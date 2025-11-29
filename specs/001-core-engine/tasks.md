@@ -133,16 +133,16 @@ This task list breaks down the Core Data Engine implementation into independentl
 - [x] **T055** [US6] Create `EquipmentGenerator` class
 - [x] **T056** [US6] Define starting equipment by class
 - [x] **T057** [US6] Implement inventory and equipped items management
-- [ ] **T058** [US6] Create `AppearanceGenerator` class
-- [ ] **T059** [US6] Implement deterministic appearance (from seed)
-  - [ ] body_type, skin_tone, hair_style, hair_color, eye_color, facial_features
-- [ ] **T060** [US6] Implement dynamic appearance (from audio/visual)
-  - [ ] primary_color, secondary_color from ColorPalette
-  - [ ] aura_color for magical classes
-- [ ] **T061** [US6] Create race data with traits in `src/utils/constants.ts`
-- [ ] **T062** [US6] Create class data with features in `src/utils/constants.ts`
-- [ ] **T063** [US6] Write unit tests for skills in `tests/unit/skills.test.ts`
-- [ ] **T064** [US6] Write unit tests for spells and equipment
+- [x] **T058** [US6] Create `AppearanceGenerator` class
+- [x] **T059** [US6] Implement deterministic appearance (from seed)
+  - [x] body_type, skin_tone, hair_style, hair_color, eye_color, facial_features
+- [x] **T060** [US6] Implement dynamic appearance (from audio/visual)
+  - [x] primary_color, secondary_color from ColorPalette
+  - [x] aura_color for magical classes
+- [x] **T061** [US6] Create race data with traits in `src/utils/constants.ts`
+- [x] **T062** [US6] Create class data with features in `src/utils/constants.ts`
+- [x] **T063** [US6] Write unit tests for skills in `tests/unit/skills.test.ts`
+- [x] **T064** [US6] Write unit tests for spells and equipment
 
 ---
 
@@ -151,22 +151,22 @@ This task list breaks down the Core Data Engine implementation into independentl
 **Goal**: XP tracking, leveling, and session management
 
 ### User Story 9: Progression & Leveling (12 tasks)
-- [ ] **T065** [US9] Create `XPCalculator` class in `src/core/progression/XPCalculator.ts`
-- [ ] **T066** [US9] Implement base XP calculation (1 XP per second)
-- [ ] **T067** [US9] Implement track completion bonus (95%+ listened)
-- [ ] **T068** [US9] Create `SessionTracker` class
-- [ ] **T069** [US9] Implement ListeningSession recording with timestamps
-- [ ] **T070** [US9] Create `LevelUpProcessor` class
-- [ ] **T071** [US9] Implement D&D 5e XP thresholds (levels 1-20) in constants
-- [ ] **T072** [US9] Implement level-up mechanics:
-  - [ ] Class features by level
-  - [ ] HP increase (hit die + CON modifier)
-  - [ ] Ability score increases (levels 4, 8, 12, 16, 19)
-  - [ ] Spell slot increases for casters
+- [x] **T065** [US9] Create `XPCalculator` class in `src/core/progression/XPCalculator.ts`
+- [x] **T066** [US9] Implement base XP calculation (1 XP per second)
+- [x] **T067** [US9] Implement track completion bonus (95%+ listened)
+- [x] **T068** [US9] Create `SessionTracker` class
+- [x] **T069** [US9] Implement ListeningSession recording with timestamps
+- [x] **T070** [US9] Create `LevelUpProcessor` class
+- [x] **T071** [US9] Implement D&D 5e XP thresholds (levels 1-20) in constants
+- [x] **T072** [US9] Implement level-up mechanics:
+  - [x] Class features by level
+  - [x] HP increase (hit die + CON modifier)
+  - [x] Ability score increases (levels 4, 8, 12, 16, 19)
+  - [x] Spell slot increases for casters
 - [ ] **T073** [US9] Create `MasterySystem` class
 - [ ] **T074** [US9] Implement track mastery threshold and bonus XP
 - [ ] **T075** [US9] Create `updateCharacterFromSession` function
-- [ ] **T076** [US9] Write unit tests for progression in `tests/unit/progression.test.ts`
+- [x] **T076** [US9] Write unit tests for progression in `tests/unit/progression.test.ts`
 
 ---
 

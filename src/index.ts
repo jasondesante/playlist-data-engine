@@ -31,6 +31,19 @@ export type {
     Equipment
 } from './utils/constants.js';
 
+export type {
+    GeolocationData,
+    MotionData,
+    WeatherData,
+    LightData,
+    EnvironmentalContext,
+    GamingContext,
+    ListeningSession,
+    ExperienceSystem
+} from './core/types/Progression.js';
+
+export type { LevelUpBenefits } from './core/progression/LevelUpProcessor.js';
+
 // Utilities
 export {
     generateSeed,
@@ -63,6 +76,11 @@ export { SkillAssigner } from './core/generation/SkillAssigner.js';
 export { SpellManager } from './core/generation/SpellManager.js';
 export { EquipmentGenerator } from './core/generation/EquipmentGenerator.js';
 export { NamingEngine } from './core/generation/NamingEngine.js';
+
+// Progression
+export { XPCalculator } from './core/progression/XPCalculator.js';
+export { SessionTracker } from './core/progression/SessionTracker.js';
+export { LevelUpProcessor } from './core/progression/LevelUpProcessor.js';
 
 // Constants
 export {

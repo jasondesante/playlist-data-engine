@@ -15,7 +15,7 @@ describe('E2E: Full Pipeline', () => {
         const playlist = await parser.parse(samplePlaylistData);
 
         expect(playlist.name).toBe('Test Playlist');
-        expect(playlist.image).toBe('https://example.com/playlist-cover.jpg');
+        expect(playlist.image).toBe('https://arweave.net/Zc09ELTlfM3KA4sdwS9enG6kZJXx3dQFsaYNCrJLSIk');
         expect(playlist.creator).toBe('0xCreatorWallet123');
         expect(playlist.tracks.length).toBeGreaterThan(0);
 

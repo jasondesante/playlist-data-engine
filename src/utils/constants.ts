@@ -751,6 +751,7 @@ export const EQUIPMENT_DATABASE: Record<string, Equipment> = {
     'Light Crossbow': { name: 'Light Crossbow', type: 'weapon', rarity: 'uncommon', weight: 5 },
     'Hand Crossbow': { name: 'Hand Crossbow', type: 'weapon', rarity: 'uncommon', weight: 3 },
     'Longbow': { name: 'Longbow', type: 'weapon', rarity: 'uncommon', weight: 2 },
+    'Martial Melee Weapon': { name: 'Martial Melee Weapon', type: 'weapon', rarity: 'common', weight: 3 },
 
     // Armor
     'No Armor': { name: 'No Armor', type: 'armor', rarity: 'common', weight: 0 },

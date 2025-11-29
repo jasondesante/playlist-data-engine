@@ -6,6 +6,7 @@ import { RaceSelector } from './RaceSelector.js';
 import { ClassSuggester } from './ClassSuggester.js';
 import { AbilityScoreCalculator } from './AbilityScoreCalculator.js';
 import { SkillAssigner } from './SkillAssigner.js';
+import { AppearanceGenerator } from './AppearanceGenerator.js';
 
 export interface CharacterGeneratorOptions {
     /** Starting level (default: 1) */
@@ -72,6 +73,9 @@ export class CharacterGenerator {
             CHA: classData.saving_throws.includes('CHA'),
         };
 
+        // Generate character appearance
+        const appearance = AppearanceGenerator.generate(seed, suggestedClass, audioProfile);
+
         return {
             name,
             race,
@@ -92,6 +96,7 @@ export class CharacterGenerator {
             saving_throws,
             racial_traits: raceData.traits,
             class_features: [`${suggestedClass} Level ${level}`],
+            appearance,
             xp: {
                 current: 0,
                 next_level: XP_THRESHOLDS[level + 1] || 0,
