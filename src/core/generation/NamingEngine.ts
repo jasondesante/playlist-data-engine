@@ -1,0 +1,111 @@
+import type { PlaylistTrack } from '../types/Playlist';
+import type { AudioProfile } from '../types/AudioProfile';
+import { ADJECTIVE_DATA } from '../../utils/constants';
+import { SeededRNG } from '../../utils/random';
+
+export class NamingEngine {
+    /**
+     * Generates a unique RPG-style name for a track
+     */
+    public generateName(track: PlaylistTrack, audioProfile: AudioProfile): string {
+        const cleanTitle = this.cleanTitle(track.title);
+        const rng = new SeededRNG(track.uuid);
+        const format = this.selectFormat(rng);
+
+        switch (format) {
+            case 'class_title':
+                return this.formatClassTitle(cleanTitle, track.genre);
+            case 'adjective_construct':
+                return this.formatAdjectiveConstruct(cleanTitle, track.genre, audioProfile);
+            case 'clan_construct':
+                return this.formatClanConstruct(cleanTitle, track.artist);
+            default:
+                return cleanTitle;
+        }
+    }
+
+    /**
+     * Cleans track titles by removing common noise
+     * e.g. "Song Name (Official Video)" -> "Song Name"
+     * e.g. "01 - Song Name" -> "Song Name"
+     */
+    public cleanTitle(title: string): string {
+        let clean = title;
+
+        // Remove brackets and parentheses content if it looks like metadata
+        clean = clean.replace(/\s*[([].*?(video|official|remix|mix|edit|feat|ft\.|version|remaster).*?[)\]]/gi, '');
+
+        // Remove leading track numbers (e.g. "01 - ", "1. ")
+        clean = clean.replace(/^\s*\d+[\s.-]+/, '');
+
+        // Remove file extensions
+        clean = clean.replace(/\.(mp3|wav|flac|m4a)$/i, '');
+
+        return clean.trim();
+    }
+
+    private selectFormat(rng: SeededRNG): 'class_title' | 'adjective_construct' | 'clan_construct' {
+        // Weighted random selection: 50% Class Title, 30% Adjective, 20% Clan
+        const rand = rng.random();
+
+        if (rand < 0.5) return 'class_title';
+        if (rand < 0.8) return 'adjective_construct';
+        return 'clan_construct';
+    }
+
+    private formatClassTitle(core: string, genre: string): string {
+        // [Core] the [Class]
+        // Class is derived from genre or random?
+        // Let's map genre to a "Class" title or use a generic one.
+        // For now, I'll use a simple mapping or just "Bard" if unknown.
+        // Actually, maybe we can use the "Class" from D&D classes?
+        // Let's use a simple mapping for now.
+
+        const genreLower = genre.toLowerCase();
+        let className = 'Bard';
+
+        if (genreLower.includes('rock') || genreLower.includes('metal')) className = 'Barbarian';
+        else if (genreLower.includes('techno') || genreLower.includes('electronic')) className = 'Artificer';
+        else if (genreLower.includes('ambient') || genreLower.includes('classical')) className = 'Wizard';
+        else if (genreLower.includes('rap') || genreLower.includes('hip hop')) className = 'Rogue';
+        else if (genreLower.includes('pop')) className = 'Sorcerer';
+        else if (genreLower.includes('jazz')) className = 'Monk';
+        else if (genreLower.includes('folk')) className = 'Druid';
+
+        return `${core} the ${className}`;
+    }
+
+    private formatAdjectiveConstruct(core: string, genre: string, audio: AudioProfile): string {
+        // [Adjective] [Core]
+        const genreKey = this.findGenreKey(genre);
+        const adjectives = ADJECTIVE_DATA[genreKey] || ADJECTIVE_DATA['default'];
+
+        let adjective = adjectives.mid; // Default
+
+        // Determine dominant feature
+        if (audio.average_amplitude < 0.3) {
+            adjective = adjectives.quiet;
+        } else if (audio.average_amplitude > 0.8) {
+            adjective = adjectives.loud;
+        } else if (audio.bass_dominance > 0.6) {
+            adjective = adjectives.bass;
+        } else if (audio.treble_dominance > 0.6) {
+            adjective = adjectives.treble;
+        }
+
+        return `${adjective} ${core}`;
+    }
+
+    private formatClanConstruct(core: string, artist: string): string {
+        // [Core] of [Artist]
+        return `${core} of ${artist}`;
+    }
+
+    private findGenreKey(genre: string): string {
+        const lower = genre.toLowerCase();
+        for (const key of Object.keys(ADJECTIVE_DATA)) {
+            if (lower.includes(key)) return key;
+        }
+        return 'default';
+    }
+}

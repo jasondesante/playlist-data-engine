@@ -65,33 +65,33 @@ This task list breaks down the Core Data Engine implementation into independentl
 **Goal**: Color palette extraction and character naming
 
 ### User Story 3: Visual Analysis (6 tasks)
-- [ ] **T023** [US3] Create `ColorExtractor` class in `src/core/analysis/ColorExtractor.ts`
-- [ ] **T024** [US3] Implement image loading with off-screen canvas (100x100px)
-- [ ] **T025** [US3] Implement k-means clustering algorithm for color quantization
-- [ ] **T026** [US3] Implement median cut algorithm as fallback
-- [ ] **T027** [US3] Calculate brightness, saturation, and monochrome detection
-- [ ] **T028** [US3] Write unit tests for `ColorExtractor` in `tests/unit/colorExtractor.test.ts`
+- [x] **T023** [US3] Create `ColorExtractor` class in `src/core/analysis/ColorExtractor.ts`
+- [x] **T024** [US3] Implement image loading with off-screen canvas (100x100px)
+- [x] **T025** [US3] Implement k-means clustering algorithm for color quantization
+- [x] **T026** [US3] Implement median cut algorithm as fallback
+- [x] **T027** [US3] Calculate brightness, saturation, and monochrome detection
+- [x] **T028** [US3] Write unit tests for `ColorExtractor` in `tests/unit/colorExtractor.test.ts`
 
 ### User Story 5: Naming Engine (10 tasks)
-- [ ] **T029** [US5] Create `NamingEngine` class in `src/core/generation/NamingEngine.ts`
-- [ ] **T030** [US5] Implement name hierarchy extraction (title > token name > fallback)
-- [ ] **T031** [US5] Implement cleaning logic:
-  - [ ] Remove brackets: `(Official Video)`, `[Remix]`
-  - [ ] Remove track numbers: `01 - Song`
-- [ ] **T032** [US5] Implement Format 1: Class Title (40% probability)
-  - [ ] Structure: `[Core] the [Class]`
-- [ ] **T033** [US5] Implement Format 2: Adjective Construct (30% probability)
-  - [ ] Create adjective mapping from AudioProfile + Genre
-  - [ ] High Bass + Techno = "Thumping"
-  - [ ] High Treble + Rock = "Screaming"
-  - [ ] Low Amp + Ambient = "Whispering"
-- [ ] **T034** [US5] Implement Format 3: Clan Construct (20% probability)
-  - [ ] Structure: `[Core] of [Artist]`
-- [ ] **T035** [US5] Implement weighted random selection (50/30/20)
-- [ ] **T036** [US5] Create adjective database in `src/utils/constants.ts`
-- [ ] **T037** [US5] Write unit tests for `NamingEngine` in `tests/unit/namingEngine.test.ts`
-- [ ] **T038** [US5] Test format distribution matches probabilities
-- [ ] **T039** [US5] Test cleaning logic with edge cases
+- [x] **T029** [US5] Create `NamingEngine` class in `src/core/generation/NamingEngine.ts`
+- [x] **T030** [US5] Implement name hierarchy extraction (title > token name > fallback)
+- [x] **T031** [US5] Implement cleaning logic:
+  - [x] Remove brackets: `(Official Video)`, `[Remix]`
+  - [x] Remove track numbers: `01 - Song`
+- [x] **T032** [US5] Implement Format 1: Class Title (50% probability)
+  - [x] Structure: `[Core] the [Class]`
+- [x] **T033** [US5] Implement Format 2: Adjective Construct (30% probability)
+  - [x] Create adjective mapping from AudioProfile + Genre
+  - [x] High Bass + Techno = "Thumping"
+  - [x] High Treble + Rock = "Screaming"
+  - [x] Low Amp + Ambient = "Whispering"
+- [x] **T034** [US5] Implement Format 3: Clan Construct (20% probability)
+  - [x] Structure: `[Core] of [Artist]`
+- [x] **T035** [US5] Implement weighted random selection (50/30/20)
+- [x] **T036** [US5] Create adjective database in `src/utils/constants.ts`
+- [x] **T037** [US5] Write unit tests for `NamingEngine` in `tests/unit/namingEngine.test.ts`
+- [x] **T038** [US5] Test format distribution matches probabilities
+- [x] **T039** [US5] Test cleaning logic with edge cases
 
 ---
 
@@ -112,7 +112,7 @@ This task list breaks down the Core Data Engine implementation into independentl
 - [x] **T046** [US4] Write unit tests for basic character generation
 
 ### User Story 6: Advanced Features (18 tasks)
-- [ ] **T047** [US6] Create `SkillAssigner` class in `src/core/generation/SkillAssigner.ts`
+- [x] **T047** [US6] Create `SkillAssigner` class in `src/core/generation/SkillAssigner.ts`
 - [ ] **T048** [US6] Implement 18 D&D skills with proficiency levels
   - [ ] STR: athletics
   - [ ] DEX: acrobatics, sleight_of_hand, stealth

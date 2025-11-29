@@ -1,62 +1,24 @@
 /**
  * Test setup file for vitest
+ * Uses real Web Audio API via web-audio-api package for authentic audio analysis
  */
 
-// Add any global test setup here
-// For example, mocking browser APIs that aren't available in jsdom
+// @ts-ignore - web-audio-api has no type definitions
+import { AudioContext, OfflineAudioContext } from 'web-audio-api';
 
-// Mock Web Audio API for testing
-if (typeof window !== 'undefined' && !window.AudioContext) {
+// Provide real Web Audio API to global scope (works in both browser and Node.js)
+// @ts-ignore
+globalThis.AudioContext = AudioContext;
+// @ts-ignore
+globalThis.OfflineAudioContext = OfflineAudioContext;
+
+// Also set on window if it exists (for browser compatibility)
+if (typeof window !== 'undefined') {
     // @ts-ignore
-    window.AudioContext = class MockAudioContext {
-        createOscillator() {
-            return {
-                connect: () => { },
-                start: () => { },
-                stop: () => { },
-            };
-        }
-
-        createGain() {
-            return {
-                connect: () => { },
-                gain: { value: 1 },
-            };
-        }
-
-        destination = {};
-    };
-
+    window.AudioContext = AudioContext;
     // @ts-ignore
-    window.OfflineAudioContext = class MockOfflineAudioContext {
-        constructor(public numberOfChannels: number, public length: number, public sampleRate: number) { }
-
-        createBufferSource() {
-            return {
-                buffer: null,
-                connect: () => { },
-                start: () => { },
-            };
-        }
-
-        createAnalyser() {
-            return {
-                fftSize: 2048,
-                frequencyBinCount: 1024,
-                connect: () => { },
-                getByteFrequencyData: () => { },
-            };
-        }
-
-        startRendering() {
-            return Promise.resolve({
-                getChannelData: () => new Float32Array(this.length),
-                numberOfChannels: this.numberOfChannels,
-                length: this.length,
-                sampleRate: this.sampleRate,
-            });
-        }
-
-        destination = {};
-    };
+    window.OfflineAudioContext = OfflineAudioContext;
 }
+
+// Also export for direct use if needed
+export { AudioContext, OfflineAudioContext };

@@ -2,7 +2,7 @@
  * D&D 5e data constants
  */
 
-import type { Race, Class, Ability } from '../core/types/Character.js';
+import type { Race, Class, Ability, Skill } from '../core/types/Character.js';
 
 // Race data with ability score bonuses
 export const RACE_DATA: Record<Race, {
@@ -63,78 +63,125 @@ export const CLASS_DATA: Record<Class, {
     hit_die: number;
     saving_throws: Ability[];
     is_spellcaster: boolean;
+    skill_count: number;
+    available_skills: Skill[];
+    has_expertise: boolean;
+    expertise_count?: number;
 }> = {
     'Barbarian': {
         primary_ability: 'STR',
         hit_die: 12,
         saving_throws: ['STR', 'CON'],
         is_spellcaster: false,
+        skill_count: 2,
+        available_skills: ['athletics', 'animal_handling', 'intimidation', 'nature', 'perception', 'survival'],
+        has_expertise: false,
     },
     'Bard': {
         primary_ability: 'CHA',
         hit_die: 8,
         saving_throws: ['DEX', 'CHA'],
         is_spellcaster: true,
+        skill_count: 3,
+        available_skills: [
+            'athletics', 'acrobatics', 'sleight_of_hand', 'stealth',
+            'arcana', 'history', 'investigation', 'nature', 'religion',
+            'animal_handling', 'insight', 'medicine', 'perception', 'survival',
+            'deception', 'intimidation', 'performance', 'persuasion'
+        ],
+        has_expertise: true,
+        expertise_count: 2,
     },
     'Cleric': {
         primary_ability: 'WIS',
         hit_die: 8,
         saving_throws: ['WIS', 'CHA'],
         is_spellcaster: true,
+        skill_count: 2,
+        available_skills: ['history', 'insight', 'medicine', 'persuasion', 'religion'],
+        has_expertise: false,
     },
     'Druid': {
         primary_ability: 'WIS',
         hit_die: 8,
         saving_throws: ['INT', 'WIS'],
         is_spellcaster: true,
+        skill_count: 2,
+        available_skills: ['arcana', 'animal_handling', 'insight', 'medicine', 'nature', 'perception', 'religion', 'survival'],
+        has_expertise: false,
     },
     'Fighter': {
         primary_ability: 'STR',
         hit_die: 10,
         saving_throws: ['STR', 'CON'],
         is_spellcaster: false,
+        skill_count: 2,
+        available_skills: ['acrobatics', 'animal_handling', 'athletics', 'history', 'insight', 'intimidation', 'perception', 'survival'],
+        has_expertise: false,
     },
     'Monk': {
         primary_ability: 'DEX',
         hit_die: 8,
         saving_throws: ['STR', 'DEX'],
         is_spellcaster: false,
+        skill_count: 2,
+        available_skills: ['acrobatics', 'athletics', 'history', 'insight', 'religion', 'stealth'],
+        has_expertise: false,
     },
     'Paladin': {
         primary_ability: 'STR',
         hit_die: 10,
         saving_throws: ['WIS', 'CHA'],
         is_spellcaster: true,
+        skill_count: 2,
+        available_skills: ['athletics', 'insight', 'intimidation', 'medicine', 'persuasion', 'religion'],
+        has_expertise: false,
     },
     'Ranger': {
         primary_ability: 'DEX',
         hit_die: 10,
         saving_throws: ['STR', 'DEX'],
         is_spellcaster: true,
+        skill_count: 3,
+        available_skills: ['animal_handling', 'athletics', 'insight', 'investigation', 'nature', 'perception', 'stealth', 'survival'],
+        has_expertise: false,
     },
     'Rogue': {
         primary_ability: 'DEX',
         hit_die: 8,
         saving_throws: ['DEX', 'INT'],
         is_spellcaster: false,
+        skill_count: 4,
+        available_skills: ['acrobatics', 'athletics', 'deception', 'insight', 'intimidation', 'investigation', 'perception', 'performance', 'persuasion', 'sleight_of_hand', 'stealth'],
+        has_expertise: true,
+        expertise_count: 2,
     },
     'Sorcerer': {
         primary_ability: 'CHA',
         hit_die: 6,
         saving_throws: ['CON', 'CHA'],
         is_spellcaster: true,
+        skill_count: 2,
+        available_skills: ['arcana', 'deception', 'insight', 'intimidation', 'persuasion', 'religion'],
+        has_expertise: false,
     },
     'Warlock': {
         primary_ability: 'CHA',
         hit_die: 8,
         saving_throws: ['WIS', 'CHA'],
         is_spellcaster: true,
+        skill_count: 2,
+        available_skills: ['arcana', 'deception', 'history', 'intimidation', 'investigation', 'nature', 'religion'],
+        has_expertise: false,
     },
     'Wizard': {
         primary_ability: 'INT',
         hit_die: 6,
         saving_throws: ['INT', 'WIS'],
         is_spellcaster: true,
+        skill_count: 2,
+        available_skills: ['arcana', 'history', 'insight', 'investigation', 'medicine', 'religion'],
+        has_expertise: false,
     },
 };
 
@@ -199,3 +246,55 @@ export const ALL_CLASSES: Class[] = [
     'Warlock',
     'Wizard',
 ];
+
+// Adjective mapping for NamingEngine
+export const ADJECTIVE_DATA: Record<string, {
+    bass: string;
+    treble: string;
+    mid: string;
+    quiet: string;
+    loud: string;
+}> = {
+    'techno': { bass: 'Thumping', treble: 'Piercing', mid: 'Driving', quiet: 'Minimal', loud: 'Pounding' },
+    'rock': { bass: 'Heavy', treble: 'Screaming', mid: 'Crunchy', quiet: 'Acoustic', loud: 'Thunderous' },
+    'metal': { bass: 'Brutal', treble: 'Shredding', mid: 'Chugging', quiet: 'Doomed', loud: 'Deafening' },
+    'ambient': { bass: 'Deep', treble: 'Ethereal', mid: 'Whispering', quiet: 'Silent', loud: 'Swelling' },
+    'classical': { bass: 'Grand', treble: 'Soaring', mid: 'Noble', quiet: 'Gentle', loud: 'Majestic' },
+    'jazz': { bass: 'Smooth', treble: 'Bright', mid: 'Swinging', quiet: 'Cool', loud: 'Big' },
+    'hip hop': { bass: 'Bumping', treble: 'Sharp', mid: 'Flowing', quiet: 'Chill', loud: 'Hype' },
+    'pop': { bass: 'Bouncy', treble: 'Sparkling', mid: 'Catchy', quiet: 'Soft', loud: 'Anthemic' },
+    'electronic': { bass: 'Pulsing', treble: 'Glitchy', mid: 'Synthetic', quiet: 'Atmospheric', loud: 'Massive' },
+    'default': { bass: 'Booming', treble: 'Sharp', mid: 'Resonant', quiet: 'Quiet', loud: 'Loud' },
+};
+
+// Skill to ability score mapping (D&D 5e)
+export const SKILL_ABILITY_MAP: Record<Skill, Ability> = {
+    // STR-based
+    athletics: 'STR',
+
+    // DEX-based
+    acrobatics: 'DEX',
+    sleight_of_hand: 'DEX',
+    stealth: 'DEX',
+
+    // INT-based
+    arcana: 'INT',
+    history: 'INT',
+    investigation: 'INT',
+    nature: 'INT',
+    religion: 'INT',
+
+    // WIS-based
+    animal_handling: 'WIS',
+    insight: 'WIS',
+    medicine: 'WIS',
+    perception: 'WIS',
+    survival: 'WIS',
+
+    // CHA-based
+    deception: 'CHA',
+    intimidation: 'CHA',
+    performance: 'CHA',
+    persuasion: 'CHA',
+};
+

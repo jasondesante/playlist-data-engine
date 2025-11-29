@@ -48,7 +48,14 @@ export {
 export { PlaylistParser } from './core/parser/PlaylistParser.js';
 export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
 export { AudioAnalyzer } from './core/analysis/AudioAnalyzer.js';
+export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
+export { ColorExtractor } from './core/analysis/ColorExtractor.js';
 export { CharacterGenerator } from './core/generation/CharacterGenerator.js';
+export { RaceSelector } from './core/generation/RaceSelector.js';
+export { ClassSuggester } from './core/generation/ClassSuggester.js';
+export { AbilityScoreCalculator } from './core/generation/AbilityScoreCalculator.js';
+export { SkillAssigner } from './core/generation/SkillAssigner.js';
+export { NamingEngine } from './core/generation/NamingEngine.js';
 
 // Constants
 export {
@@ -57,5 +64,6 @@ export {
     ALL_RACES,
     ALL_CLASSES,
     XP_THRESHOLDS,
-    PROFICIENCY_BONUS
+    PROFICIENCY_BONUS,
+    SKILL_ABILITY_MAP
 } from './utils/constants.js';

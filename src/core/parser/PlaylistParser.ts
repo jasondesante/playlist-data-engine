@@ -72,7 +72,7 @@ export class PlaylistParser {
      * Parse a single track following the flattening process
      * ENGINE_DESIGN_DOCUMENT.md Section 2.D.2
      */
-    private async parseTrack(rawTrack: any, playlistIndex: number): Promise<PlaylistTrack | null> {
+    private async parseTrack(rawTrack: RawArweavePlaylist['tracks'][number], playlistIndex: number): Promise<PlaylistTrack | null> {
         // Step 1: Parse Metadata
         const parsedMetadata = MetadataExtractor.parseMetadata(rawTrack.metadata);
         if (!parsedMetadata && this.options.strict) {
@@ -128,13 +128,13 @@ export class PlaylistParser {
         }
 
         // Extract optional fields from parsed metadata
-        const description = parsedMetadata?.description;
-        const album = parsedMetadata?.album;
+        const description = typeof parsedMetadata?.description === 'string' ? parsedMetadata.description : undefined;
+        const album = typeof parsedMetadata?.album === 'string' ? parsedMetadata.album : undefined;
         const duration = parsedMetadata?.duration ? Number(parsedMetadata.duration) : 0;
-        const genre = parsedMetadata?.genre || '';
+        const genre = typeof parsedMetadata?.genre === 'string' ? parsedMetadata.genre : '';
         const tags = parsedMetadata?.tags || [];
         const bpm = parsedMetadata?.bpm ? Number(parsedMetadata.bpm) : undefined;
-        const key = parsedMetadata?.key;
+        const key = typeof parsedMetadata?.key === 'string' ? parsedMetadata.key : undefined;
 
         // Step 5: Merge Attributes - Convert OpenSea-style attributes array
         const attributes = MetadataExtractor.convertAttributes(parsedMetadata?.attributes);

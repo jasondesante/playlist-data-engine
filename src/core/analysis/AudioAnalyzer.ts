@@ -3,6 +3,7 @@
  */
 
 import type { AudioProfile, FrequencyBands } from '../types/AudioProfile.js';
+import { SpectrumScanner } from './SpectrumScanner.js';
 
 export interface AudioAnalyzerOptions {
     /** Include advanced metrics (spectral_centroid, spectral_rolloff, zero_crossing_rate) */
@@ -41,11 +42,16 @@ export class AudioAnalyzer {
         const arrayBuffer = await response.arrayBuffer();
 
         // Decode audio data
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        const AudioContextClass = (globalThis as any).AudioContext || (window as any)?.AudioContext;
+        if (!AudioContextClass) {
+            throw new Error('AudioContext not available in this environment');
+        }
+        const audioContext = new AudioContextClass();
+        const audioBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
+            audioContext.decodeAudioData(arrayBuffer, resolve, reject);
+        });
 
         const duration = audioBuffer.duration;
-        const sampleRate = audioBuffer.sampleRate;
 
         // Determine if we should analyze the full buffer (< 3 seconds)
         const fullBufferAnalyzed = duration < 3;
@@ -74,10 +80,10 @@ export class AudioAnalyzer {
         // Average the frequency data across all samples
         const averagedBands = this.averageFrequencyBands(frequencyDataSamples);
 
-        // Calculate dominance metrics
-        const bassDominance = this.calculateDominance(averagedBands.bass);
-        const midDominance = this.calculateDominance(averagedBands.mid);
-        const trebleDominance = this.calculateDominance(averagedBands.treble);
+        // Calculate dominance metrics using SpectrumScanner
+        const bassDominance = SpectrumScanner.calculateDominance(averagedBands.bass);
+        const midDominance = SpectrumScanner.calculateDominance(averagedBands.mid);
+        const trebleDominance = SpectrumScanner.calculateDominance(averagedBands.treble);
 
         // Calculate average amplitude
         const averageAmplitude = this.calculateAverageAmplitude(audioBuffer);
@@ -137,63 +143,135 @@ export class AudioAnalyzer {
             endSample = Math.min(startSample + sampleRate, audioBuffer.length);
         }
 
-        // Extract the audio segment
-        const segmentLength = endSample - startSample;
-        const offlineContext = new OfflineAudioContext(
-            audioBuffer.numberOfChannels,
-            segmentLength,
-            sampleRate
-        );
+        // Extract audio data from the specified range and perform FFT analysis
+        const audioData = this.extractAudioSegment(audioBuffer, startSample, endSample);
+        const fftBins = this.performFFT(audioData, this.options.fftSize!);
 
-        const source = offlineContext.createBufferSource();
-        source.buffer = audioBuffer;
+        // Normalize FFT bins to 0-255 range for consistency with Web Audio API
+        const frequencyData = new Uint8Array(fftBins.length);
+        for (let i = 0; i < fftBins.length; i++) {
+            frequencyData[i] = Math.min(255, Math.round(fftBins[i]));
+        }
 
-        const analyser = offlineContext.createAnalyser();
-        analyser.fftSize = this.options.fftSize!;
-
-        source.connect(analyser);
-        analyser.connect(offlineContext.destination);
-
-        source.start(0, startSample / sampleRate, segmentLength / sampleRate);
-
-        await offlineContext.startRendering();
-
-        // Get frequency data
-        const frequencyData = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(frequencyData);
-
-        // Separate into frequency bands
-        return this.separateFrequencyBands(frequencyData, sampleRate);
+        // Separate into frequency bands using SpectrumScanner
+        return SpectrumScanner.separateFrequencyBands(frequencyData, sampleRate);
     }
 
     /**
-     * Separate frequency data into bass, mid, and treble bands
+     * Extract audio segment from buffer
      */
-    private separateFrequencyBands(
-        frequencyData: Uint8Array,
-        sampleRate: number
-    ): FrequencyBands {
-        const binCount = frequencyData.length;
-        const frequencyPerBin = sampleRate / 2 / binCount;
+    private extractAudioSegment(
+        audioBuffer: AudioBuffer,
+        startSample: number,
+        endSample: number
+    ): Float32Array {
+        const length = endSample - startSample;
+        const audioData = new Float32Array(length);
 
-        const bass: number[] = [];
-        const mid: number[] = [];
-        const treble: number[] = [];
-
-        for (let i = 0; i < binCount; i++) {
-            const frequency = i * frequencyPerBin;
-            const amplitude = frequencyData[i] / 255; // Normalize to 0-1
-
-            if (frequency >= 20 && frequency < 250) {
-                bass.push(amplitude);
-            } else if (frequency >= 250 && frequency < 4000) {
-                mid.push(amplitude);
-            } else if (frequency >= 4000 && frequency <= 20000) {
-                treble.push(amplitude);
+        // Mix down all channels to mono for analysis
+        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+            const channelData = audioBuffer.getChannelData(channel);
+            for (let i = 0; i < length; i++) {
+                audioData[i] += channelData[startSample + i] / audioBuffer.numberOfChannels;
             }
         }
 
-        return { bass, mid, treble };
+        return audioData;
+    }
+
+    /**
+     * Simple FFT implementation for frequency analysis
+     * Uses Cooley-Tukey algorithm
+     */
+    private performFFT(signal: Float32Array, fftSize: number): number[] {
+        // Pad signal to nearest power of 2
+        const paddedSize = Math.pow(2, Math.ceil(Math.log2(Math.min(signal.length, fftSize))));
+        const real = new Float32Array(paddedSize);
+        const imag = new Float32Array(paddedSize);
+
+        // Apply Hann window and copy signal
+        for (let i = 0; i < Math.min(signal.length, paddedSize); i++) {
+            const window = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (paddedSize - 1));
+            real[i] = signal[i] * window;
+        }
+
+        // Perform FFT
+        this.fft(real, imag);
+
+        // Calculate magnitude spectrum
+        const magnitude = new Array(paddedSize / 2);
+        for (let i = 0; i < magnitude.length; i++) {
+            const re = real[i];
+            const im = imag[i];
+            magnitude[i] = Math.sqrt(re * re + im * im);
+        }
+
+        // Normalize and scale to logarithmic scale for better visualization
+        const maxMagnitude = Math.max(...magnitude);
+        const normalized = magnitude.map(m => {
+            const normalized = m / (maxMagnitude || 1);
+            // Use logarithmic scale (20 * log10(x))
+            return 20 * Math.log10(Math.max(normalized, 0.001));
+        });
+
+        return normalized;
+    }
+
+    /**
+     * Cooley-Tukey FFT algorithm
+     */
+    private fft(real: Float32Array, imag: Float32Array): void {
+        const n = real.length;
+
+        if (n <= 1) return;
+
+        // Bit reversal
+        let j = 0;
+        for (let i = 0; i < n - 1; i++) {
+            if (i < j) {
+                [real[i], real[j]] = [real[j], real[i]];
+                [imag[i], imag[j]] = [imag[j], imag[i]];
+            }
+
+            let k = n / 2;
+            while (j >= k) {
+                j -= k;
+                k /= 2;
+            }
+            j += k;
+        }
+
+        // FFT computation
+        let length = 2;
+        while (length <= n) {
+            const angle = (-2 * Math.PI) / length;
+            const wReal = Math.cos(angle);
+            const wImag = Math.sin(angle);
+
+            for (let i = 0; i < n; i += length) {
+                let uReal = 1;
+                let uImag = 0;
+
+                for (let j = 0; j < length / 2; j++) {
+                    const t1 = i + j;
+                    const t2 = i + j + length / 2;
+
+                    const tReal = real[t2] * uReal - imag[t2] * uImag;
+                    const tImag = real[t2] * uImag + imag[t2] * uReal;
+
+                    real[t2] = real[t1] - tReal;
+                    imag[t2] = imag[t1] - tImag;
+                    real[t1] += tReal;
+                    imag[t1] += tImag;
+
+                    const tempReal = uReal * wReal - uImag * wImag;
+                    uImag = uReal * wImag + uImag * wReal;
+                    uReal = tempReal;
+                }
+            }
+
+            length *= 2;
+        }
     }
 
     /**
@@ -228,15 +306,6 @@ export class AudioAnalyzer {
         }
 
         return { bass, mid, treble };
-    }
-
-    /**
-     * Calculate dominance (average amplitude) for a frequency band
-     */
-    private calculateDominance(band: number[]): number {
-        if (band.length === 0) return 0;
-        const sum = band.reduce((a, b) => a + b, 0);
-        return sum / band.length;
     }
 
     /**

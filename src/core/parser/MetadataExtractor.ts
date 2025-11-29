@@ -17,7 +17,7 @@ export class MetadataExtractor {
      * 4. lossless_audio (High fidelity - larger files)
      * 5. animation_url (OpenSea standard - often audio, but could be video)
      */
-    static extractAudioUrl(data: any): string | null {
+    static extractAudioUrl(data: Record<string, unknown>): string | null {
         const priorities = ['mp3_url', 'lossy_audio', 'audio_url', 'lossless_audio', 'animation_url'];
 
         for (const key of priorities) {
@@ -36,7 +36,7 @@ export class MetadataExtractor {
      * 3. image_large (Fallback)
      * 4. image_thumb (Last resort)
      */
-    static extractImageUrl(data: any): string | null {
+    static extractImageUrl(data: Record<string, unknown>): string | null {
         const priorities = ['image_small', 'image', 'image_large', 'image_thumb'];
 
         for (const key of priorities) {
@@ -53,7 +53,7 @@ export class MetadataExtractor {
      * 1. name
      * 2. title
      */
-    static extractTitle(data: any): string | null {
+    static extractTitle(data: Record<string, unknown>): string | null {
         if (data.name && typeof data.name === 'string') {
             return data.name;
         }
@@ -69,7 +69,7 @@ export class MetadataExtractor {
      * 2. created_by
      * 3. minter
      */
-    static extractArtist(data: any): string | null {
+    static extractArtist(data: Record<string, unknown>): string | null {
         const priorities = ['artist', 'created_by', 'minter'];
 
         for (const key of priorities) {
@@ -85,14 +85,14 @@ export class MetadataExtractor {
      * Parse metadata string to JSON object
      * Handles stringified JSON with error handling
      */
-    static parseMetadata(metadata: any): Record<string, any> | null {
+    static parseMetadata(metadata: unknown): Record<string, unknown> | null {
         if (!metadata) {
             return null;
         }
 
         // Already an object
         if (typeof metadata === 'object' && !Array.isArray(metadata)) {
-            return metadata;
+            return metadata as Record<string, unknown>;
         }
 
         // Try to parse stringified JSON
@@ -115,7 +115,7 @@ export class MetadataExtractor {
      * Convert OpenSea-style attributes array to key-value object
      * Example: [{ trait_type: "BPM", value: 120 }] => { BPM: 120 }
      */
-    static convertAttributes(attributes: any): Record<string, string | number> | null {
+    static convertAttributes(attributes: unknown): Record<string, string | number> | null {
         if (!Array.isArray(attributes)) {
             return null;
         }
