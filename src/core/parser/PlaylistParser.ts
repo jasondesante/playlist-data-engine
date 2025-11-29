@@ -1,0 +1,177 @@
+/**
+ * Playlist parser - converts raw Arweave JSON to ServerlessPlaylist
+ * Based on ENGINE_DESIGN_DOCUMENT.md Section 2.D
+ */
+
+import type { ServerlessPlaylist, PlaylistTrack, RawArweavePlaylist } from '../types/Playlist.js';
+import { MetadataExtractor } from './MetadataExtractor.js';
+import { v4 as uuidv4 } from 'uuid';
+
+export interface PlaylistParserOptions {
+    /** Validate audio URLs (check for 404s) */
+    validateAudioUrls?: boolean;
+
+    /** Strict mode throws errors on invalid tracks */
+    strict?: boolean;
+}
+
+export class PlaylistParser {
+    private options: PlaylistParserOptions;
+
+    constructor(options: PlaylistParserOptions = {}) {
+        this.options = {
+            validateAudioUrls: false,
+            strict: false,
+            ...options,
+        };
+    }
+
+    /**
+     * Parse raw Arweave playlist data into ServerlessPlaylist
+     * Follows the flattening process from ENGINE_DESIGN_DOCUMENT.md Section 2.D.2
+     */
+    async parse(data: RawArweavePlaylist): Promise<ServerlessPlaylist> {
+        // Extract playlist-level metadata
+        const playlistName = data.name;
+        const playlistImage = data.image;
+        const playlistCreator = data.creator;
+        const playlistDescription = data.description;
+        const playlistGenre = data.genre;
+        const playlistTags = data.tags;
+
+        // Parse tracks
+        const rawTracks = data.tracks || [];
+        const tracks: PlaylistTrack[] = [];
+
+        for (let i = 0; i < rawTracks.length; i++) {
+            try {
+                const track = await this.parseTrack(rawTracks[i], i);
+                if (track) {
+                    tracks.push(track);
+                }
+            } catch (error) {
+                if (this.options.strict) {
+                    throw error;
+                }
+                console.warn(`Failed to parse track at index ${i}:`, error);
+            }
+        }
+
+        return {
+            name: playlistName,
+            description: playlistDescription,
+            image: playlistImage,
+            creator: playlistCreator,
+            genre: playlistGenre,
+            tags: playlistTags,
+            tracks,
+        };
+    }
+
+    /**
+     * Parse a single track following the flattening process
+     * ENGINE_DESIGN_DOCUMENT.md Section 2.D.2
+     */
+    private async parseTrack(rawTrack: any, playlistIndex: number): Promise<PlaylistTrack | null> {
+        // Step 1: Parse Metadata
+        const parsedMetadata = MetadataExtractor.parseMetadata(rawTrack.metadata);
+        if (!parsedMetadata && this.options.strict) {
+            throw new Error(`Failed to parse metadata for track at index ${playlistIndex}`);
+        }
+
+        // Step 2: Initialize PlaylistTrack
+        // Step 3: Map Outer Shell - Copy blockchain data directly
+        const chainName = rawTrack.chain_name;
+        const tokenAddress = rawTrack.token_address;
+        const tokenId = rawTrack.token_id;
+        const platform = rawTrack.platform;
+
+        // Generate or use existing id (ENGINE_DESIGN_DOCUMENT.md Section 3)
+        const id = rawTrack.id || `${chainName}-${tokenAddress}-${tokenId}`;
+
+        // Generate UUID if not provided
+        const uuid = rawTrack.uuid || uuidv4();
+
+        // Step 4: Run Extraction Logic
+        const title = MetadataExtractor.extractTitle(parsedMetadata || {});
+        const artist = MetadataExtractor.extractArtist(parsedMetadata || {});
+        const imageUrl = MetadataExtractor.extractImageUrl(parsedMetadata || {});
+        const audioUrl = MetadataExtractor.extractAudioUrl(parsedMetadata || {});
+
+        // Step 6: Validate - If audio_url is empty, mark as "Unsummonable"
+        if (!audioUrl) {
+            if (this.options.strict) {
+                throw new Error(`No audio URL found for track: ${title || id}`);
+            }
+            console.warn(`Track ${id} has no audio URL - marked as Unsummonable`);
+            return null;
+        }
+
+        // Optional: Validate audio URL accessibility
+        if (this.options.validateAudioUrls) {
+            const isValid = await this.validateAudioUrl(audioUrl);
+            if (!isValid) {
+                if (this.options.strict) {
+                    throw new Error(`Audio URL validation failed for track: ${title || id}`);
+                }
+                console.warn(`Track ${id} has invalid audio URL - marked as Unsummonable`);
+                return null;
+            }
+        }
+
+        // Validate required fields
+        if (!title || !artist || !imageUrl) {
+            if (this.options.strict) {
+                throw new Error(`Missing required fields for track: ${JSON.stringify({ title, artist, imageUrl })}`);
+            }
+            return null;
+        }
+
+        // Extract optional fields from parsed metadata
+        const description = parsedMetadata?.description;
+        const album = parsedMetadata?.album;
+        const duration = parsedMetadata?.duration ? Number(parsedMetadata.duration) : 0;
+        const genre = parsedMetadata?.genre || '';
+        const tags = parsedMetadata?.tags || [];
+        const bpm = parsedMetadata?.bpm ? Number(parsedMetadata.bpm) : undefined;
+        const key = parsedMetadata?.key;
+
+        // Step 5: Merge Attributes - Convert OpenSea-style attributes array
+        const attributes = MetadataExtractor.convertAttributes(parsedMetadata?.attributes);
+
+        return {
+            id,
+            uuid,
+            playlist_index: playlistIndex,
+            chain_name: chainName,
+            token_address: tokenAddress,
+            token_id: tokenId,
+            platform,
+            title,
+            artist,
+            description,
+            album,
+            image_url: imageUrl,
+            audio_url: audioUrl,
+            duration,
+            genre,
+            tags: Array.isArray(tags) ? tags.map(t => String(t).toLowerCase()) : [],
+            bpm,
+            key,
+            attributes: attributes || undefined,
+        };
+    }
+
+    /**
+     * Validate that an audio URL is accessible
+     */
+    private async validateAudioUrl(url: string): Promise<boolean> {
+        try {
+            const response = await fetch(url, { method: 'HEAD' });
+            return response.ok;
+        } catch (error) {
+            console.warn(`Audio URL validation failed for ${url}:`, error);
+            return false;
+        }
+    }
+}
