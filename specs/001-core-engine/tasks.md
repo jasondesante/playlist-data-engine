@@ -123,16 +123,16 @@ This task list breaks down the Core Data Engine implementation into independentl
   - [x] Rogue: expertise in 2 skills
   - [x] Bard: expertise in 2 skills
 - [x] **T050** [US6] Implement saving throw proficiencies by class
-- [ ] **T051** [US6] Create `SpellManager` class in `src/core/generation/SpellManager.ts`
-- [ ] **T052** [US6] Define spell lists for each spellcasting class
-  - [ ] Wizard, Sorcerer, Warlock, Bard, Cleric, Druid, Paladin, Ranger
-- [ ] **T053** [US6] Implement spell slot calculation by level
-- [ ] **T054** [US6] Create spell database in `src/utils/constants.ts`
-  - [ ] Cantrips (level 0) through 9th level spells
-  - [ ] Spell schools: Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation
-- [ ] **T055** [US6] Create `EquipmentGenerator` class
-- [ ] **T056** [US6] Define starting equipment by class
-- [ ] **T057** [US6] Implement inventory and equipped items management
+- [x] **T051** [US6] Create `SpellManager` class in `src/core/generation/SpellManager.ts`
+- [x] **T052** [US6] Define spell lists for each spellcasting class
+  - [x] Wizard, Sorcerer, Warlock, Bard, Cleric, Druid, Paladin, Ranger
+- [x] **T053** [US6] Implement spell slot calculation by level
+- [x] **T054** [US6] Create spell database in `src/utils/constants.ts`
+  - [x] Cantrips (level 0) through 9th level spells
+  - [x] Spell schools: Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation
+- [x] **T055** [US6] Create `EquipmentGenerator` class
+- [x] **T056** [US6] Define starting equipment by class
+- [x] **T057** [US6] Implement inventory and equipped items management
 - [ ] **T058** [US6] Create `AppearanceGenerator` class
 - [ ] **T059** [US6] Implement deterministic appearance (from seed)
   - [ ] body_type, skin_tone, hair_style, hair_color, eye_color, facial_features

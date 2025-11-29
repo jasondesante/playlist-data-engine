@@ -26,6 +26,11 @@ export type {
     ProficiencyLevel
 } from './core/types/Character.js';
 
+export type {
+    Spell,
+    Equipment
+} from './utils/constants.js';
+
 // Utilities
 export {
     generateSeed,
@@ -55,6 +60,8 @@ export { RaceSelector } from './core/generation/RaceSelector.js';
 export { ClassSuggester } from './core/generation/ClassSuggester.js';
 export { AbilityScoreCalculator } from './core/generation/AbilityScoreCalculator.js';
 export { SkillAssigner } from './core/generation/SkillAssigner.js';
+export { SpellManager } from './core/generation/SpellManager.js';
+export { EquipmentGenerator } from './core/generation/EquipmentGenerator.js';
 export { NamingEngine } from './core/generation/NamingEngine.js';
 
 // Constants
@@ -65,5 +72,10 @@ export {
     ALL_CLASSES,
     XP_THRESHOLDS,
     PROFICIENCY_BONUS,
-    SKILL_ABILITY_MAP
+    SKILL_ABILITY_MAP,
+    SPELL_DATABASE,
+    CLASS_SPELL_LISTS,
+    SPELL_SLOTS_BY_CLASS,
+    CLASS_STARTING_EQUIPMENT,
+    EQUIPMENT_DATABASE
 } from './utils/constants.js';

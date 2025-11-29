@@ -20,7 +20,7 @@ export const SAMPLE_TEST_TRACK = {
     platform: 'arweave',
     title: 'Test Audio Track',
     artist: 'Test Artist',
-    image_url: 'https://arweave.net/test-image.jpg',
+    image_url: 'https://arweave.net/Zc09ELTlfM3KA4sdwS9enG6kZJXx3dQFsaYNCrJLSIk',
     audio_url: TEST_AUDIO_URLS.arweaveTrack,
     duration: 180, // Estimated duration in seconds
     genre: 'Electronic',

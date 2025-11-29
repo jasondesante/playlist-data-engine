@@ -4,10 +4,17 @@
  */
 
 import type { RawArweavePlaylist } from '../../src/core/types/Playlist';
+import { TEST_AUDIO_URLS } from './testAudioUrls';
+
+export const TEST_URLS = {
+    // Arweave-hosted test track
+    arweaveTrack: 'https://arweave.net/G9lus_CuOViy1M-sLbQXGXnV2wYGPodYAcGP5akM8EU',
+    arweaveImage: 'https://arweave.net/Zc09ELTlfM3KA4sdwS9enG6kZJXx3dQFsaYNCrJLSIk',
+};
 
 export const samplePlaylistData: RawArweavePlaylist = {
     name: 'Test Playlist',
-    image: 'https://example.com/playlist-cover.jpg',
+    image: 'https://arweave.net/Zc09ELTlfM3KA4sdwS9enG6kZJXx3dQFsaYNCrJLSIk',
     creator: '0xCreatorWallet123',
     description: 'A sample playlist for testing the data engine',
     genre: 'Electronic',
@@ -25,8 +32,8 @@ export const samplePlaylistData: RawArweavePlaylist = {
             metadata: JSON.stringify({
                 name: 'Epic Battle Theme',
                 artist: 'Composer One',
-                mp3_url: 'https://example.com/track1.mp3',
-                image_small: 'https://example.com/artwork1-small.jpg',
+                mp3_url: TEST_URLS.arweaveTrack,
+                image_small: TEST_URLS.arweaveImage,
                 duration: 180,
                 genre: 'Electronic',
                 tags: ['epic', 'battle', 'electronic'],
@@ -43,8 +50,8 @@ export const samplePlaylistData: RawArweavePlaylist = {
             metadata: JSON.stringify({
                 title: 'Peaceful Melody',
                 created_by: 'Composer Two',
-                lossy_audio: 'https://example.com/track2.ogg',
-                image: 'https://example.com/artwork2.jpg',
+                lossy_audio: TEST_URLS.arweaveTrack,
+                image: TEST_URLS.arweaveImage,
                 duration: 240,
                 genre: 'Ambient',
                 tags: ['peaceful', 'ambient'],
@@ -59,8 +66,8 @@ export const samplePlaylistData: RawArweavePlaylist = {
             metadata: JSON.stringify({
                 name: 'Energetic Dance',
                 artist: 'Composer Three',
-                audio_url: 'https://example.com/track3.mp3',
-                image_large: 'https://example.com/artwork3-large.jpg',
+                audio_url: TEST_URLS.arweaveTrack,
+                image_large: TEST_URLS.arweaveImage,
                 duration: 200,
                 genre: 'Dance',
                 tags: ['energetic', 'dance', 'upbeat'],
