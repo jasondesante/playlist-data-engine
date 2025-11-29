@@ -1,4 +1,4 @@
-import type { CharacterSheet, Class } from '../types/Character.js';
+import type { CharacterSheet, Class, Ability } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
 import { SeededRNG } from '../../utils/random.js';
 import { RACE_DATA, CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
@@ -63,7 +63,7 @@ export class CharacterGenerator {
         const skills = SkillAssigner.assignSkills(suggestedClass, rng);
 
         // Initialize saving throws
-        const saving_throws: Record<string, boolean> = {
+        const saving_throws: Record<Ability, boolean> = {
             STR: classData.saving_throws.includes('STR'),
             DEX: classData.saving_throws.includes('DEX'),
             CON: classData.saving_throws.includes('CON'),

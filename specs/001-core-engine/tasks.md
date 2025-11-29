@@ -113,16 +113,16 @@ This task list breaks down the Core Data Engine implementation into independentl
 
 ### User Story 6: Advanced Features (18 tasks)
 - [x] **T047** [US6] Create `SkillAssigner` class in `src/core/generation/SkillAssigner.ts`
-- [ ] **T048** [US6] Implement 18 D&D skills with proficiency levels
-  - [ ] STR: athletics
-  - [ ] DEX: acrobatics, sleight_of_hand, stealth
-  - [ ] INT: arcana, history, investigation, nature, religion
-  - [ ] WIS: animal_handling, insight, medicine, perception, survival
-  - [ ] CHA: deception, intimidation, performance, persuasion
-- [ ] **T049** [US6] Assign class-based skill proficiencies
-  - [ ] Rogue: expertise in 2 skills
-  - [ ] Bard: expertise in 2 skills
-- [ ] **T050** [US6] Implement saving throw proficiencies by class
+- [x] **T048** [US6] Implement 18 D&D skills with proficiency levels
+  - [x] STR: athletics
+  - [x] DEX: acrobatics, sleight_of_hand, stealth
+  - [x] INT: arcana, history, investigation, nature, religion
+  - [x] WIS: animal_handling, insight, medicine, perception, survival
+  - [x] CHA: deception, intimidation, performance, persuasion
+- [x] **T049** [US6] Assign class-based skill proficiencies
+  - [x] Rogue: expertise in 2 skills
+  - [x] Bard: expertise in 2 skills
+- [x] **T050** [US6] Implement saving throw proficiencies by class
 - [ ] **T051** [US6] Create `SpellManager` class in `src/core/generation/SpellManager.ts`
 - [ ] **T052** [US6] Define spell lists for each spellcasting class
   - [ ] Wizard, Sorcerer, Warlock, Bard, Cleric, Druid, Paladin, Ranger
