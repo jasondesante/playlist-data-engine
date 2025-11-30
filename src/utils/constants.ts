@@ -797,3 +797,8 @@ export const EQUIPMENT_DATABASE: Record<string, Equipment> = {
     // Martial Arts
     'Martial Arts': { name: 'Martial Arts', type: 'weapon', rarity: 'common', weight: 0 },
 };
+
+// Mastery System Constants
+export const MASTERY_THRESHOLD = 10; // Number of listens to master a track
+export const MASTERY_BONUS_XP = 500; // Bonus XP for mastering a track
+

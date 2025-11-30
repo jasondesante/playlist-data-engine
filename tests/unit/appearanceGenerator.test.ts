@@ -73,7 +73,7 @@ describe('AppearanceGenerator', () => {
 
         it('should generate hex color for skin tone', () => {
             const seed = 'test-seed-skin';
-            const characterClass: Class = 'Elf';
+            const characterClass: Class = 'Druid';
 
             const appearance = AppearanceGenerator.generate(seed, characterClass, mockAudioProfile);
 

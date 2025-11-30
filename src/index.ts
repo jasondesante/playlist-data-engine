@@ -43,6 +43,7 @@ export type {
 } from './core/types/Progression.js';
 
 export type { LevelUpBenefits } from './core/progression/LevelUpProcessor.js';
+export type { CharacterUpdateResult } from './core/progression/CharacterUpdater.js';
 
 // Utilities
 export {
@@ -81,6 +82,8 @@ export { NamingEngine } from './core/generation/NamingEngine.js';
 export { XPCalculator } from './core/progression/XPCalculator.js';
 export { SessionTracker } from './core/progression/SessionTracker.js';
 export { LevelUpProcessor } from './core/progression/LevelUpProcessor.js';
+export { MasterySystem } from './core/progression/MasterySystem.js';
+export { CharacterUpdater } from './core/progression/CharacterUpdater.js';
 
 // Constants
 export {
@@ -95,5 +98,7 @@ export {
     CLASS_SPELL_LISTS,
     SPELL_SLOTS_BY_CLASS,
     CLASS_STARTING_EQUIPMENT,
-    EQUIPMENT_DATABASE
+    EQUIPMENT_DATABASE,
+    MASTERY_THRESHOLD,
+    MASTERY_BONUS_XP
 } from './utils/constants.js';

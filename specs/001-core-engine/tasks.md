@@ -163,9 +163,9 @@ This task list breaks down the Core Data Engine implementation into independentl
   - [x] HP increase (hit die + CON modifier)
   - [x] Ability score increases (levels 4, 8, 12, 16, 19)
   - [x] Spell slot increases for casters
-- [ ] **T073** [US9] Create `MasterySystem` class
-- [ ] **T074** [US9] Implement track mastery threshold and bonus XP
-- [ ] **T075** [US9] Create `updateCharacterFromSession` function
+- [x] **T073** [US9] Create `MasterySystem` class
+- [x] **T074** [US9] Implement track mastery threshold and bonus XP
+- [x] **T075** [US9] Create `updateCharacterFromSession` function
 - [x] **T076** [US9] Write unit tests for progression in `tests/unit/progression.test.ts`
 
 ---
