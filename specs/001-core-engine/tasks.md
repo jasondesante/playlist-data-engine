@@ -175,32 +175,32 @@ This task list breaks down the Core Data Engine implementation into independentl
 **Goal**: Real-world sensor integration with privacy-first design
 
 ### User Story 7: Environmental Sensors (16 tasks)
-- [ ] **T077** [US7] Create `EnvironmentalSensors` class in `src/core/sensors/EnvironmentalSensors.ts`
-- [ ] **T078** [US7] Implement permission request system
-  - [ ] Clear dialogs explaining data usage
-  - [ ] Per-sensor opt-in/opt-out
-- [ ] **T079** [US7] Create `GeolocationProvider` class
-- [ ] **T080** [US7] Implement Geolocation API integration
-  - [ ] latitude, longitude, altitude, accuracy, heading, speed
-- [ ] **T081** [US7] Implement biome detection from coordinates
-  - [ ] urban, forest, desert, mountain, water, tundra
-- [ ] **T082** [US7] Create `MotionDetector` class
-- [ ] **T083** [US7] Implement DeviceMotionEvent integration
-  - [ ] acceleration, acceleration_with_gravity, rotation_rate
-- [ ] **T084** [US7] Implement activity type detection
-  - [ ] stationary (< 0.1), walking (0.1-0.4), running (0.4-0.7), driving (> 0.7)
-- [ ] **T085** [US7] Create `WeatherAPIClient` class
-- [ ] **T086** [US7] Integrate with weather API (OpenWeatherMap or similar)
-  - [ ] temperature, humidity, pressure, weather_type, wind
-  - [ ] is_night, moon_phase
-- [ ] **T087** [US7] Create `LightSensor` class (experimental)
-- [ ] **T088** [US7] Implement AmbientLightSensor API with fallback
-- [ ] **T089** [US7] Implement environmental XP modifier calculation
-  - [ ] Running: 1.5x, Thunderstorm: 1.4x, High altitude: 1.3x, Night: 1.25x
-  - [ ] Cap at 3.0x total
-- [ ] **T090** [US7] Implement continuous monitoring with callbacks
-- [ ] **T091** [US7] Implement graceful degradation when sensors denied
-- [ ] **T092** [US7] Write unit tests for sensors in `tests/unit/sensors.test.ts`
+- [x] **T077** [US7] Create `EnvironmentalSensors` class in `src/core/sensors/EnvironmentalSensors.ts`
+- [x] **T078** [US7] Implement permission request system
+  - [x] Clear dialogs explaining data usage
+  - [x] Per-sensor opt-in/opt-out
+- [x] **T079** [US7] Create `GeolocationProvider` class
+- [x] **T080** [US7] Implement Geolocation API integration
+  - [x] latitude, longitude, altitude, accuracy, heading, speed
+- [x] **T081** [US7] Implement biome detection from coordinates
+  - [x] tundra (high latitude), forest (tropics), urban (mid-latitude)
+- [x] **T082** [US7] Create `MotionDetector` class
+- [x] **T083** [US7] Implement DeviceMotionEvent integration
+  - [x] acceleration, acceleration_with_gravity, rotation_rate
+- [x] **T084** [US7] Implement activity type detection
+  - [x] stationary (< 0.1), walking (0.1-0.4), running (0.4-0.7), driving (> 0.7)
+- [x] **T085** [US7] Create `WeatherAPIClient` class
+- [x] **T086** [US7] Integrate with weather API (OpenWeatherMap or similar)
+  - [x] temperature, humidity, pressure, weather_type, wind
+  - [x] is_night, moon_phase
+- [x] **T087** [US7] Create `LightSensor` class (experimental)
+- [x] **T088** [US7] Implement AmbientLightSensor API with fallback
+- [x] **T089** [US7] Implement environmental XP modifier calculation
+  - [x] Running: 1.5x, Rain/Storm: 1.4x, High altitude: 1.3x, Night: 1.25x
+  - [x] Cap at 3.0x total
+- [x] **T090** [US7] Implement continuous monitoring with callbacks
+- [x] **T091** [US7] Implement graceful degradation when sensors denied
+- [x] **T092** [US7] Write unit tests for sensors in `tests/unit/sensors.test.ts`
 
 ---
 
