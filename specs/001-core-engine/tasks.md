@@ -209,31 +209,31 @@ This task list breaks down the Core Data Engine implementation into independentl
 **Goal**: Steam and Discord integration for gaming bonuses
 
 ### User Story 8: Gaming Integration (14 tasks)
-- [ ] **T093** [US8] Create `GamingPlatformSensors` class in `src/core/sensors/GamingPlatformSensors.ts`
-- [ ] **T094** [US8] Create `SteamAPIClient` class
-- [ ] **T095** [US8] Implement Steam Web API integration
-  - [ ] IPlayerService/GetRecentlyPlayedGames
-  - [ ] ISteamUserStats/GetSchemaForGame
-  - [ ] ISteamApps/GetAppList
-- [ ] **T096** [US8] Implement Steam game detection and metadata fetching
-- [ ] **T097** [US8] Create `DiscordRPCClient` class
-- [ ] **T098** [US8] Implement Discord Rich Presence integration
-  - [ ] Game name, details, party size, elapsed time
-- [ ] **T099** [US8] Implement unified GamingContext merging Steam + Discord
-- [ ] **T100** [US8] Implement gaming bonus calculation
-  - [ ] Base: +25% for any gaming
-  - [ ] Genre bonuses: Action +15%, RPG +20%, Strategy +10%
-  - [ ] Multiplayer: +15% for party size > 1
-  - [ ] Session duration: up to +20% for 4+ hours
-- [ ] **T101** [US8] Implement compound bonus system (environmental + gaming)
-  - [ ] Cap at 3.0x total
-- [ ] **T102** [US8] Implement polling with exponential backoff
-  - [ ] Default 60-second intervals
-  - [ ] Backoff on rate limiting
-- [ ] **T103** [US8] Implement game metadata caching
-- [ ] **T104** [US8] Implement `isPlayingGame(gameName)` helper
-- [ ] **T105** [US8] Write unit tests for gaming in `tests/unit/gaming.test.ts`
-- [ ] **T106** [US8] Write integration tests with mock APIs
+- [x] **T093** [US8] Create `GamingPlatformSensors` class in `src/core/sensors/GamingPlatformSensors.ts`
+- [x] **T094** [US8] Create `SteamAPIClient` class
+- [x] **T095** [US8] Implement Steam Web API integration
+  - [x] IPlayerService/GetRecentlyPlayedGames
+  - [x] ISteamUserStats/GetSchemaForGame
+  - [x] ISteamApps/GetAppList
+- [x] **T096** [US8] Implement Steam game detection and metadata fetching
+- [x] **T097** [US8] Create `DiscordRPCClient` class
+- [x] **T098** [US8] Implement Discord Rich Presence integration
+  - [x] Game name, details, party size, elapsed time
+- [x] **T099** [US8] Implement unified GamingContext merging Steam + Discord
+- [x] **T100** [US8] Implement gaming bonus calculation
+  - [x] Base: +25% for any gaming
+  - [x] Genre bonuses: Action +15%, RPG +20%, Strategy +10%
+  - [x] Multiplayer: +15% for party size > 1
+  - [x] Session duration: up to +20% for 4+ hours
+- [x] **T101** [US8] Implement compound bonus system (environmental + gaming)
+  - [x] Cap at 3.0x total
+- [x] **T102** [US8] Implement polling with exponential backoff
+  - [x] Default 60-second intervals
+  - [x] Backoff on rate limiting
+- [x] **T103** [US8] Implement game metadata caching
+- [x] **T104** [US8] Implement `isPlayingGame(gameName)` helper
+- [x] **T105** [US8] Write unit tests for gaming in `tests/unit/gaming.test.ts`
+- [x] **T106** [US8] Write integration tests with mock APIs
 
 ---
 
@@ -242,16 +242,16 @@ This task list breaks down the Core Data Engine implementation into independentl
 **Goal**: Turn-based combat engine for advanced RPG games
 
 ### User Story 10: Combat Engine (10 tasks)
-- [ ] **T107** [US10] Create `CombatEngine` class in `src/core/combat/CombatEngine.ts`
-- [ ] **T108** [US10] Create `InitiativeRoller` class
-- [ ] **T109** [US10] Implement initiative rolls (d20 + DEX modifier)
-- [ ] **T110** [US10] Implement turn order sorting
-- [ ] **T111** [US10] Create `AttackResolver` class
-- [ ] **T112** [US10] Implement attack rolls (d20 + attack bonus vs AC)
-- [ ] **T113** [US10] Implement damage calculation with dice rolling
-- [ ] **T114** [US10] Implement critical hits (natural 20 = double damage)
-- [ ] **T115** [US10] Create `SpellCaster` class for combat spells
-- [ ] **T116** [US10] Write unit tests for combat in `tests/unit/combat.test.ts`
+- [x] **T107** [US10] Create `CombatEngine` class in `src/core/combat/CombatEngine.ts`
+- [x] **T108** [US10] Create `InitiativeRoller` class
+- [x] **T109** [US10] Implement initiative rolls (d20 + DEX modifier)
+- [x] **T110** [US10] Implement turn order sorting
+- [x] **T111** [US10] Create `AttackResolver` class
+- [x] **T112** [US10] Implement attack rolls (d20 + attack bonus vs AC)
+- [x] **T113** [US10] Implement damage calculation with dice rolling
+- [x] **T114** [US10] Implement critical hits (natural 20 = double damage)
+- [x] **T115** [US10] Create `SpellCaster` class for combat spells
+- [x] **T116** [US10] Write unit tests for combat in `tests/unit/combat.test.ts`
 
 ---
 
@@ -259,17 +259,24 @@ This task list breaks down the Core Data Engine implementation into independentl
 
 **Goal**: End-to-end testing and documentation
 
-- [ ] **T117** Create comprehensive integration test in `tests/integration/e2e.test.ts`
-  - [ ] Full pipeline: JSON → Playlist → Audio Analysis → Character → Session → Level Up
-- [ ] **T118** Create sensor integration test with mock data
-- [ ] **T119** Create gaming integration test with mock APIs
-- [ ] **T120** Update `README.md` with comprehensive examples
-- [ ] **T121** Update `quickstart.md` with all API examples
-- [ ] **T122** Add JSDoc comments to all public API methods
-- [ ] **T123** Create mock data generators for testing
-  - [ ] `tests/fixtures/mockSensorData.ts`
-  - [ ] `tests/fixtures/mockGamingData.ts`
-- [ ] **T124** Run full test suite and verify 100% pass rate
+- [x] **T117** Create comprehensive integration test in `tests/integration/e2e.test.ts`
+  - [x] Full pipeline: JSON → Playlist → Audio Analysis → Character → Session → Level Up
+- [x] **T118** Create sensor integration test with mock data (tests/integration/sensorIntegration.test.ts)
+  - [x] 35+ tests validating sensor data aggregation, XP modifiers, activity detection
+- [x] **T119** Create gaming integration test with mock APIs (updated tests/integration/gamingIntegration.test.ts)
+  - [x] 30+ new tests validating gaming bonus calculations with real implementation
+- [x] **T120** Update `README.md` with comprehensive examples
+- [x] **T121** Update `quickstart.md` with all API examples
+- [x] **T122** Add JSDoc comments to all public API methods
+  - [x] Analysis module (AudioAnalyzer, ColorExtractor)
+  - [x] Generation module (CharacterGenerator, RaceSelector, ClassSuggester, AbilityScoreCalculator, NamingEngine)
+  - [x] Sensors module (EnvironmentalSensors, GamingPlatformSensors)
+  - [x] Combat module (CombatEngine, InitiativeRoller, AttackResolver, SpellCaster)
+  - [x] Parser module (PlaylistParser, MetadataExtractor)
+- [x] **T123** Create mock data generators for testing
+  - [x] `tests/fixtures/mockSensorData.ts` (Created & type-fixed)
+  - [x] `tests/fixtures/mockGamingData.ts` (Created & type-fixed)
+- [x] **T124** Run full test suite and verify 100% pass rate (426 tests passing ✅)
 
 ---
 

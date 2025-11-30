@@ -4,6 +4,18 @@ import { MotionDetector } from './MotionDetector';
 import { WeatherAPIClient } from './WeatherAPIClient';
 import { LightSensor } from './LightSensor';
 
+/**
+ * Environmental sensor integration for location, motion, weather, and light data
+ *
+ * Aggregates data from:
+ * - GPS/Geolocation (latitude, longitude, altitude)
+ * - Motion sensors (accelerometer, gyroscope, activity detection)
+ * - Weather API (temperature, humidity, conditions)
+ * - Light sensor (illuminance, environment classification)
+ *
+ * Calculates environmental XP modifiers (1.0x - 3.0x) based on activity
+ * type, weather conditions, altitude, and time of day.
+ */
 export class EnvironmentalSensors {
     private permissions: Map<SensorType, boolean> = new Map();
     private geolocation: GeolocationProvider;
@@ -15,6 +27,14 @@ export class EnvironmentalSensors {
         timestamp: Date.now()
     };
 
+    /**
+     * Initialize environmental sensors with optional weather API key
+     *
+     * @param {string} [weatherApiKey] - OpenWeatherMap API key (required for weather data)
+     *
+     * @example
+     * const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
+     */
     constructor(weatherApiKey?: string) {
         this.permissions.set('geolocation', false);
         this.permissions.set('motion', false);
@@ -28,7 +48,16 @@ export class EnvironmentalSensors {
     }
 
     /**
-     * Request permissions for specific sensors.
+     * Request user permissions for specific sensor types
+     *
+     * Requests browser/device permissions for GPS, motion, weather, and light sensors.
+     * User must explicitly grant permissions before data can be accessed.
+     *
+     * @param {SensorType[]} types - Array of sensor types to request ('geolocation' | 'motion' | 'weather' | 'light')
+     * @returns {Promise<SensorPermission[]>} Array of permission results (granted/denied)
+     *
+     * @example
+     * const permissions = await sensors.requestPermissions(['geolocation', 'motion']);
      */
     async requestPermissions(types: SensorType[]): Promise<SensorPermission[]> {
         const results: SensorPermission[] = [];

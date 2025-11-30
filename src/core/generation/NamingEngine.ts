@@ -3,9 +3,39 @@ import type { AudioProfile } from '../types/AudioProfile';
 import { ADJECTIVE_DATA } from '../../utils/constants';
 import { SeededRNG } from '../../utils/random';
 
+/**
+ * Generate RPG-style character names from track metadata
+ *
+ * Combines track title, artist, and genre with audio characteristics to create
+ * unique fantasy-inspired character names using three random formats:
+ * - 50% Class Title (e.g., "Sonic Bard")
+ * - 30% Adjective Construct (e.g., "Midnight Echoes")
+ * - 20% Clan Construct (e.g., "Harmonix Collective")
+ */
 export class NamingEngine {
     /**
-     * Generates a unique RPG-style name for a track
+     * Generate a unique RPG-style character name from track metadata
+     *
+     * Creates fantasy-inspired character names by combining:
+     * - Track title/artist with cleaning (removes "Official Video", "Remix", etc.)
+     * - Genre classification
+     * - Audio profile characteristics
+     * - Randomized format selection
+     *
+     * Format distribution:
+     * - 50% "Class Title" format (e.g., "Sonic Bard", "Thumping Mage")
+     * - 30% "Adjective Construct" format (e.g., "Midnight City", "Electric Dreams")
+     * - 20% "Clan Construct" format (e.g., "Harmonix Collective", "Bass Synth")
+     *
+     * @param {PlaylistTrack} track - Track with title, artist, genre metadata
+     * @param {AudioProfile} audioProfile - Audio frequency characteristics
+     * @returns {string} Generated RPG-style character name (20-50 characters)
+     *
+     * @example
+     * const track = { title: 'Midnight Dreams (Official Video)', artist: 'The Band', genre: 'Electronic' };
+     * const audioProfile = await analyzer.extractSonicFingerprint(audioUrl);
+     * const name = namingEngine.generateName(track, audioProfile);
+     * console.log(name);  // e.g., "Midnight Synth" or "The Band Collective"
      */
     public generateName(track: PlaylistTrack, audioProfile: AudioProfile): string {
         const cleanTitle = this.cleanTitle(track.title);
@@ -25,9 +55,19 @@ export class NamingEngine {
     }
 
     /**
-     * Cleans track titles by removing common noise
-     * e.g. "Song Name (Official Video)" -> "Song Name"
-     * e.g. "01 - Song Name" -> "Song Name"
+     * Clean track title by removing metadata and noise
+     *
+     * Removes common metadata suffixes and prefixes:
+     * - Removes "(Official Video)", "[Remix]", "[feat. Artist]", etc.
+     * - Removes leading track numbers like "01 - " or "1. "
+     * - Removes audio file extensions (.mp3, .wav, .flac, etc.)
+     *
+     * @param {string} title - Raw track title
+     * @returns {string} Cleaned title suitable for character naming
+     *
+     * @example
+     * namingEngine.cleanTitle("01 - Midnight Dreams (Official Video)");
+     * // Returns: "Midnight Dreams"
      */
     public cleanTitle(title: string): string {
         let clean = title;

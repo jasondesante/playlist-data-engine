@@ -16,9 +16,43 @@ export interface CharacterGeneratorOptions {
     forceClass?: Class;
 }
 
+/**
+ * Generate D&D 5e-compliant character sheets deterministically from audio signatures
+ *
+ * Uses seeded random number generation to ensure the same seed always produces
+ * the same character. Combines audio frequency analysis with blockchain metadata
+ * to create unique, reproducible characters.
+ */
 export class CharacterGenerator {
     /**
-     * Generate a complete character sheet from seed and audio profile
+     * Generate a complete D&D 5e character sheet from audio profile and seed
+     *
+     * Deterministically generates:
+     * - Race (with racial ability bonuses)
+     * - Class (suggested by audio profile frequency analysis)
+     * - Ability scores (based on bass/mid/treble dominance)
+     * - Skills, proficiencies, and saving throws
+     * - Hit points and armor class
+     * - Character appearance (color-matched to audio)
+     *
+     * Same seed + audio profile = identical character every time.
+     *
+     * @param {string} seed - Deterministic seed (e.g., "chain-contract-tokenId")
+     * @param {AudioProfile} audioProfile - Audio frequency analysis results
+     * @param {string} name - Character name
+     * @param {CharacterGeneratorOptions} [options] - Generation options
+     * @param {number} [options.level=1] - Starting level (1-20)
+     * @param {Class} [options.forceClass] - Override class suggestion
+     * @returns {CharacterSheet} Complete D&D 5e character sheet
+     *
+     * @example
+     * const character = CharacterGenerator.generate(
+     *   'polygon-0x123-456',
+     *   audioProfile,
+     *   'Sonic Warrior',
+     *   { level: 5 }
+     * );
+     * console.log(`${character.name}: Level ${character.level} ${character.character_class.name}`);
      */
     static generate(
         seed: string,

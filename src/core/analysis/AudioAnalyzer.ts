@@ -16,9 +16,30 @@ export interface AudioAnalyzerOptions {
     fftSize?: number;
 }
 
+/**
+ * Audio analyzer using Web Audio API with Triple Tap sampling strategy
+ *
+ * Analyzes audio files using Fourier analysis to extract frequency band information
+ * (bass, mid, treble dominance). For audio longer than 3 seconds, uses Triple Tap
+ * sampling at 5%, 40%, and 70% positions to provide representative analysis.
+ */
 export class AudioAnalyzer {
     private options: AudioAnalyzerOptions;
 
+    /**
+     * Initialize AudioAnalyzer with configuration options
+     *
+     * @param {AudioAnalyzerOptions} [options] - Configuration options
+     * @param {boolean} [options.includeAdvancedMetrics=false] - Include spectral analysis metrics
+     * @param {number} [options.sampleRate=44100] - Sample rate in Hz
+     * @param {number} [options.fftSize=2048] - FFT size for frequency analysis (must be power of 2)
+     *
+     * @example
+     * const analyzer = new AudioAnalyzer({
+     *   includeAdvancedMetrics: true,
+     *   sampleRate: 48000
+     * });
+     */
     constructor(options: AudioAnalyzerOptions = {}) {
         this.options = {
             includeAdvancedMetrics: false,

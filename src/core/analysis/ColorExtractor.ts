@@ -1,9 +1,17 @@
 import type { ColorPalette } from '../types/AudioProfile';
 
+/**
+ * Extract color palettes from images using k-means and median-cut algorithms
+ * Analyzes image pixels to identify dominant colors and brightness characteristics
+ */
 export class ColorExtractor {
     private canvas: HTMLCanvasElement | null = null;
     private context: CanvasRenderingContext2D | null = null;
 
+    /**
+     * Initialize ColorExtractor with canvas for image processing
+     * Canvas is only created in browser environments (safe for Node.js)
+     */
     constructor() {
         if (typeof document !== 'undefined') {
             this.canvas = document.createElement('canvas');
@@ -13,6 +21,22 @@ export class ColorExtractor {
         }
     }
 
+    /**
+     * Extract dominant colors from image URL
+     *
+     * Applies k-means clustering (primary) or median-cut (fallback) to identify
+     * the 4 most representative colors in the image. Analyzes color frequency,
+     * brightness, saturation, and monochrome characteristics.
+     *
+     * @param {string} imageUrl - URL of the image to analyze
+     * @returns {Promise<ColorPalette>} Color palette with dominant colors and characteristics
+     * @throws {Error} If canvas is not supported in the environment
+     *
+     * @example
+     * const extractor = new ColorExtractor();
+     * const palette = await extractor.extractPalette('https://example.com/image.jpg');
+     * console.log(`Primary color: ${palette.primary_color}`);
+     */
     public async extractPalette(imageUrl: string): Promise<ColorPalette> {
         try {
             if (!this.context || !this.canvas) {

@@ -8,9 +8,34 @@ import type { AudioProfile } from '../types/AudioProfile.js';
 import { SeededRNG } from '../../utils/random.js';
 import { ALL_CLASSES } from '../../utils/constants.js';
 
+/**
+ * Suggest D&D 5e classes based on audio frequency analysis
+ *
+ * Maps audio characteristics to character classes:
+ * - High bass (strength) → Barbarian, Fighter, Paladin
+ * - High treble (dexterity) → Rogue, Ranger, Monk
+ * - High mid (intelligence/wisdom) → Wizard, Cleric, Druid
+ */
 export class ClassSuggester {
     /**
-     * Suggest class based on audio profile
+     * Suggest a class based on audio frequency dominance
+     *
+     * Analyzes bass/mid/treble frequencies to weight class suggestions:
+     * - Bass dominance suggests strength-based classes (Barbarian, Fighter)
+     * - Treble dominance suggests dexterity-based classes (Rogue, Ranger)
+     * - Mid dominance suggests intelligence-based classes (Wizard)
+     * - Amplitude suggests charisma classes (Bard, Warlock)
+     *
+     * Uses weighted random selection with seeded RNG for determinism.
+     *
+     * @param {AudioProfile} audioProfile - Frequency analysis results (bass/mid/treble/amplitude)
+     * @param {SeededRNG} rng - Seeded random number generator for deterministic selection
+     * @returns {Class} Suggested D&D 5e class
+     *
+     * @example
+     * const audioProfile = await analyzer.extractSonicFingerprint(audioUrl);
+     * const suggestedClass = ClassSuggester.suggest(audioProfile, rng);
+     * console.log(`This audio suggests: ${suggestedClass}`);
      */
     static suggest(audioProfile: AudioProfile, rng: SeededRNG): Class {
         const { bass_dominance, mid_dominance, treble_dominance, average_amplitude } = audioProfile;
