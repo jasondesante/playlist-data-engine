@@ -51,6 +51,38 @@ export type Skill =
 
 export type ProficiencyLevel = 'none' | 'proficient' | 'expertise';
 
+/**
+ * Attack type for combat actions
+ */
+export interface Attack {
+    name: string;
+    bonus?: number;
+    attack_bonus?: number;
+    damage?: string;
+    damage_dice?: string;
+    damage_type?: string;
+    type?: 'melee' | 'ranged' | 'spell';
+    range?: number;
+}
+
+/**
+ * Spell type for casting
+ */
+export interface Spell {
+    name: string;
+    level?: number;
+    school?: string;
+    casting_time?: string;
+    range?: string;
+    duration?: string;
+    components?: string[];
+    description?: string;
+    damage_dice?: string;
+    damage_type?: string;
+    attack_roll?: boolean;
+    saving_throw?: string;
+}
+
 export interface AbilityScores {
     STR: number;
     DEX: number;
@@ -58,6 +90,10 @@ export interface AbilityScores {
     INT: number;
     WIS: number;
     CHA: number;
+    // Aliases for compatibility
+    dexterity?: number;
+    strength?: number;
+    constitution?: number;
 }
 
 export interface CharacterSheet {
@@ -151,4 +187,12 @@ export interface CharacterSheet {
 
     /** Generation timestamp */
     generated_at: string;
+
+    // Aliases and additional properties for compatibility
+    hit_points?: {
+        current: number;
+        max: number;
+        temp: number;
+    };
+    character_class?: Class;
 }

@@ -5,6 +5,22 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    lib: {
+      entry: 'src/index.ts',
+      name: 'PlaylistDataEngine',
+      fileName: (format) => `playlist-data-engine.${format === 'es' ? 'mjs' : 'js'}`
+    },
+    rollupOptions: {
+      external: ['react', 'react-dom'],
+      output: {
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM'
+        }
+      }
+    }
+  },
   test: {
     globals: true,
     environment: 'jsdom',
@@ -19,5 +35,5 @@ export default defineConfig({
         '**/*.config.ts',
       ],
     },
-  },
-})
+  } as any,
+} as any)
