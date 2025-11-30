@@ -4,6 +4,21 @@
 
 Spec-Kit is GitHub's spec-driven development toolkit that helps you plan, design, and implement features systematically. It's integrated into Claude Code and provides slash commands for structured development.
 
+# Basic project initialization
+specify init my-project
+
+# Initialize with specific AI assistant
+specify init my-project --ai claude
+
+# Initialize with Cursor support
+specify init my-project --ai cursor-agent
+
+# Initialize with Windsurf support
+specify init my-project --ai windsurf
+
+# Skip git initialization
+specify init my-project --ai gemini --no-git
+
 ## Your Setup
 
 ✅ **Installed**: `specify-cli` (v0.0.22)
