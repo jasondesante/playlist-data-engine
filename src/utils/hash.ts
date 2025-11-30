@@ -2,6 +2,7 @@
  * Deterministic seed generation using MurmurHash
  */
 
+// @ts-ignore
 import MurmurHashV3 from 'murmurhash-v3';
 
 /**

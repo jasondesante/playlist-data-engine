@@ -3,7 +3,7 @@
  */
 
 import type { Class } from '../types/Character.js';
-import type { SeededRNG } from '../../utils/random.js';
+// import type { SeededRNG } from '../../utils/random.js';
 import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS } from '../../utils/constants.js';
 
 export interface SpellSlots {
@@ -77,9 +77,7 @@ export class SpellManager {
    * @returns Array of cantrip names
    */
   static getCantrips(
-    characterClass: Class,
-    characterLevel: number,
-    rng: SeededRNG
+    characterClass: Class
   ): string[] {
     if (!this.isSpellcaster(characterClass)) {
       return [];
@@ -105,8 +103,7 @@ export class SpellManager {
    */
   static getKnownSpells(
     characterClass: Class,
-    characterLevel: number,
-    rng: SeededRNG
+    characterLevel: number
   ): string[] {
     if (!this.isSpellcaster(characterClass)) {
       return [];
@@ -141,13 +138,12 @@ export class SpellManager {
    */
   static initializeSpells(
     characterClass: Class,
-    characterLevel: number,
-    rng: SeededRNG
+    characterLevel: number
   ): SpellSlots {
     return {
       spell_slots: this.getSpellSlots(characterClass, characterLevel),
-      known_spells: this.getKnownSpells(characterClass, characterLevel, rng),
-      cantrips: this.getCantrips(characterClass, characterLevel, rng),
+      known_spells: this.getKnownSpells(characterClass, characterLevel),
+      cantrips: this.getCantrips(characterClass),
     };
   }
 

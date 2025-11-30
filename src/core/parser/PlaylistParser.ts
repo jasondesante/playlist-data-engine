@@ -84,10 +84,16 @@ export class PlaylistParser {
         const chainName = rawTrack.chain_name;
         const tokenAddress = rawTrack.token_address;
         const tokenId = rawTrack.token_id;
+        const txId = rawTrack.tx_id;
         const platform = rawTrack.platform;
 
         // Generate or use existing id (ENGINE_DESIGN_DOCUMENT.md Section 3)
-        const id = rawTrack.id || `${chainName}-${tokenAddress}-${tokenId}`;
+        // For Arweave (AR) chain, use tx_id instead of token_address/token_id
+        const id = rawTrack.id || (
+            chainName === 'AR'
+                ? `AR-${txId}`
+                : `${chainName}-${tokenAddress}-${tokenId}`
+        );
 
         // Generate UUID if not provided
         const uuid = rawTrack.uuid || uuidv4();
@@ -139,13 +145,11 @@ export class PlaylistParser {
         // Step 5: Merge Attributes - Convert OpenSea-style attributes array
         const attributes = MetadataExtractor.convertAttributes(parsedMetadata?.attributes);
 
-        return {
+        const track: PlaylistTrack = {
             id,
             uuid,
             playlist_index: playlistIndex,
             chain_name: chainName,
-            token_address: tokenAddress,
-            token_id: tokenId,
             platform,
             title,
             artist,
@@ -160,6 +164,17 @@ export class PlaylistParser {
             key,
             attributes: attributes || undefined,
         };
+
+        // Add token_address and token_id for non-Arweave chains
+        if (chainName !== 'AR') {
+            track.token_address = tokenAddress;
+            track.token_id = tokenId;
+        } else if (txId) {
+            // Add tx_id for Arweave chains
+            track.tx_id = txId;
+        }
+
+        return track;
     }
 
     /**

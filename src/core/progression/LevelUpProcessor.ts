@@ -88,7 +88,7 @@ export class LevelUpProcessor {
 
         // Calculate new spell slots if spellcaster
         if (this.isSpellcaster(character.class)) {
-            benefits.newSpellSlots = this.calculateSpellSlots(character.class, newLevel);
+            benefits.newSpellSlots = this.calculateSpellSlots(newLevel);
         }
 
         // Get class features for this level
@@ -127,7 +127,7 @@ export class LevelUpProcessor {
 
         // Update spell slots if applicable
         if (benefits.newSpellSlots && updated.spells) {
-            updated.spells.spell_slots = benefits.newSpellSlots;
+            updated.spells.spell_slots = benefits.newSpellSlots as any;
         }
 
         // Add class features
@@ -194,7 +194,6 @@ export class LevelUpProcessor {
      * @returns Record of spell slots by level
      */
     private static calculateSpellSlots(
-        characterClass: CharacterClass,
         level: number
     ): Record<number, number> {
         // Spell slot progression varies by class
@@ -208,7 +207,7 @@ export class LevelUpProcessor {
         // Based on character level, populate slot counts
         // This is simplified; full implementation would reference D&D 5e tables
         for (let slotLevel = 1; slotLevel <= 9; slotLevel++) {
-            slots[slotLevel] = this.getSpellSlotCount(characterClass, level, slotLevel);
+            slots[slotLevel] = this.getSpellSlotCount(level, slotLevel);
         }
 
         return slots;
@@ -217,13 +216,11 @@ export class LevelUpProcessor {
     /**
      * Get spell slot count for a specific slot level
      * Simplified version - would be expanded in full implementation
-     * @param characterClass - The character class
      * @param characterLevel - The character level
      * @param slotLevel - The spell slot level (1-9)
      * @returns Number of slots available
      */
     private static getSpellSlotCount(
-        characterClass: CharacterClass,
         characterLevel: number,
         slotLevel: number
     ): number {

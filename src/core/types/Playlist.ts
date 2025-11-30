@@ -26,13 +26,14 @@ export interface ServerlessPlaylist {
  */
 export interface PlaylistTrack {
     // --- Identity & Blockchain Data (The Outer Shell) ---
-    id: string;             // e.g. "ethereum/0xContract/1" or constructed from chain_name-token_address-token_id
+    id: string;             // e.g. "ethereum-0xContract-1" or "AR-{tx_id}"
     uuid: string;           // Unique instance ID for the game engine
     playlist_index: number; // Order in the playlist
 
-    chain_name: string;     // e.g. "ethereum", "optimism"
-    token_address: string;  // Contract Address (or 0x0 for files)
-    token_id: string;       // Token ID (or 0 for files)
+    chain_name: string;     // e.g. "ethereum", "optimism", "AR"
+    token_address?: string; // Contract Address (or 0x0 for files). Not present for AR chain.
+    token_id?: string;      // Token ID (or 0 for files). Not present for AR chain.
+    tx_id?: string;         // Arweave transaction ID (only present when chain_name is "AR")
     platform: string;       // e.g. "sound", "catalog", "contract-wizard"
 
     // --- Content Data (The Inner Core - Extracted from Metadata) ---
@@ -70,8 +71,9 @@ export interface RawArweavePlaylist {
     tracks: Array<{
         // Outer Blockchain Data
         chain_name: string;
-        token_address: string;
-        token_id: string;
+        token_address?: string;  // Not present for AR chain
+        token_id?: string;       // Not present for AR chain
+        tx_id?: string;          // Arweave transaction ID (only present when chain_name is "AR")
         platform: string;
         id?: string;
         uuid?: string;

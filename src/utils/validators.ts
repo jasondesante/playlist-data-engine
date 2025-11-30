@@ -12,8 +12,9 @@ export const PlaylistTrackSchema = z.object({
     uuid: z.string(),
     playlist_index: z.number().nonnegative(),
     chain_name: z.string(),
-    token_address: z.string(),
-    token_id: z.string(),
+    token_address: z.string().optional(),
+    token_id: z.string().optional(),
+    tx_id: z.string().optional(),
     platform: z.string(),
     title: z.string(),
     artist: z.string(),
@@ -27,7 +28,20 @@ export const PlaylistTrackSchema = z.object({
     bpm: z.number().positive().optional(),
     key: z.string().optional(),
     attributes: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
-});
+}).refine(
+    (track) => {
+        // For Arweave (AR) chain: must have tx_id
+        if (track.chain_name === 'AR') {
+            return !!track.tx_id;
+        }
+        // For other chains: must have token_address and token_id
+        return !!track.token_address && !!track.token_id;
+    },
+    {
+        message: 'AR chain tracks must have tx_id; other chains must have token_address and token_id',
+        path: ['chain_name'],
+    }
+);
 
 /**
  * Serverless Playlist schema

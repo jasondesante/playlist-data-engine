@@ -73,7 +73,7 @@ export class AbilityScoreCalculator {
 
         for (const [ability, bonus] of Object.entries(bonuses)) {
             const key = ability as keyof AbilityScores;
-            result[key] = Math.min(20, result[key] + (bonus || 0));
+            result[key] = Math.min(20, (result[key] || 0) + (bonus || 0));
         }
 
         return result;
