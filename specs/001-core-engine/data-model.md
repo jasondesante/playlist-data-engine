@@ -89,7 +89,7 @@ Full D&D 5e-inspired character object.
 
 **D&D Core Stats:**
 - **race**: Race - Character race (deterministic from seed)
-- **character_class**: CharacterClass - Character class (from audio profile)
+- **class**: Class - Character class (from audio profile)
 - **background**: Background (optional)
 - **alignment**: Alignment (optional)
 

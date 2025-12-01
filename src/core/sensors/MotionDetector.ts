@@ -82,6 +82,15 @@ export class MotionDetector {
         };
 
         this.lastMotion = data;
+
+        // ADD THIS FOR DEBUGGING
+        console.log('[MotionDetector] Live data actually no bullshit →', { data });
+        console.log('[MotionDetector] Live data →', {
+            acc: data.accelerationIncludingGravity,
+            rot: data.rotationRate,
+            activity: this.detectActivity(data)
+        });
+
         this.motionCallback(data);
     };
 }

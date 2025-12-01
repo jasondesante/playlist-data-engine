@@ -375,7 +375,7 @@ export class CombatEngine {
   } | undefined {
     const spellcastingClasses = ['Wizard', 'Cleric', 'Sorcerer', 'Bard', 'Druid', 'Warlock', 'Paladin', 'Ranger'];
 
-    if (!spellcastingClasses.includes(character.character_class)) {
+    if (!spellcastingClasses.includes(character.class)) {
       return undefined;
     }
 

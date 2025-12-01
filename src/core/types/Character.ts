@@ -188,6 +188,4 @@ export interface CharacterSheet {
     /** Generation timestamp */
     generated_at: string;
 
-    // Aliases and additional properties for compatibility
-    character_class?: Class;
 }

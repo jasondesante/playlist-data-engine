@@ -72,7 +72,7 @@ const character = CharacterGenerator.generate(
   `${track.artist} - ${track.title}`
 );
 
-console.log(`Generated ${character.race} ${character.character_class.name}`);
+console.log(`Generated ${character.race} ${character.class}`);
 console.log(`Ability Scores: STR=${character.ability_scores.strength}, DEX=${character.ability_scores.dexterity}, CON=${character.ability_scores.constitution}`);
 ```
 
@@ -95,7 +95,7 @@ const characterName = nameEngine.generateName(
   track.title,
   track.artist,
   audioProfile,
-  character.character_class.name
+  character.class
 );
 console.log(`Character name: "${characterName}" (e.g., "Sonic Midnight City", "Thumping Nexus")`);
 ```
@@ -114,7 +114,7 @@ console.log(`Proficient in: ${character.skills.filter(s => s.proficiency).map(s 
 
 // Generate spells for spellcasters
 const spellManager = new SpellManager();
-if (spellManager.isSpellcaster(character.character_class.name)) {
+if (spellManager.isSpellcaster(character.class)) {
   character.spells = spellManager.generateSpells(character);
   console.log(`Known spells: ${character.spells.map(s => s.name).join(', ')}`);
 }

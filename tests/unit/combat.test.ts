@@ -7,6 +7,9 @@ import * as DiceRoller from '../../src/core/combat/DiceRoller';
 import type { CharacterSheet, Attack, Spell } from '../../src/core/types/Character';
 import type { Combatant } from '../../src/core/types/Combat';
 
+// bro these tests are FUCKED up! So many things wrong from the mock data being wrong to fuckin everything.
+// one huge mess up is that character_class doesn't exist, isn't an object because it doesn't exist. But there does exist "class" which is a string and not an object.
+
 // Helper function to create a mock character
 function createMockCharacter(overrides?: Partial<CharacterSheet>): CharacterSheet {
   return {

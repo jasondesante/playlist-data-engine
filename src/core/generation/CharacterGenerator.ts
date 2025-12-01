@@ -52,7 +52,7 @@ export class CharacterGenerator {
      *   'Sonic Warrior',
      *   { level: 5 }
      * );
-     * console.log(`${character.name}: Level ${character.level} ${character.character_class.name}`);
+     * console.log(`${character.name}: Level ${character.level} ${character.class}`);
      */
     static generate(
         seed: string,

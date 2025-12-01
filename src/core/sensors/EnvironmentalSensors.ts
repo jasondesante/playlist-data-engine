@@ -236,4 +236,12 @@ export class EnvironmentalSensors {
             return false;
         }
     }
+
+    // Add this inside the EnvironmentalSensors class
+    public getCurrentActivity(): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown' {
+        if (!this.context.motion || !this.permissions.get('motion')) {
+            return 'unknown';
+        }
+        return this.motion.detectActivity(this.context.motion);
+    }
 }

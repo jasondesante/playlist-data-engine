@@ -153,7 +153,7 @@ export class SpellCaster {
    * For simplicity, restores ALL spell slots to maximum
    */
   restoreSpellSlots(caster: Combatant): void {
-    const characterClass = caster.character.character_class.name.toLowerCase();
+    const characterClass = caster.character.class.toLowerCase();
 
     // D&D 5e spell slot progression by class and level
     // This is simplified - in full implementation, would use actual class progression

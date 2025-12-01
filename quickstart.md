@@ -22,7 +22,7 @@ const analyzer = new AudioAnalyzer();
 const audio = await analyzer.extractSonicFingerprint(track.audio_url);
 
 const character = CharacterGenerator.generate(track.id, audio, track.title);
-console.log(`${character.race} ${character.character_class.name} with ${character.ability_scores.strength} STR`);
+console.log(`${character.race} ${character.class} with ${character.ability_scores.strength} STR`);
 ```
 
 ## Phase by Phase Quick Examples
@@ -41,7 +41,7 @@ const profile = await analyzer.extractSonicFingerprint(track.audio_url);
 
 // Generate character (deterministic from seed)
 const char = CharacterGenerator.generate(track.id, profile, 'My Character');
-// char.race, char.character_class.name, char.ability_scores.*, char.hp.max
+// char.race, char.class, char.ability_scores.*, char.hp.max
 ```
 
 ### Phase 1: Visual & Naming
@@ -71,7 +71,7 @@ char.skills = skills.assignSkills(char);
 
 // Add spells (if spellcaster)
 const spellMgr = new SpellManager();
-if (spellMgr.isSpellcaster(char.character_class.name)) {
+if (spellMgr.isSpellcaster(char.class)) {
   char.spells = spellMgr.generateSpells(char);
   char.spell_slots = spellMgr.generateSpellSlots(char);
 }
