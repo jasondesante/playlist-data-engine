@@ -356,7 +356,7 @@ export class CombatEngine {
       id,
       character,
       initiative: 0,
-      currentHP: character.hit_points.maximum,
+      currentHP: character.hit_points.max,
       temporaryHP: 0,
       statusEffects: [],
       isDefeated: false,
@@ -375,7 +375,7 @@ export class CombatEngine {
   } | undefined {
     const spellcastingClasses = ['Wizard', 'Cleric', 'Sorcerer', 'Bard', 'Druid', 'Warlock', 'Paladin', 'Ranger'];
 
-    if (!spellcastingClasses.includes(character.character_class.name)) {
+    if (!spellcastingClasses.includes(character.character_class)) {
       return undefined;
     }
 
@@ -418,7 +418,7 @@ export class CombatEngine {
    */
   getCombatSummary(combat: CombatInstance): string {
     const current = this.getCurrentCombatant(combat);
-    const summary = `Round ${combat.roundNumber}, Turn: ${current.character.name} (${current.currentHP}/${current.character.hit_points.maximum} HP)`;
+    const summary = `Round ${combat.roundNumber}, Turn: ${current.character.name} (${current.currentHP}/${current.character.hit_points.max} HP)`;
     return summary;
   }
 
@@ -451,7 +451,7 @@ export class CombatEngine {
    * Heal a combatant
    */
   healCombatant(combatant: Combatant, healing: number): number {
-    const actualHealing = Math.min(healing, combatant.character.hit_points.maximum - combatant.currentHP);
+    const actualHealing = Math.min(healing, combatant.character.hit_points.max - combatant.currentHP);
     combatant.currentHP += actualHealing;
     return actualHealing;
   }
