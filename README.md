@@ -149,7 +149,7 @@ session.xp_earned = baseXP;
 const updater = new CharacterUpdater();
 const updatedChar = updater.applyListeningSession(character, session);
 if (updatedChar.level > character.level) {
-  console.log(`Level up! Now level ${updatedChar.level} with ${updatedChar.hit_points.maximum} HP`);
+  console.log(`Level up! Now level ${updatedChar.level} with ${updatedChar.hp.max} HP`);
 }
 
 // Track track mastery (bonus after 10 playthroughs)

@@ -41,7 +41,7 @@ const profile = await analyzer.extractSonicFingerprint(track.audio_url);
 
 // Generate character (deterministic from seed)
 const char = CharacterGenerator.generate(track.id, profile, 'My Character');
-// char.race, char.character_class.name, char.ability_scores.*, char.hit_points.maximum
+// char.race, char.character_class.name, char.ability_scores.*, char.hp.max
 ```
 
 ### Phase 1: Visual & Naming
@@ -249,7 +249,7 @@ if (char.experience_points >= char.xp.next_level) {
   const updates = processor.processLevelUp(char);
 
   char.level = updates.newLevel;
-  char.hit_points.maximum = updates.newHitPoints;
+  char.hp.max = updates.newHitPoints;
   char.proficiency_bonus = updates.newProficiencyBonus;
 
   // Reset XP or carry over (depends on your design)

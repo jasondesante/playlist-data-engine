@@ -189,10 +189,5 @@ export interface CharacterSheet {
     generated_at: string;
 
     // Aliases and additional properties for compatibility
-    hit_points?: {
-        current: number;
-        max: number;
-        temp: number;
-    };
     character_class?: Class;
 }

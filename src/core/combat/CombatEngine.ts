@@ -356,7 +356,7 @@ export class CombatEngine {
       id,
       character,
       initiative: 0,
-      currentHP: character.hit_points.max,
+      currentHP: character.hp.max,
       temporaryHP: 0,
       statusEffects: [],
       isDefeated: false,
@@ -418,7 +418,7 @@ export class CombatEngine {
    */
   getCombatSummary(combat: CombatInstance): string {
     const current = this.getCurrentCombatant(combat);
-    const summary = `Round ${combat.roundNumber}, Turn: ${current.character.name} (${current.currentHP}/${current.character.hit_points.max} HP)`;
+    const summary = `Round ${combat.roundNumber}, Turn: ${current.character.name} (${current.currentHP}/${current.character.hp.max} HP)`;
     return summary;
   }
 
@@ -451,7 +451,7 @@ export class CombatEngine {
    * Heal a combatant
    */
   healCombatant(combatant: Combatant, healing: number): number {
-    const actualHealing = Math.min(healing, combatant.character.hit_points.max - combatant.currentHP);
+    const actualHealing = Math.min(healing, combatant.character.hp.max - combatant.currentHP);
     combatant.currentHP += actualHealing;
     return actualHealing;
   }

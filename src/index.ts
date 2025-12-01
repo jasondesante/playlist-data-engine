@@ -102,3 +102,10 @@ export {
     MASTERY_THRESHOLD,
     MASTERY_BONUS_XP
 } from './utils/constants.js';
+
+// Sensors
+export { EnvironmentalSensors } from './core/sensors/EnvironmentalSensors.js';
+export { GamingPlatformSensors } from './core/sensors/GamingPlatformSensors.js';
+
+// Combat
+export { CombatEngine } from './core/combat/CombatEngine.js';

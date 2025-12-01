@@ -42,9 +42,9 @@ function createMockCharacter(overrides?: Partial<CharacterSheet>): CharacterShee
       wisdom: 1,
       charisma: -1
     },
-    hit_points: {
+    hp: {
       current: 10,
-      maximum: 10,
+      max: 10,
       temporary: 0
     },
     armor_class: 16,
@@ -171,7 +171,7 @@ describe('Combat System (T107-T116)', () => {
         id: 'test_1',
         character,
         initiative: 0,
-        currentHP: character.hit_points.maximum,
+        currentHP: character.hp.max,
         statusEffects: [],
         isDefeated: false,
         actionUsed: false,
@@ -290,7 +290,7 @@ describe('Combat System (T107-T116)', () => {
         id: 'attacker',
         character: attacker,
         initiative: 10,
-        currentHP: attacker.hit_points.maximum,
+        currentHP: attacker.hp.max,
         statusEffects: [],
         isDefeated: false,
         actionUsed: false,
@@ -302,7 +302,7 @@ describe('Combat System (T107-T116)', () => {
         id: 'defender',
         character: defender,
         initiative: 5,
-        currentHP: defender.hit_points.maximum,
+        currentHP: defender.hp.max,
         statusEffects: [],
         isDefeated: false,
         actionUsed: false,
@@ -335,7 +335,7 @@ describe('Combat System (T107-T116)', () => {
         id: 'attacker',
         character: attacker,
         initiative: 10,
-        currentHP: attacker.hit_points.maximum,
+        currentHP: attacker.hp.max,
         statusEffects: [],
         isDefeated: false,
         actionUsed: false,
@@ -347,7 +347,7 @@ describe('Combat System (T107-T116)', () => {
         id: 'defender',
         character: defender,
         initiative: 5,
-        currentHP: defender.hit_points.maximum,
+        currentHP: defender.hp.max,
         statusEffects: [],
         isDefeated: false,
         actionUsed: false,
@@ -398,7 +398,7 @@ describe('Combat System (T107-T116)', () => {
       expect(combat.combatants.length).toBe(2);
       expect(combat.roundNumber).toBe(1);
       expect(combat.isActive).toBe(true);
-      expect(combat.combatants[0].currentHP).toBe(player.hit_points.maximum);
+      expect(combat.combatants[0].currentHP).toBe(player.hp.max);
     });
 
     it('should roll initiative and establish turn order', () => {
@@ -684,7 +684,7 @@ describe('Combat System (T107-T116)', () => {
       expect(combatant.currentHP).toBe(8);
     });
 
-    it('should not heal above maximum HP', () => {
+    it('should not heal above max HP', () => {
       const character = createMockCharacter();
       const combatant: Combatant = {
         id: 'test',
