@@ -3,91 +3,23 @@
  * Based on ENGINE_DESIGN_DOCUMENT.md v2.0 and data-model.md
  */
 
-// ============================================================================
-// Environmental Sensor Types
-// ============================================================================
+// Import environmental types from Environmental.ts to avoid duplication
+import type {
+    GeolocationData,
+    MotionData,
+    WeatherData,
+    LightData,
+    EnvironmentalContext
+} from './Environmental.js';
 
-/**
- * GeolocationData - GPS and location information
- */
-export interface GeolocationData {
-    latitude: number;
-    longitude: number;
-    altitude?: number;            // Meters above sea level
-    accuracy: number;             // Meters
-    altitude_accuracy?: number;
-    heading?: number;             // Direction 0-360 degrees
-    speed?: number;               // Meters per second
-    timestamp: number;            // Unix timestamp
-}
-
-/**
- * MotionData - Accelerometer and gyroscope data
- */
-export interface MotionData {
-    acceleration: {
-        x: number;  // m/s²
-        y: number;
-        z: number;
-    };
-    acceleration_with_gravity: {
-        x: number;
-        y: number;
-        z: number;
-    };
-    rotation_rate: {
-        alpha: number;  // degrees/second
-        beta: number;
-        gamma: number;
-    };
-    movement_intensity: number;   // 0.0 to 1.0
-    activity_type: 'stationary' | 'walking' | 'running' | 'driving' | 'unknown';
-    timestamp: number;
-}
-
-/**
- * WeatherData - Weather API information
- */
-export interface WeatherData {
-    temperature: number;          // Celsius
-    feels_like: number;           // Apparent temperature
-    humidity: number;             // Percentage
-    pressure: number;             // hPa
-    weather_type: 'clear' | 'clouds' | 'rain' | 'snow' | 'thunderstorm' | 'mist' | 'fog';
-    wind_speed: number;           // m/s
-    wind_direction: number;       // Degrees
-    visibility: number;           // Meters
-    is_night: boolean;            // Based on sunrise/sunset times
-    moon_phase?: number;          // 0.0 to 1.0 (new to full)
-    timestamp: number;
-}
-
-/**
- * LightData - Ambient light sensor information
- */
-export interface LightData {
-    illuminance: number;          // lux (light intensity)
-    timestamp: number;
-    environment: 'bright_daylight' | 'indoor' | 'dim' | 'dark';
-}
-
-/**
- * EnvironmentalContext - Aggregated environmental sensor data
- */
-export interface EnvironmentalContext {
-    location?: GeolocationData;
-    motion?: MotionData;
-    weather?: WeatherData;
-    light?: LightData;
-
-    // Derived gameplay data
-    biome?: 'urban' | 'forest' | 'desert' | 'mountain' | 'water' | 'tundra';
-    time_of_day?: 'dawn' | 'day' | 'dusk' | 'night';
-    season?: 'spring' | 'summer' | 'autumn' | 'winter';
-
-    // Composite XP multiplier (0.5 to 3.0)
-    environmental_xp_modifier: number;
-}
+// Re-export them for consumers
+export type {
+    GeolocationData,
+    MotionData,
+    WeatherData,
+    LightData,
+    EnvironmentalContext
+} from './Environmental.js';
 
 // ============================================================================
 // Gaming Platform Types

@@ -123,25 +123,25 @@ export class XPCalculator {
         let multiplier = 1.0;
 
         // Night time bonus
-        if (context.time_of_day === 'night') {
+        if (context.weather?.isNight) {
             multiplier *= this.config.activity_bonuses.night_time;
         }
 
         // Weather bonuses
         if (context.weather) {
-            if (context.weather.weather_type === 'thunderstorm') {
+            if (context.weather.weatherType === 'Thunderstorm') {
                 multiplier *= this.config.activity_bonuses.extreme_weather;
             }
             // Rain and snow also count as extreme
-            if (context.weather.weather_type === 'rain' || context.weather.weather_type === 'snow') {
+            if (context.weather.weatherType === 'Rain' || context.weather.weatherType === 'Snow') {
                 multiplier *= this.config.activity_bonuses.extreme_weather;
             }
         }
 
         // Altitude bonus (high altitude = high elevation)
-        if (context.location && context.location.altitude) {
+        if (context.geolocation?.altitude) {
             // 2000m+ altitude triggers bonus
-            if (context.location.altitude >= 2000) {
+            if (context.geolocation.altitude >= 2000) {
                 multiplier *= this.config.activity_bonuses.high_altitude;
             }
         }
@@ -237,19 +237,18 @@ export class XPCalculator {
     private calculateEnvironmentalModifier(context: EnvironmentalContext): number {
         let multiplier = 1.0;
 
-        if (context.motion?.activity_type === 'running') {
-            multiplier *= this.config.activity_bonuses.running;
-        }
+        // Note: activity_type was removed from MotionData type - it's computed by MotionDetector.detectActivity()
+        // If needed, derive from acceleration data or call detectActivity() separately
 
-        if (context.weather?.weather_type === 'thunderstorm') {
+        if (context.weather?.weatherType === 'Thunderstorm') {
             multiplier *= this.config.activity_bonuses.extreme_weather;
         }
 
-        if (context.time_of_day === 'night') {
+        if (context.weather?.isNight) {
             multiplier *= this.config.activity_bonuses.night_time;
         }
 
-        if (context.location?.altitude && context.location.altitude >= 2000) {
+        if (context.geolocation?.altitude && context.geolocation.altitude >= 2000) {
             multiplier *= this.config.activity_bonuses.high_altitude;
         }
 
