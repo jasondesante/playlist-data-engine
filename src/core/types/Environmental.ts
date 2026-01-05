@@ -23,9 +23,9 @@ export interface MotionData {
         z: number | null;
     };
     accelerationIncludingGravity: {
-        x: number | null;
-        y: number | null;
-        z: number | null;
+        x: number;
+        y: number;
+        z: number;
     };
     rotationRate: {
         alpha: number | null;
@@ -59,4 +59,5 @@ export interface EnvironmentalContext {
     weather?: WeatherData;
     light?: LightData;
     timestamp: number;
+    environmental_xp_modifier?: number;
 }

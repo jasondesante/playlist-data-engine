@@ -68,9 +68,9 @@ export class MotionDetector {
                 z: event.acceleration?.z ?? null,
             },
             accelerationIncludingGravity: {
-                x: event.accelerationIncludingGravity?.x ?? null,
-                y: event.accelerationIncludingGravity?.y ?? null,
-                z: event.accelerationIncludingGravity?.z ?? null,
+                x: event.accelerationIncludingGravity?.x ?? 0,
+                y: event.accelerationIncludingGravity?.y ?? 0,
+                z: event.accelerationIncludingGravity?.z ?? 0,
             },
             rotationRate: {
                 alpha: event.rotationRate?.alpha ?? null,
