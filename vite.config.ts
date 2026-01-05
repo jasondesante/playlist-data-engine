@@ -1,15 +1,23 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import dts from 'vite-plugin-dts'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    dts({
+      include: ['src/**/*'],
+      outDir: 'dist',
+      insertTypesEntry: true,
+    }),
+  ],
   build: {
     lib: {
       entry: 'src/index.ts',
       name: 'PlaylistDataEngine',
-      fileName: (format) => `playlist-data-engine.${format === 'es' ? 'mjs' : 'js'}`
+      fileName: (format: 'es' | 'cjs') => `playlist-data-engine.${format === 'es' ? 'mjs' : 'js'}`
     },
     rollupOptions: {
       external: ['react', 'react-dom'],

@@ -4,7 +4,6 @@
  */
 
 import type { Combatant } from '../types/Combat';
-import { rollInitiative } from './DiceRoller';
 
 /**
  * Result of initiative rolling
@@ -25,7 +24,7 @@ export class InitiativeRoller {
    * Initiative = d20 + DEX modifier
    */
   rollInitiativeForCombatant(combatant: Combatant): InitiativeResult {
-    const dexModifier = combatant.character.ability_modifiers.dexterity;
+    const dexModifier = combatant.character.ability_modifiers.dexterity ?? 0;
     const d20Roll = Math.floor(Math.random() * 20) + 1; // Roll d20
     const initiativeTotal = d20Roll + dexModifier;
 
@@ -62,8 +61,8 @@ export class InitiativeRoller {
         return b.initiative - a.initiative;
       }
       // Tiebreaker: higher DEX modifier
-      const aDexMod = a.character.ability_modifiers.dexterity;
-      const bDexMod = b.character.ability_modifiers.dexterity;
+      const aDexMod = a.character.ability_modifiers.dexterity ?? 0;
+      const bDexMod = b.character.ability_modifiers.dexterity ?? 0;
       return bDexMod - aDexMod;
     });
 
@@ -97,7 +96,7 @@ export class InitiativeRoller {
    */
   getInitiativeOrder(combatants: Combatant[]): string[] {
     return combatants.map((c, index) => {
-      const dexMod = c.character.ability_modifiers.dexterity;
+      const dexMod = c.character.ability_modifiers.dexterity ?? 0;
       return `${index + 1}. ${c.character.name} (Initiative: ${c.initiative}, DEX: ${dexMod})`;
     });
   }
@@ -106,7 +105,7 @@ export class InitiativeRoller {
    * Re-roll initiative for a specific combatant (e.g., if an effect changes DEX)
    */
   rerollInitiativeForCombatant(combatant: Combatant): number {
-    const dexModifier = combatant.character.ability_modifiers.dexterity;
+    const dexModifier = combatant.character.ability_modifiers.dexterity ?? 0;
     const d20Roll = Math.floor(Math.random() * 20) + 1;
     combatant.initiative = d20Roll + dexModifier;
     return combatant.initiative;
@@ -140,8 +139,8 @@ export class InitiativeRoller {
         return b.initiative - a.initiative;
       }
       // Tiebreaker: higher DEX modifier
-      const aDexMod = a.character.ability_modifiers.dexterity;
-      const bDexMod = b.character.ability_modifiers.dexterity;
+      const aDexMod = a.character.ability_modifiers.dexterity ?? 0;
+      const bDexMod = b.character.ability_modifiers.dexterity ?? 0;
       return bDexMod - aDexMod;
     });
   }

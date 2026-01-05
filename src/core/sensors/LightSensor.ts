@@ -1,7 +1,6 @@
 import type { LightData } from '../types/Environmental';
 
 export class LightSensor {
-    private isListening: boolean = false;
     private lastReading: LightData | null = null;
     private callback: ((data: LightData) => void) | null = null;
     private sensor: any | null = null; // AmbientLightSensor type is experimental
@@ -35,11 +34,9 @@ export class LightSensor {
                 });
 
                 this.sensor.start();
-                this.isListening = true;
                 this.callback = callback;
             } catch (error) {
                 console.warn('Failed to initialize AmbientLightSensor:', error);
-                this.isListening = false;
             }
         } else {
             console.warn('AmbientLightSensor not supported');
@@ -54,7 +51,6 @@ export class LightSensor {
             this.sensor.stop();
             this.sensor = null;
         }
-        this.isListening = false;
         this.callback = null;
     }
 

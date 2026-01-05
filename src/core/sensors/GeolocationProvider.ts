@@ -41,7 +41,7 @@ export class GeolocationProvider {
      * In a real app, this would query a GIS service or use a sophisticated map.
      * Here we use simple latitude/longitude heuristics for demonstration.
      */
-    getBiome(latitude: number, longitude: number): string {
+    getBiome(latitude: number, _longitude: number): string {
         // Simplified biome detection
         const absLat = Math.abs(latitude);
 

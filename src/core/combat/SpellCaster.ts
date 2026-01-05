@@ -24,21 +24,23 @@ export class SpellCaster {
     spell: Spell,
     targets: Combatant[]
   ): SpellCastResult {
+    const spellLevel = spell.level ?? 0;
+
     // Check if caster has spell slots available
-    if (!this.hasSpellSlot(caster, spell.level)) {
+    if (!this.hasSpellSlot(caster, spellLevel)) {
       return {
         success: false,
         spellName: spell.name,
         caster,
         targets,
         effectsApplied: [],
-        spellSlotUsed: spell.level,
+        spellSlotUsed: spellLevel,
         description: `${caster.character.name} tried to cast ${spell.name} but has no spell slots available!`
       };
     }
 
     // Consume spell slot
-    this.consumeSpellSlot(caster, spell.level);
+    this.consumeSpellSlot(caster, spellLevel);
 
     // Determine spell effects
     const effectsApplied: StatusEffect[] = [];
@@ -71,7 +73,7 @@ export class SpellCaster {
     }
 
     // Apply spell effects (status effects, buffs, debuffs)
-    if (spell.description.toLowerCase().includes('charm')) {
+    if (spell.description?.toLowerCase().includes('charm')) {
       const charmed: StatusEffect = {
         name: 'Charmed',
         description: `Charmed by ${caster.character.name}`,
@@ -85,7 +87,7 @@ export class SpellCaster {
       }
     }
 
-    if (spell.description.toLowerCase().includes('frighten')) {
+    if (spell.description?.toLowerCase().includes('frighten')) {
       const frightened: StatusEffect = {
         name: 'Frightened',
         description: `Frightened of ${caster.character.name}`,
@@ -99,7 +101,7 @@ export class SpellCaster {
       }
     }
 
-    const description = `${caster.character.name} casts ${spell.name} (Level ${spell.level}) at ${targets.map(t => t.character.name).join(', ')}`;
+    const description = `${caster.character.name} casts ${spell.name} (Level ${spellLevel}) at ${targets.map(t => t.character.name).join(', ')}`;
 
     return {
       success: true,
@@ -109,7 +111,7 @@ export class SpellCaster {
       saveDC,
       damage,
       effectsApplied,
-      spellSlotUsed: spell.level,
+      spellSlotUsed: spellLevel,
       description
     };
   }
@@ -153,8 +155,6 @@ export class SpellCaster {
    * For simplicity, restores ALL spell slots to maximum
    */
   restoreSpellSlots(caster: Combatant): void {
-    const characterClass = caster.character.class.toLowerCase();
-
     // D&D 5e spell slot progression by class and level
     // This is simplified - in full implementation, would use actual class progression
     const maxSlots: { [key: number]: number[] } = {
@@ -244,7 +244,8 @@ export class SpellCaster {
    * Upcasting is when a spell is cast using a higher-level spell slot
    */
   canUpcast(caster: Combatant, spell: Spell, targetSlotLevel: number): boolean {
-    if (targetSlotLevel < spell.level) {
+    const spellLevel = spell.level ?? 0;
+    if (targetSlotLevel < spellLevel) {
       return false; // Cannot downcast
     }
 
@@ -260,7 +261,8 @@ export class SpellCaster {
     targets: Combatant[],
     slotLevelUsed: number
   ): SpellCastResult {
-    if (slotLevelUsed < spell.level) {
+    const spellLevel = spell.level ?? 0;
+    if (slotLevelUsed < spellLevel) {
       return {
         success: false,
         spellName: spell.name,

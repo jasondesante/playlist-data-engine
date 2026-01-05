@@ -5,19 +5,28 @@
   "type": "module",
   "main": "./dist/playlist-data-engine.js",
   "module": "./dist/playlist-data-engine.mjs",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/playlist-data-engine.mjs",
       "require": "./dist/playlist-data-engine.js"
     }
   },
-  "files": ["dist", "src"],
-  "keywords": ["d&d", "character-generation", "audio-analysis", "progression-system", "rpg"],
+  "files": [
+    "dist",
+    "src"
+  ],
+  "keywords": [
+    "d&d",
+    "character-generation",
+    "audio-analysis",
+    "progression-system",
+    "rpg"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc -p tsconfig.declarations.json && vite build",
     "build:strict": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -51,6 +60,7 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
+    "vite-plugin-dts": "^4.5.4",
     "vitest": "^4.0.14",
     "web-audio-api": "^0.2.2"
   }

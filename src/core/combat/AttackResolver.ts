@@ -81,9 +81,9 @@ export class AttackResolver {
    * Roll an attack (d20 + attack bonus vs AC)
    * Attack bonus = ability modifier + proficiency bonus (if proficient)
    */
-  private rollAttack(attacker: Combatant, target: Combatant, attack: Attack): AttackRoll {
+  private rollAttack(_attacker: Combatant, target: Combatant, attack: Attack): AttackRoll {
     const d20Roll = Math.floor(Math.random() * 20) + 1;
-    const attackBonus = attack.attack_bonus;
+    const attackBonus = attack.attack_bonus ?? 0;
     const totalRoll = d20Roll + attackBonus;
     const targetAC = target.character.armor_class;
 
@@ -109,13 +109,14 @@ export class AttackResolver {
   private rollDamage(attack: Attack, isCritical: boolean): DamageRoll {
     // Parse attack damage formula (e.g., "1d8", "2d6+3")
     const abilityModifier = 0; // Should be extracted from attacker's ability score if needed
+    const damageDice = attack.damage_dice ?? '';
 
-    const damageResult = calculateDamage(attack.damage_dice, abilityModifier, isCritical);
+    const damageResult = calculateDamage(damageDice, abilityModifier, isCritical);
 
     return {
-      diceFormula: attack.damage_dice,
+      diceFormula: damageDice,
       rolls: damageResult.rolls,
-      modifier: damageResult.modifier,
+      modifier: damageResult.modifier ?? 0,
       total: damageResult.total,
       isCritical: damageResult.isCritical
     };
@@ -150,7 +151,7 @@ export class AttackResolver {
    * Calculate attack bonus for a character
    * Ability modifier + proficiency bonus (if proficient with weapon)
    */
-  calculateAttackBonus(character: any, attackName: string, abilityModifier: number, isProficient: boolean = false): number {
+  calculateAttackBonus(character: any, _attackName: string, abilityModifier: number, isProficient: boolean = false): number {
     let bonus = abilityModifier;
 
     if (isProficient) {
@@ -169,7 +170,7 @@ export class AttackResolver {
     const roll2 = Math.floor(Math.random() * 20) + 1;
     const d20Roll = Math.max(roll1, roll2);
 
-    const attackBonus = attack.attack_bonus;
+    const attackBonus = attack.attack_bonus ?? 0;
     const totalRoll = d20Roll + attackBonus;
     const targetAC = target.character.armor_class;
 
@@ -237,7 +238,7 @@ export class AttackResolver {
     const roll2 = Math.floor(Math.random() * 20) + 1;
     const d20Roll = Math.min(roll1, roll2);
 
-    const attackBonus = attack.attack_bonus;
+    const attackBonus = attack.attack_bonus ?? 0;
     const totalRoll = d20Roll + attackBonus;
     const targetAC = target.character.armor_class;
 

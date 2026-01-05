@@ -9,8 +9,7 @@ import type {
   Combatant,
   CombatAction,
   CombatConfig,
-  CombatResult,
-  CombatActionResult
+  CombatResult
 } from '../types/Combat';
 import type { EnvironmentalContext } from '../types/Progression';
 import { InitiativeRoller } from './InitiativeRoller';
@@ -318,7 +317,6 @@ export class CombatEngine {
       return null; // Combat still ongoing
     }
 
-    const players = combat.combatants.filter(c => c.id.startsWith('player'));
     const enemies = combat.combatants.filter(c => c.id.startsWith('enemy'));
 
     const defeated = combat.combatants.filter(c => c.isDefeated);

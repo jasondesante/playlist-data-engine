@@ -12,10 +12,6 @@ export class DiscordRPCClient {
         partySize?: number;
     } | null = null;
     private connectionAttempts: number = 0;
-    private maxConnectionAttempts: number = 3;
-
-    // Simulating RPC client for browser environment
-    private rpcEndpoint: string = 'http://localhost:6463/rpc';
 
     constructor(clientId: string = '') {
         this.clientId = clientId;
@@ -170,7 +166,7 @@ export class DiscordRPCClient {
     /**
      * Subscribe to Discord voice updates (to detect multiplayer)
      */
-    async subscribeToVoiceUpdates(callback: (voiceState: any) => void): Promise<boolean> {
+    async subscribeToVoiceUpdates(_callback: (voiceState: any) => void): Promise<boolean> {
         if (!this.isConnected) {
             return false;
         }

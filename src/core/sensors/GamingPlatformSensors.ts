@@ -80,7 +80,7 @@ export class GamingPlatformSensors {
         }
 
         if (discordUserId) {
-            this.discordUserId = discordUserId;
+            // Future: store discordUserId for Discord API calls
             discordAuth = this.discord.connect();
         }
 
@@ -137,7 +137,7 @@ export class GamingPlatformSensors {
                     source: currentGame.source,
                     genre: await this.getGameMetadata(currentGame.name).then(m => m?.genre),
                     sessionDuration: currentGame.sessionDuration,
-                    partySize: currentGame.partySize
+                    partySize: 'partySize' in currentGame ? currentGame.partySize : undefined
                 } : undefined,
                 totalGamingMinutes: this.gamingContext.totalGamingMinutes,
                 gamesPlayedWhileListening: this.gamingContext.gamesPlayedWhileListening,
