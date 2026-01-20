@@ -35,7 +35,7 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 **Legend**: ✅ Fully implemented | ⚠️ Partial | ❌ Not implemented
 
 #### Feature 1: Playlist Parsing & Metadata
-- [ ] Arweave/JSON input acceptance
+- [x] Arweave/JSON input acceptance
 - [ ] Metadata extraction with priority queues
 - [ ] Deterministic seed generation
 - [ ] Audio URL validation (404 = "Unsummonable")
