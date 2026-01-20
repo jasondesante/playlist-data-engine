@@ -84,11 +84,11 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - **Status**: 5 / 5
 
 #### Feature 8: Gaming Platform Integration
-- [ ] Steam/Discord integration
-- [ ] Gaming bonus calculation
-- [ ] Compound modifiers
-- [ ] Polling with backoff
-- **Status**: _____ / 4
+- [x] Steam/Discord integration
+- [x] Gaming bonus calculation
+- [x] Compound modifiers
+- [x] Polling with backoff
+- **Status**: 4 / 4
 
 #### Feature 9: Progression System
 - [ ] XP calculation (1 XP/sec)
