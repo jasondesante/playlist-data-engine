@@ -3,7 +3,7 @@
  * Based on ENGINE_DESIGN_DOCUMENT.md data structures
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { PlaylistParser } from '../../src/core/parser/PlaylistParser';
 import { MetadataExtractor } from '../../src/core/parser/MetadataExtractor';
 
@@ -266,6 +266,113 @@ describe('PlaylistParser', () => {
                 BPM: 128,
                 Key: 'C Major',
             });
+        });
+
+        it('should skip tracks with 404 audio URLs when validateAudioUrls is true', async () => {
+            // Mock fetch to simulate 404 response
+            global.fetch = vi.fn(() =>
+                Promise.resolve({
+                    ok: false,
+                    status: 404,
+                } as Response)
+            );
+
+            const parser = new PlaylistParser({
+                validateAudioUrls: true,
+                strict: false,
+            });
+
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'ethereum',
+                        token_address: '0xabc',
+                        token_id: '1',
+                        platform: 'sound',
+                        metadata: JSON.stringify({
+                            name: 'Valid Track',
+                            artist: 'Artist',
+                            mp3_url: 'https://example.com/valid.mp3',
+                            image: 'https://example.com/image.jpg',
+                            duration: 180,
+                            genre: 'Test',
+                            tags: [],
+                        }),
+                    },
+                    {
+                        chain_name: 'ethereum',
+                        token_address: '0xdef',
+                        token_id: '2',
+                        platform: 'sound',
+                        metadata: JSON.stringify({
+                            name: 'Invalid Track (404)',
+                            artist: 'Artist',
+                            mp3_url: 'https://example.com/404.mp3',
+                            image: 'https://example.com/image.jpg',
+                            duration: 180,
+                            genre: 'Test',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const result = await parser.parse(rawData);
+
+            // Both tracks should be skipped since fetch returns 404 for all
+            expect(result.tracks).toHaveLength(0);
+
+            // Restore original fetch
+            vi.restoreAllMocks();
+        });
+
+        it('should include tracks with valid audio URLs when validateAudioUrls is true', async () => {
+            // Mock fetch to return ok for valid URL, 404 for invalid
+            global.fetch = vi.fn((url: string) =>
+                Promise.resolve({
+                    ok: url.includes('valid'),
+                    status: url.includes('valid') ? 200 : 404,
+                } as Response)
+            );
+
+            const parser = new PlaylistParser({
+                validateAudioUrls: true,
+                strict: false,
+            });
+
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'ethereum',
+                        token_address: '0xabc',
+                        token_id: '1',
+                        platform: 'sound',
+                        metadata: JSON.stringify({
+                            name: 'Valid Track',
+                            artist: 'Artist',
+                            mp3_url: 'https://example.com/valid.mp3',
+                            image: 'https://example.com/image.jpg',
+                            duration: 180,
+                            genre: 'Test',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(result.tracks).toHaveLength(1);
+            expect(result.tracks[0].title).toBe('Valid Track');
+
+            // Restore original fetch
+            vi.restoreAllMocks();
         });
     });
 });

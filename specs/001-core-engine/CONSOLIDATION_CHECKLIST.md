@@ -38,7 +38,7 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - [x] Arweave/JSON input acceptance
 - [x] Metadata extraction with priority queues
 - [x] Deterministic seed generation
-- [ ] Audio URL validation (404 = "Unsummonable")
+- [x] Audio URL validation (404 = "Unsummonable")
 - **Status**: _____ / 4
 
 #### Feature 2: Audio Analysis ("Triple Tap")
