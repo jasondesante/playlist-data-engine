@@ -43,10 +43,10 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 
 #### Feature 2: Audio Analysis ("Triple Tap")
 - [x] 5%/40%/70% sampling
-- [ ] Bass/mid/treble dominance
-- [ ] Short file handling (< 3s)
-- [ ] Advanced metrics (optional)
-- **Status**: _____ / 4
+- [x] Bass/mid/treble dominance
+- [x] Short file handling (< 3s)
+- [x] Advanced metrics (optional)
+- **Status**: 4 / 4
 
 #### Feature 3: Visual Analysis
 - [ ] Color palette extraction
