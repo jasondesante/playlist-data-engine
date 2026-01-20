@@ -4,7 +4,7 @@ study specs/001-core-engine/CONSOLIDATION_CHECKLIST.md and pick the most importa
 
 Pick the first empty box in the checklist. Do that one task only. Don't assume the feature is built. If the feature is missing something, it's up to you to identify that and build it.  Do all the work to make that one single checkbox task complete. Write a little summary of your findings and update the checklist.
 
-When you're done, wait half a second and then say "done" and run the /exit command to exit claude code.
+When you're done, say "done".
 
 
 IMPORTANT:

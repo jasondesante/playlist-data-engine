@@ -1,0 +1,412 @@
+# Core Data Engine - Implementation Plan
+
+**Status**: Active Planning | **Updated**: 2026-01-20
+
+This document tracks all remaining tasks to bring the Core Data Engine from ~85% complete to 100% production-ready.
+
+---
+
+## Summary
+
+| Category | Tasks | Status |
+|----------|-------|--------|
+| Critical Bug Fixes | 1 | 🔴 Blocking |
+| Major Features | 1 | 🟡 In Progress |
+| Enhancements | 8 | 🟢 Pending |
+| Technical Debt | 3 | 🟢 Pending |
+| **Total** | **13** | |
+
+---
+
+## Priority Legend
+
+- 🔴 **Critical** - Bugs affecting core functionality
+- 🟡 **High** - Major incomplete features
+- 🟢 **Medium** - Enhancements and improvements
+- ⚪ **Low** - Nice-to-have items
+
+---
+
+## 🔴 CRITICAL PRIORITY: Bug Fixes
+
+### 1. Fix AttackResolver Hardcoded Ability Modifier
+
+**File**: [src/core/combat/AttackResolver.ts](../../src/core/combat/AttackResolver.ts)
+
+**Issue**: Line 111 has `abilityModifier = 0` hardcoded, preventing proper damage calculation with ability scores.
+
+**Subtasks**:
+- [ ] Add `attacker` parameter to `rollDamage()` method signature
+- [ ] Extract ability score from attacker's character sheet based on damage type
+- [ ] Map damage types to abilities:
+  - [ ] Melee attacks → STR modifier
+  - [ ] Ranged attacks → DEX modifier
+  - [ ] Finesse weapons → max(STR, DEX)
+- [ ] Calculate modifier: `Math.floor((abilityScore - 10) / 2)`
+- [ ] Update method call in `resolveAttack()` to pass attacker
+- [ ] Update method calls in `attackWithAdvantage()` and `attackWithDisadvantage()`
+- [ ] Add unit tests for ability modifier extraction
+- [ ] Test with various weapon types and character ability scores
+
+**Estimated Effort**: 2-3 hours
+
+---
+
+## 🟡 HIGH PRIORITY: Major Features
+
+### 2. Discord RPC Integration (Complete Rewrite)
+
+**File**: [src/core/sensors/DiscordRPCClient.ts](../../src/core/sensors/DiscordRPCClient.ts)
+
+**Issue**: Entire class is mocked. All methods return null or hardcoded values.
+
+**Current State**:
+- 180 lines of placeholder code
+- No actual Discord RPC library integration
+- No real game activity detection
+- No Rich Presence updates
+- No voice channel detection
+
+**Subtasks**:
+
+#### 2.1 Setup and Dependencies
+- [ ] Install `discord-rpc` or `discord-rpc-browser` package
+- [ ] Create Discord application at https://discord.com/developers/applications
+- [ ] Obtain Client ID for RPC connection
+- [ ] Add Client ID to environment variables or config
+
+#### 2.2 Core Connection Methods
+- [ ] Implement `connect()` method with real RPC connection
+- [ ] Add error handling for connection failures
+- [ ] Implement `disconnect()` with proper cleanup
+- [ ] Add connection state event handlers (ready, close, error)
+- [ ] Implement connection retry logic with exponential backoff
+
+#### 2.3 Game Activity Detection
+- [ ] Replace `getCurrentGame()` mock with `getActivity()` RPC call
+- [ ] Parse Discord activity data for game name, timestamp, party info
+- [ ] Handle `null` activity (user not playing anything)
+- [ ] Cache activity data with timestamp for freshness checks
+- [ ] Add activity change event listener
+
+#### 2.4 Rich Presence Updates
+- [ ] Implement `setGameActivity()` to update user's Rich Presence
+- [ ] Set activity state, details, timestamps, and assets
+- [ ] Support party size/max display
+- [ ] Handle Rich Presence update errors gracefully
+- [ ] Add `clearGameActivity()` to clear user's presence
+
+#### 2.5 User Information
+- [ ] Implement `getUserInfo()` with RPC user lookup
+- [ ] Retrieve username, discriminator, avatar
+- [ ] Cache user info to reduce RPC calls
+- [ ] Handle permission-denied scenarios
+
+#### 2.6 Voice Channel Detection
+- [ ] Implement `subscribeToVoiceUpdates()` with voice state monitoring
+- [ ] Detect voice channel ID changes
+- [ ] Extract party size from voice channel member count
+- [ ] Handle voice state changes (join/leave/move)
+- [ ] Implement `getVoiceChannelInfo()` with real data
+
+#### 2.7 Error Handling and Edge Cases
+- [ ] Handle Discord not running
+- [ ] Handle user not logged in
+- [ ] Handle RPC permission denied
+- [ ] Add graceful degradation when Discord unavailable
+- [ ] Log all RPC errors with context
+
+#### 2.8 TypeScript Types
+- [ ] Define proper Discord activity interfaces
+- [ ] Add types for voice state data
+- [ ] Add types for RPC error responses
+- [ ] Remove `@ts-ignore` comments if any
+
+#### 2.9 Testing
+- [ ] Add unit tests with mocked Discord RPC
+- [ ] Add integration tests (requires running Discord)
+- [ ] Test connection lifecycle
+- [ ] Test activity detection and updates
+- [ ] Test voice channel monitoring
+
+**Estimated Effort**: 16-20 hours
+
+---
+
+## 🟢 MEDIUM PRIORITY: Enhancements
+
+### 3. Weather API Caching
+
+**File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
+
+**Issue**: No caching of API responses. Every call hits OpenWeatherMap API.
+
+**Subtasks**:
+- [ ] Add in-memory cache for weather data
+- [ ] Set cache TTL to 10-15 minutes
+- [ ] Check cache before making API calls
+- [ ] Implement cache key based on lat/lon coordinates
+- [ ] Add cache invalidation method
+- [ ] Add cache statistics (hits/misses)
+- [ ] Consider localStorage persistence for browser
+- [ ] Add unit tests for cache behavior
+
+**Estimated Effort**: 2-3 hours
+
+---
+
+### 4. Geolocation Caching
+
+**File**: [src/core/sensors/GeolocationProvider.ts](../../src/core/sensors/GeolocationProvider.ts)
+
+**Issue**: No caching. Every call triggers browser geolocation API.
+
+**Subtasks**:
+- [ ] Add position data cache
+- [ ] Set cache TTL to 5 minutes (GPS changes slowly)
+- [ ] Check cache before requesting position
+- [ ] Implement manual cache refresh option
+- [ ] Add cache age tracking
+- [ ] Consider localStorage for persistence
+- [ ] Add unit tests for caching logic
+
+**Estimated Effort**: 1-2 hours
+
+---
+
+### 5. Moon Phase Calculation
+
+**File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
+
+**Issue**: Moon phase is hardcoded to `0.5` (line ~100).
+
+**Subtasks**:
+- [ ] Implement lunar phase calculation algorithm
+- [ ] Use date/time and geolocation for accuracy
+- [ ] Return value 0-1 (0=new moon, 0.5=full moon, 1=new moon)
+- [ ] Add astronomical calculation reference
+- [ ] Test with known moon phase dates
+- [ ] Document algorithm in code comments
+
+**Suggested Algorithm**:
+```typescript
+// Conway's method or similar astronomical calculation
+// Input: date, latitude, longitude
+// Output: 0-1 representing moon phase
+```
+
+**Estimated Effort**: 2-3 hours
+
+---
+
+### 6. Enhanced Biome Detection
+
+**File**: [src/core/sensors/GeolocationProvider.ts](../../src/core/sensors/GeolocationProvider.ts)
+
+**Issue**: Current biome detection uses simplified latitude-based heuristics only.
+
+**Current Implementation**:
+- Tundra: >66.5° latitude
+- Forest: <23.5° latitude
+- Urban: 30-50° latitude
+- Plains: default (everything else)
+
+**Subtasks**:
+
+#### 6.1 GIS Service Integration (Optional Enhancement)
+- [ ] Research GIS/biome APIs (e.g., Mapbox, Google Maps, NASA)
+- [ ] Evaluate cost and complexity of integration
+- [ ] Implement API client if chosen
+- [ ] Add fallback to current heuristics if API unavailable
+
+#### 6.2 Improved Heuristics (Recommended)
+- [ ] Add longitude-based regional detection
+- [ ] Add coastal vs inland detection
+- [ ] Add elevation-based biomes (mountain, valley)
+- [ ] Add more biome types: desert, swamp, jungle, taiga, savanna
+- [ ] Implement decision tree for biome classification
+- [ ] Add unit tests for coordinate → biome mapping
+
+**Estimated Effort**: 4-6 hours (GIS), 2-3 hours (heuristics)
+
+---
+
+### 7. Weather Forecast Data
+
+**File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
+
+**Issue**: Only current weather data. No forecast available.
+
+**Subtasks**:
+- [ ] Add forecast endpoint to API client
+- [ ] Parse forecast data (hourly/daily)
+- [ ] Return next N hours of weather
+- [ ] Cache forecast data separately (longer TTL)
+- [ ] Add forecast data to TypeScript types
+- [ ] Update XP modifier to consider incoming weather
+
+**Estimated Effort**: 3-4 hours
+
+---
+
+### 8. Severe Weather Detection
+
+**File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
+
+**Issue**: No handling of weather alerts or severe conditions.
+
+**Subtasks**:
+- [ ] Add weather alert detection from API
+- [ ] Map severe conditions to XP bonuses:
+  - [ ] Blizzard: +50%
+  - [ ] Hurricane/Typhoon: +75%
+  - [ ] Tornado: +100%
+- [ ] Add safety check (warn user of dangerous weather)
+- [ ] Cap modifier at 3.0x total
+- [ ] Add unit tests
+
+**Estimated Effort**: 2-3 hours
+
+---
+
+### 9. Gaming Sensor Real-Time Detection
+
+**File**: [src/core/sensors/GamingPlatformSensors.ts](../../src/core/sensors/GamingPlatformSensors.ts)
+
+**Issue**: Polling-based only. No real-time game change detection.
+
+**Subtasks**:
+- [ ] Implement WebSocket/event-based detection for Steam
+- [ ] Implement event-based detection for Discord RPC
+- [ ] Add event listeners for game start/stop
+- [ ] Reduce polling when event-based available
+- [ ] Add hybrid mode (polling + events)
+- [ ] Update tests for event-driven behavior
+
+**Estimated Effort**: 4-5 hours
+
+---
+
+### 10. Environmental Sensor Error Recovery
+
+**File**: [src/core/sensors/EnvironmentalSensors.ts](../../src/core/sensors/EnvironmentalSensors.ts)
+
+**Issue**: Limited error recovery when sensors fail.
+
+**Subtasks**:
+- [ ] Add retry logic for failed sensor reads
+- [ ] Implement exponential backoff for retries
+- [ ] Add sensor health monitoring
+- [ ] Gracefully degrade when individual sensors fail
+- [ ] Log sensor failures with timestamps
+- [ ] Add "last known good" fallback values
+- [ ] Add sensor recovery notifications
+
+**Estimated Effort**: 3-4 hours
+
+---
+
+## ⚪ LOW PRIORITY: Nice to Have
+
+### 11. Improved Logging and Diagnostics
+
+**Files**: Various sensor files
+
+**Subtasks**:
+- [ ] Add consistent logging levels (debug, info, warn, error)
+- [ ] Add diagnostic mode for troubleshooting
+- [ ] Add sensor status dashboard output
+- [ ] Add performance metrics (API call times, cache hit rates)
+- [ ] Add optional verbose logging flag
+
+**Estimated Effort**: 2-3 hours
+
+---
+
+### 12. Additional Test Coverage
+
+**Files**: Tests for sensor modules
+
+**Subtasks**:
+- [ ] Add edge case tests for sensor failures
+- [ ] Add integration tests for full sensor pipeline
+- [ ] Add tests for XP modifier edge cases (3.0x cap)
+- [ ] Add tests for multi-sensor interaction
+- [ ] Mock browser APIs for headless testing
+
+**Estimated Effort**: 4-6 hours
+
+---
+
+### 13. Configuration Options
+
+**File**: New config file or enhanced constants
+
+**Subtasks**:
+- [ ] Create sensor configuration interface
+- [ ] Make cache TTLs configurable
+- [ ] Make modifier caps configurable
+- [ ] Make polling intervals configurable
+- [ ] Add environment variable support
+- [ ] Document all config options
+
+**Estimated Effort**: 2-3 hours
+
+---
+
+## 📋 Technical Debt Tracking
+
+| Item | Location | Impact | Fix Priority |
+|------|----------|--------|--------------|
+| Hardcoded `abilityModifier = 0` | AttackResolver.ts:111 | Damage calculation incorrect | Critical |
+| Mocked Discord RPC | DiscordRPCClient.ts | No Discord features | High |
+| Hardcoded moon phase | WeatherAPIClient.ts | Inaccurate night bonuses | Medium |
+| No weather caching | WeatherAPIClient.ts | API overuse, slow | Medium |
+| No geolocation caching | GeolocationProvider.ts | Unnecessary GPS calls | Medium |
+| Simplified biome detection | GeolocationProvider.ts | Limited variety | Low |
+
+---
+
+## ✅ Verification Checklist
+
+After completing all tasks, verify:
+
+- [ ] All 10 features in SPEC.md show 100% implementation
+- [ ] All TypeScript files compile with strict mode
+- [ ] All tests pass (426+ tests, 100% passing)
+- [ ] No `@ts-ignore` comments remain
+- [ ] No `TODO` comments remain (or convert to tracked issues)
+- [ ] All mocked methods replaced with real implementations
+- [ ] XP modifiers correctly cap at 3.0x in all scenarios
+- [ ] Sensors gracefully handle permission denials
+- [ ] Discord RPC successfully connects and detects activity
+- [ ] Attack damage includes correct ability modifiers
+
+---
+
+## 📊 Progress Tracking
+
+Use this section to track completion:
+
+```
+[████████████████████░░░░] 90% Complete
+
+Critical:  [░░░░░░░░░░░] 0/1 tasks
+High:      [░░░░░░░░░░░] 0/1 tasks
+Medium:    [░░░░░░░░░░░] 0/8 tasks
+Low:       [░░░░░░░░░░░] 0/3 tasks
+```
+
+---
+
+## Notes
+
+- **TODO.md vs Current State**: TODO.md was written earlier and some items (like MotionDetector) are now fully implemented. This plan reflects actual current state.
+- **Environmental Sensors**: Contrary to TODO.md, the environmental sensor aggregation is actually complete and functional.
+- **Discord RPC**: This is the single largest remaining piece of work.
+- **Priority Order**: Recommend fixing Critical bug first, then Discord RPC, then Medium priority items.
+
+---
+
+**Last Updated**: 2026-01-20
+**Next Review**: After completing Critical and High priority tasks
