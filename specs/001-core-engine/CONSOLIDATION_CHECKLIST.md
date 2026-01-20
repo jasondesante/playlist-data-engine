@@ -79,9 +79,9 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - [x] GPS/motion/weather/light
 - [x] Activity type detection
 - [x] Biome detection
-- [ ] XP modifiers (capped 3.0x)
+- [x] XP modifiers (capped 3.0x)
 - [ ] Permission handling
-- **Status**: 3 / 5
+- **Status**: 4 / 5
 
 #### Feature 8: Gaming Platform Integration
 - [ ] Steam/Discord integration
