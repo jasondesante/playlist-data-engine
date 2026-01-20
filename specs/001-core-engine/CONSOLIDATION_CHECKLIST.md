@@ -39,7 +39,7 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - [x] Metadata extraction with priority queues
 - [x] Deterministic seed generation
 - [x] Audio URL validation (404 = "Unsummonable")
-- **Status**: _____ / 4
+- **Status**: 4 / 4
 
 #### Feature 2: Audio Analysis ("Triple Tap")
 - [x] 5%/40%/70% sampling
