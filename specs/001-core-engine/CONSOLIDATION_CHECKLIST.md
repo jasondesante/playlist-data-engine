@@ -72,8 +72,8 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - [x] Class-based proficiencies
 - [x] Spell lists and slots
 - [x] Equipment and inventory
-- [ ] Character appearance
-- **Status**: 4 / 5
+- [x] Character appearance
+- **Status**: 5 / 5
 
 #### Feature 7: Environmental Sensors
 - [ ] GPS/motion/weather/light
