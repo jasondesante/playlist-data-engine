@@ -71,9 +71,9 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - [x] 18 D&D skills with proficiencies
 - [x] Class-based proficiencies
 - [x] Spell lists and slots
-- [ ] Equipment and inventory
+- [x] Equipment and inventory
 - [ ] Character appearance
-- **Status**: 3 / 5
+- **Status**: 4 / 5
 
 #### Feature 7: Environmental Sensors
 - [ ] GPS/motion/weather/light

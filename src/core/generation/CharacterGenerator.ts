@@ -8,6 +8,7 @@ import { AbilityScoreCalculator } from './AbilityScoreCalculator.js';
 import { SkillAssigner } from './SkillAssigner.js';
 import { AppearanceGenerator } from './AppearanceGenerator.js';
 import { SpellManager } from './SpellManager.js';
+import { EquipmentGenerator } from './EquipmentGenerator.js';
 
 export interface CharacterGeneratorOptions {
     /** Starting level (default: 1) */
@@ -114,6 +115,9 @@ export class CharacterGenerator {
         // Generate spells for spellcasting classes
         const spells = SpellManager.initializeSpells(suggestedClass, level);
 
+        // Initialize starting equipment
+        const equipment = EquipmentGenerator.initializeEquipment(suggestedClass);
+
         return {
             name,
             race,
@@ -136,6 +140,7 @@ export class CharacterGenerator {
             class_features: [`${suggestedClass} Level ${level}`],
             appearance,
             spells,
+            equipment,
             xp: {
                 current: 0,
                 next_level: XP_THRESHOLDS[level + 1] || 0,

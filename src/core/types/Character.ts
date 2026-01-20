@@ -155,9 +155,11 @@ export interface CharacterSheet {
 
     /** Equipment */
     equipment?: {
-        weapons: string[];
-        armor: string[];
-        items: string[];
+        weapons: Array<{ name: string; quantity: number; equipped: boolean }>;
+        armor: Array<{ name: string; quantity: number; equipped: boolean }>;
+        items: Array<{ name: string; quantity: number; equipped: boolean }>;
+        totalWeight: number;
+        equippedWeight: number;
     };
 
     /** Character appearance */
