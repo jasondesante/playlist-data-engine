@@ -133,6 +133,10 @@ export class EnvironmentalSensors {
             if (geo) {
                 this.context.geolocation = geo;
 
+                // Calculate biome from coordinates
+                const biome = this.geolocation.getBiome(geo.latitude, geo.longitude);
+                this.context.biome = biome as any;
+
                 // If we have geo and weather permission, update weather
                 if (this.permissions.get('weather')) {
                     const weather = await this.weather.getWeather(geo.latitude, geo.longitude);
