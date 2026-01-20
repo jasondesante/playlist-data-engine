@@ -93,9 +93,9 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 #### Feature 9: Progression System
 - [x] XP calculation (1 XP/sec)
 - [x] D&D 5e level thresholds
-- [ ] Level-up mechanics
+- [x] Level-up mechanics
 - [ ] Track mastery
-- **Status**: 2 / 4
+- **Status**: 3 / 4
 
 #### Feature 10: Combat Engine (Optional)
 - [ ] Initiative rolls
