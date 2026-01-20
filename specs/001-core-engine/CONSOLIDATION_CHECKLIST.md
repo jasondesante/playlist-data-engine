@@ -62,10 +62,10 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - **Status**: 4 / 4
 
 #### Feature 5: Character Naming
-- [ ] 3-format weighted (50/30/20)
-- [ ] Title cleaning
-- [ ] Adjective generation
-- **Status**: _____ / 3
+- [x] 3-format weighted (50/30/20)
+- [x] Title cleaning
+- [x] Adjective generation
+- **Status**: 3 / 3
 
 #### Feature 6: Advanced Character System
 - [ ] 18 D&D skills with proficiencies
