@@ -101,8 +101,8 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - [x] Initiative rolls
 - [x] Attack/damage resolution
 - [x] Critical hits (natural 20 detection, damage dice doubling, always-hit)
-- [ ] Spell casting
-- **Status**: 3 / 4
+- [x] Spell casting
+- **Status**: 4 / 4
 
 
 ---
