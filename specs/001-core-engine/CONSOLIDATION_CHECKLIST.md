@@ -42,7 +42,7 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - **Status**: _____ / 4
 
 #### Feature 2: Audio Analysis ("Triple Tap")
-- [ ] 5%/40%/70% sampling
+- [x] 5%/40%/70% sampling
 - [ ] Bass/mid/treble dominance
 - [ ] Short file handling (< 3s)
 - [ ] Advanced metrics (optional)

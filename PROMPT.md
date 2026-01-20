@@ -10,3 +10,4 @@ IMPORTANT:
 - not every task will require code changes, some will just require lots of reading and validation and summarizing maybe some note taking.
 - update the consolidation checklist when the task is done
 - commit and push to deploy the changes (if there are any changes)
+- once you have deployed the changes, you are done. 
