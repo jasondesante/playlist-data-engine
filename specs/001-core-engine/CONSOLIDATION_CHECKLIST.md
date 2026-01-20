@@ -36,7 +36,7 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 
 #### Feature 1: Playlist Parsing & Metadata
 - [x] Arweave/JSON input acceptance
-- [ ] Metadata extraction with priority queues
+- [x] Metadata extraction with priority queues
 - [ ] Deterministic seed generation
 - [ ] Audio URL validation (404 = "Unsummonable")
 - **Status**: _____ / 4
@@ -183,13 +183,19 @@ No separate spec files - document everything in code via JSDoc
 One simple README.md with overview and links
 ```
 
-**My choice**: _____ (fill in after review)
+**My choice**: **Option B** - Two Focused Files
+
+**Rationale**:
+- Implementation is complete (426 tests, 98.4% pass rate)
+- Type definitions are now in code via TypeScript/JSDoc
+- Keeping features/requirements separate from technology decisions improves maintainability
+- Two files keeps documentation focused without being overwhelming
 
 ---
 
 ## Step 4: Consolidation Actions
 
-1. [ ] Choose final structure (A, B, or C)
+1. [x] Choose final structure (A, B, or C) - **Selected Option B**
 2. [ ] Create new consolidated file(s)
 3. [ ] Delete redundant files
 4. [ ] Update cross-references
