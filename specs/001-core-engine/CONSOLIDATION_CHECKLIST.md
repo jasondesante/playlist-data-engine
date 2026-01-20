@@ -49,10 +49,10 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - **Status**: 4 / 4
 
 #### Feature 3: Visual Analysis
-- [ ] Color palette extraction
-- [ ] 4 dominant colors
-- [ ] Brightness/saturation/monochrome
-- **Status**: _____ / 3
+- [x] Color palette extraction
+- [x] 4 dominant colors
+- [x] Brightness/saturation/monochrome
+- **Status**: 3 / 3
 
 #### Feature 4: Character Generation
 - [ ] D&D 5e character sheets
