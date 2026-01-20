@@ -37,7 +37,7 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 #### Feature 1: Playlist Parsing & Metadata
 - [x] Arweave/JSON input acceptance
 - [x] Metadata extraction with priority queues
-- [ ] Deterministic seed generation
+- [x] Deterministic seed generation
 - [ ] Audio URL validation (404 = "Unsummonable")
 - **Status**: _____ / 4
 
