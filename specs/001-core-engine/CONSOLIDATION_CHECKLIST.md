@@ -80,8 +80,8 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - [x] Activity type detection
 - [x] Biome detection
 - [x] XP modifiers (capped 3.0x)
-- [ ] Permission handling
-- **Status**: 4 / 5
+- [x] Permission handling
+- **Status**: 5 / 5
 
 #### Feature 8: Gaming Platform Integration
 - [ ] Steam/Discord integration
