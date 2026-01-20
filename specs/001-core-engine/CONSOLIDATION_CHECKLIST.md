@@ -94,8 +94,8 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - [x] XP calculation (1 XP/sec)
 - [x] D&D 5e level thresholds
 - [x] Level-up mechanics
-- [ ] Track mastery
-- **Status**: 3 / 4
+- [x] Track mastery
+- **Status**: 4 / 4
 
 #### Feature 10: Combat Engine (Optional)
 - [ ] Initiative rolls
