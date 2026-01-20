@@ -98,11 +98,11 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - **Status**: 4 / 4
 
 #### Feature 10: Combat Engine (Optional)
-- [ ] Initiative rolls
+- [x] Initiative rolls
 - [ ] Attack/damage resolution
 - [ ] Critical hits
 - [ ] Spell casting
-- **Status**: _____ / 4
+- **Status**: 1 / 4
 
 
 ---
