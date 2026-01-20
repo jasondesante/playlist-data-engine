@@ -55,11 +55,11 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - **Status**: 3 / 3
 
 #### Feature 4: Character Generation
-- [ ] D&D 5e character sheets
-- [ ] Audio → ability score mapping
-- [ ] Deterministic race/class
-- [ ] Racial bonuses
-- **Status**: _____ / 4
+- [x] D&D 5e character sheets
+- [x] Audio → ability score mapping
+- [x] Deterministic race/class
+- [x] Racial bonuses
+- **Status**: 4 / 4
 
 #### Feature 5: Character Naming
 - [ ] 3-format weighted (50/30/20)
