@@ -41,11 +41,11 @@ export class MotionDetector {
     /**
      * Detect activity type based on motion intensity
      * @param data MotionData to analyze
-     * @returns 'stationary' | 'walking' | 'running' | 'driving'
+     * @returns 'stationary' | 'walking' | 'running' | 'driving' | 'unknown'
      */
-    detectActivity(data: MotionData): 'stationary' | 'walking' | 'running' | 'driving' {
+    detectActivity(data: MotionData): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown' {
         const acc = data.accelerationIncludingGravity;
-        if (!acc.x || !acc.y || !acc.z) return 'stationary';
+        if (!acc.x || !acc.y || !acc.z) return 'unknown';
 
         // Calculate magnitude of acceleration vector (minus gravity approx 9.8)
         // This is a very rough heuristic

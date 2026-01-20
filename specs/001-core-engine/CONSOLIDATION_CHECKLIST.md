@@ -77,11 +77,11 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 
 #### Feature 7: Environmental Sensors
 - [x] GPS/motion/weather/light
-- [ ] Activity type detection
+- [x] Activity type detection
 - [ ] Biome detection
 - [ ] XP modifiers (capped 3.0x)
 - [ ] Permission handling
-- **Status**: 1 / 5
+- **Status**: 2 / 5
 
 #### Feature 8: Gaming Platform Integration
 - [ ] Steam/Discord integration
