@@ -28,7 +28,7 @@ This is a **one-time review tool** to help consolidate 6 spec files (~1,600 line
 
 ---
 
-## Step 1: Feature Implementation Status
+### Feature Implementation Status
 
 Mark what's actually implemented. This tells us what to KEEP in the final spec.
 
@@ -104,15 +104,6 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - [ ] Spell casting
 - **Status**: _____ / 4
 
----
-
-## Step 2: Consolidation Actions
-
-1. [x] Choose final structure (A, B, or C) - **Selected Option B**
-2. [x] Create new consolidated file(s)
-3. [x] Delete redundant files
-4. [x] Update cross-references
-5. [ ] DELETE this checklist (one-time tool)
 
 ---
 
