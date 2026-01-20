@@ -7,6 +7,7 @@ import { ClassSuggester } from './ClassSuggester.js';
 import { AbilityScoreCalculator } from './AbilityScoreCalculator.js';
 import { SkillAssigner } from './SkillAssigner.js';
 import { AppearanceGenerator } from './AppearanceGenerator.js';
+import { SpellManager } from './SpellManager.js';
 
 export interface CharacterGeneratorOptions {
     /** Starting level (default: 1) */
@@ -110,6 +111,9 @@ export class CharacterGenerator {
         // Generate character appearance
         const appearance = AppearanceGenerator.generate(seed, suggestedClass, audioProfile);
 
+        // Generate spells for spellcasting classes
+        const spells = SpellManager.initializeSpells(suggestedClass, level);
+
         return {
             name,
             race,
@@ -131,6 +135,7 @@ export class CharacterGenerator {
             racial_traits: raceData.traits,
             class_features: [`${suggestedClass} Level ${level}`],
             appearance,
+            spells,
             xp: {
                 current: 0,
                 next_level: XP_THRESHOLDS[level + 1] || 0,

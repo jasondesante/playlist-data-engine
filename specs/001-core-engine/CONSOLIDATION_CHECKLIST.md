@@ -70,10 +70,10 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 #### Feature 6: Advanced Character System
 - [x] 18 D&D skills with proficiencies
 - [x] Class-based proficiencies
-- [ ] Spell lists and slots
+- [x] Spell lists and slots
 - [ ] Equipment and inventory
 - [ ] Character appearance
-- **Status**: 2 / 5
+- **Status**: 3 / 5
 
 #### Feature 7: Environmental Sensors
 - [ ] GPS/motion/weather/light
