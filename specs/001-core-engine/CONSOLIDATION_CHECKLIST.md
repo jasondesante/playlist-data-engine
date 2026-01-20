@@ -109,22 +109,10 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 ## Step 2: Consolidation Actions
 
 1. [x] Choose final structure (A, B, or C) - **Selected Option B**
-2. [ ] Create new consolidated file(s)
-3. [ ] Delete redundant files
+2. [x] Create new consolidated file(s)
+3. [x] Delete redundant files
 4. [ ] Update cross-references
 5. [ ] DELETE this checklist (one-time tool)
-
----
-
-## Files to Review
-
-Read each file once, then consolidate:
-
-- [ ] spec.md - What's essential here?
-- [ ] data-model.md - Can this be inline or in code?
-- [ ] plan.md - What's actually useful?
-- [ ] research.md - Any decisions worth keeping?
-- [ ] tasks.md - Is this complete and still needed?
 
 ---
 
