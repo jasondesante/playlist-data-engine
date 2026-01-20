@@ -1,6 +1,6 @@
 /**
  * Playlist-related type definitions
- * Based on ENGINE_DESIGN_DOCUMENT.md v2.0
+ * Based on specs/001-core-engine/SPEC.md
  */
 
 /**

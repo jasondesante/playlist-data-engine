@@ -1,6 +1,6 @@
 /**
  * Playlist parser - converts raw Arweave JSON to ServerlessPlaylist
- * Based on ENGINE_DESIGN_DOCUMENT.md Section 2.D
+ * Based on specs/001-core-engine/SPEC.md
  */
 
 import type { ServerlessPlaylist, PlaylistTrack, RawArweavePlaylist } from '../types/Playlist.js';
@@ -28,7 +28,7 @@ export class PlaylistParser {
 
     /**
      * Parse raw Arweave playlist data into ServerlessPlaylist
-     * Follows the flattening process from ENGINE_DESIGN_DOCUMENT.md Section 2.D.2
+     * Follows the flattening process from specs/001-core-engine/SPEC.md
      */
     async parse(data: RawArweavePlaylist): Promise<ServerlessPlaylist> {
         // Extract playlist-level metadata
@@ -70,7 +70,7 @@ export class PlaylistParser {
 
     /**
      * Parse a single track following the flattening process
-     * ENGINE_DESIGN_DOCUMENT.md Section 2.D.2
+     * See specs/001-core-engine/SPEC.md
      */
     private async parseTrack(rawTrack: RawArweavePlaylist['tracks'][number], playlistIndex: number): Promise<PlaylistTrack | null> {
         // Step 1: Parse Metadata
@@ -87,7 +87,7 @@ export class PlaylistParser {
         const txId = rawTrack.tx_id;
         const platform = rawTrack.platform;
 
-        // Generate or use existing id (ENGINE_DESIGN_DOCUMENT.md Section 3)
+        // Generate or use existing id (see specs/001-core-engine/SPEC.md)
         // For Arweave (AR) chain, use tx_id instead of token_address/token_id
         const id = rawTrack.id || (
             chainName === 'AR'

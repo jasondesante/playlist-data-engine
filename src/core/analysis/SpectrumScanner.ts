@@ -1,6 +1,6 @@
 /**
  * Spectrum Scanner - Separates frequency data into bands
- * Based on ENGINE_DESIGN_DOCUMENT.md Section 4.B
+ * Based on specs/001-core-engine/SPEC.md
  */
 
 import type { FrequencyBands } from '../types/AudioProfile.js';

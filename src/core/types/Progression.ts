@@ -1,6 +1,6 @@
 /**
  * Progression and Environmental System Types
- * Based on ENGINE_DESIGN_DOCUMENT.md v2.0 and data-model.md
+ * Based on specs/001-core-engine/SPEC.md
  */
 
 // Import environmental types from Environmental.ts to avoid duplication

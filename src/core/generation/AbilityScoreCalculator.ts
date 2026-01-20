@@ -1,6 +1,6 @@
 /**
  * Ability Score Calculator - Maps audio profile to ability scores
- * Based on ENGINE_DESIGN_DOCUMENT.md Section 6.B
+ * Based on specs/001-core-engine/SPEC.md
  */
 
 import type { AbilityScores, Race } from '../types/Character.js';

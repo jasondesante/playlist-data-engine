@@ -384,12 +384,12 @@ All major classes are fully typed. Enable strict mode in `tsconfig.json`:
 
 - **Read [README.md](README.md)** for comprehensive API documentation
 - **Check [tests/](tests/)** for more usage examples
-- **Review [ENGINE_DESIGN_DOCUMENT.md](ENGINE_DESIGN_DOCUMENT.md)** for architecture details
+- **Review [specs/001-core-engine/SPEC.md](specs/001-core-engine/SPEC.md)** for architecture details
 
 ## Support
 
 - **Issues**: Check existing tests for examples
-- **Design questions**: See ENGINE_DESIGN_DOCUMENT.md Section 8
+- **Design questions**: See specs/001-core-engine/SPEC.md
 - **Type definitions**: Review src/core/types/ files
 
 ---

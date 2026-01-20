@@ -1,6 +1,6 @@
 /**
  * Metadata extraction with priority queue logic
- * Based on ENGINE_DESIGN_DOCUMENT.md Section 2.C
+ * Based on specs/001-core-engine/SPEC.md
  */
 
 export interface MetadataExtractionOptions {
@@ -10,7 +10,7 @@ export interface MetadataExtractionOptions {
 
 export class MetadataExtractor {
     /**
-     * Extract audio URL with priority (ENGINE_DESIGN_DOCUMENT.md Section 2.C.1):
+     * Extract audio URL with priority (see specs/001-core-engine/SPEC.md):
      * 1. mp3_url (Standard web audio - preferred)
      * 2. lossy_audio (Compressed)
      * 3. audio_url (Explicit audio field)
@@ -30,7 +30,7 @@ export class MetadataExtractor {
     }
 
     /**
-     * Extract image URL with priority (ENGINE_DESIGN_DOCUMENT.md Section 2.C.2):
+     * Extract image URL with priority (see specs/001-core-engine/SPEC.md):
      * 1. image_small (Preferred for performance)
      * 2. image (Standard)
      * 3. image_large (Fallback)
@@ -49,7 +49,7 @@ export class MetadataExtractor {
     }
 
     /**
-     * Extract name/title with priority (ENGINE_DESIGN_DOCUMENT.md Section 2.C.3):
+     * Extract name/title with priority (see specs/001-core-engine/SPEC.md):
      * 1. name
      * 2. title
      */
@@ -64,7 +64,7 @@ export class MetadataExtractor {
     }
 
     /**
-     * Extract artist with priority (ENGINE_DESIGN_DOCUMENT.md Section 2.C.4):
+     * Extract artist with priority (see specs/001-core-engine/SPEC.md):
      * 1. artist
      * 2. created_by
      * 3. minter

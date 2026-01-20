@@ -1,6 +1,6 @@
 /**
  * XPCalculator - Handles all XP calculations for listening sessions
- * Based on ENGINE_DESIGN_DOCUMENT.md v2.0 Section 7.G
+ * Based on specs/001-core-engine/SPEC.md
  */
 
 import type { ListeningSession, EnvironmentalContext, GamingContext } from '../types/Progression.js';

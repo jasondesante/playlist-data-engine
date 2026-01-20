@@ -31,7 +31,7 @@ export class GamingPlatformSensors {
 
     /**
      * Initialize GamingPlatformSensors with optional Steam and Discord configuration
-     * Matches specification from ENGINE_DESIGN_DOCUMENT.md Section 7.C
+     * Matches specification from specs/001-core-engine/SPEC.md
      */
     constructor(config: {
         steam?: {

@@ -1,6 +1,6 @@
 /**
  * Class Suggester - Suggests class based on audio profile
- * Based on ENGINE_DESIGN_DOCUMENT.md Section 6.D
+ * Based on specs/001-core-engine/SPEC.md
  */
 
 import type { Class } from '../types/Character.js';

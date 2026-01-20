@@ -111,7 +111,7 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 1. [x] Choose final structure (A, B, or C) - **Selected Option B**
 2. [x] Create new consolidated file(s)
 3. [x] Delete redundant files
-4. [ ] Update cross-references
+4. [x] Update cross-references
 5. [ ] DELETE this checklist (one-time tool)
 
 ---

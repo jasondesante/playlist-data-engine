@@ -1,6 +1,6 @@
 /**
  * Sample playlist data for testing
- * Based on ENGINE_DESIGN_DOCUMENT.md RawArweavePlaylist structure
+ * Based on specs/001-core-engine/SPEC.md
  */
 
 import type { RawArweavePlaylist } from '../../src/core/types/Playlist';

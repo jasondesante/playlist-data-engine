@@ -1,6 +1,6 @@
 /**
  * Unit tests for PlaylistParser
- * Based on ENGINE_DESIGN_DOCUMENT.md data structures
+ * Based on specs/001-core-engine/SPEC.md
  */
 
 import { describe, it, expect, vi } from 'vitest';

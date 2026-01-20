@@ -1,6 +1,6 @@
 /**
  * LevelUpProcessor - Handles character leveling mechanics
- * Based on ENGINE_DESIGN_DOCUMENT.md v2.0 Section 7.G and D&D 5e rules
+ * Based on specs/001-core-engine/SPEC.md and D&D 5e rules
  */
 
 import type { CharacterSheet, Class as CharacterClass } from '../types/Character.js';

@@ -2,7 +2,7 @@ study specs/readme.md
 
 study specs/001-core-engine/CONSOLIDATION_CHECKLIST.md and pick the most important thing to do. 
 
-Pick the first empty box in the checklist. Do that one task only. Don't assume the feature is built. If the feature is missing something, it's up to you to identify that and build it.  Do all the work to make that one single checkbox task complete. When you are done, talk to me about what you did, write a little summary of your findings.
+Pick the first empty box in the checklist. Do that one task only. Don't assume the feature is built. If the feature is missing something, it's up to you to identify that and build it.  Do all the work to make that one single checkbox task complete. When you are done, write a little summary of your findings and update the checklist.
 
 When you're done, say "done" and you will be done.
 
