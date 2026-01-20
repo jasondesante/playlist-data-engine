@@ -76,12 +76,12 @@ Mark what's actually implemented. This tells us what to KEEP in the final spec.
 - **Status**: 5 / 5
 
 #### Feature 7: Environmental Sensors
-- [ ] GPS/motion/weather/light
+- [x] GPS/motion/weather/light
 - [ ] Activity type detection
 - [ ] Biome detection
 - [ ] XP modifiers (capped 3.0x)
 - [ ] Permission handling
-- **Status**: _____ / 5
+- **Status**: 1 / 5
 
 #### Feature 8: Gaming Platform Integration
 - [ ] Steam/Discord integration
