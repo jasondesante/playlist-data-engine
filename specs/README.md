@@ -4,7 +4,7 @@ This directory contains project specifications.
 
 ## 001: Core Data Engine
 
-**Status**: Implementation complete, ready for consolidation
+**Status**: Implementation complete
 
 The Core Data Engine transforms music playlists into RPG game characters through audio/visual analysis and deterministic generation.
 
@@ -12,16 +12,12 @@ The Core Data Engine transforms music playlists into RPG game characters through
 
 | File | Description |
 |------|-------------|
-| [spec.md](001-core-engine/spec.md) | Feature specification with requirements |
-| [data-model.md](001-core-engine/data-model.md) | Type definitions and validation rules |
-| [plan.md](001-core-engine/plan.md) | Technical implementation plan |
-| [research.md](001-core-engine/research.md) | Technology decisions and rationale |
-| [tasks.md](001-core-engine/tasks.md) | Implementation task breakdown |
-| [CONSOLIDATION_CHECKLIST.md](001-core-engine/CONSOLIDATION_CHECKLIST.md) | One-time tool for consolidating specs |
+| [SPEC.md](001-core-engine/SPEC.md) | Feature specification with requirements and data models |
+| [DECISIONS.md](001-core-engine/DECISIONS.md) | Architecture and technology choices |
 
 ### Note
 
-These 6 files (~1,600 lines) contain significant redundancy. The CONSOLIDATION_CHECKLIST.md is a tool to help reduce this to 1-2 concise files without losing any essential information.
+Specs have been consolidated from 6 files (~1,600 lines) to 2 files (~540 lines). See `src/core/types/` for complete TypeScript type definitions.
 
 ---
 
