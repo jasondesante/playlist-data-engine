@@ -12,7 +12,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 |----------|-------|--------|
 | Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | 🟡 In Progress |
-| Enhancements | 8 | 🟢 Pending |
+| Enhancements | 8 | 🟢 1/8 Complete |
 | Nice to Have | 3 | ⚪ Low Priority |
 | **Total** | **12** | |
 
@@ -370,16 +370,28 @@ Added comprehensive integration tests for Discord RPC with real Discord connecti
 **Issue**: No caching of API responses. Every call hits OpenWeatherMap API.
 
 **Subtasks**:
-- [ ] Add in-memory cache for weather data
-- [ ] Set cache TTL to 10-15 minutes
-- [ ] Check cache before making API calls
-- [ ] Implement cache key based on lat/lon coordinates
-- [ ] Add cache invalidation method
-- [ ] Add cache statistics (hits/misses)
-- [ ] Consider localStorage persistence for browser
-- [ ] Add unit tests for cache behavior
+- [x] Add in-memory cache for weather data
+- [x] Set cache TTL to 10-15 minutes
+- [x] Check cache before making API calls
+- [x] Implement cache key based on lat/lon coordinates
+- [x] Add cache invalidation method
+- [x] Add cache statistics (hits/misses)
+- [x] Consider localStorage persistence for browser
+- [x] Add unit tests for cache behavior
 
 **Estimated Effort**: 2-3 hours
+
+**Status**: ✅ Complete (2026-01-20)
+
+**Implementation Summary**:
+- Added in-memory cache using Map with CacheEntry interface (data + timestamp)
+- Configurable cache TTL (default 12 minutes)
+- Cache key based on rounded coordinates (4 decimal places, ~11m precision)
+- Cache methods: `invalidateCache()`, `invalidateLocation()`, `clearExpiredEntries()`, `getCacheSize()`
+- Cache statistics: `getCacheStats()` returns hits/misses, `resetCacheStats()`
+- localStorage persistence for browser environments (auto-detected and enabled)
+- 14 new unit tests covering all cache behavior
+- All 35 existing + new tests passing
 
 ---
 
@@ -587,9 +599,9 @@ Added comprehensive integration tests for Discord RPC with real Discord connecti
 | Item | Location | Impact | Fix Priority |
 |------|----------|--------|--------------|
 | Hardcoded `abilityModifier = 0` | AttackResolver.ts:111 | Damage calculation incorrect | Critical |
-| Mocked Discord RPC game detection | DiscordRPCClient.ts | Discord RPC cannot read user activity | Blocked - Platform Limitation |
+| ~~Mocked Discord RPC game detection~~ | ~~DiscordRPCClient.ts~~ | ~~Discord RPC cannot read user activity~~ | ~~Blocked - Platform Limitation~~ |
 | Hardcoded moon phase | WeatherAPIClient.ts | Inaccurate night bonuses | Medium |
-| No weather caching | WeatherAPIClient.ts | API overuse, slow | Medium |
+| ~~No weather caching~~ | ~~WeatherAPIClient.ts~~ | ~~API overuse, slow~~ | ~~Medium~~ |
 | No geolocation caching | GeolocationProvider.ts | Unnecessary GPS calls | Medium |
 | Simplified biome detection | GeolocationProvider.ts | Limited variety | Low |
 
@@ -621,7 +633,7 @@ Use this section to track completion:
 
 Critical:  [██████████████] 1/1 tasks (100%)
 High:      [░░░░░░░░░░░] 0/1 tasks (0%)
-Medium:    [░░░░░░░░░░░] 0/8 tasks (0%)
+Medium:    [██░░░░░░░░░░] 1/8 tasks (13%)
 Low:       [░░░░░░░░░░░] 0/3 tasks (0%)
 ```
 

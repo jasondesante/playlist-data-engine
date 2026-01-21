@@ -595,4 +595,249 @@ describe('LightSensor (T087-088)', () => {
         consoleWarnSpy.mockRestore();
     });
 
+describe('WeatherAPIClient Caching', () => {
+    let weatherClient: WeatherAPIClient;
+    let mockFetch: ReturnType<typeof vi.fn>;
+
+    const mockWeatherResponse = {
+        coord: { lon: 10.99, lat: 44.34 },
+        weather: [{ id: 501, main: 'Rain', description: 'moderate rain', icon: '10d' }],
+        main: { temp: 298.48, feels_like: 298.74, temp_min: 297.56, temp_max: 300.05, pressure: 1015, humidity: 64, sea_level: 1015, grnd_level: 933 },
+        visibility: 10000,
+        wind: { speed: 0.62, deg: 349, gust: 1.18 },
+        rain: { '1h': 3.16 },
+        clouds: { all: 100 },
+        dt: 1661870592,
+        sys: { type: 2, id: 2075663, country: 'IT', sunrise: 1661834187, sunset: 1661882248 },
+        timezone: 7200,
+        id: 3163858,
+        name: 'Zocca',
+        cod: 200
+    };
+
+    beforeEach(() => {
+        // Mock fetch
+        mockFetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => mockWeatherResponse
+        });
+        global.fetch = mockFetch;
+
+        // Create client with short TTL for testing
+        weatherClient = new WeatherAPIClient('test-key', 12, false); // 12 minutes TTL, no localStorage
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('should cache weather data and return cached data on subsequent calls', async () => {
+        const lat = 44.34;
+        const lon = 10.99;
+
+        // First call should hit the API
+        const weather1 = await weatherClient.getWeather(lat, lon);
+        expect(weather1).not.toBeNull();
+        expect(weather1?.temperature).toBe(298.48);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+
+        // Second call should return cached data
+        const weather2 = await weatherClient.getWeather(lat, lon);
+        expect(weather2).not.toBeNull();
+        expect(weather2?.temperature).toBe(298.48);
+        expect(mockFetch).toHaveBeenCalledTimes(1); // No additional API call
+    });
+
+    it('should track cache hits and misses', async () => {
+        const lat = 44.34;
+        const lon = 10.99;
+
+        // First call - cache miss
+        await weatherClient.getWeather(lat, lon);
+        let stats = weatherClient.getCacheStats();
+        expect(stats.hits).toBe(0);
+        expect(stats.misses).toBe(1);
+
+        // Second call - cache hit
+        await weatherClient.getWeather(lat, lon);
+        stats = weatherClient.getCacheStats();
+        expect(stats.hits).toBe(1);
+        expect(stats.misses).toBe(1);
+
+        // Third call - cache hit
+        await weatherClient.getWeather(lat, lon);
+        stats = weatherClient.getCacheStats();
+        expect(stats.hits).toBe(2);
+        expect(stats.misses).toBe(1);
+    });
+
+    it('should invalidate cache for specific location', async () => {
+        const lat = 44.34;
+        const lon = 10.99;
+
+        // First call - cache miss
+        await weatherClient.getWeather(lat, lon);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+
+        // Second call - cache hit
+        await weatherClient.getWeather(lat, lon);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+
+        // Invalidate specific location
+        weatherClient.invalidateLocation(lat, lon);
+
+        // Third call - cache miss again
+        await weatherClient.getWeather(lat, lon);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should invalidate all cache', async () => {
+        const lat1 = 44.34;
+        const lon1 = 10.99;
+        const lat2 = 40.71;
+        const lon2 = -74.01;
+
+        // Fetch two locations
+        await weatherClient.getWeather(lat1, lon1);
+        await weatherClient.getWeather(lat2, lon2);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+
+        // Both should be cached
+        await weatherClient.getWeather(lat1, lon1);
+        await weatherClient.getWeather(lat2, lon2);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+
+        // Invalidate all cache
+        weatherClient.invalidateCache();
+
+        // Both should hit API again
+        await weatherClient.getWeather(lat1, lon1);
+        await weatherClient.getWeather(lat2, lon2);
+        expect(mockFetch).toHaveBeenCalledTimes(4);
+    });
+
+    it('should reset cache statistics', async () => {
+        const lat = 44.34;
+        const lon = 10.99;
+
+        await weatherClient.getWeather(lat, lon);
+        await weatherClient.getWeather(lat, lon);
+
+        let stats = weatherClient.getCacheStats();
+        expect(stats.hits).toBe(1);
+        expect(stats.misses).toBe(1);
+
+        weatherClient.resetCacheStats();
+
+        stats = weatherClient.getCacheStats();
+        expect(stats.hits).toBe(0);
+        expect(stats.misses).toBe(0);
+    });
+
+    it('should return cache size', async () => {
+        const lat1 = 44.34;
+        const lon1 = 10.99;
+        const lat2 = 40.71;
+        const lon2 = -74.01;
+
+        expect(weatherClient.getCacheSize()).toBe(0);
+
+        await weatherClient.getWeather(lat1, lon1);
+        expect(weatherClient.getCacheSize()).toBe(1);
+
+        await weatherClient.getWeather(lat2, lon2);
+        expect(weatherClient.getCacheSize()).toBe(2);
+
+        // Same location should not increase size
+        await weatherClient.getWeather(lat1, lon1);
+        expect(weatherClient.getCacheSize()).toBe(2);
+    });
+
+    it('should clear expired cache entries', async () => {
+        // Create client with very short TTL (1ms)
+        const shortTTLClient = new WeatherAPIClient('test-key', 0.000017, false); // ~1ms in minutes
+        const lat = 44.34;
+        const lon = 10.99;
+
+        await shortTTLClient.getWeather(lat, lon);
+        expect(shortTTLClient.getCacheSize()).toBe(1);
+
+        // Wait for cache to expire
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Clear expired entries
+        const cleared = shortTTLClient.clearExpiredEntries();
+        expect(cleared).toBe(1);
+        expect(shortTTLClient.getCacheSize()).toBe(0);
+    });
+
+    it('should use coordinate-based cache keys with rounding', async () => {
+        // Coordinates that round to the same key (4 decimal places)
+        // 44.34004 rounds to 44.34, 44.34005 rounds to 44.3401 (different!)
+        // Let's use coordinates within 0.00005 of each other
+        const lat1 = 44.34;
+        const lon1 = 10.99;
+        const lat2 = 44.34004;
+        const lon2 = 10.99004;
+
+        await weatherClient.getWeather(lat1, lon1);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+
+        // These should hit the same cache entry due to rounding
+        await weatherClient.getWeather(lat2, lon2);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should treat different coordinates as different cache entries', async () => {
+        const lat1 = 44.34;
+        const lon1 = 10.99;
+        const lat2 = 40.71;
+        const lon2 = -74.01;
+
+        await weatherClient.getWeather(lat1, lon1);
+        await weatherClient.getWeather(lat2, lon2);
+
+        expect(weatherClient.getCacheSize()).toBe(2);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle cache statistics returns copy not reference', async () => {
+        const stats = weatherClient.getCacheStats();
+        stats.hits = 999;
+
+        const newStats = weatherClient.getCacheStats();
+        expect(newStats.hits).toBe(0); // Should not be affected by modifying the returned object
+    });
+
+    it('should return null when no API key is provided', async () => {
+        const noKeyClient = new WeatherAPIClient('', 12, false);
+        const weather = await noKeyClient.getWeather(44.34, 10.99);
+
+        expect(weather).toBeNull();
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle API errors gracefully', async () => {
+        mockFetch.mockResolvedValueOnce({
+            ok: false,
+            statusText: 'Not Found'
+        });
+
+        const weather = await weatherClient.getWeather(44.34, 10.99);
+        expect(weather).toBeNull();
+
+        // Should not cache failed requests
+        expect(weatherClient.getCacheSize()).toBe(0);
+    });
+
+    it('should handle network errors gracefully', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+        const weather = await weatherClient.getWeather(44.34, 10.99);
+        expect(weather).toBeNull();
+
+        // Should not cache failed requests
+        expect(weatherClient.getCacheSize()).toBe(0);
+    });
+});
 });
