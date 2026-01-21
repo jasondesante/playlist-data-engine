@@ -110,6 +110,47 @@ export class WeatherAPIClient {
     }
 
     /**
+     * Calculate the moon phase for a given date using astronomical algorithms.
+     *
+     * Returns a value between 0 and 1 representing the moon's illumination phase:
+     * - 0.0 = New Moon (completely dark)
+     * - 0.25 = First Quarter (half illuminated, waxing)
+     * - 0.5 = Full Moon (fully illuminated)
+     * - 0.75 = Last Quarter (half illuminated, waning)
+     * - 1.0 = New Moon (cycle completes)
+     *
+     * Algorithm: Uses a simplified version of the Conway method combined with
+     * astronomical calculations based on the known date of a new moon reference.
+     *
+     * Reference: Based on the mean synodic month of 29.530588853 days
+     * (the average time from new moon to new moon).
+     *
+     * @param date The date for which to calculate the moon phase
+     * @returns Moon phase value between 0 and 1
+     */
+    private calculateMoonPhase(date: Date): number {
+        // Reference date: Known new moon on January 11, 2024 at 11:57 UTC
+        // This is a well-documented new moon that serves as our epoch
+        const knownNewMoon = new Date('2024-01-11T11:57:00Z');
+
+        // Mean synodic month (average lunar cycle) in milliseconds
+        // 29.530588853 days = 29 days, 12 hours, 44 minutes, 2.9 seconds
+        const synodicMonthMs = 29.530588853 * 24 * 60 * 60 * 1000;
+
+        // Calculate time difference from reference new moon
+        const timeSinceReference = date.getTime() - knownNewMoon.getTime();
+
+        // Calculate how many lunar cycles have passed (including fractional)
+        const cyclesPassed = timeSinceReference / synodicMonthMs;
+
+        // The fractional part tells us where we are in the current cycle
+        // We use Math.abs to handle any potential negative values
+        const phase = Math.abs(cyclesPassed % 1);
+
+        return phase;
+    }
+
+    /**
      * Fetch current weather for coordinates
      * @param latitude Latitude
      * @param longitude Longitude
@@ -154,7 +195,7 @@ export class WeatherAPIClient {
                 windSpeed: data.wind.speed,
                 windDirection: data.wind.deg,
                 isNight,
-                moonPhase: 0.5, // API doesn't provide moon phase in free tier, defaulting to 0.5
+                moonPhase: this.calculateMoonPhase(new Date()),
                 timestamp: Date.now()
             };
 

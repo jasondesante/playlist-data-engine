@@ -1,6 +1,6 @@
 # Core Data Engine - Implementation Plan
 
-**Status**: Active Planning | **Updated**: 2026-01-20
+**Status**: Active Planning | **Updated**: 2026-01-21
 
 This document tracks all remaining tasks to bring the Core Data Engine from ~85% complete to 100% production-ready.
 
@@ -12,7 +12,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 |----------|-------|--------|
 | Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | 🟡 In Progress |
-| Enhancements | 8 | 🟢 2/8 Complete |
+| Enhancements | 8 | 🟢 3/8 Complete |
 | Nice to Have | 3 | ⚪ Low Priority |
 | **Total** | **12** | |
 
@@ -436,28 +436,35 @@ Added comprehensive integration tests for Discord RPC with real Discord connecti
 
 ---
 
-### 4. Moon Phase Calculation
+### 4. Moon Phase Calculation ✅
 
 **File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
 
-**Issue**: Moon phase is hardcoded to `0.5` (line ~100).
+**Issue**: Moon phase was hardcoded to `0.5` (line ~157).
 
 **Subtasks**:
-- [ ] Implement lunar phase calculation algorithm
-- [ ] Use date/time and geolocation for accuracy
-- [ ] Return value 0-1 (0=new moon, 0.5=full moon, 1=new moon)
-- [ ] Add astronomical calculation reference
-- [ ] Test with known moon phase dates
-- [ ] Document algorithm in code comments
-
-**Suggested Algorithm**:
-```typescript
-// Conway's method or similar astronomical calculation
-// Input: date, latitude, longitude
-// Output: 0-1 representing moon phase
-```
+- [x] Implement lunar phase calculation algorithm
+- [x] Use date/time for accuracy (geolocation not needed for moon phase)
+- [x] Return value 0-1 (0=new moon, 0.5=full moon, 1=new moon)
+- [x] Add astronomical calculation reference
+- [x] Test with known moon phase dates
+- [x] Document algorithm in code comments
 
 **Estimated Effort**: 2-3 hours
+
+**Status**: ✅ Complete (2026-01-21)
+
+**Implementation Summary**:
+- Implemented `calculateMoonPhase()` method using astronomical calculation based on the mean synodic month (29.530588853 days)
+- Uses known new moon reference date: January 11, 2024 at 11:57 UTC
+- Returns moon phase value between 0 and 1 representing the moon's illumination phase
+- Algorithm calculates time difference from reference new moon and divides by synodic month length
+- Fractional part of cycles passed represents current position in lunar cycle
+- Tested against known astronomical dates with acceptable accuracy for game purposes
+- Added comprehensive JSDoc documentation explaining the algorithm and return values
+
+**Algorithm Reference**:
+Based on the mean synodic month of 29.530588853 days (the average time from new moon to new moon). The calculation uses a known reference new moon date and calculates how many lunar cycles have passed since then. The fractional part of this value represents the current phase within the lunar cycle.
 
 ---
 
@@ -622,7 +629,7 @@ Added comprehensive integration tests for Discord RPC with real Discord connecti
 |------|----------|--------|--------------|
 | Hardcoded `abilityModifier = 0` | AttackResolver.ts:111 | Damage calculation incorrect | Critical |
 | ~~Mocked Discord RPC game detection~~ | ~~DiscordRPCClient.ts~~ | ~~Discord RPC cannot read user activity~~ | ~~Blocked - Platform Limitation~~ |
-| Hardcoded moon phase | WeatherAPIClient.ts | Inaccurate night bonuses | Medium |
+| ~~Hardcoded moon phase~~ | ~~WeatherAPIClient.ts~~ | ~~Inaccurate night bonuses~~ | ~~Medium~~ |
 | ~~No weather caching~~ | ~~WeatherAPIClient.ts~~ | ~~API overuse, slow~~ | ~~Medium~~ |
 | ~~No geolocation caching~~ | ~~GeolocationProvider.ts~~ | ~~Unnecessary GPS calls~~ | ~~Medium~~ |
 | Simplified biome detection | GeolocationProvider.ts | Limited variety | Low |
@@ -651,11 +658,11 @@ After completing all tasks, verify:
 Use this section to track completion:
 
 ```
-[███████████████████░░░░░] 93% Complete
+[███████████████████░░░░░] 94% Complete
 
 Critical:  [██████████████] 1/1 tasks (100%)
 High:      [░░░░░░░░░░░] 0/1 tasks (0%)
-Medium:    [███░░░░░░░░░] 2/8 tasks (25%)
+Medium:    [████░░░░░░░░] 3/8 tasks (38%)
 Low:       [░░░░░░░░░░░] 0/3 tasks (0%)
 ```
 
