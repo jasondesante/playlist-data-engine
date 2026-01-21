@@ -10,6 +10,12 @@ describe('EnvironmentalSensors', () => {
 
     beforeEach(() => {
         sensors = new EnvironmentalSensors('test-api-key');
+        // Clear localStorage to prevent cached data from affecting tests
+        try {
+            localStorage.clear();
+        } catch {
+            // localStorage not available
+        }
     });
 
     afterEach(() => {
@@ -594,6 +600,7 @@ describe('LightSensor (T087-088)', () => {
 
         consoleWarnSpy.mockRestore();
     });
+});
 
 describe('WeatherAPIClient Caching', () => {
     let weatherClient: WeatherAPIClient;
@@ -840,4 +847,246 @@ describe('WeatherAPIClient Caching', () => {
         expect(weatherClient.getCacheSize()).toBe(0);
     });
 });
+
+describe('GeolocationProvider Caching', () => {
+    let geoProvider: GeolocationProvider;
+    let mockGetCurrentPosition: ReturnType<typeof vi.fn>;
+
+    const mockGeolocationPosition = {
+        coords: {
+            latitude: 51.5074,
+            longitude: -0.1278,
+            altitude: 5,
+            accuracy: 10,
+            altitudeAccuracy: 2,
+            heading: 45,
+            speed: 2.5
+        },
+        timestamp: 1661870592000
+    };
+
+    beforeEach(() => {
+        // Mock navigator.geolocation
+        mockGetCurrentPosition = vi.fn((success) => {
+            success(mockGeolocationPosition as any);
+        });
+
+        Object.defineProperty(global.navigator, 'geolocation', {
+            value: { getCurrentPosition: mockGetCurrentPosition },
+            configurable: true
+        });
+
+        // Create provider with short TTL for testing
+        geoProvider = new GeolocationProvider(5, false); // 5 minutes TTL, no localStorage
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('should cache position data and return cached data on subsequent calls', async () => {
+        // First call should hit the geolocation API
+        const position1 = await geoProvider.getCurrentPosition();
+        expect(position1).not.toBeNull();
+        expect(position1?.latitude).toBe(51.5074);
+        expect(mockGetCurrentPosition).toHaveBeenCalledTimes(1);
+
+        // Second call should return cached data
+        const position2 = await geoProvider.getCurrentPosition();
+        expect(position2).not.toBeNull();
+        expect(position2?.latitude).toBe(51.5074);
+        expect(mockGetCurrentPosition).toHaveBeenCalledTimes(1); // No additional call
+    });
+
+    it('should track cache hits and misses', async () => {
+        // First call - cache miss
+        await geoProvider.getCurrentPosition();
+        let stats = geoProvider.getCacheStats();
+        expect(stats.hits).toBe(0);
+        expect(stats.misses).toBe(1);
+
+        // Second call - cache hit
+        await geoProvider.getCurrentPosition();
+        stats = geoProvider.getCacheStats();
+        expect(stats.hits).toBe(1);
+        expect(stats.misses).toBe(1);
+
+        // Third call - cache hit
+        await geoProvider.getCurrentPosition();
+        stats = geoProvider.getCacheStats();
+        expect(stats.hits).toBe(2);
+        expect(stats.misses).toBe(1);
+    });
+
+    it('should force refresh when forceRefresh parameter is true', async () => {
+        // First call - cache miss
+        await geoProvider.getCurrentPosition();
+        expect(mockGetCurrentPosition).toHaveBeenCalledTimes(1);
+
+        // Second call - cache hit
+        await geoProvider.getCurrentPosition();
+        expect(mockGetCurrentPosition).toHaveBeenCalledTimes(1);
+
+        // Force refresh - should call API again
+        await geoProvider.getCurrentPosition(true);
+        expect(mockGetCurrentPosition).toHaveBeenCalledTimes(2);
+    });
+
+    it('should invalidate cache', async () => {
+        // First call - cache miss
+        await geoProvider.getCurrentPosition();
+        expect(mockGetCurrentPosition).toHaveBeenCalledTimes(1);
+
+        // Second call - cache hit
+        await geoProvider.getCurrentPosition();
+        expect(mockGetCurrentPosition).toHaveBeenCalledTimes(1);
+
+        // Invalidate cache
+        geoProvider.invalidateCache();
+
+        // Third call - cache miss again
+        await geoProvider.getCurrentPosition();
+        expect(mockGetCurrentPosition).toHaveBeenCalledTimes(2);
+    });
+
+    it('should reset cache statistics', async () => {
+        await geoProvider.getCurrentPosition();
+        await geoProvider.getCurrentPosition();
+
+        let stats = geoProvider.getCacheStats();
+        expect(stats.hits).toBe(1);
+        expect(stats.misses).toBe(1);
+
+        geoProvider.resetCacheStats();
+
+        stats = geoProvider.getCacheStats();
+        expect(stats.hits).toBe(0);
+        expect(stats.misses).toBe(0);
+    });
+
+    it('should return cache age', async () => {
+        expect(geoProvider.getCacheAge()).toBeNull();
+
+        await geoProvider.getCurrentPosition();
+
+        const age = geoProvider.getCacheAge();
+        expect(age).not.toBeNull();
+        expect(age).toBeGreaterThanOrEqual(0);
+        expect(age).toBeLessThan(100); // Should be very fresh
+    });
+
+    it('should check if cache is expired', async () => {
+        // Initially, no cache - should be expired
+        expect(geoProvider.isCacheExpired()).toBe(true);
+
+        await geoProvider.getCurrentPosition();
+
+        // Cache should be valid now
+        expect(geoProvider.isCacheExpired()).toBe(false);
+    });
+
+    it('should return cached position without TTL check', async () => {
+        expect(geoProvider.getCachedPosition()).toBeNull();
+
+        await geoProvider.getCurrentPosition();
+
+        const cached = geoProvider.getCachedPosition();
+        expect(cached).not.toBeNull();
+        expect(cached?.latitude).toBe(51.5074);
+    });
+
+    it('should handle cache expiration after TTL', async () => {
+        // Create provider with very short TTL (1ms)
+        const shortTTLProvider = new GeolocationProvider(0.000017, false); // ~1ms in minutes
+
+        await shortTTLProvider.getCurrentPosition();
+        expect(shortTTLProvider.isCacheExpired()).toBe(false);
+
+        // Wait for cache to expire
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        expect(shortTTLProvider.isCacheExpired()).toBe(true);
+
+        // Should fetch new data when expired
+        await shortTTLProvider.getCurrentPosition();
+        expect(mockGetCurrentPosition).toHaveBeenCalledTimes(2);
+    });
+
+    it('should return null when navigator is undefined', async () => {
+        // Remove navigator
+        const originalNavigator = global.navigator;
+        // @ts-ignore - intentionally removing navigator
+        delete global.navigator;
+
+        const provider = new GeolocationProvider(5, false);
+        const position = await provider.getCurrentPosition();
+        expect(position).toBeNull();
+
+        // Restore navigator
+        global.navigator = originalNavigator;
+    });
+
+    it('should return null when geolocation is not available', async () => {
+        // @ts-ignore - intentionally removing geolocation
+        delete navigator.geolocation;
+
+        const provider = new GeolocationProvider(5, false);
+        const position = await provider.getCurrentPosition();
+        expect(position).toBeNull();
+    });
+
+    it('should handle geolocation errors gracefully', async () => {
+        const errorMock = vi.fn((_, error) => {
+            error({ message: 'User denied Geolocation' });
+        });
+
+        Object.defineProperty(global.navigator, 'geolocation', {
+            value: { getCurrentPosition: errorMock },
+            configurable: true
+        });
+
+        const provider = new GeolocationProvider(5, false);
+        const position = await provider.getCurrentPosition();
+
+        expect(position).toBeNull();
+        // Should not cache failed requests
+        expect(provider.getCachedPosition()).toBeNull();
+    });
+
+    it('should handle null values in cached position', async () => {
+        const nullPosition = {
+            coords: {
+                latitude: 51.5074,
+                longitude: -0.1278,
+                altitude: null,
+                accuracy: 10,
+                altitudeAccuracy: null,
+                heading: null,
+                speed: null
+            },
+            timestamp: 1661870592000
+        };
+
+        const nullMock = vi.fn((success) => {
+            success(nullPosition as any);
+        });
+
+        Object.defineProperty(global.navigator, 'geolocation', {
+            value: { getCurrentPosition: nullMock },
+            configurable: true
+        });
+
+        const provider = new GeolocationProvider(5, false);
+        const position = await provider.getCurrentPosition();
+
+        expect(position?.latitude).toBe(51.5074);
+        expect(position?.altitude).toBeNull();
+        expect(position?.heading).toBeNull();
+        expect(position?.speed).toBeNull();
+
+        // Should cache properly even with null values
+        const cached = provider.getCachedPosition();
+        expect(cached?.altitude).toBeNull();
+        expect(cached?.heading).toBeNull();
+    });
 });

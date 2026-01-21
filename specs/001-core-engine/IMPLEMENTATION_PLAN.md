@@ -12,7 +12,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 |----------|-------|--------|
 | Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | 🟡 In Progress |
-| Enhancements | 8 | 🟢 1/8 Complete |
+| Enhancements | 8 | 🟢 2/8 Complete |
 | Nice to Have | 3 | ⚪ Low Priority |
 | **Total** | **12** | |
 
@@ -395,22 +395,44 @@ Added comprehensive integration tests for Discord RPC with real Discord connecti
 
 ---
 
-### 3. Geolocation Caching
+### 3. Geolocation Caching ✅
 
 **File**: [src/core/sensors/GeolocationProvider.ts](../../src/core/sensors/GeolocationProvider.ts)
 
 **Issue**: No caching. Every call triggers browser geolocation API.
 
 **Subtasks**:
-- [ ] Add position data cache
-- [ ] Set cache TTL to 5 minutes (GPS changes slowly)
-- [ ] Check cache before requesting position
-- [ ] Implement manual cache refresh option
-- [ ] Add cache age tracking
-- [ ] Consider localStorage for persistence
-- [ ] Add unit tests for caching logic
+- [x] Add position data cache
+- [x] Set cache TTL to 5 minutes (GPS changes slowly)
+- [x] Check cache before requesting position
+- [x] Implement manual cache refresh option
+- [x] Add cache age tracking
+- [x] Consider localStorage for persistence
+- [x] Add unit tests for caching logic
 
 **Estimated Effort**: 1-2 hours
+
+**Status**: ✅ Complete (2026-01-20)
+
+**Implementation Summary**:
+- Added in-memory cache for position data using CacheEntry interface (data + timestamp)
+- Configurable cache TTL (default 5 minutes)
+- Check cache before requesting position from Geolocation API
+- Manual cache refresh via `forceRefresh` parameter in `getCurrentPosition()`
+- Cache age tracking via `getCacheAge()` method
+- localStorage persistence for browser environments (auto-detected and enabled)
+- 15 new unit tests covering all cache behavior
+- All 48 existing + new tests passing
+
+**New Methods**:
+- `constructor(cacheTTLMinutes?, useLocalStorage?)`: Configurable caching behavior
+- `getCurrentPosition(forceRefresh?)`: Supports bypassing cache
+- `getCacheAge()`: Returns age of cached position in milliseconds
+- `invalidateCache()`: Clears cached position and localStorage
+- `getCacheStats()`: Returns cache hits/misses statistics
+- `resetCacheStats()`: Resets cache statistics
+- `isCacheExpired()`: Checks if cache has expired
+- `getCachedPosition()`: Returns cached position without TTL check
 
 ---
 
@@ -602,7 +624,7 @@ Added comprehensive integration tests for Discord RPC with real Discord connecti
 | ~~Mocked Discord RPC game detection~~ | ~~DiscordRPCClient.ts~~ | ~~Discord RPC cannot read user activity~~ | ~~Blocked - Platform Limitation~~ |
 | Hardcoded moon phase | WeatherAPIClient.ts | Inaccurate night bonuses | Medium |
 | ~~No weather caching~~ | ~~WeatherAPIClient.ts~~ | ~~API overuse, slow~~ | ~~Medium~~ |
-| No geolocation caching | GeolocationProvider.ts | Unnecessary GPS calls | Medium |
+| ~~No geolocation caching~~ | ~~GeolocationProvider.ts~~ | ~~Unnecessary GPS calls~~ | ~~Medium~~ |
 | Simplified biome detection | GeolocationProvider.ts | Limited variety | Low |
 
 ---
@@ -629,11 +651,11 @@ After completing all tasks, verify:
 Use this section to track completion:
 
 ```
-[███████████████████░░░░░] 92% Complete
+[███████████████████░░░░░] 93% Complete
 
 Critical:  [██████████████] 1/1 tasks (100%)
 High:      [░░░░░░░░░░░] 0/1 tasks (0%)
-Medium:    [██░░░░░░░░░░] 1/8 tasks (13%)
+Medium:    [███░░░░░░░░░] 2/8 tasks (25%)
 Low:       [░░░░░░░░░░░] 0/3 tasks (0%)
 ```
 
