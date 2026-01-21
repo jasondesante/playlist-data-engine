@@ -303,13 +303,31 @@ All TypeScript types have been properly defined and `any` types removed:
 - `getVoiceChannelInfo()`: Now returns `VoiceStateInfo | null` type
 
 #### 2.9 Testing (Needs Update)
-- [ ] Update tests to remove game activity testing
+- [x] Update tests to remove game activity testing
+
+**Status**: ✅ Complete (2026-01-20)
+
+**Implementation Summary**:
+Removed all Discord game activity testing and updated test fixtures to reflect Discord RPC's actual purpose (music presence only).
+
+**Changes Made**:
+- **mockGamingData.ts**: Renamed `mockDiscordRPC_Presence` → `mockDiscordRPC_MusicPresence` and updated data to show music listening activity (type: 2, "Never Gonna Give You Up" by Rick Astley) instead of game activity
+- **mockGamingContext_MultiplayerGame**: Changed `platformSource` from 'discord' to 'steam' and `source` from 'discord' to 'steam' since Discord cannot detect games
+- **gamingIntegration.test.ts**: Updated test expectations to only accept 'steam' or 'none' as valid platform sources (removed 'discord' and 'both')
+- **gamingIntegration.test.ts**: Updated mock data validation test to verify music presence data structure
+
+**Tests Verified**:
+- All 25 unit tests in `tests/unit/gaming.test.ts` pass
+- All 36 integration tests in `tests/integration/gamingIntegration.test.ts` pass
+
+**Note**: The DiscordRPCClient tests already correctly test only music activity methods (`setMusicActivity`, `clearMusicActivity`, `getUserInfo`). No game activity methods exist in the implementation.
+
 - [ ] Add unit tests for `setMusicActivity()`
 - [ ] Add unit tests for `clearMusicActivity()`
 - [ ] Add integration tests (requires running Discord)
 - [ ] Test connection lifecycle
 
-**Estimated Remaining Effort**: 6-8 hours
+**Estimated Remaining Effort**: 5-7 hours
 
 ---
 

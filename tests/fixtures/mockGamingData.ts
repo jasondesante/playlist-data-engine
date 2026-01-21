@@ -67,25 +67,22 @@ export const mockSteamAPI_GameSchema = {
 };
 
 /**
- * Mock Discord RPC presence data
+ * Mock Discord RPC music presence data
+ * Note: Discord RPC is used for SETTING music activity only, NOT for game detection.
+ * Game detection is handled by Steam API only.
  */
-export const mockDiscordRPC_Presence = {
+export const mockDiscordRPC_MusicPresence = {
   applicationId: '123456789',
-  name: 'The Legend of Zelda: Breath of the Wild',
-  state: 'In Hyrule Castle',
-  details: 'Exploring',
-  startTimestamp: Date.now() - 3600000,  // 1 hour ago
-  largeImageKey: 'zelda_botw',
-  largeImageText: 'The Legend of Zelda: Breath of the Wild',
-  smallImageKey: 'switch_icon',
-  smallImageText: 'Nintendo Switch',
-  partyId: null,
-  partySize: 1,
-  matchSecret: null,
-  spectateSecret: null,
-  joinSecret: null,
-  instance: false,
-  flags: 0
+  name: 'Never Gonna Give You Up',
+  state: 'by Rick Astley',
+  details: 'Listening',
+  startTimestamp: Date.now() - 45000,  // 45 seconds into song
+  endTimestamp: Date.now() + 167000,  // 212 second song, remaining time
+  largeImageKey: 'album_art',
+  largeImageText: 'Never Gonna Give You Up',
+  smallImageKey: 'music_icon',
+  smallImageText: 'Now Playing',
+  type: 2,  // ActivityType.Listening
 };
 
 /**
@@ -156,13 +153,14 @@ export const mockGamingContext_StrategyGame: GamingContext = {
 
 /**
  * Gaming context for multiplayer game with party
+ * Note: platformSource is 'steam' only - Discord cannot detect games
  */
 export const mockGamingContext_MultiplayerGame: GamingContext = {
   isActivelyGaming: true,
-  platformSource: 'discord',
+  platformSource: 'steam',
   currentGame: {
     name: 'Baldur\'s Gate 3',
-    source: 'discord',
+    source: 'steam',
     genre: ['RPG', 'Multiplayer', 'Fantasy'],
     sessionDuration: 240,  // 4 hours
     partySize: 4

@@ -11,7 +11,7 @@ import {
   getMockGamingContext,
   getExpectedGamingBonus,
   mockSteamAPI_RecentlyPlayed,
-  mockDiscordRPC_Presence,
+  mockDiscordRPC_MusicPresence,
   mockSteamAPI_AppList,
   gamingSessionScenarios
 } from '../fixtures/mockGamingData';
@@ -332,9 +332,10 @@ describe('Gaming Integration with Mock Data (T119)', () => {
             const context = mockGamingContext_MultiplayerGame;
 
             expect(context.isActivelyGaming).toBe(true);
-            expect(context.platformSource).toBe('discord');
+            // Note: platformSource is 'steam' only - Discord cannot detect games
+            expect(context.platformSource).toBe('steam');
             expect(context.currentGame?.name).toBe('Baldur\'s Gate 3');
-            expect(context.currentGame?.source).toBe('discord');
+            expect(context.currentGame?.source).toBe('steam');
             expect(context.currentGame?.genre).toContain('Multiplayer');
             expect(context.currentGame?.partySize).toBe(4);
             expect(context.gamesPlayedWhileListening).toContain('Baldur\'s Gate 3');
@@ -446,7 +447,8 @@ describe('Gaming Integration with Mock Data (T119)', () => {
 
                 // Verify types
                 expect(typeof context.isActivelyGaming).toBe('boolean');
-                expect(['steam', 'discord', 'both', 'none']).toContain(context.platformSource);
+                // Note: platformSource can only be 'steam' or 'none' since Discord cannot detect games
+                expect(['steam', 'none']).toContain(context.platformSource);
                 expect(typeof context.totalGamingMinutes).toBe('number');
                 expect(Array.isArray(context.gamesPlayedWhileListening)).toBe(true);
                 expect(typeof context.lastUpdated).toBe('number');
@@ -514,12 +516,14 @@ describe('Gaming Integration with Mock Data (T119)', () => {
             });
         });
 
-        it('should provide valid Discord RPC mock data', () => {
-            expect(mockDiscordRPC_Presence).toHaveProperty('applicationId');
-            expect(mockDiscordRPC_Presence).toHaveProperty('name');
-            expect(mockDiscordRPC_Presence).toHaveProperty('state');
-            expect(mockDiscordRPC_Presence).toHaveProperty('details');
-            expect(mockDiscordRPC_Presence).toHaveProperty('startTimestamp');
+        it('should provide valid Discord RPC music presence mock data', () => {
+            expect(mockDiscordRPC_MusicPresence).toHaveProperty('applicationId');
+            expect(mockDiscordRPC_MusicPresence).toHaveProperty('name');
+            expect(mockDiscordRPC_MusicPresence).toHaveProperty('state');
+            expect(mockDiscordRPC_MusicPresence).toHaveProperty('details');
+            expect(mockDiscordRPC_MusicPresence).toHaveProperty('startTimestamp');
+            expect(mockDiscordRPC_MusicPresence).toHaveProperty('type');
+            expect(mockDiscordRPC_MusicPresence.type).toBe(2); // ActivityType.Listening
         });
     });
 
