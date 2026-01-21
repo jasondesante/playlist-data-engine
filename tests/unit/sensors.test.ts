@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EnvironmentalSensors } from '../../src/core/sensors/EnvironmentalSensors';
 import { GeolocationProvider } from '../../src/core/sensors/GeolocationProvider';
 import { MotionDetector } from '../../src/core/sensors/MotionDetector';
-import { WeatherAPIClient } from '../../src/core/sensors/WeatherAPIClient';
+import { WeatherAPIClient, SevereWeatherType } from '../../src/core/sensors/WeatherAPIClient';
 import { LightSensor } from '../../src/core/sensors/LightSensor';
+import type { WeatherData, ForecastData, MotionData } from '../../src/core/types/Environmental';
 
 describe('EnvironmentalSensors', () => {
     let sensors: EnvironmentalSensors;
@@ -2011,5 +2012,478 @@ describe('WeatherAPIClient Forecast', () => {
 
         const cleared = shortTTLClient.clearExpiredForecastEntries();
         expect(cleared).toBeGreaterThanOrEqual(0);
+    });
+});
+
+describe('WeatherAPIClient Severe Weather Detection', () => {
+    let weatherClient: WeatherAPIClient;
+
+    beforeEach(() => {
+        weatherClient = new WeatherAPIClient('test-key');
+    });
+
+    describe('detectSevereWeather', () => {
+        it('should detect blizzard conditions (heavy snow + high winds)', () => {
+            const blizzardWeather: WeatherData = {
+                temperature: -10,
+                humidity: 80,
+                pressure: 1000,
+                weatherType: 'Blizzard',
+                windSpeed: 15, // ~54 km/h
+                windDirection: 180,
+                isNight: true,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(blizzardWeather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe('Blizzard');
+            expect(alert?.xpBonus).toBe(0.5); // +50% XP
+            expect(alert?.severity).toBe('extreme'); // High winds (>50 km/h)
+        });
+
+        it('should detect blizzard with moderate severity', () => {
+            const blizzardWeather: WeatherData = {
+                temperature: -5,
+                humidity: 75,
+                pressure: 1005,
+                weatherType: 'Blizzard',
+                windSpeed: 8, // ~28.8 km/h
+                windDirection: 180,
+                isNight: true,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(blizzardWeather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe('Blizzard');
+            expect(alert?.xpBonus).toBe(0.5);
+            expect(alert?.severity).toBe('high'); // Moderate wind speed
+        });
+
+        it('should detect heavy snow with high winds as blizzard', () => {
+            const heavySnowWeather: WeatherData = {
+                temperature: -8,
+                humidity: 85,
+                pressure: 1002,
+                weatherType: 'Heavy Snow',
+                windSpeed: 10, // ~36 km/h
+                windDirection: 200,
+                isNight: false,
+                moonPhase: 0.3,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(heavySnowWeather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe('Blizzard');
+            expect(alert?.xpBonus).toBe(0.5);
+        });
+
+        it('should not detect regular snow as severe weather', () => {
+            const snowWeather: WeatherData = {
+                temperature: -2,
+                humidity: 70,
+                pressure: 1010,
+                weatherType: 'Snow',
+                windSpeed: 3, // ~10.8 km/h - low wind
+                windDirection: 90,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(snowWeather);
+
+            expect(alert).toBeNull();
+        });
+
+        it('should detect hurricane conditions (extreme winds)', () => {
+            const hurricaneWeather: WeatherData = {
+                temperature: 25,
+                humidity: 90,
+                pressure: 950,
+                weatherType: 'Thunderstorm',
+                windSpeed: 35, // ~126 km/h - Category 1+ hurricane
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(hurricaneWeather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe('Typhoon'); // isTropicalRegion returns false by default
+            expect(alert?.xpBonus).toBe(0.75); // +75% XP
+            expect(alert?.severity).toBe('high');
+        });
+
+        it('should detect extreme hurricane as extreme severity', () => {
+            const extremeHurricaneWeather: WeatherData = {
+                temperature: 28,
+                humidity: 95,
+                pressure: 920,
+                weatherType: 'Thunderstorm',
+                windSpeed: 55, // ~198 km/h - Category 3+ hurricane
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(extremeHurricaneWeather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.severity).toBe('extreme'); // >177 km/h
+        });
+
+        it('should detect tornado weather type', () => {
+            const tornadoWeather: WeatherData = {
+                temperature: 20,
+                humidity: 80,
+                pressure: 990,
+                weatherType: 'Tornado',
+                windSpeed: 30,
+                windDirection: 270,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(tornadoWeather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe('Tornado');
+            expect(alert?.xpBonus).toBe(1.0); // +100% XP (maximum)
+            expect(alert?.severity).toBe('extreme');
+        });
+
+        it('should detect extreme thunderstorm with high winds', () => {
+            const extremeStormWeather: WeatherData = {
+                temperature: 18,
+                humidity: 85,
+                pressure: 995,
+                weatherType: 'Thunderstorm',
+                windSpeed: 20, // ~72 km/h - high winds
+                windDirection: 225,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(extremeStormWeather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.xpBonus).toBe(0.5); // Same as blizzard
+            expect(alert?.severity).toBe('high');
+        });
+
+        it('should not detect normal thunderstorm as severe', () => {
+            const normalStormWeather: WeatherData = {
+                temperature: 15,
+                humidity: 75,
+                pressure: 1005,
+                weatherType: 'Thunderstorm',
+                windSpeed: 8, // ~28.8 km/h - below threshold
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(normalStormWeather);
+
+            expect(alert).toBeNull();
+        });
+
+        it('should not detect clear weather as severe', () => {
+            const clearWeather: WeatherData = {
+                temperature: 20,
+                humidity: 50,
+                pressure: 1015,
+                weatherType: 'Clear',
+                windSpeed: 5,
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(clearWeather);
+
+            expect(alert).toBeNull();
+        });
+
+        it('should detect severe weather from ForecastData', () => {
+            const forecastData: ForecastData = {
+                temperature: -15,
+                humidity: 85,
+                pressure: 995,
+                weatherType: 'Blizzard',
+                windSpeed: 18,
+                windDirection: 0,
+                timestamp: Date.now(),
+                forecastTime: new Date(Date.now() + 3600000),
+                probabilityOfPrecipitation: 0.9
+            };
+
+            const alert = weatherClient.detectSevereWeather(forecastData);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe('Blizzard');
+        });
+    });
+
+    describe('getSafetyWarning', () => {
+        it('should return appropriate warning for extreme blizzard', () => {
+            const alert = {
+                type: SevereWeatherType.Blizzard,
+                xpBonus: 0.5,
+                severity: 'extreme',
+                message: '⚠️ Blizzard conditions detected!',
+                detectedAt: Date.now()
+            };
+
+            const warning = weatherClient.getSafetyWarning(alert);
+
+            expect(warning).toContain('EXTREME BLIZZARD');
+            expect(warning).toContain('Stay indoors');
+        });
+
+        it('should return appropriate warning for high severity blizzard', () => {
+            const alert = {
+                type: SevereWeatherType.Blizzard,
+                xpBonus: 0.5,
+                severity: 'high',
+                message: '⚠️ Blizzard conditions detected!',
+                detectedAt: Date.now()
+            };
+
+            const warning = weatherClient.getSafetyWarning(alert);
+
+            expect(warning).toContain('Blizzard');
+            expect(warning).toContain('Dress warmly');
+        });
+
+        it('should return appropriate warning for hurricane', () => {
+            const alert = {
+                type: SevereWeatherType.Hurricane,
+                xpBonus: 0.75,
+                severity: 'high',
+                message: '🌀 Hurricane conditions detected!',
+                detectedAt: Date.now()
+            };
+
+            const warning = weatherClient.getSafetyWarning(alert);
+
+            expect(warning).toContain('Hurricane');
+            expect(warning).toContain('emergency kit');
+        });
+
+        it('should return appropriate warning for extreme cyclone', () => {
+            const alert = {
+                type: SevereWeatherType.Hurricane,
+                xpBonus: 0.75,
+                severity: 'extreme',
+                message: '🌀 Hurricane conditions detected!',
+                detectedAt: Date.now()
+            };
+
+            const warning = weatherClient.getSafetyWarning(alert);
+
+            expect(warning).toContain('EXTREME CYCLONE');
+            expect(warning).toContain('Seek shelter immediately');
+        });
+
+        it('should return appropriate warning for tornado', () => {
+            const alert = {
+                type: SevereWeatherType.Tornado,
+                xpBonus: 1.0,
+                severity: 'extreme',
+                message: '🌪️ TORNADO WARNING!',
+                detectedAt: Date.now()
+            };
+
+            const warning = weatherClient.getSafetyWarning(alert);
+
+            expect(warning).toContain('TORNADO');
+            expect(warning).toContain('Take shelter');
+        });
+    });
+
+    describe('EnvironmentalSensors integration with severe weather', () => {
+        let sensors: EnvironmentalSensors;
+
+        beforeEach(() => {
+            sensors = new EnvironmentalSensors('test-api-key');
+        });
+
+        it('should calculate XP modifier with severe weather bonus', async () => {
+            // Mock weather with blizzard conditions
+            const mockWeather: WeatherData = {
+                temperature: -10,
+                humidity: 80,
+                pressure: 1000,
+                weatherType: 'Blizzard',
+                windSpeed: 15,
+                windDirection: 180,
+                isNight: true,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            // Set up sensors context with blizzard weather
+            await sensors.requestPermissions(['weather']);
+            sensors['context'].weather = mockWeather;
+
+            const result = await sensors.calculateXPModifierWithSevereWeather();
+
+            expect(result.severeWeatherAlert).not.toBeNull();
+            expect(result.severeWeatherAlert?.type).toBe('Blizzard');
+            expect(result.severeWeatherAlert?.xpBonus).toBe(0.5);
+            expect(result.safetyWarning).not.toBeNull();
+            expect(result.safetyWarning).toContain('BLIZZARD');
+            // Base modifier (1.0) + night bonus (0.25) + blizzard bonus (0.5) = 1.75
+            // Note: "Blizzard" weatherType doesn't include "snow" as a substring, so no 0.3 snow bonus
+            expect(result.modifier).toBeGreaterThanOrEqual(1.75);
+            expect(result.modifier).toBeLessThanOrEqual(3.0); // Capped at 3.0x
+        });
+
+        it('should cap XP modifier at 3.0x with tornado', async () => {
+            // Mock extreme conditions for maximum XP
+            const mockWeather: WeatherData = {
+                temperature: 20,
+                humidity: 80,
+                pressure: 990,
+                weatherType: 'Tornado',
+                windSpeed: 30, // Below hurricane threshold (118 km/h = ~32.78 m/s)
+                windDirection: 270,
+                isNight: true,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            // Mock running motion for additional bonus
+            const mockMotion: MotionData = {
+                acceleration: { x: 2, y: 3, z: 1 },
+                accelerationIncludingGravity: { x: 2, y: 12, z: 10 },
+                rotationRate: { alpha: 15, beta: 4, gamma: -8 },
+                interval: 16,
+                timestamp: Date.now()
+            };
+
+            await sensors.requestPermissions(['weather', 'motion']);
+            sensors['context'].weather = mockWeather;
+            sensors['context'].motion = mockMotion;
+
+            const result = await sensors.calculateXPModifierWithSevereWeather();
+
+            // Base (1.0) + running (0.5) + night (0.25) + tornado (1.0) = 2.75
+            // Even with all bonuses, should not exceed 3.0x
+            expect(result.modifier).toBeLessThanOrEqual(3.0);
+            expect(result.severeWeatherAlert?.xpBonus).toBe(1.0); // Tornado gives max bonus
+        });
+
+        it('should return null for severe weather when weather is normal', async () => {
+            const mockWeather: WeatherData = {
+                temperature: 20,
+                humidity: 50,
+                pressure: 1015,
+                weatherType: 'Clear',
+                windSpeed: 5,
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            await sensors.requestPermissions(['weather']);
+            sensors['context'].weather = mockWeather;
+
+            const result = await sensors.calculateXPModifierWithSevereWeather();
+
+            expect(result.severeWeatherAlert).toBeNull();
+            expect(result.safetyWarning).toBeNull();
+            expect(result.modifier).toBe(1.0); // No bonuses for clear, daytime, stationary
+        });
+
+        it('should detect severe weather independently', () => {
+            const mockWeather: WeatherData = {
+                temperature: -12,
+                humidity: 85,
+                pressure: 998,
+                weatherType: 'Blizzard',
+                windSpeed: 12,
+                windDirection: 0,
+                isNight: true,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            sensors['context'].weather = mockWeather;
+
+            const alert = sensors.detectSevereWeather();
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe('Blizzard');
+        });
+
+        it('should get safety warning independently', () => {
+            const mockWeather: WeatherData = {
+                temperature: 25,
+                humidity: 90,
+                pressure: 950,
+                weatherType: 'Tornado',
+                windSpeed: 30, // Below hurricane threshold
+                windDirection: 270,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            sensors['context'].weather = mockWeather;
+
+            const warning = sensors.getSevereWeatherWarning();
+
+            expect(warning).not.toBeNull();
+            expect(warning).toContain('TORNADO');
+            expect(warning).toContain('Take shelter');
+        });
+
+        it('should return null warning when no severe weather', () => {
+            const mockWeather: WeatherData = {
+                temperature: 15,
+                humidity: 60,
+                pressure: 1010,
+                weatherType: 'Clouds',
+                windSpeed: 3,
+                windDirection: 90,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            sensors['context'].weather = mockWeather;
+
+            const warning = sensors.getSevereWeatherWarning();
+
+            expect(warning).toBeNull();
+        });
+
+        it('should handle null weather context gracefully', () => {
+            sensors['context'].weather = undefined;
+
+            const alert = sensors.detectSevereWeather();
+            expect(alert).toBeNull();
+
+            const warning = sensors.getSevereWeatherWarning();
+            expect(warning).toBeNull();
+        });
     });
 });

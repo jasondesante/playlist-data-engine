@@ -1,7 +1,7 @@
 import type { SensorType, SensorPermission, EnvironmentalContext } from '../types/Environmental';
 import { GeolocationProvider } from './GeolocationProvider';
 import { MotionDetector } from './MotionDetector';
-import { WeatherAPIClient } from './WeatherAPIClient';
+import { WeatherAPIClient, type SevereWeatherAlert } from './WeatherAPIClient';
 import { LightSensor } from './LightSensor';
 
 /**
@@ -220,6 +220,72 @@ export class EnvironmentalSensors {
         }
 
         return Math.min(modifier, 3.0);
+    }
+
+    /**
+     * Calculate XP modifier based on environmental factors including severe weather detection
+     * Considers current severe weather conditions for maximum XP bonus
+     * Cap at 3.0x total
+     * @returns Promise resolving to XP modifier value and any severe weather alert
+     */
+    async calculateXPModifierWithSevereWeather(): Promise<{
+        modifier: number;
+        severeWeatherAlert: SevereWeatherAlert | null;
+        safetyWarning: string | null;
+    }> {
+        let modifier = this.calculateXPModifier();
+
+        // Check for severe weather conditions in current weather
+        let severeWeatherAlert: SevereWeatherAlert | null = null;
+
+        if (this.context.weather) {
+            severeWeatherAlert = this.weather.detectSevereWeather(this.context.weather);
+
+            if (severeWeatherAlert) {
+                // Add severe weather XP bonus
+                // Blizzard: +50%, Hurricane/Typhoon: +75%, Tornado: +100%
+                modifier += severeWeatherAlert.xpBonus;
+            }
+        }
+
+        // Cap at 3.0x total
+        const cappedModifier = Math.min(modifier, 3.0);
+
+        // Get safety warning if severe weather detected
+        const safetyWarning = severeWeatherAlert
+            ? this.weather.getSafetyWarning(severeWeatherAlert)
+            : null;
+
+        return {
+            modifier: cappedModifier,
+            severeWeatherAlert,
+            safetyWarning
+        };
+    }
+
+    /**
+     * Detect severe weather from current environmental conditions
+     * @returns Severe weather alert or null if conditions are normal
+     */
+    detectSevereWeather(): SevereWeatherAlert | null {
+        if (!this.context.weather) {
+            return null;
+        }
+
+        return this.weather.detectSevereWeather(this.context.weather);
+    }
+
+    /**
+     * Get safety warning for current severe weather conditions
+     * @returns Safety warning message or null if no severe weather
+     */
+    getSevereWeatherWarning(): string | null {
+        const alert = this.detectSevereWeather();
+        if (!alert) {
+            return null;
+        }
+
+        return this.weather.getSafetyWarning(alert);
     }
 
     getPermissions(): SensorPermission[] {

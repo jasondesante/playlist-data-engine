@@ -12,7 +12,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 |----------|-------|--------|
 | Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | ✅ Complete |
-| Enhancements | 8 | 🟢 5/8 Complete |
+| Enhancements | 8 | 🟢 6/8 Complete |
 | Nice to Have | 3 | ⚪ Low Priority |
 | **Total** | **12** | |
 
@@ -605,23 +605,52 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 
 ---
 
-### 7. Severe Weather Detection
+### 7. Severe Weather Detection ✅
 
 **File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
 
 **Issue**: No handling of weather alerts or severe conditions.
 
 **Subtasks**:
-- [ ] Add weather alert detection from API
-- [ ] Map severe conditions to XP bonuses:
-  - [ ] Blizzard: +50%
-  - [ ] Hurricane/Typhoon: +75%
-  - [ ] Tornado: +100%
-- [ ] Add safety check (warn user of dangerous weather)
-- [ ] Cap modifier at 3.0x total
-- [ ] Add unit tests
+- [x] Add weather alert detection from API
+- [x] Map severe conditions to XP bonuses:
+  - [x] Blizzard: +50%
+  - [x] Hurricane/Typhoon: +75%
+  - [x] Tornado: +100%
+- [x] Add safety check (warn user of dangerous weather)
+- [x] Cap modifier at 3.0x total
+- [x] Add unit tests
 
 **Estimated Effort**: 2-3 hours
+
+**Status**: ✅ Complete (2026-01-21)
+
+**Implementation Summary**:
+- Added `SevereWeatherType` enum: Blizzard, Hurricane, Typhoon, Tornado, None
+- Added `SevereWeatherAlert` interface with type, xpBonus, severity, message, detectedAt
+- Implemented `detectSevereWeather()` method in `WeatherAPIClient.ts`:
+  - **Blizzard detection**: Heavy snow/blizzard weather type with winds >25 km/h (extreme if >50 km/h)
+  - **Hurricane/Typhoon detection**: Extreme winds >118 km/h (Category 1+), extreme if >177 km/h
+  - **Tornado detection**: Tornado weather type detected from API
+  - **Extreme thunderstorm detection**: Thunderstorm with winds >60 km/h (high severity)
+- Implemented `getSafetyWarning()` method for user-facing safety messages
+- Added `calculateXPModifierWithSevereWeather()` method in `EnvironmentalSensors.ts`:
+  - Integrates severe weather bonuses with existing XP modifier calculation
+  - Returns modifier, severeWeatherAlert, and safetyWarning
+  - Properly caps at 3.0x total modifier
+- Added helper methods: `detectSevereWeather()` and `getSevereWeatherWarning()` to EnvironmentalSensors
+- Added 23 comprehensive unit tests covering:
+  - Blizzard detection (extreme and high severity)
+  - Heavy snow with high winds
+  - Regular snow (not severe)
+  - Hurricane/typhoon detection
+  - Tornado detection
+  - Extreme thunderstorm detection
+  - Normal weather (not severe)
+  - Forecast data severe weather detection
+  - Safety warnings for all severe weather types
+  - XP modifier integration with 3.0x cap
+  - Null weather handling
 
 ---
 

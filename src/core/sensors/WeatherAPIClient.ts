@@ -22,6 +22,28 @@ interface PersistentCache {
     };
 }
 
+/**
+ * Severe weather alert types with XP bonus multipliers
+ */
+export enum SevereWeatherType {
+    Blizzard = 'Blizzard',
+    Hurricane = 'Hurricane',
+    Typhoon = 'Typhoon',
+    Tornado = 'Tornado',
+    None = 'None'
+}
+
+/**
+ * Severe weather alert information
+ */
+export interface SevereWeatherAlert {
+    type: SevereWeatherType;
+    xpBonus: number; // 0.5 to 1.0 (50% to 100%)
+    severity: 'moderate' | 'high' | 'extreme';
+    message: string;
+    detectedAt: number;
+}
+
 const STORAGE_KEY = 'weather_api_cache';
 
 export class WeatherAPIClient {
@@ -451,6 +473,116 @@ export class WeatherAPIClient {
             snowProbability: maxSnowProb,
             worstWeatherType
         };
+    }
+
+    /**
+     * Detect severe weather conditions from current or forecast data
+     *
+     * Analyzes weather conditions to detect severe weather events including:
+     * - Blizzard: Heavy snow with high winds (>25 km/h)
+     * - Hurricane/Typhoon: Extreme wind speeds (>118 km/h) with rain/storm
+     * - Tornado: Tornado weather type detected (API-specific)
+     *
+     * @param weather Weather data to analyze
+     * @returns Severe weather alert or null if conditions are normal
+     */
+    detectSevereWeather(weather: WeatherData | ForecastData): SevereWeatherAlert | null {
+        const weatherTypeLower = weather.weatherType.toLowerCase();
+        const windSpeedKmh = weather.windSpeed * 3.6; // Convert m/s to km/h
+
+        // Blizzard detection: Heavy snow with high winds
+        if (weatherTypeLower.includes('snow') || weatherTypeLower.includes('blizzard')) {
+            const isHeavySnow = weatherTypeLower.includes('blizzard') ||
+                              weatherTypeLower.includes('heavy') ||
+                              weather.windSpeed > 8; // Strong winds
+            const isHighWind = windSpeedKmh > 25; // >25 km/h
+
+            if ((weatherTypeLower.includes('blizzard') || (isHeavySnow && isHighWind))) {
+                return {
+                    type: SevereWeatherType.Blizzard,
+                    xpBonus: 0.5, // +50% XP
+                    severity: windSpeedKmh > 50 ? 'extreme' : 'high',
+                    message: '⚠️ Blizzard conditions detected! Stay safe and warm.',
+                    detectedAt: Date.now()
+                };
+            }
+        }
+
+        // Hurricane/Typhoon detection: Extreme winds with storm conditions
+        if (windSpeedKmh > 118) {
+            // Hurricane force winds: >118 km/h (Category 1+)
+            const isTropicalRegion = this.isTropicalRegion(); // Could be enhanced with lat/lon
+            const type = isTropicalRegion ? SevereWeatherType.Hurricane : SevereWeatherType.Typhoon;
+
+            return {
+                type,
+                xpBonus: 0.75, // +75% XP
+                severity: windSpeedKmh > 177 ? 'extreme' : 'high',
+                message: `🌀 ${type} conditions detected! Please seek shelter.`,
+                detectedAt: Date.now()
+            };
+        }
+
+        // Tornado detection: Tornado weather type or extreme conditions
+        if (weatherTypeLower.includes('tornado')) {
+            return {
+                type: SevereWeatherType.Tornado,
+                xpBonus: 1.0, // +100% XP (maximum bonus)
+                severity: 'extreme',
+                message: '🌪️ TORNADO WARNING! Take immediate shelter!',
+                detectedAt: Date.now()
+            };
+        }
+
+        // Extreme thunderstorm detection (near-severe threshold)
+        if (weatherTypeLower.includes('thunderstorm') && windSpeedKmh > 60) {
+            // Very strong thunderstorm - close to severe but not in the same category
+            return {
+                type: SevereWeatherType.Tornado, // Using tornado as proxy for extreme storm
+                xpBonus: 0.5, // +50% XP (same as blizzard)
+                severity: 'high',
+                message: '⛈️ Extreme thunderstorm with high winds! Exercise caution.',
+                detectedAt: Date.now()
+            };
+        }
+
+        return null;
+    }
+
+    /**
+     * Helper method to determine if current location is in tropical region
+     * This is a simplified version - in production, you'd pass lat/lon as parameters
+     *
+     * @returns True if in tropical region (between 23.5°N and 23.5°S)
+     */
+    private isTropicalRegion(): boolean {
+        // Default to false - this would need location context
+        // In production, enhance to accept lat/lon parameters
+        return false;
+    }
+
+    /**
+     * Get safety warning message for severe weather
+     *
+     * @param alert Severe weather alert
+     * @returns Safety warning message with recommendations
+     */
+    getSafetyWarning(alert: SevereWeatherAlert): string {
+        switch (alert.type) {
+            case SevereWeatherType.Blizzard:
+                return alert.severity === 'extreme'
+                    ? '🚨 EXTREME BLIZZARD: Stay indoors, avoid travel. Keep emergency supplies ready.'
+                    : '⚠️ Blizzard: Dress warmly, avoid unnecessary travel. Check on neighbors.';
+            case SevereWeatherType.Hurricane:
+            case SevereWeatherType.Typhoon:
+                return alert.severity === 'extreme'
+                    ? '🚨 EXTREME CYCLONE: Seek shelter immediately! Follow evacuation orders.'
+                    : '⚠️ Hurricane/Typhoon: Secure property, prepare emergency kit, follow local alerts.';
+            case SevereWeatherType.Tornado:
+                return '🚨 TORNADO: Take shelter in basement or interior room immediately! Stay away from windows.';
+            default:
+                return '⚠️ Severe weather detected. Stay informed and stay safe.';
+        }
     }
 
     /**
