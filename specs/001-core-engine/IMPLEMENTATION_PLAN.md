@@ -140,12 +140,41 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 - Updated `GamingPlatformSensors.authenticate()` to await the async `connect()` method
 - Updated tests to handle async `connect()` and gracefully handle Discord unavailable scenarios
 
-#### 2.3 Game Activity Detection
-- [ ] Replace `getCurrentGame()` mock with `getActivity()` RPC call
-- [ ] Parse Discord activity data for game name, timestamp, party info
-- [ ] Handle `null` activity (user not playing anything)
-- [ ] Cache activity data with timestamp for freshness checks
-- [ ] Add activity change event listener
+#### 2.3 Game Activity Detection ⚠️ **NOT POSSIBLE VIA DISCORD RPC**
+- [x] Document Discord RPC limitation - cannot read user's current game activity
+- [x] Research alternative approaches (see findings below)
+- [ ] **DECISION REQUIRED**: Choose alternative approach
+
+**Status**: ❌ **Blocked - Discord RPC Limitation**
+
+**Research Findings** (2026-01-20):
+- Discord RPC has NO API to retrieve the current user's game activity
+- Discord RPC can only SET Rich Presence (what your app displays), not READ what games Discord detects
+- Discord detects games via process scanning (desktop client) + Game SDK updates - neither exposed via RPC
+- The `activityUpdate` event only fires when WE set activity, not when Discord detects a game
+
+**Alternative Approaches**:
+
+1. **Remove Discord game detection** (Recommended):
+   - Keep Discord RPC only for SETTING Rich Presence (display playlist info on Discord)
+   - Remove `getCurrentGame()` from DiscordRPCClient
+   - Rely on Steam API for game detection
+   - Update GamingPlatformSensors to ignore Discord for game detection
+
+2. **Use Discord Bot API** (Requires bot token + OAuth2):
+   - Create Discord bot with "presence intent"
+   - Use bot API to fetch current user's presence
+   - Requires additional OAuth2 scope and user authorization
+   - More complex, requires Discord app approval for certain scopes
+
+3. **Hybrid approach**:
+   - Keep current mock implementation (returns cached data when WE set it)
+   - Document that Discord game detection is not supported
+   - Add comment explaining the limitation
+
+**Recommended**: Approach #1 - Remove Discord game detection capability since it's not technically feasible via RPC. Discord RPC should only be used for SETTING activity (displaying what music the user is listening to on their Discord profile).
+
+**Estimated Effort**: 1-2 hours for code cleanup and documentation
 
 #### 2.4 Rich Presence Updates
 - [ ] Implement `setGameActivity()` to update user's Rich Presence
@@ -417,7 +446,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 | Item | Location | Impact | Fix Priority |
 |------|----------|--------|--------------|
 | Hardcoded `abilityModifier = 0` | AttackResolver.ts:111 | Damage calculation incorrect | Critical |
-| Mocked Discord RPC | DiscordRPCClient.ts | No Discord features | High |
+| Mocked Discord RPC game detection | DiscordRPCClient.ts | Discord RPC cannot read user activity | Blocked - Platform Limitation |
 | Hardcoded moon phase | WeatherAPIClient.ts | Inaccurate night bonuses | Medium |
 | No weather caching | WeatherAPIClient.ts | API overuse, slow | Medium |
 | No geolocation caching | GeolocationProvider.ts | Unnecessary GPS calls | Medium |

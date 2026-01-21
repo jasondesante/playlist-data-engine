@@ -1,6 +1,22 @@
 /**
  * DiscordRPCClient - Handles Discord Rich Presence integration
- * Detects actively played games via Discord Rich Presence
+ *
+ * Purpose: Display playlist/music information on the user's Discord profile via Rich Presence.
+ *
+ * ⚠️ IMPORTANT LIMITATION: Discord RPC cannot retrieve the user's current game activity.
+ * Discord RPC is designed only for SETTING presence (what your app displays), not READING
+ * what games Discord detects. For game detection, use Steam API or other platform APIs.
+ *
+ * Features:
+ * - Connect to Discord via IPC (requires Discord desktop app running)
+ * - Set Rich Presence (show what music is playing on Discord profile)
+ * - Clear Rich Presence
+ * - Listen to connection state events
+ *
+ * What it CANNOT do:
+ * - Detect what game the user is playing (platform limitation)
+ * - Read other users' activities
+ * - Query Discord's game detection (not exposed via RPC)
  */
 import { DiscordRPCClient as RPCClient } from '@ryuziii/discord-rpc';
 
@@ -159,7 +175,21 @@ export class DiscordRPCClient {
 
     /**
      * Get currently played game from Discord Rich Presence
-     * Looks for game activity in user's rich presence data
+     *
+     * ⚠️ PLATFORM LIMITATION: Discord RPC cannot retrieve the user's current game activity.
+     * Discord RPC is designed only for SETTING Rich Presence (what your app displays on Discord),
+     * not READING what games Discord detects the user playing.
+     *
+     * Discord detects games via:
+     * 1. Process scanning (desktop client only, not exposed via RPC)
+     * 2. Game SDK Rich Presence updates (games actively broadcasting their presence)
+     *
+     * The RPC protocol has no command to query "what game is the user playing".
+     *
+     * Current behavior: Returns cached game data only when WE set it via setGameActivity().
+     * For actual game detection, use Steam API or other platform-specific APIs.
+     *
+     * @returns Cached game if set via setGameActivity(), otherwise null
      */
     async getCurrentGame(): Promise<{
         name: string;
@@ -172,9 +202,8 @@ export class DiscordRPCClient {
         }
 
         try {
-            // In a real implementation with discord-rpc:
-            // const activity = await this.client.request('GET_ACTIVITY');
-            // For now, return cached game or null
+            // Return cached game (only populated when WE set it via setGameActivity)
+            // Discord RPC cannot fetch the user's actual current game activity
             return this.currentGame;
         } catch (error) {
             console.warn('Failed to fetch Discord game activity:', error);
