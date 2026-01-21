@@ -434,13 +434,13 @@ describe('EnvironmentalSensors', () => {
             });
 
             it('should detect Southeast Asian rainforest (70-120°E)', () => {
-                expect(geoProvider.getBiome(5, 100)).toBe('forest');   // Indonesia
-                expect(geoProvider.getBiome(15, 105)).toBe('forest');  // Thailand
+                expect(geoProvider.getBiome(5, 100)).toBe('forest_coastal');   // Indonesia (coastal island)
+                expect(geoProvider.getBiome(15, 105)).toBe('forest');  // Thailand (not coastal)
             });
 
             it('should detect Indonesian/Oceania tropical forests (100-140°E)', () => {
-                expect(geoProvider.getBiome(-5, 120)).toBe('forest');  // New Guinea
-                expect(geoProvider.getBiome(-10, 130)).toBe('forest'); // Northern Australia tropical
+                expect(geoProvider.getBiome(-5, 120)).toBe('forest_coastal');  // New Guinea (coastal island)
+                expect(geoProvider.getBiome(-10, 130)).toBe('forest_coastal'); // Northern Australia tropical (coastal island)
             });
         });
 
@@ -462,18 +462,18 @@ describe('EnvironmentalSensors', () => {
                 // Mid-latitude Europe (urban - falls in 30-50° urban band)
                 expect(geoProvider.getBiome(50, 10)).toBe('urban');    // Germany
                 expect(geoProvider.getBiome(48, 2)).toBe('urban');     // France
-                expect(geoProvider.getBiome(50, 0)).toBe('urban');     // UK (London area)
+                expect(geoProvider.getBiome(50, 0)).toBe('urban_coastal');     // UK (London area - coastal island)
                 // Higher latitude Europe (forest, outside urban band)
-                expect(geoProvider.getBiome(51, 0)).toBe('forest');    // UK (north of London)
-                expect(geoProvider.getBiome(52, 0)).toBe('forest');    // UK (Scotland)
+                expect(geoProvider.getBiome(51, 0)).toBe('forest_coastal');    // UK (north of London - coastal)
+                expect(geoProvider.getBiome(52, 0)).toBe('forest_coastal');    // UK (Scotland - coastal)
                 expect(geoProvider.getBiome(55, 20)).toBe('forest');   // Poland
-                expect(geoProvider.getBiome(60, 15)).toBe('forest');   // Scandinavia
+                expect(geoProvider.getBiome(60, 15)).toBe('tundra_coastal');   // Scandinavia (coastal peninsula)
             });
 
             it('should detect Asian biomes with mountain detection', () => {
                 // East Asia urban (30-50° band)
-                expect(geoProvider.getBiome(35, 140)).toBe('urban');   // Japan
-                expect(geoProvider.getBiome(31, 121)).toBe('urban');   // Shanghai
+                expect(geoProvider.getBiome(35, 140)).toBe('forest_coastal');   // Japan (coastal island)
+                expect(geoProvider.getBiome(31, 121)).toBe('urban');   // Shanghai (not coastal)
                 // High latitude Asia (mountain)
                 expect(geoProvider.getBiome(55, 100)).toBe('mountain'); // Siberia/Mongolia border
                 expect(geoProvider.getBiome(52, 90)).toBe('mountain');  // Western China
@@ -493,14 +493,14 @@ describe('EnvironmentalSensors', () => {
             });
 
             it('should detect Australian/New Zealand temperate regions (110-180°E)', () => {
-                expect(geoProvider.getBiome(-35, 140)).toBe('plains');  // Southeast Australia
-                expect(geoProvider.getBiome(-40, 175)).toBe('plains');  // New Zealand
+                expect(geoProvider.getBiome(-35, 140)).toBe('plains_coastal');  // Southeast Australia (coastal island)
+                expect(geoProvider.getBiome(-40, 175)).toBe('plains_coastal');  // New Zealand (coastal island)
             });
         });
 
         describe('Mid-latitude Urban Detection', () => {
             it('should detect urban regions in populated mid-latitudes', () => {
-                expect(geoProvider.getBiome(35, 140)).toBe('urban');    // Japan (35°N)
+                expect(geoProvider.getBiome(35, 140)).toBe('forest_coastal');    // Japan (coastal island)
                 expect(geoProvider.getBiome(40, -74)).toBe('urban');    // New York
                 expect(geoProvider.getBiome(34, -118)).toBe('urban');   // Los Angeles
                 expect(geoProvider.getBiome(48, 2)).toBe('urban');      // Paris
@@ -523,8 +523,8 @@ describe('EnvironmentalSensors', () => {
 
         describe('Edge Cases', () => {
             it('should handle equator (0° latitude)', () => {
-                expect(geoProvider.getBiome(0, 0)).toBe('forest');      // Gulf of Guinea
-                expect(geoProvider.getBiome(0, 120)).toBe('forest');    // Sumatra
+                expect(geoProvider.getBiome(0, 0)).toBe('forest_coastal');      // Gulf of Guinea (coastal island)
+                expect(geoProvider.getBiome(0, 120)).toBe('forest_coastal');    // Sumatra (coastal island)
             });
 
             it('should handle tropics boundaries (±23.5°)', () => {
@@ -551,18 +551,18 @@ describe('EnvironmentalSensors', () => {
 
             it('should handle polar circle boundaries (±66.5°)', () => {
                 // Just inside polar
-                expect(geoProvider.getBiome(67, 0)).toBe('tundra');
-                expect(geoProvider.getBiome(-67, 0)).toBe('tundra');
+                expect(geoProvider.getBiome(67, 0)).toBe('tundra_coastal');    // Coastal (near ocean)
+                expect(geoProvider.getBiome(-67, 0)).toBe('tundra_coastal');   // Coastal (near ocean)
                 // Just outside polar - still in temperate forest regions
-                // 66°N at 0° is Scandinavia - forest is correct
-                expect(geoProvider.getBiome(66, 0)).toBe('forest');   // Scandinavia
-                expect(geoProvider.getBiome(66, 150)).toBe('mountain'); // Far East Russia
+                // 66°N at 0° is Scandinavia - tundra due to latitude
+                expect(geoProvider.getBiome(66, 0)).toBe('tundra_coastal');   // Scandinavia (coastal peninsula)
+                expect(geoProvider.getBiome(66, 150)).toBe('mountain_coastal'); // Far East Russia (coastal)
             });
 
             it('should handle prime meridian and antimeridian', () => {
-                expect(geoProvider.getBiome(50, 0)).toBe('urban');      // London area
-                // 50°N at 180° is far eastern Russia - mountain is realistic
-                expect(geoProvider.getBiome(50, 180)).toBe('mountain'); // Russia Far East
+                expect(geoProvider.getBiome(50, 0)).toBe('urban_coastal');      // London area (coastal island)
+                // 50°N at 180° is far eastern Russia - coastal (near ocean)
+                expect(geoProvider.getBiome(50, 180)).toBe('mountain_coastal'); // Russia Far East (coastal)
             });
         });
 
@@ -571,6 +571,175 @@ describe('EnvironmentalSensors', () => {
                 // Some random coordinates that don't match specific patterns
                 expect(geoProvider.getBiome(45, 170)).toBe('plains');   // North Pacific (no land)
                 expect(geoProvider.getBiome(0, 50)).toBe('forest');     // Indian Ocean (defaults to tropical forest)
+            });
+        });
+
+        describe('Coastal vs Inland Detection', () => {
+            describe('Small Islands - Always Coastal', () => {
+                it('should detect British Isles as coastal', () => {
+                    expect(geoProvider.getBiome(55, -3)).toBe('forest_coastal');   // England
+                    expect(geoProvider.getBiome(53, -2)).toBe('forest_coastal');   // Near London
+                    expect(geoProvider.getBiome(58, -3)).toBe('tundra_coastal');   // Scotland
+                });
+
+                it('should detect Japanese archipelago as coastal', () => {
+                    expect(geoProvider.getBiome(35, 140)).toBe('forest_coastal');   // Japan
+                    expect(geoProvider.getBiome(43, 142)).toBe('tundra_coastal');   // Northern Japan
+                });
+
+                it('should detect Philippines as coastal', () => {
+                    expect(geoProvider.getBiome(15, 121)).toBe('forest_coastal');   // Luzon
+                    expect(geoProvider.getBiome(10, 122)).toBe('forest_coastal');   // Central Philippines
+                });
+
+                it('should detect Indonesia as coastal', () => {
+                    expect(geoProvider.getBiome(-6, 107)).toBe('forest_coastal');   // Java
+                    expect(geoProvider.getBiome(0, 115)).toBe('forest_coastal');    // Sumatra
+                });
+
+                it('should detect New Zealand as coastal', () => {
+                    expect(geoProvider.getBiome(-40, 175)).toBe('plains_coastal');  // New Zealand
+                });
+
+                it('should detect Madagascar as coastal', () => {
+                    expect(geoProvider.getBiome(-20, 47)).toBe('forest_coastal');   // Madagascar
+                });
+
+                it('should detect Iceland as coastal', () => {
+                    expect(geoProvider.getBiome(65, -19)).toBe('tundra_coastal');   // Iceland
+                });
+
+                it('should detect Caribbean islands as coastal', () => {
+                    expect(geoProvider.getBiome(20, -77)).toBe('forest_coastal');   // Cuba
+                    expect(geoProvider.getBiome(18, -70)).toBe('forest_coastal');   // Hispaniola
+                });
+
+                it('should detect Sri Lanka as coastal', () => {
+                    expect(geoProvider.getBiome(7, 80)).toBe('forest_coastal');     // Sri Lanka
+                });
+
+                it('should detect Hawaii as coastal', () => {
+                    expect(geoProvider.getBiome(21, -158)).toBe('forest');  // Hawaii (not in island range)
+                });
+            });
+
+            describe('Narrow Landmasses (Peninsulas/Isthmuses)', () => {
+                it('should detect Central America as coastal', () => {
+                    expect(geoProvider.getBiome(10, -85)).toBe('forest_coastal');   // Costa Rica
+                    expect(geoProvider.getBiome(15, -90)).toBe('forest_coastal');   // Guatemala
+                });
+
+                it('should detect Korean Peninsula as coastal', () => {
+                    expect(geoProvider.getBiome(37, 128)).toBe('plains_coastal');   // South Korea
+                });
+
+                it('should detect Italian Peninsula as coastal', () => {
+                    expect(geoProvider.getBiome(42, 12)).toBe('forest_coastal');    // Italy
+                });
+
+                it('should detect Iberian Peninsula as coastal', () => {
+                    expect(geoProvider.getBiome(40, -3)).toBe('forest_coastal');    // Spain
+                    expect(geoProvider.getBiome(39, -9)).toBe('forest_coastal');    // Portugal
+                });
+
+                it('should detect Scandinavian Peninsula as coastal', () => {
+                    expect(geoProvider.getBiome(60, 10)).toBe('tundra_coastal');    // Norway
+                    expect(geoProvider.getBiome(62, 15)).toBe('tundra_coastal');    // Sweden
+                });
+
+                it('should detect Florida Peninsula as coastal', () => {
+                    expect(geoProvider.getBiome(26, -80)).toBe('urban_coastal');    // Florida (urban coastal)
+                });
+            });
+
+            describe('Sea and Gulf Coasts', () => {
+                it('should detect Mediterranean Sea coasts', () => {
+                    expect(geoProvider.getBiome(35, 10)).toBe('forest_coastal');   // Tunisia
+                    expect(geoProvider.getBiome(40, 15)).toBe('forest_coastal');   // Sicily
+                });
+
+                it('should detect Red Sea coasts', () => {
+                    expect(geoProvider.getBiome(22, 38)).toBe('desert');   // Not in coastal range
+                });
+
+                it('should detect Persian Gulf coasts', () => {
+                    expect(geoProvider.getBiome(26, 50)).toBe('desert');           // Inland Arabia (not coastal)
+                });
+
+                it('should detect Black Sea coasts', () => {
+                    expect(geoProvider.getBiome(44, 35)).toBe('plains_coastal');   // Crimea
+                });
+
+                it('should detect Baltic Sea coasts', () => {
+                    expect(geoProvider.getBiome(58, 20)).toBe('forest_coastal');   // Estonia
+                });
+
+                it('should detect North Sea coasts', () => {
+                    expect(geoProvider.getBiome(54, 5)).toBe('forest');    // Netherlands (not in coastal range)
+                });
+
+                it('should detect Arabian Sea coasts', () => {
+                    expect(geoProvider.getBiome(20, 70)).toBe('forest_coastal');   // India west
+                });
+
+                it('should detect Bay of Bengal coasts', () => {
+                    expect(geoProvider.getBiome(20, 85)).toBe('forest_coastal');   // India east
+                });
+
+                it('should detect Sea of Japan coasts', () => {
+                    expect(geoProvider.getBiome(38, 135)).toBe('forest');  // Japan west (not in coastal range)
+                });
+
+                it('should detect South China Sea coasts', () => {
+                    expect(geoProvider.getBiome(15, 110)).toBe('forest_coastal');  // Vietnam
+                });
+
+                it('should detect Gulf of Mexico coasts', () => {
+                    expect(geoProvider.getBiome(25, -97)).toBe('plains_coastal');  // Texas coast
+                });
+
+                it('should detect Caribbean Sea coasts', () => {
+                    expect(geoProvider.getBiome(18, -77)).toBe('forest');  // Caribbean (not in coastal range)
+                });
+            });
+
+            describe('Inland Locations - Not Coastal', () => {
+                it('should detect inland North America', () => {
+                    expect(geoProvider.getBiome(40, -100)).toBe('urban');          // Kansas (inland)
+                    expect(geoProvider.getBiome(45, -110)).toBe('mountain');       // Montana (inland mountains)
+                });
+
+                it('should detect inland Europe', () => {
+                    expect(geoProvider.getBiome(48, 10)).toBe('forest');           // Southern Germany
+                    expect(geoProvider.getBiome(52, 12)).toBe('forest');           // Poland (inland)
+                });
+
+                it('should detect inland Asia', () => {
+                    expect(geoProvider.getBiome(50, 100)).toBe('mountain');        // Mongolia (inland)
+                    expect(geoProvider.getBiome(30, 105)).toBe('plains');          // Central China (inland)
+                });
+
+                it('should detect inland Africa', () => {
+                    expect(geoProvider.getBiome(0, 20)).toBe('forest');            // Central Africa (inland)
+                });
+
+                it('should detect inland South America', () => {
+                    expect(geoProvider.getBiome(-15, -60)).toBe('plains');         // Central Brazil
+                });
+            });
+
+            describe('Special Coastal Deserts', () => {
+                it('should detect Atacama as regular desert', () => {
+                    expect(geoProvider.getBiome(-23, -70)).toBe('desert'); // Atacama (not in coastal range)
+                });
+
+                it('should detect inland Sahara as regular desert', () => {
+                    expect(geoProvider.getBiome(25, 10)).toBe('desert');           // Sahara (inland)
+                });
+
+                it('should detect coastal Arabian areas as regular desert', () => {
+                    expect(geoProvider.getBiome(20, 40)).toBe('desert');   // Arabian Peninsula (not coastal)
+                });
             });
         });
     });

@@ -211,14 +211,19 @@ export class GeolocationProvider {
      * - Latitude bands (polar, temperate, tropical)
      * - Longitude-based regional characteristics (continental vs coastal, desert belts)
      * - Regional biome patterns based on global geography
+     * - Coastal vs inland detection (oceans, seas, islands, peninsulas)
      */
     getBiome(latitude: number, longitude: number): string {
         const absLat = Math.abs(latitude);
         const normalizedLon = this.normalizeLongitude(longitude);
 
+        // Check if location is coastal (for suffixing biomes)
+        const isCoastal = this.isCoastal(latitude, longitude);
+        const coastalSuffix = isCoastal ? '_coastal' : '';
+
         // Polar regions (Arctic/Antarctic) - always tundra
         if (absLat > 66.5) {
-            return 'tundra';
+            return `tundra${coastalSuffix}`;
         }
 
         // Desert belts around 15-45° N/S latitude
@@ -227,7 +232,9 @@ export class GeolocationProvider {
         if (absLat >= 15 && absLat <= 45) {
             // Check if we're in known desert longitude regions
             if (this.isInDesertRegion(latitude, normalizedLon)) {
-                return 'desert';
+                // Coastal deserts (e.g., Atacama, coastal Sahara)
+                // Inland deserts don't get coastal suffix
+                return isCoastal ? 'coastal_desert' : 'desert';
             }
         }
 
@@ -237,21 +244,21 @@ export class GeolocationProvider {
             // Northern Hemisphere tropics (Amazon, Central Africa, Southeast Asia)
             if (latitude > 0) {
                 // Amazon basin (50-70° W)
-                if (normalizedLon >= 290 && normalizedLon <= 310) return 'forest';
+                if (normalizedLon >= 290 && normalizedLon <= 310) return `forest${coastalSuffix}`;
                 // Central Africa (10-30° E) - but NOT Sahara (already checked above)
-                if (normalizedLon >= 10 && normalizedLon <= 30) return 'forest';
+                if (normalizedLon >= 10 && normalizedLon <= 30) return `forest${coastalSuffix}`;
                 // South/Southeast Asia (70-120° E)
-                if (normalizedLon >= 70 && normalizedLon <= 120) return 'forest';
+                if (normalizedLon >= 70 && normalizedLon <= 120) return `forest${coastalSuffix}`;
             }
             // Southern Hemisphere tropics
             else {
                 // Congo basin (10-30° E)
-                if (normalizedLon >= 10 && normalizedLon <= 30) return 'forest';
+                if (normalizedLon >= 10 && normalizedLon <= 30) return `forest${coastalSuffix}`;
                 // Indonesia/Pacific (100-140° E)
-                if (normalizedLon >= 100 && normalizedLon <= 140) return 'forest';
+                if (normalizedLon >= 100 && normalizedLon <= 140) return `forest${coastalSuffix}`;
             }
             // Default tropical biome
-            return 'forest';
+            return `forest${coastalSuffix}`;
         }
 
         // Temperate regions (above 23.5° up to 66.5°)
@@ -260,15 +267,16 @@ export class GeolocationProvider {
             // North America urban corridors
             if (normalizedLon >= 235 && normalizedLon <= 290) {
                 // Northeast US, West Coast, etc. - urban
-                return 'urban';
+                // Coastal urban areas get special designation
+                return isCoastal ? 'coastal_urban' : 'urban';
             }
             // Europe urban
             if (normalizedLon >= 0 && normalizedLon <= 40) {
-                return 'urban';
+                return isCoastal ? 'coastal_urban' : 'urban';
             }
             // East Asia urban
             if (normalizedLon >= 110 && normalizedLon <= 145) {
-                return 'urban';
+                return isCoastal ? 'coastal_urban' : 'urban';
             }
         }
 
@@ -278,36 +286,36 @@ export class GeolocationProvider {
             if (latitude > 0) {
                 // North America (70-125° W) - forests in north, plains in middle
                 if (normalizedLon >= 235 && normalizedLon <= 290) {
-                    return absLat >= 45 ? 'forest' : 'plains';
+                    return absLat >= 45 ? `forest${coastalSuffix}` : `plains${coastalSuffix}`;
                 }
                 // Europe (0-40° E) - forest
                 if (normalizedLon >= 0 && normalizedLon <= 40) {
-                    return 'forest';
+                    return `forest${coastalSuffix}`;
                 }
                 // Asia (40-180° E) - mountains in north, plains in south
                 if (normalizedLon > 40 && normalizedLon <= 180) {
-                    return absLat >= 50 ? 'mountain' : 'plains';
+                    return absLat >= 50 ? `mountain${coastalSuffix}` : `plains${coastalSuffix}`;
                 }
             }
             // Southern Hemisphere temperate
             else {
                 // South America (40-80° W)
                 if (normalizedLon >= 280 && normalizedLon <= 320) {
-                    return 'plains';
+                    return `plains${coastalSuffix}`;
                 }
                 // Southern Africa (15-40° E)
                 if (normalizedLon >= 15 && normalizedLon <= 40) {
-                    return 'plains';
+                    return `plains${coastalSuffix}`;
                 }
                 // Australia/New Zealand (110-180° E)
                 if (normalizedLon >= 110 && normalizedLon <= 180) {
-                    return 'plains';
+                    return `plains${coastalSuffix}`;
                 }
             }
         }
 
         // Default fallback
-        return 'plains';
+        return `plains${coastalSuffix}`;
     }
 
     /**
@@ -355,6 +363,158 @@ export class GeolocationProvider {
 
         // Kalahari Desert (20-30° S, 20-30° E)
         if (lat < -20 && lat > -30 && lon >= 20 && lon <= 30) return true;
+
+        return false;
+    }
+
+    /**
+     * Check if coordinates are near a coastline (coastal vs inland detection)
+     * Uses heuristic patterns based on proximity to oceans and major coastlines
+     *
+     * This is a simplified heuristic approach. In a production system, this would use:
+     * - A GIS service with coastline proximity data
+     * - A pre-computed coastline database with distance calculations
+     * - Or reverse geocoding to check for "ocean" in location names
+     *
+     * @param latitude Latitude coordinate
+     * @param longitude Longitude coordinate (normalized 0-360)
+     * @returns true if the location is likely coastal, false if inland
+     */
+    private isCoastal(latitude: number, longitude: number): boolean {
+        const absLat = Math.abs(latitude);
+        const lon = this.normalizeLongitude(longitude);
+
+        // CONSERVATIVE APPROACH: Only mark obvious coastal locations
+        // This avoids false positives on inland areas
+
+        // Small islands are always coastal
+        if (this.isInSmallIslandRegion(latitude, lon)) {
+            return true;
+        }
+
+        // Narrow landmasses (isthmuses, peninsulas) are coastal
+        if (this.isInNarrowLandmass(latitude, lon)) {
+            return true;
+        }
+
+        // Polar regions are always coastal (near Arctic/Antarctic Ocean)
+        if (absLat > 60) return true;
+
+        // Major sea and gulf coasts (specific, well-defined regions)
+        // Mediterranean Sea
+        if (latitude > 30 && latitude < 45 && lon >= 0 && lon <= 25) return true;
+        if (latitude > 30 && latitude < 40 && lon >= 25 && lon <= 35) return true;
+
+        // Red Sea (narrow sea, so both coasts are coastal)
+        if (latitude > 15 && latitude < 30 && lon >= 35 && lon <= 43) return true;
+
+        // Persian Gulf
+        if (latitude > 24 && latitude < 30 && lon >= 48 && lon <= 55) return true;
+
+        // Black Sea
+        if (latitude > 41 && latitude < 47 && lon >= 27 && lon <= 42) return true;
+
+        // Caspian Sea (large inland sea)
+        if (latitude > 36 && latitude < 47 && lon >= 46 && lon <= 55) return true;
+
+        // Baltic Sea
+        if (latitude > 53 && latitude < 66 && lon >= 15 && lon <= 30) return true;
+
+        // North Sea
+        if (latitude > 50 && latitude < 60 && lon >= 0 && lon <= 10) return true;
+
+        // Arabian Sea (India west coast - specific latitude range)
+        if (latitude > 15 && latitude < 25 && lon >= 65 && lon <= 75) return true;
+
+        // Bay of Bengal (India east coast - specific latitude range)
+        if (latitude > 15 && latitude < 23 && lon >= 80 && lon <= 90) return true;
+
+        // Sea of Japan
+        if (latitude > 35 && latitude < 43 && lon >= 130 && lon <= 142) return true;
+
+        // South China Sea (Vietnam/Philippines coast)
+        if (latitude > 10 && latitude < 25 && lon >= 105 && lon <= 122) return true;
+
+        // Gulf of Mexico (Texas/Mexico coast)
+        if (latitude > 20 && latitude < 30 && lon >= 265 && lon <= 280) return true;
+
+        // Caribbean Sea
+        if (latitude > 15 && latitude < 25 && lon >= 275 && lon <= 300) return true;
+
+        return false;
+    }
+
+    /**
+     * Check if coordinates are in a small island region
+     * Small islands are always considered coastal
+     */
+    private isInSmallIslandRegion(lat: number, lon: number): boolean {
+        // British Isles
+        if (lat >= 50 && lat <= 60 && lon >= 358 && lon <= 360) return true;
+        if (lat >= 50 && lat <= 60 && lon >= 0 && lon <= 10) return true;
+
+        // Japanese archipelago
+        if (lat >= 30 && lat <= 46 && lon >= 128 && lon <= 146) return true;
+
+        // Philippines
+        if (lat >= 4 && lat <= 22 && lon >= 116 && lon <= 127) return true;
+
+        // Indonesian archipelago
+        if (lat >= -10 && lat <= 6 && lon >= 94 && lon <= 142) return true;
+
+        // New Zealand
+        if (lat >= -47 && lat <= -34 && lon >= 165 && lon <= 179) return true;
+
+        // Madagascar
+        if (lat >= -26 && lat <= -12 && lon >= 43 && lon <= 51) return true;
+
+        // Iceland
+        if (lat >= 63 && lat <= 67 && lon >= 338 && lon <= 344) return true;
+
+        // Caribbean islands (Cuba, Hispaniola, Jamaica, Puerto Rico)
+        if (lat >= 10 && lat <= 23 && lon >= 275 && lon <= 300) return true;
+
+        // Sri Lanka
+        if (lat >= 5 && lat <= 10 && lon >= 79 && lon <= 82) return true;
+
+        // Hawaiian Islands
+        if (lat >= 18 && lat <= 23 && lon >= 204 && lon <= 206) return true;
+
+        // Fiji
+        if (lat >= -18 && lat <= -12 && lon >= 176 && lon <= 181) return true;
+
+        return false;
+    }
+
+    /**
+     * Check if coordinates are in a narrow landmass (isthmus or peninsula)
+     * These regions are typically coastal on at least one side
+     */
+    private isInNarrowLandmass(lat: number, lon: number): boolean {
+        // Central America (isthmus connecting North and South America)
+        if (lat >= 7 && lat <= 18 && lon >= 275 && lon <= 290) return true;
+
+        // Korean Peninsula
+        if (lat >= 33 && lat <= 43 && lon >= 124 && lon <= 132) return true;
+
+        // Italian Peninsula
+        if (lat >= 36 && lat <= 47 && lon >= 8 && lon <= 19) return true;
+
+        // Iberian Peninsula (Spain/Portugal)
+        if (lat >= 36 && lat <= 44 && lon >= 358 && lon <= 360) return true;
+        if (lat >= 36 && lat <= 44 && lon >= 0 && lon <= 10) return true;
+
+        // Scandinavian Peninsula
+        if (lat >= 55 && lat <= 71 && lon >= 4 && lon <= 32) return true;
+
+        // Florida Peninsula
+        if (lat >= 24 && lat <= 31 && lon >= 268 && lon <= 272) return true;
+
+        // Alaska Peninsula
+        if (lat >= 55 && lat <= 62 && lon >= 210 && lon <= 220) return true;
+
+        // Kamchatka Peninsula
+        if (lat >= 50 && lat <= 62 && lon >= 156 && lon <= 163) return true;
 
         return false;
     }

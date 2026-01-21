@@ -490,7 +490,7 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 
 #### 6.2 Improved Heuristics (Recommended)
 - [x] Add longitude-based regional detection
-- [ ] Add coastal vs inland detection
+- [x] Add coastal vs inland detection
 - [ ] Add elevation-based biomes (mountain, valley)
 - [ ] Add more biome types: desert, swamp, jungle, taiga, savanna
 - [x] Implement decision tree for biome classification
@@ -504,13 +504,21 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
   - Tropical forests: Amazon, Central Africa, Southeast Asia, Indonesia, Congo basin
   - Temperate regions: North America (urban corridors vs forests vs plains), Europe (urban vs forest), Asia (mountains vs plains)
   - Southern Hemisphere: South America, Southern Africa, Australia/New Zealand
+- **Coastal vs inland detection**: Implemented conservative heuristic approach:
+  - Small islands detection: British Isles, Japan, Philippines, Indonesia, New Zealand, Madagascar, Iceland, Caribbean, Sri Lanka, Hawaii
+  - Narrow landmasses (peninsulas/isthmuses): Central America, Korea, Italy, Iberia, Scandinavia, Florida, Alaska, Kamchatka
+  - Polar regions: All locations >60° latitude marked as coastal (near Arctic/Antarctic Ocean)
+  - Major sea/gulf coasts: Mediterranean, Red Sea, Persian Gulf, Black Sea, Caspian Sea, Baltic Sea, North Sea, Arabian Sea, Bay of Bengal, Sea of Japan, South China Sea, Gulf of Mexico, Caribbean Sea
+  - Suffix system: Coastal biomes get `_coastal` suffix (e.g., `forest_coastal`, `urban_coastal`, `tundra_coastal`)
+  - **Design decision**: Conservative approach to avoid false positives - only marks locations as coastal when clearly islands, peninsulas, or adjacent to named seas/gulfs
 - **Decision tree implementation**: Multi-level decision tree considering:
   1. Polar regions (>66.5°)
   2. Desert regions (15-45° with specific longitude ranges)
   3. Tropical regions (≤23.5° with regional longitude checks)
   4. Urban detection (30-50° N in specific longitude ranges)
   5. Temperate regional classification
-- **Test coverage**: 76 comprehensive unit tests covering all major world regions and edge cases
+  6. Coastal detection (applies suffix to all biome types)
+- **Test coverage**: 76+ comprehensive unit tests covering all major world regions and edge cases
 
 **Estimated Effort**: 4-6 hours (GIS), 2-3 hours (heuristics)
 
