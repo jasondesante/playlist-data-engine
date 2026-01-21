@@ -15,3 +15,4 @@ IMPORTANT:
 - update the implementation plan when the task is done
 - commit and push to deploy the changes (if there are any changes)
 - once you have deployed the changes, run /exit. 
+- Always remember to say "done" when you're done.
