@@ -322,12 +322,36 @@ Removed all Discord game activity testing and updated test fixtures to reflect D
 
 **Note**: The DiscordRPCClient tests already correctly test only music activity methods (`setMusicActivity`, `clearMusicActivity`, `getUserInfo`). No game activity methods exist in the implementation.
 
-- [ ] Add unit tests for `setMusicActivity()`
+- [x] Add unit tests for `setMusicActivity()`
 - [ ] Add unit tests for `clearMusicActivity()`
 - [ ] Add integration tests (requires running Discord)
 - [ ] Test connection lifecycle
 
-**Estimated Remaining Effort**: 5-7 hours
+**Status**: ✅ Partial Complete (2026-01-20)
+
+**Implementation Summary**:
+Added comprehensive unit tests for `setMusicActivity()` method with proper mocking.
+
+**Changes Made**:
+- **New test file**: `tests/unit/discordRPC.test.ts` with 40 unit tests
+- Tests cover:
+  - Basic `setMusicActivity()` functionality (connection state, song name, artist, activity type)
+  - Progress bar (timestamps) functionality (start/end timestamps, duration calculation, edge cases)
+  - Album art functionality (large image key, image text)
+  - Error handling (RPC errors, null handling, graceful degradation)
+  - Complex scenarios (complete activity with all fields, artist formatting, special characters)
+  - Multiple calls (sequential, rapid successive)
+  - Data validation (long names, numeric names, unicode)
+  - `clearMusicActivity()` functionality
+  - Connection state management
+  - `getUserInfo()` functionality
+
+**Tests Verified**:
+- All 40 new unit tests in `tests/unit/discordRPC.test.ts` pass
+- Tests use proper mocking of internal RPC client (no Discord required)
+- Tests are isolated and don't depend on external services
+
+**Estimated Remaining Effort**: 2-3 hours
 
 ---
 
