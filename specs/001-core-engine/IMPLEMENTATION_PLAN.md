@@ -323,7 +323,7 @@ Removed all Discord game activity testing and updated test fixtures to reflect D
 **Note**: The DiscordRPCClient tests already correctly test only music activity methods (`setMusicActivity`, `clearMusicActivity`, `getUserInfo`). No game activity methods exist in the implementation.
 
 - [x] Add unit tests for `setMusicActivity()`
-- [ ] Add unit tests for `clearMusicActivity()`
+- [x] Add unit tests for `clearMusicActivity()`
 - [ ] Add integration tests (requires running Discord)
 - [ ] Test connection lifecycle
 
