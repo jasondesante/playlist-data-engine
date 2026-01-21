@@ -190,12 +190,38 @@ Discord RPC will be used to **display serverless playlist info on Discord profil
 - Gracefully handles scenarios where user info is not yet available (returns null)
 - No additional RPC calls needed - user info is included in the initial handshake
 
-#### 2.6 Voice Channel Detection (Future Enhancement - for Multiplayer)
-- [ ] Implement `subscribeToVoiceUpdates()` with voice state monitoring
-- [ ] Detect voice channel ID changes
-- [ ] Extract party size from voice channel member count
-- [ ] Handle voice state changes (join/leave/move)
-- [ ] Implement `getVoiceChannelInfo()` with real data
+#### 2.6 Voice Channel Detection (Future Enhancement - for Multiplayer) ❌ BLOCKED
+
+**Status**: ❌ **Not Possible - Platform Limitation** (2026-01-20)
+
+**Finding**: Discord RPC CANNOT access voice state data. After thorough investigation of the `@ryuziii/discord-rpc` library and Discord RPC capabilities:
+
+**What Discord RPC Cannot Do**:
+- ❌ Subscribe to voice state events (VOICE_STATE_UPDATE events not exposed via RPC)
+- ❌ Read voice channel ID or voice state changes
+- ❌ Access voice channel member count or party size
+- ❌ Detect when users join/leave/move between voice channels
+
+**Root Cause**: Discord RPC is designed exclusively for **setting Rich Presence** (user's status display). Voice state data requires:
+- Discord API Gateway connection (bot-level permissions)
+- Discord.js or similar full-featured Discord library
+- OAuth2 bot token with appropriate scopes
+
+**Current State**: Placeholder methods in `DiscordRPCClient.ts` are appropriate:
+- `subscribeToVoiceUpdates()` - Returns false (no implementation possible)
+- `getVoiceChannelInfo()` - Returns null (no data available)
+
+**Alternative for Multiplayer Detection**:
+- Use Discord.js with bot permissions for voice state detection
+- Use manual party size input in Rich Presence (activity.party.size)
+- Detect multiplayer via game-specific APIs (Steam friend sessions, etc.)
+
+**Subtasks**:
+- [x] Investigate Discord RPC voice state capabilities
+- [x] Document platform limitation
+- [x] Mark as blocked with alternative approaches documented
+
+**Resolution**: This task should be removed from the implementation plan as it is technically impossible with Discord RPC. If multiplayer voice detection is needed, it requires a different architectural approach (Discord bot integration).
 
 #### 2.7 Error Handling and Edge Cases (Partial Complete)
 - [x] Handle Discord not running (already in connect/error handling)
