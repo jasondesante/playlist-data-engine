@@ -661,12 +661,7 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 **Issue**: Polling-based only. No real-time game change detection.
 
 **Subtasks**:
-- [ ] Implement WebSocket/event-based detection for Steam
-- [ ] Implement event-based detection for Discord RPC (discord game detection doesnt exist anymore, delete this subtask)
-- [ ] Add event listeners for game start/stop
-- [ ] Reduce polling when event-based available
-- [ ] Add hybrid mode (polling + events)
-- [ ] Update tests for event-driven behavior
+- [ ] Delete any traces of Discord game detection because Discord can't tell you game data
 
 **Estimated Effort**: 4-5 hours
 
