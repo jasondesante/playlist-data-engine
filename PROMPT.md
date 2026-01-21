@@ -14,5 +14,5 @@ IMPORTANT:
 - not every task will require code changes, some will just require lots of reading and validation and summarizing maybe some note taking.
 - update the implementation plan when the task is done
 - commit and push to deploy the changes (if there are any changes)
-- once you have deployed the changes, run /exit. 
+- once you have deployed the changes, say "done". 
 - Always remember to say "done" when you're done.
