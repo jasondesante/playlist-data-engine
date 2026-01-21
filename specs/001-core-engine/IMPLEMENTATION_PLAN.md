@@ -324,34 +324,40 @@ Removed all Discord game activity testing and updated test fixtures to reflect D
 
 - [x] Add unit tests for `setMusicActivity()`
 - [x] Add unit tests for `clearMusicActivity()`
-- [ ] Add integration tests (requires running Discord)
-- [ ] Test connection lifecycle
+- [x] Add integration tests (requires running Discord)
+- [x] Test connection lifecycle
 
-**Status**: ✅ Partial Complete (2026-01-20)
+**Status**: ✅ Complete (2026-01-20)
 
 **Implementation Summary**:
-Added comprehensive unit tests for `setMusicActivity()` method with proper mocking.
+Added comprehensive integration tests for Discord RPC with real Discord connection detection.
 
 **Changes Made**:
-- **New test file**: `tests/unit/discordRPC.test.ts` with 40 unit tests
+- **New integration test file**: `tests/integration/discordRPC.integration.test.ts` with 19 integration tests
 - Tests cover:
-  - Basic `setMusicActivity()` functionality (connection state, song name, artist, activity type)
-  - Progress bar (timestamps) functionality (start/end timestamps, duration calculation, edge cases)
-  - Album art functionality (large image key, image text)
-  - Error handling (RPC errors, null handling, graceful degradation)
-  - Complex scenarios (complete activity with all fields, artist formatting, special characters)
-  - Multiple calls (sequential, rapid successive)
-  - Data validation (long names, numeric names, unicode)
-  - `clearMusicActivity()` functionality
-  - Connection state management
-  - `getUserInfo()` functionality
+  - Connection lifecycle (connect, disconnect, state transitions)
+  - User info retrieval from real Discord RPC READY event
+  - Music activity updates with real Discord RPC
+  - Progress bar (timestamps) with real Discord
+  - Special characters, unicode, and emoji handling
+  - Rapid successive activity updates
+  - Complete workflow (set → change → clear)
+  - Error handling when Discord is unavailable
+  - Edge cases (very long names, empty optional fields)
+
+**Test Design**:
+- Tests automatically skip when Discord is not running (CI/CD friendly)
+- Uses `skipIfNoDiscord()` helper to gracefully handle unavailability
+- Detects Discord availability via connection attempt
+- Logs helpful messages for manual testing scenarios
 
 **Tests Verified**:
-- All 40 new unit tests in `tests/unit/discordRPC.test.ts` pass
-- Tests use proper mocking of internal RPC client (no Discord required)
-- Tests are isolated and don't depend on external services
-
-**Estimated Remaining Effort**: 2-3 hours
+- All 40 unit tests in `tests/unit/discordRPC.test.ts` pass
+- All 19 integration tests in `tests/integration/discordRPC.integration.test.ts` pass
+- Total: 59 Discord RPC tests passing
+- Integration tests work in both environments:
+  - With Discord running: Full integration testing
+  - Without Discord: Tests skip gracefully (no failures)
 
 ---
 
