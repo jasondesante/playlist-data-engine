@@ -11,8 +11,8 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 | Category | Tasks | Status |
 |----------|-------|--------|
 | Critical Bug Fixes | 0 | ✅ Complete |
-| Major Features | 1 | 🟡 In Progress |
-| Enhancements | 8 | 🟢 3/8 Complete |
+| Major Features | 1 | ✅ Complete |
+| Enhancements | 8 | 🟢 4/8 Complete |
 | Nice to Have | 3 | ⚪ Low Priority |
 | **Total** | **12** | |
 
@@ -492,13 +492,21 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 - [x] Add longitude-based regional detection
 - [x] Add coastal vs inland detection
 - [x] Add elevation-based biomes (mountain, valley)
-- [ ] Add more biome types: desert, swamp, jungle, taiga, savanna
+- [x] Add more biome types: desert, swamp, jungle, taiga, savanna
 - [x] Implement decision tree for biome classification
 - [x] Add unit tests for coordinate → biome mapping
 
-**Status**: ✅ Partially Complete (2026-01-21)
+**Status**: ✅ Complete (2026-01-21)
 
 **Implementation Summary**:
+- **New Biome Types Added** (2026-01-21):
+  - **Jungle**: Dense tropical rainforests in Amazon (5°N-15°S, 50-70°W), Congo (5°N-5°S, 10-30°E), Southeast Asia (10°N-10°S, 95-140°E)
+  - **Swamp**: Wetlands including Florida Everglades (25-26°N, 80-81°W), Okavango Delta (18-20°S, 22-24°E), Sundarbans (21-22°N, 89-90°E), Pantanal (15-20°S, 55-60°W)
+  - **Taiga**: Boreal forests in Canada (50-70°N, 60-130°W), Scandinavia (60-70°N, 5-30°E), Russia (55-70°N, 30-180°E)
+  - **Savanna**: Tropical grasslands in East Africa (5°S-15°N, 30-40°E), Southern Africa (15-20°S, 15-35°E), South American Cerrado (5-25°S, 45-60°W), Northern Australia (10-20°S, 130-135°E)
+- **TypeScript types**: Added `jungle`, `swamp`, `taiga`, `savanna` to `BiomeType` union type
+- **Detection priority**: Swamps checked globally (highest priority), jungles in tropics (≤15°), savannas in tropics/subtropics (≤20°), taiga in northern boreal regions (50-70°N)
+- **Test coverage**: 30+ new unit tests covering all new biome types with coastal/inland variations
 - **Longitude-based regional detection**: Implemented comprehensive longitude-based detection for:
   - Desert regions: Sahara, Arabian, Syrian, Iranian, Thar, Gobi, Australian, Atacama, Sonoran, Kalahari
   - Tropical forests: Amazon, Central Africa, Southeast Asia, Indonesia, Congo basin
@@ -536,12 +544,14 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 - **Decision tree implementation**: Multi-level decision tree considering:
   1. Elevation check (when available): Mountains (>1500m), Valleys (<0m)
   2. Polar regions (>66.5°)
-  3. Desert regions (15-45° with specific longitude ranges)
-  4. Tropical regions (≤23.5° with regional longitude checks)
-  5. Urban detection (30-50° N in specific longitude ranges)
-  6. Temperate regional classification
-  7. Coastal detection (applies suffix to all biome types)
-- **Test coverage**: 84+ comprehensive unit tests covering all major world regions, elevation detection, and edge cases
+  3. Swamp regions (global check - highest priority for specific wetlands)
+  4. Desert regions (15-45° with specific longitude ranges)
+  5. Tropical regions (≤23.5° with jungle, savanna, then forest checks)
+  6. Temperate regions with taiga check (50-70°N)
+  7. Urban detection (30-50° N in specific longitude ranges)
+  8. Temperate regional classification
+  9. Coastal detection (applies suffix to all biome types)
+- **Test coverage**: 115+ comprehensive unit tests covering all major world regions, elevation detection, new biome types (jungle, swamp, taiga, savanna), and edge cases
 
 **Estimated Effort**: 4-6 hours (GIS), 2-3 hours (heuristics)
 
@@ -708,8 +718,8 @@ Use this section to track completion:
 [███████████████████░░░░░] 94% Complete
 
 Critical:  [██████████████] 1/1 tasks (100%)
-High:      [░░░░░░░░░░░] 0/1 tasks (0%)
-Medium:    [████░░░░░░░░] 3/8 tasks (38%)
+High:      [████████░░░░░] 1/1 tasks (100%)
+Medium:    [██████░░░░░░░] 4/8 tasks (50%)
 Low:       [░░░░░░░░░░░] 0/3 tasks (0%)
 ```
 
@@ -718,11 +728,11 @@ Low:       [░░░░░░░░░░░] 0/3 tasks (0%)
 ## Notes
 
 - **TODO.md vs Current State**: TODO.md was written earlier and some items (like MotionDetector) are now fully implemented. This plan reflects actual current state.
-- **Environmental Sensors**: Contrary to TODO.md, the environmental sensor aggregation is actually complete and functional.
-- **Discord RPC**: This is the single largest remaining piece of work.
-- **Priority Order**: Recommend fixing Critical bug first, then Discord RPC, then Medium priority items.
+- **Environmental Sensors**: Environmental sensor aggregation is complete and functional. Enhanced biome detection now includes jungle, swamp, taiga, and savanna.
+- **Discord RPC**: Discord RPC integration is complete for music presence only (cannot detect games - use Steam API for game detection).
+- **Priority Order**: All Critical and High priority tasks are now complete. Remaining Medium priority tasks are optional enhancements.
 
 ---
 
-**Last Updated**: 2026-01-20
-**Next Review**: After completing Critical and High priority tasks
+**Last Updated**: 2026-01-21
+**Next Review**: After completing additional Medium priority enhancements

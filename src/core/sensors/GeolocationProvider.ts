@@ -242,6 +242,12 @@ export class GeolocationProvider {
             return `tundra${coastalSuffix}`;
         }
 
+        // Swamp regions (highest priority - specific wetlands)
+        // Check swamps globally before other biome classifications
+        if (this.isInSwampRegion(latitude, normalizedLon)) {
+            return `swamp${coastalSuffix}`;
+        }
+
         // Desert belts around 15-45° N/S latitude
         // Check this BEFORE tropics for desert regions to avoid misclassifying deserts as forests
         // Extended range to cover Gobi (35-45°N) and other higher-latitude deserts
@@ -254,9 +260,20 @@ export class GeolocationProvider {
             }
         }
 
-        // Tropical regions (23.5° N/S) - forests and jungles
+        // Tropical and subtropical regions (within 23.5° of equator)
         // Check this AFTER desert to avoid misclassifying tropical deserts as forests
         if (absLat <= 23.5) {
+
+            // Jungle regions (dense tropical rainforests)
+            if (this.isInJungleRegion(latitude, normalizedLon)) {
+                return `jungle${coastalSuffix}`;
+            }
+
+            // Savanna regions (tropical grasslands)
+            if (this.isInSavannaRegion(latitude, normalizedLon)) {
+                return `savanna${coastalSuffix}`;
+            }
+
             // Northern Hemisphere tropics (Amazon, Central Africa, Southeast Asia)
             if (latitude > 0) {
                 // Amazon basin (50-70° W)
@@ -300,6 +317,11 @@ export class GeolocationProvider {
         if (absLat > 23.5 && absLat <= 66.5) {
             // Northern Hemisphere temperate
             if (latitude > 0) {
+                // Taiga (boreal forest) regions - check before other temperate biomes
+                if (this.isInTaigaRegion(latitude, normalizedLon)) {
+                    return `taiga${coastalSuffix}`;
+                }
+
                 // North America (70-125° W) - forests in north, plains in middle
                 if (normalizedLon >= 235 && normalizedLon <= 290) {
                     return absLat >= 45 ? `forest${coastalSuffix}` : `plains${coastalSuffix}`;
@@ -380,6 +402,93 @@ export class GeolocationProvider {
         let normalized = lon % 360;
         if (normalized < 0) normalized += 360;
         return normalized;
+    }
+
+    /**
+     * Check if coordinates fall within jungle regions (dense tropical rainforests)
+     * Jungle is a subtype of forest - specifically dense tropical forests
+     */
+    private isInJungleRegion(lat: number, lon: number): boolean {
+        const absLat = Math.abs(lat);
+
+        // Jungles are tropical (within 15° of equator for denser vegetation)
+        if (absLat > 15) return false;
+
+        // Amazon Jungle (South America): 5°N-15°S, 50-70°W
+        if (lat >= -15 && lat <= 5 && lon >= 290 && lon <= 310) return true;
+
+        // Congo Jungle (Africa): 5°N-5°S, 10-30°E
+        if (lat >= -5 && lat <= 5 && lon >= 10 && lon <= 30) return true;
+
+        // Southeast Asian Jungles (Indonesia, Malaysia, Papua New Guinea)
+        if (lat >= -10 && lat <= 10 && lon >= 95 && lon <= 140) return true;
+
+        return false;
+    }
+
+    /**
+     * Check if coordinates fall within swamp/wetland regions
+     */
+    private isInSwampRegion(lat: number, lon: number): boolean {
+        const absLat = Math.abs(lat);
+
+        // Florida Everglades (USA): 25-26°N, 80-81°W
+        if (lat >= 25 && lat <= 26 && lon >= 279 && lon <= 281) return true;
+
+        // Okavango Delta (Botswana): 18-20°S, 22-24°E
+        if (lat >= -20 && lat <= -18 && lon >= 22 && lon <= 24) return true;
+
+        // Sundarbans (Bangladesh/India): 21-22°N, 89-90°E
+        if (lat >= 21 && lat <= 22 && lon >= 89 && lon <= 90) return true;
+
+        // Pantanal (Brazil/Bolivia): 15-20°S, 55-60°W
+        if (lat >= -20 && lat <= -15 && lon >= 300 && lon <= 305) return true;
+
+        return false;
+    }
+
+    /**
+     * Check if coordinates fall within taiga (boreal forest) regions
+     * Taiga is between 50-70° latitude in northern hemisphere
+     */
+    private isInTaigaRegion(lat: number, lon: number): boolean {
+        // Taiga only in northern hemisphere, 50-70°N
+        if (lat < 50 || lat > 70) return false;
+
+        // Canadian Taiga: 50-70°N, 60-130°W
+        if (lat >= 50 && lat <= 70 && lon >= 230 && lon <= 300) return true;
+
+        // Scandinavian Taiga: 60-70°N, 5-30°E
+        if (lat >= 60 && lat <= 70 && lon >= 5 && lon <= 30) return true;
+
+        // Russian Taiga: 55-70°N, 30-180°E
+        if (lat >= 55 && lat <= 70 && lon >= 30 && lon <= 180) return true;
+
+        return false;
+    }
+
+    /**
+     * Check if coordinates fall within savanna (tropical grassland) regions
+     */
+    private isInSavannaRegion(lat: number, lon: number): boolean {
+        const absLat = Math.abs(lat);
+
+        // Savannas are tropical to subtropical (within 20° of equator, excluding dense jungle areas)
+        if (absLat > 20) return false;
+
+        // African Savanna (East Africa - Serengeti region): 5°S-15°N, 30-40°E
+        if (lat >= -5 && lat <= 15 && lon >= 30 && lon <= 40) return true;
+
+        // Southern African Savanna: 15-20°S, 15-35°E
+        if (lat >= -20 && lat <= -15 && lon >= 15 && lon <= 35) return true;
+
+        // South American Cerrado: 5-25°S, 45-60°W (outside Amazon jungle range)
+        if (lat >= -25 && lat <= -5 && lon >= 300 && lon <= 315) return true;
+
+        // Northern Australian Tropical Savanna: 10-20°S, 130-135°E
+        if (lat >= -20 && lat <= -10 && lon >= 130 && lon <= 135) return true;
+
+        return false;
     }
 
     /**

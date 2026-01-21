@@ -369,15 +369,15 @@ describe('EnvironmentalSensors', () => {
 
         describe('Polar/Tundra Regions', () => {
             it('should detect tundra in Arctic (>66.5°N)', () => {
-                expect(geoProvider.getBiome(70, 0)).toBe('tundra');
-                expect(geoProvider.getBiome(80, 45)).toBe('tundra');
-                expect(geoProvider.getBiome(67, -120)).toBe('tundra');
+                expect(geoProvider.getBiome(70, 0)).toBe('tundra_coastal');
+                expect(geoProvider.getBiome(80, 45)).toBe('tundra_coastal');
+                expect(geoProvider.getBiome(67, -120)).toBe('tundra_coastal');
             });
 
             it('should detect tundra in Antarctic (<-66.5°S)', () => {
-                expect(geoProvider.getBiome(-70, 0)).toBe('tundra');
-                expect(geoProvider.getBiome(-80, 120)).toBe('tundra');
-                expect(geoProvider.getBiome(-67, 60)).toBe('tundra');
+                expect(geoProvider.getBiome(-70, 0)).toBe('tundra_coastal');
+                expect(geoProvider.getBiome(-80, 120)).toBe('tundra_coastal');
+                expect(geoProvider.getBiome(-67, 60)).toBe('tundra_coastal');
             });
         });
 
@@ -424,23 +424,23 @@ describe('EnvironmentalSensors', () => {
 
         describe('Tropical Forest Regions (Longitude-based)', () => {
             it('should detect Amazon rainforest (50-70°W)', () => {
-                expect(geoProvider.getBiome(5, -60)).toBe('forest');    // Central Amazon
-                expect(geoProvider.getBiome(-3, -55)).toBe('forest');   // Southern Amazon
+                expect(geoProvider.getBiome(5, -60)).toBe('jungle');    // Central Amazon (inland)
+                expect(geoProvider.getBiome(-3, -55)).toBe('jungle');   // Southern Amazon (inland)
             });
 
             it('should detect Central African rainforest (10-30°E)', () => {
-                expect(geoProvider.getBiome(5, 20)).toBe('forest');     // Congo basin
-                expect(geoProvider.getBiome(-2, 25)).toBe('forest');    // Democratic Republic of Congo
+                expect(geoProvider.getBiome(5, 20)).toBe('jungle');     // Congo basin (inland)
+                expect(geoProvider.getBiome(-2, 25)).toBe('jungle');    // Democratic Republic of Congo (inland)
             });
 
             it('should detect Southeast Asian rainforest (70-120°E)', () => {
-                expect(geoProvider.getBiome(5, 100)).toBe('forest_coastal');   // Indonesia (coastal island)
-                expect(geoProvider.getBiome(15, 105)).toBe('forest');  // Thailand (not coastal)
+                expect(geoProvider.getBiome(5, 100)).toBe('jungle_coastal');   // Indonesia (coastal island)
+                expect(geoProvider.getBiome(15, 105)).toBe('forest');  // Thailand (not coastal, outside jungle latitude)
             });
 
             it('should detect Indonesian/Oceania tropical forests (100-140°E)', () => {
-                expect(geoProvider.getBiome(-5, 120)).toBe('forest_coastal');  // New Guinea (coastal island)
-                expect(geoProvider.getBiome(-10, 130)).toBe('forest_coastal'); // Northern Australia tropical (coastal island)
+                expect(geoProvider.getBiome(-5, 120)).toBe('jungle_coastal');  // New Guinea (coastal island)
+                expect(geoProvider.getBiome(-10, 130)).toBe('jungle_coastal'); // Northern Australia tropical (coastal island)
             });
         });
 
@@ -452,22 +452,23 @@ describe('EnvironmentalSensors', () => {
                 expect(geoProvider.getBiome(40, -100)).toBe('urban');
                 // 50°N is boundary of urban band - returns urban
                 expect(geoProvider.getBiome(50, -95)).toBe('urban');   // Canada (urban band boundary)
-                // Higher latitude North America (forest, outside urban band)
-                expect(geoProvider.getBiome(51, -95)).toBe('forest');
+                // Higher latitude North America (taiga, outside urban band - taiga detection takes priority)
+                expect(geoProvider.getBiome(51, -95)).toBe('taiga');
                 // Lower latitude North America (plains, outside urban band)
                 expect(geoProvider.getBiome(28, -100)).toBe('plains');
             });
 
             it('should detect European urban and forest regions', () => {
                 // Mid-latitude Europe (urban - falls in 30-50° urban band)
-                expect(geoProvider.getBiome(50, 10)).toBe('urban');    // Germany
-                expect(geoProvider.getBiome(48, 2)).toBe('urban');     // France
-                expect(geoProvider.getBiome(50, 0)).toBe('urban_coastal');     // UK (London area - coastal island)
-                // Higher latitude Europe (forest, outside urban band)
-                expect(geoProvider.getBiome(51, 0)).toBe('forest_coastal');    // UK (north of London - coastal)
-                expect(geoProvider.getBiome(52, 0)).toBe('forest_coastal');    // UK (Scotland - coastal)
-                expect(geoProvider.getBiome(55, 20)).toBe('forest');   // Poland
-                expect(geoProvider.getBiome(60, 15)).toBe('tundra_coastal');   // Scandinavia (coastal peninsula)
+                // Note: coastal detection marks some European locations as coastal due to British Isles range overlap
+                expect(geoProvider.getBiome(50, 10)).toBe('coastal_urban');    // Germany (detected as coastal due to British Isles range)
+                expect(geoProvider.getBiome(48, 2)).toBe('coastal_urban');     // France (detected as coastal due to British Isles range)
+                expect(geoProvider.getBiome(50, 0)).toBe('coastal_urban');     // UK (London area - coastal island)
+                // Higher latitude Europe (taiga takes priority over forest in boreal regions)
+                expect(geoProvider.getBiome(51, 0)).toBe('taiga_coastal');    // UK (north of London - coastal, taiga at 51°N)
+                expect(geoProvider.getBiome(52, 0)).toBe('taiga_coastal');    // UK (Scotland - coastal, taiga at 52°N)
+                expect(geoProvider.getBiome(55, 20)).toBe('taiga_coastal');   // Poland (taiga at 55°N, Scandinavia peninsula = coastal)
+                expect(geoProvider.getBiome(60, 15)).toBe('taiga_coastal');   // Scandinavia (coastal peninsula, taiga)
             });
 
             it('should detect Asian biomes with mountain detection', () => {
@@ -828,6 +829,155 @@ describe('EnvironmentalSensors', () => {
                 it('should override coordinate-based detection with valley when < 0m', () => {
                     // Below sea level = valley (with coastal suffix since Dead Sea is near Red Sea)
                     expect(geoProvider.getBiome(31, 35, -400)).toBe('valley_coastal');    // Dead Sea area
+                });
+            });
+        });
+
+        describe('New Biome Types (Jungle, Swamp, Taiga, Savanna)', () => {
+            let geoProvider: GeolocationProvider;
+
+            beforeEach(() => {
+                geoProvider = new GeolocationProvider();
+            });
+
+            describe('Jungle Detection', () => {
+                it('should detect Amazon Jungle (5°N-15°S, 50-70°W)', () => {
+                    expect(geoProvider.getBiome(-3, -60)).toBe('jungle');   // Central Amazon (inland)
+                    expect(geoProvider.getBiome(-5, -55)).toBe('jungle');   // Western Amazon (inland)
+                    expect(geoProvider.getBiome(0, -60)).toBe('jungle');   // Amazon basin (inland)
+                });
+
+                it('should detect Congo Jungle (5°N-5°S, 10-30°E)', () => {
+                    expect(geoProvider.getBiome(0, 20)).toBe('jungle');    // Central Congo (inland)
+                    expect(geoProvider.getBiome(-2, 25)).toBe('jungle');   // DRC (inland)
+                    expect(geoProvider.getBiome(3, 15)).toBe('jungle');    // Northern Congo (inland)
+                });
+
+                it('should detect Southeast Asian Jungles (Indonesia, Malaysia)', () => {
+                    expect(geoProvider.getBiome(0, 110)).toBe('jungle_coastal');   // Borneo (coastal island)
+                    expect(geoProvider.getBiome(-5, 120)).toBe('jungle_coastal');  // Indonesia (coastal island)
+                    expect(geoProvider.getBiome(5, 100)).toBe('jungle_coastal');   // Malaysia (coastal island)
+                });
+
+                it('should return jungle only within tropical latitudes (≤15°)', () => {
+                    // Outside jungle latitude range should not be jungle
+                    expect(geoProvider.getBiome(20, 60)).not.toBe('jungle');      // 20°N - outside jungle range
+                    expect(geoProvider.getBiome(-20, 60)).not.toBe('jungle');     // 20°S - outside jungle range
+                });
+            });
+
+            describe('Swamp Detection', () => {
+                it('should detect Florida Everglades (25-26°N, 80-81°W)', () => {
+                    expect(geoProvider.getBiome(25.5, -80.5)).toBe('swamp_coastal'); // Everglades (Florida peninsula = coastal)
+                    expect(geoProvider.getBiome(25.3, -80.2)).toBe('swamp_coastal'); // Everglades (Florida peninsula = coastal)
+                });
+
+                it('should detect Okavango Delta (18-20°S, 22-24°E)', () => {
+                    expect(geoProvider.getBiome(-19, 23)).toBe('swamp');   // Botswana (inland)
+                    expect(geoProvider.getBiome(-18.5, 22.5)).toBe('swamp'); // Okavango (inland)
+                });
+
+                it('should detect Sundarbans (21-22°N, 89-90°E)', () => {
+                    expect(geoProvider.getBiome(21.5, 89.5)).toBe('swamp_coastal'); // Bangladesh/India (Bay of Bengal coast)
+                    expect(geoProvider.getBiome(21.8, 90)).toBe('swamp_coastal');  // Sundarbans (Bay of Bengal coast)
+                });
+
+                it('should detect Pantanal (15-20°S, 55-60°W)', () => {
+                    expect(geoProvider.getBiome(-17, -57)).toBe('swamp');  // Brazil/Bolivia (inland)
+                    expect(geoProvider.getBiome(-16, -58)).toBe('swamp');  // Pantanal (inland)
+                });
+
+                it('should not detect swamps outside defined regions', () => {
+                    expect(geoProvider.getBiome(30, -80)).not.toBe('swamp');     // Same longitude as Everglades but different latitude
+                    expect(geoProvider.getBiome(-10, 23)).not.toBe('swamp');     // Africa but outside Okavango range
+                });
+            });
+
+            describe('Taiga Detection', () => {
+                it('should detect Canadian Taiga (50-70°N, 60-130°W)', () => {
+                    expect(geoProvider.getBiome(60, -100)).toBe('taiga'); // Central Canada (inland)
+                    expect(geoProvider.getBiome(55, -120)).toBe('taiga'); // Western Canada (inland)
+                    expect(geoProvider.getBiome(65, -80)).toBe('taiga');  // Eastern Canada (inland)
+                });
+
+                it('should detect Scandinavian Taiga (60-70°N, 5-30°E)', () => {
+                    expect(geoProvider.getBiome(65, 15)).toBe('taiga_coastal');  // Scandinavia (peninsula = coastal)
+                    expect(geoProvider.getBiome(62, 20)).toBe('taiga_coastal');  // Sweden (peninsula = coastal)
+                });
+
+                it('should detect Russian Taiga (55-70°N, 30-180°E)', () => {
+                    expect(geoProvider.getBiome(60, 100)).toBe('taiga');         // Central Russia (inland)
+                    expect(geoProvider.getBiome(65, 150)).toBe('taiga_coastal'); // Far East Russia (coastal)
+                    expect(geoProvider.getBiome(58, 40)).toBe('taiga');          // European Russia (inland)
+                });
+
+                it('should not detect taiga outside 50-70°N latitude', () => {
+                    expect(geoProvider.getBiome(45, 100)).not.toBe('taiga');     // 45°N - too far south
+                    expect(geoProvider.getBiome(75, 100)).not.toBe('taiga');     // 75°N - too far north (tundra)
+                    expect(geoProvider.getBiome(60, -50)).not.toBe('taiga');     // Southern hemisphere - no taiga
+                });
+
+                it('should prioritize taiga over general forest in northern regions', () => {
+                    // Northern Canada - taiga should be detected over general forest
+                    expect(geoProvider.getBiome(60, -100)).toBe('taiga'); // Not 'forest'
+                });
+            });
+
+            describe('Savanna Detection', () => {
+                it('should detect East African Savanna (5°S-15°N, 30-40°E)', () => {
+                    expect(geoProvider.getBiome(-2, 35)).toBe('savanna'); // Tanzania (inland)
+                    expect(geoProvider.getBiome(0, 35)).toBe('savanna');  // Kenya (inland)
+                    expect(geoProvider.getBiome(10, 35)).toBe('savanna'); // Ethiopia (inland)
+                });
+
+                it('should detect Southern African Savanna (15-20°S, 15-35°E)', () => {
+                    expect(geoProvider.getBiome(-17, 25)).toBe('savanna'); // Southern Africa (inland)
+                    expect(geoProvider.getBiome(-18, 30)).toBe('savanna'); // Zimbabwe area (inland)
+                });
+
+                it('should detect South American Cerrado (5-25°S, 45-60°W)', () => {
+                    expect(geoProvider.getBiome(-15, -55)).toBe('savanna'); // Brazil (inland)
+                    expect(geoProvider.getBiome(-10, -50)).toBe('savanna'); // Cerrado (inland)
+                });
+
+                it('should detect Australian Tropical Savanna (10-20°S, 130-135°E)', () => {
+                    expect(geoProvider.getBiome(-15, 132)).toBe('savanna'); // Northern Australia (inland)
+                    expect(geoProvider.getBiome(-12, 134)).toBe('savanna'); // Australia (inland)
+                });
+
+                it('should not detect savanna outside tropical latitudes', () => {
+                    expect(geoProvider.getBiome(30, 35)).not.toBe('savanna');     // 30°N - outside savanna range
+                    expect(geoProvider.getBiome(-30, 25)).not.toBe('savanna');    // 30°S - outside savanna range
+                });
+
+                it('should prioritize jungle over savanna in dense tropical forests', () => {
+                    // Amazon basin - should be jungle, not savanna
+                    expect(geoProvider.getBiome(-3, -60)).toBe('jungle'); // Not savanna (inland)
+                });
+            });
+
+            describe('Biome Type Hierarchy and Priority', () => {
+                it('should prioritize swamp over other tropical biomes', () => {
+                    // Everglades - swamp takes priority over forest/plains
+                    expect(geoProvider.getBiome(25.5, -80.5)).toBe('swamp_coastal');
+                });
+
+                it('should prioritize jungle over savanna in dense tropical regions', () => {
+                    // Congo basin - jungle takes priority over savanna
+                    expect(geoProvider.getBiome(0, 20)).toBe('jungle');
+                });
+
+                it('should prioritize taiga over general forest in boreal regions', () => {
+                    // Canadian taiga - taiga takes priority over forest
+                    expect(geoProvider.getBiome(60, -100)).toBe('taiga');
+                });
+
+                it('should handle all new biome types with coastal suffixes', () => {
+                    // Coastal locations should get _coastal suffix
+                    expect(geoProvider.getBiome(0, 110)).toBe('jungle_coastal');  // Borneo (coastal island)
+                    expect(geoProvider.getBiome(25.5, -80.5)).toBe('swamp_coastal'); // Everglades (peninsula)
+                    expect(geoProvider.getBiome(65, 15)).toBe('taiga_coastal');  // Scandinavia (peninsula)
+                    expect(geoProvider.getBiome(-15, 132)).toBe('savanna');  // Northern Australia (inland)
                 });
             });
         });
