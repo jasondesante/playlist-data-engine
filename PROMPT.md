@@ -12,7 +12,7 @@ When you're done, say "done".
 IMPORTANT:
 - DO NOT DO MORE THAN ONE TASK/BOX AT A TIME
 - not every task will require code changes, some will just require lots of reading and validation and summarizing maybe some note taking.
-- update the implementation plan when the task is done
+- update the implementation plan when the task is completed
 - commit and push to deploy the changes (if there are any changes)
 - once you have deployed the changes, say "done". 
 - Always remember to say "done" when you're done.
