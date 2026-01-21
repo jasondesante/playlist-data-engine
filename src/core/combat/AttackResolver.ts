@@ -45,7 +45,7 @@ export class AttackResolver {
       description = `${attacker.character.name} uses ${attack.name} against ${target.character.name} - Miss (rolled ${attackRoll.d20Roll}, needed ${attackRoll.targetAC})`;
     } else {
       // Attack hit - roll damage
-      damageRoll = this.rollDamage(attack, attackRoll.isCritical);
+      damageRoll = this.rollDamage(attacker, attack, attackRoll.isCritical);
 
       // Apply damage
       hpAfterDamage = target.currentHP - damageRoll.total;
@@ -103,12 +103,38 @@ export class AttackResolver {
   }
 
   /**
+   * Extract ability modifier for damage based on attack type
+   * Melee attacks → STR modifier
+   * Ranged attacks → DEX modifier
+   * Finesse weapons → max(STR, DEX)
+   * Spells → typically no modifier (added to spell DC, not damage dice)
+   */
+  private getDamageModifier(attacker: Combatant, attack: Attack): number {
+    const attackType = attack.type ?? 'melee';
+    const abilityMods = attacker.character.ability_modifiers;
+
+    if (attackType === 'ranged') {
+      return abilityMods.DEX ?? 0;
+    }
+
+    if (attackType === 'spell') {
+      // Spells typically don't add ability modifier to damage dice
+      // The modifier is usually accounted for in the spell's damage formula
+      return 0;
+    }
+
+    // Melee attacks - could be finesse (max of STR/DEX)
+    // For now, default to STR for melee
+    return abilityMods.STR ?? 0;
+  }
+
+  /**
    * Roll damage for an attack
    * If critical hit, double the damage dice (not the modifier)
    */
-  private rollDamage(attack: Attack, isCritical: boolean): DamageRoll {
+  private rollDamage(attacker: Combatant, attack: Attack, isCritical: boolean): DamageRoll {
     // Parse attack damage formula (e.g., "1d8", "2d6+3")
-    const abilityModifier = 0; // Should be extracted from attacker's ability score if needed
+    const abilityModifier = this.getDamageModifier(attacker, attack);
     const damageDice = attack.damage_dice ?? '';
 
     const damageResult = calculateDamage(damageDice, abilityModifier, isCritical);
@@ -182,7 +208,7 @@ export class AttackResolver {
 
     // Construct result (same as normal attack if hit)
     if (hit && !isMiss) {
-      const damageRoll = this.rollDamage(attack, isCritical);
+      const damageRoll = this.rollDamage(attacker, attack, isCritical);
       const hpAfterDamage = target.currentHP - damageRoll.total;
 
       if (hpAfterDamage < 0) {
@@ -250,7 +276,7 @@ export class AttackResolver {
 
     // Construct result
     if (hit && !isMiss) {
-      const damageRoll = this.rollDamage(attack, isCritical);
+      const damageRoll = this.rollDamage(attacker, attack, isCritical);
       const hpAfterDamage = target.currentHP - damageRoll.total;
 
       if (hpAfterDamage < 0) {

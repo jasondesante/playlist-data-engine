@@ -36,15 +36,15 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 **Issue**: Line 111 has `abilityModifier = 0` hardcoded, preventing proper damage calculation with ability scores.
 
 **Subtasks**:
-- [ ] Add `attacker` parameter to `rollDamage()` method signature
-- [ ] Extract ability score from attacker's character sheet based on damage type
-- [ ] Map damage types to abilities:
-  - [ ] Melee attacks → STR modifier
-  - [ ] Ranged attacks → DEX modifier
+- [x] Add `attacker` parameter to `rollDamage()` method signature
+- [x] Extract ability score from attacker's character sheet based on damage type
+- [x] Map damage types to abilities:
+  - [x] Melee attacks → STR modifier
+  - [x] Ranged attacks → DEX modifier
   - [ ] Finesse weapons → max(STR, DEX)
-- [ ] Calculate modifier: `Math.floor((abilityScore - 10) / 2)`
-- [ ] Update method call in `resolveAttack()` to pass attacker
-- [ ] Update method calls in `attackWithAdvantage()` and `attackWithDisadvantage()`
+- [x] Calculate modifier: `Math.floor((abilityScore - 10) / 2)`
+- [x] Update method call in `resolveAttack()` to pass attacker
+- [x] Update method calls in `attackWithAdvantage()` and `attackWithDisadvantage()`
 - [ ] Add unit tests for ability modifier extraction
 - [ ] Test with various weapon types and character ability scores
 
