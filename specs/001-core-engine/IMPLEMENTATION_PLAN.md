@@ -226,9 +226,25 @@ Discord RPC will be used to **display serverless playlist info on Discord profil
 #### 2.7 Error Handling and Edge Cases (Partial Complete)
 - [x] Handle Discord not running (already in connect/error handling)
 - [x] Add graceful degradation when Discord unavailable
-- [ ] Handle user not logged in
+- [x] Handle user not logged in (2026-01-20)
 - [ ] Handle RPC permission denied
-- [ ] Log all RPC errors with context
+- [x] Log all RPC errors with context (2026-01-20)
+
+**Implementation Summary (2026-01-20)**:
+The "user not logged in" scenario has been handled through enhanced error detection and reporting. Since Discord RPC cannot distinguish between "Discord not running" and "Discord running but no user logged in" (both result in unavailable IPC pipes), the implementation now:
+
+1. **Added `DiscordConnectionState` enum** with states: `Disconnected`, `Connecting`, `Connected`, `DiscordUnavailable`, `Error`
+2. **Enhanced `connect()` method** with improved error detection:
+   - Detects common IPC connection errors (`ECONNREFUSED`, `ENOENT`, `connect`, `pipe` keywords)
+   - Sets `DiscordUnavailable` state for "user not logged in" scenarios
+   - Provides helpful error message: "Discord is not running or no user is logged in"
+3. **Added public methods**:
+   - `getConnectionState()`: Returns current connection state
+   - `getLastError()`: Returns last error message
+4. **Updated all event handlers** to maintain proper connection state
+5. **Added comprehensive JSDoc documentation** for all error scenarios
+
+Note: "RPC permission denied" remains unchecked as it would require additional research into Discord RPC permission error codes.
 
 #### 2.8 TypeScript Types (Future Enhancement)
 - [ ] Define proper Discord activity interfaces for music

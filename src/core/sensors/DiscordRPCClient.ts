@@ -19,8 +19,31 @@
  * - Read other users' activities
  * - Query Discord's game detection (not exposed via RPC)
  * - Set game activity status (not the purpose of this integration)
+ *
+ * Discord Availability States:
+ * - Discord not running: IPC pipes don't exist (connection fails immediately)
+ * - Discord running but no user logged in: Same as "not running" (no IPC pipes)
+ * - Discord running with user logged in: IPC pipes available, connection succeeds
+ *
+ * @note Discord RPC requires Node.js environment. Cannot work in browsers due to IPC requirements.
  */
 import { DiscordRPCClient as RPCClient } from '@ryuziii/discord-rpc';
+
+/**
+ * Discord RPC connection states for better error handling
+ */
+export enum DiscordConnectionState {
+    /** Not connected, connection not attempted */
+    Disconnected = 'disconnected',
+    /** Connection in progress */
+    Connecting = 'connecting',
+    /** Connected and ready */
+    Connected = 'connected',
+    /** Discord not running or user not logged in */
+    DiscordUnavailable = 'discord_unavailable',
+    /** Connection error */
+    Error = 'error',
+}
 
 /**
  * Discord user information from READY event
@@ -39,6 +62,8 @@ export class DiscordRPCClient {
     private isConnected: boolean = false;
     private disconnectRequested: boolean = false;
     private userInfo: DiscordUserInfo | null = null;
+    private connectionState: DiscordConnectionState = DiscordConnectionState.Disconnected;
+    private lastError: string | null = null;
 
     constructor(clientId: string = '') {
         this.clientId = clientId;
@@ -47,14 +72,26 @@ export class DiscordRPCClient {
     /**
      * Connect to Discord RPC
      * Uses @ryuziii/discord-rpc library for real connection
+     *
+     * @returns true if connection attempt initiated successfully, false otherwise
+     *
+     * Error scenarios:
+     * - No client ID provided: Returns false with warning
+     * - Discord not running: Returns false (IPC pipe unavailable)
+     * - Discord running but user not logged in: Returns false (same as not running)
+     * - Network/connection error: Returns false with error details
      */
     async connect(): Promise<boolean> {
         if (!this.clientId) {
             console.warn('Discord client ID not provided');
+            this.connectionState = DiscordConnectionState.Error;
+            this.lastError = 'Discord client ID not provided';
             return false;
         }
 
         this.disconnectRequested = false;
+        this.connectionState = DiscordConnectionState.Connecting;
+        this.lastError = null;
 
         try {
             // Create the RPC client with IPC transport
@@ -74,7 +111,27 @@ export class DiscordRPCClient {
             return true;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.warn('Failed to connect to Discord RPC:', errorMessage);
+
+            // Determine if this is a "Discord not available" error
+            // Common errors when Discord is not running or user not logged in:
+            // - ECONNREFUSED: IPC pipe doesn't exist or can't connect
+            // - ENOENT: Pipe/socket file not found
+            const isDiscordUnavailable = errorMessage.includes('ECONNREFUSED') ||
+                                         errorMessage.includes('ENOENT') ||
+                                         errorMessage.includes('connect') ||
+                                         errorMessage.includes('pipe');
+
+            if (isDiscordUnavailable) {
+                this.connectionState = DiscordConnectionState.DiscordUnavailable;
+                this.lastError = 'Discord is not running or no user is logged in';
+                console.warn('Discord RPC unavailable:', this.lastError,
+                    '- Please ensure Discord is running and you are logged in');
+            } else {
+                this.connectionState = DiscordConnectionState.Error;
+                this.lastError = errorMessage;
+                console.warn('Failed to connect to Discord RPC:', errorMessage);
+            }
+
             this.isConnected = false;
             this.rpcClient = null;
 
@@ -113,6 +170,8 @@ export class DiscordRPCClient {
         // Connection ready
         this.rpcClient.on('ready', () => {
             this.isConnected = true;
+            this.connectionState = DiscordConnectionState.Connected;
+            this.lastError = null;
         });
 
         // Disconnection
@@ -120,6 +179,10 @@ export class DiscordRPCClient {
             if (!this.disconnectRequested) {
                 // Unexpected disconnection
                 console.warn('Discord RPC disconnected unexpectedly');
+                this.connectionState = DiscordConnectionState.DiscordUnavailable;
+                this.lastError = 'Unexpectedly disconnected from Discord';
+            } else {
+                this.connectionState = DiscordConnectionState.Disconnected;
             }
             this.isConnected = false;
             // Clear cached user info on disconnect
@@ -130,6 +193,8 @@ export class DiscordRPCClient {
         this.rpcClient.on('error', (error: Error) => {
             console.error('Discord RPC error:', error.message);
             this.isConnected = false;
+            this.connectionState = DiscordConnectionState.Error;
+            this.lastError = error.message;
         });
     }
 
@@ -138,6 +203,7 @@ export class DiscordRPCClient {
      */
     disconnect(): void {
         this.disconnectRequested = true;
+        this.connectionState = DiscordConnectionState.Disconnected;
         if (this.rpcClient) {
             try {
                 this.rpcClient.disconnect();
@@ -154,6 +220,30 @@ export class DiscordRPCClient {
      */
     isConnectedToDiscord(): boolean {
         return this.isConnected && this.rpcClient !== null;
+    }
+
+    /**
+     * Get the current connection state
+     *
+     * @returns The current DiscordConnectionState
+     *
+     * @example
+     * const state = discordClient.getConnectionState();
+     * if (state === DiscordConnectionState.DiscordUnavailable) {
+     *   console.log('Please open Discord and log in');
+     * }
+     */
+    getConnectionState(): DiscordConnectionState {
+        return this.connectionState;
+    }
+
+    /**
+     * Get the last error message
+     *
+     * @returns The last error message, or null if no error occurred
+     */
+    getLastError(): string | null {
+        return this.lastError;
     }
 
     /**
