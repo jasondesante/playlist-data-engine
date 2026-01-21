@@ -272,11 +272,35 @@ The "user not logged in" scenario has been handled through enhanced error detect
 4. **Updated all event handlers** to maintain proper connection state
 5. **Added comprehensive JSDoc documentation** for all error scenarios
 
-#### 2.8 TypeScript Types (Future Enhancement)
-- [ ] Define proper Discord activity interfaces for music
-- [ ] Add types for voice state data
-- [ ] Add types for RPC error responses
-- [ ] Remove `any` types in music activity method
+#### 2.8 TypeScript Types ✅
+- [x] Define proper Discord activity interfaces for music
+- [x] Add types for voice state data
+- [x] Add types for RPC error responses
+- [x] Remove `any` types in music activity method
+
+**Status**: ✅ Complete (2026-01-20)
+
+**Implementation Summary**:
+All TypeScript types have been properly defined and `any` types removed:
+
+**New Types Added**:
+- `ActivityType` enum: Playing (0), Streaming (1), Listening (2), Watching (3), Competing (5)
+- `DiscordActivityButton`: Interface for activity buttons with label and URL
+- `DiscordActivityAssets`: Interface for image assets (large/small images with text)
+- `DiscordActivityTimestamps`: Interface for progress bar timestamps
+- `DiscordActivityParty`: Interface for multiplayer party info
+- `DiscordActivity`: Complete activity structure for SET_ACTIVITY command
+- `MusicActivityDetails`: Specific interface for music presence parameters
+- `VoiceStateInfo`: Interface for voice state (placeholder - Discord RPC limitation)
+- `DiscordRPCErrorCode`: Enum of all Discord RPC error codes (4000-4007)
+- `DiscordRPCErrorResponse`: Interface for error response structure
+- `DiscordRPCRawEvent`: Interface for raw event data parsing
+
+**Code Changes**:
+- `setMusicActivity()`: Now uses `MusicActivityDetails` and `DiscordActivity` types instead of `any`
+- `onRawEvent` handler: Now uses `DiscordRPCRawEvent` type with proper type casting
+- `subscribeToVoiceUpdates()`: Now uses `VoiceStateInfo` type for callback parameter
+- `getVoiceChannelInfo()`: Now returns `VoiceStateInfo | null` type
 
 #### 2.9 Testing (Needs Update)
 - [ ] Update tests to remove game activity testing

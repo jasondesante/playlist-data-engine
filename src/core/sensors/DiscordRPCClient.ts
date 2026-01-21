@@ -56,6 +56,158 @@ export interface DiscordUserInfo {
     globalName?: string; // Display name
 }
 
+/**
+ * Activity types for Discord Rich Presence
+ * Based on Discord RPC protocol specification
+ */
+export enum ActivityType {
+    Playing = 0,
+    Streaming = 1,
+    Listening = 2,
+    Watching = 3,
+    Competing = 5,
+}
+
+/**
+ * Discord button for activity
+ */
+export interface DiscordActivityButton {
+    label: string;
+    url: string;
+}
+
+/**
+ * Assets for activity (images)
+ */
+export interface DiscordActivityAssets {
+    largeImageKey?: string;
+    largeImageText?: string;
+    smallImageKey?: string;
+    smallImageText?: string;
+}
+
+/**
+ * Timestamps for activity progress bar
+ */
+export interface DiscordActivityTimestamps {
+    startTimestamp?: number; // Unix timestamp in seconds
+    endTimestamp?: number; // Unix timestamp in seconds
+}
+
+/**
+ * Party information for multiplayer games
+ */
+export interface DiscordActivityParty {
+    id?: string;
+    size?: [current: number, max: number];
+}
+
+/**
+ * Discord Rich Presence activity structure
+ * Based on Discord RPC SET_ACTIVITY command specification
+ */
+export interface DiscordActivity {
+    /** Activity type (Playing, Streaming, Listening, etc.) */
+    type?: ActivityType;
+    /** Main activity text (max 128 chars) */
+    details?: string;
+    /** Secondary activity text (max 128 chars) */
+    state?: string;
+    /** Timestamps for progress bar */
+    startTimestamp?: number;
+    endTimestamp?: number;
+    /** Image assets */
+    largeImageKey?: string;
+    largeImageText?: string;
+    smallImageKey?: string;
+    smallImageText?: string;
+    /** Party info for multiplayer */
+    party?: DiscordActivityParty;
+    /** Buttons for action links */
+    buttons?: DiscordActivityButton[];
+    /** Join secret for multiplayer */
+    secret?: string;
+    /** Match ID for spectate */
+    matchSecret?: string;
+    /** Spectate secret */
+    spectateSecret?: string;
+}
+
+/**
+ * Music activity details - specific interface for music presence
+ */
+export interface MusicActivityDetails {
+    songName: string;
+    artistName?: string;
+    albumArtKey?: string;
+    startTime?: number; // Unix timestamp in seconds
+    durationSeconds?: number;
+}
+
+/**
+ * Voice state information (placeholder - Discord RPC cannot access voice state)
+ * Note: Discord RPC does not support voice state detection.
+ * This interface exists for type compatibility only.
+ */
+export interface VoiceStateInfo {
+    channelId?: string;
+    guildId?: string;
+    participantCount?: number;
+}
+
+/**
+ * Discord RPC error codes from protocol specification
+ * Reference: https://discord.com/developers/docs/topics/rpc#errors
+ */
+export enum DiscordRPCErrorCode {
+    /** An invalid opcode was sent */
+    InvalidOpcode = 4000,
+    /** An invalid payload was sent */
+    InvalidPayload = 4001,
+    /** A frame was sent before the handshake completed */
+    InvalidFrameBeforeHandshake = 4002,
+    /** An invalid frame was sent */
+    InvalidFrame = 4003,
+    /** The client is not connected */
+    NotConnected = 4004,
+    /** The client is already connected */
+    AlreadyConnected = 4005,
+    /** The authentication failed */
+    InvalidPermissions = 4006,
+    /** Invalid client ID */
+    InvalidClientId = 4007,
+}
+
+/**
+ * Discord RPC error response structure
+ */
+export interface DiscordRPCErrorResponse {
+    code: DiscordRPCErrorCode;
+    message: string;
+    evt?: string; // Event name if this is an error event
+}
+
+/**
+ * Raw Discord RPC event data
+ * Used in onRawEvent handler for parsing low-level events
+ */
+export interface DiscordRPCRawEvent {
+    cmd?: string;
+    evt?: string;
+    nonce?: string;
+    data?: {
+        user?: {
+            id: string;
+            username: string;
+            discriminator: string;
+            avatar?: string;
+            global_name?: string;
+        };
+        [key: string]: unknown;
+    };
+    [key: string]: unknown;
+}
+
 export class DiscordRPCClient {
     private clientId: string;
     private rpcClient: RPCClient | null = null;
@@ -149,7 +301,10 @@ export class DiscordRPCClient {
 
         // Use raw event handler to capture the READY event with user data
         // Note: onRawEvent exists in the JS library but may not be in TS declarations
-        (this.rpcClient as any).onRawEvent((op: number, data: any) => {
+        const clientWithRawEvent = this.rpcClient as unknown as {
+            onRawEvent: (handler: (op: number, data: DiscordRPCRawEvent) => void) => void;
+        };
+        clientWithRawEvent.onRawEvent((op: number, data: DiscordRPCRawEvent) => {
             // Opcode 1 is FRAME, which contains commands/events
             if (op === 1 && data && data.evt === 'READY') {
                 // Extract user information from READY event
@@ -268,21 +423,15 @@ export class DiscordRPCClient {
      *     durationSeconds: 212 // optional, for progress bar
      * });
      */
-    async setMusicActivity(musicDetails: {
-        songName: string;
-        artistName?: string;
-        albumArtKey?: string;
-        startTime?: number; // Unix timestamp in seconds
-        durationSeconds?: number;
-    }): Promise<boolean> {
+    async setMusicActivity(musicDetails: MusicActivityDetails): Promise<boolean> {
         if (!this.isConnected || !this.rpcClient) {
             return false;
         }
 
         try {
             // Build activity object for Discord RPC with type 2 (Listening)
-            const activity: any = {
-                type: 2, // ActivityType.Listening
+            const activity: DiscordActivity = {
+                type: ActivityType.Listening,
                 details: musicDetails.songName,
             };
 
@@ -376,8 +525,12 @@ export class DiscordRPCClient {
 
     /**
      * Subscribe to Discord voice updates (to detect multiplayer)
+     *
+     * @note Discord RPC CANNOT access voice state data.
+     * This method is a placeholder that returns false.
+     * Voice state detection requires Discord API Gateway with bot permissions.
      */
-    async subscribeToVoiceUpdates(_callback: (voiceState: any) => void): Promise<boolean> {
+    async subscribeToVoiceUpdates(_callback: (voiceState: VoiceStateInfo) => void): Promise<boolean> {
         if (!this.isConnected) {
             return false;
         }
@@ -397,12 +550,11 @@ export class DiscordRPCClient {
 
     /**
      * Get current voice channel info (for party size detection)
+     *
+     * @note Discord RPC CANNOT access voice state data.
+     * This method returns null as voice state is not available via RPC.
      */
-    async getVoiceChannelInfo(): Promise<{
-        channelId?: string;
-        guild?: string;
-        participantCount?: number;
-    } | null> {
+    async getVoiceChannelInfo(): Promise<VoiceStateInfo | null> {
         try {
             // In real implementation, would fetch actual voice channel data
             // For now return null
