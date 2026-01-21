@@ -140,48 +140,40 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 - Updated `GamingPlatformSensors.authenticate()` to await the async `connect()` method
 - Updated tests to handle async `connect()` and gracefully handle Discord unavailable scenarios
 
-#### 2.3 Game Activity Detection ⚠️ **NOT POSSIBLE VIA DISCORD RPC**
+#### 2.3 Discord RPC Purpose & Capabilities ✅
 - [x] Document Discord RPC limitation - cannot read user's current game activity
-- [x] Research alternative approaches (see findings below)
-- [ ] **DECISION REQUIRED**: Choose alternative approach
+- [x] Identify Discord RPC's actual capability: SETTING Rich Presence (music activity)
+- [x] Reframe Discord integration as music display feature, not game detection
 
-**Status**: ❌ **Blocked - Discord RPC Limitation**
+**Status**: ✅ **Resolved - Discord RPC is for SETTING music activity, not READING games**
 
-**Research Findings** (2026-01-20):
-- Discord RPC has NO API to retrieve the current user's game activity
-- Discord RPC can only SET Rich Presence (what your app displays), not READ what games Discord detects
-- Discord detects games via process scanning (desktop client) + Game SDK updates - neither exposed via RPC
-- The `activityUpdate` event only fires when WE set activity, not when Discord detects a game
+**Discord RPC Capabilities** (2026-01-20):
+- ✅ **CAN SET**: Rich Presence activity (tell Discord what you're listening to)
+- ✅ **Activity Type**: Supports `type: 2` for "Listening to" (music) vs `type: 0` for "Playing" (games)
+- ✅ **Music Display**: Can show song name, artist, progress bar, album art
+- ❌ **CANNOT READ**: User's current game activity (platform limitation)
+- ❌ **CANNOT QUERY**: What games Discord detects via process scanning
 
-**Alternative Approaches**:
+**Implementation Decision**:
+Discord RPC will be used to **display serverless playlist info on Discord profile**. When a song is playing from a serverless playlist, the Discord status will show "Listening to {song}" with a progress bar.
 
-1. **Remove Discord game detection** (Recommended):
-   - Keep Discord RPC only for SETTING Rich Presence (display playlist info on Discord)
-   - Remove `getCurrentGame()` from DiscordRPCClient
-   - Rely on Steam API for game detection
-   - Update GamingPlatformSensors to ignore Discord for game detection
+**Removed**:
+- Game detection via Discord (use Steam API instead)
+- `getCurrentGame()` method for reading Discord activity (not possible)
 
-2. **Use Discord Bot API** (Requires bot token + OAuth2):
-   - Create Discord bot with "presence intent"
-   - Use bot API to fetch current user's presence
-   - Requires additional OAuth2 scope and user authorization
-   - More complex, requires Discord app approval for certain scopes
-
-3. **Hybrid approach**:
-   - Keep current mock implementation (returns cached data when WE set it)
-   - Document that Discord game detection is not supported
-   - Add comment explaining the limitation
-
-**Recommended**: Approach #1 - Remove Discord game detection capability since it's not technically feasible via RPC. Discord RPC should only be used for SETTING activity (displaying what music the user is listening to on their Discord profile).
-
-**Estimated Effort**: 1-2 hours for code cleanup and documentation
+**Added**:
+- `setMusicActivity()` method to display what song is playing from serverless playlists
+- Support for "Listening to" activity type (type 2) with music metadata
 
 #### 2.4 Rich Presence Updates
-- [ ] Implement `setGameActivity()` to update user's Rich Presence
+- [ ] Implement `setMusicActivity()` to display "Listening to {song}" on Discord profile
+- [ ] Set activity with `type: 2` (Listening) for proper music display
+- [ ] Support song name, artist, album art, and progress bar
+- [ ] Implement `setGameActivity()` to update user's Rich Presence (for games)
 - [ ] Set activity state, details, timestamps, and assets
 - [ ] Support party size/max display
 - [ ] Handle Rich Presence update errors gracefully
-- [ ] Add `clearGameActivity()` to clear user's presence
+- [ ] Add `clearActivity()` to clear user's presence
 
 #### 2.5 User Information
 - [ ] Implement `getUserInfo()` with RPC user lookup

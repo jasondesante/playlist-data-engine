@@ -8,10 +8,24 @@ declare module '@ryuziii/discord-rpc' {
         details?: string;
         state?: string;
         startTimestamp?: number;
+        endTimestamp?: number;
+        type?: number; // 0 = Playing, 1 = Streaming, 2 = Listening, 5 = Competing
+        largeImageKey?: string;
+        largeImageText?: string;
+        smallImageKey?: string;
+        smallImageText?: string;
         party?: {
             size?: [number, number];
         };
+        buttons?: Array<{ label: string; url: string }>;
         [key: string]: any;
+    }
+
+    enum ActivityType {
+        Playing = 0,
+        Streaming = 1,
+        Listening = 2,
+        Competing = 5,
     }
 
     interface ActivityUpdateData {
@@ -34,5 +48,5 @@ declare module '@ryuziii/discord-rpc' {
         on(event: 'activityUpdate', callback: (data: ActivityUpdateData) => void): void;
     }
 
-    export { DiscordRPCClient };
+    export { DiscordRPCClient, ActivityType };
 }

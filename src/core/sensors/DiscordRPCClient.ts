@@ -1,17 +1,17 @@
 /**
  * DiscordRPCClient - Handles Discord Rich Presence integration
  *
- * Purpose: Display playlist/music information on the user's Discord profile via Rich Presence.
+ * Purpose: Display serverless playlist music information on the user's Discord profile
+ * via Rich Presence ("Listening to {song}" status).
+ *
+ * Discord RPC Capabilities:
+ * ✅ SET Rich Presence - Tell Discord what song/music you're listening to
+ * ✅ Activity types: Playing (0), Streaming (1), Listening (2), Competing (5)
+ * ✅ Show song name, artist, progress bar, album art
  *
  * ⚠️ IMPORTANT LIMITATION: Discord RPC cannot retrieve the user's current game activity.
  * Discord RPC is designed only for SETTING presence (what your app displays), not READING
  * what games Discord detects. For game detection, use Steam API or other platform APIs.
- *
- * Features:
- * - Connect to Discord via IPC (requires Discord desktop app running)
- * - Set Rich Presence (show what music is playing on Discord profile)
- * - Clear Rich Presence
- * - Listen to connection state events
  *
  * What it CANNOT do:
  * - Detect what game the user is playing (platform limitation)
@@ -267,9 +267,9 @@ export class DiscordRPCClient {
     }
 
     /**
-     * Clear game activity from Discord Rich Presence
+     * Clear activity from Discord Rich Presence
      */
-    async clearGameActivity(): Promise<boolean> {
+    async clearActivity(): Promise<boolean> {
         if (!this.isConnected || !this.rpcClient) {
             return false;
         }
@@ -281,7 +281,88 @@ export class DiscordRPCClient {
             return true;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.warn('Failed to clear Discord game activity:', errorMessage);
+            console.warn('Failed to clear Discord activity:', errorMessage);
+            return false;
+        }
+    }
+
+    /**
+     * Clear game activity from Discord Rich Presence
+     * @deprecated Use clearActivity() instead
+     */
+    async clearGameActivity(): Promise<boolean> {
+        return this.clearActivity();
+    }
+
+    /**
+     * Set music activity on Discord Rich Presence
+     *
+     * Displays "Listening to {song}" on the user's Discord profile with:
+     * - Activity type 2 (Listening to) for proper music display
+     * - Song name in details field
+     * - Artist name in state field (optional)
+     * - Progress bar showing song position/duration (optional)
+     * - Album art (optional, requires Discord application upload)
+     *
+     * @param musicDetails - Music information to display
+     * @returns true if successful, false otherwise
+     *
+     * @example
+     * await discordClient.setMusicActivity({
+     *     songName: "Never Gonna Give You Up",
+     *     artistName: "Rick Astley",
+     *     albumArtKey: "album1", // optional
+     *     startTime: Date.now() / 1000, // optional, for progress bar
+     *     durationSeconds: 212 // optional, for progress bar
+     * });
+     */
+    async setMusicActivity(musicDetails: {
+        songName: string;
+        artistName?: string;
+        albumArtKey?: string;
+        startTime?: number; // Unix timestamp in seconds
+        durationSeconds?: number;
+    }): Promise<boolean> {
+        if (!this.isConnected || !this.rpcClient) {
+            return false;
+        }
+
+        try {
+            // Build activity object for Discord RPC with type 2 (Listening)
+            const activity: any = {
+                type: 2, // ActivityType.Listening
+                details: musicDetails.songName,
+            };
+
+            // Add artist name if provided
+            if (musicDetails.artistName) {
+                activity.state = `by ${musicDetails.artistName}`;
+            }
+
+            // Add timestamps for progress bar if duration provided
+            if (musicDetails.durationSeconds && musicDetails.startTime) {
+                activity.startTimestamp = musicDetails.startTime;
+                activity.endTimestamp = musicDetails.startTime + musicDetails.durationSeconds;
+            } else if (musicDetails.durationSeconds) {
+                // If only duration provided, start from now
+                const now = Math.floor(Date.now() / 1000);
+                activity.startTimestamp = now;
+                activity.endTimestamp = now + musicDetails.durationSeconds;
+            }
+
+            // Add album art if provided
+            if (musicDetails.albumArtKey) {
+                activity.largeImageKey = musicDetails.albumArtKey;
+                activity.largeImageText = musicDetails.songName;
+            }
+
+            // Set activity using the real RPC client
+            this.rpcClient.setActivity(activity);
+
+            return true;
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.warn('Failed to update Discord music activity:', errorMessage);
             return false;
         }
     }
