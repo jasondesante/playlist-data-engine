@@ -489,12 +489,28 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 - [ ] Add fallback to current heuristics if API unavailable
 
 #### 6.2 Improved Heuristics (Recommended)
-- [ ] Add longitude-based regional detection
+- [x] Add longitude-based regional detection
 - [ ] Add coastal vs inland detection
 - [ ] Add elevation-based biomes (mountain, valley)
 - [ ] Add more biome types: desert, swamp, jungle, taiga, savanna
-- [ ] Implement decision tree for biome classification
-- [ ] Add unit tests for coordinate → biome mapping
+- [x] Implement decision tree for biome classification
+- [x] Add unit tests for coordinate → biome mapping
+
+**Status**: ✅ Partially Complete (2026-01-21)
+
+**Implementation Summary**:
+- **Longitude-based regional detection**: Implemented comprehensive longitude-based detection for:
+  - Desert regions: Sahara, Arabian, Syrian, Iranian, Thar, Gobi, Australian, Atacama, Sonoran, Kalahari
+  - Tropical forests: Amazon, Central Africa, Southeast Asia, Indonesia, Congo basin
+  - Temperate regions: North America (urban corridors vs forests vs plains), Europe (urban vs forest), Asia (mountains vs plains)
+  - Southern Hemisphere: South America, Southern Africa, Australia/New Zealand
+- **Decision tree implementation**: Multi-level decision tree considering:
+  1. Polar regions (>66.5°)
+  2. Desert regions (15-45° with specific longitude ranges)
+  3. Tropical regions (≤23.5° with regional longitude checks)
+  4. Urban detection (30-50° N in specific longitude ranges)
+  5. Temperate regional classification
+- **Test coverage**: 76 comprehensive unit tests covering all major world regions and edge cases
 
 **Estimated Effort**: 4-6 hours (GIS), 2-3 hours (heuristics)
 
