@@ -155,10 +155,10 @@ describe('GamingPlatformSensors (T093)', () => {
 
     it('should cap bonus at 3.0x maximum', () => {
         const sensors = new GamingPlatformSensors({});
-        // Simulate all bonuses stacking
+        // Simulate all bonuses stacking (note: platformSource can only be 'steam' or 'none' now)
         vi.spyOn(sensors, 'getContext').mockReturnValue({
             isActivelyGaming: true,
-            platformSource: 'both',
+            platformSource: 'steam', // Only 'steam' or 'none' since Discord can't detect games
             currentGame: {
                 name: 'Baldur\'s Gate 3',
                 source: 'steam',
@@ -361,29 +361,43 @@ describe('DiscordRPCClient', () => {
         expect(discordClient.isConnectedToDiscord()).toBe(false);
     });
 
-    it('should set and clear game activity', async () => {
+    it('should set and clear music activity', async () => {
         await discordClient.connect();
 
-        const result = await discordClient.setGameActivity({
-            gameName: 'Baldur\'s Gate 3',
-            details: 'In Battle',
-            partySize: 4
+        const result = await discordClient.setMusicActivity({
+            songName: 'Never Gonna Give You Up',
+            artistName: 'Rick Astley',
+            durationSeconds: 212
         });
 
         // Result depends on whether Discord is actually running
         // If Discord isn't available, the operation will gracefully fail
         expect(typeof result).toBe('boolean');
 
-        const clearResult = await discordClient.clearGameActivity();
+        const clearResult = await discordClient.clearMusicActivity();
         expect(typeof clearResult).toBe('boolean');
     });
 
-    it('should handle activity updates when not connected', async () => {
-        const result = await discordClient.setGameActivity({
-            gameName: 'Test Game',
-            details: 'Playing'
+    it('should handle music activity updates when not connected', async () => {
+        const result = await discordClient.setMusicActivity({
+            songName: 'Test Song',
+            artistName: 'Test Artist'
         });
 
         expect(result).toBe(false);
+    });
+
+    it('should set music activity with album art', async () => {
+        await discordClient.connect();
+
+        const result = await discordClient.setMusicActivity({
+            songName: 'Bohemian Rhapsody',
+            artistName: 'Queen',
+            albumArtKey: 'album1',
+            startTime: Math.floor(Date.now() / 1000),
+            durationSeconds: 354
+        });
+
+        expect(typeof result).toBe('boolean');
     });
 });

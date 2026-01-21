@@ -3,8 +3,12 @@ import { SteamAPIClient } from './SteamAPIClient';
 import { DiscordRPCClient } from './DiscordRPCClient';
 
 /**
- * GamingPlatformSensors - Unified interface for Steam and Discord gaming detection
+ * GamingPlatformSensors - Unified interface for gaming detection
  * Monitors active games and calculates gaming-based XP bonuses
+ *
+ * Note: Discord RPC CANNOT read game activity due to platform limitations.
+ * Discord RPC is only used for SETTING music presence ("Listening to" status).
+ * Game detection uses Steam API only.
  */
 export class GamingPlatformSensors {
     private steam: SteamAPIClient;
@@ -118,26 +122,23 @@ export class GamingPlatformSensors {
     }
 
     /**
-     * Update gaming status from Steam and Discord
+     * Update gaming status from Steam
+     * Note: Discord RPC cannot read game activity (platform limitation)
      */
     private async updateGamingStatus(): Promise<void> {
         try {
             const steamGame = this.steamUserId ? await this.steam.getCurrentGame(this.steamUserId) : null;
-            const discordGame = this.discord.isConnectedToDiscord() ? await this.discord.getCurrentGame() : null;
-
-            // Merge Steam and Discord data
-            const currentGame = steamGame || discordGame;
 
             // Update gaming context
             this.gamingContext = {
-                isActivelyGaming: !!currentGame,
-                platformSource: steamGame && discordGame ? 'both' : steamGame ? 'steam' : discordGame ? 'discord' : 'none',
-                currentGame: currentGame ? {
-                    name: currentGame.name,
-                    source: currentGame.source,
-                    genre: await this.getGameMetadata(currentGame.name).then(m => m?.genre),
-                    sessionDuration: currentGame.sessionDuration,
-                    partySize: 'partySize' in currentGame ? currentGame.partySize : undefined
+                isActivelyGaming: !!steamGame,
+                platformSource: steamGame ? 'steam' : 'none',
+                currentGame: steamGame ? {
+                    name: steamGame.name,
+                    source: steamGame.source,
+                    genre: await this.getGameMetadata(steamGame.name).then(m => m?.genre),
+                    sessionDuration: steamGame.sessionDuration,
+                    partySize: ('partySize' in steamGame && typeof steamGame.partySize === 'number') ? steamGame.partySize : undefined
                 } : undefined,
                 totalGamingMinutes: this.gamingContext.totalGamingMinutes,
                 gamesPlayedWhileListening: this.gamingContext.gamesPlayedWhileListening,

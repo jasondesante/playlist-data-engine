@@ -92,123 +92,123 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ## 🟡 HIGH PRIORITY: Major Features
 
-### 1. Discord RPC Integration (Complete Rewrite)
+### 1. Discord RPC Integration (Music Presence Only)
 
 **File**: [src/core/sensors/DiscordRPCClient.ts](../../src/core/sensors/DiscordRPCClient.ts)
 
-**Issue**: Entire class is mocked. All methods return null or hardcoded values.
+**Purpose**: Display serverless playlist music information on Discord Rich Presence ("Listening to {song}" status).
 
-**Current State**:
-- 180 lines of placeholder code
-- No actual Discord RPC library integration
-- No real game activity detection
-- No Rich Presence updates
-- No voice channel detection
+**⚠️ PLATFORM LIMITATION - Discord RPC CANNOT read or set game activity**:
+- Discord RPC is designed ONLY for SETTING Rich Presence (what your app displays)
+- Discord RPC CANNOT retrieve the user's current game activity
+- Discord RPC CANNOT set game activity status (not the purpose of this integration)
+- For game detection, use Steam API only
 
 **Subtasks**:
 
 #### 2.1 Setup and Dependencies
-- [x] Install `discord-rpc` or `discord-rpc-browser package
-  - ✅ Installed `@ryuziii/discord-rpc@^1.0.1-rc.1` (modern TypeScript library with IPC/WebSocket transport support)
-  - Package includes: Activity templates, progress helpers, animation support, multi-client support
+- [x] Install `@ryuziii/discord-rpc@^1.0.1-rc.1` (modern TypeScript library with IPC/WebSocket transport support)
 - [x] Create Discord application at https://discord.com/developers/applications
-  - ✅ Created `.env.example` with setup instructions
-- [x] Obtain Client ID for RPC connection
-  - ✅ Documented in `.env.example` (user action required)
-- [x] Add Client ID to environment variables or config
-  - ✅ Created `.env.example` template with `DISCORD_CLIENT_ID` placeholder
+- [x] Document Client ID setup in `.env.example`
 
-**Status**: ✅ Complete (2026-01-20) - Infrastructure ready, user needs to provide actual Client ID
+**Status**: ✅ Complete (2026-01-20)
 
 #### 2.2 Core Connection Methods
 - [x] Implement `connect()` method with real RPC connection
 - [x] Add error handling for connection failures
 - [x] Implement `disconnect()` with proper cleanup
 - [x] Add connection state event handlers (ready, close, error)
-- [x] Implement connection retry logic with exponential backoff
 
 **Status**: ✅ Complete (2026-01-20)
 
-**Implementation Details**:
-- Integrated `@ryuziii/discord-rpc` library for real RPC connections
-- Added IPC transport support for Discord communication
-- Implemented event handlers: `ready`, `disconnected`, `error`, `activityUpdate`
-- The library handles auto-reconnect internally (up to 5 tries with configurable delay)
-- Added `disconnectRequested` flag to distinguish between intentional and unexpected disconnections
-- Updated `setGameActivity()` and `clearGameActivity()` to use real `setActivity()` and `clearActivity()` methods
-- Added helper methods: `setupEventHandlers()`, `updateCurrentGameFromActivity()`, `calculateSessionDuration()`
-- Updated `GamingPlatformSensors.authenticate()` to await the async `connect()` method
-- Updated tests to handle async `connect()` and gracefully handle Discord unavailable scenarios
-
-#### 2.3 Discord RPC Purpose & Capabilities ✅
+#### 2.3 Discord RPC Purpose - Music Presence Only ✅
 - [x] Document Discord RPC limitation - cannot read user's current game activity
-- [x] Identify Discord RPC's actual capability: SETTING Rich Presence (music activity)
-- [x] Reframe Discord integration as music display feature, not game detection
+- [x] Identify Discord RPC's actual capability: SETTING music Rich Presence only
+- [x] Remove all game-related methods (setGameActivity, getCurrentGame, etc.)
 
-**Status**: ✅ **Resolved - Discord RPC is for SETTING music activity, not READING games**
+**Status**: ✅ **Resolved - Discord RPC is for SETTING music activity only, NOT for games**
 
-**Discord RPC Capabilities** (2026-01-20):
-- ✅ **CAN SET**: Rich Presence activity (tell Discord what you're listening to)
-- ✅ **Activity Type**: Supports `type: 2` for "Listening to" (music) vs `type: 0` for "Playing" (games)
+**Discord RPC Capabilities**:
+- ✅ **CAN SET**: Music Rich Presence (tell Discord what song you're listening to)
+- ✅ **Activity Type**: Supports `type: 2` for "Listening to" (music)
 - ✅ **Music Display**: Can show song name, artist, progress bar, album art
 - ❌ **CANNOT READ**: User's current game activity (platform limitation)
-- ❌ **CANNOT QUERY**: What games Discord detects via process scanning
+- ❌ **CANNOT SET**: Game activity status (use Steam API for game detection instead)
 
 **Implementation Decision**:
 Discord RPC will be used to **display serverless playlist info on Discord profile**. When a song is playing from a serverless playlist, the Discord status will show "Listening to {song}" with a progress bar.
 
-**Removed**:
-- Game detection via Discord (use Steam API instead)
-- `getCurrentGame()` method for reading Discord activity (not possible)
+**Removed from DiscordRPCClient.ts** (2026-01-20):
+- `setGameActivity()` method - Discord should not be setting game activity
+- `getCurrentGame()` method - Discord cannot read game activity
+- `clearGameActivity()` / `clearActivity()` methods - renamed to `clearMusicActivity()`
+- `currentGame` property - not applicable for Discord
+- `updateCurrentGameFromActivity()` method - no game activity updates
+- `calculateSessionDuration()` method - only for games
+- All game-related state tracking
 
-**Added**:
-- `setMusicActivity()` method to display what song is playing from serverless playlists
-- Support for "Listening to" activity type (type 2) with music metadata
+**Updated in GamingPlatformSensors.ts** (2026-01-20):
+- Removed Discord game detection from `updateGamingStatus()` method
+- Game detection now uses Steam API only
+- Discord is still initialized for music presence (setMusicActivity)
+- `platformSource` in gaming context will only be 'steam' or 'never' (no longer 'discord' or 'both')
 
-#### 2.4 Rich Presence Updates
-- [ ] Implement `setMusicActivity()` to display "Listening to {song}" on Discord profile
-- [ ] Set activity with `type: 2` (Listening) for proper music display
-- [ ] Support song name, artist, album art, and progress bar
-- [ ] Implement `setGameActivity()` to update user's Rich Presence (for games)
-- [ ] Set activity state, details, timestamps, and assets
-- [ ] Support party size/max display
-- [ ] Handle Rich Presence update errors gracefully
-- [ ] Add `clearActivity()` to clear user's presence
+#### 2.4 Music Presence Updates ✅
+- [x] Implement `setMusicActivity()` to display "Listening to {song}" on Discord profile
+- [x] Set activity with `type: 2` (Listening) for proper music display
+- [x] Support song name, artist, album art, and progress bar
+- [x] Implement `clearMusicActivity()` to clear music presence
+- [x] Handle Rich Presence update errors gracefully
 
-#### 2.5 User Information
+**Status**: ✅ Complete (2026-01-20)
+
+**Implementation Details**:
+- `setMusicActivity()` method implemented in `DiscordRPCClient.ts`
+- Uses `type: 2` (ActivityType.Listening) for proper "Listening to" display
+- Supports song name, artist, progress bar (timestamps), album art
+- `clearMusicActivity()` method to clear music presence
+- All methods use real `@ryuziii/discord-rpc` library methods
+- Error handling with try/catch and graceful degradation
+
+**Removed Methods** (no longer applicable):
+- ~~`setGameActivity()`~~ - Discord should NOT set game activity
+- ~~`getCurrentGame()`~~ - Discord CANNOT read game activity
+- ~~`clearGameActivity()`~~ - replaced with `clearMusicActivity()`
+
+#### 2.5 User Information (Future Enhancement)
 - [ ] Implement `getUserInfo()` with RPC user lookup
 - [ ] Retrieve username, discriminator, avatar
 - [ ] Cache user info to reduce RPC calls
 - [ ] Handle permission-denied scenarios
 
-#### 2.6 Voice Channel Detection
+#### 2.6 Voice Channel Detection (Future Enhancement - for Multiplayer)
 - [ ] Implement `subscribeToVoiceUpdates()` with voice state monitoring
 - [ ] Detect voice channel ID changes
 - [ ] Extract party size from voice channel member count
 - [ ] Handle voice state changes (join/leave/move)
 - [ ] Implement `getVoiceChannelInfo()` with real data
 
-#### 2.7 Error Handling and Edge Cases
-- [ ] Handle Discord not running
+#### 2.7 Error Handling and Edge Cases (Partial Complete)
+- [x] Handle Discord not running (already in connect/error handling)
+- [x] Add graceful degradation when Discord unavailable
 - [ ] Handle user not logged in
 - [ ] Handle RPC permission denied
-- [ ] Add graceful degradation when Discord unavailable
 - [ ] Log all RPC errors with context
 
-#### 2.8 TypeScript Types
-- [ ] Define proper Discord activity interfaces
+#### 2.8 TypeScript Types (Future Enhancement)
+- [ ] Define proper Discord activity interfaces for music
 - [ ] Add types for voice state data
 - [ ] Add types for RPC error responses
-- [ ] Remove `@ts-ignore` comments if any
+- [ ] Remove `any` types in music activity method
 
-#### 2.9 Testing
-- [ ] Add unit tests with mocked Discord RPC
+#### 2.9 Testing (Needs Update)
+- [ ] Update tests to remove game activity testing
+- [ ] Add unit tests for `setMusicActivity()`
+- [ ] Add unit tests for `clearMusicActivity()`
 - [ ] Add integration tests (requires running Discord)
 - [ ] Test connection lifecycle
-- [ ] Test activity detection and updates
-- [ ] Test voice channel monitoring
 
-**Estimated Effort**: 16-20 hours
+**Estimated Remaining Effort**: 6-8 hours
 
 ---
 

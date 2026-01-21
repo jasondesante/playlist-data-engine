@@ -9,14 +9,16 @@
  * ✅ Activity types: Playing (0), Streaming (1), Listening (2), Competing (5)
  * ✅ Show song name, artist, progress bar, album art
  *
- * ⚠️ IMPORTANT LIMITATION: Discord RPC cannot retrieve the user's current game activity.
- * Discord RPC is designed only for SETTING presence (what your app displays), not READING
- * what games Discord detects. For game detection, use Steam API or other platform APIs.
+ * ⚠️ IMPORTANT LIMITATIONS:
+ * - Discord RPC CANNOT retrieve the user's current game activity (platform limitation)
+ * - Discord RPC CANNOT set game activity - use Steam API for game detection
+ * - Discord RPC is ONLY for SETTING music presence (what song is playing)
  *
  * What it CANNOT do:
- * - Detect what game the user is playing (platform limitation)
+ * - Detect what game the user is playing (use Steam API instead)
  * - Read other users' activities
  * - Query Discord's game detection (not exposed via RPC)
+ * - Set game activity status (not the purpose of this integration)
  */
 import { DiscordRPCClient as RPCClient } from '@ryuziii/discord-rpc';
 
@@ -24,15 +26,6 @@ export class DiscordRPCClient {
     private clientId: string;
     private rpcClient: RPCClient | null = null;
     private isConnected: boolean = false;
-    private currentGame: {
-        name: string;
-        source: 'discord';
-        sessionDuration?: number;
-        partySize?: number;
-    } | null = null;
-    private connectionAttempts: number = 0;
-    private maxReconnectTries: number = 5;
-    private reconnectDelay: number = 2000; // ms
     private disconnectRequested: boolean = false;
 
     constructor(clientId: string = '') {
@@ -70,7 +63,6 @@ export class DiscordRPCClient {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.warn('Failed to connect to Discord RPC:', errorMessage);
-            this.connectionAttempts++;
             this.isConnected = false;
             this.rpcClient = null;
 
@@ -89,7 +81,6 @@ export class DiscordRPCClient {
         // Connection ready
         this.rpcClient.on('ready', () => {
             this.isConnected = true;
-            this.connectionAttempts = 0;
             console.log('Discord RPC connected successfully');
         });
 
@@ -107,46 +98,6 @@ export class DiscordRPCClient {
             console.error('Discord RPC error:', error.message);
             this.isConnected = false;
         });
-
-        // Activity updates (for detecting game changes from Discord)
-        this.rpcClient.on('activityUpdate', (data: any) => {
-            // This could be used to detect when the user's activity changes
-            // For now, we'll just log it for debugging
-            if (data && data.activity) {
-                this.updateCurrentGameFromActivity(data.activity);
-            }
-        });
-    }
-
-    /**
-     * Update current game from Discord activity data
-     */
-    private updateCurrentGameFromActivity(activity: any): void {
-        if (!activity) {
-            this.currentGame = null;
-            return;
-        }
-
-        // Extract game info from Discord activity
-        this.currentGame = {
-            name: activity.name || activity.details || 'Unknown Game',
-            source: 'discord',
-            sessionDuration: activity.timestamps ? this.calculateSessionDuration(activity.timestamps) : undefined,
-            partySize: activity.party?.size?.[1] || activity.party?.size?.[0] || undefined
-        };
-    }
-
-    /**
-     * Calculate session duration from Discord timestamps
-     */
-    private calculateSessionDuration(timestamps: { start?: number; end?: number }): number | undefined {
-        if (timestamps.start) {
-            const start = timestamps.start; // Unix timestamp in seconds
-            const now = Math.floor(Date.now() / 1000);
-            const durationSeconds = now - start;
-            return Math.floor(durationSeconds / 60); // Convert to minutes
-        }
-        return undefined;
     }
 
     /**
@@ -163,7 +114,6 @@ export class DiscordRPCClient {
             this.rpcClient = null;
         }
         this.isConnected = false;
-        this.currentGame = null;
     }
 
     /**
@@ -171,127 +121,6 @@ export class DiscordRPCClient {
      */
     isConnectedToDiscord(): boolean {
         return this.isConnected && this.rpcClient !== null;
-    }
-
-    /**
-     * Get currently played game from Discord Rich Presence
-     *
-     * ⚠️ PLATFORM LIMITATION: Discord RPC cannot retrieve the user's current game activity.
-     * Discord RPC is designed only for SETTING Rich Presence (what your app displays on Discord),
-     * not READING what games Discord detects the user playing.
-     *
-     * Discord detects games via:
-     * 1. Process scanning (desktop client only, not exposed via RPC)
-     * 2. Game SDK Rich Presence updates (games actively broadcasting their presence)
-     *
-     * The RPC protocol has no command to query "what game is the user playing".
-     *
-     * Current behavior: Returns cached game data only when WE set it via setGameActivity().
-     * For actual game detection, use Steam API or other platform-specific APIs.
-     *
-     * @returns Cached game if set via setGameActivity(), otherwise null
-     */
-    async getCurrentGame(): Promise<{
-        name: string;
-        source: 'discord';
-        sessionDuration?: number;
-        partySize?: number;
-    } | null> {
-        if (!this.isConnected) {
-            return null;
-        }
-
-        try {
-            // Return cached game (only populated when WE set it via setGameActivity)
-            // Discord RPC cannot fetch the user's actual current game activity
-            return this.currentGame;
-        } catch (error) {
-            console.warn('Failed to fetch Discord game activity:', error);
-            return null;
-        }
-    }
-
-    /**
-     * Update game activity in Discord Rich Presence
-     */
-    async setGameActivity(gameDetails: {
-        gameName: string;
-        details?: string;
-        state?: string;
-        partySize?: number;
-        startTime?: number;
-    }): Promise<boolean> {
-        if (!this.isConnected || !this.rpcClient) {
-            return false;
-        }
-
-        try {
-            // Build activity object for Discord RPC
-            const activity: any = {
-                details: gameDetails.details || gameDetails.gameName,
-                state: gameDetails.state,
-            };
-
-            // Add timestamps if startTime provided
-            if (gameDetails.startTime) {
-                activity.startTimestamp = gameDetails.startTime;
-            } else {
-                // Use current time if no start time provided
-                activity.startTimestamp = Math.floor(Date.now() / 1000);
-            }
-
-            // Add party size if provided
-            if (gameDetails.partySize && gameDetails.partySize > 0) {
-                activity.party = {
-                    size: [gameDetails.partySize, gameDetails.partySize]
-                };
-            }
-
-            // Set activity using the real RPC client
-            this.rpcClient.setActivity(activity);
-
-            // Update local cache
-            this.currentGame = {
-                name: gameDetails.gameName,
-                source: 'discord',
-                partySize: gameDetails.partySize,
-                sessionDuration: activity.startTimestamp ? this.calculateSessionDuration({ start: activity.startTimestamp }) : undefined
-            };
-
-            return true;
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            console.warn('Failed to update Discord game activity:', errorMessage);
-            return false;
-        }
-    }
-
-    /**
-     * Clear activity from Discord Rich Presence
-     */
-    async clearActivity(): Promise<boolean> {
-        if (!this.isConnected || !this.rpcClient) {
-            return false;
-        }
-
-        try {
-            // Clear activity using the real RPC client
-            this.rpcClient.clearActivity();
-            this.currentGame = null;
-            return true;
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            console.warn('Failed to clear Discord activity:', errorMessage);
-            return false;
-        }
-    }
-
-    /**
-     * Clear game activity from Discord Rich Presence
-     * @deprecated Use clearActivity() instead
-     */
-    async clearGameActivity(): Promise<boolean> {
-        return this.clearActivity();
     }
 
     /**
@@ -363,6 +192,25 @@ export class DiscordRPCClient {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.warn('Failed to update Discord music activity:', errorMessage);
+            return false;
+        }
+    }
+
+    /**
+     * Clear music activity from Discord Rich Presence
+     */
+    async clearMusicActivity(): Promise<boolean> {
+        if (!this.isConnected || !this.rpcClient) {
+            return false;
+        }
+
+        try {
+            // Clear activity using the real RPC client
+            this.rpcClient.clearActivity();
+            return true;
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.warn('Failed to clear Discord music activity:', errorMessage);
             return false;
         }
     }

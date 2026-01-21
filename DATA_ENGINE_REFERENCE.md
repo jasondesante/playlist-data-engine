@@ -1171,12 +1171,20 @@ Integrates with Steam Web API.
 
 **Location:** `src/core/sensors/DiscordRPCClient.ts`
 
-Integrates with Discord Rich Presence.
+Integrates with Discord Rich Presence for displaying music activity.
 
-- `getCurrentGame(): Promise<{ name: string } | null>`
-    - Detects game from user status.
-- `setGameActivity(details: object): Promise<boolean>`
-    - Updates Discord status to show what the user is listening to.
+**⚠️ IMPORTANT: Discord RPC CANNOT read or set game activity. It is ONLY for displaying music status ("Listening to").**
+
+- `async connect(): Promise<boolean>`
+    - Connects to Discord RPC.
+- `disconnect(): void`
+    - Disconnects from Discord RPC.
+- `isConnectedToDiscord(): boolean`
+    - Checks connection status.
+- `setMusicActivity(musicDetails: { songName: string, artistName?: string, albumArtKey?: string, startTime?: number, durationSeconds?: number }): Promise<boolean>`
+    - Displays "Listening to {song}" on Discord profile with progress bar.
+- `clearMusicActivity(): Promise<boolean>`
+    - Clears music activity from Discord Rich Presence.
 
 ---
 
