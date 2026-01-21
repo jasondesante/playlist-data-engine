@@ -10,11 +10,11 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 | Category | Tasks | Status |
 |----------|-------|--------|
-| Critical Bug Fixes | 1 | 🔴 Blocking |
+| Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | 🟡 In Progress |
 | Enhancements | 8 | 🟢 Pending |
-| Technical Debt | 3 | 🟢 Pending |
-| **Total** | **13** | |
+| Nice to Have | 3 | ⚪ Low Priority |
+| **Total** | **12** | |
 
 ---
 
@@ -29,7 +29,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ## 🔴 CRITICAL PRIORITY: Bug Fixes
 
-### 1. Fix AttackResolver Hardcoded Ability Modifier
+### 1. Fix AttackResolver Hardcoded Ability Modifier ✅
 
 **File**: [src/core/combat/AttackResolver.ts](../../src/core/combat/AttackResolver.ts)
 
@@ -46,15 +46,53 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 - [x] Update method call in `resolveAttack()` to pass attacker
 - [x] Update method calls in `attackWithAdvantage()` and `attackWithDisadvantage()`
 - [x] Add unit tests for ability modifier extraction
-- [ ] Test with various weapon types and character ability scores
+- [x] Test with various weapon types and character ability scores
 
 **Estimated Effort**: 2-3 hours
+
+**Status**: ✅ Complete (2026-01-20)
+
+**Test Coverage**: 18 tests added covering:
+- STR modifier for melee attacks
+- DEX modifier for ranged attacks
+- max(STR, DEX) for finesse weapons
+- No modifier for spell attacks
+- Negative ability modifiers
+- Critical hits with ability modifiers
+- Advantage/Disadvantage with ability modifiers
+- High ability scores (score 20 = +5 modifier)
+- Edge cases (missing modifiers, invalid dice formulas)
+
+---
+
+### ~~2. [REMOVED - COMPLETED ABOVE]~~
+
+**File**: [src/core/combat/AttackResolver.ts](../../src/core/combat/AttackResolver.ts)
+
+**Issue**: Line 111 has `abilityModifier = 0` hardcoded, preventing proper damage calculation with ability scores.
+
+**Subtasks**:
+- [x] Add `attacker` parameter to `rollDamage()` method signature
+- [x] Extract ability score from attacker's character sheet based on damage type
+- [x] Map damage types to abilities:
+  - [x] Melee attacks → STR modifier
+  - [x] Ranged attacks → DEX modifier
+  - [x] Finesse weapons → max(STR, DEX)
+- [x] Calculate modifier: `Math.floor((abilityScore - 10) / 2)`
+- [x] Update method call in `resolveAttack()` to pass attacker
+- [x] Update method calls in `attackWithAdvantage()` and `attackWithDisadvantage()`
+- [x] Add unit tests for ability modifier extraction
+- [x] Test with various weapon types and character ability scores
+
+**Estimated Effort**: 2-3 hours
+
+**Status**: ✅ Complete (2026-01-20)
 
 ---
 
 ## 🟡 HIGH PRIORITY: Major Features
 
-### 2. Discord RPC Integration (Complete Rewrite)
+### 1. Discord RPC Integration (Complete Rewrite)
 
 **File**: [src/core/sensors/DiscordRPCClient.ts](../../src/core/sensors/DiscordRPCClient.ts)
 
@@ -135,7 +173,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ## 🟢 MEDIUM PRIORITY: Enhancements
 
-### 3. Weather API Caching
+### 2. Weather API Caching
 
 **File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
 
@@ -155,7 +193,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ---
 
-### 4. Geolocation Caching
+### 3. Geolocation Caching
 
 **File**: [src/core/sensors/GeolocationProvider.ts](../../src/core/sensors/GeolocationProvider.ts)
 
@@ -174,7 +212,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ---
 
-### 5. Moon Phase Calculation
+### 4. Moon Phase Calculation
 
 **File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
 
@@ -199,7 +237,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ---
 
-### 6. Enhanced Biome Detection
+### 5. Enhanced Biome Detection
 
 **File**: [src/core/sensors/GeolocationProvider.ts](../../src/core/sensors/GeolocationProvider.ts)
 
@@ -231,7 +269,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ---
 
-### 7. Weather Forecast Data
+### 6. Weather Forecast Data
 
 **File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
 
@@ -249,7 +287,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ---
 
-### 8. Severe Weather Detection
+### 7. Severe Weather Detection
 
 **File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
 
@@ -269,7 +307,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ---
 
-### 9. Gaming Sensor Real-Time Detection
+### 8. Gaming Sensor Real-Time Detection
 
 **File**: [src/core/sensors/GamingPlatformSensors.ts](../../src/core/sensors/GamingPlatformSensors.ts)
 
@@ -287,7 +325,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ---
 
-### 10. Environmental Sensor Error Recovery
+### 9. Environmental Sensor Error Recovery
 
 **File**: [src/core/sensors/EnvironmentalSensors.ts](../../src/core/sensors/EnvironmentalSensors.ts)
 
@@ -308,7 +346,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ## ⚪ LOW PRIORITY: Nice to Have
 
-### 11. Improved Logging and Diagnostics
+### 10. Improved Logging and Diagnostics
 
 **Files**: Various sensor files
 
@@ -323,7 +361,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ---
 
-### 12. Additional Test Coverage
+### 11. Additional Test Coverage
 
 **Files**: Tests for sensor modules
 
@@ -338,7 +376,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 
 ---
 
-### 13. Configuration Options
+### 12. Configuration Options
 
 **File**: New config file or enhanced constants
 
@@ -389,12 +427,12 @@ After completing all tasks, verify:
 Use this section to track completion:
 
 ```
-[████████████████████░░░░] 90% Complete
+[███████████████████░░░░░] 92% Complete
 
-Critical:  [░░░░░░░░░░░] 0/1 tasks
-High:      [░░░░░░░░░░░] 0/1 tasks
-Medium:    [░░░░░░░░░░░] 0/8 tasks
-Low:       [░░░░░░░░░░░] 0/3 tasks
+Critical:  [██████████████] 1/1 tasks (100%)
+High:      [░░░░░░░░░░░] 0/1 tasks (0%)
+Medium:    [░░░░░░░░░░░] 0/8 tasks (0%)
+Low:       [░░░░░░░░░░░] 0/3 tasks (0%)
 ```
 
 ---
