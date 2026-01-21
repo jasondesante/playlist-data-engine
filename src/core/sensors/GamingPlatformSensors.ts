@@ -81,7 +81,7 @@ export class GamingPlatformSensors {
 
         if (discordUserId) {
             // Future: store discordUserId for Discord API calls
-            discordAuth = this.discord.connect();
+            discordAuth = await this.discord.connect();
         }
 
         return steamAuth || discordAuth;

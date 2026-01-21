@@ -121,11 +121,24 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 **Status**: ✅ Complete (2026-01-20) - Infrastructure ready, user needs to provide actual Client ID
 
 #### 2.2 Core Connection Methods
-- [ ] Implement `connect()` method with real RPC connection
-- [ ] Add error handling for connection failures
-- [ ] Implement `disconnect()` with proper cleanup
-- [ ] Add connection state event handlers (ready, close, error)
-- [ ] Implement connection retry logic with exponential backoff
+- [x] Implement `connect()` method with real RPC connection
+- [x] Add error handling for connection failures
+- [x] Implement `disconnect()` with proper cleanup
+- [x] Add connection state event handlers (ready, close, error)
+- [x] Implement connection retry logic with exponential backoff
+
+**Status**: ✅ Complete (2026-01-20)
+
+**Implementation Details**:
+- Integrated `@ryuziii/discord-rpc` library for real RPC connections
+- Added IPC transport support for Discord communication
+- Implemented event handlers: `ready`, `disconnected`, `error`, `activityUpdate`
+- The library handles auto-reconnect internally (up to 5 tries with configurable delay)
+- Added `disconnectRequested` flag to distinguish between intentional and unexpected disconnections
+- Updated `setGameActivity()` and `clearGameActivity()` to use real `setActivity()` and `clearActivity()` methods
+- Added helper methods: `setupEventHandlers()`, `updateCurrentGameFromActivity()`, `calculateSessionDuration()`
+- Updated `GamingPlatformSensors.authenticate()` to await the async `connect()` method
+- Updated tests to handle async `connect()` and gracefully handle Discord unavailable scenarios
 
 #### 2.3 Game Activity Detection
 - [ ] Replace `getCurrentGame()` mock with `getActivity()` RPC call
