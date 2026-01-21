@@ -123,8 +123,16 @@ export class AttackResolver {
       return 0;
     }
 
-    // Melee attacks - could be finesse (max of STR/DEX)
-    // For now, default to STR for melee
+    // Melee attacks - check for finesse property
+    const properties = attack.properties ?? [];
+    if (properties.includes('finesse')) {
+      // Finesse weapons use the better of STR or DEX
+      const strMod = abilityMods.STR ?? 0;
+      const dexMod = abilityMods.DEX ?? 0;
+      return Math.max(strMod, dexMod);
+    }
+
+    // Default to STR for non-finesse melee attacks
     return abilityMods.STR ?? 0;
   }
 

@@ -41,7 +41,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 - [x] Map damage types to abilities:
   - [x] Melee attacks → STR modifier
   - [x] Ranged attacks → DEX modifier
-  - [ ] Finesse weapons → max(STR, DEX)
+  - [x] Finesse weapons → max(STR, DEX)
 - [x] Calculate modifier: `Math.floor((abilityScore - 10) / 2)`
 - [x] Update method call in `resolveAttack()` to pass attacker
 - [x] Update method calls in `attackWithAdvantage()` and `attackWithDisadvantage()`
