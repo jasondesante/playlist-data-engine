@@ -654,16 +654,14 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 
 ---
 
-### 8. Gaming Sensor Real-Time Detection
+### 8. Clean up Gaming Platform Sensors
 
 **File**: [src/core/sensors/GamingPlatformSensors.ts](../../src/core/sensors/GamingPlatformSensors.ts)
-
-**Issue**: Polling-based only. No real-time game change detection.
 
 **Subtasks**:
 - [ ] Delete any traces of Discord game detection because Discord can't tell you game data
 
-**Estimated Effort**: 4-5 hours
+**Estimated Effort**: 1 hour
 
 ---
 
