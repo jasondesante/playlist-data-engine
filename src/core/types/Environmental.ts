@@ -48,6 +48,18 @@ export interface WeatherData {
     timestamp: number;
 }
 
+export interface ForecastData {
+    temperature: number;
+    humidity: number;
+    pressure: number;
+    weatherType: string;
+    windSpeed: number;
+    windDirection: number;
+    timestamp: number;
+    forecastTime: Date; // When this forecast is for
+    probabilityOfPrecipitation: number; // 0.0 to 1.0
+}
+
 export interface LightData {
     illuminance: number; // lux
     timestamp: number;

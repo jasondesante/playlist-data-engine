@@ -1,7 +1,12 @@
-import type { WeatherData } from '../types/Environmental';
+import type { WeatherData, ForecastData } from '../types/Environmental';
 
 interface CacheEntry {
     data: WeatherData;
+    timestamp: number;
+}
+
+interface ForecastCacheEntry {
+    data: ForecastData[];
     timestamp: number;
 }
 
@@ -22,8 +27,11 @@ const STORAGE_KEY = 'weather_api_cache';
 export class WeatherAPIClient {
     private apiKey: string;
     private baseUrl: string = 'https://api.openweathermap.org/data/2.5/weather';
+    private forecastUrl: string = 'https://api.openweathermap.org/data/2.5/forecast';
     private cache: Map<string, CacheEntry> = new Map();
+    private forecastCache: Map<string, ForecastCacheEntry> = new Map();
     private cacheTTL: number = 12 * 60 * 1000; // 12 minutes
+    private forecastCacheTTL: number = 60 * 60 * 1000; // 60 minutes for forecasts
     private cacheStats: CacheStatistics = { hits: 0, misses: 0 };
     private useLocalStorage: boolean;
 
@@ -273,5 +281,212 @@ export class WeatherAPIClient {
      */
     getCacheSize(): number {
         return this.cache.size;
+    }
+
+    /**
+     * Check if a forecast cache entry is still valid
+     * @param entry Forecast cache entry to validate
+     * @returns True if entry is valid and within TTL
+     */
+    private isForecastCacheEntryValid(entry: ForecastCacheEntry): boolean {
+        const age = Date.now() - entry.timestamp;
+        return age < this.forecastCacheTTL;
+    }
+
+    /**
+     * Generate forecast cache key with hours limit
+     * @param latitude Latitude
+     * @param longitude Longitude
+     * @param hours Number of hours to forecast
+     * @returns Forecast cache key string
+     */
+    private getForecastCacheKey(latitude: number, longitude: number, hours: number): string {
+        const lat = Math.round(latitude * 10000) / 10000;
+        const lon = Math.round(longitude * 10000) / 10000;
+        return `forecast_${lat},${lon}_${hours}h`;
+    }
+
+    /**
+     * Fetch weather forecast for coordinates
+     * @param latitude Latitude
+     * @param longitude Longitude
+     * @param hours Number of hours to return (max 120 hours / 5 days)
+     * @returns Promise resolving to array of ForecastData or null if failed
+     */
+    async getForecast(latitude: number, longitude: number, hours: number = 24): Promise<ForecastData[] | null> {
+        if (!this.apiKey) {
+            console.warn('Weather API key not provided');
+            return null;
+        }
+
+        // Limit hours to maximum supported by API (120 hours = 5 days)
+        const hoursToFetch = Math.min(hours, 120);
+
+        // Check forecast cache first
+        const forecastCacheKey = this.getForecastCacheKey(latitude, longitude, hoursToFetch);
+        const cachedForecastEntry = this.forecastCache.get(forecastCacheKey);
+
+        if (cachedForecastEntry && this.isForecastCacheEntryValid(cachedForecastEntry)) {
+            // Filter cached results to requested hours
+            return cachedForecastEntry.data.slice(0, Math.ceil(hoursToFetch / 3));
+        }
+
+        try {
+            // OpenWeatherMap 5-day/3-hour forecast endpoint
+            // Using cnt parameter to limit number of timestamps returned
+            // 3-hour intervals means we need ceil(hours / 3) data points
+            const count = Math.ceil(hoursToFetch / 3);
+            const url = `${this.forecastUrl}?lat=${latitude}&lon=${longitude}&appid=${this.apiKey}&units=metric&cnt=${count}`;
+
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`Weather Forecast API error: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            // Parse forecast data from API response
+            const forecastData: ForecastData[] = data.list.map((item: any) => ({
+                temperature: item.main.temp,
+                humidity: item.main.humidity,
+                pressure: item.main.pressure,
+                weatherType: item.weather[0]?.main || 'Clear',
+                windSpeed: item.wind.speed,
+                windDirection: item.wind.deg,
+                timestamp: Date.now(),
+                forecastTime: new Date(item.dt * 1000),
+                probabilityOfPrecipitation: item.pop || 0
+            }));
+
+            // Store in forecast cache
+            this.forecastCache.set(forecastCacheKey, {
+                data: forecastData,
+                timestamp: Date.now()
+            });
+
+            return forecastData;
+        } catch (error) {
+            console.error('Failed to fetch weather forecast:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Get upcoming weather changes for XP modifier calculation
+     * @param latitude Latitude
+     * @param longitude Longitude
+     * @param hours Hours ahead to check (default: 12 hours)
+     * @returns Promise resolving to upcoming weather info or null
+     */
+    async getUpcomingWeather(latitude: number, longitude: number, hours: number = 12): Promise<{
+        willRain: boolean;
+        willSnow: boolean;
+        rainProbability: number;
+        snowProbability: number;
+        worstWeatherType: string;
+    } | null> {
+        const forecast = await this.getForecast(latitude, longitude, hours);
+
+        if (!forecast || forecast.length === 0) {
+            return null;
+        }
+
+        // Analyze forecast for weather conditions
+        let willRain = false;
+        let willSnow = false;
+        let maxRainProb = 0;
+        let maxSnowProb = 0;
+        const weatherTypes: string[] = [];
+
+        for (const item of forecast) {
+            weatherTypes.push(item.weatherType);
+
+            if (item.weatherType.toLowerCase().includes('rain') || item.weatherType.toLowerCase().includes('drizzle')) {
+                willRain = true;
+                maxRainProb = Math.max(maxRainProb, item.probabilityOfPrecipitation);
+            }
+
+            if (item.weatherType.toLowerCase().includes('snow')) {
+                willSnow = true;
+                maxSnowProb = Math.max(maxSnowProb, item.probabilityOfPrecipitation);
+            }
+        }
+
+        // Determine worst weather type for XP bonus calculation
+        // Priority: Storm > Snow > Rain > Clouds > Clear
+        const typePriority: Record<string, number> = {
+            'thunderstorm': 5,
+            'snow': 4,
+            'rain': 3,
+            'drizzle': 2,
+            'clouds': 1,
+            'clear': 0,
+            'mist': 1,
+            'fog': 1,
+            'haze': 1,
+            'smoke': 1,
+            'dust': 1,
+            'sand': 1,
+            'ash': 1,
+            'squall': 2,
+            'tornado': 5
+        };
+
+        let worstWeatherType = 'Clear';
+        let maxPriority = -1;
+
+        for (const type of new Set(weatherTypes)) {
+            const priority = typePriority[type.toLowerCase()] ?? 0;
+            if (priority > maxPriority) {
+                maxPriority = priority;
+                worstWeatherType = type;
+            }
+        }
+
+        return {
+            willRain,
+            willSnow,
+            rainProbability: maxRainProb,
+            snowProbability: maxSnowProb,
+            worstWeatherType
+        };
+    }
+
+    /**
+     * Invalidate all forecast cache
+     */
+    invalidateForecastCache(): void {
+        this.forecastCache.clear();
+    }
+
+    /**
+     * Invalidate forecast cache for a specific location
+     * @param latitude Latitude
+     * @param longitude Longitude
+     */
+    invalidateForecastLocation(latitude: number, longitude: number): void {
+        // Clear all forecast cache entries for this location (any hours value)
+        for (const [key] of this.forecastCache.entries()) {
+            const baseKey = this.getCacheKey(latitude, longitude);
+            if (key.includes(baseKey)) {
+                this.forecastCache.delete(key);
+            }
+        }
+    }
+
+    /**
+     * Clear expired forecast cache entries
+     * @returns Number of entries cleared
+     */
+    clearExpiredForecastEntries(): number {
+        let cleared = 0;
+        for (const [key, entry] of this.forecastCache.entries()) {
+            if (!this.isForecastCacheEntryValid(entry)) {
+                this.forecastCache.delete(key);
+                cleared++;
+            }
+        }
+        return cleared;
     }
 }

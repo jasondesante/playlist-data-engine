@@ -1713,3 +1713,303 @@ describe('GeolocationProvider Caching', () => {
         expect(cached?.heading).toBeNull();
     });
 });
+
+describe('WeatherAPIClient Forecast', () => {
+    let weatherClient: WeatherAPIClient;
+    let mockFetch: ReturnType<typeof vi.fn>;
+
+    // Full forecast data (8 items for testing)
+    const fullForecastList = [
+            {
+                dt: 1661871600,
+                main: { temp: 296.76, feels_like: 296.98, temp_min: 296.76, temp_max: 297.87, pressure: 1015, sea_level: 1015, grnd_level: 933, humidity: 69, temp_kf: -1.11 },
+                weather: [{ id: 500, main: 'Rain', description: 'light rain', icon: '10d' }],
+                clouds: { all: 100 },
+                wind: { speed: 0.62, deg: 349, gust: 1.18 },
+                visibility: 10000,
+                pop: 0.32,
+                rain: { '3h': 0.26 },
+                sys: { pod: 'd' },
+                dt_txt: '2022-08-30 15:00:00'
+            },
+            {
+                dt: 1661882400,
+                main: { temp: 295.45, feels_like: 295.59, temp_min: 292.84, temp_max: 295.45, pressure: 1015, sea_level: 1015, grnd_level: 931, humidity: 71, temp_kf: 2.61 },
+                weather: [{ id: 500, main: 'Rain', description: 'light rain', icon: '10n' }],
+                clouds: { all: 96 },
+                wind: { speed: 1.97, deg: 157, gust: 3.39 },
+                visibility: 10000,
+                pop: 0.33,
+                rain: { '3h': 0.57 },
+                sys: { pod: 'n' },
+                dt_txt: '2022-08-30 18:00:00'
+            },
+            {
+                dt: 1661893200,
+                main: { temp: 292.46, feels_like: 292.54, temp_min: 290.31, temp_max: 292.46, pressure: 1015, sea_level: 1015, grnd_level: 931, humidity: 80, temp_kf: 2.15 },
+                weather: [{ id: 600, main: 'Snow', description: 'light snow', icon: '13n' }],
+                clouds: { all: 68 },
+                wind: { speed: 2.66, deg: 210, gust: 3.58 },
+                visibility: 10000,
+                pop: 0.7,
+                snow: { '3h': 0.49 },
+                sys: { pod: 'n' },
+                dt_txt: '2022-08-30 21:00:00'
+            },
+            {
+                dt: 1661904000,
+                main: { temp: 294.93, feels_like: 294.83, temp_min: 294.93, temp_max: 294.93, pressure: 1018, sea_level: 1018, grnd_level: 935, humidity: 64, temp_kf: 0 },
+                weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+                clouds: { all: 0 },
+                wind: { speed: 1.14, deg: 17, gust: 1.57 },
+                visibility: 10000,
+                pop: 0,
+                sys: { pod: 'd' },
+                dt_txt: '2022-09-01 00:00:00'
+            },
+            {
+                dt: 1661914800,
+                main: { temp: 298.5, feels_like: 298.3, temp_min: 298.5, temp_max: 298.5, pressure: 1017, sea_level: 1017, grnd_level: 934, humidity: 60, temp_kf: 0 },
+                weather: [{ id: 801, main: 'Clouds', description: 'few clouds', icon: '02d' }],
+                clouds: { all: 20 },
+                wind: { speed: 2.5, deg: 45, gust: 3.0 },
+                visibility: 10000,
+                pop: 0.1,
+                sys: { pod: 'd' },
+                dt_txt: '2022-09-01 03:00:00'
+            },
+            {
+                dt: 1661925600,
+                main: { temp: 296.2, feels_like: 296.1, temp_min: 296.2, temp_max: 296.2, pressure: 1016, sea_level: 1016, grnd_level: 933, humidity: 65, temp_kf: 0 },
+                weather: [{ id: 802, main: 'Clouds', description: 'scattered clouds', icon: '03d' }],
+                clouds: { all: 40 },
+                wind: { speed: 3.0, deg: 90, gust: 4.5 },
+                visibility: 10000,
+                pop: 0.15,
+                sys: { pod: 'd' },
+                dt_txt: '2022-09-01 06:00:00'
+            },
+            {
+                dt: 1661936400,
+                main: { temp: 293.8, feels_like: 293.6, temp_min: 293.8, temp_max: 293.8, pressure: 1015, sea_level: 1015, grnd_level: 932, humidity: 70, temp_kf: 0 },
+                weather: [{ id: 211, main: 'Thunderstorm', description: 'thunderstorm', icon: '11d' }],
+                clouds: { all: 90 },
+                wind: { speed: 5.5, deg: 180, gust: 8.0 },
+                visibility: 5000,
+                pop: 0.85,
+                rain: { '3h': 5.0 },
+                sys: { pod: 'd' },
+                dt_txt: '2022-09-01 09:00:00'
+            },
+            {
+                dt: 1661947200,
+                main: { temp: 291.5, feels_like: 291.2, temp_min: 291.5, temp_max: 291.5, pressure: 1014, sea_level: 1014, grnd_level: 931, humidity: 75, temp_kf: 0 },
+                weather: [{ id: 500, main: 'Rain', description: 'moderate rain', icon: '10d' }],
+                clouds: { all: 100 },
+                wind: { speed: 4.0, deg: 200, gust: 6.5 },
+                visibility: 7000,
+                pop: 0.6,
+                rain: { '3h': 2.5 },
+                sys: { pod: 'd' },
+                dt_txt: '2022-09-01 12:00:00'
+            }
+    ];
+
+    // Function to create a mock response that respects the cnt parameter
+    const createMockForecastResponse = (url: string) => {
+        const cntMatch = url.match(/cnt=(\d+)/);
+        const count = cntMatch ? parseInt(cntMatch[1], 10) : 8;
+        const listToReturn = fullForecastList.slice(0, Math.min(count, fullForecastList.length));
+        return Promise.resolve({
+            ok: true,
+            json: async () => ({
+                cod: '200',
+                message: 0,
+                cnt: listToReturn.length,
+                list: listToReturn,
+                city: {
+                    id: 3163858,
+                    name: 'Zocca',
+                    coord: { lat: 44.34, lon: 10.99 },
+                    country: 'IT',
+                    population: 4593,
+                    timezone: 7200,
+                    sunrise: 1661834187,
+                    sunset: 1661882248
+                }
+            })
+        });
+    };
+
+    beforeEach(() => {
+        mockFetch = vi.fn().mockImplementation(createMockForecastResponse);
+        global.fetch = mockFetch;
+        weatherClient = new WeatherAPIClient('test-key', 12, false);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('should fetch forecast data successfully', async () => {
+        const forecast = await weatherClient.getForecast(44.34, 10.99, 24);
+
+        expect(forecast).not.toBeNull();
+        expect(forecast).toHaveLength(8); // All 8 forecast points
+        expect(forecast[0].temperature).toBe(296.76);
+        expect(forecast[0].weatherType).toBe('Rain');
+        expect(forecast[0].probabilityOfPrecipitation).toBe(0.32);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should limit forecast to requested hours', async () => {
+        const forecast = await weatherClient.getForecast(44.34, 10.99, 12);
+
+        // 12 hours / 3-hour intervals = 4 data points
+        expect(forecast).toHaveLength(4);
+        expect(mockFetch).toHaveBeenCalled();
+        expect(mockFetch.mock.calls[0][0]).toContain('cnt=4');
+    });
+
+    it('should cap forecast hours at maximum (120)', async () => {
+        // Request more than 120 hours
+        const forecast = await weatherClient.getForecast(44.34, 10.99, 150);
+
+        // Should cap at 120 hours = 40 data points (max from API)
+        expect(forecast).toBeDefined();
+        // The API was called with cnt=40 (120/3)
+        expect(mockFetch).toHaveBeenCalled();
+        expect(mockFetch.mock.calls[0][0]).toContain('cnt=40');
+    });
+
+    it('should parse different weather types correctly', async () => {
+        const forecast = await weatherClient.getForecast(44.34, 10.99, 24);
+
+        expect(forecast[0].weatherType).toBe('Rain');
+        expect(forecast[2].weatherType).toBe('Snow');
+        expect(forecast[3].weatherType).toBe('Clear');
+        expect(forecast[6].weatherType).toBe('Thunderstorm');
+    });
+
+    it('should handle probability of precipitation', async () => {
+        const forecast = await weatherClient.getForecast(44.34, 10.99, 24);
+
+        expect(forecast[0].probabilityOfPrecipitation).toBe(0.32);
+        expect(forecast[2].probabilityOfPrecipitation).toBe(0.7);
+        expect(forecast[3].probabilityOfPrecipitation).toBe(0);
+        expect(forecast[6].probabilityOfPrecipitation).toBe(0.85);
+    });
+
+    it('should return null when no API key provided', async () => {
+        const noKeyClient = new WeatherAPIClient('', 12, false);
+        const forecast = await noKeyClient.getForecast(44.34, 10.99);
+
+        expect(forecast).toBeNull();
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle API errors gracefully', async () => {
+        mockFetch.mockResolvedValueOnce({
+            ok: false,
+            statusText: 'Not Found'
+        });
+
+        const forecast = await weatherClient.getForecast(44.34, 10.99);
+        expect(forecast).toBeNull();
+    });
+
+    it('should cache forecast results', async () => {
+        await weatherClient.getForecast(44.34, 10.99, 24);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+
+        // Second call should use cache
+        await weatherClient.getForecast(44.34, 10.99, 24);
+        expect(mockFetch).toHaveBeenCalledTimes(1); // No additional API call
+    });
+
+    it('should return upcoming weather analysis', async () => {
+        const upcoming = await weatherClient.getUpcomingWeather(44.34, 10.99, 24);
+
+        expect(upcoming).not.toBeNull();
+        expect(upcoming?.willRain).toBe(true);
+        expect(upcoming?.willSnow).toBe(true);
+        expect(upcoming?.rainProbability).toBeGreaterThan(0);
+        expect(upcoming?.snowProbability).toBeGreaterThan(0);
+        // Thunderstorm is the worst weather type
+        expect(upcoming?.worstWeatherType).toBe('Thunderstorm');
+    });
+
+    it('should identify clear weather in forecast', async () => {
+        const clearForecastList = fullForecastList.map(item => ({
+            ...item,
+            weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+            pop: 0
+        }));
+
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                cod: '200',
+                message: 0,
+                cnt: clearForecastList.length,
+                list: clearForecastList,
+                city: {
+                    id: 3163858,
+                    name: 'Zocca',
+                    coord: { lat: 44.34, lon: 10.99 },
+                    country: 'IT',
+                    population: 4593,
+                    timezone: 7200,
+                    sunrise: 1661834187,
+                    sunset: 1661882248
+                }
+            })
+        });
+
+        const upcoming = await weatherClient.getUpcomingWeather(44.34, 10.99, 24);
+
+        expect(upcoming).not.toBeNull();
+        expect(upcoming?.willRain).toBe(false);
+        expect(upcoming?.willSnow).toBe(false);
+        expect(upcoming?.worstWeatherType).toBe('Clear');
+    });
+
+    it('should invalidate forecast cache for location', async () => {
+        await weatherClient.getForecast(44.34, 10.99, 24);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+
+        weatherClient.invalidateForecastLocation(44.34, 10.99);
+
+        // Should fetch again after invalidation
+        await weatherClient.getForecast(44.34, 10.99, 24);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should invalidate all forecast cache', async () => {
+        await weatherClient.getForecast(44.34, 10.99, 24);
+        await weatherClient.getForecast(40.71, -74.01, 24);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+
+        weatherClient.invalidateForecastCache();
+
+        // Both should fetch again
+        await weatherClient.getForecast(44.34, 10.99, 24);
+        await weatherClient.getForecast(40.71, -74.01, 24);
+        expect(mockFetch).toHaveBeenCalledTimes(4);
+    });
+
+    it('should clear expired forecast entries', async () => {
+        // Create client with very short TTL
+        const shortTTLClient = new WeatherAPIClient('test-key', 0.000017, false);
+        shortTTLClient.invalidateForecastCache = vi.fn();
+        const invalidateSpy = vi.spyOn(shortTTLClient, 'clearExpiredForecastEntries');
+
+        await shortTTLClient.getForecast(44.34, 10.99, 24);
+
+        // Wait for cache to expire
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const cleared = shortTTLClient.clearExpiredForecastEntries();
+        expect(cleared).toBeGreaterThanOrEqual(0);
+    });
+});

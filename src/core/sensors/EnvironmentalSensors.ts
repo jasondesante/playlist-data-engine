@@ -182,6 +182,46 @@ export class EnvironmentalSensors {
         return Math.min(modifier, 3.0);
     }
 
+    /**
+     * Calculate XP modifier based on environmental factors including forecast
+     * Considers incoming weather for bonus XP
+     * Cap at 3.0x total
+     * @param forecastHours Hours ahead to check for incoming weather (default: 12)
+     * @returns Promise resolving to XP modifier value
+     */
+    async calculateXPModifierWithForecast(forecastHours: number = 12): Promise<number> {
+        let modifier = this.calculateXPModifier();
+
+        // Get upcoming weather for forecast bonus
+        if (this.context.geolocation && this.permissions.get('weather')) {
+            const upcoming = await this.weather.getUpcomingWeather(
+                this.context.geolocation.latitude,
+                this.context.geolocation.longitude,
+                forecastHours
+            );
+
+            if (upcoming) {
+                // Add small bonus for incoming severe weather (anticipation bonus)
+                // If bad weather is coming, playing now shows preparation/planning
+                const worstType = upcoming.worstWeatherType.toLowerCase();
+                if (worstType.includes('thunderstorm') || worstType.includes('tornado')) {
+                    modifier += 0.15; // +15% for playing before storm
+                } else if (worstType.includes('snow') && upcoming.snowProbability > 0.5) {
+                    modifier += 0.1; // +10% for playing before snow
+                } else if (worstType.includes('rain') && upcoming.rainProbability > 0.7) {
+                    modifier += 0.1; // +10% for playing before heavy rain
+                }
+
+                // Small bonus for clear skies ahead (optimism bonus)
+                if (worstType === 'clear' && !upcoming.willRain && !upcoming.willSnow) {
+                    modifier += 0.05; // +5% for clear outlook
+                }
+            }
+        }
+
+        return Math.min(modifier, 3.0);
+    }
+
     getPermissions(): SensorPermission[] {
         return Array.from(this.permissions.entries()).map(([type, granted]) => ({
             type,

@@ -12,7 +12,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 |----------|-------|--------|
 | Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | ✅ Complete |
-| Enhancements | 8 | 🟢 4/8 Complete |
+| Enhancements | 8 | 🟢 5/8 Complete |
 | Nice to Have | 3 | ⚪ Low Priority |
 | **Total** | **12** | |
 
@@ -557,21 +557,51 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 
 ---
 
-### 6. Weather Forecast Data
+### 6. Weather Forecast Data ✅
 
 **File**: [src/core/sensors/WeatherAPIClient.ts](../../src/core/sensors/WeatherAPIClient.ts)
 
 **Issue**: Only current weather data. No forecast available.
 
 **Subtasks**:
-- [ ] Add forecast endpoint to API client
-- [ ] Parse forecast data (hourly/daily)
-- [ ] Return next N hours of weather
-- [ ] Cache forecast data separately (longer TTL)
-- [ ] Add forecast data to TypeScript types
-- [ ] Update XP modifier to consider incoming weather
+- [x] Add forecast endpoint to API client
+- [x] Parse forecast data (hourly/daily)
+- [x] Return next N hours of weather
+- [x] Cache forecast data separately (longer TTL)
+- [x] Add forecast data to TypeScript types
+- [x] Update XP modifier to consider incoming weather
 
 **Estimated Effort**: 3-4 hours
+
+**Status**: ✅ Complete (2026-01-21)
+
+**Implementation Summary**:
+- Added `ForecastData` interface to `src/core/types/Environmental.ts` with fields for temperature, humidity, pressure, weatherType, windSpeed, windDirection, timestamp, forecastTime (Date), and probabilityOfPrecipitation (0.0 to 1.0)
+- Added `getForecast()` method to `WeatherAPIClient.ts` that calls OpenWeatherMap's 5-day/3-hour forecast endpoint (`/data/2.5/forecast`)
+- Forecast can be requested for up to 120 hours (5 days) with 3-hour intervals
+- Added separate forecast cache (`forecastCache` Map) with longer TTL (60 minutes vs 12 minutes for current weather)
+- Forecast cache key includes hours limit: `forecast_{lat},{lon}_{hours}h`
+- Added `getUpcomingWeather()` method that analyzes forecast data and returns upcoming weather info (willRain, willSnow, rainProbability, snowProbability, worstWeatherType)
+- Added `calculateXPModifierWithForecast()` method to `EnvironmentalSensors.ts` that considers incoming weather for XP bonus:
+  - +15% for playing before thunderstorm/tornado
+  - +10% for playing before snow (if probability > 50%)
+  - +10% for playing before heavy rain (if probability > 70%)
+  - +5% for clear skies outlook
+- Added forecast cache management methods: `invalidateForecastCache()`, `invalidateForecastLocation()`, `clearExpiredForecastEntries()`
+- Added 13 unit tests for forecast functionality covering:
+  - Fetching forecast data successfully
+  - Limiting forecast to requested hours
+  - Capping at maximum 120 hours
+  - Parsing different weather types correctly
+  - Handling probability of precipitation
+  - Returning null when no API key provided
+  - Handling API errors gracefully
+  - Caching forecast results
+  - Returning upcoming weather analysis
+  - Identifying clear weather in forecast
+  - Invalidating forecast cache for location
+  - Invalidating all forecast cache
+  - Clearing expired forecast entries
 
 ---
 
