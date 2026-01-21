@@ -175,11 +175,20 @@ Discord RPC will be used to **display serverless playlist info on Discord profil
 - ~~`getCurrentGame()`~~ - Discord CANNOT read game activity
 - ~~`clearGameActivity()`~~ - replaced with `clearMusicActivity()`
 
-#### 2.5 User Information (Future Enhancement)
-- [ ] Implement `getUserInfo()` with RPC user lookup
-- [ ] Retrieve username, discriminator, avatar
-- [ ] Cache user info to reduce RPC calls
-- [ ] Handle permission-denied scenarios
+#### 2.5 User Information ✅
+- [x] Implement `getUserInfo()` with RPC user lookup
+- [x] Retrieve username, discriminator, avatar
+- [x] Cache user info to reduce RPC calls
+- [x] Handle permission-denied scenarios
+
+**Status**: ✅ Complete (2026-01-20)
+
+**Implementation Details**:
+- Captures user information from the Discord RPC READY event using `onRawEvent`
+- Returns cached `DiscordUserInfo` interface with `id`, `username`, `discriminator`, `avatar`, and `globalName`
+- Cache is automatically cleared on disconnect
+- Gracefully handles scenarios where user info is not yet available (returns null)
+- No additional RPC calls needed - user info is included in the initial handshake
 
 #### 2.6 Voice Channel Detection (Future Enhancement - for Multiplayer)
 - [ ] Implement `subscribeToVoiceUpdates()` with voice state monitoring

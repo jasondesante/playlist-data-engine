@@ -22,11 +22,23 @@
  */
 import { DiscordRPCClient as RPCClient } from '@ryuziii/discord-rpc';
 
+/**
+ * Discord user information from READY event
+ */
+export interface DiscordUserInfo {
+    id: string;
+    username: string;
+    discriminator: string;
+    avatar?: string; // Avatar hash
+    globalName?: string; // Display name
+}
+
 export class DiscordRPCClient {
     private clientId: string;
     private rpcClient: RPCClient | null = null;
     private isConnected: boolean = false;
     private disconnectRequested: boolean = false;
+    private userInfo: DiscordUserInfo | null = null;
 
     constructor(clientId: string = '') {
         this.clientId = clientId;
@@ -78,10 +90,29 @@ export class DiscordRPCClient {
     private setupEventHandlers(): void {
         if (!this.rpcClient) return;
 
+        // Use raw event handler to capture the READY event with user data
+        // Note: onRawEvent exists in the JS library but may not be in TS declarations
+        (this.rpcClient as any).onRawEvent((op: number, data: any) => {
+            // Opcode 1 is FRAME, which contains commands/events
+            if (op === 1 && data && data.evt === 'READY') {
+                // Extract user information from READY event
+                if (data.data && data.data.user) {
+                    const user = data.data.user;
+                    this.userInfo = {
+                        id: user.id || '',
+                        username: user.username || '',
+                        discriminator: user.discriminator || '',
+                        avatar: user.avatar,
+                        globalName: user.global_name
+                    };
+                    console.log('Discord RPC connected - User:', this.userInfo.username);
+                }
+            }
+        });
+
         // Connection ready
         this.rpcClient.on('ready', () => {
             this.isConnected = true;
-            console.log('Discord RPC connected successfully');
         });
 
         // Disconnection
@@ -91,6 +122,8 @@ export class DiscordRPCClient {
                 console.warn('Discord RPC disconnected unexpectedly');
             }
             this.isConnected = false;
+            // Clear cached user info on disconnect
+            this.userInfo = null;
         });
 
         // Error handling
@@ -216,27 +249,39 @@ export class DiscordRPCClient {
     }
 
     /**
-     * Get Discord user info (if available)
+     * Get Discord user info
+     *
+     * Returns cached user information from the READY event.
+     * The user info is automatically captured when connecting to Discord.
+     *
+     * @returns User information if connected and available, null otherwise
+     *
+     * @example
+     * const userInfo = await discordClient.getUserInfo();
+     * if (userInfo) {
+     *   console.log(`Connected as ${userInfo.username}#${userInfo.discriminator}`);
+     * }
+     *
+     * @note Returns null if:
+     * - Not connected to Discord
+     * - Connection failed or not yet established
+     * - READY event has not been received yet
+     * - User info was malformed in READY event
      */
-    async getUserInfo(): Promise<{
-        id: string;
-        username: string;
-        discriminator: string;
-    } | null> {
+    async getUserInfo(): Promise<DiscordUserInfo | null> {
+        // Return null if not connected
         if (!this.isConnected) {
             return null;
         }
 
-        try {
-            // In real implementation:
-            // const user = await this.client.request('AUTHENTICATE', { access_token });
-            // return user;
-
-            return null;
-        } catch (error) {
-            console.warn('Failed to fetch Discord user info:', error);
+        // Return null if user info not yet available from READY event
+        // (it may take a moment after connection before READY is received)
+        if (!this.userInfo) {
             return null;
         }
+
+        // Return cached user info
+        return { ...this.userInfo };
     }
 
     /**
