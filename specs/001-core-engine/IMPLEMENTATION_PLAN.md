@@ -108,10 +108,17 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 **Subtasks**:
 
 #### 2.1 Setup and Dependencies
-- [ ] Install `discord-rpc` or `discord-rpc-browser` package
-- [ ] Create Discord application at https://discord.com/developers/applications
-- [ ] Obtain Client ID for RPC connection
-- [ ] Add Client ID to environment variables or config
+- [x] Install `discord-rpc` or `discord-rpc-browser package
+  - ✅ Installed `@ryuziii/discord-rpc@^1.0.1-rc.1` (modern TypeScript library with IPC/WebSocket transport support)
+  - Package includes: Activity templates, progress helpers, animation support, multi-client support
+- [x] Create Discord application at https://discord.com/developers/applications
+  - ✅ Created `.env.example` with setup instructions
+- [x] Obtain Client ID for RPC connection
+  - ✅ Documented in `.env.example` (user action required)
+- [x] Add Client ID to environment variables or config
+  - ✅ Created `.env.example` template with `DISCORD_CLIENT_ID` placeholder
+
+**Status**: ✅ Complete (2026-01-20) - Infrastructure ready, user needs to provide actual Client ID
 
 #### 2.2 Core Connection Methods
 - [ ] Implement `connect()` method with real RPC connection

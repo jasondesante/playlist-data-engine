@@ -36,6 +36,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@ryuziii/discord-rpc": "^1.0.1-rc.1",
     "@types/uuid": "^10.0.0",
     "murmurhash-v3": "^1.0.2",
     "react": "^19.2.0",
