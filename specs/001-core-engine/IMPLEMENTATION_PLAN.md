@@ -662,7 +662,7 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 
 **Subtasks**:
 - [ ] Implement WebSocket/event-based detection for Steam
-- [ ] Implement event-based detection for Discord RPC
+- [ ] Implement event-based detection for Discord RPC (discord game detection doesnt exist anymore, delete this subtask)
 - [ ] Add event listeners for game start/stop
 - [ ] Reduce polling when event-based available
 - [ ] Add hybrid mode (polling + events)
