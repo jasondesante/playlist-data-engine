@@ -4,7 +4,7 @@ import { InitiativeRoller } from '../../src/core/combat/InitiativeRoller';
 import { AttackResolver } from '../../src/core/combat/AttackResolver';
 import { SpellCaster } from '../../src/core/combat/SpellCaster';
 import * as DiceRoller from '../../src/core/combat/DiceRoller';
-import type { CharacterSheet, Attack, Spell } from '../../src/core/types/Character';
+import type { CharacterSheet, Attack, Spell, AbilityScores } from '../../src/core/types/Character';
 import type { Combatant } from '../../src/core/types/Combat';
 
 // bro these tests are FUCKED up! So many things wrong from the mock data being wrong to fuckin everything.
@@ -725,6 +725,266 @@ describe('Combat System (T107-T116)', () => {
       combatEngine.applyTemporaryHP(combatant, 5);
 
       expect(combatant.temporaryHP).toBe(5);
+    });
+  });
+
+  describe('getDamageModifier - Ability Modifier Extraction', () => {
+    // Helper to access private method for testing
+    function getDamageModifier(resolver: AttackResolver, attacker: Combatant, attack: Attack): number {
+      return (resolver as any).getDamageModifier(attacker, attack);
+    }
+
+    function createMockCombatant(abilityMods: Partial<AbilityScores>): Combatant {
+      const character = createMockCharacter({
+        ability_modifiers: {
+          STR: 0,
+          DEX: 0,
+          CON: 0,
+          INT: 0,
+          WIS: 0,
+          CHA: 0,
+          ...abilityMods
+        }
+      });
+
+      return {
+        id: 'test-combatant',
+        character,
+        initiative: 10,
+        currentHP: character.hp.max,
+        statusEffects: [],
+        isDefeated: false,
+        actionUsed: false,
+        bonusActionUsed: false,
+        reactionUsed: false
+      };
+    }
+
+    it('should return DEX modifier for ranged attacks', () => {
+      const combatant = createMockCombatant({ STR: 3, DEX: 4 });
+      const attack: Attack = {
+        name: 'Longbow',
+        type: 'ranged',
+        damage_dice: '1d8',
+        damage_type: 'piercing',
+        range: 150
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(4); // DEX modifier
+    });
+
+    it('should return 0 for ranged attacks when DEX is 0', () => {
+      const combatant = createMockCombatant({ STR: 3, DEX: 0 });
+      const attack: Attack = {
+        name: 'Crossbow',
+        type: 'ranged',
+        damage_dice: '1d10',
+        damage_type: 'piercing',
+        range: 100
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(0);
+    });
+
+    it('should return STR modifier for non-finesse melee attacks', () => {
+      const combatant = createMockCombatant({ STR: 3, DEX: 1 });
+      const attack: Attack = {
+        name: 'Greatsword',
+        type: 'melee',
+        damage_dice: '2d6',
+        damage_type: 'slashing',
+        properties: ['heavy', 'two-handed']
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(3); // STR modifier
+    });
+
+    it('should return STR modifier for melee attacks by default (no type specified)', () => {
+      const combatant = createMockCombatant({ STR: 2, DEX: 4 });
+      const attack: Attack = {
+        name: 'Club',
+        damage_dice: '1d4',
+        damage_type: 'bludgeoning'
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(2); // STR modifier (default)
+    });
+
+    it('should return max(STR, DEX) for finesse weapons', () => {
+      const combatant = createMockCombatant({ STR: 2, DEX: 4 });
+      const attack: Attack = {
+        name: 'Rapier',
+        type: 'melee',
+        damage_dice: '1d8',
+        damage_type: 'piercing',
+        properties: ['finesse']
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(4); // max(STR, DEX) = max(2, 4) = 4
+    });
+
+    it('should return max(STR, DEX) when STR is higher for finesse weapons', () => {
+      const combatant = createMockCombatant({ STR: 5, DEX: 1 });
+      const attack: Attack = {
+        name: 'Dagger',
+        type: 'melee',
+        damage_dice: '1d4',
+        damage_type: 'piercing',
+        properties: ['finesse', 'thrown', 'light']
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(5); // max(STR, DEX) = max(5, 1) = 5
+    });
+
+    it('should return 0 for finesse weapon when both STR and DEX are 0', () => {
+      const combatant = createMockCombatant({ STR: 0, DEX: 0 });
+      const attack: Attack = {
+        name: 'Rapier',
+        type: 'melee',
+        damage_dice: '1d8',
+        damage_type: 'piercing',
+        properties: ['finesse']
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(0); // max(0, 0) = 0
+    });
+
+    it('should return 0 for spell attacks', () => {
+      const combatant = createMockCombatant({ STR: 3, DEX: 2, INT: 4 });
+      const attack: Attack = {
+        name: 'Fire Bolt',
+        type: 'spell',
+        damage_dice: '2d10',
+        damage_type: 'fire'
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(0); // Spells don't add ability mod to damage dice
+    });
+
+    it('should handle negative ability modifiers for melee attacks', () => {
+      const combatant = createMockCombatant({ STR: -1, DEX: 2 });
+      const attack: Attack = {
+        name: 'Staff',
+        type: 'melee',
+        damage_dice: '1d4',
+        damage_type: 'bludgeoning'
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(-1); // Negative STR modifier
+    });
+
+    it('should handle negative ability modifiers for ranged attacks', () => {
+      const combatant = createMockCombatant({ STR: 3, DEX: -1 });
+      const attack: Attack = {
+        name: 'Sling',
+        type: 'ranged',
+        damage_dice: '1d6',
+        damage_type: 'bludgeoning',
+        range: 30
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(-1); // Negative DEX modifier
+    });
+
+    it('should handle finesse weapon with one positive and one negative modifier', () => {
+      const combatant = createMockCombatant({ STR: -1, DEX: 3 });
+      const attack: Attack = {
+        name: 'Rapier',
+        type: 'melee',
+        damage_dice: '1d8',
+        damage_type: 'piercing',
+        properties: ['finesse']
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(3); // max(-1, 3) = 3
+    });
+
+    it('should handle missing ability modifier keys gracefully (defaults to 0)', () => {
+      const character = createMockCharacter();
+      // Create an ability_modifiers object with missing keys
+      character.ability_modifiers = {
+        STR: 0,
+        DEX: 0,
+        CON: 0,
+        INT: 0,
+        WIS: 0,
+        CHA: 0
+      };
+
+      const combatant: Combatant = {
+        id: 'test-combatant',
+        character,
+        initiative: 10,
+        currentHP: character.hp.max,
+        statusEffects: [],
+        isDefeated: false,
+        actionUsed: false,
+        bonusActionUsed: false,
+        reactionUsed: false
+      };
+
+      const attack: Attack = {
+        name: 'Longsword',
+        type: 'melee',
+        damage_dice: '1d8',
+        damage_type: 'slashing'
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(0); // Should default to 0
+    });
+
+    it('should correctly identify finesse property in properties array', () => {
+      const combatant = createMockCombatant({ STR: 1, DEX: 5 });
+      const attack: Attack = {
+        name: 'Shortsword',
+        type: 'melee',
+        damage_dice: '1d6',
+        damage_type: 'piercing',
+        properties: ['finesse', 'light']
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(5); // max(1, 5) = 5 due to finesse
+    });
+
+    it('should not use finesse logic when finesse is not in properties', () => {
+      const combatant = createMockCombatant({ STR: 4, DEX: 5 });
+      const attack: Attack = {
+        name: 'Longsword',
+        type: 'melee',
+        damage_dice: '1d8',
+        damage_type: 'slashing',
+        properties: ['versatile']
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(4); // STR only, not finesse
+    });
+
+    it('should handle undefined properties for melee attacks', () => {
+      const combatant = createMockCombatant({ STR: 3, DEX: 2 });
+      const attack: Attack = {
+        name: 'Unarmed Strike',
+        type: 'melee',
+        damage_dice: '1',
+        damage_type: 'bludgeoning'
+        // No properties array
+      };
+
+      const modifier = getDamageModifier(attackResolver, combatant, attack);
+      expect(modifier).toBe(3); // STR modifier (no finesse without properties)
     });
   });
 

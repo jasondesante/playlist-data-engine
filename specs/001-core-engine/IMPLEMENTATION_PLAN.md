@@ -45,7 +45,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 - [x] Calculate modifier: `Math.floor((abilityScore - 10) / 2)`
 - [x] Update method call in `resolveAttack()` to pass attacker
 - [x] Update method calls in `attackWithAdvantage()` and `attackWithDisadvantage()`
-- [ ] Add unit tests for ability modifier extraction
+- [x] Add unit tests for ability modifier extraction
 - [ ] Test with various weapon types and character ability scores
 
 **Estimated Effort**: 2-3 hours
