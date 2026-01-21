@@ -212,14 +212,30 @@ export class GeolocationProvider {
      * - Longitude-based regional characteristics (continental vs coastal, desert belts)
      * - Regional biome patterns based on global geography
      * - Coastal vs inland detection (oceans, seas, islands, peninsulas)
+     * - Elevation/altitude when available (mountains, valleys)
+     *
+     * @param latitude Latitude coordinate
+     * @param longitude Longitude coordinate
+     * @param altitude Optional altitude in meters (null if unavailable)
+     * @returns Biome type string (may include _coastal suffix for coastal variants)
      */
-    getBiome(latitude: number, longitude: number): string {
+    getBiome(latitude: number, longitude: number, altitude: number | null = null): string {
         const absLat = Math.abs(latitude);
         const normalizedLon = this.normalizeLongitude(longitude);
 
         // Check if location is coastal (for suffixing biomes)
         const isCoastal = this.isCoastal(latitude, longitude);
         const coastalSuffix = isCoastal ? '_coastal' : '';
+
+        // ELEVATION-BASED BIOME DETECTION
+        // When valid altitude data is available, use it to determine biome
+        // Elevation overrides coordinate-based detection for mountains and valleys
+        if (altitude !== null && !isNaN(altitude)) {
+            const elevationBiome = this.getElevationBiome(altitude, coastalSuffix);
+            if (elevationBiome) {
+                return elevationBiome;
+            }
+        }
 
         // Polar regions (Arctic/Antarctic) - always tundra
         if (absLat > 66.5) {
@@ -316,6 +332,45 @@ export class GeolocationProvider {
 
         // Default fallback
         return `plains${coastalSuffix}`;
+    }
+
+    /**
+     * Determine biome based on elevation/altitude
+     *
+     * Elevation thresholds (based on common geographical classifications):
+     * - High mountain: >3500m (11,500ft) - permanent snow, alpine
+     * - Mountain: 1500-3500m (4,900-11,500ft) - mountain ranges
+     * - High plateau: 500-1500m (1,600-4,900ft) - transitional
+     * - Valley/below sea level: <0m - depressions, rift valleys
+     *
+     * When altitude data is valid and indicates mountain or valley terrain,
+     * return the appropriate biome. Otherwise return null to fall back to
+     * coordinate-based detection.
+     *
+     * @param altitude Altitude in meters
+     * @param coastalSuffix The coastal suffix to apply if needed
+     * @returns Biome string if elevation indicates mountain/valley, null otherwise
+     */
+    private getElevationBiome(altitude: number, coastalSuffix: string): string | null {
+        // High mountains - always mountain biome
+        if (altitude > 3500) {
+            return `mountain${coastalSuffix}`;
+        }
+
+        // Mountain range elevation
+        if (altitude > 1500) {
+            return `mountain${coastalSuffix}`;
+        }
+
+        // Below sea level - valleys, depressions, rift valleys
+        if (altitude < 0) {
+            return `valley${coastalSuffix}`;
+        }
+
+        // For elevations between 0-1500m, fall back to coordinate-based detection
+        // This includes high plateaus which could be plains, forests, or deserts
+        // depending on their geographic location
+        return null;
     }
 
     /**

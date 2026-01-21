@@ -491,7 +491,7 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 #### 6.2 Improved Heuristics (Recommended)
 - [x] Add longitude-based regional detection
 - [x] Add coastal vs inland detection
-- [ ] Add elevation-based biomes (mountain, valley)
+- [x] Add elevation-based biomes (mountain, valley)
 - [ ] Add more biome types: desert, swamp, jungle, taiga, savanna
 - [x] Implement decision tree for biome classification
 - [x] Add unit tests for coordinate → biome mapping
@@ -511,14 +511,37 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
   - Major sea/gulf coasts: Mediterranean, Red Sea, Persian Gulf, Black Sea, Caspian Sea, Baltic Sea, North Sea, Arabian Sea, Bay of Bengal, Sea of Japan, South China Sea, Gulf of Mexico, Caribbean Sea
   - Suffix system: Coastal biomes get `_coastal` suffix (e.g., `forest_coastal`, `urban_coastal`, `tundra_coastal`)
   - **Design decision**: Conservative approach to avoid false positives - only marks locations as coastal when clearly islands, peninsulas, or adjacent to named seas/gulfs
+- **Elevation-based biomes**: Implemented altitude-based biome detection (2026-01-21):
+  - **Mountain detection**: Altitude >1500m returns `mountain` biome (with coastal suffix when applicable)
+  - **Valley detection**: Altitude <0m returns `valley` biome (with coastal suffix when applicable)
+  - **Elevation thresholds**:
+    - High mountain: >3500m (permanent snow, alpine)
+    - Mountain: 1500-3500m (mountain ranges)
+    - Valley/below sea level: <0m (depressions, rift valleys)
+  - **Fallback behavior**: For elevations 0-1500m, falls back to coordinate-based detection (high plateaus use coordinate logic)
+  - **Override behavior**: When altitude data is valid and indicates mountain/valley, it overrides coordinate-based detection
+  - **Null/NaN handling**: When altitude is null or NaN, falls back to coordinate-based detection only
+  - **TypeScript types**: Added `valley` to `BiomeType` union type
+  - **API changes**: `getBiome(latitude, longitude, altitude?)` now accepts optional third parameter
+  - **Integration**: `EnvironmentalSensors.ts` updated to pass altitude from `GeolocationData` to `getBiome()`
+  - **Test coverage**: 8 new unit tests covering:
+    - High mountain detection (3500m+)
+    - Mountain detection (1500-3500m)
+    - Coastal suffix for mountain biomes
+    - Fallback when altitude is null/NaN
+    - Valley detection (below sea level)
+    - Coastal suffix for valley biomes
+    - Elevation fallback (0-1500m)
+    - Elevation override behavior
 - **Decision tree implementation**: Multi-level decision tree considering:
-  1. Polar regions (>66.5°)
-  2. Desert regions (15-45° with specific longitude ranges)
-  3. Tropical regions (≤23.5° with regional longitude checks)
-  4. Urban detection (30-50° N in specific longitude ranges)
-  5. Temperate regional classification
-  6. Coastal detection (applies suffix to all biome types)
-- **Test coverage**: 76+ comprehensive unit tests covering all major world regions and edge cases
+  1. Elevation check (when available): Mountains (>1500m), Valleys (<0m)
+  2. Polar regions (>66.5°)
+  3. Desert regions (15-45° with specific longitude ranges)
+  4. Tropical regions (≤23.5° with regional longitude checks)
+  5. Urban detection (30-50° N in specific longitude ranges)
+  6. Temperate regional classification
+  7. Coastal detection (applies suffix to all biome types)
+- **Test coverage**: 84+ comprehensive unit tests covering all major world regions, elevation detection, and edge cases
 
 **Estimated Effort**: 4-6 hours (GIS), 2-3 hours (heuristics)
 

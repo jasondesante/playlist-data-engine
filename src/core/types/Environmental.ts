@@ -53,7 +53,7 @@ export interface LightData {
     timestamp: number;
 }
 
-export type BiomeType = 'urban' | 'forest' | 'desert' | 'mountain' | 'water' | 'tundra' | 'plains';
+export type BiomeType = 'urban' | 'forest' | 'desert' | 'mountain' | 'valley' | 'water' | 'tundra' | 'plains';
 
 export interface EnvironmentalContext {
     geolocation?: GeolocationData;

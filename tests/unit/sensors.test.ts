@@ -742,6 +742,95 @@ describe('EnvironmentalSensors', () => {
                 });
             });
         });
+
+        describe('Elevation-Based Biome Detection', () => {
+            let geoProvider: GeolocationProvider;
+
+            beforeEach(() => {
+                geoProvider = new GeolocationProvider();
+            });
+
+            describe('Mountain Detection (Altitude > 1500m)', () => {
+                it('should detect high mountain biome at 3500m+ elevation', () => {
+                    // Denali, Alaska (6190m actual elevation)
+                    expect(geoProvider.getBiome(63, -151, 4000)).toBe('mountain_coastal');  // Polar region = coastal
+                    // Mount Everest (8849m actual elevation) - Asia north of 50° with mountain elevation
+                    expect(geoProvider.getBiome(27, 86, 8849)).toBe('mountain');  // Below 50° lat, not coastal
+                });
+
+                it('should detect mountain biome at 1500-3500m elevation', () => {
+                    // Denver, Colorado (1600m elevation) - falls in urban band but elevation overrides
+                    expect(geoProvider.getBiome(39, -104, 1600)).toBe('mountain');  // Inland
+                    // Bogota, Colombia (2640m elevation)
+                    expect(geoProvider.getBiome(4, -74, 2640)).toBe('mountain');  // Tropical, inland
+                });
+
+                it('should add coastal suffix to mountain biomes when coastal', () => {
+                    // Coastal mountain location (Andes near coast)
+                    expect(geoProvider.getBiome(-33, -71, 2500)).toBe('mountain');  // Southern Hemisphere temperate = plains (not coastal by our logic)
+                    // Japanese Alps - East Asia urban band but mountain elevation overrides
+                    expect(geoProvider.getBiome(36, 137, 2000)).toBe('mountain_coastal');  // Japan = coastal island
+                });
+
+                it('should fall back to coordinate-based detection when altitude is null', () => {
+                    // When altitude is null, should use coordinate-based detection
+                    expect(geoProvider.getBiome(45, -110, null)).toBe('urban');  // Montana = urban range in North America
+                    expect(geoProvider.getBiome(40, -74, null)).toBe('urban');     // NYC (urban by coordinates)
+                });
+
+                it('should fall back to coordinate-based detection when altitude is NaN', () => {
+                    expect(geoProvider.getBiome(40, -74, NaN)).toBe('urban');     // NYC (urban by coordinates)
+                });
+            });
+
+            describe('Valley Detection (Altitude < 0m)', () => {
+                it('should detect valley biome at below sea level', () => {
+                    // Death Valley (-86m elevation) - inland North America
+                    expect(geoProvider.getBiome(36, -116, -86)).toBe('valley');  // Inland
+                    // Dead Sea (-430m elevation) - near Red Sea (coastal)
+                    expect(geoProvider.getBiome(31, 35, -430)).toBe('valley_coastal');  // Near Red Sea = coastal
+                    // Lake Assal, Djibouti (-155m elevation) - NOT in Red Sea coastal range (<15°N)
+                    expect(geoProvider.getBiome(11, 42, -155)).toBe('valley');  // Not coastal by our logic
+                });
+
+                it('should add coastal suffix to valley biomes when coastal', () => {
+                    // Below sea level location near Red Sea (within 15-30°N range)
+                    expect(geoProvider.getBiome(20, 40, -50)).toBe('valley_coastal');  // Near Red Sea = coastal
+                });
+            });
+
+            describe('Elevation Fallback (0-1500m)', () => {
+                it('should use coordinate-based detection for normal elevations (0-1500m)', () => {
+                    // Sea level coastal city - London at 51°N is above urban band (30-50°N), so it's forest
+                    expect(geoProvider.getBiome(51, 0, 0)).toBe('forest_coastal');  // London (above urban band = forest, coastal)
+                    // Slightly elevated but still using coordinates - NYC is in North America urban band, but not coastal by our logic
+                    expect(geoProvider.getBiome(40, -74, 10)).toBe('urban');       // NYC (inland urban by our logic)
+                    // Tokyo is in East Asia urban band, coastal island
+                    expect(geoProvider.getBiome(35, 139, 100)).toBe('coastal_urban'); // Tokyo (East Asia = urban, coastal island)
+                });
+
+                it('should handle high plateau elevations (500-1500m)', () => {
+                    // High plateau that would be forest/plains by coordinate, not mountain
+                    expect(geoProvider.getBiome(35, 105, 1200)).toBe('plains');  // Tibetan plateau edge (Asia south of 50°)
+                    // 1400m - still not mountain threshold, falls in North America urban band
+                    expect(geoProvider.getBiome(45, -75, 1400)).toBe('urban');  // Ottawa area (North America urban range, inland)
+                });
+            });
+
+            describe('Elevation Override Behavior', () => {
+                it('should override coordinate-based detection with elevation when > 1500m', () => {
+                    // Urban coordinate range but high elevation = mountain
+                    expect(geoProvider.getBiome(40, -105, 2000)).toBe('mountain');  // Denver area (inland)
+                    // Forest coordinate range but high elevation = mountain
+                    expect(geoProvider.getBiome(48, 11, 1800)).toBe('mountain');   // Alpine area (Europe = forest by coordinates, overridden)
+                });
+
+                it('should override coordinate-based detection with valley when < 0m', () => {
+                    // Below sea level = valley (with coastal suffix since Dead Sea is near Red Sea)
+                    expect(geoProvider.getBiome(31, 35, -400)).toBe('valley_coastal');    // Dead Sea area
+                });
+            });
+        });
     });
 });
 
