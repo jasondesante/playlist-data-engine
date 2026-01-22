@@ -6,6 +6,57 @@ export interface SensorPermission {
     timestamp: number;
 }
 
+/**
+ * Health status of a sensor
+ */
+export type SensorHealthStatus = 'healthy' | 'degraded' | 'failed' | 'unknown';
+
+/**
+ * Status information for a single sensor
+ */
+export interface SensorStatus {
+    type: SensorType;
+    health: SensorHealthStatus;
+    lastSuccessTimestamp: number | null;
+    lastFailureTimestamp: number | null;
+    consecutiveFailures: number;
+    totalFailures: number;
+    lastError: string | null;
+    isRetrying: boolean;
+}
+
+/**
+ * Log entry for a sensor failure event
+ */
+export interface SensorFailureLog {
+    sensorType: SensorType;
+    timestamp: number;
+    error: string;
+    retryAttempt: number;
+    willRetry: boolean;
+}
+
+/**
+ * Configuration for sensor retry behavior
+ */
+export interface SensorRetryConfig {
+    maxRetries: number;
+    initialDelayMs: number;
+    maxDelayMs: number;
+    backoffMultiplier: number;
+}
+
+/**
+ * Notification callback for sensor recovery events
+ */
+export interface SensorRecoveryNotification {
+    sensorType: SensorType;
+    previousStatus: SensorHealthStatus;
+    newStatus: SensorHealthStatus;
+    timestamp: number;
+    message: string;
+}
+
 export interface GeolocationData {
     latitude: number;
     longitude: number;

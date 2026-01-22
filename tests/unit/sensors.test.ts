@@ -2486,4 +2486,297 @@ describe('WeatherAPIClient Severe Weather Detection', () => {
             expect(warning).toBeNull();
         });
     });
+
+    // ==================== Error Recovery Tests ====================
+    describe('EnvironmentalSensors Error Recovery', () => {
+        let sensors: EnvironmentalSensors;
+
+        beforeEach(() => {
+            // Clear localStorage
+            try {
+                localStorage.clear();
+            } catch {
+                // localStorage not available
+            }
+
+            // Create sensors instance with custom retry config (faster for tests)
+            sensors = new EnvironmentalSensors('test-api-key', {
+                maxRetries: 2,
+                initialDelayMs: 10,
+                maxDelayMs: 50,
+                backoffMultiplier: 2
+            });
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        describe('Sensor Status Monitoring', () => {
+            it('should initialize all sensors with unknown status', () => {
+                const statuses = sensors.getAllSensorStatuses();
+
+                expect(statuses).toHaveLength(4);
+                statuses.forEach(status => {
+                    expect(status.health).toBe('unknown');
+                    expect(status.lastSuccessTimestamp).toBeNull();
+                    expect(status.lastFailureTimestamp).toBeNull();
+                    expect(status.consecutiveFailures).toBe(0);
+                    expect(status.totalFailures).toBe(0);
+                    expect(status.lastError).toBeNull();
+                    expect(status.isRetrying).toBe(false);
+                });
+            });
+
+            it('should return individual sensor status', () => {
+                const status = sensors.getSensorStatus('geolocation');
+
+                expect(status).not.toBeNull();
+                expect(status?.type).toBe('geolocation');
+                expect(status?.health).toBe('unknown');
+            });
+
+            it('should return null for invalid sensor type', () => {
+                const status = sensors.getSensorStatus('invalid' as any);
+                expect(status).toBeNull();
+            });
+
+            it('should have correct sensor types in status list', () => {
+                const statuses = sensors.getAllSensorStatuses();
+                const sensorTypes = statuses.map(s => s.type).sort();
+
+                expect(sensorTypes).toEqual(['geolocation', 'light', 'motion', 'weather']);
+            });
+
+            it('should have all required status fields', () => {
+                const status = sensors.getSensorStatus('geolocation');
+
+                expect(status).toHaveProperty('type');
+                expect(status).toHaveProperty('health');
+                expect(status).toHaveProperty('lastSuccessTimestamp');
+                expect(status).toHaveProperty('lastFailureTimestamp');
+                expect(status).toHaveProperty('consecutiveFailures');
+                expect(status).toHaveProperty('totalFailures');
+                expect(status).toHaveProperty('lastError');
+                expect(status).toHaveProperty('isRetrying');
+            });
+
+            it('should have valid health status values', () => {
+                const statuses = sensors.getAllSensorStatuses();
+                const validHealthStatuses = ['unknown', 'healthy', 'degraded', 'failed'];
+
+                statuses.forEach(status => {
+                    expect(validHealthStatuses).toContain(status.health);
+                });
+            });
+        });
+
+        describe('Failure Logging', () => {
+            it('should return empty failure log initially', () => {
+                const logs = sensors.getFailureLog();
+                expect(logs).toHaveLength(0);
+            });
+
+            it('should return empty failure log for specific sensor initially', () => {
+                const logs = sensors.getFailureLog('geolocation');
+                expect(logs).toHaveLength(0);
+            });
+
+            it('should return empty failure log with limit', () => {
+                const logs = sensors.getFailureLog('geolocation', 10);
+                expect(logs).toHaveLength(0);
+            });
+
+            it('should clear failure log', () => {
+                // Log is empty initially
+                expect(sensors.getFailureLog()).toHaveLength(0);
+
+                // Clear should not throw
+                sensors.clearFailureLog();
+                expect(sensors.getFailureLog()).toHaveLength(0);
+            });
+        });
+
+        describe('Last Known Good Fallback', () => {
+            it('should return null for last known good when no data exists', () => {
+                const lastKnown = sensors.getLastKnownGood('geolocation');
+                expect(lastKnown).toBeNull();
+            });
+
+            it('should return null for all sensors initially', () => {
+                const sensorTypes: Array<'geolocation' | 'motion' | 'weather' | 'light'> =
+                    ['geolocation', 'motion', 'weather', 'light'];
+
+                sensorTypes.forEach(type => {
+                    expect(sensors.getLastKnownGood(type)).toBeNull();
+                });
+            });
+
+            it('should use last known good for XP modifier calculation', () => {
+                const mockGeoData = {
+                    latitude: 40.71,
+                    longitude: -74.01,
+                    altitude: 1500, // Above 1000m threshold
+                    accuracy: 10,
+                    heading: null,
+                    speed: null,
+                    timestamp: Date.now()
+                };
+
+                // Store last known good directly
+                sensors['storeLastKnownGood']('geolocation', { geolocation: mockGeoData });
+
+                // Clear current context
+                sensors['context'].geolocation = undefined;
+
+                // Should still apply high altitude bonus
+                const modifier = sensors.calculateXPModifier();
+                expect(modifier).toBeGreaterThanOrEqual(1.3); // 1.0 + 0.3 for altitude
+            });
+
+            it('should calculate base modifier when no last known good data', () => {
+                const modifier = sensors.calculateXPModifier();
+                expect(modifier).toBe(1.0); // Base modifier with no sensor data
+            });
+        });
+
+        describe('Recovery Notifications', () => {
+            it('should register recovery callback', () => {
+                const callback = vi.fn();
+                const unsubscribe = sensors.onSensorRecovery(callback);
+
+                expect(typeof unsubscribe).toBe('function');
+
+                // Cleanup
+                unsubscribe();
+            });
+
+            it('should allow unsubscribing from recovery notifications', () => {
+                const callback = vi.fn();
+                const unsubscribe = sensors.onSensorRecovery(callback);
+
+                // Unsubscribe
+                unsubscribe();
+
+                // Callback should not be called (we can't easily trigger notifications without mocking internals)
+                expect(callback).not.toHaveBeenCalled();
+            });
+
+            it('should allow multiple recovery callbacks', () => {
+                const callback1 = vi.fn();
+                const callback2 = vi.fn();
+                const unsubscribe1 = sensors.onSensorRecovery(callback1);
+                const unsubscribe2 = sensors.onSensorRecovery(callback2);
+
+                expect(typeof unsubscribe1).toBe('function');
+                expect(typeof unsubscribe2).toBe('function');
+
+                // Cleanup
+                unsubscribe1();
+                unsubscribe2();
+            });
+        });
+
+        describe('Retry Configuration', () => {
+            it('should create sensors with default retry config', () => {
+                const defaultSensors = new EnvironmentalSensors('test-key');
+                expect(defaultSensors).toBeDefined();
+            });
+
+            it('should create sensors with custom retry configuration', () => {
+                const customSensors = new EnvironmentalSensors('test-key', {
+                    maxRetries: 5,
+                    initialDelayMs: 100,
+                    maxDelayMs: 5000,
+                    backoffMultiplier: 3
+                });
+
+                expect(customSensors).toBeDefined();
+            });
+
+            it('should allow updating retry config at runtime', () => {
+                // Should not throw
+                sensors.updateRetryConfig({
+                    maxRetries: 10,
+                    initialDelayMs: 500
+                });
+
+                expect(sensors).toBeDefined();
+            });
+
+            it('should allow partial retry config updates', () => {
+                // Should not throw - only updating some values
+                sensors.updateRetryConfig({
+                    maxRetries: 7
+                });
+
+                expect(sensors).toBeDefined();
+            });
+        });
+
+        describe('Public API Methods', () => {
+            it('should have getAllSensorStatuses method', () => {
+                expect(typeof sensors.getAllSensorStatuses).toBe('function');
+            });
+
+            it('should have getSensorStatus method', () => {
+                expect(typeof sensors.getSensorStatus).toBe('function');
+            });
+
+            it('should have getFailureLog method', () => {
+                expect(typeof sensors.getFailureLog).toBe('function');
+            });
+
+            it('should have clearFailureLog method', () => {
+                expect(typeof sensors.clearFailureLog).toBe('function');
+            });
+
+            it('should have getLastKnownGood method', () => {
+                expect(typeof sensors.getLastKnownGood).toBe('function');
+            });
+
+            it('should have onSensorRecovery method', () => {
+                expect(typeof sensors.onSensorRecovery).toBe('function');
+            });
+
+            it('should have updateRetryConfig method', () => {
+                expect(typeof sensors.updateRetryConfig).toBe('function');
+            });
+        });
+
+        describe('Graceful Degradation', () => {
+            it('should return base modifier when no sensor data available', () => {
+                const modifier = sensors.calculateXPModifier();
+                expect(modifier).toBe(1.0);
+            });
+
+            it('should handle null context gracefully in severe weather detection', () => {
+                sensors['context'].weather = undefined;
+
+                const alert = sensors.detectSevereWeather();
+                expect(alert).toBeNull();
+
+                const warning = sensors.getSevereWeatherWarning();
+                expect(warning).toBeNull();
+            });
+
+            it('should return base modifier with forecast when no data', async () => {
+                const modifier = await sensors.calculateXPModifierWithForecast();
+                expect(modifier).toBe(1.0);
+            });
+
+            it('should return safe values with severe weather when no data', async () => {
+                const result = await sensors.calculateXPModifierWithSevereWeather();
+
+                expect(result.modifier).toBe(1.0);
+                expect(result.severeWeatherAlert).toBeNull();
+                expect(result.safetyWarning).toBeNull();
+            });
+
+            it('should return unknown activity when no motion data', () => {
+                const activity = sensors.getCurrentActivity();
+                expect(activity).toBe('unknown');
+            });
+        });
+    });
 });

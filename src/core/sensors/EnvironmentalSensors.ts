@@ -1,11 +1,24 @@
-import type { SensorType, SensorPermission, EnvironmentalContext } from '../types/Environmental';
+import type {
+    SensorType,
+    SensorPermission,
+    EnvironmentalContext,
+    SensorHealthStatus,
+    SensorStatus,
+    SensorFailureLog,
+    SensorRetryConfig,
+    SensorRecoveryNotification,
+    GeolocationData,
+    WeatherData,
+    MotionData,
+    LightData
+} from '../types/Environmental';
 import { GeolocationProvider } from './GeolocationProvider';
 import { MotionDetector } from './MotionDetector';
 import { WeatherAPIClient, type SevereWeatherAlert } from './WeatherAPIClient';
 import { LightSensor } from './LightSensor';
 
 /**
- * Environmental sensor integration for location, motion, weather, and light data
+ * Environmental sensor integration with error recovery
  *
  * Aggregates data from:
  * - GPS/Geolocation (latitude, longitude, altitude)
@@ -15,6 +28,14 @@ import { LightSensor } from './LightSensor';
  *
  * Calculates environmental XP modifiers (1.0x - 3.0x) based on activity
  * type, weather conditions, altitude, and time of day.
+ *
+ * Error Recovery Features:
+ * - Retry logic with exponential backoff for failed sensor reads
+ * - Sensor health monitoring and status tracking
+ * - "Last known good" fallback values when sensors fail
+ * - Graceful degradation when individual sensors fail
+ * - Failure logging with timestamps
+ * - Recovery notifications
  */
 export class EnvironmentalSensors {
     private permissions: Map<SensorType, boolean> = new Map();
@@ -27,24 +48,320 @@ export class EnvironmentalSensors {
         timestamp: Date.now()
     };
 
+    // Error recovery state
+    private sensorStatuses: Map<SensorType, SensorStatus> = new Map();
+    private failureLog: SensorFailureLog[] = [];
+    private lastKnownGood: Map<SensorType, {
+        geolocation?: GeolocationData;
+        weather?: WeatherData;
+        motion?: MotionData;
+        light?: LightData;
+    }> = new Map();
+    private recoveryCallbacks: Set<(notification: SensorRecoveryNotification) => void> = new Set();
+
+    // Default retry configuration
+    private retryConfig: SensorRetryConfig = {
+        maxRetries: 3,
+        initialDelayMs: 1000, // 1 second
+        maxDelayMs: 10000, // 10 seconds
+        backoffMultiplier: 2
+    };
+
     /**
-     * Initialize environmental sensors with optional weather API key
+     * Initialize environmental sensors with optional weather API key and retry config
      *
      * @param {string} [weatherApiKey] - OpenWeatherMap API key (required for weather data)
+     * @param {SensorRetryConfig} [retryConfig] - Optional custom retry configuration
      *
      * @example
      * const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
      */
-    constructor(weatherApiKey?: string) {
+    constructor(weatherApiKey?: string, retryConfig?: Partial<SensorRetryConfig>) {
         this.permissions.set('geolocation', false);
         this.permissions.set('motion', false);
         this.permissions.set('weather', false);
         this.permissions.set('light', false);
 
+        // Apply custom retry config if provided
+        if (retryConfig) {
+            this.retryConfig = { ...this.retryConfig, ...retryConfig };
+        }
+
         this.geolocation = new GeolocationProvider();
         this.motion = new MotionDetector();
         this.weather = new WeatherAPIClient(weatherApiKey);
         this.light = new LightSensor();
+
+        // Initialize sensor statuses
+        this.initializeSensorStatuses();
+    }
+
+    /**
+     * Initialize sensor statuses to 'unknown' state
+     */
+    private initializeSensorStatuses(): void {
+        const sensorTypes: SensorType[] = ['geolocation', 'motion', 'weather', 'light'];
+        const now = Date.now();
+
+        for (const type of sensorTypes) {
+            this.sensorStatuses.set(type, {
+                type,
+                health: 'unknown',
+                lastSuccessTimestamp: null,
+                lastFailureTimestamp: null,
+                consecutiveFailures: 0,
+                totalFailures: 0,
+                lastError: null,
+                isRetrying: false
+            });
+        }
+    }
+
+    /**
+     * Update sensor health status after a success or failure
+     */
+    private updateSensorStatus(
+        sensorType: SensorType,
+        success: boolean,
+        error?: string
+    ): void {
+        const status = this.sensorStatuses.get(sensorType);
+        if (!status) return;
+
+        const now = Date.now();
+        const previousHealth = status.health;
+
+        if (success) {
+            status.lastSuccessTimestamp = now;
+            status.consecutiveFailures = 0;
+            status.lastError = null;
+            status.isRetrying = false;
+
+            // Update health based on recovery
+            if (status.health === 'failed' || status.health === 'unknown') {
+                status.health = 'healthy';
+                this.notifyRecovery(sensorType, previousHealth, 'healthy', 'Sensor recovered successfully');
+            } else if (status.health === 'degraded') {
+                status.health = 'healthy';
+                this.notifyRecovery(sensorType, previousHealth, 'healthy', 'Sensor returned to healthy state');
+            }
+        } else {
+            status.lastFailureTimestamp = now;
+            status.consecutiveFailures++;
+            status.totalFailures++;
+            status.lastError = error || 'Unknown error';
+
+            // Update health based on failure count
+            if (status.consecutiveFailures >= 3) {
+                if (status.health !== 'failed') {
+                    const previousHealth = status.health;
+                    status.health = 'failed';
+                    this.notifyRecovery(sensorType, previousHealth, 'failed', `Sensor failed after ${status.consecutiveFailures} consecutive failures`);
+                }
+            } else if (status.consecutiveFailures >= 1) {
+                if (status.health === 'healthy' || status.health === 'unknown') {
+                    status.health = 'degraded';
+                    this.notifyRecovery(sensorType, previousHealth, 'degraded', `Sensor degraded after ${status.consecutiveFailures} consecutive failures`);
+                }
+            }
+        }
+
+        this.sensorStatuses.set(sensorType, status);
+    }
+
+    /**
+     * Notify registered callbacks of sensor recovery events
+     */
+    private notifyRecovery(
+        sensorType: SensorType,
+        previousStatus: SensorHealthStatus,
+        newStatus: SensorHealthStatus,
+        message: string
+    ): void {
+        const notification: SensorRecoveryNotification = {
+            sensorType,
+            previousStatus,
+            newStatus,
+            timestamp: Date.now(),
+            message
+        };
+
+        this.recoveryCallbacks.forEach(callback => {
+            try {
+                callback(notification);
+            } catch (e) {
+                // Don't let callback errors break the sensor logic
+                console.error('[EnvironmentalSensors] Recovery callback error:', e);
+            }
+        });
+    }
+
+    /**
+     * Log a sensor failure event
+     */
+    private logFailure(
+        sensorType: SensorType,
+        error: string,
+        retryAttempt: number,
+        willRetry: boolean
+    ): void {
+        const logEntry: SensorFailureLog = {
+            sensorType,
+            timestamp: Date.now(),
+            error,
+            retryAttempt,
+            willRetry
+        };
+
+        this.failureLog.push(logEntry);
+
+        // Keep only last 100 failure logs to prevent memory bloat
+        if (this.failureLog.length > 100) {
+            this.failureLog = this.failureLog.slice(-100);
+        }
+    }
+
+    /**
+     * Store last known good value for a sensor
+     */
+    private storeLastKnownGood(sensorType: SensorType, data: any): void {
+        this.lastKnownGood.set(sensorType, {
+            ...this.lastKnownGood.get(sensorType),
+            ...data
+        });
+    }
+
+    /**
+     * Execute a sensor operation with retry logic and exponential backoff
+     */
+    private async retrySensorOperation<T>(
+        sensorType: SensorType,
+        operation: () => Promise<T>,
+        operationName: string = 'sensor operation'
+    ): Promise<T | null> {
+        let lastError: Error | null = null;
+        let delay = this.retryConfig.initialDelayMs;
+
+        for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
+            try {
+                // Set retrying status if this is a retry attempt
+                if (attempt > 0) {
+                    const status = this.sensorStatuses.get(sensorType);
+                    if (status) {
+                        status.isRetrying = true;
+                        this.sensorStatuses.set(sensorType, status);
+                    }
+                }
+
+                const result = await operation();
+
+                // Operation succeeded
+                this.updateSensorStatus(sensorType, true);
+
+                return result;
+            } catch (error) {
+                lastError = error as Error;
+                const errorMessage = lastError.message || String(error);
+                const willRetry = attempt < this.retryConfig.maxRetries;
+
+                // Log the failure
+                this.logFailure(sensorType, errorMessage, attempt, willRetry);
+
+                // Update sensor status
+                this.updateSensorStatus(sensorType, false, errorMessage);
+
+                // If we have more retries, wait with exponential backoff
+                if (willRetry) {
+                    await this.delay(delay);
+                    delay = Math.min(delay * this.retryConfig.backoffMultiplier, this.retryConfig.maxDelayMs);
+                }
+            }
+        }
+
+        // All retries exhausted
+        const status = this.sensorStatuses.get(sensorType);
+        if (status) {
+            status.isRetrying = false;
+            this.sensorStatuses.set(sensorType, status);
+        }
+
+        return null;
+    }
+
+    /**
+     * Delay helper for retry backoff
+     */
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Register a callback for sensor recovery notifications
+     *
+     * @param callback - Function to call when sensor status changes
+     * @returns Unsubscribe function
+     */
+    onSensorRecovery(callback: (notification: SensorRecoveryNotification) => void): () => void {
+        this.recoveryCallbacks.add(callback);
+        return () => this.recoveryCallbacks.delete(callback);
+    }
+
+    /**
+     * Get current status of a specific sensor
+     */
+    getSensorStatus(sensorType: SensorType): SensorStatus | null {
+        return this.sensorStatuses.get(sensorType) || null;
+    }
+
+    /**
+     * Get status of all sensors
+     */
+    getAllSensorStatuses(): SensorStatus[] {
+        return Array.from(this.sensorStatuses.values());
+    }
+
+    /**
+     * Get failure log entries
+     *
+     * @param sensorType - Optional filter by sensor type
+     * @param limit - Maximum number of entries to return (default: all)
+     */
+    getFailureLog(sensorType?: SensorType, limit?: number): SensorFailureLog[] {
+        let logs = [...this.failureLog];
+
+        if (sensorType) {
+            logs = logs.filter(log => log.sensorType === sensorType);
+        }
+
+        // Return most recent first
+        logs.reverse();
+
+        if (limit) {
+            logs = logs.slice(0, limit);
+        }
+
+        return logs;
+    }
+
+    /**
+     * Get last known good value for a sensor
+     */
+    getLastKnownGood(sensorType: SensorType): any {
+        return this.lastKnownGood.get(sensorType) || null;
+    }
+
+    /**
+     * Clear failure log
+     */
+    clearFailureLog(): void {
+        this.failureLog = [];
+    }
+
+    /**
+     * Update retry configuration
+     */
+    updateRetryConfig(config: Partial<SensorRetryConfig>): void {
+        this.retryConfig = { ...this.retryConfig, ...config };
     }
 
     /**
@@ -99,6 +416,13 @@ export class EnvironmentalSensors {
             this.motion.startMonitoring((data) => {
                 this.context.motion = data;
                 this.context.timestamp = Date.now();
+
+                // Store last known good
+                this.storeLastKnownGood('motion', { motion: data });
+
+                // Update sensor status on successful read
+                this.updateSensorStatus('motion', true);
+
                 if (callback) callback(this.context);
             });
         }
@@ -107,12 +431,18 @@ export class EnvironmentalSensors {
             this.light.startMonitoring((data) => {
                 this.context.light = data;
                 this.context.timestamp = Date.now();
+
+                // Store last known good
+                this.storeLastKnownGood('light', { light: data });
+
+                // Update sensor status on successful read
+                this.updateSensorStatus('light', true);
+
                 if (callback) callback(this.context);
             });
         }
 
-        // Poll geolocation and weather if enabled (e.g., every 5 minutes)
-        // For simplicity, we just fetch once on start here, but a real app would set an interval
+        // Poll geolocation and weather if enabled
         this.updateSnapshot();
     }
 
@@ -125,23 +455,56 @@ export class EnvironmentalSensors {
     }
 
     /**
-     * Manually update snapshot of pull-based sensors (Geo, Weather)
+     * Manually update snapshot of pull-based sensors (Geo, Weather) with retry logic
      */
     async updateSnapshot(): Promise<EnvironmentalContext> {
+        // Update geolocation with retry
         if (this.permissions.get('geolocation')) {
-            const geo = await this.geolocation.getCurrentPosition();
+            const geo = await this.retrySensorOperation(
+                'geolocation',
+                () => this.geolocation.getCurrentPosition(),
+                'getCurrentPosition'
+            );
+
             if (geo) {
                 this.context.geolocation = geo;
+
+                // Store last known good
+                this.storeLastKnownGood('geolocation', { geolocation: geo });
 
                 // Calculate biome from coordinates (with elevation if available)
                 const biome = this.geolocation.getBiome(geo.latitude, geo.longitude, geo.altitude);
                 this.context.biome = biome as any;
+            } else {
+                // Geolocation failed, use last known good if available
+                const lastKnown = this.getLastKnownGood('geolocation');
+                if (lastKnown?.geolocation) {
+                    this.context.geolocation = lastKnown.geolocation;
+                }
+            }
 
-                // If we have geo and weather permission, update weather
-                if (this.permissions.get('weather')) {
-                    const weather = await this.weather.getWeather(geo.latitude, geo.longitude);
+            // Update weather with retry (only if we have geo location)
+            if ((this.context.geolocation || this.getLastKnownGood('geolocation')?.geolocation) && this.permissions.get('weather')) {
+                const geoForWeather = this.context.geolocation || this.getLastKnownGood('geolocation')?.geolocation;
+
+                if (geoForWeather) {
+                    const weather = await this.retrySensorOperation(
+                        'weather',
+                        () => this.weather.getWeather(geoForWeather!.latitude, geoForWeather!.longitude),
+                        'getWeather'
+                    );
+
                     if (weather) {
                         this.context.weather = weather;
+
+                        // Store last known good
+                        this.storeLastKnownGood('weather', { weather });
+                    } else {
+                        // Weather failed, use last known good if available
+                        const lastKnown = this.getLastKnownGood('weather');
+                        if (lastKnown?.weather) {
+                            this.context.weather = lastKnown.weather;
+                        }
                     }
                 }
             }
@@ -153,29 +516,33 @@ export class EnvironmentalSensors {
 
     /**
      * Calculate XP modifier based on environmental factors
+     * Uses last known good values if current readings are unavailable
      * Cap at 3.0x total
      */
     calculateXPModifier(): number {
         let modifier = 1.0;
 
-        // Motion bonuses
-        if (this.context.motion) {
-            const activity = this.motion.detectActivity(this.context.motion);
+        // Motion bonuses - check current or last known good
+        const motionData = this.context.motion || this.getLastKnownGood('motion')?.motion;
+        if (motionData) {
+            const activity = this.motion.detectActivity(motionData);
             if (activity === 'running') modifier += 0.5; // +50%
             else if (activity === 'walking') modifier += 0.2; // +20%
         }
 
-        // Weather bonuses
-        if (this.context.weather) {
-            const type = this.context.weather.weatherType.toLowerCase();
+        // Weather bonuses - check current or last known good
+        const weatherData = this.context.weather || this.getLastKnownGood('weather')?.weather;
+        if (weatherData) {
+            const type = weatherData.weatherType.toLowerCase();
             if (type.includes('rain') || type.includes('storm')) modifier += 0.4; // +40% for braving the storm
             if (type.includes('snow')) modifier += 0.3; // +30%
 
-            if (this.context.weather.isNight) modifier += 0.25; // +25% for night owl
+            if (weatherData.isNight) modifier += 0.25; // +25% for night owl
         }
 
-        // Geolocation bonuses
-        if (this.context.geolocation && this.context.geolocation.altitude && this.context.geolocation.altitude > 1000) {
+        // Geolocation bonuses - check current or last known good
+        const geoData = this.context.geolocation || this.getLastKnownGood('geolocation')?.geolocation;
+        if (geoData && geoData.altitude && geoData.altitude > 1000) {
             modifier += 0.3; // +30% for high altitude
         }
 
@@ -193,16 +560,16 @@ export class EnvironmentalSensors {
         let modifier = this.calculateXPModifier();
 
         // Get upcoming weather for forecast bonus
-        if (this.context.geolocation && this.permissions.get('weather')) {
-            const upcoming = await this.weather.getUpcomingWeather(
-                this.context.geolocation.latitude,
-                this.context.geolocation.longitude,
-                forecastHours
+        const geoData = this.context.geolocation || this.getLastKnownGood('geolocation')?.geolocation;
+        if (geoData && this.permissions.get('weather')) {
+            const upcoming = await this.retrySensorOperation(
+                'weather',
+                () => this.weather.getUpcomingWeather(geoData!.latitude, geoData!.longitude, forecastHours),
+                'getUpcomingWeather'
             );
 
             if (upcoming) {
                 // Add small bonus for incoming severe weather (anticipation bonus)
-                // If bad weather is coming, playing now shows preparation/planning
                 const worstType = upcoming.worstWeatherType.toLowerCase();
                 if (worstType.includes('thunderstorm') || worstType.includes('tornado')) {
                     modifier += 0.15; // +15% for playing before storm
@@ -238,12 +605,12 @@ export class EnvironmentalSensors {
         // Check for severe weather conditions in current weather
         let severeWeatherAlert: SevereWeatherAlert | null = null;
 
-        if (this.context.weather) {
-            severeWeatherAlert = this.weather.detectSevereWeather(this.context.weather);
+        const weatherData = this.context.weather || this.getLastKnownGood('weather')?.weather;
+        if (weatherData) {
+            severeWeatherAlert = this.weather.detectSevereWeather(weatherData);
 
             if (severeWeatherAlert) {
                 // Add severe weather XP bonus
-                // Blizzard: +50%, Hurricane/Typhoon: +75%, Tornado: +100%
                 modifier += severeWeatherAlert.xpBonus;
             }
         }
@@ -265,14 +632,16 @@ export class EnvironmentalSensors {
 
     /**
      * Detect severe weather from current environmental conditions
+     * Falls back to last known good weather if current is unavailable
      * @returns Severe weather alert or null if conditions are normal
      */
     detectSevereWeather(): SevereWeatherAlert | null {
-        if (!this.context.weather) {
+        const weatherData = this.context.weather || this.getLastKnownGood('weather')?.weather;
+        if (!weatherData) {
             return null;
         }
 
-        return this.weather.detectSevereWeather(this.context.weather);
+        return this.weather.detectSevereWeather(weatherData);
     }
 
     /**
@@ -347,11 +716,19 @@ export class EnvironmentalSensors {
         }
     }
 
-    // Add this inside the EnvironmentalSensors class
+    /**
+     * Get current activity type with fallback to last known good
+     */
     public getCurrentActivity(): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown' {
-        if (!this.context.motion || !this.permissions.get('motion')) {
+        if (!this.permissions.get('motion')) {
             return 'unknown';
         }
-        return this.motion.detectActivity(this.context.motion);
+
+        const motionData = this.context.motion || this.getLastKnownGood('motion')?.motion;
+        if (!motionData) {
+            return 'unknown';
+        }
+
+        return this.motion.detectActivity(motionData);
     }
 }
