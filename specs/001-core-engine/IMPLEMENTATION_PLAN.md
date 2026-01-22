@@ -685,7 +685,7 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 **Subtasks**:
 - [ ] Add retry logic for failed sensor reads
 - [ ] Implement exponential backoff for retries
-- [ ] Add sensor health monitoring
+- [ ] Add sensor status monitoring
 - [ ] Gracefully degrade when individual sensors fail
 - [ ] Log sensor failures with timestamps
 - [ ] Add "last known good" fallback values
