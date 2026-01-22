@@ -1447,10 +1447,11 @@ After completing all tasks, verify:
 
 - [x] All 10 features in SPEC.md show 100% implementation ✅ Verified (2026-01-22)
 - [x] All TypeScript files compile with strict mode ✅ Verified (2026-01-22)
-- [ ] All tests pass (426+ tests, 100% passing) ⚠️ Improved (2026-01-22): 823/837 tests pass (98.3%)
+- [ ] All tests pass (426+ tests, 100% passing) ⚠️ Improved (2026-01-22): 825/837 tests pass (98.6%)
   - Fixed 41 biome detection test failures by correcting expectations to match implementation
+  - Fixed 2 gaming bonus calculation tests by correcting expected values to match 1.75 cap
   - sensors.test.ts: 240/244 passing (98.4%, up from 85.7%)
-  - 14 remaining failures in multiSensorInteraction.test.ts and edge case tests
+  - 12 remaining failures in biome detection and fullSensorPipeline tests
 - [ ] No `@ts-ignore` comments remain
 - [ ] No `TODO` comments remain (or convert to tracked issues)
 - [ ] All mocked methods replaced with real implementations
@@ -1566,5 +1567,36 @@ Low:       [██████████████] 3/3 tasks (100%) - All 2
 - Failing: 45 (5.4%)
   - 35 in sensors.test.ts (biome detection boundary issues)
   - 10 in other test files (needs investigation)
+
+---
+
+### 2026-01-22: Gaming Bonus Calculation Test Fix
+
+**Task**: Fix failing gaming bonus calculation tests expecting 1.8 when implementation caps at 1.75
+
+**Issue Identified**:
+Test expectations were incorrect. The test comment showed:
+```
+// Base 0.25 + RPG 0.2 + Multiplayer 0.15 + 4hr session (0.2) = 1.8
+```
+
+However, per the documented design (DECISIONS.md line 49: "gaming (max 1.75x)"), the implementation correctly caps the gaming modifier at 1.75x.
+
+**Root Cause**: Test expectations did not account for the documented `maxGamingModifier: 1.75` cap.
+
+**Fix Applied**:
+Updated test expectations in 3 files to match the documented behavior:
+1. `tests/fixtures/mockGamingData.ts` - Updated `getExpectedGamingBonus('multiplayer')` return value from 1.8 to 1.75
+2. `tests/integration/gamingIntegration.test.ts` - Updated 2 test assertions from 1.8 to 1.75
+3. `tests/integration/fullSensorPipeline.test.ts` - Updated test assertion from 1.8 to 1.75
+4. `tests/fixtures/mockGamingData.ts` - Updated `gamingSessionScenarios` expectedBonus values for scenarios that exceed 1.75
+
+**Tests Fixed** (2 tests):
+- `should calculate correct bonus for RPG game with multiplayer` (gamingIntegration.test.ts:113)
+- `should calculate correct bonus for multiplayer game` (gamingIntegration.test.ts:403)
+
+**Result**: 823/837 tests passing (98.3% → 98.6%, +2 tests fixed)
+
+**Verification**: All gamingIntegration.test.ts tests now pass (36/36)
 
 ---

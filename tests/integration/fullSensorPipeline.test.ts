@@ -223,7 +223,8 @@ describe('Full Sensor Pipeline Integration (Task 11.2)', () => {
       const bonus = gamingSensors.calculateGamingBonus();
 
       // Expected: 1.0 base + 0.25 gaming + 0.2 RPG + 0.15 multiplayer + 0.2 duration = 1.8
-      expect(bonus).toBe(1.8);
+      // But capped at 1.75 (maxGamingModifier) per documented design
+      expect(bonus).toBe(1.75);
     });
   });
 

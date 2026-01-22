@@ -214,7 +214,8 @@ export function getExpectedGamingBonus(scenario: 'none' | 'action' | 'rpg' | 'st
       return 1.4;
     case 'multiplayer':
       // 1.0 + 0.25 (base) + 0.2 (rpg) + 0.15 (multiplayer) + 0.2 (4hr/4hr * 0.2) = 1.8
-      return 1.8;
+      // But capped at 1.75 (maxGamingModifier) per documented design
+      return 1.75;
     default:
       return 1.0;
   }
@@ -278,13 +279,13 @@ export const gamingSessionScenarios: GameSessionScenario[] = [
         sessionDuration: 240  // 4+ hours
       }
     },
-    expectedBonus: 1.8,  // 1.0 + 0.25 (base) + 0.2 (rpg) + 0.15 (action) + 0.2 (4hr session)
+    expectedBonus: 1.75,  // 1.0 + 0.25 (base) + 0.2 (rpg) + 0.15 (action) + 0.2 (4hr session) = 1.8, capped at 1.75
     description: 'Playing Elden Ring for 4+ hours (includes session duration bonus)'
   },
   {
     name: 'Multiplayer RPG - Party of 4',
     context: mockGamingContext_MultiplayerGame,
-    expectedBonus: 1.8,  // 1.0 + 0.25 (base) + 0.2 (rpg) + 0.15 (multiplayer) + 0.2 (4hr session)
+    expectedBonus: 1.75,  // 1.0 + 0.25 (base) + 0.2 (rpg) + 0.15 (multiplayer) + 0.2 (4hr session) = 1.8, capped at 1.75
     description: 'Playing BG3 with party of 4 for 4+ hours'
   },
   {

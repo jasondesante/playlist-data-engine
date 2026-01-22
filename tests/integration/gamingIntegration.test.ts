@@ -110,7 +110,8 @@ describe('Gaming Platform Integration (T093-T106)', () => {
 
             const bonus = gamingSensors.calculateGamingBonus();
             // Base 0.25 + RPG 0.2 + Multiplayer 0.15 + Duration 0.2 = 0.8 total = 1.8x
-            expect(bonus).toBe(1.8);
+            // But capped at 1.75 (maxGamingModifier) per documented design
+            expect(bonus).toBe(1.75);
             expect(bonus).toBeLessThanOrEqual(3.0);
         });
 
@@ -399,8 +400,9 @@ describe('Gaming Integration with Mock Data (T119)', () => {
             const bonus = gamingSensors.calculateGamingBonus();
 
             // Base 0.25 + RPG 0.2 + Multiplayer 0.15 + 4hr session (0.2) = 1.8
+            // But capped at 1.75 (maxGamingModifier) per documented design
             expect(bonus).toBe(expectedBonus);
-            expect(bonus).toBe(1.8);
+            expect(bonus).toBe(1.75);
         });
     });
 
@@ -414,15 +416,15 @@ describe('Gaming Integration with Mock Data (T119)', () => {
         });
 
         it('should calculate correct bonus for each scenario', () => {
-            // Expected bonuses for scenarios:
+            // Expected bonuses for scenarios (all capped at 1.75 maxGamingModifier):
             // Action (30min): 1.425
-            // RPG (4hr): 1.8 (0.25 base + 0.2 rpg + 0.15 action + 0.2 duration)
-            // Multiplayer (4hr): 1.8 (0.25 base + 0.2 rpg + 0.15 multiplayer + 0.2 duration)
+            // RPG (4hr): 1.75 (0.25 base + 0.2 rpg + 0.15 action + 0.2 duration = 1.8, capped)
+            // Multiplayer (4hr): 1.75 (0.25 base + 0.2 rpg + 0.15 multiplayer + 0.2 duration = 1.8, capped)
             // None: 1.0
             const expectedBonuses: Record<string, number> = {
                 'Solo Action Game - Short Session': 1.425,
-                'Solo RPG Game - Long Session': 1.8,
-                'Multiplayer RPG - Party of 4': 1.8,
+                'Solo RPG Game - Long Session': 1.75,
+                'Multiplayer RPG - Party of 4': 1.75,
                 'Not Gaming': 1.0
             };
 
@@ -478,7 +480,7 @@ describe('Gaming Integration with Mock Data (T119)', () => {
                 'action': 1.425,
                 'rpg': 1.55,  // RPG matches first in "Action RPG", so only +0.2
                 'strategy': 1.4,
-                'multiplayer': 1.8
+                'multiplayer': 1.75  // Capped at maxGamingModifier (1.75)
             };
 
             Object.entries(bonusMap).forEach(([scenario, expectedBonus]) => {
