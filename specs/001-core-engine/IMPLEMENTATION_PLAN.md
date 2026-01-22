@@ -13,7 +13,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 | Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | ✅ Complete |
 | Enhancements | 8 | 🟢 7/8 Complete (1 not recommended) |
-| Nice to Have | 3 | 🟡 1/3 In Progress (Task 10: 1/5 subtasks) |
+| Nice to Have | 3 | 🟡 1/3 In Progress (Task 10: 3/5 subtasks) |
 | **Total** | **12** | |
 
 ---
@@ -778,11 +778,11 @@ The "Environmental Sensor Error Recovery" task was already fully implemented in 
 **Subtasks**:
 - [x] Add consistent logging levels (debug, info, warn, error)
 - [x] Add diagnostic mode for troubleshooting
-- [ ] Add sensor status dashboard output
+- [x] Add sensor status dashboard output
 - [ ] Add performance metrics (API call times, cache hit rates)
 - [ ] Add optional verbose logging flag
 
-**Status**: 🟡 In Progress (2/5 subtasks complete)
+**Status**: 🟡 In Progress (3/5 subtasks complete)
 
 **Implementation Summary (Subtask 2 - Diagnostic Mode)**:
 Created a centralized logging utility at `src/utils/logger.ts` with:
@@ -855,6 +855,70 @@ Added diagnostic mode functionality to enable enhanced logging and comprehensive
 **Completed**: 2026-01-22
 
 **Estimated Effort**: 2-3 hours
+
+---
+
+**Implementation Summary (Subtask 3 - Sensor Status Dashboard)**:
+
+Added a visual console dashboard for displaying sensor diagnostic information:
+
+**New File**: `src/utils/sensorDashboard.ts` with:
+
+**Dashboard Features**:
+- Formatted console output with ANSI colors (auto-disabled in non-TTY environments)
+- Three main display functions:
+  - `displayEnvironmentalDiagnostics()` - Environmental sensors dashboard
+  - `displayGamingDiagnostics()` - Gaming platform sensors dashboard
+  - `displaySystemDashboard()` - Combined system-wide dashboard
+- Configurable options:
+  - `useColors` - Enable/disable colored output (default: auto-detect)
+  - `compact` - Compact mode for smaller output
+  - `showTimestamp` - Show/hide timestamp
+  - `maxFailures` - Control number of recent failures shown
+
+**Dashboard Sections for Environmental Sensors**:
+- Sensor Status: Health indicators (healthy/degraded/failed), permissions, availability
+- Cache Statistics: Geolocation age/expiry, weather cache size, hit rates
+- Recent Failures: Last N failure entries with timestamps and error messages
+- Context Data: Which sensor data is currently available
+
+**Dashboard Sections for Gaming Sensors**:
+- Platform Status: Steam authentication, Discord connection states
+- Gaming Context: Current game, platform source, session duration, party size
+- Polling Status: Active state, interval, exponential backoff
+- Cache: Game metadata cache size and cached game list
+
+**EnvironmentalSensors API Addition**:
+- `printDashboard(config?)` - Print environmental sensor dashboard to console
+
+**GamingPlatformSensors API Addition**:
+- `printDashboard(config?)` - Print gaming sensor dashboard to console
+
+**Tests Added**:
+- 4 tests in `tests/unit/sensors.test.ts` for environmental dashboard
+- 4 tests in `tests/unit/gaming.test.ts` for gaming dashboard
+
+**Usage Example**:
+```typescript
+import { EnvironmentalSensors } from './sensors/EnvironmentalSensors';
+import { GamingPlatformSensors } from './sensors/GamingPlatformSensors';
+import { SensorDashboard } from './utils/sensorDashboard';
+
+// Quick dashboard from sensor instance
+const sensors = new EnvironmentalSensors(apiKey);
+sensors.printDashboard();
+
+// Custom configuration
+sensors.printDashboard({ useColors: false, compact: true });
+
+// Combined system dashboard
+SensorDashboard.displaySystemDashboard({
+    environmental: sensors.getDiagnostics(),
+    gaming: gamingSensors.getDiagnostics()
+});
+```
+
+**Completed**: 2026-01-22
 
 ---
 

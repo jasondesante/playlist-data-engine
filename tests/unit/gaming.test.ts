@@ -328,6 +328,46 @@ describe('GamingPlatformSensors (T093)', () => {
             expect(diagnostics.steam.userId).toBe('123456789');
         });
     });
+
+    describe('Sensor Dashboard', () => {
+        it('should have printDashboard method', () => {
+            expect(typeof gamingSensors.printDashboard).toBe('function');
+        });
+
+        it('should print dashboard without errors', () => {
+            const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+            expect(() => gamingSensors.printDashboard()).not.toThrow();
+
+            expect(consoleSpy).toHaveBeenCalled();
+
+            consoleSpy.mockRestore();
+        });
+
+        it('should print dashboard with custom config', () => {
+            const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+            expect(() => gamingSensors.printDashboard({ useColors: false, compact: true, showTimestamp: false, maxFailures: 3 })).not.toThrow();
+
+            expect(consoleSpy).toHaveBeenCalled();
+
+            consoleSpy.mockRestore();
+        });
+
+        it('should print dashboard when diagnostics data is available', () => {
+            const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+            const diagnostics = gamingSensors.getDiagnostics();
+            expect(diagnostics).toBeDefined();
+
+            gamingSensors.printDashboard();
+
+            // Should contain diagnostic output
+            expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('GAMING'));
+
+            consoleSpy.mockRestore();
+        });
+    });
 });
 
 describe('SteamAPIClient', () => {

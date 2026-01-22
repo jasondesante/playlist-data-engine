@@ -2881,4 +2881,56 @@ describe('WeatherAPIClient Severe Weather Detection', () => {
             sensors.disableDiagnosticMode();
         });
     });
+
+    describe('Sensor Dashboard', () => {
+        let sensors: EnvironmentalSensors;
+
+        beforeEach(() => {
+            sensors = new EnvironmentalSensors('test-api-key');
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('should have printDashboard method', () => {
+            expect(typeof sensors.printDashboard).toBe('function');
+        });
+
+        it('should print dashboard without errors', () => {
+            // Mock console.log to capture output
+            const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+            expect(() => sensors.printDashboard()).not.toThrow();
+
+            // Verify console.log was called
+            expect(consoleSpy).toHaveBeenCalled();
+
+            consoleSpy.mockRestore();
+        });
+
+        it('should print dashboard with custom config', () => {
+            const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+            expect(() => sensors.printDashboard({ useColors: false, compact: true, showTimestamp: false, maxFailures: 3 })).not.toThrow();
+
+            expect(consoleSpy).toHaveBeenCalled();
+
+            consoleSpy.mockRestore();
+        });
+
+        it('should print dashboard when diagnostics data is available', () => {
+            const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+            const diagnostics = sensors.getDiagnostics();
+            expect(diagnostics).toBeDefined();
+
+            sensors.printDashboard();
+
+            // Should contain diagnostic output
+            expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('ENVIRONMENTAL'));
+
+            consoleSpy.mockRestore();
+        });
+    });
 });

@@ -17,6 +17,7 @@ import { MotionDetector } from './MotionDetector';
 import { WeatherAPIClient, type SevereWeatherAlert } from './WeatherAPIClient';
 import { LightSensor } from './LightSensor';
 import { Logger } from '../../utils/logger.js';
+import { SensorDashboard, type DashboardConfig } from '../../utils/sensorDashboard.js';
 
 /**
  * Environmental sensor integration with error recovery
@@ -826,5 +827,19 @@ export class EnvironmentalSensors {
     disableDiagnosticMode(): void {
         Logger.disableDiagnosticMode();
         this.logger.info('Diagnostic mode disabled');
+    }
+
+    /**
+     * Print a formatted dashboard to the console with sensor status information
+     * Useful for debugging and monitoring during development
+     *
+     * @param config Optional dashboard configuration (colors, compact mode, etc.)
+     *
+     * @example
+     * sensors.printDashboard();
+     * sensors.printDashboard({ useColors: false, compact: true });
+     */
+    printDashboard(config?: DashboardConfig): void {
+        SensorDashboard.displayEnvironmentalDiagnostics(this.getDiagnostics(), config);
     }
 }

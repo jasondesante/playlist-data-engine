@@ -2,6 +2,7 @@ import type { GamingContext } from '../types/Progression';
 import { SteamAPIClient } from './SteamAPIClient';
 import { DiscordRPCClient, DiscordConnectionState } from './DiscordRPCClient';
 import { Logger } from '../../utils/logger.js';
+import { SensorDashboard, type DashboardConfig } from '../../utils/sensorDashboard.js';
 
 /**
  * GamingPlatformSensors - Unified interface for gaming detection
@@ -323,5 +324,19 @@ export class GamingPlatformSensors {
                 cachedGames: Array.from(this.gameMetadataCache.keys()),
             },
         };
+    }
+
+    /**
+     * Print a formatted dashboard to the console with gaming sensor status information
+     * Useful for debugging and monitoring during development
+     *
+     * @param config Optional dashboard configuration (colors, compact mode, etc.)
+     *
+     * @example
+     * gamingSensors.printDashboard();
+     * gamingSensors.printDashboard({ useColors: false, compact: true });
+     */
+    printDashboard(config?: DashboardConfig): void {
+        SensorDashboard.displayGamingDiagnostics(this.getDiagnostics(), config);
     }
 }
