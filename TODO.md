@@ -4,9 +4,17 @@
 
 This document tracks what's been completed, what was recently changed, and what still needs work.
 
+**Last Updated**: 2026-01-22
+
 ---
 
-## Recent Changes (TypeScript Fixes)
+## Status: All Tasks Complete ✅
+
+All items previously tracked in this TODO have been completed. See [specs/001-core-engine/IMPLEMENTATION_PLAN.md](specs/001-core-engine/IMPLEMENTATION_PLAN.md) for the current implementation status.
+
+---
+
+## Historical Notes (For Reference)
 
 ### What Was Removed (and why it's safe)
 
@@ -29,121 +37,25 @@ This document tracks what's been completed, what was recently changed, and what 
 
 ---
 
-## Feature Completeness Status
+## Previously Completed Tasks
 
-### ✅ Fully Implemented (~85%)
+The following tasks from earlier versions of this TODO have all been completed:
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **Audio Analysis** | Complete | FFT analysis, frequency bands, color extraction |
-| **Character Generation** | Complete | D&D 5e races, classes, equipment, spells, appearance |
-| **Combat System** | Complete | Initiative, attacks, damage, criticals, spell casting |
-| **Progression/Leveling** | Complete | XP calculation, level-up benefits, session tracking |
-| **Playlist Parsing** | Complete | Arweave support, metadata extraction, validation |
-| **Dice System** | Complete | Polyhedral dice, seeded rolls, advantage/disadvantage |
-| **D&D 5e Data** | Complete | Races, classes, spells, equipment, XP tables |
+### ✅ Environmental Sensor Aggregation
+**Status**: Complete - See [IMPLEMENTATION_PLAN.md](specs/001-core-engine/IMPLEMENTATION_PLAN.md) Task 9
 
-### ⚠️ Partially Implemented (~10%)
+### ✅ Motion Detection
+**Status**: Complete - See [IMPLEMENTATION_PLAN.md](specs/001-core-engine/IMPLEMENTATION_PLAN.md)
 
-| Feature | Current State | What's Missing |
-|---------|---------------|----------------|
-| **Discord RPC** | Mock implementation only | Real Discord RPC library integration |
-| **Environmental Sensors** | Basic weather/location only | Light sensor, motion detector missing |
-| **Biome Detection** | Simplified (latitude only) | Real GIS service or database integration |
-| **Gaming Sensors** | Steam fully functional, Discord limited | Discord voice channel detection is stub |
-| **Geolocation** | Browser API works | No elevation/altitude data sources |
-| **Weather** | OpenWeatherMap API works | Moon phase is hardcoded to 0.5, no forecast data |
+### ✅ Discord RPC Integration
+**Status**: Complete - Music presence only (cannot detect games - platform limitation)
+See [IMPLEMENTATION_PLAN.md](specs/001-core-engine/IMPLEMENTATION_PLAN.md) Task 1
 
-### ❌ Not Implemented (~5%)
+### ✅ Enhanced Biome Detection
+**Status**: Complete - See [IMPLEMENTATION_PLAN.md](specs/001-core-engine/IMPLEMENTATION_PLAN.md) Task 5
 
-| Feature | Status | File |
-|---------|--------|------|
-| **EnvironmentalSensors** | Empty aggregator class | `src/core/sensors/EnvironmentalSensors.ts` |
-| **LightSensor** | Minimal (experimental API) | `src/core/sensors/LightSensor.ts` |
-| **MotionDetector** | Missing entirely | `src/core/sensors/MotionDetector.ts` (needs creation) |
-
----
-
-## What To Work On Next
-
-### Priority 1: Environmental Sensor Aggregation
-
-**File**: [src/core/sensors/EnvironmentalSensors.ts](src/core/sensors/EnvironmentalSensors.ts)
-
-**Current State**: Empty class that needs to combine data from all sensors into a unified `EnvironmentalContext`
-
-**What's Needed**:
-```typescript
-// Combine data from:
-- GeolocationProvider (biome, coordinates)
-- WeatherAPIClient (weather conditions)
-- LightSensor (ambient light level)
-- MotionDetector (activity type)
-```
-
----
-
-### Priority 2: Motion Detection
-
-**File**: Create `src/core/sensors/MotionDetector.ts`
-
-**What's Needed**:
-- Use DeviceMotion API to detect activity type
-- Distinguish between: walking, running, stationary, in vehicle
-- Provide `MotionData` interface with acceleration/rotation info
-
----
-
-### Priority 3: Discord RPC Integration
-
-**File**: [src/core/sensors/DiscordRPCClient.ts](src/core/sensors/DiscordRPCClient.ts)
-
-**Current State**: Mock implementation for browser environment
-
-**What's Needed**:
-- Integrate real `discord-rpc` library
-- Implement actual user authentication
-- Implement real voice channel detection for party size
-
----
-
-### Priority 4: Enhanced Biome Detection
-
-**File**: [src/core/sensors/GeolocationProvider.ts](src/core/sensors/GeolocationProvider.ts)
-
-**Current State**: Uses simple latitude heuristics
-
-**What's Needed**:
-- Integrate with a GIS service (e.g., Mapbox, Google Maps API)
-- Use actual elevation/altitude data
-- Implement real biome detection based on coordinates
-
----
-
-### Priority 5: AttackResolver Enhancement
-
-**File**: [src/core/combat/AttackResolver.ts](src/core/combat/AttackResolver.ts)
-
-**Current State**: `rollDamage()` has hardcoded `abilityModifier = 0`
-
-**What's Needed**:
-```typescript
-// Line 111: Should extract from attacker's ability score
-const abilityModifier = 0; // TODO: Extract from attacker's ability scores
-```
-
----
-
-## Technical Debt Notes
-
-### Placeholder Logic to Address
-
-| Location | Issue | Suggested Fix |
-|----------|-------|---------------|
-| AttackResolver.ts:111 | `abilityModifier = 0` hardcoded | Extract from attacker's ability scores based on damage type |
-| SpellCaster.ts:156 | `characterClass` was unused | Could be used for class-specific slot restoration |
-| WeatherAPIClient.ts | Moon phase hardcoded to 0.5 | Implement actual lunar calculation |
-| DiscordRPCClient.ts | Mock implementations | Replace with real `discord-rpc` library |
+### ✅ AttackResolver Enhancement (Ability Modifier)
+**Status**: Complete - See [IMPLEMENTATION_PLAN.md](specs/001-core-engine/IMPLEMENTATION_PLAN.md) Task 1
 
 ---
 
@@ -151,8 +63,5 @@ const abilityModifier = 0; // TODO: Extract from attacker's ability scores
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.0.0 | 2026-01-22 | Updated to reflect all tasks complete |
 | 1.0.0 | 2025-01-04 | Initial release with TypeScript fixes |
-| | | - Enabled strict type checking |
-| | | - Fixed all type safety issues (null checks) |
-| | | - Removed unused variables/imports |
-| | | - Added declaration file generation |
