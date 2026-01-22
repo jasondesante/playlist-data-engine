@@ -1,6 +1,18 @@
 import { Logger } from '../../utils/logger.js';
 
 /**
+ * Performance metrics for API calls
+ */
+interface PerformanceMetrics {
+    successCount: number;
+    errorCount: number;
+    totalTime: number;
+    minTime: number;
+    maxTime: number;
+    lastCallTimestamp: number | null;
+}
+
+/**
  * SteamAPIClient - Handles integration with Steam Web API
  * Fetches currently played games and game metadata
  */
@@ -9,8 +21,191 @@ export class SteamAPIClient {
     private baseUrl: string = 'https://api.steampowered.com';
     private logger = Logger.for('SteamAPIClient');
 
+    // Performance metrics for current game API
+    private currentGameApiMetrics: PerformanceMetrics = {
+        successCount: 0,
+        errorCount: 0,
+        totalTime: 0,
+        minTime: Infinity,
+        maxTime: 0,
+        lastCallTimestamp: null
+    };
+
+    // Performance metrics for game metadata API
+    private metadataApiMetrics: PerformanceMetrics = {
+        successCount: 0,
+        errorCount: 0,
+        totalTime: 0,
+        minTime: Infinity,
+        maxTime: 0,
+        lastCallTimestamp: null
+    };
+
+    // Store recent API call times for percentile calculations (last 100 calls)
+    private recentCurrentGameTimes: number[] = [];
+    private recentMetadataTimes: number[] = [];
+    private readonly maxRecentSamples = 100;
+
     constructor(apiKey: string = '') {
         this.apiKey = apiKey;
+    }
+
+    /**
+     * Calculate percentile from an array of numbers
+     */
+    private calculatePercentile(values: number[], percentile: number): number {
+        if (values.length === 0) return 0;
+        const sorted = [...values].sort((a, b) => a - b);
+        const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+        return sorted[Math.max(0, index)];
+    }
+
+    /**
+     * Record performance metrics for current game API call
+     */
+    private recordCurrentGameApiCall(elapsedMs: number, success: boolean): void {
+        const now = Date.now();
+
+        if (success) {
+            this.currentGameApiMetrics.successCount++;
+            this.currentGameApiMetrics.totalTime += elapsedMs;
+            this.currentGameApiMetrics.minTime = Math.min(this.currentGameApiMetrics.minTime, elapsedMs);
+            this.currentGameApiMetrics.maxTime = Math.max(this.currentGameApiMetrics.maxTime, elapsedMs);
+
+            // Store recent times for percentile calculation
+            this.recentCurrentGameTimes.push(elapsedMs);
+            if (this.recentCurrentGameTimes.length > this.maxRecentSamples) {
+                this.recentCurrentGameTimes.shift();
+            }
+        } else {
+            this.currentGameApiMetrics.errorCount++;
+        }
+
+        this.currentGameApiMetrics.lastCallTimestamp = now;
+    }
+
+    /**
+     * Record performance metrics for metadata API call
+     */
+    private recordMetadataApiCall(elapsedMs: number, success: boolean): void {
+        const now = Date.now();
+
+        if (success) {
+            this.metadataApiMetrics.successCount++;
+            this.metadataApiMetrics.totalTime += elapsedMs;
+            this.metadataApiMetrics.minTime = Math.min(this.metadataApiMetrics.minTime, elapsedMs);
+            this.metadataApiMetrics.maxTime = Math.max(this.metadataApiMetrics.maxTime, elapsedMs);
+
+            // Store recent times for percentile calculation
+            this.recentMetadataTimes.push(elapsedMs);
+            if (this.recentMetadataTimes.length > this.maxRecentSamples) {
+                this.recentMetadataTimes.shift();
+            }
+        } else {
+            this.metadataApiMetrics.errorCount++;
+        }
+
+        this.metadataApiMetrics.lastCallTimestamp = now;
+    }
+
+    /**
+     * Get performance metrics for current game API
+     */
+    getCurrentGameApiMetrics(): PerformanceMetrics {
+        return { ...this.currentGameApiMetrics };
+    }
+
+    /**
+     * Get performance statistics for current game API
+     */
+    getCurrentGameApiStatistics(): {
+        average: number;
+        min: number;
+        max: number;
+        totalCalls: number;
+        successRate: number;
+        p95: number;
+        p99: number;
+    } {
+        const totalCalls = this.currentGameApiMetrics.successCount + this.currentGameApiMetrics.errorCount;
+        const average = this.currentGameApiMetrics.successCount > 0
+            ? this.currentGameApiMetrics.totalTime / this.currentGameApiMetrics.successCount
+            : 0;
+        const successRate = totalCalls > 0
+            ? (this.currentGameApiMetrics.successCount / totalCalls) * 100
+            : 0;
+
+        return {
+            average: Math.round(average),
+            min: this.currentGameApiMetrics.minTime === Infinity ? 0 : Math.round(this.currentGameApiMetrics.minTime),
+            max: Math.round(this.currentGameApiMetrics.maxTime),
+            totalCalls,
+            successRate: Math.round(successRate * 10) / 10,
+            p95: Math.round(this.calculatePercentile(this.recentCurrentGameTimes, 95)),
+            p99: Math.round(this.calculatePercentile(this.recentCurrentGameTimes, 99))
+        };
+    }
+
+    /**
+     * Get performance metrics for metadata API
+     */
+    getMetadataApiMetrics(): PerformanceMetrics {
+        return { ...this.metadataApiMetrics };
+    }
+
+    /**
+     * Get performance statistics for metadata API
+     */
+    getMetadataApiStatistics(): {
+        average: number;
+        min: number;
+        max: number;
+        totalCalls: number;
+        successRate: number;
+        p95: number;
+        p99: number;
+    } {
+        const totalCalls = this.metadataApiMetrics.successCount + this.metadataApiMetrics.errorCount;
+        const average = this.metadataApiMetrics.successCount > 0
+            ? this.metadataApiMetrics.totalTime / this.metadataApiMetrics.successCount
+            : 0;
+        const successRate = totalCalls > 0
+            ? (this.metadataApiMetrics.successCount / totalCalls) * 100
+            : 0;
+
+        return {
+            average: Math.round(average),
+            min: this.metadataApiMetrics.minTime === Infinity ? 0 : Math.round(this.metadataApiMetrics.minTime),
+            max: Math.round(this.metadataApiMetrics.maxTime),
+            totalCalls,
+            successRate: Math.round(successRate * 10) / 10,
+            p95: Math.round(this.calculatePercentile(this.recentMetadataTimes, 95)),
+            p99: Math.round(this.calculatePercentile(this.recentMetadataTimes, 99))
+        };
+    }
+
+    /**
+     * Reset all performance metrics
+     */
+    resetPerformanceMetrics(): void {
+        this.currentGameApiMetrics = {
+            successCount: 0,
+            errorCount: 0,
+            totalTime: 0,
+            minTime: Infinity,
+            maxTime: 0,
+            lastCallTimestamp: null
+        };
+        this.metadataApiMetrics = {
+            successCount: 0,
+            errorCount: 0,
+            totalTime: 0,
+            minTime: Infinity,
+            maxTime: 0,
+            lastCallTimestamp: null
+        };
+        this.recentCurrentGameTimes = [];
+        this.recentMetadataTimes = [];
     }
 
     /**
@@ -27,6 +222,9 @@ export class SteamAPIClient {
             this.logger.warn('Steam API key not provided');
             return null;
         }
+
+        const startTime = performance.now();
+        let success = false;
 
         try {
             const url = `${this.baseUrl}/IPlayerService/GetRecentlyPlayedGames/v1/?` +
@@ -46,6 +244,7 @@ export class SteamAPIClient {
 
             const game = data.response.games[0];
 
+            success = true;
             return {
                 name: game.name,
                 appId: game.appid,
@@ -55,6 +254,9 @@ export class SteamAPIClient {
         } catch (error) {
             this.logger.error('Failed to fetch current Steam game', { error });
             return null;
+        } finally {
+            const elapsed = performance.now() - startTime;
+            this.recordCurrentGameApiCall(elapsed, success);
         }
     }
 
@@ -68,6 +270,9 @@ export class SteamAPIClient {
         genre?: string[];
         description?: string;
     } | null> {
+        const startTime = performance.now();
+        let success = false;
+
         try {
             // First, find the app ID using GetAppList
             const appId = await this.findAppId(gameName);
@@ -91,6 +296,7 @@ export class SteamAPIClient {
                 return { name: gameName, appId };
             }
 
+            success = true;
             return {
                 appId,
                 name: gameData.name || gameName,
@@ -100,6 +306,9 @@ export class SteamAPIClient {
         } catch (error) {
             this.logger.error(`Failed to fetch Steam metadata for ${gameName}`, { error });
             return { name: gameName };
+        } finally {
+            const elapsed = performance.now() - startTime;
+            this.recordMetadataApiCall(elapsed, success);
         }
     }
 

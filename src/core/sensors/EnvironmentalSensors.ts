@@ -739,7 +739,7 @@ export class EnvironmentalSensors {
      * Get comprehensive diagnostic information for troubleshooting
      * Returns structured data about all sensor states, cache statistics, and recent failures
      *
-     * @returns Diagnostic report containing sensor statuses, cache stats, and recent errors
+     * @returns Diagnostic report containing sensor statuses, cache stats, performance metrics, and recent errors
      */
     getDiagnostics(): {
         timestamp: number;
@@ -761,6 +761,26 @@ export class EnvironmentalSensors {
                 size: number;
                 stats: { hits: number; misses: number };
                 ttl: number;
+            };
+        };
+        performance: {
+            weatherApi: {
+                average: number;
+                min: number;
+                max: number;
+                totalCalls: number;
+                successRate: number;
+                p95: number;
+                p99: number;
+            };
+            forecastApi: {
+                average: number;
+                min: number;
+                max: number;
+                totalCalls: number;
+                successRate: number;
+                p95: number;
+                p99: number;
             };
         };
         recentFailures: SensorFailureLog[];
@@ -797,6 +817,10 @@ export class EnvironmentalSensors {
                     stats: this.weather.getCacheStats(),
                     ttl: 720, // 12 minutes in seconds (for reference)
                 },
+            },
+            performance: {
+                weatherApi: this.weather.getWeatherApiStatistics(),
+                forecastApi: this.weather.getForecastApiStatistics(),
             },
             recentFailures: this.getFailureLog(undefined, 10),
             permissions: this.getPermissions(),

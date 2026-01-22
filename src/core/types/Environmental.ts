@@ -1,5 +1,39 @@
 export type SensorType = 'geolocation' | 'motion' | 'weather' | 'light';
 
+/**
+ * Performance metrics for API calls
+ */
+export interface PerformanceMetrics {
+    /** Number of successful API calls */
+    successCount: number;
+    /** Number of failed API calls */
+    errorCount: number;
+    /** Total time spent on successful API calls (milliseconds) */
+    totalTime: number;
+    /** Time of the fastest API call (milliseconds) */
+    minTime: number;
+    /** Time of the slowest API call (milliseconds) */
+    maxTime: number;
+    /** Timestamp of the last API call */
+    lastCallTimestamp: number | null;
+}
+
+/**
+ * Detailed performance statistics derived from metrics
+ */
+export interface PerformanceStatistics {
+    /** Average API call time in milliseconds */
+    average: number;
+    /** Minimum API call time in milliseconds */
+    min: number;
+    /** Maximum API call time in milliseconds */
+    max: number;
+    /** Total number of API calls */
+    totalCalls: number;
+    /** Success rate as percentage (0-100) */
+    successRate: number;
+}
+
 export interface SensorPermission {
     type: SensorType;
     granted: boolean;

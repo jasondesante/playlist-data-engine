@@ -274,9 +274,9 @@ export class GamingPlatformSensors {
 
     /**
      * Get comprehensive diagnostic information for troubleshooting
-     * Returns structured data about gaming platform connection states and cache
+     * Returns structured data about gaming platform connection states, cache, and performance metrics
      *
-     * @returns Diagnostic report containing Steam and Discord connection states
+     * @returns Diagnostic report containing Steam and Discord connection states, cache, and API performance
      */
     getDiagnostics(): {
         timestamp: number;
@@ -300,6 +300,26 @@ export class GamingPlatformSensors {
             gameMetadataCacheSize: number;
             cachedGames: string[];
         };
+        performance: {
+            currentGameApi: {
+                average: number;
+                min: number;
+                max: number;
+                totalCalls: number;
+                successRate: number;
+                p95: number;
+                p99: number;
+            };
+            metadataApi: {
+                average: number;
+                min: number;
+                max: number;
+                totalCalls: number;
+                successRate: number;
+                p95: number;
+                p99: number;
+            };
+        };
     } {
         return {
             timestamp: Date.now(),
@@ -322,6 +342,10 @@ export class GamingPlatformSensors {
             cache: {
                 gameMetadataCacheSize: this.gameMetadataCache.size,
                 cachedGames: Array.from(this.gameMetadataCache.keys()),
+            },
+            performance: {
+                currentGameApi: this.steam.getCurrentGameApiStatistics(),
+                metadataApi: this.steam.getMetadataApiStatistics(),
             },
         };
     }

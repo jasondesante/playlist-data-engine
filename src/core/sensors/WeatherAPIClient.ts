@@ -1,4 +1,4 @@
-import type { WeatherData, ForecastData } from '../types/Environmental';
+import type { WeatherData, ForecastData, PerformanceMetrics, PerformanceStatistics } from '../types/Environmental';
 import { Logger } from '../../utils/logger.js';
 
 interface CacheEntry {
@@ -21,6 +21,15 @@ interface PersistentCache {
         data: WeatherData;
         timestamp: number;
     };
+}
+
+/**
+ * Performance timing data for API calls
+ */
+interface PerformanceTiming {
+    startTime: number;
+    endTime: number;
+    success: boolean;
 }
 
 /**
@@ -58,6 +67,31 @@ export class WeatherAPIClient {
     private cacheStats: CacheStatistics = { hits: 0, misses: 0 };
     private useLocalStorage: boolean;
     private logger = Logger.for('WeatherAPIClient');
+
+    // Performance metrics for current weather API
+    private weatherApiMetrics: PerformanceMetrics = {
+        successCount: 0,
+        errorCount: 0,
+        totalTime: 0,
+        minTime: Infinity,
+        maxTime: 0,
+        lastCallTimestamp: null
+    };
+
+    // Performance metrics for forecast API
+    private forecastApiMetrics: PerformanceMetrics = {
+        successCount: 0,
+        errorCount: 0,
+        totalTime: 0,
+        minTime: Infinity,
+        maxTime: 0,
+        lastCallTimestamp: null
+    };
+
+    // Store recent API call times for percentile calculations (last 100 calls)
+    private recentWeatherApiTimes: number[] = [];
+    private recentForecastApiTimes: number[] = [];
+    private readonly maxRecentSamples = 100;
 
     constructor(apiKey: string = '', cacheTTLMinutes: number = 12, useLocalStorage: boolean = true) {
         this.apiKey = apiKey;
@@ -116,6 +150,159 @@ export class WeatherAPIClient {
         } catch (error) {
             this.logger.warn('Failed to save weather cache to localStorage', { error });
         }
+    }
+
+    /**
+     * Start timing an API call
+     * @returns A function that when called, records the elapsed time
+     */
+    private startTiming(): (success: boolean) => void {
+        const startTime = performance.now();
+        return (success: boolean) => {
+            const elapsed = performance.now() - startTime;
+            return;
+        };
+    }
+
+    /**
+     * Record performance metrics for weather API call
+     */
+    private recordWeatherApiCall(elapsedMs: number, success: boolean): void {
+        const now = Date.now();
+
+        if (success) {
+            this.weatherApiMetrics.successCount++;
+            this.weatherApiMetrics.totalTime += elapsedMs;
+            this.weatherApiMetrics.minTime = Math.min(this.weatherApiMetrics.minTime, elapsedMs);
+            this.weatherApiMetrics.maxTime = Math.max(this.weatherApiMetrics.maxTime, elapsedMs);
+
+            // Store recent times for percentile calculation
+            this.recentWeatherApiTimes.push(elapsedMs);
+            if (this.recentWeatherApiTimes.length > this.maxRecentSamples) {
+                this.recentWeatherApiTimes.shift();
+            }
+        } else {
+            this.weatherApiMetrics.errorCount++;
+        }
+
+        this.weatherApiMetrics.lastCallTimestamp = now;
+    }
+
+    /**
+     * Record performance metrics for forecast API call
+     */
+    private recordForecastApiCall(elapsedMs: number, success: boolean): void {
+        const now = Date.now();
+
+        if (success) {
+            this.forecastApiMetrics.successCount++;
+            this.forecastApiMetrics.totalTime += elapsedMs;
+            this.forecastApiMetrics.minTime = Math.min(this.forecastApiMetrics.minTime, elapsedMs);
+            this.forecastApiMetrics.maxTime = Math.max(this.forecastApiMetrics.maxTime, elapsedMs);
+
+            // Store recent times for percentile calculation
+            this.recentForecastApiTimes.push(elapsedMs);
+            if (this.recentForecastApiTimes.length > this.maxRecentSamples) {
+                this.recentForecastApiTimes.shift();
+            }
+        } else {
+            this.forecastApiMetrics.errorCount++;
+        }
+
+        this.forecastApiMetrics.lastCallTimestamp = now;
+    }
+
+    /**
+     * Calculate percentile from an array of numbers
+     */
+    private calculatePercentile(values: number[], percentile: number): number {
+        if (values.length === 0) return 0;
+        const sorted = [...values].sort((a, b) => a - b);
+        const index = Math.ceil((percentile / 100) * sorted.length) - 1;
+        return sorted[Math.max(0, index)];
+    }
+
+    /**
+     * Get performance statistics for weather API
+     */
+    private getPerformanceStatistics(metrics: PerformanceMetrics, recentTimes: number[]): PerformanceStatistics {
+        const totalCalls = metrics.successCount + metrics.errorCount;
+        const average = metrics.successCount > 0 ? metrics.totalTime / metrics.successCount : 0;
+        const successRate = totalCalls > 0 ? (metrics.successCount / totalCalls) * 100 : 0;
+
+        return {
+            average: Math.round(average),
+            min: metrics.minTime === Infinity ? 0 : Math.round(metrics.minTime),
+            max: Math.round(metrics.maxTime),
+            totalCalls,
+            successRate: Math.round(successRate * 10) / 10
+        };
+    }
+
+    /**
+     * Get performance metrics for weather API
+     * @returns Performance metrics for current weather API calls
+     */
+    getWeatherApiMetrics(): PerformanceMetrics {
+        return { ...this.weatherApiMetrics };
+    }
+
+    /**
+     * Get performance statistics for weather API
+     * @returns Calculated performance statistics including average, min, max, success rate
+     */
+    getWeatherApiStatistics(): PerformanceStatistics & { p95: number; p99: number } {
+        const stats = this.getPerformanceStatistics(this.weatherApiMetrics, this.recentWeatherApiTimes);
+        return {
+            ...stats,
+            p95: Math.round(this.calculatePercentile(this.recentWeatherApiTimes, 95)),
+            p99: Math.round(this.calculatePercentile(this.recentWeatherApiTimes, 99))
+        };
+    }
+
+    /**
+     * Get performance metrics for forecast API
+     * @returns Performance metrics for forecast API calls
+     */
+    getForecastApiMetrics(): PerformanceMetrics {
+        return { ...this.forecastApiMetrics };
+    }
+
+    /**
+     * Get performance statistics for forecast API
+     * @returns Calculated performance statistics including average, min, max, success rate
+     */
+    getForecastApiStatistics(): PerformanceStatistics & { p95: number; p99: number } {
+        const stats = this.getPerformanceStatistics(this.forecastApiMetrics, this.recentForecastApiTimes);
+        return {
+            ...stats,
+            p95: Math.round(this.calculatePercentile(this.recentForecastApiTimes, 95)),
+            p99: Math.round(this.calculatePercentile(this.recentForecastApiTimes, 99))
+        };
+    }
+
+    /**
+     * Reset all performance metrics
+     */
+    resetPerformanceMetrics(): void {
+        this.weatherApiMetrics = {
+            successCount: 0,
+            errorCount: 0,
+            totalTime: 0,
+            minTime: Infinity,
+            maxTime: 0,
+            lastCallTimestamp: null
+        };
+        this.forecastApiMetrics = {
+            successCount: 0,
+            errorCount: 0,
+            totalTime: 0,
+            minTime: Infinity,
+            maxTime: 0,
+            lastCallTimestamp: null
+        };
+        this.recentWeatherApiTimes = [];
+        this.recentForecastApiTimes = [];
     }
 
     /**
@@ -205,6 +392,9 @@ export class WeatherAPIClient {
 
         this.cacheStats.misses++;
 
+        const startTime = performance.now();
+        let success = false;
+
         try {
             const url = `${this.baseUrl}?lat=${latitude}&lon=${longitude}&appid=${this.apiKey}&units=metric`;
             const response = await fetch(url);
@@ -240,10 +430,14 @@ export class WeatherAPIClient {
             // Persist to localStorage
             this.saveToLocalStorage();
 
+            success = true;
             return weatherData;
         } catch (error) {
             this.logger.error('Failed to fetch weather', { error });
             return null;
+        } finally {
+            const elapsed = performance.now() - startTime;
+            this.recordWeatherApiCall(elapsed, success);
         }
     }
 
@@ -355,6 +549,9 @@ export class WeatherAPIClient {
             return cachedForecastEntry.data.slice(0, Math.ceil(hoursToFetch / 3));
         }
 
+        const startTime = performance.now();
+        let success = false;
+
         try {
             // OpenWeatherMap 5-day/3-hour forecast endpoint
             // Using cnt parameter to limit number of timestamps returned
@@ -389,10 +586,14 @@ export class WeatherAPIClient {
                 timestamp: Date.now()
             });
 
+            success = true;
             return forecastData;
         } catch (error) {
             this.logger.error('Failed to fetch weather forecast', { error });
             return null;
+        } finally {
+            const elapsed = performance.now() - startTime;
+            this.recordForecastApiCall(elapsed, success);
         }
     }
 

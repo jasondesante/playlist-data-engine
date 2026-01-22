@@ -164,6 +164,30 @@ function formatHitRate(hits: number, misses: number): string {
 }
 
 /**
+ * Format performance statistics for display
+ */
+function formatPerformanceStats(
+    stats: { average: number; min: number; max: number; totalCalls: number; successRate: number; p95: number; p99: number },
+    useColors: boolean
+): string[] {
+    const lines: string[] = [];
+    const hasCalls = stats.totalCalls > 0;
+
+    lines.push(`   Calls:       ${stats.totalCalls}`);
+    lines.push(`   Success:     ${hasCalls ? `${stats.successRate.toFixed(1)}%` : 'N/A'}`);
+    if (hasCalls) {
+        const avgColor = stats.average < 500 ? Colors.green : stats.average < 1500 ? Colors.yellow : Colors.red;
+        lines.push(`   Avg Time:    ${colorize(`${stats.average}ms`, avgColor, useColors)}`);
+        lines.push(`   Min/Avg/Max: ${stats.min}/${stats.average}/${stats.max}ms`);
+        lines.push(`   P95/P99:     ${stats.p95}/${stats.p99}ms`);
+    } else {
+        lines.push(`   Avg Time:    N/A`);
+    }
+
+    return lines;
+}
+
+/**
  * Draw a horizontal line
  */
 function drawLine(width: number, char: string = '─'): string {
@@ -252,6 +276,22 @@ export function displayEnvironmentalDiagnostics(
     console.log(`   Cache Size:  ${diagnostics.cache.weather.size} entries`);
     console.log(`   TTL:         12 minutes`);
     console.log(`   Hit Rate:    ${formatHitRate(diagnostics.cache.weather.stats.hits, diagnostics.cache.weather.stats.misses)} (${diagnostics.cache.weather.stats.hits}h/${diagnostics.cache.weather.stats.misses}m)`);
+
+    // Performance Metrics Section
+    console.log(`\n${colorize('┌─ API PERFORMANCE', Colors.cyan, useColors)}`);
+    console.log(drawLine(20) + (useColors ? Colors.reset : ''));
+
+    console.log(`\n ${colorize('WEATHER API', Colors.bright, useColors)}`);
+    const weatherPerfLines = formatPerformanceStats(diagnostics.performance.weatherApi, useColors);
+    for (const line of weatherPerfLines) {
+        console.log(line);
+    }
+
+    console.log(`\n ${colorize('FORECAST API', Colors.bright, useColors)}`);
+    const forecastPerfLines = formatPerformanceStats(diagnostics.performance.forecastApi, useColors);
+    for (const line of forecastPerfLines) {
+        console.log(line);
+    }
 
     // Recent Failures Section
     if (diagnostics.recentFailures.length > 0) {
@@ -368,6 +408,22 @@ export function displayGamingDiagnostics(
         if (diagnostics.cache.cachedGames.length > 5) {
             console.log(`   ... and ${diagnostics.cache.cachedGames.length - 5} more`);
         }
+    }
+
+    // API Performance Section
+    console.log(`\n${colorize('┌─ API PERFORMANCE', Colors.cyan, useColors)}`);
+    console.log(drawLine(20) + (useColors ? Colors.reset : ''));
+
+    console.log(`\n ${colorize('CURRENT GAME API', Colors.bright, useColors)}`);
+    const currentGamePerfLines = formatPerformanceStats(diagnostics.performance.currentGameApi, useColors);
+    for (const line of currentGamePerfLines) {
+        console.log(line);
+    }
+
+    console.log(`\n ${colorize('METADATA API', Colors.bright, useColors)}`);
+    const metadataPerfLines = formatPerformanceStats(diagnostics.performance.metadataApi, useColors);
+    for (const line of metadataPerfLines) {
+        console.log(line);
     }
 
     console.log(`\n${drawLine(width)}\n`);

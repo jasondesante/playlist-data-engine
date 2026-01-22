@@ -779,10 +779,10 @@ The "Environmental Sensor Error Recovery" task was already fully implemented in 
 - [x] Add consistent logging levels (debug, info, warn, error)
 - [x] Add diagnostic mode for troubleshooting
 - [x] Add sensor status dashboard output
-- [ ] Add performance metrics (API call times, cache hit rates)
+- [x] Add performance metrics (API call times, cache hit rates)
 - [ ] Add optional verbose logging flag
 
-**Status**: 🟡 In Progress (3/5 subtasks complete)
+**Status**: 🟡 In Progress (4/5 subtasks complete)
 
 **Implementation Summary (Subtask 2 - Diagnostic Mode)**:
 Created a centralized logging utility at `src/utils/logger.ts` with:
@@ -916,6 +916,68 @@ SensorDashboard.displaySystemDashboard({
     environmental: sensors.getDiagnostics(),
     gaming: gamingSensors.getDiagnostics()
 });
+```
+
+**Completed**: 2026-01-22
+
+---
+
+**Implementation Summary (Subtask 4 - Performance Metrics)**:
+
+Added comprehensive performance metrics tracking for all external API calls with timing statistics:
+
+**New Types Added** (`src/core/types/Environmental.ts`):
+- `PerformanceMetrics` interface: Tracks success/error count, total/average/min/max times, last call timestamp
+- `PerformanceStatistics` interface: Calculated stats including average, min, max, total calls, success rate
+
+**WeatherAPIClient Performance Tracking** (`src/core/sensors/WeatherAPIClient.ts`):
+- `getWeatherApiMetrics()` - Raw metrics for current weather API
+- `getWeatherApiStatistics()` - Calculated statistics including P95/P99 percentiles
+- `getForecastApiMetrics()` - Raw metrics for forecast API
+- `getForecastApiStatistics()` - Calculated statistics including P95/P99 percentiles
+- `resetPerformanceMetrics()` - Reset all metrics
+- Tracks timing for every `getWeather()` and `getForecast()` call using `performance.now()`
+- Stores last 100 samples for percentile calculations
+
+**SteamAPIClient Performance Tracking** (`src/core/sensors/SteamAPIClient.ts`):
+- `getCurrentGameApiMetrics()` - Raw metrics for current game API
+- `getCurrentGameApiStatistics()` - Calculated statistics including P95/P99 percentiles
+- `getMetadataApiMetrics()` - Raw metrics for metadata API
+- `getMetadataApiStatistics()` - Calculated statistics including P95/P99 percentiles
+- `resetPerformanceMetrics()` - Reset all metrics
+- Tracks timing for `getCurrentGame()` and `getGameMetadata()` calls
+
+**EnvironmentalSensors Diagnostics** (`src/core/sensors/EnvironmentalSensors.ts`):
+- Updated `getDiagnostics()` to include `performance` section with weather/forecast API statistics
+
+**GamingPlatformSensors Diagnostics** (`src/core/sensors/GamingPlatformSensors.ts`):
+- Updated `getDiagnostics()` to include `performance` section with current game/metadata API statistics
+
+**Sensor Dashboard** (`src/utils/sensorDashboard.ts`):
+- Added `formatPerformanceStats()` helper for consistent performance display
+- Added "API PERFORMANCE" section to environmental dashboard showing weather/forecast metrics
+- Added "API PERFORMANCE" section to gaming dashboard showing Steam API metrics
+- Displays: total calls, success rate, average time, min/avg/max, P95/P99 percentiles
+- Color-coded timing (green <500ms, yellow <1500ms, red >=1500ms)
+
+**Dashboard Output Example**:
+```
+┌─ API PERFORMANCE
+────────────────────
+
+ WEATHER API
+   Calls:       42
+   Success:     95.2%
+   Avg Time:    342ms
+   Min/Avg/Max: 125/342/1205ms
+   P95/P99:     890/1150ms
+
+ FORECAST API
+   Calls:       8
+   Success:     87.5%
+   Avg Time:    512ms
+   Min/Avg/Max: 234/512/945ms
+   P95/P99:     920/945ms
 ```
 
 **Completed**: 2026-01-22
