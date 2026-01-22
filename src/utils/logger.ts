@@ -20,8 +20,17 @@
  * logger.warn('API rate limit approaching');
  * logger.error('Failed to fetch weather', error);
  *
- * // Set global log level
- * Logger.setLevel(LogLevel.WARN); // Only show WARN and ERROR
+ * // Control verbosity
+ * Logger.setLevel(LogLevel.WARN);        // Only show WARN and ERROR
+ * Logger.enableVerbose();                // Enable all debug output
+ * Logger.setVerbose(true);               // Same as enableVerbose()
+ * Logger.isVerbose();                    // Check verbose state
+ * Logger.disableVerbose();               // Reset to default (INFO)
+ *
+ * // Diagnostic mode (for troubleshooting)
+ * Logger.enableDiagnosticMode();         // Maximum verbosity for debugging
+ * Logger.isDiagnosticMode();             // Check diagnostic state
+ * Logger.disableDiagnosticMode();        // Reset to default
  * ```
  */
 
@@ -87,6 +96,13 @@ let customHandler: ((entry: LogEntry) => void) | null = null;
 let diagnosticMode = false;
 
 /**
+ * Global verbose mode flag
+ * When enabled, sets log level to DEBUG for increased output verbosity
+ * This is a user-friendly alternative to Logger.setLevel(LogLevel.DEBUG)
+ */
+let verboseMode = false;
+
+/**
  * Logger class providing consistent logging across all modules
  */
 export class Logger {
@@ -136,6 +152,51 @@ export class Logger {
     }
 
     /**
+     * Enable verbose logging mode
+     * Sets log level to DEBUG for increased output verbosity
+     * This is a convenience method equivalent to Logger.setLevel(LogLevel.DEBUG)
+     * @example
+     * Logger.enableVerbose();
+     * // All debug messages will now be logged
+     */
+    static enableVerbose(): void {
+        verboseMode = true;
+        globalLevel = LogLevel.DEBUG;
+    }
+
+    /**
+     * Disable verbose logging mode
+     * Resets log level to INFO (default)
+     * @example
+     * Logger.disableVerbose();
+     * // Only INFO and above will be logged
+     */
+    static disableVerbose(): void {
+        verboseMode = false;
+        globalLevel = LogLevel.INFO;
+    }
+
+    /**
+     * Check if verbose mode is enabled
+     * @returns True if verbose mode is active
+     */
+    static isVerbose(): boolean {
+        return verboseMode;
+    }
+
+    /**
+     * Set verbose mode on or off
+     * @param enabled - Whether to enable verbose logging
+     * @example
+     * Logger.setVerbose(true);  // Enable verbose logging
+     * Logger.setVerbose(false); // Disable verbose logging
+     */
+    static setVerbose(enabled: boolean): void {
+        verboseMode = enabled;
+        globalLevel = enabled ? LogLevel.DEBUG : LogLevel.INFO;
+    }
+
+    /**
      * Set the global log level
      * @param level - The minimum log level to display
      */
@@ -179,6 +240,7 @@ export class Logger {
         includeContext = true;
         customHandler = null;
         diagnosticMode = false;
+        verboseMode = false;
     }
 
     /**

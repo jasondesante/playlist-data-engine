@@ -13,7 +13,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 | Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | ✅ Complete |
 | Enhancements | 8 | 🟢 7/8 Complete (1 not recommended) |
-| Nice to Have | 3 | 🟡 1/3 In Progress (Task 10: 3/5 subtasks) |
+| Nice to Have | 3 | 🟢 1/3 Complete (Task 10: 5/5 subtasks) |
 | **Total** | **12** | |
 
 ---
@@ -780,9 +780,63 @@ The "Environmental Sensor Error Recovery" task was already fully implemented in 
 - [x] Add diagnostic mode for troubleshooting
 - [x] Add sensor status dashboard output
 - [x] Add performance metrics (API call times, cache hit rates)
-- [ ] Add optional verbose logging flag
+- [x] Add optional verbose logging flag
 
-**Status**: 🟡 In Progress (4/5 subtasks complete)
+**Status**: ✅ Complete (2026-01-22)
+
+**Implementation Summary (Subtask 5 - Verbose Logging Flag)**:
+
+Added optional verbose logging flag as a user-friendly alternative to directly setting log levels:
+
+**Logger API Additions** (`src/utils/logger.ts`):
+- `Logger.enableVerbose()` - Enable verbose logging (sets level to DEBUG)
+- `Logger.disableVerbose()` - Disable verbose logging (resets to INFO)
+- `Logger.isVerbose()` - Check if verbose mode is enabled
+- `Logger.setVerbose(enabled: boolean)` - Set verbose mode on/off
+- New global state: `verboseMode` flag (independent from `diagnosticMode`)
+
+**Usage Example**:
+```typescript
+import { Logger } from './utils/logger';
+
+// Enable verbose logging
+Logger.enableVerbose();
+// Equivalent to: Logger.setLevel(LogLevel.DEBUG);
+
+// Check verbose state
+if (Logger.isVerbose()) {
+    console.log('Verbose mode is on');
+}
+
+// Toggle verbose mode
+Logger.setVerbose(true);   // On
+Logger.setVerbose(false);  // Off
+
+// Disable verbose
+Logger.disableVerbose();
+// Equivalent to: Logger.setLevel(LogLevel.INFO);
+```
+
+**Design Decisions**:
+- Verbose mode is **independent** from diagnostic mode (both track separate state)
+- Both verbose and diagnostic mode set the same log level (DEBUG)
+- When both are enabled, disabling one doesn't affect the other's flag
+- The `reset()` method clears both `verboseMode` and `diagnosticMode` flags
+- Provides a more user-friendly API than `Logger.setLevel(LogLevel.DEBUG)`
+
+**Tests Added**:
+- 10 new tests in `tests/unit/discordRPC.test.ts` under "Logger - Verbose Mode" describe block
+- Tests cover:
+  - Default state (verbose disabled)
+  - Enable/disable functionality
+  - setVerbose(true/false) toggle
+  - Debug message logging when enabled
+  - Debug message suppression when disabled
+  - Independence from manual log level changes
+  - Reset behavior
+  - Independence from diagnostic mode
+
+**Total Logger Tests**: 17 diagnostic mode + 10 verbose mode = 27 logger tests passing
 
 **Implementation Summary (Subtask 2 - Diagnostic Mode)**:
 Created a centralized logging utility at `src/utils/logger.ts` with:

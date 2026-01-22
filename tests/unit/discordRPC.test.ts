@@ -785,3 +785,126 @@ describe('Logger - Diagnostic Mode', () => {
         expect(entries).toHaveLength(0);
     });
 });
+
+describe('Logger - Verbose Mode', () => {
+    let originalLevel: LogLevel;
+
+    beforeEach(() => {
+        originalLevel = Logger.getLevel();
+        Logger.reset();
+    });
+
+    afterEach(() => {
+        Logger.setLevel(originalLevel);
+        Logger.reset();
+    });
+
+    it('should start with verbose mode disabled by default', () => {
+        expect(Logger.isVerbose()).toBe(false);
+        expect(Logger.getLevel()).toBe(LogLevel.INFO);
+    });
+
+    it('should enable verbose mode and set DEBUG level', () => {
+        Logger.enableVerbose();
+        expect(Logger.isVerbose()).toBe(true);
+        expect(Logger.getLevel()).toBe(LogLevel.DEBUG);
+    });
+
+    it('should disable verbose mode and reset to INFO level', () => {
+        Logger.enableVerbose();
+        Logger.disableVerbose();
+        expect(Logger.isVerbose()).toBe(false);
+        expect(Logger.getLevel()).toBe(LogLevel.INFO);
+    });
+
+    it('should set verbose mode to true', () => {
+        Logger.setVerbose(true);
+        expect(Logger.isVerbose()).toBe(true);
+        expect(Logger.getLevel()).toBe(LogLevel.DEBUG);
+    });
+
+    it('should set verbose mode to false', () => {
+        Logger.enableVerbose();
+        Logger.setVerbose(false);
+        expect(Logger.isVerbose()).toBe(false);
+        expect(Logger.getLevel()).toBe(LogLevel.INFO);
+    });
+
+    it('should toggle verbose mode with setVerbose', () => {
+        expect(Logger.isVerbose()).toBe(false);
+
+        Logger.setVerbose(true);
+        expect(Logger.isVerbose()).toBe(true);
+
+        Logger.setVerbose(false);
+        expect(Logger.isVerbose()).toBe(false);
+    });
+
+    it('should log debug messages when verbose mode is enabled', () => {
+        const entries: LogEntry[] = [];
+
+        Logger.configure({
+            customHandler: (entry) => {
+                entries.push(entry);
+            }
+        });
+
+        Logger.enableVerbose();
+
+        const logger = Logger.for('TestModule');
+        logger.debug('Verbose debug message');
+
+        expect(entries).toHaveLength(1);
+        expect(entries[0].level).toBe(LogLevel.DEBUG);
+        expect(entries[0].message).toBe('Verbose debug message');
+    });
+
+    it('should not log debug messages when verbose mode is disabled', () => {
+        const entries: LogEntry[] = [];
+
+        Logger.configure({
+            customHandler: (entry) => {
+                entries.push(entry);
+            }
+        });
+
+        expect(Logger.isVerbose()).toBe(false);
+
+        const logger = Logger.for('TestModule');
+        logger.debug('This debug message should not appear');
+
+        expect(entries).toHaveLength(0);
+    });
+
+    it('should allow manual log level changes outside verbose mode', () => {
+        Logger.setLevel(LogLevel.ERROR);
+        expect(Logger.getLevel()).toBe(LogLevel.ERROR);
+        expect(Logger.isVerbose()).toBe(false);
+    });
+
+    it('should reset verbose mode in reset()', () => {
+        Logger.enableVerbose();
+        expect(Logger.isVerbose()).toBe(true);
+
+        Logger.reset();
+        expect(Logger.isVerbose()).toBe(false);
+        expect(Logger.getLevel()).toBe(LogLevel.INFO);
+    });
+
+    it('should work independently from diagnostic mode', () => {
+        // Verbose mode should be independent from diagnostic mode
+        Logger.enableVerbose();
+        expect(Logger.isVerbose()).toBe(true);
+        expect(Logger.isDiagnosticMode()).toBe(false);
+
+        Logger.enableDiagnosticMode();
+        expect(Logger.isVerbose()).toBe(true);
+        expect(Logger.isDiagnosticMode()).toBe(true);
+
+        Logger.disableVerbose();
+        // Diagnostic mode should still be true, but level should be INFO now
+        expect(Logger.isDiagnosticMode()).toBe(true);
+        expect(Logger.isVerbose()).toBe(false);
+        expect(Logger.getLevel()).toBe(LogLevel.INFO);
+    });
+});
