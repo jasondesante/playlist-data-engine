@@ -1046,7 +1046,7 @@ Added comprehensive performance metrics tracking for all external API calls with
 - [x] Add edge case tests for sensor failures
 - [x] Add integration tests for full sensor pipeline
 - [x] Add tests for XP modifier edge cases (3.0x cap)
-- [ ] Add tests for multi-sensor interaction
+- [x] Add tests for multi-sensor interaction
 - [ ] Mock browser APIs for headless testing
 
 **Estimated Effort**: 4-6 hours
@@ -1054,6 +1054,7 @@ Added comprehensive performance metrics tracking for all external API calls with
 **Status**: ✅ Subtask 11.1 Complete (2026-01-22)
 **Status**: ✅ Subtask 11.2 Complete (2026-01-22)
 **Status**: ✅ Subtask 11.3 Complete (2026-01-22)
+**Status**: ✅ Subtask 11.4 Complete (2026-01-22)
 
 **Implementation Summary (Subtask 11.3 - XP Modifier Edge Cases (3.0x Cap))**:
 
@@ -1217,6 +1218,64 @@ The tests document current implementation behavior, revealing several edge cases
 - Relies on try/catch for missing required fields (returns null on error)
 
 All 17 new tests pass. Tests serve as documentation of current behavior and can be updated if validation logic is added in the future.
+
+---
+
+**Implementation Summary (Subtask 11.4 - Multi-Sensor Interaction Tests)**:
+
+Created comprehensive integration test file: `tests/integration/multiSensorInteraction.test.ts` with 17 tests covering:
+
+1. **Inter-Dependent Sensor Data** (3 tests):
+   - Weather API dependency on geolocation coordinates (skips weather when geo fails)
+   - Use of cached geolocation for weather when current geo fails
+   - Biome calculation from geolocation data
+
+2. **Cross-Sensor Cascading Failures** (2 tests):
+   - Partial sensor data maintained when other sensors fail
+   - Individual sensor recovery without affecting other sensors
+
+3. **Sensor Priority and Override Behavior** (3 tests):
+   - Current sensor data prioritized over last known good
+   - Last known good fallback when current sensor fails
+   - Elevation override in biome detection (mountain/valley vs coordinate-based)
+
+4. **Concurrent Sensor Operations** (2 tests):
+   - Rapid successive sensor updates handled correctly
+   - No context corruption when sensors update simultaneously
+
+5. **Cross-Sensor Data Consistency** (2 tests):
+   - Consistent timestamps across sensor updates
+   - Handling of sensor data with conflicting time values
+
+6. **Multi-Sensor XP Modifier Calculation** (2 tests):
+   - Correct combination of all sensor data for XP calculation
+   - XP calculation with partial sensor data
+
+7. **Sensor Health Monitoring** (2 tests):
+   - Independent health status tracking for all sensors
+   - Comprehensive diagnostics covering all sensors
+
+8. **Sensor Recovery Notifications** (1 test):
+   - Recovery notifications sent for individual sensor status changes
+
+**Test Configuration**:
+- Uses custom retry config for faster test execution (maxRetries: 1, initialDelayMs: 10ms)
+- Properly mocks sensor methods to avoid external API calls
+- Tests verify inter-sensor dependencies and cascading behaviors
+
+**Test Results**:
+- All 17 tests passing (100%)
+- Test execution time: ~200ms
+- No external dependencies or real API calls
+
+**Key Findings**:
+1. **Weather-Geolocation Dependency**: Weather API correctly depends on geolocation coordinates and is skipped when geo fails
+2. **Sensor Independence**: Each sensor maintains independent health status while sharing data
+3. **Elevation Override**: High altitude (>1500m) and low altitude (<0m) correctly override coordinate-based biome detection
+4. **Graceful Degradation**: System continues functioning with partial sensor data using "last known good" fallback
+5. **Concurrent Safety**: Multiple simultaneous sensor updates do not corrupt shared context
+
+**Completed**: 2026-01-22
 
 ---
 
