@@ -2934,3 +2934,451 @@ describe('WeatherAPIClient Severe Weather Detection', () => {
         });
     });
 });
+
+// ==================== Edge Case Tests: Data Integrity & Malformed Responses ====================
+describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
+    let weatherClient: WeatherAPIClient;
+    let mockFetch: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        mockFetch = vi.fn();
+        global.fetch = mockFetch;
+        weatherClient = new WeatherAPIClient('test-key', 12, false);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    describe('Malformed JSON Response Handling', () => {
+        it('should handle completely null/undefined API responses', async () => {
+            // Mock fetch to return invalid JSON
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => null
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            // Should return null rather than crashing
+            expect(weather).toBeNull();
+        });
+
+        it('should detect and reject malformed JSON', async () => {
+            // Mock fetch to return invalid JSON that throws on parse
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => {
+                    throw new SyntaxError('Unexpected token < in JSON');
+                }
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            // Should gracefully handle JSON parse errors
+            expect(weather).toBeNull();
+        });
+
+        it('should handle partial data corruption in sensor readings', async () => {
+            // Mock response with missing critical data
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 10.99, lat: 44.34 },
+                    weather: [], // Empty weather array
+                    main: {
+                        temp: null, // Null temperature
+                        feels_like: null,
+                        temp_min: null,
+                        temp_max: null,
+                        pressure: null, // Null pressure
+                        humidity: null // Null humidity
+                    },
+                    // Missing wind data
+                    // Missing sys data
+                    clouds: { all: 100 },
+                    dt: 1661870592,
+                    id: 3163858,
+                    name: 'Zocca',
+                    cod: 200
+                })
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            // Current implementation throws error when required fields are missing
+            // and returns null in the catch block
+            expect(weather).toBeNull();
+        });
+
+        it('should handle extreme value outliers', async () => {
+            // Mock response with physically impossible values
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 10.99, lat: 44.34 },
+                    weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+                    main: {
+                        temp: -9999, // Impossible temperature (Kelvin)
+                        feels_like: -9999,
+                        temp_min: -9999,
+                        temp_max: -9999,
+                        pressure: -9999, // Impossible pressure
+                        humidity: 999, // Impossible humidity (>100%)
+                        sea_level: 1015,
+                        grnd_level: 933
+                    },
+                    wind: {
+                        speed: -9999, // Negative wind speed
+                        deg: -9999
+                    },
+                    visibility: 10000,
+                    clouds: { all: 0 },
+                    dt: 1661870592,
+                    sys: {
+                        type: 2,
+                        id: 2075663,
+                        country: 'IT',
+                        sunrise: 1661834187,
+                        sunset: 1661882248
+                    },
+                    timezone: 7200,
+                    id: 3163858,
+                    name: 'Zocca',
+                    cod: 200
+                })
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            // Note: Current implementation does not validate extreme values
+            // This test documents current behavior - extreme values are passed through
+            expect(weather).not.toBeNull();
+            expect(weather?.temperature).toBe(-9999);
+            expect(weather?.humidity).toBe(999);
+            expect(weather?.windSpeed).toBe(-9999);
+        });
+
+        it('should handle invalid sensor data types', async () => {
+            // Mock response with strings in numeric fields
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 10.99, lat: 44.34 },
+                    weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+                    main: {
+                        temp: '298.48', // String instead of number
+                        feels_like: '298.74',
+                        temp_min: '297.56',
+                        temp_max: '300.05',
+                        pressure: '1015',
+                        humidity: '64', // String number
+                        sea_level: 1015,
+                        grnd_level: 933
+                    },
+                    wind: {
+                        speed: '0.62', // String instead of number
+                        deg: '349'
+                    },
+                    visibility: 10000,
+                    clouds: { all: 0 },
+                    dt: 1661870592,
+                    sys: {
+                        type: 2,
+                        id: 2075663,
+                        country: 'IT',
+                        sunrise: 1661834187,
+                        sunset: 1661882248
+                    },
+                    timezone: 7200,
+                    id: 3163858,
+                    name: 'Zocca',
+                    cod: 200
+                })
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            // JavaScript's loose typing means strings are not converted to numbers
+            // This test documents the current behavior - values remain as strings
+            expect(weather).not.toBeNull();
+            expect(typeof weather?.temperature).toBe('string');
+            expect(weather?.temperature).toBe('298.48');
+        });
+
+        it('should handle missing required fields in API responses', async () => {
+            // Mock response missing critical nested structures
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 10.99, lat: 44.34 },
+                    // Missing 'weather' array entirely
+                    // Missing 'main' object entirely
+                    // Missing 'sys' object entirely
+                    // Missing 'wind' object entirely
+                    clouds: { all: 0 },
+                    dt: 1661870592,
+                    id: 3163858,
+                    name: 'Zocca',
+                    cod: 200
+                })
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            // Should throw error and return null when required fields are missing
+            expect(weather).toBeNull();
+        });
+
+        it('should handle empty response object', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({})
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            expect(weather).toBeNull();
+        });
+
+        it('should handle non-JSON response', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => {
+                    throw new SyntaxError('Unexpected token');
+                }
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            expect(weather).toBeNull();
+        });
+    });
+
+    describe('Forecast API Data Integrity', () => {
+        it('should handle malformed forecast response', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    cod: '200',
+                    message: 0,
+                    cnt: 0,
+                    list: null, // Null list instead of array
+                    city: null
+                })
+            });
+
+            const forecast = await weatherClient.getForecast(44.34, 10.99, 24);
+
+            // Should handle null list gracefully
+            expect(forecast).toBeNull();
+        });
+
+        it('should handle empty forecast list', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    cod: '200',
+                    message: 0,
+                    cnt: 0,
+                    list: [],
+                    city: {
+                        id: 3163858,
+                        name: 'Zocca',
+                        coord: { lat: 44.34, lon: 10.99 },
+                        country: 'IT'
+                    }
+                })
+            });
+
+            const forecast = await weatherClient.getForecast(44.34, 10.99, 24);
+
+            // Should return empty array when list is empty
+            expect(forecast).toEqual([]);
+        });
+
+        it('should handle forecast items with missing data', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    cod: '200',
+                    message: 0,
+                    cnt: 2,
+                    list: [
+                        {
+                            dt: 1661871600,
+                            main: {
+                                temp: 296.76,
+                                // Missing feels_like, temp_min, temp_max
+                                pressure: 1015,
+                                // Missing humidity
+                            },
+                            // Missing weather array
+                            clouds: { all: 100 },
+                            wind: { speed: 0.62, deg: 349 },
+                            // Missing pop (probability of precipitation)
+                            sys: { pod: 'd' },
+                            dt_txt: '2022-08-30 15:00:00'
+                        },
+                        {
+                            dt: 1661882400,
+                            // Missing main entirely
+                            weather: [{ id: 500, main: 'Rain', description: 'light rain', icon: '10n' }],
+                            clouds: { all: 96 },
+                            wind: { speed: 1.97, deg: 157 },
+                            pop: 0.33,
+                            sys: { pod: 'n' },
+                            dt_txt: '2022-08-30 18:00:00'
+                        }
+                    ],
+                    city: {
+                        id: 3163858,
+                        name: 'Zocca',
+                        coord: { lat: 44.34, lon: 10.99 },
+                        country: 'IT'
+                    }
+                })
+            });
+
+            const forecast = await weatherClient.getForecast(44.34, 10.99, 24);
+
+            // Current implementation throws error when required fields are missing
+            // and returns null in the catch block
+            expect(forecast).toBeNull();
+        });
+    });
+
+    describe('Coordinate Boundary Validation', () => {
+        it('should handle invalid latitude > 90', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 0, lat: 100 }, // Invalid latitude
+                    weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+                    main: { temp: 298.48, humidity: 64, pressure: 1015 },
+                    wind: { speed: 0.62, deg: 349 },
+                    sys: { sunrise: 1661834187, sunset: 1661882248 },
+                    cod: 200
+                })
+            });
+
+            const weather = await weatherClient.getWeather(100, 0);
+
+            // Current implementation passes through invalid coordinates
+            expect(weather).not.toBeNull();
+        });
+
+        it('should handle invalid longitude > 180', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 200, lat: 0 }, // Invalid longitude
+                    weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+                    main: { temp: 298.48, humidity: 64, pressure: 1015 },
+                    wind: { speed: 0.62, deg: 349 },
+                    sys: { sunrise: 1661834187, sunset: 1661882248 },
+                    cod: 200
+                })
+            });
+
+            const weather = await weatherClient.getWeather(0, 200);
+
+            // Current implementation passes through invalid coordinates
+            expect(weather).not.toBeNull();
+        });
+
+        it('should handle NaN coordinates', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: NaN, lat: NaN },
+                    weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+                    main: { temp: 298.48, humidity: 64, pressure: 1015 },
+                    wind: { speed: 0.62, deg: 349 },
+                    sys: { sunrise: 1661834187, sunset: 1661882248 },
+                    cod: 200
+                })
+            });
+
+            const weather = await weatherClient.getWeather(NaN, NaN);
+
+            // Current implementation handles NaN by using it directly
+            // The cache key generation will have NaN in it
+            expect(weather).not.toBeNull();
+        });
+    });
+
+    describe('Impossible Weather Conditions', () => {
+        it('should handle negative humidity', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 10.99, lat: 44.34 },
+                    weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+                    main: {
+                        temp: 298.48,
+                        humidity: -10, // Physically impossible
+                        pressure: 1015
+                    },
+                    wind: { speed: 0.62, deg: 349 },
+                    sys: { sunrise: 1661834187, sunset: 1661882248 },
+                    cod: 200
+                })
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            // Current implementation passes through invalid values
+            expect(weather).not.toBeNull();
+            expect(weather?.humidity).toBe(-10);
+        });
+
+        it('should handle humidity > 100%', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 10.99, lat: 44.34 },
+                    weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+                    main: {
+                        temp: 298.48,
+                        humidity: 150, // Impossible (>100%)
+                        pressure: 1015
+                    },
+                    wind: { speed: 0.62, deg: 349 },
+                    sys: { sunrise: 1661834187, sunset: 1661882248 },
+                    cod: 200
+                })
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            // Current implementation passes through invalid values
+            expect(weather).not.toBeNull();
+            expect(weather?.humidity).toBe(150);
+        });
+
+        it('should handle zero pressure', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 10.99, lat: 44.34 },
+                    weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+                    main: {
+                        temp: 298.48,
+                        humidity: 64,
+                        pressure: 0 // Impossible (vacuum of space)
+                    },
+                    wind: { speed: 0.62, deg: 349 },
+                    sys: { sunrise: 1661834187, sunset: 1661882248 },
+                    cod: 200
+                })
+            });
+
+            const weather = await weatherClient.getWeather(44.34, 10.99);
+
+            // Current implementation passes through invalid values
+            expect(weather).not.toBeNull();
+            expect(weather?.pressure).toBe(0);
+        });
+    });
+});

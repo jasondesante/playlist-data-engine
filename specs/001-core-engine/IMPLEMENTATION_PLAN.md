@@ -1043,13 +1043,54 @@ Added comprehensive performance metrics tracking for all external API calls with
 **Files**: Tests for sensor modules
 
 **Subtasks**:
-- [ ] Add edge case tests for sensor failures
+- [x] Add edge case tests for sensor failures
 - [ ] Add integration tests for full sensor pipeline
 - [ ] Add tests for XP modifier edge cases (3.0x cap)
 - [ ] Add tests for multi-sensor interaction
 - [ ] Mock browser APIs for headless testing
 
 **Estimated Effort**: 4-6 hours
+
+**Status**: ✅ Subtask 11.1 Complete (2026-01-22)
+
+**Implementation Summary**:
+Added 17 comprehensive edge case tests for sensor failures focusing on Data Integrity & Malformed Responses:
+
+**New Test Suite**: `Edge Case Tests: Data Integrity & Malformed Responses`
+
+1. **Malformed JSON Response Handling** (8 tests):
+   - Completely null/undefined API responses
+   - Malformed JSON detection
+   - Partial data corruption in sensor readings
+   - Extreme value outliers (e.g., -9999°C temperature)
+   - Invalid sensor data types (strings in numeric fields)
+   - Missing required fields in API responses
+   - Empty response objects
+   - Non-JSON responses
+
+2. **Forecast API Data Integrity** (3 tests):
+   - Malformed forecast response handling
+   - Empty forecast list handling
+   - Forecast items with missing data
+
+3. **Coordinate Boundary Validation** (3 tests):
+   - Invalid latitude > 90
+   - Invalid longitude > 180
+   - NaN coordinates
+
+4. **Impossible Weather Conditions** (3 tests):
+   - Negative humidity
+   - Humidity > 100%
+   - Zero pressure (vacuum)
+
+**Test Findings**:
+The tests document current implementation behavior, revealing several edge cases where the current code:
+- Does not validate extreme values (passes through -9999°C, 999% humidity, negative wind speeds)
+- Does not validate data types (strings remain strings when API returns them)
+- Does not validate coordinate boundaries (accepts lat > 90, lon > 180, NaN)
+- Relies on try/catch for missing required fields (returns null on error)
+
+All 17 new tests pass. Tests serve as documentation of current behavior and can be updated if validation logic is added in the future.
 
 ---
 
@@ -1104,12 +1145,12 @@ After completing all tasks, verify:
 Use this section to track completion:
 
 ```
-[████████████████████░░░░] 96% Complete
+[████████████████████░░░░] 97% Complete
 
 Critical:  [██████████████] 0/0 tasks (100%)
 High:      [██████████████] 1/1 tasks (100%)
 Medium:    [██████████░░░░] 7/8 tasks (88%) - 1 task researched & not recommended
-Low:       [░░░░░░░░░░░] 0/3 tasks (0%)
+Low:       [███░░░░░░░░░░] 1/3 tasks (1/15 subtasks) - 1/5 subtasks complete
 ```
 
 ---
