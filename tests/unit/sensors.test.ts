@@ -1639,7 +1639,7 @@ describe('GeolocationProvider Caching', () => {
     it('should return null when navigator is undefined', async () => {
         // Remove navigator
         const originalNavigator = global.navigator;
-        // @ts-ignore - intentionally removing navigator
+        // @ts-expect-error - intentionally removing navigator for testing
         delete global.navigator;
 
         const provider = new GeolocationProvider(5, false);
@@ -1651,7 +1651,7 @@ describe('GeolocationProvider Caching', () => {
     });
 
     it('should return null when geolocation is not available', async () => {
-        // @ts-ignore - intentionally removing geolocation
+        // @ts-expect-error - intentionally removing geolocation for testing
         delete navigator.geolocation;
 
         const provider = new GeolocationProvider(5, false);

@@ -1,11 +1,35 @@
 import type { LightData } from '../types/Environmental';
 import { Logger } from '../../utils/logger.js';
 
+/**
+ * AmbientLightSensor is an experimental Web API.
+ * This interface provides type safety for the experimental API.
+ *
+ * @see https://wicg.github.io/generic-sensor/
+ */
+interface AmbientLightSensorConstructor {
+    new (): AmbientLightSensor;
+}
+
+interface AmbientLightSensor extends EventTarget {
+    readonly illuminance: number | null;
+    start(): void;
+    stop(): void;
+    addEventListener(type: 'reading', listener: (this: AmbientLightSensor, event: Event) => void): void;
+    addEventListener(type: 'error', listener: (this: AmbientLightSensor, event: ErrorEvent) => void): void;
+    addEventListener(type: string, listener: EventListener): void;
+    removeEventListener(type: string, listener: EventListener): void;
+}
+
+interface AmbientLightSensorWindow extends Window {
+    AmbientLightSensor?: AmbientLightSensorConstructor;
+}
+
 export class LightSensor {
     private logger = Logger.for('LightSensor');
     private lastReading: LightData | null = null;
     private callback: ((data: LightData) => void) | null = null;
-    private sensor: any | null = null; // AmbientLightSensor type is experimental
+    private sensor: AmbientLightSensor | null = null;
 
     /**
      * Start monitoring ambient light
@@ -14,14 +38,14 @@ export class LightSensor {
     startMonitoring(callback: (data: LightData) => void): void {
         if (typeof window === 'undefined') return;
 
-        if ('AmbientLightSensor' in window) {
+        const ambientWindow = window as AmbientLightSensorWindow;
+        if (ambientWindow.AmbientLightSensor) {
             try {
-                // @ts-ignore - AmbientLightSensor is experimental
-                const SensorClass: any = (window as any).AmbientLightSensor;
+                const SensorClass = ambientWindow.AmbientLightSensor;
                 this.sensor = new SensorClass();
 
                 this.sensor.addEventListener('reading', () => {
-                    if (this.sensor.illuminance !== null) {
+                    if (this.sensor && this.sensor.illuminance !== null) {
                         const data: LightData = {
                             illuminance: this.sensor.illuminance,
                             timestamp: Date.now()
@@ -31,8 +55,13 @@ export class LightSensor {
                     }
                 });
 
-                this.sensor.addEventListener('error', (event: any) => {
-                    this.logger.warn('Light sensor error', { name: event.error.name, message: event.error.message });
+                this.sensor.addEventListener('error', (event: Event | ErrorEvent) => {
+                    if ('error' in event) {
+                        this.logger.warn('Light sensor error', {
+                            name: (event as ErrorEvent).error.name,
+                            message: (event as ErrorEvent).error.message
+                        });
+                    }
                 });
 
                 this.sensor.start();

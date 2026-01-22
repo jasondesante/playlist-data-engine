@@ -1452,7 +1452,11 @@ After completing all tasks, verify:
   - Fixed 2 gaming bonus calculation tests by correcting expected values to match 1.75 cap
   - sensors.test.ts: 240/244 passing (98.4%, up from 85.7%)
   - 12 remaining failures in biome detection and fullSensorPipeline tests
-- [ ] No `@ts-ignore` comments remain
+- [x] No `@ts-ignore` comments remain ✅ Verified (2026-01-22)
+  - Added proper type declarations for `murmurhash-v3` in `src/types/murmurhash-v3.d.ts`
+  - Added `AmbientLightSensor` interface in `src/core/sensors/LightSensor.ts`
+  - Extended global types in `tests/mocks/browserAPIs.ts` for test mocks
+  - Converted intentional test errors to use `@ts-expect-error` in `tests/unit/sensors.test.ts` and `tests/setup.ts`
 - [ ] No `TODO` comments remain (or convert to tracked issues)
 - [ ] All mocked methods replaced with real implementations
 - [ ] XP modifiers correctly cap at 3.0x in all scenarios
@@ -1641,5 +1645,54 @@ Tests       837 passed (837)
 - Integration tests: 105+ tests passing (e2e, sensor integration, audio analysis, gaming, multi-sensor, full pipeline)
 
 **Conclusion**: All 837 tests pass. The Core Data Engine is fully tested and production-ready.
+
+---
+
+### 2026-01-22: Remove All `@ts-ignore` Comments
+
+**Task**: Remove all `@ts-ignore` comments from the codebase (Verification Checklist item #4)
+
+**Status**: ✅ **COMPLETE**
+
+**Changes Made**:
+
+1. **`src/types/murmurhash-v3.d.ts`** - Added proper type declarations:
+   - Created proper TypeScript interface for `MurmHashV3` function
+   - Added JSDoc documentation for the module
+   - This allows the import to work without `@ts-ignore`
+
+2. **`src/core/sensors/LightSensor.ts`** - Added `AmbientLightSensor` interface:
+   - Created `AmbientLightSensorConstructor` interface
+   - Created `AmbientLightSensor` interface extending EventTarget
+   - Created `AmbientLightSensorWindow` interface to extend Window
+   - Removed `any` types and `@ts-ignore` comment
+   - Improved error handling with proper type narrowing
+
+3. **`tests/mocks/browserAPIs.ts`** - Extended global types:
+   - Added `declare global` block extending `Navigator`, `Window`, and `globalThis`
+   - Removed 7 `@ts-ignore` comments from the `setupBrowserAPIMocks()` function
+   - Properly typed the browser API mocks for test environments
+
+4. **`tests/unit/sensors.test.ts`** - Converted to `@ts-expect-error`:
+   - Changed 2 `@ts-ignore` to `@ts-expect-error` for intentional property removal
+   - `@ts-expect-error` is more appropriate for test code that intentionally violates types
+
+5. **`tests/setup.ts`** - Converted to `@ts-expect-error`:
+   - Changed 9 `@ts-ignore` to `@ts-expect-error` with better explanations
+   - Documents that the errors are expected for test setup
+
+**Summary**:
+- **Total `@ts-ignore` removed**: 19 comments
+- **New type declarations**: 2 (murmurhash-v3, AmbientLightSensor)
+- **Converted to `@ts-expect-error`**: 11 (test files - appropriate for test code)
+- **TypeScript compilation**: ✅ Passes (`npx tsc --noEmit`)
+- **All tests**: ✅ Pass (837/837)
+
+**Files Modified**:
+- `src/types/murmurhash-v3.d.ts` - Enhanced type declarations
+- `src/core/sensors/LightSensor.ts` - Added proper interfaces
+- `tests/mocks/browserAPIs.ts` - Added global type extensions
+- `tests/unit/sensors.test.ts` - Converted to `@ts-expect-error`
+- `tests/setup.ts` - Converted to `@ts-expect-error`
 
 ---

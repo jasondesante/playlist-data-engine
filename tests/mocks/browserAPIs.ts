@@ -14,6 +14,48 @@
  */
 
 /**
+ * Extend global types for browser API mocks
+ * This allows TypeScript to recognize the mocked APIs we add to globalThis
+ */
+declare global {
+    interface Navigator {
+        geolocation?: Geolocation;
+    }
+
+    interface Window {
+        addEventListener?: (
+            type: string,
+            listener: (event: DeviceMotionEvent | DeviceOrientationEvent) => void
+        ) => void;
+        removeEventListener?: (
+            type: string,
+            listener: (event: DeviceMotionEvent | DeviceOrientationEvent) => void
+        ) => void;
+    }
+
+    // Extend globalThis directly for Node.js environments
+    var globalThis: {
+        navigator?: {
+            geolocation?: Geolocation;
+        };
+        addEventListener?: (
+            type: string,
+            listener: (event: DeviceMotionEvent | DeviceOrientationEvent) => void
+        ) => void;
+        removeEventListener?: (
+            type: string,
+            listener: (event: DeviceMotionEvent | DeviceOrientationEvent) => void
+        ) => void;
+        AmbientLightSensor?: new () => MockAmbientLightSensor;
+        localStorage?: Storage;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [key: string]: any;
+    } & typeof globalThis;
+}
+
+export {}; // Ensure this is treated as a module
+
+/**
  * Geolocation API Mock
  *
  * Provides mock implementation of navigator.geolocation.getCurrentPosition()
@@ -478,10 +520,8 @@ export function createMockAmbientLightSensor(): MockAmbientLightSensor {
  */
 export function setMockLightSensorSupported(supported: boolean): void {
     if (supported) {
-        // @ts-ignore - Adding to window for testing
-        globalThis.AmbientLightSensor = createMockAmbientLightSensor() as any;
+        globalThis.AmbientLightSensor = createMockAmbientLightSensor();
     } else {
-        // @ts-ignore
         delete globalThis.AmbientLightSensor;
     }
 }
@@ -538,17 +578,13 @@ export class MockStorage implements Storage {
 export function setupBrowserAPIMocks(): void {
     // Setup Geolocation API
     if (typeof globalThis.navigator === 'undefined') {
-        // @ts-ignore
         globalThis.navigator = {};
     }
-    // @ts-ignore
     globalThis.navigator.geolocation = createMockGeolocation();
 
     // Setup DeviceMotionEvent via window.addEventListener
     if (typeof globalThis.addEventListener === 'undefined') {
-        // @ts-ignore
         globalThis.addEventListener = createMockDeviceMotionAPI().addEventListener;
-        // @ts-ignore
         globalThis.removeEventListener = createMockDeviceMotionAPI().removeEventListener;
     }
 
@@ -558,7 +594,6 @@ export function setupBrowserAPIMocks(): void {
     // Setup localStorage if not available
     if (typeof globalThis.localStorage === 'undefined') {
         const mockStorage = new MockStorage();
-        // @ts-ignore
         globalThis.localStorage = mockStorage;
     }
 }

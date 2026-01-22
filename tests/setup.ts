@@ -5,20 +5,20 @@
  * Provides comprehensive browser API mocks for headless testing
  */
 
-// @ts-ignore - web-audio-api has no type definitions
+// @ts-expect-error - web-audio-api has no type definitions, we define the types we need below
 import { AudioContext, OfflineAudioContext } from 'web-audio-api';
-// @ts-ignore - canvas has type definitions but we're using it in a special way
+// @ts-expect-error - canvas has type definitions but we're using it in a special way for Node.js
 import { createCanvas, Image as CanvasImage } from 'canvas';
 import { setupBrowserAPIMocks, teardownBrowserAPIMocks } from './mocks/browserAPIs';
 
 // Provide real Web Audio API to global scope (works in both browser and Node.js)
-// @ts-ignore
+// @ts-expect-error - Extending globalThis with AudioContext for tests
 globalThis.AudioContext = AudioContext;
-// @ts-ignore
+// @ts-expect-error - Extending globalThis with OfflineAudioContext for tests
 globalThis.OfflineAudioContext = OfflineAudioContext;
 
 // Provide Canvas API to global scope for ColorExtractor tests
-// @ts-ignore
+// @ts-expect-error - Extending globalThis with HTMLCanvasElement for tests
 globalThis.HTMLCanvasElement = class HTMLCanvasElement {
     width: number = 0;
     height: number = 0;
@@ -40,24 +40,24 @@ globalThis.HTMLCanvasElement = class HTMLCanvasElement {
 };
 
 // Provide Image API to global scope
-// @ts-ignore
+// @ts-expect-error - Extending globalThis with Image for tests
 globalThis.Image = CanvasImage;
 
 // Also set on window/document if it exists (for browser compatibility)
 if (typeof window !== 'undefined') {
-    // @ts-ignore
+    // @ts-expect-error - Extending window with AudioContext for tests
     window.AudioContext = AudioContext;
-    // @ts-ignore
+    // @ts-expect-error - Extending window with OfflineAudioContext for tests
     window.OfflineAudioContext = OfflineAudioContext;
 }
 
 // Mock document.createElement for canvas
 if (typeof document !== 'undefined') {
     const originalCreateElement = document.createElement.bind(document);
-    // @ts-ignore
+    // @ts-expect-error - Overriding createElement for canvas support in tests
     document.createElement = function (tagName: string) {
         if (tagName === 'canvas') {
-            // @ts-ignore
+            // @ts-expect-error - Returning mock HTMLCanvasElement
             return new globalThis.HTMLCanvasElement();
         }
         return originalCreateElement(tagName);
