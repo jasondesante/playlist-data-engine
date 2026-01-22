@@ -327,13 +327,14 @@ describe('AttackResolver', () => {
             const resolver = new AttackResolver();
 
             const attacker = createCombatant('Puncher', 16, 10);
-            const target = createCombatant('Target', 10, 10, 20, 10);
+            // Use low AC so the attack will hit and trigger damage calculation
+            const target = createCombatant('Target', 10, 10, 20, 0);
             const attack = createAttack('Unarmed', '', 'melee');
 
             // Should throw error for invalid dice formula
             expect(() => {
                 resolver.resolveAttack(attacker, target, attack);
-            }).toThrow('Invalid dice formula');
+            }).toThrow('Invalid dice formula: ');
         });
 
         it('should handle missing attack type (defaults to melee)', () => {

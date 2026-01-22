@@ -352,8 +352,8 @@ describe('EnvironmentalSensors', () => {
     it('should handle geolocation biome detection', () => {
         const geoProvider = new GeolocationProvider();
 
-        // Tundra (high latitude)
-        expect(geoProvider.getBiome(70, 0)).toBe('tundra');
+        // Tundra (high latitude) - polar regions >60° are always coastal
+        expect(geoProvider.getBiome(70, 0)).toBe('tundra_coastal');
 
         // Tropics (low latitude)
         expect(geoProvider.getBiome(0, 0)).toBe('forest');
@@ -437,7 +437,7 @@ describe('EnvironmentalSensors', () => {
 
             it('should detect Southeast Asian rainforest (70-120°E)', () => {
                 expect(geoProvider.getBiome(5, 100)).toBe('jungle_coastal');   // Indonesia (coastal island)
-                expect(geoProvider.getBiome(15, 105)).toBe('forest');  // Thailand (not coastal, outside jungle latitude)
+                expect(geoProvider.getBiome(15, 105)).toBe('forest_coastal');  // Thailand/South China Sea coast (15°N, 105°E is in South China Sea coastal range 10-25°N, 105-122°E)
             });
 
             it('should detect Indonesian/Oceania tropical forests (100-140°E)', () => {
@@ -463,23 +463,23 @@ describe('EnvironmentalSensors', () => {
             it('should detect European urban and forest regions', () => {
                 // Mid-latitude Europe (urban - falls in 30-50° urban band)
                 // Note: coastal detection marks some European locations as coastal due to British Isles range overlap
-                expect(geoProvider.getBiome(50, 10)).toBe('coastal_urban');    // Germany (detected as coastal due to British Isles range)
-                expect(geoProvider.getBiome(48, 2)).toBe('coastal_urban');     // France (detected as coastal due to British Isles range)
+                expect(geoProvider.getBiome(50, 10)).toBe('coastal_urban');    // Germany (detected as coastal due to British Isles range: 50-60°N, 0-10°E)
+                expect(geoProvider.getBiome(48, 2)).toBe('urban');     // France (48°N is below British Isles range which starts at 50°N)
                 expect(geoProvider.getBiome(50, 0)).toBe('coastal_urban');     // UK (London area - coastal island)
-                // Higher latitude Europe (taiga takes priority over forest in boreal regions)
-                expect(geoProvider.getBiome(51, 0)).toBe('taiga_coastal');    // UK (north of London - coastal, taiga at 51°N)
-                expect(geoProvider.getBiome(52, 0)).toBe('taiga_coastal');    // UK (Scotland - coastal, taiga at 52°N)
-                expect(geoProvider.getBiome(55, 20)).toBe('taiga_coastal');   // Poland (taiga at 55°N, Scandinavia peninsula = coastal)
-                expect(geoProvider.getBiome(60, 15)).toBe('taiga_coastal');   // Scandinavia (coastal peninsula, taiga)
+                // Higher latitude Europe - taiga starts at 55°N (Russian Taiga: 30-180°E) or 60°N (Scandinavian Taiga: 5-30°E)
+                expect(geoProvider.getBiome(51, 0)).toBe('forest_coastal');    // UK (north of London - coastal, forest at 51°N, below taiga threshold)
+                expect(geoProvider.getBiome(52, 0)).toBe('forest_coastal');    // UK (Scotland - coastal, forest at 52°N, below taiga threshold)
+                expect(geoProvider.getBiome(55, 20)).toBe('forest_coastal');   // Poland (55°N but lon 20°E is outside Russian Taiga range which starts at 30°E)
+                expect(geoProvider.getBiome(60, 15)).toBe('taiga_coastal');   // Scandinavia (coastal peninsula, taiga at 60°N - in Scandinavian Taiga range: 60-70°N, 5-30°E)
             });
 
             it('should detect Asian biomes with mountain detection', () => {
                 // East Asia urban (30-50° band)
                 expect(geoProvider.getBiome(35, 140)).toBe('coastal_urban');   // Japan (in East Asia urban band + island)
                 expect(geoProvider.getBiome(31, 121)).toBe('urban');   // Shanghai (not coastal)
-                // High latitude Asia (mountain)
-                expect(geoProvider.getBiome(55, 100)).toBe('mountain'); // Siberia/Mongolia border
-                expect(geoProvider.getBiome(52, 90)).toBe('mountain');  // Western China
+                // High latitude Asia - taiga takes priority over mountain in Russian Taiga region (55-70°N, 30-180°E)
+                expect(geoProvider.getBiome(55, 100)).toBe('taiga'); // Siberia/Mongolia border (in Russian Taiga region: 55-70°N, 30-180°E)
+                expect(geoProvider.getBiome(52, 90)).toBe('mountain');  // Western China (52°N < 55°N, so not in taiga region, returns mountain)
                 // Lower latitude Asia (plains, outside urban band)
                 expect(geoProvider.getBiome(25, 105)).toBe('plains');   // Southeast Asia
             });

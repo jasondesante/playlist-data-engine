@@ -53,6 +53,7 @@ describe('Multi-Sensor Interaction Tests (Task 11.4)', () => {
   let sensors: EnvironmentalSensors;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.restoreAllMocks();
     // Use custom retry config for faster tests
     sensors = new EnvironmentalSensors('test-weather-api-key', {
@@ -269,9 +270,18 @@ describe('Multi-Sensor Interaction Tests (Task 11.4)', () => {
       const mockGeoData = createMockGeoData({ latitude: 35.6762, longitude: 139.6503 }); // Tokyo
 
       vi.spyOn(sensors, 'checkAvailability' as any).mockReturnValue(true);
+
+      // Use mockImplementation to ensure complete control over behavior
+      let callCount = 0;
       vi.spyOn((sensors as any).geolocation, 'getCurrentPosition')
-        .mockResolvedValueOnce(mockGeoData)
-        .mockRejectedValueOnce(new Error('GPS unavailable'));
+        .mockImplementation(() => {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve(mockGeoData);
+          } else {
+            return Promise.reject(new Error('GPS unavailable'));
+          }
+        });
 
       (sensors as any).permissions.set('geolocation', true);
 
