@@ -252,6 +252,82 @@ describe('GamingPlatformSensors (T093)', () => {
             expect(callback.mock.calls.length).toBe(previousCallCount);
         }, 100);
     });
+
+    describe('Diagnostic Mode', () => {
+        it('should return comprehensive diagnostic information', () => {
+            const diagnostics = gamingSensors.getDiagnostics();
+
+            expect(diagnostics).toHaveProperty('timestamp');
+            expect(diagnostics).toHaveProperty('steam');
+            expect(diagnostics).toHaveProperty('discord');
+            expect(diagnostics).toHaveProperty('gamingContext');
+            expect(diagnostics).toHaveProperty('polling');
+            expect(diagnostics).toHaveProperty('cache');
+        });
+
+        it('should include Steam diagnostic information', () => {
+            const diagnostics = gamingSensors.getDiagnostics();
+
+            expect(diagnostics.steam).toHaveProperty('isAuthenticated');
+            expect(diagnostics.steam).toHaveProperty('apiKey');
+            expect(diagnostics.steam.isAuthenticated).toBe(false); // No user ID set
+            expect(diagnostics.steam.apiKey).toBe(true); // API key was provided
+        });
+
+        it('should include Discord diagnostic information', () => {
+            const diagnostics = gamingSensors.getDiagnostics();
+
+            expect(diagnostics.discord).toHaveProperty('isConnected');
+            expect(diagnostics.discord).toHaveProperty('clientId');
+            expect(diagnostics.discord).toHaveProperty('connectionState');
+            expect(diagnostics.discord.clientId).toBe(true); // Client ID was provided
+            expect(typeof diagnostics.discord.connectionState).toBe('string');
+        });
+
+        it('should include polling information', () => {
+            const diagnostics = gamingSensors.getDiagnostics();
+
+            expect(diagnostics.polling).toHaveProperty('isActive');
+            expect(diagnostics.polling).toHaveProperty('intervalMs');
+            expect(diagnostics.polling).toHaveProperty('exponentialBackoff');
+            expect(diagnostics.polling.isActive).toBe(false); // Not monitoring yet
+            expect(diagnostics.polling.exponentialBackoff).toBe(1);
+        });
+
+        it('should include cache information', () => {
+            const diagnostics = gamingSensors.getDiagnostics();
+
+            expect(diagnostics.cache).toHaveProperty('gameMetadataCacheSize');
+            expect(diagnostics.cache).toHaveProperty('cachedGames');
+            expect(Array.isArray(diagnostics.cache.cachedGames)).toBe(true);
+        });
+
+        it('should include current gaming context', () => {
+            const diagnostics = gamingSensors.getDiagnostics();
+
+            expect(diagnostics.gamingContext).toHaveProperty('isActivelyGaming');
+            expect(diagnostics.gamingContext).toHaveProperty('platformSource');
+            expect(diagnostics.gamingContext).toHaveProperty('totalGamingMinutes');
+            expect(diagnostics.gamingContext).toHaveProperty('gamesPlayedWhileListening');
+        });
+
+        it('should update polling status when monitoring', () => {
+            gamingSensors.startMonitoring();
+
+            const diagnostics = gamingSensors.getDiagnostics();
+            expect(diagnostics.polling.isActive).toBe(true);
+
+            gamingSensors.stopMonitoring();
+        });
+
+        it('should reflect authentication state in diagnostics', async () => {
+            await gamingSensors.authenticate('123456789');
+
+            const diagnostics = gamingSensors.getDiagnostics();
+            expect(diagnostics.steam.isAuthenticated).toBe(true);
+            expect(diagnostics.steam.userId).toBe('123456789');
+        });
+    });
 });
 
 describe('SteamAPIClient', () => {

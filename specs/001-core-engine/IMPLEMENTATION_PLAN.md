@@ -777,14 +777,14 @@ The "Environmental Sensor Error Recovery" task was already fully implemented in 
 
 **Subtasks**:
 - [x] Add consistent logging levels (debug, info, warn, error)
-- [ ] Add diagnostic mode for troubleshooting
+- [x] Add diagnostic mode for troubleshooting
 - [ ] Add sensor status dashboard output
 - [ ] Add performance metrics (API call times, cache hit rates)
 - [ ] Add optional verbose logging flag
 
-**Status**: 🟡 In Progress (1/5 subtasks complete)
+**Status**: 🟡 In Progress (2/5 subtasks complete)
 
-**Implementation Summary (Subtask 1 - Consistent Logging Levels)**:
+**Implementation Summary (Subtask 2 - Diagnostic Mode)**:
 Created a centralized logging utility at `src/utils/logger.ts` with:
 
 **Logger Features**:
@@ -813,6 +813,44 @@ Created a centralized logging utility at `src/utils/logger.ts` with:
 09:40:08.123 [ERROR] [WeatherAPIClient] Failed to fetch weather { error: 'Network error' }
 09:40:09.456 [DEBUG] [MotionDetector] Motion event received { activity: 'walking' }
 ```
+
+**Completed**: 2026-01-22
+
+**Estimated Effort**: 2-3 hours
+
+---
+
+**Implementation Summary (Subtask 2 - Diagnostic Mode)**:
+
+Added diagnostic mode functionality to enable enhanced logging and comprehensive diagnostic information:
+
+**Logger Enhancements** (`src/utils/logger.ts`):
+- `Logger.enableDiagnosticMode()` - Sets log level to DEBUG for maximum verbosity
+- `Logger.disableDiagnosticMode()` - Resets log level to INFO
+- `Logger.isDiagnosticMode()` - Check if diagnostic mode is active
+- `Logger.reset()` now also resets diagnostic mode flag
+
+**EnvironmentalSensors Diagnostics** (`src/core/sensors/EnvironmentalSensors.ts`):
+- `getDiagnostics()` - Returns comprehensive diagnostic report including:
+  - All sensor statuses, permissions, availability, and last known good values
+  - Cache statistics (geolocation age/expiry, weather cache size/stats)
+  - Recent failure log (limited to 10 entries)
+  - Current permissions state
+  - Context availability (which sensors are present)
+- `enableDiagnosticMode()` / `disableDiagnosticMode()` - Control diagnostic mode
+
+**GamingPlatformSensors Diagnostics** (`src/core/sensors/GamingPlatformSensors.ts`):
+- `getDiagnostics()` - Returns diagnostic report including:
+  - Steam authentication state (userId, apiKey presence)
+  - Discord connection state (isConnected, clientId, connectionState)
+  - Current gaming context (active gaming, platform, total minutes)
+  - Polling status (isActive, intervalMs, exponentialBackoff)
+  - Cache information (gameMetadataCacheSize, cachedGames list)
+
+**Tests Added**:
+- `tests/unit/sensors.test.ts` - 6 diagnostic mode tests
+- `tests/unit/gaming.test.ts` - 8 diagnostic mode tests
+- `tests/unit/discordRPC.test.ts` - 7 logger diagnostic mode tests
 
 **Completed**: 2026-01-22
 

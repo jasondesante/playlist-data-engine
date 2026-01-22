@@ -733,4 +733,98 @@ export class EnvironmentalSensors {
 
         return this.motion.detectActivity(motionData);
     }
+
+    /**
+     * Get comprehensive diagnostic information for troubleshooting
+     * Returns structured data about all sensor states, cache statistics, and recent failures
+     *
+     * @returns Diagnostic report containing sensor statuses, cache stats, and recent errors
+     */
+    getDiagnostics(): {
+        timestamp: number;
+        diagnosticMode: boolean;
+        sensors: {
+            type: SensorType;
+            status: SensorStatus;
+            permission: boolean;
+            availability: boolean;
+            lastKnownGood: any;
+        }[];
+        cache: {
+            geolocation: {
+                age: number | null;
+                isExpired: boolean;
+                stats: { hits: number; misses: number };
+            };
+            weather: {
+                size: number;
+                stats: { hits: number; misses: number };
+                ttl: number;
+            };
+        };
+        recentFailures: SensorFailureLog[];
+        permissions: SensorPermission[];
+        context: {
+            hasGeolocation: boolean;
+            hasMotion: boolean;
+            hasWeather: boolean;
+            hasLight: boolean;
+            hasBiome: boolean;
+            timestamp: number;
+        };
+    } {
+        const isDiagnostic = Logger.isDiagnosticMode();
+
+        return {
+            timestamp: Date.now(),
+            diagnosticMode: isDiagnostic,
+            sensors: Array.from(this.sensorStatuses.values()).map(status => ({
+                type: status.type,
+                status,
+                permission: this.permissions.get(status.type) || false,
+                availability: this.checkAvailability(status.type),
+                lastKnownGood: this.getLastKnownGood(status.type),
+            })),
+            cache: {
+                geolocation: {
+                    age: this.geolocation.getCacheAge(),
+                    isExpired: this.geolocation.isCacheExpired(),
+                    stats: this.geolocation.getCacheStats(),
+                },
+                weather: {
+                    size: this.weather.getCacheSize(),
+                    stats: this.weather.getCacheStats(),
+                    ttl: 720, // 12 minutes in seconds (for reference)
+                },
+            },
+            recentFailures: this.getFailureLog(undefined, 10),
+            permissions: this.getPermissions(),
+            context: {
+                hasGeolocation: !!this.context.geolocation,
+                hasMotion: !!this.context.motion,
+                hasWeather: !!this.context.weather,
+                hasLight: !!this.context.light,
+                hasBiome: !!this.context.biome,
+                timestamp: this.context.timestamp,
+            },
+        };
+    }
+
+    /**
+     * Enable diagnostic mode for enhanced logging and debugging
+     * Sets global logger to DEBUG level
+     */
+    enableDiagnosticMode(): void {
+        Logger.enableDiagnosticMode();
+        this.logger.info('Diagnostic mode enabled');
+    }
+
+    /**
+     * Disable diagnostic mode and reset to normal logging
+     * Resets global logger to INFO level
+     */
+    disableDiagnosticMode(): void {
+        Logger.disableDiagnosticMode();
+        this.logger.info('Diagnostic mode disabled');
+    }
 }

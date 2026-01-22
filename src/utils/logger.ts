@@ -81,6 +81,12 @@ let includeContext = true;
 let customHandler: ((entry: LogEntry) => void) | null = null;
 
 /**
+ * Global diagnostic mode flag
+ * When enabled, sets log level to DEBUG and enables verbose output
+ */
+let diagnosticMode = false;
+
+/**
  * Logger class providing consistent logging across all modules
  */
 export class Logger {
@@ -101,6 +107,32 @@ export class Logger {
      */
     static for(context: string): Logger {
         return new Logger(context);
+    }
+
+    /**
+     * Enable diagnostic mode
+     * Sets log level to DEBUG for maximum verbosity
+     */
+    static enableDiagnosticMode(): void {
+        diagnosticMode = true;
+        globalLevel = LogLevel.DEBUG;
+    }
+
+    /**
+     * Disable diagnostic mode
+     * Resets log level to INFO
+     */
+    static disableDiagnosticMode(): void {
+        diagnosticMode = false;
+        globalLevel = LogLevel.INFO;
+    }
+
+    /**
+     * Check if diagnostic mode is enabled
+     * @returns True if diagnostic mode is active
+     */
+    static isDiagnosticMode(): boolean {
+        return diagnosticMode;
     }
 
     /**
@@ -146,6 +178,7 @@ export class Logger {
         includeTimestamp = true;
         includeContext = true;
         customHandler = null;
+        diagnosticMode = false;
     }
 
     /**

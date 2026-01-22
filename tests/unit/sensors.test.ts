@@ -5,6 +5,7 @@ import { MotionDetector } from '../../src/core/sensors/MotionDetector';
 import { WeatherAPIClient, SevereWeatherType } from '../../src/core/sensors/WeatherAPIClient';
 import { LightSensor } from '../../src/core/sensors/LightSensor';
 import type { WeatherData, ForecastData, MotionData } from '../../src/core/types/Environmental';
+import { Logger } from '../../src/utils/logger';
 
 describe('EnvironmentalSensors', () => {
     let sensors: EnvironmentalSensors;
@@ -2777,6 +2778,107 @@ describe('WeatherAPIClient Severe Weather Detection', () => {
                 const activity = sensors.getCurrentActivity();
                 expect(activity).toBe('unknown');
             });
+        });
+    });
+
+    describe('Diagnostic Mode', () => {
+        let sensors: EnvironmentalSensors;
+
+        beforeEach(() => {
+            sensors = new EnvironmentalSensors('test-api-key');
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+        it('should return comprehensive diagnostic information', () => {
+            const diagnostics = sensors.getDiagnostics();
+
+            expect(diagnostics).toHaveProperty('timestamp');
+            expect(diagnostics).toHaveProperty('diagnosticMode');
+            expect(diagnostics).toHaveProperty('sensors');
+            expect(diagnostics).toHaveProperty('cache');
+            expect(diagnostics).toHaveProperty('recentFailures');
+            expect(diagnostics).toHaveProperty('permissions');
+            expect(diagnostics).toHaveProperty('context');
+        });
+
+        it('should include sensor statuses in diagnostics', () => {
+            const diagnostics = sensors.getDiagnostics();
+
+            expect(diagnostics.sensors).toHaveLength(4);
+            const sensorTypes = diagnostics.sensors.map(s => s.type);
+            expect(sensorTypes).toContain('geolocation');
+            expect(sensorTypes).toContain('motion');
+            expect(sensorTypes).toContain('weather');
+            expect(sensorTypes).toContain('light');
+
+            // Each sensor should have status, permission, availability, and lastKnownGood
+            diagnostics.sensors.forEach(sensor => {
+                expect(sensor).toHaveProperty('status');
+                expect(sensor).toHaveProperty('permission');
+                expect(sensor).toHaveProperty('availability');
+                expect(sensor).toHaveProperty('lastKnownGood');
+            });
+        });
+
+        it('should include cache information in diagnostics', () => {
+            const diagnostics = sensors.getDiagnostics();
+
+            expect(diagnostics.cache).toHaveProperty('geolocation');
+            expect(diagnostics.cache.geolocation).toHaveProperty('age');
+            expect(diagnostics.cache.geolocation).toHaveProperty('isExpired');
+            expect(diagnostics.cache.geolocation).toHaveProperty('stats');
+
+            expect(diagnostics.cache).toHaveProperty('weather');
+            expect(diagnostics.cache.weather).toHaveProperty('size');
+            expect(diagnostics.cache.weather).toHaveProperty('stats');
+            expect(diagnostics.cache.weather).toHaveProperty('ttl');
+        });
+
+        it('should include context information in diagnostics', () => {
+            const diagnostics = sensors.getDiagnostics();
+
+            expect(diagnostics.context).toHaveProperty('hasGeolocation');
+            expect(diagnostics.context).toHaveProperty('hasMotion');
+            expect(diagnostics.context).toHaveProperty('hasWeather');
+            expect(diagnostics.context).toHaveProperty('hasLight');
+            expect(diagnostics.context).toHaveProperty('hasBiome');
+            expect(diagnostics.context).toHaveProperty('timestamp');
+        });
+
+        it('should limit recent failures to 10 entries', () => {
+            const diagnostics = sensors.getDiagnostics();
+
+            expect(diagnostics.recentFailures).toBeInstanceOf(Array);
+            expect(diagnostics.recentFailures.length).toBeLessThanOrEqual(10);
+        });
+
+        it('should enable and disable diagnostic mode', () => {
+            // Initial state - not in diagnostic mode
+            expect(Logger.isDiagnosticMode()).toBe(false);
+
+            // Enable diagnostic mode
+            sensors.enableDiagnosticMode();
+            expect(Logger.isDiagnosticMode()).toBe(true);
+
+            // Disable diagnostic mode
+            sensors.disableDiagnosticMode();
+            expect(Logger.isDiagnosticMode()).toBe(false);
+        });
+
+        it('should reflect diagnostic mode state in diagnostics', () => {
+            // Initially not in diagnostic mode
+            let diagnostics = sensors.getDiagnostics();
+            expect(diagnostics.diagnosticMode).toBe(false);
+
+            // Enable diagnostic mode
+            sensors.enableDiagnosticMode();
+            diagnostics = sensors.getDiagnostics();
+            expect(diagnostics.diagnosticMode).toBe(true);
+
+            // Disable for cleanup
+            sensors.disableDiagnosticMode();
         });
     });
 });

@@ -699,3 +699,89 @@ describe('DiscordRPCClient - getUserInfo() Unit Tests', () => {
         expect((discordClient as any).userInfo.username).toBe('TestUser');
     });
 });
+
+describe('Logger - Diagnostic Mode', () => {
+    // Save original logger state before each test
+    let originalLevel: LogLevel;
+
+    beforeEach(() => {
+        originalLevel = Logger.getLevel();
+        Logger.reset();
+    });
+
+    afterEach(() => {
+        // Reset to original state after each test
+        Logger.setLevel(originalLevel);
+        Logger.reset();
+    });
+
+    it('should start in INFO log level by default', () => {
+        expect(Logger.getLevel()).toBe(LogLevel.INFO);
+    });
+
+    it('should enable diagnostic mode and set DEBUG level', () => {
+        Logger.enableDiagnosticMode();
+        expect(Logger.isDiagnosticMode()).toBe(true);
+        expect(Logger.getLevel()).toBe(LogLevel.DEBUG);
+    });
+
+    it('should disable diagnostic mode and reset to INFO level', () => {
+        Logger.enableDiagnosticMode();
+        Logger.disableDiagnosticMode();
+        expect(Logger.isDiagnosticMode()).toBe(false);
+        expect(Logger.getLevel()).toBe(LogLevel.INFO);
+    });
+
+    it('should report diagnostic mode status correctly', () => {
+        expect(Logger.isDiagnosticMode()).toBe(false);
+
+        Logger.enableDiagnosticMode();
+        expect(Logger.isDiagnosticMode()).toBe(true);
+
+        Logger.disableDiagnosticMode();
+        expect(Logger.isDiagnosticMode()).toBe(false);
+    });
+
+    it('should allow manual log level changes outside diagnostic mode', () => {
+        Logger.setLevel(LogLevel.WARN);
+        expect(Logger.getLevel()).toBe(LogLevel.WARN);
+        expect(Logger.isDiagnosticMode()).toBe(false);
+    });
+
+    it('should enable debug logging when diagnostic mode is on', () => {
+        const entries: LogEntry[] = [];
+
+        Logger.configure({
+            customHandler: (entry) => {
+                entries.push(entry);
+            }
+        });
+
+        Logger.enableDiagnosticMode();
+
+        const logger = Logger.for('TestModule');
+        logger.debug('This is a debug message');
+
+        expect(entries).toHaveLength(1);
+        expect(entries[0].level).toBe(LogLevel.DEBUG);
+        expect(entries[0].message).toBe('This is a debug message');
+    });
+
+    it('should not log debug messages when diagnostic mode is off', () => {
+        const entries: LogEntry[] = [];
+
+        Logger.configure({
+            level: LogLevel.INFO, // Default level
+            customHandler: (entry) => {
+                entries.push(entry);
+            }
+        });
+
+        expect(Logger.isDiagnosticMode()).toBe(false);
+
+        const logger = Logger.for('TestModule');
+        logger.debug('This debug message should not appear');
+
+        expect(entries).toHaveLength(0);
+    });
+});

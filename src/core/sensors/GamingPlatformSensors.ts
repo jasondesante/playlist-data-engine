@@ -1,6 +1,6 @@
 import type { GamingContext } from '../types/Progression';
 import { SteamAPIClient } from './SteamAPIClient';
-import { DiscordRPCClient } from './DiscordRPCClient';
+import { DiscordRPCClient, DiscordConnectionState } from './DiscordRPCClient';
 import { Logger } from '../../utils/logger.js';
 
 /**
@@ -269,5 +269,59 @@ export class GamingPlatformSensors {
             this.gamingContext.gamesPlayedWhileListening.push(gameName);
         }
         this.gamingContext.totalGamingMinutes += durationMinutes;
+    }
+
+    /**
+     * Get comprehensive diagnostic information for troubleshooting
+     * Returns structured data about gaming platform connection states and cache
+     *
+     * @returns Diagnostic report containing Steam and Discord connection states
+     */
+    getDiagnostics(): {
+        timestamp: number;
+        steam: {
+            isAuthenticated: boolean;
+            userId?: string;
+            apiKey: boolean;
+        };
+        discord: {
+            isConnected: boolean;
+            clientId: boolean;
+            connectionState: string;
+        };
+        gamingContext: GamingContext;
+        polling: {
+            isActive: boolean;
+            intervalMs: number;
+            exponentialBackoff: number;
+        };
+        cache: {
+            gameMetadataCacheSize: number;
+            cachedGames: string[];
+        };
+    } {
+        return {
+            timestamp: Date.now(),
+            steam: {
+                isAuthenticated: !!this.steamUserId,
+                userId: this.steamUserId,
+                apiKey: !!this.steamApiKey,
+            },
+            discord: {
+                isConnected: this.discord.getConnectionState() === DiscordConnectionState?.Connected,
+                clientId: !!this.discordClientId,
+                connectionState: this.discord.getConnectionState()?.toString() || 'unknown',
+            },
+            gamingContext: this.getContext(),
+            polling: {
+                isActive: this.pollingInterval !== null,
+                intervalMs: this.pollIntervalMs,
+                exponentialBackoff: this.exponentialBackoff,
+            },
+            cache: {
+                gameMetadataCacheSize: this.gameMetadataCache.size,
+                cachedGames: Array.from(this.gameMetadataCache.keys()),
+            },
+        };
     }
 }
