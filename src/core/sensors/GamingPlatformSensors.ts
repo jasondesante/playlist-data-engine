@@ -1,6 +1,7 @@
 import type { GamingContext } from '../types/Progression';
 import { SteamAPIClient } from './SteamAPIClient';
 import { DiscordRPCClient } from './DiscordRPCClient';
+import { Logger } from '../../utils/logger.js';
 
 /**
  * GamingPlatformSensors - Unified interface for gaming detection
@@ -20,6 +21,7 @@ export class GamingPlatformSensors {
     private pollingInterval: NodeJS.Timeout | null = null;
     private exponentialBackoff: number = 1;
     private maxBackoffMs: number = 600000; // 10 minutes max backoff
+    private logger = Logger.for('GamingPlatformSensors');
     private gamingContext: GamingContext = {
         isActivelyGaming: false,
         platformSource: 'none',
@@ -153,7 +155,7 @@ export class GamingPlatformSensors {
                 this.contextCallback(this.gamingContext);
             }
         } catch (error) {
-            console.warn('Error updating gaming status:', error);
+            this.logger.warn('Error updating gaming status', { error });
             // Exponential backoff on error
             this.applyExponentialBackoff();
         }
@@ -194,7 +196,7 @@ export class GamingPlatformSensors {
             });
             return metadata;
         } catch (error) {
-            console.warn(`Failed to fetch metadata for game: ${gameName}`, error);
+            this.logger.warn(`Failed to fetch metadata for game: ${gameName}`, { error });
             return null;
         }
     }

@@ -16,6 +16,7 @@ import { GeolocationProvider } from './GeolocationProvider';
 import { MotionDetector } from './MotionDetector';
 import { WeatherAPIClient, type SevereWeatherAlert } from './WeatherAPIClient';
 import { LightSensor } from './LightSensor';
+import { Logger } from '../../utils/logger.js';
 
 /**
  * Environmental sensor integration with error recovery
@@ -43,6 +44,7 @@ export class EnvironmentalSensors {
     private motion: MotionDetector;
     private weather: WeatherAPIClient;
     private light: LightSensor;
+    private logger = Logger.for('EnvironmentalSensors');
 
     private context: EnvironmentalContext = {
         timestamp: Date.now()
@@ -191,7 +193,7 @@ export class EnvironmentalSensors {
                 callback(notification);
             } catch (e) {
                 // Don't let callback errors break the sensor logic
-                console.error('[EnvironmentalSensors] Recovery callback error:', e);
+                this.logger.error('Recovery callback error', { error: e });
             }
         });
     }

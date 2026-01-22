@@ -1,6 +1,6 @@
 # Core Data Engine - Implementation Plan
 
-**Status**: Active Planning | **Updated**: 2026-01-21
+**Status**: Active Planning | **Updated**: 2026-01-22
 
 This document tracks all remaining tasks to bring the Core Data Engine from ~85% complete to 100% production-ready.
 
@@ -13,7 +13,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 | Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | ✅ Complete |
 | Enhancements | 8 | 🟢 7/8 Complete (1 not recommended) |
-| Nice to Have | 3 | ⚪ Low Priority |
+| Nice to Have | 3 | 🟡 1/3 In Progress (Task 10: 1/5 subtasks) |
 | **Total** | **12** | |
 
 ---
@@ -776,11 +776,45 @@ The "Environmental Sensor Error Recovery" task was already fully implemented in 
 **Files**: Various sensor files
 
 **Subtasks**:
-- [ ] Add consistent logging levels (debug, info, warn, error)
+- [x] Add consistent logging levels (debug, info, warn, error)
 - [ ] Add diagnostic mode for troubleshooting
 - [ ] Add sensor status dashboard output
 - [ ] Add performance metrics (API call times, cache hit rates)
 - [ ] Add optional verbose logging flag
+
+**Status**: 🟡 In Progress (1/5 subtasks complete)
+
+**Implementation Summary (Subtask 1 - Consistent Logging Levels)**:
+Created a centralized logging utility at `src/utils/logger.ts` with:
+
+**Logger Features**:
+- Four log levels: DEBUG, INFO, WARN, ERROR (plus NONE to disable)
+- Named loggers for each module: `Logger.for('DiscordRPCClient')`
+- Consistent message formatting with timestamps: `HH:MM:SS.mmm [LEVEL] [Context] Message`
+- Configurable log level to control verbosity
+- Custom handler support for testing (can capture logs instead of console output)
+- `Logger.reset()` method to restore default configuration
+
+**Files Updated**:
+- `src/utils/logger.ts` - New centralized logging utility
+- `src/core/sensors/DiscordRPCClient.ts` - 9 console calls → logger
+- `src/core/sensors/WeatherAPIClient.ts` - 5 console calls → logger
+- `src/core/sensors/GeolocationProvider.ts` - 4 console calls → logger
+- `src/core/sensors/GamingPlatformSensors.ts` - 2 console calls → logger
+- `src/core/sensors/SteamAPIClient.ts` - 5 console calls → logger
+- `src/core/sensors/MotionDetector.ts` - 3 console calls → logger (debug logs now conditional)
+- `src/core/sensors/LightSensor.ts` - 3 console calls → logger
+- `src/core/sensors/EnvironmentalSensors.ts` - 1 console call → logger
+- `tests/unit/discordRPC.test.ts` - Updated to use Logger's custom handler
+
+**Log Output Example**:
+```
+09:40:07.298 [WARN] [DiscordRPCClient] Discord client ID not provided
+09:40:08.123 [ERROR] [WeatherAPIClient] Failed to fetch weather { error: 'Network error' }
+09:40:09.456 [DEBUG] [MotionDetector] Motion event received { activity: 'walking' }
+```
+
+**Completed**: 2026-01-22
 
 **Estimated Effort**: 2-3 hours
 

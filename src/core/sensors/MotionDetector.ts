@@ -1,6 +1,8 @@
 import type { MotionData } from '../types/Environmental';
+import { Logger } from '../../utils/logger.js';
 
 export class MotionDetector {
+    private logger = Logger.for('MotionDetector');
     private isListening: boolean = false;
     private lastMotion: MotionData | null = null;
     private motionCallback: ((data: MotionData) => void) | null = null;
@@ -11,7 +13,7 @@ export class MotionDetector {
      */
     startMonitoring(callback: (data: MotionData) => void): void {
         if (typeof window === 'undefined' || !('DeviceMotionEvent' in window)) {
-            console.warn('DeviceMotionEvent not supported');
+            this.logger.warn('DeviceMotionEvent not supported');
             return;
         }
 
@@ -83,11 +85,10 @@ export class MotionDetector {
 
         this.lastMotion = data;
 
-        // ADD THIS FOR DEBUGGING
-        console.log('[MotionDetector] Live data actually no bullshit →', { data });
-        console.log('[MotionDetector] Live data →', {
-            acc: data.accelerationIncludingGravity,
-            rot: data.rotationRate,
+        // Debug logging for motion data (conditional on log level)
+        this.logger.debug('Motion event received', {
+            acceleration: data.accelerationIncludingGravity,
+            rotation: data.rotationRate,
             activity: this.detectActivity(data)
         });
 

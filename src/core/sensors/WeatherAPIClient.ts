@@ -1,4 +1,5 @@
 import type { WeatherData, ForecastData } from '../types/Environmental';
+import { Logger } from '../../utils/logger.js';
 
 interface CacheEntry {
     data: WeatherData;
@@ -56,6 +57,7 @@ export class WeatherAPIClient {
     private forecastCacheTTL: number = 60 * 60 * 1000; // 60 minutes for forecasts
     private cacheStats: CacheStatistics = { hits: 0, misses: 0 };
     private useLocalStorage: boolean;
+    private logger = Logger.for('WeatherAPIClient');
 
     constructor(apiKey: string = '', cacheTTLMinutes: number = 12, useLocalStorage: boolean = true) {
         this.apiKey = apiKey;
@@ -96,7 +98,7 @@ export class WeatherAPIClient {
                 }
             }
         } catch (error) {
-            console.warn('Failed to load weather cache from localStorage:', error);
+            this.logger.warn('Failed to load weather cache from localStorage', { error });
         }
     }
 
@@ -112,7 +114,7 @@ export class WeatherAPIClient {
             }
             localStorage.setItem(STORAGE_KEY, JSON.stringify(persistentCache));
         } catch (error) {
-            console.warn('Failed to save weather cache to localStorage:', error);
+            this.logger.warn('Failed to save weather cache to localStorage', { error });
         }
     }
 
@@ -188,7 +190,7 @@ export class WeatherAPIClient {
      */
     async getWeather(latitude: number, longitude: number): Promise<WeatherData | null> {
         if (!this.apiKey) {
-            console.warn('Weather API key not provided');
+            this.logger.warn('Weather API key not provided');
             return null;
         }
 
@@ -240,7 +242,7 @@ export class WeatherAPIClient {
 
             return weatherData;
         } catch (error) {
-            console.error('Failed to fetch weather:', error);
+            this.logger.error('Failed to fetch weather', { error });
             return null;
         }
     }
@@ -337,7 +339,7 @@ export class WeatherAPIClient {
      */
     async getForecast(latitude: number, longitude: number, hours: number = 24): Promise<ForecastData[] | null> {
         if (!this.apiKey) {
-            console.warn('Weather API key not provided');
+            this.logger.warn('Weather API key not provided');
             return null;
         }
 
@@ -389,7 +391,7 @@ export class WeatherAPIClient {
 
             return forecastData;
         } catch (error) {
-            console.error('Failed to fetch weather forecast:', error);
+            this.logger.error('Failed to fetch weather forecast', { error });
             return null;
         }
     }

@@ -28,6 +28,7 @@
  * @note Discord RPC requires Node.js environment. Cannot work in browsers due to IPC requirements.
  */
 import { DiscordRPCClient as RPCClient } from '@ryuziii/discord-rpc';
+import { Logger } from '../../utils/logger.js';
 
 /**
  * Discord RPC connection states for better error handling
@@ -216,6 +217,7 @@ export class DiscordRPCClient {
     private userInfo: DiscordUserInfo | null = null;
     private connectionState: DiscordConnectionState = DiscordConnectionState.Disconnected;
     private lastError: string | null = null;
+    private logger = Logger.for('DiscordRPCClient');
 
     constructor(clientId: string = '') {
         this.clientId = clientId;
@@ -235,7 +237,7 @@ export class DiscordRPCClient {
      */
     async connect(): Promise<boolean> {
         if (!this.clientId) {
-            console.warn('Discord client ID not provided');
+            this.logger.warn('Discord client ID not provided');
             this.connectionState = DiscordConnectionState.Error;
             this.lastError = 'Discord client ID not provided';
             return false;
@@ -276,12 +278,11 @@ export class DiscordRPCClient {
             if (isDiscordUnavailable) {
                 this.connectionState = DiscordConnectionState.DiscordUnavailable;
                 this.lastError = 'Discord is not running or no user is logged in';
-                console.warn('Discord RPC unavailable:', this.lastError,
-                    '- Please ensure Discord is running and you are logged in');
+                this.logger.warn('Discord RPC unavailable - Please ensure Discord is running and you are logged in', { error: this.lastError });
             } else {
                 this.connectionState = DiscordConnectionState.Error;
                 this.lastError = errorMessage;
-                console.warn('Failed to connect to Discord RPC:', errorMessage);
+                this.logger.warn('Failed to connect to Discord RPC', { error: errorMessage });
             }
 
             this.isConnected = false;
@@ -317,7 +318,7 @@ export class DiscordRPCClient {
                         avatar: user.avatar,
                         globalName: user.global_name
                     };
-                    console.log('Discord RPC connected - User:', this.userInfo.username);
+                    this.logger.info('Discord RPC connected', { username: this.userInfo.username });
                 }
             }
         });
@@ -333,7 +334,7 @@ export class DiscordRPCClient {
         this.rpcClient.on('disconnected', () => {
             if (!this.disconnectRequested) {
                 // Unexpected disconnection
-                console.warn('Discord RPC disconnected unexpectedly');
+                this.logger.warn('Discord RPC disconnected unexpectedly');
                 this.connectionState = DiscordConnectionState.DiscordUnavailable;
                 this.lastError = 'Unexpectedly disconnected from Discord';
             } else {
@@ -346,7 +347,7 @@ export class DiscordRPCClient {
 
         // Error handling
         this.rpcClient.on('error', (error: Error) => {
-            console.error('Discord RPC error:', error.message);
+            this.logger.error('Discord RPC error', { error: error.message });
             this.isConnected = false;
             this.connectionState = DiscordConnectionState.Error;
             this.lastError = error.message;
@@ -363,7 +364,7 @@ export class DiscordRPCClient {
             try {
                 this.rpcClient.disconnect();
             } catch (error) {
-                console.warn('Error disconnecting Discord RPC:', error);
+                this.logger.warn('Error disconnecting Discord RPC', { error });
             }
             this.rpcClient = null;
         }
@@ -463,7 +464,7 @@ export class DiscordRPCClient {
             return true;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.warn('Failed to update Discord music activity:', errorMessage);
+            this.logger.warn('Failed to update Discord music activity', { error: errorMessage });
             return false;
         }
     }
@@ -482,7 +483,7 @@ export class DiscordRPCClient {
             return true;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.warn('Failed to clear Discord music activity:', errorMessage);
+            this.logger.warn('Failed to clear Discord music activity', { error: errorMessage });
             return false;
         }
     }
@@ -543,7 +544,7 @@ export class DiscordRPCClient {
 
             return true;
         } catch (error) {
-            console.warn('Failed to subscribe to voice updates:', error);
+            this.logger.warn('Failed to subscribe to voice updates', { error });
             return false;
         }
     }
@@ -560,7 +561,7 @@ export class DiscordRPCClient {
             // For now return null
             return null;
         } catch (error) {
-            console.warn('Failed to fetch voice channel info:', error);
+            this.logger.warn('Failed to fetch voice channel info', { error });
             return null;
         }
     }

@@ -1,6 +1,8 @@
 import type { LightData } from '../types/Environmental';
+import { Logger } from '../../utils/logger.js';
 
 export class LightSensor {
+    private logger = Logger.for('LightSensor');
     private lastReading: LightData | null = null;
     private callback: ((data: LightData) => void) | null = null;
     private sensor: any | null = null; // AmbientLightSensor type is experimental
@@ -30,16 +32,16 @@ export class LightSensor {
                 });
 
                 this.sensor.addEventListener('error', (event: any) => {
-                    console.warn('Light sensor error:', event.error.name, event.error.message);
+                    this.logger.warn('Light sensor error', { name: event.error.name, message: event.error.message });
                 });
 
                 this.sensor.start();
                 this.callback = callback;
             } catch (error) {
-                console.warn('Failed to initialize AmbientLightSensor:', error);
+                this.logger.warn('Failed to initialize AmbientLightSensor', { error });
             }
         } else {
-            console.warn('AmbientLightSensor not supported');
+            this.logger.warn('AmbientLightSensor not supported');
         }
     }
 

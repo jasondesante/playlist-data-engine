@@ -1,4 +1,5 @@
 import type { GeolocationData } from '../types/Environmental';
+import { Logger } from '../../utils/logger.js';
 
 interface CacheEntry {
     data: GeolocationData;
@@ -24,6 +25,7 @@ export class GeolocationProvider {
     private cacheTTL: number = 5 * 60 * 1000; // 5 minutes
     private cacheStats: CacheStatistics = { hits: 0, misses: 0 };
     private useLocalStorage: boolean;
+    private logger = Logger.for('GeolocationProvider');
 
     constructor(cacheTTLMinutes: number = 5, useLocalStorage: boolean = true) {
         this.cacheTTL = cacheTTLMinutes * 60 * 1000;
@@ -63,7 +65,7 @@ export class GeolocationProvider {
                 }
             }
         } catch (error) {
-            console.warn('Failed to load geolocation cache from localStorage:', error);
+            this.logger.warn('Failed to load geolocation cache from localStorage', { error });
         }
     }
 
@@ -78,7 +80,7 @@ export class GeolocationProvider {
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(persistentCache));
         } catch (error) {
-            console.warn('Failed to save geolocation cache to localStorage:', error);
+            this.logger.warn('Failed to save geolocation cache to localStorage', { error });
         }
     }
 
@@ -145,7 +147,7 @@ export class GeolocationProvider {
                     resolve(geoData);
                 },
                 (error) => {
-                    console.warn('Geolocation error:', error.message);
+                    this.logger.warn('Geolocation error', { error: error.message });
                     resolve(null);
                 },
                 {
@@ -166,7 +168,7 @@ export class GeolocationProvider {
             try {
                 localStorage.removeItem(STORAGE_KEY);
             } catch (error) {
-                console.warn('Failed to clear geolocation cache from localStorage:', error);
+                this.logger.warn('Failed to clear geolocation cache from localStorage', { error });
             }
         }
     }

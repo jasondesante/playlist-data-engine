@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DiscordRPCClient, ActivityType, DiscordConnectionState } from '../../src/core/sensors/DiscordRPCClient';
+import { Logger, LogLevel, type LogEntry } from '../../src/utils/logger';
 
 describe('DiscordRPCClient - setMusicActivity() Unit Tests', () => {
     let discordClient: DiscordRPCClient;
@@ -246,7 +247,12 @@ describe('DiscordRPCClient - setMusicActivity() Unit Tests', () => {
 
     describe('Error handling', () => {
         it('should return false and log warning when setActivity throws error', async () => {
-            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            // Set up Logger to capture log entries
+            const logEntries: LogEntry[] = [];
+            Logger.configure({
+                level: LogLevel.DEBUG,
+                customHandler: (entry) => logEntries.push(entry)
+            });
 
             // Get the actual RPC client and make setActivity throw
             const actualRPCClient = (discordClient as any).rpcClient;
@@ -259,12 +265,12 @@ describe('DiscordRPCClient - setMusicActivity() Unit Tests', () => {
             });
 
             expect(result).toBe(false);
-            expect(consoleSpy).toHaveBeenCalledWith(
-                'Failed to update Discord music activity:',
-                'RPC error'
-            );
+            expect(logEntries.some(entry =>
+                entry.level === LogLevel.WARN &&
+                entry.message.includes('Failed to update Discord music activity')
+            )).toBe(true);
 
-            consoleSpy.mockRestore();
+            Logger.reset();
         });
 
         it('should handle null song name gracefully', async () => {
@@ -476,7 +482,12 @@ describe('DiscordRPCClient - clearMusicActivity() Unit Tests', () => {
         });
 
         it('should handle clearActivity errors gracefully', async () => {
-            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            // Set up Logger to capture log entries
+            const logEntries: LogEntry[] = [];
+            Logger.configure({
+                level: LogLevel.DEBUG,
+                customHandler: (entry) => logEntries.push(entry)
+            });
 
             // Get the actual RPC client and make clearActivity throw
             const actualRPCClient = (discordClient as any).rpcClient;
@@ -487,12 +498,12 @@ describe('DiscordRPCClient - clearMusicActivity() Unit Tests', () => {
             const result = await discordClient.clearMusicActivity();
 
             expect(result).toBe(false);
-            expect(consoleSpy).toHaveBeenCalledWith(
-                'Failed to clear Discord music activity:',
-                'RPC error'
-            );
+            expect(logEntries.some(entry =>
+                entry.level === LogLevel.WARN &&
+                entry.message.includes('Failed to clear Discord music activity')
+            )).toBe(true);
 
-            consoleSpy.mockRestore();
+            Logger.reset();
         });
 
         it('should return false when rpcClient is null', async () => {

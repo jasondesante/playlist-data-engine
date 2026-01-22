@@ -1,3 +1,5 @@
+import { Logger } from '../../utils/logger.js';
+
 /**
  * SteamAPIClient - Handles integration with Steam Web API
  * Fetches currently played games and game metadata
@@ -5,6 +7,7 @@
 export class SteamAPIClient {
     private apiKey: string;
     private baseUrl: string = 'https://api.steampowered.com';
+    private logger = Logger.for('SteamAPIClient');
 
     constructor(apiKey: string = '') {
         this.apiKey = apiKey;
@@ -21,7 +24,7 @@ export class SteamAPIClient {
         sessionDuration?: number;
     } | null> {
         if (!this.apiKey) {
-            console.warn('Steam API key not provided');
+            this.logger.warn('Steam API key not provided');
             return null;
         }
 
@@ -50,7 +53,7 @@ export class SteamAPIClient {
                 sessionDuration: game.playtime_2weeks ?? game.playtime_forever
             };
         } catch (error) {
-            console.error('Failed to fetch current Steam game:', error);
+            this.logger.error('Failed to fetch current Steam game', { error });
             return null;
         }
     }
@@ -95,7 +98,7 @@ export class SteamAPIClient {
                 description: gameData.short_description
             };
         } catch (error) {
-            console.error(`Failed to fetch Steam metadata for ${gameName}:`, error);
+            this.logger.error(`Failed to fetch Steam metadata for ${gameName}`, { error });
             return { name: gameName };
         }
     }
@@ -125,7 +128,7 @@ export class SteamAPIClient {
 
             return found?.appid || null;
         } catch (error) {
-            console.error('Failed to find Steam app ID:', error);
+            this.logger.error('Failed to find Steam app ID', { error });
             return null;
         }
     }
@@ -150,7 +153,7 @@ export class SteamAPIClient {
             const data = await response.json();
             return data.game || null;
         } catch (error) {
-            console.error('Failed to fetch game schema:', error);
+            this.logger.error('Failed to fetch game schema', { error });
             return null;
         }
     }
