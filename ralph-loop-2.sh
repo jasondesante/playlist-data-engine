@@ -7,3 +7,6 @@
 #     docker sandbox run claude "$(cat PROMPT.md)" | tee .log
 #     grep -q "done" .log && continue || break
 #   done
+# 
+# while :; do cat PROMPT.md | docker sandbox run claude ; done
+# 
