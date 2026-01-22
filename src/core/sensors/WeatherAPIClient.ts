@@ -1,4 +1,5 @@
 import type { WeatherData, ForecastData, PerformanceMetrics, PerformanceStatistics } from '../types/Environmental';
+import type { WeatherSensorConfig } from '../config/sensorConfig.js';
 import { Logger } from '../../utils/logger.js';
 
 interface CacheEntry {
@@ -93,10 +94,21 @@ export class WeatherAPIClient {
     private recentForecastApiTimes: number[] = [];
     private readonly maxRecentSamples = 100;
 
-    constructor(apiKey: string = '', cacheTTLMinutes: number = 12, useLocalStorage: boolean = true) {
-        this.apiKey = apiKey;
-        this.cacheTTL = cacheTTLMinutes * 60 * 1000;
-        this.useLocalStorage = useLocalStorage && this.isLocalStorageAvailable();
+    constructor(apiKey?: string, cacheTTLMinutes?: number, useLocalStorage?: boolean);
+    constructor(config: WeatherSensorConfig);
+    constructor(apiKeyOrConfig?: string | WeatherSensorConfig, cacheTTLMinutes?: number, useLocalStorage?: boolean) {
+        // Handle both legacy constructor signature and new config object
+        if (typeof apiKeyOrConfig === 'string' || apiKeyOrConfig === undefined) {
+            this.apiKey = apiKeyOrConfig ?? '';
+            this.cacheTTL = (cacheTTLMinutes ?? 12) * 60 * 1000;
+            this.useLocalStorage = (useLocalStorage ?? true) && this.isLocalStorageAvailable();
+        } else {
+            const config = apiKeyOrConfig;
+            this.apiKey = config.apiKey ?? '';
+            this.cacheTTL = config.cacheTTL ?? 12 * 60 * 1000;
+            this.useLocalStorage = (config.useLocalStorage ?? true) && this.isLocalStorageAvailable();
+        }
+
         if (this.useLocalStorage) {
             this.loadFromLocalStorage();
         }

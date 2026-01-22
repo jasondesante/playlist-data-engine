@@ -1,4 +1,5 @@
 import type { GeolocationData } from '../types/Environmental';
+import type { GeolocationSensorConfig } from '../config/sensorConfig.js';
 import { Logger } from '../../utils/logger.js';
 
 interface CacheEntry {
@@ -27,9 +28,19 @@ export class GeolocationProvider {
     private useLocalStorage: boolean;
     private logger = Logger.for('GeolocationProvider');
 
-    constructor(cacheTTLMinutes: number = 5, useLocalStorage: boolean = true) {
-        this.cacheTTL = cacheTTLMinutes * 60 * 1000;
-        this.useLocalStorage = useLocalStorage && this.isLocalStorageAvailable();
+    constructor(cacheTTLMinutes?: number, useLocalStorage?: boolean);
+    constructor(config: GeolocationSensorConfig);
+    constructor(cacheTTLMinutesOrConfig?: number | GeolocationSensorConfig, useLocalStorage?: boolean) {
+        // Handle both legacy constructor signature and new config object
+        if (typeof cacheTTLMinutesOrConfig === 'number' || cacheTTLMinutesOrConfig === undefined) {
+            this.cacheTTL = (cacheTTLMinutesOrConfig ?? 5) * 60 * 1000;
+            this.useLocalStorage = (useLocalStorage ?? true) && this.isLocalStorageAvailable();
+        } else {
+            const config = cacheTTLMinutesOrConfig;
+            this.cacheTTL = config.cacheTTL ?? 5 * 60 * 1000;
+            this.useLocalStorage = (config.useLocalStorage ?? true) && this.isLocalStorageAvailable();
+        }
+
         if (this.useLocalStorage) {
             this.loadFromLocalStorage();
         }

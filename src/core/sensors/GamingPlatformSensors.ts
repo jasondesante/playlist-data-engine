@@ -1,4 +1,5 @@
 import type { GamingContext } from '../types/Progression';
+import type { GamingSensorConfig, XPModifierConfig } from '../config/sensorConfig.js';
 import { SteamAPIClient } from './SteamAPIClient';
 import { DiscordRPCClient, DiscordConnectionState } from './DiscordRPCClient';
 import { Logger } from '../../utils/logger.js';
@@ -23,6 +24,22 @@ export class GamingPlatformSensors {
     private exponentialBackoff: number = 1;
     private maxBackoffMs: number = 600000; // 10 minutes max backoff
     private logger = Logger.for('GamingPlatformSensors');
+
+    // XP modifier configuration (default values)
+    private xpConfig: Required<XPModifierConfig> = {
+        maxModifier: 3.0,
+        maxGamingModifier: 1.75,
+        runningBonus: 0.5,
+        walkingBonus: 0.2,
+        stormBonus: 0.4,
+        snowBonus: 0.3,
+        nightBonus: 0.25,
+        altitudeThreshold: 1000,
+        altitudeBonus: 0.3,
+        gamingBaseBonus: 0.25,
+        gamingRPGBonus: 0.2,
+        gamingMultiplayerBonus: 0.15,
+    };
     private gamingContext: GamingContext = {
         isActivelyGaming: false,
         platformSource: 'none',
@@ -39,6 +56,8 @@ export class GamingPlatformSensors {
     /**
      * Initialize GamingPlatformSensors with optional Steam and Discord configuration
      * Matches specification from specs/001-core-engine/SPEC.md
+     *
+     * Supports both legacy config format and new GamingSensorConfig format
      */
     constructor(config: {
         steam?: {
@@ -51,9 +70,9 @@ export class GamingPlatformSensors {
             enableRichPresence?: boolean;
             pollInterval?: number;
         };
-    } = {}) {
+    } | GamingSensorConfig = {}) {
         // Steam configuration
-        if (config.steam) {
+        if ('steam' in config && config.steam) {
             this.steamApiKey = config.steam.apiKey;
             this.steamUserId = config.steam.steamId;
             if (config.steam.pollInterval) {
@@ -62,11 +81,22 @@ export class GamingPlatformSensors {
         }
 
         // Discord configuration
-        if (config.discord) {
+        if ('discord' in config && config.discord) {
             this.discordClientId = config.discord.clientId;
             if (config.discord.pollInterval) {
                 this.pollIntervalMs = config.discord.pollInterval;
             }
+        }
+
+        // New GamingSensorConfig format support
+        if ('metadataCacheExpiry' in config && config.metadataCacheExpiry) {
+            this.cacheExpiryMs = config.metadataCacheExpiry;
+        }
+        if ('maxBackoffMs' in config && config.maxBackoffMs) {
+            this.maxBackoffMs = config.maxBackoffMs;
+        }
+        if ('xpModifier' in config && config.xpModifier) {
+            this.xpConfig = { ...this.xpConfig, ...config.xpModifier };
         }
 
         // Initialize clients with their respective API keys
@@ -217,7 +247,7 @@ export class GamingPlatformSensors {
      * Genre bonuses: RPG +20%, Action +15%, Strategy +10%
      * Multiplayer: +15% for party size > 1
      * Session duration: up to +20% for 4+ hours
-     * Capped at 3.0x total
+     * Capped at configured max gaming modifier (default: 1.75x)
      */
     calculateGamingBonus(): number {
         const context = this.getContext();
@@ -225,7 +255,7 @@ export class GamingPlatformSensors {
             return 1.0;
         }
 
-        let bonus = 0.25; // Base +25%
+        let bonus = this.xpConfig.gamingBaseBonus;
 
         const game = context.currentGame;
         if (game) {
@@ -233,7 +263,7 @@ export class GamingPlatformSensors {
             if (game.genre) {
                 for (const g of game.genre) {
                     const genreLower = g.toLowerCase();
-                    if (genreLower.includes('rpg')) bonus += 0.2;
+                    if (genreLower.includes('rpg')) bonus += this.xpConfig.gamingRPGBonus;
                     else if (genreLower.includes('action')) bonus += 0.15;
                     else if (genreLower.includes('strategy')) bonus += 0.1;
                 }
@@ -241,7 +271,7 @@ export class GamingPlatformSensors {
 
             // Multiplayer bonus
             if (game.partySize && game.partySize > 1) {
-                bonus += 0.15;
+                bonus += this.xpConfig.gamingMultiplayerBonus;
             }
 
             // Session duration bonus (up to 20% for 4+ hours)
@@ -252,7 +282,7 @@ export class GamingPlatformSensors {
             }
         }
 
-        return Math.min(1.0 + bonus, 3.0);
+        return Math.min(1.0 + bonus, this.xpConfig.maxGamingModifier);
     }
 
     /**

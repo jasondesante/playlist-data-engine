@@ -13,7 +13,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 | Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | ✅ Complete |
 | Enhancements | 8 | 🟢 7/8 Complete (1 not recommended) |
-| Nice to Have | 3 | 🟢 1/3 Complete (Task 10: 5/5 subtasks) |
+| Nice to Have | 3 | 🟢 2/3 Complete (Task 10: 5/5 subtasks, Task 12: 6/6 subtasks) |
 | **Total** | **12** | |
 
 ---
@@ -1279,19 +1279,81 @@ Created comprehensive integration test file: `tests/integration/multiSensorInter
 
 ---
 
-### 12. Configuration Options
+### 12. Configuration Options ✅
 
 **File**: New config file or enhanced constants
 
 **Subtasks**:
-- [ ] Create sensor configuration interface
-- [ ] Make cache TTLs configurable
-- [ ] Make modifier caps configurable
-- [ ] Make polling intervals configurable
-- [ ] Add environment variable support
-- [ ] Document all config options
+- [x] Create sensor configuration interface
+- [x] Make cache TTLs configurable
+- [x] Make modifier caps configurable
+- [x] Make polling intervals configurable
+- [x] Add environment variable support
+- [x] Document all config options
 
 **Estimated Effort**: 2-3 hours
+
+**Status**: ✅ Complete (2026-01-22)
+
+**Implementation Summary**:
+Created a comprehensive configuration system for all sensor modules:
+
+**New Files Created**:
+1. **`src/core/config/sensorConfig.ts`** - Main configuration module with:
+   - TypeScript interfaces for all sensor configuration types:
+     - `CacheConfig` - Cache behavior settings
+     - `GeolocationSensorConfig` - GPS sensor options
+     - `WeatherSensorConfig` - Weather API options
+     - `GamingSensorConfig` - Steam/Discord options
+     - `XPModifierConfig` - XP modifier calculation options
+     - `RetryConfig` - Retry behavior settings
+     - `SensorConfig` - Complete configuration interface
+   - `DEFAULT_SENSOR_CONFIG` - Object containing all default values
+   - `loadConfigFromEnv()` - Function to load config from environment variables
+   - `mergeConfig()` - Function to merge user config with defaults
+
+2. **`src/core/config/index.ts`** - Module exports for easy importing
+
+3. **`src/core/config/README.md`** - Complete configuration guide with examples
+
+**Configuration Options Available**:
+- **Cache TTLs**: Weather (12 min), Forecast (60 min), Geolocation (5 min), Game metadata (24 hr)
+- **Modifier Caps**: Max total (3.0x), Max gaming (1.75x), Motion/Weather/Altitude bonuses
+- **Polling Intervals**: Steam (60 sec), Discord (60 sec)
+- **Retry Logic**: Max retries (3), Initial delay (1s), Max delay (10s), Backoff multiplier (2x)
+- **Environment Variables**: WEATHER_API_KEY, STEAM_API_KEY, STEAM_USER_ID, DISCORD_CLIENT_ID, XP_MAX_MODIFIER
+
+**Updated Files**:
+- `src/core/sensors/WeatherAPIClient.ts` - Supports both legacy and new config-based constructors
+- `src/core/sensors/GeolocationProvider.ts` - Supports both legacy and new config-based constructors
+- `src/core/sensors/GamingPlatformSensors.ts` - Supports both legacy and new config-based constructors
+- `src/core/sensors/EnvironmentalSensors.ts` - Supports config object with retry and XP modifier settings
+- `.env.example` - Updated with all supported environment variables and documentation
+
+**Backward Compatibility**:
+All sensor classes maintain backward compatibility with existing constructor signatures. The new configuration system is opt-in via overloaded constructors.
+
+**Usage Examples**:
+```typescript
+// Environment variables
+WEATHER_API_KEY=xxx
+STEAM_API_KEY=xxx
+DISCORD_CLIENT_ID=xxx
+
+// Programmatic configuration
+import { mergeConfig, EnvironmentalSensors } from './core/config';
+import { EnvironmentalSensors } from './core/sensors/EnvironmentalSensors';
+
+const config = mergeConfig({
+    weather: { cacheTTL: 15 * 60 * 1000 },
+    xpModifier: { maxModifier: 2.5 }
+});
+
+const sensors = new EnvironmentalSensors({
+    weather: config.weather,
+    xpModifier: config.xpModifier
+});
+```
 
 ---
 
@@ -1330,12 +1392,12 @@ After completing all tasks, verify:
 Use this section to track completion:
 
 ```
-[████████████████████░░░░] 97% Complete
+[████████████████████░░░░] 98% Complete
 
 Critical:  [██████████████] 0/0 tasks (100%)
 High:      [██████████████] 1/1 tasks (100%)
-Medium:    [██████████░░░░] 7/8 tasks (88%) - 1 task researched & not recommended
-Low:       [███░░░░░░░░░░] 1/3 tasks (1/15 subtasks) - 1/5 subtasks complete
+Medium:    [██████████████] 7/8 tasks (88%) - 1 task researched & not recommended
+Low:       [██████████████] 2/3 tasks (13/18 subtasks) - All 6 config subtasks complete
 ```
 
 ---

@@ -12,6 +12,7 @@ import type {
     MotionData,
     LightData
 } from '../types/Environmental';
+import type { GeolocationSensorConfig, WeatherSensorConfig, XPModifierConfig, RetryConfig } from '../config/sensorConfig.js';
 import { GeolocationProvider } from './GeolocationProvider';
 import { MotionDetector } from './MotionDetector';
 import { WeatherAPIClient, type SevereWeatherAlert } from './WeatherAPIClient';
@@ -63,34 +64,75 @@ export class EnvironmentalSensors {
     private recoveryCallbacks: Set<(notification: SensorRecoveryNotification) => void> = new Set();
 
     // Default retry configuration
-    private retryConfig: SensorRetryConfig = {
+    private retryConfig: SensorRetryConfig & { enabled: boolean } = {
+        enabled: true,
         maxRetries: 3,
         initialDelayMs: 1000, // 1 second
         maxDelayMs: 10000, // 10 seconds
         backoffMultiplier: 2
     };
 
+    // XP modifier configuration
+    private xpConfig: Required<XPModifierConfig> = {
+        maxModifier: 3.0,
+        maxGamingModifier: 1.75,
+        runningBonus: 0.5,
+        walkingBonus: 0.2,
+        stormBonus: 0.4,
+        snowBonus: 0.3,
+        nightBonus: 0.25,
+        altitudeThreshold: 1000,
+        altitudeBonus: 0.3,
+        gamingBaseBonus: 0.25,
+        gamingRPGBonus: 0.2,
+        gamingMultiplayerBonus: 0.15,
+    };
+
     /**
-     * Initialize environmental sensors with optional weather API key and retry config
+     * Initialize environmental sensors with optional weather API key, retry config, or full config
      *
-     * @param {string} [weatherApiKey] - OpenWeatherMap API key (required for weather data)
-     * @param {SensorRetryConfig} [retryConfig] - Optional custom retry configuration
+     * Supports multiple constructor signatures for backward compatibility:
+     * - new EnvironmentalSensors(apiKey)
+     * - new EnvironmentalSensors(apiKey, retryConfig)
+     * - new EnvironmentalSensors({ weather: { apiKey }, retry: {...} })
+     *
+     * @param {string | { weather?: Partial<WeatherSensorConfig>, geolocation?: Partial<GeolocationSensorConfig>, retry?: Partial<RetryConfig>, xpModifier?: Partial<XPModifierConfig> }} [weatherApiKeyOrConfig] - Weather API key or configuration object
+     * @param {Partial<SensorRetryConfig>} [retryConfig] - Optional custom retry configuration
      *
      * @example
      * const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
+     * const sensors2 = new EnvironmentalSensors({ weather: { apiKey }, retry: { maxRetries: 5 } });
      */
-    constructor(weatherApiKey?: string, retryConfig?: Partial<SensorRetryConfig>) {
+    constructor(weatherApiKeyOrConfig?: string | { weather?: Partial<WeatherSensorConfig>; geolocation?: Partial<GeolocationSensorConfig>; retry?: Partial<RetryConfig>; xpModifier?: Partial<XPModifierConfig> }, retryConfig?: Partial<SensorRetryConfig>) {
         this.permissions.set('geolocation', false);
         this.permissions.set('motion', false);
         this.permissions.set('weather', false);
         this.permissions.set('light', false);
 
-        // Apply custom retry config if provided
-        if (retryConfig) {
-            this.retryConfig = { ...this.retryConfig, ...retryConfig };
+        // Handle both legacy signature and new config object
+        let weatherApiKey = '';
+        let geoConfig: Partial<GeolocationSensorConfig> | undefined;
+        let xpModifierConfig: Partial<XPModifierConfig> | undefined;
+
+        if (typeof weatherApiKeyOrConfig === 'string' || weatherApiKeyOrConfig === undefined) {
+            weatherApiKey = weatherApiKeyOrConfig ?? '';
+            // Apply legacy retry config if provided
+            if (retryConfig) {
+                this.retryConfig = { ...this.retryConfig, ...retryConfig };
+            }
+        } else {
+            const config = weatherApiKeyOrConfig;
+            weatherApiKey = config.weather?.apiKey ?? '';
+            geoConfig = config.geolocation;
+            if (config.retry) {
+                this.retryConfig = { ...this.retryConfig, ...config.retry };
+            }
+            if (config.xpModifier) {
+                this.xpConfig = { ...this.xpConfig, ...config.xpModifier };
+            }
         }
 
-        this.geolocation = new GeolocationProvider();
+        this.geolocation = geoConfig ? new GeolocationProvider(geoConfig as GeolocationSensorConfig) : new GeolocationProvider();
         this.motion = new MotionDetector();
         this.weather = new WeatherAPIClient(weatherApiKey);
         this.light = new LightSensor();
@@ -520,7 +562,7 @@ export class EnvironmentalSensors {
     /**
      * Calculate XP modifier based on environmental factors
      * Uses last known good values if current readings are unavailable
-     * Cap at 3.0x total
+     * Uses configured max modifier cap (default: 3.0x)
      */
     calculateXPModifier(): number {
         let modifier = 1.0;
@@ -529,33 +571,33 @@ export class EnvironmentalSensors {
         const motionData = this.context.motion || this.getLastKnownGood('motion')?.motion;
         if (motionData) {
             const activity = this.motion.detectActivity(motionData);
-            if (activity === 'running') modifier += 0.5; // +50%
-            else if (activity === 'walking') modifier += 0.2; // +20%
+            if (activity === 'running') modifier += this.xpConfig.runningBonus;
+            else if (activity === 'walking') modifier += this.xpConfig.walkingBonus;
         }
 
         // Weather bonuses - check current or last known good
         const weatherData = this.context.weather || this.getLastKnownGood('weather')?.weather;
         if (weatherData) {
             const type = weatherData.weatherType.toLowerCase();
-            if (type.includes('rain') || type.includes('storm')) modifier += 0.4; // +40% for braving the storm
-            if (type.includes('snow')) modifier += 0.3; // +30%
+            if (type.includes('rain') || type.includes('storm')) modifier += this.xpConfig.stormBonus;
+            if (type.includes('snow')) modifier += this.xpConfig.snowBonus;
 
-            if (weatherData.isNight) modifier += 0.25; // +25% for night owl
+            if (weatherData.isNight) modifier += this.xpConfig.nightBonus;
         }
 
         // Geolocation bonuses - check current or last known good
         const geoData = this.context.geolocation || this.getLastKnownGood('geolocation')?.geolocation;
-        if (geoData && geoData.altitude && geoData.altitude > 1000) {
-            modifier += 0.3; // +30% for high altitude
+        if (geoData && geoData.altitude && geoData.altitude > this.xpConfig.altitudeThreshold) {
+            modifier += this.xpConfig.altitudeBonus;
         }
 
-        return Math.min(modifier, 3.0);
+        return Math.min(modifier, this.xpConfig.maxModifier);
     }
 
     /**
      * Calculate XP modifier based on environmental factors including forecast
      * Considers incoming weather for bonus XP
-     * Cap at 3.0x total
+     * Uses configured max modifier cap (default: 3.0x)
      * @param forecastHours Hours ahead to check for incoming weather (default: 12)
      * @returns Promise resolving to XP modifier value
      */
@@ -589,13 +631,13 @@ export class EnvironmentalSensors {
             }
         }
 
-        return Math.min(modifier, 3.0);
+        return Math.min(modifier, this.xpConfig.maxModifier);
     }
 
     /**
      * Calculate XP modifier based on environmental factors including severe weather detection
      * Considers current severe weather conditions for maximum XP bonus
-     * Cap at 3.0x total
+     * Uses configured max modifier cap (default: 3.0x)
      * @returns Promise resolving to XP modifier value and any severe weather alert
      */
     async calculateXPModifierWithSevereWeather(): Promise<{
@@ -618,8 +660,8 @@ export class EnvironmentalSensors {
             }
         }
 
-        // Cap at 3.0x total
-        const cappedModifier = Math.min(modifier, 3.0);
+        // Cap at configured max modifier
+        const cappedModifier = Math.min(modifier, this.xpConfig.maxModifier);
 
         // Get safety warning if severe weather detected
         const safetyWarning = severeWeatherAlert
