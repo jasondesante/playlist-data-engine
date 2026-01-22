@@ -2,12 +2,14 @@
  * Test setup file for vitest
  * Uses real Web Audio API via web-audio-api package for authentic audio analysis
  * Uses node-canvas for Canvas API support in Node.js environment
+ * Provides comprehensive browser API mocks for headless testing
  */
 
 // @ts-ignore - web-audio-api has no type definitions
 import { AudioContext, OfflineAudioContext } from 'web-audio-api';
 // @ts-ignore - canvas has type definitions but we're using it in a special way
 import { createCanvas, Image as CanvasImage } from 'canvas';
+import { setupBrowserAPIMocks, teardownBrowserAPIMocks } from './mocks/browserAPIs';
 
 // Provide real Web Audio API to global scope (works in both browser and Node.js)
 // @ts-ignore
@@ -62,5 +64,24 @@ if (typeof document !== 'undefined') {
     };
 }
 
+// Setup browser API mocks for headless testing
+// This provides mock implementations of:
+// - navigator.geolocation (Geolocation API)
+// - DeviceMotionEvent (motion detection)
+// - DeviceOrientationEvent (orientation detection)
+// - AmbientLightSensor (ambient light detection)
+// - localStorage (storage API)
+setupBrowserAPIMocks();
+
+// Setup hooks for vitest to cleanup mocks after each test
+if (typeof afterEach !== 'undefined') {
+    afterEach(() => {
+        teardownBrowserAPIMocks();
+        // Re-setup mocks for next test
+        setupBrowserAPIMocks();
+    });
+}
+
 // Also export for direct use if needed
 export { AudioContext, OfflineAudioContext };
+export * from './mocks/browserAPIs';
