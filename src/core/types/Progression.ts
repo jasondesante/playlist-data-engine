@@ -26,15 +26,18 @@ export type {
 // ============================================================================
 
 /**
- * GamingContext - Steam and Discord gaming activity data
+ * GamingContext - Steam gaming activity data
+ * Note: Discord RPC CANNOT read game activity due to platform limitations.
+ * Discord RPC is only used for SETTING music presence ("Listening to" status).
+ * Game detection uses Steam API only.
  */
 export interface GamingContext {
     isActivelyGaming: boolean;
-    platformSource: 'steam' | 'discord' | 'both' | 'none';
+    platformSource: 'steam' | 'none';
 
     currentGame?: {
         name: string;
-        source: 'steam' | 'discord';
+        source: 'steam';
         genre?: string[];
         sessionDuration?: number;  // Minutes in current session
         partySize?: number;        // Multiplayer party size

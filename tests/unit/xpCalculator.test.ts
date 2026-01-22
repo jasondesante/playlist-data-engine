@@ -328,13 +328,13 @@ describe('XPCalculator', () => {
         it('should apply multiplayer bonus (+15% for party size > 1)', () => {
             const gamingContext: GamingContext = {
                 isActivelyGaming: true,
-                platformSource: 'discord',
+                platformSource: 'steam',
                 totalGamingMinutes: 60,
                 gamesPlayedWhileListening: ['Valheim'],
                 lastUpdated: Date.now(),
                 currentGame: {
                     name: 'Valheim',
-                    source: 'discord',
+                    source: 'steam',
                     partySize: 4,
                     sessionDuration: 120,
                 },

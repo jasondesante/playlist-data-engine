@@ -654,14 +654,25 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 
 ---
 
-### 8. Clean up Gaming Platform Sensors
+### 8. Clean up Gaming Platform Sensors ✅
 
 **File**: [src/core/sensors/GamingPlatformSensors.ts](../../src/core/sensors/GamingPlatformSensors.ts)
 
 **Subtasks**:
-- [ ] Delete any traces of Discord game detection because Discord can't tell you game data
+- [x] Delete any traces of Discord game detection because Discord can't tell you game data
 
 **Estimated Effort**: 1 hour
+
+**Status**: ✅ Complete (2026-01-22)
+
+**Implementation Summary**:
+- Removed `'discord'` and `'both'` from `platformSource` type in `src/core/types/Progression.ts` (now only `'steam' | 'none'`)
+- Updated `currentGame.source` type from `'steam' | 'discord'` to just `'steam'`
+- Updated test in `tests/unit/xpCalculator.test.ts` to use `platformSource: 'steam'` instead of `'discord'`
+- Updated documentation in `DATA_ENGINE_REFERENCE.md` to reflect Discord RPC's actual purpose (music presence only)
+- Added comment to `GamingContext` interface explaining Discord RPC limitation
+- TypeScript compilation verified (no errors)
+- Test change verified (multiplayer bonus test passes)
 
 ---
 

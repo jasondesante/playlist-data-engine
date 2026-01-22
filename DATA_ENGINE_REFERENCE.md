@@ -426,16 +426,16 @@ export interface LightData {
 
 ### GamingContext
 
-Steam and Discord gaming activity data.
+Steam gaming activity data. Note: Discord RPC CANNOT read game activity due to platform limitations. Discord RPC is only used for SETTING music presence ("Listening to" status).
 
 ```typescript
 export interface GamingContext {
     isActivelyGaming: boolean;
-    platformSource: 'steam' | 'discord' | 'both' | 'none';
+    platformSource: 'steam' | 'none';
 
     currentGame?: {
         name: string;
-        source: 'steam' | 'discord';
+        source: 'steam';
         genre?: string[];
         sessionDuration?: number;  // Minutes in current session
         partySize?: number;        // Multiplayer party size
