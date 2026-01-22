@@ -130,7 +130,18 @@ describe('XPCalculator', () => {
     describe('Environmental Bonuses', () => {
         it('should apply night time bonus (1.25x)', () => {
             const envContext: EnvironmentalContext = {
-                time_of_day: 'night',
+                weather: {
+                    temperature: 15,
+                    humidity: 60,
+                    pressure: 1013,
+                    weatherType: 'Clear',
+                    windSpeed: 5,
+                    windDirection: 180,
+                    isNight: true,
+                    moonPhase: 0.5,
+                    timestamp: Date.now(),
+                },
+                timestamp: Date.now(),
                 environmental_xp_modifier: 1.25,
             };
             mockSession.environmental_context = envContext;
@@ -143,16 +154,16 @@ describe('XPCalculator', () => {
             const envContext: EnvironmentalContext = {
                 weather: {
                     temperature: 15,
-                    feels_like: 12,
                     humidity: 80,
                     pressure: 1000,
-                    weather_type: 'thunderstorm',
-                    wind_speed: 10,
-                    wind_direction: 180,
-                    visibility: 5000,
-                    is_night: false,
+                    weatherType: 'Thunderstorm',
+                    windSpeed: 10,
+                    windDirection: 180,
+                    isNight: false,
+                    moonPhase: 0.5,
                     timestamp: Date.now(),
                 },
+                timestamp: Date.now(),
                 environmental_xp_modifier: 1.4,
             };
             mockSession.environmental_context = envContext;
@@ -165,16 +176,16 @@ describe('XPCalculator', () => {
             const envContext: EnvironmentalContext = {
                 weather: {
                     temperature: 15,
-                    feels_like: 14,
                     humidity: 90,
                     pressure: 1000,
-                    weather_type: 'rain',
-                    wind_speed: 5,
-                    wind_direction: 180,
-                    visibility: 5000,
-                    is_night: false,
+                    weatherType: 'Rain',
+                    windSpeed: 5,
+                    windDirection: 180,
+                    isNight: false,
+                    moonPhase: 0.5,
                     timestamp: Date.now(),
                 },
+                timestamp: Date.now(),
                 environmental_xp_modifier: 1.4,
             };
             mockSession.environmental_context = envContext;
@@ -185,13 +196,16 @@ describe('XPCalculator', () => {
 
         it('should apply high altitude bonus (1.3x) at 2000m+', () => {
             const envContext: EnvironmentalContext = {
-                location: {
+                geolocation: {
                     latitude: 40.7128,
                     longitude: -74.006,
                     altitude: 2500,
                     accuracy: 10,
+                    heading: null,
+                    speed: null,
                     timestamp: Date.now(),
                 },
+                timestamp: Date.now(),
                 environmental_xp_modifier: 1.3,
             };
             mockSession.environmental_context = envContext;
@@ -202,13 +216,16 @@ describe('XPCalculator', () => {
 
         it('should not apply altitude bonus below 2000m', () => {
             const envContext: EnvironmentalContext = {
-                location: {
+                geolocation: {
                     latitude: 40.7128,
                     longitude: -74.006,
                     altitude: 1500,
                     accuracy: 10,
+                    heading: null,
+                    speed: null,
                     timestamp: Date.now(),
                 },
+                timestamp: Date.now(),
                 environmental_xp_modifier: 1.0,
             };
             mockSession.environmental_context = envContext;
@@ -219,19 +236,18 @@ describe('XPCalculator', () => {
 
         it('should stack multiple environmental bonuses', () => {
             const envContext: EnvironmentalContext = {
-                time_of_day: 'night', // 1.25x
                 weather: {
                     temperature: 15,
-                    feels_like: 12,
                     humidity: 80,
                     pressure: 1000,
-                    weather_type: 'thunderstorm', // 1.4x
-                    wind_speed: 10,
-                    wind_direction: 180,
-                    visibility: 5000,
-                    is_night: true,
+                    weatherType: 'Thunderstorm', // 1.4x
+                    windSpeed: 10,
+                    windDirection: 180,
+                    isNight: true, // 1.25x
+                    moonPhase: 0.5,
                     timestamp: Date.now(),
                 },
+                timestamp: Date.now(),
                 environmental_xp_modifier: 1.75, // 1.25 * 1.4
             };
             mockSession.environmental_context = envContext;
