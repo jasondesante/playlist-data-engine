@@ -12,7 +12,7 @@ This document tracks all remaining tasks to bring the Core Data Engine from ~85%
 |----------|-------|--------|
 | Critical Bug Fixes | 0 | ✅ Complete |
 | Major Features | 1 | ✅ Complete |
-| Enhancements | 8 | 🟢 7/8 Complete |
+| Enhancements | 8 | 🟢 7/8 Complete (1 not recommended) |
 | Nice to Have | 3 | ⚪ Low Priority |
 | **Total** | **12** | |
 
@@ -483,10 +483,71 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 **Subtasks**:
 
 #### 6.1 GIS Service Integration (Optional Enhancement)
-- [ ] Research GIS/biome APIs (e.g., Mapbox, Google Maps, NASA)
-- [ ] Evaluate cost and complexity of integration
+- [x] Research GIS/biome APIs (e.g., Mapbox, Google Maps, NASA)
+- [x] Evaluate cost and complexity of integration
 - [ ] Implement API client if chosen
 - [ ] Add fallback to current heuristics if API unavailable
+
+**Status**: 🟡 Research Complete - NOT Recommended for Implementation (2026-01-22)
+
+**Research Summary**:
+After thorough research of available GIS/biome APIs, **integration is NOT recommended** for the following reasons:
+
+### Available Options Evaluated
+
+| API | Type | Resolution | Cost | Complexity |
+|-----|------|------------|------|------------|
+| **Google Maps Elevation** | Commercial | High | $2-30 per 1,000 requests | Low |
+| **Mapbox Terrain** | Commercial | High | ~$0.25 per 1,000 requests | Medium |
+| **OpenTopoData** | Open Source | Medium (SRTM/ASTER) | FREE | Low (self-hosted) |
+| **Copernicus CLMS** | Government (EU) | 10-100m | FREE | Medium (registration required) |
+| **ESA WorldCover** | Government (ESA) | 10m | FREE | High (bulk download) |
+| **NASA MODIS** | Government | 500m | FREE (research) | High |
+
+### Sources:
+- [OpenTopoData GitHub](https://github.com/ajnisbet/opentopodata) - Free, MIT-licensed elevation API
+- [Open Topo Data Website](https://www.opentopodata.org/) - Public API and self-hosting options
+- [Google Maps Elevation API Pricing](https://developers.google.com/maps/documentation/elevation/usage-and-billing) - Official pricing documentation
+- [Google Maps Platform Pricing](https://mapsplatform.google.com/pricing/) - General pricing
+- [Copernicus Land Monitoring Service](https://land.copernicus.eu/) - Free land cover data portal
+- [CLMS API Guide](https://land.copernicus.eu/en/how-to-guides/how-to-download-data/how-to-download-data-using-clms-api) - API access documentation
+- [ESA WorldCover](https://esa-worldcover.org/en) - 10m resolution land cover
+- [ESA WorldCover Download](https://worldcover2021.esa.int/download) - Free data download portal
+- [ESA WorldCover on Google Earth Engine](https://developers.google.com/earth-engine/datasets/catalog/ESA_WorldCover_v200) - GEE integration
+- [Radar Blog - Google Maps API Cost](https://radar.com/blog/google-maps-api-cost) - Cost analysis
+
+### Recommendation: DO NOT IMPLEMENT GIS API INTEGRATION
+
+**Reasons:**
+
+1. **Current Heuristics Are Sufficient**: The existing implementation (completed in task 6.2) provides:
+   - 12+ biome types (tundra, forest, urban, plains, desert, jungle, swamp, taiga, savanna, mountain, valley)
+   - Coastal detection with suffix system
+   - Elevation-based detection (mountains >1500m, valleys <0m)
+   - Regional detection covering all major world biomes
+   - 115+ comprehensive unit tests
+
+2. **Cost-Benefit Analysis**:
+   - **Paid APIs** (Google, Mapbox): Expensive for a music-to-RPG game feature (adds monthly costs)
+   - **Free APIs** (Copernicus, ESA): Require registration, API tokens, and have rate limits
+   - **Self-hosted** (OpenTopoData): Requires infrastructure maintenance
+
+3. **Use Case Mismatch**:
+   - This is a **game feature** for ambiance/XP modifiers, not scientific research
+   - Users won't notice the difference between 85% accurate heuristics and 99% accurate GIS data
+   - The current implementation already provides rich biome variety for gameplay variety
+
+4. **Complexity vs Value**:
+   - API integration adds: external dependencies, rate limiting, error handling, authentication
+   - Falls back to heuristics anyway when API unavailable
+   - Maintenance burden for minimal gameplay improvement
+
+5. **Privacy Considerations**:
+   - Current heuristics work locally with no external API calls
+   - GIS integration would require sending coordinates to third-party services
+
+### Conclusion
+The current heuristic-based biome detection provides excellent coverage for a game feature. The marginal accuracy improvement from GIS APIs does not justify the cost, complexity, or external dependencies. **This task should be marked as "not recommended" and left incomplete.**
 
 #### 6.2 Improved Heuristics (Recommended)
 - [x] Add longitude-based regional detection
@@ -795,7 +856,7 @@ Use this section to track completion:
 
 Critical:  [██████████████] 0/0 tasks (100%)
 High:      [██████████████] 1/1 tasks (100%)
-Medium:    [██████████░░░░] 7/8 tasks (88%)
+Medium:    [██████████░░░░] 7/8 tasks (88%) - 1 task researched & not recommended
 Low:       [░░░░░░░░░░░] 0/3 tasks (0%)
 ```
 
