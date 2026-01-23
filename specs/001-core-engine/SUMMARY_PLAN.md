@@ -445,16 +445,24 @@ Before starting verification tasks, integrate the reference information from thi
   **DISCREPANCY NOTED**: Voice-related methods (`subscribeToVoiceUpdates()`, `getVoiceChannelInfo()`, `VoiceStateInfo` interface) exist in the code as documented placeholders that return false/null. They are properly documented as non-functional due to Discord RPC platform limitations. These should be removed in Phase 5 (Code Cleanup) but are currently present.
 
 #### Task 3: Weather API Caching
-- [ ] Read `src/core/sensors/WeatherAPIClient.ts`
-- [ ] Verify in-memory cache exists (Map with CacheEntry)
-- [ ] Verify cache TTL is 12 minutes
-- [ ] Verify cache key based on lat/lon coordinates
-- [ ] Verify cache methods: `invalidateCache()`, `invalidateLocation()`, `clearExpiredEntries()`, `getCacheSize()`
-- [ ] Verify cache statistics: `getCacheStats()` returns hits/misses
-- [ ] Verify localStorage persistence for browser
-- [ ] Verify 14 cache-related tests exist
-- [ ] Summarize caching implementation
-- [ ] Note any discrepancies
+- [x] Read `src/core/sensors/WeatherAPIClient.ts`
+- [x] Verify in-memory cache exists (Map with CacheEntry)
+- [x] Verify cache TTL is 12 minutes
+- [x] Verify cache key based on lat/lon coordinates
+- [x] Verify cache methods: `invalidateCache()`, `invalidateLocation()`, `clearExpiredEntries()`, `getCacheSize()`
+- [x] Verify cache statistics: `getCacheStats()` returns hits/misses
+- [x] Verify localStorage persistence for browser
+- [x] Verify 14 cache-related tests exist
+- [x] Summarize caching implementation
+- [x] Note any discrepancies
+  **Completed 2026-01-23**: All claims verified. WeatherAPIClient has comprehensive caching implementation.
+  - In-memory cache: `Map<string, CacheEntry>` with data + timestamp
+  - TTL: 12 minutes (configurable, default 12 * 60 * 1000 ms)
+  - Cache key: Lat/lon rounded to 4 decimal places (~11m precision) for better cache hits
+  - Cache methods all verified: `invalidateCache()`, `invalidateLocation()`, `clearExpiredEntries()`, `getCacheSize()`
+  - Cache statistics: `getCacheStats()` returns `{hits, misses}`, `resetCacheStats()` also available
+  - localStorage persistence: Loads/saves cache with `weather_api_cache` key, filters expired entries on load
+  - **DISCREPANCY**: Plan mentioned "14 cache-related tests" but found 28+ cache-related tests in `tests/unit/sensors.test.ts` (10 weather cache + 9 geolocation cache + 3 forecast cache + 1 diagnostics + others)
 
 #### Task 4: Geolocation Caching
 - [ ] Read `src/core/sensors/GeolocationProvider.ts`
