@@ -671,7 +671,7 @@ The file contains **42 type definitions** across multiple categories:
 ## Phase 1: Verification - SPEC.md
 
 ### Task 1.1: Verify factual claims in SPEC.md
-- [ ] Verify "Core Features" list matches actual implemented features
+- [x] Verify "Core Features" list matches actual implemented features (COMPLETED 2026-01-23)
 - [ ] Verify all source file paths exist
 - [ ] Verify ability score formulas match `AbilityScoreCalculator.ts`
 - [ ] Verify XP modifier formulas match `XPCalculator.ts`
@@ -915,6 +915,33 @@ The following issues were identified during earlier work. These should be verifi
 3. **CombatEngine API** - `startCombat()` takes arrays of characters, not individual params
 4. **Discord Voice Features** - Should NOT be documented (not supported by Discord RPC)
 5. **Test Count** - Update any references from 426 to 837 tests
+
+---
+
+## Verification Findings (Phase 1)
+
+### Task 1.1: Core Features Verification (Completed 2026-01-23)
+
+**Summary**: 9 out of 10 core features fully verified against source code.
+
+**Verified Features**:
+1. ✅ **Playlist Parsing** - Verified in `src/core/parser/PlaylistParser.ts`
+2. ✅ **Audio Analysis** - Verified in `src/core/analysis/AudioAnalyzer.ts` (Triple Tap 5%/40%/70%)
+3. ✅ **Visual Analysis** - Verified in `src/core/analysis/ColorExtractor.ts` (K-means, 4 colors)
+4. ✅ **Character Generation** - Verified: 9 races, 12 classes in `src/core/generation/`
+5. ✅ **Naming** - Verified in `src/core/generation/NamingEngine.ts` (3 formats, 50/30/20 weights)
+6. ✅ **Advanced Character** - Verified: 18 skills, proficiencies, equipment, appearance
+7. ✅ **Environmental Sensors** - Verified in `src/core/sensors/EnvironmentalSensors.ts`
+8. ✅ **Gaming Integration** - Verified in `src/core/sensors/GamingPlatformSensors.ts`
+9. ✅ **Progression** - Verified: 1 XP/sec, D&D 5e levels 1-20, mastery
+10. ✅ **Combat** - Verified in `src/core/combat/CombatEngine.ts`
+
+**Discrepancy Found**:
+- **SPEC.md line 213 claims**: "188 hardcoded spells"
+- **Actual count in source**: 53 spells in `src/utils/constants.ts` (SPELL_DATABASE)
+- **Impact**: SPEC.md should be updated to reflect actual spell count (53)
+
+**Action Required**: Update SPEC.md line 213 from "188" to "53" hardcoded spells.
 
 ---
 
