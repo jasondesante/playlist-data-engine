@@ -794,7 +794,13 @@ Before starting verification tasks, integrate the reference information from thi
   - `subscribeToVoiceUpdates()` method (lines 528-550) - returns false, documented as non-functional
   - `getVoiceChannelInfo()` method (lines 552-567) - returns null, documented as non-functional
   All voice-related code is explicitly documented as non-functional due to Discord RPC platform limitations. Ready for removal.
-- [ ] Remove `subscribeToVoiceUpdates()` method and related code
+- [x] Remove `subscribeToVoiceUpdates()` method and related code
+  **Completed 2026-01-23**: Removed voice-related dead code from DiscordRPCClient.ts:
+  - Removed `VoiceStateInfo` interface (lines 149-157)
+  - Removed `subscribeToVoiceUpdates()` method (lines 527-550)
+  - Removed `getVoiceChannelInfo()` method (lines 552-567)
+  - Verified no voice-related tests exist in test files
+  - All 837 tests still pass after cleanup
 - [ ] Remove any voice state tracking properties/types
 - [ ] Remove any voice-related event handlers
 - [ ] Search for any other voice-related code in the file and remove it

@@ -146,17 +146,6 @@ export interface MusicActivityDetails {
 }
 
 /**
- * Voice state information (placeholder - Discord RPC cannot access voice state)
- * Note: Discord RPC does not support voice state detection.
- * This interface exists for type compatibility only.
- */
-export interface VoiceStateInfo {
-    channelId?: string;
-    guildId?: string;
-    participantCount?: number;
-}
-
-/**
  * Discord RPC error codes from protocol specification
  * Reference: https://discord.com/developers/docs/topics/rpc#errors
  */
@@ -524,45 +513,4 @@ export class DiscordRPCClient {
         return { ...this.userInfo };
     }
 
-    /**
-     * Subscribe to Discord voice updates (to detect multiplayer)
-     *
-     * @note Discord RPC CANNOT access voice state data.
-     * This method is a placeholder that returns false.
-     * Voice state detection requires Discord API Gateway with bot permissions.
-     */
-    async subscribeToVoiceUpdates(_callback: (voiceState: VoiceStateInfo) => void): Promise<boolean> {
-        if (!this.isConnected) {
-            return false;
-        }
-
-        try {
-            // In real implementation:
-            // this.client.subscribe('VOICE_SETTINGS_UPDATE', (data) => {
-            //   callback(data);
-            // });
-
-            return true;
-        } catch (error) {
-            this.logger.warn('Failed to subscribe to voice updates', { error });
-            return false;
-        }
-    }
-
-    /**
-     * Get current voice channel info (for party size detection)
-     *
-     * @note Discord RPC CANNOT access voice state data.
-     * This method returns null as voice state is not available via RPC.
-     */
-    async getVoiceChannelInfo(): Promise<VoiceStateInfo | null> {
-        try {
-            // In real implementation, would fetch actual voice channel data
-            // For now return null
-            return null;
-        } catch (error) {
-            this.logger.warn('Failed to fetch voice channel info', { error });
-            return null;
-        }
-    }
 }
