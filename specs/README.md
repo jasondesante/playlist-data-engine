@@ -12,7 +12,7 @@ The Core Data Engine transforms music playlists into RPG game characters through
 
 | File | Description |
 |------|-------------|
-| [SPEC.md](001-core-engine/SPEC.md) | Feature specification with requirements and data models (DEFINITIVE REFERENCE) |
+| [spec.md](001-core-engine/spec.md) | Feature specification with requirements and data models (DEFINITIVE REFERENCE) |
 | [DECISIONS.md](001-core-engine/DECISIONS.md) | Architecture and technology choices |
 ### Note
 
