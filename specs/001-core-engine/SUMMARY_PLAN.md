@@ -863,7 +863,14 @@ Before starting verification tasks, integrate the reference information from thi
   **Completed 2026-01-23**: No fixes needed. All tests pass.
 
 ### Phase 7: Final SPEC.md Polish
-- [ ] Review complete SPEC.md for consistency
+- [x] Review complete SPEC.md for consistency
+  **Completed 2026-01-23**: Reviewed SPEC.md for consistency and fixed several issues:
+  - Fixed NamingEngine usage: Changed from `NamingEngine.generate(seed, audioProfile)` to `new NamingEngine().generateName(track, audioProfile)` (method is instance method, not static, requires PlaylistTrack)
+  - Fixed Discord music presence: Added proper `DiscordRPCClient` instantiation before usage
+  - Fixed SessionTracker usage: Changed from `SessionTracker.startSession(...)` returning a session object to `new SessionTracker().startSession(...)` returning a sessionId, with `endSession()` to get the actual session
+  - Fixed CombatEngine API: Changed from non-existent `addCombatant()` method to using `startCombat([playerChars], [enemies], environment)` which takes arrays and returns a CombatInstance
+  - Fixed combat execution: Changed from non-existent `executeTurn()` method to `executeAttack(instance, attacker, target, attack)` and `nextTurn(instance)`
+  - All code examples now verified against actual source code implementations
 - [ ] Ensure all source file references are correct
 - [ ] Verify line count is under 300
 - [ ] Final accuracy check - no hallucinated data structures or methods
