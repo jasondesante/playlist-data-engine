@@ -485,8 +485,8 @@ Based on the mean synodic month of 29.530588853 days (the average time from new 
 #### 6.1 GIS Service Integration (Optional Enhancement)
 - [x] Research GIS/biome APIs (e.g., Mapbox, Google Maps, NASA)
 - [x] Evaluate cost and complexity of integration
-- [ ] Implement API client if chosen
-- [ ] Add fallback to current heuristics if API unavailable
+- [x] ~~Implement API client if chosen~~ **N/A - Not Recommended**
+- [x] ~~Add fallback to current heuristics if API unavailable~~ **N/A - Not Recommended**
 
 **Status**: 🟡 Research Complete - NOT Recommended for Implementation (2026-01-22)
 
