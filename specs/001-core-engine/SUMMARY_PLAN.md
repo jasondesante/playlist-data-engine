@@ -538,18 +538,29 @@ Before starting verification tasks, integrate the reference information from thi
   **No discrepancies found** - GIS API decision not applicable (uses heuristic coordinate-based detection as documented)
 
 #### Task 7: Weather Forecast Data
-- [ ] Read `src/core/sensors/WeatherAPIClient.ts`
-- [ ] Verify `ForecastData` interface exists in `src/core/types/Environmental.ts`
-- [ ] Verify `getForecast()` method exists
-- [ ] Verify calls OpenWeatherMap `/data/2.5/forecast` endpoint
-- [ ] Verify forecast cache exists with 60-minute TTL
-- [ ] Verify `getUpcomingWeather()` method exists
-- [ ] Read `src/core/sensors/EnvironmentalSensors.ts`
-- [ ] Verify `calculateXPModifierWithForecast()` method exists
-- [ ] Verify forecast bonus logic (+15% thunderstorm, +10% snow/rain, +5% clear)
-- [ ] Verify 13 forecast-related tests exist
-- [ ] Summarize forecast implementation
-- [ ] Note any discrepancies
+- [x] Read `src/core/sensors/WeatherAPIClient.ts`
+- [x] Verify `ForecastData` interface exists in `src/core/types/Environmental.ts`
+- [x] Verify `getForecast()` method exists
+- [x] Verify calls OpenWeatherMap `/data/2.5/forecast` endpoint
+- [x] Verify forecast cache exists with 60-minute TTL
+- [x] Verify `getUpcomingWeather()` method exists
+- [x] Read `src/core/sensors/EnvironmentalSensors.ts`
+- [x] Verify `calculateXPModifierWithForecast()` method exists
+- [x] Verify forecast bonus logic (+15% thunderstorm, +10% snow/rain, +5% clear)
+- [x] Verify 13 forecast-related tests exist
+- [x] Summarize forecast implementation
+- [x] Note any discrepancies
+  **Completed 2026-01-23**: All claims verified. Weather forecast implementation is fully functional.
+  - `ForecastData` interface at `src/core/types/Environmental.ts:136-146` with all required fields
+  - `getForecast(lat, lon, hours)` at `WeatherAPIClient.ts:546-610` calls `/data/2.5/forecast` endpoint
+  - Forecast cache: `Map<string, ForecastCacheEntry>` with 60-minute TTL (line 67)
+  - `getUpcomingWeather(lat, lon, hours)` at `WeatherAPIClient.ts:619-691` returns weather analysis
+  - `calculateXPModifierWithForecast(hours)` at `EnvironmentalSensors.ts:604-635` with forecast bonuses:
+    * Thunderstorm/Tornado: +15% (anticipation bonus)
+    * Snow (>50% prob): +10%
+    * Heavy rain (>70% prob): +10%
+    * Clear skies: +5% (optimism bonus)
+  - **DISCREPANCY**: Plan mentioned "13 forecast-related tests" but found 14 forecast-related tests in `tests/unit/sensors.test.ts` (lines 1855-2016, plus 1 at 2223)
 
 #### Task 8: Severe Weather Detection
 - [ ] Read `src/core/sensors/WeatherAPIClient.ts`
