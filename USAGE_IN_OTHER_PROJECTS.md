@@ -636,7 +636,13 @@ export STEAM_USER_ID="your_64bit_steam_id_here"
 
 # For Discord integration
 export DISCORD_CLIENT_ID="your_discord_client_id_here"
+
+# Optional: Override maximum XP modifier (default: 3.0)
+# Set to 1.0 to disable all environmental/gaming bonuses
+export XP_MAX_MODIFIER="3.0"
 ```
+
+All environment variables are optional. The system will use sensible defaults if not provided. For complete configuration options, see `.env.example` in the project root.
 
 ---
 

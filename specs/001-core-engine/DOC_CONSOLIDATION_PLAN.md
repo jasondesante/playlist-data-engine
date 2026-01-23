@@ -2750,7 +2750,7 @@ The DATA_ENGINE_REFERENCE.md provides complete API documentation for all 30 clas
 - [x] Verify all examples are complete and runnable (COMPLETED 2026-01-23)
 - [x] Verify all examples use correct API (post-fixes) (COMPLETED 2026-01-23)
 - [x] Verify installation instructions are accurate (COMPLETED 2026-01-23)
-- [ ] Verify environment variables section is complete
+- [x] Verify environment variables section is complete (COMPLETED 2026-01-23)
 - [ ] Ask: "Could I install and use this engine just from this doc?"
 
 **Task 6.3 - First Subtask Completed (2026-01-23): Verify all examples are complete and runnable**
@@ -2955,6 +2955,38 @@ USAGE_IN_OTHER_PROJECTS.md correctly uses the AudioProfile.ts version (primary_c
 
 **Files Modified**:
 - `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Fixed environment variable names, added STEAM_USER_ID, updated build status section
+
+**Task 6.3 - Fourth Subtask Completed (2026-01-23): Verify environment variables section is complete**
+
+**Summary**: Environment variables section in USAGE_IN_OTHER_PROJECTS.md has been verified and enhanced with the missing `XP_MAX_MODIFIER` variable.
+
+**Verification Results**:
+
+All 5 supported environment variables are now documented:
+
+| Variable | Purpose | Source | Status |
+|----------|---------|--------|--------|
+| `WEATHER_API_KEY` | OpenWeatherMap API key for weather data | Line 198 | ✅ Documented |
+| `STEAM_API_KEY` | Steam Web API key for game detection | Line 203 | ✅ Documented |
+| `STEAM_USER_ID` | 64-bit Steam ID (optional) | Line 211 | ✅ Documented |
+| `DISCORD_CLIENT_ID` | Discord Client ID for Rich Presence | Line 219 | ✅ Documented |
+| `XP_MAX_MODIFIER` | Maximum XP modifier cap (optional, default: 3.0) | Line 227 | ✅ **ADDED** |
+
+**Issue Found and Fixed**:
+
+1. **Missing `XP_MAX_MODIFIER` Environment Variable** ❌ → ✅ FIXED
+   - **Issue**: Documentation did not include the optional `XP_MAX_MODIFIER` variable
+   - **Impact**: Users couldn't override the maximum XP modifier cap without knowing about this variable
+   - **Source**: `src/core/config/sensorConfig.ts:227` reads from `process.env.XP_MAX_MODIFIER`
+   - **Fix Applied**: Added `XP_MAX_MODIFIER` to environment variables section with explanation that it controls the maximum bonus XP and defaults to 3.0
+
+**Enhancement Made**:
+- Added note explaining that all environment variables are optional
+- Added reference to `.env.example` file for complete configuration options
+
+**Files Modified**:
+- `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Added `XP_MAX_MODIFIER` environment variable with explanation and reference to `.env.example`
+- `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.3 checklist status
 
 ### Task 6.4: Cross-doc final check
 - [ ] Read all three docs end-to-end
