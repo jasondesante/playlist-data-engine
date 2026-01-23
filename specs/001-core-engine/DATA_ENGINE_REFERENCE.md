@@ -978,77 +978,96 @@ Get current configuration.
 
 **Source**: `src/core/progression/MasterySystem.ts`
 
-Handles track mastery system.
+Handles track mastery logic. Tracks how many times a user has listened to a track and awards mastery status.
 
 #### Methods
 
 ```typescript
-checkMastery(listenCount: number): boolean
+public checkMastery(listenCount: number): boolean
 ```
 
-Check if track is mastered based on listen count.
+Check if track has reached mastery status based on listen count.
 
 ```typescript
-isJustMastered(previousListenCount: number, currentListenCount: number): boolean
+public isJustMastered(previousListenCount: number, currentListenCount: number): boolean
 ```
 
-Check if track was just mastered on this listen.
+Determine if track just reached mastery status in this session.
 
 ```typescript
-calculateMasteryBonus(isMastered: boolean): number
+public calculateMasteryBonus(isMastered: boolean): number
 ```
 
-Calculate mastery bonus XP.
+Calculate bonus XP awarded for mastery.
 
 ### LevelUpProcessor
 
 **Source**: `src/core/progression/LevelUpProcessor.ts`
 
-Processes character level ups.
+Handles character leveling mechanics including HP increases, ability score improvements, spell slots, and class features.
+
+```typescript
+interface LevelUpBenefits {
+    newLevel: number;
+    hitPointIncrease: number;
+    newHitPointsTotal: number;
+    proficiencyBonusIncrease: number;
+    newProficiencyBonus: number;
+    abilityScoreIncrease?: {
+        ability: 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
+        increase: number;
+    };
+    newSpellSlots?: Record<number, number>;
+    classFeatures?: string[];
+}
+```
 
 #### Static Methods
 
 ```typescript
-static calculateLevel(totalXP: number): number
+static processLevelUp(character: CharacterSheet, newLevel: number, seed?: string): LevelUpBenefits
 ```
 
-Calculate character level from total XP.
-
-```typescript
-static getXPThreshold(level: number): number
-```
-
-Get XP threshold for a given level.
-
-```typescript
-static processLevelUp(character: CharacterSheet, newLevel: number, seed: string): LevelUpBenefits
-```
-
-Process level up and return benefits.
+Process a character level-up. Returns benefits granted by leveling up including HP increase, proficiency bonus, ability score increases (at levels 4, 8, 12, 16, 19), spell slots (for spellcasters), and class features.
 
 ```typescript
 static applyLevelUp(character: CharacterSheet, benefits: LevelUpBenefits): CharacterSheet
 ```
 
-Apply level up benefits to character.
+Apply a level-up to a character. Returns updated character with level, HP, proficiency bonus, ability scores, spell slots, and class features applied.
+
+```typescript
+static getXPThreshold(level: number): number
+```
+
+Get the XP threshold for a specific level (1-20) using D&D 5e standard progression.
+
+```typescript
+static calculateLevel(totalXP: number): number
+```
+
+Calculate level from total XP. Returns character level (1-20).
+
+```typescript
+static getXPToNextLevel(currentLevel: number): number
+```
+
+Get XP needed to reach next level. Returns 0 if already at max level (20).
+
+```typescript
+static getProgressPercentage(currentLevel: number, currentXP: number): number
+```
+
+Get progress to next level as a percentage (0-100).
 
 ### CharacterUpdater
 
 **Source**: `src/core/progression/CharacterUpdater.ts`
 
-Orchestrates character updates from listening sessions.
-
-#### Methods
+Orchestrates character updates from listening sessions. Calculates XP, checks for level-ups, and handles track mastery.
 
 ```typescript
-updateCharacterFromSession(character: CharacterSheet, session: ListeningSession, track?: PlaylistTrack, previousListenCount?: number): CharacterUpdateResult
-```
-
-Update a character based on a completed listening session. Calculates XP, checks for level ups, and handles track mastery.
-
-Returns:
-```typescript
-{
+interface CharacterUpdateResult {
     character: CharacterSheet;
     xpEarned: number;
     leveledUp: boolean;
@@ -1057,6 +1076,22 @@ Returns:
     masteryBonusXP: number;
 }
 ```
+
+#### Constructor
+
+```typescript
+constructor()
+```
+
+Create a new CharacterUpdater with default XPCalculator and MasterySystem.
+
+#### Methods
+
+```typescript
+public updateCharacterFromSession(character: CharacterSheet, session: ListeningSession, track?: PlaylistTrack, previousListenCount: number = 0): CharacterUpdateResult
+```
+
+Update a character based on a completed listening session. Calculates XP, checks for mastery status, processes level-ups, and returns result with updated character. Handles multiple level-ups if massive XP gain.
 
 ---
 
