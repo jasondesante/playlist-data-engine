@@ -92,11 +92,42 @@
 - **No spec information migration needed** - SPEC.md already contains all essential spec information
 
 ### Task 0.2: Create example inventory
-- [ ] List all examples currently in SPEC.md (with line numbers)
+- [x] List all examples currently in SPEC.md (with line numbers) - **COMPLETED 2026-01-23**
 - [ ] List all examples currently in DATA_ENGINE_REFERENCE.md (with line numbers)
 - [ ] List all examples currently in USAGE_IN_OTHER_PROJECTS.md (with line numbers)
 - [ ] List all examples in README.md worth keeping (with line numbers)
 - [ ] List all examples in quickstart.md worth keeping (with line numbers)
+
+**SPEC.md Example Inventory (Completed 2026-01-23):**
+
+SPEC.md contains **5 code examples** in the "How to Use" section (lines 92-188):
+
+1. **Lines 96-116**: "Basic Workflow: Playlist → Character" example
+   - Shows: PlaylistParser, AudioAnalyzer, NamingEngine, CharacterGenerator usage
+   - Code block spans 21 lines
+   - Demonstrates complete parsing → analysis → generation → naming flow
+
+2. **Lines 120-137**: "Environmental Sensors" example
+   - Shows: EnvironmentalSensors constructor and methods
+   - Code block spans 18 lines
+   - Demonstrates requestPermissions(), startMonitoring(), calculateXPModifier()
+
+3. **Lines 141-170**: "Gaming Integration (Steam + Discord)" example
+   - Shows: GamingPlatformSensors constructor with options object
+   - Shows: DiscordRPCClient usage for music presence
+   - Code block spans 30 lines
+   - Demonstrates authenticate(), startMonitoring(), setMusicActivity()
+
+4. **Lines 174-187**: "Progression & Combat" example
+   - Shows: SessionTracker, XPCalculator, CombatEngine usage
+   - Code block spans 14 lines
+   - Demonstrates startSession(), endSession(), startCombat(), executeAttack(), nextTurn()
+
+**Finding Summary for SPEC.md:**
+- Total examples: 5 code blocks (83 lines of example code)
+- Location: Lines 92-188 (entire "How to Use" section)
+- **Action Required**: ALL examples must be removed per SPEC.md success criteria (NO code examples allowed)
+- The entire "How to Use" section (lines 92-188) needs to be removed/replaced with cross-reference to USAGE_IN_OTHER_PROJECTS.md
 
 ### Task 0.3: Create SUMMARY_PLAN.md spec inventory
 - [ ] Identify all important spec information in SUMMARY_PLAN.md (not examples, but facts/specs)
