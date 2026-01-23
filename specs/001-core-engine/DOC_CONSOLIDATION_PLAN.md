@@ -1800,7 +1800,7 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 
 ### Task 3.4: Harvest examples from quickstart.md
 - [x] Review "30-Second Example" - add to USAGE if unique (COMPLETED 2026-01-23)
-- [ ] Review phase-by-phase examples - add any unique ones to USAGE
+- [x] Review phase-by-phase examples - add any unique ones to USAGE (COMPLETED 2026-01-23)
 - [ ] Review "Common Patterns" section - add to USAGE if unique
 - [ ] Review configuration examples - add to USAGE if unique
 
@@ -1825,6 +1825,65 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 4. **Ability score aliases**: Both lowercase (`.strength`) and uppercase (`.STR`) property access work per source code
 
 **Action Taken**: No changes to USAGE_IN_OTHER_PROJECTS.md required. The existing "Basic Playlist Parsing and Character Generation" example is equivalent and better formatted for external users. The quickstart.md example is just a shorter/simplified version that adds no unique value.
+
+**Task 3.4 - Phase-by-Phase Examples Review (Completed 2026-01-23):**
+
+**Summary**: Most phase-by-phase examples in quickstart.md are duplicates with correct APIs. Phase 1 and Phase 2 contain unique functionality BUT have significant API errors.
+
+**Phase-by-Phase Comparison:**
+
+| Phase | quickstart.md Location | USAGE_IN_OTHER_PROJECTS.md Equivalent | Status |
+|-------|------------------------|----------------------------------------|--------|
+| Phase 0: Parse & Generate | Lines 30-45 | "Basic Playlist Parsing..." (lines 74-105) | **Duplicate** |
+| Phase 1: Visual & Naming | Lines 47-61 | ❌ NOT in USAGE | **Unique - Has API errors** |
+| Phase 2: Skills, Spells, Equipment | Lines 63-86 | ❌ NOT in USAGE | **Unique - Has API errors** |
+| Phase 3: Progression & Leveling | Lines 88-113 | "Progression and XP Tracking" (lines 107-147) | **Duplicate** |
+| Phase 4: Environmental Sensors | Lines 115-138 | "Environmental Sensors" (lines 149-172) | **Duplicate** |
+| Phase 5: Gaming Platform Integration | Lines 140-169 | "Gaming Platform Integration" (lines 174-205) | **Duplicate** |
+| Phase 6: Combat | Lines 171-204 | "Combat System" (lines 207-271) | **Duplicate** |
+
+**Phase 1 (Visual & Naming) API Errors:**
+
+| Quickstart.md Claim | Actual API | Status |
+|---------------------|------------|--------|
+| `colors.extractColors(track.image_url)` | `ColorExtractor.extractFromUrl(url: string): Promise<ColorPalette>` or `extractColors(imageData: ImageData)` | ⚠️ Method name slightly different |
+| `naming.generateName(track.title, track.artist, profile, 'Wizard')` | `NamingEngine.generateName(track: PlaylistTrack, audioProfile: AudioProfile): string` | ❌ Wrong - 4 params vs 2 params |
+
+**Phase 2 (Skills, Spells, Equipment) API Errors:**
+
+| Quickstart.md Claim | Actual API | Status |
+|---------------------|------------|--------|
+| `skills.assignSkills(char)` | `SkillAssigner.assignSkills(characterClass: Class, rng: SeededRNG)` | ❌ Wrong - requires class + rng, not full character |
+| `spellMgr.isSpellcaster(char.class)` | `SpellManager.isSpellcaster(characterClass: Class)` | ✅ Correct |
+| `spellMgr.generateSpells(char)` | ❌ No such method exists | ❌ Method doesn't exist |
+| `spellMgr.generateSpellSlots(char)` | `SpellManager.getSpellSlots(characterClass: Class, characterLevel: number)` | ❌ Wrong method name |
+| `equipment.generateStartingEquipment(char)` | `EquipmentGenerator.getStartingEquipment(characterClass: Class)` | ⚠️ Wrong method name |
+| `appearance.generateAppearance(profile, palette)` | `AppearanceGenerator.generate(seed: string, characterClass: Class, audioProfile: AudioProfile)` | ❌ Wrong - requires seed + class + audioProfile |
+
+**Source Code Verification:**
+- `SkillAssigner.assignSkills()` - src/core/generation/SkillAssigner.ts:41 (static method, takes Class + SeededRNG)
+- `SpellManager.getSpellSlots()` - src/core/generation/SpellManager.ts:37 (static method, takes Class + level)
+- `SpellManager.getKnownSpells()` - src/core/generation/SpellManager.ts:104 (static method, takes Class + level)
+- `SpellManager.getCantrips()` - src/core/generation/SpellManager.ts:79 (static method, takes Class)
+- `EquipmentGenerator.getStartingEquipment()` - src/core/generation/EquipmentGenerator.ts:35 (static method, takes Class)
+- `AppearanceGenerator.generate()` - src/core/generation/AppearanceGenerator.ts:96 (static method, takes seed + Class + AudioProfile)
+
+**Findings:**
+1. **Phases 0, 3-6**: All duplicates of existing USAGE examples with correct APIs - no action needed
+2. **Phase 1**: ColorExtractor and NamingEngine functionality is NOT in USAGE, but the example has API errors (wrong generateName signature)
+3. **Phase 2**: Skills, Spells, Equipment, Appearance functionality is NOT in USAGE, but the example has multiple API errors
+4. The API errors in these unique examples are significant enough that they should NOT be copied without correction
+5. These unique examples represent valuable functionality that users might want to learn about
+
+**Action Taken**: No changes to USAGE_IN_OTHER_PROJECTS.md. The unique Phase 1 and Phase 2 examples have too many API errors to safely include. These should be addressed in Phase 4 (Cross-Document Consistency) where all API discrepancies are documented and fixed.
+
+**Note**: The following features are NOT demonstrated in USAGE_IN_OTHER_PROJECTS.md:
+- ColorExtractor usage
+- NamingEngine usage
+- SkillAssigner usage
+- SpellManager usage (isSpellcaster, getSpellSlots, getKnownSpells, getCantrips)
+- EquipmentGenerator usage
+- AppearanceGenerator usage
 
 ### Task 3.5: Verify Discord RPC warning
 - [ ] Ensure Discord RPC section clearly states it's for music presence ONLY
