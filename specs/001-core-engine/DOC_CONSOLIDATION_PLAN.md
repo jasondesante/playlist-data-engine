@@ -71,7 +71,16 @@
 - `MasterySystem.recordPlaythrough()/isTrackMastered()` (README) vs `checkMastery()/isJustMastered()` (USAGE)
 - `EnvironmentalSensors` constructor options object (README) vs single API key param (USAGE)
 - `SessionTracker.startSession()` - README doesn't show return value, both docs need verification
-- [ ] Read `quickstart.md` - harvest any unique examples worth keeping
+- [x] Read `quickstart.md` - harvest any unique examples worth keeping (completed 2026-01-23)
+
+**quickstart.md Unique Examples Found** (not in USAGE or README):
+1. Audio Analyzer Options configuration (`includeAdvancedMetrics`, `enableDetailedOutput`)
+2. Environmental Sensors Options (`enableLocation`, `enableMotion`, `enableWeather`, `enableLight`, `weatherApiKey`)
+3. Combat Engine Options (`useEnvironment`, `useMusic`, `tacticalMode`, `maxTurnsBeforeDraw`, `allowFleeing`)
+4. Performance Tips section (4 tips: lazy loading, caching, batching, debouncing)
+5. Troubleshooting table format (table format, not list)
+6. Testing section with specific test commands (`npm test -- combat.test.ts`, `npm test -- --watch`, `npm run test:coverage`)
+7. Type Safety section (tsconfig.json strict mode setup example)
 - [ ] Read `SUMMARY_PLAN.md` - harvest important spec information that should be in SPEC.md
 
 ### Task 0.2: Create example inventory
