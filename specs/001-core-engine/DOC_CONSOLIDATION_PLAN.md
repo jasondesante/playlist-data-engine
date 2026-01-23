@@ -2749,7 +2749,7 @@ The DATA_ENGINE_REFERENCE.md provides complete API documentation for all 30 clas
 ### Task 6.3: USAGE_IN_OTHER_PROJECTS.md final check
 - [x] Verify all examples are complete and runnable (COMPLETED 2026-01-23)
 - [x] Verify all examples use correct API (post-fixes) (COMPLETED 2026-01-23)
-- [ ] Verify installation instructions are accurate
+- [x] Verify installation instructions are accurate (COMPLETED 2026-01-23)
 - [ ] Verify environment variables section is complete
 - [ ] Ask: "Could I install and use this engine just from this doc?"
 
@@ -2907,6 +2907,54 @@ USAGE_IN_OTHER_PROJECTS.md correctly uses the AudioProfile.ts version (primary_c
 
 **Files Modified**:
 - `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.3 checklist status and added verification summary
+
+**Task 6.3 - Third Subtask Completed (2026-01-23): Verify installation instructions are accurate**
+
+**Summary**: Installation instructions in USAGE_IN_OTHER_PROJECTS.md have been verified and fixed. Two critical inaccuracies were corrected.
+
+**Issues Found and Fixed**:
+
+1. **Environment Variable Name Incorrect** ❌ → ✅ FIXED
+   - **Issue**: Document showed `OPENWEATHERMAP_API_KEY` but actual code uses `WEATHER_API_KEY`
+   - **Impact**: Users setting `OPENWEATHERMAP_API_KEY` would find weather features not working
+   - **Source**: `src/core/config/sensorConfig.ts:198` reads from `process.env.WEATHER_API_KEY`
+   - **Fix Applied**: Changed `OPENWEATHERMAP_API_KEY` to `WEATHER_API_KEY` in environment variables section
+
+2. **Missing STEAM_USER_ID Variable** ❌ → ✅ FIXED
+   - **Issue**: Documentation only showed `STEAM_API_KEY` but code also supports `STEAM_USER_ID`
+   - **Impact**: Users could optionally provide their Steam ID via environment variable
+   - **Source**: `src/core/config/sensorConfig.ts:211` reads from `process.env.STEAM_USER_ID`
+   - **Fix Applied**: Added `STEAM_USER_ID` to environment variables section
+
+3. **Build Status File Sizes Incorrect** ❌ → ✅ FIXED
+   - **Issue**: "Building Status" section showed outdated file sizes (177 KB ES module, 113 KB CommonJS)
+   - **Actual sizes**: ES module is 330 KB, CommonJS is 205 KB
+   - **Fix Applied**: Updated "Building Status" section with accurate file sizes and corrected "Source types" path from `src/index.ts` to `dist/index.d.ts`
+
+**Installation Instructions Verified as Correct**:
+
+| Instruction Aspect | Status | Details |
+|--------------------|--------|---------|
+| Package name `playlist-data-engine` | ✅ | Matches `package.json` |
+| `file:///path/to/...` syntax | ✅ | Correct for absolute paths |
+| `npm link` two-step process | ✅ | Correct (link in library, then link in project) |
+| `dist` folder structure | ✅ | Contains expected build outputs |
+| `package.json` exports field | ✅ | Properly configured with types, import, require |
+| Main entry point | ✅ | `dist/index.d.ts` exports all public APIs |
+| Build command `npm run build` | ✅ | Produces expected outputs |
+
+**Environment Variables (Verified Against `src/core/config/sensorConfig.ts`)**:
+
+| Variable | Status | Source |
+|----------|--------|--------|
+| `WEATHER_API_KEY` | ✅ Correct | Line 198 |
+| `STEAM_API_KEY` | ✅ Correct | Line 203 |
+| `STEAM_USER_ID` | ✅ Correct | Line 211 |
+| `DISCORD_CLIENT_ID` | ✅ Correct | Line 219 |
+| `XP_MAX_MODIFIER` | ✅ Documented | Line 227 (optional) |
+
+**Files Modified**:
+- `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Fixed environment variable names, added STEAM_USER_ID, updated build status section
 
 ### Task 6.4: Cross-doc final check
 - [ ] Read all three docs end-to-end

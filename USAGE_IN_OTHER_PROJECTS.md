@@ -628,13 +628,14 @@ Some features require API keys:
 
 ```bash
 # For environmental sensors (weather data)
-export OPENWEATHERMAP_API_KEY="your_key_here"
+export WEATHER_API_KEY="your_openweathermap_api_key_here"
 
 # For Steam integration
-export STEAM_API_KEY="your_key_here"
+export STEAM_API_KEY="your_steam_api_key_here"
+export STEAM_USER_ID="your_64bit_steam_id_here"
 
 # For Discord integration
-export DISCORD_CLIENT_ID="your_client_id"
+export DISCORD_CLIENT_ID="your_discord_client_id_here"
 ```
 
 ---
@@ -680,9 +681,9 @@ The AudioAnalyzer uses the Web Audio API, which requires either:
 ## Building Status
 
 ✅ Library successfully built!
-- `dist/playlist-data-engine.mjs` - ES module (177 KB, gzipped: 42.21 KB)
-- `dist/playlist-data-engine.js` - CommonJS (113 KB, gzipped: 31.43 KB)
-- Source types available in `src/index.ts`
+- `dist/playlist-data-engine.mjs` - ES module (330 KB)
+- `dist/playlist-data-engine.js` - CommonJS (205 KB)
+- Type definitions available in `dist/index.d.ts`
 
 You now have a fully functional, bundled library ready to use in other projects!
 
