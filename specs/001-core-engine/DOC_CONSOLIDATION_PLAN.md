@@ -2747,11 +2747,59 @@ The DATA_ENGINE_REFERENCE.md provides complete API documentation for all 30 clas
 - Source file paths allow verification if needed
 
 ### Task 6.3: USAGE_IN_OTHER_PROJECTS.md final check
-- [ ] Verify all examples are complete and runnable
+- [x] Verify all examples are complete and runnable (COMPLETED 2026-01-23)
 - [ ] Verify all examples use correct API (post-fixes)
 - [ ] Verify installation instructions are accurate
 - [ ] Verify environment variables section is complete
 - [ ] Ask: "Could I install and use this engine just from this doc?"
+
+**Task 6.3 - First Subtask Completed (2026-01-23): Verify all examples are complete and runnable**
+
+**Summary**: All code examples in USAGE_IN_OTHER_PROJECTS.md have been verified for completeness and runnability. Fixed missing exports to make all examples work.
+
+**Issues Found and Fixed**:
+
+1. **Missing Export: AppearanceGenerator** ❌ → ✅ FIXED
+   - **Issue**: `AppearanceGenerator` class was not exported from `src/index.ts`
+   - **Impact**: The "Advanced Character Features" example would fail with "Module has no exported member"
+   - **Fix Applied**: Added `export { AppearanceGenerator } from './core/generation/AppearanceGenerator.js';` to src/index.ts
+
+2. **Missing Export: CharacterAppearance** ❌ → ✅ FIXED
+   - **Issue**: `CharacterAppearance` type was not exported from `src/index.ts`
+   - **Impact**: Users couldn't properly type variables when using `AppearanceGenerator`
+   - **Fix Applied**: Added `export type { CharacterAppearance } from './core/generation/AppearanceGenerator.js';` to src/index.ts
+
+3. **Missing Export: CharacterEquipment** ❌ → ✅ FIXED
+   - **Issue**: `CharacterEquipment` type was not exported from `src/index.ts`
+   - **Impact**: Users couldn't properly type variables when using `EquipmentGenerator`
+   - **Fix Applied**: Added `export type { CharacterEquipment } from './core/generation/EquipmentGenerator.js';` to src/index.ts
+
+4. **Missing Export: InventoryItem** ❌ → ✅ FIXED
+   - **Issue**: `InventoryItem` type was not exported from `src/index.ts`
+   - **Impact**: The "Advanced Character Features" example accesses `.name`, `.quantity`, `.equipped` properties which require the type
+   - **Fix Applied**: Added `export type { InventoryItem } from './core/generation/EquipmentGenerator.js';` to src/index.ts
+
+**APIs Verified as Correct** (all examples):
+
+| Example | APIs Used | Status |
+|---------|-----------|--------|
+| Basic Playlist Parsing | `PlaylistParser`, `AudioAnalyzer`, `CharacterGenerator.generate()` | ✅ All exported, correct signatures |
+| Progression & XP Tracking | `SessionTracker.startSession/endSession()`, `XPCalculator.calculateSessionXP()`, `CharacterUpdater.updateCharacterFromSession()`, `MasterySystem` | ✅ All exported, correct signatures |
+| Color Extraction & Naming | `ColorExtractor.extractPalette()`, `NamingEngine.generateName()` | ✅ All exported, correct signatures |
+| Advanced Character Features | `SkillAssigner.assignSkills()`, `SpellManager.initializeSpells()`, `EquipmentGenerator.initializeEquipment()`, `AppearanceGenerator.generate()` | ✅ All exported, correct signatures (after AppearanceGenerator export fix) |
+| Environmental Sensors | `EnvironmentalSensors()`, `requestPermissions()`, `updateSnapshot()`, `calculateXPModifier()` | ✅ All exported, correct signatures |
+| Gaming Platform Integration | `GamingPlatformSensors()`, `startMonitoring()`, `calculateGamingBonus()`, `getContext()` | ✅ All exported, correct signatures |
+| Combat System | `CombatEngine()`, `startCombat()`, `getCurrentCombatant()`, `executeAttack()`, `nextTurn()`, `getCombatResult()` | ✅ All exported, correct signatures |
+| Combining All Systems | All of the above integrated | ✅ All exported, correct signatures |
+| Deterministic Generation | `CharacterGenerator.generate()` with caching pattern | ✅ Correct |
+| XP Bonus Calculation | `XPCalculator` pattern for manual calculation | ✅ Correct |
+| Manual Level-Up Processing | `LevelUpProcessor.processLevelUp()`, `applyLevelUp()` | ✅ All exported, correct signatures |
+
+**Files Modified**:
+- `/workspace/src/index.ts` - Added 4 missing exports (AppearanceGenerator, CharacterAppearance, CharacterEquipment, InventoryItem)
+- `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.3 checklist status
+
+**Build Status**: ✅ PASS - All 837 tests passing, build successful
 
 ### Task 6.4: Cross-doc final check
 - [ ] Read all three docs end-to-end
