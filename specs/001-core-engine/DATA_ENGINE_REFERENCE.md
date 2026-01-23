@@ -619,7 +619,15 @@ Assign skill proficiencies based on character class. Returns all 18 skills with 
 
 **Source**: `src/core/generation/SpellManager.ts`
 
-Manages spell selection and slots for spellcasting classes.
+Manages spell assignment, spell slots, and cantrips for spellcasting classes.
+
+```typescript
+interface SpellSlots {
+    spell_slots: Record<number, { total: number; used: number }>;  // Spell slots by level (0-9)
+    known_spells: string[];                                          // Known spell names
+    cantrips: string[];                                              // Cantrip names
+}
+```
 
 #### Static Methods
 
@@ -630,30 +638,112 @@ static isSpellcaster(characterClass: Class): boolean
 Check if a class is a spellcaster.
 
 ```typescript
-static initializeSpells(characterClass: Class, level: number): { spell_slots: Record<number, { total: number; used: number }>; known_spells: string[]; cantrips: string[] }
+static getSpellSlots(characterClass: Class, characterLevel: number): Record<number, { total: number; used: number }>
 ```
 
-Initialize spells for a spellcasting class at given level.
+Get spell slots for a class at a given level. Returns record of spell slots by spell level (0-9) with total and used counts.
 
 ```typescript
-static generateSpellSlots(characterClass: Class, level: number): Record<number, number>
+static getCantrips(characterClass: Class): string[]
 ```
 
-Generate spell slot counts by level for a spellcasting class.
+Get cantrips known by a spellcaster class.
+
+```typescript
+static getKnownSpells(characterClass: Class, characterLevel: number): string[]
+```
+
+Get spells known by a spellcaster at a given level. Returns all spells available up to the character's level.
+
+```typescript
+static initializeSpells(characterClass: Class, characterLevel: number): SpellSlots
+```
+
+Initialize complete spell configuration for a spellcaster at given level. Returns SpellSlots object with spell slots, known spells, and cantrips.
+
+```typescript
+static getSpellCountAtLevel(spellLevel: number, spellSlots: Record<number, { total: number; used: number }>): number
+```
+
+Get spell count at a given spell level from a character's spell slots.
+
+```typescript
+static useSpellSlot(spellSlots: Record<number, { total: number; used: number }>, spellLevel: number): Record<number, { total: number; used: number }>
+```
+
+Use a spell slot at a given level (1-9). Returns updated spell slots with one slot used.
+
+```typescript
+static restoreSpellSlots(spellSlots: Record<number, { total: number; used: number }>, spellLevel?: number): Record<number, { total: number; used: number }>
+```
+
+Restore all spell slots at a given level, or all levels if unspecified. Returns updated spell slots with slots restored.
 
 ### EquipmentGenerator
 
 **Source**: `src/core/generation/EquipmentGenerator.ts`
 
-Generates starting equipment for character classes.
+Manages equipment assignment, inventory, and equipped items.
+
+```typescript
+interface InventoryItem {
+    name: string;
+    quantity: number;
+    equipped: boolean;
+}
+
+interface CharacterEquipment {
+    weapons: InventoryItem[];
+    armor: InventoryItem[];
+    items: InventoryItem[];
+    totalWeight: number;
+    equippedWeight: number;
+}
+```
 
 #### Static Methods
 
 ```typescript
-static initializeEquipment(characterClass: Class): { weapons: Array<{ name: string; quantity: number; equipped: boolean }>; armor: Array<{ name: string; quantity: number; equipped: boolean }>; items: Array<{ name: string; quantity: number; equipped: boolean }>; totalWeight: number; equippedWeight: number }
+static getStartingEquipment(characterClass: Class): { weapons: string[]; armor: string[]; items: string[] }
 ```
 
-Initialize starting equipment for a character class.
+Get starting equipment for a class. Returns object with weapons, armor, and items arrays.
+
+```typescript
+static initializeEquipment(characterClass: Class): CharacterEquipment
+```
+
+Initialize complete equipment for a character class with starting gear. Equips primary weapon and armor by default.
+
+```typescript
+static addItem(equipment: CharacterEquipment, itemName: string, quantity?: number): CharacterEquipment
+```
+
+Add an item to inventory. Returns updated equipment with new item.
+
+```typescript
+static removeItem(equipment: CharacterEquipment, itemName: string, quantity?: number): CharacterEquipment
+```
+
+Remove an item from inventory. Returns updated equipment with item removed.
+
+```typescript
+static equipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment
+```
+
+Equip an item from inventory. Returns updated equipment with item equipped.
+
+```typescript
+static unequipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment
+```
+
+Unequip an item. Returns updated equipment with item unequipped.
+
+```typescript
+static getInventoryList(equipment: CharacterEquipment): InventoryItem[]
+```
+
+Get inventory as flattened list of all items (weapons, armor, items).
 
 ### AppearanceGenerator
 
@@ -661,13 +751,30 @@ Initialize starting equipment for a character class.
 
 Generates character appearance from seed and audio profile.
 
+```typescript
+interface CharacterAppearance {
+    // Deterministic features (from seed)
+    body_type: 'slender' | 'athletic' | 'muscular' | 'stocky';
+    skin_tone: string;
+    hair_style: string;
+    hair_color: string;
+    eye_color: string;
+    facial_features: string[];
+
+    // Dynamic features (from audio/visual)
+    primary_color?: string;
+    secondary_color?: string;
+    aura_color?: string;
+}
+```
+
 #### Static Methods
 
 ```typescript
-static generate(seed: string, characterClass: Class, audioProfile: AudioProfile): { body_type: string; skin_tone: string; hair_style: string; hair_color: string; eye_color: string; facial_features: string[]; primary_color?: string; secondary_color?: string; aura_color?: string }
+static generate(seed: string, characterClass: Class, audioProfile: AudioProfile): CharacterAppearance
 ```
 
-Generate deterministic character appearance from seed and audio profile.
+Generate deterministic character appearance from seed and audio profile. Magical classes receive aura colors.
 
 ---
 

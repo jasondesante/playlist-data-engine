@@ -996,7 +996,63 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 **No discrepancies found** - All three classes are documented accurately in DATA_ENGINE_REFERENCE.md.
 
 - [x] Verify `RaceSelector`, `ClassSuggester`, `AbilityScoreCalculator` exist (COMPLETED 2026-01-23)
-- [ ] Verify `SkillAssigner`, `SpellManager`, `EquipmentGenerator`, `AppearanceGenerator` exist
+- [x] Verify `SkillAssigner`, `SpellManager`, `EquipmentGenerator`, `AppearanceGenerator` exist (COMPLETED 2026-01-23)
+
+**Task 2.3 - SkillAssigner, SpellManager, EquipmentGenerator, AppearanceGenerator Verification (Completed 2026-01-23)**:
+
+**Summary**: All four classes exist and have been verified. Documentation was updated to reflect actual source code.
+
+**Verification Results**:
+
+**SkillAssigner** (`src/core/generation/SkillAssigner.ts`):
+- ✅ `static assignSkills(characterClass: Class, rng: SeededRNG): Record<Skill, ProficiencyLevel>` signature matches source (line 41)
+- ✅ Assigns all 18 D&D 5e skills based on class
+- ✅ Handles proficiency and expertise for Bard/Rogue
+- ✅ Uses deterministic Fisher-Yates shuffle
+
+**SpellManager** (`src/core/generation/SpellManager.ts`):
+- ✅ `static isSpellcaster(characterClass: Class): boolean` signature matches source (line 25)
+- ✅ `static getSpellSlots(characterClass: Class, characterLevel: number)` signature matches source (line 37)
+- ✅ `static getCantrips(characterClass: Class)` signature matches source (line 79)
+- ✅ `static getKnownSpells(characterClass: Class, characterLevel: number)` signature matches source (line 104)
+- ✅ `static initializeSpells(characterClass: Class, characterLevel: number): SpellSlots` signature matches source (line 139)
+- ✅ `static getSpellCountAtLevel(spellLevel: number, spellSlots: Record<number, { total: number; used: number }>)` signature matches source (line 157)
+- ✅ `static useSpellSlot(spellSlots: Record<number, { total: number; used: number }>, spellLevel: number)` signature matches source (line 171)
+- ✅ `static restoreSpellSlots(spellSlots: Record<number, { total: number; used: number }>, spellLevel?: number)` signature matches source (line 196)
+- ✅ `SpellSlots` interface documented (lines 9-16 in source)
+- ❌ **FIXED**: Removed non-existent `generateSpellSlots()` method from documentation
+- ❌ **FIXED**: Added missing `getSpellSlots()`, `getCantrips()`, `getKnownSpells()`, `getSpellCountAtLevel()`, `useSpellSlot()`, and `restoreSpellSlots()` methods to documentation
+
+**EquipmentGenerator** (`src/core/generation/EquipmentGenerator.ts`):
+- ✅ `static getStartingEquipment(characterClass: Class)` signature matches source (line 35)
+- ✅ `static initializeEquipment(characterClass: Class): CharacterEquipment` signature matches source (line 58)
+- ✅ `static addItem(equipment: CharacterEquipment, itemName: string, quantity?: number)` signature matches source (line 120)
+- ✅ `static removeItem(equipment: CharacterEquipment, itemName: string, quantity?: number)` signature matches source (line 170)
+- ✅ `static equipItem(equipment: CharacterEquipment, itemName: string)` signature matches source (line 221)
+- ✅ `static unequipItem(equipment: CharacterEquipment, itemName: string)` signature matches source (line 261)
+- ✅ `static getInventoryList(equipment: CharacterEquipment)` signature matches source (line 300)
+- ✅ `InventoryItem` interface documented (lines 11-15 in source)
+- ✅ `CharacterEquipment` interface documented (lines 20-26 in source)
+- ❌ **FIXED**: Added missing `getStartingEquipment()`, `addItem()`, `removeItem()`, `equipItem()`, `unequipItem()`, and `getInventoryList()` methods to documentation
+- ❌ **FIXED**: Added missing interface definitions to documentation
+
+**AppearanceGenerator** (`src/core/generation/AppearanceGenerator.ts`):
+- ✅ `static generate(seed: string, characterClass: Class, audioProfile: AudioProfile): CharacterAppearance` signature matches source (line 96)
+- ✅ `CharacterAppearance` interface documented (lines 5-18 in source)
+- ✅ Supports 4 body types, 6 skin tones, 10 hair colors, 6 eye colors
+- ✅ Magical classes receive aura colors
+- ❌ **FIXED**: Added missing `CharacterAppearance` interface definition to documentation
+
+**Documentation Updates Made**:
+1. Removed non-existent `SpellManager.generateSpellSlots()` method
+2. Added 6 missing SpellManager methods: `getSpellSlots()`, `getCantrips()`, `getKnownSpells()`, `getSpellCountAtLevel()`, `useSpellSlot()`, `restoreSpellSlots()`
+3. Added missing `SpellSlots` interface
+4. Added 6 missing EquipmentGenerator methods: `getStartingEquipment()`, `addItem()`, `removeItem()`, `equipItem()`, `unequipItem()`, `getInventoryList()`
+5. Added missing `InventoryItem` and `CharacterEquipment` interfaces
+6. Added missing `CharacterAppearance` interface
+
+**All four classes are now fully documented in DATA_ENGINE_REFERENCE.md with accurate method signatures.**
+
 - [ ] Verify `LevelUpProcessor`, `MasterySystem`, `CharacterUpdater` exist
 - [ ] Verify `GeolocationProvider`, `MotionDetector`, `WeatherAPIClient`, `LightSensor` exist
 - [ ] Verify `SteamAPIClient`, `DiscordRPCClient` exist
