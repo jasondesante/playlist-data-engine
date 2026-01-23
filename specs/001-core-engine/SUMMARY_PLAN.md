@@ -159,6 +159,156 @@ The Core Data Engine transforms music playlists into D&D 5e-inspired characters 
 
 ---
 
+## Source File Inventory (Phase 1 Verification)
+
+**Completed 2026-01-23**: Comprehensive inventory of all TypeScript files in the codebase.
+
+### Source Files (46 files total)
+
+#### Sensors (8 files)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/core/sensors/DiscordRPCClient.ts` | ✅ | Discord Rich Presence for music |
+| `src/core/sensors/MotionDetector.ts` | ✅ | Device motion/activity detection |
+| `src/core/sensors/SteamAPIClient.ts` | ✅ | Steam game detection |
+| `src/core/sensors/GamingPlatformSensors.ts` | ✅ | Aggregates Steam + Discord |
+| `src/core/sensors/EnvironmentalSensors.ts` | ✅ | Aggregates all environmental sensors |
+| `src/core/sensors/GeolocationProvider.ts` | ✅ | GPS location + biome detection |
+| `src/core/sensors/WeatherAPIClient.ts` | ✅ | Weather + forecast + moon phase |
+| `src/core/sensors/LightSensor.ts` | ✅ | Ambient light detection |
+
+#### Combat (5 files)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/core/combat/AttackResolver.ts` | ✅ | Attack/damage resolution |
+| `src/core/combat/CombatEngine.ts` | ✅ | Turn-based combat |
+| `src/core/combat/DiceRoller.ts` | ✅ | Dice rolling |
+| `src/core/combat/InitiativeRoller.ts` | ✅ | Initiative order |
+| `src/core/combat/SpellCaster.ts` | ✅ | Spell casting |
+
+#### Type Definitions (7 files)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/core/types/Environmental.ts` | ✅ | Weather, geolocation, biome types |
+| `src/core/types/Progression.ts` | ✅ | XP, leveling, gaming context |
+| `src/core/types/Combat.ts` | ✅ | Combat-related types |
+| `src/core/types/Character.ts` | ✅ | Character types |
+| `src/core/types/Playlist.ts` | ✅ | Playlist types |
+| `src/core/types/AudioProfile.ts` | ✅ | Audio analysis types |
+| `src/core/types/ColorPalette.ts` | ✅ | Color types |
+
+#### Generation (7 files)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/core/generation/CharacterGenerator.ts` | ✅ | Main character generation |
+| `src/core/generation/RaceSelector.ts` | ✅ | Race selection (9 races) |
+| `src/core/generation/ClassSuggester.ts` | ✅ | Class suggestion (12 classes) |
+| `src/core/generation/AbilityScoreCalculator.ts` | ✅ | Ability score calculation |
+| `src/core/generation/SkillAssigner.ts` | ✅ | 18 skills assignment |
+| `src/core/generation/EquipmentGenerator.ts` | ✅ | Equipment generation |
+| `src/core/generation/AppearanceGenerator.ts` | ✅ | Character appearance |
+| `src/core/generation/SpellManager.ts` | ✅ | Spell management |
+| `src/core/generation/NamingEngine.ts` | ✅ | 3-format naming |
+
+#### Progression (4 files)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/core/progression/XPCalculator.ts` | ✅ | XP calculation with modifiers |
+| `src/core/progression/LevelUpProcessor.ts` | ✅ | Level 1-20 progression |
+| `src/core/progression/MasterySystem.ts` | ✅ | Mastery bonuses |
+| `src/core/progression/SessionTracker.ts` | ✅ | Session tracking |
+
+#### Analysis (3 files)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/core/analysis/AudioAnalyzer.ts` | ✅ | Triple Tap audio analysis |
+| `src/core/analysis/SpectrumScanner.ts` | ✅ | FFT spectrum analysis |
+| `src/core/analysis/ColorExtractor.ts` | ✅ | K-means color extraction |
+
+#### Parser (2 files)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/core/parser/PlaylistParser.ts` | ✅ | Playlist parsing |
+| `src/core/parser/MetadataExtractor.ts` | ✅ | Track metadata extraction |
+
+#### Config (2 files)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/core/config/sensorConfig.ts` | ✅ | Sensor configuration |
+| `src/core/config/index.ts` | ✅ | Module exports |
+
+#### Utils (6 files)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/utils/logger.ts` | ✅ | Logging system |
+| `src/utils/sensorDashboard.ts` | ✅ | Diagnostic dashboard |
+| `src/utils/random.ts` | ✅ | Seeded random |
+| `src/utils/constants.ts` | ✅ | Game constants |
+| `src/utils/validators.ts` | ✅ | Input validation |
+| `src/utils/hash.ts` | ✅ | MurmurHash3 |
+
+#### Type Definitions (2 files)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/types/ryuziii__discord-rpc.d.ts` | ✅ | Discord RPC types |
+| `src/types/murmurhash-v3.d.ts` | ✅ | MurmurHash3 types |
+
+#### Entry Point (1 file)
+| File | Status | Purpose |
+|------|--------|---------|
+| `src/index.ts` | ✅ | Main exports |
+
+### Test Files (33 files total)
+
+#### Unit Tests (20 files)
+| File | Tests | Purpose |
+|------|-------|---------|
+| `tests/unit/attackResolver.test.ts` | 18 | Attack/damage resolution |
+| `tests/unit/discordRPC.test.ts` | 40 | Discord RPC music presence |
+| `tests/unit/gaming.test.ts` | 25 | Steam/Discord gaming |
+| `tests/unit/sensors.test.ts` | 244 | Environmental sensors |
+| `tests/unit/xpCalculator.test.ts` | 67 | XP modifier calculation |
+| `tests/unit/progression.test.ts` | 55 | Level progression |
+| `tests/unit/combat.test.ts` | 47 | Combat system |
+| `tests/unit/parser.test.ts` | 19 | Playlist parsing |
+| `tests/unit/audioAnalyzer.test.ts` | 10 | Audio analysis |
+| `tests/unit/spectrumScanner.test.ts` | 3 | Spectrum scanning |
+| `tests/unit/colorExtractor.test.ts` | 5 | Color extraction |
+| `tests/unit/colorExtractor.real.test.ts` | 5 | Real image color extraction |
+| `tests/unit/characterComponents.test.ts` | 8 | Character generation |
+| `tests/unit/namingEngine.test.ts` | 8 | Name generation |
+| `tests/unit/skills.test.ts` | 14 | Skill assignment |
+| `tests/unit/appearanceGenerator.test.ts` | 16 | Appearance generation |
+| `tests/unit/spellManager.test.ts` | 47 | Spell management |
+| `tests/unit/equipmentGenerator.test.ts` | 33 | Equipment generation |
+| `tests/unit/mastery.test.ts` | 8 | Mastery system |
+| `tests/unit/characterUpdater.test.ts` | 6 | Character updates |
+
+#### Integration Tests (7 files)
+| File | Tests | Purpose |
+|------|-------|---------|
+| `tests/integration/e2e.test.ts` | 31 | End-to-end workflow |
+| `tests/integration/audioAnalysis.integration.test.ts` | 11 | Real audio from Arweave |
+| `tests/integration/discordRPC.integration.test.ts` | 19 | Real Discord connection |
+| `tests/integration/gamingIntegration.test.ts` | 36 | Gaming sensor integration |
+| `tests/integration/sensorIntegration.test.ts` | 23 | Environmental sensor integration |
+| `tests/integration/multiSensorInteraction.test.ts` | 17 | Multi-sensor interaction |
+| `tests/integration/fullSensorPipeline.test.ts` | 21 | Full sensor pipeline |
+
+#### Test Support (6 files)
+| File | Purpose |
+|------|---------|
+| `tests/setup.ts` | Test configuration and mocks |
+| `tests/mocks/browserAPIs.ts` | Browser API mocks |
+| `tests/fixtures/testAudioUrls.ts` | Test audio URLs |
+| `tests/fixtures/mockSensorData.ts` | Mock sensor data |
+| `tests/fixtures/mockGamingData.ts` | Mock gaming data |
+| `tests/fixtures/sampleData.ts` | Sample test data |
+
+**Summary**: All 46 source files and 33 test files mentioned in the old implementation plan have been verified to exist in the codebase.
+
+---
+
 ## Concepts and Terminology (from SPEC.md)
 
 ### Core Data Types (verify these exist in `src/core/types/`)
@@ -229,7 +379,12 @@ Before starting verification tasks, integrate the reference information from thi
   **Verified**: Current line count is 197 lines (under 200-line target)
 
 ### Phase 1: Source File Inventory
-- [ ] List all `.ts` source files mentioned in the old plan
+- [x] List all `.ts` source files mentioned in the old plan
+  **Completed 2026-01-23**: Created comprehensive source file inventory.
+  - 46 source TypeScript files in `/workspace/src`
+  - 33 test TypeScript files in `/workspace/tests`
+  - Source files organized by category (Sensors, Combat, Types, Generation, Progression, Analysis, Parser, Config, Utils)
+  - Test files organized by type (unit, integration, fixtures, mocks, setup)
 - [ ] List all test files mentioned
 - [ ] Create quick reference table: Feature → Source File(s) → Test File(s)
 
