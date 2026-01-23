@@ -2,6 +2,8 @@
 
 Complete API reference for the Playlist Data Engine. Contains all type definitions, class constructors, and method signatures.
 
+**For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md)**
+
 ## Table of Contents
 
 1. [Data Types](#data-types)

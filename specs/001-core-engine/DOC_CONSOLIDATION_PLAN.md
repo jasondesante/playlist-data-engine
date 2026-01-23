@@ -2237,9 +2237,9 @@ Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need sepa
 
 ### Task 5.2: Trim DATA_ENGINE_REFERENCE.md
 - [x] Move verbose examples to USAGE (COMPLETED 2026-01-23)
-- [ ] Keep only minimal, essential inline examples
-- [ ] Ensure focus is on: complete API catalog with signatures
-- [ ] Add "For usage examples, see USAGE_IN_OTHER_PROJECTS.md" where appropriate
+- [x] Keep only minimal, essential inline examples (COMPLETED 2026-01-23)
+- [x] Ensure focus is on: complete API catalog with signatures (COMPLETED 2026-01-23)
+- [x] Add "For usage examples, see USAGE_IN_OTHER_PROJECTS.md" where appropriate (COMPLETED 2026-01-23)
 
 **Task 5.2 - Move verbose examples to USAGE (Completed 2026-01-23):**
 
@@ -2265,6 +2265,25 @@ Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need sepa
 **After Task 5.2:**
 - DATA_ENGINE_REFERENCE.md now contains only: type definitions, constructor signatures, method signatures, and concise descriptions
 - All usage examples consolidated in USAGE_IN_OTHER_PROJECTS.md as intended by the documentation plan
+
+**Task 5.2 - Keep only minimal, essential inline examples (Completed 2026-01-23):**
+
+**Summary**: DATA_ENGINE_REFERENCE.md already contains only minimal, essential inline code. All code blocks are type definitions or single-line constructor signatures.
+
+**Code Blocks Remaining (All Essential):**
+
+1. **Type Definition Blocks** (18 blocks) - TypeScript interface definitions:
+   - `ServerlessPlaylist`, `PlaylistTrack`, `AudioProfile`, `ColorPalette`, `Race`, `Class`, `Ability`, `Skill`, `ProficiencyLevel`, `Attack`, `Spell`, `AbilityScores`, `CharacterSheet`, `EnvironmentalContext`, `GamingContext`, `CombatInstance`, `Combatant`, `CombatAction`, `StatusEffect`, `ListeningSession`, `ExperienceSystem`
+   - These are **essential** for API reference - users need to see the structure of types
+
+2. **Constructor Signature Blocks** (7 blocks) - Single-line constructor signatures with parameter descriptions:
+   - `PlaylistParser`, `AudioAnalyzer`, `SessionTracker`, `XPCalculator`, `EnvironmentalSensors`, `GamingPlatformSensors`, `CombatEngine`
+   - These are **minimal** - just the signature, not full usage examples with instantiation code
+
+**No verbose usage examples found** - all multi-line usage examples were removed in the previous sub-task.
+
+**Files Modified:**
+- `/workspace/DATA_ENGINE_REFERENCE.md` - Added cross-reference note at top: "For usage examples, see USAGE_IN_OTHER_PROJECTS.md"
 
 ### Task 5.3: Enhance USAGE_IN_OTHER_PROJECTS.md
 - [ ] Add table of contents for examples section
