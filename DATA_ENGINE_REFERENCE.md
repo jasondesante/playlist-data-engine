@@ -79,6 +79,33 @@ export interface PlaylistTrack {
 }
 ```
 
+### RawArweavePlaylist
+
+The raw input schema received from Arweave before parsing.
+
+```typescript
+export interface RawArweavePlaylist {
+    name: string;
+    image: string;
+    creator: string;
+    description?: string;
+    genre?: string;
+    tags?: string[];
+    tracks: Array<{
+        // Outer Blockchain Data
+        chain_name: string;
+        token_address?: string;  // Not present for AR chain
+        token_id?: string;       // Not present for AR chain
+        tx_id?: string;          // Arweave transaction ID (only present when chain_name is "AR")
+        platform: string;
+        id?: string;
+        uuid?: string;
+        // The Stringified Payload
+        metadata: string; // "{ \"name\": \"Song\", \"audio_url\": ... }"
+    }>;
+}
+```
+
 ### AudioProfile
 
 Result of the `AudioAnalyzer`. Used to generate characters.
@@ -141,6 +168,21 @@ export interface ColorPalette {
 ```
 
 **Note**: There is also a ColorPalette definition in `AudioProfile.ts` with different property names (`primary_color` vs `primary`, `is_monochrome` vs `isMonochrome`). The definition above (from `ColorPalette.ts`) is the canonical version.
+
+### FrequencyBands
+
+Audio frequency band separation for analysis.
+
+```typescript
+export interface FrequencyBands {
+    /** Bass frequencies (20Hz - 250Hz) */
+    bass: number[];
+    /** Mid frequencies (250Hz - 4kHz) */
+    mid: number[];
+    /** Treble frequencies (4kHz - 20kHz) */
+    treble: number[];
+}
+```
 
 ### Character Types
 
@@ -334,6 +376,46 @@ export interface CharacterSheet {
 }
 ```
 
+### CharacterEquipment
+
+Equipment and inventory state for a character.
+
+```typescript
+export interface InventoryItem {
+    name: string;
+    quantity: number;
+    equipped: boolean;
+}
+
+export interface CharacterEquipment {
+    weapons: InventoryItem[];
+    armor: InventoryItem[];
+    items: InventoryItem[];
+    totalWeight: number;
+    equippedWeight: number;
+}
+```
+
+### CharacterAppearance
+
+Visual appearance details for a character.
+
+```typescript
+export interface CharacterAppearance {
+    // Deterministic features (from seed)
+    body_type: 'slender' | 'athletic' | 'muscular' | 'stocky';
+    skin_tone: string;
+    hair_style: string;
+    hair_color: string;
+    eye_color: string;
+    facial_features: string[];
+    // Dynamic features (from audio/visual)
+    primary_color?: string;
+    secondary_color?: string;
+    aura_color?: string;
+}
+```
+
 ### EnvironmentalContext
 
 Aggregated environmental sensor data.
@@ -403,6 +485,91 @@ export interface LightData {
     illuminance: number;          // lux (light intensity)
     timestamp: number;
     environment: 'bright_daylight' | 'indoor' | 'dim' | 'dark';
+}
+
+export interface ForecastData {
+    temperature: number;          // Celsius
+    humidity: number;             // Percentage
+    pressure: number;             // hPa
+    weatherType: string;          // e.g., 'Clear', 'Rain', 'Clouds'
+    windSpeed: number;           // m/s
+    windDirection: number;       // Degrees
+    timestamp: number;
+    forecastTime: Date;          // When this forecast is for
+    probabilityOfPrecipitation: number; // 0.0 to 1.0
+}
+```
+
+### Sensor-Related Types
+
+```typescript
+export type SensorType = 'geolocation' | 'motion' | 'weather' | 'light';
+
+export interface PerformanceMetrics {
+    successCount: number;        // Number of successful API calls
+    errorCount: number;          // Number of failed API calls
+    totalTime: number;           // Total time spent on successful API calls (milliseconds)
+    minTime: number;             // Time of the fastest API call (milliseconds)
+    maxTime: number;             // Time of the slowest API call (milliseconds)
+    lastCallTimestamp: number | null;
+}
+
+export interface PerformanceStatistics {
+    average: number;             // Average API call time in milliseconds
+    min: number;                 // Minimum API call time in milliseconds
+    max: number;                 // Maximum API call time in milliseconds
+    totalCalls: number;          // Total number of API calls
+    successRate: number;         // Success rate as percentage (0-100)
+}
+
+export interface SensorPermission {
+    type: SensorType;
+    granted: boolean;
+    timestamp: number;
+}
+
+export type SensorHealthStatus = 'healthy' | 'degraded' | 'failed' | 'unknown';
+
+export interface SensorStatus {
+    type: SensorType;
+    health: SensorHealthStatus;
+    lastSuccessTimestamp: number | null;
+    lastFailureTimestamp: number | null;
+    consecutiveFailures: number;
+    totalFailures: number;
+    lastError: string | null;
+    isRetrying: boolean;
+}
+
+export interface SensorFailureLog {
+    sensorType: SensorType;
+    timestamp: number;
+    error: string;
+    retryAttempt: number;
+    willRetry: boolean;
+}
+
+export interface SensorRetryConfig {
+    maxRetries: number;
+    initialDelayMs: number;
+    maxDelayMs: number;
+    backoffMultiplier: number;
+}
+
+export interface SensorRecoveryNotification {
+    sensorType: SensorType;
+    previousStatus: SensorHealthStatus;
+    newStatus: SensorHealthStatus;
+    timestamp: number;
+    message: string;
+}
+
+export interface SevereWeatherAlert {
+    type: 'Blizzard' | 'Hurricane' | 'Typhoon' | 'Tornado' | 'None';
+    xpBonus: number;             // 0.5 to 1.0 (50% to 100%)
+    severity: 'moderate' | 'high' | 'extreme';
+    message: string;
+    detectedAt: number;
 }
 ```
 
@@ -544,6 +711,47 @@ export interface CombatConfig {
   tacticalMode?: boolean;       // Enable position-based distance mechanics
   maxTurnsBeforeDraw?: number;  // Turn limit before combat is a draw (default: 100)
   allowFleeing?: boolean;       // Can combatants attempt to flee
+}
+```
+
+### Additional Combat Types
+
+```typescript
+export type DamageType =
+  | 'slashing' | 'piercing' | 'bludgeoning'  // Physical
+  | 'fire' | 'cold' | 'lightning' | 'thunder' | 'poison' | 'acid'  // Elemental
+  | 'necrotic' | 'radiant' | 'psychic' | 'force';  // Magical
+
+export type SavingThrowAbility = 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma';
+```
+
+### Combat Helper Types
+
+```typescript
+export interface InitiativeResult {
+    combatant: Combatant;
+    d20Roll: number;
+    dexModifier: number;
+    initiativeTotal: number;
+}
+
+export interface AttackResult {
+    attacker: Combatant;
+    target: Combatant;
+    attack: Attack;
+    attackRoll: AttackRoll;
+    damageRoll?: DamageRoll;
+    hpAfterDamage?: number;
+    description: string;
+}
+
+export interface SpellSlots {
+    /** Record of spell slots by spell level (0-9) */
+    spell_slots: Record<number, { total: number; used: number }>;
+    /** Array of known spell names */
+    known_spells: string[];
+    /** Array of cantrip names */
+    cantrips: string[];
 }
 ```
 
@@ -1256,6 +1464,48 @@ Integrates with Discord Rich Presence for displaying music activity.
     - Displays "Listening to {song}" on Discord profile with progress bar.
 - `clearMusicActivity(): Promise<boolean>`
     - Clears music activity from Discord Rich Presence.
+
+### Discord Types
+
+```typescript
+export interface DiscordUserInfo {
+    id: string;
+    username: string;
+    discriminator: string;
+    avatar?: string;        // Avatar hash
+    globalName?: string;    // Display name
+}
+
+export interface MusicActivityDetails {
+    songName: string;
+    artistName?: string;
+    albumArtKey?: string;
+    startTime?: number;       // Unix timestamp in seconds
+    durationSeconds?: number;
+}
+
+export interface DiscordActivity {
+    type?: 0 | 1 | 2 | 3 | 5;  // Playing, Streaming, Listening, Watching, Competing
+    details?: string;          // Main activity text (max 128 chars)
+    state?: string;            // Secondary activity text (max 128 chars)
+    startTimestamp?: number;
+    endTimestamp?: number;
+    largeImageKey?: string;
+    largeImageText?: string;
+    smallImageKey?: string;
+    smallImageText?: string;
+    party?: { id?: string; size?: [current: number, max: number] };
+    buttons?: Array<{ label: string; url: string }>;
+    secret?: string;
+}
+
+export enum DiscordConnectionState {
+    Disconnected = 'disconnected',
+    Connecting = 'connecting',
+    Connected = 'connected',
+    Error = 'error',
+}
+```
 
 ---
 
