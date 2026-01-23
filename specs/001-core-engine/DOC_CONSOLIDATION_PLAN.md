@@ -164,6 +164,114 @@ README.md contains **10 code examples** (290 lines of example code total):
 5. Troubleshooting table format (table format, not list)
 6. Testing section with specific test commands (`npm test -- combat.test.ts`, `npm test -- --watch`, `npm run test:coverage`)
 7. Type Safety section (tsconfig.json strict mode setup example)
+
+**quickstart.md Example Inventory with Line Numbers (Completed 2026-01-23):**
+
+quickstart.md contains **16 code examples** (289 lines of example code total):
+
+1. **Lines 14-26**: "30-Second Example"
+   - Shows: Basic PlaylistParser, AudioAnalyzer, CharacterGenerator workflow
+   - Code block spans 13 lines
+   - Demonstrates parse → analyze → generate flow with console output
+
+2. **Lines 32-45**: "Phase 0: Parse & Generate"
+   - Shows: AudioAnalyzer with `{ includeAdvancedMetrics: true }` option
+   - Shows: CharacterGenerator.generate() with inline comments
+   - Code block spans 14 lines
+   - **UNIQUE**: AudioAnalyzer options not shown in other docs
+
+3. **Lines 49-61**: "Phase 1: Visual & Naming"
+   - Shows: ColorExtractor.extractColors() from image URL
+   - Shows: NamingEngine.generateName() with (title, artist, profile, class) params
+   - Code block spans 13 lines
+   - **API DISCREPANCY**: NamingEngine.generateName() uses 4 params vs 2 in docs
+
+4. **Lines 65-86**: "Phase 2: Skills, Spells, Equipment"
+   - Shows: SkillAssigner, SpellManager, EquipmentGenerator, AppearanceGenerator
+   - Shows: SpellManager.isSpellcaster() check
+   - Shows: SpellManager.generateSpellSlots() method
+   - Code block spans 22 lines
+   - **UNIQUE**: generateSpellSlots() method not shown elsewhere
+
+5. **Lines 90-113**: "Phase 3: Progression & Leveling"
+   - Shows: SessionTracker.startSession() and endSession()
+   - Shows: XPCalculator.calculateSessionXP()
+   - Shows: CharacterUpdater.applyListeningSession()
+   - Shows: MasterySystem.recordPlaythrough() and isTrackMastered()
+   - Code block spans 24 lines
+   - **API DISCREPANCY**: Uses MasterySystem methods vs SUMMARY_PLAN methods
+
+6. **Lines 117-138**: "Phase 4: Environmental Sensors"
+   - Shows: EnvironmentalSensors constructor with OPTIONS OBJECT
+   - Shows: enableLocation, enableMotion, enableWeather, weatherApiKey options
+   - Shows: requestPermissions() and getCurrentContext()
+   - Shows: calculateXPModifier()
+   - Code block spans 22 lines
+
+7. **Lines 142-169**: "Phase 5: Gaming Platform Integration"
+   - Shows: GamingPlatformSensors constructor with steam/discord options
+   - Shows: authenticate(userSteamId, discordUserId) - TWO PARAMS
+   - Shows: startMonitoring(callback) with callback pattern
+   - Shows: stopMonitoring() method
+   - Code block spans 28 lines
+
+8. **Lines 173-204**: "Phase 6: Combat (Optional)"
+   - Shows: CombatEngine constructor
+   - Shows: startCombat([playerChar], [enemyChar]) - ARRAYS
+   - Shows: getCurrentCombatant(), executeAttack(), nextTurn()
+   - Shows: getCombatResult() with winner and xpAwarded
+   - Code block spans 32 lines
+   - **UNIQUE**: getCurrentCombatant() method not shown elsewhere
+
+9. **Lines 210-220**: "Deterministic Character Generation" pattern
+   - Shows: CharacterGenerator.generate() determinism proof
+   - Shows: JSON.stringify comparison for exact equality
+   - Code block spans 11 lines
+
+10. **Lines 224-240**: "Full XP Calculation with Bonuses" pattern
+    - Shows: Environmental, gaming, and mastery bonus combination
+    - Shows: 3.0x cap calculation
+    - Code block spans 17 lines
+    - **UNIQUE**: Compound bonus calculation formula not shown elsewhere
+
+11. **Lines 244-258**: "Character Level Progression" pattern
+    - Shows: LevelUpProcessor.processLevelUp() usage
+    - Shows: XP reset after level up
+    - Code block spans 15 lines
+    - **UNIQUE**: LevelUpProcessor not shown in other docs
+
+12. **Lines 265-274**: Environment Variables (bash commands, not TypeScript)
+    - Shows: WEATHER_API_KEY, STEAM_API_KEY, DISCORD_CLIENT_ID, LOG_LEVEL
+
+13. **Lines 278-283**: Audio Analyzer Options configuration
+    - Shows: includeAdvancedMetrics, enableDetailedOutput options
+    - Code block spans 6 lines
+    - **UNIQUE**: Configuration options not shown elsewhere
+
+14. **Lines 287-295**: Environmental Sensors Options configuration
+    - Shows: enableLocation, enableMotion, enableWeather, enableLight, weatherApiKey
+    - Code block spans 9 lines
+    - **UNIQUE**: enableLight option not shown in other docs
+
+15. **Lines 299-307**: Combat Engine Options configuration
+    - Shows: useEnvironment, useMusic, tacticalMode, maxTurnsBeforeDraw, allowFleeing
+    - Code block spans 9 lines
+    - **UNIQUE**: Combat constructor options not shown elsewhere
+
+16. **Lines 344-370**: Performance Tips (4 inline code examples)
+    - Shows: Lazy loading with Map, caching with Map, batch permissions, debounce gaming
+    - Code spans 27 lines (4 separate inline examples)
+
+**Summary for quickstart.md**:
+- Total TypeScript code examples: 15 blocks (262 lines of example code)
+- Plus 1 bash command section (not a code example per se)
+- Key unique findings:
+  - **API DISCREPANCY 1**: NamingEngine.generateName() uses 4 params (title, artist, profile, class)
+  - **API DISCREPANCY 2**: SessionTracker.startSession() doesn't show return value
+  - **UNIQUE METHODS**: SpellManager.generateSpellSlots(), CombatEngine.getCurrentCombatant(), LevelUpProcessor.processLevelUp()
+  - **UNIQUE OPTIONS**: AudioAnalyzer includeAdvancedMetrics/enableDetailedOutput, EnvironmentalSensors enableLight, CombatEngine tacticalMode/useEnvironment
+  - **UNIQUE PATTERNS**: Deterministic generation proof, compound XP bonus formula
+- Action required: All unique examples should be migrated to USAGE_IN_OTHER_PROJECTS.md before quickstart.md deletion
 - [x] Read `SUMMARY_PLAN.md` - harvest important spec information that should be in SPEC.md
 
 **SUMMARY_PLAN.md Analysis Completed (2026-01-23)**:
@@ -179,7 +287,7 @@ README.md contains **10 code examples** (290 lines of example code total):
 - [x] List all examples currently in DATA_ENGINE_REFERENCE.md (with line numbers) - **COMPLETED 2026-01-23: File does not exist yet (0 examples)**
 - [x] List all examples currently in USAGE_IN_OTHER_PROJECTS.md (with line numbers)
 - [x] List all examples in README.md worth keeping (with line numbers) - **COMPLETED 2026-01-23**
-- [ ] List all examples in quickstart.md worth keeping (with line numbers)
+- [x] List all examples in quickstart.md worth keeping (with line numbers) - **COMPLETED 2026-01-23**
 
 **USAGE_IN_OTHER_PROJECTS.md Example Inventory (Completed 2026-01-23):**
 
