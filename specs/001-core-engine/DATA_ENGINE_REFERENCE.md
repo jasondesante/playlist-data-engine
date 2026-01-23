@@ -1643,6 +1643,8 @@ Manages Discord Rich Presence for music status display.
 
 **Note**: For SETTING music presence only ("Listening to" status). Cannot read game activity.
 
+**Purpose**: Display serverless playlist music information on the user's Discord profile via Rich Presence. Requires Node.js environment (IPC pipes, cannot work in browsers).
+
 #### Constructor
 
 ```typescript
@@ -1652,10 +1654,10 @@ constructor(clientId?: string)
 #### Methods
 
 ```typescript
-async connect(): Promise<DiscordConnectionState>
+async connect(): Promise<boolean>
 ```
 
-Connect to Discord RPC.
+Connect to Discord RPC. Returns `true` if connection attempt initiated successfully, `false` otherwise. Handle connection state via `getConnectionState()`.
 
 ```typescript
 disconnect(): void
@@ -1664,28 +1666,66 @@ disconnect(): void
 Disconnect from Discord RPC.
 
 ```typescript
-async setMusicActivity(activity: { songName: string; artistName: string; albumArtKey?: string; startTime: number; durationSeconds: number }): Promise<void>
+async setMusicActivity(musicDetails: MusicActivityDetails): Promise<boolean>
 ```
 
-Set music presence status on Discord.
+Set music presence status on Discord. Displays "Listening to {song}" on the user's Discord profile with progress bar, album art (optional).
 
 ```typescript
-clearActivity(): void
+interface MusicActivityDetails {
+    songName: string;
+    artistName?: string;
+    albumArtKey?: string;
+    startTime?: number;      // Unix timestamp in seconds
+    durationSeconds?: number;
+}
 ```
 
-Clear activity status.
+```typescript
+async clearMusicActivity(): Promise<boolean>
+```
+
+Clear activity status from Discord Rich Presence.
 
 ```typescript
-getConnectionState(): DiscordConnectionState | null
+isConnectedToDiscord(): boolean
+```
+
+Check if connected to Discord.
+
+```typescript
+getConnectionState(): DiscordConnectionState
 ```
 
 Get current connection state.
+
+```typescript
+enum DiscordConnectionState {
+    Disconnected = 'disconnected',
+    Connecting = 'connecting',
+    Connected = 'connected',
+    DiscordUnavailable = 'discord_unavailable',
+    Error = 'error',
+}
+```
+
+```typescript
+getLastError(): string | null
+```
+
+Get the last error message.
+
+```typescript
+async getUserInfo(): Promise<DiscordUserInfo | null>
+```
+
+Get Discord user information from the READY event.
 
 ### SteamAPIClient
 
 **Source**: `src/core/sensors/SteamAPIClient.ts`
 
-Steam Web API client for game detection and metadata.
+Steam Web API client for game detection and metadata. Uses IPlayerService/GetRecentlyPlayedGames to determine active game and ISteamApps/GetAppList for app ID resolution.
 
 #### Constructor
 
@@ -1696,28 +1736,52 @@ constructor(apiKey?: string)
 #### Methods
 
 ```typescript
-async getCurrentGame(steamId: string): Promise<{ name: string; source: 'steam'; sessionDuration: number; partySize?: number } | null>
+async getCurrentGame(steamUserId: string): Promise<{ name: string; appId: number; source: 'steam'; sessionDuration?: number } | null>
 ```
 
-Get currently playing game for a Steam user.
+Get currently playing game for a Steam user. Uses GetRecentlyPlayedGames API.
 
 ```typescript
-async getGameMetadata(gameName: string): Promise<{ genre?: string[] } | null>
+async getGameMetadata(gameName: string): Promise<{ appId?: number; name: string; genre?: string[]; description?: string } | null>
 ```
 
-Get game metadata including genre.
+Get game metadata including genre, description, and app ID. Uses GetAppList and Steam store API.
+
+```typescript
+async getGameSchema(appId: number): Promise<any>
+```
+
+Get game schema/stats for a game using ISteamUserStats/GetSchemaForGame.
+
+```typescript
+getCurrentGameApiMetrics(): PerformanceMetrics
+```
+
+Get performance metrics for current game API calls.
 
 ```typescript
 getCurrentGameApiStatistics(): { average: number; min: number; max: number; totalCalls: number; successRate: number; p95: number; p99: number }
 ```
 
-Get API call statistics for current game endpoint.
+Get performance statistics for current game endpoint (includes p95/p99 percentiles).
+
+```typescript
+getMetadataApiMetrics(): PerformanceMetrics
+```
+
+Get performance metrics for metadata API calls.
 
 ```typescript
 getMetadataApiStatistics(): { average: number; min: number; max: number; totalCalls: number; successRate: number; p95: number; p99: number }
 ```
 
-Get API call statistics for metadata endpoint.
+Get performance statistics for metadata endpoint (includes p95/p99 percentiles).
+
+```typescript
+resetPerformanceMetrics(): void
+```
+
+Reset all performance metrics for both API endpoints.
 
 ---
 

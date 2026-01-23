@@ -1140,8 +1140,59 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 
 **All four sensor helper classes are now fully documented in DATA_ENGINE_REFERENCE.md with accurate method signatures.**
 
+**Task 2.3 - SteamAPIClient, DiscordRPCClient Verification (Completed 2026-01-23)**:
+
+**Summary**: Both gaming platform integration classes exist and have been verified. Documentation was updated to fix multiple API discrepancies.
+
+**Verification Results**:
+
+**SteamAPIClient** (`src/core/sensors/SteamAPIClient.ts`):
+- ✅ `constructor(apiKey?: string)` signature matches source (line 49)
+- ✅ `async getCurrentGame(steamUserId: string): Promise<{ name: string; appId: number; source: 'steam'; sessionDuration?: number } | null>` signature matches source (lines 215-220)
+- ✅ `async getGameMetadata(gameName: string): Promise<{ appId?: number; name: string; genre?: string[]; description?: string } | null>` signature matches source (lines 267-272)
+- ✅ `async getGameSchema(appId: number): Promise<any>` signature matches source (line 349)
+- ✅ `getCurrentGameApiMetrics(): PerformanceMetrics` signature matches source (line 114)
+- ✅ `getCurrentGameApiStatistics(): { ... }` with p95/p99 percentiles matches source (lines 121-147)
+- ✅ `getMetadataApiMetrics(): PerformanceMetrics` signature matches source (line 152)
+- ✅ `getMetadataApiStatistics(): { ... }` with p95/p99 percentiles matches source (lines 159-185)
+- ✅ `resetPerformanceMetrics(): void` signature matches source (line 190)
+- ❌ **FIXED**: Updated `getCurrentGame()` return type to include `appId: number` and make `sessionDuration` optional
+- ❌ **FIXED**: Updated `getGameMetadata()` return type to include `appId`, `name`, and `description` properties
+- ❌ **FIXED**: Added missing `getGameSchema()`, `resetPerformanceMetrics()`, `getCurrentGameApiMetrics()`, and `getMetadataApiMetrics()` methods
+
+**DiscordRPCClient** (`src/core/sensors/DiscordRPCClient.ts`):
+- ✅ `constructor(clientId?: string)` signature matches source (line 211)
+- ✅ `async connect(): Promise<boolean>` signature matches source (line 227) - returns boolean, not DiscordConnectionState
+- ✅ `disconnect(): void` signature matches source (line 349)
+- ✅ `async setMusicActivity(musicDetails: MusicActivityDetails): Promise<boolean>` signature matches source (line 416)
+- ✅ `async clearMusicActivity(): Promise<boolean>` signature matches source (line 464)
+- ✅ `isConnectedToDiscord(): boolean` signature matches source (line 366)
+- ✅ `getConnectionState(): DiscordConnectionState` signature matches source (line 381) - non-nullable return
+- ✅ `getLastError(): string | null` signature matches source (line 390)
+- ✅ `async getUserInfo(): Promise<DiscordUserInfo | null>` signature matches source (line 500)
+- ❌ **FIXED**: Updated `connect()` return type from `Promise<DiscordConnectionState>` to `Promise<boolean>`
+- ❌ **FIXED**: Updated `setMusicActivity()` parameter name to `musicDetails` and documented `MusicActivityDetails` interface
+- ❌ **FIXED**: Updated method name from `clearActivity()` to `clearMusicActivity()`
+- ❌ **FIXED**: Updated `getConnectionState()` return type to non-nullable `DiscordConnectionState`
+- ❌ **FIXED**: Added missing `isConnectedToDiscord()`, `getLastError()`, and `getUserInfo()` methods
+- ❌ **FIXED**: Added detailed documentation about Discord RPC limitations (music presence only, cannot read game activity)
+
+**Documentation Updates Made**:
+1. Fixed SteamAPIClient `getCurrentGame()` return type to include `appId` and optional `sessionDuration`
+2. Fixed SteamAPIClient `getGameMetadata()` return type to include `appId`, `name`, and `description`
+3. Added 4 missing SteamAPIClient methods: `getGameSchema()`, `resetPerformanceMetrics()`, `getCurrentGameApiMetrics()`, `getMetadataApiMetrics()`
+4. Fixed DiscordRPCClient `connect()` return type from `Promise<DiscordConnectionState>` to `Promise<boolean>`
+5. Fixed DiscordRPCClient `setMusicActivity()` parameter to `musicDetails: MusicActivityDetails`
+6. Fixed DiscordRPCClient method name from `clearActivity()` to `clearMusicActivity()`
+7. Fixed DiscordRPCClient `getConnectionState()` return type to non-nullable
+8. Added 3 missing DiscordRPCClient methods: `isConnectedToDiscord()`, `getLastError()`, `getUserInfo()`
+9. Added DiscordConnectionState enum documentation
+10. Added detailed purpose and limitation notes for DiscordRPCClient
+
+**Both gaming platform integration classes are now fully documented in DATA_ENGINE_REFERENCE.md with accurate method signatures.**
+
 - [x] Verify `GeolocationProvider`, `MotionDetector`, `WeatherAPIClient`, `LightSensor` exist (COMPLETED 2026-01-23)
-- [ ] Verify `SteamAPIClient`, `DiscordRPCClient` exist
+- [x] Verify `SteamAPIClient`, `DiscordRPCClient` exist (COMPLETED 2026-01-23)
 - [ ] Verify `AttackResolver`, `DiceRoller`, `InitiativeRoller`, `SpellCaster` exist
 
 ### Task 2.4: Verify code examples in DATA_ENGINE_REFERENCE.md
