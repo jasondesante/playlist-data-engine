@@ -1802,7 +1802,7 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 - [x] Review "30-Second Example" - add to USAGE if unique (COMPLETED 2026-01-23)
 - [x] Review phase-by-phase examples - add any unique ones to USAGE (COMPLETED 2026-01-23)
 - [x] Review "Common Patterns" section - add to USAGE if unique (COMPLETED 2026-01-23)
-- [ ] Review configuration examples - add to USAGE if unique
+- [x] Review configuration examples - add to USAGE if unique (COMPLETED 2026-01-23)
 
 **Task 3.4 - "Common Patterns" Section Review (Completed 2026-01-23):**
 
@@ -1845,6 +1845,51 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 **Action Taken**: Added 2 corrected patterns to USAGE_IN_OTHER_PROJECTS.md in new "Common Patterns" section (inserted before "Available Exports"):
 1. "Understanding XP Bonus Calculation" - Shows how XP modifiers combine with 3.0x cap
 2. "Manual Level-Up Processing" - Shows correct LevelUpProcessor usage with proper method signatures
+
+**Task 3.4 - "Configuration Examples" Review (Completed 2026-01-23):**
+
+**Summary**: The quickstart.md "Configuration" section (lines 260-307) contains multiple configuration examples. NONE should be added to USAGE_IN_OTHER_PROJECTS.md - all are either duplicates or contain API errors.
+
+**Configuration Examples Analysis**:
+
+| Configuration Section | quickstart.md Location | USAGE_IN_OTHER_PROJECTS.md Equivalent | Status |
+|----------------------|------------------------|----------------------------------------|--------|
+| Environment Variables | Lines 262-274 | Lines 522-535 | **Duplicate** |
+| Audio Analyzer Options | Lines 276-283 | Shown without options (defaults) | **Has API error** |
+| Environmental Sensors Options | Lines 285-295 | Shown with API key constructor | **Has API errors** |
+| Combat Engine Options | Lines 297-307 | Lines 217-222 | **Duplicate** |
+
+**API Discrepancies Found**:
+
+1. **Audio Analyzer Options** (lines 276-283):
+   - `includeAdvancedMetrics: true` - ✅ VALID (exists in `AudioAnalyzerOptions` interface)
+   - `enableDetailedOutput: false` - ❌ DOES NOT EXIST (not in source code)
+   - Source: `src/core/analysis/AudioAnalyzer.ts:8-17`
+
+2. **Environmental Sensors Options** (lines 285-295):
+   - `enableLocation: true` - ❌ DOES NOT EXIST
+   - `enableMotion: true` - ❌ DOES NOT EXIST
+   - `enableWeather: true` - ❌ DOES NOT EXIST
+   - `enableLight: false` - ❌ DOES NOT EXIST
+   - Actual constructor signature: `constructor(weatherApiKeyOrConfig?: string | { weather?: {...}, geolocation?: {...}, retry?: {...}, xpModifier?: {...} })`
+   - Source: `src/core/sensors/EnvironmentalSensors.ts:106-142`
+
+3. **Combat Engine Options** (lines 297-307):
+   - All options shown are CORRECT and already documented in USAGE_IN_OTHER_PROJECTS.md
+   - `useEnvironment`, `useMusic`, `tacticalMode`, `maxTurnsBeforeDraw`, `allowFleeing` all exist
+
+**Findings**:
+1. **Environment Variables**: Already exists in USAGE_IN_OTHER_PROJECTS.md with same content
+2. **Audio Analyzer Options**: Contains non-existent `enableDetailedOutput` option - would mislead users
+3. **Environmental Sensors Options**: Contains 4 non-existent options - constructor API is completely different
+4. **Combat Engine Options**: Already exists in USAGE_IN_OTHER_PROJECTS.md with same content
+
+**Action Taken**: No changes to USAGE_IN_OTHER_PROJECTS.md. The configuration examples either duplicate existing content or contain API inaccuracies. The correct configuration for all classes is documented in DATA_ENGINE_REFERENCE.md.
+
+**Note**: The proper constructor signatures are:
+- `AudioAnalyzer(options?: AudioAnalyzerOptions)` where options include `includeAdvancedMetrics`, `sampleRate`, `fftSize`
+- `EnvironmentalSensors(weatherApiKeyOrConfig?: string | {...})` where config includes `weather`, `geolocation`, `retry`, `xpModifier`
+- `CombatEngine(config?: CombatConfig)` where config includes `useEnvironment`, `useMusic`, `tacticalMode`, `maxTurnsBeforeDraw`, `allowFleeing`
 
 **Task 3.4 - "30-Second Example" Review (Completed 2026-01-23):**
 
