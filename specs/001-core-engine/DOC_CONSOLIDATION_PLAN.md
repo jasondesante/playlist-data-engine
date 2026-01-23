@@ -1618,7 +1618,41 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 
 **Note**: ColorExtractor and NamingEngine do not currently have usage examples in USAGE_IN_OTHER_PROJECTS.md. A corrected example could be added in a future task if desired, but the README version is too inaccurate to use.
 
-- [ ] Review "Phase 2: Advanced Character Features" example - add to USAGE if unique
+- [x] Review "Phase 2: Advanced Character Features" example - add to USAGE if unique (COMPLETED 2026-01-23)
+
+**Task 3.3 - "Phase 2: Advanced Character Features" Example Review (Completed 2026-01-23):**
+
+**Summary**: The README.md "Phase 2: Advanced Character Features" example contains MULTIPLE CRITICAL API DISCREPANCIES and should NOT be added to USAGE_IN_OTHER_PROJECTS.md.
+
+**API Discrepancies Found:**
+
+| README.md Claim | Actual API | Status |
+|-----------------|------------|--------|
+| `new SkillAssigner()` | Class has no constructor - use static methods | **Incorrect instantiation** |
+| `skillAssigner.assignSkills(character)` | `static assignSkills(characterClass: Class, rng: SeededRNG)` | **Wrong signature** |
+| `new SpellManager()` | Class has no constructor - use static methods | **Incorrect instantiation** |
+| `spellManager.generateSpells(character)` | No `generateSpells()` method exists | **Method doesn't exist** |
+| `new EquipmentGenerator()` | Class has no constructor - use static methods | **Incorrect instantiation** |
+| `equipmentGen.generateStartingEquipment(character)` | `static getStartingEquipment(characterClass: Class)` | **Wrong method name and signature** |
+| `new AppearanceGenerator()` | Class has no constructor - use static methods | **Incorrect instantiation** |
+| `appearanceGen.generateAppearance(audioProfile, palette)` | `static generate(seed: string, characterClass: Class, audioProfile: AudioProfile)` | **Wrong signature** |
+
+**Source Code Verification**:
+- `SkillAssigner.assignSkills(characterClass, rng)` - src/core/generation/SkillAssigner.ts:41
+- `SpellManager` has no `generateSpells()` method - src/core/generation/SpellManager.ts (has `initializeSpells()` instead)
+- `EquipmentGenerator.getStartingEquipment(characterClass)` - src/core/generation/EquipmentGenerator.ts:35
+- `AppearanceGenerator.generate(seed, characterClass, audioProfile)` - src/core/generation/AppearanceGenerator.ts:96
+
+**Findings**:
+1. **ALL four classes** are shown with incorrect instantiation patterns (using `new` when they should use static methods)
+2. **SkillAssigner**: Takes `characterClass` and `rng` parameters, not a `character` object
+3. **SpellManager**: No `generateSpells()` method exists - should use `initializeSpells(characterClass, characterLevel)` instead
+4. **EquipmentGenerator**: Method is `getStartingEquipment(characterClass)` not `generateStartingEquipment(character)`
+5. **AppearanceGenerator**: Requires `seed` and `characterClass` parameters, not just `audioProfile` and `palette`
+6. These classes do not currently have usage examples in USAGE_IN_OTHER_PROJECTS.md
+
+**Action Taken**: No changes to USAGE_IN_OTHER_PROJECTS.md required. The example has API inaccuracies that would mislead users. The SkillAssigner, SpellManager, EquipmentGenerator, and AppearanceGenerator classes are documented in DATA_ENGINE_REFERENCE.md with correct signatures. A corrected example showing the proper static method usage patterns could be added in a future task if desired.
+
 - [ ] Review "Phase 2: Advanced Character Features" example - add to USAGE if unique
 - [ ] Review "Phase 3: Progression & Leveling" example - add to USAGE if unique
 - [ ] Review "Phase 4: Environmental Sensors" example - add to USAGE if unique
