@@ -1193,7 +1193,74 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 
 - [x] Verify `GeolocationProvider`, `MotionDetector`, `WeatherAPIClient`, `LightSensor` exist (COMPLETED 2026-01-23)
 - [x] Verify `SteamAPIClient`, `DiscordRPCClient` exist (COMPLETED 2026-01-23)
-- [ ] Verify `AttackResolver`, `DiceRoller`, `InitiativeRoller`, `SpellCaster` exist
+- [x] Verify `AttackResolver`, `DiceRoller`, `InitiativeRoller`, `SpellCaster` exist (COMPLETED 2026-01-23)
+
+**Task 2.3 - AttackResolver, DiceRoller, InitiativeRoller, SpellCaster Verification (Completed 2026-01-23)**:
+
+**Summary**: All four combat helper classes exist and have been verified. Documentation was updated to reflect actual source code.
+
+**Verification Results**:
+
+**AttackResolver** (`src/core/combat/AttackResolver.ts`):
+- ✅ `resolveAttack(attacker, target, attack): AttackResult` signature matches source (line 35)
+- ✅ `attackWithAdvantage(attacker, target, attack): AttackResult` signature matches source (line 201)
+- ✅ `attackWithDisadvantage(attacker, target, attack): AttackResult` signature matches source (line 269)
+- ✅ `isInRange(attacker, target, attack): boolean` signature matches source (line 164)
+- ✅ `calculateAttackBonus(character, attackName, abilityModifier, isProficient): number` signature matches source (line 188)
+- ✅ `AttackResult` interface documented (lines 15-23 in source)
+- ❌ **ADDED**: Complete class documentation with all 5 methods and AttackResult interface
+
+**DiceRoller** (`src/core/combat/DiceRoller.ts`):
+- ⚠️ **IMPORTANT**: This is a **module with exported functions**, not a class
+- ✅ All 14 exported functions verified and documented:
+  - `rollDie(sides: number): number`
+  - `rollMultipleDice(count: number, sides: number): number[]`
+  - `parseDiceFormula(formula: string): {...}`
+  - `rollD20(): number`
+  - `rollWithAdvantage(): { roll1, roll2, result }`
+  - `rollWithDisadvantage(): { roll1, roll2, result }`
+  - `rollInitiative(dexModifier: number): number`
+  - `isCriticalHit(d20Roll: number): boolean`
+  - `isCriticalMiss(d20Roll: number): boolean`
+  - `doubleDamage(rolls: number[]): number[]`
+  - `calculateDamage(formula, modifier, isCritical): {...}`
+  - `rollSavingThrow(abilityModifier, proficiencyBonus): number`
+  - `rollAbilityCheck(abilityModifier, proficiencyBonus): number`
+  - `seededRoll(seed: number): number`
+  - `rollPercentile(): number`
+- ❌ **FIXED**: Documentation incorrectly showed this as a class with static methods - corrected to show as exported functions module
+- ❌ **FIXED**: Removed non-existent methods (`roll`, `d20`, `rollDamage`) and replaced with actual function signatures
+
+**InitiativeRoller** (`src/core/combat/InitiativeRoller.ts`):
+- ✅ `rollInitiativeForCombatant(combatant): InitiativeResult` signature matches source (line 26)
+- ✅ `rollInitiativeForAll(combatants): { results, sortedCombatants }` signature matches source (line 46)
+- ✅ `getNextCombatant(combatants, currentIndex): { combatant, index, isNewRound }` signature matches source (line 79)
+- ✅ `getInitiativeOrder(combatants): string[]` signature matches source (line 97)
+- ✅ `rerollInitiativeForCombatant(combatant): number` signature matches source (line 107)
+- ✅ `delayTurn(combatants, combatantId): Combatant[]` signature matches source (line 118)
+- ✅ `resortByInitiative(combatants): Combatant[]` signature matches source (line 136)
+- ✅ `InitiativeResult` interface documented (lines 11-16 in source)
+- ❌ **ADDED**: Complete class documentation with all 7 methods and InitiativeResult interface
+
+**SpellCaster** (`src/core/combat/SpellCaster.ts`):
+- ✅ `castSpell(caster, spell, targets): SpellCastResult` signature matches source (line 22)
+- ✅ `hasSpellSlot(caster, spellLevel): boolean` signature matches source (line 122)
+- ✅ `consumeSpellSlot(caster, spellLevel): void` signature matches source (line 137)
+- ✅ `restoreSpellSlots(caster): void` signature matches source (line 157)
+- ✅ `calculateSaveDC(caster, ability): number` signature matches source (line 195)
+- ✅ `makeSavingThrow(target, saveAbility, saveDC): boolean` signature matches source (line 207)
+- ✅ `getSpellSlotInfo(caster): string` signature matches source (line 226)
+- ✅ `canUpcast(caster, spell, targetSlotLevel): boolean` signature matches source (line 246)
+- ✅ `upcastSpell(caster, spell, targets, slotLevelUsed): SpellCastResult` signature matches source (line 258)
+- ❌ **ADDED**: Complete class documentation with all 9 methods
+
+**Documentation Updates Made**:
+1. Added complete AttackResolver class documentation with 5 methods and AttackResult interface
+2. Fixed DiceRoller documentation from incorrect "static class methods" to correct "exported functions module"
+3. Added complete InitiativeRoller class documentation with 7 methods and InitiativeResult interface
+4. Added complete SpellCaster class documentation with 9 methods
+
+**All four combat helper classes are now fully documented in DATA_ENGINE_REFERENCE.md with accurate method signatures.**
 
 ### Task 2.4: Verify code examples in DATA_ENGINE_REFERENCE.md
 - [ ] Review code examples in "Usage" subsections

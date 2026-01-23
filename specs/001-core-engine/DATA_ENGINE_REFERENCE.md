@@ -1907,69 +1907,270 @@ Get all defeated combatants.
 
 **Source**: `src/core/combat/AttackResolver.ts`
 
-Resolves D&D 5e attack rolls and damage.
+Resolves D&D 5e attack rolls and damage calculations. Handles critical hits (natural 20), critical misses (natural 1), and advantage/disadvantage.
+
+```typescript
+interface AttackResult {
+    attacker: Combatant;
+    target: Combatant;
+    attack: Attack;
+    attackRoll: AttackRoll;
+    damageRoll?: DamageRoll;
+    hpAfterDamage?: number;
+    description: string;
+}
+```
 
 #### Methods
 
 ```typescript
-resolveAttack(attacker: Combatant, target: Combatant, attack: Attack): { attackRoll: AttackRoll; damageRoll?: DamageRoll; hpAfterDamage: number; description: string }
+resolveAttack(attacker: Combatant, target: Combatant, attack: Attack): AttackResult
 ```
 
-Resolve an attack against a target. Returns attack roll, damage roll, and HP after damage.
+Resolve a standard attack action. Rolls d20 + attack bonus vs target AC, applies damage on hit. Returns complete attack result with rolls, damage, and HP changes.
+
+```typescript
+attackWithAdvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult
+```
+
+Resolve an attack with advantage (roll twice, take higher). Returns complete attack result.
+
+```typescript
+attackWithDisadvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult
+```
+
+Resolve an attack with disadvantage (roll twice, take lower). Returns complete attack result.
+
+```typescript
+isInRange(attacker: Combatant, target: Combatant, attack: Attack): boolean
+```
+
+Check if an attack is within range. Melee attacks require 5 ft distance, ranged attacks use attack.range property. Returns true if tactical mode is not enabled.
+
+```typescript
+calculateAttackBonus(character: any, attackName: string, abilityModifier: number, isProficient?: boolean): number
+```
+
+Calculate attack bonus for a character. Returns ability modifier + proficiency bonus (if proficient).
 
 ### SpellCaster
 
 **Source**: `src/core/combat/SpellCaster.ts`
 
-Handles spell casting in combat.
+Handles D&D 5e spell casting mechanics including spell slot management, saving throws, and spell damage.
 
 #### Methods
 
 ```typescript
-castSpell(caster: Combatant, spell: Spell, targets: Combatant[]): { success: boolean; spellName: string; caster: Combatant; targets: Combatant[]; saveDC?: number; damage?: DamageRoll; effectsApplied: StatusEffect[]; spellSlotUsed: number; description: string }
+castSpell(caster: Combatant, spell: Spell, targets: Combatant[]): SpellCastResult
 ```
 
-Cast a spell at targets.
+Cast a spell at one or more targets. Handles spell slot consumption, attack rolls vs saving throws, damage calculation, and status effect application. Returns complete spell cast result.
+
+```typescript
+hasSpellSlot(caster: Combatant, spellLevel: number): boolean
+```
+
+Check if caster has an available spell slot of the given level. Returns true for cantrips (level 0).
+
+```typescript
+consumeSpellSlot(caster: Combatant, spellLevel: number): void
+```
+
+Consume a spell slot at the specified level. No effect for cantrips.
+
+```typescript
+restoreSpellSlots(caster: Combatant): void
+```
+
+Restore all spell slots to maximum for the caster's level (after long rest).
+
+```typescript
+calculateSaveDC(caster: Combatant, ability: string): number
+```
+
+Calculate spell save DC. Returns 8 + ability modifier + proficiency bonus.
+
+```typescript
+makeSavingThrow(target: Combatant, saveAbility: string, saveDC: number): boolean
+```
+
+Make a saving throw against a spell DC. Returns true if save succeeds (roll + modifier + proficiency >= DC).
+
+```typescript
+getSpellSlotInfo(caster: Combatant): string
+```
+
+Get formatted string describing available spell slots by level.
+
+```typescript
+canUpcast(caster: Combatant, spell: Spell, targetSlotLevel: number): boolean
+```
+
+Check if a spell can be upcast using a higher-level spell slot.
+
+```typescript
+upcastSpell(caster: Combatant, spell: Spell, targets: Combatant[], slotLevelUsed: number): SpellCastResult
+```
+
+Cast a spell using a higher-level spell slot (upcasting).
 
 ### InitiativeRoller
 
 **Source**: `src/core/combat/InitiativeRoller.ts`
 
-Handles initiative rolls for combat.
+Handles D&D 5e initiative rolling and turn order sorting. Initiative = d20 + DEX modifier.
+
+```typescript
+interface InitiativeResult {
+    combatant: Combatant;
+    d20Roll: number;
+    dexModifier: number;
+    initiativeTotal: number;
+}
+```
 
 #### Methods
 
 ```typescript
-rollInitiativeForAll(combatants: Combatant[]): { sortedCombatants: Combatant[] }
+rollInitiativeForCombatant(combatant: Combatant): InitiativeResult
 ```
 
-Roll initiative for all combatants and return sorted by initiative.
+Roll initiative for a single combatant. Updates combatant's initiative property and returns result with roll details.
+
+```typescript
+rollInitiativeForAll(combatants: Combatant[]): { results: InitiativeResult[]; sortedCombatants: Combatant[] }
+```
+
+Roll initiative for all combatants and sort by descending initiative. Higher initiative acts first. Tiebreaker: higher DEX modifier. Returns both results and sorted array.
+
+```typescript
+getNextCombatant(combatants: Combatant[], currentIndex: number): { combatant: Combatant; index: number; isNewRound: boolean }
+```
+
+Get the next combatant in turn order. Wraps around to beginning when reaching end. Returns next combatant, their index, and whether this starts a new round.
+
+```typescript
+getInitiativeOrder(combatants: Combatant[]): string[]
+```
+
+Get initiative order as formatted strings for display (e.g., "1. Name (Initiative: 15, DEX: 3)").
+
+```typescript
+rerollInitiativeForCombatant(combatant: Combatant): number
+```
+
+Re-roll initiative for a specific combatant (e.g., if an effect changes DEX). Returns new initiative value.
+
+```typescript
+delayTurn(combatants: Combatant[], combatantId: string): Combatant[]
+```
+
+Delay a combatant's turn by moving them one position later in initiative order. Used when a combatant takes the "Ready" action.
+
+```typescript
+resortByInitiative(combatants: Combatant[]): Combatant[]
+```
+
+Re-sort combatants by exact initiative value. Used if new combatants join mid-combat.
 
 ### DiceRoller
 
 **Source**: `src/core/combat/DiceRoller.ts`
 
-Utility for rolling dice.
+Utility module for D&D-style dice rolling. Supports standard polyhedral dice and dice formula parsing. Uses exported functions, not a class.
 
-#### Static Methods
-
-```typescript
-static roll(sides: number, count: number = 1): number[]
-```
-
-Roll dice.
+#### Functions
 
 ```typescript
-static d20(): number
+rollDie(sides: number): number
 ```
 
-Roll a d20.
+Roll a single die with specified number of sides (4, 6, 8, 10, 12, 20, 100). Returns roll result (1 to sides).
 
 ```typescript
-static rollDamage(diceFormula: string): DamageRoll
+rollMultipleDice(count: number, sides: number): number[]
 ```
 
-Roll damage from dice formula (e.g., "2d6+3").
+Roll multiple dice and return array of individual results.
+
+```typescript
+parseDiceFormula(formula: string): { diceCount: number; diceSides: number; modifier: number; rolls: number[]; total: number }
+```
+
+Parse and roll a dice formula like "2d6+3" or "1d20-2". Returns parsed formula components and results.
+
+```typescript
+rollD20(): number
+```
+
+Roll a d20 (common for attacks and ability checks). Returns roll result (1-20).
+
+```typescript
+rollWithAdvantage(): { roll1: number; roll2: number; result: number }
+```
+
+Roll with advantage (roll twice, take higher). Returns both rolls and final result.
+
+```typescript
+rollWithDisadvantage(): { roll1: number; roll2: number; result: number }
+```
+
+Roll with disadvantage (roll twice, take lower). Returns both rolls and final result.
+
+```typescript
+rollInitiative(dexModifier: number): number
+```
+
+Roll initiative (d20 + DEX modifier). Returns initiative value.
+
+```typescript
+isCriticalHit(d20Roll: number): boolean
+```
+
+Check if a roll is a critical hit (natural 20).
+
+```typescript
+isCriticalMiss(d20Roll: number): boolean
+```
+
+Check if a roll is a critical miss (natural 1).
+
+```typescript
+doubleDamage(rolls: number[]): number[]
+```
+
+Double the damage dice for a critical hit. Returns array with each roll value duplicated.
+
+```typescript
+calculateDamage(formula: string, modifier: number, isCritical?: boolean): { rolls: number[]; modifier: number; total: number; isCritical: boolean }
+```
+
+Calculate total damage from a damage formula with modifier. Doubles dice (not modifier) for critical hits.
+
+```typescript
+rollSavingThrow(abilityModifier: number, proficiencyBonus?: number): number
+```
+
+Roll a saving throw (d20 + ability modifier + proficiency bonus). Returns save result.
+
+```typescript
+rollAbilityCheck(abilityModifier: number, proficiencyBonus?: number): number
+```
+
+Roll an ability check (d20 + ability modifier + proficiency if applicable). Returns check result.
+
+```typescript
+seededRoll(seed: number): number
+```
+
+Generate a deterministic "seeded" roll for reproducibility using LCG algorithm. Returns roll result (1-20).
+
+```typescript
+rollPercentile(): number
+```
+
+Roll percentiles (d100). Returns roll result (1-100).
 
 ---
 
