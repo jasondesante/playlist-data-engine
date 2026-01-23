@@ -1,33 +1,22 @@
-# Playlist Data Engine Reference
+# Data Engine Reference
 
-This document serves as the comprehensive reference for the Playlist Data Engine. It details every feature, class, and function available in the `src` directory, providing a "cookbook" for developers to utilize the full power of the engine.
+Complete API reference for the Playlist Data Engine. Contains all type definitions, class constructors, and method signatures.
 
 ## Table of Contents
 
 1. [Data Types](#data-types)
-    - [ServerlessPlaylist](#serverlessplaylist)
-    - [PlaylistTrack](#playlisttrack)
 2. [Core Modules](#core-modules)
-    - [PlaylistParser](#playlistparser)
-    - [AudioAnalyzer](#audioanalyzer)
-    - [CharacterGenerator](#charactergenerator)
 3. [Progression System](#progression-system)
-    - [SessionTracker](#sessiontracker)
-    - [XPCalculator](#xpcalculator)
-    - [CharacterUpdater](#characterupdater)
 4. [Environmental Sensors](#environmental-sensors)
-    - [EnvironmentalSensors](#environmentalsensors)
 5. [Gaming Integration](#gaming-integration)
-    - [GamingPlatformSensors](#gamingplatformsensors)
 6. [Combat System](#combat-system)
-    - [CombatEngine](#combatengine)
-7. [Cookbook & Examples](#cookbook--examples)
+7. [Cross-References](#cross-references)
 
 ---
 
 ## Data Types
 
-Understanding the data structures is critical for using the engine effectively.
+Type definitions for all core data structures.
 
 ### ServerlessPlaylist
 

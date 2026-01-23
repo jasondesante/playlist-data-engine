@@ -79,13 +79,14 @@ Sensors can be configured via environment variables or programmatically.
 
 | Variable | Purpose |
 |----------|---------|
-| `WEATHER_API_KEY` | OpenWeatherMap API key (get free at openweathermap.org/api) |
-| `STEAM_API_KEY` | Steam Web API key (get at steamcommunity.com/dev/apikey) |
-| `STEAM_USER_ID` | Your 64-bit Steam ID (find at steamid.io) |
-| `DISCORD_CLIENT_ID` | Discord Client ID for music presence (create at discord.com/developers/applications) |
-| `XP_MAX_MODIFIER` | Max XP multiplier (default: 3.0) |
+| `WEATHER_API_KEY` | OpenWeatherMap API key for weather data |
+| `STEAM_API_KEY` | Steam Web API key for game detection |
+| `STEAM_USER_ID` | 64-bit Steam ID for account identification |
+| `DISCORD_CLIENT_ID` | Discord application ID for music presence |
+| `XP_MAX_MODIFIER` | Maximum XP multiplier (default: 3.0) |
 
-See `.env.example` for full documentation. Programmatic configuration via `loadConfigFromEnv()` and `mergeConfig()` from `src/core/config/sensorConfig.ts`.
+**Environment file**: `.env.example`
+**Configuration module**: `src/core/config/sensorConfig.ts` with `loadConfigFromEnv()` and `mergeConfig()` functions
 
 ---
 

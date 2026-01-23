@@ -2199,10 +2199,41 @@ Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need sepa
 ## Phase 5: Content Organization & Trimming
 
 ### Task 5.1: Trim SPEC.md
-- [ ] Remove any remaining "how to" language
-- [ ] Replace with "what it does" language
-- [ ] Ensure focus is on: what exists, where it is, what it does
-- [ ] Keep "How to Use" section header but replace with "Quick Reference" pointing to USAGE
+- [x] Remove any remaining "how to" language (COMPLETED 2026-01-23)
+- [x] Replace with "what it does" language (COMPLETED 2026-01-23)
+- [x] Ensure focus is on: what exists, where it is, what it does (COMPLETED 2026-01-23)
+- [x] Keep "How to Use" section header but replace with "Quick Reference" pointing to USAGE (COMPLETED 2026-01-23)
+
+**Task 5.1 Completed (2026-01-23)**:
+
+**Summary**: SPEC.md and DATA_ENGINE_REFERENCE.md have been trimmed to remove "how to" language and replaced with "what it does" language.
+
+**Changes Made to SPEC.md**:
+
+1. **Environment Variables Table (lines 82-86)**: Removed instructional parentheticals
+   - Changed "OpenWeatherMap API key (get free at openweathermap.org/api)" → "OpenWeatherMap API key for weather data"
+   - Changed "Steam Web API key (get at steamcommunity.com/dev/apikey)" → "Steam Web API key for game detection"
+   - Changed "Your 64-bit Steam ID (find at steamid.io)" → "64-bit Steam ID for account identification"
+   - Changed "Discord Client ID for music presence (create at discord.com/developers/applications)" → "Discord application ID for music presence"
+
+2. **Configuration Section (line 88)**: Changed from instructional to factual
+   - Changed "See `.env.example` for full documentation. Programmatic configuration via..." → "**Environment file**: `.env.example` / **Configuration module**: `src/core/config/sensorConfig.ts` with `loadConfigFromEnv()` and `mergeConfig()` functions"
+
+**Changes Made to DATA_ENGINE_REFERENCE.md**:
+
+1. **Document Title (line 1)**: Removed "cookbook" language
+   - Changed "comprehensive reference... providing a 'cookbook' for developers to utilize" → "Complete API reference... Contains all type definitions, class constructors, and method signatures"
+
+2. **Table of Contents (line 24)**: Removed reference to deleted "Cookbook & Examples" section
+   - Removed "7. [Cookbook & Examples](#cookbook--examples)"
+   - Added "7. [Cross-References](#cross-references)"
+
+3. **Data Types Section (line 30)**: Changed from instructional to factual
+   - Changed "Understanding the data structures is critical for using the engine effectively" → "Type definitions for all core data structures"
+
+**Files Modified**:
+- `/workspace/specs/001-core-engine/SPEC.md` - Removed 4 instructional parentheticals and 1 instructional sentence
+- `/workspace/DATA_ENGINE_REFERENCE.md` - Fixed document title, table of contents, and section header
 
 ### Task 5.2: Trim DATA_ENGINE_REFERENCE.md
 - [ ] Move verbose examples to USAGE
