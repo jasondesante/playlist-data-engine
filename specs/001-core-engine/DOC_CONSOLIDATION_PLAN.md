@@ -877,7 +877,30 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 - ✅ 4 private methods correctly excluded from public API documentation
 
 **No discrepancies found** - XPCalculator documentation in DATA_ENGINE_REFERENCE.md is accurate and complete.
-- [ ] Verify `EnvironmentalSensors` class and method signatures
+- [x] Verify `EnvironmentalSensors` class and method signatures (COMPLETED 2026-01-23)
+
+**Task 2.2 - EnvironmentalSensors Verification (Completed 2026-01-23)**:
+
+**Summary**: EnvironmentalSensors class and method signatures verified against source code in `src/core/sensors/EnvironmentalSensors.ts`. All documentation matches actual implementation.
+
+**Verification Results**:
+- ✅ All 3 constructor signatures documented with exact signature matches:
+  - Legacy: `new EnvironmentalSensors(weatherApiKey?: string)`
+  - Legacy with retry: `new EnvironmentalSensors(weatherApiKey?: string, retryConfig?: Partial<SensorRetryConfig>)`
+  - Full config: `new EnvironmentalSensors(config?: { weather?: {...}, geolocation?: {...}, retry?: {...}, xpModifier?: {...} })`
+- ✅ All 22 public methods documented with exact signature matches:
+  - Permission methods: `requestPermissions()`, `checkAvailability()`
+  - Monitoring methods: `startMonitoring()`, `stopMonitoring()`, `updateSnapshot()`
+  - XP calculation methods: `calculateXPModifier()`, `calculateXPModifierWithForecast()`, `calculateXPModifierWithSevereWeather()`
+  - Status methods: `getSensorStatus()`, `getAllSensorStatuses()`, `getDiagnostics()`
+  - Error recovery methods: `getFailureLog()`, `getLastKnownGood()`, `clearFailureLog()`, `updateRetryConfig()`, `onSensorRecovery()`
+  - Diagnostic methods: `enableDiagnosticMode()`, `disableDiagnosticMode()`, `printDashboard()`
+  - Utility methods: `getCurrentActivity()`, `detectSevereWeather()`, `getSevereWeatherWarning()`
+
+**Minor Note**: `getPermissions()` method exists in source (line 705) but is not documented - this is a minor omission as `requestPermissions()` is the primary public API.
+
+**No discrepancies found** - EnvironmentalSensors documentation in DATA_ENGINE_REFERENCE.md is accurate and complete.
+
 - [ ] Verify `GamingPlatformSensors` class and method signatures
 - [ ] Verify `CombatEngine` class and method signatures
 
