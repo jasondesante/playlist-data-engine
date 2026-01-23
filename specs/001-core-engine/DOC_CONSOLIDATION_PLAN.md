@@ -1331,10 +1331,64 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 **Conclusion**: No action required. DATA_ENGINE_REFERENCE.md is already properly structured. This task was based on an assumption that there was a "Cookbook & Examples" section to move, but none exists. The file is already in its final correct state.
 
 ### Task 2.6: Verify utility functions section
-- [ ] Verify hashing functions exist in `src/utils/hash.ts`
-- [ ] Verify `SeededRNG` class exists in `src/utils/random.ts`
-- [ ] Verify validation schemas exist
-- [ ] Verify constants exports (`ALL_RACES`, `ALL_CLASSES`, `XP_THRESHOLDS`, etc.)
+- [x] Verify hashing functions exist in `src/utils/hash.ts` (COMPLETED 2026-01-23)
+- [x] Verify `SeededRNG` class exists in `src/utils/random.ts` (COMPLETED 2026-01-23)
+- [x] Verify validation schemas exist (COMPLETED 2026-01-23)
+- [x] Verify constants exports (`ALL_RACES`, `ALL_CLASSES`, `XP_THRESHOLDS`, etc.) (COMPLETED 2026-01-23)
+
+**Task 2.6 Completed (2026-01-23)**:
+
+**Summary**: All utility functions, classes, validation schemas, and constants exist as claimed in the codebase.
+
+**Verification Results**:
+
+**Hashing Functions** (`src/utils/hash.ts`):
+- ✅ `generateSeed(chainName, tokenAddress, tokenId): string` - generates deterministic seed from blockchain data
+- ✅ `hashSeedToFloat(seed: string): number` - hashes seed to float between 0.0 and 1.0 using MurmurHashV3
+- ✅ `hashSeedToInt(seed: string, min: number, max: number): number` - hashes seed to integer in range
+- ✅ `deriveSeed(baseSeed: string, suffix: string): string` - creates derived seed by appending suffix
+
+**SeededRNG Class** (`src/utils/random.ts`):
+- ✅ Class exists at claimed path
+- ✅ Constructor: `constructor(seed: string)`
+- ✅ All 6 public methods verified:
+  - `random(): number` - float between 0.0 and 1.0
+  - `randomInt(min: number, max: number): number` - integer in range [min, max)
+  - `randomChoice<T>(array: T[]): T` - pick random element from array
+  - `weightedChoice<T>(choices: [T, number][]): T` - pick with weighted probabilities
+  - `shuffle<T>(array: T[]): T[]` - deterministic Fisher-Yates shuffle
+  - `reset(): void` - reset counter (for testing)
+
+**Validation Schemas** (`src/utils/validators.ts`):
+- ✅ `PlaylistTrackSchema` - Zod schema with chain-specific refinements (AR vs other chains)
+- ✅ `ServerlessPlaylistSchema` - Zod schema for playlist objects
+- ✅ `AudioProfileSchema` - Zod schema for audio analysis results
+- ✅ `AbilityScoresSchema` - Zod schema for 6 ability scores (1-20 range)
+- ✅ `CharacterSheetSchema` - Complete Zod schema for character sheets with nested objects
+
+**Constants Exports** (`src/utils/constants.ts` and `src/index.ts`):
+- ✅ `ALL_RACES: Race[]` - Array of 9 D&D races
+- ✅ `ALL_CLASSES: Class[]` - Array of 12 D&D classes
+- ✅ `XP_THRESHOLDS: Record<number, number>` - XP thresholds for levels 1-20
+- ✅ `RACE_DATA` - Race data with ability bonuses, speed, traits
+- ✅ `CLASS_DATA` - Class data with primary abilities, hit dice, skills
+- ✅ `PROFICIENCY_BONUS` - Proficiency bonus by level (2-6)
+- ✅ `SKILL_ABILITY_MAP` - Mapping of 18 skills to ability scores
+- ✅ `SPELL_DATABASE` - Comprehensive spell database with ~60 spells
+- ✅ `CLASS_SPELL_LISTS` - Spell lists by class (cantrips + spells_by_level)
+- ✅ `SPELL_SLOTS_BY_CLASS` - Spell slot progression for all spellcasting classes
+- ✅ `CLASS_STARTING_EQUIPMENT` - Starting equipment by class
+- ✅ `EQUIPMENT_DATABASE` - Comprehensive equipment database
+- ✅ `MASTERY_THRESHOLD` - Set to 10 listens
+- ✅ `MASTERY_BONUS_XP` - Set to 500 XP
+
+**Public API Exports** (`src/index.ts`):
+- ✅ All hashing functions exported from main index
+- ✅ `SeededRNG` class exported from main index
+- ✅ All validation schemas exported from main index
+- ✅ All constants exported from main index
+
+**No discrepancies found** - All utility functions, classes, validation schemas, and constants are properly implemented and exported.
 
 ---
 
