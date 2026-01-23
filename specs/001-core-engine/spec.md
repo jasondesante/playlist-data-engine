@@ -8,18 +8,18 @@ Transforms music playlists into D&D 5e-inspired RPG characters through audio/vis
 
 ## Features
 
-| # | Feature | Status | Key Details |
-|---|---------|--------|-------------|
-| 1 | Playlist Parsing | ✅ | Arweave/JSON input, priority queues, deterministic seed from `chain-token-tokenId` |
-| 2 | Audio Analysis | ✅ | Triple Tap (5%/40%/70%), bass/mid/treble, < 1s per track |
-| 3 | Visual Analysis | ✅ | K-means palette extraction, 4 colors, < 200ms |
-| 4 | Character Generation | ✅ | 9 races, 12 classes, audio → ability scores, deterministic |
-| 5 | Naming | ✅ | 3 formats weighted 50/30/20, title cleaning |
-| 6 | Advanced Character | ✅ | 18 skills, proficiencies, spells, equipment, appearance |
-| 7 | Environmental Sensors | ✅ | GPS, motion, weather, light, XP modifiers up to 3.0x |
-| 8 | Gaming Integration | ✅ | Steam/Discord, genre bonuses, compound modifiers |
-| 9 | Progression | ✅ | 1 XP/sec, D&D 5e levels 1-20, mastery system |
-| 10 | Combat | ✅ | Turn-based, initiative, attacks, spell casting |
+| # | Feature | Status | Source Files |
+|---|---------|--------|--------------|
+| 1 | Playlist Parsing | ✅ | `src/core/parser/PlaylistParser.ts`, `MetadataExtractor.ts` |
+| 2 | Audio Analysis | ✅ | `src/core/analysis/AudioAnalyzer.ts`, `SpectrumScanner.ts` |
+| 3 | Visual Analysis | ✅ | `src/core/analysis/ColorExtractor.ts` |
+| 4 | Character Generation | ✅ | `src/core/generation/CharacterGenerator.ts`, `RaceSelector.ts`, `ClassSuggester.ts`, `AbilityScoreCalculator.ts` |
+| 5 | Naming | ✅ | `src/core/generation/NamingEngine.ts` |
+| 6 | Advanced Character | ✅ | `src/core/generation/SkillAssigner.ts`, `SpellManager.ts`, `EquipmentGenerator.ts`, `AppearanceGenerator.ts` |
+| 7 | Environmental Sensors | ✅ | `src/core/sensors/EnvironmentalSensors.ts`, `GeolocationProvider.ts`, `MotionDetector.ts`, `WeatherAPIClient.ts`, `LightSensor.ts` |
+| 8 | Gaming Integration | ✅ | `src/core/sensors/GamingPlatformSensors.ts`, `SteamAPIClient.ts`, `DiscordRPCClient.ts` |
+| 9 | Progression | ✅ | `src/core/progression/XPCalculator.ts`, `SessionTracker.ts`, `LevelUpProcessor.ts`, `MasterySystem.ts` |
+| 10 | Combat | ✅ | `src/core/combat/CombatEngine.ts`, `InitiativeRoller.ts`, `AttackResolver.ts`, `SpellCaster.ts`, `DiceRoller.ts` |
 
 ---
 
@@ -299,4 +299,20 @@ Implemented in `src/core/progression/XPCalculator.ts` and `src/core/sensors/Envi
 - `src/utils/sensorDashboard.ts` - Diagnostic dashboard
 - `src/utils/random.ts`, `src/utils/constants.ts`, `src/utils/validators.ts`, `src/utils/hash.ts`
 
-### Config 
+### Config (2 files)
+- `src/core/config/sensorConfig.ts` - Sensor configuration
+- `src/core/config/index.ts` - Module exports
+
+### Tests (27 files)
+- Unit: `tests/unit/attackResolver.test.ts`, `tests/unit/discordRPC.test.ts`, `tests/unit/gaming.test.ts`, `tests/unit/sensors.test.ts`, `tests/unit/xpCalculator.test.ts`, etc.
+- Integration: `tests/integration/discordRPC.integration.test.ts`, `tests/integration/gamingIntegration.test.ts`, `tests/integration/fullSensorPipeline.test.ts`, etc.
+- Mocks: `tests/mocks/browserAPIs.ts` - Browser API mocks for headless testing
+
+---
+
+## How to Use
+
+### Basic Workflow: Playlist → Character
+
+```typescript
+import { Pla
