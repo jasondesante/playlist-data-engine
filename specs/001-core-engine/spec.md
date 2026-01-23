@@ -62,9 +62,9 @@ Racial bonuses applied after, capped at 20.
 | Category | Modifiers (capped at 3.0x total) |
 |----------|----------------------------------|
 | **Motion** | Running 1.5x, Walking 1.2x, Driving 1.3x |
-| **Weather** | Storm/Rain 1.4x, Snow 1.3x |
+| **Weather** | Storm/Rain/Snow 1.4x |
 | **Time** | Night 1.25x |
-| **Altitude** | ≥2000m adds 0.3x |
+| **Altitude** | ≥2000m 1.3x |
 | **Gaming** | Active +25%, RPG +20%, Action/FPS +15%, Multiplayer +15%, 4hr+ +20% |
 
 Formula: `base × environmental × gaming` (max 3.0x)
@@ -211,5 +211,5 @@ combat.nextTurn(instance);
 ### Optional Enhancements
 These are potential future improvements, not required tasks:
 - Additional biome types beyond current 12
-- More spell variety (currently 188 hardcoded spells)
+- More spell variety (currently 53 hardcoded spells)
 - Additional language support for genre detection

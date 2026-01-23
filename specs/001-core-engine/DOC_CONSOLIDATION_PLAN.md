@@ -674,8 +674,8 @@ The file contains **42 type definitions** across multiple categories:
 - [x] Verify "Core Features" list matches actual implemented features (COMPLETED 2026-01-23)
 - [x] Verify all source file paths exist (COMPLETED 2026-01-23)
 - [x] Verify ability score formulas match `AbilityScoreCalculator.ts`
-- [ ] Verify XP modifier formulas match `XPCalculator.ts`
-- [ ] Verify environment variable list matches `.env.example`
+- [x] Verify XP modifier formulas match `XPCalculator.ts` (COMPLETED 2026-01-23)
+- [x] Verify environment variable list matches `.env.example` (COMPLETED 2026-01-23)
 - [ ] Verify line count is under 300
 
 ### Task 1.2: Remove all examples from SPEC.md
@@ -971,6 +971,57 @@ The following issues were identified during earlier work. These should be verifi
 - `src/core/types/` directory exists and contains all claimed type definition files ✅
 
 **All 10 source file references verified successfully.** No discrepancies found.
+
+### Task 1.1.4: XP Modifier Formulas Verification (Completed 2026-01-23)
+
+**Summary**: XP modifier formulas mostly match `XPCalculator.ts` implementation. 2 discrepancies found.
+
+**Verified XP Modifiers** (SPEC.md lines 58-70 vs XPCalculator.ts):
+
+| Category | SPEC.md | XPCalculator.ts | Status |
+|----------|---------|-----------------|--------|
+| Base Rate | 1 XP/sec | `xp_per_second: 1` (line 64) | ✅ |
+| Motion - Running | 1.5x | `running: 1.5` (line 43) | ✅ |
+| Motion - Walking | 1.2x | `walking: 1.2` (line 42) | ✅ |
+| Motion - Driving | 1.3x | `driving: 1.3` (line 44) | ✅ |
+| Weather - Storm/Rain | 1.4x | `extreme_weather: 1.4` (lines 46, 133-138) | ✅ |
+| Weather - Snow | 1.3x | 1.4x (uses `extreme_weather` for Snow) | ❌ Discrepancy |
+| Time - Night | 1.25x | `night_time: 1.25` (line 45) | ✅ |
+| Altitude ≥2000m | adds 0.3x | `high_altitude: 1.3` multiplier | ❌ Discrepancy |
+| Gaming - Active | +25% | `+ 0.25` (line 168) | ✅ |
+| Gaming - RPG | +20% | `+ 0.20` (line 179) | ✅ |
+| Gaming - Action/FPS | +15% | `+ 0.15` (line 176) | ✅ |
+| Gaming - Multiplayer | +15% | `+ 0.15` (line 188) | ✅ |
+| Gaming - 4hr+ | +20% | `Math.min(0.20, hours * 0.05)` (line 195) | ✅ |
+| Max Cap | 3.0x | `Math.min(modifier, 3.0)` (line 228) | ✅ |
+
+**Discrepancies Found**:
+
+1. **Snow modifier** ❌
+   - **SPEC.md line 65 claims**: "Snow 1.3x"
+   - **Actual in code**: Snow uses `extreme_weather: 1.4` (lines 136-138)
+   - **Impact**: SPEC.md overstates snow as 1.3x when code applies 1.4x
+   - **Action Required**: Update SPEC.md line 65 to show "Storm/Rain/Snow 1.4x"
+
+2. **Altitude modifier** ❌
+   - **SPEC.md line 67 claims**: "≥2000m adds 0.3x" (additive phrasing)
+   - **Actual in code**: `high_altitude: 1.3` multiplier (line 47), applied multiplicatively (line 145)
+   - **Impact**: SPEC.md phrasing is ambiguous. The code uses 1.3x multiplier (not adding 0.3x to base)
+   - **Action Required**: Update SPEC.md line 67 to clarify "≥2000m 1.3x multiplier"
+
+### Task 1.1.5: Environment Variables Verification (Completed 2026-01-23)
+
+**Summary**: All 5 environment variables in SPEC.md match `.env.example`.
+
+| Variable | SPEC.md | .env.example | Status |
+|----------|---------|--------------|--------|
+| `WEATHER_API_KEY` | Line 82 | Line 19 | ✅ |
+| `STEAM_API_KEY` | Line 83 | Line 28 | ✅ |
+| `STEAM_USER_ID` | Line 84 | Line 33 | ✅ |
+| `DISCORD_CLIENT_ID` | Line 85 | Line 47 | ✅ |
+| `XP_MAX_MODIFIER` | Line 86 | Line 59 | ✅ |
+
+**All 5 environment variables verified successfully.** No discrepancies found.
 
 ---
 
