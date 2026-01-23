@@ -125,7 +125,6 @@ Sensors can be configured via environment variables or programmatically.
 - All 10 core features fully implemented and tested
 
 ### Known Limitations
-- **Discord Voice**: Discord RPC cannot access voice state data (platform limitation). Music presence (`setMusicActivity()`) is fully supported.
 - **External APIs**: Weather (OpenWeatherMap), Steam (Web API), and Discord RPC require developer-provided API keys/credentials.
 
 ### Optional Enhancements
