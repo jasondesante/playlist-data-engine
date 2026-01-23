@@ -92,6 +92,14 @@ Formula: `base × environmental × gaming` (max 3.0x)
 
 **Combat** (5): `AttackResolver.ts`, `CombatEngine.ts`, `DiceRoller.ts`, `InitiativeRoller.ts`, `SpellCaster.ts`
 
+**Generation** (9): `AbilityScoreCalculator.ts`, `AppearanceGenerator.ts`, `CharacterGenerator.ts`, `ClassSuggester.ts`, `EquipmentGenerator.ts`, `NamingEngine.ts`, `RaceSelector.ts`, `SkillAssigner.ts`, `SpellManager.ts`
+
+**Progression** (5): `XPCalculator.ts`, `LevelUpProcessor.ts`, `MasterySystem.ts`, `SessionTracker.ts`, `CharacterUpdater.ts`
+
+**Analysis** (3): `AudioAnalyzer.ts`, `SpectrumScanner.ts`, `ColorExtractor.ts`
+
+**Parser** (2): `PlaylistParser.ts`, `MetadataExtractor.ts`
+
 **Types** (7): `Environmental.ts`, `Progression.ts`, `Combat.ts`, `Character.ts`, `Playlist.ts`, `AudioProfile.ts`, `ColorPalette.ts`
 
 **Utilities** (6): `logger.ts`, `sensorDashboard.ts`, `random.ts`, `constants.ts`, `validators.ts`, `hash.ts`
@@ -99,6 +107,36 @@ Formula: `base × environmental × gaming` (max 3.0x)
 **Config** (2): `sensorConfig.ts`, `index.ts`
 
 **Tests** (27): Unit tests in `tests/unit/`, integration tests in `tests/integration/`, mocks in `tests/mocks/browserAPIs.ts`
+
+---
+
+## Configuration
+
+Sensors can be configured via environment variables or programmatically.
+
+### Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `WEATHER_API_KEY` | OpenWeatherMap API key (get free at openweathermap.org/api) |
+| `STEAM_API_KEY` | Steam Web API key (get at steamcommunity.com/dev/apikey) |
+| `STEAM_USER_ID` | Your 64-bit Steam ID (find at steamid.io) |
+| `DISCORD_CLIENT_ID` | Discord Client ID for music presence (create at discord.com/developers/applications) |
+| `XP_MAX_MODIFIER` | Max XP multiplier (default: 3.0) |
+
+See `.env.example` for documentation. Use `loadConfigFromEnv()` or `mergeConfig(userConfig)` from `src/core/config/sensorConfig.ts` for programmatic configuration.
+
+### Configuration Interfaces
+
+```typescript
+import { mergeConfig, loadConfigFromEnv } from '@audio-alchemist/core/config';
+
+// Load from environment, then override with custom values
+const config = mergeConfig({
+    xpModifier: { maxModifier: 2.5 },
+    retry: { maxRetries: 5 }
+});
+```
 
 ---
 
@@ -117,13 +155,15 @@ const playlist = await parser.parse(rawArweavePlaylistData);
 const analyzer = new AudioAnalyzer({ includeAdvancedMetrics: true });
 const audioProfile = await analyzer.extractSonicFingerprint(track.audio_url);
 
-// 3. Generate character from audio profile
+// 3. Generate character name and sheet
+const namingEngine = new NamingEngine();
+const characterName = namingEngine.generateName(track, audioProfile);
+
 const seed = `${track.chain_name}-${track.token_address}-${track.token_id}`;
-const characterName = NamingEngine.generate(seed, audioProfile);
 const character = CharacterGenerator.generate(seed, audioProfile, characterName);
 
 console.log(`${character.name}: Level ${character.level} ${character.race} ${character.class}`);
-// → "Melody Weaver: Level 1 Elf Bard"
+// → "Midnight Synth: Level 1 Elf Artificer"
 ```
 
 ### Environmental Sensors
@@ -150,7 +190,7 @@ const modifier = sensors.calculateXPModifier();
 ### Gaming Integration (Steam + Discord)
 
 ```typescript
-import { GamingPlatformSensors } from '@audio-alchemist/core';
+import { GamingPlatformSensors, DiscordRPCClient } from '@audio-alchemist/core';
 
 const gaming = new GamingPlatformSensors({
     steam: { apiKey: process.env.STEAM_API_KEY, steamId: '123456789' },
@@ -167,11 +207,10 @@ gaming.startMonitoring((context) => {
 
 // Calculate gaming bonus (1.0x - 1.75x)
 const bonus = gaming.calculateGamingBonus();
-```
 
-### Discord Music Presence
-
-```typescript
+// Discord music presence
+const discord = new DiscordRPCClient(process.env.DISCORD_CLIENT_ID);
+await discord.connect();
 await discord.setMusicActivity({
     songName: track.title,
     artistName: track.artist,
@@ -185,12 +224,16 @@ await discord.setMusicActivity({
 
 ```typescript
 // Progression: Track XP and level up
-const session = SessionTracker.startSession(track.uuid, { duration_seconds: 180 });
+const sessionTracker = new SessionTracker();
+const sessionId = sessionTracker.startSession(track.uuid, track);
+// ... after listening ends ...
+const session = sessionTracker.endSession(sessionId);
 const totalXP = xpCalc.calculateSessionXP(session, track);
 
 // Combat: Turn-based battles
 const combat = new CombatEngine();
-combat.addCombatant(character);
-combat.addCombatant(enemy);
-combat.startCombat();
-combat.executeTurn(character.id, 'attack', { targetId: enemy.id });
+const instance = combat.startCombat([character], [enemy], environmentalContext);
+const current = combat.getCurrentCombatant(instance);
+combat.executeAttack(instance, current, enemy, character.equipment[0]);
+combat.nextTurn(instance);
+```
