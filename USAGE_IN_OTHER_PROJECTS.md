@@ -7,19 +7,19 @@ Your Playlist Data Engine is now built and ready to use! Here are the recommende
 This is the most flexible option for local development and testing.
 
 ### Step 1: Note the absolute path
-The absolute path to your built library is:
+Find the absolute path to your built library. For example:
 ```
-/Users/jasondesante/playlist-data-engine
+/path/to/playlist-data-engine
 ```
 
 ### Step 2: In your other project's `package.json`
 
-Add the library as a local dependency:
+Add the library as a local dependency (replace `/path/to/playlist-data-engine` with your actual path):
 
 ```json
 {
   "dependencies": {
-    "playlist-data-engine": "file:/Users/jasondesante/playlist-data-engine"
+    "playlist-data-engine": "file:///path/to/playlist-data-engine"
   }
 }
 ```
@@ -42,7 +42,7 @@ This creates a global symlink that you can use across multiple projects.
 ### Step 1: Create the global link
 
 ```bash
-cd /Users/jasondesante/playlist-data-engine
+cd /path/to/playlist-data-engine
 npm link
 ```
 
@@ -62,7 +62,7 @@ The package will be available just like it was installed from npm.
 If you want a completely isolated copy:
 
 ```bash
-cp -r /Users/jasondesante/playlist-data-engine/dist /path/to/your/project/vendor/playlist-data-engine
+cp -r /path/to/playlist-data-engine/dist /path/to/your/project/vendor/playlist-data-engine
 ```
 
 Then reference it in your project code directly.
@@ -319,7 +319,7 @@ When working on both projects simultaneously:
 
 ```bash
 # Terminal 1: In playlist-data-engine directory
-cd /Users/jasondesante/playlist-data-engine
+cd /path/to/playlist-data-engine
 npm run dev  # Watch mode (optional)
 
 # Terminal 2: In your other project
@@ -337,7 +337,7 @@ npm install  # Links to the library
 After making changes to the engine source code:
 
 ```bash
-cd /Users/jasondesante/playlist-data-engine
+cd /path/to/playlist-data-engine
 npm run build  # Rebuild distribution files
 ```
 
@@ -369,7 +369,7 @@ export DISCORD_CLIENT_ID="your_client_id"
 If using `file://` paths:
 ```bash
 # Rebuild the library
-cd /Users/jasondesante/playlist-data-engine
+cd /path/to/playlist-data-engine
 npm run build
 
 # Clear node_modules cache in your project
