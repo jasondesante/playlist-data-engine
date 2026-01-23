@@ -1801,8 +1801,50 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 ### Task 3.4: Harvest examples from quickstart.md
 - [x] Review "30-Second Example" - add to USAGE if unique (COMPLETED 2026-01-23)
 - [x] Review phase-by-phase examples - add any unique ones to USAGE (COMPLETED 2026-01-23)
-- [ ] Review "Common Patterns" section - add to USAGE if unique
+- [x] Review "Common Patterns" section - add to USAGE if unique (COMPLETED 2026-01-23)
 - [ ] Review configuration examples - add to USAGE if unique
+
+**Task 3.4 - "Common Patterns" Section Review (Completed 2026-01-23):**
+
+**Summary**: The quickstart.md "Common Patterns" section (lines 206-258) contains 2 unique patterns that were added to USAGE_IN_OTHER_PROJECTS.md after API verification and corrections.
+
+**Pattern Analysis**:
+
+| Pattern | quickstart.md Location | USAGE_IN_OTHER_PROJECTS.md Equivalent | Status |
+|---------|------------------------|----------------------------------------|--------|
+| Deterministic Character Generation | Lines 208-220 | Covered in "Basic Playlist Parsing..." | **Duplicate** |
+| Full XP Calculation with Bonuses | Lines 222-240 | ❌ NOT in USAGE | **Unique - Conceptually correct** |
+| Character Level Progression | Lines 242-258 | ❌ NOT in USAGE | **Unique - Has API errors** |
+
+**API Issues Found and Fixed**:
+
+1. **Deterministic Character Generation** - NOT added (duplicate)
+   - Already covered in existing "Basic Playlist Parsing and Character Generation" example
+   - Pattern of caching generated characters in a Map is trivial and self-evident
+
+2. **Full XP Calculation with Bonuses** - Added with corrections
+   - Quickstart example correctly shows the 3.0x cap formula
+   - Added with enhanced comments explaining each modifier source
+   - No API errors found - the manual calculation pattern is valid for educational purposes
+
+3. **Character Level Progression** - Fixed and added
+   - **Issue**: `processor.processLevelUp(char)` - Missing required `newLevel` parameter
+   - **Issue**: Returns `LevelUpBenefits` object, incorrect property access (`updates.newHitPoints` vs `benefits.newHitPointsTotal`)
+   - **Issue**: Missing `LevelUpProcessor.applyLevelUp()` call to actually apply benefits
+   - **Fix Applied**: Complete corrected example showing:
+     - Correct `processLevelUp(character, newLevel)` signature
+     - Correct property access: `benefits.newLevel`, `benefits.hitPointIncrease`, `benefits.newHitPointsTotal`, `benefits.newProficiencyBonus`
+     - Proper use of `applyLevelUp()` to apply benefits to character
+     - Optional feature display (ability score increase, spell slots, class features)
+
+**Source Code Verification**:
+- `LevelUpProcessor.processLevelUp(character: CharacterSheet, newLevel: number, seed?: string): LevelUpBenefits` - src/core/progression/LevelUpProcessor.ts:45-98
+- `LevelUpProcessor.applyLevelUp(character: CharacterSheet, benefits: LevelUpBenefits): CharacterSheet` - src/core/progression/LevelUpProcessor.ts:106-141
+- `LevelUpBenefits` interface includes: `newLevel`, `hitPointIncrease`, `newHitPointsTotal`, `proficiencyBonusIncrease`, `newProficiencyBonus`, `abilityScoreIncrease?`, `newSpellSlots?`, `classFeatures?`
+
+**Action Taken**: Added 2 corrected patterns to USAGE_IN_OTHER_PROJECTS.md in new "Common Patterns" section (inserted before "Available Exports"):
+1. "Understanding XP Bonus Calculation" - Shows how XP modifiers combine with 3.0x cap
+2. "Manual Level-Up Processing" - Shows correct LevelUpProcessor usage with proper method signatures
 
 **Task 3.4 - "30-Second Example" Review (Completed 2026-01-23):**
 

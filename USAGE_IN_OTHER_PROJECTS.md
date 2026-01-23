@@ -336,6 +336,106 @@ for (const track of playlist.tracks) {
 
 ---
 
+## Common Patterns
+
+### Deterministic Character Generation
+
+The same seed and audio profile always produces the same character:
+
+```typescript
+import { CharacterGenerator, AudioAnalyzer } from 'playlist-data-engine';
+
+const seed = 'ethereum-0x123abc-1';
+const audio = await analyzer.extractSonicFingerprint(track.audio_url);
+
+// Generate the same character every time
+const char1 = CharacterGenerator.generate(seed, audio, 'Test');
+const char2 = CharacterGenerator.generate(seed, audio, 'Test');
+
+console.log(char1.race === char2.race);  // true
+console.log(char1.class === char2.class);  // true
+console.log(JSON.stringify(char1) === JSON.stringify(char2));  // true
+
+// Use this for caching characters in your app
+const characterCache = new Map<string, CharacterSheet>();
+if (!characterCache.has(track.id)) {
+  characterCache.set(track.id, CharacterGenerator.generate(track.id, audio, track.title));
+}
+```
+
+### Understanding XP Bonus Calculation
+
+XP is calculated by combining multiple modifiers (capped at 3.0x total):
+
+```typescript
+import { XPCalculator } from 'playlist-data-engine';
+
+const xpCalc = new XPCalculator();
+
+// Base XP: 1 XP per second of listening
+const baseXP = 300;  // 5 minutes = 300 seconds
+
+// Environmental modifier examples:
+// - Running: 1.5x
+// - Walking: 1.2x
+// - Night time: 1.25x
+// - Extreme weather (rain/snow/storm): 1.4x
+// - High altitude (≥2000m): 1.3x
+
+// Gaming modifier examples:
+// - Base gaming bonus: +0.25x
+// - RPG game: +0.20x
+// - Action/FPS: +0.15x
+// - Multiplayer: +0.15x
+// - Long session (4+ hours): up to +0.20x
+
+// Total calculation (capped at 3.0x):
+const envMultiplier = 1.5;   // Running
+const gamingMultiplier = 1.55; // Playing RPG game
+const totalModifier = Math.min(3.0, envMultiplier * gamingMultiplier);
+const totalXP = Math.floor(baseXP * totalModifier);
+
+console.log(`Base: ${baseXP} XP, Total: ${totalXP} XP (${totalModifier.toFixed(2)}x)`);
+```
+
+### Manual Level-Up Processing
+
+For advanced use cases where you need to handle level-ups manually:
+
+```typescript
+import { LevelUpProcessor } from 'playlist-data-engine';
+
+// Check if character has enough XP to level up
+if (character.xp.current >= character.xp.next_level) {
+  const newLevel = character.level + 1;
+
+  // Process the level-up (returns benefits, doesn't apply them)
+  const benefits = LevelUpProcessor.processLevelUp(character, newLevel);
+
+  console.log(`Level up to ${benefits.newLevel}!`);
+  console.log(`  HP increase: +${benefits.hitPointIncrease}`);
+  console.log(`  New HP total: ${benefits.newHitPointsTotal}`);
+  console.log(`  Proficiency bonus: ${benefits.newProficiencyBonus}`);
+
+  if (benefits.abilityScoreIncrease) {
+    console.log(`  ASI: +${benefits.abilityScoreIncrease.increase} ${benefits.abilityScoreIncrease.ability}`);
+  }
+
+  if (benefits.newSpellSlots) {
+    console.log(`  New spell slots:`, benefits.newSpellSlots);
+  }
+
+  if (benefits.classFeatures) {
+    console.log(`  New features:`, benefits.classFeatures);
+  }
+
+  // Apply the benefits to the character
+  character = LevelUpProcessor.applyLevelUp(character, benefits);
+}
+```
+
+---
+
 ## Available Exports
 
 The main exports from the library are:
