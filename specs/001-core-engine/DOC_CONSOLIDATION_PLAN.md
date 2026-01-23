@@ -3045,7 +3045,7 @@ All 5 supported environment variables are now documented:
 ### Task 6.4: Cross-doc final check
 - [x] Read all three docs end-to-end
 - [x] Verify no duplication of core content
-- [ ] Verify cross-references are accurate
+- [x] Verify cross-references are accurate
 - [ ] Verify each doc has distinct "vibe" and purpose
 - [ ] Verify the "trinity" is complementary, not redundant
 
@@ -3120,6 +3120,30 @@ Each document maintains its distinct "vibe" and identity as planned:
 
 **Files Modified**:
 - `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.4 checklist status and added duplication analysis summary
+
+**Task 6.4 - Third Subtask Completed (2026-01-23): Verify cross-references are accurate**
+
+**Summary**: All cross-references between the three core documentation files have been verified and fixed.
+
+**Cross-Reference Analysis**:
+
+| Document | Links To | Status |
+|----------|----------|--------|
+| `specs/001-core-engine/spec.md` | `../../DATA_ENGINE_REFERENCE.md` | ✅ Correct |
+| `specs/001-core-engine/spec.md` | `../../USAGE_IN_OTHER_PROJECTS.md` | ✅ Correct |
+| `DATA_ENGINE_REFERENCE.md` | `specs/001-core-engine/spec.md` | ✅ Fixed (was SPEC.md) |
+| `DATA_ENGINE_REFERENCE.md` | `USAGE_IN_OTHER_PROJECTS.md` | ✅ Correct |
+| `USAGE_IN_OTHER_PROJECTS.md` | `DATA_ENGINE_REFERENCE.md` | ✅ Correct |
+
+**Issues Found and Fixed**:
+1. ❌ **FIXED**: `DATA_ENGINE_REFERENCE.md` referenced `specs/001-core-engine/SPEC.md` (uppercase) but actual file is `spec.md` (lowercase). Fixed in 2 locations (lines 5 and 1626).
+
+**Note on Duplicate File**:
+- There is a duplicate `DATA_ENGINE_REFERENCE.md` file at `/workspace/specs/001-core-engine/DATA_ENGINE_REFERENCE.md` (2259 lines) which differs from the canonical root version (1627 lines). This duplicate should be removed during Phase 7 (Cleanup & Removal).
+
+**Files Modified**:
+- `/workspace/DATA_ENGINE_REFERENCE.md` - Fixed 2 incorrect cross-references (SPEC.md → spec.md)
+- `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.4 checklist status and added cross-reference verification summary
 
 **Summary**: All three core documentation files have been read end-to-end:
 - `specs/001-core-engine/SPEC.md` (136 lines)
