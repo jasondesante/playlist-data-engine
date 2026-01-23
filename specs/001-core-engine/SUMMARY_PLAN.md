@@ -201,7 +201,7 @@ The Core Data Engine transforms music playlists into D&D 5e-inspired characters 
 Before starting verification tasks, integrate the reference information from this plan into SPEC.md to create a strong foundation:
 
 - [x] Read current `SPEC.md` to understand existing structure
-- [ ] Add "Source Files" section to SPEC.md with file listings from this plan's Quick Reference
+- [x] Add "Source Files" section to SPEC.md with file listings from this plan's Quick Reference
 - [ ] Enhance "Core Data Types" section with detailed type information
 - [ ] Add/clarify "Ability Score Mapping" section
 - [ ] Add/clarify "XP Modifiers" section
