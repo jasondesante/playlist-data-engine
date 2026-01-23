@@ -329,10 +329,18 @@ SPEC.md contains **5 code examples** in the "How to Use" section (lines 92-188):
 - The entire "How to Use" section (lines 92-188) needs to be removed/replaced with cross-reference to USAGE_IN_OTHER_PROJECTS.md
 
 ### Task 0.3: Create SUMMARY_PLAN.md spec inventory
-- [ ] Identify all important spec information in SUMMARY_PLAN.md (not examples, but facts/specs)
-- [ ] List each piece of spec info with line number
-- [ ] Compare against current SPEC.md - note what's missing
-- [ ] Create migration list: what from SUMMARY_PLAN.md should go into SPEC.md
+- [x] Identify all important spec information in SUMMARY_PLAN.md (not examples, but facts/specs)
+- [x] List each piece of spec info with line number
+- [x] Compare against current SPEC.md - note what's missing
+- [x] Create migration list: what from SUMMARY_PLAN.md should go into SPEC.md
+
+**SUMMARY_PLAN.md Analysis Completed (2026-01-23)**:
+- 969 lines total - primarily historical record of verification process with completed task checklists
+- **Key Finding**: Most important spec information is already in SPEC.md
+- **Feature → Files Mapping Table** (lines 322-338) is valuable but may be better suited for DATA_ENGINE_REFERENCE.md per "trinity" separation
+- **Discord Voice Exclusion** (lines 121-125) already properly excluded in SPEC.md line 208
+- **Spec Facts Already in SPEC.md**: Core Features, Data Types, Ability Score Formulas, XP Modifiers, Configuration
+- **No spec information migration needed** - SPEC.md already contains all essential spec information
 
 ### Task 0.4: Create type/method claim inventory
 - [ ] List all type definitions claimed in DATA_ENGINE_REFERENCE.md
