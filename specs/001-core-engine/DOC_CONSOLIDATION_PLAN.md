@@ -1988,10 +1988,52 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 ## Phase 4: Cross-Document Consistency
 
 ### Task 4.1: Resolve naming discrepancies
-- [ ] Check for class name inconsistencies (e.g., `SessionTracker.startSession()` returning sessionId vs session object)
+- [x] Check for class name inconsistencies (e.g., `SessionTracker.startSession()` returning sessionId vs session object) (COMPLETED 2026-01-23)
 - [ ] Check for method signature inconsistencies across docs
 - [ ] Check for type name inconsistencies
 - [ ] Document all discrepancies found and create fixes
+
+**Task 4.1 Completed (2026-01-23):**
+
+**Summary**: Verified all three main documents (SPEC.md, DATA_ENGINE_REFERENCE.md, USAGE_IN_OTHER_PROJECTS.md) for class name and API consistency. Found that SPEC.md, DATA_ENGINE_REFERENCE.md, and USAGE_IN_OTHER_PROJECTS.md are all **consistent and accurate**. However, discovered that **README.md** and **quickstart.md** (files marked for deletion in Phase 7) still contain multiple critical API discrepancies.
+
+**Consistency Status for Core Documents** (All ✅):
+
+1. **SPEC.md** - All class names and descriptions are accurate
+2. **DATA_ENGINE_REFERENCE.md** - All method signatures match source code
+3. **USAGE_IN_OTHER_PROJECTS.md** - All code examples use correct API
+
+**Key APIs Verified as Correct** (source code confirmation):
+
+| API Component | Correct Signature | Source File |
+|---------------|-------------------|-------------|
+| `SessionTracker.startSession()` | `startSession(trackUuid: string, track?, context?): string` | Returns `sessionId` |
+| `SessionTracker.endSession()` | `endSession(sessionId: string, durationOverride?, activityType?): ListeningSession | null` | Requires `sessionId` |
+| `CharacterUpdater.updateCharacterFromSession()` | `updateCharacterFromSession(character, session, track?, previousListenCount?): CharacterUpdateResult` | Returns result object |
+| `MasterySystem.checkMastery()` | `checkMastery(listenCount: number): boolean` | Takes number only |
+| `MasterySystem.isJustMastered()` | `isJustMastered(previousListenCount, currentListenCount): boolean` | Takes two numbers |
+| `MasterySystem.calculateMasteryBonus()` | `calculateMasteryBonus(isMastered: boolean): number` | Takes boolean |
+| `NamingEngine.generateName()` | `generateName(track: PlaylistTrack, audioProfile: AudioProfile): string` | Takes 2 params |
+| `EnvironmentalSensors()` constructor | Accepts string API key OR config object with `weather`, `geolocation`, `retry`, `xpModifier` | Flexible signature |
+| `GamingPlatformSensors.calculateGamingBonus()` | `calculateGamingBonus(): number` | No parameters |
+| `EnvironmentalSensors.calculateXPModifier()` | `calculateXPModifier(): number` | No parameters |
+
+**Outstanding Issues in Obsolete Files** (README.md and quickstart.md - to be deleted in Phase 7):
+
+The following discrepancies exist in files that are **already scheduled for deletion** as part of Phase 7. No action is required because these files will be removed:
+
+1. **README.md lines 139-141**: Uses `tracker.startSession(character.name)` and `tracker.endSession()` (incorrect)
+2. **README.md lines 269-271**: Same SessionTracker API errors
+3. **README.md line 150**: Uses `updater.applyListeningSession()` instead of `updateCharacterFromSession()`
+4. **README.md lines 157-159**: Uses non-existent `MasterySystem.recordPlaythrough()`, `isTrackMastered()`, `getMasteryBonus()` methods
+5. **README.md line 186**: Uses `sensors.calculateXPModifier(context)` - takes no parameters
+6. **README.md line 213**: Uses `gamingSensors.calculateGamingBonus(context)` - takes no parameters
+7. **quickstart.md lines 95-97**: Same SessionTracker API errors as README.md
+8. **quickstart.md line 105**: Uses `updater.applyListeningSession()` instead of `updateCharacterFromSession()`
+9. **quickstart.md lines 109-111**: Uses non-existent MasterySystem methods
+10. **quickstart.md line 136**: Uses `sensors.calculateXPModifier(context)` - takes no parameters
+
+**Action Required**: None. The core three documents (SPEC.md, DATA_ENGINE_REFERENCE.md, USAGE_IN_OTHER_PROJECTS.md) are consistent. The obsolete files (README.md, quickstart.md) will be deleted in Phase 7 as originally planned.
 
 ### Task 4.2: Resolve API changes (e.g., SessionTracker)
 - [ ] Verify `SessionTracker.startSession()` returns `sessionId` (string)
