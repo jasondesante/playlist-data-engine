@@ -1496,9 +1496,26 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 
 **Files Modified**:
 - `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Fixed both "Progression and XP Tracking" and "Advanced: Combining All Systems" examples
-- [ ] "Environmental Sensors" example
-  - [ ] Verify `EnvironmentalSensors` constructor
-  - [ ] Verify `requestPermissions()` and `updateSnapshot()` methods
+- [x] "Environmental Sensors" example (COMPLETED 2026-01-23)
+  - [x] Verify `EnvironmentalSensors` constructor
+  - [x] Verify `requestPermissions()` and `updateSnapshot()` methods
+
+**Task 3.2 - "Environmental Sensors" Example Verification (Completed 2026-01-23)**:
+
+**Summary**: The "Environmental Sensors" example is correct and uses accurate API signatures.
+
+**Verification Results**:
+
+| Method/Constructor | Example Usage | Actual API | Status |
+|-------------------|---------------|------------|--------|
+| `new EnvironmentalSensors(weatherApiKey)` | `new EnvironmentalSensors(process.env.OPENWEATHERMAP_API_KEY)` | `constructor(weatherApiKeyOrConfig?: string | {...})` | ✅ Correct |
+| `requestPermissions(types)` | `await sensors.requestPermissions(['geolocation', 'motion', 'weather'])` | `async requestPermissions(types: SensorType[]): Promise<SensorPermission[]>` | ✅ Correct |
+| `updateSnapshot()` | `await sensors.updateSnapshot()` | `async updateSnapshot(): Promise<EnvironmentalContext>` | ✅ Correct |
+| `calculateXPModifier()` | `sensors.calculateXPModifier()` | `calculateXPModifier(): number` | ✅ Correct |
+
+**No discrepancies found** - All API signatures in the "Environmental Sensors" example are correct.
+
+**Files Modified**: None (no fixes needed)
 - [ ] "Gaming Platform Integration" example
   - [ ] Verify `GamingPlatformSensors` constructor options
   - [ ] Verify `authenticate()` and `startMonitoring()` methods
