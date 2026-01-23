@@ -307,6 +307,24 @@ The Core Data Engine transforms music playlists into D&D 5e-inspired characters 
 
 **Summary**: All 46 source files and 33 test files mentioned in the old implementation plan have been verified to exist in the codebase.
 
+### Feature → Source Files → Test Files Quick Reference
+
+| Feature | Source Files | Unit Tests | Integration Tests |
+|---------|--------------|------------|-------------------|
+| **1. Playlist Parsing** | `PlaylistParser.ts`, `MetadataExtractor.ts` | `parser.test.ts` (19 tests) | `e2e.test.ts` (31 tests) |
+| **2. Audio Analysis** | `AudioAnalyzer.ts`, `SpectrumScanner.ts` | `audioAnalyzer.test.ts` (10), `spectrumScanner.test.ts` (3) | `audioAnalysis.integration.test.ts` (11) |
+| **3. Visual Analysis** | `ColorExtractor.ts` | `colorExtractor.test.ts` (5), `colorExtractor.real.test.ts` (5) | `e2e.test.ts` |
+| **4. Character Generation** | `CharacterGenerator.ts`, `RaceSelector.ts`, `ClassSuggester.ts`, `AbilityScoreCalculator.ts`, `NamingEngine.ts` | `characterComponents.test.ts` (8), `namingEngine.test.ts` (8) | `e2e.test.ts` |
+| **5. Advanced Character** | `SkillAssigner.ts`, `EquipmentGenerator.ts`, `SpellManager.ts`, `AppearanceGenerator.ts` | `skills.test.ts` (14), `equipmentGenerator.test.ts` (33), `spellManager.test.ts` (47), `appearanceGenerator.test.ts` (16) | `e2e.test.ts` |
+| **6. Environmental Sensors** | `EnvironmentalSensors.ts`, `GeolocationProvider.ts`, `WeatherAPIClient.ts`, `MotionDetector.ts`, `LightSensor.ts` | `sensors.test.ts` (244) | `sensorIntegration.test.ts` (23), `fullSensorPipeline.test.ts` (21) |
+| **7. Gaming Integration** | `GamingPlatformSensors.ts`, `SteamAPIClient.ts`, `DiscordRPCClient.ts` | `gaming.test.ts` (25), `discordRPC.test.ts` (40) | `gamingIntegration.test.ts` (36), `discordRPC.integration.test.ts` (19) |
+| **8. Progression** | `XPCalculator.ts`, `LevelUpProcessor.ts`, `MasterySystem.ts`, `SessionTracker.ts` | `xpCalculator.test.ts` (67), `progression.test.ts` (55), `mastery.test.ts` (8) | `e2e.test.ts` |
+| **9. Combat** | `CombatEngine.ts`, `AttackResolver.ts`, `DiceRoller.ts`, `InitiativeRoller.ts`, `SpellCaster.ts` | `combat.test.ts` (47), `attackResolver.test.ts` (18) | `e2e.test.ts` |
+| **10. Multi-Sensor Interaction** | `EnvironmentalSensors.ts`, `GamingPlatformSensors.ts` | `sensors.test.ts`, `gaming.test.ts` | `multiSensorInteraction.test.ts` (17) |
+| **Character Updates** | `characterUpdater.test.ts` | `characterUpdater.test.ts` (6) | `e2e.test.ts` |
+
+**Legend**: Tests in parentheses = number of test cases
+
 ---
 
 ## Concepts and Terminology (from SPEC.md)
@@ -391,7 +409,8 @@ Before starting verification tasks, integrate the reference information from thi
   - 7 integration test files in `/workspace/tests/integration/`
   - 6 test support files (setup, mocks, fixtures)
   - All test files are already documented in the Source File Inventory section above
-- [ ] Create quick reference table: Feature → Source File(s) → Test File(s)
+- [x] Create quick reference table: Feature → Source File(s) → Test File(s)
+  **Completed 2026-01-23**: Created comprehensive feature-to-files mapping table below.
 
 ### Phase 2: Verification and Summary by Feature (12 Main Tasks)
 
