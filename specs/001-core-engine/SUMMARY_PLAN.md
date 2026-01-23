@@ -425,17 +425,24 @@ Before starting verification tasks, integrate the reference information from thi
   **Completed 2026-01-23**: All claims verified. The `rollDamage(attacker, attack, isCritical)` method correctly receives the attacker parameter and uses `getDamageModifier()` to apply STR/DEX/finesse logic. Test file has 18 tests covering all attack types, negative modifiers, edge cases, critical hits, and advantage/disadvantage. No discrepancies found.
 
 #### Task 2: Discord RPC Integration (Music Presence)
-- [ ] Read `src/core/sensors/DiscordRPCClient.ts`
-- [ ] Verify `connect()`, `disconnect()` methods
-- [ ] Verify `setMusicActivity()` method exists (NOT `setGameActivity`)
-- [ ] Verify `clearMusicActivity()` method exists
-- [ ] Verify `getUserInfo()` method exists
-- [ ] Verify NO game-related methods exist
-- [ ] **SKIP any voice chat features** - do NOT document `subscribeToVoiceUpdates` or similar voice functionality
-- [ ] Read `src/core/sensors/GamingPlatformSensors.ts` - verify game detection uses Steam only
-- [ ] Verify test files: `tests/unit/discordRPC.test.ts` (40 tests), `tests/integration/discordRPC.integration.test.ts` (19 tests)
-- [ ] Summarize Discord RPC's actual purpose (music presence only)
-- [ ] Note any discrepancies
+- [x] Read `src/core/sensors/DiscordRPCClient.ts`
+- [x] Verify `connect()`, `disconnect()` methods
+- [x] Verify `setMusicActivity()` method exists (NOT `setGameActivity`)
+- [x] Verify `clearMusicActivity()` method exists
+- [x] Verify `getUserInfo()` method exists
+- [x] Verify NO game-related methods exist
+- [x] **SKIP any voice chat features** - do NOT document `subscribeToVoiceUpdates` or similar voice functionality
+- [x] Read `src/core/sensors/GamingPlatformSensors.ts` - verify game detection uses Steam only
+- [x] Verify test files: `tests/unit/discordRPC.test.ts` (40 tests), `tests/integration/discordRPC.integration.test.ts` (19 tests)
+- [x] Summarize Discord RPC's actual purpose (music presence only)
+- [x] Note any discrepancies
+  **Completed 2026-01-23**: All claims verified. DiscordRPCClient correctly implements music presence only.
+  - `connect()`, `disconnect()`, `setMusicActivity()`, `clearMusicActivity()`, `getUserInfo()` all exist
+  - `setMusicActivity()` uses ActivityType.Listening (2) for "Listening to" status
+  - Game detection in GamingPlatformSensors uses Steam only (platformSource: 'steam' | 'none')
+  - Unit tests: 40 tests in discordRPC.test.ts
+  - Integration tests: 19 tests in discordRPC.integration.test.ts
+  **DISCREPANCY NOTED**: Voice-related methods (`subscribeToVoiceUpdates()`, `getVoiceChannelInfo()`, `VoiceStateInfo` interface) exist in the code as documented placeholders that return false/null. They are properly documented as non-functional due to Discord RPC platform limitations. These should be removed in Phase 5 (Code Cleanup) but are currently present.
 
 #### Task 3: Weather API Caching
 - [ ] Read `src/core/sensors/WeatherAPIClient.ts`
