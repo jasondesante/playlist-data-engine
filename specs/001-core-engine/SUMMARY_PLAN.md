@@ -563,18 +563,31 @@ Before starting verification tasks, integrate the reference information from thi
   - **DISCREPANCY**: Plan mentioned "13 forecast-related tests" but found 14 forecast-related tests in `tests/unit/sensors.test.ts` (lines 1855-2016, plus 1 at 2223)
 
 #### Task 8: Severe Weather Detection
-- [ ] Read `src/core/sensors/WeatherAPIClient.ts`
-- [ ] Verify `SevereWeatherType` enum exists (Blizzard, Hurricane, Typhoon, Tornado, None)
-- [ ] Verify `SevereWeatherAlert` interface exists
-- [ ] Verify `detectSevereWeather()` method exists
-- [ ] Verify `getSafetyWarning()` method exists
-- [ ] Read `src/core/sensors/EnvironmentalSensors.ts`
-- [ ] Verify `calculateXPModifierWithSevereWeather()` method exists
-- [ ] Verify XP bonuses: Blizzard +50%, Hurricane/Typhoon +75%, Tornado +100%
-- [ ] Verify 3.0x total cap enforcement
-- [ ] Verify 23 severe weather tests exist
-- [ ] Summarize severe weather implementation
-- [ ] Note any discrepancies
+- [x] Read `src/core/sensors/WeatherAPIClient.ts`
+- [x] Verify `SevereWeatherType` enum exists (Blizzard, Hurricane, Typhoon, Tornado, None)
+- [x] Verify `SevereWeatherAlert` interface exists
+- [x] Verify `detectSevereWeather()` method exists
+- [x] Verify `getSafetyWarning()` method exists
+- [x] Read `src/core/sensors/EnvironmentalSensors.ts`
+- [x] Verify `calculateXPModifierWithSevereWeather()` method exists
+- [x] Verify XP bonuses: Blizzard +50%, Hurricane/Typhoon +75%, Tornado +100%
+- [x] Verify 3.0x total cap enforcement
+- [x] Verify 23 severe weather tests exist
+- [x] Summarize severe weather implementation
+- [x] Note any discrepancies
+  **Completed 2026-01-23**: All claims verified. Severe weather detection is fully implemented.
+  - `SevereWeatherType` enum at `WeatherAPIClient.ts:39-45` with Blizzard, Hurricane, Typhoon, Tornado, None
+  - `SevereWeatherAlert` interface at `WeatherAPIClient.ts:50-56` with type, xpBonus, severity, message, detectedAt
+  - `detectSevereWeather(weather: WeatherData | ForecastData)` at `WeatherAPIClient.ts:704-765`
+  - `getSafetyWarning(alert: SevereWeatherAlert)` at `WeatherAPIClient.ts:785-801`
+  - `calculateXPModifierWithSevereWeather()` at `EnvironmentalSensors.ts:643-676`
+  - XP bonuses verified: Blizzard 0.5 (+50%), Hurricane/Typhoon 0.75 (+75%), Tornado 1.0 (+100%)
+  - 3.0x total cap enforced at `EnvironmentalSensors.ts:664` using `Math.min(modifier, this.xpConfig.maxModifier)`
+  - **Test count**: 23 severe weather tests found in `tests/unit/sensors.test.ts`:
+    - 11 detectSevereWeather tests (blizzard extreme/high, heavy snow, regular snow, hurricane, extreme hurricane, tornado, extreme thunderstorm, normal storm, clear weather, ForecastData)
+    - 5 getSafetyWarning tests (extreme blizzard, high severity blizzard, hurricane, extreme cyclone, tornado)
+    - 7 EnvironmentalSensors integration tests (XP bonus, 3.0x cap, null weather, independent detection, safety warning, null warning, null context)
+  **No discrepancies found** - All implementations match the plan specifications.
 
 #### Task 9: Clean Up Gaming Platform Sensors
 - [ ] Read `src/core/sensors/GamingPlatformSensors.ts`
