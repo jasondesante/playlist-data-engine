@@ -2177,10 +2177,22 @@ This is a **source code inconsistency** (not a documentation issue) and is alrea
 - **DATA_ENGINE_REFERENCE.md**: "The API Dictionary" - Complete API catalog with minimal inline examples using production package name ✅
 - **USAGE_IN_OTHER_PROJECTS.md**: "The Cookbook" - All comprehensive examples using production package name ✅
 
-### Task 4.4: Verify source file references
-- [ ] All source file paths in SPEC.md should be accurate
-- [ ] All source file paths in DATA_ENGINE_REFERENCE.md should be accurate
-- [ ] Check for files that moved or were renamed
+### Task 4.4: Verify source file references (Completed 2026-01-23)
+- [x] All source file paths in SPEC.md should be accurate
+- [x] All source file paths in DATA_ENGINE_REFERENCE.md should be accurate
+- [x] Check for files that moved or were renamed
+
+**Summary**:
+- **SPEC.md**: All 12 source file references verified ✅
+- **DATA_ENGINE_REFERENCE.md**: All 39 source file references verified ✅
+- **No moved or renamed files found** ✅
+
+**Missing Documentation Found**:
+Two utility classes exist in source but are not documented:
+1. `SpectrumScanner` - Frequency band separation utility (`src/core/analysis/SpectrumScanner.ts`)
+2. `MetadataExtractor` - Priority queue metadata extraction (`src/core/parser/MetadataExtractor.ts`)
+
+Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need separate documentation.
 
 ---
 
