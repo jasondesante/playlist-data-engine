@@ -2340,11 +2340,46 @@ Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need sepa
 - `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Added 3 section headers and reorganized TOC
 
 ### Task 5.4: Add cross-references between docs
-- [ ] SPEC.md → Add "For API details, see DATA_ENGINE_REFERENCE.md"
-- [ ] SPEC.md → Add "For usage examples, see USAGE_IN_OTHER_PROJECTS.md"
-- [ ] DATA_ENGINE_REFERENCE.md → Add "For quick overview, see SPEC.md"
-- [ ] DATA_ENGINE_REFERENCE.md → Add "For usage examples, see USAGE_IN_OTHER_PROJECTS.md"
-- [ ] USAGE_IN_OTHER_PROJECTS.md → Add "For API details, see DATA_ENGINE_REFERENCE.md"
+- [x] SPEC.md → Add "For API details, see DATA_ENGINE_REFERENCE.md" (COMPLETED 2026-01-23)
+- [x] SPEC.md → Add "For usage examples, see USAGE_IN_OTHER_PROJECTS.md" (Already existed)
+- [x] DATA_ENGINE_REFERENCE.md → Add "For quick overview, see SPEC.md" (COMPLETED 2026-01-23)
+- [x] DATA_ENGINE_REFERENCE.md → Add "For usage examples, see USAGE_IN_OTHER_PROJECTS.md" (Already existed)
+- [x] USAGE_IN_OTHER_PROJECTS.md → Add "For API details, see DATA_ENGINE_REFERENCE.md" (COMPLETED 2026-01-23)
+
+**Task 5.4 Completed (2026-01-23)**:
+
+**Summary**: All cross-references have been added between the three documentation files (SPEC.md, DATA_ENGINE_REFERENCE.md, USAGE_IN_OTHER_PROJECTS.md).
+
+**Changes Made**:
+
+1. **DATA_ENGINE_REFERENCE.md** - Added missing cross-reference
+   - Added: "**For quick overview, see [SPEC.md](specs/001-core-engine/SPEC.md)**" at the top (line 6)
+   - Existing: "**For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md)**" (line 7)
+
+2. **SPEC.md** - Added missing cross-reference
+   - Added: "**For API details, see [DATA_ENGINE_REFERENCE.md](../../DATA_ENGINE_REFERENCE.md)**" (line 108)
+   - Existing: "**For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](../../USAGE_IN_OTHER_PROJECTS.md)**" (line 109)
+
+3. **USAGE_IN_OTHER_PROJECTS.md** - Added missing cross-reference
+   - Added: "**For API details, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md)**" at the top (line 3)
+
+**Cross-Reference Matrix** (After Task 5.4):
+
+| From → To | SPEC.md | DATA_ENGINE_REFERENCE.md | USAGE_IN_OTHER_PROJECTS.md |
+|-----------|---------|--------------------------|----------------------------|
+| **SPEC.md** | - | ✅ API details | ✅ Usage examples |
+| **DATA_ENGINE_REFERENCE.md** | ✅ Quick overview | - | ✅ Usage examples |
+| **USAGE_IN_OTHER_PROJECTS.md** | - | ✅ API details | - |
+
+**Result**: The "trinity" of documentation is now fully cross-referenced, allowing users to navigate easily between:
+- SPEC.md (The Atlas) - Quick overview with source file links
+- DATA_ENGINE_REFERENCE.md (The API Dictionary) - Complete API catalog
+- USAGE_IN_OTHER_PROJECTS.md (The Cookbook) - Comprehensive usage examples
+
+**Files Modified**:
+- `/workspace/DATA_ENGINE_REFERENCE.md` - Added "For quick overview, see SPEC.md" cross-reference
+- `/workspace/specs/001-core-engine/SPEC.md` - Added "For API details, see DATA_ENGINE_REFERENCE.md" cross-reference
+- `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Added "For API details, see DATA_ENGINE_REFERENCE.md" cross-reference
 
 ---
 

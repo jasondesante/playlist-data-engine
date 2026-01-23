@@ -1,5 +1,7 @@
 # Using Playlist Data Engine in Other Projects
 
+**For API details, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md)**
+
 Your Playlist Data Engine is now built and ready to use! Here are the recommended ways to use it in other projects on your local machine.
 
 ## Option 1: Using `file:` Path (Recommended for Development)

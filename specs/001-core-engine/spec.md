@@ -104,7 +104,8 @@ Sensors can be configured via environment variables or programmatically.
 | `XPCalculator` | Calculates XP with modifiers | `src/core/progression/XPCalculator.ts` |
 | `CombatEngine` | Turn-based combat system | `src/core/combat/CombatEngine.ts` |
 
-For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md).
+**For API details, see [DATA_ENGINE_REFERENCE.md](../../DATA_ENGINE_REFERENCE.md)**
+**For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](../../USAGE_IN_OTHER_PROJECTS.md)**
 
 ---
 
