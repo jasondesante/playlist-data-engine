@@ -52,7 +52,25 @@
 - [x] Read `SPEC.md` - note current structure, examples present, factual claims
 - [x] Read `DATA_ENGINE_REFERENCE.md` - note API completeness, examples present, cookbook section
 - [x] Read `USAGE_IN_OTHER_PROJECTS.md` - note examples present, installation section
-- [ ] Read `README.md` - harvest any unique examples worth keeping
+- [x] Read `README.md` - harvest any unique examples worth keeping (completed 2026-01-23)
+
+**README.md Unique Examples Found** (not in USAGE):
+1. ColorExtractor example (extract color palette from artwork)
+2. SkillAssigner example (assign and filter proficient skills)
+3. SpellManager example (isSpellcaster check + generateSpells)
+4. EquipmentGenerator + AppearanceGenerator examples
+5. LevelUpProcessor/CharacterUpdater.applyListeningSession example
+6. MasterySystem with recordPlaythrough/isTrackMastered
+7. EnvironmentalSensors constructor with options object (vs single API key)
+8. GamingPlatformSensors authenticate() method call
+9. Full Combat System example (startCombat, executeAttack, nextTurn, getCombatResult)
+10. Complete Pipeline Example
+
+**API Discrepancies Found** (needs verification in Phase 4):
+- `CharacterUpdater.applyListeningSession()` (README) vs `updateCharacterFromSession()` (USAGE)
+- `MasterySystem.recordPlaythrough()/isTrackMastered()` (README) vs `checkMastery()/isJustMastered()` (USAGE)
+- `EnvironmentalSensors` constructor options object (README) vs single API key param (USAGE)
+- `SessionTracker.startSession()` - README doesn't show return value, both docs need verification
 - [ ] Read `quickstart.md` - harvest any unique examples worth keeping
 - [ ] Read `SUMMARY_PLAN.md` - harvest important spec information that should be in SPEC.md
 
