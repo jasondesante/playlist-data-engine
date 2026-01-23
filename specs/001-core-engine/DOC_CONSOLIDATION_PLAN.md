@@ -2501,9 +2501,93 @@ SPEC.md successfully serves as "The Atlas" - a comprehensive overview that clear
 **Files Modified**:
 - `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.1 checklist status
 
+**Task 6.2 - Second Subtask Completed (2026-01-23): Verify every public method is documented**
+
+**Summary**: All public methods across 30 classes in the codebase are now documented in DATA_ENGINE_REFERENCE.md.
+
+**Methods Previously Missing (Now Added):**
+
+**SpellManager** (src/core/generation/SpellManager.ts):
+- `getSpellSlots()` - Gets spell slot counts for class/level
+- `getCantrips()` - Returns available cantrips for spellcasting class
+- `getKnownSpells()` - Returns spells known at a given level
+- `getSpellCountAtLevel()` - Returns number of spell slots at a level
+
+**EquipmentGenerator** (src/core/generation/EquipmentGenerator.ts):
+- `getStartingEquipment()` - Returns starting equipment list for class
+- `removeItem()` - Removes item from inventory
+- `unequipItem()` - Unequips an item
+- `getInventoryList()` - Returns flattened inventory list
+
+**SessionTracker** (src/core/progression/SessionTracker.ts):
+- `getActiveSession()` - Gets active session without ending it
+- `getActiveSessionDuration()` - Returns current session duration
+- `updateSessionContext()` - Updates context for live session
+- `getSessionHistory()` - Returns all completed sessions
+- `getTotalListeningTime()` - Returns total listening time
+- `getTotalXPEarned()` - Returns total XP earned
+- `getTrackListeningTime()` - Returns listening time for specific track
+- `getTrackListenCount()` - Returns number of track listens
+- `isTrackMastered()` - Checks if track is mastered
+- `getSessionsInRange()` - Returns sessions in time range
+- `getAverageSessionLength()` - Returns average session duration
+- `getLongestSession()` - Returns longest session
+- `clearHistory()` - Clears session history
+- `clearActiveSessions()` - Clears active sessions
+- `getActiveSessionCount()` - Returns active session count
+- `getActiveSessionIds()` - Returns all active session IDs
+
+**XPCalculator** (src/core/progression/XPCalculator.ts):
+- `calculateTotalModifier()` - Calculates combined XP modifier
+- `isTrackMastered()` - Checks mastery by listen count
+- `getMasteryBonusXP()` - Returns mastery bonus
+- `getConfig()` - Returns current configuration
+
+**EnvironmentalSensors** (src/core/sensors/EnvironmentalSensors.ts):
+- `calculateXPModifierWithForecast()` - Calculates XP modifier with weather forecast
+- `calculateXPModifierWithSevereWeather()` - Calculates XP with severe weather detection
+- `detectSevereWeather()` - Detects severe weather conditions
+- `getSevereWeatherWarning()` - Returns safety warning
+- `getSensorStatus()` - Returns sensor health status
+- `getAllSensorStatuses()` - Returns all sensor statuses
+- `getFailureLog()` - Returns failure log entries
+- `getLastKnownGood()` - Returns last known good sensor value
+- `clearFailureLog()` - Clears failure log
+- `updateRetryConfig()` - Updates retry configuration
+- `onSensorRecovery()` - Registers recovery callback
+- `getPermissions()` - Returns permission states
+- `checkAvailability()` - Checks sensor availability
+- `getCurrentActivity()` - Returns current activity type
+- `getDiagnostics()` - Returns diagnostic information
+- `enableDiagnosticMode()` - Enables diagnostic logging
+- `disableDiagnosticMode()` - Disables diagnostic logging
+- `printDashboard()` - Prints sensor dashboard
+
+**GamingPlatformSensors** (src/core/sensors/GamingPlatformSensors.ts):
+- `isPlayingGame()` - Checks if playing specific game
+- `getContext()` - Returns gaming context
+- `recordGameSession()` - Records game session
+- `getDiagnostics()` - Returns diagnostic information
+- `printDashboard()` - Prints gaming dashboard
+
+**CombatEngine** (src/core/combat/CombatEngine.ts):
+- `executeDodge()` - Executes dodge action
+- `executeDash()` - Executes dash action
+- `executeDisengage()` - Executes disengage action
+- `getCombatSummary()` - Returns combat summary
+- `applyDamage()` - Applies damage to combatant
+- `healCombatant()` - Heals a combatant
+- `applyTemporaryHP()` - Applies temporary HP
+- `getLivingCombatants()` - Returns living combatants
+- `getDefeatedCombatants()` - Returns defeated combatants
+
+**Files Modified**:
+- `/workspace/DATA_ENGINE_REFERENCE.md` - Added 50+ missing method documentations across 8 classes
+- `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.2 checklist status
+
 ### Task 6.2: DATA_ENGINE_REFERENCE.md final check
 - [x] Verify every class is documented (COMPLETED 2026-01-23)
-- [ ] Verify every public method is documented
+- [x] Verify every public method is documented (COMPLETED 2026-01-23)
 - [ ] Verify every type interface is documented
 - [ ] Verify all code examples compile (conceptually)
 - [ ] Ask: "Could I find the API for any class without digging into source?"

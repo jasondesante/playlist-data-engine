@@ -791,10 +791,21 @@ Assigns skill proficiencies based on class.
 Manages spells for spellcasting classes.
 
 - `static isSpellcaster(characterClass: Class): boolean`
+    - Returns true if the class can cast spells.
+- `static getSpellSlots(characterClass: Class, characterLevel: number): Record<number, { total: number; used: number }>`
+    - Gets spell slot counts for a class at a given level.
+- `static getCantrips(characterClass: Class): string[]`
+    - Returns all available cantrips for a spellcasting class.
+- `static getKnownSpells(characterClass: Class, characterLevel: number): string[]`
+    - Returns all spells known by a spellcaster at a given level.
 - `static initializeSpells(characterClass: Class, characterLevel: number): SpellSlots`
-    - Returns known spells, cantrips, and spell slots for the level.
-- `static useSpellSlot(spellSlots: SpellSlots, level: number): SpellSlots`
-- `static restoreSpellSlots(spellSlots: SpellSlots): SpellSlots`
+    - Returns complete spell configuration with slots, known spells, and cantrips.
+- `static getSpellCountAtLevel(spellLevel: number, spellSlots: Record<number, { total: number; used: number }>): number`
+    - Returns number of spell slots at a given level.
+- `static useSpellSlot(spellSlots: Record<number, { total: number; used: number }>, spellLevel: number): Record<number, { total: number; used: number }>`
+    - Consumes one spell slot at the specified level.
+- `static restoreSpellSlots(spellSlots: Record<number, { total: number; used: number }>, spellLevel?: number): Record<number, { total: number; used: number }>`
+    - Restores spell slots at a specific level or all levels.
 
 #### Helper: `EquipmentGenerator`
 
@@ -802,10 +813,20 @@ Manages spells for spellcasting classes.
 
 Manages inventory and starting gear.
 
+- `static getStartingEquipment(characterClass: Class): { weapons: string[]; armor: string[]; items: string[] }`
+    - Returns starting equipment list for a class.
 - `static initializeEquipment(characterClass: Class): CharacterEquipment`
-    - Grants starting weapons, armor, and items.
-- `static addItem(equipment: CharacterEquipment, item: string, quantity: number): CharacterEquipment`
-- `static equipItem(equipment: CharacterEquipment, item: string): CharacterEquipment`
+    - Creates complete equipment state with starting gear equipped.
+- `static addItem(equipment: CharacterEquipment, itemName: string, quantity: number): CharacterEquipment`
+    - Adds an item to inventory and recalculates weight.
+- `static removeItem(equipment: CharacterEquipment, itemName: string, quantity: number): CharacterEquipment`
+    - Removes an item from inventory and recalculates weight.
+- `static equipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment`
+    - Equips an item from inventory.
+- `static unequipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment`
+    - Unequips an item from inventory.
+- `static getInventoryList(equipment: CharacterEquipment): InventoryItem[]`
+    - Returns flattened list of all inventory items.
 
 #### Helper: `AppearanceGenerator`
 
@@ -850,10 +871,44 @@ new SessionTracker(xpCalculator?: XPCalculator)
 
 **Methods:**
 
-- `startSession(trackUuid: string, track?: PlaylistTrack, context?: { ... }): string`
+- `startSession(trackUuid: string, track?: PlaylistTrack, context?: { environmental_context?: EnvironmentalContext; gaming_context?: GamingContext }): string`
     - Starts a session. Returns a `sessionId`.
 - `endSession(sessionId: string, durationOverride?: number, activityType?: string): ListeningSession | null`
     - Ends the session, calculates XP, and returns the session record.
+- `getActiveSession(sessionId: string): ActiveSession | null`
+    - Gets an active session without ending it.
+- `getActiveSessionDuration(sessionId: string): number | null`
+    - Returns current duration of active session in seconds.
+- `updateSessionContext(sessionId: string, context: { environmental_context?: EnvironmentalContext; gaming_context?: GamingContext }): boolean`
+    - Updates environmental or gaming context for a live session.
+- `getSessionHistory(): ListeningSession[]`
+    - Returns all completed listening sessions.
+- `getSessionsForTrack(trackUuid: string): ListeningSession[]`
+    - Returns sessions for a specific track.
+- `getTotalListeningTime(): number`
+    - Returns total listening time across all sessions in seconds.
+- `getTotalXPEarned(): number`
+    - Returns total XP earned across all sessions.
+- `getTrackListeningTime(trackUuid: string): number`
+    - Returns total listening time for a specific track in seconds.
+- `getTrackListenCount(trackUuid: string): number`
+    - Returns number of times a track has been listened to.
+- `isTrackMastered(trackUuid: string, masteryThreshold?: number): boolean`
+    - Checks if track has been mastered (default threshold: 10).
+- `getSessionsInRange(startTime: number, endTime: number): ListeningSession[]`
+    - Returns sessions within a time range.
+- `getAverageSessionLength(): number`
+    - Returns average session duration in seconds.
+- `getLongestSession(): ListeningSession | null`
+    - Returns the session with longest duration.
+- `clearHistory(): void`
+    - Clears all session history.
+- `clearActiveSessions(): void`
+    - Clears all active sessions.
+- `getActiveSessionCount(): number`
+    - Returns number of currently active sessions.
+- `getActiveSessionIds(): string[]`
+    - Returns all active session IDs.
 
 ### ListeningSession
 
@@ -873,12 +928,6 @@ export interface ListeningSession {
     total_xp_earned: number;
 }
 ```
-- `getActiveSession(sessionId: string): ActiveSession | null`
-- `updateSessionContext(sessionId: string, context: { ... }): boolean`
-    - Updates environmental or gaming context for a live session.
-- `getSessionHistory(): ListeningSession[]`
-- `getSessionsForTrack(trackUuid: string): ListeningSession[]`
-- `isTrackMastered(trackUuid: string, threshold?: number): boolean`
 
 ---
 
@@ -928,9 +977,21 @@ export interface ExperienceSystem {
 **Methods:**
 
 - `calculateSessionXP(session: ListeningSession, track?: PlaylistTrack): number`
-    - Calculates total XP for a session.
+    - Calculates total XP for a session with all multipliers applied.
+- `calculateTotalModifier(envContext?: EnvironmentalContext, gamingContext?: GamingContext): number`
+    - Calculates combined XP modifier (1.0 to 3.0) from environmental and gaming bonuses.
 - `getXPThresholdForLevel(level: number): number`
+    - Returns XP required for a specific level (1-20).
+- `getXPToNextLevel(currentLevel: number): number`
+    - Returns XP needed to advance from current level to next.
 - `getLevelFromXP(totalXP: number): number`
+    - Determines character level from total XP.
+- `isTrackMastered(listenCount: number): boolean`
+    - Checks if listen count meets mastery threshold.
+- `getMasteryBonusXP(): number`
+    - Returns bonus XP for mastering a track.
+- `getConfig(): ExperienceSystem`
+    - Returns current configuration.
 
 ---
 
@@ -1040,7 +1101,7 @@ Integrates real-world data (GPS, Weather, Motion, Light) to influence XP generat
 
 **Constructor:**
 ```typescript
-new EnvironmentalSensors(weatherApiKey?: string)
+new EnvironmentalSensors(weatherApiKeyOrConfig?: string | { weather?: { apiKey?: string }; geolocation?: Partial<GeolocationSensorConfig>; retry?: Partial<RetryConfig>; xpModifier?: Partial<XPModifierConfig> }, retryConfig?: Partial<SensorRetryConfig>)
 ```
 
 **Methods:**
@@ -1050,10 +1111,47 @@ new EnvironmentalSensors(weatherApiKey?: string)
 - `startMonitoring(callback?: (context: EnvironmentalContext) => void): void`
     - Starts listening to sensor streams.
 - `stopMonitoring(): void`
+    - Stops all sensor monitoring.
 - `async updateSnapshot(): Promise<EnvironmentalContext>`
-    - Manually fetches current pull-based data (Geo, Weather).
+    - Manually fetches current pull-based data (Geo, Weather) with retry logic.
 - `calculateXPModifier(): number`
     - Returns a multiplier (1.0x - 3.0x) based on current context.
+- `async calculateXPModifierWithForecast(forecastHours?: number): Promise<number>`
+    - Calculates XP modifier including upcoming weather forecast.
+- `async calculateXPModifierWithSevereWeather(): Promise<{ modifier: number; severeWeatherAlert: SevereWeatherAlert | null; safetyWarning: string | null }>`
+    - Calculates XP modifier with severe weather detection.
+- `detectSevereWeather(): SevereWeatherAlert | null`
+    - Detects severe weather from current conditions.
+- `getSevereWeatherWarning(): string | null`
+    - Returns safety warning for current severe weather.
+- `getSensorStatus(sensorType: SensorType): SensorStatus | null`
+    - Returns current health status of a sensor.
+- `getAllSensorStatuses(): SensorStatus[]`
+    - Returns status of all sensors.
+- `getFailureLog(sensorType?: SensorType, limit?: number): SensorFailureLog[]`
+    - Returns failure log entries, optionally filtered.
+- `getLastKnownGood(sensorType: SensorType): any`
+    - Returns last known good value for a sensor.
+- `clearFailureLog(): void`
+    - Clears failure log entries.
+- `updateRetryConfig(config: Partial<SensorRetryConfig>): void`
+    - Updates retry configuration.
+- `onSensorRecovery(callback: (notification: SensorRecoveryNotification) => void): () => void`
+    - Registers callback for sensor recovery notifications, returns unsubscribe function.
+- `getPermissions(): SensorPermission[]`
+    - Returns current permission states.
+- `checkAvailability(type: SensorType): boolean`
+    - Checks if a sensor type is available in the current environment.
+- `getCurrentActivity(): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown'`
+    - Returns current activity type from motion sensor.
+- `getDiagnostics(): { timestamp: number; diagnosticMode: boolean; sensors: [...]; cache: {...}; performance: {...}; recentFailures: SensorFailureLog[]; permissions: SensorPermission[]; context: {...} }`
+    - Returns comprehensive diagnostic information.
+- `enableDiagnosticMode(): void`
+    - Enables diagnostic logging mode.
+- `disableDiagnosticMode(): void`
+    - Disables diagnostic logging mode.
+- `printDashboard(config?: DashboardConfig): void`
+    - Prints formatted sensor dashboard to console.
 
 #### Helper: `GeolocationProvider`
 
@@ -1106,15 +1204,29 @@ Monitors Steam and Discord activity to award gaming bonuses.
 
 **Constructor:**
 ```typescript
-new GamingPlatformSensors(config: { steam?: { ... }, discord?: { ... } })
+new GamingPlatformSensors(config: { steam?: { apiKey: string; steamId?: string; pollInterval?: number }; discord?: { clientId: string; enableRichPresence?: boolean; pollInterval?: number } })
 ```
 
 **Methods:**
 
 - `async authenticate(steamUserId?: string, discordUserId?: string): Promise<boolean>`
+    - Authenticates with Steam (by ID) and Discord (connects RPC).
 - `startMonitoring(callback?: (context: GamingContext) => void): void`
+    - Starts polling for gaming activity.
 - `stopMonitoring(): void`
+    - Stops monitoring gaming activity.
+- `isPlayingGame(gameName: string): boolean`
+    - Checks if currently playing a specific game.
 - `calculateGamingBonus(): number`
+    - Calculates gaming XP bonus multiplier (1.0 to 1.75).
+- `getContext(): GamingContext`
+    - Returns current gaming context snapshot.
+- `recordGameSession(gameName: string, durationMinutes: number): void`
+    - Records a game session in the gaming history.
+- `getDiagnostics(): { timestamp: number; steam: {...}; discord: {...}; gamingContext: GamingContext; polling: {...}; cache: {...}; performance: {...} }`
+    - Returns comprehensive diagnostic information.
+- `printDashboard(config?: DashboardConfig): void`
+    - Prints formatted gaming sensor dashboard to console.
 #### Helper: `SteamAPIClient`
 
 **Location:** `src/core/sensors/SteamAPIClient.ts`
@@ -1165,13 +1277,33 @@ new CombatEngine(config?: CombatConfig)
 - `startCombat(players: CharacterSheet[], enemies: CharacterSheet[], environment?: EnvironmentalContext): CombatInstance`
     - Rolls initiative and creates a combat session.
 - `getCurrentCombatant(combat: CombatInstance): Combatant`
+    - Returns the current active combatant.
 - `executeAttack(combat: CombatInstance, attacker: Combatant, target: Combatant, attack: Attack): CombatAction`
     - Resolves an attack roll against AC and applies damage.
 - `executeCastSpell(combat: CombatInstance, caster: Combatant, spell: Spell, targets: Combatant[]): CombatAction`
+    - Executes a spell casting action.
+- `executeDodge(combat: CombatInstance, combatant: Combatant): CombatAction`
+    - Executes dodge action (increases AC by 2 until next turn).
+- `executeDash(combat: CombatInstance, combatant: Combatant): CombatAction`
+    - Executes dash action (double movement speed).
+- `executeDisengage(combat: CombatInstance, combatant: Combatant): CombatAction`
+    - Executes disengage action (no opportunity attacks provoked).
 - `nextTurn(combat: CombatInstance): CombatInstance`
-    - Advances the turn order.
+    - Advances the turn order and resets action trackers.
 - `getCombatResult(combat: CombatInstance): CombatResult | null`
     - Returns winner and rewards if combat is over.
+- `getCombatSummary(combat: CombatInstance): string`
+    - Returns formatted combat summary string.
+- `applyDamage(combatant: Combatant, damage: number): number`
+    - Applies damage to combatant (accounts for temp HP).
+- `healCombatant(combatant: Combatant, healing: number): number`
+    - Heals a combatant.
+- `applyTemporaryHP(combatant: Combatant, tempHP: number): void`
+    - Applies temporary hit points.
+- `getLivingCombatants(combat: CombatInstance): Combatant[]`
+    - Returns all non-defeated combatants.
+- `getDefeatedCombatants(combat: CombatInstance): Combatant[]`
+    - Returns all defeated combatants.
 
 #### Helper: `InitiativeRoller`
 
