@@ -1691,7 +1691,18 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 6. The existing "Progression and XP Tracking" example in USAGE_IN_OTHER_PROJECTS.md (lines 107-147) already shows the correct API usage
 
 **Action Taken**: No changes to USAGE_IN_OTHER_PROJECTS.md required. The example has API inaccuracies that would mislead users. The SessionTracker, XPCalculator, CharacterUpdater, and MasterySystem classes are documented in DATA_ENGINE_REFERENCE.md with correct signatures. The existing "Progression and XP Tracking" example in USAGE_IN_OTHER_PROJECTS.md already demonstrates the correct workflow.
-- [ ] Review "Phase 4: Environmental Sensors" example - add to USAGE if unique
+- [x] Review "Phase 4: Environmental Sensors" example - add to USAGE if unique (COMPLETED 2026-01-23)
+
+**Findings**:
+1. The quickstart.md "Phase 4" example (lines 117-138) contains **multiple API inaccuracies**:
+   - Constructor uses non-existent options: `{enableLocation, enableMotion, enableWeather, weatherApiKey}` - actual constructor takes either a string API key OR `{weather: {apiKey}}` config object
+   - `requestPermissions()` called with no parameters - actual API requires `SensorType[]` array
+   - `getCurrentContext()` method doesn't exist - actual method is `updateSnapshot()`
+   - `calculateXPModifier(context)` passes context parameter - actual method takes no parameters
+
+2. USAGE_IN_OTHER_PROJECTS.md (lines 149-172) already has an "Environmental Sensors" example that is **more accurate** to the actual implementation
+
+3. **Action**: No changes needed to USAGE_IN_OTHER_PROJECTS.md. The quickstart example is buggy and should NOT be migrated - it would mislead users with incorrect API usage. The existing USAGE example correctly demonstrates the constructor, requestPermissions(), updateSnapshot(), and calculateXPModifier() methods.
 - [ ] Review "Phase 5: Gaming Platform Integration" example - add to USAGE if unique
 - [ ] Review "Phase 6: Combat System" example - add to USAGE if unique
 - [ ] Review "Complete Pipeline Example" - add to USAGE if unique
