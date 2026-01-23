@@ -214,42 +214,46 @@ import {
   EnvironmentalSensors,
   GamingPlatformSensors,
   SessionTracker,
-  XPCalculator,
   CharacterUpdater
 } from 'playlist-data-engine';
 
 // Full pipeline: Parse → Analyze → Generate → Track → Level Up
+
+// Initialize components ONCE (outside the loop)
 const parser = new PlaylistParser();
+const analyzer = new AudioAnalyzer();
+const tracker = new SessionTracker();  // Single tracker maintains session history
+const sensors = new EnvironmentalSensors(process.env.OPENWEATHERMAP_API_KEY);
+const gamingSensors = new GamingPlatformSensors({
+  steam: { apiKey: process.env.STEAM_API_KEY, steamId: userSteamId }
+});
+
 const playlist = await parser.parse(playlistJSON);
 
 for (const track of playlist.tracks) {
   // 1. Generate character from audio
-  const analyzer = new AudioAnalyzer();
   const audio = await analyzer.extractSonicFingerprint(track.audio_url);
   let character = CharacterGenerator.generate(track.id, audio, track.title);
 
-  // 2. Track listening session with context
-  const tracker = new SessionTracker();
-  const sessionId = tracker.startSession(track.id, track);
-  // ... user listens ...
-  const session = tracker.endSession(sessionId);
-
-  if (!session) continue;
-
-  // 3. Get environmental context
-  const sensors = new EnvironmentalSensors(process.env.OPENWEATHERMAP_API_KEY);
+  // 2. Get environmental context (before starting session)
   const envContext = await sensors.updateSnapshot();
 
-  // 4. Get gaming context
-  const gamingSensors = new GamingPlatformSensors({
-    steam: { apiKey: process.env.STEAM_API_KEY, steamId: userSteamId }
-  });
+  // 3. Get gaming context (before starting session)
   const gamingContext = gamingSensors.getContext();
 
-  // 5. Update session with context and recalculate XP with bonuses
-  session.environmental_context = envContext;
-  session.gaming_context = gamingContext;
+  // 4. Track listening session WITH context from the start
+  const sessionId = tracker.startSession(track.id, track, {
+    environmental_context: envContext,
+    gaming_context: gamingContext
+  });
 
+  // ... user listens to the track ...
+
+  // 5. End session (XP is calculated automatically with context)
+  const session = tracker.endSession(sessionId);
+  if (!session) continue;
+
+  // 6. Update character with session results
   const updater = new CharacterUpdater();
   const previousListenCount = tracker.getTrackListenCount(track.id) - 1;
   const result = updater.updateCharacterFromSession(character, session, track, previousListenCount);

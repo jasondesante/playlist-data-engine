@@ -1539,8 +1539,32 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 
 **Files Modified**: None (no fixes needed)
 
-- [ ] "Advanced: Combining All Systems" example
-  - [ ] Verify the full pipeline integrates correctly
+- [x] "Advanced: Combining All Systems" example (COMPLETED 2026-01-23)
+  - [x] Verify the full pipeline integrates correctly
+
+**Task 3.2 - "Advanced: Combining All Systems" Example Verification (Completed 2026-01-23)**:
+
+**Summary**: The "Advanced: Combining All Systems" example had 3 critical issues that were fixed.
+
+**Issues Found and Fixed**:
+
+1. **SessionTracker instantiated inside loop** ❌ → ✅ FIXED
+   - **Issue**: `new SessionTracker()` was inside the for loop, resetting tracker state for each track
+   - **Impact**: Session history was lost, breaking mastery tracking across multiple listens
+   - **Fix**: Moved SessionTracker initialization outside the loop to maintain history
+
+2. **Context retrieved after session ended** ❌ → ✅ FIXED
+   - **Issue**: Environmental and gaming context were retrieved AFTER calling `endSession()`
+   - **Impact**: Context was not included in automatic XP calculation during `endSession()`
+   - **Fix**: Retrieve context BEFORE starting the session and pass it via `startSession()`'s optional `context` parameter
+
+3. **AudioAnalyzer instantiated inside loop** ❌ → ✅ FIXED
+   - **Issue**: `new AudioAnalyzer()` was inside the for loop
+   - **Impact**: Inefficient - creates new analyzer instance for each track
+   - **Fix**: Moved AudioAnalyzer initialization outside the loop
+
+**Files Modified**:
+- `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Fixed "Advanced: Combining All Systems" example with proper component lifecycle and context flow
 
 ### Task 3.3: Harvest examples from README.md
 - [ ] Review "Quick Start: Foundation (Phase 0)" example - add to USAGE if unique
