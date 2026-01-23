@@ -3043,11 +3043,35 @@ All 5 supported environment variables are now documented:
 - `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.3 checklist status and added evaluation summary
 
 ### Task 6.4: Cross-doc final check
-- [ ] Read all three docs end-to-end
+- [x] Read all three docs end-to-end
 - [ ] Verify no duplication of core content
 - [ ] Verify cross-references are accurate
 - [ ] Verify each doc has distinct "vibe" and purpose
 - [ ] Verify the "trinity" is complementary, not redundant
+
+**Task 6.4 - First Subtask Completed (2026-01-23): Read all three docs end-to-end**
+
+**Summary**: All three core documentation files have been read end-to-end:
+- `specs/001-core-engine/SPEC.md` (136 lines)
+- `DATA_ENGINE_REFERENCE.md` (1,628 lines)
+- `USAGE_IN_OTHER_PROJECTS.md` (696 lines)
+
+**Initial Observations**:
+
+| Aspect | SPEC.md | DATA_ENGINE_REFERENCE.md | USAGE_IN_OTHER_PROJECTS.md |
+|--------|---------|--------------------------|----------------------------|
+| **Primary Purpose** | Feature specification & overview | Complete API reference | Usage examples & installation |
+| **Length** | 136 lines (concise) | 1,628 lines (comprehensive) | 696 lines (practical) |
+| **Tone/Vibe** | "What and Why" | "How" (technical API details) | "How" (practical code examples) |
+| **Target Audience** | Implementers, decision makers | Library users, TypeScript devs | Application developers |
+
+**Cross-References Found**:
+- SPEC.md → Links to DATA_ENGINE_REFERENCE.md and USAGE_IN_OTHER_PROJECTS.md ✅
+- DATA_ENGINE_REFERENCE.md → Links to SPEC.md and USAGE_IN_OTHER_PROJECTS.md ✅
+- USAGE_IN_OTHER_PROJECTS.md → Links to DATA_ENGINE_REFERENCE.md ✅
+
+**Files Modified**:
+- `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.4 checklist status and added reading summary
 
 ---
 
