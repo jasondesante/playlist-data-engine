@@ -788,7 +788,12 @@ Before starting verification tasks, integrate the reference information from thi
 
 **Important**: Discord RPC CANNOT access voice state data. Remove all dead code related to voice features.
 
-- [ ] Read `src/core/sensors/DiscordRPCClient.ts` and identify all voice-related methods
+- [x] Read `src/core/sensors/DiscordRPCClient.ts` and identify all voice-related methods
+  **Completed 2026-01-23**: Voice-related code identified in DiscordRPCClient.ts:
+  - `VoiceStateInfo` interface (lines 149-157) - placeholder for type compatibility
+  - `subscribeToVoiceUpdates()` method (lines 528-550) - returns false, documented as non-functional
+  - `getVoiceChannelInfo()` method (lines 552-567) - returns null, documented as non-functional
+  All voice-related code is explicitly documented as non-functional due to Discord RPC platform limitations. Ready for removal.
 - [ ] Remove `subscribeToVoiceUpdates()` method and related code
 - [ ] Remove any voice state tracking properties/types
 - [ ] Remove any voice-related event handlers
