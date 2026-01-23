@@ -31,6 +31,8 @@ export type {
     Equipment
 } from './utils/constants.js';
 
+export type { InventoryItem } from './core/generation/EquipmentGenerator.js';
+
 export type {
     GeolocationData,
     MotionData,
@@ -44,6 +46,8 @@ export type {
 
 export type { LevelUpBenefits } from './core/progression/LevelUpProcessor.js';
 export type { CharacterUpdateResult } from './core/progression/CharacterUpdater.js';
+export type { CharacterAppearance } from './core/generation/AppearanceGenerator.js';
+export type { CharacterEquipment } from './core/generation/EquipmentGenerator.js';
 
 // Utilities
 export {
@@ -76,6 +80,7 @@ export { AbilityScoreCalculator } from './core/generation/AbilityScoreCalculator
 export { SkillAssigner } from './core/generation/SkillAssigner.js';
 export { SpellManager } from './core/generation/SpellManager.js';
 export { EquipmentGenerator } from './core/generation/EquipmentGenerator.js';
+export { AppearanceGenerator } from './core/generation/AppearanceGenerator.js';
 export { NamingEngine } from './core/generation/NamingEngine.js';
 
 // Progression
