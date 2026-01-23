@@ -89,103 +89,21 @@ See `.env.example` for full documentation. Programmatic configuration via `loadC
 
 ---
 
-## How to Use
+## Key Classes
 
-### Basic Workflow: Playlist → Character
+| Class | Purpose | Source File |
+|-------|---------|-------------|
+| `PlaylistParser` | Parses Arweave/JSON playlist data | `src/core/parser/PlaylistParser.ts` |
+| `AudioAnalyzer` | Extracts sonic fingerprint from audio | `src/core/analysis/AudioAnalyzer.ts` |
+| `CharacterGenerator` | Generates character from seed + profile | `src/core/generation/CharacterGenerator.ts` |
+| `NamingEngine` | Generates RPG-style character names | `src/core/generation/NamingEngine.ts` |
+| `EnvironmentalSensors` | GPS, motion, weather, light monitoring | `src/core/sensors/EnvironmentalSensors.ts` |
+| `GamingPlatformSensors` | Steam game detection + Discord presence | `src/core/sensors/GamingPlatformSensors.ts` |
+| `SessionTracker` | Tracks listening sessions for XP | `src/core/progression/SessionTracker.ts` |
+| `XPCalculator` | Calculates XP with modifiers | `src/core/progression/XPCalculator.ts` |
+| `CombatEngine` | Turn-based combat system | `src/core/combat/CombatEngine.ts` |
 
-```typescript
-import { PlaylistParser, AudioAnalyzer, CharacterGenerator, NamingEngine } from '@audio-alchemist/core';
-
-// 1. Parse playlist from Arweave/JSON
-const parser = new PlaylistParser({ validateAudioUrls: false });
-const playlist = await parser.parse(rawArweavePlaylistData);
-
-// 2. Analyze audio for a track
-const analyzer = new AudioAnalyzer({ includeAdvancedMetrics: true });
-const audioProfile = await analyzer.extractSonicFingerprint(track.audio_url);
-
-// 3. Generate character name and sheet
-const namingEngine = new NamingEngine();
-const characterName = namingEngine.generateName(track, audioProfile);
-
-const seed = `${track.chain_name}-${track.token_address}-${track.token_id}`;
-const character = CharacterGenerator.generate(seed, audioProfile, characterName);
-
-console.log(`${character.name}: Level ${character.level} ${character.race} ${character.class}`);
-// → "Midnight Synth: Level 1 Elf Artificer"
-```
-
-### Environmental Sensors
-
-```typescript
-import { EnvironmentalSensors } from '@audio-alchemist/core';
-
-// Initialize with optional weather API key
-const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
-
-// Request permissions (browser)
-const permissions = await sensors.requestPermissions(['geolocation', 'motion', 'weather', 'light']);
-
-// Start monitoring
-sensors.startMonitoring((context) => {
-    console.log('Biome:', context.biome);
-    console.log('Activity:', sensors.getCurrentActivity());
-});
-
-// Calculate XP modifier (1.0x - 3.0x)
-const modifier = sensors.calculateXPModifier();
-```
-
-### Gaming Integration (Steam + Discord)
-
-```typescript
-import { GamingPlatformSensors, DiscordRPCClient } from '@audio-alchemist/core';
-
-const gaming = new GamingPlatformSensors({
-    steam: { apiKey: process.env.STEAM_API_KEY, steamId: '123456789' },
-    discord: { clientId: process.env.DISCORD_CLIENT_ID }
-});
-
-// Authenticate and start monitoring
-await gaming.authenticate('123456789');
-gaming.startMonitoring((context) => {
-    if (context.isActivelyGaming) {
-        console.log('Playing:', context.currentGame?.name);
-    }
-});
-
-// Calculate gaming bonus (1.0x - 1.75x)
-const bonus = gaming.calculateGamingBonus();
-
-// Discord music presence
-const discord = new DiscordRPCClient(process.env.DISCORD_CLIENT_ID);
-await discord.connect();
-await discord.setMusicActivity({
-    songName: track.title,
-    artistName: track.artist,
-    albumArtKey: 'album1',
-    startTime: Date.now() / 1000,
-    durationSeconds: track.duration
-});
-```
-
-### Progression & Combat
-
-```typescript
-// Progression: Track XP and level up
-const sessionTracker = new SessionTracker();
-const sessionId = sessionTracker.startSession(track.uuid, track);
-// ... after listening ends ...
-const session = sessionTracker.endSession(sessionId);
-const totalXP = xpCalc.calculateSessionXP(session, track);
-
-// Combat: Turn-based battles
-const combat = new CombatEngine();
-const instance = combat.startCombat([character], [enemy], environmentalContext);
-const current = combat.getCurrentCombatant(instance);
-combat.executeAttack(instance, current, enemy, character.equipment[0]);
-combat.nextTurn(instance);
-```
+For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md).
 
 ---
 
