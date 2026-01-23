@@ -202,7 +202,7 @@ Before starting verification tasks, integrate the reference information from thi
 
 - [x] Read current `SPEC.md` to understand existing structure
 - [x] Add "Source Files" section to SPEC.md with file listings from this plan's Quick Reference
-- [ ] Enhance "Core Data Types" section with detailed type information
+- [x] Enhance "Core Data Types" section with detailed type information
 - [ ] Add/clarify "Ability Score Mapping" section
 - [ ] Add/clarify "XP Modifiers" section
 - [ ] Ensure all 10 Core Features are properly documented with source file links
