@@ -26,6 +26,34 @@ This is a **verification and summarization plan** for creating an accurate summa
 
 ---
 
+## What the Playlist Data Engine Does (For SPEC.md Context)
+
+**Input**: Playlist data (Arweave/JSON) → **Output**: Rich RPG character + environmental/gaming context
+
+The Core Data Engine transforms music playlists into D&D 5e-inspired characters while integrating external data sources:
+
+1. **Playlist Processing** - Feed in playlist data, get audio/visual analysis
+2. **Character Generation** - Audio/visual data → deterministic RPG character (race, class, abilities, skills, equipment)
+3. **Discord Integration** - Set music presence on Discord (what you're listening to)
+4. **Steam Integration** - Get current game from Steam, combine with music for XP bonuses
+5. **Environmental Sensors** - Weather, location, time, motion, light → XP modifiers
+6. **Progression** - Characters level up through listening time (1 XP/sec, modified by environment/gaming)
+7. **Combat** - Turn-based combat system with attacks, spells, initiative
+
+**Key Point**: SPEC.md should make it EXTREMELY CLEAR how to:
+- Feed playlist data into the engine
+- Get useful information out (characters, XP, environmental context)
+- Connect to external APIs (Discord music presence, Steam gaming, weather)
+- Access sensor data (GPS, motion, light, time)
+- Use the progression system and combat
+
+**SPEC.md should NOT mention**:
+- Features that don't actually work (e.g., Discord voice chat)
+- Contradictory or misleading information
+- Low-quality/uninteresting features
+
+---
+
 ## Output Specification
 
 **File**: `specs/001-core-engine/SPEC.md` (update existing file)
@@ -42,6 +70,12 @@ This is a **verification and summarization plan** for creating an accurate summa
 - ONLY edit SPEC.md based on information you have just verified by reading actual source code
 - Do NOT add information from the old implementation plan without verifying it first
 - Each edit should be traceable to a verification task you just completed
+
+**General Cleanup Rule**: Throughout all phases, identify and note:
+- Contradictory information (plan says X, code does Y)
+- Dead code for features that don't work (e.g., Discord voice chat when Discord RPC cannot access voice state)
+- Low-quality/uninteresting features that shouldn't be documented
+- These will be cleaned up in Phase 5 (Code Cleanup) and excluded from SPEC.md
 
 **Critical Requirement**: Every technical claim MUST be verified against actual source code before including in summary. No hallucinated examples, data structures, or method signatures.
 
@@ -71,6 +105,11 @@ This is a **verification and summarization plan** for creating an accurate summa
 - NO: Add information from the old plan without verifying it
 - NO: Add "probably" or "likely" - only verified facts
 - NO: Add features/methods you haven't personally read in the source code
+
+**EXCLUSIONS - Do NOT Include in SPEC.md**:
+- Discord voice chat features (e.g., `subscribeToVoiceUpdates`, voice state tracking)
+- The playlist-data-engine will NEVER include Discord voice functionality
+- Only music presence features via Discord RPC should be documented
 
 ---
 
@@ -167,6 +206,7 @@ Before starting verification tasks, integrate the reference information from thi
 - [ ] Add/clarify "Ability Score Mapping" section
 - [ ] Add/clarify "XP Modifiers" section
 - [ ] Ensure all 10 Core Features are properly documented with source file links
+- [ ] **Add clear "How to Use" section** - feed playlist in → get character out, connect to Discord/Steam/sensors
 - [ ] Review and optimize for clarity and conciseness
 - [ ] Check line count - should be under 200 lines after this initial enhancement
 
@@ -193,6 +233,7 @@ Before starting verification tasks, integrate the reference information from thi
 - [ ] Verify `clearMusicActivity()` method exists
 - [ ] Verify `getUserInfo()` method exists
 - [ ] Verify NO game-related methods exist
+- [ ] **SKIP any voice chat features** - do NOT document `subscribeToVoiceUpdates` or similar voice functionality
 - [ ] Read `src/core/sensors/GamingPlatformSensors.ts` - verify game detection uses Steam only
 - [ ] Verify test files: `tests/unit/discordRPC.test.ts` (40 tests), `tests/integration/discordRPC.integration.test.ts` (19 tests)
 - [ ] Summarize Discord RPC's actual purpose (music presence only)
@@ -334,14 +375,28 @@ Before starting verification tasks, integrate the reference information from thi
 - [ ] Read `.env.example` and verify env vars are documented
 - [ ] Summarize configuration system
 
-### Phase 5: Failing Tests Analysis
+### Phase 5: Code Cleanup - Remove Non-Functional Discord Voice Features
+
+**Important**: Discord RPC CANNOT access voice state data. Remove all dead code related to voice features.
+
+- [ ] Read `src/core/sensors/DiscordRPCClient.ts` and identify all voice-related methods
+- [ ] Remove `subscribeToVoiceUpdates()` method and related code
+- [ ] Remove any voice state tracking properties/types
+- [ ] Remove any voice-related event handlers
+- [ ] Search for any other voice-related code in the file and remove it
+- [ ] Check `tests/unit/discordRPC.test.ts` for voice-related tests and remove them
+- [ ] Check `tests/integration/discordRPC.integration.test.ts` for voice-related tests and remove them
+- [ ] Run tests to ensure nothing breaks after cleanup
+- [ ] Update SPEC.md to reflect Discord RPC is for music presence ONLY (no voice features)
+
+### Phase 6: Failing Tests Analysis
 - [ ] Run `npm test` to get current test status
 - [ ] Identify which tests are failing
 - [ ] Categorize failures by type (biome detection, TypeScript errors, etc.)
 - [ ] For each failing test category, identify root cause
 - [ ] Create bullet-point plan for fixes (to be implemented later)
 
-### Phase 6: Final SPEC.md Polish
+### Phase 7: Final SPEC.md Polish
 - [ ] Review complete SPEC.md for consistency
 - [ ] Ensure all source file references are correct
 - [ ] Verify line count is under 300
@@ -370,11 +425,12 @@ Before starting verification tasks, integrate the reference information from thi
 - **Phase 1**: 3 tasks (file inventory)
 - **Phase 2**: 12 main feature tasks with 5-8 subtasks each = ~60-96 verification tasks
 - **Phase 3**: 5 tasks (technical debt + verification log)
-- **Phase 4**: 4 tasks (config + failing tests analysis + test fix plan)
-- **Phase 5**: Ongoing (SPEC.md refinement during verification)
-- **Phase 6**: 7 tasks (final polish)
+- **Phase 4**: 4 tasks (config verification)
+- **Phase 5**: 9 tasks (remove Discord voice dead code + test cleanup)
+- **Phase 6**: 5 tasks (failing tests analysis + test fix plan)
+- **Phase 7**: 7 tasks (final SPEC.md polish)
 
-**Total**: ~90-125 tasks
+**Total**: ~100-140 tasks
 
 **Guideline**: Be thorough. Every claim in the old plan should be verified against actual code before integrating into SPEC.md.
 
