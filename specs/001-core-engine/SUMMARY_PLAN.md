@@ -208,7 +208,7 @@ Before starting verification tasks, integrate the reference information from thi
   **Completed 2026-01-23**: Verified ability score mapping and XP modifiers against actual source code.
   - Ability scores: Fixed documentation discrepancies (INT uses only mid_dominance, CHA uses (mid+amplitude)/2, not genre)
   - XP modifiers: Added missing activity bonuses (walking 1.2x, driving 1.3x), gaming genre bonuses (Action/FPS +15%, Strategy +10%), snow modifier
-- [ ] Ensure all 10 Core Features are properly documented with source file links
+- [x] Ensure all 10 Core Features are properly documented with source file links
 - [ ] **Add clear "How to Use" section** - feed playlist in → get character out, connect to Discord/Steam/sensors
 - [ ] Review and optimize for clarity and conciseness
 - [ ] Check line count - should be under 200 lines after this initial enhancement
