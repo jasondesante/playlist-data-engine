@@ -1093,7 +1093,54 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 5. Added missing `CharacterUpdateResult` interface definition
 
 **All three progression classes are now fully documented in DATA_ENGINE_REFERENCE.md with accurate method signatures.**
-- [ ] Verify `GeolocationProvider`, `MotionDetector`, `WeatherAPIClient`, `LightSensor` exist
+
+**Task 2.3 - GeolocationProvider, MotionDetector, WeatherAPIClient, LightSensor Verification (Completed 2026-01-23)**:
+
+**Summary**: All four sensor helper classes exist and have been verified. Documentation was added to DATA_ENGINE_REFERENCE.md.
+
+**Verification Results**:
+
+**GeolocationProvider** (`src/core/sensors/GeolocationProvider.ts`):
+- ✅ Constructor supports both legacy signature and config object
+- ✅ `async getCurrentPosition(forceRefresh?: boolean): Promise<GeolocationData | null>` signature matches source
+- ✅ `getBiome(latitude, longitude, altitude?): string` supports 12 biome types with coastal variants
+- ✅ Cache management methods: `getCacheAge()`, `invalidateCache()`, `getCacheStats()`, `resetCacheStats()`, `isCacheExpired()`, `getCachedPosition()`
+- ❌ **ADDED**: Complete class documentation to DATA_ENGINE_REFERENCE.md
+
+**MotionDetector** (`src/core/sensors/MotionDetector.ts`):
+- ✅ `startMonitoring(callback: (data: MotionData) => void): void` signature matches source
+- ✅ `stopMonitoring(): void` signature matches source
+- ✅ `getLastMotion(): MotionData | null` signature matches source
+- ✅ `detectActivity(data: MotionData): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown'` signature matches source
+- ❌ **ADDED**: Complete class documentation to DATA_ENGINE_REFERENCE.md
+
+**WeatherAPIClient** (`src/core/sensors/WeatherAPIClient.ts`):
+- ✅ Constructor supports both legacy signature and config object
+- ✅ `async getWeather(latitude, longitude): Promise<WeatherData | null>` with caching
+- ✅ `async getForecast(latitude, longitude, hours?): Promise<ForecastData[] | null>` (max 120 hours)
+- ✅ `async getUpcomingWeather(latitude, longitude, hours?): Promise<{...} | null>` for XP modifier calculation
+- ✅ `detectSevereWeather(weather): SevereWeatherAlert | null` with 4 alert types (Blizzard, Hurricane, Typhoon, Tornado)
+- ✅ `getSafetyWarning(alert): string` for safety warnings
+- ✅ Performance metrics methods: `getWeatherApiMetrics()`, `getWeatherApiStatistics()`, `getForecastApiMetrics()`, `getForecastApiStatistics()`, `resetPerformanceMetrics()`
+- ✅ Cache management methods: `invalidateCache()`, `invalidateLocation()`, `getCacheStats()`, `resetCacheStats()`, `clearExpiredEntries()`, `getCacheSize()`, `invalidateForecastCache()`, `invalidateForecastLocation()`
+- ❌ **ADDED**: Complete class documentation to DATA_ENGINE_REFERENCE.md
+
+**LightSensor** (`src/core/sensors/LightSensor.ts`):
+- ✅ `startMonitoring(callback: (data: LightData) => void): void` signature matches source
+- ✅ `stopMonitoring(): void` signature matches source
+- ✅ `getLastReading(): LightData | null` signature matches source
+- Uses experimental AmbientLightSensor Web API
+- ❌ **ADDED**: Complete class documentation to DATA_ENGINE_REFERENCE.md
+
+**Documentation Updates Made**:
+1. Added complete GeolocationProvider class documentation with 11 methods
+2. Added complete MotionDetector class documentation with 4 methods
+3. Added complete WeatherAPIClient class documentation with 16 methods and SevereWeatherAlert interface
+4. Added complete LightSensor class documentation with 3 methods
+
+**All four sensor helper classes are now fully documented in DATA_ENGINE_REFERENCE.md with accurate method signatures.**
+
+- [x] Verify `GeolocationProvider`, `MotionDetector`, `WeatherAPIClient`, `LightSensor` exist (COMPLETED 2026-01-23)
 - [ ] Verify `SteamAPIClient`, `DiscordRPCClient` exist
 - [ ] Verify `AttackResolver`, `DiceRoller`, `InitiativeRoller`, `SpellCaster` exist
 

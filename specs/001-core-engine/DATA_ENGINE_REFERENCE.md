@@ -1348,9 +1348,296 @@ printDashboard(config?: DashboardConfig): void
 
 Print formatted dashboard to console.
 
+### GeolocationProvider
+
+**Source**: `src/core/sensors/GeolocationProvider.ts`
+
+Provides geolocation data using browser's Geolocation API with caching support.
+
+```typescript
+interface GeolocationSensorConfig {
+    cacheTTL?: number;           // Cache TTL in milliseconds (default: 5 minutes)
+    useLocalStorage?: boolean;   // Persist cache to localStorage (default: true)
+}
+```
+
+#### Constructor
+
+```typescript
+constructor(cacheTTLMinutes?: number, useLocalStorage?: boolean)
+constructor(config: GeolocationSensorConfig)
+```
+
+Creates a new GeolocationProvider with optional cache configuration.
+
+#### Methods
+
+```typescript
+async getCurrentPosition(forceRefresh?: boolean): Promise<GeolocationData | null>
+```
+
+Get current position using Geolocation API. Returns cached data if valid and not force refreshing.
+
+```typescript
+getBiome(latitude: number, longitude: number, altitude?: number | null): string
+```
+
+Calculate biome type based on coordinates and optional altitude. Supports 12 biome types: urban, forest, desert, mountain, valley, water, tundra, plains, jungle, swamp, taiga, savanna. Coastal variants are supported (e.g., "forest_coastal").
+
+```typescript
+getCacheAge(): number | null
+```
+
+Get age of cached position in milliseconds.
+
+```typescript
+invalidateCache(): void
+```
+
+Clear cached geolocation data.
+
+```typescript
+getCacheStats(): { hits: number; misses: number }
+```
+
+Get cache statistics.
+
+```typescript
+resetCacheStats(): void
+```
+
+Reset cache statistics.
+
+```typescript
+isCacheExpired(): boolean
+```
+
+Check if cache is expired.
+
+```typescript
+getCachedPosition(): GeolocationData | null
+```
+
+Get cached position without checking TTL.
+
+### MotionDetector
+
+**Source**: `src/core/sensors/MotionDetector.ts`
+
+Detects device motion using DeviceMotionEvent API.
+
+#### Constructor
+
+```typescript
+constructor()
+```
+
+Creates a new MotionDetector instance.
+
+#### Methods
+
+```typescript
+startMonitoring(callback: (data: MotionData) => void): void
+```
+
+Start listening for motion events. Callback receives motion data when available.
+
+```typescript
+stopMonitoring(): void
+```
+
+Stop listening for motion events.
+
+```typescript
+getLastMotion(): MotionData | null
+```
+
+Get the last recorded motion data.
+
+```typescript
+detectActivity(data: MotionData): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown'
+```
+
+Detect activity type based on motion intensity using acceleration magnitude.
+
+### WeatherAPIClient
+
+**Source**: `src/core/sensors/WeatherAPIClient.ts`
+
+OpenWeatherMap API client for current weather and forecast data with caching and performance metrics.
+
+```typescript
+interface WeatherSensorConfig {
+    apiKey?: string;
+    cacheTTL?: number;           // Cache TTL in milliseconds (default: 12 minutes)
+    useLocalStorage?: boolean;   // Persist cache to localStorage (default: true)
+}
+
+interface SevereWeatherAlert {
+    type: 'Blizzard' | 'Hurricane' | 'Typhoon' | 'Tornado' | 'None';
+    xpBonus: number;             // 0.5 to 1.0 (50% to 100% bonus)
+    severity: 'moderate' | 'high' | 'extreme';
+    message: string;
+    detectedAt: number;
+}
+```
+
+#### Constructor
+
+```typescript
+constructor(apiKey?: string, cacheTTLMinutes?: number, useLocalStorage?: boolean)
+constructor(config: WeatherSensorConfig)
+```
+
+Creates a new WeatherAPIClient with OpenWeatherMap API key and optional cache configuration.
+
+#### Methods
+
+```typescript
+async getWeather(latitude: number, longitude: number): Promise<WeatherData | null>
+```
+
+Fetch current weather for coordinates. Returns cached data if valid and within TTL. Includes temperature, humidity, pressure, wind, moon phase, and isNight flag.
+
+```typescript
+async getForecast(latitude: number, longitude: number, hours?: number): Promise<ForecastData[] | null>
+```
+
+Fetch weather forecast for coordinates (max 120 hours / 5 days). Returns array of forecast data with 3-hour intervals.
+
+```typescript
+async getUpcomingWeather(latitude: number, longitude: number, hours?: number): Promise<{ willRain: boolean; willSnow: boolean; rainProbability: number; snowProbability: number; worstWeatherType: string } | null>
+```
+
+Get upcoming weather changes for XP modifier calculation.
+
+```typescript
+detectSevereWeather(weather: WeatherData | ForecastData): SevereWeatherAlert | null
+```
+
+Detect severe weather conditions including blizzard, hurricane, typhoon, and tornado. Returns alert with XP bonus amount.
+
+```typescript
+getSafetyWarning(alert: SevereWeatherAlert): string
+```
+
+Get safety warning message for severe weather alert.
+
+```typescript
+getWeatherApiMetrics(): PerformanceMetrics
+```
+
+Get performance metrics for weather API calls.
+
+```typescript
+getWeatherApiStatistics(): PerformanceStatistics & { p95: number; p99: number }
+```
+
+Get calculated performance statistics including p95 and p99 percentiles.
+
+```typescript
+getForecastApiMetrics(): PerformanceMetrics
+```
+
+Get performance metrics for forecast API calls.
+
+```typescript
+getForecastApiStatistics(): PerformanceStatistics & { p95: number; p99: number }
+```
+
+Get calculated forecast statistics including p95 and p99 percentiles.
+
+```typescript
+resetPerformanceMetrics(): void
+```
+
+Reset all performance metrics.
+
+```typescript
+invalidateCache(): void
+```
+
+Invalidate all cached weather data.
+
+```typescript
+invalidateLocation(latitude: number, longitude: number): void
+```
+
+Invalidate cache for a specific location.
+
+```typescript
+getCacheStats(): { hits: number; misses: number }
+```
+
+Get cache statistics.
+
+```typescript
+resetCacheStats(): void
+```
+
+Reset cache statistics.
+
+```typescript
+clearExpiredEntries(): number
+```
+
+Clear expired cache entries. Returns number of entries cleared.
+
+```typescript
+getCacheSize(): number
+```
+
+Get current cache size.
+
+```typescript
+invalidateForecastCache(): void
+```
+
+Invalidate all forecast cache.
+
+```typescript
+invalidateForecastLocation(latitude: number, longitude: number): void
+```
+
+Invalidate forecast cache for a specific location.
+
+### LightSensor
+
+**Source**: `src/core/sensors/LightSensor.ts`
+
+Ambient light sensor using experimental Web API (AmbientLightSensor).
+
+#### Constructor
+
+```typescript
+constructor()
+```
+
+Creates a new LightSensor instance.
+
+#### Methods
+
+```typescript
+startMonitoring(callback: (data: LightData) => void): void
+```
+
+Start monitoring ambient light levels. Callback receives light data with illuminance in lux.
+
+```typescript
+stopMonitoring(): void
+```
+
+Stop monitoring.
+
+```typescript
+getLastReading(): LightData | null
+```
+
+Get last light sensor reading.
+
 ### DiscordRPCClient
 
-**Source**: `src/core/sensors/DiscordRPCClient.ts**
+**Source**: `src/core/sensors/DiscordRPCClient.ts`
 
 Manages Discord Rich Presence for music status display.
 
