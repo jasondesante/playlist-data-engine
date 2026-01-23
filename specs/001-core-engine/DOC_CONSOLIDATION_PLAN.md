@@ -858,6 +858,25 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 - [x] Verify `CharacterGenerator` class and static `generate()` method signature (COMPLETED 2026-01-23)
 - [x] Verify `SessionTracker` class and method signatures (COMPLETED 2026-01-23)
 - [x] Verify `XPCalculator` class and method signatures (COMPLETED 2026-01-23)
+
+**Task 2.2 - XPCalculator Verification (Completed 2026-01-23)**:
+
+**Summary**: XPCalculator class and method signatures verified against source code in `src/core/progression/XPCalculator.ts`. All documentation matches actual implementation.
+
+**Verification Results**:
+- ✅ Constructor `constructor(options?: Partial<ExperienceSystem>)` matches source (line 61)
+- ✅ All 8 public methods documented with exact signature matches:
+  - `calculateSessionXP(session: ListeningSession, track?: PlaylistTrack): number`
+  - `calculateTotalModifier(envContext?: EnvironmentalContext, gamingContext?: GamingContext): number`
+  - `getXPThresholdForLevel(level: number): number`
+  - `getXPToNextLevel(currentLevel: number): number`
+  - `getLevelFromXP(totalXP: number): number`
+  - `isTrackMastered(listenCount: number): boolean`
+  - `getMasteryBonusXP(): number`
+  - `getConfig(): ExperienceSystem`
+- ✅ 4 private methods correctly excluded from public API documentation
+
+**No discrepancies found** - XPCalculator documentation in DATA_ENGINE_REFERENCE.md is accurate and complete.
 - [ ] Verify `EnvironmentalSensors` class and method signatures
 - [ ] Verify `GamingPlatformSensors` class and method signatures
 - [ ] Verify `CombatEngine` class and method signatures
