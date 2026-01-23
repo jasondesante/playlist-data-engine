@@ -17,6 +17,7 @@
 **To Remove After Consolidation:**
 - `README.md` (main project README)
 - `quickstart.md`
+- `SUMMARY_PLAN.md` (after harvesting important spec information into SPEC.md)
 
 ---
 
@@ -33,14 +34,15 @@
 
 1. ✅ SPEC.md contains NO code examples - only factual summaries and source links
 2. ✅ SPEC.md has NO "How to Use" section - pure specs focus
-3. ✅ DATA_ENGINE_REFERENCE.md contains complete API reference with minimal inline examples
-4. ✅ USAGE_IN_OTHER_PROJECTS.md contains ALL usage examples and installation instructions
-5. ✅ All examples in USAGE follow standardized format (Goal → Code → Explanation)
-6. ✅ All code examples verified against actual source code (method signatures, imports, usage patterns)
-7. ✅ No duplication of content across the three docs (redundancy removed, best versions kept)
-8. ✅ Each doc has a clear, distinct purpose and "vibe"
-9. ✅ Historical/meta commentary removed from all docs
-10. ✅ README.md and quickstart.md removed (content migrated)
+3. ✅ SPEC.md contains important spec information harvested from SUMMARY_PLAN.md
+4. ✅ DATA_ENGINE_REFERENCE.md contains complete API reference with minimal inline examples
+5. ✅ USAGE_IN_OTHER_PROJECTS.md contains ALL usage examples and installation instructions
+6. ✅ All examples in USAGE follow standardized format (Goal → Code → Explanation)
+7. ✅ All code examples verified against actual source code (method signatures, imports, usage patterns)
+8. ✅ No duplication of content across the three docs (redundancy removed, best versions kept)
+9. ✅ Each doc has a clear, distinct purpose and "vibe"
+10. ✅ Historical/meta commentary removed from all docs
+11. ✅ README.md, quickstart.md, and SUMMARY_PLAN.md removed (content migrated)
 
 ---
 
@@ -52,6 +54,7 @@
 - [ ] Read `USAGE_IN_OTHER_PROJECTS.md` - note examples present, installation section
 - [ ] Read `README.md` - harvest any unique examples worth keeping
 - [ ] Read `quickstart.md` - harvest any unique examples worth keeping
+- [ ] Read `SUMMARY_PLAN.md` - harvest important spec information that should be in SPEC.md
 
 ### Task 0.2: Create example inventory
 - [ ] List all examples currently in SPEC.md (with line numbers)
@@ -60,7 +63,13 @@
 - [ ] List all examples in README.md worth keeping (with line numbers)
 - [ ] List all examples in quickstart.md worth keeping (with line numbers)
 
-### Task 0.3: Create type/method claim inventory
+### Task 0.3: Create SUMMARY_PLAN.md spec inventory
+- [ ] Identify all important spec information in SUMMARY_PLAN.md (not examples, but facts/specs)
+- [ ] List each piece of spec info with line number
+- [ ] Compare against current SPEC.md - note what's missing
+- [ ] Create migration list: what from SUMMARY_PLAN.md should go into SPEC.md
+
+### Task 0.4: Create type/method claim inventory
 - [ ] List all type definitions claimed in DATA_ENGINE_REFERENCE.md
 - [ ] List all method signatures claimed in DATA_ENGINE_REFERENCE.md
 - [ ] List all class names claimed across all docs
@@ -88,6 +97,14 @@
 - [ ] Search SPEC.md for ```` ``` ```` (code blocks) - remove all
 - [ ] Search for any remaining inline code mentions - evaluate if factual reference or example
 - [ ] Final review: Does SPEC.md contain ANY usage examples? Should be NO.
+
+### Task 1.4: Migrate important spec info from SUMMARY_PLAN.md to SPEC.md
+- [ ] Read SUMMARY_PLAN.md sections: Core Architecture, Data Flow, Key Implementation Details
+- [ ] Extract important spec facts (e.g., algorithm details, design decisions, edge cases)
+- [ ] Add extracted spec information to appropriate sections in SPEC.md
+- [ ] Ensure new content follows SPEC.md style (factual, concise, no examples)
+- [ ] Verify all migrated information is accurate and adds value
+- [ ] Remove any redundant information that's already well-covered in SPEC.md
 
 ---
 
@@ -283,6 +300,7 @@
 ### Task 7.1: Remove obsolete docs
 - [ ] Delete `README.md` (main project README)
 - [ ] Delete `quickstart.md`
+- [ ] Delete `SUMMARY_PLAN.md` (after harvesting spec information into SPEC.md)
 - [ ] Verify no other files reference these deleted docs
 
 ### Task 7.2: Update any remaining references
@@ -299,7 +317,7 @@
 
 ## Known Issues to Address (From Previous Review)
 
-Based on earlier work in SUMMARY_PLAN.md, these issues were identified and may still exist:
+The following issues were identified during earlier work. These should be verified and fixed across all docs:
 
 1. **SessionTracker API Change** - `startSession()` returns `sessionId`, not session object
 2. **NamingEngine API** - `generateName()` takes `(track, audioProfile)`, not `(title, artist, audioProfile, class)`
@@ -313,29 +331,30 @@ Based on earlier work in SUMMARY_PLAN.md, these issues were identified and may s
 
 After completing this plan:
 
-1. ✅ **SPEC.md** - Concise, example-free spec document (< 300 lines)
+1. ✅ **SPEC.md** - Concise, example-free spec document with complete information
 2. ✅ **DATA_ENGINE_REFERENCE.md** - Complete API reference with minimal examples
 3. ✅ **USAGE_IN_OTHER_PROJECTS.md** - Comprehensive cookbook with all examples
 4. ✅ **README.md** - Deleted (content migrated)
 5. ✅ **quickstart.md** - Deleted (content migrated)
-6. ✅ All code examples verified against actual source code
-7. ✅ All method signatures and type definitions accurate
-8. ✅ Clear cross-references between all three docs
+6. ✅ **SUMMARY_PLAN.md** - Deleted (important spec info migrated to SPEC.md)
+7. ✅ All code examples verified against actual source code
+8. ✅ All method signatures and type definitions accurate
+9. ✅ Clear cross-references between all three docs
 
 ---
 
 ## Estimated Task Count
 
-- **Phase 0**: 10 tasks (inventory and analysis)
-- **Phase 1**: 8 tasks (SPEC verification and cleanup)
+- **Phase 0**: 11 tasks (inventory and analysis, including SUMMARY_PLAN review)
+- **Phase 1**: 14 tasks (SPEC verification, cleanup, and SUMMARY_PLAN migration)
 - **Phase 2**: 18 tasks (DATA_ENGINE_REFERENCE verification)
 - **Phase 3**: 14 tasks (USAGE verification and enhancement)
 - **Phase 4**: 8 tasks (cross-document consistency)
 - **Phase 5**: 10 tasks (content organization and trimming)
 - **Phase 6**: 12 tasks (final verification)
-- **Phase 7**: 6 tasks (cleanup and removal)
+- **Phase 7**: 7 tasks (cleanup and removal including SUMMARY_PLAN)
 
-**Total**: ~86 tasks
+**Total**: ~94 tasks
 
 ---
 

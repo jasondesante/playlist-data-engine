@@ -1,6 +1,6 @@
 study specs/readme.md
 
-study specs/001-core-engine/SUMMARY_PLAN.md and pick the most important thing to do. 
+study specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md and pick the most important thing to do. 
 
 Pick the highest priority list of tasks and then pick the first unchecked task in the list.
 
