@@ -807,12 +807,44 @@ Before starting verification tasks, integrate the reference information from thi
   - `userInfo` property stores user profile info (username, discriminator, avatar) - NOT voice state
   - No voice-related types or interfaces exist in the file
   - All voice-related code was removed in previous task
-- [ ] Remove any voice-related event handlers
-- [ ] Search for any other voice-related code in the file and remove it
-- [ ] Check `tests/unit/discordRPC.test.ts` for voice-related tests and remove them
-- [ ] Check `tests/integration/discordRPC.integration.test.ts` for voice-related tests and remove them
-- [ ] Run tests to ensure nothing breaks after cleanup
-- [ ] Update SPEC.md to reflect Discord RPC is for music presence ONLY (no voice features)
+- [x] Remove any voice-related event handlers
+  **Completed 2026-01-23**: Verified no voice-related event handlers exist.
+  - Reviewed all event handlers in `setupEventHandlers()` method (lines 289-344)
+  - All event handlers are for legitimate Discord RPC functionality:
+    * Connection lifecycle: `ready`, `disconnected`, `error` events
+    * User profile info extraction from READY event (username, discriminator, avatar - user account info, NOT voice state)
+  - No voice-related event handlers found to remove
+- [x] Search for any other voice-related code in the file and remove it
+  **Completed 2026-01-23**: Verified no voice-related code remains in DiscordRPCClient.ts.
+  - No occurrences of "voice", "Voice", "VOICE" found in the file
+  - All voice-related code was already removed in previous tasks:
+    * `VoiceStateInfo` interface - removed
+    * `subscribeToVoiceUpdates()` method - removed
+    * `getVoiceChannelInfo()` method - removed
+  - File ends at line 516 with only music presence functionality:
+    * Connection management: `connect()`, `disconnect()`, `getConnectionState()`, `getLastError()`
+    * Music presence: `setMusicActivity()`, `clearMusicActivity()`
+    * User info: `getUserInfo()` (returns user account info: username, discriminator, avatar - NOT voice state)
+- [x] Check `tests/unit/discordRPC.test.ts` for voice-related tests and remove them
+- [x] Check `tests/integration/discordRPC.integration.test.ts` for voice-related tests and remove them
+  **Completed 2026-01-23**: Verified no voice-related tests exist in test files.
+  - Searched `tests/unit/discordRPC.test.ts` - no occurrences of "voice", "Voice", "VOICE"
+  - Searched `tests/integration/discordRPC.integration.test.ts` - no occurrences of "voice", "Voice", "VOICE"
+  - No voice-related tests were ever written (the voice methods were documented as non-functional placeholders)
+- [x] Run tests to ensure nothing breaks after cleanup
+  **Completed 2026-01-23**: All 837 tests pass after voice feature cleanup.
+  - Test Files: 27 passed (27)
+  - Tests: 837 passed (837)
+  - Duration: ~19 seconds
+  - No voice-related tests existed to remove (voice methods were documented as non-functional placeholders)
+- [x] Update SPEC.md to reflect Discord RPC is for music presence ONLY (no voice features)
+  **Completed 2026-01-23**: SPEC.md verified and updated.
+  - SPEC.md already correctly documents Discord RPC for "music presence only"
+  - Line 21: "Steam game detection + Discord music presence" (correct)
+  - Lines 150-182: Discord Music Presence section correctly shows music functionality only
+  - No mention of voice features anywhere in SPEC.md
+  - Updated test count from 426 to 837 (actual passing tests)
+  - Updated date from 2025-11-29 to 2026-01-23
 
 ### Phase 6: Failing Tests Analysis
 - [ ] Run `npm test` to get current test status
