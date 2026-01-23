@@ -2287,7 +2287,7 @@ Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need sepa
 
 ### Task 5.3: Enhance USAGE_IN_OTHER_PROJECTS.md
 - [x] Add table of contents for examples section (COMPLETED 2026-01-23)
-- [ ] Group examples logically (Basic, Advanced, Specific Features)
+- [x] Group examples logically (Basic, Advanced, Specific Features) (COMPLETED 2026-01-23)
 - [ ] Add "Troubleshooting" section if not present
 - [ ] Add "Environment Variables" section if not present
 - [ ] Ensure all harvested examples are integrated
@@ -2309,6 +2309,35 @@ Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need sepa
 
 **Files Modified**:
 - `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Added table of contents (8 lines)
+
+**Task 5.3 - Group examples logically (Completed 2026-01-23)**:
+
+**Summary**: Reorganized the Usage Examples section in USAGE_IN_OTHER_PROJECTS.md into logical groupings: Basic Examples, Advanced Examples, Specific Features, and Common Patterns.
+
+**Changes Made**:
+
+1. **Updated Table of Contents** (lines 74-89) - Grouped examples into four categories:
+   - **Basic Examples**: Essential getting started content (Playlist Parsing, Progression/XP)
+   - **Advanced Examples**: Complex workflows (Combining All Systems)
+   - **Specific Features**: Deep dives into subsystems (Environmental Sensors, Gaming Platform, Combat)
+   - **Common Patterns**: Conceptual explanations (Deterministic Generation, XP Calculation, Manual Level-Up)
+
+2. **Added Section Headers** - Added three new level-2 headers to organize the content:
+   - `## Basic Examples` (line 93)
+   - `## Specific Features` (line 172)
+   - `## Advanced Examples` (line 300)
+   - `## Common Patterns` (line 368) - already existed
+
+3. **Renamed "Advanced: Combining All Systems"** → "Combining All Systems" for consistency
+
+**Rationale**:
+- **Basic Examples** contain the essential workflows a new user needs to get started
+- **Specific Features** group together the optional/specialized subsystems (environmental, gaming, combat)
+- **Advanced Examples** showcase complex integration patterns
+- **Common Patterns** remain as conceptual documentation that complements the code examples
+
+**Files Modified**:
+- `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Added 3 section headers and reorganized TOC
 
 ### Task 5.4: Add cross-references between docs
 - [ ] SPEC.md → Add "For API details, see DATA_ENGINE_REFERENCE.md"

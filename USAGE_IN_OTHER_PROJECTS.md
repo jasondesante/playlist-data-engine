@@ -71,12 +71,26 @@ Then reference it in your project code directly.
 
 ## Usage Examples
 
+### Basic Examples
 - [Basic Playlist Parsing and Character Generation](#basic-playlist-parsing-and-character-generation) - Parse playlists, analyze audio, and generate characters
 - [Progression and XP Tracking](#progression-and-xp-tracking) - Track sessions, calculate XP, handle level-ups
+
+### Advanced Examples
+- [Combining All Systems](#combining-all-systems) - Full pipeline with environmental and gaming context
+
+### Specific Features
 - [Environmental Sensors](#environmental-sensors) - Get environmental context and XP modifiers
 - [Gaming Platform Integration](#gaming-platform-integration) - Integrate Steam and Discord for gaming bonuses
 - [Combat System](#combat-system) - Run turn-based D&D 5e combat
-- [Advanced: Combining All Systems](#advanced-combining-all-systems) - Full pipeline with all features
+
+### Common Patterns
+- [Deterministic Character Generation](#deterministic-character-generation) - How the same seed always produces the same character
+- [Understanding XP Bonus Calculation](#understanding-xp-bonus-calculation) - How environmental and gaming modifiers combine
+- [Manual Level-Up Processing](#manual-level-up-processing) - Handle level-ups programmatically
+
+---
+
+## Basic Examples
 
 ### Basic Playlist Parsing and Character Generation
 
@@ -152,6 +166,10 @@ if (session) {
   }
 }
 ```
+
+---
+
+## Specific Features
 
 ### Environmental Sensors
 
@@ -277,7 +295,11 @@ while (combatInstance.isActive) {
 }
 ```
 
-### Advanced: Combining All Systems
+---
+
+## Advanced Examples
+
+### Combining All Systems
 
 ```typescript
 import {
