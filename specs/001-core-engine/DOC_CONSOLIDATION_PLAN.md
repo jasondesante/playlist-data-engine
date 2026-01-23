@@ -66,6 +66,89 @@
 9. Full Combat System example (startCombat, executeAttack, nextTurn, getCombatResult)
 10. Complete Pipeline Example
 
+**README.md Example Inventory with Line Numbers** (completed 2026-01-23):
+
+README.md contains **10 code examples** (290 lines of example code total):
+
+1. **Lines 54-77**: "Quick Start: Foundation (Phase 0)" example
+   - Shows: PlaylistParser, AudioAnalyzer, CharacterGenerator basic workflow
+   - Code block spans 24 lines
+   - Demonstrates parse → analyze → generate flow with console logging
+
+2. **Lines 83-101**: "Phase 1: Visual Analysis & Character Naming" example
+   - Shows: ColorExtractor.extractColors() from artwork URL
+   - Shows: NamingEngine.generateName() with (title, artist, audioProfile, class) params
+   - Code block spans 19 lines
+   - Demonstrates color palette extraction and RPG-style name generation
+
+3. **Lines 105-130**: "Phase 2: Advanced Character Features" example
+   - Shows: SkillAssigner.assignSkills() and filtering proficient skills
+   - Shows: SpellManager.isSpellcaster() check and generateSpells()
+   - Shows: EquipmentGenerator.generateStartingEquipment()
+   - Shows: AppearanceGenerator.generateAppearance() from audioProfile and palette
+   - Code block spans 26 lines
+   - Demonstrates complete advanced character feature generation
+
+4. **Lines 135-162**: "Phase 3: Progression & Leveling" example
+   - Shows: SessionTracker.startSession(character.name) and endSession()
+   - Shows: XPCalculator.calculateSessionXP(duration)
+   - Shows: CharacterUpdater.applyListeningSession(character, session)
+   - Shows: MasterySystem.recordPlaythrough() and isTrackMastered() checks
+   - Code block spans 28 lines
+   - Demonstrates full progression workflow with level-ups and mastery
+
+5. **Lines 167-188**: "Phase 4: Environmental Sensors" example
+   - Shows: EnvironmentalSensors constructor with OPTIONS OBJECT
+     - enableLocation, enableMotion, enableWeather, weatherApiKey
+   - Shows: requestPermissions() and getCurrentContext()
+   - Shows: calculateXPModifier(context)
+   - Code block spans 22 lines
+   - **API DISCREPANCY**: Uses options object vs single API key in other docs
+
+6. **Lines 192-217**: "Phase 5: Gaming Platform Integration" example
+   - Shows: GamingPlatformSensors constructor with options object
+     - steam: { apiKey, steamId, pollInterval }
+     - discord: { clientId, enableRichPresence }
+   - Shows: authenticate(userSteamId, discordUserId) - TWO PARAMS
+   - Shows: startMonitoring(callback) with context access
+   - Shows: calculateGamingBonus(context)
+   - Code block spans 26 lines
+
+7. **Lines 221-255**: "Phase 6: Combat System (Optional)" example
+   - Shows: CombatEngine, AttackResolver, SpellCaster, InitiativeRoller imports
+   - Shows: combatEngine.startCombat([player], [enemy]) - ARRAYS
+   - Shows: executeAttack(combat, attacker, target, attack)
+   - Shows: nextTurn(combat) and getCombatResult(combat)
+   - Code block spans 35 lines
+   - Demonstrates complete combat loop with initiative, attacks, results
+
+8. **Lines 258-285**: "Complete Pipeline Example"
+   - Shows: Full end-to-end workflow combining all systems
+   - Shows: Environmental context + Gaming context integration
+   - Shows: Compound bonus calculation (envMultiplier * gamingMultiplier)
+   - Shows: updater.applyListeningSession() with modified session
+   - Code block spans 28 lines
+   - Demonstrates real-world usage with all features combined
+
+9. **Lines 54-77 (repeated)**: Installation/Development section (not unique example)
+   - Shows: npm install, npm test commands (bash commands, not TypeScript)
+
+10. **Lines 288-311**: Development section (bash commands, not code examples)
+    - Shows: npm test -- combat.test.ts (specific test file)
+    - Shows: npm run test:ui, npm run test:coverage, npm run type-check
+    - Shows: npm run dev (watch mode)
+
+**Summary for README.md**:
+- Total TypeScript code examples: 8 blocks (180 lines of example code)
+- Plus 2 bash command sections (not code examples per se)
+- Key findings:
+  - API DISCREPANCY 1: EnvironmentalSensors constructor uses options object with enableLocation/enableMotion/enableWeather/weatherApiKey
+  - API DISCREPANCY 2: GamingPlatformSensors.authenticate() takes TWO params (userSteamId, discordUserId)
+  - API DISCREPANCY 3: CharacterUpdater.applyListeningSession() vs updateCharacterFromSession()
+  - API DISCREPANCY 4: MasterySystem.recordPlaythrough()/isTrackMastered() vs checkMastery()/isJustMastered()
+  - SessionTracker.startSession() doesn't show return value in usage
+- Action required: All examples should be migrated to USAGE_IN_OTHER_PROJECTS.md before README.md deletion
+
 **API Discrepancies Found** (needs verification in Phase 4):
 - `CharacterUpdater.applyListeningSession()` (README) vs `updateCharacterFromSession()` (USAGE)
 - `MasterySystem.recordPlaythrough()/isTrackMastered()` (README) vs `checkMastery()/isJustMastered()` (USAGE)
@@ -95,7 +178,7 @@
 - [x] List all examples currently in SPEC.md (with line numbers) - **COMPLETED 2026-01-23**
 - [x] List all examples currently in DATA_ENGINE_REFERENCE.md (with line numbers) - **COMPLETED 2026-01-23: File does not exist yet (0 examples)**
 - [x] List all examples currently in USAGE_IN_OTHER_PROJECTS.md (with line numbers)
-- [ ] List all examples in README.md worth keeping (with line numbers)
+- [x] List all examples in README.md worth keeping (with line numbers) - **COMPLETED 2026-01-23**
 - [ ] List all examples in quickstart.md worth keeping (with line numbers)
 
 **USAGE_IN_OTHER_PROJECTS.md Example Inventory (Completed 2026-01-23):**
