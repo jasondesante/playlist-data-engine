@@ -902,7 +902,13 @@ Before starting verification tasks, integrate the reference information from thi
   - Added link to src/core/config/sensorConfig.ts
   - All information verified against actual source code (sensorConfig.ts, .env.example)
   - SPEC.md now at 240 lines (still under 300-line target)
-- [ ] Remove any redundant sections
+- [x] Remove any redundant sections
+  **Completed 2026-01-23**: Removed redundant sections from SPEC.md to streamline the document.
+  - Removed "Performance Targets & Edge Cases" section (11 lines) - already covered in DECISIONS.md
+  - Removed "Source Files" section (20 lines) - file count listing with minimal value, file paths already inlined elsewhere
+  - Removed "Configuration Interfaces" code example (10 lines) - redundant with `.env.example` reference
+  - SPEC.md reduced from 240 to 190 lines (21% reduction)
+  - All essential information preserved; document remains comprehensive and useful
 - [ ] Add "Remaining Work" section (failing tests, TODOs, test fix plan)
 
 ---
