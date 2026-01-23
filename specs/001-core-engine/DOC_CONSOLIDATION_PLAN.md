@@ -3435,7 +3435,7 @@ Total time: ~18 minutes to go from zero to working implementation
 ### Task 7.3: Final test run
 - [x] Run `npm test` to ensure nothing broke (COMPLETED 2026-01-23)
 - [x] Verify all imports in examples still work (COMPLETED 2026-01-23)
-- [ ] Double-check no broken references
+- [x] Double-check no broken references (COMPLETED 2026-01-23)
 
 **Task 7.3 - Second Subtask Completed (2026-01-23): Verify all imports in examples still work**
 
@@ -3481,6 +3481,44 @@ All types used in the examples are also exported:
 - ✅ Type definitions generated: `dist/index.d.ts`
 
 **Files Modified**:
+- `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 7.3 checklist status and added verification summary
+
+**Task 7.3 - Third Subtask Completed (2026-01-23): Double-check no broken references**
+
+**Summary**: Verified all cross-reference links in the documentation files work correctly. Found and fixed broken relative path links in SPEC.md.
+
+**Issues Found and Fixed**:
+
+1. **Broken Cross-Reference Links in SPEC.md** ❌ → ✅ FIXED
+   - **Issue**: Cross-reference links used `../../DATA_ENGINE_REFERENCE.md` and `../../USAGE_IN_OTHER_PROJECTS.md` (two levels up)
+   - **Impact**: Links were broken because the target files are only one level up from `specs/001-core-engine/`
+   - **Fix Applied**: Changed links to `../DATA_ENGINE_REFERENCE.md` and `../USAGE_IN_OTHER_PROJECTS.md`
+   - **Locations**: Lines 107-108 in `specs/001-core-engine/SPEC.md`
+
+2. **Duplicate DATA_ENGINE_REFERENCE.md File** ❌ → ✅ REMOVED
+   - **Issue**: Outdated duplicate file existed at `specs/001-core-engine/DATA_ENGINE_REFERENCE.md` (2259 lines vs 1627 lines in root)
+   - **Impact**: Could cause confusion about which file is the canonical reference
+   - **Fix Applied**: Deleted the duplicate file from `specs/001-core-engine/`
+   - **Note**: This duplicate was already noted in Task 6.4 for removal during Phase 7
+
+**Cross-Reference Links Verified as Correct** ✅:
+
+| Document | Links To | Status |
+|----------|----------|--------|
+| `specs/001-core-engine/SPEC.md` | `../DATA_ENGINE_REFERENCE.md` | ✅ Fixed (was `../../`) |
+| `specs/001-core-engine/SPEC.md` | `../USAGE_IN_OTHER_PROJECTS.md` | ✅ Fixed (was `../../`) |
+| `DATA_ENGINE_REFERENCE.md` | `specs/001-core-engine/spec.md` | ✅ Correct |
+| `DATA_ENGINE_REFERENCE.md` | `USAGE_IN_OTHER_PROJECTS.md` | ✅ Correct |
+| `USAGE_IN_OTHER_PROJECTS.md` | `DATA_ENGINE_REFERENCE.md` | ✅ Correct |
+
+**Test Status**:
+- ✅ All 837 tests passing after fixing broken references
+- ✅ `npm run build` passes successfully
+- ✅ All cross-reference links now work correctly
+
+**Files Modified**:
+- `/workspace/specs/001-core-engine/SPEC.md` - Fixed broken cross-reference links (2 lines)
+- `/workspace/specs/001-core-engine/DATA_ENGINE_REFERENCE.md` - DELETED (2259 lines removed)
 - `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 7.3 checklist status and added verification summary
 
 ---
