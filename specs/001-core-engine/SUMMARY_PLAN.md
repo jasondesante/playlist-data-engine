@@ -203,8 +203,11 @@ Before starting verification tasks, integrate the reference information from thi
 - [x] Read current `SPEC.md` to understand existing structure
 - [x] Add "Source Files" section to SPEC.md with file listings from this plan's Quick Reference
 - [x] Enhance "Core Data Types" section with detailed type information
-- [ ] Add/clarify "Ability Score Mapping" section
-- [ ] Add/clarify "XP Modifiers" section
+- [x] Add/clarify "Ability Score Mapping" section
+- [x] Add/clarify "XP Modifiers" section
+  **Completed 2026-01-23**: Verified ability score mapping and XP modifiers against actual source code.
+  - Ability scores: Fixed documentation discrepancies (INT uses only mid_dominance, CHA uses (mid+amplitude)/2, not genre)
+  - XP modifiers: Added missing activity bonuses (walking 1.2x, driving 1.3x), gaming genre bonuses (Action/FPS +15%, Strategy +10%), snow modifier
 - [ ] Ensure all 10 Core Features are properly documented with source file links
 - [ ] **Add clear "How to Use" section** - feed playlist in → get character out, connect to Discord/Steam/sensors
 - [ ] Review and optimize for clarity and conciseness
