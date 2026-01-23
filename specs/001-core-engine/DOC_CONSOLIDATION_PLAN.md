@@ -926,7 +926,35 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 
 **No discrepancies found** - GamingPlatformSensors documentation in DATA_ENGINE_REFERENCE.md is accurate and complete.
 
-- [ ] Verify `CombatEngine` class and method signatures
+- [x] Verify `CombatEngine` class and method signatures (COMPLETED 2026-01-23)
+
+**Task 2.2 - CombatEngine Verification (Completed 2026-01-23)**:
+
+**Summary**: CombatEngine class and method signatures verified against source code in `src/core/combat/CombatEngine.ts`. All documentation matches actual implementation.
+
+**Verification Results**:
+- ✅ Constructor signature matches source (lines 49-60)
+  - `constructor(config: CombatConfig = {})` with all 5 config options documented
+- ✅ All 16 public methods documented with exact signature matches:
+  - `startCombat(playerCharacters, enemies, environment?): CombatInstance` - Rolls initiative and establishes turn order
+  - `getCurrentCombatant(combat): Combatant` - Get current active combatant
+  - `executeAttack(combat, attacker, target, attack): CombatAction` - Execute attack action
+  - `executeCastSpell(combat, caster, spell, targets): CombatAction` - Execute spell casting action
+  - `executeDodge(combat, combatant): CombatAction` - Execute dodge action
+  - `executeDash(combat, combatant): CombatAction` - Execute dash action
+  - `executeDisengage(combat, combatant): CombatAction` - Execute disengage action
+  - `nextTurn(combat): CombatInstance` - Advance to next turn
+  - `getCombatResult(combat): CombatResult | null` - Get combat result when combat ends
+  - `getCombatSummary(combat): string` - Get combat status summary
+  - `applyDamage(combatant, damage): number` - Apply damage to combatant
+  - `healCombatant(combatant, healing): number` - Heal combatant
+  - `applyTemporaryHP(combatant, tempHP): void` - Apply temporary HP
+  - `getLivingCombatants(combat): Combatant[]` - Get living combatants
+  - `getDefeatedCombatants(combat): Combatant[]` - Get defeated combatants
+- ✅ CombatConfig interface fully documented: `useEnvironment`, `useMusic`, `tacticalMode`, `maxTurnsBeforeDraw`, `allowFleeing`
+- ✅ 3 private methods correctly excluded from public API documentation: `checkCombatStatus()`, `createCombatant()`, `initializeSpellSlots()`
+
+**No discrepancies found** - CombatEngine documentation in DATA_ENGINE_REFERENCE.md is accurate and complete.
 
 ### Task 2.3: Verify all helper class references
 - [ ] Verify `NamingEngine` exists and `generateName()` signature matches
