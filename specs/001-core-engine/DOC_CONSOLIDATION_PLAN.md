@@ -1989,7 +1989,7 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 
 ### Task 4.1: Resolve naming discrepancies
 - [x] Check for class name inconsistencies (e.g., `SessionTracker.startSession()` returning sessionId vs session object) (COMPLETED 2026-01-23)
-- [ ] Check for method signature inconsistencies across docs
+- [x] Check for method signature inconsistencies across docs (COMPLETED 2026-01-23)
 - [ ] Check for type name inconsistencies
 - [ ] Document all discrepancies found and create fixes
 
@@ -2034,6 +2034,29 @@ The following discrepancies exist in files that are **already scheduled for dele
 10. **quickstart.md line 136**: Uses `sensors.calculateXPModifier(context)` - takes no parameters
 
 **Action Required**: None. The core three documents (SPEC.md, DATA_ENGINE_REFERENCE.md, USAGE_IN_OTHER_PROJECTS.md) are consistent. The obsolete files (README.md, quickstart.md) will be deleted in Phase 7 as originally planned.
+
+**Task 4.1 - Method Signature Inconsistencies Check (Completed 2026-01-23)**:
+
+**Summary**: No method signature inconsistencies found across SPEC.md, DATA_ENGINE_REFERENCE.md, and USAGE_IN_OTHER_PROJECTS.md.
+
+**Verification Results**:
+
+All key methods were verified across the three core documents against actual source code:
+
+| Method | DATA_ENGINE_REFERENCE.md | USAGE_IN_OTHER_PROJECTS.md | Source Code | Status |
+|--------|--------------------------|---------------------------|-------------|--------|
+| `SessionTracker.startSession()` | Returns `sessionId` string | Returns `sessionId` string | `startSession(trackUuid, track?, context?): string` | ✅ Consistent |
+| `SessionTracker.endSession()` | Takes `sessionId`, returns `ListeningSession \| null` | Takes `sessionId` | `endSession(sessionId, durationOverride?, activityType?): ListeningSession \| null` | ✅ Consistent |
+| `XPCalculator.calculateSessionXP()` | Takes `session, track?` | Takes `session, track` | `calculateSessionXP(session: ListeningSession, track?: PlaylistTrack): number` | ✅ Consistent |
+| `CharacterUpdater.updateCharacterFromSession()` | Returns `CharacterUpdateResult` | Returns `CharacterUpdateResult` | `updateCharacterFromSession(character, session, track?, previousListenCount?): CharacterUpdateResult` | ✅ Consistent |
+| `EnvironmentalSensors.calculateXPModifier()` | Takes no parameters | Takes no parameters | `calculateXPModifier(): number` | ✅ Consistent |
+| `GamingPlatformSensors.calculateGamingBonus()` | Takes no parameters | Takes no parameters | `calculateGamingBonus(): number` | ✅ Consistent |
+| `CharacterGenerator.generate()` | `static generate(seed, audioProfile, name, options?)` | `generate(seed, audio, name)` | `static generate(seed: string, audioProfile: AudioProfile, name: string, options?: CharacterGeneratorOptions): CharacterSheet` | ✅ Consistent |
+| `LevelUpProcessor.processLevelUp()` | Takes `character, newLevel, seed?` | Takes `character, newLevel` | `static processLevelUp(character: CharacterSheet, newLevel: number, seed?: string): LevelUpBenefits` | ✅ Consistent |
+
+**Note**: SPEC.md intentionally does not contain detailed method signatures - it lists only class names, purposes, and source file paths in the "Key Classes" table. This is by design as SPEC.md serves as "The Atlas" (quick overview), not as an API reference.
+
+**Conclusion**: All three core documents are internally consistent with each other and accurately reflect the actual source code APIs. No fixes needed.
 
 ### Task 4.2: Resolve API changes (e.g., SessionTracker)
 - [ ] Verify `SessionTracker.startSession()` returns `sessionId` (string)
