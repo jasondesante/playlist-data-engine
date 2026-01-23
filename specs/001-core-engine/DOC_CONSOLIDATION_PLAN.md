@@ -2134,9 +2134,48 @@ This is a **source code inconsistency** (not a documentation issue) and is alrea
 **Action Required**: None. The core three documents are consistent and accurate. Obsolete files with incorrect APIs will be deleted in Phase 7.
 
 ### Task 4.3: Resolve import statement inconsistencies
-- [ ] Verify all import examples use correct paths
-- [ ] Ensure consistency in import style (named vs default)
-- [ ] Update all docs to use current package name
+- [x] Verify all import examples use correct paths (COMPLETED 2026-01-23)
+- [x] Ensure consistency in import style (named vs default) (COMPLETED 2026-01-23)
+- [x] Update all docs to use current package name (COMPLETED 2026-01-23)
+
+**Task 4.3 Completed (2026-01-23):**
+
+**Summary**: All import statement inconsistencies have been resolved across the three core documents.
+
+**Issues Found and Fixed**:
+
+1. **DATA_ENGINE_REFERENCE.md - Import paths using development style** ❌ → ✅ FIXED
+   - **Issue**: Import examples used development-style paths like `import { PlaylistParser } from './src/core/parser/PlaylistParser'`
+   - **Impact**: These imports don't work for external users consuming the package
+   - **Fix Applied**: Updated all import statements to use production package name: `import { PlaylistParser } from 'playlist-data-engine'`
+   - **Locations Fixed**: Lines 654, 713 (PlaylistParser and AudioAnalyzer usage sections)
+
+2. **DATA_ENGINE_REFERENCE.md - "Cookbook & Examples" section** ❌ → ✅ FIXED
+   - **Issue**: File contained a "Cookbook & Examples" section (lines 1222-1336) with 3 full examples using development-style imports
+   - **Impact**: This content violates the "Trinity" plan - DATA_ENGINE_REFERENCE.md should be "The API Dictionary" only, not a cookbook
+   - **Fix Applied**: Removed entire "Cookbook & Examples" section (115 lines) and replaced with cross-reference section pointing to USAGE_IN_OTHER_PROJECTS.md
+   - **Examples Removed**: "Hello World", "Workout Mode", and "Boss Fight" examples now defer to USAGE_IN_OTHER_PROJECTS.md
+
+3. **USAGE_IN_OTHER_PROJECTS.md - Already correct** ✅ VERIFIED
+   - All 10 import statements already use production package name: `'playlist-data-engine'`
+   - All imports use named imports (consistent style)
+   - No changes needed
+
+4. **SPEC.md - No import statements** ✅ VERIFIED
+   - SPEC.md correctly contains no import examples (follows "Atlas" identity)
+
+**Import Style Consistency**:
+- All imports use **named imports**: `import { Class } from 'playlist-data-engine'`
+- No default imports used (consistent across all docs)
+- All imports use the production package name `'playlist-data-engine'`
+
+**Files Modified**:
+- `/workspace/DATA_ENGINE_REFERENCE.md` - Fixed 2 inline import examples, removed "Cookbook & Examples" section (115 lines), added cross-reference section
+
+**Documentation Structure After Task 4.3**:
+- **SPEC.md**: "The Atlas" - Overview with no import examples ✅
+- **DATA_ENGINE_REFERENCE.md**: "The API Dictionary" - Complete API catalog with minimal inline examples using production package name ✅
+- **USAGE_IN_OTHER_PROJECTS.md**: "The Cookbook" - All comprehensive examples using production package name ✅
 
 ### Task 4.4: Verify source file references
 - [ ] All source file paths in SPEC.md should be accurate

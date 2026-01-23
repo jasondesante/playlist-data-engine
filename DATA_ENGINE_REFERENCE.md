@@ -651,7 +651,7 @@ new PlaylistParser(options?: PlaylistParserOptions)
 
 **Usage:**
 ```typescript
-import { PlaylistParser } from './src/core/parser/PlaylistParser';
+import { PlaylistParser } from 'playlist-data-engine';
 
 const parser = new PlaylistParser({ validateAudioUrls: true });
 const playlist = await parser.parse(rawJsonData);
@@ -710,7 +710,7 @@ Separates raw frequency data into bands.
 
 **Usage:**
 ```typescript
-import { AudioAnalyzer } from './src/core/analysis/AudioAnalyzer';
+import { AudioAnalyzer } from 'playlist-data-engine';
 
 const analyzer = new AudioAnalyzer({ includeAdvancedMetrics: true });
 const profile = await analyzer.extractSonicFingerprint('https://example.com/audio.mp3');
@@ -1219,118 +1219,7 @@ while (battle.isActive) {
 
 ---
 
-## Cookbook & Examples
+## Cross-References
 
-### 1. The "Hello World" - Play Audio & Generate Character
-
-**Goal:** Get the audio URL from a playlist and generate a character from it.
-
-```typescript
-import { PlaylistParser } from './src/core/parser/PlaylistParser';
-import { AudioAnalyzer } from './src/core/analysis/AudioAnalyzer';
-import { CharacterGenerator } from './src/core/generation/CharacterGenerator';
-
-async function main() {
-    // 1. Parse Playlist
-    const parser = new PlaylistParser();
-    const playlist = await parser.parse(myJsonData);
-    
-    // 2. Get the first track
-    const track = playlist.tracks[0];
-
-    // --- HOW TO PLAY THE AUDIO ---
-    console.log(`Now Playing: ${track.title} by ${track.artist}`);
-    console.log(`Stream URL: ${track.audio_url}`); // <--- Pass this to your audio player (Howler, HTML5 Audio, etc.)
-    
-    // Example: HTML5 Audio
-    // const audio = new Audio(track.audio_url);
-    // audio.play();
-
-    // 3. Analyze Audio (for character generation)
-    const analyzer = new AudioAnalyzer();
-    const audioProfile = await analyzer.extractSonicFingerprint(track.audio_url);
-
-    // 4. Generate Character
-    const character = CharacterGenerator.generate(
-        track.id,
-        audioProfile,
-        track.title
-    );
-
-    console.log(`Generated: ${character.race} ${character.class} (Level ${character.level})`);
-}
-```
-
-### 2. The "Workout Mode" - Earn XP while Running
-
-```typescript
-import { SessionTracker } from './src/core/progression/SessionTracker';
-import { EnvironmentalSensors } from './src/core/sensors/EnvironmentalSensors';
-import { CharacterUpdater } from './src/core/progression/CharacterUpdater';
-
-async function workoutSession(character, track) {
-    // Setup Sensors
-    const sensors = new EnvironmentalSensors();
-    await sensors.requestPermissions(['motion', 'geolocation']);
-    sensors.startMonitoring();
-
-    // Start Session
-    const tracker = new SessionTracker();
-    const sessionId = tracker.startSession(track.id);
-
-    console.log("Start running!");
-    // ... User runs for 30 mins ...
-
-    // End Session
-    const envContext = await sensors.updateSnapshot();
-    tracker.updateSessionContext(sessionId, { environmental_context: envContext });
-    
-    // Auto-detect 'running' activity from motion sensor
-    const session = tracker.endSession(sessionId); 
-
-    // Update Character
-    const updater = new CharacterUpdater();
-    const result = updater.updateCharacterFromSession(character, session, track);
-
-    console.log(`Workout complete! Earned ${result.xpEarned} XP.`);
-    sensors.stopMonitoring();
-}
-```
-
-### 3. The "Boss Fight" - Combat Encounter
-
-```typescript
-import { CombatEngine } from './src/core/combat/CombatEngine';
-
-function runEncounter(party, enemies) {
-    const engine = new CombatEngine();
-    let combat = engine.startCombat(party, enemies);
-
-    console.log("Combat Started!");
-
-    while (combat.isActive) {
-        const current = engine.getCurrentCombatant(combat);
-        
-        // Simple AI: Attack first enemy
-        const targets = current.id.startsWith('player') 
-            ? combat.combatants.filter(c => c.id.startsWith('enemy') && !c.isDefeated)
-            : combat.combatants.filter(c => c.id.startsWith('player') && !c.isDefeated);
-
-        if (targets.length > 0) {
-            const target = targets[0];
-            // Use first available attack
-            const attack = current.character.equipment?.weapons[0] 
-                ? { name: 'Weapon Attack', damage_dice: '1d8', damage_type: 'slashing' } // Simplified
-                : { name: 'Unarmed Strike', damage_dice: '1d4', damage_type: 'bludgeoning' };
-
-            const action = engine.executeAttack(combat, current, target, attack);
-            console.log(`${current.character.name} attacks ${target.character.name}: ${action.result.description}`);
-        }
-
-        combat = engine.nextTurn(combat);
-    }
-
-    const result = engine.getCombatResult(combat);
-    console.log(result.description);
-}
-```
+- For quick overview, see [SPEC.md](specs/001-core-engine/SPEC.md)
+- For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md)
