@@ -673,7 +673,7 @@ The file contains **42 type definitions** across multiple categories:
 ### Task 1.1: Verify factual claims in SPEC.md
 - [x] Verify "Core Features" list matches actual implemented features (COMPLETED 2026-01-23)
 - [x] Verify all source file paths exist (COMPLETED 2026-01-23)
-- [ ] Verify ability score formulas match `AbilityScoreCalculator.ts`
+- [x] Verify ability score formulas match `AbilityScoreCalculator.ts`
 - [ ] Verify XP modifier formulas match `XPCalculator.ts`
 - [ ] Verify environment variable list matches `.env.example`
 - [ ] Verify line count is under 300
