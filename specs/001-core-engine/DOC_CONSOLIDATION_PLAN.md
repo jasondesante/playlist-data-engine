@@ -2059,10 +2059,36 @@ All key methods were verified across the three core documents against actual sou
 **Conclusion**: All three core documents are internally consistent with each other and accurately reflect the actual source code APIs. No fixes needed.
 
 ### Task 4.2: Resolve API changes (e.g., SessionTracker)
-- [ ] Verify `SessionTracker.startSession()` returns `sessionId` (string)
-- [ ] Verify `SessionTracker.endSession()` takes `sessionId` and returns `ListeningSession | null`
-- [ ] Update all docs to reflect correct API
-- [ ] Check for similar API changes in other classes
+- [x] Verify `SessionTracker.startSession()` returns `sessionId` (string) (COMPLETED 2026-01-23)
+- [x] Verify `SessionTracker.endSession()` takes `sessionId` and returns `ListeningSession | null` (COMPLETED 2026-01-23)
+- [x] Update all docs to reflect correct API (COMPLETED 2026-01-23)
+- [x] Check for similar API changes in other classes (COMPLETED 2026-01-23)
+
+**Task 4.2 Completed (2026-01-23)**:
+
+**Summary**: All key APIs verified against source code. Core documentation files (SPEC.md, DATA_ENGINE_REFERENCE.md, USAGE_IN_OTHER_PROJECTS.md) already have correct API signatures. Incorrect APIs exist only in obsolete files (README.md, quickstart.md) which are scheduled for deletion in Phase 7.
+
+**APIs Verified as Correct** (source code confirmation):
+
+| API Component | Correct Signature | Source File |
+|---------------|-------------------|-------------|
+| `SessionTracker.startSession()` | `startSession(trackUuid: string, track?: PlaylistTrack, context?: {...}): string` | Returns `sessionId` (src/core/progression/SessionTracker.ts:50-69) |
+| `SessionTracker.endSession()` | `endSession(sessionId: string, durationOverride?: number, activityType?: string): ListeningSession \| null` | Requires `sessionId` (src/core/progression/SessionTracker.ts:79-124) |
+| `NamingEngine.generateName()` | `generateName(track: PlaylistTrack, audioProfile: AudioProfile): string` | Takes 2 params (src/core/generation/NamingEngine.ts:40) |
+| `CombatEngine.startCombat()` | `startCombat(playerCharacters: CharacterSheet[], enemies: CharacterSheet[], environment?: EnvironmentalContext): CombatInstance` | Takes arrays of characters (src/core/combat/CombatEngine.ts:82-116) |
+| `CharacterUpdater.updateCharacterFromSession()` | `updateCharacterFromSession(character: CharacterSheet, session: ListeningSession, track?: PlaylistTrack, previousListenCount: number = 0): CharacterUpdateResult` | Returns result object (src/core/progression/CharacterUpdater.ts:38-117) |
+| `MasterySystem.checkMastery()` | `checkMastery(listenCount: number): boolean` | Takes number only (src/core/progression/MasterySystem.ts:13) |
+| `MasterySystem.isJustMastered()` | `isJustMastered(previousListenCount: number, currentListenCount: number): boolean` | Takes two numbers (src/core/progression/MasterySystem.ts:32) |
+| `MasterySystem.calculateMasteryBonus()` | `calculateMasteryBonus(isMastered: boolean): number` | Takes boolean (src/core/progression/MasterySystem.ts:22) |
+
+**Documentation Status**:
+
+1. **SPEC.md** - All class names and descriptions are accurate (only lists classes in table, no detailed API)
+2. **DATA_ENGINE_REFERENCE.md** - All method signatures match source code
+3. **USAGE_IN_OTHER_PROJECTS.md** - All code examples use correct API
+4. **README.md** and **quickstart.md** - Contain API errors but are scheduled for deletion in Phase 7
+
+**Action Required**: None. The core three documents are consistent and accurate. Obsolete files with incorrect APIs will be deleted in Phase 7.
 
 ### Task 4.3: Resolve import statement inconsistencies
 - [ ] Verify all import examples use correct paths
