@@ -81,7 +81,15 @@
 5. Troubleshooting table format (table format, not list)
 6. Testing section with specific test commands (`npm test -- combat.test.ts`, `npm test -- --watch`, `npm run test:coverage`)
 7. Type Safety section (tsconfig.json strict mode setup example)
-- [ ] Read `SUMMARY_PLAN.md` - harvest important spec information that should be in SPEC.md
+- [x] Read `SUMMARY_PLAN.md` - harvest important spec information that should be in SPEC.md
+
+**SUMMARY_PLAN.md Analysis Completed (2026-01-23)**:
+- 969 lines total - primarily historical record of verification process with completed task checklists
+- **Key Finding**: Most important spec information is already in SPEC.md
+- **Feature → Files Mapping Table** (lines 322-338) is valuable but may be better suited for DATA_ENGINE_REFERENCE.md per "trinity" separation
+- **Discord Voice Exclusion** (lines 121-125) already properly excluded in SPEC.md line 208
+- **Spec Facts Already in SPEC.md**: Core Features, Data Types, Ability Score Formulas, XP Modifiers, Configuration
+- **No spec information migration needed** - SPEC.md already contains all essential spec information
 
 ### Task 0.2: Create example inventory
 - [ ] List all examples currently in SPEC.md (with line numbers)
