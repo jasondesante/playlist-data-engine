@@ -1263,11 +1263,37 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 **All four combat helper classes are now fully documented in DATA_ENGINE_REFERENCE.md with accurate method signatures.**
 
 ### Task 2.4: Verify code examples in DATA_ENGINE_REFERENCE.md
-- [ ] Review code examples in "Usage" subsections
-- [ ] Verify import statements are correct
-- [ ] Verify constructor calls match actual constructors
-- [ ] Verify method calls match actual signatures
-- [ ] Note any examples that should be moved to USAGE_IN_OTHER_PROJECTS.md
+- [x] Review code examples in "Usage" subsections (COMPLETED 2026-01-23)
+- [x] Verify import statements are correct (COMPLETED 2026-01-23)
+- [x] Verify constructor calls match actual constructors (COMPLETED 2026-01-23)
+- [x] Verify method calls match actual signatures (COMPLETED 2026-01-23)
+- [x] Note any examples that should be moved to USAGE_IN_OTHER_PROJECTS.md (COMPLETED 2026-01-23)
+
+**Task 2.4 Completed (2026-01-23)**:
+
+**Summary**: All code examples in DATA_ENGINE_REFERENCE.md have been reviewed.
+
+**Key Findings**:
+
+1. **No "Usage" Subsections Found**: The DATA_ENGINE_REFERENCE.md does not contain any "Usage" subsections. The file is organized as a pure API reference with:
+   - Type definitions with inline TypeScript interface blocks (for type clarity, not usage examples)
+   - Constructor and method signatures with parameter types
+   - Concise descriptions of what each method does
+
+2. **No Import Statements**: The file contains no import statements. It only shows type definitions and method signatures.
+
+3. **No Full Code Examples**: The file does not contain runnable code examples. The code blocks shown are:
+   - TypeScript interface definitions (showing structure, not usage)
+   - Method signatures (showing API, not implementation examples)
+
+4. **Assessment**: DATA_ENGINE_REFERENCE.md correctly follows the "API Dictionary" identity from the Trinity plan. It contains:
+   - ✅ Complete API catalog with all type definitions
+   - ✅ All method signatures with parameters and return types
+   - ✅ Minimal inline type definitions (only when critical to explain the API)
+   - ❌ NO usage examples (correctly deferred to USAGE_IN_OTHER_PROJECTS.md)
+   - ✅ Cross-reference at top pointing to USAGE_IN_OTHER_PROJECTS.md for examples
+
+**Conclusion**: No action required. DATA_ENGINE_REFERENCE.md is properly structured as a pure API reference without code examples. All examples should be in USAGE_IN_OTHER_PROJECTS.md.
 
 ### Task 2.5: Move cookbook examples to USAGE
 - [ ] Move "Cookbook & Examples" section content to USAGE_IN_OTHER_PROJECTS.md
