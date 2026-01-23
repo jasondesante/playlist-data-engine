@@ -970,7 +970,32 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 - ✅ Format distribution (50%/30%/20%) matches source implementation (lines 87-93)
 
 **No discrepancies found** - NamingEngine documentation in DATA_ENGINE_REFERENCE.md is accurate and complete.
-- [ ] Verify `RaceSelector`, `ClassSuggester`, `AbilityScoreCalculator` exist
+
+**Task 2.3 - RaceSelector, ClassSuggester, AbilityScoreCalculator Verification (Completed 2026-01-23)**:
+
+**Summary**: All three generation helper classes verified against source code. Documentation is accurate.
+
+**Verification Results**:
+
+**RaceSelector** (`src/core/generation/RaceSelector.ts`):
+- ✅ `static select(rng: SeededRNG): Race` signature matches source (line 29)
+- ✅ Selects from 9 D&D races deterministically using seeded RNG
+- ✅ Source path claim is accurate
+
+**ClassSuggester** (`src/core/generation/ClassSuggester.ts`):
+- ✅ `static suggest(audioProfile: AudioProfile, rng: SeededRNG): Class` signature matches source (line 40)
+- ✅ Maps audio characteristics (bass/mid/treble/amplitude) to class suggestions
+- ✅ Uses weighted random selection for determinism
+
+**AbilityScoreCalculator** (`src/core/generation/AbilityScoreCalculator.ts`):
+- ✅ `static calculateBaseScores(audioProfile: AudioProfile): AbilityScores` matches source (line 40)
+- ✅ `static applyRacialBonuses(baseScores: AbilityScores, race: Race): AbilityScores` matches source (line 70)
+- ✅ `static calculateModifiers(abilityScores: AbilityScores): AbilityScores` matches source (line 98)
+- ✅ All three method signatures documented accurately
+
+**No discrepancies found** - All three classes are documented accurately in DATA_ENGINE_REFERENCE.md.
+
+- [x] Verify `RaceSelector`, `ClassSuggester`, `AbilityScoreCalculator` exist (COMPLETED 2026-01-23)
 - [ ] Verify `SkillAssigner`, `SpellManager`, `EquipmentGenerator`, `AppearanceGenerator` exist
 - [ ] Verify `LevelUpProcessor`, `MasterySystem`, `CharacterUpdater` exist
 - [ ] Verify `GeolocationProvider`, `MotionDetector`, `WeatherAPIClient`, `LightSensor` exist
