@@ -1445,10 +1445,57 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 - All accessed properties (`character.name`, `character.race`, `character.class`, `character.ability_scores`) exist on the `CharacterSheet` type
 - No changes needed to documentation
 
-- [ ] "Progression and XP Tracking" example
-  - [ ] Verify `SessionTracker` usage pattern
-  - [ ] Verify `XPCalculator` methods
-  - [ ] Verify `CharacterUpdater` methods
+- [x] "Progression and XP Tracking" example (COMPLETED 2026-01-23)
+  - [x] Verify `SessionTracker` usage pattern
+  - [x] Verify `XPCalculator` methods
+  - [x] Verify `CharacterUpdater` methods
+
+**Task 3.2 - "Progression and XP Tracking" Example Verification (Completed 2026-01-23)**:
+
+**Summary**: The "Progression and XP Tracking" example had 6 critical API discrepancies that were fixed.
+
+**Issues Found and Fixed**:
+
+1. **`SessionTracker.startSession()` - Wrong parameter** ❌ → ✅ FIXED
+   - **Issue**: Example passed `character.name` instead of required `trackUuid`
+   - **Impact**: Code would fail at runtime with incorrect parameter type
+   - **Fix**: Changed to `tracker.startSession(track.id, track)` and capture the returned `sessionId`
+
+2. **`SessionTracker.endSession()` - Missing required parameter** ❌ → ✅ FIXED
+   - **Issue**: Example called `endSession()` without the required `sessionId` parameter
+   - **Impact**: Code would fail - `sessionId` is required to end the correct session
+   - **Fix**: Added `sessionId` parameter captured from `startSession()` return value
+
+3. **`XPCalculator.calculateSessionXP()` - Wrong parameter type** ❌ → ✅ FIXED
+   - **Issue**: Example passed raw number `300` instead of `ListeningSession` object
+   - **Impact**: TypeScript compilation error - type mismatch
+   - **Fix**: Changed to `xpCalc.calculateSessionXP(session, track)` - passes session object
+
+4. **`session.xp_earned` - Non-existent property** ❌ → ✅ FIXED
+   - **Issue**: Example tried to set `session.xp_earned = baseXP` but this property doesn't exist
+   - **Impact**: Property doesn't exist on `ListeningSession` interface
+   - **Fix**: Removed manual XP assignment - `endSession()` already calculates XP internally
+
+5. **`CharacterUpdater.updateCharacterFromSession()` - Wrong return type handling** ❌ → ✅ FIXED
+   - **Issue**: Example accessed `updatedChar.level` directly, but return type is `CharacterUpdateResult`
+   - **Impact**: Would fail - `level` property doesn't exist on `CharacterUpdateResult`
+   - **Fix**: Changed to `result.character.level` and use `result.leveledUp` boolean
+
+6. **`MasterySystem.checkMastery()` and `isJustMastered()` - Wrong signatures** ❌ → ✅ FIXED
+   - **Issue**: Example called `checkMastery(track.id, baseXP)` but only takes `listenCount: number`
+   - **Issue**: Example called `isJustMastered(track.id)` but takes `previousListenCount, currentListenCount`
+   - **Impact**: Both method calls would fail with incorrect parameters
+   - **Fix**: Removed manual mastery checks - `CharacterUpdater.updateCharacterFromSession()` handles this internally and returns `masteredTrack` boolean
+
+**Also Fixed - "Advanced: Combining All Systems" Example**:
+- Same `SessionTracker` API issues fixed (startSession/endSession parameters)
+- Fixed `XPCalculator.calculateSessionXP()` parameter type
+- Fixed manual `session.total_xp` assignment - should use `CharacterUpdater` result
+- Fixed `CharacterUpdater` return type handling
+- Properly set `environmental_context` and `gaming_context` on session before updating
+
+**Files Modified**:
+- `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Fixed both "Progression and XP Tracking" and "Advanced: Combining All Systems" examples
 - [ ] "Environmental Sensors" example
   - [ ] Verify `EnvironmentalSensors` constructor
   - [ ] Verify `requestPermissions()` and `updateSnapshot()` methods

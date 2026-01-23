@@ -116,30 +116,33 @@ import {
 
 // Track listening sessions
 const tracker = new SessionTracker();
-tracker.startSession(character.name);
+
+// Start a session - returns a sessionId (required for ending the session)
+const sessionId = tracker.startSession(track.id, track);
 
 // ... user listens to a track for 300 seconds ...
 
-const session = tracker.endSession();
+// End the session - requires the sessionId returned from startSession()
+const session = tracker.endSession(sessionId);
 
-// Calculate XP earned
-const xpCalc = new XPCalculator();
-const baseXP = xpCalc.calculateSessionXP(300);  // ~1 XP per second
-session.xp_earned = baseXP;
+if (session) {
+  // Calculate XP earned
+  const xpCalc = new XPCalculator();
+  const totalXP = xpCalc.calculateSessionXP(session, track);  // ~1 XP per second + bonuses
 
-// Apply session to character (handles level-ups)
-const updater = new CharacterUpdater();
-const updatedChar = updater.updateCharacterFromSession(character, session);
+  // Apply session to character (handles level-ups and mastery)
+  const updater = new CharacterUpdater();
+  const previousListenCount = tracker.getTrackListenCount(track.id) - 1;
+  const result = updater.updateCharacterFromSession(character, session, track, previousListenCount);
 
-if (updatedChar.level > character.level) {
-  console.log(`Level up! Now level ${updatedChar.level}`);
-}
+  if (result.leveledUp) {
+    console.log(`Level up! Now level ${result.newLevel}`);
+  }
 
-// Track track mastery
-const mastery = new MasterySystem();
-mastery.checkMastery(track.id, baseXP);
-if (mastery.isJustMastered(track.id)) {
-  console.log(`Track mastered! Bonus XP unlocked!`);
+  // Check for track mastery
+  if (result.masteredTrack) {
+    console.log(`Track mastered! ${result.masteryBonusXP} bonus XP unlocked!`);
+  }
 }
 ```
 
@@ -225,37 +228,38 @@ for (const track of playlist.tracks) {
   const audio = await analyzer.extractSonicFingerprint(track.audio_url);
   let character = CharacterGenerator.generate(track.id, audio, track.title);
 
-  // 2. Track listening session
+  // 2. Track listening session with context
   const tracker = new SessionTracker();
-  tracker.startSession(character.name);
+  const sessionId = tracker.startSession(track.id, track);
   // ... user listens ...
-  const session = tracker.endSession();
+  const session = tracker.endSession(sessionId);
+
+  if (!session) continue;
 
   // 3. Get environmental context
   const sensors = new EnvironmentalSensors(process.env.OPENWEATHERMAP_API_KEY);
   const envContext = await sensors.updateSnapshot();
-  const envMultiplier = sensors.calculateXPModifier();
 
   // 4. Get gaming context
   const gamingSensors = new GamingPlatformSensors({
     steam: { apiKey: process.env.STEAM_API_KEY, steamId: userSteamId }
   });
   const gamingContext = gamingSensors.getContext();
-  const gamingMultiplier = gamingSensors.calculateGamingBonus();
 
-  // 5. Calculate total XP
-  const xpCalc = new XPCalculator();
-  const baseXP = xpCalc.calculateSessionXP(session.duration_seconds);
-  session.total_xp = baseXP * envMultiplier * gamingMultiplier;
+  // 5. Update session with context and recalculate XP with bonuses
+  session.environmental_context = envContext;
+  session.gaming_context = gamingContext;
 
-  // 6. Update character with combined bonuses
   const updater = new CharacterUpdater();
-  character = updater.updateCharacterFromSession(character, session);
+  const previousListenCount = tracker.getTrackListenCount(track.id) - 1;
+  const result = updater.updateCharacterFromSession(character, session, track, previousListenCount);
 
-  console.log(`${character.name} earned ${session.total_xp.toFixed(0)} XP`);
-  console.log(`  Base: ${baseXP.toFixed(0)}, Env: ${envMultiplier.toFixed(2)}x, Gaming: ${gamingMultiplier.toFixed(2)}x`);
-  if (character.level > 1) {
-    console.log(`  LEVEL UP! Now level ${character.level}`);
+  character = result.character;
+
+  console.log(`${character.name} earned ${result.xpEarned} XP`);
+  console.log(`  Total: ${result.xpEarned}, Mastery Bonus: ${result.masteryBonusXP}`);
+  if (result.leveledUp) {
+    console.log(`  LEVEL UP! Now level ${result.newLevel}`);
   }
 }
 ```
