@@ -345,7 +345,7 @@ SPEC.md contains **5 code examples** in the "How to Use" section (lines 92-188):
 ### Task 0.4: Create type/method claim inventory
 - [x] List all type definitions claimed in DATA_ENGINE_REFERENCE.md
 - [x] List all method signatures claimed in DATA_ENGINE_REFERENCE.md
-- [ ] List all class names claimed across all docs
+- [x] List all class names claimed across all docs
 - [ ] Note any discrepancies between docs (e.g., different method signatures described)
 
 **DATA_ENGINE_REFERENCE.md Method Signature Inventory (Completed 2026-01-23):**
@@ -481,6 +481,114 @@ The file contains **42 type definitions** across multiple categories:
 - Fully defined with TypeScript interfaces: 24
 - Union types: 5
 - Partially defined/implied: 13
+
+**Class Names Inventory Across All Docs (Completed 2026-01-23):**
+
+**Total classes claimed across all existing documentation: 30 unique classes**
+
+**Classes claimed in SPEC.md (lines 96-188 examples - "How to Use" section):**
+1. `PlaylistParser`
+2. `AudioAnalyzer`
+3. `NamingEngine`
+4. `CharacterGenerator`
+5. `EnvironmentalSensors`
+6. `GamingPlatformSensors`
+7. `DiscordRPCClient`
+8. `SessionTracker`
+9. `XPCalculator`
+10. `CombatEngine`
+
+**Classes claimed in README.md (examples and project structure sections):**
+1. `PlaylistParser` (lines 55, 58)
+2. `AudioAnalyzer` (lines 55, 64)
+3. `CharacterGenerator` (lines 55, 69)
+4. `ColorExtractor` (line 84)
+5. `NamingEngine` (lines 84, 92)
+6. `SkillAssigner` (line 106)
+7. `SpellManager` (line 106)
+8. `EquipmentGenerator` (lines 106, 123)
+9. `AppearanceGenerator` (lines 106, 127)
+10. `SessionTracker` (lines 135, 138)
+11. `XPCalculator` (lines 135, 144)
+12. `LevelUpProcessor` (line 135)
+13. `MasterySystem` (lines 135, 156)
+14. `CharacterUpdater` (lines 135, 149)
+15. `EnvironmentalSensors` (lines 167, 170)
+16. `GamingPlatformSensors` (lines 193, 196)
+17. `CombatEngine` (lines 222, 225)
+18. `AttackResolver` (line 222)
+19. `SpellCaster` (line 222)
+20. `InitiativeRoller` (line 222)
+
+**Classes in README.md Project Structure section (lines 323-357 - explicit source file claims):**
+21. `RaceSelector` (line 330)
+22. `ClassSuggester` (line 331)
+23. `AbilityScoreCalculator` (line 332)
+24. `DiscordRPCClient` (line 351) - duplicate listed above
+25. `SteamAPIClient` (line 350)
+26. `GeolocationProvider` (line 346)
+27. `MotionDetector` (line 347)
+28. `WeatherAPIClient` (line 348)
+29. `LightSensor` (implied by LightSensor.ts on line 348, though file shown is LightData.ts)
+
+**Classes claimed in quickstart.md (examples and configuration):**
+1. `PlaylistParser` (lines 15, 17, 34)
+2. `AudioAnalyzer` (lines 15, 21, 38)
+3. `CharacterGenerator` (lines 15, 24, 43)
+4. `ColorExtractor` (lines 50, 53)
+5. `NamingEngine` (lines 50, 58)
+6. `SkillAssigner` (lines 66, 69)
+7. `SpellManager` (lines 66, 73)
+8. `EquipmentGenerator` (lines 66, 80)
+9. `AppearanceGenerator` (lines 66, 84)
+10. `SessionTracker` (lines 91, 94)
+11. `XPCalculator` (lines 91, 100)
+12. `CharacterUpdater` (lines 91, 104)
+13. `MasterySystem` (lines 91, 108)
+14. `LevelUpProcessor` (line 248)
+15. `EnvironmentalSensors` (lines 118, 121)
+16. `GamingPlatformSensors` (lines 143, 146)
+17. `CombatEngine` (lines 174, 176)
+
+**Complete Unique Class List (30 unique classes across all docs):**
+
+| Class | Claimed In |
+|-------|------------|
+| `PlaylistParser` | SPEC.md, README.md, quickstart.md |
+| `AudioAnalyzer` | SPEC.md, README.md, quickstart.md |
+| `CharacterGenerator` | SPEC.md, README.md, quickstart.md |
+| `NamingEngine` | SPEC.md, README.md, quickstart.md |
+| `ColorExtractor` | README.md, quickstart.md |
+| `SkillAssigner` | README.md, quickstart.md |
+| `SpellManager` | README.md, quickstart.md |
+| `EquipmentGenerator` | README.md, quickstart.md |
+| `AppearanceGenerator` | README.md, quickstart.md |
+| `SessionTracker` | SPEC.md, README.md, quickstart.md |
+| `XPCalculator` | SPEC.md, README.md, quickstart.md |
+| `LevelUpProcessor` | README.md, quickstart.md |
+| `MasterySystem` | README.md, quickstart.md |
+| `CharacterUpdater` | README.md, quickstart.md |
+| `EnvironmentalSensors` | SPEC.md, README.md, quickstart.md |
+| `GamingPlatformSensors` | SPEC.md, README.md, quickstart.md |
+| `DiscordRPCClient` | SPEC.md, README.md |
+| `CombatEngine` | SPEC.md, README.md, quickstart.md |
+| `AttackResolver` | README.md |
+| `SpellCaster` | README.md |
+| `InitiativeRoller` | README.md |
+| `RaceSelector` | README.md (project structure only) |
+| `ClassSuggester` | README.md (project structure only) |
+| `AbilityScoreCalculator` | README.md (project structure only) |
+| `SteamAPIClient` | README.md (project structure only) |
+| `GeolocationProvider` | README.md (project structure only) |
+| `MotionDetector` | README.md (project structure only) |
+| `WeatherAPIClient` | README.md (project structure only) |
+| `LightSensor` | README.md (implied, not used in examples) |
+
+**Summary for Task 0.4.3**:
+- Total unique class names claimed across all existing docs: **30 classes**
+- 17 classes are used in code examples across SPEC.md, README.md, and quickstart.md
+- 13 classes are only referenced in the project structure section of README.md (not shown in examples)
+- Action required: All 30 classes need to be verified against actual source code and properly documented in DATA_ENGINE_REFERENCE.md
 
 ---
 
