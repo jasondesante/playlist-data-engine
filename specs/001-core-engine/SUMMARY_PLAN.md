@@ -498,14 +498,23 @@ Before starting verification tasks, integrate the reference information from thi
     13. Handle null values in cached position
 
 #### Task 5: Moon Phase Calculation
-- [ ] Read `src/core/sensors/WeatherAPIClient.ts`
-- [ ] Verify `calculateMoonPhase()` method exists
-- [ ] Verify algorithm uses reference new moon date (January 11, 2024)
-- [ ] Verify uses mean synodic month (29.530588853 days)
-- [ ] Verify returns 0-1 value
-- [ ] Verify tests with known moon phase dates exist
-- [ ] Summarize moon phase implementation
-- [ ] Note any discrepancies
+- [x] Read `src/core/sensors/WeatherAPIClient.ts`
+- [x] Verify `calculateMoonPhase()` method exists
+- [x] Verify algorithm uses reference new moon date (January 11, 2024)
+- [x] Verify uses mean synodic month (29.530588853 days)
+- [x] Verify returns 0-1 value
+- [x] Verify tests with known moon phase dates exist
+- [x] Summarize moon phase implementation
+- [x] Note any discrepancies
+  **Completed 2026-01-23**: All claims verified. Moon phase calculation is implemented correctly.
+  - `calculateMoonPhase(date: Date): number` method exists at lines 362-382 (private method)
+  - Reference new moon date: January 11, 2024 at 11:57 UTC (`2024-01-11T11:57:00Z`)
+  - Mean synodic month: 29.530588853 days (converted to milliseconds for calculation)
+  - Returns 0-1 value: Uses `Math.abs(cyclesPassed % 1)` to get fractional cycle position
+  - Algorithm: Calculates time difference from reference new moon, divides by synodic month length, extracts fractional part
+  - **NO UNIT TESTS FOUND**: The implementation plan mentioned "tests with known moon phase dates" but no dedicated moon phase unit tests exist in `tests/unit/sensors.test.ts`. The method is only indirectly tested via mock data in fixtures (`moon_phase: 0.5`, etc.)
+  - `WeatherData.moonPhase` type is properly defined as `number` (0.0 to 1.0) in `src/core/types/Environmental.ts` line 132
+  - Moon phase is included in weather data returned by `getWeather()` (line 432)
 
 #### Task 6: Enhanced Biome Detection
 - [ ] Read `src/core/sensors/GeolocationProvider.ts`
