@@ -94,9 +94,17 @@
 ### Task 0.2: Create example inventory
 - [x] List all examples currently in SPEC.md (with line numbers) - **COMPLETED 2026-01-23**
 - [x] List all examples currently in DATA_ENGINE_REFERENCE.md (with line numbers) - **COMPLETED 2026-01-23: File does not exist yet (0 examples)**
-- [ ] List all examples currently in USAGE_IN_OTHER_PROJECTS.md (with line numbers)
+- [x] List all examples currently in USAGE_IN_OTHER_PROJECTS.md (with line numbers)
 - [ ] List all examples in README.md worth keeping (with line numbers)
 - [ ] List all examples in quickstart.md worth keeping (with line numbers)
+
+**USAGE_IN_OTHER_PROJECTS.md Example Inventory (Completed 2026-01-23):**
+
+**File does not exist yet** - USAGE_IN_OTHER_PROJECTS.md needs to be created as part of this consolidation effort.
+- Current examples: 0
+- Action required: This file will be created and populated with examples harvested from README.md, quickstart.md, and SPEC.md
+
+---
 
 **SPEC.md Example Inventory (Completed 2026-01-23):**
 
