@@ -204,6 +204,72 @@ gamingSensors.startMonitoring((context) => {
 gamingSensors.stopMonitoring();
 ```
 
+### Combat System
+
+```typescript
+import {
+  CombatEngine,
+  CharacterGenerator,
+  AudioAnalyzer
+} from 'playlist-data-engine';
+
+// Initialize combat engine (optional configuration)
+const combat = new CombatEngine({
+  useEnvironment: true,    // Apply environmental bonuses
+  useMusic: false,         // Apply music bonuses (requires audio context)
+  tacticalMode: false,     // Enable advanced tactical rules
+  maxTurnsBeforeDraw: 100  // Max turns before draw
+});
+
+// Generate player character from audio
+const analyzer = new AudioAnalyzer();
+const audioProfile = await analyzer.extractSonicFingerprint(track.audio_url);
+const playerCharacter = CharacterGenerator.generate(track.id, audioProfile, track.title);
+
+// Create enemy characters (manually or from a database)
+const enemy1 = { /* CharacterSheet */ };
+const enemy2 = { /* CharacterSheet */ };
+
+// Start combat - rolls initiative, establishes turn order
+const combatInstance = combat.startCombat(
+  [playerCharacter],  // Player characters
+  [enemy1, enemy2],   // Enemies
+  environmentalContext // Optional environmental modifiers
+);
+
+// Execute combat turns
+while (combatInstance.isActive) {
+  const current = combat.getCurrentCombatant(combatInstance);
+
+  if (current.character.attacks && current.character.attacks.length > 0) {
+    // Execute attack
+    const attack = current.character.attacks[0];
+    const target = combat.getLivingCombatants(combatInstance).find(c => c.id !== current.id);
+
+    if (target) {
+      const action = combat.executeAttack(combatInstance, current, target, attack);
+      console.log(action.result.description);
+
+      if (target.isDefeated) {
+        console.log(`${target.character.name} has been defeated!`);
+      }
+    }
+  }
+
+  // Move to next turn
+  combat.nextTurn(combatInstance);
+
+  // Check if combat ended
+  const result = combat.getCombatResult(combatInstance);
+  if (result) {
+    console.log(`Combat ended: ${result.description}`);
+    console.log(`XP awarded: ${result.xpAwarded}`);
+    console.log(`Rounds elapsed: ${result.roundsElapsed}`);
+    break;
+  }
+}
+```
+
 ### Advanced: Combining All Systems
 
 ```typescript

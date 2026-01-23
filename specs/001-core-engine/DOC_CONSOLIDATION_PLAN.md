@@ -1725,7 +1725,38 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 
 3. **Action**: No changes needed to USAGE_IN_OTHER_PROJECTS.md. The quickstart example is buggy and should NOT be migrated - it would mislead users with incorrect API usage. The existing USAGE example correctly demonstrates the constructor, requestPermissions(), updateSnapshot(), and calculateXPModifier() methods.
 - [x] Review "Phase 5: Gaming Platform Integration" example - add to USAGE if unique (COMPLETED 2026-01-23)
-- [ ] Review "Phase 6: Combat System" example - add to USAGE if unique
+
+**Task 3.3 - "Phase 6: Combat System" Example Review (Completed 2026-01-23):**
+
+**Summary**: The quickstart.md file has been deleted as part of the doc consolidation. USAGE_IN_OTHER_PROJECTS.md did NOT have a combat system example. Since the CombatEngine is a unique, valuable feature not demonstrated elsewhere, a NEW combat example has been added to USAGE_IN_OTHER_PROJECTS.md.
+
+**Source Code Verification**:
+- `CombatEngine` class: `src/core/combat/CombatEngine.ts`
+- Constructor: `constructor(config?: CombatConfig)` where CombatConfig includes `useEnvironment`, `useMusic`, `tacticalMode`, `maxTurnsBeforeDraw`, `allowFleeing`
+- `startCombat(playerCharacters, enemies, environment?): CombatInstance` - src/core/combat/CombatEngine.ts:82
+- `executeAttack(combat, attacker, target, attack): CombatAction` - src/core/combat/CombatEngine.ts:129
+- `executeCastSpell(combat, caster, spell, targets): CombatAction` - src/core/combat/CombatEngine.ts:167
+- `getCurrentCombatant(combat): Combatant` - src/core/combat/CombatEngine.ts:122
+- `nextTurn(combat): CombatInstance` - src/core/combat/CombatEngine.ts:256
+- `getCombatResult(combat): CombatResult | null` - src/core/combat/CombatEngine.ts:315
+- `getLivingCombatants(combat): Combatant[]` - src/core/combat/CombatEngine.ts:467
+
+**Action Taken**: Added a new "Combat System" example to USAGE_IN_OTHER_PROJECTS.md (inserted before "Advanced: Combining All Systems" section). The example demonstrates:
+- CombatEngine initialization with configuration options
+- Creating player characters from audio via CharacterGenerator
+- Starting combat with startCombat() (rolls initiative, establishes turn order)
+- Executing attacks with executeAttack()
+- Advancing turns with nextTurn()
+- Checking for combat end with getCombatResult()
+- Handling defeated combatants
+
+**Findings**:
+1. The CombatEngine API is comprehensive and provides a complete D&D 5e turn-based combat system
+2. No prior combat example existed in USAGE_IN_OTHER_PROJECTS.md - combat was only mentioned in the "Available Exports" list (lines 308-313)
+3. The combat system is a unique feature that warrants a dedicated usage example
+4. The example shows the full combat lifecycle: initialization → start → attack → turn progression → result
+
+- [x] Review "Phase 6: Combat System" example - add to USAGE if unique (COMPLETED 2026-01-23)
 - [ ] Review "Complete Pipeline Example" - add to USAGE if unique
 
 ### Task 3.4: Harvest examples from quickstart.md
