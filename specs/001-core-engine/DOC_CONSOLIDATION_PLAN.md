@@ -679,10 +679,10 @@ The file contains **42 type definitions** across multiple categories:
 - [x] Verify line count is under 300 (COMPLETED 2026-01-23)
 
 ### Task 1.2: Remove all examples from SPEC.md
-- [ ] Remove "How to Use" section entirely
-- [ ] Find and remove any remaining code snippets
-- [ ] Replace removed examples with brief descriptions where appropriate
-- [ ] Add cross-reference: "For usage examples, see USAGE_IN_OTHER_PROJECTS.md"
+- [x] Remove "How to Use" section entirely (COMPLETED 2026-01-23)
+- [x] Find and remove any remaining code snippets (COMPLETED 2026-01-23)
+- [x] Replace removed examples with brief descriptions where appropriate (COMPLETED 2026-01-23)
+- [x] Add cross-reference: "For usage examples, see USAGE_IN_OTHER_PROJECTS.md" (COMPLETED 2026-01-23)
 
 ### Task 1.3: Ensure SPEC.md is example-free
 - [ ] Search SPEC.md for ```` ``` ```` (code blocks) - remove all
