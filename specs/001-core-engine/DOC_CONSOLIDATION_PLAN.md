@@ -2236,10 +2236,35 @@ Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need sepa
 - `/workspace/DATA_ENGINE_REFERENCE.md` - Fixed document title, table of contents, and section header
 
 ### Task 5.2: Trim DATA_ENGINE_REFERENCE.md
-- [ ] Move verbose examples to USAGE
+- [x] Move verbose examples to USAGE (COMPLETED 2026-01-23)
 - [ ] Keep only minimal, essential inline examples
 - [ ] Ensure focus is on: complete API catalog with signatures
 - [ ] Add "For usage examples, see USAGE_IN_OTHER_PROJECTS.md" where appropriate
+
+**Task 5.2 - Move verbose examples to USAGE (Completed 2026-01-23):**
+
+**Summary**: Removed all 6 verbose usage examples from DATA_ENGINE_REFERENCE.md. All examples are already present in USAGE_IN_OTHER_PROJECTS.md.
+
+**Examples Removed:**
+1. **PlaylistParser usage** (lines 642-648) - Parsing and validating playlists
+2. **AudioAnalyzer usage** (lines 701-706) - Extracting sonic fingerprints
+3. **SessionTracker usage** (lines 879-884) - Starting and ending sessions
+4. **CharacterUpdater usage** (lines 1035-1041) - Handling level-ups
+5. **EnvironmentalSensors usage** (lines 1110-1115) - Permission requests and context
+6. **CombatEngine usage** (lines 1197-1207) - Full combat loop with while statement
+
+**Rationale:**
+- DATA_ENGINE_REFERENCE.md is "The API Dictionary" - should focus on signatures, not usage patterns
+- All removed examples are already documented in USAGE_IN_OTHER_PROJECTS.md with more context
+- Cross-references at the end of DATA_ENGINE_REFERENCE.md point to USAGE_IN_OTHER_PROJECTS.md for examples
+- Keeping the examples duplicated content across the "trinity" of docs
+
+**Files Modified:**
+- `/workspace/DATA_ENGINE_REFERENCE.md` - Removed 6 usage example blocks (approximately 40 lines of code)
+
+**After Task 5.2:**
+- DATA_ENGINE_REFERENCE.md now contains only: type definitions, constructor signatures, method signatures, and concise descriptions
+- All usage examples consolidated in USAGE_IN_OTHER_PROJECTS.md as intended by the documentation plan
 
 ### Task 5.3: Enhance USAGE_IN_OTHER_PROJECTS.md
 - [ ] Add table of contents for examples section

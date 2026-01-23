@@ -638,15 +638,6 @@ new PlaylistParser(options?: PlaylistParserOptions)
     - **Returns:** A `ServerlessPlaylist` object containing metadata and an array of `PlaylistTrack` objects.
     - **Throws:** Error if `strict` mode is on and parsing fails.
 
-**Usage:**
-```typescript
-import { PlaylistParser } from 'playlist-data-engine';
-
-const parser = new PlaylistParser({ validateAudioUrls: true });
-const playlist = await parser.parse(rawJsonData);
-console.log(`Parsed ${playlist.tracks.length} tracks.`);
-```
-
 ---
 
 ### AudioAnalyzer
@@ -696,14 +687,6 @@ Separates raw frequency data into bands.
     - **Bass:** 20Hz - 250Hz
     - **Mid:** 250Hz - 4kHz
     - **Treble:** 4kHz - 20kHz
-
-**Usage:**
-```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
-
-const analyzer = new AudioAnalyzer({ includeAdvancedMetrics: true });
-const profile = await analyzer.extractSonicFingerprint('https://example.com/audio.mp3');
-```
 
 ---
 
@@ -875,14 +858,6 @@ export interface ListeningSession {
 - `getSessionsForTrack(trackUuid: string): ListeningSession[]`
 - `isTrackMastered(trackUuid: string, threshold?: number): boolean`
 
-**Usage:**
-```typescript
-const tracker = new SessionTracker();
-const sessionId = tracker.startSession('track-1');
-// ... time passes ...
-const session = tracker.endSession(sessionId);
-```
-
 ---
 
 ### XPCalculator
@@ -1031,15 +1006,6 @@ Tracks song mastery based on listen counts.
 - `isJustMastered(previous: number, current: number): boolean`
     - Returns true if mastery was achieved in the current session.
 
-**Usage:**
-```typescript
-const updater = new CharacterUpdater();
-const result = updater.updateCharacterFromSession(character, session, track);
-if (result.leveledUp) {
-    console.log(`Level Up! Welcome to level ${result.newLevel}`);
-}
-```
-
 ---
 
 ## Environmental Sensors
@@ -1105,14 +1071,6 @@ Uses the AmbientLightSensor API.
 
 - `startMonitoring(callback: (data: LightData) => void): void`
     - Returns illuminance in lux.
-
-**Usage:**
-```typescript
-const sensors = new EnvironmentalSensors('API_KEY');
-await sensors.requestPermissions(['geolocation', 'weather']);
-const context = await sensors.updateSnapshot();
-const modifier = sensors.calculateXPModifier();
-```
 
 ---
 
@@ -1192,19 +1150,6 @@ new CombatEngine(config?: CombatConfig)
     - Advances the turn order.
 - `getCombatResult(combat: CombatInstance): CombatResult | null`
     - Returns winner and rewards if combat is over.
-
-**Usage:**
-```typescript
-const combatEngine = new CombatEngine();
-let battle = combatEngine.startCombat([hero], [monster]);
-
-while (battle.isActive) {
-    const actor = combatEngine.getCurrentCombatant(battle);
-    // AI or Player logic to choose action...
-    combatEngine.executeAttack(battle, actor, target, attack);
-    battle = combatEngine.nextTurn(battle);
-}
-```
 
 ---
 
