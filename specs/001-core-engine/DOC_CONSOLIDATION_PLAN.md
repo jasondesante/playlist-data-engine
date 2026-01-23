@@ -1973,8 +1973,15 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 - AppearanceGenerator usage
 
 ### Task 3.5: Verify Discord RPC warning
-- [ ] Ensure Discord RPC section clearly states it's for music presence ONLY
-- [ ] Verify no examples show reading game state from Discord (not possible)
+- [x] Ensure Discord RPC section clearly states it's for music presence ONLY
+- [x] Verify no examples show reading game state from Discord (not possible)
+
+**Completed 2026-01-23**:
+- Enhanced DiscordRPCClient section with prominent "IMPORTANT" warning
+- Enhanced GamingPlatformSensors section to clarify discord.pollInterval affects Steam polling, NOT Discord game detection
+- Updated authenticate() method description to clarify Discord connects for music presence only
+- Verified no examples in DATA_ENGINE_REFERENCE.md show reading game state from Discord
+- DATA_ENGINE_REFERENCE.md correctly points to USAGE_IN_OTHER_PROJECTS.md for examples (file not yet created)
 
 ---
 

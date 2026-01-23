@@ -1273,7 +1273,9 @@ Print formatted dashboard to console.
 
 Monitors Steam game activity and calculates gaming-based XP bonuses.
 
-**Note**: Discord RPC CANNOT read game activity due to platform limitations. Discord RPC is only for SETTING music presence. Game detection uses Steam API only.
+**Important**: Discord RPC CANNOT read game activity due to platform limitations. Discord RPC is only for SETTING music presence. Game detection uses Steam API only.
+
+The `discord.pollInterval` option sets the overall polling interval for Steam game detection (same as `steam.pollInterval`). Discord is NOT polled for game activity because it cannot provide it.
 
 #### Constructor
 
@@ -1282,12 +1284,12 @@ new GamingPlatformSensors(config?: {
     steam?: {
         apiKey: string;
         steamId?: string;
-        pollInterval?: number;
+        pollInterval?: number;  // Polling interval for Steam game detection (milliseconds)
     };
     discord?: {
-        clientId: string;
+        clientId: string;        // Discord client ID for music presence (NOT game detection)
         enableRichPresence?: boolean;
-        pollInterval?: number;
+        pollInterval?: number;   // Overall polling interval (affects Steam, NOT Discord game detection)
     };
 })
 ```
@@ -1298,13 +1300,13 @@ new GamingPlatformSensors(config?: {
 async authenticate(steamUserId?: string, discordUserId?: string): Promise<boolean>
 ```
 
-Authenticate with Steam and Discord. Both parameters are optional.
+Authenticate with Steam (for game detection) and Discord (for music presence only). Both parameters are optional. Note: Discord authentication connects RPC for setting music presence; it does NOT enable game detection.
 
 ```typescript
 startMonitoring(callback?: (context: GamingContext) => void): void
 ```
 
-Start polling for gaming activity.
+Start polling for gaming activity from Steam only (Discord cannot provide game activity).
 
 ```typescript
 stopMonitoring(): void
@@ -1641,7 +1643,7 @@ Get last light sensor reading.
 
 Manages Discord Rich Presence for music status display.
 
-**Note**: For SETTING music presence only ("Listening to" status). Cannot read game activity.
+**IMPORTANT**: This client is ONLY for SETTING music presence ("Listening to" status) on the user's Discord profile. It CANNOT read game activity or detect what the user is playing. For game detection, use the Steam API instead.
 
 **Purpose**: Display serverless playlist music information on the user's Discord profile via Rich Presence. Requires Node.js environment (IPC pipes, cannot work in browsers).
 
