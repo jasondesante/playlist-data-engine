@@ -1757,7 +1757,46 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 4. The example shows the full combat lifecycle: initialization → start → attack → turn progression → result
 
 - [x] Review "Phase 6: Combat System" example - add to USAGE if unique (COMPLETED 2026-01-23)
-- [ ] Review "Complete Pipeline Example" - add to USAGE if unique
+- [x] Review "Complete Pipeline Example" - add to USAGE if unique (COMPLETED 2026-01-23)
+
+**Task 3.3 - "Complete Pipeline Example" Review (Completed 2026-01-23):**
+
+**Summary**: The README.md "Complete Pipeline Example" is NOT unique - equivalent functionality already exists in USAGE_IN_OTHER_PROJECTS.md as "Advanced: Combining All Systems" with correct API usage.
+
+**API Discrepancies Found in README Example:**
+
+| README.md Claim | Actual API | Status |
+|-----------------|------------|--------|
+| `new SessionTracker()` inside loop | Should be initialized OUTSIDE loop to maintain history | **Incorrect lifecycle** |
+| `tracker.startSession(character.name)` | `startSession(trackUuid: string, track?, context?): string` returns `sessionId` | **Wrong parameter, missing return capture** |
+| `tracker.endSession()` (no params) | `endSession(sessionId: string, ...): ListeningSession | null` | **Missing required sessionId** |
+| `sensors.getCurrentContext()` | `sensors.updateSnapshot()` | **Method doesn't exist** |
+| `gamingSensors.getContext()` | Private method - should not be called directly | **Incorrect usage (private method)** |
+| `sensors.calculateXPModifier(envContext)` | `calculateXPModifier(): number` - takes NO parameters | **Incorrect parameter** |
+| `gamingSensors.calculateGamingBonus(gamingContext)` | `calculateGamingBonus(): number` - takes NO parameters | **Incorrect parameter** |
+| `session.xp_earned` | No such property exists on `ListeningSession` | **Non-existent property** |
+| `session.total_xp = ...` | No such property exists on `ListeningSession` | **Non-existent property** |
+| `updater.applyListeningSession(character, session)` | `updateCharacterFromSession(character, session, track?, previousListenCount?)` | **Wrong method name** |
+| `character = updater.applyListeningSession(...)` | Returns `CharacterUpdateResult`, not character directly | **Wrong return type handling** |
+
+**Source Code Verification:**
+- `EnvironmentalSensors.updateSnapshot()` - src/core/sensors/EnvironmentalSensors.ts:505
+- `EnvironmentalSensors.calculateXPModifier()` - src/core/sensors/EnvironmentalSensors.ts:567 (no parameters)
+- `GamingPlatformSensors.getContext()` - src/core/sensors/GamingPlatformSensors.ts:291 (private method)
+- `GamingPlatformSensors.calculateGamingBonus()` - src/core/sensors/GamingPlatformSensors.ts:252 (no parameters)
+- `CharacterUpdater.updateCharacterFromSession()` - src/core/progression/CharacterUpdater.ts:38
+
+**Findings:**
+1. **Duplicate functionality**: USAGE_IN_OTHER_PROJECTS.md "Advanced: Combining All Systems" (lines 273-335) already covers the exact same workflow with CORRECT API usage
+2. **Multiple API errors**: The README example has 10+ API discrepancies that would mislead users
+3. **Existing example is superior**: The USAGE example was fixed in Task 3.2 and correctly demonstrates:
+   - Component initialization OUTSIDE the loop
+   - Correct SessionTracker.startSession() with return value capture
+   - Context retrieval BEFORE starting the session
+   - Correct method names and parameter signatures
+4. **Bonus calculation**: The USAGE example correctly passes context via `startSession()`'s optional `context` parameter, letting the system handle XP calculation internally
+
+**Action Taken**: No changes to USAGE_IN_OTHER_PROJECTS.md required. The README example is too inaccurate to use and the existing "Advanced: Combining All Systems" example is more comprehensive and correct.
 
 ### Task 3.4: Harvest examples from quickstart.md
 - [ ] Review "30-Second Example" - add to USAGE if unique
