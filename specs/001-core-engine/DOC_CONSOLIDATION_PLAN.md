@@ -1590,7 +1590,35 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 4. **Ability score aliases**: Both lowercase (`.strength`) and uppercase (`.STR`) property access work per source code (Character.ts lines 96-98)
 
 **Action Taken**: No changes to USAGE_IN_OTHER_PROJECTS.md required. The existing "Basic Playlist Parsing and Character Generation" example is equivalent and better formatted for external users.
-- [ ] Review "Phase 1: Visual Analysis & Character Naming" example - add to USAGE if unique
+- [x] Review "Phase 1: Visual Analysis & Character Naming" example - add to USAGE if unique (COMPLETED 2026-01-23)
+
+**Task 3.3 - "Phase 1: Visual Analysis & Character Naming" Example Review (Completed 2026-01-23):**
+
+**Summary**: The README.md "Phase 1: Visual Analysis & Character Naming" example contains MULTIPLE API DISCREPANCIES and should NOT be added to USAGE_IN_OTHER_PROJECTS.md.
+
+**API Discrepancies Found**:
+
+| README.md Claim | Actual API | Status |
+|-----------------|------------|--------|
+| `colorExtractor.extractColors(track.image_url)` | `extractPalette(imageUrl)` | **Method name incorrect** |
+| `palette.dominant_colors[0]` | `palette.primary_color` or `palette.colors[0]` | **Property incorrect** |
+| `nameEngine.generateName(track.title, track.artist, audioProfile, character.class)` (4 params) | `generateName(track: PlaylistTrack, audioProfile: AudioProfile)` (2 params) | **Signature incorrect** |
+
+**Source Code Verification**:
+- `ColorExtractor.extractPalette()` - src/core/analysis/ColorExtractor.ts:40
+- `NamingEngine.generateName(track, audioProfile)` - src/core/generation/NamingEngine.ts:40
+- `ColorPalette` type has: `primary_color`, `secondary_color`, `accent_color`, `colors` array (no `dominant_colors`)
+
+**Findings**:
+1. **ColorExtractor**: README calls `extractColors()` but actual method is `extractPalette()`
+2. **NamingEngine**: README shows 4-parameter signature but actual method takes 2 parameters (track object and audioProfile)
+3. **ColorPalette access**: README accesses `palette.dominant_colors[0]` but this property doesn't exist
+
+**Action Taken**: No changes to USAGE_IN_OTHER_PROJECTS.md required. The example has API inaccuracies that would mislead users. The ColorExtractor and NamingEngine classes are documented in DATA_ENGINE_REFERENCE.md with correct signatures.
+
+**Note**: ColorExtractor and NamingEngine do not currently have usage examples in USAGE_IN_OTHER_PROJECTS.md. A corrected example could be added in a future task if desired, but the README version is too inaccurate to use.
+
+- [ ] Review "Phase 2: Advanced Character Features" example - add to USAGE if unique
 - [ ] Review "Phase 2: Advanced Character Features" example - add to USAGE if unique
 - [ ] Review "Phase 3: Progression & Leveling" example - add to USAGE if unique
 - [ ] Review "Phase 4: Environmental Sensors" example - add to USAGE if unique
