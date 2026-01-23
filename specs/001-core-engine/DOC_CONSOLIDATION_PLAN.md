@@ -3310,8 +3310,32 @@ Total time: ~18 minutes to go from zero to working implementation
 ### Task 7.1: Remove obsolete docs
 - [x] Delete `README.md` (main project README) (COMPLETED 2026-01-23)
 - [x] Delete `quickstart.md` (COMPLETED 2026-01-23)
-- [ ] Delete `SUMMARY_PLAN.md` (after harvesting spec information into SPEC.md)
-- [ ] Verify no other files reference these deleted docs
+- [x] Delete `SUMMARY_PLAN.md` (after harvesting spec information into SPEC.md) (COMPLETED 2026-01-23)
+- [x] Verify no other files reference these deleted docs (COMPLETED 2026-01-23)
+
+**Task 7.1 - Third Subtask Completed (2026-01-23): Delete SUMMARY_PLAN.md**
+
+**Summary**: SUMMARY_PLAN.md has been deleted as planned. The file explicitly stated "ALL TASKS COMPLETE" and noted that spec information had been harvested into SPEC.md.
+
+**Verification Before Deletion**:
+- Verified file header states "ALL TASKS COMPLETE (2026-01-23)"
+- Confirmed SPEC.md contains all important spec information (harvested during Phase 0-7)
+- Searched codebase for references to SUMMARY_PLAN.md:
+  - Found in `specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` (this plan)
+  - Found in `specs/README.md` (project specs index)
+
+**Rationale for Deletion**:
+- SUMMARY_PLAN.md was a 969-line temporary verification plan document
+- All valuable spec information has been migrated to SPEC.md
+- The document itself stated "this plan is temporary" and "SPEC.md is the deliverable"
+- Preserved as historical record during verification, now safe to remove
+
+**Files Modified**:
+- `/workspace/specs/001-core-engine/SUMMARY_PLAN.md` - DELETED (969 lines removed)
+
+**Files Updated**:
+- `/workspace/specs/README.md` - Removed SUMMARY_PLAN.md from documentation files table, updated consolidation note (now 2 files, 206 lines)
+- `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 7.1 checklist status
 
 **Task 7.1 - First Subtask Completed (2026-01-23): Delete README.md (main project README)**
 
