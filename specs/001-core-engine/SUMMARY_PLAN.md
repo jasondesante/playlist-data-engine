@@ -385,7 +385,12 @@ Before starting verification tasks, integrate the reference information from thi
   - 33 test TypeScript files in `/workspace/tests`
   - Source files organized by category (Sensors, Combat, Types, Generation, Progression, Analysis, Parser, Config, Utils)
   - Test files organized by type (unit, integration, fixtures, mocks, setup)
-- [ ] List all test files mentioned
+- [x] List all test files mentioned
+  **Completed 2026-01-23**: Verified all test files in the codebase.
+  - 20 unit test files in `/workspace/tests/unit/`
+  - 7 integration test files in `/workspace/tests/integration/`
+  - 6 test support files (setup, mocks, fixtures)
+  - All test files are already documented in the Source File Inventory section above
 - [ ] Create quick reference table: Feature → Source File(s) → Test File(s)
 
 ### Phase 2: Verification and Summary by Feature (12 Main Tasks)
