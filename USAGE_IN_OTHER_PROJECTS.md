@@ -251,7 +251,7 @@ if (appearance.aura_color) {
 import { EnvironmentalSensors } from 'playlist-data-engine';
 
 // Initialize sensors with weather API key
-const sensors = new EnvironmentalSensors(process.env.OPENWEATHERMAP_API_KEY);
+const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
 
 // Request permissions
 const permissions = await sensors.requestPermissions(['geolocation', 'motion', 'weather']);
@@ -392,9 +392,9 @@ import {
 const parser = new PlaylistParser();
 const analyzer = new AudioAnalyzer();
 const tracker = new SessionTracker();  // Single tracker maintains session history
-const sensors = new EnvironmentalSensors(process.env.OPENWEATHERMAP_API_KEY);
+const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
 const gamingSensors = new GamingPlatformSensors({
-  steam: { apiKey: process.env.STEAM_API_KEY, steamId: userSteamId }
+  steam: { apiKey: process.env.STEAM_API_KEY, steamId: process.env.STEAM_USER_ID }
 });
 
 const playlist = await parser.parse(playlistJSON);
