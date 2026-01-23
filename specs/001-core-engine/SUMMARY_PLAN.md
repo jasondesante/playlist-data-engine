@@ -415,13 +415,14 @@ Before starting verification tasks, integrate the reference information from thi
 ### Phase 2: Verification and Summary by Feature (12 Main Tasks)
 
 #### Task 1: AttackResolver Ability Modifier Fix
-- [ ] Read `src/core/combat/AttackResolver.ts`
-- [ ] Verify the `rollDamage()` method has `attacker` parameter
-- [ ] Verify ability modifier calculation exists (STR/DEX/finesse logic)
-- [ ] Verify method calls in `resolveAttack()`, `attackWithAdvantage()`, `attackWithDisadvantage()` pass attacker
-- [ ] Verify test file `tests/unit/attackResolver.test.ts` exists with 18 tests
-- [ ] Summarize what was fixed and how
-- [ ] Note any discrepancies
+- [x] Read `src/core/combat/AttackResolver.ts`
+- [x] Verify the `rollDamage()` method has `attacker` parameter
+- [x] Verify ability modifier calculation exists (STR/DEX/finesse logic)
+- [x] Verify method calls in `resolveAttack()`, `attackWithAdvantage()`, `attackWithDisadvantage()` pass attacker
+- [x] Verify test file `tests/unit/attackResolver.test.ts` exists with 18 tests
+- [x] Summarize what was fixed and how
+- [x] Note any discrepancies
+  **Completed 2026-01-23**: All claims verified. The `rollDamage(attacker, attack, isCritical)` method correctly receives the attacker parameter and uses `getDamageModifier()` to apply STR/DEX/finesse logic. Test file has 18 tests covering all attack types, negative modifiers, edge cases, critical hits, and advantage/disadvantage. No discrepancies found.
 
 #### Task 2: Discord RPC Integration (Music Presence)
 - [ ] Read `src/core/sensors/DiscordRPCClient.ts`
