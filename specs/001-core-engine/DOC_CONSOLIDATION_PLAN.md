@@ -672,7 +672,7 @@ The file contains **42 type definitions** across multiple categories:
 
 ### Task 1.1: Verify factual claims in SPEC.md
 - [x] Verify "Core Features" list matches actual implemented features (COMPLETED 2026-01-23)
-- [ ] Verify all source file paths exist
+- [x] Verify all source file paths exist (COMPLETED 2026-01-23)
 - [ ] Verify ability score formulas match `AbilityScoreCalculator.ts`
 - [ ] Verify XP modifier formulas match `XPCalculator.ts`
 - [ ] Verify environment variable list matches `.env.example`
@@ -942,6 +942,35 @@ The following issues were identified during earlier work. These should be verifi
 - **Impact**: SPEC.md should be updated to reflect actual spell count (53)
 
 **Action Required**: Update SPEC.md line 213 from "188" to "53" hardcoded spells.
+
+### Task 1.1.2: Source File Paths Verification (Completed 2026-01-23)
+
+**Summary**: All source file paths claimed in SPEC.md have been verified to exist.
+
+**Verified Source File Paths**:
+
+**Core Data Types Table (lines 29-37):**
+| Type | File Claimed | Actual Path | Status |
+|------|--------------|-------------|--------|
+| `AudioProfile` | `AudioProfile.ts` | `src/core/types/AudioProfile.ts` | ✅ |
+| `ColorPalette` | `ColorPalette.ts` | `src/core/types/ColorPalette.ts` | ✅ |
+| `CharacterSheet` | `Character.ts` | `src/core/types/Character.ts` | ✅ |
+| `ServerlessPlaylist` | `Playlist.ts` | `src/core/types/Playlist.ts` | ✅ |
+| `EnvironmentalContext` | `Environmental.ts` | `src/core/types/Environmental.ts` | ✅ |
+| `GamingContext` | `Progression.ts` | `src/core/types/Progression.ts` | ✅ |
+| `CombatInstance` | `Combat.ts` | `src/core/types/Combat.ts` | ✅ |
+
+**Additional Verified Files:**
+| Component | Path Claimed | Status |
+|-----------|--------------|--------|
+| `AbilityScoreCalculator` | `src/core/generation/AbilityScoreCalculator.ts` | ✅ |
+| `loadConfigFromEnv()` and `mergeConfig()` | `src/core/config/sensorConfig.ts` | ✅ |
+| Environment variables reference | `.env.example` | ✅ |
+
+**Directory Reference Claims (line 27):**
+- `src/core/types/` directory exists and contains all claimed type definition files ✅
+
+**All 10 source file references verified successfully.** No discrepancies found.
 
 ---
 
