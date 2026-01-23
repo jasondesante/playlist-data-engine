@@ -608,16 +608,25 @@ Before starting verification tasks, integrate the reference information from thi
   - All 36 integration tests pass after fix
 
 #### Task 10: Environmental Sensor Error Recovery
-- [ ] Read `src/core/sensors/EnvironmentalSensors.ts`
-- [ ] Verify `retrySensorOperation()` method exists with retry loop
-- [ ] Verify exponential backoff implementation
-- [ ] Verify `sensorStatuses` Map tracks health
-- [ ] Verify graceful degradation fallbacks
-- [ ] Verify `logFailure()` method exists
-- [ ] Verify `lastKnownGood` Map exists
-- [ ] Verify recovery callbacks exist
-- [ ] Summarize error recovery implementation
-- [ ] Note any discrepancies
+- [x] Read `src/core/sensors/EnvironmentalSensors.ts`
+- [x] Verify `retrySensorOperation()` method exists with retry loop
+- [x] Verify exponential backoff implementation
+- [x] Verify `sensorStatuses` Map tracks health
+- [x] Verify graceful degradation fallbacks
+- [x] Verify `logFailure()` method exists
+- [x] Verify `lastKnownGood` Map exists
+- [x] Verify recovery callbacks exist
+- [x] Summarize error recovery implementation
+- [x] Note any discrepancies
+  **Completed 2026-01-23**: All claims verified. Environmental sensor error recovery is fully implemented.
+  - `retrySensorOperation()` at lines 282-334: retry loop with configurable maxRetries (default: 3)
+  - Exponential backoff: Initial 1000ms, max 10000ms, multiplier 2x (lines 320-321)
+  - `sensorStatuses` Map at line 56: Tracks health (unknown/healthy/degraded/failed), timestamps, consecutive/total failures, last error, retrying state
+  - Graceful degradation: Fallbacks to `getLastKnownGood()` for geolocation (lines 524-528), weather (lines 549-552), motion (line 571), weather data (line 579), geolocation data (line 589)
+  - `logFailure()` at lines 247-267: Logs sensor type, timestamp, error, retry attempt, will retry flag; keeps last 100 entries
+  - `lastKnownGood` Map at lines 58-63: Stores cached sensor data (geolocation?, weather?, motion?, light?)
+  - Recovery callbacks: `onSensorRecovery()` (lines 349-352) registers callbacks, `notifyRecovery()` (lines 220-242) invokes on health changes
+  **No discrepancies found** - All error recovery implementations match the plan specifications.
 
 #### Task 11: Improved Logging and Diagnostics
 - [ ] Read `src/utils/logger.ts`
