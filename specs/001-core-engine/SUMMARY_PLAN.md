@@ -590,14 +590,22 @@ Before starting verification tasks, integrate the reference information from thi
   **No discrepancies found** - All implementations match the plan specifications.
 
 #### Task 9: Clean Up Gaming Platform Sensors
-- [ ] Read `src/core/sensors/GamingPlatformSensors.ts`
-- [ ] Verify `platformSource` type is only `'steam' | 'none'` (no 'discord' or 'both')
-- [ ] Verify Discord game detection methods were removed
-- [ ] Read `src/core/types/Progression.ts`
-- [ ] Verify `currentGame.source` type is only `'steam'`
-- [ ] Verify test updates (xpCalculator test uses 'steam')
-- [ ] Summarize cleanup changes
-- [ ] Note any discrepancies
+- [x] Read `src/core/sensors/GamingPlatformSensors.ts`
+- [x] Verify `platformSource` type is only `'steam' | 'none'` (no 'discord' or 'both')
+- [x] Verify Discord game detection methods were removed
+- [x] Read `src/core/types/Progression.ts`
+- [x] Verify `currentGame.source` type is only `'steam'`
+- [x] Verify test updates (xpCalculator test uses 'steam')
+- [x] Summarize cleanup changes
+- [x] Note any discrepancies
+  **Completed 2026-01-23**: All claims verified with one fix applied.
+  - `platformSource` type in `GamingContext` is correctly `'steam' | 'none'` (line 36 in Progression.ts)
+  - `currentGame.source` type is correctly `'steam'` (line 40 in Progression.ts)
+  - Discord game detection was removed - only Steam is used for game detection
+  - GamingPlatformSensors only uses Steam for game detection (lines 163, 168)
+  - All unit tests already use `'steam'` or `'none'` for platformSource
+  - **FIXED**: Integration test at `gamingIntegration.test.ts:121` had `platformSource: 'both'` - changed to `'steam'`
+  - All 36 integration tests pass after fix
 
 #### Task 10: Environmental Sensor Error Recovery
 - [ ] Read `src/core/sensors/EnvironmentalSensors.ts`

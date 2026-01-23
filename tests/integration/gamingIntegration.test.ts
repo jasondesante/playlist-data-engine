@@ -118,7 +118,7 @@ describe('Gaming Platform Integration (T093-T106)', () => {
         it('should apply correct compound bonus cap at 3.0x', () => {
             vi.spyOn(gamingSensors, 'getContext').mockReturnValue({
                 isActivelyGaming: true,
-                platformSource: 'both',
+                platformSource: 'steam',
                 currentGame: {
                     name: 'League of Legends',
                     source: 'steam',
