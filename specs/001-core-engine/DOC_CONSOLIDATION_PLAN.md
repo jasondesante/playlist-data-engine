@@ -1653,8 +1653,44 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 
 **Action Taken**: No changes to USAGE_IN_OTHER_PROJECTS.md required. The example has API inaccuracies that would mislead users. The SkillAssigner, SpellManager, EquipmentGenerator, and AppearanceGenerator classes are documented in DATA_ENGINE_REFERENCE.md with correct signatures. A corrected example showing the proper static method usage patterns could be added in a future task if desired.
 
-- [ ] Review "Phase 2: Advanced Character Features" example - add to USAGE if unique
-- [ ] Review "Phase 3: Progression & Leveling" example - add to USAGE if unique
+- [x] Review "Phase 3: Progression & Leveling" example - add to USAGE if unique (COMPLETED 2026-01-23)
+
+**Task 3.3 - "Phase 3: Progression & Leveling" Example Review (Completed 2026-01-23):**
+
+**Summary**: The README.md "Phase 3: Progression & Leveling" example contains MULTIPLE CRITICAL API DISCREPANCIES and should NOT be added to USAGE_IN_OTHER_PROJECTS.md.
+
+**API Discrepancies Found:**
+
+| README.md Claim | Actual API | Status |
+|-----------------|------------|--------|
+| `tracker.startSession(character.name)` | `startSession(trackUuid: string, track?: PlaylistTrack, context?: {...}): string` returns `sessionId` | **Wrong parameter, missing return capture** |
+| `tracker.endSession()` (no params) | `endSession(sessionId: string, durationOverride?: number, activityType?: string): ListeningSession | null` | **Missing required sessionId** |
+| `xpCalc.calculateSessionXP(300)` | `calculateSessionXP(session: ListeningSession, track?: PlaylistTrack): number` | **Wrong parameter type** |
+| `session.xp_earned = baseXP` | No such property; `endSession()` calculates XP automatically | **Non-existent property** |
+| `updater.applyListeningSession(character, session)` | `updateCharacterFromSession(character, session, track?, previousListenCount?)` | **Wrong method name** |
+| `updatedChar.level` (direct access) | `result.character.level` (result is `CharacterUpdateResult`) | **Wrong return type handling** |
+| `mastery.recordPlaythrough(track.id, baseXP)` | No such method; use `checkMastery(listenCount)` | **Method doesn't exist** |
+| `mastery.isTrackMastered(track.id)` | No such method; use `isJustMastered(prevCount, currCount)` | **Method doesn't exist** |
+| `mastery.getMasteryBonus(track.id)` | No such method; use `calculateMasteryBonus(isMastered)` | **Method doesn't exist** |
+
+**Source Code Verification**:
+- `SessionTracker.startSession(trackUuid, track?, context?)` returns `string` (sessionId) - src/core/progression/SessionTracker.ts:50-57
+- `SessionTracker.endSession(sessionId, durationOverride?, activityType?)` - src/core/progression/SessionTracker.ts:79-83
+- `XPCalculator.calculateSessionXP(session, track?)` - src/core/progression/XPCalculator.ts:83
+- `CharacterUpdater.updateCharacterFromSession(character, session, track?, previousListenCount?)` returns `CharacterUpdateResult` - src/core/progression/CharacterUpdater.ts:38
+- `MasterySystem.checkMastery(listenCount: number)` - src/core/progression/MasterySystem.ts:13
+- `MasterySystem.isJustMastered(previousListenCount, currentListenCount)` - src/core/progression/MasterySystem.ts:32
+- `MasterySystem.calculateMasteryBonus(isMastered: boolean)` - src/core/progression/MasterySystem.ts:22
+
+**Findings**:
+1. **SessionTracker API**: Example incorrectly passes `character.name` instead of `trackUuid`, and doesn't capture the returned `sessionId`
+2. **SessionTracker.endSession()**: Missing required `sessionId` parameter
+3. **XPCalculator**: Takes a `ListeningSession` object, not a raw number of seconds
+4. **CharacterUpdater**: Method name is `updateCharacterFromSession()`, not `applyListeningSession()`, and returns `CharacterUpdateResult` (not the character directly)
+5. **MasterySystem**: ALL three methods shown (`recordPlaythrough()`, `isTrackMastered()`, `getMasteryBonus()`) don't exist. The actual methods are `checkMastery()`, `isJustMastered()`, and `calculateMasteryBonus()`
+6. The existing "Progression and XP Tracking" example in USAGE_IN_OTHER_PROJECTS.md (lines 107-147) already shows the correct API usage
+
+**Action Taken**: No changes to USAGE_IN_OTHER_PROJECTS.md required. The example has API inaccuracies that would mislead users. The SessionTracker, XPCalculator, CharacterUpdater, and MasterySystem classes are documented in DATA_ENGINE_REFERENCE.md with correct signatures. The existing "Progression and XP Tracking" example in USAGE_IN_OTHER_PROJECTS.md already demonstrates the correct workflow.
 - [ ] Review "Phase 4: Environmental Sensors" example - add to USAGE if unique
 - [ ] Review "Phase 5: Gaming Platform Integration" example - add to USAGE if unique
 - [ ] Review "Phase 6: Combat System" example - add to USAGE if unique
