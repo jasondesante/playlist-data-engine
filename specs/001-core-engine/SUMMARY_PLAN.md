@@ -465,15 +465,37 @@ Before starting verification tasks, integrate the reference information from thi
   - **DISCREPANCY**: Plan mentioned "14 cache-related tests" but found 28+ cache-related tests in `tests/unit/sensors.test.ts` (10 weather cache + 9 geolocation cache + 3 forecast cache + 1 diagnostics + others)
 
 #### Task 4: Geolocation Caching
-- [ ] Read `src/core/sensors/GeolocationProvider.ts`
-- [ ] Verify position data cache exists (CacheEntry with data + timestamp)
-- [ ] Verify cache TTL is 5 minutes
-- [ ] Verify `getCurrentPosition(forceRefresh?)` bypasses cache when true
-- [ ] Verify `getCacheAge()`, `invalidateCache()` methods exist
-- [ ] Verify localStorage persistence for browser
-- [ ] Verify 15 cache-related tests exist
-- [ ] Summarize geolocation caching
-- [ ] Note any discrepancies
+- [x] Read `src/core/sensors/GeolocationProvider.ts`
+- [x] Verify position data cache exists (CacheEntry with data + timestamp)
+- [x] Verify cache TTL is 5 minutes
+- [x] Verify `getCurrentPosition(forceRefresh?)` bypasses cache when true
+- [x] Verify `getCacheAge()`, `invalidateCache()` methods exist
+- [x] Verify localStorage persistence for browser
+- [x] Verify 15 cache-related tests exist
+- [x] Summarize geolocation caching
+- [x] Note any discrepancies
+  **Completed 2026-01-23**: All claims verified. GeolocationProvider has comprehensive caching implementation.
+  - Position data cache: `CacheEntry` interface with `data: GeolocationData` and `timestamp: number` (lines 5-8)
+  - TTL: 5 minutes default (`5 * 60 * 1000` ms), configurable via constructor (line 26)
+  - `getCurrentPosition(forceRefresh: boolean = false)`: Bypasses cache when `forceRefresh=true` (lines 123-125)
+  - Cache methods all verified: `getCacheAge()` (line 113), `invalidateCache()` (line 176)
+  - Additional methods: `getCacheStats()`, `resetCacheStats()`, `isCacheExpired()`, `getCachedPosition()`
+  - localStorage persistence: Uses `STORAGE_KEY = 'geolocation_cache'`, loads/saves with filtering expired entries (lines 22, 66-96)
+  - Cache statistics: Tracks `hits` and `misses` (lines 10-13, 27)
+  - **DISCREPANCY**: Plan mentioned "15 cache-related tests" but found 13 geolocation cache-related tests in `tests/unit/sensors.test.ts` (lines 1511-1716):
+    1. Cache position data and return cached data on subsequent calls
+    2. Track cache hits and misses
+    3. Force refresh when forceRefresh parameter is true
+    4. Invalidate cache
+    5. Reset cache statistics
+    6. Return cache age
+    7. Check if cache is expired
+    8. Return cached position without TTL check
+    9. Handle cache expiration after TTL
+    10. Return null when navigator is undefined
+    11. Return null when geolocation is not available
+    12. Handle geolocation errors gracefully
+    13. Handle null values in cached position
 
 #### Task 5: Moon Phase Calculation
 - [ ] Read `src/core/sensors/WeatherAPIClient.ts`
