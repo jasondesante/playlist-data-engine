@@ -1990,7 +1990,7 @@ There are **TWO different ColorPalette interfaces** in the codebase with incompa
 ### Task 4.1: Resolve naming discrepancies
 - [x] Check for class name inconsistencies (e.g., `SessionTracker.startSession()` returning sessionId vs session object) (COMPLETED 2026-01-23)
 - [x] Check for method signature inconsistencies across docs (COMPLETED 2026-01-23)
-- [ ] Check for type name inconsistencies
+- [x] Check for type name inconsistencies (COMPLETED 2026-01-23)
 - [ ] Document all discrepancies found and create fixes
 
 **Task 4.1 Completed (2026-01-23):**
@@ -2057,6 +2057,49 @@ All key methods were verified across the three core documents against actual sou
 **Note**: SPEC.md intentionally does not contain detailed method signatures - it lists only class names, purposes, and source file paths in the "Key Classes" table. This is by design as SPEC.md serves as "The Atlas" (quick overview), not as an API reference.
 
 **Conclusion**: All three core documents are internally consistent with each other and accurately reflect the actual source code APIs. No fixes needed.
+
+**Task 4.1 - Type Name Inconsistencies Check (Completed 2026-01-23):**
+
+**Summary**: No type name inconsistencies found across SPEC.md, DATA_ENGINE_REFERENCE.md, and USAGE_IN_OTHER_PROJECTS.md.
+
+**Verification Results**:
+
+All type/interface names are **consistent** across all three core documents:
+
+| Type Name | SPEC.md | DATA_ENGINE_REFERENCE.md | USAGE_IN_OTHER_PROJECTS.md | Source Code | Status |
+|-----------|---------|--------------------------|----------------------------|-------------|--------|
+| `AudioProfile` | ✅ Listed | ✅ Full definition | ✅ Used in examples | `AudioProfile.ts` | ✅ Consistent |
+| `ColorPalette` | ✅ Listed | ✅ Full definition + note | ✅ Used in examples | `ColorPalette.ts` | ✅ Consistent |
+| `CharacterSheet` | ✅ Listed | ✅ Full definition | ✅ Used in examples | `Character.ts` | ✅ Consistent |
+| `ServerlessPlaylist` | ✅ Listed | ✅ Full definition | ✅ Used in examples | `Playlist.ts` | ✅ Consistent |
+| `PlaylistTrack` | ✅ Listed | ✅ Full definition | ✅ Used in examples | `Playlist.ts` | ✅ Consistent |
+| `EnvironmentalContext` | ✅ Listed | ✅ Full definition | ✅ Used in examples | `Environmental.ts` | ✅ Consistent |
+| `GamingContext` | ✅ Listed | ✅ Full definition | ✅ Used in examples | `Progression.ts` | ✅ Consistent |
+| `CombatInstance` | ✅ Listed | ✅ Full definition | ✅ Used in examples | `Combat.ts` | ✅ Consistent |
+| `ListeningSession` | - | ✅ Full definition | ✅ Used in examples | `Progression.ts` | ✅ Consistent |
+| `AbilityScores` | - | ✅ Full definition | ✅ Used in examples | `Character.ts` | ✅ Consistent |
+| `Race` (union) | - | ✅ Full definition | ✅ Used in examples | `Character.ts` | ✅ Consistent |
+| `Class` (union) | - | ✅ Full definition | ✅ Used in examples | `Character.ts` | ✅ Consistent |
+| `Ability` (union) | - | ✅ Full definition | ✅ Used in examples | `Character.ts` | ✅ Consistent |
+| `Skill` (union) | - | ✅ Full definition | ✅ Used in examples | `Character.ts` | ✅ Consistent |
+| `ProficiencyLevel` | - | ✅ Full definition | ✅ Used in examples | `Character.ts` | ✅ Consistent |
+| `Attack` | - | ✅ Full definition | ✅ Used in examples | `Character.ts` | ✅ Consistent |
+| `Spell` | - | ✅ Full definition | ✅ Used in examples | `Character.ts` | ✅ Consistent |
+| `CharacterUpdateResult` | - | ✅ Full definition | ✅ Used in examples | `CharacterUpdater.ts` | ✅ Consistent |
+| `LevelUpBenefits` | - | ✅ Full definition | ✅ Used in examples | `LevelUpProcessor.ts` | ✅ Consistent |
+| `Combatant` | - | ✅ Full definition | ✅ Used in examples | `Combat.ts` | ✅ Consistent |
+| `CombatAction` | - | ✅ Full definition | ✅ Used in examples | `Combat.ts` | ✅ Consistent |
+| `StatusEffect` | - | ✅ Full definition | ✅ Used in examples | `Combat.ts` | ✅ Consistent |
+
+**Known Source Code Issue** (Already Documented):
+
+The `ColorPalette` interface has **two different definitions** in the source code:
+1. `src/core/types/AudioProfile.ts` (lines 42-63) - Uses `primary_color`, `secondary_color`, `accent_color`, `is_monochrome`
+2. `src/core/types/ColorPalette.ts` - Uses `primary`, `secondary`, `tertiary`, `background`, `text`, `isMonochrome`
+
+This is a **source code inconsistency** (not a documentation issue) and is already noted in DATA_ENGINE_REFERENCE.md lines 150-151. The documentation uses the `ColorPalette.ts` version as the canonical definition.
+
+**Conclusion**: No type name inconsistencies exist across the three core documents. All types are consistently named across SPEC.md (The Atlas), DATA_ENGINE_REFERENCE.md (The API Dictionary), and USAGE_IN_OTHER_PROJECTS.md (The Cookbook).
 
 ### Task 4.2: Resolve API changes (e.g., SessionTracker)
 - [x] Verify `SessionTracker.startSession()` returns `sessionId` (string) (COMPLETED 2026-01-23)
