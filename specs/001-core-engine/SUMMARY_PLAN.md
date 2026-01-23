@@ -20,7 +20,7 @@
 
 This is a **verification and summarization plan** for creating an accurate summary of the Core Data Engine implementation. The old `IMPLEMENTATION_PLAN.md` is 1700+ lines and contains detailed implementation notes from the development process.
 
-**This plan's purpose**: Extract and verify the essential information from the old plan into a clean, concise summary.
+**This plan's purpose**: Extract and verify the essential information from the project into a clean, concise summary.
 
 **This plan is NOT**: An implementation plan for new features. All implementation is complete. This is purely documentation work.
 
