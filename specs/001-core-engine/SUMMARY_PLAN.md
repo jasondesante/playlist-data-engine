@@ -894,7 +894,14 @@ Before starting verification tasks, integrate the reference information from thi
     * Total source files: 48 TypeScript files (excluding .d.ts type declarations)
   - All type definitions verified: AudioProfile, ColorPalette, CharacterSheet, ServerlessPlaylist, EnvironmentalContext, GamingContext, CombatInstance
   - All class definitions and method signatures verified accurate
-- [ ] Ensure all verified information is integrated
+- [x] Ensure all verified information is integrated
+  **Completed 2026-01-23**: Integrated Configuration section from Phase 4 verification.
+  - Added Environment Variables table (WEATHER_API_KEY, STEAM_API_KEY, STEAM_USER_ID, DISCORD_CLIENT_ID, XP_MAX_MODIFIER)
+  - Added reference to .env.example for documentation
+  - Added programmatic configuration example using loadConfigFromEnv() and mergeConfig()
+  - Added link to src/core/config/sensorConfig.ts
+  - All information verified against actual source code (sensorConfig.ts, .env.example)
+  - SPEC.md now at 240 lines (still under 300-line target)
 - [ ] Remove any redundant sections
 - [ ] Add "Remaining Work" section (failing tests, TODOs, test fix plan)
 
