@@ -136,28 +136,19 @@ Defines a color scheme derived from audio analysis.
 
 ```typescript
 export interface ColorPalette {
-    /** Dominant colors ranked by frequency (hex format) */
-    colors: string[];
-
-    /** Primary color (most dominant) */
-    primary_color: string;
-
-    /** Secondary color */
-    secondary_color?: string;
-
-    /** Accent color */
-    accent_color?: string;
-
-    /** Average brightness (0.0 - 1.0) */
-    brightness: number;
-
-    /** Average saturation (0.0 - 1.0) */
-    saturation: number;
-
-    /** Is the image monochrome? */
-    is_monochrome: boolean;
+    primary: string;
+    secondary: string;
+    tertiary: string;
+    background: string;
+    text: string;
+    isMonochrome: boolean;
+    brightness: number; // 0-1
+    saturation: number; // 0-1
+    colors: string[]; // Full palette
 }
 ```
+
+**Note**: There is also a ColorPalette definition in `AudioProfile.ts` with different property names (`primary_color` vs `primary`, `is_monochrome` vs `isMonochrome`). The definition above (from `ColorPalette.ts`) is the canonical version.
 
 ### Character Types
 
@@ -357,28 +348,27 @@ Aggregated environmental sensor data.
 
 ```typescript
 export interface EnvironmentalContext {
-    location?: GeolocationData;
+    geolocation?: GeolocationData;
     motion?: MotionData;
     weather?: WeatherData;
     light?: LightData;
 
     // Derived gameplay data
-    biome?: 'urban' | 'forest' | 'desert' | 'mountain' | 'water' | 'tundra';
-    time_of_day?: 'dawn' | 'day' | 'dusk' | 'night';
-    season?: 'spring' | 'summer' | 'autumn' | 'winter';
+    biome?: 'urban' | 'forest' | 'desert' | 'mountain' | 'valley' | 'water' | 'tundra' | 'plains' | 'jungle' | 'swamp' | 'taiga' | 'savanna';
 
     // Composite XP multiplier (0.5 to 3.0)
-    environmental_xp_modifier: number;
+    environmental_xp_modifier?: number;
+    timestamp: number;
 }
 
 export interface GeolocationData {
     latitude: number;
     longitude: number;
-    altitude?: number;            // Meters above sea level
+    altitude: number | null;      // Meters above sea level (null if unavailable)
     accuracy: number;             // Meters
     altitude_accuracy?: number;
-    heading?: number;             // Direction 0-360 degrees
-    speed?: number;               // Meters per second
+    heading: number | null;       // Direction 0-360 degrees (null if unavailable)
+    speed: number | null;         // Meters per second (null if unavailable)
     timestamp: number;            // Unix timestamp
 }
 
