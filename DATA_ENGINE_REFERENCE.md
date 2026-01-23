@@ -1503,6 +1503,7 @@ export enum DiscordConnectionState {
     Disconnected = 'disconnected',
     Connecting = 'connecting',
     Connected = 'connected',
+    DiscordUnavailable = 'discord_unavailable',
     Error = 'error',
 }
 ```
