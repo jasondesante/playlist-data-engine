@@ -49,7 +49,7 @@
 ## Phase 0: Document Analysis & Inventory
 
 ### Task 0.1: Read and catalog all existing docs
-- [ ] Read `SPEC.md` - note current structure, examples present, factual claims
+- [x] Read `SPEC.md` - note current structure, examples present, factual claims
 - [ ] Read `DATA_ENGINE_REFERENCE.md` - note API completeness, examples present, cookbook section
 - [ ] Read `USAGE_IN_OTHER_PROJECTS.md` - note examples present, installation section
 - [ ] Read `README.md` - harvest any unique examples worth keeping
