@@ -149,11 +149,67 @@ README.md contains **10 code examples** (290 lines of example code total):
   - SessionTracker.startSession() doesn't show return value in usage
 - Action required: All examples should be migrated to USAGE_IN_OTHER_PROJECTS.md before README.md deletion
 
-**API Discrepancies Found** (needs verification in Phase 4):
-- `CharacterUpdater.applyListeningSession()` (README) vs `updateCharacterFromSession()` (USAGE)
-- `MasterySystem.recordPlaythrough()/isTrackMastered()` (README) vs `checkMastery()/isJustMastered()` (USAGE)
-- `EnvironmentalSensors` constructor options object (README) vs single API key param (USAGE)
-- `SessionTracker.startSession()` - README doesn't show return value, both docs need verification
+**API Discrepancies Found (VERIFIED 2026-01-23):**
+
+The following discrepancies were identified by comparing documentation claims against actual source code. These must be fixed in Phase 4.
+
+1. **CharacterUpdater Method Name** ❌
+   - **Incorrect (README.md lines 135, 149)**: `applyListeningSession()`
+   - **Correct (Source code)**: `updateCharacterFromSession()`
+   - **Actual signature**: `updateCharacterFromSession(character: CharacterSheet, session: ListeningSession, track?: PlaylistTrack, previousListenCount: number = 0): CharacterUpdateResult`
+   - **File**: `src/core/progression/CharacterUpdater.ts`
+
+2. **MasterySystem Methods** ❌
+   - **Incorrect (README.md, quickstart.md)**: `recordPlaythrough()`, `isTrackMastered()`
+   - **Correct (Source code)**: `checkMastery()`, `isJustMastered()`
+   - **Actual signatures**:
+     - `checkMastery(listenCount: number): boolean`
+     - `isJustMastered(previousListenCount: number, currentListenCount: number): boolean`
+     - `calculateMasteryBonus(isMastered: boolean): number`
+   - **File**: `src/core/progression/MasterySystem.ts`
+
+3. **NamingEngine.generateName() Parameters** ❌
+   - **Incorrect (quickstart.md line 188)**: 4 params `(title, artist, profile, class)`
+   - **Correct (Source code)**: 2 params `(track: PlaylistTrack, audioProfile: AudioProfile)`
+   - **Actual signature**: `generateName(track: PlaylistTrack, audioProfile: AudioProfile): string`
+   - **File**: `src/core/generation/NamingEngine.ts`
+
+4. **SessionTracker.startSession() Return Type** ⚠️
+   - **Issue**: README.md and quickstart.md don't show the return value (sessionId string)
+   - **Correct API**: Returns `string` (sessionId)
+   - **Actual signature**: `startSession(trackUuid: string, track?: PlaylistTrack, context?: {...}): string`
+   - **File**: `src/core/progression/SessionTracker.ts`
+
+5. **SessionTracker.endSession() Parameters** ⚠️
+   - **Issue**: docs don't show optional `durationOverride` and `activityType` params
+   - **Actual signature**: `endSession(sessionId: string, durationOverride?: number, activityType?: string): ListeningSession | null`
+   - **File**: `src/core/progression/SessionTracker.ts`
+
+6. **EnvironmentalSensors Constructor** ✅ (Both are valid!)
+   - **README.md (options object)**: `new EnvironmentalSensors({ weather: { apiKey } })`
+   - **Other docs (single param)**: `new EnvironmentalSensors(apiKey)`
+   - **Actual signature supports BOTH**: `constructor(weatherApiKeyOrConfig?: string | { weather?: {...}, geolocation?: {...}, retry?: {...}, xpModifier?: {...} }, retryConfig?: Partial<SensorRetryConfig>)`
+   - **File**: `src/core/sensors/EnvironmentalSensors.ts`
+   - **Note**: Both forms are valid - constructor accepts either string API key or config object
+
+7. **GamingPlatformSensors.authenticate()** ⚠️
+   - **README.md shows**: `authenticate(userSteamId, discordUserId)` - 2 required params
+   - **Actual signature**: Both params are OPTIONAL: `authenticate(steamUserId?: string, discordUserId?: string): Promise<boolean>`
+   - **File**: `src/core/sensors/GamingPlatformSensors.ts`
+
+8. **Unique Methods Not Shown in Most Docs**:
+   - `SpellManager.generateSpellSlots()` - shown only in quickstart.md
+   - `CombatEngine.getCurrentCombatant()` - shown only in quickstart.md
+   - `LevelUpProcessor.processLevelUp()` - shown only in quickstart.md
+   - These exist but are under-documented
+
+9. **AudioAnalyzer Options** ⚠️
+   - **quickstart.md shows**: `{ includeAdvancedMetrics: true, enableDetailedOutput: true }`
+   - **Needs verification**: Check if `enableDetailedOutput` option exists
+
+10. **EnvironmentalSensors.enableLight** ⚠️
+    - **quickstart.md shows**: `enableLight` option
+    - **Needs verification**: Check if this option actually exists
 - [x] Read `quickstart.md` - harvest any unique examples worth keeping (completed 2026-01-23)
 
 **quickstart.md Unique Examples Found** (not in USAGE or README):
@@ -266,12 +322,32 @@ quickstart.md contains **16 code examples** (289 lines of example code total):
 - Total TypeScript code examples: 15 blocks (262 lines of example code)
 - Plus 1 bash command section (not a code example per se)
 - Key unique findings:
-  - **API DISCREPANCY 1**: NamingEngine.generateName() uses 4 params (title, artist, profile, class)
-  - **API DISCREPANCY 2**: SessionTracker.startSession() doesn't show return value
   - **UNIQUE METHODS**: SpellManager.generateSpellSlots(), CombatEngine.getCurrentCombatant(), LevelUpProcessor.processLevelUp()
   - **UNIQUE OPTIONS**: AudioAnalyzer includeAdvancedMetrics/enableDetailedOutput, EnvironmentalSensors enableLight, CombatEngine tacticalMode/useEnvironment
   - **UNIQUE PATTERNS**: Deterministic generation proof, compound XP bonus formula
 - Action required: All unique examples should be migrated to USAGE_IN_OTHER_PROJECTS.md before quickstart.md deletion
+
+**API Discrepancies Found in quickstart.md (VERIFIED 2026-01-23):**
+
+1. **NamingEngine.generateName() - WRONG PARAMETER COUNT** ❌
+   - **quickstart.md line 188 claims**: 4 params `(title, artist, profile, class)`
+   - **Actual signature**: 2 params `(track: PlaylistTrack, audioProfile: AudioProfile): string`
+   - **File**: `src/core/generation/NamingEngine.ts`
+
+2. **SessionTracker.startSession() - MISSING RETURN VALUE** ⚠️
+   - **quickstart.md lines 91-108**: Doesn't show that startSession() returns sessionId
+   - **Actual signature**: Returns `string` (sessionId)
+   - **File**: `src/core/progression/SessionTracker.ts`
+
+3. **CharacterUpdater.applyListeningSession() - WRONG METHOD NAME** ❌
+   - **quickstart.md line 104**: Shows `applyListeningSession()`
+   - **Actual method**: `updateCharacterFromSession()`
+   - **File**: `src/core/progression/CharacterUpdater.ts`
+
+4. **MasterySystem methods - WRONG METHOD NAMES** ❌
+   - **quickstart.md line 108**: Shows `recordPlaythrough()` and `isTrackMastered()`
+   - **Actual methods**: `checkMastery()`, `isJustMastered()`, `calculateMasteryBonus()`
+   - **File**: `src/core/progression/MasterySystem.ts`
 - [x] Read `SUMMARY_PLAN.md` - harvest important spec information that should be in SPEC.md
 
 **SUMMARY_PLAN.md Analysis Completed (2026-01-23)**:
@@ -346,7 +422,7 @@ SPEC.md contains **5 code examples** in the "How to Use" section (lines 92-188):
 - [x] List all type definitions claimed in DATA_ENGINE_REFERENCE.md
 - [x] List all method signatures claimed in DATA_ENGINE_REFERENCE.md
 - [x] List all class names claimed across all docs
-- [ ] Note any discrepancies between docs (e.g., different method signatures described)
+- [x] Note any discrepancies between docs (e.g., different method signatures described) - **COMPLETED 2026-01-23**
 
 **DATA_ENGINE_REFERENCE.md Method Signature Inventory (Completed 2026-01-23):**
 
