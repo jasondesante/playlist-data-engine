@@ -2286,11 +2286,29 @@ Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need sepa
 - `/workspace/DATA_ENGINE_REFERENCE.md` - Added cross-reference note at top: "For usage examples, see USAGE_IN_OTHER_PROJECTS.md"
 
 ### Task 5.3: Enhance USAGE_IN_OTHER_PROJECTS.md
-- [ ] Add table of contents for examples section
+- [x] Add table of contents for examples section (COMPLETED 2026-01-23)
 - [ ] Group examples logically (Basic, Advanced, Specific Features)
 - [ ] Add "Troubleshooting" section if not present
 - [ ] Add "Environment Variables" section if not present
 - [ ] Ensure all harvested examples are integrated
+
+**Task 5.3 - Add table of contents for examples section (Completed 2026-01-23)**:
+
+**Summary**: Added a table of contents for the examples section in USAGE_IN_OTHER_PROJECTS.md.
+
+**Changes Made**:
+- Added a bulleted table of contents immediately after the "## Usage Examples" header
+- Each entry links to an example section with a brief description
+- Entries include:
+  - Basic Playlist Parsing and Character Generation
+  - Progression and XP Tracking
+  - Environmental Sensors
+  - Gaming Platform Integration
+  - Combat System
+  - Advanced: Combining All Systems
+
+**Files Modified**:
+- `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Added table of contents (8 lines)
 
 ### Task 5.4: Add cross-references between docs
 - [ ] SPEC.md → Add "For API details, see DATA_ENGINE_REFERENCE.md"

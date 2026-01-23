@@ -71,6 +71,13 @@ Then reference it in your project code directly.
 
 ## Usage Examples
 
+- [Basic Playlist Parsing and Character Generation](#basic-playlist-parsing-and-character-generation) - Parse playlists, analyze audio, and generate characters
+- [Progression and XP Tracking](#progression-and-xp-tracking) - Track sessions, calculate XP, handle level-ups
+- [Environmental Sensors](#environmental-sensors) - Get environmental context and XP modifiers
+- [Gaming Platform Integration](#gaming-platform-integration) - Integrate Steam and Discord for gaming bonuses
+- [Combat System](#combat-system) - Run turn-based D&D 5e combat
+- [Advanced: Combining All Systems](#advanced-combining-all-systems) - Full pipeline with all features
+
 ### Basic Playlist Parsing and Character Generation
 
 ```typescript
