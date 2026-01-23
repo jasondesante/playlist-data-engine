@@ -344,9 +344,70 @@ SPEC.md contains **5 code examples** in the "How to Use" section (lines 92-188):
 
 ### Task 0.4: Create type/method claim inventory
 - [x] List all type definitions claimed in DATA_ENGINE_REFERENCE.md
-- [ ] List all method signatures claimed in DATA_ENGINE_REFERENCE.md
+- [x] List all method signatures claimed in DATA_ENGINE_REFERENCE.md
 - [ ] List all class names claimed across all docs
 - [ ] Note any discrepancies between docs (e.g., different method signatures described)
+
+**DATA_ENGINE_REFERENCE.md Method Signature Inventory (Completed 2026-01-23):**
+
+**File does not exist yet** - DATA_ENGINE_REFERENCE.md needs to be created as part of this consolidation effort.
+- Current method signatures claimed: 0
+
+**Method Signatures Claimed in SPEC.md (for reference during DATA_ENGINE_REFERENCE.md creation):**
+
+Since DATA_ENGINE_REFERENCE.md doesn't exist yet, this inventory catalogs the method signatures currently claimed in SPEC.md examples (lines 92-188) that will need to be verified and migrated:
+
+1. **PlaylistParser**:
+   - `new PlaylistParser({ validateAudioUrls: boolean })`
+   - `parse(rawArweavePlaylistData): Promise<ServerlessPlaylist>`
+
+2. **AudioAnalyzer**:
+   - `new AudioAnalyzer({ includeAdvancedMetrics: boolean })`
+   - `extractSonicFingerprint(audioUrl): Promise<AudioProfile>`
+
+3. **NamingEngine**:
+   - `new NamingEngine()`
+   - `generateName(track, audioProfile): string`
+
+4. **CharacterGenerator**:
+   - `static generate(seed: string, audioProfile: AudioProfile, name: string): CharacterSheet`
+
+5. **EnvironmentalSensors**:
+   - `new EnvironmentalSensors(weatherApiKey?: string)`
+   - `requestPermissions(permissions: string[]): Promise<SensorPermission[]>`
+   - `startMonitoring(callback: (context: EnvironmentalContext) => void): void`
+   - `getCurrentActivity(): string`
+   - `calculateXPModifier(): number`
+
+6. **GamingPlatformSensors**:
+   - `new GamingPlatformSensors(options: { steam?: {...}, discord?: {...} })`
+   - `authenticate(userSteamId: string): Promise<void>`
+   - `startMonitoring(callback: (context: GamingContext) => void): void`
+   - `calculateGamingBonus(): number`
+
+7. **DiscordRPCClient**:
+   - `new DiscordRPCClient(clientId: string)`
+   - `connect(): Promise<void>`
+   - `setMusicActivity(activity: { songName, artistName, albumArtKey, startTime, durationSeconds }): Promise<void>`
+
+8. **SessionTracker**:
+   - `new SessionTracker()`
+   - `startSession(trackUuid: string, track: PlaylistTrack): string` (returns sessionId)
+   - `endSession(sessionId: string): ListeningSession | null`
+
+9. **XPCalculator**:
+   - `calculateSessionXP(session: ListeningSession, track: PlaylistTrack): number`
+
+10. **CombatEngine**:
+    - `new CombatEngine()`
+    - `startCombat(playerChars: CharacterSheet[], enemyChars: CharacterSheet[], envContext?: EnvironmentalContext): CombatInstance`
+    - `getCurrentCombatant(instance: CombatInstance): Combatant`
+    - `executeAttack(instance: CombatInstance, attacker: Combatant, target: Combatant, attack: Attack): CombatActionResult`
+    - `nextTurn(instance: CombatInstance): void`
+
+**Summary for Task 0.4.1**:
+- Total method signatures claimed in SPEC.md examples: 10 classes, ~30 methods
+- Action required: All these method signatures need to be verified against actual source code and properly documented in DATA_ENGINE_REFERENCE.md
 
 **DATA_ENGINE_REFERENCE.md Type Definition Inventory (Completed 2026-01-23):**
 
