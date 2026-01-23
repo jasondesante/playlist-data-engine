@@ -10,7 +10,7 @@
 # Follow the login process
 # Then type: exit (or Ctrl+D)
 # 
-# # Step 2: Run commands in the existing container
+# Step 2: Run commands in the existing container
 while :; do
   echo "=== Starting iteration ==="
   
@@ -24,14 +24,14 @@ done
 # Cleanup when done
 docker stop claude-loop
 
-# 
-# 
+# # 
+# # 
 # # try #6 loops but doesn't automatically because it shows the ui
 # while :; do
 #   echo "=== Starting iteration ==="
   
 #   docker start claude-loop 2>/dev/null || true
-#   docker exec -it -w /workspace claude-loop claude --dangerously-skip-permissions "$(cat PROMPT3.md)" | tee .log
+#   docker exec -it -w /workspace claude-loop claude --dangerously-skip-permissions "$(cat PROMPT.md)" | tee .log
   
 #   grep -qi "done" .log || break
 #   sleep 2
