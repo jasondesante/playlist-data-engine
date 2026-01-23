@@ -2502,11 +2502,63 @@ SPEC.md successfully serves as "The Atlas" - a comprehensive overview that clear
 - `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.1 checklist status
 
 ### Task 6.2: DATA_ENGINE_REFERENCE.md final check
-- [ ] Verify every class is documented
+- [x] Verify every class is documented (COMPLETED 2026-01-23)
 - [ ] Verify every public method is documented
 - [ ] Verify every type interface is documented
 - [ ] Verify all code examples compile (conceptually)
 - [ ] Ask: "Could I find the API for any class without digging into source?"
+
+**Task 6.2 - First Subtask Completed (2026-01-23): Verify every class is documented**
+
+**Summary**: All 30 classes in the codebase are now documented in DATA_ENGINE_REFERENCE.md.
+
+**Verification Results**:
+
+**Classes Previously Missing (Now Added):**
+1. `AttackResolver` - D&D 5e attack and damage calculation (melee/ranged, advantage/disadvantage)
+2. `MetadataExtractor` - Metadata extraction with priority queue logic for playlist parsing
+3. `InitiativeRoller` - Initiative system for turn order management
+4. `SpellCaster` - Spell casting mechanics (slots, saving throws, damage)
+
+**Complete Class Documentation List (30 classes total):**
+
+| Class | Location | Documentation Status |
+|-------|----------|---------------------|
+| `PlaylistParser` | src/core/parser/PlaylistParser.ts | ✅ Class: `PlaylistParser` (line 628) |
+| `MetadataExtractor` | src/core/parser/MetadataExtractor.ts | ✅ Helper: `MetadataExtractor` (line 644) - ADDED |
+| `AudioAnalyzer` | src/core/analysis/AudioAnalyzer.ts | ✅ Class: `AudioAnalyzer` (line 671) |
+| `ColorExtractor` | src/core/analysis/ColorExtractor.ts | ✅ Helper: `ColorExtractor` (line 691) |
+| `SpectrumScanner` | src/core/analysis/SpectrumScanner.ts | ✅ Helper: `SpectrumScanner` (line 702) |
+| `CharacterGenerator` | src/core/generation/CharacterGenerator.ts | ✅ Class: `CharacterGenerator` (line 721) |
+| `RaceSelector` | src/core/generation/RaceSelector.ts | ✅ Helper: `RaceSelector` (line 738) |
+| `ClassSuggester` | src/core/generation/ClassSuggester.ts | ✅ Helper: `ClassSuggester` (line 747) |
+| `AbilityScoreCalculator` | src/core/generation/AbilityScoreCalculator.ts | ✅ Helper: `AbilityScoreCalculator` (line 759) |
+| `SkillAssigner` | src/core/generation/SkillAssigner.ts | ✅ Helper: `SkillAssigner` (line 777) |
+| `SpellManager` | src/core/generation/SpellManager.ts | ✅ Helper: `SpellManager` (line 787) |
+| `EquipmentGenerator` | src/core/generation/EquipmentGenerator.ts | ✅ Helper: `EquipmentGenerator` (line 799) |
+| `AppearanceGenerator` | src/core/generation/AppearanceGenerator.ts | ✅ Helper: `AppearanceGenerator` (line 810) |
+| `NamingEngine` | src/core/generation/NamingEngine.ts | ✅ Helper: `NamingEngine` (line 820) |
+| `SessionTracker` | src/core/progression/SessionTracker.ts | ✅ Class: `SessionTracker` (line 844) |
+| `XPCalculator` | src/core/progression/XPCalculator.ts | ✅ Class: `XPCalculator` (line 891) |
+| `CharacterUpdater` | src/core/progression/CharacterUpdater.ts | ✅ Class: `CharacterUpdater` (line 943) |
+| `LevelUpProcessor` | src/core/progression/LevelUpProcessor.ts | ✅ Helper: `LevelUpProcessor` (line 988) |
+| `MasterySystem` | src/core/progression/MasterySystem.ts | ✅ Helper: `MasterySystem` (line 1018) |
+| `EnvironmentalSensors` | src/core/sensors/EnvironmentalSensors.ts | ✅ Class: `EnvironmentalSensors` (line 1039) |
+| `GeolocationProvider` | src/core/sensors/GeolocationProvider.ts | ✅ Helper: `GeolocationProvider` (line 1058) |
+| `MotionDetector` | src/core/sensors/MotionDetector.ts | ✅ Helper: `MotionDetector` (line 1069) |
+| `WeatherAPIClient` | src/core/sensors/WeatherAPIClient.ts | ✅ Helper: `WeatherAPIClient` (line 1079) |
+| `LightSensor` | src/core/sensors/LightSensor.ts | ✅ Helper: `LightSensor` (line 1088) |
+| `GamingPlatformSensors` | src/core/sensors/GamingPlatformSensors.ts | ✅ Class: `GamingPlatformSensors` (line 1105) |
+| `SteamAPIClient` | src/core/sensors/SteamAPIClient.ts | ✅ Helper: `SteamAPIClient` (line 1118) |
+| `DiscordRPCClient` | src/core/sensors/DiscordRPCClient.ts | ✅ Helper: `DiscordRPCClient` (line 1129) |
+| `CombatEngine` | src/core/combat/CombatEngine.ts | ✅ Class: `CombatEngine` (line 1156) |
+| `InitiativeRoller` | src/core/combat/InitiativeRoller.ts | ✅ Helper: `InitiativeRoller` (line 1176) - ADDED |
+| `AttackResolver` | src/core/combat/AttackResolver.ts | ✅ Helper: `AttackResolver` (line 1197) - ADDED |
+| `SpellCaster` | src/core/combat/SpellCaster.ts | ✅ Helper: `SpellCaster` (line 1214) - ADDED |
+
+**Files Modified**:
+- `/workspace/DATA_ENGINE_REFERENCE.md` - Added 4 missing class documentations (MetadataExtractor, InitiativeRoller, AttackResolver, SpellCaster)
+- `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.2 checklist status
 
 ### Task 6.3: USAGE_IN_OTHER_PROJECTS.md final check
 - [ ] Verify all examples are complete and runnable

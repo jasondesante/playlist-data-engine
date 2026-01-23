@@ -641,6 +641,25 @@ new PlaylistParser(options?: PlaylistParserOptions)
     - **Returns:** A `ServerlessPlaylist` object containing metadata and an array of `PlaylistTrack` objects.
     - **Throws:** Error if `strict` mode is on and parsing fails.
 
+#### Helper: `MetadataExtractor`
+
+**Location:** `src/core/parser/MetadataExtractor.ts`
+
+Extracts metadata with priority queue logic. All methods are static.
+
+- `static extractAudioUrl(data: Record<string, unknown>): string | null`
+    - Extracts audio URL with priority: mp3_url > lossy_audio > audio_url > lossless_audio > animation_url
+- `static extractImageUrl(data: Record<string, unknown>): string | null`
+    - Extracts image URL with priority: image_small > image > image_large > image_thumb
+- `static extractTitle(data: Record<string, unknown>): string | null`
+    - Extracts name/title with priority: name > title
+- `static extractArtist(data: Record<string, unknown>): string | null`
+    - Extracts artist with priority: artist > created_by > minter
+- `static parseMetadata(metadata: unknown): Record<string, unknown> | null`
+    - Parses metadata string to JSON object with error handling
+- `static convertAttributes(attributes: unknown): Record<string, string | number> | null`
+    - Converts OpenSea-style attributes array to key-value object
+
 ---
 
 ### AudioAnalyzer
@@ -1153,6 +1172,69 @@ new CombatEngine(config?: CombatConfig)
     - Advances the turn order.
 - `getCombatResult(combat: CombatInstance): CombatResult | null`
     - Returns winner and rewards if combat is over.
+
+#### Helper: `InitiativeRoller`
+
+**Location:** `src/core/combat/InitiativeRoller.ts`
+
+Manages initiative system for D&D combat.
+
+- `rollInitiativeForCombatant(combatant: Combatant): InitiativeResult`
+    - Rolls initiative for a single combatant (d20 + DEX modifier)
+- `rollInitiativeForAll(combatants: Combatant[]): { results: InitiativeResult[], sortedCombatants: Combatant[] }`
+    - Rolls initiative for all combatants and sorts by descending initiative
+- `getNextCombatant(combatants: Combatant[], currentIndex: number): { combatant: Combatant, index: number, isNewRound: boolean }`
+    - Gets the next combatant in turn order (wraps around)
+- `getInitiativeOrder(combatants: Combatant[]): string[]`
+    - Returns formatted initiative order for display
+- `rerollInitiativeForCombatant(combatant: Combatant): number`
+    - Re-rolls initiative for a specific combatant
+- `delayTurn(combatants: Combatant[], combatantId: string): Combatant[]`
+    - Delays a combatant's turn (moves them later in initiative order)
+- `resortByInitiative(combatants: Combatant[]): Combatant[]`
+    - Resorts combatants by initiative value (for mid-combat joins)
+
+#### Helper: `AttackResolver`
+
+**Location:** `src/core/combat/AttackResolver.ts`
+
+Handles melee and ranged attack resolution (D&D 5e: d20 + attack bonus vs target AC).
+
+- `resolveAttack(attacker: Combatant, target: Combatant, attack: Attack): AttackResult`
+    - Resolves a complete attack action (roll vs AC, damage if hit)
+- `isInRange(attacker: Combatant, target: Combatant, attack: Attack): boolean`
+    - Checks if an attack is within range (melee: 5ft, ranged: attack.range)
+- `calculateAttackBonus(character: any, attackName: string, abilityModifier: number, isProficient: boolean): number`
+    - Calculates attack bonus (ability modifier + proficiency bonus if proficient)
+- `attackWithAdvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult`
+    - Resolves attack with advantage (roll twice, take higher)
+- `attackWithDisadvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult`
+    - Resolves attack with disadvantage (roll twice, take lower)
+
+#### Helper: `SpellCaster`
+
+**Location:** `src/core/combat/SpellCaster.ts`
+
+Handles spell casting mechanics (spell slots, saving throws, spell damage).
+
+- `castSpell(caster: Combatant, spell: Spell, targets: Combatant[]): SpellCastResult`
+    - Casts a spell at one or more targets (handles slot consumption, attack rolls, saving throws)
+- `hasSpellSlot(caster: Combatant, spellLevel: number): boolean`
+    - Checks if caster has a spell slot of the given level available
+- `consumeSpellSlot(caster: Combatant, spellLevel: number): void`
+    - Consumes a spell slot
+- `restoreSpellSlots(caster: Combatant): void`
+    - Restores all spell slots to maximum (after long rest)
+- `calculateSaveDC(caster: Combatant, ability: string): number`
+    - Calculates spell save DC (8 + ability modifier + proficiency bonus)
+- `makeSavingThrow(target: Combatant, saveAbility: string, saveDC: number): boolean`
+    - Makes a saving throw against a spell (returns true if save succeeds)
+- `getSpellSlotInfo(caster: Combatant): string`
+    - Returns formatted spell slot information
+- `canUpcast(caster: Combatant, spell: Spell, targetSlotLevel: number): boolean`
+    - Checks if a spell can be upcast (cast using higher-level slot)
+- `upcastSpell(caster: Combatant, spell: Spell, targets: Combatant[], slotLevelUsed: number): SpellCastResult`
+    - Upcasts a spell using a higher-level spell slot
 
 ---
 
