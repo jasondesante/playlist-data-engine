@@ -81,6 +81,8 @@ Then reference it in your project code directly.
 - [Combining All Systems](#combining-all-systems) - Full pipeline with environmental and gaming context
 
 ### Specific Features
+- [Color Extraction and Character Naming](#color-extraction-and-character-naming) - Extract colors from artwork and generate RPG-style names
+- [Advanced Character Features](#advanced-character-features) - Skills, spells, equipment, and appearance generation
 - [Environmental Sensors](#environmental-sensors) - Get environmental context and XP modifiers
 - [Gaming Platform Integration](#gaming-platform-integration) - Integrate Steam and Discord for gaming bonuses
 - [Combat System](#combat-system) - Run turn-based D&D 5e combat
@@ -172,6 +174,76 @@ if (session) {
 ---
 
 ## Specific Features
+
+### Color Extraction and Character Naming
+
+```typescript
+import { ColorExtractor, NamingEngine } from 'playlist-data-engine';
+
+// Extract color palette from track artwork
+const colorExtractor = new ColorExtractor();
+const palette = await colorExtractor.extractPalette(track.image_url);
+console.log(`Primary color: ${palette.primary_color}`);
+console.log(`Colors: ${palette.colors.join(', ')}`);
+console.log(`Brightness: ${palette.brightness}, Saturation: ${palette.saturation}`);
+console.log(`Is monochrome: ${palette.is_monochrome}`);
+
+// Generate RPG-style character name from track metadata
+const namingEngine = new NamingEngine();
+const characterName = namingEngine.generateName(track, audioProfile);
+console.log(`Character name: "${characterName}"`);
+// Examples: "Sonic Midnight City the Bard", "Electric Dreams the Wizard", "Thumping Nexus of Daft Punk"
+```
+
+### Advanced Character Features
+
+```typescript
+import { SkillAssigner, SpellManager, EquipmentGenerator, AppearanceGenerator, SeededRNG } from 'playlist-data-engine';
+
+const character = CharacterGenerator.generate(track.id, audioProfile, track.title);
+
+// Assign skills based on class (returns Record<Skill, ProficiencyLevel>)
+const rng = new SeededRNG(track.id);
+const skills = SkillAssigner.assignSkills(character.class, rng);
+console.log(`Proficient in:`, Object.entries(skills)
+  .filter(([_, level]) => level !== 'none')
+  .map(([skill, level]) => `${skill} (${level})`)
+  .join(', '));
+// Example: "athletics (proficient), perception (expertise), stealth (proficient)"
+
+// Generate spells for spellcasters
+if (SpellManager.isSpellcaster(character.class)) {
+  // Initialize complete spell configuration (slots, known spells, cantrips)
+  const spellConfig = SpellManager.initializeSpells(character.class, character.level);
+
+  console.log(`Cantrips: ${spellConfig.cantrips.join(', ')}`);
+  console.log(`Known spells: ${spellConfig.known_spells.join(', ')}`);
+  console.log(`Spell slots:`, spellConfig.spell_slots);
+
+  // Or get individual components
+  const spellSlots = SpellManager.getSpellSlots(character.class, character.level);
+  const cantrips = SpellManager.getCantrips(character.class);
+  const knownSpells = SpellManager.getKnownSpells(character.class, character.level);
+}
+
+// Generate starting equipment
+const equipment = EquipmentGenerator.initializeEquipment(character.class);
+console.log(`Weapons:`, equipment.weapons.map(w => `${w.name} x${w.quantity}${w.equipped ? ' (equipped)' : ''}`).join(', '));
+console.log(`Armor:`, equipment.armor.map(a => `${a.name} x${a.quantity}${a.equipped ? ' (equipped)' : ''}`).join(', '));
+console.log(`Items:`, equipment.items.map(i => `${i.name} x${i.quantity}`).join(', '));
+console.log(`Total weight: ${equipment.totalWeight} lbs (${equipment.equippedWeight} lbs equipped)`);
+
+// Generate appearance from seed, class, and audio profile
+const appearance = AppearanceGenerator.generate(track.id, character.class, audioProfile);
+console.log(`Body type: ${appearance.body_type}`);
+console.log(`Hair: ${appearance.hair_color} ${appearance.hair_style}`);
+console.log(`Eyes: ${appearance.eye_color}`);
+console.log(`Skin tone: ${appearance.skin_tone}`);
+console.log(`Facial features: ${appearance.facial_features.join(', ')}`);
+if (appearance.aura_color) {
+  console.log(`Magical aura: ${appearance.aura_color}`);
+}
+```
 
 ### Environmental Sensors
 

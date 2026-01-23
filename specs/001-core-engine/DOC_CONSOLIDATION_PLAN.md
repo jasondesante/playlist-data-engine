@@ -2288,9 +2288,9 @@ Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need sepa
 ### Task 5.3: Enhance USAGE_IN_OTHER_PROJECTS.md
 - [x] Add table of contents for examples section (COMPLETED 2026-01-23)
 - [x] Group examples logically (Basic, Advanced, Specific Features) (COMPLETED 2026-01-23)
-- [ ] Add "Troubleshooting" section if not present
-- [ ] Add "Environment Variables" section if not present
-- [ ] Ensure all harvested examples are integrated
+- [x] Add "Troubleshooting" section if not present (ALREADY EXISTS - Verified 2026-01-23)
+- [x] Add "Environment Variables" section if not present (ALREADY EXISTS - Verified 2026-01-23)
+- [x] Ensure all harvested examples are integrated (COMPLETED 2026-01-23)
 
 **Task 5.3 - Add table of contents for examples section (Completed 2026-01-23)**:
 
@@ -2338,6 +2338,45 @@ Note: `config/index.ts` is a barrel file (re-exports only) and doesn't need sepa
 
 **Files Modified**:
 - `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Added 3 section headers and reorganized TOC
+
+**Task 5.3 - Ensure all harvested examples are integrated (Completed 2026-01-23)**:
+
+**Summary**: Added two new comprehensive examples to USAGE_IN_OTHER_PROJECTS.md covering all unique APIs harvested from README.md and quickstart.md.
+
+**Examples Added**:
+
+1. **Color Extraction and Character Naming** (NEW):
+   - `ColorExtractor.extractPalette()` - Extract color palette from artwork URL
+   - `NamingEngine.generateName(track, audioProfile)` - Generate RPG-style character names
+   - Shows accessing palette properties (primary_color, colors, brightness, saturation, is_monochrome)
+
+2. **Advanced Character Features** (NEW):
+   - `SkillAssigner.assignSkills(characterClass, rng)` - Assign skills based on class with proficiencies
+   - `SpellManager.isSpellcaster(characterClass)` - Check if class is a spellcaster
+   - `SpellManager.initializeSpells(characterClass, characterLevel)` - Initialize complete spell configuration
+   - `SpellManager.getSpellSlots()`, `getCantrips()`, `getKnownSpells()` - Get individual spell components
+   - `EquipmentGenerator.initializeEquipment(characterClass)` - Generate starting equipment with inventory
+   - `AppearanceGenerator.generate(seed, characterClass, audioProfile)` - Generate character appearance
+
+**API Corrections Made**:
+All examples were verified against actual source code to correct discrepancies found in original README.md/quickstart.md:
+- `NamingEngine.generateName()` takes 2 params `(track, audioProfile)`, not 4
+- `SkillAssigner.assignSkills()` is a static method, not instance method
+- `SpellManager` uses `initializeSpells()`, not `generateSpells()` or `generateSpellSlots()`
+- `ColorExtractor.extractPalette()`, not `extractColors()`
+- `EquipmentGenerator.initializeEquipment()` is static, not instance method
+- `AppearanceGenerator.generate()` takes `(seed, class, audioProfile)`, not `(audioProfile, palette)`
+
+**Files Modified**:
+- `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Added 2 new example sections (~70 lines)
+
+**All Harvested Examples Now Integrated**:
+✅ ColorExtractor example
+✅ NamingEngine example
+✅ SkillAssigner example
+✅ SpellManager examples (isSpellcaster, initializeSpells, getSpellSlots, getCantrips, getKnownSpells)
+✅ EquipmentGenerator example
+✅ AppearanceGenerator example
 
 ### Task 5.4: Add cross-references between docs
 - [x] SPEC.md → Add "For API details, see DATA_ENGINE_REFERENCE.md" (COMPLETED 2026-01-23)
