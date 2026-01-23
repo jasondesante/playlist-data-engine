@@ -3308,10 +3308,34 @@ Total time: ~18 minutes to go from zero to working implementation
 ## Phase 7: Cleanup & Removal
 
 ### Task 7.1: Remove obsolete docs
-- [ ] Delete `README.md` (main project README)
+- [x] Delete `README.md` (main project README) (COMPLETED 2026-01-23)
 - [ ] Delete `quickstart.md`
 - [ ] Delete `SUMMARY_PLAN.md` (after harvesting spec information into SPEC.md)
 - [ ] Verify no other files reference these deleted docs
+
+**Task 7.1 - First Subtask Completed (2026-01-23): Delete README.md (main project README)**
+
+**Summary**: README.md has been deleted as planned. All important content was already migrated to the three "trinity" documentation files (SPEC.md, DATA_ENGINE_REFERENCE.md, USAGE_IN_OTHER_PROJECTS.md).
+
+**Verification Before Deletion**:
+- Searched entire codebase for references to README.md
+- Found only references in files also scheduled for deletion (quickstart.md)
+- Found one generic reference in `.github/agents/speckit.constitution.agent.md` as "runtime guidance docs" but this is not a hard dependency
+- No package.json or configuration files reference README.md
+
+**Rationale for Deletion**:
+- README.md contained 478 lines with multiple API inaccuracies documented in Phase 0 analysis
+- All valuable content has already been migrated:
+  - Feature overview → SPEC.md
+  - API documentation → DATA_ENGINE_REFERENCE.md
+  - Usage examples → USAGE_IN_OTHER_PROJECTS.md
+- The "trinity" documentation plan replaces the single README approach
+
+**Files Modified**:
+- `/workspace/README.md` - DELETED (478 lines removed)
+
+**Files Updated**:
+- `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 7.1 checklist status
 
 ### Task 7.2: Update any remaining references
 - [ ] Search codebase for references to deleted files
