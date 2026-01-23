@@ -2748,7 +2748,7 @@ The DATA_ENGINE_REFERENCE.md provides complete API documentation for all 30 clas
 
 ### Task 6.3: USAGE_IN_OTHER_PROJECTS.md final check
 - [x] Verify all examples are complete and runnable (COMPLETED 2026-01-23)
-- [ ] Verify all examples use correct API (post-fixes)
+- [x] Verify all examples use correct API (post-fixes) (COMPLETED 2026-01-23)
 - [ ] Verify installation instructions are accurate
 - [ ] Verify environment variables section is complete
 - [ ] Ask: "Could I install and use this engine just from this doc?"
@@ -2800,6 +2800,113 @@ The DATA_ENGINE_REFERENCE.md provides complete API documentation for all 30 clas
 - `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.3 checklist status
 
 **Build Status**: ✅ PASS - All 837 tests passing, build successful
+
+**Task 6.3 - Second Subtask Completed (2026-01-23): Verify all examples use correct API (post-fixes)**
+
+**Summary**: All code examples in USAGE_IN_OTHER_PROJECTS.md have been verified against actual source code APIs. All examples are correct.
+
+**APIs Verified** (all matched against source):
+
+| Class/Method | Source File | Status |
+|--------------|-------------|--------|
+| `PlaylistParser()` constructor | src/core/parser/PlaylistParser.ts | ✅ |
+| `AudioAnalyzer.extractSonicFingerprint()` | src/core/analysis/AudioAnalyzer.ts | ✅ |
+| `CharacterGenerator.generate()` | src/core/generation/CharacterGenerator.ts | ✅ |
+| `SessionTracker.startSession()` | src/core/progression/SessionTracker.ts:50-57 | ✅ Returns `sessionId` |
+| `SessionTracker.endSession()` | src/core/progression/SessionTracker.ts:79-83 | ✅ Takes `sessionId` |
+| `XPCalculator.calculateSessionXP()` | src/core/progression/XPCalculator.ts | ✅ |
+| `CharacterUpdater.updateCharacterFromSession()` | src/core/progression/CharacterUpdater.ts:38 | ✅ Returns `CharacterUpdateResult` |
+| `ColorExtractor.extractPalette()` | src/core/analysis/ColorExtractor.ts:40 | ✅ |
+| `NamingEngine.generateName()` | src/core/generation/NamingEngine.ts:40 | ✅ Takes 2 params |
+| `SkillAssigner.assignSkills()` | src/core/generation/SkillAssigner.ts | ✅ Static method |
+| `SpellManager.isSpellcaster()` | src/core/generation/SpellManager.ts:25 | ✅ |
+| `SpellManager.initializeSpells()` | src/core/generation/SpellManager.ts:139 | ✅ Returns `SpellSlots` |
+| `SpellManager.getSpellSlots()` | src/core/generation/SpellManager.ts:37 | ✅ |
+| `SpellManager.getCantrips()` | src/core/generation/SpellManager.ts:79 | ✅ |
+| `SpellManager.getKnownSpells()` | src/core/generation/SpellManager.ts:104 | ✅ |
+| `EquipmentGenerator.initializeEquipment()` | src/core/generation/EquipmentGenerator.ts:58 | ✅ Returns `CharacterEquipment` |
+| `AppearanceGenerator.generate()` | src/core/generation/AppearanceGenerator.ts:96 | ✅ Takes 3 params |
+| `EnvironmentalSensors()` constructor | src/core/sensors/EnvironmentalSensors.ts | ✅ String or config |
+| `EnvironmentalSensors.requestPermissions()` | src/core/sensors/EnvironmentalSensors.ts | ✅ |
+| `EnvironmentalSensors.updateSnapshot()` | src/core/sensors/EnvironmentalSensors.ts | ✅ |
+| `EnvironmentalSensors.calculateXPModifier()` | src/core/sensors/EnvironmentalSensors.ts | ✅ No params |
+| `GamingPlatformSensors()` constructor | src/core/sensors/GamingPlatformSensors.ts | ✅ Config object |
+| `GamingPlatformSensors.startMonitoring()` | src/core/sensors/GamingPlatformSensors.ts | ✅ Callback |
+| `GamingPlatformSensors.calculateGamingBonus()` | src/core/sensors/GamingPlatformSensors.ts | ✅ No params |
+| `GamingPlatformSensors.getContext()` | src/core/sensors/GamingPlatformSensors.ts | ✅ Returns `GamingContext` |
+| `CombatEngine()` constructor | src/core/combat/CombatEngine.ts | ✅ Optional config |
+| `CombatEngine.startCombat()` | src/core/combat/CombatEngine.ts:82 | ✅ Returns `CombatInstance` |
+| `CombatEngine.getCurrentCombatant()` | src/core/combat/CombatEngine.ts:122 | ✅ Returns `Combatant` |
+| `CombatEngine.executeAttack()` | src/core/combat/CombatEngine.ts:129 | ✅ Returns `CombatAction` |
+| `CombatEngine.nextTurn()` | src/core/combat/CombatEngine.ts:256 | ✅ |
+| `CombatEngine.getCombatResult()` | src/core/combat/CombatEngine.ts:315 | ✅ Returns `CombatResult` |
+| `CombatEngine.getLivingCombatants()` | src/core/combat/CombatEngine.ts:467 | ✅ Returns `Combatant[]` |
+| `LevelUpProcessor.processLevelUp()` | src/core/progression/LevelUpProcessor.ts:45 | ✅ Returns `LevelUpBenefits` |
+| `LevelUpProcessor.applyLevelUp()` | src/core/progression/LevelUpProcessor.ts:106 | ✅ |
+| `XPCalculator.getConfig()` | src/core/progression/XPCalculator.ts:365 | ✅ |
+| `MasterySystem.checkMastery()` | src/core/progression/MasterySystem.ts:13 | ✅ |
+| `MasterySystem.calculateMasteryBonus()` | src/core/progression/MasterySystem.ts:22 | ✅ |
+
+**Properties Verified** (all exist on their respective types):
+
+| Property | Type | Status |
+|----------|------|--------|
+| `ColorPalette.primary_color` | AudioProfile.ts ColorPalette | ✅ |
+| `ColorPalette.colors` | AudioProfile.ts ColorPalette | ✅ |
+| `ColorPalette.brightness` | AudioProfile.ts ColorPalette | ✅ |
+| `ColorPalette.saturation` | AudioProfile.ts ColorPalette | ✅ |
+| `ColorPalette.is_monochrome` | AudioProfile.ts ColorPalette | ✅ |
+| `CharacterUpdateResult.xpEarned` | CharacterUpdater.ts CharacterUpdateResult | ✅ |
+| `CharacterUpdateResult.leveledUp` | CharacterUpdater.ts CharacterUpdateResult | ✅ |
+| `CharacterUpdateResult.newLevel` | CharacterUpdater.ts CharacterUpdateResult | ✅ |
+| `CharacterUpdateResult.masteredTrack` | CharacterUpdater.ts CharacterUpdateResult | ✅ |
+| `CharacterUpdateResult.masteryBonusXP` | CharacterUpdater.ts CharacterUpdateResult | ✅ |
+| `SpellSlots.spell_slots` | SpellManager.ts SpellSlots | ✅ |
+| `SpellSlots.known_spells` | SpellManager.ts SpellSlots | ✅ |
+| `SpellSlots.cantrips` | SpellManager.ts SpellSlots | ✅ |
+| `CharacterEquipment.weapons` | EquipmentGenerator.ts CharacterEquipment | ✅ |
+| `CharacterEquipment.armor` | EquipmentGenerator.ts CharacterEquipment | ✅ |
+| `CharacterEquipment.items` | EquipmentGenerator.ts CharacterEquipment | ✅ |
+| `CharacterEquipment.totalWeight` | EquipmentGenerator.ts CharacterEquipment | ✅ |
+| `CharacterEquipment.equippedWeight` | EquipmentGenerator.ts CharacterEquipment | ✅ |
+| `InventoryItem.name` | EquipmentGenerator.ts InventoryItem | ✅ |
+| `InventoryItem.quantity` | EquipmentGenerator.ts InventoryItem | ✅ |
+| `InventoryItem.equipped` | EquipmentGenerator.ts InventoryItem | ✅ |
+| `CharacterAppearance.body_type` | AppearanceGenerator.ts CharacterAppearance | ✅ |
+| `CharacterAppearance.hair_color` | AppearanceGenerator.ts CharacterAppearance | ✅ |
+| `CharacterAppearance.hair_style` | AppearanceGenerator.ts CharacterAppearance | ✅ |
+| `CharacterAppearance.eye_color` | AppearanceGenerator.ts CharacterAppearance | ✅ |
+| `CharacterAppearance.skin_tone` | AppearanceGenerator.ts CharacterAppearance | ✅ |
+| `CharacterAppearance.facial_features` | AppearanceGenerator.ts CharacterAppearance | ✅ |
+| `CharacterAppearance.aura_color` | AppearanceGenerator.ts CharacterAppearance | ✅ |
+| `CombatInstance.isActive` | Combat.ts CombatInstance | ✅ |
+| `Combatant.id` | Combat.ts Combatant | ✅ |
+| `Combatant.isDefeated` | Combat.ts Combatant | ✅ |
+| `Combatant.character` | Combat.ts Combatant | ✅ |
+| `CombatResult.description` | Combat.ts CombatResult | ✅ |
+| `CombatResult.xpAwarded` | Combat.ts CombatResult | ✅ |
+| `CombatResult.roundsElapsed` | Combat.ts CombatResult | ✅ |
+| `GamingContext.isActivelyGaming` | Progression.ts GamingContext | ✅ |
+| `GamingContext.currentGame.name` | Progression.ts GamingContext | ✅ |
+| `LevelUpBenefits.newLevel` | LevelUpProcessor.ts LevelUpBenefits | ✅ |
+| `LevelUpBenefits.hitPointIncrease` | LevelUpProcessor.ts LevelUpBenefits | ✅ |
+| `LevelUpBenefits.newHitPointsTotal` | LevelUpProcessor.ts LevelUpBenefits | ✅ |
+| `LevelUpBenefits.newProficiencyBonus` | LevelUpProcessor.ts LevelUpBenefits | ✅ |
+| `LevelUpBenefits.abilityScoreIncrease` | LevelUpProcessor.ts LevelUpBenefits | ✅ |
+| `LevelUpBenefits.newSpellSlots` | LevelUpProcessor.ts LevelUpBenefits | ✅ |
+| `LevelUpBenefits.classFeatures` | LevelUpProcessor.ts LevelUpBenefits | ✅ |
+
+**Note on ColorPalette Interface**:
+The codebase has TWO ColorPalette interfaces:
+- `src/core/types/AudioProfile.ts` - Used by ColorExtractor with properties: `primary_color`, `secondary_color`, `accent_color`, `colors`, `brightness`, `saturation`, `is_monochrome`
+- `src/core/types/ColorPalette.ts` - Standalone type with properties: `primary`, `secondary`, `tertiary`, `background`, `text`, `colors`, `isMonochrome`, `brightness`, `saturation`
+
+USAGE_IN_OTHER_PROJECTS.md correctly uses the AudioProfile.ts version (primary_color, etc.) since that's what ColorExtractor returns.
+
+**No Changes Required**: All APIs and property accesses in USAGE_IN_OTHER_PROJECTS.md are verified correct against actual source code.
+
+**Files Modified**:
+- `/workspace/specs/001-core-engine/DOC_CONSOLIDATION_PLAN.md` - Updated Task 6.3 checklist status and added verification summary
 
 ### Task 6.4: Cross-doc final check
 - [ ] Read all three docs end-to-end
