@@ -124,8 +124,15 @@ Sensors can be configured via environment variables or programmatically.
 - TypeScript compilation: Clean (strict mode enabled)
 - All 10 core features fully implemented and tested
 
-### Known Limitations
-- **External APIs**: Weather (OpenWeatherMap), Steam (Web API), and Discord RPC require developer-provided API keys/credentials.
+### Developer Configuration Required
+
+This engine requires developers to provide API keys. End-users provide their identity (Steam ID, Discord login) through your application's UI—the engine does not handle authentication or OAuth flows.
+
+| Service | Developer Provides | End-User Provides |
+|---------|-------------------|-------------------|
+| Weather (OpenWeatherMap) | API key | — |
+| Steam (Web API) | API key | 64-bit Steam ID |
+| Discord (RPC) | Application client ID | Logged-in Discord client |
 
 ### Optional Enhancements
 These are potential future improvements, not required tasks:
