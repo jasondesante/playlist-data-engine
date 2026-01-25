@@ -272,6 +272,13 @@ console.log(`Environmental bonus: ${xpModifier.toFixed(2)}x`);
 
 ### Gaming Platform Integration
 
+**Discord RPC Dual-Mode:**
+
+The Discord RPC integration now works in both browser and server environments with automatic detection:
+
+- **Server Mode (Node.js)**: Full Discord Rich Presence when running in Node.js
+- **Browser Mode**: Graceful degradation with console warnings (API remains compatible)
+
 ```typescript
 import { GamingPlatformSensors } from 'playlist-data-engine';
 
@@ -283,7 +290,7 @@ const gamingSensors = new GamingPlatformSensors({
     pollInterval: 60000  // Check every 60 seconds
   },
   discord: {
-    clientId: process.env.DISCORD_CLIENT_ID
+    clientId: process.env.DISCORD_CLIENT_ID  // Required for both modes
   }
 });
 
@@ -302,6 +309,13 @@ gamingSensors.startMonitoring((context) => {
 // Stop monitoring when done
 gamingSensors.stopMonitoring();
 ```
+
+**Browser Compatibility Notes:**
+
+- The `@ryuziii/discord-rpc` package is now an **optional dependency**
+- In browser environments, Discord music presence gracefully degrades with warnings
+- Steam game detection works in both browser AND server modes
+- No configuration required - environment is detected automatically
 
 ### Combat System
 
