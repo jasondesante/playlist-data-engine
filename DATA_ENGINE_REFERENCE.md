@@ -1450,20 +1450,54 @@ Integrates with Steam Web API.
 
 **Location:** `src/core/sensors/DiscordRPCClient.ts`
 
-Integrates with Discord Rich Presence for displaying music activity.
+**Dual-Mode Support:**
+- **Server Mode (Node.js)**: Full Discord Rich Presence functionality when running in Node.js
+- **Browser Mode**: Graceful degradation with clear console warnings
 
-**⚠️ IMPORTANT: Discord RPC CANNOT read or set game activity. It is ONLY for displaying music status ("Listening to").**
+**Automatic Environment Detection**: The client auto-detects the environment and switches modes automatically. No configuration required.
+
+**⚠️ IMPORTANT**: Discord RPC CANNOT read or set game activity in any environment. It is ONLY for displaying music status ("Listening to").
+
+**Methods:**
 
 - `async connect(): Promise<boolean>`
-    - Connects to Discord RPC.
+    - **Browser**: Always returns `false` with warning
+    - **Node.js**: Connects to Discord RPC when available
 - `disconnect(): void`
-    - Disconnects from Discord RPC.
+    - Disconnects from Discord RPC (no-op in browser mode)
 - `isConnectedToDiscord(): boolean`
-    - Checks connection status.
-- `setMusicActivity(musicDetails: { songName: string, artistName?: string, albumArtKey?: string, startTime?: number, durationSeconds?: number }): Promise<boolean>`
-    - Displays "Listening to {song}" on Discord profile with progress bar.
+    - Returns connection status (always `false` in browser mode)
+- `getConnectionState(): DiscordConnectionState`
+    - Returns current connection state
+- `getLastError(): string | null`
+    - **Browser**: Returns "Discord Rich Presence requires a server environment (Node.js)"
+    - **Node.js**: Returns last error or `null`
+- `setMusicActivity(musicDetails: { songName: string, artistName?: string, albumArtKey?: string, albumName?: string, startTime?: number, endTime?: number }): Promise<boolean>`
+    - Displays "Listening to {song}" on Discord profile with progress bar (server mode only)
 - `clearMusicActivity(): Promise<boolean>`
-    - Clears music activity from Discord Rich Presence.
+    - Clears music activity from Discord Rich Presence (server mode only)
+- `async getUserInfo(): Promise<DiscordUserInfo | null>`
+    - Retrieves Discord user information (server mode only)
+
+### Discord RPC Environment Modes
+
+The `DiscordRPCClient` supports dual-mode operation:
+
+#### Server Mode (Node.js)
+When running in a Node.js environment, full Discord Rich Presence is available:
+- Real-time connection to Discord's IPC server
+- Music activity display on Discord profile
+- Progress bars, album art, and artist information
+- User info retrieval
+
+#### Browser Mode
+When running in browsers, Discord RPC gracefully degrades:
+- All methods return appropriate defaults (false, null)
+- Console warnings explain the limitation
+- Connection state is `DiscordUnavailable`
+- API remains fully compatible - no breaking changes
+
+**Note**: This behavior is automatic and requires no configuration changes.
 
 ### Discord Types
 
@@ -1480,8 +1514,9 @@ export interface MusicActivityDetails {
     songName: string;
     artistName?: string;
     albumArtKey?: string;
+    albumName?: string;       // For album art text
     startTime?: number;       // Unix timestamp in seconds
-    durationSeconds?: number;
+    endTime?: number;         // Unix timestamp in seconds (replaces durationSeconds)
 }
 
 export interface DiscordActivity {

@@ -1,5 +1,5 @@
 /**
- * DiscordRPCClient - Handles Discord Rich Presence integration
+ * DiscordRPCClient - Dual-Mode Implementation (Server + Browser)
  *
  * Purpose: Display serverless playlist music information on the user's Discord profile
  * via Rich Presence ("Listening to {song}" status).
@@ -25,10 +25,61 @@
  * - Discord running but no user logged in: Same as "not running" (no IPC pipes)
  * - Discord running with user logged in: IPC pipes available, connection succeeds
  *
- * @note Discord RPC requires Node.js environment. Cannot work in browsers due to IPC requirements.
+ * ────────────────────────────────────────────────────────────────────────────────
+ * DUAL-MODE SUPPORT
+ * ────────────────────────────────────────────────────────────────────────────────
+ *
+ * SERVER MODE (Node.js): Full Discord Rich Presence functionality using @ryuziii/discord-rpc
+ * BROWSER MODE: Graceful degradation with clear error messages
+ *
+ * The client auto-detects the environment and switches modes automatically.
+ * No configuration required - it just works in both environments.
+ *
+ * In browser mode, all methods return appropriate defaults (false, null) and log
+ * console warnings explaining that Discord Rich Presence requires a server environment.
  */
-import { DiscordRPCClient as RPCClient } from '@ryuziii/discord-rpc';
 import { Logger } from '../../utils/logger.js';
+
+// Dynamic import placeholder for server-only dependency
+// This will be loaded lazily only in server environments
+let RPCClientModule: any = null;
+
+/**
+ * Check if the current environment is Node.js (server mode)
+ */
+function isServerEnvironment(): boolean {
+    return typeof globalThis.process !== 'undefined' &&
+           globalThis.process.versions != null &&
+           globalThis.process.versions.node != null;
+}
+
+/**
+ * Asynchronously initialize the RPC client module in server environments
+ * This is called lazily when needed to avoid breaking browser builds
+ */
+async function initializeRPCModule(): Promise<boolean> {
+    if (!isServerEnvironment()) {
+        return false;
+    }
+
+    if (RPCClientModule !== null) {
+        return RPCClientModule !== false;
+    }
+
+    try {
+        const module = await import('@ryuziii/discord-rpc');
+        RPCClientModule = module.DiscordRPCClient;
+        return true;
+    } catch (error) {
+        // Package not installed or import failed - fall back to browser mode
+        RPCClientModule = false;
+        const logger = Logger.for('DiscordRPCClient');
+        logger.warn('Failed to load @ryuziii/discord-rpc package - Discord RPC features will be unavailable', {
+            error: error instanceof Error ? error.message : String(error)
+        });
+        return false;
+    }
+}
 
 /**
  * Discord RPC connection states for better error handling
@@ -141,8 +192,10 @@ export interface MusicActivityDetails {
     songName: string;
     artistName?: string;
     albumArtKey?: string;
+    albumName?: string;
     startTime?: number; // Unix timestamp in seconds
-    durationSeconds?: number;
+    endTime?: number; // Unix timestamp in seconds
+    durationSeconds?: number; // Deprecated: Use endTime instead (for backward compatibility)
 }
 
 /**
@@ -200,35 +253,75 @@ export interface DiscordRPCRawEvent {
 
 export class DiscordRPCClient {
     private clientId: string;
-    private rpcClient: RPCClient | null = null;
+    private rpcClient: any = null;
     private isConnected: boolean = false;
     private disconnectRequested: boolean = false;
     private userInfo: DiscordUserInfo | null = null;
-    private connectionState: DiscordConnectionState = DiscordConnectionState.Disconnected;
+    private connectionState: DiscordConnectionState;
     private lastError: string | null = null;
+    private isServerMode: boolean;
     private logger = Logger.for('DiscordRPCClient');
+
+    // Testing-only: Force browser mode for tests
+    private static _forceBrowserMode: boolean = false;
+
+    /**
+     * Testing utility: Force browser mode for testing purposes
+     * @internal
+     */
+    static _setForceBrowserMode(force: boolean): void {
+        this._forceBrowserMode = force;
+    }
 
     constructor(clientId: string = '') {
         this.clientId = clientId;
+
+        // Detect environment and set initial state
+        const isBrowser = !isServerEnvironment() || DiscordRPCClient._forceBrowserMode;
+
+        if (isBrowser) {
+            // Browser mode
+            this.isServerMode = false;
+            this.connectionState = DiscordConnectionState.DiscordUnavailable;
+            this.lastError = 'Discord Rich Presence requires a server environment (Node.js). Browser mode is not supported by Discord.';
+            this.logger.warn('DiscordRPCClient running in browser mode - Rich Presence features are unavailable. Use server mode for Discord integration.');
+        } else {
+            // Server mode (Node.js)
+            this.isServerMode = true;
+            this.connectionState = DiscordConnectionState.Disconnected;
+            this.lastError = null;
+        }
     }
 
     /**
      * Connect to Discord RPC
-     * Uses @ryuziii/discord-rpc library for real connection
+     *
+     * In server mode: Uses @ryuziii/discord-rpc library for real connection
+     * In browser mode: Returns false with appropriate warning
      *
      * @returns true if connection attempt initiated successfully, false otherwise
-     *
-     * Error scenarios:
-     * - No client ID provided: Returns false with warning
-     * - Discord not running: Returns false (IPC pipe unavailable)
-     * - Discord running but user not logged in: Returns false (same as not running)
-     * - Network/connection error: Returns false with error details
      */
     async connect(): Promise<boolean> {
+        // Browser mode - not supported
+        if (!this.isServerMode) {
+            this.logger.warn('Discord RPC connect() called in browser mode - Discord Rich Presence requires server environment');
+            return false;
+        }
+
+        // Server mode validation
         if (!this.clientId) {
             this.logger.warn('Discord client ID not provided');
             this.connectionState = DiscordConnectionState.Error;
             this.lastError = 'Discord client ID not provided';
+            return false;
+        }
+
+        // Initialize RPC module (lazy load)
+        const moduleLoaded = await initializeRPCModule();
+        if (!moduleLoaded || !RPCClientModule) {
+            this.connectionState = DiscordConnectionState.DiscordUnavailable;
+            this.lastError = 'Discord RPC module not available - ensure @ryuziii/discord-rpc is installed';
+            this.logger.warn('Discord RPC module not available');
             return false;
         }
 
@@ -238,7 +331,7 @@ export class DiscordRPCClient {
 
         try {
             // Create the RPC client with IPC transport
-            this.rpcClient = new RPCClient({
+            this.rpcClient = new RPCClientModule({
                 clientId: this.clientId,
                 transport: 'ipc'
             });
@@ -246,19 +339,13 @@ export class DiscordRPCClient {
             // Set up event handlers for connection state
             this.setupEventHandlers();
 
-            // Attempt connection (the library handles auto-reconnect internally)
+            // Attempt connection
             await this.rpcClient.connect();
 
-            // The 'ready' event will set isConnected to true when connection is established
-            // For now, return true to indicate connection attempt was initiated
             return true;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
-            // Determine if this is a "Discord not available" error
-            // Common errors when Discord is not running or user not logged in:
-            // - ECONNREFUSED: IPC pipe doesn't exist or can't connect
-            // - ENOENT: Pipe/socket file not found
             const isDiscordUnavailable = errorMessage.includes('ECONNREFUSED') ||
                                          errorMessage.includes('ENOENT') ||
                                          errorMessage.includes('connect') ||
@@ -267,7 +354,7 @@ export class DiscordRPCClient {
             if (isDiscordUnavailable) {
                 this.connectionState = DiscordConnectionState.DiscordUnavailable;
                 this.lastError = 'Discord is not running or no user is logged in';
-                this.logger.warn('Discord RPC unavailable - Please ensure Discord is running and you are logged in', { error: this.lastError });
+                this.logger.warn('Discord RPC unavailable - Please ensure Discord is running and you are logged in');
             } else {
                 this.connectionState = DiscordConnectionState.Error;
                 this.lastError = errorMessage;
@@ -277,8 +364,6 @@ export class DiscordRPCClient {
             this.isConnected = false;
             this.rpcClient = null;
 
-            // Don't auto-retry here - the library handles reconnection internally
-            // We just report the initial connection failure
             return false;
         }
     }
@@ -290,14 +375,11 @@ export class DiscordRPCClient {
         if (!this.rpcClient) return;
 
         // Use raw event handler to capture the READY event with user data
-        // Note: onRawEvent exists in the JS library but may not be in TS declarations
         const clientWithRawEvent = this.rpcClient as unknown as {
             onRawEvent: (handler: (op: number, data: DiscordRPCRawEvent) => void) => void;
         };
         clientWithRawEvent.onRawEvent((op: number, data: DiscordRPCRawEvent) => {
-            // Opcode 1 is FRAME, which contains commands/events
             if (op === 1 && data && data.evt === 'READY') {
-                // Extract user information from READY event
                 if (data.data && data.data.user) {
                     const user = data.data.user;
                     this.userInfo = {
@@ -322,7 +404,6 @@ export class DiscordRPCClient {
         // Disconnection
         this.rpcClient.on('disconnected', () => {
             if (!this.disconnectRequested) {
-                // Unexpected disconnection
                 this.logger.warn('Discord RPC disconnected unexpectedly');
                 this.connectionState = DiscordConnectionState.DiscordUnavailable;
                 this.lastError = 'Unexpectedly disconnected from Discord';
@@ -330,7 +411,6 @@ export class DiscordRPCClient {
                 this.connectionState = DiscordConnectionState.Disconnected;
             }
             this.isConnected = false;
-            // Clear cached user info on disconnect
             this.userInfo = null;
         });
 
@@ -347,6 +427,11 @@ export class DiscordRPCClient {
      * Disconnect from Discord RPC
      */
     disconnect(): void {
+        if (!this.isServerMode) {
+            this.connectionState = DiscordConnectionState.Disconnected;
+            return;
+        }
+
         this.disconnectRequested = true;
         this.connectionState = DiscordConnectionState.Disconnected;
         if (this.rpcClient) {
@@ -364,19 +449,12 @@ export class DiscordRPCClient {
      * Check if connected to Discord
      */
     isConnectedToDiscord(): boolean {
+        if (!this.isServerMode) return false;
         return this.isConnected && this.rpcClient !== null;
     }
 
     /**
      * Get the current connection state
-     *
-     * @returns The current DiscordConnectionState
-     *
-     * @example
-     * const state = discordClient.getConnectionState();
-     * if (state === DiscordConnectionState.DiscordUnavailable) {
-     *   console.log('Please open Discord and log in');
-     * }
      */
     getConnectionState(): DiscordConnectionState {
         return this.connectionState;
@@ -384,54 +462,48 @@ export class DiscordRPCClient {
 
     /**
      * Get the last error message
-     *
-     * @returns The last error message, or null if no error occurred
      */
     getLastError(): string | null {
+        if (!this.isServerMode) {
+            return 'Discord Rich Presence requires a server environment (Node.js)';
+        }
         return this.lastError;
     }
 
     /**
      * Set music activity on Discord Rich Presence
      *
-     * Displays "Listening to {song}" on the user's Discord profile with:
-     * - Activity type 2 (Listening to) for proper music display
-     * - Song name in details field
-     * - Artist name in state field (optional)
-     * - Progress bar showing song position/duration (optional)
-     * - Album art (optional, requires Discord application upload)
-     *
      * @param musicDetails - Music information to display
      * @returns true if successful, false otherwise
-     *
-     * @example
-     * await discordClient.setMusicActivity({
-     *     songName: "Never Gonna Give You Up",
-     *     artistName: "Rick Astley",
-     *     albumArtKey: "album1", // optional
-     *     startTime: Date.now() / 1000, // optional, for progress bar
-     *     durationSeconds: 212 // optional, for progress bar
-     * });
      */
     async setMusicActivity(musicDetails: MusicActivityDetails): Promise<boolean> {
+        if (!this.isServerMode) {
+            this.logger.warn('Discord RPC setMusicActivity() called in browser mode - Discord Rich Presence requires server environment', {
+                songName: musicDetails.songName
+            });
+            return false;
+        }
+
         if (!this.isConnected || !this.rpcClient) {
+            this.logger.warn('Cannot set music activity - not connected to Discord');
             return false;
         }
 
         try {
-            // Build activity object for Discord RPC with type 2 (Listening)
             const activity: DiscordActivity = {
                 type: ActivityType.Listening,
                 details: musicDetails.songName,
             };
 
-            // Add artist name if provided
             if (musicDetails.artistName) {
                 activity.state = `by ${musicDetails.artistName}`;
             }
 
-            // Add timestamps for progress bar if duration provided
-            if (musicDetails.durationSeconds && musicDetails.startTime) {
+            // Handle timestamps (support both endTime and durationSeconds for backward compatibility)
+            if (musicDetails.endTime && musicDetails.startTime) {
+                activity.startTimestamp = musicDetails.startTime;
+                activity.endTimestamp = musicDetails.endTime;
+            } else if (musicDetails.durationSeconds && musicDetails.startTime) {
                 activity.startTimestamp = musicDetails.startTime;
                 activity.endTimestamp = musicDetails.startTime + musicDetails.durationSeconds;
             } else if (musicDetails.durationSeconds) {
@@ -441,18 +513,17 @@ export class DiscordRPCClient {
                 activity.endTimestamp = now + musicDetails.durationSeconds;
             }
 
-            // Add album art if provided
             if (musicDetails.albumArtKey) {
                 activity.largeImageKey = musicDetails.albumArtKey;
-                activity.largeImageText = musicDetails.songName;
+                activity.largeImageText = musicDetails.albumName || musicDetails.songName;
             }
 
-            // Set activity using the real RPC client
             this.rpcClient.setActivity(activity);
 
             return true;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
+            this.lastError = `Failed to set activity: ${errorMessage}`;
             this.logger.warn('Failed to update Discord music activity', { error: errorMessage });
             return false;
         }
@@ -462,16 +533,21 @@ export class DiscordRPCClient {
      * Clear music activity from Discord Rich Presence
      */
     async clearMusicActivity(): Promise<boolean> {
+        if (!this.isServerMode) {
+            this.logger.warn('Discord RPC clearMusicActivity() called in browser mode - Discord Rich Presence requires server environment');
+            return false;
+        }
+
         if (!this.isConnected || !this.rpcClient) {
             return false;
         }
 
         try {
-            // Clear activity using the real RPC client
             this.rpcClient.clearActivity();
             return true;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
+            this.lastError = `Failed to clear activity: ${errorMessage}`;
             this.logger.warn('Failed to clear Discord music activity', { error: errorMessage });
             return false;
         }
@@ -479,38 +555,21 @@ export class DiscordRPCClient {
 
     /**
      * Get Discord user info
-     *
-     * Returns cached user information from the READY event.
-     * The user info is automatically captured when connecting to Discord.
-     *
-     * @returns User information if connected and available, null otherwise
-     *
-     * @example
-     * const userInfo = await discordClient.getUserInfo();
-     * if (userInfo) {
-     *   console.log(`Connected as ${userInfo.username}#${userInfo.discriminator}`);
-     * }
-     *
-     * @note Returns null if:
-     * - Not connected to Discord
-     * - Connection failed or not yet established
-     * - READY event has not been received yet
-     * - User info was malformed in READY event
      */
     async getUserInfo(): Promise<DiscordUserInfo | null> {
-        // Return null if not connected
+        if (!this.isServerMode) {
+            this.logger.warn('Discord RPC getUserInfo() called in browser mode - Discord Rich Presence requires server environment');
+            return null;
+        }
+
         if (!this.isConnected) {
             return null;
         }
 
-        // Return null if user info not yet available from READY event
-        // (it may take a moment after connection before READY is received)
         if (!this.userInfo) {
             return null;
         }
 
-        // Return cached user info
         return { ...this.userInfo };
     }
-
 }

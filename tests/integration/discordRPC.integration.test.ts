@@ -22,16 +22,23 @@ import { DiscordRPCClient, DiscordConnectionState, ActivityType } from '../../sr
 // In production, this should be a real Discord application client ID
 const TEST_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '1234567890123456789';
 
-describe('DiscordRPCClient - Integration Tests (Requires Discord Running)', () => {
+describe('DiscordRPCClient - Integration Tests (Server Mode Only)', () => {
     let discordClient: DiscordRPCClient;
     let discordAvailable: boolean = false;
     let connectionError: string | null = null;
 
     /**
      * Set up: Attempt to connect to Discord RPC
-     * Tests will be skipped if Discord is not available
+     * Tests will be skipped if Discord is not available or not in server environment
      */
     beforeAll(async () => {
+        // Check if running in server environment (Node.js)
+        const isServer = typeof process !== 'undefined' && process.versions?.node;
+        if (!isServer) {
+            console.warn('Skipping Discord RPC integration tests - server mode required (Node.js only)');
+            return;
+        }
+
         discordClient = new DiscordRPCClient(TEST_CLIENT_ID);
 
         // Attempt connection

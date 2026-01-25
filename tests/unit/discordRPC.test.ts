@@ -5,7 +5,7 @@
  * the DiscordRPCClient behavior in isolation without requiring Discord to be running.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { DiscordRPCClient, ActivityType, DiscordConnectionState } from '../../src/core/sensors/DiscordRPCClient';
 import { Logger, LogLevel, type LogEntry } from '../../src/utils/logger';
 
@@ -906,5 +906,122 @@ describe('Logger - Verbose Mode', () => {
         expect(Logger.isDiagnosticMode()).toBe(true);
         expect(Logger.isVerbose()).toBe(false);
         expect(Logger.getLevel()).toBe(LogLevel.INFO);
+    });
+});
+
+// ────────────────────────────────────────────────────────────────────────────────
+// DUAL-MODE TESTS (Browser + Server)
+// ────────────────────────────────────────────────────────────────────────────────
+
+describe('DiscordRPCClient - Browser Mode', () => {
+    let originalForceMode: boolean;
+
+    beforeAll(() => {
+        // Save original force mode and enable browser mode for all tests
+        originalForceMode = (DiscordRPCClient as any)._forceBrowserMode;
+        (DiscordRPCClient as any)._setForceBrowserMode(true);
+    });
+
+    afterAll(() => {
+        // Restore original force mode
+        (DiscordRPCClient as any)._setForceBrowserMode(originalForceMode);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        Logger.reset();
+    });
+
+    it('should detect browser environment and return DiscordUnavailable', () => {
+        const client = new DiscordRPCClient('test-client-id');
+
+        expect(client.getConnectionState()).toBe(DiscordConnectionState.DiscordUnavailable);
+        expect(client.isConnectedToDiscord()).toBe(false);
+    });
+
+    it('should return false for connect() in browser mode', async () => {
+        const client = new DiscordRPCClient('test-client-id');
+        const result = await client.connect();
+
+        expect(result).toBe(false);
+        expect(client.getConnectionState()).toBe(DiscordConnectionState.DiscordUnavailable);
+    });
+
+    it('should return false for setMusicActivity() in browser mode', async () => {
+        const client = new DiscordRPCClient('test-client-id');
+        const result = await client.setMusicActivity({
+            songName: 'Test Song',
+            artistName: 'Test Artist'
+        });
+
+        expect(result).toBe(false);
+    });
+
+    it('should return false for clearMusicActivity() in browser mode', async () => {
+        const client = new DiscordRPCClient('test-client-id');
+        const result = await client.clearMusicActivity();
+
+        expect(result).toBe(false);
+    });
+
+    it('should return null for getUserInfo() in browser mode', async () => {
+        const client = new DiscordRPCClient('test-client-id');
+        const result = await client.getUserInfo();
+
+        expect(result).toBeNull();
+    });
+
+    it('should provide clear error message in browser mode', () => {
+        const client = new DiscordRPCClient('test-client-id');
+        const error = client.getLastError();
+
+        // Error should be a string containing the browser limitation message
+        expect(typeof error).toBe('string');
+        expect(error).toBeTruthy();
+        expect(error).toContain('server environment');
+    });
+
+    it('should handle disconnect() gracefully in browser mode', () => {
+        const client = new DiscordRPCClient('test-client-id');
+
+        // Should not throw
+        expect(() => client.disconnect()).not.toThrow();
+        expect(client.getConnectionState()).toBe(DiscordConnectionState.Disconnected);
+    });
+});
+
+describe('DiscordRPCClient - Server Mode (Node.js)', () => {
+    it('should detect Node.js environment', () => {
+        // These tests run in Node.js (Vitest environment)
+        const client = new DiscordRPCClient('test-client-id');
+
+        // In server mode, should initialize with Disconnected state (not DiscordUnavailable)
+        expect(client.getConnectionState()).not.toBe(DiscordConnectionState.DiscordUnavailable);
+        expect(client.getConnectionState()).toBe(DiscordConnectionState.Disconnected);
+    });
+
+    it('should not log browser mode warning in server mode', () => {
+        const logEntries: LogEntry[] = [];
+
+        Logger.configure({
+            level: LogLevel.WARN,
+            customHandler: (entry) => logEntries.push(entry)
+        });
+
+        new DiscordRPCClient('test-client-id');
+
+        // Should not log browser mode warning
+        expect(logEntries.some(entry =>
+            entry.message.includes('browser mode')
+        )).toBe(false);
+
+        Logger.reset();
+    });
+
+    it('should have null lastError initially in server mode', () => {
+        const client = new DiscordRPCClient('test-client-id');
+
+        // In server mode, lastError should be null initially (not set to browser error)
+        expect(client.getLastError()).toBeNull();
     });
 });

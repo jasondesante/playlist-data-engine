@@ -128,11 +128,19 @@ Sensors can be configured via environment variables or programmatically.
 
 This engine requires developers to provide API keys. End-users provide their identity (Steam ID, Discord login) through your application's UI—the engine does not handle authentication or OAuth flows.
 
-| Service | Developer Provides | End-User Provides |
-|---------|-------------------|-------------------|
-| Weather (OpenWeatherMap) | API key | — |
-| Steam (Web API) | API key | 64-bit Steam ID |
-| Discord (RPC) | Application client ID | Logged-in Discord client |
+| Service | Developer Provides | End-User Provides | Mode |
+|---------|-------------------|-------------------|-------|
+| Weather (OpenWeatherMap) | API key | — | Browser + Server |
+| Steam (Web API) | API key | 64-bit Steam ID | Browser + Server |
+| Discord (RPC) | Application client ID | Logged-in Discord client | **Server only** |
+
+### Discord RPC Dual-Mode Support
+
+**Server Mode (Node.js)**: Full Discord Rich Presence functionality is available when the package runs in a Node.js environment. The `@ryuziii/discord-rpc` dependency is automatically detected and used.
+
+**Browser Mode**: When running in browsers, Discord RPC gracefully degrades with clear console warnings explaining that Discord Rich Presence requires a server environment. The API remains fully compatible - all methods exist and return appropriate defaults (false, null).
+
+**Automatic Detection**: The DiscordRPCClient auto-detects the environment and switches modes automatically. No configuration required.
 
 ### Optional Enhancements
 These are potential future improvements, not required tasks:
