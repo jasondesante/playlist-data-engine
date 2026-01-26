@@ -3,7 +3,7 @@
  * Based on specs/001-core-engine/SPEC.md and D&D 5e rules
  */
 
-import type { CharacterSheet, Class as CharacterClass, Ability } from '../types/Character.js';
+import type { CharacterSheet, Class as CharacterClass, Ability, GameMode } from '../types/Character.js';
 import { CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
 import { SeededRNG } from '../../utils/random.js';
 import type { StatManager } from './stat/StatManager.js';
@@ -41,12 +41,40 @@ export interface LevelUpBenefits {
 const ABILITY_SCORE_INCREASE_LEVELS = [4, 8, 12, 16, 19];
 
 /**
+ * Configuration for uncapped mode progression
+ * Provide formulas that work for ALL levels (1-infinity), not just beyond 20
+ */
+export interface UncappedProgressionConfig {
+    /** Custom formula for calculating XP threshold for ANY level */
+    xpFormula?: (level: number) => number;
+    /** Custom formula for calculating proficiency bonus for ANY level */
+    proficiencyBonusFormula?: (level: number) => number;
+}
+
+/**
  * LevelUpProcessor class - Processes character level-ups
  * Handles HP increases, ability score improvements, spell slots, and features
  */
 export class LevelUpProcessor {
     /** Optional StatManager for advanced stat increase handling */
     private static statManager?: StatManager;
+    /** Optional configuration for uncapped mode progression */
+    private static uncappedConfig?: UncappedProgressionConfig;
+
+    /**
+     * Set configuration for uncapped mode progression
+     * @param config - Configuration with optional custom formulas
+     */
+    static setUncappedConfig(config: UncappedProgressionConfig): void {
+        this.uncappedConfig = config;
+    }
+
+    /**
+     * Get the current uncapped configuration
+     */
+    static getUncappedConfig(): UncappedProgressionConfig | undefined {
+        return this.uncappedConfig;
+    }
 
     /**
      * Set the StatManager instance for stat increase handling
@@ -76,8 +104,13 @@ export class LevelUpProcessor {
         newLevel: number,
         seed?: string
     ): LevelUpBenefits {
-        if (newLevel < 1 || newLevel > 20) {
-            throw new Error('Level must be between 1 and 20');
+        // Read gameMode from character (defaults to 'standard' for backward compatibility)
+        const gameMode: GameMode = character.gameMode || 'standard';
+        const isUncapped = gameMode === 'uncapped';
+        const maxLevel = isUncapped ? Infinity : 20;
+
+        if (newLevel < 1 || newLevel > maxLevel) {
+            throw new Error(`Level must be between 1 and ${maxLevel}`);
         }
 
         const classData = CLASS_DATA[character.class];
@@ -94,8 +127,8 @@ export class LevelUpProcessor {
 
         const newHitPointsTotal = character.hp.max + hitPointIncrease;
 
-        // Get new proficiency bonus
-        const newProficiencyBonus = PROFICIENCY_BONUS[newLevel];
+        // Get new proficiency bonus (use custom formula for uncapped mode)
+        const newProficiencyBonus = this.getProficiencyBonus(newLevel, isUncapped);
         const proficiencyBonusIncrease = newProficiencyBonus - character.proficiency_bonus;
 
         // Create benefits object
@@ -107,8 +140,12 @@ export class LevelUpProcessor {
             newProficiencyBonus,
         };
 
-        // Check for ability score increase (levels 4, 8, 12, 16, 19)
-        if (this.statManager && ABILITY_SCORE_INCREASE_LEVELS.includes(newLevel)) {
+        // Check for ability score increase
+        // - Standard mode: levels 4, 8, 12, 16, 19
+        // - Uncapped mode: every level
+        const isStatIncreaseLevel = isUncapped || ABILITY_SCORE_INCREASE_LEVELS.includes(newLevel);
+
+        if (this.statManager && isStatIncreaseLevel) {
             // Use StatManager for advanced stat increase handling
             const statResult = this.statManager.processLevelUp(character, newLevel);
 
@@ -161,12 +198,15 @@ export class LevelUpProcessor {
         updated.proficiency_bonus = benefits.newProficiencyBonus;
 
         // Apply ability score increases if applicable
+        // Determine stat cap based on game mode
+        const statCap = updated.gameMode === 'uncapped' ? Infinity : 20;
+
         if (benefits.abilityScoreIncreases && benefits.abilityScoreIncreases.length > 0) {
             // New: Handle multiple stat increases
             for (const increase of benefits.abilityScoreIncreases) {
                 const ability = increase.ability;
                 updated.ability_scores[ability] = Math.min(
-                    20,
+                    statCap,
                     updated.ability_scores[ability] + increase.increase
                 );
 
@@ -178,7 +218,7 @@ export class LevelUpProcessor {
             // Backward compatibility: Handle single stat increase
             const ability = benefits.abilityScoreIncrease.ability;
             updated.ability_scores[ability] = Math.min(
-                20,
+                statCap,
                 updated.ability_scores[ability] + benefits.abilityScoreIncrease.increase
             );
 
@@ -358,44 +398,120 @@ export class LevelUpProcessor {
 
     /**
      * Get the XP threshold for a specific level
-     * Using D&D 5e standard progression from constants
-     * @param level - The level (1-20)
+     * - Standard mode: Uses D&D 5e tables (levels 1-20 only)
+     * - Uncapped mode with custom formula: Uses your formula for ALL levels
+     * - Uncapped mode without custom formula: Continues D&D 5e pattern naturally
+     * @param level - The level
+     * @param isUncapped - Whether this is for uncapped mode
      * @returns XP required to reach that level
      */
-    static getXPThreshold(level: number): number {
-        if (level < 1 || level > 20) {
-            throw new Error('Level must be between 1 and 20');
+    static getXPThreshold(level: number, isUncapped: boolean = false): number {
+        if (level < 1) {
+            throw new Error('Level must be at least 1');
         }
 
-        return XP_THRESHOLDS[level];
+        // Standard mode: use D&D 5e tables (cap at level 20)
+        if (!isUncapped) {
+            if (level > 20) {
+                throw new Error('Standard mode only supports levels 1-20');
+            }
+            return XP_THRESHOLDS[level];
+        }
+
+        // Uncapped mode: use custom formula if provided (for ALL levels)
+        if (this.uncappedConfig?.xpFormula) {
+            return this.uncappedConfig.xpFormula(level);
+        }
+
+        // Uncapped mode default: Continue D&D 5e pattern naturally
+        // The pattern is: XP(n) = XP(n-1) + (n-1) × n × 500
+        // This exactly matches D&D 5e for levels 1-20 and continues naturally
+        if (level <= 20) {
+            return XP_THRESHOLDS[level];
+        }
+
+        // For levels beyond 20, continue the pattern
+        // Level 21: 355000 + 20*21*500 = 355000 + 210000 = 565000
+        // Level 25: ~735000
+        // Level 30: ~1,120,000
+        let xp = 355000; // Start from level 20
+        for (let lvl = 21; lvl <= level; lvl++) {
+            xp += (lvl - 1) * lvl * 500;
+        }
+        return xp;
+    }
+
+    /**
+     * Get the proficiency bonus for a specific level
+     * - Standard mode: Uses D&D 5e tables (levels 1-20 only)
+     * - Uncapped mode with custom formula: Uses your formula for ALL levels
+     * - Uncapped mode without custom formula: Continues D&D 5e pattern (+1 every 4 levels)
+     * @param level - The level
+     * @param isUncapped - Whether this is for uncapped mode
+     * @returns Proficiency bonus for that level
+     */
+    static getProficiencyBonus(level: number, isUncapped: boolean = false): number {
+        // Standard mode: use D&D 5e tables (cap at level 20)
+        if (!isUncapped) {
+            if (level < 1 || level > 20) {
+                throw new Error('Standard proficiency bonus only defined for levels 1-20');
+            }
+            return PROFICIENCY_BONUS[level];
+        }
+
+        // Uncapped mode: use custom formula if provided (for ALL levels)
+        if (this.uncappedConfig?.proficiencyBonusFormula) {
+            return this.uncappedConfig.proficiencyBonusFormula(level);
+        }
+
+        // Uncapped mode default: Continue D&D 5e pattern (+1 every 4 levels)
+        // Level 1-4: 2, Level 5-8: 3, Level 9-12: 4, Level 13-16: 5, Level 17-20: 6
+        // Level 21-24: 6, Level 25-28: 7, Level 29-32: 8, etc.
+        if (level <= 4) return 2;
+        if (level <= 8) return 3;
+        if (level <= 12) return 4;
+        if (level <= 16) return 5;
+        return 2 + Math.floor((level - 1) / 4);
     }
 
     /**
      * Calculate level from total XP
      * @param totalXP - Total experience points
-     * @returns Character level (1-20)
+     * @param isUncapped - Whether this is for uncapped mode (allows infinite levels)
+     * @returns Character level
      */
-    static calculateLevel(totalXP: number): number {
-        for (let level = 20; level >= 1; level--) {
-            if (totalXP >= this.getXPThreshold(level)) {
-                return level;
+    static calculateLevel(totalXP: number, isUncapped: boolean = false): number {
+        if (!isUncapped) {
+            // Standard mode: cap at 20
+            for (let level = 20; level >= 1; level--) {
+                if (totalXP >= this.getXPThreshold(level, false)) {
+                    return level;
+                }
             }
+            return 1;
         }
-        return 1;
+
+        // Uncapped mode: search upward from 1
+        let level = 1;
+        while (totalXP >= this.getXPThreshold(level + 1, true)) {
+            level++;
+        }
+        return level;
     }
 
     /**
      * Get XP needed to reach next level
      * @param currentLevel - Current character level
-     * @returns XP needed to advance to next level
+     * @param isUncapped - Whether this is for uncapped mode
+     * @returns XP needed to advance to next level, or 0 if at max (or if uncapped, always returns next threshold)
      */
-    static getXPToNextLevel(currentLevel: number): number {
-        if (currentLevel >= 20) {
-            return 0; // Already at max level
+    static getXPToNextLevel(currentLevel: number, isUncapped: boolean = false): number {
+        if (!isUncapped && currentLevel >= 20) {
+            return 0; // At max level in standard mode
         }
 
-        const currentThreshold = this.getXPThreshold(currentLevel);
-        const nextThreshold = this.getXPThreshold(currentLevel + 1);
+        const currentThreshold = this.getXPThreshold(currentLevel, isUncapped);
+        const nextThreshold = this.getXPThreshold(currentLevel + 1, isUncapped);
 
         return nextThreshold - currentThreshold;
     }
@@ -404,15 +520,16 @@ export class LevelUpProcessor {
      * Get progress to next level as a percentage
      * @param currentLevel - Current level
      * @param currentXP - Total XP within level thresholds
+     * @param isUncapped - Whether this is for uncapped mode
      * @returns Percentage (0-100) towards next level
      */
-    static getProgressPercentage(currentLevel: number, currentXP: number): number {
-        if (currentLevel >= 20) {
+    static getProgressPercentage(currentLevel: number, currentXP: number, isUncapped: boolean = false): number {
+        if (!isUncapped && currentLevel >= 20) {
             return 100;
         }
 
-        const currentThreshold = this.getXPThreshold(currentLevel);
-        const nextThreshold = this.getXPThreshold(currentLevel + 1);
+        const currentThreshold = this.getXPThreshold(currentLevel, isUncapped);
+        const nextThreshold = this.getXPThreshold(currentLevel + 1, isUncapped);
 
         const progressXP = currentXP - currentThreshold;
         const totalXP = nextThreshold - currentThreshold;

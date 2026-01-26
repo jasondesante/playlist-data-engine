@@ -236,6 +236,8 @@ export type Skill =
 
 export type ProficiencyLevel = 'none' | 'proficient' | 'expertise';
 
+export type GameMode = 'standard' | 'uncapped';
+
 export interface Attack {
     name: string;
     bonus?: number;
@@ -372,6 +374,9 @@ export interface CharacterSheet {
 
     /** Generation timestamp */
     generated_at: string;
+
+    /** Game mode for stat progression (standard = capped at 20, uncapped = no limits) */
+    gameMode?: GameMode;
 
 }
 ```
@@ -937,6 +942,7 @@ The `CharacterGenerator` creates deterministic D&D 5e character sheets based on 
         - `name`: Character name.
         - `options.level`: Starting level (1-20). Default: `1`.
         - `options.forceClass`: Override the suggested class.
+        - `options.gameMode`: Game mode for stat progression (`'standard'` or `'uncapped'`). Default: `'standard'`.
     - **Returns:** A complete `CharacterSheet` with:
         - Race, Class, Level
         - Ability Scores (STR, DEX, etc.)
@@ -1351,20 +1357,160 @@ new StatManager(config?: Partial<StatIncreaseConfig>)
     - Check if an ability can be increased by a given amount
     - Returns false if stat would exceed cap
 
-- `getStatCap(ability): number`
-    - Get the stat cap for an ability
+- `getStatCap(character, ability): number`
+    - Get the stat cap for an ability (reads gameMode from character)
+
+- `updateConfig(config): void`
+    - Update configuration mid-game
+    - Use to change stat increase strategies dynamically
+    - Can adjust stat cap or stat increase levels
+
+### Configuration
+
+**updateConfig() - Change Strategy Mid-Game:**
+
+```typescript
+const statManager = new StatManager();
+
+// Start with manual selection (D&D 5e standard)
+// Early game: Player manually chooses stats
+const result = statManager.processLevelUp(character, 4, {
+    forcedAbilities: ['STR']  // Player chose STR
+});
+
+// Mid-game: Switch to smart auto-selection
+// Example: After reaching level 10, automate stat increases
+statManager.updateConfig({
+    strategy: 'dnD5e_smart'
+});
+
+// Now level-ups are automatic - no manual input needed!
+const level11Result = statManager.processLevelUp(character, 11);
+
+// Late-game: Switch to balanced strategy
+statManager.updateConfig({
+    strategy: 'balanced'
+});
+```
+
+**Stat Decreases (Curses, Poison, etc.):**
+
+```typescript
+const statManager = new StatManager();
+
+// Curse of Weakness: -2 STR penalty
+const curseResult = statManager.decreaseStats(
+    character,
+    [{ ability: 'STR', amount: 2 }],
+    'event'
+);
+
+character = curseResult.character;
+
+// Check actual decrease
+for (const dec of curseResult.increases) {
+    console.log(`${dec.ability}: ${dec.oldValue} → ${dec.newValue} (${dec.delta})`);
+    // Output: "STR: 16 → 14 (-2)"
+}
+
+// Poison: -1 DEX, -1 CON
+const poisonResult = statManager.decreaseStats(
+    character,
+    [
+        { ability: 'DEX', amount: 1 },
+        { ability: 'CON', amount: 1 }
+    ],
+    'event'
+);
+
+// Remove curse with potion (restores stats)
+const restoreResult = statManager.increaseStats(
+    character,
+    [{ ability: 'STR', amount: 2 }],
+    'item'
+);
+```
+
+### Optional Features (Developer Implementation)
+
+**Banked Stat Points:**
+
+The engine does not include a "banked stat points" system. Stat increases must be applied immediately - they are not stored for later use. If your game requires this feature, you'll need to implement it yourself:
+
+```typescript
+// Example: Custom banked points system
+interface BankedPoints {
+    available: number;
+    history: Array<{ timestamp: number; source: string; amount: number }>;
+}
+
+class CharacterWithBankedPoints {
+    character: CharacterSheet;
+    banked: BankedPoints;
+
+    // Apply banked points to a stat
+    applyBankedPoints(ability: Ability, amount: number): void {
+        if (this.banked.available < amount) {
+            throw new Error('Not enough banked points');
+        }
+
+        const statManager = new StatManager();
+        const result = statManager.increaseStats(
+            this.character,
+            [{ ability, amount }],
+            'manual'
+        );
+
+        this.character = result.character;
+        this.banked.available -= amount;
+        this.banked.history.push({
+            timestamp: Date.now(),
+            source: 'banked',
+            amount
+        });
+    }
+}
+```
+
+**Respec System:**
+
+Similarly, a stat respec system is not included. You can implement this by tracking the history of stat increases:
+
+```typescript
+// Example: Custom respec system
+interface StatHistory {
+    level: number;
+    timestamp: number;
+    increases: Array<{ ability: Ability; amount: number }>;
+}
+
+class CharacterWithRespec {
+    character: CharacterSheet;
+    statHistory: StatHistory[];
+
+    // Respec all stat increases back to base values
+    respec(): void {
+        // 1. Reset all stats to base (before any level-up increases)
+        // 2. Return all spent stat points to a pool
+        // 3. Let player re-allocate
+
+        // This is game-specific logic that depends on your stat system
+        // The engine provides the building blocks (increaseStats, decreaseStats)
+    }
+}
+```
 
 ### Built-in Strategies
 
-| Strategy | Description |
-|----------|-------------|
-| `DnD5eStandardStrategy` | **DEFAULT** - Standard D&D 5e rules (+2 to one, requires manual selection) |
-| `DnD5eSmartStrategy` | Intelligent auto-selection based on class and current stats |
-| `BalancedStrategy` | Always +1 to two lowest stats (balances character) |
-| `PrimaryOnlyStrategy` | Always boosts class's primary ability |
-| `RandomStrategy` | Random stat selection |
-| `ManualStrategy` | Requires explicit ability selection via options |
-| **Custom Functions** | Pass a simple function for custom formulas |
+| Strategy Name | Type | Description | Use Case |
+|---------------|------|-------------|----------|
+| `DnD5eStandardStrategy` | Built-in | **DEFAULT** - Standard D&D 5e rules. Grants +2 to one ability OR +1 to two abilities. **Requires manual selection** via `forcedAbilities` option or throws an error. | Traditional D&D 5e gameplay where players choose stat increases |
+| `DnD5eSmartStrategy` | Built-in | Intelligent auto-selection. Boosts class's primary ability if below 16, otherwise boosts lowest stat. Can grant +2 to one or +1 to two based on what's most beneficial. | Auto-leveling without manual input while maintaining optimal builds |
+| `BalancedStrategy` | Built-in | Always grants +1 to two lowest stats (never grants +2 to one). Ensures balanced character development. | Games that want well-rounded characters without min-maxing |
+| `PrimaryOnlyStrategy` | Built-in | Always boosts the class's primary ability score. Grants +2 to one ability only. | Simple progression that reinforces class identity |
+| `RandomStrategy` | Built-in | Random stat selection. Can grant +2 to one or +1 to two at random. | Unpredictable, roguelike-style gameplay |
+| `ManualStrategy` | Built-in | Requires explicit ability selection via `forcedAbilities` option. Throws error if not provided. | Cases where stat selection is deferred to game logic or UI |
+| **Custom Functions** | Function | Provide your own `(character, amount, options) => Array<{ability, amount}>` function | Game-specific formulas (e.g., "tank build", " DPS build", etc.) |
 
 ### Strategy Types
 
@@ -1452,6 +1598,114 @@ const tankStrategy = (character, amount, options) => {
 };
 
 const statManager = new StatManager({ strategy: tankStrategy });
+```
+
+---
+
+## Game Mode Configuration
+
+The engine supports two game modes for character progression:
+
+### Standard Mode (Default)
+- D&D 5e rules
+- Stats capped at 20
+- Stat increases at levels 4, 8, 12, 16, 19
+- Maximum level: 20
+
+### Uncapped Mode
+- No stat limits (can exceed 20)
+- Stat increases EVERY level (2-∞)
+- Maximum level: unlimited
+- Custom XP scaling formulas available
+
+**Usage:**
+
+```typescript
+// Standard mode (default)
+const character = CharacterGenerator.generate(
+    seed,
+    audioProfile,
+    'Hero',
+    { gameMode: 'standard' }
+);
+
+// Uncapped mode with default D&D 5e pattern continuation
+const epicCharacter = CharacterGenerator.generate(
+    seed,
+    audioProfile,
+    'Epic Hero',
+    { gameMode: 'uncapped' }
+);
+```
+
+The `gameMode` is stored on the character and automatically used during level-ups.
+
+### Uncapped Progression Configuration
+
+For uncapped mode, you can provide custom formulas for XP thresholds and proficiency bonuses that apply to ALL levels (1-∞).
+
+```typescript
+import { LevelUpProcessor, type UncappedProgressionConfig } from 'playlist-data-engine';
+
+// Set custom formulas BEFORE generating characters
+LevelUpProcessor.setUncappedConfig({
+    // Your formula for XP: receives level, returns TOTAL XP required
+    xpFormula: (level: number) => number,
+    // Your formula for proficiency bonus: receives level, returns bonus
+    proficiencyBonusFormula: (level: number) => number
+});
+```
+
+**Interface: UncappedProgressionConfig**
+
+```typescript
+export interface UncappedProgressionConfig {
+    /** Custom formula for calculating XP threshold for ANY level */
+    xpFormula?: (level: number) => number;
+    /** Custom formula for calculating proficiency bonus for ANY level */
+    proficiencyBonusFormula?: (level: number) => number;
+}
+```
+
+**Methods:**
+
+- `static setUncappedConfig(config: UncappedProgressionConfig): void`
+    - Sets custom formulas for uncapped mode progression
+    - Pass empty object `{}` to reset to default D&D 5e pattern
+
+- `static getUncappedConfig(): UncappedProgressionConfig | undefined`
+    - Returns the current uncapped configuration
+
+**Default Behavior (No Config Provided):**
+
+If no custom formulas are provided, uncapped mode uses the natural continuation of D&D 5e patterns:
+
+- **XP Formula**: `XP(n) = XP(n-1) + (n-1) × n × 500`
+  - Level 21: 565,000 XP
+  - Level 25: ~735,000 XP
+  - Level 30: ~1,120,000 XP
+
+- **Proficiency Bonus**: Continues +1 every 4 levels
+  - Level 21-24: 6
+  - Level 25-28: 7
+  - Level 29-32: 8, etc.
+
+**Example: Linear Scaling**
+
+```typescript
+LevelUpProcessor.setUncappedConfig({
+    xpFormula: (level) => (level - 1) * 50000,  // 50,000 XP per level
+    proficiencyBonusFormula: (level) => 2 + Math.floor((level - 1) / 2)  // +1 every 2 levels
+});
+```
+
+**Example: Exponential Scaling**
+
+```typescript
+LevelUpProcessor.setUncappedConfig({
+    xpFormula: (level) => Math.floor(1000 * Math.pow(1.5, level - 1)),
+    proficiencyBonusFormula: (level) => 2 + Math.floor(Math.sqrt(level))
+});
 ```
 
 ---

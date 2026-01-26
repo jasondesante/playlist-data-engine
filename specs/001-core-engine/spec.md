@@ -53,7 +53,15 @@ Implemented in `src/core/generation/AbilityScoreCalculator.ts`. Base scores rang
 
 Racial bonuses applied after, capped at 20.
 
-**Stat Increases on Level Up**: At levels 4, 8, 12, 16, and 19, characters gain ability score increases following D&D 5e rules (+2 to one ability or +1 to two abilities). The `StatManager` class provides flexible strategies for stat selection including manual choice, intelligent auto-selection, or custom formulas.
+**Game Modes**: Characters can be generated in one of two modes:
+- **Standard** (default): D&D 5e rules with stats capped at 20, stat increases at levels 4, 8, 12, 16, 19
+- **Uncapped**: No stat limits, stat increases EVERY level (2-∞), custom XP scaling available
+
+Set game mode via `CharacterGenerator.generate(seed, audioProfile, name, { gameMode: 'uncapped' })`.
+
+**Uncapped XP Scaling**: In uncapped mode, you can provide custom formulas for XP thresholds and proficiency bonuses via `LevelUpProcessor.setUncappedConfig()`. If no custom formula is provided, the D&D 5e pattern continues naturally using `XP(n) = XP(n-1) + (n-1) × n × 500`.
+
+**Stat Increases on Level Up**: At stat increase levels, characters gain ability score increases following D&D 5e rules (+2 to one ability or +1 to two abilities). The `StatManager` class provides flexible strategies for stat selection including manual choice, intelligent auto-selection, or custom formulas.
 
 ---
 
@@ -106,6 +114,7 @@ Sensors can be configured via environment variables or programmatically.
 | `XPCalculator` | Calculates XP with modifiers | `src/core/progression/XPCalculator.ts` |
 | `CharacterUpdater` | Orchestrates character updates from sessions | `src/core/progression/CharacterUpdater.ts` |
 | `LevelUpProcessor` | Handles D&D 5e level-up mechanics | `src/core/progression/LevelUpProcessor.ts` |
+| `UncappedProgressionConfig` | Config for custom XP/proficiency formulas in uncapped mode | `src/core/progression/LevelUpProcessor.ts` |
 | `StatManager` | Manages stat increases (level-up, potions, custom) | `src/core/progression/stat/StatManager.ts` |
 | `CombatEngine` | Turn-based combat system | `src/core/combat/CombatEngine.ts` |
 

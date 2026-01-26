@@ -81,8 +81,9 @@ export class CharacterUpdater {
         let leveledUp = false;
         let newLevel: number | undefined;
 
-        // Determine expected level based on total XP
-        const expectedLevel = LevelUpProcessor.calculateLevel(updatedCharacter.xp.current);
+        // Determine expected level based on total XP (respect game mode)
+        const isUncapped = updatedCharacter.gameMode === 'uncapped';
+        const expectedLevel = LevelUpProcessor.calculateLevel(updatedCharacter.xp.current, isUncapped);
 
         if (expectedLevel > updatedCharacter.level) {
             leveledUp = true;
@@ -108,11 +109,11 @@ export class CharacterUpdater {
             }
         }
 
-        // Update next level XP threshold
-        if (updatedCharacter.level < 20) {
-            updatedCharacter.xp.next_level = LevelUpProcessor.getXPThreshold(updatedCharacter.level + 1);
+        // Update next level XP threshold (respect game mode)
+        if (!isUncapped && updatedCharacter.level >= 20) {
+            updatedCharacter.xp.next_level = 0; // Max level in standard mode
         } else {
-            updatedCharacter.xp.next_level = 0; // Max level
+            updatedCharacter.xp.next_level = LevelUpProcessor.getXPThreshold(updatedCharacter.level + 1, isUncapped);
         }
 
         return {

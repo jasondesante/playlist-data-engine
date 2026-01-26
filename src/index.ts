@@ -23,7 +23,8 @@ export type {
     Class,
     Ability,
     Skill,
-    ProficiencyLevel
+    ProficiencyLevel,
+    GameMode
 } from './core/types/Character.js';
 
 export type {
@@ -50,7 +51,7 @@ export type {
     StatIncreaseFunction
 } from './core/types/Progression.js';
 
-export type { LevelUpBenefits } from './core/progression/LevelUpProcessor.js';
+export type { LevelUpBenefits, UncappedProgressionConfig } from './core/progression/LevelUpProcessor.js';
 export type { CharacterUpdateResult } from './core/progression/CharacterUpdater.js';
 export type { CharacterAppearance } from './core/generation/AppearanceGenerator.js';
 export type { CharacterEquipment } from './core/generation/EquipmentGenerator.js';
@@ -74,12 +75,11 @@ export {
 } from './utils/validators.js';
 
 // Core functionality
-export { PlaylistParser } from './core/parser/PlaylistParser.js';
+export { CharacterGenerator, type CharacterGeneratorOptions } from './core/generation/CharacterGenerator.js';
 export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
 export { AudioAnalyzer } from './core/analysis/AudioAnalyzer.js';
 export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
 export { ColorExtractor } from './core/analysis/ColorExtractor.js';
-export { CharacterGenerator } from './core/generation/CharacterGenerator.js';
 export { RaceSelector } from './core/generation/RaceSelector.js';
 export { ClassSuggester } from './core/generation/ClassSuggester.js';
 export { AbilityScoreCalculator } from './core/generation/AbilityScoreCalculator.js';

@@ -578,7 +578,7 @@ describe('LevelUpProcessor (T070)', () => {
 
         it('should throw error for invalid level', () => {
             expect(() => LevelUpProcessor.getXPThreshold(0)).toThrow();
-            expect(() => LevelUpProcessor.getXPThreshold(21)).toThrow();
+            // Levels beyond 20 are now supported for uncapped mode
         });
     });
 

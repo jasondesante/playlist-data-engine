@@ -52,6 +52,13 @@ export type Skill =
 export type ProficiencyLevel = 'none' | 'proficient' | 'expertise';
 
 /**
+ * Game mode for stat progression
+ * - standard: D&D 5e rules (stats capped at 20, increases at levels 4, 8, 12, 16, 19)
+ * - uncapped: No stat limits, stat increases EVERY level (2-20)
+ */
+export type GameMode = 'standard' | 'uncapped';
+
+/**
  * Attack type for combat actions
  */
 export interface Attack {
@@ -191,5 +198,8 @@ export interface CharacterSheet {
 
     /** Generation timestamp */
     generated_at: string;
+
+    /** Game mode for stat progression (standard = capped at 20, uncapped = no limits) */
+    gameMode?: GameMode;
 
 }

@@ -176,7 +176,24 @@ if (session) {
 **THE LEVELING UP A CHARACTER EXAMPLE IS NOTHING WITHOUT IMPROVED STATS!** Stats increase on level up at levels 4, 8, 12, 16, and 19 following D&D 5e rules.
 
 ```typescript
-import { StatManager, CharacterUpdater } from 'playlist-data-engine';
+import { StatManager, CharacterUpdater, CharacterGenerator } from 'playlist-data-engine';
+
+// ===== GAME MODE SELECTION =====
+// Standard mode (default): D&D 5e rules - stats capped at 20, increases at levels 4, 8, 12, 16, 19
+const standardCharacter = CharacterGenerator.generate(
+    seed,
+    audioProfile,
+    'Hero',
+    { gameMode: 'standard' }  // Optional, this is the default
+);
+
+// Uncapped mode: No stat limits, stat increases EVERY level (2-20)
+const uncappedCharacter = CharacterGenerator.generate(
+    seed,
+    audioProfile,
+    'Epic Hero',
+    { gameMode: 'uncapped' }
+);
 
 // ===== OPTION 1: Manual Stat Selection (D&D 5e Standard) =====
 const statManager = new StatManager();
@@ -231,7 +248,64 @@ for (const inc of potionResult.increases) {
     console.log(`${inc.ability}: ${inc.oldValue} → ${inc.newValue} (+${inc.delta})`);
 }
 
-// ===== OPTION 4: Custom Level-Up Formula =====
+// ===== OPTION 4: Stat Decreases (Curses, Poison) =====
+const curseManager = new StatManager();
+
+// Curse of Weakness: -2 STR penalty
+const curseResult = curseManager.decreaseStats(
+    character,
+    [{ ability: 'STR', amount: 2 }],
+    'event'
+);
+
+character = curseResult.character;
+
+// Check the decrease
+for (const dec of curseResult.increases) {
+    console.log(`${dec.ability}: ${dec.oldValue} → ${dec.newValue} (${dec.delta})`);
+    // Output: "STR: 16 → 14 (-2)"
+}
+
+// Poison: -1 DEX, -1 CON
+const poisonResult = curseManager.decreaseStats(
+    character,
+    [
+        { ability: 'DEX', amount: 1 },
+        { ability: 'CON', amount: 1 }
+    ],
+    'event'
+);
+
+// Remove curse with restoration potion
+const restoreResult = curseManager.increaseStats(
+    character,
+    [{ ability: 'STR', amount: 2 }],
+    'item'
+);
+
+// ===== OPTION 5: Change Strategy Mid-Game =====
+const flexibleManager = new StatManager();
+
+// Start with manual selection (early game)
+const earlyGame = flexibleManager.processLevelUp(character, 4, {
+    forcedAbilities: ['STR']  // Player chooses manually
+});
+
+// Mid-game: Switch to smart auto-selection
+// Example: After level 10, automate stat increases
+flexibleManager.updateConfig({
+    strategy: 'dnD5e_smart'  // Now automatic!
+});
+
+// Level-ups are now automatic - no manual input needed
+const midGame = flexibleManager.processLevelUp(character, 11);
+
+// Late-game: Switch to balanced strategy
+flexibleManager.updateConfig({
+    strategy: 'balanced'
+});
+
+// ===== OPTION 6: Custom Level-Up Formula =====
 // Provide your own formula for stat selection (perfect for custom game mechanics!)
 const tankStrategy = (character, amount, options) => {
     // Always prioritize CON first (tank build), then DEX
@@ -247,6 +321,58 @@ const customUpdater = new CharacterUpdater(customStatManager);
 // Your custom formula is now used for all level-ups!
 ```
 
+**Game Mode Comparison:**
+
+```typescript
+// Standard mode (D&D 5e rules)
+const standard = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'standard' });
+// Stats capped at 20, stat increases at levels 4, 8, 12, 16, 19
+
+// Uncapped mode (epic progression)
+const uncapped = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'uncapped' });
+// No stat cap, stat increases EVERY level (2-20)
+// Level 2, 3, 4... all give +2 to one stat (or +1 to two)
+```
+
+**Optional Features - Developer Implementation:**
+
+The engine provides core stat manipulation but does NOT include:
+
+1. **Banked Stat Points**: Stat increases must be applied immediately - they are not stored for later use. If your game needs a "spend points later" system, implement it yourself using `StatManager` as the building block.
+
+2. **Respec System**: There's no built-in stat respec system. Track the history of stat increases yourself and implement respec logic using `increaseStats` and `decreaseStats`.
+
+**Example: Implementing Banked Points**
+
+```typescript
+// Your game's custom banked points system
+interface BankedPoints {
+    available: number;
+    history: Array<{ timestamp: number; source: string; amount: number }>;
+}
+
+class CharacterWithBankedPoints {
+    character: CharacterSheet;
+    banked: BankedPoints;
+
+    applyBankedPoints(ability: Ability, amount: number): void {
+        if (this.banked.available < amount) {
+            throw new Error('Not enough banked points');
+        }
+
+        const statManager = new StatManager();
+        const result = statManager.increaseStats(
+            this.character,
+            [{ ability, amount }],
+            'manual'
+        );
+
+        this.character = result.character;
+        this.banked.available -= amount;
+    }
+}
+```
+
 **HP increases EVERY level (not just stat increase levels):**
 
 The leveling system ensures HP increases on EVERY level up (1-20), not just at stat increase levels:
@@ -258,9 +384,117 @@ The leveling system ensures HP increases on EVERY level up (1-20), not just at s
 // Level 2 → Level 3: HP increases by 1d10+2
 // ...and so on for all 20 levels!
 
-// Ability scores increase at levels 4, 8, 12, 16, 19
+// Standard mode: Ability scores increase at levels 4, 8, 12, 16, 19
+// Uncapped mode: Ability scores increase at EVERY level (2-20)
 // Each grants +2 to one ability or +1 to two abilities
 ```
+
+### Custom XP Scaling for Uncapped Mode
+
+Uncapped mode supports two options for XP progression beyond level 20:
+
+**Option 1: Default D&D 5e Pattern (Continues Naturally)**
+
+```typescript
+import { CharacterGenerator, LevelUpProcessor } from 'playlist-data-engine';
+
+// Just generate a character in uncapped mode - no additional config needed!
+const character = CharacterGenerator.generate(
+    seed,
+    audioProfile,
+    'Epic Hero',
+    { gameMode: 'uncapped' }
+);
+
+// XP automatically continues the D&D 5e formula: XP(n) = XP(n-1) + (n-1) × n × 500
+// Level 21: 565,000 XP (355000 + 20*21*500)
+// Level 25: ~735,000 XP
+// Level 30: ~1,120,000 XP
+// Proficiency bonus continues: +1 every 4 levels (21-24: 6, 25-28: 7, etc.)
+```
+
+**Option 2: Provide Your Own XP Formula**
+
+```typescript
+import { CharacterGenerator, LevelUpProcessor, type UncappedProgressionConfig } from 'playlist-data-engine';
+
+// Set custom formulas BEFORE generating characters
+LevelUpProcessor.setUncappedConfig({
+    // Your formula is used for EVERY level (1-∞)
+    xpFormula: (level) => {
+        // Example: Linear 50,000 XP per level
+        return (level - 1) * 50000;
+    },
+    proficiencyBonusFormula: (level) => {
+        // Example: +1 every 2 levels
+        return 2 + Math.floor((level - 1) / 2);
+    }
+});
+
+// Now generate a character in uncapped mode
+const character = CharacterGenerator.generate(
+    seed,
+    audioProfile,
+    'Custom Hero',
+    { gameMode: 'uncapped' }
+);
+
+// Uses YOUR formulas:
+// Level 1: 0 XP
+// Level 2: 50,000 XP
+// Level 3: 100,000 XP
+// Level 10: 450,000 XP
+// Proficiency: Level 1-2: 2, Level 3-4: 3, Level 5-6: 4, etc.
+```
+
+**Example: Exponential Scaling**
+
+```typescript
+LevelUpProcessor.setUncappedConfig({
+    // Faster progression at low levels, slower at high levels
+    xpFormula: (level) => Math.floor(1000 * Math.pow(1.5, level - 1)),
+    proficiencyBonusFormula: (level) => 2 + Math.floor(Math.sqrt(level))
+});
+
+const character = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'uncapped' });
+
+// Level 1: 1,000 XP
+// Level 2: 1,500 XP
+// Level 5: ~5,062 XP
+// Level 10: ~38,443 XP
+// Level 20+: Scales exponentially
+```
+
+**Example: OSRS-Style Scaling**
+
+```typescript
+LevelUpProcessor.setUncappedConfig({
+    // Old School RuneScape style: exponential XP curve
+    xpFormula: (level) => Math.floor(Math.pow(level, 3) * 100),
+    proficiencyBonusFormula: (level) => 2 + Math.floor(level / 10)
+});
+
+// Level 1: 100 XP
+// Level 2: 800 XP
+// Level 5: 12,500 XP
+// Level 10: 100,000 XP
+// Level 20+: Very fast scaling
+```
+
+**Reset to Default:**
+
+```typescript
+// Clear custom formulas and return to D&D 5e pattern
+LevelUpProcessor.setUncappedConfig({});
+```
+
+**Important Notes:**
+
+1. Formulas apply to ALL levels (1-infinity), not just beyond 20
+2. Your `xpFormula` receives the level number and returns the TOTAL XP required to reach that level
+3. Your `proficiencyBonusFormula` receives the level number and returns the proficiency bonus
+4. Set config BEFORE generating characters or processing level-ups
+5. Config is global and affects ALL uncapped mode characters
 
 ---
 
@@ -505,9 +739,14 @@ const gamingSensors = new GamingPlatformSensors({
 const playlist = await parser.parse(playlistJSON);
 
 for (const track of playlist.tracks) {
-  // 1. Generate character from audio
+  // 1. Generate character from audio (choose game mode at creation time)
   const audio = await analyzer.extractSonicFingerprint(track.audio_url);
-  let character = CharacterGenerator.generate(track.id, audio, track.title);
+  let character = CharacterGenerator.generate(
+    track.id,
+    audio,
+    track.title,
+    { gameMode: 'standard' }  // or 'uncapped' for epic progression
+  );
 
   // 2. Get environmental context (before starting session)
   const envContext = await sensors.updateSnapshot();
@@ -551,14 +790,19 @@ for (const track of playlist.tracks) {
 The same seed and audio profile always produces the same character:
 
 ```typescript
-import { CharacterGenerator, AudioAnalyzer } from 'playlist-data-engine';
+import { CharacterGenerator, AudioAnalyzer, type CharacterSheet } from 'playlist-data-engine';
 
 const seed = 'ethereum-0x123abc-1';
+const analyzer = new AudioAnalyzer();
 const audio = await analyzer.extractSonicFingerprint(track.audio_url);
 
-// Generate the same character every time
+// Generate the same character every time (same inputs = same output)
 const char1 = CharacterGenerator.generate(seed, audio, 'Test');
 const char2 = CharacterGenerator.generate(seed, audio, 'Test');
+
+// Game mode affects the output, so different game modes = different characters
+const standardChar = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'standard' });
+const uncappedChar = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'uncapped' });
 
 console.log(char1.race === char2.race);  // true
 console.log(char1.class === char2.class);  // true
@@ -613,64 +857,49 @@ For advanced use cases where you need to handle level-ups manually with full con
 ```typescript
 import { LevelUpProcessor, StatManager } from 'playlist-data-engine';
 
-// ===== Method 1: Using StatManager (Recommended) =====
-const statManager = new StatManager();
+// ===== Method 1: Manual Stat Selection (D&D 5e Standard) =====
+// IMPORTANT: The default DnD5eStandardStrategy REQUIRES you to provide stat choice
+// via forcedAbilities. If you don't, processLevelUp() will throw an error!
 
-// Check if character has enough XP to level up
-if (character.xp.current >= character.xp.next_level) {
-  const newLevel = character.level + 1;
+const statManager = new StatManager();  // Uses DnD5eStandardStrategy by default
 
-  // Check if this level grants stat increases (4, 8, 12, 16, 19)
-  const statResult = statManager.processLevelUp(character, newLevel);
+// When a character levels up, check if it's a stat increase level
+const statIncreaseLevels = [4, 8, 12, 16, 19];
 
-  if (statResult) {
-    // Stat increases available! Player must choose which stats to increase.
-    // For example, show UI to let player pick:
-    const playerChoice = ['STR'];  // Player selected STR
+// 1. Process HP/proficiency/level-up benefits first
+const newLevel = character.level + 1;
+const benefits = LevelUpProcessor.processLevelUp(character, newLevel, character.seed);
+character = LevelUpProcessor.applyLevelUp(character, benefits);
 
-    // Apply their choice
-    const finalResult = statManager.processLevelUp(character, newLevel, {
-      forcedAbilities: playerChoice
-    });
+// 2. If this is a stat increase level, get player choice and apply stats
+if (statIncreaseLevels.includes(newLevel)) {
+  // Show UI to get player choice
+  const playerChoice = await showStatSelectionUI(); // Returns ['STR'] or ['DEX', 'CON'], etc.
 
-    character = finalResult.character;
+  // Apply stat increase with player's choice
+  const statResult = statManager.processLevelUp(character, newLevel, {
+    forcedAbilities: playerChoice
+  });
 
-    console.log(`Stat increased:`);
-    for (const inc of finalResult.increases) {
-      console.log(`  ${inc.ability}: ${inc.oldValue} → ${inc.newValue} (+${inc.delta})`);
-    }
-  }
-
-  // Process the full level-up benefits (HP, proficiency, etc.)
-  const benefits = LevelUpProcessor.processLevelUp(character, newLevel);
-
-  console.log(`Level up to ${benefits.newLevel}!`);
-  console.log(`  HP increase: +${benefits.hitPointIncrease}`);
-  console.log(`  New HP total: ${benefits.newHitPointsTotal}`);
-  console.log(`  Proficiency bonus: ${benefits.newProficiencyBonus}`);
-
-  if (benefits.newSpellSlots) {
-    console.log(`  New spell slots:`, benefits.newSpellSlots);
-  }
-
-  if (benefits.classFeatures) {
-    console.log(`  New features:`, benefits.classFeatures);
-  }
-
-  // Apply the benefits to the character
-  character = LevelUpProcessor.applyLevelUp(character, benefits);
+  character = statResult.character;
+  console.log(`Stat increased: ${statResult.increases[0].ability} +${statResult.increases[0].delta}`);
 }
 
-// ===== Method 2: Auto-selection with Smart Strategy =====
+// ===== Method 2: Auto-selection with Smart Strategy (Recommended) =====
+// This eliminates the need for manual stat selection entirely
+
 const smartStatManager = new StatManager({
-  strategy: 'dnD5e_smart'  // Automatically picks best stats
+  strategy: 'dnD5e_smart'  // Automatically picks best stats based on class
 });
 
-// Set the StatManager on LevelUpProcessor
-LevelUpProcessor.setStatManager(smartStatManager);
+const updater = new CharacterUpdater(smartStatManager);
 
-// Now level-ups automatically handle stat selection!
-// No manual choice needed - the engine intelligently picks stats.
+// Now level-ups are automatic! No manual stat selection needed.
+const result = updater.updateCharacterFromSession(character, session, track, listenCount);
+
+if (result.leveledUp) {
+  console.log(`Leveled up to ${result.newLevel}! Stats auto-increased.`);
+}
 ```
 
 ---
@@ -729,7 +958,8 @@ The main exports from the library are:
 ### Types & Constants
 All TypeScript types are exported, including:
 - `CharacterSheet`, `AbilityScores`, `Skill`, `ProficiencyLevel`
-- `Race`, `Class`, `Ability`
+- `Race`, `Class`, `Ability`, `GameMode` - `'standard'` or `'uncapped'` progression mode
+- `CharacterGeneratorOptions` - Includes `gameMode` option
 - `AudioProfile`, `ColorPalette`, `FrequencyBands`
 - `EnvironmentalContext`, `GamingContext`, `ListeningSession`
 - `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS`, etc.

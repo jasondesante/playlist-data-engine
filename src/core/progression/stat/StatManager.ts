@@ -11,7 +11,7 @@
  * - Level-up stat increases
  */
 
-import type { CharacterSheet, Ability } from '../../types/Character.js';
+import type { CharacterSheet, Ability, GameMode } from '../../types/Character.js';
 import type {
     StatIncreaseConfig,
     StatIncreaseResult,
@@ -102,12 +102,14 @@ export class StatManager {
         updated.ability_scores = { ...updated.ability_scores };
         updated.ability_modifiers = { ...updated.ability_modifiers };
 
+        // Determine stat cap based on character's game mode
+        const gameMode: GameMode = updated.gameMode || 'standard';
+        const cap = gameMode === 'uncapped' ? Infinity : (this.config.maxStatCap ?? 20);
+
         for (const { ability, amount } of increases) {
             const currentScore = updated.ability_scores[ability];
             const rawNewScore = currentScore + amount;
 
-            // Apply cap (hard limit at 20)
-            const cap = this.config.maxStatCap;
             const newScore = Math.min(rawNewScore, cap);
             const actualIncrease = newScore - currentScore;
 
@@ -212,8 +214,19 @@ export class StatManager {
         newLevel: number,
         options?: StatIncreaseOptions
     ): StatIncreaseResult | null {
+        // Read gameMode from character (defaults to 'standard' for backward compatibility)
+        const gameMode: GameMode = character.gameMode || 'standard';
+        const isUncapped = gameMode === 'uncapped';
+
         // Check if this level grants a stat increase
-        if (!this.config.statIncreaseLevels.includes(newLevel)) {
+        // - Uncapped mode: every level
+        // - Standard mode: use config levels (default: 4, 8, 12, 16, 19)
+        const statIncreaseLevels = this.config.statIncreaseLevels?.length
+            ? this.config.statIncreaseLevels
+            : DEFAULT_STAT_INCREASE_LEVELS;
+        const isStatIncreaseLevel = isUncapped || statIncreaseLevels.includes(newLevel);
+
+        if (!isStatIncreaseLevel) {
             return null;
         }
 
@@ -240,9 +253,14 @@ export class StatManager {
      *
      * @example
      * ```typescript
+     * // Change strategy mid-game
      * statManager.updateConfig({
-     *   strategy: 'dnD5e_smart',
-     *   autoApply: true
+     *   strategy: 'dnD5e_smart'
+     * });
+     *
+     * // Override stat cap (e.g., for epic mode)
+     * statManager.updateConfig({
+     *   maxStatCap: 30
      * });
      * ```
      */
@@ -284,29 +302,36 @@ export class StatManager {
         amount: number = 1
     ): boolean {
         const currentScore = character.ability_scores[ability];
-        const cap = this.config.maxStatCap;
+        // Determine stat cap based on character's game mode
+        const gameMode: GameMode = character.gameMode || 'standard';
+        const cap = gameMode === 'uncapped' ? Infinity : (this.config.maxStatCap ?? 20);
 
         return currentScore + amount <= cap;
     }
 
     /**
      * Get stat cap for an ability
+     * @param character - The character to check (for game mode)
+     * @param ability - The ability to check
+     * @returns Stat cap for this character's game mode
      */
-    getStatCap(_ability: Ability): number {
-        return this.config.maxStatCap;
+    getStatCap(character: CharacterSheet, _ability: Ability): number {
+        const gameMode: GameMode = character.gameMode || 'standard';
+        return gameMode === 'uncapped' ? Infinity : (this.config.maxStatCap ?? 20);
     }
 
     /**
      * Merge user config with defaults
+     * Note: Stat cap and increase levels are determined at runtime based on character's game mode
      */
     private mergeWithDefaults(
         config?: Partial<StatIncreaseConfig>
     ): Required<StatIncreaseConfig> {
         return {
-            maxStatCap: config?.maxStatCap ?? DEFAULT_CONFIG.maxStatCap,
+            maxStatCap: config?.maxStatCap ?? 20,
             strategy: config?.strategy ?? DEFAULT_CONFIG.strategy,
             autoApply: config?.autoApply ?? DEFAULT_CONFIG.autoApply,
-            statIncreaseLevels: config?.statIncreaseLevels ?? DEFAULT_CONFIG.statIncreaseLevels
+            statIncreaseLevels: config?.statIncreaseLevels ?? DEFAULT_STAT_INCREASE_LEVELS
         };
     }
 }

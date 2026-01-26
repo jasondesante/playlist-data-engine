@@ -1,4 +1,4 @@
-import type { CharacterSheet, Class, Ability } from '../types/Character.js';
+import type { CharacterSheet, Class, Ability, GameMode } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
 import { SeededRNG } from '../../utils/random.js';
 import { RACE_DATA, CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
@@ -16,6 +16,9 @@ export interface CharacterGeneratorOptions {
 
     /** Override class suggestion */
     forceClass?: Class;
+
+    /** Game mode for stat progression (default: 'standard') */
+    gameMode?: GameMode;
 }
 
 /**
@@ -64,6 +67,7 @@ export class CharacterGenerator {
     ): CharacterSheet {
         const rng = new SeededRNG(seed);
         const level = options.level || 1;
+        const gameMode: GameMode = options.gameMode || 'standard';
 
         // Select race deterministically from seed
         const race = RaceSelector.select(rng);
@@ -147,6 +151,7 @@ export class CharacterGenerator {
             },
             seed,
             generated_at: new Date().toISOString(),
+            gameMode,
         };
     }
 }
