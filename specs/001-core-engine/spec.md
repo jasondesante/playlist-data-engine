@@ -63,6 +63,8 @@ Set game mode via `CharacterGenerator.generate(seed, audioProfile, name, { gameM
 
 **Stat Increases on Level Up**: At stat increase levels, characters gain ability score increases following D&D 5e rules (+2 to one ability or +1 to two abilities). The `StatManager` class provides flexible strategies for stat selection including manual choice, intelligent auto-selection, or custom formulas.
 
+**Automatic Stat Increases (Default)**: `CharacterUpdater` now includes a built-in `StatManager` with the `dnD5e_smart` strategy by default. Stats increase **automatically** on level-up - no manual selection required. The smart strategy intelligently boosts the character's class primary stat or lowest stats. Simple examples work out of the box with no configuration. Manual D&D 5e rules (player must choose stats) are available by passing a custom `StatManager`.
+
 **Level-Up Details**: The `CharacterUpdateResult` now includes a `levelUpDetails` array that provides complete breakdowns of each level-up, including HP increases, proficiency changes, stat increases, new class features, and spell slots. This makes it easy to display "LEVELED UP!" celebration UI without having to manually diff the character.
 
 **XP from Multiple Sources**: In addition to music listening, the `CharacterUpdater.addXP()` method allows adding XP from any source (combat, quests, custom activities). All XP sources trigger the same level-up system with detailed breakdowns. The `source` parameter helps track where XP originated.

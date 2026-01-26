@@ -1,10 +1,10 @@
-import type { CharacterSheet, Ability } from '../types/Character.js';
+import type { CharacterSheet } from '../types/Character.js';
 import type { ListeningSession, LevelUpDetail } from '../types/Progression.js';
 import type { PlaylistTrack } from '../types/Playlist.js';
 import { XPCalculator } from './XPCalculator.js';
 import { LevelUpProcessor } from './LevelUpProcessor.js';
 import { MasterySystem } from './MasterySystem.js';
-import type { StatManager } from './stat/StatManager.js';
+import { StatManager } from './stat/StatManager.js';
 
 export interface CharacterUpdateResult {
     character: CharacterSheet;
@@ -23,17 +23,18 @@ export interface CharacterUpdateResult {
 export class CharacterUpdater {
     private xpCalculator: XPCalculator;
     private masterySystem: MasterySystem;
-    private statManager?: StatManager;
+    private statManager: StatManager;
 
     constructor(statManager?: StatManager) {
         this.xpCalculator = new XPCalculator();
         this.masterySystem = new MasterySystem();
-        this.statManager = statManager;
 
-        // Pass StatManager to LevelUpProcessor if provided
-        if (statManager) {
-            LevelUpProcessor.setStatManager(statManager);
-        }
+        // Create default StatManager with automatic stat increases if none provided
+        // This ensures stats are always increased on level-up (no manual selection required by default)
+        this.statManager = statManager || new StatManager({ strategy: 'dnD5e_smart' });
+
+        // Pass StatManager to LevelUpProcessor for stat increase handling
+        LevelUpProcessor.setStatManager(this.statManager);
     }
 
     /**
@@ -68,7 +69,7 @@ export class CharacterUpdater {
     public addXP(
         character: CharacterSheet,
         xpAmount: number,
-        source: string = 'custom'
+        _source: string = 'custom'
     ): Omit<CharacterUpdateResult, 'masteredTrack' | 'masteryBonusXP'> {
         // 1. Update Character XP
         const updatedCharacter = {
@@ -94,11 +95,8 @@ export class CharacterUpdater {
             // We loop from current level + 1 up to expected level
             for (let lvl = updatedCharacter.level + 1; lvl <= expectedLevel; lvl++) {
                 // Capture state BEFORE level-up for diff
-                const prevHP = updatedCharacter.hp.max;
-                const prevProficiency = updatedCharacter.proficiency_bonus;
                 const prevAbilityScores = { ...updatedCharacter.ability_scores };
                 const prevClassFeatures = [...updatedCharacter.class_features];
-                const prevSpellSlots = updatedCharacter.spells?.spell_slots;
 
                 const benefits = LevelUpProcessor.processLevelUp(updatedCharacter, lvl, updatedCharacter.seed);
                 const leveledChar = LevelUpProcessor.applyLevelUp(updatedCharacter, benefits);

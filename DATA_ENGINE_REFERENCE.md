@@ -1229,6 +1229,25 @@ Orchestrates applying session results to a character, handling leveling up and m
   - Calculates XP based on session duration and modifiers
   - Handles track mastery bonuses
 
+**Default Behavior - Automatic Stat Increases:**
+
+`CharacterUpdater` now comes with a built-in `StatManager` that uses the `dnD5e_smart` strategy by default. This means:
+
+- ✅ Stats increase **automatically** on level-up (no manual selection required)
+- ✅ Intelligently boosts class's primary stat or lowest stats
+- ✅ Simple examples work without any configuration
+- ✅ HP always increases on every level
+
+**To use manual D&D 5e rules** (player must choose stats), pass a custom `StatManager`:
+
+```typescript
+import { StatManager, CharacterUpdater } from 'playlist-data-engine';
+
+// Manual D&D 5e: Player chooses which stats to increase
+const statManager = new StatManager({ strategy: 'dnD5e' });
+const updater = new CharacterUpdater(statManager);
+```
+
 ### addXP() - Adding XP from Any Source
 
 **Use this method** when you want to award XP from sources other than music listening:
@@ -1276,6 +1295,7 @@ if (combatResult.leveledUp && combatResult.levelUpDetails) {
 **Key Differences from `updateCharacterFromSession()`:**
 - No track mastery bonuses (specific to music listening)
 - Direct XP amount instead of calculated from session duration
+- **Both use the same automatic stat increase system by default** (`dnD5e_smart` strategy)
 - Same level-up system and detailed breakdowns
 ### CharacterUpdateResult
 

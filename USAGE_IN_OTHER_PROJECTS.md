@@ -156,12 +156,25 @@ if (session) {
   const totalXP = xpCalc.calculateSessionXP(session, track);  // ~1 XP per second + bonuses
 
   // Apply session to character (handles level-ups and mastery)
+  // Stats increase AUTOMATICALLY using smart strategy - no manual selection needed!
   const updater = new CharacterUpdater();
   const previousListenCount = tracker.getTrackListenCount(track.id) - 1;
   const result = updater.updateCharacterFromSession(character, session, track, previousListenCount);
 
   if (result.leveledUp) {
     console.log(`Level up! Now level ${result.newLevel}`);
+
+    // Stats increased automatically - here's what changed:
+    if (result.levelUpDetails) {
+      for (const detail of result.levelUpDetails) {
+        if (detail.statIncreases && detail.statIncreases.length > 0) {
+          console.log(`Stats increased:`);
+          for (const stat of detail.statIncreases) {
+            console.log(`  ${stat.ability}: ${stat.oldValue} → ${stat.newValue} (+${stat.delta})`);
+          }
+        }
+      }
+    }
   }
 
   // Check for track mastery
@@ -169,6 +182,17 @@ if (session) {
     console.log(`Track mastered! ${result.masteryBonusXP} bonus XP unlocked!`);
   }
 }
+```
+
+**Note**: By default, `CharacterUpdater` uses automatic stat increases (`dnD5e_smart` strategy). Stats are intelligently selected based on the character's class and current stats - **no manual intervention required**. This ensures the simple example above works perfectly, with stats increasing automatically on level-up (at levels 4, 8, 12, 16, 19).
+
+To use manual D&D 5e rules (player must choose stats), pass a custom `StatManager`:
+
+```typescript
+import { StatManager } from 'playlist-data-engine';
+
+const statManager = new StatManager({ strategy: 'dnD5e' });
+const updater = new CharacterUpdater(statManager);
 ```
 
 ### Level-Up with Detailed Breakdown

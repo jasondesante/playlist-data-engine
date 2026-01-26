@@ -134,11 +134,19 @@ describe('CharacterUpdater', () => {
     });
 
     describe('addXP', () => {
-        it('should add XP to character from any source', () => {
-            const result = updater.addXP(mockCharacter, 500, 'combat');
+        it('should automatically increase stats when leveling up (default behavior)', () => {
+            // Level 1 Fighter with 10 STR -> Level 4 (stat increase level)
+            // With dnD5e_smart strategy, should auto-boost STR (Fighter's primary stat)
+            const result = updater.addXP(mockCharacter, 6500, 'quest'); // Enough to reach level 5
 
-            expect(result.xpEarned).toBe(500);
-            expect(result.character.xp.current).toBe(500);
+            expect(result.leveledUp).toBe(true);
+            expect(result.newLevel).toBe(5);
+
+            // Check that stats actually increased at level 4
+            const level4Detail = result.levelUpDetails!.find(d => d.toLevel === 4);
+            expect(level4Detail).toBeDefined();
+            expect(level4Detail!.statIncreases).toBeDefined();
+            expect(level4Detail!.statIncreases!.length).toBeGreaterThan(0);
         });
 
         it('should handle level up from combat XP', () => {
