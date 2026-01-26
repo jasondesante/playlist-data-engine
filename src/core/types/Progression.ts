@@ -158,6 +158,13 @@ export interface StatIncreaseStrategy {
         increaseAmount: number,
         options?: StatIncreaseOptions
     ): Array<{ ability: Ability; amount: number }>;
+
+    /**
+     * Check if this strategy requires manual user input
+     * @param options - Optional constraints
+     * @returns true if strategy requires manual selection
+     */
+    requiresManualInput(options?: StatIncreaseOptions): boolean;
 }
 
 /**
@@ -241,4 +248,40 @@ export interface LevelUpDetail {
 
     /** New spell slots after level-up (if spellcaster) */
     newSpellSlots?: Record<number, number>;
+}
+
+/**
+ * Result from applying a pending stat increase
+ */
+export interface ApplyPendingStatIncreaseResult {
+    /** Updated character with stats applied */
+    character: CharacterSheet;
+
+    /** Stats that were increased */
+    statIncreases: Array<{
+        ability: Ability;
+        oldValue: number;
+        newValue: number;
+        delta: number;
+    }>;
+
+    /** Remaining pending stat increases (counter) */
+    remainingPending: number;
+
+    /** Timestamp of completion */
+    timestamp: number;
+}
+
+/**
+ * Validation error for stat selection
+ */
+export interface StatSelectionValidationError {
+    /** Error message */
+    error: string;
+
+    /** What was wrong */
+    reason: 'invalid_ability' | 'invalid_amount' | 'exceeds_cap' | 'wrong_pattern' | 'duplicate_ability';
+
+    /** Valid patterns allowed */
+    allowedPatterns: string[];
 }

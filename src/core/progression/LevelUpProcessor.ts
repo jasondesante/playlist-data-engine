@@ -536,4 +536,136 @@ export class LevelUpProcessor {
 
         return Math.floor((progressXP / totalXP) * 100);
     }
+
+    /**
+     * Process level-up without stat increases
+     * Used for pending level-up system where stats are applied later
+     *
+     * @param character - The character to level up
+     * @param newLevel - The new level
+     * @param seed - Optional seed for deterministic HP rolls
+     * @returns Benefits without stat increases
+     */
+    static processLevelUpWithoutStats(
+        character: CharacterSheet,
+        newLevel: number,
+        seed?: string
+    ): Omit<LevelUpBenefits, 'abilityScoreIncreases' | 'abilityScoreIncrease'> {
+        // Read gameMode from character (defaults to 'standard' for backward compatibility)
+        const gameMode: GameMode = character.gameMode || 'standard';
+        const isUncapped = gameMode === 'uncapped';
+        const maxLevel = isUncapped ? Infinity : 20;
+
+        if (newLevel < 1 || newLevel > maxLevel) {
+            throw new Error(`Level must be between 1 and ${maxLevel}`);
+        }
+
+        const classData = CLASS_DATA[character.class];
+        if (!classData) {
+            throw new Error(`Unknown class: ${character.class}`);
+        }
+
+        // Calculate hit points
+        const hitPointIncrease = this.calculateHPIncrease(
+            classData.hit_die,
+            character.ability_modifiers.CON,
+            seed
+        );
+
+        const newHitPointsTotal = character.hp.max + hitPointIncrease;
+
+        // Get new proficiency bonus
+        const newProficiencyBonus = this.getProficiencyBonus(newLevel, isUncapped);
+        const proficiencyBonusIncrease = newProficiencyBonus - character.proficiency_bonus;
+
+        // Create benefits object (without stats)
+        const benefits: Omit<LevelUpBenefits, 'abilityScoreIncreases' | 'abilityScoreIncrease'> = {
+            newLevel,
+            hitPointIncrease,
+            newHitPointsTotal,
+            proficiencyBonusIncrease,
+            newProficiencyBonus,
+        };
+
+        // Calculate new spell slots if spellcaster
+        if (this.isSpellcaster(character.class)) {
+            benefits.newSpellSlots = this.calculateSpellSlots(newLevel);
+        }
+
+        // Get class features for this level
+        benefits.classFeatures = this.getClassFeaturesForLevel(character.class, newLevel);
+
+        return benefits;
+    }
+
+    /**
+     * Apply automatic level-up benefits (HP, proficiency, features, spell slots)
+     * Does NOT apply stat increases
+     *
+     * @param character - The character to update
+     * @param benefits - Benefits without stat increases
+     * @returns Updated character
+     */
+    static applyAutomaticBenefitsOnly(
+        character: CharacterSheet,
+        benefits: Omit<LevelUpBenefits, 'abilityScoreIncreases' | 'abilityScoreIncrease'>
+    ): CharacterSheet {
+        const updated = { ...character };
+
+        // Update level and HP
+        updated.level = benefits.newLevel;
+        updated.hp.max = benefits.newHitPointsTotal;
+        updated.hp.current = Math.min(updated.hp.current + benefits.hitPointIncrease, updated.hp.max);
+        updated.proficiency_bonus = benefits.newProficiencyBonus;
+
+        // Update spell slots if applicable
+        if (benefits.newSpellSlots && updated.spells) {
+            updated.spells.spell_slots = benefits.newSpellSlots as any;
+        }
+
+        // Add class features
+        if (benefits.classFeatures) {
+            updated.class_features = [
+                ...new Set([...updated.class_features, ...benefits.classFeatures]),
+            ];
+        }
+
+        return updated;
+    }
+
+    /**
+     * Apply ONLY stat increases to a character
+     * Used when completing a pending level-up
+     *
+     * @param character - The character to update
+     * @param statIncreases - Array of stat increases to apply
+     * @returns Updated character
+     */
+    static applyStatIncreasesOnly(
+        character: CharacterSheet,
+        statIncreases: Array<{ ability: Ability; amount: number }>
+    ): CharacterSheet {
+        const updated = { ...character };
+
+        // Deep copy ability scores and modifiers
+        updated.ability_scores = { ...updated.ability_scores };
+        updated.ability_modifiers = { ...updated.ability_modifiers };
+
+        // Determine stat cap based on game mode
+        const gameMode: GameMode = updated.gameMode || 'standard';
+        const statCap = gameMode === 'uncapped' ? Infinity : 20;
+
+        for (const increase of statIncreases) {
+            const ability = increase.ability;
+            updated.ability_scores[ability] = Math.min(
+                statCap,
+                updated.ability_scores[ability] + increase.amount
+            );
+
+            // Recalculate modifier
+            updated.ability_modifiers[ability] = Math.floor((updated.ability_scores[ability] - 10) / 2);
+        }
+
+        return updated;
+    }
 }

@@ -1229,23 +1229,32 @@ Orchestrates applying session results to a character, handling leveling up and m
   - Calculates XP based on session duration and modifiers
   - Handles track mastery bonuses
 
-**Default Behavior - Automatic Stat Increases:**
+**Default Behavior - Auto-Detected by gameMode:**
 
-`CharacterUpdater` now comes with a built-in `StatManager` that uses the `dnD5e_smart` strategy by default. This means:
+`CharacterUpdater` auto-detects the appropriate stat increase strategy based on the character's `gameMode`:
 
-- ✅ Stats increase **automatically** on level-up (no manual selection required)
-- ✅ Intelligently boosts class's primary stat or lowest stats
-- ✅ Simple examples work without any configuration
-- ✅ HP always increases on every level
+- **Standard mode** (capped at level 20) → Manual D&D 5e rules (`dnD5e` strategy)
+  - 2-step level-up process: XP adds HP/proficiency/features, but stats require manual selection
+  - Stores pending stat increases in a counter
+  - User completes level-up by calling `applyPendingStatIncrease()`
 
-**To use manual D&D 5e rules** (player must choose stats), pass a custom `StatManager`:
+- **Uncapped mode** → Automatic stat selection (`dnD5e_smart` strategy)
+  - 1-step level-up process: Everything applied automatically
+  - Intelligently boosts class's primary stat or lowest stats
+  - No manual interaction required
+
+**To override the auto-detected strategy**, pass a custom `StatManager`:
 
 ```typescript
 import { StatManager, CharacterUpdater } from 'playlist-data-engine';
 
-// Manual D&D 5e: Player chooses which stats to increase
-const statManager = new StatManager({ strategy: 'dnD5e' });
+// Force automatic mode even for standard characters
+const statManager = new StatManager({ strategy: 'dnD5e_smart' });
 const updater = new CharacterUpdater(statManager);
+
+// Force manual mode even for uncapped characters
+const manualStatManager = new StatManager({ strategy: 'dnD5e' });
+const manualUpdater = new CharacterUpdater(manualStatManager);
 ```
 
 ### addXP() - Adding XP from Any Source
@@ -1295,8 +1304,78 @@ if (combatResult.leveledUp && combatResult.levelUpDetails) {
 **Key Differences from `updateCharacterFromSession()`:**
 - No track mastery bonuses (specific to music listening)
 - Direct XP amount instead of calculated from session duration
-- **Both use the same automatic stat increase system by default** (`dnD5e_smart` strategy)
+- **Auto-detects strategy based on character's gameMode**
 - Same level-up system and detailed breakdowns
+
+### Pending Stat Increases (Manual Level-Up)
+
+When using manual mode (standard gameMode or `dnD5e` strategy), level-ups become a 2-step process:
+
+1. **Step 1**: Add XP → Character gains level with HP/proficiency/features applied
+2. **Step 2**: User selects stats → Complete the level-up
+
+**Methods:**
+
+- `applyPendingStatIncrease(character: CharacterSheet, primaryStat: Ability, secondaryStats?: Ability[]): ApplyPendingStatIncreaseResult`
+  - Apply a pending stat increase with user-selected stats
+  - Only works if `pendingStatIncreases` counter > 0
+  - Validates D&D 5e rules: +2 to one ability OR +1 to two abilities
+  - Decrements the counter
+
+- `hasPendingStatIncreases(character: CharacterSheet): boolean`
+  - Check if character has pending stat increases
+
+- `getPendingStatIncreaseCount(character: CharacterSheet): number`
+  - Get the count of pending stat increases
+
+**Example - Manual Stat Selection:**
+
+```typescript
+import { CharacterUpdater } from 'playlist-data-engine';
+
+// Standard mode (capped) defaults to manual stat selection
+const character = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'standard' });
+const updater = new CharacterUpdater(); // No StatManager needed - auto-detected!
+
+// Step 1: Add XP - triggers level-up but PAUSES before stats
+const result = updater.addXP(character, 6500, 'quest');
+
+console.log(result.leveledUp); // true
+console.log(result.newLevel); // 5
+
+// Check for pending stat increases
+if (updater.hasPendingStatIncreases(character)) {
+    const count = updater.getPendingStatIncreaseCount(character);
+    console.log(`${count} stat increases pending!`);
+
+    // Step 2: User chooses +2 to STR
+    const completeResult = updater.applyPendingStatIncrease(character, 'STR');
+    console.log(`STR: ${completeResult.statIncreases[0].oldValue} → ${completeResult.statIncreases[0].newValue}`);
+
+    if (completeResult.remainingPending > 0) {
+        console.log(`${completeResult.remainingPending} more stat increases waiting!`);
+    }
+}
+
+// Or user chooses +1 to STR and +1 to DEX
+const result2 = updater.applyPendingStatIncrease(character, 'STR', ['DEX']);
+```
+
+**Return Type:**
+```typescript
+{
+    character: CharacterSheet;              // Updated character
+    statIncreases: Array<{                  // Stats that were increased
+        ability: Ability;
+        oldValue: number;
+        newValue: number;
+        delta: number;
+    }>;
+    remainingPending: number;               // Counter value after applying
+    timestamp: number;                      // Completion timestamp
+}
+```
+
 ### CharacterUpdateResult
 
 Result of a character update operation. Now includes detailed level-up information!
@@ -1632,7 +1711,7 @@ class CharacterWithRespec {
 | `BalancedStrategy` | Built-in | Always grants +1 to two lowest stats (never grants +2 to one). Ensures balanced character development. | Games that want well-rounded characters without min-maxing |
 | `PrimaryOnlyStrategy` | Built-in | Always boosts the class's primary ability score. Grants +2 to one ability only. | Simple progression that reinforces class identity |
 | `RandomStrategy` | Built-in | Random stat selection. Can grant +2 to one or +1 to two at random. | Unpredictable, roguelike-style gameplay |
-| `ManualStrategy` | Built-in | Requires explicit ability selection via `forcedAbilities` option. Throws error if not provided. | Cases where stat selection is deferred to game logic or UI |
+| `ManualStrategy` | Built-in | Always defers to manual stat selection via `applyPendingStatIncrease()`. Returns empty array to signal manual input required. Never auto-applies stats. | Pure manual mode where user must confirm each stat increase via UI |
 | **Custom Functions** | Function | Provide your own `(character, amount, options) => Array<{ability, amount}>` function | Game-specific formulas (e.g., "tank build", " DPS build", etc.) |
 
 ### Strategy Types

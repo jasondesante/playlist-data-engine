@@ -134,19 +134,43 @@ describe('CharacterUpdater', () => {
     });
 
     describe('addXP', () => {
-        it('should automatically increase stats when leveling up (default behavior)', () => {
-            // Level 1 Fighter with 10 STR -> Level 4 (stat increase level)
-            // With dnD5e_smart strategy, should auto-boost STR (Fighter's primary stat)
+        it('should create pending stat increases for standard mode (default manual behavior)', () => {
+            // Standard mode defaults to manual stat selection (dnD5e strategy)
+            // Level 1 -> Level 5 crosses level 4 which has a stat increase
             const result = updater.addXP(mockCharacter, 6500, 'quest'); // Enough to reach level 5
 
             expect(result.leveledUp).toBe(true);
             expect(result.newLevel).toBe(5);
 
-            // Check that stats actually increased at level 4
+            // Check that stats are PENDING at level 4 (not applied)
             const level4Detail = result.levelUpDetails!.find(d => d.toLevel === 4);
             expect(level4Detail).toBeDefined();
-            expect(level4Detail!.statIncreases).toBeDefined();
-            expect(level4Detail!.statIncreases!.length).toBeGreaterThan(0);
+            expect(level4Detail!.statIncreases).toBeUndefined(); // Stats are pending!
+
+            // But HP should still increase
+            expect(level4Detail!.hpIncrease).toBeGreaterThan(0);
+
+            // Counter should be incremented
+            expect(result.character.pendingStatIncreases).toBe(1);
+        });
+
+        it('should automatically increase stats for uncapped mode (default auto behavior)', () => {
+            // Uncapped mode defaults to automatic stat selection (dnD5e_smart strategy)
+            const uncappedCharacter = { ...mockCharacter, gameMode: 'uncapped' as const };
+
+            const result = updater.addXP(uncappedCharacter, 6500, 'quest'); // Enough to reach level 5
+
+            expect(result.leveledUp).toBe(true);
+            expect(result.newLevel).toBe(5);
+
+            // Check that stats ARE applied automatically for uncapped mode
+            const level2Detail = result.levelUpDetails!.find(d => d.toLevel === 2);
+            expect(level2Detail).toBeDefined();
+            expect(level2Detail!.statIncreases).toBeDefined();
+            expect(level2Detail!.statIncreases!.length).toBeGreaterThan(0);
+
+            // Counter should NOT be incremented (auto mode)
+            expect(result.character.pendingStatIncreases).toBeUndefined();
         });
 
         it('should handle level up from combat XP', () => {

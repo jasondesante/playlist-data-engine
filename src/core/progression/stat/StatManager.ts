@@ -18,7 +18,8 @@ import type {
     StatIncreaseStrategy,
     StatIncreaseOptions,
     StatIncreaseFunction,
-    StatIncreaseStrategyType
+    StatIncreaseStrategyType,
+    StatSelectionValidationError
 } from '../../types/Progression.js';
 import { createStatIncreaseStrategy } from './StatIncreaseStrategy.js';
 
@@ -318,6 +319,94 @@ export class StatManager {
     getStatCap(character: CharacterSheet, _ability: Ability): number {
         const gameMode: GameMode = character.gameMode || 'standard';
         return gameMode === 'uncapped' ? Infinity : (this.config.maxStatCap ?? 20);
+    }
+
+    /**
+     * Validate stat selection follows D&D 5e rules
+     * Rules: +2 to one ability OR +1 to two abilities
+     *
+     * @param character - Character to validate against
+     * @param selections - User's stat selections
+     * @param increaseAmount - Total points to distribute (usually 2)
+     * @returns Validation result
+     */
+    public validateDnD5eStatSelection(
+        character: CharacterSheet,
+        selections: Array<{ ability: Ability; amount: number }>,
+        increaseAmount: number = 2
+    ): { valid: true } | StatSelectionValidationError {
+        // Rule 1: Total amount must equal 2
+        const totalAmount = selections.reduce((sum, s) => sum + s.amount, 0);
+        if (totalAmount !== increaseAmount) {
+            return {
+                error: `Total stat increase must be ${increaseAmount}, got ${totalAmount}`,
+                reason: 'invalid_amount',
+                allowedPatterns: [`+${increaseAmount} to one ability`, `+1 to two abilities`]
+            };
+        }
+
+        // Rule 2: Valid pattern (either +2 to one OR +1 to two)
+        const validPatterns = [
+            { count: 1, amount: increaseAmount },
+            { count: 2, amount: 1 }
+        ];
+
+        const patternMatch = validPatterns.some(p =>
+            selections.length === p.count &&
+            selections.every(s => s.amount === p.amount)
+        );
+
+        if (!patternMatch) {
+            return {
+                error: 'Invalid pattern: must be +2 to one ability or +1 to two abilities',
+                reason: 'wrong_pattern',
+                allowedPatterns: validPatterns.map(p =>
+                    p.count === 1 ? `+${p.amount} to one ability` : `+1 to two abilities`
+                )
+            };
+        }
+
+        // Rule 3: Check stat caps
+        const statCap = this.getStatCap(character, 'STR');
+        for (const selection of selections) {
+            const currentScore = character.ability_scores[selection.ability];
+            const newScore = currentScore + selection.amount;
+
+            if (newScore > statCap && statCap !== Infinity) {
+                return {
+                    error: `${selection.ability} would exceed stat cap of ${statCap}`,
+                    reason: 'exceeds_cap',
+                    allowedPatterns: [`Choose different abilities or use ${statCap - currentScore} points`]
+                };
+            }
+        }
+
+        // Rule 4: Valid abilities
+        const validAbilities: Ability[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+        for (const selection of selections) {
+            if (!validAbilities.includes(selection.ability)) {
+                return {
+                    error: `Invalid ability: ${selection.ability}`,
+                    reason: 'invalid_ability',
+                    allowedPatterns: validAbilities
+                };
+            }
+        }
+
+        // Rule 5: No duplicates
+        const seenAbilities = new Set<Ability>();
+        for (const selection of selections) {
+            if (seenAbilities.has(selection.ability)) {
+                return {
+                    error: `Duplicate ability: ${selection.ability}`,
+                    reason: 'duplicate_ability',
+                    allowedPatterns: ['Each ability can only be increased once']
+                };
+            }
+            seenAbilities.add(selection.ability);
+        }
+
+        return { valid: true };
     }
 
     /**

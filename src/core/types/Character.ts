@@ -202,4 +202,7 @@ export interface CharacterSheet {
     /** Game mode for stat progression (standard = capped at 20, uncapped = no limits) */
     gameMode?: GameMode;
 
+    /** Number of pending stat increases awaiting manual selection (counter) */
+    pendingStatIncreases?: number;
+
 }

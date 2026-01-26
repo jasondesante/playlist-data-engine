@@ -361,13 +361,14 @@ All sources return the same detailed breakdown:
 
 ### Level-Up with Stat Increases
 
-**THE LEVELING UP A CHARACTER EXAMPLE IS NOTHING WITHOUT IMPROVED STATS!** Stats increase on level up at levels 4, 8, 12, 16, and 19 following D&D 5e rules.
+**THE LEVELING UP A CHARACTER EXAMPLE IS NOTHING WITHOUT IMPROVED STATS!** Stats increase on level up at levels 4, 8, 12, 16, and 19 (standard mode) or every level (uncapped mode) following D&D 5e rules.
 
 ```typescript
 import { StatManager, CharacterUpdater, CharacterGenerator } from 'playlist-data-engine';
 
 // ===== GAME MODE SELECTION =====
 // Standard mode (default): D&D 5e rules - stats capped at 20, increases at levels 4, 8, 12, 16, 19
+// Uses MANUAL stat selection (2-step level-up process)
 const standardCharacter = CharacterGenerator.generate(
     seed,
     audioProfile,
@@ -376,6 +377,7 @@ const standardCharacter = CharacterGenerator.generate(
 );
 
 // Uncapped mode: No stat limits, stat increases EVERY level (2-20)
+// Uses AUTOMATIC stat selection (1-step level-up process)
 const uncappedCharacter = CharacterGenerator.generate(
     seed,
     audioProfile,
@@ -383,38 +385,62 @@ const uncappedCharacter = CharacterGenerator.generate(
     { gameMode: 'uncapped' }
 );
 
-// ===== OPTION 1: Manual Stat Selection (D&D 5e Standard) =====
-const statManager = new StatManager();
-const updater = new CharacterUpdater(statManager);
+// ===== OPTION 1: Auto-Detected Strategy (NEW DEFAULT!) =====
+// CharacterUpdater automatically detects strategy based on gameMode
+const updater = new CharacterUpdater(); // No StatManager needed!
 
-// When character reaches level 4, 8, 12, 16, or 19:
-// You provide the stat choice via options
-const levelUpResult = statManager.processLevelUp(character, 4, {
-    forcedAbilities: ['STR']  // Player chose STR
-});
+// For standard mode: 2-step level-up (manual stat selection)
+const standardResult = updater.addXP(standardCharacter, 6500, 'quest');
+console.log(`Leveled up to ${standardResult.newLevel}!`);
 
-character = levelUpResult.character;
-console.log(`STR increased from ${levelUpResult.increases[0].oldValue} to ${levelUpResult.increases[0].newValue}`);
-// Output: "STR increased from 16 to 18"
+// Check for pending stat increases
+if (updater.hasPendingStatIncreases(standardCharacter)) {
+    const count = updater.getPendingStatIncreaseCount(standardCharacter);
+    console.log(`${count} stat increases pending!`);
 
-// ===== OPTION 2: Smart Auto-Selection (No manual input needed) =====
+    // User chooses +2 to STR
+    const completeResult = updater.applyPendingStatIncrease(standardCharacter, 'STR');
+    console.log(`STR: ${completeResult.statIncreases[0].oldValue} → ${completeResult.statIncreases[0].newValue}`);
+
+    // Or user chooses +1 to STR and +1 to DEX
+    const result2 = updater.applyPendingStatIncrease(standardCharacter, 'STR', ['DEX']);
+}
+
+// For uncapped mode: 1-step level-up (automatic stat selection)
+const uncappedResult = updater.addXP(uncappedCharacter, 6500, 'quest');
+console.log(`Leveled up to ${uncappedResult.newLevel}!`);
+console.log(`Stats auto-increased: ${JSON.stringify(uncappedResult.levelUpDetails?.[0].statIncreases)}`);
+
+// ===== OPTION 2: Manual Stat Selection (Force Manual Mode) =====
+const manualStatManager = new StatManager({ strategy: 'dnD5e' });
+const manualUpdater = new CharacterUpdater(manualStatManager);
+
+const result = manualUpdater.addXP(character, 6500, 'quest');
+
+// User must manually select stats (same as Option 1)
+if (manualUpdater.hasPendingStatIncreases(character)) {
+    const completeResult = manualUpdater.applyPendingStatIncrease(character, 'CON');
+    console.log(`CON increased!`);
+}
+
+// ===== OPTION 3: Smart Auto-Selection (Force Auto Mode) =====
 const smartStatManager = new StatManager({
     strategy: 'dnD5e_smart'  // Auto-selects best stats based on class and current scores
 });
 const smartUpdater = new CharacterUpdater(smartStatManager);
 
 // Stats automatically increase on level up - no player input required!
-const result = smartUpdater.updateCharacterFromSession(character, session, track, listenCount);
+const smartResult = smartUpdater.addXP(character, 6500, 'quest');
 
-if (result.leveledUp) {
-    console.log(`Leveled up to ${result.newLevel}! Stats auto-increased.`);
+if (smartResult.leveledUp) {
+    console.log(`Leveled up to ${smartResult.newLevel}! Stats auto-increased.`);
     // The engine intelligently chose which stats to increase based on:
     // - Class primary ability
     // - Current stat values (boosts lowest if primary is high)
     // - D&D 5e rules
 }
 
-// ===== OPTION 3: Potion/Item Stat Boosts =====
+// ===== OPTION 4: Potion/Item Stat Boosts =====
 const itemStatManager = new StatManager();
 
 // Potion of Strength: +4 STR (temporary or permanent based on your game logic)
@@ -1128,7 +1154,7 @@ The main exports from the library are:
 - `BalancedStrategy` - +1 to two lowest stats
 - `PrimaryOnlyStrategy` - Always boosts class primary
 - `RandomStrategy` - Random stat selection
-- `ManualStrategy` - Requires explicit input
+- `ManualStrategy` - Pure manual mode (always defers to `applyPendingStatIncrease()`)
 - `createStatIncreaseStrategy` - Factory function for creating strategies
 
 ### Sensors

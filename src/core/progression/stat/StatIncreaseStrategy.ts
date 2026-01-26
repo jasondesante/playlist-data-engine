@@ -55,6 +55,11 @@ export class DnD5eStandardStrategy implements StatIncreaseStrategy {
         // This is the default D&D 5e behavior
         return [];
     }
+
+    requiresManualInput(options?: StatIncreaseOptions): boolean {
+        // Requires manual input if no forced abilities provided
+        return !options?.forcedAbilities || options.forcedAbilities.length === 0;
+    }
 }
 
 /**
@@ -117,6 +122,10 @@ export class DnD5eSmartStrategy implements StatIncreaseStrategy {
 
         const lowest = this.findLowestStat(character, availableAbilities);
         return [{ ability: lowest, amount: increaseAmount }];
+    }
+
+    requiresManualInput(): boolean {
+        return false; // Always automatic
     }
 
     private shouldSplit(character: CharacterSheet, primary: Ability): boolean {
@@ -192,6 +201,10 @@ export class BalancedStrategy implements StatIncreaseStrategy {
 
         return results;
     }
+
+    requiresManualInput(): boolean {
+        return false; // Always automatic
+    }
 }
 
 /**
@@ -223,6 +236,10 @@ export class PrimaryOnlyStrategy implements StatIncreaseStrategy {
         }
 
         return [{ ability: primary, amount: increaseAmount }];
+    }
+
+    requiresManualInput(): boolean {
+        return false; // Always automatic
     }
 
     private findLowestStat(character: CharacterSheet, excluded?: Ability[]): Ability {
@@ -279,28 +296,33 @@ export class RandomStrategy implements StatIncreaseStrategy {
 
         return [{ ability: shuffled[0], amount: increaseAmount }];
     }
+
+    requiresManualInput(): boolean {
+        return false; // Always automatic
+    }
 }
 
 /**
  * Manual Strategy
- * Requires explicit ability selection via options.forcedAbilities
+ * Always defers to manual stat selection
+ * Returns empty array to signal that manual input is required
+ * Stats should be applied via CharacterUpdater.applyPendingStatIncrease()
  */
 export class ManualStrategy implements StatIncreaseStrategy {
     readonly name = 'Manual';
 
     selectIncreases(
-        character: CharacterSheet,
-        increaseAmount: number,
-        options?: StatIncreaseOptions
+        _character: CharacterSheet,
+        _increaseAmount: number,
+        _options?: StatIncreaseOptions
     ): Array<{ ability: Ability; amount: number }> {
-        if (!options?.forcedAbilities || options.forcedAbilities.length === 0) {
-            throw new Error('Manual strategy requires forcedAbilities to be specified');
-        }
+        // Always defer to manual input via applyPendingStatIncrease()
+        // This strategy never auto-selects stats, even with forcedAbilities
+        return [];
+    }
 
-        return options.forcedAbilities.map(ability => ({
-            ability,
-            amount: increaseAmount / options.forcedAbilities!.length
-        }));
+    requiresManualInput(): boolean {
+        return true; // Always requires manual input
     }
 }
 
@@ -323,6 +345,10 @@ class FunctionStrategyWrapper implements StatIncreaseStrategy {
         options?: StatIncreaseOptions
     ): Array<{ ability: Ability; amount: number }> {
         return this.fn(character, increaseAmount, options);
+    }
+
+    requiresManualInput(): boolean {
+        return false; // Custom functions are treated as automatic
     }
 }
 
