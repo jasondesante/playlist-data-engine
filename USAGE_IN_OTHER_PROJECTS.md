@@ -171,6 +171,97 @@ if (session) {
 }
 ```
 
+### Level-Up with Stat Increases
+
+**THE LEVELING UP A CHARACTER EXAMPLE IS NOTHING WITHOUT IMPROVED STATS!** Stats increase on level up at levels 4, 8, 12, 16, and 19 following D&D 5e rules.
+
+```typescript
+import { StatManager, CharacterUpdater } from 'playlist-data-engine';
+
+// ===== OPTION 1: Manual Stat Selection (D&D 5e Standard) =====
+const statManager = new StatManager();
+const updater = new CharacterUpdater(statManager);
+
+// When character reaches level 4, 8, 12, 16, or 19:
+// You provide the stat choice via options
+const levelUpResult = statManager.processLevelUp(character, 4, {
+    forcedAbilities: ['STR']  // Player chose STR
+});
+
+character = levelUpResult.character;
+console.log(`STR increased from ${levelUpResult.increases[0].oldValue} to ${levelUpResult.increases[0].newValue}`);
+// Output: "STR increased from 16 to 18"
+
+// ===== OPTION 2: Smart Auto-Selection (No manual input needed) =====
+const smartStatManager = new StatManager({
+    strategy: 'dnD5e_smart'  // Auto-selects best stats based on class and current scores
+});
+const smartUpdater = new CharacterUpdater(smartStatManager);
+
+// Stats automatically increase on level up - no player input required!
+const result = smartUpdater.updateCharacterFromSession(character, session, track, listenCount);
+
+if (result.leveledUp) {
+    console.log(`Leveled up to ${result.newLevel}! Stats auto-increased.`);
+    // The engine intelligently chose which stats to increase based on:
+    // - Class primary ability
+    // - Current stat values (boosts lowest if primary is high)
+    // - D&D 5e rules
+}
+
+// ===== OPTION 3: Potion/Item Stat Boosts =====
+const itemStatManager = new StatManager();
+
+// Potion of Strength: +4 STR (temporary or permanent based on your game logic)
+const potionResult = itemStatManager.increaseStats(
+    character,
+    [{ ability: 'STR', amount: 4 }],
+    'item'
+);
+
+character = potionResult.character;
+
+// Check if stat was capped at 20
+if (potionResult.capped.length > 0) {
+    console.log('Stat was capped at 20!');
+}
+
+// Check what actually increased
+for (const inc of potionResult.increases) {
+    console.log(`${inc.ability}: ${inc.oldValue} → ${inc.newValue} (+${inc.delta})`);
+}
+
+// ===== OPTION 4: Custom Level-Up Formula =====
+// Provide your own formula for stat selection (perfect for custom game mechanics!)
+const tankStrategy = (character, amount, options) => {
+    // Always prioritize CON first (tank build), then DEX
+    if (character.ability_scores.CON < 18) {
+        return [{ ability: 'CON', amount }];
+    }
+    return [{ ability: 'DEX', amount }];
+};
+
+const customStatManager = new StatManager({ strategy: tankStrategy });
+const customUpdater = new CharacterUpdater(customStatManager);
+
+// Your custom formula is now used for all level-ups!
+```
+
+**HP increases EVERY level (not just stat increase levels):**
+
+The leveling system ensures HP increases on EVERY level up (1-20), not just at stat increase levels:
+
+```typescript
+// HP increases every level using class hit die + CON modifier
+// For example, a Fighter (d10 hit die) with +2 CON:
+// Level 1 → Level 2: HP increases by 1d10+2 (avg 7.5)
+// Level 2 → Level 3: HP increases by 1d10+2
+// ...and so on for all 20 levels!
+
+// Ability scores increase at levels 4, 8, 12, 16, 19
+// Each grants +2 to one ability or +1 to two abilities
+```
+
 ---
 
 ## Specific Features
@@ -517,26 +608,46 @@ console.log(`Base: ${baseXP} XP, Total: ${totalXP} XP (${totalModifier.toFixed(2
 
 ### Manual Level-Up Processing
 
-For advanced use cases where you need to handle level-ups manually:
+For advanced use cases where you need to handle level-ups manually with full control over stat selection:
 
 ```typescript
-import { LevelUpProcessor } from 'playlist-data-engine';
+import { LevelUpProcessor, StatManager } from 'playlist-data-engine';
+
+// ===== Method 1: Using StatManager (Recommended) =====
+const statManager = new StatManager();
 
 // Check if character has enough XP to level up
 if (character.xp.current >= character.xp.next_level) {
   const newLevel = character.level + 1;
 
-  // Process the level-up (returns benefits, doesn't apply them)
+  // Check if this level grants stat increases (4, 8, 12, 16, 19)
+  const statResult = statManager.processLevelUp(character, newLevel);
+
+  if (statResult) {
+    // Stat increases available! Player must choose which stats to increase.
+    // For example, show UI to let player pick:
+    const playerChoice = ['STR'];  // Player selected STR
+
+    // Apply their choice
+    const finalResult = statManager.processLevelUp(character, newLevel, {
+      forcedAbilities: playerChoice
+    });
+
+    character = finalResult.character;
+
+    console.log(`Stat increased:`);
+    for (const inc of finalResult.increases) {
+      console.log(`  ${inc.ability}: ${inc.oldValue} → ${inc.newValue} (+${inc.delta})`);
+    }
+  }
+
+  // Process the full level-up benefits (HP, proficiency, etc.)
   const benefits = LevelUpProcessor.processLevelUp(character, newLevel);
 
   console.log(`Level up to ${benefits.newLevel}!`);
   console.log(`  HP increase: +${benefits.hitPointIncrease}`);
   console.log(`  New HP total: ${benefits.newHitPointsTotal}`);
   console.log(`  Proficiency bonus: ${benefits.newProficiencyBonus}`);
-
-  if (benefits.abilityScoreIncrease) {
-    console.log(`  ASI: +${benefits.abilityScoreIncrease.increase} ${benefits.abilityScoreIncrease.ability}`);
-  }
 
   if (benefits.newSpellSlots) {
     console.log(`  New spell slots:`, benefits.newSpellSlots);
@@ -549,6 +660,17 @@ if (character.xp.current >= character.xp.next_level) {
   // Apply the benefits to the character
   character = LevelUpProcessor.applyLevelUp(character, benefits);
 }
+
+// ===== Method 2: Auto-selection with Smart Strategy =====
+const smartStatManager = new StatManager({
+  strategy: 'dnD5e_smart'  // Automatically picks best stats
+});
+
+// Set the StatManager on LevelUpProcessor
+LevelUpProcessor.setStatManager(smartStatManager);
+
+// Now level-ups automatically handle stat selection!
+// No manual choice needed - the engine intelligently picks stats.
 ```
 
 ---
@@ -581,6 +703,16 @@ The main exports from the library are:
 - `LevelUpProcessor` - Handle level-ups
 - `MasterySystem` - Track track mastery
 - `CharacterUpdater` - Apply sessions to characters
+- `StatManager` - **NEW** - Manage stat increases (level-up, potions, custom formulas)
+
+### Stat Increase Strategies
+- `DnD5eStandardStrategy` - Default D&D 5e (manual selection)
+- `DnD5eSmartStrategy` - Intelligent auto-selection
+- `BalancedStrategy` - +1 to two lowest stats
+- `PrimaryOnlyStrategy` - Always boosts class primary
+- `RandomStrategy` - Random stat selection
+- `ManualStrategy` - Requires explicit input
+- `createStatIncreaseStrategy` - Factory function for creating strategies
 
 ### Sensors
 - `EnvironmentalSensors` - GPS, motion, weather, light integration
@@ -601,6 +733,14 @@ All TypeScript types are exported, including:
 - `AudioProfile`, `ColorPalette`, `FrequencyBands`
 - `EnvironmentalContext`, `GamingContext`, `ListeningSession`
 - `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS`, etc.
+
+**Stat Increase Types (NEW):**
+- `StatIncreaseConfig` - Configuration for stat increase behavior
+- `StatIncreaseResult` - Result from stat operations with full change details
+- `StatIncreaseStrategy` - Strategy interface for custom formulas
+- `StatIncreaseOptions` - Options for stat selection (forced, excluded, etc.)
+- `StatIncreaseStrategyType` - Built-in strategy names ('dnD5e', 'dnD5e_smart', etc.)
+- `StatIncreaseFunction` - Simple function type for custom formulas
 
 ---
 

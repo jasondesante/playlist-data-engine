@@ -1271,10 +1271,19 @@ export interface LevelUpBenefits {
     newHitPointsTotal: number;
     proficiencyBonusIncrease: number;
     newProficiencyBonus: number;
+
+    /** New: Support multiple stat increases */
+    abilityScoreIncreases?: Array<{
+        ability: 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
+        increase: number;
+    }>;
+
+    /** Deprecated: Kept for backward compatibility */
     abilityScoreIncrease?: {
         ability: 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
         increase: number;
     };
+
     newSpellSlots?: Record<number, number>;
     classFeatures?: string[];
 }
@@ -1296,6 +1305,154 @@ Tracks song mastery based on listen counts.
     - Returns bonus XP if mastered.
 - `isJustMastered(previous: number, current: number): boolean`
     - Returns true if mastery was achieved in the current session.
+
+---
+
+## Stat Increase System
+
+**Location:** `src/core/progression/stat/StatManager.ts`
+
+Provides comprehensive stat increase management for D&D 5e-style character progression with flexible strategies for level-ups, items, and custom formulas.
+
+### Class: `StatManager`
+
+**Constructor:**
+```typescript
+new StatManager(config?: Partial<StatIncreaseConfig>)
+```
+
+**Configuration:**
+- `maxStatCap` (number): Hard cap for all stats (default: 20)
+- `strategy`: Strategy for auto-selecting stats on level up
+- `autoApply` (boolean): Auto-apply stat increases during level up (default: true)
+- `statIncreaseLevels` (number[]): Levels that grant stat increases (default: [4, 8, 12, 16, 19])
+
+**Methods:**
+
+- `increaseStats(character, increases, source): StatIncreaseResult`
+    - Manually increase stats (potions, items, events)
+    - Returns updated character with full change details
+    - Enforces stat cap and recalculates modifiers
+
+- `decreaseStats(character, decreases, source): StatIncreaseResult`
+    - Decrease stats (curses, poison)
+    - Uses same logic as increase but with negative amounts
+
+- `setStat(character, ability, value, source): StatIncreaseResult`
+    - Set a stat to an absolute value
+    - Useful for setting specific values or resetting stats
+
+- `processLevelUp(character, newLevel, options): StatIncreaseResult | null`
+    - Process stat increases for level up
+    - Returns null if this level doesn't grant stat increases
+    - Uses configured strategy to determine which stats increase
+
+- `canIncrease(character, ability, amount): boolean`
+    - Check if an ability can be increased by a given amount
+    - Returns false if stat would exceed cap
+
+- `getStatCap(ability): number`
+    - Get the stat cap for an ability
+
+### Built-in Strategies
+
+| Strategy | Description |
+|----------|-------------|
+| `DnD5eStandardStrategy` | **DEFAULT** - Standard D&D 5e rules (+2 to one, requires manual selection) |
+| `DnD5eSmartStrategy` | Intelligent auto-selection based on class and current stats |
+| `BalancedStrategy` | Always +1 to two lowest stats (balances character) |
+| `PrimaryOnlyStrategy` | Always boosts class's primary ability |
+| `RandomStrategy` | Random stat selection |
+| `ManualStrategy` | Requires explicit ability selection via options |
+| **Custom Functions** | Pass a simple function for custom formulas |
+
+### Strategy Types
+
+```typescript
+type StatIncreaseStrategyType =
+    | 'dnD5e'          // Manual selection (D&D 5e standard)
+    | 'dnD5e_smart'    // Intelligent auto-selection
+    | 'balanced'       // +1 to two lowest stats
+    | 'primary_only'   // Always boosts class primary
+    | 'random'         // Random selection
+    | 'manual';        // Requires manual selection
+```
+
+### Stat Increase Result
+
+```typescript
+export interface StatIncreaseResult {
+    character: CharacterSheet;        // Updated character
+    increases: Array<{
+        ability: Ability;             // Which stat increased
+        oldValue: number;             // Value before increase
+        newValue: number;             // Value after increase
+        delta: number;                // Amount increased
+    }>;
+    capped: Array<{
+        ability: Ability;             // Stat that was capped
+        attemptedValue: number;       // Value that was attempted
+        cappedAt: number;             // The cap (20)
+    }>;
+    source: 'level_up' | 'manual' | 'item' | 'event';
+    timestamp: number;
+}
+```
+
+### Usage Examples
+
+**Manual Stat Selection (D&D 5e Standard):**
+```typescript
+const statManager = new StatManager();
+
+// At level 4, 8, 12, 16, or 19 - player must choose
+const result = statManager.processLevelUp(character, 4, {
+    forcedAbilities: ['STR']  // Player chose STR
+});
+
+console.log(`STR increased from ${result.increases[0].oldValue} to ${result.increases[0].newValue}`);
+```
+
+**Smart Auto-Selection:**
+```typescript
+const statManager = new StatManager({
+    strategy: 'dnD5e_smart'  // Automatically picks best stats
+});
+const updater = new CharacterUpdater(statManager);
+
+// Stats automatically increase on level up!
+```
+
+**Potion/Item Stat Boosts:**
+```typescript
+const statManager = new StatManager();
+
+// Potion of Strength: +4 STR
+const result = statManager.increaseStats(
+    character,
+    [{ ability: 'STR', amount: 4 }],
+    'item'
+);
+
+character = result.character;
+
+if (result.capped.length > 0) {
+    console.log('Stat was capped at 20!');
+}
+```
+
+**Custom Formula:**
+```typescript
+// Define your own stat selection logic
+const tankStrategy = (character, amount, options) => {
+    if (character.ability_scores.CON < 18) {
+        return [{ ability: 'CON', amount }];
+    }
+    return [{ ability: 'DEX', amount }];
+};
+
+const statManager = new StatManager({ strategy: tankStrategy });
+```
 
 ---
 

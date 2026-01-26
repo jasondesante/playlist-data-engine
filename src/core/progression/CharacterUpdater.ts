@@ -4,6 +4,7 @@ import type { PlaylistTrack } from '../types/Playlist.js';
 import { XPCalculator } from './XPCalculator.js';
 import { LevelUpProcessor } from './LevelUpProcessor.js';
 import { MasterySystem } from './MasterySystem.js';
+import type { StatManager } from './stat/StatManager.js';
 
 export interface CharacterUpdateResult {
     character: CharacterSheet;
@@ -20,10 +21,17 @@ export interface CharacterUpdateResult {
 export class CharacterUpdater {
     private xpCalculator: XPCalculator;
     private masterySystem: MasterySystem;
+    private statManager?: StatManager;
 
-    constructor() {
+    constructor(statManager?: StatManager) {
         this.xpCalculator = new XPCalculator();
         this.masterySystem = new MasterySystem();
+        this.statManager = statManager;
+
+        // Pass StatManager to LevelUpProcessor if provided
+        if (statManager) {
+            LevelUpProcessor.setStatManager(statManager);
+        }
     }
 
     /**

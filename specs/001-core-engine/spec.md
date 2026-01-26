@@ -17,7 +17,7 @@ Transforms music playlists into D&D 5e-inspired RPG characters through audio/vis
 6. **Advanced Character** - 18 skills, proficiencies, spells, equipment, appearance
 7. **Environmental Sensors** - GPS, motion, weather, light → XP modifiers
 8. **Gaming Integration** - Steam game detection + Discord music presence
-9. **Progression** - 1 XP/sec, D&D 5e levels 1-20, mastery
+9. **Progression** - 1 XP/sec, D&D 5e levels 1-20, mastery, stat increases on level up
 10. **Combat** - Turn-based, initiative, attacks, spell casting
 
 ---
@@ -52,6 +52,8 @@ Implemented in `src/core/generation/AbilityScoreCalculator.ts`. Base scores rang
 | CHA | `8 + ((mid_dominance + average_amplitude) / 2 × 7)` |
 
 Racial bonuses applied after, capped at 20.
+
+**Stat Increases on Level Up**: At levels 4, 8, 12, 16, and 19, characters gain ability score increases following D&D 5e rules (+2 to one ability or +1 to two abilities). The `StatManager` class provides flexible strategies for stat selection including manual choice, intelligent auto-selection, or custom formulas.
 
 ---
 
@@ -102,6 +104,9 @@ Sensors can be configured via environment variables or programmatically.
 | `GamingPlatformSensors` | Steam game detection + Discord presence | `src/core/sensors/GamingPlatformSensors.ts` |
 | `SessionTracker` | Tracks listening sessions for XP | `src/core/progression/SessionTracker.ts` |
 | `XPCalculator` | Calculates XP with modifiers | `src/core/progression/XPCalculator.ts` |
+| `CharacterUpdater` | Orchestrates character updates from sessions | `src/core/progression/CharacterUpdater.ts` |
+| `LevelUpProcessor` | Handles D&D 5e level-up mechanics | `src/core/progression/LevelUpProcessor.ts` |
+| `StatManager` | Manages stat increases (level-up, potions, custom) | `src/core/progression/stat/StatManager.ts` |
 | `CombatEngine` | Turn-based combat system | `src/core/combat/CombatEngine.ts` |
 
 **For API details, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md)**

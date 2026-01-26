@@ -41,7 +41,13 @@ export type {
     EnvironmentalContext,
     GamingContext,
     ListeningSession,
-    ExperienceSystem
+    ExperienceSystem,
+    StatIncreaseConfig,
+    StatIncreaseResult,
+    StatIncreaseStrategy,
+    StatIncreaseOptions,
+    StatIncreaseStrategyType,
+    StatIncreaseFunction
 } from './core/types/Progression.js';
 
 export type { LevelUpBenefits } from './core/progression/LevelUpProcessor.js';
@@ -89,6 +95,25 @@ export { SessionTracker } from './core/progression/SessionTracker.js';
 export { LevelUpProcessor } from './core/progression/LevelUpProcessor.js';
 export { MasterySystem } from './core/progression/MasterySystem.js';
 export { CharacterUpdater } from './core/progression/CharacterUpdater.js';
+
+// Stat Increase System
+export { StatManager } from './core/progression/stat/StatManager.js';
+export {
+    DnD5eStandardStrategy,
+    DnD5eSmartStrategy,
+    BalancedStrategy,
+    PrimaryOnlyStrategy,
+    RandomStrategy,
+    ManualStrategy,
+    createStatIncreaseStrategy
+} from './core/progression/stat/StatIncreaseStrategy.js';
+
+// Config
+export {
+    DEFAULT_PROGRESSION_CONFIG,
+    mergeProgressionConfig,
+    type ProgressionConfig
+} from './core/config/progressionConfig.js';
 
 // Constants
 export {

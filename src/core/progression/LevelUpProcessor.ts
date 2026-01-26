@@ -3,9 +3,10 @@
  * Based on specs/001-core-engine/SPEC.md and D&D 5e rules
  */
 
-import type { CharacterSheet, Class as CharacterClass } from '../types/Character.js';
+import type { CharacterSheet, Class as CharacterClass, Ability } from '../types/Character.js';
 import { CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
 import { SeededRNG } from '../../utils/random.js';
+import type { StatManager } from './stat/StatManager.js';
 
 /**
  * Level-up benefits returned after processing a level-up
@@ -16,10 +17,19 @@ export interface LevelUpBenefits {
     newHitPointsTotal: number;
     proficiencyBonusIncrease: number;
     newProficiencyBonus: number;
+
+    /** New: Support multiple stat increases */
+    abilityScoreIncreases?: Array<{
+        ability: Ability;
+        increase: number;
+    }>;
+
+    /** Deprecated: Kept for backward compatibility */
     abilityScoreIncrease?: {
-        ability: 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
+        ability: Ability;
         increase: number;
     };
+
     newSpellSlots?: Record<number, number>;
     classFeatures?: string[];
 }
@@ -35,6 +45,25 @@ const ABILITY_SCORE_INCREASE_LEVELS = [4, 8, 12, 16, 19];
  * Handles HP increases, ability score improvements, spell slots, and features
  */
 export class LevelUpProcessor {
+    /** Optional StatManager for advanced stat increase handling */
+    private static statManager?: StatManager;
+
+    /**
+     * Set the StatManager instance for stat increase handling
+     * Call this before processing level-ups to enable smart stat selection
+     *
+     * @param statManager - The StatManager instance to use
+     */
+    static setStatManager(statManager: StatManager): void {
+        this.statManager = statManager;
+    }
+
+    /**
+     * Get the current StatManager instance
+     */
+    static getStatManager(): StatManager | undefined {
+        return this.statManager;
+    }
     /**
      * Process a character level-up
      * @param character - The character to level up
@@ -79,7 +108,26 @@ export class LevelUpProcessor {
         };
 
         // Check for ability score increase (levels 4, 8, 12, 16, 19)
-        if (ABILITY_SCORE_INCREASE_LEVELS.includes(newLevel)) {
+        if (this.statManager && ABILITY_SCORE_INCREASE_LEVELS.includes(newLevel)) {
+            // Use StatManager for advanced stat increase handling
+            const statResult = this.statManager.processLevelUp(character, newLevel);
+
+            if (statResult && statResult.increases.length > 0) {
+                benefits.abilityScoreIncreases = statResult.increases.map(inc => ({
+                    ability: inc.ability,
+                    increase: inc.delta
+                }));
+
+                // Also populate deprecated field for backward compatibility
+                if (statResult.increases.length === 1) {
+                    benefits.abilityScoreIncrease = {
+                        ability: statResult.increases[0].ability,
+                        increase: statResult.increases[0].delta
+                    };
+                }
+            }
+        } else if (ABILITY_SCORE_INCREASE_LEVELS.includes(newLevel)) {
+            // Backward compatibility: use old hardcoded behavior
             benefits.abilityScoreIncrease = {
                 ability: 'STR', // Default, can be customized by caller
                 increase: 2,
@@ -112,8 +160,22 @@ export class LevelUpProcessor {
         updated.hp.current = Math.min(updated.hp.current + benefits.hitPointIncrease, updated.hp.max);
         updated.proficiency_bonus = benefits.newProficiencyBonus;
 
-        // Apply ability score increase if applicable
-        if (benefits.abilityScoreIncrease) {
+        // Apply ability score increases if applicable
+        if (benefits.abilityScoreIncreases && benefits.abilityScoreIncreases.length > 0) {
+            // New: Handle multiple stat increases
+            for (const increase of benefits.abilityScoreIncreases) {
+                const ability = increase.ability;
+                updated.ability_scores[ability] = Math.min(
+                    20,
+                    updated.ability_scores[ability] + increase.increase
+                );
+
+                // Recalculate modifier
+                const newScore = updated.ability_scores[ability];
+                updated.ability_modifiers[ability] = Math.floor((newScore - 10) / 2);
+            }
+        } else if (benefits.abilityScoreIncrease) {
+            // Backward compatibility: Handle single stat increase
             const ability = benefits.abilityScoreIncrease.ability;
             updated.ability_scores[ability] = Math.min(
                 20,
