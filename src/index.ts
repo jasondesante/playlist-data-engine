@@ -77,6 +77,7 @@ export {
 
 // Core functionality
 export { CharacterGenerator, type CharacterGeneratorOptions } from './core/generation/CharacterGenerator.js';
+export { PlaylistParser } from './core/parser/PlaylistParser.js';
 export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
 export { AudioAnalyzer } from './core/analysis/AudioAnalyzer.js';
 export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
