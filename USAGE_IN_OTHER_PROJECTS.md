@@ -171,6 +171,170 @@ if (session) {
 }
 ```
 
+### Level-Up with Detailed Breakdown
+
+**NEW:** The engine now returns complete details about what happened during level-ups! You get everything you need for that "LEVELED UP!" celebration experience:
+
+```typescript
+import { CharacterUpdater, StatManager } from 'playlist-data-engine';
+
+const statManager = new StatManager({
+    strategy: 'dnD5e_smart'  // Auto-picks best stats
+});
+const updater = new CharacterUpdater(statManager);
+
+// Apply session and check for level up
+const result = updater.updateCharacterFromSession(character, session, track, listenCount);
+
+if (result.leveledUp && result.levelUpDetails) {
+    console.log(`🎉 LEVELED UP from ${result.levelUpDetails[0].fromLevel} to ${result.newLevel}!`);
+
+    // Each level-up has full details
+    for (const detail of result.levelUpDetails) {
+        console.log(`\n=== Level ${detail.fromLevel} → ${detail.toLevel} ===`);
+        console.log(`💚 HP: +${detail.hpIncrease} (new max: ${detail.newMaxHP})`);
+
+        if (detail.proficiencyIncrease > 0) {
+            console.log(`⚔️ Proficiency: +${detail.proficiencyIncrease} (new: ${detail.newProficiency})`);
+        }
+
+        if (detail.statIncreases && detail.statIncreases.length > 0) {
+            console.log(`📊 STATS INCREASED:`);
+            for (const stat of detail.statIncreases) {
+                console.log(`   ${stat.ability}: ${stat.oldValue} → ${stat.newValue} (+${stat.delta})`);
+            }
+        }
+
+        if (detail.featuresGained && detail.featuresGained.length > 0) {
+            console.log(`✨ NEW FEATURES: ${detail.featuresGained.join(', ')}`);
+        }
+
+        if (detail.newSpellSlots) {
+            console.log(`🔮 NEW SPELL SLOTS:`, detail.newSpellSlots);
+        }
+    }
+}
+
+// Example output:
+// 🎉 LEVELED UP from 3 to 4!
+//
+// === Level 3 → 4 ===
+// 💚 HP: +7 (new max: 32)
+// ⚔️ Proficiency: +1 (new: 3)
+// 📊 STATS INCREASED:
+//    STR: 14 → 16 (+2)
+// ✨ NEW FEATURES: Ability Score Improvement
+```
+
+### Adding XP from Other Sources
+
+**NEW:** You can now add XP from any source (combat, quests, custom activities) and get the same detailed level-up breakdowns!
+
+```typescript
+import { CharacterUpdater } from 'playlist-data-engine';
+
+const updater = new CharacterUpdater();
+
+// ===== COMBAT XP =====
+// Award XP for defeating enemies
+const combatResult = updater.addXP(character, 500, 'combat');
+
+if (combatResult.leveledUp && combatResult.levelUpDetails) {
+    console.log(`🎉 LEVELED UP from combat!`);
+    for (const detail of combatResult.levelUpDetails) {
+        console.log(`💚 HP: +${detail.hpIncrease} (new max: ${detail.newMaxHP})`);
+
+        if (detail.statIncreases && detail.statIncreases.length > 0) {
+            console.log(`📊 STATS INCREASED:`);
+            for (const stat of detail.statIncreases) {
+                console.log(`   ${stat.ability}: ${stat.oldValue} → ${stat.newValue} (+${stat.delta})`);
+            }
+        }
+    }
+}
+
+// ===== QUEST COMPLETION XP =====
+// Award XP for completing quests
+const questResult = updater.addXP(character, 1000, 'quest');
+console.log(`Quest complete! Earned ${questResult.xpEarned} XP.`);
+
+// ===== CUSTOM ACTIVITY XP =====
+// Award XP for exploration, crafting, social interactions, etc.
+const explorationResult = updater.addXP(character, 250, 'exploration');
+const craftingResult = updater.addXP(character, 150, 'crafting');
+const socialResult = updater.addXP(character, 100, 'social');
+
+// ===== MASSIVE XP REWARD =====
+// Boss defeated or major milestone - multiple levels at once!
+const bossResult = updater.addXP(character, 10000, 'boss_defeat');
+
+if (bossResult.leveledUp) {
+    console.log(`🎉🎉🎉 MULTIPLE LEVELS! ${bossResult.newLevel}`);
+    console.log(`Gained ${bossResult.levelUpDetails?.length} levels at once!`);
+
+    // Show each level-up
+    for (const detail of bossResult.levelUpDetails!) {
+        console.log(`\n=== Level ${detail.fromLevel} → ${detail.toLevel} ===`);
+        console.log(`💚 HP: +${detail.hpIncrease}`);
+
+        if (detail.featuresGained && detail.featuresGained.length > 0) {
+            console.log(`✨ ${detail.featuresGained.join(', ')}`);
+        }
+    }
+}
+
+// ===== TRACKING XP SOURCES =====
+// The 'source' parameter helps you track where XP came from
+interface XPSource {
+    source: string;
+    amount: number;
+    timestamp: number;
+}
+
+const xpHistory: XPSource[] = [];
+
+function addXPWithTracking(character: CharacterSheet, amount: number, source: string) {
+    const result = updater.addXP(character, amount, source);
+
+    // Track the XP source
+    xpHistory.push({
+        source,
+        amount,
+        timestamp: Date.now()
+    });
+
+    return result;
+}
+
+// Usage
+addXPWithTracking(character, 500, 'combat');
+addXPWithTracking(character, 1000, 'quest_main');
+addXPWithTracking(character, 250, 'side_quest');
+
+// Later, analyze where XP came from
+const combatXP = xpHistory
+    .filter(h => h.source.startsWith('combat'))
+    .reduce((sum, h) => sum + h.amount, 0);
+
+console.log(`Total combat XP: ${combatXP}`);
+```
+
+**Multiple XP Sources - Same Level-Up System:**
+
+Whether XP comes from music listening, combat, quests, or custom activities, the level-up system works identically:
+
+| Source | Method | XP Calculation | Level-Up Details |
+|--------|--------|----------------|------------------|
+| Music Listening | `updateCharacterFromSession()` | Duration × modifiers | ✅ Yes |
+| Combat | `addXP()` | Direct amount | ✅ Yes |
+| Quests | `addXP()` | Direct amount | ✅ Yes |
+| Custom | `addXP()` | Direct amount | ✅ Yes |
+
+All sources return the same detailed breakdown:
+- `leveledUp` - Whether character leveled up
+- `newLevel` - New level (if leveled up)
+- `levelUpDetails` - Array of HP, stat, feature, and spell slot changes
+
 ### Level-Up with Stat Increases
 
 **THE LEVELING UP A CHARACTER EXAMPLE IS NOTHING WITHOUT IMPROVED STATS!** Stats increase on level up at levels 4, 8, 12, 16, and 19 following D&D 5e rules.

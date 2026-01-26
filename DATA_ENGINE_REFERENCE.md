@@ -1219,10 +1219,67 @@ Orchestrates applying session results to a character, handling leveling up and m
 
 **Methods:**
 
+- `addXP(character: CharacterSheet, xpAmount: number, source?: string): Omit<CharacterUpdateResult, 'masteredTrack' | 'masteryBonusXP'>`
+  - Add XP from any source (combat, quests, custom activities)
+  - Triggers the same level-up system as listening sessions
+  - Returns detailed level-up breakdowns if character levels up
+
 - `updateCharacterFromSession(character: CharacterSheet, session: ListeningSession, track?: PlaylistTrack, previousListenCount?: number): CharacterUpdateResult`
+  - Update character from a completed listening session
+  - Calculates XP based on session duration and modifiers
+  - Handles track mastery bonuses
+
+### addXP() - Adding XP from Any Source
+
+**Use this method** when you want to award XP from sources other than music listening:
+
+```typescript
+const updater = new CharacterUpdater();
+
+// Combat victory XP
+const combatResult = updater.addXP(character, 500, 'combat');
+
+// Quest completion XP
+const questResult = updater.addXP(character, 1000, 'quest');
+
+// Custom activity XP
+const customResult = updater.addXP(character, 250, 'exploration');
+
+// All sources return the same detailed level-up information
+if (combatResult.leveledUp && combatResult.levelUpDetails) {
+    console.log(`🎉 LEVELED UP to ${combatResult.newLevel}!`);
+
+    for (const detail of combatResult.levelUpDetails) {
+        console.log(`💚 HP: +${detail.hpIncrease} (new max: ${detail.newMaxHP})`);
+
+        if (detail.statIncreases && detail.statIncreases.length > 0) {
+            console.log(`📊 STATS INCREASED:`);
+            for (const stat of detail.statIncreases) {
+                console.log(`   ${stat.ability}: ${stat.oldValue} → ${stat.newValue} (+${stat.delta})`);
+            }
+        }
+    }
+}
+```
+
+**Return Type:**
+```typescript
+{
+    character: CharacterSheet;      // Updated character
+    xpEarned: number;               // XP amount added
+    leveledUp: boolean;             // Whether character leveled up
+    newLevel?: number;              // New level (if leveled up)
+    levelUpDetails?: LevelUpDetail[]; // Detailed breakdown of each level-up
+}
+```
+
+**Key Differences from `updateCharacterFromSession()`:**
+- No track mastery bonuses (specific to music listening)
+- Direct XP amount instead of calculated from session duration
+- Same level-up system and detailed breakdowns
 ### CharacterUpdateResult
 
-Result of a character update operation.
+Result of a character update operation. Now includes detailed level-up information!
 
 ```typescript
 export interface CharacterUpdateResult {
@@ -1232,6 +1289,52 @@ export interface CharacterUpdateResult {
     newLevel?: number;
     masteredTrack: boolean;
     masteryBonusXP: number;
+    /** Detailed breakdown of each level-up */
+    levelUpDetails?: LevelUpDetail[];
+}
+
+export interface LevelUpDetail {
+    fromLevel: number;
+    toLevel: number;
+    hpIncrease: number;
+    newMaxHP: number;
+    proficiencyIncrease: number;
+    newProficiency: number;
+    statIncreases?: Array<{
+        ability: Ability;
+        oldValue: number;
+        newValue: number;
+        delta: number;
+    }>;
+    featuresGained?: string[];
+    newSpellSlots?: Record<number, number>;
+}
+```
+
+**Example - Displaying Level-Up Details:**
+
+```typescript
+const result = updater.updateCharacterFromSession(character, session, track, count);
+
+if (result.leveledUp && result.levelUpDetails) {
+    for (const detail of result.levelUpDetails) {
+        console.log(`=== Level ${detail.fromLevel} → ${detail.toLevel} ===`);
+        console.log(`HP: +${detail.hpIncrease} (new max: ${detail.newMaxHP})`);
+
+        if (detail.proficiencyIncrease > 0) {
+            console.log(`Proficiency: +${detail.proficiencyIncrease} (new: ${detail.newProficiency})`);
+        }
+
+        if (detail.statIncreases) {
+            for (const stat of detail.statIncreases) {
+                console.log(`${stat.ability}: ${stat.oldValue} → ${stat.newValue} (+${stat.delta})`);
+            }
+        }
+
+        if (detail.featuresGained) {
+            console.log(`New Features: ${detail.featuresGained.join(', ')}`);
+        }
+    }
 }
 ```
 

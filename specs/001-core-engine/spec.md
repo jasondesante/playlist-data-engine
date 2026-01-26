@@ -63,6 +63,10 @@ Set game mode via `CharacterGenerator.generate(seed, audioProfile, name, { gameM
 
 **Stat Increases on Level Up**: At stat increase levels, characters gain ability score increases following D&D 5e rules (+2 to one ability or +1 to two abilities). The `StatManager` class provides flexible strategies for stat selection including manual choice, intelligent auto-selection, or custom formulas.
 
+**Level-Up Details**: The `CharacterUpdateResult` now includes a `levelUpDetails` array that provides complete breakdowns of each level-up, including HP increases, proficiency changes, stat increases, new class features, and spell slots. This makes it easy to display "LEVELED UP!" celebration UI without having to manually diff the character.
+
+**XP from Multiple Sources**: In addition to music listening, the `CharacterUpdater.addXP()` method allows adding XP from any source (combat, quests, custom activities). All XP sources trigger the same level-up system with detailed breakdowns. The `source` parameter helps track where XP originated.
+
 ---
 
 ## XP Modifiers
@@ -112,7 +116,7 @@ Sensors can be configured via environment variables or programmatically.
 | `GamingPlatformSensors` | Steam game detection + Discord presence | `src/core/sensors/GamingPlatformSensors.ts` |
 | `SessionTracker` | Tracks listening sessions for XP | `src/core/progression/SessionTracker.ts` |
 | `XPCalculator` | Calculates XP with modifiers | `src/core/progression/XPCalculator.ts` |
-| `CharacterUpdater` | Orchestrates character updates from sessions | `src/core/progression/CharacterUpdater.ts` |
+| `CharacterUpdater` | Orchestrates character updates from sessions; `addXP()` for XP from any source (combat, quests, custom) | `src/core/progression/CharacterUpdater.ts` |
 | `LevelUpProcessor` | Handles D&D 5e level-up mechanics | `src/core/progression/LevelUpProcessor.ts` |
 | `UncappedProgressionConfig` | Config for custom XP/proficiency formulas in uncapped mode | `src/core/progression/LevelUpProcessor.ts` |
 | `StatManager` | Manages stat increases (level-up, potions, custom) | `src/core/progression/stat/StatManager.ts` |

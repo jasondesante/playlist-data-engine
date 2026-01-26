@@ -1,5 +1,5 @@
-import type { CharacterSheet } from '../types/Character.js';
-import type { ListeningSession } from '../types/Progression.js';
+import type { CharacterSheet, Ability } from '../types/Character.js';
+import type { ListeningSession, LevelUpDetail } from '../types/Progression.js';
 import type { PlaylistTrack } from '../types/Playlist.js';
 import { XPCalculator } from './XPCalculator.js';
 import { LevelUpProcessor } from './LevelUpProcessor.js';
@@ -13,6 +13,8 @@ export interface CharacterUpdateResult {
     newLevel?: number;
     masteredTrack: boolean;
     masteryBonusXP: number;
+    /** Detailed breakdown of each level-up (NEW) */
+    levelUpDetails?: LevelUpDetail[];
 }
 
 /**
@@ -32,6 +34,125 @@ export class CharacterUpdater {
         if (statManager) {
             LevelUpProcessor.setStatManager(statManager);
         }
+    }
+
+    /**
+     * Add XP from any source (combat, quests, custom activities)
+     * Triggers level-up system with detailed breakdowns
+     *
+     * @param character - The character to update
+     * @param xpAmount - Amount of XP to add
+     * @param source - Source of the XP (for tracking)
+     * @returns Result object containing updated character and level-up details
+     *
+     * @example
+     * ```typescript
+     * // Combat victory XP
+     * const result = updater.addXP(character, 500, 'combat');
+     *
+     * // Quest completion XP
+     * const questResult = updater.addXP(character, 1000, 'quest');
+     *
+     * // Custom activity XP
+     * const customResult = updater.addXP(character, 250, 'exploration');
+     *
+     * if (result.leveledUp) {
+     *   console.log(`🎉 LEVELED UP to ${result.newLevel}!`);
+     *   for (const detail of result.levelUpDetails) {
+     *     console.log(`HP: +${detail.hpIncrease}`);
+     *     console.log(`Stats:`, detail.statIncreases);
+     *   }
+     * }
+     * ```
+     */
+    public addXP(
+        character: CharacterSheet,
+        xpAmount: number,
+        source: string = 'custom'
+    ): Omit<CharacterUpdateResult, 'masteredTrack' | 'masteryBonusXP'> {
+        // 1. Update Character XP
+        const updatedCharacter = {
+            ...character,
+            xp: { ...character.xp }
+        };
+        updatedCharacter.xp.current += xpAmount;
+
+        // 2. Check for Level Up
+        let leveledUp = false;
+        let newLevel: number | undefined;
+        const levelUpDetails: LevelUpDetail[] = [];
+
+        // Determine expected level based on total XP (respect game mode)
+        const isUncapped = updatedCharacter.gameMode === 'uncapped';
+        const expectedLevel = LevelUpProcessor.calculateLevel(updatedCharacter.xp.current, isUncapped);
+
+        if (expectedLevel > updatedCharacter.level) {
+            leveledUp = true;
+            newLevel = expectedLevel;
+
+            // Process level up(s) - handle multiple levels if massive XP gain
+            // We loop from current level + 1 up to expected level
+            for (let lvl = updatedCharacter.level + 1; lvl <= expectedLevel; lvl++) {
+                // Capture state BEFORE level-up for diff
+                const prevHP = updatedCharacter.hp.max;
+                const prevProficiency = updatedCharacter.proficiency_bonus;
+                const prevAbilityScores = { ...updatedCharacter.ability_scores };
+                const prevClassFeatures = [...updatedCharacter.class_features];
+                const prevSpellSlots = updatedCharacter.spells?.spell_slots;
+
+                const benefits = LevelUpProcessor.processLevelUp(updatedCharacter, lvl, updatedCharacter.seed);
+                const leveledChar = LevelUpProcessor.applyLevelUp(updatedCharacter, benefits);
+
+                // Build LevelUpDetail with all the juicy info!
+                const detail: LevelUpDetail = {
+                    fromLevel: lvl - 1,
+                    toLevel: lvl,
+                    hpIncrease: benefits.hitPointIncrease,
+                    newMaxHP: benefits.newHitPointsTotal,
+                    proficiencyIncrease: benefits.proficiencyBonusIncrease,
+                    newProficiency: benefits.newProficiencyBonus,
+                    statIncreases: benefits.abilityScoreIncreases?.map(inc => ({
+                        ability: inc.ability,
+                        oldValue: prevAbilityScores[inc.ability],
+                        newValue: prevAbilityScores[inc.ability] + inc.increase,
+                        delta: inc.increase
+                    })),
+                    featuresGained: benefits.classFeatures?.filter(
+                        f => !prevClassFeatures.includes(f)
+                    ),
+                    newSpellSlots: benefits.newSpellSlots
+                };
+
+                levelUpDetails.push(detail);
+
+                // Update properties on our working copy
+                updatedCharacter.level = leveledChar.level;
+                updatedCharacter.hp = leveledChar.hp;
+                updatedCharacter.ability_scores = leveledChar.ability_scores;
+                updatedCharacter.ability_modifiers = leveledChar.ability_modifiers;
+                updatedCharacter.proficiency_bonus = leveledChar.proficiency_bonus;
+                updatedCharacter.class_features = leveledChar.class_features;
+
+                if (leveledChar.spells) {
+                    updatedCharacter.spells = leveledChar.spells;
+                }
+            }
+        }
+
+        // Update next level XP threshold (respect game mode)
+        if (!isUncapped && updatedCharacter.level >= 20) {
+            updatedCharacter.xp.next_level = 0; // Max level in standard mode
+        } else {
+            updatedCharacter.xp.next_level = LevelUpProcessor.getXPThreshold(updatedCharacter.level + 1, isUncapped);
+        }
+
+        return {
+            character: updatedCharacter,
+            xpEarned: xpAmount,
+            leveledUp,
+            newLevel,
+            levelUpDetails: levelUpDetails.length > 0 ? levelUpDetails : undefined
+        };
     }
 
     /**
@@ -70,57 +191,11 @@ export class CharacterUpdater {
             }
         }
 
-        // 3. Update Character XP
-        const updatedCharacter = {
-            ...character,
-            xp: { ...character.xp }
-        };
-        updatedCharacter.xp.current += xpEarned;
-
-        // 4. Check for Level Up
-        let leveledUp = false;
-        let newLevel: number | undefined;
-
-        // Determine expected level based on total XP (respect game mode)
-        const isUncapped = updatedCharacter.gameMode === 'uncapped';
-        const expectedLevel = LevelUpProcessor.calculateLevel(updatedCharacter.xp.current, isUncapped);
-
-        if (expectedLevel > updatedCharacter.level) {
-            leveledUp = true;
-            newLevel = expectedLevel;
-
-            // Process level up(s) - handle multiple levels if massive XP gain
-            // We loop from current level + 1 up to expected level
-            for (let lvl = updatedCharacter.level + 1; lvl <= expectedLevel; lvl++) {
-                const benefits = LevelUpProcessor.processLevelUp(updatedCharacter, lvl, updatedCharacter.seed);
-                const leveledChar = LevelUpProcessor.applyLevelUp(updatedCharacter, benefits);
-
-                // Update properties on our working copy
-                updatedCharacter.level = leveledChar.level;
-                updatedCharacter.hp = leveledChar.hp;
-                updatedCharacter.ability_scores = leveledChar.ability_scores;
-                updatedCharacter.ability_modifiers = leveledChar.ability_modifiers;
-                updatedCharacter.proficiency_bonus = leveledChar.proficiency_bonus;
-                updatedCharacter.class_features = leveledChar.class_features;
-
-                if (leveledChar.spells) {
-                    updatedCharacter.spells = leveledChar.spells;
-                }
-            }
-        }
-
-        // Update next level XP threshold (respect game mode)
-        if (!isUncapped && updatedCharacter.level >= 20) {
-            updatedCharacter.xp.next_level = 0; // Max level in standard mode
-        } else {
-            updatedCharacter.xp.next_level = LevelUpProcessor.getXPThreshold(updatedCharacter.level + 1, isUncapped);
-        }
+        // 3. Use the generic addXP method for level-up processing
+        const result = this.addXP(character, xpEarned, 'listening');
 
         return {
-            character: updatedCharacter,
-            xpEarned,
-            leveledUp,
-            newLevel,
+            ...result,
             masteredTrack,
             masteryBonusXP
         };

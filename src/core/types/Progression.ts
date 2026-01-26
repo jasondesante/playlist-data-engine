@@ -205,3 +205,40 @@ export interface StatIncreaseResult {
     /** Timestamp of modification */
     timestamp: number;
 }
+
+/**
+ * LevelUpDetail - Complete breakdown of what happened during a single level-up
+ */
+export interface LevelUpDetail {
+    /** Level before this level-up */
+    fromLevel: number;
+
+    /** Level after this level-up */
+    toLevel: number;
+
+    /** Hit points gained */
+    hpIncrease: number;
+
+    /** New max HP after level-up */
+    newMaxHP: number;
+
+    /** Proficiency bonus gained (0 if no increase) */
+    proficiencyIncrease: number;
+
+    /** New proficiency bonus after level-up */
+    newProficiency: number;
+
+    /** Stats that increased (if applicable) */
+    statIncreases?: Array<{
+        ability: Ability;
+        oldValue: number;
+        newValue: number;
+        delta: number;
+    }>;
+
+    /** Class features gained at this level */
+    featuresGained?: string[];
+
+    /** New spell slots after level-up (if spellcaster) */
+    newSpellSlots?: Record<number, number>;
+}

@@ -48,7 +48,8 @@ export type {
     StatIncreaseStrategy,
     StatIncreaseOptions,
     StatIncreaseStrategyType,
-    StatIncreaseFunction
+    StatIncreaseFunction,
+    LevelUpDetail
 } from './core/types/Progression.js';
 
 export type { LevelUpBenefits, UncappedProgressionConfig } from './core/progression/LevelUpProcessor.js';

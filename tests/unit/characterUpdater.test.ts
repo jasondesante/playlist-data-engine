@@ -132,4 +132,90 @@ describe('CharacterUpdater', () => {
             expect(result.masteryBonusXP).toBe(0);
         });
     });
+
+    describe('addXP', () => {
+        it('should add XP to character from any source', () => {
+            const result = updater.addXP(mockCharacter, 500, 'combat');
+
+            expect(result.xpEarned).toBe(500);
+            expect(result.character.xp.current).toBe(500);
+        });
+
+        it('should handle level up from combat XP', () => {
+            // Give enough XP to level up (needs 300)
+            const result = updater.addXP(mockCharacter, 300, 'combat');
+
+            expect(result.leveledUp).toBe(true);
+            expect(result.newLevel).toBe(2);
+            expect(result.character.level).toBe(2);
+            expect(result.character.hp.max).toBeGreaterThan(10); // HP should increase
+            expect(result.character.xp.next_level).toBe(900); // Level 3 threshold
+        });
+
+        it('should handle multi-level jump from quest XP', () => {
+            // Give enough XP to jump to level 3 (needs 900)
+            const result = updater.addXP(mockCharacter, 900, 'quest');
+
+            expect(result.leveledUp).toBe(true);
+            expect(result.newLevel).toBe(3);
+            expect(result.character.level).toBe(3);
+        });
+
+        it('should include detailed level-up information', () => {
+            const result = updater.addXP(mockCharacter, 300, 'exploration');
+
+            expect(result.levelUpDetails).toBeDefined();
+            expect(result.levelUpDetails!.length).toBeGreaterThan(0);
+
+            const detail = result.levelUpDetails![0];
+            expect(detail.fromLevel).toBe(1);
+            expect(detail.toLevel).toBe(2);
+            expect(detail.hpIncrease).toBeGreaterThan(0);
+            expect(detail.newMaxHP).toBeGreaterThan(10);
+        });
+
+        it('should handle multiple level-ups with detailed breakdowns', () => {
+            // Give enough XP to jump multiple levels
+            const result = updater.addXP(mockCharacter, 6500, 'custom'); // Should reach level 5
+
+            expect(result.leveledUp).toBe(true);
+            expect(result.newLevel).toBe(5);
+            expect(result.levelUpDetails).toBeDefined();
+            expect(result.levelUpDetails!.length).toBe(4); // Levels 2, 3, 4, 5
+
+            // Check each level-up detail
+            result.levelUpDetails!.forEach((detail, index) => {
+                expect(detail.fromLevel).toBe(index + 1);
+                expect(detail.toLevel).toBe(index + 2);
+                expect(detail.hpIncrease).toBeGreaterThan(0);
+            });
+        });
+
+        it('should not level up if insufficient XP', () => {
+            const result = updater.addXP(mockCharacter, 100, 'custom');
+
+            expect(result.leveledUp).toBe(false);
+            expect(result.newLevel).toBeUndefined();
+            expect(result.character.level).toBe(1);
+        });
+
+        it('should respect gameMode for uncapped characters', () => {
+            const uncappedCharacter = { ...mockCharacter, gameMode: 'uncapped' as const };
+
+            // Add enough XP to exceed level 20
+            // Level 21 requires 565,000 XP (355,000 for level 20 + 20*21*500 = 210,000 more)
+            const result = updater.addXP(uncappedCharacter, 600000, 'custom');
+
+            expect(result.leveledUp).toBe(true);
+            expect(result.character.level).toBeGreaterThan(20);
+        });
+
+        it('should cap level at 20 for standard mode', () => {
+            // Add massive XP
+            const result = updater.addXP(mockCharacter, 1000000, 'custom');
+
+            expect(result.character.level).toBe(20); // Max level
+            expect(result.character.xp.next_level).toBe(0); // No next level
+        });
+    });
 });
