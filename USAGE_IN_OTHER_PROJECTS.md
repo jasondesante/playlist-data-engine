@@ -75,7 +75,7 @@ Then reference it in your project code directly.
 
 ### Basic Examples
 - [Basic Playlist Parsing and Character Generation](#basic-playlist-parsing-and-character-generation) - Parse playlists, analyze audio, and generate characters
-- [Progression and XP Tracking](#progression-and-xp-tracking) - Track sessions, calculate XP, handle level-ups
+- [Earning XP from Listening to Music](#earning-xp-from-listening-to-music) - Track sessions, calculate XP, handle level-ups
 
 ### Advanced Examples
 - [Combining All Systems](#combining-all-systems) - Full pipeline with environmental and gaming context
@@ -129,7 +129,9 @@ console.log(`  Class: ${character.class}`);
 console.log(`  STR: ${character.ability_scores.STR}, DEX: ${character.ability_scores.DEX}`);
 ```
 
-### Progression and XP Tracking
+### Earning XP from Listening to Music
+
+This is the core workflow: track a listening session, calculate XP earned, and apply it to your character. Level-ups happen automatically when XP thresholds are reached.
 
 ```typescript
 import {
@@ -156,25 +158,13 @@ if (session) {
   const totalXP = xpCalc.calculateSessionXP(session, track);  // ~1 XP per second + bonuses
 
   // Apply session to character (handles level-ups and mastery)
-  // Stats increase AUTOMATICALLY using smart strategy - no manual selection needed!
   const updater = new CharacterUpdater();
   const previousListenCount = tracker.getTrackListenCount(track.id) - 1;
   const result = updater.updateCharacterFromSession(character, session, track, previousListenCount);
 
+  // ===== BASIC LEVEL-UP HANDLING =====
   if (result.leveledUp) {
     console.log(`Level up! Now level ${result.newLevel}`);
-
-    // Stats increased automatically - here's what changed:
-    if (result.levelUpDetails) {
-      for (const detail of result.levelUpDetails) {
-        if (detail.statIncreases && detail.statIncreases.length > 0) {
-          console.log(`Stats increased:`);
-          for (const stat of detail.statIncreases) {
-            console.log(`  ${stat.ability}: ${stat.oldValue} → ${stat.newValue} (+${stat.delta})`);
-          }
-        }
-      }
-    }
   }
 
   // Check for track mastery
@@ -195,19 +185,12 @@ const statManager = new StatManager({ strategy: 'dnD5e' });
 const updater = new CharacterUpdater(statManager);
 ```
 
-### Level-Up with Detailed Breakdown
+#### Detailed Level-Up Celebrations
 
-**NEW:** The engine now returns complete details about what happened during level-ups! You get everything you need for that "LEVELED UP!" celebration experience:
+The `levelUpDetails` returned by `updateCharacterFromSession()` contains everything you need for that "LEVELED UP!" celebration experience:
 
 ```typescript
-import { CharacterUpdater, StatManager } from 'playlist-data-engine';
-
-const statManager = new StatManager({
-    strategy: 'dnD5e_smart'  // Auto-picks best stats
-});
-const updater = new CharacterUpdater(statManager);
-
-// Apply session and check for level up
+// Same workflow as above, but with detailed level-up display
 const result = updater.updateCharacterFromSession(character, session, track, listenCount);
 
 if (result.leveledUp && result.levelUpDetails) {
@@ -376,7 +359,7 @@ const standardCharacter = CharacterGenerator.generate(
     { gameMode: 'standard' }  // Optional, this is the default
 );
 
-// Uncapped mode: No stat limits, stat increases EVERY level (2-20)
+// Uncapped mode: No stat limits, stat increases EVERY level (unlimited)
 // Uses AUTOMATIC stat selection (1-step level-up process)
 const uncappedCharacter = CharacterGenerator.generate(
     seed,
@@ -542,10 +525,10 @@ const customUpdater = new CharacterUpdater(customStatManager);
 const standard = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'standard' });
 // Stats capped at 20, stat increases at levels 4, 8, 12, 16, 19
 
-// Uncapped mode (epic progression)
+// Uncapped mode (epic progression - unlimited levels)
 const uncapped = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'uncapped' });
-// No stat cap, stat increases EVERY level (2-20)
-// Level 2, 3, 4... all give +2 to one stat (or +1 to two)
+// No stat cap, stat increases EVERY level (unlimited)
+// Level 2, 3, 4... and beyond give +2 to one stat (or +1 to two)
 ```
 
 **Optional Features - Developer Implementation:**
@@ -589,23 +572,29 @@ class CharacterWithBankedPoints {
 
 **HP increases EVERY level (not just stat increase levels):**
 
-The leveling system ensures HP increases on EVERY level up (1-20), not just at stat increase levels:
+The leveling system ensures HP increases on EVERY level up, not just at stat increase levels:
 
 ```typescript
 // HP increases every level using class hit die + CON modifier
 // For example, a Fighter (d10 hit die) with +2 CON:
 // Level 1 → Level 2: HP increases by 1d10+2 (avg 7.5)
 // Level 2 → Level 3: HP increases by 1d10+2
-// ...and so on for all 20 levels!
+// ...and so on for all levels!
 
-// Standard mode: Ability scores increase at levels 4, 8, 12, 16, 19
-// Uncapped mode: Ability scores increase at EVERY level (2-20)
-// Each grants +2 to one ability or +1 to two abilities
+// Standard mode (capped at level 20):
+// - Ability scores increase at levels 4, 8, 12, 16, 19
+// - Each grants +2 to one ability or +1 to two abilities
+// - Stats are capped at 20
+
+// Uncapped mode (unlimited levels):
+// - Ability scores increase at EVERY level
+// - Each grants +2 to one ability or +1 to two abilities
+// - No stat cap - grow infinitely!
 ```
 
 ### Custom XP Scaling for Uncapped Mode
 
-Uncapped mode supports two options for XP progression beyond level 20:
+Uncapped mode supports two options for XP progression (unlimited levels):
 
 **Option 1: Default D&D 5e Pattern (Continues Naturally)**
 

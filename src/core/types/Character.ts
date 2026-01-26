@@ -53,8 +53,8 @@ export type ProficiencyLevel = 'none' | 'proficient' | 'expertise';
 
 /**
  * Game mode for stat progression
- * - standard: D&D 5e rules (stats capped at 20, increases at levels 4, 8, 12, 16, 19)
- * - uncapped: No stat limits, stat increases EVERY level (2-20)
+ * - standard: D&D 5e rules (stats capped at 20, increases at levels 4, 8, 12, 16, 19, max level 20)
+ * - uncapped: No stat limits, stat increases EVERY level (unlimited progression)
  */
 export type GameMode = 'standard' | 'uncapped';
 
