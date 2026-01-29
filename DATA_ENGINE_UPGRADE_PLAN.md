@@ -1681,10 +1681,10 @@ manager.setWeights('equipment', {
 
 ### 4.2 Create Validation System
 
-**File:** `/Users/jasondesante/playlist-data-engine/src/core/extensions/ValidationManager.ts`
+**File:** `/workspace/src/core/extensions/ExtensionManager.ts` (integrated)
 
 **Tasks:**
-- [ ] Create validation schemas:
+- [x] Create validation schemas:
   ```typescript
   export const VALIDATION_SCHEMAS = {
       spells: validateSpell,
@@ -1715,16 +1715,39 @@ manager.setWeights('equipment', {
   }
   ```
 
-**Deliverable:** Complete validation system for all categories
+**Deliverable:** ~~Complete validation system for all categories~~ **COMPLETE**
+
+---
+
+#### Implementation Summary - Phase 4.2: Validation System ✅
+
+**Status:** Validation system is **already integrated into ExtensionManager**
+
+The validation functionality is implemented directly in `ExtensionManager.ts` (lines 268-353):
+- `validate()` method validates arrays of items for any category
+- `validateItem()` private method handles category-specific validation
+- Supports all categories: equipment, spells, races, classes, appearance.*
+- Validates required fields, types, value ranges, and enum values
+- Returns `ValidationResult` with `valid` boolean and `errors` array
+
+**No separate ValidationManager class needed** - the system was designed with validation built into ExtensionManager for tighter integration.
+
+**Verification:**
+- ✅ Validation invoked during `ExtensionManager.register()` when `validate: true` (default)
+- ✅ Equipment validation: name, type, rarity, weight
+- ✅ Spell validation: name, level (0-9), school enum
+- ✅ Race validation: valid Race enum values
+- ✅ Class validation: valid Class enum values
+- ✅ Appearance validation: string type check
 
 ---
 
 ### 4.3 Create WeightedSelector
 
-**File:** `/Users/jasondesante/playlist-data-engine/src/core/extensions/WeightedSelector.ts`
+**File:** `/workspace/src/core/extensions/WeightedSelector.ts`
 
 **Tasks:**
-- [ ] Create weighted selection utility:
+- [x] Create weighted selection utility:
   ```typescript
   export class WeightedSelector<T> {
       select(
@@ -1758,7 +1781,33 @@ manager.setWeights('equipment', {
   }
   ```
 
-**Deliverable:** WeightedSelector with relative and absolute modes
+**Deliverable:** ~~WeightedSelector with relative and absolute modes~~ **COMPLETE**
+
+---
+
+#### Implementation Summary - Phase 4.3: WeightedSelector ✅
+
+**Changes Made:**
+
+1. **Created `/workspace/src/core/extensions/WeightedSelector.ts`**:
+   - Generic `WeightedSelector<T>` class with full API
+   - `select()` method for single item selection
+   - `selectMultiple()` method for selecting multiple unique items
+   - `getProbabilities()` utility for debugging/analysis
+   - Support for three modes: 'relative', 'absolute', 'default'
+   - Handles both string items and objects with 'name' property
+
+2. **Updated `/workspace/src/core/extensions/index.ts`**:
+   - Added `WeightedSelector` export
+   - Added `SelectionMode` type export
+
+**Verification:**
+- ✅ TypeScript compilation passes (`tsc --noEmit`)
+- ✅ WeightedSelector exported from extensions module
+- ✅ Supports relative mode (custom weights added to defaults)
+- ✅ Supports absolute mode (custom weights replace distribution)
+- ✅ Supports default mode (equal weights for all items)
+- ✅ selectMultiple() prevents duplicate selections
 
 ---
 
