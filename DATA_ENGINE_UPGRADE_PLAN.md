@@ -4801,7 +4801,7 @@ manager.register('skills.STR', [{
   - Validate skill IDs
   - Reset to defaults
 
-- [ ] Test CharacterGenerator with custom features/skills
+- [x] Test CharacterGenerator with custom features/skills
 - [ ] Test LevelUpProcessor with custom features
 - [ ] Test SkillAssigner with custom skills
 
@@ -5022,6 +5022,58 @@ manager.register('skills.STR', [{
 - ✅ No new lint errors introduced
 - ✅ Test file follows existing test patterns
 - ✅ Comprehensive coverage of SkillRegistry API
+
+---
+
+#### Implementation Summary - Phase 15.1: CharacterGenerator Integration Tests ✅
+
+**Files Created:**
+- `/workspace/tests/integration/customFeaturesSkills.integration.test.ts` - Comprehensive integration test suite for CharacterGenerator with custom features and skills (20 tests)
+
+**Test Coverage:**
+
+1. **Custom Class Features Tests** (4 tests)
+   - Generate character with custom class feature
+   - Generate character with multiple custom class features
+   - Apply custom feature effects to character stats
+   - Respect feature prerequisites when generating character
+
+2. **Custom Racial Traits Tests** (3 tests)
+   - Generate character with custom racial trait
+   - Generate character with multiple custom racial traits
+   - Handle subrace-specific traits
+
+3. **Custom Skills Tests** (3 tests)
+   - Generate character with custom skill available
+   - Generate character with multiple custom skills
+   - Assign proficiency to custom skills when appropriate
+
+4. **Combined Custom Features and Skills Tests** (2 tests)
+   - Handle character with both custom features and skills
+   - Maintain default features and skills with custom ones
+
+5. **Edge Cases Tests** (5 tests)
+   - Handle character with no custom features or skills
+   - Handle duplicate feature IDs gracefully
+   - Handle duplicate skill IDs gracefully
+   - Handle features with invalid prerequisites
+   - Handle reset and reinitialization of registries
+
+6. **Feature and Skill Queries Tests** (3 tests)
+   - Get correct features by class and level
+   - Get skills by ability
+   - Get skills by category
+
+**Total Tests: 20**
+
+**Verification:**
+- ✅ All 20 tests pass
+- ✅ Build passes (`npm run build`)
+- ✅ No new lint errors introduced
+- ✅ Test file follows existing integration test patterns
+- ✅ Comprehensive coverage of CharacterGenerator integration with FeatureRegistry and SkillRegistry
+- ✅ Tests verify that custom features and skills are properly integrated into character generation
+- ✅ Tests verify that default features and skills are preserved when custom content is added
 
 ---
 
