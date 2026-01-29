@@ -1971,10 +1971,10 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [x] Integrate with FeatureEffectApplier
 
 ### Phase 4: Update EquipmentGenerator
-- [ ] Update getEquipmentData for EnhancedEquipment
-- [ ] Add effect application to equipItem
-- [ ] Add effect removal to unequipItem
-- [ ] Add modification methods
+- [x] Update getEquipmentData for EnhancedEquipment
+- [x] Add effect application to equipItem
+- [x] Add effect removal to unequipItem
+- [x] Add modification methods
 
 ### Phase 5: ExtensionManager Integration
 - [ ] Add equipment categories

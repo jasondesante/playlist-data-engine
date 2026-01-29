@@ -3,15 +3,25 @@
  *
  * Supports extensibility through ExtensionManager for custom equipment.
  * All equipment lookups check both default and custom equipment databases.
+ *
+ * Enhanced to support equipment properties, effects, modifications, and D&D 5e stats.
+ * Part of Phase 4: Update EquipmentGenerator for Equipment Upgrade Plan Part 2.
  */
 
-import type { Class } from '../types/Character.js';
+import type { Class, CharacterSheet } from '../types/Character.js';
 import { CLASS_STARTING_EQUIPMENT, EQUIPMENT_DATABASE } from '../../utils/constants.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureEquipmentDefaultsInitialized } from '../extensions/initializeDefaults.js';
+import type {
+    EnhancedEquipment,
+    EnhancedInventoryItem,
+    EquipmentProperty,
+    EquipmentModification
+} from '../types/Equipment.js';
+import { EquipmentEffectApplier } from '../equipment/EquipmentEffectApplier.js';
 
 /**
- * Equipment data interface
+ * Basic equipment data interface (for backward compatibility)
  */
 export interface Equipment {
     name: string;
@@ -21,7 +31,7 @@ export interface Equipment {
 }
 
 /**
- * Inventory item with quantity
+ * Inventory item with quantity (basic version, for backward compatibility)
  */
 export interface InventoryItem {
   name: string;
@@ -31,11 +41,12 @@ export interface InventoryItem {
 
 /**
  * Character equipment state
+ * Uses EnhancedInventoryItem to support per-instance modifications
  */
 export interface CharacterEquipment {
-  weapons: InventoryItem[];
-  armor: InventoryItem[];
-  items: InventoryItem[];
+  weapons: EnhancedInventoryItem[];
+  armor: EnhancedInventoryItem[];
+  items: EnhancedInventoryItem[];
   totalWeight: number;
   equippedWeight: number;
 }
@@ -53,16 +64,16 @@ export class EquipmentGenerator {
    * Get equipment data from extended database (defaults + custom)
    *
    * @param itemName - Name of the equipment to look up
-   * @returns Equipment data or undefined if not found
+   * @returns EnhancedEquipment data or undefined if not found
    */
-  private static getEquipmentData(itemName: string): Equipment | undefined {
+  private static getEquipmentData(itemName: string): EnhancedEquipment | undefined {
     const manager = ExtensionManager.getInstance();
 
     // Get all equipment (defaults + custom)
     const allEquipment = manager.get('equipment');
 
-    // Find equipment by name
-    return allEquipment.find((eq: Equipment) => eq.name === itemName);
+    // Find equipment by name (as EnhancedEquipment)
+    return allEquipment.find((eq: EnhancedEquipment) => eq.name === itemName);
   }
 
   /**
@@ -122,9 +133,9 @@ export class EquipmentGenerator {
 
     const startingEquipment = this.getStartingEquipment(characterClass);
 
-    const weapons: InventoryItem[] = [];
-    const armor: InventoryItem[] = [];
-    const items: InventoryItem[] = [];
+    const weapons: EnhancedInventoryItem[] = [];
+    const armor: EnhancedInventoryItem[] = [];
+    const items: EnhancedInventoryItem[] = [];
 
     // Add weapons
     for (const weaponName of startingEquipment.weapons) {
@@ -206,7 +217,7 @@ export class EquipmentGenerator {
     }
 
     const updated = this.cloneEquipment(equipment);
-    let inventory: InventoryItem[];
+    let inventory: EnhancedInventoryItem[];
 
     if (equipData.type === 'weapon') {
       inventory = updated.weapons;
@@ -263,7 +274,7 @@ export class EquipmentGenerator {
     }
 
     const updated = this.cloneEquipment(equipment);
-    let inventory: InventoryItem[];
+    let inventory: EnhancedInventoryItem[];
 
     const equipData = this.getEquipmentData(itemName);
     if (!equipData) {
@@ -306,9 +317,14 @@ export class EquipmentGenerator {
    *
    * @param equipment - Current equipment state
    * @param itemName - Name of item to equip
+   * @param character - Optional character to apply equipment effects to
    * @returns Updated equipment with item equipped
    */
-  static equipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment {
+  static equipItem(
+    equipment: CharacterEquipment,
+    itemName: string,
+    character?: CharacterSheet
+  ): CharacterEquipment {
     this.ensureInitialized();
 
     const updated = this.cloneEquipment(equipment);
@@ -318,7 +334,7 @@ export class EquipmentGenerator {
       return equipment;
     }
 
-    let inventory: InventoryItem[];
+    let inventory: EnhancedInventoryItem[];
 
     if (equipData.type === 'weapon') {
       inventory = updated.weapons;
@@ -332,6 +348,12 @@ export class EquipmentGenerator {
     const item = inventory.find((i) => i.name === itemName);
     if (item) {
       item.equipped = true;
+
+      // Apply equipment effects if character provided
+      if (character) {
+        const instanceId = item.instanceId;
+        EquipmentEffectApplier.equipItem(character, equipData, instanceId);
+      }
     }
 
     updated.equippedWeight = this.calculateEquippedWeight(
@@ -348,9 +370,14 @@ export class EquipmentGenerator {
    *
    * @param equipment - Current equipment state
    * @param itemName - Name of item to unequip
+   * @param character - Optional character to remove equipment effects from
    * @returns Updated equipment with item unequipped
    */
-  static unequipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment {
+  static unequipItem(
+    equipment: CharacterEquipment,
+    itemName: string,
+    character?: CharacterSheet
+  ): CharacterEquipment {
     this.ensureInitialized();
 
     const updated = this.cloneEquipment(equipment);
@@ -360,7 +387,7 @@ export class EquipmentGenerator {
       return equipment;
     }
 
-    let inventory: InventoryItem[];
+    let inventory: EnhancedInventoryItem[];
 
     if (equipData.type === 'weapon') {
       inventory = updated.weapons;
@@ -374,6 +401,12 @@ export class EquipmentGenerator {
     const item = inventory.find((i) => i.name === itemName);
     if (item) {
       item.equipped = false;
+
+      // Remove equipment effects if character provided
+      if (character) {
+        const instanceId = item.instanceId;
+        EquipmentEffectApplier.unequipItem(character, itemName, instanceId);
+      }
     }
 
     updated.equippedWeight = this.calculateEquippedWeight(
@@ -391,7 +424,7 @@ export class EquipmentGenerator {
    * @param equipment - Current equipment state
    * @returns Array of all inventory items
    */
-  static getInventoryList(equipment: CharacterEquipment): InventoryItem[] {
+  static getInventoryList(equipment: CharacterEquipment): EnhancedInventoryItem[] {
     return [...equipment.weapons, ...equipment.armor, ...equipment.items];
   }
 
@@ -404,9 +437,9 @@ export class EquipmentGenerator {
    * @returns Total weight in pounds
    */
   private static calculateTotalWeight(
-    weapons: InventoryItem[],
-    armor: InventoryItem[],
-    items: InventoryItem[]
+    weapons: EnhancedInventoryItem[],
+    armor: EnhancedInventoryItem[],
+    items: EnhancedInventoryItem[]
   ): number {
     let total = 0;
 
@@ -443,9 +476,9 @@ export class EquipmentGenerator {
    * @returns Total equipped weight in pounds
    */
   private static calculateEquippedWeight(
-    weapons: InventoryItem[],
-    armor: InventoryItem[],
-    items: InventoryItem[]
+    weapons: EnhancedInventoryItem[],
+    armor: EnhancedInventoryItem[],
+    items: EnhancedInventoryItem[]
   ): number {
     let total = 0;
 
@@ -533,5 +566,219 @@ export class EquipmentGenerator {
     };
 
     return ammunitionQuantities[characterClass] || 0;
+  }
+
+  // ==========================================
+  // EQUIPMENT MODIFICATION METHODS (Phase 4)
+  // ==========================================
+
+  /**
+   * Add a modification to an equipment item (per-instance)
+   *
+   * @param equipment - Current equipment state
+   * @param itemName - Name of the item to modify
+   * @param modification - The modification to apply
+   * @param instanceId - Optional instance ID (for multi-item tracking)
+   * @param character - Optional character to reapply effects to
+   * @returns Updated equipment with modification applied
+   */
+  static addModification(
+    equipment: CharacterEquipment,
+    itemName: string,
+    modification: EquipmentModification,
+    instanceId?: string,
+    character?: CharacterSheet
+  ): CharacterEquipment {
+    this.ensureInitialized();
+
+    const updated = this.cloneEquipment(equipment);
+    const equipData = this.getEquipmentData(itemName);
+
+    if (!equipData) {
+      return equipment;
+    }
+
+    let inventory: EnhancedInventoryItem[];
+    if (equipData.type === 'weapon') {
+      inventory = updated.weapons;
+    } else if (equipData.type === 'armor') {
+      inventory = updated.armor;
+    } else {
+      inventory = updated.items;
+    }
+
+    // Find the item to modify
+    const item = inventory.find((i) => i.name === itemName);
+    if (!item) {
+      return equipment;
+    }
+
+    // Initialize modifications array if needed
+    if (!item.modifications) {
+      item.modifications = [];
+    }
+
+    // Generate instance ID if not provided
+    if (!instanceId && !item.instanceId) {
+      item.instanceId = `${itemName}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    }
+    const targetInstanceId = instanceId || item.instanceId;
+
+    // Add the modification
+    item.modifications.push(modification);
+
+    // If item is equipped and character provided, reapply effects
+    if (item.equipped && character) {
+      // First remove old effects
+      EquipmentEffectApplier.unequipItem(character, itemName, targetInstanceId);
+      // Then reapply with new modifications
+      this.applyCombinedEffects(character, equipData, modification, targetInstanceId);
+    }
+
+    return updated;
+  }
+
+  /**
+   * Remove a modification from an equipment item
+   *
+   * @param equipment - Current equipment state
+   * @param itemName - Name of the item
+   * @param modificationId - ID of the modification to remove
+   * @param character - Optional character to reapply effects to
+   * @returns Updated equipment with modification removed
+   */
+  static removeModification(
+    equipment: CharacterEquipment,
+    itemName: string,
+    modificationId: string,
+    character?: CharacterSheet
+  ): CharacterEquipment {
+    this.ensureInitialized();
+
+    const updated = this.cloneEquipment(equipment);
+    const equipData = this.getEquipmentData(itemName);
+
+    if (!equipData) {
+      return equipment;
+    }
+
+    let inventory: EnhancedInventoryItem[];
+    if (equipData.type === 'weapon') {
+      inventory = updated.weapons;
+    } else if (equipData.type === 'armor') {
+      inventory = updated.armor;
+    } else {
+      inventory = updated.items;
+    }
+
+    // Find the item
+    const item = inventory.find((i) => i.name === itemName);
+    if (!item || !item.modifications) {
+      return equipment;
+    }
+
+    const wasEquipped = item.equipped;
+    const instanceId = item.instanceId;
+
+    // Remove the modification
+    const modIndex = item.modifications.findIndex((m) => m.id === modificationId);
+    if (modIndex !== -1) {
+      item.modifications.splice(modIndex, 1);
+    }
+
+    // If item is equipped and character provided, reapply effects
+    if (wasEquipped && character) {
+      // Remove all effects and reapply base + remaining modifications
+      EquipmentEffectApplier.unequipItem(character, itemName, instanceId);
+      EquipmentEffectApplier.equipItem(character, equipData, instanceId);
+
+      // Reapply remaining modifications
+      if (item.modifications) {
+        for (const mod of item.modifications) {
+          this.applyCombinedEffects(character, equipData, mod, instanceId);
+        }
+      }
+    }
+
+    return updated;
+  }
+
+  /**
+   * Get all active effects from an equipment item (base + modifications)
+   *
+   * @param equipment - Current equipment state
+   * @param itemName - Name of the item
+   * @param instanceId - Optional instance ID
+   * @returns Array of all active equipment properties
+   */
+  static getActiveEffects(
+    equipment: CharacterEquipment,
+    itemName: string,
+    instanceId?: string
+  ): EquipmentProperty[] {
+    this.ensureInitialized();
+
+    const equipData = this.getEquipmentData(itemName);
+    if (!equipData) {
+      return [];
+    }
+
+    let inventory: EnhancedInventoryItem[];
+    if (equipData.type === 'weapon') {
+      inventory = equipment.weapons;
+    } else if (equipData.type === 'armor') {
+      inventory = equipment.armor;
+    } else {
+      inventory = equipment.items;
+    }
+
+    // Find the item
+    const item = inventory.find((i) => i.name === itemName && (!instanceId || i.instanceId === instanceId));
+    if (!item) {
+      return [];
+    }
+
+    // Start with base properties
+    const allEffects: EquipmentProperty[] = equipData.properties ? [...equipData.properties] : [];
+
+    // Add modification properties
+    if (item.modifications) {
+      for (const mod of item.modifications) {
+        if (mod.properties) {
+          allEffects.push(...mod.properties);
+        }
+      }
+    }
+
+    return allEffects;
+  }
+
+  /**
+   * Apply combined effects from base equipment and modifications
+   *
+   * @param character - Character to apply effects to
+   * @param baseEquipment - Base equipment data
+   * @param modification - Modification to apply
+   * @param instanceId - Instance ID for tracking
+   */
+  private static applyCombinedEffects(
+    character: CharacterSheet,
+    baseEquipment: EnhancedEquipment,
+    modification: EquipmentModification,
+    instanceId?: string
+  ): void {
+    // Create temporary combined equipment for effect application
+    const combined: EnhancedEquipment = {
+      ...baseEquipment,
+      properties: [
+        ...(baseEquipment.properties || []),
+        ...modification.properties
+      ],
+      grantsFeatures: modification.addsFeatures,
+      grantsSkills: modification.addsSkills,
+      grantsSpells: modification.addsSpells
+    };
+
+    EquipmentEffectApplier.equipItem(character, combined, instanceId);
   }
 }
