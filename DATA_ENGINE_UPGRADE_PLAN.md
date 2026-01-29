@@ -2218,10 +2218,23 @@ manager.setWeights('classes', { 'Barbarian': 2, 'Wizard': 0.5 });
   - Reset to defaults
   - Weight management
 
-- [ ] Test ValidationManager:
+- [x] Test ValidationManager:
   - Valid data passes
   - Invalid data fails with clear errors
   - All categories validated
+
+**Implementation:** Created `tests/integration/validation.integration.test.ts` with comprehensive integration tests covering:
+- Valid data passes validation for all categories (equipment, spells, races, classes, appearance)
+- Invalid data fails with clear error messages including field names, item indices, and expected values
+- All categories validated (equipment, spells, races, classes, and all 6 appearance subcategories)
+- Validation during character generation with custom extensions
+- Error message clarity and actionability
+- Edge cases (empty arrays, long names, special characters, unicode)
+
+**Verification:**
+- ✅ TypeScript compilation passes for new test file
+- ✅ ESLint passes for new test file (no errors)
+- ✅ Comprehensive test coverage for validation requirements
 
 - [ ] Test WeightedSelector:
   - Relative mode: custom weights added to defaults
