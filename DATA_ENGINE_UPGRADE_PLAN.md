@@ -4270,26 +4270,53 @@ Created `/workspace/src/core/migration/CharacterMigration.ts` with:
 **File:** `/Users/jasondesante/playlist-data-engine/src/core/extensions/ExtensionManager.ts`
 
 **Tasks:**
-- [ ] Add new categories to ExtensionCategory type:
+- [x] Add new categories to ExtensionCategory type:
   ```typescript
   type ExtensionCategory =
       // ... existing categories
       | 'classFeatures'
       | 'classFeatures.Barbarian'
+      | 'classFeatures.Bard'
+      | 'classFeatures.Cleric'
+      | 'classFeatures.Druid'
       | 'classFeatures.Fighter'
-      // ... for each class
+      | 'classFeatures.Monk'
+      | 'classFeatures.Paladin'
+      | 'classFeatures.Ranger'
+      | 'classFeatures.Rogue'
+      | 'classFeatures.Sorcerer'
+      | 'classFeatures.Warlock'
+      | 'classFeatures.Wizard'
       | 'racialTraits'
+      | 'racialTraits.Human'
       | 'racialTraits.Elf'
       | 'racialTraits.Dwarf'
-      // ... for each race
+      | 'racialTraits.Halfling'
+      | 'racialTraits.Dragonborn'
+      | 'racialTraits.Gnome'
+      | 'racialTraits.Half-Elf'
+      | 'racialTraits.Half-Orc'
+      | 'racialTraits.Tiefling'
       | 'skills'
-      | 'skills.strength'
-      | 'skills.dexterity'
-      // ... for each ability
+      | 'skills.STR'
+      | 'skills.DEX'
+      | 'skills.CON'
+      | 'skills.INT'
+      | 'skills.WIS'
+      | 'skills.CHA'
       | 'skillLists'
       | 'skillLists.Barbarian'
       | 'skillLists.Bard'
-      // ... for each class
+      | 'skillLists.Cleric'
+      | 'skillLists.Druid'
+      | 'skillLists.Fighter'
+      | 'skillLists.Monk'
+      | 'skillLists.Paladin'
+      | 'skillLists.Ranger'
+      | 'skillLists.Rogue'
+      | 'skillLists.Sorcerer'
+      | 'skillLists.Warlock'
+      | 'skillLists.Wizard'
   ```
 
 - [ ] Integrate FeatureRegistry with ExtensionManager

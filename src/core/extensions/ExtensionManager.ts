@@ -29,7 +29,54 @@ export type ExtensionCategory =
     | 'spells'
     | 'races'
     | 'classes'
-    | `spells.${string}`;
+    | `spells.${string}`
+    // Class Features - Phase 11
+    | 'classFeatures'
+    | 'classFeatures.Barbarian'
+    | 'classFeatures.Bard'
+    | 'classFeatures.Cleric'
+    | 'classFeatures.Druid'
+    | 'classFeatures.Fighter'
+    | 'classFeatures.Monk'
+    | 'classFeatures.Paladin'
+    | 'classFeatures.Ranger'
+    | 'classFeatures.Rogue'
+    | 'classFeatures.Sorcerer'
+    | 'classFeatures.Warlock'
+    | 'classFeatures.Wizard'
+    // Racial Traits - Phase 11
+    | 'racialTraits'
+    | 'racialTraits.Human'
+    | 'racialTraits.Elf'
+    | 'racialTraits.Dwarf'
+    | 'racialTraits.Halfling'
+    | 'racialTraits.Dragonborn'
+    | 'racialTraits.Gnome'
+    | 'racialTraits.Half-Elf'
+    | 'racialTraits.Half-Orc'
+    | 'racialTraits.Tiefling'
+    // Skills - Phase 12
+    | 'skills'
+    | 'skills.STR'
+    | 'skills.DEX'
+    | 'skills.CON'
+    | 'skills.INT'
+    | 'skills.WIS'
+    | 'skills.CHA'
+    // Skill Lists - Phase 12
+    | 'skillLists'
+    | 'skillLists.Barbarian'
+    | 'skillLists.Bard'
+    | 'skillLists.Cleric'
+    | 'skillLists.Druid'
+    | 'skillLists.Fighter'
+    | 'skillLists.Monk'
+    | 'skillLists.Paladin'
+    | 'skillLists.Ranger'
+    | 'skillLists.Rogue'
+    | 'skillLists.Sorcerer'
+    | 'skillLists.Warlock'
+    | 'skillLists.Wizard';
 
 /**
  * Options for registering custom data
