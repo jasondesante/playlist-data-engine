@@ -5,6 +5,7 @@
  * Part of Phase 12: Custom Skills System.
  */
 
+// Type definitions
 export type {
     CustomSkill,
     SkillProficiency,
@@ -13,3 +14,9 @@ export type {
     SkillValidationResult,
     SkillRegistryStats,
 } from './SkillTypes.js';
+
+// SkillRegistry - Main registry for skills
+export { SkillRegistry, getSkillRegistry } from './SkillRegistry.js';
+
+// Default skills
+export { DEFAULT_SKILLS, DEFAULT_SKILL_CATEGORIES } from './DefaultSkills.js';
