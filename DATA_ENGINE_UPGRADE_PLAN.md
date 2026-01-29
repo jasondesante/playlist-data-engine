@@ -4802,10 +4802,70 @@ manager.register('skills.STR', [{
   - Reset to defaults
 
 - [x] Test CharacterGenerator with custom features/skills
-- [ ] Test LevelUpProcessor with custom features
+- [x] Test LevelUpProcessor with custom features
 - [ ] Test SkillAssigner with custom skills
 
 **Deliverable:** Comprehensive test suite
+
+#### Implementation Summary - Phase 15.1: LevelUpProcessor Unit Tests ✅
+
+**Files Created:**
+- `/workspace/tests/unit/levelUpProcessor.test.ts` - Comprehensive test suite for LevelUpProcessor with custom features (28 tests)
+
+**Test Coverage:**
+
+1. **Level-Up with Default Features Tests** (2 tests)
+   - Include default class features from FeatureRegistry on level-up
+   - Return feature IDs that exist in FeatureRegistry
+
+2. **Level-Up with Custom Features Tests** (3 tests)
+   - Include custom class features on level-up
+   - Include multiple custom features at the same level
+   - Add custom features to character on applyLevelUp
+
+3. **Feature Prerequisite Validation Tests** (8 tests)
+   - Grant features with met prerequisites
+   - Not grant features with unmet level prerequisites
+   - Not grant features with unmet ability score prerequisites
+   - Validate feature chain prerequisites
+   - Not grant advanced features without base features
+   - Validate class prerequisites
+   - Validate race prerequisites
+   - Grant features when race prerequisite is met
+
+4. **Feature Effects Application Tests** (5 tests)
+   - Include feature effects in level-up benefits
+   - Track multiple feature effects separately
+   - Include features without effects in benefits
+   - Apply skill proficiency effects
+   - Apply passive modifier effects
+
+5. **Mixed Default and Custom Features Tests** (2 tests)
+   - Include both default and custom features
+   - Validate mixed feature prerequisites
+
+6. **Multi-Level Progression with Custom Features Tests** (2 tests)
+   - Track custom features across multiple level-ups
+   - Handle feature chains across multiple levels
+
+7. **processLevelUpWithoutStats with Custom Features Tests** (2 tests)
+   - Include custom features in level-up without stats
+   - Include feature effects without stat increases
+
+8. **Edge Cases Tests** (4 tests)
+   - Handle custom features with complex prerequisites
+   - Handle features for non-default classes
+   - Handle level-up when no features are gained
+   - Apply feature effects to the updated character preview
+
+**Total Tests: 28**
+
+**Verification:**
+- ✅ All 28 tests pass
+- ✅ Build passes (`npm run build`)
+- ✅ Test file follows existing test patterns
+- ✅ Comprehensive coverage of LevelUpProcessor + FeatureRegistry integration
+- ✅ Tests custom feature registration, prerequisite validation, and effect application
 
 #### Implementation Summary - Phase 15.1: FeatureRegistry Unit Tests ✅
 
