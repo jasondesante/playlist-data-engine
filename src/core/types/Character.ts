@@ -2,6 +2,8 @@
  * D&D 5e Character type definitions
  */
 
+import type { FeatureEffect } from '../features/FeatureTypes.js';
+
 export type Race =
     | 'Human'
     | 'Elf'
@@ -208,12 +210,15 @@ export interface CharacterSheet {
     /**
      * Feature effects applied to this character
      * Stores effects from features and traits that modify character stats
+     *
+     * Effects include:
+     * - stat_bonus: Add to ability scores (e.g., +1 STR)
+     * - skill_proficiency: Grant proficiency or expertise in a skill
+     * - ability_unlock: Unlock new abilities (e.g., darkvision, flight)
+     * - passive_modifier: Add constant bonuses (e.g., +10 speed)
+     * - resource_grant: Grant resource pools (e.g., rage counts, ki points)
+     * - spell_slot_bonus: Grant additional spell slots
      */
-    feature_effects?: Array<{
-        type: string;
-        target: string;
-        value: number | string | boolean;
-        condition?: string;
-    }>;
+    feature_effects?: FeatureEffect[];
 
 }
