@@ -1509,17 +1509,17 @@ static registerEquipmentFeature(
 **File:** `/Users/jasondesante/playlist-data-engine/tests/unit/equipmentValidator.test.ts` (NEW)
 
 **Test Coverage:**
-- [ ] Validate valid equipment
-- [ ] Reject equipment with invalid properties
-- [ ] Reject equipment with invalid feature references
-- [ ] Reject equipment with invalid skill references
-- [ ] Validate property types
-- [ ] Validate property values
-- [ ] Validate damage information
-- [ ] Validate AC bonuses
-- [ ] Validate spawn weights (including 0)
-- [ ] Validate template IDs
-- [ ] Validate modification structures
+- [x] Validate valid equipment
+- [x] Reject equipment with invalid properties
+- [x] Reject equipment with invalid feature references
+- [x] Reject equipment with invalid skill references
+- [x] Validate property types
+- [x] Validate property values
+- [x] Validate damage information
+- [x] Validate AC bonuses
+- [x] Validate spawn weights (including 0)
+- [x] Validate template IDs
+- [x] Validate modification structures
 
 **File:** `/Users/jasondesante/playlist-data-engine/tests/unit/equipmentModifier.test.ts` (NEW)
 
@@ -1967,7 +1967,7 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 
 ### Phase 3: EquipmentEffect System
 - [x] Create EquipmentEffectApplier
-- [ ] Create EquipmentValidator
+- [x] Create EquipmentValidator
 - [ ] Integrate with FeatureEffectApplier
 
 ### Phase 4: Update EquipmentGenerator
