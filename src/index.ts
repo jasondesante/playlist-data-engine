@@ -141,3 +141,6 @@ export { GamingPlatformSensors } from './core/sensors/GamingPlatformSensors.js';
 
 // Combat
 export { CombatEngine } from './core/combat/CombatEngine.js';
+
+// Migration utilities
+export { CharacterMigration, type MigrationResult } from './core/migration/CharacterMigration.js';

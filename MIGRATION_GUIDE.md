@@ -89,6 +89,124 @@ const arrows = equipment.find(item => item.name === 'Arrow');
 
 ---
 
+## Using the CharacterMigration Utility
+
+**The easiest way to migrate your characters is to use the built-in `CharacterMigration` utility class.**
+
+This utility provides a simple API for detecting and migrating old character data formats.
+
+### Basic Usage
+
+```typescript
+import { CharacterMigration } from 'playlist-data-engine';
+
+// Check if a character needs migration
+if (CharacterMigration.needsMigration(myCharacter)) {
+    const result = CharacterMigration.migrateCharacter(myCharacter);
+
+    if (result.success) {
+        console.log('Migration successful!');
+        console.log('Changes:', result.changes);
+    } else {
+        console.error('Migration failed:', result.errors);
+    }
+
+    if (result.warnings.length > 0) {
+        console.warn('Warnings:', result.warnings);
+    }
+}
+```
+
+### Get Migration Report (Without Modifying)
+
+```typescript
+// Check what would be migrated without actually doing it
+const report = CharacterMigration.getMigrationReport(myCharacter);
+
+console.log('Needs migration:', report.needsMigration);
+console.log('Has old ammunition:', report.hasOldAmmunition);
+console.log('Has old features:', report.hasOldFeatures);
+console.log('Recommended action:', report.recommendedAction);
+```
+
+### Specific Format Checks
+
+```typescript
+// Check for old ammunition format
+if (CharacterMigration.hasOldAmmunitionFormat(myCharacter)) {
+    console.log('Character has old ammunition format');
+}
+
+// Check for old feature format
+if (CharacterMigration.hasOldFeatureFormat(myCharacter)) {
+    console.log('Character has old feature format');
+}
+```
+
+### Migrate Ammunition Only
+
+```typescript
+if (CharacterMigration.hasOldAmmunitionFormat(myCharacter)) {
+    const result = CharacterMigration.migrateAmmunition(myCharacter);
+    console.log('Ammunition migrated:', result.changes);
+}
+```
+
+### Migrate Features Only
+
+```typescript
+if (CharacterMigration.hasOldFeatureFormat(myCharacter)) {
+    const result = CharacterMigration.migrateFeatures(myCharacter);
+
+    if (result.errors.length > 0) {
+        console.error('Feature migration errors:', result.errors);
+    } else {
+        console.log('Features migrated:', result.changes);
+    }
+}
+```
+
+### Rollback (For Testing)
+
+```typescript
+// Rollback ammunition migration if needed (for testing only)
+CharacterMigration.rollbackAmmunition(myCharacter);
+```
+
+### Batch Migration Example
+
+```typescript
+import { CharacterMigration } from 'playlist-data-engine';
+
+// Migrate all characters in storage
+function migrateAllCharacters(characters: CharacterSheet[]): {
+    success: number;
+    failed: number;
+    errors: string[];
+} {
+    let success = 0;
+    let failed = 0;
+    const errors: string[] = [];
+
+    for (const character of characters) {
+        if (CharacterMigration.needsMigration(character)) {
+            const result = CharacterMigration.migrateCharacter(character);
+
+            if (result.success) {
+                success++;
+            } else {
+                failed++;
+                errors.push(`${character.name}: ${result.errors.join(', ')}`);
+            }
+        }
+    }
+
+    return { success, failed, errors };
+}
+```
+
+---
+
 ## Non-Breaking Changes (Behavioral)
 
 ### 2. Audio Analysis Frequency Bands

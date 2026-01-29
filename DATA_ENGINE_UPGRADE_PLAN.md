@@ -3191,11 +3191,11 @@ All tests pass within acceptable performance thresholds.
 - [x] Ensure existing code works without modifications ✅ **COMPLETE**
 - [x] Ensure old characters load correctly ✅ **COMPLETE**
 - [x] Document breaking changes in migration guide ✅ **COMPLETE** (Phase 11 changes added 2025-01-29)
-- [ ] Provide migration path for existing users
+- [x] Provide migration path for existing users ✅ **COMPLETE** (2025-01-29)
 
 **Deliverable:** Backward compatibility verification
 
-**Status:** Second task complete.
+**Status:** ✅ **COMPLETE**
 
 **Summary of Work Done:**
 - Fixed LevelUpProcessor test failures by adding FeatureRegistry initialization in test beforeEach
@@ -3230,6 +3230,41 @@ All 7 backward compatibility tests pass successfully.
 - Standard ability bonuses (STR, DEX, etc.) are applied directly and NOT stored in `feature_effects`
 - Custom stat bonuses ARE stored in `feature_effects`
 
+**Phase 10.3.3: Migration Utility - COMPLETE**
+
+Created `/workspace/src/core/migration/CharacterMigration.ts` with:
+
+1. **CharacterMigration class** providing migration utilities:
+   - `needsMigration()` - Check if character needs migration
+   - `migrateCharacter()` - Migrate all old formats in one call
+   - `hasOldAmmunitionFormat()` - Check for old ammunition
+   - `hasOldFeatureFormat()` - Check for old feature format
+   - `getMigrationReport()` - Get migration report without modifying
+   - `migrateAmmunition()` - Migrate ammunition only
+   - `migrateFeatures()` - Migrate features only
+   - `rollbackAmmunition()` - Rollback for testing
+
+2. **Export from main API** - Added to `src/index.ts`:
+   ```typescript
+   export { CharacterMigration, type MigrationResult } from './core/migration/CharacterMigration.js';
+   ```
+
+3. **Updated MIGRATION_GUIDE.md** with:
+   - "Using the CharacterMigration Utility" section
+   - Basic usage examples
+   - Batch migration examples
+   - Migration report examples
+
+4. **Feature ID mapping** built from DEFAULT_CLASS_FEATURES:
+   - Automatically maps old "Class Level X" format to new feature IDs
+   - Example: 'Barbarian Level 1' → ['barbarian_rage', 'barbarian_unarmored_defense']
+
+5. **Tested and verified**:
+   - Build succeeds with no TypeScript errors
+   - Migration utility tested manually with old format characters
+   - Ammunition migration works: 'Arrows (20)' → 'Arrow' × 20
+   - Feature migration works: 'Ranger Level 1' → ['favored_enemy', 'natural_explorer']
+   - feature_effects array initialized when missing
 
 
 ---
