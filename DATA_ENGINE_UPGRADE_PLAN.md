@@ -3737,10 +3737,10 @@ Created `/workspace/src/core/migration/CharacterMigration.ts` with:
 
 ### 11.7 Create FeatureValidator
 
-**File:** `/Users/jasondesante/playlist-data-engine/src/core/features/FeatureValidator.ts`
+**File:** `/workspace/src/core/features/FeatureValidator.ts`
 
 **Tasks:**
-- [ ] Create validation schemas for features:
+- [x] Create validation schemas for features:
   ```typescript
   function validateClassFeature(feature: any): ValidationResult {
       const errors: string[] = [];
@@ -3767,7 +3767,58 @@ Created `/workspace/src/core/migration/CharacterMigration.ts` with:
   }
   ```
 
-**Deliverable:** Complete validation system for features
+**Deliverable:** ~~Complete validation system for features~~ **COMPLETE**
+
+---
+
+#### Implementation Summary - Phase 11.7: FeatureValidator ✅
+
+**Files Created:**
+- `src/core/features/FeatureValidator.ts` - Complete validation system for features and traits
+- `src/core/features/index.ts` - Module index exporting all feature-related classes
+
+**Changes Made:**
+
+1. **Created FeatureValidator class** with comprehensive validation methods:
+   - `validateClassFeature()` - Validates class features with full schema checks
+   - `validateRacialTrait()` - Validates racial traits with full schema checks
+   - `validateEffect()` - Validates individual feature effects
+   - `validatePrerequisites()` - Validates feature prerequisites
+   - `validateClassFeatures()` - Batch validation for arrays of features
+   - `validateRacialTraits()` - Batch validation for arrays of traits
+
+2. **Validation includes:**
+   - Required fields: id, name, description, type, class/race, level (for features), source
+   - ID format validation (lowercase_with_underscores convention)
+   - Enum value validation for:
+     - type: 'passive', 'active', 'resource', 'trigger'
+     - source: 'default', 'custom'
+     - class: All 12 D&D 5e classes
+     - race: All 9 D&D 5e races
+     - abilities: STR, DEX, CON, INT, WIS, CHA
+   - Value range validation (level: 1-20, ability scores: 1-20)
+   - Optional field validation (tags, lore, subrace, effects, prerequisites)
+   - Effect validation with target-specific checks (abilities, skills, proficiency levels)
+
+3. **Helper functions exported:**
+   - `validateClassFeature()` - Quick single feature validation
+   - `validateRacialTrait()` - Quick single trait validation
+   - `validateClassFeatures()` - Batch feature validation
+   - `validateRacialTraits()` - Batch trait validation
+
+4. **Created features module index** (`index.ts`):
+   - Exports all types from FeatureTypes.ts
+   - Exports FeatureRegistry and getFeatureRegistry
+   - Exports DEFAULT_CLASS_FEATURES and DEFAULT_RACIAL_TRAITS
+   - Exports FeatureEffectApplier and EffectApplicationResult type
+   - Exports FeatureValidator and helper functions
+
+**Verification:**
+- ✅ TypeScript compilation passes (`npm run build`)
+- ✅ FeatureValidator class created with full validation API
+- ✅ Validation covers all feature properties and constraints
+- ✅ Clear error messages for invalid data
+- ✅ Module index exports all feature-related functionality
 
 ---
 
