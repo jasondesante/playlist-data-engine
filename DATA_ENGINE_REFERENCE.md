@@ -13,7 +13,8 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
 4. [Environmental Sensors](#environmental-sensors)
 5. [Gaming Integration](#gaming-integration)
 6. [Combat System](#combat-system)
-7. [Cross-References](#cross-references)
+7. [Extensibility System](#extensibility-system)
+8. [Cross-References](#cross-references)
 
 ---
 
@@ -2266,6 +2267,552 @@ Handles spell casting mechanics (spell slots, saving throws, spell damage).
     - Checks if a spell can be upcast (cast using higher-level slot)
 - `upcastSpell(caster: Combatant, spell: Spell, targets: Combatant[], slotLevelUsed: number): SpellCastResult`
     - Upcasts a spell using a higher-level spell slot
+
+---
+
+## Extensibility System
+
+**Location:** `src/core/extensions/`
+
+The extensibility system allows runtime customization of ALL procedural generation lists with spawn rate control. This enables adding custom spells, equipment, races, classes, and appearance options without modifying the core engine.
+
+### Overview
+
+**Design Principles:**
+- **Hybrid spawn rates**: Support both relative weights (added to pool) and absolute weights (replace distribution)
+- **Runtime only**: Custom data provided each session; characters save with custom items already included
+- **Strict validation**: Reject invalid data with clear errors
+- **Consistent API**: Same function pattern across all categories
+- **Per-category spawn rates**: Each expansion pack includes its own spawn rate weights for its content
+
+**Extensible Categories:**
+
+| Category | Phase | Extensibility Type | Spawn Rate Control |
+|----------|-------|-------------------|-------------------|
+| **Equipment** | 5.3 | Custom weapons, armor, items with weights | ✅ Per-item |
+| **Appearance** | 5.1 | Body types, skin tones, hair, eyes, facial features | ✅ Per-option |
+| **Spells** | 5.2 | Custom spells with full spell data | ✅ Per-spell |
+| **Races** | 5.4 | Custom races with ability bonuses, speed, traits | ✅ Per-race |
+| **Classes** | 5.5 | Custom classes for audio-to-class mapping | ✅ Per-class |
+
+---
+
+### ExtensionManager
+
+**Location:** `src/core/extensions/ExtensionManager.ts`
+
+Singleton class for managing runtime extensions to procedural generation data.
+
+#### Class: `ExtensionManager`
+
+**Constructor:**
+```typescript
+// Singleton - use getInstance() instead of new ExtensionManager()
+```
+
+**Methods:**
+
+- `static getInstance(): ExtensionManager`
+    - Returns the singleton instance
+
+- `initializeDefaults(category: ExtensionCategory, data: any[]): void`
+    - Initialize default data for a category (called automatically on first use)
+
+- `initializeAllDefaults(data: Record<string, any[]>): void`
+    - Initialize all default data from constants
+
+- `register(category: ExtensionCategory, items: any[], options?: ExtensionOptions): void`
+    - Register custom data for a category
+    - **Parameters:**
+        - `category`: The category to extend
+        - `items`: Custom items to add
+        - `options`: Registration options (mode, weights, validate)
+    - **Throws:** Error if validation fails
+
+- `get(category: ExtensionCategory): any[]`
+    - Get merged data (defaults + custom) for a category
+
+- `getDefaults(category: ExtensionCategory): any[]`
+    - Get default data only (no custom items)
+
+- `getCustom(category: ExtensionCategory): any[]`
+    - Get custom items only (no defaults)
+
+- `setWeights(category: ExtensionCategory, weights: Record<string, number>): void`
+    - Set spawn weights for a category
+
+- `getWeights(category: ExtensionCategory): Record<string, number>`
+    - Get combined default and custom weights
+
+- `getDefaultWeights(category: ExtensionCategory): Record<string, number>`
+    - Get default weights only (all items have weight 1.0)
+
+- `hasCustomData(category: ExtensionCategory): boolean`
+    - Check if a category has custom data registered
+
+- `getMode(category: ExtensionCategory): 'relative' | 'absolute' | 'default' | undefined`
+    - Get the registration mode for a category
+
+- `validate(category: ExtensionCategory, items: any[]): ValidationResult`
+    - Validate items for a category
+
+- `reset(category: ExtensionCategory): void`
+    - Reset a category to defaults (removes all custom data)
+
+- `resetAll(): void`
+    - Reset all categories to defaults
+
+- `getInfo(category?: ExtensionCategory): Record<string, any>`
+    - Get information about registered extensions
+
+- `exportCustomData(): Record<string, any>`
+    - Export all custom data (for debugging/saving)
+
+- `getRegisteredCategories(): ExtensionCategory[]`
+    - Get all categories with default data
+
+#### Types
+
+```typescript
+export type ExtensionCategory =
+    | 'equipment'
+    | 'appearance.bodyTypes'
+    | 'appearance.skinTones'
+    | 'appearance.hairColors'
+    | 'appearance.hairStyles'
+    | 'appearance.eyeColors'
+    | 'appearance.facialFeatures'
+    | 'spells'
+    | 'races'
+    | 'classes'
+    | `spells.${string}`;
+
+export interface ExtensionOptions {
+    /** Spawn mode for this extension */
+    mode?: 'relative' | 'absolute' | 'default';
+    /** Custom spawn weights for individual items */
+    weights?: Record<string, number>;
+    /** Whether to validate items before registration */
+    validate?: boolean;
+}
+
+export interface ValidationResult {
+    valid: boolean;
+    errors?: string[];
+}
+```
+
+#### Usage Examples
+
+**Basic Custom Spell Registration:**
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Add custom spells
+manager.register('spells', [
+    {
+        name: 'Phoenix Fire',
+        level: 5,
+        school: 'Evocation',
+        casting_time: '1 action',
+        range: '60 feet',
+        duration: 'Instantaneous',
+        components: ['V', 'S', 'M'],
+        description: 'A burst of flame explodes in a 20-foot radius...'
+    }
+], {
+    mode: 'relative',
+    weights: { 'Phoenix Fire': 0.5 }  // Half as common as other spells
+});
+```
+
+**Replace All Equipment:**
+```typescript
+// Use only custom equipment
+manager.register('equipment', [
+    { name: 'Excalibur', type: 'weapon', rarity: 'legendary', weight: 5 },
+    { name: 'Mithril Armor', type: 'armor', rarity: 'very_rare', weight: 10 }
+], {
+    mode: 'absolute'  // Replace default equipment entirely
+});
+```
+
+**Custom Appearance Options:**
+```typescript
+// Add new body types
+manager.register('appearance.bodyTypes', [
+    'giant',
+    'diminutive',
+    'elemental'
+], {
+    weights: { 'giant': 0.3, 'diminutive': 0.3, 'elemental': 0.1 }
+});
+
+// Add new skin tones
+manager.register('appearance.skinTones', [
+    '#8B4513',  // Saddle Brown
+    '#DEB887',  // Burlywood
+    '#F5DEB3'   // Wheat
+]);
+```
+
+**Custom Races and Classes:**
+```typescript
+// Note: Race and class names must extend the existing Race/Class types
+// The engine validates against the known Race/Class enums
+
+// This would require modifying the Race type in types/Character.ts first
+// manager.register('races', ['Dragonkin'], {
+//     weights: { 'Dragonkin': 0.5 }
+// });
+```
+
+---
+
+### WeightedSelector
+
+**Location:** `src/core/extensions/WeightedSelector.ts`
+
+Utility class for weighted random selection with multiple modes.
+
+#### Class: `WeightedSelector<T>`
+
+All methods are static.
+
+**Methods:**
+
+- `static select<T>(items: T[], weights: Record<string, number>, rng: SeededRNG, mode?: SelectionMode): T`
+    - Select a single item based on weights
+    - **Parameters:**
+        - `items`: Array of items to select from
+        - `weights`: Record of item name to weight multiplier
+        - `rng`: Seeded random number generator
+        - `mode`: Selection mode (default: 'relative')
+
+- `static selectMultiple<T>(items: T[], weights: Record<string, number>, rng: SeededRNG, count: number, mode?: SelectionMode): T[]`
+    - Select multiple unique items based on weights
+    - **Parameters:**
+        - `items`: Array of items to select from
+        - `weights`: Record of item name to weight multiplier
+        - `rng`: Seeded random number generator
+        - `count`: Number of items to select
+        - `mode`: Selection mode
+
+- `static getProbabilities<T>(items: T[], weights: Record<string, number>, mode?: SelectionMode): Record<string, number>`
+    - Get probability distribution for items based on weights
+    - Useful for debugging, testing, or displaying spawn rates
+
+#### Selection Modes
+
+| Mode | Behavior | Use Case |
+|------|-----------|-----------|
+| **relative** | Use provided weights as-is, normalize to probabilities | Add rare item with high spawn rate |
+| **absolute** | All non-specified items get weight 1, then normalize | Complete control over spawn rates |
+| **default** | Equal weight for all items (1.0) | Ignore custom weights |
+
+#### Types
+
+```typescript
+export type SelectionMode = 'relative' | 'absolute' | 'default';
+```
+
+#### Usage Examples
+
+**Relative Mode:**
+```typescript
+import { WeightedSelector } from 'playlist-data-engine';
+import { SeededRNG } from 'playlist-data-engine';
+
+const rng = new SeededRNG('my-seed');
+const monsters = ['Goblin', 'Orc', 'Dragon'];
+
+// Make dragons twice as common
+const weights = { 'Dragon': 2, 'Goblin': 1, 'Orc': 1 };
+const selected = WeightedSelector.select(monsters, weights, rng, 'relative');
+// Result: Dragon has 50% chance, Goblin 25%, Orc 25%
+```
+
+**Absolute Mode:**
+```typescript
+// Only specified items can spawn with their exact weights
+const weights = { 'Sword': 5, 'Axe': 3 };
+const weapons = ['Sword', 'Axe', 'Dagger', 'Bow'];
+const selected = WeightedSelector.select(weapons, weights, rng, 'absolute');
+// Result: Sword 62.5%, Axe 37.5%, Dagger and Bow 0%
+```
+
+**Multiple Selection (Facial Features):**
+```typescript
+const features = ['Scar', 'Tattoo', 'Piercing', 'Freckles', 'Beard', 'Mole'];
+const featureWeights = { 'Scar': 0.5, 'Tattoo': 0.3 };
+
+const numFeatures = rng.randomInt(1, 4);
+const selectedFeatures = WeightedSelector.selectMultiple(
+    features,
+    featureWeights,
+    rng,
+    numFeatures,
+    'relative'
+);
+// Selects 1-3 unique features with weighted probabilities
+```
+
+**Get Probabilities for Debugging:**
+```typescript
+const probabilities = WeightedSelector.getProbabilities(
+    monsters,
+    weights,
+    'relative'
+);
+console.log(probabilities);
+// { 'Goblin': 0.25, 'Orc': 0.25, 'Dragon': 0.5 }
+```
+
+---
+
+### CharacterGenerator Extensions
+
+**Location:** `src/core/generation/CharacterGenerator.ts`
+
+The `CharacterGenerator.generate()` method accepts an `extensions` option for registering custom content.
+
+#### Updated CharacterGeneratorOptions
+
+```typescript
+export interface CharacterGeneratorOptions {
+    /** Starting level (default: 1) */
+    level?: number;
+
+    /** Override class suggestion */
+    forceClass?: Class;
+
+    /** Game mode for stat progression (default: 'standard') */
+    gameMode?: GameMode;
+
+    /**
+     * Custom extensions for procedural generation
+     * Allows adding custom spells, equipment, races, classes, and appearance options
+     */
+    extensions?: CharacterGeneratorExtensions;
+}
+
+export interface CharacterGeneratorExtensions {
+    /** Custom spells to add */
+    spells?: SpellExtension[];
+
+    /** Custom equipment to add */
+    equipment?: EquipmentExtension[];
+
+    /** Custom races to add (race names) */
+    races?: RaceExtension[];
+
+    /** Custom classes to add (class names) */
+    classes?: ClassExtension[];
+
+    /** Custom appearance options */
+    appearance?: AppearanceExtension;
+}
+
+export interface SpellExtension {
+    name: string;
+    level: number;
+    school: string;
+    casting_time?: string;
+    range?: string;
+    duration?: string;
+    components?: string[];
+    description?: string;
+}
+
+export interface EquipmentExtension {
+    name: string;
+    type: 'weapon' | 'armor' | 'item';
+    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    weight: number;
+}
+
+export type RaceExtension = string;
+export type ClassExtension = string;
+
+export type AppearanceExtension = {
+    bodyTypes?: string[];
+    skinTones?: string[];
+    hairColors?: string[];
+    hairStyles?: string[];
+    eyeColors?: string[];
+    facialFeatures?: string[];
+};
+```
+
+#### Usage Example
+
+```typescript
+import { CharacterGenerator } from 'playlist-data-engine';
+
+// Generate a character with custom content
+const character = CharacterGenerator.generate(
+    seed,
+    audioProfile,
+    'Hero',
+    {
+        level: 5,
+        gameMode: 'standard',
+        extensions: {
+            // Custom spells
+            spells: [
+                {
+                    name: 'Phoenix Fire',
+                    level: 5,
+                    school: 'Evocation',
+                    casting_time: '1 action',
+                    range: '60 feet',
+                    duration: 'Instantaneous',
+                    components: ['V', 'S'],
+                    description: 'A burst of flame...'
+                }
+            ],
+
+            // Custom equipment
+            equipment: [
+                {
+                    name: 'Dragon Scale Armor',
+                    type: 'armor',
+                    rarity: 'rare',
+                    weight: 25
+                }
+            ],
+
+            // Custom appearance options
+            appearance: {
+                bodyTypes: ['giant', 'diminutive'],
+                skinTones: ['#8B4513', '#DEB887'],
+                facialFeatures: ['mystical tattoo', 'runes']
+            }
+        }
+    }
+);
+
+// Custom items will be merged with defaults during character generation
+```
+
+---
+
+### Validation System
+
+The ExtensionManager includes built-in validation for all extensible categories.
+
+**Validation Rules:**
+
+| Category | Required Fields | Valid Values |
+|----------|----------------|--------------|
+| **equipment** | name, type, rarity, weight | type: 'weapon' \| 'armor' \| 'item'; rarity: 'common'...'legendary'; weight: ≥ 0 |
+| **spells** | name, level, school | level: 0-9; school: 'Abjuration'...'Transmutation' |
+| **races** | (string value) | Must be valid Race enum value |
+| **classes** | (string value) | Must be valid Class enum value |
+| **appearance.*** | (string value) | Must be string type |
+
+**Validation Example:**
+
+```typescript
+const manager = ExtensionManager.getInstance();
+
+try {
+    // This will throw validation errors
+    manager.register('spells', [
+        {
+            name: 'Invalid Spell',
+            level: 15,  // Invalid: level must be 0-9
+            school: 'NotASchool'  // Invalid: not a valid school
+        }
+    ], {
+        validate: true  // Validation is on by default
+    });
+} catch (error) {
+    console.error(error.message);
+    // "Invalid items for category 'spells':
+    //  Item 0: Invalid 'level' (must be 0-9)
+    //  Item 0: Invalid 'school'"
+}
+
+// Disable validation if needed
+manager.register('spells', items, { validate: false });
+```
+
+---
+
+### Advanced Patterns
+
+**Per-Category Weight Management:**
+
+```typescript
+const manager = ExtensionManager.getInstance();
+
+// Set weights independently of registration
+manager.register('equipment', customItems);
+
+// Later, adjust spawn rates
+manager.setWeights('equipment', {
+    'Dragon Scale Armor': 0.1,  // Rare
+    'Sword': 2.0,               // Common
+    'Potion': 5.0               // Very common
+});
+
+// Get current weights for display
+const weights = manager.getWeights('equipment');
+console.log(weights);
+```
+
+**Check Extension Status:**
+
+```typescript
+const manager = ExtensionManager.getInstance();
+
+// Check if custom data exists
+if (manager.hasCustomData('spells')) {
+    console.log('Custom spells registered');
+}
+
+// Get extension info
+const info = manager.getInfo('spells');
+console.log(info);
+// {
+//     hasCustomData: true,
+//     defaultCount: 53,
+//     customCount: 5,
+//     totalCount: 58,
+//     mode: 'relative',
+//     weights: { ... },
+//     registeredAt: 1234567890
+// }
+```
+
+**Reset and Export:**
+
+```typescript
+const manager = ExtensionManager.getInstance();
+
+// Reset single category
+manager.reset('spells');
+
+// Reset everything
+manager.resetAll();
+
+// Export custom data for saving/loading
+const customData = manager.exportCustomData();
+console.log(customData);
+// {
+//     extensions: {
+//         'spells': { items: [...], options: {...}, registeredAt: ... },
+//         'equipment': { items: [...], options: {...}, registeredAt: ... }
+//     },
+//     weights: {
+//         'spells': { 'Phoenix Fire': 0.5 },
+//         'equipment': { 'Sword': 2.0 }
+//     }
+// }
+```
 
 ---
 

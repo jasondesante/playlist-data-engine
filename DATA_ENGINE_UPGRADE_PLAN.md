@@ -2436,7 +2436,7 @@ manager.setWeights('classes', { 'Barbarian': 2, 'Wizard': 0.5 });
 ### 7.1 Update Engine Documentation
 
 **Tasks:**
-- [ ] Update DATA_ENGINE_REFERENCE.md:
+- [x] Update DATA_ENGINE_REFERENCE.md:
   - Add ExtensionManager API reference
   - Add validation schemas
   - Add weight system docs
