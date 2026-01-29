@@ -1813,10 +1813,10 @@ The validation functionality is implemented directly in `ExtensionManager.ts` (l
 
 ### 4.4 Update CharacterGenerator
 
-**File:** `/Users/jasondesante/playlist-data-engine/src/core/generation/CharacterGenerator.ts`
+**File:** `/workspace/src/core/generation/CharacterGenerator.ts`
 
 **Tasks:**
-- [ ] Add extension options to `CharacterGeneratorOptions`:
+- [x] Add extension options to `CharacterGeneratorOptions`:
   ```typescript
   interface CharacterGeneratorOptions {
       level?: number;
@@ -1834,7 +1834,7 @@ The validation functionality is implemented directly in `ExtensionManager.ts` (l
   }
   ```
 
-- [ ] Update `generate()` method:
+- [x] Update `generate()` method:
   ```typescript
   static generate(
       seed: string,
@@ -1856,7 +1856,39 @@ The validation functionality is implemented directly in `ExtensionManager.ts` (l
   }
   ```
 
-**Deliverable:** Updated CharacterGenerator with extension support
+**Deliverable:** ~~Updated CharacterGenerator with extension support~~ **COMPLETE**
+
+---
+
+#### Implementation Summary - Phase 4.4: CharacterGenerator Extension Support ✅
+
+**Changes Made:**
+
+1. **Added Extension Types** (lines 13-52):
+   - `SpellExtension`: Custom spell interface with name, level, school, etc.
+   - `EquipmentExtension`: Custom equipment interface with name, type, rarity, weight
+   - `RaceExtension`: Type alias for race name strings
+   - `ClassExtension`: Type alias for class name strings
+   - `AppearanceExtension`: Interface for appearance customizations
+   - `CharacterGeneratorExtensions`: Main extensions configuration interface
+
+2. **Updated `CharacterGeneratorOptions`** (line 62):
+   - Added optional `extensions?: CharacterGeneratorExtensions` property
+
+3. **Added `registerExtensions()` Static Method** (lines 85-134):
+   - Private method to register all extension types with ExtensionManager
+   - Handles spells, equipment, races, classes, and all appearance categories
+   - Validates and registers each category with the ExtensionManager singleton
+
+4. **Updated `generate()` Method** (line 150):
+   - Calls `registerExtensions()` if extensions are provided
+   - Extensions are registered before character generation begins
+
+**Verification:**
+- ✅ TypeScript compilation passes (`tsc --noEmit`)
+- ✅ ESLint passes with no errors
+- ✅ Extension support added to CharacterGenerator API
+- ✅ All extension types properly defined with JSDoc documentation
 
 ---
 

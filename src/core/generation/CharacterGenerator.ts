@@ -9,6 +9,69 @@ import { SkillAssigner } from './SkillAssigner.js';
 import { AppearanceGenerator } from './AppearanceGenerator.js';
 import { SpellManager } from './SpellManager.js';
 import { EquipmentGenerator } from './EquipmentGenerator.js';
+import { ExtensionManager } from '../extensions/ExtensionManager.js';
+
+/**
+ * Extension data for custom spells
+ */
+export interface SpellExtension {
+    name: string;
+    level: number;
+    school: string;
+    casting_time?: string;
+    range?: string;
+    duration?: string;
+    components?: string[];
+    description?: string;
+}
+
+/**
+ * Extension data for custom equipment
+ */
+export interface EquipmentExtension {
+    name: string;
+    type: 'weapon' | 'armor' | 'item';
+    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    weight: number;
+}
+
+/**
+ * Extension data for custom races (race name only, uses existing Race enum)
+ */
+export type RaceExtension = string;
+
+/**
+ * Extension data for custom classes (class name only, uses existing Class enum)
+ */
+export type ClassExtension = string;
+
+/**
+ * Extension data for custom appearance options
+ */
+export type AppearanceExtension = {
+    bodyTypes?: string[];
+    skinTones?: string[];
+    hairColors?: string[];
+    hairStyles?: string[];
+    eyeColors?: string[];
+    facialFeatures?: string[];
+};
+
+/**
+ * Extension configuration for CharacterGenerator
+ */
+export interface CharacterGeneratorExtensions {
+    /** Custom spells to add */
+    spells?: SpellExtension[];
+    /** Custom equipment to add */
+    equipment?: EquipmentExtension[];
+    /** Custom races to add (race names) */
+    races?: RaceExtension[];
+    /** Custom classes to add (class names) */
+    classes?: ClassExtension[];
+    /** Custom appearance options */
+    appearance?: AppearanceExtension;
+}
 
 export interface CharacterGeneratorOptions {
     /** Starting level (default: 1) */
@@ -19,6 +82,12 @@ export interface CharacterGeneratorOptions {
 
     /** Game mode for stat progression (default: 'standard') */
     gameMode?: GameMode;
+
+    /**
+     * Custom extensions for procedural generation
+     * Allows adding custom spells, equipment, races, classes, and appearance options
+     */
+    extensions?: CharacterGeneratorExtensions;
 }
 
 /**
@@ -29,6 +98,71 @@ export interface CharacterGeneratorOptions {
  * to create unique, reproducible characters.
  */
 export class CharacterGenerator {
+    /**
+     * Register custom extensions with the ExtensionManager
+     *
+     * This method registers custom spells, equipment, races, classes, and appearance
+     * options that will be merged with the default data during character generation.
+     *
+     * @param extensions - Custom extensions to register
+     *
+     * @example
+     * CharacterGenerator.registerExtensions({
+     *     spells: [{ name: 'Phoenix Fire', level: 5, school: 'Evocation' }],
+     *     equipment: [{ name: 'Dragon Scale Armor', type: 'armor', rarity: 'rare', weight: 25 }],
+     *     races: ['Dragonborn'],
+     *     classes: ['Paladin'],
+     *     appearance: { bodyTypes: ['muscular'] }
+     * });
+     */
+    private static registerExtensions(extensions: CharacterGeneratorExtensions): void {
+        const manager = ExtensionManager.getInstance();
+
+        // Register custom spells
+        if (extensions.spells && extensions.spells.length > 0) {
+            manager.register('spells', extensions.spells);
+        }
+
+        // Register custom equipment
+        if (extensions.equipment && extensions.equipment.length > 0) {
+            manager.register('equipment', extensions.equipment);
+        }
+
+        // Register custom races
+        if (extensions.races && extensions.races.length > 0) {
+            manager.register('races', extensions.races);
+        }
+
+        // Register custom classes
+        if (extensions.classes && extensions.classes.length > 0) {
+            manager.register('classes', extensions.classes);
+        }
+
+        // Register custom appearance options
+        if (extensions.appearance) {
+            const { appearance } = extensions;
+
+            if (appearance.bodyTypes && appearance.bodyTypes.length > 0) {
+                manager.register('appearance.bodyTypes', appearance.bodyTypes);
+            }
+            if (appearance.skinTones && appearance.skinTones.length > 0) {
+                manager.register('appearance.skinTones', appearance.skinTones);
+            }
+            if (appearance.hairColors && appearance.hairColors.length > 0) {
+                manager.register('appearance.hairColors', appearance.hairColors);
+            }
+            if (appearance.hairStyles && appearance.hairStyles.length > 0) {
+                manager.register('appearance.hairStyles', appearance.hairStyles);
+            }
+            if (appearance.eyeColors && appearance.eyeColors.length > 0) {
+                manager.register('appearance.eyeColors', appearance.eyeColors);
+            }
+            if (appearance.facialFeatures && appearance.facialFeatures.length > 0) {
+                manager.register('appearance.facialFeatures', appearance.facialFeatures);
+            }
+        }
+    }
+
     /**
      * Generate a complete D&D 5e character sheet from audio profile and seed
      *
@@ -48,6 +182,8 @@ export class CharacterGenerator {
      * @param {CharacterGeneratorOptions} [options] - Generation options
      * @param {number} [options.level=1] - Starting level (1-20)
      * @param {Class} [options.forceClass] - Override class suggestion
+     * @param {GameMode} [options.gameMode='standard'] - Game mode for stat progression
+     * @param {CharacterGeneratorExtensions} [options.extensions] - Custom extensions
      * @returns {CharacterSheet} Complete D&D 5e character sheet
      *
      * @example
@@ -58,6 +194,19 @@ export class CharacterGenerator {
      *   { level: 5 }
      * );
      * console.log(`${character.name}: Level ${character.level} ${character.class}`);
+     *
+     * @example
+     * // With custom spells
+     * const customCharacter = CharacterGenerator.generate(
+     *   'seed',
+     *   audioProfile,
+     *   'Hero',
+     *   {
+     *     extensions: {
+     *       spells: [{ name: 'Phoenix Fire', level: 5, school: 'Evocation' }]
+     *     }
+     *   }
+     * );
      */
     static generate(
         seed: string,
@@ -68,6 +217,11 @@ export class CharacterGenerator {
         const rng = new SeededRNG(seed);
         const level = options.level || 1;
         const gameMode: GameMode = options.gameMode || 'standard';
+
+        // Register custom extensions if provided
+        if (options.extensions) {
+            CharacterGenerator.registerExtensions(options.extensions);
+        }
 
         // Select race deterministically from seed
         const race = RaceSelector.select(rng);
