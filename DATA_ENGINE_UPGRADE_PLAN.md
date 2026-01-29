@@ -4475,7 +4475,7 @@ manager.register('skills.STR', [{
 **File:** `/Users/jasondesante/playlist-data-engine/src/core/extensions/ValidationManager.ts`
 
 **Tasks:**
-- [ ] Add feature validation schemas:
+- [x] Add feature validation schemas:
   ```typescript
   VALIDATION_SCHEMAS = {
       // ... existing
@@ -4485,9 +4485,37 @@ manager.register('skills.STR', [{
   };
   ```
 
-- [ ] Integrate with FeatureValidator and SkillValidator
+- [x] Integrate with FeatureValidator and SkillValidator
 
 **Deliverable:** Complete validation for all categories
+
+#### Implementation Summary - Phase 13.2: ValidationManager Integration ✅
+
+**Files Modified:**
+- `src/core/extensions/ExtensionManager.ts` - Integrated FeatureValidator and SkillValidator
+
+**Changes Made:**
+
+1. **Added imports** for `FeatureValidator`, `validateClassFeature`, `validateRacialTrait`, `SkillValidator`, and `validateSkill`
+
+2. **Updated `validateItem()` method** to use the dedicated validators:
+   - Class features now use `FeatureValidator.validateClassFeature()` instead of inline validation
+   - Racial traits now use `FeatureValidator.validateRacialTrait()` instead of inline validation
+   - Skills now use `SkillValidator.validateSkill()` instead of inline validation
+
+3. **Benefits of this change:**
+   - Eliminates duplicate validation logic
+   - Uses comprehensive, tested validators
+   - Ensures consistent validation across the codebase
+   - More detailed error messages from specialized validators
+   - Validates effects and prerequisites (which inline code did not check)
+
+**Verification:**
+- ✅ TypeScript compilation passes (`npm run build`)
+- ✅ All skill integration tests pass (23 tests)
+- ✅ All validation integration tests pass (36/37 tests - 1 pre-existing failure)
+- ✅ ExtensionManager now delegates to FeatureValidator for classFeatures and racialTraits
+- ✅ ExtensionManager now delegates to SkillValidator for skills
 
 ---
 

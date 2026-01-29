@@ -16,8 +16,10 @@
 import type { Race, Class, Ability } from '../types/Character.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
+import { FeatureValidator, validateClassFeature, validateRacialTrait } from '../features/FeatureValidator.js';
 import type { CustomSkill } from '../skills/SkillTypes.js';
 import { SkillRegistry } from '../skills/SkillRegistry.js';
+import { SkillValidator, validateSkill } from '../skills/SkillValidator.js';
 
 /**
  * All extensible categories in the system
@@ -448,76 +450,25 @@ export class ExtensionManager {
                 errors.push(`${prefix} Appearance options must be strings`);
             }
         }
-        // Phase 13.1: Class Features validation
+        // Phase 13.2: Class Features validation - use FeatureValidator
         else if (category === 'classFeatures' || category.startsWith('classFeatures.')) {
-            if (!item.id || typeof item.id !== 'string') {
-                errors.push(`${prefix} Class feature must have a valid 'id'`);
-            }
-            if (!item.name || typeof item.name !== 'string') {
-                errors.push(`${prefix} Class feature must have a valid 'name'`);
-            }
-            if (!item.description || typeof item.description !== 'string') {
-                errors.push(`${prefix} Class feature must have a valid 'description'`);
-            }
-            const validTypes = ['passive', 'active', 'resource', 'trigger'];
-            if (!item.type || !validTypes.includes(item.type)) {
-                errors.push(`${prefix} Invalid 'type' (must be one of: ${validTypes.join(', ')})`);
-            }
-            if (typeof item.level !== 'number' || item.level < 1 || item.level > 20) {
-                errors.push(`${prefix} Invalid 'level' (must be 1-20)`);
-            }
-            const validClasses: Class[] = ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard'];
-            if (!item.class || !validClasses.includes(item.class)) {
-                errors.push(`${prefix} Invalid 'class' (must be a valid D&D 5e class)`);
-            }
-            if (!item.source || !['default', 'custom'].includes(item.source)) {
-                errors.push(`${prefix} Invalid 'source' (must be 'default' or 'custom')`);
+            const result = FeatureValidator.validateClassFeature(item);
+            if (!result.valid) {
+                errors.push(...result.errors.map(e => `${prefix} ${e}`));
             }
         }
-        // Phase 13.1: Racial Traits validation
+        // Phase 13.2: Racial Traits validation - use FeatureValidator
         else if (category === 'racialTraits' || category.startsWith('racialTraits.')) {
-            if (!item.id || typeof item.id !== 'string') {
-                errors.push(`${prefix} Racial trait must have a valid 'id'`);
-            }
-            if (!item.name || typeof item.name !== 'string') {
-                errors.push(`${prefix} Racial trait must have a valid 'name'`);
-            }
-            if (!item.description || typeof item.description !== 'string') {
-                errors.push(`${prefix} Racial trait must have a valid 'description'`);
-            }
-            const validRaces: Race[] = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Dragonborn', 'Gnome', 'Half-Elf', 'Half-Orc', 'Tiefling'];
-            if (!item.race || !validRaces.includes(item.race)) {
-                errors.push(`${prefix} Invalid 'race' (must be a valid D&D 5e race)`);
-            }
-            if (!item.source || !['default', 'custom'].includes(item.source)) {
-                errors.push(`${prefix} Invalid 'source' (must be 'default' or 'custom')`);
+            const result = FeatureValidator.validateRacialTrait(item);
+            if (!result.valid) {
+                errors.push(...result.errors.map(e => `${prefix} ${e}`));
             }
         }
-        // Phase 13.1: Skills validation
+        // Phase 13.2: Skills validation - use SkillValidator
         else if (category === 'skills' || category.startsWith('skills.')) {
-            if (!item.id || typeof item.id !== 'string') {
-                errors.push(`${prefix} Skill must have a valid 'id'`);
-            }
-            // Validate skill ID format (lowercase_with_underscores)
-            if (item.id && !/^[a-z][a-z0-9_]*$/.test(item.id)) {
-                errors.push(`${prefix} Invalid 'id' format (must be lowercase_with_underscores)`);
-            }
-            if (!item.name || typeof item.name !== 'string') {
-                errors.push(`${prefix} Skill must have a valid 'name'`);
-            }
-            const validAbilities: Ability[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
-            if (!item.ability || !validAbilities.includes(item.ability)) {
-                errors.push(`${prefix} Invalid 'ability' (must be one of: ${validAbilities.join(', ')})`);
-            }
-            if (item.source && !['default', 'custom'].includes(item.source)) {
-                errors.push(`${prefix} Invalid 'source' (must be 'default' or 'custom')`);
-            }
-            // Validate optional fields
-            if (item.armorPenalty !== undefined && typeof item.armorPenalty !== 'boolean') {
-                errors.push(`${prefix} Invalid 'armorPenalty' (must be boolean)`);
-            }
-            if (item.categories && !Array.isArray(item.categories)) {
-                errors.push(`${prefix} Invalid 'categories' (must be an array)`);
+            const result = SkillValidator.validateSkill(item);
+            if (!result.valid) {
+                errors.push(...result.errors.map(e => `${prefix} ${e}`));
             }
         }
         // Phase 13.1: Skill Lists validation
