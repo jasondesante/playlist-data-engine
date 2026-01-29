@@ -1485,26 +1485,26 @@ static registerEquipmentFeature(
 
 ## Phase 10: Testing
 
-### 11.1 Unit Tests
+### 10.1 Unit Tests
 
 **File:** `/Users/jasondesante/playlist-data-engine/tests/unit/equipmentEffectApplier.test.ts` (NEW)
 
 **Test Coverage:**
-- [ ] Apply equipment effects when equipping
-- [ ] Remove equipment effects when unequipping
-- [ ] Apply equipment-granted features
-- [ ] Remove equipment-granted features
-- [ ] Apply equipment-granted skills
-- [ ] Remove equipment-granted skills
-- [ ] Handle stat bonuses from equipment
-- [ ] Handle ability unlocks from equipment
-- [ ] Handle passive modifiers from equipment
-- [ ] Track equipment effect sources correctly
-- [ ] Re-apply all equipment effects
-- [ ] Handle multiple equipment with same effects
-- [ ] Handle equipment with no effects
-- [ ] Handle instance ID tracking
-- [ ] Handle template-based equipment
+- [x] Apply equipment effects when equipping
+- [x] Remove equipment effects when unequipping
+- [x] Apply equipment-granted features
+- [x] Remove equipment-granted features
+- [x] Apply equipment-granted skills
+- [x] Remove equipment-granted skills
+- [x] Handle stat bonuses from equipment
+- [x] Handle ability unlocks from equipment
+- [x] Handle passive modifiers from equipment
+- [x] Track equipment effect sources correctly
+- [x] Re-apply all equipment effects
+- [x] Handle multiple equipment with same effects
+- [x] Handle equipment with no effects
+- [x] Handle instance ID tracking
+- [x] Handle template-based equipment
 
 **File:** `/Users/jasondesante/playlist-data-engine/tests/unit/equipmentValidator.test.ts` (NEW)
 
@@ -1524,16 +1524,16 @@ static registerEquipmentFeature(
 **File:** `/Users/jasondesante/playlist-data-engine/tests/unit/equipmentModifier.test.ts` (NEW)
 
 **Test Coverage:**
-- [ ] Enchant equipment with properties
-- [ ] Curse equipment with negative effects
-- [ ] Upgrade equipment properties
-- [ ] Apply template modifications
-- [ ] Remove modifications
-- [ ] Track modification history
-- [ ] Apply multiple modifications
-- [ ] Handle conflicting modifications
-- [ ] Get combined effects
-- [ ] Check for templates
+- [x] Enchant equipment with properties
+- [x] Curse equipment with negative effects
+- [x] Upgrade equipment properties
+- [x] Apply template modifications
+- [x] Remove modifications
+- [x] Track modification history
+- [x] Apply multiple modifications
+- [x] Handle conflicting modifications
+- [x] Get combined effects
+- [x] Check for templates
 
 **File:** `/Users/jasondesante/playlist-data-engine/tests/unit/equipmentSpawnHelper.test.ts` (NEW)
 
@@ -2003,8 +2003,8 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 
 ### Phase 10: Testing
 - [x] Write unit tests for EquipmentEffectApplier
-- [ ] Write unit tests for EquipmentValidator
-- [ ] Write unit tests for EquipmentModifier
+- [x] Write unit tests for EquipmentValidator
+- [x] Write unit tests for EquipmentModifier
 - [x] Write unit tests for EquipmentSpawnHelper
 - [ ] Update existing tests
 - [ ] Write integration tests
