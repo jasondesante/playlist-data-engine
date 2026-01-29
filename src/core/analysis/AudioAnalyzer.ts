@@ -102,9 +102,14 @@ export class AudioAnalyzer {
         const averagedBands = this.averageFrequencyBands(frequencyDataSamples);
 
         // Calculate dominance metrics using SpectrumScanner
-        const bassDominance = SpectrumScanner.calculateDominance(averagedBands.bass);
-        const midDominance = SpectrumScanner.calculateDominance(averagedBands.mid);
-        const trebleDominance = SpectrumScanner.calculateDominance(averagedBands.treble);
+        // Phase 8.2: Pass bandwidth values for normalization to prevent wider bands from dominating
+        // Bandwidth values based on Phase 8.1 rebalanced frequency bands:
+        // - Bass: 20-400Hz = 380 Hz range
+        // - Mid: 400-4000Hz = 3600 Hz range
+        // - Treble: 4000-14000Hz = 10000 Hz range
+        const bassDominance = SpectrumScanner.calculateDominance(averagedBands.bass, 380);
+        const midDominance = SpectrumScanner.calculateDominance(averagedBands.mid, 3600);
+        const trebleDominance = SpectrumScanner.calculateDominance(averagedBands.treble, 10000);
 
         // Calculate average amplitude
         const averageAmplitude = this.calculateAverageAmplitude(audioBuffer);

@@ -72,10 +72,31 @@ export class SpectrumScanner {
 
     /**
      * Calculate dominance (average amplitude) for a frequency band
+     *
+     * **Phase 8.2 Update**: Added bandwidth-aware normalization to prevent
+     * wider frequency bands from dominating the dominance calculation.
+     *
+     * Previously, wider bands had more frequency bins, so their averages were
+     * naturally higher even if music wasn't louder in those ranges. This version
+     * normalizes by bandwidth (per kHz) to create fair comparisons across bands.
+     *
+     * @param band - Array of amplitude values for a frequency band
+     * @param bandWidthHz - Width of the frequency band in Hz (e.g., 380 for bass: 400-20)
+     * @returns Normalized dominance value (typically 0-1, may exceed 1 for very loud bands)
      */
-    static calculateDominance(band: number[]): number {
+    static calculateDominance(band: number[], bandWidthHz?: number): number {
         if (band.length === 0) return 0;
         const sum = band.reduce((a, b) => a + b, 0);
-        return sum / band.length;
+        const average = sum / band.length;
+
+        // Phase 8.2: Normalize by bandwidth (per kHz) to prevent wider bands from dominating
+        // If no bandwidth provided, use legacy behavior (backward compatibility)
+        if (bandWidthHz === undefined) {
+            return average;
+        }
+
+        // Normalize by bandwidth (per kHz) - wider bands get divided by larger values
+        // This prevents bands with more frequency bins from having artificially high averages
+        return average / (bandWidthHz / 1000);
     }
 }
