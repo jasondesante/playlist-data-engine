@@ -173,14 +173,21 @@ export function ensureSpellDefaultsInitialized(): void {
 
 /**
  * Default equipment data
- * Convert EQUIPMENT_DATABASE to array format for ExtensionManager
+ * Convert EQUIPMENT_DATABASE to EnhancedEquipment format for ExtensionManager
+ * Phase 5.3: Update default initialization to include source field and spawnWeight
  */
-const DEFAULT_EQUIPMENT_DATA = Object.values(EQUIPMENT_DATABASE);
+const DEFAULT_EQUIPMENT_DATA = Object.values(EQUIPMENT_DATABASE).map(eq => ({
+    ...eq,
+    source: 'default' as const,
+    spawnWeight: (eq as any).spawnWeight ?? 1.0,  // Default to normal spawn rate
+    tags: (eq as any).tags ?? []
+}));
 
 /**
  * Initialize ExtensionManager with default equipment data
  *
  * This should be called once during application initialization.
+ * Phase 5.3: Equipment is converted to EnhancedEquipment format with source field.
  */
 export function initializeEquipmentDefaults(): void {
     const manager = ExtensionManager.getInstance();
