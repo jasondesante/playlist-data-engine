@@ -26,6 +26,10 @@ import { SkillValidator, validateSkill } from '../skills/SkillValidator.js';
  */
 export type ExtensionCategory =
     | 'equipment'
+    // Equipment System - Phase 5
+    | 'equipment.properties'      // For custom equipment property templates
+    | 'equipment.modifications'   // For custom modification templates
+    | 'equipment.templates'       // For equipment templates (Flaming Sword, etc.)
     | 'appearance.bodyTypes'
     | 'appearance.skinTones'
     | 'appearance.hairColors'
