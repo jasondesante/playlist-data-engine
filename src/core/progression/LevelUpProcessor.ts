@@ -1,12 +1,22 @@
 /**
  * LevelUpProcessor - Handles character leveling mechanics
  * Based on specs/001-core-engine/SPEC.md and D&D 5e rules
+ *
+ * Phase 11.5: Updated to use FeatureRegistry for class feature lookup
+ * - Replaces hardcoded getClassFeaturesForLevel() with FeatureRegistry lookup
+ * - Validates prerequisite chains on level up
+ * - Applies new feature effects when leveling up
+ * - Handles conditional features (player choice)
+ * - Returns feature IDs instead of display strings
  */
 
 import type { CharacterSheet, Class as CharacterClass, Ability, GameMode } from '../types/Character.js';
 import { CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
 import { SeededRNG } from '../../utils/random.js';
 import type { StatManager } from './stat/StatManager.js';
+import { FeatureRegistry } from '../features/FeatureRegistry.js';
+import { FeatureEffectApplier } from '../features/FeatureEffectApplier.js';
+import type { ClassFeature } from '../features/FeatureTypes.js';
 
 /**
  * Level-up benefits returned after processing a level-up
@@ -30,8 +40,25 @@ export interface LevelUpBenefits {
         increase: number;
     };
 
-    newSpellSlots?: Record<number, number>;
+    newSpellSlots?: Record<number, { total: number; used: number }>;
+
+    /**
+     * Class features gained at this level
+     * Phase 11.5: Now returns feature IDs instead of display strings
+     * OLD: ['Barbarian Level 2', 'Reckless Attack']
+     * NEW: ['reckless_attack', 'danger_sense']
+     */
     classFeatures?: string[];
+
+    /**
+     * Feature effects applied during level-up
+     * Phase 11.5: Stores effects that were applied to the character
+     */
+    featureEffects?: Array<{
+        featureId: string;
+        featureName: string;
+        effectsApplied: number;
+    }>;
 }
 
 /**
@@ -173,13 +200,89 @@ export class LevelUpProcessor {
 
         // Calculate new spell slots if spellcaster
         if (this.isSpellcaster(character.class)) {
-            benefits.newSpellSlots = this.calculateSpellSlots(newLevel);
+            const slotCounts = this.calculateSpellSlots(newLevel);
+            // Convert slot counts to { total, used } format
+            const spellSlots: Record<number, { total: number; used: number }> = {};
+            for (const [level, count] of Object.entries(slotCounts)) {
+                spellSlots[Number(level)] = { total: count, used: 0 };
+            }
+            benefits.newSpellSlots = spellSlots;
         }
 
-        // Get class features for this level
-        benefits.classFeatures = this.getClassFeaturesForLevel(character.class, newLevel);
+        // Phase 11.5: Get class features for this level using FeatureRegistry
+        const featuresGained = this.getClassFeaturesForLevel(character, character.class, newLevel);
+        if (featuresGained.length > 0) {
+            benefits.classFeatures = featuresGained.map(f => f.id);
+
+            // Apply feature effects and store summary
+            benefits.featureEffects = [];
+            for (const feature of featuresGained) {
+                if (feature.effects && feature.effects.length > 0) {
+                    // Create a temporary updated character for effect application
+                    const updatedForEffects = { ...character, level: newLevel };
+                    const result = FeatureEffectApplier.applyFeatureEffects(updatedForEffects, feature);
+
+                    if (result.applied) {
+                        benefits.featureEffects.push({
+                            featureId: feature.id,
+                            featureName: feature.name,
+                            effectsApplied: result.count
+                        });
+                    }
+                }
+            }
+        }
 
         return benefits;
+    }
+
+    /**
+     * Get class features gained at a specific level for a character
+     * Phase 11.5: Uses FeatureRegistry to look up features and validates prerequisites
+     *
+     * @param character - The character to check features for
+     * @param characterClass - The character class
+     * @param level - The level to get features for
+     * @returns Array of ClassFeature objects gained at this level
+     */
+    private static getClassFeaturesForLevel(
+        character: CharacterSheet,
+        characterClass: CharacterClass,
+        level: number
+    ): ClassFeature[] {
+        const registry = FeatureRegistry.getInstance();
+
+        // Get features for this class at this level from FeatureRegistry
+        const features = registry.getFeaturesForLevel(characterClass, level);
+
+        // Validate prerequisites for each feature
+        // Create a preview character at the new level for validation
+        const previewCharacter = { ...character, level };
+
+        const validFeatures: ClassFeature[] = [];
+        for (const feature of features) {
+            const validation = registry.validatePrerequisites(feature, previewCharacter);
+
+            if (validation.valid) {
+                validFeatures.push(feature);
+            } else {
+                // Log warning for features that fail prerequisite validation
+                console.warn(
+                    `Feature "${feature.name}" (level ${feature.level}) ` +
+                    `failed prerequisite validation at level ${level}:`,
+                    validation.errors
+                );
+
+                // For default features, we include them anyway (they should always pass)
+                // For custom features with prerequisites, this prevents invalid features
+                // from being granted when prerequisites aren't met
+                if (feature.source === 'default') {
+                    validFeatures.push(feature);
+                }
+            }
+        }
+
+        return validFeatures;
     }
 
     /**
@@ -229,7 +332,7 @@ export class LevelUpProcessor {
 
         // Update spell slots if applicable
         if (benefits.newSpellSlots && updated.spells) {
-            updated.spells.spell_slots = benefits.newSpellSlots as any;
+            updated.spells.spell_slots = benefits.newSpellSlots;
         }
 
         // Add class features
@@ -340,60 +443,6 @@ export class LevelUpProcessor {
 
         // Higher levels get more slots - simplified progression
         return Math.min(5, Math.ceil(characterLevel / 2));
-    }
-
-    /**
-     * Get class features gained at a specific level
-     * @param characterClass - The character class
-     * @param level - The level
-     * @returns Array of feature names
-     */
-    private static getClassFeaturesForLevel(characterClass: CharacterClass, level: number): string[] {
-        const features: string[] = [];
-
-        // Level 1 features are granted during character creation
-        // This handles features gained at higher levels
-
-        if (level === 2) {
-            if (characterClass === 'Barbarian') features.push('Reckless Attack');
-            if (characterClass === 'Bard') features.push('Jack of All Trades');
-            if (characterClass === 'Cleric') features.push('Channel Divinity');
-            if (characterClass === 'Druid') features.push('Wild Shape');
-            if (characterClass === 'Fighter') features.push('Fighting Style');
-            if (characterClass === 'Monk') features.push('Martial Arts');
-            if (characterClass === 'Paladin') features.push('Lay on Hands');
-            if (characterClass === 'Ranger') features.push('Fighting Style');
-            if (characterClass === 'Rogue') features.push('Cunning Action');
-            if (characterClass === 'Sorcerer') features.push('Font of Magic');
-            if (characterClass === 'Warlock') features.push('Eldritch Invocations');
-            if (characterClass === 'Wizard') features.push('Arcane Recovery');
-        }
-
-        if (level === 3) {
-            if (characterClass === 'Barbarian') features.push('Primal Path');
-            if (characterClass === 'Bard') features.push('Bard College');
-            if (characterClass === 'Fighter') features.push('Fighting Archetype');
-            if (characterClass === 'Monk') features.push('Monastic Tradition');
-            if (characterClass === 'Ranger') features.push('Ranger Archetype');
-            if (characterClass === 'Rogue') features.push('Roguish Archetype');
-            if (characterClass === 'Sorcerer') features.push('Sorcerous Origin');
-            if (characterClass === 'Wizard') features.push('Arcane Tradition');
-        }
-
-        if (level === 5) {
-            features.push('Extra Attack'); // Most martial classes
-        }
-
-        if (level === 11) {
-            if (characterClass === 'Bard') features.push('Magical Secrets');
-            if (characterClass === 'Warlock') features.push('Mystic Arcanum');
-        }
-
-        if (level === 20) {
-            features.push('Epic Boon'); // All classes
-        }
-
-        return features;
     }
 
     /**
@@ -589,11 +638,38 @@ export class LevelUpProcessor {
 
         // Calculate new spell slots if spellcaster
         if (this.isSpellcaster(character.class)) {
-            benefits.newSpellSlots = this.calculateSpellSlots(newLevel);
+            const slotCounts = this.calculateSpellSlots(newLevel);
+            // Convert slot counts to { total, used } format
+            const spellSlots: Record<number, { total: number; used: number }> = {};
+            for (const [level, count] of Object.entries(slotCounts)) {
+                spellSlots[Number(level)] = { total: count, used: 0 };
+            }
+            benefits.newSpellSlots = spellSlots;
         }
 
-        // Get class features for this level
-        benefits.classFeatures = this.getClassFeaturesForLevel(character.class, newLevel);
+        // Phase 11.5: Get class features for this level using FeatureRegistry
+        const featuresGained = this.getClassFeaturesForLevel(character, character.class, newLevel);
+        if (featuresGained.length > 0) {
+            benefits.classFeatures = featuresGained.map(f => f.id);
+
+            // Apply feature effects and store summary
+            benefits.featureEffects = [];
+            for (const feature of featuresGained) {
+                if (feature.effects && feature.effects.length > 0) {
+                    // Create a temporary updated character for effect application
+                    const updatedForEffects = { ...character, level: newLevel };
+                    const result = FeatureEffectApplier.applyFeatureEffects(updatedForEffects, feature);
+
+                    if (result.applied) {
+                        benefits.featureEffects.push({
+                            featureId: feature.id,
+                            featureName: feature.name,
+                            effectsApplied: result.count
+                        });
+                    }
+                }
+            }
+        }
 
         return benefits;
     }
@@ -620,7 +696,7 @@ export class LevelUpProcessor {
 
         // Update spell slots if applicable
         if (benefits.newSpellSlots && updated.spells) {
-            updated.spells.spell_slots = benefits.newSpellSlots as any;
+            updated.spells.spell_slots = benefits.newSpellSlots;
         }
 
         // Add class features

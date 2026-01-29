@@ -246,8 +246,11 @@ export interface LevelUpDetail {
     /** Class features gained at this level */
     featuresGained?: string[];
 
-    /** New spell slots after level-up (if spellcaster) */
-    newSpellSlots?: Record<number, number>;
+    /**
+     * New spell slots after level-up (if spellcaster)
+     * Phase 11.5: Updated to match spell_slots structure
+     */
+    newSpellSlots?: Record<number, { total: number; used: number }>;
 }
 
 /**
