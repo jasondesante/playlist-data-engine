@@ -69,7 +69,8 @@ describe('ExtensionManager', () => {
         });
 
         it('should return empty array for uninitialized category', () => {
-            const items = manager.get('spells');
+            // Use a category that hasn't been initialized in beforeEach
+            const items = manager.get('appearance.facialFeatures');
             expect(items).toEqual([]);
         });
     });
@@ -552,10 +553,11 @@ describe('ExtensionManager', () => {
         });
 
         it('should handle registering the same category twice', () => {
-            manager.register('races', ['Human']);
+            // Use custom race names that are NOT in the default races
+            manager.register('races', ['DragonKin']);
             const count1 = manager.get('races').length;
 
-            manager.register('races', ['Elf']);
+            manager.register('races', ['Fairy', 'Giant']);
             const count2 = manager.get('races').length;
 
             // Second registration should add more items
@@ -601,7 +603,7 @@ describe('ExtensionManager', () => {
         it('should handle special characters in item names', () => {
             const specialNames = [
                 { name: "O'Brian Sword", type: 'weapon' as const, rarity: 'rare' as const, weight: 3 },
-                { name: 'Fire & Ice', type: 'weapon' as const, rarity: 'epic' as const, weight: 4 },
+                { name: 'Fire & Ice', type: 'weapon' as const, rarity: 'very_rare' as const, weight: 4 },
                 { name: 'Dagger-dagger', type: 'weapon' as const, rarity: 'common' as const, weight: 1 }
             ];
 

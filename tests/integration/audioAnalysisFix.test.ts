@@ -214,7 +214,7 @@ const DIVERSE_GENRE_PROFILES: GenreProfile[] = [
 
 describe('Phase 8.5: Audio Analysis Fix Verification', () => {
     /**
-     * Test 1: Generate 20 characters from diverse genres
+     * Test 1: Generate 21 characters from diverse genres
      *
      * This test verifies that the audio analysis fix (Phase 8) has successfully:
      * 1. Rebalanced frequency bands (Phase 8.1)
@@ -224,7 +224,7 @@ describe('Phase 8.5: Audio Analysis Fix Verification', () => {
     it('should generate 20 characters from diverse genres', () => {
         const generatedClasses: Class[] = [];
 
-        console.log('\n=== Phase 8.5: Generating 20 Characters from Diverse Genres ===\n');
+        console.log('\n=== Phase 8.5: Generating 21 Characters from Diverse Genres ===\n');
 
         DIVERSE_GENRE_PROFILES.forEach((profile, index) => {
             const rng = new SeededRNG(`seed-${index}`);
@@ -238,8 +238,8 @@ describe('Phase 8.5: Audio Analysis Fix Verification', () => {
             console.log('');
         });
 
-        // Verify we generated exactly 20 characters
-        expect(generatedClasses).toHaveLength(20);
+        // Verify we generated exactly 21 characters
+        expect(generatedClasses).toHaveLength(21);
 
         console.log('=== Generation Complete ===\n');
     });
