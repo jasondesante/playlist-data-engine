@@ -4789,7 +4789,7 @@ manager.register('skills.STR', [{
 ### 15.1 Unit Tests
 
 **Tasks:**
-- [ ] Test FeatureRegistry:
+- [x] Test FeatureRegistry:
   - Register custom features
   - Get features by class/level
   - Validate prerequisites
@@ -4806,6 +4806,118 @@ manager.register('skills.STR', [{
 - [ ] Test SkillAssigner with custom skills
 
 **Deliverable:** Comprehensive test suite
+
+#### Implementation Summary - Phase 15.1: FeatureRegistry Unit Tests ✅
+
+**Files Created:**
+- `/workspace/tests/unit/featureRegistry.test.ts` - Comprehensive test suite for FeatureRegistry (61 tests)
+
+**Test Coverage:**
+
+1. **Singleton Pattern Tests** (2 tests)
+   - Returns the same instance
+   - Maintains state across getInstance calls
+
+2. **Initialize Defaults Tests** (4 tests)
+   - Initialize with default class features
+   - Initialize with default racial traits
+   - Prevent reinitialization if already initialized
+   - Handle empty defaults
+
+3. **Register Custom Class Features Tests** (4 tests)
+   - Register single custom class feature
+   - Register multiple custom class features
+   - Throw on duplicate feature ID
+   - Organize features by class
+
+4. **Register Custom Racial Traits Tests** (5 tests)
+   - Register single custom racial trait
+   - Register multiple custom racial traits
+   - Throw on duplicate trait ID
+   - Organize traits by race
+   - Handle subrace-specific traits
+
+5. **Get Features by Class/Level Tests** (5 tests)
+   - Get all features up to a given level
+   - Get all features at max level
+   - Get features gained at a specific level
+   - Return empty array for class with no features
+   - Return empty array for level below lowest feature
+
+6. **Get Feature by ID Tests** (4 tests)
+   - Retrieve class feature by ID
+   - Return undefined for non-existent feature ID
+   - Retrieve racial trait by ID
+   - Return undefined for non-existent trait ID
+
+7. **Get Racial Traits Tests** (3 tests)
+   - Get all traits for a race
+   - Return empty array for race with no traits
+   - Filter traits by subrace
+
+8. **Validate Prerequisites - Level Requirements Tests** (3 tests)
+   - Validate feature with no prerequisites
+   - Validate met level requirement
+   - Fail unmet level requirement
+
+9. **Validate Prerequisites - Ability Score Requirements Tests** (4 tests)
+   - Validate met ability score requirement
+   - Fail unmet ability score requirement
+   - Validate multiple ability score requirements
+   - Fail if any ability score requirement is unmet
+
+10. **Validate Prerequisites - Class and Race Requirements Tests** (4 tests)
+    - Validate met class requirement
+    - Fail unmet class requirement
+    - Validate met race requirement
+    - Fail unmet race requirement
+
+11. **Validate Prerequisites - Feature Chain Requirements Tests** (4 tests)
+    - Validate met feature requirement
+    - Fail unmet feature requirement
+    - Validate multiple feature requirements
+    - Fail if any feature requirement is unmet
+
+12. **Validate Prerequisites - Complex Combinations Tests** (2 tests)
+    - Validate multiple prerequisite types
+    - Fail if any prerequisite type is unmet
+
+13. **Can Gain Feature - Convenience Method Tests** (3 tests)
+    - Return true for feature with met prerequisites
+    - Return false for feature with unmet prerequisites
+    - Return true for feature with no prerequisites
+
+14. **Get Registry Statistics Tests** (2 tests)
+    - Return accurate stats for empty registry
+    - Return accurate stats after registration
+
+15. **Get Registered Classes and Races Tests** (4 tests)
+    - Return empty array for no classes registered
+    - Return all registered classes
+    - Return empty array for no races registered
+    - Return all registered races
+
+16. **Reset to Defaults Tests** (3 tests)
+    - Clear all registered features and traits
+    - Allow reinitialization after reset
+    - Clear registered classes and races after reset
+
+17. **Export Registry Tests** (2 tests)
+    - Export empty registry as empty objects
+    - Export all registered features and traits
+
+18. **Is Initialized Tests** (3 tests)
+    - Return false before initialization
+    - Return true after initialization
+    - Return false after reset
+
+**Total Tests: 61**
+
+**Verification:**
+- ✅ All 61 tests pass
+- ✅ Build passes (`npm run build`)
+- ✅ Test file follows existing test patterns
+- ✅ Comprehensive coverage of FeatureRegistry API
 
 ---
 
