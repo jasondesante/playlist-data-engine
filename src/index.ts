@@ -144,3 +144,41 @@ export { CombatEngine } from './core/combat/CombatEngine.js';
 
 // Migration utilities
 export { CharacterMigration, type MigrationResult } from './core/migration/CharacterMigration.js';
+
+// Equipment system
+export { EquipmentModifier } from './core/equipment/EquipmentModifier.js';
+export { EquipmentEffectApplier } from './core/equipment/EquipmentEffectApplier.js';
+export { EquipmentValidator } from './core/equipment/EquipmentValidator.js';
+
+// Equipment types
+export type {
+    EnhancedEquipment,
+    EquipmentProperty,
+    EquipmentModification,
+    EquipmentMiniFeature,
+    EquipmentCondition,
+    EnhancedInventoryItem,
+    EquipmentFeature,
+    EquipmentSkill,
+    EquipmentSpell
+} from './core/types/Equipment.js';
+
+// Enchantment and curse library
+export {
+    WEAPON_ENCHANTMENTS,
+    ARMOR_ENCHANTMENTS,
+    RESISTANCE_ENCHANTMENTS,
+    CURSES,
+    ALL_ENCHANTMENTS,
+    getEnchantment,
+    getCurse,
+    getAllEnchantments,
+    getAllCurses,
+    getEnchantmentsByType,
+    createStrengthEnchantment,
+    createDexterityEnchantment,
+    createConstitutionEnchantment,
+    createIntelligenceEnchantment,
+    createWisdomEnchantment,
+    createCharismaEnchantment
+} from './utils/enchantmentLibrary.js';

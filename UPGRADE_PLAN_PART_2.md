@@ -1988,8 +1988,8 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 
 ### Phase 7: Equipment Modification System
 - [x] Create EquipmentModifier class
-- [ ] Define common enchantments and curses
-- [ ] Support templates and per-instance modifications
+- [x] Define common enchantments and curses
+- [x] Support templates and per-instance modifications
 
 ### Phase 8: Helper Functions
 - [ ] Create EquipmentSpawnHelper
