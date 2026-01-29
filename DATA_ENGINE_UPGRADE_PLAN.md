@@ -4526,14 +4526,76 @@ manager.register('skills.STR', [{
 **File:** `/Users/jasondesante/playlist-data-engine/docs/engine/DATA_ENGINE_REFERENCE.md`
 
 **Tasks:**
-- [ ] Add FeatureRegistry API reference
-- [ ] Add SkillRegistry API reference
-- [ ] Update CharacterSheet type documentation
-- [ ] Add examples of custom features
-- [ ] Add examples of custom skills
-- [ ] Document spawn rate system for features/skills
+- [x] Add FeatureRegistry API reference
+- [x] Add SkillRegistry API reference
+- [x] Update CharacterSheet type documentation
+- [x] Add examples of custom features
+- [x] Add examples of custom skills
+- [x] Document spawn rate system for features/skills
 
 **Deliverable:** Updated reference documentation
+
+#### Implementation Summary - Phase 14.1: DATA_ENGINE_REFERENCE.md Documentation ✅
+
+**Files Modified:**
+- `/workspace/DATA_ENGINE_REFERENCE.md` - Added comprehensive FeatureRegistry and SkillRegistry documentation
+
+**Changes Made:**
+
+1. **Updated Table of Contents** to include:
+   - FeatureRegistry section
+   - SkillRegistry section
+   - Per-Category Spawn Rate System section
+
+2. **Updated Extensible Categories table** to include:
+   - Class Features (Phase 11)
+   - Racial Traits (Phase 11)
+   - Skills (Phase 12)
+   - Skill Lists (Phase 12)
+
+3. **Added FeatureRegistry Documentation**:
+   - Complete API reference with all methods
+   - Type definitions for ClassFeature, RacialTrait, FeatureEffect, FeaturePrerequisite
+   - Usage examples for registering features and traits
+   - Query examples (get features by class/level)
+   - Validation examples
+   - Registry statistics
+
+4. **Added SkillRegistry Documentation**:
+   - Complete API reference with all methods
+   - Type definitions for CustomSkill, SkillValidationResult, SkillRegistryStats
+   - Usage examples for registering custom skills
+   - Query examples (get skills by ability, category, source)
+   - Validation examples
+   - Registry statistics
+
+5. **Added Per-Category Spawn Rate System Documentation**:
+   - How to set spawn rates for features
+   - How to set spawn rates for skills
+   - Weight modes (relative, absolute, default)
+   - How to get current weights
+
+6. **Updated ExtensionCategory type documentation** to include new categories:
+   - `classFeatures`
+   - `classFeatures.${string}` (per-class features)
+   - `racialTraits`
+   - `racialTraits.${string}` (per-race traits)
+   - `skills`
+   - `skills.${string}` (per-ability skills)
+   - `skillLists`
+   - `skillLists.${string}` (per-class skill lists)
+
+7. **Updated Validation Rules table** to include new categories:
+   - classFeatures
+   - racialTraits
+   - skills
+   - skillLists
+
+**Verification:**
+- ✅ Build passes (`npm run build`)
+- ✅ Documentation is comprehensive and complete
+- ✅ All examples are syntactically correct
+- ✅ Type definitions are accurate
 
 ---
 

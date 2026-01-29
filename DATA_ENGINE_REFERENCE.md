@@ -14,6 +14,14 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
 5. [Gaming Integration](#gaming-integration)
 6. [Combat System](#combat-system)
 7. [Extensibility System](#extensibility-system)
+   - [ExtensionManager](#extensionmanager)
+   - [FeatureRegistry](#featureregistry)
+   - [SkillRegistry](#skillregistry)
+   - [Per-Category Spawn Rate System](#per-category-spawn-rate-system)
+   - [WeightedSelector](#weightedselector)
+   - [CharacterGenerator Extensions](#charactergenerator-extensions)
+   - [Validation System](#validation-system)
+   - [Advanced Patterns](#advanced-patterns)
 8. [Cross-References](#cross-references)
 
 ---
@@ -2294,6 +2302,10 @@ The extensibility system allows runtime customization of ALL procedural generati
 | **Spells** | 5.2 | Custom spells with full spell data | ✅ Per-spell |
 | **Races** | 5.4 | Custom races with ability bonuses, speed, traits | ✅ Per-race |
 | **Classes** | 5.5 | Custom classes for audio-to-class mapping | ✅ Per-class |
+| **Class Features** | 11 | Custom class features with prerequisites & effects | ✅ Per-feature |
+| **Racial Traits** | 11 | Custom racial traits with effects & conditions | ✅ Per-trait |
+| **Skills** | 12 | Custom skills with ability mapping | ✅ Per-skill |
+| **Skill Lists** | 12 | Per-class custom skill lists | ✅ Per-skill |
 
 ---
 
@@ -2385,7 +2397,15 @@ export type ExtensionCategory =
     | 'spells'
     | 'races'
     | 'classes'
-    | `spells.${string}`;
+    | `spells.${string}`
+    | 'classFeatures'
+    | `classFeatures.${string}`  // Per-class features
+    | 'racialTraits'
+    | `racialTraits.${string}`   // Per-race traits
+    | 'skills'
+    | `skills.${string}`         // Per-ability skills (STR, DEX, etc.)
+    | 'skillLists'
+    | `skillLists.${string}`;    // Per-class skill lists
 
 export interface ExtensionOptions {
     /** Spawn mode for this extension */
@@ -2699,6 +2719,741 @@ const character = CharacterGenerator.generate(
 
 ---
 
+### FeatureRegistry
+
+**Location:** `src/core/features/FeatureRegistry.ts`
+
+Singleton class for managing class features and racial traits. Features are abilities gained as characters level up (e.g., Rage, Extra Attack, Metamagic) or innate racial traits (e.g., Darkvision, Fey Ancestry).
+
+#### Class: `FeatureRegistry`
+
+**Constructor:**
+```typescript
+// Singleton - use getInstance() instead of new FeatureRegistry()
+```
+
+**Methods:**
+
+- `static getInstance(): FeatureRegistry`
+    - Returns the singleton instance
+
+- `initializeDefaults(defaultClassFeatures?: ClassFeature[], defaultRacialTraits?: RacialTrait[]): void`
+    - Initialize the registry with default features
+    - Should be called once during package initialization
+    - Idempotent - subsequent calls after initialization are ignored
+
+- `registerClassFeature(feature: ClassFeature): void`
+    - Register a single class feature
+    - **Throws:** Error if feature ID already exists
+
+- `registerClassFeatures(features: ClassFeature[]): void`
+    - Register multiple class features at once
+
+- `registerRacialTrait(trait: RacialTrait): void`
+    - Register a single racial trait
+    - **Throws:** Error if trait ID already exists
+
+- `registerRacialTraits(traits: RacialTrait[]): void`
+    - Register multiple racial traits at once
+
+- `getClassFeatures(className: Class, level: number): ClassFeature[]`
+    - Get all features for a class at a specific level
+    - Includes features from lower levels
+
+- `getFeaturesForLevel(className: Class, level: number): ClassFeature[]`
+    - Get only the features gained at exactly this level
+
+- `getClassFeatureById(featureId: string): ClassFeature | undefined`
+    - Get a single class feature by ID
+
+- `getRacialTraits(race: Race): RacialTrait[]`
+    - Get all racial traits for a race
+
+- `getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[]`
+    - Get racial traits for a specific subrace
+
+- `getRacialTraitById(traitId: string): RacialTrait | undefined`
+    - Get a single racial trait by ID
+
+- `validatePrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): ValidationResult`
+    - Validate feature prerequisites against a character
+    - Returns validation result with unmet prerequisites if any
+
+- `canGainFeature(feature: ClassFeature | RacialTrait, character: CharacterSheet): boolean`
+    - Convenience method that returns true if character meets all prerequisites
+
+- `getRegisteredClasses(): Class[]`
+    - Get all classes that have features registered
+
+- `getRegisteredRaces(): Race[]`
+    - Get all races that have traits registered
+
+- `getRegistryStats(): { totalClassFeatures: number; totalRacialTraits: number; classesWithFeatures: number; racesWithTraits: number }`
+    - Get total count of registered features
+
+- `reset(): void`
+    - Reset the registry to initial state (clears all registered features)
+
+- `isInitialized(): boolean`
+    - Check if the registry has been initialized with defaults
+
+- `exportRegistry(): { classFeatures: Record<string, ClassFeature[]>; racialTraits: Record<string, RacialTrait[]> }`
+    - Export all registered features as JSON
+
+#### Types
+
+```typescript
+export interface ClassFeature {
+    /** Unique identifier (e.g., 'barbarian_rage', 'fighter_action_surge') */
+    id: string;
+
+    /** Display name shown to players */
+    name: string;
+
+    /** Detailed description of what the feature does */
+    description: string;
+
+    /** Type of feature: 'passive' | 'active' | 'resource' | 'trigger' */
+    type: FeatureType;
+
+    /** Character class this feature belongs to */
+    class: Class;
+
+    /** Level at which this feature is gained (1-20) */
+    level: number;
+
+    /** Prerequisites that must be met to gain this feature */
+    prerequisites?: FeaturePrerequisite;
+
+    /** Effects applied when this feature is gained */
+    effects?: FeatureEffect[];
+
+    /** Whether this feature is built-in or custom */
+    source: 'default' | 'custom';
+
+    /** Optional tags for filtering/categorizing */
+    tags?: string[];
+
+    /** Optional flavor text or lore */
+    lore?: string;
+}
+
+export interface RacialTrait {
+    /** Unique identifier (e.g., 'elf_darkvision', 'dwarf_dwarven_resilience') */
+    id: string;
+
+    /** Display name shown to players */
+    name: string;
+
+    /** Detailed description of what the trait does */
+    description: string;
+
+    /** Race this trait belongs to */
+    race: Race;
+
+    /** Optional subrace requirement (e.g., 'High Elf', 'Hill Dwarf') */
+    subrace?: string;
+
+    /** Prerequisites that must be met */
+    prerequisites?: FeaturePrerequisite;
+
+    /** Effects applied when this trait is gained */
+    effects?: FeatureEffect[];
+
+    /** Whether this trait is built-in or custom */
+    source: 'default' | 'custom';
+
+    /** Optional tags for filtering/categorizing */
+    tags?: string[];
+
+    /** Optional flavor text or lore */
+    lore?: string;
+}
+
+export type FeatureType = 'passive' | 'active' | 'resource' | 'trigger';
+
+export type FeatureEffectType =
+    | 'stat_bonus'           // Add to an ability score
+    | 'skill_proficiency'    // Grant proficiency or expertise
+    | 'ability_unlock'       // Unlock a new ability (e.g., darkvision)
+    | 'passive_modifier'     // Add a constant modifier to rolls
+    | 'resource_grant'       // Grant a resource pool (e.g., rage counts)
+    | 'spell_slot_bonus';    // Grant additional spell slots
+
+export interface FeatureEffect {
+    /** Type of effect to apply */
+    type: FeatureEffectType;
+
+    /** Target stat, skill, or ability this affects */
+    target: string;
+
+    /** Value to apply (number for bonuses, string for unlocks, boolean for flags) */
+    value: number | string | boolean;
+
+    /** Optional condition for when this effect applies (e.g., "while raging") */
+    condition?: string;
+
+    /** Optional description of this specific effect */
+    description?: string;
+}
+
+export interface FeaturePrerequisite {
+    /** Minimum level required */
+    level?: number;
+
+    /** Features that must be learned first (by ID) */
+    features?: string[];
+
+    /** Minimum ability scores required */
+    abilities?: Partial<Record<Ability, number>>;
+
+    /** Specific class required */
+    class?: Class;
+
+    /** Specific race or subrace required */
+    race?: Race;
+
+    /** Custom condition description (for manual validation) */
+    custom?: string;
+}
+
+export interface ValidationResult {
+    /** Whether all prerequisites are met */
+    valid: boolean;
+
+    /** Array of prerequisite descriptions that are not met */
+    unmet?: string[];
+
+    /** Detailed error messages */
+    errors?: string[];
+}
+```
+
+#### Usage Examples
+
+**Register Custom Class Features:**
+
+```typescript
+import { FeatureRegistry } from 'playlist-data-engine';
+
+const registry = FeatureRegistry.getInstance();
+
+// Register a custom Barbarian feature
+registry.registerClassFeature({
+    id: 'dragon_fury',
+    name: 'Dragon Fury',
+    description: 'Channel your draconic heritage to enhance your rage.',
+    type: 'active',
+    class: 'Barbarian',
+    level: 3,
+    source: 'custom',
+    prerequisites: {
+        level: 3,
+        features: ['rage']
+    },
+    effects: [
+        {
+            type: 'stat_bonus',
+            target: 'STR',
+            value: 2,
+            condition: 'while raging',
+            description: '+2 Strength while raging'
+        },
+        {
+            type: 'passive_modifier',
+            target: 'damage',
+            value: 4,
+            condition: 'melee attacks while raging',
+            description: '+4 damage on melee attacks while raging'
+        }
+    ],
+    tags: ['melee', 'damage', 'rage'],
+    lore: 'This ability is granted to those with dragon blood in their veins.'
+});
+
+// Register multiple features at once
+registry.registerClassFeatures([
+    {
+        id: 'reckless_attack',
+        name: 'Reckless Attack',
+        description: 'You can throw aside all concern for defense...',
+        type: 'active',
+        class: 'Barbarian',
+        level: 2,
+        source: 'custom'
+    },
+    {
+        id: 'danger_sense',
+        name: 'Danger Sense',
+        description: 'You gain an uncanny sense of when things nearby...',
+        type: 'passive',
+        class: 'Barbarian',
+        level: 2,
+        source: 'custom'
+    }
+]);
+```
+
+**Register Custom Racial Traits:**
+
+```typescript
+// Register a custom racial trait
+registry.registerRacialTrait({
+    id: 'dragonborn_fire_resistance',
+    name: 'Fire Resistance',
+    description: 'You have resistance to fire damage.',
+    race: 'Dragonborn',
+    subrace: undefined, // Applies to all Dragonborn
+    source: 'custom',
+    effects: [
+        {
+            type: 'ability_unlock',
+            target: 'damage_resistance',
+            value: 'fire',
+            description: 'Resistance to fire damage'
+        }
+    ]
+});
+
+// Register a subrace-specific trait
+registry.registerRacialTrait({
+    id: 'high_elf_weapon_training',
+    name: 'High Elf Weapon Training',
+    description: 'You have proficiency with the longsword, shortsword, shortbow, and longbow.',
+    race: 'Elf',
+    subrace: 'High Elf',
+    source: 'custom',
+    effects: [
+        {
+            type: 'skill_proficiency',
+            target: 'longsword',
+            value: 'proficient'
+        },
+        {
+            type: 'skill_proficiency',
+            target: 'shortsword',
+            value: 'proficient'
+        },
+        {
+            type: 'skill_proficiency',
+            target: 'shortbow',
+            value: 'proficient'
+        },
+        {
+            type: 'skill_proficiency',
+            target: 'longbow',
+            value: 'proficient'
+        }
+    ]
+});
+```
+
+**Query Features:**
+
+```typescript
+// Get all features for a level 5 Barbarian
+const barbarianFeatures = registry.getClassFeatures('Barbarian', 5);
+// Returns: rage, unarmored_defense, reckless_attack, danger_sense, extra_attack
+
+// Get only level 3 features
+const level3Features = registry.getFeaturesForLevel('Barbarian', 3);
+// Returns: [dragon_fury] (if registered)
+
+// Get racial traits for a race
+const elfTraits = registry.getRacialTraits('Elf');
+// Returns: darkvision, fey_ancestry, trance, etc.
+
+// Get subrace-specific traits
+const highElfTraits = registry.getRacialTraitsForSubrace('Elf', 'High Elf');
+// Returns traits specific to High Elves
+
+// Look up a specific feature
+const rageFeature = registry.getClassFeatureById('rage');
+console.log(rageFeature.name); // "Rage"
+```
+
+**Validate Prerequisites:**
+
+```typescript
+import { CharacterGenerator } from 'playlist-data-engine';
+
+// Generate a character
+const character = CharacterGenerator.generate(seed, audioProfile, name);
+
+// Check if character can gain a feature
+const dragonFury = registry.getClassFeatureById('dragon_fury');
+const canGain = registry.canGainFeature(dragonFury, character);
+console.log(canGain); // true or false
+
+// Get detailed validation result
+const validation = registry.validatePrerequisites(dragonFury, character);
+if (!validation.valid) {
+    console.log('Unmet prerequisites:', validation.unmet);
+    // e.g., ["Requires level 3 (current: 1)", "Requires feature: Rage"]
+}
+```
+
+**Get Registry Statistics:**
+
+```typescript
+const stats = registry.getRegistryStats();
+console.log(stats);
+// {
+//     totalClassFeatures: 120,
+//     totalRacialTraits: 45,
+//     classesWithFeatures: 12,
+//     racesWithTraits: 9
+// }
+```
+
+---
+
+### SkillRegistry
+
+**Location:** `src/core/skills/SkillRegistry.ts`
+
+Singleton class for managing skills (default D&D 5e skills and custom skills). Supports skill registration, lookup, and categorization.
+
+#### Class: `SkillRegistry`
+
+**Constructor:**
+```typescript
+// Singleton - use getInstance() instead of new SkillRegistry()
+```
+
+**Methods:**
+
+- `static getInstance(): SkillRegistry`
+    - Returns the singleton instance
+
+- `initializeDefaults(defaultSkills?: CustomSkill[]): void`
+    - Initialize the registry with default skills
+    - Uses DEFAULT_SKILLS if not provided
+
+- `registerSkill(skill: CustomSkill): void`
+    - Register a single skill
+    - **Throws:** Error if skill ID already exists or ID format is invalid
+
+- `registerSkills(skills: CustomSkill[]): void`
+    - Register multiple skills at once
+
+- `getSkill(id: string): CustomSkill | undefined`
+    - Get a skill by ID
+
+- `getAllSkills(): CustomSkill[]`
+    - Get all registered skills
+
+- `getSkillsByAbility(ability: Ability): CustomSkill[]`
+    - Get skills that use a specific ability score
+
+- `getSkillsByCategory(category: string): CustomSkill[]`
+    - Get skills in a specific category
+
+- `getCategories(): string[]`
+    - Get all categories in use
+
+- `getSkillsBySource(source: 'default' | 'custom'): CustomSkill[]`
+    - Get skills by source (default or custom)
+
+- `isValidSkill(id: string): boolean`
+    - Check if a skill ID exists in the registry
+
+- `validateSkill(skill: CustomSkill): SkillValidationResult`
+    - Validate skill data structure
+
+- `getRegistryStats(): SkillRegistryStats`
+    - Get statistics about registered skills
+
+- `reset(): void`
+    - Reset the registry to initial state
+
+- `isInitialized(): boolean`
+    - Check if the registry has been initialized
+
+- `exportRegistry(): CustomSkill[]`
+    - Export all registered skills as JSON
+
+- `unregisterSkill(id: string): boolean`
+    - Remove a skill by ID
+    - **Warning:** Primarily for testing; removing skills in use may cause issues
+
+#### Types
+
+```typescript
+export interface CustomSkill {
+    /** Unique identifier (e.g., 'athletics', 'survival_cold') */
+    id: string;
+
+    /** Display name (e.g., 'Athletics', 'Survival (Cold Environments)') */
+    name: string;
+
+    /** Optional description of what the skill covers */
+    description?: string;
+
+    /** The ability score used (STR, DEX, CON, INT, WIS, CHA) */
+    ability: Ability;
+
+    /** Whether affected by armor disadvantage (default: false) */
+    armorPenalty?: boolean;
+
+    /** Optional custom properties for advanced mechanics */
+    customProperties?: Record<string, string | number | boolean | string[]>;
+
+    /** Optional categories for grouping (e.g., 'exploration', 'social') */
+    categories?: string[];
+
+    /** Source: 'default' or 'custom' */
+    source: 'default' | 'custom';
+
+    /** Optional tags for additional categorization */
+    tags?: string[];
+
+    /** Optional flavor text or lore */
+    lore?: string;
+}
+
+export interface SkillValidationResult {
+    /** Whether the skill is valid */
+    valid: boolean;
+    /** Array of error messages (empty if valid) */
+    errors: string[];
+}
+
+export interface SkillRegistryStats {
+    /** Total number of registered skills */
+    totalSkills: number;
+    /** Number of default skills */
+    defaultSkills: number;
+    /** Number of custom skills */
+    customSkills: number;
+    /** Skills per ability */
+    skillsByAbility: Record<Ability, number>;
+    /** All categories in use */
+    categories: string[];
+}
+```
+
+#### Usage Examples
+
+**Register Custom Skills:**
+
+```typescript
+import { SkillRegistry } from 'playlist-data-engine';
+
+const registry = SkillRegistry.getInstance();
+
+// Register a single custom skill
+registry.registerSkill({
+    id: 'survival_cold',
+    name: 'Survival (Cold Environments)',
+    description: 'Expertise in surviving and traveling in cold weather conditions.',
+    ability: 'WIS',
+    armorPenalty: false,
+    categories: ['exploration', 'environmental'],
+    source: 'custom',
+    tags: ['cold', 'weather', 'wilderness'],
+    lore: 'Masters of cold survival learn to find shelter, build fires in snow, and navigate blizzards.'
+});
+
+// Register multiple skills at once
+registry.registerSkills([
+    {
+        id: 'survival_desert',
+        name: 'Survival (Desert)',
+        description: 'Expertise in desert survival.',
+        ability: 'WIS',
+        categories: ['exploration', 'environmental'],
+        source: 'custom'
+    },
+    {
+        id: 'navigation',
+        name: 'Navigation',
+        description: 'Ability to navigate by stars, maps, and landmarks.',
+        ability: 'INT',
+        categories: ['exploration'],
+        source: 'custom',
+        armorPenalty: false
+    },
+    {
+        id: 'intimidation',
+        name: 'Intimidation',
+        description: 'Influence others through threats and force.',
+        ability: 'CHA',
+        categories: ['social'],
+        source: 'custom'
+    }
+]);
+```
+
+**Query Skills:**
+
+```typescript
+// Get a specific skill
+const athletics = registry.getSkill('athletics');
+console.log(athletics.name); // "Athletics"
+console.log(athletics.ability); // "STR"
+
+// Get all skills for an ability
+const strengthSkills = registry.getSkillsByAbility('STR');
+// Returns: [athletics, ...other STR skills]
+
+// Get skills by category
+const explorationSkills = registry.getSkillsByCategory('exploration');
+// Returns skills tagged with 'exploration'
+
+// Get all categories
+const categories = registry.getCategories();
+console.log(categories);
+// ['exploration', 'social', 'knowledge', 'combat', 'environmental', ...]
+
+// Get custom skills only
+const customSkills = registry.getSkillsBySource('custom');
+
+// Check if a skill exists
+const hasSurvival = registry.isValidSkill('survival'); // true
+const hasFake = registry.isValidSkill('fake_skill'); // false
+```
+
+**Validate Skills:**
+
+```typescript
+// Validate a skill before registering
+const newSkill = {
+    id: 'test_skill',
+    name: 'Test Skill',
+    ability: 'STR',
+    source: 'custom'
+};
+
+const validation = registry.validateSkill(newSkill);
+if (!validation.valid) {
+    console.log('Validation errors:', validation.errors);
+}
+```
+
+**Get Registry Statistics:**
+
+```typescript
+const stats = registry.getRegistryStats();
+console.log(stats);
+// {
+//     totalSkills: 21,      // 18 default + 3 custom
+//     defaultSkills: 18,
+//     customSkills: 3,
+//     skillsByAbility: {
+//         STR: 2,   // athletics + custom
+//         DEX: 3,
+//         CON: 1,
+//         INT: 4,
+//         WIS: 6,
+//         CHA: 5
+//     },
+//     categories: ['exploration', 'social', 'knowledge', 'combat', 'environmental']
+// }
+```
+
+---
+
+### Per-Category Spawn Rate System
+
+Both FeatureRegistry and SkillRegistry support per-item spawn rate control through ExtensionManager's weight system. This allows custom content to be more or less likely to appear during character generation.
+
+**Feature Spawn Rates:**
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Set spawn rates for Barbarian class features
+manager.setWeights('classFeatures.Barbarian', {
+    'rage': 1.0,                // Normal spawn rate
+    'unarmored_defense': 1.0,   // Normal spawn rate
+    'reckless_attack': 0.5,     // Half as likely
+    'danger_sense': 0.3,        // Less likely
+    'dragon_fury': 0.1          // Very rare (10% of normal)
+});
+
+// Set spawn rates for racial traits
+manager.setWeights('racialTraits.Elf', {
+    'darkvision': 1.0,
+    'fey_ancestry': 0.8,
+    'trance': 0.5,
+    'custom_elf_trait': 0.2     // Rare custom trait
+});
+```
+
+**Skill Spawn Rates:**
+
+```typescript
+// Set spawn rates for skills in general
+manager.setWeights('skills', {
+    'athletics': 1.0,
+    'acrobatics': 1.0,
+    'survival': 0.8,           // Slightly less common
+    'survival_cold': 0.3,      // Rare custom skill
+    'navigation': 0.5,         // Uncommon custom skill
+    'intimidation': 1.2        // More common than default
+});
+
+// Set spawn rates for class-specific skill lists
+manager.setWeights('skillLists.Rogue', {
+    'stealth': 1.5,            // Rogues very likely to get stealth
+    'perception': 1.3,
+    'acrobatics': 1.2,
+    'athletics': 0.5           // Less common for rogues
+});
+```
+
+**Weight Modes:**
+
+```typescript
+// Relative mode (default): Weights added to pool, normalized
+manager.register('classFeatures.Barbarian', customFeatures, {
+    mode: 'relative',
+    weights: { 'dragon_fury': 0.5 }  // Reduces probability by 50%
+});
+
+// Absolute mode: Only specified weights used, all others = 1
+manager.register('skills', customSkills, {
+    mode: 'absolute',
+    weights: {
+        'navigation': 5.0,    // Very common
+        'intimidation': 3.0,  // Common
+        'survival_cold': 1.0  // Normal
+    }
+    // All other skills implicitly have weight 1
+});
+
+// Default mode: Equal weights for all items
+manager.register('racialTraits', customTraits, {
+    mode: 'default'  // Ignore custom weights
+});
+```
+
+**Get Current Weights:**
+
+```typescript
+// Get combined weights (defaults + custom)
+const weights = manager.getWeights('skills');
+console.log(weights);
+// {
+//     athletics: 1.0,
+//     survival: 0.8,
+//     survival_cold: 0.3,
+//     navigation: 0.5,
+//     intimidation: 1.2,
+//     ...
+// }
+
+// Get default weights only
+const defaultWeights = manager.getDefaultWeights('skills');
+console.log(defaultWeights);
+// { athletics: 1.0, acrobatics: 1.0, ...all 1.0 }
+```
+
+---
+
 ### Validation System
 
 The ExtensionManager includes built-in validation for all extensible categories.
@@ -2712,6 +3467,10 @@ The ExtensionManager includes built-in validation for all extensible categories.
 | **races** | (string value) | Must be valid Race enum value |
 | **classes** | (string value) | Must be valid Class enum value |
 | **appearance.*** | (string value) | Must be string type |
+| **classFeatures** | id, name, type, class, level, source | type: 'passive'\|'active'\|'resource'\|'trigger'; level: 1-20 |
+| **racialTraits** | id, name, race, source | Must have valid race from Race enum |
+| **skills** | id, name, ability, source | ability: 'STR'\|'DEX'\|'CON'\|'INT'\|'WIS'\|'CHA' |
+| **skillLists** | class, skillCount, availableSkills | skillCount: ≥ 0; availableSkills: array of skill IDs |
 
 **Validation Example:**
 
