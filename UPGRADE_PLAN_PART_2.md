@@ -1966,7 +1966,7 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [x] Define all interfaces clearly
 
 ### Phase 3: EquipmentEffect System
-- [ ] Create EquipmentEffectApplier
+- [x] Create EquipmentEffectApplier
 - [ ] Create EquipmentValidator
 - [ ] Integrate with FeatureEffectApplier
 
