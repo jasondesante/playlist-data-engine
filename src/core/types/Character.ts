@@ -3,6 +3,14 @@
  */
 
 import type { FeatureEffect } from '../features/FeatureTypes.js';
+import type {
+    EquipmentProperty,
+    EquipmentFeature,
+    EquipmentSkill,
+    EquipmentCondition,
+    EquipmentMiniFeature,
+    EnhancedInventoryItem
+} from './Equipment.js';
 
 export type Race =
     | 'Human'
@@ -166,9 +174,9 @@ export interface CharacterSheet {
 
     /** Equipment */
     equipment?: {
-        weapons: Array<{ name: string; quantity: number; equipped: boolean }>;
-        armor: Array<{ name: string; quantity: number; equipped: boolean }>;
-        items: Array<{ name: string; quantity: number; equipped: boolean }>;
+        weapons: EnhancedInventoryItem[];
+        armor: EnhancedInventoryItem[];
+        items: EnhancedInventoryItem[];
         totalWeight: number;
         equippedWeight: number;
     };
@@ -220,5 +228,37 @@ export interface CharacterSheet {
      * - spell_slot_bonus: Grant additional spell slots
      */
     feature_effects?: FeatureEffect[];
+
+    /**
+     * Equipment-granted effects
+     * Tracks effects currently active from equipped items
+     * Separate from feature_effects to allow proper removal when unequipping
+     *
+     * STACKING: All equipment effects stack (e.g., two +1 STR items = +2 STR total)
+     */
+    equipment_effects?: {
+        /** Equipment name providing the effect */
+        source: string;
+
+        /** Instance ID for per-instance tracking */
+        instanceId?: string;
+
+        /** Effects from this equipment */
+        effects: EquipmentProperty[];
+
+        /** Features granted by this equipment (registry features or inline mini-features) */
+        features: EquipmentFeature[];
+
+        /** Skills granted by this equipment */
+        skills: EquipmentSkill[];
+
+        /** Spells granted by this equipment */
+        spells?: Array<{
+            spellId: string;
+            level?: number;
+            uses?: number;
+            recharge?: string;
+        }>;
+    }[];
 
 }

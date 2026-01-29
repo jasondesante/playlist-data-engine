@@ -1961,9 +1961,9 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [x] Define enhancement requirements
 
 ### Phase 2: Interface Design
-- [ ] Create Equipment.ts with all type definitions
-- [ ] Update Character.ts with equipment_effects
-- [ ] Define all interfaces clearly
+- [x] Create Equipment.ts with all type definitions
+- [x] Update Character.ts with equipment_effects
+- [x] Define all interfaces clearly
 
 ### Phase 3: EquipmentEffect System
 - [ ] Create EquipmentEffectApplier
