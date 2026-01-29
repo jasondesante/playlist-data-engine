@@ -2442,13 +2442,13 @@ manager.setWeights('classes', { 'Barbarian': 2, 'Wizard': 0.5 });
   - Add weight system docs
   - Update CharacterGenerator options
 
-- [ ] Add extension examples:
+- [x] Add extension examples:
   - How to add custom spells
   - How to add custom equipment
   - How to customize spawn rates
   - Complete working example
 
-**Deliverable:** Updated documentation
+**Deliverable:** Updated documentation ✅
 
 ---
 

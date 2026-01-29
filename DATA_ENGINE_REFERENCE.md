@@ -2816,6 +2816,273 @@ console.log(customData);
 
 ---
 
+### Complete Working Example: Creating an Expansion Pack
+
+This example demonstrates creating a complete "Dragon Expansion Pack" with custom spells, equipment, races, classes, and appearance options.
+
+```typescript
+import {
+    ExtensionManager,
+    CharacterGenerator,
+    AudioAnalyzer
+} from 'playlist-data-engine';
+
+/**
+ * DRAGON EXPANSION PACK
+ * A complete example of creating custom content for the Playlist Data Engine
+ */
+
+// ============================================================
+// STEP 1: Define Custom Content
+// ============================================================
+
+const dragonSpells = [
+    {
+        name: 'Dragon Breath',
+        level: 3,
+        school: 'Evocation',
+        casting_time: '1 action',
+        range: 'Self (30-foot cone)',
+        duration: 'Instantaneous',
+        components: ['V', 'S'],
+        description: 'You exhale destructive energy in a 30-foot cone...'
+    },
+    {
+        name: 'Draconic Presence',
+        level: 4,
+        school: 'Enchantment',
+        casting_time: '1 action',
+        range: 'Self',
+        duration: 'Concentration, up to 1 minute',
+        components: ['V', 'S'],
+        description: 'You channel the presence of a dragon, exuding an aura of power...'
+    },
+    {
+        name: 'Scale Hardening',
+        level: 2,
+        school: 'Abjuration',
+        casting_time: '1 bonus action',
+        range: 'Touch',
+        duration: '1 hour',
+        components: ['V', 'S', 'M'],
+        description: 'The target\'s skin becomes as hard as dragon scales...'
+    }
+];
+
+const dragonEquipment = [
+    {
+        name: 'Dragon Scale Armor',
+        type: 'armor',
+        rarity: 'very_rare',
+        weight: 25
+    },
+    {
+        name: 'Dragon Tooth Dagger',
+        type: 'weapon',
+        rarity: 'rare',
+        weight: 1
+    },
+    {
+        name: 'Potion of Dragon Blood',
+        type: 'item',
+        rarity: 'rare',
+        weight: 0.5
+    }
+];
+
+// Note: To add custom races/classes, you would first need to extend
+// the Race/Class types in src/core/types/Character.ts
+const dragonAppearance = {
+    bodyTypes: ['draconic', 'dragonborn'],
+    skinTones: ['#8B0000', '#B8860B', '#006400', '#4B0082'], // Red, Gold, Green, Purple
+    hairColors: ['#FF0000', '#FFD700', '#00FF00'], // Red, Gold, Green
+    eyeColors: ['#FF4500', '#FFD700', '#32CD32', '#9400D3'], // Orange-red, Gold, Lime, Purple
+    facialFeatures: ['horns', 'scaled skin', 'dragon tail', 'fangs', 'claws']
+};
+
+// ============================================================
+// STEP 2: Register Content with ExtensionManager
+// ============================================================
+
+const manager = ExtensionManager.getInstance();
+
+// Register custom spells
+manager.register('spells', dragonSpells, {
+    mode: 'relative',  // Add to default spells
+    weights: {
+        'Dragon Breath': 0.3,      // Rare spell
+        'Draconic Presence': 0.2,  // Very rare spell
+        'Scale Hardening': 0.4     // Uncommon spell
+    },
+    validate: true  // Validate spell data before registration
+});
+
+// Register custom equipment
+manager.register('equipment', dragonEquipment, {
+    mode: 'relative',
+    weights: {
+        'Dragon Scale Armor': 0.1,   // Very rare armor
+        'Dragon Tooth Dagger': 0.3,  // Rare weapon
+        'Potion of Dragon Blood': 0.2 // Rare consumable
+    }
+});
+
+// Register custom appearance options
+manager.register('appearance.bodyTypes', dragonAppearance.bodyTypes, {
+    mode: 'relative',
+    weights: { 'draconic': 0.2, 'dragonborn': 0.3 }
+});
+
+manager.register('appearance.skinTones', dragonAppearance.skinTones, {
+    mode: 'relative',
+    weights: {
+        '#8B0000': 0.3,  // Red dragons most common
+        '#B8860B': 0.2,  // Gold dragons
+        '#006400': 0.15, // Green dragons
+        '#4B0082': 0.1   // Purple dragons
+    }
+});
+
+manager.register('appearance.hairColors', dragonAppearance.hairColors, {
+    mode: 'relative',
+    weights: { '#FF0000': 0.4, '#FFD700': 0.3, '#00FF00': 0.2 }
+});
+
+manager.register('appearance.eyeColors', dragonAppearance.eyeColors, {
+    mode: 'relative'
+});
+
+manager.register('appearance.facialFeatures', dragonAppearance.facialFeatures, {
+    mode: 'relative',
+    weights: {
+        'horns': 0.4,
+        'scaled skin': 0.3,
+        'dragon tail': 0.2,
+        'fangs': 0.3,
+        'claws': 0.3
+    }
+});
+
+// ============================================================
+// STEP 3: Verify Registration
+// ============================================================
+
+// Check what was registered
+const spellInfo = manager.getInfo('spells');
+console.log('Spells:', spellInfo);
+// {
+//     hasCustomData: true,
+//     defaultCount: 53,
+//     customCount: 3,
+//     totalCount: 56,
+//     mode: 'relative',
+//     weights: { 'Dragon Breath': 0.3, ... },
+//     registeredAt: 1234567890
+// }
+
+const equipInfo = manager.getInfo('equipment');
+console.log('Equipment:', equipInfo);
+
+// ============================================================
+// STEP 4: Generate Characters with Custom Content
+// ============================================================
+
+async function generateDragonCharacter() {
+    // Analyze audio from a music file
+    const audioProfile = await AudioAnalyzer.analyze(audioUrl);
+
+    // Generate character with custom content available
+    const character = CharacterGenerator.generate(
+        'dragon-seed-123',
+        audioProfile,
+        'Draconis',
+        {
+            level: 5,
+            gameMode: 'standard'
+            // Note: Extensions are registered via ExtensionManager,
+            // not passed directly in options
+        }
+    );
+
+    // The character will have:
+    // - Custom dragon-themed appearance options (horns, scales, etc.)
+    // - Access to custom dragon spells if they're a spellcaster
+    // - Possibility of custom dragon equipment
+    // - Dragon-themed color palette
+
+    console.log('Generated Character:', character);
+    return character;
+}
+
+// ============================================================
+// STEP 5: Adjust Spawn Rates Later
+// ============================================================
+
+// Make dragon items more common after testing
+manager.setWeights('equipment', {
+    'Dragon Scale Armor': 0.5,  // Increased from 0.1
+    'Dragon Tooth Dagger': 0.8, // Increased from 0.3
+    'Potion of Dragon Blood': 0.6 // Increased from 0.2
+});
+
+// ============================================================
+// STEP 6: Export/Import Custom Data
+// ============================================================
+
+// Export for saving
+const customData = manager.exportCustomData();
+console.log('Custom Data:', customData);
+
+// Save to localStorage or file
+// localStorage.setItem('dragonExpansion', JSON.stringify(customData));
+
+// Later, load and restore:
+// const savedData = JSON.parse(localStorage.getItem('dragonExpansion'));
+// manager.importCustomData(savedData);
+
+// ============================================================
+// STEP 7: Cleanup (if needed)
+// ============================================================
+
+// Reset dragon content when switching themes
+// manager.reset('spells');
+// manager.reset('equipment');
+// manager.reset('appearance.bodyTypes');
+// manager.reset('appearance.skinTones');
+// manager.reset('appearance.hairColors');
+// manager.reset('appearance.eyeColors');
+// manager.reset('appearance.facialFeatures');
+
+// Or reset everything at once
+// manager.resetAll();
+```
+
+**Expected Results:**
+
+When generating characters with this Dragon Expansion Pack:
+
+1. **Appearance**: Characters will have dragon-themed features:
+   - Body types: 50% chance of draconic/dragonborn (with other types still possible)
+   - Skin tones: Red, gold, green, or purple dragon scales
+   - Hair colors: Red, gold, or green
+   - Eye colors: Orange-red, gold, lime green, or purple
+   - Facial features: High chance of horns, scales, tail, fangs, or claws
+
+2. **Equipment**: Spellcasters may know dragon-themed spells, and any class might receive dragon equipment
+
+3. **Variety**: All default content remains available (mode: 'relative'), ensuring variety
+
+**Key Takeaways:**
+
+1. **Batch Registration**: Register all related content at once for a themed expansion
+2. **Weight Control**: Fine-tune spawn rates for balanced gameplay
+3. **Validation**: Always validate data during development (set `validate: true`)
+4. **Modularity**: Each category is independent - mix and match as needed
+5. **Persistence**: Export custom data to save/load expansion configurations
+6. **Cleanup**: Use `reset()` to cleanly switch between expansion packs
+
+---
+
 ## Cross-References
 
 - For quick overview, see [spec.md](specs/001-core-engine/spec.md)
