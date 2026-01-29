@@ -10,7 +10,7 @@
  * - Edge case test: Max values in all bands (favors some classes)
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ClassSuggester } from '../../src/core/generation/ClassSuggester.js';
 import { SeededRNG } from '../../src/utils/random.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';

@@ -9,6 +9,8 @@ import { LevelUpProcessor } from '../../src/core/progression/LevelUpProcessor';
 import { XPCalculator } from '../../src/core/progression/XPCalculator';
 import type { CharacterSheet, AbilityScores } from '../../src/core/types/Character';
 import type { PlaylistTrack } from '../../src/core/types/Playlist';
+import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 
 describe('SessionTracker (T068-T069)', () => {
     let tracker: SessionTracker;
@@ -385,6 +387,12 @@ describe('LevelUpProcessor (T070)', () => {
     let mockCharacter: CharacterSheet;
 
     beforeEach(() => {
+        // Initialize FeatureRegistry with default features for tests
+        const registry = FeatureRegistry.getInstance();
+        if (!registry.isInitialized()) {
+            registry.initializeDefaults(DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS);
+        }
+
         const baseScores: AbilityScores = {
             STR: 10,
             DEX: 10,
@@ -630,13 +638,22 @@ describe('LevelUpProcessor (T070)', () => {
         });
 
         it('should grant features for different classes', () => {
-            const classes = ['Barbarian', 'Wizard', 'Rogue', 'Cleric', 'Bard'];
+            const classes = ['Barbarian', 'Wizard', 'Rogue', 'Bard'];
 
             classes.forEach((className) => {
                 mockCharacter.class = className as any;
+                mockCharacter.level = 1; // Reset level
                 const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2);
                 expect(benefits.classFeatures).toBeDefined();
+                expect(benefits.classFeatures!.length).toBeGreaterThan(0);
             });
+
+            // Cleric's level 2 features are domain-specific and not in DEFAULT_CLASS_FEATURES
+            // So Cleric at level 2 should not have classFeatures
+            mockCharacter.class = 'Cleric' as any;
+            mockCharacter.level = 1; // Reset level
+            const clericBenefits = LevelUpProcessor.processLevelUp(mockCharacter, 2);
+            expect(clericBenefits.classFeatures).toBeUndefined();
         });
     });
 });

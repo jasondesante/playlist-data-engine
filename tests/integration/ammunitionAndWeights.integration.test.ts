@@ -18,7 +18,7 @@ import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { EquipmentGenerator } from '../../src/core/generation/EquipmentGenerator';
 import { WeightedSelector } from '../../src/core/extensions/WeightedSelector';
-import { SeededRNG } from '../../src/utils/SeededRNG';
+import { SeededRNG } from '../../src/utils/random.js';
 import { sampleAudioProfile } from '../fixtures/sampleData';
 
 describe('Integration: Ammunition Fix and Weight System', () => {
