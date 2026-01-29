@@ -84,6 +84,21 @@ export type EquipmentPropertyType =
     | 'passive_modifier'     // Damage resistance, speed bonus, AC bonus
     | 'special_property'     // Finesse, versatile, two-handed, etc.
     | 'damage_bonus'         // +1d6 fire damage, etc.
+    | 'spell_grant'          // Grants specific spells
+
+/**
+ * Structured condition types for equipment properties
+ * Properties only apply when their condition is met
+ */
+export type EquipmentCondition =
+    | { type: 'vs_creature_type'; value: string }           // e.g., {type: 'vs_creature_type', value: 'dragon'}
+    | { type: 'at_time_of_day'; value: 'day' | 'night' | 'dawn' | 'dusk' }
+    | { type: 'wielder_race'; value: string }               // e.g., {type: 'wielder_race', value: 'Elf'}
+    | { type: 'wielder_class'; value: string }              // e.g., {type: 'wielder_class', value: 'Wizard'}
+    | { type: 'while_equipped'; value: boolean }            // Always true when equipped (default)
+    | { type: 'on_hit'; value: boolean }                    // Triggers when weapon hits
+    | { type: 'on_damage_taken'; value: boolean }           // Triggers when wearer takes damage
+    | { type: 'custom'; value: string; description: string }; // Game-defined condition
 
 /**
  * Equipment property that provides mechanical benefits
@@ -92,8 +107,21 @@ export interface EquipmentProperty {
     type: EquipmentPropertyType;
     target: string;
     value: number | string | boolean;
-    condition?: string;
+    condition?: EquipmentCondition;  // Structured condition (not freeform string)
     description?: string;
+    stackable?: boolean;  // Default: true - effects always stack
+}
+
+/**
+ * Inline mini-feature definition for equipment-specific abilities
+ * These don't go in the main FeatureRegistry but are treated like features for this item
+ */
+export interface EquipmentMiniFeature {
+    id: string;                  // Unique ID for this equipment-specific feature
+    name: string;
+    description: string;
+    effects: EquipmentProperty[];  // What this mini-feature does
+    source: 'equipment_inline';    // Marks this as equipment-specific (not in main registry)
 }
 
 /**
@@ -110,13 +138,22 @@ export interface EnhancedEquipment {
     // NEW: Advanced properties
     properties?: EquipmentProperty[];
 
-    // NEW: Features granted when equipped (feature IDs from FeatureRegistry)
-    grantsFeatures?: string[];
+    // NEW: Features granted when equipped
+    // Can reference existing FeatureRegistry features OR define inline mini-features
+    grantsFeatures?: Array<string | EquipmentMiniFeature>;
 
     // NEW: Skills granted when equipped
     grantsSkills?: Array<{
         skillId: string;
         level: 'proficient' | 'expertise';
+    }>;
+
+    // NEW: Spells granted when equipped
+    grantsSpells?: Array<{
+        spellId: string;
+        level?: number;  // If item grants at specific spell level
+        uses?: number;   // For limited-use spell items (e.g., 1/day)
+        recharge?: string;  // How it recharges (e.g., 'dawn', 'short_rest')
     }>;
 
     // NEW: D&D 5e stats
@@ -148,10 +185,16 @@ export interface EquipmentModification {
     id: string;
     name: string;
     properties: EquipmentProperty[];
-    addsFeatures?: string[];
+    addsFeatures?: Array<string | EquipmentMiniFeature>;  // Can reference registry OR define inline
     addsSkills?: Array<{
         skillId: string;
         level: 'proficient' | 'expertise';
+    }>;
+    addsSpells?: Array<{
+        spellId: string;
+        level?: number;
+        uses?: number;
+        recharge?: string;
     }>;
     appliedAt: string;
     source: string;
@@ -216,6 +259,8 @@ export interface EquipmentSkill {
  * Equipment-granted effects
  * Tracks effects currently active from equipped items
  * Separate from feature_effects to allow proper removal when unequipping
+ *
+ * STACKING: All equipment effects stack (e.g., two +1 STR items = +2 STR total)
  */
 equipment_effects?: {
     /** Equipment name providing the effect */
@@ -227,17 +272,25 @@ equipment_effects?: {
     /** Effects from this equipment */
     effects: EquipmentProperty[];
 
-    /** Features granted by this equipment */
+    /** Features granted by this equipment (registry features or inline mini-features) */
     features: EquipmentFeature[];
 
     /** Skills granted by this equipment */
     skills: EquipmentSkill[];
+
+    /** Spells granted by this equipment */
+    spells?: Array<{
+        spellId: string;
+        level?: number;
+        uses?: number;
+        recharge?: string;
+    }>;
 }[];
 ```
 
 **Import Required:**
 ```typescript
-import type { EquipmentProperty, EquipmentFeature, EquipmentSkill } from './Equipment.js';
+import type { EquipmentProperty, EquipmentFeature, EquipmentSkill, EquipmentCondition, EquipmentMiniFeature } from './Equipment.js';
 ```
 
 **Deliverable:** Updated Character interface
@@ -616,17 +669,32 @@ export interface Equipment {
         type: string;
         target: string;
         value: number | string | boolean;
-        condition?: string;
+        condition?: { type: string; value: string | boolean };  // Structured conditions
         description?: string;
+        stackable?: boolean;  // Default: true
     }>;
 
-    // NEW: Features granted when equipped
-    grantsFeatures?: string[];
+    // NEW: Features granted when equipped (can reference registry features or define inline mini-features)
+    grantsFeatures?: Array<string | {
+        id: string;
+        name: string;
+        description: string;
+        effects: any[];
+        source: 'equipment_inline';
+    }>;
 
     // NEW: Skills granted when equipped
     grantsSkills?: Array<{
         skillId: string;
         level: 'proficient' | 'expertise';
+    }>;
+
+    // NEW: Spells granted when equipped
+    grantsSpells?: Array<{
+        spellId: string;
+        level?: number;
+        uses?: number;
+        recharge?: string;
     }>;
 
     // NEW: D&D 5e stats
@@ -1415,95 +1483,7 @@ static registerEquipmentFeature(
 
 ---
 
-## Phase 10: Migration & Backward Compatibility
-
-### 10.1 Create EquipmentMigration
-
-**File:** `/Users/jasondesante/playlist-data-engine/src/core/migration/EquipmentMigration.ts` (NEW)
-
-**Key Methods:**
-
-```typescript
-export class EquipmentMigration {
-    /**
-     * Migrate character's equipment to enhanced format
-     */
-    static migrateEquipment(character: CharacterSheet): MigrationResult;
-
-    /**
-     * Add default properties to legacy equipment items
-     */
-    private static addDefaultProperties(
-        item: InventoryItem
-    ): EnhancedInventoryItem;
-
-    /**
-     * Initialize equipment_effects array if missing
-     */
-    private static initializeEquipmentEffects(
-        character: CharacterSheet
-    ): void;
-
-    /**
-     * Apply default D&D 5e stats to legacy equipment
-     * Looks up in EQUIPMENT_DATABASE and adds damage/AC/properties
-     */
-    private static applyDefaultStats(
-        itemName: string
-    ): Partial<EnhancedEquipment>;
-
-    /**
-     * Generate instance IDs for inventory items
-     */
-    private static generateInstanceIds(
-        equipment: CharacterEquipment
-    ): CharacterEquipment;
-}
-
-interface MigrationResult {
-    success: boolean;
-    changes: string[];
-    errors?: string[];
-}
-```
-
-**Deliverable:** Complete equipment migration system
-
----
-
-### 10.2 Update CharacterMigration
-
-**File:** `/Users/jasondesante/playlist-data-engine/src/core/migration/CharacterMigration.ts`
-
-**Add Equipment Migration:**
-
-```typescript
-import { EquipmentMigration } from './EquipmentMigration.js';
-
-// In migrateToCurrent() method:
-// Migrate equipment system
-if (character.equipment) {
-    const equipmentResult = EquipmentMigration.migrateEquipment(character);
-    if (equipmentResult.changes.length > 0) {
-        result.changes.push(...equipmentResult.changes);
-    }
-    if (equipmentResult.errors && equipmentResult.errors.length > 0) {
-        result.errors.push(...equipmentResult.errors);
-    }
-}
-
-// Initialize equipment_effects if missing
-if (!character.equipment_effects) {
-    character.equipment_effects = [];
-    result.changes.push('Initialized equipment_effects array');
-}
-```
-
-**Deliverable:** Updated CharacterMigration with equipment support
-
----
-
-## Phase 11: Testing
+## Phase 10: Testing
 
 ### 11.1 Unit Tests
 
@@ -1555,17 +1535,6 @@ if (!character.equipment_effects) {
 - [ ] Get combined effects
 - [ ] Check for templates
 
-**File:** `/Users/jasondesante/playlist-data-engine/tests/unit/equipmentMigration.test.ts` (NEW)
-
-**Test Coverage:**
-- [ ] Migrate old format equipment
-- [ ] Add default properties to legacy items
-- [ ] Initialize equipment_effects array
-- [ ] Preserve existing equipment during migration
-- [ ] Handle equipment without properties
-- [ ] Generate instance IDs
-- [ ] Apply default D&D 5e stats
-
 **File:** `/Users/jasondesante/playlist-data-engine/tests/unit/equipmentSpawnHelper.test.ts` (NEW)
 
 **Test Coverage:**
@@ -1593,7 +1562,7 @@ if (!character.equipment_effects) {
 
 ---
 
-### 11.2 Integration Tests
+### 10.2 Integration Tests
 
 **File:** `/Users/jasondesante/playlist-data-engine/tests/integration/equipmentSystem.integration.test.ts` (NEW)
 
@@ -1628,25 +1597,13 @@ if (!character.equipment_effects) {
 - [ ] Test custom equipment modifications
 - [ ] Test zero spawn weight custom equipment
 
-**File:** `/Users/jasondesante/playlist-data-engine/tests/integration/equipmentMigration.integration.test.ts` (NEW)
-
-**Test Scenarios:**
-- [ ] Migrate character from old format
-- [ ] Verify equipment effects after migration
-- [ ] Test migration of equipped items
-- [ ] Test migration of unequipped items
-- [ ] Verify instance IDs generated
-- [ ] Verify default stats applied
-- [ ] Test migration with custom equipment
-- [ ] Test migration with modifications
-
 **Deliverable:** Complete integration test coverage
 
 ---
 
-## Phase 12: Documentation
+## Phase 11: Documentation
 
-### 12.1 Reference Documentation
+### 11.1 Reference Documentation
 
 **File:** `/Users/jasondesante/playlist-data-engine/docs/EQUIPMENT_SYSTEM.md` (NEW)
 
@@ -1663,223 +1620,71 @@ if (!character.equipment_effects) {
 10. **Custom Equipment**: Registering custom equipment
 11. **API Reference**: Complete API documentation
 12. **Examples**: Code examples for common use cases
-13. **Migration Guide**: Migrating from old equipment system
 
 **Deliverable:** Complete reference documentation
 
 ---
 
-### 12.2 Migration Guide
-
-**File:** `/Users/jasondesante/playlist-data-engine/docs/EQUIPMENT_MIGRATION.md` (NEW)
-
-**Sections:**
-1. **Breaking Changes**: What changed in equipment system
-2. **Migration Steps**: How to update existing characters
-3. **Code Updates**: How to update code using equipment
-4. **Testing**: How to test migrated characters
-5. **Rollback**: How to rollback if needed
-6. **Common Issues**: Solutions to common migration problems
-
-**Deliverable:** Complete migration guide
-
----
-
-### 12.3 Update Main Documentation
+### 11.2 Update DATA_ENGINE_REFERENCE.md
 
 **File:** `/Users/jasondesante/playlist-data-engine/DATA_ENGINE_REFERENCE.md`
 
-**Add Section:**
-```markdown
-## Equipment System (Enhanced)
+**Add Comprehensive Equipment Section:**
 
-### Equipment Properties
-Equipment can now have advanced properties that affect gameplay:
-- **stat_bonus**: +1 STR, +2 DEX, etc.
-- **skill_proficiency**: Proficiency or expertise in skills
-- **ability_unlock**: Darkvision, flight, etc.
-- **passive_modifier**: Damage resistance, speed bonus, AC bonus
-- **special_property**: Finesse, versatile, two-handed, etc.
-- **damage_bonus**: +1d6 fire damage, etc.
+This is a MAJOR documentation update. The file needs:
 
-### Equipment-Granted Features
-Equipment can grant features that are only active when the item is equipped.
-Features are tracked separately from class features and removed when unequipped.
+1. **Complete Equipment System Reference** including:
+   - Overview of all equipment capabilities
+   - Full Equipment interface with all properties
+   - All EquipmentProperty types with examples
+   - EquipmentGenerator API reference
+   - EquipmentModifier API reference
+   - EquipmentSpawnHelper API reference
+   - Character sheet integration
 
-### Equipment-Granted Skills
-Equipment can grant skill proficiencies or expertise.
-Skills are active only while the item is equipped.
+2. **Cross-reference existing features** - verify all features from original upgrade plan are documented
 
-### D&D 5e Standard Stats
-All default equipment now includes D&D 5e standard stats:
-- Weapons: Damage dice, damage type, weapon properties
-- Armor: AC bonus, special properties (stealth disadvantage, etc.)
+3. **Code examples** for every property type and API method
 
-### Spawn Weights
-Equipment can have spawn weights:
-- 0 = Never randomly spawned (still available to game logic)
-- 1+ = Can appear randomly (higher = more common)
+(Detailed content to be written during implementation - see full spec in plan file above)
 
-### Equipment Modification
-Equipment can be modified:
-- **Templates**: Pre-defined enchantments (Flaming Sword, +1 Weapon, etc.)
-- **Per-Instance**: Unique modifications to individual items
-- **Curses**: Negative effects that can be applied
-
-### Custom Equipment
-Custom equipment can be registered via ExtensionManager with full property support.
-
-### Helper Functions
-`EquipmentSpawnHelper` provides utilities for batch equipment spawning.
-```
-
-**File:** `/Users/jasondesante/playlist-data-engine/DATA_ENGINE_UPGRADE_PLAN.md`
-
-**Add Section (at end):**
-```markdown
----
-
-## Phase 16: Advanced Equipment System (NEW)
-
-### Overview
-Add advanced equipment properties, effects, and modification capabilities.
-
-### Key Features:
-- Equipment properties (stat bonuses, skills, abilities, modifiers)
-- Equipment-granted features and skills
-- D&D 5e standard stats for all equipment
-- Template-based and per-instance modifications
-- Weight-based spawning (0 = never random)
-- Helper functions for batch spawning
-- Full ExtensionManager integration
-
-### Documentation:
-- UPGRADE_PLAN_PART_2.md - Detailed upgrade plan
-- docs/EQUIPMENT_SYSTEM.md - Reference documentation
-- docs/EQUIPMENT_MIGRATION.md - Migration guide
-
-### Status: PLANNED
-```
-
-**Deliverable:** Updated main documentation
+**Deliverable:** Comprehensive equipment documentation in DATA_ENGINE_REFERENCE.md
 
 ---
 
-### 12.4 Update Usage Documentation
+### 11.3 Update USAGE_IN_OTHER_PROJECTS.md
 
 **File:** `/Users/jasondesante/playlist-data-engine/USAGE_IN_OTHER_PROJECTS.md`
 
-**Add Section:**
-```markdown
-## Equipment System Usage
+**Add Comprehensive Equipment Usage Section with MANY Examples:**
 
-### Using Enhanced Equipment
+This needs extensive practical examples including:
+- **Registering custom equipment**
+- **Items that increase basic stats** (Belt of Giant Strength, Amulet of Constitution)
+- **Items that increase HP** (Periapt of Wound Closure, Amulet of Health)
+- **Items that increase AC** (Ring of Protection, +1 Armor)
+- **Giving a sword fire damage** (2 methods: property vs feature)
+- **Removing debuffs from cursed items** (disenchanting)
+- **Items that grant skills** (Boots of Elvenkind - Stealth expertise)
+- **Items that grant features** (Boots of Speed - freedom of movement)
+- **Items that grant spells** (Ring of Spell Storing, Spell Scrolls)
+- **Conditional effects** (Weapon that does extra damage vs dragons)
+- **Item templates** (Flaming Sword template)
+- **Multiple effects stacking** (wearing two +1 STR items = +2 STR)
+- **Batch spawning examples** (treasure hoards)
+- **Game-only items** (spawnWeight: 0 for unique artifacts)
+- **Progressive enchantment** (enchanting an item through gameplay)
+- **Complete custom magic item system** example
 
-The enhanced equipment system provides several new capabilities:
+(Detailed content to be written during implementation - see full spec in plan file above)
 
-#### Registering Custom Equipment with Properties
-
-\`\`\`typescript
-import { ExtensionManager } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// Register a magic sword with fire damage
-manager.register('equipment', [{
-    name: 'Flame Tongue',
-    type: 'weapon',
-    rarity: 'rare',
-    weight: 3,
-    damage: { dice: '1d8', damageType: 'slashing' },
-    weaponProperties: ['finesse'],
-    properties: [
-        {
-            type: 'damage_bonus',
-            target: 'fire_damage',
-            value: 6,
-            description: '+1d6 fire damage'
-        }
-    ],
-    grantsFeatures: ['fire_resistance'],
-    spawnWeight: 0.1,
-    source: 'custom',
-    tags: ['magic', 'fire']
-}]);
-\`\`\`
-
-#### Equipment Modification (Enchanting)
-
-\`\`\`typescript
-import { EquipmentModifier } from 'playlist-data-engine';
-
-// Enchant an item with +1
-const enchantment = {
-    id: 'plus_one_001',
-    name: '+1 Weapon',
-    properties: [
-        { type: 'passive_modifier', target: 'attack_roll', value: 1 },
-        { type: 'passive_modifier', target: 'damage_roll', value: 1 }
-    ],
-    appliedAt: new Date().toISOString(),
-    source: 'enchantment'
-};
-
-EquipmentModifier.enchant(
-    character.equipment,
-    'Longsword',
-    enchantment,
-    character
-);
-\`\`\`
-
-#### Batch Spawning Equipment
-
-\`\`\`typescript
-import { EquipmentSpawnHelper } from 'playlist-data-engine';
-import { SeededRNG } from 'playlist-data-engine';
-
-const rng = new SeededRNG('loot_seed');
-
-// Spawn 3 random uncommon items
-const items = EquipmentSpawnHelper.spawnByRarity('uncommon', 3, rng);
-
-// Spawn treasure hoard for CR 5
-const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
-
-// Add to character
-EquipmentSpawnHelper.addToCharacter(character, items, false);
-\`\`\`
-
-### Breaking Changes from Equipment Upgrade
-
-1. **Equipment Interface Extended**: The `Equipment` interface now has optional properties:
-   - `damage?: { dice: string; damageType: string; versatile?: string }`
-   - `acBonus?: number`
-   - `weaponProperties?: string[]`
-   - `properties?: EquipmentProperty[]`
-   - `grantsFeatures?: string[]`
-   - `grantsSkills?: Array<{skillId: string; level: 'proficient' | 'expertise'}>`
-   - `spawnWeight?: number`
-
-2. **Character.equipment_effects Added**: Characters now track equipment-granted effects separately from feature effects
-
-3. **InventoryItem Enhanced**: Inventory items now support per-instance modifications
-
-### Migration Notes
-
-If using this engine in another project:
-1. Update any custom equipment definitions to include new optional properties
-2. Re-run character migrations if using saved characters
-3. Update any code that directly accesses equipment to handle new structure
-```
-
-**Deliverable:** Updated usage documentation with equipment examples
+**Deliverable:** Comprehensive usage documentation with many practical examples
 
 ---
 
-## Phase 13: Examples & Demos
+## Phase 12: Examples & Demos
 
-### 13.1 Create Example Custom Equipment
+### 12.1 Create Example Custom Equipment
 
 **File:** `/Users/jasondesante/playlist-data-engine/examples/customEquipmentExamples.ts` (NEW)
 
@@ -1924,7 +1729,124 @@ manager.register('equipment', [flameTongue], {
 
 ---
 
-### 13.2 Create Equipment Enchantment Demo
+### 12.2 Create Stat & HP Increase Examples
+
+**File:** `/Users/jasondesante/playlist-data-engine/examples/statIncreaseExamples.ts` (NEW)
+
+**Examples:**
+
+```typescript
+import { ExtensionManager } from './src/core/extensions/ExtensionManager.js';
+import type { EnhancedEquipment } from './src/core/types/Equipment.js';
+
+// Example 1: Belt of Giant Strength (+2 STR)
+const beltOfGiantStrength: EnhancedEquipment = {
+    name: 'Belt of Giant Strength',
+    type: 'item',
+    rarity: 'rare',
+    weight: 1,
+    properties: [
+        {
+            type: 'stat_bonus',
+            target: 'STR',
+            value: 2,
+            description: '+2 Strength (max 22)',
+            condition: { type: 'while_equipped', value: true }
+        }
+    ],
+    spawnWeight: 0.2,
+    source: 'custom',
+    tags: ['magic', 'wondrous', 'strength']
+};
+
+// Example 2: Amulet of Health (+5 max HP)
+const amuletOfHealth: EnhancedEquipment = {
+    name: 'Amulet of Health',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 0.1,
+    properties: [
+        {
+            type: 'passive_modifier',
+            target: 'max_hp',
+            value: 5,
+            description: '+5 maximum hit points',
+            stackable: true  // Multiple items stack
+        }
+    ],
+    spawnWeight: 0.3,
+    source: 'custom',
+    tags: ['magic', 'wondrous', 'health']
+};
+
+// Example 3: Ring of Protection (+1 AC, +1 saves)
+const ringOfProtection: EnhancedEquipment = {
+    name: 'Ring of Protection',
+    type: 'item',
+    rarity: 'rare',
+    weight: 0.1,
+    properties: [
+        {
+            type: 'passive_modifier',
+            target: 'ac',
+            value: 1,
+            description: '+1 Armor Class',
+            stackable: true
+        },
+        {
+            type: 'passive_modifier',
+            target: 'saving_throws',
+            value: 1,
+            description: '+1 to all saving throws',
+            stackable: true
+        }
+    ],
+    spawnWeight: 0.2,
+    source: 'custom',
+    tags: ['magic', 'ring', 'defense']
+};
+
+// Example 4: Belt of Dwarvenkind (+2 CON, advantage on poison saves)
+const beltOfDwarvenkind: EnhancedEquipment = {
+    name: 'Belt of Dwarvenkind',
+    type: 'item',
+    rarity: 'rare',
+    weight: 1,
+    properties: [
+        {
+            type: 'stat_bonus',
+            target: 'CON',
+            value: 2,
+            description: '+2 Constitution'
+        },
+        {
+            type: 'special_property',
+            target: 'save_advantage',
+            value: 'poison',
+            description: 'Advantage on saving throws against poison'
+        }
+    ],
+    grantsFeatures: ['poison_resistance'],
+    spawnWeight: 0.15,
+    source: 'custom',
+    tags: ['magic', 'dwarven', 'constitution']
+};
+
+// Register all items
+const manager = ExtensionManager.getInstance();
+manager.register('equipment', [
+    beltOfGiantStrength,
+    amuletOfHealth,
+    ringOfProtection,
+    beltOfDwarvenkind
+]);
+```
+
+**Deliverable:** Complete stat and HP increase examples
+
+---
+
+### 12.3 Create Equipment Enchantment Demo
 
 **File:** `/Users/jasondesante/playlist-data-engine/examples/equipmentEnchantmentDemo.ts` (NEW)
 
@@ -1965,7 +1887,7 @@ function enchantWeapon(character: CharacterSheet, weaponName: string): void {
 
 ---
 
-### 13.3 Create Batch Spawning Demo
+### 12.3 Create Batch Spawning Demo
 
 **File:** `/Users/jasondesante/playlist-data-engine/examples/batchSpawningDemo.ts` (NEW)
 
@@ -2003,12 +1925,8 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
    - `/Users/jasondesante/playlist-data-engine/examples/equipmentEnchantmentDemo.ts` - Enchantment demo
    - `/Users/jasondesante/playlist-data-engine/examples/batchSpawningDemo.ts` - Batch spawning demo
 
-4. **Migration**
-   - `/Users/jasondesante/playlist-data-engine/src/core/migration/EquipmentMigration.ts` - Equipment migration
-
-5. **Documentation**
+4. **Documentation**
    - `/Users/jasondesante/playlist-data-engine/docs/EQUIPMENT_SYSTEM.md` - Reference documentation
-   - `/Users/jasondesante/playlist-data-engine/docs/EQUIPMENT_MIGRATION.md` - Migration guide
 
 ### Key Files to Modify
 
@@ -2028,12 +1946,9 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
    - `/Users/jasondesante/playlist-data-engine/src/core/extensions/initializeDefaults.ts` - Update default initialization
    - `/Users/jasondesante/playlist-data-engine/src/core/features/FeatureRegistry.ts` - Add equipment feature support
 
-5. **Migration**
-   - `/Users/jasondesante/playlist-data-engine/src/core/migration/CharacterMigration.ts` - Add equipment migration
-
-6. **Main Documentation**
-   - `/Users/jasondesante/playlist-data-engine/DATA_ENGINE_REFERENCE.md` - Add equipment system section
-   - `/Users/jasondesante/playlist-data-engine/DATA_ENGINE_UPGRADE_PLAN.md` - Add Phase 16 reference
+5. **Main Documentation**
+   - `/Users/jasondesante/playlist-data-engine/DATA_ENGINE_REFERENCE.md` - Add comprehensive equipment system section
+   - `/Users/jasondesante/playlist-data-engine/USAGE_IN_OTHER_PROJECTS.md` - Add equipment usage examples with many practical cases
 
 ---
 
@@ -2086,29 +2001,39 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [ ] Update LevelUpProcessor
 - [ ] Update FeatureRegistry
 
-### Phase 10: Migration & Backward Compatibility
-- [ ] Create EquipmentMigration
-- [ ] Update CharacterMigration
-- [ ] Test backward compatibility
-
-### Phase 11: Testing
+### Phase 10: Testing
 - [ ] Write unit tests for EquipmentEffectApplier
 - [ ] Write unit tests for EquipmentValidator
 - [ ] Write unit tests for EquipmentModifier
-- [ ] Write unit tests for EquipmentMigration
 - [ ] Write unit tests for EquipmentSpawnHelper
 - [ ] Update existing tests
 - [ ] Write integration tests
-- [ ] Test migration paths
 
-### Phase 12: Documentation
-- [ ] Write EQUIPMENT_SYSTEM.md
-- [ ] Write EQUIPMENT_MIGRATION.md
-- [ ] Update DATA_ENGINE_REFERENCE.md
-- [ ] Update DATA_ENGINE_UPGRADE_PLAN.md
-- [ ] Update USAGE_IN_OTHER_PROJECTS.md with equipment usage examples
+### Phase 11: Documentation
+- [ ] Write EQUIPMENT_SYSTEM.md (comprehensive reference)
+- [ ] Update DATA_ENGINE_REFERENCE.md:
+  - [ ] Add complete equipment system reference section
+  - [ ] Document all EquipmentProperty types with examples
+  - [ ] Document EquipmentGenerator, EquipmentModifier, EquipmentSpawnHelper APIs
+  - [ ] Cross-check that all features from original upgrade plan are documented
+  - [ ] Add code examples for every property type and API method
+- [ ] Update USAGE_IN_OTHER_PROJECTS.md with extensive examples:
+  - [ ] Registering custom equipment
+  - [ ] Giving a sword fire damage (2 methods)
+  - [ ] Removing debuffs from cursed items
+  - [ ] Items that grant skills
+  - [ ] Items that grant features
+  - [ ] Items that upgrade stats
+  - [ ] Conditional effects
+  - [ ] Item templates
+  - [ ] Spell-like effects
+  - [ ] Multiple effects stacking
+  - [ ] Batch spawning examples
+  - [ ] Game-only items (spawnWeight: 0)
+  - [ ] Progressive enchantment through game
+  - [ ] Complete custom magic item system example
 
-### Phase 13: Examples & Demos
+### Phase 12: Examples & Demos
 - [ ] Create customEquipmentExamples.ts
 - [ ] Create equipmentEnchantmentDemo.ts
 - [ ] Create batchSpawningDemo.ts
@@ -2134,23 +2059,21 @@ Based on this plan, the 5 most critical files for implementing the equipment upg
 
 ## Notes for Implementation
 
-1. **Backward Compatibility Priority**: Ensure all old character files can be migrated without data loss
+1. **Feature Spawn Weights**: Remember that 0 spawn weight means "never random" but "still available to game logic"
 
-2. **Feature Spawn Weights**: Remember that 0 spawn weight means "never random" but "still available to game logic"
+2. **Template vs Instance**: Support both approaches - templates for common enchantments, instances for unique modifications
 
-3. **Template vs Instance**: Support both approaches - templates for common enchantments, instances for unique modifications
+3. **Effect Tracking**: Keep equipment effects separate from feature effects for proper removal when unequipping
 
-4. **Effect Tracking**: Keep equipment effects separate from feature effects for proper removal when unequipping
+4. **Instance IDs**: Generate unique instance IDs for per-instance tracking
 
-5. **Instance IDs**: Generate unique instance IDs for per-instance tracking
-
-6. **D&D 5e Alignment**: Default equipment should use standard 5e stats for compatibility
+5. **D&D 5e Alignment**: Default equipment should use standard 5e stats for compatibility
 
 ---
 
 ## Style Note
 
-This plan follows the same style and format as `DATA_ENGINE_UPGRADE_PLAN.md`:
+This plan follows consistent upgrade plan documentation:
 - Detailed phases with specific tasks
 - Checkboxes [ ] for pending items, [x] for completed items
 - File paths and line numbers where changes are needed
