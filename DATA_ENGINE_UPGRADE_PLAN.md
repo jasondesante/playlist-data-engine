@@ -2111,10 +2111,10 @@ const character = CharacterGenerator.generate(seed, audio, 'Hero', {
 
 ### 5.5 Update ClassSuggester
 
-**File:** `/Users/jasondesante/playlist-data-engine/src/core/generation/ClassSuggester.ts`
+**File:** `/workspace/src/core/generation/ClassSuggester.ts`
 
 **Tasks:**
-- [ ] Update to use extended class list:
+- [x] Update to use extended class list:
   ```typescript
   static suggest(audioProfile: AudioProfile, rng: SeededRNG): Class {
       const manager = ExtensionManager.getInstance();
@@ -2140,9 +2140,70 @@ const character = CharacterGenerator.generate(seed, audio, 'Hero', {
   }
   ```
 
-- [ ] Fix Rogue bias by equalizing default weights
+- [x] Fix Rogue bias by equalizing default weights
 
-**Deliverable:** ClassSuggester using extensibility system + bias fix
+**Deliverable:** ~~ClassSuggester using extensibility system + bias fix~~ **COMPLETE**
+
+#### Implementation Summary - Phase 5.5: ClassSuggester ✅
+
+**Files Modified:**
+- `src/core/generation/ClassSuggester.ts` - Updated to use ExtensionManager and WeightedSelector
+
+**Changes Made:**
+1. Updated `ClassSuggester.suggest()` method to use extensibility system:
+   - Added imports: `ExtensionManager`, `WeightedSelector`, `ensureClassDefaultsInitialized`
+   - Ensures class defaults are initialized before selection
+   - Gets extended class list from ExtensionManager (defaults + custom classes)
+   - Gets audio-based weights from new `getAudioWeights()` method
+   - Gets spawn rate weights from ExtensionManager
+   - Combines audio weights with custom spawn rate weights (custom takes priority)
+   - Uses `WeightedSelector.select()` for weighted random selection
+
+2. Created `getAudioWeights()` private method:
+   - Maps audio profile to class weights based on frequency dominance
+   - Bass > 0.6: Barbarian(3), Fighter(2), Paladin(2)
+   - Treble > 0.6: Rogue(2), Ranger(2), Monk(2) - **Equalized from 3 to 2 to fix Rogue bias**
+   - Mid > 0.6: Wizard(2), Cleric(2), Druid(2)
+   - Amplitude > 0.5: Bard(2), Sorcerer(2), Warlock(2)
+   - Only includes classes that exist in the available class list (supports custom classes)
+
+3. Created `combineWeights()` private method:
+   - Combines audio-based weights with custom spawn rate weights
+   - Custom weights take priority over audio-based weights
+   - Classes without audio weight get default weight of 1 (only if custom weight exists)
+
+4. Enhanced JSDoc documentation:
+   - Added examples for custom class registration
+   - Added examples for custom spawn weights
+   - Documented extensibility system integration
+   - Documented audio-to-class weight mapping
+
+**Verification:**
+- ✅ TypeScript compilation passes (`tsc --noEmit`)
+- ✅ ESLint passes for modified file
+- ✅ ClassSuggester now supports custom classes via ExtensionManager
+- ✅ ClassSuggester now supports custom spawn rates via ExtensionManager
+- ✅ Rogue bias fixed by equalizing treble-based class weights (Rogue: 3→2)
+- ✅ Default behavior preserved (audio-based selection when no custom weights)
+- ✅ Deterministic selection still works (same seed = same class)
+
+**Usage Example:**
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+// Register custom classes with spawn rates
+const manager = ExtensionManager.getInstance();
+manager.register('classes', ['Necromancer', 'Battlemage'], {
+    mode: 'relative',
+    weights: { 'Necromancer': 0.3, 'Battlemage': 0.5 }
+});
+
+// Or make certain classes more common
+manager.setWeights('classes', { 'Barbarian': 2, 'Wizard': 0.5 });
+
+// Character generation will use extended class list
+// Audio-based weights are combined with custom spawn rate weights
+```
 
 ---
 
