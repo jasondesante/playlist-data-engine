@@ -2212,7 +2212,7 @@ manager.setWeights('classes', { 'Barbarian': 2, 'Wizard': 0.5 });
 ### 6.1 Unit Tests
 
 **Tasks:**
-- [ ] Test ExtensionManager:
+- [x] Test ExtensionManager:
   - Register custom items
   - Get merged data
   - Reset to defaults
