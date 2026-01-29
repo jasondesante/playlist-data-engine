@@ -1983,8 +1983,8 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 
 ### Phase 6: Default Equipment Updates
 - [x] Update Equipment interface in constants.ts
-- [ ] Populate EQUIPMENT_DATABASE with D&D 5e stats
-- [ ] Create example magic items
+- [x] Populate EQUIPMENT_DATABASE with D&D 5e stats
+- [x] Create example magic items
 
 ### Phase 7: Equipment Modification System
 - [ ] Create EquipmentModifier class
