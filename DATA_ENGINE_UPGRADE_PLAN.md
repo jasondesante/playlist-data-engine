@@ -4803,9 +4803,63 @@ manager.register('skills.STR', [{
 
 - [x] Test CharacterGenerator with custom features/skills
 - [x] Test LevelUpProcessor with custom features
-- [ ] Test SkillAssigner with custom skills
+- [x] Test SkillAssigner with custom skills
 
 **Deliverable:** Comprehensive test suite
+
+#### Implementation Summary - Phase 15.1: SkillAssigner Custom Skills Unit Tests ✅
+
+**Files Modified:**
+- `/workspace/tests/unit/skills.test.ts` - Added comprehensive custom skills tests (16 new tests)
+
+**Test Coverage:**
+
+1. **Registry Integration Tests** (3 tests)
+   - Include custom skills registered in SkillRegistry in returned skills object
+   - Include all default skills plus custom skills
+   - Handle multiple custom skills with different abilities (STR, DEX, INT, WIS, CHA)
+
+2. **Invalid Skill Filtering Tests** (3 tests)
+   - Filter out invalid skill IDs from available_skills
+   - Warn console when encountering invalid skill ID
+   - Handle empty available_skills after filtering
+
+3. **Custom Skills with Proficiency Tests** (2 tests)
+   - Initialize custom skills to "none" proficiency by default
+   - Maintain deterministic selection with custom skills in registry
+
+4. **Custom Skills with Expertise Classes Tests** (2 tests)
+   - Include custom skills for Rogue without assigning them as proficient
+   - Include custom skills for Bard without assigning them as proficient
+
+5. **Custom Skills Registry State Tests** (2 tests)
+   - Handle registry reset between tests
+   - Handle multiple custom skills with same ability
+
+6. **Custom Skills Edge Cases Tests** (4 tests)
+   - Handle custom skill with underscore in ID
+   - Handle custom skill with numeric suffix in ID
+   - Handle custom skill with all six abilities
+   - Maintain skill count correctly with custom skills present
+
+**Total New Tests: 16**
+
+**Verification:**
+- ✅ All 30 tests pass (14 original + 16 new)
+- ✅ Build passes (`npm run build`)
+- ✅ No lint errors introduced
+- ✅ Test file follows existing test patterns
+- ✅ Comprehensive coverage of SkillAssigner with custom skills
+
+**Key Findings:**
+- SkillAssigner correctly integrates with SkillRegistry
+- Custom skills registered in SkillRegistry are included in the returned skills object
+- Custom skills default to 'none' proficiency (not in class available_skills)
+- Invalid skill IDs are filtered out with console warnings
+- Deterministic selection is maintained with custom skills present
+- Proficiency and expertise counts remain correct with custom skills
+
+---
 
 #### Implementation Summary - Phase 15.1: LevelUpProcessor Unit Tests ✅
 
@@ -4813,6 +4867,15 @@ manager.register('skills.STR', [{
 - `/workspace/tests/unit/levelUpProcessor.test.ts` - Comprehensive test suite for LevelUpProcessor with custom features (28 tests)
 
 **Test Coverage:**
+
+**Summary of Phase 15.1 Tests:**
+- LevelUpProcessor tests: 28 tests ✅
+- FeatureRegistry tests: 61 tests ✅
+- SkillRegistry tests: 63 tests ✅
+- CharacterGenerator integration tests: 20 tests ✅
+- SkillAssigner custom skills tests: 16 tests ✅
+
+**Total Phase 15.1 Tests: 188 tests**
 
 1. **Level-Up with Default Features Tests** (2 tests)
    - Include default class features from FeatureRegistry on level-up
