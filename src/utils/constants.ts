@@ -185,6 +185,98 @@ export const CLASS_DATA: Record<Class, {
     },
 };
 
+/**
+ * Audio preference data for class affinity calculation
+ *
+ * Each class has preferred audio traits that determine affinity:
+ * - primary: The most important audio characteristic
+ * - secondary: Optional secondary characteristic
+ * - tertiary: Optional tertiary characteristic
+ * - weights: Multipliers for each frequency band (0-1 range)
+ *
+ * Used by ClassSuggester for affinity-based class selection.
+ * Part of Phase 9: ClassSuggester Rewrite with baseline system.
+ */
+export const CLASS_AUDIO_PREFERENCES: Record<Class, {
+    primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+    secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+    tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+    bass?: number;
+    treble?: number;
+    mid?: number;
+    amplitude?: number;
+}> = {
+    'Barbarian': {
+        primary: 'bass',
+        secondary: 'amplitude',
+        bass: 1.0,
+        amplitude: 0.7
+    },
+    'Fighter': {
+        primary: 'bass',
+        secondary: 'amplitude',
+        bass: 0.9,
+        amplitude: 0.8
+    },
+    'Paladin': {
+        primary: 'bass',
+        secondary: 'mid',
+        bass: 0.8,
+        mid: 0.5
+    },
+    'Rogue': {
+        primary: 'treble',
+        treble: 1.0
+    },
+    'Ranger': {
+        primary: 'treble',
+        secondary: 'bass',
+        treble: 0.8,
+        bass: 0.5
+    },
+    'Monk': {
+        primary: 'treble',
+        secondary: 'mid',
+        treble: 0.7,
+        mid: 0.6
+    },
+    'Wizard': {
+        primary: 'mid',
+        mid: 1.0
+    },
+    'Cleric': {
+        primary: 'mid',
+        secondary: 'amplitude',
+        mid: 0.8,
+        amplitude: 0.6
+    },
+    'Druid': {
+        primary: 'mid',
+        secondary: 'bass',
+        mid: 0.7,
+        bass: 0.6
+    },
+    'Bard': {
+        primary: 'amplitude',
+        secondary: 'mid',
+        tertiary: 'treble',
+        amplitude: 0.8,
+        mid: 0.6,
+        treble: 0.3
+    },
+    'Sorcerer': {
+        primary: 'amplitude',
+        secondary: 'chaos',
+        amplitude: 0.9
+    },
+    'Warlock': {
+        primary: 'amplitude',
+        secondary: 'treble',
+        amplitude: 0.7,
+        treble: 0.5
+    },
+};
+
 // XP thresholds for levels 1-20
 export const XP_THRESHOLDS: Record<number, number> = {
     1: 0,
