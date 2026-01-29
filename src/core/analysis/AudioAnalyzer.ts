@@ -14,6 +14,30 @@ export interface AudioAnalyzerOptions {
 
     /** FFT size (must be power of 2) */
     fftSize?: number;
+
+    /**
+     * Treble attenuation multiplier (0.0-1.0)
+     * Reduces treble dominance to help balance class selection.
+     * Default: 0.7 (reduces treble by 30%)
+     * @default 0.7
+     */
+    trebleAttenuation?: number;
+
+    /**
+     * Bass boost multiplier (1.0+)
+     * Increases bass dominance to help balance class selection.
+     * Default: 1.2 (increases bass by 20%)
+     * @default 1.2
+     */
+    bassBoost?: number;
+
+    /**
+     * Mid boost multiplier (1.0+)
+     * Increases mid dominance to help balance class selection.
+     * Default: 1.1 (increases mid by 10%)
+     * @default 1.1
+     */
+    midBoost?: number;
 }
 
 /**
@@ -33,11 +57,16 @@ export class AudioAnalyzer {
      * @param {boolean} [options.includeAdvancedMetrics=false] - Include spectral analysis metrics
      * @param {number} [options.sampleRate=44100] - Sample rate in Hz
      * @param {number} [options.fftSize=2048] - FFT size for frequency analysis (must be power of 2)
+     * @param {number} [options.trebleAttenuation=0.7] - Treble attenuation multiplier (0.0-1.0)
+     * @param {number} [options.bassBoost=1.2] - Bass boost multiplier (1.0+)
+     * @param {number} [options.midBoost=1.1] - Mid boost multiplier (1.0+)
      *
      * @example
      * const analyzer = new AudioAnalyzer({
      *   includeAdvancedMetrics: true,
-     *   sampleRate: 48000
+     *   sampleRate: 48000,
+     *   trebleAttenuation: 0.6,
+     *   bassBoost: 1.3
      * });
      */
     constructor(options: AudioAnalyzerOptions = {}) {
@@ -45,6 +74,9 @@ export class AudioAnalyzer {
             includeAdvancedMetrics: false,
             sampleRate: 44100,
             fftSize: 2048,
+            trebleAttenuation: 0.7,
+            bassBoost: 1.2,
+            midBoost: 1.1,
             ...options,
         };
     }
@@ -107,9 +139,23 @@ export class AudioAnalyzer {
         // - Bass: 20-400Hz = 380 Hz range
         // - Mid: 400-4000Hz = 3600 Hz range
         // - Treble: 4000-14000Hz = 10000 Hz range
-        const bassDominance = SpectrumScanner.calculateDominance(averagedBands.bass, 380);
-        const midDominance = SpectrumScanner.calculateDominance(averagedBands.mid, 3600);
-        const trebleDominance = SpectrumScanner.calculateDominance(averagedBands.treble, 10000);
+        let bassDominance = SpectrumScanner.calculateDominance(averagedBands.bass, 380);
+        let midDominance = SpectrumScanner.calculateDominance(averagedBands.mid, 3600);
+        let trebleDominance = SpectrumScanner.calculateDominance(averagedBands.treble, 10000);
+
+        // Phase 8.3: Apply frequency attenuation/boost to help balance class selection
+        // Treble is attenuated (reduced) while bass and mid are boosted to counteract
+        // the natural treble dominance in modern music production and analysis
+        bassDominance = bassDominance * this.options.bassBoost!;
+        midDominance = midDominance * this.options.midBoost!;
+        trebleDominance = trebleDominance * this.options.trebleAttenuation!;
+
+        // Normalize to 0-1 range if boosts push values over 1.0
+        // This ensures the audio profile remains in valid range
+        const maxValue = Math.max(bassDominance, midDominance, trebleDominance, 1);
+        bassDominance = bassDominance / maxValue;
+        midDominance = midDominance / maxValue;
+        trebleDominance = trebleDominance / maxValue;
 
         // Calculate average amplitude
         const averageAmplitude = this.calculateAverageAmplitude(audioBuffer);
