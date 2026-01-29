@@ -4379,7 +4379,7 @@ manager.register('classFeatures', [{
 
 **Note:** Per-category spawn rates are already supported via `setWeights()`. The weights are stored and can be retrieved via `getWeights()`, but the actual spawn rate application depends on the specific generator implementation.
 - [x] Integrate SkillRegistry with ExtensionManager
-- [ ] Support per-category spawn rates:
+- [x] Support per-category spawn rates:
   ```typescript
   // Example: Set spawn rates for Barbarian features
   manager.setWeights('classFeatures.Barbarian', {
