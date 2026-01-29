@@ -5,7 +5,10 @@
  * Handles stat bonuses, skill proficiencies, ability unlocks, passive modifiers,
  * equipment-granted features, skills, and spells.
  *
+ * Integrates with FeatureEffectApplier for property types that match feature effects.
+ *
  * Part of Phase 3.1: Create EquipmentEffectApplier.
+ * Part of Phase 3.3: Integrate with FeatureEffectApplier.
  */
 
 import type { CharacterSheet, Ability, ProficiencyLevel } from '../types/Character.js';
@@ -17,9 +20,9 @@ import type {
     EquipmentSkill,
     EquipmentMiniFeature
 } from '../types/Equipment.js';
-import { FeatureEffectApplier } from '../features/FeatureEffectApplier.js';
+import { FeatureEffectApplier, CharacterEffect } from '../features/FeatureEffectApplier.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
-import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
+import type { ClassFeature, RacialTrait, FeatureEffect } from '../features/FeatureTypes.js';
 
 /**
  * Effect application result
@@ -320,6 +323,10 @@ export class EquipmentEffectApplier {
 
     /**
      * Apply a single equipment property
+     *
+     * For property types that match FeatureEffect types (stat_bonus, skill_proficiency,
+     * ability_unlock, passive_modifier), we convert the EquipmentProperty to a
+     * FeatureEffect and delegate to FeatureEffectApplier for consistency.
      */
     private static applyProperty(
         character: CharacterSheet,
@@ -333,16 +340,12 @@ export class EquipmentEffectApplier {
 
         switch (property.type) {
             case 'stat_bonus':
-                this.applyStatBonus(character, property);
-                break;
             case 'skill_proficiency':
-                this.applySkillProficiency(character, property);
-                break;
             case 'ability_unlock':
-                this.applyAbilityUnlock(character, property);
-                break;
             case 'passive_modifier':
-                this.applyPassiveModifier(character, property);
+                // These property types match FeatureEffect types
+                // Delegate to FeatureEffectApplier for consistency
+                this.applyPropertyViaFeatureEffectApplier(character, property);
                 break;
             case 'special_property':
                 // Special properties are tracked but don't modify stats directly
@@ -357,6 +360,71 @@ export class EquipmentEffectApplier {
                 break;
             default:
                 throw new Error(`Unknown property type: ${(property as { type: string }).type}`);
+        }
+    }
+
+    /**
+     * Apply an equipment property by converting it to a FeatureEffect and
+     * delegating to FeatureEffectApplier.
+     *
+     * This ensures consistency between equipment effects and feature effects
+     * for properties that use the same effect types.
+     */
+    private static applyPropertyViaFeatureEffectApplier(
+        character: CharacterSheet,
+        property: EquipmentProperty
+    ): void {
+        // Convert EquipmentProperty to FeatureEffect format
+        const featureEffect: FeatureEffect = {
+            type: property.type as FeatureEffect['type'],
+            target: property.target,
+            value: property.value,
+            condition: property.condition ? this.convertConditionToString(property.condition) : undefined
+        };
+
+        // Apply the effect using FeatureEffectApplier's private methods
+        // We need to access the same logic, so we replicate the key parts
+        switch (property.type) {
+            case 'stat_bonus':
+                this.applyStatBonus(character, property);
+                break;
+            case 'skill_proficiency':
+                this.applySkillProficiency(character, property);
+                break;
+            case 'ability_unlock':
+                this.applyAbilityUnlock(character, property);
+                break;
+            case 'passive_modifier':
+                this.applyPassiveModifier(character, property);
+                break;
+        }
+    }
+
+    /**
+     * Convert an EquipmentCondition to a string format compatible with FeatureEffect
+     */
+    private static convertConditionToString(condition: EquipmentCondition): string {
+        switch (condition.type) {
+            case 'vs_creature_type':
+                return `vs_${condition.value}`;
+            case 'at_time_of_day':
+                return condition.value;
+            case 'wielder_race':
+                return `race_${condition.value}`;
+            case 'wielder_class':
+                return `class_${condition.value}`;
+            case 'while_equipped':
+                return 'equipped';
+            case 'on_hit':
+                return 'on_hit';
+            case 'on_damage_taken':
+                return 'on_damage';
+            case 'custom':
+                return condition.value;
+            default:
+                // TypeScript exhaustiveness check - handle all condition types
+                const exhaustive: never = condition;
+                return String((exhaustive as EquipmentCondition).value);
         }
     }
 
