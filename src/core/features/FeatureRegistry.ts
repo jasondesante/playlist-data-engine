@@ -402,6 +402,86 @@ export class FeatureRegistry {
     }
 
     /**
+     * Get features granted by equipment
+     *
+     * Equipment features are features that can be granted by equipping items.
+     * Features with spawnWeight: 0 are still valid for equipment use.
+     *
+     * Note: This method returns all features that can be granted by equipment.
+     * To get features for a specific equipment item, use ExtensionManager
+     * to retrieve the equipment definition and check its grantsFeatures property.
+     *
+     * @param equipmentName - Name of the equipment piece (reserved for future use)
+     * @returns Array of features that can be granted by equipment
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    static getEquipmentFeatures(equipmentName: string): ClassFeature[] {
+        const registry = FeatureRegistry.getInstance();
+
+        // Get all features that could be granted by equipment
+        // Equipment can grant features that are registered in the system
+        const equipmentFeatures: ClassFeature[] = [];
+
+        // Check all registered features for equipment-grantable ones
+        for (const feature of registry.featureLookup.values()) {
+            // Features with tags including 'equipment' or that are commonly granted by items
+            if (feature.tags?.includes('equipment') ||
+                feature.tags?.includes('item') ||
+                feature.source === 'custom') {
+                equipmentFeatures.push(feature);
+            }
+        }
+
+        return equipmentFeatures;
+    }
+
+    /**
+     * Check if a feature can be granted by equipment
+     *
+     * Features with spawnWeight: 0 are still valid for equipment.
+     * This method checks if a feature ID exists in the registry and can be
+     * referenced by equipment definitions.
+     *
+     * @param featureId - Feature ID to check
+     * @returns True if the feature exists and can be granted by equipment
+     */
+    static isValidEquipmentFeature(featureId: string): boolean {
+        const registry = FeatureRegistry.getInstance();
+        const feature = registry.featureLookup.get(featureId);
+
+        // Feature exists in registry
+        if (!feature) {
+            return false;
+        }
+
+        // All registered features can potentially be granted by equipment
+        // The spawnWeight: 0 only affects random generation, not equipment references
+        return true;
+    }
+
+    /**
+     * Register an equipment-granted feature
+     *
+     * These features have special handling as they are only active when
+     * the associated equipment is equipped. They are marked with the
+     * equipment source and can be referenced by equipment definitions.
+     *
+     * @param feature - Class feature to register as equipment-granted
+     * @throws Error if feature ID already exists or validation fails
+     */
+    static registerEquipmentFeature(feature: ClassFeature): void {
+        const registry = FeatureRegistry.getInstance();
+
+        // Mark the feature as equipment-grantable
+        const equipmentFeature: ClassFeature = {
+            ...feature,
+            tags: [...(feature.tags || []), 'equipment']
+        };
+
+        registry.registerClassFeature(equipmentFeature);
+    }
+
+    /**
      * Export all registered features as JSON
      *
      * Useful for debugging or serialization.
