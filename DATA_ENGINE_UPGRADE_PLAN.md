@@ -2551,7 +2551,7 @@ This causes treble dominance in almost all modern music.
 **Problem:** Current threshold of 0.5 is too high (only very loud, compressed music triggers charisma classes).
 
 **Tasks:**
-- [ ] Update ClassSuggester amplitude threshold from 0.5 to 0.15:
+- [x] Update ClassSuggester amplitude threshold from 0.5 to 0.15:
   ```typescript
   // More realistic - most music is 0.05-0.25
   if (average_amplitude > 0.15) {
@@ -2559,9 +2559,9 @@ This causes treble dominance in almost all modern music.
   }
   ```
 
-- [ ] Document rationale in code comments
+- [x] Document rationale in code comments
 
-**Deliverable:** Realistic amplitude threshold
+**Deliverable:** ~~Realistic amplitude threshold~~ **COMPLETE**
 
 ---
 

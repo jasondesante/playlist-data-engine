@@ -95,7 +95,11 @@ export class ClassSuggester {
      * - Bass > 0.6: Barbarian(3), Fighter(2), Paladin(2)
      * - Treble > 0.6: Rogue(3), Ranger(2), Monk(2)
      * - Mid > 0.6: Wizard(2), Cleric(2), Druid(2)
-     * - Amplitude > 0.5: Bard(2), Sorcerer(2), Warlock(2)
+     * - Amplitude > 0.15: Bard(2), Sorcerer(2), Warlock(2)
+     *
+     * Note: Amplitude threshold lowered from 0.5 to 0.15 because most music
+     * has average amplitude between 0.05-0.25. The old threshold of 0.5 was
+     * too high and made charisma classes (Bard/Sorcerer/Warlock) too rare.
      *
      * If no thresholds are met, returns empty weights (all classes equally likely).
      *
@@ -130,7 +134,10 @@ export class ClassSuggester {
         }
 
         // High amplitude = charisma classes
-        if (average_amplitude > 0.5) {
+        // Threshold lowered from 0.5 to 0.15 to fix rarity of charisma classes
+        // Most music has average amplitude between 0.05-0.25 (not 0.5)
+        // This makes Bards, Sorcerers, and Warlocks spawn more frequently
+        if (average_amplitude > 0.15) {
             weights.push(['Bard', 2], ['Sorcerer', 2], ['Warlock', 2]);
         }
 
