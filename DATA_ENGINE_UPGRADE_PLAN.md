@@ -4604,7 +4604,7 @@ manager.register('skills.STR', [{
 **File:** `/Users/jasondesante/playlist-data-engine/docs/engine/USAGE_IN_OTHER_PROJECTS.md`
 
 **Tasks:**
-- [ ] Add custom features example:
+- [x] Add custom features example:
   ```typescript
   import { FeatureRegistry, ClassFeature } from 'playlist-data-engine';
 
@@ -4628,7 +4628,7 @@ manager.register('skills.STR', [{
   registry.registerClassFeature(customFeature);
   ```
 
-- [ ] Add custom skills example:
+- [x] Add custom skills example:
   ```typescript
   import { SkillRegistry, CustomSkill } from 'playlist-data-engine';
 
@@ -4647,9 +4647,55 @@ manager.register('skills.STR', [{
   skillRegistry.registerSkill(customSkill);
   ```
 
-- [ ] Add spawn rate control examples
+- [x] Add spawn rate control examples
 
-**Deliverable:** Complete usage examples
+**Deliverable:** Complete usage examples ✅ **COMPLETE**
+
+---
+
+#### Implementation Summary - Phase 14.2: USAGE_IN_OTHER_PROJECTS.md Documentation ✅
+
+**Files Modified:**
+- `/workspace/USAGE_IN_OTHER_PROJECTS.md` - Added comprehensive extensibility examples
+
+**Changes Made:**
+
+1. **Updated Table of Contents** to include:
+   - Custom Features and Skills section
+   - Spawn Rate Control section
+
+2. **Added "Custom Features and Skills" section** with:
+   - Custom class features example (Barbarian's Dragon Fury)
+   - Custom racial traits example (Elf weapon training)
+   - Custom skills example (cold environment survival)
+   - Feature effects documentation (all 6 effect types)
+   - Querying features and skills examples
+   - Registry statistics examples
+
+3. **Added "Spawn Rate Control" section** with:
+   - Class features spawn rate control
+   - Racial traits spawn rate control
+   - Skills spawn rate control
+   - Per-ability skill spawn rates
+   - Appearance spawn rate control
+   - Equipment spawn rate control
+   - Weight modes (relative, absolute, default)
+   - Advanced weight configuration
+   - Complete expansion pack example
+
+4. **Updated "Available Exports" section** to include:
+   - Extensibility exports (ExtensionManager, FeatureRegistry, SkillRegistry, etc.)
+   - New type exports (ClassFeature, RacialTrait, CustomSkill, FeatureEffect, etc.)
+
+5. **Updated "Core Functionality" section** to include:
+   - New extensibility module exports
+
+**Verification:**
+- ✅ Build passes (`npm run build`)
+- ✅ All examples are syntactically correct TypeScript
+- ✅ Comprehensive coverage of Phase 11-13 features
+- ✅ Usage examples for all extensibility systems
+- ✅ Spawn rate control examples for all categories
 
 ---
 

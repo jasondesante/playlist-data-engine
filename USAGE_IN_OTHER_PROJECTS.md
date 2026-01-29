@@ -86,11 +86,15 @@ Then reference it in your project code directly.
 - [Environmental Sensors](#environmental-sensors) - Get environmental context and XP modifiers
 - [Gaming Platform Integration](#gaming-platform-integration) - Integrate Steam and Discord for gaming bonuses
 - [Combat System](#combat-system) - Run turn-based D&D 5e combat
+- [Custom Features and Skills](#custom-features-and-skills) - Create custom class features, racial traits, and skills
+- [Spawn Rate Control](#spawn-rate-control) - Control how often custom content appears
 
 ### Common Patterns
 - [Deterministic Character Generation](#deterministic-character-generation) - How the same seed always produces the same character
 - [Understanding XP Bonus Calculation](#understanding-xp-bonus-calculation) - How environmental and gaming modifiers combine
 - [Manual Level-Up Processing](#manual-level-up-processing) - Handle level-ups programmatically
+- [Custom Features and Skills](#custom-features-and-skills) - Create custom class features, racial traits, and skills
+- [Spawn Rate Control](#spawn-rate-control) - Control how often custom content appears
 
 ---
 
@@ -1107,6 +1111,554 @@ if (result.leveledUp) {
 
 ---
 
+## Extensibility System
+
+### Custom Features and Skills
+
+**NEW:** The Playlist Data Engine now supports full customization of class features, racial traits, and skills through the extensibility system!
+
+#### Custom Class Features
+
+Create your own class features with prerequisites, effects, and spawn rate control:
+
+```typescript
+import { FeatureRegistry, ExtensionManager, type ClassFeature } from 'playlist-data-engine';
+
+// Method 1: Direct registration with FeatureRegistry
+const registry = FeatureRegistry.getInstance();
+
+// Add a custom Barbarian feature
+const dragonFury: ClassFeature = {
+    id: 'dragon_fury',
+    name: 'Dragon Fury',
+    description: 'Channel your draconic heritage to deal bonus fire damage while raging.',
+    type: 'active',
+    level: 3,
+    class: 'Barbarian',
+    prerequisites: {
+        level: 3,
+        // Optional: Require specific features first
+        features: ['rage']
+    },
+    effects: [
+        {
+            type: 'resource_grant',
+            target: 'dragon_fury_damage',
+            value: 2,
+            description: '+2 fire damage while raging'
+        },
+        {
+            type: 'passive_modifier',
+            target: 'fire_resistance',
+            value: true,
+            condition: 'while_raging',
+            description: 'Fire resistance while raging'
+        }
+    ],
+    source: 'custom'
+};
+
+registry.registerClassFeature(dragonFury);
+
+// Method 2: Register via ExtensionManager (recommended)
+const manager = ExtensionManager.getInstance();
+
+manager.register('classFeatures', [dragonFury], {
+    mode: 'append',  // Add to default features
+    weights: {
+        'dragon_fury': 0.5  // Half as likely to spawn in selection contexts
+    }
+});
+
+// Class-specific feature registration
+manager.register('classFeatures.Barbarian', [dragonFury]);
+```
+
+#### Custom Racial Traits
+
+Create custom racial traits with effects and conditions:
+
+```typescript
+import { FeatureRegistry, type RacialTrait } from 'playlist-data-engine';
+
+const registry = FeatureRegistry.getInstance();
+
+// Add a custom Elf trait
+const elvenCombatTraining: RacialTrait = {
+    id: 'elf_weapon_training',
+    name: 'Elven Weapon Training',
+    description: 'You are proficient with the longsword, shortsword, shortbow, and longbow.',
+    race: 'Elf',
+    prerequisites: {
+        // Optional: Require specific subrace
+        subrace: 'High Elf'
+    },
+    effects: [
+        {
+            type: 'skill_proficiency',
+            target: 'longsword',
+            value: 'proficient',
+            description: 'Proficient with longsword'
+        },
+        {
+            type: 'skill_proficiency',
+            target: 'shortsword',
+            value: 'proficient',
+            description: 'Proficient with shortsword'
+        },
+        {
+            type: 'skill_proficiency',
+            target: 'shortbow',
+            value: 'proficient',
+            description: 'Proficient with shortbow'
+        },
+        {
+            type: 'skill_proficiency',
+            target: 'longbow',
+            value: 'proficient',
+            description: 'Proficient with longbow'
+        }
+    ],
+    source: 'custom'
+};
+
+registry.registerRacialTrait(elvenCombatTraining);
+```
+
+#### Custom Skills
+
+Create custom skills for your game:
+
+```typescript
+import { SkillRegistry, type CustomSkill } from 'playlist-data-engine';
+
+const skillRegistry = SkillRegistry.getInstance();
+
+// Add a custom survival skill for cold environments
+const coldSurvival: CustomSkill = {
+    id: 'survival_cold',
+    name: 'Survival (Cold Environments)',
+    description: 'Expertise in surviving and navigating in cold weather conditions.',
+    ability: 'WIS',
+    armorPenalty: true,  // Affected by armor disadvantage
+    categories: ['exploration', 'environmental'],
+    source: 'custom',
+    tags: ['wilderness', 'weather', 'arctic']
+};
+
+skillRegistry.registerSkill(coldSurvival);
+
+// Register via ExtensionManager with spawn rate control
+const manager = ExtensionManager.getInstance();
+
+manager.register('skills', [coldSurvival], {
+    mode: 'append',
+    weights: {
+        'survival_cold': 0.3  // Less likely to spawn than default skills
+    }
+});
+
+// Register ability-specific skills
+manager.register('skills.WIS', [coldSurvival]);
+
+// Verify the skill was registered
+if (skillRegistry.isValidSkill('survival_cold')) {
+    console.log('Custom skill registered successfully!');
+}
+
+// Get skill metadata
+const skill = skillRegistry.getSkill('survival_cold');
+console.log(`${skill.name} (uses ${skill.ability})`);
+console.log(`Categories: ${skill.categories.join(', ')}`);
+```
+
+#### Feature Effects
+
+Features can apply various effects to characters:
+
+```typescript
+import { type ClassFeature, type FeatureEffect } from 'playlist-data-engine';
+
+const customFeature: ClassFeature = {
+    id: 'example_feature',
+    name: 'Example Feature',
+    description: 'Demonstrates all effect types',
+    type: 'passive',
+    level: 5,
+    class: 'Fighter',
+    effects: [
+        // Stat Bonus: Increase ability score
+        {
+            type: 'stat_bonus',
+            target: 'STR',
+            value: 2,
+            description: '+2 Strength score'
+        },
+
+        // Skill Proficiency: Grant skill proficiency
+        {
+            type: 'skill_proficiency',
+            target: 'athletics',
+            value: 'expertise',
+            description: 'Expertise in Athletics'
+        },
+
+        // Ability Unlock: Grant special ability
+        {
+            type: 'ability_unlock',
+            target: 'second_wind',
+            value: true,
+            description: 'Gain Second Wind ability'
+        },
+
+        // Passive Modifier: Add constant bonus
+        {
+            type: 'passive_modifier',
+            target: 'speed',
+            value: 10,
+            condition: 'unarmored',
+            description: '+10 speed when unarmored'
+        },
+
+        // Resource Grant: Grant resource pool
+        {
+            type: 'resource_grant',
+            target: 'ki_points',
+            value: 2,
+            description: 'Gain 2 Ki points per short rest'
+        },
+
+        // Spell Slot Bonus: Grant additional spell slots
+        {
+            type: 'spell_slot_bonus',
+            target: 'spell_slots_1',
+            value: 1,
+            description: '+1 level 1 spell slot'
+        }
+    ],
+    source: 'custom'
+};
+```
+
+#### Querying Features and Skills
+
+```typescript
+import { FeatureRegistry, SkillRegistry } from 'playlist-data-engine';
+
+const featureRegistry = FeatureRegistry.getInstance();
+const skillRegistry = SkillRegistry.getInstance();
+
+// Get all features for a class at a specific level
+const barbarianLevel3Features = featureRegistry.getClassFeatures('Barbarian', 3);
+console.log(`Barbarian level 3 features:`, barbarianLevel3Features.map(f => f.name));
+
+// Get all racial traits for a race
+const elfTraits = featureRegistry.getRacialTraits('Elf');
+console.log(`Elf traits:`, elfTraits.map(t => t.name));
+
+// Get skills by ability
+const wisdomSkills = skillRegistry.getSkillsByAbility('WIS');
+console.log(`WIS skills:`, wisdomSkills.map(s => s.id));
+
+// Get skills by category
+const explorationSkills = skillRegistry.getSkillsByCategory('exploration');
+console.log(`Exploration skills:`, explorationSkills.map(s => s.name));
+
+// Get registry statistics
+const featureStats = featureRegistry.getRegistryStats();
+console.log(`Features: ${featureStats.totalFeatures} (${featureStats.customFeatures} custom)`);
+
+const skillStats = skillRegistry.getRegistryStats();
+console.log(`Skills: ${skillStats.totalSkills} (${skillStats.customSkills} custom)`);
+```
+
+### Spawn Rate Control
+
+Control how often custom content appears in generated characters using spawn rate weights:
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// ===== CLASS FEATURES =====
+// Make certain Barbarian features more or less common
+manager.setWeights('classFeatures.Barbarian', {
+    'rage': 1.0,              // Normal spawn rate (default)
+    'dragon_fury': 2.0,       // Twice as likely to appear
+    'reckless_attack': 0.5    // Half as likely to appear
+});
+
+// ===== RACIAL TRAITS =====
+// Control trait spawn rates for Elf
+manager.setWeights('racialTraits.Elf', {
+    'darkvision': 1.0,        // Always appears (default trait)
+    'elf_weapon_training': 0.3,  // 30% of characters get this
+    'fey_ancestry': 1.0       // Always appears (default trait)
+});
+
+// ===== SKILLS =====
+// Control which skills appear during character generation
+manager.setWeights('skills', {
+    'athletics': 2.0,         // Twice as likely to be selected
+    'survival_cold': 0.5,     // Half as likely
+    'custom_skill_1': 0.0     // Never spawn (disabled)
+});
+
+// Per-ability skill spawn rates
+manager.setWeights('skills.WIS', {
+    'perception': 1.5,        // More likely for WIS-based characters
+    'survival': 0.8,          // Less likely
+    'survival_cold': 0.2      // Rare WIS skill
+});
+
+// ===== APPEARANCE =====
+// Control appearance options
+manager.setWeights('appearance.bodyTypes', {
+    'athletic': 1.5,          // More common
+    'muscular': 1.0,          // Normal
+    'slender': 0.8,           // Less common
+    'stocky': 0.5             // Rare
+});
+
+// ===== EQUIPMENT =====
+// Control equipment spawn rates
+manager.setWeights('equipment', {
+    'Longsword': 1.5,         // More common
+    'Dragon Scale Armor': 0.1, // Rare (10% spawn rate)
+    'Potion of Healing': 2.0   // Very common
+});
+
+// Weight modes: relative vs absolute
+manager.register('classFeatures', [customFeature], {
+    mode: 'relative',  // Custom weights add to default distribution
+    weights: { 'customFeature': 1.0 }
+});
+
+manager.register('classFeatures', [customFeature], {
+    mode: 'absolute',  // Custom weights replace default distribution
+    weights: {
+        'rage': 5,
+        'customFeature': 3,
+        'otherFeature': 2
+    }
+});
+
+// Get current spawn weights
+const currentWeights = manager.getWeights('classFeatures.Barbarian');
+console.log('Current Barbarian feature weights:', currentWeights);
+```
+
+#### Spawn Rate Modes
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// ===== RELATIVE MODE (default) =====
+// Custom weights are added to the default pool
+manager.register('skills', [customSkill], {
+    mode: 'relative',
+    weights: {
+        'customSkill': 2.0  // Twice as likely relative to defaults
+    }
+});
+
+// Result: customSkill competes with default skills
+// If default skills have weight 1.0, customSkill at 2.0 is twice as likely
+
+// ===== ABSOLUTE MODE =====
+// Custom weights completely replace the default distribution
+manager.register('skills', [customSkill1, customSkill2], {
+    mode: 'absolute',
+    weights: {
+        'customSkill1': 7,  // 70% spawn rate
+        'customSkill2': 3   // 30% spawn rate
+    }
+});
+
+// Result: ONLY customSkill1 and customSkill2 can spawn
+// Default skills are completely excluded (weight 0)
+
+// ===== DEFAULT MODE =====
+// All items have equal probability (ignores custom weights)
+manager.register('skills', [customSkill], {
+    mode: 'default'
+});
+
+// Result: All skills (default + custom) have equal probability
+```
+
+#### Advanced Weight Configuration
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Hierarchical weight system
+// Category defaults with individual overrides
+
+// Set default for all skills
+manager.setWeights('skills', {
+    default: 1.0  // All skills have equal weight by default
+});
+
+// Override specific skills
+manager.setWeights('skills', {
+    'athletics': 2.0,      // Override: athletics is now 2x
+    'acrobatics': 0.5,     // Override: acrobatics is now 0.5x
+    // All other skills remain at 1.0 (the default)
+});
+
+// Per-class skill spawn rates
+manager.setWeights('skillLists.Barbarian', {
+    'athletics': 2.0,      // Barbarians favor athletics
+    'survival': 1.5,       // And survival
+    'arcana': 0.2          // But rarely get arcana
+});
+
+manager.setWeights('skillLists.Wizard', {
+    'arcana': 2.0,         // Wizards favor arcana
+    'history': 1.5,        // And history
+    'athletics': 0.2       // But rarely get athletics
+});
+
+// Zero weight = never spawn
+manager.setWeights('classFeatures.Barbarian', {
+    'useless_feature': 0.0  // This feature will never spawn
+});
+
+// Reset to defaults
+manager.reset('classFeatures.Barbarian');
+// Now all Barbarian features are back to equal probability
+
+// Reset all categories
+manager.resetAll();
+```
+
+#### Complete Custom Content Pack Example
+
+```typescript
+import { ExtensionManager, FeatureRegistry, SkillRegistry } from 'playlist-data-engine';
+
+// Create an expansion pack with custom features, skills, and spawn rates
+function registerArcticExpansionPack() {
+    const manager = ExtensionManager.getInstance();
+    const featureRegistry = FeatureRegistry.getInstance();
+    const skillRegistry = SkillRegistry.getInstance();
+
+    // ===== CUSTOM FEATURES =====
+    const frostRage = {
+        id: 'frost_rage',
+        name: 'Frost Rage',
+        description: 'Your rage radiates cold, dealing extra cold damage.',
+        type: 'active',
+        level: 3,
+        class: 'Barbarian',
+        effects: [
+            {
+                type: 'resource_grant',
+                target: 'cold_damage_bonus',
+                value: 3,
+                description: '+3 cold damage while raging'
+            }
+        ],
+        source: 'custom'
+    };
+
+    const snowWalker = {
+        id: 'snow_walker',
+        name: 'Snow Walker',
+        description: 'You move through snow and ice without penalty.',
+        type: 'passive',
+        level: 1,
+        class: 'Ranger',
+        race: 'Human',
+        effects: [
+            {
+                type: 'ability_unlock',
+                target: 'snow_movement',
+                value: true,
+                description: 'No movement penalty in snow/ice'
+            },
+            {
+                type: 'passive_modifier',
+                target: 'survival_cold_bonus',
+                value: 5,
+                description: '+5 Survival in cold environments'
+            }
+        ],
+        source: 'custom'
+    };
+
+    // ===== CUSTOM SKILLS =====
+    const coldSurvival = {
+        id: 'survival_cold',
+        name: 'Survival (Cold Environments)',
+        description: 'Expertise in cold weather survival.',
+        ability: 'WIS',
+        armorPenalty: true,
+        categories: ['exploration', 'environmental'],
+        source: 'custom'
+    };
+
+    const iceFishing = {
+        id: 'ice_fishing',
+        name: 'Ice Fishing',
+        description: 'Ability to catch fish in frozen waters.',
+        ability: 'WIS',
+        armorPenalty: false,
+        categories: ['exploration', 'survival'],
+        source: 'custom'
+    };
+
+    // ===== REGISTER EVERYTHING =====
+    // Features
+    featureRegistry.registerClassFeatures([frostRage, snowWalker]);
+    manager.register('classFeatures.Barbarian', [frostRage], {
+        weights: { 'frost_rage': 0.5 }  // Rare feature
+    });
+    manager.register('classFeatures.Ranger', [snowWalker], {
+        weights: { 'snow_walker': 0.7 }
+    });
+
+    // Skills
+    skillRegistry.registerSkills([coldSurvival, iceFishing]);
+    manager.register('skills', [coldSurvival, iceFishing]);
+    manager.register('skills.WIS', [coldSurvival, iceFishing], {
+        weights: {
+            'survival_cold': 0.5,  // Less common than default skills
+            'ice_fishing': 0.3      // Quite rare
+        }
+    });
+
+    // ===== SPAWN RATE CONFIGURATION =====
+    // Make cold-themed content more likely for certain classes
+    manager.setWeights('skillLists.Ranger', {
+        'survival_cold': 2.0,  // Rangers love this skill
+        'ice_fishing': 1.5
+    });
+
+    manager.setWeights('skillLists.Barbarian', {
+        'survival_cold': 1.5,  // Barbarians also get this
+        'ice_fishing': 0.5
+    });
+
+    console.log('Arctic Expansion Pack registered!');
+}
+
+// Register the expansion pack
+registerArcticExpansionPack();
+
+// Generate characters with the new content
+const character = CharacterGenerator.generate(seed, audio, 'Arctic Hero');
+// Character may now have frost_rage, snow_walker, or survival_cold skill!
+```
+
+---
+
 ## Available Exports
 
 The main exports from the library are:
@@ -1118,6 +1670,16 @@ The main exports from the library are:
 - `SpectrumScanner` - Analyze frequency bands
 - `ColorExtractor` - Extract color palettes from images
 - `CharacterGenerator` - Generate D&D 5e characters deterministically
+
+### Extensibility (NEW)
+- `ExtensionManager` - Register and manage custom content for all categories
+- `FeatureRegistry` - Register and query custom class features and racial traits
+- `SkillRegistry` - Register and query custom skills
+- `FeatureValidator` - Validate feature data structures
+- `SkillValidator` - Validate skill data structures
+- `FeatureEffectApplier` - Apply feature effects to characters
+- `WeightedSelector` - Weighted random selection with multiple modes
+- `ensureAllDefaultsInitialized()` - Initialize all default data
 
 ### Generation
 - `RaceSelector` - Select character races
@@ -1174,6 +1736,14 @@ All TypeScript types are exported, including:
 - `StatIncreaseOptions` - Options for stat selection (forced, excluded, etc.)
 - `StatIncreaseStrategyType` - Built-in strategy names ('dnD5e', 'dnD5e_smart', etc.)
 - `StatIncreaseFunction` - Simple function type for custom formulas
+
+**Extensibility Types (NEW):**
+- `ClassFeature` - Custom class feature definition with prerequisites and effects
+- `RacialTrait` - Custom racial trait definition
+- `CustomSkill` - Custom skill definition
+- `FeatureEffect` - Effect types (stat_bonus, skill_proficiency, ability_unlock, passive_modifier, resource_grant, spell_slot_bonus)
+- `FeaturePrerequisite` - Prerequisite validation (level, abilities, class, race, feature chains)
+- `ExtensionCategory` - All extensible categories (classFeatures, racialTraits, skills, equipment, appearance, etc.)
 
 ---
 
