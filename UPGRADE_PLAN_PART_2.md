@@ -1992,9 +1992,9 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [x] Support templates and per-instance modifications
 
 ### Phase 8: Helper Functions
-- [ ] Create EquipmentSpawnHelper
-- [ ] Implement batch spawning methods
-- [ ] Implement treasure hoard generation
+- [x] Create EquipmentSpawnHelper
+- [x] Implement batch spawning methods
+- [x] Implement treasure hoard generation
 
 ### Phase 9: Integration with Existing Systems
 - [ ] Update CharacterGenerator
@@ -2005,7 +2005,7 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [ ] Write unit tests for EquipmentEffectApplier
 - [ ] Write unit tests for EquipmentValidator
 - [ ] Write unit tests for EquipmentModifier
-- [ ] Write unit tests for EquipmentSpawnHelper
+- [x] Write unit tests for EquipmentSpawnHelper
 - [ ] Update existing tests
 - [ ] Write integration tests
 
