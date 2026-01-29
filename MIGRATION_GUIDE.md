@@ -329,4 +329,204 @@ If you need to rollback to a previous version:
 
 **Primary Action:** Migrate ammunition format in stored character data (`'Arrows (20)'` → `'Arrow'` with quantity 20).
 
-**Note:** Future phases (11-15) will introduce additional breaking changes related to class features and skills. Those changes are **not yet implemented** and are not covered in this migration guide.
+---
+
+## Phase 11 Breaking Changes (Custom Class Features System)
+
+**Note:** Phase 11 has been implemented and introduces the following breaking changes.
+
+### 6. Feature ID Format Change
+
+**Impact:** High - Affects stored character data
+
+#### Before (Old Format)
+```typescript
+// Old character features (display strings)
+class_features: ['Barbarian Level 1', 'Barbarian Level 2', 'Barbarian Level 5']
+racial_traits: ['Darkvision', 'Keen Senses', 'Fey Ancestry']
+```
+
+#### After (New Format)
+```typescript
+// New character features (feature IDs from registry)
+class_features: ['barbarian_rage', 'barbarian_unarmored_defense', 'barbarian_extra_attack']
+racial_traits: ['elf_darkvision', 'elf_keen_senses', 'elf_fey_ancestry']
+```
+
+#### What Changed?
+- Features are now stored as **feature IDs** (e.g., `'barbarian_rage'`) instead of display strings (e.g., `'Barbarian Level 1'`)
+- A new **FeatureRegistry** manages all class features and racial traits
+- A new **FeatureEffect** system has been added to track mechanical effects from features
+- The `feature_effects` property has been added to `CharacterSheet` to store applied effects
+
+#### Migration Steps
+
+**If you have stored character data with old feature format:**
+
+```typescript
+// Step 1: Check for old feature format
+function hasOldFeatureFormat(character: CharacterSheet): boolean {
+    // Old format features contain phrases like "Level 1", "Level 2"
+    return character.class_features.some(f =>
+        f.includes('Level ') || f.includes(' level ')
+    );
+}
+
+// Step 2: Create feature ID mapping for migration
+const FEATURE_ID_MAPPING: Record<string, string> = {
+    // Barbarian
+    'Barbarian Level 1': 'barbarian_rage,barbarian_unarmored_defense',
+    'Barbarian Level 2': 'barbarian_reckless_attack,barbarian_danger_sense',
+    'Barbarian Level 5': 'barbarian_extra_attack,barbarian_fast_movement',
+    // ... map all old format features to new IDs
+    // See /workspace/src/core/features/DefaultFeatures.ts for complete list
+};
+
+// Step 3: Migrate to new format
+function migrateFeatures(character: CharacterSheet): CharacterSheet {
+    const migrated = { ...character };
+    const newFeatures: string[] = [];
+
+    for (const oldFeature of migrated.class_features) {
+        const newIds = FEATURE_ID_MAPPING[oldFeature];
+        if (newIds) {
+            newFeatures.push(...newIds.split(','));
+        }
+    }
+
+    migrated.class_features = newFeatures;
+    return migrated;
+}
+
+// Step 4: Initialize feature_effects if missing
+migrated.feature_effects = migrated.feature_effects || [];
+```
+
+**IMPORTANT:** The most reliable migration strategy is to **re-generate characters** from their original seeds after the upgrade. The feature format change is significant and manual migration may miss features or effects.
+
+---
+
+### 7. New FeatureEffect System
+
+**Impact:** Low - New optional property
+
+#### New Property: feature_effects
+
+```typescript
+export interface CharacterSheet {
+    // ... existing fields
+
+    /**
+     * Feature effects applied to this character
+     * Stores effects from features and traits that modify character stats
+     *
+     * Effects include:
+     * - stat_bonus: Add to ability scores (e.g., +1 STR)
+     * - skill_proficiency: Grant proficiency or expertise in a skill
+     * - ability_unlock: Unlock new abilities (e.g., darkvision, flight)
+     * - passive_modifier: Add constant bonuses (e.g., +10 speed)
+     * - resource_grant: Grant resource pools (e.g., rage counts, ki points)
+     * - spell_slot_bonus: Grant additional spell slots
+     */
+    feature_effects?: FeatureEffect[];
+}
+```
+
+**What Changed:**
+- Characters can now track specific effects from features and traits
+- Effects are applied during character generation and level-ups via `FeatureEffectApplier`
+- Old characters without `feature_effects` will have it initialized automatically
+
+**No migration needed** - The property is optional and defaults to an empty array.
+
+---
+
+### 8. Feature Registry System
+
+**Impact:** None - New opt-in feature
+
+A new `FeatureRegistry` singleton manages class features and racial traits:
+
+```typescript
+import { FeatureRegistry, ClassFeature } from 'playlist-data-engine';
+
+// Get the singleton instance
+const registry = FeatureRegistry.getInstance();
+
+// Register custom class features
+const customFeature: ClassFeature = {
+    id: 'dragon_fury',
+    name: 'Dragon Fury',
+    description: 'Channel your draconic heritage to deal extra damage...',
+    type: 'active',
+    level: 3,
+    class: 'Barbarian',
+    prerequisites: { level: 3 },
+    effects: [
+        { type: 'stat_bonus', target: 'melee_damage', value: 3 }
+    ],
+    source: 'custom'
+};
+
+registry.registerClassFeature(customFeature);
+
+// Register custom racial traits
+const customTrait = {
+    id: 'dragonkin_fire_resistance',
+    name: 'Fire Resistance',
+    description: 'You have resistance to fire damage.',
+    race: 'Dragonkin',
+    effects: [
+        { type: 'passive_modifier', target: 'fire_resistance', value: true }
+    ],
+    source: 'custom'
+};
+
+registry.registerRacialTrait(customTrait);
+```
+
+**No migration needed** - This is an opt-in feature for custom content.
+
+---
+
+## Summary Table Updated (Phases 1-11)
+
+| Change | Breaking | Migration Required | Action |
+|--------|----------|-------------------|--------|
+| Ammunition format | Yes | Yes | Update stored character data |
+| Feature ID format | Yes | Yes* | Re-generate characters or use mapping |
+| FeatureEffect system | No | No | None (optional property) |
+| Audio analysis | No | No | None (behavioral change) |
+| Class selection | No | No | None (behavioral change) |
+| Extensibility system | No | No | None (opt-in feature) |
+| FeatureRegistry | No | No | None (opt-in feature) |
+| AudioAnalyzer options | No | No | None (backward compatible) |
+
+*\* Feature ID format migration is complex. The recommended approach is to re-generate characters from their original seeds rather than attempting manual migration.*
+
+---
+
+## Recommended Migration Strategy for Phase 11
+
+Given the significant changes in Phase 11, the recommended approach is:
+
+1. **Backup existing character data**
+2. **Update the package** to the latest version
+3. **Re-generate characters** from their original saved seeds:
+   ```typescript
+   // Load old character to get seed
+   const oldCharacter = loadCharacter('character_id');
+   const seed = oldCharacter.seed;
+
+   // Re-generate with new system
+   const newCharacter = CharacterGenerator.generate(
+       seed,
+       oldCharacter.audioProfile, // You may need to save this
+       oldCharacter.name
+   );
+   ```
+4. **Verify** that class_features now contain feature IDs (e.g., `'barbarian_rage'`)
+
+---
+
+**Note:** Future phases (12-15) will introduce additional breaking changes related to custom skills and unified spawn rates. Those changes are **not yet implemented** and are not covered in this migration guide.
