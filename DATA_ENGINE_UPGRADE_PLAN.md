@@ -2236,10 +2236,27 @@ manager.setWeights('classes', { 'Barbarian': 2, 'Wizard': 0.5 });
 - ✅ ESLint passes for new test file (no errors)
 - ✅ Comprehensive test coverage for validation requirements
 
-- [ ] Test WeightedSelector:
+- [x] Test WeightedSelector:
   - Relative mode: custom weights added to defaults
   - Absolute mode: custom weights replace defaults
   - Probability calculations correct
+
+**Implementation:** Created `tests/unit/weightedSelector.test.ts` with comprehensive unit tests covering:
+- Relative mode: custom weights added to defaults, zero/negative weights, default weight for unspecified items
+- Absolute mode: specified weights used, unspecified items default to 1, custom weights replace defaults
+- Default mode: equal weight for all items, ignores custom weights
+- Probability calculations: sums to 1, correct for simple/complex weights, all-zero weights, single/two items
+- Deterministic selection: same seed produces same results, different seeds produce different results
+- Multiple item selection: unique items, count handling, empty arrays, weight distribution, deterministic results
+- Object items with name property: extracts name for weight lookup, calculates probabilities
+- Edge cases: empty arrays, special characters, unicode, very large/small weights, string representation fallback
+- Default mode parameter: defaults to relative mode when not specified
+- Statistical distribution tests: 1000 trials verify distribution matches weights
+
+**Verification:**
+- ✅ TypeScript compilation passes for new test file
+- ✅ ESLint passes for new test file (no errors)
+- ✅ Comprehensive test coverage for WeightedSelector requirements
 
 - [ ] Test each category with custom data:
   - Spells: custom spells appear in generation
