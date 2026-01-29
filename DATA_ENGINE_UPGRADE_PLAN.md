@@ -3377,7 +3377,7 @@ TypeScript compilation and ESLint verification confirm code correctness.
   const traits = registry.getRacialTraits(race);
   ```
 
-- [ ] Apply feature effects to character:
+- [x] Apply feature effects to character:
   - Stat bonuses
   - Skill proficiencies
   - Passive modifiers
@@ -3397,6 +3397,84 @@ TypeScript compilation and ESLint verification confirm code correctness.
 **Deliverable:** Updated CharacterGenerator using FeatureRegistry
 
 **Status:** ✅ **IMPLEMENTED** - CharacterGenerator now uses FeatureRegistry to fetch features and traits by ID. Features are stored as feature IDs (e.g., 'bardic_inspiration', 'elf_darkvision') instead of display strings. Feature registry initialization added to `initializeDefaults.ts` with `ensureFeatureDefaultsInitialized()` function.
+
+---
+
+#### Implementation Summary - Phase 11.4: Feature Effects Application ✅
+
+**Files Created:**
+- `src/core/features/FeatureEffectApplier.ts` - Utility class for applying feature effects to characters
+
+**Files Modified:**
+- `src/core/generation/CharacterGenerator.ts` - Updated to apply feature effects during generation
+- `src/core/types/Character.ts` - Added `feature_effects` property to CharacterSheet interface
+
+**Changes Made:**
+
+1. **Created FeatureEffectApplier class** (FeatureEffectApplier.ts):
+   - `applyFeatureEffects()`: Apply all effects from a single feature/trait
+   - `applyMultipleEffects()`: Apply effects from multiple features at once
+   - Handles all effect types:
+     - `stat_bonus`: Add to ability scores, recalculate modifiers
+     - `skill_proficiency`: Grant proficiency or expertise in skills
+     - `ability_unlock`: Store unlocked abilities (darkvision, flight, etc.)
+     - `passive_modifier`: Apply constant bonuses (speed, max stats, etc.)
+     - `resource_grant`: Store resource pool grants (rage, ki points, etc.)
+     - `spell_slot_bonus`: Store additional spell slot grants
+
+2. **Updated CharacterGenerator** (CharacterGenerator.ts):
+   - Added import for `FeatureEffectApplier`
+   - Character sheet built first, then effects applied
+   - Racial trait effects applied first (base abilities)
+   - Class feature effects applied second (may override/trait effects)
+   - Effects modify the character sheet in-place
+
+3. **Updated CharacterSheet type** (Character.ts):
+   - Changed `skills` from `Record<Skill, ProficiencyLevel>` to `Record<string, ProficiencyLevel>` to support custom skills
+   - Added optional `feature_effects` array to store applied effects for reference
+
+**Effect Application Examples:**
+
+```typescript
+// Stat bonus: Barbarian's Primal Champion grants +4 STR and CON
+{
+    type: 'stat_bonus',
+    target: 'STR',
+    value: 4
+}
+
+// Skill proficiency: Elf's Keen Senses grants Perception proficiency
+{
+    type: 'skill_proficiency',
+    target: 'perception',
+    value: 'proficient'
+}
+
+// Passive modifier: Barbarian's Fast Movement grants +10 speed
+{
+    type: 'passive_modifier',
+    target: 'speed',
+    value: 10,
+    condition: 'unarmored'
+}
+
+// Ability unlock: Elf's Darkvision grants 60ft darkvision
+{
+    type: 'ability_unlock',
+    target: 'darkvision',
+    value: 60
+}
+```
+
+**Verification:**
+- ✅ TypeScript compilation passes (`npm run build`)
+- ✅ Feature effects applied during character generation
+- ✅ Stat bonuses modify ability scores and recalculate modifiers
+- ✅ Skill proficiencies added to character skills
+- ✅ Passive modifiers stored in feature_effects array
+- ✅ Ability unlocks stored for reference
+
+**Note:** This implementation applies effects immediately during character generation. Features with conditional effects (like "while raging") store the effect with its condition, but the actual conditional logic would be handled by the game system during play.
 
 ---
 

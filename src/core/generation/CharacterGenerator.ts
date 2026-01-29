@@ -12,6 +12,7 @@ import { EquipmentGenerator } from './EquipmentGenerator.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureFeatureDefaultsInitialized } from '../extensions/index.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
+import { FeatureEffectApplier } from '../features/FeatureEffectApplier.js';
 
 /**
  * Extension data for custom spells
@@ -292,11 +293,8 @@ export class CharacterGenerator {
         const racialTraits = featureRegistry.getRacialTraits(race);
         const racial_trait_ids = racialTraits.map(t => t.id);
 
-        // Apply feature effects to character (if any effects exist)
-        // Note: This is a placeholder for future effect application
-        // For now, we store the feature IDs which can be looked up later
-
-        return {
+        // Build the initial character sheet
+        const characterSheet: CharacterSheet = {
             name,
             race,
             class: suggestedClass,
@@ -327,5 +325,13 @@ export class CharacterGenerator {
             generated_at: new Date().toISOString(),
             gameMode,
         };
+
+        // Apply feature effects from racial traits (applied first as they're base abilities)
+        FeatureEffectApplier.applyMultipleEffects(characterSheet, racialTraits);
+
+        // Apply feature effects from class features
+        FeatureEffectApplier.applyMultipleEffects(characterSheet, classFeatures);
+
+        return characterSheet;
     }
 }

@@ -144,7 +144,7 @@ export interface CharacterSheet {
     speed: number;
 
     /** Skill proficiencies */
-    skills: Record<Skill, ProficiencyLevel>;
+    skills: Record<string, ProficiencyLevel>;
 
     /** Saving throw proficiencies */
     saving_throws: Record<Ability, boolean>;
@@ -204,5 +204,16 @@ export interface CharacterSheet {
 
     /** Number of pending stat increases awaiting manual selection (counter) */
     pendingStatIncreases?: number;
+
+    /**
+     * Feature effects applied to this character
+     * Stores effects from features and traits that modify character stats
+     */
+    feature_effects?: Array<{
+        type: string;
+        target: string;
+        value: number | string | boolean;
+        condition?: string;
+    }>;
 
 }
