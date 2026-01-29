@@ -1620,7 +1620,7 @@ manager.setWeights('equipment', {
 **File:** `/Users/jasondesante/playlist-data-engine/src/core/extensions/ExtensionManager.ts`
 
 **Tasks:**
-- [ ] Create `ExtensionManager` class:
+- [x] Create `ExtensionManager` class:
   ```typescript
   export class ExtensionManager {
       private static instance: ExtensionManager;

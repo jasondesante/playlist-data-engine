@@ -1,0 +1,435 @@
+/**
+ * ExtensionManager - Core extensibility system for the Playlist Data Engine
+ *
+ * Provides runtime customization of ALL procedural generation lists with spawn rate control.
+ *
+ * Design Principles:
+ * - Hybrid spawn rates: Support both relative weights (added to pool) and absolute weights (replace distribution)
+ * - Runtime only: Custom data provided each session; characters save with custom items already included
+ * - Strict validation: Reject invalid data with clear errors
+ * - Consistent API: Same function pattern across all categories
+ * - Per-category spawn rates: Each expansion pack includes its own spawn rate weights for its content
+ *
+ * @module extensions/ExtensionManager
+ */
+
+import type { Race, Class } from '../types/Character.js';
+import type { Spell } from '../../utils/constants.js';
+
+/**
+ * All extensible categories in the system
+ */
+export type ExtensionCategory =
+    | 'equipment'
+    | 'appearance.bodyTypes'
+    | 'appearance.skinTones'
+    | 'appearance.hairColors'
+    | 'appearance.hairStyles'
+    | 'appearance.eyeColors'
+    | 'appearance.facialFeatures'
+    | 'spells'
+    | 'races'
+    | 'classes'
+    | `spells.${Class}`;
+
+/**
+ * Options for registering custom data
+ */
+export interface ExtensionOptions {
+    /**
+     * Spawn mode for this extension
+     * - 'relative': Add custom weights to default weights (default)
+     * - 'absolute': Replace default weights entirely
+     * - 'default': Use default weights (1.0 for all items)
+     */
+    mode?: 'relative' | 'absolute' | 'default';
+
+    /**
+     * Custom spawn weights for individual items
+     * Item name -> weight multiplier (1.0 = default, 2.0 = twice as likely, 0 = never spawns)
+     */
+    weights?: Record<string, number>;
+
+    /**
+     * Whether to validate items before registration
+     * @default true
+     */
+    validate?: boolean;
+}
+
+/**
+ * Stored extension data for a category
+ */
+interface ExtensionData {
+    items: any[];
+    options: ExtensionOptions;
+    registeredAt: number;
+}
+
+/**
+ * Result of validation
+ */
+export interface ValidationResult {
+    valid: boolean;
+    errors?: string[];
+}
+
+/**
+ * ExtensionManager - Singleton class for managing runtime extensions
+ *
+ * Manages custom data for all procedural generation categories with:
+ * - Default data initialization
+ * - Custom data registration
+ * - Weight management
+ * - Merged data retrieval
+ * - Reset functionality
+ */
+export class ExtensionManager {
+    private static instance: ExtensionManager;
+    private defaultData: Map<ExtensionCategory, any[]>;
+    private extensions: Map<ExtensionCategory, ExtensionData>;
+    private customWeights: Map<string, Record<string, number>>;
+
+    private constructor() {
+        this.defaultData = new Map();
+        this.extensions = new Map();
+        this.customWeights = new Map();
+    }
+
+    /**
+     * Get the singleton instance
+     */
+    static getInstance(): ExtensionManager {
+        if (!ExtensionManager.instance) {
+            ExtensionManager.instance = new ExtensionManager();
+        }
+        return ExtensionManager.instance;
+    }
+
+    /**
+     * Initialize default data for a category
+     * @param category - The category to initialize
+     * @param data - The default data array
+     */
+    initializeDefaults(category: ExtensionCategory, data: any[]): void {
+        this.defaultData.set(category, [...data]);
+    }
+
+    /**
+     * Initialize all default data from constants
+     */
+    initializeAllDefaults(data: Record<string, any[]>): void {
+        for (const [category, items] of Object.entries(data)) {
+            this.initializeDefaults(category as ExtensionCategory, items);
+        }
+    }
+
+    /**
+     * Register custom data for a category
+     * @param category - The category to extend
+     * @param items - Custom items to add
+     * @param options - Registration options
+     */
+    register(
+        category: ExtensionCategory,
+        items: any[],
+        options: ExtensionOptions = {}
+    ): void {
+        const {
+            mode = 'relative',
+            weights = {},
+            validate = true
+        } = options;
+
+        // Validate items if validation is enabled
+        if (validate) {
+            const validation = this.validate(category, items);
+            if (!validation.valid) {
+                throw new Error(
+                    `Invalid items for category '${category}':\n${validation.errors?.join('\n')}`
+                );
+            }
+        }
+
+        // Store the extension data
+        this.extensions.set(category, {
+            items: [...items],
+            options: { mode, weights, validate },
+            registeredAt: Date.now()
+        });
+
+        // Store custom weights if provided
+        if (Object.keys(weights).length > 0) {
+            this.customWeights.set(category, weights);
+        }
+    }
+
+    /**
+     * Get merged data (defaults + custom) for a category
+     * @param category - The category to get data for
+     * @returns Merged array of default and custom items
+     */
+    get(category: ExtensionCategory): any[] {
+        const defaults = this.defaultData.get(category) || [];
+        const extension = this.extensions.get(category);
+
+        if (!extension) {
+            return [...defaults];
+        }
+
+        // Merge defaults with custom items
+        return [...defaults, ...extension.items];
+    }
+
+    /**
+     * Get default data only (no custom items)
+     * @param category - The category to get defaults for
+     * @returns Default items only
+     */
+    getDefaults(category: ExtensionCategory): any[] {
+        return [...(this.defaultData.get(category) || [])];
+    }
+
+    /**
+     * Get custom items only (no defaults)
+     * @param category - The category to get custom items for
+     * @returns Custom items only
+     */
+    getCustom(category: ExtensionCategory): any[] {
+        const extension = this.extensions.get(category);
+        return extension ? [...extension.items] : [];
+    }
+
+    /**
+     * Set spawn weights for a category
+     * @param category - The category to set weights for
+     * @param weights - Record of item name to weight multiplier
+     */
+    setWeights(category: ExtensionCategory, weights: Record<string, number>): void {
+        this.customWeights.set(category, { ...weights });
+    }
+
+    /**
+     * Get spawn weights for a category
+     * @param category - The category to get weights for
+     * @returns Combined default and custom weights
+     */
+    getWeights(category: ExtensionCategory): Record<string, number> {
+        const defaults = this.getDefaultWeights(category);
+        const custom = this.customWeights.get(category) || {};
+
+        return { ...defaults, ...custom };
+    }
+
+    /**
+     * Get default weights for a category (all 1.0)
+     * @param category - The category to get default weights for
+     * @returns Default weights (all items have weight 1.0)
+     */
+    getDefaultWeights(category: ExtensionCategory): Record<string, number> {
+        const items = this.defaultData.get(category) || [];
+        const weights: Record<string, number> = {};
+
+        for (const item of items) {
+            const name = typeof item === 'string' ? item : item.name;
+            if (name) {
+                weights[name] = 1.0;
+            }
+        }
+
+        return weights;
+    }
+
+    /**
+     * Check if a category has custom data registered
+     * @param category - The category to check
+     * @returns true if custom data is registered
+     */
+    hasCustomData(category: ExtensionCategory): boolean {
+        return this.extensions.has(category);
+    }
+
+    /**
+     * Get the registration mode for a category
+     * @param category - The category to check
+     * @returns The mode ('relative', 'absolute', or undefined if no custom data)
+     */
+    getMode(category: ExtensionCategory): 'relative' | 'absolute' | undefined {
+        const extension = this.extensions.get(category);
+        return extension?.options.mode;
+    }
+
+    /**
+     * Validate items for a category
+     * @param category - The category to validate against
+     * @param items - Items to validate
+     * @returns Validation result with any errors
+     */
+    validate(category: ExtensionCategory, items: any[]): ValidationResult {
+        const errors: string[] = [];
+
+        // Basic validation: ensure items is an array
+        if (!Array.isArray(items)) {
+            errors.push('Items must be an array');
+            return { valid: false, errors };
+        }
+
+        // Category-specific validation
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const itemErrors = this.validateItem(category, item, i);
+            errors.push(...itemErrors);
+        }
+
+        return errors.length > 0
+            ? { valid: false, errors }
+            : { valid: true };
+    }
+
+    /**
+     * Validate a single item
+     * @param category - The category to validate against
+     * @param item - The item to validate
+     * @param index - Index of the item in the array (for error messages)
+     * @returns Array of error messages (empty if valid)
+     */
+    private validateItem(category: ExtensionCategory, item: any, index: number): string[] {
+        const errors: string[] = [];
+        const prefix = `Item ${index}:`;
+
+        // Ensure item exists
+        if (item === null || item === undefined) {
+            errors.push(`${prefix} Item is null or undefined`);
+            return errors;
+        }
+
+        // Category-specific validation
+        if (category === 'equipment') {
+            // Equipment must have name, type, rarity, weight
+            if (!item.name || typeof item.name !== 'string') {
+                errors.push(`${prefix} Missing or invalid 'name' property`);
+            }
+            if (!['weapon', 'armor', 'item'].includes(item.type)) {
+                errors.push(`${prefix} Invalid 'type' (must be 'weapon', 'armor', or 'item')`);
+            }
+            if (!['common', 'uncommon', 'rare', 'very_rare', 'legendary'].includes(item.rarity)) {
+                errors.push(`${prefix} Invalid 'rarity'`);
+            }
+            if (typeof item.weight !== 'number' || item.weight < 0) {
+                errors.push(`${prefix} Invalid 'weight' (must be non-negative number)`);
+            }
+        } else if (category === 'spells') {
+            // Spells must have name, level, school
+            if (!item.name || typeof item.name !== 'string') {
+                errors.push(`${prefix} Missing or invalid 'name' property`);
+            }
+            if (typeof item.level !== 'number' || item.level < 0 || item.level > 9) {
+                errors.push(`${prefix} Invalid 'level' (must be 0-9)`);
+            }
+            const validSchools = ['Abjuration', 'Conjuration', 'Divination', 'Enchantment', 'Evocation', 'Illusion', 'Necromancy', 'Transmutation'];
+            if (!validSchools.includes(item.school)) {
+                errors.push(`${prefix} Invalid 'school'`);
+            }
+        } else if (category === 'races') {
+            // Races must be a valid Race type
+            const validRaces: Race[] = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Dragonborn', 'Gnome', 'Half-Elf', 'Half-Orc', 'Tiefling'];
+            if (!validRaces.includes(item)) {
+                errors.push(`${prefix} Invalid race (must be one of: ${validRaces.join(', ')})`);
+            }
+        } else if (category === 'classes') {
+            // Classes must be a valid Class type
+            const validClasses: Class[] = ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard'];
+            if (!validClasses.includes(item)) {
+                errors.push(`${prefix} Invalid class (must be one of: ${validClasses.join(', ')})`);
+            }
+        } else if (category.startsWith('appearance.')) {
+            // Appearance items must be strings
+            if (typeof item !== 'string') {
+                errors.push(`${prefix} Appearance options must be strings`);
+            }
+        }
+
+        return errors;
+    }
+
+    /**
+     * Reset a category to defaults (removes all custom data)
+     * @param category - The category to reset
+     */
+    reset(category: ExtensionCategory): void {
+        this.extensions.delete(category);
+        this.customWeights.delete(category);
+    }
+
+    /**
+     * Reset all categories to defaults
+     */
+    resetAll(): void {
+        this.extensions.clear();
+        this.customWeights.clear();
+    }
+
+    /**
+     * Get information about registered extensions
+     * @param category - Optional category to get info for (if omitted, returns all)
+     * @returns Object with extension information
+     */
+    getInfo(category?: ExtensionCategory): Record<string, any> {
+        if (category) {
+            const extension = this.extensions.get(category);
+            const defaults = this.defaultData.get(category) || [];
+
+            return {
+                hasCustomData: this.hasCustomData(category),
+                defaultCount: defaults.length,
+                customCount: extension?.items.length || 0,
+                totalCount: this.get(category).length,
+                mode: this.getMode(category),
+                weights: this.getWeights(category),
+                registeredAt: extension?.registeredAt
+            };
+        }
+
+        // Return info for all categories
+        const allInfo: Record<string, any> = {};
+        for (const cat of this.defaultData.keys()) {
+            allInfo[cat] = this.getInfo(cat as ExtensionCategory);
+        }
+        return allInfo;
+    }
+
+    /**
+     * Export all custom data (for debugging/saving)
+     * @returns Object with all custom extensions
+     */
+    exportCustomData(): Record<string, any> {
+        const exported: Record<string, any> = {};
+
+        for (const [category, data] of this.extensions.entries()) {
+            exported[category] = {
+                items: data.items,
+                options: data.options,
+                registeredAt: data.registeredAt
+            };
+        }
+
+        // Also export custom weights
+        const weightData: Record<string, any> = {};
+        for (const [category, weights] of this.customWeights.entries()) {
+            weightData[category] = weights;
+        }
+
+        return {
+            extensions: exported,
+            weights: weightData
+        };
+    }
+
+    /**
+     * Get all registered categories
+     * @returns Array of all categories with default data
+     */
+    getRegisteredCategories(): ExtensionCategory[] {
+        return Array.from(this.defaultData.keys());
+    }
+}
