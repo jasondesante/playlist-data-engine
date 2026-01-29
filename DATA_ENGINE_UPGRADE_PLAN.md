@@ -3827,7 +3827,7 @@ Created `/workspace/src/core/migration/CharacterMigration.ts` with:
 ### 12.1 Design Skill Architecture
 
 **Tasks:**
-- [ ] Design `CustomSkill` interface:
+- [x] Design `CustomSkill` interface:
   ```typescript
   interface CustomSkill {
       id: string;
@@ -3841,7 +3841,7 @@ Created `/workspace/src/core/migration/CharacterMigration.ts` with:
   }
   ```
 
-- [ ] Design skill proficiency system:
+- [x] Design skill proficiency system:
   ```typescript
   interface SkillProficiency {
       skillId: string;
@@ -3850,9 +3850,56 @@ Created `/workspace/src/core/migration/CharacterMigration.ts` with:
   }
   ```
 
-**File to create:** `/Users/jasondesante/playlist-data-engine/src/core/skills/SkillTypes.ts`
+**File created:** `/workspace/src/core/skills/SkillTypes.ts`
 
-**Deliverable:** Complete skill type definitions
+**Deliverable:** ~~Complete skill type definitions~~ **COMPLETE**
+
+---
+
+#### Implementation Summary - Phase 12.1: Skill Architecture Design ✅
+
+**Files Created:**
+- `src/core/skills/SkillTypes.ts` - Complete skill type definitions
+- `src/core/skills/index.ts` - Module index exports
+
+**Changes Made:**
+
+1. **Created CustomSkill interface** with comprehensive properties:
+   - `id`: Unique identifier (lowercase_with_underscores format)
+   - `name`: Display name for UI
+   - `description`: Optional description of what the skill covers
+   - `ability`: Associated ability score (STR, DEX, CON, INT, WIS, CHA)
+   - `armorPenalty`: Whether armor disadvantage applies (true for Athletics, Acrobatics, etc.)
+   - `customProperties`: Optional game-specific data
+   - `categories`: Optional grouping tags (exploration, social, knowledge, combat, environmental)
+   - `source`: 'default' or 'custom' origin
+   - `tags`: Optional tags for filtering/prerequisites
+   - `lore`: Optional flavor text
+
+2. **Created SkillProficiency interface**:
+   - `skillId`: References CustomSkill.id
+   - `level`: 'none' | 'proficient' | 'expertise'
+   - `source`: 'class' | 'background' | 'feat' | 'custom' | 'racial' | 'other'
+   - `grantedBy`: Optional feature ID for tracking
+
+3. **Created supporting interfaces**:
+   - `SkillSelectionWeights`: Per-skill spawn rate control
+   - `SkillListDefinition`: Class skill list configuration
+   - `SkillValidationResult`: Standard validation result type
+   - `SkillRegistryStats`: Registry statistics
+
+**Verification:**
+- ✅ TypeScript compilation passes (`npm run build`)
+- ✅ All interfaces properly typed with JSDoc documentation
+- ✅ Module index exports all types
+- ✅ Consistent with existing FeatureTypes pattern
+
+**Design Notes:**
+- CustomSkill supports all 18 default D&D 5e skills plus unlimited custom skills
+- Skill IDs use snake_case for consistency with feature IDs
+- Categories support background skill preferences (e.g., Noble favors social skills)
+- CustomProperties allow expansion packs to add game-specific mechanics
+- Armor penalty flag supports D&D 5e armor disadvantage rules
 
 ---
 
