@@ -709,7 +709,7 @@ export const CLASS_STARTING_EQUIPMENT: Record<Class, {
     'Ranger': {
         weapons: ['Longsword', 'Shortsword', 'Longbow'],
         armor: ['Leather Armor', 'Dagger'],
-        items: ['Arrows (20)', 'Explorer\'s Pack'],
+        items: ['Explorer\'s Pack'],  // Arrows added programmatically in EquipmentGenerator
     },
     'Rogue': {
         weapons: ['Rapier', 'Hand Crossbow'],
@@ -787,9 +787,9 @@ export const EQUIPMENT_DATABASE: Record<string, Equipment> = {
     'Scholar\'s Pack': { name: 'Scholar\'s Pack', type: 'item', rarity: 'common', weight: 49 },
     'Traveler\'s Pack': { name: 'Traveler\'s Pack', type: 'item', rarity: 'common', weight: 64 },
 
-    // Ammunition
-    'Arrows (20)': { name: 'Arrows (20)', type: 'item', rarity: 'common', weight: 1 },
-    'Bolts (20)': { name: 'Bolts (20)', type: 'item', rarity: 'common', weight: 1.5 },
+    // Ammunition (individual items with quantity)
+    'Arrow': { name: 'Arrow', type: 'item', rarity: 'common', weight: 0.05 },
+    'Bolt': { name: 'Bolt', type: 'item', rarity: 'common', weight: 0.075 },
 
     // Insignia
     'Insignia': { name: 'Insignia', type: 'item', rarity: 'common', weight: 0 },

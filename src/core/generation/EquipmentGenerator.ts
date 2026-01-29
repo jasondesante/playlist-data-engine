@@ -92,6 +92,18 @@ export class EquipmentGenerator {
       }
     }
 
+    // Handle ammunition items (add programmatically based on class weapons)
+    const ammoType = this.getAmmunitionType(characterClass, startingEquipment.weapons);
+    if (ammoType) {
+      const quantity = this.getAmmunitionQuantity(characterClass);
+      const existing = items.find((i) => i.name === ammoType);
+      if (existing) {
+        existing.quantity += quantity;
+      } else {
+        items.push({ name: ammoType, quantity, equipped: false });
+      }
+    }
+
     // Equip primary weapon and armor
     if (weapons.length > 0) {
       weapons[0].equipped = true;
@@ -399,5 +411,45 @@ export class EquipmentGenerator {
       totalWeight: equipment.totalWeight,
       equippedWeight: equipment.equippedWeight,
     };
+  }
+
+  /**
+   * Get the type of ammunition a class uses based on their starting weapons
+   *
+   * @param characterClass - The character's class
+   * @param weapons - Array of weapon names the class starts with
+   * @returns Ammunition type ('Arrow', 'Bolt', etc.) or null if not applicable
+   */
+  private static getAmmunitionType(characterClass: Class, weapons: string[]): string | null {
+    // Check if class has weapons that require ammunition
+    const hasLongbow = weapons.some(w => w === 'Longbow');
+    const hasShortbow = weapons.some(w => w === 'Shortbow');  // If added later
+    const hasLightCrossbow = weapons.some(w => w === 'Light Crossbow');
+    const hasHandCrossbow = weapons.some(w => w === 'Hand Crossbow');
+
+    if (hasLongbow || hasShortbow) {
+      return 'Arrow';
+    }
+    if (hasLightCrossbow || hasHandCrossbow) {
+      return 'Bolt';
+    }
+    return null;
+  }
+
+  /**
+   * Get the quantity of ammunition a class starts with
+   *
+   * @param characterClass - The character's class
+   * @returns Number of ammunition items
+   */
+  private static getAmmunitionQuantity(characterClass: Class): number {
+    // Standard ammunition quantities by class
+    const ammunitionQuantities: Record<string, number> = {
+      'Ranger': 20,       // Rangers get 20 arrows
+      'Fighter': 20,      // Fighters get 20 if they have a bow
+      'Rogue': 20,        // Rogues get 20 if they have a crossbow
+    };
+
+    return ammunitionQuantities[characterClass] || 0;
   }
 }

@@ -298,14 +298,31 @@ describe('EquipmentGenerator', () => {
     });
 
     describe('Ammunition', () => {
-        it('should have ammunition items in database', () => {
-            expect(EQUIPMENT_DATABASE['Arrows (20)']).toBeDefined();
-            expect(EQUIPMENT_DATABASE['Bolts (20)']).toBeDefined();
+        it('should have individual ammunition items in database', () => {
+            expect(EQUIPMENT_DATABASE['Arrow']).toBeDefined();
+            expect(EQUIPMENT_DATABASE['Bolt']).toBeDefined();
         });
 
-        it('ammunition should be lightweight', () => {
-            expect(EQUIPMENT_DATABASE['Arrows (20)'].weight).toBeLessThanOrEqual(2);
-            expect(EQUIPMENT_DATABASE['Bolts (20)'].weight).toBeLessThanOrEqual(2);
+        it('individual ammunition should be lightweight', () => {
+            expect(EQUIPMENT_DATABASE['Arrow'].weight).toBeLessThanOrEqual(0.1);
+            expect(EQUIPMENT_DATABASE['Bolt'].weight).toBeLessThanOrEqual(0.1);
+        });
+
+        it('Ranger should receive 20 Arrow items', () => {
+            const equipment = EquipmentGenerator.initializeEquipment('Ranger');
+
+            const arrowItem = equipment.items.find((i) => i.name === 'Arrow');
+            expect(arrowItem).toBeDefined();
+            expect(arrowItem!.quantity).toBe(20);
+        });
+
+        it('Ranger arrow weight should be 1 lb total (20 × 0.05)', () => {
+            const equipment = EquipmentGenerator.initializeEquipment('Ranger');
+
+            const arrowItem = equipment.items.find((i) => i.name === 'Arrow');
+            const arrowWeight = arrowItem!.quantity * EQUIPMENT_DATABASE['Arrow'].weight;
+
+            expect(arrowWeight).toBeCloseTo(1.0, 0.01);
         });
     });
 });
