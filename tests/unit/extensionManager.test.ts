@@ -554,10 +554,11 @@ describe('ExtensionManager', () => {
 
         it('should handle registering the same category twice', () => {
             // Use custom race names that are NOT in the default races
-            manager.register('races', ['DragonKin']);
+            // Disable validation for this test since we're using non-standard race names
+            manager.register('races', ['DragonKin'], { validate: false });
             const count1 = manager.get('races').length;
 
-            manager.register('races', ['Fairy', 'Giant']);
+            manager.register('races', ['Fairy', 'Giant'], { validate: false });
             const count2 = manager.get('races').length;
 
             // Second registration should add more items

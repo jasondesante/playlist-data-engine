@@ -14,6 +14,7 @@ import type {
 } from './FeatureTypes.js';
 import type { Class, Race } from '../types/Character.js';
 import type { CharacterSheet } from '../types/Character.js';
+import { validateClassFeature, validateRacialTrait } from './FeatureValidator.js';
 
 /**
  * FeatureRegistry - Singleton class for managing features and traits
@@ -87,9 +88,15 @@ export class FeatureRegistry {
      * Register a single class feature
      *
      * @param feature - Class feature to register
-     * @throws Error if feature ID already exists
+     * @throws Error if feature ID already exists or validation fails
      */
     registerClassFeature(feature: ClassFeature): void {
+        // Validate feature before registering
+        const validation = validateClassFeature(feature);
+        if (!validation.valid) {
+            throw new Error(`Invalid class feature "${feature.id}":\n${validation.errors.join('\n')}`);
+        }
+
         if (this.featureLookup.has(feature.id)) {
             throw new Error(`Class feature with ID "${feature.id}" already exists`);
         }
@@ -120,9 +127,15 @@ export class FeatureRegistry {
      * Register a single racial trait
      *
      * @param trait - Racial trait to register
-     * @throws Error if trait ID already exists
+     * @throws Error if trait ID already exists or validation fails
      */
     registerRacialTrait(trait: RacialTrait): void {
+        // Validate trait before registering
+        const validation = validateRacialTrait(trait);
+        if (!validation.valid) {
+            throw new Error(`Invalid racial trait "${trait.id}":\n${validation.errors.join('\n')}`);
+        }
+
         if (this.traitLookup.has(trait.id)) {
             throw new Error(`Racial trait with ID "${trait.id}" already exists`);
         }

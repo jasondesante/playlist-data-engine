@@ -53,33 +53,36 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 {
                     id: 'fighter_born_leader',
                     name: 'Born Leader',
+                    type: 'passive' as const,
                     class: 'Fighter' as Class,
                     level: 1,
                     description: 'You naturally lead others in battle.',
                     effects: [
-                        { type: 'ability_bonus' as const, ability: 'CHA' as const, value: 1 }
+                        { type: 'stat_bonus' as const, target: 'CHA', value: 1 }
                     ],
                     source: 'custom' as const
                 },
                 {
                     id: 'wizard_arcane_insight',
                     name: 'Arcane Insight',
+                    type: 'passive' as const,
                     class: 'Wizard' as Class,
                     level: 1,
                     description: 'You see magical patterns others miss.',
                     effects: [
-                        { type: 'ability_bonus' as const, ability: 'INT' as const, value: 1 }
+                        { type: 'stat_bonus' as const, target: 'INT', value: 1 }
                     ],
                     source: 'custom' as const
                 },
                 {
                     id: 'rogue_street_scholar',
                     name: 'Street Scholar',
+                    type: 'passive' as const,
                     class: 'Rogue' as Class,
                     level: 1,
                     description: 'You learned from the school of hard knocks.',
                     effects: [
-                        { type: 'ability_bonus' as const, ability: 'INT' as const, value: 1 }
+                        { type: 'stat_bonus' as const, target: 'INT', value: 1 }
                     ],
                     source: 'custom' as const
                 }
@@ -90,16 +93,18 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 {
                     id: 'human_adaptability_plus',
                     name: 'Human Adaptability Plus',
+                    type: 'passive' as const,
                     race: 'Human' as Race,
                     description: 'Humans can adapt to any situation.',
                     effects: [
-                        { type: 'ability_bonus' as const, ability: 'DEX' as const, value: 1 }
+                        { type: 'stat_bonus' as const, target: 'DEX', value: 1 }
                     ],
                     source: 'custom' as const
                 },
                 {
                     id: 'elf_ferry_blood',
                     name: 'Ferry Blood',
+                    type: 'passive' as const,
                     race: 'Elf' as Race,
                     description: 'Your connection to the Feywild is stronger than most.',
                     effects: [],
@@ -140,20 +145,14 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const customSkinTones = ['#FFD700', '#C0C0C0']; // Gold, Silver
             const customHairColors = ['#FF4500', '#9400D3']; // OrangeRed, DarkViolet
 
-            // Register custom spells (for spellcasting classes)
-            const customSpells = [
-                {
-                    name: 'Phoenix Flame',
-                    level: 2,
-                    school: 'Evocation' as const,
-                    casting_time: '1 action',
-                    range: '60 feet',
-                    duration: 'Instantaneous',
-                    components: ['V', 'S'],
-                    description: 'A burst of fire that mimics a phoenix.',
-                    source: 'custom' as const
+            // Register custom spells for Wizard (needs to be a ClassSpellListData format)
+            const customWizardSpellList = {
+                class: 'Wizard' as Class,
+                cantrips: [], // No custom cantrips
+                spells_by_level: {
+                    2: ['Phoenix Flame'] // Add Phoenix Flame at level 2
                 }
-            ];
+            };
 
             // Register all custom content
             for (const feature of customClassFeatures) {
@@ -172,7 +171,8 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             extensionManager.register('appearance.skinTones', customSkinTones);
             extensionManager.register('appearance.hairColors', customHairColors);
 
-            extensionManager.register('spells', customSpells);
+            // Register custom spell list for Wizard
+            extensionManager.register('spells.Wizard', [customWizardSpellList]);
 
             // Generate characters for each class and verify custom content appears
             const testClasses: Class[] = ['Fighter', 'Wizard', 'Rogue'];
@@ -208,10 +208,18 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
 
                 // For spellcasting classes, verify custom spell appears
                 if (testClass === 'Wizard' && character.spells) {
-                    // Verify the custom spell is in the known spells or cantrips
+                    // Phoenix Flame is level 2, so generate a higher level Wizard to have it
+                    const highLevelWizard = CharacterGenerator.generate(
+                        `full-custom-wizard-level5`,
+                        sampleAudioProfile,
+                        'Test Wizard Level 5',
+                        { forceClass: 'Wizard', level: 5 }
+                    );
+
+                    // Verify the custom spell is in the known spells
                     const allSpells = [
-                        ...(character.spells.known_spells || []),
-                        ...(character.spells.cantrips || [])
+                        ...(highLevelWizard.spells.known_spells || []),
+                        ...(highLevelWizard.spells.cantrips || [])
                     ];
                     expect(allSpells).toContain('Phoenix Flame');
                 }
@@ -289,11 +297,12 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const level1Feature = {
                 id: 'paladin_divine_start',
                 name: 'Divine Start',
+                type: 'passive' as const,
                 class: 'Paladin' as Class,
                 level: 1,
                 description: 'Your divine journey begins.',
                 effects: [
-                    { type: 'ability_bonus' as const, ability: 'CHA' as const, value: 1 }
+                    { type: 'stat_bonus' as const, target: 'CHA', value: 1 }
                 ],
                 source: 'custom' as const
             };
@@ -301,6 +310,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const level3Feature = {
                 id: 'paladin_divine_fervor',
                 name: 'Divine Fervor',
+                type: 'passive' as const,
                 class: 'Paladin' as Class,
                 level: 3,
                 description: 'Your divine power grows.',
@@ -311,11 +321,12 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const level5Feature = {
                 id: 'paladin_holy_warrior',
                 name: 'Holy Warrior',
+                type: 'active' as const,
                 class: 'Paladin' as Class,
                 level: 5,
                 description: 'You become a true holy warrior.',
                 effects: [
-                    { type: 'ability_bonus' as const, ability: 'STR' as const, value: 2 }
+                    { type: 'stat_bonus' as const, target: 'STR', value: 2 }
                 ],
                 prerequisites: {
                     level: 5
@@ -338,21 +349,23 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             // Verify level 1 custom feature
             expect(character.class_features).toContain('paladin_divine_start');
 
-            // Level up to 3
-            const level3Result = LevelUpProcessor.processLevelUp(character, 3);
+            // Level up to 3 - get benefits then apply
+            const level3Benefits = LevelUpProcessor.processLevelUp(character, 3);
+            const level3Character = LevelUpProcessor.applyLevelUp(character, level3Benefits);
 
             // Verify new feature gained
-            expect(level3Result.updatedCharacter.class_features).toContain('paladin_divine_fervor');
+            expect(level3Character.class_features).toContain('paladin_divine_fervor');
 
             // Level up to 5
-            const level5Result = LevelUpProcessor.processLevelUp(level3Result.updatedCharacter, 5);
+            const level5Benefits = LevelUpProcessor.processLevelUp(level3Character, 5);
+            const level5Character = LevelUpProcessor.applyLevelUp(level3Character, level5Benefits);
 
             // Verify level 5 feature gained
-            expect(level5Result.updatedCharacter.class_features).toContain('paladin_holy_warrior');
+            expect(level5Character.class_features).toContain('paladin_holy_warrior');
 
             // Verify all features still present
-            expect(level5Result.updatedCharacter.class_features).toContain('paladin_divine_start');
-            expect(level5Result.updatedCharacter.class_features).toContain('paladin_divine_fervor');
+            expect(level5Character.class_features).toContain('paladin_divine_start');
+            expect(level5Character.class_features).toContain('paladin_divine_fervor');
         });
 
         it('should respect custom feature prerequisites during level-up', () => {
@@ -360,6 +373,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const baseFeature = {
                 id: 'custom_base_feature',
                 name: 'Base Feature',
+                type: 'passive' as const,
                 class: 'Fighter' as Class,
                 level: 1,
                 description: 'Base feature for testing chains.',
@@ -370,6 +384,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const advancedFeature = {
                 id: 'custom_advanced_feature',
                 name: 'Advanced Feature',
+                type: 'active' as const,
                 class: 'Fighter' as Class,
                 level: 5,
                 description: 'Advanced feature requiring base.',
@@ -395,12 +410,13 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             expect(character.class_features).toContain('custom_base_feature');
             expect(character.class_features).not.toContain('custom_advanced_feature');
 
-            // Level up to 5
-            const result = LevelUpProcessor.processLevelUp(character, 5);
+            // Level up to 5 - get benefits then apply
+            const benefits = LevelUpProcessor.processLevelUp(character, 5);
+            const updatedCharacter = LevelUpProcessor.applyLevelUp(character, benefits);
 
             // Both features should be present (prerequisites met)
-            expect(result.updatedCharacter.class_features).toContain('custom_base_feature');
-            expect(result.updatedCharacter.class_features).toContain('custom_advanced_feature');
+            expect(updatedCharacter.class_features).toContain('custom_base_feature');
+            expect(updatedCharacter.class_features).toContain('custom_advanced_feature');
         });
 
         it('should apply custom feature effects during level-up', () => {
@@ -408,11 +424,12 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const conBoostFeature = {
                 id: 'barbarian_iron_constitution',
                 name: 'Iron Constitution',
+                type: 'passive' as const,
                 class: 'Barbarian' as Class,
                 level: 4,
                 description: 'Your constitution becomes iron-like.',
                 effects: [
-                    { type: 'ability_bonus' as const, ability: 'CON' as const, value: 2 }
+                    { type: 'stat_bonus' as const, target: 'CON', value: 2 }
                 ],
                 source: 'custom' as const
             };
@@ -427,18 +444,18 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 { forceClass: 'Barbarian', level: 1 }
             );
 
-            // Level up to 4
-            const result = LevelUpProcessor.processLevelUp(character, 4);
+            // Level up to 4 - get benefits then apply
+            const benefits = LevelUpProcessor.processLevelUp(character, 4);
+            const updatedCharacter = LevelUpProcessor.applyLevelUp(character, benefits);
 
             // Verify feature is gained
-            expect(result.updatedCharacter.class_features).toContain('barbarian_iron_constitution');
+            expect(updatedCharacter.class_features).toContain('barbarian_iron_constitution');
 
-            // Verify the effect should be applied (CON should be higher)
-            // Note: The actual effect application depends on FeatureEffectApplier
+            // Verify the feature exists and has effect
             const customFeature = featureRegistry.getClassFeatureById('barbarian_iron_constitution');
             expect(customFeature).toBeDefined();
             expect(customFeature?.effects).toHaveLength(1);
-            expect(customFeature?.effects[0].type).toBe('ability_bonus');
+            expect(customFeature?.effects[0].type).toBe('stat_bonus');
         });
     });
 
@@ -584,10 +601,11 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
 
     describe('Task 4: Test spawn rate system across all categories', () => {
         it('should apply custom spawn rates to class features', () => {
-            // Register custom features with spawn rate weights
+            // Register custom features with spawn rate weights via ExtensionManager
             const rareFeature = {
                 id: 'rare_feature',
                 name: 'Rare Feature',
+                type: 'passive' as const,
                 class: 'Fighter' as Class,
                 level: 1,
                 description: 'A rare feature.',
@@ -598,6 +616,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const commonFeature = {
                 id: 'common_feature',
                 name: 'Common Feature',
+                type: 'passive' as const,
                 class: 'Fighter' as Class,
                 level: 1,
                 description: 'A common feature.',
@@ -605,23 +624,27 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 source: 'custom' as const
             };
 
-            featureRegistry.registerClassFeature(rareFeature);
-            featureRegistry.registerClassFeature(commonFeature);
-
-            // Set spawn rate weights
-            extensionManager.setWeights('classFeatures.Fighter', {
-                'common_feature': 3.0,  // 3x more likely
-                'rare_feature': 0.5     // Half as likely
+            // Register via ExtensionManager (handles both storage and FeatureRegistry)
+            extensionManager.register('classFeatures.Fighter', [rareFeature, commonFeature], {
+                weights: {
+                    'common_feature': 3.0,  // 3x more likely
+                    'rare_feature': 0.5     // Half as likely
+                }
             });
 
             // Verify weights are set
             const weights = extensionManager.getWeights('classFeatures.Fighter');
             expect(weights['common_feature']).toBe(3.0);
             expect(weights['rare_feature']).toBe(0.5);
+
+            // Verify features are in FeatureRegistry
+            const retrievedFeature = featureRegistry.getClassFeatureById('common_feature');
+            expect(retrievedFeature).toBeDefined();
+            expect(retrievedFeature?.name).toBe('Common Feature');
         });
 
         it('should apply custom spawn rates to skills', () => {
-            // Register custom skills
+            // Register custom skills via ExtensionManager
             const commonSkill = {
                 id: 'common_custom_skill',
                 name: 'Common Custom Skill',
@@ -640,10 +663,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 categories: ['combat']
             };
 
-            skillRegistry.registerSkill(commonSkill);
-            skillRegistry.registerSkill(rareSkill);
-
-            // Set spawn rate weights via ExtensionManager
+            // Register via ExtensionManager (handles both storage and SkillRegistry)
             extensionManager.register('skills', [commonSkill, rareSkill], {
                 weights: {
                     'common_custom_skill': 5.0,  // 5x more likely
@@ -655,6 +675,11 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const weights = extensionManager.getWeights('skills');
             expect(weights['common_custom_skill']).toBe(5.0);
             expect(weights['rare_custom_skill']).toBe(0.2);
+
+            // Verify skills are in SkillRegistry
+            const retrievedSkill = skillRegistry.getSkill('common_custom_skill');
+            expect(retrievedSkill).toBeDefined();
+            expect(retrievedSkill?.name).toBe('Common Custom Skill');
         });
 
         it('should apply custom spawn rates to appearance options', () => {
@@ -735,10 +760,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 }
             ];
 
-            skillRegistry.registerSkill(customSkills[0]);
-            skillRegistry.registerSkill(customSkills[1]);
-
-            // Set absolute mode weights
+            // Set absolute mode weights via ExtensionManager (handles SkillRegistry registration)
             extensionManager.register('skills', customSkills, {
                 mode: 'absolute',
                 weights: {
@@ -754,6 +776,12 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const weights = extensionManager.getWeights('skills');
             expect(weights['only_allowed_skill']).toBe(5);
             expect(weights['another_allowed_skill']).toBe(3);
+
+            // Verify skills are in SkillRegistry
+            const skill1 = skillRegistry.getSkill('only_allowed_skill');
+            const skill2 = skillRegistry.getSkill('another_allowed_skill');
+            expect(skill1).toBeDefined();
+            expect(skill2).toBeDefined();
         });
 
         it('should apply spawn rates using WeightedSelector', () => {
@@ -895,6 +923,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const feature1 = {
                 id: 'duplicate_id',
                 name: 'Feature 1',
+                type: 'passive' as const,
                 class: 'Fighter' as Class,
                 level: 1,
                 description: 'First feature.',
@@ -924,6 +953,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const featureWithInvalidChain = {
                 id: 'feature_with_invalid_chain',
                 name: 'Feature with Invalid Chain',
+                type: 'active' as const,
                 class: 'Wizard' as Class,
                 level: 5,
                 description: 'Feature requiring non-existent prerequisite.',
@@ -1000,6 +1030,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 largeFeatureSet.push({
                     id: `bulk_feature_${i}`,
                     name: `Bulk Feature ${i}`,
+                    type: 'passive' as const,
                     class: 'Wizard' as Class,
                     level: 1,
                     description: `Bulk feature number ${i}.`,
@@ -1057,6 +1088,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const customFeature = {
                 id: 'test_cycle_feature',
                 name: 'Cycle Test Feature',
+                type: 'passive' as const,
                 class: 'Fighter' as Class,
                 level: 1,
                 description: 'Testing reset cycles.',
@@ -1099,11 +1131,12 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             featureRegistry.registerClassFeature({
                 id: 'champion_heroic_strike',
                 name: 'Heroic Strike',
+                type: 'active' as const,
                 class: 'Fighter' as Class,
                 level: 1,
                 description: 'A powerful heroic strike.',
                 effects: [
-                    { type: 'ability_bonus' as const, ability: 'STR' as const, value: 1 }
+                    { type: 'stat_bonus' as const, target: 'STR', value: 1 }
                 ],
                 source: 'custom' as const
             });
@@ -1112,6 +1145,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             featureRegistry.registerRacialTrait({
                 id: 'human_versatility_master',
                 name: 'Versatility Master',
+                type: 'passive' as const,
                 race: 'Human' as Race,
                 description: 'Humans are extremely versatile.',
                 effects: [],

@@ -15,7 +15,7 @@ import type { SeededRNG } from '../../utils/random.js';
 /**
  * Selection mode for weighted selection
  */
-export type SelectionMode = 'relative' | 'absolute' | 'default';
+export type SelectionMode = 'relative' | 'absolute' | 'default' | 'replace';
 
 /**
  * WeightedSelector - Generic weighted selection utility

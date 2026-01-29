@@ -652,7 +652,7 @@ describe('Integration: Edge Cases', () => {
         it('should handle special characters in item names', () => {
             const customEquipment = [
                 { name: "O'Brian Sword", type: 'weapon' as const, rarity: 'rare' as const, weight: 3 },
-                { name: 'Fire & Ice Staff', type: 'weapon' as const, rarity: 'epic' as const, weight: 5 },
+                { name: 'Fire & Ice Staff', type: 'weapon' as const, rarity: 'legendary' as const, weight: 5 },
                 { name: 'Dagger-dagger++', type: 'weapon' as const, rarity: 'common' as const, weight: 1 },
             ];
 

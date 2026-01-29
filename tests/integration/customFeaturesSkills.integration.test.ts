@@ -47,9 +47,11 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 name: 'Battle Hardened',
                 class: 'Fighter' as const,
                 level: 1,
+                type: 'passive' as const,
+                source: 'custom' as const,
                 description: 'You have survived countless battles.',
                 effects: [
-                    { type: 'ability_bonus' as const, ability: 'CON' as const, value: 1 }
+                    { type: 'stat_bonus' as const, target: 'CON' as const, value: 1 }
                 ]
             };
 
@@ -75,9 +77,11 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                     name: 'Arcane Mastery',
                     class: 'Wizard' as const,
                     level: 1,
+                type: 'passive' as const,
+                source: 'custom' as const,
                     description: 'You have mastered the arcane arts.',
                     effects: [
-                        { type: 'ability_bonus' as const, ability: 'INT' as const, value: 1 }
+                        { type: 'stat_bonus' as const, target: 'INT' as const, value: 1 }
                     ]
                 },
                 {
@@ -85,6 +89,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                     name: 'Spell Mastery',
                     class: 'Wizard' as const,
                     level: 3,
+                type: 'passive' as const,
+                source: 'custom' as const,
                     description: 'You can cast spells with increased power.',
                     effects: []
                 }
@@ -114,9 +120,11 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 name: 'Barbarian Toughness',
                 class: 'Barbarian' as const,
                 level: 1,
+                type: 'passive' as const,
+                source: 'custom' as const,
                 description: 'You are exceptionally tough.',
                 effects: [
-                    { type: 'ability_bonus' as const, ability: 'CON' as const, value: 2 }
+                    { type: 'stat_bonus' as const, target: 'CON' as const, value: 2 }
                 ]
             };
 
@@ -142,6 +150,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 name: 'Holy Avenger',
                 class: 'Paladin' as const,
                 level: 10,
+                type: 'passive' as const,
+                source: 'custom' as const,
                 description: 'You can summon a holy avenger weapon.',
                 effects: [],
                 prerequisites: {
@@ -182,8 +192,9 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 race: 'Elf' as const,
                 description: 'Your fey heritage is particularly strong.',
                 effects: [
-                    { type: 'ability_bonus' as const, ability: 'CHA' as const, value: 1 }
-                ]
+                    { type: 'stat_bonus' as const, target: 'CHA' as const, value: 1 }
+                ],
+                source: 'custom' as const
             };
 
             featureRegistry.registerRacialTrait(customTrait);
@@ -215,7 +226,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                     name: 'Stone Cunning',
                     race: 'Dwarf' as const,
                     description: 'You have intuition about stone work.',
-                    effects: []
+                    effects: [],
+                    source: 'custom' as const
                 },
                 {
                     id: 'dwarf_dwarven_toughness',
@@ -223,8 +235,9 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                     race: 'Dwarf' as const,
                     description: 'You are exceptionally hardy.',
                     effects: [
-                        { type: 'ability_bonus' as const, ability: 'CON' as const, value: 1 }
-                    ]
+                        { type: 'stat_bonus' as const, target: 'CON' as const, value: 1 }
+                    ],
+                    source: 'custom' as const
                 }
             ];
 
@@ -260,7 +273,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 race: 'Elf' as const,
                 subrace: 'High Elf',
                 description: 'You have proficiency with certain weapons.',
-                effects: []
+                effects: [],
+                source: 'custom' as const
             };
 
             featureRegistry.registerRacialTrait(highElfTrait);
@@ -372,6 +386,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 name: 'Weapon Specialist',
                 class: 'Fighter' as const,
                 level: 1,
+                type: 'passive' as const,
+                source: 'custom' as const,
                 description: 'You specialize in all weapons.',
                 effects: []
             };
@@ -412,6 +428,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 name: 'Shadow Step',
                 class: 'Rogue' as const,
                 level: 2,
+                type: 'passive' as const,
+                source: 'custom' as const,
                 description: 'You can step through shadows.',
                 effects: []
             };
@@ -476,6 +494,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 name: 'Test Feature',
                 class: 'Fighter' as const,
                 level: 1,
+                type: 'passive' as const,
+                source: 'custom' as const,
                 description: 'A test feature.',
                 effects: []
             };
@@ -514,6 +534,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 name: 'Invalid Feature',
                 class: 'Wizard' as const,
                 level: 1,
+                type: 'passive' as const,
+                source: 'custom' as const,
                 description: 'A feature with impossible prerequisites.',
                 effects: [],
                 prerequisites: {
@@ -544,6 +566,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 name: 'Reset Test Feature',
                 class: 'Fighter' as const,
                 level: 1,
+                type: 'passive' as const,
+                source: 'custom' as const,
                 description: 'A feature for testing reset.',
                 effects: []
             };
@@ -583,6 +607,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 name: 'Level 1 Feature',
                 class: 'Paladin' as const,
                 level: 1,
+                type: 'passive' as const,
+                source: 'custom' as const,
                 description: 'A level 1 feature.',
                 effects: []
             };
@@ -592,6 +618,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 name: 'Level 5 Feature',
                 class: 'Paladin' as const,
                 level: 5,
+                type: 'passive' as const,
+                source: 'custom' as const,
                 description: 'A level 5 feature.',
                 effects: []
             };

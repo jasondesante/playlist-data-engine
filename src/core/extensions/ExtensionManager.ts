@@ -93,8 +93,9 @@ export interface ExtensionOptions {
      * - 'relative': Add custom weights to default weights (default)
      * - 'absolute': Replace default weights entirely
      * - 'default': Use default weights (1.0 for all items)
+     * - 'replace': Replace default items with custom items only
      */
-    mode?: 'relative' | 'absolute' | 'default';
+    mode?: 'relative' | 'absolute' | 'default' | 'replace';
 
     /**
      * Custom spawn weights for individual items
@@ -279,7 +280,14 @@ export class ExtensionManager {
             return [...defaults];
         }
 
-        // Merge defaults with custom items
+        const mode = extension.options.mode || 'relative';
+
+        // Replace mode: return only custom items
+        if (mode === 'replace') {
+            return [...extension.items];
+        }
+
+        // Default and relative modes: merge defaults with custom items
         return [...defaults, ...extension.items];
     }
 
@@ -354,9 +362,9 @@ export class ExtensionManager {
     /**
      * Get the registration mode for a category
      * @param category - The category to check
-     * @returns The mode ('relative', 'absolute', 'default', or undefined if no custom data)
+     * @returns The mode ('relative', 'absolute', 'default', 'replace', or undefined if no custom data)
      */
-    getMode(category: ExtensionCategory): 'relative' | 'absolute' | 'default' | undefined {
+    getMode(category: ExtensionCategory): 'relative' | 'absolute' | 'default' | 'replace' | undefined {
         const extension = this.extensions.get(category);
         return extension?.options.mode;
     }

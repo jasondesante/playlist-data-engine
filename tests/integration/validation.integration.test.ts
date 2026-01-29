@@ -406,7 +406,7 @@ describe('Integration: ValidationManager', () => {
         it('should handle special characters in item names', () => {
             const validEquipment = [
                 { name: "O'Brian Sword", type: 'weapon' as const, rarity: 'rare' as const, weight: 3 },
-                { name: 'Fire & Ice', type: 'weapon' as const, rarity: 'epic' as const, weight: 4 },
+                { name: 'Fire & Ice', type: 'weapon' as const, rarity: 'legendary' as const, weight: 4 },
                 { name: 'Dagger-dagger', type: 'weapon' as const, rarity: 'common' as const, weight: 1 },
             ];
 
