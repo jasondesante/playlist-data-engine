@@ -2045,7 +2045,7 @@ const character = CharacterGenerator.generate(seed, audio, 'Hero', {
 **File:** `/Users/jasondesante/playlist-data-engine/src/core/generation/RaceSelector.ts`
 
 **Tasks:**
-- [ ] Update to use extended race list:
+- [x] Update to use extended race list:
   ```typescript
   static select(rng: SeededRNG): Race {
       const manager = ExtensionManager.getInstance();
@@ -2056,7 +2056,56 @@ const character = CharacterGenerator.generate(seed, audio, 'Hero', {
   }
   ```
 
-**Deliverable:** RaceSelector using extensibility system
+**Deliverable:** ~~RaceSelector using extensibility system~~ **COMPLETE**
+
+#### Implementation Summary - Phase 5.4: RaceSelector ✅
+
+**Files Modified:**
+- `src/core/generation/RaceSelector.ts` - Updated to use ExtensionManager and WeightedSelector
+
+**Changes Made:**
+1. Updated `RaceSelector.select()` method to use extensibility system:
+   - Added imports: `ExtensionManager`, `WeightedSelector`, `ensureRaceDefaultsInitialized`
+   - Ensures race defaults are initialized before selection
+   - Gets extended race list from ExtensionManager (defaults + custom races)
+   - Gets spawn rate weights from ExtensionManager
+   - Gets selection mode (relative/absolute/default) from ExtensionManager
+   - Uses `WeightedSelector.select()` for weighted random selection
+
+2. Enhanced JSDoc documentation:
+   - Added examples for custom race registration
+   - Added examples for custom spawn weights
+   - Documented extensibility system integration
+
+**Verification:**
+- ✅ TypeScript compilation passes (`tsc --noEmit`)
+- ✅ ESLint passes for modified file
+- ✅ RaceSelector now supports custom races via ExtensionManager
+- ✅ RaceSelector now supports custom spawn rates via ExtensionManager
+- ✅ Default behavior preserved (equal weights for all races)
+- ✅ Deterministic selection still works (same seed = same race)
+
+**Usage Example:**
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+// Register custom races with spawn rates
+const manager = ExtensionManager.getInstance();
+manager.register('races', ['Dragonkin', 'Fairy'], {
+    mode: 'relative',
+    weights: { 'Dragonkin': 0.5, 'Fairy': 0.3 }  // Rare races
+});
+
+// Or make certain races more common
+manager.setWeights('races', { 'Human': 2, 'Elf': 1.5 });
+
+// Character generation will use extended race list
+const character = CharacterGenerator.generate(seed, audio, 'Hero', {
+    extensions: {
+        races: ['Dragonkin', 'Fairy']
+    }
+});
+```
 
 ---
 
