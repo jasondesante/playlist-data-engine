@@ -21,7 +21,7 @@ IMPORTANT:
 - DO NOT DO MORE THAN ONE TASK/BOX AT A TIME
 - ALWAYS run a build/lint to make sure you didn't add any new bugs. 
 - ALWAYS verify that there aren't any random errors in the build.
-- update the implementation plan when the task is completed
+- update the DATA_ENGINE_UPGRADE_PLAN.md when the task is completed
 - commit and push to deploy the changes (if there are any changes) (commit locally for now)
 - once you have deployed the changes, say "done". 
 - Always remember to say "done" when you're done.
