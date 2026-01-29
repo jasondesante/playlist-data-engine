@@ -117,8 +117,8 @@ export class ClassSuggester {
         const finalProbabilities = this.applyCustomWeights(probabilities, customWeights, allClasses);
 
         // Step 5: Weighted random selection
-        const choices = Object.entries(finalProbabilities).map(([cls, prob]) => [cls, prob]);
-        return rng.weightedChoice(choices);
+        const choices = Object.entries(finalProbabilities).map(([cls, prob]) => [cls as Class, prob]);
+        return rng.weightedChoice(choices as [Class, number][]);
     }
 
     /**
