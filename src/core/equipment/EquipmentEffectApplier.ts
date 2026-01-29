@@ -456,9 +456,20 @@ export class EquipmentEffectApplier {
         // Equipment always grants at least the stated proficiency level
         // If character has higher (expertise), keep it
         const currentLevel = character.skills[skillId];
-        if (!currentLevel || proficiency === 'expertise') {
+
+        // Proficiency hierarchy: none < proficient < expertise
+        // Always apply if no current level or current is 'none'
+        if (!currentLevel || currentLevel === 'none') {
+            character.skills[skillId] = proficiency;
+            return;
+        }
+
+        // Apply expertise regardless of current level (upgrade from none/proficient)
+        if (proficiency === 'expertise') {
             character.skills[skillId] = proficiency;
         }
+        // Note: If current is 'proficient' and new is 'proficient', no change needed
+        // If current is 'expertise' and new is 'proficient', keep expertise (higher level)
     }
 
     /**
@@ -768,10 +779,19 @@ export class EquipmentEffectApplier {
         const skillId = equipmentSkill.skillId.toLowerCase();
         const currentLevel = character.skills[skillId];
 
-        // Only upgrade proficiency level
-        if (!currentLevel || equipmentSkill.level === 'expertise') {
+        // Proficiency hierarchy: none < proficient < expertise
+        // Always apply if no current level or current is 'none'
+        if (!currentLevel || currentLevel === 'none') {
+            character.skills[skillId] = equipmentSkill.level;
+            return;
+        }
+
+        // Apply expertise regardless of current level (upgrade from none/proficient)
+        if (equipmentSkill.level === 'expertise') {
             character.skills[skillId] = equipmentSkill.level;
         }
+        // Note: If current is 'proficient' and new is 'proficient', no change needed
+        // If current is 'expertise' and new is 'proficient', keep expertise (higher level)
     }
 
     /**

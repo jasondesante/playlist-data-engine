@@ -2002,7 +2002,7 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [x] Update FeatureRegistry
 
 ### Phase 10: Testing
-- [ ] Write unit tests for EquipmentEffectApplier
+- [x] Write unit tests for EquipmentEffectApplier
 - [ ] Write unit tests for EquipmentValidator
 - [ ] Write unit tests for EquipmentModifier
 - [x] Write unit tests for EquipmentSpawnHelper
