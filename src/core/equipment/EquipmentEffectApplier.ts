@@ -17,10 +17,9 @@ import type {
     EquipmentProperty,
     EquipmentCondition,
     EquipmentFeature,
-    EquipmentSkill,
-    EquipmentMiniFeature
+    EquipmentSkill
 } from '../types/Equipment.js';
-import { FeatureEffectApplier, CharacterEffect } from '../features/FeatureEffectApplier.js';
+import { FeatureEffectApplier } from '../features/FeatureEffectApplier.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import type { ClassFeature, RacialTrait, FeatureEffect } from '../features/FeatureTypes.js';
 
@@ -374,14 +373,6 @@ export class EquipmentEffectApplier {
         character: CharacterSheet,
         property: EquipmentProperty
     ): void {
-        // Convert EquipmentProperty to FeatureEffect format
-        const featureEffect: FeatureEffect = {
-            type: property.type as FeatureEffect['type'],
-            target: property.target,
-            value: property.value,
-            condition: property.condition ? this.convertConditionToString(property.condition) : undefined
-        };
-
         // Apply the effect using FeatureEffectApplier's private methods
         // We need to access the same logic, so we replicate the key parts
         switch (property.type) {
@@ -421,10 +412,11 @@ export class EquipmentEffectApplier {
                 return 'on_damage';
             case 'custom':
                 return condition.value;
-            default:
+            default: {
                 // TypeScript exhaustiveness check - handle all condition types
                 const exhaustive: never = condition;
                 return String((exhaustive as EquipmentCondition).value);
+            }
         }
     }
 
@@ -473,11 +465,14 @@ export class EquipmentEffectApplier {
      * Apply an ability unlock property
      */
     private static applyAbilityUnlock(
-        character: CharacterSheet,
-        property: EquipmentProperty
+        _character: CharacterSheet,
+        _property: EquipmentProperty
     ): void {
         // Ability unlocks are stored for game logic to reference
         // They're tracked in the equipment_effects array
+        // Suppress unused warning: parameters kept for future use
+        void _character;
+        void _property;
     }
 
     /**
@@ -522,6 +517,10 @@ export class EquipmentEffectApplier {
     ): void {
         // Special properties are stored in equipment_effects for game logic
         // No direct character modification needed
+        // Suppress unused warning: parameters kept for future use
+        void _character;
+        void _property;
+        void _sourceName;
     }
 
     /**
@@ -534,6 +533,10 @@ export class EquipmentEffectApplier {
     ): void {
         // Damage bonuses are stored in equipment_effects for combat system
         // No direct character modification needed
+        // Suppress unused warning: parameters kept for future use
+        void _character;
+        void _property;
+        void _sourceName;
     }
 
     /**

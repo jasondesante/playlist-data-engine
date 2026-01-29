@@ -717,7 +717,7 @@ export interface Equipment {
 }
 ```
 
-**Deliverable:** Updated Equipment interface
+**Deliverable:** ~~Updated Equipment interface~~ **COMPLETE**
 
 ---
 
@@ -1982,7 +1982,7 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [x] Update default initialization
 
 ### Phase 6: Default Equipment Updates
-- [ ] Update Equipment interface in constants.ts
+- [x] Update Equipment interface in constants.ts
 - [ ] Populate EQUIPMENT_DATABASE with D&D 5e stats
 - [ ] Create example magic items
 
