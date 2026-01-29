@@ -2258,14 +2258,30 @@ manager.setWeights('classes', { 'Barbarian': 2, 'Wizard': 0.5 });
 - ✅ ESLint passes for new test file (no errors)
 - ✅ Comprehensive test coverage for WeightedSelector requirements
 
-- [ ] Test each category with custom data:
+- [x] Test each category with custom data:
   - Spells: custom spells appear in generation
   - Equipment: custom items spawn with correct weights
   - Appearance: custom options appear
   - Races: custom races spawn
   - Classes: custom classes spawn
 
-**Deliverable:** Comprehensive test suite
+**Deliverable:** ~~Comprehensive test suite~~ **COMPLETE**
+
+**Implementation:** Created `tests/integration/customGeneration.integration.test.ts` with comprehensive integration tests covering:
+- Spells: Custom spells appear in spellcasting characters, empty arrays handled, cantrips included
+- Equipment: Custom equipment registered in characters, custom weights applied, empty arrays handled
+- Appearance: All appearance categories tested (bodyTypes, skinTones, hairColors, hairStyles, eyeColors, facialFeatures)
+- Races: Custom races registered with weights, empty arrays handled
+- Classes: Custom classes registered with weights, empty arrays handled
+- Combined: Multiple custom categories at once
+- Edge cases: Multiple generations with different data, defaults maintained when custom data provided
+
+**Verification:**
+- ✅ TypeScript compilation passes for new test file
+- ✅ Comprehensive test coverage for all 5 categories (spells, equipment, appearance, races, classes)
+- ✅ Tests verify custom data appears in generated characters
+- ✅ Tests verify custom weights are applied correctly
+- ✅ Tests verify defaults are maintained when custom data is provided
 
 ---
 
