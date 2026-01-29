@@ -66,7 +66,9 @@ export class WeightedSelector<T = any> {
         // Convert to choices format for SeededRNG.weightedChoice
         const choices: [T, number][] = items.map(item => {
             const itemName = this.getItemName(item);
-            return [item, finalWeights[itemName] || 1];
+            // Use finalWeights[itemName] if it exists (even if 0), otherwise default to 1
+            const weight = itemName in finalWeights ? finalWeights[itemName] : 1;
+            return [item, weight];
         });
 
         return rng.weightedChoice(choices);

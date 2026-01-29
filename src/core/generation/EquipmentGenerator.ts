@@ -218,9 +218,14 @@ export class EquipmentGenerator {
 
     const existing = inventory.find((i) => i.name === itemName);
     if (existing) {
-      existing.quantity += quantity;
+      // For existing items, negative or zero quantity is a no-op
+      if (quantity > 0) {
+        existing.quantity += quantity;
+      }
+      // If quantity <= 0, don't change anything (no-op)
     } else {
-      inventory.push({ name: itemName, quantity, equipped: false });
+      // For new items, allow zero quantity but negative is treated as 0
+      inventory.push({ name: itemName, quantity: Math.max(0, quantity), equipped: false });
     }
 
     updated.totalWeight = this.calculateTotalWeight(
@@ -251,6 +256,11 @@ export class EquipmentGenerator {
     quantity: number = 1
   ): CharacterEquipment {
     this.ensureInitialized();
+
+    // Handle invalid quantities as no-ops (zero or negative)
+    if (quantity <= 0) {
+      return equipment;
+    }
 
     const updated = this.cloneEquipment(equipment);
     let inventory: InventoryItem[];
@@ -320,7 +330,7 @@ export class EquipmentGenerator {
 
     // Find the item and mark as equipped
     const item = inventory.find((i) => i.name === itemName);
-    if (item && item.quantity > 0) {
+    if (item) {
       item.equipped = true;
     }
 

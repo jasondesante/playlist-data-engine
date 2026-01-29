@@ -205,15 +205,22 @@ export class ExtensionManager {
         }
 
         // Store the extension data
+        // For relative mode, merge with existing items; for other modes, replace
+        const existingExtension = this.extensions.get(category);
+        const finalItems = (mode === 'relative' && existingExtension)
+            ? [...existingExtension.items, ...items]
+            : [...items];
+
         this.extensions.set(category, {
-            items: [...items],
+            items: finalItems,
             options: { mode, weights, validate },
             registeredAt: Date.now()
         });
 
-        // Store custom weights if provided
+        // Merge custom weights if provided (don't replace existing weights)
         if (Object.keys(weights).length > 0) {
-            this.customWeights.set(category, weights);
+            const existingWeights = this.customWeights.get(category) || {};
+            this.customWeights.set(category, { ...existingWeights, ...weights });
         }
 
         // Phase 13.1: Integrate with FeatureRegistry for class features
@@ -417,7 +424,7 @@ export class ExtensionManager {
         if (category === 'equipment') {
             // Equipment must have name, type, rarity, weight
             if (!item.name || typeof item.name !== 'string') {
-                errors.push(`${prefix} Missing or invalid 'name' property`);
+                errors.push(`${prefix} Required field 'name' is missing or invalid`);
             }
             if (!['weapon', 'armor', 'item'].includes(item.type)) {
                 errors.push(`${prefix} Invalid 'type' (must be 'weapon', 'armor', or 'item')`);

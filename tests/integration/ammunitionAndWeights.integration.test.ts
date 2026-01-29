@@ -76,17 +76,17 @@ describe('Integration: Ammunition Fix and Weight System', () => {
             expect(oldArrowItem).toBeUndefined();
         });
 
-        it('should give Fighter ammunition when using ranged weapons', () => {
+        it('should give Ranger ammunition when using ranged weapons', () => {
             const character = CharacterGenerator.generate(
-                'test-fighter-arrows',
+                'test-ranger-arrows',
                 sampleAudioProfile,
-                'Fighter Test',
+                'Ranger Test',
                 {
-                    forceClass: 'Fighter'
+                    forceClass: 'Ranger'
                 }
             );
 
-            // Fighter starts with Longbow, should get arrows
+            // Ranger starts with Longbow, should get arrows
             const arrowItems = character.equipment?.items.filter(item => item.name === 'Arrow');
             expect(arrowItems).toBeDefined();
             expect(arrowItems.length).toBe(1);
@@ -355,7 +355,7 @@ describe('Integration: Ammunition Fix and Weight System', () => {
                 selections[selected] = (selections[selected] || 0) + 1;
             }
 
-            expect(selections['Unwanted Item']).toBe(0);
+            expect(selections['Unwanted Item'] || 0).toBe(0);
         });
     });
 

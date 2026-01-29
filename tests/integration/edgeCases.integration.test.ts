@@ -526,6 +526,12 @@ describe('Integration: Edge Cases', () => {
             // This is an edge case - in normal flow, quantity 0 items are removed
             // But let's test the behavior if such an item exists
 
+            // First register "Test Arrow" in the equipment database
+            const testArrowEquipment = [
+                { name: 'Test Arrow', type: 'item' as const, rarity: 'common' as const, weight: 0.05 },
+            ];
+            manager.register('equipment', testArrowEquipment);
+
             let equipment = EquipmentGenerator.initializeEquipment('Ranger');
 
             // Manually create an item with 0 quantity (edge case)
@@ -542,6 +548,12 @@ describe('Integration: Edge Cases', () => {
         });
 
         it('should handle un-equipping item with quantity 0', () => {
+            // First register "Test Arrow" in the equipment database (if not already registered)
+            const testArrowEquipment = [
+                { name: 'Test Arrow', type: 'item' as const, rarity: 'common' as const, weight: 0.05 },
+            ];
+            manager.register('equipment', testArrowEquipment);
+
             let equipment = EquipmentGenerator.initializeEquipment('Ranger');
 
             // Create and equip item with 0 quantity

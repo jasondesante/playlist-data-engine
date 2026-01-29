@@ -102,18 +102,23 @@ export class SpellManager {
     const category = `spells.${characterClass}` as const;
     const classSpellData = manager.get(category);
 
-    if (classSpellData.length === 0) {
-      // Fall back to default data if no extended data
-      const spellList = CLASS_SPELL_LISTS[characterClass];
-      if (!spellList || !spellList.cantrips || spellList.cantrips.length === 0) {
-        return [];
+    // Start with default cantrips
+    const defaultList = CLASS_SPELL_LISTS[characterClass];
+    const mergedCantrips = defaultList ? [...defaultList.cantrips] : [];
+
+    // Merge in custom cantrips from all extended spell lists
+    for (const spellData of classSpellData) {
+      const list = spellData as ClassSpellListData;
+      if (list.cantrips && list.cantrips.length > 0) {
+        for (const cantrip of list.cantrips) {
+          if (!mergedCantrips.includes(cantrip)) {
+            mergedCantrips.push(cantrip);
+          }
+        }
       }
-      return [...spellList.cantrips];
     }
 
-    // Get cantrips from extended data
-    const spellList = classSpellData[0] as ClassSpellListData;
-    return [...spellList.cantrips];
+    return mergedCantrips;
   }
 
   /**
@@ -150,8 +155,50 @@ export class SpellManager {
       }
       spellList = defaultList;
     } else {
-      // Get spell list from extended data
-      spellList = (classSpellData[0] as ClassSpellListData);
+      // Merge spell lists from all extended data sources (defaults + custom)
+      // Start with defaults from CLASS_SPELL_LISTS
+      const defaultList = CLASS_SPELL_LISTS[characterClass];
+      const mergedCantrips = defaultList ? [...defaultList.cantrips] : [];
+      const mergedSpellsByLevel: Record<number, string[]> = {};
+
+      // Initialize with default spells
+      if (defaultList && defaultList.spells_by_level) {
+        for (const [level, spells] of Object.entries(defaultList.spells_by_level)) {
+          mergedSpellsByLevel[Number(level)] = [...spells];
+        }
+      }
+
+      // Merge in custom spells from all extended spell lists
+      for (const spellData of classSpellData) {
+        const list = spellData as ClassSpellListData;
+        // Merge cantrips
+        if (list.cantrips && list.cantrips.length > 0) {
+          for (const cantrip of list.cantrips) {
+            if (!mergedCantrips.includes(cantrip)) {
+              mergedCantrips.push(cantrip);
+            }
+          }
+        }
+        // Merge spells by level
+        if (list.spells_by_level) {
+          for (const [level, spells] of Object.entries(list.spells_by_level)) {
+            const levelNum = Number(level);
+            if (!mergedSpellsByLevel[levelNum]) {
+              mergedSpellsByLevel[levelNum] = [];
+            }
+            for (const spell of spells) {
+              if (!mergedSpellsByLevel[levelNum].includes(spell)) {
+                mergedSpellsByLevel[levelNum].push(spell);
+              }
+            }
+          }
+        }
+      }
+
+      spellList = {
+        cantrips: mergedCantrips,
+        spells_by_level: mergedSpellsByLevel
+      };
     }
 
     const knownSpells: string[] = [];
