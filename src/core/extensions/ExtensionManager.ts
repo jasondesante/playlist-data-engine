@@ -14,7 +14,6 @@
  */
 
 import type { Race, Class } from '../types/Character.js';
-import type { Spell } from '../../utils/constants.js';
 
 /**
  * All extensible categories in the system
@@ -30,7 +29,7 @@ export type ExtensionCategory =
     | 'spells'
     | 'races'
     | 'classes'
-    | `spells.${Class}`;
+    | `spells.${string}`;
 
 /**
  * Options for registering custom data

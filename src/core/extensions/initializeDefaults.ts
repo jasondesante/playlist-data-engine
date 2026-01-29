@@ -7,6 +7,8 @@
  */
 
 import { ExtensionManager } from './ExtensionManager.js';
+import { SPELL_DATABASE, CLASS_SPELL_LISTS } from '../../utils/constants.js';
+import type { Class } from '../types/Character.js';
 
 /**
  * Default appearance data
@@ -101,5 +103,63 @@ export function areAppearanceDefaultsInitialized(): boolean {
 export function ensureAppearanceDefaultsInitialized(): void {
     if (!areAppearanceDefaultsInitialized()) {
         initializeAppearanceDefaults();
+    }
+}
+
+/**
+ * Default spell data
+ * Convert SPELL_DATABASE to array format for ExtensionManager
+ */
+const DEFAULT_SPELL_DATA = Object.values(SPELL_DATABASE);
+
+/**
+ * Default class spell lists data
+ * Format: Array of { class: Class, cantrips: string[], spells_by_level: Record<number, string[]> }
+ */
+const DEFAULT_CLASS_SPELL_LISTS_DATA = Object.entries(CLASS_SPELL_LISTS).map(([className, spellList]) => ({
+    class: className as Class,
+    cantrips: spellList.cantrips,
+    spells_by_level: spellList.spells_by_level,
+}));
+
+/**
+ * Initialize ExtensionManager with default spell data
+ *
+ * This should be called once during application initialization.
+ */
+export function initializeSpellDefaults(): void {
+    const manager = ExtensionManager.getInstance();
+
+    // Initialize spells database (all spells)
+    manager.initializeDefaults('spells', DEFAULT_SPELL_DATA);
+
+    // Initialize class-specific spell lists
+    for (const classSpellData of DEFAULT_CLASS_SPELL_LISTS_DATA) {
+        const category = `spells.${classSpellData.class}` as const;
+        // Store the full spell list object for this class
+        manager.initializeDefaults(category, [classSpellData]);
+    }
+}
+
+/**
+ * Check if spell defaults are initialized
+ */
+export function areSpellDefaultsInitialized(): boolean {
+    const manager = ExtensionManager.getInstance();
+    const categories = manager.getRegisteredCategories();
+
+    // Check if spells category is registered
+    return categories.some(cat => String(cat).startsWith('spells'));
+}
+
+/**
+ * Ensure spell defaults are initialized
+ *
+ * Initializes defaults if they haven't been already.
+ * Safe to call multiple times.
+ */
+export function ensureSpellDefaultsInitialized(): void {
+    if (!areSpellDefaultsInitialized()) {
+        initializeSpellDefaults();
     }
 }

@@ -5,6 +5,17 @@
 import type { Class } from '../types/Character.js';
 // import type { SeededRNG } from '../../utils/random.js';
 import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS } from '../../utils/constants.js';
+import { ExtensionManager } from '../extensions/ExtensionManager.js';
+import { ensureSpellDefaultsInitialized } from '../extensions/initializeDefaults.js';
+
+/**
+ * Interface for class spell list data (used for extensibility)
+ */
+interface ClassSpellListData {
+    class: Class;
+    cantrips: string[];
+    spells_by_level: Record<number, string[]>;
+}
 
 export interface SpellSlots {
   /** Record of spell slots by spell level (0-9) */
@@ -71,9 +82,10 @@ export class SpellManager {
   /**
    * Get cantrips known by a spellcaster at a given level
    *
+   * Uses the ExtensionManager to get extended spell data (defaults + custom).
+   *
    * @param characterClass - The character's class
    * @param characterLevel - The character's level (1-20)
-   * @param rng - Seeded random number generator for deterministic selection
    * @returns Array of cantrip names
    */
   static getCantrips(
@@ -83,22 +95,34 @@ export class SpellManager {
       return [];
     }
 
-    const spellList = CLASS_SPELL_LISTS[characterClass];
-    if (!spellList || !spellList.cantrips || spellList.cantrips.length === 0) {
-      return [];
+    // Ensure spell defaults are initialized
+    ensureSpellDefaultsInitialized();
+
+    const manager = ExtensionManager.getInstance();
+    const category = `spells.${characterClass}` as const;
+    const classSpellData = manager.get(category);
+
+    if (classSpellData.length === 0) {
+      // Fall back to default data if no extended data
+      const spellList = CLASS_SPELL_LISTS[characterClass];
+      if (!spellList || !spellList.cantrips || spellList.cantrips.length === 0) {
+        return [];
+      }
+      return [...spellList.cantrips];
     }
 
-    // Return all available cantrips for the class
-    // (Cantrips are typically all known by a spellcaster and scale with level)
+    // Get cantrips from extended data
+    const spellList = classSpellData[0] as ClassSpellListData;
     return [...spellList.cantrips];
   }
 
   /**
    * Get spells known by a spellcaster at a given level
    *
+   * Uses the ExtensionManager to get extended spell data (defaults + custom).
+   *
    * @param characterClass - The character's class
    * @param characterLevel - The character's level (1-20)
-   * @param rng - Seeded random number generator for deterministic selection
    * @returns Array of spell names that the character knows
    */
   static getKnownSpells(
@@ -109,9 +133,25 @@ export class SpellManager {
       return [];
     }
 
-    const spellList = CLASS_SPELL_LISTS[characterClass];
-    if (!spellList || !spellList.spells_by_level) {
-      return [];
+    // Ensure spell defaults are initialized
+    ensureSpellDefaultsInitialized();
+
+    const manager = ExtensionManager.getInstance();
+    const category = `spells.${characterClass}` as const;
+    const classSpellData = manager.get(category);
+
+    let spellList: { cantrips: string[]; spells_by_level: Record<number, string[]> };
+
+    if (classSpellData.length === 0) {
+      // Fall back to default data if no extended data
+      const defaultList = CLASS_SPELL_LISTS[characterClass];
+      if (!defaultList || !defaultList.spells_by_level) {
+        return [];
+      }
+      spellList = defaultList;
+    } else {
+      // Get spell list from extended data
+      spellList = (classSpellData[0] as ClassSpellListData);
     }
 
     const knownSpells: string[] = [];

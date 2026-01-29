@@ -1999,7 +1999,7 @@ const character = CharacterGenerator.generate(seed, audio, 'Hero', {
 **File:** `/Users/jasondesante/playlist-data-engine/src/core/generation/SpellManager.ts`
 
 **Tasks:**
-- [ ] Update `initializeSpells()` to use extended data:
+- [x] Update `initializeSpells()` to use extended data:
   ```typescript
   static initializeSpells(characterClass: Class, characterLevel: number): SpellSlots {
       const manager = ExtensionManager.getInstance();
@@ -2011,7 +2011,7 @@ const character = CharacterGenerator.generate(seed, audio, 'Hero', {
   }
   ```
 
-**Deliverable:** SpellManager using extensibility system
+**Deliverable:** ~~SpellManager using extensibility system~~ **COMPLETE**
 
 ---
 
