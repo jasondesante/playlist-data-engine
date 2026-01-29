@@ -13,6 +13,7 @@ import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureFeatureDefaultsInitialized } from '../extensions/index.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import { FeatureEffectApplier } from '../features/FeatureEffectApplier.js';
+import { EquipmentEffectApplier } from '../equipment/EquipmentEffectApplier.js';
 
 /**
  * Extension data for custom spells
@@ -382,6 +383,24 @@ export class CharacterGenerator {
 
         // Apply feature effects from class features
         FeatureEffectApplier.applyMultipleEffects(characterSheet, validClassFeatures);
+
+        // Apply equipment effects for equipped items (Phase 9.1)
+        // Equipment effects are applied after feature effects so they can stack
+        if (equipment) {
+            const equippedItems = [
+                ...equipment.weapons.filter(item => item.equipped),
+                ...equipment.armor.filter(item => item.equipped),
+                ...equipment.items.filter(item => item.equipped)
+            ];
+
+            for (const item of equippedItems) {
+                const equipData = EquipmentGenerator.getEquipmentDataStatic(item.name);
+                if (equipData) {
+                    const instanceId = (item as { instanceId?: string }).instanceId;
+                    EquipmentEffectApplier.equipItem(characterSheet, equipData, instanceId);
+                }
+            }
+        }
 
         return characterSheet;
     }

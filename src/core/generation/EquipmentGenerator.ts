@@ -63,6 +63,18 @@ export class EquipmentGenerator {
   /**
    * Get equipment data from extended database (defaults + custom)
    *
+   * Public static method for external access.
+   *
+   * @param itemName - Name of the equipment to look up
+   * @returns EnhancedEquipment data or undefined if not found
+   */
+  static getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined {
+    return EquipmentGenerator.getEquipmentData(itemName);
+  }
+
+  /**
+   * Get equipment data from extended database (defaults + custom)
+   *
    * @param itemName - Name of the equipment to look up
    * @returns EnhancedEquipment data or undefined if not found
    */
