@@ -1,6 +1,9 @@
 import type { Class } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
 import { SeededRNG } from '../../utils/random.js';
+import { ExtensionManager } from '../extensions/ExtensionManager.js';
+import { WeightedSelector } from '../extensions/WeightedSelector.js';
+import { ensureAppearanceDefaultsInitialized } from '../extensions/initializeDefaults.js';
 
 export interface CharacterAppearance {
     // Deterministic features (from seed)
@@ -17,67 +20,6 @@ export interface CharacterAppearance {
     aura_color?: string;
 }
 
-// Predefined appearance palettes
-const BODY_TYPES: Array<'slender' | 'athletic' | 'muscular' | 'stocky'> = ['slender', 'athletic', 'muscular', 'stocky'];
-
-
-const SKIN_TONES = [
-    '#F5E6D3', // Fair
-    '#E8C4A0', // Light
-    '#D4A574', // Medium
-    '#C68642', // Tan
-    '#8D5524', // Brown
-    '#5C3317', // Dark
-];
-
-const HAIR_COLORS = [
-    '#1C1C1C', // Black
-    '#3B2414', // Dark Brown
-    '#6A4E23', // Brown
-    '#A67B5B', // Light Brown
-    '#D4AF37', // Blonde
-    '#E9C2A6', // Light Blonde
-    '#B55239', // Auburn
-    '#DC143C', // Red
-    '#C0C0C0', // Gray
-    '#FFFFFF', // White
-];
-
-const EYE_COLORS = [
-    '#3B2414', // Brown
-    '#6F4E37', // Hazel
-    '#228B22', // Green
-    '#4169E1', // Blue
-    '#708090', // Gray
-    '#000000', // Black
-];
-
-const HAIR_STYLES = [
-    'short',
-    'long',
-    'bald',
-    'braided',
-    'curly',
-    'wavy',
-    'straight',
-    'ponytail',
-    'mohawk',
-    'dreadlocks',
-];
-
-const FACIAL_FEATURES = [
-    'scar on cheek',
-    'tattoo on forehead',
-    'piercing',
-    'freckles',
-    'beard',
-    'mustache',
-    'clean-shaven',
-    'birthmark',
-    'sharp jawline',
-    'soft features',
-];
-
 // Magical classes that receive aura colors
 const MAGICAL_CLASSES: Class[] = [
     'Wizard',
@@ -92,25 +34,62 @@ const MAGICAL_CLASSES: Class[] = [
 export class AppearanceGenerator {
     /**
      * Generate character appearance from seed and audio profile
+     *
+     * Uses the ExtensionManager to get appearance options (defaults + custom)
+     * and WeightedSelector for spawn rate control.
      */
     static generate(
         seed: string,
         characterClass: Class,
         audioProfile: AudioProfile
     ): CharacterAppearance {
+        // Ensure defaults are initialized
+        ensureAppearanceDefaultsInitialized();
+
         const rng = new SeededRNG(seed);
+        const manager = ExtensionManager.getInstance();
 
-        // Generate deterministic features
-        const body_type = rng.randomChoice(BODY_TYPES);
-        const skin_tone = rng.randomChoice(SKIN_TONES);
-        const hair_style = rng.randomChoice(HAIR_STYLES);
-        const hair_color = rng.randomChoice(HAIR_COLORS);
-        const eye_color = rng.randomChoice(EYE_COLORS);
+        // Get extended appearance data (defaults + custom)
+        const bodyTypes = manager.get('appearance.bodyTypes');
+        const bodyWeights = manager.getWeights('appearance.bodyTypes');
+        const body_mode = manager.getMode('appearance.bodyTypes') || 'default';
 
-        // Generate 1-3 facial features
+        const skinTones = manager.get('appearance.skinTones');
+        const skinWeights = manager.getWeights('appearance.skinTones');
+        const skin_mode = manager.getMode('appearance.skinTones') || 'default';
+
+        const hairStyles = manager.get('appearance.hairStyles');
+        const hairStyleWeights = manager.getWeights('appearance.hairStyles');
+        const hairStyle_mode = manager.getMode('appearance.hairStyles') || 'default';
+
+        const hairColors = manager.get('appearance.hairColors');
+        const hairColorWeights = manager.getWeights('appearance.hairColors');
+        const hairColor_mode = manager.getMode('appearance.hairColors') || 'default';
+
+        const eyeColors = manager.get('appearance.eyeColors');
+        const eyeWeights = manager.getWeights('appearance.eyeColors');
+        const eye_mode = manager.getMode('appearance.eyeColors') || 'default';
+
+        const facialFeatures = manager.get('appearance.facialFeatures');
+        const featureWeights = manager.getWeights('appearance.facialFeatures');
+        const feature_mode = manager.getMode('appearance.facialFeatures') || 'default';
+
+        // Generate deterministic features using weighted selection
+        const body_type = WeightedSelector.select(bodyTypes, bodyWeights, rng, body_mode);
+        const skin_tone = WeightedSelector.select(skinTones, skinWeights, rng, skin_mode);
+        const hair_style = WeightedSelector.select(hairStyles, hairStyleWeights, rng, hairStyle_mode);
+        const hair_color = WeightedSelector.select(hairColors, hairColorWeights, rng, hairColor_mode);
+        const eye_color = WeightedSelector.select(eyeColors, eyeWeights, rng, eye_mode);
+
+        // Generate 1-3 facial features using weighted selection without duplicates
         const numFeatures = rng.randomInt(1, 4);
-        const shuffledFeatures = rng.shuffle(FACIAL_FEATURES);
-        const facial_features = shuffledFeatures.slice(0, numFeatures);
+        const selected_facial_features = WeightedSelector.selectMultiple(
+            facialFeatures,
+            featureWeights,
+            rng,
+            numFeatures,
+            feature_mode
+        );
 
         // Generate dynamic features from audio/visual data
         const colorPalette = audioProfile.color_palette;
@@ -130,7 +109,7 @@ export class AppearanceGenerator {
             hair_style,
             hair_color,
             eye_color,
-            facial_features,
+            facial_features: selected_facial_features,
             primary_color,
             secondary_color,
             aura_color,

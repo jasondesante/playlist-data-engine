@@ -1899,16 +1899,19 @@ The validation functionality is implemented directly in `ExtensionManager.ts` (l
 **File:** `/Users/jasondesante/playlist-data-engine/src/core/generation/AppearanceGenerator.ts`
 
 **Tasks:**
-- [ ] Replace hardcoded arrays with ExtensionManager:
+- [x] Replace hardcoded arrays with ExtensionManager:
   ```typescript
   static generate(seed: string, characterClass: Class, audioProfile: AudioProfile): CharacterAppearance {
+      // Ensure defaults are initialized
+      ensureAppearanceDefaultsInitialized();
+
       const rng = new SeededRNG(seed);
       const manager = ExtensionManager.getInstance();
 
       // Get extended body types (defaults + custom)
       const bodyTypes = manager.get('appearance.bodyTypes');
       const bodyWeights = manager.getWeights('appearance.bodyTypes');
-      const body_type = WeightedSelector.select(bodyTypes, bodyWeights, rng);
+      const body_type = WeightedSelector.select(bodyTypes, bodyWeights, rng, body_mode);
 
       // Same for skin tones, hair colors, etc.
 
@@ -1916,20 +1919,78 @@ The validation functionality is implemented directly in `ExtensionManager.ts` (l
       const facialFeatures = manager.get('appearance.facialFeatures');
       const featureWeights = manager.getWeights('appearance.facialFeatures');
       const numFeatures = rng.randomInt(1, 4);
-      const selectedFeatures = WeightedSelector.selectMultiple(
+      const selected_facial_features = WeightedSelector.selectMultiple(
           facialFeatures,
           featureWeights,
           rng,
-          numFeatures
+          numFeatures,
+          feature_mode
       );
 
       // ... rest of generation
   }
   ```
 
-- [ ] Add default appearance data to ExtensionManager on init
+- [x] Add default appearance data to ExtensionManager on init
+  - Created `src/core/extensions/initializeDefaults.ts`
+  - Exported initialization functions from `src/core/extensions/index.ts`
 
-**Deliverable:** AppearanceGenerator using extensibility system
+**Deliverable:** AppearanceGenerator using extensibility system ✅
+
+#### Implementation Summary - Phase 5.1: AppearanceGenerator ✅
+
+**Files Modified:**
+- `src/core/generation/AppearanceGenerator.ts` - Updated to use ExtensionManager and WeightedSelector
+- `src/core/extensions/index.ts` - Exported initialization functions
+- `src/core/extensions/initializeDefaults.ts` (NEW) - Default appearance data initialization
+
+**Changes Made:**
+1. Created `initializeDefaults.ts` with default appearance data:
+   - `BODY_TYPES`: 4 options (slender, athletic, muscular, stocky)
+   - `SKIN_TONES`: 6 hex colors (Fair to Dark)
+   - `HAIR_COLORS`: 10 hex colors (Black to White)
+   - `HAIR_STYLES`: 10 styles (short, long, bald, etc.)
+   - `EYE_COLORS`: 6 hex colors (Brown, Hazel, Green, Blue, Gray, Black)
+   - `FACIAL_FEATURES`: 10 options (scar, tattoo, piercing, freckles, beard, etc.)
+
+2. Updated `AppearanceGenerator.ts`:
+   - Removed hardcoded arrays
+   - Added imports: `ExtensionManager`, `WeightedSelector`, `ensureAppearanceDefaultsInitialized`
+   - Updated `generate()` method to use ExtensionManager for all appearance categories
+   - Uses `WeightedSelector.select()` for single selections
+   - Uses `WeightedSelector.selectMultiple()` for facial features (1-3 without duplicates)
+   - Respects spawn mode ('relative', 'absolute', 'default') from ExtensionManager
+
+3. Exported initialization functions:
+   - `initializeAppearanceDefaults()` - Initialize all default appearance data
+   - `areAppearanceDefaultsInitialized()` - Check if already initialized
+   - `ensureAppearanceDefaultsInitialized()` - Safe initialization (idempotent)
+
+**Testing:**
+- ✅ TypeScript compilation passes (`tsc --noEmit`)
+- ✅ ESLint passes for modified files
+- ⚠️ Test runner has rollup dependency issue (pre-existing)
+
+**Usage Example:**
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+// Register custom body types with weights
+const manager = ExtensionManager.getInstance();
+manager.register('appearance.bodyTypes', ['giant', 'diminutive'], {
+    mode: 'relative',
+    weights: { 'giant': 0.5, 'diminutive': 0.3 }  // Less common
+});
+
+// Character generation will use extended list
+const character = CharacterGenerator.generate(seed, audio, 'Hero', {
+    extensions: {
+        appearance: {
+            bodyTypes: ['giant', 'diminutive']
+        }
+    }
+});
+```
 
 ---
 

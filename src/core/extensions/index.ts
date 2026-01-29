@@ -9,3 +9,5 @@ export type { ExtensionCategory, ExtensionOptions, ValidationResult } from './Ex
 
 export { WeightedSelector } from './WeightedSelector.js';
 export type { SelectionMode } from './WeightedSelector.js';
+
+export { initializeAppearanceDefaults, areAppearanceDefaultsInitialized, ensureAppearanceDefaultsInitialized } from './initializeDefaults.js';
