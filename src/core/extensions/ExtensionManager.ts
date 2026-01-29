@@ -20,6 +20,7 @@ import { FeatureValidator, validateClassFeature, validateRacialTrait } from '../
 import type { CustomSkill } from '../skills/SkillTypes.js';
 import { SkillRegistry } from '../skills/SkillRegistry.js';
 import { SkillValidator, validateSkill } from '../skills/SkillValidator.js';
+import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
 
 /**
  * All extensible categories in the system
@@ -426,18 +427,10 @@ export class ExtensionManager {
 
         // Category-specific validation
         if (category === 'equipment') {
-            // Equipment must have name, type, rarity, weight
-            if (!item.name || typeof item.name !== 'string') {
-                errors.push(`${prefix} Required field 'name' is missing or invalid`);
-            }
-            if (!['weapon', 'armor', 'item'].includes(item.type)) {
-                errors.push(`${prefix} Invalid 'type' (must be 'weapon', 'armor', or 'item')`);
-            }
-            if (!['common', 'uncommon', 'rare', 'very_rare', 'legendary'].includes(item.rarity)) {
-                errors.push(`${prefix} Invalid 'rarity'`);
-            }
-            if (typeof item.weight !== 'number' || item.weight < 0) {
-                errors.push(`${prefix} Invalid 'weight' (must be non-negative number)`);
+            // Phase 5.2: Use EquipmentValidator for comprehensive equipment validation
+            const result = EquipmentValidator.validateEquipment(item);
+            if (!result.valid) {
+                errors.push(...(result.errors || []).map(e => `${prefix} ${e}`));
             }
         } else if (category === 'spells') {
             // Spells must have name, level, school

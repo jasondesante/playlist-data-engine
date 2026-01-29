@@ -112,15 +112,19 @@ export class EquipmentValidator {
     /**
      * Validate a complete equipment object
      *
-     * @param equipment - Equipment to validate
+     * Supports both legacy Equipment format and EnhancedEquipment format.
+     * Legacy format may have: damage as string, armor_class instead of acBonus, no source field
+     * Enhanced format has: damage as object, acBonus, source field
+     *
+     * @param equipment - Equipment to validate (any format)
      * @returns Validation result with any errors
      */
-    static validateEquipment(equipment: EnhancedEquipment): EquipmentValidationResult {
+    static validateEquipment(equipment: any): EquipmentValidationResult {
         const errors: string[] = [];
 
         // Validate required fields
         if (!equipment.name || typeof equipment.name !== 'string') {
-            errors.push('Equipment must have a valid name');
+            errors.push('Equipment must have a valid name (required)');
         }
 
         if (!equipment.type || !VALID_EQUIPMENT_TYPES.includes(equipment.type)) {
@@ -135,8 +139,8 @@ export class EquipmentValidator {
             errors.push('Equipment weight must be a non-negative number');
         }
 
-        // Validate source
-        if (!equipment.source || !VALID_SOURCE.includes(equipment.source)) {
+        // Validate source (optional for backward compatibility - defaults to 'default')
+        if (equipment.source !== undefined && !VALID_SOURCE.includes(equipment.source)) {
             errors.push(`Equipment source must be one of: ${VALID_SOURCE.join(', ')}`);
         }
 
@@ -220,10 +224,11 @@ export class EquipmentValidator {
             }
         }
 
-        // Validate AC bonus if present
-        if (equipment.acBonus !== undefined) {
-            if (typeof equipment.acBonus !== 'number') {
-                errors.push('acBonus must be a number');
+        // Validate AC bonus if present (handles both legacy armor_class and enhanced acBonus)
+        const acBonus = equipment.acBonus ?? equipment.armor_class;
+        if (acBonus !== undefined) {
+            if (typeof acBonus !== 'number') {
+                errors.push('AC bonus must be a number');
             }
         }
 
@@ -619,11 +624,15 @@ export class EquipmentValidator {
     /**
      * Validate damage information
      *
-     * @param damage - Damage object to validate
+     * Supports both string format (legacy) and object format (EnhancedEquipment).
+     * String format: "1d8 slashing"
+     * Object format: { dice: "1d8", damageType: "slashing", versatile?: "1d10" }
+     *
+     * @param damage - Damage object or string to validate
      * @returns Validation result with any errors
      */
     static validateDamageInfo(
-        damage: EnhancedEquipment['damage']
+        damage: EnhancedEquipment['damage'] | string
     ): EquipmentValidationResult {
         const errors: string[] = [];
 
@@ -631,6 +640,24 @@ export class EquipmentValidator {
             return { valid: true };
         }
 
+        // Handle string format for backward compatibility (e.g., "1d8 slashing")
+        if (typeof damage === 'string') {
+            const parts = damage.trim().split(/\s+/);
+            if (parts.length < 2) {
+                errors.push(`Damage string must be in format "NdM type" (e.g., "1d8 slashing"), got: "${damage}"`);
+            } else {
+                const dicePart = parts[0];
+                if (!DICE_FORMAT_REGEX.test(dicePart)) {
+                    errors.push(`Damage dice must be in format "NdM" (e.g., "1d8"), got: ${dicePart}`);
+                }
+            }
+            return {
+                valid: errors.length === 0,
+                errors: errors.length > 0 ? errors : undefined
+            };
+        }
+
+        // Handle object format (EnhancedEquipment)
         if (!damage.dice || typeof damage.dice !== 'string') {
             errors.push('Damage must have a valid dice string (e.g., "1d8")');
         } else if (!DICE_FORMAT_REGEX.test(damage.dice)) {

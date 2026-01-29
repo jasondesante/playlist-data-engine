@@ -1977,8 +1977,8 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [x] Add modification methods
 
 ### Phase 5: ExtensionManager Integration
-- [ ] Add equipment categories
-- [ ] Add equipment validation
+- [x] Add equipment categories
+- [x] Add equipment validation
 - [ ] Update default initialization
 
 ### Phase 6: Default Equipment Updates

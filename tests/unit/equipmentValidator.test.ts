@@ -72,7 +72,7 @@ describe('EquipmentValidator', () => {
 
             const result = EquipmentValidator.validateEquipment(equipment);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Equipment must have a valid name');
+            expect(result.errors).toContain('Equipment must have a valid name (required)');
         });
 
         it('should reject equipment with invalid type', () => {
