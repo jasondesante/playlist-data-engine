@@ -3367,10 +3367,10 @@ TypeScript compilation and ESLint verification confirm code correctness.
 
 ### 11.4 Update CharacterGenerator
 
-**File:** `/Users/jasondesante/playlist-data-engine/src/core/generation/CharacterGenerator.ts`
+**File:** `/workspace/src/core/generation/CharacterGenerator.ts`
 
 **Tasks:**
-- [ ] Update character generation to use FeatureRegistry:
+- [x] Update character generation to use FeatureRegistry:
   ```typescript
   const registry = FeatureRegistry.getInstance();
   const features = registry.getClassFeatures(characterClass, level);
@@ -3382,7 +3382,7 @@ TypeScript compilation and ESLint verification confirm code correctness.
   - Skill proficiencies
   - Passive modifiers
 
-- [ ] Store feature IDs instead of display strings:
+- [x] Store feature IDs instead of display strings:
   ```typescript
   // OLD format:
   // class_features: ['Barbarian Level 1', 'Barbarian Level 2']
@@ -3395,6 +3395,8 @@ TypeScript compilation and ESLint verification confirm code correctness.
 - [ ] Validate prerequisites during generation
 
 **Deliverable:** Updated CharacterGenerator using FeatureRegistry
+
+**Status:** ✅ **IMPLEMENTED** - CharacterGenerator now uses FeatureRegistry to fetch features and traits by ID. Features are stored as feature IDs (e.g., 'bardic_inspiration', 'elf_darkvision') instead of display strings. Feature registry initialization added to `initializeDefaults.ts` with `ensureFeatureDefaultsInitialized()` function.
 
 ---
 

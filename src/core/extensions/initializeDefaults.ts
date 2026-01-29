@@ -9,6 +9,8 @@
 import { ExtensionManager } from './ExtensionManager.js';
 import { SPELL_DATABASE, CLASS_SPELL_LISTS, EQUIPMENT_DATABASE, ALL_RACES, ALL_CLASSES } from '../../utils/constants.js';
 import type { Class } from '../types/Character.js';
+import { FeatureRegistry } from '../features/FeatureRegistry.js';
+import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../features/DefaultFeatures.js';
 
 /**
  * Default appearance data
@@ -301,4 +303,37 @@ export function ensureAllDefaultsInitialized(): void {
     ensureEquipmentDefaultsInitialized();
     ensureRaceDefaultsInitialized();
     ensureClassDefaultsInitialized();
+    ensureFeatureDefaultsInitialized();
+}
+
+/**
+ * Initialize FeatureRegistry with default features and traits
+ *
+ * This should be called once during application initialization.
+ */
+export function initializeFeatureDefaults(): void {
+    const registry = FeatureRegistry.getInstance();
+
+    // Initialize with default class features and racial traits
+    registry.initializeDefaults(DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS);
+}
+
+/**
+ * Check if feature defaults are initialized
+ */
+export function areFeatureDefaultsInitialized(): boolean {
+    const registry = FeatureRegistry.getInstance();
+    return registry.isInitialized();
+}
+
+/**
+ * Ensure feature defaults are initialized
+ *
+ * Initializes defaults if they haven't been already.
+ * Safe to call multiple times.
+ */
+export function ensureFeatureDefaultsInitialized(): void {
+    if (!areFeatureDefaultsInitialized()) {
+        initializeFeatureDefaults();
+    }
 }

@@ -10,6 +10,8 @@ import { AppearanceGenerator } from './AppearanceGenerator.js';
 import { SpellManager } from './SpellManager.js';
 import { EquipmentGenerator } from './EquipmentGenerator.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
+import { ensureFeatureDefaultsInitialized } from '../extensions/index.js';
+import { FeatureRegistry } from '../features/FeatureRegistry.js';
 
 /**
  * Extension data for custom spells
@@ -218,6 +220,12 @@ export class CharacterGenerator {
         const level = options.level || 1;
         const gameMode: GameMode = options.gameMode || 'standard';
 
+        // Ensure feature registry is initialized with defaults
+        ensureFeatureDefaultsInitialized();
+
+        // Get the feature registry
+        const featureRegistry = FeatureRegistry.getInstance();
+
         // Register custom extensions if provided
         if (options.extensions) {
             CharacterGenerator.registerExtensions(options.extensions);
@@ -276,6 +284,18 @@ export class CharacterGenerator {
         // Initialize starting equipment
         const equipment = EquipmentGenerator.initializeEquipment(suggestedClass);
 
+        // Get class features from FeatureRegistry (feature IDs only)
+        const classFeatures = featureRegistry.getClassFeatures(suggestedClass, level);
+        const class_feature_ids = classFeatures.map(f => f.id);
+
+        // Get racial traits from FeatureRegistry (trait IDs only)
+        const racialTraits = featureRegistry.getRacialTraits(race);
+        const racial_trait_ids = racialTraits.map(t => t.id);
+
+        // Apply feature effects to character (if any effects exist)
+        // Note: This is a placeholder for future effect application
+        // For now, we store the feature IDs which can be looked up later
+
         return {
             name,
             race,
@@ -294,8 +314,8 @@ export class CharacterGenerator {
             speed: raceData.speed,
             skills,
             saving_throws,
-            racial_traits: raceData.traits,
-            class_features: [`${suggestedClass} Level ${level}`],
+            racial_traits: racial_trait_ids,
+            class_features: class_feature_ids,
             appearance,
             spells,
             equipment,
