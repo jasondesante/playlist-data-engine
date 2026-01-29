@@ -20,3 +20,13 @@ export { SkillRegistry, getSkillRegistry } from './SkillRegistry.js';
 
 // Default skills
 export { DEFAULT_SKILLS, DEFAULT_SKILL_CATEGORIES } from './DefaultSkills.js';
+
+// SkillValidator - Validation for skills
+export {
+    SkillValidator,
+    validateSkill,
+    validateSkills,
+    validateSkillProficiency,
+    validateSkillProficiencies,
+    validateSkillListDefinition
+} from './SkillValidator.js';

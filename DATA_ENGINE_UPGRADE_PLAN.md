@@ -4185,12 +4185,12 @@ Created `/workspace/src/core/migration/CharacterMigration.ts` with:
 
 ---
 
-### 12.6 Create SkillValidator
+### 12.6 Create SkillValidator ✅
 
-**File:** `/Users/jasondesante/playlist-data-engine/src/core/skills/SkillValidator.ts`
+**File:** `/workspace/src/core/skills/SkillValidator.ts`
 
 **Tasks:**
-- [ ] Create validation schemas for skills:
+- [x] Create validation schemas for skills:
   ```typescript
   function validateSkill(skill: any): ValidationResult {
       const errors: string[] = [];
@@ -4210,7 +4210,56 @@ Created `/workspace/src/core/migration/CharacterMigration.ts` with:
   }
   ```
 
-**Deliverable:** Complete validation system for skills
+**Deliverable:** ~~Complete validation system for skills~~ **COMPLETE**
+
+---
+
+#### Implementation Summary - Phase 12.6: SkillValidator ✅
+
+**Files Created:**
+- `src/core/skills/SkillValidator.ts` - Complete validation system for skills
+
+**Files Modified:**
+- `src/core/skills/index.ts` - Added SkillValidator exports
+
+**Changes Made:**
+
+1. **Created SkillValidator class** with comprehensive validation methods:
+   - `validateSkill()` - Validates custom skills with full schema checks
+   - `validateSkills()` - Batch validation for arrays of skills
+   - `validateSkillProficiency()` - Validates skill proficiency objects
+   - `validateSkillProficiencies()` - Batch validation for skill proficiencies
+   - `validateSkillListDefinition()` - Validates skill list definitions for classes
+   - `isValidAbility()` - Utility to check if a string is a valid ability
+   - `isValidSkillId()` - Utility to check skill ID format (lowercase_with_underscores)
+
+2. **Validation includes:**
+   - Required fields: id, name, ability, source
+   - ID format validation (lowercase_with_underscores convention)
+   - Enum value validation for:
+     - ability: STR, DEX, CON, INT, WIS, CHA
+     - source: 'default', 'custom'
+     - proficiency level: 'none', 'proficient', 'expertise'
+     - proficiency source: 'class', 'background', 'feat', 'custom', 'racial', 'other'
+   - Optional field validation (description, armorPenalty, categories, tags, lore)
+   - customProperties validation (supports string, number, boolean, string[] values)
+   - skillCount validation (non-negative integer, doesn't exceed availableSkills)
+   - expertiseCount validation (non-negative integer, doesn't exceed availableSkills)
+
+3. **Helper functions exported:**
+   - `validateSkill()` - Quick single skill validation
+   - `validateSkills()` - Batch skill validation
+   - `validateSkillProficiency()` - Quick proficiency validation
+   - `validateSkillProficiencies()` - Batch proficiency validation
+   - `validateSkillListDefinition()` - Quick skill list validation
+
+**Verification:**
+- ✅ TypeScript compilation passes (`npm run build`)
+- ✅ ESLint passes for new file
+- ✅ SkillValidator class created with full validation API
+- ✅ Validation covers all skill properties and constraints
+- ✅ Clear error messages for invalid data
+- ✅ Consistent with FeatureValidator pattern
 
 ---
 
