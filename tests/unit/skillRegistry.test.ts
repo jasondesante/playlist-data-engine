@@ -1,0 +1,840 @@
+/**
+ * Unit tests for SkillRegistry
+ *
+ * Tests the custom skill system including:
+ * - Register custom skills
+ * - Get skills by ability/category
+ * - Validate skill IDs
+ * - Reset to defaults
+ *
+ * Part of Phase 15.1: Unit Tests for SkillRegistry
+ */
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
+import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
+import type { Ability } from '../../src/core/types/Character.js';
+
+describe('SkillRegistry', () => {
+    let registry: SkillRegistry;
+
+    beforeEach(() => {
+        // Get a fresh instance for each test
+        registry = SkillRegistry.getInstance();
+        // Reset to ensure clean state
+        registry.reset();
+    });
+
+    afterEach(() => {
+        // Clean up after each test
+        registry.reset();
+    });
+
+    describe('Singleton Pattern', () => {
+        it('should return the same instance', () => {
+            const instance1 = SkillRegistry.getInstance();
+            const instance2 = SkillRegistry.getInstance();
+            expect(instance1).toBe(instance2);
+        });
+
+        it('should maintain state across getInstance calls', () => {
+            const publicRegistry = SkillRegistry.getInstance();
+            publicRegistry.initializeDefaults(DEFAULT_SKILLS);
+            expect(publicRegistry.isInitialized()).toBe(true);
+        });
+    });
+
+    describe('Initialize Defaults', () => {
+        it('should initialize with default skills', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            expect(registry.isInitialized()).toBe(true);
+
+            const stats = registry.getRegistryStats();
+            expect(stats.totalSkills).toBeGreaterThan(0);
+            expect(stats.defaultSkills).toBe(18); // All D&D 5e skills
+        });
+
+        it('should not reinitialize if already initialized', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            const stats1 = registry.getRegistryStats();
+
+            // Try to initialize again with empty array
+            registry.initializeDefaults([]);
+
+            // Stats should remain the same (no reset occurred)
+            const stats2 = registry.getRegistryStats();
+            expect(stats2.totalSkills).toBe(stats1.totalSkills);
+        });
+
+        it('should handle empty defaults', () => {
+            registry.reset();
+            registry.initializeDefaults([]);
+
+            expect(registry.isInitialized()).toBe(true);
+            expect(registry.getRegistryStats().totalSkills).toBe(0);
+        });
+
+        it('should load all 18 default D&D 5e skills', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const expectedSkillIds = [
+                'athletics', 'acrobatics', 'sleight_of_hand', 'stealth',
+                'arcana', 'history', 'investigation', 'nature', 'religion',
+                'animal_handling', 'insight', 'medicine', 'perception', 'survival',
+                'deception', 'intimidation', 'performance', 'persuasion'
+            ];
+
+            for (const skillId of expectedSkillIds) {
+                expect(registry.isValidSkill(skillId)).toBe(true);
+            }
+        });
+    });
+
+    describe('Register Custom Skills', () => {
+        it('should register a single custom skill', () => {
+            const customSkill: CustomSkill = {
+                id: 'custom_swimming',
+                name: 'Swimming',
+                description: 'Ability to swim and endure water environments.',
+                ability: 'STR' as Ability,
+                armorPenalty: true,
+                categories: ['exploration', 'environmental'],
+                source: 'custom'
+            };
+
+            registry.registerSkill(customSkill);
+
+            const retrieved = registry.getSkill('custom_swimming');
+            expect(retrieved).toEqual(customSkill);
+        });
+
+        it('should register multiple custom skills', () => {
+            const customSkills: CustomSkill[] = [
+                {
+                    id: 'custom_riding',
+                    name: 'Animal Riding',
+                    description: 'Ability to ride and control mounts.',
+                    ability: 'DEX' as Ability,
+                    source: 'custom'
+                },
+                {
+                    id: 'custom_sailing',
+                    name: 'Sailing',
+                    description: 'Knowledge of ships and sailing.',
+                    ability: 'INT' as Ability,
+                    categories: ['exploration', 'knowledge'],
+                    source: 'custom'
+                }
+            ];
+
+            registry.registerSkills(customSkills);
+
+            expect(registry.getSkill('custom_riding')).toBeDefined();
+            expect(registry.getSkill('custom_sailing')).toBeDefined();
+        });
+
+        it('should throw on duplicate skill ID', () => {
+            const skill: CustomSkill = {
+                id: 'duplicate_skill',
+                name: 'Duplicate Skill',
+                description: 'This skill is registered twice.',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            registry.registerSkill(skill);
+
+            expect(() => {
+                registry.registerSkill(skill);
+            }).toThrow('Skill with ID "duplicate_skill" already exists');
+        });
+
+        it('should validate skill ID format', () => {
+            const invalidSkill: CustomSkill = {
+                id: 'InvalidSkillName',
+                name: 'Invalid',
+                description: 'Invalid ID format.',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            expect(() => {
+                registry.registerSkill(invalidSkill);
+            }).toThrow(/Invalid skill ID.*lowercase_with_underscores/);
+        });
+
+        it('should throw on invalid skill ID with numbers at start', () => {
+            const invalidSkill: CustomSkill = {
+                id: '1_invalid_skill',
+                name: 'Invalid',
+                description: 'Invalid ID format.',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            expect(() => {
+                registry.registerSkill(invalidSkill);
+            }).toThrow(/Invalid skill ID/);
+        });
+
+        it('should accept valid skill IDs with underscores and numbers', () => {
+            const validSkill: CustomSkill = {
+                id: 'skill_3d_printing',
+                name: '3D Printing',
+                description: 'Valid ID with underscore and number.',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            expect(() => {
+                registry.registerSkill(validSkill);
+            }).not.toThrow();
+        });
+    });
+
+    describe('Get Skills', () => {
+        beforeEach(() => {
+            // Initialize with defaults and add custom skills
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const customSkills: CustomSkill[] = [
+                {
+                    id: 'custom_alchemy',
+                    name: 'Alchemy',
+                    description: 'Knowledge of potions and chemicals.',
+                    ability: 'INT' as Ability,
+                    categories: ['knowledge', 'crafting'],
+                    source: 'custom'
+                },
+                {
+                    id: 'custom_intimidation_beast',
+                    name: 'Beast Intimidation',
+                    description: 'Intimidate animals and beasts.',
+                    ability: 'CHA' as Ability,
+                    categories: ['social', 'environmental'],
+                    source: 'custom'
+                }
+            ];
+
+            registry.registerSkills(customSkills);
+        });
+
+        it('should get skill by ID', () => {
+            const skill = registry.getSkill('athletics');
+            expect(skill).toBeDefined();
+            expect(skill?.id).toBe('athletics');
+            expect(skill?.name).toBe('Athletics');
+            expect(skill?.ability).toBe('STR');
+        });
+
+        it('should return undefined for non-existent skill ID', () => {
+            const skill = registry.getSkill('non_existent_skill');
+            expect(skill).toBeUndefined();
+        });
+
+        it('should get all registered skills', () => {
+            const allSkills = registry.getAllSkills();
+            expect(allSkills.length).toBe(20); // 18 default + 2 custom
+        });
+
+        it('should get skills by ability', () => {
+            const strSkills = registry.getSkillsByAbility('STR' as Ability);
+            expect(strSkills.length).toBeGreaterThan(0);
+            expect(strSkills.some(s => s.id === 'athletics')).toBe(true);
+        });
+
+        it('should return empty array for ability with no skills', () => {
+            // Reset and don't initialize
+            registry.reset();
+            const intSkills = registry.getSkillsByAbility('INT' as Ability);
+            expect(intSkills).toEqual([]);
+        });
+
+        it('should get skills by category', () => {
+            const knowledgeSkills = registry.getSkillsByCategory('knowledge');
+            expect(knowledgeSkills.length).toBeGreaterThan(0);
+
+            // Check that Arcana (knowledge category) is included
+            expect(knowledgeSkills.some(s => s.id === 'arcana')).toBe(true);
+
+            // Check custom alchemy skill is included
+            expect(knowledgeSkills.some(s => s.id === 'custom_alchemy')).toBe(true);
+        });
+
+        it('should return empty array for category with no skills', () => {
+            const nonexistentCategory = registry.getSkillsByCategory('nonexistent_category');
+            expect(nonexistentCategory).toEqual([]);
+        });
+
+        it('should get all categories in use', () => {
+            const categories = registry.getCategories();
+            expect(categories.length).toBeGreaterThan(0);
+            expect(categories).toContain('knowledge');
+            expect(categories).toContain('physical');
+            expect(categories).toContain('social');
+            expect(categories).toContain('crafting');
+        });
+
+        it('should get skills by source', () => {
+            const defaultSkills = registry.getSkillsBySource('default');
+            const customSkills = registry.getSkillsBySource('custom');
+
+            expect(defaultSkills.length).toBe(18);
+            expect(customSkills.length).toBe(2);
+        });
+    });
+
+    describe('Validate Skills', () => {
+        it('should validate skill ID exists', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            expect(registry.isValidSkill('athletics')).toBe(true);
+            expect(registry.isValidSkill('non_existent')).toBe(false);
+        });
+
+        it('should validate valid skill structure', () => {
+            const validSkill: CustomSkill = {
+                id: 'valid_skill',
+                name: 'Valid Skill',
+                description: 'A valid skill.',
+                ability: 'WIS' as Ability,
+                source: 'custom'
+            };
+
+            const result = registry.validateSkill(validSkill);
+            expect(result.valid).toBe(true);
+            expect(result.errors).toHaveLength(0);
+        });
+
+        it('should fail validation for missing id', () => {
+            const invalidSkill = {
+                name: 'No ID',
+                ability: 'INT' as Ability,
+                source: 'custom' as const
+            };
+
+            const result = registry.validateSkill(invalidSkill as CustomSkill);
+            expect(result.valid).toBe(false);
+            expect(result.errors).toContain('Skill must have a valid id');
+        });
+
+        it('should fail validation for missing name', () => {
+            const invalidSkill = {
+                id: 'no_name',
+                ability: 'INT' as Ability,
+                source: 'custom' as const
+            };
+
+            const result = registry.validateSkill(invalidSkill as CustomSkill);
+            expect(result.valid).toBe(false);
+            expect(result.errors).toContain('Skill must have a valid name');
+        });
+
+        it('should fail validation for missing ability', () => {
+            const invalidSkill = {
+                id: 'no_ability',
+                name: 'No Ability',
+                source: 'custom' as const
+            };
+
+            const result = registry.validateSkill(invalidSkill as CustomSkill);
+            expect(result.valid).toBe(false);
+            expect(result.errors).toContain('Skill must have a valid ability');
+        });
+
+        it('should fail validation for invalid ability', () => {
+            const invalidSkill: CustomSkill = {
+                id: 'invalid_ability',
+                name: 'Invalid Ability',
+                ability: 'XXX' as Ability,
+                source: 'custom'
+            };
+
+            const result = registry.validateSkill(invalidSkill);
+            expect(result.valid).toBe(false);
+            expect(result.errors.some(e => e.includes('Invalid ability: XXX'))).toBe(true);
+        });
+
+        it('should fail validation for invalid source', () => {
+            const invalidSkill = {
+                id: 'invalid_source',
+                name: 'Invalid Source',
+                ability: 'INT' as Ability,
+                source: 'invalid'
+            };
+
+            const result = registry.validateSkill(invalidSkill as CustomSkill);
+            expect(result.valid).toBe(false);
+            expect(result.errors.some(e => e.includes('Invalid source: invalid'))).toBe(true);
+        });
+
+        it('should fail validation for invalid ID format', () => {
+            const invalidSkill: CustomSkill = {
+                id: 'InvalidFormat',
+                name: 'Invalid Format',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            const result = registry.validateSkill(invalidSkill);
+            expect(result.valid).toBe(false);
+            expect(result.errors.some(e => e.includes('Invalid skill ID "InvalidFormat"'))).toBe(true);
+        });
+
+        it('should return multiple errors for multiple issues', () => {
+            const invalidSkill = {
+                name: 'Multiple Issues',
+                ability: 'XXX' as Ability,
+                source: 'invalid'
+            };
+
+            const result = registry.validateSkill(invalidSkill as CustomSkill);
+            expect(result.valid).toBe(false);
+            expect(result.errors.length).toBeGreaterThan(1);
+        });
+    });
+
+    describe('Get Registry Statistics', () => {
+        it('should return accurate stats for empty registry', () => {
+            const stats = registry.getRegistryStats();
+
+            expect(stats.totalSkills).toBe(0);
+            expect(stats.defaultSkills).toBe(0);
+            expect(stats.customSkills).toBe(0);
+            expect(stats.categories).toEqual([]);
+        });
+
+        it('should return accurate stats after initialization', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const stats = registry.getRegistryStats();
+
+            expect(stats.totalSkills).toBe(18);
+            expect(stats.defaultSkills).toBe(18);
+            expect(stats.customSkills).toBe(0);
+            expect(stats.categories.length).toBeGreaterThan(0);
+        });
+
+        it('should track default vs custom skills separately', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const customSkills: CustomSkill[] = [
+                {
+                    id: 'custom_1',
+                    name: 'Custom 1',
+                    ability: 'STR' as Ability,
+                    source: 'custom'
+                },
+                {
+                    id: 'custom_2',
+                    name: 'Custom 2',
+                    ability: 'DEX' as Ability,
+                    source: 'custom'
+                }
+            ];
+
+            registry.registerSkills(customSkills);
+
+            const stats = registry.getRegistryStats();
+            expect(stats.totalSkills).toBe(20);
+            expect(stats.defaultSkills).toBe(18);
+            expect(stats.customSkills).toBe(2);
+        });
+
+        it('should count skills per ability', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const stats = registry.getRegistryStats();
+
+            // Check expected counts per ability
+            expect(stats.skillsByAbility.STR).toBe(1); // athletics
+            expect(stats.skillsByAbility.DEX).toBe(3); // acrobatics, sleight_of_hand, stealth
+            expect(stats.skillsByAbility.INT).toBe(5); // arcana, history, investigation, nature, religion
+            expect(stats.skillsByAbility.WIS).toBe(5); // animal_handling, insight, medicine, perception, survival
+            expect(stats.skillsByAbility.CHA).toBe(4); // deception, intimidation, performance, persuasion
+            expect(stats.skillsByAbility.CON).toBe(0); // No CON skills in D&D 5e
+        });
+
+        it('should track custom categories', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const customSkill: CustomSkill = {
+                id: 'custom_foraging',
+                name: 'Foraging',
+                ability: 'WIS' as Ability,
+                categories: ['exploration', 'survival', 'food'],
+                source: 'custom'
+            };
+
+            registry.registerSkill(customSkill);
+
+            const stats = registry.getRegistryStats();
+            expect(stats.categories).toContain('food');
+        });
+    });
+
+    describe('Unregister Skill', () => {
+        beforeEach(() => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+        });
+
+        it('should unregister an existing skill', () => {
+            expect(registry.isValidSkill('athletics')).toBe(true);
+
+            const result = registry.unregisterSkill('athletics');
+            expect(result).toBe(true);
+            expect(registry.isValidSkill('athletics')).toBe(false);
+        });
+
+        it('should return false for non-existent skill', () => {
+            const result = registry.unregisterSkill('non_existent');
+            expect(result).toBe(false);
+        });
+
+        it('should remove skill from ability index', () => {
+            registry.unregisterSkill('athletics');
+
+            const strSkills = registry.getSkillsByAbility('STR' as Ability);
+            expect(strSkills.some(s => s.id === 'athletics')).toBe(false);
+        });
+
+        it('should remove skill from category indexes', () => {
+            // Arcana is in 'knowledge' and 'magic' categories
+            const beforeKnowledge = registry.getSkillsByCategory('knowledge');
+            expect(beforeKnowledge.some(s => s.id === 'arcana')).toBe(true);
+
+            registry.unregisterSkill('arcana');
+
+            const afterKnowledge = registry.getSkillsByCategory('knowledge');
+            expect(afterKnowledge.some(s => s.id === 'arcana')).toBe(false);
+        });
+
+        it('should clean up empty category maps', () => {
+            const customSkill: CustomSkill = {
+                id: 'custom_unique_category',
+                name: 'Unique Category',
+                ability: 'INT' as Ability,
+                categories: ['unique_category_only'],
+                source: 'custom'
+            };
+
+            registry.registerSkill(customSkill);
+            expect(registry.getCategories()).toContain('unique_category_only');
+
+            registry.unregisterSkill('custom_unique_category');
+            expect(registry.getCategories()).not.toContain('unique_category_only');
+        });
+    });
+
+    describe('Reset to Defaults', () => {
+        it('should clear all registered skills', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const customSkill: CustomSkill = {
+                id: 'custom_test',
+                name: 'Custom Test',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            registry.registerSkill(customSkill);
+
+            expect(registry.getRegistryStats().totalSkills).toBe(19);
+            expect(registry.isInitialized()).toBe(true);
+
+            registry.reset();
+
+            expect(registry.getRegistryStats().totalSkills).toBe(0);
+            expect(registry.isInitialized()).toBe(false);
+        });
+
+        it('should allow reinitialization after reset', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            expect(registry.isInitialized()).toBe(true);
+            const stats1 = registry.getRegistryStats();
+
+            registry.reset();
+            expect(registry.isInitialized()).toBe(false);
+
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            expect(registry.isInitialized()).toBe(true);
+            const stats2 = registry.getRegistryStats();
+
+            expect(stats2.totalSkills).toBe(stats1.totalSkills);
+            expect(stats2.defaultSkills).toBe(stats1.defaultSkills);
+        });
+
+        it('should clear categories after reset', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            expect(registry.getCategories().length).toBeGreaterThan(0);
+
+            registry.reset();
+            expect(registry.getCategories()).toEqual([]);
+        });
+
+        it('should clear ability indexes after reset', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const strSkills = registry.getSkillsByAbility('STR' as Ability);
+            expect(strSkills.length).toBeGreaterThan(0);
+
+            registry.reset();
+
+            const strSkillsAfter = registry.getSkillsByAbility('STR' as Ability);
+            expect(strSkillsAfter).toEqual([]);
+        });
+    });
+
+    describe('Is Initialized', () => {
+        it('should return false before initialization', () => {
+            expect(registry.isInitialized()).toBe(false);
+        });
+
+        it('should return true after initialization', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            expect(registry.isInitialized()).toBe(true);
+        });
+
+        it('should return false after reset', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            expect(registry.isInitialized()).toBe(true);
+
+            registry.reset();
+            expect(registry.isInitialized()).toBe(false);
+        });
+
+        it('should not be initialized after registering skills without init', () => {
+            const customSkill: CustomSkill = {
+                id: 'custom_test',
+                name: 'Custom Test',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            registry.registerSkill(customSkill);
+            expect(registry.isInitialized()).toBe(false);
+        });
+    });
+
+    describe('Export Registry', () => {
+        it('should export empty registry as empty array', () => {
+            const exported = registry.exportRegistry();
+            expect(exported).toEqual([]);
+        });
+
+        it('should export all registered skills', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const customSkill: CustomSkill = {
+                id: 'custom_export_test',
+                name: 'Export Test',
+                ability: 'WIS' as Ability,
+                categories: ['testing'],
+                source: 'custom'
+            };
+
+            registry.registerSkill(customSkill);
+
+            const exported = registry.exportRegistry();
+
+            expect(exported.length).toBe(19); // 18 default + 1 custom
+            expect(exported.some(s => s.id === 'custom_export_test')).toBe(true);
+            expect(exported.some(s => s.id === 'athletics')).toBe(true);
+        });
+
+        it('should export skills with all properties', () => {
+            const customSkill: CustomSkill = {
+                id: 'full_skill_test',
+                name: 'Full Skill Test',
+                description: 'A complete skill with all properties.',
+                ability: 'CHA' as Ability,
+                armorPenalty: false,
+                categories: ['social', 'test'],
+                customProperties: { testProp: 'testValue', numberProp: 42 },
+                source: 'custom',
+                tags: ['test', 'example'],
+                lore: 'This is test lore for the skill.'
+            };
+
+            registry.registerSkill(customSkill);
+
+            const exported = registry.exportRegistry();
+            const exportedSkill = exported.find(s => s.id === 'full_skill_test');
+
+            expect(exportedSkill).toEqual(customSkill);
+        });
+    });
+
+    describe('Skill Categories and Tags', () => {
+        beforeEach(() => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+        });
+
+        it('should handle skills without categories', () => {
+            const noCategorySkill: CustomSkill = {
+                id: 'no_category',
+                name: 'No Category',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            registry.registerSkill(noCategorySkill);
+            expect(registry.getSkill('no_category')).toBeDefined();
+        });
+
+        it('should handle skills with multiple categories', () => {
+            const multiCategorySkill: CustomSkill = {
+                id: 'multi_category',
+                name: 'Multi Category',
+                ability: 'WIS' as Ability,
+                categories: ['exploration', 'survival', 'environmental', 'wilderness'],
+                source: 'custom'
+            };
+
+            registry.registerSkill(multiCategorySkill);
+
+            // Should appear in all categories
+            expect(registry.getSkillsByCategory('exploration').some(s => s.id === 'multi_category')).toBe(true);
+            expect(registry.getSkillsByCategory('survival').some(s => s.id === 'multi_category')).toBe(true);
+            expect(registry.getSkillsByCategory('environmental').some(s => s.id === 'multi_category')).toBe(true);
+            expect(registry.getSkillsByCategory('wilderness').some(s => s.id === 'multi_category')).toBe(true);
+        });
+
+        it('should store tags on skills', () => {
+            const taggedSkill: CustomSkill = {
+                id: 'tagged_skill',
+                name: 'Tagged Skill',
+                ability: 'INT' as Ability,
+                source: 'custom',
+                tags: ['secret', 'advanced', 'requires_training']
+            };
+
+            registry.registerSkill(taggedSkill);
+
+            const retrieved = registry.getSkill('tagged_skill');
+            expect(retrieved?.tags).toEqual(['secret', 'advanced', 'requires_training']);
+        });
+
+        it('should store custom properties', () => {
+            const customPropsSkill: CustomSkill = {
+                id: 'custom_props_skill',
+                name: 'Custom Props Skill',
+                ability: 'DEX' as Ability,
+                source: 'custom',
+                customProperties: {
+                    toolType: 'musical',
+                    requiresTraining: true,
+                    synergy: ['performance', 'history'],
+                    difficulty: 5
+                }
+            };
+
+            registry.registerSkill(customPropsSkill);
+
+            const retrieved = registry.getSkill('custom_props_skill');
+            expect(retrieved?.customProperties).toEqual({
+                toolType: 'musical',
+                requiresTraining: true,
+                synergy: ['performance', 'history'],
+                difficulty: 5
+            });
+        });
+
+        it('should store armor penalty setting', () => {
+            const armoredSkill: CustomSkill = {
+                id: 'armored_skill',
+                name: 'Armored Skill',
+                ability: 'STR' as Ability,
+                armorPenalty: true,
+                source: 'custom'
+            };
+
+            registry.registerSkill(armoredSkill);
+
+            const retrieved = registry.getSkill('armored_skill');
+            expect(retrieved?.armorPenalty).toBe(true);
+        });
+
+        it('should default armor penalty to false if not specified', () => {
+            const noPenaltySkill: CustomSkill = {
+                id: 'no_penalty',
+                name: 'No Penalty',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            registry.registerSkill(noPenaltySkill);
+
+            const retrieved = registry.getSkill('no_penalty');
+            expect(retrieved?.armorPenalty).toBeUndefined();
+        });
+    });
+
+    describe('Edge Cases', () => {
+        it('should handle empty skill ID format', () => {
+            const emptyIdSkill: CustomSkill = {
+                id: '',
+                name: 'Empty ID',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            const result = registry.validateSkill(emptyIdSkill);
+            expect(result.valid).toBe(false);
+        });
+
+        it('should handle skill with only special characters', () => {
+            const specialCharSkill: CustomSkill = {
+                id: '___',
+                name: 'Special Chars',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            // Underscores alone are valid (start with letter is required)
+            const result = registry.validateSkill(specialCharSkill);
+            expect(result.valid).toBe(false);
+        });
+
+        it('should handle getting skill from empty registry', () => {
+            const skill = registry.getSkill('anything');
+            expect(skill).toBeUndefined();
+        });
+
+        it('should handle unregistering from empty registry', () => {
+            const result = registry.unregisterSkill('anything');
+            expect(result).toBe(false);
+        });
+
+        it('should handle multiple resets', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            expect(registry.getRegistryStats().totalSkills).toBe(18);
+
+            registry.reset();
+            expect(registry.getRegistryStats().totalSkills).toBe(0);
+
+            registry.reset();
+            expect(registry.getRegistryStats().totalSkills).toBe(0);
+
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            expect(registry.getRegistryStats().totalSkills).toBe(18);
+        });
+
+        it('should handle skill with very long ID', () => {
+            const longIdSkill: CustomSkill = {
+                id: 'very_long_skill_id_with_many_underscores_and_characters',
+                name: 'Long ID Skill',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            expect(() => {
+                registry.registerSkill(longIdSkill);
+            }).not.toThrow();
+
+            expect(registry.isValidSkill('very_long_skill_id_with_many_underscores_and_characters')).toBe(true);
+        });
+    });
+});

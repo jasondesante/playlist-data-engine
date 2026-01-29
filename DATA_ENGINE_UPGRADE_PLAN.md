@@ -4795,7 +4795,7 @@ manager.register('skills.STR', [{
   - Validate prerequisites
   - Reset to defaults
 
-- [ ] Test SkillRegistry:
+- [x] Test SkillRegistry:
   - Register custom skills
   - Get skills by ability/category
   - Validate skill IDs
@@ -4918,6 +4918,110 @@ manager.register('skills.STR', [{
 - ✅ Build passes (`npm run build`)
 - ✅ Test file follows existing test patterns
 - ✅ Comprehensive coverage of FeatureRegistry API
+
+---
+
+#### Implementation Summary - Phase 15.1: SkillRegistry Unit Tests ✅
+
+**Files Created:**
+- `/workspace/tests/unit/skillRegistry.test.ts` - Comprehensive test suite for SkillRegistry (63 tests)
+
+**Test Coverage:**
+
+1. **Singleton Pattern Tests** (2 tests)
+   - Returns the same instance
+   - Maintains state across getInstance calls
+
+2. **Initialize Defaults Tests** (4 tests)
+   - Initialize with default skills
+   - Prevent reinitialization if already initialized
+   - Handle empty defaults
+   - Load all 18 default D&D 5e skills
+
+3. **Register Custom Skills Tests** (5 tests)
+   - Register single custom skill
+   - Register multiple custom skills
+   - Throw on duplicate skill ID
+   - Validate skill ID format
+   - Accept valid skill IDs with underscores and numbers
+
+4. **Get Skills Tests** (8 tests)
+   - Get skill by ID
+   - Return undefined for non-existent skill ID
+   - Get all registered skills
+   - Get skills by ability
+   - Return empty array for ability with no skills
+   - Get skills by category
+   - Return empty array for category with no skills
+   - Get all categories in use
+   - Get skills by source
+
+5. **Validate Skills Tests** (9 tests)
+   - Validate skill ID exists
+   - Validate valid skill structure
+   - Fail validation for missing id
+   - Fail validation for missing name
+   - Fail validation for missing ability
+   - Fail validation for invalid ability
+   - Fail validation for invalid source
+   - Fail validation for invalid ID format
+   - Return multiple errors for multiple issues
+
+6. **Get Registry Statistics Tests** (5 tests)
+   - Return accurate stats for empty registry
+   - Return accurate stats after initialization
+   - Track default vs custom skills separately
+   - Count skills per ability
+   - Track custom categories
+
+7. **Unregister Skill Tests** (5 tests)
+   - Unregister an existing skill
+   - Return false for non-existent skill
+   - Remove skill from ability index
+   - Remove skill from category indexes
+   - Clean up empty category maps
+
+8. **Reset to Defaults Tests** (4 tests)
+   - Clear all registered skills
+   - Allow reinitialization after reset
+   - Clear categories after reset
+   - Clear ability indexes after reset
+
+9. **Is Initialized Tests** (4 tests)
+   - Return false before initialization
+   - Return true after initialization
+   - Return false after reset
+   - Not be initialized after registering skills without init
+
+10. **Export Registry Tests** (3 tests)
+    - Export empty registry as empty array
+    - Export all registered skills
+    - Export skills with all properties
+
+11. **Skill Categories and Tags Tests** (7 tests)
+    - Handle skills without categories
+    - Handle skills with multiple categories
+    - Store tags on skills
+    - Store custom properties
+    - Store armor penalty setting
+    - Default armor penalty to false if not specified
+
+12. **Edge Cases Tests** (7 tests)
+    - Handle empty skill ID format
+    - Handle skill with only special characters
+    - Handle getting skill from empty registry
+    - Handle unregistering from empty registry
+    - Handle multiple resets
+    - Handle skill with very long ID
+
+**Total Tests: 63**
+
+**Verification:**
+- ✅ All 63 tests pass
+- ✅ Build passes (`npm run build`)
+- ✅ No new lint errors introduced
+- ✅ Test file follows existing test patterns
+- ✅ Comprehensive coverage of SkillRegistry API
 
 ---
 
