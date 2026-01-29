@@ -11,6 +11,8 @@ import { SPELL_DATABASE, CLASS_SPELL_LISTS, EQUIPMENT_DATABASE, ALL_RACES, ALL_C
 import type { Class } from '../types/Character.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../features/DefaultFeatures.js';
+import { SkillRegistry } from '../skills/SkillRegistry.js';
+import { DEFAULT_SKILLS } from '../skills/DefaultSkills.js';
 
 /**
  * Default appearance data
@@ -304,6 +306,7 @@ export function ensureAllDefaultsInitialized(): void {
     ensureRaceDefaultsInitialized();
     ensureClassDefaultsInitialized();
     ensureFeatureDefaultsInitialized();
+    ensureSkillDefaultsInitialized();
 }
 
 /**
@@ -335,5 +338,38 @@ export function areFeatureDefaultsInitialized(): boolean {
 export function ensureFeatureDefaultsInitialized(): void {
     if (!areFeatureDefaultsInitialized()) {
         initializeFeatureDefaults();
+    }
+}
+
+/**
+ * Initialize SkillRegistry with default skills
+ *
+ * This should be called once during application initialization.
+ * Part of Phase 12.4: Update SkillAssigner to use SkillRegistry.
+ */
+export function initializeSkillDefaults(): void {
+    const registry = SkillRegistry.getInstance();
+
+    // Initialize with default D&D 5e skills
+    registry.initializeDefaults(DEFAULT_SKILLS);
+}
+
+/**
+ * Check if skill defaults are initialized
+ */
+export function areSkillDefaultsInitialized(): boolean {
+    const registry = SkillRegistry.getInstance();
+    return registry.isInitialized();
+}
+
+/**
+ * Ensure skill defaults are initialized
+ *
+ * Initializes defaults if they haven't been already.
+ * Safe to call multiple times.
+ */
+export function ensureSkillDefaultsInitialized(): void {
+    if (!areSkillDefaultsInitialized()) {
+        initializeSkillDefaults();
     }
 }

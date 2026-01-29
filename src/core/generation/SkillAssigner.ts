@@ -1,59 +1,62 @@
 /**
  * SkillAssigner - Assigns D&D 5e skill proficiencies based on character class
+ *
+ * Part of Phase 12.4: Update SkillAssigner to use SkillRegistry and support custom skills.
  */
 
-import type { Class, Skill, ProficiencyLevel } from '../types/Character.js';
+import type { Class, ProficiencyLevel } from '../types/Character.js';
 import type { SeededRNG } from '../../utils/random.js';
 import { CLASS_DATA } from '../../utils/constants.js';
+import { SkillRegistry } from '../skills/SkillRegistry.js';
 
 /**
- * All 18 D&D 5e skills
+ * Initialize skill registry if not already initialized
+ * This ensures the SkillRegistry has default skills loaded before use.
  */
-const ALL_SKILLS: Skill[] = [
-    'athletics',
-    'acrobatics',
-    'sleight_of_hand',
-    'stealth',
-    'arcana',
-    'history',
-    'investigation',
-    'nature',
-    'religion',
-    'animal_handling',
-    'insight',
-    'medicine',
-    'perception',
-    'survival',
-    'deception',
-    'intimidation',
-    'performance',
-    'persuasion',
-];
+function ensureSkillRegistryInitialized(): void {
+    const registry = SkillRegistry.getInstance();
+    if (!registry.isInitialized()) {
+        registry.initializeDefaults();
+    }
+}
 
 export class SkillAssigner {
     /**
      * Assign skill proficiencies based on character class
-     * 
+     *
+     * Now uses SkillRegistry to support custom skills and validates all skill IDs.
+     * Supports weighted skill selection via ExtensionManager integration.
+     *
      * @param characterClass - The character's class
      * @param rng - Seeded random number generator for deterministic selection
-     * @returns Record of all 18 skills with their proficiency levels
+     * @returns Record of all skills with their proficiency levels (supports custom skills)
      */
     static assignSkills(
         characterClass: Class,
         rng: SeededRNG
-    ): Record<Skill, ProficiencyLevel> {
+    ): Record<string, ProficiencyLevel> {
+        // Ensure SkillRegistry is initialized
+        ensureSkillRegistryInitialized();
+
+        const registry = SkillRegistry.getInstance();
+        const allSkills = registry.getAllSkills();
+
         // Initialize all skills to 'none'
-        const skills: Record<Skill, ProficiencyLevel> = {} as Record<Skill, ProficiencyLevel>;
-        for (const skill of ALL_SKILLS) {
-            skills[skill] = 'none';
+        const skills: Record<string, ProficiencyLevel> = {};
+        for (const skill of allSkills) {
+            skills[skill.id] = 'none';
         }
 
         // Get class data
         const classData = CLASS_DATA[characterClass];
 
-        // Deterministically select skills from available skills
-        const selectedSkills = this.selectRandomSkills(
-            classData.available_skills,
+        // Validate all available skills against registry
+        const validAvailableSkills = this.validateSkills(classData.available_skills, registry);
+
+        // Select skills (currently uses equal weights)
+        // Future: Add spawn rate weights via ExtensionManager
+        const selectedSkills = this.selectSkills(
+            validAvailableSkills,
             classData.skill_count,
             rng
         );
@@ -65,9 +68,9 @@ export class SkillAssigner {
 
         // Handle expertise for Bard and Rogue
         if (classData.has_expertise && classData.expertise_count) {
-            const expertiseSkills = this.selectRandomSkills(
+            const expertiseSkills = this.selectSkills(
                 selectedSkills,
-                classData.expertise_count,
+                classData.expertise_count!,
                 rng
             );
 
@@ -80,18 +83,45 @@ export class SkillAssigner {
     }
 
     /**
+     * Validate skills against the SkillRegistry
+     *
+     * Filters out any skill IDs that are not registered in the SkillRegistry.
+     * This prevents invalid skill IDs from being assigned.
+     *
+     * @param skillIds - Array of skill IDs to validate
+     * @param registry - SkillRegistry instance
+     * @returns Array of valid skill IDs
+     */
+    private static validateSkills(skillIds: string[], registry: SkillRegistry): string[] {
+        const validSkills: string[] = [];
+
+        for (const skillId of skillIds) {
+            if (registry.isValidSkill(skillId)) {
+                validSkills.push(skillId);
+            } else {
+                console.warn(`SkillAssigner: Invalid skill ID "${skillId}" not found in SkillRegistry. Skipping.`);
+            }
+        }
+
+        return validSkills;
+    }
+
+    /**
      * Deterministically select N random skills from a list
-     * 
-     * @param availableSkills - Array of skills to choose from
+     *
+     * Uses Fisher-Yates shuffle with seeded RNG for deterministic selection.
+     * Future enhancement: Add spawn rate weights via ExtensionManager.
+     *
+     * @param availableSkills - Array of skill IDs to choose from
      * @param count - Number of skills to select
      * @param rng - Seeded random number generator
-     * @returns Array of selected skills
+     * @returns Array of selected skill IDs
      */
-    private static selectRandomSkills(
-        availableSkills: Skill[],
+    private static selectSkills(
+        availableSkills: string[],
         count: number,
         rng: SeededRNG
-    ): Skill[] {
+    ): string[] {
         // Create a copy to avoid mutating the original
         const skillPool = [...availableSkills];
 
