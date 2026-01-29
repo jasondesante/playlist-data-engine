@@ -1998,7 +1998,7 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 
 ### Phase 9: Integration with Existing Systems
 - [x] Update CharacterGenerator
-- [ ] Update LevelUpProcessor
+- [x] Update LevelUpProcessor
 - [ ] Update FeatureRegistry
 
 ### Phase 10: Testing

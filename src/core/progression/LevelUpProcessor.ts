@@ -16,6 +16,7 @@ import { SeededRNG } from '../../utils/random.js';
 import type { StatManager } from './stat/StatManager.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import { FeatureEffectApplier } from '../features/FeatureEffectApplier.js';
+import { EquipmentEffectApplier } from '../equipment/EquipmentEffectApplier.js';
 import type { ClassFeature } from '../features/FeatureTypes.js';
 
 /**
@@ -341,6 +342,11 @@ export class LevelUpProcessor {
                 ...new Set([...updated.class_features, ...benefits.classFeatures]),
             ];
         }
+
+        // Phase 9.2: Re-apply equipment effects after level-up
+        // This ensures equipment bonuses (like stat bonuses from items) persist
+        // after the character's stats have changed
+        this.reapplyEquipmentEffects(updated);
 
         return updated;
     }
@@ -706,6 +712,10 @@ export class LevelUpProcessor {
             ];
         }
 
+        // Phase 9.2: Re-apply equipment effects after automatic benefits
+        // This ensures equipment bonuses persist when level increases
+        this.reapplyEquipmentEffects(updated);
+
         return updated;
     }
 
@@ -743,5 +753,24 @@ export class LevelUpProcessor {
         }
 
         return updated;
+    }
+
+    /**
+     * Re-apply all equipment effects after a level-up
+     * Phase 9.2: Ensures equipment effects persist when character stats change
+     *
+     * This method uses EquipmentEffectApplier's reapplyEquipmentEffects which:
+     * - Clears the equipment_effects array
+     * - Re-applies all properties, features, skills, and spells
+     * - Rebuilds the equipment_effects tracking array
+     *
+     * @param character - The character to reapply equipment effects to
+     */
+    private static reapplyEquipmentEffects(character: CharacterSheet): void {
+        if (!character.equipment) return;
+
+        // Use EquipmentEffectApplier's reapplyEquipmentEffects method
+        // This handles the full reapplication including properties, features, skills, and spells
+        EquipmentEffectApplier.reapplyEquipmentEffects(character);
     }
 }
