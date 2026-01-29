@@ -15,6 +15,7 @@ import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../features/Defau
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
 import { SkillRegistry } from '../skills/SkillRegistry.js';
 import { DEFAULT_SKILLS } from '../skills/DefaultSkills.js';
+import type { CustomSkill } from '../skills/SkillTypes.js';
 
 /**
  * Default appearance data
@@ -383,16 +384,42 @@ export function ensureFeatureDefaultsInitialized(): void {
 }
 
 /**
- * Initialize SkillRegistry with default skills
+ * Initialize SkillRegistry and ExtensionManager with default skills
  *
  * This should be called once during application initialization.
  * Part of Phase 12.4: Update SkillAssigner to use SkillRegistry.
+ * Phase 13.1: Also initializes ExtensionManager with skill default data for spawn rate management.
  */
 export function initializeSkillDefaults(): void {
     const registry = SkillRegistry.getInstance();
+    const manager = ExtensionManager.getInstance();
 
-    // Initialize with default D&D 5e skills
+    // Initialize SkillRegistry with default D&D 5e skills
     registry.initializeDefaults(DEFAULT_SKILLS);
+
+    // Phase 13.1: Initialize ExtensionManager with default skills for spawn rate management
+    // Group skills by ability for ExtensionManager storage
+    const skillsByAbility: Record<string, CustomSkill[]> = {
+        STR: [],
+        DEX: [],
+        CON: [],
+        INT: [],
+        WIS: [],
+        CHA: []
+    };
+
+    for (const skill of DEFAULT_SKILLS) {
+        skillsByAbility[skill.ability].push(skill);
+    }
+
+    // Initialize general skills category with all skills
+    manager.initializeDefaults('skills', [...DEFAULT_SKILLS]);
+
+    // Initialize ability-specific skill categories
+    for (const [ability, skills] of Object.entries(skillsByAbility)) {
+        const category = `skills.${ability}` as ExtensionCategory;
+        manager.initializeDefaults(category, skills);
+    }
 }
 
 /**

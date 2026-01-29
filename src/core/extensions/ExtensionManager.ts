@@ -13,9 +13,11 @@
  * @module extensions/ExtensionManager
  */
 
-import type { Race, Class } from '../types/Character.js';
+import type { Race, Class, Ability } from '../types/Character.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
+import type { CustomSkill } from '../skills/SkillTypes.js';
+import { SkillRegistry } from '../skills/SkillRegistry.js';
 
 /**
  * All extensible categories in the system
@@ -237,6 +239,28 @@ export class ExtensionManager {
             void category.replace('racialTraits.', '') as unknown as Race;
             const registry = FeatureRegistry.getInstance();
             registry.registerRacialTraits(items as RacialTrait[]);
+        }
+
+        // Phase 13.1: Integrate with SkillRegistry for skills
+        if (category === 'skills') {
+            const registry = SkillRegistry.getInstance();
+            registry.registerSkills(items as CustomSkill[]);
+        }
+
+        // Phase 13.1: Handle ability-specific skills
+        if (category.startsWith('skills.')) {
+            // abilityName is extracted for future use in validation/logging
+            void category.replace('skills.', '') as unknown as Ability;
+            const registry = SkillRegistry.getInstance();
+            registry.registerSkills(items as CustomSkill[]);
+        }
+
+        // Phase 13.1: Handle skill lists (class-specific skill lists)
+        // Skill lists are stored directly in ExtensionManager without registry integration
+        // They are used by SkillAssigner to determine available skills per class
+        if (category.startsWith('skillLists.') || category === 'skillLists') {
+            // Skill lists are stored directly - no registry integration needed
+            // They will be retrieved by SkillAssigner via manager.get()
         }
     }
 
@@ -469,6 +493,50 @@ export class ExtensionManager {
                 errors.push(`${prefix} Invalid 'source' (must be 'default' or 'custom')`);
             }
         }
+        // Phase 13.1: Skills validation
+        else if (category === 'skills' || category.startsWith('skills.')) {
+            if (!item.id || typeof item.id !== 'string') {
+                errors.push(`${prefix} Skill must have a valid 'id'`);
+            }
+            // Validate skill ID format (lowercase_with_underscores)
+            if (item.id && !/^[a-z][a-z0-9_]*$/.test(item.id)) {
+                errors.push(`${prefix} Invalid 'id' format (must be lowercase_with_underscores)`);
+            }
+            if (!item.name || typeof item.name !== 'string') {
+                errors.push(`${prefix} Skill must have a valid 'name'`);
+            }
+            const validAbilities: Ability[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+            if (!item.ability || !validAbilities.includes(item.ability)) {
+                errors.push(`${prefix} Invalid 'ability' (must be one of: ${validAbilities.join(', ')})`);
+            }
+            if (item.source && !['default', 'custom'].includes(item.source)) {
+                errors.push(`${prefix} Invalid 'source' (must be 'default' or 'custom')`);
+            }
+            // Validate optional fields
+            if (item.armorPenalty !== undefined && typeof item.armorPenalty !== 'boolean') {
+                errors.push(`${prefix} Invalid 'armorPenalty' (must be boolean)`);
+            }
+            if (item.categories && !Array.isArray(item.categories)) {
+                errors.push(`${prefix} Invalid 'categories' (must be an array)`);
+            }
+        }
+        // Phase 13.1: Skill Lists validation
+        else if (category === 'skillLists' || category.startsWith('skillLists.')) {
+            // Skill list items are objects with { class, skillCount, availableSkills, selectionWeights?, hasExpertise?, expertiseCount? }
+            if (!item.class || typeof item.class !== 'string') {
+                errors.push(`${prefix} Skill list must have a valid 'class'`);
+            }
+            if (typeof item.skillCount !== 'number' || item.skillCount < 0) {
+                errors.push(`${prefix} Invalid 'skillCount' (must be non-negative number)`);
+            }
+            if (!Array.isArray(item.availableSkills)) {
+                errors.push(`${prefix} Invalid 'availableSkills' (must be an array of skill IDs)`);
+            }
+            // Validate expertise count if provided
+            if (item.expertiseCount !== undefined && (typeof item.expertiseCount !== 'number' || item.expertiseCount < 0)) {
+                errors.push(`${prefix} Invalid 'expertiseCount' (must be non-negative number)`);
+            }
+        }
 
         return errors;
     }
@@ -489,6 +557,16 @@ export class ExtensionManager {
             // Custom features can be distinguished by source: 'custom' property
             // Full reset would require tracking which custom features were registered via ExtensionManager
         }
+
+        // Phase 13.1: Reset SkillRegistry when skill categories are reset
+        if (category === 'skills' || category.startsWith('skills.')) {
+            void SkillRegistry.getInstance();
+            // Note: We don't fully reset the registry as it would remove default skills
+            // Custom skills can be distinguished by source: 'custom' property
+            // Full reset would require tracking which custom skills were registered via ExtensionManager
+        }
+
+        // Skill lists are stored directly in ExtensionManager - no registry reset needed
     }
 
     /**

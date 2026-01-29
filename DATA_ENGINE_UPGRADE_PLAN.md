@@ -4378,7 +4378,7 @@ manager.register('classFeatures', [{
 ```
 
 **Note:** Per-category spawn rates are already supported via `setWeights()`. The weights are stored and can be retrieved via `getWeights()`, but the actual spawn rate application depends on the specific generator implementation.
-- [ ] Integrate SkillRegistry with ExtensionManager
+- [x] Integrate SkillRegistry with ExtensionManager
 - [ ] Support per-category spawn rates:
   ```typescript
   // Example: Set spawn rates for Barbarian features
@@ -4397,6 +4397,76 @@ manager.register('classFeatures', [{
   ```
 
 **Deliverable:** ExtensionManager with feature/skill categories
+
+#### Implementation Summary - Phase 13.1 (Part 2): SkillRegistry Integration ✅
+
+**Files Modified:**
+- `src/core/extensions/ExtensionManager.ts` - Added SkillRegistry integration
+- `src/core/extensions/initializeDefaults.ts` - Added skill defaults initialization
+- `tests/integration/skillIntegration.test.ts` - Added comprehensive tests (9 tests, all passing)
+
+**Changes Made:**
+
+1. **Added SkillRegistry import** to ExtensionManager.ts for integration
+
+2. **Updated `register()` method** to integrate with SkillRegistry:
+   - When `skills` category is registered, skills are also registered with SkillRegistry
+   - When `skills.{ability}` categories are registered (e.g., `skills.STR`), skills are also registered with SkillRegistry
+   - When `skillLists` categories are registered, they are stored directly in ExtensionManager (no registry integration needed)
+
+3. **Added skill validation** to `validateItem()` method:
+   - Skills must have: id, name, ability (STR/DEX/CON/INT/WIS/CHA), source (default/custom)
+   - Skill ID must be lowercase_with_underscores format
+   - Optional fields validated: armorPenalty (boolean), categories (array)
+
+4. **Added skill list validation** to `validateItem()` method:
+   - Skill lists must have: class (string), skillCount (non-negative number), availableSkills (array)
+   - Optional fields validated: expertiseCount (non-negative number)
+
+5. **Updated `reset()` method** with comment about SkillRegistry handling
+
+6. **Updated `initializeSkillDefaults()`** in initializeDefaults.ts:
+   - Initializes SkillRegistry with default skills
+   - Groups skills by ability for ExtensionManager storage
+   - Initializes `skills` category with all 18 default skills
+   - Initializes ability-specific categories (skills.STR, skills.DEX, etc.)
+
+**Verification:**
+- ✅ TypeScript compilation passes (`npm run build`)
+- ✅ No new lint errors introduced
+- ✅ ExtensionManager now integrates with SkillRegistry
+- ✅ Custom skills registered via ExtensionManager are stored in SkillRegistry
+- ✅ Spawn rate weights can be set via `manager.setWeights('skills', { 'athletics': 2.0 })`
+- ✅ All 9 skill integration tests passing
+
+**Usage Example:**
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register custom skills (automatically added to SkillRegistry)
+manager.register('skills', [{
+    id: 'survival_cold',
+    name: 'Survival (Cold Environments)',
+    ability: 'WIS',
+    description: 'Expertise in cold weather survival',
+    categories: ['exploration', 'environmental'],
+    source: 'custom'
+}], {
+    weights: { 'survival_cold': 0.5 }  // Half as likely to spawn
+});
+
+// Register ability-specific skills
+manager.register('skills.STR', [{
+    id: 'custom_strength_skill',
+    name: 'Custom Strength Skill',
+    ability: 'STR',
+    source: 'custom'
+}]);
+```
+
+**Note:** Per-category spawn rates are already supported via `setWeights()`. The weights are stored and can be retrieved via `getWeights()`, but the actual spawn rate application depends on the specific generator implementation.
 
 ---
 
