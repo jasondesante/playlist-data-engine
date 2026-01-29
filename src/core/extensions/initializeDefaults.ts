@@ -7,7 +7,7 @@
  */
 
 import { ExtensionManager } from './ExtensionManager.js';
-import { SPELL_DATABASE, CLASS_SPELL_LISTS } from '../../utils/constants.js';
+import { SPELL_DATABASE, CLASS_SPELL_LISTS, EQUIPMENT_DATABASE, ALL_RACES, ALL_CLASSES } from '../../utils/constants.js';
 import type { Class } from '../types/Character.js';
 
 /**
@@ -162,4 +162,143 @@ export function ensureSpellDefaultsInitialized(): void {
     if (!areSpellDefaultsInitialized()) {
         initializeSpellDefaults();
     }
+}
+
+/**
+ * Default equipment data
+ * Convert EQUIPMENT_DATABASE to array format for ExtensionManager
+ */
+const DEFAULT_EQUIPMENT_DATA = Object.values(EQUIPMENT_DATABASE);
+
+/**
+ * Initialize ExtensionManager with default equipment data
+ *
+ * This should be called once during application initialization.
+ */
+export function initializeEquipmentDefaults(): void {
+    const manager = ExtensionManager.getInstance();
+
+    // Initialize equipment database (all equipment)
+    manager.initializeDefaults('equipment', DEFAULT_EQUIPMENT_DATA);
+}
+
+/**
+ * Check if equipment defaults are initialized
+ */
+export function areEquipmentDefaultsInitialized(): boolean {
+    const manager = ExtensionManager.getInstance();
+    const categories = manager.getRegisteredCategories();
+
+    // Check if equipment category is registered
+    return categories.some(cat => cat === 'equipment');
+}
+
+/**
+ * Ensure equipment defaults are initialized
+ *
+ * Initializes defaults if they haven't been already.
+ * Safe to call multiple times.
+ */
+export function ensureEquipmentDefaultsInitialized(): void {
+    if (!areEquipmentDefaultsInitialized()) {
+        initializeEquipmentDefaults();
+    }
+}
+
+/**
+ * Initialize ExtensionManager with default race data
+ *
+ * This should be called once during application initialization.
+ */
+export function initializeRaceDefaults(): void {
+    const manager = ExtensionManager.getInstance();
+
+    // Initialize races with default data
+    manager.initializeDefaults('races', [...ALL_RACES]);
+}
+
+/**
+ * Check if race defaults are initialized
+ */
+export function areRaceDefaultsInitialized(): boolean {
+    const manager = ExtensionManager.getInstance();
+    const categories = manager.getRegisteredCategories();
+
+    // Check if races category is registered
+    return categories.some(cat => cat === 'races');
+}
+
+/**
+ * Ensure race defaults are initialized
+ *
+ * Initializes defaults if they haven't been already.
+ * Safe to call multiple times.
+ */
+export function ensureRaceDefaultsInitialized(): void {
+    if (!areRaceDefaultsInitialized()) {
+        initializeRaceDefaults();
+    }
+}
+
+/**
+ * Initialize ExtensionManager with default class data
+ *
+ * This should be called once during application initialization.
+ */
+export function initializeClassDefaults(): void {
+    const manager = ExtensionManager.getInstance();
+
+    // Initialize classes with default data
+    manager.initializeDefaults('classes', [...ALL_CLASSES]);
+}
+
+/**
+ * Check if class defaults are initialized
+ */
+export function areClassDefaultsInitialized(): boolean {
+    const manager = ExtensionManager.getInstance();
+    const categories = manager.getRegisteredCategories();
+
+    // Check if classes category is registered
+    return categories.some(cat => cat === 'classes');
+}
+
+/**
+ * Ensure class defaults are initialized
+ *
+ * Initializes defaults if they haven't been already.
+ * Safe to call multiple times.
+ */
+export function ensureClassDefaultsInitialized(): void {
+    if (!areClassDefaultsInitialized()) {
+        initializeClassDefaults();
+    }
+}
+
+/**
+ * Initialize ALL ExtensionManager defaults at once
+ *
+ * This is the recommended way to initialize the extensibility system.
+ * Call this once during application initialization.
+ */
+export function initializeAllDefaults(): void {
+    initializeAppearanceDefaults();
+    initializeSpellDefaults();
+    initializeEquipmentDefaults();
+    initializeRaceDefaults();
+    initializeClassDefaults();
+}
+
+/**
+ * Ensure ALL ExtensionManager defaults are initialized
+ *
+ * Initializes any defaults that haven't been initialized yet.
+ * Safe to call multiple times.
+ */
+export function ensureAllDefaultsInitialized(): void {
+    ensureAppearanceDefaultsInitialized();
+    ensureSpellDefaultsInitialized();
+    ensureEquipmentDefaultsInitialized();
+    ensureRaceDefaultsInitialized();
+    ensureClassDefaultsInitialized();
 }

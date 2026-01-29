@@ -1,9 +1,24 @@
 /**
  * EquipmentGenerator - Manages equipment assignment, inventory, and equipped items
+ *
+ * Supports extensibility through ExtensionManager for custom equipment.
+ * All equipment lookups check both default and custom equipment databases.
  */
 
 import type { Class } from '../types/Character.js';
 import { CLASS_STARTING_EQUIPMENT, EQUIPMENT_DATABASE } from '../../utils/constants.js';
+import { ExtensionManager } from '../extensions/ExtensionManager.js';
+import { ensureEquipmentDefaultsInitialized } from '../extensions/initializeDefaults.js';
+
+/**
+ * Equipment data interface
+ */
+export interface Equipment {
+    name: string;
+    type: 'weapon' | 'armor' | 'item';
+    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    weight: number;
+}
 
 /**
  * Inventory item with quantity
@@ -27,6 +42,51 @@ export interface CharacterEquipment {
 
 export class EquipmentGenerator {
   /**
+   * Ensure equipment defaults are initialized
+   * Safe to call multiple times
+   */
+  private static ensureInitialized(): void {
+    ensureEquipmentDefaultsInitialized();
+  }
+
+  /**
+   * Get equipment data from extended database (defaults + custom)
+   *
+   * @param itemName - Name of the equipment to look up
+   * @returns Equipment data or undefined if not found
+   */
+  private static getEquipmentData(itemName: string): Equipment | undefined {
+    const manager = ExtensionManager.getInstance();
+
+    // Get all equipment (defaults + custom)
+    const allEquipment = manager.get('equipment');
+
+    // Find equipment by name
+    return allEquipment.find((eq: Equipment) => eq.name === itemName);
+  }
+
+  /**
+   * Get all equipment names from extended database
+   *
+   * @returns Array of all equipment names
+   */
+  private static getAllEquipmentNames(): string[] {
+    const manager = ExtensionManager.getInstance();
+    const allEquipment = manager.get('equipment');
+    return allEquipment.map((eq: Equipment) => eq.name);
+  }
+
+  /**
+   * Check if equipment exists in extended database
+   *
+   * @param itemName - Name of the equipment to check
+   * @returns true if equipment exists
+   */
+  private static hasEquipment(itemName: string): boolean {
+    return this.getEquipmentData(itemName) !== undefined;
+  }
+
+  /**
    * Get starting equipment for a class
    *
    * @param characterClass - The character's class
@@ -37,6 +97,8 @@ export class EquipmentGenerator {
     armor: string[];
     items: string[];
   } {
+    this.ensureInitialized();
+
     const equipment = CLASS_STARTING_EQUIPMENT[characterClass];
     if (!equipment) {
       return { weapons: [], armor: [], items: [] };
@@ -56,6 +118,8 @@ export class EquipmentGenerator {
    * @returns CharacterEquipment with starting gear in inventory
    */
   static initializeEquipment(characterClass: Class): CharacterEquipment {
+    this.ensureInitialized();
+
     const startingEquipment = this.getStartingEquipment(characterClass);
 
     const weapons: InventoryItem[] = [];
@@ -134,7 +198,9 @@ export class EquipmentGenerator {
     itemName: string,
     quantity: number = 1
   ): CharacterEquipment {
-    const equipData = EQUIPMENT_DATABASE[itemName];
+    this.ensureInitialized();
+
+    const equipData = this.getEquipmentData(itemName);
     if (!equipData) {
       return equipment;
     }
@@ -184,10 +250,12 @@ export class EquipmentGenerator {
     itemName: string,
     quantity: number = 1
   ): CharacterEquipment {
+    this.ensureInitialized();
+
     const updated = this.cloneEquipment(equipment);
     let inventory: InventoryItem[];
 
-    const equipData = EQUIPMENT_DATABASE[itemName];
+    const equipData = this.getEquipmentData(itemName);
     if (!equipData) {
       return equipment;
     }
@@ -231,8 +299,10 @@ export class EquipmentGenerator {
    * @returns Updated equipment with item equipped
    */
   static equipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment {
+    this.ensureInitialized();
+
     const updated = this.cloneEquipment(equipment);
-    const equipData = EQUIPMENT_DATABASE[itemName];
+    const equipData = this.getEquipmentData(itemName);
 
     if (!equipData) {
       return equipment;
@@ -271,8 +341,10 @@ export class EquipmentGenerator {
    * @returns Updated equipment with item unequipped
    */
   static unequipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment {
+    this.ensureInitialized();
+
     const updated = this.cloneEquipment(equipment);
-    const equipData = EQUIPMENT_DATABASE[itemName];
+    const equipData = this.getEquipmentData(itemName);
 
     if (!equipData) {
       return equipment;
@@ -329,21 +401,21 @@ export class EquipmentGenerator {
     let total = 0;
 
     for (const weapon of weapons) {
-      const data = EQUIPMENT_DATABASE[weapon.name];
+      const data = this.getEquipmentData(weapon.name);
       if (data) {
         total += data.weight * weapon.quantity;
       }
     }
 
     for (const arm of armor) {
-      const data = EQUIPMENT_DATABASE[arm.name];
+      const data = this.getEquipmentData(arm.name);
       if (data) {
         total += data.weight * arm.quantity;
       }
     }
 
     for (const item of items) {
-      const data = EQUIPMENT_DATABASE[item.name];
+      const data = this.getEquipmentData(item.name);
       if (data) {
         total += data.weight * item.quantity;
       }
@@ -369,7 +441,7 @@ export class EquipmentGenerator {
 
     for (const weapon of weapons) {
       if (weapon.equipped) {
-        const data = EQUIPMENT_DATABASE[weapon.name];
+        const data = this.getEquipmentData(weapon.name);
         if (data) {
           total += data.weight;
         }
@@ -378,7 +450,7 @@ export class EquipmentGenerator {
 
     for (const arm of armor) {
       if (arm.equipped) {
-        const data = EQUIPMENT_DATABASE[arm.name];
+        const data = this.getEquipmentData(arm.name);
         if (data) {
           total += data.weight;
         }
@@ -387,7 +459,7 @@ export class EquipmentGenerator {
 
     for (const item of items) {
       if (item.equipped) {
-        const data = EQUIPMENT_DATABASE[item.name];
+        const data = this.getEquipmentData(item.name);
         if (data) {
           total += data.weight;
         }

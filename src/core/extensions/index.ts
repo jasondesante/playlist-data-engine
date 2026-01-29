@@ -10,4 +10,22 @@ export type { ExtensionCategory, ExtensionOptions, ValidationResult } from './Ex
 export { WeightedSelector } from './WeightedSelector.js';
 export type { SelectionMode } from './WeightedSelector.js';
 
-export { initializeAppearanceDefaults, areAppearanceDefaultsInitialized, ensureAppearanceDefaultsInitialized } from './initializeDefaults.js';
+export {
+    initializeAppearanceDefaults,
+    areAppearanceDefaultsInitialized,
+    ensureAppearanceDefaultsInitialized,
+    initializeSpellDefaults,
+    areSpellDefaultsInitialized,
+    ensureSpellDefaultsInitialized,
+    initializeEquipmentDefaults,
+    areEquipmentDefaultsInitialized,
+    ensureEquipmentDefaultsInitialized,
+    initializeRaceDefaults,
+    areRaceDefaultsInitialized,
+    ensureRaceDefaultsInitialized,
+    initializeClassDefaults,
+    areClassDefaultsInitialized,
+    ensureClassDefaultsInitialized,
+    initializeAllDefaults,
+    ensureAllDefaultsInitialized,
+} from './initializeDefaults.js';

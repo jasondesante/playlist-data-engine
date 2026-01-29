@@ -251,9 +251,9 @@ export class ExtensionManager {
     /**
      * Get the registration mode for a category
      * @param category - The category to check
-     * @returns The mode ('relative', 'absolute', or undefined if no custom data)
+     * @returns The mode ('relative', 'absolute', 'default', or undefined if no custom data)
      */
-    getMode(category: ExtensionCategory): 'relative' | 'absolute' | undefined {
+    getMode(category: ExtensionCategory): 'relative' | 'absolute' | 'default' | undefined {
         const extension = this.extensions.get(category);
         return extension?.options.mode;
     }
