@@ -7,10 +7,12 @@
  */
 
 import { ExtensionManager } from './ExtensionManager.js';
+import type { ExtensionCategory } from './ExtensionManager.js';
 import { SPELL_DATABASE, CLASS_SPELL_LISTS, EQUIPMENT_DATABASE, ALL_RACES, ALL_CLASSES } from '../../utils/constants.js';
 import type { Class } from '../types/Character.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../features/DefaultFeatures.js';
+import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
 import { SkillRegistry } from '../skills/SkillRegistry.js';
 import { DEFAULT_SKILLS } from '../skills/DefaultSkills.js';
 
@@ -313,12 +315,51 @@ export function ensureAllDefaultsInitialized(): void {
  * Initialize FeatureRegistry with default features and traits
  *
  * This should be called once during application initialization.
+ * Phase 13.1: Also initializes ExtensionManager with feature default data for spawn rate management.
  */
 export function initializeFeatureDefaults(): void {
     const registry = FeatureRegistry.getInstance();
+    const manager = ExtensionManager.getInstance();
 
-    // Initialize with default class features and racial traits
+    // Initialize FeatureRegistry with default class features and racial traits
     registry.initializeDefaults(DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS);
+
+    // Phase 13.1: Initialize ExtensionManager with default features for spawn rate management
+    // Group features by class for ExtensionManager storage
+    const featuresByClass: Record<string, ClassFeature[]> = {};
+    for (const feature of DEFAULT_CLASS_FEATURES) {
+        if (!featuresByClass[feature.class]) {
+            featuresByClass[feature.class] = [];
+        }
+        featuresByClass[feature.class].push(feature);
+    }
+
+    // Initialize general classFeatures category with all features
+    manager.initializeDefaults('classFeatures', [...DEFAULT_CLASS_FEATURES]);
+
+    // Initialize class-specific feature categories
+    for (const [className, features] of Object.entries(featuresByClass)) {
+        const category = `classFeatures.${className}` as ExtensionCategory;
+        manager.initializeDefaults(category, features);
+    }
+
+    // Group traits by race for ExtensionManager storage
+    const traitsByRace: Record<string, RacialTrait[]> = {};
+    for (const trait of DEFAULT_RACIAL_TRAITS) {
+        if (!traitsByRace[trait.race]) {
+            traitsByRace[trait.race] = [];
+        }
+        traitsByRace[trait.race].push(trait);
+    }
+
+    // Initialize general racialTraits category with all traits
+    manager.initializeDefaults('racialTraits', [...DEFAULT_RACIAL_TRAITS]);
+
+    // Initialize race-specific trait categories
+    for (const [raceName, traits] of Object.entries(traitsByRace)) {
+        const category = `racialTraits.${raceName}` as ExtensionCategory;
+        manager.initializeDefaults(category, traits);
+    }
 }
 
 /**

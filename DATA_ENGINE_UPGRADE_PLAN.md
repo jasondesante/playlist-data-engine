@@ -4319,7 +4319,65 @@ Created `/workspace/src/core/migration/CharacterMigration.ts` with:
       | 'skillLists.Wizard'
   ```
 
-- [ ] Integrate FeatureRegistry with ExtensionManager
+- [x] Integrate FeatureRegistry with ExtensionManager
+
+#### Implementation Summary - Phase 13.1: FeatureRegistry Integration ✅
+
+**Files Modified:**
+- `src/core/extensions/ExtensionManager.ts` - Added FeatureRegistry integration
+- `src/core/extensions/initializeDefaults.ts` - Added feature defaults initialization
+
+**Changes Made:**
+
+1. **Added FeatureRegistry import** to ExtensionManager.ts for integration
+
+2. **Updated `register()` method** to integrate with FeatureRegistry:
+   - When `classFeatures` category is registered, features are also registered with FeatureRegistry
+   - When `racialTraits` category is registered, traits are also registered with FeatureRegistry
+   - Class-specific features (`classFeatures.Barbarian`, etc.) are registered with FeatureRegistry
+   - Race-specific traits (`racialTraits.Elf`, etc.) are registered with FeatureRegistry
+
+3. **Added feature validation** to `validateItem()` method:
+   - Class features must have: id, name, description, type, level (1-20), class, source
+   - Racial traits must have: id, name, description, race, source
+   - Validates enum values for type, class, race, and source
+
+4. **Updated `reset()` method** with comment about FeatureRegistry handling
+
+5. **Updated `initializeFeatureDefaults()`** in initializeDefaults.ts:
+   - Initializes FeatureRegistry with default features and traits
+   - Groups features by class for ExtensionManager storage
+   - Groups traits by race for ExtensionManager storage
+   - Initializes both general and class/race-specific categories in ExtensionManager
+
+**Verification:**
+- ✅ TypeScript compilation passes (`npm run build`)
+- ✅ No new lint errors introduced
+- ✅ ExtensionManager now integrates with FeatureRegistry
+- ✅ Custom features registered via ExtensionManager are stored in FeatureRegistry
+- ✅ Spawn rate weights can be set via `manager.setWeights('classFeatures', { 'rage': 2.0 })`
+
+**Usage Example:**
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register custom class features (automatically added to FeatureRegistry)
+manager.register('classFeatures', [{
+    id: 'dragon_fury',
+    name: 'Dragon Fury',
+    description: 'Channel your draconic heritage...',
+    type: 'active',
+    level: 3,
+    class: 'Barbarian',
+    source: 'custom'
+}], {
+    weights: { 'dragon_fury': 0.5 }  // Half as likely to spawn
+});
+```
+
+**Note:** Per-category spawn rates are already supported via `setWeights()`. The weights are stored and can be retrieved via `getWeights()`, but the actual spawn rate application depends on the specific generator implementation.
 - [ ] Integrate SkillRegistry with ExtensionManager
 - [ ] Support per-category spawn rates:
   ```typescript

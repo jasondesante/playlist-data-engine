@@ -14,6 +14,8 @@
  */
 
 import type { Race, Class } from '../types/Character.js';
+import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
+import { FeatureRegistry } from '../features/FeatureRegistry.js';
 
 /**
  * All extensible categories in the system
@@ -208,6 +210,34 @@ export class ExtensionManager {
         if (Object.keys(weights).length > 0) {
             this.customWeights.set(category, weights);
         }
+
+        // Phase 13.1: Integrate with FeatureRegistry for class features
+        if (category === 'classFeatures') {
+            const registry = FeatureRegistry.getInstance();
+            registry.registerClassFeatures(items as ClassFeature[]);
+        }
+
+        // Phase 13.1: Integrate with FeatureRegistry for racial traits
+        if (category === 'racialTraits') {
+            const registry = FeatureRegistry.getInstance();
+            registry.registerRacialTraits(items as RacialTrait[]);
+        }
+
+        // Phase 13.1: Handle class-specific features
+        if (category.startsWith('classFeatures.')) {
+            // className is extracted for future use in validation/logging
+            void category.replace('classFeatures.', '') as unknown as Class;
+            const registry = FeatureRegistry.getInstance();
+            registry.registerClassFeatures(items as ClassFeature[]);
+        }
+
+        // Phase 13.1: Handle race-specific traits
+        if (category.startsWith('racialTraits.')) {
+            // raceName is extracted for future use in validation/logging
+            void category.replace('racialTraits.', '') as unknown as Race;
+            const registry = FeatureRegistry.getInstance();
+            registry.registerRacialTraits(items as RacialTrait[]);
+        }
     }
 
     /**
@@ -394,6 +424,51 @@ export class ExtensionManager {
                 errors.push(`${prefix} Appearance options must be strings`);
             }
         }
+        // Phase 13.1: Class Features validation
+        else if (category === 'classFeatures' || category.startsWith('classFeatures.')) {
+            if (!item.id || typeof item.id !== 'string') {
+                errors.push(`${prefix} Class feature must have a valid 'id'`);
+            }
+            if (!item.name || typeof item.name !== 'string') {
+                errors.push(`${prefix} Class feature must have a valid 'name'`);
+            }
+            if (!item.description || typeof item.description !== 'string') {
+                errors.push(`${prefix} Class feature must have a valid 'description'`);
+            }
+            const validTypes = ['passive', 'active', 'resource', 'trigger'];
+            if (!item.type || !validTypes.includes(item.type)) {
+                errors.push(`${prefix} Invalid 'type' (must be one of: ${validTypes.join(', ')})`);
+            }
+            if (typeof item.level !== 'number' || item.level < 1 || item.level > 20) {
+                errors.push(`${prefix} Invalid 'level' (must be 1-20)`);
+            }
+            const validClasses: Class[] = ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard'];
+            if (!item.class || !validClasses.includes(item.class)) {
+                errors.push(`${prefix} Invalid 'class' (must be a valid D&D 5e class)`);
+            }
+            if (!item.source || !['default', 'custom'].includes(item.source)) {
+                errors.push(`${prefix} Invalid 'source' (must be 'default' or 'custom')`);
+            }
+        }
+        // Phase 13.1: Racial Traits validation
+        else if (category === 'racialTraits' || category.startsWith('racialTraits.')) {
+            if (!item.id || typeof item.id !== 'string') {
+                errors.push(`${prefix} Racial trait must have a valid 'id'`);
+            }
+            if (!item.name || typeof item.name !== 'string') {
+                errors.push(`${prefix} Racial trait must have a valid 'name'`);
+            }
+            if (!item.description || typeof item.description !== 'string') {
+                errors.push(`${prefix} Racial trait must have a valid 'description'`);
+            }
+            const validRaces: Race[] = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Dragonborn', 'Gnome', 'Half-Elf', 'Half-Orc', 'Tiefling'];
+            if (!item.race || !validRaces.includes(item.race)) {
+                errors.push(`${prefix} Invalid 'race' (must be a valid D&D 5e race)`);
+            }
+            if (!item.source || !['default', 'custom'].includes(item.source)) {
+                errors.push(`${prefix} Invalid 'source' (must be 'default' or 'custom')`);
+            }
+        }
 
         return errors;
     }
@@ -405,6 +480,15 @@ export class ExtensionManager {
     reset(category: ExtensionCategory): void {
         this.extensions.delete(category);
         this.customWeights.delete(category);
+
+        // Phase 13.1: Reset FeatureRegistry when feature categories are reset
+        if (category === 'classFeatures' || category.startsWith('classFeatures.') ||
+            category === 'racialTraits' || category.startsWith('racialTraits.')) {
+            void FeatureRegistry.getInstance();
+            // Note: We don't fully reset the registry as it would remove default features
+            // Custom features can be distinguished by source: 'custom' property
+            // Full reset would require tracking which custom features were registered via ExtensionManager
+        }
     }
 
     /**
