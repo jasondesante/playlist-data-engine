@@ -1996,7 +1996,7 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [x] Write integration tests (equipmentSystem.integration.test.ts - 40 tests passing)
 
 ### Phase 11: Documentation
-- [ ] Write EQUIPMENT_SYSTEM.md (comprehensive reference)
+- [x] Write EQUIPMENT_SYSTEM.md (comprehensive reference)
 - [ ] Update DATA_ENGINE_REFERENCE.md:
   - [ ] Add complete equipment system reference section
   - [ ] Document all EquipmentProperty types with examples
