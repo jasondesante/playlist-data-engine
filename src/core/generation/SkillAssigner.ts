@@ -2,12 +2,14 @@
  * SkillAssigner - Assigns D&D 5e skill proficiencies based on character class
  *
  * Part of Phase 12.4: Update SkillAssigner to use SkillRegistry and support custom skills.
+ * Part of Phase 3.2: Update SkillAssigner for prerequisite filtering.
  */
 
-import type { Class, ProficiencyLevel } from '../types/Character.js';
+import type { Class, ProficiencyLevel, CharacterSheet } from '../types/Character.js';
 import type { SeededRNG } from '../../utils/random.js';
 import { CLASS_DATA } from '../../utils/constants.js';
 import { SkillRegistry } from '../skills/SkillRegistry.js';
+import { SkillValidator } from '../skills/SkillValidator.js';
 
 /**
  * Initialize skill registry if not already initialized
@@ -26,14 +28,17 @@ export class SkillAssigner {
      *
      * Now uses SkillRegistry to support custom skills and validates all skill IDs.
      * Supports weighted skill selection via ExtensionManager integration.
+     * Filters skills by prerequisites when a character is provided.
      *
      * @param characterClass - The character's class
      * @param rng - Seeded random number generator for deterministic selection
+     * @param character - Optional character sheet for prerequisite validation
      * @returns Record of all skills with their proficiency levels (supports custom skills)
      */
     static assignSkills(
         characterClass: Class,
-        rng: SeededRNG
+        rng: SeededRNG,
+        character?: CharacterSheet
     ): Record<string, ProficiencyLevel> {
         // Ensure SkillRegistry is initialized
         ensureSkillRegistryInitialized();
@@ -53,10 +58,15 @@ export class SkillAssigner {
         // Validate all available skills against registry
         const validAvailableSkills = this.validateSkills(classData.available_skills, registry);
 
+        // Filter skills by prerequisites if character provided
+        const availableSkills = character
+            ? this.filterSkillsByPrerequisites(validAvailableSkills, registry, character)
+            : validAvailableSkills;
+
         // Select skills (currently uses equal weights)
         // Future: Add spawn rate weights via ExtensionManager
         const selectedSkills = this.selectSkills(
-            validAvailableSkills,
+            availableSkills,
             classData.skill_count,
             rng
         );
@@ -101,6 +111,43 @@ export class SkillAssigner {
             } else {
                 console.warn(`SkillAssigner: Invalid skill ID "${skillId}" not found in SkillRegistry. Skipping.`);
             }
+        }
+
+        return validSkills;
+    }
+
+    /**
+     * Filter skills by prerequisites
+     *
+     * Removes skills that have unmet prerequisites for the given character.
+     * Skills without prerequisites are always included.
+     *
+     * @param skillIds - Array of skill IDs to filter
+     * @param registry - SkillRegistry instance
+     * @param character - Character sheet to validate prerequisites against
+     * @returns Array of skill IDs whose prerequisites are met
+     */
+    private static filterSkillsByPrerequisites(
+        skillIds: string[],
+        registry: SkillRegistry,
+        character: CharacterSheet
+    ): string[] {
+        const validSkills: string[] = [];
+
+        for (const skillId of skillIds) {
+            const skill = registry.getSkill(skillId);
+            if (!skill) continue;
+
+            // Skip skills with unmet prerequisites
+            if (skill.prerequisites) {
+                const result = SkillValidator.validateSkillPrerequisites(skill.prerequisites, character);
+                if (!result.valid) {
+                    // Skill has prerequisites that are not met - skip it
+                    continue;
+                }
+            }
+
+            validSkills.push(skillId);
         }
 
         return validSkills;

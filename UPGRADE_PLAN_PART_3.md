@@ -992,8 +992,8 @@ Test Scenarios:
 
 ### Phase 3: Skill Prerequisites
 - [x] Create SkillValidator prerequisite validation
-- [ ] Update SkillAssigner for filtering
-- [ ] Update SkillRegistry
+- [x] Update SkillAssigner for filtering
+- [x] Update SkillRegistry
 
 ### Phase 4: Spell Prerequisites
 - [ ] Create SpellValidator

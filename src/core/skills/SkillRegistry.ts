@@ -5,6 +5,7 @@
  * Manages skill registration, lookup, and categorization.
  *
  * Part of Phase 12.2: Create SkillRegistry.
+ * Part of Phase 3.3: Update SkillRegistry for prerequisite validation.
  */
 
 import type {
@@ -12,8 +13,9 @@ import type {
     SkillRegistryStats,
     SkillValidationResult
 } from './SkillTypes.js';
-import type { Ability } from '../types/Character.js';
+import type { Ability, CharacterSheet } from '../types/Character.js';
 import { DEFAULT_SKILLS } from './DefaultSkills.js';
+import { SkillValidator } from './SkillValidator.js';
 
 /**
  * SkillRegistry - Singleton class for managing skills
@@ -249,6 +251,23 @@ export class SkillRegistry {
             valid: errors.length === 0,
             errors
         };
+    }
+
+    /**
+     * Validate skill prerequisites against a character
+     *
+     * Checks if a character meets all prerequisite requirements for a skill.
+     * This is a convenience method that delegates to SkillValidator.
+     *
+     * @param skill - The skill whose prerequisites to validate
+     * @param character - The character sheet to validate against
+     * @returns Validation result with unmet prerequisites if any
+     */
+    validatePrerequisites(
+        skill: CustomSkill,
+        character: CharacterSheet
+    ): SkillValidationResult {
+        return SkillValidator.validateSkillPrerequisites(skill.prerequisites, character);
     }
 
     /**
