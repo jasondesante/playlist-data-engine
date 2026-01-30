@@ -33,6 +33,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [Spell Prerequisites](#spell-prerequisites)
    - [Custom Races](#custom-races)
    - [Subrace Support](#subrace-support)
+   - [Custom Classes](#custom-classes)
 9. [Cross-References](#cross-references)
 
 ---
@@ -5539,6 +5540,488 @@ const result = FeatureValidator.validatePrerequisites(
 
 console.log(result.valid);  // false
 console.log(result.errors); // ['Requires subrace High Elf (current: Wood Elf)']
+```
+
+---
+
+### Custom Classes
+
+**Location:** `src/utils/constants.ts`, `src/core/extensions/ExtensionManager.ts`, `src/core/types/Character.ts`, `src/core/generation/ClassSuggester.ts`
+
+The engine now supports template-based custom classes through the ExtensionManager. Custom classes can extend (inherit from) existing D&D 5e base classes or be defined completely from scratch.
+
+#### Overview
+
+The Template Class System enables creating new classes that extend existing D&D 5e base classes without duplicating all properties. For example, a "Necromancer" class can extend "Wizard" and only override the properties that differ.
+
+**Key Features:**
+- **Template inheritance**: Custom classes can inherit from base classes via `baseClass` property
+- **Complete customization**: Classes can be defined from scratch without `baseClass`
+- **Skill lists**: Custom skill lists (including custom skills)
+- **Spell casting**: Custom spell lists and slot progressions
+- **Equipment**: Custom starting equipment
+- **Features**: Custom class features with prerequisites
+- **Audio preferences**: Optional audio affinity for class suggestion
+
+#### Class Type Extensibility
+
+The `Class` type uses a branded string pattern for extensibility:
+
+**Location:** `src/core/types/Character.ts`
+
+```typescript
+/**
+ * Branded type for class names (supports custom classes)
+ *
+ * Use asClass() to convert a string to the Class type, and isValidClass()
+ * to validate at runtime.
+ */
+export type Class = string & { readonly __ClassBrand: unique symbol };
+
+/**
+ * Convert a string to the Class type
+ *
+ * Use this function to register custom class names.
+ *
+ * @param value - The class name string
+ * @returns The value branded as a Class type
+ *
+ * @example
+ * const customClass: Class = asClass('Necromancer');
+ */
+export function asClass(value: string): Class;
+
+/**
+ * Type guard to check if a string is a valid Class (default or custom)
+ *
+ * This checks against both default D&D 5e classes and any custom classes
+ * registered via ExtensionManager's 'classes.data' category.
+ *
+ * @param value - The value to check
+ * @returns True if the value is a valid class name
+ */
+export function isValidClass(value: string): value is Class;
+```
+
+#### ClassDataEntry Interface
+
+**Location:** `src/utils/constants.ts`
+
+```typescript
+export interface ClassDataEntry {
+    /** Primary ability score for this class */
+    primary_ability: Ability;
+
+    /** Hit die size for this class */
+    hit_die: number;
+
+    /** Saving throw proficiencies */
+    saving_throws: Ability[];
+
+    /** Whether this class can cast spells */
+    is_spellcaster: boolean;
+
+    /** Number of skills to choose from */
+    skill_count: number;
+
+    /** Available skills for this class (includes custom skills) */
+    available_skills: string[];
+
+    /** Whether this class has expertise */
+    has_expertise: boolean;
+
+    /** Number of expertise choices (if has_expertise is true) */
+    expertise_count?: number;
+
+    /**
+     * For template-based classes: the base class to inherit from
+     *
+     * When specified, the custom class will inherit properties from the base class,
+     * with custom properties overriding inherited ones.
+     *
+     * @example
+     * // Necromancer extends Wizard
+     * baseClass: 'Wizard'
+     */
+    baseClass?: Class;
+
+    /** Optional: Audio preferences for class affinity calculation */
+    audio_preferences?: {
+        primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        bass?: number;
+        treble?: number;
+        mid?: number;
+        amplitude?: number;
+    };
+}
+```
+
+#### getClassData() Helper Function
+
+**Location:** `src/utils/constants.ts`
+
+```typescript
+/**
+ * Get class data (default or custom)
+ *
+ * This helper function retrieves class data from either:
+ * 1. The default CLASS_DATA constant (for built-in classes)
+ * 2. The ExtensionManager (for custom classes registered via 'classes.data')
+ *
+ * For template-based custom classes (those with a baseClass property),
+ * the base class data is merged with custom data, with custom properties
+ * taking precedence.
+ *
+ * @param className - The class name to look up
+ * @returns Class data entry or undefined if not found
+ *
+ * @example
+ * // Get default class data
+ * const wizardData = getClassData('Wizard');
+ * console.log(wizardData.hit_die); // 6
+ *
+ * // Get custom class data (if registered via ExtensionManager)
+ * const necromancerData = getClassData('Necromancer');
+ * if (necromancerData) {
+ *     console.log(necromancerData.baseClass); // 'Wizard'
+ *     console.log(necromancerData.primary_ability); // 'INT'
+ * }
+ */
+export function getClassData(className: string): ClassDataEntry | undefined;
+```
+
+#### Template Class Merge Logic
+
+When a custom class specifies `baseClass`, the system merges properties as follows:
+
+```typescript
+// The merge happens in getClassData() function in src/utils/constants.ts
+{
+    ...baseData,        // Base class properties (e.g., Wizard)
+    ...classEntry,      // Custom properties override base
+    available_skills: classEntry.available_skills || baseData.available_skills
+}
+```
+
+**Property Override Behavior:**
+
+| Property | Behavior | Example |
+|----------|----------|---------|
+| `primary_ability` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `INT` |
+| `hit_die` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `8` |
+| `saving_throws` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `['INT', 'WIS']` |
+| `is_spellcaster` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `true` |
+| `skill_count` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `2` |
+| `available_skills` | **Replaced** (not merged) | Custom list replaces base entirely |
+| `has_expertise` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `false` |
+| `audio_preferences` | Inherited unless specified | Can override for custom audio affinity |
+
+#### Class-Specific Data Helper Functions
+
+**Location:** `src/utils/constants.ts`
+
+```typescript
+/**
+ * Get spell list for a class (default or custom)
+ *
+ * Checks CLASS_SPELL_LISTS for default classes, or ExtensionManager
+ * for custom spell lists registered via 'classSpellLists.${ClassName}'.
+ *
+ * @param className - The class name to look up
+ * @returns Spell list with cantrips and spells_by_level, or undefined
+ */
+export function getClassSpellList(className: string): {
+    cantrips: string[];
+    spells_by_level: Record<number, string[]>;
+} | undefined;
+
+/**
+ * Get spell slots for a class at a specific level (default or custom)
+ *
+ * Checks SPELL_SLOTS_BY_CLASS for default classes, or ExtensionManager
+ * for custom spell slot progressions registered via 'classSpellSlots'.
+ *
+ * @param className - The class name to look up
+ * @param characterLevel - The character level (1-20)
+ * @returns Record of spell slots by level, or undefined
+ */
+export function getSpellSlotsForClass(className: string, characterLevel: number): Record<number, number> | undefined;
+
+/**
+ * Get starting equipment for a class (default or custom)
+ *
+ * Checks CLASS_STARTING_EQUIPMENT for default classes, or ExtensionManager
+ * for custom equipment registered via 'classStartingEquipment.${ClassName}'.
+ *
+ * @param className - The class name to look up
+ * @returns Equipment object with weapons, armor, items arrays, or undefined
+ */
+export function getClassStartingEquipment(className: string): {
+    weapons: string[];
+    armor: string[];
+    items: string[];
+} | undefined;
+```
+
+#### Registering Custom Classes
+
+**Via ExtensionManager:**
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+import { asClass } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Step 1: Register custom class data
+manager.register('classes.data', [{
+    name: 'Necromancer',
+    baseClass: 'Wizard',  // Inherits from Wizard
+    // Only override what's different:
+    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
+    // All other properties (hit_die, saving_throws, etc.) are inherited from Wizard
+}]);
+
+// Step 2: Register the class name for validation
+manager.register('classes', [asClass('Necromancer')]);
+```
+
+**Complete Custom Class (without baseClass):**
+
+```typescript
+// Register a complete custom class (no inheritance)
+manager.register('classes.data', [{
+    name: 'Runecaster',
+    // No baseClass - must specify everything
+    primary_ability: 'WIS',
+    hit_die: 8,
+    saving_throws: ['WIS', 'CON'],
+    is_spellcaster: true,
+    skill_count: 3,
+    available_skills: ['arcana', 'nature', 'religion', 'insight', 'medicine'],
+    has_expertise: false
+}]);
+
+manager.register('classes', [asClass('Runecaster')]);
+```
+
+#### Custom Class Validation
+
+**Location:** `src/core/extensions/ExtensionManager.ts`
+
+The ExtensionManager validates custom classes:
+
+1. **Class Names**: Must be either a default class or registered via `classes.data`
+2. **Class Data**: Must have `name` (string), `primary_ability` (Ability), `hit_die` (number), `saving_throws` (Ability[]), `is_spellcaster` (boolean), `skill_count` (number), `available_skills` (string[]), `has_expertise` (boolean)
+
+```typescript
+// Validation errors for invalid class data
+manager.register('classes', ['InvalidClass']);
+// Throws: "Invalid items for category 'classes':
+//   Invalid class (must be one of: Barbarian, Bard, Cleric, Druid, Fighter,
+//   Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard or a custom
+//   class registered via 'classes.data')"
+```
+
+#### ClassSuggester Custom Class Support
+
+**Location:** `src/core/generation/ClassSuggester.ts`
+
+The `ClassSuggester` automatically includes custom classes registered via ExtensionManager when suggesting a class based on audio profile:
+
+```typescript
+class ClassSuggester {
+    /**
+     * Suggest a class based on audio profile
+     *
+     * Selects from available classes (default 12 D&D 5e classes plus any
+     * custom classes). Custom classes with audio_preferences are matched
+     * against the audio profile.
+     *
+     * @param audioProfile - The audio analysis result
+     * @param rng - Seeded random number generator
+     * @returns Suggested class name
+     */
+    static suggest(audioProfile: AudioProfile, rng: SeededRNG): string;
+}
+```
+
+#### Usage Examples
+
+**Template-Based Custom Class (Necromancer):**
+
+```typescript
+import { ExtensionManager, asClass, CharacterGenerator } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register custom skill for Necromancer
+manager.register('skills.INT', [{
+    id: 'necromancy',
+    name: 'Necromancy',
+    ability: 'INT',
+    description: 'Knowledge of undead creation and control',
+    prerequisites: { class: asClass('Necromancer') },
+    source: 'custom'
+}]);
+
+// Register Necromancer class based on Wizard
+manager.register('classes.data', [{
+    name: 'Necromancer',
+    baseClass: 'Wizard',
+    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
+}]);
+
+manager.register('classes', [asClass('Necromancer')]);
+
+// Register custom spell list for Necromancer
+manager.register('classSpellLists.Necromancer', [{
+    cantrips: ['Chill Touch', 'Mage Hand', 'Mending', 'Message'],
+    spells_by_level: {
+        1: ['Animate Dead', 'False Life', 'Ray of Sickness'],
+        2: ['Ray of Enfeeblement', 'Web'],
+        3: ['Animate Dead', 'Feign Death']
+        // ... more levels
+    }
+}]);
+
+// Generate a Necromancer character
+const character = CharacterGenerator.generate(
+    'test-seed',
+    sampleAudioProfile,
+    'Test Character',
+    { forceClass: asClass('Necromancer') }
+);
+
+console.log(character.class);  // 'Necromancer'
+console.log(character.ability_scores.INT);  // High (primary ability)
+console.log(character.spells?.known_spells);  // Custom spell list
+```
+
+**Archetype Variant (Battle Mage):**
+
+```typescript
+// BattleMage - tougher Wizard variant
+manager.register('classes.data', [{
+    name: 'BattleMage',
+    baseClass: 'Wizard',
+    hit_die: 10,           // More durable than standard Wizard (d8 → d10)
+    saving_throws: ['INT', 'CON'],  // CON instead of WIS
+    available_skills: ['arcana', 'athletics', 'intimidation']
+}]);
+
+manager.register('classes', [asClass('BattleMage')]);
+```
+
+**Multiclass-Inspired (Spellsword):**
+
+```typescript
+// Spellsword - Fighter with spellcasting
+manager.register('classes.data', [{
+    name: 'Spellsword',
+    baseClass: 'Fighter',
+    is_spellcaster: true,  // Add spellcasting to Fighter
+    primary_ability: 'STR',  // Keep Fighter primary
+    available_skills: ['athletics', 'acrobatics', 'arcana', 'intimidation']
+}]);
+
+manager.register('classes', [asClass('Spellsword')]);
+
+// Register spell list for Spellsword
+manager.register('classSpellLists.Spellsword', [{
+    cantrips: ['Booming Blade', 'Green-Flame Blade', 'Light', 'Mending'],
+    spells_by_level: {
+        1: ['Shield', 'Thunderwave', 'Magic Missile'],
+        2: ['Blur', 'Warding Bond'],
+        // ... more levels
+    }
+}]);
+
+// Register spell slots for Spellsword (half-caster progression)
+manager.register('classSpellSlots', [{
+    class: 'Spellsword',
+    slots_by_level: {
+        1: { 1: 2 },
+        2: { 1: 3 },
+        3: { 1: 4, 2: 2 },
+        // ... more levels
+    }
+}]);
+```
+
+**Specialist (Beastmaster Ranger):**
+
+```typescript
+// Beastmaster - focused Ranger variant
+manager.register('classes.data', [{
+    name: 'Beastmaster',
+    baseClass: 'Ranger',
+    skill_count: 3,  // Extra skill for animal handling
+    available_skills: ['animal_handling', 'nature', 'survival', 'perception']
+}]);
+
+manager.register('classes', [asClass('Beastmaster')]);
+
+// Register custom starting equipment
+manager.register('classStartingEquipment.Beastmaster', [{
+    weapons: ['Longbow', 'Shortsword'],
+    armor: ['Leather Armor'],
+    items: ['Explorer\'s Pack', 'Animal Companion Kit']
+}]);
+```
+
+**Custom Class Spawn Rates:**
+
+```typescript
+// Make custom classes rarer than default classes
+manager.setWeights('classes', {
+    'Fighter': 1.0,       // Common
+    'Wizard': 1.0,        // Common
+    'Necromancer': 0.2,   // Rare (20% of normal)
+    'BattleMage': 0.15,   // Very rare
+    'Spellsword': 0.1     // Very rare
+});
+```
+
+#### Integration with Other Systems
+
+Custom classes created via the template pattern integrate seamlessly with:
+
+- **Custom Skills**: Register via `skills.${ABILITY}` categories
+- **Custom Features**: Register via `classFeatures.${ClassName}` categories
+- **Custom Spell Lists**: Register via `classSpellLists.${ClassName}` categories
+- **Custom Spell Slots**: Register via `classSpellSlots` category
+- **Custom Equipment**: Register via `classStartingEquipment.${ClassName}` categories
+- **Prerequisites**: Custom classes can be used in feature/skill prerequisites
+
+#### Testing Your Custom Class
+
+```typescript
+import { CharacterGenerator, getClassData } from 'playlist-data-engine';
+
+// Verify class data
+const necromancerData = getClassData('Necromancer');
+if (necromancerData) {
+    console.log(necromancerData.baseClass);       // 'Wizard'
+    console.log(necromancerData.primary_ability); // 'INT'
+    console.log(necromancerData.hit_die);         // 8 (inherited)
+    console.log(necromancerData.available_skills); // Custom skill list
+}
+
+// Generate a character
+const character = CharacterGenerator.generate(
+    'test-seed',
+    sampleAudioProfile,
+    'Test Character',
+    { forceClass: asClass('Necromancer') }
+);
+
+console.log(character.class);  // 'Necromancer'
+console.log(character.ability_scores.INT);  // Should be high (primary ability)
+console.log(character.saving_throws.INT);   // true (inherited from Wizard)
+console.log(character.saving_throws.WIS);   // true (inherited from Wizard)
 ```
 
 ---

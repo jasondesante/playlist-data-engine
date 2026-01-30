@@ -272,7 +272,7 @@ When implementing custom classes, the phases would be:
 - [x] Example: "Necromancer" extends "Wizard" with custom features
 
 ### Phase 5: Documentation & Testing
-- [ ] Update DATA_ENGINE_REFERENCE.md with custom classes section
+- [x] Update DATA_ENGINE_REFERENCE.md with custom classes section
 - [ ] Update USAGE_IN_OTHER_PROJECTS.md with custom class examples
 - [x] Write unit tests for custom class registration
 - [x] Write integration tests for custom class character generation
