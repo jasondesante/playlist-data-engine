@@ -857,6 +857,21 @@ export const CLASS_SPELL_LISTS: Record<string, {
 };
 
 /**
+ * Interface for class spell list data (used for extensibility)
+ *
+ * Defines the structure for spell lists associated with a class.
+ * Used by ExtensionManager to support custom spell lists for custom classes.
+ */
+export interface ClassSpellListData {
+    /** The class this spell list belongs to */
+    class: string;
+    /** Cantrips available to this class */
+    cantrips: string[];
+    /** Spells available at each spell level (1-9) */
+    spells_by_level: Record<number, string[]>;
+}
+
+/**
  * Spell slots by class and level - D&D 5e standard progression
  * Key: "ClassName", Value: Record mapping character level (1-20) to spell slots per level (1-9)
  */
@@ -1169,6 +1184,45 @@ export const CLASS_STARTING_EQUIPMENT: Record<string, {
         items: ['Spellbook', 'Component Pouch', 'Scholar\'s Pack', 'Ink & Quill'],
     },
 };
+
+// ===== Helper Functions for Custom Class Data =====
+// These functions check both default constants and ExtensionManager for custom class data
+// Part 4: Template-Based Custom Classes
+
+/**
+ * Get spell list for a class (default or custom)
+ *
+ * First checks the default CLASS_SPELL_LISTS constant, then checks
+ * the ExtensionManager for custom spell lists registered via 'classSpellLists.${ClassName}'.
+ *
+ * @param className - The class name to get spell list for
+ * @returns The spell list with cantrips and spells_by_level, or undefined if not found
+ */
+export function getClassSpellList(className: string): { cantrips: string[]; spells_by_level: Record<number, string[]> } | undefined {
+    // Check default classes
+    if (className in CLASS_SPELL_LISTS) {
+        return CLASS_SPELL_LISTS[className];
+    }
+
+    // Check ExtensionManager for custom spell list
+    // Dynamic import to avoid circular dependency
+    try {
+        const { ExtensionManager } = require('../core/extensions/ExtensionManager.js');
+        const manager = ExtensionManager.getInstance();
+        const category = `classSpellLists.${className}` as const;
+        const customSpellLists = manager.get(category as any);
+
+        if (customSpellLists && customSpellLists.length > 0) {
+            // Return the first custom spell list for this class
+            return customSpellLists[0] as { cantrips: string[]; spells_by_level: Record<number, string[]> };
+        }
+    } catch (error) {
+        // ExtensionManager not available (may be during initialization)
+        // Return undefined to fall back to default behavior
+    }
+
+    return undefined;
+}
 
 /**
  * Comprehensive equipment database with D&D 5e stats

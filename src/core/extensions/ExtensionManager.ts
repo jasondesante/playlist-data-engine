@@ -90,7 +90,10 @@ export type ExtensionCategory =
     | 'skillLists.Rogue'
     | 'skillLists.Sorcerer'
     | 'skillLists.Warlock'
-    | 'skillLists.Wizard';
+    | 'skillLists.Wizard'
+    // Class Spell Lists - Phase 13 (Part 4)
+    | 'classSpellLists'
+    | `classSpellLists.${string}`;
 
 /**
  * Options for registering custom data
