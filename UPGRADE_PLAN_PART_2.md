@@ -2012,7 +2012,7 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
   - [ ] Items that upgrade stats
   - [ ] Conditional effects
   - [ ] Item templates
-  - [ ] Spell-like effects
+  - [x] Spell-like effects
   - [ ] Multiple effects stacking
   - [ ] Batch spawning examples
   - [ ] Game-only items (spawnWeight: 0)

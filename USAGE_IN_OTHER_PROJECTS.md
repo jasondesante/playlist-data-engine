@@ -1960,6 +1960,171 @@ const ringOfDarkvision: EnhancedEquipment = {
 };
 ```
 
+### Items That Grant Spells
+
+Equipment can grant spellcasting abilities or specific spells. This is done using the `grantsSpells` property:
+
+```typescript
+import type { EnhancedEquipment } from 'playlist-data-engine';
+
+// ===== Ring of Spell Storing - Store and cast spells =====
+const ringOfSpellStoring: EnhancedEquipment = {
+    name: 'Ring of Spell Storing',
+    type: 'item',
+    rarity: 'rare',
+    weight: 0.1,
+    properties: [
+        {
+            type: 'special_property',
+            target: 'spell_storing',
+            value: 5,
+            description: 'Can store up to 5 levels of spells'
+        }
+    ],
+    grantsSpells: [
+        { spellId: 'fireball', level: 3, uses: 1, recharge: 'dawn' },
+        { spellId: 'shield', level: 1, uses: 1, recharge: 'dawn' }
+    ],
+    source: 'custom',
+    tags: ['magic', 'ring', 'spell']
+};
+
+// ===== Scroll of Fireball - One-time use spell =====
+const scrollOfFireball: EnhancedEquipment = {
+    name: 'Scroll of Fireball',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 0.1,
+    grantsSpells: [
+        { spellId: 'fireball', level: 3, uses: 1 }
+        // No recharge means one-time use
+    ],
+    source: 'custom',
+    tags: ['magic', 'scroll', 'consumable', 'fire']
+};
+
+// ===== Wand of Magic Missiles - Cast at will (unlimited) =====
+const wandOfMagicMissiles: EnhancedEquipment = {
+    name: 'Wand of Magic Missiles',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 1,
+    grantsSpells: [
+        { spellId: 'magic_missile', level: 1, uses: null }
+        // uses: null means unlimited uses
+    ],
+    source: 'custom',
+    tags: ['magic', 'wand', 'evocation']
+};
+
+// ===== Staff of Healing - Recharge on short rest =====
+const staffOfHealing: EnhancedEquipment = {
+    name: 'Staff of Healing',
+    type: 'item',
+    rarity: 'rare',
+    weight: 2,
+    grantsSpells: [
+        { spellId: 'cure_wounds', level: 1, uses: 10, recharge: 'short_rest' },
+        { spellId: 'lesser_restoration', level: 2, uses: 3, recharge: 'short_rest' },
+        { spellId: 'mass_healing_word', level: 3, uses: 1, recharge: 'short_rest' }
+    ],
+    source: 'custom',
+    tags: ['magic', 'staff', 'healing']
+};
+
+// ===== Amulet of the Devout - Cleric spells daily =====
+const amuletOfTheDevout: EnhancedEquipment = {
+    name: 'Amulet of the Devout',
+    type: 'item',
+    rarity: 'rare',
+    weight: 0.1,
+    properties: [
+        {
+            type: 'passive_modifier',
+            target: 'spell_save_dc',
+            value: 1,
+            description: '+1 to spell save DC'
+        }
+    ],
+    grantsSpells: [
+        { spellId: 'guidance', level: 0, uses: null }, // Cantrip - unlimited
+        { spellId: 'bless', level: 1, uses: 3, recharge: 'dawn' },
+        { spellId: 'cure_wounds', level: 1, uses: 3, recharge: 'dawn' }
+    ],
+    source: 'custom',
+    tags: ['magic', 'amulet', 'divine']
+};
+
+// ===== Pearl of Power - Recover spell slot =====
+const pearlOfPower: EnhancedEquipment = {
+    name: 'Pearl of Power',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 0.1,
+    properties: [
+        {
+            type: 'special_property',
+            target: 'recover_spell_slot',
+            value: 3,
+            description: 'Once per day, recover one expended 3rd-level spell slot'
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'pearl', 'spell_slot']
+};
+```
+
+**Understanding `grantsSpells` Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `spellId` | string | The spell identifier (must exist in spell database) |
+| `level` | number | Spell level (0 for cantrips, 1-9 for spell levels) |
+| `uses` | number or null | Number of uses, or `null` for unlimited |
+| `recharge` | string | When uses reset: `'dawn'`, `'short_rest'`, `'long_rest'`, or undefined (one-time) |
+
+**Recharge Options:**
+
+- `undefined` or omitted - One-time use (consumable like scrolls)
+- `'dawn'` - Uses reset at dawn (daily items like most magic items)
+- `'short_rest'` - Uses reset on short rest (powerful items)
+- `'long_rest'` - Uses reset on long rest (very powerful items)
+- `uses: null` - Unlimited uses (cantrips, wands, at-will items)
+
+**Combining with Other Properties:**
+
+Spell-granting items often have additional properties:
+
+```typescript
+// Combined spell + stat boost
+const arcaneNecklace: EnhancedEquipment = {
+    name: 'Arcane Necklace',
+    type: 'item',
+    rarity: 'rare',
+    weight: 0.1,
+    properties: [
+        {
+            type: 'stat_bonus',
+            target: 'INT',
+            value: 2,
+            description: '+2 Intelligence'
+        },
+        {
+            type: 'passive_modifier',
+            target: 'spell_save_dc',
+            value: 1,
+            description: '+1 spell save DC'
+        }
+    ],
+    grantsSpells: [
+        { spellId: 'mage_armor', level: 1, uses: 1, recharge: 'dawn' },
+        { spellId: 'detect_magic', level: 1, uses: null } // At will
+    ],
+    source: 'custom',
+    tags: ['magic', 'necklace', 'arcane']
+};
+```
+
 ### Giving a Sword Fire Damage (Two Methods)
 
 **Method 1: Using Properties**
