@@ -9,7 +9,7 @@
  */
 
 import type { Class, CharacterSheet } from '../types/Character.js';
-import { CLASS_STARTING_EQUIPMENT, EQUIPMENT_DATABASE } from '../../utils/constants.js';
+import { CLASS_STARTING_EQUIPMENT, EQUIPMENT_DATABASE, getClassStartingEquipment } from '../../utils/constants.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureEquipmentDefaultsInitialized } from '../extensions/initializeDefaults.js';
 import type {
@@ -112,6 +112,8 @@ export class EquipmentGenerator {
   /**
    * Get starting equipment for a class
    *
+   * Supports custom classes registered via the 'classStartingEquipment.${ClassName}' category in ExtensionManager.
+   *
    * @param characterClass - The character's class
    * @returns Object with weapons, armor, and items arrays
    */
@@ -122,7 +124,9 @@ export class EquipmentGenerator {
   } {
     this.ensureInitialized();
 
-    const equipment = CLASS_STARTING_EQUIPMENT[characterClass];
+    // Try to get equipment via helper function (checks default + classStartingEquipment.${ClassName})
+    const equipment = getClassStartingEquipment(characterClass);
+
     if (!equipment) {
       return { weapons: [], armor: [], items: [] };
     }

@@ -260,10 +260,10 @@ When implementing custom classes, the phases would be:
 ### Phase 3: Class-Specific Data Registration
 - [x] Add `classSpellLists.${ClassName}` categories
 - [x] Add `classSpellSlots` category
-- [ ] Add `classStartingEquipment.${ClassName}` categories
+- [x] Add `classStartingEquipment.${ClassName}` categories
 - [x] Implement helper functions for spell/slot/equipment lookup
 - [x] Update SpellManager to use helpers
-- [ ] Update EquipmentGenerator to use helpers
+- [x] Update EquipmentGenerator to use helpers
 
 ### Phase 4: Template-Based Class System
 - [ ] Implement `baseClass` inheritance in `getClassData()`

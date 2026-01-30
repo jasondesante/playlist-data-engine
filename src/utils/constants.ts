@@ -1295,6 +1295,73 @@ export function getSpellSlotsForClass(className: string, characterLevel: number)
 }
 
 /**
+ * Interface for class starting equipment data (used for extensibility)
+ */
+interface ClassStartingEquipmentData {
+    /** Class name this starting equipment data is for */
+    class: string;
+    /** Starting equipment for this class */
+    weapons: string[];
+    armor: string[];
+    items: string[];
+}
+
+/**
+ * Get starting equipment for a class (default or custom)
+ *
+ * First checks the default CLASS_STARTING_EQUIPMENT constant, then checks
+ * the ExtensionManager for custom starting equipment registered via 'classStartingEquipment.${ClassName}'.
+ *
+ * The 'classStartingEquipment.${ClassName}' category expects an array of ClassStartingEquipmentData objects,
+ * each containing a class name and the equipment (weapons, armor, items).
+ *
+ * @param className - The class name to get starting equipment for
+ * @returns Object with weapons, armor, and items arrays, or undefined if not found
+ *
+ * @example
+ * // Register custom starting equipment for a "Necromancer" class
+ * manager.register('classStartingEquipment.Necromancer', [{
+ *     class: 'Necromancer',
+ *     weapons: ['Bone Staff', 'Dagger'],
+ *     armor: ['No Armor'],
+ *     items: ['Arcane Focus', 'Skeleton Key', 'Dark Robes']
+ * }]);
+ */
+export function getClassStartingEquipment(className: string): {
+    weapons: string[];
+    armor: string[];
+    items: string[];
+} | undefined {
+    // Check default classes
+    if (className in CLASS_STARTING_EQUIPMENT) {
+        return CLASS_STARTING_EQUIPMENT[className];
+    }
+
+    // Check ExtensionManager for custom starting equipment data
+    try {
+        const { ExtensionManager } = require('../core/extensions/ExtensionManager.js');
+        const manager = ExtensionManager.getInstance();
+        const category = `classStartingEquipment.${className}` as const;
+        const customEquipment = manager.get(category as any);
+
+        if (customEquipment && customEquipment.length > 0) {
+            // Return the first custom starting equipment for this class
+            const equipmentData = customEquipment[0] as ClassStartingEquipmentData;
+            return {
+                weapons: equipmentData.weapons,
+                armor: equipmentData.armor,
+                items: equipmentData.items
+            };
+        }
+    } catch (error) {
+        // ExtensionManager not available (may be during initialization)
+        // Return undefined to fall back to default behavior
+    }
+
+    return undefined;
+}
+
+/**
  * Comprehensive equipment database with D&D 5e stats
  */
 export const EQUIPMENT_DATABASE: Record<string, Equipment> = {

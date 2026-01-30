@@ -95,7 +95,10 @@ export type ExtensionCategory =
     | 'classSpellLists'
     | `classSpellLists.${string}`
     // Class Spell Slots - Phase 3.2 (Part 4)
-    | 'classSpellSlots';
+    | 'classSpellSlots'
+    // Class Starting Equipment - Phase 3.3 (Part 4)
+    | 'classStartingEquipment'
+    | `classStartingEquipment.${string}`;
 
 /**
  * Options for registering custom data
