@@ -39,6 +39,7 @@ export type ExtensionCategory =
     | 'appearance.facialFeatures'
     | 'spells'
     | 'races'
+    | 'races.data'                // For custom race data (ability bonuses, speed, traits, subraces)
     | 'classes'
     | `spells.${string}`
     // Class Features - Phase 11
@@ -382,6 +383,16 @@ export class ExtensionManager {
     }
 
     /**
+     * Get the registration options for a category
+     * @param category - The category to get options for
+     * @returns The options object or undefined if no custom data
+     */
+    getCurrentOptions(category: ExtensionCategory): ExtensionOptions | undefined {
+        const extension = this.extensions.get(category);
+        return extension?.options;
+    }
+
+    /**
      * Validate items for a category
      * @param category - The category to validate against
      * @param items - Items to validate
@@ -445,10 +456,61 @@ export class ExtensionManager {
                 errors.push(`${prefix} Invalid 'school'`);
             }
         } else if (category === 'races') {
-            // Races must be a valid Race type
+            // Races must be a valid Race type OR a registered custom race
             const validRaces: Race[] = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Dragonborn', 'Gnome', 'Half-Elf', 'Half-Orc', 'Tiefling'];
-            if (!validRaces.includes(item)) {
-                errors.push(`${prefix} Invalid race (must be one of: ${validRaces.join(', ')})`);
+
+            // Check if it's a default race
+            if (validRaces.includes(item)) {
+                return errors; // Valid default race
+            }
+
+            // Check if it's a previously registered custom race (via 'races' category)
+            const registeredRaces = this.get('races');
+            if (Array.isArray(registeredRaces) && registeredRaces.includes(item)) {
+                return errors; // Valid custom race
+            }
+
+            // Check if it's a custom race with data registered via 'races.data' category
+            const customRaceData = this.get('races.data' as ExtensionCategory);
+            if (Array.isArray(customRaceData)) {
+                const raceNames: string[] = customRaceData.map((d: any) => d.race).filter(Boolean);
+                if (raceNames.includes(item)) {
+                    return errors; // Valid custom race (has data registered)
+                }
+            }
+
+            // Not a valid race
+            errors.push(`${prefix} Invalid race "${item}". Must be one of: ${validRaces.join(', ')} or register custom race via 'races.data' first.`);
+        } else if (category === 'races.data') {
+            // Validate custom race data objects
+            // Each item should have: race (string), ability_bonuses (record), speed (number), traits (array)
+            if (!item.race || typeof item.race !== 'string') {
+                errors.push(`${prefix} Race data must have a valid 'race' property (string)`);
+            }
+            if (typeof item.speed !== 'number' || item.speed <= 0) {
+                errors.push(`${prefix} Race data must have a valid 'speed' property (positive number)`);
+            }
+            if (!Array.isArray(item.traits)) {
+                errors.push(`${prefix} Race data must have a 'traits' property (array of strings)`);
+            }
+            if (item.ability_bonuses) {
+                if (typeof item.ability_bonuses !== 'object' || Array.isArray(item.ability_bonuses)) {
+                    errors.push(`${prefix} Race 'ability_bonuses' must be a record of ability -> number`);
+                } else {
+                    const validAbilities: Ability[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+                    for (const [ability, bonus] of Object.entries(item.ability_bonuses)) {
+                        if (!validAbilities.includes(ability as Ability)) {
+                            errors.push(`${prefix} Invalid ability "${ability}" in ability_bonuses`);
+                        }
+                        if (typeof bonus !== 'number') {
+                            errors.push(`${prefix} Ability bonus for "${ability}" must be a number`);
+                        }
+                    }
+                }
+            }
+            // Optional subraces array
+            if (item.subraces !== undefined && !Array.isArray(item.subraces)) {
+                errors.push(`${prefix} Race 'subraces' must be an array of strings (if provided)`);
             }
         } else if (category === 'classes') {
             // Classes must be a valid Class type

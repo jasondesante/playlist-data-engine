@@ -1001,7 +1001,7 @@ Test Scenarios:
 - [x] Update CharacterGenerator
 
 ### Phase 5: Custom Races
-- [ ] Update ExtensionManager race validation
+- [x] Update ExtensionManager race validation
 - [ ] Create RACE_DATA extensibility (getRaceData helper)
 - [ ] Update AbilityScoreCalculator
 
