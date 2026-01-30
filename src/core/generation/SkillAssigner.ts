@@ -7,7 +7,7 @@
 
 import type { Class, ProficiencyLevel, CharacterSheet } from '../types/Character.js';
 import type { SeededRNG } from '../../utils/random.js';
-import { CLASS_DATA } from '../../utils/constants.js';
+import { getClassData } from '../../utils/constants.js';
 import { SkillRegistry } from '../skills/SkillRegistry.js';
 import { SkillValidator } from '../skills/SkillValidator.js';
 
@@ -52,8 +52,14 @@ export class SkillAssigner {
             skills[skill.id] = 'none';
         }
 
-        // Get class data
-        const classData = CLASS_DATA[characterClass];
+        // Get class data (supports default and custom classes via ExtensionManager)
+        const classData = getClassData(characterClass);
+
+        if (!classData) {
+            console.warn(`SkillAssigner: Unknown class "${characterClass}", using default skill assignment`);
+            // Return all skills with 'none' proficiency if class data not found
+            return skills;
+        }
 
         // Validate all available skills against registry
         const validAvailableSkills = this.validateSkills(classData.available_skills, registry);

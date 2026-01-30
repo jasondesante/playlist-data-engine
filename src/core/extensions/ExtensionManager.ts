@@ -42,6 +42,7 @@ export type ExtensionCategory =
     | 'races'
     | 'races.data'                // For custom race data (ability bonuses, speed, traits, subraces)
     | 'classes'
+    | 'classes.data'              // For custom class data (primary ability, hit die, saving throws, spellcasting, skills, expertise, audio preferences)
     | `spells.${string}`
     // Class Features - Phase 11
     | 'classFeatures'
@@ -517,6 +518,52 @@ export class ExtensionManager {
             // Classes must be a valid Class type (default or custom)
             if (!isValidClass(item)) {
                 errors.push(`${prefix} Invalid class (must be one of: ${DEFAULT_CLASSES.join(', ')} or a custom class registered via 'classes.data')`);
+            }
+        } else if (category === 'classes.data') {
+            // Validate custom class data objects
+            // Each item should have: name (string), primary_ability (Ability), hit_die (number), saving_throws (Ability[]), is_spellcaster (boolean), skill_count (number), available_skills (string[]), has_expertise (boolean)
+            if (!item.name || typeof item.name !== 'string') {
+                errors.push(`${prefix} Class data must have a valid 'name' property (string)`);
+            }
+            const validAbilities: Ability[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+            if (!item.primary_ability || !validAbilities.includes(item.primary_ability)) {
+                errors.push(`${prefix} Class data must have a valid 'primary_ability' (one of: STR, DEX, CON, INT, WIS, CHA)`);
+            }
+            if (typeof item.hit_die !== 'number' || item.hit_die <= 0) {
+                errors.push(`${prefix} Class data must have a valid 'hit_die' property (positive number)`);
+            }
+            if (!Array.isArray(item.saving_throws)) {
+                errors.push(`${prefix} Class data must have a 'saving_throws' property (array of abilities)`);
+            } else {
+                for (const save of item.saving_throws) {
+                    if (!validAbilities.includes(save)) {
+                        errors.push(`${prefix} Invalid saving throw "${save}" in class data`);
+                    }
+                }
+            }
+            if (typeof item.is_spellcaster !== 'boolean') {
+                errors.push(`${prefix} Class data must have an 'is_spellcaster' property (boolean)`);
+            }
+            if (typeof item.skill_count !== 'number' || item.skill_count < 0) {
+                errors.push(`${prefix} Class data must have a valid 'skill_count' property (non-negative number)`);
+            }
+            if (!Array.isArray(item.available_skills)) {
+                errors.push(`${prefix} Class data must have an 'available_skills' property (array of skill IDs)`);
+            }
+            if (typeof item.has_expertise !== 'boolean') {
+                errors.push(`${prefix} Class data must have a 'has_expertise' property (boolean)`);
+            }
+            // Optional expertise_count
+            if (item.expertise_count !== undefined && (typeof item.expertise_count !== 'number' || item.expertise_count < 0)) {
+                errors.push(`${prefix} Class 'expertise_count' must be a non-negative number (if provided)`);
+            }
+            // Optional baseClass (for template-based custom classes)
+            if (item.baseClass !== undefined && typeof item.baseClass !== 'string') {
+                errors.push(`${prefix} Class 'baseClass' must be a string (if provided)`);
+            }
+            // Optional audio_preferences
+            if (item.audio_preferences !== undefined && typeof item.audio_preferences !== 'object') {
+                errors.push(`${prefix} Class 'audio_preferences' must be an object (if provided)`);
             }
         } else if (category.startsWith('appearance.')) {
             // Appearance items must be strings

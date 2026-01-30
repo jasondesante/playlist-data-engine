@@ -247,15 +247,15 @@ export function getClassStartingEquipment(className: string): { weapons: string[
 When implementing custom classes, the phases would be:
 
 ### Phase 1: Class Type Extensibility
-- [ ] Convert Class type to branded string or document augmentation
-- [ ] Update all Class type usages to handle validation at runtime
-- [ ] Add type guards for class validation
+- [x] Convert Class type to branded string or document augmentation
+- [x] Update all Class type usages to handle validation at runtime
+- [x] Add type guards for class validation
 
 ### Phase 2: Class Data Registration
-- [ ] Add `classes.data` to ExtensionCategory type
-- [ ] Implement `getClassData()` helper in constants.ts
-- [ ] Update AbilityScoreCalculator to use `getClassData()`
-- [ ] Update SkillAssigner to use `getClassData()`
+- [x] Add `classes.data` to ExtensionCategory type
+- [x] Implement `getClassData()` helper in constants.ts
+- [x] Update AbilityScoreCalculator to use `getClassData()`
+- [x] Update SkillAssigner to use `getClassData()`
 
 ### Phase 3: Class-Specific Data Registration
 - [ ] Add `classSpellLists.${ClassName}` categories

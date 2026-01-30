@@ -190,6 +190,116 @@ export function getRaceData(race: string): RaceDataEntry | undefined {
     return undefined;
 }
 
+/**
+ * Class data entry interface
+ *
+ * Defines the structure for class data including primary ability, hit die,
+ * saving throws, spellcasting, skills, expertise, and optional audio preferences.
+ */
+export interface ClassDataEntry {
+    /** Primary ability score for this class */
+    primary_ability: Ability;
+
+    /** Hit die size for this class */
+    hit_die: number;
+
+    /** Saving throw proficiencies */
+    saving_throws: Ability[];
+
+    /** Whether this class can cast spells */
+    is_spellcaster: boolean;
+
+    /** Number of skills to choose from */
+    skill_count: number;
+
+    /** Available skills for this class (includes custom skills) */
+    available_skills: string[];
+
+    /** Whether this class has expertise */
+    has_expertise: boolean;
+
+    /** Number of expertise choices (if has_expertise is true) */
+    expertise_count?: number;
+
+    /** Optional: For template-based classes, the base class to inherit from */
+    baseClass?: Class;
+
+    /** Optional: Audio preferences for class affinity calculation */
+    audio_preferences?: {
+        primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        bass?: number;
+        treble?: number;
+        mid?: number;
+        amplitude?: number;
+    };
+}
+
+/**
+ * Get class data (default or custom)
+ *
+ * This helper function retrieves class data from either:
+ * 1. The default CLASS_DATA constant (for built-in classes)
+ * 2. The ExtensionManager (for custom classes registered via 'classes.data')
+ *
+ * For template-based custom classes (those with a baseClass property),
+ * the base class data is merged with custom data, with custom properties
+ * taking precedence.
+ *
+ * @param className - The class name to look up
+ * @returns Class data entry or undefined if not found
+ *
+ * @example
+ * // Get default class data
+ * const wizardData = getClassData('Wizard');
+ * console.log(wizardData.hit_die); // 6
+ *
+ * // Get custom class data (if registered via ExtensionManager)
+ * const necromancerData = getClassData('Necromancer');
+ * if (necromancerData) {
+ *     console.log(necromancerData.baseClass); // 'Wizard'
+ *     console.log(necromancerData.primary_ability); // 'INT'
+ * }
+ */
+export function getClassData(className: string): ClassDataEntry | undefined {
+    // Check default classes
+    if (className in CLASS_DATA) {
+        return CLASS_DATA[className];
+    }
+
+    // Check ExtensionManager for custom class data
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const extensionModule = require('../core/extensions/ExtensionManager.js');
+        const manager = extensionModule.ExtensionManager.getInstance();
+        const customClassData = manager.get('classes.data' as any);
+
+        if (customClassData && Array.isArray(customClassData)) {
+            const classEntry = customClassData.find((d: any) => d.name === className);
+            if (classEntry) {
+                // If has baseClass, merge with base class data
+                if (classEntry.baseClass && classEntry.baseClass in CLASS_DATA) {
+                    const baseData = CLASS_DATA[classEntry.baseClass];
+                    // Merge base data with custom data, custom properties take precedence
+                    return {
+                        ...baseData,
+                        ...classEntry,
+                        // Ensure available_skills is merged (custom skills + base skills)
+                        available_skills: classEntry.available_skills || baseData.available_skills,
+                    } as ClassDataEntry;
+                }
+                return classEntry as ClassDataEntry;
+            }
+        }
+    } catch (error) {
+        // ExtensionManager not available or not initialized
+        // This is expected in some contexts (e.g., pure server-side)
+    }
+
+    return undefined;
+}
+
 // Class data with primary abilities and hit dice
 export const CLASS_DATA: Record<string, {
     primary_ability: Ability;
