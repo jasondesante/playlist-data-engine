@@ -273,7 +273,7 @@ When implementing custom classes, the phases would be:
 
 ### Phase 5: Documentation & Testing
 - [x] Update DATA_ENGINE_REFERENCE.md with custom classes section
-- [ ] Update USAGE_IN_OTHER_PROJECTS.md with custom class examples
+- [x] Update USAGE_IN_OTHER_PROJECTS.md with custom class examples
 - [x] Write unit tests for custom class registration
 - [x] Write integration tests for custom class character generation
 

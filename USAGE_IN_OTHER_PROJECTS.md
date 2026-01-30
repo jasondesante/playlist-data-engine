@@ -88,6 +88,7 @@ Then reference it in your project code directly.
 - [Combat System](#combat-system) - Run turn-based D&D 5e combat
 - [Equipment System](#equipment-system) - Custom equipment, properties, enchanting, and batch spawning
 - [Custom Features and Skills](#custom-features-and-skills) - Create custom class features, racial traits, and skills
+- [Custom Classes](#custom-classes) - Create entirely new classes or extend existing ones
 - [Spawn Rate Control](#spawn-rate-control) - Control how often custom content appears
 
 ### Common Patterns
@@ -95,6 +96,7 @@ Then reference it in your project code directly.
 - [Understanding XP Bonus Calculation](#understanding-xp-bonus-calculation) - How environmental and gaming modifiers combine
 - [Manual Level-Up Processing](#manual-level-up-processing) - Handle level-ups programmatically
 - [Custom Features and Skills](#custom-features-and-skills) - Create custom class features, racial traits, and skills
+- [Custom Classes](#custom-classes) - Create entirely new classes or extend existing ones
 - [Spawn Rate Control](#spawn-rate-control) - Control how often custom content appears
 
 ---
@@ -1372,6 +1374,254 @@ console.log(`Features: ${featureStats.totalFeatures} (${featureStats.customFeatu
 const skillStats = skillRegistry.getRegistryStats();
 console.log(`Skills: ${skillStats.totalSkills} (${skillStats.customSkills} custom)`);
 ```
+
+### Custom Classes
+
+**NEW:** Create entirely new classes or extend existing D&D 5e classes using the template-based class system!
+
+#### Overview
+
+The Template Class System allows you to create new custom classes that extend (inherit from) existing D&D 5e base classes. This enables rapid creation of specialized classes without duplicating all base class properties.
+
+#### Creating a Template-Based Custom Class
+
+Create a new class by extending an existing base class:
+
+```typescript
+import { ExtensionManager, asClass } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register a custom "Necromancer" class based on Wizard
+manager.register('classes.data', [{
+    name: 'Necromancer',
+    baseClass: 'Wizard',  // Inherits from Wizard by default
+    // Only override what's different:
+    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
+    // All other properties (hit_die, saving_throws, etc.) are inherited from Wizard
+}]);
+
+// Register the class name
+manager.register('classes', [asClass('Necromancer')]);
+```
+
+The `baseClass` property enables template inheritance:
+- **Properties are merged**: Base class properties are spread first, then custom properties override
+- **Complete overrides**: Specify all properties without `baseClass` for a completely custom class
+- **Skill lists are replaced**: The `available_skills` array is completely replaced (not merged)
+
+#### Custom Class with Complete Override
+
+Create a class from scratch without inheriting from a base class:
+
+```typescript
+// Register a completely custom "Runecaster" class
+manager.register('classes.data', [{
+    name: 'Runecaster',
+    // No baseClass - must specify everything
+    primary_ability: 'WIS',
+    hit_die: 8,
+    saving_throws: ['WIS', 'CON'],
+    is_spellcaster: true,
+    skill_count: 3,
+    available_skills: ['arcana', 'nature', 'religion', 'insight', 'medicine'],
+    has_expertise: false,
+    // Optional: Audio preferences for class affinity
+    audio_preferences: {
+        primary: 'folk',
+        bass: 0.6,
+        treble: 0.7,
+        mid: 0.5,
+        amplitude: 0.6
+    }
+}]);
+
+manager.register('classes', [asClass('Runecaster')]);
+```
+
+#### Custom Class with Features
+
+Add custom class features to your new class:
+
+```typescript
+// Register custom features for Necromancer
+manager.register('classFeatures.Necromancer', [
+    {
+        id: 'necromancer_raise_dead',
+        name: 'Raise Undead',
+        description: 'Can raise undead creatures to serve you.',
+        type: 'active',
+        level: 1,
+        class: 'Necromancer',
+        prerequisites: {
+            class: 'Necromancer',
+            abilities: { INT: 13 }
+        },
+        effects: [
+            {
+                type: 'ability_unlock',
+                target: 'raise_undead',
+                value: true,
+                description: 'Can cast Animate Dead'
+            }
+        ],
+        source: 'custom'
+    },
+    {
+        id: 'necromancer_deadlord',
+        name: 'Dead Lord',
+        description: 'Control more powerful undead creatures.',
+        type: 'passive',
+        level: 10,
+        class: 'Necromancer',
+        prerequisites: {
+            class: 'Necromancer',
+            level: 10,
+            skills: ['necromancy']
+        },
+        effects: [
+            {
+                type: 'passive_modifier',
+                target: 'undead_control_limit',
+                value: 5,
+                description: 'Control 5 additional HD of undead'
+            }
+        ],
+        source: 'custom'
+    }
+], { mode: 'replace' });  // Replace Wizard features entirely
+```
+
+#### Custom Class with Skills
+
+Register custom skills for your class:
+
+```typescript
+// Register custom skill for Necromancer
+manager.register('skills.INT', [{
+    id: 'necromancy',
+    name: 'Necromancy',
+    ability: 'INT',
+    description: 'Knowledge of undead creation and control.',
+    prerequisites: { class: 'Necromancer' },  // Only for Necromancers
+    source: 'custom'
+}]);
+```
+
+#### Custom Class with Spells
+
+Provide custom spell lists for your spellcasting class:
+
+```typescript
+// Register custom spell list for Necromancer
+manager.register('classSpellLists.Necromancer', [{
+    cantrips: ['Chill Touch', 'Mage Hand', 'Mending', 'Message'],
+    spells_by_level: {
+        1: ['Animate Dead', 'False Life', 'Ray of Sickness'],
+        2: ['Ray of Enfeeblement', 'Web'],
+        3: ['Animate Dead', 'Feign Death', 'Speak with Dead'],
+        // ... more levels
+    }
+}]);
+```
+
+#### Custom Class with Spell Slots
+
+Define custom spell slot progression:
+
+```typescript
+// Register custom spell slot progression
+manager.register('classSpellSlots', {
+    'Necromancer': {
+        1: { 1: 2 },
+        2: { 1: 3 },
+        3: { 1: 4, 2: 2 },
+        4: { 1: 4, 2: 3 },
+        5: { 1: 4, 2: 3, 3: 2 },
+        // ... more levels
+    }
+});
+```
+
+#### Custom Class with Starting Equipment
+
+Define custom starting equipment:
+
+```typescript
+// Register custom starting equipment
+manager.register('classStartingEquipment.Necromancer', [{
+    weapons: ['Dagger', 'Quarterstaff'],
+    armor: [],
+    items: ['Component Pouch', 'Spellbook', 'Bone Charm']
+}]);
+```
+
+#### Generating a Custom Class Character
+
+Generate a character with your custom class:
+
+```typescript
+import { CharacterGenerator, getClassData } from 'playlist-data-engine';
+
+// Verify class data
+const necromancerData = getClassData('Necromancer');
+console.log(necromancerData);
+// Output: { name: 'Necromancer', baseClass: 'Wizard', hit_die: 8, ... }
+
+// Generate a character
+const character = CharacterGenerator.generate(
+    'test-seed',
+    sampleAudioProfile,
+    'Test Character',
+    { forceClass: asClass('Necromancer') }
+);
+
+console.log(character.class);  // 'Necromancer'
+console.log(character.ability_scores.INT);  // High (primary ability)
+console.log(character.class_features);  // ['necromancer_raise_dead']
+console.log(character.skills);  // Includes 'necromancy'
+```
+
+#### Common Patterns
+
+**Archetype Variant** - Same class, different flavor:
+```typescript
+{
+    name: 'BattleMage',
+    baseClass: 'Wizard',
+    hit_die: 10,           // More durable than standard Wizard
+    saving_throws: ['INT', 'CON'],  // CON instead of WIS
+    available_skills: ['arcana', 'athletics', 'intimidation']
+}
+```
+
+**Multiclass-Inspired** - Two classes combined:
+```typescript
+{
+    name: 'Spellsword',
+    baseClass: 'Fighter',
+    is_spellcaster: true,  // Add spellcasting
+    primary_ability: 'STR',  // Keep Fighter primary
+    available_skills: ['athletics', 'acrobatics', 'arcana', 'intimidation']
+}
+```
+
+**Specialist** - Narrow focus:
+```typescript
+{
+    name: 'Beastmaster',
+    baseClass: 'Ranger',
+    skill_count: 3,  // Extra skill for animal handling
+    available_skills: ['animal_handling', 'nature', 'survival', 'perception']
+}
+```
+
+#### Validation Rules
+
+1. **Base class must exist**: `baseClass` must be a valid D&D 5e class name
+2. **Custom properties must be valid**: All properties must match expected types
+3. **Class name must be registered**: After registering class data, register the class name via `manager.register('classes', [asClass('ClassName')])`
+4. **Custom skills must exist**: If referencing custom skills in `available_skills`, register them first
 
 ### Spawn Rate Control
 

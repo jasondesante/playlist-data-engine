@@ -58,6 +58,7 @@ export type ExtensionCategory =
     | 'classFeatures.Sorcerer'
     | 'classFeatures.Warlock'
     | 'classFeatures.Wizard'
+    | `classFeatures.${string}` // For custom class features (Part 4)
     // Racial Traits - Phase 11
     | 'racialTraits'
     | 'racialTraits.Human'
@@ -91,6 +92,7 @@ export type ExtensionCategory =
     | 'skillLists.Sorcerer'
     | 'skillLists.Warlock'
     | 'skillLists.Wizard'
+    | `skillLists.${string}` // For custom class skill lists (Part 4)
     // Class Spell Lists - Phase 13 (Part 4)
     | 'classSpellLists'
     | `classSpellLists.${string}`
@@ -241,44 +243,62 @@ export class ExtensionManager {
 
         // Phase 13.1: Integrate with FeatureRegistry for class features
         if (category === 'classFeatures') {
-            const registry = FeatureRegistry.getInstance();
-            registry.registerClassFeatures(items as ClassFeature[]);
+            // Only register with FeatureRegistry if validation is enabled
+            if (validate) {
+                const registry = FeatureRegistry.getInstance();
+                registry.registerClassFeatures(items as ClassFeature[]);
+            }
         }
 
         // Phase 13.1: Integrate with FeatureRegistry for racial traits
         if (category === 'racialTraits') {
-            const registry = FeatureRegistry.getInstance();
-            registry.registerRacialTraits(items as RacialTrait[]);
+            // Only register with FeatureRegistry if validation is enabled
+            if (validate) {
+                const registry = FeatureRegistry.getInstance();
+                registry.registerRacialTraits(items as RacialTrait[]);
+            }
         }
 
         // Phase 13.1: Handle class-specific features
         if (category.startsWith('classFeatures.')) {
             // className is extracted for future use in validation/logging
             void category.replace('classFeatures.', '') as unknown as Class;
-            const registry = FeatureRegistry.getInstance();
-            registry.registerClassFeatures(items as ClassFeature[]);
+            // Only register with FeatureRegistry if validation is enabled
+            if (validate) {
+                const registry = FeatureRegistry.getInstance();
+                registry.registerClassFeatures(items as ClassFeature[]);
+            }
         }
 
         // Phase 13.1: Handle race-specific traits
         if (category.startsWith('racialTraits.')) {
             // raceName is extracted for future use in validation/logging
             void category.replace('racialTraits.', '') as unknown as Race;
-            const registry = FeatureRegistry.getInstance();
-            registry.registerRacialTraits(items as RacialTrait[]);
+            // Only register with FeatureRegistry if validation is enabled
+            if (validate) {
+                const registry = FeatureRegistry.getInstance();
+                registry.registerRacialTraits(items as RacialTrait[]);
+            }
         }
 
         // Phase 13.1: Integrate with SkillRegistry for skills
         if (category === 'skills') {
-            const registry = SkillRegistry.getInstance();
-            registry.registerSkills(items as CustomSkill[]);
+            // Only register with SkillRegistry if validation is enabled
+            if (validate) {
+                const registry = SkillRegistry.getInstance();
+                registry.registerSkills(items as CustomSkill[]);
+            }
         }
 
         // Phase 13.1: Handle ability-specific skills
         if (category.startsWith('skills.')) {
             // abilityName is extracted for future use in validation/logging
             void category.replace('skills.', '') as unknown as Ability;
-            const registry = SkillRegistry.getInstance();
-            registry.registerSkills(items as CustomSkill[]);
+            // Only register with SkillRegistry if validation is enabled
+            if (validate) {
+                const registry = SkillRegistry.getInstance();
+                registry.registerSkills(items as CustomSkill[]);
+            }
         }
 
         // Phase 13.1: Handle skill lists (class-specific skill lists)
@@ -524,7 +544,21 @@ export class ExtensionManager {
             }
         } else if (category === 'classes') {
             // Classes must be a valid Class type (default or custom)
-            if (!isValidClass(item)) {
+            const itemStr = item as string;
+
+            // Check if it's a default class
+            const isDefaultClass = DEFAULT_CLASSES.includes(itemStr as Class);
+
+            // Check if it's already registered in the classes category
+            const registeredClasses = this.get('classes') as string[] | undefined;
+            const isAlreadyRegistered = registeredClasses?.includes(itemStr);
+
+            // Check if it has data registered in classes.data (allows new custom class registration)
+            const classDataList = this.get('classes.data') as Array<{ name: string }> | undefined;
+            const hasClassData = classDataList?.some(d => d.name === itemStr);
+
+            // Valid if: default class OR already registered OR has data registered
+            if (!isDefaultClass && !isAlreadyRegistered && !hasClassData) {
                 errors.push(`${prefix} Invalid class (must be one of: ${DEFAULT_CLASSES.join(', ')} or a custom class registered via 'classes.data')`);
             }
         } else if (category === 'classes.data') {

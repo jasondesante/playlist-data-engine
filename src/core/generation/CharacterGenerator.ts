@@ -1,7 +1,7 @@
 import type { CharacterSheet, Class, Ability, GameMode } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
 import { SeededRNG } from '../../utils/random.js';
-import { getRaceData, RACE_DATA, CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
+import { getRaceData, getClassData, RACE_DATA, CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
 import { RaceSelector } from './RaceSelector.js';
 import { ClassSuggester } from './ClassSuggester.js';
 import { AbilityScoreCalculator } from './AbilityScoreCalculator.js';
@@ -253,8 +253,11 @@ export class CharacterGenerator {
         // Calculate ability modifiers
         const abilityModifiers = AbilityScoreCalculator.calculateModifiers(abilityScores);
 
-        // Get class data
-        const classData = CLASS_DATA[suggestedClass];
+        // Get class data (supports custom classes via getClassData)
+        const classData = getClassData(suggestedClass);
+        if (!classData) {
+            throw new Error(`Unknown class: ${suggestedClass}. Cannot generate character.`);
+        }
         const raceData = getRaceData(race);
 
         // Handle custom races with no registered data
