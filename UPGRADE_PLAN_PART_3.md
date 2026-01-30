@@ -985,7 +985,7 @@ Test Scenarios:
 - [x] Analyze subrace system
 
 ### Phase 2: Interface Design
-- [ ] Add SkillPrerequisite interface
+- [x] Add SkillPrerequisite interface
 - [ ] Add SpellPrerequisite interface
 - [ ] Add subrace property to CharacterSheet
 - [ ] Design race extensibility strategy

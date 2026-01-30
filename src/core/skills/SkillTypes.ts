@@ -7,7 +7,46 @@
  * Part of Phase 12.1: Design Skill Architecture.
  */
 
-import type { Ability } from '../types/Character.js';
+import type { Ability, Class, Race } from '../types/Character.js';
+
+/**
+ * Prerequisites for learning or using a skill
+ *
+ * Follows the same pattern as FeaturePrerequisite for consistency.
+ * Skills can require:
+ * - A minimum character level
+ * - Other skills to be proficient first
+ * - Features to be learned first
+ * - Spells to be known first
+ * - Minimum ability scores
+ * - Specific class or race
+ * - Custom conditions
+ */
+export interface SkillPrerequisite {
+    /** Minimum character level required */
+    level?: number;
+
+    /** Minimum ability scores required */
+    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+
+    /** Specific class required */
+    class?: Class;
+
+    /** Specific race required */
+    race?: Race;
+
+    /** Skills that must be proficient first (by skill ID) */
+    skills?: string[];
+
+    /** Features that must be learned first (by feature ID) */
+    features?: string[];
+
+    /** Spells that must be known first (by spell name) */
+    spells?: string[];
+
+    /** Custom condition description */
+    custom?: string;
+}
 
 /**
  * Custom Skill Interface
@@ -77,6 +116,18 @@ export interface CustomSkill {
      * Optional flavor text or lore about the skill
      */
     lore?: string;
+
+    /**
+     * Prerequisites for learning this skill
+     *
+     * If specified, the skill can only be gained by characters who meet
+     * all the prerequisite requirements. This allows for:
+     * - Advanced skills that require base skills
+     * - Class-specific or race-specific skills
+     * - Skills that require certain features (e.g., Draconic Bloodline)
+     * - Skills that require certain spells (e.g., must know fireball)
+     */
+    prerequisites?: SkillPrerequisite;
 }
 
 /**
