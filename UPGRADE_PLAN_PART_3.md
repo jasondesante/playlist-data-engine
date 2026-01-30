@@ -996,7 +996,7 @@ Test Scenarios:
 - [x] Update SkillRegistry
 
 ### Phase 4: Spell Prerequisites
-- [ ] Create SpellValidator
+- [x] Create SpellValidator
 - [ ] Update SpellManager for filtering
 - [ ] Update CharacterGenerator
 
