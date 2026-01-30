@@ -1013,7 +1013,7 @@ Test Scenarios:
 - [x] Add subraces to RaceDataEntry
 
 ### Phase 7: Feature Prerequisites Expansion
-- [ ] Update FeatureValidator for skills/spells/subrace
+- [x] Update FeatureValidator for skills/spells/subrace
 - [ ] Update RacialTrait validation
 
 ### Phase 8: Documentation

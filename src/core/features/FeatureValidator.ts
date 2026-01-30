@@ -470,6 +470,45 @@ export class FeatureValidator {
             }
         }
 
+        // Validate subrace requirement
+        if (p.subrace !== undefined) {
+            if (typeof p.subrace !== 'string') {
+                errors.push('Prerequisite subrace must be a string');
+            } else if (p.subrace.trim() === '') {
+                errors.push('Prerequisite subrace cannot be empty');
+            }
+        }
+
+        // Validate skills requirement
+        if (p.skills !== undefined) {
+            if (!Array.isArray(p.skills)) {
+                errors.push('Prerequisite skills must be an array');
+            } else {
+                for (const skillId of p.skills) {
+                    if (typeof skillId !== 'string') {
+                        errors.push('Prerequisite skill IDs must be strings');
+                    } else if (!VALID_SKILLS.includes(skillId)) {
+                        errors.push(`Invalid prerequisite skill: "${skillId}". Must be one of: ${VALID_SKILLS.join(', ')}`);
+                    }
+                }
+            }
+        }
+
+        // Validate spells requirement
+        if (p.spells !== undefined) {
+            if (!Array.isArray(p.spells)) {
+                errors.push('Prerequisite spells must be an array');
+            } else {
+                for (const spellName of p.spells) {
+                    if (typeof spellName !== 'string') {
+                        errors.push('Prerequisite spell names must be strings');
+                    } else if (spellName.trim() === '') {
+                        errors.push('Prerequisite spell name cannot be empty');
+                    }
+                }
+            }
+        }
+
         // Validate custom condition
         if (p.custom !== undefined && typeof p.custom !== 'string') {
             errors.push('Prerequisite custom condition must be a string');
