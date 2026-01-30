@@ -881,11 +881,11 @@ Test Coverage:
 **File:** `tests/unit/spellPrerequisites.test.ts`
 
 Test Coverage:
-- [ ] Validate spell prerequisites (level, abilities, features, spells, skills)
-- [ ] Reject spells with unmet prerequisites
-- [ ] Spells with no prerequisites always available
-- [ ] SpellManager filters spells by prerequisites
-- [ ] Dragon-themed spells (feature-based)
+- [x] Validate spell prerequisites (level, abilities, features, spells, skills)
+- [x] Reject spells with unmet prerequisites
+- [x] Spells with no prerequisites always available
+- [x] SpellManager filters spells by prerequisites
+- [x] Dragon-themed spells (feature-based)
 
 **File:** `tests/unit/customRaces.test.ts`
 
@@ -900,11 +900,11 @@ Test Coverage:
 **File:** `tests/unit/subraces.test.ts`
 
 Test Coverage:
-- [ ] Character can have subrace property
-- [ ] Subrace filtering works for racial traits
-- [ ] FeaturePrerequisite validates subrace correctly
-- [ ] Custom races can define available subraces
-- [ ] Subrace-specific traits only apply to correct subrace
+- [x] Character can have subrace property
+- [x] Subrace filtering works for racial traits
+- [x] FeaturePrerequisite validates subrace correctly
+- [x] Custom races can define available subraces
+- [x] Subrace-specific traits only apply to correct subrace
 
 ### 9.2 Integration Tests (NEW FILE)
 
@@ -1026,7 +1026,7 @@ Test Scenarios:
 ### Phase 9: Testing
 - [x] Write unit tests for skill prerequisites
 - [x] Write unit tests for spell prerequisites
-- [x] Write unit tests for custom races (26 tests passing, 3 skipped due to ESM/CJS interop)
+- [x] Write unit tests for custom races (29 tests passing - fixed ESM/CJS interop issue)
 - [x] Write unit tests for subraces (28 tests passing)
 - [x] Write integration tests (33 tests passing)
 

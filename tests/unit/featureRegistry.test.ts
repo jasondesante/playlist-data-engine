@@ -862,7 +862,7 @@ describe('FeatureRegistry', () => {
 
             const result = registry.validatePrerequisites(trait, mockCharacter);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Requires race Dwarf');
+            expect(result.errors).toContain('Requires race Dwarf (current: Elf)');
         });
     });
 

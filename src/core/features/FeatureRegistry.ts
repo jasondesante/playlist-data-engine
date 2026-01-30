@@ -276,7 +276,7 @@ export class FeatureRegistry {
 
         // Check race requirement
         if (prereqs.race !== undefined && character.race !== prereqs.race) {
-            errors.push(`Requires race ${prereqs.race}`);
+            errors.push(`Requires race ${prereqs.race} (current: ${character.race})`);
         }
 
         // Check subrace requirement

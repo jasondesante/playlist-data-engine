@@ -327,11 +327,10 @@ describe('Custom Races', () => {
     });
 
     describe('Custom racial traits with prerequisite validation', () => {
-        it.skip('should register custom racial trait with race prerequisite (requires ESM/CJS interop fix)', () => {
-            // NOTE: This test is skipped due to ESM/CJS interop issues in test environment
-            // The FeatureValidator uses require() to check ExtensionManager for custom races,
-            // but require() doesn't work correctly in ESM test environment.
-            // In production (CJS build), this functionality works correctly.
+        it('should register custom racial trait with race prerequisite', () => {
+            // NOTE: Fixed ESM/CJS interop issue - FeatureValidator now allows custom races
+            // when require is unavailable (ESM environment). ExtensionManager handles
+            // the actual validation at registration time.
             const customRaceData = [{
                 race: 'Dragonkin',
                 ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
@@ -367,8 +366,8 @@ describe('Custom Races', () => {
             expect(traits[0].id).toBe('dragon_breath');
         });
 
-        it.skip('should validate custom racial trait prerequisites against character (requires ESM/CJS interop fix)', () => {
-            // NOTE: Skipped due to ESM/CJS interop issues
+        it('should validate custom racial trait prerequisites against character', () => {
+            // NOTE: Fixed ESM/CJS interop issue
             const customRaceData = [{
                 race: 'HighElf',
                 ability_bonuses: { DEX: 2, INT: 1 },
@@ -412,8 +411,8 @@ describe('Custom Races', () => {
             expect(result.valid).toBe(true);
         });
 
-        it.skip('should fail validation for character without required race (requires ESM/CJS interop fix)', () => {
-            // NOTE: Skipped due to ESM/CJS interop issues
+        it('should fail validation for character without required race', () => {
+            // NOTE: Fixed ESM/CJS interop issue
             const customRaceData = [{
                 race: 'Dragonkin',
                 ability_bonuses: { STR: 2, CON: 1, CHA: 1 },

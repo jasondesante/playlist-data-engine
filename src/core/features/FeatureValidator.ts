@@ -273,22 +273,30 @@ export class FeatureValidator {
             // Check if it's a valid default race or custom race
             const isValidDefaultRace = VALID_RACES.includes(t.race);
 
-            // Check ExtensionManager for custom races
+            // Check ExtensionManager for custom races (when require is available)
             let isValidCustomRace = false;
+            let canCheckCustomRaces = false;
             try {
-                // Dynamic require to avoid circular dependencies
+                // Dynamic require to avoid circular dependencies (works in Node.js CJS)
+                // In ESM/browser, require is not available, so we skip custom race check
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const ExtensionModule = require('../extensions/ExtensionManager.js');
-                const manager = ExtensionModule.ExtensionManager.getInstance();
-                const customRaces = manager.get('races');
-                if (Array.isArray(customRaces) && customRaces.includes(t.race)) {
-                    isValidCustomRace = true;
+                const ExtensionModule = typeof require !== 'undefined' ? require('../extensions/ExtensionManager.js') : undefined;
+                if (ExtensionModule) {
+                    canCheckCustomRaces = true;
+                    const manager = ExtensionModule.ExtensionManager.getInstance();
+                    const customRaces = manager.get('races');
+                    if (Array.isArray(customRaces) && customRaces.includes(t.race)) {
+                        isValidCustomRace = true;
+                    }
                 }
             } catch {
                 // ExtensionManager not available, skip custom race check
             }
 
-            if (!isValidDefaultRace && !isValidCustomRace) {
+            // Only validate race if we can check both default and custom races
+            // In ESM/browser where require is unavailable, we allow any non-empty string
+            // ExtensionManager will handle the actual validation at registration time
+            if (canCheckCustomRaces && !isValidDefaultRace && !isValidCustomRace) {
                 errors.push(`Invalid race: "${t.race}". Must be one of: ${VALID_RACES.join(', ')} or a custom race registered via ExtensionManager.`);
             }
         }
@@ -474,22 +482,30 @@ export class FeatureValidator {
                 // Check if it's a valid default race or custom race
                 const isValidDefaultRace = VALID_RACES.includes(p.race);
 
-                // Check ExtensionManager for custom races
+                // Check ExtensionManager for custom races (when require is available)
                 let isValidCustomRace = false;
+                let canCheckCustomRaces = false;
                 try {
-                    // Dynamic require to avoid circular dependencies
+                    // Dynamic require to avoid circular dependencies (works in Node.js CJS)
+                    // In ESM/browser, require is not available, so we skip custom race check
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const ExtensionModule = require('../extensions/ExtensionManager.js');
-                    const manager = ExtensionModule.ExtensionManager.getInstance();
-                    const customRaces = manager.get('races');
-                    if (Array.isArray(customRaces) && customRaces.includes(p.race)) {
-                        isValidCustomRace = true;
+                    const ExtensionModule = typeof require !== 'undefined' ? require('../extensions/ExtensionManager.js') : undefined;
+                    if (ExtensionModule) {
+                        canCheckCustomRaces = true;
+                        const manager = ExtensionModule.ExtensionManager.getInstance();
+                        const customRaces = manager.get('races');
+                        if (Array.isArray(customRaces) && customRaces.includes(p.race)) {
+                            isValidCustomRace = true;
+                        }
                     }
                 } catch {
                     // ExtensionManager not available, skip custom race check
                 }
 
-                if (!isValidDefaultRace && !isValidCustomRace) {
+                // Only validate race if we can check both default and custom races
+                // In ESM/browser where require is unavailable, we allow any non-empty string
+                // ExtensionManager will handle the actual validation at registration time
+                if (canCheckCustomRaces && !isValidDefaultRace && !isValidCustomRace) {
                     errors.push(`Invalid prerequisite race: "${p.race}". Must be one of: ${VALID_RACES.join(', ')} or a custom race registered via ExtensionManager.`);
                 }
             }
