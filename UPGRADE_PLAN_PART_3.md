@@ -1027,7 +1027,7 @@ Test Scenarios:
 - [x] Write unit tests for skill prerequisites
 - [x] Write unit tests for spell prerequisites
 - [x] Write unit tests for custom races (26 tests passing, 3 skipped due to ESM/CJS interop)
-- [ ] Write unit tests for subraces (NEW)
+- [x] Write unit tests for subraces (28 tests passing)
 - [ ] Write integration tests
 
 ---
