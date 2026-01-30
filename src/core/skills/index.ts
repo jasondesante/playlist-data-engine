@@ -8,6 +8,7 @@
 // Type definitions
 export type {
     CustomSkill,
+    SkillPrerequisite,
     SkillProficiency,
     SkillSelectionWeights,
     SkillListDefinition,
@@ -28,5 +29,6 @@ export {
     validateSkills,
     validateSkillProficiency,
     validateSkillProficiencies,
-    validateSkillListDefinition
+    validateSkillListDefinition,
+    validateSkillPrerequisites
 } from './SkillValidator.js';

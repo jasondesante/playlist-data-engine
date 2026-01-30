@@ -11,8 +11,8 @@
  * Part of Phase 12.6: Create SkillValidator.
  */
 
-import type { SkillValidationResult } from './SkillTypes.js';
-import type { Ability } from '../types/Character.js';
+import type { SkillValidationResult, SkillPrerequisite } from './SkillTypes.js';
+import type { Ability, CharacterSheet } from '../types/Character.js';
 
 /**
  * Valid D&D 5e abilities
@@ -353,6 +353,98 @@ export class SkillValidator {
         // Examples: 'athletics', 'survival_cold', 'arcana_planar'
         return /^[a-z][a-z0-9_]*$/.test(id);
     }
+
+    /**
+     * Validate skill prerequisites against a character
+     *
+     * Checks if a character meets all prerequisite requirements for a skill.
+     * Follows the same pattern as FeaturePrerequisite validation for consistency.
+     *
+     * @param prerequisites - The skill prerequisites to validate
+     * @param character - The character sheet to validate against
+     * @returns Validation result with unmet prerequisites if any
+     */
+    static validateSkillPrerequisites(
+        prerequisites: SkillPrerequisite | undefined,
+        character: CharacterSheet
+    ): SkillValidationResult {
+        const unmet: string[] = [];
+
+        // If no prerequisites, skill is available
+        if (!prerequisites) {
+            return { valid: true, errors: [] };
+        }
+
+        // Check level requirement
+        if (prerequisites.level !== undefined && character.level < prerequisites.level) {
+            unmet.push(`Requires level ${prerequisites.level} (current: ${character.level})`);
+        }
+
+        // Check ability score requirements
+        if (prerequisites.abilities) {
+            for (const [ability, minScore] of Object.entries(prerequisites.abilities)) {
+                const score = character.ability_scores[ability as Ability];
+                if (score === undefined || score < minScore) {
+                    unmet.push(`Requires ${ability} ${minScore}+ (current: ${score ?? 0})`);
+                }
+            }
+        }
+
+        // Check class requirement
+        if (prerequisites.class !== undefined && character.class !== prerequisites.class) {
+            unmet.push(`Requires ${prerequisites.class} class (current: ${character.class})`);
+        }
+
+        // Check race requirement
+        if (prerequisites.race !== undefined && character.race !== prerequisites.race) {
+            unmet.push(`Requires ${prerequisites.race} race (current: ${character.race})`);
+        }
+
+        // Check skill prerequisites (skills that must be proficient first)
+        if (prerequisites.skills && prerequisites.skills.length > 0) {
+            for (const requiredSkillId of prerequisites.skills) {
+                const proficiency = character.skills[requiredSkillId];
+                if (proficiency !== 'proficient' && proficiency !== 'expertise') {
+                    unmet.push(`Requires proficiency in ${requiredSkillId} (current: ${proficiency ?? 'none'})`);
+                }
+            }
+        }
+
+        // Check feature prerequisites (features that must be learned first)
+        if (prerequisites.features && prerequisites.features.length > 0) {
+            const hasFeatures = character.class_features || [];
+            for (const requiredFeatureId of prerequisites.features) {
+                if (!hasFeatures.includes(requiredFeatureId)) {
+                    unmet.push(`Requires feature: ${requiredFeatureId}`);
+                }
+            }
+        }
+
+        // Check spell prerequisites (spells that must be known first)
+        if (prerequisites.spells && prerequisites.spells.length > 0) {
+            const knownSpells = character.spells?.known_spells || [];
+            const cantrips = character.spells?.cantrips || [];
+            const allKnownSpells = [...knownSpells, ...cantrips];
+
+            for (const requiredSpell of prerequisites.spells) {
+                if (!allKnownSpells.includes(requiredSpell)) {
+                    unmet.push(`Requires spell: ${requiredSpell}`);
+                }
+            }
+        }
+
+        // Note: Custom conditions cannot be automatically validated
+        // They must be checked by the calling code
+        if (prerequisites.custom) {
+            // Add a note about custom condition but don't fail validation
+            // The calling code is responsible for validating custom conditions
+        }
+
+        return {
+            valid: unmet.length === 0,
+            errors: unmet
+        };
+    }
 }
 
 /**
@@ -413,4 +505,20 @@ export function validateSkillProficiencies(proficiencies: unknown[]): SkillValid
  */
 export function validateSkillListDefinition(skillList: unknown): SkillValidationResult {
     return SkillValidator.validateSkillListDefinition(skillList);
+}
+
+/**
+ * Helper function to validate skill prerequisites against a character
+ *
+ * Convenience function for quick validation.
+ *
+ * @param prerequisites - The skill prerequisites to validate
+ * @param character - The character sheet to validate against
+ * @returns Validation result with unmet prerequisites if any
+ */
+export function validateSkillPrerequisites(
+    prerequisites: SkillPrerequisite | undefined,
+    character: CharacterSheet
+): SkillValidationResult {
+    return SkillValidator.validateSkillPrerequisites(prerequisites, character);
 }

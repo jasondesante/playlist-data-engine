@@ -987,11 +987,11 @@ Test Scenarios:
 ### Phase 2: Interface Design
 - [x] Add SkillPrerequisite interface
 - [x] Add SpellPrerequisite interface
-- [ ] Add subrace property to CharacterSheet
+- [x] Add subrace property to CharacterSheet
 - [ ] Design race extensibility strategy
 
 ### Phase 3: Skill Prerequisites
-- [ ] Create SkillValidator prerequisite validation
+- [x] Create SkillValidator prerequisite validation
 - [ ] Update SkillAssigner for filtering
 - [ ] Update SkillRegistry
 
