@@ -402,6 +402,11 @@ export class CharacterGenerator {
             }
         }
 
-        return characterSheet;
+        // Filter spells by prerequisites (Phase 4.3)
+        // Spells are filtered after all features and equipment are applied
+        // since spell prerequisites may depend on features or equipment
+        const finalCharacterSheet = SpellManager.filterCharacterSpells(characterSheet);
+
+        return finalCharacterSheet;
     }
 }

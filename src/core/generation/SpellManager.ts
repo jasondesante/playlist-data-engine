@@ -1,12 +1,15 @@
 /**
  * SpellManager - Manages spell assignment, spell slots, and cantrips for spellcasting classes
+ *
+ * Part of Phase 4.2: Update SpellManager for prerequisite filtering.
  */
 
-import type { Class } from '../types/Character.js';
+import type { Class, CharacterSheet } from '../types/Character.js';
 // import type { SeededRNG } from '../../utils/random.js';
-import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS } from '../../utils/constants.js';
+import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS, SPELL_DATABASE } from '../../utils/constants.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureSpellDefaultsInitialized } from '../extensions/initializeDefaults.js';
+import { SpellValidator } from '../spells/SpellValidator.js';
 
 /**
  * Interface for class spell list data (used for extensibility)
@@ -125,14 +128,17 @@ export class SpellManager {
    * Get spells known by a spellcaster at a given level
    *
    * Uses the ExtensionManager to get extended spell data (defaults + custom).
+   * Filters spells by prerequisites when a character is provided.
    *
    * @param characterClass - The character's class
    * @param characterLevel - The character's level (1-20)
+   * @param character - Optional character sheet for prerequisite validation
    * @returns Array of spell names that the character knows
    */
   static getKnownSpells(
     characterClass: Class,
-    characterLevel: number
+    characterLevel: number,
+    character?: CharacterSheet
   ): string[] {
     if (!this.isSpellcaster(characterClass)) {
       return [];
@@ -212,7 +218,49 @@ export class SpellManager {
       }
     }
 
-    return knownSpells;
+    // Filter by prerequisites if character provided
+    return character
+      ? this.filterSpellsByPrerequisites(knownSpells, character)
+      : knownSpells;
+  }
+
+  /**
+   * Filter spells by prerequisites
+   *
+   * Removes spells that have unmet prerequisites for the given character.
+   * Spells without prerequisites are always included.
+   *
+   * @param spellNames - Array of spell names to filter
+   * @param character - Character sheet to validate prerequisites against
+   * @returns Array of spell names whose prerequisites are met
+   */
+  private static filterSpellsByPrerequisites(
+    spellNames: string[],
+    character: CharacterSheet
+  ): string[] {
+    const validSpells: string[] = [];
+
+    for (const spellName of spellNames) {
+      const spell = SPELL_DATABASE[spellName];
+      if (!spell) {
+        // If spell is not in database, include it (for custom spells)
+        validSpells.push(spellName);
+        continue;
+      }
+
+      // Skip spells with unmet prerequisites
+      if (spell.prerequisites) {
+        const result = SpellValidator.validateSpellPrerequisites(spell.prerequisites, character);
+        if (!result.valid) {
+          // Spell has prerequisites that are not met - skip it
+          continue;
+        }
+      }
+
+      validSpells.push(spellName);
+    }
+
+    return validSpells;
   }
 
   /**
@@ -220,16 +268,17 @@ export class SpellManager {
    *
    * @param characterClass - The character's class
    * @param characterLevel - The character's level (1-20)
-   * @param rng - Seeded random number generator for deterministic selection
+   * @param character - Optional character sheet for prerequisite validation
    * @returns SpellSlots object with spell slots, known spells, and cantrips
    */
   static initializeSpells(
     characterClass: Class,
-    characterLevel: number
+    characterLevel: number,
+    character?: CharacterSheet
   ): SpellSlots {
     return {
       spell_slots: this.getSpellSlots(characterClass, characterLevel),
-      known_spells: this.getKnownSpells(characterClass, characterLevel),
+      known_spells: this.getKnownSpells(characterClass, characterLevel, character),
       cantrips: this.getCantrips(characterClass),
     };
   }
@@ -302,5 +351,40 @@ export class SpellManager {
     }
 
     return updated;
+  }
+
+  /**
+   * Filter character's spells by prerequisites
+   *
+   * Updates a character's known_spells array to only include spells whose
+   * prerequisites are met by the character. Used during character generation
+   * and when validating characters with custom spells.
+   *
+   * @param character - The character sheet whose spells should be filtered
+   * @returns Updated character with filtered spells
+   */
+  static filterCharacterSpells(character: CharacterSheet): CharacterSheet {
+    if (!character.spells) {
+      return character;
+    }
+
+    const filteredKnownSpells = this.filterSpellsByPrerequisites(
+      character.spells.known_spells || [],
+      character
+    );
+
+    const filteredCantrips = this.filterSpellsByPrerequisites(
+      character.spells.cantrips || [],
+      character
+    );
+
+    return {
+      ...character,
+      spells: {
+        ...character.spells,
+        known_spells: filteredKnownSpells,
+        cantrips: filteredCantrips
+      }
+    };
   }
 }

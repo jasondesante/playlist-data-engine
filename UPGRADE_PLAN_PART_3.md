@@ -997,8 +997,8 @@ Test Scenarios:
 
 ### Phase 4: Spell Prerequisites
 - [x] Create SpellValidator
-- [ ] Update SpellManager for filtering
-- [ ] Update CharacterGenerator
+- [x] Update SpellManager for filtering
+- [x] Update CharacterGenerator
 
 ### Phase 5: Custom Races
 - [ ] Update ExtensionManager race validation
