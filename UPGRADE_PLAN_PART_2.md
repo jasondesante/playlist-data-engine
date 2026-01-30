@@ -1538,16 +1538,16 @@ static registerEquipmentFeature(
 **File:** `/Users/jasondesante/playlist-data-engine/tests/unit/equipmentSpawnHelper.test.ts` (NEW)
 
 **Test Coverage:**
-- [ ] Spawn from list of names
-- [ ] Spawn by rarity
-- [ ] Spawn by tags
-- [ ] Spawn random with weights
-- [ ] Spawn from template
-- [ ] Spawn treasure hoard
-- [ ] Add to character
-- [ ] Respect spawn weights
-- [ ] Exclude zero-weight items
-- [ ] Handle invalid template IDs
+- [x] Spawn from list of names
+- [x] Spawn by rarity
+- [x] Spawn by tags
+- [x] Spawn random with weights
+- [x] Spawn from template
+- [x] Spawn treasure hoard
+- [x] Add to character
+- [x] Respect spawn weights
+- [x] Exclude zero-weight items
+- [x] Handle invalid template IDs
 
 **Update:** `/Users/jasondesante/playlist-data-engine/tests/unit/equipmentGenerator.test.ts`
 
@@ -1992,7 +1992,7 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 - [x] Write unit tests for EquipmentValidator
 - [x] Write unit tests for EquipmentModifier
 - [x] Write unit tests for EquipmentSpawnHelper
-- [ ] Update existing tests
+- [x] Update existing tests
 - [x] Write integration tests (equipmentSystem.integration.test.ts - 40 tests passing)
 
 ### Phase 11: Documentation
