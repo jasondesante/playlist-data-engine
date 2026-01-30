@@ -268,7 +268,7 @@ When implementing custom classes, the phases would be:
 ### Phase 4: Template-Based Class System
 - [x] Implement `baseClass` inheritance in `getClassData()`
 - [x] Custom classes inherit from base unless overridden
-- [ ] Document template class pattern
+- [x] Document template class pattern
 - [x] Example: "Necromancer" extends "Wizard" with custom features
 
 ### Phase 5: Documentation & Testing
