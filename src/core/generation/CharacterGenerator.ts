@@ -87,6 +87,9 @@ export interface CharacterGeneratorOptions {
     /** Game mode for stat progression (default: 'standard') */
     gameMode?: GameMode;
 
+    /** Optional subrace (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf') */
+    subrace?: string;
+
     /**
      * Custom extensions for procedural generation
      * Allows adding custom spells, equipment, races, classes, and appearance options
@@ -187,6 +190,7 @@ export class CharacterGenerator {
      * @param {number} [options.level=1] - Starting level (1-20)
      * @param {Class} [options.forceClass] - Override class suggestion
      * @param {GameMode} [options.gameMode='standard'] - Game mode for stat progression
+     * @param {string} [options.subrace] - Optional subrace (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf')
      * @param {CharacterGeneratorExtensions} [options.extensions] - Custom extensions
      * @returns {CharacterSheet} Complete D&D 5e character sheet
      *
@@ -221,6 +225,7 @@ export class CharacterGenerator {
         const rng = new SeededRNG(seed);
         const level = options.level || 1;
         const gameMode: GameMode = options.gameMode || 'standard';
+        const subrace = options.subrace;
 
         // Ensure feature registry is initialized with defaults
         ensureFeatureDefaultsInitialized();
@@ -290,13 +295,17 @@ export class CharacterGenerator {
         const classFeatures = featureRegistry.getClassFeatures(suggestedClass, level);
 
         // Get racial traits from FeatureRegistry (trait IDs only)
-        const racialTraits = featureRegistry.getRacialTraits(race);
+        // Filter by subrace if character has one
+        const racialTraits = subrace
+            ? featureRegistry.getRacialTraitsForSubrace(race, subrace)
+            : featureRegistry.getRacialTraits(race);
 
         // Validate feature prerequisites (Phase 11.4)
         // Build a partial character sheet for validation
         const partialCharacter: CharacterSheet = {
             name,
             race,
+            subrace,  // Include subrace for prerequisite validation
             class: suggestedClass,
             level,
             ability_scores: abilityScores,
@@ -349,6 +358,7 @@ export class CharacterGenerator {
         const characterSheet: CharacterSheet = {
             name,
             race,
+            subrace,  // Include subrace in the character sheet
             class: suggestedClass,
             level,
             ability_scores: abilityScores,

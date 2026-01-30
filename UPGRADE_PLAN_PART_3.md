@@ -1009,7 +1009,7 @@ Test Scenarios:
 - [x] Add subrace property to CharacterSheet
 - [x] Update FeaturePrerequisite for subrace
 - [x] Update FeatureRegistry.validatePrerequisites() for subrace
-- [ ] Update racial trait assignment for subrace
+- [x] Update racial trait assignment for subrace
 - [x] Add subraces to RaceDataEntry
 
 ### Phase 7: Feature Prerequisites Expansion
