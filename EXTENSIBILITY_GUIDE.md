@@ -313,19 +313,16 @@ const character = CharacterGenerator.generate(
 
 ### Classes
 
-Add custom classes:
+Adjust spawn rates for existing classes:
 
 ```typescript
 const manager = ExtensionManager.getInstance();
 
-// Register custom class names
-manager.register('classes', ['Necromancer', 'Battlemage', 'Shadowdancer']);
-
-// Set spawn rates
+// Make certain classes more or less common in character generation
 manager.setWeights('classes', {
-    'Necromancer': 0.2,    // Very rare
-    'Battlemage': 0.5,     // Uncommon
-    'Fighter': 1.5         // Common
+    'Sorcerer': 2.0,    // 2x as common
+    'Warlock': 1.5,     // 1.5x as common
+    'Paladin': 0.3      // Rare
 });
 
 const character = CharacterGenerator.generate(
@@ -334,6 +331,8 @@ const character = CharacterGenerator.generate(
     'Hero Name'
 );
 ```
+
+**Note:** Only the 12 D&D 5e classes are supported: Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard. You cannot create entirely new class names through ExtensionManager.
 
 ### Class Features
 

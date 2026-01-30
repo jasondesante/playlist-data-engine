@@ -4411,8 +4411,14 @@ const dragonEquipment = [
     }
 ];
 
-// Note: To add custom races/classes, you would first need to extend
-// the Race/Class types in src/core/types/Character.ts
+// NOTE: This example demonstrates custom SPELLS, EQUIPMENT, and APPEARANCE only.
+//
+// While you can register 'classes' via ExtensionManager, this ONLY adjusts spawn rates
+// for the 12 existing D&D 5e classes. You cannot create entirely new classes like
+// "Draconis" through ExtensionManager without source code changes.
+//
+// This example does NOT add a custom "Draconis" class - it only adds dragon-themed
+// content that can appear for any existing class.
 const dragonAppearance = {
     bodyTypes: ['draconic', 'dragonborn'],
     skinTones: ['#8B0000', '#B8860B', '#006400', '#4B0082'], // Red, Gold, Green, Purple
