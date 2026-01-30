@@ -1,7 +1,7 @@
 import type { CharacterSheet, Class, Ability, GameMode } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
 import { SeededRNG } from '../../utils/random.js';
-import { RACE_DATA, CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
+import { getRaceData, RACE_DATA, CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
 import { RaceSelector } from './RaceSelector.js';
 import { ClassSuggester } from './ClassSuggester.js';
 import { AbilityScoreCalculator } from './AbilityScoreCalculator.js';
@@ -255,7 +255,10 @@ export class CharacterGenerator {
 
         // Get class data
         const classData = CLASS_DATA[suggestedClass];
-        const raceData = RACE_DATA[race];
+        const raceData = getRaceData(race);
+
+        // Handle custom races with no registered data
+        const raceSpeed = raceData?.speed ?? 30;
 
         // Calculate HP
         const maxHp = classData.hit_die + abilityModifiers.CON;
@@ -314,7 +317,7 @@ export class CharacterGenerator {
             hp: { current: maxHp, max: maxHp, temp: 0 },
             armor_class: armorClass,
             initiative,
-            speed: raceData.speed,
+            speed: raceSpeed,
             skills,
             saving_throws,
             racial_traits: [],  // Empty for now, will populate after validation
@@ -371,7 +374,7 @@ export class CharacterGenerator {
             },
             armor_class: armorClass,
             initiative,
-            speed: raceData.speed,
+            speed: raceSpeed,
             skills,
             saving_throws,
             racial_traits: validRacialTraits.map(t => t.id),

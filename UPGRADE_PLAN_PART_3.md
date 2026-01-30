@@ -890,12 +890,12 @@ Test Coverage:
 **File:** `tests/unit/customRaces.test.ts`
 
 Test Coverage:
-- [ ] Register custom race with ExtensionManager
-- [ ] Custom race data retrieved correctly
-- [ ] AbilityScoreCalculator applies custom race bonuses
-- [ ] Custom racial traits with prerequisite validation
-- [ ] Character generation with custom race
-- [ ] Validation rejects invalid race data
+- [x] Register custom race with ExtensionManager
+- [x] Custom race data retrieved correctly
+- [x] AbilityScoreCalculator applies custom race bonuses
+- [x] Custom racial traits with prerequisite validation
+- [x] Character generation with custom race
+- [x] Validation rejects invalid race data
 
 **File:** `tests/unit/subraces.test.ts`
 
@@ -1026,7 +1026,7 @@ Test Scenarios:
 ### Phase 9: Testing
 - [x] Write unit tests for skill prerequisites
 - [x] Write unit tests for spell prerequisites
-- [ ] Write unit tests for custom races
+- [x] Write unit tests for custom races (26 tests passing, 3 skipped due to ESM/CJS interop)
 - [ ] Write unit tests for subraces (NEW)
 - [ ] Write integration tests
 
