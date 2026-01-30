@@ -3,6 +3,7 @@
  */
 
 import type { Race, Class, Ability, Skill } from '../core/types/Character.js';
+import { ExtensionManager } from '../core/extensions/ExtensionManager.js';
 
 /**
  * Race data entry interface
@@ -169,11 +170,9 @@ export function getRaceData(race: string): RaceDataEntry | undefined {
         return RACE_DATA[race as Race];
     }
 
-    // Check ExtensionManager for custom race data (using require for CJS compatibility)
+    // Check ExtensionManager for custom race data
     try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const extensionModule = require('../core/extensions/ExtensionManager.js');
-        const manager = extensionModule.ExtensionManager.getInstance();
+        const manager = ExtensionManager.getInstance();
         const customRaceData = manager.get('races.data' as any);
 
         if (customRaceData && Array.isArray(customRaceData)) {
@@ -195,6 +194,75 @@ export function getRaceData(race: string): RaceDataEntry | undefined {
  *
  * Defines the structure for class data including primary ability, hit die,
  * saving throws, spellcasting, skills, expertise, and optional audio preferences.
+ *
+ * ## Template-Based Class System
+ *
+ * This interface supports creating custom classes that extend (inherit from) existing
+ * D&D 5e base classes through the `baseClass` property. This enables rapid creation
+ * of specialized classes (e.g., "Necromancer" extending "Wizard") without duplicating
+ * all base class properties.
+ *
+ * ### How Template Inheritance Works
+ *
+ * When `baseClass` is specified in a custom class registration:
+ *
+ * 1. **Base class lookup**: The system retrieves the base class data from CLASS_DATA
+ * 2. **Property merging**: Base class properties are merged with custom class properties
+ * 3. **Override behavior**: Custom properties take precedence over base class properties
+ * 4. **Special handling for available_skills**: Custom skill list replaces base skill list
+ *    (not merged), allowing complete customization of class skills
+ *
+ * ### Example Usage
+ *
+ * ```typescript
+ * import { ExtensionManager } from './core/extensions/ExtensionManager.js';
+ *
+ * const manager = ExtensionManager.getInstance();
+ *
+ * // Register a custom "Necromancer" class based on Wizard
+ * manager.register('classes.data', [{
+ *     name: 'Necromancer',
+ *     baseClass: 'Wizard',  // Inherits from Wizard by default
+ *     primary_ability: 'INT',  // Same as Wizard (could omit to inherit)
+ *     hit_die: 8,  // Same as Wizard (could omit to inherit)
+ *     saving_throws: ['INT', 'WIS'],  // Same as Wizard (could omit to inherit)
+ *     is_spellcaster: true,  // Same as Wizard (could omit to inherit)
+ *     skill_count: 2,  // Same as Wizard (could omit to inherit)
+ *     // Override available_skills to include custom skill
+ *     available_skills: ['arcana', 'medicine', 'religion', 'necromancy'],
+ *     has_expertise: false  // Same as Wizard (could omit to inherit)
+ * }]);
+ * ```
+ *
+ * ### Complete Custom Classes
+ *
+ * Classes without `baseClass` are standalone and must specify all required properties:
+ *
+ * ```typescript
+ * manager.register('classes.data', [{
+ *     name: 'Runecaster',
+ *     // No baseClass - must specify all properties
+ *     primary_ability: 'WIS',
+ *     hit_die: 8,
+ *     saving_throws: ['WIS', 'CON'],
+ *     is_spellcaster: true,
+ *     skill_count: 3,
+ *     available_skills: ['arcana', 'nature', 'religion', 'insight', 'medicine'],
+ *     has_expertise: false
+ * }]);
+ * ```
+ *
+ * ### Integration with Other Extension Categories
+ *
+ * Custom classes can be further customized with:
+ *
+ * - **Custom skills**: Register via `skills.${ABILITY}` categories
+ * - **Custom features**: Register via `classFeatures.${ClassName}` categories
+ * - **Custom spell lists**: Register via `classSpellLists.${ClassName}` categories
+ * - **Custom spell slots**: Register via `classSpellSlots` category
+ * - **Custom equipment**: Register via `classStartingEquipment.${ClassName}` categories
+ *
+ * See UPGRADE_PLAN_PART_4.md for complete examples.
  */
 export interface ClassDataEntry {
     /** Primary ability score for this class */
@@ -221,7 +289,20 @@ export interface ClassDataEntry {
     /** Number of expertise choices (if has_expertise is true) */
     expertise_count?: number;
 
-    /** Optional: For template-based classes, the base class to inherit from */
+    /**
+     * For template-based classes: the base class to inherit from
+     *
+     * When specified, the custom class will inherit properties from the base class,
+     * with custom properties overriding inherited ones. This enables rapid creation
+     * of specialized classes (e.g., "Necromancer" extending "Wizard").
+     *
+     * The base class must be a valid D&D 5e class name (one of: Barbarian, Bard,
+     * Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard).
+     *
+     * @example
+     * // Necromancer extends Wizard
+     * baseClass: 'Wizard'
+     */
     baseClass?: Class;
 
     /** Optional: Audio preferences for class affinity calculation */
@@ -262,6 +343,152 @@ export interface ClassDataEntry {
  *     console.log(necromancerData.primary_ability); // 'INT'
  * }
  */
+/**
+ * Get class data (default or custom) - asynchronous version
+ *
+ * This helper function retrieves class data from either:
+ * 1. The default CLASS_DATA constant (for built-in classes)
+ * 2. The ExtensionManager (for custom classes registered via 'classes.data')
+ *
+ * ## Template-Based Class Inheritance
+ *
+ * For template-based custom classes (those with a baseClass property),
+ * the base class data is merged with custom data following these rules:
+ *
+ * 1. **Base class lookup**: Retrieves the base class data from CLASS_DATA
+ * 2. **Shallow merge**: Base properties are spread first, then custom properties
+ * 3. **Override behavior**: Custom properties take precedence over base properties
+ * 4. **Special handling for available_skills**: The custom skill list completely replaces
+ *    the base skill list (not merged), allowing complete customization
+ *
+ * The merge logic is:
+ * ```typescript
+ * {
+ *     ...baseData,        // Base class properties first
+ *     ...classEntry,      // Custom properties override base
+ *     available_skills: classEntry.available_skills || baseData.available_skills
+ * }
+ * ```
+ *
+ * ### Usage Flow for Custom Classes
+ *
+ * 1. Register class data via `ExtensionManager.register('classes.data', [...])`
+ * 2. Register class name via `ExtensionManager.register('classes', [asClass('Necromancer')])`
+ * 3. Optionally register custom features, skills, spells, equipment
+ * 4. Use `CharacterGenerator.generate()` with `forceClass: asClass('Necromancer')`
+ *
+ * @param className - The class name to look up
+ * @returns Class data entry or undefined if not found
+ *
+ * @example
+ * // Get default class data
+ * const wizardData = await getClassDataAsync('Wizard');
+ * console.log(wizardData.hit_die); // 6
+ *
+ * // Get custom class data (if registered via ExtensionManager)
+ * const necromancerData = await getClassDataAsync('Necromancer');
+ * if (necromancerData) {
+ *     console.log(necromancerData.baseClass); // 'Wizard'
+ *     console.log(necromancerData.primary_ability); // 'INT' (inherited from Wizard)
+ *     console.log(necromancerData.available_skills); // ['arcana', 'medicine', 'religion', 'necromancy'] (custom)
+ * }
+ */
+export async function getClassDataAsync(className: string): Promise<ClassDataEntry | undefined> {
+    // Check default classes
+    if (className in CLASS_DATA) {
+        return CLASS_DATA[className];
+    }
+
+    // Check ExtensionManager for custom class data
+    // Note: This is a dynamic check at runtime for custom classes
+    // The ExtensionManager is lazy-loaded to avoid circular dependencies
+    try {
+        if (!extensionManagerModule) {
+            // Use dynamic import for ESM compatibility
+            if (!extensionManagerPromise) {
+                extensionManagerPromise = import('../core/extensions/ExtensionManager.js');
+            }
+            const module = await extensionManagerPromise;
+            extensionManagerModule = module.ExtensionManager;
+        }
+        const manager = extensionManagerModule.getInstance();
+        const customClassData = manager.get('classes.data' as any);
+
+        if (customClassData && Array.isArray(customClassData)) {
+            const classEntry = customClassData.find((d: any) => d.name === className);
+            if (classEntry) {
+                // If has baseClass, merge with base class data
+                if (classEntry.baseClass && classEntry.baseClass in CLASS_DATA) {
+                    const baseData = CLASS_DATA[classEntry.baseClass];
+                    // Merge base data with custom data, custom properties take precedence
+                    return {
+                        ...baseData,
+                        ...classEntry,
+                        // Ensure available_skills is merged (custom skills + base skills)
+                        available_skills: classEntry.available_skills || baseData.available_skills,
+                    } as ClassDataEntry;
+                }
+                return classEntry as ClassDataEntry;
+            }
+        }
+    } catch (error) {
+        // ExtensionManager not available or not initialized
+        // This is expected in some contexts (e.g., pure server-side)
+    }
+
+    return undefined;
+}
+
+/**
+ * Get class data (default or custom)
+ *
+ * This helper function retrieves class data from either:
+ * 1. The default CLASS_DATA constant (for built-in classes)
+ * 2. The ExtensionManager (for custom classes registered via 'classes.data')
+ *
+ * ## Template-Based Class Inheritance
+ *
+ * For template-based custom classes (those with a baseClass property),
+ * the base class data is merged with custom data following these rules:
+ *
+ * 1. **Base class lookup**: Retrieves the base class data from CLASS_DATA
+ * 2. **Shallow merge**: Base properties are spread first, then custom properties
+ * 3. **Override behavior**: Custom properties take precedence over base properties
+ * 4. **Special handling for available_skills**: The custom skill list completely replaces
+ *    the base skill list (not merged), allowing complete customization
+ *
+ * The merge logic is:
+ * ```typescript
+ * {
+ *     ...baseData,        // Base class properties first
+ *     ...classEntry,      // Custom properties override base
+ *     available_skills: classEntry.available_skills || baseData.available_skills
+ * }
+ * ```
+ *
+ * ### Usage Flow for Custom Classes
+ *
+ * 1. Register class data via `ExtensionManager.register('classes.data', [...])`
+ * 2. Register class name via `ExtensionManager.register('classes', [asClass('Necromancer')])`
+ * 3. Optionally register custom features, skills, spells, equipment
+ * 4. Use `CharacterGenerator.generate()` with `forceClass: asClass('Necromancer')`
+ *
+ * @param className - The class name to look up
+ * @returns Class data entry or undefined if not found
+ *
+ * @example
+ * // Get default class data
+ * const wizardData = getClassData('Wizard');
+ * console.log(wizardData.hit_die); // 6
+ *
+ * // Get custom class data (if registered via ExtensionManager)
+ * const necromancerData = getClassData('Necromancer');
+ * if (necromancerData) {
+ *     console.log(necromancerData.baseClass); // 'Wizard'
+ *     console.log(necromancerData.primary_ability); // 'INT' (inherited from Wizard)
+ *     console.log(necromancerData.available_skills); // ['arcana', 'medicine', 'religion', 'necromancy'] (custom)
+ * }
+ */
 export function getClassData(className: string): ClassDataEntry | undefined {
     // Check default classes
     if (className in CLASS_DATA) {
@@ -270,9 +497,7 @@ export function getClassData(className: string): ClassDataEntry | undefined {
 
     // Check ExtensionManager for custom class data
     try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const extensionModule = require('../core/extensions/ExtensionManager.js');
-        const manager = extensionModule.ExtensionManager.getInstance();
+        const manager = ExtensionManager.getInstance();
         const customClassData = manager.get('classes.data' as any);
 
         if (customClassData && Array.isArray(customClassData)) {
@@ -1205,9 +1430,7 @@ export function getClassSpellList(className: string): { cantrips: string[]; spel
     }
 
     // Check ExtensionManager for custom spell list
-    // Dynamic import to avoid circular dependency
     try {
-        const { ExtensionManager } = require('../core/extensions/ExtensionManager.js');
         const manager = ExtensionManager.getInstance();
         const category = `classSpellLists.${className}` as const;
         const customSpellLists = manager.get(category as any);
@@ -1271,7 +1494,6 @@ export function getSpellSlotsForClass(className: string, characterLevel: number)
 
     // Check ExtensionManager for custom spell slot data
     try {
-        const { ExtensionManager } = require('../core/extensions/ExtensionManager.js');
         const manager = ExtensionManager.getInstance();
         const category = 'classSpellSlots' as const;
         const customSpellSlots = manager.get(category as any);
@@ -1339,7 +1561,6 @@ export function getClassStartingEquipment(className: string): {
 
     // Check ExtensionManager for custom starting equipment data
     try {
-        const { ExtensionManager } = require('../core/extensions/ExtensionManager.js');
         const manager = ExtensionManager.getInstance();
         const category = `classStartingEquipment.${className}` as const;
         const customEquipment = manager.get(category as any);

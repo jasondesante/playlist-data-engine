@@ -266,16 +266,189 @@ When implementing custom classes, the phases would be:
 - [x] Update EquipmentGenerator to use helpers
 
 ### Phase 4: Template-Based Class System
-- [ ] Implement `baseClass` inheritance in `getClassData()`
-- [ ] Custom classes inherit from base unless overridden
+- [x] Implement `baseClass` inheritance in `getClassData()`
+- [x] Custom classes inherit from base unless overridden
 - [ ] Document template class pattern
-- [ ] Example: "Necromancer" extends "Wizard" with custom features
+- [x] Example: "Necromancer" extends "Wizard" with custom features
 
 ### Phase 5: Documentation & Testing
 - [ ] Update DATA_ENGINE_REFERENCE.md with custom classes section
 - [ ] Update USAGE_IN_OTHER_PROJECTS.md with custom class examples
-- [ ] Write unit tests for custom class registration
-- [ ] Write integration tests for custom class character generation
+- [x] Write unit tests for custom class registration
+- [x] Write integration tests for custom class character generation
+
+---
+
+## Template Class Pattern Documentation
+
+### Overview
+
+The Template Class System allows you to create new custom classes that extend (inherit from) existing D&D 5e base classes. This enables rapid creation of specialized classes without duplicating all base class properties.
+
+### How It Works
+
+When you register a custom class with the `baseClass` property, the system automatically:
+
+1. **Looks up the base class data** from the default `CLASS_DATA` constant
+2. **Merges properties** using a shallow merge strategy: base properties are spread first, then custom properties
+3. **Applies overrides**: Custom properties take precedence over base class properties
+4. **Handles special cases**: The `available_skills` array is completely replaced (not merged), allowing full customization
+
+### Merge Logic
+
+```typescript
+// The merge happens in getClassData() function in src/utils/constants.ts
+{
+    ...baseData,        // Base class properties (e.g., Wizard)
+    ...classEntry,      // Custom properties override base
+    available_skills: classEntry.available_skills || baseData.available_skills
+}
+```
+
+### Quick Example
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+import { asClass } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register a custom "Necromancer" class based on Wizard
+manager.register('classes.data', [{
+    name: 'Necromancer',
+    baseClass: 'Wizard',  // Inherits from Wizard
+    // Only override what's different:
+    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
+    // All other properties (hit_die, saving_throws, etc.) are inherited from Wizard
+}]);
+
+// Register the class name
+manager.register('classes', [asClass('Necromancer')]);
+```
+
+### Property Override Behavior
+
+| Property | Behavior | Example |
+|----------|----------|---------|
+| `primary_ability` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `INT` |
+| `hit_die` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `8` |
+| `saving_throws` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `['INT', 'WIS']` |
+| `is_spellcaster` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `true` |
+| `skill_count` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `2` |
+| `available_skills` | **Replaced** (not merged) | Custom list replaces base entirely |
+| `has_expertise` | Inherited unless specified | `baseClass: 'Wizard'` → inherits `false` |
+| `audio_preferences` | Inherited unless specified | Can override for custom audio affinity |
+
+### Complete vs. Partial Overrides
+
+#### Partial Override (Recommended)
+Specify only the properties you want to change:
+
+```typescript
+{
+    name: 'Necromancer',
+    baseClass: 'Wizard',
+    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
+    // Everything else inherited from Wizard
+}
+```
+
+#### Complete Override
+Specify all properties (not using `baseClass`):
+
+```typescript
+{
+    name: 'Runecaster',
+    // No baseClass - must specify everything
+    primary_ability: 'WIS',
+    hit_die: 8,
+    saving_throws: ['WIS', 'CON'],
+    is_spellcaster: true,
+    skill_count: 3,
+    available_skills: ['arcana', 'nature', 'religion', 'insight', 'medicine'],
+    has_expertise: false
+}
+```
+
+### Integration with Other Systems
+
+Custom classes created via the template pattern integrate seamlessly with:
+
+- **Custom Skills**: Register via `skills.${ABILITY}` categories
+- **Custom Features**: Register via `classFeatures.${ClassName}` categories
+- **Custom Spell Lists**: Register via `classSpellLists.${ClassName}` categories
+- **Custom Spell Slots**: Register via `classSpellSlots` category
+- **Custom Equipment**: Register via `classStartingEquipment.${ClassName}` categories
+
+### Common Patterns
+
+#### 1. Archetype Variant (Same class, different flavor)
+```typescript
+{
+    name: 'BattleMage',
+    baseClass: 'Wizard',
+    hit_die: 10,           // More durable than standard Wizard
+    saving_throws: ['INT', 'CON'],  // CON instead of WIS
+    available_skills: ['arcana', 'athletics', 'intimidation']
+}
+```
+
+#### 2. Multiclass-Inspired (Two classes combined)
+```typescript
+{
+    name: 'Spellsword',
+    baseClass: 'Fighter',
+    is_spellcaster: true,  // Add spellcasting
+    primary_ability: 'STR',  // Keep Fighter primary
+    available_skills: ['athletics', 'acrobatics', 'arcana', 'intimidation']
+}
+```
+
+#### 3. Specialist (Narrow focus)
+```typescript
+{
+    name: 'Beastmaster',
+    baseClass: 'Ranger',
+    skill_count: 3,  // Extra skill for animal handling
+    available_skills: ['animal_handling', 'nature', 'survival', 'perception']
+}
+```
+
+### Validation Rules
+
+1. **Base class must exist**: `baseClass` must be a valid D&D 5e class name
+2. **Custom properties must be valid**: All properties must match expected types
+3. **Class name must be registered**: After registering class data, register the class name via `manager.register('classes', [asClass('ClassName')])`
+4. **Custom skills must exist**: If referencing custom skills in `available_skills`, register them first
+
+### Runtime Behavior
+
+- **Character generation**: Custom classes work identically to base classes in `CharacterGenerator.generate()`
+- **Skill assignment**: Custom skill lists are respected during skill selection
+- **Spell assignment**: Custom spell lists are used if registered via `classSpellLists.${ClassName}`
+- **Equipment assignment**: Custom equipment is used if registered via `classStartingEquipment.${ClassName}`
+
+### Testing Your Custom Class
+
+```typescript
+import { CharacterGenerator } from 'playlist-data-engine';
+import { getClassData } from 'playlist-data-engine';
+
+// Verify class data
+const necromancerData = getClassData('Necromancer');
+console.log(necromancerData);  // Should show merged properties
+
+// Generate a character
+const character = CharacterGenerator.generate(
+    'test-seed',
+    sampleAudioProfile,
+    'Test Character',
+    { forceClass: asClass('Necromancer') }
+);
+
+console.log(character.class);  // 'Necromancer'
+console.log(character.ability_scores.INT);  // Should be high (primary ability)
+```
 
 ---
 
