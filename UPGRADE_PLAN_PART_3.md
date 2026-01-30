@@ -1014,7 +1014,7 @@ Test Scenarios:
 
 ### Phase 7: Feature Prerequisites Expansion
 - [x] Update FeatureValidator for skills/spells/subrace
-- [ ] Update RacialTrait validation
+- [x] Update RacialTrait validation
 
 ### Phase 8: Documentation
 - [ ] Update DATA_ENGINE_REFERENCE.md
