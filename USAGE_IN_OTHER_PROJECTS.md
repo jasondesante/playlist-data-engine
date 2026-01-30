@@ -1658,6 +1658,374 @@ const character = CharacterGenerator.generate(seed, audio, 'Arctic Hero');
 // Character may now have frost_rage, snow_walker, or survival_cold skill!
 ```
 
+### Skills with Prerequisites
+
+Skills can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced skills that require base skills, specific features, spells, ability scores, level, class, or race.
+
+```typescript
+import { SkillRegistry, SkillValidator, CharacterGenerator } from 'playlist-data-engine';
+
+const registry = SkillRegistry.getInstance();
+
+// ===== SKILL WITH FEATURE PREREQUISITES =====
+// Dragon Smithing: Requires Draconic Bloodline feature
+const dragonSmithing: CustomSkill = {
+    id: 'dragon_smithing',
+    name: 'Dragon Smithing',
+    description: 'Craft weapons from dragon scales',
+    ability: 'INT',
+    prerequisites: {
+        features: ['draconic_bloodline'],  // Requires Sorcerer feature
+        level: 5,
+        class: 'Sorcerer'
+    },
+    source: 'custom'
+};
+
+registry.registerSkill(dragonSmithing);
+
+// ===== SKILL WITH ABILITY SCORE AND SKILL PREREQUISITES =====
+// Advanced Arcana: Requires INT 16 and proficiency in Arcana
+const advancedArcana: CustomSkill = {
+    id: 'advanced_arcana',
+    name: 'Advanced Arcana',
+    description: 'Cast complex spells and understand magical theory',
+    ability: 'INT',
+    prerequisites: {
+        abilities: { INT: 16 },  // Requires INT 16 or higher
+        skills: ['arcana'],       // Must already know Arcana
+        level: 7
+    },
+    source: 'custom'
+};
+
+registry.registerSkill(advancedArcana);
+
+// ===== SKILL WITH SPELL PREREQUISITES =====
+// Spell Mastery: Requires knowing specific spells first
+const spellMasterySkill: CustomSkill = {
+    id: 'spell_mastery',
+    name: 'Spell Mastery',
+    description: 'Improved control over known spells',
+    ability: 'INT',
+    prerequisites: {
+        spells: ['Fireball', 'Lightning Bolt'],  // Must know these spells
+        class: 'Wizard',
+        level: 10
+    },
+    source: 'custom'
+};
+
+registry.registerSkill(spellMasterySkill);
+
+// ===== SKILL WITH RACE PREREQUISITES =====
+// Dwarven Combat Training: Dwarf only
+const dwarvenCombat: CustomSkill = {
+    id: 'dwarven_warfare',
+    name: 'Dwarven Warfare',
+    description: 'Advanced dwarven combat techniques',
+    ability: 'STR',
+    prerequisites: {
+        race: 'Dwarf'
+    },
+    source: 'custom'
+};
+
+registry.registerSkill(dwarvenCombat);
+
+// ===== VALIDATING SKILL PREREQUISITES =====
+// Check if a character meets the requirements
+const character = CharacterGenerator.generate(seed, audioProfile, 'Hero');
+const skill = registry.getSkill('dragon_smithing');
+
+if (skill && skill.prerequisites) {
+    const result = SkillValidator.validateSkillPrerequisites(skill, character);
+
+    if (!result.valid) {
+        console.log('Unmet prerequisites:', result.unmet);
+        // Output example: ["Requires feature: draconic_bloodline", "Requires level 5 (current: 1)"]
+    }
+}
+
+// Skills with unmet prerequisites are automatically
+// filtered out during character generation
+```
+
+### Spells with Prerequisites
+
+Spells can have prerequisites that must be met before a spellcaster can learn them. This allows for specialized spells that require specific features, abilities, spells, skills, level, or class.
+
+```typescript
+import { SpellValidator, SpellManager, ExtensionManager } from 'playlist-data-engine';
+
+// ===== SPELL WITH FEATURE PREREQUISITES =====
+// Dragon Breath: Requires Draconic Bloodline feature
+const dragonBreath = {
+    id: 'dragon_breath',
+    name: 'Dragon Breath',
+    level: 3,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '60 ft cone',
+    components: ['V', 'S', 'M'],
+    duration: 'Instantaneous',
+    description: 'Exhale destructive energy',
+    prerequisites: {
+        features: ['dragon_bloodline'],
+        abilities: { CHA: 16 }
+    }
+};
+
+// ===== SPELL WITH LEVEL AND CLASS PREREQUISITES =====
+// Meteor Swarm: High-level evocation spell
+const limitedMeteorSwarm = {
+    id: 'limited_meteor_swarm',
+    name: 'Meteor Swarm',
+    level: 9,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '1 mile',
+    components: ['V', 'S'],
+    duration: 'Instantaneous',
+    description: 'Blazing orbs rain down',
+    prerequisites: {
+        level: 17,  // Character must be level 17+
+        class: 'Wizard',
+        spells: ['Fireball']  // Must know Fireball first
+    }
+};
+
+// ===== SPELL WITH SKILL PREREQUISITES =====
+// Arcane Sword: Requires Arcana proficiency
+const arcaneSwordSpell = {
+    id: 'arcane_sword',
+    name: 'Arcane Sword',
+    level: 5,
+    school: 'Evocation',
+    casting_time: '1 bonus action',
+    range: '60 ft',
+    components: ['V', 'S', 'M'],
+    duration: 'Concentration, 1 minute',
+    description: 'Summon a sword of pure magic',
+    prerequisites: {
+        skills: ['arcana']  // Requires Arcana proficiency
+    }
+};
+
+// ===== REGISTER CUSTOM SPELLS =====
+const manager = ExtensionManager.getInstance();
+manager.register('spells', [dragonBreath, limitedMeteorSwarm, arcaneSwordSpell]);
+
+// ===== VALIDATE SPELL PREREQUISITES =====
+const character = CharacterGenerator.generate(seed, audioProfile, 'Sorcerer');
+const spell = SPELL_DATABASE['dragon_breath'];
+
+if (spell.prerequisites) {
+    const result = SpellValidator.validateSpellPrerequisites(spell, character);
+
+    if (!result.valid) {
+        console.log('Cannot learn this spell:', result.unmet);
+    }
+}
+
+// During character generation, SpellManager automatically filters
+// out spells that have unmet prerequisites
+const knownSpells = SpellManager.getKnownSpells(
+    character.class,
+    character.level,
+    character  // Pass character for prerequisite filtering
+);
+// Only includes spells whose prerequisites are met
+```
+
+### Custom Races with Subraces
+
+The engine supports fully extensible custom races with optional subrace variants. Register custom race data and the engine will validate and use it during character generation.
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// ===== REGISTER CUSTOM RACE WITH SUBRACES =====
+// Step 1: Register the race name
+manager.register('races', ['Dragonkin'], { validate: true });
+
+// Step 2: Register the race data (ability bonuses, speed, traits, subraces)
+manager.register('races.data', [{
+    race: 'Dragonkin',
+    ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
+    speed: 30,
+    traits: ['Draconic Ancestry', 'Darkvision'],
+    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
+}]);
+
+// ===== REGISTER SUBRACE-SPECIFIC TRAITS =====
+// Fire Dragonkin only
+manager.register('racialTraits', [{
+    id: 'fire_dragonkin_resistance',
+    name: 'Fire Resistance',
+    description: 'Resistance to fire damage',
+    race: 'Dragonkin',
+    subrace: 'Fire Dragonkin',  // Only for this subrace
+    effects: [
+        { type: 'passive_modifier', target: 'fire_resistance', value: true }
+    ],
+    source: 'custom'
+}]);
+
+// Ice Dragonkin only
+manager.register('racialTraits', [{
+    id: 'ice_dragonkin_resistance',
+    name: 'Cold Resistance',
+    description: 'Resistance to cold damage',
+    race: 'Dragonkin',
+    subrace: 'Ice Dragonkin',
+    effects: [
+        { type: 'passive_modifier', target: 'cold_resistance', value: true }
+    ],
+    source: 'custom'
+}]);
+
+// ===== GENERATE CHARACTER WITH SUBRACE =====
+const character = CharacterGenerator.generate(seed, audioProfile, 'Pyro');
+// After generation, set the subrace
+character.subrace = 'Fire Dragonkin';
+
+// Character will have:
+// - Base Dragonkin traits (Draconic Ancestry, Darkvision)
+// - Subrace-specific traits (Fire Resistance)
+// - Correct ability bonuses (STR+2, CON+1, CHA+1)
+
+// ===== FEATURE WITH SUBRACE PREREQUISITE =====
+// Trait that requires a specific subrace
+manager.register('racialTraits', [{
+    id: 'inferno_breath',
+    name: 'Inferno Breath',
+    description: 'Breathe fire like a true red dragon',
+    race: 'Dragonkin',
+    subrace: 'Fire Dragonkin',
+    prerequisites: {
+        subrace: 'Fire Dragonkin',  // Must be Fire Dragonkin
+        level: 5
+    },
+    effects: [
+        { type: 'active_ability', target: 'fire_breath', value: '6d6' }
+    ],
+    source: 'custom'
+}]);
+```
+
+**Type Augmentation for Custom Races:**
+
+Since `Race` is a closed union, extend it in your project:
+
+```typescript
+// In your project's global types file
+import 'playlist-data-engine';
+
+declare module 'playlist-data-engine' {
+    type Race =
+        | 'Human' | 'Elf' | 'Dwarf'
+        | 'Dwarf' | 'Halfling' | 'Dragonborn' | 'Gnome'
+        | 'Half-Elf' | 'Half-Orc' | 'Tiefling'
+        | 'Dragonkin';  // Custom race
+}
+
+// Now TypeScript accepts 'Dragonkin' as a valid Race
+const dragonkinCharacter: CharacterSheet = {
+    // ...
+    race: 'Dragonkin'  // No TypeScript error!
+};
+```
+
+### Features with Skill/Spell Prerequisites
+
+Class features can now require skills or spells as prerequisites, in addition to the existing support for features, abilities, level, class, and race.
+
+```typescript
+import { FeatureRegistry, FeatureValidator } from 'playlist-data-engine';
+
+const registry = FeatureRegistry.getInstance();
+
+// ===== FEATURE REQUIRING SKILL PROFICIENCY =====
+// Arcane Smith: Requires Arcana skill proficiency
+const arcaneSmith = {
+    id: 'arcane_smith',
+    name: 'Arcane Smith',
+    description: 'Can enchant magical items',
+    type: 'passive',
+    level: 7,
+    class: 'Wizard',
+    prerequisites: {
+        skills: ['arcana'],  // Requires Arcana proficiency
+        level: 7
+    },
+    effects: [
+        { type: 'ability_unlock', target: 'item_enchantment', value: true }
+    ],
+    source: 'custom'
+};
+
+registry.registerClassFeature(arcaneSmith);
+
+// ===== FEATURE REQUIRING SPELL KNOWLEDGE =====
+// Spellblade: Requires knowing specific spells
+const spellblade = {
+    id: 'spellblade',
+    name: 'Spellblade',
+    description: 'Channel spells through your weapon',
+    type: 'active',
+    level: 10,
+    class: 'Eldritch Knight',
+    prerequisites: {
+        spells: ['Green-Flame Blade', 'Booming Blade'],
+        features: ['weapon_bond']
+    },
+    effects: [
+        { type: 'passive_modifier', target: 'spell_strike_damage', value: 4 }
+    ],
+    source: 'custom'
+};
+
+registry.registerClassFeature(spellblade);
+
+// ===== RACIAL TRAIT WITH SKILL PREREQUISITES =====
+// Elven Battle Training: Requires proficiency in a combat skill
+const elvenBattleTraining = {
+    id: 'elven_battle_training',
+    name: 'Elven Battle Training',
+    description: 'Advanced elven combat techniques',
+    type: 'active',
+    race: 'Elf',
+    prerequisites: {
+        skills: ['athletics', 'perception'],  // Must have both skills
+        level: 3
+    },
+    effects: [
+        { type: 'passive_modifier', target: 'initiative', value: 2 }
+    ],
+    source: 'custom'
+};
+
+registry.registerRacialTrait(elvenBattleTraining);
+
+// ===== VALIDATE FEATURE PREREQUISITES =====
+const character = CharacterGenerator.generate(seed, audioProfile, 'Elf Warrior');
+const feature = registry.getClassFeature('arcane_smith', character.level, character.class);
+
+if (feature && feature.prerequisites) {
+    const result = FeatureValidator.validatePrerequisites(feature.prerequisites, character);
+
+    if (!result.valid) {
+        console.log('Cannot learn feature:', result.unmet);
+    }
+}
+
+// Features with unmet prerequisites are automatically
+// excluded during character generation
+```
+
 ---
 
 ## Equipment System

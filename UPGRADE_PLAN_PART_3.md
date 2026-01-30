@@ -1018,7 +1018,7 @@ Test Scenarios:
 
 ### Phase 8: Documentation
 - [x] Update DATA_ENGINE_REFERENCE.md
-- [ ] Update USAGE_IN_OTHER_PROJECTS.md
+- [x] Update USAGE_IN_OTHER_PROJECTS.md
 - [ ] Create PREREQUISITES_AND_RACES.md
 
 ### Phase 9: Testing
