@@ -986,7 +986,7 @@ Test Scenarios:
 
 ### Phase 2: Interface Design
 - [x] Add SkillPrerequisite interface
-- [ ] Add SpellPrerequisite interface
+- [x] Add SpellPrerequisite interface
 - [ ] Add subrace property to CharacterSheet
 - [ ] Design race extensibility strategy
 
