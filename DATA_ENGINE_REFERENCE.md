@@ -13,7 +13,14 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
 4. [Environmental Sensors](#environmental-sensors)
 5. [Gaming Integration](#gaming-integration)
 6. [Combat System](#combat-system)
-7. [Extensibility System](#extensibility-system)
+7. [Equipment System](#equipment-system)
+   - [Equipment Types](#equipment-types)
+   - [Equipment Properties](#equipment-properties)
+   - [Equipment Effects](#equipment-effects)
+   - [Equipment Generator](#equipment-generator)
+   - [Equipment Modifier](#equipment-modifier)
+   - [Equipment Spawn Helper](#equipment-spawn-helper)
+8. [Extensibility System](#extensibility-system)
    - [ExtensionManager](#extensionmanager)
    - [FeatureRegistry](#featureregistry)
    - [SkillRegistry](#skillregistry)
@@ -2275,6 +2282,761 @@ Handles spell casting mechanics (spell slots, saving throws, spell damage).
     - Checks if a spell can be upcast (cast using higher-level slot)
 - `upcastSpell(caster: Combatant, spell: Spell, targets: Combatant[], slotLevelUsed: number): SpellCastResult`
     - Upcasts a spell using a higher-level spell slot
+
+---
+
+## Equipment System
+
+**Location:** `src/core/equipment/`, `src/core/types/Equipment.ts`, `src/core/generation/EquipmentGenerator.ts`
+
+The Advanced Equipment System transforms basic equipment into a comprehensive item system supporting equipment properties, effects, modifications, custom equipment, and batch spawning.
+
+### Overview
+
+The equipment system provides:
+- **Equipment Properties**: Stat bonuses, skill proficiencies, ability unlocks, passive modifiers, special properties, damage bonuses, spell grants
+- **Equipment Effects**: Automatic application/removal of effects when equipping/unequipping items
+- **Equipment-Granted Features**: Items can provide unique features or reference existing registry features
+- **D&D 5e Standard Stats**: All equipment populated with default damage dice, AC, and properties
+- **Custom Equipment Support**: ExtensionManager integration for custom equipment with full property support
+- **Runtime Equipment Modification**: Template-based items (Flaming Sword) + per-instance enchanting/upgrading
+- **Batch Spawning**: Helper functions for spawning equipment by rarity, tags, or randomly
+
+### Equipment Types
+
+#### `EquipmentProperty`
+
+Defines a single property that affects gameplay.
+
+```typescript
+interface EquipmentProperty {
+    type: EquipmentPropertyType;
+    target: string;
+    value: number | string | boolean;
+    condition?: EquipmentCondition;
+    description?: string;
+    stackable?: boolean;  // Default: true
+}
+```
+
+**Property Types:**
+- `stat_bonus` - Increases ability score (e.g., +2 STR)
+- `skill_proficiency` - Grants skill proficiency or expertise
+- `ability_unlock` - Unlocks special abilities (e.g., darkvision, flight)
+- `passive_modifier` - Modifies passive values (AC, speed, max_hp, saving_throws, etc.)
+- `special_property` - Game-specific properties (finesse, versatile, two-handed, stealth_disadvantage)
+- `damage_bonus` - Adds extra damage (fire, cold, lightning, etc.)
+- `spell_grant` - Grants spellcasting ability
+- `stat_requirement` - Minimum stat required to use item
+
+**Condition Types:**
+- `vs_creature_type` - Property applies vs specific creature type
+- `at_time_of_day` - Property applies at specific time (day/night/dawn/dusk)
+- `wielder_race` - Property applies only to specific race
+- `wielder_class` - Property applies only to specific class
+- `while_equipped` - Always true when equipped (default)
+- `on_hit` - Triggers when weapon hits
+- `on_damage_taken` - Triggers when wearer takes damage
+- `custom` - Game-defined condition
+
+#### `EnhancedEquipment`
+
+Extended equipment interface with advanced capabilities.
+
+```typescript
+interface EnhancedEquipment {
+    // Base Properties
+    name: string;
+    type: 'weapon' | 'armor' | 'item';
+    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    weight: number;
+
+    // Advanced Properties
+    properties?: EquipmentProperty[];
+
+    // Features granted when equipped (registry features or inline mini-features)
+    grantsFeatures?: Array<string | EquipmentMiniFeature>;
+
+    // Skills granted when equipped
+    grantsSkills?: Array<{
+        skillId: string;
+        level: 'proficient' | 'expertise';
+    }>;
+
+    // Spells granted when equipped
+    grantsSpells?: Array<{
+        spellId: string;
+        level?: number;
+        uses?: number;
+        recharge?: string;
+    }>;
+
+    // D&D 5e Stats
+    damage?: {
+        dice: string;          // e.g., "1d8", "2d6"
+        damageType: string;    // e.g., "slashing", "fire"
+        versatile?: string;    // e.g., "1d10" if used two-handed
+    };
+    acBonus?: number;
+    weaponProperties?: string[];
+
+    // Spawn weight (0 = never random, still available to game logic)
+    spawnWeight?: number;
+
+    // Template support
+    templateId?: string;
+
+    // Source tracking
+    source: 'default' | 'custom';
+    tags?: string[];
+}
+```
+
+#### `EquipmentModification`
+
+Runtime modification to equipment (enchanting, curses, upgrades).
+
+```typescript
+interface EquipmentModification {
+    id: string;
+    name: string;
+    properties: EquipmentProperty[];
+    addsFeatures?: Array<string | EquipmentMiniFeature>;
+    addsSkills?: Array<{
+        skillId: string;
+        level: 'proficient' | 'expertise';
+    }>;
+    addsSpells?: Array<{
+        spellId: string;
+        level?: number;
+        uses?: number;
+        recharge?: string;
+    }>;
+    appliedAt: string;
+    source: string;
+}
+```
+
+#### `EnhancedInventoryItem`
+
+Inventory item with per-instance modifications.
+
+```typescript
+interface EnhancedInventoryItem {
+    name: string;
+    quantity: number;
+    equipped: boolean;
+
+    // Per-instance modifications
+    modifications?: EquipmentModification[];
+
+    // Template ID (if created from a template)
+    templateId?: string;
+
+    // Unique instance ID for tracking
+    instanceId?: string;
+}
+```
+
+### Equipment Properties
+
+All equipment effects stack by default. Multiple items with the same effect will combine:
+- Two +1 STR items = +2 STR total
+- Two +1 AC items = +2 AC total
+
+**Property Examples:**
+
+```typescript
+// Stat Bonus
+{
+    type: 'stat_bonus',
+    target: 'STR',
+    value: 2,
+    description: '+2 Strength'
+}
+
+// Skill Proficiency with Expertise
+{
+    type: 'skill_proficiency',
+    target: 'stealth',
+    value: 'expertise',
+    description: 'Stealth expertise'
+}
+
+// Conditional Damage (vs dragons)
+{
+    type: 'damage_bonus',
+    target: 'dragon',
+    value: '3d6',
+    description: '+3d6 damage vs dragons',
+    condition: { type: 'vs_creature_type', value: 'dragon' }
+}
+
+// Passive Modifier (stacking)
+{
+    type: 'passive_modifier',
+    target: 'ac',
+    value: 2,
+    description: '+2 AC',
+    stackable: true
+}
+
+// Time-based Condition
+{
+    type: 'damage_bonus',
+    target: 'radiant',
+    value: '1d6',
+    description: '+1d6 radiant damage at night',
+    condition: { type: 'at_time_of_day', value: 'night' }
+}
+```
+
+### Equipment Effects
+
+The `EquipmentEffectApplier` class handles automatic application and removal of equipment effects.
+
+**Location:** `src/core/equipment/EquipmentEffectApplier.ts`
+
+#### Class: `EquipmentEffectApplier`
+
+```typescript
+class EquipmentEffectApplier {
+    // Apply all effects from equipping an item
+    static equipItem(
+        character: CharacterSheet,
+        equipment: EnhancedEquipment,
+        instanceId?: string
+    ): EffectApplicationResult;
+
+    // Remove all effects from unequipping an item
+    static unequipItem(
+        character: CharacterSheet,
+        equipmentName: string,
+        instanceId?: string
+    ): EffectApplicationResult;
+
+    // Re-apply all equipment effects (for updates/level-ups)
+    static reapplyEquipmentEffects(
+        character: CharacterSheet
+    ): EffectApplicationResult;
+
+    // Get all active equipment effects
+    static getActiveEffects(
+        character: CharacterSheet
+    ): EquipmentProperty[];
+}
+```
+
+**Character Equipment Effects Structure:**
+
+```typescript
+interface CharacterSheet {
+    equipment_effects?: {
+        source: string;              // Equipment name
+        instanceId?: string;         // For per-instance tracking
+        effects: EquipmentProperty[]; // Properties from this item
+        features: EquipmentFeature[]; // Features granted by this item
+        skills: EquipmentSkill[];    // Skills granted by this item
+        spells?: Array<{             // Spells granted by this item
+            spellId: string;
+            level?: number;
+            uses?: number;
+            recharge?: string;
+        }>;
+    }[];
+}
+```
+
+### Equipment Generator
+
+**Location:** `src/core/generation/EquipmentGenerator.ts`
+
+Manages equipment inventory and equipping/unequipping items.
+
+#### Class: `EquipmentGenerator`
+
+```typescript
+class EquipmentGenerator {
+    // Get starting equipment for a class
+    static getStartingEquipment(
+        characterClass: Class
+    ): { weapons: string[]; armor: string[]; items: string[] };
+
+    // Initialize equipment for a new character
+    static initializeEquipment(
+        characterClass: Class
+    ): CharacterEquipment;
+
+    // Add item to inventory
+    static addItem(
+        equipment: CharacterEquipment,
+        itemName: string,
+        quantity?: number,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Remove item from inventory
+    static removeItem(
+        equipment: CharacterEquipment,
+        itemName: string,
+        quantity?: number,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Equip an item and apply its effects
+    static equipItem(
+        equipment: CharacterEquipment,
+        itemName: string,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Unequip an item and remove its effects
+    static unequipItem(
+        equipment: CharacterEquipment,
+        itemName: string,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Get equipment data by name
+    static getEquipmentData(
+        itemName: string
+    ): EnhancedEquipment | undefined;
+
+    // Add modification to equipment
+    static addModification(
+        equipment: CharacterEquipment,
+        itemName: string,
+        modification: EquipmentModification,
+        instanceId?: string,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Remove modification from equipment
+    static removeModification(
+        equipment: CharacterEquipment,
+        itemName: string,
+        modificationId: string,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Get active effects from an item
+    static getActiveEffects(
+        equipment: CharacterEquipment,
+        itemName: string,
+        instanceId?: string
+    ): EquipmentProperty[];
+
+    // Get inventory list
+    static getInventoryList(
+        equipment: CharacterEquipment
+    ): EnhancedInventoryItem[];
+
+    // Get equipment by type
+    static getEquipmentByType(
+        equipment: CharacterEquipment,
+        type: 'weapons' | 'armor' | 'items'
+    ): EnhancedInventoryItem[];
+}
+```
+
+### Equipment Modifier
+
+**Location:** `src/core/equipment/EquipmentModifier.ts`
+
+Handles runtime equipment modifications including enchanting, cursing, and upgrading.
+
+#### Class: `EquipmentModifier`
+
+```typescript
+class EquipmentModifier {
+    // Enchant equipment with new properties
+    static enchant(
+        equipment: CharacterEquipment,
+        itemName: string,
+        enchantment: EquipmentModification,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Apply a template modification
+    static applyTemplate(
+        equipment: CharacterEquipment,
+        itemName: string,
+        templateId: string,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Curse equipment with negative effects
+    static curse(
+        equipment: CharacterEquipment,
+        itemName: string,
+        curse: EquipmentModification,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Upgrade equipment (improve existing properties)
+    static upgrade(
+        equipment: CharacterEquipment,
+        itemName: string,
+        upgrade: EquipmentModification,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Remove a modification
+    static removeModification(
+        equipment: CharacterEquipment,
+        itemName: string,
+        modificationId: string,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Get modification history
+    static getModificationHistory(
+        equipment: CharacterEquipment,
+        itemName: string
+    ): EquipmentModification[];
+
+    // Get combined effects (base + modifications)
+    static getCombinedEffects(
+        equipment: CharacterEquipment,
+        itemName: string,
+        instanceId?: string
+    ): EquipmentProperty[];
+
+    // Check if item has a specific template
+    static hasTemplate(
+        equipment: CharacterEquipment,
+        itemName: string,
+        templateId: string
+    ): boolean;
+
+    // Disenchant (remove enchantments, keep curses)
+    static disenchant(
+        equipment: CharacterEquipment,
+        itemName: string,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Lift curse (remove curses, keep enchantments)
+    static liftCurse(
+        equipment: CharacterEquipment,
+        itemName: string,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    // Factory: Create modification
+    static createModification(
+        id: string,
+        name: string,
+        properties: EquipmentProperty[],
+        source: string
+    ): EquipmentModification;
+
+    // Factory: Generate unique modification ID
+    static generateModificationId(prefix?: string): string;
+}
+```
+
+### Equipment Spawn Helper
+
+**Location:** `src/core/equipment/EquipmentSpawnHelper.ts`
+
+Batch spawning utilities for equipment.
+
+#### Class: `EquipmentSpawnHelper`
+
+```typescript
+class EquipmentSpawnHelper {
+    // Spawn items from list of names
+    static spawnFromList(
+        itemNames: string[],
+        rng?: SeededRNG
+    ): (EnhancedEquipment | undefined)[];
+
+    // Spawn items by rarity
+    static spawnByRarity(
+        rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary',
+        count: number,
+        rng?: SeededRNG
+    ): EnhancedEquipment[];
+
+    // Spawn items by tags
+    static spawnByTags(
+        tags: string[],
+        count: number,
+        rng?: SeededRNG,
+        options?: SpawnRandomOptions
+    ): EnhancedEquipment[];
+
+    // Spawn random equipment (respects weights)
+    static spawnRandom(
+        count: number,
+        rng: SeededRNG,
+        options?: SpawnRandomOptions
+    ): EnhancedEquipment[];
+
+    // Spawn from template
+    static spawnFromTemplate(
+        templateId: string,
+        baseItemName?: string
+    ): EnhancedEquipment | null;
+
+    // Spawn treasure hoard
+    static spawnTreasureHoard(
+        cr: number,
+        rng: SeededRNG
+    ): TreasureHoardResult;
+
+    // Add spawned equipment to character
+    static addToCharacter(
+        character: CharacterSheet,
+        items: EnhancedEquipment[],
+        equip?: boolean
+    ): CharacterSheet;
+}
+```
+
+**Spawn Options:**
+
+```typescript
+interface SpawnRandomOptions {
+    excludeZeroWeight?: boolean;  // Exclude items with spawnWeight: 0
+    includeTypes?: ('weapon' | 'armor' | 'item')[];
+    minRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    maxRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+}
+```
+
+**Treasure Hoard Result:**
+
+```typescript
+interface TreasureHoardResult {
+    items: EnhancedEquipment[];
+    cr: number;
+    totalValue: number;  // Estimated gold value
+}
+```
+
+### Equipment Validator
+
+**Location:** `src/core/equipment/EquipmentValidator.ts`
+
+Validates equipment data structures.
+
+```typescript
+class EquipmentValidator {
+    // Validate a complete equipment object
+    static validateEquipment(
+        equipment: EnhancedEquipment
+    ): EquipmentValidationResult;
+
+    // Validate a single equipment property
+    static validateProperty(
+        property: EquipmentProperty
+    ): EquipmentValidationResult;
+
+    // Validate feature reference
+    static validateEquipmentFeatureReference(
+        featureId: string
+    ): boolean;
+
+    // Validate skill reference
+    static validateEquipmentSkillReference(
+        skillId: string
+    ): boolean;
+
+    // Validate damage info
+    static validateDamageInfo(
+        damage: EnhancedEquipment['damage']
+    ): EquipmentValidationResult;
+
+    // Validate spawn weight
+    static validateSpawnWeight(
+        weight: number
+    ): EquipmentValidationResult;
+
+    // Validate modification
+    static validateModification(
+        modification: EquipmentModification
+    ): EquipmentValidationResult;
+}
+
+interface EquipmentValidationResult {
+    valid: boolean;
+    errors?: string[];
+}
+```
+
+### Usage Examples
+
+#### Example 1: Register Custom Equipment with Stat Bonus
+
+```typescript
+import { ExtensionManager } from './src/core/extensions/ExtensionManager.js';
+import type { EnhancedEquipment } from './src/core/types/Equipment.js';
+
+const beltOfGiantStrength: EnhancedEquipment = {
+    name: 'Belt of Giant Strength',
+    type: 'item',
+    rarity: 'rare',
+    weight: 1,
+    properties: [
+        {
+            type: 'stat_bonus',
+            target: 'STR',
+            value: 2,
+            description: '+2 Strength (max 22)'
+        }
+    ],
+    spawnWeight: 0.2,
+    source: 'custom',
+    tags: ['magic', 'wondrous', 'strength']
+};
+
+const manager = ExtensionManager.getInstance();
+manager.register('equipment', [beltOfGiantStrength], {
+    mode: 'relative',
+    weights: { 'Belt of Giant Strength': 0.5 },
+    validate: true
+});
+```
+
+#### Example 2: Magic Weapon with Fire Damage
+
+```typescript
+const flameTongue: EnhancedEquipment = {
+    name: 'Flame Tongue',
+    type: 'weapon',
+    rarity: 'rare',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing' },
+    properties: [
+        {
+            type: 'damage_bonus',
+            target: 'fire',
+            value: '1d6',
+            description: '+1d6 fire damage'
+        }
+    ],
+    grantsFeatures: ['fire_resistance'],
+    spawnWeight: 0.1,
+    source: 'custom',
+    tags: ['magic', 'fire', 'weapon']
+};
+
+manager.register('equipment', [flameTongue]);
+```
+
+#### Example 3: Item That Grants Skills
+
+```typescript
+const bootsOfElvenkind: EnhancedEquipment = {
+    name: 'Boots of Elvenkind',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 1,
+    grantsSkills: [
+        { skillId: 'stealth', level: 'expertise' }
+    ],
+    spawnWeight: 0.3,
+    source: 'custom',
+    tags: ['magic', 'boots', 'stealth']
+};
+```
+
+#### Example 4: Conditional Effects (vs Dragons)
+
+```typescript
+const dragonSlayingSword: EnhancedEquipment = {
+    name: 'Dragonslayer Longsword',
+    type: 'weapon',
+    rarity: 'very_rare',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing' },
+    properties: [
+        {
+            type: 'damage_bonus',
+            target: 'dragon',
+            value: '3d6',
+            description: '+3d6 damage vs dragons',
+            condition: { type: 'vs_creature_type', value: 'dragon' }
+        }
+    ],
+    spawnWeight: 0.05,
+    source: 'custom',
+    tags: ['magic', 'weapon', 'dragon_slaying']
+};
+```
+
+#### Example 5: Enchanting Equipment at Runtime
+
+```typescript
+import { EquipmentModifier } from './src/core/equipment/EquipmentModifier.js';
+
+// Create +1 enchantment
+const plusOneEnchantment = EquipmentModifier.createModification(
+    'plus_one_001',
+    '+1 Longsword',
+    [
+        {
+            type: 'passive_modifier',
+            target: 'attack_roll',
+            value: 1,
+            description: '+1 to attack rolls'
+        }
+    ],
+    'enchantment'
+);
+
+// Apply to character's weapon
+const updatedEquipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Longsword',
+    plusOneEnchantment,
+    character
+);
+```
+
+#### Example 6: Batch Spawning Treasure
+
+```typescript
+import { EquipmentSpawnHelper } from './src/core/equipment/EquipmentSpawnHelper.js';
+import { SeededRNG } from './src/core/randomness/SeededRNG.js';
+
+// Spawn treasure hoard
+const rng = new SeededRNG('dragon_hoard_123');
+const hoard = EquipmentSpawnHelper.spawnTreasureHoard(15, rng);
+
+console.log(`Generated ${hoard.items.length} items worth ~${hoard.totalValue} gp`);
+
+// Add to character
+character = EquipmentSpawnHelper.addToCharacter(character, hoard.items, false);
+```
+
+#### Example 7: Game-Only Item (spawnWeight: 0)
+
+```typescript
+const vorpalSword: EnhancedEquipment = {
+    name: 'Vorpal Sword',
+    type: 'weapon',
+    rarity: 'legendary',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing' },
+    properties: [
+        {
+            type: 'special_property',
+            target: 'vorpal_decapitation',
+            value: true,
+            description: 'Decapitates on nat 20 vs creatures with heads'
+        }
+    ],
+    spawnWeight: 0,  // Never spawns randomly - only via game logic
+    source: 'custom',
+    tags: ['artifact', 'legendary', 'vorpal']
+};
+
+// Can still be spawned directly:
+const sword = EquipmentSpawnHelper.spawnFromList(['Vorpal Sword']);
+```
 
 ---
 

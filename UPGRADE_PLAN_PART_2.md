@@ -1997,12 +1997,12 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
 
 ### Phase 11: Documentation
 - [x] Write EQUIPMENT_SYSTEM.md (comprehensive reference)
-- [ ] Update DATA_ENGINE_REFERENCE.md:
-  - [ ] Add complete equipment system reference section
-  - [ ] Document all EquipmentProperty types with examples
-  - [ ] Document EquipmentGenerator, EquipmentModifier, EquipmentSpawnHelper APIs
-  - [ ] Cross-check that all features from original upgrade plan are documented
-  - [ ] Add code examples for every property type and API method
+- [x] Update DATA_ENGINE_REFERENCE.md:
+  - [x] Add complete equipment system reference section
+  - [x] Document all EquipmentProperty types with examples
+  - [x] Document EquipmentGenerator, EquipmentModifier, EquipmentSpawnHelper APIs
+  - [x] Cross-check that all features from original upgrade plan are documented
+  - [x] Add code examples for every property type and API method
 - [ ] Update USAGE_IN_OTHER_PROJECTS.md with extensive examples:
   - [ ] Registering custom equipment
   - [ ] Giving a sword fire damage (2 methods)
