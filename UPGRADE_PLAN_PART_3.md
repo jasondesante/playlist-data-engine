@@ -1024,8 +1024,8 @@ Test Scenarios:
 - [x] Write unit tests for skill prerequisites
 
 ### Phase 9: Testing
-^- [x] Write unit tests for skill prerequisites
-- [ ] Write unit tests for spell prerequisites
+- [x] Write unit tests for skill prerequisites
+- [x] Write unit tests for spell prerequisites
 - [ ] Write unit tests for custom races
 - [ ] Write unit tests for subraces (NEW)
 - [ ] Write integration tests

@@ -264,6 +264,11 @@ export class SpellValidator {
             errors.push('Prerequisite class must be a string');
         }
 
+        // Validate race (must be string)
+        if (p.race !== undefined && typeof p.race !== 'string') {
+            errors.push('Prerequisite race must be a string');
+        }
+
         // Validate features (must be array of strings)
         if (p.features !== undefined) {
             if (!Array.isArray(p.features)) {
@@ -358,6 +363,11 @@ export class SpellValidator {
         // Check class requirement
         if (prerequisites.class !== undefined && character.class !== prerequisites.class) {
             unmet.push(`Requires ${prerequisites.class} class (current: ${character.class})`);
+        }
+
+        // Check race requirement
+        if (prerequisites.race !== undefined && character.race !== prerequisites.race) {
+            unmet.push(`Requires ${prerequisites.race} race (current: ${character.race})`);
         }
 
         // Check feature prerequisites (features that must be learned first)
