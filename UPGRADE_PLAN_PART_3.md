@@ -871,12 +871,12 @@ FeatureRegistry.getInstance().registerClassFeature(arcaneMastery);
 **File:** `tests/unit/skillPrerequisites.test.ts`
 
 Test Coverage:
-- [ ] Validate skill prerequisites (level, abilities, class, race, skills, features, spells)
-- [ ] Reject skills with unmet prerequisites
-- [ ] Skills with no prerequisites always available
-- [ ] Multiple prerequisite types combined (AND logic)
-- [ ] SkillAssigner filters skills by prerequisites
-- [ ] Dragon-only skills (feature-based)
+- [x] Validate skill prerequisites (level, abilities, class, race, skills, features, spells)
+- [x] Reject skills with unmet prerequisites
+- [x] Skills with no prerequisites always available
+- [x] Multiple prerequisite types combined (AND logic)
+- [x] SkillAssigner filters skills by prerequisites
+- [x] Dragon-only skills (feature-based)
 
 **File:** `tests/unit/spellPrerequisites.test.ts`
 
@@ -1021,8 +1021,10 @@ Test Scenarios:
 - [x] Update USAGE_IN_OTHER_PROJECTS.md
 - [x] Create PREREQUISITES_AND_RACES.md
 
+- [x] Write unit tests for skill prerequisites
+
 ### Phase 9: Testing
-- [ ] Write unit tests for skill prerequisites
+^- [x] Write unit tests for skill prerequisites
 - [ ] Write unit tests for spell prerequisites
 - [ ] Write unit tests for custom races
 - [ ] Write unit tests for subraces (NEW)
