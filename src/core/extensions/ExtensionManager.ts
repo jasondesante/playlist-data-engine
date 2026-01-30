@@ -14,6 +14,7 @@
  */
 
 import type { Race, Class, Ability } from '../types/Character.js';
+import { DEFAULT_CLASSES, isValidClass } from '../types/Character.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import { FeatureValidator, validateClassFeature, validateRacialTrait } from '../features/FeatureValidator.js';
@@ -513,10 +514,9 @@ export class ExtensionManager {
                 errors.push(`${prefix} Race 'subraces' must be an array of strings (if provided)`);
             }
         } else if (category === 'classes') {
-            // Classes must be a valid Class type
-            const validClasses: Class[] = ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard'];
-            if (!validClasses.includes(item)) {
-                errors.push(`${prefix} Invalid class (must be one of: ${validClasses.join(', ')})`);
+            // Classes must be a valid Class type (default or custom)
+            if (!isValidClass(item)) {
+                errors.push(`${prefix} Invalid class (must be one of: ${DEFAULT_CLASSES.join(', ')} or a custom class registered via 'classes.data')`);
             }
         } else if (category.startsWith('appearance.')) {
             // Appearance items must be strings

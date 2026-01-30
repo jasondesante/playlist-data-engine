@@ -191,7 +191,7 @@ export function getRaceData(race: string): RaceDataEntry | undefined {
 }
 
 // Class data with primary abilities and hit dice
-export const CLASS_DATA: Record<Class, {
+export const CLASS_DATA: Record<string, {
     primary_ability: Ability;
     hit_die: number;
     saving_throws: Ability[];
@@ -330,7 +330,7 @@ export const CLASS_DATA: Record<Class, {
  * Used by ClassSuggester for affinity-based class selection.
  * Part of Phase 9: ClassSuggester Rewrite with baseline system.
  */
-export const CLASS_AUDIO_PREFERENCES: Record<Class, {
+export const CLASS_AUDIO_PREFERENCES: Record<string, {
     primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
     secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
     tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
@@ -458,18 +458,18 @@ export const ALL_RACES: Race[] = [
 
 // All classes in order
 export const ALL_CLASSES: Class[] = [
-    'Barbarian',
-    'Bard',
-    'Cleric',
-    'Druid',
-    'Fighter',
-    'Monk',
-    'Paladin',
-    'Ranger',
-    'Rogue',
-    'Sorcerer',
-    'Warlock',
-    'Wizard',
+    'Barbarian' as Class,
+    'Bard' as Class,
+    'Cleric' as Class,
+    'Druid' as Class,
+    'Fighter' as Class,
+    'Monk' as Class,
+    'Paladin' as Class,
+    'Ranger' as Class,
+    'Rogue' as Class,
+    'Sorcerer' as Class,
+    'Warlock' as Class,
+    'Wizard' as Class,
 ];
 
 // Adjective mapping for NamingEngine
@@ -993,7 +993,7 @@ export interface Equipment {
 /**
  * Starting equipment by class - D&D 5e standard
  */
-export const CLASS_STARTING_EQUIPMENT: Record<Class, {
+export const CLASS_STARTING_EQUIPMENT: Record<string, {
     weapons: string[];
     armor: string[];
     items: string[];

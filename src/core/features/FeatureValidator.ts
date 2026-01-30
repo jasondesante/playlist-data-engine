@@ -13,6 +13,7 @@
 
 import type { ClassFeature, RacialTrait, FeatureEffect, FeaturePrerequisite } from './FeatureTypes.js';
 import type { Class, Race, Ability } from '../types/Character.js';
+import { DEFAULT_CLASSES, isValidClass } from '../types/Character.js';
 
 /**
  * Validation result interface
@@ -50,21 +51,10 @@ const VALID_EFFECT_TYPES: ReadonlyArray<string> = [
 
 /**
  * Valid D&D 5e classes
+ *
+ * Use isValidClass() from '../types/Character.js' to validate custom classes.
  */
-const VALID_CLASSES: ReadonlyArray<string> = [
-    'Barbarian',
-    'Bard',
-    'Cleric',
-    'Druid',
-    'Fighter',
-    'Monk',
-    'Paladin',
-    'Ranger',
-    'Rogue',
-    'Sorcerer',
-    'Warlock',
-    'Wizard'
-] as const;
+const VALID_CLASSES: ReadonlyArray<string> = DEFAULT_CLASSES;
 
 /**
  * Valid D&D 5e races
@@ -166,8 +156,8 @@ export class FeatureValidator {
 
         if (!f.class || typeof f.class !== 'string') {
             errors.push('Feature must have a class (string)');
-        } else if (!VALID_CLASSES.includes(f.class)) {
-            errors.push(`Invalid class: "${f.class}". Must be one of: ${VALID_CLASSES.join(', ')}`);
+        } else if (!isValidClass(f.class)) {
+            errors.push(`Invalid class: "${f.class}". Must be one of: ${DEFAULT_CLASSES.join(', ')} or a custom class registered via ExtensionManager.`);
         }
 
         if (typeof f.level !== 'number') {
@@ -469,8 +459,8 @@ export class FeatureValidator {
         if (p.class !== undefined) {
             if (typeof p.class !== 'string') {
                 errors.push('Prerequisite class must be a string');
-            } else if (!VALID_CLASSES.includes(p.class)) {
-                errors.push(`Invalid prerequisite class: "${p.class}". Must be one of: ${VALID_CLASSES.join(', ')}`);
+            } else if (!isValidClass(p.class)) {
+                errors.push(`Invalid prerequisite class: "${p.class}". Must be one of: ${DEFAULT_CLASSES.join(', ')} or a custom class registered via ExtensionManager.`);
             }
         }
 

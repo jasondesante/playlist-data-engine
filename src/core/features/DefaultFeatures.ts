@@ -8,6 +8,7 @@
  */
 
 import type { ClassFeature, RacialTrait } from './FeatureTypes.js';
+import type { Class } from '../types/Character.js';
 
 /**
  * Default Class Features for all 12 D&D 5e classes
@@ -25,7 +26,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'In battle, you fight with primal fury. On your turn, you can enter a rage as a bonus action. While raging, you gain the following benefits if you aren\'t wearing heavy armor: Advantage on Strength checks and Strength saving throws, +2 damage bonus with melee weapons using Strength, resistance to bludgeoning, piercing, and slashing damage.',
         type: 'active',
         level: 1,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         effects: [
             { type: 'stat_bonus', target: 'melee_damage', value: 2, condition: 'while raging' }
         ],
@@ -38,7 +39,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'While you are not wearing any armor, your Armor Class equals 10 + your Dexterity modifier + your Constitution modifier.',
         type: 'passive',
         level: 1,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         source: 'default',
         tags: ['defense']
     },
@@ -48,7 +49,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can throw aside all concern for defense to attack with fierce desperation. When you make your first attack on your turn, you can decide to attack recklessly. Doing so gives you advantage on melee weapon attack rolls using Strength during this turn, but attack rolls against you have advantage until your next turn.',
         type: 'active',
         level: 2,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -58,7 +59,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You gain an uncanny sense of when things nearby aren\'t as they should be, giving you edge when you attempt to dodge a danger or react to a hidden threat. You have advantage on Dexterity saving throws against effects that you can see, such as traps and spells.',
         type: 'passive',
         level: 2,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         source: 'default',
         tags: ['defense', 'perception']
     },
@@ -68,7 +69,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can attack twice, instead of once, whenever you take the Attack action on your turn.',
         type: 'passive',
         level: 5,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -78,7 +79,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Your speed increases by 10 feet while you aren\'t wearing heavy armor.',
         type: 'passive',
         level: 5,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         effects: [
             { type: 'passive_modifier', target: 'speed', value: 10, condition: 'unarmored' }
         ],
@@ -91,7 +92,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Your instincts are so honed that you have advantage on initiative rolls. Additionally, if you are surprised at the start of combat and aren\'t incapacitated, you can act normally on your first turn.',
         type: 'passive',
         level: 7,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         source: 'default',
         tags: ['combat', 'perception']
     },
@@ -101,7 +102,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you score a critical hit with a melee weapon attack, you can roll one of the weapon\'s damage dice one additional time and add it to the extra damage of the critical hit.',
         type: 'passive',
         level: 9,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         source: 'default',
         tags: ['combat', 'damage']
     },
@@ -111,7 +112,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. You can\'t use this feature again until you finish a long rest.',
         type: 'active',
         level: 11,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         source: 'default',
         tags: ['survival']
     },
@@ -121,7 +122,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Your rage can\'t end early due to fatigue.',
         type: 'passive',
         level: 11,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -131,7 +132,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Your Strength score increases by 4, and your maximum for that score becomes 24.',
         type: 'passive',
         level: 18,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         effects: [
             { type: 'stat_bonus', target: 'STR', value: 4 },
             { type: 'passive_modifier', target: 'STR_max', value: 24 }
@@ -145,7 +146,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Your Strength and Constitution scores increase by 4, and your maximum for those scores becomes 24.',
         type: 'passive',
         level: 20,
-        class: 'Barbarian',
+        class: 'Barbarian' as Class,
         effects: [
             { type: 'stat_bonus', target: 'STR', value: 4 },
             { type: 'stat_bonus', target: 'CON', value: 4 },
@@ -165,7 +166,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can inspire others through stirring words or music. To do so, you use a bonus action on your turn to choose one creature other than yourself within 60 feet of you who can hear you. That creature gains one Bardic Inspiration die, a d6.',
         type: 'resource',
         level: 1,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['support', 'resource']
     },
@@ -175,7 +176,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can add half your proficiency bonus, rounded down, to any ability check you make that doesn\'t already include your proficiency bonus.',
         type: 'passive',
         level: 2,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['skill']
     },
@@ -185,7 +186,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can use soothing music or oration to help revitalize your wounded allies during a short rest. If you or any friendly creatures who can hear your performance regain hit points at the end of the short rest, each of those creatures regains an extra 1d6 hit points.',
         type: 'passive',
         level: 2,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['healing', 'support']
     },
@@ -195,7 +196,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 3rd level, you delve into the advanced techniques of a bard college of your choice. Your choice grants you features at 3rd level and again at 6th and 14th level.',
         type: 'passive',
         level: 3,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['subclass']
     },
@@ -205,7 +206,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Whenever you reach a level in this class that grants the Ability Score Improvement feature, you can do one of the following: Replace one of your skills with another skill from the bard list, gain proficiency in one skill of your choice, gain proficiency with one musical instrument of your choice, or gain proficiency with one tool of your choice.',
         type: 'passive',
         level: 4,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['skill', 'proficiency']
     },
@@ -215,7 +216,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you roll initiative and have no uses of Bardic Inspiration left, you regain one use.',
         type: 'passive',
         level: 5,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['resource']
     },
@@ -225,7 +226,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You gain the ability to use musical notes or words of power to disrupt mind-influencing effects. As an action, you can start a performance that lasts until the end of your next turn. During that time, you and any friendly creatures within 30 feet of you have advantage on saving throws against being frightened or charmed.',
         type: 'active',
         level: 6,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['support', 'defense']
     },
@@ -235,7 +236,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you roll initiative and have no uses of Bardic Inspiration left, you regain two uses.',
         type: 'passive',
         level: 10,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['resource']
     },
@@ -245,7 +246,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You learn two spells of your choice from any class. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip. The chosen spells count as bard spells for you.',
         type: 'passive',
         level: 10,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['magic']
     },
@@ -255,7 +256,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you speak to a creature for the first time, you can choose one creature. That creature has disadvantage on attack rolls against you for 1 minute.',
         type: 'active',
         level: 14,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['social', 'defense']
     },
@@ -265,7 +266,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You learn two spells of your choice from any class.',
         type: 'passive',
         level: 14,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['magic']
     },
@@ -275,7 +276,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Your Bardic Inspiration die changes to a d8.',
         type: 'passive',
         level: 15,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['resource']
     },
@@ -285,7 +286,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You learn two spells of your choice from any class.',
         type: 'passive',
         level: 18,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['magic']
     },
@@ -295,7 +296,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Your Bardic Inspiration die changes to a d10.',
         type: 'passive',
         level: 20,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['resource']
     },
@@ -305,7 +306,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you roll initiative and have no uses of Bardic Inspiration left, you regain three uses.',
         type: 'passive',
         level: 20,
-        class: 'Bard',
+        class: 'Bard' as Class,
         source: 'default',
         tags: ['resource']
     },
@@ -319,7 +320,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Choose one domain related to your deity: Knowledge, Life, Light, Nature, Tempest, Trickery, or War. Each domain grants domain spells and other features at levels 1, 2, 6, 8, and 17.',
         type: 'passive',
         level: 1,
-        class: 'Cleric',
+        class: 'Cleric' as Class,
         source: 'default',
         tags: ['subclass', 'magic']
     },
@@ -329,7 +330,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can call on your deity to intervene on your behalf. Your deity intervenes by causing a effect related to their portfolio. You can use this feature once between long rests.',
         type: 'active',
         level: 10,
-        class: 'Cleric',
+        class: 'Cleric' as Class,
         source: 'default',
         tags: ['magic', 'divine']
     },
@@ -339,7 +340,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When an undead fails its saving throw against your Turn Undead feature, the creature is instantly destroyed if its challenge rating is at or below a threshold shown on the Cleric table.',
         type: 'passive',
         level: 5,
-        class: 'Cleric',
+        class: 'Cleric' as Class,
         source: 'default',
         tags: ['combat', 'divine']
     },
@@ -349,7 +350,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can use Divine Intervention twice between long rests.',
         type: 'active',
         level: 20,
-        class: 'Cleric',
+        class: 'Cleric' as Class,
         source: 'default',
         tags: ['magic', 'divine']
     },
@@ -363,7 +364,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You know Druidic, the secret language of druids. You can speak the language and use it to leave hidden messages. You and others who know this language automatically spot such a message. Others spot the message\'s presence with a successful DC 15 Wisdom (Perception) check but can\'t decipher it without magic.',
         type: 'passive',
         level: 1,
-        class: 'Druid',
+        class: 'Druid' as Class,
         source: 'default',
         tags: ['language', 'secret']
     },
@@ -373,7 +374,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can use your action to magically assume the shape of a beast that you have seen before. You can transform into a beast with a challenge rating as shown on the Druid table.',
         type: 'active',
         level: 2,
-        class: 'Druid',
+        class: 'Druid' as Class,
         source: 'default',
         tags: ['magic', 'shapeshifting']
     },
@@ -383,7 +384,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can transform into a beast with a challenge rating up to 1.',
         type: 'passive',
         level: 2,
-        class: 'Druid',
+        class: 'Druid' as Class,
         source: 'default',
         tags: ['magic', 'shapeshifting']
     },
@@ -393,7 +394,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 2nd level, you choose to identify with a circle of druids. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level.',
         type: 'passive',
         level: 2,
-        class: 'Druid',
+        class: 'Druid' as Class,
         source: 'default',
         tags: ['subclass']
     },
@@ -403,7 +404,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can transform into a beast with a swimming speed.',
         type: 'passive',
         level: 4,
-        class: 'Druid',
+        class: 'Druid' as Class,
         source: 'default',
         tags: ['magic', 'shapeshifting']
     },
@@ -413,7 +414,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can transform into a beast with a challenge rating up to 2.',
         type: 'passive',
         level: 8,
-        class: 'Druid',
+        class: 'Druid' as Class,
         source: 'default',
         tags: ['magic', 'shapeshifting']
     },
@@ -423,7 +424,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can transform into a beast with a challenge rating up to 3.',
         type: 'passive',
         level: 8,
-        class: 'Druid',
+        class: 'Druid' as Class,
         source: 'default',
         tags: ['magic', 'shapeshifting']
     },
@@ -433,7 +434,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You age slowly, appearing no older than you did at the start of your druidic studies.',
         type: 'passive',
         level: 18,
-        class: 'Druid',
+        class: 'Druid' as Class,
         source: 'default',
         tags: ['ability']
     },
@@ -443,7 +444,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can cast many of your druid spells in any shape you assume using Wild Shape.',
         type: 'passive',
         level: 18,
-        class: 'Druid',
+        class: 'Druid' as Class,
         source: 'default',
         tags: ['magic', 'shapeshifting']
     },
@@ -453,7 +454,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can use your Wild Shape an unlimited number of times.',
         type: 'passive',
         level: 20,
-        class: 'Druid',
+        class: 'Druid' as Class,
         source: 'default',
         tags: ['magic', 'shapeshifting']
     },
@@ -467,7 +468,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You adopt a style of fighting as your specialty. Choose one of the following: Archery, Defense, Dueling, Great Weapon Fighting, Protection, Two-Weapon Fighting, or Unarmed Fighting.',
         type: 'passive',
         level: 1,
-        class: 'Fighter',
+        class: 'Fighter' as Class,
         source: 'default',
         tags: ['combat', 'style']
     },
@@ -477,7 +478,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You have a limited well of stamina you can draw on to protect yourself. As a bonus action, you can regain hit points equal to 1d10 + your fighter level.',
         type: 'active',
         level: 1,
-        class: 'Fighter',
+        class: 'Fighter' as Class,
         source: 'default',
         tags: ['healing', 'combat']
     },
@@ -487,7 +488,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can push yourself beyond your normal limits for a moment. On your turn, you can take one additional action.',
         type: 'active',
         level: 2,
-        class: 'Fighter',
+        class: 'Fighter' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -497,7 +498,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 3rd level, you choose an archetype that you strive to emulate in your combat styles. Your choice grants you features at 3rd level and again at 7th, 10th, 15th, and 18th level.',
         type: 'passive',
         level: 3,
-        class: 'Fighter',
+        class: 'Fighter' as Class,
         source: 'default',
         tags: ['subclass']
     },
@@ -507,7 +508,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can attack twice, instead of once, whenever you take the Attack action on your turn.',
         type: 'passive',
         level: 5,
-        class: 'Fighter',
+        class: 'Fighter' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -517,7 +518,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can reroll a saving throw that you fail. If you do so, you must use the new roll.',
         type: 'active',
         level: 9,
-        class: 'Fighter',
+        class: 'Fighter' as Class,
         source: 'default',
         tags: ['defense', 'combat']
     },
@@ -527,7 +528,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can use Indomitable twice between long rests.',
         type: 'active',
         level: 13,
-        class: 'Fighter',
+        class: 'Fighter' as Class,
         source: 'default',
         tags: ['defense', 'combat']
     },
@@ -537,7 +538,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can use Indomitable three times between long rests.',
         type: 'active',
         level: 17,
-        class: 'Fighter',
+        class: 'Fighter' as Class,
         source: 'default',
         tags: ['defense', 'combat']
     },
@@ -547,7 +548,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can use Action Surge twice between short rests.',
         type: 'passive',
         level: 17,
-        class: 'Fighter',
+        class: 'Fighter' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -561,7 +562,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Beginning at 1st level, while you are wearing no armor and not wielding a shield, your AC equals 10 + your Dexterity modifier + your Wisdom modifier.',
         type: 'passive',
         level: 1,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['defense']
     },
@@ -571,7 +572,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You gain the following benefits while you are unarmed or wielding only monk weapons and you aren\'t wearing armor or wielding a shield: You can use Dexterity instead of Strength for attacks and damage rolls with your unarmed strikes and monk weapons, you can roll a d4 in place of the normal damage of your monk weapon or unarmed strike, and when you use the Attack action with an unarmed strike or a monk weapon, you can make one unarmed strike as a bonus action.',
         type: 'passive',
         level: 1,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -581,7 +582,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Starting at 2nd level, your training allows you to harness the mystic energy of ki. Your access to this energy is represented by a number of Ki points. You have a number of Ki points equal to your monk level.',
         type: 'resource',
         level: 2,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['resource', 'magic']
     },
@@ -591,7 +592,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Immediately after you take the Attack action on your turn, you can spend 1 Ki point to make two unarmed strikes as a bonus action.',
         type: 'active',
         level: 2,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -601,7 +602,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can spend 1 Ki point to take the Dodge action as a bonus action on your turn.',
         type: 'active',
         level: 2,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['defense', 'combat']
     },
@@ -611,7 +612,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can spend 1 Ki point to take the Disengage or Dash action as a bonus action on your turn, and your jump distance is doubled for the turn.',
         type: 'active',
         level: 2,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['movement', 'combat']
     },
@@ -621,7 +622,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you reach 3rd level, you commit yourself to a monastic tradition. Your tradition grants you features at 3rd level and again at 6th, 11th, and 17th level.',
         type: 'passive',
         level: 3,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['subclass']
     },
@@ -631,7 +632,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 4th level, you can use your reaction when you fall to reduce any falling damage you take by an amount equal to five times your monk level.',
         type: 'passive',
         level: 4,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['defense', 'movement']
     },
@@ -641,7 +642,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can attack twice, instead of once, whenever you take the Attack action on your turn.',
         type: 'passive',
         level: 5,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -651,7 +652,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Starting at 5th level, you can interfere with the flow of ki in an opponent\'s body. When you hit another creature with a melee weapon attack, you can spend 1 Ki point to attempt a stunning strike. The target must succeed on a Constitution saving throw or be stunned until the end of your next turn.',
         type: 'active',
         level: 5,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -661,7 +662,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Starting at 6th level, your unarmed strikes count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.',
         type: 'passive',
         level: 6,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['combat', 'magic']
     },
@@ -671,7 +672,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 7th level, you can use your action to end one effect on yourself that is causing you to be charmed or frightened.',
         type: 'active',
         level: 7,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['defense']
     },
@@ -681,7 +682,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Your speed increases by 10 feet while you are not wearing armor or wielding a shield. This bonus increases when you reach certain monk levels.',
         type: 'passive',
         level: 2,
-        class: 'Monk',
+        class: 'Monk' as Class,
         effects: [
             { type: 'passive_modifier', target: 'speed', value: 10, condition: 'unarmored' }
         ],
@@ -694,7 +695,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 10th level, your mastery of the ki flowing through you makes you immune to disease and poison.',
         type: 'passive',
         level: 10,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['defense', 'ability']
     },
@@ -704,7 +705,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 13th level, you learn to touch the ki of other minds so that you understand all spoken languages. Moreover, any creature that can understand a language can understand what you say.',
         type: 'passive',
         level: 13,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['language', 'social']
     },
@@ -714,7 +715,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 18th level, you can spend 4 Ki points to start becoming invisible for 1 minute. During that time, you also have resistance to all damage but force damage.',
         type: 'active',
         level: 18,
-        class: 'Monk',
+        class: 'Monk' as Class,
         source: 'default',
         tags: ['defense', 'magic']
     },
@@ -728,7 +729,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'As an action, you can detect good and evil. You can sense the presence of any celestial, fiend, or undead within 60 feet of you.',
         type: 'active',
         level: 1,
-        class: 'Paladin',
+        class: 'Paladin' as Class,
         source: 'default',
         tags: ['perception', 'divine']
     },
@@ -738,7 +739,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Your blessed touch can heal wounds. You have a pool of healing power that replenishes when you take a long rest. With that pool, you can restore a total number of hit points equal to your paladin level × 5.',
         type: 'active',
         level: 2,
-        class: 'Paladin',
+        class: 'Paladin' as Class,
         source: 'default',
         tags: ['healing', 'divine']
     },
@@ -748,7 +749,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You adopt a style of fighting as your specialty. Choose one of the following: Defense, Dueling, Great Weapon Fighting, Protection, or Two-Weapon Fighting.',
         type: 'passive',
         level: 2,
-        class: 'Paladin',
+        class: 'Paladin' as Class,
         source: 'default',
         tags: ['combat', 'style']
     },
@@ -758,7 +759,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you hit a creature with a melee weapon attack, you can expend one spell slot to deal radiant damage to the target.',
         type: 'active',
         level: 2,
-        class: 'Paladin',
+        class: 'Paladin' as Class,
         source: 'default',
         tags: ['combat', 'divine']
     },
@@ -768,7 +769,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you reach 3rd level, you swear the oath that binds you as a paladin forever. Your choice grants you features at 3rd level and again at 7th, 15th, and 20th level.',
         type: 'passive',
         level: 3,
-        class: 'Paladin',
+        class: 'Paladin' as Class,
         source: 'default',
         tags: ['subclass', 'divine']
     },
@@ -778,7 +779,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Starting at 6th level, you and friendly creatures within 10 feet of you gain a bonus to all saving throws equal to your Charisma modifier (minimum of +1).',
         type: 'passive',
         level: 6,
-        class: 'Paladin',
+        class: 'Paladin' as Class,
         source: 'default',
         tags: ['defense', 'aura']
     },
@@ -788,7 +789,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Starting at 10th level, you and friendly creatures within 10 feet of you can\'t be frightened.',
         type: 'passive',
         level: 10,
-        class: 'Paladin',
+        class: 'Paladin' as Class,
         source: 'default',
         tags: ['defense', 'aura']
     },
@@ -798,7 +799,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Starting at 11th level, you are so suffused with righteous might that all your melee weapon strikes carry divine power with them. Whenever you hit a creature with a melee weapon, the creature takes an extra 1d8 radiant damage.',
         type: 'passive',
         level: 11,
-        class: 'Paladin',
+        class: 'Paladin' as Class,
         source: 'default',
         tags: ['combat', 'divine']
     },
@@ -808,7 +809,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 14th level, you can use your action to end one spell or effect on yourself or one willing creature that you touch.',
         type: 'active',
         level: 14,
-        class: 'Paladin',
+        class: 'Paladin' as Class,
         source: 'default',
         tags: ['defense', 'divine']
     },
@@ -818,7 +819,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 18th level, the range of your auras increases to 30 feet.',
         type: 'passive',
         level: 18,
-        class: 'Paladin',
+        class: 'Paladin' as Class,
         source: 'default',
         tags: ['aura']
     },
@@ -832,7 +833,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You have significant experience studying, tracking, hunting, and even talking to a certain type of enemy. Choose a type of favored enemy: aberrations, beasts, celestials, constructs, dragons, elementals, fey, fiends, giants, monstrosities, oozes, plants, or undead. You gain a bonus to damage rolls against creatures of the chosen type.',
         type: 'passive',
         level: 1,
-        class: 'Ranger',
+        class: 'Ranger' as Class,
         source: 'default',
         tags: ['combat']
     },
@@ -842,7 +843,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You are a master of navigating the natural world. You choose a type of favored terrain: arctic, coast, desert, forest, grassland, mountain, swamp, or the Underdark. While traveling for an hour or more in your favored terrain, you gain the following benefits: Difficult terrain doesn\'t slow your group\'s travel, your group can\'t become lost except by magical means, and you remain alert to danger even when you are engaged in another activity.',
         type: 'passive',
         level: 1,
-        class: 'Ranger',
+        class: 'Ranger' as Class,
         source: 'default',
         tags: ['exploration']
     },
@@ -852,7 +853,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You adopt a style of fighting as your specialty. Choose one of the following: Archery, Defense, Dueling, Great Weapon Fighting, Two-Weapon Fighting, or Mariner (if you have a swimming speed).',
         type: 'passive',
         level: 2,
-        class: 'Ranger',
+        class: 'Ranger' as Class,
         source: 'default',
         tags: ['combat', 'style']
     },
@@ -862,7 +863,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'By the time you reach 2nd level, you have learned to use the magical essence of nature to cast spells, much as a druid does.',
         type: 'passive',
         level: 2,
-        class: 'Ranger',
+        class: 'Ranger' as Class,
         source: 'default',
         tags: ['magic']
     },
@@ -872,7 +873,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 3rd level, you choose an archetype that you strive to emulate in your combat styles and techniques. Your choice grants you features at 3rd level and again at 5th, 7th, 11th, and 15th level.',
         type: 'passive',
         level: 3,
-        class: 'Ranger',
+        class: 'Ranger' as Class,
         source: 'default',
         tags: ['subclass']
     },
@@ -882,7 +883,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 6th level, your mastery of the wild allows you to navigate with ease. You can use the Hide action as a bonus action. You also gain an additional Favored Enemy and Favored Terrain.',
         type: 'passive',
         level: 6,
-        class: 'Ranger',
+        class: 'Ranger' as Class,
         source: 'default',
         tags: ['exploration', 'stealth']
     },
@@ -892,7 +893,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Your speed increases by 5 feet.',
         type: 'passive',
         level: 8,
-        class: 'Ranger',
+        class: 'Ranger' as Class,
         effects: [
             { type: 'passive_modifier', target: 'speed', value: 5 }
         ],
@@ -905,7 +906,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Starting at 10th level, you can remain perfectly still for long periods to blend in with your surroundings. You can spend 1 minute creating camouflage and gain advantage on Stealth checks.',
         type: 'active',
         level: 10,
-        class: 'Ranger',
+        class: 'Ranger' as Class,
         source: 'default',
         tags: ['stealth']
     },
@@ -915,7 +916,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Starting at 14th level, you can use the Hide action as a bonus action on your turn. Also, you can\'t be tracked by nonmagical means.',
         type: 'passive',
         level: 14,
-        class: 'Ranger',
+        class: 'Ranger' as Class,
         source: 'default',
         tags: ['stealth']
     },
@@ -925,7 +926,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 18th level, you gain preternatural senses that help you fight creatures you can\'t see. When you attack a creature you can\'t see, your inability to see it doesn\'t impose disadvantage on your attack rolls. You are also aware of the location of any invisible creature within 30 feet of you.',
         type: 'passive',
         level: 18,
-        class: 'Ranger',
+        class: 'Ranger' as Class,
         source: 'default',
         tags: ['perception', 'combat']
     },
@@ -939,7 +940,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You know how to strike subtly and exploit a foe\'s distraction. Once per turn, you can deal an extra 1d6 damage to one creature you hit with an attack if you have advantage on the attack roll.',
         type: 'passive',
         level: 1,
-        class: 'Rogue',
+        class: 'Rogue' as Class,
         source: 'default',
         tags: ['combat', 'damage']
     },
@@ -949,7 +950,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'During your rogue training you learned thieves\' cant, a secret mix of dialect, hand signs, and body language that allows you to hide messages in seemingly normal conversation.',
         type: 'passive',
         level: 1,
-        class: 'Rogue',
+        class: 'Rogue' as Class,
         source: 'default',
         tags: ['language', 'secret']
     },
@@ -959,7 +960,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can take a bonus action on each of your turns in combat. This action can be used only to take the Dash, Disengage, or Hide action.',
         type: 'active',
         level: 2,
-        class: 'Rogue',
+        class: 'Rogue' as Class,
         source: 'default',
         tags: ['combat', 'movement']
     },
@@ -969,7 +970,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 3rd level, you choose an archetype that you strive to emulate in your combat styles and techniques. Your choice grants you features at 3rd level and then again at 9th, 13th, and 17th level.',
         type: 'passive',
         level: 3,
-        class: 'Rogue',
+        class: 'Rogue' as Class,
         source: 'default',
         tags: ['subclass']
     },
@@ -979,7 +980,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 4th level, you can increase one ability score by 2 or two ability scores by 1.',
         type: 'passive',
         level: 4,
-        class: 'Rogue',
+        class: 'Rogue' as Class,
         source: 'default',
         tags: ['ability']
     },
@@ -989,7 +990,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Starting at 5th level, when an attacker that you can see hits you with an attack, you can use your reaction to halve the attack\'s damage against you.',
         type: 'active',
         level: 5,
-        class: 'Rogue',
+        class: 'Rogue' as Class,
         source: 'default',
         tags: ['defense', 'combat']
     },
@@ -999,7 +1000,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Starting at 7th level, you can nimbly dodge out of the way of certain area effects. When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed and only half damage if you fail.',
         type: 'passive',
         level: 7,
-        class: 'Rogue',
+        class: 'Rogue' as Class,
         source: 'default',
         tags: ['defense']
     },
@@ -1009,7 +1010,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 11th level, you have acquired greater mental strength. You gain proficiency in Wisdom saving throws.',
         type: 'passive',
         level: 11,
-        class: 'Rogue',
+        class: 'Rogue' as Class,
         source: 'default',
         tags: ['defense']
     },
@@ -1019,7 +1020,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Beginning at 18th level, you are so evasive that attackers rarely gain the upper hand against you. No attack roll has advantage against you while you aren\'t incapacitated.',
         type: 'passive',
         level: 18,
-        class: 'Rogue',
+        class: 'Rogue' as Class,
         source: 'default',
         tags: ['defense']
     },
@@ -1029,7 +1030,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 20th level, you have an uncanny knack for succeeding when you need to. If your attack misses a target within range, you can turn the miss into a hit. Alternatively, if you fail an ability check, you can treat the d20 roll as a 20.',
         type: 'active',
         level: 20,
-        class: 'Rogue',
+        class: 'Rogue' as Class,
         source: 'default',
         tags: ['combat', 'luck']
     },
@@ -1043,7 +1044,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can regain 4 sorcery points on a short rest.',
         type: 'passive',
         level: 20,
-        class: 'Sorcerer',
+        class: 'Sorcerer' as Class,
         source: 'default',
         tags: ['resource']
     },
@@ -1053,7 +1054,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You can manipulate the weave of magic to your advantage. You have 2 sorcery points. You gain more as you level. You can use sorcery points to create additional spell slots or gain spell slots.',
         type: 'resource',
         level: 2,
-        class: 'Sorcerer',
+        class: 'Sorcerer' as Class,
         source: 'default',
         tags: ['resource', 'magic']
     },
@@ -1063,7 +1064,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 3rd level, you gain the ability to twist your spells to suit your needs. You gain two metamagic options of your choice: Careful Spell, Distant Spell, Empowered Spell, Extended Spell, Heightened Spell, Quickened Spell, Subtle Spell, Twinned Spell.',
         type: 'active',
         level: 3,
-        class: 'Sorcerer',
+        class: 'Sorcerer' as Class,
         source: 'default',
         tags: ['magic']
     },
@@ -1073,7 +1074,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'Choose a sorcerous origin, which describes the source of your magical power: Draconic Bloodline, Wild Magic, or another origin.',
         type: 'passive',
         level: 1,
-        class: 'Sorcerer',
+        class: 'Sorcerer' as Class,
         source: 'default',
         tags: ['subclass']
     },
@@ -1083,7 +1084,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 10th level, you gain a third metamagic option.',
         type: 'active',
         level: 10,
-        class: 'Sorcerer',
+        class: 'Sorcerer' as Class,
         source: 'default',
         tags: ['magic']
     },
@@ -1093,7 +1094,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 17th level, you gain a fourth metamagic option.',
         type: 'active',
         level: 17,
-        class: 'Sorcerer',
+        class: 'Sorcerer' as Class,
         source: 'default',
         tags: ['magic']
     },
@@ -1107,7 +1108,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 1st level, you have struck a bargain with an otherworldly being of power. Your choice grants you features at 1st level and again at 6th, 10th, and 14th level.',
         type: 'passive',
         level: 1,
-        class: 'Warlock',
+        class: 'Warlock' as Class,
         source: 'default',
         tags: ['subclass']
     },
@@ -1117,7 +1118,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You have learned to delve into the secrets of magic to harness the power of your patron. You know two cantrips and a number of spells.',
         type: 'passive',
         level: 1,
-        class: 'Warlock',
+        class: 'Warlock' as Class,
         source: 'default',
         tags: ['magic']
     },
@@ -1127,7 +1128,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 20th level, you can draw on your inner reserve of magical power while entreating your patron to regain expended spell slots. You can regain all your warlock spell slots on a short or long rest.',
         type: 'active',
         level: 20,
-        class: 'Warlock',
+        class: 'Warlock' as Class,
         source: 'default',
         tags: ['magic', 'resource']
     },
@@ -1137,7 +1138,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 11th level, your patron bestows upon you the ability to cast a 6th-level spell. You gain additional spells at higher levels.',
         type: 'passive',
         level: 11,
-        class: 'Warlock',
+        class: 'Warlock' as Class,
         source: 'default',
         tags: ['magic']
     },
@@ -1151,7 +1152,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'You have learned to regain some of your magical energy by studying your spellbook. Once per day when you finish a short rest, you can recover expended spell slots whose combined level equals no more than half your wizard level.',
         type: 'active',
         level: 1,
-        class: 'Wizard',
+        class: 'Wizard' as Class,
         source: 'default',
         tags: ['magic', 'resource']
     },
@@ -1161,7 +1162,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you reach 2nd level, you choose an arcane tradition that shapes your practice of magic. Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level.',
         type: 'passive',
         level: 2,
-        class: 'Wizard',
+        class: 'Wizard' as Class,
         source: 'default',
         tags: ['subclass']
     },
@@ -1171,7 +1172,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'At 18th level, you have achieved profound mastery over spells. Choose two 1st-level wizard spells that you know. You can cast these spells at their lowest level without expending a spell slot.',
         type: 'passive',
         level: 18,
-        class: 'Wizard',
+        class: 'Wizard' as Class,
         source: 'default',
         tags: ['magic']
     },
@@ -1181,7 +1182,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         description: 'When you reach 20th level, you gain mastery over two powerful spells. Choose two 3rd-level wizard spells that you know. You can cast these spells at their lowest level without expending a spell slot.',
         type: 'passive',
         level: 20,
-        class: 'Wizard',
+        class: 'Wizard' as Class,
         source: 'default',
         tags: ['magic']
     },

@@ -22,13 +22,13 @@ export interface CharacterAppearance {
 
 // Magical classes that receive aura colors
 const MAGICAL_CLASSES: Class[] = [
-    'Wizard',
-    'Sorcerer',
-    'Warlock',
-    'Bard',
-    'Cleric',
-    'Druid',
-    'Paladin',
+    'Wizard' as Class,
+    'Sorcerer' as Class,
+    'Warlock' as Class,
+    'Bard' as Class,
+    'Cleric' as Class,
+    'Druid' as Class,
+    'Paladin' as Class,
 ];
 
 export class AppearanceGenerator {

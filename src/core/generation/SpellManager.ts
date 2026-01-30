@@ -37,7 +37,7 @@ export class SpellManager {
    * @returns true if the class can cast spells
    */
   static isSpellcaster(characterClass: Class): boolean {
-    const spellcasters: Class[] = ['Bard', 'Cleric', 'Druid', 'Paladin', 'Ranger', 'Sorcerer', 'Warlock', 'Wizard'];
+    const spellcasters: Class[] = ['Bard' as Class, 'Cleric' as Class, 'Druid' as Class, 'Paladin' as Class, 'Ranger' as Class, 'Sorcerer' as Class, 'Warlock' as Class, 'Wizard' as Class];
     return spellcasters.includes(characterClass);
   }
 

@@ -3,6 +3,10 @@
  */
 
 import { z } from 'zod';
+import { DEFAULT_CLASSES } from '../core/types/Character.js';
+
+// String values of default classes for Zod validation
+const DEFAULT_CLASS_VALUES = DEFAULT_CLASSES.map(c => c as string) as [string, ...string[]];
 
 /**
  * Playlist Track schema
@@ -102,7 +106,7 @@ export const AbilityScoresSchema = z.object({
 export const CharacterSheetSchema = z.object({
     name: z.string(),
     race: z.enum(['Human', 'Elf', 'Dwarf', 'Halfling', 'Dragonborn', 'Gnome', 'Half-Elf', 'Half-Orc', 'Tiefling']),
-    class: z.enum(['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard']),
+    class: z.enum(DEFAULT_CLASS_VALUES),
     level: z.number().min(1).max(20),
     ability_scores: AbilityScoresSchema,
     ability_modifiers: AbilityScoresSchema,

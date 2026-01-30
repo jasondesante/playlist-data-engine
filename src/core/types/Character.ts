@@ -23,19 +23,129 @@ export type Race =
     | 'Half-Orc'
     | 'Tiefling';
 
-export type Class =
-    | 'Barbarian'
-    | 'Bard'
-    | 'Cleric'
-    | 'Druid'
-    | 'Fighter'
-    | 'Monk'
-    | 'Paladin'
-    | 'Ranger'
-    | 'Rogue'
-    | 'Sorcerer'
-    | 'Warlock'
-    | 'Wizard';
+/**
+ * Branded type for extensible Class names
+ *
+ * This allows custom classes to be registered via ExtensionManager while maintaining
+ * type safety. Use asClass() to convert a string to the Class type, and isValidClass()
+ * to validate at runtime.
+ *
+ * @example
+ * // Default D&D 5e classes
+ * const defaultClass: Class = 'Wizard' as Class;
+ *
+ * // Custom class (must be registered via ExtensionManager first)
+ * const customClass: Class = asClass('Necromancer');
+ * if (isValidClass(customClass)) {
+ *   // Safe to use
+ * }
+ *
+ * // Type augmentation alternative (for user projects):
+ * // declare module 'playlist-data-engine' {
+ * //   type Class = 'Barbarian' | ... | 'Wizard' | 'Necromancer';
+ * // }
+ */
+export type Class = string & { readonly __ClassBrand: unique symbol };
+
+/**
+ * Cast a string to the Class type
+ *
+ * This function performs a type assertion to convert any string to the Class type.
+ * Use isValidClass() first if you need runtime validation.
+ *
+ * @param value - The class name string
+ * @returns The value cast to Class type
+ *
+ * @example
+ * const className = 'Necromancer';
+ * if (isValidClass(className)) {
+ *   const cls: Class = asClass(className);
+ * }
+ */
+export function asClass(value: string): Class {
+    return value as Class;
+}
+
+/**
+ * Valid D&D 5e class names (for runtime validation)
+ *
+ * These are the string values of the default D&D 5e classes. Use isValidClass()
+ * to validate at runtime, and use the DEFAULT_CLASS_VALUES array for iteration.
+ */
+const DEFAULT_CLASS_NAMES = [
+    'Barbarian',
+    'Bard',
+    'Cleric',
+    'Druid',
+    'Fighter',
+    'Monk',
+    'Paladin',
+    'Ranger',
+    'Rogue',
+    'Sorcerer',
+    'Warlock',
+    'Wizard'
+] as const;
+
+/**
+ * Default D&D 5e classes (pre-branded Class type values)
+ *
+ * These are the core classes that are always available without needing ExtensionManager.
+ * Custom classes can be added via ExtensionManager.register('classes.data', [...]).
+ */
+export const DEFAULT_CLASSES: readonly Class[] = DEFAULT_CLASS_NAMES.map(asClass);
+
+/**
+ * Type guard to check if a string is a valid Class (default or custom)
+ *
+ * This checks against both default D&D 5e classes and any custom classes
+ * registered via ExtensionManager's 'classes.data' category.
+ *
+ * @param value - The value to check
+ * @returns True if the value is a valid class name
+ *
+ * @example
+ * if (isValidClass('Necromancer')) {
+ *   // Safe to use as Class type
+ *   const cls: Class = 'Necromancer';
+ * }
+ */
+export function isValidClass(value: unknown): value is Class {
+    if (typeof value !== 'string') {
+        return false;
+    }
+
+    // Check default classes
+    if (DEFAULT_CLASSES.includes(value as Class)) {
+        return true;
+    }
+
+    // Check ExtensionManager for custom classes (lazy-loaded to avoid circular dependency)
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const extensionModule = require('../extensions/ExtensionManager.js');
+        const manager = extensionModule.ExtensionManager.getInstance();
+
+        // Check if registered as a class
+        const registeredClasses = manager.get('classes') as string[] | undefined;
+        if (registeredClasses?.includes(value)) {
+            return true;
+        }
+
+        // Check custom class data registration
+        const customClassData = manager.get('classes.data' as any);
+        if (customClassData && Array.isArray(customClassData)) {
+            const classNames = customClassData.map((d: any) => d.name);
+            if (classNames.includes(value)) {
+                return true;
+            }
+        }
+    } catch {
+        // ExtensionManager not available - only allow default classes
+    }
+
+    return false;
+}
 
 export type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
 
