@@ -29,7 +29,11 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [CharacterGenerator Extensions](#charactergenerator-extensions)
    - [Validation System](#validation-system)
    - [Advanced Patterns](#advanced-patterns)
-8. [Cross-References](#cross-references)
+   - [Skill Prerequisites](#skill-prerequisites)
+   - [Spell Prerequisites](#spell-prerequisites)
+   - [Custom Races](#custom-races)
+   - [Subrace Support](#subrace-support)
+9. [Cross-References](#cross-references)
 
 ---
 
@@ -4607,6 +4611,935 @@ When generating characters with this Dragon Expansion Pack:
 4. **Modularity**: Each category is independent - mix and match as needed
 5. **Persistence**: Export custom data to save/load expansion configurations
 6. **Cleanup**: Use `reset()` to cleanly switch between expansion packs
+
+---
+
+### Skill Prerequisites
+
+**Location:** `src/core/skills/SkillTypes.ts`, `src/core/skills/SkillValidator.ts`
+
+Skills can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced skills that require base skills, specific features, spells, ability scores, level, class, or race.
+
+#### SkillPrerequisite Interface
+
+```typescript
+export interface SkillPrerequisite {
+    /** Minimum character level required */
+    level?: number;
+
+    /** Minimum ability scores required */
+    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+
+    /** Specific class required */
+    class?: Class;
+
+    /** Specific race required */
+    race?: Race;
+
+    /** Skills that must be proficient first (by skill ID) */
+    skills?: string[];
+
+    /** Features that must be learned first (by feature ID) */
+    features?: string[];
+
+    /** Spells that must be known first (by spell name) */
+    spells?: string[];
+
+    /** Custom condition description */
+    custom?: string;
+}
+```
+
+#### Updated CustomSkill Interface
+
+The `CustomSkill` interface now includes an optional `prerequisites` property:
+
+```typescript
+export interface CustomSkill {
+    id: string;
+    name: string;
+    description?: string;
+    ability: Ability;
+    armorPenalty?: boolean;
+    customProperties?: Record<string, string | number | boolean | string[]>;
+    categories?: string[];
+    source: 'default' | 'custom';
+    tags?: string[];
+    lore?: string;
+
+    // NEW: Prerequisites for learning this skill
+    prerequisites?: SkillPrerequisite;
+}
+```
+
+#### SkillValidator Prerequisite Validation
+
+**Location:** `src/core/skills/SkillValidator.ts`
+
+The `SkillValidator` class now includes a method for validating skill prerequisites:
+
+```typescript
+class SkillValidator {
+    /**
+     * Validate skill prerequisites against a character
+     *
+     * @param skill - The skill to validate prerequisites for
+     * @param character - The character to check against
+     * @returns Validation result with valid flag and optional unmet requirements
+     */
+    static validateSkillPrerequisites(
+        skill: CustomSkill,
+        character: CharacterSheet
+    ): ValidationResult;
+}
+```
+
+**ValidationResult:**
+```typescript
+interface ValidationResult {
+    /** Whether all prerequisites are met */
+    valid: boolean;
+
+    /** Array of unmet prerequisite descriptions (empty if valid) */
+    unmet?: string[];
+}
+```
+
+#### SkillAssigner Filtering
+
+**Location:** `src/core/generation/SkillAssigner.ts`
+
+The `SkillAssigner` now filters skills by prerequisites when assigning skills to a character. Skills with unmet prerequisites are automatically excluded from selection.
+
+#### SkillRegistry Validation
+
+**Location:** `src/core/skills/SkillRegistry.ts`
+
+The `SkillRegistry` includes a method for validating prerequisites:
+
+```typescript
+class SkillRegistry {
+    /**
+     * Validate skill prerequisites against a character
+     *
+     * @param skill - The skill to validate
+     * @param character - The character to check against
+     * @returns Validation result
+     */
+    validatePrerequisites(
+        skill: CustomSkill,
+        character: CharacterSheet
+    ): ValidationResult;
+}
+```
+
+#### Usage Examples
+
+**Skill with Level and Feature Prerequisites:**
+
+```typescript
+import { SkillRegistry } from 'playlist-data-engine';
+
+const dragonSmithing: CustomSkill = {
+    id: 'dragon_smithing',
+    name: 'Dragon Smithing',
+    description: 'Craft weapons and armor from dragon scales',
+    ability: 'INT',
+    prerequisites: {
+        features: ['draconic_bloodline'],  // Requires Sorcerer's Draconic Bloodline feature
+        level: 5,                          // Must be level 5+
+        class: 'Sorcerer'                  // Must be a Sorcerer
+    },
+    source: 'custom',
+    categories: ['crafting']
+};
+
+SkillRegistry.getInstance().registerSkill(dragonSmithing);
+```
+
+**Skill with Ability Score and Skill Prerequisites:**
+
+```typescript
+const arcaneMastery: CustomSkill = {
+    id: 'arcane_mastery',
+    name: 'Arcane Mastery',
+    description: 'Advanced magical theory and practice',
+    ability: 'INT',
+    prerequisites: {
+        abilities: { INT: 16 },      // Requires 16+ Intelligence
+        skills: ['arcana'],          // Must be proficient in Arcana first
+        level: 7                     // Must be level 7+
+    },
+    source: 'custom',
+    categories: ['knowledge', 'magic']
+};
+```
+
+**Skill with Spell and Race Prerequisites:**
+
+```typescript
+const elvenSongMagic: CustomSkill = {
+    id: 'elven_song_magic',
+    name: 'Elven Song Magic',
+    description: 'Traditional elven magic through song',
+    ability: 'CHA',
+    prerequisites: {
+        race: 'Elf',                 // Elves only
+        spells: ['Minor Illusion'],  // Must know Minor Illusion
+        skills: ['performance']      // Must be proficient in Performance
+    },
+    source: 'custom',
+    categories: ['magic', 'social']
+};
+```
+
+**Validate Prerequisites:**
+
+```typescript
+import { SkillRegistry } from 'playlist-data-engine';
+
+const registry = SkillRegistry.getInstance();
+const skill = registry.getSkill('dragon_smithing');
+
+if (skill && skill.prerequisites) {
+    const result = registry.validatePrerequisites(skill, character);
+
+    if (!result.valid) {
+        console.log('Unmet prerequisites:', result.unmet);
+        // Output: [
+        //   'Requires feature: draconic_bloodline',
+        //   'Requires level 5 (current: 3)',
+        //   'Requires Sorcerer class (current: Fighter)'
+        // ]
+    }
+}
+```
+
+---
+
+### Spell Prerequisites
+
+**Location:** `src/utils/constants.ts`, `src/core/spells/SpellValidator.ts`
+
+Spells can have prerequisites that must be met before a spellcaster can learn them. This allows for specialized spells that require specific features, abilities, spells, skills, level, or class.
+
+#### SpellPrerequisite Interface
+
+```typescript
+export interface SpellPrerequisite {
+    /** Minimum character level */
+    level?: number;
+
+    /** Minimum spellcaster level (if different from character level) */
+    casterLevel?: number;
+
+    /** Minimum ability scores */
+    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+
+    /** Specific class required */
+    class?: string;
+
+    /** Features that must be learned first (by feature ID) */
+    features?: string[];
+
+    /** Spells that must be known first (by spell name) */
+    spells?: string[];
+
+    /** Skills that must be proficient first (by skill ID) */
+    skills?: string[];
+
+    /** Custom condition */
+    custom?: string;
+}
+```
+
+#### Updated Spell Interface
+
+The `Spell` interface now includes optional `id` and `prerequisites` properties:
+
+```typescript
+export interface Spell {
+    /** Unique identifier (optional for backward compatibility) */
+    id?: string;
+
+    name: string;
+    level: number;           // 0-9 (0 = cantrips)
+    school: 'Abjuration' | 'Conjuration' | 'Divination' | 'Enchantment' | 'Evocation' | 'Illusion' | 'Necromancy' | 'Transmutation';
+    casting_time: string;
+    range: string;
+    components: string[];
+    duration: string;
+    description?: string;
+
+    // NEW: Prerequisites for learning this spell
+    prerequisites?: SpellPrerequisite;
+}
+```
+
+#### SpellValidator
+
+**Location:** `src/core/spells/SpellValidator.ts` (NEW FILE)
+
+The `SpellValidator` class validates spells and their prerequisites:
+
+```typescript
+class SpellValidator {
+    /**
+     * Validate a spell's data structure
+     */
+    static validateSpell(spell: unknown): SpellValidationResult;
+
+    /**
+     * Validate spell prerequisites schema
+     */
+    static validatePrerequisites(prerequisites: unknown): SpellValidationResult;
+
+    /**
+     * Validate spell prerequisites against a character
+     *
+     * @param prerequisites - The spell prerequisites to validate
+     * @param character - The character to check against
+     * @returns Validation result with valid flag and optional errors
+     */
+    static validateSpellPrerequisites(
+        prerequisites: SpellPrerequisite | undefined,
+        character: CharacterSheet
+    ): SpellValidationResult;
+}
+```
+
+**SpellValidationResult:**
+```typescript
+interface SpellValidationResult {
+    /** Whether the spell/prerequisites are valid */
+    valid: boolean;
+
+    /** Array of error messages (empty if valid) */
+    errors: string[];
+}
+```
+
+#### SpellManager Filtering
+
+**Location:** `src/core/generation/SpellManager.ts`
+
+The `SpellManager` now filters spells by prerequisites when assigning spells to a character:
+
+```typescript
+class SpellManager {
+    /**
+     * Get known spells for a character, filtering by prerequisites
+     *
+     * @param characterClass - The character's class
+     * @param characterLevel - The character's level
+     * @param character - Optional character for prerequisite validation
+     * @returns Array of known spell names
+     */
+    static getKnownSpells(
+        characterClass: Class,
+        characterLevel: number,
+        character?: CharacterSheet
+    ): string[];
+}
+```
+
+#### Usage Examples
+
+**Spell with Feature and Ability Prerequisites:**
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const dragonBreath = {
+    id: 'dragon_breath',
+    name: 'Dragon Breath',
+    level: 3,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '60 ft cone',
+    components: ['V', 'S', 'M'],
+    duration: 'Instantaneous',
+    description: 'Exhale destructive energy in a 60-foot cone',
+    prerequisites: {
+        features: ['draconic_bloodline'],  // Requires Draconic Bloodline feature
+        abilities: { CHA: 16 },            // Requires 16+ Charisma
+        class: 'Sorcerer'                  // Sorcerer only
+    }
+};
+
+const manager = ExtensionManager.getInstance();
+manager.register('spells', [dragonBreath]);
+```
+
+**Spell with Spell Chain Prerequisites:**
+
+```typescript
+const improvedFireball = {
+    id: 'improved_fireball',
+    name: 'Improved Fireball',
+    level: 5,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '150 ft',
+    components: ['V', 'S', 'M'],
+    duration: 'Instantaneous',
+    description: 'A more powerful version of fireball',
+    prerequisites: {
+        spells: ['Fireball'],        // Must know Fireball first
+        level: 11,                   // Must be level 11+
+        class: 'Wizard'              // Wizards only
+    }
+};
+```
+
+**Spell with Skill Prerequisites:**
+
+```typescript
+const arcaneSight = {
+    id: 'arcane_sight_superior',
+    name: 'Superior Arcane Sight',
+    level: 4,
+    school: 'Divination',
+    casting_time: '1 action',
+    range: 'Self',
+    components: ['V', 'S'],
+    duration: '1 hour',
+    description: 'See all magical auras and understand their school',
+    prerequisites: {
+        skills: ['arcana'],           // Must be proficient in Arcana
+        abilities: { INT: 14 },       // Requires 14+ Intelligence
+        casterLevel: 7                // Must be a 7th-level spellcaster
+    }
+};
+```
+
+**Validate Spell Prerequisites:**
+
+```typescript
+import { SpellValidator } from 'playlist-data-engine';
+
+// Check if a character can learn a spell
+const spell = SPELL_DATABASE['dragon_breath'];
+if (spell.prerequisites) {
+    const result = SpellValidator.validateSpellPrerequisites(
+        spell.prerequisites,
+        character
+    );
+
+    if (!result.valid) {
+        console.log('Cannot learn spell:', result.errors);
+        // Output: [
+        //   'Requires feature: draconic_bloodline',
+        //   'Requires CHA 16+ (current: 14)',
+        //   'Requires Sorcerer class (current: Wizard)'
+        // ]
+    }
+}
+```
+
+---
+
+### Custom Races
+
+**Location:** `src/utils/constants.ts`, `src/core/extensions/ExtensionManager.ts`, `src/core/generation/AbilityScoreCalculator.ts`
+
+The engine now supports custom races through the ExtensionManager. Custom races can define ability score bonuses, speed, traits, and available subraces.
+
+#### RaceDataEntry Interface
+
+```typescript
+export interface RaceDataEntry {
+    /** Ability score bonuses granted by this race */
+    ability_bonuses: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+
+    /** Base walking speed in feet */
+    speed: number;
+
+    /** Array of racial trait names/IDs */
+    traits: string[];
+
+    /** Optional: Available subraces for this race */
+    subraces?: string[];
+}
+```
+
+#### getRaceData() Helper Function
+
+**Location:** `src/utils/constants.ts`
+
+```typescript
+/**
+ * Get race data (default or custom)
+ *
+ * Checks both the built-in RACE_DATA and the ExtensionManager for custom race data.
+ *
+ * @param race - The race name to look up
+ * @returns Race data entry or undefined if not found
+ *
+ * @example
+ * // Get default race data
+ * const elfData = getRaceData('Elf');
+ * console.log(elfData.speed); // 30
+ *
+ * // Get custom race data (if registered via ExtensionManager)
+ * const dragonkinData = getRaceData('Dragonkin');
+ * if (dragonkinData) {
+ *     console.log(dragonkinData.ability_bonuses);
+ * }
+ */
+export function getRaceData(race: string): RaceDataEntry | undefined;
+```
+
+#### Registering Custom Races
+
+**Via ExtensionManager:**
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Step 1: Register custom race data (ability bonuses, speed, traits, subraces)
+manager.register('races.data', [
+    {
+        race: 'Dragonkin',
+        ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
+        speed: 30,
+        traits: ['Draconic Ancestry', 'Darkvision', 'Draconic Resistance'],
+        subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
+    },
+    {
+        race: 'Fairy',
+        ability_bonuses: { DEX: 2, CHA: 2, WIS: 1 },
+        speed: 25,
+        traits: ['Fey Ancestry', 'Flight', 'Nature Sense'],
+        subraces: ['Summer Fairy', 'Winter Fairy', 'Twilight Fairy']
+    }
+]);
+
+// Step 2: Register the race names for validation
+manager.register('races', ['Dragonkin', 'Fairy'], { validate: true });
+```
+
+#### AbilityScoreCalculator Custom Race Support
+
+**Location:** `src/core/generation/AbilityScoreCalculator.ts`
+
+The `AbilityScoreCalculator.applyRacialBonuses()` method now accepts `string` instead of `Race` and uses `getRaceData()` to support custom races:
+
+```typescript
+class AbilityScoreCalculator {
+    /**
+     * Apply racial ability score bonuses
+     *
+     * Supports both default D&D 5e races and custom races registered via ExtensionManager.
+     *
+     * @param baseScores - Base scores before racial bonuses
+     * @param race - Selected character race (e.g., 'Human', 'Elf', or custom race like 'Dragonkin')
+     * @returns Final scores with racial bonuses applied (capped at 20 in standard mode)
+     */
+    static applyRacialBonuses(baseScores: AbilityScores, race: string): AbilityScores;
+}
+```
+
+#### RaceSelector Custom Race Support
+
+**Location:** `src/core/generation/RaceSelector.ts`
+
+The `RaceSelector` automatically includes custom races registered via ExtensionManager:
+
+```typescript
+class RaceSelector {
+    /**
+     * Select a random race based on weighted spawn rates
+     *
+     * Selects from available races (default 9 D&D 5e races plus any custom races).
+     * Spawn rates can be customized via ExtensionManager weights.
+     *
+     * @param rng - Seeded random number generator
+     * @returns Selected race name
+     */
+    static selectRace(rng: SeededRNG): string;
+}
+```
+
+#### Custom Race Validation
+
+**Location:** `src/core/extensions/ExtensionManager.ts`
+
+The ExtensionManager validates custom races:
+
+1. **Race Names**: Must be either a default race or registered via `races.data`
+2. **Race Data**: Must have `race` (string), `ability_bonuses` (record), `speed` (number), `traits` (array)
+
+```typescript
+// Validation errors for invalid race data
+manager.register('races', ['InvalidRace']);
+// Throws: "Invalid items for category 'races':
+//   Invalid race 'InvalidRace'. Must be one of: Human, Elf, Dwarf, Halfling,
+//   Dragonborn, Gnome, Half-Elf, Half-Orc, Tiefling or register custom race
+//   via 'races.data' first."
+```
+
+#### Usage Examples
+
+**Basic Custom Race:**
+
+```typescript
+const manager = ExtensionManager.getInstance();
+
+// Register a simple custom race
+manager.register('races.data', [{
+    race: 'Aasimar',
+    ability_bonuses: { CHA: 2 },
+    speed: 30,
+    traits: ['Celestial Resistance', 'Darkvision', 'Celestial Legacy']
+}]);
+
+manager.register('races', ['Aasimar']);
+
+// Now characters can be generated as Aasimar
+const character = CharacterGenerator.generate(seed, audioProfile, name);
+// character.race might be 'Aasimar'
+```
+
+**Custom Race with Subraces:**
+
+```typescript
+// Register custom race with subraces
+manager.register('races.data', [{
+    race: 'Dragonkin',
+    ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
+    speed: 30,
+    traits: ['Draconic Ancestry', 'Darkvision'],
+    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
+}]);
+
+// Register subrace-specific traits
+manager.register('racialTraits', [
+    {
+        id: 'fire_dragonkin_resistance',
+        name: 'Fire Resistance',
+        race: 'Dragonkin',
+        subrace: 'Fire Dragonkin',
+        effects: [{ type: 'passive_modifier', target: 'fire_resistance', value: true }],
+        source: 'custom'
+    },
+    {
+        id: 'ice_dragonkin_resistance',
+        name: 'Cold Resistance',
+        race: 'Dragonkin',
+        subrace: 'Ice Dragonkin',
+        effects: [{ type: 'passive_modifier', target: 'cold_resistance', value: true }],
+        source: 'custom'
+    }
+]);
+```
+
+**Custom Race Spawn Rates:**
+
+```typescript
+// Make custom races rarer than default races
+manager.setWeights('races', {
+    'Human': 1.0,      // Common
+    'Elf': 1.0,        // Common
+    'Dragonkin': 0.2,  // Rare (20% of normal)
+    'Fairy': 0.1       // Very rare (10% of normal)
+});
+```
+
+---
+
+### Subrace Support
+
+**Location:** `src/core/types/Character.ts`, `src/core/generation/CharacterGenerator.ts`, `src/core/features/FeatureTypes.ts`
+
+Characters can now have a subrace property (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf'). Subraces allow for more granular racial trait assignment and prerequisite validation.
+
+#### CharacterSheet Subrace Property
+
+The `CharacterSheet` interface now includes an optional `subrace` property:
+
+```typescript
+export interface CharacterSheet {
+    name: string;
+    race: Race;
+
+    /** Subrace (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf') */
+    subrace?: string;
+
+    class: Class;
+    level: number;
+    // ... rest of properties
+}
+```
+
+#### FeaturePrerequisite Subrace Support
+
+The `FeaturePrerequisite` interface now includes `subrace`:
+
+```typescript
+export interface FeaturePrerequisite {
+    level?: number;
+    features?: string[];
+    abilities?: Partial<Record<Ability, number>>;
+    class?: Class;
+    race?: Race;
+
+    /** Specific subrace required (e.g., 'High Elf', 'Hill Dwarf') */
+    subrace?: string;
+
+    /** Skills that must be proficient first (by skill ID) */
+    skills?: string[];
+
+    /** Spells that must be known first (by spell name) */
+    spells?: string[];
+
+    custom?: string;
+}
+```
+
+#### RacialTrait Subrace Support
+
+The `RacialTrait` interface includes a `subrace` property for subrace-specific traits:
+
+```typescript
+export interface RacialTrait {
+    id: string;
+    name: string;
+    race: Race;
+
+    /** Optional subrace (e.g., 'High Elf', 'Hill Dwarf') */
+    subrace?: string;
+
+    description?: string;
+    level?: number;
+    prerequisites?: FeaturePrerequisite;
+    effects?: FeatureEffect[];
+    source: 'default' | 'custom';
+}
+```
+
+#### CharacterGenerator Subrace Support
+
+**Location:** `src/core/generation/CharacterGenerator.ts`
+
+The `CharacterGenerator.generate()` method accepts an optional `subrace` parameter:
+
+```typescript
+class CharacterGenerator {
+    /**
+     * Generate a complete D&D 5e character
+     *
+     * @param seed - Deterministic seed for generation
+     * @param audioProfile - Audio analysis result
+     * @param name - Character name
+     * @param options - Generation options
+     * @param options.level - Character level (default: 1)
+     * @param options.subrace - Optional subrace (e.g., 'High Elf', 'Hill Dwarf')
+     * @param options.extensions - Custom extensions
+     * @returns Complete D&D 5e character sheet
+     */
+    static generate(
+        seed: string,
+        audioProfile: AudioProfile,
+        name: string,
+        options?: {
+            level?: number;
+            subrace?: string;
+            gameMode?: GameMode;
+            extensions?: CharacterGeneratorExtensions;
+        }
+    ): CharacterSheet;
+}
+```
+
+**Racial Trait Assignment by Subrace:**
+
+When generating a character with a subrace, the generator filters racial traits by subrace:
+
+```typescript
+// Get racial traits, filtering by subrace if character has one
+const racialTraits = subrace
+    ? featureRegistry.getRacialTraitsForSubrace(race, subrace)
+    : featureRegistry.getRacialTraits(race);
+```
+
+#### FeatureRegistry Subrace Methods
+
+**Location:** `src/core/features/FeatureRegistry.ts`
+
+```typescript
+class FeatureRegistry {
+    /**
+     * Get racial traits for a specific subrace
+     *
+     * @param race - The base race
+     * @param subrace - The subrace name
+     * @returns Array of racial traits for that subrace
+     */
+    getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[];
+
+    /**
+     * Validate feature prerequisites against a character
+     *
+     * @param prerequisites - The prerequisites to validate
+     * @param character - The character to check against
+     * @param context - Optional context (race, subrace, class, level, ability_scores)
+     * @returns Validation result with errors array
+     */
+    validatePrerequisites(
+        prerequisites: FeaturePrerequisite,
+        character?: CharacterSheet,
+        context?: FeaturePrerequisiteContext
+    ): ValidationResult;
+}
+```
+
+#### FeatureValidator Subrace Validation
+
+**Location:** `src/core/features/FeatureValidator.ts`
+
+The `FeatureValidator.validatePrerequisites()` method now validates subrace requirements:
+
+```typescript
+class FeatureValidator {
+    static validatePrerequisites(
+        prerequisites: FeaturePrerequisite,
+        character?: CharacterSheet,
+        context?: FeaturePrerequisiteContext
+    ): ValidationResult {
+        const errors: string[] = [];
+
+        // ... other validations ...
+
+        // Check subrace requirement
+        if (prereqs.subrace !== undefined) {
+            if (!context?.subrace || context.subrace !== prereqs.subrace) {
+                errors.push(`Requires subrace ${prereqs.subrace} (current: ${context?.subrace || 'none'})`);
+            }
+        }
+
+        return { valid: errors.length === 0, errors: errors.length > 0 ? errors : undefined };
+    }
+}
+```
+
+#### RaceDataEntry Subraces Property
+
+The `RaceDataEntry` interface includes optional `subraces`:
+
+```typescript
+export interface RaceDataEntry {
+    ability_bonuses: Partial<Record<Ability, number>>;
+    speed: number;
+    traits: string[];
+    /** Optional: Available subraces for this race */
+    subraces?: string[];
+}
+```
+
+#### Usage Examples
+
+**Generate Character with Subrace:**
+
+```typescript
+import { CharacterGenerator } from 'playlist-data-engine';
+
+// Generate a High Elf character
+const character = CharacterGenerator.generate(
+    'seed-123',
+    audioProfile,
+    'Elandra',
+    {
+        level: 5,
+        subrace: 'High Elf'  // Specify subrace
+    }
+);
+
+console.log(character.race);     // 'Elf'
+console.log(character.subrace);  // 'High Elf'
+console.log(character.racial_traits);
+// Might include: ['Darkvision', 'Fey Ancestry', 'Trance', 'High Elf Cantrip']
+```
+
+**Subrace-Specific Racial Trait:**
+
+```typescript
+import { FeatureRegistry } from 'playlist-data-engine';
+
+const registry = FeatureRegistry.getInstance();
+
+// Register a High Elf-specific trait
+registry.registerRacialTrait({
+    id: 'high_elf_cantrip',
+    name: 'High Elf Cantrip',
+    race: 'Elf',
+    subrace: 'High Elf',  // Only for High Elves
+    description: 'You know one cantrip from the wizard spell list',
+    prerequisites: {
+        race: 'Elf',
+        subrace: 'High Elf'  // Requires High Elf subrace
+    },
+    effects: [
+        { type: 'grant_spell', target: 'cantrip', source: 'wizard', count: 1 }
+    ],
+    source: 'custom'
+});
+```
+
+**Feature with Subrace Prerequisite:**
+
+```typescript
+// Register a feature that requires Wood Elf subrace
+registry.registerClassFeature({
+    id: 'wood elf masking',
+    name: 'Wood Elf Masking',
+    description: 'You can attempt to hide even when only lightly obscured',
+    type: 'passive',
+    level: 1,
+    class: 'Ranger',
+    prerequisites: {
+        race: 'Elf',
+        subrace: 'Wood Elf'  // Only Wood Elves get this
+    },
+    effects: [
+        { type: 'passive_modifier', target: 'stealth_bonus', value: 2 }
+    ],
+    source: 'custom'
+});
+```
+
+**Validate Subrace Prerequisites:**
+
+```typescript
+import { FeatureValidator } from 'playlist-data-engine';
+
+const trait = {
+    id: 'high_elf_cantrip',
+    name: 'High Elf Cantrip',
+    prerequisites: {
+        race: 'Elf',
+        subrace: 'High Elf'
+    }
+};
+
+// Check if character meets prerequisites
+const result = FeatureValidator.validatePrerequisites(
+    trait.prerequisites!,
+    undefined,
+    {
+        race: 'Elf',
+        subrace: 'Wood Elf',  // Wrong subrace
+        class: 'Wizard',
+        level: 1,
+        ability_scores: { STR: 10, DEX: 14, CON: 12, INT: 16, WIS: 12, CHA: 10 }
+    }
+);
+
+console.log(result.valid);  // false
+console.log(result.errors); // ['Requires subrace High Elf (current: Wood Elf)']
+```
 
 ---
 

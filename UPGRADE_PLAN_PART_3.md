@@ -1017,7 +1017,7 @@ Test Scenarios:
 - [x] Update RacialTrait validation
 
 ### Phase 8: Documentation
-- [ ] Update DATA_ENGINE_REFERENCE.md
+- [x] Update DATA_ENGINE_REFERENCE.md
 - [ ] Update USAGE_IN_OTHER_PROJECTS.md
 - [ ] Create PREREQUISITES_AND_RACES.md
 
