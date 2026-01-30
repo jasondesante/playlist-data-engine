@@ -2004,20 +2004,20 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
   - [x] Cross-check that all features from original upgrade plan are documented
   - [x] Add code examples for every property type and API method
 - [x] Update USAGE_IN_OTHER_PROJECTS.md with extensive examples:
-  - [ ] Registering custom equipment
-  - [ ] Giving a sword fire damage (2 methods)
-  - [ ] Removing debuffs from cursed items
-  - [ ] Items that grant skills
-  - [ ] Items that grant features
-  - [ ] Items that upgrade stats
-  - [ ] Conditional effects
-  - [ ] Item templates
+  - [x] Registering custom equipment
+  - [x] Giving a sword fire damage (2 methods)
+  - [x] Removing debuffs from cursed items
+  - [x] Items that grant skills
+  - [x] Items that grant features
+  - [x] Items that upgrade stats
+  - [x] Conditional effects
+  - [x] Item templates
   - [x] Spell-like effects
-  - [ ] Multiple effects stacking
-  - [ ] Batch spawning examples
-  - [ ] Game-only items (spawnWeight: 0)
-  - [ ] Progressive enchantment through game
-  - [ ] Complete custom magic item system example
+  - [x] Multiple effects stacking
+  - [x] Batch spawning examples
+  - [x] Game-only items (spawnWeight: 0)
+  - [x] Progressive enchantment through game
+  - [x] Complete custom magic item system example
 
 ### Phase 12: Examples & Demos
 - [x] Create customEquipmentExamples.ts
