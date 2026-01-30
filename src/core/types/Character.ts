@@ -122,6 +122,9 @@ export interface CharacterSheet {
     /** Race */
     race: Race;
 
+    /** Subrace (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf') */
+    subrace?: string;
+
     /** Class */
     class: Class;
 
