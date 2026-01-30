@@ -7,7 +7,7 @@
 
 import type { Class, CharacterSheet } from '../types/Character.js';
 // import type { SeededRNG } from '../../utils/random.js';
-import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS, SPELL_DATABASE, getClassSpellList } from '../../utils/constants.js';
+import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS, SPELL_DATABASE, getClassSpellList, getSpellSlotsForClass } from '../../utils/constants.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureSpellDefaultsInitialized } from '../extensions/initializeDefaults.js';
 import { SpellValidator } from '../spells/SpellValidator.js';
@@ -45,6 +45,9 @@ export class SpellManager {
   /**
    * Get spell slots for a class at a given level
    *
+   * Uses the getSpellSlotsForClass() helper to get spell slot progression (default or custom).
+   * This supports custom classes registered via the 'classSpellSlots' category in ExtensionManager.
+   *
    * @param characterClass - The character's class
    * @param characterLevel - The character's level (1-20)
    * @returns Record of spell slots by spell level with total and used counts
@@ -63,13 +66,8 @@ export class SpellManager {
       slots[i] = { total: 0, used: 0 };
     }
 
-    // Get spell slots from constant data
-    const classSlots = SPELL_SLOTS_BY_CLASS[characterClass];
-    if (!classSlots) {
-      return slots;
-    }
-
-    const levelSlots = classSlots[characterLevel];
+    // Get spell slots via helper function (checks default + classSpellSlots category)
+    const levelSlots = getSpellSlotsForClass(characterClass, characterLevel);
     if (!levelSlots) {
       return slots;
     }

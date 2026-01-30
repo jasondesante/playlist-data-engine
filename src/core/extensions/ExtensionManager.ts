@@ -93,7 +93,9 @@ export type ExtensionCategory =
     | 'skillLists.Wizard'
     // Class Spell Lists - Phase 13 (Part 4)
     | 'classSpellLists'
-    | `classSpellLists.${string}`;
+    | `classSpellLists.${string}`
+    // Class Spell Slots - Phase 3.2 (Part 4)
+    | 'classSpellSlots';
 
 /**
  * Options for registering custom data

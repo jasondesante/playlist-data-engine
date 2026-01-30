@@ -1225,6 +1225,76 @@ export function getClassSpellList(className: string): { cantrips: string[]; spel
 }
 
 /**
+ * Interface for class spell slots data (used for extensibility)
+ */
+interface ClassSpellSlotsData {
+    /** Class name this spell slot data is for */
+    class: string;
+    /** Spell slot progression by character level (1-20), each level maps to spell level (1-9) to count */
+    slots_by_level: Record<number, Record<number, number>>;
+}
+
+/**
+ * Get spell slots for a class at a specific level (default or custom)
+ *
+ * First checks the default SPELL_SLOTS_BY_CLASS constant, then checks
+ * the ExtensionManager for custom spell slot progressions registered via 'classSpellSlots'.
+ *
+ * The 'classSpellSlots' category expects an array of ClassSpellSlotsData objects,
+ * each containing a class name and a slots_by_level record mapping character levels
+ * to spell slot counts per spell level.
+ *
+ * @param className - The class name to get spell slots for
+ * @param characterLevel - The character level (1-20)
+ * @returns Record mapping spell level (1-9) to slot count, or undefined if not found
+ *
+ * @example
+ * // Register custom spell slots for a "Necromancer" class
+ * manager.register('classSpellSlots', [{
+ *     class: 'Necromancer',
+ *     slots_by_level: {
+ *         1: { 1: 2 },
+ *         2: { 1: 3 },
+ *         3: { 1: 4, 2: 2 },
+ *         // ... more levels
+ *     }
+ * }]);
+ */
+export function getSpellSlotsForClass(className: string, characterLevel: number): Record<number, number> | undefined {
+    // Check default classes
+    if (className in SPELL_SLOTS_BY_CLASS) {
+        const classSlots = SPELL_SLOTS_BY_CLASS[className];
+        if (classSlots && characterLevel in classSlots) {
+            return classSlots[characterLevel];
+        }
+    }
+
+    // Check ExtensionManager for custom spell slot data
+    try {
+        const { ExtensionManager } = require('../core/extensions/ExtensionManager.js');
+        const manager = ExtensionManager.getInstance();
+        const category = 'classSpellSlots' as const;
+        const customSpellSlots = manager.get(category as any);
+
+        if (customSpellSlots && Array.isArray(customSpellSlots)) {
+            // Find the class-specific slot data
+            const classSlotData = customSpellSlots.find((d: any) => d.class === className);
+            if (classSlotData && classSlotData.slots_by_level) {
+                const slotsByLevel = classSlotData.slots_by_level as Record<number, Record<number, number>>;
+                if (characterLevel in slotsByLevel) {
+                    return slotsByLevel[characterLevel];
+                }
+            }
+        }
+    } catch (error) {
+        // ExtensionManager not available (may be during initialization)
+        // Return undefined to fall back to default behavior
+    }
+
+    return undefined;
+}
+
+/**
  * Comprehensive equipment database with D&D 5e stats
  */
 export const EQUIPMENT_DATABASE: Record<string, Equipment> = {

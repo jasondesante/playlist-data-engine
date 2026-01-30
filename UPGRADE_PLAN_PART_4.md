@@ -259,7 +259,7 @@ When implementing custom classes, the phases would be:
 
 ### Phase 3: Class-Specific Data Registration
 - [x] Add `classSpellLists.${ClassName}` categories
-- [ ] Add `classSpellSlots` category
+- [x] Add `classSpellSlots` category
 - [ ] Add `classStartingEquipment.${ClassName}` categories
 - [x] Implement helper functions for spell/slot/equipment lookup
 - [x] Update SpellManager to use helpers
