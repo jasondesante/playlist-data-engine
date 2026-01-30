@@ -86,6 +86,7 @@ Then reference it in your project code directly.
 - [Environmental Sensors](#environmental-sensors) - Get environmental context and XP modifiers
 - [Gaming Platform Integration](#gaming-platform-integration) - Integrate Steam and Discord for gaming bonuses
 - [Combat System](#combat-system) - Run turn-based D&D 5e combat
+- [Equipment System](#equipment-system) - Custom equipment, properties, enchanting, and batch spawning
 - [Custom Features and Skills](#custom-features-and-skills) - Create custom class features, racial traits, and skills
 - [Spawn Rate Control](#spawn-rate-control) - Control how often custom content appears
 
@@ -1659,6 +1660,898 @@ const character = CharacterGenerator.generate(seed, audio, 'Arctic Hero');
 
 ---
 
+## Equipment System
+
+The Playlist Data Engine includes a comprehensive equipment system supporting custom properties, effects, modifications, and batch spawning.
+
+### Registering Custom Equipment
+
+Register custom equipment through ExtensionManager with full property support:
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+import type { EnhancedEquipment } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Method 1: Direct registration with validation
+const flamingSword: EnhancedEquipment = {
+    name: 'Flaming Sword',
+    type: 'weapon',
+    rarity: 'rare',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing' },
+    weaponProperties: ['finesse'],
+    // Properties that apply when equipped
+    properties: [
+        {
+            type: 'damage_bonus',
+            target: 'fire',
+            value: '1d6',
+            description: '+1d6 fire damage on hit',
+            stackable: true
+        }
+    ],
+    // Grant a feature when equipped
+    grantsFeatures: ['fire_resistance'],
+    spawnWeight: 0.5,  // Half as likely to spawn randomly
+    source: 'custom',
+    tags: ['magic', 'fire', 'weapon', 'flame']
+};
+
+manager.register('equipment', [flamingSword], {
+    mode: 'relative',  // Add to existing equipment
+    validate: true     // Validate the equipment structure
+});
+```
+
+### Equipment Properties
+
+Equipment can have various properties that affect gameplay:
+
+```typescript
+import type { EquipmentProperty } from 'playlist-data-engine';
+
+// ===== STAT BONUS =====
+const beltOfStrength: EquipmentProperty = {
+    type: 'stat_bonus',
+    target: 'STR',
+    value: 2,
+    description: '+2 Strength (max 22)',
+    stackable: true
+};
+
+// ===== SKILL PROFICIENCY =====
+const bootsOfElvenkind: EquipmentProperty = {
+    type: 'skill_proficiency',
+    target: 'stealth',
+    value: 'expertise',  // Can be 'proficient' or 'expertise'
+    description: 'Stealth expertise'
+};
+
+// ===== ABILITY UNLOCK =====
+const bootsOfFlying: EquipmentProperty = {
+    type: 'ability_unlock',
+    target: 'flight',
+    value: true,
+    description: 'Can fly at will'
+};
+
+// ===== PASSIVE MODIFIER =====
+const ringOfProtection: EquipmentProperty = {
+    type: 'passive_modifier',
+    target: 'ac',
+    value: 1,
+    description: '+1 Armor Class',
+    stackable: true  // Multiple rings stack
+};
+
+// ===== DAMAGE BONUS (CONDITIONAL) =====
+const dragonSlayingSword: EquipmentProperty = {
+    type: 'damage_bonus',
+    target: 'dragon',
+    value: '3d6',
+    condition: { type: 'vs_creature_type', value: 'dragon' },
+    description: '+3d6 damage vs dragons'
+};
+
+// ===== TIME-BASED CONDITION =====
+const moonBlade: EquipmentProperty = {
+    type: 'damage_bonus',
+    target: 'radiant',
+    value: '2d6',
+    condition: { type: 'at_time_of_day', value: 'night' },
+    description: '+2d6 radiant damage at night'
+};
+
+// ===== CLASS-SPECIFIC CONDITION =====
+const holyAvenger: EquipmentProperty = {
+    type: 'passive_modifier',
+    target: 'saving_throws',
+    value: 3,
+    condition: { type: 'wielder_class', value: 'Paladin' },
+    description: '+3 to saving throws (Paladin only)'
+};
+```
+
+### Items That Upgrade Stats
+
+Equipment that increases ability scores:
+
+```typescript
+import type { EnhancedEquipment } from 'playlist-data-engine';
+
+// ===== Belt of Giant Strength (+2 STR) =====
+const beltOfGiantStrength: EnhancedEquipment = {
+    name: 'Belt of Giant Strength',
+    type: 'item',
+    rarity: 'rare',
+    weight: 1,
+    properties: [
+        {
+            type: 'stat_bonus',
+            target: 'STR',
+            value: 2,
+            description: '+2 Strength (sets to 19 if lower)',
+            condition: { type: 'while_equipped', value: true }
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'wondrous', 'strength']
+};
+
+// ===== Amulet of Health (+5 Max HP) =====
+const amuletOfHealth: EnhancedEquipment = {
+    name: 'Amulet of Health',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 0.1,
+    properties: [
+        {
+            type: 'passive_modifier',
+            target: 'max_hp',
+            value: 5,
+            description: '+5 maximum hit points',
+            stackable: true
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'wondrous', 'health']
+};
+
+// ===== Headband of Intellect (+2 INT) =====
+const headbandOfIntellect: EnhancedEquipment = {
+    name: 'Headband of Intellect',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 0.1,
+    properties: [
+        {
+            type: 'stat_bonus',
+            target: 'INT',
+            value: 2,
+            description: '+2 Intelligence'
+        }
+    ],
+    grantsSkills: [
+        { skillId: 'arcana', level: 'proficient' },
+        { skillId: 'history', level: 'proficient' }
+    ],
+    source: 'custom',
+    tags: ['magic', 'wondrous', 'intelligence']
+};
+```
+
+### Items That Grant Skills
+
+Equipment that grants skill proficiencies or expertise:
+
+```typescript
+import type { EnhancedEquipment } from 'playlist-data-engine';
+
+// ===== Boots of Elvenkind (Stealth Expertise) =====
+const bootsOfElvenkind: EnhancedEquipment = {
+    name: 'Boots of Elvenkind',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 1,
+    properties: [
+        {
+            type: 'passive_modifier',
+            target: 'stealth_check',
+            value: 2,
+            description: '+2 to Stealth checks'
+        }
+    ],
+    grantsSkills: [
+        {
+            skillId: 'stealth',
+            level: 'expertise'  // 'proficient' or 'expertise'
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'wondrous', 'stealth', 'boots']
+};
+
+// ===== Cloak of Billowing (Performance Proficiency) =====
+const cloakOfBillowing: EnhancedEquipment = {
+    name: 'Cloak of Billowing',
+    type: 'item',
+    rarity: 'common',
+    weight: 1,
+    properties: [
+        {
+            type: 'special_property',
+            target: 'billowing',
+            value: true,
+            description: 'Dramatically billows on command'
+        }
+    ],
+    grantsSkills: [
+        {
+            skillId: 'performance',
+            level: 'proficient'
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'clothing', 'performance']
+};
+```
+
+### Items That Grant Features
+
+Equipment can grant class features or racial traits:
+
+```typescript
+import type { EnhancedEquipment } from 'playlist-data-engine';
+
+// ===== Boots of Speed (Freedom of Movement) =====
+const bootsOfSpeed: EnhancedEquipment = {
+    name: 'Boots of Speed',
+    type: 'item',
+    rarity: 'rare',
+    weight: 1,
+    properties: [
+        {
+            type: 'passive_modifier',
+            target: 'speed',
+            value: 10,
+            description: '+10 walking speed'
+        },
+        {
+            type: 'special_property',
+            target: 'freedom_of_movement',
+            value: true,
+            description: 'Cannot be restrained or grappled'
+        }
+    ],
+    grantsFeatures: ['freedom_of_movement'],
+    source: 'custom',
+    tags: ['magic', 'wondrous', 'speed', 'mobility']
+};
+
+// ===== Amulet of the Planes (Plane Shift) =====
+const amuletOfPlanes: EnhancedEquipment = {
+    name: 'Amulet of the Planes',
+    type: 'item',
+    rarity: 'very_rare',
+    weight: 0.1,
+    grantsFeatures: ['plane_shift'],
+    source: 'custom',
+    tags: ['magic', 'wondrous', 'planar', 'teleportation']
+};
+
+// ===== Ring of Darkvision =====
+const ringOfDarkvision: EnhancedEquipment = {
+    name: 'Ring of Darkvision',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 0.1,
+    properties: [
+        {
+            type: 'ability_unlock',
+            target: 'darkvision',
+            value: 60,
+            description: 'Darkvision 60 feet'
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'ring', 'vision']
+};
+```
+
+### Giving a Sword Fire Damage (Two Methods)
+
+**Method 1: Using Properties**
+
+```typescript
+import type { EnhancedEquipment } from 'playlist-data-engine';
+
+const flameTongueWeapon: EnhancedEquipment = {
+    name: 'Flame Tongue',
+    type: 'weapon',
+    rarity: 'rare',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing' },
+    weaponProperties: ['finesse'],
+    // Direct property for bonus damage
+    properties: [
+        {
+            type: 'damage_bonus',
+            target: 'fire',
+            value: '2d6',
+            description: '+2d6 fire damage on hit'
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'fire', 'weapon']
+};
+```
+
+**Method 2: Using a Feature Reference**
+
+```typescript
+import type { EnhancedEquipment } from 'playlist-data-engine';
+
+const flameTongueWithFeature: EnhancedEquipment = {
+    name: 'Flame Tongue',
+    type: 'weapon',
+    rarity: 'rare',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing' },
+    weaponProperties: ['finesse'],
+    // Reference an existing feature from the registry
+    grantsFeatures: ['flame_weapon'],
+    source: 'custom',
+    tags: ['magic', 'fire', 'weapon']
+};
+
+// Or define an inline mini-feature for this item only
+const flameTongueInlineFeature: EnhancedEquipment = {
+    name: 'Flame Tongue',
+    type: 'weapon',
+    rarity: 'rare',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing' },
+    weaponProperties: ['finesse'],
+    grantsFeatures: [
+        {
+            id: 'flame_tongue_fire',
+            name: 'Flame Tongue Fire',
+            description: 'This weapon deals extra fire damage.',
+            source: 'equipment_inline',
+            effects: [
+                {
+                    type: 'damage_bonus',
+                    target: 'fire',
+                    value: '2d6',
+                    description: '+2d6 fire damage on hit'
+                },
+                {
+                    type: 'ability_unlock',
+                    target: 'light',
+                    value: 'bright_light_20ft',
+                    description: 'Sheds bright light in a 20ft radius'
+                }
+            ]
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'fire', 'weapon']
+};
+```
+
+### Conditional Effects
+
+Equipment properties can have conditions that determine when they apply:
+
+```typescript
+import type { EnhancedEquipment, EquipmentCondition } from 'playlist-data-engine';
+
+// ===== VS CREATURE TYPE =====
+const dragonSlayerAxe: EnhancedEquipment = {
+    name: 'Dragon Slayer Axe',
+    type: 'weapon',
+    rarity: 'very_rare',
+    weight: 5,
+    damage: { dice: '1d12', damageType: 'slashing' },
+    weaponProperties: ['two-handed'],
+    properties: [
+        {
+            type: 'damage_bonus',
+            target: 'dragon',
+            value: '3d6',
+            condition: { type: 'vs_creature_type', value: 'dragon' },
+            description: '+3d6 damage vs dragons'
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'weapon', 'dragon', 'slayer']
+};
+
+// ===== TIME OF DAY =====
+const moonBlade: EnhancedEquipment = {
+    name: 'Moon Blade',
+    type: 'weapon',
+    rarity: 'rare',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing' },
+    properties: [
+        {
+            type: 'damage_bonus',
+            target: 'radiant',
+            value: '2d6',
+            condition: { type: 'at_time_of_day', value: 'night' },
+            description: '+2d6 radiant damage at night'
+        },
+        {
+            type: 'damage_bonus',
+            target: 'radiant',
+            value: '1d6',
+            condition: { type: 'at_time_of_day', value: 'dawn' },
+            description: '+1d6 radiant damage at dawn'
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'weapon', 'moon', 'radiant']
+};
+
+// ===== WIELDER RACE =====
+const elvenChain: EnhancedEquipment = {
+    name: "Elven Chain",
+    type: 'armor',
+    rarity: 'rare',
+    weight: 20,
+    acBonus: 16,
+    properties: [
+        {
+            type: 'special_property',
+            target: 'sleep_immunity',
+            value: true,
+            condition: { type: 'wielder_race', value: 'Elf' },
+            description: 'Immunity to magic that puts you to sleep (Elf only)'
+        },
+        {
+            type: 'passive_modifier',
+            target: 'stealth_disadvantage',
+            value: false,
+            condition: { type: 'wielder_race', value: 'Elf' },
+            description: 'No stealth disadvantage (Elf only)'
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'armor', 'elf', 'stealth']
+};
+
+// ===== WIELDER CLASS =====
+const holyAvenger: EnhancedEquipment = {
+    name: 'Holy Avenger',
+    type: 'weapon',
+    rarity: 'legendary',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing' },
+    weaponProperties: ['versatile'],
+    properties: [
+        {
+            type: 'passive_modifier',
+            target: 'saving_throws',
+            value: 3,
+            condition: { type: 'wielder_class', value: 'Paladin' },
+            description: '+3 to saving throws (Paladin only)'
+        },
+        {
+            type: 'damage_bonus',
+            target: 'radiant',
+            value: '2d6',
+            condition: { type: 'wielder_class', value: 'Paladin' },
+            description: '+2d6 radiant damage vs fiends/undead (Paladin only)'
+        }
+    ],
+    source: 'custom',
+    tags: ['magic', 'weapon', 'paladin', 'holy', 'legendary']
+};
+```
+
+### Item Templates
+
+Templates allow you to create variations of base items:
+
+```typescript
+import { EquipmentModifier } from 'playlist-data-engine';
+import type { EquipmentModification, CharacterEquipment } from 'playlist-data-engine';
+
+// ===== APPLY A TEMPLATE =====
+const equipment: CharacterEquipment = {
+    weapons: [{ name: 'Longsword', quantity: 1, equipped: true }],
+    armor: [],
+    items: [],
+    totalWeight: 3,
+    equippedWeight: 3
+};
+
+// Create a +1 magic weapon modification
+const plusOneModification: EquipmentModification = {
+    id: 'plus_one_longsword_001',
+    name: '+1 Enchantment',
+    properties: [
+        {
+            type: 'passive_modifier',
+            target: 'attack_roll',
+            value: 1,
+            description: '+1 to attack rolls'
+        },
+        {
+            type: 'passive_modifier',
+            target: 'damage_roll',
+            value: 1,
+            description: '+1 to damage rolls'
+        }
+    ],
+    appliedAt: new Date().toISOString(),
+    source: 'enchantment'
+};
+
+// Apply the modification
+equipment.modify = EquipmentModifier.enchant(
+    equipment,
+    'Longsword',
+    plusOneModification,
+    character
+);
+
+// The sword is now +1 and provides the attack/damage bonuses
+```
+
+### Progressive Enchantment Through Gameplay
+
+Track equipment upgrades as players progress:
+
+```typescript
+import { EquipmentModifier, EquipmentGenerator } from 'playlist-data-engine';
+import type { EquipmentModification } from 'playlist-data-engine';
+
+// Game loop: Player earns upgrade points
+let enchantmentLevel = 0;
+
+// Function to enchant weapon based on earned level
+function upgradeWeapon(character: CharacterSheet, weaponName: string) {
+    enchantmentLevel++;
+
+    const modification: EquipmentModification = {
+        id: `upgrade_${Date.now()}`,
+        name: `+${enchantmentLevel} ${weaponName}`,
+        properties: [
+            {
+                type: 'passive_modifier',
+                target: 'attack_roll',
+                value: enchantmentLevel,
+                description: `+${enchantmentLevel} to attack rolls`
+            },
+            {
+                type: 'passive_modifier',
+                target: 'damage_roll',
+                value: enchantmentLevel,
+                description: `+${enchantmentLevel} to damage rolls`
+            }
+        ],
+        appliedAt: new Date().toISOString(),
+        source: 'gameplay'
+    };
+
+    // Remove previous upgrade if exists
+    if (enchantmentLevel > 1) {
+        const oldModId = `upgrade_${Date.now() - 10000}`;
+        EquipmentModifier.removeModification(
+            character.equipment!,
+            weaponName,
+            oldModId,
+            character
+        );
+    }
+
+    // Apply new upgrade
+    character.equipment = EquipmentModifier.enchant(
+        character.equipment!,
+        weaponName,
+        modification,
+        character
+    );
+
+    console.log(`Weapon upgraded to +${enchantmentLevel}!`);
+}
+
+// Example usage:
+upgradeWeapon(character, 'Longsword');  // +1 Longsword
+// ... later in game ...
+upgradeWeapon(character, 'Longsword');  // +2 Longsword
+// ... even later ...
+upgradeWeapon(character, 'Longsword');  // +3 Longsword
+```
+
+### Removing Debuffs from Cursed Items
+
+Disenchant or lift curses from equipment:
+
+```typescript
+import { EquipmentModifier } from 'playlist-data-engine';
+
+// ===== DISenCHANT (Remove beneficial enchantments, keep curses) =====
+const result = EquipmentModifier.disenchant(
+    character.equipment!,
+    'Cursed Sword of Pain',
+    character
+);
+// Removes +1 bonuses but keeps the curse
+
+// ===== LIFT CURSE (Remove curses, keep enchantments) =====
+const result = EquipmentModifier.liftCurse(
+    character.equipment!,
+    'Cursed Sword of Pain',
+    character
+);
+// Removes curse effects but keeps the +1 enchantment
+
+// ===== REMOVE SPECIFIC MODIFICATION =====
+const result = EquipmentModifier.removeModification(
+    character.equipment!,
+    'Cursed Sword',
+    'curse_mod_001',  // Modification ID to remove
+    character
+);
+// Removes only that specific modification
+```
+
+### Multiple Effects Stacking
+
+All equipment effects stack by default:
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+import type { EnhancedEquipment } from 'playlist-data-engine';
+
+// Register two items that both give +1 STR
+const beltOfStrength1: EnhancedEquipment = {
+    name: 'Belt of Strength I',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 1,
+    properties: [
+        { type: 'stat_bonus', target: 'STR', value: 1, description: '+1 STR' }
+    ],
+    source: 'custom',
+    tags: ['magic', 'strength']
+};
+
+const beltOfStrength2: EnhancedEquipment = {
+    name: 'Belt of Strength II',
+    type: 'item',
+    rarity: 'rare',
+    weight: 1,
+    properties: [
+        { type: 'stat_bonus', target: 'STR', value: 1, description: '+1 STR' }
+    ],
+    source: 'custom',
+    tags: ['magic', 'strength']
+};
+
+// If a character equips BOTH items, they get +2 STR total
+// stackable: true is the default behavior
+```
+
+### Batch Spawning Examples
+
+Spawn multiple equipment items at once:
+
+```typescript
+import { EquipmentSpawnHelper, SeededRNG } from 'playlist-data-engine';
+
+const rng = new SeededRNG('loot_seed');
+
+// ===== SPAWN FROM LIST =====
+const starterGear = EquipmentSpawnHelper.spawnFromList(
+    ['Longsword', 'Shield', 'Scale Mail', 'Torch', 'Rope'],
+    rng
+);
+
+// ===== SPAWN BY RARITY =====
+const rareItems = EquipmentSpawnHelper.spawnByRarity('rare', 3, rng);
+// Returns 3 random rare items
+
+// ===== SPAWN BY TAGS =====
+const fireWeapons = EquipmentSpawnHelper.spawnByTags(
+    ['fire', 'weapon'],
+    5,
+    rng
+);
+
+// ===== SPAWN RANDOM WITH FILTERS =====
+const randomLoot = EquipmentSpawnHelper.spawnRandom(
+    10,
+    rng,
+    {
+        excludeZeroWeight: true,    // Skip game-only items
+        includeTypes: ['weapon', 'armor'],
+        minRarity: 'uncommon',
+        maxRarity: 'rare'
+    }
+);
+
+// ===== SPAWN TREASURE HOARD =====
+const dragonHoard = EquipmentSpawnHelper.spawnTreasureHoard(15, rng);
+console.log(`Dragon hoard: ${dragonHoard.items.length} items worth ~${dragonHoard.totalValue} gp`);
+
+// ===== ADD SPAWNED ITEMS TO CHARACTER =====
+const loot = EquipmentSpawnHelper.spawnByRarity('uncommon', 2, rng);
+character = EquipmentSpawnHelper.addToCharacter(character, loot, false);
+```
+
+### Game-Only Items (spawnWeight: 0)
+
+Items that never spawn randomly but are available to game logic:
+
+```typescript
+import type { EnhancedEquipment } from 'playlist-data-engine';
+
+// This item will NEVER appear in random loot tables
+const artifactOfDoom: EnhancedEquipment = {
+    name: 'Artifact of Doom',
+    type: 'item',
+    rarity: 'legendary',
+    weight: 5,
+    properties: [
+        { type: 'stat_bonus', target: 'STR', value: 5, description: '+5 STR' },
+        { type: 'special_property', target: 'curse', value: true, description: 'Cursed!' }
+    ],
+    spawnWeight: 0,  // NEVER spawns randomly
+    source: 'custom',
+    tags: ['artifact', 'unique', 'cursed', 'quest']
+};
+
+// Can ONLY be obtained through specific game logic:
+function awardArtifact(character: CharacterSheet) {
+    // Directly add to character's inventory
+    character.equipment = character.equipment || {
+        weapons: [], armor: [], items: [], totalWeight: 0, equippedWeight: 0
+    };
+
+    character.equipment.items.push({
+        name: 'Artifact of Doom',
+        quantity: 1,
+        equipped: false
+    });
+
+    // Manually apply the effects
+    EquipmentEffectApplier.equipItem(character, artifactOfDoom);
+}
+```
+
+### Complete Custom Magic Item System
+
+Full example of a custom magic item system:
+
+```typescript
+import {
+    ExtensionManager,
+    EquipmentSpawnHelper,
+    EquipmentModifier,
+    EquipmentEffectApplier
+} from 'playlist-data-engine';
+import type { EnhancedEquipment, EquipmentModification } from 'playlist-data-engine';
+import { SeededRNG } from 'playlist-data-engine';
+
+// ===== STEP 1: Define Custom Equipment =====
+const customItems: EnhancedEquipment[] = [
+    {
+        name: 'Frostbrand',
+        type: 'weapon',
+        rarity: 'very_rare',
+        weight: 3,
+        damage: { dice: '1d8', damageType: 'slashing' },
+        weaponProperties: ['finesse'],
+        properties: [
+            { type: 'damage_bonus', target: 'cold', value: '1d8', description: '+1d8 cold damage' },
+            { type: 'ability_unlock', target: 'fire_resistance', value: true, description: 'Fire resistance' }
+        ],
+        grantsFeatures: ['protection_from_fire'],
+        spawnWeight: 0.2,
+        source: 'custom',
+        tags: ['magic', 'ice', 'weapon']
+    },
+    {
+        name: 'Boots of Striding and Springing',
+        type: 'item',
+        rarity: 'uncommon',
+        weight: 1,
+        properties: [
+            { type: 'passive_modifier', target: 'speed', value: 10, description: '+10 speed' },
+            { type: 'ability_unlock', target: 'long_jump', value: true, description: 'Stand up from prone as bonus action' }
+        ],
+        grantsSkills: [{ skillId: 'athletics', level: 'proficient' }],
+        spawnWeight: 0.5,
+        source: 'custom',
+        tags: ['magic', 'boots', 'movement']
+    },
+    {
+        name: 'Ring of Spell Storing',
+        type: 'item',
+        rarity: 'rare',
+        weight: 0.1,
+        grantsSpells: [
+            { spellId: 'fireball', level: 3, uses: 1, recharge: 'dawn' },
+            { spellId: 'shield', level: 1, uses: 1, recharge: 'dawn' }
+        ],
+        spawnWeight: 0.3,
+        source: 'custom',
+        tags: ['magic', 'ring', 'spell']
+    }
+];
+
+// ===== STEP 2: Register Equipment =====
+const manager = ExtensionManager.getInstance();
+manager.register('equipment', customItems, {
+    mode: 'relative',
+    validate: true
+});
+
+// ===== STEP 3: Spawn Custom Items =====
+const rng = new SeededRNG('custom_loot');
+const customLoot = EquipmentSpawnHelper.spawnByTags(['custom', 'magic'], 3, rng);
+
+// ===== STEP 4: Add to Character =====
+const character = CharacterGenerator.generate(seed, audio, 'Adventurer');
+character = EquipmentSpawnHelper.addToCharacter(character, customLoot, true);
+
+// ===== STEP 5: Enchant Items During Gameplay =====
+function enchantItem(character: CharacterSheet, itemName: string, enchantmentLevel: number) {
+    const enchantment: EquipmentModification = {
+        id: `enchant_${itemName}_${Date.now()}`,
+        name: `+${enchantmentLevel} Enhancement`,
+        properties: [
+            {
+                type: 'passive_modifier',
+                target: 'attack_roll',
+                value: enchantmentLevel,
+                description: `+${enchantmentLevel} to attack rolls`
+            }
+        ],
+        appliedAt: new Date().toISOString(),
+        source: 'enchanting'
+    };
+
+    character.equipment = EquipmentModifier.enchant(
+        character.equipment!,
+        itemName,
+        enchantment,
+        character
+    );
+
+    console.log(`${itemName} is now +${enchantmentLevel}!`);
+}
+
+// ===== STEP 6: Quest Rewards =====
+function awardQuestReward(character: CharacterSheet) {
+    // Spawn a rare item as quest reward
+    const reward = EquipmentSpawnHelper.spawnByRarity('rare', 1, new SeededRNG('quest'));
+    if (reward.length > 0) {
+        character = EquipmentSpawnHelper.addToCharacter(character, reward, false);
+        console.log(`Quest complete! You received: ${reward[0].name}`);
+    }
+}
+
+// ===== STEP 7: Boss Drops =====
+function bossLoot(character: CharacterSheet, bossCR: number) {
+    const hoard = EquipmentSpawnHelper.spawnTreasureHoard(
+        bossCR,
+        new SeededRNG(`boss_${Date.now()}`)
+    );
+
+    character = EquipmentSpawnHelper.addToCharacter(character, hoard.items, false);
+    console.log(`Boss defeated! Found ${hoard.items.length} items worth ~${hoard.totalValue} gp`);
+}
+```
+
+---
+
 ## Available Exports
 
 The main exports from the library are:
@@ -1687,7 +2580,10 @@ The main exports from the library are:
 - `AbilityScoreCalculator` - Calculate ability scores
 - `SkillAssigner` - Assign skills and proficiencies
 - `SpellManager` - Manage spells and casting
-- `EquipmentGenerator` - Generate starting equipment
+- `EquipmentGenerator` - Generate starting equipment and manage inventory
+- `EquipmentEffectApplier` - Apply/remove equipment effects when equipping/unequipping
+- `EquipmentModifier` - Enchant, curse, upgrade, and modify equipment
+- `EquipmentSpawnHelper` - Batch spawn equipment by rarity, tags, or templates
 - `NamingEngine` - Generate character names
 - `AppearanceGenerator` - Generate character appearance
 
@@ -1744,6 +2640,16 @@ All TypeScript types are exported, including:
 - `FeatureEffect` - Effect types (stat_bonus, skill_proficiency, ability_unlock, passive_modifier, resource_grant, spell_slot_bonus)
 - `FeaturePrerequisite` - Prerequisite validation (level, abilities, class, race, feature chains)
 - `ExtensionCategory` - All extensible categories (classFeatures, racialTraits, skills, equipment, appearance, etc.)
+
+**Equipment System Types (NEW):**
+- `EnhancedEquipment` - Full equipment definition with properties, features, skills, spells
+- `EquipmentProperty` - Individual equipment property (stat_bonus, skill_proficiency, ability_unlock, passive_modifier, special_property, damage_bonus, spell_grant, stat_requirement)
+- `EquipmentCondition` - Property conditions (vs_creature_type, at_time_of_day, wielder_race, wielder_class, while_equipped, on_hit, on_damage_taken, custom)
+- `EquipmentModification` - Runtime enchantment, curse, or upgrade
+- `EnhancedInventoryItem` - Inventory item with per-instance modifications
+- `EquipmentMiniFeature` - Inline equipment-specific feature definition
+- `SpawnRandomOptions` - Options for random equipment spawning
+- `TreasureHoardResult` - Treasure hoard with items and estimated value
 
 ---
 
