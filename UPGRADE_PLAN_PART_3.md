@@ -911,16 +911,16 @@ Test Coverage:
 **File:** `tests/integration/prerequisitesAndRaces.integration.test.ts`
 
 Test Scenarios:
-- [ ] Generate character with skill prerequisites met
-- [ ] Generate character with skill prerequisites unmet (skill not assigned)
-- [ ] Level up character, new skills with prerequisites become available
-- [ ] Generate spellcaster with spell prerequisites
-- [ ] Custom race character with correct bonuses
-- [ ] Custom race with subrace (High Elf) gets subrace-specific traits
-- [ ] Custom race with racial trait prerequisites
-- [ ] Dragon Sorcerer with dragon-only skills/spells
-- [ ] Save and load character with all prerequisite data
-- [ ] Feature requiring skill/spell prerequisites
+- [x] Generate character with skill prerequisites met
+- [x] Generate character with skill prerequisites unmet (skill not assigned)
+- [x] Level up character, new skills with prerequisites become available
+- [x] Generate spellcaster with spell prerequisites
+- [x] Custom race character with correct bonuses
+- [x] Custom race with subrace (High Elf) gets subrace-specific traits
+- [x] Custom race with racial trait prerequisites
+- [x] Dragon Sorcerer with dragon-only skills/spells
+- [x] Save and load character with all prerequisite data
+- [x] Feature requiring skill/spell prerequisites
 
 ---
 
