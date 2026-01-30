@@ -3,9 +3,9 @@
  * Based on specs/001-core-engine/SPEC.md
  */
 
-import type { AbilityScores, Race } from '../types/Character.js';
+import type { AbilityScores } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
-import { RACE_DATA } from '../../utils/constants.js';
+import { getRaceData } from '../../utils/constants.js';
 
 /**
  * Calculate D&D 5e ability scores and modifiers from audio characteristics
@@ -59,21 +59,36 @@ export class AbilityScoreCalculator {
      * Each D&D 5e race provides +2 bonuses to specific abilities. This function
      * applies those racial bonuses and ensures no ability exceeds the D&D maximum of 20.
      *
+     * Supports both default D&D 5e races and custom races registered via ExtensionManager.
+     *
      * @param {AbilityScores} baseScores - Base scores before racial bonuses
-     * @param {Race} race - Selected character race (e.g., 'Human', 'Elf', 'Dwarf')
+     * @param {string} race - Selected character race (e.g., 'Human', 'Elf', 'Dwarf', or custom race)
      * @returns {AbilityScores} Final scores with racial bonuses applied (capped at 20)
      *
      * @example
+     * // Default race
      * const bonusedScores = AbilityScoreCalculator.applyRacialBonuses(baseScores, 'Elf');
      * // For Elf: DEX +2, assuming baseScores.DEX was 14 → becomes 16
+     *
+     * // Custom race (if registered via ExtensionManager)
+     * const customScores = AbilityScoreCalculator.applyRacialBonuses(baseScores, 'Dragonkin');
      */
-    static applyRacialBonuses(baseScores: AbilityScores, race: Race): AbilityScores {
-        const bonuses = RACE_DATA[race].ability_bonuses;
+    static applyRacialBonuses(baseScores: AbilityScores, race: string): AbilityScores {
+        const raceData = getRaceData(race);
+
+        if (!raceData) {
+            console.warn(`Unknown race: "${race}", using no ability bonuses`);
+            return { ...baseScores };
+        }
+
+        const bonuses = raceData.ability_bonuses;
         const result = { ...baseScores };
 
-        for (const [ability, bonus] of Object.entries(bonuses)) {
-            const key = ability as keyof AbilityScores;
-            result[key] = Math.min(20, (result[key] || 0) + (bonus || 0));
+        if (bonuses) {
+            for (const [ability, bonus] of Object.entries(bonuses)) {
+                const key = ability as keyof AbilityScores;
+                result[key] = Math.min(20, (result[key] || 0) + (bonus || 0));
+            }
         }
 
         return result;

@@ -4,12 +4,28 @@
 
 import type { Race, Class, Ability, Skill } from '../core/types/Character.js';
 
-// Race data with ability score bonuses
-export const RACE_DATA: Record<Race, {
+/**
+ * Race data entry interface
+ *
+ * Defines the structure for race data including ability bonuses,
+ * speed, traits, and optional subraces.
+ */
+export interface RaceDataEntry {
+    /** Ability score bonuses granted by this race */
     ability_bonuses: Partial<Record<Ability, number>>;
+
+    /** Base walking speed in feet */
     speed: number;
+
+    /** Racial traits granted by this race */
     traits: string[];
-}> = {
+
+    /** Optional: Available subraces for this race */
+    subraces?: string[];
+}
+
+// Race data with ability score bonuses
+export const RACE_DATA: Record<Race, RaceDataEntry> = {
     'Human': {
         ability_bonuses: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 },
         speed: 30,
@@ -56,6 +72,55 @@ export const RACE_DATA: Record<Race, {
         traits: ['Darkvision', 'Hellish Resistance', 'Infernal Legacy'],
     },
 };
+
+/**
+ * Get race data (default or custom)
+ *
+ * This helper function retrieves race data from either:
+ * 1. The default RACE_DATA constant (for built-in races)
+ * 2. The ExtensionManager (for custom races registered via 'races.data')
+ *
+ * @param race - The race name to look up
+ * @returns Race data entry or undefined if not found
+ *
+ * @example
+ * // Get default race data
+ * const elfData = getRaceData('Elf');
+ * console.log(elfData.speed); // 30
+ *
+ * // Get custom race data (if registered via ExtensionManager)
+ * const dragonkinData = getRaceData('Dragonkin');
+ * if (dragonkinData) {
+ *     console.log(dragonkinData.ability_bonuses);
+ * }
+ */
+export function getRaceData(race: string): RaceDataEntry | undefined {
+    // Check default races
+    if (race in RACE_DATA) {
+        return RACE_DATA[race as Race];
+    }
+
+    // Check ExtensionManager for custom race data
+    // Note: This is a dynamic check at runtime for custom races
+    // The ExtensionManager is lazy-loaded to avoid circular dependencies
+    try {
+        const { ExtensionManager } = require('../core/extensions/ExtensionManager.js');
+        const manager = ExtensionManager.getInstance();
+        const customRaceData = manager.get('races.data' as any);
+
+        if (customRaceData && Array.isArray(customRaceData)) {
+            const raceEntry = customRaceData.find((d: any) => d.race === race);
+            if (raceEntry) {
+                return raceEntry as RaceDataEntry;
+            }
+        }
+    } catch (error) {
+        // ExtensionManager not available or not initialized
+        // This is expected in some contexts (e.g., pure server-side)
+    }
+
+    return undefined;
+}
 
 // Class data with primary abilities and hit dice
 export const CLASS_DATA: Record<Class, {

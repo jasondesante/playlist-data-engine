@@ -279,6 +279,36 @@ export class FeatureRegistry {
             errors.push(`Requires race ${prereqs.race}`);
         }
 
+        // Check subrace requirement
+        if (prereqs.subrace !== undefined) {
+            if (!character.subrace || character.subrace !== prereqs.subrace) {
+                errors.push(`Requires subrace ${prereqs.subrace} (current: ${character.subrace || 'none'})`);
+            }
+        }
+
+        // Check skill prerequisites (skills that must be proficient first)
+        if (prereqs.skills && prereqs.skills.length > 0) {
+            for (const requiredSkillId of prereqs.skills) {
+                const proficiency = character.skills[requiredSkillId];
+                if (proficiency !== 'proficient' && proficiency !== 'expertise') {
+                    errors.push(`Requires proficiency in ${requiredSkillId}`);
+                }
+            }
+        }
+
+        // Check spell prerequisites (spells that must be known first)
+        if (prereqs.spells && prereqs.spells.length > 0) {
+            const knownSpells = character.spells?.known_spells || [];
+            const cantrips = character.spells?.cantrips || [];
+            const allKnownSpells = [...knownSpells, ...cantrips];
+
+            for (const requiredSpell of prereqs.spells) {
+                if (!allKnownSpells.includes(requiredSpell)) {
+                    errors.push(`Requires spell: ${requiredSpell}`);
+                }
+            }
+        }
+
         // Check feature prerequisites (must have these features already)
         if (prereqs.features && prereqs.features.length > 0) {
             const characterFeatures = this.getCharacterFeatureIds(character);

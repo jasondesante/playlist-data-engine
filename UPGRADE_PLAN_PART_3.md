@@ -988,7 +988,7 @@ Test Scenarios:
 - [x] Add SkillPrerequisite interface
 - [x] Add SpellPrerequisite interface
 - [x] Add subrace property to CharacterSheet
-- [ ] Design race extensibility strategy
+- [x] Design race extensibility strategy (Option A: Keep Race closed union, use getRaceData helper)
 
 ### Phase 3: Skill Prerequisites
 - [x] Create SkillValidator prerequisite validation
@@ -1002,15 +1002,15 @@ Test Scenarios:
 
 ### Phase 5: Custom Races
 - [x] Update ExtensionManager race validation
-- [ ] Create RACE_DATA extensibility (getRaceData helper)
-- [ ] Update AbilityScoreCalculator
+- [x] Create RACE_DATA extensibility (getRaceData helper)
+- [x] Update AbilityScoreCalculator
 
 ### Phase 6: Subrace Support (NEW)
-- [ ] Add subrace property to CharacterSheet
-- [ ] Update FeaturePrerequisite for subrace
-- [ ] Update FeatureRegistry.validatePrerequisites() for subrace
+- [x] Add subrace property to CharacterSheet
+- [x] Update FeaturePrerequisite for subrace
+- [x] Update FeatureRegistry.validatePrerequisites() for subrace
 - [ ] Update racial trait assignment for subrace
-- [ ] Add subraces to RaceDataEntry
+- [x] Add subraces to RaceDataEntry
 
 ### Phase 7: Feature Prerequisites Expansion
 - [ ] Update FeatureValidator for skills/spells/subrace

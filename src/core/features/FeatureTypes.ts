@@ -61,6 +61,8 @@ export interface FeatureEffect {
  * - Other features to be learned first (chains)
  * - Minimum ability scores
  * - Specific class or race
+ * - Skills that must be proficient first
+ * - Spells that must be known first
  * - Custom conditions
  */
 export interface FeaturePrerequisite {
@@ -76,8 +78,17 @@ export interface FeaturePrerequisite {
     /** Specific class required (for multi-class features) */
     class?: Class;
 
-    /** Specific race or subrace required */
+    /** Specific race required */
     race?: Race;
+
+    /** Specific subrace required (e.g., 'High Elf', 'Hill Dwarf') */
+    subrace?: string;
+
+    /** Skills that must be proficient first (by skill ID) */
+    skills?: string[];
+
+    /** Spells that must be known first (by spell name) */
+    spells?: string[];
 
     /** Custom condition description (for manual validation) */
     custom?: string;
