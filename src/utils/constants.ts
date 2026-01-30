@@ -94,7 +94,31 @@ export const RACE_DATA: Record<Race, RaceDataEntry> = {
  *     console.log(dragonkinData.ability_bonuses);
  * }
  */
-export function getRaceData(race: string): RaceDataEntry | undefined {
+// Cache for dynamically loaded ExtensionManager to avoid repeated imports
+let extensionManagerModule: any = null;
+let extensionManagerPromise: Promise<any> | null = null;
+
+/**
+ * Get race data (default or custom)
+ *
+ * This function supports both default D&D 5e races and custom races registered via ExtensionManager.
+ * Custom race data is retrieved from ExtensionManager's 'races.data' category.
+ *
+ * @param race - The race name to look up
+ * @returns Race data entry or undefined if not found
+ *
+ * @example
+ * // Get default race data
+ * const elfData = getRaceData('Elf');
+ * console.log(elfData.speed); // 30
+ *
+ * // Get custom race data (if registered via ExtensionManager)
+ * const dragonkinData = getRaceData('Dragonkin');
+ * if (dragonkinData) {
+ *     console.log(dragonkinData.ability_bonuses);
+ * }
+ */
+export async function getRaceDataAsync(race: string): Promise<RaceDataEntry | undefined> {
     // Check default races
     if (race in RACE_DATA) {
         return RACE_DATA[race as Race];
@@ -104,8 +128,52 @@ export function getRaceData(race: string): RaceDataEntry | undefined {
     // Note: This is a dynamic check at runtime for custom races
     // The ExtensionManager is lazy-loaded to avoid circular dependencies
     try {
-        const { ExtensionManager } = require('../core/extensions/ExtensionManager.js');
-        const manager = ExtensionManager.getInstance();
+        if (!extensionManagerModule) {
+            // Use dynamic import for ESM compatibility
+            if (!extensionManagerPromise) {
+                extensionManagerPromise = import('../core/extensions/ExtensionManager.js');
+            }
+            const module = await extensionManagerPromise;
+            extensionManagerModule = module.ExtensionManager;
+        }
+        const manager = extensionManagerModule.getInstance();
+        const customRaceData = manager.get('races.data' as any);
+
+        if (customRaceData && Array.isArray(customRaceData)) {
+            const raceEntry = customRaceData.find((d: any) => d.race === race);
+            if (raceEntry) {
+                return raceEntry as RaceDataEntry;
+            }
+        }
+    } catch (error) {
+        // ExtensionManager not available or not initialized
+        // This is expected in some contexts (e.g., pure server-side)
+    }
+
+    return undefined;
+}
+
+/**
+ * Synchronous version of getRaceData for backward compatibility
+ *
+ * Note: This function uses require() for compatibility with existing code.
+ * In ESM environments, require() may not work correctly. Use getRaceDataAsync() for
+ * full ESM support or ensure ExtensionManager is imported before calling this function.
+ *
+ * @param race - The race name to look up
+ * @returns Race data entry or undefined if not found
+ */
+export function getRaceData(race: string): RaceDataEntry | undefined {
+    // Check default races
+    if (race in RACE_DATA) {
+        return RACE_DATA[race as Race];
+    }
+
+    // Check ExtensionManager for custom race data (using require for CJS compatibility)
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const extensionModule = require('../core/extensions/ExtensionManager.js');
+        const manager = extensionModule.ExtensionManager.getInstance();
         const customRaceData = manager.get('races.data' as any);
 
         if (customRaceData && Array.isArray(customRaceData)) {

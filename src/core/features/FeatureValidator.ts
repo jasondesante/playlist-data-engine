@@ -269,8 +269,28 @@ export class FeatureValidator {
 
         if (!t.race || typeof t.race !== 'string') {
             errors.push('Trait must have a race (string)');
-        } else if (!VALID_RACES.includes(t.race)) {
-            errors.push(`Invalid race: "${t.race}". Must be one of: ${VALID_RACES.join(', ')}`);
+        } else {
+            // Check if it's a valid default race or custom race
+            const isValidDefaultRace = VALID_RACES.includes(t.race);
+
+            // Check ExtensionManager for custom races
+            let isValidCustomRace = false;
+            try {
+                // Dynamic require to avoid circular dependencies
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const ExtensionModule = require('../extensions/ExtensionManager.js');
+                const manager = ExtensionModule.ExtensionManager.getInstance();
+                const customRaces = manager.get('races');
+                if (Array.isArray(customRaces) && customRaces.includes(t.race)) {
+                    isValidCustomRace = true;
+                }
+            } catch {
+                // ExtensionManager not available, skip custom race check
+            }
+
+            if (!isValidDefaultRace && !isValidCustomRace) {
+                errors.push(`Invalid race: "${t.race}". Must be one of: ${VALID_RACES.join(', ')} or a custom race registered via ExtensionManager.`);
+            }
         }
 
         if (!t.source || typeof t.source !== 'string') {
@@ -450,8 +470,28 @@ export class FeatureValidator {
         if (p.race !== undefined) {
             if (typeof p.race !== 'string') {
                 errors.push('Prerequisite race must be a string');
-            } else if (!VALID_RACES.includes(p.race)) {
-                errors.push(`Invalid prerequisite race: "${p.race}". Must be one of: ${VALID_RACES.join(', ')}`);
+            } else {
+                // Check if it's a valid default race or custom race
+                const isValidDefaultRace = VALID_RACES.includes(p.race);
+
+                // Check ExtensionManager for custom races
+                let isValidCustomRace = false;
+                try {
+                    // Dynamic require to avoid circular dependencies
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const ExtensionModule = require('../extensions/ExtensionManager.js');
+                    const manager = ExtensionModule.ExtensionManager.getInstance();
+                    const customRaces = manager.get('races');
+                    if (Array.isArray(customRaces) && customRaces.includes(p.race)) {
+                        isValidCustomRace = true;
+                    }
+                } catch {
+                    // ExtensionManager not available, skip custom race check
+                }
+
+                if (!isValidDefaultRace && !isValidCustomRace) {
+                    errors.push(`Invalid prerequisite race: "${p.race}". Must be one of: ${VALID_RACES.join(', ')} or a custom race registered via ExtensionManager.`);
+                }
             }
         }
 
