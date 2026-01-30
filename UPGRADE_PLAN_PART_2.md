@@ -2020,10 +2020,10 @@ const treasure = EquipmentSpawnHelper.spawnTreasureHoard(5, rng);
   - [ ] Complete custom magic item system example
 
 ### Phase 12: Examples & Demos
-- [ ] Create customEquipmentExamples.ts
-- [ ] Create equipmentEnchantmentDemo.ts
-- [ ] Create batchSpawningDemo.ts
-- [ ] Create comprehensive usage examples
+- [x] Create customEquipmentExamples.ts
+- [x] Create equipmentEnchantmentDemo.ts
+- [x] Create batchSpawningDemo.ts
+- [x] Create comprehensive usage examples
 
 ---
 
