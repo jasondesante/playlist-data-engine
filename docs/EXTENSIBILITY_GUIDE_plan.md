@@ -316,10 +316,10 @@ This ensures all discovered issues are tracked, researched, and resolved systema
 - [x] Verify `asClass` is exported from src/index.ts (line 177)
 
 ### Task 5.3: Verify Registry Helper Functions
-- [ ] `getFeatureRegistry()` → [src/core/features/FeatureRegistry.ts:569](src/core/features/FeatureRegistry.ts#L569)
-- [ ] `getSkillRegistry()` → [src/core/skills/SkillRegistry.ts:399](src/core/skills/SkillRegistry.ts#L399)
-- [ ] `getSpellRegistry()` → [src/core/spells/SpellRegistry.ts (verify export)]
-- [ ] Verify all are exported from src/index.ts
+- [x] `getFeatureRegistry()` → [src/core/features/FeatureRegistry.ts:569](src/core/features/FeatureRegistry.ts#L569)
+- [x] `getSkillRegistry()` → [src/core/skills/SkillRegistry.ts:399](src/core/skills/SkillRegistry.ts#L399)
+- [x] `getSpellRegistry()` → [src/core/spells/SpellRegistry.ts:576](src/core/spells/SpellRegistry.ts#L576)
+- [x] Verify all are exported from src/index.ts
 
 ### Task 5.4: Verify Initialization Helpers
 All should be exported from [src/core/extensions/index.ts](src/core/extensions/index.ts):
@@ -601,11 +601,11 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 | Phase 2: Registries | 3 | 3 | 100% | Complete |
 | Phase 3: Validators | 4 | 4 | 100% | Complete |
 | Phase 4: EquipmentModifier | 5 | 5 | 100% | Complete |
-| Phase 5: Helpers | 4 | 2 | 50% | In Progress |
+| Phase 5: Helpers | 4 | 3 | 75% | In Progress |
 | Phase 6: Types | 7 | 0 | 0% | Pending |
 | Phase 7: Categories | 11 | 0 | 0% | Pending |
 | Phase 8: Examples | 7 | 0 | 0% | Pending |
-| **TOTAL** | **48** | **21** | **44%** | **In Progress** |
+| **TOTAL** | **48** | **22** | **46%** | **In Progress** |
 
 ---
 
