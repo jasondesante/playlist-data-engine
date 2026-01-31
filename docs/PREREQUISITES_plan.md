@@ -329,14 +329,14 @@ Verify all documented items are exported from the main package.
 
 ### Task 5.1: Verify Type Exports from src/index.ts
 
-- [ ] `SkillPrerequisite` type - Line 105
-- [ ] `CustomSkill` type - Line 104
-- [ ] `FeaturePrerequisite` type - Line 97
-- [ ] `ClassFeature` type - Line 94
-- [ ] `RacialTrait` type - Line 95
-- [ ] `SpellPrerequisite` type - Line 114
-- [ ] `Spell` type - Line 115
-- [ ] `ValidationResult` type - Line 112 (from ExtensionManager)
+- [x] `SkillPrerequisite` type - Line 109 (plan listed 105 - updated)
+- [x] `CustomSkill` type - Line 108 (plan listed 104 - updated)
+- [x] `FeaturePrerequisite` type - Line 101 (plan listed 97 - updated)
+- [x] `ClassFeature` type - Line 98 (plan listed 94 - updated)
+- [x] `RacialTrait` type - Line 99 (plan listed 95 - updated)
+- [x] `SpellPrerequisite` type - Line 119 (plan listed 114 - updated)
+- [x] `Spell` type - Line 120 (plan listed 115 - updated)
+- [x] `ValidationResult` type - Line 115 (plan listed 112 - updated) - from ExtensionManager
 
 ### Task 5.2: Verify Class Exports from src/index.ts
 
@@ -573,7 +573,7 @@ Verify type imports across modules are correct.
 | Registry Classes | 2 | 2* |
 | Extension Classes | 1 | 1 |
 | Helper Functions | 2 | 2 |
-| Public API Exports | 14 | 0 |
+| Public API Exports | 14 | 8 |
 
 *Note: Registry Classes verified but Task 3.1 found `meetsPrerequisites` method doesn't exist (see Task 6.1)
 
