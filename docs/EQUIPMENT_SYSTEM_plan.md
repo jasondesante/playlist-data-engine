@@ -43,14 +43,14 @@ This approach ensures all discrepancies are captured systematically and resolved
 
 ### Task 1.1: Verify File Structure
 
-- [ ] `src/core/types/Equipment.ts` exists - Main equipment type definitions
-- [ ] `src/core/types/Character.ts` exists - Character sheet type definitions
-- [ ] `src/core/equipment/EquipmentEffectApplier.ts` exists - Effect application logic
-- [ ] `src/core/equipment/EquipmentValidator.ts` exists - Validation logic
-- [ ] `src/core/equipment/EquipmentModifier.ts` exists - Modification logic
-- [ ] `src/core/equipment/EquipmentSpawnHelper.ts` exists - Spawning utilities
-- [ ] `src/core/extensions/ExtensionManager.ts` exists - Extension registration
-- [ ] `src/core/randomness/SeededRNG.ts` exists - RNG utilities
+- [x] `src/core/types/Equipment.ts` exists - Main equipment type definitions
+- [x] `src/core/types/Character.ts` exists - Character sheet type definitions
+- [x] `src/core/equipment/EquipmentEffectApplier.ts` exists - Effect application logic
+- [x] `src/core/equipment/EquipmentValidator.ts` exists - Validation logic
+- [x] `src/core/equipment/EquipmentModifier.ts` exists - Modification logic
+- [x] `src/core/equipment/EquipmentSpawnHelper.ts` exists - Spawning utilities
+- [x] `src/core/extensions/ExtensionManager.ts` exists - Extension registration
+- [x] `src/core/randomness/SeededRNG.ts` exists - RNG utilities (DISCREPANCY: actually at `src/utils/random.ts`)
 
 ### Task 1.2: Verify Package Exports
 
@@ -319,6 +319,7 @@ For every item listed in Phases 1-4, verify:
 
 ### Discrepancies Found
 
+- [x] SeededRNG path mismatch - Documented as `src/core/randomness/SeededRNG.ts` but actually located at `src/utils/random.ts`
 - [ ] Items documented but not found in codebase
 - [ ] Items exist in code but not documented
 - [ ] Signature mismatches between documentation and code
