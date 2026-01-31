@@ -103,17 +103,18 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 2.2: Equipment Interfaces
 
-- [ ] `interface EquipmentProperty` → src/core/types/Equipment.ts
-  - [ ] `type: EquipmentPropertyType`
-  - [ ] `target: string`
-  - [ ] `value: number | string | boolean`
-  - [ ] `condition?: EquipmentCondition`
-  - [ ] `description?: string`
-  - [ ] `stackable?: boolean` (default: true)
+- [x] `interface EquipmentProperty` → src/core/types/Equipment.ts (VERIFIED)
+  - [x] `type: EquipmentPropertyType`
+  - [x] `target: string`
+  - [x] `value: number | string | boolean`
+  - [x] `condition?: EquipmentCondition`
+  - [x] `description?: string`
+  - [x] `stackable?: boolean` (default: true)
 
-- [ ] `interface EquipmentCondition` → src/core/types/Equipment.ts
-  - [ ] `type: string`
-  - [ ] `value: string | boolean`
+- [x] `type EquipmentCondition` → src/core/types/Equipment.ts (VERIFIED - better than planned!)
+  - [x] Implemented as discriminated union (not simple interface) for type safety
+  - [x] Condition types: 'vs_creature_type', 'at_time_of_day', 'wielder_race', 'wielder_class', 'while_equipped', 'on_hit', 'on_damage_taken', 'custom'
+  - [x] Each condition type has properly typed values
 
 - [ ] `interface EnhancedEquipment` → src/core/types/Equipment.ts
   - [ ] **Base Properties:**
