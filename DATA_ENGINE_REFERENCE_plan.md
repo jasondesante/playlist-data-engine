@@ -351,9 +351,9 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 **Focus**: Equipment data structures, spawning, validation, and modification.
 **Estimated Items**: ~60
 
-### Task 5.1: Equipment Types (10 items)
-- [ ] EquipmentProperty, EquipmentPropertyType, EquipmentCondition, EnhancedEquipment, EquipmentModification, EnhancedInventoryItem, EffectApplicationResult, EquipmentValidationResult → src/types/Equipment.ts
-- [ ] SpawnRandomOptions, TreasureHoardResult → src/core/equipment/EquipmentSpawnHelper.ts
+### Task 5.1: Equipment Types (10 items) ✅ COMPLETED
+- [x] EquipmentProperty, EquipmentPropertyType, EquipmentCondition, EnhancedEquipment, EquipmentModification, EnhancedInventoryItem, EffectApplicationResult, EquipmentValidationResult → src/core/types/Equipment.ts ✅ (location mismatch: documented as src/types/Equipment.ts)
+- [x] SpawnRandomOptions, TreasureHoardResult → src/core/types/Equipment.ts ✅ (location mismatch: documented as src/core/equipment/EquipmentSpawnHelper.ts)
 
 ### Task 5.2: Equipment Core Classes (50 items)
 - [ ] class EquipmentEffectApplier (static) → src/core/equipment/EquipmentEffectApplier.ts
@@ -586,7 +586,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
-| 5 | Equipment System | ~60 | ⬜ Not Started |
+| 5 | Equipment System | ~60 | 🔄 IN PROGRESS (10/60 done) |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
 | **Total** | | **~449** | |
@@ -710,6 +710,17 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - `DiscordConnectionState` (enum) → (87-98)
 - [x] **Signature mismatch (Task 4.3 - SteamAPIClient.getCurrentGame)** - DATA_ENGINE_REFERENCE.md documents return type as `Promise<{ name; appId } | null>`, but actual code at `src/core/sensors/SteamAPIClient.ts:215-261` returns `Promise<{ name: string; appId: number; source: 'steam'; sessionDuration?: number } | null>`. The actual return type has additional properties `source` and `sessionDuration`. The code is correct; documentation should be updated.
 - [x] **Signature mismatch (Task 4.3 - SteamAPIClient.getGameMetadata)** - DATA_ENGINE_REFERENCE.md documents return type as `Promise<{ genre? } | null>`, but actual code at `src/core/sensors/SteamAPIClient.ts:267-313` returns `Promise<{ appId?: number; name: string; genre?: string[]; description?: string } | null>`. The actual return type has additional properties `appId`, `name`, and `description`. The code is correct; documentation should be updated.
+- [x] **Location mismatch (Task 5.1 - Equipment Types)** - DATA_ENGINE_REFERENCE_plan.md documents equipment types at `src/types/Equipment.ts` and `src/core/equipment/EquipmentSpawnHelper.ts`, but these files do not exist at those paths. All 10 types exist at `src/core/types/Equipment.ts`:
+  - `EquipmentProperty` → (64-71)
+  - `EquipmentPropertyType` → (38-45)
+  - `EquipmentCondition` → (51-59)
+  - `EnhancedEquipment` → (89-137)
+  - `EquipmentModification` → (142-159)
+  - `EnhancedInventoryItem` → (164-177)
+  - `EffectApplicationResult` → (231-238)
+  - `EquipmentValidationResult` → (243-248)
+  - `SpawnRandomOptions` → (253-262)
+  - `TreasureHoardResult` → (267-274)
 - [ ] [Item] documented but not found in codebase (covered by EquipmentGenerator.getEquipmentByType above)
 - [ ] [Item] exists in code but not documented (covered by EquipmentGenerator methods above)
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y] (covered by EquipmentGenerator methods above)
