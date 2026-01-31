@@ -176,13 +176,13 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] getActiveSessionCount(): number
   - [x] getActiveSessionIds(): string[]
 
-### Task 3.2: Progression Types (6 items)
-- [ ] ListeningSession → src/types/ProgressionTypes.ts
-- [ ] ExperienceSystem → src/types/ProgressionTypes.ts
-- [ ] CharacterUpdateResult → src/types/ProgressionTypes.ts
-- [ ] LevelUpDetail → src/types/ProgressionTypes.ts
-- [ ] LevelUpBenefits → src/types/ProgressionTypes.ts
-- [ ] StatIncreaseResult → src/types/StatTypes.ts
+### Task 3.2: Progression Types (6 items) ✅ COMPLETED
+- [x] ListeningSession → src/core/types/Progression.ts (60-71) ✅ (location mismatch: documented as src/types/ProgressionTypes.ts)
+- [x] ExperienceSystem → src/core/types/Progression.ts (76-98) ✅ (location mismatch: documented as src/types/ProgressionTypes.ts)
+- [x] CharacterUpdateResult → src/core/progression/CharacterUpdater.ts (9-18) ✅ (location mismatch: documented as src/types/ProgressionTypes.ts)
+- [x] LevelUpDetail → src/core/types/Progression.ts (219-254) ✅ (location mismatch: documented as src/types/ProgressionTypes.ts)
+- [x] LevelUpBenefits → src/core/progression/LevelUpProcessor.ts (25-63) ✅ (location mismatch: documented as src/types/ProgressionTypes.ts)
+- [x] StatIncreaseResult → src/core/types/Progression.ts (190-214) ✅ (location mismatch: documented as src/types/StatTypes.ts)
 
 ### Task 3.3: XP Calculator & Level Up (14 items)
 - [ ] class XPCalculator → src/core/progression/XPCalculator.ts
@@ -582,7 +582,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
-| 3 | Progression & Combat | ~80 | 🔄 In Progress (22/~80 done) |
+| 3 | Progression & Combat | ~80 | 🔄 In Progress (28/~80 done) |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
@@ -636,6 +636,13 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] **Missing documentation (Task 2.3 - EquipmentGenerator.addModification)** - DATA_ENGINE_REFERENCE.md is missing the `addModification(equipment, itemName, modification, instanceId?, character?): CharacterEquipment` method. The actual code at `src/core/generation/EquipmentGenerator.ts:590-644` includes this method for adding equipment modifications/enchantments. Documentation needs to be updated.
 - [x] **Missing documentation (Task 2.3 - EquipmentGenerator.removeModification)** - DATA_ENGINE_REFERENCE.md is missing the `removeModification(equipment, itemName, modificationId, character?): CharacterEquipment` method. The actual code at `src/core/generation/EquipmentGenerator.ts:655-709` includes this method for removing equipment modifications. Documentation needs to be updated.
 - [x] **Missing documentation (Task 2.3 - EquipmentGenerator.getActiveEffects)** - DATA_ENGINE_REFERENCE.md is missing the `getActiveEffects(equipment, itemName, instanceId?): EquipmentProperty[]` method. The actual code at `src/core/generation/EquipmentGenerator.ts:719-759` includes this method for getting all active effects from an equipment item (base + modifications). Documentation needs to be updated.
+- [x] **Location mismatch (Task 3.2 - Progression Types)** - DATA_ENGINE_REFERENCE_plan.md documents progression types at `src/types/ProgressionTypes.ts` and `src/types/StatTypes.ts`, but these files do not exist. All 6 types exist at different locations:
+  - ListeningSession → `src/core/types/Progression.ts` (60-71)
+  - ExperienceSystem → `src/core/types/Progression.ts` (76-98)
+  - LevelUpDetail → `src/core/types/Progression.ts` (219-254)
+  - StatIncreaseResult → `src/core/types/Progression.ts` (190-214)
+  - CharacterUpdateResult → `src/core/progression/CharacterUpdater.ts` (9-18)
+  - LevelUpBenefits → `src/core/progression/LevelUpProcessor.ts` (25-63)
 - [ ] [Item] documented but not found in codebase (covered by EquipmentGenerator.getEquipmentByType above)
 - [ ] [Item] exists in code but not documented (covered by EquipmentGenerator methods above)
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y] (covered by EquipmentGenerator methods above)
