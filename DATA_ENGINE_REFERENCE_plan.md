@@ -118,8 +118,8 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] calculateBaseScores(audioProfile): AbilityScores ✅
   - [x] applyRacialBonuses(baseScores, race): AbilityScores ✅ (parameter type: string vs Race documented; both correct for custom race support)
   - [x] calculateModifiers(scores): AbilityScores ✅
-- [ ] class SkillAssigner (static) → src/core/generation/SkillAssigner.ts
-  - [ ] assignSkills(characterClass, rng): Record<Skill, ProficiencyLevel>
+- [x] class SkillAssigner (static) → src/core/generation/SkillAssigner.ts
+  - [x] assignSkills(characterClass, rng, character?): Record<string, ProficiencyLevel> ✅ (return type: string vs Skill documented; third parameter missing from docs; both correct for custom skill/prerequisite support)
 - [ ] class SpellManager (static) → src/core/generation/SpellManager.ts
   - [ ] isSpellcaster(characterClass): boolean
   - [ ] getSpellSlots(characterClass, characterLevel): Record<number, { total; used }>
@@ -579,7 +579,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
-| 2 | Core Processing Modules | ~50 | 🔄 In Progress (15/~50 done) |
+| 2 | Core Processing Modules | ~50 | 🔄 In Progress (16/~50 done) |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
@@ -622,6 +622,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - `CharacterSheetSchema` → `src/utils/validators.ts` (106-156)
 - [x] **Signature mismatch (Task 2.3 - CharacterSheet interface)** - DATA_ENGINE_REFERENCE.md shows CharacterSheet with properties `abilities` and `modifiers`, but actual code at `src/core/types/Character.ts:246-249` uses `ability_scores` and `ability_modifiers`. The code is correct; documentation needs to be updated.
 - [x] **Missing documentation (Task 2.3 - CharacterGeneratorOptions)** - DATA_ENGINE_REFERENCE.md is missing the `extensions?: CharacterGeneratorExtensions` property in CharacterGeneratorOptions. The actual code at `src/core/generation/CharacterGenerator.ts:80-119` includes this property which allows registering custom spells, equipment, races, classes, and appearance options.
+- [x] **Signature mismatch (Task 2.3 - SkillAssigner.assignSkills)** - DATA_ENGINE_REFERENCE.md documents `assignSkills(characterClass, rng): Record<Skill, ProficiencyLevel>`, but actual code at `src/core/generation/SkillAssigner.ts:38-42` shows `assignSkills(characterClass, rng, character?): Record<string, ProficiencyLevel>`. The code is correct: (1) Return type uses `string` instead of `Skill` to support custom skills registered via SkillRegistry; (2) Third parameter `character?: CharacterSheet` enables prerequisite validation. Documentation needs to be updated.
 - [ ] [Item] documented but not found in codebase
 - [ ] [Item] exists in code but not documented
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y]
