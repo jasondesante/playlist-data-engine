@@ -107,7 +107,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] class SpectrumScanner (static) → src/core/analysis/SpectrumScanner.ts ✅
   - [x] separateFrequencyBands(frequencyData: Uint8Array, sampleRate: number): FrequencyBands ✅
 
-### Task 2.3: Character Generation (35 items) 🔄 IN PROGRESS (3/~35 done)
+### Task 2.3: Character Generation (35 items) 🔄 IN PROGRESS (34/~35 done)
 - [x] class CharacterGenerator (static) → src/core/generation/CharacterGenerator.ts
   - [x] generate(seed, audioProfile, name, options?): CharacterSheet ✅
 - [x] class RaceSelector (static) → src/core/generation/RaceSelector.ts
@@ -140,8 +140,8 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] getEquipmentData(itemName): EnhancedEquipment | undefined ⚠️ (visibility mismatch: docs show public, code has private getEquipmentData + public getEquipmentDataStatic)
   - [x] getInventoryList(equipment): EnhancedInventoryItem[] ✅
   - [x] getEquipmentByType(equipment, type): EnhancedInventoryItem[] ❌ (MISSING: documented but not in codebase)
-- [ ] class AppearanceGenerator (static) → src/core/generation/AppearanceGenerator.ts
-  - [ ] generate(seed, characterClass, audioProfile): CharacterAppearance
+- [x] class AppearanceGenerator (static) → src/core/generation/AppearanceGenerator.ts ✅
+  - [x] generate(seed, characterClass, audioProfile): CharacterAppearance ✅
 - [ ] class NamingEngine → src/core/generation/NamingEngine.ts
   - [ ] generateName(track, audioProfile): string
   - [ ] cleanTitle(title): string
@@ -580,7 +580,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
-| 2 | Core Processing Modules | ~50 | 🔄 In Progress (33/~50 done) |
+| 2 | Core Processing Modules | ~50 | 🔄 In Progress (34/~50 done) |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
