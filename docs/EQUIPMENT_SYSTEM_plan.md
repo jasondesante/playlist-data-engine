@@ -363,23 +363,24 @@ For every item listed in Phases 1-4, verify:
 
 #### Duplicate Property Definitions Found
 
-**1. `CharacterEquipment` Type** (LOW PRIORITY - Already imported correctly)
-   - **Primary Definition**: [src/core/types/Equipment.ts:164-177](../src/core/types/Equipment.ts#L164-L177) - NOT present here
-   - **Actual Location**: [src/core/generation/EquipmentGenerator.ts:46-52](../src/core/generation/EquipmentGenerator.ts#L46-L52)
-   - **Duplicate**: [src/core/equipment/EquipmentModifier.ts:38-44](../src/core/equipment/EquipmentModifier.ts#L38-L44)
-   - **Usage**: [src/core/types/Character.ts:289-295](../src/core/types/Character.ts#L289-L295) - inline type on `CharacterSheet.equipment`
+**1. `CharacterEquipment` Type** (RESOLVED in commit 7fbcabe)
+   - ~~**Primary Definition**: [src/core/types/Equipment.ts:164-177](../src/core/types/Equipment.ts#L164-L177) - NOT present here~~
+   - ~~**Actual Location**: [src/core/generation/EquipmentGenerator.ts:46-52](../src/core/generation/EquipmentGenerator.ts#L46-L52)~~
+   - **New Primary Definition**: [src/core/types/Equipment.ts:177-185](../src/core/types/Equipment.ts#L177-L185)
+   - **Status**: Moved from EquipmentGenerator.ts to Equipment.ts
 
-   **Finding**: EquipmentModifier re-exports `CharacterEquipment` with identical structure. The EquipmentGenerator is the source of truth. EquipmentModifier imports from EquipmentGenerator. CharacterSheet uses an inline type matching the structure.
+   **Resolution**: CharacterEquipment has been consolidated to Equipment.ts as the single source of truth. All imports now point to Equipment.ts:
+   - EquipmentGenerator.ts: imports from Equipment.ts
+   - EquipmentModifier.ts: imports from Equipment.ts
+   - equipmentModifier.test.ts: imports from Equipment.ts
+   - src/index.ts: exports from Equipment.ts
 
-   **Recommendation**: Consider consolidating to single export from Equipment.ts or keep current import chain (EquipmentGenerator → EquipmentModifier). No action needed as imports work correctly.
+**2. `EnhancedInventoryItem` Type** (ALREADY CORRECT - No duplicate)
+   - **Primary Definition**: [src/core/types/Equipment.ts:164-176](../src/core/types/Equipment.ts#L164-L176)
 
-**2. `EnhancedInventoryItem` Type** (LOW PRIORITY - Already imported correctly)
-   - **Primary Definition**: [src/core/types/Equipment.ts:164-177](../src/core/types/Equipment.ts#L164-L177)
-   - **Duplicate**: [src/core/equipment/EquipmentModifier.ts:49-56](../src/core/equipment/EquipmentModifier.ts#L49-L56)
+   **Finding**: This was incorrectly marked as a duplicate. EquipmentModifier only imports `EnhancedInventoryItem` from Equipment.ts and does not re-export it. No action needed.
 
-   **Finding**: EquipmentModifier re-exports `EnhancedInventoryItem` with identical structure. All files import from Equipment.ts.
-
-   **Recommendation**: Remove duplicate export from EquipmentModifier.ts, use Equipment.ts as single source. EquipmentModifier should import, not re-export.
+   **Status**: RESOLVED - Not actually a duplicate
 
 **3. Equipment Spell Structure** (MINOR - Type exists but inline usage preferred)
    - **Type Definition**: [src/core/types/Equipment.ts:205-214](../src/core/types/Equipment.ts#L205-L214) - `interface EquipmentSpell`
@@ -389,7 +390,14 @@ For every item listed in Phases 1-4, verify:
 
    **Recommendation**: Optional - Could use `EquipmentSpell[]` type in Character.ts for consistency, but inline type is self-documenting and acceptable.
 
-**Summary**: The duplicates are mostly import/re-export patterns that work correctly. No critical issues requiring immediate resolution. The codebase is consistent in its usage.
+**Summary**: ~~The duplicates are mostly import/re-export patterns that work correctly. No critical issues requiring immediate resolution. The codebase is consistent in its usage.~~
+
+**Updated Summary (2025-01-31)**:
+- `CharacterEquipment` duplicate RESOLVED: Consolidated to Equipment.ts as single source of truth
+- `EnhancedInventoryItem` was never actually duplicated - EquipmentModifier was just importing from Equipment.ts
+- `EquipmentSpell` inline usage in Character.ts is intentional for self-documentation
+
+Remaining: 1 minor inline type preference issue (EquipmentSpell) which is acceptable.
 
 ### Discrepancies Found
 
