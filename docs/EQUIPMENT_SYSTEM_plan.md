@@ -50,7 +50,7 @@ This approach ensures all discrepancies are captured systematically and resolved
 - [x] `src/core/equipment/EquipmentModifier.ts` exists - Modification logic
 - [x] `src/core/equipment/EquipmentSpawnHelper.ts` exists - Spawning utilities
 - [x] `src/core/extensions/ExtensionManager.ts` exists - Extension registration
-- [x] `src/core/randomness/SeededRNG.ts` exists - RNG utilities (DISCREPANCY: actually at `src/utils/random.ts`)
+- [x] `src/utils/random.ts` exists - RNG utilities (SeededRNG class)
 
 ### Task 1.2: Verify Package Exports
 
@@ -255,7 +255,7 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 3.6: SeededRNG Class
 
-- [ ] `class SeededRNG` → src/core/randomness/SeededRNG.ts
+- [ ] `class SeededRNG` → src/utils/random.ts
   - [ ] `constructor(seed: string)`
 
 ---
@@ -319,7 +319,7 @@ For every item listed in Phases 1-4, verify:
 
 ### Discrepancies Found
 
-- [x] SeededRNG path mismatch - Documented as `src/core/randomness/SeededRNG.ts` but actually located at `src/utils/random.ts`
+- [x] SeededRNG path mismatch - FIXED in Phase 8: Updated documentation to reflect actual location `src/utils/random.ts`
 - [x] EquipmentRarity type missing - Documented as separate type but only exists as inline union in EnhancedEquipment.rarity
 - [x] EquipmentType type missing - Documented as separate type but only exists as inline union in EnhancedEquipment.type
 - [ ] Items documented but not found in codebase
@@ -381,6 +381,28 @@ Create the missing types as proper type definitions in `src/core/types/Equipment
 - [x] Ensure new types are exported from Equipment.ts
 - [x] Verify types are available through package exports
 - [x] Run build to ensure no TypeScript errors (Build successful - 753ms)
+
+---
+
+## Phase 8: Documentation Path Correction - SeededRNG
+
+**Objective**: Fix the discrepancy where `SeededRNG` was documented at the wrong path.
+
+### Research Findings
+
+During Phase 1 verification, the following discrepancy was discovered:
+
+1. **`SeededRNG` class location** - Documented as `src/core/randomness/SeededRNG.ts` but actually located at `src/utils/random.ts`
+
+### Resolution Approach
+
+Since the class is already correctly implemented and likely imported throughout the codebase from `src/utils/random.ts`, the correct fix is to update the documentation to reflect the actual location rather than moving the file.
+
+### Task 8.1: Update Documentation Path References
+
+- [x] Update Task 1.1 file path reference from `src/core/randomness/SeededRNG.ts` to `src/utils/random.ts`
+- [x] Update Task 3.6 class path reference from `src/core/randomness/SeededRNG.ts` to `src/utils/random.ts`
+- [x] Update Phase 6 discrepancy note to mark as resolved
 
 ---
 
