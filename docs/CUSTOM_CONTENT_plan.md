@@ -48,13 +48,13 @@ This plan organizes verification into **phases** and **tasks** to systematically
 **Focus:** Verify fundamental type definitions and their helper functions.
 
 ### Task 1.1: Race Type
-- [ ] `Race` type exists as closed union
-- [ ] Contains all default races: 'Human' | 'Elf' | 'Dwarf' | 'Halfling' | 'Dragonborn' | 'Gnome' | 'Half-Elf' | 'Half-Orc' | 'Tiefling'
-- [ ] Type is exported from 'playlist-data-engine'
+- [x] `Race` type exists as closed union
+- [x] Contains all default races: 'Human' | 'Elf' | 'Dwarf' | 'Halfling' | 'Dragonborn' | 'Gnome' | 'Half-Elf' | 'Half-Orc' | 'Tiefling'
+- [x] Type is exported from 'playlist-data-engine'
 
 ### Task 1.2: Class Type
-- [ ] `Class` type exists as branded type (`string & { readonly __ClassBrand: unique symbol }`)
-- [ ] Type is exported from 'playlist-data-engine'
+- [x] `Class` type exists as branded type (`string & { readonly __ClassBrand: unique symbol }`)
+- [x] Type is exported from 'playlist-data-engine'
 
 ### Task 1.3: Ability Type
 - [ ] `Ability` type exists
