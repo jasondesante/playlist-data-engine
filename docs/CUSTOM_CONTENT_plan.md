@@ -281,69 +281,70 @@ This plan organizes verification into **phases** and **tasks** to systematically
 ### Task 9.1: ExtensionManager Registration Categories
 
 **Race-related:**
-- [ ] 'races.data' category accepts RaceDataEntry[]
-- [ ] 'races' category accepts race name strings
-- [ ] 'racialTraits' category accepts RacialTrait[]
-- [ ] 'racialTraits.${RaceName}' pattern works for per-race weights
+- [x] 'races.data' category accepts RaceDataEntry[] (line 43)
+- [x] 'races' category accepts race name strings (line 42)
+- [x] 'racialTraits' category accepts RacialTrait[] (line 63)
+- [x] 'racialTraits.${RaceName}' pattern works for per-race weights (lines 64-72)
 
 **Class-related:**
-- [ ] 'classes.data' category accepts ClassDataEntry[]
-- [ ] 'classes' category accepts Class type names
-- [ ] 'classFeatures.${ClassName}' pattern works
-- [ ] 'classSpellLists.${ClassName}' pattern works
-- [ ] 'classSpellSlots' category works
-- [ ] 'classStartingEquipment.${ClassName}' pattern works
-- [ ] 'skillLists.${ClassName}' pattern works
+- [x] 'classes.data' category accepts ClassDataEntry[] (line 45)
+- [x] 'classes' category accepts Class type names (line 44)
+- [x] 'classFeatures.${ClassName}' pattern works (lines 47-61)
+- [x] 'classSpellLists.${ClassName}' pattern works (line 98)
+- [x] 'classSpellSlots' category works (line 100)
+- [x] 'classStartingEquipment.${ClassName}' pattern works (lines 102-103)
+- [x] 'skillLists.${ClassName}' pattern works (lines 82-95)
 
 **General:**
-- [ ] 'skills' category works
-- [ ] 'spells' category works
-- [ ] 'equipment' category works
+- [x] 'skills' category works (line 74)
+- [x] 'spells' category works (line 41)
+- [x] 'equipment' category works (line 30)
 
 ### Task 9.2: Registration Options
-- [ ] `mode: 'relative'` option works
-- [ ] `mode: 'absolute'` option works
-- [ ] `mode: 'default'` option works
-- [ ] `weights: Record<string, number>` option works
+- [x] `mode: 'relative'` option works (lines 116, 210, 326)
+- [x] `mode: 'absolute'` option works (lines 116, 210)
+- [x] `mode: 'default'` option works (lines 116, 210)
+- [x] `mode: 'replace'` option works (lines 116, 210, 329)
+- [x] `weights: Record<string, number>` option works (lines 122, 211-212, 239-242)
 
 ### Task 9.3: Template Class Merge Behavior
-- [ ] `primary_ability` inherited unless specified
-- [ ] `hit_die` inherited unless specified
-- [ ] `saving_throws` inherited unless specified
-- [ ] `is_spellcaster` inherited unless specified
-- [ ] `skill_count` inherited unless specified
-- [ ] `available_skills` **replaced** (not merged) - verify in getClassData()
-- [ ] `has_expertise` inherited unless specified
-- [ ] `audio_preferences` inherited unless specified
+- [x] `primary_ability` inherited unless specified (via spread from baseData)
+- [x] `hit_die` inherited unless specified (via spread from baseData)
+- [x] `saving_throws` inherited unless specified (via spread from baseData)
+- [x] `is_spellcaster` inherited unless specified (via spread from baseData)
+- [x] `skill_count` inherited unless specified (via spread from baseData)
+- [x] `available_skills` **replaced** (not merged) - uses `classEntry.available_skills || baseData.available_skills` (constants.ts lines 513, 427)
+- [x] `has_expertise` inherited unless specified (via spread from baseData)
+- [x] `audio_preferences` inherited unless specified (via spread from baseData)
 
 ### Task 9.4: Audio Preferences Shape
-- [ ] `primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos'`
-- [ ] `secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos'`
-- [ ] `tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos'`
-- [ ] `bass?: number`
-- [ ] `treble?: number`
-- [ ] `mid?: number`
-- [ ] `amplitude?: number`
+- [x] `primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos'` (line 309)
+- [x] `secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos'` (line 310)
+- [x] `tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos'` (line 311)
+- [x] `bass?: number` (line 312)
+- [x] `treble?: number` (line 313)
+- [x] `mid?: number` (line 314)
+- [x] `amplitude?: number` (line 315)
 
 ### Task 9.5: Validation Behavior
 **Race validation order:**
-- [ ] 1. Check if default race
-- [ ] 2. Check if registered as custom race name
-- [ ] 3. Check if has data via 'races.data'
-- [ ] 4. `{ validate: false }` option bypasses validation
+- [x] 1. Check if default race (lines 492-494)
+- [x] 2. Check if registered as custom race name (lines 497-500)
+- [x] 3. Check if has data via 'races.data' (lines 503-509)
+- [x] 4. `{ validate: false }` option bypasses validation (lines 215-223)
 
 **Class validation:**
-- [ ] Class names must be default or registered via 'classes.data'
-- [ ] Validation error message matches documented format
+- [x] Class names must be default or registered via 'classes.data' (lines 545-563)
+- [x] Validation error message matches documented format (line 562)
 
 ### Task 9.6: ExtensionInfo Return Type
-- [ ] `hasCustomData: boolean`
-- [ ] `defaultCount: number`
-- [ ] `customCount: number`
-- [ ] `totalCount: number`
-- [ ] `mode: string`
-- [ ] `weights: Record<string, number>`
-- [ ] `registeredAt: number`
+- [x] `hasCustomData: boolean` (line 705)
+- [x] `defaultCount: number` (line 706)
+- [x] `customCount: number` (line 707)
+- [x] `totalCount: number` (line 708)
+- [x] `mode: string` (line 709, returns 'relative' | 'absolute' | 'default' | 'replace' | undefined)
+- [x] `weights: Record<string, number>` (line 710)
+- [x] `registeredAt: number` (line 711)
 
 ---
 
@@ -361,14 +362,7 @@ This plan organizes verification into **phases** and **tasks** to systematically
 | 6 | [x] Complete | 2026-01-31 | ClassSuggester verified |
 | 7 | [x] Complete | 2026-01-31 | Constants verified |
 | 8 | [x] Complete | 2026-01-31 | Package Exports verified & fixed missing exports |
-| 9 | [ ] Pending | | Advanced Features |
-| 3 | [ ] Pending | | Helper Functions |
-| 4 | [ ] Pending | | ExtensionManager |
-| 5 | [ ] Pending | | FeatureRegistry |
-| 6 | [ ] Pending | | ClassSuggester |
-| 7 | [ ] Pending | | Constants |
-| 8 | [ ] Pending | | Package Exports |
-| 9 | [ ] Pending | | Advanced Features |
+| 9 | [x] Complete | 2026-01-31 | Advanced Features verified - all validation behaviors and ExtensionInfo return type confirmed |
 
 ---
 
