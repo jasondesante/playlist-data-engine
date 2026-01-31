@@ -116,26 +116,26 @@ Verify that the package exports (likely from `src/index.ts` or similar):
   - [x] Condition types: 'vs_creature_type', 'at_time_of_day', 'wielder_race', 'wielder_class', 'while_equipped', 'on_hit', 'on_damage_taken', 'custom'
   - [x] Each condition type has properly typed values
 
-- [ ] `interface EnhancedEquipment` → src/core/types/Equipment.ts
-  - [ ] **Base Properties:**
-    - [ ] `name: string`
-    - [ ] `type: 'weapon' | 'armor' | 'item'`
-    - [ ] `rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary'`
-    - [ ] `weight: number`
-  - [ ] **Advanced Properties:**
-    - [ ] `properties?: EquipmentProperty[]`
-    - [ ] `grantsFeatures?: Array<string | EquipmentMiniFeature>`
-    - [ ] `grantsSkills?: Array<{ skillId, level: 'proficient' | 'expertise' }>`
-    - [ ] `grantsSpells?: Array<{ spellId, level?, uses?, recharge? }>`
-  - [ ] **D&D 5e Stats:**
-    - [ ] `damage?: { dice: string, damageType: string, versatile?: string }`
-    - [ ] `acBonus?: number`
-    - [ ] `weaponProperties?: string[]`
-  - [ ] **Other:**
-    - [ ] `spawnWeight?: number`
-    - [ ] `templateId?: string`
-    - [ ] `source: 'default' | 'custom'`
-    - [ ] `tags?: string[]`
+- [x] `interface EnhancedEquipment` → src/core/types/Equipment.ts (VERIFIED)
+  - [x] **Base Properties:**
+    - [x] `name: string`
+    - [x] `type: 'weapon' | 'armor' | 'item'` (uses EquipmentType type)
+    - [x] `rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary'` (uses EquipmentRarity type)
+    - [x] `weight: number`
+  - [x] **Advanced Properties:**
+    - [x] `properties?: EquipmentProperty[]`
+    - [x] `grantsFeatures?: Array<string | EquipmentMiniFeature>`
+    - [x] `grantsSkills?: Array<{ skillId, level: 'proficient' | 'expertise' }>`
+    - [x] `grantsSpells?: Array<{ spellId, level?, uses?, recharge? }>`
+  - [x] **D&D 5e Stats:**
+    - [x] `damage?: { dice: string, damageType: string, versatile?: string }`
+    - [x] `acBonus?: number`
+    - [x] `weaponProperties?: string[]`
+  - [x] **Other:**
+    - [x] `spawnWeight?: number`
+    - [x] `templateId?: string`
+    - [x] `source: 'default' | 'custom'`
+    - [x] `tags?: string[]`
 
 ### Task 2.3: Feature & Skill Interfaces
 
