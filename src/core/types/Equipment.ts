@@ -219,10 +219,10 @@ export interface EquipmentSpell {
     level?: number;
     uses?: number;
     recharge?: string;
-    source: 'equipment';
-    equipmentName: string;
+    source?: 'equipment';
+    equipmentName?: string;
     instanceId?: string;
-    sourceType: 'default' | 'custom';
+    sourceType?: 'default' | 'custom';
 }
 
 /**

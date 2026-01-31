@@ -7,6 +7,7 @@ import type {
     EquipmentProperty,
     EquipmentFeature,
     EquipmentSkill,
+    EquipmentSpell,
     EquipmentCondition,
     EquipmentMiniFeature,
     EnhancedInventoryItem
@@ -366,12 +367,7 @@ export interface CharacterSheet {
         skills: EquipmentSkill[];
 
         /** Spells granted by this equipment */
-        spells?: Array<{
-            spellId: string;
-            level?: number;
-            uses?: number;
-            recharge?: string;
-        }>;
+        spells?: EquipmentSpell[];
     }[];
 
 }
