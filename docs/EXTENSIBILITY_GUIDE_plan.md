@@ -87,37 +87,37 @@ This ensures all discovered issues are tracked, researched, and resolved systema
 - [x] `initializeAllDefaults(data)` → Line 192
 
 ### Task 1.3: Verify Data Retrieval Methods
-- [ ] `get(category)` → Line 318 - Returns merged defaults + custom
-- [ ] `getDefaults(category)` → Line 342 - Returns defaults only
-- [ ] `getCustom(category)` → Line 351 - Returns custom only
-- [ ] `getDefaultWeights(category)` → Line 382 - Returns default weights (all 1.0)
+- [x] `get(category)` → Line 318 - Returns merged defaults + custom
+- [x] `getDefaults(category)` → Line 342 - Returns defaults only
+- [x] `getCustom(category)` → Line 351 - Returns custom only
+- [x] `getDefaultWeights(category)` → Line 382 - Returns default weights (all 1.0)
 
 ### Task 1.4: Verify Weight Management Methods
-- [ ] `setWeights(category, weights)` → Line 361
-- [ ] `getWeights(category)` → Line 370
-- [ ] `hasCustomData(category)` → Line 401
-- [ ] `getMode(category)` → Line 410 - Returns 'relative' | 'absolute' | 'default' | 'replace' | undefined
+- [x] `setWeights(category, weights)` → Line 361
+- [x] `getWeights(category)` → Line 370
+- [x] `hasCustomData(category)` → Line 401
+- [x] `getMode(category)` → Line 410 - Returns 'relative' | 'absolute' | 'default' | 'replace' | undefined
 
 ### Task 1.5: Verify Information and Export Methods
-- [ ] `getInfo(category)` → Line 699 - Returns extension info object
-  - [ ] hasCustomData: boolean
-  - [ ] defaultCount: number
-  - [ ] customCount: number
-  - [ ] totalCount: number
-  - [ ] mode: string
-  - [ ] weights: object
-  - [ ] registeredAt: timestamp
-- [ ] `getCurrentOptions(category)` → Line 420
-- [ ] `exportCustomData()` → Line 727
-- [ ] `getRegisteredCategories()` → Line 754
+- [x] `getInfo(category)` → Line 699 - Returns extension info object
+  - [x] hasCustomData: boolean
+  - [x] defaultCount: number
+  - [x] customCount: number
+  - [x] totalCount: number
+  - [x] mode: string
+  - [x] weights: object
+  - [x] registeredAt: timestamp
+- [x] `getCurrentOptions(category)` → Line 420
+- [x] `exportCustomData()` → Line 727
+- [x] `getRegisteredCategories()` → Line 754
 
 ### Task 1.6: Verify Reset Methods
-- [ ] `reset(category)` → Line 662
-- [ ] `resetAll()` → Line 689
+- [x] `reset(category)` → Line 662
+- [x] `resetAll()` → Line 689
 
 ### Task 1.7: Verify Validation Method
-- [ ] `validate(category, items)` → Line 431
-- [ ] `validateItem(category, item, index)` → Line 459 (private)
+- [x] `validate(category, items)` → Line 431
+- [x] `validateItem(category, item, index)` → Line 459 (private)
 
 ---
 
@@ -126,64 +126,64 @@ This ensures all discovered issues are tracked, researched, and resolved systema
 **Goal:** Verify all three registry systems (Features, Skills, Spells) provide consistent APIs for managing their respective data.
 
 ### Task 2.1: Verify FeatureRegistry
-- [ ] Class exists at [src/core/features/FeatureRegistry.ts](src/core/features/FeatureRegistry.ts)
-- [ ] `getInstance()` → Line 49
-- [ ] `initializeDefaults(defaultClassFeatures, defaultRacialTraits)` → Line 63
-- [ ] `registerClassFeature(feature)` → Line 93
-- [ ] `registerClassFeatures(features)` → Line 120
-- [ ] `registerRacialTrait(trait)` → Line 132
-- [ ] `registerRacialTraits(traits)` → Line 159
-- [ ] `getClassFeatures(className, level)` → Line 175
-- [ ] `getFeaturesForLevel(className, level)` → Line 189
-- [ ] `getClassFeatureById(featureId)` → Line 200
-- [ ] `getRacialTraits(race)` → Line 210
-- [ ] `getRacialTraitsForSubrace(race, subrace)` → Line 221
-- [ ] `getAvailableSubraces(race)` → Line 235
-- [ ] `getRacialTraitById(traitId)` → Line 252
-- [ ] `validatePrerequisites(feature, character)` → Line 265
-- [ ] `canGainFeature(feature, character)` → Line 379
-- [ ] `getRegisteredClasses()` → Line 389
-- [ ] `getRegisteredRaces()` → Line 398
-- [ ] `getRegistryStats()` → Line 407
-- [ ] `reset()` → Line 437
-- [ ] `exportRegistry()` → Line 541
-- [ ] `isInitialized()` → Line 450
-- [ ] Static methods: `getEquipmentFeatures()`, `isValidEquipmentFeature()`, `registerEquipmentFeature()` → Lines 468-532
-- [ ] Helper function: `getFeatureRegistry()` → Line 569
+- [x] Class exists at [src/core/features/FeatureRegistry.ts](src/core/features/FeatureRegistry.ts)
+- [x] `getInstance()` → Line 49
+- [x] `initializeDefaults(defaultClassFeatures, defaultRacialTraits)` → Line 63
+- [x] `registerClassFeature(feature)` → Line 93
+- [x] `registerClassFeatures(features)` → Line 120
+- [x] `registerRacialTrait(trait)` → Line 132
+- [x] `registerRacialTraits(traits)` → Line 159
+- [x] `getClassFeatures(className, level)` → Line 175
+- [x] `getFeaturesForLevel(className, level)` → Line 189
+- [x] `getClassFeatureById(featureId)` → Line 200
+- [x] `getRacialTraits(race)` → Line 210
+- [x] `getRacialTraitsForSubrace(race, subrace)` → Line 221
+- [x] `getAvailableSubraces(race)` → Line 235
+- [x] `getRacialTraitById(traitId)` → Line 252
+- [x] `validatePrerequisites(feature, character)` → Line 265
+- [x] `canGainFeature(feature, character)` → Line 379
+- [x] `getRegisteredClasses()` → Line 389
+- [x] `getRegisteredRaces()` → Line 398
+- [x] `getRegistryStats()` → Line 407
+- [x] `reset()` → Line 437
+- [x] `exportRegistry()` → Line 541
+- [x] `isInitialized()` → Line 450
+- [x] Static methods: `getEquipmentFeatures()`, `isValidEquipmentFeature()`, `registerEquipmentFeature()` → Lines 468-532
+- [x] Helper function: `getFeatureRegistry()` → Line 569
 
 ### Task 2.2: Verify SkillRegistry
-- [ ] Class exists at [src/core/skills/SkillRegistry.ts](src/core/skills/SkillRegistry.ts)
-- [ ] `getInstance()` → Line 51
-- [ ] `initializeDefaults(defaultSkills)` → Line 64
-- [ ] `registerSkill(skill)` → Line 86
-- [ ] `registerSkills(skills)` → Line 124
-- [ ] `getSkill(id)` → Line 136
-- [ ] `getAllSkills()` → Line 145
-- [ ] `getSkillsByAbility(ability)` → Line 155
-- [ ] `getSkillsByCategory(category)` → Line 172
-- [ ] `getCategories()` → Line 188
-- [ ] `getSkillsBySource(source)` → Line 198 - 'default' | 'custom'
-- [ ] `isValidSkill(id)` → Line 208
-- [ ] `validateSkill(skill)` → Line 218
-- [ ] `validatePrerequisites(skill, character)` → Line 266
-- [ ] `getRegistryStats()` → Line 278
-- [ ] `reset()` → Line 315
-- [ ] `exportRegistry()` → Line 345
-- [ ] `unregisterSkill(id)` → Line 358
-- [ ] `isInitialized()` → Line 334
-- [ ] Helper function: `getSkillRegistry()` → Line 399
+- [x] Class exists at [src/core/skills/SkillRegistry.ts](src/core/skills/SkillRegistry.ts)
+- [x] `getInstance()` → Line 51
+- [x] `initializeDefaults(defaultSkills)` → Line 64
+- [x] `registerSkill(skill)` → Line 86
+- [x] `registerSkills(skills)` → Line 124
+- [x] `getSkill(id)` → Line 136
+- [x] `getAllSkills()` → Line 145
+- [x] `getSkillsByAbility(ability)` → Line 155
+- [x] `getSkillsByCategory(category)` → Line 172
+- [x] `getCategories()` → Line 188
+- [x] `getSkillsBySource(source)` → Line 198 - 'default' | 'custom'
+- [x] `isValidSkill(id)` → Line 208
+- [x] `validateSkill(skill)` → Line 218
+- [x] `validatePrerequisites(skill, character)` → Line 266
+- [x] `getRegistryStats()` → Line 278
+- [x] `reset()` → Line 315
+- [x] `exportRegistry()` → Line 345
+- [x] `unregisterSkill(id)` → Line 358
+- [x] `isInitialized()` → Line 334
+- [x] Helper function: `getSkillRegistry()` → Line 399
 
 ### Task 2.3: Verify SpellRegistry
-- [ ] Class exists at [src/core/spells/SpellRegistry.ts](src/core/spells/SpellRegistry.ts)
-- [ ] `getInstance()` → Line 94
-- [ ] `initializeDefaults(defaultSpells)` → Line 107
-- [ ] `registerSpell(spell)` → Line 137
-- [ ] Helper function: `getSpellRegistry()` → [needs verification of export]
-- [ ] Query methods (verify exist):
-  - [ ] `getSpell(id)`
-  - [ ] `getSpellsByLevel(level)`
-  - [ ] `getSpellsBySchool(school)`
-  - [ ] `getSpellsByClass(className)`
+- [x] Class exists at [src/core/spells/SpellRegistry.ts](src/core/spells/SpellRegistry.ts)
+- [x] `getInstance()` → Line 94
+- [x] `initializeDefaults(defaultSpells)` → Line 107
+- [x] `registerSpell(spell)` → Line 137
+- [x] Helper function: `getSpellRegistry()` → Line 576
+- [x] Query methods (verify exist):
+  - [x] `getSpell(id)` → Line 201
+  - [x] `getSpellsByLevel(level)` → Line 220
+  - [x] `getSpellsBySchool(school)` → Line 237
+  - [x] `getSpellsByClass(className)` → Line 254 (named `getSpellsForClass`)
 
 ---
 
@@ -597,8 +597,8 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 
 | Phase | Tasks | Completed | % Done | Status |
 |-------|-------|-----------|--------|--------|
-| Phase 1: ExtensionManager | 7 | 4 | 57% | In Progress |
-| Phase 2: Registries | 3 | 0 | 0% | Pending |
+| Phase 1: ExtensionManager | 7 | 7 | 100% | Complete |
+| Phase 2: Registries | 3 | 3 | 100% | Complete |
 | Phase 3: Validators | 4 | 0 | 0% | Pending |
 | Phase 4: EquipmentModifier | 5 | 0 | 0% | Pending |
 | Phase 5: Helpers | 4 | 0 | 0% | Pending |
