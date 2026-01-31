@@ -301,14 +301,14 @@ This ensures all discovered issues are tracked, researched, and resolved systema
 **Goal:** Verify all helper functions exist and are exported correctly.
 
 ### Task 5.1: Verify Constants Helper Functions
-- [ ] `getClassData(className)` → [src/utils/constants.ts:491](src/utils/constants.ts#L491)
-- [ ] `getClassDataAsync(className)` → [src/utils/constants.ts:395](src/utils/constants.ts#L395)
-- [ ] `getRaceData(race)` → [src/utils/constants.ts:167](src/utils/constants.ts#L167)
-- [ ] `getRaceDataAsync(race)` → [src/utils/constants.ts:122](src/utils/constants.ts#L122)
-- [ ] `getClassSpellList(className)` → [src/utils/constants.ts:1425](src/utils/constants.ts#L1425)
-- [ ] `getSpellSlotsForClass(className, characterLevel)` → [src/utils/constants.ts:1485](src/utils/constants.ts#L1485)
-- [ ] `getClassStartingEquipment(className)` → [src/utils/constants.ts:1551](src/utils/constants.ts#L1551)
-- [ ] Verify these are exported from src/index.ts
+- [x] `getClassData(className)` → [src/utils/constants.ts:491](src/utils/constants.ts#L491)
+- [x] `getClassDataAsync(className)` → [src/utils/constants.ts:395](src/utils/constants.ts#L395) (internal, not exported)
+- [x] `getRaceData(race)` → [src/utils/constants.ts:167](src/utils/constants.ts#L167)
+- [x] `getRaceDataAsync(race)` → [src/utils/constants.ts:122](src/utils/constants.ts#L122) (internal, not exported)
+- [x] `getClassSpellList(className)` → [src/utils/constants.ts:1425](src/utils/constants.ts#L1425)
+- [x] `getSpellSlotsForClass(className, characterLevel)` → [src/utils/constants.ts:1485](src/utils/constants.ts#L1485)
+- [x] `getClassStartingEquipment(className)` → [src/utils/constants.ts:1551](src/utils/constants.ts#L1551)
+- [x] Verified exports from src/index.ts
 
 ### Task 5.2: Verify Type Helper Functions
 - [ ] `asClass(value)` → [src/core/types/Character.ts:65](src/core/types/Character.ts#L65)
@@ -601,11 +601,11 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 | Phase 2: Registries | 3 | 3 | 100% | Complete |
 | Phase 3: Validators | 4 | 4 | 100% | Complete |
 | Phase 4: EquipmentModifier | 5 | 5 | 100% | Complete |
-| Phase 5: Helpers | 4 | 0 | 0% | Pending |
+| Phase 5: Helpers | 4 | 1 | 25% | In Progress |
 | Phase 6: Types | 7 | 0 | 0% | Pending |
 | Phase 7: Categories | 11 | 0 | 0% | Pending |
 | Phase 8: Examples | 7 | 0 | 0% | Pending |
-| **TOTAL** | **48** | **19** | **40%** | **In Progress** |
+| **TOTAL** | **48** | **20** | **42%** | **In Progress** |
 
 ---
 
