@@ -348,8 +348,14 @@ Verify all documented items are exported from the main package.
 
 ### Task 5.3: Verify Function Exports from src/index.ts
 
-- [ ] `validateSkillPrerequisites` - Line 305
-- [ ] `validateSpellPrerequisites` - Line 335
+- [x] `validateSkillPrerequisites` - Line 308 (actual line, plan listed 305)
+  - Exported as `export function validateSkillPrerequisites` at `src/core/skills/SkillValidator.ts:432`
+  - Re-exported from `src/core/skills/index.ts:33`
+  - Re-exported from `src/index.ts:308`
+- [x] `validateSpellPrerequisites` - Line 338 (actual line, plan listed 335)
+  - Exported as `export function validateSpellPrerequisites` at `src/core/spells/SpellValidator.ts:306`
+  - Re-exported from `src/core/spells/index.ts:10`
+  - Re-exported from `src/index.ts:338`
 
 ---
 
@@ -573,7 +579,7 @@ Verify type imports across modules are correct.
 | Registry Classes | 2 | 2* |
 | Extension Classes | 1 | 1 |
 | Helper Functions | 2 | 2 |
-| Public API Exports | 14 | 13 |
+| Public API Exports | 16 | 16 |
 
 *Note: Registry Classes verified but Task 3.1 found `meetsPrerequisites` method doesn't exist (see Task 6.1)
 
@@ -595,7 +601,7 @@ Verify type imports across modules are correct.
 - [x] Phase 2: Validator Classes (All 2 tasks verified)
 - [x] Phase 3: Registry Classes (Task 3.1 has one missing method documented - see Task 6.1, Task 3.2 verified)
 - [x] Phase 4: Extension System (All 2 tasks verified)
-- [ ] Phase 5: Public API Exports
+- [x] Phase 5: Public API Exports (All 3 tasks verified - Task 5.3 completed with actual line numbers)
 - [ ] Phase 6: Discrepancies Resolution
 - [ ] Phase 7: Code Examples Testing
 
