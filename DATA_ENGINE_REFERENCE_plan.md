@@ -56,11 +56,11 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] Spell (interface) → src/core/types/Character.ts (201-214) ✅ (location mismatch in plan)
 - [x] AbilityScores (interface) → src/core/types/Character.ts (216-227) ✅ (location mismatch in plan)
 
-### Task 1.3: Character Interfaces (4 items)
-- [ ] CharacterSheet → src/types/CharacterTypes.ts
-- [ ] CharacterEquipment → src/types/CharacterTypes.ts
-- [ ] InventoryItem → src/types/CharacterTypes.ts
-- [ ] CharacterAppearance → src/types/CharacterTypes.ts
+### Task 1.3: Character Interfaces (4 items) ✅ COMPLETED
+- [x] CharacterSheet → src/core/types/Character.ts (229-373) ✅ (location mismatch; src/types/CharacterTypes.ts does not exist)
+- [x] CharacterEquipment → src/core/types/Equipment.ts (183-189) ✅ (location mismatch)
+- [x] InventoryItem → src/core/generation/EquipmentGenerator.ts (37-41) as basic version; EnhancedInventoryItem → src/core/types/Equipment.ts (164-177) ✅ (location mismatch; naming variation)
+- [x] CharacterAppearance → src/core/generation/AppearanceGenerator.ts (8-21) ✅ (location mismatch)
 
 ### Task 1.4: Utility Functions & RNG (7 items)
 - [ ] generateSeed() → src/utils/random.ts
@@ -602,8 +602,14 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 
 ### Discrepancies Found
 - [x] **Location mismatch (Task 1.2)** - DATA_ENGINE_REFERENCE_plan.md documents character types at `src/types/CharacterTypes.ts` and `src/types/CombatTypes.ts`, but actual location is `src/core/types/Character.ts`. All 9 types (Race, Class, Ability, Skill, ProficiencyLevel, GameMode, Attack, Spell, AbilityScores) exist at the correct location in the codebase.
+- [x] **Location mismatch (Task 1.3)** - DATA_ENGINE_REFERENCE_plan.md documents character interfaces at `src/types/CharacterTypes.ts`, but this file does not exist. All 4 interfaces exist at different locations:
+  - CharacterSheet → `src/core/types/Character.ts` (229-373)
+  - CharacterEquipment → `src/core/types/Equipment.ts` (183-189)
+  - InventoryItem → Basic version at `src/core/generation/EquipmentGenerator.ts` (37-41); Enhanced version called `EnhancedInventoryItem` at `src/core/types/Equipment.ts` (164-177)
+  - CharacterAppearance → `src/core/generation/AppearanceGenerator.ts` (8-21)
 - [x] **Signature mismatch (Class type)** - DATA_ENGINE_REFERENCE.md shows `Class` as simple union type `'Barbarian' | ... | 'Wizard'`, but actual code uses branded type `string & { readonly __ClassBrand: unique symbol }` for extensibility. The branded type is correct and intentional for supporting custom classes.
 - [x] **Missing documentation (Attack interface)** - DATA_ENGINE_REFERENCE.md is missing the `properties?: string[]` property on the Attack interface. The actual code at `src/core/types/Character.ts:195` includes this property.
+- [x] **Naming variation (InventoryItem)** - DATA_ENGINE_REFERENCE.md documents `InventoryItem` but the enhanced version in the codebase is called `EnhancedInventoryItem` at `src/core/types/Equipment.ts`. A basic `InventoryItem` interface exists at `src/core/generation/EquipmentGenerator.ts` for backward compatibility.
 - [ ] [Item] documented but not found in codebase
 - [ ] [Item] exists in code but not documented
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y]
