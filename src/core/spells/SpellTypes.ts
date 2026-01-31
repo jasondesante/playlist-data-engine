@@ -5,7 +5,10 @@
  * Moved from src/utils/constants.ts for better module organization.
  *
  * Part of Phase 6: Discrepancies Resolution - Task 6.3
+ * Part of Phase 6: Discrepancies Resolution - Task 6.4 (class type consistency)
  */
+
+import type { Class } from '../types/Character.js';
 
 /**
  * Prerequisites for learning a spell
@@ -32,7 +35,7 @@ export interface SpellPrerequisite {
     abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
 
     /** Specific class required */
-    class?: string;
+    class?: Class;
 
     /** Specific race required */
     race?: string;

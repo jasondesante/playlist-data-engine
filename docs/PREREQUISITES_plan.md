@@ -426,14 +426,17 @@ Address all discrepancies found during verification.
 
 ### Task 6.4: Class Type Inconsistency in Prerequisites
 
-**Status**: LOW - Type consistency issue
+**Status**: ✅ RESOLVED - Changed to `Class` type for consistency
 
-- [ ] **Issue**: `SpellPrerequisite.class?: string` uses plain string, while `SkillPrerequisite.class?: Class` and `FeaturePrerequisite.class?: Class` use the `Class` type
-- [ ] **Investigation**: Determine why this difference exists
-- [ ] **Resolution Options**:
-  - [ ] Option A: Change `SpellPrerequisite.class` to `Class` type for consistency
-  - [ ] Option B: Change all to use `string` for flexibility
-  - [ ] Option C: Document the reason for the difference
+- [x] **Issue**: `SpellPrerequisite.class?: string` uses plain string, while `SkillPrerequisite.class?: Class` and `FeaturePrerequisite.class?: Class` use the `Class` type
+- [x] **Investigation**: Determined the reason for the difference was historical - the spell system was designed with plain strings for simplicity
+- [x] **Resolution Applied**: Option A - Changed `SpellPrerequisite.class` to `Class` type for consistency
+  - [x] Updated `src/core/spells/SpellTypes.ts` to import `Class` type
+  - [x] Changed `class?: string` to `class?: Class` at line 35
+  - [x] Updated `docs/PREREQUISITES.md` documentation to reflect `Class` type
+- [x] **Verification**: Build passes, all spell prerequisite tests (17 tests) pass, all prerequisite tests (92 tests) pass
+
+**Note**: The `Class` type is a branded type (`string & { readonly __ClassBrand: unique symbol }`) that provides type safety for extensible classes. String literals like `'Wizard'` are still compatible at runtime.
 
 ---
 

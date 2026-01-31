@@ -145,7 +145,7 @@ interface SpellPrerequisite {
     abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
 
     /** Specific class required */
-    class?: string;
+    class?: Class;
 
     /** Specific race required */
     race?: string;
