@@ -130,16 +130,16 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] useSpellSlot(spellSlots, spellLevel): Record<number, { total; used }> ✅
   - [x] restoreSpellSlots(spellSlots, spellLevel?): Record<number, { total; used }> ✅
   - [x] filterCharacterSpells(character): CharacterSheet ✅ (missing from documentation)
-- [ ] class EquipmentGenerator (static) → src/core/generation/EquipmentGenerator.ts
-  - [ ] getStartingEquipment(characterClass): { weapons; armor; items }
-  - [ ] initializeEquipment(characterClass): CharacterEquipment
-  - [ ] addItem(equipment, itemName, quantity?, character?): CharacterEquipment
-  - [ ] removeItem(equipment, itemName, quantity?, character?): CharacterEquipment
-  - [ ] equipItem(equipment, itemName, character?): CharacterEquipment
-  - [ ] unequipItem(equipment, itemName, character?): CharacterEquipment
-  - [ ] getEquipmentData(itemName): EnhancedEquipment | undefined
-  - [ ] getInventoryList(equipment): EnhancedInventoryItem[]
-  - [ ] getEquipmentByType(equipment, type): EnhancedInventoryItem[]
+- [x] class EquipmentGenerator (static) → src/core/generation/EquipmentGenerator.ts
+  - [x] getStartingEquipment(characterClass): { weapons; armor; items } ✅
+  - [x] initializeEquipment(characterClass): CharacterEquipment ✅
+  - [x] addItem(equipment, itemName, quantity?, character?): CharacterEquipment ⚠️ (signature mismatch: docs have 4 params, code has 3 - no character param)
+  - [x] removeItem(equipment, itemName, quantity?, character?): CharacterEquipment ⚠️ (signature mismatch: docs have 4 params, code has 3 - no character param)
+  - [x] equipItem(equipment, itemName, character?): CharacterEquipment ✅
+  - [x] unequipItem(equipment, itemName, character?): CharacterEquipment ✅
+  - [x] getEquipmentData(itemName): EnhancedEquipment | undefined ⚠️ (visibility mismatch: docs show public, code has private getEquipmentData + public getEquipmentDataStatic)
+  - [x] getInventoryList(equipment): EnhancedInventoryItem[] ✅
+  - [x] getEquipmentByType(equipment, type): EnhancedInventoryItem[] ❌ (MISSING: documented but not in codebase)
 - [ ] class AppearanceGenerator (static) → src/core/generation/AppearanceGenerator.ts
   - [ ] generate(seed, characterClass, audioProfile): CharacterAppearance
 - [ ] class NamingEngine → src/core/generation/NamingEngine.ts
@@ -580,7 +580,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
-| 2 | Core Processing Modules | ~50 | 🔄 In Progress (24/~50 done) |
+| 2 | Core Processing Modules | ~50 | 🔄 In Progress (33/~50 done) |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
@@ -627,10 +627,18 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] **Signature mismatch (Task 2.3 - SpellManager.getKnownSpells)** - DATA_ENGINE_REFERENCE.md documents `getKnownSpells(characterClass, characterLevel): string[]`, but actual code at `src/core/generation/SpellManager.ts:140-221` shows `getKnownSpells(characterClass, characterLevel, character?: CharacterSheet): string[]`. The code is correct: third parameter `character?: CharacterSheet` enables prerequisite filtering. Documentation needs to be updated.
 - [x] **Signature mismatch (Task 2.3 - SpellManager.initializeSpells)** - DATA_ENGINE_REFERENCE.md documents `initializeSpells(characterClass, characterLevel): SpellSlots`, but actual code at `src/core/generation/SpellManager.ts:270-280` shows `initializeSpells(characterClass, characterLevel, character?: CharacterSheet): SpellSlots`. The code is correct: third parameter `character?: CharacterSheet` enables prerequisite filtering. Documentation needs to be updated.
 - [x] **Missing documentation (Task 2.3 - SpellManager.filterCharacterSpells)** - DATA_ENGINE_REFERENCE.md is missing the `filterCharacterSpells(character: CharacterSheet): CharacterSheet` method. The actual code at `src/core/generation/SpellManager.ts:362-385` includes this method which updates a character's known_spells and cantrips arrays to only include spells whose prerequisites are met. Documentation needs to be updated.
-- [ ] [Item] documented but not found in codebase
-- [ ] [Item] exists in code but not documented
-- [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y]
-- [ ] Export mismatch: documented as exported but is internal (or vice versa)
+- [x] **Signature mismatch (Task 2.3 - EquipmentGenerator.addItem)** - DATA_ENGINE_REFERENCE.md documents `addItem(equipment, itemName, quantity?, character?): CharacterEquipment` with 4 parameters, but actual code at `src/core/generation/EquipmentGenerator.ts:212-216` shows only 3 parameters without the `character` parameter. Documentation needs to be updated.
+- [x] **Signature mismatch (Task 2.3 - EquipmentGenerator.removeItem)** - DATA_ENGINE_REFERENCE.md documents `removeItem(equipment, itemName, quantity?, character?): CharacterEquipment` with 4 parameters, but actual code at `src/core/generation/EquipmentGenerator.ts:269-273` shows only 3 parameters without the `character` parameter. Documentation needs to be updated.
+- [x] **Visibility mismatch (Task 2.3 - EquipmentGenerator.getEquipmentData)** - DATA_ENGINE_REFERENCE.md documents `getEquipmentData` as a public static method, but actual code at `src/core/generation/EquipmentGenerator.ts:70-78` has it as private. A public static method `getEquipmentDataStatic` exists at line 60-62 that provides the same functionality. Documentation needs to be updated.
+- [x] **Missing code (Task 2.3 - EquipmentGenerator.getEquipmentByType)** - DATA_ENGINE_REFERENCE.md documents `getEquipmentByType(equipment, type): EnhancedInventoryItem[]` method, but this method does not exist in the codebase at `src/core/generation/EquipmentGenerator.ts`. Documentation needs to be updated or code needs to be added.
+- [x] **Missing documentation (Task 2.3 - EquipmentGenerator.getEquipmentDataStatic)** - DATA_ENGINE_REFERENCE.md is missing the `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method. The actual code at `src/core/generation/EquipmentGenerator.ts:60-62` includes this public static method. Documentation needs to be updated.
+- [x] **Missing documentation (Task 2.3 - EquipmentGenerator.addModification)** - DATA_ENGINE_REFERENCE.md is missing the `addModification(equipment, itemName, modification, instanceId?, character?): CharacterEquipment` method. The actual code at `src/core/generation/EquipmentGenerator.ts:590-644` includes this method for adding equipment modifications/enchantments. Documentation needs to be updated.
+- [x] **Missing documentation (Task 2.3 - EquipmentGenerator.removeModification)** - DATA_ENGINE_REFERENCE.md is missing the `removeModification(equipment, itemName, modificationId, character?): CharacterEquipment` method. The actual code at `src/core/generation/EquipmentGenerator.ts:655-709` includes this method for removing equipment modifications. Documentation needs to be updated.
+- [x] **Missing documentation (Task 2.3 - EquipmentGenerator.getActiveEffects)** - DATA_ENGINE_REFERENCE.md is missing the `getActiveEffects(equipment, itemName, instanceId?): EquipmentProperty[]` method. The actual code at `src/core/generation/EquipmentGenerator.ts:719-759` includes this method for getting all active effects from an equipment item (base + modifications). Documentation needs to be updated.
+- [ ] [Item] documented but not found in codebase (covered by EquipmentGenerator.getEquipmentByType above)
+- [ ] [Item] exists in code but not documented (covered by EquipmentGenerator methods above)
+- [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y] (covered by EquipmentGenerator methods above)
+- [ ] Export mismatch: documented as exported but is internal (or vice versa) (covered by EquipmentGenerator.getEquipmentData above)
 
 ### Needs Investigation
 - [ ] [Item] - [describe what needs clarification]
