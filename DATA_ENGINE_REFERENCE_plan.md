@@ -45,16 +45,16 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] ColorPalette → src/core/types/AudioProfile.ts ✅ (see notes)
 - [x] FrequencyBands → src/core/types/AudioProfile.ts ✅
 
-### Task 1.2: Character Type Definitions (8 items)
-- [ ] Race (type) → src/types/CharacterTypes.ts
-- [ ] Class (type) → src/types/CharacterTypes.ts
-- [ ] Ability (type) → src/types/CharacterTypes.ts
-- [ ] Skill (type) → src/types/CharacterTypes.ts
-- [ ] ProficiencyLevel (type) → src/types/CharacterTypes.ts
-- [ ] GameMode (type) → src/types/CharacterTypes.ts
-- [ ] Attack (interface) → src/types/CombatTypes.ts
-- [ ] Spell (interface) → src/types/CombatTypes.ts
-- [ ] AbilityScores (interface) → src/types/CharacterTypes.ts
+### Task 1.2: Character Type Definitions (9 items) ✅ COMPLETED
+- [x] Race (type) → src/core/types/Character.ts (16) ✅ (location mismatch in plan)
+- [x] Class (type) → src/core/types/Character.ts (49) ✅ (signature mismatch: branded type vs union; location mismatch)
+- [x] Ability (type) → src/core/types/Character.ts (151) ✅ (location mismatch in plan)
+- [x] Skill (type) → src/core/types/Character.ts (153-171) ✅ (location mismatch in plan)
+- [x] ProficiencyLevel (type) → src/core/types/Character.ts (173) ✅ (location mismatch in plan)
+- [x] GameMode (type) → src/core/types/Character.ts (180) ✅ (location mismatch in plan)
+- [x] Attack (interface) → src/core/types/Character.ts (185-196) ✅ (location mismatch; missing `properties?: string[]` in DATA_ENGINE_REFERENCE.md)
+- [x] Spell (interface) → src/core/types/Character.ts (201-214) ✅ (location mismatch in plan)
+- [x] AbilityScores (interface) → src/core/types/Character.ts (216-227) ✅ (location mismatch in plan)
 
 ### Task 1.3: Character Interfaces (4 items)
 - [ ] CharacterSheet → src/types/CharacterTypes.ts
@@ -601,9 +601,12 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [ ] Multiple implementations of [functionality] found
 
 ### Discrepancies Found
+- [x] **Location mismatch (Task 1.2)** - DATA_ENGINE_REFERENCE_plan.md documents character types at `src/types/CharacterTypes.ts` and `src/types/CombatTypes.ts`, but actual location is `src/core/types/Character.ts`. All 9 types (Race, Class, Ability, Skill, ProficiencyLevel, GameMode, Attack, Spell, AbilityScores) exist at the correct location in the codebase.
+- [x] **Signature mismatch (Class type)** - DATA_ENGINE_REFERENCE.md shows `Class` as simple union type `'Barbarian' | ... | 'Wizard'`, but actual code uses branded type `string & { readonly __ClassBrand: unique symbol }` for extensibility. The branded type is correct and intentional for supporting custom classes.
+- [x] **Missing documentation (Attack interface)** - DATA_ENGINE_REFERENCE.md is missing the `properties?: string[]` property on the Attack interface. The actual code at `src/core/types/Character.ts:195` includes this property.
 - [ ] [Item] documented but not found in codebase
 - [ ] [Item] exists in code but not documented
-- [ ] Signature mismatch: [Item] documented as [X] but code shows [Y]
+- [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y]
 - [ ] Export mismatch: documented as exported but is internal (or vice versa)
 
 ### Needs Investigation
