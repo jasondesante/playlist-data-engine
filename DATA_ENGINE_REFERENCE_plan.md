@@ -86,17 +86,17 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 **Focus**: Parser, analyzer, and character generation - the heart of the engine.
 **Estimated Items**: ~50
 
-### Task 2.1: Playlist Parser (8 items)
-- [ ] class PlaylistParser → src/core/parser/PlaylistParser.ts
-  - [ ] constructor(options?: PlaylistParserOptions)
-  - [ ] parse(data: RawArweavePlaylist): Promise<ServerlessPlaylist>
-- [ ] class MetadataExtractor (static) → src/core/parser/MetadataExtractor.ts
-  - [ ] extractAudioUrl(data: Record<string, unknown>): string | null
-  - [ ] extractImageUrl(data: Record<string, unknown>): string | null
-  - [ ] extractTitle(data: Record<string, unknown>): string | null
-  - [ ] extractArtist(data: Record<string, unknown>): string | null
-  - [ ] parseMetadata(metadata: unknown): Record<string, unknown> | null
-  - [ ] convertAttributes(attributes: unknown): Record<string, string | number> | null
+### Task 2.1: Playlist Parser (8 items) ✅ COMPLETED
+- [x] class PlaylistParser → src/core/parser/PlaylistParser.ts
+  - [x] constructor(options?: PlaylistParserOptions) ✅
+  - [x] parse(data: RawArweavePlaylist): Promise<ServerlessPlaylist> ✅
+- [x] class MetadataExtractor (static) → src/core/parser/MetadataExtractor.ts
+  - [x] extractAudioUrl(data: Record<string, unknown>): string | null ✅
+  - [x] extractImageUrl(data: Record<string, unknown>): string | null ✅
+  - [x] extractTitle(data: Record<string, unknown>): string | null ✅
+  - [x] extractArtist(data: Record<string, unknown>): string | null ✅
+  - [x] parseMetadata(metadata: unknown): Record<string, unknown> | null ✅
+  - [x] convertAttributes(attributes: unknown): Record<string, string | number> | null ✅
 
 ### Task 2.2: Audio Analyzer (5 items)
 - [ ] class AudioAnalyzer → src/core/analysis/AudioAnalyzer.ts
@@ -579,7 +579,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
-| 2 | Core Processing Modules | ~50 | ⬜ Not Started |
+| 2 | Core Processing Modules | ~50 | 🔄 In Progress (8/~50 done) |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
