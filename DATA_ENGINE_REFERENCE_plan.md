@@ -142,9 +142,9 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] getEquipmentByType(equipment, type): EnhancedInventoryItem[] ❌ (MISSING: documented but not in codebase)
 - [x] class AppearanceGenerator (static) → src/core/generation/AppearanceGenerator.ts ✅
   - [x] generate(seed, characterClass, audioProfile): CharacterAppearance ✅
-- [ ] class NamingEngine → src/core/generation/NamingEngine.ts
-  - [ ] generateName(track, audioProfile): string
-  - [ ] cleanTitle(title): string
+- [x] class NamingEngine → src/core/generation/NamingEngine.ts ✅
+  - [x] generateName(track, audioProfile): string ✅
+  - [x] cleanTitle(title): string ✅
 
 ---
 
@@ -580,7 +580,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
-| 2 | Core Processing Modules | ~50 | 🔄 In Progress (34/~50 done) |
+| 2 | Core Processing Modules | ~50 | 🔄 In Progress (36/~50 done) |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
