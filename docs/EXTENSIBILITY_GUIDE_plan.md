@@ -192,18 +192,18 @@ This ensures all discovered issues are tracked, researched, and resolved systema
 **Goal:** Verify all validators provide consistent validation for their respective data types.
 
 ### Task 3.1: Verify FeatureValidator
-- [ ] Class exists at [src/core/features/FeatureValidator.ts](src/core/features/FeatureValidator.ts)
-- [ ] `validateClassFeature(feature)` → Line 123
-- [ ] `validateRacialTrait(trait)` → Line 232
-- [ ] `validateEffect(effect)` → Line 355
-- [ ] `validatePrerequisites(prerequisites)` → Line 420
-- [ ] `validateClassFeatures(features)` → Line 575
-- [ ] `validateRacialTraits(traits)` → Line 604
-- [ ] Helper functions exported:
-  - [ ] `validateClassFeature(feature)` → Line 662
-  - [ ] `validateRacialTrait(trait)` → Line 674
-  - [ ] `validateClassFeatures(features)` → Line 686
-  - [ ] `validateRacialTraits(traits)` → Line 698
+- [x] Class exists at [src/core/features/FeatureValidator.ts](src/core/features/FeatureValidator.ts)
+- [x] `validateClassFeature(feature)` → Line 123
+- [x] `validateRacialTrait(trait)` → Line 232
+- [x] `validateEffect(effect)` → Line 355
+- [x] `validatePrerequisites(prerequisites)` → Line 420
+- [x] `validateClassFeatures(features)` → Line 575
+- [x] `validateRacialTraits(traits)` → Line 604
+- [x] Helper functions exported:
+  - [x] `validateClassFeature(feature)` → Line 662
+  - [x] `validateRacialTrait(trait)` → Line 674
+  - [x] `validateClassFeatures(features)` → Line 686
+  - [x] `validateRacialTraits(traits)` → Line 698
 
 ### Task 3.2: Verify SkillValidator
 - [ ] Class exists at [src/core/skills/SkillValidator.ts](src/core/skills/SkillValidator.ts)
@@ -599,13 +599,13 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 |-------|-------|-----------|--------|--------|
 | Phase 1: ExtensionManager | 7 | 7 | 100% | Complete |
 | Phase 2: Registries | 3 | 3 | 100% | Complete |
-| Phase 3: Validators | 4 | 0 | 0% | Pending |
+| Phase 3: Validators | 4 | 1 | 25% | In Progress |
 | Phase 4: EquipmentModifier | 5 | 0 | 0% | Pending |
 | Phase 5: Helpers | 4 | 0 | 0% | Pending |
 | Phase 6: Types | 7 | 0 | 0% | Pending |
 | Phase 7: Categories | 11 | 0 | 0% | Pending |
 | Phase 8: Examples | 7 | 0 | 0% | Pending |
-| **TOTAL** | **48** | **10** | **21%** | **In Progress** |
+| **TOTAL** | **48** | **11** | **23%** | **In Progress** |
 
 ---
 
