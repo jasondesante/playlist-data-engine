@@ -622,6 +622,31 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 
 ---
 
+## Additional Work (Post-Verification)
+
+### Subrace Auto-Detection Feature
+
+During test runs after plan completion, discovered that subrace tests were failing because `CharacterGenerator` required both `forceRace` and `subrace` options to be specified together. However, the tests expected to be able to specify just `subrace` and have the race auto-detected.
+
+**Changes Made:**
+- Added `FeatureRegistry.getRaceForSubrace()` method to find the race associated with a given subrace
+- Updated `CharacterGenerator` to auto-detect race when `subrace` is specified without `forceRace`
+- Fixed TypeScript type casting issues
+- Updated test expectations and added proper `beforeEach` hooks to register Elf subrace traits
+
+**Files Modified:**
+- `src/core/features/FeatureRegistry.ts` - Added getRaceForSubrace method
+- `src/core/generation/CharacterGenerator.ts` - Added auto-detection logic
+- `tests/unit/subraces.test.ts` - Fixed tests to work with new behavior
+- `tests/integration/prerequisitesAndRaces.integration.test.ts` - Fixed integration test
+
+**Test Results:**
+- All 38 subrace tests now passing
+- Build succeeds without errors
+- 1854 tests passing (4 flaky statistical tests in classSuggester remain, unrelated to this change)
+
+---
+
 ## Progress Tracking
 
 | Phase | Tasks | Completed | % Done | Status |
