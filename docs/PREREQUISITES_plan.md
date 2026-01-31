@@ -404,14 +404,23 @@ Address all discrepancies found during verification.
 
 ### Task 6.3: SpellPrerequisite Location
 
-**Status**: LOW - Minor organizational issue
+**Status**: ✅ RESOLVED - Types moved to SpellTypes.ts
 
-- [ ] **Issue**: `SpellPrerequisite` is defined in `src/utils/constants.ts:873` instead of with spell types
-- [ ] **Impact**: May confuse developers looking for spell-related types
-- [ ] **Resolution Options**:
-  - [ ] Option A: Move to `src/core/spells/` directory
-  - [ ] Option B: Add a comment directing to its location
-  - [ ] Option C: Re-export from `src/core/spells/index.ts`
+- [x] **Issue**: `SpellPrerequisite` is defined in `src/utils/constants.ts:873` instead of with spell types
+- [x] **Impact**: May confuse developers looking for spell-related types
+- [x] **Resolution Applied**: Option A - Move to `src/core/spells/` directory
+  - [x] Created `src/core/spells/SpellTypes.ts` with `SpellPrerequisite` and `Spell` interfaces
+  - [x] Updated `SpellValidator.ts` to import from `SpellTypes.ts`
+  - [x] Updated `SpellRegistry.ts` to import from `SpellTypes.ts`
+  - [x] Updated `spells/index.ts` to export from `SpellTypes.ts`
+  - [x] Updated `utils/constants.ts` to import and re-export types (backward compatibility)
+  - [x] Removed duplicate type definitions from `constants.ts`
+- [x] **Verification**: Build passes, all spell prerequisite tests (17 tests) pass
+
+**Module Organization Now Consistent**:
+- `SkillPrerequisite` + `CustomSkill` → `src/core/skills/SkillTypes.ts`
+- `FeaturePrerequisite` + `ClassFeature` + `RacialTrait` → `src/core/features/FeatureTypes.ts`
+- `SpellPrerequisite` + `Spell` → `src/core/spells/SpellTypes.ts` ✅
 
 ---
 
@@ -670,7 +679,7 @@ Verify type imports across modules are correct.
 | D1 | `meetsPrerequisites` method missing | ✅ Resolved |
 | D2 | Multiple ValidationResult types | ✅ Resolved |
 | D2a | `unmet` property missing from Skill/Spell validation results | ✅ Resolved |
-| D3 | SpellPrerequisite in constants file | Low |
+| D3 | SpellPrerequisite in constants file | ✅ Resolved |
 | D4 | Class type inconsistency | Low |
 | D5 | Undocumented FeatureRegistry methods | Low |
 | D6 | Racial trait example missing `description` field | Documentation bug found in PREREQUISITES.md:426-436 |
@@ -683,7 +692,7 @@ Verify type imports across modules are correct.
 - [x] Phase 3: Registry Classes (All tasks verified - Task 3.1's `meetsPrerequisites` added in Task 6.1)
 - [x] Phase 4: Extension System (All 2 tasks verified)
 - [x] Phase 5: Public API Exports (All 3 tasks verified - Task 5.3 completed with actual line numbers)
-- [ ] Phase 6: Discrepancies Resolution (Task 6.1 completed, 6.2-6.6 remaining)
+- [ ] Phase 6: Discrepancies Resolution (Tasks 6.1, 6.2, 6.3, 6.6 completed; 6.4-6.5 remaining)
 - [x] Phase 7: Code Examples Testing (All 4 tasks completed - 12 tests created)
 
 #### Overall Completion
@@ -691,4 +700,4 @@ Verify type imports across modules are correct.
 - [x] All examples tested
 - [x] Documentation updated (if needed)
 
-**Remaining Work**: Only Phase 6 low-priority items remain (Tasks 6.3-6.5)
+**Remaining Work**: Only Phase 6 low-priority items remain (Tasks 6.4-6.5)

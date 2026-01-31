@@ -8,7 +8,7 @@
  * Part of Phase 12.3: Create SpellRegistry for consistency with SkillRegistry and FeatureRegistry.
  */
 
-import type { Spell, SpellPrerequisite } from '../../utils/constants.js';
+import type { Spell, SpellPrerequisite } from './SpellTypes.js';
 import type { Class, CharacterSheet } from '../types/Character.js';
 import { SPELL_DATABASE } from '../../utils/constants.js';
 import { SpellValidator, type SpellValidationResult } from './SpellValidator.js';

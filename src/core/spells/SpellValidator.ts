@@ -12,7 +12,7 @@
  * Part of Phase 13: Code Deduplication - Uses shared AbilityConstants.
  */
 
-import type { SpellPrerequisite } from '../../utils/constants.js';
+import type { SpellPrerequisite, Spell } from './SpellTypes.js';
 import type { Ability, CharacterSheet } from '../types/Character.js';
 import { isValidAbility } from '../utils/AbilityConstants.js';
 import { validatePrerequisiteSchema, validatePrerequisites } from '../utils/PrerequisiteValidator.js';
@@ -49,28 +49,6 @@ export interface SpellValidationResult {
     valid: boolean;
     /** Array of error messages (empty if valid) */
     errors: string[];
-}
-
-/**
- * Spell type from constants.ts
- */
-export interface Spell {
-    /** Unique identifier (optional for backward compatibility) */
-    id?: string;
-
-    name: string;
-    level: number;
-    school: 'Abjuration' | 'Conjuration' | 'Divination' | 'Enchantment' | 'Evocation' | 'Illusion' | 'Necromancy' | 'Transmutation';
-    casting_time: string;
-    range: string;
-    components: string[];
-    duration: string;
-
-    /** Optional description of what the spell does */
-    description?: string;
-
-    /** Prerequisites for learning this spell */
-    prerequisites?: SpellPrerequisite;
 }
 
 /**
