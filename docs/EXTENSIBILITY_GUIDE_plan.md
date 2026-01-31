@@ -605,7 +605,7 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 | Phase 6: Types | 7 | 0 | 0% | Pending |
 | Phase 7: Categories | 11 | 0 | 0% | Pending |
 | Phase 8: Examples | 7 | 0 | 0% | Pending |
-| **TOTAL** | **48** | **4** | **8%** | **In Progress** |
+| **TOTAL** | **48** | **10** | **21%** | **In Progress** |
 
 ---
 
