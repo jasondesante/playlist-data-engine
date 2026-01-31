@@ -9,6 +9,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EquipmentModifier } from '../../src/core/equipment/EquipmentModifier.js';
 import type {
+    CharacterEquipment,
     EnhancedEquipment,
     EquipmentModification,
     EquipmentProperty,
@@ -18,8 +19,6 @@ import type { CharacterSheet } from '../../src/core/types/Character.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
-import { EquipmentEffectApplier } from '../../src/core/equipment/EquipmentEffectApplier.js';
-import type { CharacterEquipment, EnhancedInventoryItem } from '../../src/core/equipment/EquipmentModifier.js';
 
 describe('EquipmentModifier', () => {
     let featureRegistry: FeatureRegistry;
@@ -69,7 +68,7 @@ describe('EquipmentModifier', () => {
         testCharacter = {
             name: 'Test Character',
             race: 'Human',
-            class: 'Fighter',
+            class: 'Fighter' as any,  // Type assertion for test data
             level: 1,
             ability_scores: {
                 STR: 10,
@@ -929,12 +928,12 @@ describe('EquipmentModifier', () => {
             let equipment = EquipmentModifier.enchant(testEquipment, 'Longsword', enchantment1);
             equipment = EquipmentModifier.enchant(equipment, 'Longsword', enchantment2);
 
-            const count = EquipmentModifier.countModificationsBySource(equipment, 'Longsword', 'enchantment');
+            const count = EquipmentModifier.countModificationsForSource(equipment, 'Longsword', 'enchantment');
             expect(count).toBe(2);
         });
 
         it('should return 0 for non-existent source', () => {
-            const count = EquipmentModifier.countModificationsBySource(testEquipment, 'Longsword', 'curse');
+            const count = EquipmentModifier.countModificationsForSource(testEquipment, 'Longsword', 'curse');
             expect(count).toBe(0);
         });
     });

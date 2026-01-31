@@ -10,7 +10,9 @@
 
 import type { CharacterSheet } from '../types/Character.js';
 import type {
+    CharacterEquipment,
     EnhancedEquipment,
+    EnhancedInventoryItem,
     EquipmentProperty,
     EquipmentModification,
     EquipmentMiniFeature
@@ -29,30 +31,6 @@ export interface ModificationResult {
     success: boolean;
     /** Errors encountered (if any) */
     errors?: string[];
-}
-
-/**
- * Character equipment state
- * Uses EnhancedInventoryItem to support per-instance modifications
- */
-export interface CharacterEquipment {
-    weapons: EnhancedInventoryItem[];
-    armor: EnhancedInventoryItem[];
-    items: EnhancedInventoryItem[];
-    totalWeight: number;
-    equippedWeight: number;
-}
-
-/**
- * Enhanced inventory item with per-instance modifications
- */
-export interface EnhancedInventoryItem {
-    name: string;
-    quantity: number;
-    equipped: boolean;
-    modifications?: EquipmentModification[];
-    templateId?: string;
-    instanceId?: string;
 }
 
 /**

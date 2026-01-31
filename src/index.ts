@@ -57,11 +57,11 @@ export type { CharacterUpdateResult } from './core/progression/CharacterUpdater.
 
 // Character generation types
 export type { CharacterAppearance } from './core/generation/AppearanceGenerator.js';
-export type { CharacterEquipment } from './core/generation/EquipmentGenerator.js';
 export type { InventoryItem } from './core/generation/EquipmentGenerator.js';
 
 // Equipment types
 export type {
+    CharacterEquipment,
     EnhancedEquipment,
     EquipmentProperty,
     EquipmentModification,

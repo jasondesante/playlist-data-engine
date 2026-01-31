@@ -177,6 +177,18 @@ export interface EnhancedInventoryItem {
 }
 
 /**
+ * Character equipment state
+ * Contains all inventory items organized by category with weight tracking
+ */
+export interface CharacterEquipment {
+    weapons: EnhancedInventoryItem[];
+    armor: EnhancedInventoryItem[];
+    items: EnhancedInventoryItem[];
+    totalWeight: number;
+    equippedWeight: number;
+}
+
+/**
  * Equipment-granted feature tracking
  */
 export interface EquipmentFeature {

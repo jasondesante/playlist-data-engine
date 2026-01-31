@@ -13,6 +13,7 @@ import { CLASS_STARTING_EQUIPMENT, EQUIPMENT_DATABASE, getClassStartingEquipment
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureEquipmentDefaultsInitialized } from '../extensions/initializeDefaults.js';
 import type {
+    CharacterEquipment,
     EnhancedEquipment,
     EnhancedInventoryItem,
     EquipmentProperty,
@@ -37,18 +38,6 @@ export interface InventoryItem {
   name: string;
   quantity: number;
   equipped: boolean;
-}
-
-/**
- * Character equipment state
- * Uses EnhancedInventoryItem to support per-instance modifications
- */
-export interface CharacterEquipment {
-  weapons: EnhancedInventoryItem[];
-  armor: EnhancedInventoryItem[];
-  items: EnhancedInventoryItem[];
-  totalWeight: number;
-  equippedWeight: number;
 }
 
 export class EquipmentGenerator {
