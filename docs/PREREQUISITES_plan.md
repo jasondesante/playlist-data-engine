@@ -49,18 +49,18 @@ Verify all prerequisite type definitions exist with correct properties and types
 **Implementation**: `src/core/skills/SkillTypes.ts:25-49`
 
 #### Properties
-- [ ] `level?: number` exists at line 27
-- [ ] `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` exists at line 30
-- [ ] `class?: Class` exists at line 33
-- [ ] `race?: Race` exists at line 36
-- [ ] `skills?: string[]` exists at line 39
-- [ ] `features?: string[]` exists at line 42
-- [ ] `spells?: string[]` exists at line 45
-- [ ] `custom?: string` exists at line 48
+- [x] `level?: number` exists at line 27
+- [x] `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` exists at line 30
+- [x] `class?: Class` exists at line 33
+- [x] `race?: Race` exists at line 36
+- [x] `skills?: string[]` exists at line 39
+- [x] `features?: string[]` exists at line 42
+- [x] `spells?: string[]` exists at line 45
+- [x] `custom?: string` exists at line 48
 
 #### Export Verification
-- [ ] Exported as `export interface SkillPrerequisite`
-- [ ] `Class` and `Race` types imported from `../types/Character.js`
+- [x] Exported as `export interface SkillPrerequisite`
+- [x] `Class` and `Race` types imported from `../types/Character.js`
 
 ---
 
