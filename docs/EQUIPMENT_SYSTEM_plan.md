@@ -139,18 +139,21 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 2.3: Feature & Skill Interfaces
 
-- [ ] `interface EquipmentMiniFeature` → src/core/types/Equipment.ts
-  - [ ] `id: string`
-  - [ ] `name: string`
-  - [ ] `description: string`
-  - [ ] `effects: EquipmentProperty[]`
-  - [ ] `source: 'equipment_inline'`
+- [x] `interface EquipmentMiniFeature` → src/core/types/Equipment.ts (VERIFIED - lines 77-83)
+  - [x] `id: string`
+  - [x] `name: string`
+  - [x] `description: string`
+  - [x] `effects: EquipmentProperty[]`
+  - [x] `source: 'equipment_inline'`
 
-- [ ] `type EquipmentFeature` → src/core/types/Equipment.ts
+- [x] `interface EquipmentFeature` → src/core/types/Equipment.ts (VERIFIED - lines 182-188, implemented as interface not type)
+  - Note: Plan requested `type` but code implements `interface` - this is equivalent and preferred TypeScript practice for object shapes
+  - Properties: `featureId`, `source`, `equipmentName`, `instanceId`, `sourceType`
 
-- [ ] `interface EquipmentSkill` → src/core/types/Equipment.ts
-  - [ ] `skillId: string`
-  - [ ] `level: 'proficient' | 'expertise'` (or similar)
+- [x] `interface EquipmentSkill` → src/core/types/Equipment.ts (VERIFIED - lines 193-200)
+  - [x] `skillId: string`
+  - [x] `level: 'proficient' | 'expertise'`
+  - Additional properties: `source`, `equipmentName`, `instanceId`, `sourceType`
 
 ### Task 2.4: Modification Interfaces
 
