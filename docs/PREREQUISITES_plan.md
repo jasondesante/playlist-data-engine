@@ -267,19 +267,19 @@ Verify all registry classes and their methods exist with correct signatures.
 **Implementation**: `src/core/skills/SkillRegistry.ts:29-402`
 
 #### Class Verification
-- [ ] Class `SkillRegistry` exists
-- [ ] Exported as `export class SkillRegistry`
+- [x] Class `SkillRegistry` exists at line 29
+- [x] Exported as `export class SkillRegistry`
 
 #### Static Methods
-- [ ] `getInstance(): SkillRegistry` exists at lines 51-56
+- [x] `getInstance(): SkillRegistry` exists at lines 51-56
 
 #### Instance Methods
-- [ ] `validatePrerequisites(skill: CustomSkill, character: CharacterSheet): SkillValidationResult` exists at lines 266-271
-- [ ] `registerSkill(skill: CustomSkill): void` exists at lines 86-117
+- [x] `validatePrerequisites(skill: CustomSkill, character: CharacterSheet): SkillValidationResult` exists at lines 266-271
+- [x] `registerSkill(skill: CustomSkill): void` exists at lines 86-117
 
 #### Export Verification
-- [ ] Exported from `src/core/skills/index.ts:20`
-- [ ] Exported from `src/index.ts:295`
+- [x] Exported from `src/core/skills/index.ts:20`
+- [x] Exported from `src/index.ts:298` (note: plan listed 295, actual is 298)
 
 ---
 
