@@ -340,11 +340,11 @@ Verify all documented items are exported from the main package.
 
 ### Task 5.2: Verify Class Exports from src/index.ts
 
-- [ ] `SkillValidator` - Line 296
-- [ ] `SpellValidator` - Line 327
-- [ ] `FeatureRegistry` - Line 266
-- [ ] `SkillRegistry` - Line 295
-- [ ] `ExtensionManager` - Line 342
+- [x] `SkillValidator` - Line 296 (actual: 299)
+- [x] `SpellValidator` - Line 327 (actual: 330)
+- [x] `FeatureRegistry` - Line 266 (actual: 269)
+- [x] `SkillRegistry` - Line 295 (actual: 298)
+- [x] `ExtensionManager` - Line 342 (actual: 345)
 
 ### Task 5.3: Verify Function Exports from src/index.ts
 
@@ -573,7 +573,7 @@ Verify type imports across modules are correct.
 | Registry Classes | 2 | 2* |
 | Extension Classes | 1 | 1 |
 | Helper Functions | 2 | 2 |
-| Public API Exports | 14 | 8 |
+| Public API Exports | 14 | 13 |
 
 *Note: Registry Classes verified but Task 3.1 found `meetsPrerequisites` method doesn't exist (see Task 6.1)
 
