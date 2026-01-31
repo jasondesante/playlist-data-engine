@@ -112,7 +112,8 @@ export type {
 // Extensibility types
 export type {
     ExtensionOptions,
-    ValidationResult
+    ValidationResult,
+    ContentPackData
 } from './core/extensions/ExtensionManager.js';
 
 export type { SpellPrerequisite, RaceDataEntry, ClassDataEntry, ClassSpellListData } from './utils/constants.js';

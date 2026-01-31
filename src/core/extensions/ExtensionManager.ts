@@ -146,6 +146,30 @@ export interface ValidationResult {
 }
 
 /**
+ * Content pack data exported from ExtensionManager
+ *
+ * This type represents the structure of data returned by `exportCustomData()`.
+ * It can be used to save, load, and share custom content packs.
+ */
+export interface ContentPackData {
+    /**
+     * All registered extensions by category
+     * Each category contains items, options, and registration timestamp
+     */
+    extensions: Record<string, {
+        items: any[];
+        options: ExtensionOptions;
+        registeredAt: number;
+    }>;
+
+    /**
+     * Custom spawn weights for each category
+     * Item name -> weight multiplier
+     */
+    weights: Record<string, Record<string, number>>;
+}
+
+/**
  * ExtensionManager - Singleton class for managing runtime extensions
  *
  * Manages custom data for all procedural generation categories with:

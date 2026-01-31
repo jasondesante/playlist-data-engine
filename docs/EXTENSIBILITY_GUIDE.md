@@ -2399,8 +2399,7 @@ Combine export/import with a clean loader function:
 
 ```typescript
 // content-packs/dragon-pack.ts
-import { ExtensionManager } from 'playlist-data-engine';
-import type { ContentPackData } from './types';
+import { ExtensionManager, type ContentPackData } from 'playlist-data-engine';
 
 export function loadDragonPack() {
     const manager = ExtensionManager.getInstance();
@@ -2634,16 +2633,16 @@ Apply modification templates to equipment:
 ```typescript
 import { EquipmentModifier } from 'playlist-data-engine';
 
-const modifier = EquipmentModifier.getInstance();
+// EquipmentModifier uses static methods (not a singleton)
 
 // Apply an enchantment template to equipment
-const enchantedSword = modifier.applyModification(
+const enchantedSword = EquipmentModifier.applyTemplate(
     baseWeapon,
     'Flaming Enchantment'
 );
 
 // Apply a curse (if not removable)
-const cursedItem = modifier.applyModification(
+const cursedItem = EquipmentModifier.applyTemplate(
     baseItem,
     'Cursed Binding'
 );
@@ -2688,6 +2687,12 @@ manager.register('equipment.templates', [
 
 ### Type Definitions
 
+**Note:** The extension interfaces below (`ClassFeatureExtension`, `RacialTraitExtension`, `SkillExtension`) match the actual exported types from the package (`ClassFeature`, `RacialTrait`, `CustomSkill`). You can import and use the actual types directly:
+
+```typescript
+import type { ClassFeature, RacialTrait, CustomSkill } from 'playlist-data-engine';
+```
+
 ```typescript
 // Extension options
 interface ExtensionOptions {
@@ -2716,7 +2721,7 @@ interface EquipmentExtension {
     weight: number;  // Non-negative
 }
 
-// Class feature extension
+// Class feature extension (same as ClassFeature type)
 interface ClassFeatureExtension {
     id: string;              // Unique feature ID (lowercase_with_underscores)
     name: string;            // Display name
@@ -2730,6 +2735,9 @@ interface ClassFeatureExtension {
         abilities?: Record<Ability, number>;
         class?: Class;
         race?: Race;
+        subrace?: string;
+        skills?: string[];
+        spells?: string[];
         custom?: string;
     };
     effects?: Array<{        // Optional effects
@@ -2744,7 +2752,7 @@ interface ClassFeatureExtension {
     lore?: string;
 }
 
-// Racial trait extension
+// Racial trait extension (same as RacialTrait type)
 interface RacialTraitExtension {
     id: string;              // Unique trait ID (lowercase_with_underscores)
     name: string;            // Display name
@@ -2757,6 +2765,9 @@ interface RacialTraitExtension {
         abilities?: Record<Ability, number>;
         class?: Class;
         race?: Race;
+        subrace?: string;
+        skills?: string[];
+        spells?: string[];
         custom?: string;
     };
     effects?: Array<{        // Optional effects (same format as features)
@@ -2771,7 +2782,7 @@ interface RacialTraitExtension {
     lore?: string;
 }
 
-// Skill extension
+// Skill extension (same as CustomSkill type)
 interface SkillExtension {
     id: string;              // Unique skill ID (lowercase_with_underscores)
     name: string;            // Display name
@@ -2780,6 +2791,17 @@ interface SkillExtension {
     armorPenalty?: boolean;
     customProperties?: Record<string, string | number | boolean | string[]>;
     categories?: string[];
+    prerequisites?: {        // Optional prerequisites
+        level?: number;
+        abilities?: Record<Ability, number>;
+        class?: Class;
+        race?: Race;
+        subrace?: string;
+        features?: string[];
+        skills?: string[];
+        spells?: string[];
+        custom?: string;
+    };
     source: 'default' | 'custom';
     tags?: string[];
     lore?: string;
