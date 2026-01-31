@@ -98,14 +98,14 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] parseMetadata(metadata: unknown): Record<string, unknown> | null ✅
   - [x] convertAttributes(attributes: unknown): Record<string, string | number> | null ✅
 
-### Task 2.2: Audio Analyzer (5 items)
-- [ ] class AudioAnalyzer → src/core/analysis/AudioAnalyzer.ts
-  - [ ] constructor(options?: AudioAnalyzerOptions)
-  - [ ] extractSonicFingerprint(audioUrl: string): Promise<AudioProfile>
-- [ ] class ColorExtractor → src/core/analysis/ColorExtractor.ts
-  - [ ] extractPalette(imageUrl: string): Promise<ColorPalette>
-- [ ] class SpectrumScanner (static) → src/core/analysis/SpectrumScanner.ts
-  - [ ] separateFrequencyBands(frequencyData: Uint8Array, sampleRate: number): FrequencyBands
+### Task 2.2: Audio Analyzer (5 items) ✅ COMPLETED
+- [x] class AudioAnalyzer → src/core/analysis/AudioAnalyzer.ts ✅
+  - [x] constructor(options?: AudioAnalyzerOptions) ✅
+  - [x] extractSonicFingerprint(audioUrl: string): Promise<AudioProfile> ✅
+- [x] class ColorExtractor → src/core/analysis/ColorExtractor.ts ✅
+  - [x] extractPalette(imageUrl: string): Promise<ColorPalette> ✅
+- [x] class SpectrumScanner (static) → src/core/analysis/SpectrumScanner.ts ✅
+  - [x] separateFrequencyBands(frequencyData: Uint8Array, sampleRate: number): FrequencyBands ✅
 
 ### Task 2.3: Character Generation (35 items)
 - [ ] class CharacterGenerator (static) → src/core/generation/CharacterGenerator.ts
@@ -579,7 +579,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
-| 2 | Core Processing Modules | ~50 | 🔄 In Progress (8/~50 done) |
+| 2 | Core Processing Modules | ~50 | 🔄 In Progress (13/~50 done) |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
