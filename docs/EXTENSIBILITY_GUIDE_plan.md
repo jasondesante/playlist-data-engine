@@ -272,15 +272,15 @@ This ensures all discovered issues are tracked, researched, and resolved systema
 - [x] `liftCurse(equipment, itemName, character?)` → Line 460 (actual: 460-481)
 
 ### Task 4.3: Verify Query Methods
-- [ ] `getModificationHistory(equipment, itemName)` → Line 285
-- [ ] `getCombinedEffects(equipment, itemName, instanceId?)` → Line 309
-- [ ] `hasTemplate(equipment, itemName, templateId)` → Line 343
-- [ ] `getAppliedTemplates(equipment, itemName)` → Line 375
-- [ ] `getModificationSources(equipment, itemName)` → Line 751
-- [ ] `countModificationsBySource(equipment, itemName, source)` → Line 772
-- [ ] `isCursed(equipment, itemName)` → Line 792
-- [ ] `isEnchanted(equipment, itemName)` → Line 806
-- [ ] `getItemSummary(equipment, itemName)` → Line 821
+- [x] `getModificationHistory(equipment, itemName)` → Line 263 (actual: 263-274)
+- [x] `getCombinedEffects(equipment, itemName, instanceId?)` → Line 287 (actual: 287-311)
+- [x] `hasTemplate(equipment, itemName, templateId)` → Line 321 (actual: 321-344)
+- [x] `getAppliedTemplates(equipment, itemName)` → Line 353 (actual: 353-381)
+- [x] `getModificationSources(equipment, itemName)` → Line 729 (actual: 729-740)
+- [x] `countModificationsBySource(equipment, itemName, source)` → Line 752 (actual: 752-766)
+- [x] `isCursed(equipment, itemName)` → Line 792 (actual: 792-797)
+- [x] `isEnchanted(equipment, itemName)` → Line 806 (actual: 806-812)
+- [x] `getItemSummary(equipment, itemName)` → Line 821 (actual: 821-853)
 
 ### Task 4.4: Verify Factory Methods
 - [ ] `createModification(id, name, properties, source)` → Line 632
@@ -600,12 +600,12 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 | Phase 1: ExtensionManager | 7 | 7 | 100% | Complete |
 | Phase 2: Registries | 3 | 3 | 100% | Complete |
 | Phase 3: Validators | 4 | 4 | 100% | Complete |
-| Phase 4: EquipmentModifier | 5 | 2 | 40% | In Progress |
+| Phase 4: EquipmentModifier | 5 | 3 | 60% | In Progress |
 | Phase 5: Helpers | 4 | 0 | 0% | Pending |
 | Phase 6: Types | 7 | 0 | 0% | Pending |
 | Phase 7: Categories | 11 | 0 | 0% | Pending |
 | Phase 8: Examples | 7 | 0 | 0% | Pending |
-| **TOTAL** | **48** | **14** | **29%** | **In Progress** |
+| **TOTAL** | **48** | **17** | **35%** | **In Progress** |
 
 ---
 
