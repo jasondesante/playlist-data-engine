@@ -254,23 +254,23 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 3.5: EquipmentSpawnHelper Class
 
-- [ ] `class EquipmentSpawnHelper` → src/core/equipment/EquipmentSpawnHelper.ts
+- [x] `class EquipmentSpawnHelper` → src/core/equipment/EquipmentSpawnHelper.ts (VERIFIED - line 57)
 
   **Spawning Operations:**
-  - [ ] `static spawnFromList(itemNames: string[], rng?: SeededRNG): (EnhancedEquipment | undefined)[]`
-  - [ ] `static spawnByRarity(rarity: EquipmentRarity, count: number, rng?: SeededRNG): EnhancedEquipment[]`
-  - [ ] `static spawnByTags(tags: string[], count: number, rng?: SeededRNG, options?: SpawnRandomOptions): EnhancedEquipment[]`
-  - [ ] `static spawnRandom(count: number, rng: SeededRNG, options?: SpawnRandomOptions): EnhancedEquipment[]`
-  - [ ] `static spawnFromTemplate(templateId: string, baseItemName?: string): EnhancedEquipment | null`
-  - [ ] `static spawnTreasureHoard(cr: number, rng: SeededRNG): TreasureHoardResult`
+  - [x] `static spawnFromList(itemNames: string[], rng?: SeededRNG): (EnhancedEquipment | undefined)[]` (VERIFIED - lines 74-91)
+  - [x] `static spawnByRarity(rarity: EquipmentRarity, count: number, rng?: SeededRNG): EnhancedEquipment[]` (VERIFIED - lines 111-147)
+  - [x] `static spawnByTags(tags: string[], count: number, rng?: SeededRNG, options?: SpawnRandomOptions): EnhancedEquipment[]` (VERIFIED - lines 171-242)
+  - [x] `static spawnRandom(count: number, rng: SeededRNG, options?: SpawnRandomOptions): EnhancedEquipment[]` (VERIFIED - lines 266-332)
+  - [x] `static spawnFromTemplate(templateId: string, baseItemName?: string): EnhancedEquipment | null` (VERIFIED - lines 355-414)
+  - [x] `static spawnTreasureHoard(cr: number, rng: SeededRNG): TreasureHoardResult` (VERIFIED - lines 433-469)
 
   **Character Operations:**
-  - [ ] `static addToCharacter(character: CharacterSheet, items: EnhancedEquipment[], equip?: boolean): CharacterSheet`
+  - [x] `static addToCharacter(character: CharacterSheet, items: EnhancedEquipment[], equip?: boolean): CharacterSheet` (VERIFIED - lines 487-532)
 
 ### Task 3.6: SeededRNG Class
 
-- [ ] `class SeededRNG` → src/utils/random.ts
-  - [ ] `constructor(seed: string)`
+- [x] `class SeededRNG` → src/utils/random.ts (VERIFIED - line 7)
+  - [x] `constructor(seed: string)` (VERIFIED - lines 11-14)
 
 ---
 
@@ -425,7 +425,7 @@ Since the class is already correctly implemented and likely imported throughout 
 
 - [x] Phase 1: All files exist, all exports verified
 - [x] Phase 2: All types and interfaces verified (COMPLETE - All 5 tasks done)
-- [ ] Phase 3: All classes and methods verified
+- [x] Phase 3: All classes and methods verified (COMPLETE - All 6 tasks done)
 - [ ] Phase 4: Integration points verified
 - [ ] Phase 5: Detailed signature verification complete
 - [ ] Phase 6: All discrepancies documented and categorized
