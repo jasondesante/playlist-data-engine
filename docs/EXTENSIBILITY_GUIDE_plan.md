@@ -311,9 +311,9 @@ This ensures all discovered issues are tracked, researched, and resolved systema
 - [x] Verified exports from src/index.ts
 
 ### Task 5.2: Verify Type Helper Functions
-- [ ] `asClass(value)` → [src/core/types/Character.ts:65](src/core/types/Character.ts#L65)
-- [ ] `isValidClass(className)` → [src/core/types/Character.ts (verify location)]
-- [ ] Verify `asClass` is exported from src/index.ts
+- [x] `asClass(value)` → [src/core/types/Character.ts:66](src/core/types/Character.ts#L66)
+- [x] `isValidClass(className)` → [src/core/types/Character.ts:114](src/core/types/Character.ts#L114)
+- [x] Verify `asClass` is exported from src/index.ts (line 177)
 
 ### Task 5.3: Verify Registry Helper Functions
 - [ ] `getFeatureRegistry()` → [src/core/features/FeatureRegistry.ts:569](src/core/features/FeatureRegistry.ts#L569)
@@ -601,11 +601,11 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 | Phase 2: Registries | 3 | 3 | 100% | Complete |
 | Phase 3: Validators | 4 | 4 | 100% | Complete |
 | Phase 4: EquipmentModifier | 5 | 5 | 100% | Complete |
-| Phase 5: Helpers | 4 | 1 | 25% | In Progress |
+| Phase 5: Helpers | 4 | 2 | 50% | In Progress |
 | Phase 6: Types | 7 | 0 | 0% | Pending |
 | Phase 7: Categories | 11 | 0 | 0% | Pending |
 | Phase 8: Examples | 7 | 0 | 0% | Pending |
-| **TOTAL** | **48** | **20** | **42%** | **In Progress** |
+| **TOTAL** | **48** | **21** | **44%** | **In Progress** |
 
 ---
 
