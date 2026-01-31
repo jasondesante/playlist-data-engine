@@ -356,8 +356,8 @@ For every item listed in Phases 1-4, verify:
 
 (When you find similar functionality in multiple places, note it here - do not attempt to resolve)
 - [x] Document any duplicate property definitions found
-- [ ] Document similar effect application methods across different classes
-- [ ] Note any overlapping validation methods
+- [x] Document similar effect application methods across different classes
+- [x] Note any overlapping validation methods
 
 ---
 
@@ -398,6 +398,212 @@ For every item listed in Phases 1-4, verify:
 - `EquipmentSpell` inline usage in Character.ts is intentional for self-documentation
 
 Remaining: 1 minor inline type preference issue (EquipmentSpell) which is acceptable.
+
+---
+
+#### Similar Effect Application Methods Found
+
+**Analysis Date**: 2025-01-31
+
+**Classes Analyzed**:
+- [FeatureEffectApplier](../src/core/features/FeatureEffectApplier.ts) - Applies feature/trait effects
+- [EquipmentEffectApplier](../src/core/equipment/EquipmentEffectApplier.ts) - Applies equipment effects
+- [LevelUpProcessor](../src/core/progression/LevelUpProcessor.ts) - Orchestrates level-ups, delegates to both appliers
+
+---
+
+##### 1. Stat Bonus Application (NEAR-DUPLICATE)
+
+**FeatureEffectApplier.applyStatBonus()** (lines 125-152):
+```typescript
+// Checks if target is an ability, adds to score, recalculates modifier
+if (this.isAbility(target)) {
+    character.ability_scores[target] += value;
+    character.ability_modifiers[target] = Math.floor((newScore - 10) / 2);
+    return;
+}
+// Non-ability bonuses stored in feature_effects array
+```
+
+**EquipmentEffectApplier.applyStatBonus()** (lines 391-409):
+```typescript
+// IDENTICAL logic for ability score handling
+if (this.isAbility(target)) {
+    character.ability_scores[target] += value;
+    character.ability_modifiers[target] = Math.floor((newScore - 10) / 2);
+    return;
+}
+// Custom bonuses tracked in equipment_effects
+```
+
+**Assessment**: Core logic is duplicated. Could be consolidated to a shared utility function.
+
+---
+
+##### 2. Skill Proficiency Application (SIMILAR)
+
+**FeatureEffectApplier.applySkillProficiency()** (lines 160-171):
+- Simple logic: Apply proficiency, expertise overrides all
+
+**EquipmentEffectApplier.applySkillProficiency()** (lines 414-438):
+- More nuanced: Implements proficiency hierarchy (none < proficient < expertise)
+- Avoids downgrading (keeps expertise if already known)
+
+**Assessment**: Equipment version is more robust. Could unify with hierarchy logic.
+
+---
+
+##### 3. Passive Modifier Application (OVERLAPPING)
+
+**FeatureEffectApplier.applyPassiveModifier()** (lines 201-239):
+- Handles: `speed`, `*_max` stat caps
+- Stores other modifiers in `feature_effects`
+
+**EquipmentEffectApplier.applyPassiveModifier()** (lines 457-484):
+- Handles: `speed`, `ac`, `armor_class`, `max_hp`, `hp_max`
+- Directly modifies character properties
+
+**Assessment**: Different targets handled, but pattern is similar. Speed handling is duplicated.
+
+---
+
+##### 4. Ability Unlock Application (DIFFERENT)
+
+**FeatureEffectApplier.applyAbilityUnlock()** (lines 179-193):
+- Stores unlocks in `feature_effects` for tracking
+
+**EquipmentEffectApplier.applyAbilityUnlock()** (lines 443-452):
+- Currently a no-op (parameters suppressed)
+- Comment indicates future implementation needed
+
+**Assessment**: Inconsistent behavior. Equipment applier should likely store unlocks similar to features.
+
+---
+
+##### 5. isAbility() Helper (EXACT DUPLICATE)
+
+**FeatureEffectApplier.isAbility()** (lines 292-294):
+```typescript
+private static isAbility(ability: string): ability is Ability {
+    return ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].includes(ability);
+}
+```
+
+**EquipmentEffectApplier.isAbility()** (lines 847-849):
+```typescript
+private static isAbility(ability: string): ability is Ability {
+    return ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].includes(ability);
+}
+```
+
+**Assessment**: EXACT duplicate. Should be extracted to a shared utility.
+
+**Recommended Location**: `src/core/types/Character.ts` or new `src/core/utils/abilityUtils.ts`
+
+---
+
+#### Overlapping Validation Methods Found
+
+**Analysis Date**: 2025-01-31
+
+**Validators Analyzed**:
+- [SkillValidator](../src/core/skills/SkillValidator.ts)
+- [SpellValidator](../src/core/spells/SpellValidator.ts)
+- [FeatureValidator](../src/core/features/FeatureValidator.ts)
+
+---
+
+##### 1. isValidAbility() Method (EXACT DUPLICATE)
+
+All three validators define the same constant and helper:
+
+**SkillValidator** (lines 20, 337-339):
+```typescript
+const VALID_ABILITIES: ReadonlyArray<string> = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as const;
+static isValidAbility(ability: string): ability is Ability {
+    return VALID_ABILITIES.includes(ability);
+}
+```
+
+**SpellValidator** (lines 20, 425-427): Identical
+
+**FeatureValidator** (lines 77, 633-635): Identical
+
+**Assessment**: TRIPLE duplicate. Should be extracted to shared constants file.
+
+**Recommended Location**: `src/core/constants.ts` or `src/core/types/Character.ts`
+
+---
+
+##### 2. Prerequisite Validation Logic (NEAR-DUPLICATE)
+
+All three validators have nearly identical `validateXxxPrerequisites()` methods that check:
+
+**Common Pattern**:
+1. Level requirement (same check)
+2. Ability score requirements (same iteration logic)
+3. Class requirement (same comparison)
+4. Race requirement (same comparison)
+5. Skills/spells/features array requirements (same pattern)
+6. Custom conditions (same handling - note only)
+
+**SkillValidator.validateSkillPrerequisites()** (lines 367-447)
+**SpellValidator.validateSpellPrerequisites()** (lines 332-417)
+**FeatureValidator.validatePrerequisites()** (via FeatureRegistry)
+
+**Assessment**: Could be generalized to a single `PrerequisiteValidator` utility.
+
+**Recommended Signature**:
+```typescript
+interface PrerequisiteSchema {
+    level?: number;
+    casterLevel?: number;  // spells only
+    abilities?: Record<Ability, number>;
+    class?: string;
+    race?: string;
+    subrace?: string;       // features only
+    skills?: string[];
+    spells?: string[];
+    features?: string[];
+    custom?: string;
+}
+
+function validatePrerequisites(
+    prereqs: PrerequisiteSchema,
+    character: CharacterSheet
+): ValidationResult { /* ... */ }
+```
+
+---
+
+#### Cross-Module Dependencies
+
+**LevelUpProcessor** (lines 349, 717, 774):
+- Calls `EquipmentEffectApplier.reapplyEquipmentEffects()` after level-ups
+- This ensures equipment bonuses persist when stats change
+- Proper separation of concerns: LevelUpProcessor orchestrates, delegates to appliers
+
+**CharacterUpdater** (lines 117, 147):
+- Uses `LevelUpProcessor` for level-up mechanics
+- Does NOT directly apply effects (delegates appropriately)
+
+**Assessment**: Good separation of concerns. No unnecessary duplication.
+
+---
+
+#### Summary of Redundancy Findings
+
+| Category | Severity | Count | Recommendation |
+|----------|----------|-------|----------------|
+| Exact Duplicate (isAbility) | Low | 3 locations | Extract to shared utility |
+| Near Duplicate (stat_bonus) | Low | 2 methods | Could consolidate |
+| Near Duplicate (prerequisites) | Medium | 3 validators | Create PrerequisiteValidator |
+| Inconsistent (ability_unlock) | Low | 2 methods | Align behavior |
+| Overlapping (passive_modifier) | Low | 2 methods | Share common logic |
+
+**Note**: These are documented for awareness. The current architecture works correctly. Consolidation is optional and should be weighed against the complexity of introducing shared utilities that may need to handle edge cases differently for features vs equipment.
+
+---
 
 ### Discrepancies Found
 
