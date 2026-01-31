@@ -206,22 +206,22 @@ This ensures all discovered issues are tracked, researched, and resolved systema
   - [x] `validateRacialTraits(traits)` → Line 698
 
 ### Task 3.2: Verify SkillValidator
-- [ ] Class exists at [src/core/skills/SkillValidator.ts](src/core/skills/SkillValidator.ts)
-- [ ] `validateSkill(skill)` → Line 52
-- [ ] `validateSkills(skills)` → Line 161
-- [ ] `validateSkillProficiency(proficiency)` → Line 190
-- [ ] `validateSkillProficiencies(proficiencies)` → Line 239
-- [ ] `validateSkillListDefinition(skillList)` → Line 268
-- [ ] `isValidAbility(ability)` → Line 337
-- [ ] `isValidSkillId(id)` → Line 350
-- [ ] `validateSkillPrerequisites(prerequisites, character)` → Line 367
-- [ ] Helper functions exported:
-  - [ ] `validateSkill(skill)` → Line 458
-  - [ ] `validateSkills(skills)` → Line 470
-  - [ ] `validateSkillProficiency(proficiency)` → Line 482
-  - [ ] `validateSkillProficiencies(proficiencies)` → Line 494
-  - [ ] `validateSkillListDefinition(skillList)` → Line 506
-  - [ ] `validateSkillPrerequisites(prerequisites, character)` → Line 519
+- [x] Class exists at [src/core/skills/SkillValidator.ts](src/core/skills/SkillValidator.ts)
+- [x] `validateSkill(skill)` → Line 52
+- [x] `validateSkills(skills)` → Line 161
+- [x] `validateSkillProficiency(proficiency)` → Line 190
+- [x] `validateSkillProficiencies(proficiencies)` → Line 239
+- [x] `validateSkillListDefinition(skillList)` → Line 268
+- [x] `isValidAbility(ability)` → Line 337
+- [x] `isValidSkillId(id)` → Line 350
+- [x] `validateSkillPrerequisites(prerequisites, character)` → Line 367
+- [x] Helper functions exported:
+  - [x] `validateSkill(skill)` → Line 458
+  - [x] `validateSkills(skills)` → Line 470
+  - [x] `validateSkillProficiency(proficiency)` → Line 482
+  - [x] `validateSkillProficiencies(proficiencies)` → Line 494
+  - [x] `validateSkillListDefinition(skillList)` → Line 506
+  - [x] `validateSkillPrerequisites(prerequisites, character)` → Line 519
 
 ### Task 3.3: Verify SpellValidator
 - [ ] Class exists at [src/core/spells/SpellValidator.ts](src/core/spells/SpellValidator.ts)
@@ -599,13 +599,13 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 |-------|-------|-----------|--------|--------|
 | Phase 1: ExtensionManager | 7 | 7 | 100% | Complete |
 | Phase 2: Registries | 3 | 3 | 100% | Complete |
-| Phase 3: Validators | 4 | 1 | 25% | In Progress |
+| Phase 3: Validators | 4 | 2 | 50% | In Progress |
 | Phase 4: EquipmentModifier | 5 | 0 | 0% | Pending |
 | Phase 5: Helpers | 4 | 0 | 0% | Pending |
 | Phase 6: Types | 7 | 0 | 0% | Pending |
 | Phase 7: Categories | 11 | 0 | 0% | Pending |
 | Phase 8: Examples | 7 | 0 | 0% | Pending |
-| **TOTAL** | **48** | **11** | **23%** | **In Progress** |
+| **TOTAL** | **48** | **12** | **25%** | **In Progress** |
 
 ---
 
