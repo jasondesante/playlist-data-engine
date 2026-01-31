@@ -37,13 +37,13 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 **Focus**: Core data structures, type definitions, and utility functions that everything else depends on.
 **Estimated Items**: ~60
 
-### Task 1.1: Core Playlist & Audio Types (6 items)
-- [ ] ServerlessPlaylist → src/types/PlaylistTypes.ts (or similar)
-- [ ] PlaylistTrack → src/types/PlaylistTypes.ts (or similar)
-- [ ] RawArweavePlaylist → src/types/PlaylistTypes.ts (or similar)
-- [ ] AudioProfile → src/types/AudioTypes.ts (or similar)
-- [ ] ColorPalette → src/types/ColorPalette.ts
-- [ ] FrequencyBands → src/types/AudioTypes.ts (or similar)
+### Task 1.1: Core Playlist & Audio Types (6 items) ✅ COMPLETED
+- [x] ServerlessPlaylist → src/core/types/Playlist.ts ✅
+- [x] PlaylistTrack → src/core/types/Playlist.ts ✅
+- [x] RawArweavePlaylist → src/core/types/Playlist.ts ✅
+- [x] AudioProfile → src/core/types/AudioProfile.ts ✅
+- [x] ColorPalette → src/core/types/AudioProfile.ts ✅ (see notes)
+- [x] FrequencyBands → src/core/types/AudioProfile.ts ✅
 
 ### Task 1.2: Character Type Definitions (8 items)
 - [ ] Race (type) → src/types/CharacterTypes.ts
@@ -593,6 +593,9 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 
 ### Redundancy / Potential Duplicates
 (When you find similar functionality in multiple places, note it here - do not attempt to resolve)
+- [x] **ColorPalette** - Two different definitions exist:
+  - `src/core/types/AudioProfile.ts` - properties: `colors`, `primary_color`, `secondary_color`, `accent_color`, `brightness`, `saturation`, `is_monochrome` (USED throughout codebase)
+  - `src/core/types/ColorPalette.ts` - properties: `primary`, `secondary`, `tertiary`, `background`, `text`, `isMonochrome`, `brightness`, `saturation`, `colors` (NOT imported anywhere - dead code)
 - [ ] [Item A] appears similar to [Item B] - [notes]
 - [ ] [Function] in [Class] similar to standalone function at [path]
 - [ ] Multiple implementations of [functionality] found
