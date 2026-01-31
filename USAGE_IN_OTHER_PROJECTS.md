@@ -761,6 +761,56 @@ if (SpellManager.isSpellcaster(character.class)) {
   const knownSpells = SpellManager.getKnownSpells(character.class, character.level);
 }
 
+// ===== SPELL REGISTRY FOR CUSTOM SPELLS =====
+// Register and query custom spells with prerequisite validation
+import { SpellRegistry, SpellValidator } from 'playlist-data-engine';
+
+const spellRegistry = SpellRegistry.getInstance();
+
+// Initialize with default spells
+spellRegistry.initializeDefaults();
+
+// Register custom spells
+spellRegistry.registerSpell({
+  id: 'phoenix_fire',
+  name: 'Phoenix Fire',
+  level: 5,
+  school: 'Evocation',
+  casting_time: '1 action',
+  range: '60 feet',
+  components: ['V', 'S'],
+  duration: 'Instantaneous',
+  description: 'A burst of phoenix flame...',
+  prerequisites: {
+    level: 10,
+    abilities: { CHA: 16 }
+  },
+  classes: ['Sorcerer', 'Wizard'],
+  source: 'custom'
+});
+
+// Query spells by level, school, or class
+const fifthLevelSpells = spellRegistry.getSpellsByLevel(5);
+const evocationSpells = spellRegistry.getSpellsBySchool('Evocation');
+const sorcererSpells = spellRegistry.getSpellsForClass('Sorcerer');
+
+// Get spells available to a character (prerequisites met)
+const availableSpells = spellRegistry.getAvailableSpells(character);
+console.log(`Available spells: ${availableSpells.map(s => s.name).join(', ')}`);
+
+// Validate spell prerequisites
+const phoenixFire = spellRegistry.getSpell('phoenix_fire');
+if (phoenixFire) {
+  const validation = spellRegistry.validatePrerequisites(phoenixFire, character);
+  if (!validation.valid) {
+    console.log(`Prerequisites not met: ${validation.errors.join(', ')}`);
+  }
+}
+
+// Registry statistics
+const stats = spellRegistry.getRegistryStats();
+console.log(`Total spells: ${stats.totalSpells} (${stats.customSpells} custom)`);
+
 // Generate starting equipment
 const equipment = EquipmentGenerator.initializeEquipment(character.class);
 console.log(`Weapons:`, equipment.weapons.map(w => `${w.name} x${w.quantity}${w.equipped ? ' (equipped)' : ''}`).join(', '));
@@ -1304,8 +1354,10 @@ The main exports from the library are:
 - `ExtensionManager` - Register and manage custom content for all categories
 - `FeatureRegistry` - Register and query custom class features and racial traits
 - `SkillRegistry` - Register and query custom skills
+- `SpellRegistry` - Register and query spells with prerequisite validation
 - `FeatureValidator` - Validate feature data structures
 - `SkillValidator` - Validate skill data structures
+- `SpellValidator` - Validate spell data structures
 - `FeatureEffectApplier` - Apply feature effects to characters
 - `WeightedSelector` - Weighted random selection with multiple modes
 - `ensureAllDefaultsInitialized()` - Initialize all default data

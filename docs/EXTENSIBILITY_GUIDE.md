@@ -129,6 +129,98 @@ Reset all categories to defaults.
 manager.resetAll();
 ```
 
+#### `getDefaults(category)`
+
+Get default data only (no custom items).
+
+```typescript
+const defaultEquipment = manager.getDefaults('equipment');
+// Returns: default equipment only
+```
+
+#### `getCustom(category)`
+
+Get custom items only (no defaults).
+
+```typescript
+const customEquipment = manager.getCustom('equipment');
+// Returns: custom equipment only
+```
+
+#### `getDefaultWeights(category)`
+
+Get default weights only (all items have weight 1.0).
+
+```typescript
+const defaultWeights = manager.getDefaultWeights('equipment');
+// Returns: { 'Longsword': 1.0, 'Dagger': 1.0, ... }
+```
+
+#### `hasCustomData(category)`
+
+Check if a category has custom data registered.
+
+```typescript
+if (manager.hasCustomData('equipment')) {
+    console.log('Custom equipment registered');
+}
+```
+
+#### `getMode(category)`
+
+Get the registration mode for a category.
+
+```typescript
+const mode = manager.getMode('equipment');
+// Returns: 'relative' | 'absolute' | 'default' | undefined
+```
+
+#### `getInfo(category)`
+
+Get information about registered extensions.
+
+```typescript
+const info = manager.getInfo('spells');
+console.log(info);
+// {
+//     hasCustomData: true,
+//     defaultCount: 53,
+//     customCount: 5,
+//     totalCount: 58,
+//     mode: 'relative',
+//     weights: { ... },
+//     registeredAt: 1234567890
+// }
+```
+
+#### `exportCustomData()`
+
+Export all custom data (for debugging/saving).
+
+```typescript
+const customData = manager.exportCustomData();
+console.log(customData);
+// {
+//     extensions: {
+//         'spells': { items: [...], options: {...}, registeredAt: ... },
+//         'equipment': { items: [...], options: {...}, registeredAt: ... }
+//     },
+//     weights: {
+//         'spells': { 'Phoenix Fire': 0.5 },
+//         'equipment': { 'Sword': 2.0 }
+//     }
+// }
+```
+
+#### `getRegisteredCategories()`
+
+Get all categories with default data.
+
+```typescript
+const categories = manager.getRegisteredCategories();
+// Returns: ['equipment', 'spells', 'races', ...]
+```
+
 ---
 
 ## Spawn Rate System
@@ -201,6 +293,54 @@ manager.register('equipment', customItems, { mode: 'replace' });
 | `1.0` | Default spawn rate |
 | `2.0` | Twice as common as default |
 | `10.0` | Very common |
+
+### Advanced Weight Configuration
+
+You can use hierarchical weight configuration for fine-grained control:
+
+```typescript
+const manager = ExtensionManager.getInstance();
+
+// Hierarchical weight system
+// Category defaults with individual overrides
+
+// Set default for all skills
+manager.setWeights('skills', {
+    default: 1.0  // All skills have equal weight by default
+});
+
+// Override specific skills
+manager.setWeights('skills', {
+    'athletics': 2.0,      // Override: athletics is now 2x
+    'acrobatics': 0.5,     // Override: acrobatics is now 0.5x
+    // All other skills remain at 1.0 (the default)
+});
+
+// Per-class skill spawn rates
+manager.setWeights('skillLists.Barbarian', {
+    'athletics': 2.0,      // Barbarians favor athletics
+    'survival': 1.5,       // And survival
+    'arcana': 0.2          // But rarely get arcana
+});
+
+manager.setWeights('skillLists.Wizard', {
+    'arcana': 2.0,         // Wizards favor arcana
+    'history': 1.5,        // And history
+    'athletics': 0.2       // But rarely get athletics
+});
+
+// Zero weight = never spawn
+manager.setWeights('classFeatures.Barbarian', {
+    'useless_feature': 0.0  // This feature will never spawn
+});
+
+// Reset to defaults
+manager.reset('classFeatures.Barbarian');
+// Now all Barbarian features are back to equal probability
+
+// Reset all categories
+manager.resetAll();
+```
 
 ---
 
@@ -654,6 +794,45 @@ const character = CharacterGenerator.generate(
 The 12 default D&D 5e classes are always available:
 `Barbarian`, `Bard`, `Cleric`, `Druid`, `Fighter`, `Monk`, `Paladin`, `Ranger`, `Rogue`, `Sorcerer`, `Warlock`, `Wizard`
 
+#### Common Patterns
+
+Here are some common patterns for creating custom classes using the template system:
+
+**Archetype Variant** - Same class, different flavor:
+
+```typescript
+{
+    name: 'BattleMage',
+    baseClass: 'Wizard',
+    hit_die: 10,           // More durable than standard Wizard
+    saving_throws: ['INT', 'CON'],  // CON instead of WIS
+    available_skills: ['arcana', 'athletics', 'intimidation']
+}
+```
+
+**Multiclass-Inspired** - Two classes combined:
+
+```typescript
+{
+    name: 'Spellsword',
+    baseClass: 'Fighter',
+    is_spellcaster: true,  // Add spellcasting
+    primary_ability: 'STR',  // Keep Fighter primary
+    available_skills: ['athletics', 'acrobatics', 'arcana', 'intimidation']
+}
+```
+
+**Specialist** - Narrow focus:
+
+```typescript
+{
+    name: 'Beastmaster',
+    baseClass: 'Ranger',
+    skill_count: 3,  // Extra skill for animal handling
+    available_skills: ['animal_handling', 'nature', 'survival', 'perception']
+}
+```
+
 **For more examples and advanced usage, see [CUSTOM_CONTENT.md](CUSTOM_CONTENT.md).**
 
 ### Class Features
@@ -716,6 +895,26 @@ manager.setWeights('classFeatures.Barbarian', {
     'rage': 1.0          // Default spawn rate
 });
 ```
+
+**Note:** FeatureRegistry supports both single and bulk registration:
+
+```typescript
+// Register a single feature
+registry.registerClassFeature({
+    id: 'single_feature',
+    name: 'Single Feature',
+    // ... rest of feature definition
+});
+
+// Register multiple features at once
+registry.registerClassFeatures([
+    feature1,
+    feature2,
+    feature3
+]);
+```
+
+The same pattern applies to `registerRacialTrait()` / `registerRacialTraits()` and `registerSkill()` / `registerSkills()`.
 
 **Feature Effect Types:**
 
@@ -1477,6 +1676,127 @@ export function loadDarkFantasyPack() {
         'pale complexion'
     ]);
 }
+```
+
+### Complete Content Pack Example
+
+This example demonstrates a comprehensive "Arctic Expansion Pack" with custom features, skills, and spawn rates:
+
+```typescript
+import { ExtensionManager, FeatureRegistry, SkillRegistry, CharacterGenerator } from 'playlist-data-engine';
+
+// Create an expansion pack with custom features, skills, and spawn rates
+function registerArcticExpansionPack() {
+    const manager = ExtensionManager.getInstance();
+    const featureRegistry = FeatureRegistry.getInstance();
+    const skillRegistry = SkillRegistry.getInstance();
+
+    // ===== CUSTOM FEATURES =====
+    const frostRage = {
+        id: 'frost_rage',
+        name: 'Frost Rage',
+        description: 'Your rage radiates cold, dealing extra cold damage.',
+        type: 'active',
+        level: 3,
+        class: 'Barbarian',
+        effects: [
+            {
+                type: 'resource_grant',
+                target: 'cold_damage_bonus',
+                value: 3,
+                description: '+3 cold damage while raging'
+            }
+        ],
+        source: 'custom'
+    };
+
+    const snowWalker = {
+        id: 'snow_walker',
+        name: 'Snow Walker',
+        description: 'You move through snow and ice without penalty.',
+        type: 'passive',
+        level: 1,
+        class: 'Ranger',
+        race: 'Human',
+        effects: [
+            {
+                type: 'ability_unlock',
+                target: 'snow_movement',
+                value: true,
+                description: 'No movement penalty in snow/ice'
+            },
+            {
+                type: 'passive_modifier',
+                target: 'survival_cold_bonus',
+                value: 5,
+                description: '+5 Survival in cold environments'
+            }
+        ],
+        source: 'custom'
+    };
+
+    // ===== CUSTOM SKILLS =====
+    const coldSurvival = {
+        id: 'survival_cold',
+        name: 'Survival (Cold Environments)',
+        description: 'Expertise in cold weather survival.',
+        ability: 'WIS',
+        armorPenalty: true,
+        categories: ['exploration', 'environmental'],
+        source: 'custom'
+    };
+
+    const iceFishing = {
+        id: 'ice_fishing',
+        name: 'Ice Fishing',
+        description: 'Ability to catch fish in frozen waters.',
+        ability: 'WIS',
+        armorPenalty: false,
+        categories: ['exploration', 'survival'],
+        source: 'custom'
+    };
+
+    // ===== REGISTER EVERYTHING =====
+    // Features
+    featureRegistry.registerClassFeatures([frostRage, snowWalker]);
+    manager.register('classFeatures.Barbarian', [frostRage], {
+        weights: { 'frost_rage': 0.5 }  // Rare feature
+    });
+    manager.register('classFeatures.Ranger', [snowWalker], {
+        weights: { 'snow_walker': 0.7 }
+    });
+
+    // Skills
+    skillRegistry.registerSkills([coldSurvival, iceFishing]);
+    manager.register('skills', [coldSurvival, iceFishing]);
+    manager.register('skills.WIS', [coldSurvival, iceFishing], {
+        weights: {
+            'survival_cold': 0.5,  // Less common than default skills
+            'ice_fishing': 0.3      // Quite rare
+        }
+    });
+
+    // ===== SPAWN RATE CONFIGURATION =====
+    // Make cold-themed content more likely for certain classes
+    manager.setWeights('skillLists.Ranger', {
+        'survival_cold': 2.0,  // Rangers love this skill
+        'ice_fishing': 1.5
+    });
+
+    manager.setWeights('skillLists.Barbarian', {
+        'survival_cold': 1.5,  // Barbarians also get this
+        'ice_fishing': 0.5
+    });
+
+    console.log('Arctic Expansion Pack registered!');
+}
+
+// Register the expansion pack
+registerArcticExpansionPack();
+
+// Generate characters with the new content
+const character = CharacterGenerator.generate(seed, audio, 'Arctic Hero');
+// Character may now have frost_rage, snow_walker, or survival_cold skill!
 ```
 
 ---
@@ -2520,6 +2840,86 @@ type ExtensionCategory =
     | 'skills.' + Ability      // Ability-specific skills (e.g., 'skills.STR', 'skills.DEX')
     | 'skillLists'
     | `spells.${string}`;      // Class-specific spells
+```
+
+### Helper Functions
+
+The engine provides several helper functions for working with custom content:
+
+#### `getClassData(className)`
+
+Get class data for default or custom classes:
+
+```typescript
+import { getClassData } from 'playlist-data-engine';
+
+// Get default class data
+const wizardData = getClassData('Wizard');
+console.log(wizardData.hit_die); // 6
+
+// Get custom class data (if registered via ExtensionManager)
+const necromancerData = getClassData('Necromancer');
+if (necromancerData) {
+    console.log(necromancerData.baseClass); // 'Wizard'
+    console.log(necromancerData.primary_ability); // 'INT'
+}
+```
+
+For template-based custom classes (those with a `baseClass` property), the system merges properties:
+- Base class properties are spread first
+- Custom properties override base properties
+- `available_skills` is completely replaced (not merged)
+
+#### `getRaceData(raceName)`
+
+Get race data for default or custom races:
+
+```typescript
+import { getRaceData } from 'playlist-data-engine';
+
+// Get default race data
+const elfData = getRaceData('Elf');
+console.log(elfData.speed); // 30
+
+// Get custom race data (if registered via ExtensionManager)
+const dragonkinData = getRaceData('Dragonkin');
+if (dragonkinData) {
+    console.log(dragonkinData.ability_bonuses);
+    // { STR: 2, CON: 1, CHA: 1 }
+}
+```
+
+#### `getClassSpellList(className)`
+
+Get spell list for a class (default or custom):
+
+```typescript
+import { getClassSpellList } from 'playlist-data-engine';
+
+const spellList = getClassSpellList('Necromancer');
+// Returns: { cantrips: [...], spells_by_level: { 1: [...], 2: [...] } }
+```
+
+#### `getSpellSlotsForClass(className, characterLevel)`
+
+Get spell slots for a class at a specific level:
+
+```typescript
+import { getSpellSlotsForClass } from 'playlist-data-engine';
+
+const slots = getSpellSlotsForClass('Necromancer', 5);
+// Returns: { 1: 4, 2: 3, 3: 2 }
+```
+
+#### `getClassStartingEquipment(className)`
+
+Get starting equipment for a class:
+
+```typescript
+import { getClassStartingEquipment } from 'playlist-data-engine';
+
+const equipment = getClassStartingEquipment('Necromancer');
+// Returns: { weapons: [...], armor: [...], items: [...] }
 ```
 
 ---

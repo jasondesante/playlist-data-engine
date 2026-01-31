@@ -112,9 +112,14 @@ export type {
 } from './core/extensions/ExtensionManager.js';
 
 export type { SpellPrerequisite } from './utils/constants.js';
-
-// Utility types
 export type { Spell, Equipment } from './utils/constants.js';
+
+// Spell types
+export type {
+    RegisteredSpell,
+    SpellSchool,
+    ValidationResult as SpellValidationResult
+} from './core/spells/SpellRegistry.js';
 
 // Combat result types
 export type { InitiativeResult } from './core/combat/InitiativeRoller.js';
@@ -273,6 +278,7 @@ export {
 // ============================================================================
 
 export { SpellValidator } from './core/spells/SpellValidator.js';
+export { SpellRegistry, getSpellRegistry } from './core/spells/SpellRegistry.js';
 
 // ============================================================================
 // EXTENSIBILITY SYSTEM

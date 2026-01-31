@@ -24,6 +24,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [ExtensionManager](#extensionmanager)
    - [FeatureRegistry](#featureregistry)
    - [SkillRegistry](#skillregistry)
+   - [SpellRegistry](#spellregistry)
    - [Per-Category Spawn Rate System](#per-category-spawn-rate-system)
    - [WeightedSelector](#weightedselector)
    - [CharacterGenerator Extensions](#charactergenerator-extensions)
@@ -849,6 +850,306 @@ These constants are exported for use in your application.
 - `SPELL_DATABASE`: Comprehensive list of D&D 5e spells with details.
 - `EQUIPMENT_DATABASE`: Stats for weapons, armor, and items.
 
+#### Helper Functions
+
+**Location:** `src/utils/constants.ts`
+
+These helper functions retrieve data from both default constants and custom extensions registered via ExtensionManager.
+
+```typescript
+/**
+ * Get race data (default or custom)
+ *
+ * Checks both the built-in RACE_DATA and the ExtensionManager for custom race data.
+ *
+ * @param race - The race name to look up
+ * @returns Race data entry or undefined if not found
+ *
+ * @example
+ * // Get default race data
+ * const elfData = getRaceData('Elf');
+ * console.log(elfData.speed); // 30
+ *
+ * // Get custom race data (if registered via ExtensionManager)
+ * const dragonkinData = getRaceData('Dragonkin');
+ * if (dragonkinData) {
+ *     console.log(dragonkinData.ability_bonuses);
+ * }
+ */
+export function getRaceData(race: string): RaceDataEntry | undefined
+
+/**
+ * Get class data (default or custom)
+ *
+ * Checks both the default CLASS_DATA and the ExtensionManager for custom class data.
+ *
+ * For template-based custom classes (those with a baseClass property),
+ * the base class data is merged with custom data, with custom properties
+ * taking precedence.
+ *
+ * @param className - The class name to look up
+ * @returns Class data entry or undefined if not found
+ *
+ * @example
+ * // Get default class data
+ * const wizardData = getClassData('Wizard');
+ * console.log(wizardData.hit_die); // 6
+ *
+ * // Get custom class data (if registered via ExtensionManager)
+ * const necromancerData = getClassData('Necromancer');
+ * if (necromancerData) {
+ *     console.log(necromancerData.baseClass); // 'Wizard'
+ *     console.log(necromancerData.primary_ability); // 'INT'
+ * }
+ */
+export function getClassData(className: string): ClassDataEntry | undefined
+
+/**
+ * Get spell list for a class (default or custom)
+ *
+ * Checks CLASS_SPELL_LISTS for default classes, or ExtensionManager
+ * for custom spell lists registered via 'classSpellLists.${ClassName}'.
+ *
+ * @param className - The class name to look up
+ * @returns Spell list with cantrips and spells_by_level, or undefined
+ */
+export function getClassSpellList(className: string): {
+    cantrips: string[];
+    spells_by_level: Record<number, string[]>;
+} | undefined
+
+/**
+ * Get spell slots for a class at a specific level (default or custom)
+ *
+ * Checks SPELL_SLOTS_BY_CLASS for default classes, or ExtensionManager
+ * for custom spell slot progressions registered via 'classSpellSlots'.
+ *
+ * @param className - The class name to look up
+ * @param characterLevel - The character level (1-20)
+ * @returns Record of spell slots by level, or undefined
+ */
+export function getSpellSlotsForClass(className: string, characterLevel: number): Record<number, number> | undefined
+
+/**
+ * Get starting equipment for a class (default or custom)
+ *
+ * Checks CLASS_STARTING_EQUIPMENT for default classes, or ExtensionManager
+ * for custom equipment registered via 'classStartingEquipment.${ClassName}'.
+ *
+ * @param className - The class name to look up
+ * @returns Equipment object with weapons, armor, items arrays, or undefined
+ */
+export function getClassStartingEquipment(className: string): {
+    weapons: string[];
+    armor: string[];
+    items: string[];
+} | undefined
+```
+
+#### Interface Definitions
+
+**RaceDataEntry**
+
+```typescript
+/**
+ * Race data entry interface
+ *
+ * Defines the structure for race data including ability score bonuses,
+ * base walking speed, traits, and available subraces. Used by RACE_DATA
+ * and by custom races registered via ExtensionManager.
+ */
+export interface RaceDataEntry {
+    /** Ability score bonuses granted by this race */
+    ability_bonuses: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+
+    /** Base walking speed in feet */
+    speed: number;
+
+    /** Array of racial trait names/IDs */
+    traits: string[];
+
+    /** Optional: Available subraces for this race */
+    subraces?: string[];
+}
+```
+
+**ClassDataEntry**
+
+```typescript
+/**
+ * Class data entry interface
+ *
+ * Defines the structure for class data including primary ability, hit die,
+ * saving throws, spellcasting, skills, expertise, and optional audio preferences.
+ *
+ * ## Template-Based Class System
+ *
+ * This interface supports creating custom classes that extend (inherit from) existing
+ * D&D 5e base classes through the `baseClass` property. This enables rapid
+ * creation of specialized classes (e.g., "Necromancer" extending "Wizard") without
+ * duplicating all base class properties.
+ *
+ * ### How Template Inheritance Works
+ *
+ * When `baseClass` is specified in a custom class registration:
+ *
+ * 1. **Base class lookup**: The system retrieves the base class data from CLASS_DATA
+ * 2. **Property merging**: Base class properties are merged with custom class properties
+ * 3. **Override behavior**: Custom properties take precedence over base class properties
+ * 4. **Special handling for available_skills**: Custom skill list replaces base skill list
+ *    (not merged), allowing complete customization of class skills
+ */
+export interface ClassDataEntry {
+    /** Primary ability score for this class */
+    primary_ability: Ability;
+
+    /** Hit die size for this class */
+    hit_die: number;
+
+    /** Saving throw proficiencies */
+    saving_throws: Ability[];
+
+    /** Whether this class can cast spells */
+    is_spellcaster: boolean;
+
+    /** Number of skills to choose from */
+    skill_count: number;
+
+    /** Available skills for this class (includes custom skills) */
+    available_skills: string[];
+
+    /** Whether this class has expertise */
+    has_expertise: boolean;
+
+    /** Number of expertise choices (if has_expertise is true) */
+    expertise_count?: number;
+
+    /**
+     * For template-based classes: the base class to inherit from
+     *
+     * When specified, the custom class will inherit properties from the base class,
+     * with custom properties overriding inherited ones.
+     */
+    baseClass?: Class;
+
+    /** Optional: Audio preferences for class affinity calculation */
+    audio_preferences?: {
+        primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        bass?: number;
+        treble?: number;
+        mid?: number;
+        amplitude?: number;
+    };
+}
+```
+
+**SkillPrerequisite (Detailed)**
+
+```typescript
+/**
+ * Skill prerequisite interface
+ *
+ * Defines prerequisites that must be met before a character can gain
+ * proficiency in a skill. Allows for advanced skills that require base
+ * skills, specific features, spells, ability scores, level, class, or race.
+ */
+export interface SkillPrerequisite {
+    /** Minimum character level required */
+    level?: number;
+
+    /** Minimum ability scores required */
+    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+
+    /** Specific class required */
+    class?: Class;
+
+    /** Specific race required */
+    race?: Race;
+
+    /** Specific subrace required (e.g., 'High Elf', 'Hill Dwarf') */
+    subrace?: string;
+
+    /** Skills that must be proficient first (by skill ID) */
+    skills?: string[];
+
+    /** Features that must be learned first (by feature ID) */
+    features?: string[];
+
+    /** Spells that must be known first (by spell name) */
+    spells?: string[];
+
+    /** Custom condition description */
+    custom?: string;
+}
+```
+
+**SpellPrerequisite (Detailed)**
+
+```typescript
+/**
+ * Spell prerequisite interface
+ *
+ * Defines prerequisites that must be met before a spellcaster can learn
+ * a spell. Allows for specialized spells that require specific features,
+ * abilities, spells, skills, level, or class.
+ */
+export interface SpellPrerequisite {
+    /** Minimum character level */
+    level?: number;
+
+    /** Minimum spellcaster level (if different from character level) */
+    casterLevel?: number;
+
+    /** Minimum ability scores */
+    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+
+    /** Specific class required */
+    class?: string;
+
+    /** Features that must be learned first (by feature ID) */
+    features?: string[];
+
+    /** Spells that must be known first (by spell name) */
+    spells?: string[];
+
+    /** Skills that must be proficient first (by skill ID) */
+    skills?: string[];
+
+    /** Custom condition */
+    custom?: string;
+}
+```
+
+**Type Helper Functions**
+
+```typescript
+/**
+ * Convert a string to the Class type
+ *
+ * Use this function to register custom class names.
+ *
+ * @param value - The class name string
+ * @returns The value branded as a Class type
+ *
+ * @example
+ * const customClass: Class = asClass('Necromancer');
+ */
+export function asClass(value: string): Class;
+
+/**
+ * Type guard to check if a string is a valid Class (default or custom)
+ *
+ * This checks against both default D&D 5e classes and any custom classes
+ * registered via ExtensionManager's 'classes.data' category.
+ *
+ * @param value - The value to check
+ * @returns True if the value is a valid class name
+ */
+export function isValidClass(value: string): value is Class;
+```
+
 ---
 
 ### Core Modules
@@ -956,41 +1257,74 @@ The `CharacterGenerator` creates deterministic D&D 5e character sheets based on 
 
 **Methods:**
 
-- `static generate(seed: string, audioProfile: AudioProfile, name: string, options?: CharacterGeneratorOptions): CharacterSheet`
-    - **Parameters:**
-        - `seed`: Unique string (e.g., track ID) to ensure deterministic results.
-        - `audioProfile`: The audio analysis result.
-        - `name`: Character name.
-        - `options.level`: Starting level (1-20). Default: `1`.
-        - `options.forceClass`: Override the suggested class.
-        - `options.forceRace`: Override the race selection (required when specifying a subrace).
-        - `options.gameMode`: Game mode for stat progression (`'standard'` or `'uncapped'`). Default: `'standard'`.
-        - `options.subrace`: Subrace selection:
-            - `'pure'` - Explicitly no subrace (no race required)
-            - `undefined` - Randomly select between 'pure' and available subraces (default)
-            - `'Specific Subrace'` - Requires `forceRace` to also be specified
-    - **Returns:** A complete `CharacterSheet` with:
-        - Race, Class, Level
-        - Subrace (if specified or randomly selected)
-        - Ability Scores (STR, DEX, etc.)
-        - Skills, Spells, Equipment
-        - Appearance (derived from audio/seed)
-
-**Subrace Examples:**
-
 ```typescript
-// Random subrace or pure (default behavior)
-const char1 = CharacterGenerator.generate(seed, audio, 'Name');
+class CharacterGenerator {
+    static generate(
+        seed: string,
+        audioProfile: AudioProfile,
+        name: string,
+        options?: CharacterGeneratorOptions
+    ): CharacterSheet
+}
 
-// Explicitly no subrace
-const char2 = CharacterGenerator.generate(seed, audio, 'Name', { subrace: 'pure' });
+interface CharacterGeneratorOptions {
+    level?: number;              // Starting level (1-20). Default: 1
+    forceClass?: Class;          // Override the suggested class
+    forceRace?: Race;            // Override the race selection
+    subrace?: string | 'pure';   // Subrace selection (see below)
+    gameMode?: 'standard' | 'uncapped';  // Game mode for stat progression. Default: 'standard'
+}
 
-// Specific subrace with race (both required)
-const char3 = CharacterGenerator.generate(seed, audio, 'Name', {
-    forceRace: 'Elf',
-    subrace: 'High Elf'
-});
+interface CharacterSheet {
+    name: string;
+    race: Race;
+    subrace?: string;
+    class: Class;
+    level: number;
+    abilities: AbilityScores;
+    modifiers: AbilityScores;
+    skills: Record<Skill, ProficiencyLevel>;
+    spells?: SpellSlots;
+    equipment: CharacterEquipment;
+    appearance: CharacterAppearance;
+    gameMode: 'standard' | 'uncapped';
+}
+
+type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
+type Class = 'Barbarian' | 'Bard' | 'Cleric' | 'Druid' | 'Fighter' | 'Monk' | 'Paladin' | 'Ranger' | 'Rogue' | 'Sorcerer' | 'Warlock' | 'Wizard';
+type Race = 'Dwarf' | 'Elf' | 'Halfling' | 'Human' | 'Dragonborn' | 'Gnome' | 'Half-Elf' | 'Half-Orc' | 'Tiefling';
+type ProficiencyLevel = 0 | 0.5 | 1 | 2;  // None, Half-proficiency, Proficient, Expertise
 ```
+
+**Method Reference:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `seed` | `string` | Unique string (e.g., track ID) to ensure deterministic results |
+| `audioProfile` | `AudioProfile` | The audio analysis result (frequency, amplitude data) |
+| `name` | `string` | Character name |
+| `options.level` | `number` | Starting level (1-20). Default: `1` |
+| `options.forceClass` | `Class` | Override the suggested class from audio analysis |
+| `options.forceRace` | `Race` | Override race selection (required when specifying subrace) |
+| `options.subrace` | `string \| 'pure'` | Subrace selection (see below) |
+| `options.gameMode` | `'standard' \| 'uncapped'` | Game mode for stat progression. Default: `'standard'` |
+
+**Subrace Options:**
+
+| Value | Description | Requirements |
+|-------|-------------|--------------|
+| `undefined` | Randomly select between 'pure' and available subraces | None |
+| `'pure'` | Explicitly no subrace | None |
+| `'High Elf'`, etc. | Specific subrace | `forceRace` must be specified |
+
+**Returns:** A complete `CharacterSheet` with:
+- Race, Class, Level
+- Subrace (if specified or randomly selected)
+- Ability Scores (STR, DEX, etc.) with modifiers
+- Skills with proficiency levels
+- Spells (for spellcasting classes)
+- Equipment (starting gear)
+- Appearance (derived from audio/seed)
 
 #### Helper: `RaceSelector`
 
@@ -2371,6 +2705,19 @@ interface EnhancedInventoryItem {
     templateId?: string;
     instanceId?: string;
 }
+
+// Effect Application Result
+interface EffectApplicationResult {
+    applied: boolean;
+    count: number;
+    errors: string[];
+}
+
+// Equipment Validation Result
+interface EquipmentValidationResult {
+    valid: boolean;
+    errors?: string[];
+}
 ```
 
 ### EquipmentEffectApplier
@@ -2560,6 +2907,8 @@ class EquipmentModifier {
 
 **Location:** `src/core/equipment/EquipmentSpawnHelper.ts`
 
+Helper class for spawning multiple equipment items at once. Provides batch spawning utilities for spawning from lists, by rarity, by tags, randomly, from templates, and treasure hoards.
+
 ```typescript
 class EquipmentSpawnHelper {
     static spawnFromList(
@@ -2602,7 +2951,32 @@ class EquipmentSpawnHelper {
         equip?: boolean
     ): CharacterSheet;
 }
+
+interface SpawnRandomOptions {
+    excludeZeroWeight?: boolean;
+    includeTypes?: ('weapon' | 'armor' | 'item')[];
+    minRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    maxRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+}
+
+interface TreasureHoardResult {
+    items: EnhancedEquipment[];
+    totalValue: number;
+    cr: number;
+}
 ```
+
+**Method Reference:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `spawnFromList()` | `itemNames`, `rng?` | `(EnhancedEquipment \| undefined)[]` | Spawn multiple items from array of names (undefined for missing) |
+| `spawnByRarity()` | `rarity`, `count`, `rng?` | `EnhancedEquipment[]` | Spawn items of specific rarity |
+| `spawnByTags()` | `tags`, `count`, `rng`, `options?` | `EnhancedEquipment[]` | Spawn items with specific tags |
+| `spawnRandom()` | `count`, `rng`, `options?` | `EnhancedEquipment[]` | Spawn random equipment with weighted selection |
+| `spawnFromTemplate()` | `templateId`, `baseItemName?` | `EnhancedEquipment \| null` | Spawn item from template ID |
+| `spawnTreasureHoard()` | `cr`, `rng` | `TreasureHoardResult` | Spawn treasure hoard based on challenge rating |
+| `addToCharacter()` | `character`, `items`, `equip?` | `CharacterSheet` | Add spawned equipment to character |
 
 ### EquipmentGenerator
 
@@ -2692,24 +3066,46 @@ The extensibility system allows runtime customization of ALL procedural generati
 
 **Location:** `src/core/extensions/ExtensionManager.ts`
 
+Singleton registry for managing runtime customization of procedural generation lists with spawn rate control.
+
 ```typescript
 class ExtensionManager {
+    // Instance Management
     static getInstance(): ExtensionManager
 
+    // Registration
     register(category: ExtensionCategory, items: any[], options?: ExtensionOptions): void
+    registerMultiple(registrations: RegistrationEntry[]): void
+
+    // Data Retrieval
     get(category: ExtensionCategory): any[]
     getDefaults(category: ExtensionCategory): any[]
     getCustom(category: ExtensionCategory): any[]
 
+    // Weight Management
     setWeights(category: ExtensionCategory, weights: Record<string, number>): void
     getWeights(category: ExtensionCategory): Record<string, number>
+    getDefaultWeights(category: ExtensionCategory): Record<string, number>
 
+    // Spawn Mode Configuration
+    setMode(category: ExtensionCategory, mode: SpawnMode): void
+    getMode(category: ExtensionCategory): SpawnMode
+
+    // State Queries
+    hasCustomData(category: ExtensionCategory): boolean
+    getInfo(category?: ExtensionCategory): Record<string, any>
+    getRegisteredCategories(): ExtensionCategory[]
+
+    // Reset Operations
     reset(category: ExtensionCategory): void
     resetAll(): void
 
+    // Validation
     validate(category: ExtensionCategory, items: any[]): ValidationResult
-    getInfo(category?: ExtensionCategory): Record<string, any>
+
+    // Data Export
     exportCustomData(): Record<string, any>
+    exportCustomDataForCategory(category: ExtensionCategory): any[]
 }
 
 type ExtensionCategory =
@@ -2736,110 +3132,617 @@ type ExtensionCategory =
     | 'skillLists'
     | `skillLists.${string}`;
 
+type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';
+
 interface ExtensionOptions {
-    mode?: 'relative' | 'absolute' | 'default' | 'replace';
+    mode?: SpawnMode;
     weights?: Record<string, number>;
     validate?: boolean;
 }
+
+interface RegistrationEntry {
+    category: ExtensionCategory;
+    items: any[];
+    options?: ExtensionOptions;
+}
+
+interface ValidationResult {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+}
 ```
 
-**Basic Usage:**
-```typescript
-import { ExtensionManager } from 'playlist-data-engine';
+**Method Reference:**
 
-const manager = ExtensionManager.getInstance();
-manager.register('spells', [
-    { name: 'Fireball', level: 3, school: 'Evocation' }
-], {
-    weights: { 'Fireball': 2.0 }  // Twice as common
-});
-```
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `getInstance()` | - | `ExtensionManager` | Returns singleton instance |
+| `register()` | `category`, `items`, `options?` | `void` | Register items for a category with optional weights/mode |
+| `registerMultiple()` | `registrations[]` | `void` | Register multiple categories in a single call |
+| `get()` | `category` | `any[]` | Get combined defaults + custom items |
+| `getDefaults()` | `category` | `any[]` | Get default items only |
+| `getCustom()` | `category` | `any[]` | Get custom items only |
+| `setWeights()` | `category`, `weights` | `void` | Set spawn weights for items |
+| `getWeights()` | `category` | `Record<string, number>` | Get current weights |
+| `getDefaultWeights()` | `category` | `Record<string, number>` | Get default weights only |
+| `setMode()` | `category`, `mode` | `void` | Set spawn mode for category |
+| `getMode()` | `category` | `SpawnMode` | Get current spawn mode |
+| `hasCustomData()` | `category` | `boolean` | Check if category has custom data |
+| `getInfo()` | `category?` | `Record<string, any>` | Get detailed info about one or all categories |
+| `getRegisteredCategories()` | - | `ExtensionCategory[]` | List all categories with custom data |
+| `reset()` | `category` | `void` | Reset category to defaults |
+| `resetAll()` | - | `void` | Reset all categories to defaults |
+| `validate()` | `category`, `items` | `ValidationResult` | Validate items against category schema |
+| `exportCustomData()` | - | `Record<string, any>` | Export all custom data |
+| `exportCustomDataForCategory()` | `category` | `any[]` | Export custom data for single category |
 
-See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
-- Complete API reference
-- All category examples
-- Spawn rate modes (relative, absolute, default, replace)
-- Content pack creation
-- Export/import functionality
-- Equipment subcategories (properties, modifications, templates)
-- Validation rules
+**Spawn Modes:**
+
+| Mode | Behavior |
+|------|----------|
+| `relative` | Custom items added to default pool with custom weights |
+| `absolute` | Only custom items can spawn (ignore defaults) |
+| `default` | All items (default + custom) have equal weight |
+| `replace` | Clear previous custom data before registering new items |
 
 ### FeatureRegistry
 
 **Location:** `src/core/features/FeatureRegistry.ts`
 
-Singleton registry for managing class features and racial traits.
+Singleton registry for managing class features and racial traits with prerequisite validation and subrace support.
 
 ```typescript
 class FeatureRegistry {
+    // Instance Management
     static getInstance(): FeatureRegistry
-    initializeDefaults(): void
+
+    // Initialization
+    initializeDefaults(defaultClassFeatures?: ClassFeature[], defaultRacialTraits?: RacialTrait[]): void
     reset(): void
+    isInitialized(): boolean
 
     // Class Features
     registerClassFeature(feature: ClassFeature): void
     registerClassFeatures(features: ClassFeature[]): void
     getClassFeatures(characterClass: Class, level?: number): ClassFeature[]
+    getClassFeaturesForLevel(characterClass: Class, level: number): ClassFeature[]
     getClassFeatureById(featureId: string): ClassFeature | undefined
+    getAllClassFeatures(): Map<string, ClassFeature[]>
 
     // Racial Traits
     registerRacialTrait(trait: RacialTrait): void
     registerRacialTraits(traits: RacialTrait[]): void
     getRacialTraits(race: Race): RacialTrait[]
     getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[]
+    getBaseRacialTraits(race: Race): RacialTrait[]
+    getSubraceTraits(race: Race, subrace: string): RacialTrait[]
     getAvailableSubraces(race: Race): string[]
     getRacialTraitById(traitId: string): RacialTrait | undefined
+    getAllRacialTraits(): Map<string, RacialTrait[]>
 
     // Validation
     validatePrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): ValidationResult
+    validateFeaturePrerequisites(feature: ClassFeature, character: CharacterSheet): ValidationResult
+    validateTraitPrerequisites(trait: RacialTrait, character: CharacterSheet): ValidationResult
+    canGainFeature(feature: ClassFeature | RacialTrait, character: CharacterSheet): boolean
+
+    // Registry Statistics
+    getRegisteredClasses(): Class[]
+    getRegisteredRaces(): Race[]
+    getRegistryStats(): { totalClassFeatures: number; totalRacialTraits: number; classesWithFeatures: number; racesWithTraits: number }
+
+    // Export
+    exportRegistry(): { classFeatures: Record<string, ClassFeature[]>; racialTraits: Record<string, RacialTrait[]> }
+
+    // Equipment Features (static methods)
+    static getEquipmentFeatures(equipmentName: string): ClassFeature[]
+    static isValidEquipmentFeature(featureId: string): boolean
+    static registerEquipmentFeature(feature: ClassFeature): void
+}
+
+interface ClassFeature {
+    id: string;
+    name: string;
+    description: string;
+    type: FeatureType;
+    class: Class;
+    level: number;
+    prerequisites?: FeaturePrerequisite;
+    effects?: FeatureEffect[];
+    source: 'default' | 'custom';
+    tags?: string[];
+    lore?: string;
+}
+
+interface RacialTrait {
+    id: string;
+    name: string;
+    description: string;
+    race: Race;
+    subrace?: string;
+    prerequisites?: FeaturePrerequisite;
+    effects?: FeatureEffect[];
+    source: 'default' | 'custom';
+    tags?: string[];
+    lore?: string;
+}
+
+type FeatureType = 'passive' | 'active' | 'resource' | 'trigger';
+
+type FeatureEffectType =
+    | 'stat_bonus'
+    | 'skill_proficiency'
+    | 'ability_unlock'
+    | 'passive_modifier'
+    | 'resource_grant'
+    | 'spell_slot_bonus';
+
+interface FeatureEffect {
+    type: FeatureEffectType;
+    target: string;
+    value: number | string | boolean;
+    condition?: string;
+    description?: string;
+}
+
+interface FeaturePrerequisite {
+    level?: number;
+    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+    class?: Class;
+    race?: Race;
+    subrace?: string;
+    features?: string[];
+    skills?: string[];
+    spells?: string[];
+    custom?: string;
+}
+
+interface ValidationResult {
+    valid: boolean;
+    errors?: string[];
+    unmet?: string[];
+}
+
+// Additional types for character storage
+
+interface CharacterFeature {
+    featureId: string;
+    name: string;
+    gainedAtLevel: number;
+    source: 'default' | 'custom';
+    state?: Record<string, number | boolean | string>;
+    choices?: Record<string, string | number | boolean>;
+}
+
+interface CharacterTrait {
+    traitId: string;
+    name: string;
+    source: 'default' | 'custom';
 }
 ```
 
-**Key Methods:**
+**Method Reference:**
 
-| Method | Description |
-|--------|-------------|
-| `getAvailableSubraces(race)` | Returns sorted array of subrace names available for a race |
-| `getRacialTraitsForSubrace(race, subrace)` | Returns base traits + subrace-specific traits |
-| `validatePrerequisites(feature, character)` | Validates feature/trait prerequisites against a character |
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `getInstance()` | - | `FeatureRegistry` | Returns singleton instance |
+| `initializeDefaults()` | `defaultClassFeatures?`, `defaultRacialTraits?` | `void` | Load default features and traits |
+| `reset()` | - | `void` | Clear all custom data, reload defaults |
+| `isInitialized()` | - | `boolean` | Check if registry has been initialized |
+| `registerClassFeature()` | `feature` | `void` | Register single class feature |
+| `registerClassFeatures()` | `features[]` | `void` | Register multiple class features |
+| `getClassFeatures()` | `class`, `level?` | `ClassFeature[]` | Get all features for class (filtered by level) |
+| `getClassFeaturesForLevel()` | `class`, `level` | `ClassFeature[]` | Get features for specific class level |
+| `getClassFeatureById()` | `featureId` | `ClassFeature \| undefined` | Find feature by ID |
+| `getAllClassFeatures()` | - | `Map<string, ClassFeature[]>` | Get all class features by class |
+| `registerRacialTrait()` | `trait` | `void` | Register single racial trait |
+| `registerRacialTraits()` | `traits[]` | `void` | Register multiple racial traits |
+| `getRacialTraits()` | `race` | `RacialTrait[]` | Get base traits for race (no subrace) |
+| `getRacialTraitsForSubrace()` | `race`, `subrace` | `RacialTrait[]` | Get base + subrace-specific traits |
+| `getBaseRacialTraits()` | `race` | `RacialTrait[]` | Get only base traits (no subrace) |
+| `getSubraceTraits()` | `race`, `subrace` | `RacialTrait[]` | Get only subrace-specific traits |
+| `getAvailableSubraces()` | `race` | `string[]` | Get sorted list of available subraces |
+| `getRacialTraitById()` | `traitId` | `RacialTrait \| undefined` | Find trait by ID |
+| `getAllRacialTraits()` | - | `Map<string, RacialTrait[]>` | Get all racial traits by race |
+| `validatePrerequisites()` | `feature`, `character` | `ValidationResult` | Validate any feature/trait prerequisites |
+| `validateFeaturePrerequisites()` | `feature`, `character` | `ValidationResult` | Validate class feature prerequisites |
+| `validateTraitPrerequisites()` | `trait`, `character` | `ValidationResult` | Validate racial trait prerequisites |
+| `canGainFeature()` | `feature`, `character` | `boolean` | Check if character can gain feature |
+| `getRegisteredClasses()` | - | `Class[]` | Get all classes with features |
+| `getRegisteredRaces()` | - | `Race[]` | Get all races with traits |
+| `getRegistryStats()` | - | `{ totalClassFeatures, totalRacialTraits, classesWithFeatures, racesWithTraits }` | Get registry statistics |
+| `exportRegistry()` | - | `{ classFeatures, racialTraits }` | Export all features as JSON |
+| `getEquipmentFeatures()` | `equipmentName` | `ClassFeature[]` | Get features that can be granted by equipment (static) |
+| `isValidEquipmentFeature()` | `featureId` | `boolean` | Check if feature can be granted by equipment (static) |
+| `registerEquipmentFeature()` | `feature` | `void` | Register equipment-granted feature (static) |
 
-**Subrace Discovery:**
+---
+
+### FeatureValidator
+
+**Location:** `src/core/features/FeatureValidator.ts`
+
+Utility class for validating class features and racial traits against strict schemas. All methods are static.
 
 ```typescript
-const registry = FeatureRegistry.getInstance();
+class FeatureValidator {
+    // Feature Validation
+    static validateClassFeature(feature: unknown): ValidationResult
+    static validateRacialTrait(trait: unknown): ValidationResult
 
-// Get all available subraces for a race
-const elfSubraces = registry.getAvailableSubraces('Elf');
-// Returns: ['High Elf', 'Wood Elf', 'Drow', ...]
+    // Batch Validation
+    static validateClassFeatures(features: unknown[]): ValidationResult
+    static validateRacialTraits(traits: unknown[]): ValidationResult
 
-// Get traits for a specific subrace
-const highElfTraits = registry.getRacialTraitsForSubrace('Elf', 'High Elf');
-// Returns base Elf traits + High Elf specific traits
+    // Component Validation
+    static validateEffect(effect: unknown): ValidationResult
+    static validatePrerequisites(prerequisites: unknown): ValidationResult
+}
+
+interface ValidationResult {
+    valid: boolean;
+    errors: string[];
+}
+
+// Helper functions (convenience wrappers)
+function validateClassFeature(feature: unknown): ValidationResult
+function validateRacialTrait(trait: unknown): ValidationResult
+function validateClassFeatures(features: unknown[]): ValidationResult
+function validateRacialTraits(traits: unknown[]): ValidationResult
 ```
+
+**Method Reference:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `validateClassFeature()` | `feature: unknown` | `ValidationResult` | Validate class feature schema including required fields, enums, and value ranges |
+| `validateRacialTrait()` | `trait: unknown` | `ValidationResult` | Validate racial trait schema including required fields, enums, and value ranges |
+| `validateClassFeatures()` | `features: unknown[]` | `ValidationResult` | Validate array of class features with index-based error reporting |
+| `validateRacialTraits()` | `traits: unknown[]` | `ValidationResult` | Validate array of racial traits with index-based error reporting |
+| `validateEffect()` | `effect: unknown` | `ValidationResult` | Validate feature effect (type, target, value, condition) |
+| `validatePrerequisites()` | `prerequisites: unknown` | `ValidationResult` | Validate prerequisite object (level, abilities, class, race, subrace, features, skills, spells) |
+
+**Class Feature Validation Rules:**
+
+`validateClassFeature()` checks the following required fields:
+- `id` - Must be a string in `lowercase_with_underscores` format (e.g., `barbarian_rage`, `fighter_action_surge`)
+- `name` - Must be a string
+- `description` - Must be a string
+- `type` - Must be one of: `passive`, `active`, `resource`, `trigger`
+- `class` - Must be a valid default class or custom class registered via ExtensionManager
+- `level` - Must be a number between 1 and 20
+- `source` - Must be `default` or `custom`
+
+Optional fields validated:
+- `prerequisites` - Must pass prerequisite validation
+- `effects` - Array of effects, each must pass effect validation
+- `tags` - Array of strings
+- `lore` - String (flavor text)
+- `subrace` - String (for subrace-specific features)
+
+**Racial Trait Validation Rules:**
+
+`validateRacialTrait()` checks the following required fields:
+- `id` - Must be a string in `lowercase_with_underscores` format
+- `name` - Must be a string
+- `description` - Must be a string
+- `race` - Must be a valid default race or custom race registered via ExtensionManager
+- `source` - Must be `default` or `custom`
+
+Optional fields validated:
+- `subrace` - String (for subrace-specific traits)
+- `prerequisites` - Must pass prerequisite validation
+- `effects` - Array of effects, each must pass effect validation
+- `tags` - Array of strings
+- `lore` - String (flavor text)
+
+**Effect Validation Rules:**
+
+`validateEffect()` checks:
+- `type` - Must be one of: `stat_bonus`, `skill_proficiency`, `ability_unlock`, `passive_modifier`, `resource_grant`, `spell_slot_bonus`
+- `target` - Must be a string (target depends on effect type)
+- `value` - Required (number, string, or boolean depending on type)
+
+For `skill_proficiency` effects:
+- `value` - Must be one of: `none`, `proficient`, `expertise`
+
+**Prerequisite Validation Rules:**
+
+`validatePrerequisites()` checks:
+- `level` - Number between 1 and 20
+- `abilities` - Record with valid abilities (STR, DEX, CON, INT, WIS, CHA) and scores between 1-20
+- `class` - Valid default class or custom class registered via ExtensionManager
+- `race` - Valid default race or custom race registered via ExtensionManager
+- `subrace` - Non-empty string
+- `features` - Array of feature ID strings
+- `skills` - Array of valid skill IDs
+- `spells` - Array of spell name strings
+- `custom` - String (manual condition description)
+
+---
 
 ### WeightedSelector
 
 **Location:** `src/core/extensions/WeightedSelector.ts`
 
-Utility class for weighted random selection.
+Utility class for weighted random selection supporting different spawn modes for probability calculation.
 
 ```typescript
 class WeightedSelector {
-    static select<T>(items: T[], weights: Record<string, number>, rng: SeededRNG, mode?: SelectionMode): T
+    // Single Selection
+    static select<T>(items: T[], weights: Record<string, number>, rng: SeededRNG, mode?: SelectionMode): T | null
+
+    // Multiple Selection
     static selectMultiple<T>(items: T[], weights: Record<string, number>, rng: SeededRNG, count: number, mode?: SelectionMode): T[]
+
+    // Probability Calculation
     static getProbabilities<T>(items: T[], weights: Record<string, number>, mode?: SelectionMode): Record<string, number>
+
+    // Weight Normalization
+    static normalizeWeights(weights: Record<string, number>, mode: SelectionMode): Record<string, number>
+
+    // Item Identification
+    static getItemKey<T>(item: T): string
 }
 
 type SelectionMode = 'relative' | 'absolute' | 'default';
+
+interface SeededRNG {
+    next(): number;
+    seed: number;
+}
+
+interface WeightedSelectionOptions {
+    mode?: SelectionMode;
+    allowDuplicates?: boolean;
+    fallbackToEqualWeights?: boolean;
+}
 ```
 
-**Spawn Modes:**
-| Mode | Behavior |
-|------|----------|
-| `relative` | Custom weights added to default pool |
-| `absolute` | Only custom items can spawn |
-| `default` | All items have equal weight |
-| `replace` | Clear previous custom data before registering |
+**Method Reference:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `select()` | `items`, `weights`, `rng`, `mode?` | `T \| null` | Select single item using weighted random |
+| `selectMultiple()` | `items`, `weights`, `rng`, `count`, `mode?` | `T[]` | Select multiple items using weighted random |
+| `getProbabilities()` | `items`, `weights`, `mode?` | `Record<string, number>` | Calculate probability for each item (0-1) |
+| `normalizeWeights()` | `weights`, `mode` | `Record<string, number>` | Normalize weights to sum to 1.0 |
+| `getItemKey()` | `item` | `string` | Extract unique key from item for weight lookup |
+
+**Selection Modes:**
+
+| Mode | Behavior | Weight Calculation |
+|------|----------|-------------------|
+| `relative` | Items without explicit weight use weight of 1.0 | Explicit weights respected, others default to 1.0 |
+| `absolute` | Only items with explicit weights can be selected | Items without weight have 0.0 probability |
+| `default` | All items have equal weight regardless of explicit weights | All items get weight of 1.0 |
+
+---
+
+### SkillRegistry
+
+**Location:** `src/core/skills/SkillRegistry.ts`
+
+Singleton registry for managing character skills with prerequisite validation and ability score associations.
+
+```typescript
+class SkillRegistry {
+    // Instance Management
+    static getInstance(): SkillRegistry
+
+    // Initialization
+    initializeDefaults(defaultSkills?: CustomSkill[]): void
+    reset(): void
+    isInitialized(): boolean
+
+    // Registration
+    registerSkill(skill: CustomSkill): void
+    registerSkills(skills: CustomSkill[]): void
+
+    // Retrieval
+    getSkill(id: string): CustomSkill | undefined
+    getAllSkills(): CustomSkill[]
+    getSkillsByAbility(ability: Ability): CustomSkill[]
+    getSkillsByCategory(category: string): CustomSkill[]
+    getCategories(): string[]
+    getSkillsBySource(source: 'default' | 'custom'): CustomSkill[]
+    getAvailableSkills(character: CharacterSheet): CustomSkill[]
+
+    // Validation
+    validatePrerequisites(skill: CustomSkill, character: CharacterSheet): SkillValidationResult
+    validateSkill(skill: CustomSkill): SkillValidationResult
+
+    // Query
+    isValidSkill(id: string): boolean
+    getSkillCount(): number
+    getRegistryStats(): SkillRegistryStats
+
+    // Export/Import
+    exportRegistry(): CustomSkill[]
+
+    // Unregister (primarily for testing)
+    unregisterSkill(id: string): boolean
+}
+
+type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
+
+interface CustomSkill {
+    id: string;
+    name: string;
+    description?: string;
+    ability: Ability;
+    armorPenalty?: boolean;
+    customProperties?: Record<string, string | number | boolean | string[]>;
+    categories?: string[];
+    source: 'default' | 'custom';
+    tags?: string[];
+    lore?: string;
+    prerequisites?: SkillPrerequisite;
+}
+
+interface SkillPrerequisite {
+    level?: number;
+    abilities?: Partial<Record<Ability, number>>;
+    class?: Class;
+    race?: Race;
+    subrace?: string;
+    skills?: string[];
+    features?: string[];
+    spells?: string[];
+    custom?: string;
+}
+
+interface SkillValidationResult {
+    valid: boolean;
+    errors: string[];
+}
+
+interface SkillRegistryStats {
+    totalSkills: number;
+    defaultSkills: number;
+    customSkills: number;
+    skillsByAbility: Record<Ability, number>;
+    categories: string[];
+}
+
+// Additional types
+
+interface SkillProficiency {
+    skillId: string;
+    level: 'none' | 'proficient' | 'expertise';
+    source: 'class' | 'background' | 'feat' | 'custom' | 'racial' | 'other';
+    grantedBy?: string;
+}
+
+interface SkillListDefinition {
+    class: string;
+    skillCount: number;
+    availableSkills: string[];
+    selectionWeights?: SkillSelectionWeights;
+    hasExpertise?: boolean;
+    expertiseCount?: number;
+}
+
+interface SkillSelectionWeights {
+    weights: Record<string, number>;
+    mode?: 'relative' | 'absolute' | 'default';
+}
+```
+
+**Method Reference:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `getInstance()` | - | `SkillRegistry` | Returns singleton instance |
+| `initializeDefaults()` | `defaultSkills?` | `void` | Load default skills (uses DEFAULT_SKILLS if not provided) |
+| `reset()` | - | `void` | Clear all custom data, reload defaults |
+| `isInitialized()` | - | `boolean` | Check if registry has been initialized |
+| `registerSkill()` | `skill` | `void` | Register single custom skill |
+| `registerSkills()` | `skills[]` | `void` | Register multiple custom skills |
+| `getSkill()` | `id` | `CustomSkill \| undefined` | Get skill by ID |
+| `getAllSkills()` | - | `CustomSkill[]` | Get all registered skills |
+| `getSkillsByAbility()` | `ability` | `CustomSkill[]` | Get skills for specific ability |
+| `getSkillsByCategory()` | `category` | `CustomSkill[]` | Get skills in a specific category |
+| `getCategories()` | - | `string[]` | Get all categories in use |
+| `getSkillsBySource()` | `source` | `CustomSkill[]` | Get skills by source (default or custom) |
+| `getAvailableSkills()` | `character` | `CustomSkill[]` | Get skills character can learn (prerequisites met) |
+| `validatePrerequisites()` | `skill`, `character` | `SkillValidationResult` | Validate skill prerequisites against character |
+| `validateSkill()` | `skill` | `SkillValidationResult` | Validate skill data structure |
+| `isValidSkill()` | `id` | `boolean` | Check if skill ID exists in registry |
+| `getSkillCount()` | - | `number` | Get total skill count |
+| `getRegistryStats()` | - | `SkillRegistryStats` | Get statistics about registered skills |
+| `exportRegistry()` | - | `CustomSkill[]` | Export all registered skills as JSON |
+| `unregisterSkill()` | `id` | `boolean` | Remove skill by ID (primarily for testing) |
+
+---
+
+### SkillValidator
+
+**Location:** `src/core/skills/SkillValidator.ts`
+
+Utility class for validating custom skills, skill proficiencies, and skill list definitions. All methods are static and validate against strict schemas.
+
+```typescript
+class SkillValidator {
+    // Skill Validation
+    static validateSkill(skill: unknown): SkillValidationResult
+    static validateSkills(skills: unknown[]): SkillValidationResult
+
+    // Skill Proficiency Validation
+    static validateSkillProficiency(proficiency: unknown): SkillValidationResult
+    static validateSkillProficiencies(proficiencies: unknown[]): SkillValidationResult
+
+    // Skill List Definition Validation
+    static validateSkillListDefinition(skillList: unknown): SkillValidationResult
+
+    // Prerequisite Validation
+    static validateSkillPrerequisites(prerequisites: SkillPrerequisite | undefined, character: CharacterSheet): SkillValidationResult
+
+    // Type Guards
+    static isValidAbility(ability: string): ability is Ability
+    static isValidSkillId(id: string): boolean
+}
+
+interface SkillValidationResult {
+    valid: boolean;
+    errors: string[];
+}
+
+// Helper functions (convenience wrappers)
+function validateSkill(skill: unknown): SkillValidationResult
+function validateSkills(skills: unknown[]): SkillValidationResult
+function validateSkillProficiency(proficiency: unknown): SkillValidationResult
+function validateSkillProficiencies(proficiencies: unknown[]): SkillValidationResult
+function validateSkillListDefinition(skillList: unknown): SkillValidationResult
+function validateSkillPrerequisites(prerequisites: SkillPrerequisite | undefined, character: CharacterSheet): SkillValidationResult
+```
+
+**Method Reference:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `validateSkill()` | `skill: unknown` | `SkillValidationResult` | Validate skill schema including required fields, ID format, ability, source |
+| `validateSkills()` | `skills: unknown[]` | `SkillValidationResult` | Validate multiple skills with index-based error reporting |
+| `validateSkillProficiency()` | `proficiency: unknown` | `SkillValidationResult` | Validate skill proficiency (skillId, level, source) |
+| `validateSkillProficiencies()` | `proficiencies: unknown[]` | `SkillValidationResult` | Validate array of skill proficiencies |
+| `validateSkillListDefinition()` | `skillList: unknown` | `SkillValidationResult` | Validate class skill list (class, skillCount, availableSkills, expertiseCount) |
+| `validateSkillPrerequisites()` | `prerequisites`, `character` | `SkillValidationResult` | Validate prerequisites against character |
+| `isValidAbility()` | `ability: string` | `boolean` | Check if valid ability score (STR, DEX, CON, INT, WIS, CHA) |
+| `isValidSkillId()` | `id: string` | `boolean` | Check if skill ID follows lowercase_with_underscores format |
+
+**Skill Validation:**
+
+`validateSkill()` checks the following required fields:
+- `id` - Must be a string in lowercase_with_underscores format (e.g., `athletics`, `survival_cold`)
+- `name` - Must be a string
+- `ability` - Must be one of: STR, DEX, CON, INT, WIS, CHA
+- `source` - Must be 'default' or 'custom'
+
+Optional fields validated:
+- `description` - String
+- `armorPenalty` - Boolean (whether armor applies disadvantage)
+- `categories` - String array (skill categories for organization)
+- `tags` - String array (for filtering/searching)
+- `customProperties` - Record with string, number, boolean, or string[] values
+- `lore` - String (flavor text)
+
+**Skill Proficiency Validation:**
+
+`validateSkillProficiency()` checks skill proficiency objects:
+- `skillId` - Must follow lowercase_with_underscores format
+- `level` - Must be 'none', 'proficient', or 'expertise'
+- `source` - Must be 'class', 'background', 'feat', 'custom', 'racial', or 'other'
+- `grantedBy` - Optional string (what granted this proficiency)
+
+**Skill List Definition Validation:**
+
+`validateSkillListDefinition()` validates class skill list definitions:
+- `class` - String (class name)
+- `skillCount` - Non-negative integer (number of skills to choose)
+- `availableSkills` - String array (valid skill IDs to choose from)
+- `hasExpertise` - Optional boolean (whether class can get expertise)
+- `expertiseCount` - Optional non-negative integer (number of expertise choices)
 
 ---
 
@@ -2913,6 +3816,191 @@ interface Spell {
 
 ---
 
+### SpellRegistry
+
+**Location:** `src/core/spells/SpellRegistry.ts`
+
+Singleton registry for managing spells with prerequisite validation and school categorization.
+
+```typescript
+class SpellRegistry {
+    // Instance Management
+    static getInstance(): SpellRegistry
+
+    // Initialization
+    initializeDefaults(defaultSpells?: Record<string, Spell>): void
+    reset(): void
+    isInitialized(): boolean
+
+    // Registration
+    registerSpell(spell: RegisteredSpell): void
+    registerSpells(spells: RegisteredSpell[]): void
+
+    // Retrieval
+    getSpell(spellId: string): RegisteredSpell | undefined
+    getSpells(): RegisteredSpell[]
+    getSpellsByLevel(level: number): RegisteredSpell[]
+    getSpellsBySchool(school: SpellSchool): RegisteredSpell[]
+    getSpellsForClass(characterClass: Class): RegisteredSpell[]
+    getAvailableSpells(character: CharacterSheet): RegisteredSpell[]
+    getSpellsBySource(source: 'default' | 'custom'): RegisteredSpell[]
+
+    // Class Spell Lists
+    getClassSpellList(characterClass: Class): string[]
+    registerClassSpellList(characterClass: Class, spellIds: string[]): void
+
+    // Spell Slots
+    getSpellSlotsForClass(characterClass: Class, level: number): number
+
+    // Validation
+    validatePrerequisites(spell: RegisteredSpell, character: CharacterSheet): ValidationResult
+    validateSpell(spell: RegisteredSpell): ValidationResult
+
+    // Query
+    hasSpell(spellId: string): boolean
+    getSpellCount(): number
+    getRegistryStats(): { totalSpells: number; defaultSpells: number; customSpells: number; spellsByLevel: Record<number, number>; spellsBySchool: Record<SpellSchool, number>; classesWithSpells: number }
+
+    // Export/Import
+    exportRegistry(): RegisteredSpell[]
+
+    // Unregister (primarily for testing)
+    unregisterSpell(spellId: string): boolean
+}
+
+type SpellSchool =
+    | 'Abjuration'
+    | 'Conjuration'
+    | 'Divination'
+    | 'Enchantment'
+    | 'Evocation'
+    | 'Illusion'
+    | 'Necromancy'
+    | 'Transmutation';
+
+interface RegisteredSpell extends Spell {
+    id: string;
+    classes?: Class[];
+    source: 'default' | 'custom';
+}
+
+interface Spell {
+    id?: string;
+    name: string;
+    level: number;
+    school: SpellSchool;
+    prerequisites?: SpellPrerequisite;
+    description?: string;
+    casting_time?: string;
+    range?: string;
+    components?: string[];
+    duration?: string;
+    classes?: Class[];
+    source?: 'default' | 'custom';
+}
+
+interface SpellPrerequisite {
+    level?: number;
+    casterLevel?: number;
+    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+    class?: string;
+    features?: string[];
+    spells?: string[];
+    skills?: string[];
+    custom?: string;
+}
+
+interface ValidationResult {
+    valid: boolean;
+    errors: string[];
+    warnings?: string[];
+}
+```
+
+**Method Reference:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `getInstance()` | - | `SpellRegistry` | Returns singleton instance |
+| `initializeDefaults()` | `defaultSpells?` | `void` | Load default spells (uses SPELL_DATABASE if not provided) |
+| `reset()` | - | `void` | Clear all custom data, reload defaults |
+| `isInitialized()` | - | `boolean` | Check if registry has been initialized |
+| `registerSpell()` | `spell` | `void` | Register single custom spell |
+| `registerSpells()` | `spells[]` | `void` | Register multiple custom spells |
+| `getSpell()` | `spellId` | `RegisteredSpell \| undefined` | Get spell by ID |
+| `getSpells()` | - | `RegisteredSpell[]` | Get all spells |
+| `getSpellsByLevel()` | `level` | `RegisteredSpell[]` | Get spells of specific level (0-9) |
+| `getSpellsBySchool()` | `school` | `RegisteredSpell[]` | Get spells of specific school |
+| `getSpellsForClass()` | `class` | `RegisteredSpell[]` | Get spells available to a class |
+| `getAvailableSpells()` | `character` | `RegisteredSpell[]` | Get spells character can learn (prerequisites met) |
+| `getSpellsBySource()` | `source` | `RegisteredSpell[]` | Get spells by source (default or custom) |
+| `getClassSpellList()` | `class` | `string[]` | Get spell list for a class |
+| `registerClassSpellList()` | `class`, `spellIds[]` | `void` | Register spell list for a class |
+| `getSpellSlotsForClass()` | `class`, `level` | `number` | Get spell slots for class/level |
+| `validatePrerequisites()` | `spell`, `character` | `ValidationResult` | Validate spell prerequisites |
+| `validateSpell()` | `spell` | `ValidationResult` | Validate spell schema |
+| `hasSpell()` | `spellId` | `boolean` | Check if spell exists |
+| `getSpellCount()` | - | `number` | Get total spell count |
+| `getRegistryStats()` | - | `{ totalSpells, defaultSpells, customSpells, spellsByLevel, spellsBySchool, classesWithSpells }` | Get registry statistics |
+| `exportRegistry()` | - | `RegisteredSpell[]` | Export all registered spells as JSON |
+| `unregisterSpell()` | `spellId` | `boolean` | Remove spell by ID (primarily for testing) |
+
+---
+
+### SpellValidator
+
+**Location:** `src/core/spells/SpellValidator.ts`
+
+Utility class for validating spells and their prerequisites. All methods are static and validate against strict schemas.
+
+```typescript
+class SpellValidator {
+    // Spell Validation
+    static validateSpell(spell: unknown): SpellValidationResult
+    static validateSpells(spells: unknown[]): SpellValidationResult
+
+    // Prerequisite Validation
+    static validatePrerequisites(prerequisites: unknown): SpellValidationResult
+    static validateSpellPrerequisites(
+        prerequisites: SpellPrerequisite | undefined,
+        character: CharacterSheet
+    ): SpellValidationResult
+
+    // Type Guards
+    static isValidAbility(ability: string): ability is Ability
+    static isValidSchool(school: string): school is Spell['school']
+    static isValidSpellLevel(level: number): boolean
+}
+
+interface SpellValidationResult {
+    valid: boolean;
+    errors: string[];
+}
+
+// Helper functions (convenience wrappers)
+function validateSpell(spell: unknown): SpellValidationResult
+function validateSpells(spells: unknown[]): SpellValidationResult
+function validateSpellPrerequisitesSchema(prerequisites: unknown): SpellValidationResult
+function validateSpellPrerequisites(
+    prerequisites: SpellPrerequisite | undefined,
+    character: CharacterSheet
+): SpellValidationResult
+```
+
+**Method Reference:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `validateSpell()` | `spell: unknown` | `SpellValidationResult` | Validate spell schema including prerequisites |
+| `validateSpells()` | `spells: unknown[]` | `SpellValidationResult` | Validate array of spells |
+| `validatePrerequisites()` | `prerequisites: unknown` | `SpellValidationResult` | Validate prerequisite object structure |
+| `validateSpellPrerequisites()` | `prerequisites`, `character` | `SpellValidationResult` | Validate prerequisites against character |
+| `isValidAbility()` | `ability: string` | `boolean` | Check if valid ability score |
+| `isValidSchool()` | `school: string` | `boolean` | Check if valid spell school |
+| `isValidSpellLevel()` | `level: number` | `boolean` | Check if valid spell level (0-9) |
+
+---
+
 ### Custom Races
 
 **For comprehensive guide, examples, and best practices:** See [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md)
@@ -2932,12 +4020,6 @@ interface RaceDataEntry {
 
 **Helper Functions:**
 - `getRaceData(race: string)` - Get race data from default or custom races
-
-**Registration:**
-```typescript
-ExtensionManager.getInstance().register('races.data', [raceDataEntries]);
-ExtensionManager.getInstance().register('races', ['CustomRace']);
-```
 
 ---
 
@@ -2997,12 +4079,6 @@ interface ClassDataEntry {
 - `getClassData(className: string)` - Get class data from default or custom classes
 - `getClassSpellList(className: string)` - Get spell list for class
 - `getSpellSlotsForClass(className: string, level: number)` - Get spell slots for class
-
-**Registration:**
-```typescript
-ExtensionManager.getInstance().register('classes.data', [classDataEntries]);
-ExtensionManager.getInstance().register('classes', [asClass('CustomClass')]);
-```
 
 ---
 
