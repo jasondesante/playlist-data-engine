@@ -93,18 +93,19 @@ Verify all prerequisite type definitions exist with correct properties and types
 **Implementation**: `src/utils/constants.ts:873-900`
 
 #### Properties
-- [ ] `level?: number` exists at line 875
-- [ ] `casterLevel?: number` exists at line 878
-- [ ] `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` exists at line 881
-- [ ] `class?: string` exists at line 884
-- [ ] `features?: string[]` exists at line 890
-- [ ] `spells?: string[]` exists at line 893
-- [ ] `skills?: string[]` exists at line 896
-- [ ] `custom?: string` exists at line 899
+- [x] `level?: number` exists at line 875
+- [x] `casterLevel?: number` exists at line 878
+- [x] `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` exists at line 881
+- [x] `class?: string` exists at line 884
+- [x] `features?: string[]` exists at line 890
+- [x] `spells?: string[]` exists at line 893
+- [x] `skills?: string[]` exists at line 896
+- [x] `custom?: string` exists at line 899
+- [x] **FOUND**: `race?: string` exists at line 887 (undocumented - see Task 6.6)
 
 #### Export Verification
-- [ ] Exported as `export interface SpellPrerequisite`
-- [ ] **NOTE**: `class` property is typed as `string`, not `Class` (unlike SkillPrerequisite)
+- [x] Exported as `export interface SpellPrerequisite`
+- [x] **NOTE**: `class` property is typed as `string`, not `Class` (unlike SkillPrerequisite)
 
 ---
 
@@ -405,11 +406,13 @@ Address all discrepancies found during verification.
 
 ### Task 6.6: Race Property in SpellPrerequisite
 
-**Status**: INVESTIGATION NEEDED
+**Status**: ✅ RESOLVED - Property exists but is undocumented
 
-- [ ] **Issue**: Documentation examples may reference `race` property for `SpellPrerequisite`
-- [ ] **Action**: Verify if `race?: string` exists in `SpellPrerequisite` interface
-- [ ] **File**: `src/utils/constants.ts:873-900`
+- [x] **Issue**: Documentation examples may reference `race` property for `SpellPrerequisite`
+- [x] **Action**: Verify if `race?: string` exists in `SpellPrerequisite` interface
+- [x] **File**: `src/utils/constants.ts:873-900`
+- [x] **Finding**: The `race?: string` property EXISTS at line 887 in `constants.ts` but is NOT documented in `PREREQUISITES.md:137-162`
+- [ ] **Resolution Needed**: Add `race?: string` property to PREREQUISITES.md documentation at line ~148 (after `class?: string`)
 
 ---
 
@@ -542,7 +545,7 @@ Verify type imports across modules are correct.
 
 | Category | Total | Verified |
 |----------|-------|----------|
-| Core Interfaces | 4 | 0 |
+| Core Interfaces | 4 | 1 |
 | Supporting Interfaces | 2 | 0 |
 | Validator Classes | 2 | 0 |
 | Registry Classes | 2 | 0 |
