@@ -57,20 +57,20 @@ This approach ensures all discrepancies are captured systematically and resolved
 Verify that the package exports (likely from `src/index.ts` or similar):
 
 #### Classes
-- [ ] ExtensionManager
-- [ ] EquipmentSpawnHelper
-- [ ] SeededRNG
-- [ ] EquipmentEffectApplier
-- [ ] EquipmentValidator
-- [ ] EquipmentModifier
+- [x] ExtensionManager
+- [x] EquipmentSpawnHelper
+- [x] SeededRNG
+- [x] EquipmentEffectApplier
+- [x] EquipmentValidator
+- [x] EquipmentModifier
 
 #### Types
-- [ ] EnhancedEquipment
-- [ ] EquipmentProperty
-- [ ] EquipmentModification
-- [ ] EquipmentMiniFeature
-- [ ] CharacterEquipment
-- [ ] CharacterSheet
+- [x] EnhancedEquipment
+- [x] EquipmentProperty
+- [x] EquipmentModification
+- [x] EquipmentMiniFeature
+- [x] CharacterEquipment
+- [x] CharacterSheet
 
 ---
 
@@ -339,7 +339,7 @@ For every item listed in Phases 1-4, verify:
 
 ## Completion Checklist
 
-- [ ] Phase 1: All files exist, all exports verified
+- [x] Phase 1: All files exist, all exports verified
 - [ ] Phase 2: All types and interfaces verified
 - [ ] Phase 3: All classes and methods verified
 - [ ] Phase 4: Integration points verified
