@@ -355,7 +355,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] EquipmentProperty, EquipmentPropertyType, EquipmentCondition, EnhancedEquipment, EquipmentModification, EnhancedInventoryItem, EffectApplicationResult, EquipmentValidationResult → src/core/types/Equipment.ts ✅ (location mismatch: documented as src/types/Equipment.ts)
 - [x] SpawnRandomOptions, TreasureHoardResult → src/core/types/Equipment.ts ✅ (location mismatch: documented as src/core/equipment/EquipmentSpawnHelper.ts)
 
-### Task 5.2: Equipment Core Classes (50 items) 🔄 IN PROGRESS (11/~50 done)
+### Task 5.2: Equipment Core Classes (50 items) 🔄 IN PROGRESS (30/~50 done)
 - [x] class EquipmentEffectApplier (static) → src/core/equipment/EquipmentEffectApplier.ts
   - [x] equipItem(character, equipment, instanceId?): EffectApplicationResult
   - [x] unequipItem(character, equipmentName, instanceId?): EffectApplicationResult
@@ -369,26 +369,32 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] validateDamageInfo(damage): EquipmentValidationResult
   - [x] validateSpawnWeight(weight): EquipmentValidationResult
   - [x] validateModification(modification): EquipmentValidationResult
-- [ ] class EquipmentModifier (static) → src/core/equipment/EquipmentModifier.ts
-  - [ ] enchant(equipment, itemName, enchantment, character?): CharacterEquipment
-  - [ ] applyTemplate(equipment, itemName, templateId, character?): CharacterEquipment
-  - [ ] curse(equipment, itemName, curse, character?): CharacterEquipment
-  - [ ] upgrade(equipment, itemName, upgrade, character?): CharacterEquipment
-  - [ ] removeModification(equipment, itemName, modificationId, character?): CharacterEquipment
-  - [ ] disenchant(equipment, itemName, character?): CharacterEquipment
-  - [ ] liftCurse(equipment, itemName, character?): CharacterEquipment
-  - [ ] getCombinedEffects(equipment, itemName, instanceId?): EquipmentProperty[]
-  - [ ] hasTemplate(equipment, itemName, templateId): boolean
-  - [ ] isCursed(equipment, itemName): boolean
-  - [ ] isEnchanted(equipment, itemName): boolean
-  - [ ] getAppliedTemplates(equipment, itemName): string[]
-  - [ ] getModificationHistory(equipment, itemName): EquipmentModification[]
-  - [ ] removeAllModifications(equipment, itemName, character?): CharacterEquipment
-  - [ ] getModificationSources(equipment, itemName): string[]
-  - [ ] countModificationsBySource(equipment, itemName): Record<string, number>
-  - [ ] getItemSummary(equipment, itemName): { name; modifications; isCursed; isEnchanted }
-  - [ ] createModification(id, name, properties, source): EquipmentModification
-  - [ ] generateModificationId(prefix?): string
+- [x] class EquipmentModifier (static) → src/core/equipment/EquipmentModifier.ts ✅ VERIFIED
+  - [x] enchant(equipment, itemName, enchantment, character?): CharacterEquipment ✅
+  - [x] applyTemplate(equipment, itemName, templateId, character?): CharacterEquipment ✅
+  - [x] curse(equipment, itemName, curse, character?): CharacterEquipment ✅
+  - [x] upgrade(equipment, itemName, upgrade, character?): CharacterEquipment ✅
+  - [x] removeModification(equipment, itemName, modificationId, character?): CharacterEquipment ✅
+  - [x] disenchant(equipment, itemName, character?): CharacterEquipment ✅
+  - [x] liftCurse(equipment, itemName, character?): CharacterEquipment ✅
+  - [x] getCombinedEffects(equipment, itemName, instanceId?): EquipmentProperty[] ✅
+  - [x] hasTemplate(equipment, itemName, templateId): boolean ✅
+  - [x] isCursed(equipment, itemName): boolean ✅
+  - [x] isEnchanted(equipment, itemName): boolean ✅
+  - [x] getAppliedTemplates(equipment, itemName): string[] ✅
+  - [x] getModificationHistory(equipment, itemName): EquipmentModification[] ✅
+  - [x] removeAllModifications(equipment, itemName, character?): CharacterEquipment ✅
+  - [x] getModificationSources(equipment, itemName): string[] ✅
+  - [x] countModificationsBySource(equipment, itemName): Record<string, number> ✅
+  - [x] getItemSummary(equipment, itemName): { name; modifications; isCursed; isEnchanted } ⚠️ (Actual return type has more properties: quantity, equipped, instanceId, templateId, modificationCount, sources, effects - code is more feature-complete)
+  - [x] createModification(id, name, properties, source): EquipmentModification ✅
+  - [x] generateModificationId(prefix?): string ✅
+  - **Note**: Additional factory methods exist beyond documentation:
+    - createFeatureModification(id, name, properties, addsFeatures, source): EquipmentModification
+    - createSkillModification(id, name, properties, addsSkills, source): EquipmentModification
+    - createSpellModification(id, name, properties, addsSpells, source): EquipmentModification
+  - **Note**: Additional helper method exists:
+    - countModificationsForSource(equipment, itemName, source): number
 - [ ] class EquipmentSpawnHelper (static) → src/core/equipment/EquipmentSpawnHelper.ts
   - [ ] spawnFromList(itemNames, rng?): (EnhancedEquipment | undefined)[]
   - [ ] spawnByRarity(rarity, count, rng?): EnhancedEquipment[]
