@@ -19,7 +19,7 @@
 **Success Criteria:**
 - [x] All documented classes exist at expected locations
 - [x] All documented methods are implemented with matching signatures
-- [ ] All types and interfaces are properly exported
+- [x] All types and interfaces are properly exported
 - [ ] All extension categories are recognized by ExtensionManager
 - [ ] Documentation examples compile and run correctly
 
