@@ -426,6 +426,7 @@ manager.register('races', ['Dragonkin']);
 FeatureRegistry.getInstance().registerRacialTrait({
     id: 'fire_dragonkin_fire_resistance',
     name: 'Fire Resistance',
+    description: 'You have resistance to fire damage.',
     race: 'Dragonkin',
     subrace: 'Fire Dragonkin',
     prerequisites: { subrace: 'Fire Dragonkin' },
