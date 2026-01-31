@@ -142,9 +142,6 @@ export { GamingPlatformSensors } from './core/sensors/GamingPlatformSensors.js';
 // Combat
 export { CombatEngine } from './core/combat/CombatEngine.js';
 
-// Migration utilities
-export { CharacterMigration, type MigrationResult } from './core/migration/CharacterMigration.js';
-
 // Equipment system
 export { EquipmentModifier } from './core/equipment/EquipmentModifier.js';
 export { EquipmentEffectApplier } from './core/equipment/EquipmentEffectApplier.js';

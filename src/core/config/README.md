@@ -224,7 +224,7 @@ import { DEFAULT_SENSOR_CONFIG } from './core/config';
 console.log(DEFAULT_SENSOR_CONFIG);
 ```
 
-## Migration from Legacy Constructors
+## Legacy Constructor Support
 
 The sensor classes maintain backward compatibility with legacy constructor signatures:
 
