@@ -262,7 +262,6 @@ export function getRaceData(race: string): RaceDataEntry | undefined {
  * - **Custom spell slots**: Register via `classSpellSlots` category
  * - **Custom equipment**: Register via `classStartingEquipment.${ClassName}` categories
  *
- * See UPGRADE_PLAN_PART_4.md for complete examples.
  */
 export interface ClassDataEntry {
     /** Primary ability score for this class */

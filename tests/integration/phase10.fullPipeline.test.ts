@@ -4,7 +4,6 @@
  * This test verifies the complete pipeline from audio profile analysis
  * through class selection to character generation.
  *
- * Tests Phase 10.1 tasks from DATA_ENGINE_UPGRADE_PLAN.md:
  * - Test complete pipeline: audio analysis → class selection → character generation
  * - Generate 100+ characters from diverse music genres
  * - Document class distribution (should be much more balanced)

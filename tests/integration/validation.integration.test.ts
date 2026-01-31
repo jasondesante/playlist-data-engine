@@ -1,7 +1,6 @@
 /**
  * Integration test for ValidationManager
  * Tests validation in the context of character generation with custom extensions
- * Covers Phase 6.1: "Test ValidationManager" task from DATA_ENGINE_UPGRADE_PLAN.md
  *
  * Test Requirements:
  * - Valid data passes

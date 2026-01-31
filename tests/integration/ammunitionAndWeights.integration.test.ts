@@ -1,6 +1,5 @@
 /**
  * Integration test for ammunition fix and weight system
- * Tests Phase 6.2 tasks from DATA_ENGINE_UPGRADE_PLAN.md:
  * - Test ammunition fix (Ranger has 20 arrows, weight correct, can remove/add arrows)
  * - Test weight system (custom items with high weight spawn often, weight 0 never spawns, relative vs absolute modes)
  *

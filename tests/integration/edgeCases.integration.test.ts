@@ -1,6 +1,5 @@
 /**
  * Integration test for edge cases in custom data generation
- * Tests Phase 6.3 tasks from DATA_ENGINE_UPGRADE_PLAN.md:
  * - Test with empty custom data (should use defaults)
  * - Test with replacing all defaults (mode: 'replace')
  * - Test with conflicting weights (resolve correctly)

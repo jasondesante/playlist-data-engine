@@ -4,7 +4,6 @@
  * This test benchmarks the performance of character generation and
  * audio analysis after the extensibility and audio analysis upgrades.
  *
- * Tests Phase 10.2 tasks from DATA_ENGINE_UPGRADE_PLAN.md:
  * - Benchmark character generation time (before vs after)
  * - Benchmark audio analysis time (new bands + attenuation)
  * - Verify no significant performance degradation (<20% slower acceptable)

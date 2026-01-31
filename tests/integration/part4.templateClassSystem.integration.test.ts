@@ -286,7 +286,7 @@ describe('Integration: Part 4 Template-Based Class System', () => {
     });
 
     describe('Phase 4.3: Template class pattern examples', () => {
-        it('should support the Necromancer class example from UPGRADE_PLAN_PART_4.md', () => {
+        it('should support the Necromancer class example', () => {
             // This is the full example from the upgrade plan
 
             // Register a custom "Necromancer" class based on Wizard

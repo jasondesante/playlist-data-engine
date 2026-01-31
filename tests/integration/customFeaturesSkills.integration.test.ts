@@ -1,6 +1,5 @@
 /**
  * Integration test for CharacterGenerator with custom features and skills
- * Tests Phase 15.1: "Test CharacterGenerator with custom features/skills" task from DATA_ENGINE_UPGRADE_PLAN.md
  *
  * Test Requirements:
  * - CharacterGenerator works correctly with custom features registered
@@ -77,8 +76,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                     name: 'Arcane Mastery',
                     class: 'Wizard' as const,
                     level: 1,
-                type: 'passive' as const,
-                source: 'custom' as const,
+                    type: 'passive' as const,
+                    source: 'custom' as const,
                     description: 'You have mastered the arcane arts.',
                     effects: [
                         { type: 'stat_bonus' as const, target: 'INT' as const, value: 1 }
@@ -89,8 +88,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                     name: 'Spell Mastery',
                     class: 'Wizard' as const,
                     level: 3,
-                type: 'passive' as const,
-                source: 'custom' as const,
+                    type: 'passive' as const,
+                    source: 'custom' as const,
                     description: 'You can cast spells with increased power.',
                     effects: []
                 }

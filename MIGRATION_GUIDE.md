@@ -543,5 +543,4 @@ const character = CharacterGenerator.generate(
 
 - **Documentation:** See `DATA_ENGINE_REFERENCE.md` for complete API docs
 - **Examples:** See `USAGE_IN_OTHER_PROJECTS.md` for usage examples
-- **Upgrade Plans:** See `UPGRADE_PLAN_PART_3.md` and `UPGRADE_PLAN_PART_4.md` for technical details
 - **Issues:** Report bugs at the project repository

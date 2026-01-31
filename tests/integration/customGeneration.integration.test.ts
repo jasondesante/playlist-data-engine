@@ -1,6 +1,5 @@
 /**
  * Integration test for custom data in character generation
- * Tests Phase 6.1: "Test each category with custom data" task from DATA_ENGINE_UPGRADE_PLAN.md
  *
  * Test Requirements:
  * - Spells: custom spells appear in generation

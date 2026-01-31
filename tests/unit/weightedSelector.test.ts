@@ -9,7 +9,6 @@
  * - Multiple item selection
  * - Edge cases
  *
- * Phase 6.1: "Test WeightedSelector" task from DATA_ENGINE_UPGRADE_PLAN.md
  */
 
 import { describe, it, expect } from 'vitest';
@@ -167,9 +166,9 @@ describe('WeightedSelector', () => {
             const probabilities = WeightedSelector.getProbabilities(items, weights, 'default');
 
             // All items should have equal probability despite custom weights
-            expect(probabilities['Sword']).toBeCloseTo(1/3, 5);
-            expect(probabilities['Axe']).toBeCloseTo(1/3, 5);
-            expect(probabilities['Dagger']).toBeCloseTo(1/3, 5);
+            expect(probabilities['Sword']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['Axe']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['Dagger']).toBeCloseTo(1 / 3, 5);
         });
     });
 
@@ -191,9 +190,9 @@ describe('WeightedSelector', () => {
             const probabilities = WeightedSelector.getProbabilities(items, weights, 'relative');
 
             // Equal weights = equal probabilities
-            expect(probabilities['Red']).toBeCloseTo(1/3, 5);
-            expect(probabilities['Blue']).toBeCloseTo(1/3, 5);
-            expect(probabilities['Green']).toBeCloseTo(1/3, 5);
+            expect(probabilities['Red']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['Blue']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['Green']).toBeCloseTo(1 / 3, 5);
         });
 
         it('should calculate correct probabilities for complex weights', () => {
@@ -216,9 +215,9 @@ describe('WeightedSelector', () => {
             const probabilities = WeightedSelector.getProbabilities(items, weights, 'relative');
 
             // When all weights are 0, should return equal probabilities
-            expect(probabilities['A']).toBeCloseTo(1/3, 5);
-            expect(probabilities['B']).toBeCloseTo(1/3, 5);
-            expect(probabilities['C']).toBeCloseTo(1/3, 5);
+            expect(probabilities['A']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['B']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['C']).toBeCloseTo(1 / 3, 5);
         });
 
         it('should handle single item', () => {
@@ -432,9 +431,9 @@ describe('WeightedSelector', () => {
 
             const probabilities = WeightedSelector.getProbabilities(items, weights, 'relative');
 
-            expect(probabilities["O'Brian Sword"]).toBeCloseTo(1/3, 5);
-            expect(probabilities['Fire & Ice']).toBeCloseTo(1/3, 5);
-            expect(probabilities['Dagger-dagger']).toBeCloseTo(1/3, 5);
+            expect(probabilities["O'Brian Sword"]).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['Fire & Ice']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['Dagger-dagger']).toBeCloseTo(1 / 3, 5);
         });
 
         it('should handle unicode characters in item names', () => {
@@ -466,9 +465,9 @@ describe('WeightedSelector', () => {
             const probabilities = WeightedSelector.getProbabilities(items, weights, 'relative');
 
             // All weights equal, so equal probabilities
-            expect(probabilities['A']).toBeCloseTo(1/3, 5);
-            expect(probabilities['B']).toBeCloseTo(1/3, 5);
-            expect(probabilities['C']).toBeCloseTo(1/3, 5);
+            expect(probabilities['A']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['B']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['C']).toBeCloseTo(1 / 3, 5);
         });
 
         it('should use string representation for objects without name property', () => {
@@ -488,9 +487,9 @@ describe('WeightedSelector', () => {
             const probabilities = WeightedSelector.getProbabilities(items, weights, 'relative');
 
             // All items should default to weight 1
-            expect(probabilities['A']).toBeCloseTo(1/3, 5);
-            expect(probabilities['B']).toBeCloseTo(1/3, 5);
-            expect(probabilities['C']).toBeCloseTo(1/3, 5);
+            expect(probabilities['A']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['B']).toBeCloseTo(1 / 3, 5);
+            expect(probabilities['C']).toBeCloseTo(1 / 3, 5);
         });
     });
 
