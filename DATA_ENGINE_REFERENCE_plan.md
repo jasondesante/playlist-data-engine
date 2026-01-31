@@ -139,7 +139,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] unequipItem(equipment, itemName, character?): CharacterEquipment ✅
   - [x] getEquipmentData(itemName): EnhancedEquipment | undefined ⚠️ (visibility mismatch: docs show public, code has private getEquipmentData + public getEquipmentDataStatic)
   - [x] getInventoryList(equipment): EnhancedInventoryItem[] ✅
-  - [x] getEquipmentByType(equipment, type): EnhancedInventoryItem[] ❌ (MISSING: documented but not in codebase)
+  - [x] getEquipmentByType(equipment, type): EnhancedInventoryItem[] ✅ (IMPLEMENTED)
 - [x] class AppearanceGenerator (static) → src/core/generation/AppearanceGenerator.ts ✅
   - [x] generate(seed, characterClass, audioProfile): CharacterAppearance ✅
 - [x] class NamingEngine → src/core/generation/NamingEngine.ts ✅
@@ -580,7 +580,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
-| 2 | Core Processing Modules | ~50 | 🔄 In Progress (36/~50 done) |
+| 2 | Core Processing Modules | ~50 | 🔄 In Progress (37/~50 done) |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
@@ -630,7 +630,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] **Signature mismatch (Task 2.3 - EquipmentGenerator.addItem)** - DATA_ENGINE_REFERENCE.md documents `addItem(equipment, itemName, quantity?, character?): CharacterEquipment` with 4 parameters, but actual code at `src/core/generation/EquipmentGenerator.ts:212-216` shows only 3 parameters without the `character` parameter. Documentation needs to be updated.
 - [x] **Signature mismatch (Task 2.3 - EquipmentGenerator.removeItem)** - DATA_ENGINE_REFERENCE.md documents `removeItem(equipment, itemName, quantity?, character?): CharacterEquipment` with 4 parameters, but actual code at `src/core/generation/EquipmentGenerator.ts:269-273` shows only 3 parameters without the `character` parameter. Documentation needs to be updated.
 - [x] **Visibility mismatch (Task 2.3 - EquipmentGenerator.getEquipmentData)** - DATA_ENGINE_REFERENCE.md documents `getEquipmentData` as a public static method, but actual code at `src/core/generation/EquipmentGenerator.ts:70-78` has it as private. A public static method `getEquipmentDataStatic` exists at line 60-62 that provides the same functionality. Documentation needs to be updated.
-- [x] **Missing code (Task 2.3 - EquipmentGenerator.getEquipmentByType)** - DATA_ENGINE_REFERENCE.md documents `getEquipmentByType(equipment, type): EnhancedInventoryItem[]` method, but this method does not exist in the codebase at `src/core/generation/EquipmentGenerator.ts`. Documentation needs to be updated or code needs to be added.
+- [x] **Missing code (Task 2.3 - EquipmentGenerator.getEquipmentByType)** - DATA_ENGINE_REFERENCE.md documents `getEquipmentByType(equipment, type): EnhancedInventoryItem[]` method, but this method did not exist in the codebase at `src/core/generation/EquipmentGenerator.ts`. **RESOLVED**: Method has been implemented at `src/core/generation/EquipmentGenerator.ts:437-450` with proper signature and 5 new unit tests added.
 - [x] **Missing documentation (Task 2.3 - EquipmentGenerator.getEquipmentDataStatic)** - DATA_ENGINE_REFERENCE.md is missing the `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method. The actual code at `src/core/generation/EquipmentGenerator.ts:60-62` includes this public static method. Documentation needs to be updated.
 - [x] **Missing documentation (Task 2.3 - EquipmentGenerator.addModification)** - DATA_ENGINE_REFERENCE.md is missing the `addModification(equipment, itemName, modification, instanceId?, character?): CharacterEquipment` method. The actual code at `src/core/generation/EquipmentGenerator.ts:590-644` includes this method for adding equipment modifications/enchantments. Documentation needs to be updated.
 - [x] **Missing documentation (Task 2.3 - EquipmentGenerator.removeModification)** - DATA_ENGINE_REFERENCE.md is missing the `removeModification(equipment, itemName, modificationId, character?): CharacterEquipment` method. The actual code at `src/core/generation/EquipmentGenerator.ts:655-709` includes this method for removing equipment modifications. Documentation needs to be updated.

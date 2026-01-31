@@ -904,4 +904,52 @@ describe('EquipmentGenerator', () => {
             expect(equippedItem?.instanceId).toBe(originalInstanceId);
         });
     });
+
+    describe('getEquipmentByType Method', () => {
+        let testEquipment: any;
+
+        beforeEach(() => {
+            testEquipment = EquipmentGenerator.initializeEquipment('Fighter');
+        });
+
+        it('should return weapons array when type is "weapons"', () => {
+            const weapons = EquipmentGenerator.getEquipmentByType(testEquipment, 'weapons');
+            expect(weapons).toBe(testEquipment.weapons);
+            expect(weapons).toEqual(testEquipment.weapons);
+        });
+
+        it('should return armor array when type is "armor"', () => {
+            const armor = EquipmentGenerator.getEquipmentByType(testEquipment, 'armor');
+            expect(armor).toBe(testEquipment.armor);
+            expect(armor).toEqual(testEquipment.armor);
+        });
+
+        it('should return items array when type is "items"', () => {
+            const items = EquipmentGenerator.getEquipmentByType(testEquipment, 'items');
+            expect(items).toBe(testEquipment.items);
+            expect(items).toEqual(testEquipment.items);
+        });
+
+        it('should return the same reference (not a copy)', () => {
+            const weapons = EquipmentGenerator.getEquipmentByType(testEquipment, 'weapons');
+            // Modifying the returned array should affect the original
+            const originalLength = weapons.length;
+            weapons.push({ name: 'Test Weapon', quantity: 1, equipped: false });
+            expect(testEquipment.weapons.length).toBe(originalLength + 1);
+        });
+
+        it('should work with empty equipment', () => {
+            const emptyEquipment = {
+                weapons: [],
+                armor: [],
+                items: [],
+                totalWeight: 0,
+                equippedWeight: 0
+            };
+
+            expect(EquipmentGenerator.getEquipmentByType(emptyEquipment, 'weapons')).toEqual([]);
+            expect(EquipmentGenerator.getEquipmentByType(emptyEquipment, 'armor')).toEqual([]);
+            expect(EquipmentGenerator.getEquipmentByType(emptyEquipment, 'items')).toEqual([]);
+        });
+    });
 });

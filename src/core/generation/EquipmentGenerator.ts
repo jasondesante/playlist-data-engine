@@ -434,6 +434,23 @@ export class EquipmentGenerator {
   }
 
   /**
+   * Get equipment by type
+   *
+   * Utility method to retrieve a specific equipment category (weapons, armor, or items)
+   * from a CharacterEquipment object.
+   *
+   * @param equipment - Current equipment state
+   * @param type - Equipment category to retrieve
+   * @returns Array of inventory items for the specified type
+   */
+  static getEquipmentByType(
+    equipment: CharacterEquipment,
+    type: 'weapons' | 'armor' | 'items'
+  ): EnhancedInventoryItem[] {
+    return equipment[type];
+  }
+
+  /**
    * Calculate total weight of all equipment
    *
    * @param weapons - Weapon inventory
