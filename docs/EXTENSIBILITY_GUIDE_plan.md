@@ -20,7 +20,7 @@
 - [x] All documented classes exist at expected locations
 - [x] All documented methods are implemented with matching signatures
 - [x] All types and interfaces are properly exported
-- [ ] All extension categories are recognized by ExtensionManager
+- [x] All extension categories are recognized by ExtensionManager
 - [ ] Documentation examples compile and run correctly
 
 ---
@@ -631,6 +631,35 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 ---
 
 ## Additional Work (Post-Verification)
+
+### Extension Categories Documentation Update
+
+During verification of the success criteria, found that the EXTENSIBILITY_GUIDE.md "All Categories" section was missing many extension categories compared to the actual `ExtensionCategory` type defined in the code.
+
+**Changes Made:**
+- Updated "Supported Categories" table to include all 30+ categories with proper grouping
+- Updated "All Categories" type definition section to include complete list matching the code
+- Added "Quick Reference by Category" table for easy lookup
+
+**Categories Added to Documentation:**
+- Equipment subcategories: `equipment.properties`, `equipment.modifications`, `equipment.templates`
+- Race data: `races.data`
+- Class data: `classes.data`
+- Class-specific features: All 12 classes listed individually (`classFeatures.Barbarian`, etc.)
+- Race-specific traits: All 9 races listed individually (`racialTraits.Human`, etc.)
+- Skill-specific categories: All 6 abilities listed individually (`skills.STR`, etc.)
+- Class-specific skill lists: All 12 classes listed individually (`skillLists.Barbarian`, etc.)
+- Class spell system: `classSpellLists`, `classSpellLists.${string}`, `classSpellSlots`
+- Class starting equipment: `classStartingEquipment`, `classStartingEquipment.${string}`
+
+**Files Modified:**
+- `docs/EXTENSIBILITY_GUIDE.md` - Updated Supported Categories table and All Categories section
+
+**Test Results:**
+- Build succeeds without errors
+- Documentation now accurately reflects all 50+ extension categories defined in the code
+
+---
 
 ### Subrace Auto-Detection Feature
 

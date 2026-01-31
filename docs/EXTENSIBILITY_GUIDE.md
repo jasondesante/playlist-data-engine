@@ -31,25 +31,44 @@ The extensibility system allows you to:
 
 | Category | Description | Example |
 |----------|-------------|---------|
+| **Equipment** | | |
 | `equipment` | Weapons, armor, items | Custom weapons, magic items |
 | `equipment.properties` | Equipment property templates | Enchantments, curses, special abilities |
 | `equipment.modifications` | Modification templates | Curses, upgrades, enchantments |
 | `equipment.templates` | Complete equipment templates | Pre-built items with properties |
-| `spells` | Arcane and divine magic | Custom spells for spellcasting classes |
-| `races` | Character races | Custom races (uses Race enum) |
-| `classes` | Character classes | Custom classes (uses Class enum) |
-| `classFeatures` | Class abilities gained at levels | Custom rage, metamagic, etc. |
-| `classFeatures.{className}` | Class-specific features | Barbarian rage, Wizard arcane recovery |
-| `racialTraits` | Racial abilities | Custom darkvision, stonecunning, etc. |
-| `skills` | All skills (default + custom) | Custom survival, knowledge skills |
-| `skills.{ability}` | Ability-specific skills | Custom STR/DEX/CON/INT/WIS/CHA skills |
-| `skillLists` | Per-class skill selections | Custom skill lists for classes |
+| **Appearance** | | |
 | `appearance.bodyTypes` | Character body shapes | 'giant', 'diminutive', etc. |
 | `appearance.skinTones` | Skin color options | Hex colors for skin tones |
 | `appearance.hairColors` | Hair color options | Hex colors for hair |
 | `appearance.hairStyles` | Hair style options | 'braided', 'mohawk', etc. |
 | `appearance.eyeColors` | Eye color options | Hex colors for eyes |
 | `appearance.facialFeatures` | Facial features | 'scar', 'tattoo', etc. |
+| **Spells** | | |
+| `spells` | Arcane and divine magic | Custom spells for spellcasting classes |
+| `spells.{className}` | Class-specific spells | 'spells.Wizard' for custom wizard spells |
+| **Races** | | |
+| `races` | Race names | Custom races (uses Race enum) |
+| `races.data` | Race data | Ability bonuses, speed, traits, subraces |
+| **Classes** | | |
+| `classes` | Class names | Custom classes (uses Class enum) |
+| `classes.data` | Class data | Hit die, saves, skills, spellcasting, etc. |
+| **Features** | | |
+| `classFeatures` | All class features | Custom rage, metamagic, etc. |
+| `classFeatures.{className}` | Class-specific features | 'classFeatures.Barbarian', 'classFeatures.Wizard' |
+| `racialTraits` | All racial traits | Custom darkvision, stonecunning, etc. |
+| `racialTraits.{raceName}` | Race-specific traits | 'racialTraits.Elf', 'racialTraits.Dwarf' |
+| **Skills** | | |
+| `skills` | All skills (default + custom) | Custom survival, knowledge skills |
+| `skills.{ability}` | Ability-specific skills | 'skills.STR', 'skills.DEX', etc. |
+| `skillLists` | All skill lists | Per-class skill selections |
+| `skillLists.{className}` | Class-specific skill lists | 'skillLists.Barbarian', 'skillLists.Wizard' |
+| **Class Magic** | | |
+| `classSpellLists` | All class spell lists | Class-specific spell selections |
+| `classSpellLists.{className}` | Class-specific spell list | Custom spell lists for classes |
+| `classSpellSlots` | Spell slot progressions | Custom slot progressions by level |
+| **Class Gear** | | |
+| `classStartingEquipment` | All class starting equipment | Default gear for each class |
+| `classStartingEquipment.{className}` | Class-specific equipment | Custom starting equipment for classes |
 
 ---
 
@@ -2844,26 +2863,114 @@ interface CharacterGeneratorExtensions {
 
 ### All Categories
 
+The complete list of extensible categories in the system:
+
 ```typescript
 type ExtensionCategory =
-    | 'equipment'
-    | 'appearance.bodyTypes'
-    | 'appearance.skinTones'
-    | 'appearance.hairColors'
-    | 'appearance.hairStyles'
-    | 'appearance.eyeColors'
-    | 'appearance.facialFeatures'
-    | 'spells'
-    | 'races'
-    | 'classes'
-    | 'classFeatures'
-    | 'classFeatures.' + Class  // Class-specific features (e.g., 'classFeatures.Barbarian')
-    | 'racialTraits'
-    | 'skills'
-    | 'skills.' + Ability      // Ability-specific skills (e.g., 'skills.STR', 'skills.DEX')
-    | 'skillLists'
-    | `spells.${string}`;      // Class-specific spells
+    // Equipment System
+    | 'equipment'                      // Weapons, armor, items
+    | 'equipment.properties'           // Equipment property templates (enchantments, curses)
+    | 'equipment.modifications'        // Modification templates (upgrades, enchantments)
+    | 'equipment.templates'            // Complete equipment templates
+
+    // Appearance Options
+    | 'appearance.bodyTypes'           // Character body shapes
+    | 'appearance.skinTones'           // Skin color options
+    | 'appearance.hairColors'          // Hair color options
+    | 'appearance.hairStyles'          // Hair style options
+    | 'appearance.eyeColors'           // Eye color options
+    | 'appearance.facialFeatures'      // Facial features
+
+    // Spells
+    | 'spells'                         // All spells (default + custom)
+    | `spells.${string}`               // Class-specific spells
+
+    // Races
+    | 'races'                          // Race names (uses Race enum)
+    | 'races.data'                     // Race data (ability bonuses, speed, traits, subraces)
+
+    // Classes
+    | 'classes'                        // Class names (uses Class enum)
+    | 'classes.data'                   // Class data (hit die, saves, skills, etc.)
+
+    // Class Features
+    | 'classFeatures'                  // All class features
+    | 'classFeatures.Barbarian'
+    | 'classFeatures.Bard'
+    | 'classFeatures.Cleric'
+    | 'classFeatures.Druid'
+    | 'classFeatures.Fighter'
+    | 'classFeatures.Monk'
+    | 'classFeatures.Paladin'
+    | 'classFeatures.Ranger'
+    | 'classFeatures.Rogue'
+    | 'classFeatures.Sorcerer'
+    | 'classFeatures.Warlock'
+    | 'classFeatures.Wizard'
+    | `classFeatures.${string}`        // For custom class features
+
+    // Racial Traits
+    | 'racialTraits'                   // All racial traits
+    | 'racialTraits.Human'
+    | 'racialTraits.Elf'
+    | 'racialTraits.Dwarf'
+    | 'racialTraits.Halfling'
+    | 'racialTraits.Dragonborn'
+    | 'racialTraits.Gnome'
+    | 'racialTraits.Half-Elf'
+    | 'racialTraits.Half-Orc'
+    | 'racialTraits.Tiefling'
+
+    // Skills
+    | 'skills'                         // All skills (default + custom)
+    | 'skills.STR'                     // Strength-based skills
+    | 'skills.DEX'                     // Dexterity-based skills
+    | 'skills.CON'                     // Constitution-based skills
+    | 'skills.INT'                     // Intelligence-based skills
+    | 'skills.WIS'                     // Wisdom-based skills
+    | 'skills.CHA'                     // Charisma-based skills
+
+    // Skill Lists
+    | 'skillLists'                     // All skill lists
+    | 'skillLists.Barbarian'
+    | 'skillLists.Bard'
+    | 'skillLists.Cleric'
+    | 'skillLists.Druid'
+    | 'skillLists.Fighter'
+    | 'skillLists.Monk'
+    | 'skillLists.Paladin'
+    | 'skillLists.Ranger'
+    | 'skillLists.Rogue'
+    | 'skillLists.Sorcerer'
+    | 'skillLists.Warlock'
+    | 'skillLists.Wizard'
+    | `skillLists.${string}`           // For custom class skill lists
+
+    // Class Spell Lists
+    | 'classSpellLists'                // All class spell lists
+    | `classSpellLists.${string}`      // Class-specific spell lists
+
+    // Class Spell Slots
+    | 'classSpellSlots'                // Spell slot progressions
+
+    // Class Starting Equipment
+    | 'classStartingEquipment'         // All class starting equipment
+    | `classStartingEquipment.${string}`;  // Class-specific starting equipment
 ```
+
+**Quick Reference by Category:**
+
+| Category | Description |
+|----------|-------------|
+| **Equipment** | `equipment`, `equipment.properties`, `equipment.modifications`, `equipment.templates` |
+| **Appearance** | `appearance.bodyTypes`, `appearance.skinTones`, `appearance.hairColors`, `appearance.hairStyles`, `appearance.eyeColors`, `appearance.facialFeatures` |
+| **Spells** | `spells`, `spells.${className}` |
+| **Races** | `races`, `races.data` |
+| **Classes** | `classes`, `classes.data` |
+| **Features** | `classFeatures`, `classFeatures.${className}`, `racialTraits`, `racialTraits.${raceName}` |
+| **Skills** | `skills`, `skills.${ability}`, `skillLists`, `skillLists.${className}` |
+| **Class Magic** | `classSpellLists`, `classSpellLists.${className}`, `classSpellSlots` |
+| **Class Gear** | `classStartingEquipment`, `classStartingEquipment.${className}` |
 
 ### Helper Functions
 
