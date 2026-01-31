@@ -249,7 +249,7 @@ Verify all registry classes and their methods exist with correct signatures.
 #### Static Methods
 - [x] `getInstance(): FeatureRegistry` exists at lines 49-54
 - [x] `validatePrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): ValidationResult` exists at lines 286-374 (note: instance method, not static - documentation doesn't specify so this is correct)
-- [ ] ~~`meetsPrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): boolean`~~ **DOES NOT EXIST** - See Phase 6 Task 6.1 (alternative: `canGainFeature` exists at lines 400-403)
+- [x] `meetsPrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): boolean` exists at lines 414-416 (added via Task 6.1 - alias for `canGainFeature`)
 - [x] `getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[]` exists at lines 221-224
 
 #### Instance Methods
@@ -365,15 +365,16 @@ Address all discrepancies found during verification.
 
 ### Task 6.1: Missing `meetsPrerequisites` Method
 
-**Status**: CRITICAL - Documentation is incorrect
+**Status**: ✅ RESOLVED - Method added as alias
 
-- [ ] **Issue**: Documentation at lines 534 and 360 references `FeatureRegistry.meetsPrerequisites(feature, character): boolean`
-- [ ] **Actual**: Method does NOT exist in the codebase
-- [ ] **Alternative**: `FeatureRegistry.canGainFeature(feature, character): boolean` exists at lines 379-382
-- [ ] **Resolution Options**:
-  - [ ] Option A: Add `meetsPrerequisites` as an alias method
-  - [ ] Option B: Update documentation to reference `canGainFeature`
-  - [ ] Option C: Both (add alias and update docs)
+- [x] **Issue**: Documentation at lines 534 and 360 references `FeatureRegistry.meetsPrerequisites(feature, character): boolean`
+- [x] **Actual**: Method did NOT exist in the codebase
+- [x] **Alternative**: `FeatureRegistry.canGainFeature(feature, character): boolean` exists at lines 400-403
+- [x] **Resolution Applied**: Option A - Added `meetsPrerequisites` as an alias method
+  - [x] Method added at `src/core/features/FeatureRegistry.ts:414-416`
+  - [x] Calls `canGainFeature()` internally
+  - [x] Documentation is now correct
+- [x] **Verification**: Build passes, FeatureRegistry tests (61 tests) pass
 
 ---
 
@@ -581,13 +582,13 @@ Verify type imports across modules are correct.
 | Helper Functions | 2 | 2 |
 | Public API Exports | 16 | 16 |
 
-*Note: Registry Classes verified but Task 3.1 found `meetsPrerequisites` method doesn't exist (see Task 6.1)
+*Note: Registry Classes verified - all documented methods exist (Task 3.1's `meetsPrerequisites` added in Task 6.1)
 
 ### Critical Discrepancies
 
 | ID | Issue | Status |
 |----|-------|--------|
-| D1 | `meetsPrerequisites` method missing | Critical |
+| D1 | `meetsPrerequisites` method missing | ✅ Resolved |
 | D2 | Multiple ValidationResult types | Medium |
 | D2a | `unmet` property missing from Skill/Spell validation results | Medium |
 | D3 | SpellPrerequisite in constants file | Low |
@@ -599,10 +600,10 @@ Verify type imports across modules are correct.
 #### Phase Completion
 - [x] Phase 1: Type Definitions (All 6 tasks verified)
 - [x] Phase 2: Validator Classes (All 2 tasks verified)
-- [x] Phase 3: Registry Classes (Task 3.1 has one missing method documented - see Task 6.1, Task 3.2 verified)
+- [x] Phase 3: Registry Classes (All tasks verified - Task 3.1's `meetsPrerequisites` added in Task 6.1)
 - [x] Phase 4: Extension System (All 2 tasks verified)
 - [x] Phase 5: Public API Exports (All 3 tasks verified - Task 5.3 completed with actual line numbers)
-- [ ] Phase 6: Discrepancies Resolution
+- [ ] Phase 6: Discrepancies Resolution (Task 6.1 completed, 6.2-6.6 remaining)
 - [ ] Phase 7: Code Examples Testing
 
 #### Overall Completion

@@ -403,6 +403,19 @@ export class FeatureRegistry {
     }
 
     /**
+     * Check if a character meets the prerequisites for a feature
+     *
+     * Alias for canGainFeature() for API compatibility with documentation.
+     *
+     * @param feature - Feature or trait to check
+     * @param character - Character sheet
+     * @returns True if character meets all prerequisites
+     */
+    meetsPrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): boolean {
+        return this.canGainFeature(feature, character);
+    }
+
+    /**
      * Get all classes that have features registered
      *
      * @returns Array of class names
