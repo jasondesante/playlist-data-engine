@@ -355,20 +355,20 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] EquipmentProperty, EquipmentPropertyType, EquipmentCondition, EnhancedEquipment, EquipmentModification, EnhancedInventoryItem, EffectApplicationResult, EquipmentValidationResult → src/core/types/Equipment.ts ✅ (location mismatch: documented as src/types/Equipment.ts)
 - [x] SpawnRandomOptions, TreasureHoardResult → src/core/types/Equipment.ts ✅ (location mismatch: documented as src/core/equipment/EquipmentSpawnHelper.ts)
 
-### Task 5.2: Equipment Core Classes (50 items) 🔄 IN PROGRESS (4/~50 done)
+### Task 5.2: Equipment Core Classes (50 items) 🔄 IN PROGRESS (11/~50 done)
 - [x] class EquipmentEffectApplier (static) → src/core/equipment/EquipmentEffectApplier.ts
   - [x] equipItem(character, equipment, instanceId?): EffectApplicationResult
   - [x] unequipItem(character, equipmentName, instanceId?): EffectApplicationResult
   - [x] reapplyEquipmentEffects(character): EffectApplicationResult
   - [x] getActiveEffects(character): EquipmentProperty[]
-- [ ] class EquipmentValidator (static) → src/core/equipment/EquipmentValidator.ts
-  - [ ] validateEquipment(equipment): EquipmentValidationResult
-  - [ ] validateProperty(property): EquipmentValidationResult
-  - [ ] validateEquipmentFeatureReference(featureId): boolean
-  - [ ] validateEquipmentSkillReference(skillId): boolean
-  - [ ] validateDamageInfo(damage): EquipmentValidationResult
-  - [ ] validateSpawnWeight(weight): EquipmentValidationResult
-  - [ ] validateModification(modification): EquipmentValidationResult
+- [x] class EquipmentValidator (static) → src/core/equipment/EquipmentValidator.ts
+  - [x] validateEquipment(equipment): EquipmentValidationResult
+  - [x] validateProperty(property): EquipmentValidationResult
+  - [x] validateEquipmentFeatureReference(featureId): boolean
+  - [x] validateEquipmentSkillReference(skillId): boolean
+  - [x] validateDamageInfo(damage): EquipmentValidationResult
+  - [x] validateSpawnWeight(weight): EquipmentValidationResult
+  - [x] validateModification(modification): EquipmentValidationResult
 - [ ] class EquipmentModifier (static) → src/core/equipment/EquipmentModifier.ts
   - [ ] enchant(equipment, itemName, enchantment, character?): CharacterEquipment
   - [ ] applyTemplate(equipment, itemName, templateId, character?): CharacterEquipment
@@ -586,7 +586,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
-| 5 | Equipment System | ~60 | 🔄 IN PROGRESS (14/60 done) |
+| 5 | Equipment System | ~60 | 🔄 IN PROGRESS (21/60 done) |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
 | **Total** | | **~449** | |
