@@ -212,19 +212,21 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] calculateMasteryBonus(isMastered): number ✅
   - [x] isJustMastered(previous, current): boolean ✅
 
-### Task 3.4: Stat Increase System (7 items)
-- [ ] class StatManager → src/core/progression/stat/StatManager.ts
-  - [ ] constructor(config?)
-  - [ ] increaseStats(character, increases, source): StatIncreaseResult
-  - [ ] decreaseStats(character, decreases, source): StatIncreaseResult
-  - [ ] setStat(character, ability, value, source): StatIncreaseResult
-  - [ ] processLevelUp(character, newLevel, options?): StatIncreaseResult | null
-  - [ ] canIncrease(character, ability, amount): boolean
-  - [ ] getStatCap(character, ability): number
-  - [ ] updateConfig(config): void
-- [ ] StatIncreaseConfig → src/types/StatTypes.ts
-- [ ] StatIncreaseStrategyType → src/types/StatTypes.ts
-- [ ] UncappedProgressionConfig → src/types/ProgressionTypes.ts
+### Task 3.4: Stat Increase System (10 items) ✅ COMPLETED
+- [x] class StatManager → src/core/progression/stat/StatManager.ts ✅
+  - [x] constructor(config?) ✅
+  - [x] increaseStats(character, increases, source): StatIncreaseResult ✅
+  - [x] decreaseStats(character, decreases, source): StatIncreaseResult ✅
+  - [x] setStat(character, ability, value, source): StatIncreaseResult ✅
+  - [x] processLevelUp(character, newLevel, options?): StatIncreaseResult | null ✅
+  - [x] canIncrease(character, ability, amount): boolean ✅
+  - [x] getStatCap(character, ability): number ✅
+  - [x] updateConfig(config): void ✅
+  - [x] getConfig(): Readonly<Required<StatIncreaseConfig>> ✅ (missing from documentation)
+  - [x] validateDnD5eStatSelection(character, selections, increaseAmount?): { valid: true } | StatSelectionValidationError ✅ (missing from documentation)
+- [x] StatIncreaseConfig → src/core/types/Progression.ts (173-185) ✅ (location mismatch: documented as src/types/StatTypes.ts)
+- [x] StatIncreaseStrategyType → src/core/types/Progression.ts (107-113) ✅ (location mismatch: documented as src/types/StatTypes.ts)
+- [x] UncappedProgressionConfig → src/core/progression/LevelUpProcessor.ts (75-82) ✅ (location mismatch: documented as src/types/ProgressionTypes.ts)
 
 ### Task 3.5: Combat System (30 items)
 - [ ] CombatInstance, Combatant, CombatAction, StatusEffect, CombatActionResult, AttackRoll, DamageRoll, SpellCastResult, CombatResult, CombatConfig, DamageType, SavingThrowAbility, InitiativeResult, AttackResult, SpellSlots → src/types/CombatTypes.ts
@@ -582,12 +584,12 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
-| 3 | Progression & Combat | ~80 | 🔄 In Progress (42/~80 done) |
+| 3 | Progression & Combat | ~80 | 🔄 In Progress (52/~80 done) |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
-| **Total** | | **~439** | |
+| **Total** | | **~449** | |
 
 ---
 
@@ -645,6 +647,12 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - LevelUpBenefits → `src/core/progression/LevelUpProcessor.ts` (25-63)
 - [x] **Missing documentation (Task 3.3 - CharacterUpdater constructor)** - DATA_ENGINE_REFERENCE.md is missing the `constructor(statManager?: StatManager)` method for CharacterUpdater at `src/core/progression/CharacterUpdater.ts:28`. The constructor exists and is required for configuring stat increase behavior. Documentation needs to be updated.
 - [x] **Signature mismatch (Task 3.3 - LevelUpProcessor.getXPThreshold)** - DATA_ENGINE_REFERENCE.md documents `getXPThreshold(level: number): number`, but actual code at `src/core/progression/LevelUpProcessor.ts:463` shows `getXPThreshold(level: number, isUncapped: boolean = false): number`. The second parameter is optional with a default value, so the documented signature works but is incomplete. Documentation should mention the optional second parameter.
+- [x] **Location mismatch (Task 3.4 - Stat Increase Types)** - DATA_ENGINE_REFERENCE_plan.md documents stat types at `src/types/StatTypes.ts` and `src/types/ProgressionTypes.ts`, but these files do not exist. All 3 types exist at different locations:
+  - StatIncreaseConfig → `src/core/types/Progression.ts` (173-185)
+  - StatIncreaseStrategyType → `src/core/types/Progression.ts` (107-113)
+  - UncappedProgressionConfig → `src/core/progression/LevelUpProcessor.ts` (75-82)
+- [x] **Missing documentation (Task 3.4 - StatManager.getConfig)** - DATA_ENGINE_REFERENCE.md is missing the `getConfig(): Readonly<Required<StatIncreaseConfig>>` method at `src/core/progression/stat/StatManager.ts:281`. Documentation needs to be updated.
+- [x] **Missing documentation (Task 3.4 - StatManager.validateDnD5eStatSelection)** - DATA_ENGINE_REFERENCE.md is missing the `validateDnD5eStatSelection(character, selections, increaseAmount?): { valid: true } | StatSelectionValidationError` method at `src/core/progression/stat/StatManager.ts:333`. This validates stat selection follows D&D 5e rules (+2 to one ability OR +1 to two abilities). Documentation needs to be updated.
 - [ ] [Item] documented but not found in codebase (covered by EquipmentGenerator.getEquipmentByType above)
 - [ ] [Item] exists in code but not documented (covered by EquipmentGenerator methods above)
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y] (covered by EquipmentGenerator methods above)
