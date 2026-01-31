@@ -355,9 +355,41 @@ For every item listed in Phases 1-4, verify:
 ### Redundancy / Potential Duplicates
 
 (When you find similar functionality in multiple places, note it here - do not attempt to resolve)
-- [ ] Document any duplicate property definitions found
+- [x] Document any duplicate property definitions found
 - [ ] Document similar effect application methods across different classes
 - [ ] Note any overlapping validation methods
+
+---
+
+#### Duplicate Property Definitions Found
+
+**1. `CharacterEquipment` Type** (LOW PRIORITY - Already imported correctly)
+   - **Primary Definition**: [src/core/types/Equipment.ts:164-177](../src/core/types/Equipment.ts#L164-L177) - NOT present here
+   - **Actual Location**: [src/core/generation/EquipmentGenerator.ts:46-52](../src/core/generation/EquipmentGenerator.ts#L46-L52)
+   - **Duplicate**: [src/core/equipment/EquipmentModifier.ts:38-44](../src/core/equipment/EquipmentModifier.ts#L38-L44)
+   - **Usage**: [src/core/types/Character.ts:289-295](../src/core/types/Character.ts#L289-L295) - inline type on `CharacterSheet.equipment`
+
+   **Finding**: EquipmentModifier re-exports `CharacterEquipment` with identical structure. The EquipmentGenerator is the source of truth. EquipmentModifier imports from EquipmentGenerator. CharacterSheet uses an inline type matching the structure.
+
+   **Recommendation**: Consider consolidating to single export from Equipment.ts or keep current import chain (EquipmentGenerator → EquipmentModifier). No action needed as imports work correctly.
+
+**2. `EnhancedInventoryItem` Type** (LOW PRIORITY - Already imported correctly)
+   - **Primary Definition**: [src/core/types/Equipment.ts:164-177](../src/core/types/Equipment.ts#L164-L177)
+   - **Duplicate**: [src/core/equipment/EquipmentModifier.ts:49-56](../src/core/equipment/EquipmentModifier.ts#L49-L56)
+
+   **Finding**: EquipmentModifier re-exports `EnhancedInventoryItem` with identical structure. All files import from Equipment.ts.
+
+   **Recommendation**: Remove duplicate export from EquipmentModifier.ts, use Equipment.ts as single source. EquipmentModifier should import, not re-export.
+
+**3. Equipment Spell Structure** (MINOR - Type exists but inline usage preferred)
+   - **Type Definition**: [src/core/types/Equipment.ts:205-214](../src/core/types/Equipment.ts#L205-L214) - `interface EquipmentSpell`
+   - **Inline Usage**: [src/core/types/Character.ts:369-374](../src/core/types/Character.ts#L369-L374) - spells array in `equipment_effects`
+
+   **Finding**: `EquipmentSpell` type exists but `CharacterSheet.equipment_effects.spells` uses inline type instead. Structures are identical.
+
+   **Recommendation**: Optional - Could use `EquipmentSpell[]` type in Character.ts for consistency, but inline type is self-documenting and acceptable.
+
+**Summary**: The duplicates are mostly import/re-export patterns that work correctly. No critical issues requiring immediate resolution. The codebase is consistent in its usage.
 
 ### Discrepancies Found
 
