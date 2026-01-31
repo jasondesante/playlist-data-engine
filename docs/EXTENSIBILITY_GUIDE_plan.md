@@ -224,32 +224,32 @@ This ensures all discovered issues are tracked, researched, and resolved systema
   - [x] `validateSkillPrerequisites(prerequisites, character)` → Line 519
 
 ### Task 3.3: Verify SpellValidator
-- [ ] Class exists at [src/core/spells/SpellValidator.ts](src/core/spells/SpellValidator.ts)
-- [ ] `validateSpell(spell)` → Line 94
-- [ ] `validateSpells(spells)` → Line 177
-- [ ] `validatePrerequisites(prerequisites)` → Line 208 - Schema validation
-- [ ] `validateSpellPrerequisites(prerequisites, character)` → Line 332 - Runtime validation
-- [ ] `isValidAbility(ability)` → Line 425
-- [ ] `isValidSchool(school)` → Line 435
-- [ ] `isValidSpellLevel(level)` → Line 445
-- [ ] Helper functions exported:
-  - [ ] `validateSpell(spell)` → Line 458
-  - [ ] `validateSpells(spells)` → Line 470
-  - [ ] `validateSpellPrerequisitesSchema(prerequisites)` → Line 482
-  - [ ] `validateSpellPrerequisites(prerequisites, character)` → Line 495
+- [x] Class exists at [src/core/spells/SpellValidator.ts](src/core/spells/SpellValidator.ts)
+- [x] `validateSpell(spell)` → Line 94
+- [x] `validateSpells(spells)` → Line 177
+- [x] `validatePrerequisites(prerequisites)` → Line 208 - Schema validation
+- [x] `validateSpellPrerequisites(prerequisites, character)` → Line 332 - Runtime validation
+- [x] `isValidAbility(ability)` → Line 425
+- [x] `isValidSchool(school)` → Line 435
+- [x] `isValidSpellLevel(level)` → Line 445
+- [x] Helper functions exported:
+  - [x] `validateSpell(spell)` → Line 458
+  - [x] `validateSpells(spells)` → Line 470
+  - [x] `validateSpellPrerequisitesSchema(prerequisites)` → Line 482
+  - [x] `validateSpellPrerequisites(prerequisites, character)` → Line 495
 
 ### Task 3.4: Verify SpellManager
-- [ ] Class exists at [src/core/generation/SpellManager.ts](src/core/generation/SpellManager.ts)
-- [ ] `isSpellcaster(characterClass)` → Line 40
-- [ ] `getSpellSlots(characterClass, characterLevel)` → Line 55
-- [ ] `getCantrips(characterClass)` → Line 93
-- [ ] `getKnownSpells(characterClass, characterLevel, character?)` → Line 140
-- [ ] `filterSpellsByPrerequisites(spellNames, character)` → Line 233 (private)
-- [ ] `initializeSpells(characterClass, characterLevel, character?)` → Line 270
-- [ ] `getSpellCountAtLevel(spellLevel, spellSlots)` → Line 289
-- [ ] `useSpellSlot(spellSlots, spellLevel)` → Line 303
-- [ ] `restoreSpellSlots(spellSlots, spellLevel?)` → Line 328
-- [ ] `filterCharacterSpells(character)` → Line 362
+- [x] Class exists at [src/core/generation/SpellManager.ts](src/core/generation/SpellManager.ts)
+- [x] `isSpellcaster(characterClass)` → Line 40
+- [x] `getSpellSlots(characterClass, characterLevel)` → Line 55
+- [x] `getCantrips(characterClass)` → Line 93
+- [x] `getKnownSpells(characterClass, characterLevel, character?)` → Line 140
+- [x] `filterSpellsByPrerequisites(spellNames, character)` → Line 233 (private)
+- [x] `initializeSpells(characterClass, characterLevel, character?)` → Line 270
+- [x] `getSpellCountAtLevel(spellLevel, spellSlots)` → Line 289
+- [x] `useSpellSlot(spellSlots, spellLevel)` → Line 303
+- [x] `restoreSpellSlots(spellSlots, spellLevel?)` → Line 328
+- [x] `filterCharacterSpells(character)` → Line 362
 
 ---
 
@@ -599,7 +599,7 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 |-------|-------|-----------|--------|--------|
 | Phase 1: ExtensionManager | 7 | 7 | 100% | Complete |
 | Phase 2: Registries | 3 | 3 | 100% | Complete |
-| Phase 3: Validators | 4 | 2 | 50% | In Progress |
+| Phase 3: Validators | 4 | 4 | 100% | Complete |
 | Phase 4: EquipmentModifier | 5 | 0 | 0% | Pending |
 | Phase 5: Helpers | 4 | 0 | 0% | Pending |
 | Phase 6: Types | 7 | 0 | 0% | Pending |
