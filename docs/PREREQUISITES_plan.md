@@ -243,21 +243,21 @@ Verify all registry classes and their methods exist with correct signatures.
 **Implementation**: `src/core/features/FeatureRegistry.ts:31-572`
 
 #### Class Verification
-- [ ] Class `FeatureRegistry` exists
-- [ ] Exported as `export class FeatureRegistry`
+- [x] Class `FeatureRegistry` exists at line 31
+- [x] Exported as `export class FeatureRegistry`
 
 #### Static Methods
-- [ ] `getInstance(): FeatureRegistry` exists at lines 49-54
-- [ ] `validatePrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): ValidationResult` exists at lines 265-353
-- [ ] ~~`meetsPrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): boolean`~~ **DOES NOT EXIST** - See Phase 6
-- [ ] `getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[]` exists at lines 221-224
+- [x] `getInstance(): FeatureRegistry` exists at lines 49-54
+- [x] `validatePrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): ValidationResult` exists at lines 286-374 (note: instance method, not static - documentation doesn't specify so this is correct)
+- [ ] ~~`meetsPrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): boolean`~~ **DOES NOT EXIST** - See Phase 6 Task 6.1 (alternative: `canGainFeature` exists at lines 400-403)
+- [x] `getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[]` exists at lines 221-224
 
 #### Instance Methods
-- [ ] `registerClassFeature(feature: ClassFeature): void` exists at lines 93-113
-- [ ] `registerRacialTrait(trait: RacialTrait): void` exists at lines 132-152
+- [x] `registerClassFeature(feature: ClassFeature): void` exists at lines 93-113
+- [x] `registerRacialTrait(trait: RacialTrait): void` exists at lines 132-152
 
 #### Export Verification
-- [ ] Exported from `src/index.ts:266`
+- [x] Exported from `src/index.ts:269` (note: plan listed 266, actual is 269)
 
 ---
 
