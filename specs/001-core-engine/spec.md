@@ -8,17 +8,23 @@ Transforms music playlists into D&D 5e-inspired RPG characters through audio/vis
 
 **Input**: Playlist data (Arweave/JSON) → **Output**: Rich RPG character + environmental/gaming context
 
-### Core Features (10)
+### Core Features (16)
 1. **Playlist Parsing** - Arweave/JSON input, priority queues, deterministic seed
 2. **Audio Analysis** - Triple Tap (5%/40%/70%), bass/mid/treble profiling
 3. **Visual Analysis** - K-means palette extraction, 4 colors
-4. **Character Generation** - 9 races, 12 classes, deterministic
+4. **Character Generation** - 9+ races, 12+ classes, deterministic, subrace support
 5. **Naming** - 3 formats weighted 50/30/20, title cleaning
-6. **Advanced Character** - 18 skills, proficiencies, spells, equipment, appearance
+6. **Advanced Character** - 18+ skills, proficiencies, spells, equipment, appearance
 7. **Environmental Sensors** - GPS, motion, weather, light → XP modifiers
 8. **Gaming Integration** - Steam game detection + Discord music presence
-9. **Progression** - 1 XP/sec, D&D 5e levels 1-20, mastery, stat increases on level up
+9. **Progression** - 1 XP/sec, D&D 5e levels (1-20/uncapped), mastery, stat increases
 10. **Combat** - Turn-based, initiative, attacks, spell casting
+11. **Extensibility** - Runtime custom content registration with spawn rate control
+12. **Custom Classes** - Template-based classes extending base classes via inheritance
+13. **Prerequisites** - Skills/spells/features requiring levels, abilities, skills, spells, subraces
+14. **Advanced Equipment** - Properties, enchanting, templates, D&D 5e stats, per-item effects
+15. **Custom Races** - Register custom races with ability bonuses, traits, subraces
+16. **Feature Effects** - Class features and racial traits apply mechanical effects to characters
 
 ---
 
@@ -30,11 +36,82 @@ See `src/core/types/` for complete TypeScript definitions.
 |------|------|----------------|
 | `AudioProfile` | `AudioProfile.ts` | bass/mid/treble_dominance, average_amplitude, spectral_centroid |
 | `ColorPalette` | `ColorPalette.ts` | primary/secondary/tertiary/background, brightness, saturation |
-| `CharacterSheet` | `Character.ts` | name, race (9), class (12), level (1-20), ability scores, skills, equipment |
+| `CharacterSheet` | `Character.ts` | name, race, subrace?, class, level (1-20/∞), ability scores, skills, equipment, feature_effects, equipment_effects, pending_stat_increases |
 | `ServerlessPlaylist` | `Playlist.ts` | name, tracks, genre, tags |
 | `EnvironmentalContext` | `Environmental.ts` | geolocation, motion, weather, light, biome (12 types) |
 | `GamingContext` | `Progression.ts` | isActivelyGaming, currentGame (steam source), genre, sessionDuration |
 | `CombatInstance` | `Combat.ts` | combatants, initiative order, turn/round tracking, action history |
+
+---
+
+## Engine Extensions
+
+The engine supports comprehensive runtime extensibility through three registries:
+
+| Registry | Purpose | Extensible Content |
+|----------|---------|-------------------|
+| `ExtensionManager` | Base extensibility | Equipment (properties/enchanting), spells, race data (custom races), appearance, spawn weights |
+| `FeatureRegistry` | Features & traits | Class features, racial traits with prerequisites, subrace support, effect types |
+| `SkillRegistry` | Skills | Custom skills with ability mapping, prerequisites (level/class/race/features/spells), categories |
+
+### Spawn Rate System
+
+Three spawn modes control content generation:
+- **Relative** (default): Custom weights added to default pool
+- **Absolute**: Only custom content spawns (replace defaults)
+- **Default**: All items equal weight
+
+### Template-Based Classes
+
+Custom classes extend base D&D 5e classes via `baseClass` property for automatic inheritance:
+```typescript
+manager.register('classes.data', [{
+    name: 'Necromancer',
+    baseClass: 'Wizard',
+    available_skills: ['arcana', 'necromancy']
+}]);
+manager.register('classes', [asClass('Necromancer')]); // Type-safe class name casting
+```
+
+**Inheritance Logic**: Base properties spread first, custom properties override (shallow merge). The `available_skills` array is completely replaced, not merged.
+
+**Validation Rules**: Base class must exist, class name must be registered, custom skills must exist before reference.
+
+Supports full customization via ExtensionManager:
+- `classFeatures.${ClassName}` — Custom features (replace mode)
+- `classSpellLists.${ClassName}` — Custom spell lists
+- `classSpellSlots` — Custom slot progressions
+- `classStartingEquipment.${ClassName}` — Custom gear
+
+### Prerequisite System
+
+Skills, spells, and features can require:
+- Level thresholds
+- Ability score minimums
+- Class/race restrictions
+- Subrace requirements
+- Other skills (by proficiency)
+- Other spells (must be known)
+- Other features (must be learned)
+- Custom conditions
+
+Validated automatically during character generation; unmet prerequisites cause exclusion.
+
+### Data Helper Functions
+
+Custom content integrates seamlessly via runtime lookup functions:
+- `getRaceData(race)` → Returns default or custom race data (abilities, speed, traits, subraces)
+- `getClassData(class)` → Returns merged base+custom class data (hit die, saves, skills)
+- `getClassSpellList(class)` → Returns default or custom spell lists
+- `getSpellSlotsForClass(class, level)` → Returns default or custom spell slot progression
+- `getClassStartingEquipment(class)` → Returns default or custom starting equipment
+
+### Feature ID System
+
+Features stored as stable IDs (e.g., `barbarian_rage`) instead of display strings. Enables:
+- Reliable feature references in prerequisites and effects
+- `feature_effects` array on characters tracks applied mechanical effects
+- `equipment_effects` array tracks equipment-granted bonuses
 
 ---
 
@@ -51,23 +128,15 @@ Implemented in `src/core/generation/AbilityScoreCalculator.ts`. Base scores rang
 | WIS | `8 + ((1 - \|bass - treble\|) × 7)` |
 | CHA | `8 + ((mid_dominance + average_amplitude) / 2 × 7)` |
 
-Racial bonuses applied after, capped at 20.
+Racial bonuses applied after. Capped at 20 (standard) or uncapped.
 
-**Game Modes**: Characters can be generated in one of two modes:
-- **Standard** (default): D&D 5e rules with stats capped at 20, stat increases at levels 4, 8, 12, 16, 19
-- **Uncapped**: No stat limits, stat increases EVERY level (2-∞), custom XP scaling available
+**Game Modes**: Standard (stats capped at 20, increases at 4/8/12/16/19) or Uncapped (no limits, increases every level).
 
-Set game mode via `CharacterGenerator.generate(seed, audioProfile, name, { gameMode: 'uncapped' })`.
+**Stat Increases**: +2 to one ability or +1 to two abilities. `StatManager` provides manual choice, intelligent auto-selection, or custom formulas. Default is automatic smart selection.
 
-**Uncapped XP Scaling**: In uncapped mode, you can provide custom formulas for XP thresholds and proficiency bonuses via `LevelUpProcessor.setUncappedConfig()`. If no custom formula is provided, the D&D 5e pattern continues naturally using `XP(n) = XP(n-1) + (n-1) × n × 500`.
+**Level-Up Details**: `CharacterUpdateResult.levelUpDetails` provides complete breakdowns (HP, proficiency, stats, features, spell slots) for celebration UI.
 
-**Stat Increases on Level Up**: At stat increase levels, characters gain ability score increases following D&D 5e rules (+2 to one ability or +1 to two abilities). The `StatManager` class provides flexible strategies for stat selection including manual choice, intelligent auto-selection, or custom formulas.
-
-**Automatic Stat Increases (Default)**: `CharacterUpdater` now includes a built-in `StatManager` with the `dnD5e_smart` strategy by default. Stats increase **automatically** on level-up - no manual selection required. The smart strategy intelligently boosts the character's class primary stat or lowest stats. Simple examples work out of the box with no configuration. Manual D&D 5e rules (player must choose stats) are available by passing a custom `StatManager`.
-
-**Level-Up Details**: The `CharacterUpdateResult` now includes a `levelUpDetails` array that provides complete breakdowns of each level-up, including HP increases, proficiency changes, stat increases, new class features, and spell slots. This makes it easy to display "LEVELED UP!" celebration UI without having to manually diff the character.
-
-**XP from Multiple Sources**: In addition to music listening, the `CharacterUpdater.addXP()` method allows adding XP from any source (combat, quests, custom activities). All XP sources trigger the same level-up system with detailed breakdowns. The `source` parameter helps track where XP originated.
+**XP from Any Source**: `CharacterUpdater.addXP()` supports combat, quests, or custom activities with same level-up system.
 
 ---
 
@@ -118,14 +187,23 @@ Sensors can be configured via environment variables or programmatically.
 | `GamingPlatformSensors` | Steam game detection + Discord presence | `src/core/sensors/GamingPlatformSensors.ts` |
 | `SessionTracker` | Tracks listening sessions for XP | `src/core/progression/SessionTracker.ts` |
 | `XPCalculator` | Calculates XP with modifiers | `src/core/progression/XPCalculator.ts` |
-| `CharacterUpdater` | Orchestrates character updates from sessions; `addXP()` for XP from any source (combat, quests, custom) | `src/core/progression/CharacterUpdater.ts` |
+| `CharacterUpdater` | Orchestrates character updates; `addXP()` for any source | `src/core/progression/CharacterUpdater.ts` |
 | `LevelUpProcessor` | Handles D&D 5e level-up mechanics | `src/core/progression/LevelUpProcessor.ts` |
-| `UncappedProgressionConfig` | Config for custom XP/proficiency formulas in uncapped mode | `src/core/progression/LevelUpProcessor.ts` |
-| `StatManager` | Manages stat increases (level-up, potions, custom) | `src/core/progression/stat/StatManager.ts` |
+| `StatManager` | Manages stat increases (level-up, items, custom) | `src/core/progression/stat/StatManager.ts` |
 | `CombatEngine` | Turn-based combat system | `src/core/combat/CombatEngine.ts` |
+| `EquipmentEffectApplier` | Applies/removes equipment effects | `src/core/equipment/EquipmentEffectApplier.ts` |
+| `EquipmentModifier` | Enchants/curses/upgrades equipment | `src/core/equipment/EquipmentModifier.ts` |
+| `EquipmentValidator` | Validates equipment extensions | `src/core/equipment/EquipmentValidator.ts` |
+| `ExtensionManager` | Registers custom content with spawn rates | `src/core/extensions/ExtensionManager.ts` |
+| `FeatureRegistry` | Manages class features and racial traits | `src/core/features/FeatureRegistry.ts` |
+| `FeatureValidator` | Validates class features and racial traits | `src/core/features/FeatureValidator.ts` |
+| `SkillRegistry` | Manages skill definitions and prerequisites | `src/core/skills/SkillRegistry.ts` |
+| `SkillValidator` | Validates skills and skill prerequisites | `src/core/skills/SkillValidator.ts` |
+| `SpellValidator` | Validates spells and spell prerequisites | `src/core/spells/SpellValidator.ts` |
 
-**For API details, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md)**
-**For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md)**
+**For API details, see [DATA_ENGINE_REFERENCE.md](../../DATA_ENGINE_REFERENCE.md)**
+**For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](../../USAGE_IN_OTHER_PROJECTS.md)**
+**For extensibility, see [EXTENSIBILITY_GUIDE.md](../../docs/EXTENSIBILITY_GUIDE.md)**
 
 ---
 
@@ -142,7 +220,7 @@ Sensors can be configured via environment variables or programmatically.
 ### Code Quality
 - No TODO/FIXME/BUG/HACK/XXX comments in source code
 - TypeScript compilation: Clean (strict mode enabled)
-- All 10 core features fully implemented and tested
+- All 16 core features fully implemented and tested
 
 ### Developer Configuration Required
 
@@ -161,9 +239,3 @@ This engine requires developers to provide API keys. End-users provide their ide
 **Browser Mode**: When running in browsers, Discord RPC gracefully degrades with clear console warnings explaining that Discord Rich Presence requires a server environment. The API remains fully compatible - all methods exist and return appropriate defaults (false, null).
 
 **Automatic Detection**: The DiscordRPCClient auto-detects the environment and switches modes automatically. No configuration required.
-
-### Optional Enhancements
-These are potential future improvements, not required tasks:
-- Additional biome types beyond current 12
-- More spell variety (currently 53 hardcoded spells)
-- Additional language support for genre detection
