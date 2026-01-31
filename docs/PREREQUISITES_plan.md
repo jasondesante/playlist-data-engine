@@ -197,19 +197,19 @@ Verify all validator classes and their methods exist with correct signatures.
 ### Task 2.1: Verify SkillValidator Class
 
 **Documentation**: [PREREQUISITES.md:522-525](PREREQUISITES.md#L522-L525)
-**Implementation**: `src/core/skills/SkillValidator.ts:43-448`
+**Implementation**: `src/core/skills/SkillValidator.ts:41-437`
 
 #### Class Verification
-- [ ] Class `SkillValidator` exists
-- [ ] Exported as `export class SkillValidator`
+- [x] Class `SkillValidator` exists at line 41
+- [x] Exported as `export class SkillValidator`
 
 #### Method Verification
-- [ ] `validateSkillPrerequisites(prerequisites: SkillPrerequisite | undefined, character: CharacterSheet): SkillValidationResult` exists at lines 367-447
-- [ ] Method is static
+- [x] `validateSkillPrerequisites(prerequisites: SkillPrerequisite | undefined, character: CharacterSheet): SkillValidationResult` exists at lines 355-360
+- [x] Method is static at line 355
 
 #### Export Verification
-- [ ] Exported from `src/core/skills/index.ts:27`
-- [ ] Exported from `src/index.ts:296`
+- [x] Exported from `src/core/skills/index.ts:27`
+- [x] Exported from `src/index.ts:299` (note: plan listed 296, actual is 299)
 
 ---
 
