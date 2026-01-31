@@ -1146,7 +1146,7 @@ const updatedEquipment = EquipmentModifier.enchant(
 
 ```typescript
 import { EquipmentSpawnHelper } from './src/core/equipment/EquipmentSpawnHelper.js';
-import { SeededRNG } from './src/core/randomness/SeededRNG.js';
+import { SeededRNG } from './src/utils/random.js';
 
 // Spawn treasure hoard
 const rng = new SeededRNG('dragon_hoard_123');
@@ -1756,7 +1756,7 @@ import {
     EquipmentEffectApplier
 } from './src/core/index.js';
 import type { EnhancedEquipment, EquipmentModification } from './src/core/types/Equipment.js';
-import { SeededRNG } from './src/core/randomness/SeededRNG.js';
+import { SeededRNG } from './src/utils/random.js';
 
 // ===== STEP 1: Define Custom Equipment =====
 const customItems: EnhancedEquipment[] = [
