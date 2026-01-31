@@ -216,20 +216,20 @@ Verify all validator classes and their methods exist with correct signatures.
 ### Task 2.2: Verify SpellValidator Class
 
 **Documentation**: [PREREQUISITES.md:526-530](PREREQUISITES.md#L526-L530)
-**Implementation**: `src/core/spells/SpellValidator.ts:85-448`
+**Implementation**: `src/core/spells/SpellValidator.ts:83-259`
 
 #### Class Verification
-- [ ] Class `SpellValidator` exists
-- [ ] Exported as `export class SpellValidator`
+- [x] Class `SpellValidator` exists at line 83
+- [x] Exported as `export class SpellValidator`
 
 #### Method Verification
-- [ ] `validateSpellPrerequisites(prerequisites: SpellPrerequisite | undefined, character: CharacterSheet): SpellValidationResult` exists at lines 332-417
-- [ ] `validateSpell(spell: unknown): SpellValidationResult` exists at lines 94-169
-- [ ] Methods are static
+- [x] `validateSpellPrerequisites(prerequisites: SpellPrerequisite | undefined, character: CharacterSheet): SpellValidationResult` exists at lines 221-226
+- [x] `validateSpell(spell: unknown): SpellValidationResult` exists at lines 92-167
+- [x] Methods are static (all methods use `static` keyword)
 
 #### Export Verification
-- [ ] Exported from `src/core/spells/index.ts:10`
-- [ ] Exported from `src/index.ts:327`
+- [x] Exported from `src/core/spells/index.ts:10`
+- [x] Exported from `src/index.ts:330` (note: plan listed 327, actual is 330)
 
 ---
 
@@ -569,7 +569,7 @@ Verify type imports across modules are correct.
 |----------|-------|----------|
 | Core Interfaces | 6 | 6 |
 | Supporting Interfaces | 0 | 0 |
-| Validator Classes | 2 | 0 |
+| Validator Classes | 2 | 1 |
 | Registry Classes | 2 | 0 |
 | Extension Classes | 1 | 0 |
 | Helper Functions | 2 | 0 |
