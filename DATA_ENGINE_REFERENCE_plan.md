@@ -1,0 +1,607 @@
+# DATA_ENGINE_REFERENCE.md - Verification Plan
+
+> **Goal**: Systematically verify that every API element documented in DATA_ENGINE_REFERENCE.md exists in the codebase at the expected location, with matching signatures, correct exports, and accurate type annotations. This ensures documentation-code alignment and prevents breaking changes from going undetected.
+
+---
+
+## Important: Handling Discrepancies
+
+**If any problems arise where the documentation and code do not match:**
+
+1. **Add a new phase** to the end of this plan
+2. **Research the tasks** required to fix the discrepancy
+3. **Write the new phase and tasks** into this plan with appropriate detail
+4. **Fix the problem with the code** when you reach that phase in execution
+
+This ensures all discrepancies are tracked systematically and resolved with proper planning rather than ad-hoc fixes.
+
+---
+
+## Overview
+
+This plan organizes verification tasks into **6 sequential phases** designed to validate the entire codebase systematically. Each phase focuses on a specific domain and builds upon previous verification work.
+
+**Total Items to Verify**: ~400+ APIs, types, classes, and functions
+
+**Verification Criteria per Item**:
+- [ ] Exists in codebase at expected location
+- [ ] Name matches exactly (case-sensitive)
+- [ ] Signature/parameters match documentation
+- [ ] Exported correctly (export / export default / internal)
+- [ ] Type annotations are accurate
+- [ ] Any generics or constraints are documented correctly
+
+---
+
+## Phase 1: Foundation Types & Utilities
+**Focus**: Core data structures, type definitions, and utility functions that everything else depends on.
+**Estimated Items**: ~60
+
+### Task 1.1: Core Playlist & Audio Types (6 items)
+- [ ] ServerlessPlaylist → src/types/PlaylistTypes.ts (or similar)
+- [ ] PlaylistTrack → src/types/PlaylistTypes.ts (or similar)
+- [ ] RawArweavePlaylist → src/types/PlaylistTypes.ts (or similar)
+- [ ] AudioProfile → src/types/AudioTypes.ts (or similar)
+- [ ] ColorPalette → src/types/ColorPalette.ts
+- [ ] FrequencyBands → src/types/AudioTypes.ts (or similar)
+
+### Task 1.2: Character Type Definitions (8 items)
+- [ ] Race (type) → src/types/CharacterTypes.ts
+- [ ] Class (type) → src/types/CharacterTypes.ts
+- [ ] Ability (type) → src/types/CharacterTypes.ts
+- [ ] Skill (type) → src/types/CharacterTypes.ts
+- [ ] ProficiencyLevel (type) → src/types/CharacterTypes.ts
+- [ ] GameMode (type) → src/types/CharacterTypes.ts
+- [ ] Attack (interface) → src/types/CombatTypes.ts
+- [ ] Spell (interface) → src/types/CombatTypes.ts
+- [ ] AbilityScores (interface) → src/types/CharacterTypes.ts
+
+### Task 1.3: Character Interfaces (4 items)
+- [ ] CharacterSheet → src/types/CharacterTypes.ts
+- [ ] CharacterEquipment → src/types/CharacterTypes.ts
+- [ ] InventoryItem → src/types/CharacterTypes.ts
+- [ ] CharacterAppearance → src/types/CharacterTypes.ts
+
+### Task 1.4: Utility Functions & RNG (7 items)
+- [ ] generateSeed() → src/utils/random.ts
+- [ ] hashSeedToFloat() → src/utils/random.ts
+- [ ] hashSeedToInt() → src/utils/random.ts
+- [ ] class SeededRNG → src/utils/random.ts
+  - [ ] constructor(seed: string)
+  - [ ] random(): number
+  - [ ] randomInt(min: number, max: number): number
+  - [ ] randomChoice<T>(array: T[]): T
+  - [ ] weightedChoice<T>(choices: [T, number][]): T
+  - [ ] shuffle<T>(array: T[]): T[]
+
+### Task 1.5: Validation Schemas (4 items)
+- [ ] PlaylistTrackSchema → src/schemas/
+- [ ] ServerlessPlaylistSchema → src/schemas/
+- [ ] AudioProfileSchema → src/schemas/
+- [ ] CharacterSheetSchema → src/schemas/
+
+---
+
+## Phase 2: Core Processing Modules
+**Focus**: Parser, analyzer, and character generation - the heart of the engine.
+**Estimated Items**: ~50
+
+### Task 2.1: Playlist Parser (8 items)
+- [ ] class PlaylistParser → src/core/parser/PlaylistParser.ts
+  - [ ] constructor(options?: PlaylistParserOptions)
+  - [ ] parse(data: RawArweavePlaylist): Promise<ServerlessPlaylist>
+- [ ] class MetadataExtractor (static) → src/core/parser/MetadataExtractor.ts
+  - [ ] extractAudioUrl(data: Record<string, unknown>): string | null
+  - [ ] extractImageUrl(data: Record<string, unknown>): string | null
+  - [ ] extractTitle(data: Record<string, unknown>): string | null
+  - [ ] extractArtist(data: Record<string, unknown>): string | null
+  - [ ] parseMetadata(metadata: unknown): Record<string, unknown> | null
+  - [ ] convertAttributes(attributes: unknown): Record<string, string | number> | null
+
+### Task 2.2: Audio Analyzer (5 items)
+- [ ] class AudioAnalyzer → src/core/analysis/AudioAnalyzer.ts
+  - [ ] constructor(options?: AudioAnalyzerOptions)
+  - [ ] extractSonicFingerprint(audioUrl: string): Promise<AudioProfile>
+- [ ] class ColorExtractor → src/core/analysis/ColorExtractor.ts
+  - [ ] extractPalette(imageUrl: string): Promise<ColorPalette>
+- [ ] class SpectrumScanner (static) → src/core/analysis/SpectrumScanner.ts
+  - [ ] separateFrequencyBands(frequencyData: Uint8Array, sampleRate: number): FrequencyBands
+
+### Task 2.3: Character Generation (35 items)
+- [ ] class CharacterGenerator (static) → src/core/generation/CharacterGenerator.ts
+  - [ ] generate(seed, audioProfile, name, options?): CharacterSheet
+- [ ] class RaceSelector (static) → src/core/generation/RaceSelector.ts
+  - [ ] select(rng: SeededRNG): Race
+- [ ] class ClassSuggester (static) → src/core/generation/ClassSuggester.ts
+  - [ ] suggest(audioProfile, rng): Class
+- [ ] class AbilityScoreCalculator (static) → src/core/generation/AbilityScoreCalculator.ts
+  - [ ] calculateBaseScores(audioProfile): AbilityScores
+  - [ ] applyRacialBonuses(baseScores, race): AbilityScores
+  - [ ] calculateModifiers(scores): AbilityScores
+- [ ] class SkillAssigner (static) → src/core/generation/SkillAssigner.ts
+  - [ ] assignSkills(characterClass, rng): Record<Skill, ProficiencyLevel>
+- [ ] class SpellManager (static) → src/core/generation/SpellManager.ts
+  - [ ] isSpellcaster(characterClass): boolean
+  - [ ] getSpellSlots(characterClass, characterLevel): Record<number, { total; used }>
+  - [ ] getCantrips(characterClass): string[]
+  - [ ] getKnownSpells(characterClass, characterLevel): string[]
+  - [ ] initializeSpells(characterClass, characterLevel): SpellSlots
+  - [ ] getSpellCountAtLevel(spellLevel, spellSlots): number
+  - [ ] useSpellSlot(spellSlots, spellLevel): Record<number, { total; used }>
+  - [ ] restoreSpellSlots(spellSlots, spellLevel?): Record<number, { total; used }>
+- [ ] class EquipmentGenerator (static) → src/core/generation/EquipmentGenerator.ts
+  - [ ] getStartingEquipment(characterClass): { weapons; armor; items }
+  - [ ] initializeEquipment(characterClass): CharacterEquipment
+  - [ ] addItem(equipment, itemName, quantity?, character?): CharacterEquipment
+  - [ ] removeItem(equipment, itemName, quantity?, character?): CharacterEquipment
+  - [ ] equipItem(equipment, itemName, character?): CharacterEquipment
+  - [ ] unequipItem(equipment, itemName, character?): CharacterEquipment
+  - [ ] getEquipmentData(itemName): EnhancedEquipment | undefined
+  - [ ] getInventoryList(equipment): EnhancedInventoryItem[]
+  - [ ] getEquipmentByType(equipment, type): EnhancedInventoryItem[]
+- [ ] class AppearanceGenerator (static) → src/core/generation/AppearanceGenerator.ts
+  - [ ] generate(seed, characterClass, audioProfile): CharacterAppearance
+- [ ] class NamingEngine → src/core/generation/NamingEngine.ts
+  - [ ] generateName(track, audioProfile): string
+  - [ ] cleanTitle(title): string
+
+---
+
+## Phase 3: Progression & Combat Systems
+**Focus**: XP tracking, leveling, stat management, and combat mechanics.
+**Estimated Items**: ~80
+
+### Task 3.1: Session & XP Tracking (22 items)
+- [ ] class SessionTracker → src/core/progression/SessionTracker.ts
+  - [ ] constructor(xpCalculator?)
+  - [ ] startSession(trackUuid, track?, context?): string
+  - [ ] endSession(sessionId, durationOverride?, activityType?): ListeningSession | null
+  - [ ] getActiveSession(sessionId): ActiveSession | null
+  - [ ] getActiveSessionDuration(sessionId): number | null
+  - [ ] updateSessionContext(sessionId, context): boolean
+  - [ ] getSessionHistory(): ListeningSession[]
+  - [ ] getSessionsForTrack(trackUuid): ListeningSession[]
+  - [ ] getTotalListeningTime(): number
+  - [ ] getTotalXPEarned(): number
+  - [ ] getTrackListeningTime(trackUuid): number
+  - [ ] getTrackListenCount(trackUuid): number
+  - [ ] isTrackMastered(trackUuid, masteryThreshold?): boolean
+  - [ ] getSessionsInRange(startTime, endTime): ListeningSession[]
+  - [ ] getAverageSessionLength(): number
+  - [ ] getLongestSession(): ListeningSession | null
+  - [ ] clearHistory(): void
+  - [ ] clearActiveSessions(): void
+  - [ ] getActiveSessionCount(): number
+  - [ ] getActiveSessionIds(): string[]
+
+### Task 3.2: Progression Types (6 items)
+- [ ] ListeningSession → src/types/ProgressionTypes.ts
+- [ ] ExperienceSystem → src/types/ProgressionTypes.ts
+- [ ] CharacterUpdateResult → src/types/ProgressionTypes.ts
+- [ ] LevelUpDetail → src/types/ProgressionTypes.ts
+- [ ] LevelUpBenefits → src/types/ProgressionTypes.ts
+- [ ] StatIncreaseResult → src/types/StatTypes.ts
+
+### Task 3.3: XP Calculator & Level Up (14 items)
+- [ ] class XPCalculator → src/core/progression/XPCalculator.ts
+  - [ ] constructor(options?)
+  - [ ] calculateSessionXP(session, track?): number
+  - [ ] calculateTotalModifier(envContext?, gamingContext?): number
+  - [ ] getXPThresholdForLevel(level): number
+  - [ ] getXPToNextLevel(currentLevel): number
+  - [ ] getLevelFromXP(totalXP): number
+  - [ ] isTrackMastered(listenCount): boolean
+  - [ ] getMasteryBonusXP(): number
+  - [ ] getConfig(): ExperienceSystem
+- [ ] class CharacterUpdater → src/core/progression/CharacterUpdater.ts
+  - [ ] constructor(statManager?)
+  - [ ] addXP(character, xpAmount, source?): Omit<CharacterUpdateResult, 'masteredTrack' | 'masteryBonusXP'>
+  - [ ] updateCharacterFromSession(character, session, track?, previousListenCount?): CharacterUpdateResult
+  - [ ] applyPendingStatIncrease(character, primaryStat, secondaryStats?): ApplyPendingStatIncreaseResult
+  - [ ] hasPendingStatIncreases(character): boolean
+  - [ ] getPendingStatIncreaseCount(character): number
+- [ ] class LevelUpProcessor (static) → src/core/progression/LevelUpProcessor.ts
+  - [ ] applyLevelUp(character, benefits): CharacterSheet
+  - [ ] getXPThreshold(level): number
+  - [ ] setUncappedConfig(config): void
+  - [ ] getUncappedConfig(): UncappedProgressionConfig | undefined
+- [ ] class MasterySystem (static) → src/core/progression/MasterySystem.ts
+  - [ ] checkMastery(listenCount): boolean
+  - [ ] calculateMasteryBonus(isMastered): number
+  - [ ] isJustMastered(previous, current): boolean
+
+### Task 3.4: Stat Increase System (7 items)
+- [ ] class StatManager → src/core/progression/stat/StatManager.ts
+  - [ ] constructor(config?)
+  - [ ] increaseStats(character, increases, source): StatIncreaseResult
+  - [ ] decreaseStats(character, decreases, source): StatIncreaseResult
+  - [ ] setStat(character, ability, value, source): StatIncreaseResult
+  - [ ] processLevelUp(character, newLevel, options?): StatIncreaseResult | null
+  - [ ] canIncrease(character, ability, amount): boolean
+  - [ ] getStatCap(character, ability): number
+  - [ ] updateConfig(config): void
+- [ ] StatIncreaseConfig → src/types/StatTypes.ts
+- [ ] StatIncreaseStrategyType → src/types/StatTypes.ts
+- [ ] UncappedProgressionConfig → src/types/ProgressionTypes.ts
+
+### Task 3.5: Combat System (30 items)
+- [ ] CombatInstance, Combatant, CombatAction, StatusEffect, CombatActionResult, AttackRoll, DamageRoll, SpellCastResult, CombatResult, CombatConfig, DamageType, SavingThrowAbility, InitiativeResult, AttackResult, SpellSlots → src/types/CombatTypes.ts
+- [ ] class CombatEngine → src/core/combat/CombatEngine.ts
+  - [ ] constructor(config?)
+  - [ ] startCombat(players, enemies, environment?): CombatInstance
+  - [ ] getCurrentCombatant(combat): Combatant
+  - [ ] executeAttack(combat, attacker, target, attack): CombatAction
+  - [ ] executeCastSpell(combat, caster, spell, targets): CombatAction
+  - [ ] executeDodge(combat, combatant): CombatAction
+  - [ ] executeDash(combat, combatant): CombatAction
+  - [ ] executeDisengage(combat, combatant): CombatAction
+  - [ ] nextTurn(combat): CombatInstance
+  - [ ] getCombatResult(combat): CombatResult | null
+  - [ ] getCombatSummary(combat): string
+  - [ ] applyDamage(combatant, damage): number
+  - [ ] healCombatant(combatant, healing): number
+  - [ ] applyTemporaryHP(combatant, tempHP): void
+  - [ ] getLivingCombatants(combat): Combatant[]
+  - [ ] getDefeatedCombatants(combat): Combatant[]
+- [ ] class InitiativeRoller (static) → src/core/combat/InitiativeRoller.ts
+  - [ ] rollInitiativeForCombatant(combatant): InitiativeResult
+  - [ ] rollInitiativeForAll(combatants): { results; sortedCombatants }
+  - [ ] getNextCombatant(combatants, currentIndex): { combatant; index; isNewRound }
+  - [ ] getInitiativeOrder(combatants): string[]
+  - [ ] rerollInitiativeForCombatant(combatant): number
+  - [ ] delayTurn(combatants, combatantId): Combatant[]
+  - [ ] resortByInitiative(combatants): Combatant[]
+- [ ] class AttackResolver (static) → src/core/combat/AttackResolver.ts
+  - [ ] resolveAttack(attacker, target, attack): AttackResult
+  - [ ] isInRange(attacker, target, attack): boolean
+  - [ ] calculateAttackBonus(character, attackName, abilityModifier, isProficient): number
+  - [ ] attackWithAdvantage(attacker, target, attack): AttackResult
+  - [ ] attackWithDisadvantage(attacker, target, attack): AttackResult
+- [ ] class SpellCaster (static) → src/core/combat/SpellCaster.ts
+  - [ ] castSpell(caster, spell, targets): SpellCastResult
+  - [ ] hasSpellSlot(caster, spellLevel): boolean
+  - [ ] consumeSpellSlot(caster, spellLevel): void
+  - [ ] restoreSpellSlots(caster): void
+  - [ ] calculateSaveDC(caster, ability): number
+  - [ ] makeSavingThrow(target, saveAbility, saveDC): boolean
+  - [ ] getSpellSlotInfo(caster): string
+  - [ ] canUpcast(caster, spell, targetSlotLevel): boolean
+  - [ ] upcastSpell(caster, spell, targets, slotLevelUsed): SpellCastResult
+
+---
+
+## Phase 4: Environmental & Gaming Sensors
+**Focus**: Real-world data integration and platform integrations.
+**Estimated Items**: ~50
+
+### Task 4.1: Environmental Types (16 items)
+- [ ] EnvironmentalContext, GeolocationData, MotionData, WeatherData, LightData, ForecastData, SensorType, PerformanceMetrics, PerformanceStatistics, SensorPermission, SensorHealthStatus, SensorStatus, SensorFailureLog, SensorRetryConfig, SensorRecoveryNotification, SevereWeatherAlert → src/types/SensorTypes.ts
+
+### Task 4.2: Environmental Sensors (24 items)
+- [ ] class EnvironmentalSensors → src/core/sensors/EnvironmentalSensors.ts
+  - [ ] constructor(weatherApiKeyOrConfig?, retryConfig?)
+  - [ ] requestPermissions(types): Promise<SensorPermission[]>
+  - [ ] startMonitoring(callback?): void
+  - [ ] stopMonitoring(): void
+  - [ ] updateSnapshot(): Promise<EnvironmentalContext>
+  - [ ] calculateXPModifier(): number
+  - [ ] calculateXPModifierWithForecast(forecastHours?): Promise<number>
+  - [ ] calculateXPModifierWithSevereWeather(): Promise<{ modifier; severeWeatherAlert; safetyWarning }>
+  - [ ] detectSevereWeather(): SevereWeatherAlert | null
+  - [ ] getSevereWeatherWarning(): string | null
+  - [ ] getSensorStatus(sensorType): SensorStatus | null
+  - [ ] getAllSensorStatuses(): SensorStatus[]
+  - [ ] getFailureLog(sensorType?, limit?): SensorFailureLog[]
+  - [ ] getLastKnownGood(sensorType): any
+  - [ ] clearFailureLog(): void
+  - [ ] updateRetryConfig(config): void
+  - [ ] onSensorRecovery(callback): () => void
+  - [ ] getPermissions(): SensorPermission[]
+  - [ ] checkAvailability(type): boolean
+  - [ ] getCurrentActivity(): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown'
+  - [ ] getDiagnostics(): {...}
+  - [ ] enableDiagnosticMode(): void
+  - [ ] disableDiagnosticMode(): void
+  - [ ] printDashboard(config?): void
+- [ ] class GeolocationProvider → src/core/sensors/GeolocationProvider.ts
+  - [ ] getCurrentPosition(): Promise<GeolocationData | null>
+  - [ ] getBiome(latitude, longitude): string
+- [ ] class MotionDetector → src/core/sensors/MotionDetector.ts
+  - [ ] startMonitoring(callback): void
+  - [ ] detectActivity(data): 'stationary' | 'walking' | 'running' | 'driving'
+- [ ] class WeatherAPIClient → src/core/sensors/WeatherAPIClient.ts
+  - [ ] getWeather(lat, lon): Promise<WeatherData | null>
+- [ ] class LightSensor → src/core/sensors/LightSensor.ts
+  - [ ] startMonitoring(callback): void
+
+### Task 4.3: Gaming Integration (10 items)
+- [ ] GamingContext → src/types/GamingTypes.ts
+- [ ] class GamingPlatformSensors → src/core/sensors/GamingPlatformSensors.ts
+  - [ ] constructor(config)
+  - [ ] authenticate(steamUserId?, discordUserId?): Promise<boolean>
+  - [ ] startMonitoring(callback?): void
+  - [ ] stopMonitoring(): void
+  - [ ] isPlayingGame(gameName): boolean
+  - [ ] calculateGamingBonus(): number
+  - [ ] getContext(): GamingContext
+  - [ ] recordGameSession(gameName, durationMinutes): void
+  - [ ] getDiagnostics(): {...}
+  - [ ] printDashboard(config?): void
+- [ ] class SteamAPIClient → src/core/sensors/SteamAPIClient.ts
+  - [ ] getCurrentGame(steamUserId): Promise<{ name; appId } | null>
+  - [ ] getGameMetadata(gameName): Promise<{ genre? } | null>
+- [ ] DiscordUserInfo, MusicActivityDetails, DiscordActivity, DiscordConnectionState (enum) → src/types/DiscordTypes.ts
+- [ ] class DiscordRPCClient → src/core/sensors/DiscordRPCClient.ts
+  - [ ] connect(): Promise<boolean>
+  - [ ] disconnect(): void
+  - [ ] isConnectedToDiscord(): boolean
+  - [ ] getConnectionState(): DiscordConnectionState
+  - [ ] getLastError(): string | null
+  - [ ] setMusicActivity(musicDetails): Promise<boolean>
+  - [ ] clearMusicActivity(): Promise<boolean>
+  - [ ] getUserInfo(): Promise<DiscordUserInfo | null>
+
+---
+
+## Phase 5: Equipment System
+**Focus**: Equipment data structures, spawning, validation, and modification.
+**Estimated Items**: ~60
+
+### Task 5.1: Equipment Types (10 items)
+- [ ] EquipmentProperty, EquipmentPropertyType, EquipmentCondition, EnhancedEquipment, EquipmentModification, EnhancedInventoryItem, EffectApplicationResult, EquipmentValidationResult → src/types/Equipment.ts
+- [ ] SpawnRandomOptions, TreasureHoardResult → src/core/equipment/EquipmentSpawnHelper.ts
+
+### Task 5.2: Equipment Core Classes (50 items)
+- [ ] class EquipmentEffectApplier (static) → src/core/equipment/EquipmentEffectApplier.ts
+  - [ ] equipItem(character, equipment, instanceId?): EffectApplicationResult
+  - [ ] unequipItem(character, equipmentName, instanceId?): EffectApplicationResult
+  - [ ] reapplyEquipmentEffects(character): EffectApplicationResult
+  - [ ] getActiveEffects(character): EquipmentProperty[]
+- [ ] class EquipmentValidator (static) → src/core/equipment/EquipmentValidator.ts
+  - [ ] validateEquipment(equipment): EquipmentValidationResult
+  - [ ] validateProperty(property): EquipmentValidationResult
+  - [ ] validateEquipmentFeatureReference(featureId): boolean
+  - [ ] validateEquipmentSkillReference(skillId): boolean
+  - [ ] validateDamageInfo(damage): EquipmentValidationResult
+  - [ ] validateSpawnWeight(weight): EquipmentValidationResult
+  - [ ] validateModification(modification): EquipmentValidationResult
+- [ ] class EquipmentModifier (static) → src/core/equipment/EquipmentModifier.ts
+  - [ ] enchant(equipment, itemName, enchantment, character?): CharacterEquipment
+  - [ ] applyTemplate(equipment, itemName, templateId, character?): CharacterEquipment
+  - [ ] curse(equipment, itemName, curse, character?): CharacterEquipment
+  - [ ] upgrade(equipment, itemName, upgrade, character?): CharacterEquipment
+  - [ ] removeModification(equipment, itemName, modificationId, character?): CharacterEquipment
+  - [ ] disenchant(equipment, itemName, character?): CharacterEquipment
+  - [ ] liftCurse(equipment, itemName, character?): CharacterEquipment
+  - [ ] getCombinedEffects(equipment, itemName, instanceId?): EquipmentProperty[]
+  - [ ] hasTemplate(equipment, itemName, templateId): boolean
+  - [ ] isCursed(equipment, itemName): boolean
+  - [ ] isEnchanted(equipment, itemName): boolean
+  - [ ] getAppliedTemplates(equipment, itemName): string[]
+  - [ ] getModificationHistory(equipment, itemName): EquipmentModification[]
+  - [ ] removeAllModifications(equipment, itemName, character?): CharacterEquipment
+  - [ ] getModificationSources(equipment, itemName): string[]
+  - [ ] countModificationsBySource(equipment, itemName): Record<string, number>
+  - [ ] getItemSummary(equipment, itemName): { name; modifications; isCursed; isEnchanted }
+  - [ ] createModification(id, name, properties, source): EquipmentModification
+  - [ ] generateModificationId(prefix?): string
+- [ ] class EquipmentSpawnHelper (static) → src/core/equipment/EquipmentSpawnHelper.ts
+  - [ ] spawnFromList(itemNames, rng?): (EnhancedEquipment | undefined)[]
+  - [ ] spawnByRarity(rarity, count, rng?): EnhancedEquipment[]
+  - [ ] spawnByTags(tags, count, rng?, options?): EnhancedEquipment[]
+  - [ ] spawnRandom(count, rng, options?): EnhancedEquipment[]
+  - [ ] spawnFromTemplate(templateId, baseItemName?): EnhancedEquipment | null
+  - [ ] spawnTreasureHoard(cr, rng): TreasureHoardResult
+  - [ ] addToCharacter(character, items, equip?): CharacterSheet
+
+---
+
+## Phase 6: Extensibility System
+**Focus**: Registries, validators, and customization infrastructure.
+**Estimated Items**: ~120
+
+### Task 6.1: Extensibility Types (5 items)
+- [ ] ExtensionCategory, SpawnMode, ExtensionOptions, RegistrationEntry, ValidationResult → src/core/extensions/ExtensionManager.ts
+
+### Task 6.2: ExtensionManager (16 items)
+- [ ] class ExtensionManager (singleton) → src/core/extensions/ExtensionManager.ts
+  - [ ] getInstance(): ExtensionManager
+  - [ ] register(category, items, options?): void
+  - [ ] registerMultiple(registrations): void
+  - [ ] get(category): any[]
+  - [ ] getDefaults(category): any[]
+  - [ ] getCustom(category): any[]
+  - [ ] setWeights(category, weights): void
+  - [ ] getWeights(category): Record<string, number>
+  - [ ] getDefaultWeights(category): Record<string, number>
+  - [ ] setMode(category, mode): void
+  - [ ] getMode(category): SpawnMode
+  - [ ] hasCustomData(category): boolean
+  - [ ] getInfo(category?): Record<string, any>
+  - [ ] getRegisteredCategories(): ExtensionCategory[]
+  - [ ] reset(category): void
+  - [ ] resetAll(): void
+  - [ ] validate(category, items): ValidationResult
+  - [ ] exportCustomData(): Record<string, any>
+  - [ ] exportCustomDataForCategory(category): any[]
+
+### Task 6.3: FeatureRegistry & Types (30 items)
+- [ ] ClassFeature, RacialTrait, FeatureType, FeatureEffectType, FeatureEffect, FeaturePrerequisite, CharacterFeature, CharacterTrait → src/core/features/FeatureRegistry.ts
+- [ ] class FeatureRegistry (singleton) → src/core/features/FeatureRegistry.ts
+  - [ ] getInstance(): FeatureRegistry
+  - [ ] initializeDefaults(defaultClassFeatures?, defaultRacialTraits?): void
+  - [ ] reset(): void
+  - [ ] isInitialized(): boolean
+  - [ ] registerClassFeature(feature): void
+  - [ ] registerClassFeatures(features): void
+  - [ ] getClassFeatures(characterClass, level?): ClassFeature[]
+  - [ ] getClassFeaturesForLevel(characterClass, level): ClassFeature[]
+  - [ ] getClassFeatureById(featureId): ClassFeature | undefined
+  - [ ] getAllClassFeatures(): Map<string, ClassFeature[]>
+  - [ ] registerRacialTrait(trait): void
+  - [ ] registerRacialTraits(traits): void
+  - [ ] getRacialTraits(race): RacialTrait[]
+  - [ ] getRacialTraitsForSubrace(race, subrace): RacialTrait[]
+  - [ ] getBaseRacialTraits(race): RacialTrait[]
+  - [ ] getSubraceTraits(race, subrace): RacialTrait[]
+  - [ ] getAvailableSubraces(race): string[]
+  - [ ] getRacialTraitById(traitId): RacialTrait | undefined
+  - [ ] getAllRacialTraits(): Map<string, RacialTrait[]>
+  - [ ] validatePrerequisites(feature, character): ValidationResult
+  - [ ] validateFeaturePrerequisites(feature, character): ValidationResult
+  - [ ] validateTraitPrerequisites(trait, character): ValidationResult
+  - [ ] canGainFeature(feature, character): boolean
+  - [ ] getRegisteredClasses(): Class[]
+  - [ ] getRegisteredRaces(): Race[]
+  - [ ] getRegistryStats(): {...}
+  - [ ] exportRegistry(): {...}
+  - [ ] getEquipmentFeatures(equipmentName): ClassFeature[] (static)
+  - [ ] isValidEquipmentFeature(featureId): boolean (static)
+  - [ ] registerEquipmentFeature(feature): void (static)
+
+### Task 6.4: FeatureValidator (6 items)
+- [ ] class FeatureValidator (static) → src/core/features/FeatureValidator.ts
+  - [ ] validateClassFeature(feature): ValidationResult
+  - [ ] validateRacialTrait(trait): ValidationResult
+  - [ ] validateClassFeatures(features): ValidationResult
+  - [ ] validateRacialTraits(traits): ValidationResult
+  - [ ] validateEffect(effect): ValidationResult
+  - [ ] validatePrerequisites(prerequisites): ValidationResult
+
+### Task 6.5: WeightedSelector (5 items)
+- [ ] class WeightedSelector (static) → src/core/extensions/WeightedSelector.ts
+  - [ ] select<T>(items, weights, rng, mode?): T | null
+  - [ ] selectMultiple<T>(items, weights, rng, count, mode?): T[]
+  - [ ] getProbabilities<T>(items, weights, mode?): Record<string, number>
+  - [ ] normalizeWeights(weights, mode): Record<string, number>
+  - [ ] getItemKey<T>(item): string
+
+### Task 6.6: SkillRegistry & Types (20 items)
+- [ ] CustomSkill, SkillPrerequisite, SkillValidationResult, SkillRegistryStats, SkillProficiency, SkillListDefinition, SkillSelectionWeights → src/core/skills/SkillRegistry.ts
+- [ ] class SkillRegistry (singleton) → src/core/skills/SkillRegistry.ts
+  - [ ] getInstance(): SkillRegistry
+  - [ ] initializeDefaults(defaultSkills?): void
+  - [ ] reset(): void
+  - [ ] isInitialized(): boolean
+  - [ ] registerSkill(skill): void
+  - [ ] registerSkills(skills): void
+  - [ ] getSkill(id): CustomSkill | undefined
+  - [ ] getAllSkills(): CustomSkill[]
+  - [ ] getSkillsByAbility(ability): CustomSkill[]
+  - [ ] getSkillsByCategory(category): CustomSkill[]
+  - [ ] getCategories(): string[]
+  - [ ] getSkillsBySource(source): CustomSkill[]
+  - [ ] getAvailableSkills(character): CustomSkill[]
+  - [ ] validatePrerequisites(skill, character): SkillValidationResult
+  - [ ] validateSkill(skill): SkillValidationResult
+  - [ ] isValidSkill(id): boolean
+  - [ ] getSkillCount(): number
+  - [ ] getRegistryStats(): SkillRegistryStats
+  - [ ] exportRegistry(): CustomSkill[]
+  - [ ] unregisterSkill(id): boolean
+
+### Task 6.7: SkillValidator (8 items)
+- [ ] class SkillValidator (static) → src/core/skills/SkillValidator.ts
+  - [ ] validateSkill(skill): SkillValidationResult
+  - [ ] validateSkills(skills): SkillValidationResult
+  - [ ] validateSkillProficiency(proficiency): SkillValidationResult
+  - [ ] validateSkillProficiencies(proficiencies): SkillValidationResult
+  - [ ] validateSkillListDefinition(skillList): SkillValidationResult
+  - [ ] validateSkillPrerequisites(prerequisites, character): SkillValidationResult
+  - [ ] isValidAbility(ability): ability is Ability
+  - [ ] isValidSkillId(id): boolean
+
+### Task 6.8: SpellRegistry & Types (20 items)
+- [ ] SpellSchool, RegisteredSpell, SpellPrerequisite, SpellValidationResult → src/core/spells/SpellRegistry.ts
+- [ ] class SpellRegistry (singleton) → src/core/spells/SpellRegistry.ts
+  - [ ] getInstance(): SpellRegistry
+  - [ ] initializeDefaults(defaultSpells?): void
+  - [ ] reset(): void
+  - [ ] isInitialized(): boolean
+  - [ ] registerSpell(spell): void
+  - [ ] registerSpells(spells): void
+  - [ ] getSpell(spellId): RegisteredSpell | undefined
+  - [ ] getSpells(): RegisteredSpell[]
+  - [ ] getSpellsByLevel(level): RegisteredSpell[]
+  - [ ] getSpellsBySchool(school): RegisteredSpell[]
+  - [ ] getSpellsForClass(characterClass): RegisteredSpell[]
+  - [ ] getAvailableSpells(character): RegisteredSpell[]
+  - [ ] getSpellsBySource(source): RegisteredSpell[]
+  - [ ] getClassSpellList(characterClass): string[]
+  - [ ] registerClassSpellList(characterClass, spellIds): void
+  - [ ] getSpellSlotsForClass(characterClass, level): number
+  - [ ] validatePrerequisites(spell, character): ValidationResult
+  - [ ] validateSpell(spell): ValidationResult
+  - [ ] hasSpell(spellId): boolean
+  - [ ] getSpellCount(): number
+  - [ ] getRegistryStats(): {...}
+  - [ ] exportRegistry(): RegisteredSpell[]
+  - [ ] unregisterSpell(spellId): boolean
+
+### Task 6.9: SpellValidator (7 items)
+- [ ] class SpellValidator (static) → src/core/spells/SpellValidator.ts
+  - [ ] validateSpell(spell): SpellValidationResult
+  - [ ] validateSpells(spells): SpellValidationResult
+  - [ ] validatePrerequisites(prerequisites): SpellValidationResult
+  - [ ] validateSpellPrerequisites(prerequisites, character): SpellValidationResult
+  - [ ] isValidAbility(ability): ability is Ability
+  - [ ] isValidSchool(school): school is Spell['school']
+  - [ ] isValidSpellLevel(level): boolean
+
+---
+
+## Phase 7: Game Data Constants
+**Focus**: Constants and helper functions for game data.
+**Estimated Items**: ~15
+
+### Task 7.1: Constants & Helpers (15 items)
+- [ ] ALL_RACES → src/utils/constants.ts
+- [ ] ALL_CLASSES → src/utils/constants.ts
+- [ ] RACE_DATA → src/utils/constants.ts
+- [ ] CLASS_DATA → src/utils/constants.ts
+- [ ] XP_THRESHOLDS → src/utils/constants.ts
+- [ ] SPELL_DATABASE → src/utils/constants.ts
+- [ ] EQUIPMENT_DATABASE → src/utils/constants.ts
+- [ ] RaceDataEntry → src/utils/constants.ts
+- [ ] ClassDataEntry → src/utils/constants.ts
+- [ ] getRaceData(race): RaceDataEntry | undefined
+- [ ] getClassData(className): ClassDataEntry | undefined
+- [ ] getClassSpellList(className): {...} | undefined
+- [ ] getSpellSlotsForClass(className, characterLevel): Record<number, number> | undefined
+- [ ] getClassStartingEquipment(className): {...} | undefined
+- [ ] asClass(value): Class
+- [ ] isValidClass(value): value is Class
+
+---
+
+## Summary Dashboard
+
+| Phase | Focus Area | Est. Items | Status |
+|-------|-----------|------------|--------|
+| 1 | Foundation Types & Utilities | ~60 | ⬜ Not Started |
+| 2 | Core Processing Modules | ~50 | ⬜ Not Started |
+| 3 | Progression & Combat | ~80 | ⬜ Not Started |
+| 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
+| 5 | Equipment System | ~60 | ⬜ Not Started |
+| 6 | Extensibility System | ~120 | ⬜ Not Started |
+| 7 | Game Data Constants | ~15 | ⬜ Not Started |
+| **Total** | | **~435** | |
+
+---
+
+## Notes - Items Requiring Follow-up
+
+### Redundancy / Potential Duplicates
+(When you find similar functionality in multiple places, note it here - do not attempt to resolve)
+- [ ] [Item A] appears similar to [Item B] - [notes]
+- [ ] [Function] in [Class] similar to standalone function at [path]
+- [ ] Multiple implementations of [functionality] found
+
+### Discrepancies Found
+- [ ] [Item] documented but not found in codebase
+- [ ] [Item] exists in code but not documented
+- [ ] Signature mismatch: [Item] documented as [X] but code shows [Y]
+- [ ] Export mismatch: documented as exported but is internal (or vice versa)
+
+### Needs Investigation
+- [ ] [Item] - [describe what needs clarification]
