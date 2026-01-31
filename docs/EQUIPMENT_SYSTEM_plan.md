@@ -223,34 +223,34 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 3.4: EquipmentModifier Class
 
-- [ ] `class EquipmentModifier` → src/core/equipment/EquipmentModifier.ts
+- [x] `class EquipmentModifier` → src/core/equipment/EquipmentModifier.ts (VERIFIED - lines 76-854)
 
   **Modification Operations:**
-  - [ ] `static enchant(equipment: CharacterEquipment, itemName: string, enchantment: EquipmentModification, character?: CharacterSheet): CharacterEquipment`
-  - [ ] `static applyTemplate(equipment: CharacterEquipment, itemName: string, templateId: string, character?: CharacterSheet): CharacterEquipment`
-  - [ ] `static curse(equipment: CharacterEquipment, itemName: string, curse: EquipmentModification, character?: CharacterSheet): CharacterEquipment`
-  - [ ] `static upgrade(equipment: CharacterEquipment, itemName: string, upgrade: EquipmentModification, character?: CharacterSheet): CharacterEquipment`
-  - [ ] `static removeModification(equipment: CharacterEquipment, itemName: string, modificationId: string, character?: CharacterSheet): CharacterEquipment`
+  - [x] `static enchant(equipment: CharacterEquipment, itemName: string, enchantment: EquipmentModification, character?: CharacterSheet): CharacterEquipment` (VERIFIED - lines 89-106)
+  - [x] `static applyTemplate(equipment: CharacterEquipment, itemName: string, templateId: string, character?: CharacterSheet): CharacterEquipment` (VERIFIED - lines 120-160)
+  - [x] `static curse(equipment: CharacterEquipment, itemName: string, curse: EquipmentModification, character?: CharacterSheet): CharacterEquipment` (VERIFIED - lines 174-191)
+  - [x] `static upgrade(equipment: CharacterEquipment, itemName: string, upgrade: EquipmentModification, character?: CharacterSheet): CharacterEquipment` (VERIFIED - lines 205-212)
+  - [x] `static removeModification(equipment: CharacterEquipment, itemName: string, modificationId: string, character?: CharacterSheet): CharacterEquipment` (VERIFIED - lines 226-273)
 
   **Query Operations:**
-  - [ ] `static getModificationHistory(equipment: CharacterEquipment, itemName: string): EquipmentModification[]`
-  - [ ] `static getCombinedEffects(equipment: CharacterEquipment, itemName: string, instanceId?: string): EquipmentProperty[]`
-  - [ ] `static hasTemplate(equipment: CharacterEquipment, itemName: string, templateId: string): boolean`
-  - [ ] `static isEnchanted(equipment: CharacterEquipment, itemName: string): boolean`
-  - [ ] `static isCursed(equipment: CharacterEquipment, itemName: string): boolean`
-  - [ ] `static getAppliedTemplates(equipment: CharacterEquipment, itemName: string): string[]`
-  - [ ] `static getModificationSources(equipment: CharacterEquipment, itemName: string): string[]`
-  - [ ] `static countModificationsBySource(equipment: CharacterEquipment, itemName: string): Record<string, number>`
-  - [ ] `static getItemSummary(equipment: CharacterEquipment, itemName: string): { name, modifications, isCursed, isEnchanted }`
+  - [x] `static getModificationHistory(equipment: CharacterEquipment, itemName: string): EquipmentModification[]` (VERIFIED - lines 285-296)
+  - [x] `static getCombinedEffects(equipment: CharacterEquipment, itemName: string, instanceId?: string): EquipmentProperty[]` (VERIFIED - lines 309-333)
+  - [x] `static hasTemplate(equipment: CharacterEquipment, itemName: string, templateId: string): boolean` (VERIFIED - lines 343-366)
+  - [x] `static isEnchanted(equipment: CharacterEquipment, itemName: string): boolean` (VERIFIED - lines 806-812)
+  - [x] `static isCursed(equipment: CharacterEquipment, itemName: string): boolean` (VERIFIED - lines 792-797)
+  - [x] `static getAppliedTemplates(equipment: CharacterEquipment, itemName: string): string[]` (VERIFIED - lines 375-403)
+  - [x] `static getModificationSources(equipment: CharacterEquipment, itemName: string): string[]` (VERIFIED - lines 751-762)
+  - [x] `static countModificationsBySource(equipment: CharacterEquipment, itemName: string): Record<string, number>` (VERIFIED - lines 772-787, FIXED signature to match plan)
+  - [x] `static getItemSummary(equipment: CharacterEquipment, itemName: string): { name, modifications, isCursed, isEnchanted }` (VERIFIED - lines 821-853, returns enhanced summary)
 
   **Bulk Operations:**
-  - [ ] `static removeAllModifications(equipment: CharacterEquipment, itemName: string, character?: CharacterSheet): CharacterEquipment`
-  - [ ] `static disenchant(equipment: CharacterEquipment, itemName: string, character?: CharacterSheet): CharacterEquipment`
-  - [ ] `static liftCurse(equipment: CharacterEquipment, itemName: string, character?: CharacterSheet): CharacterEquipment`
+  - [x] `static removeAllModifications(equipment: CharacterEquipment, itemName: string, character?: CharacterSheet): CharacterEquipment` (VERIFIED - lines 416-435)
+  - [x] `static disenchant(equipment: CharacterEquipment, itemName: string, character?: CharacterSheet): CharacterEquipment` (VERIFIED - lines 448-469)
+  - [x] `static liftCurse(equipment: CharacterEquipment, itemName: string, character?: CharacterSheet): CharacterEquipment` (VERIFIED - lines 482-503)
 
   **Factory Methods:**
-  - [ ] `static createModification(id: string, name: string, properties: EquipmentProperty[], source: string): EquipmentModification`
-  - [ ] `static generateModificationId(prefix?: string): string`
+  - [x] `static createModification(id: string, name: string, properties: EquipmentProperty[], source: string): EquipmentModification` (VERIFIED - lines 632-645)
+  - [x] `static generateModificationId(prefix?: string): string` (VERIFIED - lines 740-742)
 
 ### Task 3.5: EquipmentSpawnHelper Class
 

@@ -764,22 +764,44 @@ export class EquipmentModifier {
     /**
      * Count modifications by source type
      *
+     * Returns a record mapping each source type to the count of modifications
+     * from that source.
+     *
+     * @param equipment - Current equipment state
+     * @param itemName - Name of the item
+     * @returns Record of source type to modification count
+     */
+    static countModificationsBySource(
+        equipment: CharacterEquipment,
+        itemName: string
+    ): Record<string, number> {
+        const item = this.findItem(equipment, itemName);
+        if (!item || !item.modifications) {
+            return {};
+        }
+
+        const counts: Record<string, number> = {};
+        for (const mod of item.modifications) {
+            counts[mod.source] = (counts[mod.source] || 0) + 1;
+        }
+        return counts;
+    }
+
+    /**
+     * Count modifications for a specific source type
+     *
      * @param equipment - Current equipment state
      * @param itemName - Name of the item
      * @param source - Source type to count
      * @returns Number of modifications from the specified source
      */
-    static countModificationsBySource(
+    static countModificationsForSource(
         equipment: CharacterEquipment,
         itemName: string,
         source: string
     ): number {
-        const item = this.findItem(equipment, itemName);
-        if (!item || !item.modifications) {
-            return 0;
-        }
-
-        return item.modifications.filter(m => m.source === source).length;
+        const counts = this.countModificationsBySource(equipment, itemName);
+        return counts[source] || 0;
     }
 
     /**
@@ -793,7 +815,7 @@ export class EquipmentModifier {
         equipment: CharacterEquipment,
         itemName: string
     ): boolean {
-        return this.countModificationsBySource(equipment, itemName, 'curse') > 0;
+        return this.countModificationsForSource(equipment, itemName, 'curse') > 0;
     }
 
     /**
