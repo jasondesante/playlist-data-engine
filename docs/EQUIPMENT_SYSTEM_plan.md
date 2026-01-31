@@ -212,14 +212,14 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 3.3: EquipmentValidator Class
 
-- [ ] `class EquipmentValidator` → src/core/equipment/EquipmentValidator.ts
-  - [ ] `static validateEquipment(equipment: EnhancedEquipment): EquipmentValidationResult`
-  - [ ] `static validateProperty(property: EquipmentProperty): EquipmentValidationResult`
-  - [ ] `static validateEquipmentFeatureReference(featureId: string): boolean`
-  - [ ] `static validateEquipmentSkillReference(skillId: string): boolean`
-  - [ ] `static validateDamageInfo(damage: EnhancedEquipment['damage']): EquipmentValidationResult`
-  - [ ] `static validateSpawnWeight(weight: number): EquipmentValidationResult`
-  - [ ] `static validateModification(modification: EquipmentModification): EquipmentValidationResult`
+- [x] `class EquipmentValidator` → src/core/equipment/EquipmentValidator.ts (VERIFIED - lines 102-905)
+  - [x] `static validateEquipment(equipment: EnhancedEquipment): EquipmentValidationResult` (VERIFIED - lines 113-258)
+  - [x] `static validateProperty(property: EquipmentProperty): EquipmentValidationResult` (VERIFIED - lines 266-317)
+  - [x] `static validateEquipmentFeatureReference(featureId: string): boolean` (VERIFIED - lines 555-560)
+  - [x] `static validateEquipmentSkillReference(skillId: string): boolean` (VERIFIED - lines 604-606)
+  - [x] `static validateDamageInfo(damage: EnhancedEquipment['damage']): EquipmentValidationResult` (VERIFIED - lines 618-669)
+  - [x] `static validateSpawnWeight(weight: number): EquipmentValidationResult` (VERIFIED - lines 681-696)
+  - [x] `static validateModification(modification: EquipmentModification): EquipmentValidationResult` (VERIFIED - lines 707-789)
 
 ### Task 3.4: EquipmentModifier Class
 
