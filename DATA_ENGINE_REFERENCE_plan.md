@@ -228,49 +228,49 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] StatIncreaseStrategyType → src/core/types/Progression.ts (107-113) ✅ (location mismatch: documented as src/types/StatTypes.ts)
 - [x] UncappedProgressionConfig → src/core/progression/LevelUpProcessor.ts (75-82) ✅ (location mismatch: documented as src/types/ProgressionTypes.ts)
 
-### Task 3.5: Combat System (30 items)
-- [x] CombatInstance, Combatant, CombatAction, StatusEffect, CombatActionResult, AttackRoll, DamageRoll, SpellCastResult, CombatResult, CombatConfig, DamageType, SavingThrowAbility, InitiativeResult, AttackResult, SpellSlots → src/types/CombatTypes.ts ✅ (location mismatch)
-- [ ] class CombatEngine → src/core/combat/CombatEngine.ts
-  - [ ] constructor(config?)
-  - [ ] startCombat(players, enemies, environment?): CombatInstance
-  - [ ] getCurrentCombatant(combat): Combatant
-  - [ ] executeAttack(combat, attacker, target, attack): CombatAction
-  - [ ] executeCastSpell(combat, caster, spell, targets): CombatAction
-  - [ ] executeDodge(combat, combatant): CombatAction
-  - [ ] executeDash(combat, combatant): CombatAction
-  - [ ] executeDisengage(combat, combatant): CombatAction
-  - [ ] nextTurn(combat): CombatInstance
-  - [ ] getCombatResult(combat): CombatResult | null
-  - [ ] getCombatSummary(combat): string
-  - [ ] applyDamage(combatant, damage): number
-  - [ ] healCombatant(combatant, healing): number
-  - [ ] applyTemporaryHP(combatant, tempHP): void
-  - [ ] getLivingCombatants(combat): Combatant[]
-  - [ ] getDefeatedCombatants(combat): Combatant[]
-- [ ] class InitiativeRoller (static) → src/core/combat/InitiativeRoller.ts
-  - [ ] rollInitiativeForCombatant(combatant): InitiativeResult
-  - [ ] rollInitiativeForAll(combatants): { results; sortedCombatants }
-  - [ ] getNextCombatant(combatants, currentIndex): { combatant; index; isNewRound }
-  - [ ] getInitiativeOrder(combatants): string[]
-  - [ ] rerollInitiativeForCombatant(combatant): number
-  - [ ] delayTurn(combatants, combatantId): Combatant[]
-  - [ ] resortByInitiative(combatants): Combatant[]
-- [ ] class AttackResolver (static) → src/core/combat/AttackResolver.ts
-  - [ ] resolveAttack(attacker, target, attack): AttackResult
-  - [ ] isInRange(attacker, target, attack): boolean
-  - [ ] calculateAttackBonus(character, attackName, abilityModifier, isProficient): number
-  - [ ] attackWithAdvantage(attacker, target, attack): AttackResult
-  - [ ] attackWithDisadvantage(attacker, target, attack): AttackResult
-- [ ] class SpellCaster (static) → src/core/combat/SpellCaster.ts
-  - [ ] castSpell(caster, spell, targets): SpellCastResult
-  - [ ] hasSpellSlot(caster, spellLevel): boolean
-  - [ ] consumeSpellSlot(caster, spellLevel): void
-  - [ ] restoreSpellSlots(caster): void
-  - [ ] calculateSaveDC(caster, ability): number
-  - [ ] makeSavingThrow(target, saveAbility, saveDC): boolean
-  - [ ] getSpellSlotInfo(caster): string
-  - [ ] canUpcast(caster, spell, targetSlotLevel): boolean
-  - [ ] upcastSpell(caster, spell, targets, slotLevelUsed): SpellCastResult
+### Task 3.5: Combat System (30 items) ✅ COMPLETED
+- [x] CombatInstance, Combatant, CombatAction, StatusEffect, CombatActionResult, AttackRoll, DamageRoll, SpellCastResult, CombatResult, CombatConfig, DamageType, SavingThrowAbility, InitiativeResult, AttackResult, SpellSlots → src/types/CombatTypes.ts ✅ (location mismatch: actual location is src/core/types/Combat.ts)
+- [x] class CombatEngine → src/core/combat/CombatEngine.ts ✅ (note: documentation shows as "static" helper but actual implementation is an instance class)
+  - [x] constructor(config?) ✅
+  - [x] startCombat(players, enemies, environment?): CombatInstance ✅
+  - [x] getCurrentCombatant(combat): Combatant ✅
+  - [x] executeAttack(combat, attacker, target, attack): CombatAction ✅
+  - [x] executeCastSpell(combat, caster, spell, targets): CombatAction ✅
+  - [x] executeDodge(combat, combatant): CombatAction ✅
+  - [x] executeDash(combat, combatant): CombatAction ✅
+  - [x] executeDisengage(combat, combatant): CombatAction ✅
+  - [x] nextTurn(combat): CombatInstance ✅
+  - [x] getCombatResult(combat): CombatResult | null ✅
+  - [x] getCombatSummary(combat): string ✅
+  - [x] applyDamage(combatant, damage): number ✅
+  - [x] healCombatant(combatant, healing): number ✅
+  - [x] applyTemporaryHP(combatant, tempHP): void ✅
+  - [x] getLivingCombatants(combat): Combatant[] ✅
+  - [x] getDefeatedCombatants(combat): Combatant[] ✅
+- [x] class InitiativeRoller (static) → src/core/combat/InitiativeRoller.ts ✅ (note: documentation shows as "static" but actual implementation is an instance class)
+  - [x] rollInitiativeForCombatant(combatant): InitiativeResult ✅
+  - [x] rollInitiativeForAll(combatants): { results; sortedCombatants } ✅
+  - [x] getNextCombatant(combatants, currentIndex): { combatant; index; isNewRound } ✅
+  - [x] getInitiativeOrder(combatants): string[] ✅
+  - [x] rerollInitiativeForCombatant(combatant): number ✅
+  - [x] delayTurn(combatants, combatantId): Combatant[] ✅
+  - [x] resortByInitiative(combatants): Combatant[] ✅
+- [x] class AttackResolver (static) → src/core/combat/AttackResolver.ts ✅ (note: documentation shows as "static" but actual implementation is an instance class)
+  - [x] resolveAttack(attacker, target, attack): AttackResult ✅
+  - [x] isInRange(attacker, target, attack): boolean ✅
+  - [x] calculateAttackBonus(character, attackName, abilityModifier, isProficient): number ✅
+  - [x] attackWithAdvantage(attacker, target, attack): AttackResult ✅
+  - [x] attackWithDisadvantage(attacker, target, attack): AttackResult ✅
+- [x] class SpellCaster (static) → src/core/combat/SpellCaster.ts ✅ (note: documentation shows as "static" but actual implementation is an instance class)
+  - [x] castSpell(caster, spell, targets): SpellCastResult ✅
+  - [x] hasSpellSlot(caster, spellLevel): boolean ✅
+  - [x] consumeSpellSlot(caster, spellLevel): void ✅
+  - [x] restoreSpellSlots(caster): void ✅
+  - [x] calculateSaveDC(caster, ability): number ✅
+  - [x] makeSavingThrow(target, saveAbility, saveDC): boolean ✅
+  - [x] getSpellSlotInfo(caster): string ✅
+  - [x] canUpcast(caster, spell, targetSlotLevel): boolean ✅
+  - [x] upcastSpell(caster, spell, targets, slotLevelUsed): SpellCastResult ✅
 
 ---
 
@@ -584,7 +584,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
-| 3 | Progression & Combat | ~80 | 🔄 In Progress (67/~80 done) |
+| 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
@@ -669,6 +669,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - InitiativeResult → `src/core/combat/InitiativeRoller.ts` (11-16)
   - AttackResult → `src/core/combat/AttackResolver.ts` (15-23)
   - SpellSlots → `src/core/generation/SpellManager.ts` (24-31) - NOT exported from src/index.ts
+- [x] **Documentation mismatch (Task 3.5 - Combat Helper Classes)** - DATA_ENGINE_REFERENCE.md shows `InitiativeRoller`, `AttackResolver`, and `SpellCaster` as "static" helper classes, but the actual implementations are instance classes (not static). The documentation style says "Helper: InitiativeRoller (static)" which is misleading. The code is correct (these are instance classes that need to be instantiated), but the documentation should be clarified. All methods exist and work correctly.
 - [ ] [Item] documented but not found in codebase (covered by EquipmentGenerator.getEquipmentByType above)
 - [ ] [Item] exists in code but not documented (covered by EquipmentGenerator methods above)
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y] (covered by EquipmentGenerator methods above)
