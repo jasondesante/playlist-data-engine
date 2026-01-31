@@ -157,15 +157,15 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 2.4: Modification Interfaces
 
-- [ ] `interface EquipmentModification` → src/core/types/Equipment.ts
-  - [ ] `id: string`
-  - [ ] `name: string`
-  - [ ] `properties: EquipmentProperty[]`
-  - [ ] `addsFeatures?: Array<string | EquipmentMiniFeature>`
-  - [ ] `addsSkills?: Array<{ skillId, level: 'proficient' | 'expertise' }>`
-  - [ ] `addsSpells?: Array<{ spellId, level?, uses?, recharge? }>`
-  - [ ] `appliedAt: string`
-  - [ ] `source: string`
+- [x] `interface EquipmentModification` → src/core/types/Equipment.ts (VERIFIED - lines 142-159)
+  - [x] `id: string`
+  - [x] `name: string`
+  - [x] `properties: EquipmentProperty[]`
+  - [x] `addsFeatures?: Array<string | EquipmentMiniFeature>`
+  - [x] `addsSkills?: Array<{ skillId, level: 'proficient' | 'expertise' }>`
+  - [x] `addsSpells?: Array<{ spellId, level?, uses?, recharge? }>`
+  - [x] `appliedAt: string`
+  - [x] `source: string`
 
 ### Task 2.5: Result Type Interfaces
 
