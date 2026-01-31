@@ -278,8 +278,8 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 **Focus**: Real-world data integration and platform integrations.
 **Estimated Items**: ~50
 
-### Task 4.1: Environmental Types (16 items)
-- [ ] EnvironmentalContext, GeolocationData, MotionData, WeatherData, LightData, ForecastData, SensorType, PerformanceMetrics, PerformanceStatistics, SensorPermission, SensorHealthStatus, SensorStatus, SensorFailureLog, SensorRetryConfig, SensorRecoveryNotification, SevereWeatherAlert → src/types/SensorTypes.ts
+### Task 4.1: Environmental Types (16 items) ✅ COMPLETED
+- [x] EnvironmentalContext, GeolocationData, MotionData, WeatherData, LightData, ForecastData, SensorType, PerformanceMetrics, PerformanceStatistics, SensorPermission, SensorHealthStatus, SensorStatus, SensorFailureLog, SensorRetryConfig, SensorRecoveryNotification, SevereWeatherAlert → src/core/types/Environmental.ts ✅ (location mismatch: documented as src/types/SensorTypes.ts; signature mismatches noted below)
 
 ### Task 4.2: Environmental Sensors (24 items)
 - [ ] class EnvironmentalSensors → src/core/sensors/EnvironmentalSensors.ts
@@ -585,7 +585,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
-| 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
+| 4 | Environmental & Gaming | ~50 | 🔄 IN PROGRESS (16/50 done) |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
@@ -670,6 +670,38 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - AttackResult → `src/core/combat/AttackResolver.ts` (15-23)
   - SpellSlots → `src/core/generation/SpellManager.ts` (24-31) - NOT exported from src/index.ts
 - [x] **Documentation mismatch (Task 3.5 - Combat Helper Classes)** - DATA_ENGINE_REFERENCE.md shows `InitiativeRoller`, `AttackResolver`, and `SpellCaster` as "static" helper classes, but the actual implementations are instance classes (not static). The documentation style says "Helper: InitiativeRoller (static)" which is misleading. The code is correct (these are instance classes that need to be instantiated), but the documentation should be clarified. All methods exist and work correctly.
+- [x] **Location mismatch (Task 4.1 - Environmental Types)** - DATA_ENGINE_REFERENCE_plan.md documents environmental types at `src/types/SensorTypes.ts`, but this file does not exist. 15 of 16 types exist at `src/core/types/Environmental.ts`:
+  - EnvironmentalContext → `src/core/types/Environmental.ts` (155-163)
+  - GeolocationData → `src/core/types/Environmental.ts` (94-102)
+  - MotionData → `src/core/types/Environmental.ts` (104-122)
+  - WeatherData → `src/core/types/Environmental.ts` (124-134)
+  - LightData → `src/core/types/Environmental.ts` (148-151)
+  - ForecastData → `src/core/types/Environmental.ts` (136-146)
+  - SensorType → `src/core/types/Environmental.ts` (1)
+  - PerformanceMetrics → `src/core/types/Environmental.ts` (6-19)
+  - PerformanceStatistics → `src/core/types/Environmental.ts` (24-35)
+  - SensorPermission → `src/core/types/Environmental.ts` (37-41)
+  - SensorHealthStatus → `src/core/types/Environmental.ts` (46)
+  - SensorStatus → `src/core/types/Environmental.ts` (51-60)
+  - SensorFailureLog → `src/core/types/Environmental.ts` (65-71)
+  - SensorRetryConfig → `src/core/types/Environmental.ts` (76-81)
+  - SensorRecoveryNotification → `src/core/types/Environmental.ts` (86-92)
+  - SevereWeatherAlert → `src/core/sensors/WeatherAPIClient.ts` (50-56)
+- [x] **Signature mismatch (Task 4.1 - GeolocationData)** - DATA_ENGINE_REFERENCE.md shows `altitude_accuracy?: number` property, but actual code at `src/core/types/Environmental.ts:94-102` does not include this property. Documentation needs to be updated.
+- [x] **Signature mismatch (Task 4.1 - MotionData)** - Multiple discrepancies between DATA_ENGINE_REFERENCE.md and actual code at `src/core/types/Environmental.ts:104-122`:
+  - `acceleration.x/y/z` are `number | null` in code but documented as `number`
+  - Property naming: code uses `accelerationIncludingGravity` but docs show `acceleration_with_gravity`
+  - Property naming: code uses `rotationRate` but docs show `rotation_rate`
+  - Code has `interval: number` property not documented
+  - Docs have `movement_intensity: number` and `activity_type` properties not in code
+  The code uses camelCase naming convention consistent with TypeScript; documentation uses snake_case which is inconsistent.
+- [x] **Signature mismatch (Task 4.1 - WeatherData)** - Multiple discrepancies between DATA_ENGINE_REFERENCE.md and actual code at `src/core/types/Environmental.ts:124-134`:
+  - Property naming: code uses camelCase (`weatherType`, `windSpeed`, `windDirection`, `isNight`, `moonPhase`) but docs show snake_case
+  - Code missing: `feels_like`, `visibility` properties shown in docs
+  - Type difference: code has `weatherType: string` but docs show `weather_type: 'clear' | 'clouds' | 'rain' | 'snow' | 'thunderstorm' | 'mist' | 'fog'`
+  - Code has `moonPhase: number` as required but docs show optional
+- [x] **Signature mismatch (Task 4.1 - LightData)** - DATA_ENGINE_REFERENCE.md shows `environment: 'bright_daylight' | 'indoor' | 'dim' | 'dark'` property, but actual code at `src/core/types/Environmental.ts:148-151` does not include this property. Documentation needs to be updated.
+- [x] **Signature mismatch (Task 4.1 - SevereWeatherAlert)** - DATA_ENGINE_REFERENCE.md shows `type: 'Blizzard' | 'Hurricane' | 'Typhoon' | 'Tornado' | 'None'` (union type), but actual code at `src/core/sensors/WeatherAPIClient.ts:50-56` uses `type: SevereWeatherType` (enum). The enum values match the union type, so functionality is equivalent but implementation differs.
 - [ ] [Item] documented but not found in codebase (covered by EquipmentGenerator.getEquipmentByType above)
 - [ ] [Item] exists in code but not documented (covered by EquipmentGenerator methods above)
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y] (covered by EquipmentGenerator methods above)
