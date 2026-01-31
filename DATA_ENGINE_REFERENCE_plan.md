@@ -62,17 +62,17 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] InventoryItem → src/core/generation/EquipmentGenerator.ts (37-41) as basic version; EnhancedInventoryItem → src/core/types/Equipment.ts (164-177) ✅ (location mismatch; naming variation)
 - [x] CharacterAppearance → src/core/generation/AppearanceGenerator.ts (8-21) ✅ (location mismatch)
 
-### Task 1.4: Utility Functions & RNG (7 items)
-- [ ] generateSeed() → src/utils/random.ts
-- [ ] hashSeedToFloat() → src/utils/random.ts
-- [ ] hashSeedToInt() → src/utils/random.ts
-- [ ] class SeededRNG → src/utils/random.ts
-  - [ ] constructor(seed: string)
-  - [ ] random(): number
-  - [ ] randomInt(min: number, max: number): number
-  - [ ] randomChoice<T>(array: T[]): T
-  - [ ] weightedChoice<T>(choices: [T, number][]): T
-  - [ ] shuffle<T>(array: T[]): T[]
+### Task 1.4: Utility Functions & RNG (7 items) ✅ COMPLETED
+- [x] generateSeed() → src/utils/hash.ts ✅ (location mismatch: documented as src/utils/random.ts)
+- [x] hashSeedToFloat() → src/utils/hash.ts ✅ (location mismatch: documented as src/utils/random.ts)
+- [x] hashSeedToInt() → src/utils/hash.ts ✅ (location mismatch: documented as src/utils/random.ts)
+- [x] class SeededRNG → src/utils/random.ts ✅
+  - [x] constructor(seed: string) ✅
+  - [x] random(): number ✅
+  - [x] randomInt(min: number, max: number): number ✅
+  - [x] randomChoice<T>(array: T[]): T ✅
+  - [x] weightedChoice<T>(choices: [T, number][]): T ✅
+  - [x] shuffle<T>(array: T[]): T[] ✅
 
 ### Task 1.5: Validation Schemas (4 items)
 - [ ] PlaylistTrackSchema → src/schemas/
@@ -610,6 +610,11 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] **Signature mismatch (Class type)** - DATA_ENGINE_REFERENCE.md shows `Class` as simple union type `'Barbarian' | ... | 'Wizard'`, but actual code uses branded type `string & { readonly __ClassBrand: unique symbol }` for extensibility. The branded type is correct and intentional for supporting custom classes.
 - [x] **Missing documentation (Attack interface)** - DATA_ENGINE_REFERENCE.md is missing the `properties?: string[]` property on the Attack interface. The actual code at `src/core/types/Character.ts:195` includes this property.
 - [x] **Naming variation (InventoryItem)** - DATA_ENGINE_REFERENCE.md documents `InventoryItem` but the enhanced version in the codebase is called `EnhancedInventoryItem` at `src/core/types/Equipment.ts`. A basic `InventoryItem` interface exists at `src/core/generation/EquipmentGenerator.ts` for backward compatibility.
+- [x] **Location mismatch (Task 1.4)** - DATA_ENGINE_REFERENCE_plan.md documents RNG utility functions at `src/utils/random.ts`, but the actual location is `src/utils/hash.ts`:
+  - `generateSeed()` → `src/utils/hash.ts` (14)
+  - `hashSeedToFloat()` → `src/utils/hash.ts` (27)
+  - `hashSeedToInt()` → `src/utils/hash.ts` (40)
+  - `class SeededRNG` is correctly documented at `src/utils/random.ts` (7)
 - [ ] [Item] documented but not found in codebase
 - [ ] [Item] exists in code but not documented
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y]
