@@ -442,14 +442,18 @@ Address all discrepancies found during verification.
 
 ### Task 6.5: Undocumented FeatureRegistry Methods
 
-**Status**: LOW - Missing documentation
+**Status**: ✅ RESOLVED - Documentation added to EQUIPMENT_SYSTEM.md
 
-- [ ] **Issue**: These static methods exist but are not documented in PREREQUISITES.md:
+- [x] **Issue**: These static methods exist but are not documented in PREREQUISITES.md:
   - `FeatureRegistry.getEquipmentFeatures(equipmentName: string): ClassFeature[]` - Line 468
   - `FeatureRegistry.isValidEquipmentFeature(featureId: string): boolean` - Line 498
   - `FeatureRegistry.registerEquipmentFeature(feature: ClassFeature): void` - Line 522
-- [ ] **Investigation**: Should these be in PREREQUISITES.md or equipment documentation?
-- [ ] **Resolution**: Decide on appropriate documentation location
+- [x] **Investigation**: Determined these are equipment-feature integration methods, not prerequisite-related
+- [x] **Resolution Applied**: Added documentation to `docs/EQUIPMENT_SYSTEM.md` in the API Reference section
+  - [x] These methods belong in equipment documentation, not PREREQUISITES.md
+  - [x] Added new "FeatureRegistry (Equipment-Related Methods)" subsection after EquipmentSpawnHelper
+  - [x] Documents all three methods with descriptions and usage notes
+- [x] **Verification**: Documentation updated, build passes
 
 ---
 
@@ -683,8 +687,8 @@ Verify type imports across modules are correct.
 | D2 | Multiple ValidationResult types | ✅ Resolved |
 | D2a | `unmet` property missing from Skill/Spell validation results | ✅ Resolved |
 | D3 | SpellPrerequisite in constants file | ✅ Resolved |
-| D4 | Class type inconsistency | Low |
-| D5 | Undocumented FeatureRegistry methods | Low |
+| D4 | Class type inconsistency | ✅ Resolved |
+| D5 | Undocumented FeatureRegistry methods | ✅ Resolved |
 | D6 | Racial trait example missing `description` field | Documentation bug found in PREREQUISITES.md:426-436 |
 
 ### Completion Checklist
@@ -695,12 +699,12 @@ Verify type imports across modules are correct.
 - [x] Phase 3: Registry Classes (All tasks verified - Task 3.1's `meetsPrerequisites` added in Task 6.1)
 - [x] Phase 4: Extension System (All 2 tasks verified)
 - [x] Phase 5: Public API Exports (All 3 tasks verified - Task 5.3 completed with actual line numbers)
-- [ ] Phase 6: Discrepancies Resolution (Tasks 6.1, 6.2, 6.3, 6.6 completed; 6.4-6.5 remaining)
+- [x] Phase 6: Discrepancies Resolution (All tasks completed - 6.1, 6.2, 6.3, 6.4, 6.5, 6.6)
 - [x] Phase 7: Code Examples Testing (All 4 tasks completed - 12 tests created)
 
 #### Overall Completion
-- [x] All phases complete (except Phase 6 low-priority items)
+- [x] All phases complete
 - [x] All examples tested
-- [x] Documentation updated (if needed)
+- [x] Documentation updated
 
-**Remaining Work**: Only Phase 6 low-priority items remain (Tasks 6.4-6.5)
+**ALL TASKS COMPLETED** ✅

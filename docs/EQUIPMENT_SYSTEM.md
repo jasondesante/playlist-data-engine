@@ -979,6 +979,28 @@ class EquipmentSpawnHelper {
 }
 ```
 
+### FeatureRegistry (Equipment-Related Methods)
+
+The FeatureRegistry provides static methods for working with equipment-granted features.
+
+```typescript
+class FeatureRegistry {
+    // Get features that can be granted by equipment
+    // Returns features tagged with 'equipment' or 'item', or custom features
+    static getEquipmentFeatures(equipmentName: string): ClassFeature[];
+
+    // Check if a feature ID exists and can be granted by equipment
+    // Features with spawnWeight: 0 are still valid for equipment use
+    static isValidEquipmentFeature(featureId: string): boolean;
+
+    // Register a feature specifically for equipment use
+    // Automatically adds 'equipment' tag to the feature
+    static registerEquipmentFeature(feature: ClassFeature): void;
+}
+```
+
+**Note**: These methods are useful when creating custom equipment that grants features. Use `isValidEquipmentFeature()` to validate feature references in equipment definitions, and `registerEquipmentFeature()` to register features specifically designed for equipment items.
+
 ---
 
 ## Examples
