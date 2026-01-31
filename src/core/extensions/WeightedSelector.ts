@@ -65,7 +65,7 @@ export class WeightedSelector<T = any> {
 
         // Convert to choices format for SeededRNG.weightedChoice
         const choices: [T, number][] = items.map(item => {
-            const itemName = this.getItemName(item);
+            const itemName = this.getItemKey(item);
             // Use finalWeights[itemName] if it exists (even if 0), otherwise default to 1
             const weight = itemName in finalWeights ? finalWeights[itemName] : 1;
             return [item, weight];
@@ -131,7 +131,7 @@ export class WeightedSelector<T = any> {
             // Remove selected item from pool to prevent duplicates
             const index = availableItems.indexOf(item);
             if (index !== -1) {
-                const itemName = this.getItemName(item);
+                const itemName = this.getItemKey(item);
                 availableItems.splice(index, 1);
                 delete availableWeights[itemName];
             }
@@ -177,7 +177,7 @@ export class WeightedSelector<T = any> {
             // Equal probability if all weights are 0
             const probabilities: Record<string, number> = {};
             for (const item of items) {
-                const name = this.getItemName(item);
+                const name = this.getItemKey(item);
                 probabilities[name] = 1 / items.length;
             }
             return probabilities;
@@ -185,12 +185,94 @@ export class WeightedSelector<T = any> {
 
         const probabilities: Record<string, number> = {};
         for (const item of items) {
-            const name = this.getItemName(item);
+            const name = this.getItemKey(item);
             const weight = finalWeights[name] || 0;
             probabilities[name] = totalWeight > 0 ? weight / totalWeight : 0;
         }
 
         return probabilities;
+    }
+
+    /**
+     * Normalize weights to sum to 1.0 (useful for debugging/analysis)
+     *
+     * Converts user-provided weights into normalized probabilities based on mode.
+     * Useful for displaying spawn rates to users or debugging weight distributions.
+     *
+     * @param items - Array of items to calculate normalized weights for
+     * @param weights - User-provided weight multipliers
+     * @param mode - Selection mode ('relative', 'absolute', or 'default')
+     * @returns Record of item name to normalized weight (sums to 1.0)
+     *
+     * @example
+     * ```typescript
+     * const weights = { 'Sword': 2, 'Axe': 1 };
+     * const normalized = WeightedSelector.normalizeWeights(
+     *     ['Sword', 'Axe', 'Dagger'],
+     *     weights,
+     *     'relative'
+     * );
+     * // Returns: { 'Sword': 0.5, 'Axe': 0.25, 'Dagger': 0.25 }
+     * ```
+     */
+    static normalizeWeights<T>(
+        items: T[],
+        weights: Record<string, number>,
+        mode: SelectionMode = 'relative'
+    ): Record<string, number> {
+        if (items.length === 0) {
+            return {};
+        }
+
+        const finalWeights = WeightedSelector.getFinalWeights(items, weights, mode);
+        const totalWeight = Object.values(finalWeights).reduce((sum, w) => sum + w, 0);
+
+        if (totalWeight === 0) {
+            // Equal weight if all are 0
+            const normalized: Record<string, number> = {};
+            for (const item of items) {
+                const name = WeightedSelector.getItemKey(item);
+                normalized[name] = 1 / items.length;
+            }
+            return normalized;
+        }
+
+        const normalized: Record<string, number> = {};
+        for (const item of items) {
+            const name = WeightedSelector.getItemKey(item);
+            normalized[name] = finalWeights[name] / totalWeight;
+        }
+
+        return normalized;
+    }
+
+    /**
+     * Extract unique key from item for weight lookup
+     *
+     * Public helper that handles both string items and objects with a 'name' property.
+     * Useful for custom item types that need explicit key extraction.
+     *
+     * @param item - The item to extract key from
+     * @returns The item's unique key (or string value if item is a string)
+     *
+     * @example
+     * ```typescript
+     * const item = { name: 'Sword', damage: 10 };
+     * const key = WeightedSelector.getItemKey(item); // 'Sword'
+     *
+     * const strItem = 'Axe';
+     * const strKey = WeightedSelector.getItemKey(strItem); // 'Axe'
+     * ```
+     */
+    static getItemKey<T>(item: T): string {
+        if (typeof item === 'string') {
+            return item;
+        }
+        if (item && typeof item === 'object' && 'name' in item) {
+            return String((item as any).name);
+        }
+        // Fallback: use string representation
+        return String(item);
     }
 
     /**
@@ -214,42 +296,23 @@ export class WeightedSelector<T = any> {
         if (mode === 'default') {
             // All items get equal weight (1.0)
             for (const item of items) {
-                const name = this.getItemName(item);
+                const name = this.getItemKey(item);
                 finalWeights[name] = 1.0;
             }
         } else if (mode === 'absolute') {
             // Specified items use their weight, unspecified get weight 1
             for (const item of items) {
-                const name = this.getItemName(item);
+                const name = this.getItemKey(item);
                 finalWeights[name] = weights[name] !== undefined ? weights[name] : 1;
             }
         } else {
             // Relative mode: use weights as provided, default to 1
             for (const item of items) {
-                const name = this.getItemName(item);
+                const name = this.getItemKey(item);
                 finalWeights[name] = weights[name] !== undefined ? weights[name] : 1;
             }
         }
 
         return finalWeights;
-    }
-
-    /**
-     * Extract item name from item (for weight lookup)
-     *
-     * Handles both string items and objects with a 'name' property.
-     *
-     * @param item - The item to extract name from
-     * @returns The item's name (or string value if item is a string)
-     */
-    private static getItemName<T>(item: T): string {
-        if (typeof item === 'string') {
-            return item;
-        }
-        if (item && typeof item === 'object' && 'name' in item) {
-            return String((item as any).name);
-        }
-        // Fallback: use string representation
-        return String(item);
     }
 }

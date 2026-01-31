@@ -517,13 +517,26 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 **Verification Results:**
 All 6 methods verified in `src/core/features/FeatureValidator.ts`. Class is properly exported from `src/index.ts` at lines 271-277 (both class and helper functions). ValidationResult interface defined in file at lines 25-30.
 
-### Task 6.5: WeightedSelector (5 items)
-- [ ] class WeightedSelector (static) → src/core/extensions/WeightedSelector.ts
-  - [ ] select<T>(items, weights, rng, mode?): T | null
-  - [ ] selectMultiple<T>(items, weights, rng, count, mode?): T[]
-  - [ ] getProbabilities<T>(items, weights, mode?): Record<string, number>
-  - [ ] normalizeWeights(weights, mode): Record<string, number>
-  - [ ] getItemKey<T>(item): string
+### Task 6.5: WeightedSelector (5 items) ✅ COMPLETED
+- [x] class WeightedSelector (static) → src/core/extensions/WeightedSelector.ts
+  - [x] select<T>(items, weights, rng, mode?): T | null ⚠️ (Return type discrepancy: documentation shows `T | null` but code returns `T` and throws on empty. Code is correct - tests verify throw behavior)
+  - [x] selectMultiple<T>(items, weights, rng, count, mode?): T[] ✅
+  - [x] getProbabilities<T>(items, weights, mode?): Record<string, number> ✅
+  - [x] normalizeWeights(items, weights, mode?): Record<string, number> ✅ **IMPLEMENTED** (signature includes `items` parameter unlike documentation)
+  - [x] getItemKey<T>(item): string ✅ **IMPLEMENTED**
+
+**Verification Results:**
+All 5 methods verified in `src/core/extensions/WeightedSelector.ts`. The `normalizeWeights()` and `getItemKey()` methods were missing from the public API and have been implemented.
+
+**Implementation Notes:**
+- `normalizeWeights(items, weights, mode)` - Added as public static method. Returns normalized weights that sum to 1.0. Note: signature includes `items` parameter (required to know which items to normalize).
+- `getItemKey<T>(item)` - Added as public static method. Extracts unique key from item for weight lookup. Handles strings and objects with 'name' property.
+- `select()` return type - Documentation shows `T | null` but code returns `T` and throws on empty arrays. This is intentional and tested - documentation should be updated.
+
+**Test Results:**
+- Unit tests: 39/39 passing (tests/unit/weightedSelector.test.ts)
+- Integration tests using WeightedSelector: 59/59 passing (ammunitionAndWeights + edgeCases)
+- Total WeightedSelector-related tests: 98/98 passing
 
 ### Task 6.6: SkillRegistry & Types (20 items)
 - [ ] CustomSkill, SkillPrerequisite, SkillValidationResult, SkillRegistryStats, SkillProficiency, SkillListDefinition, SkillSelectionWeights → src/core/skills/SkillRegistry.ts
@@ -629,6 +642,13 @@ All 6 methods verified in `src/core/features/FeatureValidator.ts`. Class is prop
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
+| 3 | Progression & Combat | ~80 | ✅ COMPLETED |
+| 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
+| 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
+| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (59/120 done; Tasks 6.1-6.5 complete) |
+| 7 | Game Data Constants | ~15 | ⬜ Not Started |
+| 8 | Fix ExtensionManager Discrepancies | ~6 | ✅ COMPLETED (6/6 done) |
+| **Total** | | **~481** | |
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
 | 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
@@ -790,6 +810,10 @@ All 6 methods verified in `src/core/features/FeatureValidator.ts`. Class is prop
   - Specific class names for skillLists category
   - `'classSpellLists'`, `'classSpellSlots'`, `'classStartingEquipment'`
 - [x] **Additional method not documented (Task 6.2)** - `getCurrentOptions(category: ExtensionCategory): ExtensionOptions | undefined` exists at line 444 but is not documented
+- [x] **Missing public methods (Task 6.5)** - Two documented methods were NOT PUBLIC:
+  - `normalizeWeights(items, weights, mode): Record<string, number>` - Existed as private `getFinalWeights()`. ✅ **RESOLVED**: Added public method with proper signature (includes `items` parameter).
+  - `getItemKey<T>(item): string` - Existed as private `getItemName()`. ✅ **RESOLVED**: Added public method and renamed internal calls.
+- [x] **Return type discrepancy (Task 6.5)** - `select()` documented as returning `T | null` but code returns `T` and throws on empty arrays. This is intentional behavior verified by tests. Documentation should be updated.
 
 ---
 
