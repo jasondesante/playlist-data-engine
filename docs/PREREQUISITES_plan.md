@@ -654,12 +654,12 @@ Verify type imports across modules are correct.
 
 ### Type Imports Verification
 
-- [ ] `SkillPrerequisite` → imports `Class`, `Race` from `../types/Character.js` → `src/core/skills/SkillTypes.ts:10`
-- [ ] `FeaturePrerequisite` → imports `Class`, `Race`, `Ability` from `../types/Character.js` → `src/core/features/FeatureTypes.ts:13`
-- [ ] `SpellPrerequisite` → no type imports (uses string literals) → `src/utils/constants.ts:873`
-- [ ] `SkillValidator` → imports `CharacterSheet` from `../types/Character.js` → `src/core/skills/SkillValidator.ts:15`
-- [ ] `SpellValidator` → imports `CharacterSheet` from `../types/Character.js` → `src/core/spells/SpellValidator.ts:15`
-- [ ] `FeatureRegistry` → imports `CharacterSheet` from `../types/Character.js` → `src/core/features/FeatureRegistry.ts:16`
+- [x] `SkillPrerequisite` → imports `Class`, `Race` from `../types/Character.js` → `src/core/skills/SkillTypes.ts:10`
+- [x] `FeaturePrerequisite` → imports `Class`, `Race`, `Ability` from `../types/Character.js` → `src/core/features/FeatureTypes.ts:13`
+- [x] `SpellPrerequisite` → imports `Class` from `../types/Character.js` → `src/core/spells/SpellTypes.ts:11` (NOTE: `race` property uses plain `string`, not `Race` type)
+- [x] `SkillValidator` → imports `CharacterSheet` from `../types/Character.js` → `src/core/skills/SkillValidator.ts:16`
+- [x] `SpellValidator` → imports `CharacterSheet` from `../types/Character.js` → `src/core/spells/SpellValidator.ts:16`
+- [x] `FeatureRegistry` → imports `CharacterSheet` from `../types/Character.js` → `src/core/features/FeatureRegistry.ts:16`
 
 ---
 
