@@ -74,11 +74,11 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] weightedChoice<T>(choices: [T, number][]): T ✅
   - [x] shuffle<T>(array: T[]): T[] ✅
 
-### Task 1.5: Validation Schemas (4 items)
-- [ ] PlaylistTrackSchema → src/schemas/
-- [ ] ServerlessPlaylistSchema → src/schemas/
-- [ ] AudioProfileSchema → src/schemas/
-- [ ] CharacterSheetSchema → src/schemas/
+### Task 1.5: Validation Schemas (4 items) ✅ COMPLETED
+- [x] PlaylistTrackSchema → src/utils/validators.ts (14-48) ✅ (location mismatch: documented as src/schemas/)
+- [x] ServerlessPlaylistSchema → src/utils/validators.ts (53-61) ✅ (location mismatch: documented as src/schemas/)
+- [x] AudioProfileSchema → src/utils/validators.ts (66-89) ✅ (location mismatch: documented as src/schemas/)
+- [x] CharacterSheetSchema → src/utils/validators.ts (106-156) ✅ (location mismatch: documented as src/schemas/)
 
 ---
 
@@ -578,14 +578,14 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
-| 1 | Foundation Types & Utilities | ~60 | ⬜ Not Started |
+| 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
 | 2 | Core Processing Modules | ~50 | ⬜ Not Started |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
-| **Total** | | **~435** | |
+| **Total** | | **~439** | |
 
 ---
 
@@ -615,6 +615,11 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - `hashSeedToFloat()` → `src/utils/hash.ts` (27)
   - `hashSeedToInt()` → `src/utils/hash.ts` (40)
   - `class SeededRNG` is correctly documented at `src/utils/random.ts` (7)
+- [x] **Location mismatch (Task 1.5)** - DATA_ENGINE_REFERENCE_plan.md documents validation schemas at `src/schemas/`, but no such directory exists. All 4 Zod schemas exist at `src/utils/validators.ts`:
+  - `PlaylistTrackSchema` → `src/utils/validators.ts` (14-48)
+  - `ServerlessPlaylistSchema` → `src/utils/validators.ts` (53-61)
+  - `AudioProfileSchema` → `src/utils/validators.ts` (66-89)
+  - `CharacterSheetSchema` → `src/utils/validators.ts` (106-156)
 - [ ] [Item] documented but not found in codebase
 - [ ] [Item] exists in code but not documented
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y]
