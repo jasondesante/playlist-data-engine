@@ -135,7 +135,6 @@ Equipment properties define how items affect gameplay. Each property has a type,
 | `passive_modifier` | Modifies passive values | `ac`, `speed`, `max_hp`, `saving_throws`, etc. | number |
 | `special_property` | Game-specific properties | `finesse`, `versatile`, `stealth_disadvantage` | boolean/string/number |
 | `damage_bonus` | Adds extra damage | `fire`, `cold`, `lightning` | dice string / number |
-| `spell_grant` | Grants spellcasting ability | spell ID | boolean |
 | `stat_requirement` | Minimum stat required to use | `STR`, `DEX` | number |
 
 ### Property Conditions

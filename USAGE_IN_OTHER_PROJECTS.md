@@ -2473,7 +2473,7 @@ All TypeScript types are exported, including:
 
 **Equipment System Types (NEW):**
 - `EnhancedEquipment` - Full equipment definition with properties, features, skills, spells
-- `EquipmentProperty` - Individual equipment property (stat_bonus, skill_proficiency, ability_unlock, passive_modifier, special_property, damage_bonus, spell_grant, stat_requirement)
+- `EquipmentProperty` - Individual equipment property (stat_bonus, skill_proficiency, ability_unlock, passive_modifier, special_property, damage_bonus, stat_requirement)
 - `EquipmentCondition` - Property conditions (vs_creature_type, at_time_of_day, wielder_race, wielder_class, while_equipped, on_hit, on_damage_taken, custom)
 - `EquipmentModification` - Runtime enchantment, curse, or upgrade
 - `EnhancedInventoryItem` - Inventory item with per-instance modifications
