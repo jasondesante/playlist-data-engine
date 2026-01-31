@@ -680,7 +680,7 @@ export const MAGIC_ITEM_EXAMPLES: EnhancedEquipment[] = [
 
     /**
      * Ring of Spell Storing - Store and cast spells
-     * Demonstrates: spell_grant property with uses
+     * Demonstrates: grantsSpells array with uses and recharge
      */
     {
         name: 'Ring of Spell Storing',
@@ -728,7 +728,7 @@ export const MAGIC_ITEM_EXAMPLES: EnhancedEquipment[] = [
 
     /**
      * Wand of Magic Missiles - Cast magic missile
-     * Demonstrates: spell_grant with limited charges
+     * Demonstrates: grantsSpells array with limited uses and recharge
      */
     {
         name: 'Wand of Magic Missiles',

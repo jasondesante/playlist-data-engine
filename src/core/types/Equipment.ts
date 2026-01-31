@@ -24,7 +24,6 @@ export type EquipmentPropertyType =
     | 'passive_modifier'     // Damage resistance, speed bonus, AC bonus
     | 'special_property'     // Finesse, versatile, two-handed, etc.
     | 'damage_bonus'         // +1d6 fire damage, etc.
-    | 'spell_grant'          // Grants specific spells
     | 'stat_requirement';    // Minimum stat required to use (e.g., STR 13 for heavy armor)
 
 /**

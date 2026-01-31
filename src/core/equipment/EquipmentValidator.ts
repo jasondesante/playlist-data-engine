@@ -54,7 +54,7 @@ const VALID_PROPERTY_TYPES: EquipmentProperty['type'][] = [
     'passive_modifier',
     'special_property',
     'damage_bonus',
-    'spell_grant'
+    'stat_requirement'
 ];
 
 /**
@@ -407,13 +407,6 @@ export class EquipmentValidator {
                     errors.push(`damage_bonus value must be a dice format (e.g., "1d6") or a number`);
                 } else if (typeof value !== 'number' && typeof value !== 'string') {
                     errors.push('damage_bonus value must be a number or dice string');
-                }
-                break;
-
-            case 'spell_grant':
-                // Target is the spell ID
-                if (typeof target !== 'string' || target.length === 0) {
-                    errors.push('spell_grant must have a valid spell ID as target');
                 }
                 break;
 
