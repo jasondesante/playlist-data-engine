@@ -204,11 +204,11 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 3.2: EquipmentEffectApplier Class
 
-- [ ] `class EquipmentEffectApplier` → src/core/equipment/EquipmentEffectApplier.ts
-  - [ ] `static equipItem(character: CharacterSheet, equipment: EnhancedEquipment, instanceId?: string): EffectApplicationResult`
-  - [ ] `static unequipItem(character: CharacterSheet, equipmentName: string, instanceId?: string): EffectApplicationResult`
-  - [ ] `static reapplyEquipmentEffects(character: CharacterSheet): EffectApplicationResult`
-  - [ ] `static getActiveEffects(character: CharacterSheet): EquipmentProperty[]`
+- [x] `class EquipmentEffectApplier` → src/core/equipment/EquipmentEffectApplier.ts (VERIFIED - lines 36-909)
+  - [x] `static equipItem(character: CharacterSheet, equipment: EnhancedEquipment, instanceId?: string): EffectApplicationResult` (VERIFIED - lines 45-141)
+  - [x] `static unequipItem(character: CharacterSheet, equipmentName: string, instanceId?: string): EffectApplicationResult` (VERIFIED - lines 151-209)
+  - [x] `static reapplyEquipmentEffects(character: CharacterSheet): EffectApplicationResult` (VERIFIED - lines 217-296)
+  - [x] `static getActiveEffects(character: CharacterSheet): EquipmentProperty[]` (VERIFIED - lines 304-316)
 
 ### Task 3.3: EquipmentValidator Class
 
