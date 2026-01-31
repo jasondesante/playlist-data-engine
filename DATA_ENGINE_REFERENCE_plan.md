@@ -505,14 +505,17 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - **Export discrepancy:** Types are exported from `FeatureTypes.ts`, not `FeatureRegistry.ts` (code is more organized)
 - Tests: 61/61 passing
 
-### Task 6.4: FeatureValidator (6 items)
-- [ ] class FeatureValidator (static) → src/core/features/FeatureValidator.ts
-  - [ ] validateClassFeature(feature): ValidationResult
-  - [ ] validateRacialTrait(trait): ValidationResult
-  - [ ] validateClassFeatures(features): ValidationResult
-  - [ ] validateRacialTraits(traits): ValidationResult
-  - [ ] validateEffect(effect): ValidationResult
-  - [ ] validatePrerequisites(prerequisites): ValidationResult
+### Task 6.4: FeatureValidator (6 items) ✅ COMPLETED
+- [x] class FeatureValidator (static) → src/core/features/FeatureValidator.ts (111)
+  - [x] validateClassFeature(feature): ValidationResult (120)
+  - [x] validateRacialTrait(trait): ValidationResult (229)
+  - [x] validateClassFeatures(features): ValidationResult (572)
+  - [x] validateRacialTraits(traits): ValidationResult (601)
+  - [x] validateEffect(effect): ValidationResult (352)
+  - [x] validatePrerequisites(prerequisites): ValidationResult (417)
+
+**Verification Results:**
+All 6 methods verified in `src/core/features/FeatureValidator.ts`. Class is properly exported from `src/index.ts` at lines 271-277 (both class and helper functions). ValidationResult interface defined in file at lines 25-30.
 
 ### Task 6.5: WeightedSelector (5 items)
 - [ ] class WeightedSelector (static) → src/core/extensions/WeightedSelector.ts
@@ -629,7 +632,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
 | 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
-| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (48/120 done; Tasks 6.1-6.3 complete) |
+| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (54/120 done; Tasks 6.1-6.4 complete) |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
 | 8 | Fix ExtensionManager Discrepancies | ~6 | ✅ COMPLETED (6/6 done) |
 | **Total** | | **~481** | |
