@@ -114,6 +114,21 @@ export type {
 export type { SpellPrerequisite } from './utils/constants.js';
 export type { Spell, Equipment } from './utils/constants.js';
 
+// Environmental types
+export type {
+    SensorType,
+    PerformanceMetrics,
+    PerformanceStatistics,
+    SensorPermission,
+    SensorHealthStatus,
+    SensorStatus,
+    SensorFailureLog,
+    SensorRetryConfig,
+    SensorRecoveryNotification,
+    ForecastData,
+    BiomeType
+} from './core/types/Environmental.js';
+
 // Spell types
 export type {
     RegisteredSpell,
@@ -151,6 +166,10 @@ export {
     CharacterSheetSchema,
     AbilityScoresSchema,
 } from './utils/validators.js';
+
+// Logger utility
+export { Logger, createLogger, LogLevel } from './utils/logger.js';
+export type { LogEntry, LoggerConfig } from './utils/logger.js';
 
 // Type helpers
 export { asClass } from './core/types/Character.js';
@@ -244,7 +263,7 @@ export { EquipmentSpawnHelper } from './core/equipment/EquipmentSpawnHelper.js';
 // FEATURES SYSTEM
 // ============================================================================
 
-export { FeatureRegistry } from './core/features/FeatureRegistry.js';
+export { FeatureRegistry, getFeatureRegistry } from './core/features/FeatureRegistry.js';
 export { FeatureEffectApplier } from './core/features/FeatureEffectApplier.js';
 export { FeatureValidator } from './core/features/FeatureValidator.js';
 export {
@@ -253,6 +272,15 @@ export {
     validateClassFeatures,
     validateRacialTraits
 } from './core/features/FeatureValidator.js';
+
+// Additional feature types
+export type {
+    FeatureEffectType,
+    FeatureType,
+    FeatureSource,
+    CharacterFeature,
+    CharacterTrait
+} from './core/features/index.js';
 
 // Default features and traits
 export {
@@ -264,14 +292,33 @@ export {
 // SKILLS SYSTEM
 // ============================================================================
 
-export { SkillRegistry } from './core/skills/SkillRegistry.js';
+export { SkillRegistry, getSkillRegistry } from './core/skills/SkillRegistry.js';
 export { SkillValidator } from './core/skills/SkillValidator.js';
+
+// Additional skill validators
+export {
+    validateSkill,
+    validateSkills,
+    validateSkillProficiency,
+    validateSkillProficiencies,
+    validateSkillListDefinition,
+    validateSkillPrerequisites
+} from './core/skills/SkillValidator.js';
 
 // Default skills
 export {
     DEFAULT_SKILLS,
     DEFAULT_SKILL_CATEGORIES
 } from './core/skills/DefaultSkills.js';
+
+// Additional skill types
+export type {
+    SkillProficiency,
+    SkillSelectionWeights,
+    SkillListDefinition,
+    SkillValidationResult,
+    SkillRegistryStats
+} from './core/skills/index.js';
 
 // ============================================================================
 // SPELLS SYSTEM
@@ -280,12 +327,50 @@ export {
 export { SpellValidator } from './core/spells/SpellValidator.js';
 export { SpellRegistry, getSpellRegistry } from './core/spells/SpellRegistry.js';
 
+// Additional spell validators
+export {
+    validateSpell,
+    validateSpells,
+    validateSpellPrerequisitesSchema,
+    validateSpellPrerequisites
+} from './core/spells/index.js';
+
 // ============================================================================
 // EXTENSIBILITY SYSTEM
 // ============================================================================
 
 export { ExtensionManager } from './core/extensions/ExtensionManager.js';
 export { WeightedSelector } from './core/extensions/WeightedSelector.js';
+
+// Extensibility types
+export type { ExtensionCategory, SelectionMode } from './core/extensions/index.js';
+
+// Extension initialization helpers
+export {
+    initializeAppearanceDefaults,
+    areAppearanceDefaultsInitialized,
+    ensureAppearanceDefaultsInitialized,
+    initializeSpellDefaults,
+    areSpellDefaultsInitialized,
+    ensureSpellDefaultsInitialized,
+    initializeEquipmentDefaults,
+    areEquipmentDefaultsInitialized,
+    ensureEquipmentDefaultsInitialized,
+    initializeRaceDefaults,
+    areRaceDefaultsInitialized,
+    ensureRaceDefaultsInitialized,
+    initializeClassDefaults,
+    areClassDefaultsInitialized,
+    ensureClassDefaultsInitialized,
+    initializeFeatureDefaults,
+    areFeatureDefaultsInitialized,
+    ensureFeatureDefaultsInitialized,
+    initializeSkillDefaults,
+    areSkillDefaultsInitialized,
+    ensureSkillDefaultsInitialized,
+    initializeAllDefaults,
+    ensureAllDefaultsInitialized
+} from './core/extensions/index.js';
 
 // ============================================================================
 // SENSORS
@@ -298,6 +383,21 @@ export { GamingPlatformSensors } from './core/sensors/GamingPlatformSensors.js';
 // CONFIGURATION
 // ============================================================================
 
+// Sensor configuration
+export {
+    DEFAULT_SENSOR_CONFIG,
+    loadConfigFromEnv,
+    mergeConfig,
+    type SensorConfig,
+    type CacheConfig,
+    type GeolocationSensorConfig,
+    type WeatherSensorConfig,
+    type GamingSensorConfig,
+    type XPModifierConfig,
+    type RetryConfig
+} from './core/config/index.js';
+
+// Progression configuration
 export {
     DEFAULT_PROGRESSION_CONFIG,
     mergeProgressionConfig,
@@ -347,3 +447,31 @@ export {
     createWisdomEnchantment,
     createCharismaEnchantment
 } from './utils/enchantmentLibrary.js';
+
+// ============================================================================
+// SENSOR DASHBOARD
+// ============================================================================
+
+export {
+    displayEnvironmentalDiagnostics,
+    displayGamingDiagnostics,
+    displaySystemDashboard
+} from './utils/sensorDashboard.js';
+
+export { SensorDashboard } from './utils/sensorDashboard.js';
+export type { DashboardConfig } from './utils/sensorDashboard.js';
+
+// ============================================================================
+// MAGIC ITEM EXAMPLES
+// ============================================================================
+
+export {
+    MAGIC_ITEM_EXAMPLES,
+    MAGIC_EQUIPMENT_TEMPLATES,
+    getMagicItem,
+    getMagicItemsByType,
+    getMagicItemsByRarity,
+    getCursedItems,
+    getItemsWithProperty,
+    applyTemplate
+} from './utils/magicItemExamples.js';

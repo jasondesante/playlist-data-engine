@@ -29,6 +29,9 @@ export {
     initializeFeatureDefaults,
     areFeatureDefaultsInitialized,
     ensureFeatureDefaultsInitialized,
+    initializeSkillDefaults,
+    areSkillDefaultsInitialized,
+    ensureSkillDefaultsInitialized,
     initializeAllDefaults,
     ensureAllDefaultsInitialized,
 } from './initializeDefaults.js';
