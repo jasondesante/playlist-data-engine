@@ -281,42 +281,42 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 ### Task 4.1: Environmental Types (16 items) ✅ COMPLETED
 - [x] EnvironmentalContext, GeolocationData, MotionData, WeatherData, LightData, ForecastData, SensorType, PerformanceMetrics, PerformanceStatistics, SensorPermission, SensorHealthStatus, SensorStatus, SensorFailureLog, SensorRetryConfig, SensorRecoveryNotification, SevereWeatherAlert → src/core/types/Environmental.ts ✅ (location mismatch: documented as src/types/SensorTypes.ts; signature mismatches noted below)
 
-### Task 4.2: Environmental Sensors (24 items)
-- [ ] class EnvironmentalSensors → src/core/sensors/EnvironmentalSensors.ts
-  - [ ] constructor(weatherApiKeyOrConfig?, retryConfig?)
-  - [ ] requestPermissions(types): Promise<SensorPermission[]>
-  - [ ] startMonitoring(callback?): void
-  - [ ] stopMonitoring(): void
-  - [ ] updateSnapshot(): Promise<EnvironmentalContext>
-  - [ ] calculateXPModifier(): number
-  - [ ] calculateXPModifierWithForecast(forecastHours?): Promise<number>
-  - [ ] calculateXPModifierWithSevereWeather(): Promise<{ modifier; severeWeatherAlert; safetyWarning }>
-  - [ ] detectSevereWeather(): SevereWeatherAlert | null
-  - [ ] getSevereWeatherWarning(): string | null
-  - [ ] getSensorStatus(sensorType): SensorStatus | null
-  - [ ] getAllSensorStatuses(): SensorStatus[]
-  - [ ] getFailureLog(sensorType?, limit?): SensorFailureLog[]
-  - [ ] getLastKnownGood(sensorType): any
-  - [ ] clearFailureLog(): void
-  - [ ] updateRetryConfig(config): void
-  - [ ] onSensorRecovery(callback): () => void
-  - [ ] getPermissions(): SensorPermission[]
-  - [ ] checkAvailability(type): boolean
-  - [ ] getCurrentActivity(): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown'
-  - [ ] getDiagnostics(): {...}
-  - [ ] enableDiagnosticMode(): void
-  - [ ] disableDiagnosticMode(): void
-  - [ ] printDashboard(config?): void
-- [ ] class GeolocationProvider → src/core/sensors/GeolocationProvider.ts
-  - [ ] getCurrentPosition(): Promise<GeolocationData | null>
-  - [ ] getBiome(latitude, longitude): string
-- [ ] class MotionDetector → src/core/sensors/MotionDetector.ts
-  - [ ] startMonitoring(callback): void
-  - [ ] detectActivity(data): 'stationary' | 'walking' | 'running' | 'driving'
-- [ ] class WeatherAPIClient → src/core/sensors/WeatherAPIClient.ts
-  - [ ] getWeather(lat, lon): Promise<WeatherData | null>
-- [ ] class LightSensor → src/core/sensors/LightSensor.ts
-  - [ ] startMonitoring(callback): void
+### Task 4.2: Environmental Sensors (24 items) ✅ COMPLETED
+- [x] class EnvironmentalSensors → src/core/sensors/EnvironmentalSensors.ts
+  - [x] constructor(weatherApiKeyOrConfig?, retryConfig?) ✅ (106-142)
+  - [x] requestPermissions(types): Promise<SensorPermission[]> ✅ (424-454)
+  - [x] startMonitoring(callback?): void ✅ (459-492)
+  - [x] stopMonitoring(): void ✅ (497-500)
+  - [x] updateSnapshot(): Promise<EnvironmentalContext> ✅ (505-560)
+  - [x] calculateXPModifier(): number ✅ (567-595)
+  - [x] calculateXPModifierWithForecast(forecastHours?): Promise<number> ✅ (604-635)
+  - [x] calculateXPModifierWithSevereWeather(): Promise<{ modifier; severeWeatherAlert; safetyWarning }> ✅ (643-676)
+  - [x] detectSevereWeather(): SevereWeatherAlert | null ✅ (683-690)
+  - [x] getSevereWeatherWarning(): string | null ✅ (696-703)
+  - [x] getSensorStatus(sensorType): SensorStatus | null ✅ (357-359)
+  - [x] getAllSensorStatuses(): SensorStatus[] ✅ (364-366)
+  - [x] getFailureLog(sensorType?, limit?): SensorFailureLog[] ✅ (374-389)
+  - [x] getLastKnownGood(sensorType): any ✅ (394-396)
+  - [x] clearFailureLog(): void ✅ (401-403)
+  - [x] updateRetryConfig(config): void ✅ (408-410)
+  - [x] onSensorRecovery(callback): () => void ✅ (349-352)
+  - [x] getPermissions(): SensorPermission[] ✅ (705-711)
+  - [x] checkAvailability(type): boolean ✅ (713-728)
+  - [x] getCurrentActivity(): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown' ✅ (767-778)
+  - [x] getDiagnostics(): {...} ✅ (786-878)
+  - [x] enableDiagnosticMode(): void ✅ (884-887)
+  - [x] disableDiagnosticMode(): void ✅ (893-896)
+  - [x] printDashboard(config?): void ✅ (908-910)
+- [x] class GeolocationProvider → src/core/sensors/GeolocationProvider.ts
+  - [x] getCurrentPosition(): Promise<GeolocationData | null> ✅ (123-171)
+  - [x] getBiome(latitude, longitude): string ✅ (235-370)
+- [x] class MotionDetector → src/core/sensors/MotionDetector.ts
+  - [x] startMonitoring(callback): void ✅ (14-23)
+  - [x] detectActivity(data): 'stationary' | 'walking' | 'running' | 'driving' ✅ (48-61)
+- [x] class WeatherAPIClient → src/core/sensors/WeatherAPIClient.ts
+  - [x] getWeather(lat, lon): Promise<WeatherData | null> ✅ (390-454)
+- [x] class LightSensor → src/core/sensors/LightSensor.ts
+  - [x] startMonitoring(callback): void ✅ (38-75)
 
 ### Task 4.3: Gaming Integration (10 items)
 - [ ] GamingContext → src/types/GamingTypes.ts
@@ -585,7 +585,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
-| 4 | Environmental & Gaming | ~50 | 🔄 IN PROGRESS (16/50 done) |
+| 4 | Environmental & Gaming | ~50 | 🔄 IN PROGRESS (40/50 done) |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
