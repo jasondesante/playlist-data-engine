@@ -184,33 +184,33 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] LevelUpBenefits → src/core/progression/LevelUpProcessor.ts (25-63) ✅ (location mismatch: documented as src/types/ProgressionTypes.ts)
 - [x] StatIncreaseResult → src/core/types/Progression.ts (190-214) ✅ (location mismatch: documented as src/types/StatTypes.ts)
 
-### Task 3.3: XP Calculator & Level Up (14 items)
-- [ ] class XPCalculator → src/core/progression/XPCalculator.ts
-  - [ ] constructor(options?)
-  - [ ] calculateSessionXP(session, track?): number
-  - [ ] calculateTotalModifier(envContext?, gamingContext?): number
-  - [ ] getXPThresholdForLevel(level): number
-  - [ ] getXPToNextLevel(currentLevel): number
-  - [ ] getLevelFromXP(totalXP): number
-  - [ ] isTrackMastered(listenCount): boolean
-  - [ ] getMasteryBonusXP(): number
-  - [ ] getConfig(): ExperienceSystem
-- [ ] class CharacterUpdater → src/core/progression/CharacterUpdater.ts
-  - [ ] constructor(statManager?)
-  - [ ] addXP(character, xpAmount, source?): Omit<CharacterUpdateResult, 'masteredTrack' | 'masteryBonusXP'>
-  - [ ] updateCharacterFromSession(character, session, track?, previousListenCount?): CharacterUpdateResult
-  - [ ] applyPendingStatIncrease(character, primaryStat, secondaryStats?): ApplyPendingStatIncreaseResult
-  - [ ] hasPendingStatIncreases(character): boolean
-  - [ ] getPendingStatIncreaseCount(character): number
-- [ ] class LevelUpProcessor (static) → src/core/progression/LevelUpProcessor.ts
-  - [ ] applyLevelUp(character, benefits): CharacterSheet
-  - [ ] getXPThreshold(level): number
-  - [ ] setUncappedConfig(config): void
-  - [ ] getUncappedConfig(): UncappedProgressionConfig | undefined
-- [ ] class MasterySystem (static) → src/core/progression/MasterySystem.ts
-  - [ ] checkMastery(listenCount): boolean
-  - [ ] calculateMasteryBonus(isMastered): number
-  - [ ] isJustMastered(previous, current): boolean
+### Task 3.3: XP Calculator & Level Up (14 items) ✅ COMPLETED
+- [x] class XPCalculator → src/core/progression/XPCalculator.ts
+  - [x] constructor(options?) ✅
+  - [x] calculateSessionXP(session, track?): number ✅
+  - [x] calculateTotalModifier(envContext?, gamingContext?): number ✅
+  - [x] getXPThresholdForLevel(level): number ✅
+  - [x] getXPToNextLevel(currentLevel): number ✅
+  - [x] getLevelFromXP(totalXP): number ✅
+  - [x] isTrackMastered(listenCount): boolean ✅
+  - [x] getMasteryBonusXP(): number ✅
+  - [x] getConfig(): ExperienceSystem ✅
+- [x] class CharacterUpdater → src/core/progression/CharacterUpdater.ts
+  - [x] constructor(statManager?) ⚠️ (MISSING FROM DOCUMENTATION)
+  - [x] addXP(character, xpAmount, source?): Omit<CharacterUpdateResult, 'masteredTrack' | 'masteryBonusXP'> ✅
+  - [x] updateCharacterFromSession(character, session, track?, previousListenCount?): CharacterUpdateResult ✅
+  - [x] applyPendingStatIncrease(character, primaryStat, secondaryStats?): ApplyPendingStatIncreaseResult ✅
+  - [x] hasPendingStatIncreases(character): boolean ✅
+  - [x] getPendingStatIncreaseCount(character): number ✅
+- [x] class LevelUpProcessor (static) → src/core/progression/LevelUpProcessor.ts
+  - [x] applyLevelUp(character, benefits): CharacterSheet ✅
+  - [x] getXPThreshold(level): number ✅ (signature: getXPThreshold(level, isUncapped?: boolean): number - second param missing from docs)
+  - [x] setUncappedConfig(config): void ✅
+  - [x] getUncappedConfig(): UncappedProgressionConfig | undefined ✅
+- [x] class MasterySystem (static) → src/core/progression/MasterySystem.ts
+  - [x] checkMastery(listenCount): boolean ✅
+  - [x] calculateMasteryBonus(isMastered): number ✅
+  - [x] isJustMastered(previous, current): boolean ✅
 
 ### Task 3.4: Stat Increase System (7 items)
 - [ ] class StatManager → src/core/progression/stat/StatManager.ts
@@ -582,7 +582,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
-| 3 | Progression & Combat | ~80 | 🔄 In Progress (28/~80 done) |
+| 3 | Progression & Combat | ~80 | 🔄 In Progress (42/~80 done) |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
@@ -643,6 +643,8 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - StatIncreaseResult → `src/core/types/Progression.ts` (190-214)
   - CharacterUpdateResult → `src/core/progression/CharacterUpdater.ts` (9-18)
   - LevelUpBenefits → `src/core/progression/LevelUpProcessor.ts` (25-63)
+- [x] **Missing documentation (Task 3.3 - CharacterUpdater constructor)** - DATA_ENGINE_REFERENCE.md is missing the `constructor(statManager?: StatManager)` method for CharacterUpdater at `src/core/progression/CharacterUpdater.ts:28`. The constructor exists and is required for configuring stat increase behavior. Documentation needs to be updated.
+- [x] **Signature mismatch (Task 3.3 - LevelUpProcessor.getXPThreshold)** - DATA_ENGINE_REFERENCE.md documents `getXPThreshold(level: number): number`, but actual code at `src/core/progression/LevelUpProcessor.ts:463` shows `getXPThreshold(level: number, isUncapped: boolean = false): number`. The second parameter is optional with a default value, so the documented signature works but is incomplete. Documentation should mention the optional second parameter.
 - [ ] [Item] documented but not found in codebase (covered by EquipmentGenerator.getEquipmentByType above)
 - [ ] [Item] exists in code but not documented (covered by EquipmentGenerator methods above)
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y] (covered by EquipmentGenerator methods above)
