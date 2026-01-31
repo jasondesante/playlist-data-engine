@@ -380,17 +380,25 @@ Address all discrepancies found during verification.
 
 ### Task 6.2: ValidationResult Type Variants
 
-**Status**: MEDIUM - Documentation may be confusing
+**Status**: ✅ RESOLVED - Documentation updated
 
-- [ ] **Issue**: Documentation shows generic `ValidationResult`, but codebase has three types:
+- [x] **Issue**: Documentation shows generic `ValidationResult`, but codebase has three types:
   - `ValidationResult` (FeatureTypes.ts) - used by FeatureRegistry
   - `SkillValidationResult` (SkillTypes.ts) - used by SkillValidator
   - `SpellValidationResult` (SpellValidator.ts) - used by SpellValidator
-- [ ] **Investigation**: Compare the shapes of these three types
-- [ ] **Resolution Options**:
-  - [ ] Option A: Standardize all to `ValidationResult`
-  - [ ] Option B: Document which type each validator returns
-  - [ ] Option C: Create a generic `PrerequisiteValidationResult` type
+- [x] **Investigation**: Compared the shapes of all types:
+  | Location | Properties | Notes |
+  |----------|------------|-------|
+  | `FeatureTypes.ts:239` | `valid`, `unmet?`, `errors?` | Used by FeatureRegistry.validatePrerequisites() |
+  | `ExtensionManager.ts:143` | `valid`, `errors?` | Used for extension validation |
+  | `PrerequisiteValidator.ts:75` | `valid`, `errors` (required) | Shared validator - errors is required |
+  | `SkillTypes.ts:241` (SkillValidationResult) | `valid`, `errors` (required) | Used by SkillValidator |
+  | `SpellValidator.ts:47` (SpellValidationResult) | `valid`, `errors` (required) | Used by SpellValidator |
+- [x] **Resolution Applied**: Option B - Document which type each validator returns
+  - [x] Updated PREREQUISITES.md to document all three ValidationResult types
+  - [x] Fixed example code to use `errors` instead of `unmet` for SkillValidator and SpellValidator
+  - [x] Documented that only FeatureRegistry returns `ValidationResult` with `unmet` property
+- [x] **Verification**: Build passes, skill/spell prerequisite tests (222 tests) pass
 
 ---
 

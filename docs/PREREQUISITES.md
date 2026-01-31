@@ -299,9 +299,11 @@ FeatureRegistry.getInstance().registerClassFeature(arcaneMastery);
 
 ## Validation System
 
-### ValidationResult Interface
+### ValidationResult Interfaces
 
-All prerequisite validations return this standard result:
+Different validators return slightly different result types:
+
+#### Feature ValidationResult (FeatureRegistry)
 
 ```typescript
 interface ValidationResult {
@@ -315,6 +317,32 @@ interface ValidationResult {
     errors?: string[];
 }
 ```
+
+#### Skill ValidationResult (SkillValidator)
+
+```typescript
+interface SkillValidationResult {
+    /** Whether all prerequisites are met */
+    valid: boolean;
+
+    /** Array of error messages (required, empty if valid) */
+    errors: string[];
+}
+```
+
+#### Spell ValidationResult (SpellValidator)
+
+```typescript
+interface SpellValidationResult {
+    /** Whether all prerequisites are met */
+    valid: boolean;
+
+    /** Array of error messages (required, empty if valid) */
+    errors: string[];
+}
+```
+
+**Note**: FeatureRegistry's `ValidationResult` includes both `unmet` and `errors` (optional), while SkillValidator and SpellValidator return `SkillValidationResult` and `SpellValidationResult` with a required `errors` array only.
 
 ### Skill Validation
 
@@ -331,7 +359,7 @@ const result = SkillValidator.validateSkillPrerequisites(
 const result2 = SkillRegistry.getInstance().validatePrerequisites(skill, character);
 
 if (!result.valid) {
-    console.log('Unmet prerequisites:', result.unmet);
+    console.log('Unmet prerequisites:', result.errors);
 }
 ```
 
@@ -348,6 +376,10 @@ const result = SpellValidator.validateSpellPrerequisites(
 
 // Helper function
 const result2 = validateSpellPrerequisites(spell.prerequisites, character);
+
+if (!result.valid) {
+    console.log('Unmet prerequisites:', result.errors);
+}
 ```
 
 ### Feature Validation
@@ -358,6 +390,11 @@ import { FeatureRegistry } from 'playlist-data-engine';
 const registry = FeatureRegistry.getInstance();
 
 const result = registry.validatePrerequisites(feature, character);
+
+// Access unmet prerequisites (FeatureRegistry-specific)
+if (!result.valid) {
+    console.log('Unmet prerequisites:', result.unmet || result.errors);
+}
 
 // Or check boolean directly
 const canLearn = registry.meetsPrerequisites(feature, character);
