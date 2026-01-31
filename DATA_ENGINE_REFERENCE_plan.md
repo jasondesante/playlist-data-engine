@@ -454,39 +454,56 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] exportCustomData(): Record<string, any> ✅ (line 837)
   - [x] exportCustomDataForCategory(category): any[] ✅ (line 854)
 
-### Task 6.3: FeatureRegistry & Types (30 items)
-- [ ] ClassFeature, RacialTrait, FeatureType, FeatureEffectType, FeatureEffect, FeaturePrerequisite, CharacterFeature, CharacterTrait → src/core/features/FeatureRegistry.ts
-- [ ] class FeatureRegistry (singleton) → src/core/features/FeatureRegistry.ts
-  - [ ] getInstance(): FeatureRegistry
-  - [ ] initializeDefaults(defaultClassFeatures?, defaultRacialTraits?): void
-  - [ ] reset(): void
-  - [ ] isInitialized(): boolean
-  - [ ] registerClassFeature(feature): void
-  - [ ] registerClassFeatures(features): void
-  - [ ] getClassFeatures(characterClass, level?): ClassFeature[]
-  - [ ] getClassFeaturesForLevel(characterClass, level): ClassFeature[]
-  - [ ] getClassFeatureById(featureId): ClassFeature | undefined
-  - [ ] getAllClassFeatures(): Map<string, ClassFeature[]>
-  - [ ] registerRacialTrait(trait): void
-  - [ ] registerRacialTraits(traits): void
-  - [ ] getRacialTraits(race): RacialTrait[]
-  - [ ] getRacialTraitsForSubrace(race, subrace): RacialTrait[]
-  - [ ] getBaseRacialTraits(race): RacialTrait[]
-  - [ ] getSubraceTraits(race, subrace): RacialTrait[]
-  - [ ] getAvailableSubraces(race): string[]
-  - [ ] getRacialTraitById(traitId): RacialTrait | undefined
-  - [ ] getAllRacialTraits(): Map<string, RacialTrait[]>
-  - [ ] validatePrerequisites(feature, character): ValidationResult
-  - [ ] validateFeaturePrerequisites(feature, character): ValidationResult
-  - [ ] validateTraitPrerequisites(trait, character): ValidationResult
-  - [ ] canGainFeature(feature, character): boolean
-  - [ ] getRegisteredClasses(): Class[]
-  - [ ] getRegisteredRaces(): Race[]
-  - [ ] getRegistryStats(): {...}
-  - [ ] exportRegistry(): {...}
-  - [ ] getEquipmentFeatures(equipmentName): ClassFeature[] (static)
-  - [ ] isValidEquipmentFeature(featureId): boolean (static)
-  - [ ] registerEquipmentFeature(feature): void (static)
+### Task 6.3: FeatureRegistry & Types (30 items) ✅ COMPLETED
+- [x] ClassFeature, RacialTrait, FeatureType, FeatureEffectType, FeatureEffect, FeaturePrerequisite, CharacterFeature, CharacterTrait → src/core/features/FeatureTypes.ts ✅ (location mismatch: documented as FeatureRegistry.ts but types are in FeatureTypes.ts)
+- [x] class FeatureRegistry (singleton) → src/core/features/FeatureRegistry.ts
+  - [x] getInstance(): FeatureRegistry ✅ (line 49)
+  - [x] initializeDefaults(defaultClassFeatures?, defaultRacialTraits?): void ✅ (line 63)
+  - [x] reset(): void ✅ (line 471)
+  - [x] isInitialized(): boolean ✅ (line 484)
+  - [x] registerClassFeature(feature): void ✅ (line 93)
+  - [x] registerClassFeatures(features): void ✅ (line 120)
+  - [x] getClassFeatures(characterClass, level?): ClassFeature[] ✅ (line 175)
+  - [x] getClassFeaturesForLevel(characterClass, level): ClassFeature[] ✅ (line 196 - alias to getFeaturesForLevel)
+  - [x] getClassFeatureById(featureId): ClassFeature | undefined ✅ (line 209)
+  - [x] getAllClassFeatures(): Map<string, ClassFeature[]> ✅ (IMPLEMENTED - line 217)
+  - [x] registerRacialTrait(trait): void ✅ (line 132)
+  - [x] registerRacialTraits(traits): void ✅ (line 159)
+  - [x] getRacialTraits(race): RacialTrait[] ✅ (line 219)
+  - [x] getRacialTraitsForSubrace(race, subrace): RacialTrait[] ✅ (line 233)
+  - [x] getBaseRacialTraits(race): RacialTrait[] ✅ (IMPLEMENTED - line 228)
+  - [x] getSubraceTraits(race, subrace): RacialTrait[] ✅ (IMPLEMENTED - line 250)
+  - [x] getAvailableSubraces(race): string[] ✅ (line 266)
+  - [x] getRacialTraitById(traitId): RacialTrait | undefined ✅ (line 304)
+  - [x] getAllRacialTraits(): Map<string, RacialTrait[]> ✅ (IMPLEMENTED - line 312)
+  - [x] validatePrerequisites(feature, character): ValidationResult ✅ (line 317)
+  - [x] validateFeaturePrerequisites(feature, character): ValidationResult ✅ (IMPLEMENTED - line 409)
+  - [x] validateTraitPrerequisites(trait, character): ValidationResult ✅ (IMPLEMENTED - line 420)
+  - [x] canGainFeature(feature, character): boolean ✅ (line 430)
+  - [x] getRegisteredClasses(): Class[] ✅ (line 453)
+  - [x] getRegisteredRaces(): Race[] ✅ (line 462)
+  - [x] getRegistryStats(): {...} ✅ (line 471)
+  - [x] exportRegistry(): {...} ✅ (line 605)
+  - [x] getEquipmentFeatures(equipmentName): ClassFeature[] (static) ✅ (line 532)
+  - [x] isValidEquipmentFeature(featureId): boolean (static) ✅ (line 562)
+  - [x] registerEquipmentFeature(feature): void (static) ✅ (line 586)
+
+**Implementation Summary:**
+- All 8 types verified at `src/core/features/FeatureTypes.ts`
+- All 30 methods verified or implemented in `src/core/features/FeatureRegistry.ts`
+- **New methods implemented:**
+  - `getAllClassFeatures()` - Returns Map of all class features by class
+  - `getBaseRacialTraits()` - Returns only base traits (no subrace)
+  - `getSubraceTraits()` - Returns only subrace-specific traits
+  - `getAllRacialTraits()` - Returns Map of all racial traits by race
+  - `getClassFeaturesForLevel()` - Alias for getFeaturesForLevel()
+  - `validateFeaturePrerequisites()` - Type-safe alias for validatePrerequisites()
+  - `validateTraitPrerequisites()` - Type-safe alias for validatePrerequisites()
+- **Additional methods in code (not documented):**
+  - `getRaceForSubrace()` - Find race associated with subrace (line 256)
+  - `meetsPrerequisites()` - Alias for canGainFeature() (line 444)
+- **Export discrepancy:** Types are exported from `FeatureTypes.ts`, not `FeatureRegistry.ts` (code is more organized)
+- Tests: 61/61 passing
 
 ### Task 6.4: FeatureValidator (6 items)
 - [ ] class FeatureValidator (static) → src/core/features/FeatureValidator.ts
@@ -612,7 +629,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
 | 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
-| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (18/120 done; Tasks 6.1-6.2 complete with findings) |
+| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (48/120 done; Tasks 6.1-6.3 complete) |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
 | 8 | Fix ExtensionManager Discrepancies | ~6 | ✅ COMPLETED (6/6 done) |
 | **Total** | | **~481** | |

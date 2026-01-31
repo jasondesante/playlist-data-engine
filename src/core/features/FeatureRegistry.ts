@@ -192,6 +192,17 @@ export class FeatureRegistry {
     }
 
     /**
+     * Alias for getFeaturesForLevel for API compatibility
+     *
+     * @param className - Class to get features for
+     * @param level - Level to check
+     * @returns Array of class features
+     */
+    getClassFeaturesForLevel(className: Class, level: number): ClassFeature[] {
+        return this.getFeaturesForLevel(className, level);
+    }
+
+    /**
      * Get a single class feature by ID
      *
      * @param featureId - Feature ID to look up
@@ -199,6 +210,18 @@ export class FeatureRegistry {
      */
     getClassFeatureById(featureId: string): ClassFeature | undefined {
         return this.featureLookup.get(featureId);
+    }
+
+    /**
+     * Get all class features organized by class
+     *
+     * Returns a Map where keys are class names and values are arrays
+     * of all features for that class.
+     *
+     * @returns Map of class names to their features
+     */
+    getAllClassFeatures(): Map<string, ClassFeature[]> {
+        return new Map(this.classFeatures);
     }
 
     /**
@@ -212,6 +235,19 @@ export class FeatureRegistry {
     }
 
     /**
+     * Get only base racial traits (excluding subrace-specific traits)
+     *
+     * Returns traits that apply to all members of a race, regardless of subrace.
+     *
+     * @param race - Race to get base traits for
+     * @returns Array of base racial traits
+     */
+    getBaseRacialTraits(race: Race): RacialTrait[] {
+        const traits = this.racialTraits.get(race) || [];
+        return traits.filter(t => !t.subrace);
+    }
+
+    /**
      * Get racial traits for a specific subrace
      *
      * @param race - Base race
@@ -221,6 +257,20 @@ export class FeatureRegistry {
     getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[] {
         const traits = this.racialTraits.get(race) || [];
         return traits.filter(t => !t.subrace || t.subrace === subrace);
+    }
+
+    /**
+     * Get only subrace-specific traits
+     *
+     * Returns only traits that specifically apply to the given subrace.
+     *
+     * @param race - Base race
+     * @param subrace - Subrace name
+     * @returns Array of subrace-specific traits
+     */
+    getSubraceTraits(race: Race, subrace: string): RacialTrait[] {
+        const traits = this.racialTraits.get(race) || [];
+        return traits.filter(t => t.subrace === subrace);
     }
 
     /**
@@ -272,6 +322,18 @@ export class FeatureRegistry {
      */
     getRacialTraitById(traitId: string): RacialTrait | undefined {
         return this.traitLookup.get(traitId);
+    }
+
+    /**
+     * Get all racial traits organized by race
+     *
+     * Returns a Map where keys are race names and values are arrays
+     * of all traits for that race.
+     *
+     * @returns Map of race names to their traits
+     */
+    getAllRacialTraits(): Map<string, RacialTrait[]> {
+        return new Map(this.racialTraits);
     }
 
     /**
@@ -371,6 +433,32 @@ export class FeatureRegistry {
             errors: errors.length > 0 ? errors : undefined,
             unmet: errors.length > 0 ? errors : undefined
         };
+    }
+
+    /**
+     * Validate class feature prerequisites against a character
+     *
+     * Alias for validatePrerequisites with type safety for ClassFeature.
+     *
+     * @param feature - Class feature to validate
+     * @param character - Character sheet to validate against
+     * @returns Validation result with unmet prerequisites if any
+     */
+    validateFeaturePrerequisites(feature: ClassFeature, character: CharacterSheet): ValidationResult {
+        return this.validatePrerequisites(feature, character);
+    }
+
+    /**
+     * Validate racial trait prerequisites against a character
+     *
+     * Alias for validatePrerequisites with type safety for RacialTrait.
+     *
+     * @param trait - Racial trait to validate
+     * @param character - Character sheet to validate against
+     * @returns Validation result with unmet prerequisites if any
+     */
+    validateTraitPrerequisites(trait: RacialTrait, character: CharacterSheet): ValidationResult {
+        return this.validatePrerequisites(trait, character);
     }
 
     /**
