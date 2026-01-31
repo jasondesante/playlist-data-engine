@@ -80,26 +80,26 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 2.1: Core Equipment Types
 
-- [ ] `type EquipmentPropertyType` → src/core/types/Equipment.ts
-  - [ ] Value: 'stat_bonus'
-  - [ ] Value: 'skill_proficiency'
-  - [ ] Value: 'ability_unlock'
-  - [ ] Value: 'passive_modifier'
-  - [ ] Value: 'special_property'
-  - [ ] Value: 'damage_bonus'
-  - [ ] Value: 'stat_requirement'
+- [x] `type EquipmentPropertyType` → src/core/types/Equipment.ts (VERIFIED)
+  - [x] Value: 'stat_bonus'
+  - [x] Value: 'skill_proficiency'
+  - [x] Value: 'ability_unlock'
+  - [x] Value: 'passive_modifier'
+  - [x] Value: 'special_property'
+  - [x] Value: 'damage_bonus'
+  - [x] Value: 'stat_requirement'
 
-- [ ] `type EquipmentRarity` → src/core/types/Equipment.ts
-  - [ ] Value: 'common'
-  - [ ] Value: 'uncommon'
-  - [ ] Value: 'rare'
-  - [ ] Value: 'very_rare'
-  - [ ] Value: 'legendary'
+- [x] `type EquipmentRarity` → src/core/types/Equipment.ts (FIXED in Phase 7)
+  - [x] Value: 'common'
+  - [x] Value: 'uncommon'
+  - [x] Value: 'rare'
+  - [x] Value: 'very_rare'
+  - [x] Value: 'legendary'
 
-- [ ] `type EquipmentType` → src/core/types/Equipment.ts
-  - [ ] Value: 'weapon'
-  - [ ] Value: 'armor'
-  - [ ] Value: 'item'
+- [x] `type EquipmentType` → src/core/types/Equipment.ts (FIXED in Phase 7)
+  - [x] Value: 'weapon'
+  - [x] Value: 'armor'
+  - [x] Value: 'item'
 
 ### Task 2.2: Equipment Interfaces
 
@@ -320,6 +320,8 @@ For every item listed in Phases 1-4, verify:
 ### Discrepancies Found
 
 - [x] SeededRNG path mismatch - Documented as `src/core/randomness/SeededRNG.ts` but actually located at `src/utils/random.ts`
+- [x] EquipmentRarity type missing - Documented as separate type but only exists as inline union in EnhancedEquipment.rarity
+- [x] EquipmentType type missing - Documented as separate type but only exists as inline union in EnhancedEquipment.type
 - [ ] Items documented but not found in codebase
 - [ ] Items exist in code but not documented
 - [ ] Signature mismatches between documentation and code
@@ -334,6 +336,51 @@ For every item listed in Phases 1-4, verify:
 - [ ] Items that may be deprecated or scheduled for removal
 - [ ] Items with incomplete implementations
 - [ ] Items that depend on features not yet implemented
+
+---
+
+## Phase 7: Missing Type Definitions - EquipmentRarity & EquipmentType
+
+**Objective**: Fix the discrepancy where `EquipmentRarity` and `EquipmentType` are documented as separate types but only exist as inline unions in the code.
+
+### Research Findings
+
+During Phase 2 Task 2.1 verification, the following discrepancies were discovered:
+
+1. **`type EquipmentRarity`** - Documented as a separate type but not defined
+   - Currently exists only as inline union: `'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary'`
+   - Used in `EnhancedEquipment.rarity` at line 75
+
+2. **`type EquipmentType`** - Documented as a separate type but not defined
+   - Currently exists only as inline union: `'weapon' | 'armor' | 'item'`
+   - Used in `EnhancedEquipment.type` at line 74
+
+### Resolution Approach
+
+Create the missing types as proper type definitions in `src/core/types/Equipment.ts` and update `EnhancedEquipment` to use them. This improves:
+- Code maintainability (single source of truth)
+- Type reusability across the codebase
+- Consistency with documentation
+
+### Task 7.1: Add EquipmentRarity Type Definition
+
+- [x] Add `export type EquipmentRarity` to src/core/types/Equipment.ts
+- [x] Include all five rarity values: 'common', 'uncommon', 'rare', 'very_rare', 'legendary'
+- [x] Update `EnhancedEquipment.rarity` to use the `EquipmentRarity` type
+- [x] Verify no breaking changes to existing code
+
+### Task 7.2: Add EquipmentType Type Definition
+
+- [x] Add `export type EquipmentType` to src/core/types/Equipment.ts
+- [x] Include all three type values: 'weapon', 'armor', 'item'
+- [x] Update `EnhancedEquipment.type` to use the `EquipmentType` type
+- [x] Verify no breaking changes to existing code
+
+### Task 7.3: Verify Type Exports
+
+- [x] Ensure new types are exported from Equipment.ts
+- [x] Verify types are available through package exports
+- [x] Run build to ensure no TypeScript errors (Build successful - 753ms)
 
 ---
 

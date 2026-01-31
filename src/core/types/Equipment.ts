@@ -15,6 +15,24 @@
 import type { ProficiencyLevel } from './Character.js';
 
 /**
+ * Equipment rarity levels following D&D 5e conventions
+ */
+export type EquipmentRarity =
+    | 'common'
+    | 'uncommon'
+    | 'rare'
+    | 'very_rare'
+    | 'legendary';
+
+/**
+ * Equipment type categories
+ */
+export type EquipmentType =
+    | 'weapon'
+    | 'armor'
+    | 'item';
+
+/**
  * Equipment property types that affect gameplay
  */
 export type EquipmentPropertyType =
@@ -71,8 +89,8 @@ export interface EquipmentMiniFeature {
 export interface EnhancedEquipment {
     // Base properties (existing)
     name: string;
-    type: 'weapon' | 'armor' | 'item';
-    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    type: EquipmentType;
+    rarity: EquipmentRarity;
     weight: number;
 
     // NEW: Advanced properties
