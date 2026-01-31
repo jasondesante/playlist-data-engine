@@ -212,3 +212,51 @@ export interface EquipmentSpell {
     instanceId?: string;
     sourceType: 'default' | 'custom';
 }
+
+/**
+ * Result type for equipment effect application/removal operations
+ */
+export interface EffectApplicationResult {
+    /** Whether any effects were applied or removed */
+    applied: boolean;
+    /** Number of effects affected */
+    count: number;
+    /** Errors encountered during application */
+    errors: string[];
+}
+
+/**
+ * Result type for equipment validation operations
+ */
+export interface EquipmentValidationResult {
+    /** Whether the validation passed */
+    valid: boolean;
+    /** Array of error messages (undefined if valid) */
+    errors?: string[];
+}
+
+/**
+ * Options for random equipment spawning
+ */
+export interface SpawnRandomOptions {
+    /** Exclude items with spawnWeight: 0 (game-only items) */
+    excludeZeroWeight?: boolean;
+    /** Only include specific equipment types */
+    includeTypes?: ('weapon' | 'armor' | 'item')[];
+    /** Minimum rarity level (inclusive) */
+    minRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    /** Maximum rarity level (inclusive) */
+    maxRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+}
+
+/**
+ * Treasure hoard result with additional metadata
+ */
+export interface TreasureHoardResult {
+    /** Generated equipment items */
+    items: EnhancedEquipment[];
+    /** Total gold piece value (estimated) */
+    totalValue: number;
+    /** Challenge rating used for generation */
+    cr: number;
+}

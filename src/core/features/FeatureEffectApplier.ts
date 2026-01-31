@@ -9,18 +9,7 @@
 
 import type { ClassFeature, RacialTrait, FeatureEffect } from './FeatureTypes.js';
 import type { CharacterSheet, Ability, ProficiencyLevel } from '../types/Character.js';
-
-/**
- * Effect application result
- */
-export interface EffectApplicationResult {
-    /** Whether any effects were applied */
-    applied: boolean;
-    /** Number of effects applied */
-    count: number;
-    /** Errors encountered during application */
-    errors: string[];
-}
+import type { EffectApplicationResult } from '../types/Equipment.js';
 
 /**
  * FeatureEffectApplier - Applies feature effects to character sheets

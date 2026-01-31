@@ -25,7 +25,10 @@ export { FeatureRegistry, getFeatureRegistry } from './FeatureRegistry.js';
 export { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from './DefaultFeatures.js';
 
 // FeatureEffectApplier - Applies feature effects to characters
-export { FeatureEffectApplier, type EffectApplicationResult } from './FeatureEffectApplier.js';
+export { FeatureEffectApplier } from './FeatureEffectApplier.js';
+
+// Re-export EffectApplicationResult from Equipment types for API consistency
+export type { EffectApplicationResult } from '../types/Equipment.js';
 
 // FeatureValidator - Validates features and traits
 export {

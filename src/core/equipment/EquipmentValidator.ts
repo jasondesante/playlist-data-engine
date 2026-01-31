@@ -13,21 +13,12 @@ import type {
     EquipmentProperty,
     EquipmentCondition,
     EquipmentModification,
-    EquipmentMiniFeature
+    EquipmentMiniFeature,
+    EquipmentValidationResult
 } from '../types/Equipment.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import { SkillRegistry } from '../skills/SkillRegistry.js';
 import type { Ability } from '../types/Character.js';
-
-/**
- * Equipment validation result
- */
-export interface EquipmentValidationResult {
-    /** Whether the validation passed */
-    valid: boolean;
-    /** Array of error messages (undefined if valid) */
-    errors?: string[];
-}
 
 /**
  * The valid ability scores

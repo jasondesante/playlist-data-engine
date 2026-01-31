@@ -17,37 +17,13 @@
 import type { CharacterSheet } from '../types/Character.js';
 import type {
     EnhancedEquipment,
-    EnhancedInventoryItem
+    EnhancedInventoryItem,
+    SpawnRandomOptions,
+    TreasureHoardResult
 } from '../types/Equipment.js';
 import { SeededRNG } from '../../utils/random.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { MAGIC_EQUIPMENT_TEMPLATES } from '../../utils/magicItemExamples.js';
-
-/**
- * Options for random equipment spawning
- */
-export interface SpawnRandomOptions {
-    /** Exclude items with spawnWeight: 0 (game-only items) */
-    excludeZeroWeight?: boolean;
-    /** Only include specific equipment types */
-    includeTypes?: ('weapon' | 'armor' | 'item')[];
-    /** Minimum rarity level (inclusive) */
-    minRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-    /** Maximum rarity level (inclusive) */
-    maxRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-}
-
-/**
- * Treasure hoard result with additional metadata
- */
-export interface TreasureHoardResult {
-    /** Generated equipment items */
-    items: EnhancedEquipment[];
-    /** Total gold piece value (estimated) */
-    totalValue: number;
-    /** Challenge rating used for generation */
-    cr: number;
-}
 
 /**
  * Rarity order for comparisons (common = 0, legendary = 4)

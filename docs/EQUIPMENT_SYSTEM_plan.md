@@ -169,15 +169,25 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 2.5: Result Type Interfaces
 
-- [ ] `type EffectApplicationResult` → src/core/types/Equipment.ts
+- [x] `type EffectApplicationResult` → src/core/types/Equipment.ts (VERIFIED - lines 180-187)
+  - [x] `applied: boolean`
+  - [x] `count: number`
+  - [x] `errors: string[]`
 
-- [ ] `interface EquipmentValidationResult` → src/core/types/Equipment.ts
-  - [ ] `valid: boolean`
-  - [ ] `errors?: string[]`
+- [x] `interface EquipmentValidationResult` → src/core/types/Equipment.ts (VERIFIED - lines 191-196)
+  - [x] `valid: boolean`
+  - [x] `errors?: string[]`
 
-- [ ] `interface SpawnRandomOptions` → src/core/types/Equipment.ts
+- [x] `interface SpawnRandomOptions` → src/core/types/Equipment.ts (VERIFIED - lines 200-209)
+  - [x] `excludeZeroWeight?: boolean`
+  - [x] `includeTypes?: ('weapon' | 'armor' | 'item')[]`
+  - [x] `minRarity?: EquipmentRarity`
+  - [x] `maxRarity?: EquipmentRarity`
 
-- [ ] `interface TreasureHoardResult` → src/core/types/Equipment.ts
+- [x] `interface TreasureHoardResult` → src/core/types/Equipment.ts (VERIFIED - lines 213-220)
+  - [x] `items: EnhancedEquipment[]`
+  - [x] `totalValue: number`
+  - [x] `cr: number`
 
 ---
 
@@ -414,7 +424,7 @@ Since the class is already correctly implemented and likely imported throughout 
 ## Completion Checklist
 
 - [x] Phase 1: All files exist, all exports verified
-- [ ] Phase 2: All types and interfaces verified
+- [x] Phase 2: All types and interfaces verified (COMPLETE - All 5 tasks done)
 - [ ] Phase 3: All classes and methods verified
 - [ ] Phase 4: Integration points verified
 - [ ] Phase 5: Detailed signature verification complete

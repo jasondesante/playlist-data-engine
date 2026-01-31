@@ -15,22 +15,11 @@ import type {
     EquipmentProperty,
     EquipmentCondition,
     EquipmentFeature,
-    EquipmentSkill
+    EquipmentSkill,
+    EffectApplicationResult
 } from '../types/Equipment.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
-
-/**
- * Effect application result
- */
-export interface EffectApplicationResult {
-    /** Whether any effects were applied or removed */
-    applied: boolean;
-    /** Number of effects affected */
-    count: number;
-    /** Errors encountered during application */
-    errors: string[];
-}
 
 /**
  * EquipmentEffectApplier - Applies and removes equipment effects

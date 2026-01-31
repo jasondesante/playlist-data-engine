@@ -70,7 +70,11 @@ export type {
     EnhancedInventoryItem,
     EquipmentFeature,
     EquipmentSkill,
-    EquipmentSpell
+    EquipmentSpell,
+    EffectApplicationResult,
+    EquipmentValidationResult,
+    SpawnRandomOptions,
+    TreasureHoardResult
 } from './core/types/Equipment.js';
 
 // Combat types
@@ -97,7 +101,7 @@ export type {
     FeaturePrerequisite
 } from './core/features/FeatureTypes.js';
 
-export type { EffectApplicationResult, CharacterEffect } from './core/features/FeatureEffectApplier.js';
+export type { CharacterEffect } from './core/features/FeatureEffectApplier.js';
 
 // Skill types
 export type {
@@ -140,10 +144,8 @@ export type {
 export type { InitiativeResult } from './core/combat/InitiativeRoller.js';
 export type { AttackResult } from './core/combat/AttackResolver.js';
 
-// Equipment helper types
-export type { SpawnRandomOptions, TreasureHoardResult } from './core/equipment/EquipmentSpawnHelper.js';
-
 // ============================================================================
+// UTILITIES
 // UTILITIES
 // ============================================================================
 
