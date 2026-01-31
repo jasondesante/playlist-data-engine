@@ -9,15 +9,13 @@
  * - Optional fields (id, description, prerequisites)
  *
  * Part of Phase 4: Spell Prerequisites System.
+ * Part of Phase 13: Code Deduplication - Uses shared AbilityConstants.
  */
 
 import type { SpellPrerequisite } from '../../utils/constants.js';
 import type { Ability, CharacterSheet } from '../types/Character.js';
-
-/**
- * Valid D&D 5e abilities
- */
-const VALID_ABILITIES: ReadonlyArray<string> = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as const;
+import { isValidAbility } from '../utils/AbilityConstants.js';
+import { validatePrerequisiteSchema, validatePrerequisites } from '../utils/PrerequisiteValidator.js';
 
 /**
  * Valid D&D 5e spell schools
@@ -201,129 +199,20 @@ export class SpellValidator {
      * Validate spell prerequisites schema
      *
      * Validates that the prerequisites object has valid structure.
+     * Uses the shared PrerequisiteValidator for consistency.
      *
      * @param prerequisites - The prerequisites to validate
      * @returns Validation result with errors if any
      */
     static validatePrerequisites(prerequisites: unknown): SpellValidationResult {
-        const errors: string[] = [];
-
-        // Prerequisites can be undefined (no prerequisites)
-        if (prerequisites === undefined || prerequisites === null) {
-            return { valid: true, errors: [] };
-        }
-
-        // Must be an object
-        if (typeof prerequisites !== 'object' || Array.isArray(prerequisites)) {
-            return {
-                valid: false,
-                errors: ['Prerequisites must be an object']
-            };
-        }
-
-        const p = prerequisites as Record<string, unknown>;
-
-        // Validate level (must be positive number)
-        if (p.level !== undefined) {
-            if (typeof p.level !== 'number') {
-                errors.push('Prerequisite level must be a number');
-            } else if (p.level < 1) {
-                errors.push(`Prerequisite level must be at least 1 (got: ${p.level})`);
-            }
-        }
-
-        // Validate casterLevel (must be positive number)
-        if (p.casterLevel !== undefined) {
-            if (typeof p.casterLevel !== 'number') {
-                errors.push('Prerequisite casterLevel must be a number');
-            } else if (p.casterLevel < 1) {
-                errors.push(`Prerequisite casterLevel must be at least 1 (got: ${p.casterLevel})`);
-            }
-        }
-
-        // Validate abilities (must be record of ability -> number)
-        if (p.abilities !== undefined) {
-            if (typeof p.abilities !== 'object' || Array.isArray(p.abilities) || p.abilities === null) {
-                errors.push('Prerequisite abilities must be a record');
-            } else {
-                for (const [ability, minScore] of Object.entries(p.abilities)) {
-                    if (!VALID_ABILITIES.includes(ability)) {
-                        errors.push(`Invalid ability in prerequisites: "${ability}". Must be one of: ${VALID_ABILITIES.join(', ')}`);
-                    }
-                    if (typeof minScore !== 'number') {
-                        errors.push(`Ability score for ${ability} must be a number (got: ${typeof minScore})`);
-                    } else if (minScore < 1 || minScore > 20) {
-                        errors.push(`Ability score for ${ability} must be between 1 and 20 (got: ${minScore})`);
-                    }
-                }
-            }
-        }
-
-        // Validate class (must be string)
-        if (p.class !== undefined && typeof p.class !== 'string') {
-            errors.push('Prerequisite class must be a string');
-        }
-
-        // Validate race (must be string)
-        if (p.race !== undefined && typeof p.race !== 'string') {
-            errors.push('Prerequisite race must be a string');
-        }
-
-        // Validate features (must be array of strings)
-        if (p.features !== undefined) {
-            if (!Array.isArray(p.features)) {
-                errors.push('Prerequisite features must be an array');
-            } else {
-                for (const feature of p.features) {
-                    if (typeof feature !== 'string') {
-                        errors.push(`Prerequisite feature must be a string (got: ${typeof feature})`);
-                    }
-                }
-            }
-        }
-
-        // Validate spells (must be array of strings)
-        if (p.spells !== undefined) {
-            if (!Array.isArray(p.spells)) {
-                errors.push('Prerequisite spells must be an array');
-            } else {
-                for (const spell of p.spells) {
-                    if (typeof spell !== 'string') {
-                        errors.push(`Prerequisite spell must be a string (got: ${typeof spell})`);
-                    }
-                }
-            }
-        }
-
-        // Validate skills (must be array of strings)
-        if (p.skills !== undefined) {
-            if (!Array.isArray(p.skills)) {
-                errors.push('Prerequisite skills must be an array');
-            } else {
-                for (const skill of p.skills) {
-                    if (typeof skill !== 'string') {
-                        errors.push(`Prerequisite skill must be a string (got: ${typeof skill})`);
-                    }
-                }
-            }
-        }
-
-        // Validate custom (must be string)
-        if (p.custom !== undefined && typeof p.custom !== 'string') {
-            errors.push('Prerequisite custom must be a string');
-        }
-
-        return {
-            valid: errors.length === 0,
-            errors
-        };
+        return validatePrerequisiteSchema(prerequisites);
     }
 
     /**
      * Validate spell prerequisites against a character
      *
      * Checks if a character meets all prerequisite requirements for a spell.
-     * Follows the same pattern as SkillPrerequisite validation for consistency.
+     * Uses the shared PrerequisiteValidator for consistency across all systems.
      *
      * @param prerequisites - The spell prerequisites to validate
      * @param character - The character sheet to validate against
@@ -333,97 +222,19 @@ export class SpellValidator {
         prerequisites: SpellPrerequisite | undefined,
         character: CharacterSheet
     ): SpellValidationResult {
-        const unmet: string[] = [];
-
-        // If no prerequisites, spell is available
-        if (!prerequisites) {
-            return { valid: true, errors: [] };
-        }
-
-        // Check level requirement
-        if (prerequisites.level !== undefined && character.level < prerequisites.level) {
-            unmet.push(`Requires level ${prerequisites.level} (current: ${character.level})`);
-        }
-
-        // Check caster level requirement
-        if (prerequisites.casterLevel !== undefined && character.level < prerequisites.casterLevel) {
-            unmet.push(`Requires caster level ${prerequisites.casterLevel} (current: ${character.level})`);
-        }
-
-        // Check ability score requirements
-        if (prerequisites.abilities) {
-            for (const [ability, minScore] of Object.entries(prerequisites.abilities)) {
-                const score = character.ability_scores[ability as Ability];
-                if (score === undefined || score < minScore) {
-                    unmet.push(`Requires ${ability} ${minScore}+ (current: ${score ?? 0})`);
-                }
-            }
-        }
-
-        // Check class requirement
-        if (prerequisites.class !== undefined && character.class !== prerequisites.class) {
-            unmet.push(`Requires ${prerequisites.class} class (current: ${character.class})`);
-        }
-
-        // Check race requirement
-        if (prerequisites.race !== undefined && character.race !== prerequisites.race) {
-            unmet.push(`Requires ${prerequisites.race} race (current: ${character.race})`);
-        }
-
-        // Check feature prerequisites (features that must be learned first)
-        if (prerequisites.features && prerequisites.features.length > 0) {
-            const hasFeatures = character.class_features || [];
-            for (const requiredFeatureId of prerequisites.features) {
-                if (!hasFeatures.includes(requiredFeatureId)) {
-                    unmet.push(`Requires feature: ${requiredFeatureId}`);
-                }
-            }
-        }
-
-        // Check spell prerequisites (spells that must be known first)
-        if (prerequisites.spells && prerequisites.spells.length > 0) {
-            const knownSpells = character.spells?.known_spells || [];
-            const cantrips = character.spells?.cantrips || [];
-            const allKnownSpells = [...knownSpells, ...cantrips];
-
-            for (const requiredSpell of prerequisites.spells) {
-                if (!allKnownSpells.includes(requiredSpell)) {
-                    unmet.push(`Requires spell: ${requiredSpell}`);
-                }
-            }
-        }
-
-        // Check skill prerequisites (skills that must be proficient first)
-        if (prerequisites.skills && prerequisites.skills.length > 0) {
-            for (const requiredSkillId of prerequisites.skills) {
-                const proficiency = character.skills[requiredSkillId];
-                if (proficiency !== 'proficient' && proficiency !== 'expertise') {
-                    unmet.push(`Requires proficiency in ${requiredSkillId} (current: ${proficiency ?? 'none'})`);
-                }
-            }
-        }
-
-        // Note: Custom conditions cannot be automatically validated
-        // They must be checked by the calling code
-        if (prerequisites.custom) {
-            // Add a note about custom condition but don't fail validation
-            // The calling code is responsible for validating custom conditions
-        }
-
-        return {
-            valid: unmet.length === 0,
-            errors: unmet
-        };
+        return validatePrerequisites(prerequisites, character);
     }
 
     /**
      * Check if a string is a valid ability score
      *
+     * Re-exports the shared isValidAbility function for convenience.
+     *
      * @param ability - The ability string to check
      * @returns True if it's a valid ability
      */
     static isValidAbility(ability: string): ability is Ability {
-        return VALID_ABILITIES.includes(ability);
+        return isValidAbility(ability);
     }
 
     /**

@@ -8,8 +8,9 @@
  */
 
 import type { ClassFeature, RacialTrait, FeatureEffect } from './FeatureTypes.js';
-import type { CharacterSheet, Ability, ProficiencyLevel } from '../types/Character.js';
+import type { CharacterSheet, ProficiencyLevel } from '../types/Character.js';
 import type { EffectApplicationResult } from '../types/Equipment.js';
+import { isAbility, applyAbilityScoreBonus, applySkillProficiencyWithHierarchy } from '../utils/EffectApplierUtils.js';
 
 /**
  * FeatureEffectApplier - Applies feature effects to character sheets
@@ -130,11 +131,8 @@ export class FeatureEffectApplier {
         const value = effect.value as number;
 
         // Handle ability score bonuses (STR, DEX, CON, INT, WIS, CHA)
-        if (this.isAbility(target)) {
-            character.ability_scores[target] += value;
-            // Recalculate modifier for the affected ability
-            const newScore = character.ability_scores[target];
-            character.ability_modifiers[target] = Math.floor((newScore - 10) / 2);
+        if (isAbility(target)) {
+            applyAbilityScoreBonus(character, target, value);
             return;
         }
 
@@ -154,6 +152,8 @@ export class FeatureEffectApplier {
     /**
      * Apply a skill proficiency effect
      *
+     * Uses shared utility with proficiency hierarchy (none < proficient < expertise)
+     *
      * @param character - The character to modify
      * @param effect - The skill proficiency effect
      */
@@ -164,10 +164,7 @@ export class FeatureEffectApplier {
         const skillId = effect.target.toLowerCase();
         const proficiency = effect.value as ProficiencyLevel;
 
-        // Add or update skill proficiency
-        if (!character.skills[skillId] || proficiency === 'expertise') {
-            character.skills[skillId] = proficiency;
-        }
+        applySkillProficiencyWithHierarchy(character, skillId, proficiency);
     }
 
     /**
@@ -281,16 +278,6 @@ export class FeatureEffectApplier {
             value: effect.value,
             condition: effect.condition
         });
-    }
-
-    /**
-     * Check if a string is a valid ability score
-     *
-     * @param ability - The ability string to check
-     * @returns True if it's a valid ability
-     */
-    private static isAbility(ability: string): ability is Ability {
-        return ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].includes(ability);
     }
 }
 

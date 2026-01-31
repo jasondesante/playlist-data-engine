@@ -9,11 +9,13 @@
  * - Effects and prerequisites
  *
  * Part of Phase 11.7: Create FeatureValidator.
+ * Part of Phase 13: Code Deduplication - Uses shared AbilityConstants.
  */
 
-import type { ClassFeature, RacialTrait, FeatureEffect, FeaturePrerequisite } from './FeatureTypes.js';
-import type { Class, Race, Ability } from '../types/Character.js';
+import type { FeaturePrerequisite } from './FeatureTypes.js';
+import type { Ability } from '../types/Character.js';
 import { DEFAULT_CLASSES, isValidClass } from '../types/Character.js';
+import { VALID_ABILITIES, isValidAbility } from '../utils/AbilityConstants.js';
 
 /**
  * Validation result interface
@@ -70,11 +72,6 @@ const VALID_RACES: ReadonlyArray<string> = [
     'Half-Orc',
     'Tiefling'
 ] as const;
-
-/**
- * Valid D&D 5e abilities
- */
-const VALID_ABILITIES: ReadonlyArray<string> = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as const;
 
 /**
  * Valid D&D 5e skills (for skill_proficiency effects)
@@ -627,11 +624,13 @@ export class FeatureValidator {
     /**
      * Check if a string is a valid ability score
      *
+     * Re-exports the shared isValidAbility function for convenience.
+     *
      * @param ability - The ability string to check
      * @returns True if it's a valid ability
      */
     private static isAbility(ability: string): ability is Ability {
-        return VALID_ABILITIES.includes(ability);
+        return isValidAbility(ability);
     }
 
     /**

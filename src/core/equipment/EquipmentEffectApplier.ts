@@ -9,7 +9,7 @@
  * Part of Phase 3.3: Integrate with FeatureEffectApplier.
  */
 
-import type { CharacterSheet, Ability, ProficiencyLevel } from '../types/Character.js';
+import type { CharacterSheet, ProficiencyLevel } from '../types/Character.js';
 import type {
     EnhancedEquipment,
     EquipmentProperty,
@@ -20,6 +20,7 @@ import type {
 } from '../types/Equipment.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
+import { isAbility, applyAbilityScoreBonus, applySkillProficiencyWithHierarchy } from '../utils/EffectApplierUtils.js';
 
 /**
  * EquipmentEffectApplier - Applies and removes equipment effects
@@ -396,11 +397,8 @@ export class EquipmentEffectApplier {
         const value = property.value as number;
 
         // Handle ability score bonuses (STR, DEX, CON, INT, WIS, CHA)
-        if (this.isAbility(target)) {
-            character.ability_scores[target] += value;
-            // Recalculate modifier for the affected ability
-            const newScore = character.ability_scores[target];
-            character.ability_modifiers[target] = Math.floor((newScore - 10) / 2);
+        if (isAbility(target)) {
+            applyAbilityScoreBonus(character, target, value);
             return;
         }
 
@@ -410,6 +408,8 @@ export class EquipmentEffectApplier {
 
     /**
      * Apply a skill proficiency property
+     *
+     * Uses shared utility with proficiency hierarchy (none < proficient < expertise)
      */
     private static applySkillProficiency(
         character: CharacterSheet,
@@ -418,23 +418,7 @@ export class EquipmentEffectApplier {
         const skillId = property.target.toLowerCase();
         const proficiency = property.value as ProficiencyLevel;
 
-        // Equipment always grants at least the stated proficiency level
-        // If character has higher (expertise), keep it
-        const currentLevel = character.skills[skillId];
-
-        // Proficiency hierarchy: none < proficient < expertise
-        // Always apply if no current level or current is 'none'
-        if (!currentLevel || currentLevel === 'none') {
-            character.skills[skillId] = proficiency;
-            return;
-        }
-
-        // Apply expertise regardless of current level (upgrade from none/proficient)
-        if (proficiency === 'expertise') {
-            character.skills[skillId] = proficiency;
-        }
-        // Note: If current is 'proficient' and new is 'proficient', no change needed
-        // If current is 'expertise' and new is 'proficient', keep expertise (higher level)
+        applySkillProficiencyWithHierarchy(character, skillId, proficiency);
     }
 
     /**
@@ -552,11 +536,8 @@ export class EquipmentEffectApplier {
         const target = property.target;
         const value = property.value as number;
 
-        if (this.isAbility(target)) {
-            character.ability_scores[target] -= value;
-            // Recalculate modifier
-            const newScore = character.ability_scores[target];
-            character.ability_modifiers[target] = Math.floor((newScore - 10) / 2);
+        if (isAbility(target)) {
+            applyAbilityScoreBonus(character, target, -value);
         }
     }
 
@@ -736,27 +717,16 @@ export class EquipmentEffectApplier {
 
     /**
      * Add a skill to character
+     *
+     * Uses shared utility with proficiency hierarchy (none < proficient < expertise)
      */
     private static addSkillToCharacter(
         character: CharacterSheet,
         equipmentSkill: EquipmentSkill
     ): void {
         const skillId = equipmentSkill.skillId.toLowerCase();
-        const currentLevel = character.skills[skillId];
 
-        // Proficiency hierarchy: none < proficient < expertise
-        // Always apply if no current level or current is 'none'
-        if (!currentLevel || currentLevel === 'none') {
-            character.skills[skillId] = equipmentSkill.level;
-            return;
-        }
-
-        // Apply expertise regardless of current level (upgrade from none/proficient)
-        if (equipmentSkill.level === 'expertise') {
-            character.skills[skillId] = equipmentSkill.level;
-        }
-        // Note: If current is 'proficient' and new is 'proficient', no change needed
-        // If current is 'expertise' and new is 'proficient', keep expertise (higher level)
+        applySkillProficiencyWithHierarchy(character, skillId, equipmentSkill.level);
     }
 
     /**
@@ -842,13 +812,6 @@ export class EquipmentEffectApplier {
     }
 
     /**
-     * Check if a string is a valid ability score
-     */
-    private static isAbility(ability: string): ability is Ability {
-        return ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].includes(ability);
-    }
-
-    /**
      * Validate stat requirements before equipping an item
      *
      * Checks all stat_requirement properties and returns errors for any
@@ -873,7 +836,7 @@ export class EquipmentEffectApplier {
                 const requiredValue = property.value as number;
 
                 // Check if target is a valid ability
-                if (this.isAbility(requiredStat)) {
+                if (isAbility(requiredStat)) {
                     const currentValue = character.ability_scores[requiredStat];
                     if (currentValue < requiredValue) {
                         errors.push(
