@@ -355,7 +355,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] EquipmentProperty, EquipmentPropertyType, EquipmentCondition, EnhancedEquipment, EquipmentModification, EnhancedInventoryItem, EffectApplicationResult, EquipmentValidationResult → src/core/types/Equipment.ts ✅ (location mismatch: documented as src/types/Equipment.ts)
 - [x] SpawnRandomOptions, TreasureHoardResult → src/core/types/Equipment.ts ✅ (location mismatch: documented as src/core/equipment/EquipmentSpawnHelper.ts)
 
-### Task 5.2: Equipment Core Classes (50 items) 🔄 IN PROGRESS (30/~50 done)
+### Task 5.2: Equipment Core Classes (50 items) 🔄 IN PROGRESS (37/~50 done)
 - [x] class EquipmentEffectApplier (static) → src/core/equipment/EquipmentEffectApplier.ts
   - [x] equipItem(character, equipment, instanceId?): EffectApplicationResult
   - [x] unequipItem(character, equipmentName, instanceId?): EffectApplicationResult
@@ -395,14 +395,14 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
     - createSpellModification(id, name, properties, addsSpells, source): EquipmentModification
   - **Note**: Additional helper method exists:
     - countModificationsForSource(equipment, itemName, source): number
-- [ ] class EquipmentSpawnHelper (static) → src/core/equipment/EquipmentSpawnHelper.ts
-  - [ ] spawnFromList(itemNames, rng?): (EnhancedEquipment | undefined)[]
-  - [ ] spawnByRarity(rarity, count, rng?): EnhancedEquipment[]
-  - [ ] spawnByTags(tags, count, rng?, options?): EnhancedEquipment[]
-  - [ ] spawnRandom(count, rng, options?): EnhancedEquipment[]
-  - [ ] spawnFromTemplate(templateId, baseItemName?): EnhancedEquipment | null
-  - [ ] spawnTreasureHoard(cr, rng): TreasureHoardResult
-  - [ ] addToCharacter(character, items, equip?): CharacterSheet
+- [x] class EquipmentSpawnHelper (static) → src/core/equipment/EquipmentSpawnHelper.ts
+  - [x] spawnFromList(itemNames, rng?): (EnhancedEquipment | undefined)[] ✅
+  - [x] spawnByRarity(rarity, count, rng?): EnhancedEquipment[] ✅
+  - [x] spawnByTags(tags, count, rng?, options?): EnhancedEquipment[] ✅
+  - [x] spawnRandom(count, rng, options?): EnhancedEquipment[] ✅
+  - [x] spawnFromTemplate(templateId, baseItemName?): EnhancedEquipment | null ✅
+  - [x] spawnTreasureHoard(cr, rng): TreasureHoardResult ✅
+  - [x] addToCharacter(character, items, equip?): CharacterSheet ✅ (note: equip parameter has default value false in docs, matching code)
 
 ---
 
@@ -592,7 +592,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
-| 5 | Equipment System | ~60 | 🔄 IN PROGRESS (30/60 done) |
+| 5 | Equipment System | ~60 | 🔄 IN PROGRESS (37/60 done) |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
 | **Total** | | **~449** | |
