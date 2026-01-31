@@ -107,7 +107,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] class SpectrumScanner (static) → src/core/analysis/SpectrumScanner.ts ✅
   - [x] separateFrequencyBands(frequencyData: Uint8Array, sampleRate: number): FrequencyBands ✅
 
-### Task 2.3: Character Generation (35 items) 🔄 IN PROGRESS (2/~35 done)
+### Task 2.3: Character Generation (35 items) 🔄 IN PROGRESS (3/~35 done)
 - [x] class CharacterGenerator (static) → src/core/generation/CharacterGenerator.ts
   - [x] generate(seed, audioProfile, name, options?): CharacterSheet ✅
 - [x] class RaceSelector (static) → src/core/generation/RaceSelector.ts
@@ -120,15 +120,16 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] calculateModifiers(scores): AbilityScores ✅
 - [x] class SkillAssigner (static) → src/core/generation/SkillAssigner.ts
   - [x] assignSkills(characterClass, rng, character?): Record<string, ProficiencyLevel> ✅ (return type: string vs Skill documented; third parameter missing from docs; both correct for custom skill/prerequisite support)
-- [ ] class SpellManager (static) → src/core/generation/SpellManager.ts
-  - [ ] isSpellcaster(characterClass): boolean
-  - [ ] getSpellSlots(characterClass, characterLevel): Record<number, { total; used }>
-  - [ ] getCantrips(characterClass): string[]
-  - [ ] getKnownSpells(characterClass, characterLevel): string[]
-  - [ ] initializeSpells(characterClass, characterLevel): SpellSlots
-  - [ ] getSpellCountAtLevel(spellLevel, spellSlots): number
-  - [ ] useSpellSlot(spellSlots, spellLevel): Record<number, { total; used }>
-  - [ ] restoreSpellSlots(spellSlots, spellLevel?): Record<number, { total; used }>
+- [x] class SpellManager (static) → src/core/generation/SpellManager.ts ✅
+  - [x] isSpellcaster(characterClass): boolean ✅
+  - [x] getSpellSlots(characterClass, characterLevel): Record<number, { total; used }> ✅
+  - [x] getCantrips(characterClass): string[] ✅
+  - [x] getKnownSpells(characterClass, characterLevel): string[] ✅ (signature mismatch: actual has third parameter `character?: CharacterSheet` for prerequisite filtering; code is correct, documentation needs update)
+  - [x] initializeSpells(characterClass, characterLevel): SpellSlots ✅ (signature mismatch: actual has third parameter `character?: CharacterSheet` for prerequisite filtering; code is correct, documentation needs update)
+  - [x] getSpellCountAtLevel(spellLevel, spellSlots): number ✅
+  - [x] useSpellSlot(spellSlots, spellLevel): Record<number, { total; used }> ✅
+  - [x] restoreSpellSlots(spellSlots, spellLevel?): Record<number, { total; used }> ✅
+  - [x] filterCharacterSpells(character): CharacterSheet ✅ (missing from documentation)
 - [ ] class EquipmentGenerator (static) → src/core/generation/EquipmentGenerator.ts
   - [ ] getStartingEquipment(characterClass): { weapons; armor; items }
   - [ ] initializeEquipment(characterClass): CharacterEquipment
@@ -579,7 +580,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
-| 2 | Core Processing Modules | ~50 | 🔄 In Progress (16/~50 done) |
+| 2 | Core Processing Modules | ~50 | 🔄 In Progress (24/~50 done) |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
@@ -623,6 +624,9 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] **Signature mismatch (Task 2.3 - CharacterSheet interface)** - DATA_ENGINE_REFERENCE.md shows CharacterSheet with properties `abilities` and `modifiers`, but actual code at `src/core/types/Character.ts:246-249` uses `ability_scores` and `ability_modifiers`. The code is correct; documentation needs to be updated.
 - [x] **Missing documentation (Task 2.3 - CharacterGeneratorOptions)** - DATA_ENGINE_REFERENCE.md is missing the `extensions?: CharacterGeneratorExtensions` property in CharacterGeneratorOptions. The actual code at `src/core/generation/CharacterGenerator.ts:80-119` includes this property which allows registering custom spells, equipment, races, classes, and appearance options.
 - [x] **Signature mismatch (Task 2.3 - SkillAssigner.assignSkills)** - DATA_ENGINE_REFERENCE.md documents `assignSkills(characterClass, rng): Record<Skill, ProficiencyLevel>`, but actual code at `src/core/generation/SkillAssigner.ts:38-42` shows `assignSkills(characterClass, rng, character?): Record<string, ProficiencyLevel>`. The code is correct: (1) Return type uses `string` instead of `Skill` to support custom skills registered via SkillRegistry; (2) Third parameter `character?: CharacterSheet` enables prerequisite validation. Documentation needs to be updated.
+- [x] **Signature mismatch (Task 2.3 - SpellManager.getKnownSpells)** - DATA_ENGINE_REFERENCE.md documents `getKnownSpells(characterClass, characterLevel): string[]`, but actual code at `src/core/generation/SpellManager.ts:140-221` shows `getKnownSpells(characterClass, characterLevel, character?: CharacterSheet): string[]`. The code is correct: third parameter `character?: CharacterSheet` enables prerequisite filtering. Documentation needs to be updated.
+- [x] **Signature mismatch (Task 2.3 - SpellManager.initializeSpells)** - DATA_ENGINE_REFERENCE.md documents `initializeSpells(characterClass, characterLevel): SpellSlots`, but actual code at `src/core/generation/SpellManager.ts:270-280` shows `initializeSpells(characterClass, characterLevel, character?: CharacterSheet): SpellSlots`. The code is correct: third parameter `character?: CharacterSheet` enables prerequisite filtering. Documentation needs to be updated.
+- [x] **Missing documentation (Task 2.3 - SpellManager.filterCharacterSpells)** - DATA_ENGINE_REFERENCE.md is missing the `filterCharacterSpells(character: CharacterSheet): CharacterSheet` method. The actual code at `src/core/generation/SpellManager.ts:362-385` includes this method which updates a character's known_spells and cantrips arrays to only include spells whose prerequisites are met. Documentation needs to be updated.
 - [ ] [Item] documented but not found in codebase
 - [ ] [Item] exists in code but not documented
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y]
