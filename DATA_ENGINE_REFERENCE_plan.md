@@ -229,7 +229,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] UncappedProgressionConfig → src/core/progression/LevelUpProcessor.ts (75-82) ✅ (location mismatch: documented as src/types/ProgressionTypes.ts)
 
 ### Task 3.5: Combat System (30 items)
-- [ ] CombatInstance, Combatant, CombatAction, StatusEffect, CombatActionResult, AttackRoll, DamageRoll, SpellCastResult, CombatResult, CombatConfig, DamageType, SavingThrowAbility, InitiativeResult, AttackResult, SpellSlots → src/types/CombatTypes.ts
+- [x] CombatInstance, Combatant, CombatAction, StatusEffect, CombatActionResult, AttackRoll, DamageRoll, SpellCastResult, CombatResult, CombatConfig, DamageType, SavingThrowAbility, InitiativeResult, AttackResult, SpellSlots → src/types/CombatTypes.ts ✅ (location mismatch)
 - [ ] class CombatEngine → src/core/combat/CombatEngine.ts
   - [ ] constructor(config?)
   - [ ] startCombat(players, enemies, environment?): CombatInstance
@@ -584,7 +584,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
-| 3 | Progression & Combat | ~80 | 🔄 In Progress (52/~80 done) |
+| 3 | Progression & Combat | ~80 | 🔄 In Progress (67/~80 done) |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
@@ -653,6 +653,22 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - UncappedProgressionConfig → `src/core/progression/LevelUpProcessor.ts` (75-82)
 - [x] **Missing documentation (Task 3.4 - StatManager.getConfig)** - DATA_ENGINE_REFERENCE.md is missing the `getConfig(): Readonly<Required<StatIncreaseConfig>>` method at `src/core/progression/stat/StatManager.ts:281`. Documentation needs to be updated.
 - [x] **Missing documentation (Task 3.4 - StatManager.validateDnD5eStatSelection)** - DATA_ENGINE_REFERENCE.md is missing the `validateDnD5eStatSelection(character, selections, increaseAmount?): { valid: true } | StatSelectionValidationError` method at `src/core/progression/stat/StatManager.ts:333`. This validates stat selection follows D&D 5e rules (+2 to one ability OR +1 to two abilities). Documentation needs to be updated.
+- [x] **Location mismatch (Task 3.5 - Combat Types)** - DATA_ENGINE_REFERENCE_plan.md documents combat types at `src/types/CombatTypes.ts`, but this file does not exist. All 15 types exist at different locations:
+  - CombatInstance → `src/core/types/Combat.ts` (111-122)
+  - Combatant → `src/core/types/Combat.ts` (23-41)
+  - CombatAction → `src/core/types/Combat.ts` (46-54)
+  - StatusEffect → `src/core/types/Combat.ts` (12-18)
+  - CombatActionResult → `src/core/types/Combat.ts` (59-67)
+  - AttackRoll → `src/core/types/Combat.ts` (72-80)
+  - DamageRoll → `src/core/types/Combat.ts` (85-91)
+  - SpellCastResult → `src/core/types/Combat.ts` (96-106)
+  - CombatResult → `src/core/types/Combat.ts` (127-138)
+  - CombatConfig → `src/core/types/Combat.ts` (156-162)
+  - DamageType → `src/core/types/Combat.ts` (143-146)
+  - SavingThrowAbility → `src/core/types/Combat.ts` (151)
+  - InitiativeResult → `src/core/combat/InitiativeRoller.ts` (11-16)
+  - AttackResult → `src/core/combat/AttackResolver.ts` (15-23)
+  - SpellSlots → `src/core/generation/SpellManager.ts` (24-31) - NOT exported from src/index.ts
 - [ ] [Item] documented but not found in codebase (covered by EquipmentGenerator.getEquipmentByType above)
 - [ ] [Item] exists in code but not documented (covered by EquipmentGenerator methods above)
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y] (covered by EquipmentGenerator methods above)
