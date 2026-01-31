@@ -107,11 +107,11 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] class SpectrumScanner (static) → src/core/analysis/SpectrumScanner.ts ✅
   - [x] separateFrequencyBands(frequencyData: Uint8Array, sampleRate: number): FrequencyBands ✅
 
-### Task 2.3: Character Generation (35 items) 🔄 IN PROGRESS (1/~35 done)
+### Task 2.3: Character Generation (35 items) 🔄 IN PROGRESS (2/~35 done)
 - [x] class CharacterGenerator (static) → src/core/generation/CharacterGenerator.ts
   - [x] generate(seed, audioProfile, name, options?): CharacterSheet ✅
-- [ ] class RaceSelector (static) → src/core/generation/RaceSelector.ts
-  - [ ] select(rng: SeededRNG): Race
+- [x] class RaceSelector (static) → src/core/generation/RaceSelector.ts
+  - [x] select(rng: SeededRNG): Race ✅
 - [ ] class ClassSuggester (static) → src/core/generation/ClassSuggester.ts
   - [ ] suggest(audioProfile, rng): Class
 - [ ] class AbilityScoreCalculator (static) → src/core/generation/AbilityScoreCalculator.ts
@@ -579,7 +579,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
-| 2 | Core Processing Modules | ~50 | 🔄 In Progress (14/~50 done) |
+| 2 | Core Processing Modules | ~50 | 🔄 In Progress (15/~50 done) |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
