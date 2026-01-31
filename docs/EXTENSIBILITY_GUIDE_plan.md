@@ -21,7 +21,7 @@
 - [x] All documented methods are implemented with matching signatures
 - [x] All types and interfaces are properly exported
 - [x] All extension categories are recognized by ExtensionManager
-- [ ] Documentation examples compile and run correctly
+- [x] Documentation examples compile and run correctly
 
 ---
 
