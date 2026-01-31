@@ -262,14 +262,14 @@ This ensures all discovered issues are tracked, researched, and resolved systema
 - [x] **NOTE:** Class uses static methods (NOT singleton) - verified (no getInstance, no private constructor, all methods static)
 
 ### Task 4.2: Verify Modification Methods
-- [ ] `enchant(equipment, itemName, enchantment, character?)` → Line 89
-- [ ] `applyTemplate(equipment, itemName, templateId, character?)` → Line 120
-- [ ] `curse(equipment, itemName, curse, character?)` → Line 174
-- [ ] `upgrade(equipment, itemName, upgrade, character?)` → Line 205
-- [ ] `removeModification(equipment, itemName, modificationId, character?)` → Line 226
-- [ ] `removeAllModifications(equipment, itemName, character?)` → Line 416
-- [ ] `disenchant(equipment, itemName, character?)` → Line 448
-- [ ] `liftCurse(equipment, itemName, character?)` → Line 482
+- [x] `enchant(equipment, itemName, enchantment, character?)` → Line 67 (actual: 67-84)
+- [x] `applyTemplate(equipment, itemName, templateId, character?)` → Line 98 (actual: 98-138)
+- [x] `curse(equipment, itemName, curse, character?)` → Line 152 (actual: 152-169)
+- [x] `upgrade(equipment, itemName, upgrade, character?)` → Line 183 (actual: 183-190)
+- [x] `removeModification(equipment, itemName, modificationId, character?)` → Line 204 (actual: 204-251)
+- [x] `removeAllModifications(equipment, itemName, character?)` → Line 394 (actual: 394-413)
+- [x] `disenchant(equipment, itemName, character?)` → Line 426 (actual: 426-447)
+- [x] `liftCurse(equipment, itemName, character?)` → Line 460 (actual: 460-481)
 
 ### Task 4.3: Verify Query Methods
 - [ ] `getModificationHistory(equipment, itemName)` → Line 285
@@ -600,12 +600,12 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 | Phase 1: ExtensionManager | 7 | 7 | 100% | Complete |
 | Phase 2: Registries | 3 | 3 | 100% | Complete |
 | Phase 3: Validators | 4 | 4 | 100% | Complete |
-| Phase 4: EquipmentModifier | 5 | 1 | 20% | In Progress |
+| Phase 4: EquipmentModifier | 5 | 2 | 40% | In Progress |
 | Phase 5: Helpers | 4 | 0 | 0% | Pending |
 | Phase 6: Types | 7 | 0 | 0% | Pending |
 | Phase 7: Categories | 11 | 0 | 0% | Pending |
 | Phase 8: Examples | 7 | 0 | 0% | Pending |
-| **TOTAL** | **48** | **13** | **27%** | **In Progress** |
+| **TOTAL** | **48** | **14** | **29%** | **In Progress** |
 
 ---
 
