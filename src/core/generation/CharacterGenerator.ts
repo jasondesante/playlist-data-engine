@@ -277,39 +277,55 @@ export class CharacterGenerator {
             CharacterGenerator.registerExtensions(options.extensions);
         }
 
-        // Select race deterministically from seed or use forced race
-        const race = options.forceRace || RaceSelector.select(rng);
-
-        // Handle subrace selection
+        // Handle subrace selection first (before race selection)
+        // This allows us to auto-detect race from subrace if needed
         let subrace: string | undefined;
         const requestedSubrace = options.subrace;
 
         if (requestedSubrace === 'pure') {
             // Explicitly no subrace (race can be generated or forced)
             subrace = undefined;
-        } else if (requestedSubrace === undefined) {
+        } else if (requestedSubrace !== undefined) {
+            // Specific subrace requested
+            if (options.forceRace) {
+                // Both race and subrace specified - validate subrace exists for this race
+                // We'll validate later after race is determined
+                subrace = requestedSubrace;
+            } else {
+                // Only subrace specified - auto-detect race from subrace
+                const detectedRace = featureRegistry.getRaceForSubrace(requestedSubrace);
+                if (!detectedRace) {
+                    throw new Error(
+                        `Cannot determine race for subrace "${requestedSubrace}". ` +
+                        `Either specify forceRace or ensure the subrace is registered in racial traits. ` +
+                        `Example: { forceRace: 'Elf', subrace: 'High Elf' }`
+                    );
+                }
+                // Use the detected race for this character
+                options.forceRace = detectedRace;
+                subrace = requestedSubrace;
+            }
+        }
+        // If requestedSubrace is undefined, we'll randomly select a subrace later
+
+        // Select race deterministically from seed or use forced race
+        const race = options.forceRace || RaceSelector.select(rng);
+
+        // Validate subrace if both race and subrace were specified
+        if (subrace !== undefined && requestedSubrace !== 'pure') {
+            const availableSubraces = featureRegistry.getAvailableSubraces(race);
+            if (!availableSubraces.includes(subrace)) {
+                throw new Error(
+                    `Invalid subrace "${subrace}" for race "${race}". ` +
+                    `Available subraces: ${availableSubraces.length > 0 ? availableSubraces.join(', ') : 'none'}`
+                );
+            }
+        } else if (subrace === undefined && requestedSubrace === undefined) {
             // Randomly select: either 'pure' or one of the available subraces
             const availableSubraces = featureRegistry.getAvailableSubraces(race);
             const optionsList = ['pure', ...availableSubraces];
             const selected = rng.randomChoice(optionsList);
             subrace = selected === 'pure' ? undefined : selected;
-        } else {
-            // Specific subrace requested - require forceRace to also be provided
-            if (!options.forceRace) {
-                throw new Error(
-                    `When specifying a subrace ("${requestedSubrace}"), you must also specify the race using the forceRace option. ` +
-                    `Example: { forceRace: 'Elf', subrace: 'High Elf' }`
-                );
-            }
-            // Validate the subrace exists for the specified race
-            const availableSubraces = featureRegistry.getAvailableSubraces(race);
-            if (!availableSubraces.includes(requestedSubrace)) {
-                throw new Error(
-                    `Invalid subrace "${requestedSubrace}" for race "${race}". ` +
-                    `Available subraces: ${availableSubraces.length > 0 ? availableSubraces.join(', ') : 'none'}`
-                );
-            }
-            subrace = requestedSubrace;
         }
 
         // Suggest class based on audio profile

@@ -244,6 +244,27 @@ export class FeatureRegistry {
     }
 
     /**
+     * Find the race associated with a given subrace
+     *
+     * Searches through all registered racial traits to find which race
+     * has traits with the specified subrace. Returns undefined if the
+     * subrace is not found in any race's traits.
+     *
+     * @param subrace - Subrace name to look up
+     * @returns Race that has this subrace, or undefined if not found
+     */
+    getRaceForSubrace(subrace: string): Race | undefined {
+        for (const [race, traits] of this.racialTraits.entries()) {
+            for (const trait of traits) {
+                if (trait.subrace === subrace) {
+                    return race as Race;
+                }
+            }
+        }
+        return undefined;
+    }
+
+    /**
      * Get a single racial trait by ID
      *
      * @param traitId - Trait ID to look up

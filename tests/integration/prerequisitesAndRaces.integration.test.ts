@@ -718,6 +718,19 @@ describe('Integration: Prerequisites and Races', () => {
         });
 
         it('should preserve subrace information when saving/loading', () => {
+            // Register Elf traits with High Elf subrace for auto-detection
+            const highElfTrait: RacialTrait = {
+                id: 'high_elf_test_cantrip',
+                name: 'High Elf Test Cantrip',
+                description: 'Test trait for High Elf',
+                type: 'passive',
+                race: 'Elf',
+                subrace: 'High Elf',
+                effects: [{ type: 'passive_modifier', target: 'test', value: true }],
+                source: 'default'
+            };
+            featureRegistry.registerRacialTrait(highElfTrait);
+
             const audioProfile = createMockAudioProfile();
 
             const character = CharacterGenerator.generate(

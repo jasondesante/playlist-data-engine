@@ -455,6 +455,124 @@ describe('Subrace Support', () => {
     });
 
     describe('CharacterGenerator subrace support', () => {
+        beforeEach(() => {
+            // Register test racial traits for Elf with subrace specificity
+            // This is required for the auto-detection of race from subrace
+            const baseElfTraits: RacialTrait[] = [
+                {
+                    id: 'elf_darkvision',
+                    name: 'Darkvision',
+                    description: 'Can see in dim light within 60 feet',
+                    type: 'passive',
+                    race: 'Elf',
+                    effects: [
+                        { type: 'passive_modifier', target: 'darkvision', value: 60 }
+                    ],
+                    source: 'default'
+                },
+                {
+                    id: 'elf_fey_ancestry',
+                    name: 'Fey Ancestry',
+                    description: 'Advantage on saves against being charmed',
+                    type: 'passive',
+                    race: 'Elf',
+                    effects: [
+                        { type: 'passive_modifier', target: 'charm_resistance', value: true }
+                    ],
+                    source: 'default'
+                },
+                {
+                    id: 'elf_trance',
+                    name: 'Trance',
+                    description: 'Meditate instead of sleeping',
+                    type: 'passive',
+                    race: 'Elf',
+                    effects: [
+                        { type: 'passive_modifier', target: 'trance', value: true }
+                    ],
+                    source: 'default'
+                },
+                {
+                    id: 'high_elf_extra_cantrip',
+                    name: 'High Elf Cantrip',
+                    description: 'Learn one extra wizard cantrip',
+                    type: 'passive',
+                    race: 'Elf',
+                    subrace: 'High Elf',
+                    effects: [
+                        { type: 'passive_modifier', target: 'extra_cantrip', value: 1 }
+                    ],
+                    source: 'default'
+                },
+                {
+                    id: 'high_elf_extra_language',
+                    name: 'High Elf Language',
+                    description: 'Learn one extra language',
+                    type: 'passive',
+                    race: 'Elf',
+                    subrace: 'High Elf',
+                    effects: [
+                        { type: 'passive_modifier', target: 'extra_language', value: 1 }
+                    ],
+                    source: 'default'
+                },
+                {
+                    id: 'wood_elf_weapon_training',
+                    name: 'Wood Elf Weapon Training',
+                    description: 'Proficient with longbow, shortbow, longsword, shortsword',
+                    type: 'passive',
+                    race: 'Elf',
+                    subrace: 'Wood Elf',
+                    effects: [
+                        { type: 'passive_modifier', target: 'weapon_proficiency', value: true }
+                    ],
+                    source: 'default'
+                },
+                {
+                    id: 'wood_elf_fleet_of_foot',
+                    name: 'Fleet of Foot',
+                    description: 'Walking speed increases by 5 feet',
+                    type: 'passive',
+                    race: 'Elf',
+                    subrace: 'Wood Elf',
+                    effects: [
+                        { type: 'passive_modifier', target: 'speed', value: 5 }
+                    ],
+                    source: 'default'
+                },
+                {
+                    id: 'drow_sunlight_sensitivity',
+                    name: 'Sunlight Sensitivity',
+                    description: 'Disadvantage on attack rolls and perception when in sunlight',
+                    type: 'passive',
+                    race: 'Elf',
+                    subrace: 'Drow',
+                    effects: [
+                        { type: 'passive_modifier', target: 'sunlight_disadvantage', value: true }
+                    ],
+                    source: 'default'
+                },
+                {
+                    id: 'drow_drow_magic',
+                    name: 'Drow Magic',
+                    description: 'Know dancing lights cantrip',
+                    type: 'passive',
+                    race: 'Elf',
+                    subrace: 'Drow',
+                    effects: [
+                        { type: 'passive_modifier', target: 'drow_magic', value: true }
+                    ],
+                    source: 'default'
+                }
+            ];
+
+            // Clear existing Elf traits and register test traits
+            featureRegistry.racialTraits.delete('Elf');
+            for (const trait of baseElfTraits) {
+                featureRegistry.registerRacialTrait(trait);
+            }
+        });
+
         it('should generate character with subrace when provided', () => {
             const seed = 12345;
             const audioProfile = createMockAudioProfile();
@@ -989,18 +1107,47 @@ describe('Subrace Support', () => {
             }).not.toThrow();
         });
 
-        it('should throw error when subrace is provided without forceRace', () => {
+        it('should throw error when subrace is provided without forceRace and subrace is not registered', () => {
             const audioProfile = createMockAudioProfile();
 
-            // Should throw an error explaining that forceRace is required
+            // Should throw an error when the subrace cannot be found in any registered traits
             expect(() => {
                 CharacterGenerator.generate(
                     'subrace-without-race-test',
                     audioProfile,
                     'Invalid',
-                    { subrace: 'High Elf' }
+                    { subrace: 'Unregistered Subrace' }
                 );
-            }).toThrow(/When specifying a subrace.*must also specify the race/);
+            }).toThrow(/Cannot determine race for subrace/);
+        });
+
+        it('should auto-detect race when subrace is provided without forceRace', () => {
+            // First, register Elf traits with High Elf subrace
+            const highElfTrait: RacialTrait = {
+                id: 'high_elf_cantrip',
+                name: 'High Elf Cantrip',
+                description: 'Extra cantrip',
+                type: 'passive',
+                race: 'Elf',
+                subrace: 'High Elf',
+                effects: [{ type: 'passive_modifier', target: 'cantrip', value: 1 }],
+                source: 'default'
+            };
+
+            featureRegistry.registerRacialTrait(highElfTrait);
+
+            const audioProfile = createMockAudioProfile();
+
+            // Should auto-detect Elf from High Elf subrace
+            const character = CharacterGenerator.generate(
+                'auto-detect-race-test',
+                audioProfile,
+                'Auto Detected',
+                { subrace: 'High Elf' }
+            );
+
+            expect(character.race).toBe('Elf');
+            expect(character.subrace).toBe('High Elf');
         });
 
         it('should throw error for invalid subrace for the specified race', () => {
