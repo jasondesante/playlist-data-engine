@@ -520,7 +520,7 @@ const character = CharacterGenerator.generate(seed, audioProfile, 'Sorcerer');
 const spell = SPELL_DATABASE['dragon_breath'];
 
 if (spell.prerequisites) {
-    const result = SpellValidator.validateSpellPrerequisites(spell, character);
+    const result = SpellValidator.validateSpellPrerequisites(spell.prerequisites, character);
 
     if (!result.valid) {
         console.log('Cannot learn this spell:', result.unmet);
@@ -1013,13 +1013,14 @@ registry.registerRacialTrait(elvenBattleTraining);
 
 // ===== VALIDATE FEATURE PREREQUISITES =====
 const character = CharacterGenerator.generate(seed, audioProfile, 'Elf Warrior');
-const feature = registry.getClassFeature('arcane_smith', character.level, character.class);
+const features = registry.getClassFeatures('Wizard', character.level);
+const feature = features.find(f => f.id === 'arcane_smith');
 
-if (feature && feature.prerequisites) {
-    const result = FeatureValidator.validatePrerequisites(feature.prerequisites, character);
+if (feature) {
+    const result = registry.validatePrerequisites(feature, character);
 
     if (!result.valid) {
-        console.log('Cannot learn feature:', result.unmet);
+        console.log('Cannot learn feature:', result.errors);
     }
 }
 
@@ -1290,7 +1291,7 @@ const character = CharacterGenerator.generate(seed, audioProfile, 'Hero');
 const skill = registry.getSkill('dragon_smithing');
 
 if (skill && skill.prerequisites) {
-    const result = SkillValidator.validateSkillPrerequisites(skill, character);
+    const result = SkillValidator.validateSkillPrerequisites(skill.prerequisites, character);
 
     if (!result.valid) {
         console.log('Unmet prerequisites:', result.unmet);

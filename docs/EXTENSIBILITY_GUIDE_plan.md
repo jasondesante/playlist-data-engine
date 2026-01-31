@@ -18,7 +18,7 @@
 
 **Success Criteria:**
 - [x] All documented classes exist at expected locations
-- [ ] All documented methods are implemented with matching signatures
+- [x] All documented methods are implemented with matching signatures
 - [ ] All types and interfaces are properly exported
 - [ ] All extension categories are recognized by ExtensionManager
 - [ ] Documentation examples compile and run correctly
@@ -619,6 +619,14 @@ All should be exported from [src/core/extensions/index.ts](src/core/extensions/i
 **Status:** ✅ Verified
 **Detail:** Documentation references [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md) for complete equipment system documentation
 **Action:** Verified file exists at /workspace/docs/EQUIPMENT_SYSTEM.md
+
+### Issue 6: Validator Method Signatures Documentation
+**Status:** ✅ Resolved
+**Detail:** Documentation showed incorrect method signatures for prerequisite validation methods
+**Action:** Fixed 3 documentation errors:
+1. `SpellValidator.validateSpellPrerequisites(spell, character)` → `SpellValidator.validateSpellPrerequisites(spell.prerequisites, character)` (line 523)
+2. `FeatureValidator.validatePrerequisites(feature.prerequisites, character)` → `registry.validatePrerequisites(feature, character)` (line 1019)
+3. `SkillValidator.validateSkillPrerequisites(skill, character)` → `SkillValidator.validateSkillPrerequisites(skill.prerequisites, character)` (line 1293)
 
 ---
 
