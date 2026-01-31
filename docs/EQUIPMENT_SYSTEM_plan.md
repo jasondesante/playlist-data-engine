@@ -403,6 +403,7 @@ Since the class is already correctly implemented and likely imported throughout 
 - [x] Update Task 1.1 file path reference from `src/core/randomness/SeededRNG.ts` to `src/utils/random.ts`
 - [x] Update Task 3.6 class path reference from `src/core/randomness/SeededRNG.ts` to `src/utils/random.ts`
 - [x] Update Phase 6 discrepancy note to mark as resolved
+- [x] Fix import examples in EQUIPMENT_SYSTEM.md (2 occurrences updated from `./src/core/randomness/SeededRNG.js` to `./src/utils/random.js`)
 
 ---
 
