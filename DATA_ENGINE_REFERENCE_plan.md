@@ -355,7 +355,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] EquipmentProperty, EquipmentPropertyType, EquipmentCondition, EnhancedEquipment, EquipmentModification, EnhancedInventoryItem, EffectApplicationResult, EquipmentValidationResult → src/core/types/Equipment.ts ✅ (location mismatch: documented as src/types/Equipment.ts)
 - [x] SpawnRandomOptions, TreasureHoardResult → src/core/types/Equipment.ts ✅ (location mismatch: documented as src/core/equipment/EquipmentSpawnHelper.ts)
 
-### Task 5.2: Equipment Core Classes (50 items) 🔄 IN PROGRESS (37/~50 done)
+### Task 5.2: Equipment Core Classes (36 items) ✅ COMPLETED
 - [x] class EquipmentEffectApplier (static) → src/core/equipment/EquipmentEffectApplier.ts
   - [x] equipItem(character, equipment, instanceId?): EffectApplicationResult
   - [x] unequipItem(character, equipmentName, instanceId?): EffectApplicationResult
@@ -592,7 +592,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | 2 | Core Processing Modules | ~50 | ✅ COMPLETED |
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
-| 5 | Equipment System | ~60 | 🔄 IN PROGRESS (37/60 done) |
+| 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
 | 6 | Extensibility System | ~120 | ⬜ Not Started |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
 | **Total** | | **~449** | |
