@@ -293,17 +293,17 @@ Verify ExtensionManager class and helper functions.
 **Implementation**: `src/core/extensions/ExtensionManager.ts:158-757`
 
 #### Class Verification
-- [ ] Class `ExtensionManager` exists
-- [ ] Exported as `export class ExtensionManager`
+- [x] Class `ExtensionManager` exists at line 182
+- [x] Exported as `export class ExtensionManager`
 
 #### Static Methods
-- [ ] `getInstance(): ExtensionManager` exists at lines 173-178
+- [x] `getInstance(): ExtensionManager` exists at lines 197-202
 
 #### Instance Methods
-- [ ] `register(category: ExtensionCategory, items: any[], options?: ExtensionOptions): void` exists at lines 204-311
+- [x] `register(category: ExtensionCategory, items: any[], options?: ExtensionOptions): void` exists at lines 228-335
 
 #### Export Verification
-- [ ] Exported from `src/index.ts:342`
+- [x] Exported from `src/index.ts:345` (note: plan listed 342, actual is 345)
 
 ---
 
@@ -312,14 +312,14 @@ Verify ExtensionManager class and helper functions.
 **Documentation**: [PREREQUISITES.md:345-348](PREREQUISITES.md#L345-L348)
 
 #### Spell Helper Function
-- [ ] `validateSpellPrerequisites(prerequisites: SpellPrerequisite | undefined, character: CharacterSheet): SpellValidationResult` exists at `src/core/spells/SpellValidator.ts:495-500`
-- [ ] Exported from `src/core/spells/index.ts:10`
-- [ ] Exported from `src/index.ts:335`
+- [x] `validateSpellPrerequisites(prerequisites: SpellPrerequisite | undefined, character: CharacterSheet): SpellValidationResult` exists at `src/core/spells/SpellValidator.ts:221-226`
+- [x] Exported from `src/core/spells/index.ts:10`
+- [x] Exported from `src/index.ts:338` (note: plan listed 335, actual is 338)
 
 #### Skill Helper Function
-- [ ] `validateSkillPrerequisites(prerequisites: SkillPrerequisite | undefined, character: CharacterSheet): SkillValidationResult` exists at `src/core/skills/SkillValidator.ts:519-524`
-- [ ] Exported from `src/core/skills/index.ts:33`
-- [ ] Exported from `src/index.ts:305`
+- [x] `validateSkillPrerequisites(prerequisites: SkillPrerequisite | undefined, character: CharacterSheet): SkillValidationResult` exists at `src/core/skills/SkillValidator.ts:355-360`
+- [x] Exported from `src/core/skills/index.ts:33`
+- [x] Exported from `src/index.ts:308` (note: plan listed 305, actual is 308)
 
 ---
 
@@ -569,11 +569,13 @@ Verify type imports across modules are correct.
 |----------|-------|----------|
 | Core Interfaces | 6 | 6 |
 | Supporting Interfaces | 0 | 0 |
-| Validator Classes | 2 | 1 |
-| Registry Classes | 2 | 0 |
-| Extension Classes | 1 | 0 |
-| Helper Functions | 2 | 0 |
+| Validator Classes | 2 | 2 |
+| Registry Classes | 2 | 2* |
+| Extension Classes | 1 | 1 |
+| Helper Functions | 2 | 2 |
 | Public API Exports | 14 | 0 |
+
+*Note: Registry Classes verified but Task 3.1 found `meetsPrerequisites` method doesn't exist (see Task 6.1)
 
 ### Critical Discrepancies
 
@@ -590,9 +592,9 @@ Verify type imports across modules are correct.
 
 #### Phase Completion
 - [x] Phase 1: Type Definitions (All 6 tasks verified)
-- [ ] Phase 2: Validator Classes
-- [ ] Phase 3: Registry Classes
-- [ ] Phase 4: Extension System
+- [x] Phase 2: Validator Classes (All 2 tasks verified)
+- [x] Phase 3: Registry Classes (Task 3.1 has one missing method documented - see Task 6.1, Task 3.2 verified)
+- [x] Phase 4: Extension System (All 2 tasks verified)
 - [ ] Phase 5: Public API Exports
 - [ ] Phase 6: Discrepancies Resolution
 - [ ] Phase 7: Code Examples Testing
