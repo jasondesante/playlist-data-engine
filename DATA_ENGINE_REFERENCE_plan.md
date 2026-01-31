@@ -107,9 +107,9 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 - [x] class SpectrumScanner (static) → src/core/analysis/SpectrumScanner.ts ✅
   - [x] separateFrequencyBands(frequencyData: Uint8Array, sampleRate: number): FrequencyBands ✅
 
-### Task 2.3: Character Generation (35 items)
-- [ ] class CharacterGenerator (static) → src/core/generation/CharacterGenerator.ts
-  - [ ] generate(seed, audioProfile, name, options?): CharacterSheet
+### Task 2.3: Character Generation (35 items) 🔄 IN PROGRESS (1/~35 done)
+- [x] class CharacterGenerator (static) → src/core/generation/CharacterGenerator.ts
+  - [x] generate(seed, audioProfile, name, options?): CharacterSheet ✅
 - [ ] class RaceSelector (static) → src/core/generation/RaceSelector.ts
   - [ ] select(rng: SeededRNG): Race
 - [ ] class ClassSuggester (static) → src/core/generation/ClassSuggester.ts
@@ -579,7 +579,7 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | Phase | Focus Area | Est. Items | Status |
 |-------|-----------|------------|--------|
 | 1 | Foundation Types & Utilities | ~64 | ✅ COMPLETED |
-| 2 | Core Processing Modules | ~50 | 🔄 In Progress (13/~50 done) |
+| 2 | Core Processing Modules | ~50 | 🔄 In Progress (14/~50 done) |
 | 3 | Progression & Combat | ~80 | ⬜ Not Started |
 | 4 | Environmental & Gaming | ~50 | ⬜ Not Started |
 | 5 | Equipment System | ~60 | ⬜ Not Started |
@@ -620,6 +620,8 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - `ServerlessPlaylistSchema` → `src/utils/validators.ts` (53-61)
   - `AudioProfileSchema` → `src/utils/validators.ts` (66-89)
   - `CharacterSheetSchema` → `src/utils/validators.ts` (106-156)
+- [x] **Signature mismatch (Task 2.3 - CharacterSheet interface)** - DATA_ENGINE_REFERENCE.md shows CharacterSheet with properties `abilities` and `modifiers`, but actual code at `src/core/types/Character.ts:246-249` uses `ability_scores` and `ability_modifiers`. The code is correct; documentation needs to be updated.
+- [x] **Missing documentation (Task 2.3 - CharacterGeneratorOptions)** - DATA_ENGINE_REFERENCE.md is missing the `extensions?: CharacterGeneratorExtensions` property in CharacterGeneratorOptions. The actual code at `src/core/generation/CharacterGenerator.ts:80-119` includes this property which allows registering custom spells, equipment, races, classes, and appearance options.
 - [ ] [Item] documented but not found in codebase
 - [ ] [Item] exists in code but not documented
 - [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y]
