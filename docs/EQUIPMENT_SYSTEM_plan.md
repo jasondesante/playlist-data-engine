@@ -280,23 +280,34 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 4.1: CharacterSheet Interface
 
-- [ ] `interface CharacterSheet` → src/core/types/Character.ts
-  - [ ] `equipment?: CharacterEquipment`
-  - [ ] `equipment_effects?: EquipmentEffectEntry[]`
+- [x] `interface CharacterSheet` → src/core/types/Character.ts (VERIFIED - lines 228-377)
+  - [x] `equipment?: CharacterEquipment` (VERIFIED - lines 289-295, uses inline type matching CharacterEquipment structure)
+  - [x] `equipment_effects?: EquipmentEffectEntry[]` (VERIFIED - lines 352-375, uses inline type matching documentation structure)
+
+**Note**: The `equipment` property uses an inline object type instead of the exported `CharacterEquipment` type from EquipmentGenerator.ts. The structures match exactly. The `equipment_effects` property also uses an inline type which matches the documentation structure. No `EquipmentEffectEntry` type is defined as a separate named type.
 
 ### Task 4.2: CharacterEquipment Type
 
-- [ ] `type CharacterEquipment` → src/core/types/Character.ts
+- [x] `type CharacterEquipment` → src/core/generation/EquipmentGenerator.ts (VERIFIED - lines 46-52)
+
+**Note**: The type is defined in `EquipmentGenerator.ts`, not in `Character.ts` as initially planned. It is properly exported and available through the package exports. The structure matches what's documented:
+- `weapons: EnhancedInventoryItem[]`
+- `armor: EnhancedInventoryItem[]`
+- `items: EnhancedInventoryItem[]`
+- `totalWeight: number`
+- `equippedWeight: number`
 
 ### Task 4.3: Equipment Effects Structure
 
 Verify `CharacterSheet.equipment_effects` structure:
-- [ ] `source: string`
-- [ ] `instanceId?: string`
-- [ ] `effects: EquipmentProperty[]`
-- [ ] `features: EquipmentFeature[]`
-- [ ] `skills: EquipmentSkill[]`
-- [ ] `spells?: Array<{ spellId, level?, uses?, recharge? }>`
+- [x] `source: string` (VERIFIED - line 354 in Character.ts)
+- [x] `instanceId?: string` (VERIFIED - line 356 in Character.ts)
+- [x] `effects: EquipmentProperty[]` (VERIFIED - line 359 in Character.ts)
+- [x] `features: EquipmentFeature[]` (VERIFIED - line 362 in Character.ts)
+- [x] `skills: EquipmentSkill[]` (VERIFIED - line 365 in Character.ts)
+- [x] `spells?: Array<{ spellId, level?, uses?, recharge? }>` (VERIFIED - lines 368-374 in Character.ts)
+
+**Note**: The structure matches the documentation exactly. All required properties are present and correctly typed.
 
 ---
 
@@ -426,6 +437,6 @@ Since the class is already correctly implemented and likely imported throughout 
 - [x] Phase 1: All files exist, all exports verified
 - [x] Phase 2: All types and interfaces verified (COMPLETE - All 5 tasks done)
 - [x] Phase 3: All classes and methods verified (COMPLETE - All 6 tasks done)
-- [ ] Phase 4: Integration points verified
+- [x] Phase 4: Integration points verified (COMPLETE - All 3 tasks done)
 - [ ] Phase 5: Detailed signature verification complete
 - [ ] Phase 6: All discrepancies documented and categorized
