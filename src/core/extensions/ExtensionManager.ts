@@ -24,6 +24,15 @@ import { SkillValidator, validateSkill } from '../skills/SkillValidator.js';
 import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
 
 /**
+ * Spawn modes for custom content
+ * - 'relative': Add custom weights to default weights (default)
+ * - 'absolute': Replace default weights entirely
+ * - 'default': Use default weights (1.0 for all items)
+ * - 'replace': Replace default items with custom items only
+ */
+export type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';
+
+/**
  * All extensible categories in the system
  */
 export type ExtensionCategory =
@@ -113,7 +122,7 @@ export interface ExtensionOptions {
      * - 'default': Use default weights (1.0 for all items)
      * - 'replace': Replace default items with custom items only
      */
-    mode?: 'relative' | 'absolute' | 'default' | 'replace';
+    mode?: SpawnMode;
 
     /**
      * Custom spawn weights for individual items
@@ -129,6 +138,26 @@ export interface ExtensionOptions {
 }
 
 /**
+ * Entry for registering multiple extensions at once
+ */
+export interface RegistrationEntry {
+    /**
+     * The category to register items for
+     */
+    category: ExtensionCategory;
+
+    /**
+     * Custom items to add
+     */
+    items: any[];
+
+    /**
+     * Registration options
+     */
+    options?: ExtensionOptions;
+}
+
+/**
  * Stored extension data for a category
  */
 interface ExtensionData {
@@ -141,8 +170,20 @@ interface ExtensionData {
  * Result of validation
  */
 export interface ValidationResult {
+    /**
+     * Whether validation passed
+     */
     valid: boolean;
+
+    /**
+     * Error messages (undefined if valid)
+     */
     errors?: string[];
+
+    /**
+     * Warning messages for non-critical issues
+     */
+    warnings?: string[];
 }
 
 /**
@@ -335,6 +376,16 @@ export class ExtensionManager {
     }
 
     /**
+     * Register multiple categories in a single call
+     * @param registrations - Array of registration entries
+     */
+    registerMultiple(registrations: RegistrationEntry[]): void {
+        for (const registration of registrations) {
+            this.register(registration.category, registration.items, registration.options);
+        }
+    }
+
+    /**
      * Get merged data (defaults + custom) for a category
      * @param category - The category to get data for
      * @returns Merged array of default and custom items
@@ -424,6 +475,25 @@ export class ExtensionManager {
      */
     hasCustomData(category: ExtensionCategory): boolean {
         return this.extensions.has(category);
+    }
+
+    /**
+     * Set the registration mode for a category
+     * @param category - The category to set mode for
+     * @param mode - The spawn mode to set
+     */
+    setMode(category: ExtensionCategory, mode: SpawnMode): void {
+        const extension = this.extensions.get(category);
+        if (extension) {
+            extension.options.mode = mode;
+        } else {
+            // If no custom data exists, create an empty extension with the specified mode
+            this.extensions.set(category, {
+                items: [],
+                options: { mode },
+                registeredAt: Date.now()
+            });
+        }
     }
 
     /**
@@ -769,6 +839,16 @@ export class ExtensionManager {
             extensions: exported,
             weights: weightData
         };
+    }
+
+    /**
+     * Export custom data for a single category
+     * @param category - The category to export
+     * @returns Array of custom items, or empty array if no custom data
+     */
+    exportCustomDataForCategory(category: ExtensionCategory): any[] {
+        const extension = this.extensions.get(category);
+        return extension ? [...extension.items] : [];
     }
 
     /**

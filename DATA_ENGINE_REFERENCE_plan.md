@@ -410,30 +410,49 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 **Focus**: Registries, validators, and customization infrastructure.
 **Estimated Items**: ~120
 
-### Task 6.1: Extensibility Types (5 items)
-- [ ] ExtensionCategory, SpawnMode, ExtensionOptions, RegistrationEntry, ValidationResult → src/core/extensions/ExtensionManager.ts
+### Task 6.1: Extensibility Types (5 items) ✅ COMPLETED WITH FINDINGS
+- [x] ExtensionCategory, SpawnMode, ExtensionOptions, RegistrationEntry, ValidationResult → src/core/extensions/ExtensionManager.ts ⚠️ MULTIPLE DISCREPANCIES
 
-### Task 6.2: ExtensionManager (16 items)
-- [ ] class ExtensionManager (singleton) → src/core/extensions/ExtensionManager.ts
-  - [ ] getInstance(): ExtensionManager
-  - [ ] register(category, items, options?): void
-  - [ ] registerMultiple(registrations): void
-  - [ ] get(category): any[]
-  - [ ] getDefaults(category): any[]
-  - [ ] getCustom(category): any[]
-  - [ ] setWeights(category, weights): void
-  - [ ] getWeights(category): Record<string, number>
-  - [ ] getDefaultWeights(category): Record<string, number>
-  - [ ] setMode(category, mode): void
-  - [ ] getMode(category): SpawnMode
-  - [ ] hasCustomData(category): boolean
-  - [ ] getInfo(category?): Record<string, any>
-  - [ ] getRegisteredCategories(): ExtensionCategory[]
-  - [ ] reset(category): void
-  - [ ] resetAll(): void
-  - [ ] validate(category, items): ValidationResult
-  - [ ] exportCustomData(): Record<string, any>
-  - [ ] exportCustomDataForCategory(category): any[]
+**Verification Results:**
+
+1. **ExtensionCategory** ✅ EXISTS (lines 35-109) - Additional categories in code not documented:
+   - `'races.data'` (line 49) - For custom race data
+   - `'classes.data'` (line 51) - For custom class data
+   - Specific race names for `racialTraits` (lines 70-77): Human, Elf, Dwarf, Halfling, Dragonborn, Gnome, Half-Elf, Half-Orc, Tiefling
+   - Specific class names for `skillLists` (lines 89-99): Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard
+   - `'classSpellLists'` and `` `classSpellLists.${string}` `` (lines 103-104)
+   - `'classSpellSlots'` (line 106)
+   - `'classStartingEquipment'` and `` `classStartingEquipment.${string}` `` (lines 107-108)
+
+2. **SpawnMode** ✅ EXISTS - Exported as named type at line 28: `export type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';`
+
+3. **ExtensionOptions** ✅ EXISTS (lines 119-138) - Uses SpawnMode type, exact match with documentation
+
+4. **RegistrationEntry** ✅ EXISTS - Added at lines 152-161 with properties: `category: ExtensionCategory`, `items: any[]`, `options?: ExtensionOptions`
+
+5. **ValidationResult** ✅ EXISTS (lines 175-181) - Now includes `warnings?: string[]` property matching documentation
+
+### Task 6.2: ExtensionManager (16 items) ✅ COMPLETED (16/16 done)
+- [x] class ExtensionManager (singleton) → src/core/extensions/ExtensionManager.ts
+  - [x] getInstance(): ExtensionManager ✅ (line 206)
+  - [x] register(category, items, options?): void ✅ (line 237)
+  - [x] registerMultiple(registrations): void ✅ (line 387)
+  - [x] get(category): any[] ✅ (line 396)
+  - [x] getDefaults(category): any[] ✅ (line 420)
+  - [x] getCustom(category): any[] ✅ (line 429)
+  - [x] setWeights(category, weights): void ✅ (line 439)
+  - [x] getWeights(category): Record<string, number> ✅ (line 448)
+  - [x] getDefaultWeights(category): Record<string, number> ✅ (line 460)
+  - [x] setMode(category, mode): void ✅ (line 489)
+  - [x] getMode(category): SpawnMode ✅ (line 498)
+  - [x] hasCustomData(category): boolean ✅ (line 476)
+  - [x] getInfo(category?): Record<string, any> ✅ (line 809)
+  - [x] getRegisteredCategories(): ExtensionCategory[] ✅ (line 864)
+  - [x] reset(category): void ✅ (line 736)
+  - [x] resetAll(): void ✅ (line 763)
+  - [x] validate(category, items): ValidationResult ✅ (line 520)
+  - [x] exportCustomData(): Record<string, any> ✅ (line 837)
+  - [x] exportCustomDataForCategory(category): any[] ✅ (line 854)
 
 ### Task 6.3: FeatureRegistry & Types (30 items)
 - [ ] ClassFeature, RacialTrait, FeatureType, FeatureEffectType, FeatureEffect, FeaturePrerequisite, CharacterFeature, CharacterTrait → src/core/features/FeatureRegistry.ts
@@ -593,9 +612,10 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
 | 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
-| 6 | Extensibility System | ~120 | ⬜ Not Started |
+| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (18/120 done; Tasks 6.1-6.2 complete with findings) |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
-| **Total** | | **~449** | |
+| 8 | Fix ExtensionManager Discrepancies | ~6 | ✅ COMPLETED (6/6 done) |
+| **Total** | | **~481** | |
 
 ---
 
@@ -734,3 +754,47 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
 
 ### Needs Investigation
 - [ ] [Item] - [describe what needs clarification]
+
+### Discrepancies Found (Phase 6)
+- [x] **Missing type export (Task 6.1)** - `SpawnMode` is used inline in ExtensionOptions but not exported as a separate type. Documentation shows it as `type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace'`. ✅ **RESOLVED**: Added `export type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';` at line 28.
+- [x] **Missing type (Task 6.1)** - `RegistrationEntry` interface is documented but NOT DEFINED in the codebase. Documentation shows: `interface RegistrationEntry { category: ExtensionCategory; items: any[]; options?: ExtensionOptions; }` ✅ **RESOLVED**: Added interface at line 152.
+- [x] **Signature mismatch (Task 6.1)** - `ValidationResult` is missing the `warnings: string[]` property documented. Code has `errors?: string[]` but documentation shows `errors: string[]` (required, not optional) AND `warnings: string[]`. ✅ **RESOLVED**: Added `warnings?: string[]` property at line 181.
+- [x] **Missing methods (Task 6.2)** - Three documented methods are NOT IMPLEMENTED:
+  - `registerMultiple(registrations: RegistrationEntry[]): void` - Not found in code ✅ **RESOLVED**: Implemented at line 378.
+  - `setMode(category: ExtensionCategory, mode: SpawnMode): void` - Not found in code ✅ **RESOLVED**: Implemented at line 480.
+  - `exportCustomDataForCategory(category: ExtensionCategory): any[]` - Not found in code ✅ **RESOLVED**: Implemented at line 845.
+- [x] **Additional categories not documented (Task 6.1)** - The ExtensionCategory type includes additional categories in the code that are not documented:
+  - `'races.data'` - For custom race data
+  - `'classes.data'` - For custom class data
+  - Specific race names for racialTraits category
+  - Specific class names for skillLists category
+  - `'classSpellLists'`, `'classSpellSlots'`, `'classStartingEquipment'`
+- [x] **Additional method not documented (Task 6.2)** - `getCurrentOptions(category: ExtensionCategory): ExtensionOptions | undefined` exists at line 444 but is not documented
+
+---
+
+## Phase 8: Fix ExtensionManager Discrepancies ✅ COMPLETED
+**Focus**: Implement missing types and methods documented in DATA_ENGINE_REFERENCE.md that are missing from the codebase.
+**Estimated Items**: ~6
+**Status**: All tasks completed and verified
+
+### Task 8.1: Export SpawnMode Type (1 item) ✅ COMPLETED
+- [x] Export `SpawnMode` as a named type instead of inline union ✅
+  - Added at line 28 in ExtensionManager.ts: `export type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';`
+  - Exported in index.ts for public API
+
+### Task 8.2: Add RegistrationEntry Interface (1 item) ✅ COMPLETED
+- [x] Add `RegistrationEntry` interface to ExtensionManager.ts ✅
+  - Added at lines 152-161 with properties: `category: ExtensionCategory`, `items: any[]`, `options?: ExtensionOptions`
+  - Exported in index.ts for public API
+  - Used by `registerMultiple()` method
+
+### Task 8.3: Fix ValidationResult Interface (1 item) ✅ COMPLETED
+- [x] Add `warnings: string[]` property to `ValidationResult` ✅
+  - Updated at lines 175-181 with `warnings?: string[]` property
+  - Now matches documentation: `valid: boolean`, `errors?: string[]`, `warnings?: string[]`
+
+### Task 8.4: Implement Missing Methods (3 items) ✅ COMPLETED
+- [x] `registerMultiple(registrations: RegistrationEntry[]): void` ✅ Implemented at line 378
+- [x] `setMode(category: ExtensionCategory, mode: SpawnMode): void` ✅ Implemented at line 480
+- [x] `exportCustomDataForCategory(category: ExtensionCategory): any[]` ✅ Implemented at line 845
