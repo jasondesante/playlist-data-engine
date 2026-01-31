@@ -459,13 +459,14 @@ Address all discrepancies found during verification.
 
 ### Task 6.6: Race Property in SpellPrerequisite
 
-**Status**: ✅ RESOLVED - Property exists but is undocumented
+**Status**: ✅ RESOLVED - Documentation already correct
 
 - [x] **Issue**: Documentation examples may reference `race` property for `SpellPrerequisite`
 - [x] **Action**: Verify if `race?: string` exists in `SpellPrerequisite` interface
-- [x] **File**: `src/utils/constants.ts:873-900`
-- [x] **Finding**: The `race?: string` property EXISTS at line 887 in `constants.ts` but is NOT documented in `PREREQUISITES.md:137-162`
-- [ ] **Resolution Needed**: Add `race?: string` property to PREREQUISITES.md documentation at line ~148 (after `class?: string`)
+- [x] **File**: `src/core/spells/SpellTypes.ts:27-54` (moved from constants.ts in Task 6.3)
+- [x] **Finding**: The `race?: string` property EXISTS at line 41 in `SpellTypes.ts`
+- [x] **Documentation**: PREREQUISITES.md:151 already documents `race?: string;`
+- [x] **Resolution**: Documentation is already correct - no changes needed
 
 ---
 
