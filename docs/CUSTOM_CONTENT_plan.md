@@ -57,18 +57,18 @@ This plan organizes verification into **phases** and **tasks** to systematically
 - [x] Type is exported from 'playlist-data-engine'
 
 ### Task 1.3: Ability Type
-- [ ] `Ability` type exists
-- [ ] Contains expected values (STR, DEX, CON, INT, WIS, CHA)
+- [x] `Ability` type exists
+- [x] Contains expected values (STR, DEX, CON, INT, WIS, CHA)
 
 ### Task 1.4: asClass Function
-- [ ] `asClass(value: string): Class` function exists
-- [ ] Located at: src/core/types/Character.ts
-- [ ] Properly exported
+- [x] `asClass(value: string): Class` function exists
+- [x] Located at: src/core/types/Character.ts
+- [x] Properly exported
 
 ### Task 1.5: isValidClass Type Guard
-- [ ] `isValidClass(value: string): value is Class` function exists
-- [ ] Located at: src/core/types/Character.ts
-- [ ] Properly exported
+- [x] `isValidClass(value: string): value is Class` function exists
+- [x] Located at: src/core/types/Character.ts
+- [x] Properly exported
 
 ---
 
@@ -79,61 +79,61 @@ This plan organizes verification into **phases** and **tasks** to systematically
 ### Task 2.1: Race-Related Interfaces
 
 **RaceDataEntry interface:**
-- [ ] Find location (search required)
-- [ ] Properties: `ability_bonuses: Partial<Record<Ability, number>>`
-- [ ] Properties: `speed: number`
-- [ ] Properties: `traits: string[]`
-- [ ] Properties: `subraces?: string[]`
+- [x] Find location (src/utils/constants.ts lines 14-26)
+- [x] Properties: `ability_bonuses: Partial<Record<Ability, number>>`
+- [x] Properties: `speed: number`
+- [x] Properties: `traits: string[]`
+- [x] Properties: `subraces?: string[]`
 
 **RacialTrait interface:**
-- [ ] Find location (search required)
-- [ ] Properties: `id: string`
-- [ ] Properties: `name: string`
-- [ ] Properties: `race: Race`
-- [ ] Properties: `subrace?: string`
-- [ ] Properties: `prerequisites?: FeaturePrerequisite`
-- [ ] Properties: `effects?: FeatureEffect[]`
-- [ ] Properties: `source: 'default' | 'custom'`
+- [x] Find location (src/core/features/FeatureTypes.ts lines 162-192)
+- [x] Properties: `id: string`
+- [x] Properties: `name: string`
+- [x] Properties: `race: Race`
+- [x] Properties: `subrace?: string`
+- [x] Properties: `prerequisites?: FeaturePrerequisite`
+- [x] Properties: `effects?: FeatureEffect[]`
+- [x] Properties: `source: 'default' | 'custom'` (implemented as FeatureSource type)
 
 ### Task 2.2: Character Interfaces
 
 **CharacterSheet interface:**
-- [ ] Find location (search required)
-- [ ] Properties: `race: Race`
-- [ ] Properties: `subrace?: string`
+- [x] Find location (src/core/types/Character.ts lines 228-376)
+- [x] Properties: `race: Race`
+- [x] Properties: `subrace?: string`
 
 ### Task 2.3: Class-Related Interface
 
 **ClassDataEntry interface:**
-- [ ] Located at: src/utils/constants.ts
-- [ ] `primary_ability: Ability`
-- [ ] `hit_die: number`
-- [ ] `saving_throws: Ability[]`
-- [ ] `is_spellcaster: boolean`
-- [ ] `skill_count: number`
-- [ ] `available_skills: string[]`
-- [ ] `has_expertise: boolean`
-- [ ] `expertise_count?: number`
-- [ ] `baseClass?: Class`
-- [ ] `audio_preferences?: object` with proper shape
+- [x] Located at: src/utils/constants.ts (lines 266-317)
+- [x] `primary_ability: Ability`
+- [x] `hit_die: number`
+- [x] `saving_throws: Ability[]`
+- [x] `is_spellcaster: boolean`
+- [x] `skill_count: number`
+- [x] `available_skills: string[]`
+- [x] `has_expertise: boolean`
+- [x] `expertise_count?: number`
+- [x] `baseClass?: Class`
+- [x] `audio_preferences?: object` with proper shape (primary, secondary?, tertiary?, bass?, treble?, mid?, amplitude?)
 
 ### Task 2.4: Feature/Effect Interfaces
 
 **FeaturePrerequisite interface:**
-- [ ] Find location (search required)
-- [ ] Has `subrace?: string` property
+- [x] Find location (src/core/features/FeatureTypes.ts lines 68-95)
+- [x] Has `subrace?: string` property
 
 **FeatureEffect interface:**
-- [ ] Find location (search required)
-- [ ] Supports `{ type: 'ability_unlock', target, value }` shape
+- [x] Find location (src/core/features/FeatureTypes.ts lines 39-54)
+- [x] Supports `{ type: 'ability_unlock', target, value }` shape (type includes 'ability_unlock')
 
 ### Task 2.5: Audio/RNG Interfaces
 
 **AudioProfile interface:**
-- [ ] Find location (search required)
+- [x] Find location (src/core/types/AudioProfile.ts lines 5-40)
 
 **SeededRNG interface/class:**
-- [ ] Find location (search required)
+- [x] Find location (src/utils/random.ts line 7 - implemented as class)
 
 ---
 
@@ -143,32 +143,32 @@ This plan organizes verification into **phases** and **tasks** to systematically
 
 ### Task 3.1: Race Helper
 **getRaceData function:**
-- [ ] Find location (search required)
-- [ ] Signature: `getRaceData(race: string)`
-- [ ] Returns race data from default or custom races
-- [ ] Exported from 'playlist-data-engine'
+- [x] Find location (src/utils/constants.ts lines 167-190)
+- [x] Signature: `getRaceData(race: string): RaceDataEntry | undefined`
+- [x] Returns race data from default or custom races
+- [x] Exported from 'playlist-data-engine'
 
 ### Task 3.2: Class Helpers (src/utils/constants.ts)
 **getClassData function:**
-- [ ] Located at: src/utils/constants.ts
-- [ ] Signature: `getClassData(className: string): ClassDataEntry | undefined`
-- [ ] Implements template merge logic for `baseClass`
-- [ ] Exported from 'playlist-data-engine'
+- [x] Located at: src/utils/constants.ts (lines 491-525)
+- [x] Signature: `getClassData(className: string): ClassDataEntry | undefined`
+- [x] Implements template merge logic for `baseClass`
+- [x] Exported from 'playlist-data-engine'
 
 **getClassSpellList function:**
-- [ ] Located at: src/utils/constants.ts
-- [ ] Returns: `{ cantrips: string[], spells_by_level: Record<number, string[]> } | undefined`
-- [ ] Exported from 'playlist-data-engine'
+- [x] Located at: src/utils/constants.ts (lines 1425-1447)
+- [x] Returns: `{ cantrips: string[], spells_by_level: Record<number, string[]> } | undefined`
+- [x] Exported from 'playlist-data-engine'
 
 **getSpellSlotsForClass function:**
-- [ ] Located at: src/utils/constants.ts
-- [ ] Signature: `getSpellSlotsForClass(className: string, characterLevel: number): Record<number, number> | undefined`
-- [ ] Exported from 'playlist-data-engine'
+- [x] Located at: src/utils/constants.ts (lines 1485-1516)
+- [x] Signature: `getSpellSlotsForClass(className: string, characterLevel: number): Record<number, number> | undefined`
+- [x] Exported from 'playlist-data-engine'
 
 **getClassStartingEquipment function:**
-- [ ] Located at: src/utils/constants.ts
-- [ ] Returns: `{ weapons: string[], armor: string[], items: string[] } | undefined`
-- [ ] Exported from 'playlist-data-engine'
+- [x] Located at: src/utils/constants.ts (lines 1551-1582)
+- [x] Returns: `{ weapons: string[], armor: string[], items: string[] } | undefined`
+- [x] Exported from 'playlist-data-engine'
 
 ---
 
@@ -179,20 +179,20 @@ This plan organizes verification into **phases** and **tasks** to systematically
 **Location:** src/core/extensions/ExtensionManager.ts
 
 ### Task 4.1: Class Structure
-- [ ] `ExtensionManager` class exists
-- [ ] Singleton pattern implemented
-- [ ] Exported from 'playlist-data-engine'
+- [x] `ExtensionManager` class exists (line 158)
+- [x] Singleton pattern implemented (line 159, getInstance at lines 173-178)
+- [ ] Exported from 'playlist-data-engine' (to verify in Phase 8)
 
 ### Task 4.2: Core Methods
-- [ ] `getInstance()` static method - returns singleton instance
-- [ ] `register(category: string, items: any, options?: object)` method
-- [ ] `setWeights(category: string, weights: Record<string, number>)` method
-- [ ] `getWeights(category: string): Record<string, number>` method
-- [ ] `getDefaultWeights(category: string): Record<string, number>` method
-- [ ] `hasCustomData(category: string): boolean` method
-- [ ] `getInfo(category: string): ExtensionInfo` method
-- [ ] `reset(category: string)` method
-- [ ] `resetAll()` method
+- [x] `getInstance()` static method - returns singleton instance (lines 173-178)
+- [x] `register(category: string, items: any, options?: object)` method (lines 204-311)
+- [x] `setWeights(category: string, weights: Record<string, number>)` method (lines 361-363)
+- [x] `getWeights(category: string): Record<string, number>` method (lines 370-375)
+- [x] `getDefaultWeights(category: string): Record<string, number>` method (lines 382-394)
+- [x] `hasCustomData(category: string): boolean` method (lines 401-403)
+- [x] `getInfo(category: string): ExtensionInfo` method (lines 699-721)
+- [x] `reset(category: string)` method (lines 662-684)
+- [x] `resetAll()` method (lines 689-692)
 
 ---
 
@@ -201,14 +201,14 @@ This plan organizes verification into **phases** and **tasks** to systematically
 **Focus:** Verify the FeatureRegistry class and methods.
 
 ### Task 5.1: Class Structure
-- [ ] `FeatureRegistry` class exists (find location - search required)
-- [ ] Singleton pattern implemented
-- [ ] Exported from 'playlist-data-engine'
+- [x] `FeatureRegistry` class exists (src/core/features/FeatureRegistry.ts line 31)
+- [x] Singleton pattern implemented (line 32, getInstance at lines 49-54)
+- [ ] Exported from 'playlist-data-engine' (to verify in Phase 8)
 
 ### Task 5.2: Methods
-- [ ] `getInstance()` static method
-- [ ] `registerRacialTrait(trait: RacialTrait)` method
-- [ ] `getRacialTraitsForSubrace(race: string, subrace: string)` method
+- [x] `getInstance()` static method (lines 49-54)
+- [x] `registerRacialTrait(trait: RacialTrait)` method (lines 132-152)
+- [x] `getRacialTraitsForSubrace(race: string, subrace: string)` method (lines 221-224)
 
 ---
 
@@ -219,12 +219,12 @@ This plan organizes verification into **phases** and **tasks** to systematically
 **Location:** src/core/generation/ClassSuggester.ts
 
 ### Task 6.1: Class Structure
-- [ ] `ClassSuggester` class exists
-- [ ] Exported from 'playlist-data-engine'
+- [x] `ClassSuggester` class exists (src/core/generation/ClassSuggester.ts line 41)
+- [ ] Exported from 'playlist-data-engine' (to verify in Phase 8)
 
 ### Task 6.2: Methods
-- [ ] `suggest(audioProfile: AudioProfile, rng: SeededRNG): string` static method
-- [ ] Includes custom classes with audio_preferences in matching
+- [x] `suggest(audioProfile: AudioProfile, rng: SeededRNG): string` static method (lines 100-122)
+- [x] Includes custom classes with audio_preferences in matching (line 105 gets all classes, line 171 checks CLASS_AUDIO_PREFERENCES)
 
 ---
 
@@ -233,14 +233,14 @@ This plan organizes verification into **phases** and **tasks** to systematically
 **Focus:** Verify all documented constants.
 
 ### Task 7.1: Default Values
-- [ ] Default races: 'Barbarian' | 'Bard' | 'Cleric' | 'Druid' | 'Fighter' | 'Monk' | 'Paladin' | 'Ranger' | 'Rogue' | 'Sorcerer' | 'Warlock' | 'Wizard'
-- [ ] Default classes: 12 D&D 5e classes
+- [x] Default classes: 'Barbarian' | 'Bard' | 'Cleric' | 'Druid' | 'Fighter' | 'Monk' | 'Paladin' | 'Ranger' | 'Rogue' | 'Sorcerer' | 'Warlock' | 'Wizard' (lines 794-807)
+- [x] Default races: 'Human' | 'Elf' | 'Dwarf' | 'Halfling' | 'Dragonborn' | 'Gnome' | 'Half-Elf' | 'Half-Orc' | 'Tiefling' (lines 781-791)
 
 ### Task 7.2: Class Data Constants (src/utils/constants.ts)
-- [ ] `CLASS_DATA` constant exists at src/utils/constants.ts
-- [ ] `CLASS_SPELL_LISTS` constant (find location - search required)
-- [ ] `SPELL_SLOTS_BY_CLASS` constant (find location - search required)
-- [ ] `CLASS_STARTING_EQUIPMENT` constant (find location - search required)
+- [x] `CLASS_DATA` constant exists at src/utils/constants.ts (lines 528-653)
+- [x] `CLASS_SPELL_LISTS` constant (lines 997-1081)
+- [x] `SPELL_SLOTS_BY_CLASS` constant (lines 1102-1279)
+- [x] `CLASS_STARTING_EQUIPMENT` constant (lines 1345-1410)
 
 ---
 
@@ -251,23 +251,26 @@ This plan organizes verification into **phases** and **tasks** to systematically
 **Location:** src/index.ts (or main entry point)
 
 ### Task 8.1: Class Exports
-- [ ] `ExtensionManager` exported
-- [ ] `FeatureRegistry` exported
-- [ ] `ClassSuggester` exported
+- [x] `ExtensionManager` exported (line 342)
+- [x] `FeatureRegistry` exported (line 266)
+- [x] `ClassSuggester` exported (line 183)
 
 ### Task 8.2: Function Exports
-- [ ] `getRaceData` exported
-- [ ] `asClass` exported
-- [ ] `isValidClass` exported
-- [ ] `getClassData` exported
-- [ ] `getClassSpellList` exported
-- [ ] `getSpellSlotsForClass` exported
-- [ ] `getClassStartingEquipment` exported
+- [x] `getRaceData` exported - ADDED to src/index.ts (line 426)
+- [x] `asClass` exported (line 175)
+- [x] `isValidClass` exported - ADDED to src/index.ts (line 175)
+- [x] `getClassData` exported - ADDED to src/index.ts (line 431)
+- [x] `getClassSpellList` exported - ADDED to src/index.ts (line 432)
+- [x] `getSpellSlotsForClass` exported - ADDED to src/index.ts (line 433)
+- [x] `getClassStartingEquipment` exported - ADDED to src/index.ts (line 434)
 
 ### Task 8.3: Type Exports
-- [ ] `Race` type exported
-- [ ] `Class` type exported
-- [ ] Type augmentation supported via `declare module 'playlist-data-engine'`
+- [x] `Race` type exported (line 28)
+- [x] `Class` type exported (line 29)
+- [x] `RaceDataEntry` type exported - ADDED to src/index.ts (line 114)
+- [x] `ClassDataEntry` type exported - ADDED to src/index.ts (line 114)
+- [x] `ClassSpellListData` type exported - ADDED to src/index.ts (line 114)
+- [ ] Type augmentation supported via `declare module 'playlist-data-engine'` (not applicable - using branded types instead)
 
 ---
 
@@ -350,8 +353,15 @@ This plan organizes verification into **phases** and **tasks** to systematically
 
 | Phase | Status | Date | Notes |
 |-------|--------|------|-------|
-| 1 | [ ] Pending | | Core Types |
-| 2 | [ ] Pending | | Interfaces |
+| 1 | [x] Complete | 2026-01-31 | Core Types verified |
+| 2 | [x] Complete | 2026-01-31 | Interfaces verified |
+| 3 | [x] Complete | 2026-01-31 | Helper Functions verified |
+| 4 | [x] Complete | 2026-01-31 | ExtensionManager verified |
+| 5 | [x] Complete | 2026-01-31 | FeatureRegistry verified |
+| 6 | [x] Complete | 2026-01-31 | ClassSuggester verified |
+| 7 | [x] Complete | 2026-01-31 | Constants verified |
+| 8 | [x] Complete | 2026-01-31 | Package Exports verified & fixed missing exports |
+| 9 | [ ] Pending | | Advanced Features |
 | 3 | [ ] Pending | | Helper Functions |
 | 4 | [ ] Pending | | ExtensionManager |
 | 5 | [ ] Pending | | FeatureRegistry |

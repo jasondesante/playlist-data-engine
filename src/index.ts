@@ -111,7 +111,7 @@ export type {
     ValidationResult
 } from './core/extensions/ExtensionManager.js';
 
-export type { SpellPrerequisite } from './utils/constants.js';
+export type { SpellPrerequisite, RaceDataEntry, ClassDataEntry, ClassSpellListData } from './utils/constants.js';
 export type { Spell, Equipment } from './utils/constants.js';
 
 // Environmental types
@@ -172,7 +172,7 @@ export { Logger, createLogger, LogLevel } from './utils/logger.js';
 export type { LogEntry, LoggerConfig } from './utils/logger.js';
 
 // Type helpers
-export { asClass } from './core/types/Character.js';
+export { asClass, isValidClass } from './core/types/Character.js';
 
 // ============================================================================
 // CHARACTER GENERATION
@@ -422,7 +422,12 @@ export {
     CLASS_STARTING_EQUIPMENT,
     EQUIPMENT_DATABASE,
     MASTERY_THRESHOLD,
-    MASTERY_BONUS_XP
+    MASTERY_BONUS_XP,
+    getRaceData,
+    getClassData,
+    getClassSpellList,
+    getSpellSlotsForClass,
+    getClassStartingEquipment
 } from './utils/constants.js';
 
 // ============================================================================
