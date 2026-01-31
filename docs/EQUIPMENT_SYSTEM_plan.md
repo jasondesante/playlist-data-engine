@@ -197,10 +197,10 @@ Verify that the package exports (likely from `src/index.ts` or similar):
 
 ### Task 3.1: ExtensionManager Class
 
-- [ ] `class ExtensionManager` → src/core/extensions/ExtensionManager.ts
-  - [ ] `static getInstance()`
-  - [ ] `register('equipment', [equipment])`
-  - [ ] `register('equipment.templates', [templates])`
+- [x] `class ExtensionManager` → src/core/extensions/ExtensionManager.ts (VERIFIED - line 158)
+  - [x] `static getInstance()` (VERIFIED - lines 173-178)
+  - [x] `register('equipment', [equipment])` (VERIFIED - lines 204-311, 'equipment' is valid ExtensionCategory at line 30)
+  - [x] `register('equipment.templates', [templates])` (VERIFIED - lines 204-311, 'equipment.templates' is valid ExtensionCategory at line 34)
 
 ### Task 3.2: EquipmentEffectApplier Class
 
