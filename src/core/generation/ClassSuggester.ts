@@ -154,7 +154,12 @@ export class ClassSuggester {
     /**
      * Calculate affinity score for a single class
      *
-     * Each class has audio preferences defined in CLASS_AUDIO_PREFERENCES:
+     * Checks for audio preferences in this order:
+     * 1. CLASS_AUDIO_PREFERENCES (for default D&D 5e classes)
+     * 2. ExtensionManager's classes.data (for custom classes with audio_preferences)
+     * 3. Returns neutral affinity (0.5) if no preferences found
+     *
+     * Audio preferences structure:
      * - primary: Most important audio trait (bass/treble/mid/amplitude/chaos)
      * - secondary: Optional secondary trait
      * - tertiary: Optional tertiary trait
@@ -168,7 +173,21 @@ export class ClassSuggester {
      * @private
      */
     private static calculateClassAffinity(audioProfile: AudioProfile, characterClass: Class): number {
-        const prefs = CLASS_AUDIO_PREFERENCES[characterClass];
+        // First check default CLASS_AUDIO_PREFERENCES
+        let prefs: {
+            primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+            secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+            tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+            bass?: number;
+            treble?: number;
+            mid?: number;
+            amplitude?: number;
+        } | undefined = CLASS_AUDIO_PREFERENCES[characterClass];
+
+        // If not found in defaults, check ExtensionManager for custom class audio_preferences
+        if (!prefs) {
+            prefs = this.getCustomClassAudioPreferences(characterClass);
+        }
 
         // Skip calculation if class has no preferences (custom class without defined preferences)
         if (!prefs) {
@@ -191,6 +210,45 @@ export class ClassSuggester {
         }
 
         return affinity;
+    }
+
+    /**
+     * Get audio preferences for a custom class from ExtensionManager
+     *
+     * Checks the 'classes.data' category for custom class entries that include
+     * audio_preferences. This allows custom classes to participate in affinity-based
+     * class suggestion.
+     *
+     * @param {Class} characterClass - Class to get audio preferences for
+     * @returns Audio preferences object or undefined if not found
+     * @private
+     */
+    private static getCustomClassAudioPreferences(
+        characterClass: Class
+    ): {
+        primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
+        bass?: number;
+        treble?: number;
+        mid?: number;
+        amplitude?: number;
+    } | undefined {
+        try {
+            const manager = ExtensionManager.getInstance();
+            const customClassData = manager.get('classes.data' as any);
+
+            if (customClassData && Array.isArray(customClassData)) {
+                const classEntry = customClassData.find((d: any) => d.name === characterClass);
+                if (classEntry && classEntry.audio_preferences) {
+                    return classEntry.audio_preferences;
+                }
+            }
+        } catch (error) {
+            // ExtensionManager not available - return undefined
+        }
+
+        return undefined;
     }
 
     /**
