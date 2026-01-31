@@ -952,7 +952,8 @@ Test Scenarios:
    - `src/core/features/FeatureRegistry.ts` - Validate skills/spells/subrace in prerequisites
 
 6. **Documentation**
-   - `docs/PREREQUISITES_AND_RACES.md` (**NEW**) - Complete reference
+   - `docs/PREREQUISITES.md` (**NEW**) - Prerequisites system guide
+   - `docs/CUSTOM_CONTENT.md` (**NEW**) - Custom races, classes, and spawn rate control
    - `DATA_ENGINE_REFERENCE.md` - Add sections
    - `USAGE_IN_OTHER_PROJECTS.md` - Add usage examples
 
@@ -1019,7 +1020,8 @@ Test Scenarios:
 ### Phase 8: Documentation
 - [x] Update DATA_ENGINE_REFERENCE.md
 - [x] Update USAGE_IN_OTHER_PROJECTS.md
-- [x] Create PREREQUISITES_AND_RACES.md
+- [x] Create docs/PREREQUISITES.md (prerequisites guide)
+- [x] Create docs/CUSTOM_CONTENT.md (custom races, classes, spawn rates)
 
 - [x] Write unit tests for skill prerequisites
 

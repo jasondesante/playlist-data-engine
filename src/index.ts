@@ -3,19 +3,25 @@
  * @module @audio-alchemist/core
  */
 
-// Types
+// ============================================================================
+// TYPES
+// ============================================================================
+
+// Playlist types
 export type {
     ServerlessPlaylist,
     PlaylistTrack,
     RawArweavePlaylist
 } from './core/types/Playlist.js';
 
+// Audio analysis types
 export type {
     AudioProfile,
     ColorPalette,
     FrequencyBands
 } from './core/types/AudioProfile.js';
 
+// Character types
 export type {
     CharacterSheet,
     AbilityScores,
@@ -27,13 +33,7 @@ export type {
     GameMode
 } from './core/types/Character.js';
 
-export type {
-    Spell,
-    Equipment
-} from './utils/constants.js';
-
-export type { InventoryItem } from './core/generation/EquipmentGenerator.js';
-
+// Progression types
 export type {
     GeolocationData,
     MotionData,
@@ -54,10 +54,80 @@ export type {
 
 export type { LevelUpBenefits, UncappedProgressionConfig } from './core/progression/LevelUpProcessor.js';
 export type { CharacterUpdateResult } from './core/progression/CharacterUpdater.js';
+
+// Character generation types
 export type { CharacterAppearance } from './core/generation/AppearanceGenerator.js';
 export type { CharacterEquipment } from './core/generation/EquipmentGenerator.js';
+export type { InventoryItem } from './core/generation/EquipmentGenerator.js';
 
-// Utilities
+// Equipment types
+export type {
+    EnhancedEquipment,
+    EquipmentProperty,
+    EquipmentModification,
+    EquipmentMiniFeature,
+    EquipmentCondition,
+    EnhancedInventoryItem,
+    EquipmentFeature,
+    EquipmentSkill,
+    EquipmentSpell
+} from './core/types/Equipment.js';
+
+// Combat types
+export type {
+    StatusEffect,
+    Combatant,
+    CombatAction,
+    CombatActionResult,
+    AttackRoll,
+    DamageRoll,
+    SpellCastResult,
+    CombatInstance,
+    CombatResult,
+    DamageType,
+    SavingThrowAbility,
+    CombatConfig
+} from './core/types/Combat.js';
+
+// Feature types
+export type {
+    ClassFeature,
+    RacialTrait,
+    FeatureEffect,
+    FeaturePrerequisite
+} from './core/features/FeatureTypes.js';
+
+export type { EffectApplicationResult, CharacterEffect } from './core/features/FeatureEffectApplier.js';
+
+// Skill types
+export type {
+    CustomSkill,
+    SkillPrerequisite
+} from './core/skills/SkillTypes.js';
+
+// Extensibility types
+export type {
+    ExtensionOptions,
+    ValidationResult
+} from './core/extensions/ExtensionManager.js';
+
+export type { SpellPrerequisite } from './utils/constants.js';
+
+// Utility types
+export type { Spell, Equipment } from './utils/constants.js';
+
+// Combat result types
+export type { InitiativeResult } from './core/combat/InitiativeRoller.js';
+export type { AttackResult } from './core/combat/AttackResolver.js';
+
+// Equipment helper types
+export type { SpawnRandomOptions, TreasureHoardResult } from './core/equipment/EquipmentSpawnHelper.js';
+
+// ============================================================================
+// UTILITIES
+// ============================================================================
+
+// Hash utilities
 export {
     generateSeed,
     hashSeedToFloat,
@@ -65,8 +135,10 @@ export {
     deriveSeed
 } from './utils/hash.js';
 
+// Random number generation
 export { SeededRNG } from './utils/random.js';
 
+// Validation schemas
 export {
     PlaylistTrackSchema,
     ServerlessPlaylistSchema,
@@ -75,13 +147,14 @@ export {
     AbilityScoresSchema,
 } from './utils/validators.js';
 
-// Core functionality
+// Type helpers
+export { asClass } from './core/types/Character.js';
+
+// ============================================================================
+// CHARACTER GENERATION
+// ============================================================================
+
 export { CharacterGenerator, type CharacterGeneratorOptions } from './core/generation/CharacterGenerator.js';
-export { PlaylistParser } from './core/parser/PlaylistParser.js';
-export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
-export { AudioAnalyzer } from './core/analysis/AudioAnalyzer.js';
-export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
-export { ColorExtractor } from './core/analysis/ColorExtractor.js';
 export { RaceSelector } from './core/generation/RaceSelector.js';
 export { ClassSuggester } from './core/generation/ClassSuggester.js';
 export { AbilityScoreCalculator } from './core/generation/AbilityScoreCalculator.js';
@@ -91,7 +164,20 @@ export { EquipmentGenerator } from './core/generation/EquipmentGenerator.js';
 export { AppearanceGenerator } from './core/generation/AppearanceGenerator.js';
 export { NamingEngine } from './core/generation/NamingEngine.js';
 
-// Progression
+// ============================================================================
+// PLAYLIST PARSING & ANALYSIS
+// ============================================================================
+
+export { PlaylistParser } from './core/parser/PlaylistParser.js';
+export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
+export { AudioAnalyzer } from './core/analysis/AudioAnalyzer.js';
+export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
+export { ColorExtractor } from './core/analysis/ColorExtractor.js';
+
+// ============================================================================
+// PROGRESSION SYSTEM
+// ============================================================================
+
 export { XPCalculator } from './core/progression/XPCalculator.js';
 export { SessionTracker } from './core/progression/SessionTracker.js';
 export { LevelUpProcessor } from './core/progression/LevelUpProcessor.js';
@@ -110,14 +196,112 @@ export {
     createStatIncreaseStrategy
 } from './core/progression/stat/StatIncreaseStrategy.js';
 
-// Config
+// ============================================================================
+// COMBAT SYSTEM
+// ============================================================================
+
+export { CombatEngine } from './core/combat/CombatEngine.js';
+
+// Dice rolling utilities
+export {
+    rollDie,
+    rollMultipleDice,
+    parseDiceFormula,
+    rollD20,
+    rollWithAdvantage,
+    rollWithDisadvantage,
+    rollInitiative,
+    isCriticalHit,
+    isCriticalMiss,
+    doubleDamage,
+    calculateDamage,
+    rollSavingThrow,
+    rollAbilityCheck,
+    seededRoll,
+    rollPercentile
+} from './core/combat/DiceRoller.js';
+
+// Combat system classes
+export { InitiativeRoller } from './core/combat/InitiativeRoller.js';
+export { AttackResolver } from './core/combat/AttackResolver.js';
+export { SpellCaster } from './core/combat/SpellCaster.js';
+
+// ============================================================================
+// EQUIPMENT SYSTEM
+// ============================================================================
+
+export { EquipmentModifier } from './core/equipment/EquipmentModifier.js';
+export { EquipmentEffectApplier } from './core/equipment/EquipmentEffectApplier.js';
+export { EquipmentValidator } from './core/equipment/EquipmentValidator.js';
+export { EquipmentSpawnHelper } from './core/equipment/EquipmentSpawnHelper.js';
+
+// ============================================================================
+// FEATURES SYSTEM
+// ============================================================================
+
+export { FeatureRegistry } from './core/features/FeatureRegistry.js';
+export { FeatureEffectApplier } from './core/features/FeatureEffectApplier.js';
+export { FeatureValidator } from './core/features/FeatureValidator.js';
+export {
+    validateClassFeature,
+    validateRacialTrait,
+    validateClassFeatures,
+    validateRacialTraits
+} from './core/features/FeatureValidator.js';
+
+// Default features and traits
+export {
+    DEFAULT_CLASS_FEATURES,
+    DEFAULT_RACIAL_TRAITS
+} from './core/features/DefaultFeatures.js';
+
+// ============================================================================
+// SKILLS SYSTEM
+// ============================================================================
+
+export { SkillRegistry } from './core/skills/SkillRegistry.js';
+export { SkillValidator } from './core/skills/SkillValidator.js';
+
+// Default skills
+export {
+    DEFAULT_SKILLS,
+    DEFAULT_SKILL_CATEGORIES
+} from './core/skills/DefaultSkills.js';
+
+// ============================================================================
+// SPELLS SYSTEM
+// ============================================================================
+
+export { SpellValidator } from './core/spells/SpellValidator.js';
+
+// ============================================================================
+// EXTENSIBILITY SYSTEM
+// ============================================================================
+
+export { ExtensionManager } from './core/extensions/ExtensionManager.js';
+export { WeightedSelector } from './core/extensions/WeightedSelector.js';
+
+// ============================================================================
+// SENSORS
+// ============================================================================
+
+export { EnvironmentalSensors } from './core/sensors/EnvironmentalSensors.js';
+export { GamingPlatformSensors } from './core/sensors/GamingPlatformSensors.js';
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
 export {
     DEFAULT_PROGRESSION_CONFIG,
     mergeProgressionConfig,
     type ProgressionConfig
 } from './core/config/progressionConfig.js';
 
-// Constants
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
 export {
     RACE_DATA,
     CLASS_DATA,
@@ -135,32 +319,10 @@ export {
     MASTERY_BONUS_XP
 } from './utils/constants.js';
 
-// Sensors
-export { EnvironmentalSensors } from './core/sensors/EnvironmentalSensors.js';
-export { GamingPlatformSensors } from './core/sensors/GamingPlatformSensors.js';
+// ============================================================================
+// ENCHANTMENT & CURSE LIBRARY
+// ============================================================================
 
-// Combat
-export { CombatEngine } from './core/combat/CombatEngine.js';
-
-// Equipment system
-export { EquipmentModifier } from './core/equipment/EquipmentModifier.js';
-export { EquipmentEffectApplier } from './core/equipment/EquipmentEffectApplier.js';
-export { EquipmentValidator } from './core/equipment/EquipmentValidator.js';
-
-// Equipment types
-export type {
-    EnhancedEquipment,
-    EquipmentProperty,
-    EquipmentModification,
-    EquipmentMiniFeature,
-    EquipmentCondition,
-    EnhancedInventoryItem,
-    EquipmentFeature,
-    EquipmentSkill,
-    EquipmentSpell
-} from './core/types/Equipment.js';
-
-// Enchantment and curse library
 export {
     WEAPON_ENCHANTMENTS,
     ARMOR_ENCHANTMENTS,

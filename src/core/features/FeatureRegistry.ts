@@ -224,6 +224,26 @@ export class FeatureRegistry {
     }
 
     /**
+     * Get all available subraces for a race
+     *
+     * Returns a unique list of subrace names that have traits registered
+     * for the given race. This is derived from registered racial traits.
+     *
+     * @param race - Race to get subraces for
+     * @returns Array of unique subrace names
+     */
+    getAvailableSubraces(race: Race): string[] {
+        const traits = this.racialTraits.get(race) || [];
+        const subraces = new Set<string>();
+        for (const trait of traits) {
+            if (trait.subrace) {
+                subraces.add(trait.subrace);
+            }
+        }
+        return Array.from(subraces).sort();
+    }
+
+    /**
      * Get a single racial trait by ID
      *
      * @param traitId - Trait ID to look up

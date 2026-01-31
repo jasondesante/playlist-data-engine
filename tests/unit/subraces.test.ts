@@ -840,4 +840,195 @@ describe('Subrace Support', () => {
             }
         });
     });
+
+    describe('FeatureRegistry.getAvailableSubraces', () => {
+        beforeEach(() => {
+            // Register traits with different subraces for Elf
+            const elfTraits: RacialTrait[] = [
+                {
+                    id: 'elf_base_trait',
+                    name: 'Elf Base Trait',
+                    description: 'Base elf trait',
+                    type: 'passive',
+                    race: 'Elf',
+                    effects: [{ type: 'passive_modifier', target: 'test', value: true }],
+                    source: 'default'
+                },
+                {
+                    id: 'high_elf_trait',
+                    name: 'High Elf Trait',
+                    description: 'High elf specific',
+                    type: 'passive',
+                    race: 'Elf',
+                    subrace: 'High Elf',
+                    effects: [{ type: 'passive_modifier', target: 'test', value: true }],
+                    source: 'default'
+                },
+                {
+                    id: 'wood_elf_trait',
+                    name: 'Wood Elf Trait',
+                    description: 'Wood elf specific',
+                    type: 'passive',
+                    race: 'Elf',
+                    subrace: 'Wood Elf',
+                    effects: [{ type: 'passive_modifier', target: 'test', value: true }],
+                    source: 'default'
+                }
+            ];
+
+            featureRegistry.racialTraits.set('Elf', []);
+            for (const trait of elfTraits) {
+                featureRegistry.registerRacialTrait(trait);
+            }
+        });
+
+        it('should return unique subrace names for a race', () => {
+            const subraces = featureRegistry.getAvailableSubraces('Elf');
+
+            expect(subraces).toEqual(['High Elf', 'Wood Elf']);
+        });
+
+        it('should return empty array for race with no subrace traits', () => {
+            // Register only base traits for Dwarf
+            const dwarfTrait: RacialTrait = {
+                id: 'dwarf_base',
+                name: 'Dwarf Base',
+                description: 'Base dwarf',
+                type: 'passive',
+                race: 'Dwarf',
+                effects: [{ type: 'passive_modifier', target: 'test', value: true }],
+                source: 'default'
+            };
+
+            featureRegistry.registerRacialTrait(dwarfTrait);
+
+            const subraces = featureRegistry.getAvailableSubraces('Dwarf');
+
+            expect(subraces).toEqual([]);
+        });
+
+        it('should return empty array for unknown race', () => {
+            const subraces = featureRegistry.getAvailableSubraces('Dragonkin' as any);
+
+            expect(subraces).toEqual([]);
+        });
+    });
+
+    describe('CharacterGenerator automatic subrace generation', () => {
+        it('should generate character with no subrace when subrace="pure"', () => {
+            const seed = 'subrace-pure-test';
+            const audioProfile = createMockAudioProfile();
+
+            const character = CharacterGenerator.generate(
+                seed,
+                audioProfile,
+                'Pure Character',
+                { subrace: 'pure' }
+            );
+
+            expect(character.subrace).toBeUndefined();
+        });
+
+        it('should generate character with random subrace when subrace is undefined', () => {
+            // This test verifies that random selection works
+            // We can't test the randomness directly, but we can verify it doesn't error
+            const audioProfile = createMockAudioProfile();
+
+            // Generate multiple characters with same seed - should get same results
+            const char1 = CharacterGenerator.generate(
+                'random-subrace-test-1',
+                audioProfile,
+                'Random 1'
+            );
+
+            const char2 = CharacterGenerator.generate(
+                'random-subrace-test-1',
+                audioProfile,
+                'Random 2'
+            );
+
+            // Same seed should produce same subrace result
+            expect(char1.subrace).toBe(char2.subrace);
+
+            // Different seed should potentially produce different result
+            const char3 = CharacterGenerator.generate(
+                'random-subrace-test-2',
+                audioProfile,
+                'Random 3'
+            );
+
+            // At minimum, verify subrace is either undefined or a string
+            expect(['string', 'undefined']).toContain(typeof char3.subrace);
+        });
+
+        it('should generate character with specific subrace when forceRace and subrace are provided', () => {
+            // First, register a subrace trait for Dwarf
+            const hillDwarfTrait: RacialTrait = {
+                id: 'hill_dwarf_wisdom',
+                name: 'Hill Dwarf Wisdom',
+                description: 'Extra wisdom',
+                type: 'passive',
+                race: 'Dwarf',
+                subrace: 'Hill Dwarf',
+                effects: [{ type: 'stat_bonus', target: 'WIS', value: 1 }],
+                source: 'default'
+            };
+
+            featureRegistry.registerRacialTrait(hillDwarfTrait);
+
+            const audioProfile = createMockAudioProfile();
+
+            // This should not throw when both forceRace and subrace are provided
+            expect(() => {
+                CharacterGenerator.generate(
+                    'specific-subrace-test',
+                    audioProfile,
+                    'Hill Dwarf',
+                    { forceRace: 'Dwarf', subrace: 'Hill Dwarf' }
+                );
+            }).not.toThrow();
+        });
+
+        it('should throw error when subrace is provided without forceRace', () => {
+            const audioProfile = createMockAudioProfile();
+
+            // Should throw an error explaining that forceRace is required
+            expect(() => {
+                CharacterGenerator.generate(
+                    'subrace-without-race-test',
+                    audioProfile,
+                    'Invalid',
+                    { subrace: 'High Elf' }
+                );
+            }).toThrow(/When specifying a subrace.*must also specify the race/);
+        });
+
+        it('should throw error for invalid subrace for the specified race', () => {
+            const audioProfile = createMockAudioProfile();
+
+            // Try to generate with a subrace that doesn't exist for Dwarf
+            expect(() => {
+                CharacterGenerator.generate(
+                    'invalid-subrace-test',
+                    audioProfile,
+                    'Invalid Subrace',
+                    { forceRace: 'Dwarf', subrace: 'High Elf' }
+                );
+            }).toThrow(/Invalid subrace "High Elf" for race "Dwarf"/);
+        });
+
+        it('should allow subrace="pure" without forceRace', () => {
+            const audioProfile = createMockAudioProfile();
+
+            // This should not throw - pure doesn't require forceRace
+            expect(() => {
+                CharacterGenerator.generate(
+                    'pure-without-race-test',
+                    audioProfile,
+                    'Pure Character',
+                    { subrace: 'pure' }
+                );
+            }).not.toThrow();
+        });
+    });
 });

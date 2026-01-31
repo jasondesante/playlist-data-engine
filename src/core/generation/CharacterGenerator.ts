@@ -1,4 +1,4 @@
-import type { CharacterSheet, Class, Ability, GameMode } from '../types/Character.js';
+import type { CharacterSheet, Class, Race, Ability, GameMode } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
 import { SeededRNG } from '../../utils/random.js';
 import { getRaceData, getClassData, RACE_DATA, CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
@@ -84,10 +84,31 @@ export interface CharacterGeneratorOptions {
     /** Override class suggestion */
     forceClass?: Class;
 
+    /** Override race selection (required when specifying a subrace other than 'pure') */
+    forceRace?: Race;
+
     /** Game mode for stat progression (default: 'standard') */
     gameMode?: GameMode;
 
-    /** Optional subrace (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf') */
+    /**
+     * Optional subrace selection
+     *
+     * - `'pure'` - Explicitly generate character with no subrace (no race required)
+     * - `undefined` - Randomly select between 'pure' and available subraces for the race
+     * - `'Specific Subrace'` - Manually specify a subrace (REQUIRES `forceRace` to also be set)
+     *
+     * @example
+     * // Random subrace or pure
+     * const randomSubrace = CharacterGenerator.generate(seed, audio, 'Name');
+     *
+     * @example
+     * // Explicitly no subrace
+     * const pure = CharacterGenerator.generate(seed, audio, 'Name', { subrace: 'pure' });
+     *
+     * @example
+     * // Specific subrace with race (both required)
+     * const highElf = CharacterGenerator.generate(seed, audio, 'Name', { forceRace: 'Elf', subrace: 'High Elf' });
+     */
     subrace?: string;
 
     /**
@@ -189,8 +210,9 @@ export class CharacterGenerator {
      * @param {CharacterGeneratorOptions} [options] - Generation options
      * @param {number} [options.level=1] - Starting level (1-20)
      * @param {Class} [options.forceClass] - Override class suggestion
+     * @param {Race} [options.forceRace] - Override race selection (required when subrace is specified)
      * @param {GameMode} [options.gameMode='standard'] - Game mode for stat progression
-     * @param {string} [options.subrace] - Optional subrace (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf')
+     * @param {string} [options.subrace] - Subrace: 'pure' (no subrace), undefined (random), or specific subrace name
      * @param {CharacterGeneratorExtensions} [options.extensions] - Custom extensions
      * @returns {CharacterSheet} Complete D&D 5e character sheet
      *
@@ -202,6 +224,24 @@ export class CharacterGenerator {
      *   { level: 5 }
      * );
      * console.log(`${character.name}: Level ${character.level} ${character.class}`);
+     *
+     * @example
+     * // Explicitly no subrace
+     * const pure = CharacterGenerator.generate(
+     *   'seed',
+     *   audioProfile,
+     *   'Pure Elf',
+     *   { subrace: 'pure' }
+     * );
+     *
+     * @example
+     * // Specific subrace with race (both required)
+     * const highElf = CharacterGenerator.generate(
+     *   'seed',
+     *   audioProfile,
+     *   'High Elf Mage',
+     *   { forceRace: 'Elf', subrace: 'High Elf' }
+     * );
      *
      * @example
      * // With custom spells
@@ -225,7 +265,6 @@ export class CharacterGenerator {
         const rng = new SeededRNG(seed);
         const level = options.level || 1;
         const gameMode: GameMode = options.gameMode || 'standard';
-        const subrace = options.subrace;
 
         // Ensure feature registry is initialized with defaults
         ensureFeatureDefaultsInitialized();
@@ -238,8 +277,40 @@ export class CharacterGenerator {
             CharacterGenerator.registerExtensions(options.extensions);
         }
 
-        // Select race deterministically from seed
-        const race = RaceSelector.select(rng);
+        // Select race deterministically from seed or use forced race
+        const race = options.forceRace || RaceSelector.select(rng);
+
+        // Handle subrace selection
+        let subrace: string | undefined;
+        const requestedSubrace = options.subrace;
+
+        if (requestedSubrace === 'pure') {
+            // Explicitly no subrace (race can be generated or forced)
+            subrace = undefined;
+        } else if (requestedSubrace === undefined) {
+            // Randomly select: either 'pure' or one of the available subraces
+            const availableSubraces = featureRegistry.getAvailableSubraces(race);
+            const optionsList = ['pure', ...availableSubraces];
+            const selected = rng.randomChoice(optionsList);
+            subrace = selected === 'pure' ? undefined : selected;
+        } else {
+            // Specific subrace requested - require forceRace to also be provided
+            if (!options.forceRace) {
+                throw new Error(
+                    `When specifying a subrace ("${requestedSubrace}"), you must also specify the race using the forceRace option. ` +
+                    `Example: { forceRace: 'Elf', subrace: 'High Elf' }`
+                );
+            }
+            // Validate the subrace exists for the specified race
+            const availableSubraces = featureRegistry.getAvailableSubraces(race);
+            if (!availableSubraces.includes(requestedSubrace)) {
+                throw new Error(
+                    `Invalid subrace "${requestedSubrace}" for race "${race}". ` +
+                    `Available subraces: ${availableSubraces.length > 0 ? availableSubraces.join(', ') : 'none'}`
+                );
+            }
+            subrace = requestedSubrace;
+        }
 
         // Suggest class based on audio profile
         const suggestedClass = options.forceClass || ClassSuggester.suggest(audioProfile, rng);

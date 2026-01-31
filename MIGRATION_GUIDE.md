@@ -244,7 +244,8 @@ export interface RaceDataEntry {
 
 - `DATA_ENGINE_REFERENCE.md` - Added prerequisites and custom races sections
 - `USAGE_IN_OTHER_PROJECTS.md` - Added dragon-themed examples
-- Created `PREREQUISITES_AND_RACES.md` - Complete reference
+- Created `docs/PREREQUISITES.md` - Prerequisites system guide (now split into separate docs)
+- Created `docs/CUSTOM_CONTENT.md` - Custom races, classes, and spawn rate control (now split into separate docs)
 
 ### Example: Dragon-Themed Content
 

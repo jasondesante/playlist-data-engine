@@ -1118,8 +1118,6 @@ if (result.leveledUp) {
 
 **For detailed extensibility documentation, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
 
-The extensibility system allows you to add custom content at runtime, including spells, equipment, races, classes, features, skills, and appearance options.
-
 ### Registering Custom Equipment
 
 ```typescript
@@ -1127,18 +1125,23 @@ import { ExtensionManager } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
 
-// Add custom equipment
+// Add custom equipment with spawn rate control
 manager.register('equipment', [
     { name: 'Dragon Sword', type: 'weapon', rarity: 'rare', weight: 5 },
-    { name: 'Mithral Armor', type: 'armor', rarity: 'very_rare', weight: 10 }
+    { name: 'Mithral Chain Shirt', type: 'armor', rarity: 'very_rare', weight: 10 },
+    { name: 'Potion of Giant Strength', type: 'item', rarity: 'uncommon', weight: 0.5 }
 ], {
-    weights: { 'Dragon Sword': 0.5 }  // Half as common
+    weights: {
+        'Dragon Sword': 0.5,      // Half as common as defaults
+        'Potion of Giant Strength': 2.0  // Twice as common
+    }
 });
 ```
 
 ### Registering Custom Spells
 
 ```typescript
+// Add custom spells
 manager.register('spells', [
     {
         name: 'Phoenix Fire',
@@ -1148,39 +1151,1186 @@ manager.register('spells', [
         range: '60 feet',
         duration: 'Instantaneous',
         components: ['V', 'S'],
-        description: 'A burst of flame...'
+        description: 'A burst of flame engulfs the target...'
+    },
+    {
+        name: 'Mind Shield',
+        level: 2,
+        school: 'Abjuration',
+        casting_time: '1 reaction',
+        range: 'Self',
+        duration: '1 minute',
+        components: ['S'],
+        description: 'You gain resistance to psychic damage...'
     }
 ]);
 ```
 
-### Spawn Rate Control
+**See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:**
+- Custom classes and class features
+- Racial traits
+- Skills and prerequisites
+- Spawn rate modes (relative, absolute, default, replace)
+- Content pack creation
+- Equipment properties and modifications
+- Export/import functionality
+- Validation and best practices
+
+---
+
+## Equipment System
 
 ```typescript
-// Control spawn rates with weights
-manager.setWeights('equipment', {
-    'Dragon Sword': 0.5,   // Rare
-    'Mithral Armor': 1.0   // Normal
+import { FeatureRegistry, ExtensionManager, type ClassFeature } from 'playlist-data-engine';
+
+// Method 1: Direct registration with FeatureRegistry
+const registry = FeatureRegistry.getInstance();
+
+// Add a custom Barbarian feature
+const dragonFury: ClassFeature = {
+    id: 'dragon_fury',
+    name: 'Dragon Fury',
+    description: 'Channel your draconic heritage to deal bonus fire damage while raging.',
+    type: 'active',
+    level: 3,
+    class: 'Barbarian',
+    prerequisites: {
+        level: 3,
+        // Optional: Require specific features first
+        features: ['rage']
+    },
+    effects: [
+        {
+            type: 'resource_grant',
+            target: 'dragon_fury_damage',
+            value: 2,
+            description: '+2 fire damage while raging'
+        },
+        {
+            type: 'passive_modifier',
+            target: 'fire_resistance',
+            value: true,
+            condition: 'while_raging',
+            description: 'Fire resistance while raging'
+        }
+    ],
+    source: 'custom'
+};
+
+registry.registerClassFeature(dragonFury);
+
+// Method 2: Register via ExtensionManager (recommended)
+const manager = ExtensionManager.getInstance();
+
+manager.register('classFeatures', [dragonFury], {
+    mode: 'append',  // Add to default features
+    weights: {
+        'dragon_fury': 0.5  // Half as likely to spawn in selection contexts
+    }
+});
+
+// Class-specific feature registration
+manager.register('classFeatures.Barbarian', [dragonFury]);
+```
+
+#### Custom Racial Traits
+
+Create custom racial traits with effects and conditions:
+
+```typescript
+import { FeatureRegistry, type RacialTrait } from 'playlist-data-engine';
+
+const registry = FeatureRegistry.getInstance();
+
+// Add a custom Elf trait
+const elvenCombatTraining: RacialTrait = {
+    id: 'elf_weapon_training',
+    name: 'Elven Weapon Training',
+    description: 'You are proficient with the longsword, shortsword, shortbow, and longbow.',
+    race: 'Elf',
+    prerequisites: {
+        // Optional: Require specific subrace
+        subrace: 'High Elf'
+    },
+    effects: [
+        {
+            type: 'skill_proficiency',
+            target: 'longsword',
+            value: 'proficient',
+            description: 'Proficient with longsword'
+        },
+        {
+            type: 'skill_proficiency',
+            target: 'shortsword',
+            value: 'proficient',
+            description: 'Proficient with shortsword'
+        },
+        {
+            type: 'skill_proficiency',
+            target: 'shortbow',
+            value: 'proficient',
+            description: 'Proficient with shortbow'
+        },
+        {
+            type: 'skill_proficiency',
+            target: 'longbow',
+            value: 'proficient',
+            description: 'Proficient with longbow'
+        }
+    ],
+    source: 'custom'
+};
+
+registry.registerRacialTrait(elvenCombatTraining);
+```
+
+#### Custom Skills
+
+Create custom skills for your game:
+
+```typescript
+import { SkillRegistry, type CustomSkill } from 'playlist-data-engine';
+
+const skillRegistry = SkillRegistry.getInstance();
+
+// Add a custom survival skill for cold environments
+const coldSurvival: CustomSkill = {
+    id: 'survival_cold',
+    name: 'Survival (Cold Environments)',
+    description: 'Expertise in surviving and navigating in cold weather conditions.',
+    ability: 'WIS',
+    armorPenalty: true,  // Affected by armor disadvantage
+    categories: ['exploration', 'environmental'],
+    source: 'custom',
+    tags: ['wilderness', 'weather', 'arctic']
+};
+
+skillRegistry.registerSkill(coldSurvival);
+
+// Register via ExtensionManager with spawn rate control
+const manager = ExtensionManager.getInstance();
+
+manager.register('skills', [coldSurvival], {
+    mode: 'append',
+    weights: {
+        'survival_cold': 0.3  // Less likely to spawn than default skills
+    }
+});
+
+// Register ability-specific skills
+manager.register('skills.WIS', [coldSurvival]);
+
+// Verify the skill was registered
+if (skillRegistry.isValidSkill('survival_cold')) {
+    console.log('Custom skill registered successfully!');
+}
+
+// Get skill metadata
+const skill = skillRegistry.getSkill('survival_cold');
+console.log(`${skill.name} (uses ${skill.ability})`);
+console.log(`Categories: ${skill.categories.join(', ')}`);
+```
+
+#### Feature Effects
+
+Features can apply various effects to characters:
+
+```typescript
+import { type ClassFeature, type FeatureEffect } from 'playlist-data-engine';
+
+const customFeature: ClassFeature = {
+    id: 'example_feature',
+    name: 'Example Feature',
+    description: 'Demonstrates all effect types',
+    type: 'passive',
+    level: 5,
+    class: 'Fighter',
+    effects: [
+        // Stat Bonus: Increase ability score
+        {
+            type: 'stat_bonus',
+            target: 'STR',
+            value: 2,
+            description: '+2 Strength score'
+        },
+
+        // Skill Proficiency: Grant skill proficiency
+        {
+            type: 'skill_proficiency',
+            target: 'athletics',
+            value: 'expertise',
+            description: 'Expertise in Athletics'
+        },
+
+        // Ability Unlock: Grant special ability
+        {
+            type: 'ability_unlock',
+            target: 'second_wind',
+            value: true,
+            description: 'Gain Second Wind ability'
+        },
+
+        // Passive Modifier: Add constant bonus
+        {
+            type: 'passive_modifier',
+            target: 'speed',
+            value: 10,
+            condition: 'unarmored',
+            description: '+10 speed when unarmored'
+        },
+
+        // Resource Grant: Grant resource pool
+        {
+            type: 'resource_grant',
+            target: 'ki_points',
+            value: 2,
+            description: 'Gain 2 Ki points per short rest'
+        },
+
+        // Spell Slot Bonus: Grant additional spell slots
+        {
+            type: 'spell_slot_bonus',
+            target: 'spell_slots_1',
+            value: 1,
+            description: '+1 level 1 spell slot'
+        }
+    ],
+    source: 'custom'
+};
+```
+
+#### Querying Features and Skills
+
+```typescript
+import { FeatureRegistry, SkillRegistry } from 'playlist-data-engine';
+
+const featureRegistry = FeatureRegistry.getInstance();
+const skillRegistry = SkillRegistry.getInstance();
+
+// Get all features for a class at a specific level
+const barbarianLevel3Features = featureRegistry.getClassFeatures('Barbarian', 3);
+console.log(`Barbarian level 3 features:`, barbarianLevel3Features.map(f => f.name));
+
+// Get all racial traits for a race
+const elfTraits = featureRegistry.getRacialTraits('Elf');
+console.log(`Elf traits:`, elfTraits.map(t => t.name));
+
+// Get skills by ability
+const wisdomSkills = skillRegistry.getSkillsByAbility('WIS');
+console.log(`WIS skills:`, wisdomSkills.map(s => s.id));
+
+// Get skills by category
+const explorationSkills = skillRegistry.getSkillsByCategory('exploration');
+console.log(`Exploration skills:`, explorationSkills.map(s => s.name));
+
+// Get registry statistics
+const featureStats = featureRegistry.getRegistryStats();
+console.log(`Features: ${featureStats.totalFeatures} (${featureStats.customFeatures} custom)`);
+
+const skillStats = skillRegistry.getRegistryStats();
+console.log(`Skills: ${skillStats.totalSkills} (${skillStats.customSkills} custom)`);
+```
+
+### Custom Classes
+
+**NEW:** Create entirely new classes or extend existing D&D 5e classes using the template-based class system!
+
+#### Overview
+
+The Template Class System allows you to create new custom classes that extend (inherit from) existing D&D 5e base classes. This enables rapid creation of specialized classes without duplicating all base class properties.
+
+#### Creating a Template-Based Custom Class
+
+Create a new class by extending an existing base class:
+
+```typescript
+import { ExtensionManager, asClass } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register a custom "Necromancer" class based on Wizard
+manager.register('classes.data', [{
+    name: 'Necromancer',
+    baseClass: 'Wizard',  // Inherits from Wizard by default
+    // Only override what's different:
+    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
+    // All other properties (hit_die, saving_throws, etc.) are inherited from Wizard
+}]);
+
+// Register the class name
+manager.register('classes', [asClass('Necromancer')]);
+```
+
+The `baseClass` property enables template inheritance:
+- **Properties are merged**: Base class properties are spread first, then custom properties override
+- **Complete overrides**: Specify all properties without `baseClass` for a completely custom class
+- **Skill lists are replaced**: The `available_skills` array is completely replaced (not merged)
+
+#### Custom Class with Complete Override
+
+Create a class from scratch without inheriting from a base class:
+
+```typescript
+// Register a completely custom "Runecaster" class
+manager.register('classes.data', [{
+    name: 'Runecaster',
+    // No baseClass - must specify everything
+    primary_ability: 'WIS',
+    hit_die: 8,
+    saving_throws: ['WIS', 'CON'],
+    is_spellcaster: true,
+    skill_count: 3,
+    available_skills: ['arcana', 'nature', 'religion', 'insight', 'medicine'],
+    has_expertise: false,
+    // Optional: Audio preferences for class affinity
+    audio_preferences: {
+        primary: 'folk',
+        bass: 0.6,
+        treble: 0.7,
+        mid: 0.5,
+        amplitude: 0.6
+    }
+}]);
+
+manager.register('classes', [asClass('Runecaster')]);
+```
+
+#### Custom Class with Features
+
+Add custom class features to your new class:
+
+```typescript
+// Register custom features for Necromancer
+manager.register('classFeatures.Necromancer', [
+    {
+        id: 'necromancer_raise_dead',
+        name: 'Raise Undead',
+        description: 'Can raise undead creatures to serve you.',
+        type: 'active',
+        level: 1,
+        class: 'Necromancer',
+        prerequisites: {
+            class: 'Necromancer',
+            abilities: { INT: 13 }
+        },
+        effects: [
+            {
+                type: 'ability_unlock',
+                target: 'raise_undead',
+                value: true,
+                description: 'Can cast Animate Dead'
+            }
+        ],
+        source: 'custom'
+    },
+    {
+        id: 'necromancer_deadlord',
+        name: 'Dead Lord',
+        description: 'Control more powerful undead creatures.',
+        type: 'passive',
+        level: 10,
+        class: 'Necromancer',
+        prerequisites: {
+            class: 'Necromancer',
+            level: 10,
+            skills: ['necromancy']
+        },
+        effects: [
+            {
+                type: 'passive_modifier',
+                target: 'undead_control_limit',
+                value: 5,
+                description: 'Control 5 additional HD of undead'
+            }
+        ],
+        source: 'custom'
+    }
+], { mode: 'replace' });  // Replace Wizard features entirely
+```
+
+#### Custom Class with Skills
+
+Register custom skills for your class:
+
+```typescript
+// Register custom skill for Necromancer
+manager.register('skills.INT', [{
+    id: 'necromancy',
+    name: 'Necromancy',
+    ability: 'INT',
+    description: 'Knowledge of undead creation and control.',
+    prerequisites: { class: 'Necromancer' },  // Only for Necromancers
+    source: 'custom'
+}]);
+```
+
+#### Custom Class with Spells
+
+Provide custom spell lists for your spellcasting class:
+
+```typescript
+// Register custom spell list for Necromancer
+manager.register('classSpellLists.Necromancer', [{
+    cantrips: ['Chill Touch', 'Mage Hand', 'Mending', 'Message'],
+    spells_by_level: {
+        1: ['Animate Dead', 'False Life', 'Ray of Sickness'],
+        2: ['Ray of Enfeeblement', 'Web'],
+        3: ['Animate Dead', 'Feign Death', 'Speak with Dead'],
+        // ... more levels
+    }
+}]);
+```
+
+#### Custom Class with Spell Slots
+
+Define custom spell slot progression:
+
+```typescript
+// Register custom spell slot progression
+manager.register('classSpellSlots', {
+    'Necromancer': {
+        1: { 1: 2 },
+        2: { 1: 3 },
+        3: { 1: 4, 2: 2 },
+        4: { 1: 4, 2: 3 },
+        5: { 1: 4, 2: 3, 3: 2 },
+        // ... more levels
+    }
 });
 ```
 
-**Spawn Modes:**
-| Mode | Description |
-|------|-------------|
-| `relative` | Add to default pool (default) |
-| `absolute` | Only custom items spawn |
-| `default` | All items equal weight |
-| `replace` | Clear previous custom data |
+#### Custom Class with Starting Equipment
 
-See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
-- Custom classes and features
-- Equipment properties and modifications
-- Export/import functionality
-- Content pack creation
+Define custom starting equipment:
 
-**For detailed guides on specific topics:**
-- [docs/PREREQUISITES.md](docs/PREREQUISITES.md) - Complete guide to skill, spell, and feature prerequisites
-- [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md) - Custom races, classes, and spawn rate control
-- [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md) - Complete API reference
+```typescript
+// Register custom starting equipment
+manager.register('classStartingEquipment.Necromancer', [{
+    weapons: ['Dagger', 'Quarterstaff'],
+    armor: [],
+    items: ['Component Pouch', 'Spellbook', 'Bone Charm']
+}]);
+```
+
+#### Generating a Custom Class Character
+
+Generate a character with your custom class:
+
+```typescript
+import { CharacterGenerator, getClassData } from 'playlist-data-engine';
+
+// Verify class data
+const necromancerData = getClassData('Necromancer');
+console.log(necromancerData);
+// Output: { name: 'Necromancer', baseClass: 'Wizard', hit_die: 8, ... }
+
+// Generate a character
+const character = CharacterGenerator.generate(
+    'test-seed',
+    sampleAudioProfile,
+    'Test Character',
+    { forceClass: asClass('Necromancer') }
+);
+
+console.log(character.class);  // 'Necromancer'
+console.log(character.ability_scores.INT);  // High (primary ability)
+console.log(character.class_features);  // ['necromancer_raise_dead']
+console.log(character.skills);  // Includes 'necromancy'
+```
+
+#### Common Patterns
+
+**Archetype Variant** - Same class, different flavor:
+```typescript
+{
+    name: 'BattleMage',
+    baseClass: 'Wizard',
+    hit_die: 10,           // More durable than standard Wizard
+    saving_throws: ['INT', 'CON'],  // CON instead of WIS
+    available_skills: ['arcana', 'athletics', 'intimidation']
+}
+```
+
+**Multiclass-Inspired** - Two classes combined:
+```typescript
+{
+    name: 'Spellsword',
+    baseClass: 'Fighter',
+    is_spellcaster: true,  // Add spellcasting
+    primary_ability: 'STR',  // Keep Fighter primary
+    available_skills: ['athletics', 'acrobatics', 'arcana', 'intimidation']
+}
+```
+
+**Specialist** - Narrow focus:
+```typescript
+{
+    name: 'Beastmaster',
+    baseClass: 'Ranger',
+    skill_count: 3,  // Extra skill for animal handling
+    available_skills: ['animal_handling', 'nature', 'survival', 'perception']
+}
+```
+
+#### Validation Rules
+
+1. **Base class must exist**: `baseClass` must be a valid D&D 5e class name
+2. **Custom properties must be valid**: All properties must match expected types
+3. **Class name must be registered**: After registering class data, register the class name via `manager.register('classes', [asClass('ClassName')])`
+4. **Custom skills must exist**: If referencing custom skills in `available_skills`, register them first
+
+### Spawn Rate Control
+
+Control how often custom content appears in generated characters using spawn rate weights:
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// ===== CLASS FEATURES =====
+// Make certain Barbarian features more or less common
+manager.setWeights('classFeatures.Barbarian', {
+    'rage': 1.0,              // Normal spawn rate (default)
+    'dragon_fury': 2.0,       // Twice as likely to appear
+    'reckless_attack': 0.5    // Half as likely to appear
+});
+
+// ===== RACIAL TRAITS =====
+// Control trait spawn rates for Elf
+manager.setWeights('racialTraits.Elf', {
+    'darkvision': 1.0,        // Always appears (default trait)
+    'elf_weapon_training': 0.3,  // 30% of characters get this
+    'fey_ancestry': 1.0       // Always appears (default trait)
+});
+
+// ===== SKILLS =====
+// Control which skills appear during character generation
+manager.setWeights('skills', {
+    'athletics': 2.0,         // Twice as likely to be selected
+    'survival_cold': 0.5,     // Half as likely
+    'custom_skill_1': 0.0     // Never spawn (disabled)
+});
+
+// Per-ability skill spawn rates
+manager.setWeights('skills.WIS', {
+    'perception': 1.5,        // More likely for WIS-based characters
+    'survival': 0.8,          // Less likely
+    'survival_cold': 0.2      // Rare WIS skill
+});
+
+// ===== APPEARANCE =====
+// Control appearance options
+manager.setWeights('appearance.bodyTypes', {
+    'athletic': 1.5,          // More common
+    'muscular': 1.0,          // Normal
+    'slender': 0.8,           // Less common
+    'stocky': 0.5             // Rare
+});
+
+// ===== EQUIPMENT =====
+// Control equipment spawn rates
+manager.setWeights('equipment', {
+    'Longsword': 1.5,         // More common
+    'Dragon Scale Armor': 0.1, // Rare (10% spawn rate)
+    'Potion of Healing': 2.0   // Very common
+});
+
+// Weight modes: relative vs absolute
+manager.register('classFeatures', [customFeature], {
+    mode: 'relative',  // Custom weights add to default distribution
+    weights: { 'customFeature': 1.0 }
+});
+
+manager.register('classFeatures', [customFeature], {
+    mode: 'absolute',  // Custom weights replace default distribution
+    weights: {
+        'rage': 5,
+        'customFeature': 3,
+        'otherFeature': 2
+    }
+});
+
+// Get current spawn weights
+const currentWeights = manager.getWeights('classFeatures.Barbarian');
+console.log('Current Barbarian feature weights:', currentWeights);
+```
+
+#### Spawn Rate Modes
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// ===== RELATIVE MODE (default) =====
+// Custom weights are added to the default pool
+manager.register('skills', [customSkill], {
+    mode: 'relative',
+    weights: {
+        'customSkill': 2.0  // Twice as likely relative to defaults
+    }
+});
+
+// Result: customSkill competes with default skills
+// If default skills have weight 1.0, customSkill at 2.0 is twice as likely
+
+// ===== ABSOLUTE MODE =====
+// Custom weights completely replace the default distribution
+manager.register('skills', [customSkill1, customSkill2], {
+    mode: 'absolute',
+    weights: {
+        'customSkill1': 7,  // 70% spawn rate
+        'customSkill2': 3   // 30% spawn rate
+    }
+});
+
+// Result: ONLY customSkill1 and customSkill2 can spawn
+// Default skills are completely excluded (weight 0)
+
+// ===== DEFAULT MODE =====
+// All items have equal probability (ignores custom weights)
+manager.register('skills', [customSkill], {
+    mode: 'default'
+});
+
+// Result: All skills (default + custom) have equal probability
+```
+
+#### Advanced Weight Configuration
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Hierarchical weight system
+// Category defaults with individual overrides
+
+// Set default for all skills
+manager.setWeights('skills', {
+    default: 1.0  // All skills have equal weight by default
+});
+
+// Override specific skills
+manager.setWeights('skills', {
+    'athletics': 2.0,      // Override: athletics is now 2x
+    'acrobatics': 0.5,     // Override: acrobatics is now 0.5x
+    // All other skills remain at 1.0 (the default)
+});
+
+// Per-class skill spawn rates
+manager.setWeights('skillLists.Barbarian', {
+    'athletics': 2.0,      // Barbarians favor athletics
+    'survival': 1.5,       // And survival
+    'arcana': 0.2          // But rarely get arcana
+});
+
+manager.setWeights('skillLists.Wizard', {
+    'arcana': 2.0,         // Wizards favor arcana
+    'history': 1.5,        // And history
+    'athletics': 0.2       // But rarely get athletics
+});
+
+// Zero weight = never spawn
+manager.setWeights('classFeatures.Barbarian', {
+    'useless_feature': 0.0  // This feature will never spawn
+});
+
+// Reset to defaults
+manager.reset('classFeatures.Barbarian');
+// Now all Barbarian features are back to equal probability
+
+// Reset all categories
+manager.resetAll();
+```
+
+#### Complete Custom Content Pack Example
+
+```typescript
+import { ExtensionManager, FeatureRegistry, SkillRegistry } from 'playlist-data-engine';
+
+// Create an expansion pack with custom features, skills, and spawn rates
+function registerArcticExpansionPack() {
+    const manager = ExtensionManager.getInstance();
+    const featureRegistry = FeatureRegistry.getInstance();
+    const skillRegistry = SkillRegistry.getInstance();
+
+    // ===== CUSTOM FEATURES =====
+    const frostRage = {
+        id: 'frost_rage',
+        name: 'Frost Rage',
+        description: 'Your rage radiates cold, dealing extra cold damage.',
+        type: 'active',
+        level: 3,
+        class: 'Barbarian',
+        effects: [
+            {
+                type: 'resource_grant',
+                target: 'cold_damage_bonus',
+                value: 3,
+                description: '+3 cold damage while raging'
+            }
+        ],
+        source: 'custom'
+    };
+
+    const snowWalker = {
+        id: 'snow_walker',
+        name: 'Snow Walker',
+        description: 'You move through snow and ice without penalty.',
+        type: 'passive',
+        level: 1,
+        class: 'Ranger',
+        race: 'Human',
+        effects: [
+            {
+                type: 'ability_unlock',
+                target: 'snow_movement',
+                value: true,
+                description: 'No movement penalty in snow/ice'
+            },
+            {
+                type: 'passive_modifier',
+                target: 'survival_cold_bonus',
+                value: 5,
+                description: '+5 Survival in cold environments'
+            }
+        ],
+        source: 'custom'
+    };
+
+    // ===== CUSTOM SKILLS =====
+    const coldSurvival = {
+        id: 'survival_cold',
+        name: 'Survival (Cold Environments)',
+        description: 'Expertise in cold weather survival.',
+        ability: 'WIS',
+        armorPenalty: true,
+        categories: ['exploration', 'environmental'],
+        source: 'custom'
+    };
+
+    const iceFishing = {
+        id: 'ice_fishing',
+        name: 'Ice Fishing',
+        description: 'Ability to catch fish in frozen waters.',
+        ability: 'WIS',
+        armorPenalty: false,
+        categories: ['exploration', 'survival'],
+        source: 'custom'
+    };
+
+    // ===== REGISTER EVERYTHING =====
+    // Features
+    featureRegistry.registerClassFeatures([frostRage, snowWalker]);
+    manager.register('classFeatures.Barbarian', [frostRage], {
+        weights: { 'frost_rage': 0.5 }  // Rare feature
+    });
+    manager.register('classFeatures.Ranger', [snowWalker], {
+        weights: { 'snow_walker': 0.7 }
+    });
+
+    // Skills
+    skillRegistry.registerSkills([coldSurvival, iceFishing]);
+    manager.register('skills', [coldSurvival, iceFishing]);
+    manager.register('skills.WIS', [coldSurvival, iceFishing], {
+        weights: {
+            'survival_cold': 0.5,  // Less common than default skills
+            'ice_fishing': 0.3      // Quite rare
+        }
+    });
+
+    // ===== SPAWN RATE CONFIGURATION =====
+    // Make cold-themed content more likely for certain classes
+    manager.setWeights('skillLists.Ranger', {
+        'survival_cold': 2.0,  // Rangers love this skill
+        'ice_fishing': 1.5
+    });
+
+    manager.setWeights('skillLists.Barbarian', {
+        'survival_cold': 1.5,  // Barbarians also get this
+        'ice_fishing': 0.5
+    });
+
+    console.log('Arctic Expansion Pack registered!');
+}
+
+// Register the expansion pack
+registerArcticExpansionPack();
+
+// Generate characters with the new content
+const character = CharacterGenerator.generate(seed, audio, 'Arctic Hero');
+// Character may now have frost_rage, snow_walker, or survival_cold skill!
+```
+
+### Skills with Prerequisites
+
+Skills can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced skills that require base skills, specific features, spells, ability scores, level, class, or race.
+
+```typescript
+import { SkillRegistry, SkillValidator, CharacterGenerator } from 'playlist-data-engine';
+
+const registry = SkillRegistry.getInstance();
+
+// ===== SKILL WITH FEATURE PREREQUISITES =====
+// Dragon Smithing: Requires Draconic Bloodline feature
+const dragonSmithing: CustomSkill = {
+    id: 'dragon_smithing',
+    name: 'Dragon Smithing',
+    description: 'Craft weapons from dragon scales',
+    ability: 'INT',
+    prerequisites: {
+        features: ['draconic_bloodline'],  // Requires Sorcerer feature
+        level: 5,
+        class: 'Sorcerer'
+    },
+    source: 'custom'
+};
+
+registry.registerSkill(dragonSmithing);
+
+// ===== SKILL WITH ABILITY SCORE AND SKILL PREREQUISITES =====
+// Advanced Arcana: Requires INT 16 and proficiency in Arcana
+const advancedArcana: CustomSkill = {
+    id: 'advanced_arcana',
+    name: 'Advanced Arcana',
+    description: 'Cast complex spells and understand magical theory',
+    ability: 'INT',
+    prerequisites: {
+        abilities: { INT: 16 },  // Requires INT 16 or higher
+        skills: ['arcana'],       // Must already know Arcana
+        level: 7
+    },
+    source: 'custom'
+};
+
+registry.registerSkill(advancedArcana);
+
+// ===== SKILL WITH SPELL PREREQUISITES =====
+// Spell Mastery: Requires knowing specific spells first
+const spellMasterySkill: CustomSkill = {
+    id: 'spell_mastery',
+    name: 'Spell Mastery',
+    description: 'Improved control over known spells',
+    ability: 'INT',
+    prerequisites: {
+        spells: ['Fireball', 'Lightning Bolt'],  // Must know these spells
+        class: 'Wizard',
+        level: 10
+    },
+    source: 'custom'
+};
+
+registry.registerSkill(spellMasterySkill);
+
+// ===== SKILL WITH RACE PREREQUISITES =====
+// Dwarven Combat Training: Dwarf only
+const dwarvenCombat: CustomSkill = {
+    id: 'dwarven_warfare',
+    name: 'Dwarven Warfare',
+    description: 'Advanced dwarven combat techniques',
+    ability: 'STR',
+    prerequisites: {
+        race: 'Dwarf'
+    },
+    source: 'custom'
+};
+
+registry.registerSkill(dwarvenCombat);
+
+// ===== VALIDATING SKILL PREREQUISITES =====
+// Check if a character meets the requirements
+const character = CharacterGenerator.generate(seed, audioProfile, 'Hero');
+const skill = registry.getSkill('dragon_smithing');
+
+if (skill && skill.prerequisites) {
+    const result = SkillValidator.validateSkillPrerequisites(skill, character);
+
+    if (!result.valid) {
+        console.log('Unmet prerequisites:', result.unmet);
+        // Output example: ["Requires feature: draconic_bloodline", "Requires level 5 (current: 1)"]
+    }
+}
+
+// Skills with unmet prerequisites are automatically
+// filtered out during character generation
+```
+
+### Spells with Prerequisites
+
+Spells can have prerequisites that must be met before a spellcaster can learn them. This allows for specialized spells that require specific features, abilities, spells, skills, level, or class.
+
+```typescript
+import { SpellValidator, SpellManager, ExtensionManager } from 'playlist-data-engine';
+
+// ===== SPELL WITH FEATURE PREREQUISITES =====
+// Dragon Breath: Requires Draconic Bloodline feature
+const dragonBreath = {
+    id: 'dragon_breath',
+    name: 'Dragon Breath',
+    level: 3,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '60 ft cone',
+    components: ['V', 'S', 'M'],
+    duration: 'Instantaneous',
+    description: 'Exhale destructive energy',
+    prerequisites: {
+        features: ['dragon_bloodline'],
+        abilities: { CHA: 16 }
+    }
+};
+
+// ===== SPELL WITH LEVEL AND CLASS PREREQUISITES =====
+// Meteor Swarm: High-level evocation spell
+const limitedMeteorSwarm = {
+    id: 'limited_meteor_swarm',
+    name: 'Meteor Swarm',
+    level: 9,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '1 mile',
+    components: ['V', 'S'],
+    duration: 'Instantaneous',
+    description: 'Blazing orbs rain down',
+    prerequisites: {
+        level: 17,  // Character must be level 17+
+        class: 'Wizard',
+        spells: ['Fireball']  // Must know Fireball first
+    }
+};
+
+// ===== SPELL WITH SKILL PREREQUISITES =====
+// Arcane Sword: Requires Arcana proficiency
+const arcaneSwordSpell = {
+    id: 'arcane_sword',
+    name: 'Arcane Sword',
+    level: 5,
+    school: 'Evocation',
+    casting_time: '1 bonus action',
+    range: '60 ft',
+    components: ['V', 'S', 'M'],
+    duration: 'Concentration, 1 minute',
+    description: 'Summon a sword of pure magic',
+    prerequisites: {
+        skills: ['arcana']  // Requires Arcana proficiency
+    }
+};
+
+// ===== REGISTER CUSTOM SPELLS =====
+const manager = ExtensionManager.getInstance();
+manager.register('spells', [dragonBreath, limitedMeteorSwarm, arcaneSwordSpell]);
+
+// ===== VALIDATE SPELL PREREQUISITES =====
+const character = CharacterGenerator.generate(seed, audioProfile, 'Sorcerer');
+const spell = SPELL_DATABASE['dragon_breath'];
+
+if (spell.prerequisites) {
+    const result = SpellValidator.validateSpellPrerequisites(spell, character);
+
+    if (!result.valid) {
+        console.log('Cannot learn this spell:', result.unmet);
+    }
+}
+
+// During character generation, SpellManager automatically filters
+// out spells that have unmet prerequisites
+const knownSpells = SpellManager.getKnownSpells(
+    character.class,
+    character.level,
+    character  // Pass character for prerequisite filtering
+);
+// Only includes spells whose prerequisites are met
+```
+
+### Custom Races with Subraces
+
+The engine supports fully extensible custom races with optional subrace variants. Register custom race data and the engine will validate and use it during character generation.
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// ===== REGISTER CUSTOM RACE WITH SUBRACES =====
+// Step 1: Register the race name
+manager.register('races', ['Dragonkin'], { validate: true });
+
+// Step 2: Register the race data (ability bonuses, speed, traits, subraces)
+manager.register('races.data', [{
+    race: 'Dragonkin',
+    ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
+    speed: 30,
+    traits: ['Draconic Ancestry', 'Darkvision'],
+    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
+}]);
+
+// ===== REGISTER SUBRACE-SPECIFIC TRAITS =====
+// Fire Dragonkin only
+manager.register('racialTraits', [{
+    id: 'fire_dragonkin_resistance',
+    name: 'Fire Resistance',
+    description: 'Resistance to fire damage',
+    race: 'Dragonkin',
+    subrace: 'Fire Dragonkin',  // Only for this subrace
+    effects: [
+        { type: 'passive_modifier', target: 'fire_resistance', value: true }
+    ],
+    source: 'custom'
+}]);
+
+// Ice Dragonkin only
+manager.register('racialTraits', [{
+    id: 'ice_dragonkin_resistance',
+    name: 'Cold Resistance',
+    description: 'Resistance to cold damage',
+    race: 'Dragonkin',
+    subrace: 'Ice Dragonkin',
+    effects: [
+        { type: 'passive_modifier', target: 'cold_resistance', value: true }
+    ],
+    source: 'custom'
+}]);
+
+// ===== GENERATE CHARACTER WITH SUBRACE =====
+const character = CharacterGenerator.generate(seed, audioProfile, 'Pyro');
+// After generation, set the subrace
+character.subrace = 'Fire Dragonkin';
+
+// Character will have:
+// - Base Dragonkin traits (Draconic Ancestry, Darkvision)
+// - Subrace-specific traits (Fire Resistance)
+// - Correct ability bonuses (STR+2, CON+1, CHA+1)
+
+// ===== FEATURE WITH SUBRACE PREREQUISITE =====
+// Trait that requires a specific subrace
+manager.register('racialTraits', [{
+    id: 'inferno_breath',
+    name: 'Inferno Breath',
+    description: 'Breathe fire like a true red dragon',
+    race: 'Dragonkin',
+    subrace: 'Fire Dragonkin',
+    prerequisites: {
+        subrace: 'Fire Dragonkin',  // Must be Fire Dragonkin
+        level: 5
+    },
+    effects: [
+        { type: 'active_ability', target: 'fire_breath', value: '6d6' }
+    ],
+    source: 'custom'
+}]);
+```
+
+**Type Augmentation for Custom Races:**
+
+Since `Race` is a closed union, extend it in your project:
+
+```typescript
+// In your project's global types file
+import 'playlist-data-engine';
+
+declare module 'playlist-data-engine' {
+    type Race =
+        | 'Human' | 'Elf' | 'Dwarf'
+        | 'Dwarf' | 'Halfling' | 'Dragonborn' | 'Gnome'
+        | 'Half-Elf' | 'Half-Orc' | 'Tiefling'
+        | 'Dragonkin';  // Custom race
+}
+
+// Now TypeScript accepts 'Dragonkin' as a valid Race
+const dragonkinCharacter: CharacterSheet = {
+    // ...
+    race: 'Dragonkin'  // No TypeScript error!
+};
+```
+
+### Features with Skill/Spell Prerequisites
+
+Class features can now require skills or spells as prerequisites, in addition to the existing support for features, abilities, level, class, and race.
+
+```typescript
+import { FeatureRegistry, FeatureValidator } from 'playlist-data-engine';
+
+const registry = FeatureRegistry.getInstance();
+
+// ===== FEATURE REQUIRING SKILL PROFICIENCY =====
+// Arcane Smith: Requires Arcana skill proficiency
+const arcaneSmith = {
+    id: 'arcane_smith',
+    name: 'Arcane Smith',
+    description: 'Can enchant magical items',
+    type: 'passive',
+    level: 7,
+    class: 'Wizard',
+    prerequisites: {
+        skills: ['arcana'],  // Requires Arcana proficiency
+        level: 7
+    },
+    effects: [
+        { type: 'ability_unlock', target: 'item_enchantment', value: true }
+    ],
+    source: 'custom'
+};
+
+registry.registerClassFeature(arcaneSmith);
+
+// ===== FEATURE REQUIRING SPELL KNOWLEDGE =====
+// Spellblade: Requires knowing specific spells
+const spellblade = {
+    id: 'spellblade',
+    name: 'Spellblade',
+    description: 'Channel spells through your weapon',
+    type: 'active',
+    level: 10,
+    class: 'Eldritch Knight',
+    prerequisites: {
+        spells: ['Green-Flame Blade', 'Booming Blade'],
+        features: ['weapon_bond']
+    },
+    effects: [
+        { type: 'passive_modifier', target: 'spell_strike_damage', value: 4 }
+    ],
+    source: 'custom'
+};
+
+registry.registerClassFeature(spellblade);
+
+// ===== RACIAL TRAIT WITH SKILL PREREQUISITES =====
+// Elven Battle Training: Requires proficiency in a combat skill
+const elvenBattleTraining = {
+    id: 'elven_battle_training',
+    name: 'Elven Battle Training',
+    description: 'Advanced elven combat techniques',
+    type: 'active',
+    race: 'Elf',
+    prerequisites: {
+        skills: ['athletics', 'perception'],  // Must have both skills
+        level: 3
+    },
+    effects: [
+        { type: 'passive_modifier', target: 'initiative', value: 2 }
+    ],
+    source: 'custom'
+};
+
+registry.registerRacialTrait(elvenBattleTraining);
+
+// ===== VALIDATE FEATURE PREREQUISITES =====
+const character = CharacterGenerator.generate(seed, audioProfile, 'Elf Warrior');
+const feature = registry.getClassFeature('arcane_smith', character.level, character.class);
+
+if (feature && feature.prerequisites) {
+    const result = FeatureValidator.validatePrerequisites(feature.prerequisites, character);
+
+    if (!result.valid) {
+        console.log('Cannot learn feature:', result.unmet);
+    }
+}
+
+// Features with unmet prerequisites are automatically
+// excluded during character generation
+```
 
 ---
 
@@ -1374,13 +2524,8 @@ All TypeScript types are exported, including:
 - `RacialTrait` - Custom racial trait definition
 - `CustomSkill` - Custom skill definition
 - `FeatureEffect` - Effect types (stat_bonus, skill_proficiency, ability_unlock, passive_modifier, resource_grant, spell_slot_bonus)
-- `FeaturePrerequisite` - Prerequisites for class features and racial traits (level, abilities, class, race, skills, spells, subrace, feature chains)
-- `SkillPrerequisite` - Prerequisites for learning custom skills (level, abilities, class, race, skills, features, spells)
-- `SpellPrerequisite` - Prerequisites for learning spells (level, caster level, abilities, class, features, spells, skills)
-- `ValidationResult` - Standard validation result for all prerequisite validation (valid, unmet, errors)
+- `FeaturePrerequisite` - Prerequisite validation (level, abilities, class, race, feature chains)
 - `ExtensionCategory` - All extensible categories (classFeatures, racialTraits, skills, equipment, appearance, etc.)
-
-**For detailed prerequisite documentation, see [PREREQUISITES.md](docs/PREREQUISITES.md)**
 
 **Equipment System Types (NEW):**
 - `EnhancedEquipment` - Full equipment definition with properties, features, skills, spells

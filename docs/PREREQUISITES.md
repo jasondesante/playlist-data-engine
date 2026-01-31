@@ -1,8 +1,9 @@
-# Prerequisites & Custom Races Reference
+# Prerequisites Reference
 
-Complete guide to the prerequisite system for skills, spells, and features, plus custom race and subrace support in the Playlist Data Engine.
+Complete guide to the prerequisite system for skills, spells, and features in the Playlist Data Engine.
 
 **For API details, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md)**
+**For custom races/classes, see [CUSTOM_CONTENT.md](CUSTOM_CONTENT.md)**
 **For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md)**
 
 ---
@@ -13,24 +14,22 @@ Complete guide to the prerequisite system for skills, spells, and features, plus
 2. [Skill Prerequisites](#skill-prerequisites)
 3. [Spell Prerequisites](#spell-prerequisites)
 4. [Feature Prerequisites](#feature-prerequisites)
-5. [Custom Races](#custom-races)
-6. [Subrace Support](#subrace-support)
-7. [Validation System](#validation-system)
-8. [Examples](#examples)
+5. [Validation System](#validation-system)
+6. [Examples](#examples)
+7. [API Reference](#api-reference)
+8. [Best Practices](#best-practices)
 
 ---
 
 ## Overview
 
-The Playlist Data Engine supports a comprehensive prerequisite system that allows skills, spells, and features to require specific conditions before they can be learned or used. Additionally, the engine supports custom races and subraces for extensibility.
+The Playlist Data Engine supports a comprehensive prerequisite system that allows skills, spells, and features to require specific conditions before they can be learned or used.
 
 ### Key Features
 
 - **Skill Prerequisites**: Skills can require levels, abilities, other skills, features, or spells
 - **Spell Prerequisites**: Spells can require levels, abilities, features, other spells, or skills
 - **Feature Prerequisites**: Features can require levels, abilities, skills, spells, or subraces
-- **Custom Races**: Register custom races with ability bonuses, speed, and traits
-- **Subrace Support**: Characters can have subraces (e.g., High Elf, Hill Dwarf) with subrace-specific traits
 
 ### Design Principles
 
@@ -291,185 +290,6 @@ const arcaneMastery = {
 };
 
 FeatureRegistry.getInstance().registerClassFeature(arcaneMastery);
-```
-
----
-
-## Custom Races
-
-The engine supports custom races through the ExtensionManager.
-
-### Race Type Definition
-
-The base `Race` type is a closed union of default races:
-
-```typescript
-type Race =
-    | 'Human' | 'Elf' | 'Dwarf' | 'Halfling' | 'Dragonborn' | 'Gnome'
-    | 'Half-Elf' | 'Half-Orc' | 'Tiefling';
-```
-
-### Type Augmentation for Custom Races
-
-To use custom races, augment the type in your project:
-
-```typescript
-import 'playlist-data-engine';
-
-declare module 'playlist-data-engine' {
-    type Race =
-        | 'Human' | 'Elf' | 'Dwarf' | 'Halfling' | 'Dragonborn' | 'Gnome'
-        | 'Half-Elf' | 'Half-Orc' | 'Tiefling'
-        | 'Dragonkin';  // Custom race
-}
-```
-
-### RaceDataEntry Interface
-
-```typescript
-interface RaceDataEntry {
-    /** Ability score bonuses */
-    ability_bonuses: Partial<Record<Ability, number>>;
-
-    /** Base speed in feet */
-    speed: number;
-
-    /** Array of trait IDs for this race */
-    traits: string[];
-
-    /** Optional: Available subraces for this race */
-    subraces?: string[];
-}
-```
-
-### Registering Custom Races
-
-```typescript
-import { ExtensionManager } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// Step 1: Register custom race data
-manager.register('races.data', [{
-    race: 'Dragonkin',
-    ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
-    speed: 30,
-    traits: ['Draconic Ancestry', 'Darkvision'],
-    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
-}]);
-
-// Step 2: Register the race name (enables validation)
-manager.register('races', ['Dragonkin']);
-
-// Step 3: Register custom racial traits (optional)
-manager.register('racialTraits', [{
-    id: 'dragonkin_draconic_ancestry',
-    name: 'Draconic Ancestry',
-    race: 'Dragonkin',
-    description: 'You have draconic heritage',
-    effects: [
-        { type: 'ability_unlock', target: 'damage_resistance', value: 'elemental' }
-    ],
-    source: 'custom'
-}]);
-```
-
-### Race Validation
-
-The ExtensionManager validates races in this order:
-
-1. Check if it's a default race (Human, Elf, etc.)
-2. Check if it's been registered as a custom race name
-3. Check if it has data registered via 'races.data'
-4. If validation is disabled via `{ validate: false }`, allow any race
-
-### getRaceData() Helper
-
-The `getRaceData()` function retrieves race data from both default and custom races:
-
-```typescript
-import { getRaceData } from 'playlist-data-engine';
-
-const dragonkinData = getRaceData('Dragonkin');
-// Returns: { ability_bonuses: { STR: 2, CON: 1, CHA: 1 }, speed: 30, traits: [...] }
-```
-
----
-
-## Subrace Support
-
-Characters can have subraces, and features/traits can require specific subraces.
-
-### Subrace Property
-
-```typescript
-interface CharacterSheet {
-    race: Race;
-    /** Subrace (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf') */
-    subrace?: string;
-    // ... other properties
-}
-```
-
-### RacialTrait with Subrace
-
-```typescript
-interface RacialTrait {
-    id: string;
-    name: string;
-    race: Race;
-    /** Optional subrace requirement */
-    subrace?: string;
-    prerequisites?: FeaturePrerequisite;
-    effects?: FeatureEffect[];
-    source: 'default' | 'custom';
-}
-```
-
-### Subrace Validation in Prerequisites
-
-When validating feature prerequisites:
-
-```typescript
-// Check subrace requirement
-if (prereqs.subrace !== undefined) {
-    if (!character.subrace || character.subrace !== prereqs.subrace) {
-        errors.push(`Requires subrace ${prereqs.subrace} (current: ${character.subrace || 'none'})`);
-    }
-}
-```
-
-### Subrace Filtering
-
-FeatureRegistry provides `getRacialTraitsForSubrace()`:
-
-```typescript
-const registry = FeatureRegistry.getInstance();
-
-// Get traits specific to High Elf subrace
-const highElfTraits = registry.getRacialTraitsForSubrace('Elf', 'High Elf');
-```
-
-### Example Subrace-Specific Trait
-
-```typescript
-import { FeatureRegistry } from 'playlist-data-engine';
-
-const fireDragonkinResistance = {
-    id: 'fire_dragonkin_fire_resistance',
-    name: 'Fire Resistance',
-    race: 'Dragonkin',
-    subrace: 'Fire Dragonkin',  // Only for this subrace
-    prerequisites: {
-        subrace: 'Fire Dragonkin'
-    },
-    effects: [
-        { type: 'ability_unlock', target: 'fire_resistance', value: true }
-    ],
-    source: 'custom'
-};
-
-FeatureRegistry.getInstance().registerRacialTrait(fireDragonkinResistance);
 ```
 
 ---
@@ -737,12 +557,12 @@ const masterHerbalist = {
 
 4. **Consider Custom Conditions**: Use the `custom` field for prerequisites that don't fit the standard types
 
-5. **Document Custom Content**: When creating custom races with subraces, document which traits belong to which subrace
+5. **Document Custom Content**: When creating custom content with prerequisites, document the requirements clearly
 
 ---
 
 ## See Also
 
 - [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md) - Complete API reference
+- [CUSTOM_CONTENT.md](CUSTOM_CONTENT.md) - Custom races and classes guide
 - [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md) - Usage examples
-- [UPGRADE_PLAN_PART_3.md](../UPGRADE_PLAN_PART_3.md) - Implementation details
