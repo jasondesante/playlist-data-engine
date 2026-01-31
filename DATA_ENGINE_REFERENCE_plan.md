@@ -112,8 +112,8 @@ This plan organizes verification tasks into **6 sequential phases** designed to 
   - [x] generate(seed, audioProfile, name, options?): CharacterSheet ✅
 - [x] class RaceSelector (static) → src/core/generation/RaceSelector.ts
   - [x] select(rng: SeededRNG): Race ✅
-- [ ] class ClassSuggester (static) → src/core/generation/ClassSuggester.ts
-  - [ ] suggest(audioProfile, rng): Class
+- [x] class ClassSuggester (static) → src/core/generation/ClassSuggester.ts ✅
+  - [x] suggest(audioProfile, rng): Class ✅
 - [ ] class AbilityScoreCalculator (static) → src/core/generation/AbilityScoreCalculator.ts
   - [ ] calculateBaseScores(audioProfile): AbilityScores
   - [ ] applyRacialBonuses(baseScores, race): AbilityScores
