@@ -2067,6 +2067,12 @@ export interface StatIncreaseConfig {
     - Get the current configuration
     - Returns a readonly copy of the configuration with all defaults applied
 
+- `validateDnD5eStatSelection(character, selections, increaseAmount?): { valid: true } | StatSelectionValidationError`
+    - Validate stat selection follows D&D 5e rules
+    - Rules: +2 to one ability OR +1 to two abilities
+    - Returns `{ valid: true }` if valid, or a `StatSelectionValidationError` with details if invalid
+    - `increaseAmount` defaults to 2
+
 - `updateConfig(config): void`
     - Update configuration mid-game
     - Use to change stat increase strategies dynamically
@@ -2255,6 +2261,25 @@ export interface StatIncreaseResult {
     }>;
     source: 'level_up' | 'manual' | 'item' | 'event';
     timestamp: number;
+}
+```
+
+### Stat Selection Validation Error
+
+**Location:** `src/core/types/Progression.ts` (281-290)
+
+Returned by `StatManager.validateDnD5eStatSelection()` when stat selection validation fails.
+
+```typescript
+export interface StatSelectionValidationError {
+    /** Error message */
+    error: string;
+
+    /** What was wrong */
+    reason: 'invalid_ability' | 'invalid_amount' | 'exceeds_cap' | 'wrong_pattern' | 'duplicate_ability';
+
+    /** Valid patterns allowed */
+    allowedPatterns: string[];
 }
 ```
 
