@@ -820,15 +820,63 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 3.8: Initialization Functions → src/core/extensions/index.ts
-- [ ] `ensureAllDefaultsInitialized(): void`
-- [ ] `initializeAllDefaults(): void`
-- [ ] Appearance defaults: initialize, check, ensure (3 functions)
-- [ ] Spell defaults: initialize, check, ensure (3 functions)
-- [ ] Equipment defaults: initialize, check, ensure (3 functions)
-- [ ] Race defaults: initialize, check, ensure (3 functions)
-- [ ] Class defaults: initialize, check, ensure (3 functions)
-- [ ] Feature defaults: initialize, check, ensure (3 functions)
-- [ ] Skill defaults: initialize, check, ensure (3 functions)
+- [x] `ensureAllDefaultsInitialized(): void`
+- [x] `initializeAllDefaults(): void`
+- [x] Appearance defaults: initialize, check, ensure (3 functions)
+- [x] Spell defaults: initialize, check, ensure (3 functions)
+- [x] Equipment defaults: initialize, check, ensure (3 functions)
+- [x] Race defaults: initialize, check, ensure (3 functions)
+- [x] Class defaults: initialize, check, ensure (3 functions)
+- [x] Feature defaults: initialize, check, ensure (3 functions)
+- [x] Skill defaults: initialize, check, ensure (3 functions)
+
+**Task 3.8 Summary - COMPLETED**:
+- **VERIFIED**: All initialization functions are properly exported from src/core/extensions/index.ts
+- **VERIFIED**: All initialization functions are properly exported from src/index.ts at lines 352-376
+
+**APPEARANCE DEFAULTS** (lines 19-22 of index.ts, lines 84-114 of initializeDefaults.ts):
+- `initializeAppearanceDefaults(): void` (line 84) - Initializes all appearance categories (bodyTypes, skinTones, hairColors, hairStyles, eyeColors, facialFeatures)
+- `areAppearanceDefaultsInitialized(): boolean` (line 96) - Checks if appearance categories are registered
+- `ensureAppearanceDefaultsInitialized(): void` (line 110) - Idempotent initialization, safe to call multiple times
+
+**SPELL DEFAULTS** (lines 23-25 of index.ts, lines 137-172 of initializeDefaults.ts):
+- `initializeSpellDefaults(): void` (line 137) - Initializes spells database and class-specific spell lists
+- `areSpellDefaultsInitialized(): boolean` (line 154) - Checks if spells category is registered
+- `ensureSpellDefaultsInitialized(): void` (line 168) - Idempotent initialization
+
+**EQUIPMENT DEFAULTS** (lines 26-28 of index.ts, lines 192-220 of initializeDefaults.ts):
+- `initializeEquipmentDefaults(): void` (line 192) - Initializes equipment database with EnhancedEquipment format (includes source field and spawnWeight)
+- `areEquipmentDefaultsInitialized(): boolean` (line 202) - Checks if equipment category is registered
+- `ensureEquipmentDefaultsInitialized(): void` (line 216) - Idempotent initialization
+
+**RACE DEFAULTS** (lines 29-31 of index.ts, lines 227-255 of initializeDefaults.ts):
+- `initializeRaceDefaults(): void` (line 227) - Initializes races with default data (ALL_RACES)
+- `areRaceDefaultsInitialized(): boolean` (line 237) - Checks if races category is registered
+- `ensureRaceDefaultsInitialized(): void` (line 251) - Idempotent initialization
+
+**CLASS DEFAULTS** (lines 32-34 of index.ts, lines 262-290 of initializeDefaults.ts):
+- `initializeClassDefaults(): void` (line 262) - Initializes classes with default data (ALL_CLASSES)
+- `areClassDefaultsInitialized(): boolean` (line 272) - Checks if classes category is registered
+- `ensureClassDefaultsInitialized(): void` (line 286) - Idempotent initialization
+
+**FEATURE DEFAULTS** (lines 35-37 of index.ts, lines 328-391 of initializeDefaults.ts):
+- `initializeFeatureDefaults(): void` (line 328) - Initializes FeatureRegistry with class features and racial traits, plus ExtensionManager for spawn rate management
+- `areFeatureDefaultsInitialized(): boolean` (line 376) - Checks if FeatureRegistry is initialized
+- `ensureFeatureDefaultsInitialized(): void` (line 387) - Idempotent initialization
+
+**SKILL DEFAULTS** (lines 38-40 of index.ts, lines 400-450 of initializeDefaults.ts):
+- `initializeSkillDefaults(): void` (line 400) - Initializes SkillRegistry with default D&D 5e skills, plus ExtensionManager for spawn rate management
+- `areSkillDefaultsInitialized(): boolean` (line 435) - Checks if SkillRegistry is initialized
+- `ensureSkillDefaultsInitialized(): void` (line 446) - Idempotent initialization
+
+**CONVENIENCE FUNCTIONS** (lines 41-42 of index.ts):
+- `initializeAllDefaults(): void` (line 298) - Calls all individual `initialize*Defaults()` functions (appearance, spell, equipment, race, class)
+- `ensureAllDefaultsInitialized(): void` (line 312) - Calls all individual `ensure*DefaultsInitialized()` functions (appearance, spell, equipment, race, class, feature, skill)
+
+**NOTE**: `initializeAllDefaults()` does NOT include feature and skill initialization (line 298-304), but `ensureAllDefaultsInitialized()` DOES include them (line 312-320). This is an intentional design difference - `initializeAllDefaults()` is for basic ExtensionManager data, while `ensureAllDefaultsInitialized()` ensures ALL registries (FeatureRegistry, SkillRegistry) are also initialized.
+
+**BUILD STATUS**: Clean - build completed successfully with no errors
+- **Phase 3 Status**: COMPLETE (all 8 tasks verified and documented)
 
 ---
 
@@ -1398,7 +1446,7 @@ For each item, verify:
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
-| 3 | In Progress | 6 | ~60 | 2026-02-01 |
+| 3 | Complete | 7 | ~60 | 2026-02-01 |
 | 4 | Not Started | 0 | ~40 | - |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
@@ -1407,4 +1455,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **16** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **17** | **~475** | 2026-02-01 |
