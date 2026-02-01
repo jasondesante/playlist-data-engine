@@ -44,7 +44,7 @@ The following items are noted for awareness but should NOT be resolved:
   - Note: `class SeededRNG` is correctly documented at `src/utils/random.ts` (7)
 
 ### Task 1.4: Validation Schemas Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Schemas documented at `src/schemas/` → actual location is `src/utils/validators.ts`:
+- [x] Update DATA_ENGINE_REFERENCE.md: Schemas documented at `src/schemas/` → actual location is `src/utils/validators.ts`:
   - `PlaylistTrackSchema` → `src/utils/validators.ts` (14-48)
   - `ServerlessPlaylistSchema` → `src/utils/validators.ts` (53-61)
   - `AudioProfileSchema` → `src/utils/validators.ts` (66-89)

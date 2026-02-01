@@ -846,10 +846,12 @@ export interface SpellSlots {
 
 **Validation Schemas**
 
-- `PlaylistTrackSchema`: Validates track metadata.
-- `ServerlessPlaylistSchema`: Validates full playlist.
-- `AudioProfileSchema`: Validates audio analysis.
-- `CharacterSheetSchema`: Validates character data.
+*Location: `src/utils/validators.ts`*
+
+- `PlaylistTrackSchema`: Validates track metadata (lines 14-48)
+- `ServerlessPlaylistSchema`: Validates full playlist (lines 53-61)
+- `AudioProfileSchema`: Validates audio analysis (lines 66-89)
+- `CharacterSheetSchema`: Validates character data (lines 106-156)
 
 ---
 
