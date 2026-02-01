@@ -2666,12 +2666,28 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 10.5: Equipment Types → src/core/types/Equipment.ts
-- [ ] `EnhancedEquipment`
-- [ ] `EquipmentProperty`
-- [ ] `EquipmentCondition`
-- [ ] `EquipmentModification`
-- [ ] `EnhancedInventoryItem`
-- [ ] `EquipmentMiniFeature`
+- [x] `EnhancedEquipment`
+- [x] `EquipmentProperty`
+- [x] `EquipmentCondition`
+- [x] `EquipmentModification`
+- [x] `EnhancedInventoryItem`
+- [x] `EquipmentMiniFeature`
+
+**Task 10.5 Summary - COMPLETED**:
+- **VERIFIED**: All 6 equipment types exist at src/core/types/Equipment.ts
+- **VERIFIED TYPES**:
+  - `EnhancedEquipment` interface (line 89) - Enhanced equipment with properties, features, skills, spells, D&D 5e stats
+  - `EquipmentProperty` interface (line 64) - Equipment property providing mechanical benefits
+  - `EquipmentCondition` type (line 51) - Structured condition types for equipment properties (vs_creature_type, at_time_of_day, wielder_race, etc.)
+  - `EquipmentModification` interface (line 142) - Runtime modification to equipment (enchanting, curses, upgrades)
+  - `EnhancedInventoryItem` interface (line 164) - Enhanced inventory item with per-instance modifications
+  - `EquipmentMiniFeature` interface (line 77) - Inline mini-feature definition for equipment-specific abilities
+- **EXPORTS**: All types properly exported from src/index.ts at lines 65-70
+- **ADDITIONAL FINDINGS**:
+  - Also found many additional types: EquipmentRarity, EquipmentType, EquipmentPropertyType, CharacterEquipment, EquipmentFeature, EquipmentSkill, EquipmentSpell, EffectApplicationResult, EquipmentValidationResult, SpawnRandomOptions, TreasureHoardResult
+  - EquipmentCondition is a discriminated union with 8 condition types
+  - All types have comprehensive JSDoc comments
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 10.6: Combat Types → src/core/types/Combat.ts
 - [ ] `StatusEffect`
