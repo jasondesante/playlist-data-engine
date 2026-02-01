@@ -2567,14 +2567,36 @@ This verification plan ensures documentation-code alignment by systematically ch
 **Objective**: Verify all TypeScript types are properly exported
 
 ### Task 10.1: Character Types → src/core/types/Character.ts
-- [ ] `CharacterSheet`
-- [ ] `AbilityScores`
-- [ ] `Race`
-- [ ] `Class`
-- [ ] `Ability`
-- [ ] `Skill`
-- [ ] `ProficiencyLevel`
-- [ ] `GameMode` ('standard' | 'uncapped')
+- [x] `CharacterSheet`
+- [x] `AbilityScores`
+- [x] `Race`
+- [x] `Class`
+- [x] `Ability`
+- [x] `Skill`
+- [x] `ProficiencyLevel`
+- [x] `GameMode` ('standard' | 'uncapped')
+
+**Task 10.1 Summary - COMPLETED**:
+- **VERIFIED**: All 8 character types exist at src/core/types/Character.ts
+- **VERIFIED**: All types properly exported from src/index.ts at lines 25-34
+- **VERIFIED**: `CharacterSheet` interface (line 333) - Complete character data structure with all properties
+- **VERIFIED**: `AbilityScores` interface (line 320) - STR, DEX, CON, INT, WIS, CHA
+- **VERIFIED**: `Race` type (line 38) - Branded type for extensible race names (string & { readonly __RaceBrand: unique symbol })
+- **VERIFIED**: `Class` type (line 153) - Branded type for extensible class names (string & { readonly __ClassBrand: unique symbol })
+- **VERIFIED**: `Ability` type (line 255) - 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA'
+- **VERIFIED**: `Skill` type (line 257) - 18 skill types (athletics, acrobatics, sleight_of_hand, stealth, arcana, history, investigation, nature, religion, animal_handling, insight, medicine, perception, survival, deception, intimidation, performance, persuasion)
+- **VERIFIED**: `ProficiencyLevel` type (line 277) - 'none' | 'proficient' | 'expertise'
+- **VERIFIED**: `GameMode` type (line 284) - 'standard' | 'uncapped'
+- **ADDITIONAL EXPORTS** (also exported but not in original checklist):
+  - `Attack` interface (line 289) - Attack type for combat actions
+  - `Spell` interface (line 305) - Spell type for casting
+  - `DEFAULT_RACES` constant (line 83) - Default D&D 5e races as pre-branded Race type values
+  - `DEFAULT_CLASSES` constant (line 201) - Default D&D 5e classes as pre-branded Class type values
+  - `asRace()` function (line 55) - Cast string to Race type
+  - `asClass()` function (line 170) - Cast string to Class type
+  - `isValidRace()` function (line 100) - Type guard for valid Race values
+  - `isValidClass()` function (line 218) - Type guard for valid Class values
+- **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 10.2: Progression Types → src/core/types/Progression.ts
 - [ ] `EnvironmentalContext`
