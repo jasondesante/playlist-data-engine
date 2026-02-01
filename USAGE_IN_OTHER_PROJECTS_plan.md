@@ -2884,9 +2884,25 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 11.4: Type Relationship Clarification
-- [ ] `Equipment` (utils/constants.ts) vs `EnhancedEquipment` (core/types/Equipment.ts)
-  - [ ] Document relationship and usage differences
-  - [ ] Verify which is used where in the API
+- [x] `Equipment` (utils/constants.ts) vs `EnhancedEquipment` (core/types/Equipment.ts)
+  - [x] Document relationship and usage differences
+  - [x] Verify which is used where in the API
+
+**Task 11.4 Summary - COMPLETED**:
+- **INVESTIGATED**: Both `Equipment` and `EnhancedEquipment` interfaces exist with overlapping but distinct purposes
+- **Equipment** (src/utils/constants.ts:1251):
+  - Base equipment interface used for equipment data in constants
+  - Properties: name, type, rarity, weight, properties?, grantsFeatures?, grantsSkills?, grantsSpells?, damage?, acBonus?, weaponProperties?
+  - Used in: DEFAULT_EQUIPMENT constant, equipment databases
+  - Less strict typing (inline types for properties array elements)
+- **EnhancedEquipment** (src/core/types/Equipment.ts:89):
+  - Enhanced equipment interface with optional advanced properties
+  - Additional properties: spawnWeight, templateId, source (required), tags
+  - Uses stricter types: EquipmentType, EquipmentRarity, EquipmentProperty, EquipmentMiniFeature
+  - Used in: EnhancedInventoryItem, equipment modification system, equipment generation
+  - Exported from src/index.ts for public API use
+- **RELATIONSHIP**: `EnhancedEquipment` is the stricter, more feature-rich version used in the public API. `Equipment` is used internally in constants for default equipment data. They are structurally compatible but `EnhancedEquipment` has additional runtime fields.
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 11.5: Redundancy Review
 - [ ] `SpellValidator` class vs validation functions in `src/core/spells/index.ts`
