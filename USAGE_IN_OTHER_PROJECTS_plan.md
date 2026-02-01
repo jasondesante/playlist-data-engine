@@ -111,12 +111,67 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **NOTE**: The character generator exports line was listed as 181 in the task but is actually 184 in the current code
 
 ### Task 1.3: Verify Extensibility Exports (src/index.ts lines 338-373)
-- [ ] `ExtensionManager` → src/core/extensions/ExtensionManager.ts (line 342)
-- [ ] `WeightedSelector` → src/core/extensions/WeightedSelector.ts (line 343)
-- [ ] `FeatureRegistry` → src/core/features/FeatureRegistry.ts (line 266)
-- [ ] `SkillRegistry` → src/core/skills/SkillRegistry.ts (line 295)
-- [ ] `SpellRegistry` → src/core/spells/SpellRegistry.ts (line 328)
-- [ ] All initialization functions exported (lines 349-373)
+- [x] `ExtensionManager` → src/core/extensions/ExtensionManager.ts (line 345)
+- [x] `WeightedSelector` → src/core/extensions/WeightedSelector.ts (line 346)
+- [x] `FeatureRegistry` → src/core/features/FeatureRegistry.ts (line 269)
+- [x] `SkillRegistry` → src/core/skills/SkillRegistry.ts (line 298)
+- [x] `SpellRegistry` → src/core/spells/SpellRegistry.ts (line 331)
+- [x] All initialization functions exported (lines 351-376)
+
+**Task 1.3 Summary - COMPLETED**:
+- **VERIFIED**: `ExtensionManager` class exists at src/core/extensions/ExtensionManager.ts:161
+  - Exported from src/index.ts at line 345
+  - Has static method: `getInstance(): ExtensionManager`
+  - Has method: `register(category: ExtensionCategory, data: any, options?: ExtensionOptions): void`
+  - Has method: `setWeights(category: ExtensionCategory, weights: Record<string, number>): void`
+  - Type `ExtensionCategory` exists (defined in ExtensionManager.ts at line 39)
+  - Type `ExtensionOptions` exists (defined in ExtensionManager.ts at line 118)
+  - Type `ValidationResult` exists (defined in ExtensionManager.ts at line 173)
+- **VERIFIED**: `WeightedSelector` class exists at src/core/extensions/WeightedSelector.ts:30
+  - Exported from src/index.ts at line 346
+  - Has static methods: `select()`, `selectMultiple()`, `getFinalWeights()`, `calculateProbabilities()`
+  - Type `SelectionMode` exists (defined in WeightedSelector.ts at line 18)
+- **VERIFIED**: `FeatureRegistry` class exists at src/core/features/FeatureRegistry.ts:31
+  - Exported from src/index.ts at line 269
+  - Has static method: `getInstance(): FeatureRegistry`
+  - Has methods for registering and querying class features
+  - Has methods for registering and querying racial traits
+  - Function `getFeatureRegistry()` exported from src/index.ts at line 269
+  - Type `ClassFeature` exists (defined in features/FeatureTypes.ts)
+  - Type `RacialTrait` exists (defined in features/FeatureTypes.ts)
+- **VERIFIED**: `SkillRegistry` class exists at src/core/skills/SkillRegistry.ts:29
+  - Exported from src/index.ts at line 298
+  - Has static method: `getInstance(): SkillRegistry`
+  - Has methods for registering and querying skills
+  - Function `getSkillRegistry()` exported from src/index.ts at line 298
+  - Type `CustomSkill` exists (defined in skills/SkillTypes.ts)
+  - Type `SkillPrerequisite` exists (defined in skills/SkillTypes.ts)
+- **VERIFIED**: `SpellRegistry` class exists at src/core/spells/SpellRegistry.ts:60
+  - Exported from src/index.ts at line 331
+  - Has static method: `getInstance(): SpellRegistry`
+  - Has `initializeDefaults(): void` method
+  - Has `registerSpell(spell: Spell): void` method
+  - Has `getSpellsByLevel(level: number): Spell[]` method
+  - Has `getSpellsBySchool(school: SpellSchool): Spell[]` method
+  - Has `getSpellsForClass(className: string): Spell[]` method
+  - Has `getAvailableSpells(character: CharacterSheet): Spell[]` method
+  - Has `getSpell(id: string): Spell | undefined` method
+  - Has `validatePrerequisites(spell: Spell, character: CharacterSheet): ValidationResult` method
+  - Has `getRegistryStats(): { totalSpells: number, customSpells: number }` method
+  - Function `getSpellRegistry()` exported from src/index.ts at line 331
+  - Type `RegisteredSpell` exists (defined in SpellRegistry.ts at line 32)
+  - Type `SpellSchool` exists (defined in SpellRegistry.ts at line 19)
+- **VERIFIED**: All initialization functions exported from src/index.ts lines 351-376:
+  - `initializeAppearanceDefaults`, `areAppearanceDefaultsInitialized`, `ensureAppearanceDefaultsInitialized`
+  - `initializeSpellDefaults`, `areSpellDefaultsInitialized`, `ensureSpellDefaultsInitialized`
+  - `initializeEquipmentDefaults`, `areEquipmentDefaultsInitialized`, `ensureEquipmentDefaultsInitialized`
+  - `initializeRaceDefaults`, `areRaceDefaultsInitialized`, `ensureRaceDefaultsInitialized`
+  - `initializeClassDefaults`, `areClassDefaultsInitialized`, `ensureClassDefaultsInitialized`
+  - `initializeFeatureDefaults`, `areFeatureDefaultsInitialized`, `ensureFeatureDefaultsInitialized`
+  - `initializeSkillDefaults`, `areSkillDefaultsInitialized`, `ensureSkillDefaultsInitialized`
+  - `initializeAllDefaults`, `ensureAllDefaultsInitialized`
+- **BUILD STATUS**: Clean - no compilation errors
+- **NOTE**: Line numbers in task description (338-373) were slightly off; actual export lines are 345-376
 
 ### Task 1.4: Verify Sensor Exports (src/index.ts lines 379-380)
 - [x] `EnvironmentalSensors` → src/core/sensors/EnvironmentalSensors.ts (line 382)
@@ -826,7 +881,7 @@ For each item, verify:
 
 | Phase | Status | Completed | Total | Last Updated |
 |-------|--------|-----------|-------|--------------|
-| 1 | In Progress | 3 | ~50 | 2026-02-01 |
+| 1 | In Progress | 4 | ~50 | 2026-02-01 |
 | 2 | Not Started | 0 | ~40 | - |
 | 3 | Not Started | 0 | ~60 | - |
 | 4 | Not Started | 0 | ~40 | - |
@@ -837,4 +892,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **3** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **4** | **~475** | 2026-02-01 |
