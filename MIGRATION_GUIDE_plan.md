@@ -360,8 +360,200 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 - [x] **SpellPrerequisite.race property**: Code has `race?: string` property not documented in the plan
 - [x] **Test suite issues** (2026-02-01): Fixed genre count mismatch in classSuggester.integration.test.ts and adjusted statistical assertions for seeded RNG behavior
 - [x] _Document any additional items found in code but not documented_ ✓ **COMPLETED (2026-02-01)**
-- [ ] _Document any items documented but not found in code_
+- [x] _Document any items documented but not found in code_ ✓ **COMPLETED (2026-02-01)**
 - [ ] _Document any signature/type mismatches_
+
+---
+
+## Investigation Results: Items Documented But Not Found in Code (Completed 2026-02-01)
+
+**Task:** Document any significant features, interfaces, types, or functions that are documented in MIGRATION_GUIDE.md but not found in the codebase.
+
+### Finding: All Documented Items Are Present in Code
+
+After comprehensive verification of all items documented in MIGRATION_GUIDE.md, **no missing items were found**. All documented features, interfaces, functions, and breaking changes are correctly implemented in the codebase.
+
+### Detailed Verification Results
+
+#### Phase 1: Breaking Changes (Part 2) - ALL VERIFIED ✓
+
+**1. Ammunition Format Change**
+- ✓ `Arrow` in EQUIPMENT_DATABASE has weight 0.05 (constants.ts:1964-1971)
+- ✓ `Bolt` in EQUIPMENT_DATABASE has weight 0.075 (constants.ts:1972-1979)
+- ✓ Ammunition tracked as individual items (not "Arrows (20)")
+- ✓ EquipmentGenerator adds ammunition programmatically for Rangers
+
+**2. Feature ID Format Change**
+- ✓ CharacterSheet.class_features stores feature IDs (Character.ts:384)
+- ✓ CharacterSheet.racial_traits stores trait IDs (Character.ts:381)
+- ✓ FeatureEffect type exists with correct fields (FeatureTypes.ts:39-54)
+- ✓ CharacterSheet.feature_effects property exists (Character.ts:448)
+
+#### Phase 2: Skill Prerequisites (Part 3) - ALL VERIFIED ✓
+
+**1. SkillPrerequisite Interface** (SkillTypes.ts:25-49)
+- ✓ Property `level?: number` exists (line 27)
+- ✓ Property `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` exists (line 30)
+- ✓ Property `class?: Class` exists (line 33)
+- ✓ Property `race?: Race` exists (line 36)
+- ✓ Property `skills?: string[]` exists (line 39)
+- ✓ Property `features?: string[]` exists (line 42)
+- ✓ Property `spells?: string[]` exists (line 45)
+- ✓ Property `custom?: string` exists (line 48)
+
+**2. SpellValidator File** (NEW FILE)
+- ✓ File exists: src/core/spells/SpellValidator.ts
+- ✓ File exports SpellValidator class
+- ✓ File exports helper functions
+
+**3. SkillValidator Method** (SkillValidator.ts:368-373)
+- ✓ Method `validateSkillPrerequisites(prerequisites, character)` exists
+- ✓ Method returns SkillValidationResult
+- ✓ Method validates all prerequisite types via PrerequisiteValidator
+
+**4. Modified Files**
+- ✓ SkillAssigner.ts filters skills by prerequisites (lines 136-160)
+- ✓ SkillRegistry.ts has `validatePrerequisites()` method (lines 256-271)
+
+#### Phase 3: Spell Prerequisites (Part 3) - ALL VERIFIED ✓
+
+**1. SpellPrerequisite Interface** (SpellTypes.ts:27-54)
+- ✓ Property `level?: number` exists (line 29)
+- ✓ Property `casterLevel?: number` exists (line 32)
+- ✓ Property `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` exists (line 35)
+- ✓ Property `class?: Class` exists (line 38)
+- ✓ Property `race?: Race` exists (line 41)
+- ✓ Property `features?: string[]` exists (line 44)
+- ✓ Property `spells?: string[]` exists (line 47)
+- ✓ Property `skills?: string[]` exists (line 50)
+- ✓ Property `custom?: string` exists (line 53)
+
+**2. SpellManager Integration**
+- ✓ getKnownSpells() filters by prerequisites (SpellManager.ts:217-220)
+- ✓ CharacterGenerator passes character to SpellManager.initializeSpells() (CharacterGenerator.ts:430)
+
+#### Phase 4: Custom Race Support (Part 3) - ALL VERIFIED ✓
+
+**1. RaceDataEntry Interface** (constants.ts:23-35)
+- ✓ Interface is exported as `export interface RaceDataEntry`
+- ✓ Property `ability_bonuses: Partial<Record<Ability, number>>` exists
+- ✓ Property `speed: number` exists
+- ✓ Property `traits: string[]` exists
+- ✓ Property `subraces?: string[]` exists
+
+**2. Helper Functions**
+- ✓ `getRaceData(race: string): RaceDataEntry | undefined` exported (constants.ts:192)
+- ✓ `getRaceDataAsync(race: string): Promise<RaceDataEntry | undefined>` exported (constants.ts:147)
+
+**3. ExtensionManager Integration**
+- ✓ Category `'races.data'` is supported (ExtensionManager.ts:52)
+- ✓ ExtensionManager validates custom races (ExtensionManager.ts:608-638)
+
+#### Phase 5: Subrace Support (Part 3) - ALL VERIFIED ✓
+
+**1. CharacterSheet Updates** (Character.ts:341)
+- ✓ Property `subrace?: string` exists on CharacterSheet
+
+**2. FeaturePrerequisite Updates** (FeatureTypes.ts:68-95)
+- ✓ Property `subrace?: string` exists (line 85)
+- ✓ Property `skills?: string[]` exists (line 88)
+- ✓ Property `spells?: string[]` exists (line 91)
+
+**3. Integration Points**
+- ✓ FeatureRegistry.validatePrerequisites() checks subrace (FeatureRegistry.ts:385-390)
+- ✓ FeatureRegistry.validatePrerequisites() checks skills (FeatureRegistry.ts:392-400)
+- ✓ FeatureRegistry.validatePrerequisites() checks spells (FeatureRegistry.ts:402-413)
+- ✓ CharacterGenerator filters racial traits by subrace (CharacterGenerator.ts:384-388)
+- ✓ RacialTrait interface supports subrace property (FeatureTypes.ts:175-176)
+
+#### Phase 6: Template-Based Custom Classes (Part 4) - ALL VERIFIED ✓
+
+**1. Class Type Extensibility** (Character.ts:153-201)
+- ✓ `Class` is a branded type (line 153)
+- ✓ `asClass(value: string): Class` function exists (line 170)
+- ✓ `isValidClass(value: unknown): value is Class` function exists (line 218)
+- ✓ `DEFAULT_CLASSES` constant exists (line 201)
+
+**2. ExtensionManager Categories**
+- ✓ Category `'classes.data'` is supported (ExtensionManager.ts:55)
+- ✓ Category `classSpellLists.${ClassName}` is supported (ExtensionManager.ts:107-108)
+- ✓ Category `classSpellSlots` is supported (ExtensionManager.ts:110)
+- ✓ Category `classStartingEquipment.${ClassName}` is supported (ExtensionManager.ts:112-113)
+
+**3. ClassDataEntry Interface** (constants.ts:291-345)
+- ✓ Interface is exported (line 291)
+- ✓ Property `name?: string` exists (line 293)
+- ✓ Property `baseClass?: Class` exists with proper JSDoc (line 333)
+- ✓ Property `primary_ability: Ability` exists (line 296)
+- ✓ Property `hit_die: number` exists (line 299)
+- ✓ Property `saving_throws: Ability[]` exists (line 302)
+- ✓ Property `is_spellcaster: boolean` exists (line 305)
+- ✓ Property `skill_count: number` exists (line 308)
+- ✓ Property `available_skills: string[]` exists (line 311)
+- ✓ Property `has_expertise: boolean` exists (line 314)
+- ✓ Property `expertise_count?: number` exists (line 317)
+- ✓ Property `audio_preferences?: {...}` exists with full nested structure (lines 336-344)
+
+**4. Helper Functions**
+- ✓ `getClassData(className: string)` exists (constants.ts:519)
+- ✓ `getClassDataAsync(className: string)` exists (constants.ts:423)
+- ✓ `getClassSpellList(className: string)` exists (constants.ts:1392)
+- ✓ `getSpellSlotsForClass(className: string, level: number)` exists (constants.ts:1452)
+- ✓ `getClassStartingEquipment(className: string)` exists (constants.ts:1518)
+
+**5. Merge Logic Implementation**
+- ✓ getClassData performs shallow merge with baseClass (constants.ts:534-536)
+- ✓ `available_skills` is replaced (not merged) (constants.ts:538)
+- ✓ Other properties are inherited unless specified via spread operator
+- ✓ JSDoc documents merge behavior correctly (constants.ts:473-489)
+
+**6. Consuming Files**
+- ✓ SkillAssigner.ts uses getClassData() (SkillAssigner.ts:10, 56)
+- ✓ SpellManager.ts uses getClassSpellList() (SpellManager.ts:10, 106, 155)
+- ✓ SpellManager.ts uses getSpellSlotsForClass() (SpellManager.ts:10, 70)
+- ✓ EquipmentGenerator.ts uses getClassStartingEquipment() (EquipmentGenerator.ts:12, 117)
+- ✓ AbilityScoreCalculator.ts - N/A (correctly does not use getClassData; uses getRaceData for racial bonuses)
+- ✓ ExtensionManager validates custom classes (ExtensionManager.ts:640-704)
+
+#### Phase 7: Tests & Documentation - ALL VERIFIED ✓
+
+**1. Test Files Exist** (Part 3)
+- ✓ tests/unit/skillPrerequisites.test.ts exists
+- ✓ tests/unit/spellPrerequisites.test.ts exists
+- ✓ tests/unit/customRaces.test.ts exists (29 tests)
+- ✓ tests/unit/subraces.test.ts exists (28 tests)
+- ✓ tests/integration/prerequisitesAndRaces.integration.test.ts exists (33 tests)
+
+**2. Test Files Exist** (Part 4)
+- ✓ tests/unit/customClasses.test.ts exists (44 tests)
+- ✓ tests/integration/customClasses.integration.test.ts exists (9 tests)
+
+**3. Documentation Updates**
+- ✓ DATA_ENGINE_REFERENCE.md has prerequisites section
+- ✓ DATA_ENGINE_REFERENCE.md has custom races section
+- ✓ DATA_ENGINE_REFERENCE.md has custom classes section
+- ✓ USAGE_IN_OTHER_PROJECTS.md has dragon-themed examples
+- ✓ USAGE_IN_OTHER_PROJECTS.md has Necromancer class example
+- ✓ docs/PREREQUISITES.md exists
+- ✓ docs/CUSTOM_CONTENT.md exists
+
+**4. Example Code**
+- ✓ Dragon-themed skill example compiles (fixed in previous investigation)
+- ✓ Custom race registration example compiles
+- ✓ Subrace-specific trait example compiles
+- ✓ Necromancer class example compiles
+
+### Conclusion
+
+**All documented items in MIGRATION_GUIDE.md are correctly implemented in the codebase.** The documentation accurately reflects the current state of the code, including:
+- All breaking changes from v1.x to v2.0.0+
+- All prerequisite systems for skills and spells
+- All custom race and subrace support
+- All template-based custom class system features
+- All helper functions and their signatures
+- All test coverage and documentation
+
+**No discrepancies found between MIGRATION_GUIDE.md and the actual codebase.**
 
 ---
 
