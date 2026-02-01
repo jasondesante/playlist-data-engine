@@ -885,8 +885,34 @@ This verification plan ensures documentation-code alignment by systematically ch
 **Objective**: Verify character generation building blocks
 
 ### Task 4.1: RaceSelector → src/core/generation/RaceSelector.ts
-- [ ] class exists and is exported
-- [ ] Methods for selecting character races
+- [x] class exists and is exported
+- [x] Methods for selecting character races
+
+**Task 4.1 Summary - COMPLETED**:
+- **VERIFIED**: `RaceSelector` class exists at src/core/generation/RaceSelector.ts:20
+  - Exported from src/index.ts at line 185
+  - All methods are static utility methods for race selection
+- **VERIFIED METHODS**:
+  - `select(rng: SeededRNG): Race` (line 61)
+    - Selects a random race deterministically from seeded RNG
+    - Selects from available races (default 9 D&D 5e races plus any custom races):
+      - Default: Dwarf, Elf, Halfling, Human, Dragonborn, Gnome, Half-Elf, Half-Orc, Tiefling
+      - Custom: Any races registered via ExtensionManager
+    - Uses weighted selection with spawn rate control
+    - Same seed always selects the same race
+    - Automatically ensures race defaults are initialized before selection
+- **VERIFIED**: Type `Race` exists at src/core/types/Character.ts:38
+  - Branded type for extensible Race names: `string & { readonly __RaceBrand: unique symbol }`
+  - Helper function `asRace(value: string): Race` exported at line 55
+  - Type guard `isValidRace(value: unknown): value is Race` exported at line 100
+  - Constant `DEFAULT_RACES: readonly Race[]` exported at line 83
+- **ADDITIONAL FINDINGS**:
+  - The class uses ExtensionManager to get registered races and weights
+  - Supports spawn modes: 'relative', 'absolute', 'default', 'replace'
+  - Integrates with WeightedSelector for actual selection
+  - Documentation includes comprehensive JSDoc with examples
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTE**: RaceSelector is listed in USAGE_IN_OTHER_PROJECTS.md but lacks detailed API documentation
 
 ### Task 4.2: ClassSuggester → src/core/generation/ClassSuggester.ts
 - [ ] class exists and is exported
@@ -1446,8 +1472,8 @@ For each item, verify:
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
-| 3 | Complete | 7 | ~60 | 2026-02-01 |
-| 4 | Not Started | 0 | ~40 | - |
+| 3 | Complete | 8 | ~60 | 2026-02-01 |
+| 4 | In Progress | 1 | ~40 | 2026-02-01 |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
 | 7 | Not Started | 0 | ~30 | - |
@@ -1455,4 +1481,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **17** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **19** | **~475** | 2026-02-01 |
