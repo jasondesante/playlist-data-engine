@@ -1085,14 +1085,25 @@ This verification plan ensures documentation-code alignment by systematically ch
   - `getKnownSpells` has an optional third parameter `character?: CharacterSheet` that was not documented
 
 ### Task 4.6: EquipmentGenerator → src/core/generation/EquipmentGenerator.ts
-- [ ] class exists and is exported
-- [ ] `initializeEquipment(className: Class): CharacterEquipment`
-- [ ] Returns CharacterEquipment with:
-  - [ ] `weapons: InventoryItem[]`
-  - [ ] `armor: InventoryItem[]`
-  - [ ] `items: InventoryItem[]`
-- [ ] Type `CharacterEquipment` exists
-- [ ] Type `InventoryItem` exists
+- [x] class exists and is exported
+- [x] `initializeEquipment(className: Class): CharacterEquipment`
+- [x] Returns CharacterEquipment with:
+  - [x] `weapons: InventoryItem[]`
+  - [x] `armor: InventoryItem[]`
+  - [x] `items: InventoryItem[]`
+- [x] Type `CharacterEquipment` exists
+- [x] Type `InventoryItem` exists
+
+- **VERIFIED**: Class `EquipmentGenerator` exists at src/core/generation/EquipmentGenerator.ts:43
+- **VERIFIED**: Exported from src/index.ts line 190
+- **VERIFIED**: Method `initializeEquipment` exists at line 136
+- **DISCREPANCY FOUND**: Parameter name is `characterClass` (not `className` as listed in task)
+- **VERIFIED**: Type `CharacterEquipment` exists at src/core/types/Equipment.ts:183-189, exported from src/index.ts:64
+- **VERIFIED**: Type `InventoryItem` exists at src/core/generation/EquipmentGenerator.ts:37-41, exported from src/index.ts:60
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTES**:
+  - Task documentation listed parameter as `className` but actual parameter is `characterClass`
+  - Actual return uses `EnhancedInventoryItem[]` which is compatible with `InventoryItem[]` for consumers
 
 ### Task 4.7: NamingEngine → src/core/generation/NamingEngine.ts
 - [ ] class exists and is exported
