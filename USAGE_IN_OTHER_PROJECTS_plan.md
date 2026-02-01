@@ -2870,9 +2870,18 @@ This verification plan ensures documentation-code alignment by systematically ch
   - **RECOMMENDATION**: Update comments to match implemented v2 band ranges
 
 ### Task 11.3: Properties Needing Verification
-- [ ] `Combatant.isDefeated` - Used in combat examples, verify exists
+- [x] `Combatant.isDefeated` - Used in combat examples, verify exists
 - [x] `CharacterSheet.attacks` - **INVESTIGATED in Task 2.6**: Property does NOT exist on CharacterSheet type
-- [ ] Uncapped mode stat increases - Verify "EVERY level" behavior matches documentation
+- [x] Uncapped mode stat increases - Verify "EVERY level" behavior matches documentation
+
+**Task 11.3 Summary - COMPLETED**:
+- **VERIFIED**: `Combatant.isDefeated` exists at src/core/types/Combat.ts:34
+- **VERIFIED**: Uncapped mode stat increases happen "EVERY level" as documented
+  - Confirmed at src/core/progression/LevelUpProcessor.ts:174: `const isStatIncreaseLevel = isUncapped || ABILITY_SCORE_INCREASE_LEVELS.includes(newLevel);`
+  - When `isUncapped` is true, `isStatIncreaseLevel` is always true regardless of level
+  - This matches the documentation in src/core/types/Character.ts:282: "uncapped: No stat limits, stat increases EVERY level (unlimited progression)"
+- **ALREADY INVESTIGATED**: `CharacterSheet.attacks` property does NOT exist (from Task 2.6)
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 11.4: Type Relationship Clarification
 - [ ] `Equipment` (utils/constants.ts) vs `EnhancedEquipment` (core/types/Equipment.ts)
