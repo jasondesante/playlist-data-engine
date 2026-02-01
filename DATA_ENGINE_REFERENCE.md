@@ -208,6 +208,8 @@ export interface FrequencyBands {
 
 ### Character Types
 
+**Location:** `src/core/types/Character.ts`
+
 ```typescript
 export type Race =
     | 'Human'

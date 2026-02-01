@@ -26,7 +26,7 @@ The following items are noted for awareness but should NOT be resolved:
 **Estimated Items**: 6 tasks
 
 ### Task 1.1: Character Types Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Character types documented at `src/types/CharacterTypes.ts` → actual location is `src/core/types/Character.ts`
+- [x] Update DATA_ENGINE_REFERENCE.md: Character types documented at `src/types/CharacterTypes.ts` → actual location is `src/core/types/Character.ts`
   - Types: Race, Class, Ability, Skill, ProficiencyLevel, GameMode, Attack, Spell, AbilityScores (9 types)
 
 ### Task 1.2: Character Interfaces Location (1 item)
