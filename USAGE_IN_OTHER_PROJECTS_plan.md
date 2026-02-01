@@ -1873,7 +1873,73 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 7.4: EquipmentValidator → src/core/equipment/EquipmentValidator.ts
-- [ ] class exists and is exported
+- [x] class exists and is exported
+
+**Task 7.4 Summary - COMPLETED**:
+- **VERIFIED**: `EquipmentValidator` class exists at src/core/equipment/EquipmentValidator.ts:102
+  - Exported from src/index.ts at line 262
+  - All methods are static utility methods for equipment validation
+- **VERIFIED METHODS**:
+  - `validateEquipment(equipment: any): EquipmentValidationResult` (line 113)
+    - Validates complete equipment objects (supports both legacy Equipment format and EnhancedEquipment format)
+    - Validates required fields: name, type, rarity, weight, source
+    - Validates properties array
+    - Validates grantsFeatures (feature references)
+    - Validates grantsSkills (skill references)
+    - Validates grantsSpells (spell grants)
+    - Validates damage info (supports both string and object format)
+    - Validates AC bonus (handles both legacy armor_class and enhanced acBonus)
+    - Validates weapon properties
+    - Validates spawn weight
+    - Validates template ID
+    - Validates tags
+  - `validateProperty(property: EquipmentProperty): EquipmentValidationResult` (line 266)
+    - Validates single equipment properties
+    - Validates property type, target, value
+    - Validates condition if present
+    - Validates stackable flag
+    - Validates description
+  - `validateCondition(condition: EquipmentCondition): EquipmentValidationResult` (line 420)
+    - Validates equipment conditions
+    - Supports condition types: vs_creature_type, at_time_of_day, wielder_race, wielder_class, while_equipped, on_hit, on_damage_taken, custom
+  - `validateFeatureReference(featureRef: string | EquipmentMiniFeature, index: number): EquipmentValidationResult` (line 487)
+    - Validates feature references (either string IDs or inline mini-features)
+    - Checks FeatureRegistry for string references
+    - Validates mini-feature structure for inline definitions
+  - `validateEquipmentFeatureReference(featureId: string): boolean` (line 555)
+    - Convenience method for checking if a feature ID exists in FeatureRegistry
+  - `validateSkillReference(skillId: string, index?: number): EquipmentValidationResult` (line 571)
+    - Validates skill references against SkillRegistry
+  - `validateEquipmentSkillReference(skillId: string): boolean` (line 604)
+    - Convenience method for checking if a skill ID exists in SkillRegistry
+  - `validateDamageInfo(damage: EnhancedEquipment['damage'] | string): EquipmentValidationResult` (line 618)
+    - Supports both string format (legacy "1d8 slashing") and object format (EnhancedEquipment)
+  - `validateSpawnWeight(weight: number): EquipmentValidationResult` (line 681)
+    - Validates spawn weights (must be non-negative, 0 means never random but still usable)
+  - `validateModification(modification: EquipmentModification): EquipmentValidationResult` (line 707)
+    - Validates equipment modifications (enchantments, curses, upgrades)
+  - `validateMiniFeature(miniFeature: EquipmentMiniFeature): EquipmentValidationResult` (line 799)
+    - Validates equipment mini-features (inline feature definitions)
+  - `validateACBonus(acBonus: number): EquipmentValidationResult` (line 843)
+    - Validates AC bonus value (must be non-negative finite number)
+  - `validateWeaponProperties(weaponProperties: string[]): EquipmentValidationResult` (line 866)
+    - Validates weapon properties array
+- **VERIFIED**: Type `EquipmentValidationResult` exists at src/core/types/Equipment.ts:218
+  - Has properties: `valid: boolean`, `errors?: string[]`
+  - Exported from src/index.ts at line 75
+- **VALIDATION CONSTANTS** defined in class:
+  - `VALID_ABILITIES`: All D&D 5e abilities
+  - `VALID_EQUIPMENT_TYPES`: weapon, armor, item
+  - `VALID_RARITY`: common, uncommon, rare, very_rare, legendary
+  - `VALID_PROPERTY_TYPES`: stat_bonus, skill_proficiency, ability_unlock, passive_modifier, special_property, damage_bonus, stat_requirement
+  - `VALID_CONDITION_TYPES`: vs_creature_type, at_time_of_day, wielder_race, wielder_class, while_equipped, on_hit, on_damage_taken, custom
+  - `VALID_TIME_OF_DAY`: day, night, dawn, dusk
+  - `VALID_PROFICIENCY_LEVEL`: proficient, expertise
+  - `VALID_SOURCE`: default, custom
+  - `DICE_FORMAT_REGEX`: /^\d+d\d+$/ (e.g., "1d8", "2d6")
+  - `RANGE_FORMAT_REGEX`: /^range_\d+_\d+$/ (e.g., "range_20_60")
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTE**: EquipmentValidator is listed in USAGE_IN_OTHER_PROJECTS.md but lacks detailed API documentation
 
 ### Task 7.5: Equipment Types → src/core/types/Equipment.ts
 - [ ] `EnhancedEquipment`
