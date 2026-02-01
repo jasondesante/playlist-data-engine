@@ -1719,16 +1719,33 @@ This verification plan ensures documentation-code alignment by systematically ch
   3. Consider if `DiceFormula` type should be extracted and exported for public use
 
 ### Task 6.6: Combat Types → src/core/types/Combat.ts
-- [ ] `StatusEffect`
-- [ ] `CombatAction`
-- [ ] `CombatActionResult`
-- [ ] `AttackRoll`
-- [ ] `DamageRoll`
-- [ ] `SpellCastResult`
-- [ ] `CombatInstance`
-- [ ] `DamageType`
-- [ ] `SavingThrowAbility`
-- [ ] `CombatConfig`
+- [x] `StatusEffect`
+- [x] `CombatAction`
+- [x] `CombatActionResult`
+- [x] `AttackRoll`
+- [x] `DamageRoll`
+- [x] `SpellCastResult`
+- [x] `CombatInstance`
+- [x] `DamageType`
+- [x] `SavingThrowAbility`
+- [x] `CombatConfig`
+
+**Task 6.6 Summary - COMPLETED**:
+- **VERIFIED**: All combat types exist at src/core/types/Combat.ts and are properly exported from src/index.ts at lines 81-94
+- **VERIFIED**: `StatusEffect` exists at src/core/types/Combat.ts:12 with properties: name, description, duration, source?, hasConcentration?
+- **VERIFIED**: `CombatAction` exists at src/core/types/Combat.ts:46 with properties: type, actor, target?, targets?, attack?, spell?, result?
+- **VERIFIED**: `CombatActionResult` exists at src/core/types/Combat.ts:59 with properties: success, roll?, isCritical?, damage?, damageType?, targetHP?, description
+- **VERIFIED**: `AttackRoll` exists at src/core/types/Combat.ts:72 with properties: d20Roll, attackBonus, totalRoll, targetAC, hit, isCritical, isMiss
+- **VERIFIED**: `DamageRoll` exists at src/core/types/Combat.ts:85 with properties: diceFormula, rolls, modifier?, total, isCritical
+- **VERIFIED**: `SpellCastResult` exists at src/core/types/Combat.ts:96 with properties: success, spellName, caster, targets, saveDC?, damage?, effectsApplied, spellSlotUsed, description
+- **VERIFIED**: `CombatInstance` exists at src/core/types/Combat.ts:111 with properties: id, combatants, currentTurnIndex, roundNumber, environment?, history, isActive, winner?, startTime, lastUpdated
+- **VERIFIED**: `DamageType` exists at src/core/types/Combat.ts:143 as a union type: 'slashing' | 'piercing' | 'bludgeoning' | 'fire' | 'cold' | 'lightning' | 'thunder' | 'poison' | 'acid' | 'necrotic' | 'radiant' | 'psychic' | 'force'
+- **VERIFIED**: `SavingThrowAbility` exists at src/core/types/Combat.ts:151 as a union type: 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma'
+- **VERIFIED**: `CombatConfig` exists at src/core/types/Combat.ts:156 with properties: useEnvironment?, useMusic?, tacticalMode?, maxTurnsBeforeDraw?, allowFleeing?
+- **ADDITIONAL TYPES FOUND** (not in original task list but properly exported):
+  - `Combatant` - at line 23, exported from src/index.ts
+  - `CombatResult` - at line 127, exported from src/index.ts
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ---
 
