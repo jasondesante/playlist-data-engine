@@ -1833,13 +1833,44 @@ This verification plan ensures documentation-code alignment by systematically ch
   - Line 290:9 - 'instanceId' is defined but never used
 
 ### Task 7.3: EquipmentSpawnHelper → src/core/equipment/EquipmentSpawnHelper.ts
-- [ ] class exists and is exported
-- [ ] `spawnFromList(items: string[], rng?: SeededRNG): EnhancedEquipment[]`
-- [ ] `spawnByRarity(rarity: string, count: number, rng: SeededRNG): EnhancedEquipment[]`
-- [ ] `spawnRandom(count: number, rng: SeededRNG, options?: SpawnRandomOptions): EnhancedEquipment[]`
-- [ ] `addToCharacter(character: CharacterSheet, items: EnhancedEquipment[], autoEquip: boolean): CharacterSheet`
-- [ ] Type `SpawnRandomOptions` exists
-- [ ] Type `TreasureHoardResult` exists
+- [x] class exists and is exported
+- [x] `spawnFromList(items: string[], rng?: SeededRNG): EnhancedEquipment[]`
+- [x] `spawnByRarity(rarity: string, count: number, rng: SeededRNG): EnhancedEquipment[]`
+- [x] `spawnRandom(count: number, rng: SeededRNG, options?: SpawnRandomOptions): EnhancedEquipment[]`
+- [x] `addToCharacter(character: CharacterSheet, items: EnhancedEquipment[], autoEquip: boolean): CharacterSheet`
+- [x] Type `SpawnRandomOptions` exists
+- [x] Type `TreasureHoardResult` exists
+
+**Task 7.3 Summary - COMPLETED**:
+- **VERIFIED**: `EquipmentSpawnHelper` class exists at src/core/equipment/EquipmentSpawnHelper.ts:57
+  - Exported from src/index.ts at line 263
+  - All methods are static helper methods for batch equipment spawning
+- **VERIFIED**: `spawnFromList(items: string[], rng?: SeededRNG): (EnhancedEquipment | undefined)[]` exists at line 74
+  - **MINOR DISCREPANCY**: Task shows return type as `EnhancedEquipment[]` but actual return type is `(EnhancedEquipment | undefined)[]` (undefined for missing items)
+  - Returns array of spawned equipment (undefined for missing items)
+  - Shuffles items deterministically if RNG is provided
+- **VERIFIED**: `spawnByRarity(rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary', count: number, rng?: SeededRNG): EnhancedEquipment[]` exists at line 111
+  - **MINOR NOTE**: Task shows `rarity: string` but actual type is a union of literal types (more specific)
+  - Returns up to count items of specified rarity
+  - Excludes items with spawnWeight: 0
+- **VERIFIED**: `spawnRandom(count: number, rng: SeededRNG, options?: SpawnRandomOptions): EnhancedEquipment[]` exists at line 266
+  - Uses weighted random selection respecting spawnWeight property
+  - Supports filtering by type, rarity, and zero-weight exclusion
+- **VERIFIED**: `addToCharacter(character: CharacterSheet, items: EnhancedEquipment[], equip: boolean = false): CharacterSheet` exists at line 487
+  - **MINOR NOTE**: Task parameter name is `autoEquip` but actual parameter name is `equip` (same functionality)
+  - Adds items to appropriate inventory section (weapons/armor/items)
+  - Updates totalWeight and equippedWeight
+- **VERIFIED**: Type `SpawnRandomOptions` exists at src/core/types/Equipment.ts:253
+  - Exported from src/index.ts at line 76
+  - Has properties: excludeZeroWeight?, includeTypes?, minRarity?, maxRarity?
+- **VERIFIED**: Type `TreasureHoardResult` exists at src/core/types/Equipment.ts:267
+  - Exported from src/index.ts at line 77
+  - Has properties: items, totalValue, cr
+- **ADDITIONAL METHODS FOUND** (not in task description but part of public API):
+  - `spawnByTags(tags: string[], count: number, rng?: SeededRNG, options?: SpawnRandomOptions): EnhancedEquipment[]` (line 171)
+  - `spawnFromTemplate(templateId: string, baseItemName?: string): EnhancedEquipment | null` (line 355)
+  - `spawnTreasureHoard(cr: number, rng: SeededRNG): TreasureHoardResult` (line 433)
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 7.4: EquipmentValidator → src/core/equipment/EquipmentValidator.ts
 - [ ] class exists and is exported
