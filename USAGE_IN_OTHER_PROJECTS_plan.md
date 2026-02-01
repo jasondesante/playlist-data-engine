@@ -2781,9 +2781,21 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 10.9: Spell Types → src/core/spells/
-- [ ] `RegisteredSpell` → SpellRegistry.ts
-- [ ] `SpellSchool` → SpellRegistry.ts
-- [ ] `ValidationResult as SpellValidationResult` → SpellRegistry.ts
+- [x] `RegisteredSpell` → SpellRegistry.ts
+- [x] `SpellSchool` → SpellRegistry.ts
+- [x] `ValidationResult as SpellValidationResult` → SpellRegistry.ts
+
+**Task 10.9 Summary - COMPLETED**:
+- **VERIFIED**: All 3 spell types exist at src/core/spells/SpellRegistry.ts
+- **VERIFIED TYPES**:
+  - `SpellSchool` type (line 19) - Valid D&D 5e spell schools (8 schools: Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation)
+  - `RegisteredSpell` interface (line 32) - Extended Spell interface with optional registry fields (id, classes, source)
+  - `ValidationResult` interface (line 44) - Validation result with warnings support (valid, errors, warnings)
+- **EXPORTS**: All types properly exported from src/index.ts at lines 139-140
+- **ADDITIONAL FINDINGS**:
+  - Also exported from src/core/spells/index.ts at line 16
+  - All types have comprehensive JSDoc comments
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 10.10: Extensibility Types → src/core/extensions/
 - [ ] `ExtensionOptions` → ExtensionManager.ts
