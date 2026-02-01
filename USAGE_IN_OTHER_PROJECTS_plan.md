@@ -958,8 +958,49 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **DOCUMENTATION NOTE**: ClassSuggester is listed in USAGE_IN_OTHER_PROJECTS.md line 1503 with brief description "Suggest classes based on audio" but lacks detailed API documentation
 
 ### Task 4.3: AbilityScoreCalculator → src/core/generation/AbilityScoreCalculator.ts
-- [ ] class exists and is exported
-- [ ] Methods for calculating ability scores
+- [x] class exists and is exported
+- [x] Methods for calculating ability scores
+
+**Task 4.3 Summary - COMPLETED**:
+- **VERIFIED**: `AbilityScoreCalculator` class exists at src/core/generation/AbilityScoreCalculator.ts:21
+  - Exported from src/index.ts at line 187
+  - All methods are static utility methods for ability score calculation
+- **VERIFIED METHODS**:
+  - `calculateBaseScores(audioProfile: AudioProfile): AbilityScores` (line 40)
+    - Calculates base ability scores (8-15 range) from audio profile frequencies
+    - Maps audio characteristics to six D&D 5e ability scores:
+      - High bass → High Strength (STR)
+      - High treble → High Dexterity (DEX)
+      - High amplitude → High Constitution (CON)
+      - High mid-range → High Intelligence (INT)
+      - Balanced (bass ≈ treble) → High Wisdom (WIS)
+      - Combined mid + amplitude → High Charisma (CHA)
+    - Formula: `8 + (dominance × 7)` for each ability
+  - `applyRacialBonuses(baseScores: AbilityScores, race: string): AbilityScores` (line 76)
+    - Applies racial ability bonuses to base scores
+    - Supports both default D&D 5e races and custom races registered via ExtensionManager
+    - Uses `getRaceData()` from utils/constants.ts to retrieve racial bonuses
+    - Caps all abilities at 20 (D&D 5e standard maximum)
+    - Returns warning to console for unknown races
+  - `calculateModifiers(scores: AbilityScores): AbilityScores` (line 113)
+    - Calculates ability modifiers from ability scores
+    - Uses D&D 5e formula: `floor((score - 10) / 2)`
+    - Returns modifiers used for d20 rolls and damage calculations
+- **VERIFIED**: Type `AbilityScores` exists at src/core/types/Character.ts:320 with properties:
+  - `STR: number` - Strength score
+  - `DEX: number` - Dexterity score
+  - `CON: number` - Constitution score
+  - `INT: number` - Intelligence score
+  - `WIS: number` - Wisdom score
+  - `CHA: number` - Charisma score
+  - Aliases for compatibility: `dexterity`, `strength`, `constitution`, `intelligence`, `wisdom`, `charisma`
+- **VERIFIED**: Type `AudioProfile` exists at src/core/types/AudioProfile.ts:5 with properties:
+  - `bass_dominance: number`
+  - `mid_dominance: number`
+  - `treble_dominance: number`
+  - `average_amplitude: number`
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTE**: AbilityScoreCalculator is listed in USAGE_IN_OTHER_PROJECTS.md but lacks detailed API documentation
 
 ### Task 4.4: SkillAssigner → src/core/generation/SkillAssigner.ts
 - [ ] class exists and is exported
@@ -1512,7 +1553,7 @@ For each item, verify:
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
 | 3 | Complete | 8 | ~60 | 2026-02-01 |
-| 4 | In Progress | 2 | ~40 | 2026-02-01 |
+| 4 | In Progress | 3 | ~40 | 2026-02-01 |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
 | 7 | Not Started | 0 | ~30 | - |
@@ -1520,4 +1561,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **20** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **21** | **~475** | 2026-02-01 |
