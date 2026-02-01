@@ -1457,9 +1457,11 @@ Maps audio profile to ability scores (STR, DEX, CON, INT, WIS, CHA).
 
 Assigns skill proficiencies based on class.
 
-- `static assignSkills(characterClass: Class, rng: SeededRNG): Record<Skill, ProficiencyLevel>`
+- `static assignSkills(characterClass: Class, rng: SeededRNG, character?: CharacterSheet): Record<string, ProficiencyLevel>`
     - Selects random skills from the class's available list.
     - Handles "Expertise" for Bards and Rogues.
+    - Supports custom skills via SkillRegistry (return type uses `string` instead of `Skill`).
+    - Optional `character` parameter enables prerequisite validation for custom skills.
 
 #### Helper: `SpellManager`
 

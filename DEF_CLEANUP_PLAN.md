@@ -90,7 +90,7 @@ The following items are noted for awareness but should NOT be resolved:
 - [x] Update DATA_ENGINE_REFERENCE.md: Add missing `extensions?: CharacterGeneratorExtensions` property to CharacterGeneratorOptions (exists in code at `src/core/generation/CharacterGenerator.ts:80-119`)
 
 ### Task 3.2: SkillAssigner.assignSkills Signature (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: `assignSkills(characterClass, rng): Record<Skill, ProficiencyLevel>` → actual signature is `assignSkills(characterClass, rng, character?): Record<string, ProficiencyLevel>` (at `src/core/generation/SkillAssigner.ts:38-42`). Return type uses `string` to support custom skills; third parameter enables prerequisite validation.
+- [x] Update DATA_ENGINE_REFERENCE.md: `assignSkills(characterClass, rng): Record<Skill, ProficiencyLevel>` → actual signature is `assignSkills(characterClass, rng, character?): Record<string, ProficiencyLevel>` (at `src/core/generation/SkillAssigner.ts:38-42`). Return type uses `string` to support custom skills; third parameter enables prerequisite validation.
 
 ### Task 3.3: SpellManager.getKnownSpells Signature (1 item)
 - [ ] Update DATA_ENGINE_REFERENCE.md: `getKnownSpells(characterClass, characterLevel): string[]` → actual signature is `getKnownSpells(characterClass, characterLevel, character?: CharacterSheet): string[]` (at `src/core/generation/SpellManager.ts:140-221`)
