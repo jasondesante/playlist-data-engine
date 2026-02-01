@@ -46,7 +46,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase 3 | Spell Prerequisites | 10 tasks | `██████████` 100% |
 | Phase 4 | Custom Race Support | 9 items | `██████████` 100% |
 | Phase 5 | Subrace Support | 12 tasks | `██████████` 100% |
-| Phase 6 | Template-Based Classes | 22 tasks | `███░░░░░░░` 14% |
+| Phase 6 | Template-Based Classes | 22 tasks | `████░░░░░░` 18% |
 | Phase 7 | Tests & Documentation | 11 tasks | `░░░░░░░░░░` 0% |
 
 ---
@@ -224,11 +224,17 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 3. This allows the interface to work for both use cases
 
 ## Task 6.4: Verify Helper Functions
-- [ ] `getClassData(className: string)` exists → line 491
-- [ ] `getClassDataAsync(className: string)` exists → line 395
-- [ ] `getClassSpellList(className: string)` exists → line 1425
-- [ ] `getSpellSlotsForClass(className: string, level: number)` exists → line 1485
-- [ ] `getClassStartingEquipment(className: string)` exists → line 1551
+- [x] `getClassData(className: string)` exists → line 516 (documented as 491, offset by +25)
+- [x] `getClassDataAsync(className: string)` exists → line 420 (documented as 395, offset by +25)
+- [x] `getClassSpellList(className: string)` exists → line 1389 (documented as 1425, offset by -36)
+- [x] `getSpellSlotsForClass(className: string, level: number)` exists → line 1449 (documented as 1485, offset by -36)
+- [x] `getClassStartingEquipment(className: string)` exists → line 1515 (documented as 1551, offset by -36)
+
+**FINDING**: All five helper functions exist and are properly exported. The documented line numbers are outdated but all functions have:
+- Correct signatures matching the documentation
+- Comprehensive JSDoc comments with usage examples
+- Proper logic to check both default data and ExtensionManager
+- Template-based class merge support (baseClass property handling)
 
 ## Task 6.5: Verify Merge Logic Implementation
 - [ ] getClassData performs shallow merge with baseClass
