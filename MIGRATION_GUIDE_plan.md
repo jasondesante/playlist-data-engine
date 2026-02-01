@@ -45,7 +45,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase 2 | Skill Prerequisites | 12 tasks | `██████████` 100% |
 | Phase 3 | Spell Prerequisites | 10 tasks | `██████████` 100% |
 | Phase 4 | Custom Race Support | 9 items | `██████████` 100% |
-| Phase 5 | Subrace Support | 12 tasks | `█░░░░░░░░░` 8% |
+| Phase 5 | Subrace Support | 12 tasks | `█░░░░░░░░░` 17% |
 | Phase 6 | Template-Based Classes | 22 tasks | `░░░░░░░░░░` 0% |
 | Phase 7 | Tests & Documentation | 11 tasks | `░░░░░░░░░░` 0% |
 
@@ -162,12 +162,12 @@ File: [src/core/types/Character.ts](src/core/types/Character.ts)
 
 ## Task 5.2: Verify FeaturePrerequisite Updates
 File: [src/core/features/FeatureTypes.ts](src/core/features/FeatureTypes.ts)
-- [ ] Property `subrace?: string` exists
-- [ ] Property has comment "Specific subrace required (e.g., 'High Elf', 'Hill Dwarf')"
-- [ ] Property `skills?: string[]` exists
-- [ ] Property has comment "Skills that must be proficient first (by skill ID)"
-- [ ] Property `spells?: string[]` exists
-- [ ] Property has comment "Spells that must be known first (by spell name)"
+- [x] Property `subrace?: string` exists → line 85
+- [x] Property has comment "Specific subrace required (e.g., 'High Elf', 'Hill Dwarf')" → line 84
+- [x] Property `skills?: string[]` exists → line 88
+- [x] Property has comment "Skills that must be proficient first (by skill ID)" → line 87
+- [x] Property `spells?: string[]` exists → line 91
+- [x] Property has comment "Spells that must be known first (by spell name)" → line 90
 
 ## Task 5.3: Verify Integration Points
 - [ ] FeatureRegistry.validatePrerequisites() checks subrace
