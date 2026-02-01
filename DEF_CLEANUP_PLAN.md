@@ -78,7 +78,7 @@ The following items are noted for awareness but should NOT be resolved:
 - [x] Update DATA_ENGINE_REFERENCE.md: Add missing `properties?: string[]` property to Attack interface (exists in code at `src/core/types/Character.ts:195`)
 
 ### Task 2.3: CharacterSheet Interface Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: CharacterSheet properties documented as `abilities` and `modifiers` → actual code uses `ability_scores` and `ability_modifiers` (at `src/core/types/Character.ts:246-249`)
+- [x] Update DATA_ENGINE_REFERENCE.md: CharacterSheet properties documented as `abilities` and `modifiers` → actual code uses `ability_scores` and `ability_modifiers` (at `src/core/types/Character.ts:246-249`)
 
 ---
 

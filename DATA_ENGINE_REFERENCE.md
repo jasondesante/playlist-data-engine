@@ -1324,8 +1324,8 @@ interface CharacterSheet {
     subrace?: string;
     class: Class;
     level: number;
-    abilities: AbilityScores;
-    modifiers: AbilityScores;
+    ability_scores: AbilityScores;
+    ability_modifiers: AbilityScores;
     skills: Record<Skill, ProficiencyLevel>;
     spells?: SpellSlots;
     equipment: CharacterEquipment;
