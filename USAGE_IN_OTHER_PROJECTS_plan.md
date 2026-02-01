@@ -1161,9 +1161,21 @@ This verification plan ensures documentation-code alignment by systematically ch
 **Objective**: Verify XP, leveling, and stat management APIs
 
 ### Task 5.1: XPCalculator → src/core/progression/XPCalculator.ts
-- [ ] class exists and is exported
-- [ ] `calculateSessionXP(session: ListeningSession, track: PlaylistTrack): number`
-- [ ] Type `ListeningSession` exists
+- [x] class exists and is exported
+- [x] `calculateSessionXP(session: ListeningSession, track: PlaylistTrack): number`
+- [x] Type `ListeningSession` exists
+
+**Task 5.1 Summary - COMPLETED**:
+- **VERIFIED**: `XPCalculator` class exists at src/core/progression/XPCalculator.ts:54
+  - Exported from src/index.ts at line 208
+- **VERIFIED**: `calculateSessionXP(session: ListeningSession, track?: PlaylistTrack): number` method exists at line 83
+  - **MINOR DISCREPANCY**: The `track` parameter is **optional** (`track?: PlaylistTrack`) in the implementation, but the documentation in USAGE_IN_OTHER_PROJECTS.md shows it as required
+  - The method accepts optional track parameter and only uses it for track completion bonus (95%+ listened)
+- **VERIFIED**: Type `ListeningSession` exists at src/core/types/Progression.ts:60
+  - Exported from src/index.ts at line 44
+  - Has properties: `track_uuid`, `start_time`, `end_time`, `duration_seconds`, `base_xp_earned`, `bonus_xp`, `environmental_context`, `gaming_context`, `activity_type`, `total_xp_earned`
+- **VERIFIED**: Type `PlaylistTrack` exists and is exported from src/index.ts at line 13
+- **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 5.2: SessionTracker → src/core/progression/SessionTracker.ts
 - [ ] class exists and is exported
