@@ -1617,7 +1617,58 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **DOCUMENTATION NOTE**: AttackResolver is listed in USAGE_IN_OTHER_PROJECTS.md line 1523 but lacks detailed API documentation
 
 ### Task 6.4: SpellCaster → src/core/combat/SpellCaster.ts
-- [ ] class exists and is exported
+- [x] class exists and is exported
+
+**Task 6.4 Summary - COMPLETED**:
+- **VERIFIED**: `SpellCaster` class exists at src/core/combat/SpellCaster.ts:13
+  - Exported from src/index.ts at line 254
+  - All methods are instance methods (not static)
+- **VERIFIED METHODS**:
+  - `castSpell(caster: Combatant, spell: Spell, targets: Combatant[]): SpellCastResult` (line 22)
+    - Main spell casting method following D&D 5e rules
+    - Handles spell slot consumption
+    - Supports attack roll spells and saving throw spells
+    - Applies damage and status effects
+    - Returns SpellCastResult with success status, damage, effects, and description
+  - `hasSpellSlot(caster: Combatant, spellLevel: number): boolean` (line 122)
+    - Checks if caster has available spell slot of given level
+    - Cantrips (level 0) always return true
+  - `consumeSpellSlot(caster: Combatant, spellLevel: number): void` (line 137)
+    - Decrements the spell slot counter
+    - Cantrips (level 0) don't consume slots
+  - `restoreSpellSlots(caster: Combatant): void` (line 157)
+    - Restores all spell slots to maximum based on character level
+    - Uses D&D 5e spell slot progression table
+  - `calculateSaveDC(caster: Combatant, ability: string): number` (line 195)
+    - Calculates spell save DC: 8 + ability modifier + proficiency bonus
+  - `makeSavingThrow(target: Combatant, saveAbility: string, saveDC: number): boolean` (line 207)
+    - Makes a saving throw against a spell DC
+    - Returns true if save succeeds, false if fails
+    - Accounts for proficiency in saving throws
+  - `getSpellSlotInfo(caster: Combatant): string` (line 226)
+    - Returns formatted string of available spell slots
+  - `canUpcast(caster: Combatant, spell: Spell, targetSlotLevel: number): boolean` (line 246)
+    - Checks if spell can be cast using higher-level slot
+  - `upcastSpell(caster: Combatant, spell: Spell, targets: Combatant[], slotLevelUsed: number): SpellCastResult` (line 258)
+    - Casts a spell using a higher-level spell slot
+- **VERIFIED**: Type `SpellCastResult` exists at src/core/types/Combat.ts:93 with properties:
+  - `success: boolean` - Whether the spell was cast successfully
+  - `spellName: string` - Name of the spell cast
+  - `caster: Combatant` - The spell caster
+  - `targets: Combatant[]` - Target combatants
+  - `saveDC?: number` - Save DC if applicable
+  - `damage?: any` - Damage dealt
+  - `effectsApplied: StatusEffect[]` - Status effects applied
+  - `spellSlotUsed: number` - Spell slot level consumed
+  - `description: string` - Human-readable result description
+- **VERIFIED**: Type `StatusEffect` exists at src/core/types/Combat.ts:62 with properties:
+  - `name: string` - Effect name
+  - `description?: string` - Effect description
+  - `duration?: number` - Duration in rounds
+  - `source?: string` - Source of effect
+  - `hasConcentration?: boolean` - Requires concentration
+- **BUILD STATUS**: Clean - no compilation errors
+- **DOCUMENTATION NOTE**: SpellCaster is listed in USAGE_IN_OTHER_PROJECTS.md line 1541 with brief description "Cast spells in combat" but lacks detailed API documentation
 
 ### Task 6.5: DiceRoller → src/core/combat/DiceRoller.ts
 - [ ] `rollDie(sides: number): number`
