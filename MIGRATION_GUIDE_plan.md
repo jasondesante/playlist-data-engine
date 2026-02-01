@@ -359,7 +359,7 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 - [x] **SpellPrerequisite.class type**: Uses `Class` branded type instead of `string` (better type safety)
 - [x] **SpellPrerequisite.race property**: Code has `race?: string` property not documented in the plan
 - [x] **Test suite issues** (2026-02-01): Fixed genre count mismatch in classSuggester.integration.test.ts and adjusted statistical assertions for seeded RNG behavior
-- [ ] _Document any additional items found in code but not documented_
+- [x] _Document any additional items found in code but not documented_ ✓ **COMPLETED (2026-02-01)**
 - [ ] _Document any items documented but not found in code_
 - [ ] _Document any signature/type mismatches_
 
@@ -396,6 +396,190 @@ The slight duplication in interface definitions is **intentional design**, not r
 - Type-level separation for domain-specific type safety
 - Runtime validation consolidation via `PrerequisiteValidator`
 - Optimal balance between type safety and code reuse
+
+---
+
+## Investigation Results: Additional Items Found in Code But Not Documented (Completed 2026-02-01)
+
+**Task:** Document any significant features, interfaces, types, or functions that exist in the code but are not documented in MIGRATION_GUIDE.md.
+
+### Key Finding: MIGRATION_GUIDE.md Scope Clarification
+
+The MIGRATION_GUIDE.md is specifically about **breaking changes and new extensibility features introduced in v2.0.0+**. It is NOT a comprehensive API reference. Many core features documented below are part of the original v1.x feature set and do not need to be in the migration guide.
+
+However, the following significant features are part of the public API and may warrant additional documentation:
+
+### 1. Full Combat System (Public API)
+
+**Files:** `src/core/combat/`
+**Public Exports from src/index.ts:**
+- `CombatEngine` - Main orchestrator for combat encounters
+- `InitiativeRoller` - Initiative rolling with advantage/disadvantage
+- `AttackResolver` - Attack rolls with critical hits and damage calculations
+- `SpellCaster` - Spell casting with spell slots and saving throws
+- Dice utilities: `rollDie`, `rollD20`, `rollWithAdvantage`, `rollWithDisadvantage`, `rollInitiative`, `isCriticalHit`, `isCriticalMiss`, `calculateDamage`, `rollSavingThrow`, `rollAbilityCheck`, `rollPercentile`
+
+**Types exported:**
+- `CombatInstance`, `Combatant`, `CombatAction`, `CombatActionResult`, `AttackRoll`, `DamageRoll`, `SpellCastResult`, `StatusEffect`, `DamageType`, `SavingThrowAbility`, `CombatConfig`, `InitiativeResult`, `AttackResult`
+
+**Status:** Core v1.x feature, not covered in migration guide (appropriate)
+
+### 2. Environmental Sensor System (Public API)
+
+**Files:** `src/core/sensors/`
+**Public Exports:**
+- `EnvironmentalSensors` - Orchestrates all environmental sensors (GPS, weather, light, motion)
+- `GamingPlatformSensors` - Detects Steam gaming activity and Discord music presence
+
+**Configuration:**
+- `SensorConfig`, `loadConfigFromEnv`, `mergeConfig`, `DEFAULT_SENSOR_CONFIG`
+- Sub-configs: `CacheConfig`, `GeolocationSensorConfig`, `WeatherSensorConfig`, `GamingSensorConfig`, `XPModifierConfig`, `RetryConfig`
+
+**Diagnostics:**
+- `SensorDashboard`, `displayEnvironmentalDiagnostics`, `displayGamingDiagnostics`, `displaySystemDashboard`
+
+**Types:** Full set of environmental types including `BiomeType`, `SensorStatus`, `SensorHealthStatus`, `PerformanceMetrics`, etc.
+
+**Status:** Core v1.x feature, not covered in migration guide (appropriate)
+
+### 3. Advanced Equipment System (Public API)
+
+**Files:** `src/core/equipment/`
+**Public Exports:**
+- `EquipmentModifier` - Enchants/curses/upgrades equipment
+- `EquipmentEffectApplier` - Applies/removes equipment effects
+- `EquipmentValidator` - Validates equipment extensions
+- `EquipmentSpawnHelper` - Controls spawn rates and treasure generation
+
+**Magic Items Library:**
+- `MAGIC_ITEM_EXAMPLES`, `MAGIC_EQUIPMENT_TEMPLATES`
+- Lookup functions: `getMagicItem`, `getMagicItemsByType`, `getMagicItemsByRarity`, `getCursedItems`, `getItemsWithProperty`
+
+**Enchantment Library:**
+- `WEAPON_ENCHANTMENTS`, `ARMOR_ENCHANTMENTS`, `RESISTANCE_ENCHANTMENTS`, `CURSES`
+- Enchantment helpers: `getEnchantment`, `getCurse`, `getAllEnchantments`, `createStrengthEnchantment`, etc.
+
+**Types:** `EnhancedEquipment`, `EquipmentProperty`, `EquipmentModification`, `EquipmentCondition`, `EnhancedInventoryItem`, `EquipmentFeature`, `EquipmentSkill`, `EquipmentSpell`, `TreasureHoardResult`
+
+**Status:** Partially documented in migration guide (ammunition format change), but full equipment system is a v1.x feature
+
+### 4. Character Progression System (Public API)
+
+**Files:** `src/core/progression/`
+**Public Exports:**
+- `CharacterUpdater` - Orchestrates character updates from any XP source
+- `XPCalculator` - Calculates XP with modifiers
+- `SessionTracker` - Tracks listening sessions
+- `LevelUpProcessor` - Handles D&D 5e level-up mechanics
+- `MasterySystem` - Track mastery for bonus XP
+
+**Stat Increase System:**
+- `StatManager` - Manages stat increases and caps
+- Strategies: `DnD5eStandardStrategy`, `DnD5eSmartStrategy`, `BalancedStrategy`, `PrimaryOnlyStrategy`, `RandomStrategy`, `ManualStrategy`, `createStatIncreaseStrategy`
+
+**Types:** Full set of progression types including `LevelUpDetail`, `CharacterUpdateResult`, `StatIncreaseStrategy`, `StatIncreaseOptions`, `LevelUpBenefits`, `UncappedProgressionConfig`
+
+**Status:** Core v1.x feature, not covered in migration guide (appropriate)
+
+### 5. Feature Effects System (Public API)
+
+**Files:** `src/core/features/`
+**Public Exports:**
+- `FeatureRegistry`, `getFeatureRegistry` - Manages class features and racial traits
+- `FeatureEffectApplier` - Applies feature effects to characters
+- `FeatureValidator` - Validates class features and racial traits
+- `DEFAULT_CLASS_FEATURES`, `DEFAULT_RACIAL_TRAITS`
+
+**Feature Effects Migration (Partially documented in migration guide):**
+- The migration guide mentions that `feature_effects` was added to `CharacterSheet`
+- But the full `FeatureEffectApplier` API and effect type system is not covered
+
+**Status:** Breaking change (feature_effects property) is documented, but full FeatureEffectApplier API is v1.x
+
+### 6. Validation Systems (Public API)
+
+**Public Exports:**
+- `SkillValidator` - Validates skill definitions and prerequisites
+- `SpellValidator` - Validates spell definitions and prerequisites
+- `FeatureValidator` - Validates class features and racial traits
+- `EquipmentValidator` - Validates equipment definitions
+- Type guards: `asClass`, `isValidClass`
+
+**Validation Result Type:** `ValidationResult` is exported and used across all validators
+
+**Status:** Prerequisite validation is documented in migration guide, but full validator APIs are v1.x
+
+### 7. Configuration System (Public API)
+
+**Files:** `src/core/config/`
+**Public Exports:**
+- Sensor config: `loadConfigFromEnv`, `mergeConfig`, `DEFAULT_SENSOR_CONFIG`
+- Progression config: `DEFAULT_PROGRESSION_CONFIG`, `mergeProgressionConfig`
+
+**Status:** Core v1.x feature, not covered in migration guide (appropriate)
+
+### 8. Audio Analysis System (Public API)
+
+**Public Exports:**
+- `AudioAnalyzer` - Analyzes audio for character generation
+- `SpectrumScanner` - Frequency band analysis
+- `ColorExtractor` - Extracts colors from album artwork
+
+**Types:** `AudioProfile`, `ColorPalette`, `FrequencyBands`
+
+**Status:** Core v1.x feature, not covered in migration guide (appropriate)
+
+### 9. Seeded RNG System (Public API)
+
+**Public Exports:**
+- `SeededRNG` - Deterministic random number generation
+- Hash utilities: `generateSeed`, `hashSeedToFloat`, `hashSeedToInt`, `deriveSeed`
+
+**Status:** Core v1.x feature, not covered in migration guide (appropriate)
+
+### 10. Extensibility Initialization Helpers (Public API)
+
+**Public Exports from `src/core/extensions/index.js`:**
+- `initializeAppearanceDefaults`, `areAppearanceDefaultsInitialized`, `ensureAppearanceDefaultsInitialized`
+- `initializeSpellDefaults`, `areSpellDefaultsInitialized`, `ensureSpellDefaultsInitialized`
+- `initializeEquipmentDefaults`, `areEquipmentDefaultsInitialized`, `ensureEquipmentDefaultsInitialized`
+- `initializeRaceDefaults`, `areRaceDefaultsInitialized`, `ensureRaceDefaultsInitialized`
+- `initializeClassDefaults`, `areClassDefaultsInitialized`, `ensureClassDefaultsInitialized`
+- `initializeFeatureDefaults`, `areFeatureDefaultsInitialized`, `ensureFeatureDefaultsInitialized`
+- `initializeSkillDefaults`, `areSkillDefaultsInitialized`, `ensureSkillDefaultsInitialized`
+- `initializeAllDefaults`, `ensureAllDefaultsInitialized`
+
+**Status:** These are helper functions for ExtensionManager, part of v2.0.0+ extensibility features. Could be documented in migration guide or separate extensibility docs.
+
+### Summary Table: Public API Coverage
+
+| Category | Public API Items | In MIGRATION_GUIDE.md? | Notes |
+|----------|------------------|------------------------|-------|
+| Combat System | CombatEngine, dice utilities, types | No | v1.x feature - appropriately excluded |
+| Environmental Sensors | EnvironmentalSensors, GamingPlatformSensors, config | No | v1.x feature - appropriately excluded |
+| Equipment System | EquipmentModifier, magic items, enchantments | Partially | Only ammunition format change documented |
+| Progression | CharacterUpdater, StatManager, strategies | No | v1.x feature - appropriately excluded |
+| Feature Effects | FeatureEffectApplier, FeatureRegistry | Partially | Breaking change (feature_effects property) documented |
+| Validation | All validators, ValidationResult | Partially | Prerequisites documented, not full validator APIs |
+| Config | loadConfigFromEnv, mergeConfig | No | v1.x feature - appropriately excluded |
+| Audio Analysis | AudioAnalyzer, SpectrumScanner, ColorExtractor | No | v1.x feature - appropriately excluded |
+| Seeded RNG | SeededRNG, hash utilities | No | v1.x feature - appropriately excluded |
+| Extension Helpers | initialize*Defaults, ensure*DefaultsInitialized | No | v2.0.0+ feature - could be documented |
+| Custom Races | getRaceData, RaceDataEntry | Yes | Documented in Part 3 |
+| Custom Classes | getClassData, ClassDataEntry | Yes | Documented in Part 4 |
+| Prerequisites | SkillPrerequisite, SpellPrerequisite | Yes | Documented in Part 3 |
+| Subrace | subrace property, subrace filtering | Yes | Documented in Part 3 |
+
+### Conclusion
+
+**The MIGRATION_GUIDE.md appropriately focuses on breaking changes and new extensibility features (v2.0.0+).** Core v1.x features like the combat system, environmental sensors, progression system, etc., are correctly excluded from the migration guide.
+
+**Potential additions:**
+1. **Extension initialization helpers** (`initialize*Defaults`, `ensure*DefaultsInitialized`) - These are part of v2.0.0+ but not documented. Could be added to migration guide or a separate extensibility guide.
+
+**Recommendation:** No changes needed to MIGRATION_GUIDE.md. The document correctly focuses on breaking changes and extensibility upgrades. Core features are documented in DATA_ENGINE_REFERENCE.md and USAGE_IN_OTHER_PROJECTS.md.
+
+---
 
 ## Investigation Needed
 - [x] Verify merge logic in getClassData handles edge cases (missing baseClass, invalid baseClass) ✓ **COMPLETED (2026-02-01)**
