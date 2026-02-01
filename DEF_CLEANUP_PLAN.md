@@ -30,7 +30,7 @@ The following items are noted for awareness but should NOT be resolved:
   - Types: Race, Class, Ability, Skill, ProficiencyLevel, GameMode, Attack, Spell, AbilityScores (9 types)
 
 ### Task 1.2: Character Interfaces Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Character interfaces documented at `src/types/CharacterTypes.ts` → actual locations:
+- [x] Update DATA_ENGINE_REFERENCE.md: Character interfaces documented at `src/types/CharacterTypes.ts` → actual locations:
   - CharacterSheet → `src/core/types/Character.ts` (229-373)
   - CharacterEquipment → `src/core/types/Equipment.ts` (183-189)
   - InventoryItem → `src/core/generation/EquipmentGenerator.ts` (37-41); Enhanced version called `EnhancedInventoryItem` at `src/core/types/Equipment.ts` (164-177)

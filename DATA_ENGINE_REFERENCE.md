@@ -304,6 +304,8 @@ export interface AbilityScores {
 
 ### CharacterSheet
 
+**Location:** `src/core/types/Character.ts` (229-373)
+
 The complete D&D 5e character object.
 
 ```typescript
@@ -405,9 +407,11 @@ export interface CharacterSheet {
 }
 ```
 
-### CharacterEquipment
+### InventoryItem
 
-Equipment and inventory state for a character.
+**Location:** `src/core/generation/EquipmentGenerator.ts` (37-41)
+
+Basic inventory item structure.
 
 ```typescript
 export interface InventoryItem {
@@ -415,17 +419,44 @@ export interface InventoryItem {
     quantity: number;
     equipped: boolean;
 }
+```
 
+### EnhancedInventoryItem
+
+**Location:** `src/core/types/Equipment.ts` (164-177)
+
+Enhanced inventory item with modification and instance tracking.
+
+```typescript
+export interface EnhancedInventoryItem {
+    name: string;
+    quantity: number;
+    equipped: boolean;
+    modifications?: EquipmentModification[];
+    templateId?: string;
+    instanceId?: string;
+}
+```
+
+### CharacterEquipment
+
+**Location:** `src/core/types/Equipment.ts` (183-189)
+
+Equipment and inventory state for a character.
+
+```typescript
 export interface CharacterEquipment {
-    weapons: InventoryItem[];
-    armor: InventoryItem[];
-    items: InventoryItem[];
+    weapons: EnhancedInventoryItem[];
+    armor: EnhancedInventoryItem[];
+    items: EnhancedInventoryItem[];
     totalWeight: number;
     equippedWeight: number;
 }
 ```
 
 ### CharacterAppearance
+
+**Location:** `src/core/generation/AppearanceGenerator.ts` (8-21)
 
 Visual appearance details for a character.
 
@@ -2699,6 +2730,8 @@ interface EquipmentModification {
 }
 
 // Enhanced Inventory Item
+// Location: `src/core/types/Equipment.ts` (164-177)
+// Note: Basic `InventoryItem` exists at `src/core/generation/EquipmentGenerator.ts` (37-41)
 interface EnhancedInventoryItem {
     name: string;
     quantity: number;
