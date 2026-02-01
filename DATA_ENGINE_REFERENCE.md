@@ -521,22 +521,21 @@ export interface GeolocationData {
 ```typescript
 export interface MotionData {
     acceleration: {
-        x: number;  // m/s²
-        y: number;
-        z: number;
+        x: number | null;  // m/s²
+        y: number | null;
+        z: number | null;
     };
-    acceleration_with_gravity: {
+    accelerationIncludingGravity: {
         x: number;
         y: number;
         z: number;
     };
-    rotation_rate: {
-        alpha: number;  // degrees/second
-        beta: number;
-        gamma: number;
+    rotationRate: {
+        alpha: number | null;  // degrees/second
+        beta: number | null;
+        gamma: number | null;
     };
-    movement_intensity: number;   // 0.0 to 1.0
-    activity_type: 'stationary' | 'walking' | 'running' | 'driving' | 'unknown';
+    interval: number;          // Time interval between samples (ms)
     timestamp: number;
 }
 ```
