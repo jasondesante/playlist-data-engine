@@ -671,21 +671,76 @@ This verification plan ensures documentation-code alignment by systematically ch
     - `getRegistryStats()` return type should document additional fields
 
 ### Task 3.5: Validators
-- [ ] `FeatureValidator` → src/core/features/FeatureValidator.ts
-  - [ ] `validateClassFeature(feature: ClassFeature): ValidationResult`
-  - [ ] `validateRacialTrait(trait: RacialTrait): ValidationResult`
-  - [ ] `validateClassFeatures(features: ClassFeature[]): ValidationResult`
-  - [ ] `validateRacialTraits(traits: RacialTrait[]): ValidationResult`
-- [ ] `SkillValidator` → src/core/skills/SkillValidator.ts
-  - [ ] `validateSkill(skill: CustomSkill): ValidationResult`
-  - [ ] `validateSkills(skills: CustomSkill[]): ValidationResult`
-  - [ ] `validateSkillProficiency(proficiency: SkillProficiency): ValidationResult`
-  - [ ] `validateSkillPrerequisites(prerequisites: SkillPrerequisite): ValidationResult`
-- [ ] `SpellValidator` → src/core/spells/SpellValidator.ts
-  - [ ] `validateSpell(spell: Spell): ValidationResult`
-  - [ ] `validateSpells(spells: Spell[]): ValidationResult`
-  - [ ] `validateSpellPrerequisitesSchema(prerequisites: SpellPrerequisite): ValidationResult`
-  - [ ] `validateSpellPrerequisites(prerequisites: SpellPrerequisite, character: CharacterSheet): ValidationResult`
+- [x] `FeatureValidator` → src/core/features/FeatureValidator.ts
+  - [x] `validateClassFeature(feature: ClassFeature): ValidationResult`
+  - [x] `validateRacialTrait(trait: RacialTrait): ValidationResult`
+  - [x] `validateClassFeatures(features: ClassFeature[]): ValidationResult`
+  - [x] `validateRacialTraits(traits: RacialTrait[]): ValidationResult`
+  - [x] `validateEffect(effect: unknown): ValidationResult` - Additional method found
+  - [x] `validatePrerequisites(prerequisites: unknown): ValidationResult` - Additional method found
+- [x] `SkillValidator` → src/core/skills/SkillValidator.ts
+  - [x] `validateSkill(skill: CustomSkill): ValidationResult`
+  - [x] `validateSkills(skills: CustomSkill[]): ValidationResult`
+  - [x] `validateSkillProficiency(proficiency: SkillProficiency): ValidationResult`
+  - [x] `validateSkillProficiencies(proficiencies: SkillProficiency[]): ValidationResult` - Additional method found
+  - [x] `validateSkillListDefinition(skillList: SkillListDefinition): ValidationResult` - Additional method found
+  - [x] `validateSkillPrerequisites(prerequisites: SkillPrerequisite): ValidationResult`
+  - [x] `isValidSkillId(id: string): boolean` - Additional method found
+  - [x] `isValidAbility(ability: string): ability is Ability` - Additional method found
+- [x] `SpellValidator` → src/core/spells/SpellValidator.ts
+  - [x] `validateSpell(spell: Spell): ValidationResult`
+  - [x] `validateSpells(spells: Spell[]): ValidationResult`
+  - [x] `validatePrerequisites(prerequisites: unknown): ValidationResult` - Method name differs from plan
+  - [x] `validateSpellPrerequisites(prerequisites: SpellPrerequisite, character: CharacterSheet): ValidationResult`
+  - [x] `isValidAbility(ability: string): ability is Ability` - Additional method found
+  - [x] `isValidSchool(school: string): school is Spell['school']` - Additional method found
+  - [x] `isValidSpellLevel(level: number): boolean` - Additional method found
+
+**Task 3.5 Summary - COMPLETED**:
+- **VERIFIED**: `FeatureValidator` class exists at src/core/features/FeatureValidator.ts:111
+  - Exported from src/index.ts at line 271
+  - Helper functions exported at lines 273-277: `validateClassFeature`, `validateRacialTrait`, `validateClassFeatures`, `validateRacialTraits`
+- **VERIFIED**: All required `FeatureValidator` methods exist:
+  - `validateClassFeature(feature: unknown): ValidationResult` (line 120)
+  - `validateRacialTrait(trait: unknown): ValidationResult` (line 229)
+  - `validateClassFeatures(features: unknown[]): ValidationResult` (line 572)
+  - `validateRacialTraits(traits: unknown[]): ValidationResult` (line 601)
+- **ADDITIONAL METHODS FOUND**:
+  - `validateEffect(effect: unknown): ValidationResult` (line 352) - Validates feature effects
+  - `validatePrerequisites(prerequisites: unknown): ValidationResult` (line 417) - Validates feature prerequisites
+- **VERIFIED**: `SkillValidator` class exists at src/core/skills/SkillValidator.ts:41
+  - Exported from src/index.ts at line 299
+  - Helper functions exported at lines 303-308
+- **VERIFIED**: All required `SkillValidator` methods exist:
+  - `validateSkill(skill: unknown): SkillValidationResult` (line 50)
+  - `validateSkills(skills: unknown[]): SkillValidationResult` (line 159)
+  - `validateSkillProficiency(proficiency: unknown): SkillValidationResult` (line 188)
+  - `validateSkillPrerequisites(prerequisites: SkillPrerequisite | undefined, character: CharacterSheet): SkillValidationResult` (line 368)
+- **ADDITIONAL METHODS FOUND**:
+  - `validateSkillProficiencies(proficiencies: unknown[]): SkillValidationResult` (line 237) - Validates multiple proficiencies
+  - `validateSkillListDefinition(skillList: unknown): SkillValidationResult` (line 266) - Validates skill list definitions
+  - `isValidSkillId(id: string): boolean` (line 338) - Checks if skill ID uses correct format
+  - `isValidAbility(ability: string): ability is Ability` (line 354) - Re-exports shared ability validator
+- **VERIFIED**: `SpellValidator` class exists at src/core/spells/SpellValidator.ts:61
+  - Exported from src/index.ts at line 330
+  - Helper functions exported at lines 334-339: `validateSpell`, `validateSpells`, `validateSpellPrerequisitesSchema`, `validateSpellPrerequisites`
+- **VERIFIED**: All required `SpellValidator` methods exist:
+  - `validateSpell(spell: unknown): SpellValidationResult` (line 70)
+  - `validateSpells(spells: unknown[]): SpellValidationResult` (line 153)
+  - `validatePrerequisites(prerequisites: unknown): SpellValidationResult` (line 185) - Note: Method name is `validatePrerequisites`, not `validateSpellPrerequisitesSchema`
+  - `validateSpellPrerequisites(prerequisites: SpellPrerequisite | undefined, character: CharacterSheet): SpellValidationResult` (line 199)
+- **ADDITIONAL METHODS FOUND**:
+  - `isValidAbility(ability: string): ability is Ability` (line 214) - Re-exports shared ability validator
+  - `isValidSchool(school: string): school is Spell['school']` (line 224) - Checks if valid spell school
+  - `isValidSpellLevel(level: number): boolean` (line 234) - Checks if valid spell level (0-9)
+- **VERIFIED**: Type `ValidationResult` exists in FeatureValidator.ts (line 25) and SpellValidator.ts (line 47)
+  - Has properties: `valid: boolean`, `errors: string[]`
+- **VERIFIED**: Type `SkillValidationResult` exists in SkillValidator.ts (exported from SkillTypes.ts)
+  - Has properties: `valid: boolean`, `errors: string[]`, `warnings?: string[]`
+- **VERIFIED**: Type `SpellValidationResult` exists in SpellValidator.ts (line 47)
+  - Has properties: `valid: boolean`, `errors: string[]`
+- **BUILD STATUS**: Clean - no compilation errors
+- **DOCUMENTATION NOTE**: The validators are listed in USAGE_IN_OTHER_PROJECTS.md (lines 1494-1496) but individual methods are not documented
 
 ### Task 3.6: FeatureEffectApplier → src/core/features/FeatureEffectApplier.ts
 - [ ] class exists and is exported
@@ -1277,7 +1332,7 @@ For each item, verify:
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
-| 3 | In Progress | 4 | ~60 | 2026-02-01 |
+| 3 | In Progress | 5 | ~60 | 2026-02-01 |
 | 4 | Not Started | 0 | ~40 | - |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
@@ -1286,4 +1341,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **14** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **15** | **~475** | 2026-02-01 |
