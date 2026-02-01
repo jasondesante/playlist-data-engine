@@ -1571,8 +1571,50 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **DOCUMENTATION NOTE**: InitiativeRoller is listed in USAGE_IN_OTHER_PROJECTS.md but lacks detailed API documentation
 
 ### Task 6.3: AttackResolver → src/core/combat/AttackResolver.ts
-- [ ] class exists and is exported
-- [ ] Type `AttackResult` exists
+- [x] class exists and is exported
+- [x] Type `AttackResult` exists
+
+**Task 6.3 Summary - COMPLETED**:
+- **VERIFIED**: `AttackResolver` class exists at src/core/combat/AttackResolver.ts:28
+  - Exported from src/index.ts at line 253
+  - All methods are instance methods (not static)
+- **VERIFIED METHODS**:
+  - `resolveAttack(attacker: Combatant, target: Combatant, attack: Attack): AttackResult` (line 35)
+    - Main attack resolution method following D&D 5e rules
+    - Rolls d20 + attack bonus vs target AC
+    - Handles critical hits (natural 20) and critical misses (natural 1)
+    - Returns complete AttackResult with damage roll and description
+  - `isInRange(attacker: Combatant, target: Combatant, attack: Attack): boolean` (line 164)
+    - Checks if attack is within range based on combatant positions
+    - Supports tactical mode with position-based distance calculation
+    - Default range: 5 feet for melee attacks
+  - `calculateAttackBonus(character: any, attackName: string, abilityModifier: number, isProficient?: boolean): number` (line 188)
+    - Calculates attack bonus from ability modifier + proficiency bonus
+    - Used for weapon proficiency bonuses
+  - `attackWithAdvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult` (line 201)
+    - Rolls twice, takes higher (advantage mechanic)
+    - Returns complete AttackResult with damage roll and description
+  - `attackWithDisadvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult` (line 269)
+    - Rolls twice, takes lower (disadvantage mechanic)
+    - Returns complete AttackResult with damage roll and description
+- **PRIVATE METHODS** (internal implementation):
+  - `rollAttack()` - Performs d20 attack roll vs AC
+  - `rollDamage()` - Calculates damage with dice formula and ability modifier
+  - `getDamageModifier()` - Extracts ability modifier based on attack type (melee→STR, ranged→DEX, finesse→max(STR,DEX))
+- **VERIFIED**: Type `AttackResult` exists at src/core/combat/AttackResolver.ts:15 with properties:
+  - `attacker: Combatant` - The attacking combatant
+  - `target: Combatant` - The target combatant
+  - `attack: Attack` - The attack being used
+  - `attackRoll: AttackRoll` - The attack roll result
+  - `damageRoll?: DamageRoll` - Damage roll (if attack hit)
+  - `hpAfterDamage?: number` - Target's HP after damage (0 if defeated)
+  - `description: string` - Human-readable result description
+  - Exported from src/index.ts at line 146 as type export
+- **VERIFIED RELATED TYPES**:
+  - `AttackRoll` exists at src/core/types/Combat.ts:72 with properties: d20Roll, attackBonus, totalRoll, targetAC, hit, isCritical, isMiss
+  - `DamageRoll` exists at src/core/types/Combat.ts:85 with properties: diceFormula, rolls, modifier, total, isCritical
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTE**: AttackResolver is listed in USAGE_IN_OTHER_PROJECTS.md line 1523 but lacks detailed API documentation
 
 ### Task 6.4: SpellCaster → src/core/combat/SpellCaster.ts
 - [ ] class exists and is exported
@@ -1973,12 +2015,12 @@ For each item, verify:
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
 | 3 | Complete | 8 | ~60 | 2026-02-01 |
-| 4 | In Progress | 4 | ~40 | 2026-02-01 |
-| 5 | Not Started | 0 | ~50 | - |
-| 6 | Not Started | 0 | ~30 | - |
+| 4 | Complete | 8 | ~40 | 2026-02-01 |
+| 5 | Complete | 7 | ~50 | 2026-02-01 |
+| 6 | In Progress | 3 | ~30 | 2026-02-01 |
 | 7 | Not Started | 0 | ~30 | - |
 | 8 | Not Started | 0 | ~20 | - |
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
-| 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **22** | **~475** | 2026-02-01 |
+| 11 | Not Started | 2 | ~15 | 2026-02-01 |
+| **ALL** | **In Progress** | **38** | **~475** | 2026-02-01 |
