@@ -114,13 +114,13 @@ The following items are noted for awareness but should NOT be resolved:
 - [x] Update DATA_ENGINE_REFERENCE.md: Add missing `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method (exists at `src/core/generation/EquipmentGenerator.ts:60-62`)
 
 ### Task 3.10: EquipmentGenerator.addModification Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Add missing `addModification(equipment, itemName, modification, instanceId?, character?): CharacterEquipment` method (exists at `src/core/generation/EquipmentGenerator.ts:590-644`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Add missing `addModification(equipment, itemName, modification, instanceId?, character?): CharacterEquipment` method (exists at `src/core/generation/EquipmentGenerator.ts:590-644`)
 
 ### Task 3.11: EquipmentGenerator.removeModification Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Add missing `removeModification(equipment, itemName, modificationId, character?): CharacterEquipment` method (exists at `src/core/generation/EquipmentGenerator.ts:655-709`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Add missing `removeModification(equipment, itemName, modificationId, character?): CharacterEquipment` method (exists at `src/core/generation/EquipmentGenerator.ts:655-709`)
 
 ### Task 3.12: EquipmentGenerator.getActiveEffects Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Add missing `getActiveEffects(equipment, itemName, instanceId?): EquipmentProperty[]` method (exists at `src/core/generation/EquipmentGenerator.ts:719-759`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Add missing `getActiveEffects(equipment, itemName, instanceId?): EquipmentProperty[]` method (exists at `src/core/generation/EquipmentGenerator.ts:719-759`)
 
 ---
 

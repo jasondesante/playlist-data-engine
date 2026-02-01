@@ -3163,6 +3163,27 @@ class EquipmentGenerator {
         equipment: CharacterEquipment,
         type: 'weapons' | 'armor' | 'items'
     ): EnhancedInventoryItem[];
+
+    static addModification(
+        equipment: CharacterEquipment,
+        itemName: string,
+        modification: EquipmentModification,
+        instanceId?: string,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    static removeModification(
+        equipment: CharacterEquipment,
+        itemName: string,
+        modificationId: string,
+        character?: CharacterSheet
+    ): CharacterEquipment;
+
+    static getActiveEffects(
+        equipment: CharacterEquipment,
+        itemName: string,
+        instanceId?: string
+    ): EquipmentProperty[];
 }
 ```
 
