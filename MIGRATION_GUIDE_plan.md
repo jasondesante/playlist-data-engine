@@ -46,7 +46,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase 3 | Spell Prerequisites | 10 tasks | `██████████` 100% |
 | Phase 4 | Custom Race Support | 9 items | `██████████` 100% |
 | Phase 5 | Subrace Support | 12 tasks | `██████████` 100% |
-| Phase 6 | Template-Based Classes | 22 tasks | `██░░░░░░░░` 9% |
+| Phase 6 | Template-Based Classes | 22 tasks | `███░░░░░░░` 14% |
 | Phase 7 | Tests & Documentation | 11 tasks | `░░░░░░░░░░` 0% |
 
 ---
@@ -205,18 +205,23 @@ File: [src/core/types/Character.ts](src/core/types/Character.ts)
 
 ## Task 6.3: Verify ClassDataEntry Interface
 File: [src/utils/constants.ts](src/utils/constants.ts)
-- [ ] Interface is exported → line 266
-- [ ] Property `baseClass?: Class` exists with proper JSDoc
-- [ ] Property `name: string` exists
-- [ ] Property `primary_ability: Ability` exists
-- [ ] Property `hit_die: number` exists
-- [ ] Property `saving_throws: Ability[]` exists
-- [ ] Property `is_spellcaster: boolean` exists
-- [ ] Property `skill_count: number` exists
-- [ ] Property `available_skills: string[]` exists
-- [ ] Property `has_expertise: boolean` exists
-- [ ] Property `expertise_count?: number` exists
-- [ ] Property `audio_preferences?: {...}` exists with full nested structure
+- [x] Interface is exported → line 288 (not 266 as documented)
+- [x] Property `name?: string` exists → line 290 (FIXED: was missing, made optional for built-in classes compatibility)
+- [x] Property `baseClass?: Class` exists with proper JSDoc → line 327
+- [x] Property `primary_ability: Ability` exists → line 293
+- [x] Property `hit_die: number` exists → line 296
+- [x] Property `saving_throws: Ability[]` exists → line 299
+- [x] Property `is_spellcaster: boolean` exists → line 302
+- [x] Property `skill_count: number` exists → line 305
+- [x] Property `available_skills: string[]` exists → line 308
+- [x] Property `has_expertise: boolean` exists → line 311
+- [x] Property `expertise_count?: number` exists → line 313
+- [x] Property `audio_preferences?: {...}` exists with full nested structure → lines 330-338
+
+**FINDING**: The `name` property was missing from the `ClassDataEntry` interface. It has been added as `name?: string` (optional) because:
+1. ExtensionManager validation requires `name` for custom classes (ExtensionManager.ts:652-663)
+2. Built-in CLASS_DATA constant uses Record keys as names, so `name` is optional there
+3. This allows the interface to work for both use cases
 
 ## Task 6.4: Verify Helper Functions
 - [ ] `getClassData(className: string)` exists → line 491

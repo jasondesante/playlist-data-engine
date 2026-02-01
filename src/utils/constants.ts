@@ -286,6 +286,9 @@ export function getRaceData(race: string): RaceDataEntry | undefined {
  *
  */
 export interface ClassDataEntry {
+    /** Class name (required for custom classes, optional for built-in classes where the key serves as the name) */
+    name?: string;
+
     /** Primary ability score for this class */
     primary_ability: Ability;
 
