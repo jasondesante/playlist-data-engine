@@ -377,8 +377,8 @@ The slight duplication in interface definitions is **intentional design**, not r
 ## Investigation Needed
 - [x] Verify merge logic in getClassData handles edge cases (missing baseClass, invalid baseClass) ✓ **COMPLETED (2026-02-01)**
 - [x] Confirm available_skills replacement is consistent across all code paths ✓ **COMPLETED (2026-02-01)**
-- [ ] Verify subrace propagation through entire character generation pipeline
-- [x] Check if tests actually pass (run test suite) ✓ **PASSING: 2035/2035 tests pass**
+- [x] Verify subrace propagation through entire character generation pipeline ✓ **COMPLETED (2026-02-01)**
+- [x] Check if tests actually pass (run test suite) ✓ **PASSING: 2040/2040 tests pass**
 
 ## Test Fixes Applied (2026-02-01)
 **Task Completed:** Fixed failing tests in classSuggester.integration.test.ts
@@ -551,6 +551,91 @@ Use this checklist for EACH item verified above:
 - [ ] JSDoc comments exist for public APIs
 - [ ] Comments describe behavior accurately
 - [ ] Examples in documentation compile and run
+
+---
+
+## Investigation Results: Subrace Propagation Through Character Generation Pipeline (Completed 2026-02-01)
+
+**Task:** Verify subrace propagation through entire character generation pipeline
+
+### Subrace Propagation Flow Analysis
+
+**1. Subrace Selection and Storage** (CharacterGenerator.ts:280-329)
+- **Status:** ✓ Working correctly
+- **Behavior:**
+  - `subrace: 'pure'` → `subrace = undefined` (no subrace)
+  - `subrace: 'Specific Name'` → Uses specific subrace
+  - `subrace: undefined` → Randomly selects from available subraces or 'pure'
+- **Validation:** Validates that requested subrace exists for the race
+- **Auto-detection:** Can auto-detect race from subrace using `FeatureRegistry.getRaceForSubrace()`
+
+**2. Subrace Property on Character Sheet** (CharacterGenerator.ts:459)
+- **Status:** ✓ Working correctly
+- **Behavior:** `subrace` is stored as optional property on `CharacterSheet`
+- **Type:** `subrace?: string`
+
+**3. Racial Trait Filtering** (CharacterGenerator.ts:384-388)
+- **Status:** ✓ BUG FIXED - Was using `getRacialTraits()` instead of `getBaseRacialTraits()` for pure characters
+- **Problem Found:** When `subrace` was `undefined` (pure character), code called `featureRegistry.getRacialTraits(race)` which returns ALL traits including subrace-specific ones
+- **Solution:** Changed to use `featureRegistry.getBaseRacialTraits(race)` when `subrace` is `undefined`
+- **Code Fix (CharacterGenerator.ts:384-388):**
+  ```typescript
+  // Before (BUG):
+  const racialTraits = subrace
+      ? featureRegistry.getRacialTraitsForSubrace(race, subrace)
+      : featureRegistry.getRacialTraits(race); // Returns ALL traits including subrace-specific
+
+  // After (FIXED):
+  const racialTraits = subrace
+      ? featureRegistry.getRacialTraitsForSubrace(race, subrace)
+      : featureRegistry.getBaseRacialTraits(race); // Returns only base traits
+  ```
+
+**4. Subrace Ability Score Bonus Application** (FeatureEffectApplier.ts via EffectApplierUtils.ts)
+- **Status:** ✓ Working correctly
+- **Behavior:** Subrace stat bonuses are applied via trait effects with `{ type: 'stat_bonus', target: 'WIS', value: 1 }`
+- **Flow:**
+  1. `AbilityScoreCalculator.applyRacialBonuses()` applies base racial bonuses (from RACE_DATA)
+  2. `FeatureEffectApplier.applyMultipleEffects()` applies subrace-specific stat bonuses
+  3. `applyAbilityScoreBonus()` modifies `ability_scores[target] += value` AND recalculates `ability_modifiers[target]`
+
+**5. Subrace in Partial Character for Prerequisite Validation** (CharacterGenerator.ts:398)
+- **Status:** ✓ Working correctly
+- **Behavior:** `partialCharacter` includes `subrace` property for prerequisite validation
+
+**6. Feature Registry Subrace Methods** (FeatureRegistry.ts:257-315)
+- **Status:** ✓ All methods working correctly
+- `getRacialTraitsForSubrace(race, subrace)` → Returns base traits + matching subrace traits
+- `getBaseRacialTraits(race)` → Returns only base traits (no subrace)
+- `getSubraceTraits(race, subrace)` → Returns only subrace-specific traits
+- `getAvailableSubraces(race)` → Returns list of available subrace names
+- `getRaceForSubrace(subrace)` → Auto-detects race from subrace name
+
+**7. Prerequisite Validation with Subrace** (FeatureRegistry.ts:385-390)
+- **Status:** ✓ Working correctly
+- **Behavior:** Validates `prerequisites.subrace` against `character.subrace`
+
+### Test Coverage Added
+
+Created comprehensive integration test file: `tests/integration/subraceStatBonus.integration.test.ts` (5 tests)
+- ✓ Hill Dwarf +1 WIS stat bonus application
+- ✓ Mountain Dwarf +2 STR stat bonus application
+- ✓ Pure Dwarf (no subrace) does not get subrace bonuses
+- ✓ Subrace trait ID is stored and subrace property is set
+- ✓ Subrace prerequisite validation works correctly
+
+### Summary
+
+**Subrace propagation is now fully verified and working correctly:**
+- Subrace property is properly set on character sheets
+- Subrace-specific traits are filtered correctly (base + matching subrace)
+- Pure characters (no subrace) only get base traits (BUG FIXED)
+- Subrace stat bonuses are applied via feature effects and ability modifiers are recalculated
+- Prerequisite validation correctly checks subrace requirements
+
+**Bug Fixed:** Changed `getRacialTraits(race)` to `getBaseRacialTraits(race)` when `subrace` is `undefined` to prevent pure characters from getting subrace-specific traits.
+
+**Test Results:** 2040/2040 tests passing (2035 existing + 5 new subrace propagation tests)
 
 ---
 

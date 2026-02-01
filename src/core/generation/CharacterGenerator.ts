@@ -385,7 +385,7 @@ export class CharacterGenerator {
         // Filter by subrace if character has one
         const racialTraits = subrace
             ? featureRegistry.getRacialTraitsForSubrace(race, subrace)
-            : featureRegistry.getRacialTraits(race);
+            : featureRegistry.getBaseRacialTraits(race);
 
         // Initialize starting equipment
         const equipment = EquipmentGenerator.initializeEquipment(suggestedClass);
