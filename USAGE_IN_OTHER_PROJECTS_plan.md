@@ -1780,11 +1780,57 @@ This verification plan ensures documentation-code alignment by systematically ch
   3. Add documentation for `reapplyEquipmentEffects` and `getActiveEffects` methods
 
 ### Task 7.2: EquipmentModifier → src/core/equipment/EquipmentModifier.ts
-- [ ] class exists and is exported
-- [ ] `createModification(id: string, name: string, properties: EquipmentProperty[], type: string): EquipmentModification`
-- [ ] `enchant(equipment: CharacterEquipment, itemName: string, modification: EquipmentModification, character: CharacterSheet): CharacterEquipment`
-- [ ] `isEnchanted(equipment: CharacterEquipment, itemName: string): boolean`
-- [ ] `getItemSummary(equipment: CharacterEquipment, itemName: string): object`
+- [x] class exists and is exported
+- [x] `createModification(id: string, name: string, properties: EquipmentProperty[], type: string): EquipmentModification`
+- [x] `enchant(equipment: CharacterEquipment, itemName: string, modification: EquipmentModification, character: CharacterSheet): CharacterEquipment`
+- [x] `isEnchanted(equipment: CharacterEquipment, itemName: string): boolean`
+- [x] `getItemSummary(equipment: CharacterEquipment, itemName: string): object`
+
+**Task 7.2 Summary - COMPLETED**:
+- **VERIFIED**: `EquipmentModifier` class exists at src/core/equipment/EquipmentModifier.ts:54
+  - Exported from src/index.ts at line 260
+  - All methods are static utility methods
+- **VERIFIED**: `createModification(id: string, name: string, properties: EquipmentProperty[], source: string): EquipmentModification` exists at line 610
+  - **MINOR DOCUMENTATION ISSUE**: Task shows parameter name as `type` but actual parameter is `source`
+  - Returns `EquipmentModification` object with properties: id, name, properties, appliedAt, source
+- **VERIFIED**: `enchant(equipment: CharacterEquipment, itemName: string, enchantment: EquipmentModification, character?: CharacterSheet): CharacterEquipment` exists at line 67
+  - **MINOR DOCUMENTATION ISSUE**: Task shows parameter name as `modification` but actual parameter is `enchantment`
+  - **MINOR DOCUMENTATION ISSUE**: Task shows `character` as required but it's actually optional (`character?:`)
+  - Validates the enchantment using EquipmentValidator before applying
+- **VERIFIED**: `isEnchanted(equipment: CharacterEquipment, itemName: string): boolean` exists at line 806
+  - Returns true if item has any enchantment or upgrade modifications
+  - Checks for source types: 'enchantment' or 'upgrade'
+- **VERIFIED**: `getItemSummary(equipment: CharacterEquipment, itemName: string): {...} | null` exists at line 821
+  - Returns detailed object with properties: name, quantity, equipped, instanceId, templateId, modificationCount, isCursed, isEnchanted, sources, effects
+  - Returns `null` if item not found
+  - Task shows return type as `object` which is technically correct (it's a detailed object)
+- **VERIFIED**: Type `EquipmentModification` exists at src/core/types/Equipment.ts:142
+  - Exported from src/index.ts at line 67
+  - Has properties: id, name, properties, addsFeatures?, addsSkills?, addsSpells?, appliedAt, source
+- **ADDITIONAL METHODS FOUND** (not in task description but part of public API):
+  - `applyTemplate()` - Apply template-based modifications (line 98)
+  - `curse()` - Curse equipment with negative effects (line 152)
+  - `upgrade()` - Upgrade equipment (line 183)
+  - `removeModification()` - Remove a specific modification (line 204)
+  - `getModificationHistory()` - Get all modifications applied to an item (line 263)
+  - `getCombinedEffects()` - Get all active effects from base + modifications (line 287)
+  - `hasTemplate()` - Check if item has a specific template (line 321)
+  - `getAppliedTemplates()` - Get all templates applied to an item (line 353)
+  - `removeAllModifications()` - Remove all modifications (line 394)
+  - `disenchant()` - Remove enchantments, keep curses (line 426)
+  - `liftCurse()` - Remove curses, keep enchantments (line 460)
+  - `createFeatureModification()` - Create feature-granting modification (line 637)
+  - `createSkillModification()` - Create skill-granting modification (line 666)
+  - `createSpellModification()` - Create spell-granting modification (line 695)
+  - `generateModificationId()` - Generate unique modification ID (line 718)
+  - `getModificationSources()` - Get all modification sources on item (line 729)
+  - `countModificationsBySource()` - Count modifications by source type (line 752)
+  - `countModificationsForSource()` - Count modifications for specific source (line 776)
+  - `isCursed()` - Check if item has any curses (line 792)
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **PRE-EXISTING LINT ERRORS** (unrelated to verification):
+  - Line 106:45 - Unexpected any
+  - Line 290:9 - 'instanceId' is defined but never used
 
 ### Task 7.3: EquipmentSpawnHelper → src/core/equipment/EquipmentSpawnHelper.ts
 - [ ] class exists and is exported
