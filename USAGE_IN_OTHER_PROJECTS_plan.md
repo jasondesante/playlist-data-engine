@@ -590,19 +590,85 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 3.4: SpellRegistry → src/core/spells/SpellRegistry.ts
-- [ ] class exists and is exported
-- [ ] Static method: `getSpellRegistry(): SpellRegistry`
-- [ ] `initializeDefaults(): void`
-- [ ] `registerSpell(spell: Spell): void`
-- [ ] `getSpellsByLevel(level: number): Spell[]`
-- [ ] `getSpellsBySchool(school: SpellSchool): Spell[]`
-- [ ] `getSpellsForClass(className: string): Spell[]`
-- [ ] `getAvailableSpells(character: CharacterSheet): Spell[]`
-- [ ] `getSpell(id: string): Spell | undefined`
-- [ ] `validatePrerequisites(spell: Spell, character: CharacterSheet): ValidationResult`
-- [ ] `getRegistryStats(): { totalSpells: number, customSpells: number }`
-- [ ] Type `RegisteredSpell` exists
-- [ ] Type `SpellSchool` exists
+- [x] class exists and is exported
+- [x] Static method: `getSpellRegistry(): SpellRegistry`
+- [x] `initializeDefaults(): void`
+- [x] `registerSpell(spell: Spell): void`
+- [x] `getSpellsByLevel(level: number): Spell[]`
+- [x] `getSpellsBySchool(school: SpellSchool): Spell[]`
+- [x] `getSpellsForClass(className: string): Spell[]`
+- [x] `getAvailableSpells(character: CharacterSheet): Spell[]`
+- [x] `getSpell(id: string): Spell | undefined`
+- [x] `validatePrerequisites(spell: Spell, character: CharacterSheet): ValidationResult`
+- [x] `getRegistryStats(): { totalSpells: number, customSpells: number }`
+- [x] Type `RegisteredSpell` exists
+- [x] Type `SpellSchool` exists
+
+**Task 3.4 Summary - COMPLETED**:
+- **VERIFIED**: `SpellRegistry` class exists at src/core/spells/SpellRegistry.ts:60
+  - Exported from src/index.ts at line 331
+  - Type `SpellRegistry` is properly exported
+- **VERIFIED**: Static method `getInstance(): SpellRegistry` exists at line 94
+- **VERIFIED**: Function `getSpellRegistry(): SpellRegistry` exists at line 576 (also exported from src/index.ts at line 331)
+- **VERIFIED**: `initializeDefaults(defaultSpells?: Record<string, Spell>): void` exists at line 107
+  - **MINOR NOTE**: Parameter is optional, accepts default spells or uses SPELL_DATABASE
+- **VERIFIED**: `registerSpell(spell: RegisteredSpell): void` exists at line 137
+  - **MINOR NOTE**: Parameter type is `RegisteredSpell`, not `Spell` as documented
+  - Also has `registerSpells(spells: RegisteredSpell[]): void` for batch registration (line 189)
+- **VERIFIED**: `getSpellsByLevel(level: number): RegisteredSpell[]` exists at line 220
+  - **MINOR NOTE**: Return type is `RegisteredSpell[]`, not `Spell[]` as documented
+- **VERIFIED**: `getSpellsBySchool(school: SpellSchool): RegisteredSpell[]` exists at line 237
+  - **MINOR NOTE**: Return type is `RegisteredSpell[]`, not `Spell[]` as documented
+- **VERIFIED**: `getSpellsForClass(characterClass: Class): RegisteredSpell[]` exists at line 254
+  - **MINOR NOTE**: Parameter name is `characterClass` with type `Class`, not `className`
+  - **MINOR NOTE**: Return type is `RegisteredSpell[]`, not `Spell[]` as documented
+- **VERIFIED**: `getAvailableSpells(character: CharacterSheet): RegisteredSpell[]` exists at line 271
+  - **MINOR NOTE**: Return type is `RegisteredSpell[]`, not `Spell[]` as documented
+- **VERIFIED**: `getSpell(spellId: string): RegisteredSpell | undefined` exists at line 201
+  - **MINOR NOTE**: Parameter name is `spellId`, not `id`
+  - **MINOR NOTE**: Return type is `RegisteredSpell | undefined`, not `Spell | undefined` as documented
+- **VERIFIED**: `validatePrerequisites(spell: RegisteredSpell, character: CharacterSheet): ValidationResult` exists at line 361
+  - **MINOR NOTE**: First parameter type is `RegisteredSpell`, not `Spell` as documented
+- **VERIFIED**: `getRegistryStats()` exists at line 427
+  - Returns object with MORE fields than documented:
+    - `totalSpells: number`
+    - `defaultSpells: number` (not documented)
+    - `customSpells: number`
+    - `spellsByLevel: Record<number, number>` (not documented)
+    - `spellsBySchool: Record<SpellSchool, number>` (not documented)
+    - `classessWithSpells: number` (not documented)
+- **VERIFIED**: Type `RegisteredSpell` exists at src/core/spells/SpellRegistry.ts:32 with properties:
+  - `id: string` - Unique identifier (uses name as ID if not provided)
+  - `classes?: Class[]` - Classes that can learn this spell
+  - `source?: 'default' | 'custom'` - Source of the spell
+  - Extends `Spell` type (includes name, level, school, casting_time, range, etc.)
+- **VERIFIED**: Type `SpellSchool` exists at src/core/spells/SpellRegistry.ts:19 as a union type:
+  - `'Abjuration' | 'Conjuration' | 'Divination' | 'Enchantment' | 'Evocation' | 'Illusion' | 'Necromancy' | 'Transmutation'`
+- **ADDITIONAL METHODS FOUND** (not in original task list but documented in USAGE_IN_OTHER_PROJECTS.md):
+  - `getSpells(): RegisteredSpell[]` - Get all registered spells (line 210)
+  - `getClassSpellList(characterClass: Class): string[]` - Get spell list for a class (line 291)
+  - `registerClassSpellList(characterClass: Class, spellIds: string[]): void` - Register spell list (line 301)
+  - `getSpellSlotsForClass(characterClass: Class, level: number): number` - Get spell slots (line 337)
+  - `validateSpell(spell: RegisteredSpell): ValidationResult` - Validate spell structure (line 383)
+  - `hasSpell(spellId: string): boolean` - Check if spell exists (line 399)
+  - `getSpellCount(): number` - Get total spell count (line 408)
+  - `getSpellsBySource(source: 'default' | 'custom'): RegisteredSpell[]` - Filter by source (line 418)
+  - `reset(): void` - Reset registry to initial state (line 473)
+  - `isInitialized(): boolean` - Check if registry has been initialized (line 502)
+  - `exportRegistry(): RegisteredSpell[]` - Export as JSON (line 513)
+  - `unregisterSpell(spellId: string): boolean` - Remove spell from registry (line 526)
+- **VERIFIED**: Type `ValidationResult` exists at line 44 with properties:
+  - `valid: boolean`
+  - `errors: string[]`
+  - `warnings?: string[]`
+- **BUILD STATUS**: Clean - no compilation errors
+- **NOTE**: Pre-existing lint errors exist in codebase but are unrelated to SpellRegistry verification
+- **DOCUMENTATION NOTES**:
+  - Several methods in USAGE_IN_OTHER_PROJECTS.md may need type signature updates:
+    - Documented `Spell` types should be `RegisteredSpell` for parameters and return types
+    - `className: string` should be `characterClass: Class` for getSpellsForClass
+    - `id` parameter should be `spellId` for getSpell
+    - `getRegistryStats()` return type should document additional fields
 
 ### Task 3.5: Validators
 - [ ] `FeatureValidator` → src/core/features/FeatureValidator.ts
@@ -1211,7 +1277,7 @@ For each item, verify:
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
-| 3 | In Progress | 3 | ~60 | 2026-02-01 |
+| 3 | In Progress | 4 | ~60 | 2026-02-01 |
 | 4 | Not Started | 0 | ~40 | - |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
@@ -1220,4 +1286,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **13** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **14** | **~475** | 2026-02-01 |
