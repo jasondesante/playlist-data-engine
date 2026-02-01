@@ -376,7 +376,7 @@ The slight duplication in interface definitions is **intentional design**, not r
 
 ## Investigation Needed
 - [x] Verify merge logic in getClassData handles edge cases (missing baseClass, invalid baseClass) ✓ **COMPLETED (2026-02-01)**
-- [ ] Confirm available_skills replacement is consistent across all code paths
+- [x] Confirm available_skills replacement is consistent across all code paths ✓ **COMPLETED (2026-02-01)**
 - [ ] Verify subrace propagation through entire character generation pipeline
 - [x] Check if tests actually pass (run test suite) ✓ **PASSING: 2035/2035 tests pass**
 
@@ -451,6 +451,76 @@ The slight duplication in interface definitions is **intentional design**, not r
 - **After:** 2035 tests passing (+4 new tests)
 - **Build:** Clean (TypeScript compilation succeeds)
 - **Duration:** ~21 seconds
+
+---
+
+## Investigation Results: available_skills Replacement Consistency (Completed 2026-02-01)
+
+**Task:** Confirm `available_skills` replacement is consistent across all code paths
+
+### Code Paths Analyzed
+
+**1. `getClassData()` function** (src/utils/constants.ts:519-553)
+- **Status:** ✓ Consistent replacement behavior
+- **Code:** `available_skills: classEntry.available_skills || baseData.available_skills`
+- **Logic:** When custom class provides `available_skills`, it completely replaces base class skills (not merged)
+- **Comment:** Line 541 documents: "available_skills is completely replaced (not merged) when provided by custom class"
+
+**2. `getClassDataAsync()` function** (src/utils/constants.ts:423-464)
+- **Status:** ✓ Consistent replacement behavior
+- **Code:** `available_skills: classEntry.available_skills || baseData.available_skills`
+- **Logic:** Same as sync version - uses `||` operator to replace base skills when custom skills provided
+- **Comment:** Line 455 documents: "available_skills is completely replaced (not merged) when provided by custom class"
+
+**3. ExtensionManager validation** (src/core/extensions/ExtensionManager.ts:687-688)
+- **Status:** ✓ Validates array type
+- **Code:** Checks `if (!Array.isArray(item.available_skills))`
+- **Logic:** Ensures custom classes provide an array of skill IDs
+- **Note:** Does not validate skill IDs exist in registry (handled by SkillAssigner at runtime)
+
+**4. SkillAssigner** (src/core/generation/SkillAssigner.ts:65)
+- **Status:** ✓ Uses class data as-is
+- **Code:** `const validAvailableSkills = this.validateSkills(classData.available_skills, registry)`
+- **Logic:** Gets `classData.available_skills` from `getClassData()`, validates against SkillRegistry, filters by prerequisites
+- **Note:** Receives the already-merged/replaced skills from `getClassData()`
+
+**5. Documentation consistency**
+- **src/utils/constants.ts JSDoc** (lines 237-238, 388-389, 484-485): ✓ Correctly states replacement behavior
+- **docs/CUSTOM_CONTENT.md** (line 351): ✓ Shows replacement logic with example
+- **docs/EXTENSIBILITY_GUIDE.md** (line 3001): ✓ States "available_skills is completely replaced (not merged)"
+- **docs/CUSTOM_CONTENT.md** (line 364): ✓ Table shows "Replaced (not merged)" behavior
+- **DATA_ENGINE_REFERENCE.md** (line 1085-1086): ✓ States "Custom skill list replaces base skill list (not merged)"
+
+### Test Coverage Verification
+
+**Unit tests** (tests/unit/customClasses.test.ts):
+- Line 261: `available_skills` test for DragonKnight - verifies exact 4 skills (not merged)
+- Line 302: Empty array test - verifies `[]` is respected (not replaced with base skills)
+- Line 323: Inheritance test - verifies skills from baseClass when custom class doesn't override
+- Line 347: Multi-level inheritance test - verifies one-level merge only
+
+**Integration tests** (tests/integration/customClasses.integration.test.ts):
+- Line 50: Necromancer class test - verifies custom skills replace base Wizard skills
+- Line 86: BattleMage test - verifies empty array is respected
+- Line 112: Runecaster test - verifies custom class without baseClass uses its own skills
+- Line 292: Full Necromancer example - verifies complete integration
+
+### Edge Cases Verified
+
+1. **Empty array `[]`**: Custom class can specify `available_skills: []` to have no skills (overrides base)
+2. **Undefined/null**: Falls back to base class skills via `||` operator
+3. **Custom skills**: Custom skill IDs (e.g., 'necromancy') are allowed and validated by SkillAssigner
+4. **Partial override**: When custom provides some skills, they completely replace (not merged)
+
+### Conclusion
+
+**All code paths consistently implement `available_skills` replacement behavior:**
+- Both sync and async versions of `getClassData()` use identical logic
+- SkillAssigner correctly consumes the merged class data
+- Documentation accurately describes the replacement behavior
+- Tests cover all edge cases (empty array, undefined, custom skills)
+
+**No inconsistencies found.** The implementation is correct and well-documented across all code paths.
 
 ---
 
