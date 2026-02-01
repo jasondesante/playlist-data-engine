@@ -271,6 +271,8 @@ export interface Attack {
     damage_type?: string;
     type?: 'melee' | 'ranged' | 'spell';
     range?: number;
+    /** Weapon properties (e.g., 'finesse', 'versatile', 'thrown', 'reach') */
+    properties?: string[];
 }
 
 export interface Spell {
