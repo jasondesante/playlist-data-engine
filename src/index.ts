@@ -53,7 +53,7 @@ export type {
 } from './core/types/Progression.js';
 
 export type { LevelUpBenefits, UncappedProgressionConfig } from './core/progression/LevelUpProcessor.js';
-export type { CharacterUpdateResult } from './core/progression/CharacterUpdater.js';
+export type { CharacterUpdateResult, ApplyPendingStatIncreaseResult } from './core/progression/CharacterUpdater.js';
 
 // Character generation types
 export type { CharacterAppearance } from './core/generation/AppearanceGenerator.js';

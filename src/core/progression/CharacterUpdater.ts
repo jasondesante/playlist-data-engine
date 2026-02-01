@@ -6,6 +6,8 @@ import { LevelUpProcessor } from './LevelUpProcessor.js';
 import { MasterySystem } from './MasterySystem.js';
 import { StatManager } from './stat/StatManager.js';
 
+export type { ApplyPendingStatIncreaseResult } from '../types/Progression.js';
+
 export interface CharacterUpdateResult {
     character: CharacterSheet;
     xpEarned: number;
