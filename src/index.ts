@@ -427,6 +427,7 @@ export {
     MASTERY_THRESHOLD,
     MASTERY_BONUS_XP,
     getRaceData,
+    getRaceDataAsync,
     getClassData,
     getClassSpellList,
     getSpellSlotsForClass,
