@@ -706,7 +706,7 @@ All 16 items verified. All constants and helper functions exist and are properly
 - [ ] Multiple implementations of [functionality] found
 
 ### Discrepancies Found
-- [ ] **Location mismatch (Task 1.2)** - DATA_ENGINE_REFERENCE_plan.md documents character types at `src/types/CharacterTypes.ts` and `src/types/CombatTypes.ts`, but actual location is `src/core/types/Character.ts`. All 9 types (Race, Class, Ability, Skill, ProficiencyLevel, GameMode, Attack, Spell, AbilityScores) exist at the correct location in the codebase.
+- [x] **Location mismatch (Task 1.2)** - DATA_ENGINE_REFERENCE_plan.md documents character types at `src/types/CharacterTypes.ts` and `src/types/CombatTypes.ts`, but actual location is `src/core/types/Character.ts`. All 9 types (Race, Class, Ability, Skill, ProficiencyLevel, GameMode, Attack, Spell, AbilityScores) exist at the correct location in the codebase. ✅ VERIFIED: Documentation already corrected at line 211.
 - [ ] **Location mismatch (Task 1.3)** - DATA_ENGINE_REFERENCE_plan.md documents character interfaces at `src/types/CharacterTypes.ts`, but this file does not exist. All 4 interfaces exist at different locations:
   - CharacterSheet → `src/core/types/Character.ts` (229-373)
   - CharacterEquipment → `src/core/types/Equipment.ts` (183-189)
