@@ -1985,8 +1985,9 @@ export interface LevelUpBenefits {
 ```
 - `static applyLevelUp(character: CharacterSheet, benefits: LevelUpBenefits): CharacterSheet`
     - Applies the calculated benefits to the character sheet.
-- `static getXPThreshold(level: number): number`
+- `static getXPThreshold(level: number, isUncapped: boolean = false): number`
     - Returns XP required for a specific level.
+    - `isUncapped`: When true, uses uncapped progression formula for levels beyond 20.
 
 #### Helper: `MasterySystem`
 
