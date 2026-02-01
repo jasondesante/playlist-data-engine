@@ -319,18 +319,80 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 2.6: CharacterGenerator → src/core/generation/CharacterGenerator.ts
-- [ ] class exists and is exported
-- [ ] Static method: `generate(seed: string, audioProfile: AudioProfile, name: string, options?: CharacterGeneratorOptions): CharacterSheet`
-- [ ] Type `CharacterGeneratorOptions` exists with:
-  - [ ] `gameMode?: 'standard' | 'uncapped'`
-- [ ] Type `CharacterSheet` exists with:
-  - [ ] `name: string`
-  - [ ] `race: Race`
-  - [ ] `class: Class`
-  - [ ] `ability_scores: AbilityScores`
-  - [ ] `level: number`
-  - [ ] `seed: string`
-  - [ ] `attacks?: Attack[]` - **NEEDS INVESTIGATION**
+- [x] class exists and is exported
+- [x] Static method: `generate(seed: string, audioProfile: AudioProfile, name: string, options?: CharacterGeneratorOptions): CharacterSheet`
+- [x] Type `CharacterGeneratorOptions` exists with:
+  - [x] `gameMode?: 'standard' | 'uncapped'`
+- [x] Type `CharacterSheet` exists with:
+  - [x] `name: string`
+  - [x] `race: Race`
+  - [x] `class: Class`
+  - [x] `ability_scores: AbilityScores`
+  - [x] `level: number`
+  - [x] `seed: string`
+  - [x] `attacks?: Attack[]` - **INVESTIGATED: Does NOT exist as property on CharacterSheet**
+
+**Task 2.6 Summary - COMPLETED**:
+- **VERIFIED**: `CharacterGenerator` class exists at src/core/generation/CharacterGenerator.ts:128
+  - Exported from src/index.ts at line 184
+  - Exported with `type CharacterGeneratorOptions` at line 184
+- **VERIFIED**: Static method `generate(seed: string, audioProfile: AudioProfile, name: string, options?: CharacterGeneratorOptions): CharacterSheet` exists at line 259
+  - Method accepts optional `CharacterGeneratorOptions` parameter
+- **VERIFIED**: Type `CharacterGeneratorOptions` exists at src/core/generation/CharacterGenerator.ts:80 with properties:
+  - `level?: number` - Starting level (default: 1)
+  - `forceClass?: Class` - Override class suggestion
+  - `forceRace?: Race` - Override race selection
+  - `gameMode?: GameMode` - Game mode for stat progression (default: 'standard')
+  - `subrace?: string` - Optional subrace selection
+  - `extensions?: CharacterGeneratorExtensions` - Custom extensions
+- **VERIFIED**: `GameMode` type exists at src/core/types/Character.ts:284 as `'standard' | 'uncapped'`
+- **VERIFIED**: Type `CharacterSheet` exists at src/core/types/Character.ts:333 with properties:
+  - `name: string` (line 335)
+  - `race: Race` (line 338)
+  - `subrace?: string` (line 341)
+  - `class: Class` (line 344)
+  - `level: number` (line 347)
+  - `ability_scores: AbilityScores` (line 350)
+  - `ability_modifiers: AbilityScores` (line 353)
+  - `proficiency_bonus: number` (line 356)
+  - `hp: { current, max, temp }` (line 359)
+  - `armor_class: number` (line 366)
+  - `initiative: number` (line 369)
+  - `speed: number` (line 372)
+  - `skills: Record<string, ProficiencyLevel>` (line 375)
+  - `saving_throws: Record<Ability, boolean>` (line 378)
+  - `racial_traits: string[]` (line 381)
+  - `class_features: string[]` (line 384)
+  - `spells?: { spell_slots, known_spells, cantrips }` (line 387)
+  - `equipment?: { weapons, armor, items, totalWeight, equippedWeight }` (line 394)
+  - `appearance?: { body_type, skin_tone, hair_style, hair_color, eye_color, facial_features, primary_color?, secondary_color?, aura_color? }` (line 403)
+  - `xp: { current, next_level }` (line 419)
+  - `seed: string` (line 425)
+  - `generated_at: string` (line 428)
+  - `gameMode?: GameMode` (line 431)
+  - `pendingStatIncreases?: number` (line 434)
+  - `feature_effects?: FeatureEffect[]` (line 448)
+  - `equipment_effects?: EquipmentEffect[]` (line 457)
+- **INVESTIGATED**: `attacks?: Attack[]` property **does NOT exist** on `CharacterSheet`
+  - The `Attack` type IS defined at src/core/types/Character.ts:289 with properties:
+    - `name: string`
+    - `bonus?: number`
+    - `attack_bonus?: number`
+    - `damage?: string`
+    - `damage_dice?: string`
+    - `damage_type?: string`
+    - `type?: 'melee' | 'ranged' | 'spell'`
+    - `range?: number`
+    - `properties?: string[]`
+  - However, `CharacterSheet` does NOT have an `attacks` property
+  - Attacks appear to be computed dynamically or derived from equipment/class features rather than stored directly on the character sheet
+  - **RECOMMENDATION**: Update USAGE_IN_OTHER_PROJECTS.md to remove references to `attacks` property on `CharacterSheet`, or add it if it was intended to be part of the type
+- **ADDITIONAL FINDINGS**: Several related types defined in CharacterGenerator.ts are NOT exported from src/index.ts:
+  - `SpellExtension` (line 21) - for custom spells
+  - `EquipmentExtension` (line 35) - for custom equipment
+  - `CharacterGeneratorExtensions` (line 67) - for extension configuration
+  - These are internal types used by the generator's extension system
+- **BUILD STATUS**: Clean - no compilation errors
 
 ---
 
@@ -916,7 +978,7 @@ This verification plan ensures documentation-code alignment by systematically ch
 - [ ] `ClassInfo` - Value type in `CLASS_DATA`
 - [ ] `EquipmentTemplate` - Value type in `MAGIC_EQUIPMENT_TEMPLATES`
 - [ ] `StatIncrease` - Array element type in `StatManager` methods
-- [ ] `Attack` - Parameter type in `CombatEngine.executeAttack()`
+- [x] `Attack` - **INVESTIGATED in Task 2.6**: Type exists at src/core/types/Character.ts:289 but `CharacterSheet.attacks` property does NOT exist
 
 ### Task 11.2a: Type Documentation Inaccuracies
 - [x] ~~`FrequencyBands` comments in AudioProfile.ts (lines 66-73) reference OLD v1 bands~~
@@ -926,7 +988,7 @@ This verification plan ensures documentation-code alignment by systematically ch
 
 ### Task 11.3: Properties Needing Verification
 - [ ] `Combatant.isDefeated` - Used in combat examples, verify exists
-- [ ] `CharacterSheet.attacks` - Used in combat examples, verify exists
+- [x] `CharacterSheet.attacks` - **INVESTIGATED in Task 2.6**: Property does NOT exist on CharacterSheet type
 - [ ] Uncapped mode stat increases - Verify "EVERY level" behavior matches documentation
 
 ### Task 11.4: Type Relationship Clarification
@@ -982,7 +1044,7 @@ For each item, verify:
 | Phase | Status | Completed | Total | Last Updated |
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
-| 2 | In Progress | 5 | ~40 | 2026-02-01 |
+| 2 | In Progress | 6 | ~40 | 2026-02-01 |
 | 3 | Not Started | 0 | ~60 | - |
 | 4 | Not Started | 0 | ~40 | - |
 | 5 | Not Started | 0 | ~50 | - |
@@ -992,4 +1054,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **9** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **10** | **~475** | 2026-02-01 |
