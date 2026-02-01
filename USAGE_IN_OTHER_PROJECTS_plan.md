@@ -2839,15 +2839,29 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 11.2: Types Needing Investigation
-- [ ] `SpellConfig` - Return type from `SpellManager.initializeSpells()`
-- [ ] `SpellSlots` - Return type from `SpellManager.getSpellSlots()`
-- [ ] `SessionContext` - Parameter type for `SessionTracker.startSession()`
-- [ ] `DiceFormula` - Return type from `parseDiceFormula()`
-- [ ] `RaceInfo` - Value type in `RACE_DATA`
-- [ ] `ClassInfo` - Value type in `CLASS_DATA`
-- [ ] `EquipmentTemplate` - Value type in `MAGIC_EQUIPMENT_TEMPLATES`
-- [ ] `StatIncrease` - Array element type in `StatManager` methods
+- [x] `SpellConfig` - Return type from `SpellManager.initializeSpells()`
+- [x] `SpellSlots` - Return type from `SpellManager.getSpellSlots()`
+- [x] `SessionContext` - Parameter type for `SessionTracker.startSession()`
+- [x] `DiceFormula` - Return type from `parseDiceFormula()`
+- [x] `RaceInfo` - Value type in `RACE_DATA`
+- [x] `ClassInfo` - Value type in `CLASS_DATA`
+- [x] `EquipmentTemplate` - Value type in `MAGIC_EQUIPMENT_TEMPLATES`
+- [x] `StatIncrease` - Array element type in `StatManager` methods
 - [x] `Attack` - **INVESTIGATED in Task 2.6**: Type exists at src/core/types/Character.ts:289 but `CharacterSheet.attacks` property does NOT exist
+
+**Task 11.2 Summary - COMPLETED**:
+- **INVESTIGATED**: All 8 types needing investigation have been identified and their actual types documented
+- **FINDINGS**:
+  1. `SpellConfig` - Return type from `SpellManager.initializeSpells()` → **RESOLVED**: Actual type is `SpellSlots` interface (exported from src/core/generation/SpellManager.ts:24)
+  2. `SpellSlots` - Return type from `SpellManager.getSpellSlots()` → **RESOLVED**: Returns inline type `Record<number, { total: number; used: number }>` (line 58)
+  3. `SessionContext` - Parameter type for `SessionTracker.startSession()` → **RESOLVED**: Inline object type `{ environmental_context?: EnvironmentalContext; gaming_context?: GamingContext }` (lines 53-56)
+  4. `DiceFormula` - Return type from `parseDiceFormula()` → **RESOLVED**: Inline return type `{ diceCount: number; diceSides: number; modifier: number; rolls: number[]; total: number; }` (lines 35-41)
+  5. `RaceInfo` - Value type in `RACE_DATA` → **RESOLVED**: Actual type is `RaceDataEntry` interface (exported from src/utils/constants.ts:23)
+  6. `ClassInfo` - Value type in `CLASS_DATA` → **RESOLVED**: Actual type is `ClassDataEntry` interface (exported from src/utils/constants.ts:291)
+  7. `EquipmentTemplate` - Value type in `MAGIC_EQUIPMENT_TEMPLATES` → **RESOLVED**: Type is `Partial<EnhancedEquipment>` (using existing EnhancedEquipment type)
+  8. `StatIncrease` - Array element type in `StatManager` methods → **RESOLVED**: Inline type `{ ability: Ability; amount: number }` (line 95)
+- **RESOLUTION**: All types are either existing exported types or inline types. No missing types found.
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 11.2a: Type Documentation Inaccuracies
 - [x] ~~`FrequencyBands` comments in AudioProfile.ts (lines 66-73) reference OLD v1 bands~~
