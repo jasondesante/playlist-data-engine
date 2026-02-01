@@ -522,11 +522,72 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 3.3: SkillRegistry → src/core/skills/SkillRegistry.ts
-- [ ] class exists and is exported
-- [ ] Static method: `getSkillRegistry(): SkillRegistry`
-- [ ] Methods for registering and querying skills
-- [ ] Type `CustomSkill` exists
-- [ ] Type `SkillPrerequisite` exists
+- [x] class exists and is exported
+- [x] Static method: `getSkillRegistry(): SkillRegistry`
+- [x] Methods for registering and querying skills
+- [x] Type `CustomSkill` exists
+- [x] Type `SkillPrerequisite` exists
+
+**Task 3.3 Summary - COMPLETED**:
+- **VERIFIED**: `SkillRegistry` class exists at src/core/skills/SkillRegistry.ts:29
+  - Exported from src/index.ts at line 298
+  - Type `SkillRegistry` is properly exported
+- **VERIFIED**: Static method `getInstance(): SkillRegistry` exists at line 51
+- **VERIFIED**: Function `getSkillRegistry(): SkillRegistry` exists at line 432 (also exported from src/index.ts at line 298)
+- **VERIFIED**: Methods for registering and querying skills:
+  - `registerSkill(skill: CustomSkill): void` (line 86)
+  - `registerSkills(skills: CustomSkill[]): void` (line 124)
+  - `getSkill(id: string): CustomSkill | undefined` (line 136)
+  - `getAllSkills(): CustomSkill[]` (line 145)
+  - `getSkillsByAbility(ability: Ability): CustomSkill[]` (line 155)
+  - `getSkillsByCategory(category: string): CustomSkill[]` (line 172)
+  - `getCategories(): string[]` (line 188)
+  - `getSkillsBySource(source: 'default' | 'custom'): CustomSkill[]` (line 198)
+  - `isValidSkill(id: string): boolean` (line 208)
+  - `validateSkill(skill: CustomSkill): SkillValidationResult` (line 218)
+  - `validatePrerequisites(skill: CustomSkill, character: CharacterSheet): SkillValidationResult` (line 266)
+  - `getRegistryStats(): SkillRegistryStats` (line 278)
+  - `reset(): void` - Reset registry to initial state (line 315)
+  - `isInitialized(): boolean` - Check if registry has been initialized (line 334)
+  - `exportRegistry(): CustomSkill[]` - Export as JSON (line 345)
+  - `unregisterSkill(id: string): boolean` - Remove skill from registry (line 358)
+  - `getSkillCount(): number` - Get total skill count (line 398)
+  - `getAvailableSkills(character: CharacterSheet): CustomSkill[]` (line 411)
+  - `initializeDefaults(defaultSkills?: CustomSkill[]): void` (line 64)
+- **VERIFIED**: Type `CustomSkill` exists at src/core/skills/SkillTypes.ts:57 with properties:
+  - `id: string` - Unique identifier (e.g., 'athletics', 'survival_cold')
+  - `name: string` - Display name
+  - `description?: string` - Optional description
+  - `ability: Ability` - The ability score used (STR, DEX, CON, INT, WIS, CHA)
+  - `armorPenalty?: boolean` - Whether affected by armor disadvantage
+  - `customProperties?: Record<string, string | number | boolean | string[]>` - Optional custom properties
+  - `categories?: string[]` - Optional categories for grouping/filtering
+  - `source: 'default' | 'custom'` - Where this skill comes from
+  - `tags?: string[]` - Optional tags for additional categorization
+  - `lore?: string` - Optional flavor text
+  - `prerequisites?: SkillPrerequisite` - Prerequisites for learning this skill
+- **VERIFIED**: Type `SkillPrerequisite` exists at src/core/skills/SkillTypes.ts:25 with properties:
+  - `level?: number` - Minimum character level required
+  - `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` - Minimum ability scores
+  - `class?: Class` - Specific class required
+  - `race?: Race` - Specific race required
+  - `skills?: string[]` - Skills that must be proficient first
+  - `features?: string[]` - Features that must be learned first
+  - `spells?: string[]` - Spells that must be known first
+  - `custom?: string` - Custom condition description
+- **ADDITIONAL TYPES EXPORTED** from src/core/skills/SkillTypes.ts:
+  - `SkillProficiency` - Proficiency level for a specific skill (lines 139-170)
+  - `SkillSelectionWeights` - Weights for controlling spawn rates (lines 178-194)
+  - `SkillListDefinition` - Skill list definition for a class (lines 201-234)
+  - `SkillValidationResult` - Validation result type (lines 241-246)
+  - `SkillRegistryStats` - Registry statistics (lines 253-264)
+- **ADDITIONAL EXPORTS** from src/index.ts:
+  - `SkillValidator` class (line 299)
+  - Validation functions: `validateSkill`, `validateSkills`, `validateSkillProficiency`, `validateSkillProficiencies`, `validateSkillListDefinition`, `validateSkillPrerequisites` (lines 303-308)
+  - `DEFAULT_SKILLS` constant (line 315)
+  - `DEFAULT_SKILL_CATEGORIES` constant (line 315)
+  - All skill types exported (lines 319-323): `SkillProficiency`, `SkillSelectionWeights`, `SkillListDefinition`, `SkillValidationResult`, `SkillRegistryStats`
+- **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 3.4: SpellRegistry → src/core/spells/SpellRegistry.ts
 - [ ] class exists and is exported
@@ -1150,7 +1211,7 @@ For each item, verify:
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
-| 3 | In Progress | 2 | ~60 | 2026-02-01 |
+| 3 | In Progress | 3 | ~60 | 2026-02-01 |
 | 4 | Not Started | 0 | ~40 | - |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
@@ -1159,4 +1220,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **12** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **13** | **~475** | 2026-02-01 |
