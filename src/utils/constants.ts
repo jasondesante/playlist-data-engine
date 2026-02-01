@@ -448,7 +448,7 @@ export async function getClassDataAsync(className: string): Promise<ClassDataEnt
                     return {
                         ...baseData,
                         ...classEntry,
-                        // Ensure available_skills is merged (custom skills + base skills)
+                        // available_skills is completely replaced (not merged) when provided by custom class
                         available_skills: classEntry.available_skills || baseData.available_skills,
                     } as ClassDataEntry;
                 }
@@ -534,7 +534,7 @@ export function getClassData(className: string): ClassDataEntry | undefined {
                     return {
                         ...baseData,
                         ...classEntry,
-                        // Ensure available_skills is merged (custom skills + base skills)
+                        // available_skills is completely replaced (not merged) when provided by custom class
                         available_skills: classEntry.available_skills || baseData.available_skills,
                     } as ClassDataEntry;
                 }

@@ -46,7 +46,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase 3 | Spell Prerequisites | 10 tasks | `██████████` 100% |
 | Phase 4 | Custom Race Support | 9 items | `██████████` 100% |
 | Phase 5 | Subrace Support | 12 tasks | `██████████` 100% |
-| Phase 6 | Template-Based Classes | 22 tasks | `████░░░░░░` 18% |
+| Phase 6 | Template-Based Classes | 22 tasks | `█████████░` 86% |
 | Phase 7 | Tests & Documentation | 11 tasks | `░░░░░░░░░░` 0% |
 
 ---
@@ -237,10 +237,12 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 - Template-based class merge support (baseClass property handling)
 
 ## Task 6.5: Verify Merge Logic Implementation
-- [ ] getClassData performs shallow merge with baseClass
-- [ ] `available_skills` is replaced (not merged)
-- [ ] Other properties are inherited unless specified
-- [ ] JSDoc documents merge behavior correctly
+- [x] getClassData performs shallow merge with baseClass → Verified at [constants.ts:534-536](src/utils/constants.ts#L534)
+- [x] `available_skills` is replaced (not merged) → Verified at [constants.ts:538](src/utils/constants.ts#L538)
+- [x] Other properties are inherited unless specified → Verified via spread operator order `{ ...baseData, ...classEntry }`
+- [x] JSDoc documents merge behavior correctly → Verified at [constants.ts:473-489](src/utils/constants.ts#L473)
+
+**FINDING**: All verified. Fixed misleading inline comment that said "merged" instead of "replaced" for available_skills. JSDoc documentation was already accurate.
 
 ## Task 6.6: Verify Consuming Files
 - [ ] SkillAssigner.ts uses getClassData()
