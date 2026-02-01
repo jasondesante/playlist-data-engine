@@ -60,7 +60,7 @@ The following items are noted for awareness but should NOT be resolved:
   - LevelUpBenefits → `src/core/progression/LevelUpProcessor.ts` (25-63)
 
 ### Task 1.6: Stat Increase Types Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Stat types documented at `src/types/StatTypes.ts` → actual locations:
+- [x] Update DATA_ENGINE_REFERENCE.md: Stat types documented at `src/types/StatTypes.ts` → actual locations:
   - StatIncreaseConfig → `src/core/types/Progression.ts` (173-185)
   - StatIncreaseStrategyType → `src/core/types/Progression.ts` (107-113)
   - UncappedProgressionConfig → `src/core/progression/LevelUpProcessor.ts` (75-82)

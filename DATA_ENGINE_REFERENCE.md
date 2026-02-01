@@ -1960,6 +1960,19 @@ Provides comprehensive stat increase management for D&D 5e-style character progr
 new StatManager(config?: Partial<StatIncreaseConfig>)
 ```
 
+**Type: StatIncreaseConfig**
+
+**Location:** `src/core/types/Progression.ts` (173-185)
+
+```typescript
+export interface StatIncreaseConfig {
+    maxStatCap: number;
+    strategy: StatIncreaseStrategyType | StatIncreaseStrategy | StatIncreaseFunction;
+    autoApply: boolean;
+    statIncreaseLevels: number[];
+}
+```
+
 **Configuration:**
 - `maxStatCap` (number): Hard cap for all stats (default: 20)
 - `strategy`: Strategy for auto-selecting stats on level up
@@ -2147,6 +2160,10 @@ class CharacterWithRespec {
 
 ### Strategy Types
 
+**Type: StatIncreaseStrategyType**
+
+**Location:** `src/core/types/Progression.ts` (107-113)
+
 ```typescript
 type StatIncreaseStrategyType =
     | 'dnD5e'          // Manual selection (D&D 5e standard)
@@ -2292,6 +2309,8 @@ LevelUpProcessor.setUncappedConfig({
 ```
 
 **Interface: UncappedProgressionConfig**
+
+**Location:** `src/core/progression/LevelUpProcessor.ts` (75-82)
 
 ```typescript
 export interface UncappedProgressionConfig {
