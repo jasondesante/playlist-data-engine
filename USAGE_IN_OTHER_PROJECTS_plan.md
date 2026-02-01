@@ -1336,22 +1336,77 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build completed successfully with no compilation errors
 
 ### Task 5.6: StatManager → src/core/progression/stat/StatManager.ts
-- [ ] class exists and is exported
-- [ ] Constructor: `constructor(config?: StatIncreaseConfig)`
-  - [ ] Config supports `strategy: StatIncreaseStrategyType | StatIncreaseStrategy | StatIncreaseFunction`
-  - [ ] Config supports `maxStat?: number` (default: 20)
-- [ ] `processLevelUp(character: CharacterSheet, newLevel: number, options?: StatIncreaseOptions): StatIncreaseResult`
-  - [ ] Options supports `forcedAbilities?: Ability[]`
-  - [ ] Options supports `excludedAbilities?: Ability[]`
-- [ ] `increaseStats(character: CharacterSheet, increases: StatIncrease[], source: string): StatIncreaseResult`
-  - [ ] Type `StatIncrease[]` exists - **NEEDS INVESTIGATION**
-- [ ] `decreaseStats(character: CharacterSheet, decreases: StatIncrease[], source: string): StatIncreaseResult`
-- [ ] `updateConfig(config: Partial<StatIncreaseConfig>): void`
-- [ ] Type `StatIncreaseConfig` exists
-- [ ] Type `StatIncreaseResult` exists with:
-  - [ ] `character: CharacterSheet`
-  - [ ] `increases: StatIncrease[]`
-  - [ ] `capped: StatIncrease[]`
+- [x] class exists and is exported
+- [x] Constructor: `constructor(config?: Partial<StatIncreaseConfig>)`
+  - [x] Config supports `strategy: StatIncreaseStrategyType | StatIncreaseStrategy | StatIncreaseFunction`
+  - [x] Config supports `maxStatCap?: number` (default: 20) - **MINOR NOTE**: Property name is `maxStatCap` not `maxStat`
+- [x] `processLevelUp(character: CharacterSheet, newLevel: number, options?: StatIncreaseOptions): StatIncreaseResult | null`
+  - [x] Options supports `forcedAbilities?: Ability[]`
+  - [x] Options supports `excludedAbilities?: Ability[]`
+  - [x] **INVESTIGATED**: Return type is `StatIncreaseResult | null` (returns `null` when no stat increase at level)
+- [x] `increaseStats(character: CharacterSheet, increases: Array<{ ability: Ability; amount: number }>, source?: string): StatIncreaseResult`
+  - [x] **INVESTIGATED**: Type is `Array<{ ability: Ability; amount: number }>` - there is NO separate `StatIncrease` type, it's an inline object type
+- [x] `decreaseStats(character: CharacterSheet, decreases: Array<{ ability: Ability; amount: number }>, source?: string): StatIncreaseResult`
+  - [x] **INVESTIGATED**: Uses same inline type as `increaseStats`
+- [x] `updateConfig(config: Partial<StatIncreaseConfig>): void`
+- [x] Type `StatIncreaseConfig` exists
+- [x] Type `StatIncreaseResult` exists with:
+  - [x] `character: CharacterSheet`
+  - [x] `increases: Array<{ ability: Ability; oldValue: number; newValue: number; delta: number }>`
+  - [x] `capped: Array<{ ability: Ability; attemptedValue: number; cappedAt: number }>`
+- [x] **ADDITIONAL METHODS** verified (not in original task):
+  - [x] `setStat(character, ability, value, source?): StatIncreaseResult` - Set a stat to absolute value
+  - [x] `getConfig(): Readonly<Required<StatIncreaseConfig>>` - Get current config
+  - [x] `canIncrease(character, ability, amount?): boolean` - Check if stat can be increased
+  - [x] `getStatCap(character, ability): number` - Get stat cap for character's game mode
+  - [x] `validateDnD5eStatSelection(character, selections, increaseAmount?): { valid: true } | StatSelectionValidationError` - Validate stat selection
+
+**Task 5.6 Summary - COMPLETED**:
+- **VERIFIED**: `StatManager` class exists at src/core/progression/stat/StatManager.ts:62
+  - Exported from src/index.ts at line 215
+- **VERIFIED**: Constructor `constructor(config?: Partial<StatIncreaseConfig>)` exists at line 66
+  - **MINOR DISCREPANCY**: Task showed `config?: StatIncreaseConfig` but actual signature is `config?: Partial<StatIncreaseConfig>`
+- **VERIFIED**: Config type `StatIncreaseConfig` exists at src/core/types/Progression.ts:173 with properties:
+  - `maxStatCap: number` (line 175) - **NOTE**: Property is `maxStatCap` not `maxStat` as shown in task
+  - `strategy: StatIncreaseStrategyType | StatIncreaseStrategy | StatIncreaseFunction` (line 178)
+  - `autoApply: boolean` (line 181)
+  - `statIncreaseLevels: number[]` (line 184)
+- **VERIFIED**: `processLevelUp(character: CharacterSheet, newLevel: number, options?: StatIncreaseOptions): StatIncreaseResult | null` exists at line 213
+  - **MINOR DISCREPANCY**: Task showed return type as `StatIncreaseResult` but actual is `StatIncreaseResult | null`
+  - Returns `null` when the level does not grant a stat increase
+  - Handles both standard mode (levels 4, 8, 12, 16, 19) and uncapped mode (every level)
+- **VERIFIED**: Type `StatIncreaseOptions` exists at src/core/types/Progression.ts:128 with properties:
+  - `forcedAbilities?: Ability[]` (line 130) - Force specific abilities (overrides strategy)
+  - `excludedAbilities?: Ability[]` (line 133) - Exclude certain abilities from selection
+  - `requireMultiple?: boolean` (line 136) - Require increasing multiple abilities
+  - `priorityAbilities?: Ability[]` (line 139) - Prioritize these abilities as tiebreaker
+- **VERIFIED**: `increaseStats(character: CharacterSheet, increases: Array<{ ability: Ability; amount: number }>, source?: string): StatIncreaseResult` exists at line 93
+  - **INVESTIGATED**: The `StatIncrease[]` type mentioned in the task does NOT exist as a named type
+  - The actual parameter type is an inline array type: `Array<{ ability: Ability; amount: number }>`
+  - The `source` parameter has a default value and is optional (defaults to `'manual'`)
+- **VERIFIED**: `decreaseStats(character: CharacterSheet, decreases: Array<{ ability: Ability; amount: number }>, source?: string): StatIncreaseResult` exists at line 164
+  - Internally converts decreases to negative increases and calls `increaseStats`
+- **VERIFIED**: `updateConfig(config: Partial<StatIncreaseConfig>): void` exists at line 268
+- **VERIFIED**: Type `StatIncreaseResult` exists at src/core/types/Progression.ts:190 with properties:
+  - `character: CharacterSheet` (line 192)
+  - `increases: Array<{ ability: Ability; oldValue: number; newValue: number; delta: number }>` (line 195)
+    - **NOTE**: This is different from the parameter type in `increaseStats` - it includes `oldValue`, `newValue`, and `delta`
+  - `capped: Array<{ ability: Ability; attemptedValue: number; cappedAt: number }>` (line 203)
+  - `source: 'level_up' | 'manual' | 'item' | 'event'` (line 210)
+  - `timestamp: number` (line 213)
+- **ADDITIONAL METHODS VERIFIED** (not in original task):
+  - `setStat(character: CharacterSheet, ability: Ability, value: number, source?: string): StatIncreaseResult` (line 192) - Sets a stat to an absolute value
+  - `getConfig(): Readonly<Required<StatIncreaseConfig>>` (line 281) - Returns current configuration
+  - `canIncrease(character: CharacterSheet, ability: Ability, amount?: number): boolean` (line 300) - Checks if stat can be increased without hitting cap
+  - `getStatCap(character: CharacterSheet, _ability: Ability): number` (line 319) - Returns stat cap (20 or Infinity based on gameMode)
+  - `validateDnD5eStatSelection(character: CharacterSheet, selections: Array<{ ability: Ability; amount: number }>, increaseAmount?: number): { valid: true } | StatSelectionValidationError` (line 333) - Validates user stat selections
+- **VERIFIED**: Type `StatSelectionValidationError` exists at src/core/types/Progression.ts:281 (imported in StatManager.ts line 22)
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTES**:
+  - Task showed `maxStat` in config but actual property is `maxStatCap`
+  - Task showed `StatIncrease[]` type which does not exist - actual types are inline object arrays
+  - Task showed `processLevelUp` returning `StatIncreaseResult` but actual is `StatIncreaseResult | null`
+  - Constructor accepts `Partial<StatIncreaseConfig>` not `StatIncreaseConfig`
 
 ### Task 5.7: Stat Increase Strategies → src/core/progression/stat/StatIncreaseStrategy.ts
 - [ ] `DnD5eStandardStrategy` - Default D&D 5e (manual selection)
