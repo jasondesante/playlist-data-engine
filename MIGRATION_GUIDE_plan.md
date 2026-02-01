@@ -45,7 +45,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase 2 | Skill Prerequisites | 12 tasks | `██████████` 100% |
 | Phase 3 | Spell Prerequisites | 10 tasks | `██████████` 100% |
 | Phase 4 | Custom Race Support | 9 items | `██████████` 100% |
-| Phase 5 | Subrace Support | 12 tasks | `░░░░░░░░░░` 0% |
+| Phase 5 | Subrace Support | 12 tasks | `█░░░░░░░░░` 8% |
 | Phase 6 | Template-Based Classes | 22 tasks | `░░░░░░░░░░` 0% |
 | Phase 7 | Tests & Documentation | 11 tasks | `░░░░░░░░░░` 0% |
 
@@ -157,8 +157,8 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 
 ## Task 5.1: Verify CharacterSheet Updates
 File: [src/core/types/Character.ts](src/core/types/Character.ts)
-- [ ] Property `subrace?: string` exists on CharacterSheet → line 236
-- [ ] Property has correct documentation comment
+- [x] Property `subrace?: string` exists on CharacterSheet → line 236
+- [x] Property has correct documentation comment → **Verified: `/** Subrace (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf') */`**
 
 ## Task 5.2: Verify FeaturePrerequisite Updates
 File: [src/core/features/FeatureTypes.ts](src/core/features/FeatureTypes.ts)
