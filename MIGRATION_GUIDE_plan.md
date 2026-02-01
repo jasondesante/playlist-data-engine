@@ -46,7 +46,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase 3 | Spell Prerequisites | 10 tasks | `██████████` 100% |
 | Phase 4 | Custom Race Support | 9 items | `██████████` 100% |
 | Phase 5 | Subrace Support | 12 tasks | `██████████` 100% |
-| Phase 6 | Template-Based Classes | 22 tasks | `█░░░░░░░░░` 5% |
+| Phase 6 | Template-Based Classes | 22 tasks | `██░░░░░░░░` 9% |
 | Phase 7 | Tests & Documentation | 11 tasks | `░░░░░░░░░░` 0% |
 
 ---
@@ -198,10 +198,10 @@ File: [src/core/types/Character.ts](src/core/types/Character.ts)
 **FINDING**: All verified. The branded type system is correctly implemented with proper documentation and runtime validation support for custom classes via ExtensionManager.
 
 ## Task 6.2: Verify ExtensionManager Categories
-- [ ] Category `'classes.data'` is supported
-- [ ] Category `classSpellLists.${ClassName}` is supported
-- [ ] Category `classSpellSlots` is supported
-- [ ] Category `classStartingEquipment.${ClassName}` is supported
+- [x] Category `'classes.data'` is supported → [ExtensionManager.ts:55](src/core/extensions/ExtensionManager.ts#L55)
+- [x] Category `classSpellLists.${ClassName}` is supported → [ExtensionManager.ts:107-108](src/core/extensions/ExtensionManager.ts#L107)
+- [x] Category `classSpellSlots` is supported → [ExtensionManager.ts:110](src/core/extensions/ExtensionManager.ts#L110)
+- [x] Category `classStartingEquipment.${ClassName}` is supported → [ExtensionManager.ts:112-113](src/core/extensions/ExtensionManager.ts#L112)
 
 ## Task 6.3: Verify ClassDataEntry Interface
 File: [src/utils/constants.ts](src/utils/constants.ts)
