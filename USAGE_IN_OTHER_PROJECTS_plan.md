@@ -2195,10 +2195,30 @@ This verification plan ensures documentation-code alignment by systematically ch
 **Objective**: Verify helper functions and game data constants
 
 ### Task 9.1: Hash Utilities → src/utils/hash.ts
-- [ ] `generateSeed(input: string): string`
-- [ ] `hashSeedToFloat(seed: string): number`
-- [ ] `hashSeedToInt(seed: string): number`
-- [ ] `deriveSeed(seed: string, salt: string): string`
+- [x] `generateSeed(input: string): string`
+- [x] `hashSeedToFloat(seed: string): number`
+- [x] `hashSeedToInt(seed: string): number`
+- [x] `deriveSeed(seed: string, salt: string): string`
+
+**Task 9.1 Summary - COMPLETED**:
+- **VERIFIED**: All hash utility functions exist at src/utils/hash.ts
+- **VERIFIED**: All functions properly exported from src/index.ts at lines 154-159
+- **SIGNATURE DISCREPANCY FOUND**: The task checklist has incorrect signatures compared to actual implementation:
+  - `generateSeed(input: string): string` listed but actual is `generateSeed(chainName: string, tokenAddress: string, tokenId: string): string`
+    - Actual function (lines 14-20) takes 3 parameters for blockchain data: chainName, tokenAddress, tokenId
+    - Returns formatted seed string: `${chainName}-${tokenAddress}-${tokenId}`
+  - `hashSeedToFloat(seed: string): number` **MATCHES** (line 27)
+    - Uses MurmurHashV3 to hash seed to 0.0-1.0 range
+  - `hashSeedToInt(seed: string): number` listed but actual is `hashSeedToInt(seed: string, min: number, max: number): number` (line 40)
+    - Takes additional `min` and `max` parameters for range specification
+    - Returns integer in range [min, max)
+  - `deriveSeed(seed: string, salt: string): string` listed but actual is `deriveSeed(baseSeed: string, suffix: string): string` (line 51)
+    - Parameter names differ: `baseSeed` vs `seed`, `suffix` vs `salt`
+    - Functionally equivalent - appends suffix to base seed with `:` separator
+- **DOCUMENTATION GAP**: Hash utilities are NOT documented in USAGE_IN_OTHER_PROJECTS.md
+  - These utilities are exported but not mentioned in the main usage documentation
+  - **RECOMMENDATION**: Add hash utilities section to USAGE_IN_OTHER_PROJECTS.md if these are intended as public API
+- **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.2: Random Number Generation → src/utils/random.ts
 - [ ] class `SeededRNG` exists and is exported
