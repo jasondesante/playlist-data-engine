@@ -566,7 +566,6 @@ export interface WeatherData {
 export interface LightData {
     illuminance: number;          // lux (light intensity)
     timestamp: number;
-    environment: 'bright_daylight' | 'indoor' | 'dim' | 'dark';
 }
 ```
 

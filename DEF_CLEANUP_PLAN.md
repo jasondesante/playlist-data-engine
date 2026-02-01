@@ -212,7 +212,7 @@ The following items are noted for awareness but should NOT be resolved:
   - `moonPhase: number` is required (not optional)
 
 ### Task 6.5: LightData Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Remove `environment: 'bright_daylight' | 'indoor' | 'dim' | 'dark'` property (does not exist in code at `src/core/types/Environmental.ts:148-151`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Remove `environment: 'bright_daylight' | 'indoor' | 'dim' | 'dark'` property (does not exist in code at `src/core/types/Environmental.ts:148-151`)
 
 ### Task 6.6: SevereWeatherAlert Documentation (1 item)
 - [ ] Update DATA_ENGINE_REFERENCE.md: `type: 'Blizzard' | 'Hurricane' | 'Typhoon' | 'Tornado' | 'None'` (union) → actual code uses `type: SevereWeatherType` (enum) at `src/core/sensors/WeatherAPIClient.ts:50-56`. Functionality is equivalent.
