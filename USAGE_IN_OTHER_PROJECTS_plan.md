@@ -2221,9 +2221,27 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.2: Random Number Generation → src/utils/random.ts
-- [ ] class `SeededRNG` exists and is exported
-- [ ] Constructor: `constructor(seed: string)`
-- [ ] Methods for generating random numbers
+- [x] class `SeededRNG` exists and is exported
+- [x] Constructor: `constructor(seed: string)`
+- [x] Methods for generating random numbers
+
+**Task 9.2 Summary - COMPLETED**:
+- **VERIFIED**: `SeededRNG` class exists at src/utils/random.ts:7
+- **VERIFIED**: Properly exported from src/index.ts at line 162
+- **VERIFIED CONSTRUCTOR**: `constructor(seed: string)` at line 11
+  - Takes a seed string for deterministic randomness
+  - Initializes internal counter for sequence generation
+- **VERIFIED METHODS** for generating random numbers:
+  - `random(): number` (line 19) - Generate random float between 0.0 and 1.0
+  - `randomInt(min: number, max: number): number` (line 28) - Generate random integer in range [min, max)
+  - `randomChoice<T>(array: T[]): T` (line 35) - Pick random element from array
+  - `weightedChoice<T>(choices: [T, number][]): T` (line 44) - Pick element with weighted probabilities
+  - `shuffle<T>(array: T[]): T[]` (line 62) - Shuffle array deterministically
+  - `reset(): void` (line 74) - Reset counter (useful for testing)
+- **DOCUMENTATION GAP**: `SeededRNG` class is NOT documented in USAGE_IN_OTHER_PROJECTS.md
+  - This is a key utility for deterministic randomness used throughout the engine
+  - **RECOMMENDATION**: Add to USAGE_IN_OTHER_PROJECTS.md if intended as public API
+- **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.3: Validation Schemas → src/utils/validators.ts
 - [ ] `PlaylistTrackSchema`
