@@ -1003,9 +1003,33 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **DOCUMENTATION NOTE**: AbilityScoreCalculator is listed in USAGE_IN_OTHER_PROJECTS.md but lacks detailed API documentation
 
 ### Task 4.4: SkillAssigner → src/core/generation/SkillAssigner.ts
-- [ ] class exists and is exported
-- [ ] `assignSkills(className: Class, rng: SeededRNG): Record<Skill, ProficiencyLevel>`
-- [ ] Type `ProficiencyLevel` exists ('proficient', 'expertise', 'none')
+- [x] class exists and is exported
+- [x] `assignSkills(className: Class, rng: SeededRNG): Record<Skill, ProficiencyLevel>`
+- [x] Type `ProficiencyLevel` exists ('proficient', 'expertise', 'none')
+
+**Task 4.4 Summary - COMPLETED**:
+- **VERIFIED**: `SkillAssigner` class exists at src/core/generation/SkillAssigner.ts:25
+  - Exported from src/index.ts at line 188
+  - All methods are static utility methods for skill assignment
+- **VERIFIED**: `assignSkills(characterClass: Class, rng: SeededRNG, character?: CharacterSheet): Record<string, ProficiencyLevel>` exists at line 38
+  - **MINOR NOTE**: Return type uses `Record<string, ProficiencyLevel>` not `Record<Skill, ProficiencyLevel>` as documented
+  - The return type uses string keys to support custom skills, which is more flexible than the branded `Skill` type
+  - Accepts optional `character` parameter for prerequisite validation (filtering skills by character's level/abilities/features)
+- **VERIFIED**: Type `ProficiencyLevel` exists at src/core/types/Character.ts:277 as `'none' | 'proficient' | 'expertise'`
+  - Exported from src/index.ts at line 32
+- **VERIFIED**: Type `Skill` exists at src/core/types/Character.ts:257 as a union of 18 D&D 5e skills
+  - Exported from src/index.ts at line 31
+  - Skills: athletics, acrobatics, sleight_of_hand, stealth, arcana, history, investigation, nature, religion, animal_handling, insight, medicine, perception, survival, deception, intimidation, performance, persuasion
+- **ADDITIONAL FINDINGS**:
+  - The class uses SkillRegistry to support custom skills beyond the default 18 D&D 5e skills
+  - Validates all skill IDs against the SkillRegistry before assignment
+  - Filters skills by prerequisites when a character is provided (e.g., skills requiring certain levels, abilities, or features)
+  - Handles expertise for Bard and Rogue classes (selected from proficient skills)
+  - Uses Fisher-Yates shuffle with seeded RNG for deterministic skill selection
+  - Integrates with ExtensionManager for custom class data
+  - Comments indicate future enhancement: spawn rate weights via ExtensionManager for skill selection
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTE**: The plan referenced `Record<Skill, ProficiencyLevel>` but actual implementation uses `Record<string, ProficiencyLevel>` to support custom skills
 
 ### Task 4.5: SpellManager → src/core/generation/SpellManager.ts
 - [ ] class exists and is exported
@@ -1553,7 +1577,7 @@ For each item, verify:
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
 | 3 | Complete | 8 | ~60 | 2026-02-01 |
-| 4 | In Progress | 3 | ~40 | 2026-02-01 |
+| 4 | In Progress | 4 | ~40 | 2026-02-01 |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
 | 7 | Not Started | 0 | ~30 | - |
@@ -1561,4 +1585,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **21** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **22** | **~475** | 2026-02-01 |
