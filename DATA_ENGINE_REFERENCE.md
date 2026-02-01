@@ -1475,9 +1475,10 @@ Manages spells for spellcasting classes.
     - Gets spell slot counts for a class at a given level.
 - `static getCantrips(characterClass: Class): string[]`
     - Returns all available cantrips for a spellcasting class.
-- `static getKnownSpells(characterClass: Class, characterLevel: number): string[]`
+- `static getKnownSpells(characterClass: Class, characterLevel: number, character?: CharacterSheet): string[]`
     - Returns all spells known by a spellcaster at a given level.
-- `static initializeSpells(characterClass: Class, characterLevel: number): SpellSlots`
+    - If `character` is provided, filters spells by their prerequisites.
+- `static initializeSpells(characterClass: Class, characterLevel: number, character?: CharacterSheet): SpellSlots`
     - Returns complete spell configuration with slots, known spells, and cantrips.
 - `static getSpellCountAtLevel(spellLevel: number, spellSlots: Record<number, { total: number; used: number }>): number`
     - Returns number of spell slots at a given level.
