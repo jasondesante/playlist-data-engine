@@ -51,7 +51,7 @@ The following items are noted for awareness but should NOT be resolved:
   - `CharacterSheetSchema` → `src/utils/validators.ts` (106-156)
 
 ### Task 1.5: Progression Types Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Progression types documented at `src/types/ProgressionTypes.ts` and `src/types/StatTypes.ts` → actual locations:
+- [x] Update DATA_ENGINE_REFERENCE.md: Progression types documented at `src/types/ProgressionTypes.ts` and `src/types/StatTypes.ts` → actual locations:
   - ListeningSession → `src/core/types/Progression.ts` (60-71)
   - ExperienceSystem → `src/core/types/Progression.ts` (76-98)
   - LevelUpDetail → `src/core/types/Progression.ts` (219-254)

@@ -1544,6 +1544,8 @@ new SessionTracker(xpCalculator?: XPCalculator)
 
 ### ListeningSession
 
+**Location:** `src/core/types/Progression.ts` (60-71)
+
 Record of a single listening session.
 
 ```typescript
@@ -1577,6 +1579,8 @@ new XPCalculator(options?: Partial<ExperienceSystem>)
 ```
 
 ### ExperienceSystem
+
+**Location:** `src/core/types/Progression.ts` (76-98)
 
 Configuration for XP calculation.
 
@@ -1796,6 +1800,8 @@ const result2 = updater.applyPendingStatIncrease(character, 'STR', ['DEX']);
 
 ### CharacterUpdateResult
 
+**Location:** `src/core/progression/CharacterUpdater.ts` (9-18)
+
 Result of a character update operation. Now includes detailed level-up information!
 
 ```typescript
@@ -1810,6 +1816,11 @@ export interface CharacterUpdateResult {
     levelUpDetails?: LevelUpDetail[];
 }
 
+### LevelUpDetail
+
+**Location:** `src/core/types/Progression.ts` (219-254)
+
+```typescript
 export interface LevelUpDetail {
     fromLevel: number;
     toLevel: number;
@@ -1887,6 +1898,8 @@ Calculates XP based on duration and bonuses.
 Handles the mechanics of leveling up a character.
 
 ### LevelUpBenefits
+
+**Location:** `src/core/progression/LevelUpProcessor.ts` (25-63)
 
 Benefits granted by leveling up.
 
@@ -2145,6 +2158,8 @@ type StatIncreaseStrategyType =
 ```
 
 ### Stat Increase Result
+
+**Location:** `src/core/types/Progression.ts` (190-214)
 
 ```typescript
 export interface StatIncreaseResult {
