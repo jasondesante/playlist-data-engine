@@ -47,7 +47,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase 4 | Custom Race Support | 9 items | `██████████` 100% |
 | Phase 5 | Subrace Support | 12 tasks | `██████████` 100% |
 | Phase 6 | Template-Based Classes | 22 tasks | `██████████` 100% |
-| Phase 7 | Tests & Documentation | 11 tasks | `░░░░░░░░░░` 0% |
+| Phase 7 | Tests & Documentation | 11 tasks | `████████░░` 18% |
 
 ---
 
@@ -265,15 +265,15 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 **Documentation Reference:** MIGRATION_GUIDE.md → Tests Added / Documentation Updated
 
 ## Task 7.1: Verify Test Files Exist (Part 3)
-- [ ] tests/unit/skillPrerequisites.test.ts
-- [ ] tests/unit/spellPrerequisites.test.ts
-- [ ] tests/unit/customRaces.test.ts (29 tests documented)
-- [ ] tests/unit/subraces.test.ts (28 tests documented)
-- [ ] tests/integration/prerequisitesAndRaces.integration.test.ts (33 tests documented)
+- [x] tests/unit/skillPrerequisites.test.ts
+- [x] tests/unit/spellPrerequisites.test.ts
+- [x] tests/unit/customRaces.test.ts (29 tests documented)
+- [x] tests/unit/subraces.test.ts (28 tests documented)
+- [x] tests/integration/prerequisitesAndRaces.integration.test.ts (33 tests documented)
 
 ## Task 7.2: Verify Test Files Exist (Part 4)
-- [ ] tests/unit/customClasses.test.ts
-- [ ] tests/integration/customClasses.integration.test.ts
+- [x] tests/unit/customClasses.test.ts (44 tests created - covers class registration, getClassData, merge logic, validation)
+- [x] tests/integration/customClasses.integration.test.ts (9 tests - copied from part4.templateClassSystem.integration.test.ts)
 
 ## Task 7.3: Verify Documentation Updates
 - [ ] DATA_ENGINE_REFERENCE.md has prerequisites section
