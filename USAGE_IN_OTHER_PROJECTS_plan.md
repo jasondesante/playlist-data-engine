@@ -786,9 +786,38 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 3.7: WeightedSelector → src/core/extensions/WeightedSelector.ts
-- [ ] class exists and is exported
-- [ ] Weighted random selection with multiple modes
-- [ ] Type `SelectionMode` exists
+- [x] class exists and is exported
+- [x] Weighted random selection with multiple modes
+- [x] Type `SelectionMode` exists
+
+**Task 3.7 Summary - COMPLETED**:
+- **VERIFIED**: `WeightedSelector` class exists at src/core/extensions/WeightedSelector.ts:30
+  - Exported from src/index.ts at line 346
+  - Exported from src/core/extensions/index.ts at line 17 (type export)
+- **VERIFIED**: Type `SelectionMode` exists at line 18 as `'relative' | 'absolute' | 'default' | 'replace'`
+  - Exported from src/core/extensions/index.ts at line 17
+  - Re-exported from src/index.ts at line 349
+- **VERIFIED METHODS** (all static utility methods):
+  - `select(items, weights, rng, mode): T` - Select single item (line 54)
+  - `selectMultiple(items, weights, rng, count, mode): T[]` - Select multiple unique items (line 103)
+  - `getProbabilities(items, weights, mode): Record<string, number>` - Get probability distribution (line 164)
+    - **NOTE**: Documentation referenced `calculateProbabilities()` but actual method is `getProbabilities()`
+  - `getFinalWeights(items, weights, mode): Record<string, number>` - Get final weights (line 289)
+    - **NOTE**: This is a private method, not part of public API
+  - `normalizeWeights(items, weights, mode): Record<string, number>` - Normalize weights to sum to 1.0 (line 218)
+    - **ADDITIONAL METHOD** not in original task list
+  - `getItemKey(item): string` - Extract unique key from item (line 267)
+    - **ADDITIONAL METHOD** not in original task list
+- **VERIFIED SELECTION MODES**:
+  - `'relative'`: Use provided weights as-is, normalize to probabilities
+  - `'absolute'`: All non-specified items get weight 1, then normalize
+  - `'default'`: Equal weight for all items
+  - `'replace'`: Alternative name for absolute mode
+- **DOCUMENTATION NOTES**:
+  - USAGE_IN_OTHER_PROJECTS.md line 1498 only has brief mention "Weighted random selection with multiple modes"
+  - No detailed API documentation for individual methods
+  - `calculateProbabilities()` in plan should be `getProbabilities()`
+- **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 3.8: Initialization Functions → src/core/extensions/index.ts
 - [ ] `ensureAllDefaultsInitialized(): void`
@@ -1369,7 +1398,7 @@ For each item, verify:
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
-| 3 | In Progress | 5 | ~60 | 2026-02-01 |
+| 3 | In Progress | 6 | ~60 | 2026-02-01 |
 | 4 | Not Started | 0 | ~40 | - |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
@@ -1378,4 +1407,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **15** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **16** | **~475** | 2026-02-01 |
