@@ -1315,7 +1315,29 @@ interface CharacterGeneratorOptions {
     forceClass?: Class;          // Override the suggested class
     forceRace?: Race;            // Override the race selection
     subrace?: string | 'pure';   // Subrace selection (see below)
-    gameMode?: 'standard' | 'uncapped';  // Game mode for stat progression. Default: 'standard'
+    gameMode?: GameMode;         // Game mode for stat progression. Default: 'standard'
+    extensions?: CharacterGeneratorExtensions;  // Custom extensions for procedural generation
+}
+
+interface CharacterGeneratorExtensions {
+    spells?: SpellExtension[];           // Custom spells to add (spell names)
+    equipment?: EquipmentExtension[];    // Custom equipment to add
+    races?: RaceExtension[];             // Custom races to add (race names)
+    classes?: ClassExtension[];          // Custom classes to add (class names)
+    appearance?: AppearanceExtension;    // Custom appearance options
+}
+
+type SpellExtension = string;
+type EquipmentExtension = string;
+type RaceExtension = string;
+type ClassExtension = string;
+
+interface AppearanceExtension {
+    hairColors?: string[];
+    skinTones?: string[];
+    eyeColors?: string[];
+    builds?: string[];
+    heights?: string[];
 }
 
 interface CharacterSheet {

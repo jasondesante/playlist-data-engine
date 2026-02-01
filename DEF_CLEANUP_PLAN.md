@@ -87,7 +87,7 @@ The following items are noted for awareness but should NOT be resolved:
 **Estimated Items**: 11 tasks
 
 ### Task 3.1: CharacterGeneratorOptions Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Add missing `extensions?: CharacterGeneratorExtensions` property to CharacterGeneratorOptions (exists in code at `src/core/generation/CharacterGenerator.ts:80-119`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Add missing `extensions?: CharacterGeneratorExtensions` property to CharacterGeneratorOptions (exists in code at `src/core/generation/CharacterGenerator.ts:80-119`)
 
 ### Task 3.2: SkillAssigner.assignSkills Signature (1 item)
 - [ ] Update DATA_ENGINE_REFERENCE.md: `assignSkills(characterClass, rng): Record<Skill, ProficiencyLevel>` → actual signature is `assignSkills(characterClass, rng, character?): Record<string, ProficiencyLevel>` (at `src/core/generation/SkillAssigner.ts:38-42`). Return type uses `string` to support custom skills; third parameter enables prerequisite validation.
