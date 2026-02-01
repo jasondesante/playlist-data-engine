@@ -2309,7 +2309,28 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.5: Type Helpers → src/core/types/Character.ts
-- [ ] `asClass(value: string): Class`
+- [x] `asClass(value: string): Class`
+
+**Task 9.5 Summary - COMPLETED**:
+- **VERIFIED**: `asClass` function exists at src/core/types/Character.ts:170
+- **VERIFIED**: Properly exported from src/index.ts at line 178 (along with `isValidClass`)
+- **VERIFIED SIGNATURE**: `asClass(value: string): Class`
+  - Type cast function that casts a string to the `Class` type
+  - Should be used with `isValidClass()` for runtime validation safety
+  - Example usage (from code comments):
+    ```typescript
+    const className = 'Necromancer';
+    if (isValidClass(className)) {
+      const cls: Class = asClass(className);
+    }
+    ```
+- **ADDITIONAL FINDINGS**: Related function `isValidClass(value: string): boolean` is also exported
+  - This performs runtime validation against DEFAULT_CLASS_NAMES
+  - Provides safe checking before using `asClass()` type cast
+- **DOCUMENTATION GAP**: Type helper functions are NOT documented in USAGE_IN_OTHER_PROJECTS.md
+  - These are useful for working with custom class names
+  - **RECOMMENDATION**: Add to USAGE_IN_OTHER_PROJECTS.md if intended as public API
+- **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.6: Sensor Dashboard → src/utils/sensorDashboard.ts
 - [ ] `displayEnvironmentalDiagnostics(): void`
