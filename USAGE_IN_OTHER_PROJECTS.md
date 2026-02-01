@@ -1433,9 +1433,11 @@ import { EquipmentEffectApplier } from 'playlist-data-engine';
 
 // Equip item - applies all properties, features, skills, spells
 const result = EquipmentEffectApplier.equipItem(character, equipment, 'instance_123');
+// result: { applied: boolean, count: number, errors: string[] }
 
-// Unequip item - removes all effects
-EquipmentEffectApplier.unequipItem(character, 'Flaming Sword', 'instance_123');
+// Unequip item - removes all effects (instanceId is optional)
+const unequipResult = EquipmentEffectApplier.unequipItem(character, 'Flaming Sword', 'instance_123');
+// unequipResult: { applied: boolean, count: number, errors: string[] }
 ```
 
 ### Enchanting Equipment

@@ -1754,9 +1754,30 @@ This verification plan ensures documentation-code alignment by systematically ch
 **Objective**: Verify equipment spawning, effects, and modification APIs
 
 ### Task 7.1: EquipmentEffectApplier → src/core/equipment/EquipmentEffectApplier.ts
-- [ ] class exists and is exported
-- [ ] `equipItem(character: CharacterSheet, equipment: EnhancedEquipment, instanceId: string): EffectApplicationResult`
-- [ ] `unequipItem(character: CharacterSheet, itemName: string, instanceId: string): void`
+- [x] class exists and is exported
+- [x] `equipItem(character: CharacterSheet, equipment: EnhancedEquipment, instanceId: string): EffectApplicationResult`
+- [x] `unequipItem(character: CharacterSheet, itemName: string, instanceId: string): void`
+
+**Task 7.1 Summary - COMPLETED**:
+- **VERIFIED**: `EquipmentEffectApplier` class exists at src/core/equipment/EquipmentEffectApplier.ts:37
+  - Exported from src/index.ts at line 261
+  - All methods are static utility methods
+- **VERIFIED**: `equipItem(character: CharacterSheet, equipment: EnhancedEquipment, instanceId?: string): EffectApplicationResult` exists at line 46
+  - **MINOR DOCUMENTATION ISSUE**: The `instanceId` parameter is optional (`instanceId?: string`) in code but documented as required
+  - Returns `EffectApplicationResult` with properties: `applied: boolean`, `count: number`, `errors: string[]`
+- **VERIFIED**: `unequipItem(character: CharacterSheet, equipmentName: string, instanceId?: string): EffectApplicationResult` exists at line 152
+  - **MINOR DOCUMENTATION ISSUE**: The `instanceId` parameter is optional (`instanceId?: string`) in code but documented as required
+  - **MINOR DOCUMENTATION ISSUE**: Return type is documented as `void` but actually returns `EffectApplicationResult`
+  - Returns `EffectApplicationResult` with properties: `applied: boolean`, `count: number`, `errors: string[]`
+- **VERIFIED**: Type `EffectApplicationResult` exists at src/core/types/Equipment.ts:231 and is exported from src/index.ts at line 74
+- **ADDITIONAL METHODS** (not documented but available):
+  - `reapplyEquipmentEffects(character: CharacterSheet): EffectApplicationResult` (line 218) - Re-apply all equipment effects for updates/level-ups
+  - `getActiveEffects(character: CharacterSheet): EquipmentProperty[]` (line 305) - Get all active equipment effects
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION UPDATE NEEDED**: Update USAGE_IN_OTHER_PROJECTS.md to:
+  1. Make `instanceId` parameter optional in both `equipItem` and `unequipItem` signatures
+  2. Change `unequipItem` return type from `void` to `EffectApplicationResult`
+  3. Add documentation for `reapplyEquipmentEffects` and `getActiveEffects` methods
 
 ### Task 7.2: EquipmentModifier → src/core/equipment/EquipmentModifier.ts
 - [ ] class exists and is exported
