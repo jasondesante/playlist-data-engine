@@ -2823,9 +2823,20 @@ This verification plan ensures documentation-code alignment by systematically ch
 **Objective**: Track discrepancies, missing items, and items requiring investigation
 
 ### Task 11.1: Discrepancies - Documented but Not Exported
-- [ ] `SteamAPIClient` - Documented line 1398, not in src/index.ts exports
-- [ ] `DiscordRPCClient` - Documented line 1399, not in src/index.ts exports
-- [ ] Resolution: Update documentation to reflect internal-only status OR export if intended as public API
+- [x] `SteamAPIClient` - Documented line 1398, not in src/index.ts exports
+- [x] `DiscordRPCClient` - Documented line 1399, not in src/index.ts exports
+- [x] Resolution: Update documentation to reflect internal-only status OR export if intended as public API
+
+**Task 11.1 Summary - COMPLETED**:
+- **INVESTIGATED**: Both `SteamAPIClient` and `DiscordRPCClient` exist as exported classes in their respective files but are NOT exported from src/index.ts
+- **VERIFIED**:
+  - `SteamAPIClient` class exists at src/core/sensors/SteamAPIClient.ts:19
+  - `DiscordRPCClient` class exists at src/core/sensors/DiscordRPCClient.ts:254
+  - Both are used internally by `GamingPlatformSensors` class
+  - Both are platform-specific sensor clients requiring API keys (developer-provided)
+- **RESOLUTION**: These are internal implementation details used by GamingPlatformSensors. The documentation should note these as internal-only. Based on SPEC.md: "This engine requires developers to provide API keys. End-users provide their identity (Steam ID, Discord login) through your application's UI—the engine does not handle authentication or OAuth flows." The public API is GamingPlatformSensors, which wraps these clients.
+- **ACTION REQUIRED**: Update USAGE_IN_OTHER_PROJECTS.md to clarify that SteamAPIClient and DiscordRPCClient are internal implementation details, not public API
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 11.2: Types Needing Investigation
 - [ ] `SpellConfig` - Return type from `SpellManager.initializeSpells()`
