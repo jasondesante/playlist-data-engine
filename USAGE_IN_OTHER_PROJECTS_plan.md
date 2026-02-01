@@ -1450,21 +1450,83 @@ This verification plan ensures documentation-code alignment by systematically ch
 **Objective**: Verify combat engine and dice rolling APIs
 
 ### Task 6.1: CombatEngine → src/core/combat/CombatEngine.ts
-- [ ] class exists and is exported
-- [ ] Constructor: `constructor(config?: CombatConfig)`
-  - [ ] Config supports `useEnvironment: boolean`
-  - [ ] Config supports `useMusic: boolean`
-  - [ ] Config supports `tacticalMode: boolean`
-  - [ ] Config supports `maxTurnsBeforeDraw: number`
-- [ ] `startCombat(players: CharacterSheet[], enemies: CharacterSheet[], environmentalContext?: EnvironmentalContext): CombatInstance`
-- [ ] `getCurrentCombatant(instance: CombatInstance): Combatant`
-  - [ ] Type `Combatant` has `isDefeated` property - **NEEDS INVESTIGATION**
-- [ ] `getLivingCombatants(instance: CombatInstance): Combatant[]`
-- [ ] `executeAttack(instance: CombatInstance, attacker: Combatant, target: Combatant, attack: Attack): CombatActionResult`
-  - [ ] Type `Attack` exists - **NEEDS INVESTIGATION**
-- [ ] `nextTurn(instance: CombatInstance): void`
-- [ ] `getCombatResult(instance: CombatInstance): CombatResult | null`
-- [ ] Type `CombatResult` contains `description`, `xpAwarded`, `roundsElapsed`
+- [x] class exists and is exported
+- [x] Constructor: `constructor(config?: CombatConfig)`
+  - [x] Config supports `useEnvironment: boolean`
+  - [x] Config supports `useMusic: boolean`
+  - [x] Config supports `tacticalMode: boolean`
+  - [x] Config supports `maxTurnsBeforeDraw: number`
+- [x] `startCombat(players: CharacterSheet[], enemies: CharacterSheet[], environmentalContext?: EnvironmentalContext): CombatInstance`
+- [x] `getCurrentCombatant(instance: CombatInstance): Combatant`
+  - [x] Type `Combatant` has `isDefeated` property - **VERIFIED**
+- [x] `getLivingCombatants(instance: CombatInstance): Combatant[]`
+- [x] `executeAttack(instance: CombatInstance, attacker: Combatant, target: Combatant, attack: Attack): CombatActionResult`
+  - [x] Type `Attack` exists - **VERIFIED**
+- [x] `nextTurn(instance: CombatInstance): void`
+- [x] `getCombatResult(instance: CombatInstance): CombatResult | null`
+- [x] Type `CombatResult` contains `description`, `xpAwarded`, `roundsElapsed`
+
+**Task 6.1 Summary - COMPLETED**:
+- **VERIFIED**: `CombatEngine` class exists at src/core/combat/CombatEngine.ts:30
+  - Exported from src/index.ts at line 230
+  - Class is properly exported as part of the public API
+- **VERIFIED**: Constructor `constructor(config?: CombatConfig)` exists at line 49
+  - Accepts optional `CombatConfig` parameter
+  - Default values: `useEnvironment: true`, `useMusic: false`, `tacticalMode: false`, `maxTurnsBeforeDraw: 100`, `allowFleeing: false`
+- **VERIFIED**: Type `CombatConfig` exists at src/core/types/Combat.ts:156 with properties:
+  - `useEnvironment?: boolean` - Apply environmental context to combat
+  - `useMusic?: boolean` - Apply music-based buffs to character stats
+  - `tacticalMode?: boolean` - Enable position-based distance mechanics
+  - `maxTurnsBeforeDraw?: number` - Turn limit before combat is a draw
+  - `allowFleeing?: boolean` - Can combatants attempt to flee
+- **VERIFIED**: `startCombat()` method exists at line 82
+  - **MINOR NOTE**: First parameter is named `playerCharacters` (not `players`), but functionality matches
+  - Signature: `startCombat(playerCharacters: CharacterSheet[], enemies: CharacterSheet[], environment?: EnvironmentalContext): CombatInstance`
+- **VERIFIED**: `getCurrentCombatant()` method exists at line 122
+  - **MINOR NOTE**: Parameter is named `combat` (not `instance`), but functionality matches
+  - Signature: `getCurrentCombatant(combat: CombatInstance): Combatant`
+- **VERIFIED**: Type `Combatant` exists at src/core/types/Combat.ts:23 with `isDefeated: boolean` property at line 34
+- **VERIFIED**: `getLivingCombatants()` method exists at line 467
+- **VERIFIED**: `executeAttack()` method exists at line 129
+  - **MINOR NOTE**: First parameter is named `combat` (not `instance`)
+  - Return type is `CombatAction` (not `CombatActionResult`) - but result is nested in the action
+  - Signature: `executeAttack(combat: CombatInstance, attacker: Combatant, target: Combatant, attack: Attack): CombatAction`
+- **VERIFIED**: Type `Attack` exists at src/core/types/Character.ts:289 with properties:
+  - `name: string`
+  - `bonus?: number`
+  - `attack_bonus?: number`
+  - `damage?: string`
+  - `damage_dice?: string`
+  - `damage_type?: string`
+  - `type?: 'melee' | 'ranged' | 'spell'`
+  - `range?: number`
+  - `properties?: string[]`
+- **VERIFIED**: `nextTurn()` method exists at line 256
+  - **MINOR NOTE**: Parameter is named `combat` (not `instance`)
+  - Returns `CombatInstance` (not `void`)
+- **VERIFIED**: `getCombatResult()` method exists at line 315
+  - **MINOR NOTE**: Parameter is named `combat` (not `instance`)
+  - Signature: `getCombatResult(combat: CombatInstance): CombatResult | null`
+- **VERIFIED**: Type `CombatResult` exists at src/core/types/Combat.ts:127 with properties:
+  - `winner: Combatant`
+  - `defeated: Combatant[]`
+  - `roundsElapsed: number` (line 130)
+  - `totalTurns: number`
+  - `xpAwarded: number` (line 132)
+  - `treasureAwarded?: { gold: number, items: any[] }`
+  - `description: string` (line 137)
+- **ADDITIONAL METHODS FOUND** (not in task list but available):
+  - `executeCastSpell()` at line 167
+  - `executeDodge()` at line 204
+  - `executeDash()` at line 221
+  - `executeDisengage()` at line 238
+  - `getCombatSummary()` at line 417
+  - `applyDamage()` at line 426
+  - `healCombatant()` at line 451
+  - `applyTemporaryHP()` at line 460
+  - `getDefeatedCombatants()` at line 474
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **NOTE**: Minor parameter name differences between documentation and implementation (combat vs instance, playerCharacters vs players) do not affect functionality
 
 ### Task 6.2: InitiativeRoller → src/core/combat/InitiativeRoller.ts
 - [ ] class exists and is exported
