@@ -42,7 +42,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase | Description | Tasks | Status |
 |-------|-------------|-------|--------|
 | Phase 1 | Breaking Changes (Part 2) | 8 tasks | `██████████` 100% |
-| Phase 2 | Skill Prerequisites | 12 tasks | `███████░░░` 58% |
+| Phase 2 | Skill Prerequisites | 12 tasks | `██████████` 100% |
 | Phase 3 | Spell Prerequisites | 10 tasks | `░░░░░░░░░░` 0% |
 | Phase 4 | Custom Race Support | 8 tasks | `░░░░░░░░░░` 0% |
 | Phase 5 | Subrace Support | 12 tasks | `░░░░░░░░░░` 0% |
@@ -97,8 +97,8 @@ File: [src/core/skills/SkillValidator.ts](src/core/skills/SkillValidator.ts)
 - [x] Method validates all prerequisite types → delegates to validatePrerequisites() from PrerequisiteValidator
 
 ## Task 2.4: Verify Modified Files
-- [ ] SkillAssigner.ts filters skills by prerequisites
-- [ ] SkillRegistry.ts has `validatePrerequisites()` method
+- [x] SkillAssigner.ts filters skills by prerequisites → Verified at [SkillAssigner.ts:136-160](src/core/generation/SkillAssigner.ts#L136)
+- [x] SkillRegistry.ts has `validatePrerequisites()` method → Verified at [SkillRegistry.ts:256-271](src/core/skills/SkillRegistry.ts#L256)
 
 ---
 
