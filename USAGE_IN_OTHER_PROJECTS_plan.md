@@ -55,11 +55,22 @@ This verification plan ensures documentation-code alignment by systematically ch
 **Objective**: Verify the main public API surface from `src/index.ts`
 
 ### Task 1.1: Verify Export Statements in src/index.ts
-- [ ] All documented classes are exported
-- [ ] All documented functions are exported
-- [ ] All documented types are exported via `export type`
-- [ ] All documented constants are exported
-- [ ] No internal-only items are mistakenly documented as public
+- [x] All documented classes are exported
+- [x] All documented functions are exported
+- [x] All documented types are exported via `export type`
+- [x] All documented constants are exported
+- [x] No internal-only items are mistakenly documented as public
+
+**Task 1.1 Summary - COMPLETED**:
+- **VERIFIED**: All documented classes are properly exported from src/index.ts
+- **VERIFIED**: All documented functions are properly exported
+- **VERIFIED**: All documented types are exported via `export type` statements
+- **VERIFIED**: All documented constants are exported
+- **DISCREPANCY FOUND**: `SteamAPIClient` and `DiscordRPCClient` are documented as available exports in USAGE_IN_OTHER_PROJECTS.md (lines 1534-1535) but are NOT exported from src/index.ts
+  - These classes exist in src/core/sensors/SteamAPIClient.ts and src/core/sensors/DiscordRPCClient.ts
+  - They are used internally by GamingPlatformSensors but are not part of the public API
+  - **RECOMMENDATION**: Update USAGE_IN_OTHER_PROJECTS.md to remove these from the "Available Exports" section (lines 1534-1535)
+- **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 1.2: Verify Core Classes (src/index.ts lines 1-200)
 - [ ] `PlaylistParser` → src/core/parser/PlaylistParser.ts (line 195)
@@ -78,9 +89,16 @@ This verification plan ensures documentation-code alignment by systematically ch
 - [ ] All initialization functions exported (lines 349-373)
 
 ### Task 1.4: Verify Sensor Exports (src/index.ts lines 379-380)
-- [ ] `EnvironmentalSensors` → src/core/sensors/EnvironmentalSensors.ts (line 379)
-- [ ] `GamingPlatformSensors` → src/core/sensors/GamingPlatformSensors.ts (line 380)
-- [ ] NOTE: `SteamAPIClient` and `DiscordRPCClient` NOT in exports - **DISCREPANCY**
+- [x] `EnvironmentalSensors` → src/core/sensors/EnvironmentalSensors.ts (line 382)
+- [x] `GamingPlatformSensors` → src/core/sensors/GamingPlatformSensors.ts (line 383)
+- [x] NOTE: `SteamAPIClient` and `DiscordRPCClient` NOT in exports - **CONFIRMED DISCREPANCY**
+
+**Task 1.4 Summary - COMPLETED**:
+- **VERIFIED**: `EnvironmentalSensors` is properly exported at line 382
+- **VERIFIED**: `GamingPlatformSensors` is properly exported at line 383
+- **CONFIRMED**: `SteamAPIClient` and `DiscordRPCClient` are NOT exported (as noted in Task 1.1)
+  - These are internal implementation classes used by GamingPlatformSensors
+  - Documentation needs updating to remove them from public exports list
 
 ---
 
@@ -778,7 +796,7 @@ For each item, verify:
 
 | Phase | Status | Completed | Total | Last Updated |
 |-------|--------|-----------|-------|--------------|
-| 1 | Not Started | 0 | ~50 | - |
+| 1 | In Progress | 2 | ~50 | 2026-02-01 |
 | 2 | Not Started | 0 | ~40 | - |
 | 3 | Not Started | 0 | ~60 | - |
 | 4 | Not Started | 0 | ~40 | - |
@@ -789,4 +807,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **Not Started** | **0** | **~475** | - |
+| **ALL** | **In Progress** | **2** | **~475** | 2026-02-01 |
