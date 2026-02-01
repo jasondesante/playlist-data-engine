@@ -1106,8 +1106,27 @@ This verification plan ensures documentation-code alignment by systematically ch
   - Actual return uses `EnhancedInventoryItem[]` which is compatible with `InventoryItem[]` for consumers
 
 ### Task 4.7: NamingEngine → src/core/generation/NamingEngine.ts
-- [ ] class exists and is exported
-- [ ] `generateName(track: PlaylistTrack, audioProfile: AudioProfile): string`
+- [x] class exists and is exported
+- [x] `generateName(track: PlaylistTrack, audioProfile: AudioProfile): string`
+
+**Task 4.7 Summary - COMPLETED**:
+- **VERIFIED**: `NamingEngine` class exists at src/core/generation/NamingEngine.ts:15
+  - Exported from src/index.ts at line 192
+  - All methods are instance methods (not static)
+- **VERIFIED**: `generateName(track: PlaylistTrack, audioProfile: AudioProfile): string` exists at line 40
+  - Takes a `PlaylistTrack` (from src/core/types/Playlist.ts) and `AudioProfile` (from src/core/types/AudioProfile.ts)
+  - Returns a generated RPG-style character name (20-50 characters)
+  - Uses three name formats weighted: 50% Class Title, 30% Adjective Construct, 20% Clan Construct
+  - Cleans track title by removing metadata (Official Video, Remix, etc.)
+  - Uses seeded RNG with track UUID for deterministic name generation
+- **VERIFIED**: Type `PlaylistTrack` exists at src/core/types/Playlist.ts:27
+  - Has properties: `uuid`, `title`, `artist`, `genre`, etc.
+- **VERIFIED**: Type `AudioProfile` exists at src/core/types/AudioProfile.ts:5
+  - Has properties: `bass_dominance`, `mid_dominance`, `treble_dominance`, `average_amplitude`
+- **ADDITIONAL PUBLIC METHOD**:
+  - `cleanTitle(title: string): string` (line 72) - Cleans track title by removing metadata and noise
+- **BUILD STATUS**: Clean - no compilation errors
+- **DOCUMENTATION NOTE**: NamingEngine is listed in USAGE_IN_OTHER_PROJECTS.md but lacks detailed API documentation
 
 ### Task 4.8: AppearanceGenerator → src/core/generation/AppearanceGenerator.ts
 - [ ] class exists and is exported
