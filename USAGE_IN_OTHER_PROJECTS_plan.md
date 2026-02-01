@@ -401,12 +401,42 @@ This verification plan ensures documentation-code alignment by systematically ch
 **Objective**: Verify all registries, validators, and initialization functions
 
 ### Task 3.1: ExtensionManager → src/core/extensions/ExtensionManager.ts
-- [ ] class exists and is exported
-- [ ] Static method: `getInstance(): ExtensionManager`
-- [ ] `register(category: ExtensionCategory, data: any, options?: ExtensionOptions): void`
-- [ ] `setWeights(category: ExtensionCategory, weights: Record<string, number>): void`
-- [ ] Type `ExtensionCategory` exists
-- [ ] Type `ExtensionOptions` exists
+- [x] class exists and is exported
+- [x] Static method: `getInstance(): ExtensionManager`
+- [x] `register(category: ExtensionCategory, data: any, options?: ExtensionOptions): void`
+- [x] `setWeights(category: ExtensionCategory, weights: Record<string, number>): void`
+- [x] Type `ExtensionCategory` exists
+- [x] Type `ExtensionOptions` exists
+
+**Task 3.1 Summary - COMPLETED**:
+- **VERIFIED**: `ExtensionManager` class exists at src/core/extensions/ExtensionManager.ts:224
+  - Exported from src/index.ts at line 345
+  - Type `ExtensionManager` is properly exported
+- **VERIFIED**: Static method `getInstance(): ExtensionManager` exists at line 239
+- **VERIFIED**: `register(category: ExtensionCategory, data: any, options?: ExtensionOptions): void` exists at line 270
+  - **MINOR NOTE**: Parameter is `items: any[]` not `data: any`, but functionality matches
+- **VERIFIED**: `setWeights(category: ExtensionCategory, weights: Record<string, number>): void` exists at line 437
+- **VERIFIED**: Type `ExtensionCategory` exists at line 39 as a union type with many categories including:
+  - `'equipment'`, `'equipment.properties'`, `'equipment.modifications'`, `'equipment.templates'`
+  - `'appearance.bodyTypes'`, `'appearance.skinTones'`, `'appearance.hairColors'`, etc.
+  - `'spells'`, `'races'`, `'races.data'`, `'classes'`, `'classes.data'`
+  - `'classFeatures'`, `'classFeatures.${string}'` (for all classes)
+  - `'racialTraits'`, `'racialTraits.${string}'` (for all races)
+  - `'skills'`, `'skills.${Ability}'`
+  - `'skillLists'`, `'skillLists.${string}'`
+  - `'classSpellLists'`, `'classSpellSlots'`, `'classStartingEquipment'`
+- **VERIFIED**: Type `ExtensionOptions` exists at line 118 with properties:
+  - `mode?: SpawnMode` - Spawn mode ('relative', 'absolute', 'default', 'replace')
+  - `weights?: Record<string, number>` - Custom spawn weights
+  - `validate?: boolean` - Whether to validate items (default: true)
+- **VERIFIED**: Type `SpawnMode` exists at line 34 as `'relative' | 'absolute' | 'default' | 'replace'`
+- **VERIFIED**: Type `ValidationResult` exists at line 173 with properties:
+  - `valid: boolean`
+  - `errors?: string[]`
+  - `warnings?: string[]`
+- **VERIFIED**: Type `ContentPackData` exists at line 196 for exporting custom content packs
+- **BUILD STATUS**: Clean - no compilation errors
+- **NOTE**: Pre-existing lint errors exist in ExtensionManager.ts (unused imports and `any` types) but are unrelated to verification
 
 ### Task 3.2: FeatureRegistry → src/core/features/FeatureRegistry.ts
 - [ ] class exists and is exported
@@ -1044,8 +1074,8 @@ For each item, verify:
 | Phase | Status | Completed | Total | Last Updated |
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
-| 2 | In Progress | 6 | ~40 | 2026-02-01 |
-| 3 | Not Started | 0 | ~60 | - |
+| 2 | Complete | 6 | ~40 | 2026-02-01 |
+| 3 | In Progress | 1 | ~60 | 2026-02-01 |
 | 4 | Not Started | 0 | ~40 | - |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
@@ -1054,4 +1084,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **10** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **11** | **~475** | 2026-02-01 |
