@@ -1993,11 +1993,55 @@ This verification plan ensures documentation-code alignment by systematically ch
 **Objective**: Verify environmental and gaming platform sensor APIs
 
 ### Task 8.1: EnvironmentalSensors → src/core/sensors/EnvironmentalSensors.ts
-- [ ] class exists and is exported
-- [ ] Constructor: `constructor(apiKey?: string)`
-- [ ] `requestPermissions(types: SensorType[]): Promise<SensorPermission[]>`
-- [ ] `updateSnapshot(): Promise<EnvironmentalContext>`
-- [ ] `calculateXPModifier(): number`
+- [x] class exists and is exported
+- [x] Constructor: `constructor(apiKey?: string)`
+- [x] `requestPermissions(types: SensorType[]): Promise<SensorPermission[]>`
+- [x] `updateSnapshot(): Promise<EnvironmentalContext>`
+- [x] `calculateXPModifier(): number`
+
+**Task 8.1 Summary - COMPLETED**:
+- **VERIFIED**: `EnvironmentalSensors` class exists at src/core/sensors/EnvironmentalSensors.ts:43
+  - Exported from src/index.ts at line 382
+- **VERIFIED**: Constructor exists with signature:
+  - `constructor(weatherApiKeyOrConfig?: string | { weather?: Partial<WeatherSensorConfig>; geolocation?: Partial<GeolocationSensorConfig>; retry?: Partial<RetryConfig>; xpModifier?: Partial<XPModifierConfig> }, retryConfig?: Partial<SensorRetryConfig>)` (line 106)
+  - **NOTE**: The constructor signature is more complex than documented in the task. It accepts either:
+    1. A single string parameter (legacy signature with just API key)
+    2. A full configuration object with weather, geolocation, retry, and xpModifier options
+    3. The legacy two-parameter form: `(apiKey, retryConfig)`
+  - The task only showed `apiKey?: string` but the actual implementation supports multiple signatures for backward compatibility
+- **VERIFIED**: `requestPermissions(types: SensorType[]): Promise<SensorPermission[]>` exists at line 424
+  - Returns array of permission results with type, granted status, and timestamp
+- **VERIFIED**: `updateSnapshot(): Promise<EnvironmentalContext>` exists at line 505
+  - Returns environmental context with geolocation, motion, weather, light, biome, and timestamp
+- **VERIFIED**: `calculateXPModifier(): number` exists at line 567
+  - Returns XP modifier (1.0x - 3.0x default) based on environmental factors
+  - Uses configured max modifier cap
+- **VERIFIED TYPES**:
+  - `SensorType` exists at src/core/types/Environmental.ts:1 as union type: `'geolocation' | 'motion' | 'weather' | 'light'`
+  - `SensorPermission` exists at src/core/types/Environmental.ts:37 with properties: `type`, `granted`, `timestamp`
+  - `EnvironmentalContext` exists at src/core/types/Environmental.ts:155 with properties: `geolocation`, `motion`, `weather`, `light`, `biome`, `timestamp`, `environmental_xp_modifier`
+- **ADDITIONAL METHODS FOUND** (not in task description but part of public API):
+  - `startMonitoring(callback?: (context: EnvironmentalContext) => void): void` (line 459)
+  - `stopMonitoring(): void` (line 497)
+  - `calculateXPModifierWithForecast(forecastHours?: number): Promise<number>` (line 604)
+  - `calculateXPModifierWithSevereWeather(): Promise<{ modifier: number; severeWeatherAlert: SevereWeatherAlert | null; safetyWarning: string | null }>` (line 643)
+  - `detectSevereWeather(): SevereWeatherAlert | null` (line 683)
+  - `getSevereWeatherWarning(): string | null` (line 696)
+  - `getPermissions(): SensorPermission[]` (line 705)
+  - `checkAvailability(type: SensorType): boolean` (line 713)
+  - `getCurrentActivity(): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown'` (line 767)
+  - `getDiagnostics(): {...}` (line 786) - Comprehensive diagnostic report
+  - `getSensorStatus(sensorType: SensorType): SensorStatus | null` (line 357)
+  - `getAllSensorStatuses(): SensorStatus[]` (line 364)
+  - `getFailureLog(sensorType?: SensorType, limit?: number): SensorFailureLog[]` (line 374)
+  - `getLastKnownGood(sensorType: SensorType): any` (line 394)
+  - `clearFailureLog(): void` (line 401)
+  - `updateRetryConfig(config: Partial<SensorRetryConfig>): void` (line 408)
+  - `onSensorRecovery(callback: (notification: SensorRecoveryNotification) => void): () => void` (line 349)
+  - `enableDiagnosticMode(): void` (line 884)
+  - `disableDiagnosticMode(): void` (line 893)
+  - `printDashboard(config?: DashboardConfig): void` (line 908)
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 8.2: GamingPlatformSensors → src/core/sensors/GamingPlatformSensors.ts
 - [ ] class exists and is exported
