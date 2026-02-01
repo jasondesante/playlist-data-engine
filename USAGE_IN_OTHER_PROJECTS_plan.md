@@ -2905,11 +2905,31 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 11.5: Redundancy Review
-- [ ] `SpellValidator` class vs validation functions in `src/core/spells/index.ts`
-- [ ] `SkillValidator` class vs validation functions in `src/core/skills/index.ts`
-- [ ] `FeatureValidator` class vs validation functions in `src/core/features/index.ts`
-- [ ] Individual `initialize*Defaults()` vs `ensureAllDefaultsInitialized()`
-  - [ ] Document usage patterns and recommended approach
+- [x] `SpellValidator` class vs validation functions in `src/core/spells/index.ts`
+- [x] `SkillValidator` class vs validation functions in `src/core/skills/index.ts`
+- [x] `FeatureValidator` class vs validation functions in `src/core/features/index.ts`
+- [x] Individual `initialize*Defaults()` vs `ensureAllDefaultsInitialized()`
+  - [x] Document usage patterns and recommended approach
+
+**Task 11.5 Summary - COMPLETED**:
+- **INVESTIGATED**: All validator modules follow the same pattern
+- **VALIDATOR PATTERN** (not redundancy, but intentional design):
+  - Each module exports both a `Validator` class AND standalone validation functions
+  - Standalone functions are convenience wrappers around class methods
+  - Provides both OOP (for stateful validation) and functional (for quick validation) interfaces
+  - `SpellValidator` class + `validateSpell`, `validateSpells`, `validateSpellPrerequisites` functions
+  - `SkillValidator` class + `validateSkill`, `validateSkills`, `validateSkillProficiency`, etc. functions
+  - `FeatureValidator` class + `validateClassFeature`, `validateRacialTrait`, etc. functions
+- **INITIALIZATION PATTERN** (not redundancy, but different use cases):
+  - `initializeAllDefaults()` (line 298) - Calls all `initialize*Defaults()` functions (basic ExtensionManager data only)
+    - Initializes: appearance, spell, equipment, race, class defaults
+    - Does NOT include: feature and skill defaults (they use FeatureRegistry/SkillRegistry, not ExtensionManager)
+    - Use for: One-time initialization of basic extensibility system
+  - `ensureAllDefaultsInitialized()` (line 312) - Calls all `ensure*DefaultsInitialized()` functions (ALL registries)
+    - Initializes: appearance, spell, equipment, race, class, feature, skill defaults
+    - Safe to call multiple times (idempotent)
+    - Use for: Ensuring ALL registries are initialized before use
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ---
 
