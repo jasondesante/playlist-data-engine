@@ -43,7 +43,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 |-------|-------------|-------|--------|
 | Phase 1 | Breaking Changes (Part 2) | 8 tasks | `██████████` 100% |
 | Phase 2 | Skill Prerequisites | 12 tasks | `██████████` 100% |
-| Phase 3 | Spell Prerequisites | 10 tasks | `░░░░░░░░░░` 0% |
+| Phase 3 | Spell Prerequisites | 10 tasks | `███████░░░` 70% |
 | Phase 4 | Custom Race Support | 8 tasks | `░░░░░░░░░░` 0% |
 | Phase 5 | Subrace Support | 12 tasks | `░░░░░░░░░░` 0% |
 | Phase 6 | Template-Based Classes | 22 tasks | `░░░░░░░░░░` 0% |
@@ -106,17 +106,20 @@ File: [src/core/skills/SkillValidator.ts](src/core/skills/SkillValidator.ts)
 
 **Documentation Reference:** MIGRATION_GUIDE.md → Part 3: Prerequisites & Custom Races → Spell Prerequisites
 
+**DISCREPANCY FOUND:** Interface is in `src/core/spells/SpellTypes.ts` NOT `src/utils/constants.ts` as documented. This was noted in the file comments as part of Phase 6 discrepancy resolution (Task 6.3/6.4).
+
 ## Task 3.1: Verify SpellPrerequisite Interface
-File: [src/utils/constants.ts](src/utils/constants.ts)
-- [ ] Interface is exported as `export interface SpellPrerequisite`
-- [ ] Property `level?: number` exists
-- [ ] Property `casterLevel?: number` exists
-- [ ] Property `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` exists
-- [ ] Property `class?: string` exists
-- [ ] Property `features?: string[]` exists
-- [ ] Property `spells?: string[]` exists
-- [ ] Property `skills?: string[]` exists
-- [ ] Property `custom?: string` exists
+File: [src/core/spells/SpellTypes.ts](src/core/spells/SpellTypes.ts)
+- [x] Interface is exported as `export interface SpellPrerequisite` → line 27
+- [x] Property `level?: number` exists → line 29
+- [x] Property `casterLevel?: number` exists → line 32
+- [x] Property `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` exists → line 35
+- [x] Property `class?: Class` exists → line 38 (uses `Class` branded type, not `string`)
+- [x] Property `race?: string` exists → line 41 (NOT documented in plan, but present in code)
+- [x] Property `features?: string[]` exists → line 44
+- [x] Property `spells?: string[]` exists → line 47
+- [x] Property `skills?: string[]` exists → line 50
+- [x] Property `custom?: string` exists → line 53
 
 ## Task 3.2: Verify SpellManager Integration
 - [ ] getKnownSpells() filters by prerequisites
@@ -267,7 +270,7 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 | 1 | Ammunition format | 2 | Breaking | constants.ts:1997, 2005 | [ ] |
 | 2 | Feature ID format | 2 | Breaking | Character.ts:279, 343 | [ ] |
 | 3 | Skill prerequisites | 3 | Feature | SkillTypes.ts:25 | [ ] |
-| 4 | Spell prerequisites | 3 | Feature | constants.ts:873 | [ ] |
+| 4 | Spell prerequisites | 3 | Feature | SpellTypes.ts:27 (discrepancy: not in constants.ts) | [x] |
 | 5 | Custom races | 3 | Feature | constants.ts:14, 167 | [ ] |
 | 6 | Subrace support | 3 | Feature | Character.ts:236, FeatureTypes.ts:68 | [ ] |
 | 7 | Template classes | 4 | Feature | constants.ts:266, Character.ts:48 | [ ] |
@@ -282,7 +285,10 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 - [ ] getRaceData() and getRaceDataAsync() both exist - determine if both are needed
 
 ## Discrepancies Found During Verification
-- [ ] _Document any items found in code but not documented_
+- [x] **SpellPrerequisite location**: Interface is in `src/core/spells/SpellTypes.ts` NOT `src/utils/constants.ts` as documented (file comments indicate this was moved in Phase 6 Task 6.3/6.4)
+- [x] **SpellPrerequisite.class type**: Uses `Class` branded type instead of `string` (better type safety)
+- [x] **SpellPrerequisite.race property**: Code has `race?: string` property not documented in the plan
+- [ ] _Document any additional items found in code but not documented_
 - [ ] _Document any items documented but not found in code_
 - [ ] _Document any signature/type mismatches_
 
