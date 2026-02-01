@@ -14,7 +14,7 @@
  */
 
 import type { Race, Class, Ability } from '../types/Character.js';
-import { DEFAULT_CLASSES, isValidClass } from '../types/Character.js';
+import { DEFAULT_CLASSES, DEFAULT_RACES, asRace, isValidClass } from '../types/Character.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import { FeatureValidator, validateClassFeature, validateRacialTrait } from '../features/FeatureValidator.js';
@@ -582,7 +582,7 @@ export class ExtensionManager {
             }
         } else if (category === 'races') {
             // Races must be a valid Race type OR a registered custom race
-            const validRaces: Race[] = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Dragonborn', 'Gnome', 'Half-Elf', 'Half-Orc', 'Tiefling'];
+            const validRaces: readonly Race[] = DEFAULT_RACES;
 
             // Check if it's a default race
             if (validRaces.includes(item)) {

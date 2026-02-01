@@ -3,6 +3,7 @@
  */
 
 import type { Race, Class, Ability, Skill } from '../core/types/Character.js';
+import { asRace } from '../core/types/Character.js';
 import type { Spell, SpellPrerequisite } from '../core/spells/SpellTypes.js';
 import { ExtensionManager } from '../core/extensions/ExtensionManager.js';
 
@@ -48,7 +49,7 @@ export interface CustomRaceDataEntry extends RaceDataEntry {
 }
 
 // Race data with ability score bonuses
-export const RACE_DATA: Record<Race, RaceDataEntry> = {
+const RACE_DATA_IMPL = {
     'Human': {
         ability_bonuses: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 },
         speed: 30,
@@ -95,6 +96,8 @@ export const RACE_DATA: Record<Race, RaceDataEntry> = {
         traits: ['Darkvision', 'Hellish Resistance', 'Infernal Legacy'],
     },
 };
+
+export const RACE_DATA: Record<Race, RaceDataEntry> = RACE_DATA_IMPL as Record<Race, RaceDataEntry>;
 
 /**
  * Get race data (default or custom)
@@ -804,15 +807,15 @@ export const PROFICIENCY_BONUS: Record<number, number> = {
 
 // All races in order
 export const ALL_RACES: Race[] = [
-    'Human',
-    'Elf',
-    'Dwarf',
-    'Halfling',
-    'Dragonborn',
-    'Gnome',
-    'Half-Elf',
-    'Half-Orc',
-    'Tiefling',
+    asRace('Human'),
+    asRace('Elf'),
+    asRace('Dwarf'),
+    asRace('Halfling'),
+    asRace('Dragonborn'),
+    asRace('Gnome'),
+    asRace('Half-Elf'),
+    asRace('Half-Orc'),
+    asRace('Tiefling'),
 ];
 
 // All classes in order
@@ -1998,6 +2001,8 @@ export const EQUIPMENT_DATABASE: Record<string, Equipment> = {
 };
 
 // Mastery System Constants
-export const MASTERY_THRESHOLD = 10; // Number of listens to master a track
-export const MASTERY_BONUS_XP = 500; // Bonus XP for mastering a track
+/** Minimum listen count to achieve track mastery */
+export const MASTERY_THRESHOLD = 10;
 
+/** Bonus XP awarded for mastered tracks */
+export const MASTERY_BONUS_XP = 50;

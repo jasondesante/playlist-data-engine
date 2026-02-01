@@ -13,16 +13,120 @@ import type {
     EnhancedInventoryItem
 } from './Equipment.js';
 
-export type Race =
-    | 'Human'
-    | 'Elf'
-    | 'Dwarf'
-    | 'Halfling'
-    | 'Dragonborn'
-    | 'Gnome'
-    | 'Half-Elf'
-    | 'Half-Orc'
-    | 'Tiefling';
+/**
+ * Branded type for extensible Race names
+ *
+ * This allows custom races to be registered via ExtensionManager while maintaining
+ * type safety. Use asRace() to convert a string to the Race type, and isValidRace()
+ * to validate at runtime.
+ *
+ * @example
+ * // Default D&D 5e races
+ * const defaultRace: Race = asRace('Human');
+ *
+ * // Custom race (must be registered via ExtensionManager first)
+ * const customRace: Race = asRace('Dragonkin');
+ * if (isValidRace(customRace)) {
+ *   // Safe to use
+ * }
+ *
+ * // Type augmentation alternative (for user projects):
+ * // declare module 'playlist-data-engine' {
+ * //   type Race = 'Human' | 'Elf' | ... | 'Tiefling' | 'Dragonkin';
+ * // }
+ */
+export type Race = string & { readonly __RaceBrand: unique symbol };
+
+/**
+ * Cast a string to the Race type
+ *
+ * This function performs a type assertion to convert any string to the Race type.
+ * Use isValidRace() first if you need runtime validation.
+ *
+ * @param value - The race name string
+ * @returns The value cast to Race type
+ *
+ * @example
+ * const raceName = 'Dragonkin';
+ * if (isValidRace(raceName)) {
+ *   const race: Race = asRace(raceName);
+ * }
+ */
+export function asRace(value: string): Race {
+    return value as Race;
+}
+
+/**
+ * Valid D&D 5e race names (for runtime validation)
+ *
+ * These are the string values of the default D&D 5e races. Use isValidRace()
+ * to validate at runtime, and use the DEFAULT_RACES array for iteration.
+ */
+const DEFAULT_RACE_NAMES = [
+    'Human',
+    'Elf',
+    'Dwarf',
+    'Halfling',
+    'Dragonborn',
+    'Gnome',
+    'Half-Elf',
+    'Half-Orc',
+    'Tiefling'
+] as const;
+
+/**
+ * Default D&D 5e races (pre-branded Race type values)
+ *
+ * These are the core races that are always available without needing ExtensionManager.
+ * Custom races can be added via ExtensionManager.register('races.data', [...]).
+ */
+export const DEFAULT_RACES: readonly Race[] = DEFAULT_RACE_NAMES.map(asRace);
+
+/**
+ * Type guard to check if a string is a valid Race (default or custom)
+ *
+ * This checks against both default D&D 5e races and any custom races
+ * registered via ExtensionManager's 'races.data' category.
+ *
+ * @param value - The value to check
+ * @returns True if the value is a valid race name
+ *
+ * @example
+ * if (isValidRace('Dragonkin')) {
+ *   // Safe to use as Race type
+ *   const race: Race = asRace('Dragonkin');
+ * }
+ */
+export function isValidRace(value: unknown): value is Race {
+    if (typeof value !== 'string') {
+        return false;
+    }
+
+    // Check default races
+    if (DEFAULT_RACES.includes(value as Race)) {
+        return true;
+    }
+
+    // Check ExtensionManager for custom races (lazy-loaded to avoid circular dependency)
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const extensionModule = require('../extensions/ExtensionManager.js');
+        const manager = extensionModule.ExtensionManager.getInstance();
+
+        // Check custom race data registration
+        const customRaceData = manager.get('races.data' as any);
+        if (customRaceData && Array.isArray(customRaceData)) {
+            const raceNames = customRaceData.map((d: any) => d.race);
+            if (raceNames.includes(value)) {
+                return true;
+            }
+        }
+    } catch {
+        // ExtensionManager not available - only allow default races
+    }
+
+    return false;
+}
 
 /**
  * Branded type for extensible Class names

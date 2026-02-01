@@ -328,7 +328,7 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 # Notes: Items Requiring Follow-up
 
 ## Redundancy / Potential Duplicates
-- [ ] SkillPrerequisite and SpellPrerequisite have nearly identical structures - evaluate if consolidation is possible
+- [x] SkillPrerequisite and SpellPrerequisite have nearly identical structures - evaluate if consolidation is possible
 - [ ] getRaceData() and getRaceDataAsync() both exist - determine if both are needed
 
 ## Discrepancies Found During Verification
@@ -338,6 +338,40 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 - [ ] _Document any additional items found in code but not documented_
 - [ ] _Document any items documented but not found in code_
 - [ ] _Document any signature/type mismatches_
+
+---
+
+## Investigation Results: SkillPrerequisite/SpellPrerequisite Consolidation (Completed)
+
+**Task Completed:** Analysis of whether SkillPrerequisite and SpellPrerequisite should be consolidated.
+
+**Finding:** **No consolidation is needed - the architecture is already optimal.**
+
+### Current Architecture
+
+1. **Type-level separation** (intentional and beneficial):
+   - `SkillPrerequisite` in `src/core/skills/SkillTypes.ts`
+   - `SpellPrerequisite` in `src/core/spells/SpellTypes.ts` (has `casterLevel` field)
+   - `FeaturePrerequisite` in `src/core/features/FeatureTypes.ts` (has `subrace` field)
+
+2. **Runtime validation already consolidated** via `PrerequisiteValidator.ts`:
+   - Created during "Phase 13: Code Deduplication - Prerequisite Validation"
+   - `PrerequisiteSchema` interface is the union of all prerequisite fields
+   - Both `SkillValidator.validateSkillPrerequisites()` and `SpellValidator.validateSpellPrerequisites()` delegate to the shared `validatePrerequisites()` function
+
+### Why Separate Interfaces Are Correct
+
+1. **Type Safety**: Prevents passing wrong prerequisites to wrong functions
+2. **Domain Clarity**: Code reading `SkillPrerequisite` immediately knows the context
+3. **Semantic Correctness**: `casterLevel` only makes sense for spells; `subrace` only for features
+4. **Runtime Efficiency**: Shared `PrerequisiteValidator` handles all validation
+
+### Conclusion
+
+The slight duplication in interface definitions is **intentional design**, not redundancy. The current architecture provides:
+- Type-level separation for domain-specific type safety
+- Runtime validation consolidation via `PrerequisiteValidator`
+- Optimal balance between type safety and code reuse
 
 ## Investigation Needed
 - [ ] Verify merge logic in getClassData handles edge cases (missing baseClass, invalid baseClass)

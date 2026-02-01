@@ -8,7 +8,8 @@
  */
 
 import type { ClassFeature, RacialTrait } from './FeatureTypes.js';
-import type { Class } from '../types/Character.js';
+import type { Class, Race } from '../types/Character.js';
+import { asRace } from '../types/Character.js';
 
 /**
  * Default Class Features for all 12 D&D 5e classes
@@ -1202,7 +1203,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'human_versatile',
         name: 'Versatile',
         description: 'Humans gain proficiency in one skill of their choice.',
-        race: 'Human',
+        race: asRace('Human'),
         source: 'default',
         tags: ['skill']
     },
@@ -1210,7 +1211,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'human_extra_language',
         name: 'Extra Language',
         description: 'Humans can speak, read, and write one extra language of their choice.',
-        race: 'Human',
+        race: asRace('Human'),
         source: 'default',
         tags: ['language']
     },
@@ -1222,7 +1223,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'elf_darkvision',
         name: 'Darkvision',
         description: 'Accustomed to twilit forests and the night sky, elves have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can\'t discern color in darkness, only shades of gray.',
-        race: 'Elf',
+        race: asRace('Elf'),
         source: 'default',
         effects: [
             { type: 'ability_unlock', target: 'darkvision', value: 60 }
@@ -1233,7 +1234,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'elf_keen_senses',
         name: 'Keen Senses',
         description: 'Elves have proficiency in the Perception skill.',
-        race: 'Elf',
+        race: asRace('Elf'),
         source: 'default',
         effects: [
             { type: 'skill_proficiency', target: 'perception', value: 'proficient' }
@@ -1244,7 +1245,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'elf_fey_ancestry',
         name: 'Fey Ancestry',
         description: 'Elves have advantage on saving throws against being charmed, and magic can\'t put them to sleep.',
-        race: 'Elf',
+        race: asRace('Elf'),
         source: 'default',
         tags: ['defense', 'magic']
     },
@@ -1252,7 +1253,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'elf_trance',
         name: 'Trance',
         description: 'Elves don\'t need to sleep. Instead, they meditate deeply, remaining semiconscious, for 4 hours a day. After resting in this way, you gain the same benefit that a human does from 8 hours of sleep.',
-        race: 'Elf',
+        race: asRace('Elf'),
         source: 'default',
         tags: ['ability']
     },
@@ -1264,7 +1265,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'dwarf_darkvision',
         name: 'Darkvision',
         description: 'Accustomed to life underground, dwarves have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can\'t discern color in darkness, only shades of gray.',
-        race: 'Dwarf',
+        race: asRace('Dwarf'),
         source: 'default',
         effects: [
             { type: 'ability_unlock', target: 'darkvision', value: 60 }
@@ -1275,7 +1276,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'dwarf_dwarven_resilience',
         name: 'Dwarven Resilience',
         description: 'Dwarves have advantage on saving throws against poison, and resistance against poison damage.',
-        race: 'Dwarf',
+        race: asRace('Dwarf'),
         source: 'default',
         tags: ['defense']
     },
@@ -1283,7 +1284,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'dwarf_stonecunning',
         name: 'Stonecunning',
         description: 'Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check.',
-        race: 'Dwarf',
+        race: asRace('Dwarf'),
         source: 'default',
         tags: ['skill', 'exploration']
     },
@@ -1295,7 +1296,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'halfling_lucky',
         name: 'Lucky',
         description: 'When you roll a 1 on an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll.',
-        race: 'Halfling',
+        race: asRace('Halfling'),
         source: 'default',
         tags: ['luck']
     },
@@ -1303,7 +1304,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'halfling_brave',
         name: 'Brave',
         description: 'Halflings have advantage on saving throws against being frightened.',
-        race: 'Halfling',
+        race: asRace('Halfling'),
         source: 'default',
         tags: ['defense']
     },
@@ -1311,7 +1312,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'halfling_halfling_nimbleness',
         name: 'Halfling Nimbleness',
         description: 'Halflings can move through the space of any creature that is larger than them.',
-        race: 'Halfling',
+        race: asRace('Halfling'),
         source: 'default',
         tags: ['movement']
     },
@@ -1323,7 +1324,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'dragonborn_draconic_ancestry',
         name: 'Draconic Ancestry',
         description: 'Dragonborn have draconic ancestry linked to a specific type of dragon. This determines their breath weapon and damage resistance.',
-        race: 'Dragonborn',
+        race: asRace('Dragonborn'),
         source: 'default',
         tags: ['ancestry', 'combat']
     },
@@ -1331,7 +1332,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'dragonborn_breath_weapon',
         name: 'Breath Weapon',
         description: 'Dragonborn can use their action to exhale destructive energy. Their draconic ancestry determines the size, shape, and damage type of the breath weapon.',
-        race: 'Dragonborn',
+        race: asRace('Dragonborn'),
         source: 'default',
         tags: ['combat']
     },
@@ -1339,7 +1340,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'dragonborn_damage_resistance',
         name: 'Damage Resistance',
         description: 'Dragonborn have resistance to the damage type associated with their draconic ancestry.',
-        race: 'Dragonborn',
+        race: asRace('Dragonborn'),
         source: 'default',
         tags: ['defense']
     },
@@ -1351,7 +1352,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'gnome_darkvision',
         name: 'Darkvision',
         description: 'Accustomed to life underground, gnomes have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can\'t discern color in darkness, only shades of gray.',
-        race: 'Gnome',
+        race: asRace('Gnome'),
         source: 'default',
         effects: [
             { type: 'ability_unlock', target: 'darkvision', value: 60 }
@@ -1362,7 +1363,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'gnome_gnome_cunning',
         name: 'Gnome Cunning',
         description: 'Gnomes have advantage on all Intelligence, Wisdom, and Charisma saving throws against magic.',
-        race: 'Gnome',
+        race: asRace('Gnome'),
         source: 'default',
         tags: ['defense', 'magic']
     },
@@ -1374,7 +1375,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'half_elf_darkvision',
         name: 'Darkvision',
         description: 'Thanks to your elf blood, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can\'t discern color in darkness, only shades of gray.',
-        race: 'Half-Elf',
+        race: asRace('Half-Elf'),
         source: 'default',
         effects: [
             { type: 'ability_unlock', target: 'darkvision', value: 60 }
@@ -1385,7 +1386,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'half_elf_fey_ancestry',
         name: 'Fey Ancestry',
         description: 'Half-elves have advantage on saving throws against being charmed, and magic can\'t put them to sleep.',
-        race: 'Half-Elf',
+        race: asRace('Half-Elf'),
         source: 'default',
         tags: ['defense', 'magic']
     },
@@ -1393,7 +1394,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'half_elf_skill_versatility',
         name: 'Skill Versatility',
         description: 'Half-elves gain proficiency in two skills of their choice.',
-        race: 'Half-Elf',
+        race: asRace('Half-Elf'),
         source: 'default',
         tags: ['skill']
     },
@@ -1405,7 +1406,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'half_orc_darkvision',
         name: 'Darkvision',
         description: 'Thanks to your orc blood, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can\'t discern color in darkness, only shades of gray.',
-        race: 'Half-Orc',
+        race: asRace('Half-Orc'),
         source: 'default',
         effects: [
             { type: 'ability_unlock', target: 'darkvision', value: 60 }
@@ -1416,7 +1417,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'half_orc_relentless_endurance',
         name: 'Relentless Endurance',
         description: 'When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. You can\'t use this feature again until you finish a long rest.',
-        race: 'Half-Orc',
+        race: asRace('Half-Orc'),
         source: 'default',
         tags: ['survival']
     },
@@ -1424,7 +1425,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'half_orc_savage_attacks',
         name: 'Savage Attacks',
         description: 'When you score a critical hit with a melee weapon attack, you can roll one of the weapon\'s damage dice one additional time and add it to the extra damage of the critical hit.',
-        race: 'Half-Orc',
+        race: asRace('Half-Orc'),
         source: 'default',
         tags: ['combat', 'damage']
     },
@@ -1436,7 +1437,7 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'tiefling_darkvision',
         name: 'Darkvision',
         description: 'Thanks to your infernal heritage, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can\'t discern color in darkness, only shades of gray.',
-        race: 'Tiefling',
+        race: asRace('Tiefling'),
         source: 'default',
         effects: [
             { type: 'ability_unlock', target: 'darkvision', value: 60 }
@@ -1447,16 +1448,16 @@ export const DEFAULT_RACIAL_TRAITS: RacialTrait[] = [
         id: 'tiefling_hellish_resistance',
         name: 'Hellish Resistance',
         description: 'Tieflings have resistance to fire damage.',
-        race: 'Tiefling',
+        race: asRace('Tiefling'),
         source: 'default',
         tags: ['defense']
     },
     {
         id: 'tiefling_infernal_legacy',
         name: 'Infernal Legacy',
-        description: 'Tieflings know the thaumaturgy cantrip. When you reach 3rd level, you can cast the hellish rebuke spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the darkness spell once with this trait and regain the ability to do so when you finish a long rest.',
-        race: 'Tiefling',
+        description: 'Tieflings know the thaumaturgy cantrip. When you reach 3rd level, you can cast the hellish rebuke spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the darkness spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells.',
+        race: asRace('Tiefling'),
         source: 'default',
-        tags: ['magic']
-    },
+        tags: ['magic', 'spell']
+    }
 ];
