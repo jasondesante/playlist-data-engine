@@ -1409,17 +1409,39 @@ This verification plan ensures documentation-code alignment by systematically ch
   - Constructor accepts `Partial<StatIncreaseConfig>` not `StatIncreaseConfig`
 
 ### Task 5.7: Stat Increase Strategies → src/core/progression/stat/StatIncreaseStrategy.ts
-- [ ] `DnD5eStandardStrategy` - Default D&D 5e (manual selection)
-- [ ] `DnD5eSmartStrategy` - Intelligent auto-selection
-- [ ] `BalancedStrategy` - +1 to two lowest stats
-- [ ] `PrimaryOnlyStrategy` - Always boosts class primary
-- [ ] `RandomStrategy` - Random stat selection
-- [ ] `ManualStrategy` - Pure manual mode
-- [ ] `createStatIncreaseStrategy` - Factory function
-- [ ] Type `StatIncreaseStrategy` exists
-- [ ] Type `StatIncreaseStrategyType` exists
-- [ ] Type `StatIncreaseFunction` exists
-- [ ] Type `StatIncreaseOptions` exists
+- [x] `DnD5eStandardStrategy` - Default D&D 5e (manual selection)
+- [x] `DnD5eSmartStrategy` - Intelligent auto-selection
+- [x] `BalancedStrategy` - +1 to two lowest stats
+- [x] `PrimaryOnlyStrategy` - Always boosts class primary
+- [x] `RandomStrategy` - Random stat selection
+- [x] `ManualStrategy` - Pure manual mode
+- [x] `createStatIncreaseStrategy` - Factory function
+- [x] Type `StatIncreaseStrategy` exists
+- [x] Type `StatIncreaseStrategyType` exists
+- [x] Type `StatIncreaseFunction` exists
+- [x] Type `StatIncreaseOptions` exists
+- **VERIFIED**: All 6 strategy classes exist and are exported at src/core/progression/stat/StatIncreaseStrategy.ts
+  - `DnD5eStandardStrategy` (line 31): Returns empty array for manual selection, supports forcedAbilities
+  - `DnD5eSmartStrategy` (line 69): Intelligently selects based on class primary and lowest stats, supports splitting +2 into +1/+1
+  - `BalancedStrategy` (line 167): Distributes increases to lowest stats, even distribution possible
+  - `PrimaryOnlyStrategy` (line 214): Always boosts class primary ability with fallback to lowest
+  - `RandomStrategy` (line 273): Random selection from available stats
+  - `ManualStrategy` (line 311): Always defers to manual input, returns empty array
+- **VERIFIED**: `createStatIncreaseStrategy` factory function (line 359) accepts:
+  - String types: 'dnD5e', 'dnD5e_smart', 'balanced', 'primary_only', 'random', 'manual'
+  - Full StatIncreaseStrategy objects
+  - Custom StatIncreaseFunction (wrapped in FunctionStrategyWrapper)
+- **VERIFIED**: Type `StatIncreaseStrategy` exists at src/core/types/Progression.ts:145
+- **VERIFIED**: Type `StatIncreaseStrategyType` exists at src/core/types/Progression.ts:107 with 6 literal types
+- **VERIFIED**: Type `StatIncreaseFunction` exists at src/core/types/Progression.ts:119
+- **VERIFIED**: Type `StatIncreaseOptions` exists at src/core/types/Progression.ts:128 with:
+  - `forcedAbilities?: Ability[]`
+  - `excludedAbilities?: Ability[]`
+  - `requireMultiple?: boolean`
+  - `priorityAbilities?: Ability[]`
+- **VERIFIED**: All classes and function exported from src/index.ts (lines 217-223)
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **TEST STATUS**: All 2040 tests passing
 
 ---
 
