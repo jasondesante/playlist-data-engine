@@ -378,12 +378,6 @@ export class CharacterGenerator {
         // Generate character appearance
         const appearance = AppearanceGenerator.generate(seed, suggestedClass, audioProfile);
 
-        // Generate spells for spellcasting classes
-        const spells = SpellManager.initializeSpells(suggestedClass, level);
-
-        // Initialize starting equipment
-        const equipment = EquipmentGenerator.initializeEquipment(suggestedClass);
-
         // Get class features from FeatureRegistry (feature IDs only)
         const classFeatures = featureRegistry.getClassFeatures(suggestedClass, level);
 
@@ -393,8 +387,11 @@ export class CharacterGenerator {
             ? featureRegistry.getRacialTraitsForSubrace(race, subrace)
             : featureRegistry.getRacialTraits(race);
 
-        // Validate feature prerequisites (Phase 11.4)
-        // Build a partial character sheet for validation
+        // Initialize starting equipment
+        const equipment = EquipmentGenerator.initializeEquipment(suggestedClass);
+
+        // Build a partial character sheet for prerequisite validation
+        // This is used for feature validation and initial spell prerequisite filtering
         const partialCharacter: CharacterSheet = {
             name,
             race,
@@ -413,13 +410,21 @@ export class CharacterGenerator {
             racial_traits: [],  // Empty for now, will populate after validation
             class_features: [],  // Empty for now, will populate after validation
             appearance,
-            spells,
+            spells: {
+                spell_slots: {},
+                known_spells: [],
+                cantrips: []
+            },  // Empty for now, will be populated with prerequisite filtering
             equipment,
             xp: { current: 0, next_level: XP_THRESHOLDS[level + 1] || 0 },
             seed,
             generated_at: new Date().toISOString(),
             gameMode,
         };
+
+        // Generate spells for spellcasting classes with prerequisite filtering
+        // Pass partialCharacter for initial prerequisite validation (level, class, race, abilities)
+        const spells = SpellManager.initializeSpells(suggestedClass, level, partialCharacter);
 
         // Validate and filter class features by prerequisites
         const validClassFeatures: typeof classFeatures = [];

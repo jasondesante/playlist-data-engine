@@ -43,7 +43,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 |-------|-------------|-------|--------|
 | Phase 1 | Breaking Changes (Part 2) | 8 tasks | `██████████` 100% |
 | Phase 2 | Skill Prerequisites | 12 tasks | `██████████` 100% |
-| Phase 3 | Spell Prerequisites | 10 tasks | `███████░░░` 70% |
+| Phase 3 | Spell Prerequisites | 10 tasks | `██████████` 100% |
 | Phase 4 | Custom Race Support | 8 tasks | `░░░░░░░░░░` 0% |
 | Phase 5 | Subrace Support | 12 tasks | `░░░░░░░░░░` 0% |
 | Phase 6 | Template-Based Classes | 22 tasks | `░░░░░░░░░░` 0% |
@@ -122,8 +122,8 @@ File: [src/core/spells/SpellTypes.ts](src/core/spells/SpellTypes.ts)
 - [x] Property `custom?: string` exists → line 53
 
 ## Task 3.2: Verify SpellManager Integration
-- [ ] getKnownSpells() filters by prerequisites
-- [ ] CharacterGenerator passes character to SpellManager.initializeSpells()
+- [x] getKnownSpells() filters by prerequisites → Verified at [SpellManager.ts:217-220](src/core/generation/SpellManager.ts#L217)
+- [x] CharacterGenerator passes character to SpellManager.initializeSpells() → Fixed and verified at [CharacterGenerator.ts:430](src/core/generation/CharacterGenerator.ts#L430)
 
 ---
 
