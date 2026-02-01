@@ -37,7 +37,7 @@ The following items are noted for awareness but should NOT be resolved:
   - CharacterAppearance → `src/core/generation/AppearanceGenerator.ts` (8-21)
 
 ### Task 1.3: RNG Utility Functions Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: RNG functions documented at `src/utils/random.ts` → actual location is `src/utils/hash.ts`:
+- [x] Update DATA_ENGINE_REFERENCE.md: RNG functions documented at `src/utils/random.ts` → actual location is `src/utils/hash.ts`:
   - `generateSeed()` → `src/utils/hash.ts` (14)
   - `hashSeedToFloat()` → `src/utils/hash.ts` (27)
   - `hashSeedToInt()` → `src/utils/hash.ts` (40)

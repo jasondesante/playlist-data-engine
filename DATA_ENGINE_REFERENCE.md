@@ -821,14 +821,20 @@ export interface SpellSlots {
 
 **Hashing & Seeds**
 
+*Location: `src/utils/hash.ts`*
+
 - `generateSeed(chain: string, address: string, id: string): string`
     - Creates a unique seed string.
 - `hashSeedToFloat(seed: string): number`
     - Returns a float between 0.0 and 1.0.
 - `hashSeedToInt(seed: string, min: number, max: number): number`
     - Returns an integer in range [min, max).
+- `deriveSeed(baseSeed: string, suffix: string): string`
+    - Creates a derived seed by appending a suffix to a base seed.
 
 **Randomness**
+
+*Location: `src/utils/random.ts`*
 
 - `class SeededRNG`
     - `constructor(seed: string)`
