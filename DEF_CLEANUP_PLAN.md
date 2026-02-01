@@ -215,7 +215,7 @@ The following items are noted for awareness but should NOT be resolved:
 - [x] Update DATA_ENGINE_REFERENCE.md: Remove `environment: 'bright_daylight' | 'indoor' | 'dim' | 'dark'` property (does not exist in code at `src/core/types/Environmental.ts:148-151`)
 
 ### Task 6.6: SevereWeatherAlert Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: `type: 'Blizzard' | 'Hurricane' | 'Typhoon' | 'Tornado' | 'None'` (union) → actual code uses `type: SevereWeatherType` (enum) at `src/core/sensors/WeatherAPIClient.ts:50-56`. Functionality is equivalent.
+- [x] Update DATA_ENGINE_REFERENCE.md: `type: 'Blizzard' | 'Hurricane' | 'Typhoon' | 'Tornado' | 'None'` (union) → actual code uses `type: SevereWeatherType` (enum) at `src/core/sensors/WeatherAPIClient.ts:50-56`. Functionality is equivalent.
 
 ---
 
@@ -269,7 +269,7 @@ The following items are noted for awareness but should NOT be resolved:
 | 3 | Character Generation Documentation | 11 | Pending |
 | 4 | Progression System Documentation | 4 | Pending |
 | 5 | Combat System Documentation | 2 | Pending |
-| 6 | Environmental Types Documentation | 6 | 3/6 completed |
+| 6 | Environmental Types Documentation | 6 | 4/6 completed |
 | 7 | Gaming Integration Documentation | 4 | Pending |
 | 8 | Equipment Types Documentation | 1 | Pending |
 | **Total** | | **37** | |

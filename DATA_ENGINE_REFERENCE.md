@@ -660,13 +660,15 @@ export interface SensorRecoveryNotification { // (86-92)
 
 ```typescript
 export interface SevereWeatherAlert {
-    type: 'Blizzard' | 'Hurricane' | 'Typhoon' | 'Tornado' | 'None';
+    type: SevereWeatherType;     // Enum: Blizzard, Hurricane, Typhoon, Tornado, None
     xpBonus: number;             // 0.5 to 1.0 (50% to 100%)
     severity: 'moderate' | 'high' | 'extreme';
     message: string;
     detectedAt: number;
 }
 ```
+
+**Related:** `SevereWeatherType` enum defined at `src/core/sensors/WeatherAPIClient.ts` (39-44)
 
 ### GamingContext
 
