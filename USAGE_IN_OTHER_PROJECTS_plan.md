@@ -439,12 +439,87 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **NOTE**: Pre-existing lint errors exist in ExtensionManager.ts (unused imports and `any` types) but are unrelated to verification
 
 ### Task 3.2: FeatureRegistry → src/core/features/FeatureRegistry.ts
-- [ ] class exists and is exported
-- [ ] Static method: `getFeatureRegistry(): FeatureRegistry`
-- [ ] Methods for registering and querying class features
-- [ ] Methods for registering and querying racial traits
-- [ ] Type `ClassFeature` exists
-- [ ] Type `RacialTrait` exists
+- [x] class exists and is exported
+- [x] Static method: `getFeatureRegistry(): FeatureRegistry`
+- [x] Methods for registering and querying class features
+- [x] Methods for registering and querying racial traits
+- [x] Type `ClassFeature` exists
+- [x] Type `RacialTrait` exists
+
+**Task 3.2 Summary - COMPLETED**:
+- **VERIFIED**: `FeatureRegistry` class exists at src/core/features/FeatureRegistry.ts:31
+  - Exported from src/index.ts at line 269
+  - Type `FeatureRegistry` is properly exported
+- **VERIFIED**: Static method `getInstance(): FeatureRegistry` exists at line 49
+- **VERIFIED**: Function `getFeatureRegistry(): FeatureRegistry` exists at line 691 (also exported from src/index.ts at line 269)
+- **VERIFIED**: Methods for registering and querying class features:
+  - `registerClassFeature(feature: ClassFeature): void` (line 93)
+  - `registerClassFeatures(features: ClassFeature[]): void` (line 120)
+  - `getClassFeatures(className: Class, level: number): ClassFeature[]` (line 175)
+  - `getFeaturesForLevel(className: Class, level: number): ClassFeature[]` (line 189)
+  - `getClassFeaturesForLevel(className: Class, level: number): ClassFeature[]` (line 201)
+  - `getClassFeatureById(featureId: string): ClassFeature | undefined` (line 211)
+  - `getAllClassFeatures(): Map<string, ClassFeature[]>` (line 223)
+  - `getRegisteredClasses(): Class[]` (line 511)
+- **VERIFIED**: Methods for registering and querying racial traits:
+  - `registerRacialTrait(trait: RacialTrait): void` (line 132)
+  - `registerRacialTraits(traits: RacialTrait[]): void` (line 159)
+  - `getRacialTraits(race: Race): RacialTrait[]` (line 233)
+  - `getBaseRacialTraits(race: Race): RacialTrait[]` (line 245)
+  - `getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[]` (line 257)
+  - `getSubraceTraits(race: Race, subrace: string): RacialTrait[]` (line 271)
+  - `getAvailableSubraces(race: Race): string[]` (line 285)
+  - `getRaceForSubrace(subrace: string): Race | undefined` (line 306)
+  - `getRacialTraitById(traitId: string): RacialTrait | undefined` (line 323)
+  - `getAllRacialTraits(): Map<string, RacialTrait[]>` (line 335)
+  - `getRegisteredRaces(): Race[]` (line 520)
+- **VERIFIED**: Type `ClassFeature` exists at src/core/features/FeatureTypes.ts:121 with properties:
+  - `id: string` - Unique identifier (e.g., 'barbarian_rage')
+  - `name: string` - Display name
+  - `description: string` - Detailed description
+  - `type: FeatureType` - Feature type ('passive' | 'active' | 'resource' | 'trigger')
+  - `class: Class` - Character class
+  - `level: number` - Level gained
+  - `prerequisites?: FeaturePrerequisite` - Prerequisites
+  - `effects?: FeatureEffect[]` - Effects applied
+  - `source: FeatureSource` - 'default' or 'custom'
+  - `tags?: string[]` - Optional tags
+  - `lore?: string` - Optional flavor text
+- **VERIFIED**: Type `RacialTrait` exists at src/core/features/FeatureTypes.ts:162 with properties:
+  - `id: string` - Unique identifier (e.g., 'elf_darkvision')
+  - `name: string` - Display name
+  - `description: string` - Detailed description
+  - `race: Race` - Race this trait belongs to
+  - `subrace?: string` - Optional subrace
+  - `prerequisites?: FeaturePrerequisite` - Prerequisites
+  - `effects?: FeatureEffect[]` - Effects applied
+  - `source: FeatureSource` - 'default' or 'custom'
+  - `tags?: string[]` - Optional tags
+  - `lore?: string` - Optional flavor text
+- **ADDITIONAL TYPES EXPORTED** from src/core/features/FeatureTypes.ts:
+  - `FeatureEffectType` - Type of effect ('stat_bonus', 'skill_proficiency', 'ability_unlock', etc.)
+  - `FeatureEffect` - Effect that applies a mechanical benefit
+  - `FeaturePrerequisite` - Prerequisites for gaining a feature or trait
+  - `FeatureType` - Feature classification ('passive', 'active', 'resource', 'trigger')
+  - `FeatureSource` - Source of feature definition ('default' | 'custom')
+  - `CharacterFeature` - Feature entry for character storage
+  - `CharacterTrait` - Trait entry for character storage
+  - `ValidationResult` - Validation result for feature prerequisites
+- **ADDITIONAL METHODS**:
+  - `validatePrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): ValidationResult` (line 348)
+  - `validateFeaturePrerequisites(feature: ClassFeature, character: CharacterSheet): ValidationResult` (line 447)
+  - `validateTraitPrerequisites(trait: RacialTrait, character: CharacterSheet): ValidationResult` (line 460)
+  - `canGainFeature(feature: ClassFeature | RacialTrait, character: CharacterSheet): boolean` (line 488)
+  - `meetsPrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): boolean` (line 502)
+  - `getRegistryStats(): { totalClassFeatures, totalRacialTraits, classesWithFeatures, racesWithTraits }` (line 529)
+  - `reset(): void` - Reset registry to initial state (line 559)
+  - `isInitialized(): boolean` - Check if registry has been initialized (line 572)
+  - `exportRegistry(): { classFeatures, racialTraits }` - Export as JSON (line 663)
+- **STATIC METHODS FOR EQUIPMENT FEATURES**:
+  - `getEquipmentFeatures(equipmentName: string): ClassFeature[]` (line 590)
+  - `isValidEquipmentFeature(featureId: string): boolean` (line 620)
+  - `registerEquipmentFeature(feature: ClassFeature): void` (line 644)
+- **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 3.3: SkillRegistry → src/core/skills/SkillRegistry.ts
 - [ ] class exists and is exported
@@ -1075,7 +1150,7 @@ For each item, verify:
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
-| 3 | In Progress | 1 | ~60 | 2026-02-01 |
+| 3 | In Progress | 2 | ~60 | 2026-02-01 |
 | 4 | Not Started | 0 | ~40 | - |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
@@ -1084,4 +1159,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **11** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **12** | **~475** | 2026-02-01 |
