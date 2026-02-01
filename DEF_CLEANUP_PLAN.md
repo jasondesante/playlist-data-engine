@@ -237,7 +237,7 @@ The following items are noted for awareness but should NOT be resolved:
 - [x] Update DATA_ENGINE_REFERENCE.md: Return type documented as `Promise<{ name; appId } | null>` → actual return type is `Promise<{ name: string; appId: number; source: 'steam'; sessionDuration?: number } | null>` (at `src/core/sensors/SteamAPIClient.ts:215-261`)
 
 ### Task 7.4: SteamAPIClient.getGameMetadata Return Type (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Return type documented as `Promise<{ genre? } | null>` → actual return type is `Promise<{ appId?: number; name: string; genre?: string[]; description?: string } | null>` (at `src/core/sensors/SteamAPIClient.ts:267-313`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Return type documented as `Promise<{ genre? } | null>` → actual return type is `Promise<{ appId?: number; name: string; genre?: string[]; description?: string } | null>` (at `src/core/sensors/SteamAPIClient.ts:267-313`)
 
 ---
 

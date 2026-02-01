@@ -2642,8 +2642,8 @@ Integrates with Steam Web API.
 
 - `getCurrentGame(steamUserId: string): Promise<{ name: string; appId: number; source: 'steam'; sessionDuration?: number } | null>`
     - Fetches currently played game.
-- `getGameMetadata(gameName: string): Promise<{ genre?: string[] } | null>`
-    - Fetches genre tags for gaming bonuses.
+- `getGameMetadata(gameName: string): Promise<{ appId?: number; name: string; genre?: string[]; description?: string } | null>`
+    - Fetches genre tags and metadata for gaming bonuses.
 
 #### Helper: `DiscordRPCClient`
 
