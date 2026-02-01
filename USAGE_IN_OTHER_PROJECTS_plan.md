@@ -915,8 +915,47 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **DOCUMENTATION NOTE**: RaceSelector is listed in USAGE_IN_OTHER_PROJECTS.md but lacks detailed API documentation
 
 ### Task 4.2: ClassSuggester → src/core/generation/ClassSuggester.ts
-- [ ] class exists and is exported
-- [ ] Methods for suggesting classes based on audio
+- [x] class exists and is exported
+- [x] Methods for suggesting classes based on audio
+
+**Task 4.2 Summary - COMPLETED**:
+- **VERIFIED**: `ClassSuggester` class exists at src/core/generation/ClassSuggester.ts:41
+  - Exported from src/index.ts at line 186
+  - All methods are static utility methods for class suggestion based on audio
+- **VERIFIED METHODS**:
+  - `suggest(audioProfile: AudioProfile, rng: SeededRNG): Class` (line 100)
+    - Suggests a class based on audio frequency dominance
+    - Uses affinity-based system with 4% baseline probability
+    - Maps audio characteristics to character classes:
+      - High bass (strength) → Barbarian, Fighter, Paladin
+      - High treble (dexterity) → Rogue, Ranger, Monk
+      - High mid (intelligence/wisdom) → Wizard, Cleric, Druid
+      - High amplitude (charisma) → Bard, Sorcerer, Warlock
+    - Supports custom classes via ExtensionManager
+    - Supports custom spawn rate weights
+    - Same seed always suggests the same class (deterministic)
+- **PRIVATE METHODS** (internal implementation):
+  - `calculateAllAffinities()` - Calculate affinity for all classes based on audio profile
+  - `calculateClassAffinity()` - Calculate affinity for a single class
+  - `getCustomClassAudioPreferences()` - Get audio preferences for custom classes
+  - `getTraitContribution()` - Get contribution of specific audio trait to affinity
+  - `calculateProbabilities()` - Convert affinity scores to probabilities with 4% baseline
+  - `applyCustomWeights()` - Apply custom spawn rate weights to probabilities
+- **ALGORITHM DETAILS**:
+  - Uses CLASS_AUDIO_PREFERENCES from constants for default D&D 5e classes
+  - Each class has preferred audio traits (bass, treble, mid, amplitude, chaos)
+  - Primary trait contributes 100% of its weight
+  - Secondary trait contributes 50% of its weight
+  - Tertiary trait contributes 25% of its weight
+  - 4% baseline ensures every class has minimum chance
+  - No class lockout - any class can be selected at any time
+- **ADDITIONAL FINDINGS**:
+  - Type `AudioProfile` exists at src/core/types/AudioProfile.ts:5
+  - Type `Class` exists at src/core/types/Character.ts:72
+  - Type `SeededRNG` exists at src/utils/random.ts
+  - The class is used internally by CharacterGenerator for class selection
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTE**: ClassSuggester is listed in USAGE_IN_OTHER_PROJECTS.md line 1503 with brief description "Suggest classes based on audio" but lacks detailed API documentation
 
 ### Task 4.3: AbilityScoreCalculator → src/core/generation/AbilityScoreCalculator.ts
 - [ ] class exists and is exported
@@ -1473,7 +1512,7 @@ For each item, verify:
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
 | 2 | Complete | 6 | ~40 | 2026-02-01 |
 | 3 | Complete | 8 | ~60 | 2026-02-01 |
-| 4 | In Progress | 1 | ~40 | 2026-02-01 |
+| 4 | In Progress | 2 | ~40 | 2026-02-01 |
 | 5 | Not Started | 0 | ~50 | - |
 | 6 | Not Started | 0 | ~30 | - |
 | 7 | Not Started | 0 | ~30 | - |
@@ -1481,4 +1520,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **19** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **20** | **~475** | 2026-02-01 |
