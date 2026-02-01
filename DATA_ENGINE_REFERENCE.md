@@ -658,6 +658,12 @@ export interface GamingContext {
 }
 ```
 
+### Combat Types
+
+**Location:** `src/core/types/Combat.ts`
+
+Core D&D 5e-inspired turn-based combat type definitions.
+
 ### CombatInstance
 
 State of an active combat encounter.
@@ -788,6 +794,11 @@ export type SavingThrowAbility = 'strength' | 'dexterity' | 'constitution' | 'in
 ```
 
 ### Combat Helper Types
+
+**Locations:**
+- `InitiativeResult` → `src/core/combat/InitiativeRoller.ts` (11-16)
+- `AttackResult` → `src/core/combat/AttackResolver.ts` (15-23)
+- `SpellSlots` → `src/core/generation/SpellManager.ts` (24-31)
 
 ```typescript
 export interface InitiativeResult {

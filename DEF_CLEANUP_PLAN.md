@@ -147,7 +147,7 @@ The following items are noted for awareness but should NOT be resolved:
 **Estimated Items**: 2 tasks
 
 ### Task 5.1: Combat Types Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Combat types documented at `src/types/CombatTypes.ts` → actual locations:
+- [x] Update DATA_ENGINE_REFERENCE.md: Combat types documented at `src/types/CombatTypes.ts` → actual locations:
   - CombatInstance → `src/core/types/Combat.ts` (111-122)
   - Combatant → `src/core/types/Combat.ts` (23-41)
   - CombatAction → `src/core/types/Combat.ts` (46-54)
