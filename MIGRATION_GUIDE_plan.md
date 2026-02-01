@@ -46,7 +46,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase 3 | Spell Prerequisites | 10 tasks | `██████████` 100% |
 | Phase 4 | Custom Race Support | 9 items | `██████████` 100% |
 | Phase 5 | Subrace Support | 12 tasks | `██████████` 100% |
-| Phase 6 | Template-Based Classes | 22 tasks | `░░░░░░░░░░` 0% |
+| Phase 6 | Template-Based Classes | 22 tasks | `█░░░░░░░░░` 5% |
 | Phase 7 | Tests & Documentation | 11 tasks | `░░░░░░░░░░` 0% |
 
 ---
@@ -190,10 +190,12 @@ File: [src/core/features/FeatureTypes.ts](src/core/features/FeatureTypes.ts)
 
 ## Task 6.1: Verify Class Type Extensibility
 File: [src/core/types/Character.ts](src/core/types/Character.ts)
-- [ ] `Class` is a branded type → line 48
-- [ ] `asClass(value: string): Class` function exists → line 65
-- [ ] `isValidClass(value: unknown): value is Class` function exists → line 113
-- [ ] `DEFAULT_CLASSES` constant exists
+- [x] `Class` is a branded type → line 49
+- [x] `asClass(value: string): Class` function exists → line 66
+- [x] `isValidClass(value: unknown): value is Class` function exists → line 114
+- [x] `DEFAULT_CLASSES` constant exists → line 97
+
+**FINDING**: All verified. The branded type system is correctly implemented with proper documentation and runtime validation support for custom classes via ExtensionManager.
 
 ## Task 6.2: Verify ExtensionManager Categories
 - [ ] Category `'classes.data'` is supported
