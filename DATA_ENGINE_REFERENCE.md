@@ -2700,7 +2700,10 @@ When running in browsers, Discord RPC gracefully degrades:
 
 ### Discord Types
 
+**Location:** `src/core/sensors/DiscordRPCClient.ts`
+
 ```typescript
+// User information from Discord READY event (103-109)
 export interface DiscordUserInfo {
     id: string;
     username: string;
@@ -2709,6 +2712,7 @@ export interface DiscordUserInfo {
     globalName?: string;    // Display name
 }
 
+// Music activity details - specific interface for music presence (191-199)
 export interface MusicActivityDetails {
     songName: string;
     artistName?: string;
@@ -2716,10 +2720,12 @@ export interface MusicActivityDetails {
     albumName?: string;       // For album art text
     startTime?: number;       // Unix timestamp in seconds
     endTime?: number;         // Unix timestamp in seconds (replaces durationSeconds)
+    durationSeconds?: number; // Deprecated: Use endTime instead (for backward compatibility)
 }
 
+// Discord Rich Presence activity structure (161-186)
 export interface DiscordActivity {
-    type?: 0 | 1 | 2 | 3 | 5;  // Playing, Streaming, Listening, Watching, Competing
+    type?: ActivityType;       // Playing, Streaming, Listening, etc.
     details?: string;          // Main activity text (max 128 chars)
     state?: string;            // Secondary activity text (max 128 chars)
     startTimestamp?: number;
@@ -2728,17 +2734,89 @@ export interface DiscordActivity {
     largeImageText?: string;
     smallImageKey?: string;
     smallImageText?: string;
-    party?: { id?: string; size?: [current: number, max: number] };
-    buttons?: Array<{ label: string; url: string }>;
+    party?: DiscordActivityParty;
+    buttons?: DiscordActivityButton[];
     secret?: string;
+    matchSecret?: string;
+    spectateSecret?: string;
 }
 
+// Discord RPC connection states (87-98)
 export enum DiscordConnectionState {
     Disconnected = 'disconnected',
     Connecting = 'connecting',
     Connected = 'connected',
     DiscordUnavailable = 'discord_unavailable',
     Error = 'error',
+}
+
+// Activity types for Discord Rich Presence (115-121)
+export enum ActivityType {
+    Playing = 0,
+    Streaming = 1,
+    Listening = 2,
+    Watching = 3,
+    Competing = 5,
+}
+
+// Supporting types for DiscordActivity
+export interface DiscordActivityButton {
+    label: string;
+    url: string;
+}
+
+export interface DiscordActivityAssets {
+    largeImageKey?: string;
+    largeImageText?: string;
+    smallImageKey?: string;
+    smallImageText?: string;
+}
+
+export interface DiscordActivityTimestamps {
+    startTimestamp?: number;
+    endTimestamp?: number;
+}
+
+export interface DiscordActivityParty {
+    id?: string;
+    size?: [current: number, max: number];
+}
+
+// Discord RPC error codes (205-222)
+export enum DiscordRPCErrorCode {
+    InvalidOpcode = 4000,
+    InvalidPayload = 4001,
+    InvalidFrameBeforeHandshake = 4002,
+    InvalidFrame = 4003,
+    NotConnected = 4004,
+    AlreadyConnected = 4005,
+    InvalidPermissions = 4006,
+    InvalidClientId = 4007,
+}
+
+// Discord RPC error response structure (227-231)
+export interface DiscordRPCErrorResponse {
+    code: DiscordRPCErrorCode;
+    message: string;
+    evt?: string;
+}
+
+// Raw Discord RPC event data (237-252)
+export interface DiscordRPCRawEvent {
+    cmd?: string;
+    evt?: string;
+    nonce?: string;
+    data?: {
+        user?: {
+            id: string;
+            username: string;
+            discriminator: string;
+            avatar?: string;
+            global_name?: string;
+        };
+        [key: string]: unknown;
+    };
+    [key: string]: unknown;
 }
 ```
 

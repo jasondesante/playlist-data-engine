@@ -227,7 +227,7 @@ The following items are noted for awareness but should NOT be resolved:
 - [x] Update DATA_ENGINE_REFERENCE.md: `GamingContext` documented at `src/types/GamingTypes.ts` → actual location is `src/core/types/Progression.ts` (36-51)
 
 ### Task 7.2: Discord Types Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Discord types documented at `src/types/DiscordTypes.ts` → actual location is `src/core/sensors/DiscordRPCClient.ts`:
+- [x] Update DATA_ENGINE_REFERENCE.md: Discord types documented at `src/types/DiscordTypes.ts` → actual location is `src/core/sensors/DiscordRPCClient.ts`:
   - `DiscordUserInfo` → (103-109)
   - `MusicActivityDetails` → (191-199)
   - `DiscordActivity` → (161-186)
