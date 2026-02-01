@@ -2363,22 +2363,50 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.7: Enchantment Library → src/utils/enchantmentLibrary.ts
-- [ ] `WEAPON_ENCHANTMENTS: EquipmentModification[]`
-- [ ] `ARMOR_ENCHANTMENTS: EquipmentModification[]`
-- [ ] `RESISTANCE_ENCHANTMENTS: EquipmentModification[]`
-- [ ] `CURSES: EquipmentModification[]`
-- [ ] `ALL_ENCHANTMENTS: EquipmentModification[]`
-- [ ] `getEnchantment(id: string): EquipmentModification | undefined`
-- [ ] `getCurse(id: string): EquipmentModification | undefined`
-- [ ] `getAllEnchantments(): EquipmentModification[]`
-- [ ] `getAllCurses(): EquipmentModification[]`
-- [ ] `getEnchantmentsByType(type: string): EquipmentModification[]`
-- [ ] `createStrengthEnchantment(): EquipmentModification`
-- [ ] `createDexterityEnchantment(): EquipmentModification`
-- [ ] `createConstitutionEnchantment(): EquipmentModification`
-- [ ] `createIntelligenceEnchantment(): EquipmentModification`
-- [ ] `createWisdomEnchantment(): EquipmentModification`
-- [ ] `createCharismaEnchantment(): EquipmentModification`
+- [x] `WEAPON_ENCHANTMENTS: EquipmentModification[]`
+- [x] `ARMOR_ENCHANTMENTS: EquipmentModification[]`
+- [x] `RESISTANCE_ENCHANTMENTS: EquipmentModification[]`
+- [x] `CURSES: EquipmentModification[]`
+- [x] `ALL_ENCHANTMENTS: EquipmentModification[]`
+- [x] `getEnchantment(id: string): EquipmentModification | undefined`
+- [x] `getCurse(id: string): EquipmentModification | undefined`
+- [x] `getAllEnchantments(): EquipmentModification[]`
+- [x] `getAllCurses(): EquipmentModification[]`
+- [x] `getEnchantmentsByType(type: string): EquipmentModification[]`
+- [x] `createStrengthEnchantment(): EquipmentModification`
+- [x] `createDexterityEnchantment(): EquipmentModification`
+- [x] `createConstitutionEnchantment(): EquipmentModification`
+- [x] `createIntelligenceEnchantment(): EquipmentModification`
+- [x] `createWisdomEnchantment(): EquipmentModification`
+- [x] `createCharismaEnchantment(): EquipmentModification`
+
+**Task 9.7 Summary - COMPLETED**:
+- **VERIFIED**: All 16 enchantment library exports exist at src/utils/enchantmentLibrary.ts
+- **VERIFIED**: All exports properly exported from src/index.ts at lines 441-457
+- **VERIFIED COLLECTIONS**:
+  - `WEAPON_ENCHANTMENTS` (line 1196) - Object with 16 weapon enchantments (plusOne, plusTwo, plusThree, flaming, frost, etc.)
+  - `ARMOR_ENCHANTMENTS` (line 1218) - Object with 2 armor enchantments (plusOne, plusTwo)
+  - `RESISTANCE_ENCHANTMENTS` (line 1226) - Object with 9 resistance enchantments (fire, cold, lightning, acid, poison, necrotic, radiant, thunder, all)
+  - `CURSES` (line 1241) - Object with 17 curses (minusOne, minusTwo, weakness, feeblemind, clumsiness, frailty, etc.)
+  - `ALL_ENCHANTMENTS` (line 1265) - Combined object with all enchantments
+- **VERIFIED FUNCTIONS**:
+  - `getEnchantment(id: string): EquipmentModification | undefined` (line 1278)
+  - `getCurse(id: string): EquipmentModification | undefined` (line 1285)
+  - `getAllEnchantments(): EquipmentModification[]` (line 1292)
+  - `getAllCurses(): EquipmentModification[]` (line 1299)
+  - `getEnchantmentsByType(type: string): EquipmentModification[]` (line 1306) - Takes 'weapon' | 'armor' | 'resistance' | 'combo'
+- **VERIFIED CREATE FUNCTIONS**:
+  - `createStrengthEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification` (line 399)
+  - `createDexterityEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification` (line 420)
+  - `createConstitutionEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification` (line 441)
+  - `createIntelligenceEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification` (line 462)
+  - `createWisdomEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification` (line 483)
+  - `createCharismaEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification` (line 504)
+- **SIGNATURE NOTES**: The create* functions take a `bonus` parameter (1 | 2 | 3 | 4) which was not listed in the task checklist
+- **DOCUMENTATION GAP**: Enchantment Library is NOT documented in USAGE_IN_OTHER_PROJECTS.md
+  - This is a comprehensive library of predefined enchantments and curses
+  - **RECOMMENDATION**: Add to USAGE_IN_OTHER_PROJECTS.md if intended as public API
+- **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.8: Magic Item Examples → src/utils/magicItemExamples.ts
 - [ ] `MAGIC_ITEM_EXAMPLES: EnhancedEquipment[]`
