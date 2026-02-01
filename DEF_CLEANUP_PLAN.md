@@ -224,7 +224,7 @@ The following items are noted for awareness but should NOT be resolved:
 **Estimated Items**: 4 tasks
 
 ### Task 7.1: GamingContext Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: `GamingContext` documented at `src/types/GamingTypes.ts` → actual location is `src/core/types/Progression.ts` (36-51)
+- [x] Update DATA_ENGINE_REFERENCE.md: `GamingContext` documented at `src/types/GamingTypes.ts` → actual location is `src/core/types/Progression.ts` (36-51)
 
 ### Task 7.2: Discord Types Location (1 item)
 - [ ] Update DATA_ENGINE_REFERENCE.md: Discord types documented at `src/types/DiscordTypes.ts` → actual location is `src/core/sensors/DiscordRPCClient.ts`:

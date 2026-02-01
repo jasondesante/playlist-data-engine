@@ -672,6 +672,8 @@ export interface SevereWeatherAlert {
 
 ### GamingContext
 
+**Location:** `src/core/types/Progression.ts` (36-51)
+
 Steam gaming activity data. Note: Discord RPC CANNOT read game activity due to platform limitations. Discord RPC is only used for SETTING music presence ("Listening to" status).
 
 ```typescript
