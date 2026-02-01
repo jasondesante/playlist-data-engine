@@ -1480,6 +1480,9 @@ Manages spells for spellcasting classes.
     - If `character` is provided, filters spells by their prerequisites.
 - `static initializeSpells(characterClass: Class, characterLevel: number, character?: CharacterSheet): SpellSlots`
     - Returns complete spell configuration with slots, known spells, and cantrips.
+- `static filterCharacterSpells(character: CharacterSheet): CharacterSheet`
+    - Filters a character's known spells and cantrips by their prerequisites.
+    - Returns an updated character sheet with only valid spells.
 - `static getSpellCountAtLevel(spellLevel: number, spellSlots: Record<number, { total: number; used: number }>): number`
     - Returns number of spell slots at a given level.
 - `static useSpellSlot(spellSlots: Record<number, { total: number; used: number }>, spellLevel: number): Record<number, { total: number; used: number }>`

@@ -96,10 +96,10 @@ The following items are noted for awareness but should NOT be resolved:
 - [x] Update DATA_ENGINE_REFERENCE.md: `getKnownSpells(characterClass, characterLevel): string[]` → actual signature is `getKnownSpells(characterClass, characterLevel, character?: CharacterSheet): string[]` (at `src/core/generation/SpellManager.ts:140-221`)
 
 ### Task 3.4: SpellManager.initializeSpells Signature (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: `initializeSpells(characterClass, characterLevel): SpellSlots` → actual signature is `initializeSpells(characterClass, characterLevel, character?: CharacterSheet): SpellSlots` (at `src/core/generation/SpellManager.ts:270-280`)
+- [x] Update DATA_ENGINE_REFERENCE.md: `initializeSpells(characterClass, characterLevel): SpellSlots` → actual signature is `initializeSpells(characterClass, characterLevel, character?: CharacterSheet): SpellSlots` (at `src/core/generation/SpellManager.ts:270-280`)
 
 ### Task 3.5: SpellManager.filterCharacterSpells Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Add missing `filterCharacterSpells(character: CharacterSheet): CharacterSheet` method (exists at `src/core/generation/SpellManager.ts:362-385`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Add missing `filterCharacterSpells(character: CharacterSheet): CharacterSheet` method (exists at `src/core/generation/SpellManager.ts:362-385`)
 
 ### Task 3.6: EquipmentGenerator.addItem Signature (1 item)
 - [ ] Update DATA_ENGINE_REFERENCE.md: `addItem(equipment, itemName, quantity?, character?): CharacterEquipment` (4 params) → actual signature has only 3 params without `character` (at `src/core/generation/EquipmentGenerator.ts:212-216`)
