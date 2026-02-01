@@ -2063,6 +2063,10 @@ export interface StatIncreaseConfig {
 - `getStatCap(character, ability): number`
     - Get the stat cap for an ability (reads gameMode from character)
 
+- `getConfig(): Readonly<Required<StatIncreaseConfig>>`
+    - Get the current configuration
+    - Returns a readonly copy of the configuration with all defaults applied
+
 - `updateConfig(config): void`
     - Update configuration mid-game
     - Use to change stat increase strategies dynamically
