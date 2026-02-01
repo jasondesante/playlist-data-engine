@@ -694,9 +694,11 @@ All 16 items verified. All constants and helper functions exist and are properly
 
 ## Notes - Items Requiring Follow-up
 
+# NOTE FROM USER - All these items requiring a follow up should be checked one at a time just like tasks and verified if they have been fixed because I went through all of them and tried to fix them and would like to see you double check the work.
+
 ### Redundancy / Potential Duplicates
-(When you find similar functionality in multiple places, note it here - do not attempt to resolve)
-- [x] **ColorPalette** - Two different definitions exist:
+
+- [ ] **ColorPalette** - Two different definitions exist:
   - `src/core/types/AudioProfile.ts` - properties: `colors`, `primary_color`, `secondary_color`, `accent_color`, `brightness`, `saturation`, `is_monochrome` (USED throughout codebase)
   - `src/core/types/ColorPalette.ts` - properties: `primary`, `secondary`, `tertiary`, `background`, `text`, `isMonochrome`, `brightness`, `saturation`, `colors` (NOT imported anywhere - dead code)
 - [ ] [Item A] appears similar to [Item B] - [notes]
@@ -704,55 +706,55 @@ All 16 items verified. All constants and helper functions exist and are properly
 - [ ] Multiple implementations of [functionality] found
 
 ### Discrepancies Found
-- [x] **Location mismatch (Task 1.2)** - DATA_ENGINE_REFERENCE_plan.md documents character types at `src/types/CharacterTypes.ts` and `src/types/CombatTypes.ts`, but actual location is `src/core/types/Character.ts`. All 9 types (Race, Class, Ability, Skill, ProficiencyLevel, GameMode, Attack, Spell, AbilityScores) exist at the correct location in the codebase.
-- [x] **Location mismatch (Task 1.3)** - DATA_ENGINE_REFERENCE_plan.md documents character interfaces at `src/types/CharacterTypes.ts`, but this file does not exist. All 4 interfaces exist at different locations:
+- [ ] **Location mismatch (Task 1.2)** - DATA_ENGINE_REFERENCE_plan.md documents character types at `src/types/CharacterTypes.ts` and `src/types/CombatTypes.ts`, but actual location is `src/core/types/Character.ts`. All 9 types (Race, Class, Ability, Skill, ProficiencyLevel, GameMode, Attack, Spell, AbilityScores) exist at the correct location in the codebase.
+- [ ] **Location mismatch (Task 1.3)** - DATA_ENGINE_REFERENCE_plan.md documents character interfaces at `src/types/CharacterTypes.ts`, but this file does not exist. All 4 interfaces exist at different locations:
   - CharacterSheet → `src/core/types/Character.ts` (229-373)
   - CharacterEquipment → `src/core/types/Equipment.ts` (183-189)
   - InventoryItem → Basic version at `src/core/generation/EquipmentGenerator.ts` (37-41); Enhanced version called `EnhancedInventoryItem` at `src/core/types/Equipment.ts` (164-177)
   - CharacterAppearance → `src/core/generation/AppearanceGenerator.ts` (8-21)
-- [x] **Signature mismatch (Class type)** - DATA_ENGINE_REFERENCE.md shows `Class` as simple union type `'Barbarian' | ... | 'Wizard'`, but actual code uses branded type `string & { readonly __ClassBrand: unique symbol }` for extensibility. The branded type is correct and intentional for supporting custom classes.
-- [x] **Missing documentation (Attack interface)** - DATA_ENGINE_REFERENCE.md is missing the `properties?: string[]` property on the Attack interface. The actual code at `src/core/types/Character.ts:195` includes this property.
-- [x] **Naming variation (InventoryItem)** - DATA_ENGINE_REFERENCE.md documents `InventoryItem` but the enhanced version in the codebase is called `EnhancedInventoryItem` at `src/core/types/Equipment.ts`. A basic `InventoryItem` interface exists at `src/core/generation/EquipmentGenerator.ts` for backward compatibility.
-- [x] **Location mismatch (Task 1.4)** - DATA_ENGINE_REFERENCE_plan.md documents RNG utility functions at `src/utils/random.ts`, but the actual location is `src/utils/hash.ts`:
+- [ ] **Signature mismatch (Class type)** - DATA_ENGINE_REFERENCE.md shows `Class` as simple union type `'Barbarian' | ... | 'Wizard'`, but actual code uses branded type `string & { readonly __ClassBrand: unique symbol }` for extensibility. The branded type is correct and intentional for supporting custom classes.
+- [ ] **Missing documentation (Attack interface)** - DATA_ENGINE_REFERENCE.md is missing the `properties?: string[]` property on the Attack interface. The actual code at `src/core/types/Character.ts:195` includes this property.
+- [ ] **Naming variation (InventoryItem)** - DATA_ENGINE_REFERENCE.md documents `InventoryItem` but the enhanced version in the codebase is called `EnhancedInventoryItem` at `src/core/types/Equipment.ts`. A basic `InventoryItem` interface exists at `src/core/generation/EquipmentGenerator.ts` for backward compatibility.
+- [ ] **Location mismatch (Task 1.4)** - DATA_ENGINE_REFERENCE_plan.md documents RNG utility functions at `src/utils/random.ts`, but the actual location is `src/utils/hash.ts`:
   - `generateSeed()` → `src/utils/hash.ts` (14)
   - `hashSeedToFloat()` → `src/utils/hash.ts` (27)
   - `hashSeedToInt()` → `src/utils/hash.ts` (40)
   - `class SeededRNG` is correctly documented at `src/utils/random.ts` (7)
-- [x] **Location mismatch (Task 1.5)** - DATA_ENGINE_REFERENCE_plan.md documents validation schemas at `src/schemas/`, but no such directory exists. All 4 Zod schemas exist at `src/utils/validators.ts`:
+- [ ] **Location mismatch (Task 1.5)** - DATA_ENGINE_REFERENCE_plan.md documents validation schemas at `src/schemas/`, but no such directory exists. All 4 Zod schemas exist at `src/utils/validators.ts`:
   - `PlaylistTrackSchema` → `src/utils/validators.ts` (14-48)
   - `ServerlessPlaylistSchema` → `src/utils/validators.ts` (53-61)
   - `AudioProfileSchema` → `src/utils/validators.ts` (66-89)
   - `CharacterSheetSchema` → `src/utils/validators.ts` (106-156)
-- [x] **Signature mismatch (Task 2.3 - CharacterSheet interface)** - DATA_ENGINE_REFERENCE.md shows CharacterSheet with properties `abilities` and `modifiers`, but actual code at `src/core/types/Character.ts:246-249` uses `ability_scores` and `ability_modifiers`. The code is correct; documentation needs to be updated.
-- [x] **Missing documentation (Task 2.3 - CharacterGeneratorOptions)** - DATA_ENGINE_REFERENCE.md is missing the `extensions?: CharacterGeneratorExtensions` property in CharacterGeneratorOptions. The actual code at `src/core/generation/CharacterGenerator.ts:80-119` includes this property which allows registering custom spells, equipment, races, classes, and appearance options.
-- [x] **Signature mismatch (Task 2.3 - SkillAssigner.assignSkills)** - DATA_ENGINE_REFERENCE.md documents `assignSkills(characterClass, rng): Record<Skill, ProficiencyLevel>`, but actual code at `src/core/generation/SkillAssigner.ts:38-42` shows `assignSkills(characterClass, rng, character?): Record<string, ProficiencyLevel>`. The code is correct: (1) Return type uses `string` instead of `Skill` to support custom skills registered via SkillRegistry; (2) Third parameter `character?: CharacterSheet` enables prerequisite validation. Documentation needs to be updated.
-- [x] **Signature mismatch (Task 2.3 - SpellManager.getKnownSpells)** - DATA_ENGINE_REFERENCE.md documents `getKnownSpells(characterClass, characterLevel): string[]`, but actual code at `src/core/generation/SpellManager.ts:140-221` shows `getKnownSpells(characterClass, characterLevel, character?: CharacterSheet): string[]`. The code is correct: third parameter `character?: CharacterSheet` enables prerequisite filtering. Documentation needs to be updated.
-- [x] **Signature mismatch (Task 2.3 - SpellManager.initializeSpells)** - DATA_ENGINE_REFERENCE.md documents `initializeSpells(characterClass, characterLevel): SpellSlots`, but actual code at `src/core/generation/SpellManager.ts:270-280` shows `initializeSpells(characterClass, characterLevel, character?: CharacterSheet): SpellSlots`. The code is correct: third parameter `character?: CharacterSheet` enables prerequisite filtering. Documentation needs to be updated.
-- [x] **Missing documentation (Task 2.3 - SpellManager.filterCharacterSpells)** - DATA_ENGINE_REFERENCE.md is missing the `filterCharacterSpells(character: CharacterSheet): CharacterSheet` method. The actual code at `src/core/generation/SpellManager.ts:362-385` includes this method which updates a character's known_spells and cantrips arrays to only include spells whose prerequisites are met. Documentation needs to be updated.
-- [x] **Signature mismatch (Task 2.3 - EquipmentGenerator.addItem)** - DATA_ENGINE_REFERENCE.md documents `addItem(equipment, itemName, quantity?, character?): CharacterEquipment` with 4 parameters, but actual code at `src/core/generation/EquipmentGenerator.ts:212-216` shows only 3 parameters without the `character` parameter. Documentation needs to be updated.
-- [x] **Signature mismatch (Task 2.3 - EquipmentGenerator.removeItem)** - DATA_ENGINE_REFERENCE.md documents `removeItem(equipment, itemName, quantity?, character?): CharacterEquipment` with 4 parameters, but actual code at `src/core/generation/EquipmentGenerator.ts:269-273` shows only 3 parameters without the `character` parameter. Documentation needs to be updated.
-- [x] **Visibility mismatch (Task 2.3 - EquipmentGenerator.getEquipmentData)** - DATA_ENGINE_REFERENCE.md documents `getEquipmentData` as a public static method, but actual code at `src/core/generation/EquipmentGenerator.ts:70-78` has it as private. A public static method `getEquipmentDataStatic` exists at line 60-62 that provides the same functionality. Documentation needs to be updated.
-- [x] **Missing code (Task 2.3 - EquipmentGenerator.getEquipmentByType)** - DATA_ENGINE_REFERENCE.md documents `getEquipmentByType(equipment, type): EnhancedInventoryItem[]` method, but this method did not exist in the codebase at `src/core/generation/EquipmentGenerator.ts`. **RESOLVED**: Method has been implemented at `src/core/generation/EquipmentGenerator.ts:437-450` with proper signature and 5 new unit tests added.
-- [x] **Missing documentation (Task 2.3 - EquipmentGenerator.getEquipmentDataStatic)** - DATA_ENGINE_REFERENCE.md is missing the `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method. The actual code at `src/core/generation/EquipmentGenerator.ts:60-62` includes this public static method. Documentation needs to be updated.
-- [x] **Missing documentation (Task 2.3 - EquipmentGenerator.addModification)** - DATA_ENGINE_REFERENCE.md is missing the `addModification(equipment, itemName, modification, instanceId?, character?): CharacterEquipment` method. The actual code at `src/core/generation/EquipmentGenerator.ts:590-644` includes this method for adding equipment modifications/enchantments. Documentation needs to be updated.
-- [x] **Missing documentation (Task 2.3 - EquipmentGenerator.removeModification)** - DATA_ENGINE_REFERENCE.md is missing the `removeModification(equipment, itemName, modificationId, character?): CharacterEquipment` method. The actual code at `src/core/generation/EquipmentGenerator.ts:655-709` includes this method for removing equipment modifications. Documentation needs to be updated.
-- [x] **Missing documentation (Task 2.3 - EquipmentGenerator.getActiveEffects)** - DATA_ENGINE_REFERENCE.md is missing the `getActiveEffects(equipment, itemName, instanceId?): EquipmentProperty[]` method. The actual code at `src/core/generation/EquipmentGenerator.ts:719-759` includes this method for getting all active effects from an equipment item (base + modifications). Documentation needs to be updated.
-- [x] **Location mismatch (Task 3.2 - Progression Types)** - DATA_ENGINE_REFERENCE_plan.md documents progression types at `src/types/ProgressionTypes.ts` and `src/types/StatTypes.ts`, but these files do not exist. All 6 types exist at different locations:
+- [ ] **Signature mismatch (Task 2.3 - CharacterSheet interface)** - DATA_ENGINE_REFERENCE.md shows CharacterSheet with properties `abilities` and `modifiers`, but actual code at `src/core/types/Character.ts:246-249` uses `ability_scores` and `ability_modifiers`. The code is correct; documentation needs to be updated.
+- [ ] **Missing documentation (Task 2.3 - CharacterGeneratorOptions)** - DATA_ENGINE_REFERENCE.md is missing the `extensions?: CharacterGeneratorExtensions` property in CharacterGeneratorOptions. The actual code at `src/core/generation/CharacterGenerator.ts:80-119` includes this property which allows registering custom spells, equipment, races, classes, and appearance options.
+- [ ] **Signature mismatch (Task 2.3 - SkillAssigner.assignSkills)** - DATA_ENGINE_REFERENCE.md documents `assignSkills(characterClass, rng): Record<Skill, ProficiencyLevel>`, but actual code at `src/core/generation/SkillAssigner.ts:38-42` shows `assignSkills(characterClass, rng, character?): Record<string, ProficiencyLevel>`. The code is correct: (1) Return type uses `string` instead of `Skill` to support custom skills registered via SkillRegistry; (2) Third parameter `character?: CharacterSheet` enables prerequisite validation. Documentation needs to be updated.
+- [ ] **Signature mismatch (Task 2.3 - SpellManager.getKnownSpells)** - DATA_ENGINE_REFERENCE.md documents `getKnownSpells(characterClass, characterLevel): string[]`, but actual code at `src/core/generation/SpellManager.ts:140-221` shows `getKnownSpells(characterClass, characterLevel, character?: CharacterSheet): string[]`. The code is correct: third parameter `character?: CharacterSheet` enables prerequisite filtering. Documentation needs to be updated.
+- [ ] **Signature mismatch (Task 2.3 - SpellManager.initializeSpells)** - DATA_ENGINE_REFERENCE.md documents `initializeSpells(characterClass, characterLevel): SpellSlots`, but actual code at `src/core/generation/SpellManager.ts:270-280` shows `initializeSpells(characterClass, characterLevel, character?: CharacterSheet): SpellSlots`. The code is correct: third parameter `character?: CharacterSheet` enables prerequisite filtering. Documentation needs to be updated.
+- [ ] **Missing documentation (Task 2.3 - SpellManager.filterCharacterSpells)** - DATA_ENGINE_REFERENCE.md is missing the `filterCharacterSpells(character: CharacterSheet): CharacterSheet` method. The actual code at `src/core/generation/SpellManager.ts:362-385` includes this method which updates a character's known_spells and cantrips arrays to only include spells whose prerequisites are met. Documentation needs to be updated.
+- [ ] **Signature mismatch (Task 2.3 - EquipmentGenerator.addItem)** - DATA_ENGINE_REFERENCE.md documents `addItem(equipment, itemName, quantity?, character?): CharacterEquipment` with 4 parameters, but actual code at `src/core/generation/EquipmentGenerator.ts:212-216` shows only 3 parameters without the `character` parameter. Documentation needs to be updated.
+- [ ] **Signature mismatch (Task 2.3 - EquipmentGenerator.removeItem)** - DATA_ENGINE_REFERENCE.md documents `removeItem(equipment, itemName, quantity?, character?): CharacterEquipment` with 4 parameters, but actual code at `src/core/generation/EquipmentGenerator.ts:269-273` shows only 3 parameters without the `character` parameter. Documentation needs to be updated.
+- [ ] **Visibility mismatch (Task 2.3 - EquipmentGenerator.getEquipmentData)** - DATA_ENGINE_REFERENCE.md documents `getEquipmentData` as a public static method, but actual code at `src/core/generation/EquipmentGenerator.ts:70-78` has it as private. A public static method `getEquipmentDataStatic` exists at line 60-62 that provides the same functionality. Documentation needs to be updated.
+- [ ] **Missing code (Task 2.3 - EquipmentGenerator.getEquipmentByType)** - DATA_ENGINE_REFERENCE.md documents `getEquipmentByType(equipment, type): EnhancedInventoryItem[]` method, but this method did not exist in the codebase at `src/core/generation/EquipmentGenerator.ts`. **RESOLVED**: Method has been implemented at `src/core/generation/EquipmentGenerator.ts:437-450` with proper signature and 5 new unit tests added.
+- [ ] **Missing documentation (Task 2.3 - EquipmentGenerator.getEquipmentDataStatic)** - DATA_ENGINE_REFERENCE.md is missing the `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method. The actual code at `src/core/generation/EquipmentGenerator.ts:60-62` includes this public static method. Documentation needs to be updated.
+- [ ] **Missing documentation (Task 2.3 - EquipmentGenerator.addModification)** - DATA_ENGINE_REFERENCE.md is missing the `addModification(equipment, itemName, modification, instanceId?, character?): CharacterEquipment` method. The actual code at `src/core/generation/EquipmentGenerator.ts:590-644` includes this method for adding equipment modifications/enchantments. Documentation needs to be updated.
+- [ ] **Missing documentation (Task 2.3 - EquipmentGenerator.removeModification)** - DATA_ENGINE_REFERENCE.md is missing the `removeModification(equipment, itemName, modificationId, character?): CharacterEquipment` method. The actual code at `src/core/generation/EquipmentGenerator.ts:655-709` includes this method for removing equipment modifications. Documentation needs to be updated.
+- [ ] **Missing documentation (Task 2.3 - EquipmentGenerator.getActiveEffects)** - DATA_ENGINE_REFERENCE.md is missing the `getActiveEffects(equipment, itemName, instanceId?): EquipmentProperty[]` method. The actual code at `src/core/generation/EquipmentGenerator.ts:719-759` includes this method for getting all active effects from an equipment item (base + modifications). Documentation needs to be updated.
+- [ ] **Location mismatch (Task 3.2 - Progression Types)** - DATA_ENGINE_REFERENCE_plan.md documents progression types at `src/types/ProgressionTypes.ts` and `src/types/StatTypes.ts`, but these files do not exist. All 6 types exist at different locations:
   - ListeningSession → `src/core/types/Progression.ts` (60-71)
   - ExperienceSystem → `src/core/types/Progression.ts` (76-98)
   - LevelUpDetail → `src/core/types/Progression.ts` (219-254)
   - StatIncreaseResult → `src/core/types/Progression.ts` (190-214)
   - CharacterUpdateResult → `src/core/progression/CharacterUpdater.ts` (9-18)
   - LevelUpBenefits → `src/core/progression/LevelUpProcessor.ts` (25-63)
-- [x] **Missing documentation (Task 3.3 - CharacterUpdater constructor)** - DATA_ENGINE_REFERENCE.md is missing the `constructor(statManager?: StatManager)` method for CharacterUpdater at `src/core/progression/CharacterUpdater.ts:28`. The constructor exists and is required for configuring stat increase behavior. Documentation needs to be updated.
-- [x] **Signature mismatch (Task 3.3 - LevelUpProcessor.getXPThreshold)** - DATA_ENGINE_REFERENCE.md documents `getXPThreshold(level: number): number`, but actual code at `src/core/progression/LevelUpProcessor.ts:463` shows `getXPThreshold(level: number, isUncapped: boolean = false): number`. The second parameter is optional with a default value, so the documented signature works but is incomplete. Documentation should mention the optional second parameter.
-- [x] **Location mismatch (Task 3.4 - Stat Increase Types)** - DATA_ENGINE_REFERENCE_plan.md documents stat types at `src/types/StatTypes.ts` and `src/types/ProgressionTypes.ts`, but these files do not exist. All 3 types exist at different locations:
+- [ ] **Missing documentation (Task 3.3 - CharacterUpdater constructor)** - DATA_ENGINE_REFERENCE.md is missing the `constructor(statManager?: StatManager)` method for CharacterUpdater at `src/core/progression/CharacterUpdater.ts:28`. The constructor exists and is required for configuring stat increase behavior. Documentation needs to be updated.
+- [ ] **Signature mismatch (Task 3.3 - LevelUpProcessor.getXPThreshold)** - DATA_ENGINE_REFERENCE.md documents `getXPThreshold(level: number): number`, but actual code at `src/core/progression/LevelUpProcessor.ts:463` shows `getXPThreshold(level: number, isUncapped: boolean = false): number`. The second parameter is optional with a default value, so the documented signature works but is incomplete. Documentation should mention the optional second parameter.
+- [ ] **Location mismatch (Task 3.4 - Stat Increase Types)** - DATA_ENGINE_REFERENCE_plan.md documents stat types at `src/types/StatTypes.ts` and `src/types/ProgressionTypes.ts`, but these files do not exist. All 3 types exist at different locations:
   - StatIncreaseConfig → `src/core/types/Progression.ts` (173-185)
   - StatIncreaseStrategyType → `src/core/types/Progression.ts` (107-113)
   - UncappedProgressionConfig → `src/core/progression/LevelUpProcessor.ts` (75-82)
-- [x] **Missing documentation (Task 3.4 - StatManager.getConfig)** - DATA_ENGINE_REFERENCE.md is missing the `getConfig(): Readonly<Required<StatIncreaseConfig>>` method at `src/core/progression/stat/StatManager.ts:281`. Documentation needs to be updated.
-- [x] **Missing documentation (Task 3.4 - StatManager.validateDnD5eStatSelection)** - DATA_ENGINE_REFERENCE.md is missing the `validateDnD5eStatSelection(character, selections, increaseAmount?): { valid: true } | StatSelectionValidationError` method at `src/core/progression/stat/StatManager.ts:333`. This validates stat selection follows D&D 5e rules (+2 to one ability OR +1 to two abilities). Documentation needs to be updated.
-- [x] **Location mismatch (Task 3.5 - Combat Types)** - DATA_ENGINE_REFERENCE_plan.md documents combat types at `src/types/CombatTypes.ts`, but this file does not exist. All 15 types exist at different locations:
+- [ ] **Missing documentation (Task 3.4 - StatManager.getConfig)** - DATA_ENGINE_REFERENCE.md is missing the `getConfig(): Readonly<Required<StatIncreaseConfig>>` method at `src/core/progression/stat/StatManager.ts:281`. Documentation needs to be updated.
+- [ ] **Missing documentation (Task 3.4 - StatManager.validateDnD5eStatSelection)** - DATA_ENGINE_REFERENCE.md is missing the `validateDnD5eStatSelection(character, selections, increaseAmount?): { valid: true } | StatSelectionValidationError` method at `src/core/progression/stat/StatManager.ts:333`. This validates stat selection follows D&D 5e rules (+2 to one ability OR +1 to two abilities). Documentation needs to be updated.
+- [ ] **Location mismatch (Task 3.5 - Combat Types)** - DATA_ENGINE_REFERENCE_plan.md documents combat types at `src/types/CombatTypes.ts`, but this file does not exist. All 15 types exist at different locations:
   - CombatInstance → `src/core/types/Combat.ts` (111-122)
   - Combatant → `src/core/types/Combat.ts` (23-41)
   - CombatAction → `src/core/types/Combat.ts` (46-54)
@@ -768,8 +770,8 @@ All 16 items verified. All constants and helper functions exist and are properly
   - InitiativeResult → `src/core/combat/InitiativeRoller.ts` (11-16)
   - AttackResult → `src/core/combat/AttackResolver.ts` (15-23)
   - SpellSlots → `src/core/generation/SpellManager.ts` (24-31) - NOT exported from src/index.ts
-- [x] **Documentation mismatch (Task 3.5 - Combat Helper Classes)** - DATA_ENGINE_REFERENCE.md shows `InitiativeRoller`, `AttackResolver`, and `SpellCaster` as "static" helper classes, but the actual implementations are instance classes (not static). The documentation style says "Helper: InitiativeRoller (static)" which is misleading. The code is correct (these are instance classes that need to be instantiated), but the documentation should be clarified. All methods exist and work correctly.
-- [x] **Location mismatch (Task 4.1 - Environmental Types)** - DATA_ENGINE_REFERENCE_plan.md documents environmental types at `src/types/SensorTypes.ts`, but this file does not exist. 15 of 16 types exist at `src/core/types/Environmental.ts`:
+- [ ] **Documentation mismatch (Task 3.5 - Combat Helper Classes)** - DATA_ENGINE_REFERENCE.md shows `InitiativeRoller`, `AttackResolver`, and `SpellCaster` as "static" helper classes, but the actual implementations are instance classes (not static). The documentation style says "Helper: InitiativeRoller (static)" which is misleading. The code is correct (these are instance classes that need to be instantiated), but the documentation should be clarified. All methods exist and work correctly.
+- [ ] **Location mismatch (Task 4.1 - Environmental Types)** - DATA_ENGINE_REFERENCE_plan.md documents environmental types at `src/types/SensorTypes.ts`, but this file does not exist. 15 of 16 types exist at `src/core/types/Environmental.ts`:
   - EnvironmentalContext → `src/core/types/Environmental.ts` (155-163)
   - GeolocationData → `src/core/types/Environmental.ts` (94-102)
   - MotionData → `src/core/types/Environmental.ts` (104-122)
@@ -786,30 +788,30 @@ All 16 items verified. All constants and helper functions exist and are properly
   - SensorRetryConfig → `src/core/types/Environmental.ts` (76-81)
   - SensorRecoveryNotification → `src/core/types/Environmental.ts` (86-92)
   - SevereWeatherAlert → `src/core/sensors/WeatherAPIClient.ts` (50-56)
-- [x] **Signature mismatch (Task 4.1 - GeolocationData)** - DATA_ENGINE_REFERENCE.md shows `altitude_accuracy?: number` property, but actual code at `src/core/types/Environmental.ts:94-102` does not include this property. Documentation needs to be updated.
-- [x] **Signature mismatch (Task 4.1 - MotionData)** - Multiple discrepancies between DATA_ENGINE_REFERENCE.md and actual code at `src/core/types/Environmental.ts:104-122`:
+- [ ] **Signature mismatch (Task 4.1 - GeolocationData)** - DATA_ENGINE_REFERENCE.md shows `altitude_accuracy?: number` property, but actual code at `src/core/types/Environmental.ts:94-102` does not include this property. Documentation needs to be updated.
+- [ ] **Signature mismatch (Task 4.1 - MotionData)** - Multiple discrepancies between DATA_ENGINE_REFERENCE.md and actual code at `src/core/types/Environmental.ts:104-122`:
   - `acceleration.x/y/z` are `number | null` in code but documented as `number`
   - Property naming: code uses `accelerationIncludingGravity` but docs show `acceleration_with_gravity`
   - Property naming: code uses `rotationRate` but docs show `rotation_rate`
   - Code has `interval: number` property not documented
   - Docs have `movement_intensity: number` and `activity_type` properties not in code
   The code uses camelCase naming convention consistent with TypeScript; documentation uses snake_case which is inconsistent.
-- [x] **Signature mismatch (Task 4.1 - WeatherData)** - Multiple discrepancies between DATA_ENGINE_REFERENCE.md and actual code at `src/core/types/Environmental.ts:124-134`:
+- [ ] **Signature mismatch (Task 4.1 - WeatherData)** - Multiple discrepancies between DATA_ENGINE_REFERENCE.md and actual code at `src/core/types/Environmental.ts:124-134`:
   - Property naming: code uses camelCase (`weatherType`, `windSpeed`, `windDirection`, `isNight`, `moonPhase`) but docs show snake_case
   - Code missing: `feels_like`, `visibility` properties shown in docs
   - Type difference: code has `weatherType: string` but docs show `weather_type: 'clear' | 'clouds' | 'rain' | 'snow' | 'thunderstorm' | 'mist' | 'fog'`
   - Code has `moonPhase: number` as required but docs show optional
-- [x] **Signature mismatch (Task 4.1 - LightData)** - DATA_ENGINE_REFERENCE.md shows `environment: 'bright_daylight' | 'indoor' | 'dim' | 'dark'` property, but actual code at `src/core/types/Environmental.ts:148-151` does not include this property. Documentation needs to be updated.
-- [x] **Signature mismatch (Task 4.1 - SevereWeatherAlert)** - DATA_ENGINE_REFERENCE.md shows `type: 'Blizzard' | 'Hurricane' | 'Typhoon' | 'Tornado' | 'None'` (union type), but actual code at `src/core/sensors/WeatherAPIClient.ts:50-56` uses `type: SevereWeatherType` (enum). The enum values match the union type, so functionality is equivalent but implementation differs.
-- [x] **Location mismatch (Task 4.3 - GamingContext)** - DATA_ENGINE_REFERENCE_plan.md documents `GamingContext` at `src/types/GamingTypes.ts`, but this file does not exist. The type exists at `src/core/types/Progression.ts` (36-51).
-- [x] **Location mismatch (Task 4.3 - Discord types)** - DATA_ENGINE_REFERENCE_plan.md documents Discord types (`DiscordUserInfo`, `MusicActivityDetails`, `DiscordActivity`, `DiscordConnectionState`) at `src/types/DiscordTypes.ts`, but this file does not exist. All types exist at `src/core/sensors/DiscordRPCClient.ts`:
+- [ ] **Signature mismatch (Task 4.1 - LightData)** - DATA_ENGINE_REFERENCE.md shows `environment: 'bright_daylight' | 'indoor' | 'dim' | 'dark'` property, but actual code at `src/core/types/Environmental.ts:148-151` does not include this property. Documentation needs to be updated.
+- [ ] **Signature mismatch (Task 4.1 - SevereWeatherAlert)** - DATA_ENGINE_REFERENCE.md shows `type: 'Blizzard' | 'Hurricane' | 'Typhoon' | 'Tornado' | 'None'` (union type), but actual code at `src/core/sensors/WeatherAPIClient.ts:50-56` uses `type: SevereWeatherType` (enum). The enum values match the union type, so functionality is equivalent but implementation differs.
+- [ ] **Location mismatch (Task 4.3 - GamingContext)** - DATA_ENGINE_REFERENCE_plan.md documents `GamingContext` at `src/types/GamingTypes.ts`, but this file does not exist. The type exists at `src/core/types/Progression.ts` (36-51).
+- [ ] **Location mismatch (Task 4.3 - Discord types)** - DATA_ENGINE_REFERENCE_plan.md documents Discord types (`DiscordUserInfo`, `MusicActivityDetails`, `DiscordActivity`, `DiscordConnectionState`) at `src/types/DiscordTypes.ts`, but this file does not exist. All types exist at `src/core/sensors/DiscordRPCClient.ts`:
   - `DiscordUserInfo` → (103-109)
   - `MusicActivityDetails` → (191-199)
   - `DiscordActivity` → (161-186)
   - `DiscordConnectionState` (enum) → (87-98)
-- [x] **Signature mismatch (Task 4.3 - SteamAPIClient.getCurrentGame)** - DATA_ENGINE_REFERENCE.md documents return type as `Promise<{ name; appId } | null>`, but actual code at `src/core/sensors/SteamAPIClient.ts:215-261` returns `Promise<{ name: string; appId: number; source: 'steam'; sessionDuration?: number } | null>`. The actual return type has additional properties `source` and `sessionDuration`. The code is correct; documentation should be updated.
-- [x] **Signature mismatch (Task 4.3 - SteamAPIClient.getGameMetadata)** - DATA_ENGINE_REFERENCE.md documents return type as `Promise<{ genre? } | null>`, but actual code at `src/core/sensors/SteamAPIClient.ts:267-313` returns `Promise<{ appId?: number; name: string; genre?: string[]; description?: string } | null>`. The actual return type has additional properties `appId`, `name`, and `description`. The code is correct; documentation should be updated.
-- [x] **Location mismatch (Task 5.1 - Equipment Types)** - DATA_ENGINE_REFERENCE_plan.md documents equipment types at `src/types/Equipment.ts` and `src/core/equipment/EquipmentSpawnHelper.ts`, but these files do not exist at those paths. All 10 types exist at `src/core/types/Equipment.ts`:
+- [ ] **Signature mismatch (Task 4.3 - SteamAPIClient.getCurrentGame)** - DATA_ENGINE_REFERENCE.md documents return type as `Promise<{ name; appId } | null>`, but actual code at `src/core/sensors/SteamAPIClient.ts:215-261` returns `Promise<{ name: string; appId: number; source: 'steam'; sessionDuration?: number } | null>`. The actual return type has additional properties `source` and `sessionDuration`. The code is correct; documentation should be updated.
+- [ ] **Signature mismatch (Task 4.3 - SteamAPIClient.getGameMetadata)** - DATA_ENGINE_REFERENCE.md documents return type as `Promise<{ genre? } | null>`, but actual code at `src/core/sensors/SteamAPIClient.ts:267-313` returns `Promise<{ appId?: number; name: string; genre?: string[]; description?: string } | null>`. The actual return type has additional properties `appId`, `name`, and `description`. The code is correct; documentation should be updated.
+- [ ] **Location mismatch (Task 5.1 - Equipment Types)** - DATA_ENGINE_REFERENCE_plan.md documents equipment types at `src/types/Equipment.ts` and `src/core/equipment/EquipmentSpawnHelper.ts`, but these files do not exist at those paths. All 10 types exist at `src/core/types/Equipment.ts`:
   - `EquipmentProperty` → (64-71)
   - `EquipmentPropertyType` → (38-45)
   - `EquipmentCondition` → (51-59)
@@ -822,34 +824,34 @@ All 16 items verified. All constants and helper functions exist and are properly
   - `TreasureHoardResult` → (267-274)
 - [ ] [Item] documented but not found in codebase (covered by EquipmentGenerator.getEquipmentByType above)
 - [ ] [Item] exists in code but not documented (covered by EquipmentGenerator methods above)
-- [ ] [Signature mismatch: [Item] documented as [X] but code shows [Y] (covered by EquipmentGenerator methods above)
+- [ ] [Signature mismatch: [Item] documented as [ ] but code shows [Y] (covered by EquipmentGenerator methods above)
 - [ ] Export mismatch: documented as exported but is internal (or vice versa) (covered by EquipmentGenerator.getEquipmentData above)
 
 ### Needs Investigation
 - [ ] [Item] - [describe what needs clarification]
 
 ### Discrepancies Found (Phase 6)
-- [x] **Missing type export (Task 6.1)** - `SpawnMode` is used inline in ExtensionOptions but not exported as a separate type. Documentation shows it as `type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace'`. ✅ **RESOLVED**: Added `export type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';` at line 28.
-- [x] **Missing type (Task 6.1)** - `RegistrationEntry` interface is documented but NOT DEFINED in the codebase. Documentation shows: `interface RegistrationEntry { category: ExtensionCategory; items: any[]; options?: ExtensionOptions; }` ✅ **RESOLVED**: Added interface at line 152.
-- [x] **Signature mismatch (Task 6.1)** - `ValidationResult` is missing the `warnings: string[]` property documented. Code has `errors?: string[]` but documentation shows `errors: string[]` (required, not optional) AND `warnings: string[]`. ✅ **RESOLVED**: Added `warnings?: string[]` property at line 181.
-- [x] **Missing methods (Task 6.2)** - Three documented methods are NOT IMPLEMENTED:
+- [ ] **Missing type export (Task 6.1)** - `SpawnMode` is used inline in ExtensionOptions but not exported as a separate type. Documentation shows it as `type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace'`. ✅ **RESOLVED**: Added `export type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';` at line 28.
+- [ ] **Missing type (Task 6.1)** - `RegistrationEntry` interface is documented but NOT DEFINED in the codebase. Documentation shows: `interface RegistrationEntry { category: ExtensionCategory; items: any[]; options?: ExtensionOptions; }` ✅ **RESOLVED**: Added interface at line 152.
+- [ ] **Signature mismatch (Task 6.1)** - `ValidationResult` is missing the `warnings: string[]` property documented. Code has `errors?: string[]` but documentation shows `errors: string[]` (required, not optional) AND `warnings: string[]`. ✅ **RESOLVED**: Added `warnings?: string[]` property at line 181.
+- [ ] **Missing methods (Task 6.2)** - Three documented methods are NOT IMPLEMENTED:
   - `registerMultiple(registrations: RegistrationEntry[]): void` - Not found in code ✅ **RESOLVED**: Implemented at line 378.
   - `setMode(category: ExtensionCategory, mode: SpawnMode): void` - Not found in code ✅ **RESOLVED**: Implemented at line 480.
   - `exportCustomDataForCategory(category: ExtensionCategory): any[]` - Not found in code ✅ **RESOLVED**: Implemented at line 845.
-- [x] **Additional categories not documented (Task 6.1)** - The ExtensionCategory type includes additional categories in the code that are not documented:
+- [ ] **Additional categories not documented (Task 6.1)** - The ExtensionCategory type includes additional categories in the code that are not documented:
   - `'races.data'` - For custom race data
   - `'classes.data'` - For custom class data
   - Specific race names for racialTraits category
   - Specific class names for skillLists category
   - `'classSpellLists'`, `'classSpellSlots'`, `'classStartingEquipment'`
-- [x] **Additional method not documented (Task 6.2)** - `getCurrentOptions(category: ExtensionCategory): ExtensionOptions | undefined` exists at line 444 but is not documented
-- [x] **Missing public methods (Task 6.5)** - Two documented methods were NOT PUBLIC:
+- [ ] **Additional method not documented (Task 6.2)** - `getCurrentOptions(category: ExtensionCategory): ExtensionOptions | undefined` exists at line 444 but is not documented
+- [ ] **Missing public methods (Task 6.5)** - Two documented methods were NOT PUBLIC:
   - `normalizeWeights(items, weights, mode): Record<string, number>` - Existed as private `getFinalWeights()`. ✅ **RESOLVED**: Added public method with proper signature (includes `items` parameter).
   - `getItemKey<T>(item): string` - Existed as private `getItemName()`. ✅ **RESOLVED**: Added public method and renamed internal calls.
-- [x] **Return type discrepancy (Task 6.5)** - `select()` documented as returning `T | null` but code returns `T` and throws on empty arrays. This is intentional behavior verified by tests. Documentation should be updated.
+- [ ] **Return type discrepancy (Task 6.5)** - `select()` documented as returning `T | null` but code returns `T` and throws on empty arrays. This is intentional behavior verified by tests. Documentation should be updated.
 
 ### Discrepancies Found (Phase 7)
-- [x] **Location mismatch (Task 7.1 - asClass and isValidClass)** - DATA_ENGINE_REFERENCE_plan.md documents `asClass` and `isValidClass` at `src/utils/constants.ts`, but actual location is `src/core/types/Character.ts`. Both functions are properly exported from `src/index.ts` (line 178) and accessible via the public API. The code organization is more appropriate (type helper functions in types module), but documentation needs to be updated.
+- [ ] **Location mismatch (Task 7.1 - asClass and isValidClass)** - DATA_ENGINE_REFERENCE_plan.md documents `asClass` and `isValidClass` at `src/utils/constants.ts`, but actual location is `src/core/types/Character.ts`. Both functions are properly exported from `src/index.ts` (line 178) and accessible via the public API. The code organization is more appropriate (type helper functions in types module), but documentation needs to be updated.
 
 ---
 
@@ -859,22 +861,22 @@ All 16 items verified. All constants and helper functions exist and are properly
 **Status**: All tasks completed and verified
 
 ### Task 8.1: Export SpawnMode Type (1 item) ✅ COMPLETED
-- [x] Export `SpawnMode` as a named type instead of inline union ✅
+- [ ] Export `SpawnMode` as a named type instead of inline union ✅
   - Added at line 28 in ExtensionManager.ts: `export type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';`
   - Exported in index.ts for public API
 
 ### Task 8.2: Add RegistrationEntry Interface (1 item) ✅ COMPLETED
-- [x] Add `RegistrationEntry` interface to ExtensionManager.ts ✅
+- [ ] Add `RegistrationEntry` interface to ExtensionManager.ts ✅
   - Added at lines 152-161 with properties: `category: ExtensionCategory`, `items: any[]`, `options?: ExtensionOptions`
   - Exported in index.ts for public API
   - Used by `registerMultiple()` method
 
 ### Task 8.3: Fix ValidationResult Interface (1 item) ✅ COMPLETED
-- [x] Add `warnings: string[]` property to `ValidationResult` ✅
+- [ ] Add `warnings: string[]` property to `ValidationResult` ✅
   - Updated at lines 175-181 with `warnings?: string[]` property
   - Now matches documentation: `valid: boolean`, `errors?: string[]`, `warnings?: string[]`
 
 ### Task 8.4: Implement Missing Methods (3 items) ✅ COMPLETED
-- [x] `registerMultiple(registrations: RegistrationEntry[]): void` ✅ Implemented at line 378
-- [x] `setMode(category: ExtensionCategory, mode: SpawnMode): void` ✅ Implemented at line 480
-- [x] `exportCustomDataForCategory(category: ExtensionCategory): any[]` ✅ Implemented at line 845
+- [ ] `registerMultiple(registrations: RegistrationEntry[]): void` ✅ Implemented at line 378
+- [ ] `setMode(category: ExtensionCategory, mode: SpawnMode): void` ✅ Implemented at line 480
+- [ ] `exportCustomDataForCategory(category: ExtensionCategory): any[]` ✅ Implemented at line 845
