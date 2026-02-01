@@ -111,7 +111,7 @@ The following items are noted for awareness but should NOT be resolved:
 - [x] Update DATA_ENGINE_REFERENCE.md: Document `getEquipmentData` as private method; add public `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method (exists at `src/core/generation/EquipmentGenerator.ts:60-62`)
 
 ### Task 3.9: EquipmentGenerator.getEquipmentDataStatic Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Add missing `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method (exists at `src/core/generation/EquipmentGenerator.ts:60-62`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Add missing `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method (exists at `src/core/generation/EquipmentGenerator.ts:60-62`)
 
 ### Task 3.10: EquipmentGenerator.addModification Documentation (1 item)
 - [ ] Update DATA_ENGINE_REFERENCE.md: Add missing `addModification(equipment, itemName, modification, instanceId?, character?): CharacterEquipment` method (exists at `src/core/generation/EquipmentGenerator.ts:590-644`)
