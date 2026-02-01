@@ -222,19 +222,14 @@ export type Race =
     | 'Half-Orc'
     | 'Tiefling';
 
-export type Class =
-    | 'Barbarian'
-    | 'Bard'
-    | 'Cleric'
-    | 'Druid'
-    | 'Fighter'
-    | 'Monk'
-    | 'Paladin'
-    | 'Ranger'
-    | 'Rogue'
-    | 'Sorcerer'
-    | 'Warlock'
-    | 'Wizard';
+/**
+ * Branded type for extensible Class names
+ *
+ * This allows custom classes to be registered via ExtensionManager while maintaining
+ * type safety. Use asClass() to convert a string to the Class type, and isValidClass()
+ * to validate at runtime.
+ */
+export type Class = string & { readonly __ClassBrand: unique symbol };
 
 export type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
 
