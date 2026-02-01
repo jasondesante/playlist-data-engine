@@ -1332,7 +1332,28 @@ interface CharacterSheet {
 }
 
 type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
-type Class = 'Barbarian' | 'Bard' | 'Cleric' | 'Druid' | 'Fighter' | 'Monk' | 'Paladin' | 'Ranger' | 'Rogue' | 'Sorcerer' | 'Warlock' | 'Wizard';
+
+/**
+ * Branded type for extensible Class names
+ *
+ * This allows custom classes to be registered via ExtensionManager while maintaining
+ * type safety. The default D&D 5e classes are available via DEFAULT_CLASSES constant.
+ *
+ * Use asClass() to convert a string to the Class type, and isValidClass()
+ * to validate at runtime.
+ *
+ * @example
+ * // Default D&D 5e classes
+ * const defaultClass: Class = 'Wizard' as Class;
+ *
+ * // Custom class (must be registered via ExtensionManager first)
+ * const customClass: Class = asClass('Necromancer');
+ * if (isValidClass(customClass)) {
+ *   // Safe to use
+ * }
+ */
+type Class = string & { readonly __ClassBrand: unique symbol };
+
 type Race = 'Dwarf' | 'Elf' | 'Halfling' | 'Human' | 'Dragonborn' | 'Gnome' | 'Half-Elf' | 'Half-Orc' | 'Tiefling';
 type ProficiencyLevel = 0 | 0.5 | 1 | 2;  // None, Half-proficiency, Proficient, Expertise
 ```

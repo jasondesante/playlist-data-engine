@@ -72,7 +72,7 @@ The following items are noted for awareness but should NOT be resolved:
 **Estimated Items**: 3 tasks
 
 ### Task 2.1: Class Type Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: `Class` type shown as simple union `'Barbarian' | ... | 'Wizard'` → actual code uses branded type `string & { readonly __ClassBrand: unique symbol }` for extensibility. The branded type is correct and intentional for supporting custom classes.
+- [x] Update DATA_ENGINE_REFERENCE.md: `Class` type shown as simple union `'Barbarian' | ... | 'Wizard'` → actual code uses branded type `string & { readonly __ClassBrand: unique symbol }` for extensibility. The branded type is correct and intentional for supporting custom classes.
 
 ### Task 2.2: Attack Interface Documentation (1 item)
 - [ ] Update DATA_ENGINE_REFERENCE.md: Add missing `properties?: string[]` property to Attack interface (exists in code at `src/core/types/Character.ts:195`)
