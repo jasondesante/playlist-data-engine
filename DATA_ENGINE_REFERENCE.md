@@ -2640,7 +2640,7 @@ new GamingPlatformSensors(config: { steam?: { apiKey: string; steamId?: string; 
 
 Integrates with Steam Web API.
 
-- `getCurrentGame(steamUserId: string): Promise<{ name: string, appId: number } | null>`
+- `getCurrentGame(steamUserId: string): Promise<{ name: string; appId: number; source: 'steam'; sessionDuration?: number } | null>`
     - Fetches currently played game.
 - `getGameMetadata(gameName: string): Promise<{ genre?: string[] } | null>`
     - Fetches genre tags for gaming bonuses.
