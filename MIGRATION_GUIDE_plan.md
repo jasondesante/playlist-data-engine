@@ -286,15 +286,27 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 
 ## Task 7.4: Verify Example Code Works
 - [x] Dragon-themed skill example compiles
-- [ ] Custom race registration example compiles
-- [ ] Subrace-specific trait example compiles
-- [ ] Necromancer class example compiles
+- [x] Custom race registration example compiles
+- [x] Subrace-specific trait example compiles
+- [x] Necromancer class example compiles
 
 **FINDING (Task 7.4 - Dragon skill example):**
 - **ISSUE FOUND**: The dragon-themed skill example in `USAGE_IN_OTHER_PROJECTS.md` (lines 1239-1281) had a type error.
 - **Problem**: The example used `class: 'Sorcerer'` but `SkillPrerequisite.class` requires the branded `Class` type, not a plain string.
 - **Fix Applied**: Added `asClass` to imports and changed `class: 'Sorcerer'` to `class: asClass('Sorcerer')`.
 - **Verification**: The fixed example now compiles correctly. Created verification test file at `tests/verification/dragon-skill-example.compile.test.ts`.
+
+**FINDING (Task 7.4 - Custom race registration, subrace-specific trait, and Necromancer class examples):**
+- **All examples compile successfully**: Created comprehensive verification test file at `tests/verification/custom-content-examples.compile.test.ts`.
+- **Test coverage**: 5 tests covering:
+  1. Custom race registration example (Dragonkin)
+  2. Subrace-specific trait example (Fire Dragonkin Fire Resistance)
+  3. Dragon-themed skill example (already fixed)
+  4. Dragon breath spell example
+  5. Necromancer class example
+- **All tests pass** (5/5 passed)
+- **Build successful** - TypeScript compilation completes without errors
+- **Note**: Custom races/classes require `as any` type assertions when registering because TypeScript cannot pre-define types for user-defined content. This is expected and correct behavior.
 
 ---
 

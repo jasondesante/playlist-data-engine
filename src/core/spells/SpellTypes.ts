@@ -8,7 +8,7 @@
  * Part of Phase 6: Discrepancies Resolution - Task 6.4 (class type consistency)
  */
 
-import type { Class } from '../types/Character.js';
+import type { Class, Race } from '../types/Character.js';
 
 /**
  * Prerequisites for learning a spell
@@ -38,7 +38,7 @@ export interface SpellPrerequisite {
     class?: Class;
 
     /** Specific race required */
-    race?: string;
+    race?: Race;
 
     /** Features that must be learned first (by feature ID) */
     features?: string[];
