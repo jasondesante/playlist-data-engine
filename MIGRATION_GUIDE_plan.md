@@ -329,7 +329,30 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 
 ## Redundancy / Potential Duplicates
 - [x] SkillPrerequisite and SpellPrerequisite have nearly identical structures - evaluate if consolidation is possible
-- [ ] getRaceData() and getRaceDataAsync() both exist - determine if both are needed
+- [x] getRaceData() and getRaceDataAsync() both exist - determine if both are needed ✓ **INVESTIGATED (2026-02-01)**
+
+### Investigation Results: getRaceData() vs getRaceDataAsync()
+
+**Finding:** Both functions serve different purposes but have overlapping implementations.
+
+**`getRaceData()` - Synchronous**
+- Uses pre-imported `ExtensionManager` (line 8 in constants.ts)
+- Works correctly in ESM because ExtensionManager is statically imported
+- Used internally by `AbilityScoreCalculator` and `CharacterGenerator`
+- Exported as public API
+
+**`getRaceDataAsync()` - Asynchronous**
+- Uses dynamic import for ExtensionManager as a fallback
+- Originally designed to avoid circular dependencies in ESM
+- Exported as public API for consumers who may need async pattern
+- Not used anywhere internally or in tests
+
+**Conclusion:** Both functions should be kept for:
+1. **API compatibility** - Removing a public export would be a breaking change
+2. **Different use cases** - Some consumers may prefer async pattern for custom race loading
+3. **Minimal overhead** - The async version provides a fallback mechanism
+
+**Recommendation:** No action needed. The slight code duplication is acceptable for API stability.
 
 ## Discrepancies Found During Verification
 - [x] **SpellPrerequisite location**: Interface is in `src/core/spells/SpellTypes.ts` NOT `src/utils/constants.ts` as documented (file comments indicate this was moved in Phase 6 Task 6.3/6.4)
