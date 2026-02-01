@@ -42,7 +42,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase | Description | Tasks | Status |
 |-------|-------------|-------|--------|
 | Phase 1 | Breaking Changes (Part 2) | 8 tasks | `██████████` 100% |
-| Phase 2 | Skill Prerequisites | 12 tasks | `░░░░░░░░░░` 0% |
+| Phase 2 | Skill Prerequisites | 12 tasks | `██████░░░░` 50% |
 | Phase 3 | Spell Prerequisites | 10 tasks | `░░░░░░░░░░` 0% |
 | Phase 4 | Custom Race Support | 8 tasks | `░░░░░░░░░░` 0% |
 | Phase 5 | Subrace Support | 12 tasks | `░░░░░░░░░░` 0% |
@@ -86,9 +86,9 @@ File: [src/core/skills/SkillTypes.ts](src/core/skills/SkillTypes.ts)
 - [x] Property `custom?: string` exists → line 48
 
 ## Task 2.2: Verify SpellValidator File (NEW FILE)
-- [ ] File exists: src/core/spells/SpellValidator.ts
-- [ ] File exports SpellValidator class
-- [ ] File exports helper functions
+- [x] File exists: src/core/spells/SpellValidator.ts
+- [x] File exports SpellValidator class
+- [x] File exports helper functions
 
 ## Task 2.3: Verify SkillValidator Method
 File: [src/core/skills/SkillValidator.ts](src/core/skills/SkillValidator.ts)
