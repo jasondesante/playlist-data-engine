@@ -743,10 +743,47 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **DOCUMENTATION NOTE**: The validators are listed in USAGE_IN_OTHER_PROJECTS.md (lines 1494-1496) but individual methods are not documented
 
 ### Task 3.6: FeatureEffectApplier → src/core/features/FeatureEffectApplier.ts
-- [ ] class exists and is exported
-- [ ] Methods for applying feature effects to characters
-- [ ] Type `EffectApplicationResult` exists
-- [ ] Type `CharacterEffect` exists
+- [x] class exists and is exported
+- [x] Methods for applying feature effects to characters
+- [x] Type `EffectApplicationResult` exists
+- [x] Type `CharacterEffect` exists
+
+**Task 3.6 Summary - COMPLETED**:
+- **VERIFIED**: `FeatureEffectApplier` class exists at src/core/features/FeatureEffectApplier.ts:21
+  - Exported from src/index.ts at line 270
+  - Exported from src/core/features/index.ts at line 28
+  - All methods are static utility methods for applying feature effects
+- **VERIFIED METHODS**:
+  - `applyFeatureEffects(character: CharacterSheet, feature: ClassFeature | RacialTrait): EffectApplicationResult` (line 29)
+    - Applies all effects from a single feature to a character
+    - Returns result with applied status, count, and errors
+  - `applyMultipleEffects(character: CharacterSheet, features: (ClassFeature | RacialTrait)[]): EffectApplicationResult` (line 64)
+    - Applies effects from multiple features to a character
+    - Returns combined result
+- **PRIVATE METHODS** (internal implementation):
+  - `applySingleEffect()` - Routes to specific effect type handlers
+  - `applyStatBonus()` - Handles stat bonus effects (ability scores, custom stats)
+  - `applySkillProficiency()` - Handles skill proficiency with hierarchy (none < proficient < expertise)
+  - `applyAbilityUnlock()` - Handles ability unlock effects (darkvision, flight, etc.)
+  - `applyPassiveModifier()` - Handles passive modifiers (speed, max stat modifiers, etc.)
+  - `applyResourceGrant()` - Handles resource grants (rage counts, ki points, etc.)
+  - `applySpellSlotBonus()` - Handles spell slot bonus effects
+- **VERIFIED**: Type `EffectApplicationResult` exists at src/core/types/Equipment.ts:231 with properties:
+  - `applied: boolean` - Whether any effects were applied or removed
+  - `count: number` - Number of effects affected
+  - `errors: string[]` - Errors encountered during application
+- **VERIFIED**: Type `CharacterEffect` exists at src/core/features/FeatureEffectApplier.ts:290 with properties:
+  - `type: string` - Type of effect that was applied
+  - `target: string` - Target stat, skill, or ability
+  - `value: number | string | boolean` - Value that was applied
+  - `condition?: string` - Optional condition for the effect
+- **VERIFIED**: `CharacterEffect` is exported from src/index.ts at line 104
+- **ADDITIONAL FINDINGS**:
+  - Uses `EffectApplierUtils` for shared logic (ability bonuses, skill proficiency hierarchy)
+  - Effects are stored in `character.feature_effects` array (or `character.equipment_effects` for equipment)
+  - Handles 6 effect types: `stat_bonus`, `skill_proficiency`, `ability_unlock`, `passive_modifier`, `resource_grant`, `spell_slot_bonus`
+  - The `EffectApplicationResult` type is also re-exported from src/core/features/index.ts:31 for API consistency
+- **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 3.7: WeightedSelector → src/core/extensions/WeightedSelector.ts
 - [ ] class exists and is exported
