@@ -1942,15 +1942,49 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **DOCUMENTATION NOTE**: EquipmentValidator is listed in USAGE_IN_OTHER_PROJECTS.md but lacks detailed API documentation
 
 ### Task 7.5: Equipment Types → src/core/types/Equipment.ts
-- [ ] `EnhancedEquipment`
-- [ ] `EquipmentProperty`
-- [ ] `EquipmentCondition`
-- [ ] `EquipmentModification`
-- [ ] `EnhancedInventoryItem`
-- [ ] `EquipmentMiniFeature`
-- [ ] `EquipmentFeature`
-- [ ] `EquipmentSkill`
-- [ ] `EquipmentSpell`
+- [x] `EnhancedEquipment`
+- [x] `EquipmentProperty`
+- [x] `EquipmentCondition`
+- [x] `EquipmentModification`
+- [x] `EnhancedInventoryItem`
+- [x] `EquipmentMiniFeature`
+- [x] `EquipmentFeature`
+- [x] `EquipmentSkill`
+- [x] `EquipmentSpell`
+
+**Task 7.5 Summary - COMPLETED**:
+- **VERIFIED**: All equipment types exist at src/core/types/Equipment.ts and are properly exported from src/index.ts (lines 63-78)
+- **VERIFIED**: `EnhancedEquipment` exists at line 89 with properties:
+  - Base: `name`, `type`, `rarity`, `weight`
+  - Advanced: `properties`, `grantsFeatures`, `grantsSkills`, `grantsSpells`, `damage`, `acBonus`, `weaponProperties`
+  - System: `spawnWeight`, `templateId`, `source`, `tags`
+- **VERIFIED**: `EquipmentProperty` exists at line 64 with properties:
+  - `type`, `target`, `value`, `condition`, `description`, `stackable`
+- **VERIFIED**: `EquipmentCondition` exists at line 51 as a union type:
+  - `vs_creature_type`, `at_time_of_day`, `wielder_race`, `wielder_class`, `while_equipped`, `on_hit`, `on_damage_taken`, `custom`
+- **VERIFIED**: `EquipmentModification` exists at line 142 with properties:
+  - `id`, `name`, `properties`, `addsFeatures`, `addsSkills`, `addsSpells`, `appliedAt`, `source`
+- **VERIFIED**: `EnhancedInventoryItem` exists at line 164 with properties:
+  - `name`, `quantity`, `equipped`, `modifications`, `templateId`, `instanceId`
+- **VERIFIED**: `EquipmentMiniFeature` exists at line 77 with properties:
+  - `id`, `name`, `description`, `effects`, `source`
+- **VERIFIED**: `EquipmentFeature` exists at line 194 with properties:
+  - `featureId`, `source`, `equipmentName`, `instanceId`, `sourceType`
+- **VERIFIED**: `EquipmentSkill` exists at line 205 with properties:
+  - `skillId`, `level`, `source`, `equipmentName`, `instanceId`, `sourceType`
+- **VERIFIED**: `EquipmentSpell` exists at line 217 with properties:
+  - `spellId`, `level`, `uses`, `recharge`, `source`, `equipmentName`, `instanceId`, `sourceType`
+- **ADDITIONAL TYPES EXPORTED** (not in original task list):
+  - `CharacterEquipment` (line 183) - Equipment organized by category with weight tracking
+  - `EffectApplicationResult` (line 231) - Result of equipment effect application/removal
+  - `EquipmentValidationResult` (line 243) - Result of equipment validation
+  - `SpawnRandomOptions` (line 253) - Options for random equipment spawning
+  - `TreasureHoardResult` (line 267) - Treasure hoard generation result
+  - `EquipmentRarity` (line 20) - Rarity type union
+  - `EquipmentType` (line 30) - Type category union
+  - `EquipmentPropertyType` (line 38) - Property type union
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **NOTE**: Pre-existing lint errors exist in codebase but are unrelated to equipment types
 
 ---
 
