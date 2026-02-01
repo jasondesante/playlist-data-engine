@@ -2690,18 +2690,40 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 10.6: Combat Types → src/core/types/Combat.ts
-- [ ] `StatusEffect`
-- [ ] `Combatant`
-- [ ] `CombatAction`
-- [ ] `CombatActionResult`
-- [ ] `AttackRoll`
-- [ ] `DamageRoll`
-- [ ] `SpellCastResult`
-- [ ] `CombatInstance`
-- [ ] `CombatResult`
-- [ ] `DamageType`
-- [ ] `SavingThrowAbility`
-- [ ] `CombatConfig`
+- [x] `StatusEffect`
+- [x] `Combatant`
+- [x] `CombatAction`
+- [x] `CombatActionResult`
+- [x] `AttackRoll`
+- [x] `DamageRoll`
+- [x] `SpellCastResult`
+- [x] `CombatInstance`
+- [x] `CombatResult`
+- [x] `DamageType`
+- [x] `SavingThrowAbility`
+- [x] `CombatConfig`
+
+**Task 10.6 Summary - COMPLETED**:
+- **VERIFIED**: All 12 combat types exist at src/core/types/Combat.ts
+- **VERIFIED TYPES**:
+  - `StatusEffect` interface (line 12) - Temporary condition affecting a combatant
+  - `Combatant` interface (line 23) - A character participating in combat
+  - `CombatAction` interface (line 46) - An action taken during combat
+  - `CombatActionResult` interface (line 59) - Outcome of a combat action
+  - `AttackRoll` interface (line 72) - Result of an attack roll
+  - `DamageRoll` interface (line 85) - Result of a damage roll
+  - `SpellCastResult` interface (line 96) - Outcome of casting a spell
+  - `CombatInstance` interface (line 111) - Represents an active combat encounter
+  - `CombatResult` interface (line 127) - Final outcome of a combat encounter
+  - `DamageType` type (line 143) - D&D damage type classification (13 types)
+  - `SavingThrowAbility` type (line 151) - D&D ability saving throw (6 abilities)
+  - `CombatConfig` interface (line 156) - Combat configuration options
+- **EXPORTS**: All types properly exported from src/index.ts at lines 82-93
+- **ADDITIONAL FINDINGS**:
+  - All types have comprehensive JSDoc comments
+  - DamageType includes physical, elemental, and magical damage types
+  - CombatConfig includes environment, music, and tactical mode options
+- **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 10.7: Feature Types → src/core/features/
 - [ ] `ClassFeature` → FeatureTypes.ts
