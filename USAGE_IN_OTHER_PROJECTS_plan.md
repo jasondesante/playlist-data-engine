@@ -2044,14 +2044,51 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build completed successfully with no errors
 
 ### Task 8.2: GamingPlatformSensors → src/core/sensors/GamingPlatformSensors.ts
-- [ ] class exists and is exported
-- [ ] Constructor accepts config:
-  - [ ] `steam: { apiKey: string, steamId: string, pollInterval?: number }`
-  - [ ] `discord: { clientId: string }`
-- [ ] `startMonitoring(callback: (context: GamingContext) => void): void`
-- [ ] `stopMonitoring(): void`
-- [ ] `getContext(): GamingContext`
-- [ ] `calculateGamingBonus(): number`
+- [x] class exists and is exported
+- [x] Constructor accepts config:
+  - [x] `steam: { apiKey: string, steamId?: string, pollInterval?: number }`
+  - [x] `discord: { clientId: string, enableRichPresence?: boolean, pollInterval?: number }`
+- [x] `startMonitoring(callback: (context: GamingContext) => void): void`
+- [x] `stopMonitoring(): void`
+- [x] `getContext(): GamingContext`
+- [x] `calculateGamingBonus(): number`
+
+**Task 8.2 Summary - COMPLETED**:
+- **VERIFIED**: `GamingPlatformSensors` class exists at src/core/sensors/GamingPlatformSensors.ts:16
+  - Exported from src/index.ts at line 383
+  - Type `GamingPlatformSensors` is properly exported
+- **VERIFIED**: Constructor accepts config object with steam and discord options at line 62
+  - **MINOR NOTES**:
+    - `steamId` is optional (`steamId?: string`) not required as shown in task
+    - `discord` config has additional optional properties: `enableRichPresence?: boolean`, `pollInterval?: number`
+  - Constructor also supports `GamingSensorConfig` type for extended configuration
+- **VERIFIED**: `startMonitoring(callback?: (context: GamingContext) => void): void` exists at line 130
+  - **MINOR NOTE**: `callback` parameter is optional, not required
+- **VERIFIED**: `stopMonitoring(): void` exists at line 149
+- **VERIFIED**: `getContext(): GamingContext` exists at line 291
+  - Returns a copy of the gaming context to prevent external mutation
+- **VERIFIED**: `calculateGamingBonus(): number` exists at line 252
+  - Returns XP multiplier based on gaming activity (1.0 for no gaming, up to configured max)
+  - Base: +25% for any gaming, +20% for RPG, +15% for Action, +15% for multiplayer
+  - Session duration bonus up to +20% for 4+ hours
+- **VERIFIED**: Type `GamingContext` exists at src/core/types/Progression.ts:36 with properties:
+  - `isActivelyGaming: boolean`
+  - `platformSource: 'steam' | 'none'`
+  - `currentGame?: { name, source, genre?, sessionDuration?, partySize? }`
+  - `totalGamingMinutes: number`
+  - `gamesPlayedWhileListening: string[]`
+  - `lastUpdated: number`
+- **ADDITIONAL METHODS** (not in task description but part of public API):
+  - `authenticate(steamUserId?: string, discordUserId?: string): Promise<boolean>` (line 110)
+  - `isPlayingGame(gameName: string): boolean` (line 238)
+  - `recordGameSession(gameName: string, durationMinutes: number): void` (line 298)
+  - `getDiagnostics(): {...}` (line 311) - Comprehensive diagnostic report
+  - `printDashboard(config?: DashboardConfig): void` (line 393)
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTES**:
+  - Task showed `steamId` as required but it's actually optional
+  - Task showed callback as required but it's optional
+  - Discord config has additional properties not documented in task
 
 ### Task 8.3: SteamAPIClient → src/core/sensors/SteamAPIClient.ts
 - [ ] File exists
@@ -2360,8 +2397,8 @@ For each item, verify:
 | 5 | Complete | 7 | ~50 | 2026-02-01 |
 | 6 | In Progress | 3 | ~30 | 2026-02-01 |
 | 7 | Not Started | 0 | ~30 | - |
-| 8 | Not Started | 0 | ~20 | - |
+| 8 | In Progress | 1 | ~20 | 2026-02-01 |
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 2 | ~15 | 2026-02-01 |
-| **ALL** | **In Progress** | **38** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **39** | **~475** | 2026-02-01 |
