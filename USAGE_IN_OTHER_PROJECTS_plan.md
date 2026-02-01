@@ -268,9 +268,26 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 2.4: SpectrumScanner → src/core/analysis/SpectrumScanner.ts
-- [ ] class exists and is exported
-- [ ] Analyzes frequency bands
-- [ ] Type `FrequencyBands` exists
+- [x] class exists and is exported
+- [x] Analyzes frequency bands
+- [x] Type `FrequencyBands` exists
+
+**Task 2.4 Summary - COMPLETED**:
+- **VERIFIED**: `SpectrumScanner` class exists at src/core/analysis/SpectrumScanner.ts:26
+  - Exported from src/index.ts at line 201
+  - Has static method `separateFrequencyBands(frequencyData: Uint8Array, sampleRate: number): FrequencyBands`
+  - Has static method `calculateDominance(band: number[], bandWidthHz?: number): number`
+  - Constant `CURRENT_BAND_VERSION` exported (value: 2)
+- **VERIFIED**: Type `FrequencyBands` exists at src/core/types/AudioProfile.ts:65
+  - Exported from src/index.ts at line 21
+  - Has properties: `bass: number[]`, `mid: number[]`, `treble: number[]`
+- **DISCREPANCY FOUND**: Comments in `FrequencyBands` interface (lines 66-73) still reference the OLD v1 frequency bands:
+  - Comment says "Bass frequencies (20Hz - 250Hz)" but code uses 20Hz-400Hz
+  - Comment says "Mid frequencies (250Hz - 4kHz)" but code uses 400Hz-4kHz
+  - Comment says "Treble frequencies (4kHz - 20kHz)" but code uses 4kHz-14kHz
+  - **RECOMMENDATION**: Update comments to match v2 band ranges implemented in Phase 8.1
+- **BUILD STATUS**: Clean - no compilation errors
+- **NOTE**: Pre-existing lint errors exist in codebase but are unrelated to this verification
 
 ### Task 2.5: ColorExtractor → src/core/analysis/ColorExtractor.ts
 - [ ] class exists and is exported
@@ -882,6 +899,12 @@ This verification plan ensures documentation-code alignment by systematically ch
 - [ ] `StatIncrease` - Array element type in `StatManager` methods
 - [ ] `Attack` - Parameter type in `CombatEngine.executeAttack()`
 
+### Task 11.2a: Type Documentation Inaccuracies
+- [x] ~~`FrequencyBands` comments in AudioProfile.ts (lines 66-73) reference OLD v1 bands~~
+  - **FOUND**: Comments say "Bass: 20-250Hz, Mid: 250Hz-4kHz, Treble: 4kHz-20kHz"
+  - **ACTUAL**: Code uses v2 bands "Bass: 20-400Hz, Mid: 400Hz-4kHz, Treble: 4kHz-14kHz"
+  - **RECOMMENDATION**: Update comments to match implemented v2 band ranges
+
 ### Task 11.3: Properties Needing Verification
 - [ ] `Combatant.isDefeated` - Used in combat examples, verify exists
 - [ ] `CharacterSheet.attacks` - Used in combat examples, verify exists
@@ -940,7 +963,7 @@ For each item, verify:
 | Phase | Status | Completed | Total | Last Updated |
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
-| 2 | In Progress | 3 | ~40 | 2026-02-01 |
+| 2 | In Progress | 4 | ~40 | 2026-02-01 |
 | 3 | Not Started | 0 | ~60 | - |
 | 4 | Not Started | 0 | ~40 | - |
 | 5 | Not Started | 0 | ~50 | - |
@@ -950,4 +973,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **6** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **7** | **~475** | 2026-02-01 |
