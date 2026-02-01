@@ -695,8 +695,21 @@ export class ExtensionManager {
                 errors.push(`${prefix} Class 'expertise_count' must be a non-negative number (if provided)`);
             }
             // Optional baseClass (for template-based custom classes)
-            if (item.baseClass !== undefined && typeof item.baseClass !== 'string') {
-                errors.push(`${prefix} Class 'baseClass' must be a string (if provided)`);
+            if (item.baseClass !== undefined) {
+                if (typeof item.baseClass !== 'string') {
+                    errors.push(`${prefix} Class 'baseClass' must be a string (if provided)`);
+                } else {
+                    // Validate that baseClass is either a default class or a registered custom class
+                    const isDefaultClass = DEFAULT_CLASSES.includes(item.baseClass as Class);
+
+                    // Check if it's a registered custom class (has data in classes.data)
+                    const classDataList = this.get('classes.data') as Array<{ name: string }> | undefined;
+                    const isRegisteredCustomClass = classDataList?.some(d => d.name === item.baseClass);
+
+                    if (!isDefaultClass && !isRegisteredCustomClass) {
+                        errors.push(`${prefix} Class 'baseClass' must be a valid default class (one of: ${DEFAULT_CLASSES.join(', ')}) or a registered custom class`);
+                    }
+                }
             }
             // Optional audio_preferences
             if (item.audio_preferences !== undefined && typeof item.audio_preferences !== 'object') {

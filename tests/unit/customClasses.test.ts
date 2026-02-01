@@ -681,6 +681,104 @@ describe('Custom Classes', () => {
             expect(result.errors?.some(e => e.includes('baseClass'))).toBe(true);
         });
 
+        it('should reject class data with invalid baseClass value (non-existent class)', () => {
+            const invalidClassData = [{
+                name: 'InvalidClass',
+                baseClass: 'NonExistentClass', // Not a valid default class
+                primary_ability: 'INT',
+                hit_die: 8,
+                saving_throws: ['INT', 'WIS'],
+                is_spellcaster: true,
+                skill_count: 2,
+                available_skills: ['arcana'],
+                has_expertise: false
+            }];
+
+            const result = manager.validate('classes.data' as any, invalidClassData);
+            expect(result.valid).toBe(false);
+            expect(result.errors?.some(e => e.includes('baseClass') && e.includes('valid'))).toBe(true);
+        });
+
+        it('should reject class data with baseClass referencing unregistered custom class', () => {
+            // Register one custom class
+            manager.register('classes.data' as any, [{
+                name: 'BaseMage',
+                primary_ability: 'INT',
+                hit_die: 8,
+                saving_throws: ['INT', 'WIS'],
+                is_spellcaster: true,
+                skill_count: 2,
+                available_skills: ['arcana'],
+                has_expertise: false
+            }]);
+
+            // Try to use a custom class that hasn't been registered as baseClass
+            const invalidClassData = [{
+                name: 'DerivedMage',
+                baseClass: 'UnregisteredClass', // Custom class not registered yet
+                primary_ability: 'INT',
+                hit_die: 8,
+                saving_throws: ['INT', 'WIS'],
+                is_spellcaster: true,
+                skill_count: 2,
+                available_skills: ['arcana'],
+                has_expertise: false
+            }];
+
+            const result = manager.validate('classes.data' as any, invalidClassData);
+            expect(result.valid).toBe(false);
+            expect(result.errors?.some(e => e.includes('baseClass') && e.includes('valid'))).toBe(true);
+        });
+
+        it('should allow baseClass referencing registered custom class', () => {
+            // Register base custom class first
+            manager.register('classes.data' as any, [{
+                name: 'BaseMage',
+                primary_ability: 'INT',
+                hit_die: 8,
+                saving_throws: ['INT', 'WIS'],
+                is_spellcaster: true,
+                skill_count: 2,
+                available_skills: ['arcana', 'history'],
+                has_expertise: false
+            }]);
+
+            // Register derived class that references the base
+            const validClassData = [{
+                name: 'SpecializedMage',
+                baseClass: 'BaseMage', // References custom class registered above
+                primary_ability: 'INT',
+                hit_die: 8,
+                saving_throws: ['INT', 'WIS'],
+                is_spellcaster: true,
+                skill_count: 2,
+                available_skills: ['arcana'], // Override with fewer skills
+                has_expertise: false
+            }];
+
+            const result = manager.validate('classes.data' as any, validClassData);
+            expect(result.valid).toBe(true);
+            expect(result.errors).toBeUndefined();
+        });
+
+        it('should allow baseClass referencing valid default class', () => {
+            const validClassData = [{
+                name: 'ValidClass',
+                baseClass: 'Wizard', // Valid default class
+                primary_ability: 'INT',
+                hit_die: 8,
+                saving_throws: ['INT', 'WIS'],
+                is_spellcaster: true,
+                skill_count: 2,
+                available_skills: ['arcana'],
+                has_expertise: false
+            }];
+
+            const result = manager.validate('classes.data' as any, validClassData);
+            expect(result.valid).toBe(true);
+            expect(result.errors).toBeUndefined();
+        });
+
         it('should reject class data with invalid audio_preferences type', () => {
             const invalidClassData = [{
                 name: 'InvalidClass',

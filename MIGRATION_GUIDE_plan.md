@@ -375,10 +375,10 @@ The slight duplication in interface definitions is **intentional design**, not r
 - Optimal balance between type safety and code reuse
 
 ## Investigation Needed
-- [ ] Verify merge logic in getClassData handles edge cases (missing baseClass, invalid baseClass)
+- [x] Verify merge logic in getClassData handles edge cases (missing baseClass, invalid baseClass) ✓ **COMPLETED (2026-02-01)**
 - [ ] Confirm available_skills replacement is consistent across all code paths
 - [ ] Verify subrace propagation through entire character generation pipeline
-- [x] Check if tests actually pass (run test suite) ✓ **PASSING: 2031/2031 tests pass**
+- [x] Check if tests actually pass (run test suite) ✓ **PASSING: 2035/2035 tests pass**
 
 ## Test Fixes Applied (2026-02-01)
 **Task Completed:** Fixed failing tests in classSuggester.integration.test.ts
@@ -398,6 +398,59 @@ The slight duplication in interface definitions is **intentional design**, not r
 - **Test Files**: 61 passed
 - **Duration**: ~21 seconds
 - **Build Status**: Clean (TypeScript compilation succeeds)
+
+---
+
+## Investigation Results: getClassData Edge Case Handling (Completed 2026-02-01)
+
+**Task:** Verify merge logic in `getClassData` handles edge cases (missing baseClass, invalid baseClass)
+
+### Edge Cases Analyzed
+
+**1. Missing baseClass (undefined/null)**
+- **Status:** ✓ Handled correctly
+- **Behavior:** If `classEntry.baseClass` is undefined, the function returns `classEntry` as-is without attempting merge
+- **Code:** `if (classEntry.baseClass && classEntry.baseClass in CLASS_DATA)` short-circuits on undefined
+- **Test Coverage:** `tests/unit/customClasses.test.ts:196-216` - "should handle class with no baseClass"
+
+**2. Invalid baseClass (non-existent default class)**
+- **Status:** ✓ Fixed - Added validation
+- **Problem Found:** ExtensionManager validation only checked that `baseClass` is a string type, NOT that it's a valid class
+- **Impact:** Developer could specify `baseClass: 'NonExistentClass'`, validation would pass, but `getClassData` would return incomplete custom class data without merging
+- **Solution:** Enhanced validation in `ExtensionManager.ts:697-711` to check that `baseClass` is either:
+  - A valid default class (one of the 12 D&D 5e classes in `DEFAULT_CLASSES`)
+  - OR a registered custom class (already has data in `classes.data`)
+- **Test Coverage Added:** 4 new tests in `tests/unit/customClasses.test.ts`:
+  - "should reject class data with invalid baseClass value (non-existent class)"
+  - "should reject class data with baseClass referencing unregistered custom class"
+  - "should allow baseClass referencing registered custom class"
+  - "should allow baseClass referencing valid default class"
+
+**3. available_skills undefined/null in custom class**
+- **Status:** ✓ Handled correctly
+- **Behavior:** If `classEntry.available_skills` is undefined, merge uses `baseData.available_skills` via the fallback: `classEntry.available_skills || baseData.available_skills`
+- **Test Coverage:** `tests/unit/customClasses.test.ts:322-345` - "should inherit available_skills when not provided"
+
+**4. Empty available_skills array**
+- **Status:** ✓ Handled correctly
+- **Behavior:** Empty array `[]` is respected (truthy) and overrides base class skills
+- **Test Coverage:** `tests/unit/customClasses.test.ts:302-321` - "should handle empty available_skills array"
+
+### Changes Made
+
+**File:** `src/core/extensions/ExtensionManager.ts`
+- **Lines 697-711:** Enhanced `baseClass` validation
+- **Before:** Only checked `typeof item.baseClass !== 'string'`
+- **After:** Also validates that `baseClass` is a valid default class or registered custom class
+
+**File:** `tests/unit/customClasses.test.ts`
+- **Lines 684-733:** Added 4 new test cases for baseClass validation
+
+### Test Results
+- **Before:** 2031 tests passing
+- **After:** 2035 tests passing (+4 new tests)
+- **Build:** Clean (TypeScript compilation succeeds)
+- **Duration:** ~21 seconds
 
 ---
 
