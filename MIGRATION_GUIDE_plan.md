@@ -44,7 +44,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase 1 | Breaking Changes (Part 2) | 8 tasks | `██████████` 100% |
 | Phase 2 | Skill Prerequisites | 12 tasks | `██████████` 100% |
 | Phase 3 | Spell Prerequisites | 10 tasks | `██████████` 100% |
-| Phase 4 | Custom Race Support | 8 tasks | `░░░░░░░░░░` 0% |
+| Phase 4 | Custom Race Support | 8 tasks | `█░░░░░░░░░` 12% |
 | Phase 5 | Subrace Support | 12 tasks | `░░░░░░░░░░` 0% |
 | Phase 6 | Template-Based Classes | 22 tasks | `░░░░░░░░░░` 0% |
 | Phase 7 | Tests & Documentation | 11 tasks | `░░░░░░░░░░` 0% |
@@ -133,11 +133,11 @@ File: [src/core/spells/SpellTypes.ts](src/core/spells/SpellTypes.ts)
 
 ## Task 4.1: Verify RaceDataEntry Interface
 File: [src/utils/constants.ts](src/utils/constants.ts)
-- [ ] Interface is exported as `export interface RaceDataEntry`
-- [ ] Property `ability_bonuses: Partial<Record<Ability, number>>` exists
-- [ ] Property `speed: number` exists
-- [ ] Property `traits: string[]` exists
-- [ ] Property `subraces?: string[]` exists
+- [x] Interface is exported as `export interface RaceDataEntry` → line 19
+- [x] Property `ability_bonuses: Partial<Record<Ability, number>>` exists → line 21
+- [x] Property `speed: number` exists → line 24
+- [x] Property `traits: string[]` exists → line 27
+- [x] Property `subraces?: string[]` exists → line 30
 
 ## Task 4.2: Verify Helper Functions
 - [ ] `getRaceData(race: string): RaceDataEntry | undefined` exported → [constants.ts:167](src/utils/constants.ts#L167)
