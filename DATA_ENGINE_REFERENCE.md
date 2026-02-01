@@ -3123,15 +3123,13 @@ class EquipmentGenerator {
     static addItem(
         equipment: CharacterEquipment,
         itemName: string,
-        quantity?: number,
-        character?: CharacterSheet
+        quantity: number = 1
     ): CharacterEquipment;
 
     static removeItem(
         equipment: CharacterEquipment,
         itemName: string,
-        quantity?: number,
-        character?: CharacterSheet
+        quantity: number = 1
     ): CharacterEquipment;
 
     static equipItem(
