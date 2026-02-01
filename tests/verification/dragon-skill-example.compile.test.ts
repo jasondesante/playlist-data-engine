@@ -5,6 +5,7 @@
  * are compatible with the example code shown in USAGE_IN_OTHER_PROJECTS.md
  */
 
+import { describe, it, expect } from 'vitest';
 import { SkillRegistry, asClass } from '../../src/index.js';
 import type { CustomSkill } from '../../src/index.js';
 
@@ -30,26 +31,28 @@ import type { CustomSkill } from '../../src/index.js';
  * ```
  */
 
-// Verify the example compiles with correct types
-const dragonSmithingSkill: CustomSkill = {
-    id: 'dragon_smithing',
-    name: 'Dragon Smithing',
-    description: 'Craft weapons from dragon scales',
-    ability: 'INT',
-    prerequisites: {
-        features: ['draconic_bloodline'],
-        level: 5,
-        class: asClass('Sorcerer')  // FIXED: Using asClass helper function
-    },
-    source: 'custom'
-};
+describe('Dragon-themed skill example verification', () => {
+    it('should compile with correct TypeScript types', () => {
+        // Verify the example compiles with correct types
+        const dragonSmithingSkill: CustomSkill = {
+            id: 'dragon_smithing',
+            name: 'Dragon Smithing',
+            description: 'Craft weapons from dragon scales',
+            ability: 'INT',
+            prerequisites: {
+                features: ['draconic_bloodline'],
+                level: 5,
+                class: asClass('Sorcerer')  // FIXED: Using asClass helper function
+            },
+            source: 'custom'
+        };
 
-// Verify we can register this skill
-const registry = SkillRegistry.getInstance();
+        // Verify we can register this skill
+        const registry = SkillRegistry.getInstance();
 
-// This should compile without errors
-// Note: We won't actually run this in tests, just verify it compiles
-// registry.registerSkill(dragonSmithingSkill);
-
-console.log('Dragon-themed skill example compiles successfully!');
-export { dragonSmithingSkill };
+        // This test passes if the code compiles without type errors
+        // The actual registration is skipped to avoid side effects
+        expect(dragonSmithingSkill.id).toBe('dragon_smithing');
+        expect(dragonSmithingSkill.prerequisites?.class).toBe('Sorcerer');
+    });
+});
