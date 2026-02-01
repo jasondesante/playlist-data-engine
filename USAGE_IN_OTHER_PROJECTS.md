@@ -1232,6 +1232,142 @@ See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
 - [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md) - Custom races, classes, and spawn rate control
 - [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md) - Complete API reference
 
+### Example: Dragon-Themed Content
+
+This example demonstrates registering a complete dragon-themed content pack with custom race, subraces, skills, and spells:
+
+```typescript
+import { ExtensionManager, FeatureRegistry, SkillRegistry } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// 1. Register a custom race with subraces
+manager.register('races.data', [{
+    race: 'Dragonkin',
+    ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
+    speed: 30,
+    traits: ['Draconic Ancestry', 'Darkvision'],
+    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
+}]);
+
+manager.register('races', ['Dragonkin']);
+
+// 2. Register subrace-specific racial traits
+FeatureRegistry.getInstance().registerRacialTrait({
+    id: 'fire_dragonkin_fire_resistance',
+    name: 'Fire Resistance',
+    description: 'You have resistance to fire damage.',
+    race: 'Dragonkin',
+    subrace: 'Fire Dragonkin',
+    prerequisites: { subrace: 'Fire Dragonkin' },
+    effects: [
+        { type: 'ability_unlock', target: 'fire_resistance', value: true }
+    ],
+    source: 'custom'
+});
+
+// 3. Register a skill with prerequisites (feature + level + class)
+SkillRegistry.getInstance().registerSkill({
+    id: 'dragon_smithing',
+    name: 'Dragon Smithing',
+    description: 'Craft weapons from dragon scales',
+    ability: 'INT',
+    prerequisites: {
+        features: ['draconic_bloodline'],
+        level: 5,
+        class: 'Sorcerer'
+    },
+    source: 'custom'
+});
+
+// 4. Register a spell with prerequisites
+manager.register('spells', [{
+    id: 'dragon_breath',
+    name: 'Dragon Breath',
+    level: 3,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '60 ft cone',
+    components: ['V', 'S', 'M'],
+    duration: 'Instantaneous',
+    description: 'Exhale destructive energy',
+    prerequisites: {
+        features: ['dragon_bloodline'],
+        abilities: { CHA: 16 }
+    }
+}]);
+```
+
+### Example: Custom Necromancer Class
+
+This example demonstrates creating a custom "Necromancer" class that extends the Wizard base class:
+
+```typescript
+import { ExtensionManager, CharacterGenerator, asClass } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// 1. Register custom skill
+manager.register('skills.INT', [{
+    id: 'necromancy',
+    name: 'Necromancy',
+    ability: 'INT',
+    description: 'Knowledge of undead creation and control',
+    prerequisites: { class: 'Necromancer' },
+    source: 'custom'
+}]);
+
+// 2. Register custom class data (inherits from Wizard)
+manager.register('classes.data', [{
+    name: 'Necromancer',
+    baseClass: 'Wizard',  // Inherits from Wizard
+    // Only override what's different:
+    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
+    // All other properties (hit_die, saving_throws, etc.) are inherited from Wizard
+}]);
+
+// 3. Register the class name
+manager.register('classes', [asClass('Necromancer')]);
+
+// 4. Register custom features
+manager.register('classFeatures.Necromancer', [
+    {
+        id: 'necromancer_raise_dead',
+        name: 'Raise Undead',
+        description: 'Can raise undead creatures',
+        type: 'active',
+        level: 1,
+        class: 'Necromancer',
+        prerequisites: {
+            class: 'Necromancer',
+            abilities: { INT: 13 }
+        },
+        effects: [
+            { type: 'ability_unlock', target: 'raise_undead', value: true }
+        ],
+        source: 'custom'
+    }
+], { mode: 'replace' });
+
+// 5. Register custom spell list
+manager.register('classSpellLists.Necromancer', [{
+    cantrips: ['Mage Hand', 'Mending', 'Message'],
+    spells_by_level: {
+        1: ['Animate Dead', 'False Life', 'Ray of Sickness'],
+        2: ['Ray of Enfeeblement', 'Web'],
+        3: ['Animate Dead', 'Feign Death']
+    }
+}]);
+
+// 6. Generate a Necromancer character
+const character = CharacterGenerator.generate(
+    'test-seed',
+    sampleAudioProfile,
+    'Test Character',
+    { forceClass: 'Necromancer' }
+);
+```
+
 ---
 
 ## Equipment System
