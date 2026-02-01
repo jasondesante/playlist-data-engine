@@ -285,10 +285,16 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 - [x] docs/CUSTOM_CONTENT.md exists
 
 ## Task 7.4: Verify Example Code Works
-- [ ] Dragon-themed skill example compiles
+- [x] Dragon-themed skill example compiles
 - [ ] Custom race registration example compiles
 - [ ] Subrace-specific trait example compiles
 - [ ] Necromancer class example compiles
+
+**FINDING (Task 7.4 - Dragon skill example):**
+- **ISSUE FOUND**: The dragon-themed skill example in `USAGE_IN_OTHER_PROJECTS.md` (lines 1239-1281) had a type error.
+- **Problem**: The example used `class: 'Sorcerer'` but `SkillPrerequisite.class` requires the branded `Class` type, not a plain string.
+- **Fix Applied**: Added `asClass` to imports and changed `class: 'Sorcerer'` to `class: asClass('Sorcerer')`.
+- **Verification**: The fixed example now compiles correctly. Created verification test file at `tests/verification/dragon-skill-example.compile.test.ts`.
 
 ---
 

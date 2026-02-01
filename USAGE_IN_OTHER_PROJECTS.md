@@ -1237,7 +1237,7 @@ See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
 This example demonstrates registering a complete dragon-themed content pack with custom race, subraces, skills, and spells:
 
 ```typescript
-import { ExtensionManager, FeatureRegistry, SkillRegistry } from 'playlist-data-engine';
+import { ExtensionManager, FeatureRegistry, SkillRegistry, asClass } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
 
@@ -1275,7 +1275,7 @@ SkillRegistry.getInstance().registerSkill({
     prerequisites: {
         features: ['draconic_bloodline'],
         level: 5,
-        class: 'Sorcerer'
+        class: asClass('Sorcerer')
     },
     source: 'custom'
 });
