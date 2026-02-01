@@ -211,8 +211,32 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: To be verified
 
 ### Task 2.2: MetadataExtractor → src/core/parser/MetadataExtractor.ts
-- [ ] class exists and is exported
-- [ ] Methods for extracting metadata from track objects
+- [x] class exists and is exported
+- [x] Methods for extracting metadata from track objects
+
+**Task 2.2 Summary - COMPLETED**:
+- **VERIFIED**: `MetadataExtractor` class exists at src/core/parser/MetadataExtractor.ts:11
+  - Exported from src/index.ts at line 199
+  - All methods are static utility methods for metadata extraction
+- **VERIFIED METHODS**:
+  - `extractAudioUrl(data: Record<string, unknown>): string | null` (line 20)
+    - Priority order: mp3_url → lossy_audio → audio_url → lossless_audio → animation_url
+  - `extractImageUrl(data: Record<string, unknown>): string | null` (line 39)
+    - Priority order: image_small → image → image_large → image_thumb
+  - `extractTitle(data: Record<string, unknown>): string | null` (line 56)
+    - Priority order: name → title
+  - `extractArtist(data: Record<string, unknown>): string | null` (line 72)
+    - Priority order: artist → created_by → minter
+  - `parseMetadata(metadata: unknown): Record<string, unknown> | null` (line 88)
+    - Parses stringified JSON or returns object if already parsed
+  - `convertAttributes(attributes: unknown): Record<string, string | number> | null` (line 118)
+    - Converts OpenSea-style attributes array to key-value object
+- **DISCREPANCY FOUND**: `MetadataExtractionOptions` interface is defined at line 6 but NOT exported from src/index.ts
+  - The interface exists but has `strict?: boolean` property
+  - Currently not used in any methods but defined for future use
+  - **RECOMMENDATION**: Either export this type from src/index.ts or remove if not needed
+- **DOCUMENTATION NOTE**: `MetadataExtractor` is mentioned in USAGE_IN_OTHER_PROJECTS.md line 1483 with brief description "Extract metadata from track objects" but lacks detailed API documentation
+- **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 2.3: AudioAnalyzer → src/core/analysis/AudioAnalyzer.ts
 - [ ] class exists and is exported
@@ -876,10 +900,11 @@ For each item, verify:
 3. `isDefeated` property on Combatant needs verification
 
 ### Medium Priority - Missing Type Documentation
-1. `SpellConfig` return type needs to be defined/exported
-2. `SpellSlots` type needs to be defined/exported
-3. `SessionContext` type needs to be defined/exported
-4. `DiceFormula`, `RaceInfo`, `ClassInfo`, `EquipmentTemplate`, `StatIncrease` types need verification
+1. `MetadataExtractionOptions` defined but NOT exported from src/index.ts (found in Task 2.2)
+2. `SpellConfig` return type needs to be defined/exported
+3. `SpellSlots` type needs to be defined/exported
+4. `SessionContext` type needs to be defined/exported
+5. `DiceFormula`, `RaceInfo`, `ClassInfo`, `EquipmentTemplate`, `StatIncrease` types need verification
 
 ### Low Priority - Consistency Review
 1. Equipment vs EnhancedEquipment type usage
@@ -893,7 +918,7 @@ For each item, verify:
 | Phase | Status | Completed | Total | Last Updated |
 |-------|--------|-----------|-------|--------------|
 | 1 | Complete | 4 | ~50 | 2026-02-01 |
-| 2 | In Progress | 1 | ~40 | 2026-02-01 |
+| 2 | In Progress | 2 | ~40 | 2026-02-01 |
 | 3 | Not Started | 0 | ~60 | - |
 | 4 | Not Started | 0 | ~40 | - |
 | 5 | Not Started | 0 | ~50 | - |
@@ -903,4 +928,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **5** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **6** | **~475** | 2026-02-01 |
