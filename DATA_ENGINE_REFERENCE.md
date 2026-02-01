@@ -509,7 +509,6 @@ export interface GeolocationData {
     longitude: number;
     altitude: number | null;      // Meters above sea level (null if unavailable)
     accuracy: number;             // Meters
-    altitude_accuracy?: number;
     heading: number | null;       // Direction 0-360 degrees (null if unavailable)
     speed: number | null;         // Meters per second (null if unavailable)
     timestamp: number;            // Unix timestamp

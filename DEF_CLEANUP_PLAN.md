@@ -193,7 +193,7 @@ The following items are noted for awareness but should NOT be resolved:
   - SevereWeatherAlert → `src/core/sensors/WeatherAPIClient.ts` (50-56)
 
 ### Task 6.2: GeolocationData Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Remove `altitude_accuracy?: number` property (does not exist in code at `src/core/types/Environmental.ts:94-102`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Remove `altitude_accuracy?: number` property (does not exist in code at `src/core/types/Environmental.ts:94-102`)
 
 ### Task 6.3: MotionData Documentation (1 item)
 - [ ] Update DATA_ENGINE_REFERENCE.md: Fix multiple discrepancies at `src/core/types/Environmental.ts:104-122`:
