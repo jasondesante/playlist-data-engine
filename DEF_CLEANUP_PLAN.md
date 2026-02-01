@@ -246,7 +246,7 @@ The following items are noted for awareness but should NOT be resolved:
 **Estimated Items**: 1 task
 
 ### Task 8.1: Equipment Types Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Equipment types documented at `src/types/Equipment.ts` and `src/core/equipment/EquipmentSpawnHelper.ts` → actual location is `src/core/types/Equipment.ts`:
+- [x] Update DATA_ENGINE_REFERENCE.md: Equipment types documented at `src/types/Equipment.ts` and `src/core/equipment/EquipmentSpawnHelper.ts` → actual location is `src/core/types/Equipment.ts`:
   - `EquipmentProperty` → (64-71)
   - `EquipmentPropertyType` → (38-45)
   - `EquipmentCondition` → (51-59)

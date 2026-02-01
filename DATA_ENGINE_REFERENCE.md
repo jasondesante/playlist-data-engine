@@ -2947,8 +2947,34 @@ Handles spell casting mechanics (spell slots, saving throws, spell damage).
 
 ### Equipment Types
 
+**Location:** `src/core/types/Equipment.ts`
+
 ```typescript
+// EquipmentPropertyType
+// Location: `src/core/types/Equipment.ts` (38-45)
+type EquipmentPropertyType =
+    | 'stat_bonus'           // +1 STR, +2 DEX, etc.
+    | 'skill_proficiency'    // Proficiency or expertise in skills
+    | 'ability_unlock'       // Darkvision, flight, etc.
+    | 'passive_modifier'     // Damage resistance, speed bonus, AC bonus
+    | 'special_property'     // Finesse, versatile, two-handed, etc.
+    | 'damage_bonus'         // +1d6 fire damage, etc.
+    | 'stat_requirement';    // Minimum stat required to use
+
+// EquipmentCondition
+// Location: `src/core/types/Equipment.ts` (51-59)
+type EquipmentCondition =
+    | { type: 'vs_creature_type'; value: string }
+    | { type: 'at_time_of_day'; value: 'day' | 'night' | 'dawn' | 'dusk' }
+    | { type: 'wielder_race'; value: string }
+    | { type: 'wielder_class'; value: string }
+    | { type: 'while_equipped'; value: boolean }
+    | { type: 'on_hit'; value: boolean }
+    | { type: 'on_damage_taken'; value: boolean }
+    | { type: 'custom'; value: string; description: string };
+
 // Equipment Property
+// Location: `src/core/types/Equipment.ts` (64-71)
 interface EquipmentProperty {
     type: EquipmentPropertyType;
     target: string;
@@ -2959,6 +2985,7 @@ interface EquipmentProperty {
 }
 
 // Enhanced Equipment
+// Location: `src/core/types/Equipment.ts` (89-137)
 interface EnhancedEquipment {
     name: string;
     type: 'weapon' | 'armor' | 'item';
@@ -2978,6 +3005,7 @@ interface EnhancedEquipment {
 }
 
 // Equipment Modification
+// Location: `src/core/types/Equipment.ts` (142-159)
 interface EquipmentModification {
     id: string;
     name: string;
@@ -3002,6 +3030,7 @@ interface EnhancedInventoryItem {
 }
 
 // Effect Application Result
+// Location: `src/core/types/Equipment.ts` (231-238)
 interface EffectApplicationResult {
     applied: boolean;
     count: number;
@@ -3009,9 +3038,27 @@ interface EffectApplicationResult {
 }
 
 // Equipment Validation Result
+// Location: `src/core/types/Equipment.ts` (243-248)
 interface EquipmentValidationResult {
     valid: boolean;
     errors?: string[];
+}
+
+// Spawn Random Options
+// Location: `src/core/types/Equipment.ts` (253-262)
+interface SpawnRandomOptions {
+    excludeZeroWeight?: boolean;
+    includeTypes?: ('weapon' | 'armor' | 'item')[];
+    minRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    maxRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+}
+
+// Treasure Hoard Result
+// Location: `src/core/types/Equipment.ts` (267-274)
+interface TreasureHoardResult {
+    items: EnhancedEquipment[];
+    totalValue: number;
+    cr: number;
 }
 ```
 
@@ -3245,19 +3292,6 @@ class EquipmentSpawnHelper {
         items: EnhancedEquipment[],
         equip?: boolean
     ): CharacterSheet;
-}
-
-interface SpawnRandomOptions {
-    excludeZeroWeight?: boolean;
-    includeTypes?: ('weapon' | 'armor' | 'item')[];
-    minRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-    maxRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-}
-
-interface TreasureHoardResult {
-    items: EnhancedEquipment[];
-    totalValue: number;
-    cr: number;
 }
 ```
 
