@@ -205,9 +205,9 @@ The following items are noted for awareness but should NOT be resolved:
   - Note: Code uses camelCase; docs incorrectly show snake_case
 
 ### Task 6.4: WeatherData Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Fix multiple discrepancies at `src/core/types/Environmental.ts:124-134`:
+- [x] Update DATA_ENGINE_REFERENCE.md: Fixed multiple discrepancies at `src/core/types/Environmental.ts:124-134`:
   - Property naming: `weatherType`, `windSpeed`, `windDirection`, `isNight`, `moonPhase` (camelCase, not snake_case)
-  - Remove `feels_like`, `visibility` properties (not in code)
+  - Removed `feels_like`, `visibility` properties (not in code)
   - Type: `weatherType: string` (not union type)
   - `moonPhase: number` is required (not optional)
 
@@ -269,7 +269,7 @@ The following items are noted for awareness but should NOT be resolved:
 | 3 | Character Generation Documentation | 11 | Pending |
 | 4 | Progression System Documentation | 4 | Pending |
 | 5 | Combat System Documentation | 2 | Pending |
-| 6 | Environmental Types Documentation | 6 | 2/6 completed |
+| 6 | Environmental Types Documentation | 6 | 3/6 completed |
 | 7 | Gaming Integration Documentation | 4 | Pending |
 | 8 | Equipment Types Documentation | 1 | Pending |
 | **Total** | | **37** | |

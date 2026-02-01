@@ -547,15 +547,13 @@ export interface MotionData {
 ```typescript
 export interface WeatherData {
     temperature: number;          // Celsius
-    feels_like: number;           // Apparent temperature
     humidity: number;             // Percentage
     pressure: number;             // hPa
-    weather_type: 'clear' | 'clouds' | 'rain' | 'snow' | 'thunderstorm' | 'mist' | 'fog';
-    wind_speed: number;           // m/s
-    wind_direction: number;       // Degrees
-    visibility: number;           // Meters
-    is_night: boolean;            // Based on sunrise/sunset times
-    moon_phase?: number;          // 0.0 to 1.0 (new to full)
+    weatherType: string;          // e.g., 'Clear', 'Rain', 'Clouds'
+    windSpeed: number;            // m/s
+    windDirection: number;        // Degrees
+    isNight: boolean;             // Based on sunrise/sunset times
+    moonPhase: number;            // 0.0 to 1.0 (new to full)
     timestamp: number;
 }
 ```
