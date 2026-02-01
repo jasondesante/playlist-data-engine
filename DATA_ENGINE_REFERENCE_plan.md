@@ -589,42 +589,57 @@ All 8 methods verified in `src/core/skills/SkillValidator.ts`. The `isValidAbili
 - `isValidAbility(ability: string): ability is Ability` - Added as public static method at line 344. Re-exports the shared `isValidAbility` function from `AbilityConstants.ts` for consistency across all validation systems.
 - Tests: 185/185 passing across skill-related test files (skills.test.ts, skillRegistry.test.ts, skillPrerequisites.test.ts, skillIntegration.test.ts)
 
-### Task 6.8: SpellRegistry & Types (20 items)
-- [ ] SpellSchool, RegisteredSpell, SpellPrerequisite, SpellValidationResult → src/core/spells/SpellRegistry.ts
-- [ ] class SpellRegistry (singleton) → src/core/spells/SpellRegistry.ts
-  - [ ] getInstance(): SpellRegistry
-  - [ ] initializeDefaults(defaultSpells?): void
-  - [ ] reset(): void
-  - [ ] isInitialized(): boolean
-  - [ ] registerSpell(spell): void
-  - [ ] registerSpells(spells): void
-  - [ ] getSpell(spellId): RegisteredSpell | undefined
-  - [ ] getSpells(): RegisteredSpell[]
-  - [ ] getSpellsByLevel(level): RegisteredSpell[]
-  - [ ] getSpellsBySchool(school): RegisteredSpell[]
-  - [ ] getSpellsForClass(characterClass): RegisteredSpell[]
-  - [ ] getAvailableSpells(character): RegisteredSpell[]
-  - [ ] getSpellsBySource(source): RegisteredSpell[]
-  - [ ] getClassSpellList(characterClass): string[]
-  - [ ] registerClassSpellList(characterClass, spellIds): void
-  - [ ] getSpellSlotsForClass(characterClass, level): number
-  - [ ] validatePrerequisites(spell, character): ValidationResult
-  - [ ] validateSpell(spell): ValidationResult
-  - [ ] hasSpell(spellId): boolean
-  - [ ] getSpellCount(): number
-  - [ ] getRegistryStats(): {...}
-  - [ ] exportRegistry(): RegisteredSpell[]
-  - [ ] unregisterSpell(spellId): boolean
+### Task 6.8: SpellRegistry & Types (20 items) ✅ COMPLETED
+- [x] SpellSchool, RegisteredSpell, SpellPrerequisite, SpellValidationResult → src/core/spells/SpellRegistry.ts ✅ (Note: SpellPrerequisite and ValidationResult are in SpellTypes.ts, documented location mismatch)
+- [x] class SpellRegistry (singleton) → src/core/spells/SpellRegistry.ts
+  - [x] getInstance(): SpellRegistry ✅ (line 94)
+  - [x] initializeDefaults(defaultSpells?): void ✅ (line 107)
+  - [x] reset(): void ✅ (line 473)
+  - [x] isInitialized(): boolean ✅ (line 502)
+  - [x] registerSpell(spell): void ✅ (line 137)
+  - [x] registerSpells(spells): void ✅ (line 189)
+  - [x] getSpell(spellId): RegisteredSpell | undefined ✅ (line 201)
+  - [x] getSpells(): RegisteredSpell[] ✅ (line 210)
+  - [x] getSpellsByLevel(level): RegisteredSpell[] ✅ (line 220)
+  - [x] getSpellsBySchool(school): RegisteredSpell[] ✅ (line 237)
+  - [x] getSpellsForClass(characterClass): RegisteredSpell[] ✅ (line 254)
+  - [x] getAvailableSpells(character): RegisteredSpell[] ✅ (line 271)
+  - [x] getSpellsBySource(source): RegisteredSpell[] ✅ (line 418)
+  - [x] getClassSpellList(characterClass): string[] ✅ (line 291)
+  - [x] registerClassSpellList(characterClass, spellIds): void ✅ (line 301)
+  - [x] getSpellSlotsForClass(characterClass, level): number ✅ (line 337)
+  - [x] validatePrerequisites(spell, character): ValidationResult ✅ (line 361)
+  - [x] validateSpell(spell): ValidationResult ✅ (line 383)
+  - [x] hasSpell(spellId): boolean ✅ (line 399)
+  - [x] getSpellCount(): number ✅ (line 408)
+  - [x] getRegistryStats(): {...} ✅ (line 427)
+  - [x] exportRegistry(): RegisteredSpell[] ✅ (line 513)
+  - [x] unregisterSpell(spellId): boolean ✅ (line 526)
 
-### Task 6.9: SpellValidator (7 items)
-- [ ] class SpellValidator (static) → src/core/spells/SpellValidator.ts
-  - [ ] validateSpell(spell): SpellValidationResult
-  - [ ] validateSpells(spells): SpellValidationResult
-  - [ ] validatePrerequisites(prerequisites): SpellValidationResult
-  - [ ] validateSpellPrerequisites(prerequisites, character): SpellValidationResult
-  - [ ] isValidAbility(ability): ability is Ability
-  - [ ] isValidSchool(school): school is Spell['school']
-  - [ ] isValidSpellLevel(level): boolean
+**Verification Results:**
+All 20 items verified in `src/core/spells/SpellRegistry.ts` and `src/core/spells/SpellTypes.ts`.
+
+**Location discrepancies:**
+- `SpellPrerequisite` is documented as being in `SpellRegistry.ts` but actual location is `src/core/spells/SpellTypes.ts` (line 27-54)
+- `ValidationResult` is documented as `SpellValidationResult` but actual type name in SpellRegistry.ts is `ValidationResult` (line 44-48). The `SpellValidationResult` type exists in SpellValidator.ts (line 47-52) and is the exported type from index.ts
+- Both types are properly exported from index.ts (lines 119, 139-141)
+
+**Test Results:**
+- 64/64 tests passing in spell-related test files (spellPrerequisites.test.ts, spellManager.test.ts)
+- Export verification: SpellRegistry and SpellValidator properly exported from src/index.ts (lines 330-331, helper functions at lines 337-338)
+
+### Task 6.9: SpellValidator (7 items) ✅ COMPLETED
+- [x] class SpellValidator (static) → src/core/spells/SpellValidator.ts
+  - [x] validateSpell(spell): SpellValidationResult ✅ (line 70)
+  - [x] validateSpells(spells): SpellValidationResult ✅ (line 153)
+  - [x] validatePrerequisites(prerequisites): SpellValidationResult ✅ (line 185)
+  - [x] validateSpellPrerequisites(prerequisites, character): SpellValidationResult ✅ (line 199)
+  - [x] isValidAbility(ability): ability is Ability ✅ (line 214)
+  - [x] isValidSchool(school): school is Spell['school'] ✅ (line 224)
+  - [x] isValidSpellLevel(level): boolean ✅ (line 234)
+
+**Verification Results:**
+All 7 methods verified in `src/core/spells/SpellValidator.ts`. The class is properly exported from `src/index.ts` at line 330. Helper functions `validateSpellPrerequisitesSchema` and `validateSpellPrerequisites` are also exported at lines 337-338.
 
 ---
 
@@ -661,7 +676,7 @@ All 8 methods verified in `src/core/skills/SkillValidator.ts`. The `isValidAbili
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
 | 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
-| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (87/120 done; Tasks 6.1-6.7 complete) |
+| 6 | Extensibility System | ~120 | ✅ COMPLETED (120/120 done; Tasks 6.1-6.9 complete) |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
 | 8 | Fix ExtensionManager Discrepancies | ~6 | ✅ COMPLETED (6/6 done) |
 | **Total** | | **~481** | |
