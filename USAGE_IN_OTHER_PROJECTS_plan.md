@@ -2160,17 +2160,33 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 8.5: Environmental Types → src/core/types/Environmental.ts
-- [ ] `SensorType`
-- [ ] `PerformanceMetrics`
-- [ ] `PerformanceStatistics`
-- [ ] `SensorPermission`
-- [ ] `SensorHealthStatus`
-- [ ] `SensorStatus`
-- [ ] `SensorFailureLog`
-- [ ] `SensorRetryConfig`
-- [ ] `SensorRecoveryNotification`
-- [ ] `ForecastData`
-- [ ] `BiomeType`
+- [x] `SensorType`
+- [x] `PerformanceMetrics`
+- [x] `PerformanceStatistics`
+- [x] `SensorPermission`
+- [x] `SensorHealthStatus`
+- [x] `SensorStatus`
+- [x] `SensorFailureLog`
+- [x] `SensorRetryConfig`
+- [x] `SensorRecoveryNotification`
+- [x] `ForecastData`
+- [x] `BiomeType`
+
+**Task 8.5 Summary - COMPLETED**:
+- **VERIFIED**: All 11 environmental types exist in src/core/types/Environmental.ts
+- **VERIFIED**: All types properly exported from src/index.ts at lines 124-134
+- **VERIFIED**: `SensorType` (line 1) - union type: 'geolocation' | 'motion' | 'weather' | 'light'
+- **VERIFIED**: `PerformanceMetrics` (lines 6-19) - interface with successCount, errorCount, totalTime, minTime, maxTime, lastCallTimestamp
+- **VERIFIED**: `PerformanceStatistics` (lines 24-35) - interface with average, min, max, totalCalls, successRate
+- **VERIFIED**: `SensorPermission` (lines 37-41) - interface with type, granted, timestamp
+- **VERIFIED**: `SensorHealthStatus` (line 46) - union type: 'healthy' | 'degraded' | 'failed' | 'unknown'
+- **VERIFIED**: `SensorStatus` (lines 51-60) - interface with type, health, timestamps, consecutiveFailures, totalFailures, lastError, isRetrying
+- **VERIFIED**: `SensorFailureLog` (lines 65-71) - interface with sensorType, timestamp, error, retryAttempt, willRetry
+- **VERIFIED**: `SensorRetryConfig` (lines 76-81) - interface with maxRetries, initialDelayMs, maxDelayMs, backoffMultiplier
+- **VERIFIED**: `SensorRecoveryNotification` (lines 86-92) - interface with sensorType, previousStatus, newStatus, timestamp, message
+- **VERIFIED**: `ForecastData` (lines 136-146) - interface with temperature, humidity, pressure, weatherType, windSpeed, windDirection, timestamp, forecastTime, probabilityOfPrecipitation
+- **VERIFIED**: `BiomeType` (line 153) - union type with 12 biomes: 'urban' | 'forest' | 'desert' | 'mountain' | 'valley' | 'water' | 'tundra' | 'plains' | 'jungle' | 'swamp' | 'taiga' | 'savanna'
+- **BUILD STATUS**: Clean - build completed successfully with no compilation errors
 
 ---
 
