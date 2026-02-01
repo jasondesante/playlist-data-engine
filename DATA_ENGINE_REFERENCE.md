@@ -3820,8 +3820,8 @@ Utility class for weighted random selection supporting different spawn modes for
 
 ```typescript
 class WeightedSelector {
-    // Single Selection
-    static select<T>(items: T[], weights: Record<string, number>, rng: SeededRNG, mode?: SelectionMode): T | null
+    // Single Selection (throws on empty arrays)
+    static select<T>(items: T[], weights: Record<string, number>, rng: SeededRNG, mode?: SelectionMode): T
 
     // Multiple Selection
     static selectMultiple<T>(items: T[], weights: Record<string, number>, rng: SeededRNG, count: number, mode?: SelectionMode): T[]
@@ -3829,14 +3829,14 @@ class WeightedSelector {
     // Probability Calculation
     static getProbabilities<T>(items: T[], weights: Record<string, number>, mode?: SelectionMode): Record<string, number>
 
-    // Weight Normalization
-    static normalizeWeights(weights: Record<string, number>, mode: SelectionMode): Record<string, number>
+    // Weight Normalization (includes items parameter)
+    static normalizeWeights<T>(items: T[], weights: Record<string, number>, mode: SelectionMode): Record<string, number>
 
     // Item Identification
     static getItemKey<T>(item: T): string
 }
 
-type SelectionMode = 'relative' | 'absolute' | 'default';
+type SelectionMode = 'relative' | 'absolute' | 'default' | 'replace';
 
 interface SeededRNG {
     next(): number;
