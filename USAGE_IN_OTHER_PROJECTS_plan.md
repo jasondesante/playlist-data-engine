@@ -1529,8 +1529,46 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **NOTE**: Minor parameter name differences between documentation and implementation (combat vs instance, playerCharacters vs players) do not affect functionality
 
 ### Task 6.2: InitiativeRoller → src/core/combat/InitiativeRoller.ts
-- [ ] class exists and is exported
-- [ ] Type `InitiativeResult` exists
+- [x] class exists and is exported
+- [x] Type `InitiativeResult` exists
+
+**Task 6.2 Summary - COMPLETED**:
+- **VERIFIED**: `InitiativeRoller` class exists at src/core/combat/InitiativeRoller.ts:21
+  - Exported from src/index.ts at line 252
+  - All methods are instance methods (not static)
+- **VERIFIED METHODS**:
+  - `rollInitiativeForCombatant(combatant: Combatant): InitiativeResult` (line 26)
+    - Rolls initiative for a single combatant (d20 + DEX modifier)
+    - Updates combatant.initiative with the result
+    - Returns InitiativeResult with d20Roll, dexModifier, and initiativeTotal
+  - `rollInitiativeForAll(combatants: Combatant[]): { results: InitiativeResult[]; sortedCombatants: Combatant[] }` (line 46)
+    - Rolls initiative for all combatants
+    - Sorts by descending initiative (higher acts first)
+    - Tiebreaker: higher DEX modifier goes first
+    - Returns both individual results and sorted combatant list
+  - `getNextCombatant(combatants: Combatant[], currentIndex: number): { combatant: Combatant; index: number; isNewRound: boolean }` (line 79)
+    - Gets the next combatant in turn order
+    - Wraps around to beginning when reaching end
+    - Indicates when a new round starts (index wraps to 0)
+  - `getInitiativeOrder(combatants: Combatant[]): string[]` (line 97)
+    - Returns formatted strings for display: "1. Name (Initiative: X, DEX: Y)"
+  - `rerollInitiativeForCombatant(combatant: Combatant): number` (line 107)
+    - Re-rolls initiative for a specific combatant
+    - Used when effects change DEX modifier
+  - `delayTurn(combatants: Combatant[], combatantId: string): Combatant[]` (line 118)
+    - Delays a combatant's turn (moves them later in initiative order)
+    - Used for the "Ready" action in D&D 5e
+  - `resortByInitiative(combatants: Combatant[]): Combatant[]` (line 136)
+    - Re-sorts combatants by exact initiative value
+    - Used when new combatants join mid-combat
+- **VERIFIED**: Type `InitiativeResult` exists at src/core/combat/InitiativeRoller.ts:11 with properties:
+  - `combatant: Combatant` - The combatant who rolled
+  - `d20Roll: number` - The raw d20 roll (1-20)
+  - `dexModifier: number` - Dexterity modifier added to roll
+  - `initiativeTotal: number` - Final initiative value (d20 + DEX)
+  - Exported from src/index.ts at line 145
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTE**: InitiativeRoller is listed in USAGE_IN_OTHER_PROJECTS.md but lacks detailed API documentation
 
 ### Task 6.3: AttackResolver → src/core/combat/AttackResolver.ts
 - [ ] class exists and is exported
