@@ -165,7 +165,7 @@ The following items are noted for awareness but should NOT be resolved:
   - SpellSlots → `src/core/generation/SpellManager.ts` (24-31) - NOT exported from src/index.ts
 
 ### Task 5.2: Combat Helper Classes Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Clarify that `InitiativeRoller`, `AttackResolver`, and `SpellCaster` are instance classes (not static). Documentation shows "Helper: InitiativeRoller (static)" which is misleading. All methods exist and work correctly.
+- [x] Update DATA_ENGINE_REFERENCE.md: Clarify that `InitiativeRoller`, `AttackResolver`, and `SpellCaster` are instance classes (not static). Documentation shows "Helper: InitiativeRoller (static)" which is misleading. All methods exist and work correctly.
 
 ---
 

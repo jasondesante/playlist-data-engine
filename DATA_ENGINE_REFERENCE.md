@@ -2753,9 +2753,11 @@ new CombatEngine(config?: CombatConfig)
 - `getDefeatedCombatants(combat: CombatInstance): Combatant[]`
     - Returns all defeated combatants.
 
-#### Helper: `InitiativeRoller`
+#### Helper: `InitiativeRoller` (instance class)
 
 **Location:** `src/core/combat/InitiativeRoller.ts`
+
+> **Note**: This is an instance class. Create an instance with `new InitiativeRoller()` before using methods.
 
 Manages initiative system for D&D combat.
 
@@ -2774,9 +2776,11 @@ Manages initiative system for D&D combat.
 - `resortByInitiative(combatants: Combatant[]): Combatant[]`
     - Resorts combatants by initiative value (for mid-combat joins)
 
-#### Helper: `AttackResolver`
+#### Helper: `AttackResolver` (instance class)
 
 **Location:** `src/core/combat/AttackResolver.ts`
+
+> **Note**: This is an instance class. Create an instance with `new AttackResolver()` before using methods.
 
 Handles melee and ranged attack resolution (D&D 5e: d20 + attack bonus vs target AC).
 
@@ -2791,9 +2795,11 @@ Handles melee and ranged attack resolution (D&D 5e: d20 + attack bonus vs target
 - `attackWithDisadvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult`
     - Resolves attack with disadvantage (roll twice, take lower)
 
-#### Helper: `SpellCaster`
+#### Helper: `SpellCaster` (instance class)
 
 **Location:** `src/core/combat/SpellCaster.ts`
+
+> **Note**: This is an instance class. Create an instance with `new SpellCaster()` before using methods.
 
 Handles spell casting mechanics (spell slots, saving throws, spell damage).
 
