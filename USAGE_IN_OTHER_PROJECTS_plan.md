@@ -73,12 +73,42 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 1.2: Verify Core Classes (src/index.ts lines 1-200)
-- [ ] `PlaylistParser` → src/core/parser/PlaylistParser.ts (line 195)
-- [ ] `MetadataExtractor` → src/core/parser/MetadataExtractor.ts (line 196)
-- [ ] `AudioAnalyzer` → src/core/analysis/AudioAnalyzer.ts (line 197)
-- [ ] `SpectrumScanner` → src/core/analysis/SpectrumScanner.ts (line 198)
-- [ ] `ColorExtractor` → src/core/analysis/ColorExtractor.ts (line 199)
-- [ ] `CharacterGenerator` → src/core/generation/CharacterGenerator.ts (line 181)
+- [x] `PlaylistParser` → src/core/parser/PlaylistParser.ts (line 198)
+- [x] `MetadataExtractor` → src/core/parser/MetadataExtractor.ts (line 199)
+- [x] `AudioAnalyzer` → src/core/analysis/AudioAnalyzer.ts (line 200)
+- [x] `SpectrumScanner` → src/core/analysis/SpectrumScanner.ts (line 201)
+- [x] `ColorExtractor` → src/core/analysis/ColorExtractor.ts (line 202)
+- [x] `CharacterGenerator` → src/core/generation/CharacterGenerator.ts (line 184)
+
+**Task 1.2 Summary - COMPLETED**:
+- **VERIFIED**: `PlaylistParser` class exists at src/core/parser/PlaylistParser.ts:18
+  - Exported from src/index.ts at line 198
+  - Has `parse(data: RawArweavePlaylist): Promise<ServerlessPlaylist>` method
+  - Type `RawArweavePlaylist` exists in src/core/types/Playlist.ts
+  - Type `ServerlessPlaylist` exists in src/core/types/Playlist.ts
+  - Type `PlaylistTrack` exists in src/core/types/Playlist.ts
+- **VERIFIED**: `MetadataExtractor` class exists at src/core/parser/MetadataExtractor.ts:11
+  - Exported from src/index.ts at line 199
+  - Has static methods for extracting metadata: `extractAudioUrl()`, `extractImageUrl()`, `extractTitle()`, `extractArtist()`, `parseMetadata()`, `convertAttributes()`
+- **VERIFIED**: `AudioAnalyzer` class exists at src/core/analysis/AudioAnalyzer.ts:50
+  - Exported from src/index.ts at line 200
+  - Has `extractSonicFingerprint(audioUrl: string): Promise<AudioProfile>` method
+  - Type `AudioProfile` exists in src/core/types/AudioProfile.ts with properties: `bass_dominance`, `mid_dominance`, `treble_dominance`, `average_amplitude`
+- **VERIFIED**: `SpectrumScanner` class exists at src/core/analysis/SpectrumScanner.ts:26
+  - Exported from src/index.ts at line 201
+  - Has static methods: `separateFrequencyBands()`, `calculateDominance()`
+  - Type `FrequencyBands` exists in src/core/types/AudioProfile.ts
+- **VERIFIED**: `ColorExtractor` class exists at src/core/analysis/ColorExtractor.ts:7
+  - Exported from src/index.ts at line 202
+  - Has `extractPalette(imageUrl: string): Promise<ColorPalette>` method
+  - Type `ColorPalette` exists in src/core/types/AudioProfile.ts with properties: `colors`, `primary_color`, `secondary_color`, `accent_color`, `brightness`, `saturation`, `is_monochrome`
+- **VERIFIED**: `CharacterGenerator` class exists at src/core/generation/CharacterGenerator.ts:128
+  - Exported from src/index.ts at line 184 (note: actual export line is 184, not 181 as noted in task)
+  - Has static method: `generate(seed: string, audioProfile: AudioProfile, name: string, options?: CharacterGeneratorOptions): CharacterSheet`
+  - Type `CharacterGeneratorOptions` exists with properties: `level`, `forceClass`, `forceRace`, `gameMode`, `subrace`, `extensions`
+  - Type `CharacterSheet` exists in src/core/types/Character.ts
+- **BUILD STATUS**: Clean - no compilation errors
+- **NOTE**: The character generator exports line was listed as 181 in the task but is actually 184 in the current code
 
 ### Task 1.3: Verify Extensibility Exports (src/index.ts lines 338-373)
 - [ ] `ExtensionManager` → src/core/extensions/ExtensionManager.ts (line 342)
@@ -796,7 +826,7 @@ For each item, verify:
 
 | Phase | Status | Completed | Total | Last Updated |
 |-------|--------|-----------|-------|--------------|
-| 1 | In Progress | 2 | ~50 | 2026-02-01 |
+| 1 | In Progress | 3 | ~50 | 2026-02-01 |
 | 2 | Not Started | 0 | ~40 | - |
 | 3 | Not Started | 0 | ~60 | - |
 | 4 | Not Started | 0 | ~40 | - |
@@ -807,4 +837,4 @@ For each item, verify:
 | 9 | Not Started | 0 | ~60 | - |
 | 10 | Not Started | 0 | ~80 | - |
 | 11 | Not Started | 0 | ~15 | - |
-| **ALL** | **In Progress** | **2** | **~475** | 2026-02-01 |
+| **ALL** | **In Progress** | **3** | **~475** | 2026-02-01 |
