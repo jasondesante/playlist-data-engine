@@ -41,7 +41,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 
 | Phase | Description | Tasks | Status |
 |-------|-------------|-------|--------|
-| Phase 1 | Breaking Changes (Part 2) | 8 tasks | `░░░░░░░░░░` 0% |
+| Phase 1 | Breaking Changes (Part 2) | 8 tasks | `██████████` 100% |
 | Phase 2 | Skill Prerequisites | 12 tasks | `░░░░░░░░░░` 0% |
 | Phase 3 | Spell Prerequisites | 10 tasks | `░░░░░░░░░░` 0% |
 | Phase 4 | Custom Race Support | 8 tasks | `░░░░░░░░░░` 0% |
@@ -56,16 +56,16 @@ This plan is a living document. Discrepancies should be captured as new phases r
 **Documentation Reference:** MIGRATION_GUIDE.md → Phase 1-11 Summary → Breaking Changes
 
 ## Task 1.1: Ammunition Format Change
-- [ ] Verify `Arrow` in EQUIPMENT_DATABASE has weight 0.05 → [constants.ts:1997](src/utils/constants.ts#L1997)
-- [ ] Verify `Bolt` in EQUIPMENT_DATABASE has weight 0.075 → [constants.ts:2005](src/utils/constants.ts#L2005)
-- [ ] Verify ammunition tracked as individual items (not "Arrows (20)")
-- [ ] Verify EquipmentGenerator adds ammunition programmatically for Rangers
+- [x] Verify `Arrow` in EQUIPMENT_DATABASE has weight 0.05 → [constants.ts:1945](src/utils/constants.ts#L1945)
+- [x] Verify `Bolt` in EQUIPMENT_DATABASE has weight 0.075 → [constants.ts:1953](src/utils/constants.ts#L1953)
+- [x] Verify ammunition tracked as individual items (not "Arrows (20)")
+- [x] Verify EquipmentGenerator adds ammunition programmatically for Rangers
 
 ## Task 1.2: Feature ID Format Change
-- [ ] Verify CharacterSheet.class_features stores feature IDs (not display strings) → [Character.ts:279](src/core/types/Character.ts#L279)
-- [ ] Verify CharacterSheet.racial_traits stores trait IDs (not display strings) → [Character.ts:276](src/core/types/Character.ts#L276)
-- [ ] Verify FeatureEffect type exists with correct fields → [FeatureTypes.ts:39](src/core/features/FeatureTypes.ts#L39)
-- [ ] Verify CharacterSheet.feature_effects property exists → [Character.ts:343](src/core/types/Character.ts#L343)
+- [x] Verify CharacterSheet.class_features stores feature IDs (not display strings) → [Character.ts:280](src/core/types/Character.ts#L280)
+- [x] Verify CharacterSheet.racial_traits stores trait IDs (not display strings) → [Character.ts:277](src/core/types/Character.ts#L277)
+- [x] Verify FeatureEffect type exists with correct fields → [FeatureTypes.ts:39](src/core/features/FeatureTypes.ts#L39)
+- [x] Verify CharacterSheet.feature_effects property exists → [Character.ts:344](src/core/types/Character.ts#L344)
 
 ---
 
@@ -75,15 +75,15 @@ This plan is a living document. Discrepancies should be captured as new phases r
 
 ## Task 2.1: Verify SkillPrerequisite Interface
 File: [src/core/skills/SkillTypes.ts](src/core/skills/SkillTypes.ts)
-- [ ] Interface is exported as `export interface SkillPrerequisite`
-- [ ] Property `level?: number` exists
-- [ ] Property `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` exists
-- [ ] Property `class?: Class` exists
-- [ ] Property `race?: Race` exists
-- [ ] Property `skills?: string[]` exists
-- [ ] Property `features?: string[]` exists
-- [ ] Property `spells?: string[]` exists
-- [ ] Property `custom?: string` exists
+- [x] Interface is exported as `export interface SkillPrerequisite` → line 25
+- [x] Property `level?: number` exists → line 27
+- [x] Property `abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>` exists → line 30
+- [x] Property `class?: Class` exists → line 33
+- [x] Property `race?: Race` exists → line 36
+- [x] Property `skills?: string[]` exists → line 39
+- [x] Property `features?: string[]` exists → line 42
+- [x] Property `spells?: string[]` exists → line 45
+- [x] Property `custom?: string` exists → line 48
 
 ## Task 2.2: Verify SpellValidator File (NEW FILE)
 - [ ] File exists: src/core/spells/SpellValidator.ts
