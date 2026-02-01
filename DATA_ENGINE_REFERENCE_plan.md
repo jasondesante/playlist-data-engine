@@ -645,25 +645,34 @@ All 7 methods verified in `src/core/spells/SpellValidator.ts`. The class is prop
 
 ## Phase 7: Game Data Constants
 **Focus**: Constants and helper functions for game data.
-**Estimated Items**: ~15
+**Estimated Items**: ~16
+**Status**: ✅ COMPLETED
 
-### Task 7.1: Constants & Helpers (15 items)
-- [ ] ALL_RACES → src/utils/constants.ts
-- [ ] ALL_CLASSES → src/utils/constants.ts
-- [ ] RACE_DATA → src/utils/constants.ts
-- [ ] CLASS_DATA → src/utils/constants.ts
-- [ ] XP_THRESHOLDS → src/utils/constants.ts
-- [ ] SPELL_DATABASE → src/utils/constants.ts
-- [ ] EQUIPMENT_DATABASE → src/utils/constants.ts
-- [ ] RaceDataEntry → src/utils/constants.ts
-- [ ] ClassDataEntry → src/utils/constants.ts
-- [ ] getRaceData(race): RaceDataEntry | undefined
-- [ ] getClassData(className): ClassDataEntry | undefined
-- [ ] getClassSpellList(className): {...} | undefined
-- [ ] getSpellSlotsForClass(className, characterLevel): Record<number, number> | undefined
-- [ ] getClassStartingEquipment(className): {...} | undefined
-- [ ] asClass(value): Class
-- [ ] isValidClass(value): value is Class
+### Task 7.1: Constants & Helpers (16 items) ✅ COMPLETED
+- [x] ALL_RACES → src/utils/constants.ts (786-796) ✅
+- [x] ALL_CLASSES → src/utils/constants.ts (799-812) ✅
+- [x] RACE_DATA → src/utils/constants.ts (34-80) ✅
+- [x] CLASS_DATA → src/utils/constants.ts (533-658) ✅
+- [x] XP_THRESHOLDS → src/utils/constants.ts (753-774) ✅
+- [x] SPELL_DATABASE → src/utils/constants.ts (871-936) ✅
+- [x] EQUIPMENT_DATABASE → src/utils/constants.ts (1531-1978) ✅
+- [x] RaceDataEntry → src/utils/constants.ts (19-31) ✅
+- [x] ClassDataEntry → src/utils/constants.ts (271-322) ✅
+- [x] getRaceData(race): RaceDataEntry | undefined ✅ (172-195)
+- [x] getClassData(className): ClassDataEntry | undefined ✅ (496-530)
+- [x] getClassSpellList(className): {...} | undefined ✅ (1369-1391)
+- [x] getSpellSlotsForClass(className, characterLevel): Record<number, number> | undefined ✅ (1429-1460)
+- [x] getClassStartingEquipment(className): {...} | undefined ✅ (1495-1526)
+- [x] asClass(value): Class ✅ (location mismatch: documented as src/utils/constants.ts, actual location is src/core/types/Character.ts (66-68))
+- [x] isValidClass(value): value is Class ✅ (location mismatch: documented as src/utils/constants.ts, actual location is src/core/types/Character.ts (114-134+))
+
+**Verification Results:**
+All 16 items verified. All constants and helper functions exist and are properly exported from `src/index.ts` (lines 119-120, 415-434, 178). Two location discrepancies noted for `asClass` and `isValidClass` which are in `src/core/types/Character.ts` instead of `src/utils/constants.ts` as documented.
+
+**Test Results:**
+- Build: ✅ Passed (877ms)
+- Tests: 1968/1972 passed (4 unrelated failures in ClassSuggester integration tests - Phase 9.3)
+- All constants properly exported and accessible via public API
 
 ---
 
@@ -677,7 +686,7 @@ All 7 methods verified in `src/core/spells/SpellValidator.ts`. The class is prop
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
 | 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
 | 6 | Extensibility System | ~120 | ✅ COMPLETED (120/120 done; Tasks 6.1-6.9 complete) |
-| 7 | Game Data Constants | ~15 | ⬜ Not Started |
+| 7 | Game Data Constants | ~16 | ✅ COMPLETED |
 | 8 | Fix ExtensionManager Discrepancies | ~6 | ✅ COMPLETED (6/6 done) |
 | **Total** | | **~481** | |
 
@@ -838,6 +847,9 @@ All 7 methods verified in `src/core/spells/SpellValidator.ts`. The class is prop
   - `normalizeWeights(items, weights, mode): Record<string, number>` - Existed as private `getFinalWeights()`. ✅ **RESOLVED**: Added public method with proper signature (includes `items` parameter).
   - `getItemKey<T>(item): string` - Existed as private `getItemName()`. ✅ **RESOLVED**: Added public method and renamed internal calls.
 - [x] **Return type discrepancy (Task 6.5)** - `select()` documented as returning `T | null` but code returns `T` and throws on empty arrays. This is intentional behavior verified by tests. Documentation should be updated.
+
+### Discrepancies Found (Phase 7)
+- [x] **Location mismatch (Task 7.1 - asClass and isValidClass)** - DATA_ENGINE_REFERENCE_plan.md documents `asClass` and `isValidClass` at `src/utils/constants.ts`, but actual location is `src/core/types/Character.ts`. Both functions are properly exported from `src/index.ts` (line 178) and accessible via the public API. The code organization is more appropriate (type helper functions in types module), but documentation needs to be updated.
 
 ---
 
