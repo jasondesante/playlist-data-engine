@@ -147,7 +147,7 @@ export interface SpellPrerequisite {
     abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
 
     /** Specific class required */
-    class?: string;
+    class?: Class;
 
     /** Features that must be learned first (by feature ID) */
     features?: string[];

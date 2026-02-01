@@ -148,7 +148,7 @@ interface SpellPrerequisite {
     class?: Class;
 
     /** Specific race required */
-    race?: string;
+    race?: Race;
 
     /** Features that must be learned first (by feature ID) */
     features?: string[];
