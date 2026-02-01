@@ -1032,14 +1032,57 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **DOCUMENTATION NOTE**: The plan referenced `Record<Skill, ProficiencyLevel>` but actual implementation uses `Record<string, ProficiencyLevel>` to support custom skills
 
 ### Task 4.5: SpellManager → src/core/generation/SpellManager.ts
-- [ ] class exists and is exported
-- [ ] Static method: `isSpellcaster(className: Class): boolean`
-- [ ] `initializeSpells(className: Class, level: number): SpellConfig`
-  - [ ] Type `SpellConfig` exists - **NEEDS INVESTIGATION**
-- [ ] `getSpellSlots(className: Class, level: number): SpellSlots`
-  - [ ] Type `SpellSlots` exists - **NEEDS INVESTIGATION**
-- [ ] `getCantrips(className: Class): string[]`
-- [ ] `getKnownSpells(className: Class, level: number): string[]`
+- [x] class exists and is exported
+- [x] Static method: `isSpellcaster(className: Class): boolean`
+- [x] `initializeSpells(className: Class, level: number): SpellSlots`
+  - [x] **INVESTIGATED**: Return type is `SpellSlots`, not `SpellConfig` (task documentation was incorrect)
+- [x] `getSpellSlots(className: Class, level: number): SpellSlots`
+  - [x] Type `SpellSlots` exists at src/core/generation/SpellManager.ts:24
+- [x] `getCantrips(className: Class): string[]`
+- [x] `getKnownSpells(className: Class, level: number): string[]`
+
+**Task 4.5 Summary - COMPLETED**:
+- **VERIFIED**: `SpellManager` class exists at src/core/generation/SpellManager.ts:33
+  - Exported from src/index.ts at line 189
+- **VERIFIED**: Static method `isSpellcaster(characterClass: Class): boolean` exists at line 40
+  - Returns true for Bard, Cleric, Druid, Paladin, Ranger, Sorcerer, Warlock, Wizard
+  - Returns false for non-spellcasting classes
+- **INVESTIGATED**: Method signature is `initializeSpells(className: Class, level: number): SpellSlots`
+  - **DISCREPANCY FOUND**: Task documentation listed return type as `SpellConfig` but actual return type is `SpellSlots`
+  - Actual signature includes optional third parameter: `initializeSpells(characterClass: Class, characterLevel: number, character?: CharacterSheet): SpellSlots`
+  - The optional `character` parameter enables prerequisite filtering for spells
+- **VERIFIED**: Type `SpellSlots` exists at src/core/generation/SpellManager.ts:24 with properties:
+  - `spell_slots: Record<number, { total: number; used: number }>` - Spell slots by level (0-9)
+  - `known_spells: string[]` - Array of known spell names
+  - `cantrips: string[]` - Array of cantrip names
+- **DISCREPANCY FOUND**: `SpellSlots` type is NOT exported from src/index.ts
+  - The type is defined as `export interface SpellSlots` in SpellManager.ts:24
+  - However, it is NOT included in the public type exports in src/index.ts
+  - **RECOMMENDATION**: Add `export type { SpellSlots } from './core/generation/SpellManager.js';` to src/index.ts for API consumers
+- **VERIFIED**: `getSpellSlots(characterClass: Class, characterLevel: number): Record<number, { total: number; used: number }>` exists at line 55
+  - Returns empty object for non-spellcasting classes
+  - Uses `getSpellSlotsForClass()` helper function for default and custom spell slot progression
+  - Returns 0-based slots (all start with `used: 0`)
+- **VERIFIED**: `getCantrips(characterClass: Class): string[]` exists at line 93
+  - Returns empty array for non-spellcasting classes
+  - Uses `getClassSpellList()` helper for default and custom spell lists
+  - Checks `spells.${ClassName}` category in ExtensionManager for extended spell data
+- **VERIFIED**: `getKnownSpells(characterClass: Class, characterLevel: number, character?: CharacterSheet): string[]` exists at line 140
+  - Returns empty array for non-spellcasting classes
+  - Collects all spells available up to the character's level
+  - Filters spells by prerequisites when a character is provided
+  - Uses `getClassSpellList()` helper for default and custom spell lists
+  - Checks `spells.${ClassName}` category in ExtensionManager for extended spell data
+- **ADDITIONAL METHODS** (not in task description but part of the public API):
+  - `getSpellCountAtLevel(spellLevel: number, spellSlots: Record<number, { total: number; used: number }>): number` (line 289)
+  - `useSpellSlot(spellSlots: Record<number, { total: number; used: number }>, spellLevel: number): Record<number, { total: number; used: number }>` (line 303)
+  - `restoreSpellSlots(spellSlots: Record<number, { total: number; used: number }>, spellLevel?: number): Record<number, { total: number; used: number }>` (line 328)
+  - `filterCharacterSpells(character: CharacterSheet): CharacterSheet` (line 362)
+- **BUILD STATUS**: Clean - build completed successfully with no errors
+- **DOCUMENTATION NOTES**:
+  - Task documentation incorrectly listed return type as `SpellConfig` - should be `SpellSlots`
+  - Task documentation listed parameter as `className` but actual parameter is `characterClass`
+  - `getKnownSpells` has an optional third parameter `character?: CharacterSheet` that was not documented
 
 ### Task 4.6: EquipmentGenerator → src/core/generation/EquipmentGenerator.ts
 - [ ] class exists and is exported
