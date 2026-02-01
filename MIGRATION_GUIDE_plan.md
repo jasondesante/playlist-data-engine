@@ -46,7 +46,7 @@ This plan is a living document. Discrepancies should be captured as new phases r
 | Phase 3 | Spell Prerequisites | 10 tasks | `██████████` 100% |
 | Phase 4 | Custom Race Support | 9 items | `██████████` 100% |
 | Phase 5 | Subrace Support | 12 tasks | `██████████` 100% |
-| Phase 6 | Template-Based Classes | 22 tasks | `█████████░` 86% |
+| Phase 6 | Template-Based Classes | 22 tasks | `██████████` 100% |
 | Phase 7 | Tests & Documentation | 11 tasks | `░░░░░░░░░░` 0% |
 
 ---
@@ -245,12 +245,18 @@ File: [src/utils/constants.ts](src/utils/constants.ts)
 **FINDING**: All verified. Fixed misleading inline comment that said "merged" instead of "replaced" for available_skills. JSDoc documentation was already accurate.
 
 ## Task 6.6: Verify Consuming Files
-- [ ] SkillAssigner.ts uses getClassData()
-- [ ] SpellManager.ts uses getClassSpellList()
-- [ ] SpellManager.ts uses getSpellSlotsForClass()
-- [ ] EquipmentGenerator.ts uses getClassStartingEquipment()
-- [ ] AbilityScoreCalculator.ts uses getClassData()
-- [ ] ExtensionManager validates custom classes
+- [x] SkillAssigner.ts uses getClassData() → Verified at [SkillAssigner.ts:10,56](src/core/generation/SkillAssigner.ts#L10)
+- [x] SpellManager.ts uses getClassSpellList() → Verified at [SpellManager.ts:10,106,155](src/core/generation/SpellManager.ts#L10)
+- [x] SpellManager.ts uses getSpellSlotsForClass() → Verified at [SpellManager.ts:10,70](src/core/generation/SpellManager.ts#L10)
+- [x] EquipmentGenerator.ts uses getClassStartingEquipment() → Verified at [EquipmentGenerator.ts:12,117](src/core/generation/EquipmentGenerator.ts#L12)
+- [x] AbilityScoreCalculator.ts - N/A (correctly does not use getClassData; uses getRaceData for racial bonuses)
+- [x] ExtensionManager validates custom classes → Verified at [ExtensionManager.ts:640-704](src/core/extensions/ExtensionManager.ts#L640)
+
+**FINDING**: All consuming files verified. AbilityScoreCalculator.ts correctly does NOT use getClassData() because its purpose is audio-based ability score calculation and racial bonus application, not class-specific operations. The helper functions are properly integrated:
+- SkillAssigner uses getClassData() for class skill assignments
+- SpellManager uses getClassSpellList() and getSpellSlotsForClass() for spellcasting
+- EquipmentGenerator uses getClassStartingEquipment() for starting gear
+- ExtensionManager validates custom classes comprehensively (name, primary_ability, hit_die, saving_throws, is_spellcaster, skill_count, available_skills, has_expertise, expertise_count, baseClass, audio_preferences)
 
 ---
 
