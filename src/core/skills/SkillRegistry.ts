@@ -387,6 +387,39 @@ export class SkillRegistry {
 
         return true;
     }
+
+    /**
+     * Get the total count of registered skills
+     *
+     * Returns the total number of skills in the registry.
+     *
+     * @returns Total skill count
+     */
+    getSkillCount(): number {
+        return this.skills.size;
+    }
+
+    /**
+     * Get skills available to a character based on prerequisites
+     *
+     * Returns all skills whose prerequisites are met by the character.
+     * Skills without prerequisites are always available.
+     *
+     * @param character - The character sheet to validate prerequisites against
+     * @returns Array of skills the character can learn
+     */
+    getAvailableSkills(character: CharacterSheet): CustomSkill[] {
+        return this.getAllSkills().filter(skill => {
+            // If skill has no prerequisites, it's available
+            if (!skill.prerequisites) {
+                return true;
+            }
+
+            // Check if character meets the prerequisites
+            const validation = this.validatePrerequisites(skill, character);
+            return validation.valid;
+        });
+    }
 }
 
 /**

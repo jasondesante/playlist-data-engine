@@ -538,29 +538,38 @@ All 5 methods verified in `src/core/extensions/WeightedSelector.ts`. The `normal
 - Integration tests using WeightedSelector: 59/59 passing (ammunitionAndWeights + edgeCases)
 - Total WeightedSelector-related tests: 98/98 passing
 
-### Task 6.6: SkillRegistry & Types (20 items)
-- [ ] CustomSkill, SkillPrerequisite, SkillValidationResult, SkillRegistryStats, SkillProficiency, SkillListDefinition, SkillSelectionWeights → src/core/skills/SkillRegistry.ts
-- [ ] class SkillRegistry (singleton) → src/core/skills/SkillRegistry.ts
-  - [ ] getInstance(): SkillRegistry
-  - [ ] initializeDefaults(defaultSkills?): void
-  - [ ] reset(): void
-  - [ ] isInitialized(): boolean
-  - [ ] registerSkill(skill): void
-  - [ ] registerSkills(skills): void
-  - [ ] getSkill(id): CustomSkill | undefined
-  - [ ] getAllSkills(): CustomSkill[]
-  - [ ] getSkillsByAbility(ability): CustomSkill[]
-  - [ ] getSkillsByCategory(category): CustomSkill[]
-  - [ ] getCategories(): string[]
-  - [ ] getSkillsBySource(source): CustomSkill[]
-  - [ ] getAvailableSkills(character): CustomSkill[]
-  - [ ] validatePrerequisites(skill, character): SkillValidationResult
-  - [ ] validateSkill(skill): SkillValidationResult
-  - [ ] isValidSkill(id): boolean
-  - [ ] getSkillCount(): number
-  - [ ] getRegistryStats(): SkillRegistryStats
-  - [ ] exportRegistry(): CustomSkill[]
-  - [ ] unregisterSkill(id): boolean
+### Task 6.6: SkillRegistry & Types (20 items) ✅ COMPLETED
+- [x] CustomSkill, SkillPrerequisite, SkillValidationResult, SkillRegistryStats, SkillProficiency, SkillListDefinition, SkillSelectionWeights → src/core/skills/SkillTypes.ts ✅ (location mismatch: documented as SkillRegistry.ts but types are in SkillTypes.ts)
+- [x] class SkillRegistry (singleton) → src/core/skills/SkillRegistry.ts
+  - [x] getInstance(): SkillRegistry ✅
+  - [x] initializeDefaults(defaultSkills?): void ✅
+  - [x] reset(): void ✅
+  - [x] isInitialized(): boolean ✅
+  - [x] registerSkill(skill): void ✅
+  - [x] registerSkills(skills): void ✅
+  - [x] getSkill(id): CustomSkill | undefined ✅
+  - [x] getAllSkills(): CustomSkill[] ✅
+  - [x] getSkillsByAbility(ability): CustomSkill[] ✅
+  - [x] getSkillsByCategory(category): CustomSkill[] ✅
+  - [x] getCategories(): string[] ✅
+  - [x] getSkillsBySource(source): CustomSkill[] ✅
+  - [x] getAvailableSkills(character): CustomSkill[] ✅ **IMPLEMENTED** - Returns skills whose prerequisites are met by the character
+  - [x] validatePrerequisites(skill, character): SkillValidationResult ✅
+  - [x] validateSkill(skill): SkillValidationResult ✅
+  - [x] isValidSkill(id): boolean ✅
+  - [x] getSkillCount(): number ✅ **IMPLEMENTED** - Returns total skill count
+  - [x] getRegistryStats(): SkillRegistryStats ✅
+  - [x] exportRegistry(): CustomSkill[] ✅
+  - [x] unregisterSkill(id): boolean ✅
+
+**Implementation Summary:**
+- All 8 types verified at `src/core/skills/SkillTypes.ts`
+- All 20 methods verified in `src/core/skills/SkillRegistry.ts`
+- **New methods implemented:**
+  - `getSkillCount(): number` - Returns total count of registered skills
+  - `getAvailableSkills(character: CharacterSheet): CustomSkill[]` - Returns skills whose prerequisites are met by the character
+- **Location discrepancy:** Types are exported from `SkillTypes.ts`, not `SkillRegistry.ts` (code is more organized)
+- Tests: 81/81 passing (unit tests) + 9/9 passing (integration tests)
 
 ### Task 6.7: SkillValidator (8 items)
 - [ ] class SkillValidator (static) → src/core/skills/SkillValidator.ts
@@ -645,14 +654,7 @@ All 5 methods verified in `src/core/extensions/WeightedSelector.ts`. The `normal
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
 | 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
-| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (59/120 done; Tasks 6.1-6.5 complete) |
-| 7 | Game Data Constants | ~15 | ⬜ Not Started |
-| 8 | Fix ExtensionManager Discrepancies | ~6 | ✅ COMPLETED (6/6 done) |
-| **Total** | | **~481** | |
-| 3 | Progression & Combat | ~80 | ✅ COMPLETED |
-| 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
-| 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
-| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (54/120 done; Tasks 6.1-6.4 complete) |
+| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (79/120 done; Tasks 6.1-6.6 complete) |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
 | 8 | Fix ExtensionManager Discrepancies | ~6 | ✅ COMPLETED (6/6 done) |
 | **Total** | | **~481** | |

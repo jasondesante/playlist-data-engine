@@ -837,4 +837,460 @@ describe('SkillRegistry', () => {
             expect(registry.isValidSkill('very_long_skill_id_with_many_underscores_and_characters')).toBe(true);
         });
     });
+
+    describe('getSkillCount', () => {
+        it('should return 0 for empty registry', () => {
+            const count = registry.getSkillCount();
+            expect(count).toBe(0);
+        });
+
+        it('should return correct count after initialization', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            const count = registry.getSkillCount();
+            expect(count).toBe(18);
+        });
+
+        it('should return correct count after adding custom skills', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const customSkill: CustomSkill = {
+                id: 'custom_count_test',
+                name: 'Count Test',
+                ability: 'INT' as Ability,
+                source: 'custom'
+            };
+
+            registry.registerSkill(customSkill);
+            const count = registry.getSkillCount();
+            expect(count).toBe(19);
+        });
+
+        it('should return correct count after unregistering skills', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            expect(registry.getSkillCount()).toBe(18);
+
+            registry.unregisterSkill('athletics');
+            expect(registry.getSkillCount()).toBe(17);
+
+            registry.unregisterSkill('arcana');
+            expect(registry.getSkillCount()).toBe(16);
+        });
+
+        it('should be consistent with getAllSkills().length', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const customSkills: CustomSkill[] = [
+                {
+                    id: 'custom_count_1',
+                    name: 'Count 1',
+                    ability: 'STR' as Ability,
+                    source: 'custom'
+                },
+                {
+                    id: 'custom_count_2',
+                    name: 'Count 2',
+                    ability: 'DEX' as Ability,
+                    source: 'custom'
+                },
+                {
+                    id: 'custom_count_3',
+                    name: 'Count 3',
+                    ability: 'INT' as Ability,
+                    source: 'custom'
+                }
+            ];
+
+            registry.registerSkills(customSkills);
+
+            const count = registry.getSkillCount();
+            const allSkillsLength = registry.getAllSkills().length;
+
+            expect(count).toBe(allSkillsLength);
+            expect(count).toBe(21); // 18 default + 3 custom
+        });
+
+        it('should return correct count after reset', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+            expect(registry.getSkillCount()).toBe(18);
+
+            registry.reset();
+            expect(registry.getSkillCount()).toBe(0);
+        });
+    });
+
+    describe('getAvailableSkills', () => {
+        // Helper function to create a minimal character sheet
+        function createMockCharacter(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
+            return {
+                name: 'Test Character',
+                race: 'Human',
+                class: 'Fighter',
+                level: 5,
+                ability_scores: {
+                    STR: 14,
+                    DEX: 12,
+                    CON: 14,
+                    INT: 10,
+                    WIS: 10,
+                    CHA: 10
+                },
+                ability_modifiers: {
+                    STR: 2,
+                    DEX: 1,
+                    CON: 2,
+                    INT: 0,
+                    WIS: 0,
+                    CHA: 0
+                },
+                proficiency_bonus: 3,
+                hp: { current: 45, max: 45, temp: 0 },
+                armor_class: 16,
+                initiative: 1,
+                speed: 30,
+                skills: {},
+                saving_throws: {
+                    STR: false,
+                    DEX: false,
+                    CON: false,
+                    INT: false,
+                    WIS: false,
+                    CHA: false
+                },
+                racial_traits: [],
+                class_features: [],
+                xp: { current: 6500, next_level: 14000 },
+                seed: 'test-seed',
+                generated_at: new Date().toISOString(),
+                ...overrides
+            };
+        }
+
+        it('should return all skills when no prerequisites exist', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const character = createMockCharacter();
+            const available = registry.getAvailableSkills(character);
+
+            expect(available.length).toBe(18);
+        });
+
+        it('should return all default skills for character without restrictions', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            const character = createMockCharacter({
+                level: 10,
+                class: 'Wizard',
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 18, WIS: 12, CHA: 10 }
+            });
+            const available = registry.getAvailableSkills(character);
+
+            expect(available.length).toBe(18);
+        });
+
+        it('should filter skills by level prerequisite', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            // Register a skill with level prerequisite
+            const advancedSkill: CustomSkill = {
+                id: 'advanced_skill',
+                name: 'Advanced Skill',
+                ability: 'INT' as Ability,
+                prerequisites: { level: 10 },
+                source: 'custom'
+            };
+            registry.registerSkill(advancedSkill);
+
+            // Low level character should not see the advanced skill
+            const lowLevelCharacter = createMockCharacter({ level: 5 });
+            const lowLevelAvailable = registry.getAvailableSkills(lowLevelCharacter);
+
+            expect(lowLevelAvailable).not.toContainEqual(advancedSkill);
+            expect(lowLevelAvailable.length).toBe(18); // Only default skills
+
+            // High level character should see the advanced skill
+            const highLevelCharacter = createMockCharacter({ level: 15 });
+            const highLevelAvailable = registry.getAvailableSkills(highLevelCharacter);
+
+            expect(highLevelAvailable).toContainEqual(advancedSkill);
+            expect(highLevelAvailable.length).toBe(19); // 18 default + 1 advanced
+        });
+
+        it('should filter skills by ability prerequisite', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            // Register a skill requiring high INT
+            const highIntSkill: CustomSkill = {
+                id: 'high_int_skill',
+                name: 'High INT Skill',
+                ability: 'INT' as Ability,
+                prerequisites: { abilities: { INT: 16 } },
+                source: 'custom'
+            };
+            registry.registerSkill(highIntSkill);
+
+            // Character with INT 10 should not see the skill
+            const lowIntCharacter = createMockCharacter({
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 }
+            });
+            const lowIntAvailable = registry.getAvailableSkills(lowIntCharacter);
+
+            expect(lowIntAvailable).not.toContainEqual(highIntSkill);
+            expect(lowIntAvailable.length).toBe(18);
+
+            // Character with INT 18 should see the skill
+            const highIntCharacter = createMockCharacter({
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 18, WIS: 10, CHA: 10 },
+                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 4, WIS: 0, CHA: 0 }
+            });
+            const highIntAvailable = registry.getAvailableSkills(highIntCharacter);
+
+            expect(highIntAvailable).toContainEqual(highIntSkill);
+            expect(highIntAvailable.length).toBe(19);
+        });
+
+        it('should filter skills by class prerequisite', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            // Register a Wizard-only skill
+            const wizardSkill: CustomSkill = {
+                id: 'wizard_only_skill',
+                name: 'Wizard Only Skill',
+                ability: 'INT' as Ability,
+                prerequisites: { class: 'Wizard' },
+                source: 'custom'
+            };
+            registry.registerSkill(wizardSkill);
+
+            // Fighter should not see the Wizard skill
+            const fighter = createMockCharacter({ class: 'Fighter' });
+            const fighterAvailable = registry.getAvailableSkills(fighter);
+
+            expect(fighterAvailable).not.toContainEqual(wizardSkill);
+            expect(fighterAvailable.length).toBe(18);
+
+            // Wizard should see the skill
+            const wizard = createMockCharacter({ class: 'Wizard' });
+            const wizardAvailable = registry.getAvailableSkills(wizard);
+
+            expect(wizardAvailable).toContainEqual(wizardSkill);
+            expect(wizardAvailable.length).toBe(19);
+        });
+
+        it('should filter skills by race prerequisite', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            // Register an Elf-only skill
+            const elfSkill: CustomSkill = {
+                id: 'elf_only_skill',
+                name: 'Elf Only Skill',
+                ability: 'DEX' as Ability,
+                prerequisites: { race: 'Elf' },
+                source: 'custom'
+            };
+            registry.registerSkill(elfSkill);
+
+            // Human should not see the Elf skill
+            const human = createMockCharacter({ race: 'Human' });
+            const humanAvailable = registry.getAvailableSkills(human);
+
+            expect(humanAvailable).not.toContainEqual(elfSkill);
+            expect(humanAvailable.length).toBe(18);
+
+            // Elf should see the skill
+            const elf = createMockCharacter({ race: 'Elf' });
+            const elfAvailable = registry.getAvailableSkills(elf);
+
+            expect(elfAvailable).toContainEqual(elfSkill);
+            expect(elfAvailable.length).toBe(19);
+        });
+
+        it('should filter skills by skill prerequisite', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            // Register a skill that requires arcana proficiency
+            const advancedArcanaSkill: CustomSkill = {
+                id: 'advanced_arcana',
+                name: 'Advanced Arcana',
+                ability: 'INT' as Ability,
+                prerequisites: { skills: ['arcana'] },
+                source: 'custom'
+            };
+            registry.registerSkill(advancedArcanaSkill);
+
+            // Character without arcana proficiency should not see the skill
+            const noProficiencyCharacter = createMockCharacter({ skills: {} });
+            const noProficiencyAvailable = registry.getAvailableSkills(noProficiencyCharacter);
+
+            expect(noProficiencyAvailable).not.toContainEqual(advancedArcanaSkill);
+            expect(noProficiencyAvailable.length).toBe(18);
+
+            // Character with arcana proficiency should see the skill
+            const proficientCharacter = createMockCharacter({ skills: { arcana: 'proficient' } });
+            const proficientAvailable = registry.getAvailableSkills(proficientCharacter);
+
+            expect(proficientAvailable).toContainEqual(advancedArcanaSkill);
+            expect(proficientAvailable.length).toBe(19);
+        });
+
+        it('should filter skills by feature prerequisite', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            // Register a skill that requires a specific feature
+            const featureSkill: CustomSkill = {
+                id: 'feature_based_skill',
+                name: 'Feature Based Skill',
+                ability: 'CHA' as Ability,
+                prerequisites: { features: ['draconic_bloodline'] },
+                source: 'custom'
+            };
+            registry.registerSkill(featureSkill);
+
+            // Character without the feature should not see the skill
+            const noFeatureCharacter = createMockCharacter({ class_features: [] });
+            const noFeatureAvailable = registry.getAvailableSkills(noFeatureCharacter);
+
+            expect(noFeatureAvailable).not.toContainEqual(featureSkill);
+            expect(noFeatureAvailable.length).toBe(18);
+
+            // Character with the feature should see the skill
+            const hasFeatureCharacter = createMockCharacter({ class_features: ['draconic_bloodline'] });
+            const hasFeatureAvailable = registry.getAvailableSkills(hasFeatureCharacter);
+
+            expect(hasFeatureAvailable).toContainEqual(featureSkill);
+            expect(hasFeatureAvailable.length).toBe(19);
+        });
+
+        it('should filter skills by spell prerequisite', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            // Register a skill that requires knowing fireball
+            const pyromancySkill: CustomSkill = {
+                id: 'pyromancy_skill',
+                name: 'Pyromancy Skill',
+                ability: 'INT' as Ability,
+                prerequisites: { spells: ['fireball'] },
+                source: 'custom'
+            };
+            registry.registerSkill(pyromancySkill);
+
+            // Character without fireball should not see the skill
+            const noSpellCharacter = createMockCharacter({
+                spells: {
+                    spell_slots: {},
+                    known_spells: ['magic_missile'],
+                    cantrips: []
+                }
+            });
+            const noSpellAvailable = registry.getAvailableSkills(noSpellCharacter);
+
+            expect(noSpellAvailable).not.toContainEqual(pyromancySkill);
+            expect(noSpellAvailable.length).toBe(18);
+
+            // Character with fireball should see the skill
+            const hasSpellCharacter = createMockCharacter({
+                spells: {
+                    spell_slots: {},
+                    known_spells: ['fireball'],
+                    cantrips: []
+                }
+            });
+            const hasSpellAvailable = registry.getAvailableSkills(hasSpellCharacter);
+
+            expect(hasSpellAvailable).toContainEqual(pyromancySkill);
+            expect(hasSpellAvailable.length).toBe(19);
+        });
+
+        it('should handle combined prerequisites', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            // Register a skill with multiple prerequisites
+            const multiPrereqSkill: CustomSkill = {
+                id: 'multi_prereq_skill',
+                name: 'Multi Prerequisite Skill',
+                ability: 'CHA' as Ability,
+                prerequisites: {
+                    level: 5,
+                    class: 'Sorcerer',
+                    abilities: { CHA: 14 }
+                },
+                source: 'custom'
+            };
+            registry.registerSkill(multiPrereqSkill);
+
+            // Character not meeting all prerequisites should not see the skill
+            const partialCharacter = createMockCharacter({
+                class: 'Sorcerer',
+                level: 5,
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 }
+            });
+            const partialAvailable = registry.getAvailableSkills(partialCharacter);
+
+            expect(partialAvailable).not.toContainEqual(multiPrereqSkill);
+            expect(partialAvailable.length).toBe(18);
+
+            // Character meeting all prerequisites should see the skill
+            const fullCharacter = createMockCharacter({
+                class: 'Sorcerer',
+                level: 5,
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 16 },
+                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 3 }
+            });
+            const fullAvailable = registry.getAvailableSkills(fullCharacter);
+
+            expect(fullAvailable).toContainEqual(multiPrereqSkill);
+            expect(fullAvailable.length).toBe(19);
+        });
+
+        it('should return empty array for empty registry', () => {
+            const character = createMockCharacter();
+            const available = registry.getAvailableSkills(character);
+
+            expect(available).toEqual([]);
+        });
+
+        it('should handle multiple skills with varying prerequisites', () => {
+            registry.initializeDefaults(DEFAULT_SKILLS);
+
+            // Register multiple custom skills with different prerequisites
+            const skills: CustomSkill[] = [
+                {
+                    id: 'skill_level_3',
+                    name: 'Level 3 Skill',
+                    ability: 'STR' as Ability,
+                    prerequisites: { level: 3 },
+                    source: 'custom'
+                },
+                {
+                    id: 'skill_level_10',
+                    name: 'Level 10 Skill',
+                    ability: 'DEX' as Ability,
+                    prerequisites: { level: 10 },
+                    source: 'custom'
+                },
+                {
+                    id: 'skill_wisdom',
+                    name: 'Wisdom Skill',
+                    ability: 'WIS' as Ability,
+                    prerequisites: { abilities: { WIS: 14 } },
+                    source: 'custom'
+                }
+            ];
+            registry.registerSkills(skills);
+
+            // Level 5 character with WIS 14 should see 2 of the custom skills
+            const character = createMockCharacter({
+                level: 5,
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 14, CHA: 10 },
+                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 2, CHA: 0 }
+            });
+            const available = registry.getAvailableSkills(character);
+
+            expect(available.length).toBe(20); // 18 default + 2 custom
+            expect(available.some(s => s.id === 'skill_level_3')).toBe(true);
+            expect(available.some(s => s.id === 'skill_wisdom')).toBe(true);
+            expect(available.some(s => s.id === 'skill_level_10')).toBe(false);
+        });
+    });
 });
