@@ -1671,21 +1671,52 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **DOCUMENTATION NOTE**: SpellCaster is listed in USAGE_IN_OTHER_PROJECTS.md line 1541 with brief description "Cast spells in combat" but lacks detailed API documentation
 
 ### Task 6.5: DiceRoller → src/core/combat/DiceRoller.ts
-- [ ] `rollDie(sides: number): number`
-- [ ] `rollMultipleDice(sides: number, count: number): number[]`
-- [ ] `parseDiceFormula(formula: string): DiceFormula` - **Type needs investigation**
-- [ ] `rollD20(): number`
-- [ ] `rollWithAdvantage(): number`
-- [ ] `rollWithDisadvantage(): number`
-- [ ] `rollInitiative(): InitiativeResult`
-- [ ] `isCriticalHit(roll: number): boolean`
-- [ ] `isCriticalMiss(roll: number): boolean`
-- [ ] `doubleDamage(damage: number): number`
-- [ ] `calculateDamage(formula: DiceFormula): number`
-- [ ] `rollSavingThrow(ability: Ability): number`
-- [ ] `rollAbilityCheck(ability: Ability): number`
-- [ ] `seededRoll(seed: string, sides: number): number`
-- [ ] `rollPercentile(): number`
+- [x] `rollDie(sides: number): number`
+- [x] `rollMultipleDice(sides: number, count: number): number[]`
+- [x] `parseDiceFormula(formula: string): DiceFormula` - **Type needs investigation**
+- [x] `rollD20(): number`
+- [x] `rollWithAdvantage(): number`
+- [x] `rollWithDisadvantage(): number`
+- [x] `rollInitiative(): InitiativeResult`
+- [x] `isCriticalHit(roll: number): boolean`
+- [x] `isCriticalMiss(roll: number): boolean`
+- [x] `doubleDamage(damage: number): number`
+- [x] `calculateDamage(formula: DiceFormula): number`
+- [x] `rollSavingThrow(ability: Ability): number`
+- [x] `rollAbilityCheck(ability: Ability): number`
+- [x] `seededRoll(seed: string, sides: number): number`
+- [x] `rollPercentile(): number`
+
+**Task 6.5 Summary - COMPLETED**:
+- **VERIFIED**: DiceRoller file exists at src/core/combat/DiceRoller.ts
+  - **IMPORTANT**: DiceRoller is NOT a class - it's a collection of standalone exported functions
+  - All dice rolling functions are exported from src/index.ts at lines 233-249
+- **VERIFIED SIGNATURES WITH DISCREPANCIES**:
+  - `rollDie(sides: number): number` ✓ (line 11) - Matches
+  - `rollMultipleDice(count: number, sides: number): number[]` (line 22) - **Parameter order reversed** - task says `(sides, count)` but actual is `(count, sides)`
+  - `parseDiceFormula(formula: string): { diceCount, diceSides, modifier, rolls, total }` (line 35) - **Returns inline type, not `DiceFormula`** - No `DiceFormula` type exported, returns inline object with properties
+  - `rollD20(): number` ✓ (line 68) - Matches
+  - `rollWithAdvantage(): { roll1, roll2, result }` (line 76) - **Returns object, not number** - task says returns `number` but actual returns object with both rolls and result
+  - `rollWithDisadvantage(): { roll1, roll2, result }` (line 94) - **Returns object, not number** - task says returns `number` but actual returns object with both rolls and result
+  - `rollInitiative(dexModifier: number): number` (line 113) - **Requires parameter** - task shows no parameters but requires `dexModifier`
+  - `isCriticalHit(d20Roll: number): boolean` ✓ (line 120) - Matches (parameter name is `d20Roll` not just `roll`)
+  - `isCriticalMiss(d20Roll: number): boolean` ✓ (line 127) - Matches (parameter name is `d20Roll` not just `roll`)
+  - `doubleDamage(rolls: number[]): number[]` (line 134) - **Different signature** - task says `(damage: number): number` but actual is `(rolls: number[]): number[]` (doubles the dice array for crits)
+  - `calculateDamage(formula: string, modifier: number, isCritical?: boolean): { rolls, modifier, total, isCritical }` (line 145) - **Different signature** - task says `(formula: DiceFormula): number` but actual takes formula string + modifier + isCritical, returns detailed object
+  - `rollSavingThrow(abilityModifier: number, proficiencyBonus: number = 0): number` (line 175) - **Different signature** - task says `(ability: Ability): number` but actual takes numeric modifiers
+  - `rollAbilityCheck(abilityModifier: number, proficiencyBonus: number = 0): number` (line 185) - **Different signature** - task says `(ability: Ability): number` but actual takes numeric modifiers
+  - `seededRoll(seed: number): number` (line 194) - **Type mismatch** - task says `(seed: string, sides: number): number` but actual is `(seed: number): number` (always rolls d20)
+  - `rollPercentile(): number` ✓ (line 204) - Matches
+- **DOCUMENTATION DISCREPANCY**: DiceRoller functions are NOT documented in USAGE_IN_OTHER_PROJECTS.md
+  - Combat section (line 1537-1541) lists: `CombatEngine`, `InitiativeRoller`, `AttackResolver`, `SpellCaster`
+  - Dice rolling utility functions are missing from documentation entirely
+- **TYPE EXPORT ISSUE**: `InitiativeResult` type is exported from src/core/combat/InitiativeRoller.ts and src/index.ts line 145, but `DiceFormula` type does NOT exist
+  - `parseDiceFormula` returns an inline object type, not a named `DiceFormula` type
+- **BUILD STATUS**: Clean - no compilation errors
+- **RECOMMENDATIONS**:
+  1. Add dice rolling functions to USAGE_IN_OTHER_PROJECTS.md documentation
+  2. Correct task 6.5 to reflect actual signatures
+  3. Consider if `DiceFormula` type should be extracted and exported for public use
 
 ### Task 6.6: Combat Types → src/core/types/Combat.ts
 - [ ] `StatusEffect`
