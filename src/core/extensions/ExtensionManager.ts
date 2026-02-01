@@ -22,6 +22,7 @@ import type { CustomSkill } from '../skills/SkillTypes.js';
 import { SkillRegistry } from '../skills/SkillRegistry.js';
 import { SkillValidator, validateSkill } from '../skills/SkillValidator.js';
 import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
+import type { CustomRaceDataEntry } from '../../utils/constants.js';
 
 /**
  * Spawn modes for custom content
@@ -606,8 +607,8 @@ export class ExtensionManager {
             // Not a valid race
             errors.push(`${prefix} Invalid race "${item}". Must be one of: ${validRaces.join(', ')} or register custom race via 'races.data' first.`);
         } else if (category === 'races.data') {
-            // Validate custom race data objects
-            // Each item should have: race (string), ability_bonuses (record), speed (number), traits (array)
+            // Validate custom race data objects (CustomRaceDataEntry type)
+            // Each item should have: race (string), ability_bonuses (record), speed (number), traits (array), optional subraces
             if (!item.race || typeof item.race !== 'string') {
                 errors.push(`${prefix} Race data must have a valid 'race' property (string)`);
             }

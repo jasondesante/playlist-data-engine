@@ -15,6 +15,9 @@ export type { Spell, SpellPrerequisite };
  *
  * Defines the structure for race data including ability bonuses,
  * speed, traits, and optional subraces.
+ *
+ * This interface is used for default races stored in RACE_DATA
+ * where the race name is the Record key, not a property.
  */
 export interface RaceDataEntry {
     /** Ability score bonuses granted by this race */
@@ -28,6 +31,20 @@ export interface RaceDataEntry {
 
     /** Optional: Available subraces for this race */
     subraces?: string[];
+}
+
+/**
+ * Custom race data entry interface
+ *
+ * Defines the structure for custom race data registered via ExtensionManager.
+ * Unlike RaceDataEntry (used for default races), custom races are stored as
+ * an array where each entry includes the race name as a property.
+ *
+ * Used by the 'races.data' category in ExtensionManager.
+ */
+export interface CustomRaceDataEntry extends RaceDataEntry {
+    /** The name of the race */
+    race: string;
 }
 
 // Race data with ability score bonuses

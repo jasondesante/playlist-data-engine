@@ -116,7 +116,7 @@ export type {
     ContentPackData
 } from './core/extensions/ExtensionManager.js';
 
-export type { SpellPrerequisite, RaceDataEntry, ClassDataEntry, ClassSpellListData } from './utils/constants.js';
+export type { SpellPrerequisite, RaceDataEntry, CustomRaceDataEntry, ClassDataEntry, ClassSpellListData } from './utils/constants.js';
 export type { Spell, Equipment } from './utils/constants.js';
 
 // Environmental types
