@@ -2091,11 +2091,73 @@ This verification plan ensures documentation-code alignment by systematically ch
   - Discord config has additional properties not documented in task
 
 ### Task 8.3: SteamAPIClient → src/core/sensors/SteamAPIClient.ts
-- [ ] File exists
-- [ ] **DISCREPANCY**: Not exported in src/index.ts but documented in USAGE_IN_OTHER_PROJECTS.md
+- [x] File exists
+- [x] **DISCREPANCY**: Not exported in src/index.ts but documented in USAGE_IN_OTHER_PROJECTS.md
 
-### Task 8.4: DiscordRPCClient
-- [ ] **DISCREPANCY**: Documented but may not exist as exportable class
+**Task 8.3 Summary - COMPLETED**:
+- **VERIFIED**: `SteamAPIClient` class exists at src/core/sensors/SteamAPIClient.ts:19
+  - The class is NOT exported from src/index.ts
+  - Used internally by `GamingPlatformSensors` (imported at line 3)
+- **VERIFIED METHODS**:
+  - `constructor(apiKey: string = '')` (line 49) - Creates client with optional API key
+  - `getCurrentGame(steamUserId: string): Promise<{name, appId, source, sessionDuration} | null>` (line 215)
+    - Fetches currently played game from Steam API using IPlayerService/GetRecentlyPlayedGames
+    - Returns null if Steam API key not provided or no game is active
+  - `getGameMetadata(gameName: string): Promise<{appId?, name, genre?, description?} | null>` (line 267)
+    - Fetches game metadata (genre, description) from Steam store API
+    - Uses ISteamApps/GetAppList to find app ID first
+  - `getGameSchema(appId: number): Promise<any>` (line 349) - Gets game schema/stats
+- **VERIFIED PERFORMANCE TRACKING METHODS**:
+  - `getCurrentGameApiMetrics(): PerformanceMetrics` (line 114) - Get raw metrics
+  - `getCurrentGameApiStatistics(): {average, min, max, totalCalls, successRate, p95, p99}` (line 121)
+  - `getMetadataApiMetrics(): PerformanceMetrics` (line 152) - Get raw metrics
+  - `getMetadataApiStatistics(): {average, min, max, totalCalls, successRate, p95, p99}` (line 159)
+  - `resetPerformanceMetrics(): void` (line 190) - Reset all metrics
+- **INTERNAL TYPE** (not exported): `PerformanceMetrics` interface at line 6
+  - Has properties: `successCount`, `errorCount`, `totalTime`, `minTime`, `maxTime`, `lastCallTimestamp`
+- **DISCREPANCY CONFIRMED**: Class is documented in USAGE_IN_OTHER_PROJECTS.md line 1536 but NOT exported from src/index.ts
+  - This is an internal implementation class used by GamingPlatformSensors
+  - **RECOMMENDATION**: Update USAGE_IN_OTHER_PROJECTS.md to remove `SteamAPIClient` from the "Available Exports" list (line 1536)
+  - Alternative: Export the class if direct Steam API access should be part of the public API
+- **BUILD STATUS**: Clean - no compilation errors
+
+### Task 8.4: DiscordRPCClient → src/core/sensors/DiscordRPCClient.ts
+- [x] **DISCREPANCY**: Documented but may not exist as exportable class
+
+**Task 8.4 Summary - COMPLETED**:
+- **VERIFIED**: `DiscordRPCClient` class exists at src/core/sensors/DiscordRPCClient.ts:254
+  - The class is NOT exported from src/index.ts
+  - Used internally by `GamingPlatformSensors` (imported at line 4)
+- **VERIFIED DUAL-MODE SUPPORT**:
+  - **SERVER MODE (Node.js)**: Full Discord Rich Presence functionality using @ryuziii/discord-rpc
+  - **BROWSER MODE**: Graceful degradation with clear console warnings
+  - Auto-detects environment and switches modes automatically (no configuration required)
+- **VERIFIED METHODS**:
+  - `constructor(clientId: string = '')` (line 276) - Creates client with Discord application ID
+  - `async connect(): Promise<boolean>` (line 304) - Connects to Discord RPC
+  - `disconnect(): void` (line 429) - Disconnects from Discord RPC
+  - `isConnectedToDiscord(): boolean` (line 451) - Check connection status
+  - `getConnectionState(): DiscordConnectionState` (line 459) - Get detailed connection state
+  - `getLastError(): string | null` (line 466) - Get last error message
+  - `async setMusicActivity(musicDetails: MusicActivityDetails): Promise<boolean>` (line 479)
+    - Sets music activity on Discord Rich Presence ("Listening to" status)
+    - Supports song name, artist, album art, progress bar
+  - `async clearMusicActivity(): Promise<boolean>` (line 535) - Clears music activity
+  - `async getUserInfo(): Promise<DiscordUserInfo | null>` (line 559) - Get Discord user info
+- **VERIFIED EXPORTED TYPES** (from DiscordRPCClient.ts):
+  - `DiscordConnectionState` enum (line 87) - Connection states: Disconnected, Connecting, Connected, DiscordUnavailable, Error
+  - `DiscordUserInfo` interface (line 103) - Discord user information
+  - `ActivityType` enum (line 115) - Activity types: Playing, Streaming, Listening, Watching, Competing
+  - `MusicActivityDetails` interface (line 191) - Music activity details
+  - `DiscordActivity` interface (line 161) - Full activity structure
+  - `DiscordRPCErrorCode` enum (line 205) - RPC error codes
+  - `DiscordRPCErrorResponse` interface (line 227)
+  - `DiscordRPCRawEvent` interface (line 237)
+- **DISCREPANCY CONFIRMED**: Class is documented in USAGE_IN_OTHER_PROJECTS.md line 1537 but NOT exported from src/index.ts
+  - This is an internal implementation class used by GamingPlatformSensors
+  - **RECOMMENDATION**: Update USAGE_IN_OTHER_PROJECTS.md to remove `DiscordRPCClient` from the "Available Exports" list (line 1537)
+  - Alternative: Export the class if direct Discord RPC access should be part of the public API
+- **BUILD STATUS**: Clean - no compilation errors
 
 ### Task 8.5: Environmental Types → src/core/types/Environmental.ts
 - [ ] `SensorType`

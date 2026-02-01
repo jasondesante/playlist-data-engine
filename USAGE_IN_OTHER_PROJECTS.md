@@ -1533,8 +1533,8 @@ The main exports from the library are:
 ### Sensors
 - `EnvironmentalSensors` - GPS, motion, weather, light integration
 - `GamingPlatformSensors` - Steam and Discord integration
-- `SteamAPIClient` - Steam API client
-- `DiscordRPCClient` - Discord RPC client
+
+> **Note**: `SteamAPIClient` and `DiscordRPCClient` are internal implementation classes used by `GamingPlatformSensors`. They are not exported as part of the public API.
 
 ### Combat (Optional)
 - `CombatEngine` - Turn-based D&D 5e combat
