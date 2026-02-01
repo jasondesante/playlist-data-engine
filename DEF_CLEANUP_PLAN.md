@@ -108,7 +108,7 @@ The following items are noted for awareness but should NOT be resolved:
 - [x] Update DATA_ENGINE_REFERENCE.md: `removeItem(equipment, itemName, quantity?, character?): CharacterEquipment` (4 params) → actual signature has only 3 params without `character` (at `src/core/generation/EquipmentGenerator.ts:269-273`)
 
 ### Task 3.8: EquipmentGenerator.getEquipmentData Visibility (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Document `getEquipmentData` as private method; add public `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method (exists at `src/core/generation/EquipmentGenerator.ts:60-62`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Document `getEquipmentData` as private method; add public `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method (exists at `src/core/generation/EquipmentGenerator.ts:60-62`)
 
 ### Task 3.9: EquipmentGenerator.getEquipmentDataStatic Documentation (1 item)
 - [ ] Update DATA_ENGINE_REFERENCE.md: Add missing `getEquipmentDataStatic(itemName: string): EnhancedEquipment | undefined` method (exists at `src/core/generation/EquipmentGenerator.ts:60-62`)

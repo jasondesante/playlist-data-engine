@@ -3144,7 +3144,14 @@ class EquipmentGenerator {
         character?: CharacterSheet
     ): CharacterEquipment;
 
-    static getEquipmentData(
+    /**
+     * @internal Private method for internal use. Use getEquipmentDataStatic for external access.
+     */
+    private static getEquipmentData(
+        itemName: string
+    ): EnhancedEquipment | undefined;
+
+    static getEquipmentDataStatic(
         itemName: string
     ): EnhancedEquipment | undefined;
 
