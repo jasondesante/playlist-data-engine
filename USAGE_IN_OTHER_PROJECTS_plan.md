@@ -2409,15 +2409,44 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.8: Magic Item Examples → src/utils/magicItemExamples.ts
-- [ ] `MAGIC_ITEM_EXAMPLES: EnhancedEquipment[]`
-- [ ] `MAGIC_EQUIPMENT_TEMPLATES: Record<string, EquipmentTemplate>`
-  - [ ] Type `EquipmentTemplate` exists - **NEEDS INVESTIGATION**
-- [ ] `getMagicItem(id: string): EnhancedEquipment | undefined`
-- [ ] `getMagicItemsByType(type: string): EnhancedEquipment[]`
-- [ ] `getMagicItemsByRarity(rarity: string): EnhancedEquipment[]`
-- [ ] `getCursedItems(): EnhancedEquipment[]`
-- [ ] `getItemsWithProperty(property: string): EnhancedEquipment[]`
-- [ ] `applyTemplate(item: EnhancedEquipment, template: EquipmentTemplate): EnhancedEquipment`
+- [x] `MAGIC_ITEM_EXAMPLES: EnhancedEquipment[]`
+- [x] `MAGIC_EQUIPMENT_TEMPLATES: Record<string, Partial<EnhancedEquipment>>`
+  - [x] Type `EquipmentTemplate` does NOT exist - actual type is `Partial<EnhancedEquipment>`
+- [x] `getMagicItem(id: string): EnhancedEquipment | undefined`
+- [x] `getMagicItemsByType(type: string): EnhancedEquipment[]`
+- [x] `getMagicItemsByRarity(rarity: string): EnhancedEquipment[]`
+- [x] `getCursedItems(): EnhancedEquipment[]`
+- [x] `getItemsWithProperty(property: string): EnhancedEquipment[]`
+- [x] `applyTemplate(item: EnhancedEquipment, template: string): EnhancedEquipment | null`
+
+**Task 9.8 Summary - COMPLETED**:
+- **VERIFIED**: All 8 magic item example exports exist at src/utils/magicItemExamples.ts
+- **VERIFIED**: All exports properly exported from src/index.ts at lines 477-486
+- **VERIFIED**: `MAGIC_ITEM_EXAMPLES: EnhancedEquipment[]` (line 27)
+  - Contains 38 example magic items demonstrating all equipment system capabilities
+  - Categories: Weapons (4), Armor (3), Wondrous Items (17), Spell-granting (3), Cursed (3), Conditional (5), Template-based (2)
+  - Examples include: Flame Tongue, Vorpal Sword, Frost Brand, Mithral Shirt, +1 Plate Armor, Elven Chain, Belt of Giant Strength, Boots of Elvenkind, Boots of Speed, Ring of Protection, Goggles of Night, Ring of Spell Storing, Pearl of Power, Wand of Magic Missiles, -1 Cursed Sword, Belt of Strength Drain, Helmet of Opposite Alignment, Moon Sickle, Sun Blade, Dwarf-Forged Armor, Wizard's Staff, Flaming Longsword, Frost Longsword
+- **VERIFIED**: `MAGIC_EQUIPMENT_TEMPLATES` (line 1061) - Type is `Record<string, Partial<EnhancedEquipment>>`
+  - **INVESTIGATION RESULT**: Type `EquipmentTemplate` does NOT exist in the codebase
+  - Actual type used is `Partial<EnhancedEquipment>` - templates are partial equipment objects
+  - Contains 7 templates: plus_one_weapon, plus_two_weapon, plus_three_weapon, flaming_weapon_template, frost_weapon_template, shocking_weapon_template, vicious_weapon_template, plus_one_armor, plus_two_armor
+- **VERIFIED FUNCTIONS**:
+  - `getMagicItem(name: string): EnhancedEquipment | undefined` (line 1231) - parameter is `name` not `id`
+  - `getMagicItemsByType(type: 'weapon' | 'armor' | 'item'): EnhancedEquipment[]` (line 1238) - parameter is `type` with literal union
+  - `getMagicItemsByRarity(rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary'): EnhancedEquipment[]` (line 1245) - parameter is `rarity` with literal union
+  - `getCursedItems(): EnhancedEquipment[]` (line 1252)
+  - `getItemsWithProperty(propertyType: string): EnhancedEquipment[]` (line 1259) - parameter is `propertyType`
+  - `applyTemplate(baseEquipment: EnhancedEquipment, templateId: string): EnhancedEquipment | null` (line 1268) - parameters are `baseEquipment` and `templateId` (a string ID), not a template object
+- **SIGNATURE NOTES**: Several parameter differences from task checklist:
+  - `getMagicItem` takes `name` parameter, not `id`
+  - `getMagicItemsByType` parameter has specific literal type, not generic `string`
+  - `getMagicItemsByRarity` parameter has specific literal type, not generic `string`
+  - `getItemsWithProperty` parameter is `propertyType`, not `property`
+  - `applyTemplate` takes `templateId: string`, not `template: EquipmentTemplate`
+- **DOCUMENTATION GAP**: Magic Item Examples are NOT documented in USAGE_IN_OTHER_PROJECTS.md
+  - These are comprehensive examples demonstrating all equipment system capabilities
+  - **RECOMMENDATION**: Add to USAGE_IN_OTHER_PROJECTS.md if intended as public API
+- **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.9: Game Data Constants → src/utils/constants.ts
 - [ ] `RACE_DATA: Record<Race, RaceInfo>` - **Type `RaceInfo` needs investigation**
