@@ -13,8 +13,8 @@
  */
 
 import type { SkillValidationResult, SkillPrerequisite } from './SkillTypes.js';
-import type { CharacterSheet } from '../types/Character.js';
-import { VALID_ABILITIES } from '../utils/AbilityConstants.js';
+import type { CharacterSheet, Ability } from '../types/Character.js';
+import { VALID_ABILITIES, isValidAbility as isValidAbilityCheck } from '../utils/AbilityConstants.js';
 import { validatePrerequisites } from '../utils/PrerequisiteValidator.js';
 
 /**
@@ -340,6 +340,19 @@ export class SkillValidator {
         // Must start with a letter
         // Examples: 'athletics', 'survival_cold', 'arcana_planar'
         return /^[a-z][a-z0-9_]*$/.test(id);
+    }
+
+    /**
+     * Check if a value is a valid ability score
+     *
+     * Re-exports the shared isValidAbility function for convenience.
+     * Uses the same validation as all other systems for consistency.
+     *
+     * @param ability - The ability value to check
+     * @returns True if the value is a valid ability (STR, DEX, CON, INT, WIS, CHA)
+     */
+    static isValidAbility(ability: string): ability is Ability {
+        return isValidAbilityCheck(ability);
     }
 
     /**

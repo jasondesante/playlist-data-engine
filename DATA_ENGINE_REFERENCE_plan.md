@@ -571,16 +571,23 @@ All 5 methods verified in `src/core/extensions/WeightedSelector.ts`. The `normal
 - **Location discrepancy:** Types are exported from `SkillTypes.ts`, not `SkillRegistry.ts` (code is more organized)
 - Tests: 81/81 passing (unit tests) + 9/9 passing (integration tests)
 
-### Task 6.7: SkillValidator (8 items)
-- [ ] class SkillValidator (static) → src/core/skills/SkillValidator.ts
-  - [ ] validateSkill(skill): SkillValidationResult
-  - [ ] validateSkills(skills): SkillValidationResult
-  - [ ] validateSkillProficiency(proficiency): SkillValidationResult
-  - [ ] validateSkillProficiencies(proficiencies): SkillValidationResult
-  - [ ] validateSkillListDefinition(skillList): SkillValidationResult
-  - [ ] validateSkillPrerequisites(prerequisites, character): SkillValidationResult
-  - [ ] isValidAbility(ability): ability is Ability
-  - [ ] isValidSkillId(id): boolean
+### Task 6.7: SkillValidator (8 items) ✅ COMPLETED
+- [x] class SkillValidator (static) → src/core/skills/SkillValidator.ts
+  - [x] validateSkill(skill): SkillValidationResult ✅ (line 50)
+  - [x] validateSkills(skills): SkillValidationResult ✅ (line 159)
+  - [x] validateSkillProficiency(proficiency): SkillValidationResult ✅ (line 188)
+  - [x] validateSkillProficiencies(proficiencies): SkillValidationResult ✅ (line 237)
+  - [x] validateSkillListDefinition(skillList): SkillValidationResult ✅ (line 266)
+  - [x] validateSkillPrerequisites(prerequisites, character): SkillValidationResult ✅ (line 355)
+  - [x] isValidAbility(ability): ability is Ability ✅ **IMPLEMENTED** (line 344 - re-exports shared function for convenience)
+  - [x] isValidSkillId(id): boolean ✅ (line 338)
+
+**Verification Results:**
+All 8 methods verified in `src/core/skills/SkillValidator.ts`. The `isValidAbility()` method was missing and has been implemented as a convenience static method that re-exports the shared `isValidAbility` function from `AbilityConstants.ts` (same pattern as FeatureValidator and SpellValidator).
+
+**Implementation Notes:**
+- `isValidAbility(ability: string): ability is Ability` - Added as public static method at line 344. Re-exports the shared `isValidAbility` function from `AbilityConstants.ts` for consistency across all validation systems.
+- Tests: 185/185 passing across skill-related test files (skills.test.ts, skillRegistry.test.ts, skillPrerequisites.test.ts, skillIntegration.test.ts)
 
 ### Task 6.8: SpellRegistry & Types (20 items)
 - [ ] SpellSchool, RegisteredSpell, SpellPrerequisite, SpellValidationResult → src/core/spells/SpellRegistry.ts
@@ -654,7 +661,7 @@ All 5 methods verified in `src/core/extensions/WeightedSelector.ts`. The `normal
 | 3 | Progression & Combat | ~80 | ✅ COMPLETED |
 | 4 | Environmental & Gaming | ~50 | ✅ COMPLETED (50/50 done) |
 | 5 | Equipment System | ~46 | ✅ COMPLETED (46/46 done) |
-| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (79/120 done; Tasks 6.1-6.6 complete) |
+| 6 | Extensibility System | ~120 | 🔄 IN PROGRESS (87/120 done; Tasks 6.1-6.7 complete) |
 | 7 | Game Data Constants | ~15 | ⬜ Not Started |
 | 8 | Fix ExtensionManager Discrepancies | ~6 | ✅ COMPLETED (6/6 done) |
 | **Total** | | **~481** | |
