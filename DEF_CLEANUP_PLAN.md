@@ -174,7 +174,7 @@ The following items are noted for awareness but should NOT be resolved:
 **Estimated Items**: 6 tasks
 
 ### Task 6.1: Environmental Types Location (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Environmental types documented at `src/types/SensorTypes.ts` → actual locations:
+- [x] Update DATA_ENGINE_REFERENCE.md: Environmental types documented at `src/types/SensorTypes.ts` → actual locations:
   - EnvironmentalContext → `src/core/types/Environmental.ts` (155-163)
   - GeolocationData → `src/core/types/Environmental.ts` (94-102)
   - MotionData → `src/core/types/Environmental.ts` (104-122)
@@ -269,7 +269,7 @@ The following items are noted for awareness but should NOT be resolved:
 | 3 | Character Generation Documentation | 11 | Pending |
 | 4 | Progression System Documentation | 4 | Pending |
 | 5 | Combat System Documentation | 2 | Pending |
-| 6 | Environmental Types Documentation | 6 | Pending |
+| 6 | Environmental Types Documentation | 6 | 1/6 completed |
 | 7 | Gaming Integration Documentation | 4 | Pending |
 | 8 | Equipment Types Documentation | 1 | Pending |
 | **Total** | | **37** | |

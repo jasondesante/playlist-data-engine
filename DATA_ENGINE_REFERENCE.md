@@ -480,6 +480,8 @@ export interface CharacterAppearance {
 
 ### EnvironmentalContext
 
+**Location:** `src/core/types/Environmental.ts` (155-163)
+
 Aggregated environmental sensor data.
 
 ```typescript
@@ -497,6 +499,11 @@ export interface EnvironmentalContext {
     timestamp: number;
 }
 
+### GeolocationData
+
+**Location:** `src/core/types/Environmental.ts` (94-102)
+
+```typescript
 export interface GeolocationData {
     latitude: number;
     longitude: number;
@@ -508,6 +515,11 @@ export interface GeolocationData {
     timestamp: number;            // Unix timestamp
 }
 
+### MotionData
+
+**Location:** `src/core/types/Environmental.ts` (104-122)
+
+```typescript
 export interface MotionData {
     acceleration: {
         x: number;  // m/s²
@@ -528,7 +540,13 @@ export interface MotionData {
     activity_type: 'stationary' | 'walking' | 'running' | 'driving' | 'unknown';
     timestamp: number;
 }
+```
 
+### WeatherData
+
+**Location:** `src/core/types/Environmental.ts` (124-134)
+
+```typescript
 export interface WeatherData {
     temperature: number;          // Celsius
     feels_like: number;           // Apparent temperature
@@ -542,13 +560,25 @@ export interface WeatherData {
     moon_phase?: number;          // 0.0 to 1.0 (new to full)
     timestamp: number;
 }
+```
 
+### LightData
+
+**Location:** `src/core/types/Environmental.ts` (148-151)
+
+```typescript
 export interface LightData {
     illuminance: number;          // lux (light intensity)
     timestamp: number;
     environment: 'bright_daylight' | 'indoor' | 'dim' | 'dark';
 }
+```
 
+### ForecastData
+
+**Location:** `src/core/types/Environmental.ts` (136-146)
+
+```typescript
 export interface ForecastData {
     temperature: number;          // Celsius
     humidity: number;             // Percentage
@@ -564,10 +594,12 @@ export interface ForecastData {
 
 ### Sensor-Related Types
 
-```typescript
-export type SensorType = 'geolocation' | 'motion' | 'weather' | 'light';
+**Location:** `src/core/types/Environmental.ts`
 
-export interface PerformanceMetrics {
+```typescript
+export type SensorType = 'geolocation' | 'motion' | 'weather' | 'light'; // (1)
+
+export interface PerformanceMetrics { // (6-19)
     successCount: number;        // Number of successful API calls
     errorCount: number;          // Number of failed API calls
     totalTime: number;           // Total time spent on successful API calls (milliseconds)
@@ -576,7 +608,7 @@ export interface PerformanceMetrics {
     lastCallTimestamp: number | null;
 }
 
-export interface PerformanceStatistics {
+export interface PerformanceStatistics { // (24-35)
     average: number;             // Average API call time in milliseconds
     min: number;                 // Minimum API call time in milliseconds
     max: number;                 // Maximum API call time in milliseconds
@@ -584,15 +616,15 @@ export interface PerformanceStatistics {
     successRate: number;         // Success rate as percentage (0-100)
 }
 
-export interface SensorPermission {
+export interface SensorPermission { // (37-41)
     type: SensorType;
     granted: boolean;
     timestamp: number;
 }
 
-export type SensorHealthStatus = 'healthy' | 'degraded' | 'failed' | 'unknown';
+export type SensorHealthStatus = 'healthy' | 'degraded' | 'failed' | 'unknown'; // (46)
 
-export interface SensorStatus {
+export interface SensorStatus { // (51-60)
     type: SensorType;
     health: SensorHealthStatus;
     lastSuccessTimestamp: number | null;
@@ -603,7 +635,7 @@ export interface SensorStatus {
     isRetrying: boolean;
 }
 
-export interface SensorFailureLog {
+export interface SensorFailureLog { // (65-71)
     sensorType: SensorType;
     timestamp: number;
     error: string;
@@ -611,21 +643,27 @@ export interface SensorFailureLog {
     willRetry: boolean;
 }
 
-export interface SensorRetryConfig {
+export interface SensorRetryConfig { // (76-81)
     maxRetries: number;
     initialDelayMs: number;
     maxDelayMs: number;
     backoffMultiplier: number;
 }
 
-export interface SensorRecoveryNotification {
+export interface SensorRecoveryNotification { // (86-92)
     sensorType: SensorType;
     previousStatus: SensorHealthStatus;
     newStatus: SensorHealthStatus;
     timestamp: number;
     message: string;
 }
+```
 
+### SevereWeatherAlert
+
+**Location:** `src/core/sensors/WeatherAPIClient.ts` (50-56)
+
+```typescript
 export interface SevereWeatherAlert {
     type: 'Blizzard' | 'Hurricane' | 'Typhoon' | 'Tornado' | 'None';
     xpBonus: number;             // 0.5 to 1.0 (50% to 100%)
