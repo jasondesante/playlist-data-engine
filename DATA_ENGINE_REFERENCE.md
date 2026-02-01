@@ -1692,6 +1692,11 @@ Orchestrates applying session results to a character, handling leveling up and m
 
 **Methods:**
 
+- `constructor(statManager?: StatManager)`
+  - Creates a new CharacterUpdater instance
+  - Optionally accepts a StatManager to override the default stat increase strategy
+  - If no StatManager is provided, the strategy is auto-detected based on the character's gameMode
+
 - `addXP(character: CharacterSheet, xpAmount: number, source?: string): Omit<CharacterUpdateResult, 'masteredTrack' | 'masteryBonusXP'>`
   - Add XP from any source (combat, quests, custom activities)
   - Triggers the same level-up system as listening sessions

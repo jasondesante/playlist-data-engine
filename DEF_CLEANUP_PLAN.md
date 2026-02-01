@@ -129,7 +129,7 @@ The following items are noted for awareness but should NOT be resolved:
 **Estimated Items**: 4 tasks
 
 ### Task 4.1: CharacterUpdater Constructor Documentation (1 item)
-- [ ] Update DATA_ENGINE_REFERENCE.md: Add missing `constructor(statManager?: StatManager)` method for CharacterUpdater (exists at `src/core/progression/CharacterUpdater.ts:28`)
+- [x] Update DATA_ENGINE_REFERENCE.md: Add missing `constructor(statManager?: StatManager)` method for CharacterUpdater (exists at `src/core/progression/CharacterUpdater.ts:28`)
 
 ### Task 4.2: LevelUpProcessor.getXPThreshold Signature (1 item)
 - [ ] Update DATA_ENGINE_REFERENCE.md: `getXPThreshold(level: number): number` → actual signature is `getXPThreshold(level: number, isUncapped: boolean = false): number` (at `src/core/progression/LevelUpProcessor.ts:463`)
