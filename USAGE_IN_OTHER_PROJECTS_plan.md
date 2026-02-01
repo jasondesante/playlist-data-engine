@@ -2449,23 +2449,73 @@ This verification plan ensures documentation-code alignment by systematically ch
 - **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.9: Game Data Constants → src/utils/constants.ts
-- [ ] `RACE_DATA: Record<Race, RaceInfo>` - **Type `RaceInfo` needs investigation**
-- [ ] `CLASS_DATA: Record<Class, ClassInfo>` - **Type `ClassInfo` needs investigation**
-- [ ] `ALL_RACES: Race[]`
-- [ ] `ALL_CLASSES: Class[]`
-- [ ] `XP_THRESHOLDS: Record<number, number>`
-- [ ] `PROFICIENCY_BONUS: Record<number, number>`
-- [ ] `SKILL_ABILITY_MAP: Record<Skill, Ability>`
-- [ ] `SPELL_DATABASE: Spell[]`
-- [ ] `CLASS_SPELL_LISTS: Record<Class, Spell[]>`
-- [ ] `SPELL_SLOTS_BY_CLASS: Record<string, Record<number, SpellSlots>>`
-- [ ] `CLASS_STARTING_EQUIPMENT: Record<Class, Equipment[]>`
-  - [ ] Type `Equipment` vs `EnhancedEquipment` - **NEEDS INVESTIGATION**
-- [ ] `EQUIPMENT_DATABASE: Equipment[]`
-- [ ] `MASTERY_THRESHOLD: number`
-- [ ] `MASTERY_BONUS_XP: number`
-- [ ] Type `Spell` exists
-- [ ] Type `SpellPrerequisite` exists
+- [x] `RACE_DATA: Record<Race, RaceDataEntry>` - **Type `RaceDataEntry` exists (not `RaceInfo`)**
+- [x] `CLASS_DATA: Record<Class, ClassDataEntry>` - **Type `ClassDataEntry` exists (not `ClassInfo`)**
+- [x] `ALL_RACES: Race[]`
+- [x] `ALL_CLASSES: Class[]`
+- [x] `XP_THRESHOLDS: Record<number, number>`
+- [x] `PROFICIENCY_BONUS: Record<number, number>`
+- [x] `SKILL_ABILITY_MAP: Record<Skill, Ability>`
+- [x] `SPELL_DATABASE: Record<string, Spell>`
+- [x] `CLASS_SPELL_LISTS: Record<string, ClassSpellListData>`
+- [x] `SPELL_SLOTS_BY_CLASS: Record<string, Record<number, Record<number, number>>>`
+- [x] `CLASS_STARTING_EQUIPMENT: Record<string, ClassStartingEquipmentData>`
+  - [x] Type `Equipment` (local interface in constants.ts) vs `EnhancedEquipment` (from core/types/Equipment.ts)
+- [x] `EQUIPMENT_DATABASE: Record<string, Equipment>`
+- [x] `MASTERY_THRESHOLD: number`
+- [x] `MASTERY_BONUS_XP: number`
+- [x] Type `Spell` exists (imported from src/core/spells/SpellTypes.ts)
+- [x] Type `SpellPrerequisite` exists (imported from src/core/spells/SpellTypes.ts)
+
+**Task 9.9 Summary - COMPLETED**:
+- **VERIFIED**: All 16 game data constants exist at src/utils/constants.ts
+- **VERIFIED**: All constants properly exported from src/index.ts at lines 414-433
+- **TYPE INVESTIGATION RESULTS**:
+  - **`RaceInfo` does NOT exist** - Actual type is `RaceDataEntry` (line 23) with properties: `ability_bonuses`, `speed`, `traits`, `subraces?`
+  - **`ClassInfo` does NOT exist** - Actual type is `ClassDataEntry` (line 291) with properties: `name?`, `primary_ability`, `hit_die`, `saving_throws`, `is_spellcaster`, `skill_count`, `available_skills`, `has_expertise`, `expertise_count?`, `baseClass?`, `audio_preferences?`
+  - **`Equipment` vs `EnhancedEquipment`**:
+    - `Equipment` is a local interface defined in constants.ts (line 1251) - simplified version with basic properties
+    - `EnhancedEquipment` is the full-featured type from src/core/types/Equipment.ts - used by the equipment system
+    - `CLASS_STARTING_EQUIPMENT` type actually uses inline type `{ weapons: string[], armor: string[], items: string[] }`
+    - `EQUIPMENT_DATABASE` type is `Record<string, Equipment>` using the local interface
+- **VERIFIED CONSTANTS**:
+  - `RACE_DATA` (line 100): Record<Race, RaceDataEntry> - 9 races (Human, Elf, Dwarf, Halfling, Dragonborn, Gnome, Half-Elf, Half-Orc, Tiefling)
+  - `CLASS_DATA` (line 556): Record<string, {...}> - 12 D&D 5e classes with detailed data
+  - `CLASS_AUDIO_PREFERENCES` (line 695): Audio preferences for class affinity (not in original checklist but exported)
+  - `ALL_RACES` (line 809): Race[] array of all 9 races using `asRace()` type cast
+  - `ALL_CLASSES` (line 822): Class[] array of all 12 classes
+  - `XP_THRESHOLDS` (line 776): Record<number, number> - D&D 5e XP thresholds for levels 1-20
+  - `PROFICIENCY_BONUS` (line 800): Record<number, number> - Proficiency bonus by level
+  - `SKILL_ABILITY_MAP` (line 858): Record<Skill, Ability> - Maps each skill to its ability
+  - `SPELL_DATABASE` (line 894): Record<string, Spell> - ~50 D&D 5e spells organized by level and school
+  - `CLASS_SPELL_LISTS` (line 964): Record<string, ClassSpellListData> - Spell lists for 8 spellcasting classes
+  - `SPELL_SLOTS_BY_CLASS` (line 1069): Record<string, Record<number, Record<number, number>>> - Spell slot progression for 8 classes
+  - `CLASS_STARTING_EQUIPMENT` (line 1312): Record<string, {...}> - Starting equipment for 12 classes
+  - `EQUIPMENT_DATABASE` (line 1554): Record<string, Equipment> - ~50 equipment items (weapons, armor, items, packs, ammunition)
+  - `MASTERY_THRESHOLD` (line 2005): number = 10 - Minimum listen count for track mastery
+  - `MASTERY_BONUS_XP` (line 2008): number = 50 - Bonus XP for mastered tracks
+- **VERIFIED TYPES** (exported from src/index.ts line 119-120):
+  - `Spell` type - imported from src/core/spells/SpellTypes.ts
+  - `SpellPrerequisite` type - imported from src/core/spells/SpellTypes.ts
+  - `RaceDataEntry`, `CustomRaceDataEntry`, `ClassDataEntry`, `ClassSpellListData` - defined in constants.ts but NOT exported from src/index.ts (internal use only)
+- **VERIFIED HELPER FUNCTIONS**:
+  - `getRaceData(race: string): RaceDataEntry | undefined` (line 192) - sync version
+  - `getRaceDataAsync(race: string): Promise<RaceDataEntry | undefined>` (line 147) - async version
+  - `getClassData(className: string): ClassDataEntry | undefined` (line 519) - sync version with template inheritance support
+  - `getClassDataAsync(className: string): Promise<ClassDataEntry | undefined>` (line 423) - async version with template inheritance
+  - `getClassSpellList(className: string): ...` (line 1392)
+  - `getSpellSlotsForClass(className: string, characterLevel: number): ...` (line 1452)
+  - `getClassStartingEquipment(className: string): ...` (line 1518)
+- **SIGNATURE NOTES**: Several types differ from task checklist:
+  - `RACE_DATA` type is `RaceDataEntry`, not `RaceInfo`
+  - `CLASS_DATA` value type is inline type, not `ClassInfo` (but `ClassDataEntry` interface exists for documentation)
+  - `SPELL_DATABASE` type is `Record<string, Spell>`, not `Spell[]`
+  - `CLASS_SPELL_LISTS` type is `Record<string, ClassSpellListData>`, not `Record<Class, Spell[]>`
+  - `SPELL_SLOTS_BY_CLASS` type uses triple nested Records, not `SpellSlots` type
+  - `CLASS_STARTING_EQUIPMENT` value type is inline, not using `Equipment[]`
+  - `EQUIPMENT_DATABASE` type is `Record<string, Equipment>`, not `Equipment[]`
+- **DOCUMENTATION GAP**: Game Data Constants are partially documented in USAGE_IN_OTHER_PROJECTS.md
+- **BUILD STATUS**: Clean - build successful, type check passed
 
 ### Task 9.10: Configuration → src/core/config/
 - [ ] `DEFAULT_SENSOR_CONFIG: SensorConfig`
