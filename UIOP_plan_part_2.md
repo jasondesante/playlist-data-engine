@@ -51,9 +51,24 @@ This plan lists all discrepancies, documentation errors, and action items discov
 **Action Required**:
 - [x] Document how attacks are actually computed/accessed and decide from there if the `attacks` property should be added to `CharacterSheet`. I am leaning towards getting rid of `attacks` if there is literally no use for it, and the engine uses `Attack`.
 - [x] Remove references to `attacks` property on `CharacterSheet` from documentation
-- [ ] OR add the `attacks` property to `CharacterSheet` interface if it was intended to be there
+- [x] OR add the `attacks` property to `CharacterSheet` interface if it was intended to be there
 
-**Resolution (2026-02-02)**: The `attacks` property does NOT exist on `CharacterSheet`. The `Attack` type exists for combat operations, but attacks must be constructed from equipment (weapons) by the user. Fixed documentation to show proper pattern: extract weapon data from `character.equipment.weapons` and construct an `Attack` object. See USAGE_IN_OTHER_PROJECTS.md:942-956.
+**Resolution (2026-02-02)**: The `attacks` property does NOT exist on `CharacterSheet`. Rather than requiring users to manually construct `Attack` objects from equipment data (which was the original documentation approach and was overly complicated), added `CombatEngine.executeWeaponAttack()` method that automatically:
+- Finds equipped weapons from `character.equipment.weapons.filter(w => w.equipped)`
+- Looks up weapon damage data from `EQUIPMENT_DATABASE[weaponName]`
+- Builds the `Attack` object internally
+- Executes the attack
+
+**Usage:**
+```typescript
+// Simple - just specify attacker and target
+combat.executeWeaponAttack(combatInstance, attacker, target);
+
+// Or specify a specific weapon if multiple are equipped
+combat.executeWeaponAttack(combatInstance, attacker, target, 'Longsword');
+```
+
+This is the proper API design - the engine knows what's equipped and handles the details automatically. Documentation updated in USAGE_IN_OTHER_PROJECTS.md and DATA_ENGINE_REFERENCE.md.
 
 **Impact**: Medium - Users may try to access `character.attacks` and get undefined
 
