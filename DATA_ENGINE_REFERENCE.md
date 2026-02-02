@@ -1007,6 +1007,73 @@ interface LoggerConfig {
 | `Logger.disableDiagnosticMode()` | `void` | Disable diagnostic mode |
 | `Logger.isDiagnosticMode()` | `boolean` | Check if diagnostic mode is enabled |
 
+**Sensor Dashboard**
+
+*Location: `src/utils/sensorDashboard.ts`*
+
+The Sensor Dashboard provides formatted console output for sensor diagnostics during development and debugging. It displays sensor status, health indicators, cache statistics, performance metrics, and recent failures with optional color support.
+
+```typescript
+interface DashboardConfig {
+    /** Use colors in output (default: true, auto-disabled in non-TTY environments) */
+    useColors?: boolean;
+    /** Compact mode for smaller output (default: false) */
+    compact?: boolean;
+    /** Show timestamp (default: true) */
+    showTimestamp?: boolean;
+    /** Maximum number of recent failures to show (default: 5) */
+    maxFailures?: number;
+}
+```
+
+**Functions:**
+
+- `displayEnvironmentalDiagnostics(diagnostics, config?): void`
+    - Displays environmental sensor dashboard (GPS, motion, weather, light sensors)
+    - Shows sensor health, permissions, availability, cache stats, API performance, recent failures
+    - **Parameters:**
+        - `diagnostics`: Return value of `EnvironmentalSensors.getDiagnostics()`
+        - `config`: Optional `DashboardConfig` object
+- `displayGamingDiagnostics(diagnostics, config?): void`
+    - Displays gaming platform sensor dashboard (Steam, Discord)
+    - Shows platform connection status, current game, polling status, cache, API performance
+    - **Parameters:**
+        - `diagnostics`: Return value of `GamingPlatformSensors.getDiagnostics()`
+        - `config`: Optional `DashboardConfig` object
+- `displaySystemDashboard(data, config?): void`
+    - Displays a combined system dashboard with quick health summary
+    - **Parameters:**
+        - `data`: Object with optional `environmental` and `gaming` diagnostics
+        - `config`: Optional `DashboardConfig` object
+
+**SensorDashboard Object:**
+
+All dashboard functions are also available as methods of the `SensorDashboard` object:
+
+```typescript
+import { SensorDashboard } from 'playlist-data-engine';
+
+SensorDashboard.displayEnvironmentalDiagnostics(diagnostics);
+SensorDashboard.displayGamingDiagnostics(diagnostics);
+SensorDashboard.displaySystemDashboard({ environmental, gaming });
+```
+
+**Dashboard Output Sections:**
+
+*Environmental Diagnostics:*
+- Sensor Status (health, permissions, availability, consecutive failures, last error)
+- Cache Statistics (geolocation age/expiry, weather cache size, hit rates)
+- API Performance (Weather API, Forecast API - calls, success rate, avg/min/max/P95/P99 times)
+- Recent Failures (sensor type, error, retry attempt, time ago)
+- Context Data (geolocation, motion, weather, light, biome availability)
+
+*Gaming Diagnostics:*
+- Platform Status (Steam authentication/API key, Discord connection/client ID/state)
+- Gaming Context (active gaming, platform, current game with session duration/party size)
+- Polling Status (active status, interval, exponential backoff)
+- Cache (game metadata size, cached games list)
+- API Performance (Current Game API, Metadata API metrics)
+
 ---
 
 ### Game Data Reference

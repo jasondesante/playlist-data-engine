@@ -1590,6 +1590,82 @@ Logger.reset();
 
 ---
 
+### Sensor Dashboard
+
+The Sensor Dashboard provides formatted console output for sensor diagnostics during development and debugging. It displays sensor status, health indicators, cache statistics, performance metrics, and recent failures with optional ANSI color support (auto-disabled in non-TTY environments like CI).
+
+#### Basic Usage
+
+```typescript
+import { SensorDashboard, EnvironmentalSensors, GamingPlatformSensors } from 'playlist-data-engine';
+
+// Initialize sensors
+const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
+const gamingSensors = new GamingPlatformSensors({
+    steamApiKey: process.env.STEAM_API_KEY,
+    discordClientId: process.env.DISCORD_CLIENT_ID
+});
+
+// Get sensor data
+const envDiagnostics = sensors.getDiagnostics();
+const gamingDiagnostics = gamingSensors.getDiagnostics();
+
+// Display individual dashboards
+SensorDashboard.displayEnvironmentalDiagnostics(envDiagnostics);
+SensorDashboard.displayGamingDiagnostics(gamingDiagnostics);
+
+// Display combined system dashboard
+SensorDashboard.displaySystemDashboard({
+    environmental: envDiagnostics,
+    gaming: gamingDiagnostics
+});
+```
+
+#### Custom Configuration
+
+```typescript
+import { SensorDashboard, type DashboardConfig } from 'playlist-data-engine';
+
+const config: DashboardConfig = {
+    useColors: false,        // Disable colors (for CI/logs)
+    compact: true,           // Compact output mode
+    showTimestamp: false,    // Hide timestamp
+    maxFailures: 10          // Show up to 10 recent failures
+};
+
+SensorDashboard.displayEnvironmentalDiagnostics(diagnostics, config);
+```
+
+#### Dashboard Sections
+
+**Environmental Diagnostics:**
+- Sensor Status - Health, permissions, availability, consecutive failures, last error
+- Cache Statistics - Geolocation age/expiry, weather cache size, hit rates
+- API Performance - Weather/Forecast API calls, success rate, timing metrics (P95/P99)
+- Recent Failures - Error messages with retry status and time ago
+- Context Data - Available context types (geolocation, motion, weather, light, biome)
+
+**Gaming Diagnostics:**
+- Platform Status - Steam authentication/API key, Discord connection state
+- Gaming Context - Active gaming status, current game with session details
+- Polling Status - Active status, interval, exponential backoff multiplier
+- Cache - Game metadata cache size and cached games list
+- API Performance - Current Game/Metadata API metrics
+
+**Quick Health Summary (System Dashboard):**
+- Overall environmental sensor health count
+- Gaming platform connection status
+
+#### Available Exports
+
+- `SensorDashboard` - Object containing all dashboard display functions
+- `displayEnvironmentalDiagnostics()` - Display environmental sensor dashboard
+- `displayGamingDiagnostics()` - Display gaming platform sensor dashboard
+- `displaySystemDashboard()` - Display combined system dashboard
+- `DashboardConfig` type - Configuration options for dashboard output
+
+---
+
 ## Extensibility System
 
 **For detailed extensibility documentation, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
@@ -2030,6 +2106,13 @@ All TypeScript types are exported, including:
 - `LogLevel` - Log level enum (DEBUG, INFO, WARN, ERROR, NONE)
 - `LogEntry` - Log entry structure type
 - `LoggerConfig` - Logger configuration options type
+
+**Sensor Dashboard (NEW)**
+- `SensorDashboard` - Diagnostic dashboard for visualizing sensor status in console
+- `displayEnvironmentalDiagnostics()` - Display environmental sensor diagnostics
+- `displayGamingDiagnostics()` - Display gaming platform sensor diagnostics
+- `displaySystemDashboard()` - Display combined system dashboard
+- `DashboardConfig` - Dashboard configuration options type
 
 **Validation Schemas**
 - `PlaylistTrackSchema` - Zod schema for validating playlist track metadata
