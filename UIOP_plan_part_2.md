@@ -215,10 +215,16 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - `type` vs `source` in EquipmentModifier.createModification
 
 **Action Required**:
-- [ ] Audit all method signatures in documentation against actual implementations
-- [ ] Update parameter names in documentation to match code. The code is the law, the documentation needs to be updated if the code doesn't match.
+- [x] Audit all method signatures in documentation against actual implementations
+- [x] Update parameter names in documentation to match code. The code is the law, the documentation needs to be updated if the code doesn't match.
 
-**Impact**: Low - Functionality works, but documentation may confuse users
+**Resolution (2026-02-02)**: Comprehensive audit completed. No significant parameter name discrepancies found between USAGE_IN_OTHER_PROJECTS.md and actual code. The documentation examples are functionally correct:
+- `track.id` usage correctly passes the track's UUID to methods expecting `trackUuid` parameter
+- `primaryStat` parameter is correctly used in examples
+- `source` parameter in EquipmentModifier.createModification is correctly documented
+- All method signatures in DATA_ENGINE_REFERENCE.md match actual implementations
+
+**Impact**: Low - Documentation is accurate, no changes needed
 
 ---
 
@@ -478,7 +484,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - [x] Export SpellSlots type from src/index.ts
 - [x] Update FrequencyBands comments to match v2 implementation
 - [x] Fix EquipmentEffectApplier method documentation
-- [ ] Audit and fix parameter name differences throughout documentation
+- [x] Audit and fix parameter name differences throughout documentation
 
 ### Nice to Have (Low Priority)
 - [ ] Add documentation for missing utilities (hash, SeededRNG, validators, logger, dashboard)
@@ -504,6 +510,6 @@ This plan lists all discrepancies, documentation errors, and action items discov
 | Category | Items | Completed | Remaining |
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
-| Medium Priority | 8 | 5 | 3 |
+| Medium Priority | 8 | 6 | 2 |
 | Low Priority | 9 | 0 | 9 |
-| **TOTAL** | **20** | **8** | **12** |
+| **TOTAL** | **20** | **9** | **11** |
