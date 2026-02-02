@@ -171,26 +171,110 @@ const registry = FeatureRegistry.getInstance();
 const highElfTraits = registry.getRacialTraitsForSubrace('Elf', 'High Elf');
 ```
 
-### Example Subrace-Specific Trait
+### Complete Subrace Registration Example
+
+```typescript
+import { ExtensionManager, CharacterGenerator } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// ===== REGISTER CUSTOM RACE WITH SUBRACES =====
+// Step 1: Register the race name
+manager.register('races', ['Dragonkin'], { validate: true });
+
+// Step 2: Register the race data (ability bonuses, speed, traits, subraces)
+manager.register('races.data', [{
+    race: 'Dragonkin',
+    ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
+    speed: 30,
+    traits: ['Draconic Ancestry', 'Darkvision'],
+    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
+}]);
+
+// ===== REGISTER SUBRACE-SPECIFIC TRAITS =====
+// Fire Dragonkin only
+manager.register('racialTraits', [{
+    id: 'fire_dragonkin_resistance',
+    name: 'Fire Resistance',
+    description: 'Resistance to fire damage',
+    race: 'Dragonkin',
+    subrace: 'Fire Dragonkin',  // Only for this subrace
+    effects: [
+        { type: 'passive_modifier', target: 'fire_resistance', value: true }
+    ],
+    source: 'custom'
+}]);
+
+// Ice Dragonkin only
+manager.register('racialTraits', [{
+    id: 'ice_dragonkin_resistance',
+    name: 'Cold Resistance',
+    description: 'Resistance to cold damage',
+    race: 'Dragonkin',
+    subrace: 'Ice Dragonkin',
+    effects: [
+        { type: 'passive_modifier', target: 'cold_resistance', value: true }
+    ],
+    source: 'custom'
+}]);
+
+// ===== GENERATE CHARACTER WITH SUBRACE =====
+const character = CharacterGenerator.generate(seed, audioProfile, 'Pyro');
+// After generation, set the subrace
+character.subrace = 'Fire Dragonkin';
+
+// Character will have:
+// - Base Dragonkin traits (Draconic Ancestry, Darkvision)
+// - Subrace-specific traits (Fire Resistance)
+// - Correct ability bonuses (STR+2, CON+1, CHA+1)
+```
+
+### Feature with Subrace Prerequisite
+
+Traits can require a specific subrace via prerequisites:
 
 ```typescript
 import { FeatureRegistry } from 'playlist-data-engine';
 
-const fireDragonkinResistance = {
-    id: 'fire_dragonkin_fire_resistance',
-    name: 'Fire Resistance',
+// Trait that requires a specific subrace
+FeatureRegistry.getInstance().registerRacialTrait({
+    id: 'inferno_breath',
+    name: 'Inferno Breath',
+    description: 'Breathe fire like a true red dragon',
     race: 'Dragonkin',
-    subrace: 'Fire Dragonkin',  // Only for this subrace
+    subrace: 'Fire Dragonkin',
     prerequisites: {
-        subrace: 'Fire Dragonkin'
+        subrace: 'Fire Dragonkin',  // Must be Fire Dragonkin
+        level: 5
     },
     effects: [
-        { type: 'ability_unlock', target: 'fire_resistance', value: true }
+        { type: 'active_ability', target: 'fire_breath', value: '6d6' }
     ],
     source: 'custom'
-};
+});
+```
 
-FeatureRegistry.getInstance().registerRacialTrait(fireDragonkinResistance);
+**Type Augmentation for Custom Races:**
+
+Since `Race` is a closed union, extend it in your project:
+
+```typescript
+// In your project's global types file
+import 'playlist-data-engine';
+
+declare module 'playlist-data-engine' {
+    type Race =
+        | 'Human' | 'Elf' | 'Dwarf'
+        | 'Dwarf' | 'Halfling' | 'Dragonborn' | 'Gnome'
+        | 'Half-Elf' | 'Half-Orc' | 'Tiefling'
+        | 'Dragonkin';  // Custom race
+}
+
+// Now TypeScript accepts 'Dragonkin' as a valid Race
+const dragonkinCharacter: CharacterSheet = {
+    // ...
+    race: 'Dragonkin'  // No TypeScript error!
+};
 ```
 
 ---
@@ -435,10 +519,14 @@ manager.register('classes.data', [{
 manager.register('classes', [asClass('Necromancer')]);
 ```
 
-**Complete Custom Class (without baseClass):**
+**Complete Custom Class** (from scratch):
 
 ```typescript
-// Register a complete custom class (no inheritance)
+import { ExtensionManager, asClass } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Step 1: Register complete custom class data
 manager.register('classes.data', [{
     name: 'Runecaster',
     // No baseClass - must specify everything
@@ -451,7 +539,101 @@ manager.register('classes.data', [{
     has_expertise: false
 }]);
 
+// Step 2: Register the class name
 manager.register('classes', [asClass('Runecaster')]);
+
+// Step 3: (Optional) Set custom spell list
+manager.register('classSpellLists.Runecaster', [{
+    cantrips: ['druidcraft', 'guidance', 'resistance'],
+    spells_by_level: {
+        1: ['detect magic', 'magic stone', 'faerie fire']
+    }
+}]);
+
+// Step 4: (Optional) Set custom spell slot progression
+manager.register('classSpellSlots', [{
+    class: 'Runecaster',
+    slots: {
+        1: { 1: 2 },
+        2: { 1: 3 },
+        3: { 1: 4, 2: 2 }
+        // ... define for all levels 1-20
+    }
+}]);
+
+// Step 5: (Optional) Set custom starting equipment
+manager.register('classStartingEquipment.Runecaster', [{
+    weapons: ['Quarterstaff', 'Dagger'],
+    armor: [],
+    items: ['Component pouch', 'Spellbook']
+}]);
+
+// Now generate a Runecaster character!
+const character = CharacterGenerator.generate(
+    'my-seed',
+    audioProfile,
+    'Hero Name'
+);
+```
+
+**Class Data Properties:**
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | string | Yes | Unique class name |
+| `baseClass` | Class | No | If specified, inherits properties from this class |
+| `primary_ability` | Ability | Yes* | Primary ability score (STR, DEX, CON, INT, WIS, CHA) - required if no baseClass |
+| `hit_die` | number | Yes* | Hit die size (6, 8, 10, 12) - required if no baseClass |
+| `saving_throws` | Ability[] | Yes* | Two saving throw abilities - required if no baseClass |
+| `is_spellcaster` | boolean | Yes* | Can this class cast spells - required if no baseClass |
+| `skill_count` | number | Yes* | Number of skill proficiencies - required if no baseClass |
+| `available_skills` | string[] | Yes* | Array of skill IDs - required if no baseClass |
+| `has_expertise` | boolean | Yes* | Has expertise feature - required if no baseClass |
+| `expertise_count` | number | No | Number of expertise choices (if has_expertise is true) |
+| `audio_preferences` | object | No | Audio affinity for class suggestion |
+
+**Default Classes:**
+
+The 12 default D&D 5e classes are always available:
+`Barbarian`, `Bard`, `Cleric`, `Druid`, `Fighter`, `Monk`, `Paladin`, `Ranger`, `Rogue`, `Sorcerer`, `Warlock`, `Wizard`
+
+### Common Patterns
+
+Here are common patterns for creating custom classes using the template system:
+
+**Archetype Variant** - Same class, different flavor:
+
+```typescript
+{
+    name: 'BattleMage',
+    baseClass: 'Wizard',
+    hit_die: 10,           // More durable than standard Wizard
+    saving_throws: ['INT', 'CON'],  // CON instead of WIS
+    available_skills: ['arcana', 'athletics', 'intimidation']
+}
+```
+
+**Multiclass-Inspired** - Two classes combined:
+
+```typescript
+{
+    name: 'Spellsword',
+    baseClass: 'Fighter',
+    is_spellcaster: true,  // Add spellcasting
+    primary_ability: 'STR',  // Keep Fighter primary
+    available_skills: ['athletics', 'acrobatics', 'arcana', 'intimidation']
+}
+```
+
+**Specialist** - Narrow focus:
+
+```typescript
+{
+    name: 'Beastmaster',
+    baseClass: 'Ranger',
+    skill_count: 3,  // Extra skill for animal handling
+    available_skills: ['animal_handling', 'nature', 'survival', 'perception']
+}
 ```
 
 ### Custom Class Validation
@@ -496,126 +678,6 @@ class ClassSuggester {
 ```
 
 ---
-
-## Spawn Rate Control
-
-Both FeatureRegistry and SkillRegistry support per-item spawn rate control through ExtensionManager's weight system. This allows custom content to be more or less likely to appear during character generation.
-
-### Feature Spawn Rates
-
-```typescript
-import { ExtensionManager } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// Set spawn rates for Barbarian class features
-manager.setWeights('classFeatures.Barbarian', {
-    'rage': 1.0,                // Normal spawn rate
-    'unarmored_defense': 1.0,   // Normal spawn rate
-    'reckless_attack': 0.5,     // Half as likely
-    'danger_sense': 0.3,        // Less likely
-    'dragon_fury': 0.1          // Very rare (10% of normal)
-});
-
-// Set spawn rates for racial traits
-manager.setWeights('racialTraits.Elf', {
-    'darkvision': 1.0,
-    'fey_ancestry': 0.8,
-    'trance': 0.5,
-    'custom_elf_trait': 0.2     // Rare custom trait
-});
-```
-
-### Skill Spawn Rates
-
-```typescript
-// Set spawn rates for skills in general
-manager.setWeights('skills', {
-    'athletics': 1.0,
-    'acrobatics': 1.0,
-    'survival': 0.8,           // Slightly less common
-    'survival_cold': 0.3,      // Rare custom skill
-    'navigation': 0.5,         // Uncommon custom skill
-    'intimidation': 1.2        // More common than default
-});
-
-// Set spawn rates for class-specific skill lists
-manager.setWeights('skillLists.Rogue', {
-    'stealth': 1.5,            // Rogues very likely to get stealth
-    'perception': 1.3,
-    'acrobatics': 1.2,
-    'athletics': 0.5           // Less common for rogues
-});
-```
-
-### Weight Modes
-
-```typescript
-// Relative mode (default): Weights added to pool, normalized
-manager.register('classFeatures.Barbarian', customFeatures, {
-    mode: 'relative',
-    weights: { 'dragon_fury': 0.5 }  // Reduces probability by 50%
-});
-
-// Absolute mode: Only specified weights used, all others = 1
-manager.register('skills', customSkills, {
-    mode: 'absolute',
-    weights: {
-        'navigation': 5.0,    // Very common
-        'intimidation': 3.0,  // Common
-        'survival_cold': 1.0  // Normal
-    }
-    // All other skills implicitly have weight 1
-});
-
-// Default mode: Equal weights for all items
-manager.register('racialTraits', customTraits, {
-    mode: 'default'  // Ignore custom weights
-});
-```
-
-### Get Current Weights
-
-```typescript
-// Get combined weights (defaults + custom)
-const weights = manager.getWeights('skills');
-console.log(weights);
-// {
-//     athletics: 1.0,
-//     survival: 0.8,
-//     survival_cold: 0.3,
-//     navigation: 0.5,
-//     intimidation: 1.2,
-//     ...
-// }
-
-// Get default weights only
-const defaultWeights = manager.getDefaultWeights('skills');
-console.log(defaultWeights);
-// { athletics: 1.0, acrobatics: 1.0, ...all 1.0 }
-```
-
-### Advanced Patterns
-
-**Per-Category Weight Management:**
-
-```typescript
-const manager = ExtensionManager.getInstance();
-
-// Set weights independently of registration
-manager.register('equipment', customItems);
-
-// Later, adjust spawn rates
-manager.setWeights('equipment', {
-    'Dragon Scale Armor': 0.1,  // Rare
-    'Sword': 2.0,               // Common
-    'Potion': 5.0               // Very common
-});
-
-// Get current weights for display
-const weights = manager.getWeights('equipment');
-console.log(weights);
-```
 
 **Check Extension Status:**
 

@@ -1351,7 +1351,7 @@ export function isValidClass(value: string): value is Class;
 
 ---
 
-### Core Modules
+## Core Modules
 
 ### PlaylistParser
 
