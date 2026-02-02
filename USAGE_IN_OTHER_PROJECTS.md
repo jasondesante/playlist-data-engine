@@ -1619,13 +1619,19 @@ import { EquipmentEffectApplier } from 'playlist-data-engine';
 
 // Equip item - applies all properties, features, skills, spells
 // instanceId is optional - use it when you want to track specific item instances
-const result = EquipmentEffectApplier.equipItem(character, equipment, 'instance_123');
+const result = EquipmentEffectApplier.equipItem(character, equipment);
 // result: { applied: boolean, count: number, errors: string[] }
+
+// With instance tracking (for multiple identical items)
+const resultWithId = EquipmentEffectApplier.equipItem(character, equipment, 'instance_123');
 
 // Unequip item - removes all effects
 // instanceId is optional - only needed if you used it when equipping
-const unequipResult = EquipmentEffectApplier.unequipItem(character, 'Flaming Sword', 'instance_123');
+const unequipResult = EquipmentEffectApplier.unequipItem(character, 'Flaming Sword');
 // unequipResult: { applied: boolean, count: number, errors: string[] }
+
+// Unequip specific instance
+const unequipResultWithId = EquipmentEffectApplier.unequipItem(character, 'Flaming Sword', 'instance_123');
 ```
 
 ### Enchanting Equipment

@@ -197,6 +197,8 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - [x] Update example code to show `instanceId` as optional
 - [x] Update return type documentation for `unequipItem` to show `EffectApplicationResult`
 
+**Resolution (2026-02-02)**: Updated the example code in USAGE_IN_OTHER_PROJECTS.md to show `instanceId` as truly optional. The original documentation had comments saying instanceId was optional but the code examples showed it as a required positional parameter. Now the examples show both usage patterns: without instanceId (common case) and with instanceId (for tracking multiple identical items). The return type documentation was already correct.
+
 **Impact**: Low - Code examples work, but documentation is misleading
 
 ---
