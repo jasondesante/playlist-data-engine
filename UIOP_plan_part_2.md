@@ -389,8 +389,10 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - `applyTemplate(baseEquipment, templateId)` - takes `templateId: string`, not template object
 
 **Action Required**:
-- [ ] Add Magic Item Examples section to USAGE_IN_OTHER_PROJECTS.md (if not already a part of DATA_ENGINE_REFERENCE.md) if intended as public API. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API.  Another important thing to note is that these examples might be in EQUIPMENT_SYSTEM.md. So you must check these other docs files first because if those examples are in EQUIPMENT_SYSTEM.md then you're good.
-- [ ] Correct parameter names and types in documentation
+- [x] Add Magic Item Examples section to USAGE_IN_OTHER_PROJECTS.md (if not already a part of DATA_ENGINE_REFERENCE.md) if intended as public API. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API.  Another important thing to note is that these examples might be in EQUIPMENT_SYSTEM.md. So you must check these other docs files first because if those examples are in EQUIPMENT_SYSTEM.md then you're good.
+- [x] Correct parameter names and types in documentation
+
+**Resolution (2026-02-02)**: Magic Item Examples were NOT documented anywhere. Added comprehensive documentation to DATA_ENGINE_REFERENCE.md with all 38 items categorized by type (weapons, armor, wondrous items, cursed items, conditional items, template-based items), 9 equipment templates, all query functions, and usage examples. Added usage examples to USAGE_IN_OTHER_PROJECTS.md including getting items by name, querying by type/rarity, applying templates, registering with ExtensionManager, and direct access to collections. Also added Magic Item Examples to the Available Exports list. All function signatures documented correctly match actual implementation.
 
 **Impact**: Low - Examples are helpful but not essential
 
@@ -503,7 +505,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 ### Nice to Have (Low Priority)
 - [x] Add documentation for missing utilities (hash, SeededRNG, validators, logger, dashboard)
 - [x] Add documentation for enchantment library
-- [ ] Add documentation for magic item examples
+- [x] Add documentation for magic item examples
 - [ ] Add documentation for configuration
 - [ ] Document Equipment vs EnhancedEquipment relationship
 - [ ] Fix type name mismatches in documentation (RaceInfo→RaceDataEntry, etc.)
@@ -525,5 +527,5 @@ This plan lists all discrepancies, documentation errors, and action items discov
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
 | Medium Priority | 8 | 6 | 2 |
-| Low Priority | 9 | 6 | 3 |
-| **TOTAL** | **20** | **15** | **5** |
+| Low Priority | 9 | 7 | 2 |
+| **TOTAL** | **20** | **16** | **4** |

@@ -2141,6 +2141,134 @@ console.log(`Weapon enchantments: ${weaponEnchants.length}`);  // 16 enchantment
 
 ---
 
+### Magic Item Examples
+
+The Magic Item Examples library provides 38 pre-built magic items that demonstrate all capabilities of the Advanced Equipment System. These include weapons, armor, wondrous items, cursed items, conditional items, and template-based items. They serve as reference implementations and test fixtures.
+
+**For complete API documentation, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#magic-item-examples)**
+
+#### Getting Magic Items by Name
+
+```typescript
+import { getMagicItem } from 'playlist-data-engine';
+
+// Get a specific magic item
+const flameTongue = getMagicItem('Flame Tongue');
+if (flameTongue) {
+    console.log(flameTongue.properties);
+    // Output: Array of equipment properties including damage_bonus and special_property
+}
+```
+
+#### Querying Magic Items
+
+```typescript
+import {
+    getMagicItemsByType,
+    getMagicItemsByRarity,
+    getCursedItems,
+    getItemsWithProperty
+} from 'playlist-data-engine';
+
+// Get all weapons
+const weapons = getMagicItemsByType('weapon');
+console.log(`Magic weapons: ${weapons.length}`);  // 4 weapons
+
+// Get all rare items
+const rareItems = getMagicItemsByRarity('rare');
+console.log(`Rare items: ${rareItems.length}`);  // ~15 rare items
+
+// Get cursed items
+const cursedItems = getCursedItems();
+cursedItems.forEach(item => {
+    console.log(`Cursed: ${item.name}`);
+    // Output: -1 Cursed Sword, Belt of Strength Drain, Helmet of Opposite Alignment
+});
+
+// Get all items with a specific property
+const statBonusItems = getItemsWithProperty('stat_bonus');
+console.log(`Items with stat bonuses: ${statBonusItems.length}`);
+```
+
+#### Applying Magic Equipment Templates
+
+Templates can be applied to base equipment to create magic variants:
+
+```typescript
+import { applyTemplate, EnhancedEquipment } from 'playlist-data-engine';
+
+// Define base equipment
+const baseLongsword: EnhancedEquipment = {
+    name: 'Longsword',
+    type: 'weapon',
+    rarity: 'common',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing', versatile: '1d10' },
+    weaponProperties: ['finesse', 'versatile'],
+    source: 'base',
+    tags: ['martial', 'melee']
+};
+
+// Apply flaming template
+const flamingSword = applyTemplate(baseLongsword, 'flaming_weapon_template');
+if (flamingSword) {
+    console.log(flamingSword.name);  // "Longsword (flaming weapon template)"
+    console.log(flamingSword.properties);  // Combined properties from base + template
+}
+
+// Apply +1 enhancement
+const plusOneSword = applyTemplate(baseLongsword, 'plus_one_weapon');
+if (plusOneSword) {
+    console.log(plusOneSword.properties);  // Includes +1 attack/damage bonus
+}
+```
+
+#### Registering Magic Items with ExtensionManager
+
+Magic item examples can be registered as custom equipment for procedural generation:
+
+```typescript
+import { ExtensionManager, MAGIC_ITEM_EXAMPLES } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register all magic items as custom equipment
+manager.register('equipment', MAGIC_ITEM_EXAMPLES, {
+    mode: 'append',
+    weights: MAGIC_ITEM_EXAMPLES.reduce((acc, item) => {
+        acc[item.name] = item.spawnWeight ?? 0;
+        return acc;
+    }, {} as Record<string, number>)
+});
+
+// Now items will appear in random generation (respecting spawnWeight)
+// Note: Vorpal Sword and other legendary items have spawnWeight: 0,
+// so they won't appear randomly but can still be spawned by name
+```
+
+#### Direct Access to Magic Item Collections
+
+```typescript
+import { MAGIC_ITEM_EXAMPLES, MAGIC_EQUIPMENT_TEMPLATES } from 'playlist-data-engine';
+
+// Iterate through all magic items
+MAGIC_ITEM_EXAMPLES.forEach(item => {
+    console.log(`${item.name} (${item.rarity}) - ${item.type}`);
+});
+
+// Access specific template
+const viciousTemplate = MAGIC_EQUIPMENT_TEMPLATES.vicious_weapon_template;
+console.log(viciousTemplate.properties);
+```
+
+**Available Exports:**
+
+- **Collections**: `MAGIC_ITEM_EXAMPLES` (38 items), `MAGIC_EQUIPMENT_TEMPLATES` (9 templates)
+- **Query Functions**: `getMagicItem`, `getMagicItemsByType`, `getMagicItemsByRarity`, `getCursedItems`, `getItemsWithProperty`
+- **Template Function**: `applyTemplate` - Apply a template to base equipment
+
+---
+
 ## Available Exports
 
 The main exports from the library are:
@@ -2176,6 +2304,7 @@ The main exports from the library are:
 - `EquipmentModifier` - Enchant, curse, upgrade, and modify equipment
 - `EquipmentSpawnHelper` - Batch spawn equipment by rarity, tags, or templates
 - `Enchantment Library (NEW)` - Predefined enchantments and curses for equipment
+- `Magic Item Examples (NEW)` - 38 pre-built magic items and equipment templates
 - `NamingEngine` - Generate character names
 - `AppearanceGenerator` - Generate character appearance
 

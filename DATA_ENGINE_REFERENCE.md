@@ -3787,6 +3787,205 @@ character.equipment = EquipmentModifier.enchant(
 
 ---
 
+## Magic Item Examples
+
+**Location:** `src/utils/magicItemExamples.ts`
+
+The Magic Item Examples library provides a comprehensive collection of 38 pre-built magic items that demonstrate all capabilities of the Advanced Equipment System. These examples serve as both reference implementations and test fixtures for the equipment system.
+
+### Available Collections
+
+#### Magic Items (`MAGIC_ITEM_EXAMPLES`)
+
+**Weapons (4 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `Flame Tongue` | Rare | +1d6 fire damage on hit, sheds bright light, grants Ignition feature |
+| `Vorpal Sword` | Legendary | +3 to attack/damage, decapitation on natural 20 |
+| `Frost Brand` | Rare | +1d6 cold damage on hit, fire resistance, extinguish flames |
+| `Dragonslayer Longsword` | Very Rare | +1 to attack/damage, +2d6 vs dragons |
+
+**Armor (3 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `Mithral Shirt` | Uncommon | AC 12 + DEX (max 2), counts as light armor |
+| `+1 Plate Armor` | Rare | Fixed AC 19, stealth disadvantage |
+| `Elven Chain` | Rare | AC 16, counts as light, no proficiency required |
+
+**Wondrous Items - Stat Bonuses (3 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `Belt of Giant Strength (Hill Giant)` | Rare | Strength becomes 21 |
+| `Amulet of Proof Against Detection` | Uncommon | Hidden from divination, +1 saves vs spells |
+| `Headband of Intellect` | Uncommon | Intelligence becomes 19 |
+
+**Wondrous Items - Skill Proficiencies (2 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `Boots of Elvenkind` | Uncommon | Stealth expertise, silent steps |
+| `Gloves of Thievery` | Uncommon | Thieves' tools expertise, Sleight of Hand proficient |
+
+**Wondrous Items - Movement (3 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `Boots of Speed` | Rare | +10 speed, grants Freedom of Movement & Haste features |
+| `Boots of Striding and Springing` | Uncommon | +10 speed, triple jump distance |
+| `Boots of Flying` | Rare | Fly 60ft, grants Flight feature |
+
+**Wondrous Items - Defense (3 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `Ring of Protection` | Rare | +1 AC and saves (stackable) |
+| `Amulet of Proof Against Poison` | Uncommon | Poison immunity and condition immunity |
+| `Cloak of Protection` | Uncommon | +1 AC and saves (stackable) |
+
+**Wondrous Items - Vision (2 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `Goggles of Night` | Uncommon | Darkvision 60ft |
+| `Lantern of Revealing` | Uncommon | Reveals invisible creatures, sheds light |
+
+**Spell-Granting Items (3 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `Ring of Spell Storing` | Rare | Store up to 5 spell levels |
+| `Pearl of Power (3rd Level)` | Uncommon | Recover one 3rd level spell slot per day |
+| `Wand of Magic Missiles` | Uncommon | 7 charges of Magic Missile |
+
+**Cursed Items (3 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `-1 Cursed Sword` | Rare | -1 to attack/damage, attunement curse |
+| `Belt of Strength Drain (Cursed)` | Uncommon | -4 Strength, appears as Belt of Giant Strength |
+| `Helmet of Opposite Alignment (Cursed)` | Rare | Changes alignment to opposite |
+
+**Conditional Items (4 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `Moon Sickle` | Rare | +1 attack/damage, +1d6 radiant at night |
+| `Sun Blade` | Rare | +2 attack/damage, +1d8 radiant in daylight, -1 at night |
+| `Dwarf-Forged Armor` | Rare | AC 15 + DEX, +2 AC and +1 saves for dwarves |
+| `Wizard's Staff` | Uncommon | +1 spell attack and save DC for wizards |
+
+**Template-Based Items (2 items)**
+| Item | Rarity | Description |
+|------|--------|-------------|
+| `Flaming Longsword` | Rare | Uses `flaming_weapon_template` |
+| `Frost Longsword` | Rare | Uses `frost_weapon_template` |
+
+#### Magic Equipment Templates (`MAGIC_EQUIPMENT_TEMPLATES`)
+
+Templates that can be applied to base equipment to create magic variants:
+
+| Template ID | Type | Description |
+|-------------|------|-------------|
+| `plus_one_weapon` | Weapon | +1 to attack and damage rolls |
+| `plus_two_weapon` | Weapon | +2 to attack and damage rolls |
+| `plus_three_weapon` | Weapon | +3 to attack and damage rolls |
+| `flaming_weapon_template` | Weapon | +1d6 fire damage, sheds light |
+| `frost_weapon_template` | Weapon | +1d6 cold damage |
+| `shocking_weapon_template` | Weapon | +1d6 lightning damage |
+| `vicious_weapon_template` | Weapon | +1 attack/damage, +1d8 extra damage (self-damage) |
+| `plus_one_armor` | Armor | +1 AC bonus |
+| `plus_two_armor` | Armor | +2 AC bonus |
+
+### Query Functions
+
+```typescript
+function getMagicItem(name: string): EnhancedEquipment | undefined
+// Get a specific magic item by name
+
+function getMagicItemsByType(type: 'weapon' | 'armor' | 'item'): EnhancedEquipment[]
+// Get all magic items of a specific type
+
+function getMagicItemsByRarity(rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary'): EnhancedEquipment[]
+// Get all magic items of a specific rarity
+
+function getCursedItems(): EnhancedEquipment[]
+// Get all cursed items (items with 'cursed' tag)
+
+function getItemsWithProperty(propertyType: string): EnhancedEquipment[]
+// Get all items with a specific property type
+
+function applyTemplate(baseEquipment: EnhancedEquipment, templateId: string): EnhancedEquipment | null
+// Apply a template to base equipment, returns enhanced item or null if template not found
+```
+
+### Usage Example
+
+```typescript
+import {
+    MAGIC_ITEM_EXAMPLES,
+    MAGIC_EQUIPMENT_TEMPLATES,
+    getMagicItem,
+    getMagicItemsByType,
+    getCursedItems,
+    applyTemplate,
+    EnhancedEquipment
+} from 'playlist-data-engine';
+
+// Get a specific item by name
+const flameTongue = getMagicItem('Flame Tongue');
+if (flameTongue) {
+    console.log(flameTongue.properties); // Array of equipment properties
+}
+
+// Get all weapons
+const weapons = getMagicItemsByType('weapon');
+console.log(weapons.length); // 4 weapons
+
+// Get cursed items
+const curses = getCursedItems();
+console.log(curses.map(item => item.name)); // ['-1 Cursed Sword', 'Belt of Strength Drain', ...]
+
+// Apply a template to base equipment
+const baseLongsword: EnhancedEquipment = {
+    name: 'Longsword',
+    type: 'weapon',
+    rarity: 'common',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing', versatile: '1d10' },
+    weaponProperties: ['finesse', 'versatile'],
+    source: 'base',
+    tags: ['martial', 'melee']
+};
+
+const flamingLongsword = applyTemplate(baseLongsword, 'flaming_weapon_template');
+if (flamingLongsword) {
+    console.log(flamingLongsword.name); // "Longsword (flaming weapon template)"
+    console.log(flamingLongsword.properties); // Combined properties from base + template
+}
+
+// Access all items directly
+MAGIC_ITEM_EXAMPLES.forEach(item => {
+    console.log(`${item.name} (${item.rarity}) - ${item.type}`);
+});
+```
+
+### Registration with ExtensionManager
+
+Magic item examples can be registered as custom equipment for use in procedural generation:
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+import { MAGIC_ITEM_EXAMPLES } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register all magic items as custom equipment
+manager.register('equipment', MAGIC_ITEM_EXAMPLES, {
+    mode: 'append',
+    weights: MAGIC_ITEM_EXAMPLES.reduce((acc, item) => {
+        acc[item.name] = item.spawnWeight ?? 0;
+        return acc;
+    }, {} as Record<string, number>)
+});
+
+// Now items will appear in random generation (respecting spawnWeight)
+```
+
+---
+
 ## Extensibility System
 
 **Location:** `src/core/extensions/`
