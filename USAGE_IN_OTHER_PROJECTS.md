@@ -1312,13 +1312,14 @@ const damage = rng.randomInt(1, 9);  // 1d8
 const races = ['Human', 'Elf', 'Dwarf', 'Halfling'];
 const race = rng.randomChoice(races);
 
-// Pick weighted random element
-const treasure = [
-  { name: 'Gold', weight: 50 },
-  { name: 'Gem', weight: 30 },
-  { name: 'Artifact', weight: 10 }
+// Pick weighted random element (uses [value, weight] tuples)
+const treasureOptions = [
+  ['Gold', 50],
+  ['Gem', 30],
+  ['Artifact', 10]
 ];
-const item = rng.weightedChoice(treasure, (t) => t.weight);
+const item = rng.weightedChoice(treasureOptions);
+console.log(item);  // 'Gold' (50% chance), 'Gem' (30% chance), or 'Artifact' (10% chance)
 
 // Shuffle array deterministically
 const cards = ['A', 'K', 'Q', 'J', '10', '9', '8', '7'];

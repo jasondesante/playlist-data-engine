@@ -886,13 +886,33 @@ export interface SpellSlots {
 
 *Location: `src/utils/random.ts`*
 
-- `class SeededRNG`
-    - `constructor(seed: string)`
-    - `random(): number`: Returns float 0-1.
-    - `randomInt(min: number, max: number): number`: Returns integer.
-    - `randomChoice<T>(array: T[]): T`: Selects random element.
-    - `weightedChoice<T>(choices: [T, number][]): T`: Selects based on weights.
-    - `shuffle<T>(array: T[]): T[]`: Deterministically shuffles array.
+```typescript
+class SeededRNG {
+    constructor(seed: string)
+
+    // Generate random values
+    random(): number                              // Returns float in [0.0, 1.0)
+    randomInt(min: number, max: number): number   // Returns integer in [min, max)
+    randomChoice<T>(array: T[]): T                // Selects random element from array
+    weightedChoice<T>(choices: [T, number][]): T  // Selects element using weights
+    shuffle<T>(array: T[]): T[]                   // Returns shuffled copy of array
+    reset(): void                                 // Resets internal counter (for testing)
+}
+```
+
+**SeededRNG** provides deterministic random number generation for reproducible results. The same seed always produces the same sequence of random values, making it ideal for blockchain-based character generation, procedural content, and testing.
+
+**Method Reference:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `constructor(seed)` | - | Creates a new RNG with the given seed string |
+| `random()` | `number` | Float in range [0.0, 1.0) |
+| `randomInt(min, max)` | `number` | Integer in range [min, max) - min is inclusive, max is exclusive |
+| `randomChoice(array)` | `T` | Random element from the array |
+| `weightedChoice(choices)` | `T` | Element from weighted choices - takes `[[value, weight], ...]` tuples |
+| `shuffle(array)` | `T[]` | New array with elements in random order |
+| `reset()` | `void` | Resets the internal counter to 0 (restarts sequence from seed) |
 
 **Validation Schemas**
 

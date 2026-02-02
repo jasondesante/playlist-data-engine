@@ -269,7 +269,9 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - `reset()` - Reset counter
 
 **Action Required**:
-- [ ] Add SeededRNG section to USAGE_IN_OTHER_PROJECTS.md (if not already a part of DATA_ENGINE_REFERENCE.md) if intended as public API. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API. 
+- [x] Add SeededRNG section to USAGE_IN_OTHER_PROJECTS.md (if not already a part of DATA_ENGINE_REFERENCE.md) if intended as public API. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API.
+
+**Resolution (2026-02-02)**: SeededRNG was already minimally documented in DATA_ENGINE_REFERENCE.md but was missing the `reset()` method and had vague descriptions. Updated DATA_ENGINE_REFERENCE.md with comprehensive method reference table including `reset()`. Fixed incorrect `weightedChoice` example in USAGE_IN_OTHER_PROJECTS.md (was using callback instead of `[value, weight]` tuples). The class is now fully documented with correct API signatures and usage examples. 
 
 **Impact**: Low - Core utility but internal use is documented elsewhere
 
@@ -515,5 +517,5 @@ This plan lists all discrepancies, documentation errors, and action items discov
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
 | Medium Priority | 8 | 6 | 2 |
-| Low Priority | 9 | 1 | 8 |
-| **TOTAL** | **20** | **10** | **10** |
+| Low Priority | 9 | 2 | 7 |
+| **TOTAL** | **20** | **11** | **9** |
