@@ -323,7 +323,7 @@ interface EnhancedEquipment {
     templateId?: string;
 
     // Source tracking
-    source: 'default' | 'custom';
+    source?: 'default' | 'custom';
 
     tags?: string[];
 }

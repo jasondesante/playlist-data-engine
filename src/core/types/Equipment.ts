@@ -12,7 +12,7 @@
  * - Spawn weight system for generation control
  */
 
-import type { ProficiencyLevel } from './Character.js';
+import type { Equipment as BaseEquipment } from '../../utils/constants.ts';
 
 /**
  * Equipment rarity levels following D&D 5e conventions
@@ -84,57 +84,15 @@ export interface EquipmentMiniFeature {
 
 /**
  * Enhanced equipment interface with optional advanced properties
- * Extends base Equipment for backward compatibility
+ *
+ * NOTE: This is now an alias to the Equipment type from constants.ts.
+ * The Equipment interface has been updated to include all the same properties
+ * as the original EnhancedEquipment interface.
+ *
+ * This alias is kept for backward compatibility with existing code.
+ * New code should use the Equipment type directly from constants.ts.
  */
-export interface EnhancedEquipment {
-    // Base properties (existing)
-    name: string;
-    type: EquipmentType;
-    rarity: EquipmentRarity;
-    weight: number;
-
-    // NEW: Advanced properties
-    properties?: EquipmentProperty[];
-
-    // NEW: Features granted when equipped
-    // Can reference existing FeatureRegistry features OR define inline mini-features
-    grantsFeatures?: Array<string | EquipmentMiniFeature>;
-
-    // NEW: Skills granted when equipped
-    grantsSkills?: Array<{
-        skillId: string;
-        level: 'proficient' | 'expertise';
-    }>;
-
-    // NEW: Spells granted when equipped
-    grantsSpells?: Array<{
-        spellId: string;
-        level?: number;  // If item grants at specific spell level
-        uses?: number;   // For limited-use spell items (e.g., 1/day)
-        recharge?: string;  // How it recharges (e.g., 'dawn', 'short_rest')
-    }>;
-
-    // NEW: D&D 5e stats
-    damage?: {
-        dice: string;          // e.g., "1d8", "2d6"
-        damageType: string;    // e.g., "slashing", "fire"
-        versatile?: string;    // e.g., "1d10" if used two-handed
-    };
-
-    acBonus?: number;
-    weaponProperties?: string[];  // e.g., ["finesse", "versatile", "two-handed"]
-
-    // NEW: Spawn weight (0 = never randomly generated, still available to game logic)
-    spawnWeight?: number;
-
-    // NEW: Template support (for items like "Flaming Sword")
-    templateId?: string;
-
-    // NEW: Source tracking
-    source: 'default' | 'custom';
-
-    tags?: string[];
-}
+export type EnhancedEquipment = BaseEquipment;
 
 /**
  * Runtime modification to equipment (enchanting, curses, upgrades)

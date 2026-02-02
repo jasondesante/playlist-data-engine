@@ -6,6 +6,14 @@ import type { Race, Class, Ability, Skill } from '../core/types/Character.js';
 import { asRace } from '../core/types/Character.js';
 import type { Spell, SpellPrerequisite } from '../core/spells/SpellTypes.js';
 import { ExtensionManager } from '../core/extensions/ExtensionManager.js';
+import type {
+    EquipmentType,
+    EquipmentRarity,
+    EquipmentPropertyType,
+    EquipmentCondition,
+    EquipmentProperty,
+    EquipmentMiniFeature
+} from '../core/types/Equipment.js';
 
 // Re-export spell types for backward compatibility
 // Types are now defined in src/core/spells/SpellTypes.ts for better module organization
@@ -1247,31 +1255,21 @@ export const SPELL_SLOTS_BY_CLASS: Record<string, Record<number, Record<number, 
 
 /**
  * Equipment data structure
+ *
+ * This interface now uses the same types as EnhancedEquipment for consistency.
+ * The 'source' field is optional for backward compatibility but defaults to 'default'.
  */
 export interface Equipment {
     name: string;
-    type: 'weapon' | 'armor' | 'item';
-    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    type: EquipmentType;
+    rarity: EquipmentRarity;
     weight: number; // pounds
 
-    // Optional advanced properties (EnhancedEquipment format)
-    properties?: Array<{
-        type: string;
-        target: string;
-        value: number | string | boolean;
-        condition?: { type: string; value: string | boolean };  // Structured conditions
-        description?: string;
-        stackable?: boolean;  // Default: true
-    }>;
+    // Optional advanced properties
+    properties?: EquipmentProperty[];
 
     // Features granted when equipped (can reference registry features or define inline mini-features)
-    grantsFeatures?: Array<string | {
-        id: string;
-        name: string;
-        description: string;
-        effects: any[];
-        source: 'equipment_inline';
-    }>;
+    grantsFeatures?: Array<string | EquipmentMiniFeature>;
 
     // Skills granted when equipped
     grantsSkills?: Array<{
@@ -1302,6 +1300,9 @@ export interface Equipment {
 
     // Template ID
     templateId?: string;
+
+    // Source tracking (optional for backward compatibility, defaults to 'default')
+    source?: 'default' | 'custom';
 
     tags?: string[];
 }

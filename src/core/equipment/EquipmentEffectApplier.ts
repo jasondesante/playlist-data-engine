@@ -598,7 +598,7 @@ export class EquipmentEffectApplier {
                         source: 'equipment',
                         equipmentName: equipment.name,
                         instanceId,
-                        sourceType: equipment.source
+                        sourceType: equipment.source ?? 'default'
                     };
                     featureList.push(equipmentFeature);
                     this.addFeatureToCharacter(character, equipmentFeature);
@@ -610,7 +610,7 @@ export class EquipmentEffectApplier {
                     source: 'equipment',
                     equipmentName: equipment.name,
                     instanceId,
-                    sourceType: equipment.source
+                    sourceType: equipment.source ?? 'default'
                 };
                 featureList.push(equipmentFeature);
                 this.addFeatureToCharacter(character, equipmentFeature);
@@ -643,7 +643,7 @@ export class EquipmentEffectApplier {
                 source: 'equipment',
                 equipmentName: equipment.name,
                 instanceId,
-                sourceType: equipment.source
+                sourceType: equipment.source ?? 'default'
             };
             skillList.push(equipmentSkill);
             this.addSkillToCharacter(character, equipmentSkill);
