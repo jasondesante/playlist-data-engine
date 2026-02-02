@@ -3174,7 +3174,12 @@ new CombatEngine(config?: CombatConfig)
 - `getCurrentCombatant(combat: CombatInstance): Combatant`
     - Returns the current active combatant.
 - `executeAttack(combat: CombatInstance, attacker: Combatant, target: Combatant, attack: Attack): CombatAction`
-    - Resolves an attack roll against AC and applies damage.
+    - Resolves an attack roll against AC and applies damage. Requires a pre-built `Attack` object.
+- `executeWeaponAttack(combat: CombatInstance, attacker: Combatant, target: Combatant, weaponName?: string): CombatAction`
+    - Automatically builds an `Attack` object from the attacker's equipped weapon(s) and executes the attack.
+    - If no `weaponName` is provided, uses the first equipped weapon.
+    - If `weaponName` is provided, uses that specific weapon (must be equipped).
+    - Throws an error if the attacker has no equipped weapons or the named weapon is not equipped.
 - `executeCastSpell(combat: CombatInstance, caster: Combatant, spell: Spell, targets: Combatant[]): CombatAction`
     - Executes a spell casting action.
 - `executeDodge(combat: CombatInstance, combatant: Combatant): CombatAction`

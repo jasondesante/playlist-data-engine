@@ -941,27 +941,16 @@ const combatInstance = combat.startCombat(
 while (combatInstance.isActive) {
   const current = combat.getCurrentCombatant(combatInstance);
 
-  // Create attack from equipped weapon
-  const equippedWeapon = current.character.equipment?.weapons.find(w => w.equipped);
-  if (equippedWeapon) {
-    // Build Attack object from weapon data
-    const attack: import('playlist-data-engine').Attack = {
-      name: equippedWeapon.name,
-      damage_dice: '1d8',  // Extract from weapon.damage.dice
-      damage_type: 'slashing',  // Extract from weapon.damage.damageType
-      type: 'melee',  // 'melee' or 'ranged' based on weapon properties
-      properties: []  // Optional: weapon properties like ['finesse', 'versatile']
-    };
+  // Attack with equipped weapon - engine finds it automatically
+  const target = combat.getLivingCombatants(combatInstance).find(c => c.id !== current.id);
 
-    const target = combat.getLivingCombatants(combatInstance).find(c => c.id !== current.id);
+  if (target) {
+    // Simple: just say who's attacking and who's getting hit
+    const action = combat.executeWeaponAttack(combatInstance, current, target);
+    console.log(action.result.description);
 
-    if (target) {
-      const action = combat.executeAttack(combatInstance, current, target, attack);
-      console.log(action.result.description);
-
-      if (target.isDefeated) {
-        console.log(`${target.character.name} has been defeated!`);
-      }
+    if (target.isDefeated) {
+      console.log(`${target.character.name} has been defeated!`);
     }
   }
 
@@ -979,7 +968,19 @@ while (combatInstance.isActive) {
 }
 ```
 
-#### DiceRoller - Standalone Dice Rolling Utilities
+**Multiple Equipped Weapons:** If a character has multiple equipped weapons, specify which one:
+
+```typescript
+// Attack with a specific equipped weapon
+combat.executeWeaponAttack(combatInstance, current, target, 'Longsword');
+
+// Or just use the first equipped weapon (default)
+combat.executeWeaponAttack(combatInstance, current, target);
+```
+
+**Manual Attack Objects:** For special cases, you can still manually construct `Attack` objects using `executeAttack()` directly. See `Attack` type in DATA_ENGINE_REFERENCE.md for all available properties.
+
+```typescript
 
 The `DiceRoller` module provides utility functions for D&D-style dice rolling. These are standalone functions (not a class) that can be imported and used directly.
 

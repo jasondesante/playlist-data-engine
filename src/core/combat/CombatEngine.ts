@@ -162,6 +162,76 @@ export class CombatEngine {
   }
 
   /**
+   * Execute an attack using equipped weapon(s)
+   *
+   * Automatically builds Attack object from equipped weapons.
+   * Uses the first equipped weapon by default, or a specific weapon if named.
+   *
+   * @param combat - Combat instance
+   * @param attacker - Attacking combatant
+   * @param target - Target combatant
+   * @param weaponName - Optional specific weapon name (if multiple equipped)
+   * @returns Combat action with result
+   *
+   * @example
+   * // Attack with first equipped weapon
+   * combat.executeWeaponAttack(combat, attacker, target);
+   *
+   * // Attack with specific weapon
+   * combat.executeWeaponAttack(combat, attacker, target, 'Longsword');
+   */
+  executeWeaponAttack(
+    combat: CombatInstance,
+    attacker: Combatant,
+    target: Combatant,
+    weaponName?: string
+  ): CombatAction {
+    const equippedWeapons = attacker.character.equipment?.weapons.filter(w => w.equipped) || [];
+
+    if (equippedWeapons.length === 0) {
+      throw new Error(`${attacker.character.name} has no equipped weapons`);
+    }
+
+    let selectedWeapon = weaponName
+      ? equippedWeapons.find(w => w.name === weaponName)
+      : equippedWeapons[0];
+
+    if (!selectedWeapon) {
+      throw new Error(`Weapon "${weaponName}" is not equipped`);
+    }
+
+    // Build Attack object from weapon data
+    const attack: Attack = this.buildAttackFromWeapon(selectedWeapon.name, attacker.character);
+
+    return this.executeAttack(combat, attacker, target, attack);
+  }
+
+  /**
+   * Build an Attack object from a weapon name
+   * Looks up weapon data from EQUIPMENT_DATABASE and constructs proper Attack
+   */
+  private buildAttackFromWeapon(weaponName: string, character: CharacterSheet): Attack {
+    // Import dynamically to avoid circular dependency
+    const { EQUIPMENT_DATABASE } = require('../../utils/constants.js');
+    const weaponData = EQUIPMENT_DATABASE[weaponName];
+
+    if (!weaponData) {
+      throw new Error(`Weapon "${weaponName}" not found in equipment database`);
+    }
+
+    // Check if it's a ranged weapon
+    const isRanged = weaponData.weaponProperties?.includes('ranged') || false;
+
+    return {
+      name: weaponName,
+      damage_dice: weaponData.damage?.dice || '1d6',
+      damage_type: weaponData.damage?.damageType || 'bludgeoning',
+      type: isRanged ? 'ranged' : 'melee',
+      properties: weaponData.weaponProperties || []
+    };
+  }
+
+  /**
    * Execute a spell casting action
    */
   executeCastSpell(
