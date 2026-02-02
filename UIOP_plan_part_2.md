@@ -104,9 +104,11 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - Not included in public type exports
 
 **Action Required**:
-- [ ] Determine if this interface should be part of public API
-- [ ] If yes, export from src/index.ts
-- [ ] If no, remove the interface since it's currently unused
+- [x] Determine if this interface should be part of public API
+- [x] If yes, export from src/index.ts
+- [x] If no, remove the interface since it's currently unused
+
+**Resolution (2026-02-02)**: Interface was completely unused (no methods in MetadataExtractor use it). Removed the dead interface from src/core/parser/MetadataExtractor.ts.
 
 **Impact**: Low - Interface exists but is unused
 
@@ -465,7 +467,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - [x] Fix DiceRoller documentation or add proper documentation with correct signatures
 
 ### Should Fix (Medium Priority)
-- [ ] Export or remove MetadataExtractionOptions
+- [x] Export or remove MetadataExtractionOptions
 - [ ] Export or document AudioAnalyzerOptions availability
 - [ ] Export SpellSlots type from src/index.ts
 - [ ] Update FrequencyBands comments to match v2 implementation
@@ -496,6 +498,6 @@ This plan lists all discrepancies, documentation errors, and action items discov
 | Category | Items | Completed | Remaining |
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
-| Medium Priority | 8 | 0 | 8 |
+| Medium Priority | 8 | 1 | 7 |
 | Low Priority | 9 | 0 | 9 |
-| **TOTAL** | **20** | **3** | **17** |
+| **TOTAL** | **20** | **4** | **16** |

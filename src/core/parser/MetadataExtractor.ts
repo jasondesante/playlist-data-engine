@@ -3,11 +3,6 @@
  * Based on specs/001-core-engine/SPEC.md
  */
 
-export interface MetadataExtractionOptions {
-    /** Strict mode throws errors on missing required fields */
-    strict?: boolean;
-}
-
 export class MetadataExtractor {
     /**
      * Extract audio URL with priority (see specs/001-core-engine/SPEC.md):
