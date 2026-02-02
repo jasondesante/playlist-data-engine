@@ -3635,6 +3635,158 @@ class EquipmentGenerator {
 
 ---
 
+## Enchantment Library
+
+**Location:** `src/utils/enchantmentLibrary.ts`
+
+The Enchantment Library provides a comprehensive collection of predefined enchantments and curses that can be applied to equipment at runtime using `EquipmentModifier`. All enchantments are `EquipmentModification` objects designed to be applied via `EquipmentModifier.enchant()` for positive effects or `EquipmentModifier.curse()` for negative curses.
+
+### Available Collections
+
+#### Weapon Enchantments (`WEAPON_ENCHANTMENTS`)
+
+| Property | Description |
+|----------|-------------|
+| `plusOne` | +1 to attack and damage rolls |
+| `plusTwo` | +2 to attack and damage rolls |
+| `plusThree` | +3 to attack and damage rolls |
+| `flaming` | +1d6 fire damage on hit, sheds bright light |
+| `frost` | +1d6 cold damage on hit |
+| `shocking` | +1d6 lightning damage on hit |
+| `thundering` | +1d6 thunder damage on hit, creates thunderous clap |
+| `acidic` | +1d6 acid damage on hit |
+| `poison` | +1d6 poison damage on hit |
+| `holy` | +1d6 radiant damage on hit |
+| `vampiric` | Regain 1d6 HP when dealing damage |
+| `vorpalEdge` | Critical hits on 19-20 |
+| `keenEdge` | Critical hits on 18-20 |
+| `mighty` | Weapon damage dice increased by one step |
+| `returning` | Weapon returns to wielder's hand after being thrown |
+| `lifestealing` | Regain 2d6 HP when dealing damage |
+
+#### Armor Enchantments (`ARMOR_ENCHANTMENTS`)
+
+| Property | Description |
+|----------|-------------|
+| `plusOne` | +1 Armor Class |
+| `plusTwo` | +2 Armor Class |
+
+#### Resistance Enchantments (`RESISTANCE_ENCHANTMENTS`)
+
+| Property | Description |
+|----------|-------------|
+| `fire` | Resistance to fire damage |
+| `cold` | Resistance to cold damage |
+| `lightning` | Resistance to lightning damage |
+| `acid` | Resistance to acid damage |
+| `poison` | Resistance to poison damage |
+| `necrotic` | Resistance to necrotic damage |
+| `radiant` | Resistance to radiant damage |
+| `thunder` | Resistance to thunder damage |
+| `all` | Resistance to all damage types |
+
+#### Curses (`CURSES`)
+
+| Property | Description |
+|----------|-------------|
+| `minusOne` | -1 penalty to attack and damage rolls |
+| `minusTwo` | -2 penalty to attack and damage rolls |
+| `weakness` | -4 Strength while equipped |
+| `feeblemind` | -4 Intelligence while equipped |
+| `clumsiness` | -4 Dexterity while equipped |
+| `frailty` | -4 Constitution while equipped |
+| `foolishness` | -4 Wisdom while equipped |
+| `repulsiveness` | -4 Charisma while equipped |
+| `fireVulnerability` | Vulnerability to fire damage (double damage) |
+| `coldVulnerability` | Vulnerability to cold damage (double damage) |
+| `lifesteal` | Wielder takes 1d4 necrotic damage when dealing damage |
+| `attunement` | Once equipped, cannot be removed unless targeted by remove curse |
+| `berserker` | Must attack each round or take disadvantage on all attacks, +1 to attack/damage |
+| `heavyBurden` | Equipment weight is doubled, -5 walking speed |
+| `lightSensitivity` | Disadvantage on attacks and perception in bright light |
+| `invisibility` | Invisible while equipped, but disadvantage on attacks |
+| `hallucinations` | 25% chance each round to see enemies as allies and vice versa |
+| `bloodMoney` | Wielder takes 1d4 damage when dealing damage to enemies |
+
+#### Combo Enchantments (`ALL_ENCHANTMENTS`)
+
+Special multi-effect enchantments:
+
+| Property | Description |
+|----------|-------------|
+| `holyAvenger` | +3 enhancement, +2d6 radiant vs fiends/undead, +5 saves vs spells |
+| `dragonSlayer` | +2 enhancement, +3d6 damage vs dragons, fire resistance |
+| `demonHunter` | +1 enhancement, +2d6 damage vs fiends |
+| `undeadBane` | +1 enhancement, +2d6 radiant damage vs undead |
+
+### Stat Boosting Enchantments
+
+Functions that create stat-boosting enchantments with configurable bonus levels (1-4):
+
+```typescript
+function createStrengthEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
+function createDexterityEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
+function createConstitutionEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
+function createIntelligenceEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
+function createWisdomEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
+function createCharismaEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
+```
+
+Each function returns an `EquipmentModification` that adds the specified bonus to the corresponding ability score when applied via `EquipmentModifier.enchant()`.
+
+### Query Functions
+
+```typescript
+function getEnchantment(id: string): EquipmentModification | undefined
+// Get a specific enchantment by its ID
+
+function getCurse(id: string): EquipmentModification | undefined
+// Get a specific curse by its ID
+
+function getAllEnchantments(): EquipmentModification[]
+// Get all enchantments (weapons, armor, resistances, combo)
+
+function getAllCurses(): EquipmentModification[]
+// Get all curses
+
+function getEnchantmentsByType(type: 'weapon' | 'armor' | 'resistance' | 'combo'): EquipmentModification[]
+// Get enchantments filtered by type
+```
+
+### Usage Example
+
+```typescript
+import { EquipmentModifier, WEAPON_ENCHANTMENTS, CURSES, createStrengthEnchantment } from 'playlist-data-engine';
+
+// Apply a predefined enchantment
+const flamingEnch = WEAPON_ENCHANTMENTS.flaming;
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Longsword',
+    flamingEnch,
+    character
+);
+
+// Apply a curse
+const cursed = EquipmentModifier.curse(
+    character.equipment,
+    'Ring',
+    CURSES.attunement,
+    character
+);
+
+// Create and apply custom stat boost
+const strengthBoost = createStrengthEnchantment(2); // +2 Strength
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Belt of Giant Strength',
+    strengthBoost,
+    character
+);
+```
+
+---
+
 ## Extensibility System
 
 **Location:** `src/core/extensions/`

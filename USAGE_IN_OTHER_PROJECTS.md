@@ -1986,6 +1986,161 @@ console.log(summary);
 
 ---
 
+### Enchantment Library
+
+The Enchantment Library provides a comprehensive collection of predefined enchantments and curses that can be applied to equipment at runtime. All enchantments are `EquipmentModification` objects designed to work with `EquipmentModifier`.
+
+**For complete API documentation, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#enchantment-library)**
+
+#### Using Predefined Enchantments
+
+```typescript
+import { EquipmentModifier, WEAPON_ENCHANTMENTS, ARMOR_ENCHANTMENTS, RESISTANCE_ENCHANTMENTS } from 'playlist-data-engine';
+
+// Apply a +1 enhancement to a weapon
+const plusOne = WEAPON_ENCHANTMENTS.plusOne;
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Longsword',
+    plusOne,
+    character
+);
+
+// Add elemental damage
+const flaming = WEAPON_ENCHANTMENTS.flaming;  // +1d6 fire damage
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Longsword',
+    flaming,
+    character
+);
+
+// Improve armor
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Plate Armor',
+    ARMOR_ENCHANTMENTS.plusTwo,  // +2 AC
+    character
+);
+
+// Add resistance
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Cloak of Protection',
+    RESISTANCE_ENCHANTMENTS.fire,  // Fire resistance
+    character
+);
+```
+
+#### Creating Stat-Boosting Enchantments
+
+The `create*Enchantment` functions create stat bonuses with configurable levels (1-4):
+
+```typescript
+import {
+    createStrengthEnchantment,
+    createDexterityEnchantment,
+    createConstitutionEnchantment,
+    createIntelligenceEnchantment,
+    createWisdomEnchantment,
+    createCharismaEnchantment
+} from 'playlist-data-engine';
+
+// Create +2 Strength belt
+const beltOfStrength = createStrengthEnchantment(2);  // Bonus: 1-4
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Belt of Giant Strength',
+    beltOfStrength,
+    character
+);
+
+// Create +4 Intelligence circlet
+const circletOfIntellect = createIntelligenceEnchantment(4);
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Circlet of Intellect',
+    circletOfIntellect,
+    character
+);
+```
+
+#### Applying Curses
+
+```typescript
+import { EquipmentModifier, CURSES } from 'playlist-data-engine';
+
+// Apply a cursed item
+const cursedItem = EquipmentModifier.curse(
+    character.equipment,
+    'Ring of Weakness',
+    CURSES.weakness,  // -4 Strength
+    character
+);
+
+// Apply attunement lock (cannot remove without remove curse)
+const lockedItem = EquipmentModifier.curse(
+    character.equipment,
+    'Cursed Helmet',
+    CURSES.attunement,
+    character
+);
+```
+
+#### Combo Enchantments
+
+Special multi-effect enchantments for powerful items:
+
+```typescript
+import { ALL_ENCHANTMENTS } from 'playlist-data-engine';
+
+// Holy Avenger: +3 enhancement, radiant damage vs fiends/undead, +5 saves vs spells
+const holyAvenger = ALL_ENCHANTMENTS.holyAvenger;
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Holy Avenger',
+    holyAvenger,
+    character
+);
+
+// Dragon Slayer: +2 enhancement, extra damage vs dragons, fire resistance
+const dragonSlayer = ALL_ENCHANTMENTS.dragonSlayer;
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Dragon Slayer Sword',
+    dragonSlayer,
+    character
+);
+```
+
+#### Querying Enchantments
+
+```typescript
+import { getEnchantment, getCurse, getAllEnchantments, getAllCurses, getEnchantmentsByType } from 'playlist-data-engine';
+
+// Get specific enchantment by ID
+const ench = getEnchantment('enchantment_flaming');
+if (ench) {
+    console.log(ench.name);  // 'Flaming'
+}
+
+// Get all curses
+const allCurses = getAllCurses();
+console.log(`Available curses: ${allCurses.length}`);  // 17 curses
+
+// Get enchantments by type
+const weaponEnchants = getEnchantmentsByType('weapon');
+console.log(`Weapon enchantments: ${weaponEnchants.length}`);  // 16 enchantments
+```
+
+**Available Exports:**
+
+- **Collections**: `WEAPON_ENCHANTMENTS`, `ARMOR_ENCHANTMENTS`, `RESISTANCE_ENCHANTMENTS`, `CURSES`, `ALL_ENCHANTMENTS`
+- **Stat Boost Functions**: `createStrengthEnchantment`, `createDexterityEnchantment`, `createConstitutionEnchantment`, `createIntelligenceEnchantment`, `createWisdomEnchantment`, `createCharismaEnchantment` (each takes `bonus: 1 | 2 | 3 | 4`)
+- **Query Functions**: `getEnchantment`, `getCurse`, `getAllEnchantments`, `getAllCurses`, `getEnchantmentsByType`
+
+---
+
 ## Available Exports
 
 The main exports from the library are:
@@ -2020,6 +2175,7 @@ The main exports from the library are:
 - `EquipmentEffectApplier` - Apply/remove equipment effects when equipping/unequipping
 - `EquipmentModifier` - Enchant, curse, upgrade, and modify equipment
 - `EquipmentSpawnHelper` - Batch spawn equipment by rarity, tags, or templates
+- `Enchantment Library (NEW)` - Predefined enchantments and curses for equipment
 - `NamingEngine` - Generate character names
 - `AppearanceGenerator` - Generate character appearance
 

@@ -361,8 +361,10 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - `createStrengthEnchantment()`, etc. (take `bonus` parameter 1-4)
 
 **Action Required**:
-- [ ] Add Enchantment Library section to USAGE_IN_OTHER_PROJECTS.md (if not already a part of DATA_ENGINE_REFERENCE.md) if intended as public API. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API. 
-- [ ] Document that `create*` functions take `bonus` parameter
+- [x] Add Enchantment Library section to USAGE_IN_OTHER_PROJECTS.md (if not already a part of DATA_ENGINE_REFERENCE.md) if intended as public API. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API.
+- [x] Document that `create*` functions take `bonus` parameter
+
+**Resolution (2026-02-02)**: Added comprehensive documentation to DATA_ENGINE_REFERENCE.md with all collections, functions, and combo enchantments listed. Added usage examples to USAGE_IN_OTHER_PROJECTS.md including predefined enchantments, stat-boosting enchantments, curses, combo enchantments, and query functions. Also added Enchantment Library to Available Exports list. The `create*` functions are now correctly documented as taking `bonus: 1 | 2 | 3 | 4` parameter.
 
 **Impact**: Medium - Very useful for equipment system but needs documentation
 
@@ -500,7 +502,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 
 ### Nice to Have (Low Priority)
 - [x] Add documentation for missing utilities (hash, SeededRNG, validators, logger, dashboard)
-- [ ] Add documentation for enchantment library
+- [x] Add documentation for enchantment library
 - [ ] Add documentation for magic item examples
 - [ ] Add documentation for configuration
 - [ ] Document Equipment vs EnhancedEquipment relationship
@@ -523,5 +525,5 @@ This plan lists all discrepancies, documentation errors, and action items discov
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
 | Medium Priority | 8 | 6 | 2 |
-| Low Priority | 9 | 5 | 4 |
-| **TOTAL** | **20** | **14** | **6** |
+| Low Priority | 9 | 6 | 3 |
+| **TOTAL** | **20** | **15** | **5** |
