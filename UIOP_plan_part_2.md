@@ -463,7 +463,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 
 ### Must Fix (High Priority)
 - [x] Remove SteamAPIClient and DiscordRPCClient from exports documentation
-- [ ] Resolve CharacterSheet.attacks property discrepancy
+- [x] Resolve CharacterSheet.attacks property discrepancy
 - [x] Fix DiceRoller documentation or add proper documentation with correct signatures
 
 ### Should Fix (Medium Priority)
