@@ -62,13 +62,26 @@ export interface ColorPalette {
     is_monochrome: boolean;
 }
 
+/**
+ * Frequency bands separated from audio analysis
+ *
+ * **Phase 8.1 (v2) ranges** - Rebalanced to prevent treble dominance:
+ * - Bass: 20Hz - 400Hz (380 Hz range, 11% of spectrum)
+ * - Mid: 400Hz - 4kHz (3,600 Hz range, 52% of spectrum)
+ * - Treble: 4kHz - 14kHz (10,000 Hz range, 37% of spectrum)
+ *
+ * Previous v1 ranges (imbalanced):
+ * - Bass: 20Hz - 250Hz (only 3% of spectrum)
+ * - Mid: 250Hz - 4kHz (47% of spectrum)
+ * - Treble: 4kHz - 20kHz (200% of spectrum!)
+ */
 export interface FrequencyBands {
-    /** Bass frequencies (20Hz - 250Hz) */
+    /** Bass frequencies (20Hz - 400Hz) */
     bass: number[];
 
-    /** Mid frequencies (250Hz - 4kHz) */
+    /** Mid frequencies (400Hz - 4kHz) */
     mid: number[];
 
-    /** Treble frequencies (4kHz - 20kHz) */
+    /** Treble frequencies (4kHz - 14kHz) */
     treble: number[];
 }

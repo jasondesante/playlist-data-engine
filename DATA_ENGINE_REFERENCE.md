@@ -195,13 +195,18 @@ export interface ColorPalette {
 
 Audio frequency band separation for analysis.
 
+**Phase 8.1 (v2) ranges** - Rebalanced to prevent treble dominance:
+- Bass: 20Hz - 400Hz (380 Hz range, 11% of spectrum)
+- Mid: 400Hz - 4kHz (3,600 Hz range, 52% of spectrum)
+- Treble: 4kHz - 14kHz (10,000 Hz range, 37% of spectrum)
+
 ```typescript
 export interface FrequencyBands {
-    /** Bass frequencies (20Hz - 250Hz) */
+    /** Bass frequencies (20Hz - 400Hz) */
     bass: number[];
-    /** Mid frequencies (250Hz - 4kHz) */
+    /** Mid frequencies (400Hz - 4kHz) */
     mid: number[];
-    /** Treble frequencies (4kHz - 20kHz) */
+    /** Treble frequencies (4kHz - 14kHz) */
     treble: number[];
 }
 ```
@@ -1324,12 +1329,12 @@ Extracts dominant colors from an image URL.
 
 **Location:** `src/core/analysis/SpectrumScanner.ts`
 
-Separates raw frequency data into bands.
+Separates raw frequency data into bands using Phase 8.1 (v2) rebalanced ranges.
 
 - `static separateFrequencyBands(frequencyData: Uint8Array, sampleRate: number): FrequencyBands`
-    - **Bass:** 20Hz - 250Hz
-    - **Mid:** 250Hz - 4kHz
-    - **Treble:** 4kHz - 20kHz
+    - **Bass:** 20Hz - 400Hz (380 Hz range, 11% of spectrum)
+    - **Mid:** 400Hz - 4kHz (3,600 Hz range, 52% of spectrum)
+    - **Treble:** 4kHz - 14kHz (10,000 Hz range, 37% of spectrum)
 
 ---
 

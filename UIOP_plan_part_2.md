@@ -174,8 +174,10 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - Treble: 4kHz - 14kHz
 
 **Action Required**:
-- [ ] Update comments in `src/core/types/AudioProfile.ts` lines 66-73 to match v2 implementation
-- [ ] Update any documentation referencing old frequency ranges
+- [x] Update comments in `src/core/types/AudioProfile.ts` lines 66-73 to match v2 implementation
+- [x] Update any documentation referencing old frequency ranges
+
+**Resolution (2026-02-02)**: Updated FrequencyBands interface documentation in `src/core/types/AudioProfile.ts` with comprehensive JSDoc explaining Phase 8.1 v2 ranges. Also updated both occurrences in `DATA_ENGINE_REFERENCE.md` (lines 200-206 and 1335-1337) to show correct v2 frequency ranges: Bass 20Hz-400Hz, Mid 400Hz-4kHz, Treble 4kHz-14kHz.
 
 **Impact**: Low - Code works correctly, comments are just misleading
 
@@ -474,7 +476,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - [x] Export or remove MetadataExtractionOptions
 - [x] Export or document AudioAnalyzerOptions availability
 - [x] Export SpellSlots type from src/index.ts
-- [ ] Update FrequencyBands comments to match v2 implementation
+- [x] Update FrequencyBands comments to match v2 implementation
 - [ ] Fix EquipmentEffectApplier method documentation
 - [ ] Audit and fix parameter name differences throughout documentation
 
@@ -502,6 +504,6 @@ This plan lists all discrepancies, documentation errors, and action items discov
 | Category | Items | Completed | Remaining |
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
-| Medium Priority | 8 | 3 | 5 |
+| Medium Priority | 8 | 4 | 4 |
 | Low Priority | 9 | 0 | 9 |
-| **TOTAL** | **20** | **6** | **14** |
+| **TOTAL** | **20** | **7** | **13** |
