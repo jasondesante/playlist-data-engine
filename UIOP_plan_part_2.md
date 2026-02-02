@@ -147,7 +147,9 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - Not in public type exports
 
 **Action Required**:
-- [ ] Add `export type { SpellSlots } from './core/generation/SpellManager.js';` to `src/index.ts`
+- [x] Add `export type { SpellSlots } from './core/generation/SpellManager.js';` to `src/index.ts`
+
+**Resolution (2026-02-02)**: The `SpellSlots` interface is exported from `SpellManager.ts`. Since `SpellManager.initializeSpells()` returns this type and users working with spell data will need it for proper TypeScript typing, added `type SpellSlots` to the export from `src/index.ts:189`.
 
 **Impact**: Medium - Users working with spell data will want this type
 
@@ -471,7 +473,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 ### Should Fix (Medium Priority)
 - [x] Export or remove MetadataExtractionOptions
 - [x] Export or document AudioAnalyzerOptions availability
-- [ ] Export SpellSlots type from src/index.ts
+- [x] Export SpellSlots type from src/index.ts
 - [ ] Update FrequencyBands comments to match v2 implementation
 - [ ] Fix EquipmentEffectApplier method documentation
 - [ ] Audit and fix parameter name differences throughout documentation
@@ -500,6 +502,6 @@ This plan lists all discrepancies, documentation errors, and action items discov
 | Category | Items | Completed | Remaining |
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
-| Medium Priority | 8 | 2 | 6 |
+| Medium Priority | 8 | 3 | 5 |
 | Low Priority | 9 | 0 | 9 |
-| **TOTAL** | **20** | **5** | **15** |
+| **TOTAL** | **20** | **6** | **14** |

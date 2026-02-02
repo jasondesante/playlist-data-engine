@@ -186,7 +186,7 @@ export { RaceSelector } from './core/generation/RaceSelector.js';
 export { ClassSuggester } from './core/generation/ClassSuggester.js';
 export { AbilityScoreCalculator } from './core/generation/AbilityScoreCalculator.js';
 export { SkillAssigner } from './core/generation/SkillAssigner.js';
-export { SpellManager } from './core/generation/SpellManager.js';
+export { SpellManager, type SpellSlots } from './core/generation/SpellManager.js';
 export { EquipmentGenerator } from './core/generation/EquipmentGenerator.js';
 export { AppearanceGenerator } from './core/generation/AppearanceGenerator.js';
 export { NamingEngine } from './core/generation/NamingEngine.js';
