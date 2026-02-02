@@ -98,7 +98,9 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - Not included in public type exports
 
 **Action Required**:
-- [ ] Export `MetadataExtractionOptions` from `src/index.ts`
+- [ ] Determine if this interface should be part of public API
+- [ ] If yes, export from src/index.ts
+- [ ] If no, remove the interface since it's currently unused
 
 **Impact**: Low - Interface exists but is unused
 
