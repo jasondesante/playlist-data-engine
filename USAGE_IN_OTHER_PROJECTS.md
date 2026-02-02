@@ -939,9 +939,18 @@ const combatInstance = combat.startCombat(
 while (combatInstance.isActive) {
   const current = combat.getCurrentCombatant(combatInstance);
 
-  if (current.character.attacks && current.character.attacks.length > 0) {
-    // Execute attack
-    const attack = current.character.attacks[0];
+  // Create attack from equipped weapon
+  const equippedWeapon = current.character.equipment?.weapons.find(w => w.equipped);
+  if (equippedWeapon) {
+    // Build Attack object from weapon data
+    const attack: import('playlist-data-engine').Attack = {
+      name: equippedWeapon.name,
+      damage_dice: '1d8',  // Extract from weapon.damage.dice
+      damage_type: 'slashing',  // Extract from weapon.damage.damageType
+      type: 'melee',  // 'melee' or 'ranged' based on weapon properties
+      properties: []  // Optional: weapon properties like ['finesse', 'versatile']
+    };
+
     const target = combat.getLivingCombatants(combatInstance).find(c => c.id !== current.id);
 
     if (target) {

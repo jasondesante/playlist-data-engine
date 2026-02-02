@@ -49,9 +49,11 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - Attacks appear to be computed dynamically or derived from equipment/class features
 
 **Action Required**:
-- [ ] Document how attacks are actually computed/accessed and decide from there if the `attacks` property should be added to `CharacterSheet`. I am leaning towards getting rid of `attacks` if there is literally no use for it, and the engine uses `Attack`.
-- [ ] Remove references to `attacks` property on `CharacterSheet` from documentation
+- [x] Document how attacks are actually computed/accessed and decide from there if the `attacks` property should be added to `CharacterSheet`. I am leaning towards getting rid of `attacks` if there is literally no use for it, and the engine uses `Attack`.
+- [x] Remove references to `attacks` property on `CharacterSheet` from documentation
 - [ ] OR add the `attacks` property to `CharacterSheet` interface if it was intended to be there
+
+**Resolution (2026-02-02)**: The `attacks` property does NOT exist on `CharacterSheet`. The `Attack` type exists for combat operations, but attacks must be constructed from equipment (weapons) by the user. Fixed documentation to show proper pattern: extract weapon data from `character.equipment.weapons` and construct an `Attack` object. See USAGE_IN_OTHER_PROJECTS.md:942-956.
 
 **Impact**: Medium - Users may try to access `character.attacks` and get undefined
 
@@ -491,7 +493,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 
 | Category | Items | Completed | Remaining |
 |----------|-------|-----------|-----------|
-| High Priority | 3 | 1 | 2 |
+| High Priority | 3 | 2 | 1 |
 | Medium Priority | 8 | 0 | 8 |
 | Low Priority | 9 | 0 | 9 |
-| **TOTAL** | **20** | **1** | **19** |
+| **TOTAL** | **20** | **2** | **18** |
