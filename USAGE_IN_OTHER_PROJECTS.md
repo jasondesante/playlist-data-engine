@@ -95,6 +95,7 @@ Then reference it in your project code directly.
 - [Deterministic Character Generation](#deterministic-character-generation) - How the same seed always produces the same character
 - [Understanding XP Bonus Calculation](#understanding-xp-bonus-calculation) - How environmental and gaming modifiers combine
 - [Manual Level-Up Processing](#manual-level-up-processing) - Handle level-ups programmatically
+- [Hash Utilities and Deterministic Seeding](#hash-utilities-and-deterministic-seeding) - Generate deterministic seeds and random values
 - [Custom Features and Skills](#custom-features-and-skills) - Create custom class features, racial traits, and skills
 - [Custom Classes](#custom-classes) - Create entirely new classes or extend existing ones
 - [Spawn Rate Control](#spawn-rate-control) - Control how often custom content appears
@@ -1271,6 +1272,82 @@ if (result.leveledUp) {
 }
 ```
 
+### Hash Utilities and Deterministic Seeding
+
+The hash utilities provide deterministic seed generation for reproducible character generation:
+
+```typescript
+import { generateSeed, hashSeedToFloat, hashSeedToInt, deriveSeed, SeededRNG } from 'playlist-data-engine';
+
+// Generate a deterministic seed from blockchain data
+// Takes THREE parameters: chainName, tokenAddress, tokenId
+const seed = generateSeed('ethereum', '0x123abc...', '42');
+console.log(seed);  // "ethereum-0x123abc...-42"
+
+// Hash seed to float (0.0 - 1.0)
+const float = hashSeedToFloat(seed);
+console.log(float);  // e.g., 0.6423...
+
+// Hash seed to integer in range
+const stat = hashSeedToInt(seed, 8, 18);  // Random stat between 8 and 17
+console.log(stat);  // e.g., 14
+
+// Derive new seeds for related random values
+const raceSeed = deriveSeed(seed, 'race');
+const classSeed = deriveSeed(seed, 'class');
+const statsSeed = deriveSeed(seed, 'stats');
+console.log(raceSeed);  // "ethereum-0x123abc...-42:race"
+
+// Use SeededRNG for complex deterministic random operations
+const rng = new SeededRNG(seed);
+
+// Generate random float in [0.0, 1.0)
+const randomValue = rng.random();
+
+// Generate random integer in range [min, max)
+const d20Roll = rng.randomInt(1, 21);
+const damage = rng.randomInt(1, 9);  // 1d8
+
+// Pick random element from array
+const races = ['Human', 'Elf', 'Dwarf', 'Halfling'];
+const race = rng.randomChoice(races);
+
+// Pick weighted random element
+const treasure = [
+  { name: 'Gold', weight: 50 },
+  { name: 'Gem', weight: 30 },
+  { name: 'Artifact', weight: 10 }
+];
+const item = rng.weightedChoice(treasure, (t) => t.weight);
+
+// Shuffle array deterministically
+const cards = ['A', 'K', 'Q', 'J', '10', '9', '8', '7'];
+const shuffled = rng.shuffle([...cards]);
+```
+
+**Common Use Case: Blockchain-Based Character Generation**
+
+```typescript
+import { generateSeed, CharacterGenerator, AudioAnalyzer } from 'playlist-data-engine';
+
+// Given an NFT's blockchain data
+const nftData = {
+  chain: 'ethereum',
+  contractAddress: '0x1234567890abcdef...',
+  tokenId: '1234'
+};
+
+// Generate a deterministic seed
+const seed = generateSeed(nftData.chain, nftData.contractAddress, nftData.tokenId);
+
+// Generate character from seed and audio
+const analyzer = new AudioAnalyzer();
+const audio = await analyzer.extractSonicFingerprint(track.audio_url);
+const character = CharacterGenerator.generate(seed, audio, 'My NFT Hero');
+
+// The same NFT always generates the same character!
+```
+
 ---
 
 ## Extensibility System
@@ -1693,6 +1770,13 @@ All TypeScript types are exported, including:
 - `EquipmentMiniFeature` - Inline equipment-specific feature definition
 - `SpawnRandomOptions` - Options for random equipment spawning
 - `TreasureHoardResult` - Treasure hoard with items and estimated value
+
+### Utilities
+- `generateSeed` - Generate deterministic seeds from blockchain data (chainName, tokenAddress, tokenId)
+- `hashSeedToFloat` - Hash seed to float in 0.0-1.0 range
+- `hashSeedToInt` - Hash seed to integer in range [min, max)
+- `deriveSeed` - Derive new seed from base seed with suffix
+- `SeededRNG` - Deterministic random number generator (random, randomInt, randomChoice, weightedChoice, shuffle)
 
 ---
 

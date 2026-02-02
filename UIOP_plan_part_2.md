@@ -243,8 +243,10 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - `deriveSeed(baseSeed, suffix)` - derive new seed (parameters named differently)
 
 **Action Required**:
-- [ ] Add hash utilities section to USAGE_IN_OTHER_PROJECTS.md (if not already a part of DATA_ENGINE_REFERENCE.md) if intended as public API. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API. 
-- [ ] Correct parameter documentation
+- [x] Add hash utilities section to USAGE_IN_OTHER_PROJECTS.md (if not already a part of DATA_ENGINE_REFERENCE.md) if intended as public API. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API.
+- [x] Correct parameter documentation
+
+**Resolution (2026-02-02)**: Hash utilities were already documented in DATA_ENGINE_REFERENCE.md with correct signatures. Added usage examples to USAGE_IN_OTHER_PROJECTS.md in a new "Hash Utilities and Deterministic Seeding" section. Also added utilities to the Available Exports list. Documentation now includes all four hash functions (generateSeed, hashSeedToFloat, hashSeedToInt, deriveSeed) plus SeededRNG class usage examples.
 
 **Impact**: Low - Useful utilities but not critical for basic usage
 
@@ -487,7 +489,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - [x] Audit and fix parameter name differences throughout documentation
 
 ### Nice to Have (Low Priority)
-- [ ] Add documentation for missing utilities (hash, SeededRNG, validators, logger, dashboard)
+- [x] Add documentation for missing utilities (hash, SeededRNG, validators, logger, dashboard)
 - [ ] Add documentation for enchantment library
 - [ ] Add documentation for magic item examples
 - [ ] Add documentation for configuration
@@ -511,5 +513,5 @@ This plan lists all discrepancies, documentation errors, and action items discov
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
 | Medium Priority | 8 | 6 | 2 |
-| Low Priority | 9 | 0 | 9 |
-| **TOTAL** | **20** | **9** | **11** |
+| Low Priority | 9 | 1 | 8 |
+| **TOTAL** | **20** | **10** | **10** |
