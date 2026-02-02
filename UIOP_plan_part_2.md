@@ -446,8 +446,10 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - Exported from src/index.ts
 
 **Action Required**:
-- [ ] Document relationship between Equipment and EnhancedEquipment
-- [ ] Clarify which to use when
+- [x] Document relationship between Equipment and EnhancedEquipment
+- [x] Clarify which to use when
+
+**Resolution (2026-02-02)**: Added comprehensive documentation to USAGE_IN_OTHER_PROJECTS.md in the Equipment System Types section. Documented that `EnhancedEquipment` is the primary type for type-safe equipment data with discriminated unions, while `Equipment` is a legacy/base type with looser typing kept for backward compatibility. Added `InventoryItem` as the minimal inventory interface for simple operations. Documentation now clearly states to prefer `EnhancedEquipment` for new code.
 
 **Impact**: Low - Types are compatible, difference is internal
 
@@ -509,7 +511,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - [x] Add documentation for enchantment library
 - [x] Add documentation for magic item examples
 - [x] Add documentation for configuration
-- [ ] Document Equipment vs EnhancedEquipment relationship
+- [x] Document Equipment vs EnhancedEquipment relationship
 - [ ] Fix type name mismatches in documentation (RaceInfo→RaceDataEntry, etc.)
 
 ---
@@ -529,5 +531,5 @@ This plan lists all discrepancies, documentation errors, and action items discov
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
 | Medium Priority | 8 | 6 | 2 |
-| Low Priority | 9 | 8 | 1 |
-| **TOTAL** | **20** | **17** | **3** |
+| Low Priority | 9 | 9 | 0 |
+| **TOTAL** | **20** | **18** | **2** |

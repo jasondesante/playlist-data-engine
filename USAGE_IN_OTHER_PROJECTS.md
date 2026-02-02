@@ -2472,11 +2472,13 @@ All TypeScript types are exported, including:
 **For detailed prerequisite documentation, see [PREREQUISITES.md](docs/PREREQUISITES.md)**
 
 **Equipment System Types (NEW):**
-- `EnhancedEquipment` - Full equipment definition with properties, features, skills, spells
+- `EnhancedEquipment` - **Primary equipment type** - Full equipment definition with properties, features, skills, spells. Use this for type-safe equipment data with discriminated unions for EquipmentType, EquipmentRarity, EquipmentPropertyType, and EquipmentCondition
+- `Equipment` - **Legacy/base equipment type** from constants.ts with looser typing. Structurally similar to EnhancedEquipment but uses string literals instead of type unions. Kept for backward compatibility with internal code. Prefer `EnhancedEquipment` for new code
+- `InventoryItem` - Minimal inventory interface with name, quantity, and equipped properties. Used for simple inventory operations
 - `EquipmentProperty` - Individual equipment property (stat_bonus, skill_proficiency, ability_unlock, passive_modifier, special_property, damage_bonus, stat_requirement)
 - `EquipmentCondition` - Property conditions (vs_creature_type, at_time_of_day, wielder_race, wielder_class, while_equipped, on_hit, on_damage_taken, custom)
 - `EquipmentModification` - Runtime enchantment, curse, or upgrade
-- `EnhancedInventoryItem` - Inventory item with per-instance modifications
+- `EnhancedInventoryItem` - Inventory item with per-instance modifications (modifications, templateId, instanceId)
 - `EquipmentMiniFeature` - Inline equipment-specific feature definition
 - `SpawnRandomOptions` - Options for random equipment spawning
 - `TreasureHoardResult` - Treasure hoard with items and estimated value
