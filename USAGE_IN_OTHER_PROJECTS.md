@@ -1541,10 +1541,12 @@ character = EquipmentSpawnHelper.addToCharacter(character, loot, false);
 import { EquipmentEffectApplier } from 'playlist-data-engine';
 
 // Equip item - applies all properties, features, skills, spells
+// instanceId is optional - use it when you want to track specific item instances
 const result = EquipmentEffectApplier.equipItem(character, equipment, 'instance_123');
 // result: { applied: boolean, count: number, errors: string[] }
 
-// Unequip item - removes all effects (instanceId is optional)
+// Unequip item - removes all effects
+// instanceId is optional - only needed if you used it when equipping
 const unequipResult = EquipmentEffectApplier.unequipItem(character, 'Flaming Sword', 'instance_123');
 // unequipResult: { applied: boolean, count: number, errors: string[] }
 ```

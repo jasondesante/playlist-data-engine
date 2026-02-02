@@ -194,8 +194,8 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - `unequipItem(character, equipmentName, instanceId?: string): EffectApplicationResult` - instanceId is optional, returns result
 
 **Action Required**:
-- [ ] Update example code to show `instanceId` as optional
-- [ ] Update return type documentation for `unequipItem` to show `EffectApplicationResult`
+- [x] Update example code to show `instanceId` as optional
+- [x] Update return type documentation for `unequipItem` to show `EffectApplicationResult`
 
 **Impact**: Low - Code examples work, but documentation is misleading
 
@@ -477,7 +477,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - [x] Export or document AudioAnalyzerOptions availability
 - [x] Export SpellSlots type from src/index.ts
 - [x] Update FrequencyBands comments to match v2 implementation
-- [ ] Fix EquipmentEffectApplier method documentation
+- [x] Fix EquipmentEffectApplier method documentation
 - [ ] Audit and fix parameter name differences throughout documentation
 
 ### Nice to Have (Low Priority)
@@ -504,6 +504,6 @@ This plan lists all discrepancies, documentation errors, and action items discov
 | Category | Items | Completed | Remaining |
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
-| Medium Priority | 8 | 4 | 4 |
+| Medium Priority | 8 | 5 | 3 |
 | Low Priority | 9 | 0 | 9 |
-| **TOTAL** | **20** | **7** | **13** |
+| **TOTAL** | **20** | **8** | **12** |
