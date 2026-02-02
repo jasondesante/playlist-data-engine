@@ -3411,7 +3411,7 @@ interface EnhancedEquipment {
     weaponProperties?: string[];
     spawnWeight?: number;
     templateId?: string;
-    source: 'default' | 'custom';
+    source?: 'default' | 'custom';
     tags?: string[];
 }
 
