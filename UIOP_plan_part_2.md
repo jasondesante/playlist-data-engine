@@ -126,7 +126,9 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - Not included in public type exports
 
 **Action Required**:
-- [ ] Export `AudioAnalyzerOptions` from `src/index.ts` if public API consumers should configure audio analysis
+- [x] Export `AudioAnalyzerOptions` from `src/index.ts` if public API consumers should configure audio analysis
+
+**Resolution (2026-02-02)**: The `AudioAnalyzerOptions` interface is defined and exported from `src/core/analysis/AudioAnalyzer.ts`. Since `AudioAnalyzer` is part of the public API and its constructor takes this options type, users need access to `AudioAnalyzerOptions` for proper TypeScript typing. Added `type AudioAnalyzerOptions` to the export from `src/index.ts:200`.
 
 **Impact**: Low - Only affects users who want to customize audio analysis behavior
 
@@ -468,7 +470,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 
 ### Should Fix (Medium Priority)
 - [x] Export or remove MetadataExtractionOptions
-- [ ] Export or document AudioAnalyzerOptions availability
+- [x] Export or document AudioAnalyzerOptions availability
 - [ ] Export SpellSlots type from src/index.ts
 - [ ] Update FrequencyBands comments to match v2 implementation
 - [ ] Fix EquipmentEffectApplier method documentation
@@ -498,6 +500,6 @@ This plan lists all discrepancies, documentation errors, and action items discov
 | Category | Items | Completed | Remaining |
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
-| Medium Priority | 8 | 1 | 7 |
+| Medium Priority | 8 | 2 | 6 |
 | Low Priority | 9 | 0 | 9 |
-| **TOTAL** | **20** | **4** | **16** |
+| **TOTAL** | **20** | **5** | **15** |

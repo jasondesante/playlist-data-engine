@@ -197,7 +197,7 @@ export { NamingEngine } from './core/generation/NamingEngine.js';
 
 export { PlaylistParser } from './core/parser/PlaylistParser.js';
 export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
-export { AudioAnalyzer } from './core/analysis/AudioAnalyzer.js';
+export { AudioAnalyzer, type AudioAnalyzerOptions } from './core/analysis/AudioAnalyzer.js';
 export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
 export { ColorExtractor } from './core/analysis/ColorExtractor.js';
 
