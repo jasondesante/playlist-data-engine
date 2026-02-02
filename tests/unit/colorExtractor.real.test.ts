@@ -15,7 +15,7 @@ describe('ColorExtractor - Real Image Tests', () => {
         extractor = new ColorExtractor();
 
         // Load the test image and convert to data URL
-        const imagePath = resolve(process.cwd(), 'test-image.jpg');
+        const imagePath = resolve(process.cwd(), 'src/assets/test-image.jpg');
         const imageBuffer = readFileSync(imagePath);
         const base64Image = imageBuffer.toString('base64');
         imageDataUrl = `data:image/jpeg;base64,${base64Image}`;
