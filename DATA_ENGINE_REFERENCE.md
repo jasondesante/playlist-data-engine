@@ -10,8 +10,9 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
 1. [Data Types](#data-types)
 2. [Core Modules](#core-modules)
 3. [Progression System](#progression-system)
-4. [Environmental Sensors](#environmental-sensors)
-5. [Gaming Integration](#gaming-integration)
+4. [Configuration](#configuration)
+5. [Environmental Sensors](#environmental-sensors)
+6. [Gaming Integration](#gaming-integration)
 6. [Combat System](#combat-system)
 7. [Equipment System](#equipment-system)
    - [Equipment Types](#equipment-types)
@@ -2666,6 +2667,166 @@ LevelUpProcessor.setUncappedConfig({
     proficiencyBonusFormula: (level) => 2 + Math.floor(Math.sqrt(level))
 });
 ```
+
+---
+
+## Configuration
+
+**Locations:**
+- Sensor Config: `src/core/config/sensorConfig.ts`
+- Progression Config: `src/core/config/progressionConfig.ts`
+
+The engine provides centralized configuration options for sensors and progression systems. These configurations allow you to customize behavior such as cache TTLs, retry logic, XP modifiers, and level-up settings.
+
+### Sensor Configuration
+
+**Sensor Configuration Types**
+
+```typescript
+// Complete sensor configuration
+export interface SensorConfig {
+    geolocation: Partial<GeolocationSensorConfig>;
+    weather: Partial<WeatherSensorConfig>;
+    gaming: Partial<GamingSensorConfig>;
+    xpModifier: Partial<XPModifierConfig>;
+    retry: Partial<RetryConfig>;
+}
+
+// Individual sensor configs
+export interface GeolocationSensorConfig {
+    cacheTTL?: number;              // Default: 5 minutes
+    useLocalStorage?: boolean;      // Default: true
+    enableHighAccuracy?: boolean;   // Default: true
+    timeout?: number;               // Default: 5000ms
+}
+
+export interface WeatherSensorConfig {
+    apiKey?: string;
+    cacheTTL?: number;              // Default: 12 minutes
+    forecastCacheTTL?: number;      // Default: 60 minutes
+    useLocalStorage?: boolean;      // Default: true
+}
+
+export interface GamingSensorConfig {
+    steam?: {
+        apiKey?: string;
+        steamId?: string;
+        pollInterval?: number;      // Default: 60000ms (1 minute)
+    };
+    discord?: {
+        clientId?: string;
+        enableRichPresence?: boolean; // Default: true
+        pollInterval?: number;      // Default: 60000ms
+    };
+    metadataCacheExpiry?: number;   // Default: 24 hours
+    maxBackoffMs?: number;         // Default: 10 minutes
+    xpModifier?: Partial<XPModifierConfig>;
+}
+
+export interface XPModifierConfig {
+    maxModifier: number;           // Default: 3.0
+    maxGamingModifier: number;     // Default: 1.75
+    runningBonus: number;          // Default: 0.5
+    walkingBonus: number;          // Default: 0.2
+    stormBonus: number;            // Default: 0.4
+    snowBonus: number;             // Default: 0.3
+    nightBonus: number;            // Default: 0.25
+    altitudeThreshold: number;     // Default: 1000m
+    altitudeBonus: number;         // Default: 0.3
+    gamingBaseBonus: number;       // Default: 0.25
+    gamingRPGBonus: number;        // Default: 0.2
+    gamingMultiplayerBonus: number; // Default: 0.15
+}
+
+export interface RetryConfig {
+    enabled: boolean;              // Default: true
+    maxRetries?: number;           // Default: 3
+    initialDelayMs?: number;       // Default: 1000ms
+    maxDelayMs?: number;           // Default: 10000ms
+    backoffMultiplier?: number;    // Default: 2
+}
+```
+
+**Available Exports:**
+
+```typescript
+import {
+    DEFAULT_SENSOR_CONFIG,
+    loadConfigFromEnv,
+    mergeConfig,
+    type SensorConfig,
+    type GeolocationSensorConfig,
+    type WeatherSensorConfig,
+    type GamingSensorConfig,
+    type XPModifierConfig,
+    type RetryConfig
+} from 'playlist-data-engine';
+```
+
+**Functions:**
+
+- `loadConfigFromEnv(): Partial<SensorConfig>`
+    - Loads configuration from environment variables
+    - Reads `WEATHER_API_KEY`, `STEAM_API_KEY`, `STEAM_USER_ID`, `DISCORD_CLIENT_ID`, `XP_MAX_MODIFIER`
+
+- `mergeConfig(userConfig?: Partial<SensorConfig>): Required<SensorConfig>`
+    - Merges user config with environment config and defaults
+    - Priority: userConfig > envConfig > defaults
+
+**Constants:**
+
+- `DEFAULT_SENSOR_CONFIG: Required<SensorConfig>` - Default configuration values
+
+### Progression Configuration
+
+**Progression Configuration Type**
+
+```typescript
+export interface ProgressionConfig {
+    xp: {
+        level_thresholds: number[];
+        xp_per_second: number;
+        xp_per_track_completion: number;
+        activity_bonuses: {
+            stationary: number;
+            walking: number;
+            running: number;
+            driving: number;
+            night_time: number;
+            extreme_weather: number;
+            high_altitude: number;
+        };
+        track_mastery_threshold: number;
+        mastery_bonus_xp: number;
+    };
+    statIncrease: Partial<StatIncreaseConfig>;
+    levelUp: {
+        useAverageHP: boolean;
+        allowManualStatSelection: boolean;
+        showNotifications: boolean;
+    };
+}
+```
+
+**Available Exports:**
+
+```typescript
+import {
+    DEFAULT_PROGRESSION_CONFIG,
+    mergeProgressionConfig,
+    type ProgressionConfig
+} from 'playlist-data-engine';
+```
+
+**Functions:**
+
+- `mergeProgressionConfig(userConfig?: Partial<ProgressionConfig>): Required<ProgressionConfig>`
+    - Merges user configuration with defaults
+    - Returns complete configuration with all required fields
+
+**Constants:**
+
+- `DEFAULT_PROGRESSION_CONFIG: Required<ProgressionConfig>` - Default D&D 5e progression values
 
 ---
 

@@ -416,7 +416,9 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - `mergeProgressionConfig()`
 
 **Action Required**:
-- [ ] Add Configuration section to USAGE_IN_OTHER_PROJECTS.md. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API.
+- [x] Add Configuration section to USAGE_IN_OTHER_PROJECTS.md. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API.
+
+**Resolution (2026-02-02)**: Configuration was NOT documented anywhere. Added comprehensive documentation to DATA_ENGINE_REFERENCE.md with all configuration types (SensorConfig, ProgressionConfig), interfaces (GeolocationSensorConfig, WeatherSensorConfig, GamingSensorConfig, XPModifierConfig, RetryConfig), functions (loadConfigFromEnv, mergeConfig, mergeProgressionConfig), and constants (DEFAULT_SENSOR_CONFIG, DEFAULT_PROGRESSION_CONFIG). Added usage examples to USAGE_IN_OTHER_PROJECTS.md including sensor configuration with custom cache TTLs and XP modifiers, progression configuration with custom XP rates and level-up settings. Also added Configuration to the Available Exports list in both locations. The configuration API is now fully documented with correct signatures and practical usage examples.
 
 **Impact**: Low - Advanced configuration, not needed for basic usage
 
@@ -506,7 +508,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - [x] Add documentation for missing utilities (hash, SeededRNG, validators, logger, dashboard)
 - [x] Add documentation for enchantment library
 - [x] Add documentation for magic item examples
-- [ ] Add documentation for configuration
+- [x] Add documentation for configuration
 - [ ] Document Equipment vs EnhancedEquipment relationship
 - [ ] Fix type name mismatches in documentation (RaceInfo→RaceDataEntry, etc.)
 
@@ -527,5 +529,5 @@ This plan lists all discrepancies, documentation errors, and action items discov
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
 | Medium Priority | 8 | 6 | 2 |
-| Low Priority | 9 | 7 | 2 |
-| **TOTAL** | **20** | **16** | **4** |
+| Low Priority | 9 | 8 | 1 |
+| **TOTAL** | **20** | **17** | **3** |

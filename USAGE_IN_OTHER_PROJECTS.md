@@ -2269,6 +2269,109 @@ console.log(viciousTemplate.properties);
 
 ---
 
+### Configuration (NEW)
+
+The library provides centralized configuration options for sensors and progression systems. These configurations allow you to customize behavior such as cache TTLs, retry logic, XP modifiers, and level-up settings.
+
+#### Sensor Configuration
+
+Sensor configuration controls environmental and gaming platform sensor behavior, including caching, retry logic, and XP modifier calculations.
+
+```typescript
+import {
+    DEFAULT_SENSOR_CONFIG,
+    loadConfigFromEnv,
+    mergeConfig,
+    type SensorConfig
+} from 'playlist-data-engine';
+
+// Use default configuration
+const defaultConfig = DEFAULT_SENSOR_CONFIG;
+console.log(defaultConfig.xpModifier.maxModifier); // 3.0
+
+// Load configuration from environment variables
+// Reads: WEATHER_API_KEY, STEAM_API_KEY, STEAM_USER_ID, DISCORD_CLIENT_ID, XP_MAX_MODIFIER
+const envConfig = loadConfigFromEnv();
+
+// Merge custom configuration with defaults
+const customConfig = mergeConfig({
+    weather: {
+        cacheTTL: 15 * 60 * 1000, // 15 minutes (default: 12 minutes)
+        apiKey: 'your_api_key_here'
+    },
+    xpModifier: {
+        maxModifier: 2.5, // Lower cap (default: 3.0)
+        runningBonus: 0.6, // Higher bonus for running (default: 0.5)
+        nightBonus: 0.3 // Higher night bonus (default: 0.25)
+    },
+    gaming: {
+        steam: {
+            pollInterval: 30000 // Poll every 30 seconds (default: 60000)
+        }
+    }
+});
+
+// Use configuration with EnvironmentalSensors
+import { EnvironmentalSensors } from 'playlist-data-engine';
+
+const sensors = new EnvironmentalSensors(customConfig);
+```
+
+#### Progression Configuration
+
+Progression configuration controls XP calculation, stat increases, and level-up behavior.
+
+```typescript
+import {
+    DEFAULT_PROGRESSION_CONFIG,
+    mergeProgressionConfig,
+    type ProgressionConfig
+} from 'playlist-data-engine';
+
+// Use default configuration (D&D 5e standard)
+const defaultProgression = DEFAULT_PROGRESSION_CONFIG;
+console.log(defaultProgression.xp.level_thresholds); // D&D 5e XP thresholds
+
+// Customize progression settings
+const customProgression = mergeProgressionConfig({
+    xp: {
+        xp_per_second: 2, // Double XP rate (default: 1)
+        activity_bonuses: {
+            running: 2.0, // 2x XP while running (default: 1.5)
+            night_time: 1.5 // 1.5x XP at night (default: 1.25)
+        }
+    },
+    statIncrease: {
+        strategy: 'balanced', // Use balanced strategy instead of manual
+        autoApply: true // Automatically apply stat increases
+    },
+    levelUp: {
+        useAverageHP: true, // Use average HP instead of rolling
+        allowManualStatSelection: false // Disable manual selection
+    }
+});
+```
+
+**Available Exports:**
+
+**Sensor Configuration:**
+- `DEFAULT_SENSOR_CONFIG` - Default sensor configuration values
+- `loadConfigFromEnv()` - Load config from environment variables
+- `mergeConfig(userConfig?)` - Merge user config with defaults and env vars
+- `type SensorConfig` - Complete sensor configuration interface
+- `type GeolocationSensorConfig` - GPS sensor configuration
+- `type WeatherSensorConfig` - Weather API configuration
+- `type GamingSensorConfig` - Gaming platform configuration
+- `type XPModifierConfig` - XP modifier calculation settings
+- `type RetryConfig` - Retry behavior configuration
+
+**Progression Configuration:**
+- `DEFAULT_PROGRESSION_CONFIG` - Default D&D 5e progression values
+- `mergeProgressionConfig(userConfig?)` - Merge progression config with defaults
+- `type ProgressionConfig` - Progression system configuration interface
+
+---
+
 ## Available Exports
 
 The main exports from the library are:
@@ -2405,6 +2508,15 @@ All TypeScript types are exported, including:
 - `AudioProfileSchema` - Zod schema for validating audio analysis results
 - `AbilityScoresSchema` - Zod schema for validating character ability scores
 - `CharacterSheetSchema` - Zod schema for validating complete character sheets
+
+**Configuration (NEW)**
+- `DEFAULT_SENSOR_CONFIG` - Default sensor configuration values
+- `loadConfigFromEnv()` - Load sensor config from environment variables
+- `mergeConfig(userConfig?)` - Merge sensor config with defaults
+- `DEFAULT_PROGRESSION_CONFIG` - Default D&D 5e progression values
+- `mergeProgressionConfig(userConfig?)` - Merge progression config with defaults
+- `type SensorConfig` - Sensor configuration interface
+- `type ProgressionConfig` - Progression configuration interface
 
 ---
 
