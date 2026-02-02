@@ -27,8 +27,10 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - Neither is exported from the main `src/index.ts`
 
 **Action Required**:
-- [ ] Export these classes if direct access should be part of the public API
-- [ ] Make sure USAGE_IN_OTHER_PROJECTS.md matches the actual exports
+- [x] Export these classes if direct access should be part of the public API
+- [x] Make sure USAGE_IN_OTHER_PROJECTS.md matches the actual exports
+
+**Resolution (2026-02-02)**: Documentation already correctly states at line 1537: "*`SteamAPIClient` and `DiscordRPCClient` are internal implementation classes used by `GamingPlatformSensors`. They are not exported as part of the public API.*" No action needed - documentation is accurate.
 
 **Impact**: Medium
 
@@ -454,7 +456,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 ## Summary Checklist
 
 ### Must Fix (High Priority)
-- [ ] Remove SteamAPIClient and DiscordRPCClient from exports documentation
+- [x] Remove SteamAPIClient and DiscordRPCClient from exports documentation
 - [ ] Resolve CharacterSheet.attacks property discrepancy
 - [ ] Fix DiceRoller documentation or add proper documentation with correct signatures
 
@@ -489,7 +491,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 
 | Category | Items | Completed | Remaining |
 |----------|-------|-----------|-----------|
-| High Priority | 3 | 0 | 3 |
+| High Priority | 3 | 1 | 2 |
 | Medium Priority | 8 | 0 | 8 |
 | Low Priority | 9 | 0 | 9 |
-| **TOTAL** | **20** | **0** | **20** |
+| **TOTAL** | **20** | **1** | **19** |
