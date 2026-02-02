@@ -61,6 +61,9 @@ interface SkillPrerequisite {
     /** Specific race required */
     race?: Race;
 
+    /** Specific subrace required (e.g., 'High Elf', 'Hill Dwarf') */
+    subrace?: string;
+
     /** Skills that must be proficient first (by skill ID) */
     skills?: string[];
 

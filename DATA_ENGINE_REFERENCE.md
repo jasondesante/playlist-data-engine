@@ -1308,82 +1308,18 @@ export interface ClassDataEntry {
 }
 ```
 
-**SkillPrerequisite (Detailed)**
+**Prerequisites**
 
-```typescript
-/**
- * Skill prerequisite interface
- *
- * Defines prerequisites that must be met before a character can gain
- * proficiency in a skill. Allows for advanced skills that require base
- * skills, specific features, spells, ability scores, level, class, or race.
- */
-export interface SkillPrerequisite {
-    /** Minimum character level required */
-    level?: number;
+**For comprehensive guide, examples, and API reference:** See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
 
-    /** Minimum ability scores required */
-    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+Skills, spells, and features can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced abilities that require:
+- Base skills, spells, or features
+- Specific ability scores
+- Minimum level
+- Class or race requirements
+- Custom conditions
 
-    /** Specific class required */
-    class?: Class;
-
-    /** Specific race required */
-    race?: Race;
-
-    /** Specific subrace required (e.g., 'High Elf', 'Hill Dwarf') */
-    subrace?: string;
-
-    /** Skills that must be proficient first (by skill ID) */
-    skills?: string[];
-
-    /** Features that must be learned first (by feature ID) */
-    features?: string[];
-
-    /** Spells that must be known first (by spell name) */
-    spells?: string[];
-
-    /** Custom condition description */
-    custom?: string;
-}
-```
-
-**SpellPrerequisite (Detailed)**
-
-```typescript
-/**
- * Spell prerequisite interface
- *
- * Defines prerequisites that must be met before a spellcaster can learn
- * a spell. Allows for specialized spells that require specific features,
- * abilities, spells, skills, level, or class.
- */
-export interface SpellPrerequisite {
-    /** Minimum character level */
-    level?: number;
-
-    /** Minimum spellcaster level (if different from character level) */
-    casterLevel?: number;
-
-    /** Minimum ability scores */
-    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
-
-    /** Specific class required */
-    class?: string;
-
-    /** Features that must be learned first (by feature ID) */
-    features?: string[];
-
-    /** Spells that must be known first (by spell name) */
-    spells?: string[];
-
-    /** Skills that must be proficient first (by skill ID) */
-    skills?: string[];
-
-    /** Custom condition */
-    custom?: string;
-}
-```
+See [PREREQUISITES.md](docs/PREREQUISITES.md) for complete interface definitions and usage examples.
 
 **Type Helper Functions**
 
@@ -4869,29 +4805,6 @@ Optional fields validated:
 
 Skills can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced skills that require base skills, specific features, spells, ability scores, level, class, or race.
 
-#### API Interfaces
-
-```typescript
-interface SkillPrerequisite {
-    level?: number;
-    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
-    class?: Class;
-    race?: Race;
-    skills?: string[];
-    features?: string[];
-    spells?: string[];
-    custom?: string;
-}
-
-interface CustomSkill {
-    id: string;
-    name: string;
-    ability: Ability;
-    prerequisites?: SkillPrerequisite;
-    source: 'default' | 'custom';
-}
-```
-
 **Validation:**
 - `SkillValidator.validateSkillPrerequisites(skill, character)` - Validate prerequisites against character
 - `SkillRegistry.validatePrerequisites(skill, character)` - Validate via registry
@@ -4903,29 +4816,6 @@ interface CustomSkill {
 **For comprehensive guide, examples, and best practices:** See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
 
 Spells can have prerequisites that must be met before a spellcaster can learn them. This allows for specialized spells that require specific features, abilities, spells, skills, level, or class.
-
-#### API Interfaces
-
-```typescript
-interface SpellPrerequisite {
-    level?: number;
-    casterLevel?: number;
-    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
-    class?: string;
-    features?: string[];
-    spells?: string[];
-    skills?: string[];
-    custom?: string;
-}
-
-interface Spell {
-    id?: string;
-    name: string;
-    level: number;
-    school: 'Abjuration' | 'Conjuration' | 'Divination' | 'Enchantment' | 'Evocation' | 'Illusion' | 'Necromancy' | 'Transmutation';
-    prerequisites?: SpellPrerequisite;
-}
-```
 
 **Validation:**
 - `SpellValidator.validateSpellPrerequisites(prerequisites, character)` - Validate prerequisites against character
