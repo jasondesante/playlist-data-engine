@@ -926,6 +926,87 @@ Zod validation schemas for runtime type validation of playlist, audio, and chara
 - `AbilityScoresSchema`: Validates ability scores (lines 94-101) - validates all six ability scores (STR, DEX, CON, INT, WIS, CHA) are in range 1-20
 - `CharacterSheetSchema`: Validates character data (lines 106-156) - comprehensive validation of complete character sheet including nested objects for abilities, HP, skills, equipment, appearance, and XP
 
+**Logging**
+
+*Location: `src/utils/logger.ts`*
+
+The Logger utility provides centralized logging with consistent log levels across the application. It supports configurable verbosity, custom handlers for testing, and diagnostic mode for troubleshooting.
+
+```typescript
+enum LogLevel {
+    DEBUG = 0,   // Detailed debugging information
+    INFO = 1,    // General operational information
+    WARN = 2,    // Warning conditions that should be addressed
+    ERROR = 3,   // Error conditions that need attention
+    NONE = 4     // Disable all logging
+}
+
+class Logger {
+    // Instance methods
+    debug(message: string, data?: unknown): void
+    info(message: string, data?: unknown): void
+    warn(message: string, data?: unknown): void
+    error(message: string, data?: unknown): void
+
+    // Static methods
+    static for(context: string): Logger
+    static setLevel(level: LogLevel): void
+    static getLevel(): LogLevel
+    static configure(config: LoggerConfig): void
+    static reset(): void
+
+    // Verbose mode (convenience for setting DEBUG level)
+    static enableVerbose(): void
+    static disableVerbose(): void
+    static setVerbose(enabled: boolean): void
+    static isVerbose(): boolean
+
+    // Diagnostic mode (maximum verbosity for troubleshooting)
+    static enableDiagnosticMode(): void
+    static disableDiagnosticMode(): void
+    static isDiagnosticMode(): boolean
+}
+
+function createLogger(context: string): Logger
+
+interface LogEntry {
+    timestamp: Date
+    level: LogLevel
+    context: string
+    message: string
+    data?: unknown
+}
+
+interface LoggerConfig {
+    level?: LogLevel
+    includeTimestamp?: boolean
+    includeContext?: boolean
+    customHandler?: (entry: LogEntry) => void
+}
+```
+
+**Method Reference:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `Logger.for(context)` | `Logger` | Creates a named logger instance for a class/module |
+| `createLogger(context)` | `Logger` | Convenience function equivalent to `Logger.for()` |
+| `debug(message, data?)` | `void` | Log debug message (most verbose) |
+| `info(message, data?)` | `void` | Log info message (general operational info) |
+| `warn(message, data?)` | `void` | Log warning message (potential issues) |
+| `error(message, data?)` | `void` | Log error message (errors needing attention) |
+| `Logger.setLevel(level)` | `void` | Set minimum log level to display (default: INFO) |
+| `Logger.getLevel()` | `LogLevel` | Get current global log level |
+| `Logger.configure(config)` | `void` | Configure logger globally (level, timestamps, handler) |
+| `Logger.reset()` | `void` | Reset to default configuration |
+| `Logger.enableVerbose()` | `void` | Enable verbose mode (sets level to DEBUG) |
+| `Logger.disableVerbose()` | `void` | Disable verbose mode (sets level to INFO) |
+| `Logger.setVerbose(enabled)` | `void` | Set verbose mode on/off |
+| `Logger.isVerbose()` | `boolean` | Check if verbose mode is enabled |
+| `Logger.enableDiagnosticMode()` | `void` | Enable diagnostic mode (maximum verbosity) |
+| `Logger.disableDiagnosticMode()` | `void` | Disable diagnostic mode |
+| `Logger.isDiagnosticMode()` | `boolean` | Check if diagnostic mode is enabled |
+
 ---
 
 ### Game Data Reference
