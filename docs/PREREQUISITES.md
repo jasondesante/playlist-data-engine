@@ -405,6 +405,38 @@ const canLearn = registry.meetsPrerequisites(feature, character);
 
 ---
 
+### Prerequisite Validation Rules
+
+When validating prerequisites, the system performs the following checks for each field:
+
+**`validatePrerequisites()` in FeatureValidator checks:**
+
+- **`level`** - Must be a number between 1 and 20
+- **`abilities`** - Must be a record with valid ability keys (STR, DEX, CON, INT, WIS, CHA) and scores between 1-20
+- **`class`** - Must be a valid default D&D 5e class or a custom class registered via ExtensionManager
+- **`race`** - Must be a valid default race or a custom race registered via ExtensionManager
+- **`subrace`** - Must be a non-empty string (for subrace-specific prerequisites)
+- **`features`** - Must be an array of feature ID strings
+- **`skills`** - Must be an array of valid skill IDs (lowercase_with_underscores format)
+- **`spells`** - Must be an array of spell name strings
+- **`custom`** - Must be a string (manual condition description for display purposes only)
+
+**Runtime Validation:**
+
+During runtime validation (when checking if a character meets prerequisites):
+
+- **Level** - Compares character's `level` against required level
+- **Abilities** - Checks if character's ability scores meet minimum values
+- **Class** - Checks if character's `class` matches required class
+- **Race** - Checks if character's `race` matches required race
+- **Subrace** - Checks if character's `subrace` matches required subrace
+- **Features** - Checks if required feature IDs are in character's `class_features` array
+- **Skills** - Checks if required skills are proficient or expertise (based on skill proficiency level)
+- **Spells** - Checks if required spells are in character's `known_spells` or `cantrips` arrays
+- **Custom** - Displayed as an unmet prerequisite but not programmatically validated
+
+---
+
 ## Examples
 
 ### Complete Example: Dragon-Themed Content

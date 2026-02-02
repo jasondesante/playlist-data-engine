@@ -4500,18 +4500,11 @@ Optional fields validated:
 For `skill_proficiency` effects:
 - `value` - Must be one of: `none`, `proficient`, `expertise`
 
-**Prerequisite Validation Rules:**
+**Prerequisite Validation:**
 
-`validatePrerequisites()` checks:
-- `level` - Number between 1 and 20
-- `abilities` - Record with valid abilities (STR, DEX, CON, INT, WIS, CHA) and scores between 1-20
-- `class` - Valid default class or custom class registered via ExtensionManager
-- `race` - Valid default race or custom race registered via ExtensionManager
-- `subrace` - Non-empty string
-- `features` - Array of feature ID strings
-- `skills` - Array of valid skill IDs
-- `spells` - Array of spell name strings
-- `custom` - String (manual condition description)
+**For detailed validation rules and runtime behavior:** See [docs/PREREQUISITES.md#validation-system](docs/PREREQUISITES.md#validation-system)
+
+`validatePrerequisites()` validates prerequisite objects and their runtime values against a character.
 
 ---
 
