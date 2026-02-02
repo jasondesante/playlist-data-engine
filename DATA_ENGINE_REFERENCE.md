@@ -918,10 +918,13 @@ class SeededRNG {
 
 *Location: `src/utils/validators.ts`*
 
-- `PlaylistTrackSchema`: Validates track metadata (lines 14-48)
-- `ServerlessPlaylistSchema`: Validates full playlist (lines 53-61)
-- `AudioProfileSchema`: Validates audio analysis (lines 66-89)
-- `CharacterSheetSchema`: Validates character data (lines 106-156)
+Zod validation schemas for runtime type validation of playlist, audio, and character data.
+
+- `PlaylistTrackSchema`: Validates track metadata (lines 14-48) - includes chain-specific validation (AR requires tx_id, other chains require token_address and token_id)
+- `ServerlessPlaylistSchema`: Validates full playlist (lines 53-61) - validates playlist structure with metadata and tracks array
+- `AudioProfileSchema`: Validates audio analysis (lines 66-89) - validates frequency analysis, color palette, and analysis metadata
+- `AbilityScoresSchema`: Validates ability scores (lines 94-101) - validates all six ability scores (STR, DEX, CON, INT, WIS, CHA) are in range 1-20
+- `CharacterSheetSchema`: Validates character data (lines 106-156) - comprehensive validation of complete character sheet including nested objects for abilities, HP, skills, equipment, appearance, and XP
 
 ---
 

@@ -96,6 +96,7 @@ Then reference it in your project code directly.
 - [Understanding XP Bonus Calculation](#understanding-xp-bonus-calculation) - How environmental and gaming modifiers combine
 - [Manual Level-Up Processing](#manual-level-up-processing) - Handle level-ups programmatically
 - [Hash Utilities and Deterministic Seeding](#hash-utilities-and-deterministic-seeding) - Generate deterministic seeds and random values
+- [Validation Schemas](#validation-schemas) - Runtime type validation with Zod schemas
 - [Custom Features and Skills](#custom-features-and-skills) - Create custom class features, racial traits, and skills
 - [Custom Classes](#custom-classes) - Create entirely new classes or extend existing ones
 - [Spawn Rate Control](#spawn-rate-control) - Control how often custom content appears
@@ -1351,6 +1352,130 @@ const character = CharacterGenerator.generate(seed, audio, 'My NFT Hero');
 
 ---
 
+### Validation Schemas
+
+The library exports Zod validation schemas for runtime type validation of playlist, audio, and character data. Use these to validate external data before processing or to ensure API responses match expected formats.
+
+```typescript
+import {
+  PlaylistTrackSchema,
+  ServerlessPlaylistSchema,
+  AudioProfileSchema,
+  AbilityScoresSchema,
+  CharacterSheetSchema
+} from 'playlist-data-engine';
+
+// Validate a playlist track from an external API
+const externalTrackData = {
+  id: 'track-123',
+  uuid: '550e8400-e29b-41d4-a716-446655440000',
+  playlist_index: 0,
+  chain_name: 'ethereum',
+  token_address: '0x123abc...',
+  token_id: '42',
+  platform: 'spotify',
+  title: 'Epic Battle Music',
+  artist: 'Composer Name',
+  image_url: 'https://example.com/image.jpg',
+  audio_url: 'https://example.com/audio.mp3',
+  duration: 240,
+  genre: 'Soundtrack',
+  tags: ['epic', 'battle', 'orchestral']
+};
+
+const trackResult = PlaylistTrackSchema.safeParse(externalTrackData);
+if (!trackResult.success) {
+  console.error('Invalid track data:', trackResult.error.format());
+} else {
+  console.log('Track is valid:', trackResult.data);
+}
+```
+
+**Validating Character Data**
+
+```typescript
+import { CharacterSheetSchema, AbilityScoresSchema } from 'playlist-data-engine';
+
+// Validate ability scores
+const scoresInput = { STR: 16, DEX: 14, CON: 15, INT: 10, WIS: 12, CHA: 8 };
+const scoresResult = AbilityScoresSchema.safeParse(scoresInput);
+
+if (!scoresResult.success) {
+  console.error('Invalid ability scores:', scoresResult.error.issues);
+  // Example error: "Number must be less than or equal to 20" or "Number must be greater than or equal to 1"
+}
+
+// Validate complete character sheet
+const characterInput = {
+  name: 'Aragorn',
+  race: 'Human',
+  class: 'Ranger',
+  level: 10,
+  ability_scores: { STR: 16, DEX: 14, CON: 15, INT: 10, WIS: 14, CHA: 12 },
+  ability_modifiers: { STR: 3, DEX: 2, CON: 2, INT: 0, WIS: 2, CHA: 1 },
+  proficiency_bonus: 4,
+  hp: { current: 87, max: 87, temp: 0 },
+  armor_class: 16,
+  initiative: 6,
+  speed: 30,
+  skills: { 'Stealth': 'proficient', 'Survival': 'expertise', 'Nature': 'proficient' },
+  saving_throws: { 'Strength': true, 'Dexterity': true },
+  racial_traits: ['Extra Language', 'Versatile'],
+  class_features: ['Favored Enemy', 'Natural Explorer'],
+  equipment: {
+    weapons: ['Longbow', 'Longsword'],
+    armor: ['Leather Armor'],
+    items: ['Rope', 'Torches']
+  },
+  xp: { current: 65000, next_level: 85000 },
+  seed: 'character-seed-123',
+  generated_at: new Date().toISOString()
+};
+
+const charResult = CharacterSheetSchema.safeParse(characterInput);
+if (!charResult.success) {
+  console.error('Invalid character:', charResult.error.format());
+} else {
+  console.log('Character is valid!');
+}
+```
+
+**Validating Audio Analysis Results**
+
+```typescript
+import { AudioProfileSchema } from 'playlist-data-engine';
+
+const audioProfile = {
+  bass_dominance: 0.6,
+  mid_dominance: 0.3,
+  treble_dominance: 0.1,
+  average_amplitude: 0.7,
+  spectral_centroid: 2500,
+  spectral_rolloff: 8000,
+  zero_crossing_rate: 0.05,
+  analysis_metadata: {
+    duration_analyzed: 30,
+    full_buffer_analyzed: true,
+    sample_positions: [0, 5, 10, 15, 20, 25],
+    analyzed_at: new Date().toISOString()
+  }
+};
+
+const audioResult = AudioProfileSchema.safeParse(audioProfile);
+if (!audioResult.success) {
+  console.error('Invalid audio profile:', audioResult.error.issues);
+}
+```
+
+**Note**: Zod schemas are useful for:
+- Validating external API responses before processing
+- Runtime type checking in user-facing applications
+- Ensuring data integrity when storing/retrieving from databases
+- Form validation in web applications
+- Type guard functions with `schema.safeParse()`
+
+---
+
 ## Extensibility System
 
 **For detailed extensibility documentation, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
@@ -1784,6 +1909,13 @@ All TypeScript types are exported, including:
 - `hashSeedToInt` - Hash seed to integer in range [min, max)
 - `deriveSeed` - Derive new seed from base seed with suffix
 - `SeededRNG` - Deterministic random number generator (random, randomInt, randomChoice, weightedChoice, shuffle)
+
+**Validation Schemas**
+- `PlaylistTrackSchema` - Zod schema for validating playlist track metadata
+- `ServerlessPlaylistSchema` - Zod schema for validating full playlist structure
+- `AudioProfileSchema` - Zod schema for validating audio analysis results
+- `AbilityScoresSchema` - Zod schema for validating character ability scores
+- `CharacterSheetSchema` - Zod schema for validating complete character sheets
 
 ---
 

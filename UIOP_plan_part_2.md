@@ -291,7 +291,9 @@ This plan lists all discrepancies, documentation errors, and action items discov
 - `CharacterSheetSchema`
 
 **Action Required**:
-- [ ] Add validation schemas section to USAGE_IN_OTHER_PROJECTS.md (if not already a part of DATA_ENGINE_REFERENCE.md) if intended as public API. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API. 
+- [x] Add validation schemas section to USAGE_IN_OTHER_PROJECTS.md (if not already a part of DATA_ENGINE_REFERENCE.md) if intended as public API. Remember the API documentation is written in DATA_ENGINE_REFERENCE.md so if it's already in there you are good. The USAGE_IN_OTHER_PROJECTS.md file is strictly for examples of how to use the API and for more in depth descriptions of the API.
+
+**Resolution (2026-02-02)**: Validation schemas were already minimally documented in DATA_ENGINE_REFERENCE.md (lines 917-924). Updated that section to include the missing `AbilityScoresSchema` and added more descriptive documentation. Added comprehensive usage examples to USAGE_IN_OTHER_PROJECTS.md in a new "Validation Schemas" section with examples for validating playlist tracks, character sheets, ability scores, and audio profiles. Also added schemas to the Available Exports list. Documentation now includes all five Zod schemas with practical usage examples.
 
 **Impact**: Low - Useful for runtime validation but not essential
 
@@ -517,5 +519,5 @@ This plan lists all discrepancies, documentation errors, and action items discov
 |----------|-------|-----------|-----------|
 | High Priority | 3 | 3 | 0 |
 | Medium Priority | 8 | 6 | 2 |
-| Low Priority | 9 | 2 | 7 |
-| **TOTAL** | **20** | **11** | **9** |
+| Low Priority | 9 | 3 | 6 |
+| **TOTAL** | **20** | **12** | **8** |
