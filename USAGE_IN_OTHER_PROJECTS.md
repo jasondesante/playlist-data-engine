@@ -977,6 +977,106 @@ while (combatInstance.isActive) {
 }
 ```
 
+#### DiceRoller - Standalone Dice Rolling Utilities
+
+The `DiceRoller` module provides utility functions for D&D-style dice rolling. These are standalone functions (not a class) that can be imported and used directly.
+
+```typescript
+import {
+  rollDie,
+  rollD20,
+  rollMultipleDice,
+  parseDiceFormula,
+  rollWithAdvantage,
+  rollWithDisadvantage,
+  rollInitiative,
+  calculateDamage,
+  doubleDamage,
+  rollSavingThrow,
+  rollAbilityCheck,
+  isCriticalHit,
+  isCriticalMiss,
+  seededRoll,
+  rollPercentile
+} from 'playlist-data-engine';
+
+// Basic dice rolling
+const d6Result = rollDie(6);           // Roll a single d6 (1-6)
+const d20Result = rollD20();           // Roll a d20 (1-20)
+const threeD6 = rollMultipleDice(3, 6); // Roll 3d6, returns [3, 5, 2]
+const percentile = rollPercentile();   // Roll d100 (1-100)
+
+// Parse and roll dice formulas
+const fireball = parseDiceFormula('8d6+5');
+console.log(`Fireball damage: ${fireball.total}`);  // Sum of all rolls + modifier
+console.log(`Individual rolls: ${fireball.rolls}`); // Array of each die result
+
+// Advantage and disadvantage
+const advRoll = rollWithAdvantage();
+console.log(`Rolled ${advRoll.roll1} and ${advRoll.roll2}, taking ${advRoll.result}`);
+
+const disadvRoll = rollWithDisadvantage();
+console.log(`Rolled ${disadvRoll.roll1} and ${disadvRoll.roll2}, taking ${disadvRoll.result}`);
+
+// Combat functions
+const initiative = rollInitiative(3);  // d20 + DEX modifier (e.g., +3)
+
+const damage = calculateDamage('2d6', 2, false);  // formula, modifier, critical?
+console.log(`Damage: ${damage.total} (${damage.rolls} + ${damage.modifier})`);
+
+const critDamage = calculateDamage('2d6', 2, true);  // Critical hit - dice doubled
+console.log(`Critical damage: ${critDamage.total}`);
+
+// Manual critical handling
+const baseRolls = rollMultipleDice(2, 6);  // [4, 3]
+const critRolls = doubleDamage(baseRolls);   // [4, 3, 4, 3]
+
+// Saving throws and ability checks
+const fortitudeSave = rollSavingThrow(2, 2);  // ability modifier + proficiency bonus
+const athleticsCheck = rollAbilityCheck(4, 0);  // ability modifier only
+
+// Critical detection
+const attackRoll = rollD20();
+if (isCriticalHit(attackRoll)) {
+  console.log('Critical hit! Double the damage dice!');
+}
+if (isCriticalMiss(attackRoll)) {
+  console.log('Critical miss! Attack fails automatically.');
+}
+
+// Seeded RNG for reproducible rolls
+const seeded = seededRoll(12345);  // Same seed always produces same result
+const anotherSeeded = seededRoll(12345);  // Will equal seeded
+```
+
+**Common Use Case: Custom Attack Resolution**
+
+```typescript
+import { rollD20, rollWithAdvantage, parseDiceFormula, isCriticalHit } from 'playlist-data-engine';
+
+function resolveAttack(attackBonus: number, targetAC: number, hasAdvantage: boolean) {
+  let d20Roll: number;
+
+  if (hasAdvantage) {
+    const result = rollWithAdvantage();
+    d20Roll = result.result;
+    console.log(`Advantage: rolled ${result.roll1} and ${result.roll2}`);
+  } else {
+    d20Roll = rollD20();
+  }
+
+  const total = d20Roll + attackBonus;
+  const hit = total >= targetAC;
+  const crit = isCriticalHit(d20Roll);
+
+  return { d20Roll, total, hit, crit };
+}
+
+const attack = resolveAttack(7, 15, true);
+console.log(`Attack roll: ${attack.d20Roll} + 7 = ${attack.total} vs AC 15`);
+console.log(attack.crit ? 'CRITICAL HIT!' : (attack.hit ? 'Hit!' : 'Miss!'));
+```
+
 ---
 
 ## Advanced Examples
@@ -1550,6 +1650,7 @@ The main exports from the library are:
 - `InitiativeRoller` - Roll initiative
 - `AttackResolver` - Resolve attack rolls
 - `SpellCaster` - Cast spells in combat
+- `DiceRoller` - Standalone dice rolling utilities (rollDie, rollD20, parseDiceFormula, rollWithAdvantage, calculateDamage, etc.)
 
 ### Types & Constants
 All TypeScript types are exported, including:

@@ -2886,6 +2886,80 @@ Manages initiative system for D&D combat.
 - `resortByInitiative(combatants: Combatant[]): Combatant[]`
     - Resorts combatants by initiative value (for mid-combat joins)
 
+#### Helper: `DiceRoller` (utility functions)
+
+**Location:** `src/core/combat/DiceRoller.ts`
+
+> **Note**: This is a collection of standalone exported functions, not a class. Import functions directly.
+
+Utility functions for D&D-style dice rolling mechanics.
+
+**Basic Dice Functions:**
+
+- `rollDie(sides: number): number`
+    - Roll a single die with the specified number of sides (4, 6, 8, 10, 12, 20, 100)
+    - Returns a value from 1 to sides
+- `rollD20(): number`
+    - Roll a d20 (common for attacks, ability checks, saving throws)
+    - Returns a value from 1 to 20
+- `rollMultipleDice(count: number, sides: number): number[]`
+    - Roll multiple dice of the same size
+    - Returns an array of individual roll results
+- `rollPercentile(): number`
+    - Roll a d100 (percentile die)
+    - Returns a value from 1 to 100
+
+**Formula Parsing:**
+
+- `parseDiceFormula(formula: string): { diceCount: number, diceSides: number, modifier: number, rolls: number[], total: number }`
+    - Parse and roll a dice formula string like "2d6+3" or "1d20-2"
+    - Returns an object with parsed formula data and results
+
+**Advantage/Disadvantage:**
+
+- `rollWithAdvantage(): { roll1: number, roll2: number, result: number }`
+    - Roll d20 with advantage (roll twice, take higher)
+    - Returns both rolls and the final result
+- `rollWithDisadvantage(): { roll1: number, roll2: number, result: number }`
+    - Roll d20 with disadvantage (roll twice, take lower)
+    - Returns both rolls and the final result
+
+**Combat Functions:**
+
+- `rollInitiative(dexModifier: number): number`
+    - Roll initiative (d20 + DEX modifier)
+    - Returns the initiative value
+- `calculateDamage(formula: string, modifier: number, isCritical?: boolean): { rolls: number[], modifier: number, total: number, isCritical: boolean }`
+    - Calculate damage from a dice formula with optional modifier
+    - For critical hits, dice are doubled (not the modifier)
+    - Returns detailed damage breakdown
+- `doubleDamage(rolls: number[]): number[]`
+    - Double the damage dice for a critical hit
+    - Returns a new array with each roll duplicated
+
+**Saving Throws & Ability Checks:**
+
+- `rollSavingThrow(abilityModifier: number, proficiencyBonus?: number): number`
+    - Roll a saving throw (d20 + ability modifier + proficiency bonus if proficient)
+    - Returns the total save result
+- `rollAbilityCheck(abilityModifier: number, proficiencyBonus?: number): number`
+    - Roll an ability check (d20 + ability modifier + proficiency bonus if proficient)
+    - Returns the total check result
+
+**Critical Hit Detection:**
+
+- `isCriticalHit(d20Roll: number): boolean`
+    - Check if a d20 roll is a critical hit (natural 20)
+- `isCriticalMiss(d20Roll: number): boolean`
+    - Check if a d20 roll is a critical miss (natural 1)
+
+**Seeded RNG:**
+
+- `seededRoll(seed: number): number`
+    - Generate a deterministic "seeded" d20 roll for reproducibility
+    - Uses a simple LCG algorithm
+    - Returns a value from 1 to 20
+
 #### Helper: `AttackResolver` (instance class)
 
 **Location:** `src/core/combat/AttackResolver.ts`

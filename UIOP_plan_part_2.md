@@ -79,10 +79,12 @@ This plan lists all discrepancies, documentation errors, and action items discov
 | `seededRoll` | `(seed: string, sides: number): number` | `(seed: number): number` | Different parameter types |
 
 **Action Required**:
-- [ ] Is DiceRoller already documented in DATA_ENGINE_REFERENCE.md? If so then it doesn't need to be documented in USAGE_IN_OTHER_PROJECTS.md because DATA_ENGINE_REFERENCE.md is where the api documentation goes, and USAGE_IN_OTHER_PROJECTS.md is all about the examples.
-- [ ] Add DiceRoller documentation to DATA_ENGINE_REFERENCE.md if it is not already documented in DATA_ENGINE_REFERENCE.md, and correct it's documentation in USAGE_IN_OTHER_PROJECTS.md if necessary too.
-- [ ] Correct all function signatures in documentation
-- [ ] Consider if `DiceFormula` type should be extracted and exported
+- [x] Is DiceRoller already documented in DATA_ENGINE_REFERENCE.md? If so then it doesn't need to be documented in USAGE_IN_OTHER_PROJECTS.md because DATA_ENGINE_REFERENCE.md is where the api documentation goes, and USAGE_IN_OTHER_PROJECTS.md is all about the examples.
+- [x] Add DiceRoller documentation to DATA_ENGINE_REFERENCE.md if it is not already documented in DATA_ENGINE_REFERENCE.md, and correct it's documentation in USAGE_IN_OTHER_PROJECTS.md if necessary too.
+- [x] Correct all function signatures in documentation
+- [x] Consider if `DiceFormula` type should be extracted and exported
+
+**Resolution (2026-02-02)**: DiceRoller was NOT documented anywhere. Added comprehensive documentation to DATA_ENGINE_REFERENCE.md with all correct function signatures based on actual implementation. Added usage examples to USAGE_IN_OTHER_PROJECTS.md including common use case for custom attack resolution. The `DiceFormula` type does not exist as a named type - `parseDiceFormula` returns an inline object, which is now correctly documented.
 
 **Impact**: Medium - Users will get compilation errors when using documented signatures
 
@@ -460,7 +462,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 ### Must Fix (High Priority)
 - [x] Remove SteamAPIClient and DiscordRPCClient from exports documentation
 - [ ] Resolve CharacterSheet.attacks property discrepancy
-- [ ] Fix DiceRoller documentation or add proper documentation with correct signatures
+- [x] Fix DiceRoller documentation or add proper documentation with correct signatures
 
 ### Should Fix (Medium Priority)
 - [ ] Export or remove MetadataExtractionOptions
@@ -493,7 +495,7 @@ This plan lists all discrepancies, documentation errors, and action items discov
 
 | Category | Items | Completed | Remaining |
 |----------|-------|-----------|-----------|
-| High Priority | 3 | 2 | 1 |
+| High Priority | 3 | 3 | 0 |
 | Medium Priority | 8 | 0 | 8 |
 | Low Priority | 9 | 0 | 9 |
-| **TOTAL** | **20** | **2** | **18** |
+| **TOTAL** | **20** | **3** | **17** |
