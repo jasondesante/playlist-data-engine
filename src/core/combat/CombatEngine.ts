@@ -162,23 +162,27 @@ export class CombatEngine {
   }
 
   /**
-   * Execute an attack using equipped weapon(s)
+   * Execute an attack using equipped weapon(s) or unarmed strike
    *
-   * Automatically builds Attack object from equipped weapons.
+   * Automatically builds Attack object from equipped weapons or unarmed combat.
    * Uses the first equipped weapon by default, or a specific weapon if named.
+   * If no weapon equipped or weaponName is "unarmed", uses unarmed strike.
    *
    * @param combat - Combat instance
    * @param attacker - Attacking combatant
    * @param target - Target combatant
-   * @param weaponName - Optional specific weapon name (if multiple equipped)
+   * @param weaponName - Optional specific weapon name (if multiple equipped), or "unarmed" for unarmed strike
    * @returns Combat action with result
    *
    * @example
-   * // Attack with first equipped weapon
+   * // Attack with first equipped weapon (or unarmed if none)
    * combat.executeWeaponAttack(combat, attacker, target);
    *
    * // Attack with specific weapon
    * combat.executeWeaponAttack(combat, attacker, target, 'Longsword');
+   *
+   * // Unarmed strike explicitly
+   * combat.executeWeaponAttack(combat, attacker, target, 'unarmed');
    */
   executeWeaponAttack(
     combat: CombatInstance,
@@ -188,10 +192,13 @@ export class CombatEngine {
   ): CombatAction {
     const equippedWeapons = attacker.character.equipment?.weapons.filter(w => w.equipped) || [];
 
-    if (equippedWeapons.length === 0) {
-      throw new Error(`${attacker.character.name} has no equipped weapons`);
+    // Explicit unarmed request or no weapons equipped
+    if (weaponName === 'unarmed' || equippedWeapons.length === 0) {
+      const attack = this.buildUnarmedAttack(attacker.character);
+      return this.executeAttack(combat, attacker, target, attack);
     }
 
+    // Find the specific weapon or use the first equipped one
     let selectedWeapon = weaponName
       ? equippedWeapons.find(w => w.name === weaponName)
       : equippedWeapons[0];
@@ -201,7 +208,7 @@ export class CombatEngine {
     }
 
     // Build Attack object from weapon data
-    const attack: Attack = this.buildAttackFromWeapon(selectedWeapon.name, attacker.character);
+    const attack = this.buildAttackFromWeapon(selectedWeapon.name, attacker.character);
 
     return this.executeAttack(combat, attacker, target, attack);
   }
@@ -209,6 +216,7 @@ export class CombatEngine {
   /**
    * Build an Attack object from a weapon name
    * Looks up weapon data from EQUIPMENT_DATABASE and constructs proper Attack
+   * Uses character's stats to calculate attack bonus
    */
   private buildAttackFromWeapon(weaponName: string, character: CharacterSheet): Attack {
     // Import dynamically to avoid circular dependency
@@ -221,13 +229,42 @@ export class CombatEngine {
 
     // Check if it's a ranged weapon
     const isRanged = weaponData.weaponProperties?.includes('ranged') || false;
+    const isFinesse = weaponData.weaponProperties?.includes('finesse') || false;
+
+    // Calculate ability modifier based on weapon type
+    // Melee/unarmed: STR, Ranged/finesse: DEX
+    const ability = isRanged || isFinesse ? 'DEX' : 'STR';
+    const abilityMod = Math.floor((character.ability_scores[ability] - 10) / 2);
+
+    // Check proficiency (proficient if weapon is simple or character is proficient with weapon type)
+    // Simplified: assume proficiency with simple weapons for now
+    const profBonus = character.proficiency_bonus;
 
     return {
       name: weaponName,
       damage_dice: weaponData.damage?.dice || '1d6',
       damage_type: weaponData.damage?.damageType || 'bludgeoning',
       type: isRanged ? 'ranged' : 'melee',
+      attack_bonus: abilityMod + profBonus,
       properties: weaponData.weaponProperties || []
+    };
+  }
+
+  /**
+   * Build an unarmed strike Attack object
+   * D&D 5e: 1 + STR modifier damage, proficiency bonus applies to attack
+   */
+  private buildUnarmedAttack(character: CharacterSheet): Attack {
+    const strMod = Math.floor((character.ability_scores.STR - 10) / 2);
+    const profBonus = character.proficiency_bonus;
+
+    return {
+      name: 'Unarmed Strike',
+      damage_dice: '1',
+      damage_type: 'bludgeoning',
+      type: 'melee',
+      attack_bonus: strMod + profBonus,
+      properties: []
     };
   }
 

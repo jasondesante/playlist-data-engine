@@ -980,8 +980,6 @@ combat.executeWeaponAttack(combatInstance, current, target);
 
 **Manual Attack Objects:** For special cases, you can still manually construct `Attack` objects using `executeAttack()` directly. See `Attack` type in DATA_ENGINE_REFERENCE.md for all available properties.
 
-```typescript
-
 The `DiceRoller` module provides utility functions for D&D-style dice rolling. These are standalone functions (not a class) that can be imported and used directly.
 
 ```typescript
