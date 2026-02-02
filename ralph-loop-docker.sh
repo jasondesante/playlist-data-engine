@@ -16,7 +16,7 @@ while :; do
   
   # Use exec to run commands in the EXISTING container
   docker start claude-loop 2>/dev/null || true
-  docker exec -w /workspace claude-loop claude --dangerously-skip-permissions "$(cat PROMPT_UIOP_plan_part_2.md)" 2>&1 | tee .log
+  docker exec -w /workspace claude-loop claude --dangerously-skip-permissions "$(cat PROMPT.md)" 2>&1 | tee .log
   
   grep -qi "done" .log || break
   sleep 2
