@@ -150,12 +150,11 @@ export class AudioAnalyzer {
         midDominance = midDominance * this.options.midBoost!;
         trebleDominance = trebleDominance * this.options.trebleBoost!;
 
-        // Normalize to 0-1 range if boosts push values over 1.0
-        // This ensures the audio profile remains in valid range
-        const maxValue = Math.max(bassDominance, midDominance, trebleDominance, 1);
-        bassDominance = bassDominance / maxValue;
-        midDominance = midDominance / maxValue;
-        trebleDominance = trebleDominance / maxValue;
+        // Normalize to 0-1 range so the highest value becomes 1.0
+        const maxValue = Math.max(bassDominance, midDominance, trebleDominance);
+        bassDominance = bassDominance / (maxValue || 1);
+        midDominance = midDominance / (maxValue || 1);
+        trebleDominance = trebleDominance / (maxValue || 1);
 
         // Calculate average amplitude
         const averageAmplitude = this.calculateAverageAmplitude(audioBuffer);
