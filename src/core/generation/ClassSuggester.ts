@@ -277,13 +277,14 @@ export class ClassSuggester {
             case 'amplitude':
                 return (audioProfile.average_amplitude * (prefs.amplitude || 1.0)) * multiplier;
             case 'chaos': {
-                // Chaos rewards variance across frequency bands
+                // Chaos rewards tight clustering (all bands close together)
                 const bass = audioProfile.bass_dominance;
                 const treble = audioProfile.treble_dominance;
                 const mid = audioProfile.mid_dominance;
-                // Calculate variance (how different the values are)
-                const variance = Math.max(bass, treble, mid) - Math.min(bass, treble, mid);
-                return variance * 0.5 * multiplier;
+                // Calculate spread (max - min), then invert: smaller spread = higher chaos
+                const spread = Math.max(bass, treble, mid) - Math.min(bass, treble, mid);
+                const chaos = 1 - spread; // Tight clustering (small spread) = high chaos
+                return chaos * multiplier;
             }
             default:
                 return 0;
