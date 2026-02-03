@@ -3,9 +3,6 @@
  *
  * Type definitions for spell-related structures.
  * Moved from src/utils/constants.ts for better module organization.
- *
- * Part of Phase 6: Discrepancies Resolution - Task 6.3
- * Part of Phase 6: Discrepancies Resolution - Task 6.4 (class type consistency)
  */
 
 import type { Class, Race } from '../types/Character.js';

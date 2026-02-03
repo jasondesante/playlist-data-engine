@@ -4,9 +4,7 @@
  * Applies and removes equipment effects to/from characters during equip/unequip.
  * Handles stat bonuses, skill proficiencies, ability unlocks, passive modifiers,
  * equipment-granted features, skills, and spells.
- *
- * Part of Phase 3.1: Create EquipmentEffectApplier.
- * Part of Phase 3.3: Integrate with FeatureEffectApplier.
+ * Integrates with FeatureEffectApplier.
  */
 
 import type { CharacterSheet, ProficiencyLevel } from '../types/Character.js';

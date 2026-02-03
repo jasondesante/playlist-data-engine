@@ -3,8 +3,6 @@
  *
  * Default D&D 5e skills with complete metadata.
  * These skills are loaded into the SkillRegistry on initialization.
- *
- * Part of Phase 12.2: Create SkillRegistry.
  */
 
 import type { CustomSkill } from './SkillTypes.js';

@@ -4,7 +4,6 @@
  * This file demonstrates how to create and register custom equipment
  * with various properties, effects, and features.
  *
- * Part of Phase 12.1: Create Custom Equipment Examples.
  */
 
 import { ExtensionManager } from '../src/core/extensions/ExtensionManager.js';

@@ -4,7 +4,6 @@
  * This file demonstrates how to enchant, curse, upgrade, and modify
  * equipment during gameplay using the EquipmentModifier system.
  *
- * Part of Phase 12.1: Create Equipment Enchantment Demo.
  */
 
 import { EquipmentModifier } from '../src/core/generation/EquipmentGenerator.js';

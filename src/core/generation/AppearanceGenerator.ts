@@ -17,6 +17,7 @@ export interface CharacterAppearance {
     // Dynamic features (from audio/visual)
     primary_color?: string;
     secondary_color?: string;
+    accent_color?: string;
     aura_color?: string;
 }
 
@@ -95,6 +96,7 @@ export class AppearanceGenerator {
         const colorPalette = audioProfile.color_palette;
         const primary_color = colorPalette?.primary_color;
         const secondary_color = colorPalette?.secondary_color;
+        const accent_color = colorPalette?.accent_color;
 
         // Generate aura color for magical classes
         let aura_color: string | undefined;
@@ -112,6 +114,7 @@ export class AppearanceGenerator {
             facial_features: selected_facial_features,
             primary_color,
             secondary_color,
+            accent_color,
             aura_color,
         };
     }

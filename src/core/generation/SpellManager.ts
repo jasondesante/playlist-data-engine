@@ -1,8 +1,5 @@
 /**
  * SpellManager - Manages spell assignment, spell slots, and cantrips for spellcasting classes
- *
- * Part of Phase 4.2: Update SpellManager for prerequisite filtering.
- * Part 4: Update to use getClassSpellList() helper for custom class spell lists.
  */
 
 import type { Class, CharacterSheet } from '../types/Character.js';

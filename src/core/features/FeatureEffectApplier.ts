@@ -3,8 +3,6 @@
  *
  * Applies feature and trait effects to characters during generation.
  * Handles stat bonuses, skill proficiencies, passive modifiers, and ability unlocks.
- *
- * Part of Phase 11.4: Apply feature effects to character.
  */
 
 import type { ClassFeature, RacialTrait, FeatureEffect } from './FeatureTypes.js';

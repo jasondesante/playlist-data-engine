@@ -7,9 +7,7 @@
  * - Valid enum values (class, race, type, source)
  * - Value ranges (level 1-20)
  * - Effects and prerequisites
- *
- * Part of Phase 11.7: Create FeatureValidator.
- * Part of Phase 13: Code Deduplication - Uses shared AbilityConstants.
+ * Uses shared AbilityConstants for code deduplication.
  */
 
 import type { FeaturePrerequisite } from './FeatureTypes.js';

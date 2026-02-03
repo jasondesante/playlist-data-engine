@@ -1,8 +1,7 @@
 /**
  * Feature Type Definitions
  *
- * Defines the interfaces for custom class features and racial traits
- * as part of Phase 11: Custom Class Features System.
+ * Defines the interfaces for custom class features and racial traits.
  *
  * These interfaces allow for:
  * - Extensible feature definitions with prerequisites

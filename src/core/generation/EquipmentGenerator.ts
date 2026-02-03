@@ -5,7 +5,6 @@
  * All equipment lookups check both default and custom equipment databases.
  *
  * Enhanced to support equipment properties, effects, modifications, and D&D 5e stats.
- * Part of Phase 4: Update EquipmentGenerator for Equipment Upgrade Plan Part 2.
  */
 
 import type { Class, CharacterSheet } from '../types/Character.js';
@@ -591,7 +590,7 @@ export class EquipmentGenerator {
   }
 
   // ==========================================
-  // EQUIPMENT MODIFICATION METHODS (Phase 4)
+  // EQUIPMENT MODIFICATION METHODS
   // ==========================================
 
   /**

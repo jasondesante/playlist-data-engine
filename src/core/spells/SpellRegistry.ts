@@ -3,9 +3,6 @@
  *
  * Central registry for all spells (default D&D 5e and custom).
  * Manages spell registration, lookup, and categorization by level, school, and class.
- *
- * Part of Phase 4: Spell Prerequisites System.
- * Part of Phase 12.3: Create SpellRegistry for consistency with SkillRegistry and FeatureRegistry.
  */
 
 import type { Spell, SpellPrerequisite } from './SpellTypes.js';

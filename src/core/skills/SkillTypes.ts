@@ -3,8 +3,6 @@
  *
  * Type definitions for the extensible skill system.
  * Supports default D&D 5e skills plus custom skills with metadata.
- *
- * Part of Phase 12.1: Design Skill Architecture.
  */
 
 import type { Ability, Class, Race } from '../types/Character.js';

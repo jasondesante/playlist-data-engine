@@ -698,7 +698,6 @@ export const CLASS_DATA: Record<string, {
  * - weights: Multipliers for each frequency band (0-1 range)
  *
  * Used by ClassSuggester for affinity-based class selection.
- * Part of Phase 9: ClassSuggester Rewrite with baseline system.
  */
 export const CLASS_AUDIO_PREFERENCES: Record<string, {
     primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';

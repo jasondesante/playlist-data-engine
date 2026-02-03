@@ -10,8 +10,6 @@
  * - EquipmentModifier.curse() - for negative curses
  * - EquipmentModifier.upgrade() - for improvements
  *
- * Part of Phase 7.2: Define common enchantments and curses.
- *
  * @module utils/enchantmentLibrary
  */
 

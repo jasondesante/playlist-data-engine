@@ -492,7 +492,7 @@ export class CharacterGenerator {
         // Apply feature effects from class features
         FeatureEffectApplier.applyMultipleEffects(characterSheet, validClassFeatures);
 
-        // Apply equipment effects for equipped items (Phase 9.1)
+        // Apply equipment effects for equipped items
         // Equipment effects are applied after feature effects so they can stack
         if (equipment) {
             const equippedItems = [
@@ -510,7 +510,7 @@ export class CharacterGenerator {
             }
         }
 
-        // Filter spells by prerequisites (Phase 4.3)
+        // Filter spells by prerequisites
         // Spells are filtered after all features and equipment are applied
         // since spell prerequisites may depend on features or equipment
         const finalCharacterSheet = SpellManager.filterCharacterSpells(characterSheet);

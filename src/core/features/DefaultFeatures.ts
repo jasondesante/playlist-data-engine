@@ -3,8 +3,6 @@
  *
  * Contains all default D&D 5e class features and racial traits
  * for initializing the FeatureRegistry.
- *
- * Part of Phase 11.3: Migrate Existing Features.
  */
 
 import type { ClassFeature, RacialTrait } from './FeatureTypes.js';

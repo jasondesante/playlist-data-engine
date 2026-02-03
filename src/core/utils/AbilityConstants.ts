@@ -3,8 +3,6 @@
  *
  * Central location for ability-related constants and utility functions.
  * Eliminates duplicate code across SkillValidator, SpellValidator, and FeatureValidator.
- *
- * Part of Phase 13: Code Deduplication - Ability Constants.
  */
 
 import type { Ability } from '../types/Character.js';

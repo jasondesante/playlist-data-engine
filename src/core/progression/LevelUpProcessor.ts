@@ -2,7 +2,7 @@
  * LevelUpProcessor - Handles character leveling mechanics
  * Based on specs/001-core-engine/SPEC.md and D&D 5e rules
  *
- * Phase 11.5: Updated to use FeatureRegistry for class feature lookup
+ * Uses FeatureRegistry for class feature lookup.
  * - Replaces hardcoded getClassFeaturesForLevel() with FeatureRegistry lookup
  * - Validates prerequisite chains on level up
  * - Applies new feature effects when leveling up
@@ -45,7 +45,7 @@ export interface LevelUpBenefits {
 
     /**
      * Class features gained at this level
-     * Phase 11.5: Now returns feature IDs instead of display strings
+     * Returns feature IDs instead of display strings
      * OLD: ['Barbarian Level 2', 'Reckless Attack']
      * NEW: ['reckless_attack', 'danger_sense']
      */
@@ -53,7 +53,7 @@ export interface LevelUpBenefits {
 
     /**
      * Feature effects applied during level-up
-     * Phase 11.5: Stores effects that were applied to the character
+     * Stores effects that were applied to the character
      */
     featureEffects?: Array<{
         featureId: string;
@@ -210,7 +210,7 @@ export class LevelUpProcessor {
             benefits.newSpellSlots = spellSlots;
         }
 
-        // Phase 11.5: Get class features for this level using FeatureRegistry
+        // Get class features for this level using FeatureRegistry
         const featuresGained = this.getClassFeaturesForLevel(character, character.class, newLevel);
         if (featuresGained.length > 0) {
             benefits.classFeatures = featuresGained.map(f => f.id);
@@ -239,7 +239,7 @@ export class LevelUpProcessor {
 
     /**
      * Get class features gained at a specific level for a character
-     * Phase 11.5: Uses FeatureRegistry to look up features and validates prerequisites
+     * Uses FeatureRegistry to look up features and validates prerequisites
      *
      * @param character - The character to check features for
      * @param characterClass - The character class
@@ -343,7 +343,7 @@ export class LevelUpProcessor {
             ];
         }
 
-        // Phase 9.2: Re-apply equipment effects after level-up
+        // Re-apply equipment effects after level-up
         // This ensures equipment bonuses (like stat bonuses from items) persist
         // after the character's stats have changed
         this.reapplyEquipmentEffects(updated);
@@ -653,7 +653,7 @@ export class LevelUpProcessor {
             benefits.newSpellSlots = spellSlots;
         }
 
-        // Phase 11.5: Get class features for this level using FeatureRegistry
+        // Get class features for this level using FeatureRegistry
         const featuresGained = this.getClassFeaturesForLevel(character, character.class, newLevel);
         if (featuresGained.length > 0) {
             benefits.classFeatures = featuresGained.map(f => f.id);
@@ -712,7 +712,7 @@ export class LevelUpProcessor {
             ];
         }
 
-        // Phase 9.2: Re-apply equipment effects after automatic benefits
+        // Re-apply equipment effects after automatic benefits
         // This ensures equipment bonuses persist when level increases
         this.reapplyEquipmentEffects(updated);
 
@@ -757,7 +757,7 @@ export class LevelUpProcessor {
 
     /**
      * Re-apply all equipment effects after a level-up
-     * Phase 9.2: Ensures equipment effects persist when character stats change
+     * Ensures equipment effects persist when character stats change
      *
      * This method uses EquipmentEffectApplier's reapplyEquipmentEffects which:
      * - Clears the equipment_effects array

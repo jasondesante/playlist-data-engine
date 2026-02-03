@@ -2,7 +2,6 @@
  * Enhanced Equipment Type Definitions
  *
  * Defines interfaces for the Advanced Equipment System.
- * Part of Phase 2: Interface Design for Equipment Upgrade Plan Part 2.
  *
  * These interfaces provide:
  * - Equipment properties affecting gameplay

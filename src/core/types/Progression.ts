@@ -248,7 +248,6 @@ export interface LevelUpDetail {
 
     /**
      * New spell slots after level-up (if spellcaster)
-     * Phase 11.5: Updated to match spell_slots structure
      */
     newSpellSlots?: Record<number, { total: number; used: number }>;
 }

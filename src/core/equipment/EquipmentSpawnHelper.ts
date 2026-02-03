@@ -10,8 +10,6 @@
  * - Spawning from templates (e.g., Flaming Sword)
  * - Spawning treasure hoards (simplified D&D 5e table)
  * - Adding spawned equipment to characters
- *
- * Part of Phase 8.1: Create EquipmentSpawnHelper.
  */
 
 import type { CharacterSheet } from '../types/Character.js';

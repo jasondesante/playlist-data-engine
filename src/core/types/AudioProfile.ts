@@ -65,7 +65,7 @@ export interface ColorPalette {
 /**
  * Frequency bands separated from audio analysis
  *
- * **Phase 8.1 (v2) ranges** - Rebalanced to prevent treble dominance:
+ * Rebalanced v2 ranges prevent treble dominance:
  * - Bass: 20Hz - 400Hz (380 Hz range, 11% of spectrum)
  * - Mid: 400Hz - 4kHz (3,600 Hz range, 52% of spectrum)
  * - Treble: 4kHz - 14kHz (10,000 Hz range, 37% of spectrum)

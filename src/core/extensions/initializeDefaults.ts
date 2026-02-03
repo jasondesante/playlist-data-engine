@@ -174,7 +174,6 @@ export function ensureSpellDefaultsInitialized(): void {
 /**
  * Default equipment data
  * Convert EQUIPMENT_DATABASE to EnhancedEquipment format for ExtensionManager
- * Phase 5.3: Update default initialization to include source field and spawnWeight
  */
 const DEFAULT_EQUIPMENT_DATA = Object.values(EQUIPMENT_DATABASE).map(eq => ({
     ...eq,
@@ -187,7 +186,7 @@ const DEFAULT_EQUIPMENT_DATA = Object.values(EQUIPMENT_DATABASE).map(eq => ({
  * Initialize ExtensionManager with default equipment data
  *
  * This should be called once during application initialization.
- * Phase 5.3: Equipment is converted to EnhancedEquipment format with source field.
+ * Equipment is converted to EnhancedEquipment format with source field.
  */
 export function initializeEquipmentDefaults(): void {
     const manager = ExtensionManager.getInstance();
@@ -323,7 +322,7 @@ export function ensureAllDefaultsInitialized(): void {
  * Initialize FeatureRegistry with default features and traits
  *
  * This should be called once during application initialization.
- * Phase 13.1: Also initializes ExtensionManager with feature default data for spawn rate management.
+ * Also initializes ExtensionManager with feature default data for spawn rate management.
  */
 export function initializeFeatureDefaults(): void {
     const registry = FeatureRegistry.getInstance();
@@ -332,7 +331,7 @@ export function initializeFeatureDefaults(): void {
     // Initialize FeatureRegistry with default class features and racial traits
     registry.initializeDefaults(DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS);
 
-    // Phase 13.1: Initialize ExtensionManager with default features for spawn rate management
+    // Initialize ExtensionManager with default features for spawn rate management
     // Group features by class for ExtensionManager storage
     const featuresByClass: Record<string, ClassFeature[]> = {};
     for (const feature of DEFAULT_CLASS_FEATURES) {
@@ -394,8 +393,7 @@ export function ensureFeatureDefaultsInitialized(): void {
  * Initialize SkillRegistry and ExtensionManager with default skills
  *
  * This should be called once during application initialization.
- * Part of Phase 12.4: Update SkillAssigner to use SkillRegistry.
- * Phase 13.1: Also initializes ExtensionManager with skill default data for spawn rate management.
+ * Also initializes ExtensionManager with skill default data for spawn rate management.
  */
 export function initializeSkillDefaults(): void {
     const registry = SkillRegistry.getInstance();
@@ -404,7 +402,7 @@ export function initializeSkillDefaults(): void {
     // Initialize SkillRegistry with default D&D 5e skills
     registry.initializeDefaults(DEFAULT_SKILLS);
 
-    // Phase 13.1: Initialize ExtensionManager with default skills for spawn rate management
+    // Initialize ExtensionManager with default skills for spawn rate management
     // Group skills by ability for ExtensionManager storage
     const skillsByAbility: Record<string, CustomSkill[]> = {
         STR: [],

@@ -18,8 +18,6 @@
  * - features: Features that must be learned first
  * - spells: Spells that must be known first
  * - custom: Custom condition (note only - caller must validate)
- *
- * Part of Phase 13: Code Deduplication - Prerequisite Validation.
  */
 
 import type { Ability, CharacterSheet } from '../types/Character.js';

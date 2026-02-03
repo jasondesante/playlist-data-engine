@@ -4,7 +4,6 @@
  * This file demonstrates how to use the EquipmentSpawnHelper to
  * batch spawn equipment for various gameplay scenarios.
  *
- * Part of Phase 12.1: Create Batch Spawning Demo.
  */
 
 import { EquipmentSpawnHelper } from '../src/core/equipment/EquipmentSpawnHelper.js';

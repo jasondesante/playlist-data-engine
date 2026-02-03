@@ -7,9 +7,7 @@
  * - Valid enum values (school)
  * - Level validation (0-9)
  * - Optional fields (id, description, prerequisites)
- *
- * Part of Phase 4: Spell Prerequisites System.
- * Part of Phase 13: Code Deduplication - Uses shared AbilityConstants.
+ * Uses shared AbilityConstants for code deduplication.
  */
 
 import type { SpellPrerequisite, Spell } from './SpellTypes.js';

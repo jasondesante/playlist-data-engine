@@ -96,7 +96,7 @@ The Advanced Equipment System transforms the basic equipment database into a com
 - **Weight-Based Spawning**: Features have spawn weights (0 = never random, still available to game logic)
 - **Template + Instance**: Support both equipment templates AND per-item unique modifications
 - **D&D 5e Aligned**: Default equipment uses standard 5e stats
-- **Feature-Aligned**: Follows existing FeatureEffect pattern from Phase 11
+- **Feature-Aligned**: Follows existing FeatureEffect
 - **Data Structure Focus**: Provides structures, not full gameplay systems
 
 ### System Architecture

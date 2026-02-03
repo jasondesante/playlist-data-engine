@@ -2,7 +2,6 @@
  * Skills Module Index
  *
  * Exports all skill-related types and utilities.
- * Part of Phase 12: Custom Skills System.
  */
 
 // Type definitions

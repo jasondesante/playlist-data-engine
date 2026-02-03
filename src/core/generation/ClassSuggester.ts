@@ -1,7 +1,6 @@
 /**
  * Class Suggester - Affinity-based class selection with baseline system
  * Based on specs/001-core-engine/SPEC.md
- * Phase 9: Complete rewrite with 4% baseline and smooth affinity curves
  */
 
 import type { Class } from '../types/Character.js';
@@ -18,8 +17,6 @@ type AudioTrait = 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
 
 /**
  * Suggest D&D 5e classes based on audio frequency analysis
- *
- * **Phase 9 Rewrite: Affinity-based system with 4% baseline**
  *
  * Key improvements over previous implementation:
  * - **4% baseline probability**: All classes always have at least 4% chance
@@ -50,7 +47,7 @@ export class ClassSuggester {
     /**
      * Suggest a class based on audio frequency dominance
      *
-     * **Phase 9 Algorithm:**
+     * Algorithm:
      * 1. Calculate affinity for each class based on audio profile
      * 2. Convert affinities to probabilities with 4% baseline
      * 3. Apply custom spawn rate weights (custom takes priority)

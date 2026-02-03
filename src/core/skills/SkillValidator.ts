@@ -7,9 +7,7 @@
  * - Valid enum values (ability, source)
  * - ID format validation (lowercase_with_underscores)
  * - Optional fields (description, categories, tags, customProperties)
- *
- * Part of Phase 12.6: Create SkillValidator.
- * Part of Phase 13: Code Deduplication - Uses shared AbilityConstants.
+ * Uses shared AbilityConstants for code deduplication.
  */
 
 import type { SkillValidationResult, SkillPrerequisite } from './SkillTypes.js';

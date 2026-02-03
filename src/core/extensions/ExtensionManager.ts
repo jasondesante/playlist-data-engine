@@ -38,7 +38,7 @@ export type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';
  */
 export type ExtensionCategory =
     | 'equipment'
-    // Equipment System - Phase 5
+    // Equipment System
     | 'equipment.properties'      // For custom equipment property templates
     | 'equipment.modifications'   // For custom modification templates
     | 'equipment.templates'       // For equipment templates (Flaming Sword, etc.)
@@ -54,7 +54,7 @@ export type ExtensionCategory =
     | 'classes'
     | 'classes.data'              // For custom class data (primary ability, hit die, saving throws, spellcasting, skills, expertise, audio preferences)
     | `spells.${string}`
-    // Class Features - Phase 11
+    // Class Features
     | 'classFeatures'
     | 'classFeatures.Barbarian'
     | 'classFeatures.Bard'
@@ -69,7 +69,7 @@ export type ExtensionCategory =
     | 'classFeatures.Warlock'
     | 'classFeatures.Wizard'
     | `classFeatures.${string}` // For custom class features (Part 4)
-    // Racial Traits - Phase 11
+    // Racial Traits
     | 'racialTraits'
     | 'racialTraits.Human'
     | 'racialTraits.Elf'
@@ -80,7 +80,7 @@ export type ExtensionCategory =
     | 'racialTraits.Half-Elf'
     | 'racialTraits.Half-Orc'
     | 'racialTraits.Tiefling'
-    // Skills - Phase 12
+    // Skills
     | 'skills'
     | 'skills.STR'
     | 'skills.DEX'
@@ -88,7 +88,7 @@ export type ExtensionCategory =
     | 'skills.INT'
     | 'skills.WIS'
     | 'skills.CHA'
-    // Skill Lists - Phase 12
+    // Skill Lists
     | 'skillLists'
     | 'skillLists.Barbarian'
     | 'skillLists.Bard'
@@ -103,12 +103,12 @@ export type ExtensionCategory =
     | 'skillLists.Warlock'
     | 'skillLists.Wizard'
     | `skillLists.${string}` // For custom class skill lists (Part 4)
-    // Class Spell Lists - Phase 13 (Part 4)
+    // Class Spell Lists
     | 'classSpellLists'
     | `classSpellLists.${string}`
-    // Class Spell Slots - Phase 3.2 (Part 4)
+    // Class Spell Slots
     | 'classSpellSlots'
-    // Class Starting Equipment - Phase 3.3 (Part 4)
+    // Class Starting Equipment
     | 'classStartingEquipment'
     | `classStartingEquipment.${string}`;
 
@@ -307,7 +307,7 @@ export class ExtensionManager {
             this.customWeights.set(category, { ...existingWeights, ...weights });
         }
 
-        // Phase 13.1: Integrate with FeatureRegistry for class features
+        // Integrate with FeatureRegistry for class features
         if (category === 'classFeatures') {
             // Only register with FeatureRegistry if validation is enabled
             if (validate) {
@@ -316,7 +316,7 @@ export class ExtensionManager {
             }
         }
 
-        // Phase 13.1: Integrate with FeatureRegistry for racial traits
+        // Integrate with FeatureRegistry for racial traits
         if (category === 'racialTraits') {
             // Only register with FeatureRegistry if validation is enabled
             if (validate) {
@@ -325,7 +325,7 @@ export class ExtensionManager {
             }
         }
 
-        // Phase 13.1: Handle class-specific features
+        // Handle class-specific features
         if (category.startsWith('classFeatures.')) {
             // className is extracted for future use in validation/logging
             void category.replace('classFeatures.', '') as unknown as Class;
@@ -336,7 +336,7 @@ export class ExtensionManager {
             }
         }
 
-        // Phase 13.1: Handle race-specific traits
+        // Handle race-specific traits
         if (category.startsWith('racialTraits.')) {
             // raceName is extracted for future use in validation/logging
             void category.replace('racialTraits.', '') as unknown as Race;
@@ -347,7 +347,7 @@ export class ExtensionManager {
             }
         }
 
-        // Phase 13.1: Integrate with SkillRegistry for skills
+        // Integrate with SkillRegistry for skills
         if (category === 'skills') {
             // Only register with SkillRegistry if validation is enabled
             if (validate) {
@@ -356,7 +356,7 @@ export class ExtensionManager {
             }
         }
 
-        // Phase 13.1: Handle ability-specific skills
+        // Handle ability-specific skills
         if (category.startsWith('skills.')) {
             // abilityName is extracted for future use in validation/logging
             void category.replace('skills.', '') as unknown as Ability;
@@ -367,7 +367,7 @@ export class ExtensionManager {
             }
         }
 
-        // Phase 13.1: Handle skill lists (class-specific skill lists)
+        // Handle skill lists (class-specific skill lists)
         // Skill lists are stored directly in ExtensionManager without registry integration
         // They are used by SkillAssigner to determine available skills per class
         if (category.startsWith('skillLists.') || category === 'skillLists') {
@@ -563,7 +563,7 @@ export class ExtensionManager {
 
         // Category-specific validation
         if (category === 'equipment') {
-            // Phase 5.2: Use EquipmentValidator for comprehensive equipment validation
+            // Use EquipmentValidator for comprehensive equipment validation
             const result = EquipmentValidator.validateEquipment(item);
             if (!result.valid) {
                 errors.push(...(result.errors || []).map(e => `${prefix} ${e}`));
@@ -721,28 +721,28 @@ export class ExtensionManager {
                 errors.push(`${prefix} Appearance options must be strings`);
             }
         }
-        // Phase 13.2: Class Features validation - use FeatureValidator
+        // Class Features validation - use FeatureValidator
         else if (category === 'classFeatures' || category.startsWith('classFeatures.')) {
             const result = FeatureValidator.validateClassFeature(item);
             if (!result.valid) {
                 errors.push(...result.errors.map(e => `${prefix} ${e}`));
             }
         }
-        // Phase 13.2: Racial Traits validation - use FeatureValidator
+        // Racial Traits validation - use FeatureValidator
         else if (category === 'racialTraits' || category.startsWith('racialTraits.')) {
             const result = FeatureValidator.validateRacialTrait(item);
             if (!result.valid) {
                 errors.push(...result.errors.map(e => `${prefix} ${e}`));
             }
         }
-        // Phase 13.2: Skills validation - use SkillValidator
+        // Skills validation - use SkillValidator
         else if (category === 'skills' || category.startsWith('skills.')) {
             const result = SkillValidator.validateSkill(item);
             if (!result.valid) {
                 errors.push(...result.errors.map(e => `${prefix} ${e}`));
             }
         }
-        // Phase 13.1: Skill Lists validation
+        // Skill Lists validation
         else if (category === 'skillLists' || category.startsWith('skillLists.')) {
             // Skill list items are objects with { class, skillCount, availableSkills, selectionWeights?, hasExpertise?, expertiseCount? }
             if (!item.class || typeof item.class !== 'string') {
@@ -771,7 +771,7 @@ export class ExtensionManager {
         this.extensions.delete(category);
         this.customWeights.delete(category);
 
-        // Phase 13.1: Reset FeatureRegistry when feature categories are reset
+        // Reset FeatureRegistry when feature categories are reset
         if (category === 'classFeatures' || category.startsWith('classFeatures.') ||
             category === 'racialTraits' || category.startsWith('racialTraits.')) {
             void FeatureRegistry.getInstance();
@@ -780,7 +780,7 @@ export class ExtensionManager {
             // Full reset would require tracking which custom features were registered via ExtensionManager
         }
 
-        // Phase 13.1: Reset SkillRegistry when skill categories are reset
+        // Reset SkillRegistry when skill categories are reset
         if (category === 'skills' || category.startsWith('skills.')) {
             void SkillRegistry.getInstance();
             // Note: We don't fully reset the registry as it would remove default skills

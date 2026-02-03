@@ -3,9 +3,6 @@
  *
  * Central registry for all skills (default D&D 5e and custom).
  * Manages skill registration, lookup, and categorization.
- *
- * Part of Phase 12.2: Create SkillRegistry.
- * Part of Phase 3.3: Update SkillRegistry for prerequisite validation.
  */
 
 import type {

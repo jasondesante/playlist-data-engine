@@ -4,8 +4,6 @@
  * Handles equipment modification operations including enchanting, cursing,
  * upgrading, and template application. Supports per-instance modifications
  * that can be applied to individual equipment items.
- *
- * Part of Phase 7.1: Create EquipmentModifier.
  */
 
 import type { CharacterSheet } from '../types/Character.js';

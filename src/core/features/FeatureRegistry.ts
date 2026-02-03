@@ -3,8 +3,6 @@
  *
  * Central registry for class features and racial traits.
  * Manages default and custom features with prerequisite validation.
- *
- * Part of Phase 11.2: Custom Class Features System.
  */
 
 import type {

@@ -1,8 +1,5 @@
 /**
  * SkillAssigner - Assigns D&D 5e skill proficiencies based on character class
- *
- * Part of Phase 12.4: Update SkillAssigner to use SkillRegistry and support custom skills.
- * Part of Phase 3.2: Update SkillAssigner for prerequisite filtering.
  */
 
 import type { Class, ProficiencyLevel, CharacterSheet } from '../types/Character.js';

@@ -4,8 +4,6 @@
  * Validates equipment data structures for the Advanced Equipment System.
  * Checks equipment properties, feature/skill references, damage info,
  * spawn weights, and modification structures.
- *
- * Part of Phase 3.2: Create EquipmentValidator.
  */
 
 import type {

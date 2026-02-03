@@ -134,8 +134,8 @@ export class AudioAnalyzer {
         const averagedBands = this.averageFrequencyBands(frequencyDataSamples);
 
         // Calculate dominance metrics using SpectrumScanner
-        // Phase 8.2: Pass bandwidth values for normalization to prevent wider bands from dominating
-        // Bandwidth values based on Phase 8.1 rebalanced frequency bands:
+        // Pass bandwidth values for normalization to prevent wider bands from dominating
+        // Bandwidth values based on rebalanced frequency bands:
         // - Bass: 20-400Hz = 380 Hz range
         // - Mid: 400-4000Hz = 3600 Hz range
         // - Treble: 4000-14000Hz = 10000 Hz range
@@ -143,7 +143,7 @@ export class AudioAnalyzer {
         let midDominance = SpectrumScanner.calculateDominance(averagedBands.mid, 3600);
         let trebleDominance = SpectrumScanner.calculateDominance(averagedBands.treble, 10000);
 
-        // Phase 8.3: Apply frequency attenuation/boost to help balance class selection
+        // Apply frequency attenuation/boost to help balance class selection
         // Treble is attenuated (reduced) while bass and mid are boosted to counteract
         // the natural treble dominance in modern music production and analysis
         bassDominance = bassDominance * this.options.bassBoost!;
