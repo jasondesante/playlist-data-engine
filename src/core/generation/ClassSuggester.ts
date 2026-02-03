@@ -173,7 +173,7 @@ export class ClassSuggester {
      * @private
      */
     private static calculateClassAffinity(audioProfile: AudioProfile, characterClass: Class): number {
-        // First check default CLASS_AUDIO_PREFERENCES
+        // First check ExtensionManager for custom audio_preferences (allows overriding defaults)
         let prefs: {
             primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
             secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
@@ -182,11 +182,11 @@ export class ClassSuggester {
             treble?: number;
             mid?: number;
             amplitude?: number;
-        } | undefined = CLASS_AUDIO_PREFERENCES[characterClass];
+        } | undefined = this.getCustomClassAudioPreferences(characterClass);
 
-        // If not found in defaults, check ExtensionManager for custom class audio_preferences
+        // Fall back to default CLASS_AUDIO_PREFERENCES if no custom override
         if (!prefs) {
-            prefs = this.getCustomClassAudioPreferences(characterClass);
+            prefs = CLASS_AUDIO_PREFERENCES[characterClass];
         }
 
         // Skip calculation if class has no preferences (custom class without defined preferences)

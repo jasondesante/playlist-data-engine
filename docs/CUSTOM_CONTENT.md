@@ -376,7 +376,16 @@ export interface ClassDataEntry {
      */
     baseClass?: Class;
 
-    /** Optional: Audio preferences for class affinity calculation */
+    /**
+     * Audio preferences for class affinity calculation
+     *
+     * For custom classes: defines what audio traits this class prefers
+     * For default classes: overrides the default CLASS_AUDIO_PREFERENCES
+     *
+     * The ClassSuggester checks ExtensionManager for audio_preferences FIRST,
+     * then falls back to CLASS_AUDIO_PREFERENCES. This allows you to override
+     * default class audio behavior (e.g., make Barbarians prefer treble instead of bass).
+     */
     audio_preferences?: {
         primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
         secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
@@ -517,6 +526,25 @@ manager.register('classes.data', [{
 
 // Step 2: Register the class name for validation
 manager.register('classes', [asClass('Necromancer')]);
+```
+
+**Overriding Audio Preferences for Default Classes:**
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Override default class audio preferences
+manager.register('classes.data', [{
+    name: 'Barbarian',  // Override default Barbarian
+    audio_preferences: {
+        primary: 'treble',  // Make Barbarians prefer treble instead of bass
+        treble: 1.0
+    }
+}]);
+
+// Now Barbarians will be suggested for treble-heavy audio instead of bass-heavy
 ```
 
 **Complete Custom Class** (from scratch):
