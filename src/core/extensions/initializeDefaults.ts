@@ -8,7 +8,7 @@
 
 import { ExtensionManager } from './ExtensionManager.js';
 import type { ExtensionCategory } from './ExtensionManager.js';
-import { SPELL_DATABASE, CLASS_SPELL_LISTS, EQUIPMENT_DATABASE, ALL_RACES, ALL_CLASSES } from '../../utils/constants.js';
+import { SPELL_DATABASE, CLASS_SPELL_LISTS, EQUIPMENT_DATABASE, ALL_RACES, ALL_CLASSES, DEFAULT_RACE_DATA_ARRAY } from '../../utils/constants.js';
 import type { Class } from '../types/Character.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../features/DefaultFeatures.js';
@@ -254,6 +254,42 @@ export function ensureRaceDefaultsInitialized(): void {
 }
 
 /**
+ * Initialize ExtensionManager with default race data (ability bonuses, speed, traits, subraces)
+ *
+ * This loads RACE_DATA_IMPL into ExtensionManager's 'races.data' category, making it
+ * editable through the extension system. This should be called once during application initialization.
+ */
+export function initializeRaceDataDefaults(): void {
+    const manager = ExtensionManager.getInstance();
+
+    // Initialize race data with default race properties
+    manager.initializeDefaults('races.data', [...DEFAULT_RACE_DATA_ARRAY]);
+}
+
+/**
+ * Check if race data defaults are initialized
+ */
+export function areRaceDataDefaultsInitialized(): boolean {
+    const manager = ExtensionManager.getInstance();
+    const categories = manager.getRegisteredCategories();
+
+    // Check if races.data category is registered
+    return categories.some(cat => cat === 'races.data');
+}
+
+/**
+ * Ensure race data defaults are initialized
+ *
+ * Initializes defaults if they haven't been already.
+ * Safe to call multiple times.
+ */
+export function ensureRaceDataDefaultsInitialized(): void {
+    if (!areRaceDataDefaultsInitialized()) {
+        initializeRaceDataDefaults();
+    }
+}
+
+/**
  * Initialize ExtensionManager with default class data
  *
  * This should be called once during application initialization.
@@ -299,6 +335,7 @@ export function initializeAllDefaults(): void {
     initializeSpellDefaults();
     initializeEquipmentDefaults();
     initializeRaceDefaults();
+    initializeRaceDataDefaults();
     initializeClassDefaults();
 }
 
@@ -313,6 +350,7 @@ export function ensureAllDefaultsInitialized(): void {
     ensureSpellDefaultsInitialized();
     ensureEquipmentDefaultsInitialized();
     ensureRaceDefaultsInitialized();
+    ensureRaceDataDefaultsInitialized();
     ensureClassDefaultsInitialized();
     ensureFeatureDefaultsInitialized();
     ensureSkillDefaultsInitialized();
