@@ -412,6 +412,7 @@ export interface CharacterSheet {
         /** Dynamic features from audio/visual */
         primary_color?: string;
         secondary_color?: string;
+        accent_color?: string;
         aura_color?: string;
     };
 
