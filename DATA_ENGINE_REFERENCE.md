@@ -1411,6 +1411,9 @@ new AudioAnalyzer(options?: AudioAnalyzerOptions)
 - `options.includeAdvancedMetrics` (boolean): Calculate spectral centroid, rolloff, and zero crossing rate. Default: `false`.
 - `options.sampleRate` (number): Sample rate in Hz. Default: `44100`.
 - `options.fftSize` (number): FFT size (power of 2). Default: `2048`.
+- `options.trebleBoost` (number): Treble boost multiplier (0.0-1.0+). Default: `0.7`.
+- `options.bassBoost` (number): Bass boost multiplier (0.0-1.0+). Default: `1.2`.
+- `options.midBoost` (number): Mid boost multiplier (0.0-1.0+). Default: `1.1`.
 
 **Methods:**
 

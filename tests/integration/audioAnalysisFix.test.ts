@@ -219,7 +219,7 @@ describe('Phase 8.5: Audio Analysis Fix Verification', () => {
      * This test verifies that the audio analysis fix (Phase 8) has successfully:
      * 1. Rebalanced frequency bands (Phase 8.1)
      * 2. Applied bandwidth normalization (Phase 8.2)
-     * 3. Applied treble attenuation and bass/mid boost (Phase 8.3)
+     * 3. Applied treble boost and bass/mid boost (Phase 8.3)
      */
     it('should generate 20 characters from diverse genres', () => {
         const generatedClasses: Class[] = [];
@@ -338,7 +338,7 @@ describe('Phase 8.5: Audio Analysis Fix Verification', () => {
      *
      * This test documents that treble-heavy genres (Classical, Jazz, Ambient)
      * no longer always result in the same class (Rogue) due to the
-     * treble attenuation system.
+     * treble boost system.
      */
     it('should verify treble dominance has been reduced', () => {
         console.log('\n=== Treble Dominance Verification ===\n');
