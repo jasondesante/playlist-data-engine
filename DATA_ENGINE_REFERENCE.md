@@ -318,6 +318,9 @@ export interface CharacterSheet {
     /** Race */
     race: Race;
 
+    /** Subrace (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf') */
+    subrace?: string;
+
     /** Class */
     class: Class;
 
@@ -350,7 +353,7 @@ export interface CharacterSheet {
     speed: number;
 
     /** Skill proficiencies */
-    skills: Record<Skill, ProficiencyLevel>;
+    skills: Record<string, ProficiencyLevel>;
 
     /** Saving throw proficiencies */
     saving_throws: Record<Ability, boolean>;
@@ -370,9 +373,11 @@ export interface CharacterSheet {
 
     /** Equipment */
     equipment?: {
-        weapons: string[];
-        armor: string[];
-        items: string[];
+        weapons: EnhancedInventoryItem[];
+        armor: EnhancedInventoryItem[];
+        items: EnhancedInventoryItem[];
+        totalWeight: number;
+        equippedWeight: number;
     };
 
     /** Character appearance */
@@ -406,6 +411,50 @@ export interface CharacterSheet {
 
     /** Game mode for stat progression (standard = capped at 20, uncapped = no limits) */
     gameMode?: GameMode;
+
+    /** Number of pending stat increases awaiting manual selection (counter) */
+    pendingStatIncreases?: number;
+
+    /**
+     * Feature effects applied to this character
+     * Stores effects from features and traits that modify character stats
+     *
+     * Effects include:
+     * - stat_bonus: Add to ability scores (e.g., +1 STR)
+     * - skill_proficiency: Grant proficiency or expertise in a skill
+     * - ability_unlock: Unlock new abilities (e.g., darkvision, flight)
+     * - passive_modifier: Add constant bonuses (e.g., +10 speed)
+     * - resource_grant: Grant resource pools (e.g., rage counts, ki points)
+     * - spell_slot_bonus: Grant additional spell slots
+     */
+    feature_effects?: FeatureEffect[];
+
+    /**
+     * Equipment-granted effects
+     * Tracks effects currently active from equipped items
+     * Separate from feature_effects to allow proper removal when unequipping
+     *
+     * STACKING: All equipment effects stack (e.g., two +1 STR items = +2 STR total)
+     */
+    equipment_effects?: {
+        /** Equipment name providing the effect */
+        source: string;
+
+        /** Instance ID for per-instance tracking */
+        instanceId?: string;
+
+        /** Effects from this equipment */
+        effects: EquipmentProperty[];
+
+        /** Features granted by this equipment (registry features or inline mini-features) */
+        features: EquipmentFeature[];
+
+        /** Skills granted by this equipment */
+        skills: EquipmentSkill[];
+
+        /** Spells granted by this equipment */
+        spells?: EquipmentSpell[];
+    }[];
 
 }
 ```

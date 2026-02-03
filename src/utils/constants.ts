@@ -62,31 +62,37 @@ const RACE_DATA_IMPL = {
         ability_bonuses: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 },
         speed: 30,
         traits: ['Versatile', 'Extra Language'],
+        subraces: ['Calishite', 'Chondathan', 'Damaran', 'Illuskan', 'Mulan', 'Rashemi', 'Shou', 'Tethyrian', 'Turami'],
     },
     'Elf': {
         ability_bonuses: { DEX: 2 },
         speed: 30,
         traits: ['Darkvision', 'Keen Senses', 'Fey Ancestry', 'Trance'],
+        subraces: ['High Elf', 'Wood Elf', 'Dark Elf (Drow)'],
     },
     'Dwarf': {
         ability_bonuses: { CON: 2 },
         speed: 25,
         traits: ['Darkvision', 'Dwarven Resilience', 'Stonecunning'],
+        subraces: ['Hill Dwarf', 'Mountain Dwarf'],
     },
     'Halfling': {
         ability_bonuses: { DEX: 2 },
         speed: 25,
         traits: ['Lucky', 'Brave', 'Halfling Nimbleness'],
+        subraces: ['Lightfoot', 'Stout'],
     },
     'Dragonborn': {
         ability_bonuses: { STR: 2, CHA: 1 },
         speed: 30,
         traits: ['Draconic Ancestry', 'Breath Weapon', 'Damage Resistance'],
+        subraces: ['Chromatic', 'Metallic', 'Gem'],
     },
     'Gnome': {
         ability_bonuses: { INT: 2 },
         speed: 25,
         traits: ['Darkvision', 'Gnome Cunning'],
+        subraces: ['Forest Gnome', 'Rock Gnome'],
     },
     'Half-Elf': {
         ability_bonuses: { CHA: 2 },

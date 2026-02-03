@@ -13,6 +13,7 @@ import type {
 import type { Class, Race } from '../types/Character.js';
 import type { CharacterSheet } from '../types/Character.js';
 import { validateClassFeature, validateRacialTrait } from './FeatureValidator.js';
+import { getRaceData } from '../../utils/constants.js';
 
 /**
  * FeatureRegistry - Singleton class for managing features and traits
@@ -274,13 +275,21 @@ export class FeatureRegistry {
     /**
      * Get all available subraces for a race
      *
-     * Returns a unique list of subrace names that have traits registered
-     * for the given race. This is derived from registered racial traits.
+     * Returns a unique list of subrace names for the given race.
+     * First checks RACE_DATA for a defined subraces list, then falls back
+     * to deriving subraces from registered racial traits (for custom content).
      *
      * @param race - Race to get subraces for
      * @returns Array of unique subrace names
      */
     getAvailableSubraces(race: Race): string[] {
+        // Check RACE_DATA first (for default races with defined subraces)
+        const raceData = getRaceData(race);
+        if (raceData?.subraces && raceData.subraces.length > 0) {
+            return raceData.subraces;
+        }
+
+        // Fall back to deriving from traits (for custom races/content)
         const traits = this.racialTraits.get(race) || [];
         const subraces = new Set<string>();
         for (const trait of traits) {
