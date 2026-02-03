@@ -18,24 +18,24 @@ export interface AudioAnalyzerOptions {
     /**
      * Treble boost multiplier (0.0-1.0+)
      * Reduces treble dominance to help balance class selection.
-     * Default: 0.7 (reduces treble by 30%)
-     * @default 0.7
+     * Default: 1
+     * @default 1
      */
     trebleBoost?: number;
 
     /**
      * Bass boost multiplier (0.0-1.0+)
      * Increases bass dominance to help balance class selection.
-     * Default: 1.2 (increases bass by 20%)
-     * @default 1.2
+     * Default: 1
+     * @default 1
      */
     bassBoost?: number;
 
     /**
      * Mid boost multiplier (0.0-1.0+)
      * Increases mid dominance to help balance class selection.
-     * Default: 1.1 (increases mid by 10%)
-     * @default 1.1
+     * Default: 1
+     * @default 1
      */
     midBoost?: number;
 }
@@ -57,9 +57,9 @@ export class AudioAnalyzer {
      * @param {boolean} [options.includeAdvancedMetrics=false] - Include spectral analysis metrics
      * @param {number} [options.sampleRate=44100] - Sample rate in Hz
      * @param {number} [options.fftSize=2048] - FFT size for frequency analysis (must be power of 2)
-     * @param {number} [options.trebleBoost=0.7] - Treble boost multiplier (0.0-1.0+)
-     * @param {number} [options.bassBoost=1.2] - Bass boost multiplier (0.0-1.0+)
-     * @param {number} [options.midBoost=1.1] - Mid boost multiplier (0.0-1.0+)
+     * @param {number} [options.trebleBoost=1] - Treble boost multiplier (0.0-1.0+)
+     * @param {number} [options.bassBoost=1] - Bass boost multiplier (0.0-1.0+)
+     * @param {number} [options.midBoost=1] - Mid boost multiplier (0.0-1.0+)
      *
      * @example
      * const analyzer = new AudioAnalyzer({
@@ -74,9 +74,9 @@ export class AudioAnalyzer {
             includeAdvancedMetrics: false,
             sampleRate: 44100,
             fftSize: 2048,
-            trebleBoost: 0.7,
-            bassBoost: 1.2,
-            midBoost: 1.1,
+            trebleBoost: 1,
+            bassBoost: 1,
+            midBoost: 1,
             ...options,
         };
     }
