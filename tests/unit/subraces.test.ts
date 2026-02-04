@@ -147,6 +147,11 @@ describe('Subrace Support', () => {
 
     describe('FeatureRegistry.getRacialTraitsForSubrace', () => {
         beforeEach(() => {
+            // Clear default racial traits and register test traits
+            // We set defaults to empty array to remove the default traits
+            extensionManager.initializeDefaults('racialTraits', []);
+            featureRegistry.invalidateCache();
+
             // Register test racial traits for Elf with subrace specificity
             const baseElfTraits: RacialTrait[] = [
                 {
@@ -256,8 +261,7 @@ describe('Subrace Support', () => {
                 }
             ];
 
-            // Clear existing Elf traits and register test traits
-            featureRegistry.racialTraits.delete('Elf');
+            // Register test traits
             for (const trait of baseElfTraits) {
                 featureRegistry.registerRacialTrait(trait);
             }
@@ -478,6 +482,10 @@ describe('Subrace Support', () => {
 
     describe('CharacterGenerator subrace support', () => {
         beforeEach(() => {
+            // Clear default racial traits and register test traits
+            extensionManager.initializeDefaults('racialTraits', []);
+            featureRegistry.invalidateCache();
+
             // Register test racial traits for Elf with subrace specificity
             // This is required for the auto-detection of race from subrace
             const baseElfTraits: RacialTrait[] = [
@@ -588,8 +596,7 @@ describe('Subrace Support', () => {
                 }
             ];
 
-            // Clear existing Elf traits and register test traits
-            featureRegistry.racialTraits.delete('Elf');
+            // Register test traits
             for (const trait of baseElfTraits) {
                 featureRegistry.registerRacialTrait(trait);
             }
@@ -1016,7 +1023,7 @@ describe('Subrace Support', () => {
                 }
             ];
 
-            featureRegistry.racialTraits.set('Elf', []);
+            // Register test traits
             for (const trait of elfTraits) {
                 featureRegistry.registerRacialTrait(trait);
             }

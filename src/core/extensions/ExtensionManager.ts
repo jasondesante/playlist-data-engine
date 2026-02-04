@@ -308,29 +308,10 @@ export class ExtensionManager {
         }
 
         // Note: FeatureRegistry is a convenience wrapper that reads from ExtensionManager
-        // We no longer delegate to FeatureRegistry for class features since it delegates to EM
-        // This prevents circular dependency: FeatureRegistry.registerClassFeatures() → EM.register() → FeatureRegistry
-
-        // Note: We still delegate to FeatureRegistry for racial traits (to be removed in Phase 9)
-        // Integrate with FeatureRegistry for racial traits
-        if (category === 'racialTraits') {
-            // Only register with FeatureRegistry if validation is enabled
-            if (validate) {
-                const registry = FeatureRegistry.getInstance();
-                registry.registerRacialTraits(items as RacialTrait[]);
-            }
-        }
-
-        // Handle race-specific traits
-        if (category.startsWith('racialTraits.')) {
-            // raceName is extracted for future use in validation/logging
-            void category.replace('racialTraits.', '') as unknown as Race;
-            // Only register with FeatureRegistry if validation is enabled
-            if (validate) {
-                const registry = FeatureRegistry.getInstance();
-                registry.registerRacialTraits(items as RacialTrait[]);
-            }
-        }
+        // We no longer delegate to FeatureRegistry for class features or racial traits since they delegate to EM
+        // This prevents circular dependency:
+        // - FeatureRegistry.registerClassFeatures() → EM.register() → FeatureRegistry
+        // - FeatureRegistry.registerRacialTraits() → EM.register() → FeatureRegistry
 
         // Note: SkillRegistry is a convenience wrapper that reads from ExtensionManager
         // We no longer delegate to SkillRegistry since it reads from EM directly

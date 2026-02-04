@@ -840,12 +840,17 @@ All tests pass (209 passed, 8 test files passed).
 ### Task 10.1: Remove FeatureRegistry Delegation for Racial Traits
 
 **Remove these code blocks from `register()` method:**
-- [ ] Lines 319-326: FeatureRegistry integration for 'racialTraits' category
-- [ ] Lines 339-348: FeatureRegistry integration for 'racialTraits.*' categories
+- [x] Lines 319-326: FeatureRegistry integration for 'racialTraits' category
+- [x] Lines 339-348: FeatureRegistry integration for 'racialTraits.*' categories
 
 **Verification:**
-- [ ] ExtensionManager does not call FeatureRegistry.registerRacialTraits()
-- [ ] Traits are only stored in EM's extensions Map
+- [x] ExtensionManager does not call FeatureRegistry.registerRacialTraits()
+- [x] Traits are only stored in EM's extensions Map
+
+**Summary:**
+Removed the FeatureRegistry delegation code blocks from `ExtensionManager.register()` method for racial traits. The registry is now a pure convenience wrapper that delegates TO ExtensionManager, not the other way around. This prevents circular dependency issues.
+
+**Note:** Also fixed tests in `tests/unit/subraces.test.ts` that were directly accessing the removed `featureRegistry.racialTraits` private Map. Updated these tests to use `extensionManager.initializeDefaults('racialTraits', [])` to clear defaults before registering test traits, and to use `featureRegistry.invalidateCache()` after reset operations.
 
 ---
 
