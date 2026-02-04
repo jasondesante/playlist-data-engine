@@ -695,16 +695,22 @@ The test suite correctly verifies that:
 ### Task 9.1: Remove Internal Storage for Racial Traits
 
 **Remove these properties:**
-- [ ] `private racialTraits: Map<string, RacialTrait[]>`
-- [ ] `private traitLookup: Map<string, RacialTrait>`
+- [x] `private racialTraits: Map<string, RacialTrait[]>`
+- [x] `private traitLookup: Map<string, RacialTrait>`
+- [x] `private initialized: boolean` (no longer needed with EM as source of truth)
 
 **Add these properties:**
-- [ ] `private allRacialTraitsCache: RacialTrait[] | null` (lazy cache)
-- [ ] `private racialTraitsIndex: Map<string, RacialTrait[]> | null` (lazy index by race)
+- [x] `private allRacialTraitsCache: RacialTrait[] | null` (lazy cache)
+- [x] `private racialTraitsIndex: Map<string, RacialTrait[]> | null` (lazy index by race)
 
 **Verification:**
-- [ ] TypeScript compiles
-- [ ] No internal storage Maps remain
+- [x] TypeScript compiles
+- [x] No internal storage Maps remain
+
+**Summary:**
+Removed all internal storage for racial traits from FeatureRegistry. The registry now reads all racial trait data from ExtensionManager with caching. Updated `invalidateCache()` to include racial trait caches. Updated `isInitialized()` to check ExtensionManager for data instead of using an internal flag. Updated `initializeDefaults()` to delegate to ExtensionManager. Updated `exportRacialTraits()` to read from ExtensionManager.
+
+**Note:** Query methods (getRacialTraits, getBaseRacialTraits, etc.) were also updated to read from ExtensionManager as part of this task, which covers work from Tasks 9.4 and 9.5. The registration methods (registerRacialTrait, registerRacialTraits) were updated to delegate to ExtensionManager, covering work from Task 9.2.
 
 ---
 
@@ -726,11 +732,12 @@ registerRacialTrait(trait: RacialTrait): void {
 ```
 
 **Refactor `registerRacialTraits()` similarly**
+- [x] Done
 
 **Verification:**
-- [ ] TypeScript compiles
-- [ ] Registering via FeatureRegistry adds to ExtensionManager
-- [ ] Cache is invalidated after registration
+- [x] TypeScript compiles
+- [x] Registering via FeatureRegistry adds to ExtensionManager
+- [x] Cache is invalidated after registration
 
 ---
 
@@ -750,38 +757,43 @@ registerRacialTrait(trait: RacialTrait): void {
 ### Task 9.4: Refactor Racial Trait Query Methods to Read from EM
 
 **Refactor `getRacialTraits(race)` to:**
-- Get traits via `this.manager.get('racialTraits')`
-- Filter by race
-- Build cache for performance
+- [x] Get traits via `this.manager.get('racialTraits')`
+- [x] Filter by race
+- [x] Build cache for performance
 
 **Refactor `getBaseRacialTraits(race)` similarly**
+- [x] Done
 
 **Refactor `getRacialTraitsForSubrace(race, subrace)` similarly**
+- [x] Done
 
 **Refactor `getSubraceTraits(race, subrace)` similarly**
+- [x] Done
 
 **Refactor `getRacialTraitById(traitId)` to find in EM data**
+- [x] Done
 
 **Refactor `getAllRacialTraits()` to return Map built from EM data**
+- [x] Done
 
 **Verification:**
-- [ ] `getRacialTraits('Elf')` returns correct traits
-- [ ] `getRacialTraitById('darkvision')` finds the trait
+- [x] `getRacialTraits('Elf')` returns correct traits
+- [x] `getRacialTraitById('darkvision')` finds the trait
 
 ---
 
 ### Task 9.5: Update Subrace Methods to Use EM Data
 
 **Refactor `getAvailableSubraces(race)` to:**
-- Check RACE_DATA first (for default races)
-- Fall back to deriving from EM data via `this.manager.get('racialTraits')`
+- [x] Check RACE_DATA first (for default races)
+- [x] Fall back to deriving from EM data via `this.manager.get('racialTraits')`
 
 **Refactor `getRaceForSubrace(subrace)` to:**
-- Search through EM data for the subrace
+- [x] Search through EM data for the subrace
 
 **Verification:**
-- [ ] `getAvailableSubraces('Elf')` returns correct subraces
-- [ ] `getRaceForSubrace('High Elf')` returns 'Elf'
+- [x] `getAvailableSubraces('Elf')` returns correct subraces
+- [x] `getRaceForSubrace('High Elf')` returns 'Elf'
 
 ---
 

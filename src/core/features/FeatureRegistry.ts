@@ -12,8 +12,7 @@
  *
  * No duplicate storage - all data lives in ExtensionManager.
  *
- * **Note:** Racial traits still use internal storage (to be refactored in Phase 9).
- * Class features read from ExtensionManager (refactored in Phase 6).
+ * **Note:** Both class features and racial traits now read from ExtensionManager.
  */
 
 import type {
@@ -31,32 +30,27 @@ import { ExtensionManager } from '../extensions/ExtensionManager.js';
  * FeatureRegistry - Singleton class for managing features and traits
  *
  * The registry is a **convenience wrapper** around ExtensionManager.
- * All class features are stored in ExtensionManager; FeatureRegistry provides:
+ * All class features and racial traits are stored in ExtensionManager; FeatureRegistry provides:
  * - Convenient registration methods that delegate to ExtensionManager
  * - Query methods with caching for performance
  * - Feature-related helper methods
  *
- * Racial traits still use internal storage (to be migrated to ExtensionManager in Phase 9).
- *
- * Design principle: No duplicate storage for class features. All class feature data lives in ExtensionManager.
+ * Design principle: No duplicate storage. All feature data lives in ExtensionManager.
  */
 export class FeatureRegistry {
     private static instance: FeatureRegistry;
     private manager: ExtensionManager;
 
-    // Racial traits - internal storage (to be refactored in Phase 9)
-    private racialTraits: Map<string, RacialTrait[]>;
-    private traitLookup: Map<string, RacialTrait>;
-    private initialized: boolean = false;
-
     // Cache properties for class features (reads from ExtensionManager)
     private allClassFeaturesCache: ClassFeature[] | null = null;
     private classFeaturesIndex: Map<string, ClassFeature[]> | null = null;
 
+    // Cache properties for racial traits (reads from ExtensionManager)
+    private allRacialTraitsCache: RacialTrait[] | null = null;
+    private racialTraitsIndex: Map<string, RacialTrait[]> | null = null;
+
     private constructor() {
         this.manager = ExtensionManager.getInstance();
-        this.racialTraits = new Map();
-        this.traitLookup = new Map();
     }
 
     /**
@@ -72,7 +66,7 @@ export class FeatureRegistry {
     /**
      * Invalidate all caches
      *
-     * Call this method after directly manipulating ExtensionManager's class feature data
+     * Call this method after directly manipulating ExtensionManager's data
      * (e.g., after calling ExtensionManager.resetAll()).
      *
      * This ensures that FeatureRegistry's cached data is refreshed to reflect
@@ -81,32 +75,32 @@ export class FeatureRegistry {
     invalidateCache(): void {
         this.allClassFeaturesCache = null;
         this.classFeaturesIndex = null;
+        this.allRacialTraitsCache = null;
+        this.racialTraitsIndex = null;
     }
 
     /**
      * Initialize the registry with default racial traits
      * This should be called once during package initialization
      *
-     * Note: Class features are now initialized via ExtensionManager.
+     * Note: Both class features and racial traits are now initialized via ExtensionManager.
      * Use ExtensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES)
+     * and ExtensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)
      * or call initializeFeatureDefaults() from initializeDefaults.ts.
+     *
+     * This method is kept for backward compatibility but delegates to ExtensionManager.
      *
      * @param defaultRacialTraits - Default racial traits from constants
      */
     initializeDefaults(defaultRacialTraits: RacialTrait[] = []): void {
-        if (this.initialized) {
+        if (this.isInitialized()) {
             return; // Already initialized
         }
 
-        // Clear any existing data
-        this.reset();
-
-        // Register default racial traits
-        for (const trait of defaultRacialTraits) {
-            this.registerRacialTrait(trait);
+        // Register default racial traits via ExtensionManager
+        if (defaultRacialTraits.length > 0) {
+            this.manager.register('racialTraits', defaultRacialTraits);
         }
-
-        this.initialized = true;
     }
 
     /**
@@ -191,6 +185,8 @@ export class FeatureRegistry {
     /**
      * Register a single racial trait
      *
+     * Delegates to ExtensionManager.register('racialTraits', [...])
+     *
      * @param trait - Racial trait to register
      * @throws Error if trait ID already exists or validation fails
      */
@@ -201,30 +197,68 @@ export class FeatureRegistry {
             throw new Error(`Invalid racial trait "${trait.id}":\n${validation.errors.join('\n')}`);
         }
 
-        if (this.traitLookup.has(trait.id)) {
+        // Check for duplicate trait ID
+        const existingTraits = this.getAllRacialTraitsArray();
+        if (existingTraits.some(t => t.id === trait.id)) {
             throw new Error(`Racial trait with ID "${trait.id}" already exists`);
         }
 
-        // Add to race-specific map
-        const raceKey = trait.race;
-        if (!this.racialTraits.has(raceKey)) {
-            this.racialTraits.set(raceKey, []);
-        }
-        this.racialTraits.get(raceKey)!.push(trait);
+        // Ensure trait has source
+        const traitToRegister = {
+            ...trait,
+            source: trait.source || 'custom'
+        };
 
-        // Add to lookup map
-        this.traitLookup.set(trait.id, trait);
+        // Delegate to ExtensionManager
+        this.manager.register('racialTraits', [traitToRegister]);
+
+        // Invalidate cache
+        this.invalidateCache();
     }
 
     /**
      * Register multiple racial traits at once
      *
+     * Delegates to ExtensionManager.register('racialTraits', [...])
+     *
      * @param traits - Array of racial traits to register
+     * @throws Error if validation fails or if any trait ID already exists
      */
     registerRacialTraits(traits: RacialTrait[]): void {
+        // Validate all traits first
         for (const trait of traits) {
-            this.registerRacialTrait(trait);
+            const validation = validateRacialTrait(trait);
+            if (!validation.valid) {
+                throw new Error(`Invalid racial trait "${trait.id}":\n${validation.errors.join('\n')}`);
+            }
         }
+
+        // Check for duplicate trait IDs (both within batch and against existing traits)
+        const existingTraits = this.getAllRacialTraitsArray();
+        const existingIds = new Set(existingTraits.map(t => t.id));
+        const newIds = new Set<string>();
+
+        for (const trait of traits) {
+            if (existingIds.has(trait.id)) {
+                throw new Error(`Racial trait with ID "${trait.id}" already exists`);
+            }
+            if (newIds.has(trait.id)) {
+                throw new Error(`Duplicate racial trait ID "${trait.id}" in batch`);
+            }
+            newIds.add(trait.id);
+        }
+
+        // Ensure all traits have source
+        const traitsToRegister = traits.map(trait => ({
+            ...trait,
+            source: trait.source || 'custom'
+        }));
+
+        // Delegate to ExtensionManager
+        this.manager.register('racialTraits', traitsToRegister);
+
+        // Invalidate cache
+        this.invalidateCache();
     }
 
     /**
@@ -240,6 +274,21 @@ export class FeatureRegistry {
             this.allClassFeaturesCache = features as ClassFeature[];
         }
         return this.allClassFeaturesCache;
+    }
+
+    /**
+     * Get all racial traits as an array
+     *
+     * Reads from ExtensionManager with caching.
+     *
+     * @returns Array of all racial traits
+     */
+    private getAllRacialTraitsArray(): RacialTrait[] {
+        if (!this.allRacialTraitsCache) {
+            const traits = this.manager.get('racialTraits');
+            this.allRacialTraitsCache = traits as RacialTrait[];
+        }
+        return this.allRacialTraitsCache;
     }
 
     /**
@@ -326,11 +375,14 @@ export class FeatureRegistry {
     /**
      * Get all racial traits for a race
      *
+     * Reads from ExtensionManager with caching.
+     *
      * @param race - Race to get traits for
      * @returns Array of racial traits
      */
     getRacialTraits(race: Race): RacialTrait[] {
-        return this.racialTraits.get(race) || [];
+        const allTraits = this.getAllRacialTraitsArray();
+        return allTraits.filter(t => t.race === race);
     }
 
     /**
@@ -338,24 +390,30 @@ export class FeatureRegistry {
      *
      * Returns traits that apply to all members of a race, regardless of subrace.
      *
+     * Reads from ExtensionManager with caching.
+     *
      * @param race - Race to get base traits for
      * @returns Array of base racial traits
      */
     getBaseRacialTraits(race: Race): RacialTrait[] {
-        const traits = this.racialTraits.get(race) || [];
-        return traits.filter(t => !t.subrace);
+        const allTraits = this.getAllRacialTraitsArray();
+        return allTraits.filter(t => t.race === race && !t.subrace);
     }
 
     /**
      * Get racial traits for a specific subrace
+     *
+     * Returns base traits for the race plus subrace-specific traits.
+     *
+     * Reads from ExtensionManager with caching.
      *
      * @param race - Base race
      * @param subrace - Subrace name
      * @returns Array of racial traits for the subrace
      */
     getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[] {
-        const traits = this.racialTraits.get(race) || [];
-        return traits.filter(t => !t.subrace || t.subrace === subrace);
+        const allTraits = this.getAllRacialTraitsArray();
+        return allTraits.filter(t => t.race === race && (!t.subrace || t.subrace === subrace));
     }
 
     /**
@@ -363,13 +421,15 @@ export class FeatureRegistry {
      *
      * Returns only traits that specifically apply to the given subrace.
      *
+     * Reads from ExtensionManager with caching.
+     *
      * @param race - Base race
      * @param subrace - Subrace name
      * @returns Array of subrace-specific traits
      */
     getSubraceTraits(race: Race, subrace: string): RacialTrait[] {
-        const traits = this.racialTraits.get(race) || [];
-        return traits.filter(t => t.subrace === subrace);
+        const allTraits = this.getAllRacialTraitsArray();
+        return allTraits.filter(t => t.race === race && t.subrace === subrace);
     }
 
     /**
@@ -378,6 +438,8 @@ export class FeatureRegistry {
      * Returns a unique list of subrace names for the given race.
      * First checks RACE_DATA for a defined subraces list, then falls back
      * to deriving subraces from registered racial traits (for custom content).
+     *
+     * Reads from ExtensionManager with caching.
      *
      * @param race - Race to get subraces for
      * @returns Array of unique subrace names
@@ -390,10 +452,10 @@ export class FeatureRegistry {
         }
 
         // Fall back to deriving from traits (for custom races/content)
-        const traits = this.racialTraits.get(race) || [];
+        const allTraits = this.getAllRacialTraitsArray();
         const subraces = new Set<string>();
-        for (const trait of traits) {
-            if (trait.subrace) {
+        for (const trait of allTraits) {
+            if (trait.race === race && trait.subrace) {
                 subraces.add(trait.subrace);
             }
         }
@@ -407,15 +469,16 @@ export class FeatureRegistry {
      * has traits with the specified subrace. Returns undefined if the
      * subrace is not found in any race's traits.
      *
+     * Reads from ExtensionManager.
+     *
      * @param subrace - Subrace name to look up
      * @returns Race that has this subrace, or undefined if not found
      */
     getRaceForSubrace(subrace: string): Race | undefined {
-        for (const [race, traits] of this.racialTraits.entries()) {
-            for (const trait of traits) {
-                if (trait.subrace === subrace) {
-                    return race as Race;
-                }
+        const allTraits = this.getAllRacialTraitsArray();
+        for (const trait of allTraits) {
+            if (trait.subrace === subrace) {
+                return trait.race;
             }
         }
         return undefined;
@@ -424,11 +487,14 @@ export class FeatureRegistry {
     /**
      * Get a single racial trait by ID
      *
+     * Reads from ExtensionManager.
+     *
      * @param traitId - Trait ID to look up
      * @returns Racial trait or undefined if not found
      */
     getRacialTraitById(traitId: string): RacialTrait | undefined {
-        return this.traitLookup.get(traitId);
+        const allTraits = this.getAllRacialTraitsArray();
+        return allTraits.find(t => t.id === traitId);
     }
 
     /**
@@ -437,10 +503,22 @@ export class FeatureRegistry {
      * Returns a Map where keys are race names and values are arrays
      * of all traits for that race.
      *
+     * Reads from ExtensionManager with caching.
+     *
      * @returns Map of race names to their traits
      */
     getAllRacialTraits(): Map<string, RacialTrait[]> {
-        return new Map(this.racialTraits);
+        if (!this.racialTraitsIndex) {
+            this.racialTraitsIndex = new Map();
+            const allTraits = this.getAllRacialTraitsArray();
+            for (const trait of allTraits) {
+                if (!this.racialTraitsIndex.has(trait.race)) {
+                    this.racialTraitsIndex.set(trait.race, []);
+                }
+                this.racialTraitsIndex.get(trait.race)!.push(trait);
+            }
+        }
+        return new Map(this.racialTraitsIndex);
     }
 
     /**
@@ -630,16 +708,23 @@ export class FeatureRegistry {
     /**
      * Get all races that have traits registered
      *
+     * Reads from ExtensionManager.
+     *
      * @returns Array of race names
      */
     getRegisteredRaces(): Race[] {
-        return Array.from(this.racialTraits.keys()) as Race[];
+        const allTraits = this.getAllRacialTraitsArray();
+        const racesSet = new Set<Race>();
+        for (const trait of allTraits) {
+            racesSet.add(trait.race);
+        }
+        return Array.from(racesSet);
     }
 
     /**
      * Get total count of registered features
      *
-     * Reads from ExtensionManager for class features.
+     * Reads from ExtensionManager for both class features and racial traits.
      *
      * @returns Object with counts
      */
@@ -655,45 +740,47 @@ export class FeatureRegistry {
             classesSet.add(feature.class);
         }
 
-        let totalRacialTraits = 0;
-        for (const traits of this.racialTraits.values()) {
-            totalRacialTraits += traits.length;
+        const allTraits = this.getAllRacialTraitsArray();
+        const racesSet = new Set<Race>();
+        for (const trait of allTraits) {
+            racesSet.add(trait.race);
         }
 
         return {
             totalClassFeatures: allFeatures.length,
-            totalRacialTraits,
+            totalRacialTraits: allTraits.length,
             classesWithFeatures: classesSet.size,
-            racesWithTraits: this.racialTraits.size
+            racesWithTraits: racesSet.size
         };
     }
 
     /**
      * Reset the registry to initial state
      *
-     * Clears all registered features and traits.
+     * Clears all registered features and traits from ExtensionManager.
      * Useful for testing or reinitialization.
      */
     reset(): void {
-        // Clear racial traits from internal storage
-        this.racialTraits.clear();
-        this.traitLookup.clear();
-
         // Clear class features from ExtensionManager
         this.manager.reset('classFeatures');
 
-        // Clear initialization flag and cache
-        this.initialized = false;
+        // Clear racial traits from ExtensionManager
+        this.manager.reset('racialTraits');
+
+        // Clear cache
         this.invalidateCache();
     }
 
     /**
      * Check if the registry has been initialized
      *
+     * Checks ExtensionManager for racial traits data.
+     *
      * @returns True if initialized with defaults
      */
     isInitialized(): boolean {
-        return this.initialized;
+        // Check if ExtensionManager has racial traits data
+        return this.manager.hasCustomData('racialTraits') || this.manager.getDefaults('racialTraits').length > 0;
     }
 
     /**
@@ -780,14 +867,17 @@ export class FeatureRegistry {
     /**
      * Get all racial traits as a plain object (for debugging/serialization)
      *
-     * Note: For class features, use ExtensionManager.get('classFeatures') directly.
-     * This method is kept for racial traits until Phase 9 migration.
+     * Note: For both class features and racial traits, use ExtensionManager.get() directly.
+     * This method is kept for API compatibility.
+     *
+     * Reads from ExtensionManager.
      *
      * @returns Object mapping race names to their traits
      */
     exportRacialTraits(): Record<string, RacialTrait[]> {
         const racialTraitsExport: Record<string, RacialTrait[]> = {};
-        for (const [race, traits] of this.racialTraits.entries()) {
+        const traitsByRace = this.getAllRacialTraits();
+        for (const [race, traits] of traitsByRace.entries()) {
             racialTraitsExport[race] = traits;
         }
         return racialTraitsExport;
