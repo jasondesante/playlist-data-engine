@@ -1,0 +1,886 @@
+# Registry Consolidation Plan
+
+**Goal:** Refactor SkillRegistry and FeatureRegistry to eliminate duplicate storage, following the same pattern as SpellRegistry. Both registries will become convenience wrappers that read from ExtensionManager without their own internal storage.
+
+## Current State (Duplicate Storage)
+
+### ExtensionManager
+- Stores features/skills in `extensions` Map
+- ALSO calls FeatureRegistry/SkillRegistry.register*() after storing
+- Creates duplicate storage
+
+### FeatureRegistry
+- Has internal Maps: `classFeatures`, `racialTraits`, `featureLookup`, `traitLookup`
+- `initializeDefaults()` loads default features
+- `registerClassFeature()`, `registerRacialTrait()` store in internal Maps
+- Query methods read from internal Maps
+
+### SkillRegistry
+- Has internal Maps: `skills`, `skillsByAbility`, `skillsByCategory`
+- `initializeDefaults()` loads default skills
+- `registerSkill()` stores in internal Map
+- Query methods read from internal Maps
+
+## Target State (No Duplicate Storage)
+
+### ExtensionManager
+- **Single source of truth** for features and skills
+- `initializeDefaults(category)` initializes all defaults
+- NO delegation calls to registries
+
+### FeatureRegistry (Convenience Wrapper)
+- **No internal storage** - reads from ExtensionManager
+- **No `registerClassFeature()` or `registerRacialTrait()` methods**
+- Query methods build indexes from EM data with caching
+- Validation methods delegate to FeatureValidator
+
+### SkillRegistry (Convenience Wrapper)
+- **No internal storage** - reads from ExtensionManager
+- **No `registerSkill()` method**
+- Query methods build indexes from EM data with caching
+- Validation methods delegate to SkillValidator
+
+---
+
+# Implementation Plan
+
+## Phase 1: Refactor SkillRegistry
+
+**File:** `src/core/skills/SkillRegistry.ts`
+
+---
+
+### Task 1.1: Remove Internal Storage from SkillRegistry
+
+**Remove these properties:**
+- [ ] `private skills: Map<string, CustomSkill>`
+- [ ] `private skillsByAbility: Map<Ability, Set<string>>`
+- [ ] `private skillsByCategory: Map<string, Set<string>>`
+- [ ] `private initialized: boolean`
+
+**Add these properties:**
+- [ ] `private manager: ExtensionManager` (reference to ExtensionManager)
+- [ ] `private allSkillsCache: CustomSkill[] | null` (lazy cache)
+- [ ] `private abilityCache: Map<Ability, CustomSkill[]> | null` (lazy index)
+- [ ] `private categoryCache: Map<string, CustomSkill[]> | null` (lazy index)
+
+**Verification:**
+- [ ] TypeScript compiles
+- [ ] Constructor initializes `this.manager = ExtensionManager.getInstance()`
+
+---
+
+### Task 1.2: Remove Skill Registration Methods from SkillRegistry
+
+**Remove these methods:**
+- [ ] `registerSkill(skill: CustomSkill): void`
+- [ ] `registerSkills(skills: CustomSkill[]): void`
+
+**Reason:** Registration should use `ExtensionManager.register('skills', [...])` directly.
+
+**Verification:**
+- [ ] TypeScript compiles
+- [ ] No registerSkill/registerSkills methods in SkillRegistry
+
+---
+
+### Task 1.3: Remove initializeDefaults() from SkillRegistry
+
+**Remove this method:**
+- [ ] `initializeDefaults(defaultSkills?: CustomSkill[]): void`
+
+**Update callers:**
+- [ ] Find all calls to `SkillRegistry.getInstance().initializeDefaults()`
+- [ ] Replace with `ExtensionManager.getInstance().initializeDefaults('skills', DEFAULT_SKILLS)`
+
+**Verification:**
+- [ ] No calls to SkillRegistry.initializeDefaults() in codebase
+- [ ] ExtensionManager initializes default skills
+
+---
+
+### Task 1.4: Remove reset() and Related Methods from SkillRegistry
+
+**Remove these methods:**
+- [ ] `reset(): void`
+- [ ] `isInitialized(): boolean`
+- [ ] `unregisterSkill(id: string): boolean`
+
+**Reason:** ExtensionManager handles reset. SkillRegistry has no state to reset.
+
+**Verification:**
+- [ ] TypeScript compiles
+- [ ] No references to removed methods
+
+---
+
+### Task 1.5: Refactor Query Methods to Read from ExtensionManager
+
+**Refactor `getAllSkills()` to read from ExtensionManager:**
+```typescript
+getAllSkills(): CustomSkill[] {
+    if (!this.allSkillsCache) {
+        const skills = this.manager.get('skills');
+        this.allSkillsCache = skills as CustomSkill[];
+    }
+    return this.allSkillsCache;
+}
+```
+
+**Refactor `getSkill(id)` to find in `getAllSkills()`**
+
+**Refactor `isValidSkill(id)` to check `getSkill(id)` !== undefined**
+
+**Refactor `getSkillCount()` to return `this.getAllSkills().length`**
+
+**Refactor `getSkillsBySource(source)` to filter `this.getAllSkills()`**
+
+**Verification:**
+- [ ] `getAllSkills()` returns skills from ExtensionManager
+- [ ] `getSkill('athletics')` finds the skill
+
+---
+
+### Task 1.6: Refactor Indexed Query Methods to Build from EM Data
+
+**Refactor `getSkillsByAbility(ability)` to build cache from `getAllSkills()`:**
+```typescript
+getSkillsByAbility(ability: Ability): CustomSkill[] {
+    if (!this.abilityCache) {
+        this.abilityCache = new Map();
+        const allSkills = this.getAllSkills();
+        for (const skill of allSkills) {
+            if (!this.abilityCache.has(skill.ability)) {
+                this.abilityCache.set(skill.ability, []);
+            }
+            this.abilityCache.get(skill.ability)!.push(skill);
+        }
+    }
+    return this.abilityCache.get(ability) || [];
+}
+```
+
+**Refactor `getSkillsByCategory(category)` to build cache from `getAllSkills()`**
+
+**Refactor `getCategories()` to build from `getAllSkills()`**
+
+**Add `invalidateCache()` method to clear all caches**
+
+**Verification:**
+- [ ] `getSkillsByAbility('STR')` returns STR skills
+- [ ] Caches are invalidated after registration via EM
+
+---
+
+### Task 1.7: Simplify Validation Methods
+
+**`validateSkill()` should delegate to SkillValidator:**
+```typescript
+validateSkill(skill: CustomSkill): SkillValidationResult {
+    return SkillValidator.validateSkill(skill);
+}
+```
+
+**`validatePrerequisites()` already delegates to SkillValidator - no change needed**
+
+**Verification:**
+- [ ] Validation methods delegate to SkillValidator
+- [ ] No duplicate validation logic
+
+---
+
+### Task 1.8: Refactor getAvailableSkills() to Read from EM
+
+**Update `getAvailableSkills(character)` to:**
+- Get all skills via `this.getAllSkills()`
+- Filter by prerequisites using SkillValidator
+
+**Verification:**
+- [ ] `getAvailableSkills()` returns skills matching character prerequisites
+
+---
+
+### Task 1.9: Update getRegistryStats() to Compute from EM Data
+
+**Refactor `getRegistryStats()` to:**
+- Get all skills via `this.getAllSkills()`
+- Compute counts from the array
+- Build ability/category counts from the data
+
+**Verification:**
+- [ ] `getRegistryStats()` returns correct statistics
+
+---
+
+### Task 1.10: Remove exportRegistry() Method
+
+**Remove this method:**
+- [ ] `exportRegistry(): CustomSkill[]`
+
+**Reason:** No internal storage to export. Use `ExtensionManager.get('skills')` instead.
+
+**Verification:**
+- [ ] TypeScript compiles
+- [ ] No references to exportRegistry()
+
+---
+
+## Phase 2: Update ExtensionManager for Skills
+
+**File:** `src/core/extensions/ExtensionManager.ts`
+
+---
+
+### Task 2.1: Remove SkillRegistry Delegation from EM.register()
+
+**Remove these code blocks from `register()` method:**
+- [ ] Lines 350-357: SkillRegistry integration for 'skills' category
+- [ ] Lines 359-368: SkillRegistry integration for 'skills.*' categories
+
+**Verification:**
+- [ ] ExtensionManager does not call SkillRegistry.registerSkills()
+- [ ] Skills are only stored in EM's extensions Map
+
+---
+
+### Task 2.2: Remove SkillRegistry Delegation from EM.reset()
+
+**Remove this code block from `reset()` method:**
+- [ ] Lines 777-783: SkillRegistry reset integration
+
+**Verification:**
+- [ ] EM.reset('skills') does not call SkillRegistry
+
+---
+
+## Phase 3: Update Tests for SkillRegistry
+
+**File:** `tests/documentation/examples-compilation.test.ts` and related test files
+
+---
+
+### Task 3.1: Update Existing SkillRegistry Tests
+
+**Review tests that use SkillRegistry:**
+- [ ] Update tests to verify data is stored in ExtensionManager
+- [ ] Update tests to use `ExtensionManager.register('skills', [...])` for registration
+- [ ] Verify query methods read from ExtensionManager
+
+**Verification:**
+- [ ] All SkillRegistry tests pass
+- [ ] Tests verify ExtensionManager is single source of truth
+
+---
+
+### Task 3.2: Add Integration Tests
+
+**Add tests for SkillRegistry/ExtensionManager interaction:**
+- [ ] Register via `ExtensionManager.register('skills')`, verify `SkillRegistry.getAllSkills()` sees it
+- [ ] `getSkillsByAbility()` returns correct skills from EM data
+- [ ] `getSkillsByCategory()` returns correct skills from EM data
+- [ ] Cache invalidation works after EM registration
+- [ ] `getAvailableSkills()` filters correctly from EM data
+
+**Verification:**
+- [ ] All new integration tests pass
+
+---
+
+## Phase 4: Update Documentation for SkillRegistry
+
+---
+
+### Task 4.1: Update EXTENSIBILITY_GUIDE.md
+
+**Find sections about skill registration:**
+- [ ] Update examples to use `ExtensionManager.register('skills', [...])`
+- [ ] Add note: "SkillRegistry is a convenience wrapper around ExtensionManager"
+- [ ] Remove obsolete `SkillRegistry.initializeDefaults()` calls
+
+**Verification:**
+- [ ] Example code compiles
+- [ ] Documentation matches implementation
+
+---
+
+### Task 4.2: Update DATA_ENGINE_REFERENCE.md
+
+**Update SkillRegistry section:**
+- [ ] Update section intro: "SkillRegistry is a convenience wrapper around ExtensionManager"
+- [ ] Update method docs: "Reads from ExtensionManager with caching"
+- [ ] Remove documentation for removed methods (registerSkill, initializeDefaults, reset, etc.)
+
+**Verification:**
+- [ ] Documentation matches implementation
+
+---
+
+### Task 4.3: Update USAGE_IN_OTHER_PROJECTS.md
+
+**Update SkillRegistry description:**
+- [ ] Emphasize: "Convenience wrapper around ExtensionManager"
+- [ ] Note: "No duplicate storage — same pattern as SpellRegistry"
+
+**Verification:**
+- [ ] Description accurate
+
+---
+
+### Task 4.4: Audit Other Documentation
+
+**Check all .md files for SkillRegistry references:**
+- [ ] Verify all examples use ExtensionManager for registration
+- [ ] Check for "SkillRegistry stores" language (should be "reads from EM")
+
+**Verification:**
+- [ ] No outdated SkillRegistry documentation
+
+---
+
+## Phase 5: Final Verification for SkillRegistry
+
+---
+
+### Task 5.1: Run All Tests
+
+- [ ] Run `npm test` — all tests pass
+- [ ] Run skill-related integration tests specifically
+- [ ] Run documentation compilation tests
+
+**Verification:**
+- [ ] All SkillRegistry tests pass
+- [ ] Build succeeds without errors
+- [ ] No TypeScript errors
+
+---
+
+### Task 5.2: Manual Verification
+
+- [ ] Register skill via `ExtensionManager.register('skills')`
+- [ ] Verify `SkillRegistry.getAllSkills()` sees it
+- [ ] Verify `SkillRegistry.getSkillsByAbility()` works
+- [ ] Verify `SkillRegistry.getSkillsByCategory()` works
+
+**Verification:**
+- [ ] Manual testing successful
+
+---
+
+### Task 5.3: Code Quality Check
+
+- [ ] No console warnings
+- [ ] No TODO comments left in modified files
+- [ ] Code follows existing patterns
+- [ ] File size similar to SpellRegistry
+
+**Verification:**
+- [ ] Code clean and consistent
+
+---
+
+## Phase 6: Refactor FeatureRegistry - Class Features
+
+**File:** `src/core/features/FeatureRegistry.ts`
+
+---
+
+### Task 6.1: Remove Internal Storage for Class Features
+
+**Remove these properties:**
+- [ ] `private classFeatures: Map<string, ClassFeature[]>`
+- [ ] `private featureLookup: Map<string, ClassFeature>`
+- [ ] `private initialized: boolean`
+
+**Add these properties:**
+- [ ] `private manager: ExtensionManager` (reference to ExtensionManager)
+- [ ] `private allClassFeaturesCache: ClassFeature[] | null` (lazy cache)
+- [ ] `private classFeaturesIndex: Map<string, ClassFeature[]> | null` (lazy index by class)
+
+**Note:** Keep `racialTraits` and `traitLookup` for now (handled in Phase 9).
+
+**Verification:**
+- [ ] TypeScript compiles
+- [ ] Constructor initializes `this.manager = ExtensionManager.getInstance()`
+
+---
+
+### Task 6.2: Remove Class Feature Registration Methods
+
+**Remove these methods:**
+- [ ] `registerClassFeature(feature: ClassFeature): void`
+- [ ] `registerClassFeatures(features: ClassFeature[]): void`
+
+**Reason:** Registration should use `ExtensionManager.register('classFeatures', [...])` directly.
+
+**Verification:**
+- [ ] TypeScript compiles
+- [ ] No registerClassFeature/registerClassFeatures methods
+
+---
+
+### Task 6.3: Update initializeDefaults() for Class Features Only
+
+**Modify `initializeDefaults()` to only handle racial traits:**
+- [ ] Remove `defaultClassFeatures` parameter
+- [ ] Remove class feature registration logic
+- [ ] Keep racial trait initialization (for Phase 9)
+
+**Update callers:**
+- [ ] Find calls with classFeatures argument
+- [ ] Replace with `ExtensionManager.getInstance().initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES)`
+
+**Verification:**
+- [ ] No classFeatures passed to FeatureRegistry.initializeDefaults()
+
+---
+
+### Task 6.4: Refactor Class Feature Query Methods to Read from EM
+
+**Refactor `getClassFeatures(className, level)` to:**
+- Get features via `this.manager.get('classFeatures')`
+- Filter by class and level
+- Build cache for performance
+
+**Refactor `getFeaturesForLevel(className, level)` similarly**
+
+**Refactor `getClassFeatureById(featureId)` to find in EM data**
+
+**Refactor `getAllClassFeatures()` to return Map built from EM data**
+
+**Verification:**
+- [ ] `getClassFeatures('Fighter', 5)` returns correct features
+- [ ] `getClassFeatureById('second_wind')` finds the feature
+
+---
+
+### Task 6.5: Update validatePrerequisites() for Class Features
+
+**Refactor `validatePrerequisites()` to:**
+- Get feature IDs from EM data
+- Work with features from ExtensionManager
+
+**Note:** `getCharacterFeatureIds()` helper should read from EM.
+
+**Verification:**
+- [ ] Prerequisite validation works with EM data
+
+---
+
+### Task 6.6: Update getRegistryStats() for Class Features
+
+**Refactor `getRegistryStats()` to:**
+- Get class features from EM data
+- Count racial traits from internal storage (temporary, until Phase 9)
+
+**Verification:**
+- [ ] Stats are correct for class features
+
+---
+
+### Task 6.7: Remove exportRegistry() Method
+
+**Remove this method:**
+- [ ] `exportRegistry()` (or mark as deprecated)
+
+**Reason:** No internal storage to export. Use `ExtensionManager.get('classFeatures')` instead.
+
+**Verification:**
+- [ ] TypeScript compiles
+
+---
+
+## Phase 7: Update ExtensionManager for Class Features
+
+**File:** `src/core/extensions/ExtensionManager.ts`
+
+---
+
+### Task 7.1: Remove FeatureRegistry Delegation for Class Features
+
+**Remove these code blocks from `register()` method:**
+- [ ] Lines 310-317: FeatureRegistry integration for 'classFeatures' category
+- [ ] Lines 328-337: FeatureRegistry integration for 'classFeatures.*' categories
+
+**Verification:**
+- [ ] ExtensionManager does not call FeatureRegistry.registerClassFeatures()
+- [ ] Features are only stored in EM's extensions Map
+
+---
+
+### Task 7.2: Remove FeatureRegistry Delegation from EM.reset()
+
+**Update this code block in `reset()` method:**
+- [ ] Lines 768-775: Remove or simplify FeatureRegistry reset integration
+
+**Verification:**
+- [ ] EM.reset('classFeatures') does not call FeatureRegistry
+
+---
+
+## Phase 8: Update Tests for Class Features
+
+---
+
+### Task 8.1: Update Existing FeatureRegistry Tests
+
+**Review tests that use FeatureRegistry for class features:**
+- [ ] Update tests to use `ExtensionManager.register('classFeatures', [...])`
+- [ ] Verify query methods read from ExtensionManager
+- [ ] Update tests that call `registerClassFeature()`
+
+**Verification:**
+- [ ] All class feature tests pass
+- [ ] Tests verify EM is single source of truth
+
+---
+
+### Task 8.2: Add Integration Tests for Class Features
+
+**Add tests:**
+- [ ] Register via `ExtensionManager.register('classFeatures')`, verify `FeatureRegistry.getClassFeatures()` sees it
+- [ ] `getClassFeatures()` returns correct features from EM data
+- [ ] `getFeaturesForLevel()` filters correctly from EM data
+- [ ] Cache invalidation works after EM registration
+
+**Verification:**
+- [ ] All new integration tests pass
+
+---
+
+## Phase 9: Refactor FeatureRegistry - Racial Traits
+
+**File:** `src/core/features/FeatureRegistry.ts`
+
+---
+
+### Task 9.1: Remove Internal Storage for Racial Traits
+
+**Remove these properties:**
+- [ ] `private racialTraits: Map<string, RacialTrait[]>`
+- [ ] `private traitLookup: Map<string, RacialTrait>`
+
+**Add these properties:**
+- [ ] `private allRacialTraitsCache: RacialTrait[] | null` (lazy cache)
+- [ ] `private racialTraitsIndex: Map<string, RacialTrait[]> | null` (lazy index by race)
+
+**Verification:**
+- [ ] TypeScript compiles
+- [ ] No internal storage Maps remain
+
+---
+
+### Task 9.2: Remove Racial Trait Registration Methods
+
+**Remove these methods:**
+- [ ] `registerRacialTrait(trait: RacialTrait): void`
+- [ ] `registerRacialTraits(traits: RacialTrait[]): void`
+
+**Reason:** Registration should use `ExtensionManager.register('racialTraits', [...])` directly.
+
+**Verification:**
+- [ ] TypeScript compiles
+- [ ] No registerRacialTrait/registerRacialTraits methods
+
+---
+
+### Task 9.3: Remove initializeDefaults() Entirely
+
+**Remove this method:**
+- [ ] `initializeDefaults(defaultClassFeatures?, defaultRacialTraits?): void`
+
+**Update remaining callers:**
+- [ ] Replace with `ExtensionManager.getInstance().initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)`
+
+**Verification:**
+- [ ] No calls to FeatureRegistry.initializeDefaults() in codebase
+
+---
+
+### Task 9.4: Refactor Racial Trait Query Methods to Read from EM
+
+**Refactor `getRacialTraits(race)` to:**
+- Get traits via `this.manager.get('racialTraits')`
+- Filter by race
+- Build cache for performance
+
+**Refactor `getBaseRacialTraits(race)` similarly**
+
+**Refactor `getRacialTraitsForSubrace(race, subrace)` similarly**
+
+**Refactor `getSubraceTraits(race, subrace)` similarly**
+
+**Refactor `getRacialTraitById(traitId)` to find in EM data**
+
+**Refactor `getAllRacialTraits()` to return Map built from EM data**
+
+**Verification:**
+- [ ] `getRacialTraits('Elf')` returns correct traits
+- [ ] `getRacialTraitById('darkvision')` finds the trait
+
+---
+
+### Task 9.5: Update Subrace Methods to Use EM Data
+
+**Refactor `getAvailableSubraces(race)` to:**
+- Check RACE_DATA first (for default races)
+- Fall back to deriving from EM data via `this.manager.get('racialTraits')`
+
+**Refactor `getRaceForSubrace(subrace)` to:**
+- Search through EM data for the subrace
+
+**Verification:**
+- [ ] `getAvailableSubraces('Elf')` returns correct subraces
+- [ ] `getRaceForSubrace('High Elf')` returns 'Elf'
+
+---
+
+## Phase 10: Update ExtensionManager for Racial Traits
+
+**File:** `src/core/extensions/ExtensionManager.ts`
+
+---
+
+### Task 10.1: Remove FeatureRegistry Delegation for Racial Traits
+
+**Remove these code blocks from `register()` method:**
+- [ ] Lines 319-326: FeatureRegistry integration for 'racialTraits' category
+- [ ] Lines 339-348: FeatureRegistry integration for 'racialTraits.*' categories
+
+**Verification:**
+- [ ] ExtensionManager does not call FeatureRegistry.registerRacialTraits()
+- [ ] Traits are only stored in EM's extensions Map
+
+---
+
+### Task 10.2: Clean up EM.reset() for Features
+
+**Remove this code block from `reset()` method:**
+- [ ] Lines 768-775: FeatureRegistry reset integration (completely remove)
+
+**Verification:**
+- [ ] EM.reset() does not reference FeatureRegistry
+
+---
+
+## Phase 11: Update Tests for Racial Traits
+
+---
+
+### Task 11.1: Update Existing Racial Trait Tests
+
+**Review tests that use FeatureRegistry for racial traits:**
+- [ ] Update tests to use `ExtensionManager.register('racialTraits', [...])`
+- [ ] Verify query methods read from ExtensionManager
+- [ ] Update tests that call `registerRacialTrait()`
+
+**Verification:**
+- [ ] All racial trait tests pass
+- [ ] Tests verify EM is single source of truth
+
+---
+
+### Task 11.2: Add Integration Tests for Racial Traits
+
+**Add tests:**
+- [ ] Register via `ExtensionManager.register('racialTraits')`, verify `FeatureRegistry.getRacialTraits()` sees it
+- [ ] `getRacialTraits()` returns correct traits from EM data
+- [ ] `getRacialTraitsForSubrace()` filters correctly from EM data
+- [ ] `getAvailableSubraces()` derives from EM data
+- [ ] Cache invalidation works after EM registration
+
+**Verification:**
+- [ ] All new integration tests pass
+
+---
+
+## Phase 12: Update Documentation for FeatureRegistry
+
+---
+
+### Task 12.1: Update EXTENSIBILITY_GUIDE.md
+
+**Find sections about feature registration:**
+- [ ] Update examples to use `ExtensionManager.register('classFeatures', [...])` and `ExtensionManager.register('racialTraits', [...])`
+- [ ] Add note: "FeatureRegistry is a convenience wrapper around ExtensionManager"
+- [ ] Remove obsolete `FeatureRegistry.initializeDefaults()` calls
+
+**Verification:**
+- [ ] Example code compiles
+- [ ] Documentation matches implementation
+
+---
+
+### Task 12.2: Update DATA_ENGINE_REFERENCE.md
+
+**Update FeatureRegistry section:**
+- [ ] Update section intro: "FeatureRegistry is a convenience wrapper around ExtensionManager"
+- [ ] Update method docs: "Reads from ExtensionManager with caching"
+- [ ] Remove documentation for removed methods
+
+**Verification:**
+- [ ] Documentation matches implementation
+
+---
+
+### Task 12.3: Update USAGE_IN_OTHER_PROJECTS.md
+
+**Update FeatureRegistry description:**
+- [ ] Emphasize: "Convenience wrapper around ExtensionManager"
+- [ ] Note: "No duplicate storage — same pattern as SpellRegistry and SkillRegistry"
+
+**Verification:**
+- [ ] Description accurate
+
+---
+
+### Task 12.4: Audit Other Documentation
+
+**Check all .md files for FeatureRegistry references:**
+- [ ] Verify all examples use ExtensionManager for registration
+- [ ] Check for "FeatureRegistry stores" language (should be "reads from EM")
+
+**Verification:**
+- [ ] No outdated FeatureRegistry documentation
+
+---
+
+## Phase 13: Final Verification for FeatureRegistry
+
+---
+
+### Task 13.1: Run All Tests
+
+- [ ] Run `npm test` — all tests pass
+- [ ] Run feature-related integration tests specifically
+- [ ] Run documentation compilation tests
+
+**Verification:**
+- [ ] All FeatureRegistry tests pass
+- [ ] Build succeeds without errors
+- [ ] No TypeScript errors
+
+---
+
+### Task 13.2: Manual Verification
+
+- [ ] Register feature via `ExtensionManager.register('classFeatures')`
+- [ ] Verify `FeatureRegistry.getClassFeatures()` sees it
+- [ ] Register trait via `ExtensionManager.register('racialTraits')`
+- [ ] Verify `FeatureRegistry.getRacialTraits()` sees it
+- [ ] Generate a character with custom features/traits
+
+**Verification:**
+- [ ] Manual testing successful
+
+---
+
+### Task 13.3: Code Quality Check
+
+- [ ] No console warnings
+- [ ] No TODO comments left in modified files
+- [ ] Code follows existing patterns
+- [ ] File size similar to SpellRegistry/SkillRegistry
+
+**Verification:**
+- [ ] Code clean and consistent
+
+---
+
+## Phase 14: Cross-Registry Consistency Check
+
+---
+
+### Task 14.1: Verify Consistent Patterns Across Registries
+
+**Check that SpellRegistry, SkillRegistry, and FeatureRegistry:**
+- [ ] All have `private manager: ExtensionManager`
+- [ ] All have cache properties (no storage Maps)
+- [ ] All have `invalidateCache()` method
+- [ ] All query methods read from EM with caching
+- [ ] All validation methods delegate to validators
+
+**Verification:**
+- [ ] All three registries follow the same pattern
+
+---
+
+### Task 14.2: Verify ExtensionManager Has No Registry Delegation
+
+**Check EM.register() method:**
+- [ ] No calls to SpellRegistry.registerSpell()
+- [ ] No calls to SkillRegistry.registerSkill()
+- [ ] No calls to FeatureRegistry.registerClassFeature()
+- [ ] No calls to FeatureRegistry.registerRacialTrait()
+
+**Verification:**
+- [ ] EM stores data only in its extensions Map
+- [ ] No duplicate storage
+
+---
+
+### Task 14.3: Update Index Exports
+
+**Check src/core/features/index.ts and src/core/skills/index.ts:**
+- [ ] Export validation result types from validators
+- [ ] Remove any exported registration methods if they exist
+
+**Verification:**
+- [ ] Exports are consistent across registries
+
+---
+
+## Success Criteria
+
+1. [ ] SkillRegistry has no internal storage (reads from ExtensionManager)
+2. [ ] FeatureRegistry has no internal storage (reads from ExtensionManager)
+3. [ ] `ExtensionManager.register()` is the only way to register skills/features
+4. [ ] All query methods read from ExtensionManager with caching
+5. [ ] All validation methods delegate to validators
+6. [ ] No duplicate storage between ExtensionManager and registries
+7. [ ] All tests pass
+8. [ ] Documentation updated to reflect wrapper pattern
+9. [ ] Same pattern as SpellRegistry across all three registries
+
+---
+
+## File Change Summary
+
+| File | Type | Changes |
+|------|------|---------|
+| `src/core/skills/SkillRegistry.ts` | Modify | Remove storage, delegate to EM, add caching |
+| `src/core/features/FeatureRegistry.ts` | Modify | Remove storage, delegate to EM, add caching |
+| `src/core/extensions/ExtensionManager.ts` | Modify | Remove registry delegation calls |
+| `tests/**/*.test.ts` | Modify | Update/add tests |
+| `docs/EXTENSIBILITY_GUIDE.md` | Modify | Update registration examples |
+| `docs/DATA_ENGINE_REFERENCE.md` | Modify | Update registry documentation |
+| `docs/USAGE_IN_OTHER_PROJECTS.md` | Modify | Update feature descriptions |
+
+---
+
+## Open Questions
+
+All resolved. Ready to implement.
+
+### ✅ Architecture
+- SpellRegistry pattern is the target for SkillRegistry and FeatureRegistry
+- Convenience wrapper with no duplicate storage
+- ExtensionManager is single source of truth
+
+### ✅ Scope
+- Phases 1-5: SkillRegistry refactoring
+- Phases 6-8: FeatureRegistry - Class Features
+- Phases 9-11: FeatureRegistry - Racial Traits
+- Phases 12-13: Documentation and verification
+- Phase 14: Cross-registry consistency
+
+### ✅ Breaking Changes
+- Remove `initializeDefaults()` from registries
+- Remove `register*()` methods from registries
+- Remove `reset()`, `isInitialized()` from registries
+- ExtensionManager no longer delegates to registries
+
+### ✅ Non-Breaking
+- Query methods remain (with same API)
+- Validation methods remain (with same API)
+- Helper methods remain (with same API)
+- All existing queries work, just read from EM instead of internal Maps
