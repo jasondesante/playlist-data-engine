@@ -11,7 +11,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ExtensionManager, type ExtensionCategory } from '../../src/core/extensions/ExtensionManager.js';
-import { SPELL_DATABASE, EQUIPMENT_DATABASE, ALL_RACES, ALL_CLASSES } from '../../src/utils/constants.js';
+import { SPELL_DATABASE, EQUIPMENT_DATABASE, ALL_RACES, ALL_CLASSES, DEFAULT_RACE_DATA_ARRAY } from '../../src/utils/constants.js';
 
 describe('ExtensionManager', () => {
     let manager: ExtensionManager;
@@ -25,6 +25,7 @@ describe('ExtensionManager', () => {
         manager.initializeDefaults('equipment', Object.values(EQUIPMENT_DATABASE));
         manager.initializeDefaults('spells', Object.values(SPELL_DATABASE));
         manager.initializeDefaults('races', [...ALL_RACES]);
+        manager.initializeDefaults('races.data', [...DEFAULT_RACE_DATA_ARRAY]);
         manager.initializeDefaults('classes', [...ALL_CLASSES]);
         manager.initializeDefaults('appearance.bodyTypes', ['slender', 'athletic', 'muscular', 'stocky']);
         manager.initializeDefaults('appearance.skinTones', ['#F5E6D3', '#E8C4A0', '#D4A574']);
@@ -103,7 +104,15 @@ describe('ExtensionManager', () => {
 
         it('should register custom spells', () => {
             const customSpells = [
-                { name: 'Phoenix Fire', level: 5, school: 'Evocation' }
+                {
+                    name: 'Phoenix Fire',
+                    level: 5,
+                    school: 'Evocation',
+                    casting_time: '1 action',
+                    range: '60 feet',
+                    components: ['V', 'S', 'M'],
+                    duration: 'Instantaneous'
+                }
             ];
 
             manager.register('spells', customSpells);
@@ -291,7 +300,15 @@ describe('ExtensionManager', () => {
 
         it('should reset all categories', () => {
             manager.register('equipment', [{ name: 'A', type: 'item' as const, rarity: 'common' as const, weight: 1 }]);
-            manager.register('spells', [{ name: 'B', level: 1, school: 'Evocation' }]);
+            manager.register('spells', [{
+                name: 'B',
+                level: 1,
+                school: 'Evocation',
+                casting_time: '1 action',
+                range: '60 feet',
+                components: ['V', 'S'],
+                duration: 'Instantaneous'
+            }]);
             manager.register('races', ['Human']);
 
             expect(manager.hasCustomData('equipment')).toBe(true);
@@ -388,7 +405,15 @@ describe('ExtensionManager', () => {
 
         it('should validate spells with required fields', () => {
             const validSpells = [
-                { name: 'Fireball', level: 3, school: 'Evocation' }
+                {
+                    name: 'Fireball',
+                    level: 3,
+                    school: 'Evocation',
+                    casting_time: '1 action',
+                    range: '150 feet',
+                    components: ['V', 'S', 'M'],
+                    duration: 'Instantaneous'
+                }
             ];
 
             const result = manager.validate('spells', validSpells);
@@ -397,7 +422,15 @@ describe('ExtensionManager', () => {
 
         it('should reject spells with invalid level', () => {
             const invalidSpells = [
-                { name: 'Test Spell', level: 15, school: 'Evocation' }
+                {
+                    name: 'Test Spell',
+                    level: 15,
+                    school: 'Evocation',
+                    casting_time: '1 action',
+                    range: '60 feet',
+                    components: ['V', 'S'],
+                    duration: 'Instantaneous'
+                }
             ];
 
             const result = manager.validate('spells', invalidSpells);
@@ -407,7 +440,15 @@ describe('ExtensionManager', () => {
 
         it('should reject spells with invalid school', () => {
             const invalidSpells = [
-                { name: 'Test Spell', level: 1, school: 'Invalid School' }
+                {
+                    name: 'Test Spell',
+                    level: 1,
+                    school: 'Invalid School',
+                    casting_time: '1 action',
+                    range: '60 feet',
+                    components: ['V', 'S'],
+                    duration: 'Instantaneous'
+                }
             ];
 
             const result = manager.validate('spells', invalidSpells);
@@ -509,7 +550,15 @@ describe('ExtensionManager', () => {
 
         it('should get info for all categories', () => {
             manager.register('equipment', [{ name: 'A', type: 'item' as const, rarity: 'common' as const, weight: 1 }]);
-            manager.register('spells', [{ name: 'B', level: 1, school: 'Evocation' }]);
+            manager.register('spells', [{
+                name: 'B',
+                level: 1,
+                school: 'Evocation',
+                casting_time: '1 action',
+                range: '60 feet',
+                components: ['V', 'S'],
+                duration: 'Instantaneous'
+            }]);
 
             const allInfo = manager.getInfo();
 

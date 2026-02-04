@@ -2,13 +2,21 @@
  * Unit tests for isolated character generation components
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { AbilityScoreCalculator } from '../../src/core/generation/AbilityScoreCalculator';
 import { RaceSelector } from '../../src/core/generation/RaceSelector';
 import { ClassSuggester } from '../../src/core/generation/ClassSuggester';
 import { SeededRNG } from '../../src/utils/random';
-import { ALL_RACES } from '../../src/utils/constants';
+import { ALL_RACES, DEFAULT_RACE_DATA_ARRAY } from '../../src/utils/constants';
+import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import type { AudioProfile } from '../../src/core/types/AudioProfile';
+
+// Initialize race data defaults before running tests
+beforeAll(() => {
+    const manager = ExtensionManager.getInstance();
+    manager.initializeDefaults('races', [...ALL_RACES]);
+    manager.initializeDefaults('races.data', [...DEFAULT_RACE_DATA_ARRAY]);
+});
 
 describe('RaceSelector', () => {
     it('should select a race deterministically', () => {

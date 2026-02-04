@@ -14,7 +14,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { AbilityScoreCalculator } from '../../src/core/generation/AbilityScoreCalculator.js';
-import { getRaceData, RACE_DATA, ALL_RACES } from '../../src/utils/constants.js';
+import { getRaceData, RACE_DATA, ALL_RACES, DEFAULT_RACE_DATA_ARRAY } from '../../src/utils/constants.js';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
@@ -74,6 +74,7 @@ describe('Custom Races', () => {
         // Use the singleton instance for consistency
         manager = ExtensionManager.getInstance();
         manager.initializeDefaults('races', [...ALL_RACES]);
+        manager.initializeDefaults('races.data', [...DEFAULT_RACE_DATA_ARRAY]);
         manager.initializeDefaults('classes', ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard']);
         manager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
 
@@ -98,7 +99,8 @@ describe('Custom Races', () => {
                 manager.register('races.data' as any, customRaceData);
             }).not.toThrow();
 
-            const retrieved = manager.get('races.data' as any);
+            // Use getCustom to get only the custom registered data (not defaults)
+            const retrieved = manager.getCustom('races.data' as any);
             expect(retrieved).toEqual(customRaceData);
         });
 
@@ -156,8 +158,10 @@ describe('Custom Races', () => {
 
             manager.register('races.data' as any, customRaceData);
 
-            const retrieved = manager.get('races.data' as any);
-            expect(retrieved[0].subraces).toEqual(['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']);
+            // Use getCustom to get only the custom registered data and find Dragonkin
+            const retrieved = manager.getCustom('races.data' as any);
+            const dragonkin = Array.isArray(retrieved) ? retrieved.find((d: any) => d.race === 'Dragonkin') : undefined;
+            expect(dragonkin?.subraces).toEqual(['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']);
         });
 
         it('should validate custom race data when validate option is true', () => {
@@ -580,8 +584,8 @@ describe('Custom Races', () => {
                 expect(races).toContain(race);
             }
 
-            // Verify data is stored correctly
-            const storedData = manager.get('races.data' as any);
+            // Verify custom data is stored correctly (use getCustom for only custom data)
+            const storedData = manager.getCustom('races.data' as any);
             expect(Array.isArray(storedData)).toBe(true);
             expect(storedData).toHaveLength(6);
         });

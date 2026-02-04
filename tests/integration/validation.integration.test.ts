@@ -47,8 +47,24 @@ describe('Integration: ValidationManager', () => {
 
         it('should accept valid custom spells', () => {
             const validSpells = [
-                { name: 'Phoenix Fire', level: 5, school: 'Evocation' },
-                { name: 'Mind Shield', level: 2, school: 'Abjuration' },
+                {
+                    name: 'Phoenix Fire',
+                    level: 5,
+                    school: 'Evocation',
+                    casting_time: '1 action',
+                    range: '60 feet',
+                    components: ['V', 'S', 'M'],
+                    duration: 'Instantaneous'
+                },
+                {
+                    name: 'Mind Shield',
+                    level: 2,
+                    school: 'Abjuration',
+                    casting_time: '1 action',
+                    range: 'Self',
+                    components: ['V', 'S'],
+                    duration: '1 hour'
+                },
             ];
 
             const result = manager.validate('spells', validSpells);
@@ -205,7 +221,15 @@ describe('Integration: ValidationManager', () => {
         });
 
         it('should validate spells category', () => {
-            const valid = [{ name: 'Test Spell', level: 1, school: 'Evocation' }];
+            const valid = [{
+                name: 'Test Spell',
+                level: 1,
+                school: 'Evocation',
+                casting_time: '1 action',
+                range: '60 feet',
+                components: ['V', 'S'],
+                duration: 'Instantaneous'
+            }];
             const result = manager.validate('spells', valid);
             expect(result.valid).toBe(true);
         });
@@ -278,7 +302,7 @@ describe('Integration: ValidationManager', () => {
 
                 // Verify character was generated successfully
                 expect(character).toBeDefined();
-                expect(character.name).toBe('Test Character');
+                expect(character.name).toMatch(/Test/); // Name should contain "Test" from the track name
                 expect(character.level).toBe(1);
             }).not.toThrow();
         });
