@@ -28,6 +28,8 @@ describe('SkillRegistry', () => {
         em = ExtensionManager.getInstance();
         // Reset to ensure clean state using ExtensionManager
         em.resetAll();
+        // Invalidate SkillRegistry cache after EM reset
+        registry.invalidateCache();
         // Initialize with default skills
         em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
     });
@@ -35,6 +37,10 @@ describe('SkillRegistry', () => {
     afterEach(() => {
         // Clean up after each test using ExtensionManager
         em.resetAll();
+        // Invalidate SkillRegistry cache after EM reset
+        registry.invalidateCache();
+        // Restore defaults for next test
+        em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
     });
 
     describe('Singleton Pattern', () => {
@@ -130,7 +136,7 @@ describe('SkillRegistry', () => {
 
             expect(() => {
                 registry.registerSkill(invalidSkill);
-            }).toThrow(/Invalid skill ID.*lowercase_with_underscores/);
+            }).toThrow(/Invalid skill "InvalidSkillName"/);
         });
 
         it('should throw on invalid skill ID with numbers at start', () => {
@@ -144,7 +150,7 @@ describe('SkillRegistry', () => {
 
             expect(() => {
                 registry.registerSkill(invalidSkill);
-            }).toThrow(/Invalid skill ID/);
+            }).toThrow(/Invalid skill "1_invalid_skill"/);
         });
 
         it('should accept valid skill IDs with underscores and numbers', () => {
@@ -166,6 +172,7 @@ describe('SkillRegistry', () => {
         beforeEach(() => {
             // Reset to clean state before adding custom skills
             em.resetAll();
+            registry.invalidateCache();
             em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
 
             // Add custom skills
@@ -218,6 +225,8 @@ describe('SkillRegistry', () => {
         it('should return empty array for ability with no skills', () => {
             // Clear all skills and verify empty
             em.resetAll();
+            em.initializeDefaults('skills', []); // Clear defaults too
+            registry.invalidateCache();
 
             const intSkills = registry.getSkillsByAbility('INT' as Ability);
             expect(intSkills).toEqual([]);
@@ -286,7 +295,7 @@ describe('SkillRegistry', () => {
 
             const result = registry.validateSkill(invalidSkill as CustomSkill);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Skill must have a valid id');
+            expect(result.errors).toContain('Skill must have a valid id (string)');
         });
 
         it('should fail validation for missing name', () => {
@@ -298,7 +307,7 @@ describe('SkillRegistry', () => {
 
             const result = registry.validateSkill(invalidSkill as CustomSkill);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Skill must have a valid name');
+            expect(result.errors).toContain('Skill must have a valid name (string)');
         });
 
         it('should fail validation for missing ability', () => {
@@ -310,7 +319,7 @@ describe('SkillRegistry', () => {
 
             const result = registry.validateSkill(invalidSkill as CustomSkill);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Skill must have a valid ability');
+            expect(result.errors).toContain('Skill must have an ability (string)');
         });
 
         it('should fail validation for invalid ability', () => {
@@ -323,7 +332,7 @@ describe('SkillRegistry', () => {
 
             const result = registry.validateSkill(invalidSkill);
             expect(result.valid).toBe(false);
-            expect(result.errors.some(e => e.includes('Invalid ability: XXX'))).toBe(true);
+            expect(result.errors.some(e => e.includes('Invalid ability: "XXX"'))).toBe(true);
         });
 
         it('should fail validation for invalid source', () => {
@@ -336,7 +345,7 @@ describe('SkillRegistry', () => {
 
             const result = registry.validateSkill(invalidSkill as CustomSkill);
             expect(result.valid).toBe(false);
-            expect(result.errors.some(e => e.includes('Invalid source: invalid'))).toBe(true);
+            expect(result.errors.some(e => e.includes('Invalid source: "invalid"'))).toBe(true);
         });
 
         it('should fail validation for invalid ID format', () => {
@@ -349,7 +358,7 @@ describe('SkillRegistry', () => {
 
             const result = registry.validateSkill(invalidSkill);
             expect(result.valid).toBe(false);
-            expect(result.errors.some(e => e.includes('Invalid skill ID "InvalidFormat"'))).toBe(true);
+            expect(result.errors.some(e => e.includes('Skill id must use lowercase_with_underscores format: "InvalidFormat"'))).toBe(true);
         });
 
         it('should return multiple errors for multiple issues', () => {
@@ -368,6 +377,8 @@ describe('SkillRegistry', () => {
     describe('Get Registry Statistics', () => {
         it('should return accurate stats for empty registry', () => {
             em.resetAll();
+            em.initializeDefaults('skills', []); // Clear defaults too
+            registry.invalidateCache();
 
             const stats = registry.getRegistryStats();
 
@@ -567,6 +578,7 @@ describe('SkillRegistry', () => {
 
         it('should handle getting skill from empty registry', () => {
             em.resetAll();
+            registry.invalidateCache();
 
             const skill = registry.getSkill('anything');
             expect(skill).toBeUndefined();
@@ -591,6 +603,8 @@ describe('SkillRegistry', () => {
     describe('getSkillCount', () => {
         it('should return 0 for empty registry', () => {
             em.resetAll();
+            em.initializeDefaults('skills', []); // Clear defaults too
+            registry.invalidateCache();
 
             const count = registry.getSkillCount();
             expect(count).toBe(0);
@@ -649,6 +663,8 @@ describe('SkillRegistry', () => {
             expect(registry.getSkillCount()).toBe(18);
 
             em.resetAll();
+            em.initializeDefaults('skills', []); // Clear defaults too
+            registry.invalidateCache();
             expect(registry.getSkillCount()).toBe(0);
         });
     });
@@ -960,6 +976,8 @@ describe('SkillRegistry', () => {
 
         it('should return empty array for empty registry', () => {
             em.resetAll();
+            em.initializeDefaults('skills', []); // Clear defaults too
+            registry.invalidateCache();
 
             const character = createMockCharacter();
             const available = registry.getAvailableSkills(character);

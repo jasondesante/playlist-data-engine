@@ -56,9 +56,14 @@ export class SkillRegistry {
 
     /**
      * Invalidate all caches
-     * Called when skills are registered to ensure fresh data
+     *
+     * Call this method after directly manipulating ExtensionManager's skill data
+     * (e.g., after calling ExtensionManager.resetAll()).
+     *
+     * This ensures that SkillRegistry's cached data is refreshed to reflect
+     * the current state of ExtensionManager.
      */
-    private invalidateCache(): void {
+    invalidateCache(): void {
         this.allSkillsCache = null;
         this.abilityCache = null;
         this.categoryCache = null;
@@ -70,13 +75,19 @@ export class SkillRegistry {
      * Delegates to ExtensionManager.register('skills', [...])
      *
      * @param skill - Skill to register
-     * @throws Error if validation fails
+     * @throws Error if validation fails or if skill ID already exists
      */
     registerSkill(skill: CustomSkill): void {
         // Validate skill before registering
         const validation = SkillValidator.validateSkill(skill);
         if (!validation.valid) {
             throw new Error(`Invalid skill "${skill.id}":\n${validation.errors.join('\n')}`);
+        }
+
+        // Check for duplicate skill ID
+        const existingSkills = this.getAllSkills();
+        if (existingSkills.some(s => s.id === skill.id)) {
+            throw new Error(`Invalid skill "${skill.id}":\nSkill with id "${skill.id}" is already registered`);
         }
 
         // Ensure skill has source
@@ -98,6 +109,7 @@ export class SkillRegistry {
      * Delegates to ExtensionManager.register('skills', [...])
      *
      * @param skills - Array of skills to register
+     * @throws Error if validation fails or if any skill ID already exists
      */
     registerSkills(skills: CustomSkill[]): void {
         // Validate all skills first
@@ -106,6 +118,21 @@ export class SkillRegistry {
             if (!validation.valid) {
                 throw new Error(`Invalid skill "${skill.id}":\n${validation.errors.join('\n')}`);
             }
+        }
+
+        // Check for duplicate skill IDs (both within batch and against existing skills)
+        const existingSkills = this.getAllSkills();
+        const existingIds = new Set(existingSkills.map(s => s.id));
+        const newIds = new Set<string>();
+
+        for (const skill of skills) {
+            if (existingIds.has(skill.id)) {
+                throw new Error(`Invalid skill "${skill.id}":\nSkill with id "${skill.id}" is already registered`);
+            }
+            if (newIds.has(skill.id)) {
+                throw new Error(`Invalid skill "${skill.id}":\nDuplicate skill id "${skill.id}" in batch`);
+            }
+            newIds.add(skill.id);
         }
 
         // Ensure all skills have source

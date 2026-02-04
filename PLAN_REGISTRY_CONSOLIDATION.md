@@ -280,13 +280,13 @@ validateSkill(skill: CustomSkill): SkillValidationResult {
 ### Task 3.1: Update Existing SkillRegistry Tests
 
 **Review tests that use SkillRegistry:**
-- [ ] Update tests to verify data is stored in ExtensionManager
-- [ ] Update tests to use `ExtensionManager.register('skills', [...])` for registration
-- [ ] Verify query methods read from ExtensionManager
+- [x] Update tests to verify data is stored in ExtensionManager
+- [x] Update tests to use `ExtensionManager.register('skills', [...])` for registration
+- [x] Verify query methods read from ExtensionManager
 
 **Verification:**
-- [ ] All SkillRegistry tests pass
-- [ ] Tests verify ExtensionManager is single source of truth
+- [x] All SkillRegistry tests pass
+- [x] Tests verify ExtensionManager is single source of truth
 
 ---
 

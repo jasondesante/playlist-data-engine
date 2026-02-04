@@ -537,6 +537,7 @@ describe('SkillAssigner', () => {
         describe('Custom Skills Registry State', () => {
             it('should handle registry reset between tests', () => {
                 const registry = SkillRegistry.getInstance();
+                const em = ExtensionManager.getInstance();
 
                 // Register custom skills
                 const customSkill: CustomSkill = {
@@ -554,9 +555,10 @@ describe('SkillAssigner', () => {
                 // Custom skill should be present
                 expect(skills1).toHaveProperty('reset_test_skill');
 
-                // Reset registry
-                registry.reset();
-                registry.initializeDefaults();
+                // Reset registry using ExtensionManager
+                em.resetAll();
+                em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
+                registry.invalidateCache();
 
                 const rng2 = new SeededRNG('after-reset');
                 const skills2 = SkillAssigner.assignSkills('Barbarian', rng2);
