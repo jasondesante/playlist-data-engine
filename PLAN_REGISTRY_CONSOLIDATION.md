@@ -857,10 +857,23 @@ Removed the FeatureRegistry delegation code blocks from `ExtensionManager.regist
 ### Task 10.2: Clean up EM.reset() for Features
 
 **Remove this code block from `reset()` method:**
-- [ ] Lines 768-775: FeatureRegistry reset integration (completely remove)
+- [x] Lines 768-775: FeatureRegistry reset integration (completely remove)
 
 **Verification:**
-- [ ] EM.reset() does not reference FeatureRegistry
+- [x] EM.reset() does not reference FeatureRegistry
+
+**Summary:**
+Completely removed all FeatureRegistry and SkillRegistry references from `ExtensionManager.reset()` method. The registries are now pure convenience wrappers with no coupling from ExtensionManager. Users who need cache invalidation can manually call `registry.invalidateCache()` after using `ExtensionManager.register()` directly.
+
+Changes made:
+1. Removed FeatureRegistry cache invalidation for `classFeatures` category
+2. Removed obsolete placeholder code for `racialTraits` (no longer needed since Phase 9 completed)
+3. Removed comments about SkillRegistry (unnecessary)
+4. Removed unused `FeatureRegistry` and `SkillRegistry` imports from ExtensionManager
+
+**Note:** With this change, if users register features/traits directly via `ExtensionManager.register()`, the FeatureRegistry cache won't be automatically invalidated. Users should either:
+- Use `FeatureRegistry.registerClassFeature()` / `registerRacialTrait()` convenience wrappers (recommended), OR
+- Manually call `FeatureRegistry.getInstance().invalidateCache()` after direct EM registration
 
 ---
 

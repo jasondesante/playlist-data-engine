@@ -16,10 +16,8 @@
 import type { Race, Class, Ability } from '../types/Character.js';
 import { DEFAULT_CLASSES, DEFAULT_RACES } from '../types/Character.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
-import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import { FeatureValidator } from '../features/FeatureValidator.js';
 import type { CustomSkill } from '../skills/SkillTypes.js';
-import { SkillRegistry } from '../skills/SkillRegistry.js';
 import { SkillValidator } from '../skills/SkillValidator.js';
 import { SpellValidator } from '../spells/SpellValidator.js';
 import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
@@ -715,25 +713,8 @@ export class ExtensionManager {
         this.extensions.delete(category);
         this.customWeights.delete(category);
 
-        // Invalidate FeatureRegistry cache when class features are reset
-        if (category === 'classFeatures' || category.startsWith('classFeatures.')) {
-            // FeatureRegistry is a convenience wrapper that reads from ExtensionManager
-            // Invalidate cache to ensure fresh data on next access
-            FeatureRegistry.getInstance().invalidateCache();
-        }
-
-        // Reset racial trait internal storage when racial traits are reset
-        // Note: Racial traits still use internal storage in FeatureRegistry (to be refactored in Phase 9)
-        if (category === 'racialTraits' || category.startsWith('racialTraits.')) {
-            void FeatureRegistry.getInstance();
-            // Note: We don't fully reset the registry as it would remove default traits
-            // Racial traits have internal storage that will be migrated to ExtensionManager in Phase 9
-        }
-
-        // Note: SkillRegistry is a convenience wrapper that reads from ExtensionManager
-        // No reset needed for SkillRegistry since it has no internal storage
-
-        // Skill lists are stored directly in ExtensionManager - no registry reset needed
+        // Note: FeatureRegistry and SkillRegistry are convenience wrappers that read from ExtensionManager
+        // Cache invalidation is handled by users calling registry.invalidateCache() if needed
     }
 
     /**
