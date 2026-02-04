@@ -311,10 +311,17 @@ if (category.startsWith('spells.') && category !== 'spells') {
 **File:** `src/core/skills/SkillRegistry.ts`
 
 **Sub-tasks:**
-- [ ] Remove `registerSkill()` method (lines 80-104)
-- [ ] Remove `registerSkills()` method (lines 114-149)
-- [ ] Verify `invalidateCache()` is public (already is)
-- [ ] TypeScript compilation check
+- [x] Remove `registerSkill()` method (lines 80-104)
+- [x] Remove `registerSkills()` method (lines 114-149)
+- [x] Verify `invalidateCache()` is public (already is)
+- [x] TypeScript compilation check
+
+**Status:** ✅ COMPLETED
+- Both `registerSkill()` and `registerSkills()` methods removed
+- `invalidateCache()` is public (line 70)
+- Class documentation updated to remove "convenience wrapper" language
+- Build passes successfully (no new errors introduced)
+- Pre-existing lint errors in test files remain (not introduced by this change)
 
 **Methods to Keep (Query/Validation):**
 - `getSkill()`

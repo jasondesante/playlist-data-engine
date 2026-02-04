@@ -2,13 +2,15 @@
  * SkillRegistry
  *
  * Central registry for all skills (default D&D 5e and custom).
- * Manages skill registration, lookup, and categorization.
+ * Manages skill lookup, validation, and categorization.
  *
- * **Design:** This is a **convenience wrapper** around ExtensionManager.
+ * **Design:** This is a query layer on top of ExtensionManager.
  * All skills are stored in ExtensionManager; SkillRegistry provides:
- * - Convenient registration methods that delegate to ExtensionManager
  * - Query methods with caching for performance
- * - Skill-related helper methods
+ * - Skill-related helper methods and validation
+ *
+ * **Registration:** Use ExtensionManager.register('skills', [...]) to add custom skills.
+ * After registration, call SkillRegistry.getInstance().invalidateCache() to refresh cached data.
  *
  * No duplicate storage - all data lives in ExtensionManager.
  */
@@ -25,11 +27,13 @@ import { ExtensionManager } from '../extensions/ExtensionManager.js';
 /**
  * SkillRegistry - Singleton class for managing skills
  *
- * The registry is a **convenience wrapper** around ExtensionManager.
+ * The registry is a query layer on top of ExtensionManager.
  * All skills are stored in ExtensionManager; SkillRegistry provides:
- * - Convenient registration methods that delegate to ExtensionManager
  * - Query methods with caching for performance
- * - Skill-related helper methods
+ * - Skill-related helper methods and validation
+ *
+ * **Registration:** Use ExtensionManager.register('skills', [...]) to add custom skills.
+ * After registration, call SkillRegistry.getInstance().invalidateCache() to refresh cached data.
  *
  * Design principle: No duplicate storage. All data lives in ExtensionManager.
  */
@@ -67,85 +71,6 @@ export class SkillRegistry {
         this.allSkillsCache = null;
         this.abilityCache = null;
         this.categoryCache = null;
-    }
-
-    /**
-     * Register a single skill
-     *
-     * Delegates to ExtensionManager.register('skills', [...])
-     *
-     * @param skill - Skill to register
-     * @throws Error if validation fails or if skill ID already exists
-     */
-    registerSkill(skill: CustomSkill): void {
-        // Validate skill before registering
-        const validation = SkillValidator.validateSkill(skill);
-        if (!validation.valid) {
-            throw new Error(`Invalid skill "${skill.id}":\n${validation.errors.join('\n')}`);
-        }
-
-        // Check for duplicate skill ID
-        const existingSkills = this.getAllSkills();
-        if (existingSkills.some(s => s.id === skill.id)) {
-            throw new Error(`Invalid skill "${skill.id}":\nSkill with id "${skill.id}" is already registered`);
-        }
-
-        // Ensure skill has source
-        const skillToRegister = {
-            ...skill,
-            source: skill.source || 'custom'
-        };
-
-        // Delegate to ExtensionManager
-        this.manager.register('skills', [skillToRegister]);
-
-        // Invalidate cache
-        this.invalidateCache();
-    }
-
-    /**
-     * Register multiple skills at once
-     *
-     * Delegates to ExtensionManager.register('skills', [...])
-     *
-     * @param skills - Array of skills to register
-     * @throws Error if validation fails or if any skill ID already exists
-     */
-    registerSkills(skills: CustomSkill[]): void {
-        // Validate all skills first
-        for (const skill of skills) {
-            const validation = SkillValidator.validateSkill(skill);
-            if (!validation.valid) {
-                throw new Error(`Invalid skill "${skill.id}":\n${validation.errors.join('\n')}`);
-            }
-        }
-
-        // Check for duplicate skill IDs (both within batch and against existing skills)
-        const existingSkills = this.getAllSkills();
-        const existingIds = new Set(existingSkills.map(s => s.id));
-        const newIds = new Set<string>();
-
-        for (const skill of skills) {
-            if (existingIds.has(skill.id)) {
-                throw new Error(`Invalid skill "${skill.id}":\nSkill with id "${skill.id}" is already registered`);
-            }
-            if (newIds.has(skill.id)) {
-                throw new Error(`Invalid skill "${skill.id}":\nDuplicate skill id "${skill.id}" in batch`);
-            }
-            newIds.add(skill.id);
-        }
-
-        // Ensure all skills have source
-        const skillsToRegister = skills.map(skill => ({
-            ...skill,
-            source: skill.source || 'custom'
-        }));
-
-        // Delegate to ExtensionManager
-        this.manager.register('skills', skillsToRegister);
-
-        // Invalidate cache
-        this.invalidateCache();
     }
 
     /**
