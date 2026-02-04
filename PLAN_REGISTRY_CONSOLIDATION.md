@@ -59,20 +59,20 @@ Two ways to register, both end up in ExtensionManager:
 ### Task 1.1: Remove Internal Storage from SkillRegistry
 
 **Remove these properties:**
-- [ ] `private skills: Map<string, CustomSkill>`
-- [ ] `private skillsByAbility: Map<Ability, Set<string>>`
-- [ ] `private skillsByCategory: Map<string, Set<string>>`
-- [ ] `private initialized: boolean`
+- [x] `private skills: Map<string, CustomSkill>`
+- [x] `private skillsByAbility: Map<Ability, Set<string>>`
+- [x] `private skillsByCategory: Map<string, Set<string>>`
+- [x] `private initialized: boolean`
 
 **Add these properties:**
-- [ ] `private manager: ExtensionManager` (reference to ExtensionManager)
-- [ ] `private allSkillsCache: CustomSkill[] | null` (lazy cache)
-- [ ] `private abilityCache: Map<Ability, CustomSkill[]> | null` (lazy index)
-- [ ] `private categoryCache: Map<string, CustomSkill[]> | null` (lazy index)
+- [x] `private manager: ExtensionManager` (reference to ExtensionManager)
+- [x] `private allSkillsCache: CustomSkill[] | null` (lazy cache)
+- [x] `private abilityCache: Map<Ability, CustomSkill[]> | null` (lazy index)
+- [x] `private categoryCache: Map<string, CustomSkill[]> | null` (lazy index)
 
 **Verification:**
-- [ ] TypeScript compiles
-- [ ] Constructor initializes `this.manager = ExtensionManager.getInstance()`
+- [x] TypeScript compiles
+- [x] Constructor initializes `this.manager = ExtensionManager.getInstance()`
 
 ---
 

@@ -52,13 +52,13 @@ describe('PREREQUISITES.md Code Examples', () => {
         manager = ExtensionManager.getInstance();
 
         // Reset registries
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         featureRegistry.reset();
         manager.resetAll();
     });
 
     afterEach(() => {
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         featureRegistry.reset();
         manager.resetAll();
     });

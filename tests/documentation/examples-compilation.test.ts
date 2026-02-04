@@ -108,7 +108,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
     afterEach(() => {
         manager.resetAll();
         featureRegistry.reset();
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
     });
 
     describe('ExtensionManager API Examples', () => {

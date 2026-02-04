@@ -29,7 +29,7 @@ describe('Integration: Part 4 Template-Based Class System', () => {
 
         // Reset all registries
         featureRegistry.reset();
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
 
         // Initialize with defaults
@@ -39,7 +39,7 @@ describe('Integration: Part 4 Template-Based Class System', () => {
 
     afterEach(() => {
         featureRegistry.reset();
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
     });
 

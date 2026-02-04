@@ -347,25 +347,9 @@ export class ExtensionManager {
             }
         }
 
-        // Integrate with SkillRegistry for skills
-        if (category === 'skills') {
-            // Only register with SkillRegistry if validation is enabled
-            if (validate) {
-                const registry = SkillRegistry.getInstance();
-                registry.registerSkills(items as CustomSkill[]);
-            }
-        }
-
-        // Handle ability-specific skills
-        if (category.startsWith('skills.')) {
-            // abilityName is extracted for future use in validation/logging
-            void category.replace('skills.', '') as unknown as Ability;
-            // Only register with SkillRegistry if validation is enabled
-            if (validate) {
-                const registry = SkillRegistry.getInstance();
-                registry.registerSkills(items as CustomSkill[]);
-            }
-        }
+        // Note: SkillRegistry is a convenience wrapper that reads from ExtensionManager
+        // We no longer delegate to SkillRegistry since it reads from EM directly
+        // This prevents circular dependency: SkillRegistry.registerSkills() → EM.register() → SkillRegistry
 
         // Handle skill lists (class-specific skill lists)
         // Skill lists are stored directly in ExtensionManager without registry integration
@@ -774,13 +758,8 @@ export class ExtensionManager {
             // Full reset would require tracking which custom features were registered via ExtensionManager
         }
 
-        // Reset SkillRegistry when skill categories are reset
-        if (category === 'skills' || category.startsWith('skills.')) {
-            void SkillRegistry.getInstance();
-            // Note: We don't fully reset the registry as it would remove default skills
-            // Custom skills can be distinguished by source: 'custom' property
-            // Full reset would require tracking which custom skills were registered via ExtensionManager
-        }
+        // Note: SkillRegistry is a convenience wrapper that reads from ExtensionManager
+        // No reset needed for SkillRegistry since it has no internal storage
 
         // Skill lists are stored directly in ExtensionManager - no registry reset needed
     }

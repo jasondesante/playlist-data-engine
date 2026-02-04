@@ -11,12 +11,15 @@ import { SkillValidator } from '../skills/SkillValidator.js';
 /**
  * Initialize skill registry if not already initialized
  * This ensures the SkillRegistry has default skills loaded before use.
+ *
+ * Note: Since SkillRegistry now reads from ExtensionManager, we initialize
+ * ExtensionManager instead. The defaults should already be loaded during
+ * package initialization, so this is a safeguard.
  */
 function ensureSkillRegistryInitialized(): void {
-    const registry = SkillRegistry.getInstance();
-    if (!registry.isInitialized()) {
-        registry.initializeDefaults();
-    }
+    // The ExtensionManager should be initialized during package initialization
+    // via initializeSkillDefaults() in initializeDefaults.ts
+    // SkillRegistry reads from ExtensionManager, so no action needed here
 }
 
 export class SkillAssigner {

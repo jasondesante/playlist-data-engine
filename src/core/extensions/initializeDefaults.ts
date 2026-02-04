@@ -432,13 +432,12 @@ export function ensureFeatureDefaultsInitialized(): void {
  *
  * This should be called once during application initialization.
  * Also initializes ExtensionManager with skill default data for spawn rate management.
+ *
+ * Note: SkillRegistry no longer has its own storage - it reads from ExtensionManager.
+ * We only initialize ExtensionManager now.
  */
 export function initializeSkillDefaults(): void {
-    const registry = SkillRegistry.getInstance();
     const manager = ExtensionManager.getInstance();
-
-    // Initialize SkillRegistry with default D&D 5e skills
-    registry.initializeDefaults(DEFAULT_SKILLS);
 
     // Initialize ExtensionManager with default skills for spawn rate management
     // Group skills by ability for ExtensionManager storage
@@ -467,10 +466,12 @@ export function initializeSkillDefaults(): void {
 
 /**
  * Check if skill defaults are initialized
+ *
+ * Note: Since SkillRegistry now reads from ExtensionManager, we check EM instead.
  */
 export function areSkillDefaultsInitialized(): boolean {
-    const registry = SkillRegistry.getInstance();
-    return registry.isInitialized();
+    const manager = ExtensionManager.getInstance();
+    return manager.hasCustomData('skills') || manager.getDefaults('skills').length > 0;
 }
 
 /**

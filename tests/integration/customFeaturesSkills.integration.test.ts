@@ -24,9 +24,11 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
         featureRegistry = FeatureRegistry.getInstance();
         skillRegistry = SkillRegistry.getInstance();
 
-        // Reset to defaults
+        // Reset FeatureRegistry to defaults
+        // Note: SkillRegistry no longer has a reset() method as it's a wrapper around ExtensionManager
+        // We use ExtensionManager.reset() for skills instead
         featureRegistry.reset();
-        skillRegistry.reset();
+        // SkillRegistry reads from ExtensionManager, so no reset needed here
 
         // Initialize with defaults using the proper initialization functions
         initializeFeatureDefaults();
@@ -35,7 +37,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
 
     afterEach(() => {
         featureRegistry.reset();
-        skillRegistry.reset();
+        // SkillRegistry has no internal state to reset - it reads from ExtensionManager
     });
 
     describe('Custom Class Features', () => {

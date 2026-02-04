@@ -32,7 +32,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
 
         // Reset all registries
         featureRegistry.reset();
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
 
         // Initialize with defaults
@@ -42,7 +42,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
 
     afterEach(() => {
         featureRegistry.reset();
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
     });
 

@@ -32,7 +32,7 @@ describe('Integration: Custom Classes', () => {
 
         // Reset all registries
         featureRegistry.reset();
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
 
         // Initialize with defaults
@@ -42,7 +42,7 @@ describe('Integration: Custom Classes', () => {
 
     afterEach(() => {
         featureRegistry.reset();
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
     });
 

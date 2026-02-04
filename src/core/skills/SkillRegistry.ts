@@ -3,6 +3,14 @@
  *
  * Central registry for all skills (default D&D 5e and custom).
  * Manages skill registration, lookup, and categorization.
+ *
+ * **Design:** This is a **convenience wrapper** around ExtensionManager.
+ * All skills are stored in ExtensionManager; SkillRegistry provides:
+ * - Convenient registration methods that delegate to ExtensionManager
+ * - Query methods with caching for performance
+ * - Skill-related helper methods
+ *
+ * No duplicate storage - all data lives in ExtensionManager.
  */
 
 import type {
@@ -11,35 +19,29 @@ import type {
     SkillValidationResult
 } from './SkillTypes.js';
 import type { Ability, CharacterSheet } from '../types/Character.js';
-import { DEFAULT_SKILLS } from './DefaultSkills.js';
 import { SkillValidator } from './SkillValidator.js';
+import { ExtensionManager } from '../extensions/ExtensionManager.js';
 
 /**
  * SkillRegistry - Singleton class for managing skills
  *
- * The registry handles:
- * - Skill registration and lookup
- * - Skill queries by ability, category, or source
- * - Validation of skill IDs
- * - Registry statistics
+ * The registry is a **convenience wrapper** around ExtensionManager.
+ * All skills are stored in ExtensionManager; SkillRegistry provides:
+ * - Convenient registration methods that delegate to ExtensionManager
+ * - Query methods with caching for performance
+ * - Skill-related helper methods
+ *
+ * Design principle: No duplicate storage. All data lives in ExtensionManager.
  */
 export class SkillRegistry {
     private static instance: SkillRegistry;
-    private skills: Map<string, CustomSkill>;
-    private skillsByAbility: Map<Ability, Set<string>>;
-    private skillsByCategory: Map<string, Set<string>>;
-    private initialized: boolean = false;
+    private manager: ExtensionManager;
+    private allSkillsCache: CustomSkill[] | null = null;
+    private abilityCache: Map<Ability, CustomSkill[]> | null = null;
+    private categoryCache: Map<string, CustomSkill[]> | null = null;
 
     private constructor() {
-        this.skills = new Map();
-        this.skillsByAbility = new Map();
-        this.skillsByCategory = new Map();
-
-        // Initialize ability maps
-        const abilities: Ability[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
-        for (const ability of abilities) {
-            this.skillsByAbility.set(ability, new Set());
-        }
+        this.manager = ExtensionManager.getInstance();
     }
 
     /**
@@ -53,75 +55,70 @@ export class SkillRegistry {
     }
 
     /**
-     * Initialize the registry with default skills
-     * This should be called once during package initialization
-     *
-     * @param defaultSkills - Default skills to load (uses DEFAULT_SKILLS if not provided)
+     * Invalidate all caches
+     * Called when skills are registered to ensure fresh data
      */
-    initializeDefaults(defaultSkills: CustomSkill[] = DEFAULT_SKILLS): void {
-        if (this.initialized) {
-            return; // Already initialized
-        }
-
-        // Clear any existing data
-        this.reset();
-
-        // Register default skills
-        for (const skill of defaultSkills) {
-            this.registerSkill(skill);
-        }
-
-        this.initialized = true;
+    private invalidateCache(): void {
+        this.allSkillsCache = null;
+        this.abilityCache = null;
+        this.categoryCache = null;
     }
 
     /**
      * Register a single skill
      *
+     * Delegates to ExtensionManager.register('skills', [...])
+     *
      * @param skill - Skill to register
-     * @throws Error if skill ID already exists
+     * @throws Error if validation fails
      */
     registerSkill(skill: CustomSkill): void {
-        if (this.skills.has(skill.id)) {
-            throw new Error(`Skill with ID "${skill.id}" already exists`);
+        // Validate skill before registering
+        const validation = SkillValidator.validateSkill(skill);
+        if (!validation.valid) {
+            throw new Error(`Invalid skill "${skill.id}":\n${validation.errors.join('\n')}`);
         }
 
-        // Validate skill ID format (lowercase_with_underscores)
-        if (!/^[a-z][a-z0-9_]*$/.test(skill.id)) {
-            throw new Error(
-                `Invalid skill ID "${skill.id}". ` +
-                `Skill IDs must be lowercase_with_underscores format.`
-            );
-        }
+        // Ensure skill has source
+        const skillToRegister = {
+            ...skill,
+            source: skill.source || 'custom'
+        };
 
-        // Add to main skills map
-        this.skills.set(skill.id, skill);
+        // Delegate to ExtensionManager
+        this.manager.register('skills', [skillToRegister]);
 
-        // Index by ability
-        const abilitySkills = this.skillsByAbility.get(skill.ability);
-        if (abilitySkills) {
-            abilitySkills.add(skill.id);
-        }
-
-        // Index by category (if categories provided)
-        if (skill.categories && skill.categories.length > 0) {
-            for (const category of skill.categories) {
-                if (!this.skillsByCategory.has(category)) {
-                    this.skillsByCategory.set(category, new Set());
-                }
-                this.skillsByCategory.get(category)!.add(skill.id);
-            }
-        }
+        // Invalidate cache
+        this.invalidateCache();
     }
 
     /**
      * Register multiple skills at once
      *
+     * Delegates to ExtensionManager.register('skills', [...])
+     *
      * @param skills - Array of skills to register
      */
     registerSkills(skills: CustomSkill[]): void {
+        // Validate all skills first
         for (const skill of skills) {
-            this.registerSkill(skill);
+            const validation = SkillValidator.validateSkill(skill);
+            if (!validation.valid) {
+                throw new Error(`Invalid skill "${skill.id}":\n${validation.errors.join('\n')}`);
+            }
         }
+
+        // Ensure all skills have source
+        const skillsToRegister = skills.map(skill => ({
+            ...skill,
+            source: skill.source || 'custom'
+        }));
+
+        // Delegate to ExtensionManager
+        this.manager.register('skills', skillsToRegister);
+
+        // Invalidate cache
+        this.invalidateCache();
     }
 
     /**
@@ -131,50 +128,71 @@ export class SkillRegistry {
      * @returns Skill or undefined if not found
      */
     getSkill(id: string): CustomSkill | undefined {
-        return this.skills.get(id);
+        const allSkills = this.getAllSkills();
+        return allSkills.find(skill => skill.id === id);
     }
 
     /**
      * Get all registered skills
      *
+     * Reads from ExtensionManager with caching.
+     *
      * @returns Array of all skills
      */
     getAllSkills(): CustomSkill[] {
-        return Array.from(this.skills.values());
+        if (!this.allSkillsCache) {
+            const skills = this.manager.get('skills');
+            this.allSkillsCache = skills as CustomSkill[];
+        }
+        return this.allSkillsCache;
     }
 
     /**
      * Get skills by ability score
      *
+     * Builds index from ExtensionManager data with caching.
+     *
      * @param ability - Ability score to filter by
      * @returns Array of skills that use this ability
      */
     getSkillsByAbility(ability: Ability): CustomSkill[] {
-        const skillIds = this.skillsByAbility.get(ability);
-        if (!skillIds) {
-            return [];
+        if (!this.abilityCache) {
+            this.abilityCache = new Map();
+            const allSkills = this.getAllSkills();
+            for (const skill of allSkills) {
+                if (!this.abilityCache.has(skill.ability)) {
+                    this.abilityCache.set(skill.ability, []);
+                }
+                this.abilityCache.get(skill.ability)!.push(skill);
+            }
         }
-
-        return Array.from(skillIds)
-            .map(id => this.skills.get(id))
-            .filter((skill): skill is CustomSkill => skill !== undefined);
+        return this.abilityCache.get(ability) || [];
     }
 
     /**
      * Get skills by category
      *
+     * Builds index from ExtensionManager data with caching.
+     *
      * @param category - Category to filter by
      * @returns Array of skills in this category
      */
     getSkillsByCategory(category: string): CustomSkill[] {
-        const skillIds = this.skillsByCategory.get(category);
-        if (!skillIds) {
-            return [];
+        if (!this.categoryCache) {
+            this.categoryCache = new Map();
+            const allSkills = this.getAllSkills();
+            for (const skill of allSkills) {
+                if (skill.categories && skill.categories.length > 0) {
+                    for (const skillCategory of skill.categories) {
+                        if (!this.categoryCache.has(skillCategory)) {
+                            this.categoryCache.set(skillCategory, []);
+                        }
+                        this.categoryCache.get(skillCategory)!.push(skill);
+                    }
+                }
+            }
         }
-
-        return Array.from(skillIds)
-            .map(id => this.skills.get(id))
-            .filter((skill): skill is CustomSkill => skill !== undefined);
+        return this.categoryCache.get(category) || [];
     }
 
     /**
@@ -183,7 +201,16 @@ export class SkillRegistry {
      * @returns Array of category names
      */
     getCategories(): string[] {
-        return Array.from(this.skillsByCategory.keys());
+        const allSkills = this.getAllSkills();
+        const categories = new Set<string>();
+        for (const skill of allSkills) {
+            if (skill.categories) {
+                for (const category of skill.categories) {
+                    categories.add(category);
+                }
+            }
+        }
+        return Array.from(categories);
     }
 
     /**
@@ -203,51 +230,19 @@ export class SkillRegistry {
      * @returns True if skill exists
      */
     isValidSkill(id: string): boolean {
-        return this.skills.has(id);
+        return this.getSkill(id) !== undefined;
     }
 
     /**
      * Validate skill data structure
      *
+     * Delegates to SkillValidator.
+     *
      * @param skill - Skill object to validate
      * @returns Validation result with any errors
      */
     validateSkill(skill: CustomSkill): SkillValidationResult {
-        const errors: string[] = [];
-
-        // Check required fields
-        if (!skill.id || typeof skill.id !== 'string') {
-            errors.push('Skill must have a valid id');
-        }
-
-        if (!skill.name || typeof skill.name !== 'string') {
-            errors.push('Skill must have a valid name');
-        }
-
-        if (!skill.ability || typeof skill.ability !== 'string') {
-            errors.push('Skill must have a valid ability');
-        }
-
-        // Validate ability is one of the 6 abilities
-        const validAbilities: Ability[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
-        if (skill.ability && !validAbilities.includes(skill.ability as Ability)) {
-            errors.push(`Invalid ability: ${skill.ability}. Must be one of: ${validAbilities.join(', ')}`);
-        }
-
-        // Validate source
-        if (skill.source && !['default', 'custom'].includes(skill.source)) {
-            errors.push(`Invalid source: ${skill.source}. Must be 'default' or 'custom'`);
-        }
-
-        // Validate ID format
-        if (skill.id && !/^[a-z][a-z0-9_]*$/.test(skill.id)) {
-            errors.push(`Invalid skill ID "${skill.id}". Must be lowercase_with_underscores format.`);
-        }
-
-        return {
-            valid: errors.length === 0,
-            errors
-        };
+        return SkillValidator.validateSkill(skill);
     }
 
     /**
@@ -304,88 +299,6 @@ export class SkillRegistry {
     }
 
     /**
-     * Reset the registry to initial state
-     *
-     * Clears all registered skills.
-     * Useful for testing or reinitialization.
-     */
-    reset(): void {
-        this.skills.clear();
-        this.skillsByAbility.clear();
-        this.skillsByCategory.clear();
-
-        // Reinitialize ability maps
-        const abilities: Ability[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
-        for (const ability of abilities) {
-            this.skillsByAbility.set(ability, new Set());
-        }
-
-        this.initialized = false;
-    }
-
-    /**
-     * Check if the registry has been initialized
-     *
-     * @returns True if initialized with defaults
-     */
-    isInitialized(): boolean {
-        return this.initialized;
-    }
-
-    /**
-     * Export all registered skills as JSON
-     *
-     * Useful for debugging or serialization.
-     *
-     * @returns Array of all skills
-     */
-    exportRegistry(): CustomSkill[] {
-        return this.getAllSkills();
-    }
-
-    /**
-     * Unregister a skill by ID
-     *
-     * Warning: This is primarily for testing.
-     * Removing skills that are in use may cause issues.
-     *
-     * @param id - Skill ID to unregister
-     * @returns True if skill was found and removed
-     */
-    unregisterSkill(id: string): boolean {
-        const skill = this.skills.get(id);
-        if (!skill) {
-            return false;
-        }
-
-        // Remove from main map
-        this.skills.delete(id);
-
-        // Remove from ability index
-        const abilitySkills = this.skillsByAbility.get(skill.ability);
-        if (abilitySkills) {
-            abilitySkills.delete(id);
-        }
-
-        // Remove from category indexes
-        if (skill.categories) {
-            for (const category of skill.categories) {
-                const categorySkills = this.skillsByCategory.get(category);
-                if (categorySkills) {
-                    categorySkills.delete(id);
-
-                    // Clean up empty category maps
-                    if (categorySkills.size === 0) {
-                        this.skillsByCategory.delete(category);
-                    }
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * Get the total count of registered skills
      *
      * Returns the total number of skills in the registry.
@@ -393,7 +306,7 @@ export class SkillRegistry {
      * @returns Total skill count
      */
     getSkillCount(): number {
-        return this.skills.size;
+        return this.getAllSkills().length;
     }
 
     /**

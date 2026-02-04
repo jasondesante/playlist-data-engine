@@ -107,7 +107,7 @@ describe('Integration: Prerequisites and Races', () => {
         extensionManager = ExtensionManager.getInstance();
 
         // Reset all registries
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         featureRegistry.reset();
         extensionManager.resetAll();
 
@@ -119,7 +119,7 @@ describe('Integration: Prerequisites and Races', () => {
     });
 
     afterEach(() => {
-        skillRegistry.reset();
+        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         featureRegistry.reset();
         extensionManager.resetAll();
     });
