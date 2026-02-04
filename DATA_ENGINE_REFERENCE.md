@@ -4313,29 +4313,38 @@ interface ValidationResult {
 
 **Location:** `src/core/features/FeatureRegistry.ts`
 
-Singleton registry for managing class features and racial traits with prerequisite validation and subrace support.
+**Convenience wrapper** around ExtensionManager for managing class features and racial traits with prerequisite validation and subrace support.
+
+**Architecture:** FeatureRegistry provides a convenient API that delegates to ExtensionManager as the single source of truth. All features and traits are stored in ExtensionManager; FeatureRegistry provides:
+- Registration methods that delegate to `ExtensionManager.register('classFeatures', [...])` and `ExtensionManager.register('racialTraits', [...])`
+- Query methods that read from ExtensionManager with caching for performance
+- Feature-related helper methods (prerequisite validation, subrace support, etc.)
+
+**Design principle:** No duplicate storage. All three registries (SpellRegistry, SkillRegistry, FeatureRegistry) follow the same pattern: they do not maintain their own copy of data. All data lives in ExtensionManager.
 
 ```typescript
 class FeatureRegistry {
     // Instance Management
     static getInstance(): FeatureRegistry
 
-    // Initialization
-    initializeDefaults(defaultClassFeatures?: ClassFeature[], defaultRacialTraits?: RacialTrait[]): void
-    reset(): void
-    isInitialized(): boolean
+    // Cache Management
+    invalidateCache(): void
 
-    // Class Features
+    // Class Features (delegates to ExtensionManager)
     registerClassFeature(feature: ClassFeature): void
     registerClassFeatures(features: ClassFeature[]): void
+
+    // Class Features (reads from ExtensionManager with caching)
     getClassFeatures(characterClass: Class, level?: number): ClassFeature[]
     getClassFeaturesForLevel(characterClass: Class, level: number): ClassFeature[]
     getClassFeatureById(featureId: string): ClassFeature | undefined
     getAllClassFeatures(): Map<string, ClassFeature[]>
 
-    // Racial Traits
+    // Racial Traits (delegates to ExtensionManager)
     registerRacialTrait(trait: RacialTrait): void
     registerRacialTraits(traits: RacialTrait[]): void
+
+    // Racial Traits (reads from ExtensionManager with caching)
     getRacialTraits(race: Race): RacialTrait[]
     getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[]
     getBaseRacialTraits(race: Race): RacialTrait[]
@@ -4344,7 +4353,7 @@ class FeatureRegistry {
     getRacialTraitById(traitId: string): RacialTrait | undefined
     getAllRacialTraits(): Map<string, RacialTrait[]>
 
-    // Validation
+    // Validation (delegates to FeatureValidator)
     validatePrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): ValidationResult
     validateFeaturePrerequisites(feature: ClassFeature, character: CharacterSheet): ValidationResult
     validateTraitPrerequisites(trait: RacialTrait, character: CharacterSheet): ValidationResult
@@ -4355,7 +4364,7 @@ class FeatureRegistry {
     getRegisteredRaces(): Race[]
     getRegistryStats(): { totalClassFeatures: number; totalRacialTraits: number; classesWithFeatures: number; racesWithTraits: number }
 
-    // Export (racial traits only - class features via ExtensionManager)
+    // Export (reads from ExtensionManager)
     exportRacialTraits(): Record<string, RacialTrait[]>
 
     // Equipment Features (static methods)
@@ -4450,35 +4459,51 @@ interface CharacterTrait {
 | Method | Parameters | Returns | Description |
 |--------|-----------|---------|-------------|
 | `getInstance()` | - | `FeatureRegistry` | Returns singleton instance |
-| `initializeDefaults()` | `defaultClassFeatures?`, `defaultRacialTraits?` | `void` | Load default features and traits |
-| `reset()` | - | `void` | Clear all custom data, reload defaults |
-| `isInitialized()` | - | `boolean` | Check if registry has been initialized |
-| `registerClassFeature()` | `feature` | `void` | Register single class feature |
-| `registerClassFeatures()` | `features[]` | `void` | Register multiple class features |
-| `getClassFeatures()` | `class`, `level?` | `ClassFeature[]` | Get all features for class (filtered by level) |
-| `getClassFeaturesForLevel()` | `class`, `level` | `ClassFeature[]` | Get features for specific class level |
+| `invalidateCache()` | - | `void` | Clear all caches (call after direct ExtensionManager manipulation) |
+| `registerClassFeature()` | `feature` | `void` | Register single class feature (delegates to ExtensionManager) |
+| `registerClassFeatures()` | `features[]` | `void` | Register multiple class features (delegates to ExtensionManager) |
+| `getClassFeatures()` | `class`, `level?` | `ClassFeature[]` | Get all features for class (filtered by level, reads from ExtensionManager with caching) |
+| `getClassFeaturesForLevel()` | `class`, `level` | `ClassFeature[]` | Get features for specific class level (reads from ExtensionManager with caching) |
 | `getClassFeatureById()` | `featureId` | `ClassFeature \| undefined` | Find feature by ID |
-| `getAllClassFeatures()` | - | `Map<string, ClassFeature[]>` | Get all class features by class |
-| `registerRacialTrait()` | `trait` | `void` | Register single racial trait |
-| `registerRacialTraits()` | `traits[]` | `void` | Register multiple racial traits |
-| `getRacialTraits()` | `race` | `RacialTrait[]` | Get base traits for race (no subrace) |
-| `getRacialTraitsForSubrace()` | `race`, `subrace` | `RacialTrait[]` | Get base + subrace-specific traits |
-| `getBaseRacialTraits()` | `race` | `RacialTrait[]` | Get only base traits (no subrace) |
-| `getSubraceTraits()` | `race`, `subrace` | `RacialTrait[]` | Get only subrace-specific traits |
-| `getAvailableSubraces()` | `race` | `string[]` | Get sorted list of available subraces |
+| `getAllClassFeatures()` | - | `Map<string, ClassFeature[]>` | Get all class features by class (builds index from EM data with caching) |
+| `registerRacialTrait()` | `trait` | `void` | Register single racial trait (delegates to ExtensionManager) |
+| `registerRacialTraits()` | `traits[]` | `void` | Register multiple racial traits (delegates to ExtensionManager) |
+| `getRacialTraits()` | `race` | `RacialTrait[]` | Get traits for race (reads from ExtensionManager with caching) |
+| `getRacialTraitsForSubrace()` | `race`, `subrace` | `RacialTrait[]` | Get base + subrace-specific traits (reads from ExtensionManager with caching) |
+| `getBaseRacialTraits()` | `race` | `RacialTrait[]` | Get only base traits (no subrace, reads from ExtensionManager with caching) |
+| `getSubraceTraits()` | `race`, `subrace` | `RacialTrait[]` | Get only subrace-specific traits (reads from ExtensionManager with caching) |
+| `getAvailableSubraces()` | `race` | `string[]` | Get sorted list of available subraces (checks RACE_DATA, derives from EM data) |
 | `getRacialTraitById()` | `traitId` | `RacialTrait \| undefined` | Find trait by ID |
-| `getAllRacialTraits()` | - | `Map<string, RacialTrait[]>` | Get all racial traits by race |
-| `validatePrerequisites()` | `feature`, `character` | `ValidationResult` | Validate any feature/trait prerequisites |
-| `validateFeaturePrerequisites()` | `feature`, `character` | `ValidationResult` | Validate class feature prerequisites |
-| `validateTraitPrerequisites()` | `trait`, `character` | `ValidationResult` | Validate racial trait prerequisites |
+| `getAllRacialTraits()` | - | `Map<string, RacialTrait[]>` | Get all racial traits by race (builds index from EM data with caching) |
+| `validatePrerequisites()` | `feature`, `character` | `ValidationResult` | Validate any feature/trait prerequisites (delegates to FeatureValidator) |
+| `validateFeaturePrerequisites()` | `feature`, `character` | `ValidationResult` | Validate class feature prerequisites (delegates to FeatureValidator) |
+| `validateTraitPrerequisites()` | `trait`, `character` | `ValidationResult` | Validate racial trait prerequisites (delegates to FeatureValidator) |
 | `canGainFeature()` | `feature`, `character` | `boolean` | Check if character can gain feature |
 | `getRegisteredClasses()` | - | `Class[]` | Get all classes with features |
 | `getRegisteredRaces()` | - | `Race[]` | Get all races with traits |
-| `getRegistryStats()` | - | `{ totalClassFeatures, totalRacialTraits, classesWithFeatures, racesWithTraits }` | Get registry statistics |
-| `exportRacialTraits()` | - | `Record<string, RacialTrait[]>` | Export racial traits as JSON (for class features, use ExtensionManager.get('classFeatures')) |
+| `getRegistryStats()` | - | `{ totalClassFeatures, totalRacialTraits, classesWithFeatures, racesWithTraits }` | Get registry statistics (computed from ExtensionManager data) |
+| `exportRacialTraits()` | - | `Record<string, RacialTrait[]>` | Export racial traits (reads from ExtensionManager; for class features, use ExtensionManager.get('classFeatures')) |
 | `getEquipmentFeatures()` | `equipmentName` | `ClassFeature[]` | Get features that can be granted by equipment (static) |
 | `isValidEquipmentFeature()` | `featureId` | `boolean` | Check if feature can be granted by equipment (static) |
 | `registerEquipmentFeature()` | `feature` | `void` | Register equipment-granted feature (static) |
+
+**Note on Registration:**
+
+Two ways to register class features (both store data in ExtensionManager):
+1. `ExtensionManager.getInstance().register('classFeatures', [featureData])` — direct
+2. `FeatureRegistry.getInstance().registerClassFeature(featureData)` — convenience wrapper
+
+Two ways to register racial traits (both store data in ExtensionManager):
+1. `ExtensionManager.getInstance().register('racialTraits', [traitData])` — direct
+2. `FeatureRegistry.getInstance().registerRacialTrait(traitData)` — convenience wrapper
+
+**Note on Initialization:**
+
+Default class features and racial traits are initialized via ExtensionManager:
+```typescript
+ExtensionManager.getInstance().initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES)
+ExtensionManager.getInstance().initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)
+```
 
 ---
 
@@ -5019,7 +5044,7 @@ interface ValidationResult {
 - **Registration:** Use `SpellRegistry.registerSpell()` for convenience or `ExtensionManager.register('spells', [...])` directly. Both methods end up in the same place (ExtensionManager).
 - **Querying:** Query methods read from ExtensionManager with lazy caching for performance. Caches are invalidated when spells are registered.
 - **Class Spell Lists:** Custom class spell lists can be registered via `registerClassSpellList()` or directly via `ExtensionManager.register('spells.${ClassName}', [...])`.
-- **No Duplicate Storage:** Unlike SkillRegistry/FeatureRegistry, SpellRegistry does not maintain its own data copy. ExtensionManager is the single source of truth.
+- **No Duplicate Storage:** All three registries (SpellRegistry, SkillRegistry, FeatureRegistry) follow the same pattern and do not maintain their own data copy. ExtensionManager is the single source of truth.
 
 ---
 
