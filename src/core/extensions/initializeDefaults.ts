@@ -10,10 +10,8 @@ import { ExtensionManager } from './ExtensionManager.js';
 import type { ExtensionCategory } from './ExtensionManager.js';
 import { SPELL_DATABASE, CLASS_SPELL_LISTS, EQUIPMENT_DATABASE, ALL_RACES, ALL_CLASSES, DEFAULT_RACE_DATA_ARRAY } from '../../utils/constants.js';
 import type { Class } from '../types/Character.js';
-import { FeatureRegistry } from '../features/FeatureRegistry.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../features/DefaultFeatures.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
-import { SkillRegistry } from '../skills/SkillRegistry.js';
 import { DEFAULT_SKILLS } from '../skills/DefaultSkills.js';
 import type { CustomSkill } from '../skills/SkillTypes.js';
 
@@ -337,6 +335,8 @@ export function initializeAllDefaults(): void {
     initializeRaceDefaults();
     initializeRaceDataDefaults();
     initializeClassDefaults();
+    initializeFeatureDefaults();
+    initializeSkillDefaults();
 }
 
 /**
@@ -361,13 +361,12 @@ export function ensureAllDefaultsInitialized(): void {
  *
  * This should be called once during application initialization.
  * Also initializes ExtensionManager with feature default data for spawn rate management.
+ *
+ * Note: FeatureRegistry reads from ExtensionManager, so we only need to initialize
+ * ExtensionManager with defaults. The registry will access them via manager.get().
  */
 export function initializeFeatureDefaults(): void {
-    const registry = FeatureRegistry.getInstance();
     const manager = ExtensionManager.getInstance();
-
-    // Initialize FeatureRegistry with default class features and racial traits
-    registry.initializeDefaults(DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS);
 
     // Initialize ExtensionManager with default features for spawn rate management
     // Group features by class for ExtensionManager storage
@@ -411,8 +410,10 @@ export function initializeFeatureDefaults(): void {
  * Check if feature defaults are initialized
  */
 export function areFeatureDefaultsInitialized(): boolean {
-    const registry = FeatureRegistry.getInstance();
-    return registry.isInitialized();
+    const manager = ExtensionManager.getInstance();
+    const categories = manager.getRegisteredCategories();
+    // Check if classFeatures or racialTraits category is registered (has defaults)
+    return categories.some(cat => cat === 'classFeatures' || cat === 'racialTraits');
 }
 
 /**
