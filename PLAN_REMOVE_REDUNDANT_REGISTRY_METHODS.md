@@ -212,11 +212,20 @@ All tasks in Phase 1 have been completed. Key findings:
 **Goal:** Preserve the spell ID validation logic before removing the wrapper method
 
 **Sub-tasks:**
-- [ ] Read current `registerClassSpellList()` implementation in SpellRegistry.ts
-- [ ] Add validation logic to `ExtensionManager.register()` for `spells.${ClassName}` categories
-- [ ] Validation should: Get all spells from EM, check each spell ID exists, throw if not
-- [ ] Test the validation works by trying to register invalid spell IDs
-- [ ] TypeScript compilation check
+- [x] Read current `registerClassSpellList()` implementation in SpellRegistry.ts
+- [x] Add validation logic to `ExtensionManager.register()` for `spells.${ClassName}` categories
+- [x] Validation should: Get all spells from EM, check each spell ID exists, throw if not
+- [x] Test the validation works by trying to register invalid spell IDs
+- [x] TypeScript compilation check
+
+**Status:** ✅ COMPLETED
+- Validation logic added at lines 287-306 in ExtensionManager.ts
+- Gets all spells from `spells` category via `this.get('spells')`
+- Creates a Set of spell IDs for efficient lookup
+- Validates each spell ID in the items array
+- Throws descriptive error if any invalid spell IDs found
+- TypeScript compilation passes
+- Build completes successfully
 
 **Implementation sketch:**
 ```typescript

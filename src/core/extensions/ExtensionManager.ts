@@ -284,6 +284,27 @@ export class ExtensionManager {
             }
         }
 
+        // Special validation for spell lists (spells.${ClassName})
+        // Validates that all spell IDs exist in the spells registry
+        if (category.startsWith('spells.') && category !== 'spells') {
+            const allSpells = this.get('spells');
+            const spellIdSet = new Set(allSpells.map((s: any) => s.id));
+            const spellIds = items as string[];
+            const invalidIds: string[] = [];
+
+            for (const spellId of spellIds) {
+                if (!spellIdSet.has(spellId)) {
+                    invalidIds.push(spellId);
+                }
+            }
+
+            if (invalidIds.length > 0) {
+                throw new Error(
+                    `Invalid spell IDs for ${category}: ${invalidIds.join(', ')}`
+                );
+            }
+        }
+
         // Store the extension data
         // For relative mode, merge with existing items; for other modes, replace
         const existingExtension = this.extensions.get(category);
