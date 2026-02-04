@@ -366,11 +366,17 @@ Updated the SkillRegistry section in DATA_ENGINE_REFERENCE.md (lines 4639-4772) 
 ### Task 4.3: Update USAGE_IN_OTHER_PROJECTS.md
 
 **Update SkillRegistry description:**
-- [ ] Emphasize: "Convenience wrapper around ExtensionManager"
-- [ ] Note: "No duplicate storage — same pattern as SpellRegistry"
+- [x] Emphasize: "Convenience wrapper around ExtensionManager"
+- [x] Note: "No duplicate storage — same pattern as SpellRegistry"
 
 **Verification:**
-- [ ] Description accurate
+- [x] Description accurate
+
+**Summary:**
+Updated USAGE_IN_OTHER_PROJECTS.md to reflect SkillRegistry as a convenience wrapper:
+1. Updated "Extensibility (NEW)" section (line ~1756-1779) to clarify that SkillRegistry is a convenience wrapper around ExtensionManager with no duplicate storage (same pattern as SpellRegistry)
+2. Updated the "Dragon-Themed Content" example (line ~1107-1151) to show ExtensionManager.register() as the primary method for skills, with SkillRegistry as an alternative convenience wrapper
+3. Updated SpellRegistry description to remove outdated "improvement over SkillRegistry/FeatureRegistry pattern" comparison (now all three follow same pattern)
 
 ---
 
