@@ -1157,14 +1157,40 @@ Fixed test failures caused by:
 ### Task 14.1: Verify Consistent Patterns Across Registries
 
 **Check that SpellRegistry, SkillRegistry, and FeatureRegistry:**
-- [ ] All have `private manager: ExtensionManager`
-- [ ] All have cache properties (no storage Maps)
-- [ ] All have `invalidateCache()` method
-- [ ] All query methods read from EM with caching
-- [ ] All validation methods delegate to validators
+- [x] All have `private manager: ExtensionManager`
+- [x] All have cache properties (no storage Maps)
+- [x] All have `invalidateCache()` method
+- [x] All query methods read from EM with caching
+- [x] All validation methods delegate to validators
 
 **Verification:**
-- [ ] All three registries follow the same pattern
+- [x] All three registries follow the same pattern
+
+**Summary:**
+All three registries (SpellRegistry, SkillRegistry, FeatureRegistry) follow the same convenience wrapper pattern:
+
+1. **`private manager: ExtensionManager`**: All three registries have a private reference to ExtensionManager singleton.
+
+2. **Cache properties (no storage Maps)**:
+   - SpellRegistry: `allSpellsCache`, `levelCache`, `schoolCache`
+   - SkillRegistry: `allSkillsCache`, `abilityCache`, `categoryCache`
+   - FeatureRegistry: `allClassFeaturesCache`, `classFeaturesIndex`, `allRacialTraitsCache`, `racialTraitsIndex`
+   - No internal storage Maps for data - all data lives in ExtensionManager
+
+3. **`invalidateCache()` method**: All three have cache invalidation.
+   - SpellRegistry: `private invalidateCache()` (internal use only)
+   - SkillRegistry: `public invalidateCache()` (allows manual invalidation after direct EM registration)
+   - FeatureRegistry: `public invalidateCache()` (allows manual invalidation after direct EM registration)
+   - Note: The visibility difference is acceptable - SpellRegistry manages its cache internally.
+
+4. **Query methods read from EM with caching**: All query methods call `this.manager.get()` to retrieve data from ExtensionManager, then build cached indexes for performance.
+
+5. **Validation methods delegate to validators**:
+   - SpellRegistry delegates to `SpellValidator.validateSpell()` and `SpellValidator.validateSpellPrerequisites()`
+   - SkillRegistry delegates to `SkillValidator.validateSkill()` and `SkillValidator.validateSkillPrerequisites()`
+   - FeatureRegistry delegates to `validateClassFeature()` and `validateRacialTrait()` from FeatureValidator
+
+**Verification Method:** Created and ran `verify-registry-consistency.ts` which confirmed all patterns are consistent.
 
 ---
 
