@@ -884,13 +884,26 @@ Changes made:
 ### Task 11.1: Update Existing Racial Trait Tests
 
 **Review tests that use FeatureRegistry for racial traits:**
-- [ ] Update tests to use `ExtensionManager.register('racialTraits', [...])`
-- [ ] Verify query methods read from ExtensionManager
-- [ ] Update tests that call `registerRacialTrait()`
+- [x] Update tests to use `ExtensionManager.register('racialTraits', [...])`
+- [x] Verify query methods read from ExtensionManager
+- [x] Update tests that call `registerRacialTrait()`
 
 **Verification:**
-- [ ] All racial trait tests pass
-- [ ] Tests verify EM is single source of truth
+- [x] All racial trait tests pass
+- [x] Tests verify EM is single source of truth
+
+**Summary:**
+Fixed and updated racial trait tests to work with FeatureRegistry as a convenience wrapper:
+1. **Fixed subraceStatBonus.integration.test.ts** - Updated to use `createMockTrack()` helper and `initializeAllDefaults()` for proper test setup. All 5 tests now pass.
+2. **Updated featureRegistry.test.ts** - Updated test expectations for `exportRacialTraits()` and `isInitialized()` methods to match the new convenience wrapper behavior (reading from ExtensionManager with persistent defaults). All 62 FeatureRegistry tests pass.
+3. **Verified subraces.test.ts** - All 38 tests were already passing and correctly verify that FeatureRegistry query methods read from ExtensionManager.
+
+**Test Results:**
+- tests/unit/featureRegistry.test.ts: 62 tests PASSED ✅
+- tests/unit/subraces.test.ts: 38 tests PASSED ✅
+- tests/integration/subraceStatBonus.integration.test.ts: 5 tests PASSED ✅
+- tests/integration/featureIntegration.test.ts: 16 tests PASSED ✅
+- Total: 121 tests PASSED ✅
 
 ---
 

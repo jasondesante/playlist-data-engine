@@ -2,10 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
+import { initializeAllDefaults } from '../../src/core/extensions/initializeDefaults.js';
 import { ALL_RACES } from '../../src/utils/constants.js';
 import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 import type { RacialTrait } from '../../src/core/features/FeatureTypes.js';
 import type { AudioProfile } from '../../src/core/types/AudioProfile.js';
+import type { PlaylistTrack } from '../../src/core/types/Playlist.js';
 
 describe('Subrace Stat Bonus Application', () => {
     let featureRegistry: FeatureRegistry;
@@ -27,11 +29,29 @@ describe('Subrace Stat Bonus Application', () => {
         };
     }
 
+    function createMockTrack(title: string = 'Test Character'): PlaylistTrack {
+        return {
+            title,
+            artist: 'Test Artist',
+            genre: 'Rock',
+            id: 'test-1',
+            uuid: 'test-uuid-1',
+            playlist_index: 0,
+            chain_name: 'eth',
+            token_address: '0x0',
+            token_id: '1',
+            platform: 'sound',
+            image_url: 'https://example.com/image.jpg',
+            audio_url: 'https://example.com/audio.mp3',
+            duration: 180,
+            tags: ['rock', 'test']
+        };
+    }
+
     beforeEach(() => {
         extensionManager = ExtensionManager.getInstance();
-        extensionManager.initializeDefaults('races', [...ALL_RACES]);
-        extensionManager.initializeDefaults('classes', ['Cleric']);
-        extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
+        // Initialize all defaults including race data
+        initializeAllDefaults();
 
         featureRegistry = FeatureRegistry.getInstance();
     });
@@ -65,7 +85,7 @@ describe('Subrace Stat Bonus Application', () => {
         const character = CharacterGenerator.generate(
             seed,
             audioProfile,
-            'Hill Dwarf Cleric',
+            createMockTrack('Hill Dwarf Cleric'),
             { forceRace: 'Dwarf', subrace: 'Hill Dwarf', forceClass: 'Cleric' }
         );
 
@@ -109,7 +129,7 @@ describe('Subrace Stat Bonus Application', () => {
         const character = CharacterGenerator.generate(
             seed,
             audioProfile,
-            'Mountain Dwarf Cleric',
+            createMockTrack('Mountain Dwarf Cleric'),
             { forceRace: 'Dwarf', subrace: 'Mountain Dwarf', forceClass: 'Cleric' }
         );
 
@@ -149,7 +169,7 @@ describe('Subrace Stat Bonus Application', () => {
         const pureDwarf = CharacterGenerator.generate(
             seed,
             audioProfile,
-            'Pure Dwarf',
+            createMockTrack('Pure Dwarf'),
             { forceRace: 'Dwarf', subrace: 'pure', forceClass: 'Cleric' }
         );
 
@@ -185,7 +205,7 @@ describe('Subrace Stat Bonus Application', () => {
         const character = CharacterGenerator.generate(
             seed,
             audioProfile,
-            'High Elf Wizard',
+            createMockTrack('High Elf Wizard'),
             { forceRace: 'Elf', subrace: 'High Elf', forceClass: 'Wizard' }
         );
 
@@ -226,7 +246,7 @@ describe('Subrace Stat Bonus Application', () => {
         const highElf = CharacterGenerator.generate(
             seed,
             audioProfile,
-            'High Elf',
+            createMockTrack('High Elf'),
             { forceRace: 'Elf', subrace: 'High Elf', forceClass: 'Wizard' }
         );
 
