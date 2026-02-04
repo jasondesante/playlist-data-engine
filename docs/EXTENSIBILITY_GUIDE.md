@@ -476,15 +476,16 @@ manager.setWeights('spells', {
 ===== SPELL REGISTRY FOR CUSTOM SPELLS =====
 Register and query custom spells with prerequisite validation
 
+**Note:** SpellRegistry is a **convenience wrapper** around ExtensionManager. All spells are stored in ExtensionManager; SpellRegistry provides convenient methods that delegate to ExtensionManager with caching for performance.
+
 ```typescript
 
-import { SpellRegistry } from 'playlist-data-engine';
+import { SpellRegistry, ExtensionManager } from 'playlist-data-engine';
 
 const spellRegistry = SpellRegistry.getInstance();
+const manager = ExtensionManager.getInstance();
 
-// Initialize with default spells
-spellRegistry.initializeDefaults();
-
+// ===== REGISTRATION PATTERN 1: Via SpellRegistry (Convenience) =====
 // Register custom spells
 spellRegistry.registerSpell({
   id: 'phoenix_fire',
@@ -504,6 +505,23 @@ spellRegistry.registerSpell({
   source: 'custom'
 });
 
+// ===== REGISTRATION PATTERN 2: Via ExtensionManager (Direct) =====
+// Both methods end up in the same place (ExtensionManager)
+manager.register('spells', [{
+  id: 'frost_breath',
+  name: 'Frost Breath',
+  level: 3,
+  school: 'Evocation',
+  casting_time: '1 action',
+  range: '30 ft cone',
+  components: ['V', 'S'],
+  duration: 'Instantaneous',
+  description: 'Exhale freezing cold...',
+  classes: ['Wizard', 'Sorcerer'],
+  source: 'custom'
+}]);
+
+// ===== QUERY SPELLS =====
 // Query spells by level, school, or class
 const fifthLevelSpells = spellRegistry.getSpellsByLevel(5);
 const evocationSpells = spellRegistry.getSpellsBySchool('Evocation');

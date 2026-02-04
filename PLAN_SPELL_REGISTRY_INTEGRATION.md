@@ -270,17 +270,18 @@ const { getSpellSlotsForClass } = require('../../utils/constants.js');
 
 ---
 
-#### Task 3.1: Update EXTENSIBILITY_GUIDE.md
+#### Task 3.1: Update EXTENSIBILITY_GUIDE.md ✅
 
 **Lines 481-483** — incorrect SpellRegistry usage example
 
 **Current example shows direct SpellRegistry registration (will work, but should clarify pattern):**
 
-- [ ] Update example to show both ways work:
+- [x] Update example to show both ways work:
   - Way 1: `ExtensionManager.register('spells', [...])` — direct
   - Way 2: `SpellRegistry.registerSpell(...)` — convenience wrapper
-- [ ] Add note: "SpellRegistry is a convenience wrapper around ExtensionManager"
-- [ ] Clarify: Both methods end up in the same place (ExtensionManager)
+- [x] Add note: "SpellRegistry is a convenience wrapper around ExtensionManager"
+- [x] Clarify: Both methods end up in the same place (ExtensionManager)
+- [x] Removed obsolete `initializeDefaults()` call (method no longer exists)
 
 **Recommended example:**
 ```typescript
@@ -300,8 +301,15 @@ const evocationSpells = registry.getSpellsBySchool('Evocation');
 ```
 
 **Verification:**
-- [ ] Example code compiles
-- [ ] Both patterns documented
+- [x] Example code compiles
+- [x] Both patterns documented
+- [x] Build passes without errors
+
+**Summary:** Updated the Spell Registry section in EXTENSIBILITY_GUIDE.md (lines 474-530) to:
+1. Add note that SpellRegistry is a convenience wrapper around ExtensionManager
+2. Show both registration patterns (direct ExtensionManager vs SpellRegistry)
+3. Remove the obsolete `initializeDefaults()` call
+4. Clarify that both methods end up in the same place
 
 ---
 
@@ -428,8 +436,17 @@ const evocationSpells = registry.getSpellsBySchool('Evocation');
 - Removed obsolete methods (initializeDefaults, reset, isInitialized, unregisterSpell, exportRegistry)
 - TypeScript compiles successfully
 
-**Phase 2: ⏳ PENDING** - Update Tests
-**Phase 3: ⏳ PENDING** - Update Documentation
+**Phase 2: ✅ COMPLETE** - Update Tests
+- Updated existing SpellRegistry tests to verify delegation to ExtensionManager
+- Added 5 new integration tests for SpellRegistry/ExtensionManager interaction
+- All tests pass (837 passing)
+
+**Phase 3: ⏳ IN PROGRESS** - Update Documentation
+- [x] Task 3.1: Update EXTENSIBILITY_GUIDE.md
+- [ ] Task 3.2: Update DATA_ENGINE_REFERENCE.md
+- [ ] Task 3.3: Update USAGE_IN_OTHER_PROJECTS.md
+- [ ] Task 3.4: Audit Other Documentation
+
 **Phase 4: ⏳ PENDING** - Final Verification
 
 ---
