@@ -78,7 +78,7 @@ export class FeatureRegistry {
      * This ensures that FeatureRegistry's cached data is refreshed to reflect
      * the current state of ExtensionManager.
      */
-    private invalidateCache(): void {
+    invalidateCache(): void {
         this.allClassFeaturesCache = null;
         this.classFeaturesIndex = null;
     }

@@ -734,13 +734,19 @@ export class ExtensionManager {
         this.extensions.delete(category);
         this.customWeights.delete(category);
 
-        // Reset FeatureRegistry when feature categories are reset
-        if (category === 'classFeatures' || category.startsWith('classFeatures.') ||
-            category === 'racialTraits' || category.startsWith('racialTraits.')) {
+        // Invalidate FeatureRegistry cache when class features are reset
+        if (category === 'classFeatures' || category.startsWith('classFeatures.')) {
+            // FeatureRegistry is a convenience wrapper that reads from ExtensionManager
+            // Invalidate cache to ensure fresh data on next access
+            FeatureRegistry.getInstance().invalidateCache();
+        }
+
+        // Reset racial trait internal storage when racial traits are reset
+        // Note: Racial traits still use internal storage in FeatureRegistry (to be refactored in Phase 9)
+        if (category === 'racialTraits' || category.startsWith('racialTraits.')) {
             void FeatureRegistry.getInstance();
-            // Note: We don't fully reset the registry as it would remove default features
-            // Custom features can be distinguished by source: 'custom' property
-            // Full reset would require tracking which custom features were registered via ExtensionManager
+            // Note: We don't fully reset the registry as it would remove default traits
+            // Racial traits have internal storage that will be migrated to ExtensionManager in Phase 9
         }
 
         // Note: SkillRegistry is a convenience wrapper that reads from ExtensionManager
