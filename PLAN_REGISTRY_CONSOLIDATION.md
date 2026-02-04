@@ -344,12 +344,22 @@ All examples now show ExtensionManager.register('skills', [...]) as the recommen
 ### Task 4.2: Update DATA_ENGINE_REFERENCE.md
 
 **Update SkillRegistry section:**
-- [ ] Update section intro: "SkillRegistry is a convenience wrapper around ExtensionManager"
-- [ ] Update method docs: "Reads from ExtensionManager with caching"
-- [ ] Remove documentation for removed methods (registerSkill, initializeDefaults, reset, etc.)
+- [x] Update section intro: "SkillRegistry is a convenience wrapper around ExtensionManager"
+- [x] Update method docs: "Reads from ExtensionManager with caching"
+- [x] Remove documentation for removed methods (registerSkill, initializeDefaults, reset, etc.)
 
 **Verification:**
-- [ ] Documentation matches implementation
+- [x] Documentation matches implementation
+
+**Summary:**
+Updated the SkillRegistry section in DATA_ENGINE_REFERENCE.md (lines 4639-4772) to reflect the new convenience wrapper pattern:
+1. Updated section intro to emphasize "Convenience wrapper around ExtensionManager"
+2. Added Architecture section explaining the design pattern
+3. Removed documentation for removed methods: initializeDefaults(), reset(), isInitialized(), exportRegistry(), unregisterSkill()
+4. Added documentation for new invalidateCache() method
+5. Updated method descriptions to clarify delegation to ExtensionManager or caching behavior
+6. Added notes on registration patterns and initialization
+7. Also updated SpellRegistry section (line 4908) to remove the outdated "Unlike SkillRegistry/FeatureRegistry" comparison
 
 ---
 

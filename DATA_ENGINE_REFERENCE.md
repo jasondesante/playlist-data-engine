@@ -4640,23 +4640,28 @@ interface WeightedSelectionOptions {
 
 **Location:** `src/core/skills/SkillRegistry.ts`
 
-Singleton registry for managing character skills with prerequisite validation and ability score associations.
+**Convenience wrapper** around ExtensionManager for managing character skills with prerequisite validation and ability score associations.
+
+**Architecture:** SkillRegistry provides a convenient API that delegates to ExtensionManager as the single source of truth. All skills are stored in ExtensionManager; SkillRegistry provides:
+- Registration methods that delegate to `ExtensionManager.register('skills', [...])`
+- Query methods that read from ExtensionManager with caching for performance
+- Skill-related helper methods (prerequisite validation, ability/category filtering, etc.)
+
+**Design principle:** No duplicate storage. All data lives in ExtensionManager.
 
 ```typescript
 class SkillRegistry {
     // Instance Management
     static getInstance(): SkillRegistry
 
-    // Initialization
-    initializeDefaults(defaultSkills?: CustomSkill[]): void
-    reset(): void
-    isInitialized(): boolean
+    // Cache Management
+    invalidateCache(): void
 
-    // Registration
+    // Registration (delegates to ExtensionManager)
     registerSkill(skill: CustomSkill): void
     registerSkills(skills: CustomSkill[]): void
 
-    // Retrieval
+    // Retrieval (reads from ExtensionManager with caching)
     getSkill(id: string): CustomSkill | undefined
     getAllSkills(): CustomSkill[]
     getSkillsByAbility(ability: Ability): CustomSkill[]
@@ -4665,7 +4670,7 @@ class SkillRegistry {
     getSkillsBySource(source: 'default' | 'custom'): CustomSkill[]
     getAvailableSkills(character: CharacterSheet): CustomSkill[]
 
-    // Validation
+    // Validation (delegates to SkillValidator)
     validatePrerequisites(skill: CustomSkill, character: CharacterSheet): SkillValidationResult
     validateSkill(skill: CustomSkill): SkillValidationResult
 
@@ -4673,12 +4678,6 @@ class SkillRegistry {
     isValidSkill(id: string): boolean
     getSkillCount(): number
     getRegistryStats(): SkillRegistryStats
-
-    // Export/Import
-    exportRegistry(): CustomSkill[]
-
-    // Unregister (primarily for testing)
-    unregisterSkill(id: string): boolean
 }
 
 type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
@@ -4751,25 +4750,34 @@ interface SkillSelectionWeights {
 | Method | Parameters | Returns | Description |
 |--------|-----------|---------|-------------|
 | `getInstance()` | - | `SkillRegistry` | Returns singleton instance |
-| `initializeDefaults()` | `defaultSkills?` | `void` | Load default skills (uses DEFAULT_SKILLS if not provided) |
-| `reset()` | - | `void` | Clear all custom data, reload defaults |
-| `isInitialized()` | - | `boolean` | Check if registry has been initialized |
-| `registerSkill()` | `skill` | `void` | Register single custom skill |
-| `registerSkills()` | `skills[]` | `void` | Register multiple custom skills |
+| `invalidateCache()` | - | `void` | Clear all caches (call after direct ExtensionManager manipulation) |
+| `registerSkill()` | `skill` | `void` | Register single custom skill (delegates to ExtensionManager) |
+| `registerSkills()` | `skills[]` | `void` | Register multiple custom skills (delegates to ExtensionManager) |
 | `getSkill()` | `id` | `CustomSkill \| undefined` | Get skill by ID |
-| `getAllSkills()` | - | `CustomSkill[]` | Get all registered skills |
-| `getSkillsByAbility()` | `ability` | `CustomSkill[]` | Get skills for specific ability |
-| `getSkillsByCategory()` | `category` | `CustomSkill[]` | Get skills in a specific category |
-| `getCategories()` | - | `string[]` | Get all categories in use |
+| `getAllSkills()` | - | `CustomSkill[]` | Get all registered skills (reads from ExtensionManager with caching) |
+| `getSkillsByAbility()` | `ability` | `CustomSkill[]` | Get skills for specific ability (builds index from EM data with caching) |
+| `getSkillsByCategory()` | `category` | `CustomSkill[]` | Get skills in a specific category (builds index from EM data with caching) |
+| `getCategories()` | - | `string[]` | Get all categories in use (derived from EM data) |
 | `getSkillsBySource()` | `source` | `CustomSkill[]` | Get skills by source (default or custom) |
 | `getAvailableSkills()` | `character` | `CustomSkill[]` | Get skills character can learn (prerequisites met) |
-| `validatePrerequisites()` | `skill`, `character` | `SkillValidationResult` | Validate skill prerequisites against character |
-| `validateSkill()` | `skill` | `SkillValidationResult` | Validate skill data structure |
+| `validatePrerequisites()` | `skill`, `character` | `SkillValidationResult` | Validate skill prerequisites (delegates to SkillValidator) |
+| `validateSkill()` | `skill` | `SkillValidationResult` | Validate skill data structure (delegates to SkillValidator) |
 | `isValidSkill()` | `id` | `boolean` | Check if skill ID exists in registry |
 | `getSkillCount()` | - | `number` | Get total skill count |
 | `getRegistryStats()` | - | `SkillRegistryStats` | Get statistics about registered skills |
-| `exportRegistry()` | - | `CustomSkill[]` | Export all registered skills as JSON |
-| `unregisterSkill()` | `id` | `boolean` | Remove skill by ID (primarily for testing) |
+
+**Note on Registration:**
+
+Two ways to register skills (both store data in ExtensionManager):
+1. `ExtensionManager.getInstance().register('skills', [skillData])` — direct
+2. `SkillRegistry.getInstance().registerSkill(skillData)` — convenience wrapper
+
+**Note on Initialization:**
+
+Default skills are initialized via ExtensionManager:
+```typescript
+ExtensionManager.getInstance().initializeDefaults('skills', DEFAULT_SKILLS)
+```
 
 ---
 
@@ -4897,7 +4905,7 @@ Spells can have prerequisites that must be met before a spellcaster can learn th
 - Query methods that read from ExtensionManager with caching for performance
 - Spell-related helper methods (prerequisite validation, class spell lists, etc.)
 
-**Design principle:** No duplicate storage. Unlike SkillRegistry/FeatureRegistry, SpellRegistry does not maintain its own copy of data. All data lives in ExtensionManager.
+**Design principle:** No duplicate storage. All three registries (SpellRegistry, SkillRegistry, FeatureRegistry) follow the same pattern: they do not maintain their own copy of data. All data lives in ExtensionManager.
 
 ```typescript
 class SpellRegistry {
