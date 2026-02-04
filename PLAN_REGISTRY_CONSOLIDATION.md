@@ -508,16 +508,19 @@ registerClassFeature(feature: ClassFeature): void {
 ### Task 6.3: Update initializeDefaults() for Class Features Only
 
 **Modify `initializeDefaults()` to only handle racial traits:**
-- [ ] Remove `defaultClassFeatures` parameter
-- [ ] Remove class feature registration logic
-- [ ] Keep racial trait initialization (for Phase 9)
+- [x] Remove `defaultClassFeatures` parameter
+- [x] Remove class feature registration logic
+- [x] Keep racial trait initialization (for Phase 9)
 
 **Update callers:**
-- [ ] Find calls with classFeatures argument
-- [ ] Replace with `ExtensionManager.getInstance().initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES)`
+- [x] Find calls with classFeatures argument
+- [x] Replace with `ExtensionManager.getInstance().initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES)`
 
 **Verification:**
-- [ ] No classFeatures passed to FeatureRegistry.initializeDefaults()
+- [x] No classFeatures passed to FeatureRegistry.initializeDefaults()
+
+**Summary:**
+Updated `FeatureRegistry.initializeDefaults()` to only accept `defaultRacialTraits` parameter. Class features are now initialized exclusively via `ExtensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES)`. All test callers were updated to properly initialize ExtensionManager before initializing FeatureRegistry with racial traits.
 
 ---
 
