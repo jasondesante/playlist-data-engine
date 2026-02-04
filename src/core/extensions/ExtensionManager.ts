@@ -15,9 +15,7 @@
 
 import type { Race, Class, Ability } from '../types/Character.js';
 import { DEFAULT_CLASSES, DEFAULT_RACES } from '../types/Character.js';
-import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
 import { FeatureValidator } from '../features/FeatureValidator.js';
-import type { CustomSkill } from '../skills/SkillTypes.js';
 import { SkillValidator } from '../skills/SkillValidator.js';
 import { SpellValidator } from '../spells/SpellValidator.js';
 import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
@@ -305,23 +303,6 @@ export class ExtensionManager {
             this.customWeights.set(category, { ...existingWeights, ...weights });
         }
 
-        // Note: FeatureRegistry is a convenience wrapper that reads from ExtensionManager
-        // We no longer delegate to FeatureRegistry for class features or racial traits since they delegate to EM
-        // This prevents circular dependency:
-        // - FeatureRegistry.registerClassFeatures() → EM.register() → FeatureRegistry
-        // - FeatureRegistry.registerRacialTraits() → EM.register() → FeatureRegistry
-
-        // Note: SkillRegistry is a convenience wrapper that reads from ExtensionManager
-        // We no longer delegate to SkillRegistry since it reads from EM directly
-        // This prevents circular dependency: SkillRegistry.registerSkills() → EM.register() → SkillRegistry
-
-        // Handle skill lists (class-specific skill lists)
-        // Skill lists are stored directly in ExtensionManager without registry integration
-        // They are used by SkillAssigner to determine available skills per class
-        if (category.startsWith('skillLists.') || category === 'skillLists') {
-            // Skill lists are stored directly - no registry integration needed
-            // They will be retrieved by SkillAssigner via manager.get()
-        }
     }
 
     /**
@@ -713,7 +694,6 @@ export class ExtensionManager {
         this.extensions.delete(category);
         this.customWeights.delete(category);
 
-        // Note: FeatureRegistry and SkillRegistry are convenience wrappers that read from ExtensionManager
         // Cache invalidation is handled by users calling registry.invalidateCache() if needed
     }
 
