@@ -249,7 +249,7 @@ import { StatManager, CharacterUpdater, CharacterGenerator } from 'playlist-data
 const standardCharacter = CharacterGenerator.generate(
     seed,
     audioProfile,
-    'Hero',
+    track,
     { gameMode: 'standard' }  // Optional, this is the default
 );
 
@@ -258,7 +258,7 @@ const standardCharacter = CharacterGenerator.generate(
 const uncappedCharacter = CharacterGenerator.generate(
     seed,
     audioProfile,
-    'Epic Hero',
+    track,
     { gameMode: 'uncapped' }
 );
 
@@ -416,11 +416,11 @@ const customUpdater = new CharacterUpdater(customStatManager);
 
 ```typescript
 // Standard mode (D&D 5e rules)
-const standard = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'standard' });
+const standard = CharacterGenerator.generate(seed, audioProfile, track, { gameMode: 'standard' });
 // Stats capped at 20, stat increases at levels 4, 8, 12, 16, 19
 
 // Uncapped mode (epic progression - unlimited levels)
-const uncapped = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'uncapped' });
+const uncapped = CharacterGenerator.generate(seed, audioProfile, track, { gameMode: 'uncapped' });
 // No stat cap, stat increases EVERY level (unlimited)
 // Level 2, 3, 4... and beyond give +2 to one stat (or +1 to two)
 ```
@@ -501,7 +501,7 @@ import { CharacterGenerator, LevelUpProcessor } from 'playlist-data-engine';
 const character = CharacterGenerator.generate(
     seed,
     audioProfile,
-    'Epic Hero',
+    track,
     { gameMode: 'uncapped' }
 );
 
@@ -534,7 +534,7 @@ LevelUpProcessor.setUncappedConfig({
 const character = CharacterGenerator.generate(
     seed,
     audioProfile,
-    'Custom Hero',
+    track,
     { gameMode: 'uncapped' }
 );
 
@@ -555,7 +555,7 @@ LevelUpProcessor.setUncappedConfig({
     proficiencyBonusFormula: (level) => 2 + Math.floor(Math.sqrt(level))
 });
 
-const character = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'uncapped' });
+const character = CharacterGenerator.generate(seed, audio, track, { gameMode: 'uncapped' });
 
 // Level 1: 1,000 XP
 // Level 2: 1,500 XP

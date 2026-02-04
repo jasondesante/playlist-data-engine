@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ExtensionManager } from '../../src/core/extensions';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator';
-import { sampleAudioProfile } from '../fixtures/sampleData';
+import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 
 describe('Integration: ValidationManager', () => {
     let manager: ExtensionManager;
@@ -274,11 +274,7 @@ describe('Integration: ValidationManager', () => {
 
             // Generate a character - should not throw
             expect(() => {
-                const character = CharacterGenerator.generate(
-                    'test-seed-validation-1',
-                    sampleAudioProfile,
-                    'Test Character'
-                );
+                const character = CharacterGenerator.generate('test-seed-validation-1', sampleAudioProfile, sampleTrack);
 
                 // Verify character was generated successfully
                 expect(character).toBeDefined();

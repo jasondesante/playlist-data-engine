@@ -20,7 +20,7 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { EquipmentGenerator } from '../../src/core/generation/EquipmentGenerator';
 import { WeightedSelector } from '../../src/core/extensions/WeightedSelector';
 import { SeededRNG } from '../../src/utils/random.js';
-import { sampleAudioProfile } from '../fixtures/sampleData';
+import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 
 describe('Integration: Edge Cases', () => {
     let manager: ExtensionManager;
@@ -587,11 +587,7 @@ describe('Integration: Edge Cases', () => {
     describe('Complex edge cases', () => {
         it('should handle registering custom data after generating characters', () => {
             // Generate character with defaults
-            const character1 = CharacterGenerator.generate(
-                'test-before-custom',
-                sampleAudioProfile,
-                'Character 1'
-            );
+            const character1 = CharacterGenerator.generate('test-before-custom', sampleAudioProfile, sampleTrack);
 
             // Now register custom data
             const customEquipment = [
@@ -601,11 +597,7 @@ describe('Integration: Edge Cases', () => {
             manager.register('equipment', customEquipment);
 
             // Generate another character
-            const character2 = CharacterGenerator.generate(
-                'test-after-custom',
-                sampleAudioProfile,
-                'Character 2'
-            );
+            const character2 = CharacterGenerator.generate('test-after-custom', sampleAudioProfile, sampleTrack);
 
             // Custom equipment should be available
             const allEquipment = manager.get('equipment');

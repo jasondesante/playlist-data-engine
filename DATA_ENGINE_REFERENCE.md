@@ -1514,7 +1514,7 @@ class CharacterGenerator {
     static generate(
         seed: string,
         audioProfile: AudioProfile,
-        name: string,
+        track: PlaylistTrack,
         options?: CharacterGeneratorOptions
     ): CharacterSheet
 }
@@ -1525,6 +1525,8 @@ interface CharacterGeneratorOptions {
     forceRace?: Race;            // Override the race selection
     subrace?: string | 'pure';   // Subrace selection (see below)
     gameMode?: GameMode;         // Game mode for stat progression. Default: 'standard'
+    forceName?: string;          // Override automatic name generation with custom name
+    deterministicName?: boolean; // Generate deterministic names (same seed = same name). Default: true
     extensions?: CharacterGeneratorExtensions;  // Custom extensions for procedural generation
 }
 
@@ -1597,12 +1599,14 @@ type ProficiencyLevel = 0 | 0.5 | 1 | 2;  // None, Half-proficiency, Proficient,
 |-----------|------|-------------|
 | `seed` | `string` | Unique string (e.g., track ID) to ensure deterministic results |
 | `audioProfile` | `AudioProfile` | The audio analysis result (frequency, amplitude data) |
-| `name` | `string` | Character name |
+| `track` | `PlaylistTrack` | Track metadata (title, artist, genre) for automatic name generation |
 | `options.level` | `number` | Starting level (1-20). Default: `1` |
 | `options.forceClass` | `Class` | Override the suggested class from audio analysis |
 | `options.forceRace` | `Race` | Override race selection (required when specifying subrace) |
 | `options.subrace` | `string \| 'pure'` | Subrace selection (see below) |
 | `options.gameMode` | `'standard' \| 'uncapped'` | Game mode for stat progression. Default: `'standard'` |
+| `options.forceName` | `string` | Force a specific name for the character |
+| `options.deterministicName` | `boolean` | Generate deterministic names (same seed = same name). Default: `true` |
 
 **Subrace Options:**
 
@@ -1734,15 +1738,28 @@ Generates visual traits.
 
 **Location:** `src/core/generation/NamingEngine.ts`
 
-Generates RPG-style names from track metadata.
+**Note:** Internal API - automatically called by `CharacterGenerator.generate()`. Names are generated automatically based on track metadata, audio characteristics, and character class.
 
-- `generateName(track: PlaylistTrack, audioProfile: AudioProfile, deterministic: boolean): string`
-    - **Formats:**
-        - Class Title: "Sonic Bard"
-        - Adjective Construct: "Midnight Echoes"
-        - Clan Construct: "Harmonix Collective"
+Generates RPG-style character names from track metadata using 7 different naming formats with weighted distribution (20-20-10-20-15-10-5).
+
+- `generateName(seed: string, track: PlaylistTrack, audioProfile: AudioProfile, characterClass: Class, deterministic?: boolean): string`
+    - **Parameters:**
+        - `seed`: Random seed (from CharacterGenerator)
+        - `track`: Track metadata (title, artist, genre)
+        - `audioProfile`: Audio characteristics (light influence via weights)
+        - `characterClass`: Actual D&D character class
+        - `deterministic`: If true, same seed = same name (default: false)
+    - **Naming Formats (with distribution):**
+        - **20%** Class Title: "Midnight Dreams the Wizard"
+        - **20%** Adjective Construct: "Hypnotic Midnight Dreams"
+        - **10%** Clan Construct: "Midnight Dreams of Daft Punk"
+        - **20%** Descriptive Epithet: "Midnight Dreams, the Swift Sage"
+        - **15%** Compound Adjective: "Thunder-Blessed Midnight Dreams"
+        - **10%** Artist-Inspired: "Daftsmith of the Crystal Spire"
+        - **5%** Mononym Subtitle: "Midnight [Dreams Eternal]"
+    - **Design principle:** Audio characteristics provide ~50% influence through weighted selection, random choice provides ~50% influence
 - `cleanTitle(title: string): string`
-    - Removes "(Official Video)", "ft.", etc.
+    - Removes "(Official Video)", "[Remix]", "ft.", track numbers, file extensions, etc.
 
 ---
 
@@ -2021,7 +2038,7 @@ When using manual mode (standard gameMode or `dnD5e` strategy), level-ups become
 import { CharacterUpdater } from 'playlist-data-engine';
 
 // Standard mode (capped) defaults to manual stat selection
-const character = CharacterGenerator.generate(seed, audio, 'Hero', { gameMode: 'standard' });
+const character = CharacterGenerator.generate(seed, audio, track, { gameMode: 'standard' });
 const updater = new CharacterUpdater(); // No StatManager needed - auto-detected!
 
 // Step 1: Add XP - triggers level-up but PAUSES before stats
@@ -2572,7 +2589,7 @@ The engine supports two game modes for character progression:
 const character = CharacterGenerator.generate(
     seed,
     audioProfile,
-    'Hero',
+    track,
     { gameMode: 'standard' }
 );
 
@@ -2580,7 +2597,7 @@ const character = CharacterGenerator.generate(
 const epicCharacter = CharacterGenerator.generate(
     seed,
     audioProfile,
-    'Epic Hero',
+    track,
     { gameMode: 'uncapped' }
 );
 ```

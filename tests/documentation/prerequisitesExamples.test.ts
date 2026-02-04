@@ -12,7 +12,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SkillRegistry, FeatureRegistry, ExtensionManager, SkillValidator, SpellValidator, CharacterGenerator } from '../../src/index';
-import type { CustomSkill, Spell, ClassFeature } from '../../src/index';
+import type { CustomSkill, Spell, ClassFeature, PlaylistTrack } from '../../src/index';
 
 describe('PREREQUISITES.md Code Examples', () => {
     let skillRegistry: SkillRegistry;
@@ -26,6 +26,24 @@ describe('PREREQUISITES.md Code Examples', () => {
         treble_dominance: 0.5,
         average_amplitude: 0.5,
         spectral_centroid: 0.5
+    };
+
+    // Mock track for character generation
+    const mockTrack: PlaylistTrack = {
+        title: 'Test Song',
+        artist: 'Test Artist',
+        genre: 'Rock',
+        id: 'test-1',
+        uuid: 'test-uuid-1',
+        playlist_index: 0,
+        chain_name: 'eth',
+        token_address: '0x0',
+        token_id: '1',
+        platform: 'sound',
+        image_url: 'https://example.com/image.jpg',
+        audio_url: 'https://example.com/audio.mp3',
+        duration: 180,
+        tags: ['rock', 'test']
     };
 
     beforeEach(() => {
@@ -91,7 +109,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             const qualifiedCharacter = CharacterGenerator.generate(
                 'test-seed',
                 mockAudioProfile,
-                'Test Sorcerer',
+                mockTrack,
                 {
                     forceClass: 'Sorcerer',
                     level: 5
@@ -133,7 +151,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             const unqualifiedCharacter = CharacterGenerator.generate(
                 'test-seed',
                 mockAudioProfile,
-                'Test Wizard',
+                mockTrack,
                 {
                     forceClass: 'Wizard',  // Wrong class
                     level: 10  // High enough level but wrong class
@@ -203,7 +221,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             const qualifiedCharacter = CharacterGenerator.generate(
                 'test-seed',
                 mockAudioProfile,
-                'Test Sorcerer',
+                mockTrack,
                 {
                     forceClass: 'Sorcerer'
                 }
@@ -246,7 +264,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             const unqualifiedCharacter = CharacterGenerator.generate(
                 'test-seed',
                 mockAudioProfile,
-                'Test Sorcerer',
+                mockTrack,
                 {
                     forceClass: 'Sorcerer'
                 }
@@ -320,7 +338,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             const qualifiedCharacter = CharacterGenerator.generate(
                 'test-seed',
                 mockAudioProfile,
-                'Test Wizard',
+                mockTrack,
                 {
                     forceClass: 'Wizard',
                     level: 10
@@ -358,7 +376,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             const unqualifiedCharacter = CharacterGenerator.generate(
                 'test-seed',
                 mockAudioProfile,
-                'Test Wizard',
+                mockTrack,
                 {
                     forceClass: 'Wizard',
                     level: 10
@@ -396,7 +414,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             const qualifiedCharacter = CharacterGenerator.generate(
                 'test-seed',
                 mockAudioProfile,
-                'Test Wizard',
+                mockTrack,
                 {
                     forceClass: 'Wizard',
                     level: 10

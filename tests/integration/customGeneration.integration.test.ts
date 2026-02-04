@@ -12,7 +12,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
-import { sampleAudioProfile } from '../fixtures/sampleData';
+import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 
 describe('Integration: Custom Data Generation', () => {
     let manager: ExtensionManager;

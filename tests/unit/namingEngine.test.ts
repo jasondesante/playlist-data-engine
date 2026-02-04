@@ -2,11 +2,14 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { NamingEngine } from '../../src/core/generation/NamingEngine';
 import { PlaylistTrack } from '../../src/core/types/Playlist';
 import { AudioProfile } from '../../src/core/types/AudioProfile';
+import { asClass } from '../../src/core/types/Character';
 
 describe('NamingEngine', () => {
     let engine: NamingEngine;
     let mockTrack: PlaylistTrack;
     let mockAudio: AudioProfile;
+    const testSeed = 'test-seed-123';
+    const testClass = asClass('Wizard');
 
     beforeEach(() => {
         engine = new NamingEngine();
@@ -68,7 +71,7 @@ describe('NamingEngine', () => {
 
     describe('generateName', () => {
         it('should generate valid names', () => {
-            const name = engine.generateName(mockTrack, mockAudio);
+            const name = engine.generateName(testSeed, mockTrack, mockAudio, testClass);
             expect(typeof name).toBe('string');
             expect(name.length).toBeGreaterThan(0);
         });
@@ -76,14 +79,14 @@ describe('NamingEngine', () => {
         it('should use correct adjective for high bass', () => {
             mockTrack.genre = 'Techno';
             mockAudio.bass_dominance = 0.8;
-            const name = engine.generateName(mockTrack, mockAudio);
+            const name = engine.generateName(testSeed, mockTrack, mockAudio, testClass);
             expect(name).toBeTruthy();
         });
 
         it('should generate different names by default (non-deterministic)', () => {
-            const name1 = engine.generateName(mockTrack, mockAudio);
-            const name2 = engine.generateName(mockTrack, mockAudio);
-            const name3 = engine.generateName(mockTrack, mockAudio);
+            const name1 = engine.generateName(testSeed, mockTrack, mockAudio, testClass);
+            const name2 = engine.generateName(testSeed, mockTrack, mockAudio, testClass);
+            const name3 = engine.generateName(testSeed, mockTrack, mockAudio, testClass);
 
             // At least one should be different (very high probability)
             const allSame = name1 === name2 && name2 === name3;
@@ -91,36 +94,48 @@ describe('NamingEngine', () => {
         });
 
         it('should generate same name when deterministic is true', () => {
-            const name1 = engine.generateName(mockTrack, mockAudio, true);
-            const name2 = engine.generateName(mockTrack, mockAudio, true);
-            const name3 = engine.generateName(mockTrack, mockAudio, true);
+            const name1 = engine.generateName(testSeed, mockTrack, mockAudio, testClass, true);
+            const name2 = engine.generateName(testSeed, mockTrack, mockAudio, testClass, true);
+            const name3 = engine.generateName(testSeed, mockTrack, mockAudio, testClass, true);
 
             expect(name1).toBe(name2);
             expect(name2).toBe(name3);
         });
 
-        it('should verify format distribution matches 50/30/20 in deterministic mode', () => {
-            // Test with many UUIDs to verify probabilistic distribution
+        it('should verify format distribution matches 20-20-10-20-15-10-5 in deterministic mode', () => {
+            // Test with many seeds to verify probabilistic distribution
             const distribution = {
                 class_title: 0,
                 adjective_construct: 0,
-                clan_construct: 0
+                clan_construct: 0,
+                descriptive_epithet: 0,
+                compound_adjective: 0,
+                artist_inspired: 0,
+                mononym_subtitle: 0
             };
 
             const iterations = 1000;
 
             for (let i = 0; i < iterations; i++) {
-                const testTrack = { ...mockTrack, uuid: `test-uuid-${i}` };
+                const seed = `test-seed-${i}`;
                 // Use deterministic mode for consistent testing
-                const name = engine.generateName(testTrack, mockAudio, true);
+                const name = engine.generateName(seed, mockTrack, mockAudio, testClass, true);
 
-                // Determine which format was used
-                if (name.includes(' the ')) {
+                // Determine which format was used (order matters - check more specific patterns first)
+                if (name.includes('[')) {
+                    distribution.mononym_subtitle++;
+                } else if (name.includes(', the ')) {
+                    distribution.descriptive_epithet++;
+                } else if (name.includes('-')) {
+                    distribution.compound_adjective++;
+                } else if (name.includes('of the ')) {
+                    distribution.artist_inspired++;
+                } else if (name.includes(' the ')) {
                     distribution.class_title++;
                 } else if (name.includes(' of ')) {
                     distribution.clan_construct++;
                 } else {
-                    // Adjective construct (starts with adjective)
+                    // Adjective construct (remaining format)
                     distribution.adjective_construct++;
                 }
             }
@@ -129,14 +144,27 @@ describe('NamingEngine', () => {
             const classTitle = (distribution.class_title / iterations) * 100;
             const adjective = (distribution.adjective_construct / iterations) * 100;
             const clan = (distribution.clan_construct / iterations) * 100;
+            const descriptive = (distribution.descriptive_epithet / iterations) * 100;
+            const compound = (distribution.compound_adjective / iterations) * 100;
+            const artistInspired = (distribution.artist_inspired / iterations) * 100;
+            const mononym = (distribution.mononym_subtitle / iterations) * 100;
 
-            // Allow ±5% margin of error
-            expect(classTitle).toBeGreaterThan(45);
-            expect(classTitle).toBeLessThan(55);
-            expect(adjective).toBeGreaterThan(25);
-            expect(adjective).toBeLessThan(35);
-            expect(clan).toBeGreaterThan(15);
-            expect(clan).toBeLessThan(25);
+            // Allow ±5% margin of error for each format
+            // Expected: 20-20-10-20-15-10-5
+            expect(classTitle).toBeGreaterThan(15);
+            expect(classTitle).toBeLessThan(25);
+            expect(adjective).toBeGreaterThan(15);
+            expect(adjective).toBeLessThan(25);
+            expect(clan).toBeGreaterThan(5);
+            expect(clan).toBeLessThan(15);
+            expect(descriptive).toBeGreaterThan(15);
+            expect(descriptive).toBeLessThan(25);
+            expect(compound).toBeGreaterThan(10);
+            expect(compound).toBeLessThan(20);
+            expect(artistInspired).toBeGreaterThan(5);
+            expect(artistInspired).toBeLessThan(15);
+            expect(mononym).toBeGreaterThan(0);
+            expect(mononym).toBeLessThan(10);
         });
     });
 });

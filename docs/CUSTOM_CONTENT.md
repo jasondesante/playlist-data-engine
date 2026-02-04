@@ -219,7 +219,7 @@ manager.register('racialTraits', [{
 }]);
 
 // ===== GENERATE CHARACTER WITH SUBRACE =====
-const character = CharacterGenerator.generate(seed, audioProfile, 'Pyro');
+const character = CharacterGenerator.generate(seed, audioProfile, track);
 // After generation, set the subrace
 character.subrace = 'Fire Dragonkin';
 
@@ -600,7 +600,7 @@ manager.register('classStartingEquipment.Runecaster', [{
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name'
+    track
 );
 ```
 

@@ -275,11 +275,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
             // Step 2: Character generation using the audio profile
             // Note: Use a different seed for character generation to demonstrate
             // that the pipeline flows from audio profile to class to character
-            const character = CharacterGenerator.generate(
-                'test-pipeline-character-seed',
-                audioProfile,
-                'Pipeline Test Character'
-            );
+            const character = CharacterGenerator.generate('test-pipeline-character-seed', audioProfile, sampleTrack);
 
             // Verify character was generated successfully
             expect(character).toBeDefined();
@@ -317,8 +313,8 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
 
             const seed = 'deterministic-test-seed';
 
-            const char1 = CharacterGenerator.generate(seed, audioProfile, 'Test 1');
-            const char2 = CharacterGenerator.generate(seed, audioProfile, 'Test 2');
+            const char1 = CharacterGenerator.generate(seed, audioProfile, sampleTrack);
+            const char2 = CharacterGenerator.generate(seed, audioProfile, sampleTrack);
 
             // Same seed + audio profile should produce identical characters (except name)
             expect(char1.class).toBe(char2.class);
@@ -342,11 +338,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
                     const audioProfile = createAudioProfile(genre);
                     const seed = `phase10-genre-${round}-${genre.name}`;
 
-                    const character = CharacterGenerator.generate(
-                        seed,
-                        audioProfile,
-                        `${genre.name} Character ${round + 1}`
-                    );
+                    const character = CharacterGenerator.generate(seed, audioProfile, sampleTrack);
 
                     allClasses.push(character.class);
                     classCounts.set(character.class, (classCounts.get(character.class) || 0) + 1);
@@ -406,11 +398,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
                     const audioProfile = createAudioProfile(genre);
                     const seed = `balanced-dist-${round}-${genre.name}`;
 
-                    const character = CharacterGenerator.generate(
-                        seed,
-                        audioProfile,
-                        'Balanced Test'
-                    );
+                    const character = CharacterGenerator.generate(seed, audioProfile, sampleTrack);
 
                     classCounts.set(character.class, (classCounts.get(character.class) || 0) + 1);
                     totalGenerated++;
@@ -455,11 +443,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
                 const audioProfile = createAudioProfile(genre);
                 const seed = `baseline-verify-${i}`;
 
-                const character = CharacterGenerator.generate(
-                    seed,
-                    audioProfile,
-                    'Baseline Test'
-                );
+                const character = CharacterGenerator.generate(seed, audioProfile, sampleTrack);
 
                 classCounts.set(character.class, (classCounts.get(character.class) || 0) + 1);
             }
@@ -531,7 +515,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
             for (const profile of extremeProfiles) {
                 for (let i = 0; i < trials; i++) {
                     const seed = `extreme-baseline-${profile.bass_dominance}-${profile.mid_dominance}-${profile.treble_dominance}-${i}`;
-                    const character = CharacterGenerator.generate(seed, profile, 'Extreme Test');
+                    const character = CharacterGenerator.generate(seed, profile, sampleTrack);
                     allClassCounts.set(character.class, (allClassCounts.get(character.class) || 0) + 1);
                 }
             }
@@ -811,11 +795,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
                 },
             };
 
-            const character = CharacterGenerator.generate(
-                'all-bass-test',
-                allBassProfile,
-                'All Bass Test'
-            );
+            const character = CharacterGenerator.generate('all-bass-test', allBassProfile, sampleTrack);
 
             // Verify character is valid
             expect(character).toBeDefined();
@@ -841,11 +821,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
                 },
             };
 
-            const character = CharacterGenerator.generate(
-                'all-treble-test',
-                allTrebleProfile,
-                'All Treble Test'
-            );
+            const character = CharacterGenerator.generate('all-treble-test', allTrebleProfile, sampleTrack);
 
             expect(character).toBeDefined();
             expect(character.class).toBeDefined();
@@ -869,11 +845,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
                 },
             };
 
-            const character = CharacterGenerator.generate(
-                'all-mid-test',
-                allMidProfile,
-                'All Mid Test'
-            );
+            const character = CharacterGenerator.generate('all-mid-test', allMidProfile, sampleTrack);
 
             expect(character).toBeDefined();
             expect(character.class).toBeDefined();
@@ -897,11 +869,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
                 },
             };
 
-            const character = CharacterGenerator.generate(
-                'max-amp-test',
-                maxAmpProfile,
-                'Max Amplitude Test'
-            );
+            const character = CharacterGenerator.generate('max-amp-test', maxAmpProfile, sampleTrack);
 
             expect(character).toBeDefined();
             expect(character.class).toBeDefined();
@@ -925,11 +893,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
                 },
             };
 
-            const character = CharacterGenerator.generate(
-                'zero-profile-test',
-                zeroProfile,
-                'Zero Profile Test'
-            );
+            const character = CharacterGenerator.generate('zero-profile-test', zeroProfile, sampleTrack);
 
             // Should still generate valid character (baseline ensures all classes possible)
             expect(character).toBeDefined();
@@ -954,11 +918,7 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
                 },
             };
 
-            const character = CharacterGenerator.generate(
-                'max-profile-test',
-                maxProfile,
-                'Max Profile Test'
-            );
+            const character = CharacterGenerator.generate('max-profile-test', maxProfile, sampleTrack);
 
             expect(character).toBeDefined();
             expect(character.class).toBeDefined();

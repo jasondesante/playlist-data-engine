@@ -860,24 +860,113 @@ export const ALL_CLASSES: Class[] = [
 ];
 
 // Adjective mapping for NamingEngine
-export const ADJECTIVE_DATA: Record<string, {
-    bass: string;
-    treble: string;
-    mid: string;
-    quiet: string;
-    loud: string;
-}> = {
-    'techno': { bass: 'Thumping', treble: 'Piercing', mid: 'Driving', quiet: 'Minimal', loud: 'Pounding' },
-    'rock': { bass: 'Heavy', treble: 'Screaming', mid: 'Crunchy', quiet: 'Acoustic', loud: 'Thunderous' },
-    'metal': { bass: 'Brutal', treble: 'Shredding', mid: 'Chugging', quiet: 'Doomed', loud: 'Deafening' },
-    'ambient': { bass: 'Deep', treble: 'Ethereal', mid: 'Whispering', quiet: 'Silent', loud: 'Swelling' },
-    'classical': { bass: 'Grand', treble: 'Soaring', mid: 'Noble', quiet: 'Gentle', loud: 'Majestic' },
-    'jazz': { bass: 'Smooth', treble: 'Bright', mid: 'Swinging', quiet: 'Cool', loud: 'Big' },
-    'hip hop': { bass: 'Bumping', treble: 'Sharp', mid: 'Flowing', quiet: 'Chill', loud: 'Hype' },
-    'pop': { bass: 'Bouncy', treble: 'Sparkling', mid: 'Catchy', quiet: 'Soft', loud: 'Anthemic' },
-    'electronic': { bass: 'Pulsing', treble: 'Glitchy', mid: 'Synthetic', quiet: 'Atmospheric', loud: 'Massive' },
-    'default': { bass: 'Booming', treble: 'Sharp', mid: 'Resonant', quiet: 'Quiet', loud: 'Loud' },
+/**
+ * Centralized naming data for character name generation
+ * Contains adjectives, descriptors, and word pools for various naming formats
+ */
+export const NAMING_DATA = {
+    adjectives: {
+        'techno': {
+            bass: ['Thumping', 'Pulsing', 'Driving', 'Hypnotic', 'Relentless', 'Mechanical', 'Deep'],
+            treble: ['Piercing', 'Synthetic', 'Digital', 'Sharp', 'Glittering', 'Laser'],
+            mid: ['Driving', 'Rhythmic', 'Flowing', 'Seamless', 'Kinetic'],
+            quiet: ['Minimal', 'Sparse', 'Subtle', 'Ambient', 'Whispered'],
+            loud: ['Pounding', 'Overwhelming', 'Massive', 'Explosive', 'Crushing']
+        },
+        'rock': {
+            bass: ['Heavy', 'Rumbling', 'Gritty', 'Raw', 'Crushing', 'Grinding'],
+            treble: ['Screaming', 'Wailing', 'Soaring', 'Piercing', 'Shrill'],
+            mid: ['Crunchy', 'Distorted', 'Overdriven', 'Gritty', 'Aggressive'],
+            quiet: ['Acoustic', 'Stripped', 'Bare', 'Intimate', 'Unplugged'],
+            loud: ['Thunderous', 'Explosive', 'Deafening', 'Roaring', 'Volcanic']
+        },
+        'metal': {
+            bass: ['Brutal', 'Crushing', 'Punishing', 'Merciless', 'Devastating', 'Obliterating'],
+            treble: ['Shredding', 'Screaming', 'Hellish', 'Demonic', 'Piercing'],
+            mid: ['Chugging', 'Grinding', 'Relentless', 'Aggressive', 'Furious'],
+            quiet: ['Doomed', 'Somber', 'Ominous', 'Foreboding', 'Dark'],
+            loud: ['Deafening', 'Apocalyptic', 'Cataclysmic', 'Earth-Shattering', 'Monolithic']
+        },
+        'ambient': {
+            bass: ['Deep', 'Vast', 'Profound', 'Oceanic', 'Cavernous', 'Abyssal'],
+            treble: ['Ethereal', 'Crystalline', 'Shimmering', 'Celestial', 'Gossamer'],
+            mid: ['Whispering', 'Drifting', 'Floating', 'Meandering', 'Breathing'],
+            quiet: ['Silent', 'Hushed', 'Meditative', 'Peaceful', 'Tranquil'],
+            loud: ['Swelling', 'Building', 'Crescendoing', 'Rising', 'Expanding']
+        },
+        'classical': {
+            bass: ['Grand', 'Stately', 'Majestic', 'Regal', 'Noble', 'Profound'],
+            treble: ['Soaring', 'Triumphant', 'Brilliant', 'Radiant', 'Gleaming'],
+            mid: ['Noble', 'Elegant', 'Refined', 'Graceful', 'Poised'],
+            quiet: ['Gentle', 'Delicate', 'Tender', 'Soft', 'Intimate'],
+            loud: ['Majestic', 'Powerful', 'Commanding', 'Heroic', 'Epic']
+        },
+        'jazz': {
+            bass: ['Smooth', 'Groovy', 'Walking', 'Swinging', 'Funky', 'Mellow'],
+            treble: ['Bright', 'Crisp', 'Brilliant', 'Clear', 'Sparkling'],
+            mid: ['Swinging', 'Syncopated', 'Bluesy', 'Soulful', 'Improvisational'],
+            quiet: ['Cool', 'Laid-back', 'Subtle', 'Understated', 'Intimate'],
+            loud: ['Big', 'Bold', 'Brassy', 'Energetic', 'Vibrant']
+        },
+        'hip hop': {
+            bass: ['Bumping', 'Knocking', 'Booming', 'Heavy', 'Fat', 'Deep'],
+            treble: ['Sharp', 'Crisp', 'Cutting', 'Bright', 'Piercing'],
+            mid: ['Flowing', 'Smooth', 'Rhythmic', 'Funky', 'Grooving'],
+            quiet: ['Chill', 'Mellow', 'Lo-fi', 'Smooth', 'Laid-back'],
+            loud: ['Hype', 'Aggressive', 'Hard', 'Explosive', 'Banging']
+        },
+        'pop': {
+            bass: ['Bouncy', 'Punchy', 'Groovy', 'Catchy', 'Upbeat'],
+            treble: ['Sparkling', 'Bright', 'Shimmering', 'Glittering', 'Polished'],
+            mid: ['Catchy', 'Memorable', 'Infectious', 'Singable', 'Hooky'],
+            quiet: ['Soft', 'Gentle', 'Sweet', 'Tender', 'Intimate'],
+            loud: ['Anthemic', 'Soaring', 'Epic', 'Triumphant', 'Powerful']
+        },
+        'electronic': {
+            bass: ['Pulsing', 'Wobbling', 'Throbbing', 'Synthetic', 'Digital', 'Modulated'],
+            treble: ['Glitchy', 'Digital', 'Futuristic', 'Synthetic', 'Robotic'],
+            mid: ['Synthetic', 'Programmed', 'Sequenced', 'Processed', 'Modular'],
+            quiet: ['Atmospheric', 'Ambient', 'Minimal', 'Spacious', 'Ethereal'],
+            loud: ['Massive', 'Crushing', 'Drop-heavy', 'Explosive', 'Wall-of-sound']
+        },
+        'default': {
+            bass: ['Booming', 'Deep', 'Low', 'Resonant', 'Rumbling', 'Heavy'],
+            treble: ['Sharp', 'High', 'Piercing', 'Bright', 'Clear'],
+            mid: ['Resonant', 'Balanced', 'Full', 'Rich', 'Warm'],
+            quiet: ['Quiet', 'Soft', 'Gentle', 'Subtle', 'Hushed'],
+            loud: ['Loud', 'Powerful', 'Strong', 'Intense', 'Forceful']
+        }
+    },
+    descriptors: ['Swift', 'Iron', 'Shadow', 'Mystic', 'Wild', 'Radiant', 'Grim', 'Noble', 'Ancient', 'Blazing'],
+    classAspects: {
+        'Barbarian': ['Warrior', 'Rage', 'Beast', 'Fury'],
+        'Bard': ['Song', 'Voice', 'Muse', 'Melody'],
+        'Cleric': ['Light', 'Faith', 'Devotion', 'Grace'],
+        'Druid': ['Wild', 'Nature', 'Grove', 'Fang'],
+        'Fighter': ['Blade', 'Shield', 'Defender', 'Champion'],
+        'Monk': ['Fist', 'Spirit', 'Flow', 'Path'],
+        'Paladin': ['Oath', 'Justice', 'Light', 'Defender'],
+        'Ranger': ['Hunter', 'Arrow', 'Tracker', 'Scout'],
+        'Rogue': ['Shadow', 'Blade', 'Whisper', 'Dagger'],
+        'Sorcerer': ['Flame', 'Storm', 'Chaos', 'Power'],
+        'Warlock': ['Pact', 'Shadow', 'Hex', 'Dark'],
+        'Wizard': ['Arcane', 'Sage', 'Spellweaver', 'Mind'],
+        'Artificer': ['Craft', 'Forge', 'Construct', 'Invention']
+    } as Record<Class, string[]>,
+    prefixes: ['Thunder', 'Shadow', 'Flame', 'Frost', 'Storm', 'Star', 'Blood', 'Soul', 'Moon', 'Sun'],
+    suffixes: ['Blessed', 'Forged', 'Wreathed', 'Touched', 'Born', 'Kissed', 'Bound', 'Marked', 'Sworn', 'Woven'],
+    occupations: ['smith', 'weaver', 'caller', 'keeper', 'herald', 'warden', 'seeker', 'walker', 'singer'],
+    realms: ['Eternal Stage', 'Forgotten Hall', 'Misty Vale', 'Iron Keep', 'Crystal Spire',
+             'Shadow Court', 'Golden Fields', 'Storm Peak', 'Ancient Grove', 'Silent Deep'],
+    subtitlePrefixes: ['of Stars', 'Eternal', 'Reborn', 'Unchained', 'Ascendant',
+                       'the Fallen', 'Unbound', 'Rising', 'Triumphant', 'Immortal']
 };
+
+/**
+ * Backward compatibility export
+ * @deprecated Use NAMING_DATA.adjectives instead
+ */
+export const ADJECTIVE_DATA = NAMING_DATA.adjectives;
 
 // Skill to ability score mapping (D&D 5e)
 export const SKILL_ABILITY_MAP: Record<Skill, Ability> = {

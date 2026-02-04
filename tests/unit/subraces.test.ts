@@ -19,6 +19,7 @@ import { ALL_RACES } from '../../src/utils/constants.js';
 import type { RacialTrait } from '../../src/core/features/FeatureTypes.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 import type { AudioProfile } from '../../src/core/types/AudioProfile.js';
+import type { PlaylistTrack } from '../../src/core/types/Playlist.js';
 
 describe('Subrace Support', () => {
     let featureRegistry: FeatureRegistry;
@@ -84,6 +85,26 @@ describe('Subrace Support', () => {
                 sample_positions: [0.05, 0.40, 0.70],
                 analyzed_at: new Date().toISOString()
             }
+        };
+    }
+
+    // Helper function to create a mock track
+    function createMockTrack(title: string = 'Test Character'): PlaylistTrack {
+        return {
+            title,
+            artist: 'Test Artist',
+            genre: 'Rock',
+            id: 'test-1',
+            uuid: 'test-uuid-1',
+            playlist_index: 0,
+            chain_name: 'eth',
+            token_address: '0x0',
+            token_id: '1',
+            platform: 'sound',
+            image_url: 'https://example.com/image.jpg',
+            audio_url: 'https://example.com/audio.mp3',
+            duration: 180,
+            tags: ['rock', 'test']
         };
     }
 
@@ -580,7 +601,7 @@ describe('Subrace Support', () => {
             const character = CharacterGenerator.generate(
                 seed,
                 audioProfile,
-                'Test Character',
+                createMockTrack('Test Character'),
                 { subrace: 'High Elf' }
             );
 
@@ -594,7 +615,7 @@ describe('Subrace Support', () => {
             const character = CharacterGenerator.generate(
                 seed,
                 audioProfile,
-                'Test Character'
+                createMockTrack('Test Character')
             );
 
             expect(character.subrace).toBeUndefined();
@@ -608,7 +629,7 @@ describe('Subrace Support', () => {
             const highElf = CharacterGenerator.generate(
                 seed,
                 audioProfile,
-                'High Elf Character',
+                createMockTrack('High Elf Character'),
                 { subrace: 'High Elf' }
             );
 
@@ -616,7 +637,7 @@ describe('Subrace Support', () => {
             const woodElf = CharacterGenerator.generate(
                 seed + 1,
                 audioProfile,
-                'Wood Elf Character',
+                createMockTrack('Wood Elf Character'),
                 { subrace: 'Wood Elf' }
             );
 
@@ -1040,7 +1061,7 @@ describe('Subrace Support', () => {
             const character = CharacterGenerator.generate(
                 seed,
                 audioProfile,
-                'Pure Character',
+                createMockTrack('Pure Character'),
                 { subrace: 'pure' }
             );
 
@@ -1056,13 +1077,13 @@ describe('Subrace Support', () => {
             const char1 = CharacterGenerator.generate(
                 'random-subrace-test-1',
                 audioProfile,
-                'Random 1'
+                createMockTrack('Random 1')
             );
 
             const char2 = CharacterGenerator.generate(
                 'random-subrace-test-1',
                 audioProfile,
-                'Random 2'
+                createMockTrack('Random 2')
             );
 
             // Same seed should produce same subrace result
@@ -1072,7 +1093,7 @@ describe('Subrace Support', () => {
             const char3 = CharacterGenerator.generate(
                 'random-subrace-test-2',
                 audioProfile,
-                'Random 3'
+                createMockTrack('Random 3')
             );
 
             // At minimum, verify subrace is either undefined or a string
@@ -1101,7 +1122,7 @@ describe('Subrace Support', () => {
                 CharacterGenerator.generate(
                     'specific-subrace-test',
                     audioProfile,
-                    'Hill Dwarf',
+                    createMockTrack('Hill Dwarf'),
                     { forceRace: 'Dwarf', subrace: 'Hill Dwarf' }
                 );
             }).not.toThrow();
@@ -1115,7 +1136,7 @@ describe('Subrace Support', () => {
                 CharacterGenerator.generate(
                     'subrace-without-race-test',
                     audioProfile,
-                    'Invalid',
+                    createMockTrack('Invalid'),
                     { subrace: 'Unregistered Subrace' }
                 );
             }).toThrow(/Cannot determine race for subrace/);
@@ -1142,7 +1163,7 @@ describe('Subrace Support', () => {
             const character = CharacterGenerator.generate(
                 'auto-detect-race-test',
                 audioProfile,
-                'Auto Detected',
+                createMockTrack('Auto Detected'),
                 { subrace: 'High Elf' }
             );
 
@@ -1158,7 +1179,7 @@ describe('Subrace Support', () => {
                 CharacterGenerator.generate(
                     'invalid-subrace-test',
                     audioProfile,
-                    'Invalid Subrace',
+                    createMockTrack('Invalid Subrace'),
                     { forceRace: 'Dwarf', subrace: 'High Elf' }
                 );
             }).toThrow(/Invalid subrace "High Elf" for race "Dwarf"/);
@@ -1172,7 +1193,7 @@ describe('Subrace Support', () => {
                 CharacterGenerator.generate(
                     'pure-without-race-test',
                     audioProfile,
-                    'Pure Character',
+                    createMockTrack('Pure Character'),
                     { subrace: 'pure' }
                 );
             }).not.toThrow();

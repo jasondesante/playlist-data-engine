@@ -1839,7 +1839,7 @@ const rng = new SeededRNG('custom_loot');
 const customLoot = EquipmentSpawnHelper.spawnByTags(['custom', 'magic'], 3, rng);
 
 // ===== STEP 4: Add to Character =====
-const character = CharacterGenerator.generate(seed, audio, 'Adventurer');
+const character = CharacterGenerator.generate(seed, audio, track);
 character = EquipmentSpawnHelper.addToCharacter(character, customLoot, true);
 
 // ===== STEP 5: Enchant Items During Gameplay =====

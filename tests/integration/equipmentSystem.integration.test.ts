@@ -28,7 +28,7 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { ensureAllDefaultsInitialized } from '../../src/core/extensions/initializeDefaults.js';
 import { SeededRNG } from '../../src/utils/random.js';
 import type { EnhancedEquipment, EquipmentModification } from '../../src/core/types/Equipment.js';
-import { sampleAudioProfile } from '../fixtures/sampleData';
+import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 
 describe('Integration: Equipment System', () => {
     let manager: ExtensionManager;

@@ -15,6 +15,27 @@ import { MasterySystem } from '../../src/core/progression/MasterySystem';
 import { CharacterUpdater } from '../../src/core/progression/CharacterUpdater';
 import { samplePlaylistData, sampleAudioProfile } from '../fixtures/sampleData';
 import type { CharacterSheet } from '../../src/core/types/Character';
+import type { PlaylistTrack } from '../../src/core/types/Playlist';
+
+// Helper function to create mock tracks for testing
+function createMockTrack(title: string): PlaylistTrack {
+    return {
+        title,
+        artist: 'Test Artist',
+        genre: 'Rock',
+        id: `test-${title.replace(/\s+/g, '-').toLowerCase()}`,
+        uuid: `uuid-${Date.now()}`,
+        playlist_index: 0,
+        chain_name: 'eth',
+        token_address: '0x0',
+        token_id: '1',
+        platform: 'sound',
+        image_url: 'https://example.com/image.jpg',
+        audio_url: 'https://example.com/audio.mp3',
+        duration: 180,
+        tags: ['rock', 'test']
+    };
+}
 
 describe('E2E: Full Pipeline', () => {
     it('should parse playlist and generate characters', async () => {
@@ -37,7 +58,7 @@ describe('E2E: Full Pipeline', () => {
         const character = CharacterGenerator.generate(
             track.id,
             sampleAudioProfile,
-            `${track.artist} - ${track.title}`
+            track
         );
 
         // Verify character properties
@@ -75,13 +96,13 @@ describe('E2E: Full Pipeline', () => {
         const char1 = CharacterGenerator.generate(
             seed,
             sampleAudioProfile,
-            'Test Character'
+            createMockTrack('Test Character')
         );
 
         const char2 = CharacterGenerator.generate(
             seed,
             sampleAudioProfile,
-            'Test Character'
+            createMockTrack('Test Character')
         );
 
         // Same seed should produce identical characters
@@ -107,7 +128,7 @@ describe('E2E: Full Pipeline', () => {
             },
         };
 
-        const bassChar = CharacterGenerator.generate(seed, bassProfile, 'Bass Character');
+        const bassChar = CharacterGenerator.generate(seed, bassProfile, createMockTrack('Bass Character'));
 
         // High bass should result in high STR
         expect(bassChar.ability_scores.STR).toBeGreaterThan(bassChar.ability_scores.DEX);
@@ -126,10 +147,30 @@ describe('E2E: Full Pipeline', () => {
             },
         };
 
-        const trebleChar = CharacterGenerator.generate(seed, trebleProfile, 'Treble Character');
+        const trebleChar = CharacterGenerator.generate(seed, trebleProfile, createMockTrack('Treble Character'));
 
         // High treble should result in high DEX
         expect(trebleChar.ability_scores.DEX).toBeGreaterThan(trebleChar.ability_scores.STR);
+    });
+
+    it('should allow forcing custom names via forceName option', () => {
+        const seed = 'test-seed-custom-name';
+        const customName = 'Gandalf the Grey';
+
+        const character = CharacterGenerator.generate(
+            seed,
+            sampleAudioProfile,
+            createMockTrack('Test Song'),
+            { forceName: customName }
+        );
+
+        // Should use the forced name instead of generating one
+        expect(character.name).toBe(customName);
+
+        // All other properties should still be generated normally
+        expect(character.race).toBeTruthy();
+        expect(character.class).toBeTruthy();
+        expect(character.level).toBe(1);
     });
 });
 

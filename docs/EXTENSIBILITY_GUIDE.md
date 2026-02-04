@@ -396,7 +396,7 @@ const customEquipment = [
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name',
+    track,
     {
         extensions: {
             equipment: customEquipment
@@ -448,12 +448,13 @@ const customSpells = [
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Wizard Name',
+    track,
     {
         forceClass: 'Wizard',
         extensions: {
             spells: customSpells
-        }
+        },
+        forceName: 'Wizard Name'
     }
 );
 ```
@@ -468,6 +469,67 @@ manager.setWeights('spells', {
     'Mind Shield': 2.0     // Common
 });
 ```
+
+
+#### Spell Registry
+
+===== SPELL REGISTRY FOR CUSTOM SPELLS =====
+Register and query custom spells with prerequisite validation
+
+```typescript
+
+import { SpellRegistry } from 'playlist-data-engine';
+
+const spellRegistry = SpellRegistry.getInstance();
+
+// Initialize with default spells
+spellRegistry.initializeDefaults();
+
+// Register custom spells
+spellRegistry.registerSpell({
+  id: 'phoenix_fire',
+  name: 'Phoenix Fire',
+  level: 5,
+  school: 'Evocation',
+  casting_time: '1 action',
+  range: '60 feet',
+  components: ['V', 'S'],
+  duration: 'Instantaneous',
+  description: 'A burst of phoenix flame...',
+  prerequisites: {
+    level: 10,
+    abilities: { CHA: 16 }
+  },
+  classes: ['Sorcerer', 'Wizard'],
+  source: 'custom'
+});
+
+// Query spells by level, school, or class
+const fifthLevelSpells = spellRegistry.getSpellsByLevel(5);
+const evocationSpells = spellRegistry.getSpellsBySchool('Evocation');
+const sorcererSpells = spellRegistry.getSpellsForClass('Sorcerer');
+
+// Get spells available to a character (prerequisites met)
+const availableSpells = spellRegistry.getAvailableSpells(character);
+console.log(`Available spells: ${availableSpells.map(s => s.name).join(', ')}`);
+
+// Validate spell prerequisites
+const phoenixFire = spellRegistry.getSpell('phoenix_fire');
+if (phoenixFire) {
+  const validation = spellRegistry.validatePrerequisites(phoenixFire, character);
+  if (!validation.valid) {
+    console.log(`Prerequisites not met: ${validation.errors.join(', ')}`);
+  }
+}
+
+// Registry statistics
+const stats = spellRegistry.getRegistryStats();
+console.log(`Total spells: ${stats.totalSpells} (${stats.customSpells} custom)`);
+
+
+```
+
+
 
 #### Spells with Prerequisites
 
@@ -535,7 +597,7 @@ const manager = ExtensionManager.getInstance();
 manager.register('spells', [dragonBreath, limitedMeteorSwarm, arcaneSwordSpell]);
 
 // ===== VALIDATE SPELL PREREQUISITES =====
-const character = CharacterGenerator.generate(seed, audioProfile, 'Sorcerer');
+const character = CharacterGenerator.generate(seed, audioProfile, track, {forceName: 'Sorcerer'});
 const spell = SPELL_DATABASE['dragon_breath'];
 
 if (spell.prerequisites) {
@@ -576,7 +638,7 @@ manager.setWeights('races', {
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name'
+    track
 );
 // Now Dragonkin and Fairy can be selected!
 ```
@@ -606,7 +668,7 @@ manager.setWeights('classes', {
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name'
+    track
 );
 ```
 
@@ -791,7 +853,7 @@ const elvenBattleTraining = {
 registry.registerRacialTrait(elvenBattleTraining);
 
 // ===== VALIDATE FEATURE PREREQUISITES =====
-const character = CharacterGenerator.generate(seed, audioProfile, 'Elf Warrior');
+const character = CharacterGenerator.generate(seed, audioProfile, track, {forceName: 'Elf Warrior'});
 const features = registry.getClassFeatures('Wizard', character.level);
 const feature = features.find(f => f.id === 'arcane_smith');
 
@@ -1066,7 +1128,7 @@ registry.registerSkill(dwarvenCombat);
 
 // ===== VALIDATING SKILL PREREQUISITES =====
 // Check if a character meets the requirements
-const character = CharacterGenerator.generate(seed, audioProfile, 'Hero');
+const character = CharacterGenerator.generate(seed, audioProfile, track);
 const skill = registry.getSkill('dragon_smithing');
 
 if (skill && skill.prerequisites) {
@@ -1217,7 +1279,7 @@ const customBodyTypes = ['giant', 'diminutive', 'elongated'];
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name',
+    track,
     {
         extensions: {
             appearance: {
@@ -1248,7 +1310,7 @@ const customSkinTones = [
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name',
+    track,
     {
         extensions: {
             appearance: {
@@ -1271,7 +1333,7 @@ const customHairColors = [
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name',
+    track,
     {
         extensions: {
             appearance: {
@@ -1290,7 +1352,7 @@ const customHairStyles = ['mohawk', 'braided', 'pompadour', 'mullet'];
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name',
+    track,
     {
         extensions: {
             appearance: {
@@ -1313,7 +1375,7 @@ const customEyeColors = [
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name',
+    track,
     {
         extensions: {
             appearance: {
@@ -1337,7 +1399,7 @@ const customFacialFeatures = [
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name',
+    track,
     {
         extensions: {
             appearance: {
@@ -1411,7 +1473,7 @@ loadContentPack();
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name'
+    track
 );
 ```
 
@@ -1575,7 +1637,7 @@ function registerArcticExpansionPack() {
 registerArcticExpansionPack();
 
 // Generate characters with the new content
-const character = CharacterGenerator.generate(seed, audio, 'Arctic Hero');
+const character = CharacterGenerator.generate(seed, audio, track, {forceName: 'Arctic Hero' });
 // Character may now have frost_rage, snow_walker, or survival_cold skill!
 ```
 
@@ -2400,7 +2462,7 @@ import { CharacterGenerator } from 'playlist-data-engine';
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
-    'Hero Name'
+    track
 );
 
 // Character may have Flaming Sword or Shadow Cloak based on spawn weights

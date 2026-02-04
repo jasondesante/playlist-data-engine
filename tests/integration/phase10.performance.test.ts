@@ -169,11 +169,7 @@ describe('Phase 10.2: Performance Testing', () => {
             const result = runBenchmark(
                 'Basic Character Generation',
                 () => {
-                    const character = CharacterGenerator.generate(
-                        `benchmark-${counter++}`,
-                        profile,
-                        'Benchmark Character'
-                    );
+                    const character = CharacterGenerator.generate(`benchmark-${counter++}`, profile, sampleTrack);
                     expect(character).toBeDefined();
                     expect(character.class).toBeDefined();
                 },
@@ -204,11 +200,7 @@ describe('Phase 10.2: Performance Testing', () => {
                 () => {
                     const profileIndex = counter % BENCHMARK_AUDIO_PROFILES.length;
                     const profile = BENCHMARK_AUDIO_PROFILES[profileIndex];
-                    const character = CharacterGenerator.generate(
-                        `benchmark-diverse-${counter++}`,
-                        profile,
-                        'Diverse Profile Character'
-                    );
+                    const character = CharacterGenerator.generate(`benchmark-diverse-${counter++}`, profile, sampleTrack);
                     expect(character).toBeDefined();
                 },
                 100
@@ -361,11 +353,7 @@ describe('Phase 10.2: Performance Testing', () => {
             results.push(runBenchmark(
                 'Baseline: Basic Generation',
                 () => {
-                    const character = CharacterGenerator.generate(
-                        `baseline-${counter++}`,
-                        BENCHMARK_AUDIO_PROFILES[0],
-                        'Baseline'
-                    );
+                    const character = CharacterGenerator.generate(`baseline-${counter++}`, BENCHMARK_AUDIO_PROFILES[0], sampleTrack);
                     expect(character).toBeDefined();
                 },
                 100
@@ -391,11 +379,7 @@ describe('Phase 10.2: Performance Testing', () => {
                     const profile = BENCHMARK_AUDIO_PROFILES[counter % BENCHMARK_AUDIO_PROFILES.length];
                     const rng = new SeededRNG(`baseline-pipeline-${counter++}`);
                     const suggestedClass = ClassSuggester.suggest(profile, rng);
-                    const character = CharacterGenerator.generate(
-                        `pipeline-${counter}`,
-                        profile,
-                        'Pipeline Test'
-                    );
+                    const character = CharacterGenerator.generate(`pipeline-${counter}`, profile, sampleTrack);
                     expect(suggestedClass).toBeDefined();
                     expect(character).toBeDefined();
                 },
@@ -450,11 +434,7 @@ describe('Phase 10.2: Performance Testing', () => {
             // Generate many characters and track memory
             for (let i = 0; i < iterations; i++) {
                 const profile = BENCHMARK_AUDIO_PROFILES[i % BENCHMARK_AUDIO_PROFILES.length];
-                CharacterGenerator.generate(
-                    `memory-test-${i}`,
-                    profile,
-                    `Memory Test ${i}`
-                );
+                CharacterGenerator.generate(`memory-test-${i}`, profile, sampleTrack);
 
                 if (i % 20 === 0) {
                     memories.push(process.memoryUsage().heapUsed / 1024 / 1024);
@@ -542,11 +522,7 @@ describe('Phase 10.2: Performance Testing', () => {
             // Generate characters with custom content
             for (let i = 0; i < 50; i++) {
                 const profile = BENCHMARK_AUDIO_PROFILES[i % BENCHMARK_AUDIO_PROFILES.length];
-                CharacterGenerator.generate(
-                    `custom-memory-${i}`,
-                    profile,
-                    'Custom Memory Test'
-                );
+                CharacterGenerator.generate(`custom-memory-${i}`, profile, sampleTrack);
             }
 
             const afterGenerationMemory = process.memoryUsage().heapUsed / 1024 / 1024;

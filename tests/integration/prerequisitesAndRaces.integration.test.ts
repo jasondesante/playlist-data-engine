@@ -26,7 +26,7 @@ import { SpellValidator } from '../../src/core/spells/SpellValidator.js';
 import { SPELL_DATABASE } from '../../src/utils/constants.js';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 import { ALL_RACES } from '../../src/utils/constants.js';
-import { sampleAudioProfile } from '../fixtures/sampleData.js';
+import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
 import type { ClassFeature } from '../../src/core/features/FeatureTypes.js';
 import type { Spell } from '../../src/utils/constants.js';

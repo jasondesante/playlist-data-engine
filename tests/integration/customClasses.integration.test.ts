@@ -17,7 +17,7 @@ import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/co
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
 import { getClassData, getClassSpellList, getSpellSlotsForClass, getClassStartingEquipment } from '../../src/utils/constants';
-import { sampleAudioProfile } from '../fixtures/sampleData';
+import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 import { Class, asClass } from '../../src/core/types/Character';
 
 describe('Integration: Custom Classes', () => {

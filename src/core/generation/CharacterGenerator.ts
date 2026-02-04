@@ -1,6 +1,8 @@
 import type { CharacterSheet, Class, Race, Ability, GameMode } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
+import type { PlaylistTrack } from '../types/Playlist.js';
 import { SeededRNG } from '../../utils/random.js';
+import { NamingEngine } from './NamingEngine.js';
 import { getRaceData, getClassData, RACE_DATA, CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
 import { RaceSelector } from './RaceSelector.js';
 import { ClassSuggester } from './ClassSuggester.js';
@@ -90,6 +92,12 @@ export interface CharacterGeneratorOptions {
     /** Game mode for stat progression (default: 'standard') */
     gameMode?: GameMode;
 
+    /** Override automatic name generation with custom name */
+    forceName?: string;
+
+    /** Generate deterministic names (same seed = same name). Default: true */
+    deterministicName?: boolean;
+
     /**
      * Optional subrace selection
      *
@@ -99,15 +107,15 @@ export interface CharacterGeneratorOptions {
      *
      * @example
      * // Random subrace or pure
-     * const randomSubrace = CharacterGenerator.generate(seed, audio, 'Name');
+     * const randomSubrace = CharacterGenerator.generate(seed, audio, track);
      *
      * @example
      * // Explicitly no subrace
-     * const pure = CharacterGenerator.generate(seed, audio, 'Name', { subrace: 'pure' });
+     * const pure = CharacterGenerator.generate(seed, audio, track, { subrace: 'pure' });
      *
      * @example
      * // Specific subrace with race (both required)
-     * const highElf = CharacterGenerator.generate(seed, audio, 'Name', { forceRace: 'Elf', subrace: 'High Elf' });
+     * const highElf = CharacterGenerator.generate(seed, audio, track, { forceRace: 'Elf', subrace: 'High Elf' });
      */
     subrace?: string;
 
@@ -206,13 +214,14 @@ export class CharacterGenerator {
      *
      * @param {string} seed - Deterministic seed (e.g., "chain-contract-tokenId")
      * @param {AudioProfile} audioProfile - Audio frequency analysis results
-     * @param {string} name - Character name
+     * @param {PlaylistTrack} track - Track metadata (title, artist, genre) for automatic name generation
      * @param {CharacterGeneratorOptions} [options] - Generation options
      * @param {number} [options.level=1] - Starting level (1-20)
      * @param {Class} [options.forceClass] - Override class suggestion
      * @param {Race} [options.forceRace] - Override race selection (required when subrace is specified)
      * @param {GameMode} [options.gameMode='standard'] - Game mode for stat progression
      * @param {string} [options.subrace] - Subrace: 'pure' (no subrace), undefined (random), or specific subrace name
+     * @param {boolean} [options.deterministicName=true] - Generate deterministic names (same seed = same name)
      * @param {CharacterGeneratorExtensions} [options.extensions] - Custom extensions
      * @returns {CharacterSheet} Complete D&D 5e character sheet
      *
@@ -220,7 +229,7 @@ export class CharacterGenerator {
      * const character = CharacterGenerator.generate(
      *   'polygon-0x123-456',
      *   audioProfile,
-     *   'Sonic Warrior',
+     *   track,
      *   { level: 5 }
      * );
      * console.log(`${character.name}: Level ${character.level} ${character.class}`);
@@ -230,7 +239,7 @@ export class CharacterGenerator {
      * const pure = CharacterGenerator.generate(
      *   'seed',
      *   audioProfile,
-     *   'Pure Elf',
+     *   track,
      *   { subrace: 'pure' }
      * );
      *
@@ -239,17 +248,18 @@ export class CharacterGenerator {
      * const highElf = CharacterGenerator.generate(
      *   'seed',
      *   audioProfile,
-     *   'High Elf Mage',
+     *   track,
      *   { forceRace: 'Elf', subrace: 'High Elf' }
      * );
      *
      * @example
-     * // With custom spells
+     * // With custom spells and non deterministic name
      * const customCharacter = CharacterGenerator.generate(
      *   'seed',
      *   audioProfile,
-     *   'Hero',
+     *   track,
      *   {
+     *     deterministicName: false,
      *     extensions: {
      *       spells: [{ name: 'Phoenix Fire', level: 5, school: 'Evocation' }]
      *     }
@@ -259,7 +269,7 @@ export class CharacterGenerator {
     static generate(
         seed: string,
         audioProfile: AudioProfile,
-        name: string,
+        track: PlaylistTrack,
         options: CharacterGeneratorOptions = {}
     ): CharacterSheet {
         const rng = new SeededRNG(seed);
@@ -330,6 +340,19 @@ export class CharacterGenerator {
 
         // Suggest class based on audio profile
         const suggestedClass = options.forceClass || ClassSuggester.suggest(audioProfile, rng);
+
+        // Generate character name using NamingEngine (after class selection)
+        // Or use forceName if provided
+        const name = options.forceName || (() => {
+            const namingEngine = new NamingEngine();
+            return namingEngine.generateName(
+                seed,
+                track,
+                audioProfile,
+                suggestedClass,
+                options.deterministicName || true
+            );
+        })();
 
         // Calculate base ability scores from audio profile
         const baseScores = AbilityScoreCalculator.calculateBaseScores(audioProfile);

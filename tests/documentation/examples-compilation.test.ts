@@ -62,6 +62,7 @@ import type {
     AudioProfile,
     ContentPackData,
     CharacterGeneratorOptions,
+    PlaylistTrack,
 } from '../../src/index';
 
 describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
@@ -77,6 +78,24 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         treble_dominance: 0.5,
         average_amplitude: 0.5,
         spectral_centroid: 0.5
+    };
+
+    // Mock track for character generation
+    const mockTrack: PlaylistTrack = {
+        title: 'Test Song',
+        artist: 'Test Artist',
+        genre: 'Rock',
+        id: 'test-1',
+        uuid: 'test-uuid-1',
+        playlist_index: 0,
+        chain_name: 'eth',
+        token_address: '0x0',
+        token_id: '1',
+        platform: 'sound',
+        image_url: 'https://example.com/image.jpg',
+        audio_url: 'https://example.com/audio.mp3',
+        duration: 180,
+        tags: ['rock', 'test']
     };
 
     beforeEach(() => {
@@ -249,7 +268,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Hero Name',
+                mockTrack,
                 {
                     extensions: {
                         equipment: customEquipment
@@ -296,7 +315,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Wizard Name',
+                mockTrack,
                 {
                     forceClass: 'Wizard',
                     extensions: {
@@ -329,7 +348,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         });
 
         it('should compile spell validation example', () => {
-            const character = CharacterGenerator.generate('seed', mockAudioProfile, 'Sorcerer');
+            const character = CharacterGenerator.generate('seed', mockAudioProfile, mockTrack);
             const spell: Spell = {
                 id: 'dragon_breath',
                 name: 'Dragon Breath',
@@ -347,7 +366,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         });
 
         it('should compile SpellManager filtering example', () => {
-            const character = CharacterGenerator.generate('seed', mockAudioProfile, 'Wizard', {
+            const character = CharacterGenerator.generate('seed', mockAudioProfile, mockTrack, {
                 forceClass: 'Wizard'
             });
 
@@ -407,7 +426,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Hero Name'
+                mockTrack
             );
 
             expect(character).toBeDefined();
@@ -468,7 +487,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Hero Name'
+                mockTrack
             );
 
             expect(character).toBeDefined();
@@ -582,7 +601,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
             featureRegistry.registerClassFeature(arcaneSmith);
 
-            const character = CharacterGenerator.generate('seed', mockAudioProfile, 'Wizard', {
+            const character = CharacterGenerator.generate('seed', mockAudioProfile, mockTrack, {
                 forceClass: 'Wizard'
             });
 
@@ -798,7 +817,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
         it('should compile skill validation example', () => {
             const registry = SkillRegistry.getInstance();
-            const character = CharacterGenerator.generate('seed', mockAudioProfile, 'Hero');
+            const character = CharacterGenerator.generate('seed', mockAudioProfile, mockTrack);
             const skill = registry.getSkill('dragon_smithing');
 
             if (skill && skill.prerequisites) {
@@ -883,7 +902,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Hero Name',
+                mockTrack,
                 {
                     extensions: {
                         appearance: {
@@ -906,7 +925,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Hero Name',
+                mockTrack,
                 {
                     extensions: {
                         appearance: {
@@ -929,7 +948,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Hero Name',
+                mockTrack,
                 {
                     extensions: {
                         appearance: {
@@ -948,7 +967,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Hero Name',
+                mockTrack,
                 {
                     extensions: {
                         appearance: {
@@ -971,7 +990,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Hero Name',
+                mockTrack,
                 {
                     extensions: {
                         appearance: {
@@ -995,7 +1014,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Hero Name',
+                mockTrack,
                 {
                     extensions: {
                         appearance: {
@@ -1049,7 +1068,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const character = CharacterGenerator.generate(
                 'my-seed',
                 mockAudioProfile,
-                'Hero Name'
+                mockTrack
             );
 
             expect(character).toBeDefined();

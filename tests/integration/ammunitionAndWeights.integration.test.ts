@@ -18,7 +18,7 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { EquipmentGenerator } from '../../src/core/generation/EquipmentGenerator';
 import { WeightedSelector } from '../../src/core/extensions/WeightedSelector';
 import { SeededRNG } from '../../src/utils/random.js';
-import { sampleAudioProfile } from '../fixtures/sampleData';
+import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 
 describe('Integration: Ammunition Fix and Weight System', () => {
     let manager: ExtensionManager;
@@ -471,11 +471,7 @@ describe('Integration: Ammunition Fix and Weight System', () => {
             const numGenerations = 20;
 
             for (let i = 0; i < numGenerations; i++) {
-                const character = CharacterGenerator.generate(
-                    `test-weight-gen-${i}`,
-                    sampleAudioProfile,
-                    `Character ${i}`
-                );
+                const character = CharacterGenerator.generate(`test-weight-gen-${i}`, sampleAudioProfile, sampleTrack);
 
                 const bodyType = character.appearance?.body_type;
                 if (bodyType) {
@@ -503,11 +499,7 @@ describe('Integration: Ammunition Fix and Weight System', () => {
                 mode: 'replace',
             });
 
-            const character = CharacterGenerator.generate(
-                'test-multi-category',
-                sampleAudioProfile,
-                'Test Character'
-            );
+            const character = CharacterGenerator.generate('test-multi-category', sampleAudioProfile, sampleTrack);
 
             // Verify both customizations are applied
             expect(character.appearance?.body_type).toBe('giant');

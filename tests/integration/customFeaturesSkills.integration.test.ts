@@ -14,7 +14,7 @@ import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
-import { sampleAudioProfile } from '../fixtures/sampleData';
+import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 
 describe('Integration: CharacterGenerator with Custom Features and Skills', () => {
     let featureRegistry: FeatureRegistry;
@@ -60,7 +60,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const character = CharacterGenerator.generate(
                 'test-custom-feature',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -103,7 +103,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const character = CharacterGenerator.generate(
                 'test-multiple-custom-features',
                 sampleAudioProfile,
-                'Test Wizard',
+                sampleTrack,
                 { forceClass: 'Wizard', level: 3 }
             );
 
@@ -409,7 +409,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const character = CharacterGenerator.generate(
                 'test-combined-custom',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -476,7 +476,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const character = CharacterGenerator.generate(
                 'test-no-custom',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -549,7 +549,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const character = CharacterGenerator.generate(
                 'test-invalid-prereqs',
                 sampleAudioProfile,
-                'Test Wizard',
+                sampleTrack,
                 { forceClass: 'Wizard', level: 1 }
             );
 
@@ -589,7 +589,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const character = CharacterGenerator.generate(
                 'test-reset-reinit',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 

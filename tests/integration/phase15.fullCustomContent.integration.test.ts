@@ -17,7 +17,7 @@ import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { WeightedSelector } from '../../src/core/extensions/WeightedSelector';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
-import { sampleAudioProfile } from '../fixtures/sampleData';
+import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 import { Class, Race } from '../../src/core/types';
 
 describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
@@ -262,11 +262,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             // Generate multiple characters to verify custom content appears
             const characters = [];
             for (let i = 0; i < 10; i++) {
-                const character = CharacterGenerator.generate(
-                    `all-custom-${i}`,
-                    sampleAudioProfile,
-                    `Test Character ${i}`
-                );
+                const character = CharacterGenerator.generate(`all-custom-${i}`, sampleAudioProfile, sampleTrack);
                 characters.push(character);
             }
 

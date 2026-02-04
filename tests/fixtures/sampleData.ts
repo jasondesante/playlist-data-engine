@@ -3,7 +3,7 @@
  * Based on specs/001-core-engine/SPEC.md
  */
 
-import type { RawArweavePlaylist } from '../../src/core/types/Playlist';
+import type { RawArweavePlaylist, PlaylistTrack } from '../../src/core/types/Playlist';
 import { TEST_AUDIO_URLS } from './testAudioUrls';
 
 export const TEST_URLS = {
@@ -92,4 +92,22 @@ export const sampleAudioProfile = {
         sample_positions: [0.05, 0.40, 0.70],
         analyzed_at: new Date().toISOString(),
     },
+};
+
+// Sample track for character generation tests
+export const sampleTrack: PlaylistTrack = {
+    title: 'Test Song',
+    artist: 'Test Artist',
+    genre: 'Rock',
+    id: 'test-1',
+    uuid: 'test-uuid-1',
+    playlist_index: 0,
+    chain_name: 'eth',
+    token_address: '0x0',
+    token_id: '1',
+    platform: 'sound',
+    image_url: 'https://example.com/image.jpg',
+    audio_url: 'https://example.com/audio.mp3',
+    duration: 180,
+    tags: ['rock', 'test']
 };
