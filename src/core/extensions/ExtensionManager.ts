@@ -307,32 +307,17 @@ export class ExtensionManager {
             this.customWeights.set(category, { ...existingWeights, ...weights });
         }
 
-        // Integrate with FeatureRegistry for class features
-        if (category === 'classFeatures') {
-            // Only register with FeatureRegistry if validation is enabled
-            if (validate) {
-                const registry = FeatureRegistry.getInstance();
-                registry.registerClassFeatures(items as ClassFeature[]);
-            }
-        }
+        // Note: FeatureRegistry is a convenience wrapper that reads from ExtensionManager
+        // We no longer delegate to FeatureRegistry for class features since it delegates to EM
+        // This prevents circular dependency: FeatureRegistry.registerClassFeatures() → EM.register() → FeatureRegistry
 
+        // Note: We still delegate to FeatureRegistry for racial traits (to be removed in Phase 9)
         // Integrate with FeatureRegistry for racial traits
         if (category === 'racialTraits') {
             // Only register with FeatureRegistry if validation is enabled
             if (validate) {
                 const registry = FeatureRegistry.getInstance();
                 registry.registerRacialTraits(items as RacialTrait[]);
-            }
-        }
-
-        // Handle class-specific features
-        if (category.startsWith('classFeatures.')) {
-            // className is extracted for future use in validation/logging
-            void category.replace('classFeatures.', '') as unknown as Class;
-            // Only register with FeatureRegistry if validation is enabled
-            if (validate) {
-                const registry = FeatureRegistry.getInstance();
-                registry.registerClassFeatures(items as ClassFeature[]);
             }
         }
 

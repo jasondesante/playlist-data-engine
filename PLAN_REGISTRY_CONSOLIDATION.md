@@ -441,20 +441,20 @@ Updated USAGE_IN_OTHER_PROJECTS.md to reflect SkillRegistry as a convenience wra
 ### Task 6.1: Remove Internal Storage for Class Features
 
 **Remove these properties:**
-- [ ] `private classFeatures: Map<string, ClassFeature[]>`
-- [ ] `private featureLookup: Map<string, ClassFeature>`
-- [ ] `private initialized: boolean`
+- [x] `private classFeatures: Map<string, ClassFeature[]>`
+- [x] `private featureLookup: Map<string, ClassFeature>`
+- [x] `private initialized: boolean`
 
 **Add these properties:**
-- [ ] `private manager: ExtensionManager` (reference to ExtensionManager)
-- [ ] `private allClassFeaturesCache: ClassFeature[] | null` (lazy cache)
-- [ ] `private classFeaturesIndex: Map<string, ClassFeature[]> | null` (lazy index by class)
+- [x] `private manager: ExtensionManager` (reference to ExtensionManager)
+- [x] `private allClassFeaturesCache: ClassFeature[] | null` (lazy cache)
+- [x] `private classFeaturesIndex: Map<string, ClassFeature[]> | null` (lazy index by class)
 
 **Note:** Keep `racialTraits` and `traitLookup` for now (handled in Phase 9).
 
 **Verification:**
-- [ ] TypeScript compiles
-- [ ] Constructor initializes `this.manager = ExtensionManager.getInstance()`
+- [x] TypeScript compiles
+- [x] Constructor initializes `this.manager = ExtensionManager.getInstance()`
 
 ---
 
@@ -478,9 +478,9 @@ registerClassFeature(feature: ClassFeature): void {
 **Refactor `registerClassFeatures()` similarly**
 
 **Verification:**
-- [ ] TypeScript compiles
-- [ ] Registering via FeatureRegistry adds to ExtensionManager
-- [ ] Cache is invalidated after registration
+- [x] TypeScript compiles
+- [x] Registering via FeatureRegistry adds to ExtensionManager
+- [x] Cache is invalidated after registration
 
 ---
 
@@ -514,8 +514,8 @@ registerClassFeature(feature: ClassFeature): void {
 **Refactor `getAllClassFeatures()` to return Map built from EM data**
 
 **Verification:**
-- [ ] `getClassFeatures('Fighter', 5)` returns correct features
-- [ ] `getClassFeatureById('second_wind')` finds the feature
+- [x] `getClassFeatures('Fighter', 5)` returns correct features
+- [x] `getClassFeatureById('second_wind')` finds the feature
 
 ---
 
@@ -528,7 +528,7 @@ registerClassFeature(feature: ClassFeature): void {
 **Note:** `getCharacterFeatureIds()` helper should read from EM.
 
 **Verification:**
-- [ ] Prerequisite validation works with EM data
+- [x] Prerequisite validation works with EM data
 
 ---
 
@@ -539,7 +539,7 @@ registerClassFeature(feature: ClassFeature): void {
 - Count racial traits from internal storage (temporary, until Phase 9)
 
 **Verification:**
-- [ ] Stats are correct for class features
+- [x] Stats are correct for class features
 
 ---
 
@@ -564,12 +564,12 @@ registerClassFeature(feature: ClassFeature): void {
 ### Task 7.1: Remove FeatureRegistry Delegation for Class Features
 
 **Remove these code blocks from `register()` method:**
-- [ ] Lines 310-317: FeatureRegistry integration for 'classFeatures' category
-- [ ] Lines 328-337: FeatureRegistry integration for 'classFeatures.*' categories
+- [x] Lines 310-317: FeatureRegistry integration for 'classFeatures' category
+- [x] Lines 328-337: FeatureRegistry integration for 'classFeatures.*' categories
 
 **Verification:**
-- [ ] ExtensionManager does not call FeatureRegistry.registerClassFeatures()
-- [ ] Features are only stored in EM's extensions Map
+- [x] ExtensionManager does not call FeatureRegistry.registerClassFeatures()
+- [x] Features are only stored in EM's extensions Map
 
 ---
 

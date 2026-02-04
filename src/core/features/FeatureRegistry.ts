@@ -3,6 +3,17 @@
  *
  * Central registry for class features and racial traits.
  * Manages default and custom features with prerequisite validation.
+ *
+ * **Design:** This is a **convenience wrapper** around ExtensionManager.
+ * All features are stored in ExtensionManager; FeatureRegistry provides:
+ * - Convenient registration methods that delegate to ExtensionManager
+ * - Query methods with caching for performance
+ * - Feature-related helper methods
+ *
+ * No duplicate storage - all data lives in ExtensionManager.
+ *
+ * **Note:** Racial traits still use internal storage (to be refactored in Phase 9).
+ * Class features read from ExtensionManager (refactored in Phase 6).
  */
 
 import type {
@@ -14,31 +25,37 @@ import type { Class, Race } from '../types/Character.js';
 import type { CharacterSheet } from '../types/Character.js';
 import { validateClassFeature, validateRacialTrait } from './FeatureValidator.js';
 import { getRaceData } from '../../utils/constants.js';
+import { ExtensionManager } from '../extensions/ExtensionManager.js';
 
 /**
  * FeatureRegistry - Singleton class for managing features and traits
  *
- * Features and traits can be:
- * - Default: Built-in D&D 5e features
- * - Custom: User-created or expansion pack content
+ * The registry is a **convenience wrapper** around ExtensionManager.
+ * All class features are stored in ExtensionManager; FeatureRegistry provides:
+ * - Convenient registration methods that delegate to ExtensionManager
+ * - Query methods with caching for performance
+ * - Feature-related helper methods
  *
- * The registry handles:
- * - Feature registration and lookup
- * - Prerequisite validation
- * - Feature queries by class/level
+ * Racial traits still use internal storage (to be migrated to ExtensionManager in Phase 9).
+ *
+ * Design principle: No duplicate storage for class features. All class feature data lives in ExtensionManager.
  */
 export class FeatureRegistry {
     private static instance: FeatureRegistry;
-    private classFeatures: Map<string, ClassFeature[]>;
+    private manager: ExtensionManager;
+
+    // Racial traits - internal storage (to be refactored in Phase 9)
     private racialTraits: Map<string, RacialTrait[]>;
-    private featureLookup: Map<string, ClassFeature>;
     private traitLookup: Map<string, RacialTrait>;
     private initialized: boolean = false;
 
+    // Cache properties for class features (reads from ExtensionManager)
+    private allClassFeaturesCache: ClassFeature[] | null = null;
+    private classFeaturesIndex: Map<string, ClassFeature[]> | null = null;
+
     private constructor() {
-        this.classFeatures = new Map();
+        this.manager = ExtensionManager.getInstance();
         this.racialTraits = new Map();
-        this.featureLookup = new Map();
         this.traitLookup = new Map();
     }
 
@@ -50,6 +67,20 @@ export class FeatureRegistry {
             FeatureRegistry.instance = new FeatureRegistry();
         }
         return FeatureRegistry.instance;
+    }
+
+    /**
+     * Invalidate all caches
+     *
+     * Call this method after directly manipulating ExtensionManager's class feature data
+     * (e.g., after calling ExtensionManager.resetAll()).
+     *
+     * This ensures that FeatureRegistry's cached data is refreshed to reflect
+     * the current state of ExtensionManager.
+     */
+    private invalidateCache(): void {
+        this.allClassFeaturesCache = null;
+        this.classFeaturesIndex = null;
     }
 
     /**
@@ -86,6 +117,8 @@ export class FeatureRegistry {
     /**
      * Register a single class feature
      *
+     * Delegates to ExtensionManager.register('classFeatures', [...])
+     *
      * @param feature - Class feature to register
      * @throws Error if feature ID already exists or validation fails
      */
@@ -96,30 +129,68 @@ export class FeatureRegistry {
             throw new Error(`Invalid class feature "${feature.id}":\n${validation.errors.join('\n')}`);
         }
 
-        if (this.featureLookup.has(feature.id)) {
+        // Check for duplicate feature ID
+        const existingFeatures = this.getAllClassFeaturesArray();
+        if (existingFeatures.some(f => f.id === feature.id)) {
             throw new Error(`Class feature with ID "${feature.id}" already exists`);
         }
 
-        // Add to class-specific map
-        const classKey = feature.class;
-        if (!this.classFeatures.has(classKey)) {
-            this.classFeatures.set(classKey, []);
-        }
-        this.classFeatures.get(classKey)!.push(feature);
+        // Ensure feature has source
+        const featureToRegister = {
+            ...feature,
+            source: feature.source || 'custom'
+        };
 
-        // Add to lookup map
-        this.featureLookup.set(feature.id, feature);
+        // Delegate to ExtensionManager
+        this.manager.register('classFeatures', [featureToRegister]);
+
+        // Invalidate cache
+        this.invalidateCache();
     }
 
     /**
      * Register multiple class features at once
      *
+     * Delegates to ExtensionManager.register('classFeatures', [...])
+     *
      * @param features - Array of class features to register
+     * @throws Error if validation fails or if any feature ID already exists
      */
     registerClassFeatures(features: ClassFeature[]): void {
+        // Validate all features first
         for (const feature of features) {
-            this.registerClassFeature(feature);
+            const validation = validateClassFeature(feature);
+            if (!validation.valid) {
+                throw new Error(`Invalid class feature "${feature.id}":\n${validation.errors.join('\n')}`);
+            }
         }
+
+        // Check for duplicate feature IDs (both within batch and against existing features)
+        const existingFeatures = this.getAllClassFeaturesArray();
+        const existingIds = new Set(existingFeatures.map(f => f.id));
+        const newIds = new Set<string>();
+
+        for (const feature of features) {
+            if (existingIds.has(feature.id)) {
+                throw new Error(`Class feature with ID "${feature.id}" already exists`);
+            }
+            if (newIds.has(feature.id)) {
+                throw new Error(`Duplicate class feature ID "${feature.id}" in batch`);
+            }
+            newIds.add(feature.id);
+        }
+
+        // Ensure all features have source
+        const featuresToRegister = features.map(feature => ({
+            ...feature,
+            source: feature.source || 'custom'
+        }));
+
+        // Delegate to ExtensionManager
+        this.manager.register('classFeatures', featuresToRegister);
+
+        // Invalidate cache
+        this.invalidateCache();
     }
 
     /**
@@ -162,18 +233,35 @@ export class FeatureRegistry {
     }
 
     /**
+     * Get all class features as an array
+     *
+     * Reads from ExtensionManager with caching.
+     *
+     * @returns Array of all class features
+     */
+    private getAllClassFeaturesArray(): ClassFeature[] {
+        if (!this.allClassFeaturesCache) {
+            const features = this.manager.get('classFeatures');
+            this.allClassFeaturesCache = features as ClassFeature[];
+        }
+        return this.allClassFeaturesCache;
+    }
+
+    /**
      * Get all features for a class at a specific level
      *
      * Returns all features the character would have at the given level,
      * including features from lower levels.
+     *
+     * Reads from ExtensionManager with caching.
      *
      * @param className - Class to get features for
      * @param level - Character level (1-20)
      * @returns Array of class features
      */
     getClassFeatures(className: Class, level: number): ClassFeature[] {
-        const features = this.classFeatures.get(className) || [];
-        return features.filter(f => f.level <= level);
+        const allFeatures = this.getAllClassFeaturesArray();
+        return allFeatures.filter(f => f.class === className && f.level <= level);
     }
 
     /**
@@ -181,13 +269,15 @@ export class FeatureRegistry {
      *
      * Returns only the features gained at exactly this level.
      *
+     * Reads from ExtensionManager with caching.
+     *
      * @param className - Class to get features for
      * @param level - Level to check
      * @returns Array of class features
      */
     getFeaturesForLevel(className: Class, level: number): ClassFeature[] {
-        const features = this.classFeatures.get(className) || [];
-        return features.filter(f => f.level === level);
+        const allFeatures = this.getAllClassFeaturesArray();
+        return allFeatures.filter(f => f.class === className && f.level === level);
     }
 
     /**
@@ -204,11 +294,14 @@ export class FeatureRegistry {
     /**
      * Get a single class feature by ID
      *
+     * Reads from ExtensionManager.
+     *
      * @param featureId - Feature ID to look up
      * @returns Class feature or undefined if not found
      */
     getClassFeatureById(featureId: string): ClassFeature | undefined {
-        return this.featureLookup.get(featureId);
+        const allFeatures = this.getAllClassFeaturesArray();
+        return allFeatures.find(f => f.id === featureId);
     }
 
     /**
@@ -217,10 +310,22 @@ export class FeatureRegistry {
      * Returns a Map where keys are class names and values are arrays
      * of all features for that class.
      *
+     * Reads from ExtensionManager with caching.
+     *
      * @returns Map of class names to their features
      */
     getAllClassFeatures(): Map<string, ClassFeature[]> {
-        return new Map(this.classFeatures);
+        if (!this.classFeaturesIndex) {
+            this.classFeaturesIndex = new Map();
+            const allFeatures = this.getAllClassFeaturesArray();
+            for (const feature of allFeatures) {
+                if (!this.classFeaturesIndex.has(feature.class)) {
+                    this.classFeaturesIndex.set(feature.class, []);
+                }
+                this.classFeaturesIndex.get(feature.class)!.push(feature);
+            }
+        }
+        return new Map(this.classFeaturesIndex);
     }
 
     /**
@@ -425,7 +530,8 @@ export class FeatureRegistry {
 
             for (const requiredFeatureId of prereqs.features) {
                 if (!characterFeatures.includes(requiredFeatureId)) {
-                    const requiredFeature = this.featureLookup.get(requiredFeatureId);
+                    // Try to get the feature name from ExtensionManager
+                    const requiredFeature = this.getClassFeatureById(requiredFeatureId);
                     const featureName = requiredFeature?.name || requiredFeatureId;
                     errors.push(`Requires feature: ${featureName}`);
                 }
@@ -513,10 +619,17 @@ export class FeatureRegistry {
     /**
      * Get all classes that have features registered
      *
+     * Reads from ExtensionManager.
+     *
      * @returns Array of class names
      */
     getRegisteredClasses(): Class[] {
-        return Array.from(this.classFeatures.keys()) as Class[];
+        const allFeatures = this.getAllClassFeaturesArray();
+        const classesSet = new Set<Class>();
+        for (const feature of allFeatures) {
+            classesSet.add(feature.class);
+        }
+        return Array.from(classesSet);
     }
 
     /**
@@ -531,6 +644,8 @@ export class FeatureRegistry {
     /**
      * Get total count of registered features
      *
+     * Reads from ExtensionManager for class features.
+     *
      * @returns Object with counts
      */
     getRegistryStats(): {
@@ -539,9 +654,10 @@ export class FeatureRegistry {
         classesWithFeatures: number;
         racesWithTraits: number;
     } {
-        let totalClassFeatures = 0;
-        for (const features of this.classFeatures.values()) {
-            totalClassFeatures += features.length;
+        const allFeatures = this.getAllClassFeaturesArray();
+        const classesSet = new Set<Class>();
+        for (const feature of allFeatures) {
+            classesSet.add(feature.class);
         }
 
         let totalRacialTraits = 0;
@@ -550,9 +666,9 @@ export class FeatureRegistry {
         }
 
         return {
-            totalClassFeatures,
+            totalClassFeatures: allFeatures.length,
             totalRacialTraits,
-            classesWithFeatures: this.classFeatures.size,
+            classesWithFeatures: classesSet.size,
             racesWithTraits: this.racialTraits.size
         };
     }
@@ -564,11 +680,16 @@ export class FeatureRegistry {
      * Useful for testing or reinitialization.
      */
     reset(): void {
-        this.classFeatures.clear();
+        // Clear racial traits from internal storage
         this.racialTraits.clear();
-        this.featureLookup.clear();
         this.traitLookup.clear();
+
+        // Clear class features from ExtensionManager
+        this.manager.reset('classFeatures');
+
+        // Clear initialization flag and cache
         this.initialized = false;
+        this.invalidateCache();
     }
 
     /**
@@ -602,7 +723,8 @@ export class FeatureRegistry {
         const equipmentFeatures: ClassFeature[] = [];
 
         // Check all registered features for equipment-grantable ones
-        for (const feature of registry.featureLookup.values()) {
+        const allFeatures = registry.getAllClassFeaturesArray();
+        for (const feature of allFeatures) {
             // Features with tags including 'equipment' or that are commonly granted by items
             if (feature.tags?.includes('equipment') ||
                 feature.tags?.includes('item') ||
@@ -626,7 +748,7 @@ export class FeatureRegistry {
      */
     static isValidEquipmentFeature(featureId: string): boolean {
         const registry = FeatureRegistry.getInstance();
-        const feature = registry.featureLookup.get(featureId);
+        const feature = registry.getClassFeatureById(featureId);
 
         // Feature exists in registry
         if (!feature) {
@@ -672,8 +794,12 @@ export class FeatureRegistry {
         racialTraits: Record<string, RacialTrait[]>;
     } {
         const classFeaturesExport: Record<string, ClassFeature[]> = {};
-        for (const [className, features] of this.classFeatures.entries()) {
-            classFeaturesExport[className] = features;
+        const allFeatures = this.getAllClassFeaturesArray();
+        for (const feature of allFeatures) {
+            if (!classFeaturesExport[feature.class]) {
+                classFeaturesExport[feature.class] = [];
+            }
+            classFeaturesExport[feature.class].push(feature);
         }
 
         const racialTraitsExport: Record<string, RacialTrait[]> = {};
