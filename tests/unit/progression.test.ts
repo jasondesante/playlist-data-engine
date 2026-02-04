@@ -392,10 +392,9 @@ describe('LevelUpProcessor (T070)', () => {
         const registry = FeatureRegistry.getInstance();
         const extensionManager = ExtensionManager.getInstance();
         if (!registry.isInitialized()) {
-            // Class features are initialized via ExtensionManager
+            // Both class features and racial traits are initialized via ExtensionManager
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
-            // Racial traits are initialized via FeatureRegistry (until Phase 9)
-            registry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
+            extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
         }
 
         const baseScores: AbilityScores = {

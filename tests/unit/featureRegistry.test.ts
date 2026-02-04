@@ -45,20 +45,18 @@ describe('FeatureRegistry', () => {
 
         it('should maintain state across getInstance calls', () => {
             const publicRegistry = FeatureRegistry.getInstance();
-            // Class features are initialized via ExtensionManager
+            // Both class features and racial traits are initialized via ExtensionManager
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
-            // Racial traits are initialized via FeatureRegistry (until Phase 9)
-            publicRegistry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
+            extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
             expect(publicRegistry.isInitialized()).toBe(true);
         });
     });
 
     describe('Initialize Defaults', () => {
         it('should initialize with default class features', () => {
-            // Class features are initialized via ExtensionManager
+            // Both class features and racial traits are initialized via ExtensionManager
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
-            // Racial traits are initialized via FeatureRegistry (until Phase 9)
-            registry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
+            extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
 
             expect(registry.isInitialized()).toBe(true);
 
@@ -68,10 +66,9 @@ describe('FeatureRegistry', () => {
         });
 
         it('should initialize with default racial traits', () => {
-            // Class features are initialized via ExtensionManager
+            // Both class features and racial traits are initialized via ExtensionManager
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
-            // Racial traits are initialized via FeatureRegistry (until Phase 9)
-            registry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
+            extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
 
             const stats = registry.getRegistryStats();
             expect(stats.totalRacialTraits).toBeGreaterThan(0);
@@ -79,14 +76,13 @@ describe('FeatureRegistry', () => {
         });
 
         it('should not reinitialize if already initialized', () => {
-            // Class features are initialized via ExtensionManager
+            // Both class features and racial traits are initialized via ExtensionManager
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
-            // Racial traits are initialized via FeatureRegistry (until Phase 9)
-            registry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
+            extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
             const stats1 = registry.getRegistryStats();
 
-            // Try to initialize again
-            registry.initializeDefaults([]);
+            // Try to initialize again (should not duplicate)
+            extensionManager.initializeDefaults('racialTraits', []);
 
             // Stats should remain the same (no reset occurred)
             const stats2 = registry.getRegistryStats();
@@ -94,7 +90,7 @@ describe('FeatureRegistry', () => {
         });
 
         it('should handle empty defaults', () => {
-            registry.initializeDefaults([]);
+            extensionManager.initializeDefaults('racialTraits', []);
 
             expect(registry.isInitialized()).toBe(true);
             expect(registry.getRegistryStats().totalRacialTraits).toBe(0);
@@ -1487,10 +1483,9 @@ describe('FeatureRegistry', () => {
         });
 
         it('should allow reinitialization after reset', () => {
-            // Class features are initialized via ExtensionManager
+            // Both class features and racial traits are initialized via ExtensionManager
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
-            // Racial traits are initialized via FeatureRegistry (until Phase 9)
-            registry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
+            extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
             expect(registry.isInitialized()).toBe(true);
             const stats1 = registry.getRegistryStats();
 
@@ -1499,7 +1494,7 @@ describe('FeatureRegistry', () => {
 
             // Re-initialize after reset
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
-            registry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
+            extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
             expect(registry.isInitialized()).toBe(true);
             const stats2 = registry.getRegistryStats();
 
@@ -1612,18 +1607,16 @@ describe('FeatureRegistry', () => {
         });
 
         it('should return true after initialization', () => {
-            // Class features are initialized via ExtensionManager
+            // Both class features and racial traits are initialized via ExtensionManager
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
-            // Racial traits are initialized via FeatureRegistry (until Phase 9)
-            registry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
+            extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
             expect(registry.isInitialized()).toBe(true);
         });
 
         it('should return false after reset', () => {
-            // Class features are initialized via ExtensionManager
+            // Both class features and racial traits are initialized via ExtensionManager
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
-            // Racial traits are initialized via FeatureRegistry (until Phase 9)
-            registry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
+            extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
             expect(registry.isInitialized()).toBe(true);
 
             registry.reset();

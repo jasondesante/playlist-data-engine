@@ -3,6 +3,7 @@ import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { ALL_RACES } from '../../src/utils/constants.js';
+import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 import type { RacialTrait } from '../../src/core/features/FeatureTypes.js';
 import type { AudioProfile } from '../../src/core/types/AudioProfile.js';
 
@@ -27,12 +28,12 @@ describe('Subrace Stat Bonus Application', () => {
     }
 
     beforeEach(() => {
-        featureRegistry = FeatureRegistry.getInstance();
-        featureRegistry.initializeDefaults();
-
         extensionManager = ExtensionManager.getInstance();
         extensionManager.initializeDefaults('races', [...ALL_RACES]);
         extensionManager.initializeDefaults('classes', ['Cleric']);
+        extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
+
+        featureRegistry = FeatureRegistry.getInstance();
     });
 
     afterEach(() => {

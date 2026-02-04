@@ -16,6 +16,7 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js'
 import { AbilityScoreCalculator } from '../../src/core/generation/AbilityScoreCalculator.js';
 import { getRaceData, RACE_DATA, ALL_RACES } from '../../src/utils/constants.js';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 import type { AbilityScores } from '../../src/core/types/Character.js';
 
@@ -74,9 +75,9 @@ describe('Custom Races', () => {
         manager = ExtensionManager.getInstance();
         manager.initializeDefaults('races', [...ALL_RACES]);
         manager.initializeDefaults('classes', ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard']);
+        manager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
 
         featureRegistry = FeatureRegistry.getInstance();
-        featureRegistry.initializeDefaults();
     });
 
     afterEach(() => {

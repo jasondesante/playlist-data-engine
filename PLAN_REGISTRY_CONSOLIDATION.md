@@ -744,13 +744,28 @@ registerRacialTrait(trait: RacialTrait): void {
 ### Task 9.3: Remove initializeDefaults() Entirely
 
 **Remove this method:**
-- [ ] `initializeDefaults(defaultClassFeatures?, defaultRacialTraits?): void`
+- [x] `initializeDefaults(defaultClassFeatures?, defaultRacialTraits?): void`
 
 **Update remaining callers:**
-- [ ] Replace with `ExtensionManager.getInstance().initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)`
+- [x] Replace with `ExtensionManager.getInstance().initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)`
 
 **Verification:**
-- [ ] No calls to FeatureRegistry.initializeDefaults() in codebase
+- [x] No calls to FeatureRegistry.initializeDefaults() in codebase
+
+**Summary:**
+Removed the `initializeDefaults()` method from FeatureRegistry entirely. Both class features and racial traits are now initialized exclusively via ExtensionManager using:
+- `ExtensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES)`
+- `ExtensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)`
+
+Updated all test files that were calling `FeatureRegistry.initializeDefaults()`:
+- `tests/unit/featureRegistry.test.ts` - Updated to use ExtensionManager for both class features and racial traits
+- `tests/unit/subraces.test.ts` - Updated to use ExtensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)
+- `tests/unit/customRaces.test.ts` - Updated to use ExtensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)
+- `tests/integration/subraceStatBonus.integration.test.ts` - Updated to use ExtensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)
+- `tests/unit/progression.test.ts` - Updated to use ExtensionManager for both class features and racial traits
+- `tests/unit/levelUpProcessor.test.ts` - Updated to use ExtensionManager for both class features and racial traits
+
+All tests pass (209 passed, 8 test files passed).
 
 ---
 

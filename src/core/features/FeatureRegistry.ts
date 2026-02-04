@@ -79,29 +79,6 @@ export class FeatureRegistry {
         this.racialTraitsIndex = null;
     }
 
-    /**
-     * Initialize the registry with default racial traits
-     * This should be called once during package initialization
-     *
-     * Note: Both class features and racial traits are now initialized via ExtensionManager.
-     * Use ExtensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES)
-     * and ExtensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)
-     * or call initializeFeatureDefaults() from initializeDefaults.ts.
-     *
-     * This method is kept for backward compatibility but delegates to ExtensionManager.
-     *
-     * @param defaultRacialTraits - Default racial traits from constants
-     */
-    initializeDefaults(defaultRacialTraits: RacialTrait[] = []): void {
-        if (this.isInitialized()) {
-            return; // Already initialized
-        }
-
-        // Register default racial traits via ExtensionManager
-        if (defaultRacialTraits.length > 0) {
-            this.manager.register('racialTraits', defaultRacialTraits);
-        }
-    }
 
     /**
      * Register a single class feature
