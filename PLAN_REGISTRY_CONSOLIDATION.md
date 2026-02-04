@@ -322,13 +322,22 @@ Fixed test setup in `skillIntegration.test.ts` to properly reset state between t
 ### Task 4.1: Update EXTENSIBILITY_GUIDE.md
 
 **Find sections about skill registration:**
-- [ ] Update examples to use `ExtensionManager.register('skills', [...])`
-- [ ] Add note: "SkillRegistry is a convenience wrapper around ExtensionManager"
-- [ ] Remove obsolete `SkillRegistry.initializeDefaults()` calls
+- [x] Update examples to use `ExtensionManager.register('skills', [...])`
+- [x] Add note: "SkillRegistry is a convenience wrapper around ExtensionManager"
+- [x] Remove obsolete `SkillRegistry.initializeDefaults()` calls
 
 **Verification:**
-- [ ] Example code compiles
-- [ ] Documentation matches implementation
+- [x] Example code compiles
+- [x] Documentation matches implementation
+
+**Summary:**
+Updated the following sections in EXTENSIBILITY_GUIDE.md:
+1. "Skills" section (line ~973) - Changed to use ExtensionManager.register() as primary method and added note about SkillRegistry being a convenience wrapper
+2. "Skills with Prerequisites" section (line ~1072) - Added note about SkillRegistry being a convenience wrapper and showed both registration approaches
+3. "Querying Registries" section (line ~1250) - Added note that registries are convenience wrappers that read from ExtensionManager
+4. "Arctic Expansion Pack" example (line ~1543) - Updated to use ExtensionManager.register() for skills and added note about registries being convenience wrappers
+
+All examples now show ExtensionManager.register('skills', [...]) as the recommended approach, with notes that SkillRegistry.registerSkill() is a convenience wrapper that delegates to ExtensionManager internally.
 
 ---
 

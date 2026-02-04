@@ -972,15 +972,15 @@ const fireResistance = registry.getRacialTraitById('dragon_born_fire_resistance'
 
 ### Skills
 
-Add custom skills with the SkillRegistry:
+Add custom skills through ExtensionManager (recommended) or SkillRegistry (convenience wrapper):
 
 ```typescript
-import { SkillRegistry } from 'playlist-data-engine';
+import { ExtensionManager } from 'playlist-data-engine';
 
-const registry = SkillRegistry.getInstance();
+const manager = ExtensionManager.getInstance();
 
-// Register custom skills
-registry.registerSkills([
+// Register custom skills (recommended approach)
+manager.register('skills', [
     {
         id: 'survival_cold',
         name: 'Survival (Cold Environments)',
@@ -1011,13 +1011,14 @@ registry.registerSkills([
 ]);
 
 // Set spawn rates for skills
-const manager = ExtensionManager.getInstance();
 manager.setWeights('skills', {
     'survival_cold': 0.5,     // Half as likely
     'athletics': 2.0,         // Twice as likely
     'intimidation_war': 1.0   // Default rate
 });
 ```
+
+**Note:** `SkillRegistry` is a convenience wrapper around `ExtensionManager`. You can also use `SkillRegistry.registerSkill()` or `SkillRegistry.registerSkills()`, which delegate to `ExtensionManager.register('skills', [...])` internally.
 
 **Register ability-specific skills:**
 
@@ -1074,9 +1075,12 @@ const isValid = registry.isValidSkill('survival_cold');  // true
 Skills can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced skills that require base skills, specific features, spells, ability scores, level, class, or race.
 
 ```typescript
-import { SkillRegistry, SkillValidator, CharacterGenerator } from 'playlist-data-engine';
+import { ExtensionManager, SkillRegistry, SkillValidator, CharacterGenerator } from 'playlist-data-engine';
 
-const registry = SkillRegistry.getInstance();
+// Note: SkillRegistry is a convenience wrapper around ExtensionManager
+// Both approaches work - choose the one you prefer
+const manager = ExtensionManager.getInstance();
+const registry = SkillRegistry.getInstance();  // Convenience wrapper
 
 // ===== SKILL WITH FEATURE PREREQUISITES =====
 // Dragon Smithing: Requires Draconic Bloodline feature
@@ -1093,7 +1097,11 @@ const dragonSmithing: CustomSkill = {
     source: 'custom'
 };
 
-registry.registerSkill(dragonSmithing);
+// Option 1: Register via ExtensionManager (recommended)
+manager.register('skills', [dragonSmithing]);
+
+// Option 2: Register via SkillRegistry (convenience wrapper)
+// registry.registerSkill(dragonSmithing);
 
 // ===== SKILL WITH ABILITY SCORE AND SKILL PREREQUISITES =====
 // Advanced Arcana: Requires INT 16 and proficiency in Arcana
@@ -1110,7 +1118,7 @@ const advancedArcana: CustomSkill = {
     source: 'custom'
 };
 
-registry.registerSkill(advancedArcana);
+manager.register('skills', [advancedArcana]);
 
 // ===== SKILL WITH SPELL PREREQUISITES =====
 // Spell Mastery: Requires knowing specific spells first
@@ -1127,7 +1135,7 @@ const spellMasterySkill: CustomSkill = {
     source: 'custom'
 };
 
-registry.registerSkill(spellMasterySkill);
+manager.register('skills', [spellMasterySkill]);
 
 // ===== SKILL WITH RACE PREREQUISITES =====
 // Dwarven Combat Training: Dwarf only
@@ -1142,7 +1150,7 @@ const dwarvenCombat: CustomSkill = {
     source: 'custom'
 };
 
-registry.registerSkill(dwarvenCombat);
+manager.register('skills', [dwarvenCombat]);
 
 // ===== VALIDATING SKILL PREREQUISITES =====
 // Check if a character meets the requirements
@@ -1249,7 +1257,9 @@ manager.register('skillLists', [
 
 #### Querying Registries
 
-You can query the FeatureRegistry and SkillRegistry to get information about registered features, skills, and registry statistics:
+You can query the FeatureRegistry and SkillRegistry to get information about registered features, skills, and registry statistics.
+
+**Note:** `FeatureRegistry` and `SkillRegistry` are convenience wrappers that read from `ExtensionManager` with caching. Query methods work the same way - they just fetch data from the single source of truth.
 
 ```typescript
 import { FeatureRegistry, SkillRegistry } from 'playlist-data-engine';
@@ -1548,6 +1558,9 @@ import { ExtensionManager, FeatureRegistry, SkillRegistry, CharacterGenerator } 
 // Create an expansion pack with custom features, skills, and spawn rates
 function registerArcticExpansionPack() {
     const manager = ExtensionManager.getInstance();
+
+    // Note: FeatureRegistry and SkillRegistry are convenience wrappers around ExtensionManager
+    // Query methods use them for convenience, but registration goes through ExtensionManager
     const featureRegistry = FeatureRegistry.getInstance();
     const skillRegistry = SkillRegistry.getInstance();
 
@@ -1618,7 +1631,7 @@ function registerArcticExpansionPack() {
 
     // ===== REGISTER EVERYTHING =====
     // Features
-    featureRegistry.registerClassFeatures([frostRage, snowWalker]);
+    manager.register('classFeatures', [frostRage, snowWalker]);
     manager.register('classFeatures.Barbarian', [frostRage], {
         weights: { 'frost_rage': 0.5 }  // Rare feature
     });
@@ -1626,8 +1639,7 @@ function registerArcticExpansionPack() {
         weights: { 'snow_walker': 0.7 }
     });
 
-    // Skills
-    skillRegistry.registerSkills([coldSurvival, iceFishing]);
+    // Skills (register via ExtensionManager)
     manager.register('skills', [coldSurvival, iceFishing]);
     manager.register('skills.WIS', [coldSurvival, iceFishing], {
         weights: {
