@@ -335,16 +335,18 @@ const evocationSpells = registry.getSpellsBySchool('Evocation');
 
 ---
 
-#### Task 3.3: Update USAGE_IN_OTHER_PROJECTS.md
+#### Task 3.3: Update USAGE_IN_OTHER_PROJECTS.md ✅
 
 **Line 1760** mentions SpellRegistry
 
-- [ ] Update feature description
-- [ ] Emphasize: "Convenience wrapper around ExtensionManager"
-- [ ] Note: "No duplicate storage — improvement over SkillRegistry/FeatureRegistry pattern"
+- [x] Update feature description
+- [x] Emphasize: "Convenience wrapper around ExtensionManager"
+- [x] Note: "No duplicate storage — improvement over SkillRegistry/FeatureRegistry pattern"
 
 **Verification:**
-- [ ] Description accurate
+- [x] Description accurate
+
+**Summary:** Updated line 1760 in USAGE_IN_OTHER_PROJECTS.md to describe SpellRegistry as "Register and query spells with prerequisite validation (convenience wrapper around ExtensionManager with no duplicate storage — improvement over SkillRegistry/FeatureRegistry pattern)"
 
 ---
 
@@ -449,8 +451,8 @@ const evocationSpells = registry.getSpellsBySchool('Evocation');
 
 **Phase 3: ⏳ IN PROGRESS** - Update Documentation
 - [x] Task 3.1: Update EXTENSIBILITY_GUIDE.md
-- [ ] Task 3.2: Update DATA_ENGINE_REFERENCE.md
-- [ ] Task 3.3: Update USAGE_IN_OTHER_PROJECTS.md
+- [x] Task 3.2: Update DATA_ENGINE_REFERENCE.md
+- [x] Task 3.3: Update USAGE_IN_OTHER_PROJECTS.md
 - [ ] Task 3.4: Audit Other Documentation
 
 **Phase 4: ⏳ PENDING** - Final Verification
