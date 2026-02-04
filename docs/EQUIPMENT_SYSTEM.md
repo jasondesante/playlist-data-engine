@@ -999,7 +999,7 @@ class FeatureRegistry {
 }
 ```
 
-**Note**: These methods are useful when creating custom equipment that grants features. Use `isValidEquipmentFeature()` to validate feature references in equipment definitions, and `registerEquipmentFeature()` to register features specifically designed for equipment items.
+**Note**: FeatureRegistry is a convenience wrapper around ExtensionManager (reads from ExtensionManager with no duplicate storage). These methods are useful when creating custom equipment that grants features. Use `isValidEquipmentFeature()` to validate feature references in equipment definitions, and `registerEquipmentFeature()` to register features specifically designed for equipment items.
 
 ---
 

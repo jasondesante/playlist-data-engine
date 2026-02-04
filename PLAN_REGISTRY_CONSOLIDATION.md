@@ -1067,11 +1067,29 @@ Updated the FeatureRegistry description in USAGE_IN_OTHER_PROJECTS.md (line 1774
 ### Task 12.4: Audit Other Documentation
 
 **Check all .md files for FeatureRegistry references:**
-- [ ] Verify all examples use ExtensionManager for registration
-- [ ] Check for "FeatureRegistry stores" language (should be "reads from EM")
+- [x] Verify all examples use ExtensionManager for registration
+- [x] Check for "FeatureRegistry stores" language (should be "reads from EM")
 
 **Verification:**
-- [ ] No outdated FeatureRegistry documentation
+- [x] No outdated FeatureRegistry documentation
+
+**Summary:**
+Audited all .md documentation files for FeatureRegistry references:
+
+1. **EQUIPMENT_SYSTEM.md** - Added note clarifying that FeatureRegistry is a convenience wrapper around ExtensionManager. The equipment-related methods (`getEquipmentFeatures`, `isValidEquipmentFeature`, `registerEquipmentFeature`) are documented correctly and work as expected.
+
+2. **CUSTOM_CONTENT.md** - Already uses `manager.register('racialTraits', [...])` for registration (correct ExtensionManager pattern). Query methods like `getRacialTraitsForSubrace()` are shown using FeatureRegistry which is correct (convenience wrapper for querying).
+
+3. **PREREQUISITES.md** - Shows `FeatureRegistry.getInstance().registerClassFeature()` which is correct (convenience wrapper). The `validatePrerequisites()` method documentation is accurate.
+
+4. **specs/001-core-engine/SPEC.md** - Correctly describes FeatureRegistry's purpose as managing features and traits.
+
+5. **USAGE_IN_OTHER_PROJECTS.md**, **DATA_ENGINE_REFERENCE.md**, **EXTENSIBILITY_GUIDE.md** - Already updated in previous tasks (12.1-12.3).
+
+No outdated patterns found. All documentation correctly reflects that:
+- FeatureRegistry provides methods for querying features (reads from ExtensionManager with caching)
+- FeatureRegistry's `register*()` methods are convenience wrappers that delegate to ExtensionManager
+- ExtensionManager is the single source of truth for storage
 
 ---
 
