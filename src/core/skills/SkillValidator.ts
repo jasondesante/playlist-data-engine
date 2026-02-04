@@ -15,6 +15,9 @@ import type { CharacterSheet, Ability } from '../types/Character.js';
 import { VALID_ABILITIES, isValidAbility as isValidAbilityCheck } from '../utils/AbilityConstants.js';
 import { validatePrerequisites } from '../utils/PrerequisiteValidator.js';
 
+// Re-export validation result type for consistency with other registries
+export type { SkillValidationResult };
+
 /**
  * Valid skill sources
  */

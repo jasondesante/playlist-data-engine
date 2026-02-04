@@ -1279,27 +1279,41 @@ The architecture is correct: ExtensionManager is the single source of truth, and
 ### Task 14.3: Update Index Exports
 
 **Check src/core/features/index.ts and src/core/skills/index.ts:**
-- [ ] Export validation result types from validators
-- [ ] Remove any exported registration methods if they exist
+- [x] Export validation result types from validators
+- [x] Remove any exported registration methods if they exist
 
 **Verification:**
-- [ ] Exports are consistent across registries
+- [x] Exports are consistent across registries
+
+**Summary:**
+Updated the Skills module to export validation result types from the validator (matching Spells and Features pattern):
+1. Added `export type { SkillValidationResult };` re-export to `SkillValidator.ts`
+2. Updated `skills/index.ts` to import `SkillValidationResult` from `SkillValidator.js` instead of `SkillTypes.js`
+
+**Consistent Pattern Across Registries:**
+- **Features**: Exports `ValidationResult as FeatureValidationResult` from `FeatureValidator.js`
+- **Skills**: Exports `SkillValidationResult` from `SkillValidator.js` (NEW)
+- **Spells**: Exports `SpellValidationResult` from `SpellValidator.js`
+
+All three registries now follow the same pattern: validation result types are exported from the validator files, not from the types files. This provides a consistent API for consumers who want to import validation types.
+
+**Note on Registration Methods:** The index files correctly export the Registry classes (FeatureRegistry, SkillRegistry, SpellRegistry) which include `register*()` convenience methods. These are NOT removed because they are part of the convenience wrapper pattern - the registration methods delegate to ExtensionManager internally, which is the desired behavior.
 
 ---
 
 ## Success Criteria
 
-1. [ ] SkillRegistry has no internal storage (reads from ExtensionManager)
-2. [ ] FeatureRegistry has no internal storage (reads from ExtensionManager)
-3. [ ] `ExtensionManager.register()` works directly for registration
-4. [ ] Registry `register*()` methods delegate to `ExtensionManager.register()` (convenience wrappers)
-5. [ ] ExtensionManager NO LONGER calls registry `register*()` methods (eliminates duplicate storage)
-6. [ ] All query methods read from ExtensionManager with caching
-7. [ ] All validation methods delegate to validators
-8. [ ] No duplicate storage between ExtensionManager and registries
-9. [ ] All tests pass
-10. [ ] Documentation updated to reflect wrapper pattern
-11. [ ] Same pattern as SpellRegistry across all three registries
+1. [x] SkillRegistry has no internal storage (reads from ExtensionManager)
+2. [x] FeatureRegistry has no internal storage (reads from ExtensionManager)
+3. [x] `ExtensionManager.register()` works directly for registration
+4. [x] Registry `register*()` methods delegate to `ExtensionManager.register()` (convenience wrappers)
+5. [x] ExtensionManager NO LONGER calls registry `register*()` methods (eliminates duplicate storage)
+6. [x] All query methods read from ExtensionManager with caching
+7. [x] All validation methods delegate to validators
+8. [x] No duplicate storage between ExtensionManager and registries
+9. [x] All tests pass
+10. [x] Documentation updated to reflect wrapper pattern
+11. [x] Same pattern as SpellRegistry across all three registries
 
 ---
 
