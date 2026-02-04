@@ -17,6 +17,19 @@ Eliminate redundant registration methods from SpellRegistry, SkillRegistry, and 
 
 ---
 
+## Progress Summary
+
+### Phase 1: Research and Discovery - ✅ COMPLETED
+All tasks in Phase 1 have been completed. Key findings:
+- Created comprehensive usage inventory (`METHOD_USAGE_INVENTORY.md`)
+- Identified ~307 test calls that need migration
+- No production code uses these methods (only tests and docs)
+- ExtensionManager can handle all registration use cases EXCEPT:
+  1. Duplicate ID detection (needs to be added)
+  2. Spell list spell ID validation (needs to be moved from SpellRegistry)
+
+---
+
 ## Current State
 
 ### Redundant Methods to Remove
@@ -49,19 +62,25 @@ Eliminate redundant registration methods from SpellRegistry, SkillRegistry, and 
 **Goal:** Create comprehensive list of all usage locations
 
 **Sub-tasks:**
-- [ ] Verify all `registerSpell()` usage locations from grep results
-- [ ] Verify all `registerSpells()` usage locations from grep results
-- [ ] Verify all `registerClassSpellList()` usage locations from grep results
-- [ ] Verify all `registerSkill()` usage locations from grep results
-- [ ] Verify all `registerSkills()` usage locations from grep results
-- [ ] Verify all `registerClassFeature()` usage locations from grep results
-- [ ] Verify all `registerClassFeatures()` usage locations from grep results
-- [ ] Verify all `registerRacialTrait()` usage locations from grep results
-- [ ] Verify all `registerRacialTraits()` usage locations from grep results
-- [ ] Categorize usages by: test files, documentation, production code
-- [ ] Create detailed inventory spreadsheet/table
+- [x] Verify all `registerSpell()` usage locations from grep results
+- [x] Verify all `registerSpells()` usage locations from grep results
+- [x] Verify all `registerClassSpellList()` usage locations from grep results
+- [x] Verify all `registerSkill()` usage locations from grep results
+- [x] Verify all `registerSkills()` usage locations from grep results
+- [x] Verify all `registerClassFeature()` usage locations from grep results
+- [x] Verify all `registerClassFeatures()` usage locations from grep results
+- [x] Verify all `registerRacialTrait()` usage locations from grep results
+- [x] Verify all `registerRacialTraits()` usage locations from grep results
+- [x] Categorize usages by: test files, documentation, production code
+- [x] Create detailed inventory spreadsheet/table
 
 **Expected Output:** Complete inventory file with file paths and line numbers
+
+**Status:** ✅ COMPLETED
+- Inventory created at `METHOD_USAGE_INVENTORY.md`
+- All methods verified across 21 test files and 15 documentation files
+- No production code usage found (all usage is in tests/docs)
+- Total ~307 test calls to replace across all registries
 
 ---
 
@@ -70,17 +89,64 @@ Eliminate redundant registration methods from SpellRegistry, SkillRegistry, and 
 **Goal:** Confirm ExtensionManager can handle all current registry use cases
 
 **Sub-tasks:**
-- [ ] Read `ExtensionManager.register()` method signature
-- [ ] Verify validation is handled by ExtensionManager or validators
-- [ ] Confirm duplicate detection works in ExtensionManager
-- [ ] Verify spawn rate weights work with ExtensionManager
-- [ ] Check if any special logic in registry methods needs to be preserved
+- [x] Read `ExtensionManager.register()` method signature
+- [x] Verify validation is handled by ExtensionManager or validators
+- [x] Confirm duplicate detection works in ExtensionManager
+- [x] Verify spawn rate weights work with ExtensionManager
+- [x] Check if any special logic in registry methods needs to be preserved
 
 **Files to Review:**
-- [ ] `src/core/extensions/ExtensionManager.ts` - register() method
-- [ ] `src/core/spells/SpellValidator.ts`
-- [ ] `src/core/skills/SkillValidator.ts`
-- [ ] `src/core/features/FeatureValidator.ts`
+- [x] `src/core/extensions/ExtensionManager.ts` - register() method
+- [x] `src/core/spells/SpellValidator.ts`
+- [x] `src/core/skills/SkillValidator.ts`
+- [x] `src/core/features/FeatureValidator.ts`
+
+**Status:** ✅ COMPLETED
+
+**Findings:**
+
+1. **ExtensionManager.register() signature** (lines 266-306):
+   ```typescript
+   register(category: ExtensionCategory, items: any[], options: ExtensionOptions = {}): void
+   ```
+   - Supports all needed categories: `spells`, `skills`, `classFeatures`, `racialTraits`
+   - Has validation support via `validate` option (default: true)
+   - Handles merge modes via `mode` option (relative, absolute, default, replace)
+   - Has `weights` option for spawn rate control
+
+2. **Validation is already delegated to Validators**:
+   - ExtensionManager.validate() (lines 455-474) calls category-specific validators
+   - Spells: Uses SpellValidator.validateSpell() at line 502
+   - Skills: Uses SkillValidator.validateSkill() at line 663
+   - Features: Uses FeatureValidator.validateClassFeature/validateRacialTrait() at lines 649, 656
+   - All validation happens BEFORE registration in ExtensionManager
+
+3. **Duplicate Detection**:
+   - ✅ ExtensionManager does NOT handle duplicate detection
+   - ❌ Registry methods have duplicate detection that needs to be preserved:
+     - SkillRegistry.registerSkill(): Lines 88-91 check for duplicate skill IDs
+     - FeatureRegistry.registerClassFeature(): Lines 99-102 check for duplicate feature IDs
+     - FeatureRegistry.registerRacialTrait(): Lines 178-181 check for duplicate trait IDs
+   - **Decision needed**: Should duplicate detection be added to ExtensionManager or handled in validators?
+
+4. **Special Logic to Preserve**:
+   - **SpellRegistry.registerClassSpellList()** (lines 156-178):
+     - Validates spell IDs exist before registering spell list
+     - This validation needs to be moved to ExtensionManager before removal
+     - Implementation in Task 2.0
+
+5. **Cache Invalidation**:
+   - ✅ All registries have public `invalidateCache()` method (except SpellRegistry which is private)
+   - After calling ExtensionManager.register() directly, users must call `registry.invalidateCache()`
+   - Task 6.2 will make SpellRegistry.invalidateCache() public
+
+6. **Spawn Rate Weights**:
+   - ✅ ExtensionManager fully supports spawn rate weights via `options.weights`
+   - Works correctly with all categories
+
+**Conclusion**: ExtensionManager can handle all registration use cases EXCEPT:
+1. Duplicate ID detection (needs to be added)
+2. Spell list spell ID validation (needs to be moved from SpellRegistry)
 
 ---
 
@@ -89,16 +155,51 @@ Eliminate redundant registration methods from SpellRegistry, SkillRegistry, and 
 **Goal:** Understand impact of removing convenience methods
 
 **Sub-tasks:**
-- [ ] Check if registry methods are exported in public API
-- [ ] Check if any external projects might be using these methods
-- [ ] Identify any deprecation notices needed
-- [ ] Determine if migration helper is needed
+- [x] Check if registry methods are exported in public API
+- [x] Check if any external projects might be using these methods
+- [x] Identify any deprecation notices needed
+- [x] Determine if migration helper is needed
 
 **Files to Review:**
-- [ ] `src/core/spells/index.ts` - exports
-- [ ] `src/core/skills/index.ts` - exports
-- [ ] `src/core/features/index.ts` - exports
-- [ ] `USAGE_IN_OTHER_PROJECTS.md` - external usage examples
+- [x] `src/core/spells/index.ts` - exports
+- [x] `src/core/skills/index.ts` - exports
+- [x] `src/core/features/index.ts` - exports
+- [x] `USAGE_IN_OTHER_PROJECTS.md` - external usage examples
+
+**Status:** ✅ COMPLETED
+
+**Findings:**
+
+1. **Public API Exports** (src/index.ts):
+   - ✅ SpellRegistry is exported (line 334)
+   - ✅ SkillRegistry is exported (line 301)
+   - ✅ FeatureRegistry is exported (line 272)
+   - The registries themselves are part of the public API
+   - The registration methods are instance methods on these registries
+   - **Impact**: Breaking change - removing methods is a public API change
+
+2. **External Usage** (USAGE_IN_OTHER_PROJECTS.md):
+   - Usage_IN_OTHER_PROJECTS.md shows examples using both:
+     - ExtensionManager.register() directly
+     - Registry convenience wrappers
+   - Both patterns are documented as valid
+   - **Impact**: External projects may be using either pattern
+
+3. **Deprecation Notices**:
+   - Current docs say convenience wrappers are valid approaches
+   - Decision already made: Remove methods outright (no deprecation period)
+   - **Action needed**: Documentation must be updated before release
+
+4. **Migration Helper**:
+   - Plan already specifies creating test helpers in tests/helpers/registrationHelpers.ts
+   - Test helpers will make migration easier for internal code
+   - **No user-facing migration helper needed** - users will use ExtensionManager directly
+
+**Breaking Change Assessment**:
+- **Severity**: MEDIUM-HIGH
+- **Scope**: All users who use registry convenience methods
+- **Mitigation**: Clear documentation updates before release
+- **Rollback**: Not possible without re-adding methods
 
 ---
 
