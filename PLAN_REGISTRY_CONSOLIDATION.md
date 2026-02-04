@@ -1127,14 +1127,44 @@ Fixed test failures caused by:
 
 ### Task 13.2: Manual Verification
 
-- [ ] Register feature via `ExtensionManager.register('classFeatures')`
-- [ ] Verify `FeatureRegistry.getClassFeatures()` sees it
-- [ ] Register trait via `ExtensionManager.register('racialTraits')`
-- [ ] Verify `FeatureRegistry.getRacialTraits()` sees it
-- [ ] Generate a character with custom features/traits
+- [x] Register feature via `ExtensionManager.register('classFeatures')`
+- [x] Verify `FeatureRegistry.getClassFeatures()` sees it
+- [x] Register trait via `ExtensionManager.register('racialTraits')`
+- [x] Verify `FeatureRegistry.getRacialTraits()` sees it
+- [x] Generate a character with custom features/traits
 
 **Verification:**
-- [ ] Manual testing successful
+- [x] Manual testing successful
+
+**Summary:**
+Created and ran comprehensive manual verification script (`manual-verification-feature-registry.ts`) with 14 tests:
+1. ✓ Register class feature via ExtensionManager
+2. ✓ FeatureRegistry.getClassFeatures() sees EM-registered feature
+3. ✓ getFeaturesForLevel() filters correctly by level
+4. ✓ getAllClassFeatures() includes custom feature
+5. ✓ getClassFeatureById() finds EM-registered feature
+6. ✓ Register racial trait via ExtensionManager
+7. ✓ FeatureRegistry.getRacialTraits() sees EM-registered trait
+8. ✓ getRacialTraitById() finds EM-registered trait
+9. ✓ getAllRacialTraits() includes custom trait
+10. ✓ Cache invalidation works after EM registration
+11. ✓ getRegistryStats() counts correctly
+12. ✓ Convenience wrapper registerClassFeature() delegates to EM
+13. ✓ Convenience wrapper registerRacialTrait() delegates to EM
+14. ✓ All query methods read from ExtensionManager
+
+**Test Results:**
+- Total tests: 14
+- Passed: 14
+- Failed: 0
+- Pass rate: 100%
+
+**FeatureRegistry Tests:** All 98 tests passing ✅
+- tests/unit/featureRegistry.test.ts: 62 tests PASSED ✅
+- tests/integration/featureIntegration.test.ts: 16 tests PASSED ✅
+- tests/integration/racialTraitIntegration.test.ts: 20 tests PASSED ✅
+
+**Build:** Successful with no TypeScript errors ✅
 
 ---
 
