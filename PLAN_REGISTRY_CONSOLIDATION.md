@@ -293,14 +293,25 @@ validateSkill(skill: CustomSkill): SkillValidationResult {
 ### Task 3.2: Add Integration Tests
 
 **Add tests for SkillRegistry/ExtensionManager interaction:**
-- [ ] Register via `ExtensionManager.register('skills')`, verify `SkillRegistry.getAllSkills()` sees it
-- [ ] `getSkillsByAbility()` returns correct skills from EM data
-- [ ] `getSkillsByCategory()` returns correct skills from EM data
-- [ ] Cache invalidation works after EM registration
-- [ ] `getAvailableSkills()` filters correctly from EM data
+- [x] Register via `ExtensionManager.register('skills')`, verify `SkillRegistry.getAllSkills()` sees it
+- [x] `getSkillsByAbility()` returns correct skills from EM data
+- [x] `getSkillsByCategory()` returns correct skills from EM data
+- [x] Cache invalidation works after EM registration
+- [x] `getAvailableSkills()` filters correctly from EM data
 
 **Verification:**
-- [ ] All new integration tests pass
+- [x] All new integration tests pass
+
+**Summary:**
+Added 5 new integration tests to `tests/integration/skillIntegration.test.ts`:
+1. `should register via ExtensionManager and SkillRegistry.getAllSkills() sees it`
+2. `getSkillsByAbility() returns correct skills from EM data`
+3. `getSkillsByCategory() returns correct skills from EM data`
+4. `cache invalidation works after EM registration`
+5. `getAvailableSkills() filters correctly from EM data`
+
+**Additional fixes:**
+Fixed test setup in `skillIntegration.test.ts` to properly reset state between tests and initialize defaults in `beforeEach`. Also fixed equipment-related tests (`equipmentEffectApplier.test.ts`, `equipmentModifier.test.ts`, `equipmentValidator.test.ts`) to use the new `initializeSkillDefaults()` function instead of the removed `SkillRegistry.initializeDefaults()` method.
 
 ---
 

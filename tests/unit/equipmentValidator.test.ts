@@ -15,6 +15,7 @@ import type {
 } from '../../src/core/types/Equipment.js';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 
 describe('EquipmentValidator', () => {
     let featureRegistry: FeatureRegistry;
@@ -25,13 +26,9 @@ describe('EquipmentValidator', () => {
         featureRegistry = FeatureRegistry.getInstance();
         skillRegistry = SkillRegistry.getInstance();
 
-        // Initialize if not already
-        if (!featureRegistry.isInitialized()) {
-            featureRegistry.initializeDefaults();
-        }
-        if (!skillRegistry.isInitialized()) {
-            skillRegistry.initializeDefaults();
-        }
+        // Initialize defaults using ExtensionManager initialization functions
+        initializeFeatureDefaults();
+        initializeSkillDefaults();
     });
 
     afterEach(() => {

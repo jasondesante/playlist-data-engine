@@ -19,6 +19,7 @@ import type { CharacterSheet } from '../../src/core/types/Character.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 
 describe('EquipmentModifier', () => {
     let featureRegistry: FeatureRegistry;
@@ -34,14 +35,9 @@ describe('EquipmentModifier', () => {
         skillRegistry = SkillRegistry.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
-        // Initialize registries if not already
-        if (!featureRegistry.isInitialized()) {
-            featureRegistry.initializeDefaults();
-        }
-        if (!skillRegistry.isInitialized()) {
-            skillRegistry.initializeDefaults();
-        }
-        // ExtensionManager doesn't have isInitialized - it auto-initializes on first use
+        // Initialize defaults using ExtensionManager initialization functions
+        initializeFeatureDefaults();
+        initializeSkillDefaults();
 
         // Register a test piece of equipment
         testBaseEquipment = {
