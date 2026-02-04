@@ -27,6 +27,7 @@ import { SPELL_DATABASE } from '../../src/utils/constants.js';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 import { ALL_RACES } from '../../src/utils/constants.js';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData.js';
+import { registerTestSkill, registerTestClassFeature, registerTestRacialTrait } from '../helpers/registrationHelpers.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
 import type { PlaylistTrack } from '../../src/core/types/Playlist.js';
 
@@ -156,7 +157,7 @@ describe('Integration: Prerequisites and Races', () => {
                 prerequisites: { level: 5 },
                 source: 'custom'
             };
-            skillRegistry.registerSkill(advancedSkill);
+            registerTestSkill(advancedSkill);
 
             // Generate a level 10 Fighter (meets prerequisites)
             const character = CharacterGenerator.generate(
@@ -187,7 +188,7 @@ describe('Integration: Prerequisites and Races', () => {
                 },
                 source: 'custom'
             };
-            skillRegistry.registerSkill(dragonSkill);
+            registerTestSkill(dragonSkill);
 
             // Generate a Sorcerer that should have draconic_bloodline feature
             // at level 5 or higher
@@ -222,7 +223,7 @@ describe('Integration: Prerequisites and Races', () => {
                 prerequisites: { level: 10 },
                 source: 'custom'
             };
-            skillRegistry.registerSkill(masterSkill);
+            registerTestSkill(masterSkill);
 
             // Generate a level 1 Rogue (doesn't meet prerequisites)
             const character = CharacterGenerator.generate(
@@ -247,7 +248,7 @@ describe('Integration: Prerequisites and Races', () => {
                 prerequisites: { class: 'Sorcerer' },
                 source: 'custom'
             };
-            skillRegistry.registerSkill(sorcerySkill);
+            registerTestSkill(sorcerySkill);
 
             // Generate a Fighter (wrong class)
             const character = CharacterGenerator.generate(
@@ -274,7 +275,7 @@ describe('Integration: Prerequisites and Races', () => {
                 prerequisites: { level: 5 },
                 source: 'custom'
             };
-            skillRegistry.registerSkill(level5Skill);
+            registerTestSkill(level5Skill);
 
             // Generate a level 1 Fighter
             const character = CharacterGenerator.generate(
@@ -457,8 +458,8 @@ describe('Integration: Prerequisites and Races', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerRacialTrait(highElfTrait);
-            featureRegistry.registerRacialTrait(woodElfTrait);
+            registerTestRacialTrait(highElfTrait);
+            registerTestRacialTrait(woodElfTrait);
         });
 
         it('should get traits for High Elf subrace', () => {
@@ -551,7 +552,7 @@ describe('Integration: Prerequisites and Races', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerRacialTrait(dragonTrait);
+            registerTestRacialTrait(dragonTrait);
 
             const dwarfCharacter = createMockCharacter({
                 race: 'Dwarf',
@@ -582,7 +583,7 @@ describe('Integration: Prerequisites and Races', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerRacialTrait(dragonOnlyTrait);
+            registerTestRacialTrait(dragonOnlyTrait);
 
             const humanCharacter = createMockCharacter({
                 race: 'Human',
@@ -624,8 +625,8 @@ describe('Integration: Prerequisites and Races', () => {
                 source: 'custom'
             };
 
-            skillRegistry.registerSkill(dragonSmithing);
-            skillRegistry.registerSkill(dragonLore);
+            registerTestSkill(dragonSmithing);
+            registerTestSkill(dragonLore);
 
             // Register dragon-themed class feature
             const dragonMagic: ClassFeature = {
@@ -643,7 +644,7 @@ describe('Integration: Prerequisites and Races', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerClassFeature(dragonMagic);
+            registerTestClassFeature(dragonMagic);
         });
 
         it('should allow dragon skills for Sorcerer with draconic bloodline', () => {
@@ -707,7 +708,7 @@ describe('Integration: Prerequisites and Races', () => {
                 },
                 source: 'custom'
             };
-            skillRegistry.registerSkill(advancedSkill);
+            registerTestSkill(advancedSkill);
 
             // Generate a character
             const character = CharacterGenerator.generate(
@@ -750,7 +751,7 @@ describe('Integration: Prerequisites and Races', () => {
                 effects: [{ type: 'passive_modifier', target: 'test', value: true }],
                 source: 'default'
             };
-            featureRegistry.registerRacialTrait(highElfTrait);
+            registerTestRacialTrait(highElfTrait);
 
             const audioProfile = createMockAudioProfile();
 
@@ -785,7 +786,7 @@ describe('Integration: Prerequisites and Races', () => {
                 },
                 source: 'custom'
             };
-            skillRegistry.registerSkill(complexSkill);
+            registerTestSkill(complexSkill);
 
             // Generate character meeting prerequisites
             const character = CharacterGenerator.generate(
@@ -870,9 +871,9 @@ describe('Integration: Prerequisites and Races', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerClassFeature(arcaneSmithFeature);
-            featureRegistry.registerClassFeature(battleCasterFeature);
-            featureRegistry.registerClassFeature(masteryFeature);
+            registerTestClassFeature(arcaneSmithFeature);
+            registerTestClassFeature(battleCasterFeature);
+            registerTestClassFeature(masteryFeature);
         });
 
         it('should validate feature with skill prerequisite', () => {
@@ -1009,7 +1010,7 @@ describe('Integration: Prerequisites and Races', () => {
                 prerequisites: {},
                 source: 'custom'
             };
-            skillRegistry.registerSkill(emptyPrereqSkill);
+            registerTestSkill(emptyPrereqSkill);
 
             const character = createMockCharacter();
             const skill = skillRegistry.getSkill('empty_prereq');
@@ -1034,7 +1035,7 @@ describe('Integration: Prerequisites and Races', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerClassFeature(featureWithSpellPrereq);
+            registerTestClassFeature(featureWithSpellPrereq);
 
             // Character without spells object
             const characterWithoutSpells = createMockCharacter();
@@ -1070,8 +1071,8 @@ describe('Integration: Prerequisites and Races', () => {
                 source: 'custom'
             };
 
-            skillRegistry.registerSkill(skillA);
-            skillRegistry.registerSkill(skillB);
+            registerTestSkill(skillA);
+            registerTestSkill(skillB);
 
             const character = createMockCharacter({
                 skills: {}
@@ -1113,9 +1114,9 @@ describe('Integration: Prerequisites and Races', () => {
                 source: 'custom'
             };
 
-            skillRegistry.registerSkill(level1Skill);
-            skillRegistry.registerSkill(level5Skill);
-            skillRegistry.registerSkill(level10Skill);
+            registerTestSkill(level1Skill);
+            registerTestSkill(level5Skill);
+            registerTestSkill(level10Skill);
 
             // Generate level 1 character
             const character = CharacterGenerator.generate(
@@ -1154,7 +1155,7 @@ describe('Integration: Prerequisites and Races', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerClassFeature(sneakAttackFighter);
+            registerTestClassFeature(sneakAttackFighter);
 
             const stealthyFighter = createMockCharacter({
                 class: 'Fighter',

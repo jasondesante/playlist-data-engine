@@ -15,6 +15,7 @@ import { FeatureRegistry } from '../../src/core/features/FeatureRegistry';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
+import { registerTestSkill } from '../helpers/registrationHelpers.js';
 import type { PlaylistTrack } from '../../src/core/types/Playlist';
 
 // Helper function to create a mock track with a custom title
@@ -321,7 +322,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 categories: ['exploration']
             };
 
-            skillRegistry.registerSkill(customSkill);
+            registerTestSkill(customSkill);
 
             // Generate a Ranger character
             const character = CharacterGenerator.generate(
@@ -357,7 +358,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             ];
 
             for (const skill of customSkills) {
-                skillRegistry.registerSkill(skill);
+                registerTestSkill(skill);
             }
 
             // Generate a Rogue character
@@ -387,7 +388,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 categories: ['knowledge']
             };
 
-            skillRegistry.registerSkill(customSkill);
+            registerTestSkill(customSkill);
 
             // Note: For this skill to be assigned as proficient, it would need to be added
             // to the Wizard's available_skills list in constants.ts
@@ -426,7 +427,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 categories: ['knowledge']
             };
 
-            skillRegistry.registerSkill(customSkill);
+            registerTestSkill(customSkill);
 
             // Generate a Fighter character
             const character = CharacterGenerator.generate(
@@ -468,7 +469,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 categories: ['social']
             };
 
-            skillRegistry.registerSkill(customSkill);
+            registerTestSkill(customSkill);
 
             // Generate a Rogue character
             const character = CharacterGenerator.generate(
@@ -542,11 +543,11 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             };
 
             // Register the skill once
-            skillRegistry.registerSkill(customSkill);
+            registerTestSkill(customSkill);
 
             // Attempting to register again should throw
             expect(() => {
-                skillRegistry.registerSkill(customSkill);
+                registerTestSkill(customSkill);
             }).toThrow();
         });
 
@@ -680,8 +681,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 categories: ['knowledge']
             };
 
-            skillRegistry.registerSkill(strSkill);
-            skillRegistry.registerSkill(intSkill);
+            registerTestSkill(strSkill);
+            registerTestSkill(intSkill);
 
             // Get skills by ability
             const strSkills = skillRegistry.getSkillsByAbility('STR');
@@ -711,8 +712,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 categories: ['social']
             };
 
-            skillRegistry.registerSkill(combatSkill);
-            skillRegistry.registerSkill(socialSkill);
+            registerTestSkill(combatSkill);
+            registerTestSkill(socialSkill);
 
             // Get skills by category
             const combatSkills = skillRegistry.getSkillsByCategory('combat');

@@ -12,6 +12,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SkillRegistry, FeatureRegistry, ExtensionManager, SkillValidator, SpellValidator, CharacterGenerator } from '../../src/index';
+import { registerTestSkill } from '../helpers/registrationHelpers.js';
 import type { CustomSkill, Spell, ClassFeature, PlaylistTrack } from '../../src/index';
 
 describe('PREREQUISITES.md Code Examples', () => {
@@ -85,7 +86,7 @@ describe('PREREQUISITES.md Code Examples', () => {
 
             // This should not throw
             expect(() => {
-                SkillRegistry.getInstance().registerSkill(dragonSmithing);
+                registerTestSkill(dragonSmithing);
             }).not.toThrow();
         });
 
@@ -103,7 +104,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                 source: 'custom'
             };
 
-            skillRegistry.registerSkill(dragonSmithing);
+            registerTestSkill(dragonSmithing);
 
             // Create a character that meets prerequisites
             const qualifiedCharacter = CharacterGenerator.generate(
@@ -145,7 +146,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                 source: 'custom'
             };
 
-            skillRegistry.registerSkill(dragonSmithing);
+            registerTestSkill(dragonSmithing);
 
             // Create a character that does NOT meet prerequisites
             const unqualifiedCharacter = CharacterGenerator.generate(
@@ -482,7 +483,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                 source: 'custom'
             };
             expect(() => {
-                SkillRegistry.getInstance().registerSkill(dragonSmithingSkill);
+                registerTestSkill(dragonSmithingSkill);
             }).not.toThrow();
 
             // 4. Register a spell with prerequisites
@@ -561,7 +562,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                 },
                 source: 'custom'
             };
-            skillRegistry.registerSkill(dragonSmithingSkill);
+            registerTestSkill(dragonSmithingSkill);
 
             const dragonBreathSpell: Spell = {
                 id: 'dragon_breath',

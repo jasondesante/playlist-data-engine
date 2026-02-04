@@ -64,6 +64,7 @@ import type {
     CharacterGeneratorOptions,
     PlaylistTrack,
 } from '../../src/index';
+import { registerTestSkill, registerTestSkills } from '../helpers/registrationHelpers.js';
 
 describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
@@ -690,7 +691,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
     describe('Skills Examples', () => {
         it('should compile custom skills registration example', () => {
-            skillRegistry.registerSkills([
+            registerTestSkills([
                 {
                     id: 'survival_cold',
                     name: 'Survival (Cold Environments)',
@@ -782,7 +783,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
                 source: 'custom'
             };
 
-            skillRegistry.registerSkill(dragonSmithing);
+            registerTestSkill(dragonSmithing);
 
             const advancedArcana: CustomSkill = {
                 id: 'advanced_arcana',
@@ -797,7 +798,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
                 source: 'custom'
             };
 
-            skillRegistry.registerSkill(advancedArcana);
+            registerTestSkill(advancedArcana);
 
             const spellMasterySkill: CustomSkill = {
                 id: 'spell_mastery',
@@ -812,7 +813,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
                 source: 'custom'
             };
 
-            skillRegistry.registerSkill(spellMasterySkill);
+            registerTestSkill(spellMasterySkill);
         });
 
         it('should compile skill validation example', () => {

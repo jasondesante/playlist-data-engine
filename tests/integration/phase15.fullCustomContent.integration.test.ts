@@ -18,6 +18,7 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { WeightedSelector } from '../../src/core/extensions/WeightedSelector';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
+import { registerTestSkill } from '../helpers/registrationHelpers.js';
 import { Class, Race } from '../../src/core/types';
 import type { PlaylistTrack } from '../../src/core/types/Playlist';
 
@@ -185,7 +186,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             }
 
             for (const skill of customSkills) {
-                skillRegistry.registerSkill(skill);
+                registerTestSkill(skill);
             }
 
             extensionManager.register('appearance.bodyTypes', customBodyTypes);
@@ -531,7 +532,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             ];
 
             for (const skill of customSkills) {
-                skillRegistry.registerSkill(skill);
+                registerTestSkill(skill);
             }
 
             // Generate characters for classes that benefit from different abilities
@@ -589,7 +590,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 categories: ['knowledge']
             };
 
-            skillRegistry.registerSkill(validSkill);
+            registerTestSkill(validSkill);
 
             // Attempt to register invalid skill (should throw)
             const invalidSkill = {
@@ -601,7 +602,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             };
 
             expect(() => {
-                skillRegistry.registerSkill(invalidSkill);
+                registerTestSkill(invalidSkill);
             }).toThrow();
 
             // Generate character and verify valid skill is present
@@ -879,7 +880,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
 
             // Attempting to register should fail validation
             expect(() => {
-                skillRegistry.registerSkill(invalidSkill);
+                registerTestSkill(invalidSkill);
             }).toThrow();
         });
 
@@ -1088,7 +1089,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 categories: ['knowledge']
             };
 
-            skillRegistry.registerSkill(validSkill);
+            registerTestSkill(validSkill);
 
             const character = CharacterGenerator.generate(
                 'special-chars-id',
@@ -1170,7 +1171,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             });
 
             // Custom skills
-            skillRegistry.registerSkill({
+            registerTestSkill({
                 id: 'master_strategy',
                 name: 'Master Strategy',
                 ability: 'INT' as const,

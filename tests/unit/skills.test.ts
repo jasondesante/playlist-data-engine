@@ -10,6 +10,7 @@ import { CLASS_DATA } from '../../src/utils/constants.js';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
+import { registerTestSkill, registerTestSkills } from '../helpers/registrationHelpers.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
 
 describe('SkillAssigner', () => {
@@ -254,8 +255,8 @@ describe('SkillAssigner', () => {
                     source: 'custom'
                 };
 
-                registry.registerSkill(customSkill1);
-                registry.registerSkill(customSkill2);
+                registerTestSkill(customSkill1);
+                registerTestSkill(customSkill2);
 
                 // Generate skills
                 const rng = new SeededRNG('custom-skills-test');
@@ -282,7 +283,7 @@ describe('SkillAssigner', () => {
                     source: 'custom'
                 };
 
-                registry.registerSkill(customSkill);
+                registerTestSkill(customSkill);
 
                 const rng = new SeededRNG('all-skills-test');
                 const skills = SkillAssigner.assignSkills('Wizard', rng);
@@ -316,7 +317,7 @@ describe('SkillAssigner', () => {
                 ];
 
                 for (const skill of customSkills) {
-                    registry.registerSkill(skill);
+                    registerTestSkill(skill);
                 }
 
                 const rng = new SeededRNG('multi-ability-test');
@@ -371,7 +372,7 @@ describe('SkillAssigner', () => {
                     ability: 'STR',
                     source: 'custom'
                 };
-                registry.registerSkill(customSkill);
+                registerTestSkill(customSkill);
 
                 // The SkillAssigner validates skills, but since we can't modify CLASS_DATA
                 // directly, we'll verify the validation mechanism exists
@@ -422,7 +423,7 @@ describe('SkillAssigner', () => {
                 ];
 
                 for (const skill of customSkills) {
-                    registry.registerSkill(skill);
+                    registerTestSkill(skill);
                 }
 
                 const rng = new SeededRNG('custom-none-test');
@@ -443,7 +444,7 @@ describe('SkillAssigner', () => {
                     source: 'custom'
                 };
 
-                registry.registerSkill(customSkill);
+                registerTestSkill(customSkill);
 
                 const seed = 'deterministic-custom-test';
 
@@ -473,7 +474,7 @@ describe('SkillAssigner', () => {
                     source: 'custom'
                 };
 
-                registry.registerSkill(customSkill);
+                registerTestSkill(customSkill);
 
                 const rng = new SeededRNG('rogue-custom-test');
                 const skills = SkillAssigner.assignSkills('Rogue', rng);
@@ -512,7 +513,7 @@ describe('SkillAssigner', () => {
                 ];
 
                 for (const skill of customSkills) {
-                    registry.registerSkill(skill);
+                    registerTestSkill(skill);
                 }
 
                 const rng = new SeededRNG('bard-custom-test');
@@ -547,7 +548,7 @@ describe('SkillAssigner', () => {
                     source: 'custom'
                 };
 
-                registry.registerSkill(customSkill);
+                registerTestSkill(customSkill);
 
                 const rng1 = new SeededRNG('before-reset');
                 const skills1 = SkillAssigner.assignSkills('Barbarian', rng1);
@@ -577,7 +578,7 @@ describe('SkillAssigner', () => {
                 ];
 
                 for (const skill of wisSkills) {
-                    registry.registerSkill(skill);
+                    registerTestSkill(skill);
                 }
 
                 const rng = new SeededRNG('same-ability-test');
@@ -602,7 +603,7 @@ describe('SkillAssigner', () => {
                     source: 'custom'
                 };
 
-                registry.registerSkill(customSkill);
+                registerTestSkill(customSkill);
 
                 const rng = new SeededRNG('underscore-test');
                 const skills = SkillAssigner.assignSkills('Barbarian', rng);
@@ -621,7 +622,7 @@ describe('SkillAssigner', () => {
                     source: 'custom'
                 };
 
-                registry.registerSkill(customSkill);
+                registerTestSkill(customSkill);
 
                 const rng = new SeededRNG('numeric-suffix-test');
                 const skills = SkillAssigner.assignSkills('Fighter', rng);
@@ -642,7 +643,7 @@ describe('SkillAssigner', () => {
                         ability: ability,
                         source: 'custom'
                     };
-                    registry.registerSkill(customSkill);
+                    registerTestSkill(customSkill);
                 });
 
                 const rng = new SeededRNG('all-abilities-test');
@@ -667,7 +668,7 @@ describe('SkillAssigner', () => {
                         ability: 'INT',
                         source: 'custom'
                     };
-                    registry.registerSkill(customSkill);
+                    registerTestSkill(customSkill);
                 }
 
                 const rng = new SeededRNG('skill-count-test');

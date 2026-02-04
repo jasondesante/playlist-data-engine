@@ -14,6 +14,7 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js'
 import { SkillAssigner } from '../../src/core/generation/SkillAssigner.js';
 import { SeededRNG } from '../../src/utils/random.js';
 import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
+import { registerTestSkill } from '../helpers/registrationHelpers.js';
 import type { CustomSkill, SkillPrerequisite } from '../../src/core/skills/SkillTypes.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 
@@ -825,7 +826,7 @@ describe('Skill Prerequisites', () => {
                 ability: 'INT',
                 source: 'custom'
             };
-            registry.registerSkill(customSkill);
+            registerTestSkill(customSkill);
 
             const character = createMockCharacter();
             const rng = new SeededRNG('test-seed');
@@ -847,7 +848,7 @@ describe('Skill Prerequisites', () => {
                 prerequisites: { level: 10 },
                 source: 'custom'
             };
-            registry.registerSkill(advancedSkill);
+            registerTestSkill(advancedSkill);
 
             // Create a level 1 Wizard
             const character = createMockCharacter({ level: 1 });
@@ -870,7 +871,7 @@ describe('Skill Prerequisites', () => {
                 prerequisites: { level: 5 },
                 source: 'custom'
             };
-            registry.registerSkill(midLevelSkill);
+            registerTestSkill(midLevelSkill);
 
             // Create a level 10 Wizard
             const character = createMockCharacter({ level: 10 });
@@ -892,7 +893,7 @@ describe('Skill Prerequisites', () => {
                 prerequisites: { abilities: { INT: 18 } },
                 source: 'custom'
             };
-            registry.registerSkill(highIntSkill);
+            registerTestSkill(highIntSkill);
 
             // Create a character with INT 14
             const character = createMockCharacter({
@@ -918,7 +919,7 @@ describe('Skill Prerequisites', () => {
                 prerequisites: { class: 'Sorcerer' },
                 source: 'custom'
             };
-            registry.registerSkill(sorcererSkill);
+            registerTestSkill(sorcererSkill);
 
             // Create a Wizard
             const character = createMockCharacter({ class: 'Wizard' });
@@ -941,7 +942,7 @@ describe('Skill Prerequisites', () => {
                 prerequisites: { race: 'Elf' },
                 source: 'custom'
             };
-            registry.registerSkill(elfSkill);
+            registerTestSkill(elfSkill);
 
             // Create a Human character
             const character = createMockCharacter({ race: 'Human' });
@@ -964,7 +965,7 @@ describe('Skill Prerequisites', () => {
                 prerequisites: { skills: ['arcana'] },
                 source: 'custom'
             };
-            registry.registerSkill(advancedSkill);
+            registerTestSkill(advancedSkill);
 
             // Create a character without arcana proficiency
             const character = createMockCharacter({ skills: {} });
@@ -987,7 +988,7 @@ describe('Skill Prerequisites', () => {
                 prerequisites: { features: ['draconic_bloodline'] },
                 source: 'custom'
             };
-            registry.registerSkill(dragonSkill);
+            registerTestSkill(dragonSkill);
 
             // Create a character without the feature
             const character = createMockCharacter({ class_features: [] });
@@ -1010,7 +1011,7 @@ describe('Skill Prerequisites', () => {
                 prerequisites: { spells: ['fireball'] },
                 source: 'custom'
             };
-            registry.registerSkill(pyromancySkill);
+            registerTestSkill(pyromancySkill);
 
             // Create a character without fireball
             const character = createMockCharacter({
@@ -1039,7 +1040,7 @@ describe('Skill Prerequisites', () => {
                 prerequisites: { level: 10 },
                 source: 'custom'
             };
-            registry.registerSkill(skillWithPrereqs);
+            registerTestSkill(skillWithPrereqs);
 
             // Call without character parameter (backward compatibility)
             const rng = new SeededRNG('test-seed');
@@ -1064,7 +1065,7 @@ describe('Skill Prerequisites', () => {
                 },
                 source: 'custom'
             };
-            registry.registerSkill(dragonSmithing);
+            registerTestSkill(dragonSmithing);
 
             // Create a character that meets all prerequisites
             const character = createMockCharacter({
@@ -1142,7 +1143,7 @@ describe('Skill Prerequisites', () => {
                 },
                 source: 'custom'
             };
-            registry.registerSkill(dragonSkill);
+            registerTestSkill(dragonSkill);
 
             const character = createMockCharacter();
             const result = SkillValidator.validateSkillPrerequisites(dragonSkill.prerequisites, character);
@@ -1165,7 +1166,7 @@ describe('Skill Prerequisites', () => {
                 },
                 source: 'custom'
             };
-            registry.registerSkill(dragonSkill);
+            registerTestSkill(dragonSkill);
 
             const character = createMockCharacter({
                 class_features: ['wild_magic'] // Wrong feature

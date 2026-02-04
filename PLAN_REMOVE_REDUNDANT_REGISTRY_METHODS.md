@@ -353,11 +353,18 @@ if (category.startsWith('spells.') && category !== 'spells') {
 - `tests/integration/phase15.fullCustomContent.integration.test.ts` (~8 calls)
 
 **Sub-tasks:**
-- [ ] Create helper function for test setup: `registerTestSkill(skill)` that calls EM + invalidates cache
-- [ ] Replace all `skillRegistry.registerSkill()` calls with helper
-- [ ] Replace all `skillRegistry.registerSkills()` calls with helper
-- [ ] Verify tests pass after changes
-- [ ] Search for any missed usages
+- [x] Create helper function for test setup: `registerTestSkill(skill)` that calls EM + invalidates cache
+- [x] Replace all `skillRegistry.registerSkill()` calls with helper
+- [x] Replace all `skillRegistry.registerSkills()` calls with helper
+- [x] Verify tests pass after changes
+- [x] Search for any missed usages
+
+**Status:** ✅ COMPLETED
+- Created `tests/helpers/registrationHelpers.ts` with helper functions
+- Updated all test files to use helper functions instead of removed methods
+- All 153 skill-related tests passing
+- Build passes without errors
+- Remaining grep results are in documentation/verification files (code examples, not actual usage)
 
 ---
 
