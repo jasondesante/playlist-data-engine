@@ -26,19 +26,25 @@
 ### ExtensionManager
 - **Single source of truth** for features and skills
 - `initializeDefaults(category)` initializes all defaults
-- NO delegation calls to registries
+- NO delegation calls to registries (direction reversed)
 
 ### FeatureRegistry (Convenience Wrapper)
 - **No internal storage** - reads from ExtensionManager
-- **No `registerClassFeature()` or `registerRacialTrait()` methods**
+- **Keeps `registerClassFeature()` and `registerRacialTrait()` methods** as convenience wrappers that delegate to `ExtensionManager.register()`
 - Query methods build indexes from EM data with caching
 - Validation methods delegate to FeatureValidator
 
 ### SkillRegistry (Convenience Wrapper)
 - **No internal storage** - reads from ExtensionManager
-- **No `registerSkill()` method**
+- **Keeps `registerSkill()` method** as convenience wrapper that delegates to `ExtensionManager.register()`
 - Query methods build indexes from EM data with caching
 - Validation methods delegate to SkillValidator
+
+### Registration Pattern (Same as SpellRegistry)
+Two ways to register, both end up in ExtensionManager:
+1. `ExtensionManager.getInstance().register('skills', [skillData])` — direct
+2. `SkillRegistry.getInstance().registerSkill(skillData)` — convenience wrapper
+3. Same for features with `classFeatures` and `racialTraits`
 
 ---
 
@@ -70,17 +76,29 @@
 
 ---
 
-### Task 1.2: Remove Skill Registration Methods from SkillRegistry
+### Task 1.2: Refactor Skill Registration Methods to Delegate to ExtensionManager
 
-**Remove these methods:**
-- [ ] `registerSkill(skill: CustomSkill): void`
-- [ ] `registerSkills(skills: CustomSkill[]): void`
+**Refactor `registerSkill()` to delegate to ExtensionManager:**
+```typescript
+registerSkill(skill: CustomSkill): void {
+    // Validate skill before registering
+    const validation = SkillValidator.validateSkill(skill);
+    if (!validation.valid) {
+        throw new Error(`Invalid skill "${skill.id}":\n${validation.errors.join('\n')}`);
+    }
+    // Delegate to ExtensionManager
+    this.manager.register('skills', [{ ...skill, source: skill.source || 'custom' }]);
+    // Invalidate cache
+    this.invalidateCache();
+}
+```
 
-**Reason:** Registration should use `ExtensionManager.register('skills', [...])` directly.
+**Refactor `registerSkills()` similarly**
 
 **Verification:**
 - [ ] TypeScript compiles
-- [ ] No registerSkill/registerSkills methods in SkillRegistry
+- [ ] Registering via SkillRegistry adds to ExtensionManager
+- [ ] Cache is invalidated after registration
 
 ---
 
@@ -404,17 +422,29 @@ validateSkill(skill: CustomSkill): SkillValidationResult {
 
 ---
 
-### Task 6.2: Remove Class Feature Registration Methods
+### Task 6.2: Refactor Class Feature Registration Methods to Delegate to ExtensionManager
 
-**Remove these methods:**
-- [ ] `registerClassFeature(feature: ClassFeature): void`
-- [ ] `registerClassFeatures(features: ClassFeature[]): void`
+**Refactor `registerClassFeature()` to delegate to ExtensionManager:**
+```typescript
+registerClassFeature(feature: ClassFeature): void {
+    // Validate feature before registering
+    const validation = FeatureValidator.validateClassFeature(feature);
+    if (!validation.valid) {
+        throw new Error(`Invalid class feature "${feature.id}":\n${validation.errors.join('\n')}`);
+    }
+    // Delegate to ExtensionManager
+    this.manager.register('classFeatures', [{ ...feature, source: feature.source || 'custom' }]);
+    // Invalidate cache
+    this.invalidateCache();
+}
+```
 
-**Reason:** Registration should use `ExtensionManager.register('classFeatures', [...])` directly.
+**Refactor `registerClassFeatures()` similarly**
 
 **Verification:**
 - [ ] TypeScript compiles
-- [ ] No registerClassFeature/registerClassFeatures methods
+- [ ] Registering via FeatureRegistry adds to ExtensionManager
+- [ ] Cache is invalidated after registration
 
 ---
 
@@ -569,17 +599,29 @@ validateSkill(skill: CustomSkill): SkillValidationResult {
 
 ---
 
-### Task 9.2: Remove Racial Trait Registration Methods
+### Task 9.2: Refactor Racial Trait Registration Methods to Delegate to ExtensionManager
 
-**Remove these methods:**
-- [ ] `registerRacialTrait(trait: RacialTrait): void`
-- [ ] `registerRacialTraits(traits: RacialTrait[]): void`
+**Refactor `registerRacialTrait()` to delegate to ExtensionManager:**
+```typescript
+registerRacialTrait(trait: RacialTrait): void {
+    // Validate trait before registering
+    const validation = FeatureValidator.validateRacialTrait(trait);
+    if (!validation.valid) {
+        throw new Error(`Invalid racial trait "${trait.id}":\n${validation.errors.join('\n')}`);
+    }
+    // Delegate to ExtensionManager
+    this.manager.register('racialTraits', [{ ...trait, source: trait.source || 'custom' }]);
+    // Invalidate cache
+    this.invalidateCache();
+}
+```
 
-**Reason:** Registration should use `ExtensionManager.register('racialTraits', [...])` directly.
+**Refactor `registerRacialTraits()` similarly**
 
 **Verification:**
 - [ ] TypeScript compiles
-- [ ] No registerRacialTrait/registerRacialTraits methods
+- [ ] Registering via FeatureRegistry adds to ExtensionManager
+- [ ] Cache is invalidated after registration
 
 ---
 
@@ -833,13 +875,15 @@ validateSkill(skill: CustomSkill): SkillValidationResult {
 
 1. [ ] SkillRegistry has no internal storage (reads from ExtensionManager)
 2. [ ] FeatureRegistry has no internal storage (reads from ExtensionManager)
-3. [ ] `ExtensionManager.register()` is the only way to register skills/features
-4. [ ] All query methods read from ExtensionManager with caching
-5. [ ] All validation methods delegate to validators
-6. [ ] No duplicate storage between ExtensionManager and registries
-7. [ ] All tests pass
-8. [ ] Documentation updated to reflect wrapper pattern
-9. [ ] Same pattern as SpellRegistry across all three registries
+3. [ ] `ExtensionManager.register()` works directly for registration
+4. [ ] Registry `register*()` methods delegate to `ExtensionManager.register()` (convenience wrappers)
+5. [ ] ExtensionManager NO LONGER calls registry `register*()` methods (eliminates duplicate storage)
+6. [ ] All query methods read from ExtensionManager with caching
+7. [ ] All validation methods delegate to validators
+8. [ ] No duplicate storage between ExtensionManager and registries
+9. [ ] All tests pass
+10. [ ] Documentation updated to reflect wrapper pattern
+11. [ ] Same pattern as SpellRegistry across all three registries
 
 ---
 
@@ -874,10 +918,10 @@ All resolved. Ready to implement.
 - Phase 14: Cross-registry consistency
 
 ### ✅ Breaking Changes
-- Remove `initializeDefaults()` from registries
-- Remove `register*()` methods from registries
-- Remove `reset()`, `isInitialized()` from registries
-- ExtensionManager no longer delegates to registries
+- Remove `initializeDefaults()` from registries (use `ExtensionManager.initializeDefaults(category, data)`)
+- Registry `register*()` methods now delegate to `ExtensionManager.register()` (same API, different implementation)
+- Remove `reset()`, `isInitialized()` from registries (use ExtensionManager's methods)
+- ExtensionManager no longer delegates to registries (direction reversed - registries delegate TO EM)
 
 ### ✅ Non-Breaking
 - Query methods remain (with same API)
