@@ -676,13 +676,32 @@ The test suite correctly verifies that:
 ### Task 8.2: Add Integration Tests for Class Features
 
 **Add tests:**
-- [ ] Register via `ExtensionManager.register('classFeatures')`, verify `FeatureRegistry.getClassFeatures()` sees it
-- [ ] `getClassFeatures()` returns correct features from EM data
-- [ ] `getFeaturesForLevel()` filters correctly from EM data
-- [ ] Cache invalidation works after EM registration
+- [x] Register via `ExtensionManager.register('classFeatures')`, verify `FeatureRegistry.getClassFeatures()` sees it
+- [x] `getClassFeatures()` returns correct features from EM data
+- [x] `getFeaturesForLevel()` filters correctly from EM data
+- [x] Cache invalidation works after EM registration
 
 **Verification:**
-- [ ] All new integration tests pass
+- [x] All new integration tests pass
+
+**Summary:**
+Created `tests/integration/featureIntegration.test.ts` with 16 comprehensive integration tests covering:
+1. Registration via ExtensionManager and FeatureRegistry visibility
+2. Multi-level features retrieval
+3. Multi-class features registration
+4. Filtering by class and level
+5. Default features inclusion from ExtensionManager
+6. getFeaturesForLevel() filtering
+7. Cache invalidation after EM registration
+8. getAllClassFeatures() index rebuilding
+9. Multiple cache invalidations
+10. FeatureRegistry convenience wrapper registration
+11. Validation during registration
+12. Duplicate feature ID detection
+13. Reset/re-registration persistence
+14. getRegistryStats() counting
+
+All 16 tests pass successfully.
 
 ---
 
