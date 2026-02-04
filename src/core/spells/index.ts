@@ -9,4 +9,5 @@ export { SpellRegistry, getSpellRegistry } from './SpellRegistry.js';
 
 // Export spell types from SpellTypes.ts
 export type { SpellPrerequisite, Spell } from './SpellTypes.js';
-export type { RegisteredSpell, SpellSchool, ValidationResult } from './SpellRegistry.js';
+export type { RegisteredSpell, SpellSchool } from './SpellRegistry.js';
+export type { SpellValidationResult } from './SpellValidator.js';

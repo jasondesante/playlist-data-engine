@@ -14,15 +14,15 @@
  */
 
 import type { Race, Class, Ability } from '../types/Character.js';
-import { DEFAULT_CLASSES, DEFAULT_RACES, asRace, isValidClass } from '../types/Character.js';
+import { DEFAULT_CLASSES, DEFAULT_RACES } from '../types/Character.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
 import { FeatureRegistry } from '../features/FeatureRegistry.js';
-import { FeatureValidator, validateClassFeature, validateRacialTrait } from '../features/FeatureValidator.js';
+import { FeatureValidator } from '../features/FeatureValidator.js';
 import type { CustomSkill } from '../skills/SkillTypes.js';
 import { SkillRegistry } from '../skills/SkillRegistry.js';
-import { SkillValidator, validateSkill } from '../skills/SkillValidator.js';
+import { SkillValidator } from '../skills/SkillValidator.js';
+import { SpellValidator } from '../spells/SpellValidator.js';
 import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
-import type { CustomRaceDataEntry } from '../../utils/constants.js';
 
 /**
  * Spawn modes for custom content
@@ -568,17 +568,11 @@ export class ExtensionManager {
             if (!result.valid) {
                 errors.push(...(result.errors || []).map(e => `${prefix} ${e}`));
             }
-        } else if (category === 'spells') {
-            // Spells must have name, level, school
-            if (!item.name || typeof item.name !== 'string') {
-                errors.push(`${prefix} Missing or invalid 'name' property`);
-            }
-            if (typeof item.level !== 'number' || item.level < 0 || item.level > 9) {
-                errors.push(`${prefix} Invalid 'level' (must be 0-9)`);
-            }
-            const validSchools = ['Abjuration', 'Conjuration', 'Divination', 'Enchantment', 'Evocation', 'Illusion', 'Necromancy', 'Transmutation'];
-            if (!validSchools.includes(item.school)) {
-                errors.push(`${prefix} Invalid 'school'`);
+        } else if (category === 'spells' || category.startsWith('spells.')) {
+            // Spells validation - use SpellValidator
+            const result = SpellValidator.validateSpell(item);
+            if (!result.valid) {
+                errors.push(...result.errors.map(e => `${prefix} ${e}`));
             }
         } else if (category === 'races') {
             // Races must be a valid Race type OR a registered custom race

@@ -13,7 +13,7 @@
  * No duplicate storage - all data lives in ExtensionManager.
  */
 
-import type { Spell, SpellPrerequisite } from './SpellTypes.js';
+import type { Spell } from './SpellTypes.js';
 import type { Class, CharacterSheet } from '../types/Character.js';
 import { SpellValidator, type SpellValidationResult } from './SpellValidator.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
@@ -42,15 +42,6 @@ export interface RegisteredSpell extends Spell {
     classes?: Class[];
     /** Source of the spell (default or custom) */
     source?: 'default' | 'custom';
-}
-
-/**
- * Validation result with warnings support
- */
-export interface ValidationResult {
-    valid: boolean;
-    errors: string[];
-    warnings?: string[];
 }
 
 /**
@@ -341,17 +332,11 @@ export class SpellRegistry {
     validatePrerequisites(
         spell: RegisteredSpell,
         character: CharacterSheet
-    ): ValidationResult {
-        const result = SpellValidator.validateSpellPrerequisites(
+    ): SpellValidationResult {
+        return SpellValidator.validateSpellPrerequisites(
             spell.prerequisites,
             character
         );
-
-        return {
-            valid: result.valid,
-            errors: result.errors,
-            warnings: result.errors.length === 0 ? undefined : result.errors
-        };
     }
 
     /**
@@ -360,14 +345,8 @@ export class SpellRegistry {
      * @param spell - Spell object to validate
      * @returns Validation result with any errors
      */
-    validateSpell(spell: RegisteredSpell): ValidationResult {
-        const result = SpellValidator.validateSpell(spell);
-
-        return {
-            valid: result.valid,
-            errors: result.errors,
-            warnings: undefined
-        };
+    validateSpell(spell: RegisteredSpell): SpellValidationResult {
+        return SpellValidator.validateSpell(spell);
     }
 
     /**

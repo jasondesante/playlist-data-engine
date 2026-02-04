@@ -137,9 +137,12 @@ export type {
 // Spell types
 export type {
     RegisteredSpell,
-    SpellSchool,
-    ValidationResult as SpellValidationResult
+    SpellSchool
 } from './core/spells/SpellRegistry.js';
+
+export type {
+    SpellValidationResult
+} from './core/spells/SpellValidator.js';
 
 // Combat result types
 export type { InitiativeResult } from './core/combat/InitiativeRoller.js';
