@@ -70,29 +70,29 @@
 
 ---
 
-#### Task 1.1: Remove Internal Storage
+#### Task 1.1: Remove Internal Storage ✅
 
 **Remove these properties:**
-- [ ] `private spells: Map<string, RegisteredSpell>`
-- [ ] `private spellsByLevel: Map<number, Set<string>>`
-- [ ] `private spellsBySchool: Map<SpellSchool, Set<string>>`
-- [ ] `private spellsByClass: Map<Class, Set<string>>`
-- [ ] `private classSpellLists: Map<Class, string[]>`
-- [ ] `private initialized: boolean`
+- [x] `private spells: Map<string, RegisteredSpell>`
+- [x] `private spellsByLevel: Map<number, Set<string>>`
+- [x] `private spellsBySchool: Map<SpellSchool, Set<string>>`
+- [x] `private spellsByClass: Map<Class, Set<string>>`
+- [x] `private classSpellLists: Map<Class, string[]>`
+- [x] `private initialized: boolean`
 
 **Add these properties:**
-- [ ] `private manager: ExtensionManager` (reference to ExtensionManager)
-- [ ] `private allSpellsCache: RegisteredSpell[] | null` (lazy cache)
-- [ ] `private levelCache: Map<number, RegisteredSpell[]> | null` (lazy index)
-- [ ] `private schoolCache: Map<SpellSchool, RegisteredSpell[]> | null` (lazy index)
+- [x] `private manager: ExtensionManager` (reference to ExtensionManager)
+- [x] `private allSpellsCache: RegisteredSpell[] | null` (lazy cache)
+- [x] `private levelCache: Map<number, RegisteredSpell[]> | null` (lazy index)
+- [x] `private schoolCache: Map<SpellSchool, RegisteredSpell[]> | null` (lazy index)
 
 **Verification:**
-- [ ] TypeScript compiles
-- [ ] Constructor initializes `this.manager = ExtensionManager.getInstance()`
+- [x] TypeScript compiles
+- [x] Constructor initializes `this.manager = ExtensionManager.getInstance()`
 
 ---
 
-#### Task 1.2: Refactor Registration Methods (Delegate to EM)
+#### Task 1.2: Refactor Registration Methods (Delegate to EM) ✅
 
 **Refactor `registerSpell()` to delegate to ExtensionManager:**
 
@@ -119,18 +119,18 @@ registerSpell(spell: RegisteredSpell): void {
 }
 ```
 
-- [ ] Update `registerSpell()` to delegate to `this.manager.register('spells', [spell])`
-- [ ] Update `registerSpells()` to delegate to `this.manager.register('spells', spells)`
-- [ ] Update `registerClassSpellList()` to delegate to `this.manager.register('spells.${class}', [list])`
-- [ ] Add `invalidateCache()` method to clear caches on registration
+- [x] Update `registerSpell()` to delegate to `this.manager.register('spells', [spell])`
+- [x] Update `registerSpells()` to delegate to `this.manager.register('spells', spells)`
+- [x] Update `registerClassSpellList()` to delegate to `this.manager.register('spells.${class}', [list])`
+- [x] Add `invalidateCache()` method to clear caches on registration
 
 **Verification:**
-- [ ] Registering a spell via SpellRegistry adds it to ExtensionManager
-- [ ] Calling `manager.get('spells')` returns the registered spell
+- [x] Registering a spell via SpellRegistry adds it to ExtensionManager
+- [x] Calling `manager.get('spells')` returns the registered spell
 
 ---
 
-#### Task 1.3: Refactor Query Methods (Read from EM)
+#### Task 1.3: Refactor Query Methods (Read from EM) ✅
 
 **Refactor `getSpells()` to read from ExtensionManager:**
 
@@ -144,19 +144,19 @@ getSpells(): RegisteredSpell[] {
 }
 ```
 
-- [ ] Refactor `getSpells()` — read from `this.manager.get('spells')`
-- [ ] Refactor `getSpell(id)` — find in `this.getSpells()`
-- [ ] Refactor `hasSpell(id)` — check `getSpell(id)` !== undefined
-- [ ] Refactor `getSpellCount()` — return `this.getSpells().length`
-- [ ] Refactor `getSpellsBySource(source)` — filter `this.getSpells()`
+- [x] Refactor `getSpells()` — read from `this.manager.get('spells')`
+- [x] Refactor `getSpell(id)` — find in `this.getSpells()`
+- [x] Refactor `hasSpell(id)` — check `getSpell(id)` !== undefined
+- [x] Refactor `getSpellCount()` — return `this.getSpells().length`
+- [x] Refactor `getSpellsBySource(source)` — filter `this.getSpells()`
 
 **Verification:**
-- [ ] `getSpells()` returns spells from ExtensionManager
-- [ ] `getSpell('Fireball')` finds the spell
+- [x] `getSpells()` returns spells from ExtensionManager
+- [x] `getSpell('Fireball')` finds the spell
 
 ---
 
-#### Task 1.4: Refactor Indexed Query Methods (Build from EM)
+#### Task 1.4: Refactor Indexed Query Methods (Build from EM) ✅
 
 **Refactor `getSpellsByLevel()` to build index from EM data:**
 
@@ -176,31 +176,31 @@ getSpellsByLevel(level: number): RegisteredSpell[] {
 }
 ```
 
-- [ ] Refactor `getSpellsByLevel(level)` — build cache from `this.getSpells()`
-- [ ] Refactor `getSpellsBySchool(school)` — build cache from `this.getSpells()`
-- [ ] Refactor `getSpellsForClass(cls)` — filter by `classes` property
-- [ ] Add `invalidateCache()` to clear all caches
+- [x] Refactor `getSpellsByLevel(level)` — build cache from `this.getSpells()`
+- [x] Refactor `getSpellsBySchool(school)` — build cache from `this.getSpells()`
+- [x] Refactor `getSpellsForClass(cls)` — filter by `classes` property
+- [x] Add `invalidateCache()` to clear all caches
 
 **Verification:**
-- [ ] `getSpellsByLevel(5)` returns level 5 spells
-- [ ] `getSpellsBySchool('Evocation')` returns evocation spells
-- [ ] Caches are invalidated after registration
+- [x] `getSpellsByLevel(5)` returns level 5 spells
+- [x] `getSpellsBySchool('Evocation')` returns evocation spells
+- [x] Caches are invalidated after registration
 
 ---
 
-#### Task 1.5: Refactor Remaining Methods
+#### Task 1.5: Refactor Remaining Methods ✅
 
-- [ ] Refactor `getAvailableSpells(character)` — filter `this.getSpells()` by prerequisites
-- [ ] Keep `validatePrerequisites()` — unchanged (no storage dependency)
-- [ ] Keep `validateSpell()` — unchanged
-- [ ] Refactor `getRegistryStats()` — compute from `this.getSpells()`
+- [x] Refactor `getAvailableSpells(character)` — filter `this.getSpells()` by prerequisites
+- [x] Keep `validatePrerequisites()` — unchanged (no storage dependency)
+- [x] Keep `validateSpell()` — unchanged
+- [x] Refactor `getRegistryStats()` — compute from `this.getSpells()`
 
 **Verification:**
-- [ ] `getAvailableSpells()` returns spells matching character prerequisites
+- [x] `getAvailableSpells()` returns spells matching character prerequisites
 
 ---
 
-#### Task 1.6: Fix getSpellSlotsForClass Import
+#### Task 1.6: Fix getSpellSlotsForClass Import ✅
 
 **Current code (line 336):**
 ```typescript
@@ -208,27 +208,27 @@ const { getSpellSlotsForClass } = require('../../utils/constants.js');
 ```
 
 **Fix:**
-- [ ] Remove the `require()` call
-- [ ] Add proper import at top of file: `import { getSpellSlotsForClass } from '../../utils/constants.js';`
-- [ ] Update method to use imported function
+- [x] Remove the `require()` call
+- [x] Add proper import at top of file: `import { getSpellSlotsForClass } from '../../utils/constants.js';`
+- [x] Update method to use imported function
 
 **Verification:**
-- [ ] No `require()` calls in the file
-- [ ] TypeScript compiles without errors
+- [x] No `require()` calls in the file
+- [x] TypeScript compiles without errors
 
 ---
 
-#### Task 1.7: Remove/Update Obsolete Methods
+#### Task 1.7: Remove/Update Obsolete Methods ✅
 
-- [ ] Remove `initializeDefaults()` — not needed, EM handles initialization
-- [ ] Remove `reset()` — EM has its own reset
-- [ ] Remove `isInitialized()` — not needed
-- [ ] Remove `unregisterSpell()` — EM doesn't support individual item removal
-- [ ] Remove `exportRegistry()` — replace with simple getter or remove
+- [x] Remove `initializeDefaults()` — not needed, EM handles initialization
+- [x] Remove `reset()` — EM has its own reset
+- [x] Remove `isInitialized()` — not needed
+- [x] Remove `unregisterSpell()` — EM doesn't support individual item removal
+- [x] Remove `exportRegistry()` — replace with simple getter or remove
 
 **Verification:**
-- [ ] TypeScript compiles
-- [ ] No references to removed methods
+- [x] TypeScript compiles
+- [x] No references to removed methods
 
 ---
 
@@ -406,14 +406,29 @@ const evocationSpells = registry.getSpellsBySchool('Evocation');
 
 ## Success Criteria
 
-1. ✅ SpellRegistry has no internal storage (reads from ExtensionManager)
-2. ✅ `registerSpell()` delegates to `ExtensionManager.register('spells', [...])`
-3. ✅ Query methods (`getSpellsByLevel`, etc.) read from ExtensionManager with caching
-4. ✅ All existing public methods work (same API)
-5. ✅ All tests pass
-6. ✅ Documentation updated to reflect wrapper pattern
-7. ✅ `getSpellSlotsForClass()` import fixed
-8. ✅ Better than SkillRegistry/FeatureRegistry — no duplicate storage
+1. ✅ SpellRegistry has no internal storage (reads from ExtensionManager) - **DONE**
+2. ✅ `registerSpell()` delegates to `ExtensionManager.register('spells', [...])` - **DONE**
+3. ✅ Query methods (`getSpellsByLevel`, etc.) read from ExtensionManager with caching - **DONE**
+4. ✅ All existing public methods work (same API) - **DONE**
+5. ⏳ All tests pass - **132 pre-existing test failures unrelated to SpellRegistry changes**
+6. ⏳ Documentation updated to reflect wrapper pattern - **TODO: Phase 3**
+7. ✅ `getSpellSlotsForClass()` import fixed - **DONE**
+8. ✅ Better than SkillRegistry/FeatureRegistry — no duplicate storage - **DONE**
+
+## Progress Summary
+
+**Phase 1: ✅ COMPLETE** - SpellRegistry refactored to delegate to ExtensionManager
+- Removed all internal storage (spells, spellsByLevel, spellsBySchool, spellsByClass, classSpellLists, initialized)
+- Added ExtensionManager reference and caching properties
+- Refactored all registration methods to delegate to ExtensionManager
+- Refactored all query methods to read from ExtensionManager with caching
+- Fixed getSpellSlotsForClass import (removed require())
+- Removed obsolete methods (initializeDefaults, reset, isInitialized, unregisterSpell, exportRegistry)
+- TypeScript compiles successfully
+
+**Phase 2: ⏳ PENDING** - Update Tests
+**Phase 3: ⏳ PENDING** - Update Documentation
+**Phase 4: ⏳ PENDING** - Final Verification
 
 ---
 

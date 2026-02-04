@@ -3,12 +3,21 @@
  *
  * Central registry for all spells (default D&D 5e and custom).
  * Manages spell registration, lookup, and categorization by level, school, and class.
+ *
+ * **Design:** This is a **convenience wrapper** around ExtensionManager.
+ * All spells are stored in ExtensionManager; SpellRegistry provides:
+ * - Convenient registration methods that delegate to ExtensionManager
+ * - Query methods with caching for performance
+ * - Spell-related helper methods
+ *
+ * No duplicate storage - all data lives in ExtensionManager.
  */
 
 import type { Spell, SpellPrerequisite } from './SpellTypes.js';
 import type { Class, CharacterSheet } from '../types/Character.js';
-import { SPELL_DATABASE } from '../../utils/constants.js';
 import { SpellValidator, type SpellValidationResult } from './SpellValidator.js';
+import { ExtensionManager } from '../extensions/ExtensionManager.js';
+import { getSpellSlotsForClass as getSpellSlotsForClassFromConstants } from '../../utils/constants.js';
 
 /**
  * Valid D&D 5e spell schools
@@ -47,42 +56,23 @@ export interface ValidationResult {
 /**
  * SpellRegistry - Singleton class for managing spells
  *
- * The registry handles:
- * - Spell registration and lookup
- * - Spell queries by level, school, or class
- * - Prerequisite validation for characters
- * - Class spell list management
- * - Spell slot queries
+ * The registry is a **convenience wrapper** around ExtensionManager.
+ * All spells are stored in ExtensionManager; SpellRegistry provides:
+ * - Convenient registration methods that delegate to ExtensionManager
+ * - Query methods with caching for performance
+ * - Spell-related helper methods
+ *
+ * Design principle: No duplicate storage. All data lives in ExtensionManager.
  */
 export class SpellRegistry {
     private static instance: SpellRegistry;
-    private spells: Map<string, RegisteredSpell>;
-    private spellsByLevel: Map<number, Set<string>>;
-    private spellsBySchool: Map<SpellSchool, Set<string>>;
-    private spellsByClass: Map<Class, Set<string>>;
-    private classSpellLists: Map<Class, string[]>;
-    private initialized: boolean = false;
+    private manager: ExtensionManager;
+    private allSpellsCache: RegisteredSpell[] | null = null;
+    private levelCache: Map<number, RegisteredSpell[]> | null = null;
+    private schoolCache: Map<SpellSchool, RegisteredSpell[]> | null = null;
 
     private constructor() {
-        this.spells = new Map();
-        this.spellsByLevel = new Map();
-        this.spellsBySchool = new Map();
-        this.spellsByClass = new Map();
-        this.classSpellLists = new Map();
-
-        // Initialize level maps (0-9)
-        for (let level = 0; level <= 9; level++) {
-            this.spellsByLevel.set(level, new Set());
-        }
-
-        // Initialize school maps
-        const schools: SpellSchool[] = [
-            'Abjuration', 'Conjuration', 'Divination', 'Enchantment',
-            'Evocation', 'Illusion', 'Necromancy', 'Transmutation'
-        ];
-        for (const school of schools) {
-            this.spellsBySchool.set(school, new Set());
-        }
+        this.manager = ExtensionManager.getInstance();
     }
 
     /**
@@ -96,40 +86,22 @@ export class SpellRegistry {
     }
 
     /**
-     * Initialize the registry with default spells
-     * This should be called once during package initialization
-     *
-     * @param defaultSpells - Default spells to load (uses SPELL_DATABASE if not provided)
+     * Invalidate all caches
+     * Called when spells are registered to ensure fresh data
      */
-    initializeDefaults(defaultSpells?: Record<string, Spell>): void {
-        if (this.initialized) {
-            return; // Already initialized
-        }
-
-        // Clear any existing data
-        this.reset();
-
-        // Use SPELL_DATABASE if no custom spells provided
-        const spellsToLoad = defaultSpells || SPELL_DATABASE;
-
-        // Register default spells
-        for (const [name, spell] of Object.entries(spellsToLoad)) {
-            const registeredSpell: RegisteredSpell = {
-                ...spell,
-                id: spell.id || name,
-                source: 'default'
-            };
-            this.registerSpell(registeredSpell);
-        }
-
-        this.initialized = true;
+    private invalidateCache(): void {
+        this.allSpellsCache = null;
+        this.levelCache = null;
+        this.schoolCache = null;
     }
 
     /**
      * Register a single spell
      *
+     * Delegates to ExtensionManager.register('spells', [...])
+     *
      * @param spell - Spell to register
-     * @throws Error if spell ID already exists or validation fails
+     * @throws Error if validation fails
      */
     registerSpell(spell: RegisteredSpell): void {
         // Validate spell before registering
@@ -138,55 +110,80 @@ export class SpellRegistry {
             throw new Error(`Invalid spell "${spell.id || spell.name}":\n${validation.errors.join('\n')}`);
         }
 
-        // Use spell name as ID if not provided
-        const spellId = spell.id || spell.name;
-
-        if (this.spells.has(spellId)) {
-            throw new Error(`Spell with ID "${spellId}" already exists`);
-        }
-
-        // Ensure the spell has an ID
-        const spellToStore: RegisteredSpell = {
+        // Ensure spell has ID
+        const spellToRegister = {
             ...spell,
-            id: spellId,
+            id: spell.id || spell.name,
             source: spell.source || 'custom'
         };
 
-        // Add to main spells map
-        this.spells.set(spellId, spellToStore);
+        // Delegate to ExtensionManager
+        this.manager.register('spells', [spellToRegister]);
 
-        // Index by level
-        const levelSpells = this.spellsByLevel.get(spell.level);
-        if (levelSpells) {
-            levelSpells.add(spellId);
-        }
-
-        // Index by school
-        const schoolSpells = this.spellsBySchool.get(spell.school);
-        if (schoolSpells) {
-            schoolSpells.add(spellId);
-        }
-
-        // Index by class (if classes specified)
-        if (spell.classes && spell.classes.length > 0) {
-            for (const characterClass of spell.classes) {
-                if (!this.spellsByClass.has(characterClass)) {
-                    this.spellsByClass.set(characterClass, new Set());
-                }
-                this.spellsByClass.get(characterClass)!.add(spellId);
-            }
-        }
+        // Invalidate cache
+        this.invalidateCache();
     }
 
     /**
      * Register multiple spells at once
      *
+     * Delegates to ExtensionManager.register('spells', [...])
+     *
      * @param spells - Array of spells to register
      */
     registerSpells(spells: RegisteredSpell[]): void {
+        // Validate all spells first
         for (const spell of spells) {
-            this.registerSpell(spell);
+            const validation = SpellValidator.validateSpell(spell);
+            if (!validation.valid) {
+                throw new Error(`Invalid spell "${spell.id || spell.name}":\n${validation.errors.join('\n')}`);
+            }
         }
+
+        // Ensure all spells have IDs
+        const spellsToRegister = spells.map(spell => ({
+            ...spell,
+            id: spell.id || spell.name,
+            source: spell.source || 'custom'
+        }));
+
+        // Delegate to ExtensionManager
+        this.manager.register('spells', spellsToRegister);
+
+        // Invalidate cache
+        this.invalidateCache();
+    }
+
+    /**
+     * Register a spell list for a class
+     *
+     * Delegates to ExtensionManager.register('spells.${class}', [...])
+     *
+     * @param characterClass - Class to register spell list for
+     * @param spellIds - Array of spell IDs for this class
+     */
+    registerClassSpellList(characterClass: Class, spellIds: string[]): void {
+        // Get all spells to validate spell IDs exist
+        const allSpells = this.getSpells();
+        const spellIdSet = new Set(allSpells.map(s => s.id));
+
+        // Validate all spell IDs exist
+        const invalidIds: string[] = [];
+        for (const spellId of spellIds) {
+            if (!spellIdSet.has(spellId)) {
+                invalidIds.push(spellId);
+            }
+        }
+
+        if (invalidIds.length > 0) {
+            throw new Error(
+                `Invalid spell IDs for class ${characterClass}: ${invalidIds.join(', ')}`
+            );
+        }
+
+        // Delegate to ExtensionManager
+        const category = `spells.${characterClass}` as const;
+        this.manager.register(category, spellIds);
     }
 
     /**
@@ -196,71 +193,88 @@ export class SpellRegistry {
      * @returns Spell or undefined if not found
      */
     getSpell(spellId: string): RegisteredSpell | undefined {
-        return this.spells.get(spellId);
+        const allSpells = this.getSpells();
+        return allSpells.find(spell => spell.id === spellId);
     }
 
     /**
      * Get all registered spells
      *
+     * Reads from ExtensionManager with caching.
+     *
      * @returns Array of all spells
      */
     getSpells(): RegisteredSpell[] {
-        return Array.from(this.spells.values());
+        if (!this.allSpellsCache) {
+            const spells = this.manager.get('spells');
+            this.allSpellsCache = spells as RegisteredSpell[];
+        }
+        return this.allSpellsCache;
     }
 
     /**
      * Get spells by level
      *
+     * Builds index from ExtensionManager data with caching.
+     *
      * @param level - Spell level (0-9)
      * @returns Array of spells at this level
      */
     getSpellsByLevel(level: number): RegisteredSpell[] {
-        const spellIds = this.spellsByLevel.get(level);
-        if (!spellIds) {
-            return [];
+        if (!this.levelCache) {
+            this.levelCache = new Map();
+            const allSpells = this.getSpells();
+            for (const spell of allSpells) {
+                if (!this.levelCache.has(spell.level)) {
+                    this.levelCache.set(spell.level, []);
+                }
+                this.levelCache.get(spell.level)!.push(spell);
+            }
         }
-
-        return Array.from(spellIds)
-            .map(id => this.spells.get(id))
-            .filter((spell): spell is RegisteredSpell => spell !== undefined);
+        return this.levelCache.get(level) || [];
     }
 
     /**
      * Get spells by school
      *
+     * Builds index from ExtensionManager data with caching.
+     *
      * @param school - Spell school to filter by
      * @returns Array of spells from this school
      */
     getSpellsBySchool(school: SpellSchool): RegisteredSpell[] {
-        const spellIds = this.spellsBySchool.get(school);
-        if (!spellIds) {
-            return [];
+        if (!this.schoolCache) {
+            this.schoolCache = new Map();
+            const allSpells = this.getSpells();
+            for (const spell of allSpells) {
+                if (!this.schoolCache.has(spell.school)) {
+                    this.schoolCache.set(spell.school, []);
+                }
+                this.schoolCache.get(spell.school)!.push(spell);
+            }
         }
-
-        return Array.from(spellIds)
-            .map(id => this.spells.get(id))
-            .filter((spell): spell is RegisteredSpell => spell !== undefined);
+        return this.schoolCache.get(school) || [];
     }
 
     /**
      * Get spells available to a specific class
      *
+     * Filters spells by their classes property.
+     *
      * @param characterClass - Class to get spells for
      * @returns Array of spells available to this class
      */
     getSpellsForClass(characterClass: Class): RegisteredSpell[] {
-        const spellIds = this.spellsByClass.get(characterClass);
-        if (!spellIds) {
-            return [];
-        }
-
-        return Array.from(spellIds)
-            .map(id => this.spells.get(id))
-            .filter((spell): spell is RegisteredSpell => spell !== undefined);
+        const allSpells = this.getSpells();
+        return allSpells.filter(spell =>
+            spell.classes && spell.classes.includes(characterClass)
+        );
     }
 
     /**
      * Get spells available to a character (prerequisites met)
+     *
+     * Filters all spells by character prerequisites.
      *
      * @param character - Character sheet to validate against
      * @returns Array of spells the character can learn
@@ -282,43 +296,15 @@ export class SpellRegistry {
     /**
      * Get the spell list for a class (spell IDs)
      *
+     * Reads from ExtensionManager.
+     *
      * @param characterClass - Class to get spell list for
      * @returns Array of spell IDs for this class
      */
     getClassSpellList(characterClass: Class): string[] {
-        return this.classSpellLists.get(characterClass) || [];
-    }
-
-    /**
-     * Register a spell list for a class
-     *
-     * @param characterClass - Class to register spell list for
-     * @param spellIds - Array of spell IDs for this class
-     */
-    registerClassSpellList(characterClass: Class, spellIds: string[]): void {
-        // Validate all spell IDs exist
-        const invalidIds: string[] = [];
-        for (const spellId of spellIds) {
-            if (!this.spells.has(spellId)) {
-                invalidIds.push(spellId);
-            }
-        }
-
-        if (invalidIds.length > 0) {
-            throw new Error(
-                `Invalid spell IDs for class ${characterClass}: ${invalidIds.join(', ')}`
-            );
-        }
-
-        this.classSpellLists.set(characterClass, [...spellIds]);
-
-        // Also update the spellsByClass index
-        for (const spellId of spellIds) {
-            if (!this.spellsByClass.has(characterClass)) {
-                this.spellsByClass.set(characterClass, new Set());
-            }
-            this.spellsByClass.get(characterClass)!.add(spellId);
-        }
+        const category = `spells.${characterClass}` as const;
+        const spellList = this.manager.get(category);
+        return spellList as string[] || [];
     }
 
     /**
@@ -332,12 +318,9 @@ export class SpellRegistry {
      * @returns Number of spell slots at this level, or 0 if not a spellcaster
      */
     getSpellSlotsForClass(characterClass: Class, level: number): number {
-        // Import the helper function dynamically to avoid circular dependencies
-        const { getSpellSlotsForClass } = require('../../utils/constants.js');
-        const slots = getSpellSlotsForClass(characterClass, level);
+        const slots = getSpellSlotsForClassFromConstants(characterClass, level);
 
-        // Return slots for the given spell level (level parameter here is character level)
-        // This is a simplified implementation - the full version would need spell level parameter
+        // Return total number of spell slots across all levels
         if (!slots) {
             return 0;
         }
@@ -394,7 +377,7 @@ export class SpellRegistry {
      * @returns True if spell exists
      */
     hasSpell(spellId: string): boolean {
-        return this.spells.has(spellId);
+        return this.getSpell(spellId) !== undefined;
     }
 
     /**
@@ -403,7 +386,7 @@ export class SpellRegistry {
      * @returns Total number of registered spells
      */
     getSpellCount(): number {
-        return this.spells.size;
+        return this.getSpells().length;
     }
 
     /**
@@ -436,20 +419,30 @@ export class SpellRegistry {
         // Count spells per level
         const spellsByLevel: Record<number, number> = {} as any;
         for (let level = 0; level <= 9; level++) {
-            spellsByLevel[level] = this.spellsByLevel.get(level)?.size || 0;
+            spellsByLevel[level] = this.getSpellsByLevel(level).length;
         }
 
         // Count spells per school
         const spellsBySchool: Record<SpellSchool, number> = {
-            Abjuration: this.spellsBySchool.get('Abjuration')?.size || 0,
-            Conjuration: this.spellsBySchool.get('Conjuration')?.size || 0,
-            Divination: this.spellsBySchool.get('Divination')?.size || 0,
-            Enchantment: this.spellsBySchool.get('Enchantment')?.size || 0,
-            Evocation: this.spellsBySchool.get('Evocation')?.size || 0,
-            Illusion: this.spellsBySchool.get('Illusion')?.size || 0,
-            Necromancy: this.spellsBySchool.get('Necromancy')?.size || 0,
-            Transmutation: this.spellsBySchool.get('Transmutation')?.size || 0
+            Abjuration: this.getSpellsBySchool('Abjuration').length,
+            Conjuration: this.getSpellsBySchool('Conjuration').length,
+            Divination: this.getSpellsBySchool('Divination').length,
+            Enchantment: this.getSpellsBySchool('Enchantment').length,
+            Evocation: this.getSpellsBySchool('Evocation').length,
+            Illusion: this.getSpellsBySchool('Illusion').length,
+            Necromancy: this.getSpellsBySchool('Necromancy').length,
+            Transmutation: this.getSpellsBySchool('Transmutation').length
         };
+
+        // Count classes with spells
+        const classesWithSpells = new Set<Class>();
+        for (const spell of allSpells) {
+            if (spell.classes) {
+                for (const cls of spell.classes) {
+                    classesWithSpells.add(cls);
+                }
+            }
+        }
 
         return {
             totalSpells: allSpells.length,
@@ -457,109 +450,8 @@ export class SpellRegistry {
             customSpells: customSpells.length,
             spellsByLevel,
             spellsBySchool,
-            classesWithSpells: this.spellsByClass.size
+            classesWithSpells: classesWithSpells.size
         };
-    }
-
-    /**
-     * Reset the registry to initial state
-     *
-     * Clears all registered spells and indexes.
-     * Useful for testing or reinitialization.
-     */
-    reset(): void {
-        this.spells.clear();
-        this.spellsByLevel.clear();
-        this.spellsBySchool.clear();
-        this.spellsByClass.clear();
-        this.classSpellLists.clear();
-
-        // Reinitialize level maps (0-9)
-        for (let level = 0; level <= 9; level++) {
-            this.spellsByLevel.set(level, new Set());
-        }
-
-        // Reinitialize school maps
-        const schools: SpellSchool[] = [
-            'Abjuration', 'Conjuration', 'Divination', 'Enchantment',
-            'Evocation', 'Illusion', 'Necromancy', 'Transmutation'
-        ];
-        for (const school of schools) {
-            this.spellsBySchool.set(school, new Set());
-        }
-
-        this.initialized = false;
-    }
-
-    /**
-     * Check if the registry has been initialized
-     *
-     * @returns True if initialized with defaults
-     */
-    isInitialized(): boolean {
-        return this.initialized;
-    }
-
-    /**
-     * Export all registered spells as JSON
-     *
-     * Useful for debugging or serialization.
-     *
-     * @returns Array of all spells
-     */
-    exportRegistry(): RegisteredSpell[] {
-        return this.getSpells();
-    }
-
-    /**
-     * Unregister a spell by ID
-     *
-     * Warning: This is primarily for testing.
-     * Removing spells that are in use may cause issues.
-     *
-     * @param spellId - Spell ID to unregister
-     * @returns True if spell was found and removed
-     */
-    unregisterSpell(spellId: string): boolean {
-        const spell = this.spells.get(spellId);
-        if (!spell) {
-            return false;
-        }
-
-        // Remove from main map
-        this.spells.delete(spellId);
-
-        // Remove from level index
-        const levelSpells = this.spellsByLevel.get(spell.level);
-        if (levelSpells) {
-            levelSpells.delete(spellId);
-        }
-
-        // Remove from school index
-        const schoolSpells = this.spellsBySchool.get(spell.school);
-        if (schoolSpells) {
-            schoolSpells.delete(spellId);
-        }
-
-        // Remove from class indexes
-        if (spell.classes) {
-            for (const characterClass of spell.classes) {
-                const classSpells = this.spellsByClass.get(characterClass);
-                if (classSpells) {
-                    classSpells.delete(spellId);
-                }
-            }
-        }
-
-        // Remove from class spell lists
-        for (const [characterClass, spellList] of this.classSpellLists.entries()) {
-            const index = spellList.indexOf(spellId);
-            if (index !== -1) {
-                spellList.splice(index, 1);
-            }
-        }
-
-        return true;
     }
 }
 
