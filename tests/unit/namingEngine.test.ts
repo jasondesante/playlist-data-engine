@@ -80,7 +80,26 @@ describe('NamingEngine', () => {
             expect(name).toBeTruthy();
         });
 
-        it('should verify format distribution matches 50/30/20', () => {
+        it('should generate different names by default (non-deterministic)', () => {
+            const name1 = engine.generateName(mockTrack, mockAudio);
+            const name2 = engine.generateName(mockTrack, mockAudio);
+            const name3 = engine.generateName(mockTrack, mockAudio);
+
+            // At least one should be different (very high probability)
+            const allSame = name1 === name2 && name2 === name3;
+            expect(allSame).toBe(false);
+        });
+
+        it('should generate same name when deterministic is true', () => {
+            const name1 = engine.generateName(mockTrack, mockAudio, true);
+            const name2 = engine.generateName(mockTrack, mockAudio, true);
+            const name3 = engine.generateName(mockTrack, mockAudio, true);
+
+            expect(name1).toBe(name2);
+            expect(name2).toBe(name3);
+        });
+
+        it('should verify format distribution matches 50/30/20 in deterministic mode', () => {
             // Test with many UUIDs to verify probabilistic distribution
             const distribution = {
                 class_title: 0,
@@ -92,7 +111,8 @@ describe('NamingEngine', () => {
 
             for (let i = 0; i < iterations; i++) {
                 const testTrack = { ...mockTrack, uuid: `test-uuid-${i}` };
-                const name = engine.generateName(testTrack, mockAudio);
+                // Use deterministic mode for consistent testing
+                const name = engine.generateName(testTrack, mockAudio, true);
 
                 // Determine which format was used
                 if (name.includes(' the ')) {

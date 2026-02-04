@@ -29,17 +29,30 @@ export class NamingEngine {
      *
      * @param {PlaylistTrack} track - Track with title, artist, genre metadata
      * @param {AudioProfile} audioProfile - Audio frequency characteristics
+     * @param {boolean} deterministic - If true, same track always produces same name. Default: false (random variation each time)
      * @returns {string} Generated RPG-style character name (20-50 characters)
      *
      * @example
-     * const track = { title: 'Midnight Dreams (Official Video)', artist: 'The Band', genre: 'Electronic' };
-     * const audioProfile = await analyzer.extractSonicFingerprint(audioUrl);
-     * const name = namingEngine.generateName(track, audioProfile);
-     * console.log(name);  // e.g., "Midnight Synth" or "The Band Collective"
+     * // Non-deterministic (default) - slightly different each time
+     * const name1 = namingEngine.generateName(track, audioProfile);
+     * const name2 = namingEngine.generateName(track, audioProfile);
+     * console.log(name1);  // e.g., "Midnight Synth"
+     * console.log(name2);  // e.g., "Electric Dreams of The Band" (different!)
+     *
+     * @example
+     * // Deterministic mode - same track always produces same name
+     * const name = namingEngine.generateName(track, audioProfile, true);
+     * console.log(name);  // Always: "Midnight Synth" for this track
      */
-    public generateName(track: PlaylistTrack, audioProfile: AudioProfile): string {
+    public generateName(track: PlaylistTrack, audioProfile: AudioProfile, deterministic: boolean = false): string {
         const cleanTitle = this.cleanTitle(track.title);
-        const rng = new SeededRNG(track.uuid);
+
+        // Generate seed: deterministic uses track.uuid, non-deterministic adds timestamp + random
+        const seed = deterministic
+            ? track.uuid
+            : `${track.uuid}-${Date.now()}-${Math.random()}`;
+
+        const rng = new SeededRNG(seed);
         const format = this.selectFormat(rng);
 
         switch (format) {

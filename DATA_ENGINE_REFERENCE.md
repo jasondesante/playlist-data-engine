@@ -1736,7 +1736,7 @@ Generates visual traits.
 
 Generates RPG-style names from track metadata.
 
-- `generateName(track: PlaylistTrack, audioProfile: AudioProfile): string`
+- `generateName(track: PlaylistTrack, audioProfile: AudioProfile, deterministic: boolean): string`
     - **Formats:**
         - Class Title: "Sonic Bard"
         - Adjective Construct: "Midnight Echoes"
