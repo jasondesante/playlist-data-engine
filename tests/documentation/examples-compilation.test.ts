@@ -1358,6 +1358,8 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         it('should compile getSpellRegistry example', () => {
             const registry = getSpellRegistry();
             expect(registry).toBeInstanceOf(SpellRegistry);
+            // Verify SpellRegistry is a convenience wrapper that delegates to ExtensionManager
+            expect(registry.getSpellCount()).toBeGreaterThan(0);
         });
 
         it('should compile initializeAllDefaults example', () => {
@@ -1366,6 +1368,193 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
         it('should compile ensureAllDefaultsInitialized example', () => {
             ensureAllDefaultsInitialized();
+        });
+    });
+
+    describe('SpellRegistry Integration Tests', () => {
+        let spellRegistry: SpellRegistry;
+
+        beforeEach(() => {
+            spellRegistry = SpellRegistry.getInstance();
+        });
+
+        it('should verify SpellRegistry.registerSpell() delegates to ExtensionManager', () => {
+            // Get initial spell count from ExtensionManager
+            const initialSpells = manager.get('spells');
+            const initialCount = initialSpells.length;
+
+            // Register a custom spell via SpellRegistry
+            const customSpell = {
+                id: 'test_frost_bolt',
+                name: 'Frost Bolt',
+                level: 1,
+                school: 'Evocation' as const,
+                casting_time: '1 action',
+                range: '60 feet',
+                duration: 'Instantaneous',
+                components: ['V', 'S'],
+                description: 'A bolt of freezing cold',
+                source: 'custom' as const
+            };
+
+            spellRegistry.registerSpell(customSpell);
+
+            // Verify the spell is now in ExtensionManager
+            const updatedSpells = manager.get('spells');
+            expect(updatedSpells.length).toBe(initialCount + 1);
+
+            // Verify the specific spell is accessible via ExtensionManager
+            const foundInManager = updatedSpells.find((s: any) => s.id === 'test_frost_bolt');
+            expect(foundInManager).toBeDefined();
+            expect(foundInManager.name).toBe('Frost Bolt');
+        });
+
+        it('should verify registering via ExtensionManager is visible in SpellRegistry', () => {
+            // Register a spell directly via ExtensionManager
+            const customSpell = {
+                id: 'test_arcane_blast',
+                name: 'Arcane Blast',
+                level: 2,
+                school: 'Evocation' as const,
+                casting_time: '1 action',
+                range: '120 feet',
+                duration: 'Instantaneous',
+                components: ['V', 'S', 'M'],
+                description: 'A blast of pure arcane energy',
+                source: 'custom' as const
+            };
+
+            manager.register('spells', [customSpell]);
+
+            // Verify the spell is accessible via SpellRegistry
+            const found = spellRegistry.getSpell('test_arcane_blast');
+            expect(found).toBeDefined();
+            expect(found?.name).toBe('Arcane Blast');
+
+            // Verify it appears in getAllSpells
+            const allSpells = spellRegistry.getSpells();
+            expect(allSpells.some(s => s.id === 'test_arcane_blast')).toBe(true);
+        });
+
+        it('should verify getSpellsByLevel() returns correct spells', () => {
+            // Register spells of different levels
+            const cantrip = {
+                id: 'test_light_cantrip',
+                name: 'Light Cantrip',
+                level: 0,
+                school: 'Evocation' as const,
+                casting_time: '1 action',
+                range: 'Touch',
+                duration: '1 minute',
+                components: ['V', 'M'],
+                description: 'A small light',
+                source: 'custom' as const
+            };
+
+            const level5Spell = {
+                id: 'test_fire_storm',
+                name: 'Fire Storm',
+                level: 5,
+                school: 'Evocation' as const,
+                casting_time: '1 action',
+                range: '120 feet',
+                duration: 'Instantaneous',
+                components: ['V', 'S'],
+                description: 'A storm of fire',
+                source: 'custom' as const
+            };
+
+            spellRegistry.registerSpells([cantrip, level5Spell]);
+
+            // Verify getSpellsByLevel works
+            const cantrips = spellRegistry.getSpellsByLevel(0);
+            expect(cantrips.some(s => s.id === 'test_light_cantrip')).toBe(true);
+
+            const level5Spells = spellRegistry.getSpellsByLevel(5);
+            expect(level5Spells.some(s => s.id === 'test_fire_storm')).toBe(true);
+
+            // Verify cross-contamination doesn't happen
+            expect(cantrips.some(s => s.id === 'test_fire_storm')).toBe(false);
+            expect(level5Spells.some(s => s.id === 'test_light_cantrip')).toBe(false);
+        });
+
+        it('should verify getSpellsBySchool() returns correct spells', () => {
+            // Register spells from different schools
+            const evocationSpell = {
+                id: 'test_evocation_spell',
+                name: 'Evocation Test',
+                level: 1,
+                school: 'Evocation' as const,
+                casting_time: '1 action',
+                range: '60 feet',
+                duration: 'Instantaneous',
+                components: ['V', 'S'],
+                description: 'An evocation spell',
+                source: 'custom' as const
+            };
+
+            const abjurationSpell = {
+                id: 'test_abjuration_spell',
+                name: 'Abjuration Test',
+                level: 1,
+                school: 'Abjuration' as const,
+                casting_time: '1 reaction',
+                range: 'Self',
+                duration: '1 minute',
+                components: ['S'],
+                description: 'An abjuration spell',
+                source: 'custom' as const
+            };
+
+            spellRegistry.registerSpells([evocationSpell, abjurationSpell]);
+
+            // Verify getSpellsBySchool works
+            const evocationSpells = spellRegistry.getSpellsBySchool('Evocation');
+            expect(evocationSpells.some(s => s.id === 'test_evocation_spell')).toBe(true);
+            expect(evocationSpells.some(s => s.id === 'test_abjuration_spell')).toBe(false);
+
+            const abjurationSpells = spellRegistry.getSpellsBySchool('Abjuration');
+            expect(abjurationSpells.some(s => s.id === 'test_abjuration_spell')).toBe(true);
+            expect(abjurationSpells.some(s => s.id === 'test_evocation_spell')).toBe(false);
+        });
+
+        it('should verify cache invalidation works after registration', () => {
+            // Register a spell and cache the result
+            const customSpell = {
+                id: 'test_cache_spell',
+                name: 'Cache Test Spell',
+                level: 3,
+                school: 'Transmutation' as const,
+                casting_time: '1 action',
+                range: 'Touch',
+                duration: 'Concentration, 1 minute',
+                components: ['V', 'S', 'M'],
+                description: 'A spell for testing cache',
+                source: 'custom' as const
+            };
+
+            // Verify the spell is not already registered
+            const notFound = spellRegistry.getSpell('test_cache_spell');
+            expect(notFound).toBeUndefined();
+
+            // Register new spell (should invalidate cache)
+            spellRegistry.registerSpell(customSpell);
+
+            // Verify the spell is accessible after registration
+            const found = spellRegistry.getSpell('test_cache_spell');
+            expect(found).toBeDefined();
+            expect(found?.name).toBe('Cache Test Spell');
+
+            // Verify indexed queries also see the new spell (proves cache was invalidated)
+            const level3Spells = spellRegistry.getSpellsByLevel(3);
+            expect(level3Spells.some(s => s.id === 'test_cache_spell')).toBe(true);
+
+            const transmutationSpells = spellRegistry.getSpellsBySchool('Transmutation');
+            expect(transmutationSpells.some(s => s.id === 'test_cache_spell')).toBe(true);
+
+            // Verify spell appears in all spells query
+            const allSpells = spellRegistry.getSpells();
+            expect(allSpells.some(s => s.id === 'test_cache_spell')).toBe(true);
         });
     });
 

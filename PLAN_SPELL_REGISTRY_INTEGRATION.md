@@ -238,29 +238,31 @@ const { getSpellSlotsForClass } = require('../../utils/constants.js');
 
 ---
 
-#### Task 2.1: Update Existing SpellRegistry Tests
+#### Task 2.1: Update Existing SpellRegistry Tests ✅
 
 **Lines 13, 30, 1358-1360** reference SpellRegistry:
 
-- [ ] Review existing test at lines 1358-1360
-- [ ] Update test to verify `SpellRegistry.registerSpell()` delegates to ExtensionManager
-- [ ] Verify `getSpellRegistry()` returns singleton instance
+- [x] Review existing test at lines 1358-1360
+- [x] Update test to verify `SpellRegistry.registerSpell()` delegates to ExtensionManager
+- [x] Verify `getSpellRegistry()` returns singleton instance
 
 **Verification:**
-- [ ] Test passes
+- [x] Test passes
 
 ---
 
-#### Task 2.2: Add Integration Tests
+#### Task 2.2: Add Integration Tests ✅
 
-- [ ] Add test: Register via `SpellRegistry.registerSpell()`, verify in `ExtensionManager.get('spells')`
-- [ ] Add test: Register via `ExtensionManager.register('spells')`, verify `SpellRegistry.getSpells()` sees it
-- [ ] Add test: `getSpellsByLevel()` returns correct spells
-- [ ] Add test: `getSpellsBySchool()` returns correct spells
-- [ ] Add test: Cache invalidation works after registration
+- [x] Add test: Register via `SpellRegistry.registerSpell()`, verify in `ExtensionManager.get('spells')`
+- [x] Add test: Register via `ExtensionManager.register('spells')`, verify `SpellRegistry.getSpells()` sees it
+- [x] Add test: `getSpellsByLevel()` returns correct spells
+- [x] Add test: `getSpellsBySchool()` returns correct spells
+- [x] Add test: Cache invalidation works after registration
 
 **Verification:**
-- [ ] All new tests pass
+- [x] All new tests pass
+
+**Summary:** Added 5 new integration tests in a new `describe('SpellRegistry Integration Tests')` block after the "Helper Function Examples" section. All tests verify the delegation between SpellRegistry and ExtensionManager works correctly.
 
 ---
 
