@@ -930,14 +930,45 @@ Fixed and updated racial trait tests to work with FeatureRegistry as a convenien
 ### Task 11.2: Add Integration Tests for Racial Traits
 
 **Add tests:**
-- [ ] Register via `ExtensionManager.register('racialTraits')`, verify `FeatureRegistry.getRacialTraits()` sees it
-- [ ] `getRacialTraits()` returns correct traits from EM data
-- [ ] `getRacialTraitsForSubrace()` filters correctly from EM data
-- [ ] `getAvailableSubraces()` derives from EM data
-- [ ] Cache invalidation works after EM registration
+- [x] Register via `ExtensionManager.register('racialTraits')`, verify `FeatureRegistry.getRacialTraits()` sees it
+- [x] `getRacialTraits()` returns correct traits from EM data
+- [x] `getRacialTraitsForSubrace()` filters correctly from EM data
+- [x] `getAvailableSubraces()` derives from EM data
+- [x] Cache invalidation works after EM registration
 
 **Verification:**
-- [ ] All new integration tests pass
+- [x] All new integration tests pass
+
+**Summary:**
+Created `tests/integration/racialTraitIntegration.test.ts` with 20 comprehensive integration tests covering:
+1. Task 11.2.1: Register via ExtensionManager and FeatureRegistry sees it (2 tests)
+2. Task 11.2.2: getRacialTraits() returns correct traits from EM data (2 tests)
+3. Task 11.2.3: getRacialTraitsForSubrace() filters correctly from EM data (3 tests)
+4. Task 11.2.4: getAvailableSubraces() derives from EM data (2 tests)
+5. Task 11.2.5: Cache invalidation works after EM registration (3 tests)
+6. Additional tests for comprehensive coverage (8 tests)
+
+All 20 tests pass successfully, verifying:
+- Registration via ExtensionManager and visibility through FeatureRegistry
+- Multi-race trait registration and retrieval
+- Filtering by race and subrace (base traits + subrace-specific traits)
+- getSubraceTraits returning only subrace-specific traits
+- Deriving subraces from EM data when RACE_DATA not available
+- getRaceForSubrace finding race from registered traits
+- Cache invalidation after EM registration
+- Convenience wrapper registration (registerRacialTrait delegates to ExtensionManager)
+- Validation during registration
+- Duplicate trait ID detection
+- Persistence across ExtensionManager reset when re-registered
+- getRegistryStats counting correctly
+- getBaseRacialTraits excluding subrace-specific traits
+- exportRacialTraits returning correct data structure
+
+**Test Results:**
+- tests/integration/racialTraitIntegration.test.ts: 20 tests PASSED ✅
+- tests/integration/featureIntegration.test.ts: 16 tests PASSED ✅
+- tests/unit/featureRegistry.test.ts: 62 tests PASSED ✅
+- Total feature-related tests: 98 tests PASSED ✅
 
 ---
 
