@@ -28,6 +28,27 @@ import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/co
 import { ALL_RACES } from '../../src/utils/constants.js';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
+import type { PlaylistTrack } from '../../src/core/types/Playlist.js';
+
+// Helper function to create a mock track with a custom title
+function createMockTrack(title: string): PlaylistTrack {
+    return {
+        title,
+        artist: 'Test Artist',
+        genre: 'Rock',
+        id: 'test-1',
+        uuid: 'test-uuid-1',
+        playlist_index: 0,
+        chain_name: 'eth',
+        token_address: '0x0',
+        token_id: '1',
+        platform: 'sound',
+        image_url: 'https://example.com/image.jpg',
+        audio_url: 'https://example.com/audio.mp3',
+        duration: 180,
+        tags: ['rock', 'test']
+    };
+}
 import type { ClassFeature } from '../../src/core/features/FeatureTypes.js';
 import type { Spell } from '../../src/utils/constants.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
@@ -141,7 +162,7 @@ describe('Integration: Prerequisites and Races', () => {
             const character = CharacterGenerator.generate(
                 'skill-prereqs-met',
                 sampleAudioProfile as any,
-                'Advanced Fighter',
+                createMockTrack('Advanced Fighter'),
                 { forceClass: 'Fighter', level: 10 }
             );
 
@@ -176,7 +197,7 @@ describe('Integration: Prerequisites and Races', () => {
                 character = CharacterGenerator.generate(
                     `dragon-lore-${attempts}`,
                     sampleAudioProfile as any,
-                    'Dragon Sorcerer',
+                    createMockTrack('Dragon Sorcerer'),
                     { forceClass: 'Sorcerer', level: 5 }
                 );
                 if (character.class_features.includes('draconic_bloodline')) {
@@ -207,7 +228,7 @@ describe('Integration: Prerequisites and Races', () => {
             const character = CharacterGenerator.generate(
                 'skill-prereqs-unmet',
                 sampleAudioProfile as any,
-                'Novice Rogue',
+                createMockTrack('Novice Rogue'),
                 { forceClass: 'Rogue', level: 1 }
             );
 
@@ -232,7 +253,7 @@ describe('Integration: Prerequisites and Races', () => {
             const character = CharacterGenerator.generate(
                 'wrong-class-skill',
                 sampleAudioProfile as any,
-                'Fighter No Magic',
+                createMockTrack('Fighter No Magic'),
                 { forceClass: 'Fighter', level: 5 }
             );
 
@@ -259,7 +280,7 @@ describe('Integration: Prerequisites and Races', () => {
             const character = CharacterGenerator.generate(
                 'levelup-test',
                 sampleAudioProfile as any,
-                'Growing Fighter',
+                createMockTrack('Growing Fighter'),
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -490,7 +511,7 @@ describe('Integration: Prerequisites and Races', () => {
             const character = CharacterGenerator.generate(
                 'subrace-test',
                 audioProfile,
-                'High Elf Character',
+                createMockTrack('High Elf Character'),
                 { subrace: 'High Elf' }
             );
 
@@ -692,7 +713,7 @@ describe('Integration: Prerequisites and Races', () => {
             const character = CharacterGenerator.generate(
                 'save-load-test',
                 sampleAudioProfile as any,
-                'Test Character',
+                createMockTrack('Test Character'),
                 { forceClass: 'Wizard', level: 5 }
             );
 
@@ -736,7 +757,7 @@ describe('Integration: Prerequisites and Races', () => {
             const character = CharacterGenerator.generate(
                 'subrace-save-test',
                 audioProfile,
-                'High Elf Wizard',
+                createMockTrack('High Elf Wizard'),
                 { subrace: 'High Elf' }
             );
 
@@ -770,7 +791,7 @@ describe('Integration: Prerequisites and Races', () => {
             const character = CharacterGenerator.generate(
                 'complex-prereq-test',
                 sampleAudioProfile as any,
-                'Half-Elf Bard',
+                createMockTrack('Half-Elf Bard'),
                 { forceClass: 'Bard', level: 10 }
             );
 
@@ -967,13 +988,13 @@ describe('Integration: Prerequisites and Races', () => {
             const character = CharacterGenerator.generate(
                 'basic-character',
                 sampleAudioProfile as any,
-                'Basic Fighter',
+                createMockTrack('Basic Fighter'),
                 { forceClass: 'Fighter', level: 1 }
             );
 
             // Character should be valid and complete
             expect(character).toBeDefined();
-            expect(character.name).toBe('Basic Fighter');
+            expect(character.name).toContain('Basic Fighter');
             expect(character.class).toBe('Fighter');
             expect(character.level).toBe(1);
             expect(character.skills).toBeDefined();
@@ -1100,7 +1121,7 @@ describe('Integration: Prerequisites and Races', () => {
             const character = CharacterGenerator.generate(
                 'crafting-lifecycle',
                 sampleAudioProfile as any,
-                'Artisan',
+                createMockTrack('Artisan'),
                 { forceClass: 'Wizard', level: 1 }
             );
 

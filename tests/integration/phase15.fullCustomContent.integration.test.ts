@@ -19,6 +19,27 @@ import { WeightedSelector } from '../../src/core/extensions/WeightedSelector';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 import { Class, Race } from '../../src/core/types';
+import type { PlaylistTrack } from '../../src/core/types/Playlist';
+
+// Helper function to create a mock track with a custom title
+function createMockTrack(title: string): PlaylistTrack {
+    return {
+        title,
+        artist: 'Test Artist',
+        genre: 'Rock',
+        id: 'test-1',
+        uuid: 'test-uuid-1',
+        playlist_index: 0,
+        chain_name: 'eth',
+        token_address: '0x0',
+        token_id: '1',
+        platform: 'sound',
+        image_url: 'https://example.com/image.jpg',
+        audio_url: 'https://example.com/audio.mp3',
+        duration: 180,
+        tags: ['rock', 'test']
+    };
+}
 
 describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
     let featureRegistry: FeatureRegistry;
@@ -181,7 +202,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 const character = CharacterGenerator.generate(
                     `full-custom-${testClass.toLowerCase()}`,
                     sampleAudioProfile,
-                    `Test ${testClass}`,
+                    createMockTrack(`Test ${testClass}`),
                     { forceClass: testClass, level: 1 }
                 );
 
@@ -212,7 +233,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                     const highLevelWizard = CharacterGenerator.generate(
                         `full-custom-wizard-level5`,
                         sampleAudioProfile,
-                        'Test Wizard Level 5',
+                        createMockTrack('Test Wizard Level 5'),
                         { forceClass: 'Wizard', level: 5 }
                     );
 
@@ -338,7 +359,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const character = CharacterGenerator.generate(
                 'level-up-custom-features',
                 sampleAudioProfile,
-                'Test Paladin',
+                createMockTrack('Test Paladin'),
                 { forceClass: 'Paladin', level: 1 }
             );
 
@@ -399,7 +420,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const character = CharacterGenerator.generate(
                 'feature-chain-level1',
                 sampleAudioProfile,
-                'Test Fighter',
+                createMockTrack('Test Fighter'),
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -436,7 +457,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const character = CharacterGenerator.generate(
                 'feature-effects-levelup',
                 sampleAudioProfile,
-                'Test Barbarian',
+                createMockTrack('Test Barbarian'),
                 { forceClass: 'Barbarian', level: 1 }
             );
 
@@ -541,7 +562,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 const character = CharacterGenerator.generate(
                     `custom-skills-${testCase.class.toLowerCase()}`,
                     sampleAudioProfile,
-                    `Test ${testCase.class}`,
+                    createMockTrack(`Test ${testCase.class}`),
                     { forceClass: testCase.class, level: 1 }
                 );
 
@@ -587,7 +608,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const character = CharacterGenerator.generate(
                 'skill-validation-test',
                 sampleAudioProfile,
-                'Test Wizard',
+                createMockTrack('Test Wizard'),
                 { forceClass: 'Wizard', level: 1 }
             );
 
@@ -967,7 +988,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const character = CharacterGenerator.generate(
                 'invalid-prereq-chain',
                 sampleAudioProfile,
-                'Test Wizard',
+                createMockTrack('Test Wizard'),
                 { forceClass: 'Wizard', level: 5 }
             );
 
@@ -1008,7 +1029,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const character = CharacterGenerator.generate(
                 'empty-custom-content',
                 sampleAudioProfile,
-                'Test Fighter',
+                createMockTrack('Test Fighter'),
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -1046,7 +1067,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const character = CharacterGenerator.generate(
                 'bulk-features',
                 sampleAudioProfile,
-                'Test Wizard',
+                createMockTrack('Test Wizard'),
                 { forceClass: 'Wizard', level: 1 }
             );
 
@@ -1072,7 +1093,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const character = CharacterGenerator.generate(
                 'special-chars-id',
                 sampleAudioProfile,
-                'Test Wizard',
+                createMockTrack('Test Wizard'),
                 { forceClass: 'Wizard', level: 1 }
             );
 
@@ -1110,7 +1131,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const character = CharacterGenerator.generate(
                 'reset-cycle-test',
                 sampleAudioProfile,
-                'Test Fighter',
+                createMockTrack('Test Fighter'),
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -1187,7 +1208,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const character = CharacterGenerator.generate(
                 'ultimate-integration-test',
                 sampleAudioProfile,
-                'Champion Test',
+                createMockTrack('Champion Test'),
                 { forceClass: 'Fighter', level: 1 }
             );
 

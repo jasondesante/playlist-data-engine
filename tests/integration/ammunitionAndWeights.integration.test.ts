@@ -19,6 +19,27 @@ import { EquipmentGenerator } from '../../src/core/generation/EquipmentGenerator
 import { WeightedSelector } from '../../src/core/extensions/WeightedSelector';
 import { SeededRNG } from '../../src/utils/random.js';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
+import type { PlaylistTrack } from '../../src/core/types/Playlist';
+
+// Helper function to create a mock track with a custom title
+function createMockTrack(title: string): PlaylistTrack {
+    return {
+        title,
+        artist: 'Test Artist',
+        genre: 'Rock',
+        id: 'test-1',
+        uuid: 'test-uuid-1',
+        playlist_index: 0,
+        chain_name: 'eth',
+        token_address: '0x0',
+        token_id: '1',
+        platform: 'sound',
+        image_url: 'https://example.com/image.jpg',
+        audio_url: 'https://example.com/audio.mp3',
+        duration: 180,
+        tags: ['rock', 'test']
+    };
+}
 
 describe('Integration: Ammunition Fix and Weight System', () => {
     let manager: ExtensionManager;
@@ -37,7 +58,7 @@ describe('Integration: Ammunition Fix and Weight System', () => {
             const character = CharacterGenerator.generate(
                 'test-ranger-arrows',
                 sampleAudioProfile,
-                'Ranger Test',
+                createMockTrack('Ranger Test'),
                 {
                     forceClass: 'Ranger'
                 }
@@ -64,7 +85,7 @@ describe('Integration: Ammunition Fix and Weight System', () => {
             const character = CharacterGenerator.generate(
                 'test-no-old-arrows',
                 sampleAudioProfile,
-                'Ranger Test',
+                createMockTrack('Ranger Test'),
                 {
                     forceClass: 'Ranger'
                 }
@@ -79,7 +100,7 @@ describe('Integration: Ammunition Fix and Weight System', () => {
             const character = CharacterGenerator.generate(
                 'test-ranger-arrows',
                 sampleAudioProfile,
-                'Ranger Test',
+                createMockTrack('Ranger Test'),
                 {
                     forceClass: 'Ranger'
                 }
@@ -96,7 +117,7 @@ describe('Integration: Ammunition Fix and Weight System', () => {
             const character = CharacterGenerator.generate(
                 'test-crossbow-bolts',
                 sampleAudioProfile,
-                'Ranger Test',
+                createMockTrack('Ranger Test'),
                 {
                     forceClass: 'Ranger'
                 }
@@ -117,7 +138,7 @@ describe('Integration: Ammunition Fix and Weight System', () => {
             const character = CharacterGenerator.generate(
                 'test-arrow-weight',
                 sampleAudioProfile,
-                'Ranger Test',
+                createMockTrack('Ranger Test'),
                 {
                     forceClass: 'Ranger'
                 }

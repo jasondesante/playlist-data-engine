@@ -15,6 +15,27 @@ import { FeatureRegistry } from '../../src/core/features/FeatureRegistry';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
+import type { PlaylistTrack } from '../../src/core/types/Playlist';
+
+// Helper function to create a mock track with a custom title
+function createMockTrack(title: string): PlaylistTrack {
+    return {
+        title,
+        artist: 'Test Artist',
+        genre: 'Rock',
+        id: 'test-1',
+        uuid: 'test-uuid-1',
+        playlist_index: 0,
+        chain_name: 'eth',
+        token_address: '0x0',
+        token_id: '1',
+        platform: 'sound',
+        image_url: 'https://example.com/image.jpg',
+        audio_url: 'https://example.com/audio.mp3',
+        duration: 180,
+        tags: ['rock', 'test']
+    };
+}
 
 describe('Integration: CharacterGenerator with Custom Features and Skills', () => {
     let featureRegistry: FeatureRegistry;
@@ -135,7 +156,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const character = CharacterGenerator.generate(
                 'test-feature-effects',
                 sampleAudioProfile,
-                'Test Barbarian',
+                createMockTrack('Test Barbarian'),
                 { forceClass: 'Barbarian', level: 1 }
             );
 
@@ -166,7 +187,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const lowLevelCharacter = CharacterGenerator.generate(
                 'test-feature-prereq-low',
                 sampleAudioProfile,
-                'Low Paladin',
+                createMockTrack('Low Paladin'),
                 { forceClass: 'Paladin', level: 5 }
             );
 
@@ -176,7 +197,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const highLevelCharacter = CharacterGenerator.generate(
                 'test-feature-prereq-high',
                 sampleAudioProfile,
-                'High Paladin',
+                createMockTrack('High Paladin'),
                 { forceClass: 'Paladin', level: 10 }
             );
 
@@ -207,7 +228,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 character = CharacterGenerator.generate(
                     `test-custom-trait-${attempts}`,
                     sampleAudioProfile,
-                    'Test Elf',
+                    createMockTrack('Test Elf'),
                     { forceClass: 'Wizard' }
                 );
                 attempts++;
@@ -253,7 +274,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 character = CharacterGenerator.generate(
                     `test-multiple-custom-traits-${attempts}`,
                     sampleAudioProfile,
-                    'Test Dwarf',
+                    createMockTrack('Test Dwarf'),
                     { forceClass: 'Cleric' }
                 );
                 attempts++;
@@ -306,7 +327,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const character = CharacterGenerator.generate(
                 'test-custom-skill',
                 sampleAudioProfile,
-                'Test Ranger',
+                createMockTrack('Test Ranger'),
                 { forceClass: 'Ranger', level: 1 }
             );
 
@@ -343,7 +364,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const character = CharacterGenerator.generate(
                 'test-multiple-custom-skills',
                 sampleAudioProfile,
-                'Test Rogue',
+                createMockTrack('Test Rogue'),
                 { forceClass: 'Rogue', level: 1 }
             );
 
@@ -453,7 +474,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             const character = CharacterGenerator.generate(
                 'test-defaults-plus-custom',
                 sampleAudioProfile,
-                'Test Rogue',
+                createMockTrack('Test Rogue'),
                 { forceClass: 'Rogue', level: 2 }
             );
 

@@ -19,6 +19,27 @@ import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
 import { getClassData, getClassSpellList, getSpellSlotsForClass, getClassStartingEquipment } from '../../src/utils/constants';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 import { Class, asClass } from '../../src/core/types/Character';
+import type { PlaylistTrack } from '../../src/core/types/Playlist';
+
+// Helper function to create a mock track with a custom title
+function createMockTrack(title: string): PlaylistTrack {
+    return {
+        title,
+        artist: 'Test Artist',
+        genre: 'Rock',
+        id: 'test-1',
+        uuid: 'test-uuid-1',
+        playlist_index: 0,
+        chain_name: 'eth',
+        token_address: '0x0',
+        token_id: '1',
+        platform: 'sound',
+        image_url: 'https://example.com/image.jpg',
+        audio_url: 'https://example.com/audio.mp3',
+        duration: 180,
+        tags: ['rock', 'test']
+    };
+}
 
 describe('Integration: Custom Classes', () => {
     let featureRegistry: FeatureRegistry;
@@ -170,7 +191,7 @@ describe('Integration: Custom Classes', () => {
             const necromancer = CharacterGenerator.generate(
                 'test-seed-necromancer',
                 sampleAudioProfile,
-                'Test Necromancer',
+                createMockTrack('Test Necromancer'),
                 { forceClass: asClass('Necromancer') }
             );
 
@@ -367,7 +388,7 @@ describe('Integration: Custom Classes', () => {
             const necromancer = CharacterGenerator.generate(
                 'test-seed-necromancer-full',
                 sampleAudioProfile,
-                'Test Necromancer',
+                createMockTrack('Test Necromancer'),
                 { forceClass: asClass('Necromancer') }
             );
 
