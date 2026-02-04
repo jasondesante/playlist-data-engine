@@ -570,12 +570,19 @@ Updated `FeatureRegistry.initializeDefaults()` to only accept `defaultRacialTrai
 ### Task 6.7: Remove exportRegistry() Method
 
 **Remove this method:**
-- [ ] `exportRegistry()` (or mark as deprecated)
+- [x] `exportRegistry()` (replaced with `exportRacialTraits()`)
 
 **Reason:** No internal storage to export. Use `ExtensionManager.get('classFeatures')` instead.
 
 **Verification:**
-- [ ] TypeScript compiles
+- [x] TypeScript compiles
+
+**Summary:**
+Replaced `exportRegistry()` with `exportRacialTraits()` method. Class features are accessed via `ExtensionManager.get('classFeatures')` instead, since they're stored in ExtensionManager. Racial traits still use internal storage (until Phase 9), so `exportRacialTraits()` is kept for that purpose.
+
+Updated tests to use the new pattern:
+- Class features: `ExtensionManager.get('classFeatures')`
+- Racial traits: `FeatureRegistry.exportRacialTraits()`
 
 ---
 
