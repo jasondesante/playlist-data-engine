@@ -15,19 +15,27 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { LevelUpProcessor } from '../../src/core/progression/LevelUpProcessor.js';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 import type { ClassFeature, AbilityScores } from '../../src/core/types/index.js';
 import type { CharacterSheet, Class } from '../../src/core/types/Character.js';
 
 describe('LevelUpProcessor with Custom Features', () => {
     let registry: FeatureRegistry;
+    let extensionManager: ExtensionManager;
     let mockCharacter: CharacterSheet;
 
     beforeEach(() => {
         // Get a fresh instance and initialize with defaults
         registry = FeatureRegistry.getInstance();
+        extensionManager = ExtensionManager.getInstance();
         registry.reset();
-        registry.initializeDefaults(DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS);
+        extensionManager.resetAll();
+
+        // Class features are initialized via ExtensionManager
+        extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
+        // Racial traits are initialized via FeatureRegistry (until Phase 9)
+        registry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
 
         const baseScores: AbilityScores = {
             STR: 10,
@@ -96,6 +104,7 @@ describe('LevelUpProcessor with Custom Features', () => {
     afterEach(() => {
         // Clean up after each test
         registry.reset();
+        extensionManager.resetAll();
     });
 
     describe('Level-Up with Default Features', () => {

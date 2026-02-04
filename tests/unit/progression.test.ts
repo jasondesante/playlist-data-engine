@@ -10,6 +10,7 @@ import { XPCalculator } from '../../src/core/progression/XPCalculator';
 import type { CharacterSheet, AbilityScores } from '../../src/core/types/Character';
 import type { PlaylistTrack } from '../../src/core/types/Playlist';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 
 describe('SessionTracker (T068-T069)', () => {
@@ -389,8 +390,12 @@ describe('LevelUpProcessor (T070)', () => {
     beforeEach(() => {
         // Initialize FeatureRegistry with default features for tests
         const registry = FeatureRegistry.getInstance();
+        const extensionManager = ExtensionManager.getInstance();
         if (!registry.isInitialized()) {
-            registry.initializeDefaults(DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS);
+            // Class features are initialized via ExtensionManager
+            extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
+            // Racial traits are initialized via FeatureRegistry (until Phase 9)
+            registry.initializeDefaults(DEFAULT_RACIAL_TRAITS);
         }
 
         const baseScores: AbilityScores = {

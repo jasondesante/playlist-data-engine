@@ -84,27 +84,22 @@ export class FeatureRegistry {
     }
 
     /**
-     * Initialize the registry with default features
+     * Initialize the registry with default racial traits
      * This should be called once during package initialization
      *
-     * @param defaultClassFeatures - Default class features from constants
+     * Note: Class features are now initialized via ExtensionManager.
+     * Use ExtensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES)
+     * or call initializeFeatureDefaults() from initializeDefaults.ts.
+     *
      * @param defaultRacialTraits - Default racial traits from constants
      */
-    initializeDefaults(
-        defaultClassFeatures: ClassFeature[] = [],
-        defaultRacialTraits: RacialTrait[] = []
-    ): void {
+    initializeDefaults(defaultRacialTraits: RacialTrait[] = []): void {
         if (this.initialized) {
             return; // Already initialized
         }
 
         // Clear any existing data
         this.reset();
-
-        // Register default class features
-        for (const feature of defaultClassFeatures) {
-            this.registerClassFeature(feature);
-        }
 
         // Register default racial traits
         for (const trait of defaultRacialTraits) {
