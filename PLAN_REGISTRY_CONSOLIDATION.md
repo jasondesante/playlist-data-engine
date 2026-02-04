@@ -979,13 +979,22 @@ All 20 tests pass successfully, verifying:
 ### Task 12.1: Update EXTENSIBILITY_GUIDE.md
 
 **Find sections about feature registration:**
-- [ ] Update examples to use `ExtensionManager.register('classFeatures', [...])` and `ExtensionManager.register('racialTraits', [...])`
-- [ ] Add note: "FeatureRegistry is a convenience wrapper around ExtensionManager"
-- [ ] Remove obsolete `FeatureRegistry.initializeDefaults()` calls
+- [x] Update examples to use `ExtensionManager.register('classFeatures', [...])` and `ExtensionManager.register('racialTraits', [...])`
+- [x] Add note: "FeatureRegistry is a convenience wrapper around ExtensionManager"
+- [x] Remove obsolete `FeatureRegistry.initializeDefaults()` calls
 
 **Verification:**
-- [ ] Example code compiles
-- [ ] Documentation matches implementation
+- [x] Example code compiles
+- [x] Documentation matches implementation
+
+**Summary:**
+Updated the following sections in EXTENSIBILITY_GUIDE.md:
+1. "Class Features" section (line ~697) - Changed to use ExtensionManager.register() as primary method and added note about FeatureRegistry being a convenience wrapper
+2. "Features with Skill/Spell Prerequisites" section (line ~802) - Added note about FeatureRegistry being a convenience wrapper and showed both registration approaches (ExtensionManager as primary, FeatureRegistry as alternative)
+3. "Racial Traits" section (line ~890) - Updated to use ExtensionManager.register() as primary method and added note about FeatureRegistry being a convenience wrapper
+4. "Arctic Expansion Pack" example (line ~1555) - Updated comment to clarify that FeatureRegistry and SkillRegistry are convenience wrappers around ExtensionManager
+
+All examples now show ExtensionManager.register('classFeatures', [...]) and ExtensionManager.register('racialTraits', [...]) as the recommended approach, with notes that FeatureRegistry.registerClassFeature()/registerRacialTrait() are convenience wrappers that delegate to ExtensionManager internally.
 
 ---
 

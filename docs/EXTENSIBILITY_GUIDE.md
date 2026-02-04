@@ -696,15 +696,15 @@ const character = CharacterGenerator.generate(
 
 ### Class Features
 
-Add custom class features with the FeatureRegistry:
+Add custom class features through ExtensionManager (recommended) or FeatureRegistry (convenience wrapper):
 
 ```typescript
-import { FeatureRegistry } from 'playlist-data-engine';
+import { ExtensionManager } from 'playlist-data-engine';
 
-const registry = FeatureRegistry.getInstance();
+const manager = ExtensionManager.getInstance();
 
-// Register custom class features
-registry.registerClassFeatures([
+// Register custom class features (recommended approach)
+manager.register('classFeatures', [
     {
         id: 'dragon_fury',
         name: 'Dragon Fury',
@@ -748,14 +748,15 @@ registry.registerClassFeatures([
 ]);
 
 // Set spawn rates for features
-const manager = ExtensionManager.getInstance();
 manager.setWeights('classFeatures.Barbarian', {
     'dragon_fury': 0.5,  // Half as likely to spawn
     'rage': 1.0          // Default spawn rate
 });
 ```
 
-**Note:** FeatureRegistry supports both single and bulk registration:
+**Note:** `FeatureRegistry` is a convenience wrapper around `ExtensionManager`. You can also use `FeatureRegistry.registerClassFeature()` or `FeatureRegistry.registerClassFeatures()`, which delegate to `ExtensionManager.register('classFeatures', [...])` internally.
+
+FeatureRegistry supports both single and bulk registration:
 
 ```typescript
 // Register a single feature
@@ -804,9 +805,12 @@ The same pattern applies to `registerRacialTrait()` / `registerRacialTraits()` a
 Class features and racial traits can require skills or spells as prerequisites, in addition to features, abilities, level, class, and race.
 
 ```typescript
-import { FeatureRegistry, FeatureValidator } from 'playlist-data-engine';
+import { ExtensionManager, FeatureRegistry, FeatureValidator, CharacterGenerator } from 'playlist-data-engine';
 
-const registry = FeatureRegistry.getInstance();
+// Note: FeatureRegistry is a convenience wrapper around ExtensionManager
+// Both approaches work - choose the one you prefer
+const manager = ExtensionManager.getInstance();
+const registry = FeatureRegistry.getInstance();  // Convenience wrapper
 
 // ===== FEATURE REQUIRING SKILL PROFICIENCY =====
 // Arcane Smith: Requires Arcana skill proficiency
@@ -827,7 +831,11 @@ const arcaneSmith = {
     source: 'custom'
 };
 
-registry.registerClassFeature(arcaneSmith);
+// Option 1: Register via ExtensionManager (recommended)
+manager.register('classFeatures', [arcaneSmith]);
+
+// Option 2: Register via FeatureRegistry (convenience wrapper)
+// registry.registerClassFeature(arcaneSmith);
 
 // ===== FEATURE REQUIRING SPELL KNOWLEDGE =====
 // Spellblade: Requires knowing specific spells
@@ -848,7 +856,7 @@ const spellblade = {
     source: 'custom'
 };
 
-registry.registerClassFeature(spellblade);
+manager.register('classFeatures', [spellblade]);
 
 // ===== RACIAL TRAIT WITH SKILL PREREQUISITES =====
 // Elven Battle Training: Requires proficiency in a combat skill
@@ -868,7 +876,7 @@ const elvenBattleTraining = {
     source: 'custom'
 };
 
-registry.registerRacialTrait(elvenBattleTraining);
+manager.register('racialTraits', [elvenBattleTraining]);
 
 // ===== VALIDATE FEATURE PREREQUISITES =====
 const character = CharacterGenerator.generate(seed, audioProfile, track, {forceName: 'Elf Warrior'});
@@ -889,15 +897,15 @@ if (feature) {
 
 ### Racial Traits
 
-Add custom racial traits with the FeatureRegistry:
+Add custom racial traits through ExtensionManager (recommended) or FeatureRegistry (convenience wrapper):
 
 ```typescript
-import { FeatureRegistry } from 'playlist-data-engine';
+import { ExtensionManager } from 'playlist-data-engine';
 
-const registry = FeatureRegistry.getInstance();
+const manager = ExtensionManager.getInstance();
 
-// Register custom racial traits
-registry.registerRacialTraits([
+// Register custom racial traits (recommended approach)
+manager.register('racialTraits', [
     {
         id: 'dragon_born_fire_resistance',
         name: 'Fire Resistance',
@@ -947,13 +955,14 @@ registry.registerRacialTraits([
 ]);
 
 // Set spawn rates for traits
-const manager = ExtensionManager.getInstance();
 manager.setWeights('racialTraits', {
     'dragon_born_fire_resistance': 1.0,
     'fairy_flight': 0.3,  // Rare trait
     'elemental_affinity': 0.5
 });
 ```
+
+**Note:** `FeatureRegistry` is a convenience wrapper around `ExtensionManager`. You can also use `FeatureRegistry.registerRacialTrait()` or `FeatureRegistry.registerRacialTraits()`, which delegate to `ExtensionManager.register('racialTraits', [...])` internally.
 
 **Get traits for a race:**
 
@@ -1560,7 +1569,7 @@ function registerArcticExpansionPack() {
     const manager = ExtensionManager.getInstance();
 
     // Note: FeatureRegistry and SkillRegistry are convenience wrappers around ExtensionManager
-    // Query methods use them for convenience, but registration goes through ExtensionManager
+    // You can register via ExtensionManager (recommended) or via the registries (convenience wrappers)
     const featureRegistry = FeatureRegistry.getInstance();
     const skillRegistry = SkillRegistry.getInstance();
 
