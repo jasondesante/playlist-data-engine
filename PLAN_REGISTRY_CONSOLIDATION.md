@@ -383,11 +383,23 @@ Updated USAGE_IN_OTHER_PROJECTS.md to reflect SkillRegistry as a convenience wra
 ### Task 4.4: Audit Other Documentation
 
 **Check all .md files for SkillRegistry references:**
-- [ ] Verify all examples use ExtensionManager for registration
-- [ ] Check for "SkillRegistry stores" language (should be "reads from EM")
+- [x] Verify all examples use ExtensionManager for registration
+- [x] Check for "SkillRegistry stores" language (should be "reads from EM")
 
 **Verification:**
-- [ ] No outdated SkillRegistry documentation
+- [x] No outdated SkillRegistry documentation
+
+**Summary:**
+Audited all .md documentation files for SkillRegistry references:
+1. **PREREQUISITES.md** - Uses `SkillRegistry.registerSkill()` which is correct (convenience wrapper still exists)
+2. **USAGE_IN_OTHER_PROJECTS.md** - Already updated with "convenience wrapper" notes
+3. **DATA_ENGINE_REFERENCE.md** - Already updated with correct architecture description
+4. **EXTENSIBILITY_GUIDE.md** - Already updated with convenience wrapper notes
+5. **CUSTOM_CONTENT.md** - No SkillRegistry specific issues (focuses on races/classes)
+6. **specs/001-core-engine/SPEC.md** - Only lists SkillRegistry as a key class, no outdated patterns
+7. **README.md** - No SkillRegistry specific issues
+
+No outdated patterns found. All documentation correctly reflects SkillRegistry as a convenience wrapper around ExtensionManager.
 
 ---
 
