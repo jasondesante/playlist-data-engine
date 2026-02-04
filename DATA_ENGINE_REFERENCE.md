@@ -4890,23 +4890,26 @@ Spells can have prerequisites that must be met before a spellcaster can learn th
 
 **Location:** `src/core/spells/SpellRegistry.ts`
 
-Singleton registry for managing spells with prerequisite validation and school categorization.
+**Convenience wrapper** around ExtensionManager for managing spells with prerequisite validation and school categorization.
+
+**Architecture:** SpellRegistry provides a convenient API that delegates to ExtensionManager as the single source of truth. All spells are stored in ExtensionManager; SpellRegistry provides:
+- Registration methods that delegate to `ExtensionManager.register('spells', [...])`
+- Query methods that read from ExtensionManager with caching for performance
+- Spell-related helper methods (prerequisite validation, class spell lists, etc.)
+
+**Design principle:** No duplicate storage. Unlike SkillRegistry/FeatureRegistry, SpellRegistry does not maintain its own copy of data. All data lives in ExtensionManager.
 
 ```typescript
 class SpellRegistry {
     // Instance Management
     static getInstance(): SpellRegistry
 
-    // Initialization
-    initializeDefaults(defaultSpells?: Record<string, Spell>): void
-    reset(): void
-    isInitialized(): boolean
-
-    // Registration
+    // Registration (delegates to ExtensionManager)
     registerSpell(spell: RegisteredSpell): void
     registerSpells(spells: RegisteredSpell[]): void
+    registerClassSpellList(characterClass: Class, spellIds: string[]): void
 
-    // Retrieval
+    // Retrieval (reads from ExtensionManager with caching)
     getSpell(spellId: string): RegisteredSpell | undefined
     getSpells(): RegisteredSpell[]
     getSpellsByLevel(level: number): RegisteredSpell[]
@@ -4917,7 +4920,6 @@ class SpellRegistry {
 
     // Class Spell Lists
     getClassSpellList(characterClass: Class): string[]
-    registerClassSpellList(characterClass: Class, spellIds: string[]): void
 
     // Spell Slots
     getSpellSlotsForClass(characterClass: Class, level: number): number
@@ -4930,12 +4932,6 @@ class SpellRegistry {
     hasSpell(spellId: string): boolean
     getSpellCount(): number
     getRegistryStats(): { totalSpells: number; defaultSpells: number; customSpells: number; spellsByLevel: Record<number, number>; spellsBySchool: Record<SpellSchool, number>; classesWithSpells: number }
-
-    // Export/Import
-    exportRegistry(): RegisteredSpell[]
-
-    // Unregister (primarily for testing)
-    unregisterSpell(spellId: string): boolean
 }
 
 type SpellSchool =
@@ -4992,28 +4988,30 @@ interface ValidationResult {
 | Method | Parameters | Returns | Description |
 |--------|-----------|---------|-------------|
 | `getInstance()` | - | `SpellRegistry` | Returns singleton instance |
-| `initializeDefaults()` | `defaultSpells?` | `void` | Load default spells (uses SPELL_DATABASE if not provided) |
-| `reset()` | - | `void` | Clear all custom data, reload defaults |
-| `isInitialized()` | - | `boolean` | Check if registry has been initialized |
-| `registerSpell()` | `spell` | `void` | Register single custom spell |
-| `registerSpells()` | `spells[]` | `void` | Register multiple custom spells |
+| `registerSpell()` | `spell` | `void` | Register single custom spell (delegates to `ExtensionManager.register('spells', [...])`) |
+| `registerSpells()` | `spells[]` | `void` | Register multiple custom spells (delegates to `ExtensionManager.register('spells', [...])`) |
+| `registerClassSpellList()` | `class`, `spellIds[]` | `void` | Register spell list for a class (delegates to `ExtensionManager.register('spells.${class}', [...])`) |
 | `getSpell()` | `spellId` | `RegisteredSpell \| undefined` | Get spell by ID |
-| `getSpells()` | - | `RegisteredSpell[]` | Get all spells |
-| `getSpellsByLevel()` | `level` | `RegisteredSpell[]` | Get spells of specific level (0-9) |
-| `getSpellsBySchool()` | `school` | `RegisteredSpell[]` | Get spells of specific school |
-| `getSpellsForClass()` | `class` | `RegisteredSpell[]` | Get spells available to a class |
+| `getSpells()` | - | `RegisteredSpell[]` | Get all spells (reads from ExtensionManager with caching) |
+| `getSpellsByLevel()` | `level` | `RegisteredSpell[]` | Get spells of specific level (0-9) (queries ExtensionManager, builds index with caching) |
+| `getSpellsBySchool()` | `school` | `RegisteredSpell[]` | Get spells of specific school (queries ExtensionManager, builds index with caching) |
+| `getSpellsForClass()` | `class` | `RegisteredSpell[]` | Get spells available to a class (filters by `classes` property) |
 | `getAvailableSpells()` | `character` | `RegisteredSpell[]` | Get spells character can learn (prerequisites met) |
 | `getSpellsBySource()` | `source` | `RegisteredSpell[]` | Get spells by source (default or custom) |
-| `getClassSpellList()` | `class` | `string[]` | Get spell list for a class |
-| `registerClassSpellList()` | `class`, `spellIds[]` | `void` | Register spell list for a class |
-| `getSpellSlotsForClass()` | `class`, `level` | `number` | Get spell slots for class/level |
-| `validatePrerequisites()` | `spell`, `character` | `ValidationResult` | Validate spell prerequisites |
-| `validateSpell()` | `spell` | `ValidationResult` | Validate spell schema |
+| `getClassSpellList()` | `class` | `string[]` | Get spell list for a class (reads from ExtensionManager) |
+| `getSpellSlotsForClass()` | `class`, `level` | `number` | Get spell slots for class/level (delegates to constants helper) |
+| `validatePrerequisites()` | `spell`, `character` | `ValidationResult` | Validate spell prerequisites (delegates to SpellValidator) |
+| `validateSpell()` | `spell` | `ValidationResult` | Validate spell schema (delegates to SpellValidator) |
 | `hasSpell()` | `spellId` | `boolean` | Check if spell exists |
 | `getSpellCount()` | - | `number` | Get total spell count |
-| `getRegistryStats()` | - | `{ totalSpells, defaultSpells, customSpells, spellsByLevel, spellsBySchool, classesWithSpells }` | Get registry statistics |
-| `exportRegistry()` | - | `RegisteredSpell[]` | Export all registered spells as JSON |
-| `unregisterSpell()` | `spellId` | `boolean` | Remove spell by ID (primarily for testing) |
+| `getRegistryStats()` | - | `{ totalSpells, defaultSpells, customSpells, spellsByLevel, spellsBySchool, classesWithSpells }` | Get registry statistics (computed from ExtensionManager data) |
+
+**Usage Notes:**
+
+- **Registration:** Use `SpellRegistry.registerSpell()` for convenience or `ExtensionManager.register('spells', [...])` directly. Both methods end up in the same place (ExtensionManager).
+- **Querying:** Query methods read from ExtensionManager with lazy caching for performance. Caches are invalidated when spells are registered.
+- **Class Spell Lists:** Custom class spell lists can be registered via `registerClassSpellList()` or directly via `ExtensionManager.register('spells.${ClassName}', [...])`.
+- **No Duplicate Storage:** Unlike SkillRegistry/FeatureRegistry, SpellRegistry does not maintain its own data copy. ExtensionManager is the single source of truth.
 
 ---
 

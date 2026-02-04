@@ -313,19 +313,25 @@ const evocationSpells = registry.getSpellsBySchool('Evocation');
 
 ---
 
-#### Task 3.2: Update DATA_ENGINE_REFERENCE.md
+#### Task 3.2: Update DATA_ENGINE_REFERENCE.md ✅
 
 **Lines 28, 4888-4993** document SpellRegistry
 
-- [ ] Update section intro: "SpellRegistry is a convenience wrapper around ExtensionManager"
-- [ ] Update `registerSpell()` docs: "Delegates to ExtensionManager.register('spells', [...])"
-- [ ] Update `getSpells()` docs: "Reads from ExtensionManager with caching"
-- [ ] Update `getSpellsByLevel()` docs: "Queries ExtensionManager, builds index"
-- [ ] Remove documentation for removed methods (reset, unregisterSpell, etc.)
-- [ ] Add cross-reference to ExtensionManager spell handling
+- [x] Update section intro: "SpellRegistry is a convenience wrapper around ExtensionManager"
+- [x] Update `registerSpell()` docs: "Delegates to ExtensionManager.register('spells', [...])"
+- [x] Update `getSpells()` docs: "Reads from ExtensionManager with caching"
+- [x] Update `getSpellsByLevel()` docs: "Queries ExtensionManager, builds index"
+- [x] Remove documentation for removed methods (reset, unregisterSpell, etc.)
+- [x] Add cross-reference to ExtensionManager spell handling
 
 **Verification:**
-- [ ] Documentation matches implementation
+- [x] Documentation matches implementation
+
+**Summary:** Updated the SpellRegistry section in DATA_ENGINE_REFERENCE.md (lines 4888-5016) to:
+1. Clarify that SpellRegistry is a convenience wrapper around ExtensionManager
+2. Remove obsolete methods: `initializeDefaults()`, `reset()`, `isInitialized()`, `exportRegistry()`, `unregisterSpell()`
+3. Update method descriptions to reflect delegation pattern
+4. Add "Usage Notes" section explaining the architecture and no-duplicate-storage design
 
 ---
 
