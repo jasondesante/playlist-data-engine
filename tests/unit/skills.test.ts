@@ -8,19 +8,21 @@ import { SeededRNG } from '../../src/utils/random.js';
 import type { Class, Skill } from '../../src/core/types/Character.js';
 import { CLASS_DATA } from '../../src/utils/constants.js';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
+import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
 
 describe('SkillAssigner', () => {
-    // Reset SkillRegistry before each test to ensure clean state
+    // Initialize ExtensionManager with default skills before each test
     beforeEach(() => {
-        const registry = SkillRegistry.getInstance();
-        registry.reset();
-        registry.initializeDefaults();
+        const em = ExtensionManager.getInstance();
+        em.resetAll();
+        em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
     });
 
     afterEach(() => {
-        const registry = SkillRegistry.getInstance();
-        registry.reset();
+        const em = ExtensionManager.getInstance();
+        em.resetAll();
     });
     describe('assignSkills', () => {
         it('should return all 18 D&D skills', () => {

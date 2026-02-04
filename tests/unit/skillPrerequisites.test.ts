@@ -10,22 +10,24 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SkillValidator } from '../../src/core/skills/SkillValidator.js';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { SkillAssigner } from '../../src/core/generation/SkillAssigner.js';
 import { SeededRNG } from '../../src/utils/random.js';
+import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
 import type { CustomSkill, SkillPrerequisite } from '../../src/core/skills/SkillTypes.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 
 describe('Skill Prerequisites', () => {
-    // Reset SkillRegistry before each test
+    // Initialize ExtensionManager with default skills before each test
     beforeEach(() => {
-        const registry = SkillRegistry.getInstance();
-        registry.reset();
-        registry.initializeDefaults();
+        const em = ExtensionManager.getInstance();
+        em.resetAll();
+        em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
     });
 
     afterEach(() => {
-        const registry = SkillRegistry.getInstance();
-        registry.reset();
+        const em = ExtensionManager.getInstance();
+        em.resetAll();
     });
 
     describe('SkillValidator.validateSkillPrerequisites', () => {

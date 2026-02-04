@@ -12,7 +12,7 @@ describe('Phase 13.1: SkillRegistry Integration with ExtensionManager', () => {
     beforeEach(() => {
         // Reset instances for clean state
         ExtensionManager.getInstance().resetAll();
-        SkillRegistry.getInstance().reset();
+        // Note: SkillRegistry no longer has a reset() method - it reads from ExtensionManager
     });
 
     it('should initialize ExtensionManager with default skills', () => {

@@ -96,39 +96,39 @@ registerSkill(skill: CustomSkill): void {
 **Refactor `registerSkills()` similarly**
 
 **Verification:**
-- [ ] TypeScript compiles
-- [ ] Registering via SkillRegistry adds to ExtensionManager
-- [ ] Cache is invalidated after registration
+- [x] TypeScript compiles
+- [x] Registering via SkillRegistry adds to ExtensionManager
+- [x] Cache is invalidated after registration
 
 ---
 
 ### Task 1.3: Remove initializeDefaults() from SkillRegistry
 
 **Remove this method:**
-- [ ] `initializeDefaults(defaultSkills?: CustomSkill[]): void`
+- [x] `initializeDefaults(defaultSkills?: CustomSkill[]): void`
 
 **Update callers:**
-- [ ] Find all calls to `SkillRegistry.getInstance().initializeDefaults()`
-- [ ] Replace with `ExtensionManager.getInstance().initializeDefaults('skills', DEFAULT_SKILLS)`
+- [x] Find all calls to `SkillRegistry.getInstance().initializeDefaults()`
+- [x] Replace with `ExtensionManager.getInstance().initializeDefaults('skills', DEFAULT_SKILLS)`
 
 **Verification:**
-- [ ] No calls to SkillRegistry.initializeDefaults() in codebase
-- [ ] ExtensionManager initializes default skills
+- [x] No calls to SkillRegistry.initializeDefaults() in codebase
+- [x] ExtensionManager initializes default skills
 
 ---
 
 ### Task 1.4: Remove reset() and Related Methods from SkillRegistry
 
 **Remove these methods:**
-- [ ] `reset(): void`
-- [ ] `isInitialized(): boolean`
-- [ ] `unregisterSkill(id: string): boolean`
+- [x] `reset(): void`
+- [x] `isInitialized(): boolean`
+- [x] `unregisterSkill(id: string): boolean`
 
 **Reason:** ExtensionManager handles reset. SkillRegistry has no state to reset.
 
 **Verification:**
-- [ ] TypeScript compiles
-- [ ] No references to removed methods
+- [x] TypeScript compiles
+- [x] No references to removed methods
 
 ---
 
@@ -154,8 +154,8 @@ getAllSkills(): CustomSkill[] {
 **Refactor `getSkillsBySource(source)` to filter `this.getAllSkills()`**
 
 **Verification:**
-- [ ] `getAllSkills()` returns skills from ExtensionManager
-- [ ] `getSkill('athletics')` finds the skill
+- [x] `getAllSkills()` returns skills from ExtensionManager
+- [x] `getSkill('athletics')` finds the skill
 
 ---
 
@@ -185,8 +185,8 @@ getSkillsByAbility(ability: Ability): CustomSkill[] {
 **Add `invalidateCache()` method to clear all caches**
 
 **Verification:**
-- [ ] `getSkillsByAbility('STR')` returns STR skills
-- [ ] Caches are invalidated after registration via EM
+- [x] `getSkillsByAbility('STR')` returns STR skills
+- [x] Caches are invalidated after registration via EM
 
 ---
 
@@ -202,8 +202,8 @@ validateSkill(skill: CustomSkill): SkillValidationResult {
 **`validatePrerequisites()` already delegates to SkillValidator - no change needed**
 
 **Verification:**
-- [ ] Validation methods delegate to SkillValidator
-- [ ] No duplicate validation logic
+- [x] Validation methods delegate to SkillValidator
+- [x] No duplicate validation logic
 
 ---
 
@@ -214,7 +214,7 @@ validateSkill(skill: CustomSkill): SkillValidationResult {
 - Filter by prerequisites using SkillValidator
 
 **Verification:**
-- [ ] `getAvailableSkills()` returns skills matching character prerequisites
+- [x] `getAvailableSkills()` returns skills matching character prerequisites
 
 ---
 
@@ -226,20 +226,20 @@ validateSkill(skill: CustomSkill): SkillValidationResult {
 - Build ability/category counts from the data
 
 **Verification:**
-- [ ] `getRegistryStats()` returns correct statistics
+- [x] `getRegistryStats()` returns correct statistics
 
 ---
 
 ### Task 1.10: Remove exportRegistry() Method
 
 **Remove this method:**
-- [ ] `exportRegistry(): CustomSkill[]`
+- [x] `exportRegistry(): CustomSkill[]`
 
 **Reason:** No internal storage to export. Use `ExtensionManager.get('skills')` instead.
 
 **Verification:**
-- [ ] TypeScript compiles
-- [ ] No references to exportRegistry()
+- [x] TypeScript compiles
+- [x] No references to exportRegistry()
 
 ---
 
@@ -252,22 +252,22 @@ validateSkill(skill: CustomSkill): SkillValidationResult {
 ### Task 2.1: Remove SkillRegistry Delegation from EM.register()
 
 **Remove these code blocks from `register()` method:**
-- [ ] Lines 350-357: SkillRegistry integration for 'skills' category
-- [ ] Lines 359-368: SkillRegistry integration for 'skills.*' categories
+- [x] Lines 350-357: SkillRegistry integration for 'skills' category
+- [x] Lines 359-368: SkillRegistry integration for 'skills.*' categories
 
 **Verification:**
-- [ ] ExtensionManager does not call SkillRegistry.registerSkills()
-- [ ] Skills are only stored in EM's extensions Map
+- [x] ExtensionManager does not call SkillRegistry.registerSkills()
+- [x] Skills are only stored in EM's extensions Map
 
 ---
 
 ### Task 2.2: Remove SkillRegistry Delegation from EM.reset()
 
 **Remove this code block from `reset()` method:**
-- [ ] Lines 777-783: SkillRegistry reset integration
+- [x] Lines 777-783: SkillRegistry reset integration
 
 **Verification:**
-- [ ] EM.reset('skills') does not call SkillRegistry
+- [x] EM.reset('skills') does not call SkillRegistry
 
 ---
 

@@ -5,30 +5,36 @@
  * - Register custom skills
  * - Get skills by ability/category
  * - Validate skill IDs
- * - Reset to defaults
+ * - SkillRegistry as convenience wrapper around ExtensionManager
  *
- * Part of Phase 15.1: Unit Tests for SkillRegistry
+ * **IMPORTANT**: SkillRegistry now reads from ExtensionManager.
+ * Tests use ExtensionManager for initialization and reset.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
 import type { Ability } from '../../src/core/types/Character.js';
 
 describe('SkillRegistry', () => {
     let registry: SkillRegistry;
+    let em: ExtensionManager;
 
     beforeEach(() => {
-        // Get a fresh instance for each test
+        // Get instances
         registry = SkillRegistry.getInstance();
-        // Reset to ensure clean state
-        registry.reset();
+        em = ExtensionManager.getInstance();
+        // Reset to ensure clean state using ExtensionManager
+        em.resetAll();
+        // Initialize with default skills
+        em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
     });
 
     afterEach(() => {
-        // Clean up after each test
-        registry.reset();
+        // Clean up after each test using ExtensionManager
+        em.resetAll();
     });
 
     describe('Singleton Pattern', () => {
@@ -40,55 +46,8 @@ describe('SkillRegistry', () => {
 
         it('should maintain state across getInstance calls', () => {
             const publicRegistry = SkillRegistry.getInstance();
-            publicRegistry.initializeDefaults(DEFAULT_SKILLS);
-            expect(publicRegistry.isInitialized()).toBe(true);
-        });
-    });
-
-    describe('Initialize Defaults', () => {
-        it('should initialize with default skills', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
-            expect(registry.isInitialized()).toBe(true);
-
-            const stats = registry.getRegistryStats();
-            expect(stats.totalSkills).toBeGreaterThan(0);
-            expect(stats.defaultSkills).toBe(18); // All D&D 5e skills
-        });
-
-        it('should not reinitialize if already initialized', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-            const stats1 = registry.getRegistryStats();
-
-            // Try to initialize again with empty array
-            registry.initializeDefaults([]);
-
-            // Stats should remain the same (no reset occurred)
-            const stats2 = registry.getRegistryStats();
-            expect(stats2.totalSkills).toBe(stats1.totalSkills);
-        });
-
-        it('should handle empty defaults', () => {
-            registry.reset();
-            registry.initializeDefaults([]);
-
-            expect(registry.isInitialized()).toBe(true);
-            expect(registry.getRegistryStats().totalSkills).toBe(0);
-        });
-
-        it('should load all 18 default D&D 5e skills', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
-            const expectedSkillIds = [
-                'athletics', 'acrobatics', 'sleight_of_hand', 'stealth',
-                'arcana', 'history', 'investigation', 'nature', 'religion',
-                'animal_handling', 'insight', 'medicine', 'perception', 'survival',
-                'deception', 'intimidation', 'performance', 'persuasion'
-            ];
-
-            for (const skillId of expectedSkillIds) {
-                expect(registry.isValidSkill(skillId)).toBe(true);
-            }
+            // With the new pattern, we just verify skills are available
+            expect(publicRegistry.getSkillCount()).toBeGreaterThan(0);
         });
     });
 
@@ -108,6 +67,10 @@ describe('SkillRegistry', () => {
 
             const retrieved = registry.getSkill('custom_swimming');
             expect(retrieved).toEqual(customSkill);
+
+            // Verify it's stored in ExtensionManager
+            const emSkills = em.get('skills') as CustomSkill[];
+            expect(emSkills.some(s => s.id === 'custom_swimming')).toBe(true);
         });
 
         it('should register multiple custom skills', () => {
@@ -133,6 +96,11 @@ describe('SkillRegistry', () => {
 
             expect(registry.getSkill('custom_riding')).toBeDefined();
             expect(registry.getSkill('custom_sailing')).toBeDefined();
+
+            // Verify both are in ExtensionManager
+            const emSkills = em.get('skills') as CustomSkill[];
+            expect(emSkills.some(s => s.id === 'custom_riding')).toBe(true);
+            expect(emSkills.some(s => s.id === 'custom_sailing')).toBe(true);
         });
 
         it('should throw on duplicate skill ID', () => {
@@ -148,7 +116,7 @@ describe('SkillRegistry', () => {
 
             expect(() => {
                 registry.registerSkill(skill);
-            }).toThrow('Skill with ID "duplicate_skill" already exists');
+            }).toThrow(/Invalid skill "duplicate_skill"/);
         });
 
         it('should validate skill ID format', () => {
@@ -196,9 +164,11 @@ describe('SkillRegistry', () => {
 
     describe('Get Skills', () => {
         beforeEach(() => {
-            // Initialize with defaults and add custom skills
-            registry.initializeDefaults(DEFAULT_SKILLS);
+            // Reset to clean state before adding custom skills
+            em.resetAll();
+            em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
 
+            // Add custom skills
             const customSkills: CustomSkill[] = [
                 {
                     id: 'custom_alchemy',
@@ -246,8 +216,9 @@ describe('SkillRegistry', () => {
         });
 
         it('should return empty array for ability with no skills', () => {
-            // Reset and don't initialize
-            registry.reset();
+            // Clear all skills and verify empty
+            em.resetAll();
+
             const intSkills = registry.getSkillsByAbility('INT' as Ability);
             expect(intSkills).toEqual([]);
         });
@@ -288,8 +259,6 @@ describe('SkillRegistry', () => {
 
     describe('Validate Skills', () => {
         it('should validate skill ID exists', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             expect(registry.isValidSkill('athletics')).toBe(true);
             expect(registry.isValidSkill('non_existent')).toBe(false);
         });
@@ -398,6 +367,8 @@ describe('SkillRegistry', () => {
 
     describe('Get Registry Statistics', () => {
         it('should return accurate stats for empty registry', () => {
+            em.resetAll();
+
             const stats = registry.getRegistryStats();
 
             expect(stats.totalSkills).toBe(0);
@@ -407,8 +378,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should return accurate stats after initialization', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             const stats = registry.getRegistryStats();
 
             expect(stats.totalSkills).toBe(18);
@@ -418,8 +387,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should track default vs custom skills separately', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             const customSkills: CustomSkill[] = [
                 {
                     id: 'custom_1',
@@ -444,8 +411,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should count skills per ability', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             const stats = registry.getRegistryStats();
 
             // Check expected counts per ability
@@ -458,8 +423,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should track custom categories', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             const customSkill: CustomSkill = {
                 id: 'custom_foraging',
                 name: 'Foraging',
@@ -475,203 +438,7 @@ describe('SkillRegistry', () => {
         });
     });
 
-    describe('Unregister Skill', () => {
-        beforeEach(() => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-        });
-
-        it('should unregister an existing skill', () => {
-            expect(registry.isValidSkill('athletics')).toBe(true);
-
-            const result = registry.unregisterSkill('athletics');
-            expect(result).toBe(true);
-            expect(registry.isValidSkill('athletics')).toBe(false);
-        });
-
-        it('should return false for non-existent skill', () => {
-            const result = registry.unregisterSkill('non_existent');
-            expect(result).toBe(false);
-        });
-
-        it('should remove skill from ability index', () => {
-            registry.unregisterSkill('athletics');
-
-            const strSkills = registry.getSkillsByAbility('STR' as Ability);
-            expect(strSkills.some(s => s.id === 'athletics')).toBe(false);
-        });
-
-        it('should remove skill from category indexes', () => {
-            // Arcana is in 'knowledge' and 'magic' categories
-            const beforeKnowledge = registry.getSkillsByCategory('knowledge');
-            expect(beforeKnowledge.some(s => s.id === 'arcana')).toBe(true);
-
-            registry.unregisterSkill('arcana');
-
-            const afterKnowledge = registry.getSkillsByCategory('knowledge');
-            expect(afterKnowledge.some(s => s.id === 'arcana')).toBe(false);
-        });
-
-        it('should clean up empty category maps', () => {
-            const customSkill: CustomSkill = {
-                id: 'custom_unique_category',
-                name: 'Unique Category',
-                ability: 'INT' as Ability,
-                categories: ['unique_category_only'],
-                source: 'custom'
-            };
-
-            registry.registerSkill(customSkill);
-            expect(registry.getCategories()).toContain('unique_category_only');
-
-            registry.unregisterSkill('custom_unique_category');
-            expect(registry.getCategories()).not.toContain('unique_category_only');
-        });
-    });
-
-    describe('Reset to Defaults', () => {
-        it('should clear all registered skills', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
-            const customSkill: CustomSkill = {
-                id: 'custom_test',
-                name: 'Custom Test',
-                ability: 'INT' as Ability,
-                source: 'custom'
-            };
-
-            registry.registerSkill(customSkill);
-
-            expect(registry.getRegistryStats().totalSkills).toBe(19);
-            expect(registry.isInitialized()).toBe(true);
-
-            registry.reset();
-
-            expect(registry.getRegistryStats().totalSkills).toBe(0);
-            expect(registry.isInitialized()).toBe(false);
-        });
-
-        it('should allow reinitialization after reset', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-            expect(registry.isInitialized()).toBe(true);
-            const stats1 = registry.getRegistryStats();
-
-            registry.reset();
-            expect(registry.isInitialized()).toBe(false);
-
-            registry.initializeDefaults(DEFAULT_SKILLS);
-            expect(registry.isInitialized()).toBe(true);
-            const stats2 = registry.getRegistryStats();
-
-            expect(stats2.totalSkills).toBe(stats1.totalSkills);
-            expect(stats2.defaultSkills).toBe(stats1.defaultSkills);
-        });
-
-        it('should clear categories after reset', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-            expect(registry.getCategories().length).toBeGreaterThan(0);
-
-            registry.reset();
-            expect(registry.getCategories()).toEqual([]);
-        });
-
-        it('should clear ability indexes after reset', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
-            const strSkills = registry.getSkillsByAbility('STR' as Ability);
-            expect(strSkills.length).toBeGreaterThan(0);
-
-            registry.reset();
-
-            const strSkillsAfter = registry.getSkillsByAbility('STR' as Ability);
-            expect(strSkillsAfter).toEqual([]);
-        });
-    });
-
-    describe('Is Initialized', () => {
-        it('should return false before initialization', () => {
-            expect(registry.isInitialized()).toBe(false);
-        });
-
-        it('should return true after initialization', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-            expect(registry.isInitialized()).toBe(true);
-        });
-
-        it('should return false after reset', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-            expect(registry.isInitialized()).toBe(true);
-
-            registry.reset();
-            expect(registry.isInitialized()).toBe(false);
-        });
-
-        it('should not be initialized after registering skills without init', () => {
-            const customSkill: CustomSkill = {
-                id: 'custom_test',
-                name: 'Custom Test',
-                ability: 'INT' as Ability,
-                source: 'custom'
-            };
-
-            registry.registerSkill(customSkill);
-            expect(registry.isInitialized()).toBe(false);
-        });
-    });
-
-    describe('Export Registry', () => {
-        it('should export empty registry as empty array', () => {
-            const exported = registry.exportRegistry();
-            expect(exported).toEqual([]);
-        });
-
-        it('should export all registered skills', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
-            const customSkill: CustomSkill = {
-                id: 'custom_export_test',
-                name: 'Export Test',
-                ability: 'WIS' as Ability,
-                categories: ['testing'],
-                source: 'custom'
-            };
-
-            registry.registerSkill(customSkill);
-
-            const exported = registry.exportRegistry();
-
-            expect(exported.length).toBe(19); // 18 default + 1 custom
-            expect(exported.some(s => s.id === 'custom_export_test')).toBe(true);
-            expect(exported.some(s => s.id === 'athletics')).toBe(true);
-        });
-
-        it('should export skills with all properties', () => {
-            const customSkill: CustomSkill = {
-                id: 'full_skill_test',
-                name: 'Full Skill Test',
-                description: 'A complete skill with all properties.',
-                ability: 'CHA' as Ability,
-                armorPenalty: false,
-                categories: ['social', 'test'],
-                customProperties: { testProp: 'testValue', numberProp: 42 },
-                source: 'custom',
-                tags: ['test', 'example'],
-                lore: 'This is test lore for the skill.'
-            };
-
-            registry.registerSkill(customSkill);
-
-            const exported = registry.exportRegistry();
-            const exportedSkill = exported.find(s => s.id === 'full_skill_test');
-
-            expect(exportedSkill).toEqual(customSkill);
-        });
-    });
-
     describe('Skill Categories and Tags', () => {
-        beforeEach(() => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-        });
-
         it('should handle skills without categories', () => {
             const noCategorySkill: CustomSkill = {
                 id: 'no_category',
@@ -799,27 +566,10 @@ describe('SkillRegistry', () => {
         });
 
         it('should handle getting skill from empty registry', () => {
+            em.resetAll();
+
             const skill = registry.getSkill('anything');
             expect(skill).toBeUndefined();
-        });
-
-        it('should handle unregistering from empty registry', () => {
-            const result = registry.unregisterSkill('anything');
-            expect(result).toBe(false);
-        });
-
-        it('should handle multiple resets', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-            expect(registry.getRegistryStats().totalSkills).toBe(18);
-
-            registry.reset();
-            expect(registry.getRegistryStats().totalSkills).toBe(0);
-
-            registry.reset();
-            expect(registry.getRegistryStats().totalSkills).toBe(0);
-
-            registry.initializeDefaults(DEFAULT_SKILLS);
-            expect(registry.getRegistryStats().totalSkills).toBe(18);
         });
 
         it('should handle skill with very long ID', () => {
@@ -840,19 +590,18 @@ describe('SkillRegistry', () => {
 
     describe('getSkillCount', () => {
         it('should return 0 for empty registry', () => {
+            em.resetAll();
+
             const count = registry.getSkillCount();
             expect(count).toBe(0);
         });
 
         it('should return correct count after initialization', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
             const count = registry.getSkillCount();
             expect(count).toBe(18);
         });
 
         it('should return correct count after adding custom skills', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             const customSkill: CustomSkill = {
                 id: 'custom_count_test',
                 name: 'Count Test',
@@ -865,20 +614,7 @@ describe('SkillRegistry', () => {
             expect(count).toBe(19);
         });
 
-        it('should return correct count after unregistering skills', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-            expect(registry.getSkillCount()).toBe(18);
-
-            registry.unregisterSkill('athletics');
-            expect(registry.getSkillCount()).toBe(17);
-
-            registry.unregisterSkill('arcana');
-            expect(registry.getSkillCount()).toBe(16);
-        });
-
         it('should be consistent with getAllSkills().length', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             const customSkills: CustomSkill[] = [
                 {
                     id: 'custom_count_1',
@@ -910,17 +646,16 @@ describe('SkillRegistry', () => {
         });
 
         it('should return correct count after reset', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
             expect(registry.getSkillCount()).toBe(18);
 
-            registry.reset();
+            em.resetAll();
             expect(registry.getSkillCount()).toBe(0);
         });
     });
 
     describe('getAvailableSkills', () => {
         // Helper function to create a minimal character sheet
-        function createMockCharacter(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
+        function createMockCharacter(overrides: any = {}): any {
             return {
                 name: 'Test Character',
                 race: 'Human',
@@ -962,12 +697,10 @@ describe('SkillRegistry', () => {
                 seed: 'test-seed',
                 generated_at: new Date().toISOString(),
                 ...overrides
-            };
+            } as any;
         }
 
         it('should return all skills when no prerequisites exist', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             const character = createMockCharacter();
             const available = registry.getAvailableSkills(character);
 
@@ -975,12 +708,10 @@ describe('SkillRegistry', () => {
         });
 
         it('should return all default skills for character without restrictions', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             const character = createMockCharacter({
                 level: 10,
                 class: 'Wizard',
-                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 18, WIS: 12, CHA: 10 }
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 18, WIS: 12, CHA: 10 } as any
             });
             const available = registry.getAvailableSkills(character);
 
@@ -988,8 +719,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should filter skills by level prerequisite', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             // Register a skill with level prerequisite
             const advancedSkill: CustomSkill = {
                 id: 'advanced_skill',
@@ -1016,8 +745,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should filter skills by ability prerequisite', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             // Register a skill requiring high INT
             const highIntSkill: CustomSkill = {
                 id: 'high_int_skill',
@@ -1030,8 +757,8 @@ describe('SkillRegistry', () => {
 
             // Character with INT 10 should not see the skill
             const lowIntCharacter = createMockCharacter({
-                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
-                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 }
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 } as any,
+                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 } as any
             });
             const lowIntAvailable = registry.getAvailableSkills(lowIntCharacter);
 
@@ -1040,8 +767,8 @@ describe('SkillRegistry', () => {
 
             // Character with INT 18 should see the skill
             const highIntCharacter = createMockCharacter({
-                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 18, WIS: 10, CHA: 10 },
-                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 4, WIS: 0, CHA: 0 }
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 18, WIS: 10, CHA: 10 } as any,
+                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 4, WIS: 0, CHA: 0 } as any
             });
             const highIntAvailable = registry.getAvailableSkills(highIntCharacter);
 
@@ -1050,8 +777,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should filter skills by class prerequisite', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             // Register a Wizard-only skill
             const wizardSkill: CustomSkill = {
                 id: 'wizard_only_skill',
@@ -1078,8 +803,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should filter skills by race prerequisite', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             // Register an Elf-only skill
             const elfSkill: CustomSkill = {
                 id: 'elf_only_skill',
@@ -1106,8 +829,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should filter skills by skill prerequisite', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             // Register a skill that requires arcana proficiency
             const advancedArcanaSkill: CustomSkill = {
                 id: 'advanced_arcana',
@@ -1126,7 +847,7 @@ describe('SkillRegistry', () => {
             expect(noProficiencyAvailable.length).toBe(18);
 
             // Character with arcana proficiency should see the skill
-            const proficientCharacter = createMockCharacter({ skills: { arcana: 'proficient' } });
+            const proficientCharacter = createMockCharacter({ skills: { arcana: 'proficient' } as any });
             const proficientAvailable = registry.getAvailableSkills(proficientCharacter);
 
             expect(proficientAvailable).toContainEqual(advancedArcanaSkill);
@@ -1134,8 +855,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should filter skills by feature prerequisite', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             // Register a skill that requires a specific feature
             const featureSkill: CustomSkill = {
                 id: 'feature_based_skill',
@@ -1162,8 +881,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should filter skills by spell prerequisite', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             // Register a skill that requires knowing fireball
             const pyromancySkill: CustomSkill = {
                 id: 'pyromancy_skill',
@@ -1180,7 +897,7 @@ describe('SkillRegistry', () => {
                     spell_slots: {},
                     known_spells: ['magic_missile'],
                     cantrips: []
-                }
+                } as any
             });
             const noSpellAvailable = registry.getAvailableSkills(noSpellCharacter);
 
@@ -1193,7 +910,7 @@ describe('SkillRegistry', () => {
                     spell_slots: {},
                     known_spells: ['fireball'],
                     cantrips: []
-                }
+                } as any
             });
             const hasSpellAvailable = registry.getAvailableSkills(hasSpellCharacter);
 
@@ -1202,8 +919,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should handle combined prerequisites', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             // Register a skill with multiple prerequisites
             const multiPrereqSkill: CustomSkill = {
                 id: 'multi_prereq_skill',
@@ -1222,8 +937,8 @@ describe('SkillRegistry', () => {
             const partialCharacter = createMockCharacter({
                 class: 'Sorcerer',
                 level: 5,
-                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
-                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 }
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 } as any,
+                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 } as any
             });
             const partialAvailable = registry.getAvailableSkills(partialCharacter);
 
@@ -1234,8 +949,8 @@ describe('SkillRegistry', () => {
             const fullCharacter = createMockCharacter({
                 class: 'Sorcerer',
                 level: 5,
-                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 16 },
-                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 3 }
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 16 } as any,
+                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 3 } as any
             });
             const fullAvailable = registry.getAvailableSkills(fullCharacter);
 
@@ -1244,6 +959,8 @@ describe('SkillRegistry', () => {
         });
 
         it('should return empty array for empty registry', () => {
+            em.resetAll();
+
             const character = createMockCharacter();
             const available = registry.getAvailableSkills(character);
 
@@ -1251,8 +968,6 @@ describe('SkillRegistry', () => {
         });
 
         it('should handle multiple skills with varying prerequisites', () => {
-            registry.initializeDefaults(DEFAULT_SKILLS);
-
             // Register multiple custom skills with different prerequisites
             const skills: CustomSkill[] = [
                 {
@@ -1282,8 +997,8 @@ describe('SkillRegistry', () => {
             // Level 5 character with WIS 14 should see 2 of the custom skills
             const character = createMockCharacter({
                 level: 5,
-                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 14, CHA: 10 },
-                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 2, CHA: 0 }
+                ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 14, CHA: 10 } as any,
+                ability_modifiers: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 2, CHA: 0 } as any
             });
             const available = registry.getAvailableSkills(character);
 
