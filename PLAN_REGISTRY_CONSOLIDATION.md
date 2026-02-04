@@ -1026,11 +1026,15 @@ All FeatureRegistry tests pass (62 unit tests + 36 integration tests = 98 tests)
 ### Task 12.3: Update USAGE_IN_OTHER_PROJECTS.md
 
 **Update FeatureRegistry description:**
-- [ ] Emphasize: "Convenience wrapper around ExtensionManager"
-- [ ] Note: "No duplicate storage — same pattern as SpellRegistry and SkillRegistry"
+- [x] Emphasize: "Convenience wrapper around ExtensionManager"
+- [x] Note: "No duplicate storage — same pattern as SpellRegistry and SkillRegistry"
 
 **Verification:**
-- [ ] Description accurate
+- [x] Description accurate
+
+**Summary:**
+Updated the FeatureRegistry description in USAGE_IN_OTHER_PROJECTS.md (line 1774) to include the "same pattern as SpellRegistry and SkillRegistry" phrase, matching the format used for SkillRegistry description. The description now reads:
+"Register and query custom class features and racial traits (convenience wrapper around ExtensionManager with no duplicate storage — same pattern as SpellRegistry and SkillRegistry)"
 
 ---
 

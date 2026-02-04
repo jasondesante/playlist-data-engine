@@ -1771,7 +1771,7 @@ The main exports from the library are:
 
 ### Extensibility (NEW)
 - `ExtensionManager` - Register and manage custom content for all categories (single source of truth)
-- `FeatureRegistry` - Register and query custom class features and racial traits (convenience wrapper around ExtensionManager with no duplicate storage)
+- `FeatureRegistry` - Register and query custom class features and racial traits (convenience wrapper around ExtensionManager with no duplicate storage — same pattern as SpellRegistry and SkillRegistry)
 - `SkillRegistry` - Register and query custom skills (convenience wrapper around ExtensionManager with no duplicate storage — same pattern as SpellRegistry)
 - `SpellRegistry` - Register and query spells with prerequisite validation (convenience wrapper around ExtensionManager with no duplicate storage)
 - `FeatureValidator` - Validate feature data structures
