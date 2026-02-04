@@ -778,34 +778,19 @@ export class FeatureRegistry {
     }
 
     /**
-     * Export all registered features as JSON
+     * Get all racial traits as a plain object (for debugging/serialization)
      *
-     * Useful for debugging or serialization.
+     * Note: For class features, use ExtensionManager.get('classFeatures') directly.
+     * This method is kept for racial traits until Phase 9 migration.
      *
-     * @returns Object containing all features and traits
+     * @returns Object mapping race names to their traits
      */
-    exportRegistry(): {
-        classFeatures: Record<string, ClassFeature[]>;
-        racialTraits: Record<string, RacialTrait[]>;
-    } {
-        const classFeaturesExport: Record<string, ClassFeature[]> = {};
-        const allFeatures = this.getAllClassFeaturesArray();
-        for (const feature of allFeatures) {
-            if (!classFeaturesExport[feature.class]) {
-                classFeaturesExport[feature.class] = [];
-            }
-            classFeaturesExport[feature.class].push(feature);
-        }
-
+    exportRacialTraits(): Record<string, RacialTrait[]> {
         const racialTraitsExport: Record<string, RacialTrait[]> = {};
         for (const [race, traits] of this.racialTraits.entries()) {
             racialTraitsExport[race] = traits;
         }
-
-        return {
-            classFeatures: classFeaturesExport,
-            racialTraits: racialTraitsExport
-        };
+        return racialTraitsExport;
     }
 }
 

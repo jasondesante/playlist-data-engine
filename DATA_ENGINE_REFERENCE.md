@@ -4355,8 +4355,8 @@ class FeatureRegistry {
     getRegisteredRaces(): Race[]
     getRegistryStats(): { totalClassFeatures: number; totalRacialTraits: number; classesWithFeatures: number; racesWithTraits: number }
 
-    // Export
-    exportRegistry(): { classFeatures: Record<string, ClassFeature[]>; racialTraits: Record<string, RacialTrait[]> }
+    // Export (racial traits only - class features via ExtensionManager)
+    exportRacialTraits(): Record<string, RacialTrait[]>
 
     // Equipment Features (static methods)
     static getEquipmentFeatures(equipmentName: string): ClassFeature[]
@@ -4475,7 +4475,7 @@ interface CharacterTrait {
 | `getRegisteredClasses()` | - | `Class[]` | Get all classes with features |
 | `getRegisteredRaces()` | - | `Race[]` | Get all races with traits |
 | `getRegistryStats()` | - | `{ totalClassFeatures, totalRacialTraits, classesWithFeatures, racesWithTraits }` | Get registry statistics |
-| `exportRegistry()` | - | `{ classFeatures, racialTraits }` | Export all features as JSON |
+| `exportRacialTraits()` | - | `Record<string, RacialTrait[]>` | Export racial traits as JSON (for class features, use ExtensionManager.get('classFeatures')) |
 | `getEquipmentFeatures()` | `equipmentName` | `ClassFeature[]` | Get features that can be granted by equipment (static) |
 | `isValidEquipmentFeature()` | `featureId` | `boolean` | Check if feature can be granted by equipment (static) |
 | `registerEquipmentFeature()` | `feature` | `void` | Register equipment-granted feature (static) |

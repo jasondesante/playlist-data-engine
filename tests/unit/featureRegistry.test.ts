@@ -1544,21 +1544,46 @@ describe('FeatureRegistry', () => {
         });
     });
 
-    describe('Export Registry', () => {
-        it('should export empty registry as empty objects', () => {
-            // Note: FeatureRegistry reads class features from ExtensionManager
-            // If ExtensionManager has defaults initialized, those will be included
-            // This test ensures that when nothing is registered, racialTraits is empty
-            const exported = registry.exportRegistry();
+    describe('Export Racial Traits', () => {
+        it('should export empty registry as empty object', () => {
+            // FeatureRegistry stores racial traits internally (until Phase 9)
+            // This test ensures that when nothing is registered, we get an empty object
+            const exported = registry.exportRacialTraits();
 
-            // Class features may include defaults if ExtensionManager was initialized
-            // Racial traits should be empty since we haven't registered any
-            expect(exported.racialTraits).toEqual({});
+            expect(exported).toEqual({});
         });
 
-        it('should export all registered features and traits', () => {
-            // First, ensure ExtensionManager has no defaults for this test
-            // We can't clear defaults, so we'll verify the custom features are present
+        it('should export all registered racial traits', () => {
+            const traits: RacialTrait[] = [
+                {
+                    id: 'export_trait_1',
+                    name: 'Export Trait 1',
+                    description: 'First trait.',
+                    race: 'Human',
+                    source: 'custom'
+                },
+                {
+                    id: 'export_trait_2',
+                    name: 'Export Trait 2',
+                    description: 'Second trait.',
+                    race: 'Elf',
+                    source: 'custom'
+                }
+            ];
+
+            registry.registerRacialTraits(traits);
+
+            const exported = registry.exportRacialTraits();
+
+            expect(exported.Human).toHaveLength(1);
+            expect(exported.Human[0].id).toBe('export_trait_1');
+            expect(exported.Elf).toHaveLength(1);
+            expect(exported.Elf[0].id).toBe('export_trait_2');
+        });
+
+        it('should export class features via ExtensionManager', () => {
+            // Class features are accessed via ExtensionManager, not FeatureRegistry
+            // This test verifies the pattern for accessing class features
             const features: ClassFeature[] = [
                 {
                     id: 'export_feature_1',
@@ -1568,40 +1593,16 @@ describe('FeatureRegistry', () => {
                     class: 'Fighter',
                     level: 1,
                     source: 'custom'
-                },
-                {
-                    id: 'export_feature_2',
-                    name: 'Export Feature 2',
-                    description: 'Second feature.',
-                    type: 'active',
-                    class: 'Wizard',
-                    level: 2,
-                    source: 'custom'
-                }
-            ];
-
-            const traits: RacialTrait[] = [
-                {
-                    id: 'export_trait_1',
-                    name: 'Export Trait 1',
-                    description: 'First trait.',
-                    race: 'Human',
-                    source: 'custom'
                 }
             ];
 
             registry.registerClassFeatures(features);
-            registry.registerRacialTraits(traits);
 
-            const exported = registry.exportRegistry();
+            // Use ExtensionManager to get class features
+            const classFeatures = extensionManager.get('classFeatures') as ClassFeature[];
+            const fighterFeatures = classFeatures.filter((f: ClassFeature) => f.class === 'Fighter');
 
-            // Verify custom features are included (along with any defaults from EM)
-            expect(exported.classFeatures.Fighter).toBeDefined();
-            expect(exported.classFeatures.Fighter.some((f: ClassFeature) => f.id === 'export_feature_1')).toBe(true);
-            expect(exported.classFeatures.Wizard).toBeDefined();
-            expect(exported.classFeatures.Wizard.some((f: ClassFeature) => f.id === 'export_feature_2')).toBe(true);
-            expect(exported.racialTraits.Human).toHaveLength(1);
-            expect(exported.racialTraits.Human[0].id).toBe('export_trait_1');
+            expect(fighterFeatures.some((f: ClassFeature) => f.id === 'export_feature_1')).toBe(true);
         });
     });
 
