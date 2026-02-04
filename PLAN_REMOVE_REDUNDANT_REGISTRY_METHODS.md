@@ -248,11 +248,19 @@ if (category.startsWith('spells.') && category !== 'spells') {
 **File:** `src/core/spells/SpellRegistry.ts`
 
 **Sub-tasks:**
-- [ ] Remove `registerSpell()` method (lines 88-107)
-- [ ] Remove `registerSpells()` method (lines 116-137)
-- [ ] Remove `registerClassSpellList()` method (lines 147-169) - validation now in EM
-- [ ] Verify `invalidateCache()` is still used by query methods only
-- [ ] TypeScript compilation check
+- [x] Remove `registerSpell()` method (lines 88-107)
+- [x] Remove `registerSpells()` method (lines 116-137)
+- [x] Remove `registerClassSpellList()` method (lines 147-169) - validation now in EM
+- [x] Verify `invalidateCache()` is still used by query methods only
+- [x] TypeScript compilation check
+
+**Status:** ✅ COMPLETED
+- All three registration methods removed from SpellRegistry
+- `invalidateCache()` made public (also completed Task 6.2 ahead of schedule)
+- Class and module documentation updated to reflect ExtensionManager as the registration method
+- Test files updated to use `ExtensionManager.register()` directly
+- Fixed incomplete spell examples in documentation compilation tests (pre-existing bug)
+- All 84 examples-compilation tests passing
 
 **Methods to Keep (Query/Validation):**
 - `getSpell()`
@@ -278,17 +286,21 @@ if (category.startsWith('spells.') && category !== 'spells') {
 - `tests/documentation/examples-compilation.test.ts`
 
 **Sub-tasks:**
-- [ ] Replace `spellRegistry.registerSpell()` with `ExtensionManager.register('spells', [...])`
-  - [ ] Line ~1381: `registerSpell()` call in test
-  - [ ] Line ~1400: `registerSpell()` call in test
-  - [ ] Line ~1541: `registerSpell()` call in test
-- [ ] Replace `spellRegistry.registerSpells()` with `ExtensionManager.register('spells', [...])`
-  - [ ] Line ~1467: `registerSpells()` call
-  - [ ] Line ~1509: `registerSpells()` call
-- [ ] Verify tests pass after changes
-- [ ] Add cache invalidation calls where needed: `spellRegistry.invalidateCache()` (make public first)
+- [x] Replace `spellRegistry.registerSpell()` with `ExtensionManager.register('spells', [...])`
+  - [x] Line ~1381: `registerSpell()` call in test
+  - [x] Line ~1400: `registerSpell()` call in test
+  - [x] Line ~1541: `registerSpell()` call in test
+- [x] Replace `spellRegistry.registerSpells()` with `ExtensionManager.register('spells', [...])`
+  - [x] Line ~1467: `registerSpells()` call
+  - [x] Line ~1509: `registerSpells()` call
+- [x] Verify tests pass after changes
+- [x] Add cache invalidation calls where needed: `spellRegistry.invalidateCache()` (made public)
 
-**Note:** Need to make `invalidateCache()` public in SpellRegistry or handle cache invalidation differently
+**Status:** ✅ COMPLETED (completed as part of Task 2.1)
+- All 4 registration calls updated to use ExtensionManager.register()
+- Added `spellRegistry.invalidateCache()` calls after each registration
+- Fixed incomplete spell objects in content pack examples (pre-existing bug)
+- All 84 examples-compilation tests passing
 
 ---
 
@@ -535,9 +547,11 @@ if (category.startsWith('spells.') && category !== 'spells') {
 **File:** `src/core/spells/SpellRegistry.ts`
 
 **Sub-tasks:**
-- [ ] Change `private invalidateCache()` to `public invalidateCache()`
-- [ ] Update JSDoc comment to explain public API for manual invalidation after direct EM registration
-- [ ] Verify consistency with SkillRegistry and FeatureRegistry (already public)
+- [x] Change `private invalidateCache()` to `public invalidateCache()`
+- [x] Update JSDoc comment to explain public API for manual invalidation after direct EM registration
+- [x] Verify consistency with SkillRegistry and FeatureRegistry (already public)
+
+**Status:** ✅ COMPLETED (completed as part of Task 2.1)
 
 ---
 

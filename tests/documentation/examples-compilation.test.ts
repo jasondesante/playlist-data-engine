@@ -1046,8 +1046,30 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             });
 
             manager.register('spells', [
-                { name: 'Dragon Breath', level: 3, school: 'Evocation' },
-                { name: 'Scale Hardening', level: 2, school: 'Transmutation' }
+                {
+                    id: 'dragon_breath',
+                    name: 'Dragon Breath',
+                    level: 3,
+                    school: 'Evocation' as const,
+                    casting_time: '1 action',
+                    range: 'Self',
+                    duration: 'Instantaneous',
+                    components: ['V', 'S'],
+                    description: 'You exhale destructive energy',
+                    source: 'custom' as const
+                },
+                {
+                    id: 'scale_hardening',
+                    name: 'Scale Hardening',
+                    level: 2,
+                    school: 'Transmutation' as const,
+                    casting_time: '1 action',
+                    range: 'Touch',
+                    duration: 'Concentration, 1 hour',
+                    components: ['V', 'S', 'M'],
+                    description: 'The target scales become harder',
+                    source: 'custom' as const
+                }
             ]);
 
             // Note: Dracophile is not a valid default race - would need custom race registration
@@ -1089,9 +1111,42 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             });
 
             manager.register('spells', [
-                { name: 'Soul Drain', level: 4, school: 'Necromancy' },
-                { name: 'Shadow Step', level: 2, school: 'Conjuration' },
-                { name: 'Death Coil', level: 3, school: 'Necromancy' }
+                {
+                    id: 'soul_drain',
+                    name: 'Soul Drain',
+                    level: 4,
+                    school: 'Necromancy' as const,
+                    casting_time: '1 action',
+                    range: '60 feet',
+                    duration: 'Instantaneous',
+                    components: ['V', 'S'],
+                    description: 'You drain life force from a creature',
+                    source: 'custom' as const
+                },
+                {
+                    id: 'shadow_step',
+                    name: 'Shadow Step',
+                    level: 2,
+                    school: 'Conjuration' as const,
+                    casting_time: '1 bonus action',
+                    range: '30 feet',
+                    duration: 'Instantaneous',
+                    components: ['V'],
+                    description: 'You teleport through shadows',
+                    source: 'custom' as const
+                },
+                {
+                    id: 'death_coil',
+                    name: 'Death Coil',
+                    level: 3,
+                    school: 'Necromancy' as const,
+                    casting_time: '1 action',
+                    range: '120 feet',
+                    duration: 'Instantaneous',
+                    components: ['V', 'S'],
+                    description: 'A coil of dark energy strikes a foe',
+                    source: 'custom' as const
+                }
             ]);
         });
 
@@ -1378,12 +1433,12 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             spellRegistry = SpellRegistry.getInstance();
         });
 
-        it('should verify SpellRegistry.registerSpell() delegates to ExtensionManager', () => {
+        it('should verify ExtensionManager.register() is visible in SpellRegistry', () => {
             // Get initial spell count from ExtensionManager
             const initialSpells = manager.get('spells');
             const initialCount = initialSpells.length;
 
-            // Register a custom spell via SpellRegistry
+            // Register a custom spell via ExtensionManager
             const customSpell = {
                 id: 'test_frost_bolt',
                 name: 'Frost Bolt',
@@ -1397,7 +1452,8 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
                 source: 'custom' as const
             };
 
-            spellRegistry.registerSpell(customSpell);
+            manager.register('spells', [customSpell]);
+            spellRegistry.invalidateCache();
 
             // Verify the spell is now in ExtensionManager
             const updatedSpells = manager.get('spells');
@@ -1464,7 +1520,8 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
                 source: 'custom' as const
             };
 
-            spellRegistry.registerSpells([cantrip, level5Spell]);
+            manager.register('spells', [cantrip, level5Spell]);
+            spellRegistry.invalidateCache();
 
             // Verify getSpellsByLevel works
             const cantrips = spellRegistry.getSpellsByLevel(0);
@@ -1506,7 +1563,8 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
                 source: 'custom' as const
             };
 
-            spellRegistry.registerSpells([evocationSpell, abjurationSpell]);
+            manager.register('spells', [evocationSpell, abjurationSpell]);
+            spellRegistry.invalidateCache();
 
             // Verify getSpellsBySchool works
             const evocationSpells = spellRegistry.getSpellsBySchool('Evocation');
@@ -1537,8 +1595,9 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const notFound = spellRegistry.getSpell('test_cache_spell');
             expect(notFound).toBeUndefined();
 
-            // Register new spell (should invalidate cache)
-            spellRegistry.registerSpell(customSpell);
+            // Register new spell via ExtensionManager and invalidate cache
+            manager.register('spells', [customSpell]);
+            spellRegistry.invalidateCache();
 
             // Verify the spell is accessible after registration
             const found = spellRegistry.getSpell('test_cache_spell');

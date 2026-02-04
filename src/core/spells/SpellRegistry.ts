@@ -2,15 +2,17 @@
  * SpellRegistry
  *
  * Central registry for all spells (default D&D 5e and custom).
- * Manages spell registration, lookup, and categorization by level, school, and class.
+ * Manages spell lookup, and categorization by level, school, and class.
  *
- * **Design:** This is a **convenience wrapper** around ExtensionManager.
+ * **Design:** This is a **query interface** around ExtensionManager.
  * All spells are stored in ExtensionManager; SpellRegistry provides:
- * - Convenient registration methods that delegate to ExtensionManager
  * - Query methods with caching for performance
  * - Spell-related helper methods
  *
  * No duplicate storage - all data lives in ExtensionManager.
+ *
+ * **Registration:** Use ExtensionManager.register('spells', [...]) to register spells.
+ * After direct registration, call invalidateCache() to refresh cached queries.
  */
 
 import type { Spell } from './SpellTypes.js';
@@ -47,13 +49,15 @@ export interface RegisteredSpell extends Spell {
 /**
  * SpellRegistry - Singleton class for managing spells
  *
- * The registry is a **convenience wrapper** around ExtensionManager.
+ * The registry is a **query interface** around ExtensionManager.
  * All spells are stored in ExtensionManager; SpellRegistry provides:
- * - Convenient registration methods that delegate to ExtensionManager
  * - Query methods with caching for performance
  * - Spell-related helper methods
  *
  * Design principle: No duplicate storage. All data lives in ExtensionManager.
+ *
+ * **Registration:** Use ExtensionManager.register('spells', [...]) to register spells.
+ * After direct registration, call invalidateCache() to refresh cached queries.
  */
 export class SpellRegistry {
     private static instance: SpellRegistry;
@@ -78,103 +82,21 @@ export class SpellRegistry {
 
     /**
      * Invalidate all caches
-     * Called when spells are registered to ensure fresh data
+     *
+     * Call this after directly registering spells via ExtensionManager
+     * to ensure fresh data in query methods.
+     *
+     * @example
+     * ```typescript
+     * const manager = ExtensionManager.getInstance();
+     * manager.register('spells', [customSpell]);
+     * SpellRegistry.getInstance().invalidateCache();
+     * ```
      */
-    private invalidateCache(): void {
+    invalidateCache(): void {
         this.allSpellsCache = null;
         this.levelCache = null;
         this.schoolCache = null;
-    }
-
-    /**
-     * Register a single spell
-     *
-     * Delegates to ExtensionManager.register('spells', [...])
-     *
-     * @param spell - Spell to register
-     * @throws Error if validation fails
-     */
-    registerSpell(spell: RegisteredSpell): void {
-        // Validate spell before registering
-        const validation = SpellValidator.validateSpell(spell);
-        if (!validation.valid) {
-            throw new Error(`Invalid spell "${spell.id || spell.name}":\n${validation.errors.join('\n')}`);
-        }
-
-        // Ensure spell has ID
-        const spellToRegister = {
-            ...spell,
-            id: spell.id || spell.name,
-            source: spell.source || 'custom'
-        };
-
-        // Delegate to ExtensionManager
-        this.manager.register('spells', [spellToRegister]);
-
-        // Invalidate cache
-        this.invalidateCache();
-    }
-
-    /**
-     * Register multiple spells at once
-     *
-     * Delegates to ExtensionManager.register('spells', [...])
-     *
-     * @param spells - Array of spells to register
-     */
-    registerSpells(spells: RegisteredSpell[]): void {
-        // Validate all spells first
-        for (const spell of spells) {
-            const validation = SpellValidator.validateSpell(spell);
-            if (!validation.valid) {
-                throw new Error(`Invalid spell "${spell.id || spell.name}":\n${validation.errors.join('\n')}`);
-            }
-        }
-
-        // Ensure all spells have IDs
-        const spellsToRegister = spells.map(spell => ({
-            ...spell,
-            id: spell.id || spell.name,
-            source: spell.source || 'custom'
-        }));
-
-        // Delegate to ExtensionManager
-        this.manager.register('spells', spellsToRegister);
-
-        // Invalidate cache
-        this.invalidateCache();
-    }
-
-    /**
-     * Register a spell list for a class
-     *
-     * Delegates to ExtensionManager.register('spells.${class}', [...])
-     *
-     * @param characterClass - Class to register spell list for
-     * @param spellIds - Array of spell IDs for this class
-     */
-    registerClassSpellList(characterClass: Class, spellIds: string[]): void {
-        // Get all spells to validate spell IDs exist
-        const allSpells = this.getSpells();
-        const spellIdSet = new Set(allSpells.map(s => s.id));
-
-        // Validate all spell IDs exist
-        const invalidIds: string[] = [];
-        for (const spellId of spellIds) {
-            if (!spellIdSet.has(spellId)) {
-                invalidIds.push(spellId);
-            }
-        }
-
-        if (invalidIds.length > 0) {
-            throw new Error(
-                `Invalid spell IDs for class ${characterClass}: ${invalidIds.join(', ')}`
-            );
-        }
-
-        // Delegate to ExtensionManager
-        const category = `spells.${characterClass}` as const;
-        this.manager.register(category, spellIds);
     }
 
     /**
