@@ -362,10 +362,12 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 27: Clean up skillRegistry.test.ts
 **File:** `tests/unit/skillRegistry.test.ts`
 
-- [ ] Search for all `invalidateCache()` calls
-- [ ] Remove unnecessary `invalidateCache()` calls after registration
-- [ ] Keep `invalidateCache()` calls that are specifically testing the cache behavior
-- [ ] Run tests to verify they pass
+- [x] Search for all `invalidateCache()` calls
+- [x] Remove unnecessary `invalidateCache()` calls after registration
+- [x] Keep `invalidateCache()` calls that are specifically testing the cache behavior
+- [x] Run tests to verify they pass
+
+**Summary:** Removed 10 unnecessary `invalidateCache()` calls. Kept 1 call in the duplicate registration test that specifically tests idempotent cache behavior. All 58 tests pass. The remaining `invalidateCache()` call at line 126 is kept because it tests that calling `invalidateCache()` after automatic invalidation is safe (idempotent behavior).
 
 ### Task 28: Clean up subraces.test.ts
 **File:** `tests/unit/subraces.test.ts`

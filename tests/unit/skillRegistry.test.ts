@@ -29,19 +29,17 @@ describe('SkillRegistry', () => {
         em = ExtensionManager.getInstance();
         // Reset to ensure clean state using ExtensionManager
         em.resetAll();
-        // Invalidate SkillRegistry cache after EM reset
-        registry.invalidateCache();
         // Initialize with default skills
         em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
+        // Note: Cache invalidation is now automatic after register/resetAll
     });
 
     afterEach(() => {
         // Clean up after each test using ExtensionManager
         em.resetAll();
-        // Invalidate SkillRegistry cache after EM reset
-        registry.invalidateCache();
         // Restore defaults for next test
         em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
+        // Note: Cache invalidation is now automatic after register/resetAll
     });
 
     describe('Singleton Pattern', () => {
@@ -180,8 +178,8 @@ describe('SkillRegistry', () => {
         beforeEach(() => {
             // Reset to clean state before adding custom skills
             em.resetAll();
-            registry.invalidateCache();
             em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
+            // Note: Cache invalidation is now automatic after register/resetAll
 
             // Add custom skills
             const customSkills: CustomSkill[] = [
@@ -234,7 +232,6 @@ describe('SkillRegistry', () => {
             // Clear all skills and verify empty
             em.resetAll();
             em.initializeDefaults('skills', []); // Clear defaults too
-            registry.invalidateCache();
 
             const intSkills = registry.getSkillsByAbility('INT' as Ability);
             expect(intSkills).toEqual([]);
@@ -386,7 +383,6 @@ describe('SkillRegistry', () => {
         it('should return accurate stats for empty registry', () => {
             em.resetAll();
             em.initializeDefaults('skills', []); // Clear defaults too
-            registry.invalidateCache();
 
             const stats = registry.getRegistryStats();
 
@@ -586,7 +582,6 @@ describe('SkillRegistry', () => {
 
         it('should handle getting skill from empty registry', () => {
             em.resetAll();
-            registry.invalidateCache();
 
             const skill = registry.getSkill('anything');
             expect(skill).toBeUndefined();
@@ -612,7 +607,6 @@ describe('SkillRegistry', () => {
         it('should return 0 for empty registry', () => {
             em.resetAll();
             em.initializeDefaults('skills', []); // Clear defaults too
-            registry.invalidateCache();
 
             const count = registry.getSkillCount();
             expect(count).toBe(0);
@@ -672,7 +666,6 @@ describe('SkillRegistry', () => {
 
             em.resetAll();
             em.initializeDefaults('skills', []); // Clear defaults too
-            registry.invalidateCache();
             expect(registry.getSkillCount()).toBe(0);
         });
     });
@@ -985,7 +978,6 @@ describe('SkillRegistry', () => {
         it('should return empty array for empty registry', () => {
             em.resetAll();
             em.initializeDefaults('skills', []); // Clear defaults too
-            registry.invalidateCache();
 
             const character = createMockCharacter();
             const available = registry.getAvailableSkills(character);
