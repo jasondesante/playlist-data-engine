@@ -88,17 +88,18 @@ export function registerTestSpell(spell: Spell, options?: { validate?: boolean }
 }
 
 /**
- * Register multiple test spells via ExtensionManager and invalidate cache
+ * Register multiple test spells via ExtensionManager
+ *
+ * Note: Cache invalidation is automatic after registration.
  *
  * @param spells - Array of spells to register
  * @param options - Optional registration options for ExtensionManager
  */
 export function registerTestSpells(spells: Spell[], options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const spellRegistry = SpellRegistry.getInstance();
 
     extensionManager.register('spells', spells, options);
-    spellRegistry.invalidateCache();
+    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
