@@ -601,7 +601,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             };
 
             manager.register('classFeatures', [arcaneSmith]);
-            featureRegistry.invalidateCache();
+            // Note: Cache invalidation is automatic via ExtensionManager.register()
 
             const character = CharacterGenerator.generate('seed', mockAudioProfile, mockTrack, {
                 forceClass: 'Wizard'
@@ -1455,7 +1455,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             };
 
             manager.register('spells', [customSpell]);
-            spellRegistry.invalidateCache();
+            // Note: Cache invalidation is automatic via ExtensionManager.register()
 
             // Verify the spell is now in ExtensionManager
             const updatedSpells = manager.get('spells');
@@ -1523,7 +1523,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             };
 
             manager.register('spells', [cantrip, level5Spell]);
-            spellRegistry.invalidateCache();
+            // Note: Cache invalidation is automatic via ExtensionManager.register()
 
             // Verify getSpellsByLevel works
             const cantrips = spellRegistry.getSpellsByLevel(0);
@@ -1566,7 +1566,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             };
 
             manager.register('spells', [evocationSpell, abjurationSpell]);
-            spellRegistry.invalidateCache();
+            // Note: Cache invalidation is automatic via ExtensionManager.register()
 
             // Verify getSpellsBySchool works
             const evocationSpells = spellRegistry.getSpellsBySchool('Evocation');
@@ -1597,9 +1597,8 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const notFound = spellRegistry.getSpell('test_cache_spell');
             expect(notFound).toBeUndefined();
 
-            // Register new spell via ExtensionManager and invalidate cache
+            // Register new spell via ExtensionManager (cache invalidation is automatic)
             manager.register('spells', [customSpell]);
-            spellRegistry.invalidateCache();
 
             // Verify the spell is accessible after registration
             const found = spellRegistry.getSpell('test_cache_spell');

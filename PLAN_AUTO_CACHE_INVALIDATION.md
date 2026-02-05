@@ -411,9 +411,18 @@ Also verified `tests/integration/fullSensorPipeline.test.ts` line 543 contains o
 ### Task 31: Clean up examples-compilation.test.ts
 **File:** `tests/documentation/examples-compilation.test.ts`
 
-- [ ] Search for `invalidateCache()` in code examples
-- [ ] Remove `invalidateCache()` calls from examples
-- [ ] Run tests to verify examples compile correctly
+- [x] Search for `invalidateCache()` in code examples
+- [x] Remove `invalidateCache()` calls from examples
+- [x] Run tests to verify examples compile correctly
+
+**Summary:** Removed 5 unnecessary `invalidateCache()` calls:
+- Line 604: `featureRegistry.invalidateCache()` after `manager.register('classFeatures', ...)`
+- Line 1458: `spellRegistry.invalidateCache()` after `manager.register('spells', ...)`
+- Line 1526: `spellRegistry.invalidateCache()` after `manager.register('spells', ...)`
+- Line 1569: `spellRegistry.invalidateCache()` after `manager.register('spells', ...)`
+- Line 1602: `spellRegistry.invalidateCache()` after `manager.register('spells', ...)`
+
+All 84 tests pass. Build successful. Cache invalidation is now automatic via `ExtensionManager.register()`.
 
 ### Task 32: Clean up prerequisitesExamples.test.ts
 **File:** `tests/documentation/prerequisitesExamples.test.ts`
