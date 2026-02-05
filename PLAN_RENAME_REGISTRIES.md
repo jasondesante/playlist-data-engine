@@ -47,7 +47,6 @@ Rename `SpellRegistry`, `SkillRegistry`, and `FeatureRegistry` to `SpellQuery`, 
 - [ ] Update JSDoc comments referencing "registry" → "query"
 - [ ] Rename method: `getRegistryStats()` → `getQueryStats()`
 - [ ] Update return type in `getInstance()`
-- [ ] Add backward compatibility export: `export type SpellRegistry = SpellQuery`
 
 ### 2.2 Rename and Update SkillRegistry → SkillQuery
 - [ ] Rename file: `src/core/skills/SkillRegistry.ts` → `src/core/skills/SkillQuery.ts`
@@ -55,7 +54,6 @@ Rename `SpellRegistry`, `SkillRegistry`, and `FeatureRegistry` to `SpellQuery`, 
 - [ ] Update JSDoc comments referencing "registry" → "query"
 - [ ] Rename method: `getRegistryStats()` → `getQueryStats()`
 - [ ] Update return type in `getInstance()`
-- [ ] Add backward compatibility export: `export type SkillRegistry = SkillQuery`
 
 ### 2.3 Rename and Update FeatureRegistry → FeatureQuery
 - [ ] Rename file: `src/core/features/FeatureRegistry.ts` → `src/core/features/FeatureQuery.ts`
@@ -64,7 +62,6 @@ Rename `SpellRegistry`, `SkillRegistry`, and `FeatureRegistry` to `SpellQuery`, 
 - [ ] Rename method: `getRegistryStats()` → `getQueryStats()`
 - [ ] Rename method: `reset()` → `clearQueryCache()` (more explicit)
 - [ ] Update return type in `getInstance()`
-- [ ] Add backward compatibility export: `export type FeatureRegistry = FeatureQuery`
 
 ### 2.4 Update Type Definitions
 - [ ] Edit `src/core/skills/SkillTypes.ts`
@@ -74,18 +71,14 @@ Rename `SpellRegistry`, `SkillRegistry`, and `FeatureRegistry` to `SpellQuery`, 
 ### 2.5 Update Module Index Files
 - [ ] Edit `src/core/spells/index.ts`
   - Update: `export { SpellRegistry }` → `export { SpellQuery }`
-  - Add: `export type { SpellRegistry }` (backward compatibility)
 - [ ] Edit `src/core/skills/index.ts`
   - Update: `export { SkillRegistry }` → `export { SkillQuery }`
-  - Add: `export type { SkillRegistry }` (backward compatibility)
 - [ ] Edit `src/core/features/index.ts`
   - Update: `export { FeatureRegistry }` → `export { FeatureQuery }`
-  - Add: `export type { FeatureRegistry }` (backward compatibility)
 
 ### 2.6 Update Main Export File
 - [ ] Edit `src/index.ts`
   - Update exports for all three classes
-  - Add backward compatibility type exports
 
 ### 2.7 Update ExtensionManager (Critical - Circular Dependency)
 - [ ] Edit `src/core/extensions/ExtensionManager.ts`
@@ -118,9 +111,9 @@ Rename `SpellRegistry`, `SkillRegistry`, and `FeatureRegistry` to `SpellQuery`, 
   - Update any registry references to query references
 
 ### 3.4 Update ESLint Plugin
-- [ ] Edit `eslint-plugins/no-removed-registry-methods.js`
-  - Update class name references
-  - Consider renaming plugin to reflect new architecture
+- [ ] Rename file: `eslint-plugins/no-removed-registry-methods.js` → `eslint-plugins/no-removed-query-methods.js`
+- [ ] Update class name references
+- [ ] Update plugin name in any config files that reference it
 
 ---
 
@@ -268,22 +261,9 @@ Rename `SpellRegistry`, `SkillRegistry`, and `FeatureRegistry` to `SpellQuery`, 
 
 ### 6.5 Search for Remaining References
 - [ ] Run: `grep -r "SpellRegistry\|SkillRegistry\|FeatureRegistry" --include="*.ts" --include="*.md" .`
-- [ ] Verify all found references are intentional (e.g., in backward compatibility exports)
-- [ ] Run: `grep -r "getRegistryStats" --include="*.ts" .` - should only be in backward compatibility
+- [ ] Verify NO references remain (all should be converted to Query)
+- [ ] Run: `grep -r "getRegistryStats" --include="*.ts" .` - should return nothing
 - [ ] Run: `grep -r "\.reset()" --include="*.ts" tests/ | grep -i feature` - verify clearQueryCache usage
-
----
-
-## Phase 7: Clean Up (Optional)
-
-### 7.1 Remove Backward Compatibility (Future)
-- [ ] Consider removing type aliases in a future major version
-- [ ] Consider removing convenience function aliases in a future major version
-
-### 7.2 Documentation
-- [ ] Update CHANGELOG.md with breaking changes
-- [ ] Document migration guide for external consumers
-- [ ] Update version number (major version bump)
 
 ---
 
