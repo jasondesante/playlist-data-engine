@@ -93,23 +93,23 @@
 
 **File:** `docs/ROLLS_AND_SEEDS.md`
 
-- [ ] **6.1.1** Add InitiativeRoller documentation (new section after Dice Roller)
-  - [ ] Add section "## Initiative Roller"
-  - [ ] Document `rollInitiativeForCombatant()` with example
-  - [ ] Document `rollInitiativeForAll()` with example
-  - [ ] Document `getNextCombatant()` with example
-  - [ ] Document `getInitiativeOrder()` with example
-  - [ ] Document `rerollInitiativeForCombatant()` with example
-  - [ ] Document `delayTurn()` with example
-  - [ ] Document `resortByInitiative()` with example
-  - [ ] Add usage example showing full combat initiative workflow
+- [x] **6.1.1** Add InitiativeRoller documentation (new section after Dice Roller)
+  - [x] Add section "## Initiative Roller"
+  - [x] Document `rollInitiativeForCombatant()` with example
+  - [x] Document `rollInitiativeForAll()` with example
+  - [x] Document `getNextCombatant()` with example
+  - [x] Document `getInitiativeOrder()` with example
+  - [x] Document `rerollInitiativeForCombatant()` with example
+  - [x] Document `delayTurn()` with example
+  - [x] Document `resortByInitiative()` with example
+  - [x] Add usage example showing full combat initiative workflow
 
-- [ ] **6.1.2** Update Dice Roller section for new class API
-  - [ ] Change import from individual functions to `import { DiceRoller } from 'playlist-data-engine';`
-  - [ ] Update all examples to use `DiceRoller.methodName()` (no `new` needed!)
-  - [ ] Update example code: `const d6Result = DiceRoller.rollDie(6);`
-  - [ ] Update advantage/disadvantage examples: `DiceRoller.rollWithAdvantage()`
-  - [ ] Update combat function examples: `DiceRoller.rollInitiative()`, `DiceRoller.calculateDamage()`
+- [x] **6.1.2** Update Dice Roller section for new class API
+  - [x] Change import from individual functions to `import { DiceRoller } from 'playlist-data-engine';`
+  - [x] Update all examples to use `DiceRoller.methodName()` (no `new` needed!)
+  - [x] Update example code: `const d6Result = DiceRoller.rollDie(6);`
+  - [x] Update advantage/disadvantage examples: `DiceRoller.rollWithAdvantage()`
+  - [x] Update combat function examples: `DiceRoller.rollInitiative()`, `DiceRoller.calculateDamage()`
 
 ### 6.2 Update DATA_ENGINE_REFERENCE.md
 
