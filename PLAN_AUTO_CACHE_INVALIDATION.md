@@ -392,9 +392,17 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 30: Verify sensors.test.ts is unchanged
 **File:** `tests/unit/sensors.test.ts`
 
-- [ ] Verify `WeatherAPIClient.invalidateCache()` calls remain (unrelated to ExtensionManager)
-- [ ] Verify `GeolocationProvider.invalidateCache()` calls remain (unrelated to ExtensionManager)
-- [ ] Confirm no changes needed for this file
+- [x] Verify `WeatherAPIClient.invalidateCache()` calls remain (unrelated to ExtensionManager)
+- [x] Verify `GeolocationProvider.invalidateCache()` calls remain (unrelated to ExtensionManager)
+- [x] Confirm no changes needed for this file
+
+**Summary:** Verified that `tests/unit/sensors.test.ts` contains only sensor-related `invalidateCache()` calls:
+- Line 1342: `weatherClient.invalidateCache()` - tests WeatherAPIClient cache invalidation
+- Line 1569: `geoProvider.invalidateCache()` - tests GeolocationProvider cache invalidation
+
+No ExtensionManager registry (SkillRegistry/SpellRegistry/FeatureRegistry) invalidations found. **No changes needed.** This file should remain unchanged as sensor caches are separate from the spell/skill/feature registries.
+
+Also verified `tests/integration/fullSensorPipeline.test.ts` line 543 contains only geolocation cache invalidation, not ExtensionManager-related.
 
 ---
 
