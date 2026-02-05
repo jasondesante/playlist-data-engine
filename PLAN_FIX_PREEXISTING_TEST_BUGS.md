@@ -199,7 +199,20 @@ export const createTestSpell = (overrides?: Partial<Spell>): Spell => ({
 
 **Estimated fixes**: ~18 tests
 
-**Status:** [ ] TODO
+**Status:** ✅ COMPLETED
+- Imported `sampleTrack` from `../fixtures/sampleData.js`
+- Imported `completeTestSpells` and `spellByName` from `../fixtures/spellFixtures.js`
+- Replaced incomplete spell objects (lines 646-649) with complete spells from fixtures:
+  - `spellByName['Phoenix Fire']` (complete with all required fields)
+  - `spellByName['Mind Shield']` (complete with all required fields)
+- Replaced all string track parameters with `sampleTrack`:
+  - Lines 280, 316-317, 341, 401, 446, 518: Already using `sampleTrack` (now imported)
+  - Lines 557-561, 594-598, 622-626: Added `sampleTrack` + `forceName: 'Ranger Test'`
+  - Lines 664-673: Added `sampleTrack` + `forceName: 'Wizard Test'`
+  - Lines 709-718: Added `sampleTrack` + `forceName: 'Rogue Test'`
+  - Lines 754-762: Added `sampleTrack` + `forceName: 'Appearance Test'`
+  - Lines 798, 824, 848, 872, 896, 921: Already using `sampleTrack` (now imported)
+- All 19 tests now passing (100% pass rate for this file)
 
 #### Task 2.3: Fix phase15.fullCustomContent.integration.test.ts
 
