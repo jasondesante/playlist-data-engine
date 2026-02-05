@@ -541,9 +541,15 @@ if (category.startsWith('spells.') && category !== 'spells') {
 - Examples using `FeatureRegistry.registerRacialTrait()` (~line 240)
 
 **Sub-tasks:**
-- [ ] Replace `FeatureRegistry.registerRacialTrait()` with `ExtensionManager.register('racialTraits', [...])`
-- [ ] Update custom content examples to use ExtensionManager pattern
-- [ ] Ensure examples still demonstrate custom content concepts
+- [x] Replace `FeatureRegistry.registerRacialTrait()` with `ExtensionManager.register('racialTraits', [...])`
+- [x] Update custom content examples to use ExtensionManager pattern
+- [x] Ensure examples still demonstrate custom content concepts
+
+**Status:** ✅ COMPLETED
+- Updated registration example at line 237-254 to use ExtensionManager.register()
+- Added `FeatureRegistry.getInstance().invalidateCache()` call after registration
+- Verified no remaining usages of removed methods in CUSTOM_CONTENT.md
+- Build passes successfully
 
 ---
 
@@ -554,11 +560,20 @@ if (category.startsWith('spells.') && category !== 'spells') {
 - "Dragon-Themed Content" example (~line 1107)
 
 **Sub-tasks:**
-- [ ] Update SkillRegistry description (remove "convenience wrapper" language)
-- [ ] Update FeatureRegistry description (remove "convenience wrapper" language)
-- [ ] Update SpellRegistry description if needed
-- [ ] Replace example code using registry methods with ExtensionManager
-- [ ] Update integration instructions
+- [x] Update SkillRegistry description (remove "convenience wrapper" language)
+- [x] Update FeatureRegistry description (remove "convenience wrapper" language)
+- [x] Update SpellRegistry description if needed
+- [x] Replace example code using registry methods with ExtensionManager
+- [x] Update integration instructions
+
+**Status:** ✅ COMPLETED
+- Updated "Dragon-Themed Content" example at lines 1126-1138 to use ExtensionManager.register()
+- Added `FeatureRegistry.getInstance().invalidateCache()` call after registration
+- Updated skill registration example at lines 1141-1155 to remove commented-out SkillRegistry usage
+- Added `SkillRegistry.getInstance().invalidateCache()` call after registration
+- Updated "Available Exports" section (lines 1772-1782) to remove "convenience wrapper" language
+- All registry descriptions now emphasize that registration is done via ExtensionManager
+- Build passes successfully
 
 ---
 
@@ -567,11 +582,20 @@ if (category.startsWith('spells.') && category !== 'spells') {
 **Location:** Add to `EXTENSIBILITY_GUIDE.md` or create new `MIGRATION.md`
 
 **Sub-tasks:**
-- [ ] Document old registration methods being removed
-- [ ] Provide before/after code examples
-- [ ] Explain ExtensionManager.register() pattern
-- [ ] Document test helper functions for migration
-- [ ] Add timeline/deprecation info if applicable
+- [x] Document old registration methods being removed
+- [x] Provide before/after code examples
+- [x] Explain ExtensionManager.register() pattern
+- [x] Document test helper functions for migration
+- [x] Add timeline/deprecation info if applicable
+
+**Status:** ✅ COMPLETED
+- Created `docs/MIGRATION_GUIDE.md` with comprehensive migration documentation
+- Documented all removed registration methods (9 methods across 3 registries)
+- Provided before/after code examples for spells, skills, class features, racial traits, and class spell lists
+- Explained ExtensionManager.register() pattern with cache invalidation
+- Documented test helper functions from tests/helpers/registrationHelpers.ts
+- Added summary table of changes for quick reference
+- Build passes successfully
 
 ---
 
@@ -582,20 +606,28 @@ if (category.startsWith('spells.') && category !== 'spells') {
 **New File:** `tests/helpers/registrationHelpers.ts`
 
 **Sub-tasks:**
-- [ ] Create `registerTestSpell(spell: Spell): void` function
+- [x] Create `registerTestSpell(spell: Spell): void` function
   - Calls `ExtensionManager.register('spells', [...])`
   - Calls `SpellRegistry.getInstance().invalidateCache()` (need to make public first)
-- [ ] Create `registerTestSkill(skill: CustomSkill): void` function
+- [x] Create `registerTestSkill(skill: CustomSkill): void` function
   - Calls `ExtensionManager.register('skills', [...])`
   - Calls `SkillRegistry.getInstance().invalidateCache()`
-- [ ] Create `registerTestClassFeature(feature: ClassFeature): void` function
+- [x] Create `registerTestClassFeature(feature: ClassFeature): void` function
   - Calls `ExtensionManager.register('classFeatures', [...])`
   - Calls `FeatureRegistry.getInstance().invalidateCache()`
-- [ ] Create `registerTestRacialTrait(trait: RacialTrait): void` function
+- [x] Create `registerTestRacialTrait(trait: RacialTrait): void` function
   - Calls `ExtensionManager.register('racialTraits', [...])`
   - Calls `FeatureRegistry.getInstance().invalidateCache()`
-- [ ] Export all helper functions
-- [ ] Add JSDoc comments
+- [x] Export all helper functions
+- [x] Add JSDoc comments
+
+**Status:** ✅ COMPLETED
+- File created at `tests/helpers/registrationHelpers.ts`
+- All helper functions implemented: `registerTestSpell`, `registerTestSpells`, `registerTestSkill`, `registerTestSkills`, `registerTestClassFeature`, `registerTestClassFeatures`, `registerTestRacialTrait`, `registerTestRacialTraits`
+- All functions call ExtensionManager.register() followed by registry.invalidateCache()
+- Duplicate ID detection included for single-item registration functions
+- Comprehensive JSDoc comments with usage examples
+- Helper functions are already being used in updated test files (Tasks 3.2, 4.2)
 
 ---
 
@@ -615,9 +647,15 @@ if (category.startsWith('spells.') && category !== 'spells') {
 ### Task 6.3: Update Test Imports
 
 **Sub-tasks:**
-- [ ] Add import for test helpers in affected test files
-- [ ] Remove unused imports after migration
-- [ ] Verify all imports are correct
+- [x] Add import for test helpers in affected test files
+- [x] Remove unused imports after migration
+- [x] Verify all imports are correct
+
+**Status:** ✅ COMPLETED
+- All test files that were updated in Tasks 3.2 and 4.2 already have correct imports
+- Verified imports in 16 test files using helper functions
+- Example: `import { registerTestSkill, registerTestSkills } from '../helpers/registrationHelpers.js';`
+- No unused imports remain (removed as part of migration)
 
 ---
 
@@ -626,10 +664,16 @@ if (category.startsWith('spells.') && category !== 'spells') {
 ### Task 7.1: Compile-Time Verification
 
 **Sub-tasks:**
-- [ ] Run `npm run build` - verify no TypeScript errors
-- [ ] Run `tsc --noEmit` - verify type checking passes
-- [ ] Check for any implicit any types
-- [ ] Verify no unused imports
+- [x] Run `npm run build` - verify no TypeScript errors
+- [x] Run `tsc --noEmit` - verify type checking passes
+- [x] Check for any implicit any types
+- [x] Verify no unused imports
+
+**Status:** ✅ COMPLETED
+- Build completes successfully with no TypeScript errors
+- `tsc --noEmit` passes with no errors
+- No implicit any types introduced
+- No unused imports (verified during migration tasks)
 
 ---
 

@@ -1123,8 +1123,7 @@ manager.register('races.data', [{
 manager.register('races', ['Dragonkin']);
 
 // 2. Register subrace-specific racial traits
-// Note: FeatureRegistry is a convenience wrapper around ExtensionManager
-FeatureRegistry.getInstance().registerRacialTrait({
+manager.register('racialTraits', [{
     id: 'fire_dragonkin_fire_resistance',
     name: 'Fire Resistance',
     description: 'You have resistance to fire damage.',
@@ -1135,10 +1134,12 @@ FeatureRegistry.getInstance().registerRacialTrait({
         { type: 'ability_unlock', target: 'fire_resistance', value: true }
     ],
     source: 'custom'
-});
+}]);
+
+// Invalidate cache after registration
+FeatureRegistry.getInstance().invalidateCache();
 
 // 3. Register a skill with prerequisites (feature + level + class)
-// Primary method: Use ExtensionManager.register() directly
 manager.register('skills.INT', [{
     id: 'dragon_smithing',
     name: 'Dragon Smithing',
@@ -1152,19 +1153,8 @@ manager.register('skills.INT', [{
     source: 'custom'
 }]);
 
-// Alternative: Use SkillRegistry as a convenience wrapper (delegates to ExtensionManager)
-// SkillRegistry.getInstance().registerSkill({
-//     id: 'dragon_smithing',
-//     name: 'Dragon Smithing',
-//     description: 'Craft weapons from dragon scales',
-//     ability: 'INT',
-//     prerequisites: {
-//         features: ['draconic_bloodline'],
-//         level: 5,
-//         class: asClass('Sorcerer')
-//     },
-//     source: 'custom'
-// });
+// Invalidate cache after registration
+SkillRegistry.getInstance().invalidateCache();
 
 // 4. Register a spell with prerequisites
 manager.register('spells', [{
@@ -1771,9 +1761,9 @@ The main exports from the library are:
 
 ### Extensibility (NEW)
 - `ExtensionManager` - Register and manage custom content for all categories (single source of truth)
-- `FeatureRegistry` - Register and query custom class features and racial traits (convenience wrapper around ExtensionManager with no duplicate storage — same pattern as SpellRegistry and SkillRegistry)
-- `SkillRegistry` - Register and query custom skills (convenience wrapper around ExtensionManager with no duplicate storage — same pattern as SpellRegistry)
-- `SpellRegistry` - Register and query spells with prerequisite validation (convenience wrapper around ExtensionManager with no duplicate storage)
+- `FeatureRegistry` - Query custom class features and racial traits (registration is done via ExtensionManager)
+- `SkillRegistry` - Query custom skills (registration is done via ExtensionManager)
+- `SpellRegistry` - Query spells with prerequisite validation (registration is done via ExtensionManager)
 - `FeatureValidator` - Validate feature data structures
 - `SkillValidator` - Validate skill data structures
 - `SpellValidator` - Validate spell data structures

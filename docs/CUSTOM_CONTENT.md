@@ -234,10 +234,12 @@ character.subrace = 'Fire Dragonkin';
 Traits can require a specific subrace via prerequisites:
 
 ```typescript
-import { FeatureRegistry } from 'playlist-data-engine';
+import { ExtensionManager, FeatureRegistry } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
 
 // Trait that requires a specific subrace
-FeatureRegistry.getInstance().registerRacialTrait({
+manager.register('racialTraits', [{
     id: 'inferno_breath',
     name: 'Inferno Breath',
     description: 'Breathe fire like a true red dragon',
@@ -251,7 +253,10 @@ FeatureRegistry.getInstance().registerRacialTrait({
         { type: 'active_ability', target: 'fire_breath', value: '6d6' }
     ],
     source: 'custom'
-});
+}]);
+
+// Invalidate cache after registration
+FeatureRegistry.getInstance().invalidateCache();
 ```
 
 **Type Augmentation for Custom Races:**

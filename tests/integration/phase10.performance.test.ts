@@ -17,7 +17,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator.js';
 import { ClassSuggester } from '../../src/core/generation/ClassSuggester.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
+import { ensureAllDefaultsInitialized } from '../../src/core/extensions/index.js';
 import { SeededRNG } from '../../src/utils/random.js';
+import { sampleTrack } from '../fixtures/sampleData.js';
 import type { AudioProfile } from '../../src/core/types/AudioProfile.js';
 
 /**
@@ -155,6 +157,7 @@ describe('Phase 10.2: Performance Testing', () => {
     beforeEach(() => {
         manager = ExtensionManager.getInstance();
         manager.resetAll();
+        ensureAllDefaultsInitialized();
     });
 
     afterEach(() => {
@@ -218,9 +221,9 @@ describe('Phase 10.2: Performance Testing', () => {
 
         it('should benchmark character generation with custom content (extensions)', () => {
             const customSpells = [
-                { name: 'Phoenix Fire', level: 5, school: 'Evocation' },
-                { name: 'Mind Shield', level: 2, school: 'Abjuration' },
-                { name: 'Frost Nova', level: 3, school: 'Evocation' },
+                { id: 'phoenix_fire', name: 'Phoenix Fire', level: 5, school: 'Evocation', casting_time: '1 action', range: '60 feet', components: ['V', 'S'], duration: 'Instantaneous' },
+                { id: 'mind_shield', name: 'Mind Shield', level: 2, school: 'Abjuration', casting_time: '1 action', range: 'Self', components: ['V', 'S'], duration: '1 hour' },
+                { id: 'frost_nova', name: 'Frost Nova', level: 3, school: 'Evocation', casting_time: '1 action', range: '15 ft cone', components: ['V', 'S'], duration: 'Instantaneous' },
             ];
 
             const customEquipment = [
@@ -237,7 +240,7 @@ describe('Phase 10.2: Performance Testing', () => {
                     const character = CharacterGenerator.generate(
                         `benchmark-custom-${counter++}`,
                         profile,
-                        'Custom Content Character',
+                        sampleTrack,
                         {
                             forceClass: 'Wizard',
                             extensions: {
@@ -466,7 +469,16 @@ describe('Phase 10.2: Performance Testing', () => {
             // Repeatedly register and reset
             for (let i = 0; i < 50; i++) {
                 const customSpells = [
-                    { name: `Test Spell ${i}`, level: 1, school: 'Evocation' },
+                    {
+                        id: `test_spell_${i}`,
+                        name: `Test Spell ${i}`,
+                        level: 1,
+                        school: 'Evocation',
+                        casting_time: '1 action',
+                        range: '60 feet',
+                        components: ['V', 'S'],
+                        duration: 'Instantaneous'
+                    },
                 ];
 
                 manager.register('spells', customSpells, { mode: 'append' });
@@ -497,9 +509,14 @@ describe('Phase 10.2: Performance Testing', () => {
 
             const customContent = {
                 spells: Array.from({ length: 50 }, (_, i) => ({
+                    id: `custom_spell_${i}`,
                     name: `Custom Spell ${i}`,
                     level: i % 9,
                     school: ['Evocation', 'Abjuration', 'Conjuration', 'Divination', 'Enchantment', 'Illusion', 'Necromancy', 'Transmutation'][i % 8],
+                    casting_time: '1 action',
+                    range: '60 feet',
+                    components: ['V', 'S'],
+                    duration: 'Instantaneous'
                 })),
                 equipment: Array.from({ length: 50 }, (_, i) => ({
                     name: `Custom Item ${i}`,
