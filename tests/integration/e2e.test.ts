@@ -62,7 +62,11 @@ describe('E2E: Full Pipeline', () => {
         );
 
         // Verify character properties
-        expect(character.name).toBe(`${track.artist} - ${track.title}`);
+        // Note: NamingEngine generates RPG-style names, not simple "artist - title" format
+        // The name will be one of 7 formats (Class Title, Adjective Construct, Clan Construct, etc.)
+        expect(character.name).toBeTruthy();
+        expect(character.name).not.toBe('');
+        expect(character.name).not.toBe(`${track.artist} - ${track.title}`); // Verify it's NOT the raw format
         expect(character.seed).toBe(track.id);
         expect(character.race).toBeTruthy();
         expect(character.class).toBeTruthy();
