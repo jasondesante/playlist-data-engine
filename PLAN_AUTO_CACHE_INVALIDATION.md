@@ -533,15 +533,27 @@ All 20 tests pass. The script now correctly validates the new automatic cache in
 ### Task 39: Create integration test for automatic cache invalidation
 **File:** `tests/integration/autoCacheInvalidation.test.ts` (new file)
 
-- [ ] Create test file for automatic cache invalidation verification
-- [ ] Add test for SkillRegistry auto-invalidation after `register('skills', ...)`
-- [ ] Add test for SpellRegistry auto-invalidation after `register('spells', ...)`
-- [ ] Add test for FeatureRegistry auto-invalidation after `register('classFeatures', ...)`
-- [ ] Add test for FeatureRegistry auto-invalidation after `register('racialTraits', ...)`
-- [ ] Add test verifying no invalidation for non-registry categories (e.g., 'equipment')
-- [ ] Add test for `reset()` auto-invalidation
-- [ ] Add test for `resetAll()` invalidating all registries
-- [ ] Run new test file to verify all tests pass
+- [x] Create test file for automatic cache invalidation verification
+- [x] Add test for SkillRegistry auto-invalidation after `register('skills', ...)`
+- [x] Add test for SpellRegistry auto-invalidation after `register('spells', ...)`
+- [x] Add test for FeatureRegistry auto-invalidation after `register('classFeatures', ...)`
+- [x] Add test for FeatureRegistry auto-invalidation after `register('racialTraits', ...)`
+- [x] Add test verifying no invalidation for non-registry categories (e.g., 'equipment')
+- [x] Add test for `reset()` auto-invalidation
+- [x] Add test for `resetAll()` invalidating all registries
+- [x] Run new test file to verify all tests pass
+
+**Summary:** Created comprehensive integration test file `tests/integration/autoCacheInvalidation.test.ts` with 16 tests covering:
+- SkillRegistry auto-invalidation after `register('skills', ...)` and `register('skills.STR', ...)`
+- SpellRegistry auto-invalidation after `register('spells', ...)` and `register('spells.Wizard', ...)`
+- FeatureRegistry auto-invalidation after `register('classFeatures', ...)`, `register('racialTraits', ...)`, and `register('classFeatures.Fighter', ...)`
+- No invalidation for non-registry categories (tested with 'classes')
+- `reset()` auto-invalidation for skills, spells, and classFeatures
+- `resetAll()` invalidating all registries
+- `registerMultiple()` with mixed categories
+- Backward compatibility: manual `invalidateCache()` still works (idempotent)
+
+All 16 tests pass. Full test suite passes (2083/2083 tests).
 
 ### Task 40: Verify backward compatibility
 - [ ] Create test showing manual `invalidateCache()` still works (idempotent)
