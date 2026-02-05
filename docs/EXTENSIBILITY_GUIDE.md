@@ -367,10 +367,12 @@ manager.resetAll();
 
 ### Equipment
 
-Add custom weapons, armor, and items:
+Register custom equipment through ExtensionManager:
 
 ```typescript
-import { CharacterGenerator } from 'playlist-data-engine';
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
 
 const customEquipment = [
     {
@@ -393,6 +395,23 @@ const customEquipment = [
     }
 ];
 
+// Register custom equipment
+manager.register('equipment', customEquipment, {
+    weights: {
+        'Frost Brand': 0.1,                // Very rare
+        'Potion of Giant Strength': 2.0    // Common
+    }
+});
+
+// Now generate characters with the custom equipment available
+const character = CharacterGenerator.generate('my-seed', audioProfile, track);
+```
+
+**Alternative: Convenience parameter in CharacterGenerator**
+
+You can also pass extensions directly to `CharacterGenerator.generate()` for one-off custom content:
+
+```typescript
 const character = CharacterGenerator.generate(
     'my-seed',
     audioProfile,
@@ -405,23 +424,29 @@ const character = CharacterGenerator.generate(
 );
 ```
 
-**Set spawn weights:**
+This is equivalent to registering via `ExtensionManager` before generation, but doesn't persist across multiple character generations.
+
+**Adjust spawn rates after registration:**
 
 ```typescript
 const manager = ExtensionManager.getInstance();
 
-// Make Frost Brand very rare
+// Make Frost Brand even more rare
 manager.setWeights('equipment', {
-    'Frost Brand': 0.1,
-    'Potion of Giant Strength': 2.0  // Common
+    'Frost Brand': 0.05,
+    'Potion of Giant Strength': 3.0  // Very common
 });
 ```
 
 ### Spells
 
-Add custom spells:
+Register custom spells through ExtensionManager:
 
 ```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
 const customSpells = [
     {
         name: 'Phoenix Fire',
@@ -445,28 +470,21 @@ const customSpells = [
     }
 ];
 
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track,
-    {
-        forceClass: 'Wizard',
-        extensions: {
-            spells: customSpells
-        },
-        forceName: 'Wizard Name'
+// Register custom spells with spawn weights
+manager.register('spells', customSpells, {
+    weights: {
+        'Phoenix Fire': 0.5,   // Rare
+        'Mind Shield': 2.0     // Common
     }
-);
+});
 ```
 
-**Make certain spells more common:**
+**Adjust spawn rates after registration:**
 
 ```typescript
-const manager = ExtensionManager.getInstance();
-
 manager.setWeights('spells', {
-    'Phoenix Fire': 0.5,   // Rare
-    'Mind Shield': 2.0     // Common
+    'Phoenix Fire': 0.3,   // Even rarer
+    'Mind Shield': 3.0     // Very common
 });
 ```
 
