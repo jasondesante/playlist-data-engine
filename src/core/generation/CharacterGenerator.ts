@@ -276,11 +276,11 @@ export class CharacterGenerator {
         const level = options.level || 1;
         const gameMode: GameMode = options.gameMode || 'standard';
 
-        // Ensure feature registry is initialized with defaults
+        // Ensure feature query is initialized with defaults
         ensureFeatureDefaultsInitialized();
 
-        // Get the feature registry
-        const featureRegistry = FeatureQuery.getInstance();
+        // Get the feature query
+        const featureQuery = FeatureQuery.getInstance();
 
         // Register custom extensions if provided
         if (options.extensions) {
@@ -303,7 +303,7 @@ export class CharacterGenerator {
                 subrace = requestedSubrace;
             } else {
                 // Only subrace specified - auto-detect race from subrace
-                const detectedRace = featureRegistry.getRaceForSubrace(requestedSubrace);
+                const detectedRace = featureQuery.getRaceForSubrace(requestedSubrace);
                 if (!detectedRace) {
                     throw new Error(
                         `Cannot determine race for subrace "${requestedSubrace}". ` +
@@ -323,7 +323,7 @@ export class CharacterGenerator {
 
         // Validate subrace if both race and subrace were specified
         if (subrace !== undefined && requestedSubrace !== 'pure') {
-            const availableSubraces = featureRegistry.getAvailableSubraces(race);
+            const availableSubraces = featureQuery.getAvailableSubraces(race);
             if (!availableSubraces.includes(subrace)) {
                 throw new Error(
                     `Invalid subrace "${subrace}" for race "${race}". ` +
@@ -332,7 +332,7 @@ export class CharacterGenerator {
             }
         } else if (subrace === undefined && requestedSubrace === undefined) {
             // Randomly select: either 'pure' or one of the available subraces
-            const availableSubraces = featureRegistry.getAvailableSubraces(race);
+            const availableSubraces = featureQuery.getAvailableSubraces(race);
             const optionsList = ['pure', ...availableSubraces];
             const selected = rng.randomChoice(optionsList);
             subrace = selected === 'pure' ? undefined : selected;
@@ -402,13 +402,13 @@ export class CharacterGenerator {
         const appearance = AppearanceGenerator.generate(seed, suggestedClass, audioProfile);
 
         // Get class features from FeatureQuery (feature IDs only)
-        const classFeatures = featureRegistry.getClassFeatures(suggestedClass, level);
+        const classFeatures = featureQuery.getClassFeatures(suggestedClass, level);
 
         // Get racial traits from FeatureQuery (trait IDs only)
         // Filter by subrace if character has one
         const racialTraits = subrace
-            ? featureRegistry.getRacialTraitsForSubrace(race, subrace)
-            : featureRegistry.getBaseRacialTraits(race);
+            ? featureQuery.getRacialTraitsForSubrace(race, subrace)
+            : featureQuery.getBaseRacialTraits(race);
 
         // Initialize starting equipment
         const equipment = EquipmentGenerator.initializeEquipment(suggestedClass);
@@ -452,7 +452,7 @@ export class CharacterGenerator {
         // Validate and filter class features by prerequisites
         const validClassFeatures: typeof classFeatures = [];
         for (const feature of classFeatures) {
-            const validation = featureRegistry.validatePrerequisites(feature, partialCharacter);
+            const validation = featureQuery.validatePrerequisites(feature, partialCharacter);
             if (!validation.valid) {
                 // Log warning but continue - default features should always pass
                 console.warn(`Feature "${feature.name}" (${feature.id}) failed prerequisite validation:`, validation.errors);
@@ -465,7 +465,7 @@ export class CharacterGenerator {
         // Validate and filter racial traits by prerequisites
         const validRacialTraits: typeof racialTraits = [];
         for (const trait of racialTraits) {
-            const validation = featureRegistry.validatePrerequisites(trait, partialCharacter);
+            const validation = featureQuery.validatePrerequisites(trait, partialCharacter);
             if (!validation.valid) {
                 // Log warning but continue - default traits should always pass
                 console.warn(`Trait "${trait.name}" (${trait.id}) failed prerequisite validation:`, validation.errors);

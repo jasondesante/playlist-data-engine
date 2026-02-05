@@ -51,8 +51,8 @@ The engine supports comprehensive runtime extensibility through three registries
 | Registry | Purpose | Extensible Content |
 |----------|---------|-------------------|
 | `ExtensionManager` | Base extensibility | Equipment (properties/enchanting), spells, race data (custom races), appearance, spawn weights |
-| `FeatureRegistry` | Features & traits | Class features, racial traits with prerequisites, subrace support, effect types |
-| `SkillRegistry` | Skills | Custom skills with ability mapping, prerequisites (level/class/race/features/spells), categories |
+| `FeatureQuery` | Features & traits | Class features, racial traits with prerequisites, subrace support, effect types |
+| `SkillQuery` | Skills | Custom skills with ability mapping, prerequisites (level/class/race/features/spells), categories |
 
 ### Spawn Rate System
 
@@ -195,9 +195,9 @@ Sensors can be configured via environment variables or programmatically.
 | `EquipmentModifier` | Enchants/curses/upgrades equipment | `src/core/equipment/EquipmentModifier.ts` |
 | `EquipmentValidator` | Validates equipment extensions | `src/core/equipment/EquipmentValidator.ts` |
 | `ExtensionManager` | Registers custom content with spawn rates | `src/core/extensions/ExtensionManager.ts` |
-| `FeatureRegistry` | Manages class features and racial traits | `src/core/features/FeatureRegistry.ts` |
+| `FeatureQuery` | Manages class features and racial traits | `src/core/features/FeatureQuery.ts` |
 | `FeatureValidator` | Validates class features and racial traits | `src/core/features/FeatureValidator.ts` |
-| `SkillRegistry` | Manages skill definitions and prerequisites | `src/core/skills/SkillRegistry.ts` |
+| `SkillQuery` | Manages skill definitions and prerequisites | `src/core/skills/SkillQuery.ts` |
 | `SkillValidator` | Validates skills and skill prerequisites | `src/core/skills/SkillValidator.ts` |
 | `SpellValidator` | Validates spells and spell prerequisites | `src/core/spells/SpellValidator.ts` |
 
