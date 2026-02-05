@@ -789,4 +789,128 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             expect(featureRegistry.getClassFeatureById('test_invalid_feature')).toBeUndefined();
         });
     });
+
+    describe('Edge cases: empty items array', () => {
+        it('should invalidate cache when registering empty array to skills', () => {
+            const manager = ExtensionManager.getInstance();
+            const skillRegistry = SkillRegistry.getInstance();
+
+            // Initialize default skills
+            initializeSkillDefaults();
+
+            // First, register a custom skill
+            const customSkill = {
+                id: 'test_empty_array_skill',
+                name: 'Test Empty Array Skill',
+                ability: 'STR' as const,
+                description: 'Test skill for empty array test',
+                categories: ['test'],
+                source: 'custom' as const
+            };
+
+            manager.register('skills', [customSkill]);
+
+            // Verify it's registered
+            expect(skillRegistry.isValidSkill('test_empty_array_skill')).toBe(true);
+
+            // Warm up the cache
+            const skillsBefore = skillRegistry.getAllSkills();
+            const countBefore = skillsBefore.length;
+
+            // Now register an empty array (should trigger cache invalidation)
+            expect(() => {
+                manager.register('skills', []);
+            }).not.toThrow();
+
+            // Verify the cache was invalidated by calling getAllSkills again
+            const skillsAfter = skillRegistry.getAllSkills();
+            expect(skillsAfter).toHaveLength(countBefore);
+
+            // The custom skill should still be accessible (empty array doesn't remove existing items in relative mode)
+            expect(skillRegistry.isValidSkill('test_empty_array_skill')).toBe(true);
+        });
+
+        it('should invalidate cache when registering empty array to spells', () => {
+            const manager = ExtensionManager.getInstance();
+            const spellRegistry = SpellRegistry.getInstance();
+
+            // Initialize default spells
+            initializeSpellDefaults();
+
+            // First, register a custom spell
+            const customSpell = {
+                id: 'test_empty_array_spell',
+                name: 'Test Empty Array Spell',
+                level: 1,
+                school: 'Evocation' as const,
+                casting_time: '1 action',
+                range: '60 feet',
+                components: ['V'],
+                duration: 'Instantaneous',
+                description: 'Test spell for empty array test',
+                source: 'custom' as const
+            };
+
+            manager.register('spells', [customSpell]);
+
+            // Verify it's registered
+            expect(spellRegistry.getSpell('test_empty_array_spell')).toBeDefined();
+
+            // Warm up the cache
+            const spellsBefore = spellRegistry.getSpells();
+            const countBefore = spellsBefore.length;
+
+            // Register an empty array
+            expect(() => {
+                manager.register('spells', []);
+            }).not.toThrow();
+
+            // Verify the cache was invalidated
+            const spellsAfter = spellRegistry.getSpells();
+            expect(spellsAfter).toHaveLength(countBefore);
+
+            // The custom spell should still be accessible
+            expect(spellRegistry.getSpell('test_empty_array_spell')).toBeDefined();
+        });
+
+        it('should invalidate cache when registering empty array to classFeatures', () => {
+            const manager = ExtensionManager.getInstance();
+            const featureRegistry = FeatureRegistry.getInstance();
+
+            // Initialize default features
+            initializeFeatureDefaults();
+
+            // First, register a custom feature
+            const customFeature = {
+                id: 'test_empty_array_feature',
+                name: 'Test Empty Array Feature',
+                description: 'Test feature for empty array test',
+                type: 'passive' as const,
+                class: 'Paladin',
+                level: 3,
+                source: 'custom' as const
+            };
+
+            manager.register('classFeatures', [customFeature]);
+
+            // Verify it's registered
+            expect(featureRegistry.getClassFeatureById('test_empty_array_feature')).toBeDefined();
+
+            // Warm up the cache
+            const paladinFeaturesBefore = featureRegistry.getClassFeatures('Paladin', 20);
+            const countBefore = paladinFeaturesBefore.length;
+
+            // Register an empty array
+            expect(() => {
+                manager.register('classFeatures', []);
+            }).not.toThrow();
+
+            // Verify the cache was invalidated
+            const paladinFeaturesAfter = featureRegistry.getClassFeatures('Paladin', 20);
+            expect(paladinFeaturesAfter).toHaveLength(countBefore);
+
+            // The custom feature should still be accessible
+            expect(featureRegistry.getClassFeatureById('test_empty_array_feature')).toBeDefined();
+        });
+    });
 });

@@ -613,9 +613,19 @@ All 16 tests pass. Full test suite passes (2083/2083 tests).
 All 2086 tests pass (3 new tests added). No new linting errors introduced.
 
 ### Task 45: Test empty items array
-- [ ] Test `register('skills', [])` with empty array
-- [ ] Verify cache is still invalidated
-- [ ] Verify no errors occur
+- [x] Test `register('skills', [])` with empty array
+- [x] Verify cache is still invalidated
+- [x] Verify no errors occur
+
+**Summary:** Created 3 comprehensive tests in `tests/integration/autoCacheInvalidation.test.ts` covering empty array registration behavior for SkillRegistry, SpellRegistry, and FeatureRegistry. Tests verify that:
+1. `register('skills', [])` with an empty array doesn't throw an error
+2. Cache is still invalidated when registering an empty array
+3. Existing registered items remain accessible (empty array in relative mode doesn't remove items)
+4. The cache is properly refreshed (verified by calling getAll/getSpells/getClassFeatures again)
+
+The tests use the pattern: register a custom item → warm up cache → register empty array → verify cache was invalidated and custom item still exists.
+
+All 2089 tests pass (3 new tests added). No new linting errors introduced.
 
 ### Task 46: Test relative mode merging
 - [ ] Test `register()` with `mode: 'relative'`
