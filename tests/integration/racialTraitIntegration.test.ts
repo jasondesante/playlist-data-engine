@@ -26,9 +26,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
         // Reset instances for clean state
         manager.resetAll();
 
-        // Invalidate FeatureRegistry cache after EM reset
-        registry.invalidateCache();
-
         // Initialize with default features for each test
         initializeFeatureDefaults();
     });
@@ -47,9 +44,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
 
             // Register via ExtensionManager
             manager.register('racialTraits', [customTrait]);
-
-            // Invalidate cache to reflect new data
-            registry.invalidateCache();
 
             // Verify FeatureRegistry sees it via getRacialTraits()
             const dragonbornTraits = registry.getRacialTraits('Dragonborn');
@@ -92,7 +86,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
 
             // Register via ExtensionManager
             manager.register('racialTraits', customTraits);
-            registry.invalidateCache();
 
             // Verify each race has its traits
             expect(registry.getRacialTraitById('test_elf_magic_resistance')).toBeDefined();
@@ -137,7 +130,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             ];
 
             manager.register('racialTraits', customTraits);
-            registry.invalidateCache();
 
             // Verify Elf gets its own custom traits but not Dwarf's
             const updatedElfTraits = registry.getRacialTraits('Elf');
@@ -179,7 +171,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             };
 
             manager.register('racialTraits', [customTrait]);
-            registry.invalidateCache();
 
             // Verify getRacialTraitsForSubrace returns base traits + subrace traits
             const highElfTraits = registry.getRacialTraitsForSubrace('Elf', 'High Elf');
@@ -205,7 +196,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             };
 
             manager.register('racialTraits', [customTrait]);
-            registry.invalidateCache();
 
             // Verify getSubraceTraits returns only subrace-specific traits
             const woodElfOnlyTraits = registry.getSubraceTraits('Elf', 'Wood Elf');
@@ -248,7 +238,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             ];
 
             manager.register('racialTraits', customTraits);
-            registry.invalidateCache();
 
             // Verify each subrace gets only its specific traits
             const highElfTraits = registry.getSubraceTraits('Elf', 'High Elf');
@@ -295,7 +284,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             ];
 
             manager.register('racialTraits', customTraits);
-            registry.invalidateCache();
 
             // Verify getAvailableSubraces derives from traits
             const customSubraces = registry.getAvailableSubraces('CustomRace' as any);
@@ -316,7 +304,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             };
 
             manager.register('racialTraits', [customTrait]);
-            registry.invalidateCache();
 
             // Verify getRaceForSubrace finds the race
             const foundRace = registry.getRaceForSubrace('Lightfoot Halfling');
@@ -335,7 +322,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             const initialStats = registry.getRegistryStats();
             const initialElfCount = registry.getRacialTraits('Elf').length;
 
-            // Register new trait via ExtensionManager
+            // Register new trait via ExtensionManager (cache is automatically invalidated)
             const newTrait: RacialTrait = {
                 id: 'test_cache_invalidation_elf',
                 name: 'Cache Invalidation Test',
@@ -347,10 +334,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
 
             manager.register('racialTraits', [newTrait]);
 
-            // Invalidate cache explicitly
-            registry.invalidateCache();
-
-            // Verify new trait is visible after cache invalidation
+            // Verify new trait is visible (automatic cache invalidation)
             const newStats = registry.getRegistryStats();
             expect(newStats.totalRacialTraits).toBe(initialStats.totalRacialTraits + 1);
 
@@ -375,7 +359,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             };
 
             manager.register('racialTraits', [tieflingTrait]);
-            registry.invalidateCache();
 
             // Verify getRegisteredRaces sees the new race
             const newRaces = registry.getRegisteredRaces();
@@ -390,7 +373,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
         it('should handle multiple cache invalidations', () => {
             let traitCount = registry.getRegistryStats().totalRacialTraits;
 
-            // Register multiple traits in batches with cache invalidation
+            // Register multiple traits in batches (cache auto-invalidated each time)
             for (let i = 0; i < 3; i++) {
                 const trait: RacialTrait = {
                     id: `test_batch_racial_${i}`,
@@ -402,7 +385,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
                 };
 
                 manager.register('racialTraits', [trait]);
-                registry.invalidateCache();
 
                 const newStats = registry.getRegistryStats();
                 expect(newStats.totalRacialTraits).toBe(++traitCount);
@@ -461,7 +443,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
 
             // Register via ExtensionManager
             manager.register('racialTraits', [trait]);
-            registry.invalidateCache();
 
             // Try to register same ID via helper
             expect(() => {
@@ -480,17 +461,14 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             };
 
             manager.register('racialTraits', [trait]);
-            registry.invalidateCache();
             expect(registry.getRacialTraitById('test_persistence_racial')).toBeDefined();
 
             // Reset and verify trait is gone
             manager.reset('racialTraits');
-            registry.invalidateCache();
             expect(registry.getRacialTraitById('test_persistence_racial')).toBeUndefined();
 
             // Re-register and verify it's back
             manager.register('racialTraits', [trait]);
-            registry.invalidateCache();
             expect(registry.getRacialTraitById('test_persistence_racial')).toBeDefined();
         });
 
@@ -518,7 +496,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             ];
 
             manager.register('racialTraits', newRacialTraits);
-            registry.invalidateCache();
 
             const newStats = registry.getRegistryStats();
             expect(newStats.totalRacialTraits).toBe(initialStats.totalRacialTraits + 2);
@@ -545,7 +522,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             ];
 
             manager.register('racialTraits', customTraits);
-            registry.invalidateCache();
 
             // Verify getBaseRacialTraits excludes subrace traits
             const baseTraits = registry.getBaseRacialTraits('Elf');
@@ -564,7 +540,6 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             };
 
             manager.register('racialTraits', [customTrait]);
-            registry.invalidateCache();
 
             // Export and verify structure
             const exported = registry.exportRacialTraits();

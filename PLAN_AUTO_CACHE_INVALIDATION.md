@@ -318,11 +318,13 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 23: Clean up racialTraitIntegration.test.ts
 **File:** `tests/integration/racialTraitIntegration.test.ts`
 
-- [ ] Remove `invalidateCache()` call from `beforeEach()` (line 30)
-- [ ] Remove all remaining `invalidateCache()` calls (~20 occurrences)
-- [ ] Search file for `invalidateCache` to ensure none remain
-- [ ] Remove `FeatureRegistry` import if no longer used
-- [ ] Run tests to verify they pass
+- [x] Remove `invalidateCache()` call from `beforeEach()` (line 30)
+- [x] Remove all remaining `invalidateCache()` calls (~20 occurrences)
+- [x] Search file for `invalidateCache` to ensure none remain
+- [x] Remove `FeatureRegistry` import if no longer used (KEPT - still used for validation)
+- [x] Run tests to verify they pass
+
+**Summary:** Removed 18 `invalidateCache()` calls. The `FeatureRegistry` import remains because the registry instance is used extensively throughout the tests for validation (not for cache invalidation). All 20 tests pass.
 
 ### Task 24: Clean up spellIntegration.test.ts
 **File:** `tests/integration/spellIntegration.test.ts`
