@@ -1107,7 +1107,7 @@ See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
 This example demonstrates registering a complete dragon-themed content pack with custom race, subraces, skills, and spells:
 
 ```typescript
-import { ExtensionManager, FeatureRegistry, SkillRegistry, asClass } from 'playlist-data-engine';
+import { ExtensionManager, asClass } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
 
@@ -1136,8 +1136,7 @@ manager.register('racialTraits', [{
     source: 'custom'
 }]);
 
-// Invalidate cache after registration
-FeatureRegistry.getInstance().invalidateCache();
+// Cache is automatically invalidated after registration
 
 // 3. Register a skill with prerequisites (feature + level + class)
 manager.register('skills.INT', [{
@@ -1153,8 +1152,7 @@ manager.register('skills.INT', [{
     source: 'custom'
 }]);
 
-// Invalidate cache after registration
-SkillRegistry.getInstance().invalidateCache();
+// Cache is automatically invalidated after registration
 
 // 4. Register a spell with prerequisites
 manager.register('spells', [{

@@ -507,10 +507,12 @@ All 20 tests pass. The script now correctly validates the new automatic cache in
 ### Task 37: Update USAGE_IN_OTHER_PROJECTS.md
 **File:** `USAGE_IN_OTHER_PROJECTS.md`
 
-- [ ] Find and remove `FeatureRegistry.getInstance().invalidateCache()` (line 1140)
-- [ ] Find and remove `SkillRegistry.getInstance().invalidateCache()` (line 1157)
-- [ ] Search file for any remaining `invalidateCache` references
-- [ ] Update examples to note automatic invalidation
+- [x] Find and remove `FeatureRegistry.getInstance().invalidateCache()` (line 1140)
+- [x] Find and remove `SkillRegistry.getInstance().invalidateCache()` (line 1157)
+- [x] Search file for any remaining `invalidateCache` references
+- [x] Update examples to note automatic invalidation
+
+**Summary:** Removed 2 manual `invalidateCache()` calls and removed unused `FeatureRegistry` and `SkillRegistry` imports from the example. Replaced with comments noting automatic cache invalidation. Build successful. All 2067 tests pass.
 
 ### Task 38: Update Registry JSDoc Comments
 **Files:** `src/core/skills/SkillRegistry.ts`, `src/core/spells/SpellRegistry.ts`, `src/core/features/FeatureRegistry.ts`
