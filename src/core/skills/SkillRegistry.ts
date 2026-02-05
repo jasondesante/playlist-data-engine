@@ -10,7 +10,7 @@
  * - Skill-related helper methods and validation
  *
  * **Registration:** Use ExtensionManager.register('skills', [...]) to add custom skills.
- * After registration, call SkillRegistry.getInstance().invalidateCache() to refresh cached data.
+ * Cache invalidation is automatic after registration.
  *
  * No duplicate storage - all data lives in ExtensionManager.
  */
@@ -33,7 +33,7 @@ import { ExtensionManager } from '../extensions/ExtensionManager.js';
  * - Skill-related helper methods and validation
  *
  * **Registration:** Use ExtensionManager.register('skills', [...]) to add custom skills.
- * After registration, call SkillRegistry.getInstance().invalidateCache() to refresh cached data.
+ * Cache invalidation is automatic after registration.
  *
  * Design principle: No duplicate storage. All data lives in ExtensionManager.
  */
@@ -60,6 +60,9 @@ export class SkillRegistry {
 
     /**
      * Invalidate all caches
+     *
+     * **Note:** Cache invalidation is automatic after ExtensionManager.register().
+     * This method is primarily for internal use and advanced scenarios.
      *
      * Call this method after directly manipulating ExtensionManager's skill data
      * (e.g., after calling ExtensionManager.resetAll()).

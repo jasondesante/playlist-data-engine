@@ -16,6 +16,7 @@
  *
  * **Note:** Both class features and racial traits read from ExtensionManager.
  * To register new features, use ExtensionManager.register() directly.
+ * Cache invalidation is automatic after registration.
  */
 
 import type {
@@ -39,6 +40,7 @@ import { ExtensionManager } from '../extensions/ExtensionManager.js';
  *
  * Design principle: No duplicate storage. All feature data lives in ExtensionManager.
  * To register new features, use ExtensionManager.register() directly.
+ * Cache invalidation is automatic after registration.
  */
 export class FeatureRegistry {
     private static instance: FeatureRegistry;
@@ -68,6 +70,9 @@ export class FeatureRegistry {
 
     /**
      * Invalidate all caches
+     *
+     * **Note:** Cache invalidation is automatic after ExtensionManager.register().
+     * This method is primarily for internal use and advanced scenarios.
      *
      * Call this method after directly manipulating ExtensionManager's data
      * (e.g., after calling ExtensionManager.resetAll()).

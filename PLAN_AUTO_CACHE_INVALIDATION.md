@@ -517,12 +517,14 @@ All 20 tests pass. The script now correctly validates the new automatic cache in
 ### Task 38: Update Registry JSDoc Comments
 **Files:** `src/core/skills/SkillRegistry.ts`, `src/core/spells/SpellRegistry.ts`, `src/core/features/FeatureRegistry.ts`
 
-- [ ] Update `SkillRegistry.ts` JSDoc: Note automatic invalidation after registration
-- [ ] Update `SkillRegistry.invalidateCache()` JSDoc: Note primarily for internal use
-- [ ] Update `SpellRegistry.ts` JSDoc: Note automatic invalidation after registration
-- [ ] Update `SpellRegistry.invalidateCache()` JSDoc: Note primarily for internal use
-- [ ] Update `FeatureRegistry.ts` JSDoc: Note automatic invalidation after registration
-- [ ] Update `FeatureRegistry.invalidateCache()` JSDoc: Note primarily for internal use
+- [x] Update `SkillRegistry.ts` JSDoc: Note automatic invalidation after registration
+- [x] Update `SkillRegistry.invalidateCache()` JSDoc: Note primarily for internal use
+- [x] Update `SpellRegistry.ts` JSDoc: Note automatic invalidation after registration
+- [x] Update `SpellRegistry.invalidateCache()` JSDoc: Note primarily for internal use
+- [x] Update `FeatureRegistry.ts` JSDoc: Note automatic invalidation after registration
+- [x] Update `FeatureRegistry.invalidateCache()` JSDoc: Note primarily for internal use
+
+**Summary:** Updated JSDoc comments in all three registry files (SkillRegistry, SpellRegistry, FeatureRegistry) to note that cache invalidation is automatic after registration. Also updated the `invalidateCache()` method JSDoc in each file to note it's primarily for internal use. Build successful. All 2067 tests pass (1 pre-existing unrelated failure in attackResolver.test.ts).
 
 ---
 
