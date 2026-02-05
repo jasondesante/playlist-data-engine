@@ -178,7 +178,16 @@ export const createTestSpell = (overrides?: Partial<Spell>): Spell => ({
 
 **Estimated fixes**: ~15 tests
 
-**Status:** [ ] TODO
+**Status:** ✅ COMPLETED
+- Imported `completeTestSpells` and `spellByName` from `spellFixtures.ts`
+- Replaced all incomplete spell objects with complete spells from fixtures:
+  - Phoenix Fire, Mind Shield, Time Warp (in first test)
+  - Arcane Spark (from fixtures)
+  - Created complete Mage Hand cantrip inline
+  - Fire Storm, Ice Storm (in edge cases test)
+- Replaced all string track parameters with `sampleTrack` (22 instances)
+- Added `forceName: 'Test Character'` option to combined test to ensure name matches expectation
+- All 22 tests now passing (100% pass rate for this file)
 
 #### Task 2.2: Fix phase10.fullPipeline.test.ts
 

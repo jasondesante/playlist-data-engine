@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
+import { completeTestSpells, spellByName } from '../fixtures/spellFixtures';
 
 describe('Integration: Custom Data Generation', () => {
     let manager: ExtensionManager;
@@ -29,16 +30,16 @@ describe('Integration: Custom Data Generation', () => {
     describe('Spells: custom spells appear in generation', () => {
         it('should include custom spells in spellcasting character', () => {
             const customSpells = [
-                { name: 'Phoenix Fire', level: 5, school: 'Evocation' },
-                { name: 'Mind Shield', level: 2, school: 'Abjuration' },
-                { name: 'Time Warp', level: 3, school: 'Transmutation' },
+                spellByName['Phoenix Fire'],
+                spellByName['Mind Shield'],
+                spellByName['Time Warp'],
             ];
 
             // Generate a Wizard with custom spells
             const character = CharacterGenerator.generate(
                 'test-custom-spells',
                 sampleAudioProfile,
-                'Test Wizard',
+                sampleTrack,
                 {
                     forceClass: 'Wizard',
                     extensions: {
@@ -68,7 +69,7 @@ describe('Integration: Custom Data Generation', () => {
             const character = CharacterGenerator.generate(
                 'test-empty-spells',
                 sampleAudioProfile,
-                'Test Wizard',
+                sampleTrack,
                 {
                     forceClass: 'Wizard',
                     extensions: {
@@ -84,14 +85,25 @@ describe('Integration: Custom Data Generation', () => {
 
         it('should include custom spell cantrips', () => {
             const customSpells = [
-                { name: 'Arcane Spark', level: 0, school: 'Evocation' },
-                { name: 'Mage Hand', level: 0, school: 'Conjuration' },
+                spellByName['Arcane Spark'],
+                // Mage Hand is a default spell, we can use createTestSpell for a second cantrip
+                {
+                    id: 'mage_hand_test',
+                    name: 'Mage Hand',
+                    level: 0,
+                    school: 'Conjuration',
+                    casting_time: '1 action',
+                    range: '30 feet',
+                    components: ['V', 'S'],
+                    duration: '1 minute',
+                    description: 'A spectral, floating hand appears.',
+                },
             ];
 
             const character = CharacterGenerator.generate(
                 'test-custom-cantrips',
                 sampleAudioProfile,
-                'Test Wizard',
+                sampleTrack,
                 {
                     forceClass: 'Wizard',
                     extensions: {
@@ -122,7 +134,7 @@ describe('Integration: Custom Data Generation', () => {
             const character = CharacterGenerator.generate(
                 'test-custom-equipment',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 {
                     forceClass: 'Fighter',
                     extensions: {
@@ -163,7 +175,7 @@ describe('Integration: Custom Data Generation', () => {
             const character = CharacterGenerator.generate(
                 'test-empty-equipment',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 {
                     forceClass: 'Fighter',
                     extensions: {
@@ -185,7 +197,7 @@ describe('Integration: Custom Data Generation', () => {
             const character = CharacterGenerator.generate(
                 'test-custom-body-types',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         appearance: {
@@ -213,7 +225,7 @@ describe('Integration: Custom Data Generation', () => {
             CharacterGenerator.generate(
                 'test-custom-skin-tones',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         appearance: {
@@ -236,7 +248,7 @@ describe('Integration: Custom Data Generation', () => {
             CharacterGenerator.generate(
                 'test-custom-hair-colors',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         appearance: {
@@ -259,7 +271,7 @@ describe('Integration: Custom Data Generation', () => {
             CharacterGenerator.generate(
                 'test-custom-hair-styles',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         appearance: {
@@ -283,7 +295,7 @@ describe('Integration: Custom Data Generation', () => {
             CharacterGenerator.generate(
                 'test-custom-eye-colors',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         appearance: {
@@ -306,7 +318,7 @@ describe('Integration: Custom Data Generation', () => {
             CharacterGenerator.generate(
                 'test-custom-facial-features',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         appearance: {
@@ -336,7 +348,7 @@ describe('Integration: Custom Data Generation', () => {
             CharacterGenerator.generate(
                 'test-all-custom-appearance',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         appearance: customAppearance
@@ -363,7 +375,7 @@ describe('Integration: Custom Data Generation', () => {
             CharacterGenerator.generate(
                 'test-custom-races',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         races: customRaces
@@ -398,7 +410,7 @@ describe('Integration: Custom Data Generation', () => {
             const character = CharacterGenerator.generate(
                 'test-empty-races',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         races: []
@@ -422,7 +434,7 @@ describe('Integration: Custom Data Generation', () => {
             CharacterGenerator.generate(
                 'test-custom-classes',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         classes: customClasses
@@ -457,7 +469,7 @@ describe('Integration: Custom Data Generation', () => {
             const character = CharacterGenerator.generate(
                 'test-empty-classes',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         classes: []
@@ -475,7 +487,7 @@ describe('Integration: Custom Data Generation', () => {
     describe('Combined custom data', () => {
         it('should handle multiple custom categories at once', () => {
             const customSpells = [
-                { name: 'Phoenix Fire', level: 5, school: 'Evocation' }
+                spellByName['Phoenix Fire']
             ];
             const customEquipment = [
                 { name: 'Dragon Sword', type: 'weapon' as const, rarity: 'legendary' as const, weight: 5 }
@@ -487,9 +499,10 @@ describe('Integration: Custom Data Generation', () => {
             const character = CharacterGenerator.generate(
                 'test-combined-custom',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     forceClass: 'Wizard',
+                    forceName: 'Test Character',
                     extensions: {
                         spells: customSpells,
                         equipment: customEquipment,
@@ -513,13 +526,13 @@ describe('Integration: Custom Data Generation', () => {
         it('should handle multiple generations with different custom data', () => {
             // First generation with custom spells
             const customSpells1 = [
-                { name: 'Fire Storm', level: 4, school: 'Evocation' }
+                spellByName['Fire Storm']
             ];
 
             CharacterGenerator.generate(
                 'test-multi-1',
                 sampleAudioProfile,
-                'Character 1',
+                sampleTrack,
                 {
                     extensions: { spells: customSpells1 }
                 }
@@ -529,13 +542,13 @@ describe('Integration: Custom Data Generation', () => {
 
             // Second generation with different custom spells
             const customSpells2 = [
-                { name: 'Ice Storm', level: 4, school: 'Evocation' }
+                spellByName['Ice Storm']
             ];
 
             CharacterGenerator.generate(
                 'test-multi-2',
                 sampleAudioProfile,
-                'Character 2',
+                sampleTrack,
                 {
                     extensions: { spells: customSpells2 }
                 }
@@ -554,7 +567,7 @@ describe('Integration: Custom Data Generation', () => {
             CharacterGenerator.generate(
                 'test-maintain-defaults',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         equipment: customEquipment
