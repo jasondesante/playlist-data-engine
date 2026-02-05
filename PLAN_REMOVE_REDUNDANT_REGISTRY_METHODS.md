@@ -521,11 +521,17 @@ if (category.startsWith('spells.') && category !== 'spells') {
 - Examples using `FeatureRegistry.registerRacialTrait()` (~line 461)
 
 **Sub-tasks:**
-- [ ] Find all `SkillRegistry.registerSkill()` usage and replace
-- [ ] Find all `FeatureRegistry.registerClassFeature()` usage and replace
-- [ ] Find all `FeatureRegistry.registerRacialTrait()` usage and replace
-- [ ] Update examples to use ExtensionManager directly
-- [ ] Verify examples still demonstrate prerequisite concepts correctly
+- [x] Find all `SkillRegistry.registerSkill()` usage and replace
+- [x] Find all `FeatureRegistry.registerClassFeature()` usage and replace
+- [x] Find all `FeatureRegistry.registerRacialTrait()` usage and replace
+- [x] Update examples to use ExtensionManager directly
+- [x] Verify examples still demonstrate prerequisite concepts correctly
+
+**Status:** ✅ COMPLETED
+- Replaced 5 registration calls with `ExtensionManager.register()` directly
+- Added `invalidateCache()` calls after each registration
+- All removed method references verified as gone via grep
+- Build passes successfully
 
 ---
 

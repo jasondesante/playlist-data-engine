@@ -125,7 +125,8 @@ const dragonSmithing = {
     source: 'custom' as const
 };
 
-SkillRegistry.getInstance().registerSkill(dragonSmithing);
+ExtensionManager.getInstance().register('skills', [dragonSmithing]);
+SkillRegistry.getInstance().invalidateCache();
 ```
 
 ---
@@ -295,7 +296,8 @@ const arcaneMastery = {
     source: 'custom' as const
 };
 
-FeatureRegistry.getInstance().registerClassFeature(arcaneMastery);
+ExtensionManager.getInstance().register('classFeatures', [arcaneMastery]);
+FeatureRegistry.getInstance().invalidateCache();
 ```
 
 ---
@@ -458,7 +460,7 @@ manager.register('races.data', [{
 manager.register('races', ['Dragonkin']);
 
 // 2. Register a subrace-specific trait
-FeatureRegistry.getInstance().registerRacialTrait({
+ExtensionManager.getInstance().register('racialTraits', [{
     id: 'fire_dragonkin_fire_resistance',
     name: 'Fire Resistance',
     description: 'You have resistance to fire damage.',
@@ -469,10 +471,11 @@ FeatureRegistry.getInstance().registerRacialTrait({
         { type: 'ability_unlock', target: 'fire_resistance', value: true }
     ],
     source: 'custom'
-});
+}]);
+FeatureRegistry.getInstance().invalidateCache();
 
 // 3. Register a skill with prerequisites (feature + level + class)
-SkillRegistry.getInstance().registerSkill({
+ExtensionManager.getInstance().register('skills', [{
     id: 'dragon_smithing',
     name: 'Dragon Smithing',
     description: 'Craft weapons from dragon scales',
@@ -483,7 +486,8 @@ SkillRegistry.getInstance().registerSkill({
         class: 'Sorcerer'
     },
     source: 'custom'
-});
+}]);
+SkillRegistry.getInstance().invalidateCache();
 
 // 4. Register a spell with prerequisites
 manager.register('spells', [{
@@ -502,7 +506,7 @@ manager.register('spells', [{
 }]);
 
 // 5. Register a feature with skill prerequisite
-FeatureRegistry.getInstance().registerClassFeature({
+ExtensionManager.getInstance().register('classFeatures', [{
     id: 'arcane_smith',
     name: 'Arcane Smith',
     description: 'Can enchant magical items',
@@ -517,7 +521,8 @@ FeatureRegistry.getInstance().registerClassFeature({
         { type: 'ability_unlock', target: 'item_enchantment', value: true }
     ],
     source: 'custom'
-});
+}]);
+FeatureRegistry.getInstance().invalidateCache();
 ```
 
 ### Example: Validation in Character Generation
