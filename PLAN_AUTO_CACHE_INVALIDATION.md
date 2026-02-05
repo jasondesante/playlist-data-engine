@@ -460,13 +460,15 @@ All 20 tests pass. The script now correctly validates the new automatic cache in
 ### Task 34: Update PREREQUISITES.md
 **File:** `docs/PREREQUISITES.md`
 
-- [ ] Find and remove `SkillRegistry.getInstance().invalidateCache()` (line 129)
-- [ ] Find and remove `FeatureRegistry.getInstance().invalidateCache()` (line 300)
-- [ ] Find and remove `FeatureRegistry.getInstance().invalidateCache()` (line 475)
-- [ ] Find and remove `SkillRegistry.getInstance().invalidateCache()` (line 490)
-- [ ] Find and remove `FeatureRegistry.getInstance().invalidateCache()` (line 525)
-- [ ] Search file for any remaining `invalidateCache` references
-- [ ] Update code examples to note automatic invalidation
+- [x] Find and remove `SkillRegistry.getInstance().invalidateCache()` (line 129)
+- [x] Find and remove `FeatureRegistry.getInstance().invalidateCache()` (line 300)
+- [x] Find and remove `FeatureRegistry.getInstance().invalidateCache()` (line 475)
+- [x] Find and remove `SkillRegistry.getInstance().invalidateCache()` (line 490)
+- [x] Find and remove `FeatureRegistry.getInstance().invalidateCache()` (line 525)
+- [x] Search file for any remaining `invalidateCache` references
+- [x] Update code examples to note automatic invalidation
+
+**Summary:** Removed 5 manual `invalidateCache()` calls and replaced them with comments noting automatic cache invalidation. All examples updated. Build successful.
 
 ### Task 35: Update EXTENSIBILITY_GUIDE.md
 **File:** `docs/EXTENSIBILITY_GUIDE.md`

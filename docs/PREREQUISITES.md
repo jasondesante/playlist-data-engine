@@ -126,7 +126,7 @@ const dragonSmithing = {
 };
 
 ExtensionManager.getInstance().register('skills', [dragonSmithing]);
-SkillRegistry.getInstance().invalidateCache();
+// Cache is automatically invalidated after registration
 ```
 
 ---
@@ -297,7 +297,7 @@ const arcaneMastery = {
 };
 
 ExtensionManager.getInstance().register('classFeatures', [arcaneMastery]);
-FeatureRegistry.getInstance().invalidateCache();
+// Cache is automatically invalidated after registration
 ```
 
 ---
@@ -472,7 +472,7 @@ ExtensionManager.getInstance().register('racialTraits', [{
     ],
     source: 'custom'
 }]);
-FeatureRegistry.getInstance().invalidateCache();
+// Cache is automatically invalidated after registration
 
 // 3. Register a skill with prerequisites (feature + level + class)
 ExtensionManager.getInstance().register('skills', [{
@@ -487,7 +487,7 @@ ExtensionManager.getInstance().register('skills', [{
     },
     source: 'custom'
 }]);
-SkillRegistry.getInstance().invalidateCache();
+// Cache is automatically invalidated after registration
 
 // 4. Register a spell with prerequisites
 manager.register('spells', [{
@@ -522,7 +522,7 @@ ExtensionManager.getInstance().register('classFeatures', [{
     ],
     source: 'custom'
 }]);
-FeatureRegistry.getInstance().invalidateCache();
+// Cache is automatically invalidated after registration
 ```
 
 ### Example: Validation in Character Generation
