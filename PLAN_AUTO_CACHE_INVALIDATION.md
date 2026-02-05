@@ -382,10 +382,12 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 29: Clean up skills.test.ts
 **File:** `tests/unit/skills.test.ts`
 
-- [ ] Search for `invalidateCache()` calls
-- [ ] Remove `invalidateCache()` calls after registration
-- [ ] Remove unused registry imports if present
-- [ ] Run tests to verify they pass
+- [x] Search for `invalidateCache()` calls
+- [x] Remove `invalidateCache()` calls after registration
+- [x] Remove unused registry imports if present
+- [x] Run tests to verify they pass
+
+**Summary:** Removed 1 `invalidateCache()` call (line 562) in the "should handle registry reset between tests" test. The call was redundant since `resetAll()` already invalidates all registry caches, and `initializeDefaults()` also auto-invalidates through `register()`. No unused registry imports to remove - `SkillRegistry` is still used for validation in other tests. All 30 tests pass.
 
 ### Task 30: Verify sensors.test.ts is unchanged
 **File:** `tests/unit/sensors.test.ts`

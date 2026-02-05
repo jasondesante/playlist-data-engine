@@ -559,7 +559,7 @@ describe('SkillAssigner', () => {
                 // Reset registry using ExtensionManager
                 em.resetAll();
                 em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
-                registry.invalidateCache();
+                // Cache invalidation is automatic after register()
 
                 const rng2 = new SeededRNG('after-reset');
                 const skills2 = SkillAssigner.assignSkills('Barbarian', rng2);
