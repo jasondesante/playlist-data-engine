@@ -58,10 +58,10 @@
 
 - [x] **3.1** Update AttackResolver to use DiceRoller static methods
   - [x] Import `DiceRoller` class
-  - [ ] Update `rollAttack()` - replace `Math.floor(Math.random() * 20) + 1` with `DiceRoller.rollD20()` (noted: still uses inline, but functional)
+  - [x] Update `rollAttack()` - replace `Math.floor(Math.random() * 20) + 1` with `DiceRoller.rollD20()` (also updated isCritical/isMiss to use DiceRoller methods)
   - [x] Update `rollDamage()` - change `calculateDamage` import to `DiceRoller.calculateDamage`
-  - [ ] Update `attackWithAdvantage()` - replace inline dice rolls with `DiceRoller.rollD20()` (noted: still uses inline, but functional)
-  - [ ] Update `attackWithDisadvantage()` - replace inline dice rolls with `DiceRoller.rollD20()` (noted: still uses inline, but functional)
+  - [ ] Update `attackWithAdvantage()` - replace inline dice rolls with `DiceRoller.rollWithAdvantage()`
+  - [ ] Update `attackWithDisadvantage()` - replace inline dice rolls with `DiceRoller.rollWithDisadvantage()`
 
 ---
 

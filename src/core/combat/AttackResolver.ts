@@ -82,13 +82,13 @@ export class AttackResolver {
    * Attack bonus = ability modifier + proficiency bonus (if proficient)
    */
   private rollAttack(_attacker: Combatant, target: Combatant, attack: Attack): AttackRoll {
-    const d20Roll = Math.floor(Math.random() * 20) + 1;
+    const d20Roll = DiceRoller.rollD20();
     const attackBonus = attack.attack_bonus ?? 0;
     const totalRoll = d20Roll + attackBonus;
     const targetAC = target.character.armor_class;
 
-    const isCritical = d20Roll === 20;
-    const isMiss = d20Roll === 1;
+    const isCritical = DiceRoller.isCriticalHit(d20Roll);
+    const isMiss = DiceRoller.isCriticalMiss(d20Roll);
     const hit = !isMiss && (isCritical || totalRoll >= targetAC);
 
     return {
