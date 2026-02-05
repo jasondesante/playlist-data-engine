@@ -4329,9 +4329,6 @@ class FeatureRegistry {
     // Instance Management
     static getInstance(): FeatureRegistry
 
-    // Cache Management
-    invalidateCache(): void
-
     // Class Features (reads from ExtensionManager with caching)
     getClassFeatures(characterClass: Class, level?: number): ClassFeature[]
     getClassFeaturesForLevel(characterClass: Class, level: number): ClassFeature[]
@@ -4452,7 +4449,6 @@ interface CharacterTrait {
 | Method | Parameters | Returns | Description |
 |--------|-----------|---------|-------------|
 | `getInstance()` | - | `FeatureRegistry` | Returns singleton instance |
-| `invalidateCache()` | - | `void` | Clear all caches (primarily for internal use; auto-called after registration) |
 | `getClassFeatures()` | `class`, `level?` | `ClassFeature[]` | Get all features for class (filtered by level, reads from ExtensionManager with caching) |
 | `getClassFeaturesForLevel()` | `class`, `level` | `ClassFeature[]` | Get features for specific class level (reads from ExtensionManager with caching) |
 | `getClassFeatureById()` | `featureId` | `ClassFeature \| undefined` | Find feature by ID |
@@ -4673,9 +4669,6 @@ class SkillRegistry {
     // Instance Management
     static getInstance(): SkillRegistry
 
-    // Cache Management
-    invalidateCache(): void
-
     // Retrieval (reads from ExtensionManager with caching)
     getSkill(id: string): CustomSkill | undefined
     getAllSkills(): CustomSkill[]
@@ -4765,7 +4758,6 @@ interface SkillSelectionWeights {
 | Method | Parameters | Returns | Description |
 |--------|-----------|---------|-------------|
 | `getInstance()` | - | `SkillRegistry` | Returns singleton instance |
-| `invalidateCache()` | - | `void` | Clear all caches (primarily for internal use; auto-called after registration) |
 | `getSkill()` | `id` | `CustomSkill \| undefined` | Get skill by ID |
 | `getAllSkills()` | - | `CustomSkill[]` | Get all registered skills (reads from ExtensionManager with caching) |
 | `getSkillsByAbility()` | `ability` | `CustomSkill[]` | Get skills for specific ability (builds index from EM data with caching) |

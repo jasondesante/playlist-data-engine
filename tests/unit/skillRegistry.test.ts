@@ -123,7 +123,6 @@ describe('SkillRegistry', () => {
             expect(() => {
                 ExtensionManager.getInstance().register('skills', [skill], { validate: false });
                 ExtensionManager.getInstance().register('skills', [skill], { validate: false });
-                registry.invalidateCache();
             }).not.toThrow();
 
             // Verify the skill exists (may have duplicate entries)

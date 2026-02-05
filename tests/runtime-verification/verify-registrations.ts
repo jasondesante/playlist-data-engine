@@ -379,22 +379,6 @@ async function main(): Promise<void> {
             testsFailed++;
         }
 
-        // Verify manual invalidateCache() is still safe (idempotent)
-        skillRegistry.invalidateCache();
-        logInfo('Called manual invalidateCache() to verify idempotent behavior');
-
-        const afterManualInvalidation = skillRegistry.getAllSkills();
-        const stillHasBothSkills = afterManualInvalidation.some(s => s.id === 'test_arcana_theory') &&
-                                   afterManualInvalidation.some(s => s.id === 'test_nature_lore');
-
-        if (stillHasBothSkills) {
-            logSuccess('Manual invalidateCache() is safe and idempotent');
-            testsPassed++;
-        } else {
-            logError('Manual invalidateCache() should be safe (idempotent)');
-            testsFailed++;
-        }
-
     } catch (error) {
         logError(`Automatic cache invalidation test failed: ${error}`);
         testsFailed++;

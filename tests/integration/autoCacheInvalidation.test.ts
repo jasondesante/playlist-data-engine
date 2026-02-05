@@ -16,10 +16,8 @@ import { initializeSkillDefaults, initializeSpellDefaults, initializeFeatureDefa
 describe('Automatic Cache Invalidation Integration Tests', () => {
     beforeEach(() => {
         // Reset all registries and ExtensionManager for clean state
+        // resetAll() automatically invalidates all registry caches
         ExtensionManager.getInstance().resetAll();
-        SkillRegistry.getInstance().invalidateCache();
-        SpellRegistry.getInstance().invalidateCache();
-        FeatureRegistry.getInstance().invalidateCache();
     });
 
     describe('SkillRegistry auto-invalidation', () => {
@@ -634,54 +632,6 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             expect(featureRegistry.getRacialTraitById('test_multi_trait')).toBeDefined();
             expect(featureRegistry.getClassFeatures('Monk', 20)).toHaveLength(monkFeaturesBefore.length + 1);
             expect(featureRegistry.getRacialTraits('Elf')).toHaveLength(elfTraitsBefore.length + 1);
-        });
-    });
-
-    describe('Backward compatibility: manual invalidateCache() still works', () => {
-        it('should be safe to call invalidateCache() manually after automatic invalidation', () => {
-            const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillRegistry.getInstance();
-
-            // Initialize defaults
-            initializeSkillDefaults();
-
-            // Register a skill (triggers automatic invalidation)
-            const customSkill = {
-                id: 'test_manual_invalidate',
-                name: 'Test Manual Invalidate',
-                ability: 'CHA' as const,
-                description: 'Test skill for manual invalidation',
-                categories: ['test'],
-                source: 'custom' as const
-            };
-
-            manager.register('skills', [customSkill]);
-
-            // Verify it's registered
-            expect(skillRegistry.isValidSkill('test_manual_invalidate')).toBe(true);
-
-            // Manually call invalidateCache() (should be safe/idempotent)
-            skillRegistry.invalidateCache();
-
-            // Verify the skill is still accessible after manual invalidation
-            expect(skillRegistry.isValidSkill('test_manual_invalidate')).toBe(true);
-            expect(skillRegistry.getSkill('test_manual_invalidate')?.name).toBe('Test Manual Invalidate');
-        });
-
-        it('should be safe to call invalidateCache() multiple times', () => {
-            const skillRegistry = SkillRegistry.getInstance();
-
-            // Initialize defaults
-            initializeSkillDefaults();
-
-            // Call invalidateCache multiple times (should be safe)
-            skillRegistry.invalidateCache();
-            skillRegistry.invalidateCache();
-            skillRegistry.invalidateCache();
-
-            // Verify registry still works
-            const skills = skillRegistry.getAllSkills();
-            expect(skills.length).toBeGreaterThan(0);
         });
     });
 
