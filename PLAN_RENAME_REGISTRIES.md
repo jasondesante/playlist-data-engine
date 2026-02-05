@@ -94,26 +94,26 @@ Rename `SpellQuery`, `SkillQuery`, and `FeatureQuery` to `SpellQuery`, `SkillQue
 - [x] Edit `src/core/generation/CharacterGenerator.ts`
   - Update: `import { FeatureQuery }` → `import { FeatureQuery }`
   - Update: `FeatureQuery.getInstance()` → `FeatureQuery.getInstance()`
-- [ ] Edit `src/core/generation/SkillAssigner.ts`
+- [x] Edit `src/core/generation/SkillAssigner.ts`
   - Update: `import { SkillQuery }` → `import { SkillQuery }`
   - Update: `SkillQuery.getInstance()` → `SkillQuery.getInstance()`
 
 ### 3.2 Core Equipment Files
-- [ ] Edit `src/core/equipment/EquipmentEffectApplier.ts`
+- [x] Edit `src/core/equipment/EquipmentEffectApplier.ts`
   - Update: `import { FeatureQuery }` → `import { FeatureQuery }`
   - Update: `FeatureQuery.getInstance()` → `FeatureQuery.getInstance()`
-- [ ] Edit `src/core/equipment/EquipmentValidator.ts`
+- [x] Edit `src/core/equipment/EquipmentValidator.ts`
   - Update: `import { SkillQuery, FeatureQuery }` → `import { SkillQuery, FeatureQuery }`
   - Update all `getInstance()` calls
 
 ### 3.3 Core Progression Files
-- [ ] Edit `src/core/progression/LevelUpProcessor.ts`
+- [x] Edit `src/core/progression/LevelUpProcessor.ts`
   - Update any registry references to query references
 
 ### 3.4 Update ESLint Plugin
-- [ ] Rename file: `eslint-plugins/no-removed-registry-methods.js` → `eslint-plugins/no-removed-query-methods.js`
-- [ ] Update class name references
-- [ ] Update plugin name in any config files that reference it
+- [x] Rename file: `eslint-plugins/no-removed-registry-methods.js` → `eslint-plugins/no-removed-query-methods.js`
+- [x] Update class name references
+- [x] Update plugin name in any config files that reference it (eslint.config.js)
 
 ---
 
@@ -230,22 +230,22 @@ Rename `SpellQuery`, `SkillQuery`, and `FeatureQuery` to `SpellQuery`, `SkillQue
 ## Phase 6: Verification & Testing
 
 ### 6.1 Build Verification
-- [ ] Run `npm run build` - verify clean compilation
-- [ ] Run `npm run type-check` - verify no type errors
-- [ ] Check `dist/` directory for correct file names:
+- [x] Run `npm run build` - verify clean compilation
+- [x] Run `npm run type-check` - verify no type errors
+- [x] Check `dist/` directory for correct file names:
   - `dist/core/features/FeatureQuery.d.ts`
   - `dist/core/skills/SkillQuery.d.ts`
   - `dist/core/spells/SpellQuery.d.ts`
 
 ### 6.2 Test Suite Verification
-- [ ] Run full test suite: `npm test`
+- [x] Run full test suite: `npm test` - **2096 tests passed**
 - [ ] Run coverage: `npm run test:coverage`
-- [ ] Verify all tests pass
-- [ ] Check for any skipped or pending tests
+- [x] Verify all tests pass
+- [x] Check for any skipped or pending tests (none)
 
 ### 6.3 Linting
-- [ ] Run `npm run lint`
-- [ ] Fix any linting issues
+- [x] Run `npm run lint`
+- [x] Fix any linting issues (ESLint config updated to reference renamed plugin)
 
 ### 6.4 Manual Verification Checklist
 - [x] All imports resolve correctly
