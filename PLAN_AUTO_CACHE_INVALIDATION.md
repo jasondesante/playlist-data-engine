@@ -197,11 +197,11 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 12: Clean up registerTestSkill()
 **File:** `tests/helpers/registrationHelpers.ts`
 
-- [ ] Locate `registerTestSkill()` function
-- [ ] Remove `const skillRegistry = SkillRegistry.getInstance()` declaration
-- [ ] Remove `skillRegistry.invalidateCache()` call at end
-- [ ] Keep duplicate check for existing skill ID (useful validation)
-- [ ] Add comment noting cache invalidation is automatic
+- [x] Locate `registerTestSkill()` function
+- [x] Remove `const skillRegistry = SkillRegistry.getInstance()` declaration
+- [x] Remove `skillRegistry.invalidateCache()` call at end
+- [x] Keep duplicate check for existing skill ID (useful validation)
+- [x] Add comment noting cache invalidation is automatic
 
 ### Task 13: Clean up registerTestSkills()
 **File:** `tests/helpers/registrationHelpers.ts`

@@ -2,11 +2,8 @@
  * Test Helper Functions for Registration
  *
  * These helper functions simplify test setup by providing a single function
- * that calls ExtensionManager.register() and then invalidates the registry cache.
- *
- * This is needed because after using ExtensionManager.register() directly,
- * the corresponding registry (SkillRegistry, SpellRegistry, FeatureRegistry)
- * must have its cache invalidated to see the new content.
+ * that calls ExtensionManager.register(). Cache invalidation is now automatic,
+ * handled by ExtensionManager based on the category being registered.
  */
 
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
@@ -18,7 +15,9 @@ import type { Spell } from '../../src/utils/constants.js';
 import type { ClassFeature, RacialTrait } from '../../src/core/features/FeatureTypes.js';
 
 /**
- * Register a test skill via ExtensionManager and invalidate cache
+ * Register a test skill via ExtensionManager
+ *
+ * Note: Cache invalidation is automatic after registration.
  *
  * @param skill - The skill to register
  * @param options - Optional registration options for ExtensionManager
@@ -46,7 +45,7 @@ export function registerTestSkill(skill: CustomSkill, options?: { validate?: boo
     }
 
     extensionManager.register('skills', [skill], options);
-    skillRegistry.invalidateCache();
+    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
