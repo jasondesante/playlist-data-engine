@@ -120,9 +120,9 @@
   - [x] Update all method signatures to show `DiceRoller.methodName()` format
   - [x] Note: No instantiation needed - just call `DiceRoller.rollD20()` directly
 
-- [ ] **6.2.2** Add InitiativeRoller documentation
-  - [ ] Add new section for InitiativeRoller class
-  - [ ] Document all public methods with signatures and descriptions
+- [x] **6.2.2** Add InitiativeRoller documentation
+  - [x] Add new section for InitiativeRoller class
+  - [x] Document all public methods with signatures and descriptions
 
 ---
 

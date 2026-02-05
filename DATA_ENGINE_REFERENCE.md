@@ -3234,22 +3234,44 @@ new CombatEngine(config?: CombatConfig)
 
 > **Note**: This is an instance class. Create an instance with `new InitiativeRoller()` before using methods.
 
-Manages initiative system for D&D combat.
+Manages the D&D 5e initiative system for combat. Handles rolling initiative, sorting combatants by turn order, and managing turn progression. Internally uses `DiceRoller.rollD20()` for all dice rolls.
+
+**Initiative Rolling:**
 
 - `rollInitiativeForCombatant(combatant: Combatant): InitiativeResult`
     - Rolls initiative for a single combatant (d20 + DEX modifier)
+    - Updates the combatant's `initiative` property in-place
+    - Returns `InitiativeResult` with combatant, d20Roll, dexModifier, and initiativeTotal
 - `rollInitiativeForAll(combatants: Combatant[]): { results: InitiativeResult[], sortedCombatants: Combatant[] }`
     - Rolls initiative for all combatants and sorts by descending initiative
+    - Higher initiative acts first; ties broken by higher DEX modifier
+    - Returns detailed roll results and the sorted combatant array
+
+**Turn Management:**
+
 - `getNextCombatant(combatants: Combatant[], currentIndex: number): { combatant: Combatant, index: number, isNewRound: boolean }`
-    - Gets the next combatant in turn order (wraps around)
+    - Gets the next combatant in turn order
+    - Automatically wraps around to beginning when reaching the end of the list
+    - Returns the combatant, their new index, and whether a new round has started
 - `getInitiativeOrder(combatants: Combatant[]): string[]`
-    - Returns formatted initiative order for display
+    - Returns initiative order as an array of formatted strings for display
+    - Each string shows: position, name, initiative value, and DEX modifier
+    - Useful for displaying turn order to players
+
+**Mid-Combat Changes:**
+
 - `rerollInitiativeForCombatant(combatant: Combatant): number`
     - Re-rolls initiative for a specific combatant
+    - Use when an effect changes a combatant's DEX modifier mid-combat
+    - Updates combatant's initiative in-place and returns the new value
 - `delayTurn(combatants: Combatant[], combatantId: string): Combatant[]`
-    - Delays a combatant's turn (moves them later in initiative order)
+    - Delays a combatant's turn by moving them one position later in initiative order
+    - Used when a combatant takes the "Ready" action in D&D 5e
+    - Returns a new array with the combatant moved to the next position
 - `resortByInitiative(combatants: Combatant[]): Combatant[]`
-    - Resorts combatants by initiative value (for mid-combat joins)
+    - Resorts combatants by their current initiative values
+    - Use when new combatants join mid-combat or initiative values change
+    - Returns a new sorted array (higher initiative first, DEX as tiebreaker)
 
 #### Helper: `DiceRoller` (static class)
 
