@@ -791,16 +791,29 @@ The runtime verification confirms that:
 ### Task 7.5: Search for Remaining References
 
 **Sub-tasks:**
-- [ ] Grep for `registerSpell` in entire codebase
-- [ ] Grep for `registerSpells` in entire codebase
-- [ ] Grep for `registerClassSpellList` in entire codebase
-- [ ] Grep for `registerSkill` in entire codebase
-- [ ] Grep for `registerSkills` in entire codebase
-- [ ] Grep for `registerClassFeature` in entire codebase
-- [ ] Grep for `registerClassFeatures` in entire codebase
-- [ ] Grep for `registerRacialTrait` in entire codebase
-- [ ] Grep for `registerRacialTraits` in entire codebase
-- [ ] Verify any remaining references are intentional (e.g., in this plan file)
+- [x] Grep for `registerSpell` in entire codebase
+- [x] Grep for `registerSpells` in entire codebase
+- [x] Grep for `registerClassSpellList` in entire codebase
+- [x] Grep for `registerSkill` in entire codebase
+- [x] Grep for `registerSkills` in entire codebase
+- [x] Grep for `registerClassFeature` in entire codebase
+- [x] Grep for `registerClassFeatures` in entire codebase
+- [x] Grep for `registerRacialTrait` in entire codebase
+- [x] Grep for `registerRacialTraits` in entire codebase
+- [x] Verify any remaining references are intentional (e.g., in this plan file)
+
+**Status:** ✅ COMPLETED
+- All 9 registration method patterns searched across the codebase
+- All remaining references are intentional and fall into these categories:
+  1. **MIGRATION_GUIDE.md** - Shows "before" examples of old methods to migrate FROM (lines 22-30, 121, 130, 164, 212, 222, 256, 303, 408-410)
+  2. **Plan files** - This plan and PLAN_REGISTRY_CONSOLIDATION.md documenting the work
+  3. **METHOD_USAGE_INVENTORY.md** - Inventory tracking what was removed
+  4. **tests/helpers/registrationHelpers.ts** - Comments explaining old behavior (lines 42, 105, 140)
+  5. **tests/verification/dragon-skill-example.compile.test.ts** - Compile-time test showing commented-out old pattern (line 19)
+  6. **tests/verification/custom-content-examples.compile.test.ts** - Compile-time test showing commented-out old pattern (line 157)
+  7. **tests/unit/subraces.test.ts** - Comment explaining why code uses Map directly (line 673)
+  8. **examples/customEquipmentExamples.ts:756** - Has `registerSpellItems()` which is a different function (not a removed registry method)
+- **No actual production code uses the removed methods** - cleanup is complete
 
 ---
 
@@ -809,33 +822,61 @@ The runtime verification confirms that:
 ### Task 8.1: Remove Dead Code
 
 **Sub-tasks:**
-- [ ] Check for unused imports in registry files
-- [ ] Check for unused private methods in registry files
-- [ ] Verify no commented-out code remains
-- [ ] Remove any TODO comments related to removed methods
+- [x] Check for unused imports in registry files
+- [x] Check for unused private methods in registry files
+- [x] Verify no commented-out code remains
+- [x] Remove any TODO comments related to removed methods
+
+**Status:** ✅ COMPLETED
+- All three registry files (SpellRegistry, SkillRegistry, FeatureRegistry) reviewed
+- **Unused imports**: None found - all imports are being used
+- **Unused private methods**: None found - all private methods are actively used
+- **Commented-out code**: No commented-out code in any of the registry files
+- **TODO comments**: No TODO comments related to removed registration methods
+- The cleanup was already completed as part of Tasks 2.1, 3.1, and 4.1
 
 ---
 
 ### Task 8.2: Update Comments and JSDoc
 
 **Sub-tasks:**
-- [ ] Update SpellRegistry class header comment
-- [ ] Update SkillRegistry class header comment
-- [ ] Update FeatureRegistry class header comment
-- [ ] Remove JSDoc for removed methods
-- [ ] Update JSDoc for query methods to clarify they read from EM
+- [x] Update SpellRegistry class header comment
+- [x] Update SkillRegistry class header comment
+- [x] Update FeatureRegistry class header comment
+- [x] Remove JSDoc for removed methods
+- [x] Update JSDoc for query methods to clarify they read from EM
+
+**Status:** ✅ COMPLETED
+- All three registry class headers already updated to emphasize ExtensionManager registration
+- SpellRegistry: "Use ExtensionManager.register('spells', [...]) to register spells"
+- SkillRegistry: "Use ExtensionManager.register('skills', [...]) to add custom skills"
+- FeatureRegistry: "All feature registration is done via ExtensionManager.register()"
+- JSDoc for removed methods was already removed when the methods were deleted (Tasks 2.1, 3.1, 4.1)
+- Query methods already have clear JSDoc explaining they "read from ExtensionManager with caching"
+- invalidateCache() methods have clear examples showing ExtensionManager.register() usage
 
 ---
 
 ### Task 8.3: Final Documentation Review
 
 **Sub-tasks:**
-- [ ] Review DATA_ENGINE_REFERENCE.md for clarity
-- [ ] Review EXTENSIBILITY_GUIDE.md for clarity
-- [ ] Review PREREQUISITES.md for clarity
-- [ ] Review CUSTOM_CONTENT.md for clarity
-- [ ] Review USAGE_IN_OTHER_PROJECTS.md for clarity
-- [ ] Ensure consistent terminology throughout
+- [x] Review DATA_ENGINE_REFERENCE.md for clarity
+- [x] Review EXTENSIBILITY_GUIDE.md for clarity
+- [x] Review PREREQUISITES.md for clarity
+- [x] Review CUSTOM_CONTENT.md for clarity
+- [x] Review USAGE_IN_OTHER_PROJECTS.md for clarity
+- [x] Ensure consistent terminology throughout
+
+**Status:** ✅ COMPLETED
+- All documentation reviewed for clarity and consistency
+- **EXTENSIBILITY_GUIDE.md**: All registration examples use `ExtensionManager.register()`, notes emphasize ExtensionManager as the single source of truth
+- **PREREQUISITES.md**: All examples updated to use `ExtensionManager.register()` directly
+- **CUSTOM_CONTENT.md**: All registration examples use `ExtensionManager.register()`
+- **USAGE_IN_OTHER_PROJECTS.md**: "convenience wrapper" language removed from registry descriptions, examples use ExtensionManager
+- **MIGRATION_GUIDE.md**: Comprehensive migration guide created with before/after examples
+- **Consistent terminology**: All user-facing docs emphasize ExtensionManager.register() for registration
+- **DATA_ENGINE_REFERENCE.md**: Does not exist (documentation consolidated to EXTENSIBILITY_GUIDE.md)
+- **EQUIPMENT_SYSTEM.md**: Correctly describes FeatureRegistry as a convenience wrapper for **querying** (not registration)
 
 ---
 
