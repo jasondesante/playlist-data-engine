@@ -141,7 +141,9 @@ export function registerTestClassFeatures(features: ClassFeature[], options?: { 
 }
 
 /**
- * Register a test racial trait via ExtensionManager and invalidate cache
+ * Register a test racial trait via ExtensionManager
+ *
+ * Note: Cache invalidation is automatic after registration.
  *
  * @param trait - The racial trait to register
  * @param options - Optional registration options for ExtensionManager
@@ -158,19 +160,20 @@ export function registerTestRacialTrait(trait: RacialTrait, options?: { validate
     }
 
     extensionManager.register('racialTraits', [trait], options);
-    featureRegistry.invalidateCache();
+    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
- * Register multiple test racial traits via ExtensionManager and invalidate cache
+ * Register multiple test racial traits via ExtensionManager
+ *
+ * Note: Cache invalidation is automatic after registration.
  *
  * @param traits - Array of racial traits to register
  * @param options - Optional registration options for ExtensionManager
  */
 export function registerTestRacialTraits(traits: RacialTrait[], options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const featureRegistry = FeatureRegistry.getInstance();
 
     extensionManager.register('racialTraits', traits, options);
-    featureRegistry.invalidateCache();
+    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }

@@ -253,20 +253,20 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 18: Clean up registerTestRacialTrait()
 **File:** `tests/helpers/registrationHelpers.ts`
 
-- [ ] Locate `registerTestRacialTrait()` function
-- [ ] Remove `const featureRegistry = FeatureRegistry.getInstance()` declaration
-- [ ] Remove `featureRegistry.invalidateCache()` call at end
-- [ ] Keep duplicate check for existing trait ID
-- [ ] Add comment noting cache invalidation is automatic
+- [x] Locate `registerTestRacialTrait()` function
+- [x] ~~Remove `const featureRegistry = FeatureRegistry.getInstance()` declaration~~ - KEPT (needed for duplicate check)
+- [x] Remove `featureRegistry.invalidateCache()` call at end
+- [x] Keep duplicate check for existing trait ID
+- [x] Add comment noting cache invalidation is automatic
 
 ### Task 19: Clean up registerTestRacialTraits()
 **File:** `tests/helpers/registrationHelpers.ts`
 
-- [ ] Locate `registerTestRacialTraits()` function
-- [ ] Remove `const featureRegistry = FeatureRegistry.getInstance()` declaration
-- [ ] Remove `featureRegistry.invalidateCache()` call at end
-- [ ] Keep duplicate check for existing trait IDs
-- [ ] Add comment noting cache invalidation is automatic
+- [x] Locate `registerTestRacialTraits()` function
+- [x] ~~Remove `const featureRegistry = FeatureRegistry.getInstance()` declaration~~ - NOT PRESENT (function never had it)
+- [x] Remove `featureRegistry.invalidateCache()` call at end
+- [x] Keep duplicate check for existing trait IDs
+- [x] Add comment noting cache invalidation is automatic
 
 ### Task 20: Remove unused imports from registrationHelpers.ts
 **File:** `tests/helpers/registrationHelpers.ts`
