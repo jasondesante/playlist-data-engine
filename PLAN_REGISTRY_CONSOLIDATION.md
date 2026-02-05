@@ -28,23 +28,27 @@
 - `initializeDefaults(category)` initializes all defaults
 - NO delegation calls to registries (direction reversed)
 
-### FeatureRegistry (Convenience Wrapper)
+### FeatureRegistry (Query-Only)
 - **No internal storage** - reads from ExtensionManager
-- **Keeps `registerClassFeature()` and `registerRacialTrait()` methods** as convenience wrappers that delegate to `ExtensionManager.register()`
+- ~~**Keeps `registerClassFeature()` and `registerRacialTrait()` methods** as convenience wrappers~~ → **REMOVED** (use `ExtensionManager.register()` directly)
 - Query methods build indexes from EM data with caching
 - Validation methods delegate to FeatureValidator
+- Public `invalidateCache()` for manual invalidation after direct EM registration
 
-### SkillRegistry (Convenience Wrapper)
+### SkillRegistry (Query-Only)
 - **No internal storage** - reads from ExtensionManager
-- **Keeps `registerSkill()` method** as convenience wrapper that delegates to `ExtensionManager.register()`
+- ~~**Keeps `registerSkill()` method** as convenience wrapper~~ → **REMOVED** (use `ExtensionManager.register()` directly)
 - Query methods build indexes from EM data with caching
 - Validation methods delegate to SkillValidator
+- Public `invalidateCache()` for manual invalidation after direct EM registration
 
-### Registration Pattern (Same as SpellRegistry)
-Two ways to register, both end up in ExtensionManager:
-1. `ExtensionManager.getInstance().register('skills', [skillData])` — direct
-2. `SkillRegistry.getInstance().registerSkill(skillData)` — convenience wrapper
-3. Same for features with `classFeatures` and `racialTraits`
+### Registration Pattern (After Follow-Up)
+**ONE way to register** (canonical pattern):
+1. `ExtensionManager.getInstance().register('skills', [skillData])` — ONLY way
+2. Same for `classFeatures` and `racialTraits`
+3. After direct EM registration, call `registry.invalidateCache()` if needed
+
+**Note:** This is the final state after the follow-up work in `PLAN_REMOVE_REDUNDANT_REGISTRY_METHODS.md`. The original plan kept convenience wrappers, but they were later removed to simplify the API.
 
 ---
 
@@ -1349,12 +1353,75 @@ All resolved. Ready to implement.
 
 ### ✅ Breaking Changes
 - Remove `initializeDefaults()` from registries (use `ExtensionManager.initializeDefaults(category, data)`)
-- Registry `register*()` methods now delegate to `ExtensionManager.register()` (same API, different implementation)
+- ~~Registry `register*()` methods now delegate to `ExtensionManager.register()`~~ → **REMOVED entirely** (use `ExtensionManager.register()` directly)
 - Remove `reset()`, `isInitialized()` from registries (use ExtensionManager's methods)
 - ExtensionManager no longer delegates to registries (direction reversed - registries delegate TO EM)
+- **Follow-up:** All convenience wrapper registration methods (`registerSpell()`, `registerSkill()`, etc.) removed - see "Follow-Up Work" section below
 
 ### ✅ Non-Breaking
 - Query methods remain (with same API)
 - Validation methods remain (with same API)
 - Helper methods remain (with same API)
 - All existing queries work, just read from EM instead of internal Maps
+
+---
+
+## Follow-Up Work: Remove Redundant Registry Methods
+
+**Status:** ✅ Completed (see `PLAN_REMOVE_REDUNDANT_REGISTRY_METHODS.md`)
+
+After completing the registry consolidation (convenience wrapper pattern), a follow-up project was undertaken to **remove the convenience wrapper registration methods entirely** in favor of using `ExtensionManager.register()` directly.
+
+### What Changed
+
+The original plan (above) kept these methods as convenience wrappers:
+- `SpellRegistry.registerSpell()`, `registerSpells()`, `registerClassSpellList()`
+- `SkillRegistry.registerSkill()`, `registerSkills()`
+- `FeatureRegistry.registerClassFeature()`, `registerClassFeatures()`, `registerRacialTrait()`, `registerRacialTraits()`
+
+The follow-up work **removed these methods entirely** because:
+1. They were redundant - `ExtensionManager.register()` is the single source of truth
+2. Having two ways to register content caused confusion
+3. The API is simpler with one canonical registration method
+
+### Current State (After Follow-Up)
+
+**Registration is now done EXCLUSIVELY via:**
+```typescript
+ExtensionManager.getInstance().register('spells', [...]);
+ExtensionManager.getInstance().register('skills', [...]);
+ExtensionManager.getInstance().register('classFeatures', [...]);
+ExtensionManager.getInstance().register('racialTraits', [...]);
+```
+
+**Cache invalidation after direct EM registration:**
+```typescript
+SpellRegistry.getInstance().invalidateCache();
+SkillRegistry.getInstance().invalidateCache();
+FeatureRegistry.getInstance().invalidateCache();
+```
+
+**Registries now ONLY provide:**
+- Query methods (read from ExtensionManager with caching)
+- Validation methods (delegate to validators)
+- Cache invalidation (for manual use after direct EM registration)
+
+### Documentation
+
+See `PLAN_REMOVE_REDUNDANT_REGISTRY_METHODS.md` for complete details on the follow-up work, including:
+- Migration guide (`docs/MIGRATION_GUIDE.md`)
+- Test helper functions (`tests/helpers/registrationHelpers.ts`)
+- ESLint rule to prevent using removed methods (`eslint-plugins/no-removed-registry-methods.js`)
+
+### Success Criteria (Updated)
+
+All success criteria from the original plan remain satisfied, plus:
+
+1. [x] All registration methods removed from SpellRegistry, SkillRegistry, FeatureRegistry
+2. [x] ExtensionManager.register() is the ONLY way to register content
+3. [x] Query methods still work correctly via ExtensionManager data
+4. [x] Cache invalidation is public for manual use after direct EM registration
+5. [x] All tests updated to use ExtensionManager.register() or test helpers
+6. [x] All documentation updated to emphasize ExtensionManager
+7. [x] ESLint rule prevents regression of removed method usage
+8. [x] Migration guide provided for users

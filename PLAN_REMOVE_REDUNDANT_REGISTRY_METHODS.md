@@ -909,9 +909,17 @@ The runtime verification confirms that:
 ### Task 9.2: Update PLAN_REGISTRY_CONSOLIDATION.md
 
 **Sub-tasks:**
-- [ ] Add note about this follow-up work
-- [ ] Link to this plan file
-- [ ] Update success criteria if needed
+- [x] Add note about this follow-up work
+- [x] Link to this plan file
+- [x] Update success criteria if needed
+
+**Status:** ✅ COMPLETED
+- Added "Follow-Up Work: Remove Redundant Registry Methods" section to PLAN_REGISTRY_CONSOLIDATION.md
+- Linked to PLAN_REMOVE_REDUNDANT_REGISTRY_METHODS.md for complete details
+- Updated success criteria to include removal of registration methods
+- Updated "Target State" section to reflect final state (no convenience wrappers)
+- Updated "Breaking Changes" section to note the removal of register*() methods
+- Build passes successfully with no TypeScript errors
 
 ---
 
