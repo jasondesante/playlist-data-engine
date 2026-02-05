@@ -3,18 +3,18 @@
  * Runtime Verification Test Script
  *
  * This script verifies that registration via ExtensionManager works correctly
- * after the removal of redundant registry methods.
+ * with automatic cache invalidation.
  *
  * Usage:
  *   npx tsx tests/runtime-verification/verify-registrations.ts
  *
  * This script will:
- * 1. Register a spell via ExtensionManager
- * 2. Register a skill via ExtensionManager
- * 3. Register a class feature via ExtensionManager
- * 4. Register a racial trait via ExtensionManager
+ * 1. Register a spell via ExtensionManager (auto-invalidates SpellRegistry cache)
+ * 2. Register a skill via ExtensionManager (auto-invalidates SkillRegistry cache)
+ * 3. Register a class feature via ExtensionManager (auto-invalidates FeatureRegistry cache)
+ * 4. Register a racial trait via ExtensionManager (auto-invalidates FeatureRegistry cache)
  * 5. Verify query methods work after registration
- * 6. Verify cache invalidation works
+ * 6. Verify automatic cache invalidation works
  * 7. Verify getRegistryStats() counts correctly
  */
 
@@ -114,15 +114,11 @@ async function main(): Promise<void> {
         const initialSpellCount = spellRegistry.getSpellCount();
         logInfo(`Initial spell count: ${initialSpellCount}`);
 
-        // Register via ExtensionManager
+        // Register via ExtensionManager (cache invalidation is automatic)
         manager.register('spells', [testSpell]);
         logInfo('Registered test spell via ExtensionManager');
 
-        // Invalidate cache (critical step!)
-        spellRegistry.invalidateCache();
-        logInfo('Called invalidateCache()');
-
-        // Verify spell is accessible
+        // Verify spell is accessible (cache automatically invalidated)
         const retrievedSpell = spellRegistry.getSpell('test_frostbolt');
         if (retrievedSpell && retrievedSpell.name === 'Frostbolt') {
             logSuccess('Spell registration successful');
@@ -178,15 +174,11 @@ async function main(): Promise<void> {
         const initialSkillCount = skillRegistry.getSkillCount();
         logInfo(`Initial skill count: ${initialSkillCount}`);
 
-        // Register via ExtensionManager
+        // Register via ExtensionManager (cache invalidation is automatic)
         manager.register('skills', [testSkill]);
         logInfo('Registered test skill via ExtensionManager');
 
-        // Invalidate cache
-        skillRegistry.invalidateCache();
-        logInfo('Called invalidateCache()');
-
-        // Verify skill is accessible
+        // Verify skill is accessible (cache automatically invalidated)
         const retrievedSkill = skillRegistry.getSkill('test_arcana_theory');
         if (retrievedSkill && retrievedSkill.name === 'Arcana Theory') {
             logSuccess('Skill registration successful');
@@ -242,15 +234,11 @@ async function main(): Promise<void> {
         const initialFeatureStats = featureRegistry.getRegistryStats();
         logInfo(`Initial class feature count: ${initialFeatureStats.totalClassFeatures}`);
 
-        // Register via ExtensionManager
+        // Register via ExtensionManager (cache invalidation is automatic)
         manager.register('classFeatures', [testClassFeature]);
         logInfo('Registered test class feature via ExtensionManager');
 
-        // Invalidate cache
-        featureRegistry.invalidateCache();
-        logInfo('Called invalidateCache()');
-
-        // Verify feature is accessible
+        // Verify feature is accessible (cache automatically invalidated)
         const retrievedFeature = featureRegistry.getClassFeatureById('test_wild_surge');
         if (retrievedFeature && retrievedFeature.name === 'Wild Surge') {
             logSuccess('Class feature registration successful');
@@ -296,15 +284,11 @@ async function main(): Promise<void> {
         const initialTraitStats = featureRegistry.getRegistryStats();
         logInfo(`Initial racial trait count: ${initialTraitStats.totalRacialTraits}`);
 
-        // Register via ExtensionManager
+        // Register via ExtensionManager (cache invalidation is automatic)
         manager.register('racialTraits', [testRacialTrait]);
         logInfo('Registered test racial trait via ExtensionManager');
 
-        // Invalidate cache
-        featureRegistry.invalidateCache();
-        logInfo('Called invalidateCache()');
-
-        // Verify trait is accessible
+        // Verify trait is accessible (cache automatically invalidated)
         const retrievedTrait = featureRegistry.getRacialTraitById('test_dragon_fury');
         if (retrievedTrait && retrievedTrait.name === 'Dragon Fury') {
             logSuccess('Racial trait registration successful');
@@ -341,24 +325,24 @@ async function main(): Promise<void> {
     }
 
     // ========================================
-    // Test 5: Cache Invalidation Verification
+    // Test 5: Automatic Cache Invalidation Verification
     // ========================================
-    logSection('Test 5: Cache Invalidation Behavior');
+    logSection('Test 5: Automatic Cache Invalidation Behavior');
 
     try {
-        // Test that cache is stale before invalidation
-        const beforeInvalidation = skillRegistry.getAllSkills();
-        const hasBefore = beforeInvalidation.some(s => s.id === 'test_arcana_theory');
+        // Verify that the first skill is already in cache (from Test 2)
+        const beforeRegistration = skillRegistry.getAllSkills();
+        const hasFirstSkill = beforeRegistration.some(s => s.id === 'test_arcana_theory');
 
-        if (hasBefore) {
-            logSuccess('Cache contains custom skill after invalidation');
+        if (hasFirstSkill) {
+            logSuccess('Cache contains custom skill from Test 2 (auto-invalidated during registration)');
             testsPassed++;
         } else {
-            logError('Cache does not contain custom skill (should have after invalidateCache())');
+            logError('Cache should contain custom skill from Test 2');
             testsFailed++;
         }
 
-        // Register another skill without invalidating cache
+        // Register another skill - cache invalidation is automatic
         const testSkill2 = {
             id: 'test_nature_lore',
             name: 'Nature Lore',
@@ -371,36 +355,48 @@ async function main(): Promise<void> {
         manager.register('skills', [testSkill2]);
         logInfo('Registered second skill via ExtensionManager');
 
-        // Check if cache is stale (should NOT contain new skill yet)
-        const staleCache = skillRegistry.getAllSkills();
-        const hasNewSkillInStaleCache = staleCache.some(s => s.id === 'test_nature_lore');
+        // Check if cache is automatically refreshed (should contain new skill immediately)
+        const afterRegistration = skillRegistry.getAllSkills();
+        const hasNewSkillAfterRegistration = afterRegistration.some(s => s.id === 'test_nature_lore');
 
-        if (!hasNewSkillInStaleCache) {
-            logSuccess('Cache is stale before invalidateCache() (expected behavior)');
+        if (hasNewSkillAfterRegistration) {
+            logSuccess('Cache is automatically refreshed after register() (automatic invalidation works)');
             testsPassed++;
         } else {
-            logError('Cache should be stale before invalidateCache()');
+            logError('Cache should be automatically refreshed after register()');
             testsFailed++;
         }
 
-        // Now invalidate cache
-        skillRegistry.invalidateCache();
-        logInfo('Called invalidateCache()');
+        // Verify both skills are present
+        const hasBothSkills = afterRegistration.some(s => s.id === 'test_arcana_theory') &&
+                              afterRegistration.some(s => s.id === 'test_nature_lore');
 
-        // Check if fresh cache contains new skill
-        const freshCache = skillRegistry.getAllSkills();
-        const hasNewSkillInFreshCache = freshCache.some(s => s.id === 'test_nature_lore');
-
-        if (hasNewSkillInFreshCache) {
-            logSuccess('Cache is fresh after invalidateCache()');
+        if (hasBothSkills) {
+            logSuccess('Both custom skills are accessible via getAllSkills()');
             testsPassed++;
         } else {
-            logError('Cache should be fresh after invalidateCache()');
+            logError('Both custom skills should be accessible');
+            testsFailed++;
+        }
+
+        // Verify manual invalidateCache() is still safe (idempotent)
+        skillRegistry.invalidateCache();
+        logInfo('Called manual invalidateCache() to verify idempotent behavior');
+
+        const afterManualInvalidation = skillRegistry.getAllSkills();
+        const stillHasBothSkills = afterManualInvalidation.some(s => s.id === 'test_arcana_theory') &&
+                                   afterManualInvalidation.some(s => s.id === 'test_nature_lore');
+
+        if (stillHasBothSkills) {
+            logSuccess('Manual invalidateCache() is safe and idempotent');
+            testsPassed++;
+        } else {
+            logError('Manual invalidateCache() should be safe (idempotent)');
             testsFailed++;
         }
 
     } catch (error) {
-        logError(`Cache invalidation test failed: ${error}`);
+        logError(`Automatic cache invalidation test failed: ${error}`);
         testsFailed++;
     }
 

@@ -441,9 +441,17 @@ All 12 tests pass. Build successful. Cache invalidation is now automatic via `Ex
 ### Task 33: Clean up verify-registrations.ts
 **File:** `tests/runtime-verification/verify-registrations.ts`
 
-- [ ] Search for `invalidateCache()` calls
-- [ ] Remove unnecessary `invalidateCache()` calls
-- [ ] Run verification script to ensure it works
+- [x] Search for `invalidateCache()` calls
+- [x] Remove unnecessary `invalidateCache()` calls
+- [x] Run verification script to ensure it works
+
+**Summary:** Removed 4 redundant `invalidateCache()` calls (lines 122, 186, 250, 304). Rewrote Test 5 (lines 346-405) to test automatic cache invalidation instead of testing stale cache behavior. The test now verifies:
+1. Cache contains skills from previous registrations (auto-invalidated)
+2. Cache is automatically refreshed after `register()` call
+3. Both skills are accessible via `getAllSkills()`
+4. Manual `invalidateCache()` is still safe (idempotent behavior)
+
+All 20 tests pass. The script now correctly validates the new automatic cache invalidation behavior. Updated file header comment to reflect automatic invalidation.
 
 ---
 
