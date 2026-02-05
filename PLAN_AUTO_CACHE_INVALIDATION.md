@@ -215,11 +215,11 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 14: Clean up registerTestSpell()
 **File:** `tests/helpers/registrationHelpers.ts`
 
-- [ ] Locate `registerTestSpell()` function
-- [ ] Remove `const spellRegistry = SpellRegistry.getInstance()` declaration
-- [ ] Remove `spellRegistry.invalidateCache()` call at end
-- [ ] Keep duplicate check for existing spell ID
-- [ ] Add comment noting cache invalidation is automatic
+- [x] Locate `registerTestSpell()` function
+- [x] Remove `const spellRegistry = SpellRegistry.getInstance()` declaration
+- [x] Remove `spellRegistry.invalidateCache()` call at end
+- [x] Keep duplicate check for existing spell ID
+- [x] Add comment noting cache invalidation is automatic
 
 ### Task 15: Clean up registerTestSpells()
 **File:** `tests/helpers/registrationHelpers.ts`

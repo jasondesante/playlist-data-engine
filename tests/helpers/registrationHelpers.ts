@@ -63,17 +63,28 @@ export function registerTestSkills(skills: CustomSkill[], options?: { validate?:
 }
 
 /**
- * Register a test spell via ExtensionManager and invalidate cache
+ * Register a test spell via ExtensionManager
+ *
+ * Note: Cache invalidation is automatic after registration.
  *
  * @param spell - The spell to register
  * @param options - Optional registration options for ExtensionManager
+ *
+ * @example
+ * ```ts
+ * registerTestSpell({
+ *     id: 'fireball',
+ *     name: 'Fireball',
+ *     level: 3,
+ *     school: 'Evocation'
+ * });
+ * ```
  */
 export function registerTestSpell(spell: Spell, options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const spellRegistry = SpellRegistry.getInstance();
 
     extensionManager.register('spells', [spell], options);
-    spellRegistry.invalidateCache();
+    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
