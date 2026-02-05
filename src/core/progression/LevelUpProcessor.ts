@@ -2,8 +2,8 @@
  * LevelUpProcessor - Handles character leveling mechanics
  * Based on specs/001-core-engine/SPEC.md and D&D 5e rules
  *
- * Uses FeatureRegistry for class feature lookup.
- * - Replaces hardcoded getClassFeaturesForLevel() with FeatureRegistry lookup
+ * Uses FeatureQuery for class feature lookup.
+ * - Replaces hardcoded getClassFeaturesForLevel() with FeatureQuery lookup
  * - Validates prerequisite chains on level up
  * - Applies new feature effects when leveling up
  * - Handles conditional features (player choice)
@@ -14,7 +14,7 @@ import type { CharacterSheet, Class as CharacterClass, Ability, GameMode } from 
 import { CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
 import { SeededRNG } from '../../utils/random.js';
 import type { StatManager } from './stat/StatManager.js';
-import { FeatureRegistry } from '../features/FeatureRegistry.js';
+import { FeatureQuery } from '../features/FeatureQuery.js';
 import { FeatureEffectApplier } from '../features/FeatureEffectApplier.js';
 import { EquipmentEffectApplier } from '../equipment/EquipmentEffectApplier.js';
 import type { ClassFeature } from '../features/FeatureTypes.js';
@@ -210,7 +210,7 @@ export class LevelUpProcessor {
             benefits.newSpellSlots = spellSlots;
         }
 
-        // Get class features for this level using FeatureRegistry
+        // Get class features for this level using FeatureQuery
         const featuresGained = this.getClassFeaturesForLevel(character, character.class, newLevel);
         if (featuresGained.length > 0) {
             benefits.classFeatures = featuresGained.map(f => f.id);
@@ -239,7 +239,7 @@ export class LevelUpProcessor {
 
     /**
      * Get class features gained at a specific level for a character
-     * Uses FeatureRegistry to look up features and validates prerequisites
+     * Uses FeatureQuery to look up features and validates prerequisites
      *
      * @param character - The character to check features for
      * @param characterClass - The character class
@@ -251,9 +251,9 @@ export class LevelUpProcessor {
         characterClass: CharacterClass,
         level: number
     ): ClassFeature[] {
-        const registry = FeatureRegistry.getInstance();
+        const registry = FeatureQuery.getInstance();
 
-        // Get features for this class at this level from FeatureRegistry
+        // Get features for this class at this level from FeatureQuery
         const features = registry.getFeaturesForLevel(characterClass, level);
 
         // Validate prerequisites for each feature
@@ -653,7 +653,7 @@ export class LevelUpProcessor {
             benefits.newSpellSlots = spellSlots;
         }
 
-        // Get class features for this level using FeatureRegistry
+        // Get class features for this level using FeatureQuery
         const featuresGained = this.getClassFeaturesForLevel(character, character.class, newLevel);
         if (featuresGained.length > 0) {
             benefits.classFeatures = featuresGained.map(f => f.id);

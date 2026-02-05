@@ -16,7 +16,7 @@ import type {
     EquipmentSkill,
     EffectApplicationResult
 } from '../types/Equipment.js';
-import { FeatureRegistry } from '../features/FeatureRegistry.js';
+import { FeatureQuery } from '../features/FeatureQuery.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
 import { isAbility, applyAbilityScoreBonus, applySkillProficiencyWithHierarchy } from '../utils/EffectApplierUtils.js';
 
@@ -586,7 +586,7 @@ export class EquipmentEffectApplier {
             if (typeof featureRef === 'string') {
                 // Reference to registry feature
                 // Try both class features and racial traits
-                const registry = FeatureRegistry.getInstance();
+                const registry = FeatureQuery.getInstance();
                 const classFeature = registry.getClassFeatureById(featureRef);
                 const racialTrait = !classFeature ? registry.getRacialTraitById(featureRef) : undefined;
                 const feature: ClassFeature | RacialTrait | undefined = classFeature || racialTrait;

@@ -13,7 +13,7 @@ import { SpellManager } from './SpellManager.js';
 import { EquipmentGenerator } from './EquipmentGenerator.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureFeatureDefaultsInitialized } from '../extensions/index.js';
-import { FeatureRegistry } from '../features/FeatureRegistry.js';
+import { FeatureQuery } from '../features/FeatureQuery.js';
 import { FeatureEffectApplier } from '../features/FeatureEffectApplier.js';
 import { EquipmentEffectApplier } from '../equipment/EquipmentEffectApplier.js';
 
@@ -280,7 +280,7 @@ export class CharacterGenerator {
         ensureFeatureDefaultsInitialized();
 
         // Get the feature registry
-        const featureRegistry = FeatureRegistry.getInstance();
+        const featureRegistry = FeatureQuery.getInstance();
 
         // Register custom extensions if provided
         if (options.extensions) {
@@ -401,10 +401,10 @@ export class CharacterGenerator {
         // Generate character appearance
         const appearance = AppearanceGenerator.generate(seed, suggestedClass, audioProfile);
 
-        // Get class features from FeatureRegistry (feature IDs only)
+        // Get class features from FeatureQuery (feature IDs only)
         const classFeatures = featureRegistry.getClassFeatures(suggestedClass, level);
 
-        // Get racial traits from FeatureRegistry (trait IDs only)
+        // Get racial traits from FeatureQuery (trait IDs only)
         // Filter by subrace if character has one
         const racialTraits = subrace
             ? featureRegistry.getRacialTraitsForSubrace(race, subrace)

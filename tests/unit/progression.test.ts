@@ -9,7 +9,7 @@ import { LevelUpProcessor } from '../../src/core/progression/LevelUpProcessor';
 import { XPCalculator } from '../../src/core/progression/XPCalculator';
 import type { CharacterSheet, AbilityScores } from '../../src/core/types/Character';
 import type { PlaylistTrack } from '../../src/core/types/Playlist';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 
@@ -388,8 +388,8 @@ describe('LevelUpProcessor (T070)', () => {
     let mockCharacter: CharacterSheet;
 
     beforeEach(() => {
-        // Initialize FeatureRegistry with default features for tests
-        const registry = FeatureRegistry.getInstance();
+        // Initialize FeatureQuery with default features for tests
+        const registry = FeatureQuery.getInstance();
         const extensionManager = ExtensionManager.getInstance();
         if (!registry.isInitialized()) {
             // Both class features and racial traits are initialized via ExtensionManager

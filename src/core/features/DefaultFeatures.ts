@@ -2,7 +2,7 @@
  * Default Features and Traits
  *
  * Contains all default D&D 5e class features and racial traits
- * for initializing the FeatureRegistry.
+ * for initializing the FeatureQuery.
  */
 
 import type { ClassFeature, RacialTrait } from './FeatureTypes.js';

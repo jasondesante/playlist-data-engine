@@ -1,26 +1,26 @@
 /**
- * Integration test for FeatureRegistry and ExtensionManager integration
+ * Integration test for FeatureQuery and ExtensionManager integration
  * Phase 8, Task 8.2: Add Integration Tests for Class Features
  *
- * Tests the interaction between FeatureRegistry (convenience wrapper) and
+ * Tests the interaction between FeatureQuery (convenience wrapper) and
  * ExtensionManager (single source of truth) for class features.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { initializeFeatureDefaults } from '../../src/core/extensions/initializeDefaults.js';
 import { DEFAULT_CLASS_FEATURES } from '../../src/core/features/DefaultFeatures.js';
 import { registerTestClassFeature, registerTestClassFeatures } from '../helpers/registrationHelpers.js';
 import type { ClassFeature } from '../../src/core/features/FeatureTypes.js';
 
-describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Features', () => {
-    let registry: FeatureRegistry;
+describe('Phase 8.2: FeatureQuery/ExtensionManager Integration for Class Features', () => {
+    let registry: FeatureQuery;
     let manager: ExtensionManager;
 
     beforeEach(() => {
-        // Get FeatureRegistry and ExtensionManager instances
-        registry = FeatureRegistry.getInstance();
+        // Get FeatureQuery and ExtensionManager instances
+        registry = FeatureQuery.getInstance();
         manager = ExtensionManager.getInstance();
 
         // Reset instances for clean state
@@ -30,8 +30,8 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
         initializeFeatureDefaults();
     });
 
-    describe('Task 8.2.1: Register via ExtensionManager and FeatureRegistry sees it', () => {
-        it('should register via ExtensionManager and FeatureRegistry.getAllClassFeatures() sees it', () => {
+    describe('Task 8.2.1: Register via ExtensionManager and FeatureQuery sees it', () => {
+        it('should register via ExtensionManager and FeatureQuery.getAllClassFeatures() sees it', () => {
             // Create a custom class feature
             const customFeature: ClassFeature = {
                 id: 'test_custom_berserker_rage',
@@ -47,7 +47,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             // Register via ExtensionManager
             manager.register('classFeatures', [customFeature]);
 
-            // Verify FeatureRegistry sees it via getAllClassFeatures()
+            // Verify FeatureQuery sees it via getAllClassFeatures()
             const allClassFeatures = registry.getAllClassFeatures();
             expect(allClassFeatures.has('Barbarian')).toBe(true);
 
@@ -242,8 +242,8 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             // Verify we have the default features from ExtensionManager
             expect(allFeatures.size).toBeGreaterThan(0);
 
-            // Check that getRegistryStats includes default features
-            const stats = registry.getRegistryStats();
+            // Check that getQueryStats includes default features
+            const stats = registry.getQueryStats();
             expect(stats.totalClassFeatures).toBeGreaterThanOrEqual(DEFAULT_CLASS_FEATURES.length);
         });
     });
@@ -332,7 +332,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
     describe('Task 8.2.4: Cache invalidation works after EM registration', () => {
         it('should invalidate cache after ExtensionManager registration', () => {
             // Get initial state - build cache
-            const initialStats = registry.getRegistryStats();
+            const initialStats = registry.getQueryStats();
             const initialBarbarianCount = registry.getClassFeatures('Barbarian', 20).length;
 
             // Register new feature via ExtensionManager
@@ -349,7 +349,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             manager.register('classFeatures', [newFeature]);
 
             // Verify new feature is visible (cache auto-invalidated by register())
-            const newStats = registry.getRegistryStats();
+            const newStats = registry.getQueryStats();
             expect(newStats.totalClassFeatures).toBe(initialStats.totalClassFeatures + 1);
 
             const newBarbarianFeatures = registry.getClassFeatures('Barbarian', 20);
@@ -386,7 +386,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
         });
 
         it('should handle multiple cache invalidations', () => {
-            let featureCount = registry.getRegistryStats().totalClassFeatures;
+            let featureCount = registry.getQueryStats().totalClassFeatures;
 
             // Register multiple features in batches with cache invalidation
             for (let i = 0; i < 3; i++) {
@@ -402,7 +402,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
 
                 manager.register('classFeatures', [feature]);
 
-                const newStats = registry.getRegistryStats();
+                const newStats = registry.getQueryStats();
                 expect(newStats.totalClassFeatures).toBe(++featureCount);
             }
 
@@ -432,11 +432,11 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             const emFeatures = manager.get('classFeatures') as ClassFeature[];
             expect(emFeatures.some(f => f.id === 'test_wrapper_registration')).toBe(true);
 
-            // Verify FeatureRegistry can still access it
+            // Verify FeatureQuery can still access it
             expect(registry.getClassFeatureById('test_wrapper_registration')).toBeDefined();
         });
 
-        it('should validate features during registration via FeatureRegistry', () => {
+        it('should validate features during registration via FeatureQuery', () => {
             // Try to register invalid feature (missing required fields)
             const invalidFeature = {
                 id: 'test_invalid'
@@ -462,7 +462,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             // Register via ExtensionManager
             manager.register('classFeatures', [feature]);
 
-            // Try to register same ID via FeatureRegistry
+            // Try to register same ID via FeatureQuery
             expect(() => {
                 registerTestClassFeature(feature);
             }).toThrow(/already exists/);
@@ -491,8 +491,8 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             expect(registry.getClassFeatureById('test_persistence')).toBeDefined();
         });
 
-        it('should correctly count class features in getRegistryStats', () => {
-            const initialStats = registry.getRegistryStats();
+        it('should correctly count class features in getQueryStats', () => {
+            const initialStats = registry.getQueryStats();
 
             // Register features for an existing class
             const newClassFeatures: ClassFeature[] = [
@@ -518,7 +518,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
 
             manager.register('classFeatures', newClassFeatures);
 
-            const newStats = registry.getRegistryStats();
+            const newStats = registry.getQueryStats();
             expect(newStats.totalClassFeatures).toBe(initialStats.totalClassFeatures + 2);
         });
     });

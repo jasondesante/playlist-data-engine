@@ -104,12 +104,12 @@ Skill prerequisites are validated automatically during:
 
 1. **Skill Registration**: Schema validation ensures prerequisite structure is valid
 2. **Skill Assignment**: During character generation, skills with unmet prerequisites are filtered out
-3. **Manual Validation**: Use `SkillValidator.validateSkillPrerequisites()` or `SkillRegistry.validatePrerequisites()`
+3. **Manual Validation**: Use `SkillValidator.validateSkillPrerequisites()` or `SkillQuery.validatePrerequisites()`
 
 ### Example Skill with Prerequisites
 
 ```typescript
-import { SkillRegistry } from 'playlist-data-engine';
+import { SkillQuery } from 'playlist-data-engine';
 
 // Advanced skill requiring a specific feature
 const dragonSmithing = {
@@ -262,7 +262,7 @@ interface FeaturePrerequisite {
 
 ### Validation
 
-Feature prerequisites are validated via `FeatureRegistry.validatePrerequisites()` which checks:
+Feature prerequisites are validated via `FeatureQuery.validatePrerequisites()` which checks:
 
 - Level requirement
 - Ability scores
@@ -277,7 +277,7 @@ Feature prerequisites are validated via `FeatureRegistry.validatePrerequisites()
 ### Example Feature with Skill/Spell Prerequisites
 
 ```typescript
-import { FeatureRegistry } from 'playlist-data-engine';
+import { FeatureQuery } from 'playlist-data-engine';
 
 const arcaneMastery = {
     id: 'arcane_mastery',
@@ -308,7 +308,7 @@ ExtensionManager.getInstance().register('classFeatures', [arcaneMastery]);
 
 Different validators return slightly different result types:
 
-#### Feature ValidationResult (FeatureRegistry)
+#### Feature ValidationResult (FeatureQuery)
 
 ```typescript
 interface ValidationResult {
@@ -347,12 +347,12 @@ interface SpellValidationResult {
 }
 ```
 
-**Note**: FeatureRegistry's `ValidationResult` includes both `unmet` and `errors` (optional), while SkillValidator and SpellValidator return `SkillValidationResult` and `SpellValidationResult` with a required `errors` array only.
+**Note**: FeatureQuery's `ValidationResult` includes both `unmet` and `errors` (optional), while SkillValidator and SpellValidator return `SkillValidationResult` and `SpellValidationResult` with a required `errors` array only.
 
 ### Skill Validation
 
 ```typescript
-import { SkillValidator, SkillRegistry } from 'playlist-data-engine';
+import { SkillValidator, SkillQuery } from 'playlist-data-engine';
 
 // Direct validation
 const result = SkillValidator.validateSkillPrerequisites(
@@ -361,7 +361,7 @@ const result = SkillValidator.validateSkillPrerequisites(
 );
 
 // Via registry
-const result2 = SkillRegistry.getInstance().validatePrerequisites(skill, character);
+const result2 = SkillQuery.getInstance().validatePrerequisites(skill, character);
 
 if (!result.valid) {
     console.log('Unmet prerequisites:', result.errors);
@@ -390,13 +390,13 @@ if (!result.valid) {
 ### Feature Validation
 
 ```typescript
-import { FeatureRegistry } from 'playlist-data-engine';
+import { FeatureQuery } from 'playlist-data-engine';
 
-const registry = FeatureRegistry.getInstance();
+const registry = FeatureQuery.getInstance();
 
 const result = registry.validatePrerequisites(feature, character);
 
-// Access unmet prerequisites (FeatureRegistry-specific)
+// Access unmet prerequisites (FeatureQuery-specific)
 if (!result.valid) {
     console.log('Unmet prerequisites:', result.unmet || result.errors);
 }
@@ -444,7 +444,7 @@ During runtime validation (when checking if a character meets prerequisites):
 ### Complete Example: Dragon-Themed Content
 
 ```typescript
-import { SkillRegistry, FeatureRegistry, ExtensionManager } from 'playlist-data-engine';
+import { SkillQuery, FeatureQuery, ExtensionManager } from 'playlist-data-engine';
 
 // 1. Register a custom race with subraces
 const manager = ExtensionManager.getInstance();
@@ -609,13 +609,13 @@ const masterHerbalist = {
 - `validateSpellPrerequisites(prerequisites, character)` - Validate spell prerequisites against a character
 - `validateSpell(spell)` - Validate spell schema including prerequisites
 
-### FeatureRegistry
+### FeatureQuery
 
 - `validatePrerequisites(feature, character)` - Validate feature prerequisites
 - `meetsPrerequisites(feature, character)` - Boolean check if prerequisites are met
 - `getRacialTraitsForSubrace(race, subrace)` - Get traits for a specific subrace
 
-### SkillRegistry
+### SkillQuery
 
 - `validatePrerequisites(skill, character)` - Validate skill prerequisites
 

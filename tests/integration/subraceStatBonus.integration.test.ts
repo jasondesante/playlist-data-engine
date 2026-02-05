@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { initializeAllDefaults } from '../../src/core/extensions/initializeDefaults.js';
@@ -11,7 +11,7 @@ import type { AudioProfile } from '../../src/core/types/AudioProfile.js';
 import type { PlaylistTrack } from '../../src/core/types/Playlist.js';
 
 describe('Subrace Stat Bonus Application', () => {
-    let featureRegistry: FeatureRegistry;
+    let featureRegistry: FeatureQuery;
     let extensionManager: ExtensionManager;
 
     function createMockAudioProfile(): AudioProfile {
@@ -54,11 +54,11 @@ describe('Subrace Stat Bonus Application', () => {
         // Initialize all defaults including race data
         initializeAllDefaults();
 
-        featureRegistry = FeatureRegistry.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
     });
 
     afterEach(() => {
-        featureRegistry.reset();
+        featureRegistry.clearQueryCache();
         extensionManager.resetAll();
     });
 

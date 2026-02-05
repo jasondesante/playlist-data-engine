@@ -7,8 +7,8 @@
  */
 
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
 import type { Spell } from '../../src/utils/constants.js';
 import type { ClassFeature, RacialTrait } from '../../src/core/features/FeatureTypes.js';
@@ -35,9 +35,9 @@ import type { ClassFeature, RacialTrait } from '../../src/core/features/FeatureT
  */
 export function registerTestSkill(skill: CustomSkill, options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const skillRegistry = SkillRegistry.getInstance();
+    const skillRegistry = SkillQuery.getInstance();
 
-    // Check for duplicate ID to maintain test behavior from old SkillRegistry.registerSkill()
+    // Check for duplicate ID to maintain test behavior from old SkillQuery.registerSkill()
     const existing = skillRegistry.getSkill(skill.id);
     if (existing) {
         throw new Error(`Skill with ID "${skill.id}" already exists`);
@@ -112,9 +112,9 @@ export function registerTestSpells(spells: Spell[], options?: { validate?: boole
  */
 export function registerTestClassFeature(feature: ClassFeature, options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const featureRegistry = FeatureRegistry.getInstance();
+    const featureRegistry = FeatureQuery.getInstance();
 
-    // Check for duplicate ID to maintain test behavior from old FeatureRegistry.registerClassFeature()
+    // Check for duplicate ID to maintain test behavior from old FeatureQuery.registerClassFeature()
     const existing = featureRegistry.getClassFeatureById(feature.id);
     if (existing) {
         throw new Error(`Class feature with ID "${feature.id}" already exists`);
@@ -150,9 +150,9 @@ export function registerTestClassFeatures(features: ClassFeature[], options?: { 
  */
 export function registerTestRacialTrait(trait: RacialTrait, options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const featureRegistry = FeatureRegistry.getInstance();
+    const featureRegistry = FeatureQuery.getInstance();
 
-    // Check for duplicate ID to maintain test behavior from old FeatureRegistry.registerRacialTrait()
+    // Check for duplicate ID to maintain test behavior from old FeatureQuery.registerRacialTrait()
     const existing = featureRegistry.getRacialTraitById(trait.id);
     if (existing) {
         throw new Error(`Racial trait with ID "${trait.id}" already exists`);

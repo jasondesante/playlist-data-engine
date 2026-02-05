@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SkillValidator } from '../../src/core/skills/SkillValidator.js';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { SkillAssigner } from '../../src/core/generation/SkillAssigner.js';
 import { SeededRNG } from '../../src/utils/random.js';
@@ -670,7 +670,7 @@ describe('Skill Prerequisites', () => {
         });
     });
 
-    describe('SkillRegistry.validatePrerequisites', () => {
+    describe('SkillQuery.validatePrerequisites', () => {
         function createMockCharacter(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
             return {
                 name: 'Test Character',
@@ -717,7 +717,7 @@ describe('Skill Prerequisites', () => {
         }
 
         it('should delegate to SkillValidator.validateSkillPrerequisites', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
             const character = createMockCharacter({ level: 5 });
 
             const skill: CustomSkill = {
@@ -735,7 +735,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should return unmet prerequisites through registry', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
             const character = createMockCharacter({ level: 2 });
 
             const skill: CustomSkill = {
@@ -753,7 +753,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should handle skill with no prerequisites', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
             const character = createMockCharacter();
 
             const skill: CustomSkill = {
@@ -817,7 +817,7 @@ describe('Skill Prerequisites', () => {
         }
 
         it('should assign skills with no prerequisites when character is provided', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register a custom skill with no prerequisites
             const customSkill: CustomSkill = {
@@ -838,7 +838,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should filter out skills with unmet level prerequisites', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register a high-level skill
             const advancedSkill: CustomSkill = {
@@ -861,7 +861,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should allow skills with met level prerequisites', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register a skill that requires level 5
             const midLevelSkill: CustomSkill = {
@@ -883,7 +883,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should filter out skills with unmet ability prerequisites', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register a skill that requires high INT
             const highIntSkill: CustomSkill = {
@@ -909,7 +909,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should filter out skills with unmet class prerequisites', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register a Sorcerer-only skill
             const sorcererSkill: CustomSkill = {
@@ -932,7 +932,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should filter out skills with unmet race prerequisites', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register an Elf-only skill
             const elfSkill: CustomSkill = {
@@ -955,7 +955,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should filter out skills with unmet skill prerequisites', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register a skill that requires arcana proficiency
             const advancedSkill: CustomSkill = {
@@ -978,7 +978,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should filter out skills with unmet feature prerequisites', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register a skill that requires a specific feature
             const dragonSkill: CustomSkill = {
@@ -1001,7 +1001,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should filter out skills with unmet spell prerequisites', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register a skill that requires knowing fireball
             const pyromancySkill: CustomSkill = {
@@ -1030,7 +1030,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should work without character parameter (backward compatibility)', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register a skill with prerequisites
             const skillWithPrereqs: CustomSkill = {
@@ -1051,7 +1051,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should handle combined prerequisites correctly', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             // Register a skill with multiple prerequisites
             const dragonSmithing: CustomSkill = {
@@ -1130,7 +1130,7 @@ describe('Skill Prerequisites', () => {
         }
 
         it('should allow dragon skill for character with draconic bloodline', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             const dragonSkill: CustomSkill = {
                 id: 'dragon_scalesmithing',
@@ -1153,7 +1153,7 @@ describe('Skill Prerequisites', () => {
         });
 
         it('should deny dragon skill for character without draconic bloodline', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
 
             const dragonSkill: CustomSkill = {
                 id: 'dragon_scalesmithing',

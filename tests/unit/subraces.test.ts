@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { ALL_RACES } from '../../src/utils/constants.js';
@@ -24,7 +24,7 @@ import type { AudioProfile } from '../../src/core/types/AudioProfile.js';
 import type { PlaylistTrack } from '../../src/core/types/Playlist.js';
 
 describe('Subrace Support', () => {
-    let featureRegistry: FeatureRegistry;
+    let featureRegistry: FeatureQuery;
     let extensionManager: ExtensionManager;
 
     // Helper function to create a minimal character sheet
@@ -116,11 +116,11 @@ describe('Subrace Support', () => {
         extensionManager.initializeDefaults('classes', ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard']);
         extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
 
-        featureRegistry = FeatureRegistry.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
     });
 
     afterEach(() => {
-        featureRegistry.reset();
+        featureRegistry.clearQueryCache();
         extensionManager.resetAll();
     });
 
@@ -146,7 +146,7 @@ describe('Subrace Support', () => {
         });
     });
 
-    describe('FeatureRegistry.getRacialTraitsForSubrace', () => {
+    describe('FeatureQuery.getRacialTraitsForSubrace', () => {
         beforeEach(() => {
             // Clear default racial traits and register test traits
             // We set defaults to empty array to remove the default traits
@@ -668,7 +668,7 @@ describe('Subrace Support', () => {
             // Register with validation disabled since Dragonkin is a custom race
             extensionManager.register('races', ['Dragonkin'] as any, { validate: false });
 
-            // Also add Dragonkin to the FeatureRegistry's race validation
+            // Also add Dragonkin to the FeatureQuery's race validation
             // This is needed because FeatureValidator uses dynamic require which may not see the updated ExtensionManager
             // We do this by using the racialTraits Map directly instead of going through registerRacialTrait validation
         });
@@ -989,7 +989,7 @@ describe('Subrace Support', () => {
         });
     });
 
-    describe('FeatureRegistry.getAvailableSubraces', () => {
+    describe('FeatureQuery.getAvailableSubraces', () => {
         beforeEach(() => {
             // Register traits with different subraces for Elf
             const elfTraits: RacialTrait[] = [

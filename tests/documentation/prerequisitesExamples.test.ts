@@ -11,13 +11,13 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SkillRegistry, FeatureRegistry, ExtensionManager, SkillValidator, SpellValidator, CharacterGenerator } from '../../src/index';
+import { SkillQuery, FeatureQuery, ExtensionManager, SkillValidator, SpellValidator, CharacterGenerator } from '../../src/index';
 import { registerTestSkill } from '../helpers/registrationHelpers.js';
 import type { CustomSkill, Spell, ClassFeature, PlaylistTrack } from '../../src/index';
 
 describe('PREREQUISITES.md Code Examples', () => {
-    let skillRegistry: SkillRegistry;
-    let featureRegistry: FeatureRegistry;
+    let skillRegistry: SkillQuery;
+    let featureRegistry: FeatureQuery;
     let manager: ExtensionManager;
 
     // Mock audio profile for character generation
@@ -48,19 +48,19 @@ describe('PREREQUISITES.md Code Examples', () => {
     };
 
     beforeEach(() => {
-        skillRegistry = SkillRegistry.getInstance();
-        featureRegistry = FeatureRegistry.getInstance();
+        skillRegistry = SkillQuery.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
         manager = ExtensionManager.getInstance();
 
         // Reset registries
-        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
-        featureRegistry.reset();
+        // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
+        featureRegistry.clearQueryCache();
         manager.resetAll();
     });
 
     afterEach(() => {
-        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
-        featureRegistry.reset();
+        // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
+        featureRegistry.clearQueryCache();
         manager.resetAll();
         // Cache invalidation is now automatic via ExtensionManager.register() and resetAll()
     });
@@ -425,7 +425,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             qualifiedCharacter.skills.arcana = 'proficient';
 
             // Use the meetsPrerequisites method (documentation example at PREREQUISITES.md:400)
-            const canLearn = FeatureRegistry.getInstance().meetsPrerequisites(arcaneMastery, qualifiedCharacter);
+            const canLearn = FeatureQuery.getInstance().meetsPrerequisites(arcaneMastery, qualifiedCharacter);
 
             expect(canLearn).toBe(true);
         });

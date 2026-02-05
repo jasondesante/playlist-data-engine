@@ -138,7 +138,7 @@ export type {
 export type {
     RegisteredSpell,
     SpellSchool
-} from './core/spells/SpellRegistry.js';
+} from './core/spells/SpellQuery.js';
 
 export type {
     SpellValidationResult
@@ -269,7 +269,7 @@ export { EquipmentSpawnHelper } from './core/equipment/EquipmentSpawnHelper.js';
 // FEATURES SYSTEM
 // ============================================================================
 
-export { FeatureRegistry, getFeatureRegistry } from './core/features/FeatureRegistry.js';
+export { FeatureQuery, getFeatureQuery } from './core/features/FeatureQuery.js';
 export { FeatureEffectApplier } from './core/features/FeatureEffectApplier.js';
 export { FeatureValidator } from './core/features/FeatureValidator.js';
 export {
@@ -298,7 +298,7 @@ export {
 // SKILLS SYSTEM
 // ============================================================================
 
-export { SkillRegistry, getSkillRegistry } from './core/skills/SkillRegistry.js';
+export { SkillQuery, getSkillQuery } from './core/skills/SkillQuery.js';
 export { SkillValidator } from './core/skills/SkillValidator.js';
 
 // Additional skill validators
@@ -323,7 +323,7 @@ export type {
     SkillSelectionWeights,
     SkillListDefinition,
     SkillValidationResult,
-    SkillRegistryStats
+    SkillQueryStats
 } from './core/skills/index.js';
 
 // ============================================================================
@@ -331,7 +331,7 @@ export type {
 // ============================================================================
 
 export { SpellValidator } from './core/spells/SpellValidator.js';
-export { SpellRegistry, getSpellRegistry } from './core/spells/SpellRegistry.js';
+export { SpellQuery, getSpellQuery } from './core/spells/SpellQuery.js';
 
 // Additional spell validators
 export {

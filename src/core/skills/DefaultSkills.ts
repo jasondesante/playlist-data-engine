@@ -2,7 +2,7 @@
  * Default Skills
  *
  * Default D&D 5e skills with complete metadata.
- * These skills are loaded into the SkillRegistry on initialization.
+ * These skills are loaded into the SkillQuery on initialization.
  */
 
 import type { CustomSkill } from './SkillTypes.js';

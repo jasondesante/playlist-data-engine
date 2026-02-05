@@ -19,9 +19,9 @@ import { FeatureValidator } from '../features/FeatureValidator.js';
 import { SkillValidator } from '../skills/SkillValidator.js';
 import { SpellValidator } from '../spells/SpellValidator.js';
 import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
-import { SpellRegistry } from '../spells/SpellRegistry.js';
-import { SkillRegistry } from '../skills/SkillRegistry.js';
-import { FeatureRegistry } from '../features/FeatureRegistry.js';
+import { SpellQuery } from '../spells/SpellQuery.js';
+import { SkillQuery } from '../skills/SkillQuery.js';
+import { FeatureQuery } from '../features/FeatureQuery.js';
 
 /**
  * Spawn modes for custom content
@@ -771,9 +771,9 @@ export class ExtensionManager {
         this.customWeights.clear();
 
         // Invalidate all registry caches to ensure fresh data
-        SpellRegistry.getInstance().invalidateCache();
-        SkillRegistry.getInstance().invalidateCache();
-        FeatureRegistry.getInstance().invalidateCache();
+        SpellQuery.getInstance().invalidateCache();
+        SkillQuery.getInstance().invalidateCache();
+        FeatureQuery.getInstance().invalidateCache();
     }
 
     /**
@@ -786,17 +786,17 @@ export class ExtensionManager {
      * @private
      */
     private getRegistryForCategory(category: ExtensionCategory): 'spell' | 'skill' | 'feature' | null {
-        // Spells and class spell lists map to SpellRegistry
+        // Spells and class spell lists map to SpellQuery
         if (category === 'spells' || category.startsWith('spells.') || category === 'classSpellLists' || category.startsWith('classSpellLists.')) {
             return 'spell';
         }
 
-        // Skills and skill lists map to SkillRegistry
+        // Skills and skill lists map to SkillQuery
         if (category === 'skills' || category.startsWith('skills.') || category === 'skillLists' || category.startsWith('skillLists.')) {
             return 'skill';
         }
 
-        // Class features and racial traits map to FeatureRegistry
+        // Class features and racial traits map to FeatureQuery
         if (category === 'classFeatures' || category.startsWith('classFeatures.') || category === 'racialTraits' || category.startsWith('racialTraits.')) {
             return 'feature';
         }
@@ -818,11 +818,11 @@ export class ExtensionManager {
         const registryType = this.getRegistryForCategory(category);
 
         if (registryType === 'spell') {
-            SpellRegistry.getInstance().invalidateCache();
+            SpellQuery.getInstance().invalidateCache();
         } else if (registryType === 'skill') {
-            SkillRegistry.getInstance().invalidateCache();
+            SkillQuery.getInstance().invalidateCache();
         } else if (registryType === 'feature') {
-            FeatureRegistry.getInstance().invalidateCache();
+            FeatureQuery.getInstance().invalidateCache();
         }
         // If registryType is null, no cache invalidation is needed
     }

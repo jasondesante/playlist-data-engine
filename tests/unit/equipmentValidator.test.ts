@@ -13,18 +13,18 @@ import type {
     EquipmentModification,
     EquipmentMiniFeature
 } from '../../src/core/types/Equipment.js';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
+import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 
 describe('EquipmentValidator', () => {
-    let featureRegistry: FeatureRegistry;
-    let skillRegistry: SkillRegistry;
+    let featureRegistry: FeatureQuery;
+    let skillRegistry: SkillQuery;
 
     beforeEach(() => {
         // Get singleton instances
-        featureRegistry = FeatureRegistry.getInstance();
-        skillRegistry = SkillRegistry.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
+        skillRegistry = SkillQuery.getInstance();
 
         // Initialize defaults using ExtensionManager initialization functions
         initializeFeatureDefaults();
@@ -201,7 +201,7 @@ describe('EquipmentValidator', () => {
 
             const result = EquipmentValidator.validateEquipment(equipment);
             expect(result.valid).toBe(false);
-            expect(result.errors?.some(e => e.includes('not found in SkillRegistry'))).toBe(true);
+            expect(result.errors?.some(e => e.includes('not found in SkillQuery'))).toBe(true);
         });
 
         it('should validate equipment with valid damage info', () => {
@@ -316,7 +316,7 @@ describe('EquipmentValidator', () => {
 
             const result = EquipmentValidator.validateProperty(property);
             expect(result.valid).toBe(false);
-            expect(result.errors?.some(e => e.includes('not found in SkillRegistry'))).toBe(true);
+            expect(result.errors?.some(e => e.includes('not found in SkillQuery'))).toBe(true);
         });
 
         it('should validate a passive modifier property', () => {
@@ -559,7 +559,7 @@ describe('EquipmentValidator', () => {
         it('should reject a skill that does not exist', () => {
             const result = EquipmentValidator.validateSkillReference('nonexistent_skill', 0);
             expect(result.valid).toBe(false);
-            expect(result.errors?.some(e => e.includes('not found in SkillRegistry'))).toBe(true);
+            expect(result.errors?.some(e => e.includes('not found in SkillQuery'))).toBe(true);
         });
 
         it('should reject invalid skill ID', () => {
@@ -797,7 +797,7 @@ describe('EquipmentValidator', () => {
 
             const result = EquipmentValidator.validateModification(modification);
             expect(result.valid).toBe(false);
-            expect(result.errors?.some(e => e.includes('not found in SkillRegistry'))).toBe(true);
+            expect(result.errors?.some(e => e.includes('not found in SkillQuery'))).toBe(true);
         });
     });
 

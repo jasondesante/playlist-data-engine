@@ -635,7 +635,7 @@ describe('Integration: Equipment System', () => {
             // Clear any existing equipment effects
             character.equipment_effects = [];
 
-            // Note: 'freedom_of_movement' must exist in FeatureRegistry for this to work
+            // Note: 'freedom_of_movement' must exist in FeatureQuery for this to work
             // We'll create a simpler test that just verifies the structure
             const bootsOfSpeed: EnhancedEquipment = {
                 name: 'Boots of Speed',

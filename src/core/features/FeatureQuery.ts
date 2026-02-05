@@ -1,10 +1,10 @@
 /**
- * FeatureRegistry
+ * FeatureQuery
  *
- * Central registry for class features and racial traits.
- * Manages default and custom features with prerequisite validation.
+ * Central query interface for class features and racial traits.
+ * Provides default and custom features with prerequisite validation.
  *
- * **Design:** FeatureRegistry provides query methods that read from ExtensionManager.
+ * **Design:** FeatureQuery provides query methods that read from ExtensionManager.
  * All feature registration is done via ExtensionManager.register().
  *
  * This class provides:
@@ -30,10 +30,10 @@ import { getRaceData } from '../../utils/constants.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 
 /**
- * FeatureRegistry - Singleton class for managing features and traits
+ * FeatureQuery - Singleton class for querying features and traits
  *
- * The registry provides query methods that read from ExtensionManager.
- * All class features and racial traits are stored in ExtensionManager; FeatureRegistry provides:
+ * This is a query interface that reads from ExtensionManager.
+ * All class features and racial traits are stored in ExtensionManager; FeatureQuery provides:
  * - Query methods with caching for performance
  * - Feature-related helper methods
  * - Prerequisite validation
@@ -42,8 +42,8 @@ import { ExtensionManager } from '../extensions/ExtensionManager.js';
  * To register new features, use ExtensionManager.register() directly.
  * Cache invalidation is automatic after registration.
  */
-export class FeatureRegistry {
-    private static instance: FeatureRegistry;
+export class FeatureQuery {
+    private static instance: FeatureQuery;
     private manager: ExtensionManager;
 
     // Cache properties for class features (reads from ExtensionManager)
@@ -61,11 +61,11 @@ export class FeatureRegistry {
     /**
      * Get the singleton instance
      */
-    static getInstance(): FeatureRegistry {
-        if (!FeatureRegistry.instance) {
-            FeatureRegistry.instance = new FeatureRegistry();
+    static getInstance(): FeatureQuery {
+        if (!FeatureQuery.instance) {
+            FeatureQuery.instance = new FeatureQuery();
         }
-        return FeatureRegistry.instance;
+        return FeatureQuery.instance;
     }
 
     /**
@@ -77,7 +77,7 @@ export class FeatureRegistry {
      * Call this method after directly manipulating ExtensionManager's data
      * (e.g., after calling ExtensionManager.resetAll()).
      *
-     * This ensures that FeatureRegistry's cached data is refreshed to reflect
+     * This ensures that FeatureQuery's cached data is refreshed to reflect
      * the current state of ExtensionManager.
      */
     invalidateCache(): void {
@@ -554,7 +554,7 @@ export class FeatureRegistry {
      *
      * @returns Object with counts
      */
-    getRegistryStats(): {
+    getQueryStats(): {
         totalClassFeatures: number;
         totalRacialTraits: number;
         classesWithFeatures: number;
@@ -581,12 +581,12 @@ export class FeatureRegistry {
     }
 
     /**
-     * Reset the registry to initial state
+     * Clear the query cache and reset ExtensionManager data
      *
      * Clears all registered features and traits from ExtensionManager.
      * Useful for testing or reinitialization.
      */
-    reset(): void {
+    clearQueryCache(): void {
         // Clear class features from ExtensionManager
         this.manager.reset('classFeatures');
 
@@ -624,7 +624,7 @@ export class FeatureRegistry {
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     static getEquipmentFeatures(equipmentName: string): ClassFeature[] {
-        const registry = FeatureRegistry.getInstance();
+        const registry = FeatureQuery.getInstance();
 
         // Get all features that could be granted by equipment
         // Equipment can grant features that are registered in the system
@@ -655,7 +655,7 @@ export class FeatureRegistry {
      * @returns True if the feature exists and can be granted by equipment
      */
     static isValidEquipmentFeature(featureId: string): boolean {
-        const registry = FeatureRegistry.getInstance();
+        const registry = FeatureQuery.getInstance();
         const feature = registry.getClassFeatureById(featureId);
 
         // Feature exists in registry
@@ -689,12 +689,12 @@ export class FeatureRegistry {
 }
 
 /**
- * Get the global FeatureRegistry instance
+ * Get the global FeatureQuery instance
  *
  * Convenience function for accessing the singleton.
  *
- * @returns FeatureRegistry instance
+ * @returns FeatureQuery instance
  */
-export function getFeatureRegistry(): FeatureRegistry {
-    return FeatureRegistry.getInstance();
+export function getFeatureQuery(): FeatureQuery {
+    return FeatureQuery.getInstance();
 }

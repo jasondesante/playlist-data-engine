@@ -1,19 +1,19 @@
 /**
- * Integration test for SkillRegistry and ExtensionManager integration
- * Phase 13.1: Integrate SkillRegistry with ExtensionManager
+ * Integration test for SkillQuery and ExtensionManager integration
+ * Phase 13.1: Integrate SkillQuery with ExtensionManager
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 
-describe('Phase 13.1: SkillRegistry Integration with ExtensionManager', () => {
-    let registry: SkillRegistry;
+describe('Phase 13.1: SkillQuery Integration with ExtensionManager', () => {
+    let registry: SkillQuery;
 
     beforeEach(() => {
-        // Get SkillRegistry instance
-        registry = SkillRegistry.getInstance();
+        // Get SkillQuery instance
+        registry = SkillQuery.getInstance();
 
         // Reset instances for clean state
         ExtensionManager.getInstance().resetAll();
@@ -52,7 +52,7 @@ describe('Phase 13.1: SkillRegistry Integration with ExtensionManager', () => {
         expect(intSkills[0].ability).toBe('INT');
     });
 
-    it('should register custom skills with ExtensionManager and SkillRegistry', () => {
+    it('should register custom skills with ExtensionManager and SkillQuery', () => {
         const manager = ExtensionManager.getInstance();
 
         const customSkill = {
@@ -73,7 +73,7 @@ describe('Phase 13.1: SkillRegistry Integration with ExtensionManager', () => {
         expect(customInManager).toBeDefined();
         expect(customInManager.name).toBe('Survival (Test)');
 
-        // Check it's also in SkillRegistry
+        // Check it's also in SkillQuery
         expect(registry.isValidSkill('test_survival')).toBe(true);
         
         const skillInRegistry = registry.getSkill('test_survival');
@@ -138,10 +138,10 @@ describe('Phase 13.1: SkillRegistry Integration with ExtensionManager', () => {
         // Register to STR-specific category (for organizational purposes)
         manager.register('skills.STR', [customSkill]);
 
-        // Also need to register to main skills category for SkillRegistry to see it
+        // Also need to register to main skills category for SkillQuery to see it
         manager.register('skills', [customSkill]);
 
-        // Check it's in SkillRegistry
+        // Check it's in SkillQuery
         expect(registry.isValidSkill('custom_strength_skill')).toBe(true);
     });
 
@@ -183,8 +183,8 @@ describe('Phase 13.1: SkillRegistry Integration with ExtensionManager', () => {
     });
 
     // Additional integration tests for Task 3.2
-    describe('Task 3.2: SkillRegistry/ExtensionManager Integration', () => {
-        it('should register via ExtensionManager and SkillRegistry.getAllSkills() sees it', () => {
+    describe('Task 3.2: SkillQuery/ExtensionManager Integration', () => {
+        it('should register via ExtensionManager and SkillQuery.getAllSkills() sees it', () => {
             const manager = ExtensionManager.getInstance();
 
             // Register custom skill via ExtensionManager
@@ -199,7 +199,7 @@ describe('Phase 13.1: SkillRegistry Integration with ExtensionManager', () => {
 
             manager.register('skills', [customSkill]);
 
-            // Verify SkillRegistry sees it via getAllSkills()
+            // Verify SkillQuery sees it via getAllSkills()
             const allSkills = registry.getAllSkills();
             expect(allSkills.some(s => s.id === 'test_custom_integration')).toBe(true);
 

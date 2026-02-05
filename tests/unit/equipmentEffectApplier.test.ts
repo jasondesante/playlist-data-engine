@@ -13,19 +13,19 @@ import type {
     EquipmentMiniFeature
 } from '../../src/core/types/Equipment.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
+import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 
 describe('EquipmentEffectApplier', () => {
-    let featureRegistry: FeatureRegistry;
-    let skillRegistry: SkillRegistry;
+    let featureRegistry: FeatureQuery;
+    let skillRegistry: SkillQuery;
     let testCharacter: CharacterSheet;
 
     beforeEach(() => {
         // Get singleton instances
-        featureRegistry = FeatureRegistry.getInstance();
-        skillRegistry = SkillRegistry.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
+        skillRegistry = SkillQuery.getInstance();
 
         // Initialize defaults using ExtensionManager initialization functions
         initializeFeatureDefaults();

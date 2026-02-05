@@ -5,28 +5,28 @@
 import type { Class, ProficiencyLevel, CharacterSheet } from '../types/Character.js';
 import type { SeededRNG } from '../../utils/random.js';
 import { getClassData } from '../../utils/constants.js';
-import { SkillRegistry } from '../skills/SkillRegistry.js';
+import { SkillQuery } from '../skills/SkillQuery.js';
 import { SkillValidator } from '../skills/SkillValidator.js';
 
 /**
- * Initialize skill registry if not already initialized
- * This ensures the SkillRegistry has default skills loaded before use.
+ * Initialize skill query interface if not already initialized
+ * This ensures the SkillQuery has default skills loaded before use.
  *
- * Note: Since SkillRegistry now reads from ExtensionManager, we initialize
+ * Note: Since SkillQuery now reads from ExtensionManager, we initialize
  * ExtensionManager instead. The defaults should already be loaded during
  * package initialization, so this is a safeguard.
  */
-function ensureSkillRegistryInitialized(): void {
+function ensureSkillQueryInitialized(): void {
     // The ExtensionManager should be initialized during package initialization
     // via initializeSkillDefaults() in initializeDefaults.ts
-    // SkillRegistry reads from ExtensionManager, so no action needed here
+    // SkillQuery reads from ExtensionManager, so no action needed here
 }
 
 export class SkillAssigner {
     /**
      * Assign skill proficiencies based on character class
      *
-     * Now uses SkillRegistry to support custom skills and validates all skill IDs.
+     * Now uses SkillQuery to support custom skills and validates all skill IDs.
      * Supports weighted skill selection via ExtensionManager integration.
      * Filters skills by prerequisites when a character is provided.
      *
@@ -40,10 +40,10 @@ export class SkillAssigner {
         rng: SeededRNG,
         character?: CharacterSheet
     ): Record<string, ProficiencyLevel> {
-        // Ensure SkillRegistry is initialized
-        ensureSkillRegistryInitialized();
+        // Ensure SkillQuery is initialized
+        ensureSkillQueryInitialized();
 
-        const registry = SkillRegistry.getInstance();
+        const registry = SkillQuery.getInstance();
         const allSkills = registry.getAllSkills();
 
         // Initialize all skills to 'none'
@@ -99,23 +99,23 @@ export class SkillAssigner {
     }
 
     /**
-     * Validate skills against the SkillRegistry
+     * Validate skills against the SkillQuery
      *
-     * Filters out any skill IDs that are not registered in the SkillRegistry.
+     * Filters out any skill IDs that are not registered in the SkillQuery.
      * This prevents invalid skill IDs from being assigned.
      *
      * @param skillIds - Array of skill IDs to validate
-     * @param registry - SkillRegistry instance
+     * @param registry - SkillQuery instance
      * @returns Array of valid skill IDs
      */
-    private static validateSkills(skillIds: string[], registry: SkillRegistry): string[] {
+    private static validateSkills(skillIds: string[], registry: SkillQuery): string[] {
         const validSkills: string[] = [];
 
         for (const skillId of skillIds) {
             if (registry.isValidSkill(skillId)) {
                 validSkills.push(skillId);
             } else {
-                console.warn(`SkillAssigner: Invalid skill ID "${skillId}" not found in SkillRegistry. Skipping.`);
+                console.warn(`SkillAssigner: Invalid skill ID "${skillId}" not found in SkillQuery. Skipping.`);
             }
         }
 
@@ -129,13 +129,13 @@ export class SkillAssigner {
      * Skills without prerequisites are always included.
      *
      * @param skillIds - Array of skill IDs to filter
-     * @param registry - SkillRegistry instance
+     * @param registry - SkillQuery instance
      * @param character - Character sheet to validate prerequisites against
      * @returns Array of skill IDs whose prerequisites are met
      */
     private static filterSkillsByPrerequisites(
         skillIds: string[],
-        registry: SkillRegistry,
+        registry: SkillQuery,
         character: CharacterSheet
     ): string[] {
         const validSkills: string[] = [];

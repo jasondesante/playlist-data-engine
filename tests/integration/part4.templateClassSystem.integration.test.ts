@@ -11,25 +11,25 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery';
+import { SkillQuery } from '../../src/core/skills/SkillQuery';
 import { getClassData, getClassSpellList, getSpellSlotsForClass, getClassStartingEquipment } from '../../src/utils/constants';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 import { Class, asClass } from '../../src/core/types/Character';
 
 describe('Integration: Part 4 Template-Based Class System', () => {
-    let featureRegistry: FeatureRegistry;
-    let skillRegistry: SkillRegistry;
+    let featureRegistry: FeatureQuery;
+    let skillRegistry: SkillQuery;
     let extensionManager: ExtensionManager;
 
     beforeEach(() => {
-        featureRegistry = FeatureRegistry.getInstance();
-        skillRegistry = SkillRegistry.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
+        skillRegistry = SkillQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Reset all registries
-        featureRegistry.reset();
-        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
+        featureRegistry.clearQueryCache();
+        // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
 
         // Initialize with defaults
@@ -38,8 +38,8 @@ describe('Integration: Part 4 Template-Based Class System', () => {
     });
 
     afterEach(() => {
-        featureRegistry.reset();
-        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
+        featureRegistry.clearQueryCache();
+        // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
     });
 

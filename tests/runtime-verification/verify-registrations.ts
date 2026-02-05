@@ -9,19 +9,19 @@
  *   npx tsx tests/runtime-verification/verify-registrations.ts
  *
  * This script will:
- * 1. Register a spell via ExtensionManager (auto-invalidates SpellRegistry cache)
- * 2. Register a skill via ExtensionManager (auto-invalidates SkillRegistry cache)
- * 3. Register a class feature via ExtensionManager (auto-invalidates FeatureRegistry cache)
- * 4. Register a racial trait via ExtensionManager (auto-invalidates FeatureRegistry cache)
+ * 1. Register a spell via ExtensionManager (auto-invalidates SpellQuery cache)
+ * 2. Register a skill via ExtensionManager (auto-invalidates SkillQuery cache)
+ * 3. Register a class feature via ExtensionManager (auto-invalidates FeatureQuery cache)
+ * 4. Register a racial trait via ExtensionManager (auto-invalidates FeatureQuery cache)
  * 5. Verify query methods work after registration
  * 6. Verify automatic cache invalidation works
- * 7. Verify getRegistryStats() counts correctly
+ * 7. Verify getQueryStats() counts correctly
  */
 
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
-import { SpellRegistry } from '../../src/core/spells/SpellRegistry.js';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { SpellQuery } from '../../src/core/spells/SpellQuery.js';
+import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 
 // ANSI color codes for output
 const colors = {
@@ -97,9 +97,9 @@ async function main(): Promise<void> {
     logInfo('Verifying registration via ExtensionManager after method removal...\n');
 
     const manager = ExtensionManager.getInstance();
-    const spellRegistry = SpellRegistry.getInstance();
-    const skillRegistry = SkillRegistry.getInstance();
-    const featureRegistry = FeatureRegistry.getInstance();
+    const spellRegistry = SpellQuery.getInstance();
+    const skillRegistry = SkillQuery.getInstance();
+    const featureRegistry = FeatureQuery.getInstance();
 
     let testsPassed = 0;
     let testsFailed = 0;
@@ -139,12 +139,12 @@ async function main(): Promise<void> {
         }
 
         // Verify stats
-        const spellStats = spellRegistry.getRegistryStats();
+        const spellStats = spellRegistry.getQueryStats();
         if (spellStats.customSpells >= 1) {
-            logSuccess(`getRegistryStats() reports ${spellStats.customSpells} custom spell(s)`);
+            logSuccess(`getQueryStats() reports ${spellStats.customSpells} custom spell(s)`);
             testsPassed++;
         } else {
-            logError('getRegistryStats() does not report custom spell');
+            logError('getQueryStats() does not report custom spell');
             testsFailed++;
         }
 
@@ -199,12 +199,12 @@ async function main(): Promise<void> {
         }
 
         // Verify stats
-        const skillStats = skillRegistry.getRegistryStats();
+        const skillStats = skillRegistry.getQueryStats();
         if (skillStats.customSkills >= 1) {
-            logSuccess(`getRegistryStats() reports ${skillStats.customSkills} custom skill(s)`);
+            logSuccess(`getQueryStats() reports ${skillStats.customSkills} custom skill(s)`);
             testsPassed++;
         } else {
-            logError('getRegistryStats() does not report custom skill');
+            logError('getQueryStats() does not report custom skill');
             testsFailed++;
         }
 
@@ -231,7 +231,7 @@ async function main(): Promise<void> {
 
     try {
         // Get initial stats
-        const initialFeatureStats = featureRegistry.getRegistryStats();
+        const initialFeatureStats = featureRegistry.getQueryStats();
         logInfo(`Initial class feature count: ${initialFeatureStats.totalClassFeatures}`);
 
         // Register via ExtensionManager (cache invalidation is automatic)
@@ -249,7 +249,7 @@ async function main(): Promise<void> {
         }
 
         // Verify count increased
-        const newFeatureStats = featureRegistry.getRegistryStats();
+        const newFeatureStats = featureRegistry.getQueryStats();
         if (newFeatureStats.totalClassFeatures === initialFeatureStats.totalClassFeatures + 1) {
             logSuccess(`Feature count correctly increased: ${initialFeatureStats.totalClassFeatures} → ${newFeatureStats.totalClassFeatures}`);
             testsPassed++;
@@ -281,7 +281,7 @@ async function main(): Promise<void> {
 
     try {
         // Get initial stats
-        const initialTraitStats = featureRegistry.getRegistryStats();
+        const initialTraitStats = featureRegistry.getQueryStats();
         logInfo(`Initial racial trait count: ${initialTraitStats.totalRacialTraits}`);
 
         // Register via ExtensionManager (cache invalidation is automatic)
@@ -299,7 +299,7 @@ async function main(): Promise<void> {
         }
 
         // Verify count increased
-        const newTraitStats = featureRegistry.getRegistryStats();
+        const newTraitStats = featureRegistry.getQueryStats();
         if (newTraitStats.totalRacialTraits === initialTraitStats.totalRacialTraits + 1) {
             logSuccess(`Trait count correctly increased: ${initialTraitStats.totalRacialTraits} → ${newTraitStats.totalRacialTraits}`);
             testsPassed++;

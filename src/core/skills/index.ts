@@ -11,14 +11,14 @@ export type {
     SkillProficiency,
     SkillSelectionWeights,
     SkillListDefinition,
-    SkillRegistryStats,
+    SkillQueryStats,
 } from './SkillTypes.js';
 
-// Validation result type - exported from SkillValidator for consistency with other registries
+// Validation result type - exported from SkillValidator for consistency with other query classes
 export type { SkillValidationResult } from './SkillValidator.js';
 
-// SkillRegistry - Main registry for skills
-export { SkillRegistry, getSkillRegistry } from './SkillRegistry.js';
+// SkillQuery - Main query interface for skills
+export { SkillQuery, getSkillQuery } from './SkillQuery.js';
 
 // Default skills
 export { DEFAULT_SKILLS, DEFAULT_SKILL_CATEGORIES } from './DefaultSkills.js';

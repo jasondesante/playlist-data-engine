@@ -18,8 +18,8 @@ export type {
     ValidationResult
 } from './FeatureTypes.js';
 
-// FeatureRegistry - Main registry for features and traits
-export { FeatureRegistry, getFeatureRegistry } from './FeatureRegistry.js';
+// FeatureQuery - Main query interface for features and traits
+export { FeatureQuery, getFeatureQuery } from './FeatureQuery.js';
 
 // Default features and traits
 export { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from './DefaultFeatures.js';

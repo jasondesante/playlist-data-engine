@@ -1,5 +1,5 @@
 /**
- * Unit tests for FeatureRegistry
+ * Unit tests for FeatureQuery
  *
  * Tests the custom class features and racial traits system including:
  * - Register custom features
@@ -7,45 +7,45 @@
  * - Validate prerequisites
  * - Reset to defaults
  *
- * Part of Phase 15.1: Unit Tests for FeatureRegistry
+ * Part of Phase 15.1: Unit Tests for FeatureQuery
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 import { registerTestClassFeature, registerTestClassFeatures, registerTestRacialTrait, registerTestRacialTraits } from '../helpers/registrationHelpers.js';
 import type { ClassFeature, RacialTrait, Class, Race, AbilityScores } from '../../src/core/types/index.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 
-describe('FeatureRegistry', () => {
-    let registry: FeatureRegistry;
+describe('FeatureQuery', () => {
+    let registry: FeatureQuery;
     let extensionManager: ExtensionManager;
 
     beforeEach(() => {
         // Get a fresh instance for each test
-        registry = FeatureRegistry.getInstance();
+        registry = FeatureQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
         // Reset to ensure clean state
-        registry.reset();
+        registry.clearQueryCache();
         extensionManager.resetAll();
     });
 
     afterEach(() => {
         // Clean up after each test
-        registry.reset();
+        registry.clearQueryCache();
         extensionManager.resetAll();
     });
 
     describe('Singleton Pattern', () => {
         it('should return the same instance', () => {
-            const instance1 = FeatureRegistry.getInstance();
-            const instance2 = FeatureRegistry.getInstance();
+            const instance1 = FeatureQuery.getInstance();
+            const instance2 = FeatureQuery.getInstance();
             expect(instance1).toBe(instance2);
         });
 
         it('should maintain state across getInstance calls', () => {
-            const publicRegistry = FeatureRegistry.getInstance();
+            const publicRegistry = FeatureQuery.getInstance();
             // Both class features and racial traits are initialized via ExtensionManager
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
             extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
@@ -61,7 +61,7 @@ describe('FeatureRegistry', () => {
 
             expect(registry.isInitialized()).toBe(true);
 
-            const stats = registry.getRegistryStats();
+            const stats = registry.getQueryStats();
             expect(stats.totalClassFeatures).toBeGreaterThan(0);
             expect(stats.classesWithFeatures).toBeGreaterThan(0);
         });
@@ -71,7 +71,7 @@ describe('FeatureRegistry', () => {
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
             extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
 
-            const stats = registry.getRegistryStats();
+            const stats = registry.getQueryStats();
             expect(stats.totalRacialTraits).toBeGreaterThan(0);
             expect(stats.racesWithTraits).toBeGreaterThan(0);
         });
@@ -80,13 +80,13 @@ describe('FeatureRegistry', () => {
             // Both class features and racial traits are initialized via ExtensionManager
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
             extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
-            const stats1 = registry.getRegistryStats();
+            const stats1 = registry.getQueryStats();
 
             // Try to initialize again (should not duplicate)
             extensionManager.initializeDefaults('racialTraits', []);
 
             // Stats should remain the same (no reset occurred)
-            const stats2 = registry.getRegistryStats();
+            const stats2 = registry.getQueryStats();
             expect(stats2.totalClassFeatures).toBe(stats1.totalClassFeatures);
         });
 
@@ -99,7 +99,7 @@ describe('FeatureRegistry', () => {
 
             // With empty array set, totalRacialTraits reflects what's in ExtensionManager
             // This may include defaults from the defaultData configuration
-            expect(registry.getRegistryStats().totalRacialTraits).toBeGreaterThanOrEqual(0);
+            expect(registry.getQueryStats().totalRacialTraits).toBeGreaterThanOrEqual(0);
         });
     });
 
@@ -1284,7 +1284,7 @@ describe('FeatureRegistry', () => {
 
     describe('Get Registry Statistics', () => {
         it('should return accurate stats for empty registry', () => {
-            const stats = registry.getRegistryStats();
+            const stats = registry.getQueryStats();
 
             // Note: Class features may include defaults from ExtensionManager
             // Racial traits should be 0 since we haven't registered any
@@ -1350,7 +1350,7 @@ describe('FeatureRegistry', () => {
             registerTestClassFeatures(features);
             registerTestRacialTraits(traits);
 
-            const stats = registry.getRegistryStats();
+            const stats = registry.getQueryStats();
             // Note: Class features may include defaults from ExtensionManager
             // We verify that our custom features are included in the count
             expect(stats.totalClassFeatures).toBeGreaterThanOrEqual(3);
@@ -1477,15 +1477,15 @@ describe('FeatureRegistry', () => {
             registerTestRacialTraits(traits);
 
             // After custom registration, total should include the custom traits
-            expect(registry.getRegistryStats().totalRacialTraits).toBeGreaterThanOrEqual(1);
+            expect(registry.getQueryStats().totalRacialTraits).toBeGreaterThanOrEqual(1);
             // isInitialized checks both custom data and defaults
             expect(typeof registry.isInitialized()).toBe('boolean');
 
-            registry.reset();
+            registry.clearQueryCache();
 
             // After reset, custom traits are cleared
             // But ExtensionManager may still have defaults configured
-            expect(registry.getRegistryStats().totalRacialTraits).toBeGreaterThanOrEqual(0);
+            expect(registry.getQueryStats().totalRacialTraits).toBeGreaterThanOrEqual(0);
             // isInitialized may still be true if defaults exist
             expect(typeof registry.isInitialized()).toBe('boolean');
         });
@@ -1495,9 +1495,9 @@ describe('FeatureRegistry', () => {
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
             extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
             expect(registry.isInitialized()).toBe(true);
-            const stats1 = registry.getRegistryStats();
+            const stats1 = registry.getQueryStats();
 
-            registry.reset();
+            registry.clearQueryCache();
             // After reset, isInitialized may still be true if defaults exist in ExtensionManager
             expect(typeof registry.isInitialized()).toBe('boolean');
 
@@ -1505,7 +1505,7 @@ describe('FeatureRegistry', () => {
             extensionManager.initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES);
             extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
             expect(registry.isInitialized()).toBe(true);
-            const stats2 = registry.getRegistryStats();
+            const stats2 = registry.getQueryStats();
 
             expect(stats2.totalClassFeatures).toBe(stats1.totalClassFeatures);
             expect(stats2.totalRacialTraits).toBe(stats1.totalRacialTraits);
@@ -1540,7 +1540,7 @@ describe('FeatureRegistry', () => {
             expect(registry.getRegisteredClasses()).toContain('Fighter');
             expect(registry.getRegisteredRaces()).toContain('Human');
 
-            registry.reset();
+            registry.clearQueryCache();
 
             // After reset, custom traits are cleared but default traits may persist
             // getRegisteredRaces() reads from ExtensionManager which has defaults
@@ -1553,7 +1553,7 @@ describe('FeatureRegistry', () => {
 
     describe('Export Racial Traits', () => {
         it('should export all racial traits from ExtensionManager', () => {
-            // FeatureRegistry reads from ExtensionManager
+            // FeatureQuery reads from ExtensionManager
             // ExtensionManager has default racial traits configured
             const exported = registry.exportRacialTraits();
 
@@ -1566,7 +1566,7 @@ describe('FeatureRegistry', () => {
 
         it('should export all registered racial traits', () => {
             // Reset first to ensure clean state
-            registry.reset();
+            registry.clearQueryCache();
 
             const traits: RacialTrait[] = [
                 {
@@ -1602,7 +1602,7 @@ describe('FeatureRegistry', () => {
         });
 
         it('should export class features via ExtensionManager', () => {
-            // Class features are accessed via ExtensionManager, not FeatureRegistry
+            // Class features are accessed via ExtensionManager, not FeatureQuery
             // This test verifies the pattern for accessing class features
             const features: ClassFeature[] = [
                 {
@@ -1629,7 +1629,7 @@ describe('FeatureRegistry', () => {
     describe('Is Initialized', () => {
         it('should return true if ExtensionManager has defaults or custom data', () => {
             // ExtensionManager has default racial traits configured
-            // FeatureRegistry checks ExtensionManager for initialization status
+            // FeatureQuery checks ExtensionManager for initialization status
             const isInit = registry.isInitialized();
 
             // After reset, ExtensionManager may still have defaults configured
@@ -1650,7 +1650,7 @@ describe('FeatureRegistry', () => {
             extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
             expect(registry.isInitialized()).toBe(true);
 
-            registry.reset();
+            registry.clearQueryCache();
 
             // After reset, ExtensionManager may still have defaults configured
             // isInitialized() returns true if defaults exist

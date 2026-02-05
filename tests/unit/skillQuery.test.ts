@@ -1,31 +1,31 @@
 /**
- * Unit tests for SkillRegistry
+ * Unit tests for SkillQuery
  *
  * Tests the custom skill system including:
  * - Register custom skills
  * - Get skills by ability/category
  * - Validate skill IDs
- * - SkillRegistry as convenience wrapper around ExtensionManager
+ * - SkillQuery as convenience wrapper around ExtensionManager
  *
- * **IMPORTANT**: SkillRegistry now reads from ExtensionManager.
+ * **IMPORTANT**: SkillQuery now reads from ExtensionManager.
  * Tests use ExtensionManager for initialization and reset.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
 import { registerTestSkill, registerTestSkills } from '../helpers/registrationHelpers.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
 import type { Ability } from '../../src/core/types/Character.js';
 
-describe('SkillRegistry', () => {
-    let registry: SkillRegistry;
+describe('SkillQuery', () => {
+    let registry: SkillQuery;
     let em: ExtensionManager;
 
     beforeEach(() => {
         // Get instances
-        registry = SkillRegistry.getInstance();
+        registry = SkillQuery.getInstance();
         em = ExtensionManager.getInstance();
         // Reset to ensure clean state using ExtensionManager
         em.resetAll();
@@ -44,13 +44,13 @@ describe('SkillRegistry', () => {
 
     describe('Singleton Pattern', () => {
         it('should return the same instance', () => {
-            const instance1 = SkillRegistry.getInstance();
-            const instance2 = SkillRegistry.getInstance();
+            const instance1 = SkillQuery.getInstance();
+            const instance2 = SkillQuery.getInstance();
             expect(instance1).toBe(instance2);
         });
 
         it('should maintain state across getInstance calls', () => {
-            const publicRegistry = SkillRegistry.getInstance();
+            const publicRegistry = SkillQuery.getInstance();
             // With the new pattern, we just verify skills are available
             expect(publicRegistry.getSkillCount()).toBeGreaterThan(0);
         });
@@ -383,7 +383,7 @@ describe('SkillRegistry', () => {
             em.resetAll();
             em.initializeDefaults('skills', []); // Clear defaults too
 
-            const stats = registry.getRegistryStats();
+            const stats = registry.getQueryStats();
 
             expect(stats.totalSkills).toBe(0);
             expect(stats.defaultSkills).toBe(0);
@@ -392,7 +392,7 @@ describe('SkillRegistry', () => {
         });
 
         it('should return accurate stats after initialization', () => {
-            const stats = registry.getRegistryStats();
+            const stats = registry.getQueryStats();
 
             expect(stats.totalSkills).toBe(18);
             expect(stats.defaultSkills).toBe(18);
@@ -418,14 +418,14 @@ describe('SkillRegistry', () => {
 
             registerTestSkills(customSkills);
 
-            const stats = registry.getRegistryStats();
+            const stats = registry.getQueryStats();
             expect(stats.totalSkills).toBe(20);
             expect(stats.defaultSkills).toBe(18);
             expect(stats.customSkills).toBe(2);
         });
 
         it('should count skills per ability', () => {
-            const stats = registry.getRegistryStats();
+            const stats = registry.getQueryStats();
 
             // Check expected counts per ability
             expect(stats.skillsByAbility.STR).toBe(1); // athletics
@@ -447,7 +447,7 @@ describe('SkillRegistry', () => {
 
             registerTestSkill(customSkill);
 
-            const stats = registry.getRegistryStats();
+            const stats = registry.getQueryStats();
             expect(stats.categories).toContain('food');
         });
     });

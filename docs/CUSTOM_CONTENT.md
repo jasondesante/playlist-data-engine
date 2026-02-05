@@ -162,10 +162,10 @@ if (prereqs.subrace !== undefined) {
 
 ### Subrace Filtering
 
-FeatureRegistry provides `getRacialTraitsForSubrace()`:
+FeatureQuery provides `getRacialTraitsForSubrace()`:
 
 ```typescript
-const registry = FeatureRegistry.getInstance();
+const registry = FeatureQuery.getInstance();
 
 // Get traits specific to High Elf subrace
 const highElfTraits = registry.getRacialTraitsForSubrace('Elf', 'High Elf');

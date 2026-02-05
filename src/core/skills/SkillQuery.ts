@@ -1,11 +1,11 @@
 /**
- * SkillRegistry
+ * SkillQuery
  *
- * Central registry for all skills (default D&D 5e and custom).
- * Manages skill lookup, validation, and categorization.
+ * Central query interface for all skills (default D&D 5e and custom).
+ * Provides skill lookup, validation, and categorization.
  *
  * **Design:** This is a query layer on top of ExtensionManager.
- * All skills are stored in ExtensionManager; SkillRegistry provides:
+ * All skills are stored in ExtensionManager; SkillQuery provides:
  * - Query methods with caching for performance
  * - Skill-related helper methods and validation
  *
@@ -17,7 +17,7 @@
 
 import type {
     CustomSkill,
-    SkillRegistryStats,
+    SkillQueryStats,
     SkillValidationResult
 } from './SkillTypes.js';
 import type { Ability, CharacterSheet } from '../types/Character.js';
@@ -25,10 +25,10 @@ import { SkillValidator } from './SkillValidator.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 
 /**
- * SkillRegistry - Singleton class for managing skills
+ * SkillQuery - Singleton class for querying skills
  *
- * The registry is a query layer on top of ExtensionManager.
- * All skills are stored in ExtensionManager; SkillRegistry provides:
+ * This is a query layer on top of ExtensionManager.
+ * All skills are stored in ExtensionManager; SkillQuery provides:
  * - Query methods with caching for performance
  * - Skill-related helper methods and validation
  *
@@ -37,8 +37,8 @@ import { ExtensionManager } from '../extensions/ExtensionManager.js';
  *
  * Design principle: No duplicate storage. All data lives in ExtensionManager.
  */
-export class SkillRegistry {
-    private static instance: SkillRegistry;
+export class SkillQuery {
+    private static instance: SkillQuery;
     private manager: ExtensionManager;
     private allSkillsCache: CustomSkill[] | null = null;
     private abilityCache: Map<Ability, CustomSkill[]> | null = null;
@@ -51,11 +51,11 @@ export class SkillRegistry {
     /**
      * Get the singleton instance
      */
-    static getInstance(): SkillRegistry {
-        if (!SkillRegistry.instance) {
-            SkillRegistry.instance = new SkillRegistry();
+    static getInstance(): SkillQuery {
+        if (!SkillQuery.instance) {
+            SkillQuery.instance = new SkillQuery();
         }
-        return SkillRegistry.instance;
+        return SkillQuery.instance;
     }
 
     /**
@@ -67,7 +67,7 @@ export class SkillRegistry {
      * Call this method after directly manipulating ExtensionManager's skill data
      * (e.g., after calling ExtensionManager.resetAll()).
      *
-     * This ensures that SkillRegistry's cached data is refreshed to reflect
+     * This ensures that SkillQuery's cached data is refreshed to reflect
      * the current state of ExtensionManager.
      */
     invalidateCache(): void {
@@ -179,7 +179,7 @@ export class SkillRegistry {
     }
 
     /**
-     * Validate if a skill ID exists in the registry
+     * Validate if a skill ID exists
      *
      * @param id - Skill ID to validate
      * @returns True if skill exists
@@ -218,11 +218,11 @@ export class SkillRegistry {
     }
 
     /**
-     * Get registry statistics
+     * Get query statistics
      *
      * @returns Statistics about registered skills
      */
-    getRegistryStats(): SkillRegistryStats {
+    getQueryStats(): SkillQueryStats {
         const allSkills = this.getAllSkills();
         const defaultSkills = allSkills.filter(s => s.source === 'default');
         const customSkills = allSkills.filter(s => s.source === 'custom');
@@ -288,12 +288,12 @@ export class SkillRegistry {
 }
 
 /**
- * Get the global SkillRegistry instance
+ * Get the global SkillQuery instance
  *
  * Convenience function for accessing the singleton.
  *
- * @returns SkillRegistry instance
+ * @returns SkillQuery instance
  */
-export function getSkillRegistry(): SkillRegistry {
-    return SkillRegistry.getInstance();
+export function getSkillQuery(): SkillQuery {
+    return SkillQuery.getInstance();
 }

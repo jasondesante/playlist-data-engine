@@ -1759,9 +1759,9 @@ The main exports from the library are:
 
 ### Extensibility (NEW)
 - `ExtensionManager` - Register and manage custom content for all categories (single source of truth)
-- `FeatureRegistry` - Query custom class features and racial traits (registration is done via ExtensionManager)
-- `SkillRegistry` - Query custom skills (registration is done via ExtensionManager)
-- `SpellRegistry` - Query spells with prerequisite validation (registration is done via ExtensionManager)
+- `FeatureQuery` - Query custom class features and racial traits (registration is done via ExtensionManager)
+- `SkillQuery` - Query custom skills (registration is done via ExtensionManager)
+- `SpellQuery` - Query spells with prerequisite validation (registration is done via ExtensionManager)
 - `FeatureValidator` - Validate feature data structures
 - `SkillValidator` - Validate skill data structures
 - `SpellValidator` - Validate spell data structures

@@ -12,8 +12,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator';
 import { LevelUpProcessor } from '../../src/core/progression/LevelUpProcessor';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery';
+import { SkillQuery } from '../../src/core/skills/SkillQuery';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { WeightedSelector } from '../../src/core/extensions/WeightedSelector';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
@@ -43,18 +43,18 @@ function createMockTrack(title: string): PlaylistTrack {
 }
 
 describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
-    let featureRegistry: FeatureRegistry;
-    let skillRegistry: SkillRegistry;
+    let featureRegistry: FeatureQuery;
+    let skillRegistry: SkillQuery;
     let extensionManager: ExtensionManager;
 
     beforeEach(() => {
-        featureRegistry = FeatureRegistry.getInstance();
-        skillRegistry = SkillRegistry.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
+        skillRegistry = SkillQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Reset all registries
-        featureRegistry.reset();
-        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
+        featureRegistry.clearQueryCache();
+        // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
 
         // Initialize with defaults
@@ -63,8 +63,8 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
     });
 
     afterEach(() => {
-        featureRegistry.reset();
-        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
+        featureRegistry.clearQueryCache();
+        // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
     });
 
@@ -659,9 +659,9 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 source: 'custom' as const
             };
 
-            // Register via ExtensionManager (handles both storage and FeatureRegistry)
+            // Register via ExtensionManager (handles both storage and FeatureQuery)
             // Note: We need to register to both 'classFeatures.Fighter' for spawn rates
-            // and 'classFeatures' for FeatureRegistry to see the features
+            // and 'classFeatures' for FeatureQuery to see the features
             extensionManager.register('classFeatures', [rareFeature, commonFeature]);
             extensionManager.register('classFeatures.Fighter', [rareFeature, commonFeature], {
                 weights: {
@@ -675,7 +675,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             expect(weights['common_feature']).toBe(3.0);
             expect(weights['rare_feature']).toBe(0.5);
 
-            // Verify features are in FeatureRegistry
+            // Verify features are in FeatureQuery
             const retrievedFeature = featureRegistry.getClassFeatureById('common_feature');
             expect(retrievedFeature).toBeDefined();
             expect(retrievedFeature?.name).toBe('Common Feature');
@@ -701,7 +701,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 categories: ['combat']
             };
 
-            // Register via ExtensionManager (handles both storage and SkillRegistry)
+            // Register via ExtensionManager (handles both storage and SkillQuery)
             extensionManager.register('skills', [commonSkill, rareSkill], {
                 weights: {
                     'common_custom_skill': 5.0,  // 5x more likely
@@ -714,7 +714,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             expect(weights['common_custom_skill']).toBe(5.0);
             expect(weights['rare_custom_skill']).toBe(0.2);
 
-            // Verify skills are in SkillRegistry
+            // Verify skills are in SkillQuery
             const retrievedSkill = skillRegistry.getSkill('common_custom_skill');
             expect(retrievedSkill).toBeDefined();
             expect(retrievedSkill?.name).toBe('Common Custom Skill');
@@ -798,7 +798,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 }
             ];
 
-            // Set absolute mode weights via ExtensionManager (handles SkillRegistry registration)
+            // Set absolute mode weights via ExtensionManager (handles SkillQuery registration)
             extensionManager.register('skills', customSkills, {
                 mode: 'absolute',
                 weights: {
@@ -815,7 +815,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             expect(weights['only_allowed_skill']).toBe(5);
             expect(weights['another_allowed_skill']).toBe(3);
 
-            // Verify skills are in SkillRegistry
+            // Verify skills are in SkillQuery
             const skill1 = skillRegistry.getSkill('only_allowed_skill');
             const skill2 = skillRegistry.getSkill('another_allowed_skill');
             expect(skill1).toBeDefined();
@@ -1081,7 +1081,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             registerTestClassFeatures(largeFeatureSet);
 
             // Verify all are registered
-            const stats = featureRegistry.getRegistryStats();
+            const stats = featureRegistry.getQueryStats();
             expect(stats.totalClassFeatures).toBeGreaterThanOrEqual(100);
 
             // Generate character - should handle large set
@@ -1140,7 +1140,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             expect(featureRegistry.getClassFeatureById('test_cycle_feature')).toBeDefined();
 
             // Reset
-            featureRegistry.reset();
+            featureRegistry.clearQueryCache();
 
             // Verify it's gone
             expect(featureRegistry.getClassFeatureById('test_cycle_feature')).toBeUndefined();

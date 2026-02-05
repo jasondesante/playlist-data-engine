@@ -161,7 +161,7 @@ export interface SkillProficiency {
 
     /**
      * Optional feature ID that granted this proficiency
-     * - Links back to the feature in FeatureRegistry
+     * - Links back to the feature in FeatureQuery
      * - Example: 'rogue_expertise', 'bard_jack_of_all_trades'
      */
     grantedBy?: string;
@@ -244,11 +244,11 @@ export interface SkillValidationResult {
 }
 
 /**
- * Skill Registry Statistics
+ * Skill Query Statistics
  *
- * Statistical information about the skill registry.
+ * Statistical information about registered skills.
  */
-export interface SkillRegistryStats {
+export interface SkillQueryStats {
     /** Total number of registered skills */
     totalSkills: number;
     /** Number of default skills */

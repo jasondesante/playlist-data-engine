@@ -37,7 +37,7 @@ const VALID_PROFICIENCY_SOURCES: ReadonlyArray<string> = ['class', 'background',
  * SkillValidator - Validates custom skills
  *
  * Provides strict validation to ensure custom skills
- * meet all requirements before being registered with SkillRegistry.
+ * meet all requirements before being registered with SkillQuery.
  */
 export class SkillValidator {
     /**

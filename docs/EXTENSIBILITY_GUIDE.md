@@ -489,12 +489,12 @@ manager.setWeights('spells', {
 
 #### Spell Registry
 
-Query spells and check prerequisites using SpellRegistry:
+Query spells and check prerequisites using SpellQuery:
 
 ```typescript
-import { SpellRegistry } from 'playlist-data-engine';
+import { SpellQuery } from 'playlist-data-engine';
 
-const spellRegistry = SpellRegistry.getInstance();
+const spellRegistry = SpellQuery.getInstance();
 
 // Query spells by level, school, or class
 const fifthLevelSpells = spellRegistry.getSpellsByLevel(5);
@@ -517,7 +517,7 @@ if (phoenixFire) {
 }
 
 // Registry statistics
-const stats = spellRegistry.getRegistryStats();
+const stats = spellRegistry.getQueryStats();
 console.log(`Total spells: ${stats.totalSpells} (${stats.customSpells} custom)`);
 ```
 
@@ -759,10 +759,10 @@ manager.setWeights('classFeatures.Barbarian', {
 Class features and racial traits can require skills or spells as prerequisites, in addition to features, abilities, level, class, and race.
 
 ```typescript
-import { ExtensionManager, FeatureRegistry, FeatureValidator, CharacterGenerator } from 'playlist-data-engine';
+import { ExtensionManager, FeatureQuery, FeatureValidator, CharacterGenerator } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
-const registry = FeatureRegistry.getInstance();  // Convenience wrapper
+const registry = FeatureQuery.getInstance();  // Convenience wrapper
 
 // ===== FEATURE REQUIRING SKILL PROFICIENCY =====
 // Arcane Smith: Requires Arcana skill proficiency
@@ -918,7 +918,7 @@ manager.setWeights('racialTraits', {
 **Get traits for a race:**
 
 ```typescript
-const registry = FeatureRegistry.getInstance();
+const registry = FeatureQuery.getInstance();
 
 // Get all traits for a race
 const dragonbornTraits = registry.getRacialTraits('Dragonborn');
@@ -1012,7 +1012,7 @@ manager.register('skills.DEX', [
 **Query skills:**
 
 ```typescript
-const registry = SkillRegistry.getInstance();
+const registry = SkillQuery.getInstance();
 
 // Get skill by ID
 const survival = registry.getSkill('survival_cold');
@@ -1035,10 +1035,10 @@ const isValid = registry.isValidSkill('survival_cold');  // true
 Skills can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced skills that require base skills, specific features, spells, ability scores, level, class, or race.
 
 ```typescript
-import { ExtensionManager, SkillRegistry, SkillValidator, CharacterGenerator } from 'playlist-data-engine';
+import { ExtensionManager, SkillQuery, SkillValidator, CharacterGenerator } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
-const registry = SkillRegistry.getInstance();
+const registry = SkillQuery.getInstance();
 
 // ===== SKILL WITH FEATURE PREREQUISITES =====
 // Dragon Smithing: Requires Draconic Bloodline feature
@@ -1214,15 +1214,15 @@ manager.register('skillLists', [
 
 #### Querying Registries
 
-You can query the FeatureRegistry and SkillRegistry to get information about registered features, skills, and registry statistics.
+You can query the FeatureQuery and SkillQuery to get information about registered features, skills, and registry statistics.
 
-**Note:** `FeatureRegistry` and `SkillRegistry` read from `ExtensionManager` with caching. Query methods fetch data from the single source of truth.
+**Note:** `FeatureQuery` and `SkillQuery` read from `ExtensionManager` with caching. Query methods fetch data from the single source of truth.
 
 ```typescript
-import { FeatureRegistry, SkillRegistry } from 'playlist-data-engine';
+import { FeatureQuery, SkillQuery } from 'playlist-data-engine';
 
-const featureRegistry = FeatureRegistry.getInstance();
-const skillRegistry = SkillRegistry.getInstance();
+const featureRegistry = FeatureQuery.getInstance();
+const skillRegistry = SkillQuery.getInstance();
 
 // ===== FEATURE QUERIES =====
 
@@ -1247,10 +1247,10 @@ console.log(`Exploration skills:`, explorationSkills.map(s => s.name));
 // ===== REGISTRY STATISTICS =====
 
 // Get registry statistics
-const featureStats = featureRegistry.getRegistryStats();
+const featureStats = featureRegistry.getQueryStats();
 console.log(`Features: ${featureStats.totalFeatures} (${featureStats.customFeatures} custom)`);
 
-const skillStats = skillRegistry.getRegistryStats();
+const skillStats = skillRegistry.getQueryStats();
 console.log(`Skills: ${skillStats.totalSkills} (${skillStats.customSkills} custom)`);
 ```
 
@@ -1510,13 +1510,13 @@ export function loadDarkFantasyPack() {
 This example demonstrates a comprehensive "Arctic Expansion Pack" with custom features, skills, and spawn rates:
 
 ```typescript
-import { ExtensionManager, FeatureRegistry, SkillRegistry, CharacterGenerator } from 'playlist-data-engine';
+import { ExtensionManager, FeatureQuery, SkillQuery, CharacterGenerator } from 'playlist-data-engine';
 
 // Create an expansion pack with custom features, skills, and spawn rates
 function registerArcticExpansionPack() {
     const manager = ExtensionManager.getInstance();
-    const featureRegistry = FeatureRegistry.getInstance();
-    const skillRegistry = SkillRegistry.getInstance();
+    const featureRegistry = FeatureQuery.getInstance();
+    const skillRegistry = SkillQuery.getInstance();
 
     // ===== CUSTOM FEATURES =====
     const frostRage = {

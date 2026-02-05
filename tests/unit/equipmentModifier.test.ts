@@ -17,13 +17,13 @@ import type {
 } from '../../src/core/types/Equipment.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
+import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 
 describe('EquipmentModifier', () => {
-    let featureRegistry: FeatureRegistry;
-    let skillRegistry: SkillRegistry;
+    let featureRegistry: FeatureQuery;
+    let skillRegistry: SkillQuery;
     let extensionManager: ExtensionManager;
     let testCharacter: CharacterSheet;
     let testEquipment: CharacterEquipment;
@@ -31,8 +31,8 @@ describe('EquipmentModifier', () => {
 
     beforeEach(() => {
         // Get singleton instances
-        featureRegistry = FeatureRegistry.getInstance();
-        skillRegistry = SkillRegistry.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
+        skillRegistry = SkillQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Initialize defaults using ExtensionManager initialization functions

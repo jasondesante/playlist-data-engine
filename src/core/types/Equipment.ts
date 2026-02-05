@@ -71,7 +71,7 @@ export interface EquipmentProperty {
 
 /**
  * Inline mini-feature definition for equipment-specific abilities
- * These don't go in the main FeatureRegistry but are treated like features for this item
+ * These don't go in the main FeatureQuery but are treated like features for this item
  */
 export interface EquipmentMiniFeature {
     id: string;                  // Unique ID for this equipment-specific feature

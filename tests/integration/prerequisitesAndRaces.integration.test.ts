@@ -19,8 +19,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator.js';
 import { CharacterUpdater } from '../../src/core/progression/CharacterUpdater.js';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { SpellValidator } from '../../src/core/spells/SpellValidator.js';
 import { SPELL_DATABASE } from '../../src/utils/constants.js';
@@ -56,8 +56,8 @@ import type { CharacterSheet } from '../../src/core/types/Character.js';
 import type { RacialTrait } from '../../src/core/features/FeatureTypes.js';
 
 describe('Integration: Prerequisites and Races', () => {
-    let skillRegistry: SkillRegistry;
-    let featureRegistry: FeatureRegistry;
+    let skillRegistry: SkillQuery;
+    let featureRegistry: FeatureQuery;
     let extensionManager: ExtensionManager;
 
     // Helper function to create a minimal character sheet
@@ -124,13 +124,13 @@ describe('Integration: Prerequisites and Races', () => {
     }
 
     beforeEach(() => {
-        skillRegistry = SkillRegistry.getInstance();
-        featureRegistry = FeatureRegistry.getInstance();
+        skillRegistry = SkillQuery.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Reset all registries
-        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
-        featureRegistry.reset();
+        // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
+        featureRegistry.clearQueryCache();
         extensionManager.resetAll();
 
         // Initialize defaults
@@ -141,9 +141,9 @@ describe('Integration: Prerequisites and Races', () => {
     });
 
     afterEach(() => {
-        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
+        // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         // Cache invalidation is now automatic after ExtensionManager.register()
-        featureRegistry.reset();
+        featureRegistry.clearQueryCache();
         extensionManager.resetAll();
     });
 

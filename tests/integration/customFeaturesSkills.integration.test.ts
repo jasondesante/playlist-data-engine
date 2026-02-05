@@ -4,15 +4,15 @@
  * Test Requirements:
  * - CharacterGenerator works correctly with custom features registered
  * - CharacterGenerator works correctly with custom skills registered
- * - The integration between CharacterGenerator, FeatureRegistry, and SkillRegistry works properly
+ * - The integration between CharacterGenerator, FeatureQuery, and SkillQuery works properly
  * - Custom features appear in generated characters
  * - Custom skills appear in generated characters
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery';
+import { SkillQuery } from '../../src/core/skills/SkillQuery';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 import { registerTestSkill, registerTestClassFeature, registerTestClassFeatures, registerTestRacialTrait } from '../helpers/registrationHelpers.js';
@@ -39,18 +39,18 @@ function createMockTrack(title: string): PlaylistTrack {
 }
 
 describe('Integration: CharacterGenerator with Custom Features and Skills', () => {
-    let featureRegistry: FeatureRegistry;
-    let skillRegistry: SkillRegistry;
+    let featureRegistry: FeatureQuery;
+    let skillRegistry: SkillQuery;
 
     beforeEach(() => {
-        featureRegistry = FeatureRegistry.getInstance();
-        skillRegistry = SkillRegistry.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
+        skillRegistry = SkillQuery.getInstance();
 
-        // Reset FeatureRegistry to defaults
-        // Note: SkillRegistry no longer has a reset() method as it's a wrapper around ExtensionManager
-        // We use ExtensionManager.reset() for skills instead
-        featureRegistry.reset();
-        // SkillRegistry reads from ExtensionManager, so no reset needed here
+        // Reset FeatureQuery to defaults
+        // Note: SkillQuery no longer has a reset() method as it's a wrapper around ExtensionManager
+        // We use ExtensionManager.clearQueryCache() for skills instead
+        featureRegistry.clearQueryCache();
+        // SkillQuery reads from ExtensionManager, so no reset needed here
 
         // Initialize with defaults using the proper initialization functions
         initializeFeatureDefaults();
@@ -58,8 +58,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
     });
 
     afterEach(() => {
-        featureRegistry.reset();
-        // SkillRegistry has no internal state to reset - it reads from ExtensionManager
+        featureRegistry.clearQueryCache();
+        // SkillQuery has no internal state to reset - it reads from ExtensionManager
     });
 
     describe('Custom Class Features', () => {
@@ -601,7 +601,7 @@ registerTestClassFeature(customFeature);
             expect(featureRegistry.getClassFeatureById('test_reset_feature')).toBeDefined();
 
             // Reset the registry
-            featureRegistry.reset();
+            featureRegistry.clearQueryCache();
 
             // Verify feature is no longer registered
             expect(featureRegistry.getClassFeatureById('test_reset_feature')).toBeUndefined();

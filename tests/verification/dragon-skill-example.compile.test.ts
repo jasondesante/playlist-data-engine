@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { SkillRegistry, asClass } from '../../src/index.js';
+import { SkillQuery, asClass } from '../../src/index.js';
 import type { CustomSkill } from '../../src/index.js';
 
 /**
@@ -14,9 +14,9 @@ import type { CustomSkill } from '../../src/index.js';
  *
  * Fixed example (with asClass import and usage):
  * ```typescript
- * import { ExtensionManager, FeatureRegistry, SkillRegistry, asClass } from 'playlist-data-engine';
+ * import { ExtensionManager, FeatureQuery, SkillQuery, asClass } from 'playlist-data-engine';
  * ...
- * SkillRegistry.getInstance().registerSkill({
+ * SkillQuery.getInstance().registerSkill({
  *     id: 'dragon_smithing',
  *     name: 'Dragon Smithing',
  *     description: 'Craft weapons from dragon scales',
@@ -48,7 +48,7 @@ describe('Dragon-themed skill example verification', () => {
         };
 
         // Verify we can register this skill
-        const registry = SkillRegistry.getInstance();
+        const registry = SkillQuery.getInstance();
 
         // This test passes if the code compiles without type errors
         // The actual registration is skipped to avoid side effects

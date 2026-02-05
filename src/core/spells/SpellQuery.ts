@@ -1,11 +1,11 @@
 /**
- * SpellRegistry
+ * SpellQuery
  *
- * Central registry for all spells (default D&D 5e and custom).
- * Manages spell lookup, and categorization by level, school, and class.
+ * Central query interface for all spells (default D&D 5e and custom).
+ * Provides spell lookup and categorization by level, school, and class.
  *
  * **Design:** This is a **query interface** around ExtensionManager.
- * All spells are stored in ExtensionManager; SpellRegistry provides:
+ * All spells are stored in ExtensionManager; SpellQuery provides:
  * - Query methods with caching for performance
  * - Spell-related helper methods
  *
@@ -35,7 +35,7 @@ export type SpellSchool =
     | 'Transmutation';
 
 /**
- * Extended Spell interface with optional registry fields
+ * Extended Spell interface with optional query fields
  */
 export interface RegisteredSpell extends Spell {
     /** Unique identifier (uses name as ID if not provided) */
@@ -47,10 +47,10 @@ export interface RegisteredSpell extends Spell {
 }
 
 /**
- * SpellRegistry - Singleton class for managing spells
+ * SpellQuery - Singleton class for querying spells
  *
- * The registry is a **query interface** around ExtensionManager.
- * All spells are stored in ExtensionManager; SpellRegistry provides:
+ * This is a **query interface** around ExtensionManager.
+ * All spells are stored in ExtensionManager; SpellQuery provides:
  * - Query methods with caching for performance
  * - Spell-related helper methods
  *
@@ -59,8 +59,8 @@ export interface RegisteredSpell extends Spell {
  * **Registration:** Use ExtensionManager.register('spells', [...]) to register spells.
  * Cache invalidation is automatic after registration.
  */
-export class SpellRegistry {
-    private static instance: SpellRegistry;
+export class SpellQuery {
+    private static instance: SpellQuery;
     private manager: ExtensionManager;
     private allSpellsCache: RegisteredSpell[] | null = null;
     private levelCache: Map<number, RegisteredSpell[]> | null = null;
@@ -73,11 +73,11 @@ export class SpellRegistry {
     /**
      * Get the singleton instance
      */
-    static getInstance(): SpellRegistry {
-        if (!SpellRegistry.instance) {
-            SpellRegistry.instance = new SpellRegistry();
+    static getInstance(): SpellQuery {
+        if (!SpellQuery.instance) {
+            SpellQuery.instance = new SpellQuery();
         }
-        return SpellRegistry.instance;
+        return SpellQuery.instance;
     }
 
     /**
@@ -268,7 +268,7 @@ export class SpellRegistry {
     }
 
     /**
-     * Check if a spell exists in the registry
+     * Check if a spell exists
      *
      * @param spellId - Spell ID to check
      * @returns True if spell exists
@@ -297,11 +297,11 @@ export class SpellRegistry {
     }
 
     /**
-     * Get registry statistics
+     * Get query statistics
      *
      * @returns Statistics about registered spells
      */
-    getRegistryStats(): {
+    getQueryStats(): {
         totalSpells: number;
         defaultSpells: number;
         customSpells: number;
@@ -353,12 +353,12 @@ export class SpellRegistry {
 }
 
 /**
- * Get the global SpellRegistry instance
+ * Get the global SpellQuery instance
  *
  * Convenience function for accessing the singleton.
  *
- * @returns SpellRegistry instance
+ * @returns SpellQuery instance
  */
-export function getSpellRegistry(): SpellRegistry {
-    return SpellRegistry.getInstance();
+export function getSpellQuery(): SpellQuery {
+    return SpellQuery.getInstance();
 }

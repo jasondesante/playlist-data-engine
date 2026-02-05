@@ -290,7 +290,7 @@ interface EnhancedEquipment {
     properties?: EquipmentProperty[];
 
     // Features granted when equipped
-    // Can reference existing FeatureRegistry features OR define inline mini-features
+    // Can reference existing FeatureQuery features OR define inline mini-features
     grantsFeatures?: Array<string | EquipmentMiniFeature>;
 
     // Skills granted when equipped
@@ -347,7 +347,7 @@ Equipment can grant features in two ways:
 
 ### 1. Registry Feature References
 
-String references to features in the FeatureRegistry:
+String references to features in the FeatureQuery:
 
 ```typescript
 {
@@ -979,12 +979,12 @@ class EquipmentSpawnHelper {
 }
 ```
 
-### FeatureRegistry (Equipment-Related Methods)
+### FeatureQuery (Equipment-Related Methods)
 
-The FeatureRegistry provides static methods for working with equipment-granted features.
+The FeatureQuery provides static methods for working with equipment-granted features.
 
 ```typescript
-class FeatureRegistry {
+class FeatureQuery {
     // Get features that can be granted by equipment
     // Returns features tagged with 'equipment' or 'item', or custom features
     static getEquipmentFeatures(equipmentName: string): ClassFeature[];
@@ -999,7 +999,7 @@ class FeatureRegistry {
 }
 ```
 
-**Note**: FeatureRegistry is a convenience wrapper around ExtensionManager (reads from ExtensionManager with no duplicate storage). These methods are useful when creating custom equipment that grants features. Use `isValidEquipmentFeature()` to validate feature references in equipment definitions, and `registerEquipmentFeature()` to register features specifically designed for equipment items.
+**Note**: FeatureQuery is a convenience wrapper around ExtensionManager (reads from ExtensionManager with no duplicate storage). These methods are useful when creating custom equipment that grants features. Use `isValidEquipmentFeature()` to validate feature references in equipment definitions, and `registerEquipmentFeature()` to register features specifically designed for equipment items.
 
 ---
 

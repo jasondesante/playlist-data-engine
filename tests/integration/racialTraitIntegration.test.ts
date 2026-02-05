@@ -1,26 +1,26 @@
 /**
- * Integration test for FeatureRegistry and ExtensionManager integration
+ * Integration test for FeatureQuery and ExtensionManager integration
  * Phase 11, Task 11.2: Add Integration Tests for Racial Traits
  *
- * Tests the interaction between FeatureRegistry (convenience wrapper) and
+ * Tests the interaction between FeatureQuery (convenience wrapper) and
  * ExtensionManager (single source of truth) for racial traits.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { initializeFeatureDefaults } from '../../src/core/extensions/initializeDefaults.js';
 import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 import { registerTestRacialTrait } from '../helpers/registrationHelpers.js';
 import type { RacialTrait } from '../../src/core/features/FeatureTypes.js';
 
-describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Traits', () => {
-    let registry: FeatureRegistry;
+describe('Phase 11.2: FeatureQuery/ExtensionManager Integration for Racial Traits', () => {
+    let registry: FeatureQuery;
     let manager: ExtensionManager;
 
     beforeEach(() => {
-        // Get FeatureRegistry and ExtensionManager instances
-        registry = FeatureRegistry.getInstance();
+        // Get FeatureQuery and ExtensionManager instances
+        registry = FeatureQuery.getInstance();
         manager = ExtensionManager.getInstance();
 
         // Reset instances for clean state
@@ -30,8 +30,8 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
         initializeFeatureDefaults();
     });
 
-    describe('Task 11.2.1: Register via ExtensionManager and FeatureRegistry sees it', () => {
-        it('should register via ExtensionManager and FeatureRegistry.getRacialTraits() sees it', () => {
+    describe('Task 11.2.1: Register via ExtensionManager and FeatureQuery sees it', () => {
+        it('should register via ExtensionManager and FeatureQuery.getRacialTraits() sees it', () => {
             // Create a custom racial trait
             const customTrait: RacialTrait = {
                 id: 'test_custom_dragon_fire_resistance',
@@ -45,7 +45,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             // Register via ExtensionManager
             manager.register('racialTraits', [customTrait]);
 
-            // Verify FeatureRegistry sees it via getRacialTraits()
+            // Verify FeatureQuery sees it via getRacialTraits()
             const dragonbornTraits = registry.getRacialTraits('Dragonborn');
             expect(dragonbornTraits.some(t => t.id === 'test_custom_dragon_fire_resistance')).toBe(true);
 
@@ -151,8 +151,8 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             expect(allTraits.has('Elf')).toBe(true);
             expect(allTraits.has('Dwarf')).toBe(true);
 
-            // Check that getRegistryStats includes default traits
-            const stats = registry.getRegistryStats();
+            // Check that getQueryStats includes default traits
+            const stats = registry.getQueryStats();
             expect(stats.totalRacialTraits).toBeGreaterThanOrEqual(DEFAULT_RACIAL_TRAITS.length);
         });
     });
@@ -319,7 +319,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
     describe('Task 11.2.5: Cache invalidation works after EM registration', () => {
         it('should invalidate cache after ExtensionManager registration', () => {
             // Get initial state - build cache
-            const initialStats = registry.getRegistryStats();
+            const initialStats = registry.getQueryStats();
             const initialElfCount = registry.getRacialTraits('Elf').length;
 
             // Register new trait via ExtensionManager (cache is automatically invalidated)
@@ -335,7 +335,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             manager.register('racialTraits', [newTrait]);
 
             // Verify new trait is visible (automatic cache invalidation)
-            const newStats = registry.getRegistryStats();
+            const newStats = registry.getQueryStats();
             expect(newStats.totalRacialTraits).toBe(initialStats.totalRacialTraits + 1);
 
             const newElfTraits = registry.getRacialTraits('Elf');
@@ -371,7 +371,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
         });
 
         it('should handle multiple cache invalidations', () => {
-            let traitCount = registry.getRegistryStats().totalRacialTraits;
+            let traitCount = registry.getQueryStats().totalRacialTraits;
 
             // Register multiple traits in batches (cache auto-invalidated each time)
             for (let i = 0; i < 3; i++) {
@@ -386,7 +386,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
 
                 manager.register('racialTraits', [trait]);
 
-                const newStats = registry.getRegistryStats();
+                const newStats = registry.getQueryStats();
                 expect(newStats.totalRacialTraits).toBe(++traitCount);
             }
 
@@ -415,11 +415,11 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             const emTraits = manager.get('racialTraits') as RacialTrait[];
             expect(emTraits.some(t => t.id === 'test_wrapper_registration_racial')).toBe(true);
 
-            // Verify FeatureRegistry can still access it
+            // Verify FeatureQuery can still access it
             expect(registry.getRacialTraitById('test_wrapper_registration_racial')).toBeDefined();
         });
 
-        it('should validate traits during registration via FeatureRegistry', () => {
+        it('should validate traits during registration via FeatureQuery', () => {
             // Try to register invalid trait (missing required fields)
             const invalidTrait = {
                 id: 'test_invalid_racial'
@@ -472,8 +472,8 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             expect(registry.getRacialTraitById('test_persistence_racial')).toBeDefined();
         });
 
-        it('should correctly count racial traits in getRegistryStats', () => {
-            const initialStats = registry.getRegistryStats();
+        it('should correctly count racial traits in getQueryStats', () => {
+            const initialStats = registry.getQueryStats();
 
             // Register traits for an existing race
             const newRacialTraits: RacialTrait[] = [
@@ -497,7 +497,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
 
             manager.register('racialTraits', newRacialTraits);
 
-            const newStats = registry.getRegistryStats();
+            const newStats = registry.getQueryStats();
             expect(newStats.totalRacialTraits).toBe(initialStats.totalRacialTraits + 2);
         });
 

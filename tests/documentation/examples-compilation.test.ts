@@ -8,9 +8,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
     ExtensionManager,
     WeightedSelector,
-    FeatureRegistry,
-    SkillRegistry,
-    SpellRegistry,
+    FeatureQuery,
+    SkillQuery,
+    SpellQuery,
     SpellValidator,
     FeatureValidator,
     SkillValidator,
@@ -25,9 +25,9 @@ import {
     getClassSpellList,
     getSpellSlotsForClass,
     getClassStartingEquipment,
-    getFeatureRegistry,
-    getSkillRegistry,
-    getSpellRegistry,
+    getFeatureQuery,
+    getSkillQuery,
+    getSpellQuery,
     initializeAllDefaults,
     ensureAllDefaultsInitialized,
     validateSpell,
@@ -69,8 +69,8 @@ import { registerTestSkill, registerTestSkills } from '../helpers/registrationHe
 describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
     let manager: ExtensionManager;
-    let featureRegistry: FeatureRegistry;
-    let skillRegistry: SkillRegistry;
+    let featureRegistry: FeatureQuery;
+    let skillRegistry: SkillQuery;
 
     // Mock audio profile for testing
     const mockAudioProfile: AudioProfile = {
@@ -101,15 +101,15 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
     beforeEach(() => {
         manager = ExtensionManager.getInstance();
-        featureRegistry = FeatureRegistry.getInstance();
-        skillRegistry = SkillRegistry.getInstance();
+        featureRegistry = FeatureQuery.getInstance();
+        skillRegistry = SkillQuery.getInstance();
         initializeAllDefaults();
     });
 
     afterEach(() => {
         manager.resetAll();
-        featureRegistry.reset();
-        // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
+        featureRegistry.clearQueryCache();
+        // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
     });
 
     describe('ExtensionManager API Examples', () => {
@@ -624,8 +624,8 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             expect(Array.isArray(elfTraits)).toBe(true);
         });
 
-        it('should compile getRegistryStats example', () => {
-            const stats = featureRegistry.getRegistryStats();
+        it('should compile getQueryStats example', () => {
+            const stats = featureRegistry.getQueryStats();
 
             // Note: The actual properties are totalClassFeatures, totalRacialTraits, etc.
             // The documentation may use a simplified name
@@ -818,7 +818,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         });
 
         it('should compile skill validation example', () => {
-            const registry = SkillRegistry.getInstance();
+            const registry = SkillQuery.getInstance();
             const character = CharacterGenerator.generate('seed', mockAudioProfile, mockTrack);
             const skill = registry.getSkill('dragon_smithing');
 
@@ -828,8 +828,8 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             }
         });
 
-        it('should compile getRegistryStats example', () => {
-            const stats = skillRegistry.getRegistryStats();
+        it('should compile getQueryStats example', () => {
+            const stats = skillRegistry.getQueryStats();
 
             expect(stats).toHaveProperty('totalSkills');
             expect(stats).toHaveProperty('customSkills');
@@ -1402,20 +1402,20 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
     });
 
     describe('Helper Function Examples', () => {
-        it('should compile getFeatureRegistry example', () => {
-            const registry = getFeatureRegistry();
-            expect(registry).toBeInstanceOf(FeatureRegistry);
+        it('should compile getFeatureQuery example', () => {
+            const registry = getFeatureQuery();
+            expect(registry).toBeInstanceOf(FeatureQuery);
         });
 
-        it('should compile getSkillRegistry example', () => {
-            const registry = getSkillRegistry();
-            expect(registry).toBeInstanceOf(SkillRegistry);
+        it('should compile getSkillQuery example', () => {
+            const registry = getSkillQuery();
+            expect(registry).toBeInstanceOf(SkillQuery);
         });
 
-        it('should compile getSpellRegistry example', () => {
-            const registry = getSpellRegistry();
-            expect(registry).toBeInstanceOf(SpellRegistry);
-            // Verify SpellRegistry is a convenience wrapper that delegates to ExtensionManager
+        it('should compile getSpellQuery example', () => {
+            const registry = getSpellQuery();
+            expect(registry).toBeInstanceOf(SpellQuery);
+            // Verify SpellQuery is a convenience wrapper that delegates to ExtensionManager
             expect(registry.getSpellCount()).toBeGreaterThan(0);
         });
 
@@ -1428,14 +1428,14 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         });
     });
 
-    describe('SpellRegistry Integration Tests', () => {
-        let spellRegistry: SpellRegistry;
+    describe('SpellQuery Integration Tests', () => {
+        let spellRegistry: SpellQuery;
 
         beforeEach(() => {
-            spellRegistry = SpellRegistry.getInstance();
+            spellRegistry = SpellQuery.getInstance();
         });
 
-        it('should verify ExtensionManager.register() is visible in SpellRegistry', () => {
+        it('should verify ExtensionManager.register() is visible in SpellQuery', () => {
             // Get initial spell count from ExtensionManager
             const initialSpells = manager.get('spells');
             const initialCount = initialSpells.length;
@@ -1467,7 +1467,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             expect(foundInManager.name).toBe('Frost Bolt');
         });
 
-        it('should verify registering via ExtensionManager is visible in SpellRegistry', () => {
+        it('should verify registering via ExtensionManager is visible in SpellQuery', () => {
             // Register a spell directly via ExtensionManager
             const customSpell = {
                 id: 'test_arcane_blast',
@@ -1484,7 +1484,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
             manager.register('spells', [customSpell]);
 
-            // Verify the spell is accessible via SpellRegistry
+            // Verify the spell is accessible via SpellQuery
             const found = spellRegistry.getSpell('test_arcane_blast');
             expect(found).toBeDefined();
             expect(found?.name).toBe('Arcane Blast');

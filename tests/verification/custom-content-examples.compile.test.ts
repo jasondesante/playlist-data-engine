@@ -14,8 +14,8 @@ import { describe, it, expect } from 'vitest';
 
 import {
     ExtensionManager,
-    FeatureRegistry,
-    SkillRegistry,
+    FeatureQuery,
+    SkillQuery,
     asClass
 } from '../../src/index.js';
 
@@ -142,8 +142,8 @@ function verifyExamplesCompile(): void {
     // Variables are intentionally unused - this is a compile-time verification test
     /* eslint-disable @typescript-eslint/no-unused-vars */
     const manager = ExtensionManager.getInstance();
-    const featureRegistry = FeatureRegistry.getInstance();
-    const skillRegistry = SkillRegistry.getInstance();
+    const featureRegistry = FeatureQuery.getInstance();
+    const skillRegistry = SkillQuery.getInstance();
     /* eslint-enable @typescript-eslint/no-unused-vars */
 
     // Example 1: Register custom race

@@ -7,7 +7,7 @@ import { SkillAssigner } from '../../src/core/generation/SkillAssigner.js';
 import { SeededRNG } from '../../src/utils/random.js';
 import type { Class, Skill } from '../../src/core/types/Character.js';
 import { CLASS_DATA } from '../../src/utils/constants.js';
-import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
+import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
 import { registerTestSkill, registerTestSkills } from '../helpers/registrationHelpers.js';
@@ -233,8 +233,8 @@ describe('SkillAssigner', () => {
 
     describe('Custom Skills (Phase 15.1)', () => {
         describe('Registry Integration', () => {
-            it('should include custom skills registered in SkillRegistry', () => {
-                const registry = SkillRegistry.getInstance();
+            it('should include custom skills registered in SkillQuery', () => {
+                const registry = SkillQuery.getInstance();
 
                 // Register custom skills
                 const customSkill1: CustomSkill = {
@@ -272,7 +272,7 @@ describe('SkillAssigner', () => {
             });
 
             it('should include all default skills plus custom skills', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const customSkill: CustomSkill = {
                     id: 'custom_alchemy',
@@ -306,7 +306,7 @@ describe('SkillAssigner', () => {
             });
 
             it('should handle multiple custom skills with different abilities', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const customSkills: CustomSkill[] = [
                     { id: 'heavy_lifting', name: 'Heavy Lifting', ability: 'STR', source: 'custom' },
@@ -333,7 +333,7 @@ describe('SkillAssigner', () => {
 
         describe('Invalid Skill Filtering', () => {
             it('should filter out invalid skill IDs from available_skills', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 // Spy on console.warn to verify warning is logged
                 const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -361,7 +361,7 @@ describe('SkillAssigner', () => {
             });
 
             it('should warn console when encountering invalid skill ID', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -387,7 +387,7 @@ describe('SkillAssigner', () => {
             });
 
             it('should handle empty available_skills after filtering', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 // This is an edge case - if all available_skills are invalid,
                 // the SkillAssigner should still return all skills with 'none' proficiency
@@ -403,7 +403,7 @@ describe('SkillAssigner', () => {
 
         describe('Custom Skills with Proficiency', () => {
             it('should initialize custom skills to "none" proficiency by default', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const customSkills: CustomSkill[] = [
                     {
@@ -435,7 +435,7 @@ describe('SkillAssigner', () => {
             });
 
             it('should maintain deterministic selection with custom skills in registry', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const customSkill: CustomSkill = {
                     id: 'deterministic_custom',
@@ -464,7 +464,7 @@ describe('SkillAssigner', () => {
 
         describe('Custom Skills with Expertise Classes', () => {
             it('should include custom skills for Rogue without assigning them as proficient', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const customSkill: CustomSkill = {
                     id: 'shadow_maneuver',
@@ -493,7 +493,7 @@ describe('SkillAssigner', () => {
             });
 
             it('should include custom skills for Bard without assigning them as proficient', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const customSkills: CustomSkill[] = [
                     {
@@ -537,7 +537,7 @@ describe('SkillAssigner', () => {
 
         describe('Custom Skills Registry State', () => {
             it('should handle registry reset between tests', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
                 const em = ExtensionManager.getInstance();
 
                 // Register custom skills
@@ -569,7 +569,7 @@ describe('SkillAssigner', () => {
             });
 
             it('should handle multiple custom skills with same ability', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const wisSkills: CustomSkill[] = [
                     { id: 'wisdom_custom_1', name: 'Custom WIS 1', ability: 'WIS', source: 'custom' },
@@ -594,7 +594,7 @@ describe('SkillAssigner', () => {
 
         describe('Custom Skills Edge Cases', () => {
             it('should handle custom skill with underscore in ID', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const customSkill: CustomSkill = {
                     id: 'under_score_skill',
@@ -613,7 +613,7 @@ describe('SkillAssigner', () => {
             });
 
             it('should handle custom skill with numeric suffix in ID', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const customSkill: CustomSkill = {
                     id: 'combat_style_2',
@@ -632,7 +632,7 @@ describe('SkillAssigner', () => {
             });
 
             it('should handle custom skill with all six abilities', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 const abilities = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as const;
 
@@ -658,7 +658,7 @@ describe('SkillAssigner', () => {
             });
 
             it('should maintain skill count correctly with custom skills present', () => {
-                const registry = SkillRegistry.getInstance();
+                const registry = SkillQuery.getInstance();
 
                 // Add 10 custom skills
                 for (let i = 0; i < 10; i++) {

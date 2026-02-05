@@ -6,7 +6,7 @@
  * These interfaces allow for:
  * - Extensible feature definitions with prerequisites
  * - Feature effects (stat bonuses, skill proficiencies, ability unlocks)
- * - Integration with FeatureRegistry for runtime customization
+ * - Integration with FeatureQuery for runtime customization
  */
 
 import type { Class, Race, Ability } from '../types/Character.js';

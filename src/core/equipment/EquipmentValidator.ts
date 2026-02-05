@@ -14,8 +14,8 @@ import type {
     EquipmentMiniFeature,
     EquipmentValidationResult
 } from '../types/Equipment.js';
-import { FeatureRegistry } from '../features/FeatureRegistry.js';
-import { SkillRegistry } from '../skills/SkillRegistry.js';
+import { FeatureQuery } from '../features/FeatureQuery.js';
+import { SkillQuery } from '../skills/SkillQuery.js';
 import type { Ability } from '../types/Character.js';
 
 /**
@@ -91,8 +91,8 @@ const RANGE_FORMAT_REGEX = /^range_\d+_\d+$/;
  * This class provides static methods for validating:
  * - Complete equipment objects
  * - Individual equipment properties
- * - Feature references (checks FeatureRegistry)
- * - Skill references (checks SkillRegistry)
+ * - Feature references (checks FeatureQuery)
+ * - Skill references (checks SkillQuery)
  * - Damage information
  * - Spawn weights
  * - Equipment modifications
@@ -341,9 +341,9 @@ export class EquipmentValidator {
                 if (typeof target !== 'string') {
                     errors.push('skill_proficiency target must be a string');
                 } else {
-                    const skillReg = SkillRegistry.getInstance();
+                    const skillReg = SkillQuery.getInstance();
                     if (!skillReg.isValidSkill(target)) {
-                        errors.push(`skill_proficiency target must be a valid skill ID: "${target}" not found in SkillRegistry`);
+                        errors.push(`skill_proficiency target must be a valid skill ID: "${target}" not found in SkillQuery`);
                     }
                 }
                 if (value !== 'proficient' && value !== 'expertise' && typeof value !== 'boolean') {
@@ -369,7 +369,7 @@ export class EquipmentValidator {
                 ];
                 if (!validPassiveTargets.includes(target) &&
                     !VALID_ABILITIES.includes(target as Ability) &&
-                    !SkillRegistry.getInstance().isValidSkill(target)) {
+                    !SkillQuery.getInstance().isValidSkill(target)) {
                     // Allow custom targets for extensibility
                     // But warn if it doesn't match known patterns
                 }
@@ -475,7 +475,7 @@ export class EquipmentValidator {
     /**
      * Validate an equipment feature reference
      *
-     * Checks if string references exist in FeatureRegistry or if inline
+     * Checks if string references exist in FeatureQuery or if inline
      * mini-features are properly structured.
      *
      * @param featureRef - Feature reference (string ID or mini-feature object)
@@ -490,13 +490,13 @@ export class EquipmentValidator {
 
         if (typeof featureRef === 'string') {
             // Check if feature exists in registry
-            const registry = FeatureRegistry.getInstance();
+            const registry = FeatureQuery.getInstance();
             const classFeature = registry.getClassFeatureById(featureRef);
             const racialTrait = !classFeature ? registry.getRacialTraitById(featureRef) : undefined;
 
             if (!classFeature && !racialTrait) {
                 errors.push(
-                    `grantsFeatures[${index}]: Feature "${featureRef}" not found in FeatureRegistry`
+                    `grantsFeatures[${index}]: Feature "${featureRef}" not found in FeatureQuery`
                 );
             }
         } else if (typeof featureRef === 'object' && featureRef !== null) {
@@ -543,7 +543,7 @@ export class EquipmentValidator {
     }
 
     /**
-     * Validate if a feature ID exists in the FeatureRegistry
+     * Validate if a feature ID exists in the FeatureQuery
      *
      * Convenience method for checking single feature references.
      *
@@ -551,7 +551,7 @@ export class EquipmentValidator {
      * @returns True if feature exists in registry
      */
     static validateEquipmentFeatureReference(featureId: string): boolean {
-        const registry = FeatureRegistry.getInstance();
+        const registry = FeatureQuery.getInstance();
         const classFeature = registry.getClassFeatureById(featureId);
         const racialTrait = !classFeature ? registry.getRacialTraitById(featureId) : undefined;
         return !!(classFeature || racialTrait);
@@ -560,7 +560,7 @@ export class EquipmentValidator {
     /**
      * Validate an equipment skill reference
      *
-     * Checks if the skill ID exists in SkillRegistry.
+     * Checks if the skill ID exists in SkillQuery.
      *
      * @param skillId - Skill ID to validate
      * @param index - Index in the grantsSkills array (for error messages)
@@ -581,8 +581,8 @@ export class EquipmentValidator {
             };
         }
 
-        if (!SkillRegistry.getInstance().isValidSkill(skillId)) {
-            errors.push(`${prefix}: Skill "${skillId}" not found in SkillRegistry`);
+        if (!SkillQuery.getInstance().isValidSkill(skillId)) {
+            errors.push(`${prefix}: Skill "${skillId}" not found in SkillQuery`);
         }
 
         return {
@@ -592,7 +592,7 @@ export class EquipmentValidator {
     }
 
     /**
-     * Validate if a skill ID exists in the SkillRegistry
+     * Validate if a skill ID exists in the SkillQuery
      *
      * Convenience method for checking single skill references.
      *
@@ -600,7 +600,7 @@ export class EquipmentValidator {
      * @returns True if skill exists in registry
      */
     static validateEquipmentSkillReference(skillId: string): boolean {
-        return SkillRegistry.getInstance().isValidSkill(skillId);
+        return SkillQuery.getInstance().isValidSkill(skillId);
     }
 
     /**

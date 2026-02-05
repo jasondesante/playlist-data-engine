@@ -104,7 +104,7 @@ const VALID_PROFICIENCY_LEVELS: ReadonlyArray<string> = ['none', 'proficient', '
  * FeatureValidator - Validates class features and racial traits
  *
  * Provides strict validation to ensure custom features and traits
- * meet all requirements before being registered with FeatureRegistry.
+ * meet all requirements before being registered with FeatureQuery.
  */
 export class FeatureValidator {
     /**

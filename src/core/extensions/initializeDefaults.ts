@@ -357,12 +357,12 @@ export function ensureAllDefaultsInitialized(): void {
 }
 
 /**
- * Initialize FeatureRegistry with default features and traits
+ * Initialize FeatureQuery with default features and traits
  *
  * This should be called once during application initialization.
  * Also initializes ExtensionManager with feature default data for spawn rate management.
  *
- * Note: FeatureRegistry reads from ExtensionManager, so we only need to initialize
+ * Note: FeatureQuery reads from ExtensionManager, so we only need to initialize
  * ExtensionManager with defaults. The registry will access them via manager.get().
  */
 export function initializeFeatureDefaults(): void {
@@ -429,12 +429,12 @@ export function ensureFeatureDefaultsInitialized(): void {
 }
 
 /**
- * Initialize SkillRegistry and ExtensionManager with default skills
+ * Initialize SkillQuery and ExtensionManager with default skills
  *
  * This should be called once during application initialization.
  * Also initializes ExtensionManager with skill default data for spawn rate management.
  *
- * Note: SkillRegistry no longer has its own storage - it reads from ExtensionManager.
+ * Note: SkillQuery no longer has its own storage - it reads from ExtensionManager.
  * We only initialize ExtensionManager now.
  */
 export function initializeSkillDefaults(): void {
@@ -468,7 +468,7 @@ export function initializeSkillDefaults(): void {
 /**
  * Check if skill defaults are initialized
  *
- * Note: Since SkillRegistry now reads from ExtensionManager, we check EM instead.
+ * Note: Since SkillQuery now reads from ExtensionManager, we check EM instead.
  */
 export function areSkillDefaultsInitialized(): boolean {
     const manager = ExtensionManager.getInstance();

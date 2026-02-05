@@ -1,8 +1,8 @@
 /**
  * Unit tests for LevelUpProcessor with custom features
  *
- * Tests the level-up system with FeatureRegistry integration including:
- * - Level-up with default features from FeatureRegistry
+ * Tests the level-up system with FeatureQuery integration including:
+ * - Level-up with default features from FeatureQuery
  * - Level-up with custom class features
  * - Feature prerequisite validation during level-up
  * - Feature effects application during level-up
@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { LevelUpProcessor } from '../../src/core/progression/LevelUpProcessor.js';
-import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
+import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
 import { registerTestClassFeature, registerTestClassFeatures } from '../helpers/registrationHelpers.js';
@@ -22,15 +22,15 @@ import type { ClassFeature, AbilityScores } from '../../src/core/types/index.js'
 import type { CharacterSheet, Class } from '../../src/core/types/Character.js';
 
 describe('LevelUpProcessor with Custom Features', () => {
-    let registry: FeatureRegistry;
+    let registry: FeatureQuery;
     let extensionManager: ExtensionManager;
     let mockCharacter: CharacterSheet;
 
     beforeEach(() => {
         // Get a fresh instance and initialize with defaults
-        registry = FeatureRegistry.getInstance();
+        registry = FeatureQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
-        registry.reset();
+        registry.clearQueryCache();
         extensionManager.resetAll();
 
         // Both class features and racial traits are initialized via ExtensionManager
@@ -103,12 +103,12 @@ describe('LevelUpProcessor with Custom Features', () => {
 
     afterEach(() => {
         // Clean up after each test
-        registry.reset();
+        registry.clearQueryCache();
         extensionManager.resetAll();
     });
 
     describe('Level-Up with Default Features', () => {
-        it('should include default class features from FeatureRegistry on level-up', () => {
+        it('should include default class features from FeatureQuery on level-up', () => {
             // Level up from 1 to 2
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
@@ -123,7 +123,7 @@ describe('LevelUpProcessor with Custom Features', () => {
             });
         });
 
-        it('should return feature IDs that exist in FeatureRegistry', () => {
+        it('should return feature IDs that exist in FeatureQuery', () => {
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
             if (benefits.classFeatures && benefits.classFeatures.length > 0) {
