@@ -48,7 +48,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-starting-equipment',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 {
                     forceClass: 'Fighter',
                     level: 1
@@ -65,7 +65,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-fighter-weapons',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 {
                     forceClass: 'Fighter',
                     level: 1
@@ -81,7 +81,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-wizard-focus',
                 sampleAudioProfile,
-                'Test Wizard',
+                sampleTrack,
                 {
                     forceClass: 'Wizard',
                     level: 1
@@ -100,7 +100,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-equipment-weight',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 {
                     forceClass: 'Fighter',
                     level: 1
@@ -136,7 +136,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-stat-bonus',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -181,7 +181,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-features',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -210,7 +210,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-skills',
                 sampleAudioProfile,
-                'Test Rogue',
+                sampleTrack,
                 { forceClass: 'Rogue', level: 1 }
             );
 
@@ -229,7 +229,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-equip-weapon',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -268,7 +268,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-equip-armor',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -305,7 +305,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-multiple-items',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -352,7 +352,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-unequip',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -392,7 +392,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-multiple-instances',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -448,7 +448,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-enchant',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -472,7 +472,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-stack-enchant',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -509,7 +509,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-remove-enchant',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -583,7 +583,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-level-up-effects',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -613,7 +613,7 @@ describe('Integration: Equipment System', () => {
             const leveledUpCharacter = CharacterGenerator.generate(
                 'test-level-up-effects-lvl2',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 2 }
             );
 
@@ -628,7 +628,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-equip-features',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -676,7 +676,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-inline-features',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -719,7 +719,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-grant-skill',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -748,7 +748,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-grant-expertise',
                 sampleAudioProfile,
-                'Test Rogue',
+                sampleTrack,
                 { forceClass: 'Rogue', level: 1 }
             );
 
@@ -775,7 +775,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-grant-multiple-skills',
                 sampleAudioProfile,
-                'Test Bard',
+                sampleTrack,
                 { forceClass: 'Bard', level: 1 }
             );
 
@@ -805,7 +805,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-stack-ac',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -853,7 +853,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-stack-stats',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -910,7 +910,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-zero-weight-manual',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -964,7 +964,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-instance-id',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -990,7 +990,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-different-enchantments',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -1011,7 +1011,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-modification-history',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -1044,7 +1044,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-reapply-effects',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -1074,7 +1074,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-reapply-empty',
                 sampleAudioProfile,
-                'Test Wizard',
+                sampleTrack,
                 { forceClass: 'Wizard', level: 1 }
             );
 
@@ -1089,7 +1089,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-generator-integration',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -1107,7 +1107,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-generator-unequip',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -1160,7 +1160,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-double-equip',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -1187,7 +1187,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-unequip-nonexistent',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 
@@ -1199,7 +1199,7 @@ describe('Integration: Equipment System', () => {
             const character = CharacterGenerator.generate(
                 'test-no-properties',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 { forceClass: 'Fighter', level: 1 }
             );
 

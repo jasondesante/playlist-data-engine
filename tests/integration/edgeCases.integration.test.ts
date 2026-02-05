@@ -39,7 +39,7 @@ describe('Integration: Edge Cases', () => {
             const character = CharacterGenerator.generate(
                 'test-empty-spells',
                 sampleAudioProfile,
-                'Test Wizard',
+                sampleTrack,
                 {
                     forceClass: 'Wizard',
                     extensions: {
@@ -62,7 +62,7 @@ describe('Integration: Edge Cases', () => {
             const character = CharacterGenerator.generate(
                 'test-empty-equipment',
                 sampleAudioProfile,
-                'Test Fighter',
+                sampleTrack,
                 {
                     forceClass: 'Fighter',
                     extensions: {
@@ -85,7 +85,7 @@ describe('Integration: Edge Cases', () => {
             const character = CharacterGenerator.generate(
                 'test-empty-appearance',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         appearance: {}
@@ -107,7 +107,7 @@ describe('Integration: Edge Cases', () => {
             const character = CharacterGenerator.generate(
                 'test-empty-races',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         races: []
@@ -125,7 +125,7 @@ describe('Integration: Edge Cases', () => {
             const character = CharacterGenerator.generate(
                 'test-empty-classes',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         classes: []
@@ -147,7 +147,7 @@ describe('Integration: Edge Cases', () => {
             CharacterGenerator.generate(
                 'test-replace-body-types',
                 sampleAudioProfile,
-                'Test Character',
+                sampleTrack,
                 {
                     extensions: {
                         appearance: {

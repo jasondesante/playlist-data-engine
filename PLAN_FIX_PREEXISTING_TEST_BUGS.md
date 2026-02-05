@@ -252,10 +252,22 @@ export const createTestSpell = (overrides?: Partial<Spell>): Spell => ({
 #### Task 2.5: Fix remaining test files
 
 **Files** (estimated):
+- `tests/integration/equipmentSystem.integration.test.ts`
+- `tests/integration/edgeCases.integration.test.ts`
 - `tests/integration/e2e.test.ts`
 - Any other integration/unit tests with incomplete spell data
 
-**Status:** [ ] TODO
+**Status:** ✅ COMPLETED
+- Fixed `equipmentSystem.integration.test.ts`: Replaced 34 string track parameters with `sampleTrack`
+- Fixed `edgeCases.integration.test.ts`: Replaced 6 string track parameters with `sampleTrack`
+- Note: `e2e.test.ts` already uses proper track objects; its 1 failing test is a different pre-existing issue (name format expectation mismatch)
+
+**Test Results:**
+- Before fix: 1986 passing, 81 failing (96.1% pass rate)
+- After fix: 2066 passing, 1 failing (99.95% pass rate)
+- Fixed 80 tests by replacing string track parameters with proper `PlaylistTrack` objects
+
+**Note:** The remaining 1 failing test in `e2e.test.ts` ("should parse playlist and generate characters") is not related to the track parameter issue. It's a separate pre-existing issue where the test expects a specific name format but gets a different one due to `NamingEngine.cleanTitle()` processing. This test was already using proper track objects.
 
 ---
 
@@ -271,7 +283,10 @@ npm test
 
 **Expected result**: 2067 passing, 0 failing
 
-**Status:** [ ] TODO
+**Status:** ⚠️ PARTIALLY COMPLETED
+- Actual result: 2066 passing, 1 failing (99.95% pass rate)
+- The 1 failing test (`e2e.test.ts` - "should parse playlist and generate characters") is a separate pre-existing issue unrelated to the track parameter fixes
+- All tests affected by the "Issue 2: Wrong Track Parameter Type" bug have been fixed
 
 #### Task 3.2: Run TypeScript compilation
 
@@ -281,7 +296,8 @@ npm run build
 
 **Expected result**: No errors
 
-**Status:** [ ] TODO
+**Status:** ✅ COMPLETED
+- Build completes successfully with no TypeScript errors
 
 #### Task 3.3: Run linting
 
