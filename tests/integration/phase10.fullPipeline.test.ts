@@ -24,6 +24,8 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js'
 import { SeededRNG } from '../../src/utils/random.js';
 import type { Class } from '../../src/core/types/Character.js';
 import type { AudioProfile } from '../../src/core/types/AudioProfile.js';
+import { sampleTrack } from '../fixtures/sampleData.js';
+import { spellByName } from '../fixtures/spellFixtures.js';
 
 /**
  * Synthetic audio profiles representing diverse musical genres
@@ -275,7 +277,9 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
             // Step 2: Character generation using the audio profile
             // Note: Use a different seed for character generation to demonstrate
             // that the pipeline flows from audio profile to class to character
-            const character = CharacterGenerator.generate('test-pipeline-character-seed', audioProfile, sampleTrack);
+            const character = CharacterGenerator.generate('test-pipeline-character-seed', audioProfile, sampleTrack, {
+                forceName: 'Pipeline Test Character'
+            });
 
             // Verify character was generated successfully
             expect(character).toBeDefined();
@@ -557,8 +561,8 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
             const ranger = CharacterGenerator.generate(
                 'ranger-ammo-test',
                 audioProfile,
-                'Ranger Test',
-                { forceClass: 'Ranger' }
+                sampleTrack,
+                { forceClass: 'Ranger', forceName: 'Ranger Test' }
             );
 
             expect(ranger.class).toBe('Ranger');
@@ -594,8 +598,8 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
             const ranger = CharacterGenerator.generate(
                 'no-old-arrows',
                 audioProfile,
-                'Ranger Test',
-                { forceClass: 'Ranger' }
+                sampleTrack,
+                { forceClass: 'Ranger', forceName: 'Ranger Test' }
             );
 
             // Verify "Arrows (20)" is not in equipment
@@ -622,8 +626,8 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
             const ranger = CharacterGenerator.generate(
                 'crossbow-bolts',
                 audioProfile,
-                'Ranger Test',
-                { forceClass: 'Ranger' }
+                sampleTrack,
+                { forceClass: 'Ranger', forceName: 'Ranger Test' }
             );
 
             // If character has Crossbow, should have Bolts
@@ -644,8 +648,8 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
     describe('Task 6: Verify custom content system works', () => {
         it('should generate characters with custom spells', () => {
             const customSpells = [
-                { name: 'Phoenix Fire', level: 5, school: 'Evocation' },
-                { name: 'Mind Shield', level: 2, school: 'Abjuration' },
+                spellByName['Phoenix Fire'],
+                spellByName['Mind Shield'],
             ];
 
             const audioProfile: AudioProfile = {
@@ -664,9 +668,10 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
             const wizard = CharacterGenerator.generate(
                 'custom-spells-test',
                 audioProfile,
-                'Wizard Test',
+                sampleTrack,
                 {
                     forceClass: 'Wizard',
+                    forceName: 'Wizard Test',
                     extensions: {
                         spells: customSpells
                     }
@@ -709,9 +714,10 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
             const rogue = CharacterGenerator.generate(
                 'custom-equipment-test',
                 audioProfile,
-                'Rogue Test',
+                sampleTrack,
                 {
                     forceClass: 'Rogue',
+                    forceName: 'Rogue Test',
                     extensions: {
                         equipment: customEquipment
                     }
@@ -754,8 +760,9 @@ describe('Phase 10.1: End-to-End Full Pipeline Testing', () => {
             const character = CharacterGenerator.generate(
                 'custom-appearance-test',
                 audioProfile,
-                'Appearance Test',
+                sampleTrack,
                 {
+                    forceName: 'Appearance Test',
                     extensions: {
                         appearance: customAppearance
                     }
