@@ -103,7 +103,9 @@ export function registerTestSpells(spells: Spell[], options?: { validate?: boole
 }
 
 /**
- * Register a test class feature via ExtensionManager and invalidate cache
+ * Register a test class feature via ExtensionManager
+ *
+ * Note: Cache invalidation is automatic after registration.
  *
  * @param feature - The class feature to register
  * @param options - Optional registration options for ExtensionManager
@@ -120,7 +122,7 @@ export function registerTestClassFeature(feature: ClassFeature, options?: { vali
     }
 
     extensionManager.register('classFeatures', [feature], options);
-    featureRegistry.invalidateCache();
+    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**

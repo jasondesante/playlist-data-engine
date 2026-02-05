@@ -233,11 +233,13 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 16: Clean up registerTestClassFeature()
 **File:** `tests/helpers/registrationHelpers.ts`
 
-- [ ] Locate `registerTestClassFeature()` function
-- [ ] Remove `const featureRegistry = FeatureRegistry.getInstance()` declaration
-- [ ] Remove `featureRegistry.invalidateCache()` call at end
-- [ ] Keep duplicate check for existing feature ID
-- [ ] Add comment noting cache invalidation is automatic
+- [x] Locate `registerTestClassFeature()` function
+- [x] Remove `const featureRegistry = FeatureRegistry.getInstance()` declaration
+- [x] Remove `featureRegistry.invalidateCache()` call at end
+- [x] Keep duplicate check for existing feature ID (uses featureRegistry for duplicate check)
+- [x] Add comment noting cache invalidation is automatic
+
+**Note:** FeatureRegistry instance is still needed for the duplicate check (`getClassFeatureById()`), so the import and declaration remain.
 
 ### Task 17: Clean up registerTestClassFeatures()
 **File:** `tests/helpers/registrationHelpers.ts`
