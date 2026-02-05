@@ -115,10 +115,10 @@
 
 **File:** `DATA_ENGINE_REFERENCE.md`
 
-- [ ] **6.2.1** Update DiceRoller documentation
-  - [ ] Change from function signatures to static class method signatures
-  - [ ] Update all method signatures to show `DiceRoller.methodName()` format
-  - [ ] Note: No instantiation needed - just call `DiceRoller.rollD20()` directly
+- [x] **6.2.1** Update DiceRoller documentation
+  - [x] Change from function signatures to static class method signatures
+  - [x] Update all method signatures to show `DiceRoller.methodName()` format
+  - [x] Note: No instantiation needed - just call `DiceRoller.rollD20()` directly
 
 - [ ] **6.2.2** Add InitiativeRoller documentation
   - [ ] Add new section for InitiativeRoller class
