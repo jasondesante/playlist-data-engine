@@ -8,7 +8,6 @@
 
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry.js';
-import { SpellRegistry } from '../../src/core/spells/SpellRegistry.js';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
 import type { Spell } from '../../src/utils/constants.js';

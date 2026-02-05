@@ -271,11 +271,17 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 20: Remove unused imports from registrationHelpers.ts
 **File:** `tests/helpers/registrationHelpers.ts`
 
-- [ ] Check if `SkillRegistry` import is now unused
-- [ ] Check if `SpellRegistry` import is now unused
-- [ ] Check if `FeatureRegistry` import is now unused
-- [ ] Remove any unused registry imports
-- [ ] Run linter to verify no unused imports
+- [x] Check if `SkillRegistry` import is now unused
+- [x] Check if `SpellRegistry` import is now unused
+- [x] Check if `FeatureRegistry` import is now unused
+- [x] Remove any unused registry imports
+- [x] Run linter to verify no unused imports
+
+**Findings:**
+- `SpellRegistry` import was unused and has been removed
+- `SkillRegistry` import is still needed for duplicate check in `registerTestSkill()`
+- `FeatureRegistry` import is still needed for duplicate checks in `registerTestClassFeature()` and `registerTestRacialTrait()`
+- Linter no longer reports unused import errors
 
 ---
 
