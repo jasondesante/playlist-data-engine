@@ -690,9 +690,20 @@ All tests pass.
 ## Phase 10: Final Documentation and Changelog
 
 ### Task 50: Update or create CHANGELOG entry
-- [ ] Document automatic cache invalidation feature
-- [ ] Add migration notes for existing code
-- [ ] Note backward compatibility (manual calls still work)
+- [x] Document automatic cache invalidation feature
+- [x] Add migration notes for existing code
+- [x] Note backward compatibility (manual calls still work)
+
+**Summary:** Created `CHANGELOG.md` at the project root with comprehensive documentation of the automatic cache invalidation feature. The changelog includes:
+- Description of the new automatic cache invalidation behavior
+- Category-to-registry mapping details
+- Migration notes showing before/after code examples
+- Backward compatibility notes (manual calls still safe)
+- Technical details about edge cases
+- Test coverage information
+- Complete list of modified files
+
+The changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format and adheres to Semantic Versioning conventions.
 
 ### Task 51: Final verification of documentation
 - [ ] Search all `.md` files for `invalidateCache` to ensure examples are updated
