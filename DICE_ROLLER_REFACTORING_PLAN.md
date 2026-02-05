@@ -60,8 +60,8 @@
   - [x] Import `DiceRoller` class
   - [x] Update `rollAttack()` - replace `Math.floor(Math.random() * 20) + 1` with `DiceRoller.rollD20()` (also updated isCritical/isMiss to use DiceRoller methods)
   - [x] Update `rollDamage()` - change `calculateDamage` import to `DiceRoller.calculateDamage`
-  - [ ] Update `attackWithAdvantage()` - replace inline dice rolls with `DiceRoller.rollWithAdvantage()`
-  - [ ] Update `attackWithDisadvantage()` - replace inline dice rolls with `DiceRoller.rollWithDisadvantage()`
+  - [x] Update `attackWithAdvantage()` - replace inline dice rolls with `DiceRoller.rollWithAdvantage()`
+  - [x] Update `attackWithDisadvantage()` - replace inline dice rolls with `DiceRoller.rollWithDisadvantage()`
 
 ---
 

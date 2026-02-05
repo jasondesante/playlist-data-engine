@@ -199,17 +199,18 @@ export class AttackResolver {
    * Check if attack hits with advantage or disadvantage
    */
   attackWithAdvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult {
-    // Roll twice, take higher
-    const roll1 = Math.floor(Math.random() * 20) + 1;
-    const roll2 = Math.floor(Math.random() * 20) + 1;
-    const d20Roll = Math.max(roll1, roll2);
+    // Roll twice, take higher using DiceRoller
+    const advantageRoll = DiceRoller.rollWithAdvantage();
+    const roll1 = advantageRoll.roll1;
+    const roll2 = advantageRoll.roll2;
+    const d20Roll = advantageRoll.result;
 
     const attackBonus = attack.attack_bonus ?? 0;
     const totalRoll = d20Roll + attackBonus;
     const targetAC = target.character.armor_class;
 
-    const isCritical = d20Roll === 20;
-    const isMiss = d20Roll === 1;
+    const isCritical = DiceRoller.isCriticalHit(d20Roll);
+    const isMiss = DiceRoller.isCriticalMiss(d20Roll);
     const hit = !isMiss && (isCritical || totalRoll >= targetAC);
 
     const description = `${attacker.character.name} attacks with advantage (rolled ${roll1} and ${roll2}, using ${d20Roll})`;
@@ -267,17 +268,18 @@ export class AttackResolver {
    * Roll twice, take lower
    */
   attackWithDisadvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult {
-    // Roll twice, take lower
-    const roll1 = Math.floor(Math.random() * 20) + 1;
-    const roll2 = Math.floor(Math.random() * 20) + 1;
-    const d20Roll = Math.min(roll1, roll2);
+    // Roll twice, take lower using DiceRoller
+    const disadvantageRoll = DiceRoller.rollWithDisadvantage();
+    const roll1 = disadvantageRoll.roll1;
+    const roll2 = disadvantageRoll.roll2;
+    const d20Roll = disadvantageRoll.result;
 
     const attackBonus = attack.attack_bonus ?? 0;
     const totalRoll = d20Roll + attackBonus;
     const targetAC = target.character.armor_class;
 
-    const isCritical = d20Roll === 20;
-    const isMiss = d20Roll === 1;
+    const isCritical = DiceRoller.isCriticalHit(d20Roll);
+    const isMiss = DiceRoller.isCriticalMiss(d20Roll);
     const hit = !isMiss && (isCritical || totalRoll >= targetAC);
 
     const description = `${attacker.character.name} attacks with disadvantage (rolled ${roll1} and ${roll2}, using ${d20Roll})`;
