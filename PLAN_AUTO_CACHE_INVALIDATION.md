@@ -329,12 +329,7 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 24: Clean up spellIntegration.test.ts
 **File:** `tests/integration/spellIntegration.test.ts`
 
-- [ ] Remove `invalidateCache()` call from `beforeEach()` (line 19)
-- [ ] Remove `invalidateCache()` call (line 243)
-- [ ] Remove `invalidateCache()` call (line 288)
-- [ ] Search file for `invalidateCache` to ensure none remain
-- [ ] Remove `SpellRegistry` import if no longer used
-- [ ] Run tests to verify they pass
+**N/A - File does not exist.** No spell integration test file exists in the codebase.
 
 ### Task 25: Clean up phase15.fullCustomContent.integration.test.ts
 **File:** `tests/integration/phase15.fullCustomContent.integration.test.ts`
@@ -353,10 +348,12 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 26: Clean up prerequisitesAndRaces.integration.test.ts
 **File:** `tests/integration/prerequisitesAndRaces.integration.test.ts`
 
-- [ ] Remove `invalidateCache()` call (line 147)
-- [ ] Search file for `invalidateCache` to ensure none remain
-- [ ] Remove unused registry imports
-- [ ] Run tests to verify they pass
+- [x] Remove `invalidateCache()` call (line 147)
+- [x] Search file for `invalidateCache` to ensure none remain
+- [x] Remove unused registry imports (N/A - SkillRegistry still used for validation)
+- [x] Run tests to verify they pass
+
+**Summary:** Removed 1 `invalidateCache()` call. The `SkillRegistry` import remains because the registry instance is used extensively throughout the tests for validation (not for cache invalidation). All 33 tests pass.
 
 ---
 

@@ -142,9 +142,9 @@ describe('Integration: Prerequisites and Races', () => {
 
     afterEach(() => {
         // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
+        // Cache invalidation is now automatic after ExtensionManager.register()
         featureRegistry.reset();
         extensionManager.resetAll();
-        skillRegistry.invalidateCache();
     });
 
     describe('Generate character with skill prerequisites met', () => {
