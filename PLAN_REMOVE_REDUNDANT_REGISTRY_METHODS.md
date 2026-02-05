@@ -751,13 +751,40 @@ The registry method removal itself is working correctly. The failing tests are u
 ### Task 7.4: Runtime Verification (Manual)
 
 **Sub-tasks:**
-- [ ] Create test script registering spell via ExtensionManager
-- [ ] Create test script registering skill via ExtensionManager
-- [ ] Create test script registering feature via ExtensionManager
-- [ ] Create test script registering trait via ExtensionManager
-- [ ] Verify query methods work after registration
-- [ ] Verify cache invalidation works
-- [ ] Verify getRegistryStats() counts correctly
+- [x] Create test script registering spell via ExtensionManager
+- [x] Create test script registering skill via ExtensionManager
+- [x] Create test script registering feature via ExtensionManager
+- [x] Create test script registering trait via ExtensionManager
+- [x] Verify query methods work after registration
+- [x] Verify cache invalidation works
+- [x] Verify getRegistryStats() counts correctly
+
+**Status:** ✅ COMPLETED
+- Created comprehensive runtime verification script at `tests/runtime-verification/verify-registrations.ts`
+- All 19 verification tests passing (100% pass rate)
+- Verified spell registration via ExtensionManager works correctly
+- Verified skill registration via ExtensionManager works correctly
+- Verified class feature registration via ExtensionManager works correctly
+- Verified racial trait registration via ExtensionManager works correctly
+- Verified query methods work after registration
+- Verified cache invalidation works correctly (cache is stale before invalidation, fresh after)
+- Verified getRegistryStats() counts correctly
+- Verified validation rejects invalid data correctly
+
+**Test Results:**
+```
+Total Tests: 19
+Passed: 19
+Failed: 0
+Pass Rate: 100.0%
+```
+
+The runtime verification confirms that:
+1. ExtensionManager.register() works for all content types
+2. Query methods correctly read from ExtensionManager after registration
+3. Cache invalidation is required and works as expected
+4. getRegistryStats() correctly counts custom content
+5. Validation works correctly to reject invalid data
 
 ---
 
