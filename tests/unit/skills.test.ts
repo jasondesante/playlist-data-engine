@@ -336,7 +336,7 @@ describe('SkillAssigner', () => {
                 const registry = SkillQuery.getInstance();
 
                 // Spy on console.warn to verify warning is logged
-                const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+                const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
                 // We can't modify CLASS_DATA directly, but we can test the validation behavior
                 // by creating a scenario where invalid skills would be present
@@ -363,7 +363,7 @@ describe('SkillAssigner', () => {
             it('should warn console when encountering invalid skill ID', () => {
                 const registry = SkillQuery.getInstance();
 
-                const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+                const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
                 // Register a custom skill
                 const customSkill: CustomSkill = {
@@ -559,7 +559,6 @@ describe('SkillAssigner', () => {
                 // Reset registry using ExtensionManager
                 em.resetAll();
                 em.initializeDefaults('skills', [...DEFAULT_SKILLS]);
-                // Cache invalidation is automatic after register()
 
                 const rng2 = new SeededRNG('after-reset');
                 const skills2 = SkillAssigner.assignSkills('Barbarian', rng2);

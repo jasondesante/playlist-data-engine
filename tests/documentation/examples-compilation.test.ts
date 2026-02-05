@@ -601,7 +601,6 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             };
 
             manager.register('classFeatures', [arcaneSmith]);
-            // Note: Cache invalidation is automatic via ExtensionManager.register()
 
             const character = CharacterGenerator.generate('seed', mockAudioProfile, mockTrack, {
                 forceClass: 'Wizard'
@@ -1455,7 +1454,6 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             };
 
             manager.register('spells', [customSpell]);
-            // Note: Cache invalidation is automatic via ExtensionManager.register()
 
             // Verify the spell is now in ExtensionManager
             const updatedSpells = manager.get('spells');
@@ -1523,7 +1521,6 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             };
 
             manager.register('spells', [cantrip, level5Spell]);
-            // Note: Cache invalidation is automatic via ExtensionManager.register()
 
             // Verify getSpellsByLevel works
             const cantrips = spellQuery.getSpellsByLevel(0);
@@ -1566,7 +1563,6 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             };
 
             manager.register('spells', [evocationSpell, abjurationSpell]);
-            // Note: Cache invalidation is automatic via ExtensionManager.register()
 
             // Verify getSpellsBySchool works
             const evocationSpells = spellQuery.getSpellsBySchool('Evocation');
@@ -1597,7 +1593,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             const notFound = spellQuery.getSpell('test_cache_spell');
             expect(notFound).toBeUndefined();
 
-            // Register new spell via ExtensionManager (cache invalidation is automatic)
+            // Register new spell via ExtensionManager
             manager.register('spells', [customSpell]);
 
             // Verify the spell is accessible after registration

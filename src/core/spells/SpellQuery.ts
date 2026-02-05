@@ -12,7 +12,6 @@
  * No duplicate storage - all data lives in ExtensionManager.
  *
  * **Registration:** Use ExtensionManager.register('spells', [...]) to register spells.
- * Cache invalidation is automatic after registration.
  */
 
 import type { Spell } from './SpellTypes.js';
@@ -57,7 +56,6 @@ export interface RegisteredSpell extends Spell {
  * Design principle: No duplicate storage. All data lives in ExtensionManager.
  *
  * **Registration:** Use ExtensionManager.register('spells', [...]) to register spells.
- * Cache invalidation is automatic after registration.
  */
 export class SpellQuery {
     private static instance: SpellQuery;
@@ -83,7 +81,6 @@ export class SpellQuery {
     /**
      * Invalidate all caches
      *
-     * **Note:** Cache invalidation is automatic after ExtensionManager.register().
      * This method is primarily for internal use and advanced scenarios.
      *
      * Call this after directly registering spells via ExtensionManager

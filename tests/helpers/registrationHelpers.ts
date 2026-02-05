@@ -16,7 +16,6 @@ import type { ClassFeature, RacialTrait } from '../../src/core/features/FeatureT
 /**
  * Register a test skill via ExtensionManager
  *
- * Note: Cache invalidation is automatic after registration.
  *
  * @param skill - The skill to register
  * @param options - Optional registration options for ExtensionManager
@@ -44,13 +43,11 @@ export function registerTestSkill(skill: CustomSkill, options?: { validate?: boo
     }
 
     extensionManager.register('skills', [skill], options);
-    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
  * Register multiple test skills via ExtensionManager
  *
- * Note: Cache invalidation is automatic after registration.
  *
  * @param skills - Array of skills to register
  * @param options - Optional registration options for ExtensionManager
@@ -64,7 +61,6 @@ export function registerTestSkills(skills: CustomSkill[], options?: { validate?:
 /**
  * Register a test spell via ExtensionManager
  *
- * Note: Cache invalidation is automatic after registration.
  *
  * @param spell - The spell to register
  * @param options - Optional registration options for ExtensionManager
@@ -83,13 +79,10 @@ export function registerTestSpell(spell: Spell, options?: { validate?: boolean }
     const extensionManager = ExtensionManager.getInstance();
 
     extensionManager.register('spells', [spell], options);
-    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
  * Register multiple test spells via ExtensionManager
- *
- * Note: Cache invalidation is automatic after registration.
  *
  * @param spells - Array of spells to register
  * @param options - Optional registration options for ExtensionManager
@@ -98,13 +91,10 @@ export function registerTestSpells(spells: Spell[], options?: { validate?: boole
     const extensionManager = ExtensionManager.getInstance();
 
     extensionManager.register('spells', spells, options);
-    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
  * Register a test class feature via ExtensionManager
- *
- * Note: Cache invalidation is automatic after registration.
  *
  * @param feature - The class feature to register
  * @param options - Optional registration options for ExtensionManager
@@ -121,13 +111,10 @@ export function registerTestClassFeature(feature: ClassFeature, options?: { vali
     }
 
     extensionManager.register('classFeatures', [feature], options);
-    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
  * Register multiple test class features via ExtensionManager
- *
- * Note: Cache invalidation is automatic after registration.
  *
  * @param features - Array of class features to register
  * @param options - Optional registration options for ExtensionManager
@@ -136,13 +123,10 @@ export function registerTestClassFeatures(features: ClassFeature[], options?: { 
     const extensionManager = ExtensionManager.getInstance();
 
     extensionManager.register('classFeatures', features, options);
-    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
  * Register a test racial trait via ExtensionManager
- *
- * Note: Cache invalidation is automatic after registration.
  *
  * @param trait - The racial trait to register
  * @param options - Optional registration options for ExtensionManager
@@ -159,13 +143,10 @@ export function registerTestRacialTrait(trait: RacialTrait, options?: { validate
     }
 
     extensionManager.register('racialTraits', [trait], options);
-    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
  * Register multiple test racial traits via ExtensionManager
- *
- * Note: Cache invalidation is automatic after registration.
  *
  * @param traits - Array of racial traits to register
  * @param options - Optional registration options for ExtensionManager
@@ -174,5 +155,4 @@ export function registerTestRacialTraits(traits: RacialTrait[], options?: { vali
     const extensionManager = ExtensionManager.getInstance();
 
     extensionManager.register('racialTraits', traits, options);
-    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }

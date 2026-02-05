@@ -4359,7 +4359,7 @@ Query and validation layer for class features and racial traits stored in Extens
 - Feature-related helper methods (prerequisite validation, subrace support, etc.)
 - Cache invalidation for manual updates
 
-**Registration:** Use `ExtensionManager.register('classFeatures', [...])` or `ExtensionManager.register('racialTraits', [...])` directly. Cache invalidation is automatic after registration.
+**Registration:** Use `ExtensionManager.register('classFeatures', [...])` or `ExtensionManager.register('racialTraits', [...])` directly.
 
 **Design principle:** No duplicate storage. All three registries (SpellQuery, SkillQuery, FeatureQuery) follow the same pattern: they do not maintain their own copy of data. All data lives in ExtensionManager.
 
@@ -4515,13 +4515,11 @@ interface CharacterTrait {
 **Class features** must be registered via ExtensionManager:
 ```typescript
 ExtensionManager.getInstance().register('classFeatures', [featureData]);
-// Cache invalidation is automatic
 ```
 
 **Racial traits** must be registered via ExtensionManager:
 ```typescript
 ExtensionManager.getInstance().register('racialTraits', [traitData]);
-// Cache invalidation is automatic
 ```
 
 **Note on Initialization:**
@@ -4699,7 +4697,7 @@ Query and validation layer for character skills stored in ExtensionManager.
 - Skill-related helper methods (prerequisite validation, ability/category filtering, etc.)
 - Cache invalidation for manual updates
 
-**Registration:** Use `ExtensionManager.register('skills', [...])` directly. Cache invalidation is automatic after registration.
+**Registration:** Use `ExtensionManager.register('skills', [...])` directly.
 
 **Design principle:** No duplicate storage. All data lives in ExtensionManager.
 
@@ -4815,7 +4813,6 @@ interface SkillSelectionWeights {
 Skills must be registered via ExtensionManager:
 ```typescript
 ExtensionManager.getInstance().register('skills', [skillData]);
-// Cache invalidation is automatic
 ```
 
 **Note on Initialization:**
@@ -4951,7 +4948,7 @@ Query and validation layer for spells stored in ExtensionManager.
 - Spell-related helper methods (prerequisite validation, class spell lists, etc.)
 - Cache invalidation for manual updates
 
-**Registration:** Use `ExtensionManager.register('spells', [...])` or `ExtensionManager.register('spells.${ClassName}', [...])` for class spell lists directly. Cache invalidation is automatic after registration.
+**Registration:** Use `ExtensionManager.register('spells', [...])` or `ExtensionManager.register('spells.${ClassName}', [...])` for class spell lists directly.
 
 **Design principle:** No duplicate storage. All three registries (SpellQuery, SkillQuery, FeatureQuery) follow the same pattern: they do not maintain their own copy of data. All data lives in ExtensionManager.
 
@@ -5056,7 +5053,7 @@ interface ValidationResult {
 
 **Usage Notes:**
 
-- **Registration:** Use `ExtensionManager.register('spells', [...])` directly. Cache invalidation is automatic after registration.
+- **Registration:** Use `ExtensionManager.register('spells', [...])` directly.
 - **Class Spell Lists:** Register custom class spell lists via `ExtensionManager.register('spells.${ClassName}', [...])`. Spell IDs are validated during registration.
 - **Querying:** Query methods read from ExtensionManager with lazy caching for performance. Caches are automatically invalidated after registration.
 - **No Duplicate Storage:** All three registries (SpellQuery, SkillQuery, FeatureQuery) follow the same pattern and do not maintain their own data copy. ExtensionManager is the single source of truth.

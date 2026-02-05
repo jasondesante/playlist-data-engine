@@ -114,7 +114,7 @@ async function main(): Promise<void> {
         const initialSpellCount = spellQuery.getSpellCount();
         logInfo(`Initial spell count: ${initialSpellCount}`);
 
-        // Register via ExtensionManager (cache invalidation is automatic)
+        // Register via ExtensionManager
         manager.register('spells', [testSpell]);
         logInfo('Registered test spell via ExtensionManager');
 
@@ -174,7 +174,7 @@ async function main(): Promise<void> {
         const initialSkillCount = skillQuery.getSkillCount();
         logInfo(`Initial skill count: ${initialSkillCount}`);
 
-        // Register via ExtensionManager (cache invalidation is automatic)
+        // Register via ExtensionManager
         manager.register('skills', [testSkill]);
         logInfo('Registered test skill via ExtensionManager');
 
@@ -234,7 +234,7 @@ async function main(): Promise<void> {
         const initialFeatureStats = featureQuery.getQueryStats();
         logInfo(`Initial class feature count: ${initialFeatureStats.totalClassFeatures}`);
 
-        // Register via ExtensionManager (cache invalidation is automatic)
+        // Register via ExtensionManager
         manager.register('classFeatures', [testClassFeature]);
         logInfo('Registered test class feature via ExtensionManager');
 
@@ -284,7 +284,7 @@ async function main(): Promise<void> {
         const initialTraitStats = featureQuery.getQueryStats();
         logInfo(`Initial racial trait count: ${initialTraitStats.totalRacialTraits}`);
 
-        // Register via ExtensionManager (cache invalidation is automatic)
+        // Register via ExtensionManager
         manager.register('racialTraits', [testRacialTrait]);
         logInfo('Registered test racial trait via ExtensionManager');
 
@@ -342,7 +342,7 @@ async function main(): Promise<void> {
             testsFailed++;
         }
 
-        // Register another skill - cache invalidation is automatic
+        // Register another skill
         const testSkill2 = {
             id: 'test_nature_lore',
             name: 'Nature Lore',
@@ -369,7 +369,7 @@ async function main(): Promise<void> {
 
         // Verify both skills are present
         const hasBothSkills = afterRegistration.some(s => s.id === 'test_arcana_theory') &&
-                              afterRegistration.some(s => s.id === 'test_nature_lore');
+            afterRegistration.some(s => s.id === 'test_nature_lore');
 
         if (hasBothSkills) {
             logSuccess('Both custom skills are accessible via getAllSkills()');

@@ -150,7 +150,6 @@ describe('Subrace Support', () => {
         beforeEach(() => {
             // Clear default racial traits and register test traits
             // We set defaults to empty array to remove the default traits
-            // Note: Cache invalidation is automatic after ExtensionManager.register()
             extensionManager.initializeDefaults('racialTraits', []);
 
             // Register test racial traits for Elf with subrace specificity
@@ -484,7 +483,6 @@ describe('Subrace Support', () => {
     describe('CharacterGenerator subrace support', () => {
         beforeEach(() => {
             // Clear default racial traits and register test traits
-            // Note: Cache invalidation is automatic after ExtensionManager.register()
             extensionManager.initializeDefaults('racialTraits', []);
 
             // Register test racial traits for Elf with subrace specificity

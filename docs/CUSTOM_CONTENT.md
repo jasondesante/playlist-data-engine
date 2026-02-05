@@ -255,7 +255,6 @@ manager.register('racialTraits', [{
     source: 'custom'
 }]);
 
-// Cache invalidation is automatic after registration
 ```
 
 **Type Augmentation for Custom Races:**

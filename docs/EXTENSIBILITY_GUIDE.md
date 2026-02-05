@@ -487,7 +487,7 @@ manager.setWeights('spells', {
 ```
 
 
-#### Spell Registry
+#### Spell Query
 
 Query spells and check prerequisites using SpellQuery:
 
@@ -516,7 +516,7 @@ if (phoenixFire) {
     }
 }
 
-// Registry statistics
+// Query statistics
 const stats = spellQuery.getQueryStats();
 console.log(`Total spells: ${stats.totalSpells} (${stats.customSpells} custom)`);
 ```
@@ -728,8 +728,6 @@ manager.setWeights('classFeatures.Barbarian', {
 });
 ```
 
-**Note:** Cache invalidation is automatic after registration via `ExtensionManager.register()`.
-
 **Feature Effect Types:**
 
 | Type | Description | Example |
@@ -762,7 +760,7 @@ Class features and racial traits can require skills or spells as prerequisites, 
 import { ExtensionManager, FeatureQuery, FeatureValidator, CharacterGenerator } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
-const registry = FeatureQuery.getInstance();  // Convenience wrapper
+const query = FeatureQuery.getInstance();  // Convenience wrapper
 
 // ===== FEATURE REQUIRING SKILL PROFICIENCY =====
 // Arcane Smith: Requires Arcana skill proficiency
@@ -831,11 +829,11 @@ manager.register('racialTraits', [elvenBattleTraining]);
 
 // ===== VALIDATE FEATURE PREREQUISITES =====
 const character = CharacterGenerator.generate(seed, audioProfile, track, {forceName: 'Elf Warrior'});
-const features = registry.getClassFeatures('Wizard', character.level);
+const features = query.getClassFeatures('Wizard', character.level);
 const feature = features.find(f => f.id === 'arcane_smith');
 
 if (feature) {
-    const result = registry.validatePrerequisites(feature, character);
+    const result = query.validatePrerequisites(feature, character);
 
     if (!result.valid) {
         console.log('Cannot learn feature:', result.errors);
@@ -913,21 +911,20 @@ manager.setWeights('racialTraits', {
 });
 ```
 
-**Note:** Cache invalidation is automatic after registration via `ExtensionManager.register()`.
 
 **Get traits for a race:**
 
 ```typescript
-const registry = FeatureQuery.getInstance();
+const query = FeatureQuery.getInstance();
 
 // Get all traits for a race
-const dragonbornTraits = registry.getRacialTraits('Dragonborn');
+const dragonbornTraits = query.getRacialTraits('Dragonborn');
 
 // Get traits for a subrace
-const hillDwarfTraits = registry.getRacialTraitsForSubrace('Dwarf', 'Hill Dwarf');
+const hillDwarfTraits = query.getRacialTraitsForSubrace('Dwarf', 'Hill Dwarf');
 
 // Get a specific trait
-const fireResistance = registry.getRacialTraitById('dragon_born_fire_resistance');
+const fireResistance = query.getRacialTraitById('dragon_born_fire_resistance');
 ```
 
 ### Skills
@@ -978,8 +975,6 @@ manager.setWeights('skills', {
 });
 ```
 
-**Note:** Cache invalidation is automatic after registration via `ExtensionManager.register()`.
-
 **Register ability-specific skills:**
 
 ```typescript
@@ -1012,22 +1007,22 @@ manager.register('skills.DEX', [
 **Query skills:**
 
 ```typescript
-const registry = SkillQuery.getInstance();
+const query = SkillQuery.getInstance();
 
 // Get skill by ID
-const survival = registry.getSkill('survival_cold');
+const survival = query.getSkill('survival_cold');
 
 // Get all skills for an ability
-const strSkills = registry.getSkillsByAbility('STR');
+const strSkills = query.getSkillsByAbility('STR');
 
 // Get skills by category
-const explorationSkills = registry.getSkillsByCategory('exploration');
+const explorationSkills = query.getSkillsByCategory('exploration');
 
 // Get custom skills only
-const customSkills = registry.getSkillsBySource('custom');
+const customSkills = query.getSkillsBySource('custom');
 
 // Check if skill exists
-const isValid = registry.isValidSkill('survival_cold');  // true
+const isValid = query.isValidSkill('survival_cold');  // true
 ```
 
 #### Skills with Prerequisites
@@ -1038,7 +1033,7 @@ Skills can have prerequisites that must be met before a character can gain profi
 import { ExtensionManager, SkillQuery, SkillValidator, CharacterGenerator } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
-const registry = SkillQuery.getInstance();
+const query = SkillQuery.getInstance();
 
 // ===== SKILL WITH FEATURE PREREQUISITES =====
 // Dragon Smithing: Requires Draconic Bloodline feature
@@ -1112,7 +1107,7 @@ manager.register('skills', [dwarvenCombat]);
 // ===== VALIDATING SKILL PREREQUISITES =====
 // Check if a character meets the requirements
 const character = CharacterGenerator.generate(seed, audioProfile, track);
-const skill = registry.getSkill('dragon_smithing');
+const skill = query.getSkill('dragon_smithing');
 
 if (skill && skill.prerequisites) {
     const result = SkillValidator.validateSkillPrerequisites(skill.prerequisites, character);

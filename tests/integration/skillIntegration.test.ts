@@ -75,7 +75,7 @@ describe('Phase 13.1: SkillQuery Integration with ExtensionManager', () => {
 
         // Check it's also in SkillQuery
         expect(registry.isValidSkill('test_survival')).toBe(true);
-        
+
         const skillInRegistry = registry.getSkill('test_survival');
         expect(skillInRegistry).toBeDefined();
         expect(skillInRegistry?.name).toBe('Survival (Test)');
@@ -302,8 +302,6 @@ describe('Phase 13.1: SkillQuery Integration with ExtensionManager', () => {
             };
 
             manager.register('skills', [newSkill]);
-
-            // Note: Cache invalidation is automatic after ExtensionManager.register()
 
             // Verify new skill is visible after cache invalidation
             const newCount = registry.getAllSkills().length;
