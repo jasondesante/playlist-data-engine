@@ -494,13 +494,22 @@ if (category.startsWith('spells.') && category !== 'spells') {
 - "Arctic Expansion Pack" example (~line 1543)
 
 **Sub-tasks:**
-- [ ] Replace all `SpellRegistry.registerSpell()` examples with `ExtensionManager.register('spells', [...])`
-- [ ] Replace all `SkillRegistry.registerSkill()` examples with `ExtensionManager.register('skills', [...])`
-- [ ] Replace all `FeatureRegistry.registerClassFeature()` examples with `ExtensionManager.register('classFeatures', [...])`
-- [ ] Replace all `FeatureRegistry.registerRacialTrait()` examples with `ExtensionManager.register('racialTraits', [...])`
-- [ ] Remove "convenience wrapper" notes (no longer accurate)
-- [ ] Update registration pattern sections
-- [ ] Verify all code examples compile
+- [x] Replace all `SpellRegistry.registerSpell()` examples with `ExtensionManager.register('spells', [...])`
+- [x] Replace all `SkillRegistry.registerSkill()` examples with `ExtensionManager.register('skills', [...])`
+- [x] Replace all `FeatureRegistry.registerClassFeature()` examples with `ExtensionManager.register('classFeatures', [...])`
+- [x] Replace all `FeatureRegistry.registerRacialTrait()` examples with `ExtensionManager.register('racialTraits', [...])`
+- [x] Remove "convenience wrapper" notes (no longer accurate)
+- [x] Update registration pattern sections
+- [x] Verify all code examples compile
+
+**Status:** ✅ COMPLETED
+- All "convenience wrapper" language removed from document
+- All registration examples updated to use `ExtensionManager.register()` directly
+- Added `invalidateCache()` calls after registration examples where needed
+- Updated validation error examples to use `manager.register()` instead of removed methods
+- TypeScript compilation passes with no errors
+- Build completes successfully
+- All removed method references verified as gone via grep
 
 ---
 

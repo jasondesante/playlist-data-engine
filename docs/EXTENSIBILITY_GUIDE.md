@@ -476,7 +476,7 @@ manager.setWeights('spells', {
 ===== SPELL REGISTRY FOR CUSTOM SPELLS =====
 Register and query custom spells with prerequisite validation
 
-**Note:** SpellRegistry is a **convenience wrapper** around ExtensionManager. All spells are stored in ExtensionManager; SpellRegistry provides convenient methods that delegate to ExtensionManager with caching for performance.
+**Note:** Spell registration is done via `ExtensionManager.register()`. After registration, you may need to call `SpellRegistry.getInstance().invalidateCache()` to ensure query methods return the latest data.
 
 ```typescript
 
@@ -485,41 +485,43 @@ import { SpellRegistry, ExtensionManager } from 'playlist-data-engine';
 const spellRegistry = SpellRegistry.getInstance();
 const manager = ExtensionManager.getInstance();
 
-// ===== REGISTRATION PATTERN 1: Via SpellRegistry (Convenience) =====
-// Register custom spells
-spellRegistry.registerSpell({
-  id: 'phoenix_fire',
-  name: 'Phoenix Fire',
-  level: 5,
-  school: 'Evocation',
-  casting_time: '1 action',
-  range: '60 feet',
-  components: ['V', 'S'],
-  duration: 'Instantaneous',
-  description: 'A burst of phoenix flame...',
-  prerequisites: {
-    level: 10,
-    abilities: { CHA: 16 }
+// ===== REGISTER CUSTOM SPELLS =====
+// Use ExtensionManager to register spells
+manager.register('spells', [
+  {
+    id: 'phoenix_fire',
+    name: 'Phoenix Fire',
+    level: 5,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '60 feet',
+    components: ['V', 'S'],
+    duration: 'Instantaneous',
+    description: 'A burst of phoenix flame...',
+    prerequisites: {
+      level: 10,
+      abilities: { CHA: 16 }
+    },
+    classes: ['Sorcerer', 'Wizard'],
+    source: 'custom'
   },
-  classes: ['Sorcerer', 'Wizard'],
-  source: 'custom'
-});
+  {
+    id: 'frost_breath',
+    name: 'Frost Breath',
+    level: 3,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '30 ft cone',
+    components: ['V', 'S'],
+    duration: 'Instantaneous',
+    description: 'Exhale freezing cold...',
+    classes: ['Wizard', 'Sorcerer'],
+    source: 'custom'
+  }
+]);
 
-// ===== REGISTRATION PATTERN 2: Via ExtensionManager (Direct) =====
-// Both methods end up in the same place (ExtensionManager)
-manager.register('spells', [{
-  id: 'frost_breath',
-  name: 'Frost Breath',
-  level: 3,
-  school: 'Evocation',
-  casting_time: '1 action',
-  range: '30 ft cone',
-  components: ['V', 'S'],
-  duration: 'Instantaneous',
-  description: 'Exhale freezing cold...',
-  classes: ['Wizard', 'Sorcerer'],
-  source: 'custom'
-}]);
+// Invalidate cache to ensure query methods return latest data
+spellRegistry.invalidateCache();
 
 // ===== QUERY SPELLS =====
 // Query spells by level, school, or class
@@ -696,7 +698,7 @@ const character = CharacterGenerator.generate(
 
 ### Class Features
 
-Add custom class features through ExtensionManager (recommended) or FeatureRegistry (convenience wrapper):
+Register custom class features through ExtensionManager:
 
 ```typescript
 import { ExtensionManager } from 'playlist-data-engine';
@@ -754,27 +756,7 @@ manager.setWeights('classFeatures.Barbarian', {
 });
 ```
 
-**Note:** `FeatureRegistry` is a convenience wrapper around `ExtensionManager`. You can also use `FeatureRegistry.registerClassFeature()` or `FeatureRegistry.registerClassFeatures()`, which delegate to `ExtensionManager.register('classFeatures', [...])` internally.
-
-FeatureRegistry supports both single and bulk registration:
-
-```typescript
-// Register a single feature
-registry.registerClassFeature({
-    id: 'single_feature',
-    name: 'Single Feature',
-    // ... rest of feature definition
-});
-
-// Register multiple features at once
-registry.registerClassFeatures([
-    feature1,
-    feature2,
-    feature3
-]);
-```
-
-The same pattern applies to `registerRacialTrait()` / `registerRacialTraits()` and `registerSkill()` / `registerSkills()`.
+**Note:** After registering features, call `FeatureRegistry.getInstance().invalidateCache()` to ensure query methods return the latest data.
 
 **Feature Effect Types:**
 
@@ -807,8 +789,6 @@ Class features and racial traits can require skills or spells as prerequisites, 
 ```typescript
 import { ExtensionManager, FeatureRegistry, FeatureValidator, CharacterGenerator } from 'playlist-data-engine';
 
-// Note: FeatureRegistry is a convenience wrapper around ExtensionManager
-// Both approaches work - choose the one you prefer
 const manager = ExtensionManager.getInstance();
 const registry = FeatureRegistry.getInstance();  // Convenience wrapper
 
@@ -834,8 +814,12 @@ const arcaneSmith = {
 // Option 1: Register via ExtensionManager (recommended)
 manager.register('classFeatures', [arcaneSmith]);
 
-// Option 2: Register via FeatureRegistry (convenience wrapper)
-// registry.registerClassFeature(arcaneSmith);
+// Invalidate cache to ensure query methods return latest data
+registry.invalidateCache();
+
+// Invalidate cache to ensure query methods return latest data
+const featureRegistry = FeatureRegistry.getInstance();
+featureRegistry.invalidateCache();
 
 // ===== FEATURE REQUIRING SPELL KNOWLEDGE =====
 // Spellblade: Requires knowing specific spells
@@ -897,7 +881,7 @@ if (feature) {
 
 ### Racial Traits
 
-Add custom racial traits through ExtensionManager (recommended) or FeatureRegistry (convenience wrapper):
+Register custom racial traits through ExtensionManager:
 
 ```typescript
 import { ExtensionManager } from 'playlist-data-engine';
@@ -962,7 +946,7 @@ manager.setWeights('racialTraits', {
 });
 ```
 
-**Note:** `FeatureRegistry` is a convenience wrapper around `ExtensionManager`. You can also use `FeatureRegistry.registerRacialTrait()` or `FeatureRegistry.registerRacialTraits()`, which delegate to `ExtensionManager.register('racialTraits', [...])` internally.
+**Note:** After registering traits, call `FeatureRegistry.getInstance().invalidateCache()` to ensure query methods return the latest data.
 
 **Get traits for a race:**
 
@@ -981,7 +965,7 @@ const fireResistance = registry.getRacialTraitById('dragon_born_fire_resistance'
 
 ### Skills
 
-Add custom skills through ExtensionManager (recommended) or SkillRegistry (convenience wrapper):
+Register custom skills through ExtensionManager:
 
 ```typescript
 import { ExtensionManager } from 'playlist-data-engine';
@@ -1027,7 +1011,7 @@ manager.setWeights('skills', {
 });
 ```
 
-**Note:** `SkillRegistry` is a convenience wrapper around `ExtensionManager`. You can also use `SkillRegistry.registerSkill()` or `SkillRegistry.registerSkills()`, which delegate to `ExtensionManager.register('skills', [...])` internally.
+**Note:** After registering skills, call `SkillRegistry.getInstance().invalidateCache()` to ensure query methods return the latest data.
 
 **Register ability-specific skills:**
 
@@ -1086,10 +1070,8 @@ Skills can have prerequisites that must be met before a character can gain profi
 ```typescript
 import { ExtensionManager, SkillRegistry, SkillValidator, CharacterGenerator } from 'playlist-data-engine';
 
-// Note: SkillRegistry is a convenience wrapper around ExtensionManager
-// Both approaches work - choose the one you prefer
 const manager = ExtensionManager.getInstance();
-const registry = SkillRegistry.getInstance();  // Convenience wrapper
+const registry = SkillRegistry.getInstance();
 
 // ===== SKILL WITH FEATURE PREREQUISITES =====
 // Dragon Smithing: Requires Draconic Bloodline feature
@@ -1109,8 +1091,8 @@ const dragonSmithing: CustomSkill = {
 // Option 1: Register via ExtensionManager (recommended)
 manager.register('skills', [dragonSmithing]);
 
-// Option 2: Register via SkillRegistry (convenience wrapper)
-// registry.registerSkill(dragonSmithing);
+// Invalidate cache to ensure query methods return latest data
+registry.invalidateCache();
 
 // ===== SKILL WITH ABILITY SCORE AND SKILL PREREQUISITES =====
 // Advanced Arcana: Requires INT 16 and proficiency in Arcana
@@ -1268,7 +1250,7 @@ manager.register('skillLists', [
 
 You can query the FeatureRegistry and SkillRegistry to get information about registered features, skills, and registry statistics.
 
-**Note:** `FeatureRegistry` and `SkillRegistry` are convenience wrappers that read from `ExtensionManager` with caching. Query methods work the same way - they just fetch data from the single source of truth.
+**Note:** `FeatureRegistry` and `SkillRegistry` read from `ExtensionManager` with caching. Query methods fetch data from the single source of truth.
 
 ```typescript
 import { FeatureRegistry, SkillRegistry } from 'playlist-data-engine';
@@ -1567,9 +1549,6 @@ import { ExtensionManager, FeatureRegistry, SkillRegistry, CharacterGenerator } 
 // Create an expansion pack with custom features, skills, and spawn rates
 function registerArcticExpansionPack() {
     const manager = ExtensionManager.getInstance();
-
-    // Note: FeatureRegistry and SkillRegistry are convenience wrappers around ExtensionManager
-    // You can register via ExtensionManager (recommended) or via the registries (convenience wrappers)
     const featureRegistry = FeatureRegistry.getInstance();
     const skillRegistry = SkillRegistry.getInstance();
 
@@ -1817,8 +1796,8 @@ manager.register('appearance.bodyTypes', [{ name: 'giant' }]);  // Error: Must b
 // Invalid type
 { id: 'test', name: 'Test', type: 'invalid', ... }  // Error: Invalid feature type
 
-// Duplicate ID
-registry.registerClassFeature({ id: 'rage', ... });  // Error: Feature ID 'rage' already exists
+// Duplicate ID - will throw error during validation
+manager.register('classFeatures', [{ id: 'rage', ... }]);  // Error: Feature ID 'rage' already exists
 ```
 
 #### Racial Traits
@@ -1860,8 +1839,8 @@ registry.registerClassFeature({ id: 'rage', ... });  // Error: Feature ID 'rage'
 // Invalid race
 { id: 'test', name: 'Test', race: 'Orc', ... }  // Error: Invalid race
 
-// Duplicate ID
-registry.registerRacialTrait({ id: 'darkvision', ... });  // Error: Trait ID 'darkvision' already exists
+// Duplicate ID - will throw error during validation
+manager.register('racialTraits', [{ id: 'darkvision', ... }]);  // Error: Trait ID 'darkvision' already exists
 ```
 
 #### Skills
@@ -1893,8 +1872,8 @@ registry.registerRacialTrait({ id: 'darkvision', ... });  // Error: Trait ID 'da
 // Invalid ability
 { id: 'test', name: 'Test', ability: 'INVALID', source: 'custom' }  // Error: Invalid ability
 
-// Duplicate ID
-registry.registerSkill({ id: 'athletics', ... });  // Error: Skill ID 'athletics' already exists
+// Duplicate ID - will throw error during validation
+manager.register('skills', [{ id: 'athletics', ... }]);  // Error: Skill ID 'athletics' already exists
 ```
 
 #### Skill Lists
