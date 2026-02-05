@@ -35,10 +35,10 @@ import type { ClassFeature, RacialTrait } from '../../src/core/features/FeatureT
  */
 export function registerTestSkill(skill: CustomSkill, options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const skillRegistry = SkillQuery.getInstance();
+    const skillQuery = SkillQuery.getInstance();
 
     // Check for duplicate ID to maintain test behavior from old SkillQuery.registerSkill()
-    const existing = skillRegistry.getSkill(skill.id);
+    const existing = skillQuery.getSkill(skill.id);
     if (existing) {
         throw new Error(`Skill with ID "${skill.id}" already exists`);
     }
@@ -112,10 +112,10 @@ export function registerTestSpells(spells: Spell[], options?: { validate?: boole
  */
 export function registerTestClassFeature(feature: ClassFeature, options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const featureRegistry = FeatureQuery.getInstance();
+    const featureQuery = FeatureQuery.getInstance();
 
     // Check for duplicate ID to maintain test behavior from old FeatureQuery.registerClassFeature()
-    const existing = featureRegistry.getClassFeatureById(feature.id);
+    const existing = featureQuery.getClassFeatureById(feature.id);
     if (existing) {
         throw new Error(`Class feature with ID "${feature.id}" already exists`);
     }
@@ -150,10 +150,10 @@ export function registerTestClassFeatures(features: ClassFeature[], options?: { 
  */
 export function registerTestRacialTrait(trait: RacialTrait, options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const featureRegistry = FeatureQuery.getInstance();
+    const featureQuery = FeatureQuery.getInstance();
 
     // Check for duplicate ID to maintain test behavior from old FeatureQuery.registerRacialTrait()
-    const existing = featureRegistry.getRacialTraitById(trait.id);
+    const existing = featureQuery.getRacialTraitById(trait.id);
     if (existing) {
         throw new Error(`Racial trait with ID "${trait.id}" already exists`);
     }

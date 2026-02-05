@@ -11,7 +11,7 @@ import type { AudioProfile } from '../../src/core/types/AudioProfile.js';
 import type { PlaylistTrack } from '../../src/core/types/Playlist.js';
 
 describe('Subrace Stat Bonus Application', () => {
-    let featureRegistry: FeatureQuery;
+    let featureQuery: FeatureQuery;
     let extensionManager: ExtensionManager;
 
     function createMockAudioProfile(): AudioProfile {
@@ -54,11 +54,11 @@ describe('Subrace Stat Bonus Application', () => {
         // Initialize all defaults including race data
         initializeAllDefaults();
 
-        featureRegistry = FeatureQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
     });
 
     afterEach(() => {
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         extensionManager.resetAll();
     });
 
@@ -217,7 +217,7 @@ describe('Subrace Stat Bonus Application', () => {
         expect(character.racial_traits).toContain('high_elf_cantrip');
 
         // Verify the trait has the subrace property
-        const trait = featureRegistry.getRacialTraitById('high_elf_cantrip');
+        const trait = featureQuery.getRacialTraitById('high_elf_cantrip');
         expect(trait?.subrace).toBe('High Elf');
     });
 
@@ -256,7 +256,7 @@ describe('Subrace Stat Bonus Application', () => {
 
         // Wood Elf (if we registered the trait) should NOT have the trait due to prerequisite
         // But we haven't registered Wood Elf trait, so let's just verify High Elf has it
-        const validation = featureRegistry.validatePrerequisites(highElfOnlyTrait, highElf);
+        const validation = featureQuery.validatePrerequisites(highElfOnlyTrait, highElf);
         expect(validation.valid).toBe(true);
     });
 });

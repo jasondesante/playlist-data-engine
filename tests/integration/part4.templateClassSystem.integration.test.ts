@@ -18,17 +18,17 @@ import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
 import { Class, asClass } from '../../src/core/types/Character';
 
 describe('Integration: Part 4 Template-Based Class System', () => {
-    let featureRegistry: FeatureQuery;
-    let skillRegistry: SkillQuery;
+    let featureQuery: FeatureQuery;
+    let skillQuery: SkillQuery;
     let extensionManager: ExtensionManager;
 
     beforeEach(() => {
-        featureRegistry = FeatureQuery.getInstance();
-        skillRegistry = SkillQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
+        skillQuery = SkillQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Reset all registries
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
 
@@ -38,7 +38,7 @@ describe('Integration: Part 4 Template-Based Class System', () => {
     });
 
     afterEach(() => {
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
     });

@@ -23,7 +23,7 @@ import type { AbilityScores } from '../../src/core/types/Character.js';
 
 describe('Custom Races', () => {
     let manager: ExtensionManager;
-    let featureRegistry: FeatureQuery;
+    let featureQuery: FeatureQuery;
 
     // Helper function to create a minimal character sheet
     function createMockCharacter(overrides: Partial<CharacterSheet> = {}): CharacterSheet {
@@ -79,7 +79,7 @@ describe('Custom Races', () => {
         manager.initializeDefaults('classes', ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard']);
         manager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
 
-        featureRegistry = FeatureQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
     });
 
     afterEach(() => {
@@ -367,7 +367,7 @@ describe('Custom Races', () => {
                 registerTestRacialTrait(dragonTrait);
             }).not.toThrow();
 
-            const traits = featureRegistry.getRacialTraits('Dragonkin' as any);
+            const traits = featureQuery.getRacialTraits('Dragonkin' as any);
             expect(traits).toHaveLength(1);
             expect(traits[0].id).toBe('dragon_breath');
         });
@@ -405,7 +405,7 @@ describe('Custom Races', () => {
 
             registerTestRacialTrait(highElfSpell);
 
-            const trait = featureRegistry.getRacialTraitById('high_elf_cantrip');
+            const trait = featureQuery.getRacialTraitById('high_elf_cantrip');
             expect(trait).toBeDefined();
 
             const highElfCharacter = createMockCharacter({
@@ -413,7 +413,7 @@ describe('Custom Races', () => {
                 subrace: 'High Elf'
             });
 
-            const result = featureRegistry.validatePrerequisites(trait!, highElfCharacter);
+            const result = featureQuery.validatePrerequisites(trait!, highElfCharacter);
             expect(result.valid).toBe(true);
         });
 
@@ -448,7 +448,7 @@ describe('Custom Races', () => {
 
             registerTestRacialTrait(dragonOnlyTrait);
 
-            const trait = featureRegistry.getRacialTraitById('dragon_wings');
+            const trait = featureQuery.getRacialTraitById('dragon_wings');
             expect(trait).toBeDefined();
 
             const humanCharacter = createMockCharacter({
@@ -456,7 +456,7 @@ describe('Custom Races', () => {
                 level: 5
             });
 
-            const result = featureRegistry.validatePrerequisites(trait!, humanCharacter);
+            const result = featureQuery.validatePrerequisites(trait!, humanCharacter);
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('Requires race Dragonkin (current: Human)');
         });
@@ -637,15 +637,15 @@ describe('Custom Races', () => {
             registerTestRacialTrait(highElfTrait);
 
             // Get all traits for Elf
-            const allTraits = featureRegistry.getRacialTraits('Elf');
+            const allTraits = featureQuery.getRacialTraits('Elf');
             expect(allTraits.length).toBeGreaterThanOrEqual(2);
 
             // Get traits specifically for High Elf subrace
-            const highElfTraits = featureRegistry.getRacialTraitsForSubrace('Elf', 'High Elf');
+            const highElfTraits = featureQuery.getRacialTraitsForSubrace('Elf', 'High Elf');
             expect(highElfTraits.length).toBeGreaterThanOrEqual(2); // Both base and High Elf specific
 
             // Get traits for Wood Elf (should only have base trait)
-            const woodElfTraits = featureRegistry.getRacialTraitsForSubrace('Elf', 'Wood Elf');
+            const woodElfTraits = featureQuery.getRacialTraitsForSubrace('Elf', 'Wood Elf');
             expect(woodElfTraits.some(t => t.id === 'darkvision_custom')).toBe(true);
             expect(woodElfTraits.some(t => t.id === 'high_elf_magic')).toBe(false);
         });

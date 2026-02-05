@@ -494,30 +494,30 @@ Query spells and check prerequisites using SpellQuery:
 ```typescript
 import { SpellQuery } from 'playlist-data-engine';
 
-const spellRegistry = SpellQuery.getInstance();
+const spellQuery = SpellQuery.getInstance();
 
 // Query spells by level, school, or class
-const fifthLevelSpells = spellRegistry.getSpellsByLevel(5);
-const evocationSpells = spellRegistry.getSpellsBySchool('Evocation');
-const sorcererSpells = spellRegistry.getSpellsForClass('Sorcerer');
+const fifthLevelSpells = spellQuery.getSpellsByLevel(5);
+const evocationSpells = spellQuery.getSpellsBySchool('Evocation');
+const sorcererSpells = spellQuery.getSpellsForClass('Sorcerer');
 
 // Get spells available to a character (prerequisites met)
-const availableSpells = spellRegistry.getAvailableSpells(character);
+const availableSpells = spellQuery.getAvailableSpells(character);
 console.log(`Available spells: ${availableSpells.map(s => s.name).join(', ')}`);
 
 // Get a specific spell
-const phoenixFire = spellRegistry.getSpell('phoenix_fire');
+const phoenixFire = spellQuery.getSpell('phoenix_fire');
 
 // Validate spell prerequisites
 if (phoenixFire) {
-    const validation = spellRegistry.validatePrerequisites(phoenixFire, character);
+    const validation = spellQuery.validatePrerequisites(phoenixFire, character);
     if (!validation.valid) {
         console.log(`Prerequisites not met: ${validation.errors.join(', ')}`);
     }
 }
 
 // Registry statistics
-const stats = spellRegistry.getQueryStats();
+const stats = spellQuery.getQueryStats();
 console.log(`Total spells: ${stats.totalSpells} (${stats.customSpells} custom)`);
 ```
 
@@ -1221,36 +1221,36 @@ You can query the FeatureQuery and SkillQuery to get information about registere
 ```typescript
 import { FeatureQuery, SkillQuery } from 'playlist-data-engine';
 
-const featureRegistry = FeatureQuery.getInstance();
-const skillRegistry = SkillQuery.getInstance();
+const featureQuery = FeatureQuery.getInstance();
+const skillQuery = SkillQuery.getInstance();
 
 // ===== FEATURE QUERIES =====
 
 // Get all features for a class at a specific level
-const barbarianLevel3Features = featureRegistry.getClassFeatures('Barbarian', 3);
+const barbarianLevel3Features = featureQuery.getClassFeatures('Barbarian', 3);
 console.log(`Barbarian level 3 features:`, barbarianLevel3Features.map(f => f.name));
 
 // Get all racial traits for a race
-const elfTraits = featureRegistry.getRacialTraits('Elf');
+const elfTraits = featureQuery.getRacialTraits('Elf');
 console.log(`Elf traits:`, elfTraits.map(t => t.name));
 
 // ===== SKILL QUERIES =====
 
 // Get skills by ability
-const wisdomSkills = skillRegistry.getSkillsByAbility('WIS');
+const wisdomSkills = skillQuery.getSkillsByAbility('WIS');
 console.log(`WIS skills:`, wisdomSkills.map(s => s.id));
 
 // Get skills by category
-const explorationSkills = skillRegistry.getSkillsByCategory('exploration');
+const explorationSkills = skillQuery.getSkillsByCategory('exploration');
 console.log(`Exploration skills:`, explorationSkills.map(s => s.name));
 
 // ===== REGISTRY STATISTICS =====
 
 // Get registry statistics
-const featureStats = featureRegistry.getQueryStats();
+const featureStats = featureQuery.getQueryStats();
 console.log(`Features: ${featureStats.totalFeatures} (${featureStats.customFeatures} custom)`);
 
-const skillStats = skillRegistry.getQueryStats();
+const skillStats = skillQuery.getQueryStats();
 console.log(`Skills: ${skillStats.totalSkills} (${skillStats.customSkills} custom)`);
 ```
 
@@ -1515,8 +1515,8 @@ import { ExtensionManager, FeatureQuery, SkillQuery, CharacterGenerator } from '
 // Create an expansion pack with custom features, skills, and spawn rates
 function registerArcticExpansionPack() {
     const manager = ExtensionManager.getInstance();
-    const featureRegistry = FeatureQuery.getInstance();
-    const skillRegistry = SkillQuery.getInstance();
+    const featureQuery = FeatureQuery.getInstance();
+    const skillQuery = SkillQuery.getInstance();
 
     // ===== CUSTOM FEATURES =====
     const frostRage = {

@@ -24,7 +24,7 @@ import type { AudioProfile } from '../../src/core/types/AudioProfile.js';
 import type { PlaylistTrack } from '../../src/core/types/Playlist.js';
 
 describe('Subrace Support', () => {
-    let featureRegistry: FeatureQuery;
+    let featureQuery: FeatureQuery;
     let extensionManager: ExtensionManager;
 
     // Helper function to create a minimal character sheet
@@ -116,11 +116,11 @@ describe('Subrace Support', () => {
         extensionManager.initializeDefaults('classes', ['Barbarian', 'Bard', 'Cleric', 'Druid', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Sorcerer', 'Warlock', 'Wizard']);
         extensionManager.initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS);
 
-        featureRegistry = FeatureQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
     });
 
     afterEach(() => {
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         extensionManager.resetAll();
     });
 
@@ -269,7 +269,7 @@ describe('Subrace Support', () => {
         });
 
         it('should return all base traits when no subrace specified', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('Elf', '');
+            const traits = featureQuery.getRacialTraitsForSubrace('Elf', '');
 
             // Should return base traits (without subrace) plus any traits with matching subrace (empty string won't match)
             // Since we pass '', it will only match traits without subrace or with subrace === ''
@@ -277,7 +277,7 @@ describe('Subrace Support', () => {
         });
 
         it('should return base + High Elf specific traits for High Elf subrace', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('Elf', 'High Elf');
+            const traits = featureQuery.getRacialTraitsForSubrace('Elf', 'High Elf');
 
             // Should include base traits (no subrace) and High Elf specific traits
             const traitIds = traits.map(t => t.id);
@@ -299,7 +299,7 @@ describe('Subrace Support', () => {
         });
 
         it('should return base + Wood Elf specific traits for Wood Elf subrace', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('Elf', 'Wood Elf');
+            const traits = featureQuery.getRacialTraitsForSubrace('Elf', 'Wood Elf');
 
             const traitIds = traits.map(t => t.id);
 
@@ -320,7 +320,7 @@ describe('Subrace Support', () => {
         });
 
         it('should return base + Drow specific traits for Drow subrace', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('Elf', 'Drow');
+            const traits = featureQuery.getRacialTraitsForSubrace('Elf', 'Drow');
 
             const traitIds = traits.map(t => t.id);
 
@@ -341,13 +341,13 @@ describe('Subrace Support', () => {
         });
 
         it('should return empty array for unknown race', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('UnknownRace' as any, 'Subrace');
+            const traits = featureQuery.getRacialTraitsForSubrace('UnknownRace' as any, 'Subrace');
 
             expect(traits).toEqual([]);
         });
 
         it('should return only base traits for unknown subrace', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('Elf', 'UnknownSubrace');
+            const traits = featureQuery.getRacialTraitsForSubrace('Elf', 'UnknownSubrace');
 
             const traitIds = traits.map(t => t.id);
 
@@ -363,14 +363,14 @@ describe('Subrace Support', () => {
         });
 
         it('should correctly filter traits when some have no subrace and some do', () => {
-            const allElfTraits = featureRegistry.getRacialTraits('Elf');
+            const allElfTraits = featureQuery.getRacialTraits('Elf');
 
             // All traits should be present for base race
             const allTraitIds = allElfTraits.map(t => t.id);
             expect(allTraitIds.length).toBeGreaterThan(5);
 
             // High Elf should get base + high elf traits
-            const highElfTraits = featureRegistry.getRacialTraitsForSubrace('Elf', 'High Elf');
+            const highElfTraits = featureQuery.getRacialTraitsForSubrace('Elf', 'High Elf');
             const highElfTraitIds = highElfTraits.map(t => t.id);
             expect(highElfTraitIds.length).toBeLessThan(allTraitIds.length);
             expect(highElfTraitIds).toContain('high_elf_extra_cantrip');
@@ -418,9 +418,9 @@ describe('Subrace Support', () => {
 
         it('should validate when character has required subrace', () => {
             const highElfCharacter = createMockCharacter({ subrace: 'High Elf' });
-            const highElfTrait = featureRegistry.getRacialTraitById('high_elf_wizard_training');
+            const highElfTrait = featureQuery.getRacialTraitById('high_elf_wizard_training');
 
-            const result = featureRegistry.validatePrerequisites(highElfTrait!, highElfCharacter);
+            const result = featureQuery.validatePrerequisites(highElfTrait!, highElfCharacter);
 
             expect(result.valid).toBe(true);
             expect(result.errors).toBeUndefined();
@@ -428,9 +428,9 @@ describe('Subrace Support', () => {
 
         it('should fail validation when character lacks required subrace', () => {
             const woodElfCharacter = createMockCharacter({ subrace: 'Wood Elf' });
-            const highElfTrait = featureRegistry.getRacialTraitById('high_elf_wizard_training');
+            const highElfTrait = featureQuery.getRacialTraitById('high_elf_wizard_training');
 
-            const result = featureRegistry.validatePrerequisites(highElfTrait!, woodElfCharacter);
+            const result = featureQuery.validatePrerequisites(highElfTrait!, woodElfCharacter);
 
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('Requires subrace High Elf (current: Wood Elf)');
@@ -438,9 +438,9 @@ describe('Subrace Support', () => {
 
         it('should fail validation when character has no subrace but subrace is required', () => {
             const noSubraceCharacter = createMockCharacter();
-            const highElfTrait = featureRegistry.getRacialTraitById('high_elf_wizard_training');
+            const highElfTrait = featureQuery.getRacialTraitById('high_elf_wizard_training');
 
-            const result = featureRegistry.validatePrerequisites(highElfTrait!, noSubraceCharacter);
+            const result = featureQuery.validatePrerequisites(highElfTrait!, noSubraceCharacter);
 
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('Requires subrace High Elf (current: none)');
@@ -462,9 +462,9 @@ describe('Subrace Support', () => {
             registerTestRacialTrait(noPrereqTrait);
 
             const anyCharacter = createMockCharacter({ subrace: 'Any Subrace' });
-            const trait = featureRegistry.getRacialTraitById('test_trait_no_prereq');
+            const trait = featureQuery.getRacialTraitById('test_trait_no_prereq');
 
-            const result = featureRegistry.validatePrerequisites(trait!, anyCharacter);
+            const result = featureQuery.validatePrerequisites(trait!, anyCharacter);
 
             expect(result.valid).toBe(true);
             expect(result.errors).toBeUndefined();
@@ -472,9 +472,9 @@ describe('Subrace Support', () => {
 
         it('should handle exact subrace matching (case-sensitive)', () => {
             const highElfCharacter = createMockCharacter({ subrace: 'low elf' }); // lowercase
-            const highElfTrait = featureRegistry.getRacialTraitById('high_elf_wizard_training');
+            const highElfTrait = featureQuery.getRacialTraitById('high_elf_wizard_training');
 
-            const result = featureRegistry.validatePrerequisites(highElfTrait!, highElfCharacter);
+            const result = featureQuery.validatePrerequisites(highElfTrait!, highElfCharacter);
 
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('Requires subrace High Elf (current: low elf)');
@@ -726,7 +726,7 @@ describe('Subrace Support', () => {
             registerTestRacialTrait(baseDragonkinTrait);
 
             // Get traits for Fire Dragonkin (using Dwarf race since we're using it as a stand-in)
-            const fireDragonkinTraits = featureRegistry.getRacialTraitsForSubrace('Dwarf', 'Fire Dragonkin');
+            const fireDragonkinTraits = featureQuery.getRacialTraitsForSubrace('Dwarf', 'Fire Dragonkin');
             const fireTraitIds = fireDragonkinTraits.map(t => t.id);
 
             // Should have base trait + fire specific trait
@@ -735,7 +735,7 @@ describe('Subrace Support', () => {
             expect(fireTraitIds).not.toContain('ice_dragonkin_ice_breath');
 
             // Get traits for Ice Dragonkin
-            const iceDragonkinTraits = featureRegistry.getRacialTraitsForSubrace('Dwarf', 'Ice Dragonkin');
+            const iceDragonkinTraits = featureQuery.getRacialTraitsForSubrace('Dwarf', 'Ice Dragonkin');
             const iceTraitIds = iceDragonkinTraits.map(t => t.id);
 
             // Should have base trait + ice specific trait
@@ -773,17 +773,17 @@ describe('Subrace Support', () => {
                 subrace: 'Fire Dragonkin'
             });
 
-            const lightningTrait = featureRegistry.getRacialTraitById('lightning_dragonkin_lightning_resistance');
+            const lightningTrait = featureQuery.getRacialTraitById('lightning_dragonkin_lightning_resistance');
 
             // Lightning Dragonkin should have access
-            const lightningResult = featureRegistry.validatePrerequisites(
+            const lightningResult = featureQuery.validatePrerequisites(
                 lightningTrait!,
                 lightningDragonkinCharacter
             );
             expect(lightningResult.valid).toBe(true);
 
             // Fire Dragonkin should NOT have access
-            const fireResult = featureRegistry.validatePrerequisites(
+            const fireResult = featureQuery.validatePrerequisites(
                 lightningTrait!,
                 fireDragonkinCharacter
             );
@@ -842,7 +842,7 @@ describe('Subrace Support', () => {
         });
 
         it('should only return Hill Dwarf traits for Hill Dwarf', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('Dwarf', 'Hill Dwarf');
+            const traits = featureQuery.getRacialTraitsForSubrace('Dwarf', 'Hill Dwarf');
             const traitIds = traits.map(t => t.id);
 
             expect(traitIds).toContain('hill_dwarf_wisdom');
@@ -851,7 +851,7 @@ describe('Subrace Support', () => {
         });
 
         it('should only return Mountain Dwarf traits for Mountain Dwarf', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('Dwarf', 'Mountain Dwarf');
+            const traits = featureQuery.getRacialTraitsForSubrace('Dwarf', 'Mountain Dwarf');
             const traitIds = traits.map(t => t.id);
 
             expect(traitIds).toContain('mountain_dwarf_strength');
@@ -860,7 +860,7 @@ describe('Subrace Support', () => {
         });
 
         it('should only return Duergar traits for Duergar', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('Dwarf', 'Duergar');
+            const traits = featureQuery.getRacialTraitsForSubrace('Dwarf', 'Duergar');
             const traitIds = traits.map(t => t.id);
 
             expect(traitIds).toContain('duergar_sunlight_sensitivity');
@@ -879,18 +879,18 @@ describe('Subrace Support', () => {
                 subrace: 'Mountain Dwarf'
             });
 
-            const hillDwarfTrait = featureRegistry.getRacialTraitById('hill_dwarf_wisdom');
-            const mountainDwarfTrait = featureRegistry.getRacialTraitById('mountain_dwarf_strength');
+            const hillDwarfTrait = featureQuery.getRacialTraitById('hill_dwarf_wisdom');
+            const mountainDwarfTrait = featureQuery.getRacialTraitById('mountain_dwarf_strength');
 
             // Hill Dwarf should not get Mountain Dwarf trait
-            const hillDwarfGetsMountainTrait = featureRegistry.validatePrerequisites(
+            const hillDwarfGetsMountainTrait = featureQuery.validatePrerequisites(
                 mountainDwarfTrait!,
                 hillDwarfCharacter
             );
             expect(hillDwarfGetsMountainTrait.valid).toBe(true); // No subrace prerequisite on the trait itself
 
             // Mountain Dwarf should not get Hill Dwarf trait
-            const mountainDwarfGetsHillTrait = featureRegistry.validatePrerequisites(
+            const mountainDwarfGetsHillTrait = featureQuery.validatePrerequisites(
                 hillDwarfTrait!,
                 mountainDwarfCharacter
             );
@@ -922,9 +922,9 @@ describe('Subrace Support', () => {
             };
 
             registerTestRacialTrait(noPrereqTrait);
-            const trait = featureRegistry.getRacialTraitById('test_no_prereq');
+            const trait = featureQuery.getRacialTraitById('test_no_prereq');
 
-            const result = featureRegistry.validatePrerequisites(trait!, character);
+            const result = featureQuery.validatePrerequisites(trait!, character);
 
             expect(result.valid).toBe(true);
         });
@@ -945,7 +945,7 @@ describe('Subrace Support', () => {
 
             registerTestRacialTrait(baseTrait);
 
-            const traits = featureRegistry.getRacialTraitsForSubrace('Elf', 'Invalid Subrace');
+            const traits = featureQuery.getRacialTraitsForSubrace('Elf', 'Invalid Subrace');
 
             // Should return only base traits (no subrace-specific traits)
             const traitIds = traits.map(t => t.id);
@@ -976,7 +976,7 @@ describe('Subrace Support', () => {
 
             // Each subrace should get only its specific traits
             for (const subrace of subraces) {
-                const traits = featureRegistry.getRacialTraitsForSubrace('Dwarf', subrace);
+                const traits = featureQuery.getRacialTraitsForSubrace('Dwarf', subrace);
                 const traitIds = traits.map(t => t.id);
 
                 for (const otherSubrace of subraces) {
@@ -1031,7 +1031,7 @@ describe('Subrace Support', () => {
         });
 
         it('should return unique subrace names for a race', () => {
-            const subraces = featureRegistry.getAvailableSubraces('Elf');
+            const subraces = featureQuery.getAvailableSubraces('Elf');
 
             expect(subraces).toEqual(['High Elf', 'Wood Elf']);
         });
@@ -1050,13 +1050,13 @@ describe('Subrace Support', () => {
 
             registerTestRacialTrait(dwarfTrait);
 
-            const subraces = featureRegistry.getAvailableSubraces('Dwarf');
+            const subraces = featureQuery.getAvailableSubraces('Dwarf');
 
             expect(subraces).toEqual([]);
         });
 
         it('should return empty array for unknown race', () => {
-            const subraces = featureRegistry.getAvailableSubraces('Dragonkin' as any);
+            const subraces = featureQuery.getAvailableSubraces('Dragonkin' as any);
 
             expect(subraces).toEqual([]);
         });

@@ -18,13 +18,13 @@ import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 
 describe('EquipmentValidator', () => {
-    let featureRegistry: FeatureQuery;
-    let skillRegistry: SkillQuery;
+    let featureQuery: FeatureQuery;
+    let skillQuery: SkillQuery;
 
     beforeEach(() => {
         // Get singleton instances
-        featureRegistry = FeatureQuery.getInstance();
-        skillRegistry = SkillQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
+        skillQuery = SkillQuery.getInstance();
 
         // Initialize defaults using ExtensionManager initialization functions
         initializeFeatureDefaults();

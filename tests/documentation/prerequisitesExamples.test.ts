@@ -16,8 +16,8 @@ import { registerTestSkill } from '../helpers/registrationHelpers.js';
 import type { CustomSkill, Spell, ClassFeature, PlaylistTrack } from '../../src/index';
 
 describe('PREREQUISITES.md Code Examples', () => {
-    let skillRegistry: SkillQuery;
-    let featureRegistry: FeatureQuery;
+    let skillQuery: SkillQuery;
+    let featureQuery: FeatureQuery;
     let manager: ExtensionManager;
 
     // Mock audio profile for character generation
@@ -48,19 +48,19 @@ describe('PREREQUISITES.md Code Examples', () => {
     };
 
     beforeEach(() => {
-        skillRegistry = SkillQuery.getInstance();
-        featureRegistry = FeatureQuery.getInstance();
+        skillQuery = SkillQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
         manager = ExtensionManager.getInstance();
 
         // Reset registries
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         manager.resetAll();
     });
 
     afterEach(() => {
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         manager.resetAll();
         // Cache invalidation is now automatic via ExtensionManager.register() and resetAll()
     });
@@ -348,7 +348,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             );
             qualifiedCharacter.skills.arcana = 'proficient';
 
-            const qualifiedResult = featureRegistry.validatePrerequisites(arcaneMastery, qualifiedCharacter);
+            const qualifiedResult = featureQuery.validatePrerequisites(arcaneMastery, qualifiedCharacter);
 
             expect(qualifiedResult.valid).toBe(true);
             expect(qualifiedResult.errors).toBeUndefined();
@@ -386,7 +386,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             );
             unqualifiedCharacter.skills.arcana = 'none';
 
-            const unqualifiedResult = featureRegistry.validatePrerequisites(arcaneMastery, unqualifiedCharacter);
+            const unqualifiedResult = featureQuery.validatePrerequisites(arcaneMastery, unqualifiedCharacter);
 
             expect(unqualifiedResult.valid).toBe(false);
             expect(unqualifiedResult.errors.length).toBeGreaterThan(0);
@@ -606,9 +606,9 @@ describe('PREREQUISITES.md Code Examples', () => {
             ExtensionManager.getInstance().register('classFeatures', [arcSmithFeature]);
 
             // Verify components are registered
-            expect(skillRegistry.getSkill('dragon_smithing')).toBeDefined();
-            expect(featureRegistry.getClassFeatureById('arcane_smith')).toBeDefined();
-            expect(featureRegistry.getRacialTraitById('fire_dragonkin_fire_resistance')).toBeDefined();
+            expect(skillQuery.getSkill('dragon_smithing')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('arcane_smith')).toBeDefined();
+            expect(featureQuery.getRacialTraitById('fire_dragonkin_fire_resistance')).toBeDefined();
 
             // Verify spell is in extension manager
             const allSpells = manager.get('spells');

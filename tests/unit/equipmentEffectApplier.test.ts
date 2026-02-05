@@ -18,14 +18,14 @@ import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 
 describe('EquipmentEffectApplier', () => {
-    let featureRegistry: FeatureQuery;
-    let skillRegistry: SkillQuery;
+    let featureQuery: FeatureQuery;
+    let skillQuery: SkillQuery;
     let testCharacter: CharacterSheet;
 
     beforeEach(() => {
         // Get singleton instances
-        featureRegistry = FeatureQuery.getInstance();
-        skillRegistry = SkillQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
+        skillQuery = SkillQuery.getInstance();
 
         // Initialize defaults using ExtensionManager initialization functions
         initializeFeatureDefaults();
@@ -299,7 +299,7 @@ describe('EquipmentEffectApplier', () => {
 
         it('should apply equipment-granted features from grantsFeatures (string reference)', () => {
             // First, let's check if darkvision exists in the registry
-            const darkvision = featureRegistry.getRacialTraitById('darkvision');
+            const darkvision = featureQuery.getRacialTraitById('darkvision');
             if (!darkvision) {
                 // Skip test if feature doesn't exist
                 return;
@@ -723,7 +723,7 @@ describe('EquipmentEffectApplier', () => {
         });
 
         it('should remove equipment-granted features', () => {
-            const darkvision = featureRegistry.getRacialTraitById('darkvision');
+            const darkvision = featureQuery.getRacialTraitById('darkvision');
             if (!darkvision) {
                 return;
             }
@@ -1323,7 +1323,7 @@ describe('EquipmentEffectApplier', () => {
         });
 
         it('should handle equipment granting multiple features', () => {
-            const darkvision = featureRegistry.getRacialTraitById('darkvision');
+            const darkvision = featureQuery.getRacialTraitById('darkvision');
             if (!darkvision) {
                 return;
             }

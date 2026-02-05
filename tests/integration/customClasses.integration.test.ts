@@ -42,17 +42,17 @@ function createMockTrack(title: string): PlaylistTrack {
 }
 
 describe('Integration: Custom Classes', () => {
-    let featureRegistry: FeatureQuery;
-    let skillRegistry: SkillQuery;
+    let featureQuery: FeatureQuery;
+    let skillQuery: SkillQuery;
     let extensionManager: ExtensionManager;
 
     beforeEach(() => {
-        featureRegistry = FeatureQuery.getInstance();
-        skillRegistry = SkillQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
+        skillQuery = SkillQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Reset all registries
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
 
@@ -62,7 +62,7 @@ describe('Integration: Custom Classes', () => {
     });
 
     afterEach(() => {
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
     });

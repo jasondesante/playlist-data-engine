@@ -97,9 +97,9 @@ async function main(): Promise<void> {
     logInfo('Verifying registration via ExtensionManager after method removal...\n');
 
     const manager = ExtensionManager.getInstance();
-    const spellRegistry = SpellQuery.getInstance();
-    const skillRegistry = SkillQuery.getInstance();
-    const featureRegistry = FeatureQuery.getInstance();
+    const spellQuery = SpellQuery.getInstance();
+    const skillQuery = SkillQuery.getInstance();
+    const featureQuery = FeatureQuery.getInstance();
 
     let testsPassed = 0;
     let testsFailed = 0;
@@ -111,7 +111,7 @@ async function main(): Promise<void> {
 
     try {
         // Get initial count
-        const initialSpellCount = spellRegistry.getSpellCount();
+        const initialSpellCount = spellQuery.getSpellCount();
         logInfo(`Initial spell count: ${initialSpellCount}`);
 
         // Register via ExtensionManager (cache invalidation is automatic)
@@ -119,7 +119,7 @@ async function main(): Promise<void> {
         logInfo('Registered test spell via ExtensionManager');
 
         // Verify spell is accessible (cache automatically invalidated)
-        const retrievedSpell = spellRegistry.getSpell('test_frostbolt');
+        const retrievedSpell = spellQuery.getSpell('test_frostbolt');
         if (retrievedSpell && retrievedSpell.name === 'Frostbolt') {
             logSuccess('Spell registration successful');
             testsPassed++;
@@ -129,7 +129,7 @@ async function main(): Promise<void> {
         }
 
         // Verify count increased
-        const newSpellCount = spellRegistry.getSpellCount();
+        const newSpellCount = spellQuery.getSpellCount();
         if (newSpellCount === initialSpellCount + 1) {
             logSuccess(`Spell count correctly increased: ${initialSpellCount} → ${newSpellCount}`);
             testsPassed++;
@@ -139,7 +139,7 @@ async function main(): Promise<void> {
         }
 
         // Verify stats
-        const spellStats = spellRegistry.getQueryStats();
+        const spellStats = spellQuery.getQueryStats();
         if (spellStats.customSpells >= 1) {
             logSuccess(`getQueryStats() reports ${spellStats.customSpells} custom spell(s)`);
             testsPassed++;
@@ -149,7 +149,7 @@ async function main(): Promise<void> {
         }
 
         // Verify query by level
-        const level1Spells = spellRegistry.getSpellsByLevel(1);
+        const level1Spells = spellQuery.getSpellsByLevel(1);
         const hasTestSpell = level1Spells.some(s => s.id === 'test_frostbolt');
         if (hasTestSpell) {
             logSuccess('getSpellsByLevel(1) includes test spell');
@@ -171,7 +171,7 @@ async function main(): Promise<void> {
 
     try {
         // Get initial count
-        const initialSkillCount = skillRegistry.getSkillCount();
+        const initialSkillCount = skillQuery.getSkillCount();
         logInfo(`Initial skill count: ${initialSkillCount}`);
 
         // Register via ExtensionManager (cache invalidation is automatic)
@@ -179,7 +179,7 @@ async function main(): Promise<void> {
         logInfo('Registered test skill via ExtensionManager');
 
         // Verify skill is accessible (cache automatically invalidated)
-        const retrievedSkill = skillRegistry.getSkill('test_arcana_theory');
+        const retrievedSkill = skillQuery.getSkill('test_arcana_theory');
         if (retrievedSkill && retrievedSkill.name === 'Arcana Theory') {
             logSuccess('Skill registration successful');
             testsPassed++;
@@ -189,7 +189,7 @@ async function main(): Promise<void> {
         }
 
         // Verify count increased
-        const newSkillCount = skillRegistry.getSkillCount();
+        const newSkillCount = skillQuery.getSkillCount();
         if (newSkillCount === initialSkillCount + 1) {
             logSuccess(`Skill count correctly increased: ${initialSkillCount} → ${newSkillCount}`);
             testsPassed++;
@@ -199,7 +199,7 @@ async function main(): Promise<void> {
         }
 
         // Verify stats
-        const skillStats = skillRegistry.getQueryStats();
+        const skillStats = skillQuery.getQueryStats();
         if (skillStats.customSkills >= 1) {
             logSuccess(`getQueryStats() reports ${skillStats.customSkills} custom skill(s)`);
             testsPassed++;
@@ -209,7 +209,7 @@ async function main(): Promise<void> {
         }
 
         // Verify query by ability
-        const intSkills = skillRegistry.getSkillsByAbility('INT');
+        const intSkills = skillQuery.getSkillsByAbility('INT');
         const hasTestSkill = intSkills.some(s => s.id === 'test_arcana_theory');
         if (hasTestSkill) {
             logSuccess('getSkillsByAbility(INT) includes test skill');
@@ -231,7 +231,7 @@ async function main(): Promise<void> {
 
     try {
         // Get initial stats
-        const initialFeatureStats = featureRegistry.getQueryStats();
+        const initialFeatureStats = featureQuery.getQueryStats();
         logInfo(`Initial class feature count: ${initialFeatureStats.totalClassFeatures}`);
 
         // Register via ExtensionManager (cache invalidation is automatic)
@@ -239,7 +239,7 @@ async function main(): Promise<void> {
         logInfo('Registered test class feature via ExtensionManager');
 
         // Verify feature is accessible (cache automatically invalidated)
-        const retrievedFeature = featureRegistry.getClassFeatureById('test_wild_surge');
+        const retrievedFeature = featureQuery.getClassFeatureById('test_wild_surge');
         if (retrievedFeature && retrievedFeature.name === 'Wild Surge') {
             logSuccess('Class feature registration successful');
             testsPassed++;
@@ -249,7 +249,7 @@ async function main(): Promise<void> {
         }
 
         // Verify count increased
-        const newFeatureStats = featureRegistry.getQueryStats();
+        const newFeatureStats = featureQuery.getQueryStats();
         if (newFeatureStats.totalClassFeatures === initialFeatureStats.totalClassFeatures + 1) {
             logSuccess(`Feature count correctly increased: ${initialFeatureStats.totalClassFeatures} → ${newFeatureStats.totalClassFeatures}`);
             testsPassed++;
@@ -259,7 +259,7 @@ async function main(): Promise<void> {
         }
 
         // Verify query by class and level
-        const sorcererLevel1Features = featureRegistry.getClassFeatures('Sorcerer', 1);
+        const sorcererLevel1Features = featureQuery.getClassFeatures('Sorcerer', 1);
         const hasTestFeature = sorcererLevel1Features.some(f => f.id === 'test_wild_surge');
         if (hasTestFeature) {
             logSuccess('getClassFeatures(Sorcerer, 1) includes test feature');
@@ -281,7 +281,7 @@ async function main(): Promise<void> {
 
     try {
         // Get initial stats
-        const initialTraitStats = featureRegistry.getQueryStats();
+        const initialTraitStats = featureQuery.getQueryStats();
         logInfo(`Initial racial trait count: ${initialTraitStats.totalRacialTraits}`);
 
         // Register via ExtensionManager (cache invalidation is automatic)
@@ -289,7 +289,7 @@ async function main(): Promise<void> {
         logInfo('Registered test racial trait via ExtensionManager');
 
         // Verify trait is accessible (cache automatically invalidated)
-        const retrievedTrait = featureRegistry.getRacialTraitById('test_dragon_fury');
+        const retrievedTrait = featureQuery.getRacialTraitById('test_dragon_fury');
         if (retrievedTrait && retrievedTrait.name === 'Dragon Fury') {
             logSuccess('Racial trait registration successful');
             testsPassed++;
@@ -299,7 +299,7 @@ async function main(): Promise<void> {
         }
 
         // Verify count increased
-        const newTraitStats = featureRegistry.getQueryStats();
+        const newTraitStats = featureQuery.getQueryStats();
         if (newTraitStats.totalRacialTraits === initialTraitStats.totalRacialTraits + 1) {
             logSuccess(`Trait count correctly increased: ${initialTraitStats.totalRacialTraits} → ${newTraitStats.totalRacialTraits}`);
             testsPassed++;
@@ -309,7 +309,7 @@ async function main(): Promise<void> {
         }
 
         // Verify query by race
-        const dragonbornTraits = featureRegistry.getRacialTraits('Dragonborn');
+        const dragonbornTraits = featureQuery.getRacialTraits('Dragonborn');
         const hasTestTrait = dragonbornTraits.some(t => t.id === 'test_dragon_fury');
         if (hasTestTrait) {
             logSuccess('getRacialTraits(Dragonborn) includes test trait');
@@ -331,7 +331,7 @@ async function main(): Promise<void> {
 
     try {
         // Verify that the first skill is already in cache (from Test 2)
-        const beforeRegistration = skillRegistry.getAllSkills();
+        const beforeRegistration = skillQuery.getAllSkills();
         const hasFirstSkill = beforeRegistration.some(s => s.id === 'test_arcana_theory');
 
         if (hasFirstSkill) {
@@ -356,7 +356,7 @@ async function main(): Promise<void> {
         logInfo('Registered second skill via ExtensionManager');
 
         // Check if cache is automatically refreshed (should contain new skill immediately)
-        const afterRegistration = skillRegistry.getAllSkills();
+        const afterRegistration = skillQuery.getAllSkills();
         const hasNewSkillAfterRegistration = afterRegistration.some(s => s.id === 'test_nature_lore');
 
         if (hasNewSkillAfterRegistration) {

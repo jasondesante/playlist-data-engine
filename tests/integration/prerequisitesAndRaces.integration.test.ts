@@ -56,8 +56,8 @@ import type { CharacterSheet } from '../../src/core/types/Character.js';
 import type { RacialTrait } from '../../src/core/features/FeatureTypes.js';
 
 describe('Integration: Prerequisites and Races', () => {
-    let skillRegistry: SkillQuery;
-    let featureRegistry: FeatureQuery;
+    let skillQuery: SkillQuery;
+    let featureQuery: FeatureQuery;
     let extensionManager: ExtensionManager;
 
     // Helper function to create a minimal character sheet
@@ -124,13 +124,13 @@ describe('Integration: Prerequisites and Races', () => {
     }
 
     beforeEach(() => {
-        skillRegistry = SkillQuery.getInstance();
-        featureRegistry = FeatureQuery.getInstance();
+        skillQuery = SkillQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Reset all registries
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         extensionManager.resetAll();
 
         // Initialize defaults
@@ -143,7 +143,7 @@ describe('Integration: Prerequisites and Races', () => {
     afterEach(() => {
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         // Cache invalidation is now automatic after ExtensionManager.register()
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         extensionManager.resetAll();
     });
 
@@ -464,7 +464,7 @@ describe('Integration: Prerequisites and Races', () => {
         });
 
         it('should get traits for High Elf subrace', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('Elf', 'High Elf');
+            const traits = featureQuery.getRacialTraitsForSubrace('Elf', 'High Elf');
             const traitIds = traits.map(t => t.id);
 
             // Should include High Elf specific trait
@@ -474,7 +474,7 @@ describe('Integration: Prerequisites and Races', () => {
         });
 
         it('should get traits for Wood Elf subrace', () => {
-            const traits = featureRegistry.getRacialTraitsForSubrace('Elf', 'Wood Elf');
+            const traits = featureQuery.getRacialTraitsForSubrace('Elf', 'Wood Elf');
             const traitIds = traits.map(t => t.id);
 
             // Should include Wood Elf specific trait
@@ -494,15 +494,15 @@ describe('Integration: Prerequisites and Races', () => {
                 subrace: 'Wood Elf'
             });
 
-            const highElfTrait = featureRegistry.getRacialTraitById('high_elf_arcane_mastery');
-            const woodElfTrait = featureRegistry.getRacialTraitById('wood_elf_archery');
+            const highElfTrait = featureQuery.getRacialTraitById('high_elf_arcane_mastery');
+            const woodElfTrait = featureQuery.getRacialTraitById('wood_elf_archery');
 
             // High Elf character should pass High Elf trait validation
-            const highElfResult = featureRegistry.validatePrerequisites(highElfTrait!, highElfCharacter);
+            const highElfResult = featureQuery.validatePrerequisites(highElfTrait!, highElfCharacter);
             expect(highElfResult.valid).toBe(true);
 
             // High Elf character should fail Wood Elf trait validation
-            const woodElfResult = featureRegistry.validatePrerequisites(woodElfTrait!, highElfCharacter);
+            const woodElfResult = featureQuery.validatePrerequisites(woodElfTrait!, highElfCharacter);
             expect(woodElfResult.valid).toBe(false);
             expect(woodElfResult.errors).toContain('Requires subrace Wood Elf (current: High Elf)');
         });
@@ -560,8 +560,8 @@ describe('Integration: Prerequisites and Races', () => {
                 level: 5
             });
 
-            const trait = featureRegistry.getRacialTraitById('dragon_fire_breath');
-            const result = featureRegistry.validatePrerequisites(trait!, dwarfCharacter);
+            const trait = featureQuery.getRacialTraitById('dragon_fire_breath');
+            const result = featureQuery.validatePrerequisites(trait!, dwarfCharacter);
 
             expect(result.valid).toBe(true);
         });
@@ -591,8 +591,8 @@ describe('Integration: Prerequisites and Races', () => {
                 level: 10
             });
 
-            const trait = featureRegistry.getRacialTraitById('dragon_wings');
-            const result = featureRegistry.validatePrerequisites(trait!, humanCharacter);
+            const trait = featureQuery.getRacialTraitById('dragon_wings');
+            const result = featureQuery.validatePrerequisites(trait!, humanCharacter);
 
             expect(result.valid).toBe(false);
         });
@@ -657,10 +657,10 @@ describe('Integration: Prerequisites and Races', () => {
             });
 
             // Get the dragon_smithing skill and validate
-            const dragonSmithing = skillRegistry.getSkill('dragon_smithing');
+            const dragonSmithing = skillQuery.getSkill('dragon_smithing');
             expect(dragonSmithing).toBeDefined();
 
-            const result = skillRegistry.validatePrerequisites(dragonSmithing!, dragonSorcerer);
+            const result = skillQuery.validatePrerequisites(dragonSmithing!, dragonSorcerer);
             expect(result.valid).toBe(true);
         });
 
@@ -672,10 +672,10 @@ describe('Integration: Prerequisites and Races', () => {
                 ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 14, WIS: 10, CHA: 10 }
             });
 
-            const dragonSmithing = skillRegistry.getSkill('dragon_smithing');
+            const dragonSmithing = skillQuery.getSkill('dragon_smithing');
             expect(dragonSmithing).toBeDefined();
 
-            const result = skillRegistry.validatePrerequisites(dragonSmithing!, regularWizard);
+            const result = skillQuery.validatePrerequisites(dragonSmithing!, regularWizard);
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('Requires feature: draconic_bloodline');
         });
@@ -688,10 +688,10 @@ describe('Integration: Prerequisites and Races', () => {
                 ability_scores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 16 }
             });
 
-            const dragonMagic = featureRegistry.getClassFeatureById('dragon_magic');
+            const dragonMagic = featureQuery.getClassFeatureById('dragon_magic');
             expect(dragonMagic).toBeDefined();
 
-            const result = featureRegistry.validatePrerequisites(dragonMagic!, level6DragonSorcerer);
+            const result = featureQuery.validatePrerequisites(dragonMagic!, level6DragonSorcerer);
             expect(result.valid).toBe(true);
         });
     });
@@ -885,8 +885,8 @@ describe('Integration: Prerequisites and Races', () => {
                 class_features: ['arcane_tradition', 'spellcasting']
             });
 
-            const arcaneSmith = featureRegistry.getClassFeatureById('arcane_smith');
-            const result = featureRegistry.validatePrerequisites(arcaneSmith!, wizardWithArcana);
+            const arcaneSmith = featureQuery.getClassFeatureById('arcane_smith');
+            const result = featureQuery.validatePrerequisites(arcaneSmith!, wizardWithArcana);
 
             expect(result.valid).toBe(true);
         });
@@ -899,8 +899,8 @@ describe('Integration: Prerequisites and Races', () => {
                 class_features: ['arcane_tradition', 'spellcasting']
             });
 
-            const arcaneSmith = featureRegistry.getClassFeatureById('arcane_smith');
-            const result = featureRegistry.validatePrerequisites(arcaneSmith!, wizardWithoutArcana);
+            const arcaneSmith = featureQuery.getClassFeatureById('arcane_smith');
+            const result = featureQuery.validatePrerequisites(arcaneSmith!, wizardWithoutArcana);
 
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('Requires proficiency in arcana');
@@ -918,8 +918,8 @@ describe('Integration: Prerequisites and Races', () => {
                 }
             });
 
-            const battleCaster = featureRegistry.getClassFeatureById('battle_caster');
-            const result = featureRegistry.validatePrerequisites(battleCaster!, eldritchKnight);
+            const battleCaster = featureQuery.getClassFeatureById('battle_caster');
+            const result = featureQuery.validatePrerequisites(battleCaster!, eldritchKnight);
 
             expect(result.valid).toBe(true);
         });
@@ -936,8 +936,8 @@ describe('Integration: Prerequisites and Races', () => {
                 }
             });
 
-            const battleCaster = featureRegistry.getClassFeatureById('battle_caster');
-            const result = featureRegistry.validatePrerequisites(battleCaster!, eldritchKnight);
+            const battleCaster = featureQuery.getClassFeatureById('battle_caster');
+            const result = featureQuery.validatePrerequisites(battleCaster!, eldritchKnight);
 
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('Requires spell: armor_of_agathys');
@@ -956,8 +956,8 @@ describe('Integration: Prerequisites and Races', () => {
                 }
             });
 
-            const arcaneMastery = featureRegistry.getClassFeatureById('arcane_mastery');
-            const result = featureRegistry.validatePrerequisites(arcaneMastery!, masterWizard);
+            const arcaneMastery = featureQuery.getClassFeatureById('arcane_mastery');
+            const result = featureQuery.validatePrerequisites(arcaneMastery!, masterWizard);
 
             expect(result.valid).toBe(true);
         });
@@ -975,8 +975,8 @@ describe('Integration: Prerequisites and Races', () => {
                 }
             });
 
-            const arcaneMastery = featureRegistry.getClassFeatureById('arcane_mastery');
-            const result = featureRegistry.validatePrerequisites(arcaneMastery!, incompleteWizard);
+            const arcaneMastery = featureQuery.getClassFeatureById('arcane_mastery');
+            const result = featureQuery.validatePrerequisites(arcaneMastery!, incompleteWizard);
 
             expect(result.valid).toBe(false);
             // Should have multiple errors
@@ -1014,8 +1014,8 @@ describe('Integration: Prerequisites and Races', () => {
             registerTestSkill(emptyPrereqSkill);
 
             const character = createMockCharacter();
-            const skill = skillRegistry.getSkill('empty_prereq');
-            const result = skillRegistry.validatePrerequisites(skill!, character);
+            const skill = skillQuery.getSkill('empty_prereq');
+            const result = skillQuery.validatePrerequisites(skill!, character);
 
             // Empty prerequisites should always pass
             expect(result.valid).toBe(true);
@@ -1042,8 +1042,8 @@ describe('Integration: Prerequisites and Races', () => {
             const characterWithoutSpells = createMockCharacter();
             delete (characterWithoutSpells as any).spells;
 
-            const feature = featureRegistry.getClassFeatureById('test_spell_feature');
-            const result = featureRegistry.validatePrerequisites(feature!, characterWithoutSpells);
+            const feature = featureQuery.getClassFeatureById('test_spell_feature');
+            const result = featureQuery.validatePrerequisites(feature!, characterWithoutSpells);
 
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('Requires spell: fireball');
@@ -1080,8 +1080,8 @@ describe('Integration: Prerequisites and Races', () => {
             });
 
             // Both validations should fail (neither skill is proficient)
-            const resultA = skillRegistry.validatePrerequisites(skillA, character);
-            const resultB = skillRegistry.validatePrerequisites(skillB, character);
+            const resultA = skillQuery.validatePrerequisites(skillA, character);
+            const resultB = skillQuery.validatePrerequisites(skillB, character);
 
             expect(resultA.valid).toBe(false);
             expect(resultB.valid).toBe(false);
@@ -1170,10 +1170,10 @@ describe('Integration: Prerequisites and Races', () => {
                 skills: { athletics: 'proficient' }
             });
 
-            const feature = featureRegistry.getClassFeatureById('fighter_sneak_attack');
+            const feature = featureQuery.getClassFeatureById('fighter_sneak_attack');
 
-            const stealthyResult = featureRegistry.validatePrerequisites(feature!, stealthyFighter);
-            const nonStealthyResult = featureRegistry.validatePrerequisites(feature!, nonStealthyFighter);
+            const stealthyResult = featureQuery.validatePrerequisites(feature!, stealthyFighter);
+            const nonStealthyResult = featureQuery.validatePrerequisites(feature!, nonStealthyFighter);
 
             expect(stealthyResult.valid).toBe(true);
             expect(nonStealthyResult.valid).toBe(false);

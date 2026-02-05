@@ -39,17 +39,17 @@ function createMockTrack(title: string): PlaylistTrack {
 }
 
 describe('Integration: CharacterGenerator with Custom Features and Skills', () => {
-    let featureRegistry: FeatureQuery;
-    let skillRegistry: SkillQuery;
+    let featureQuery: FeatureQuery;
+    let skillQuery: SkillQuery;
 
     beforeEach(() => {
-        featureRegistry = FeatureQuery.getInstance();
-        skillRegistry = SkillQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
+        skillQuery = SkillQuery.getInstance();
 
         // Reset FeatureQuery to defaults
         // Note: SkillQuery no longer has a reset() method as it's a wrapper around ExtensionManager
         // We use ExtensionManager.clearQueryCache() for skills instead
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         // SkillQuery reads from ExtensionManager, so no reset needed here
 
         // Initialize with defaults using the proper initialization functions
@@ -58,7 +58,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
     });
 
     afterEach(() => {
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         // SkillQuery has no internal state to reset - it reads from ExtensionManager
     });
 
@@ -304,7 +304,7 @@ registerTestRacialTrait(highElfTrait);
 
             // The character generation will need to support subrace selection
             // For now, verify the trait is registered
-            const registeredTrait = featureRegistry.getRacialTraitById('high_elf_weapon_training');
+            const registeredTrait = featureQuery.getRacialTraitById('high_elf_weapon_training');
             expect(registeredTrait).toBeDefined();
             expect(registeredTrait?.id).toBe('high_elf_weapon_training');
         });
@@ -394,7 +394,7 @@ registerTestRacialTrait(highElfTrait);
             // to the Wizard's available_skills list in constants.ts
             // This test verifies the skill is available in the registry
 
-            const allSkills = skillRegistry.getAllSkills();
+            const allSkills = skillQuery.getAllSkills();
             const customSkillExists = allSkills.some(s => s.id === 'arcane_knowledge');
 
             expect(customSkillExists).toBe(true);
@@ -598,13 +598,13 @@ registerTestClassFeature(invalidFeature);
 registerTestClassFeature(customFeature);
 
             // Verify feature is registered
-            expect(featureRegistry.getClassFeatureById('test_reset_feature')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_reset_feature')).toBeDefined();
 
             // Reset the registry
-            featureRegistry.clearQueryCache();
+            featureQuery.clearQueryCache();
 
             // Verify feature is no longer registered
-            expect(featureRegistry.getClassFeatureById('test_reset_feature')).toBeUndefined();
+            expect(featureQuery.getClassFeatureById('test_reset_feature')).toBeUndefined();
 
             // Reinitialize with defaults using the proper initialization function
             initializeFeatureDefaults();
@@ -651,12 +651,12 @@ registerTestClassFeature(level1Feature);
 registerTestClassFeature(level5Feature);
 
             // Get features for level 3 (should only include level 1)
-            const level3Features = featureRegistry.getClassFeatures('Paladin', 3);
+            const level3Features = featureQuery.getClassFeatures('Paladin', 3);
             expect(level3Features.some(f => f.id === 'test_level_1')).toBe(true);
             expect(level3Features.some(f => f.id === 'test_level_5')).toBe(false);
 
             // Get features for level 5 (should include both)
-            const level5Features = featureRegistry.getClassFeatures('Paladin', 5);
+            const level5Features = featureQuery.getClassFeatures('Paladin', 5);
             expect(level5Features.some(f => f.id === 'test_level_1')).toBe(true);
             expect(level5Features.some(f => f.id === 'test_level_5')).toBe(true);
         });
@@ -685,10 +685,10 @@ registerTestClassFeature(level5Feature);
             registerTestSkill(intSkill);
 
             // Get skills by ability
-            const strSkills = skillRegistry.getSkillsByAbility('STR');
+            const strSkills = skillQuery.getSkillsByAbility('STR');
             expect(strSkills.some(s => s.id === 'test_str_skill')).toBe(true);
 
-            const intSkills = skillRegistry.getSkillsByAbility('INT');
+            const intSkills = skillQuery.getSkillsByAbility('INT');
             expect(intSkills.some(s => s.id === 'test_int_skill')).toBe(true);
         });
 
@@ -716,10 +716,10 @@ registerTestClassFeature(level5Feature);
             registerTestSkill(socialSkill);
 
             // Get skills by category
-            const combatSkills = skillRegistry.getSkillsByCategory('combat');
+            const combatSkills = skillQuery.getSkillsByCategory('combat');
             expect(combatSkills.some(s => s.id === 'test_combat_skill')).toBe(true);
 
-            const socialSkills = skillRegistry.getSkillsByCategory('social');
+            const socialSkills = skillQuery.getSkillsByCategory('social');
             expect(socialSkills.some(s => s.id === 'test_social_skill')).toBe(true);
         });
     });

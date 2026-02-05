@@ -69,8 +69,8 @@ import { registerTestSkill, registerTestSkills } from '../helpers/registrationHe
 describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
     let manager: ExtensionManager;
-    let featureRegistry: FeatureQuery;
-    let skillRegistry: SkillQuery;
+    let featureQuery: FeatureQuery;
+    let skillQuery: SkillQuery;
 
     // Mock audio profile for testing
     const mockAudioProfile: AudioProfile = {
@@ -101,14 +101,14 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
     beforeEach(() => {
         manager = ExtensionManager.getInstance();
-        featureRegistry = FeatureQuery.getInstance();
-        skillRegistry = SkillQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
+        skillQuery = SkillQuery.getInstance();
         initializeAllDefaults();
     });
 
     afterEach(() => {
         manager.resetAll();
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
     });
 
@@ -607,25 +607,25 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
                 forceClass: 'Wizard'
             });
 
-            const features = featureRegistry.getClassFeatures('Wizard', character.level);
+            const features = featureQuery.getClassFeatures('Wizard', character.level);
             const feature = features.find(f => f.id === 'arcane_smith');
 
             if (feature) {
-                const result = featureRegistry.validatePrerequisites(feature, character);
+                const result = featureQuery.validatePrerequisites(feature, character);
                 expect(result).toHaveProperty('valid');
             }
         });
 
         it('should compile feature queries example', () => {
-            const barbarianLevel3Features = featureRegistry.getClassFeatures('Barbarian', 3);
+            const barbarianLevel3Features = featureQuery.getClassFeatures('Barbarian', 3);
             expect(Array.isArray(barbarianLevel3Features)).toBe(true);
 
-            const elfTraits = featureRegistry.getRacialTraits('Elf');
+            const elfTraits = featureQuery.getRacialTraits('Elf');
             expect(Array.isArray(elfTraits)).toBe(true);
         });
 
         it('should compile getQueryStats example', () => {
-            const stats = featureRegistry.getQueryStats();
+            const stats = featureQuery.getQueryStats();
 
             // Note: The actual properties are totalClassFeatures, totalRacialTraits, etc.
             // The documentation may use a simplified name
@@ -679,13 +679,13 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         });
 
         it('should compile get traits for a race example', () => {
-            const dragonbornTraits = featureRegistry.getRacialTraits('Dragonborn');
+            const dragonbornTraits = featureQuery.getRacialTraits('Dragonborn');
             expect(Array.isArray(dragonbornTraits)).toBe(true);
 
-            const hillDwarfTraits = featureRegistry.getRacialTraitsForSubrace('Dwarf', 'Hill Dwarf');
+            const hillDwarfTraits = featureQuery.getRacialTraitsForSubrace('Dwarf', 'Hill Dwarf');
             expect(Array.isArray(hillDwarfTraits)).toBe(true);
 
-            const fireResistance = featureRegistry.getRacialTraitById('dragon_born_fire_resistance');
+            const fireResistance = featureQuery.getRacialTraitById('dragon_born_fire_resistance');
             // May be undefined if not registered
         });
     });
@@ -754,19 +754,19 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         });
 
         it('should compile skill queries example', () => {
-            const survival = skillRegistry.getSkill('survival');
+            const survival = skillQuery.getSkill('survival');
             expect(typeof survival === 'object' || survival === undefined).toBe(true);
 
-            const strSkills = skillRegistry.getSkillsByAbility('STR');
+            const strSkills = skillQuery.getSkillsByAbility('STR');
             expect(Array.isArray(strSkills)).toBe(true);
 
-            const explorationSkills = skillRegistry.getSkillsByCategory('exploration');
+            const explorationSkills = skillQuery.getSkillsByCategory('exploration');
             expect(Array.isArray(explorationSkills)).toBe(true);
 
-            const customSkills = skillRegistry.getSkillsBySource('custom');
+            const customSkills = skillQuery.getSkillsBySource('custom');
             expect(Array.isArray(customSkills)).toBe(true);
 
-            const isValid = skillRegistry.isValidSkill('survival');
+            const isValid = skillQuery.isValidSkill('survival');
             expect(typeof isValid === 'boolean').toBe(true);
         });
 
@@ -829,7 +829,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         });
 
         it('should compile getQueryStats example', () => {
-            const stats = skillRegistry.getQueryStats();
+            const stats = skillQuery.getQueryStats();
 
             expect(stats).toHaveProperty('totalSkills');
             expect(stats).toHaveProperty('customSkills');
@@ -1403,20 +1403,20 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
     describe('Helper Function Examples', () => {
         it('should compile getFeatureQuery example', () => {
-            const registry = getFeatureQuery();
-            expect(registry).toBeInstanceOf(FeatureQuery);
+            const query = getFeatureQuery();
+            expect(query).toBeInstanceOf(FeatureQuery);
         });
 
         it('should compile getSkillQuery example', () => {
-            const registry = getSkillQuery();
-            expect(registry).toBeInstanceOf(SkillQuery);
+            const query = getSkillQuery();
+            expect(query).toBeInstanceOf(SkillQuery);
         });
 
         it('should compile getSpellQuery example', () => {
-            const registry = getSpellQuery();
-            expect(registry).toBeInstanceOf(SpellQuery);
+            const query = getSpellQuery();
+            expect(query).toBeInstanceOf(SpellQuery);
             // Verify SpellQuery is a convenience wrapper that delegates to ExtensionManager
-            expect(registry.getSpellCount()).toBeGreaterThan(0);
+            expect(query.getSpellCount()).toBeGreaterThan(0);
         });
 
         it('should compile initializeAllDefaults example', () => {
@@ -1429,10 +1429,10 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
     });
 
     describe('SpellQuery Integration Tests', () => {
-        let spellRegistry: SpellQuery;
+        let spellQuery: SpellQuery;
 
         beforeEach(() => {
-            spellRegistry = SpellQuery.getInstance();
+            spellQuery = SpellQuery.getInstance();
         });
 
         it('should verify ExtensionManager.register() is visible in SpellQuery', () => {
@@ -1485,12 +1485,12 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             manager.register('spells', [customSpell]);
 
             // Verify the spell is accessible via SpellQuery
-            const found = spellRegistry.getSpell('test_arcane_blast');
+            const found = spellQuery.getSpell('test_arcane_blast');
             expect(found).toBeDefined();
             expect(found?.name).toBe('Arcane Blast');
 
             // Verify it appears in getAllSpells
-            const allSpells = spellRegistry.getSpells();
+            const allSpells = spellQuery.getSpells();
             expect(allSpells.some(s => s.id === 'test_arcane_blast')).toBe(true);
         });
 
@@ -1526,10 +1526,10 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             // Note: Cache invalidation is automatic via ExtensionManager.register()
 
             // Verify getSpellsByLevel works
-            const cantrips = spellRegistry.getSpellsByLevel(0);
+            const cantrips = spellQuery.getSpellsByLevel(0);
             expect(cantrips.some(s => s.id === 'test_light_cantrip')).toBe(true);
 
-            const level5Spells = spellRegistry.getSpellsByLevel(5);
+            const level5Spells = spellQuery.getSpellsByLevel(5);
             expect(level5Spells.some(s => s.id === 'test_fire_storm')).toBe(true);
 
             // Verify cross-contamination doesn't happen
@@ -1569,11 +1569,11 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             // Note: Cache invalidation is automatic via ExtensionManager.register()
 
             // Verify getSpellsBySchool works
-            const evocationSpells = spellRegistry.getSpellsBySchool('Evocation');
+            const evocationSpells = spellQuery.getSpellsBySchool('Evocation');
             expect(evocationSpells.some(s => s.id === 'test_evocation_spell')).toBe(true);
             expect(evocationSpells.some(s => s.id === 'test_abjuration_spell')).toBe(false);
 
-            const abjurationSpells = spellRegistry.getSpellsBySchool('Abjuration');
+            const abjurationSpells = spellQuery.getSpellsBySchool('Abjuration');
             expect(abjurationSpells.some(s => s.id === 'test_abjuration_spell')).toBe(true);
             expect(abjurationSpells.some(s => s.id === 'test_evocation_spell')).toBe(false);
         });
@@ -1594,26 +1594,26 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
             };
 
             // Verify the spell is not already registered
-            const notFound = spellRegistry.getSpell('test_cache_spell');
+            const notFound = spellQuery.getSpell('test_cache_spell');
             expect(notFound).toBeUndefined();
 
             // Register new spell via ExtensionManager (cache invalidation is automatic)
             manager.register('spells', [customSpell]);
 
             // Verify the spell is accessible after registration
-            const found = spellRegistry.getSpell('test_cache_spell');
+            const found = spellQuery.getSpell('test_cache_spell');
             expect(found).toBeDefined();
             expect(found?.name).toBe('Cache Test Spell');
 
             // Verify indexed queries also see the new spell (proves cache was invalidated)
-            const level3Spells = spellRegistry.getSpellsByLevel(3);
+            const level3Spells = spellQuery.getSpellsByLevel(3);
             expect(level3Spells.some(s => s.id === 'test_cache_spell')).toBe(true);
 
-            const transmutationSpells = spellRegistry.getSpellsBySchool('Transmutation');
+            const transmutationSpells = spellQuery.getSpellsBySchool('Transmutation');
             expect(transmutationSpells.some(s => s.id === 'test_cache_spell')).toBe(true);
 
             // Verify spell appears in all spells query
-            const allSpells = spellRegistry.getSpells();
+            const allSpells = spellQuery.getSpells();
             expect(allSpells.some(s => s.id === 'test_cache_spell')).toBe(true);
         });
     });

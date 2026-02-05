@@ -43,17 +43,17 @@ function createMockTrack(title: string): PlaylistTrack {
 }
 
 describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
-    let featureRegistry: FeatureQuery;
-    let skillRegistry: SkillQuery;
+    let featureQuery: FeatureQuery;
+    let skillQuery: SkillQuery;
     let extensionManager: ExtensionManager;
 
     beforeEach(() => {
-        featureRegistry = FeatureQuery.getInstance();
-        skillRegistry = SkillQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
+        skillQuery = SkillQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Reset all registries
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
 
@@ -63,7 +63,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
     });
 
     afterEach(() => {
-        featureRegistry.clearQueryCache();
+        featureQuery.clearQueryCache();
         // Note: SkillQuery no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
     });
@@ -487,7 +487,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             expect(updatedCharacter.class_features).toContain('barbarian_iron_constitution');
 
             // Verify the feature exists and has effect
-            const customFeature = featureRegistry.getClassFeatureById('barbarian_iron_constitution');
+            const customFeature = featureQuery.getClassFeatureById('barbarian_iron_constitution');
             expect(customFeature).toBeDefined();
             expect(customFeature?.effects).toHaveLength(1);
             expect(customFeature?.effects[0].type).toBe('stat_bonus');
@@ -676,7 +676,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             expect(weights['rare_feature']).toBe(0.5);
 
             // Verify features are in FeatureQuery
-            const retrievedFeature = featureRegistry.getClassFeatureById('common_feature');
+            const retrievedFeature = featureQuery.getClassFeatureById('common_feature');
             expect(retrievedFeature).toBeDefined();
             expect(retrievedFeature?.name).toBe('Common Feature');
         });
@@ -715,7 +715,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             expect(weights['rare_custom_skill']).toBe(0.2);
 
             // Verify skills are in SkillQuery
-            const retrievedSkill = skillRegistry.getSkill('common_custom_skill');
+            const retrievedSkill = skillQuery.getSkill('common_custom_skill');
             expect(retrievedSkill).toBeDefined();
             expect(retrievedSkill?.name).toBe('Common Custom Skill');
         });
@@ -816,8 +816,8 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             expect(weights['another_allowed_skill']).toBe(3);
 
             // Verify skills are in SkillQuery
-            const skill1 = skillRegistry.getSkill('only_allowed_skill');
-            const skill2 = skillRegistry.getSkill('another_allowed_skill');
+            const skill1 = skillQuery.getSkill('only_allowed_skill');
+            const skill2 = skillQuery.getSkill('another_allowed_skill');
             expect(skill1).toBeDefined();
             expect(skill2).toBeDefined();
         });
@@ -1081,7 +1081,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             registerTestClassFeatures(largeFeatureSet);
 
             // Verify all are registered
-            const stats = featureRegistry.getQueryStats();
+            const stats = featureQuery.getQueryStats();
             expect(stats.totalClassFeatures).toBeGreaterThanOrEqual(100);
 
             // Generate character - should handle large set
@@ -1137,13 +1137,13 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             registerTestClassFeature(customFeature);
 
             // Verify it's registered
-            expect(featureRegistry.getClassFeatureById('test_cycle_feature')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_cycle_feature')).toBeDefined();
 
             // Reset
-            featureRegistry.clearQueryCache();
+            featureQuery.clearQueryCache();
 
             // Verify it's gone
-            expect(featureRegistry.getClassFeatureById('test_cycle_feature')).toBeUndefined();
+            expect(featureQuery.getClassFeatureById('test_cycle_feature')).toBeUndefined();
 
             // Reinitialize
             initializeFeatureDefaults();

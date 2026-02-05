@@ -22,8 +22,8 @@ import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 
 describe('EquipmentModifier', () => {
-    let featureRegistry: FeatureQuery;
-    let skillRegistry: SkillQuery;
+    let featureQuery: FeatureQuery;
+    let skillQuery: SkillQuery;
     let extensionManager: ExtensionManager;
     let testCharacter: CharacterSheet;
     let testEquipment: CharacterEquipment;
@@ -31,8 +31,8 @@ describe('EquipmentModifier', () => {
 
     beforeEach(() => {
         // Get singleton instances
-        featureRegistry = FeatureQuery.getInstance();
-        skillRegistry = SkillQuery.getInstance();
+        featureQuery = FeatureQuery.getInstance();
+        skillQuery = SkillQuery.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Initialize defaults using ExtensionManager initialization functions
@@ -1126,7 +1126,7 @@ describe('EquipmentModifier', () => {
 
         it('should handle modification with all grant types', () => {
             // Verify darkvision exists in registry first
-            const darkvision = featureRegistry.getRacialTraitById('darkvision');
+            const darkvision = featureQuery.getRacialTraitById('darkvision');
             if (!darkvision) {
                 // Skip if feature doesn't exist
                 return;

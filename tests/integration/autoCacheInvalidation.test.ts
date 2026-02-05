@@ -23,13 +23,13 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
     describe('SkillQuery auto-invalidation', () => {
         it('should auto-invalidate SkillQuery cache after register("skills", ...)', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
 
             // Initialize default skills
             initializeSkillDefaults();
 
             // Warm up the cache by calling getAllSkills
-            const skillsBefore = skillRegistry.getAllSkills();
+            const skillsBefore = skillQuery.getAllSkills();
             const countBefore = skillsBefore.length;
 
             // Register a new skill via ExtensionManager
@@ -46,24 +46,24 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
 
             // Verify the new skill is accessible via SkillQuery
             // This would fail if cache wasn't invalidated
-            const skillsAfter = skillRegistry.getAllSkills();
+            const skillsAfter = skillQuery.getAllSkills();
             expect(skillsAfter).toHaveLength(countBefore + 1);
-            expect(skillRegistry.isValidSkill('test_skill_auto')).toBe(true);
+            expect(skillQuery.isValidSkill('test_skill_auto')).toBe(true);
 
-            const customSkillInRegistry = skillRegistry.getSkill('test_skill_auto');
+            const customSkillInRegistry = skillQuery.getSkill('test_skill_auto');
             expect(customSkillInRegistry).toBeDefined();
             expect(customSkillInRegistry?.name).toBe('Test Skill Auto');
         });
 
         it('should auto-invalidate SkillQuery cache after register("skills.STR", ...)', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
 
             // Initialize default skills
             initializeSkillDefaults();
 
             // Warm up the cache
-            const strSkillsBefore = skillRegistry.getSkillsByAbility('STR');
+            const strSkillsBefore = skillQuery.getSkillsByAbility('STR');
             const countBefore = strSkillsBefore.length;
 
             // Register a new STR skill via ExtensionManager
@@ -81,7 +81,7 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             // Verify the SkillQuery cache was invalidated by checking ability cache was refreshed
             // Note: skills.STR is a separate category from 'skills', so it won't show in getAllSkills()
             // But the cache invalidation should have happened
-            const strSkillsAfter = skillRegistry.getSkillsByAbility('STR');
+            const strSkillsAfter = skillQuery.getSkillsByAbility('STR');
             // Since we registered to skills.STR category (not main 'skills'), this tests
             // that cache invalidation occurred - the ability cache was rebuilt
             expect(strSkillsAfter.length).toBeGreaterThanOrEqual(countBefore);
@@ -97,13 +97,13 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
     describe('SpellQuery auto-invalidation', () => {
         it('should auto-invalidate SpellQuery cache after register("spells", ...)', () => {
             const manager = ExtensionManager.getInstance();
-            const spellRegistry = SpellQuery.getInstance();
+            const spellQuery = SpellQuery.getInstance();
 
             // Initialize default spells
             initializeSpellDefaults();
 
             // Warm up the cache
-            const spellsBefore = spellRegistry.getSpells();
+            const spellsBefore = spellQuery.getSpells();
             const countBefore = spellsBefore.length;
 
             // Register a new spell via ExtensionManager
@@ -123,17 +123,17 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('spells', [customSpell]);
 
             // Verify the new spell is accessible via SpellQuery
-            const spellsAfter = spellRegistry.getSpells();
+            const spellsAfter = spellQuery.getSpells();
             expect(spellsAfter).toHaveLength(countBefore + 1);
 
-            const customSpellInRegistry = spellRegistry.getSpell('test_spell_auto');
+            const customSpellInRegistry = spellQuery.getSpell('test_spell_auto');
             expect(customSpellInRegistry).toBeDefined();
             expect(customSpellInRegistry?.name).toBe('Test Spell Auto');
         });
 
         it('should auto-invalidate SpellQuery cache after register("spells.Wizard", ...)', () => {
             const manager = ExtensionManager.getInstance();
-            const spellRegistry = SpellQuery.getInstance();
+            const spellQuery = SpellQuery.getInstance();
 
             // Initialize default spells
             initializeSpellDefaults();
@@ -156,7 +156,7 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('spells', [testSpell]);
 
             // Warm up the cache by getting the wizard spell list
-            const wizardSpellsBefore = spellRegistry.getSpellsForClass('Wizard');
+            const wizardSpellsBefore = spellQuery.getSpellsForClass('Wizard');
             const countBefore = wizardSpellsBefore.length;
 
             // Register the spell to Wizard's class list
@@ -171,7 +171,7 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('spells.Wizard' as any, [classSpellList]);
 
             // Verify the spell list is updated in SpellQuery
-            const wizardSpellsAfter = spellRegistry.getSpellsForClass('Wizard');
+            const wizardSpellsAfter = spellQuery.getSpellsForClass('Wizard');
             expect(wizardSpellsAfter.length).toBeGreaterThanOrEqual(countBefore);
         });
     });
@@ -179,13 +179,13 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
     describe('FeatureQuery auto-invalidation', () => {
         it('should auto-invalidate FeatureQuery cache after register("classFeatures", ...)', () => {
             const manager = ExtensionManager.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize default features
             initializeFeatureDefaults();
 
             // Warm up the cache - get Fighter features specifically
-            const fighterFeaturesBefore = featureRegistry.getClassFeatures('Fighter', 20);
+            const fighterFeaturesBefore = featureQuery.getClassFeatures('Fighter', 20);
             const countBefore = fighterFeaturesBefore.length;
 
             // Register a new class feature via ExtensionManager
@@ -202,23 +202,23 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('classFeatures', [customFeature]);
 
             // Verify the new feature is accessible via FeatureQuery
-            const fighterFeaturesAfter = featureRegistry.getClassFeatures('Fighter', 20);
+            const fighterFeaturesAfter = featureQuery.getClassFeatures('Fighter', 20);
             expect(fighterFeaturesAfter).toHaveLength(countBefore + 1);
 
-            const customFeatureInRegistry = featureRegistry.getClassFeatureById('test_feature_auto');
+            const customFeatureInRegistry = featureQuery.getClassFeatureById('test_feature_auto');
             expect(customFeatureInRegistry).toBeDefined();
             expect(customFeatureInRegistry?.name).toBe('Test Feature Auto');
         });
 
         it('should auto-invalidate FeatureQuery cache after register("racialTraits", ...)', () => {
             const manager = ExtensionManager.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize default features
             initializeFeatureDefaults();
 
             // Warm up the cache - get Human traits specifically
-            const humanTraitsBefore = featureRegistry.getRacialTraits('Human');
+            const humanTraitsBefore = featureQuery.getRacialTraits('Human');
             const countBefore = humanTraitsBefore.length;
 
             // Register a new racial trait via ExtensionManager
@@ -233,17 +233,17 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('racialTraits', [customTrait]);
 
             // Verify the new trait is accessible via FeatureQuery
-            const humanTraitsAfter = featureRegistry.getRacialTraits('Human');
+            const humanTraitsAfter = featureQuery.getRacialTraits('Human');
             expect(humanTraitsAfter).toHaveLength(countBefore + 1);
 
-            const customTraitInRegistry = featureRegistry.getRacialTraitById('test_trait_auto');
+            const customTraitInRegistry = featureQuery.getRacialTraitById('test_trait_auto');
             expect(customTraitInRegistry).toBeDefined();
             expect(customTraitInRegistry?.name).toBe('Test Trait Auto');
         });
 
         it('should auto-invalidate FeatureQuery cache after register("racialTraits.Elf", ...)', () => {
             const manager = ExtensionManager.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize default features
             initializeFeatureDefaults();
@@ -260,8 +260,8 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('racialTraits', [elfTrait1]);
 
             // Verify it's registered and warm up the cache
-            expect(featureRegistry.getRacialTraitById('test_elf_trait_1')).toBeDefined();
-            const elfTraitsBefore = featureRegistry.getRacialTraits('Elf');
+            expect(featureQuery.getRacialTraitById('test_elf_trait_1')).toBeDefined();
+            const elfTraitsBefore = featureQuery.getRacialTraits('Elf');
             const countBefore = elfTraitsBefore.length;
 
             // Now also register to racialTraits.Elf (separate category)
@@ -280,11 +280,11 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             // Note: racialTraits.Elf is a separate category from 'racialTraits', so items
             // registered there don't show in getRacialTraits('Elf'). But the cache invalidation
             // should have occurred, which we verify by checking the original trait is still accessible.
-            const elfTraitsAfter = featureRegistry.getRacialTraits('Elf');
+            const elfTraitsAfter = featureQuery.getRacialTraits('Elf');
             expect(elfTraitsAfter).toHaveLength(countBefore);
 
             // Verify the first trait is still accessible via FeatureQuery (cache was refreshed)
-            const trait1InRegistry = featureRegistry.getRacialTraitById('test_elf_trait_1');
+            const trait1InRegistry = featureQuery.getRacialTraitById('test_elf_trait_1');
             expect(trait1InRegistry).toBeDefined();
             expect(trait1InRegistry?.name).toBe('Test Elf Trait 1');
 
@@ -297,13 +297,13 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
 
         it('should auto-invalidate FeatureQuery cache after register("classFeatures.Fighter", ...)', () => {
             const manager = ExtensionManager.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize default features
             initializeFeatureDefaults();
 
             // Warm up the cache - get Fighter features
-            const fighterFeaturesBefore = featureRegistry.getClassFeatures('Fighter', 20);
+            const fighterFeaturesBefore = featureQuery.getClassFeatures('Fighter', 20);
             const countBefore = fighterFeaturesBefore.length;
 
             // First, register to the main classFeatures category (what FeatureQuery reads)
@@ -334,12 +334,12 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('classFeatures.Fighter' as any, [anotherFeature]);
 
             // Verify the first feature is accessible via FeatureQuery (from classFeatures)
-            const customFeatureInRegistry = featureRegistry.getClassFeatureById('test_fighter_feature');
+            const customFeatureInRegistry = featureQuery.getClassFeatureById('test_fighter_feature');
             expect(customFeatureInRegistry).toBeDefined();
             expect(customFeatureInRegistry?.name).toBe('Test Fighter Feature');
 
             // Verify Fighter features count increased by 1 (from the main classFeatures registration)
-            const fighterFeaturesAfter = featureRegistry.getClassFeatures('Fighter', 20);
+            const fighterFeaturesAfter = featureQuery.getClassFeatures('Fighter', 20);
             expect(fighterFeaturesAfter).toHaveLength(countBefore + 1);
 
             // Also verify the second feature exists in the classFeatures.Fighter category
@@ -352,13 +352,13 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
     describe('No invalidation for non-registry categories', () => {
         it('should NOT invalidate SkillQuery when registering classes', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
 
             // Initialize default skills
             initializeSkillDefaults();
 
             // Warm up the cache
-            const skillsBefore = skillRegistry.getAllSkills();
+            const skillsBefore = skillQuery.getAllSkills();
             const countBefore = skillsBefore.length;
 
             // Register a class (should not affect SkillQuery cache)
@@ -376,7 +376,7 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('classes', ['TestClass']);
 
             // The cache should still have the same count
-            const skillsAfter = skillRegistry.getAllSkills();
+            const skillsAfter = skillQuery.getAllSkills();
             expect(skillsAfter).toHaveLength(countBefore);
         });
     });
@@ -384,7 +384,7 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
     describe('reset() auto-invalidation', () => {
         it('should auto-invalidate SkillQuery cache after reset("skills")', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
 
             // Initialize default skills
             initializeSkillDefaults();
@@ -402,18 +402,18 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('skills', [customSkill]);
 
             // Verify it's registered
-            expect(skillRegistry.isValidSkill('test_reset_skill')).toBe(true);
+            expect(skillQuery.isValidSkill('test_reset_skill')).toBe(true);
 
             // Reset the skills category
             manager.reset('skills');
 
             // Verify the custom skill is gone (cache was invalidated)
-            expect(skillRegistry.isValidSkill('test_reset_skill')).toBe(false);
+            expect(skillQuery.isValidSkill('test_reset_skill')).toBe(false);
         });
 
         it('should auto-invalidate SpellQuery cache after reset("spells")', () => {
             const manager = ExtensionManager.getInstance();
-            const spellRegistry = SpellQuery.getInstance();
+            const spellQuery = SpellQuery.getInstance();
 
             // Initialize default spells
             initializeSpellDefaults();
@@ -435,18 +435,18 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('spells', [customSpell]);
 
             // Verify it's registered
-            expect(spellRegistry.getSpell('test_reset_spell')).toBeDefined();
+            expect(spellQuery.getSpell('test_reset_spell')).toBeDefined();
 
             // Reset the spells category
             manager.reset('spells');
 
             // Verify the custom spell is gone (cache was invalidated)
-            expect(spellRegistry.getSpell('test_reset_spell')).toBeUndefined();
+            expect(spellQuery.getSpell('test_reset_spell')).toBeUndefined();
         });
 
         it('should auto-invalidate FeatureQuery cache after reset("classFeatures")', () => {
             const manager = ExtensionManager.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize default features
             initializeFeatureDefaults();
@@ -465,22 +465,22 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('classFeatures', [customFeature]);
 
             // Verify it's registered
-            expect(featureRegistry.getClassFeatureById('test_reset_feature')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_reset_feature')).toBeDefined();
 
             // Reset the classFeatures category
             manager.reset('classFeatures');
 
             // Verify the custom feature is gone (cache was invalidated)
-            expect(featureRegistry.getClassFeatureById('test_reset_feature')).toBeUndefined();
+            expect(featureQuery.getClassFeatureById('test_reset_feature')).toBeUndefined();
         });
     });
 
     describe('resetAll() invalidates all registry caches', () => {
         it('should invalidate SkillQuery, SpellQuery, and FeatureQuery caches after resetAll()', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
-            const spellRegistry = SpellQuery.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
+            const spellQuery = SpellQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize defaults
             initializeSkillDefaults();
@@ -525,33 +525,33 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('classFeatures', [customFeature]);
 
             // Verify all are registered
-            expect(skillRegistry.isValidSkill('test_resetall_skill')).toBe(true);
-            expect(spellRegistry.getSpell('test_resetall_spell')).toBeDefined();
-            expect(featureRegistry.getClassFeatureById('test_resetall_feature')).toBeDefined();
+            expect(skillQuery.isValidSkill('test_resetall_skill')).toBe(true);
+            expect(spellQuery.getSpell('test_resetall_spell')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_resetall_feature')).toBeDefined();
 
             // Reset all
             manager.resetAll();
 
             // Verify all custom items are gone (all caches were invalidated)
-            expect(skillRegistry.isValidSkill('test_resetall_skill')).toBe(false);
-            expect(spellRegistry.getSpell('test_resetall_spell')).toBeUndefined();
-            expect(featureRegistry.getClassFeatureById('test_resetall_feature')).toBeUndefined();
+            expect(skillQuery.isValidSkill('test_resetall_skill')).toBe(false);
+            expect(spellQuery.getSpell('test_resetall_spell')).toBeUndefined();
+            expect(featureQuery.getClassFeatureById('test_resetall_feature')).toBeUndefined();
         });
     });
 
     describe('registerMultiple with mixed categories', () => {
         it('should invalidate both SkillQuery and SpellQuery caches when registering skills and spells', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
-            const spellRegistry = SpellQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
+            const spellQuery = SpellQuery.getInstance();
 
             // Initialize defaults
             initializeSkillDefaults();
             initializeSpellDefaults();
 
             // Warm up caches
-            const skillsBefore = skillRegistry.getAllSkills();
-            const spellsBefore = spellRegistry.getSpells();
+            const skillsBefore = skillQuery.getAllSkills();
+            const spellsBefore = spellQuery.getSpells();
 
             // Register multiple categories at once
             manager.registerMultiple([
@@ -584,22 +584,22 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             ]);
 
             // Verify both registries were invalidated
-            expect(skillRegistry.isValidSkill('test_multi_skill')).toBe(true);
-            expect(spellRegistry.getSpell('test_multi_spell')).toBeDefined();
-            expect(skillRegistry.getAllSkills()).toHaveLength(skillsBefore.length + 1);
-            expect(spellRegistry.getSpells()).toHaveLength(spellsBefore.length + 1);
+            expect(skillQuery.isValidSkill('test_multi_skill')).toBe(true);
+            expect(spellQuery.getSpell('test_multi_spell')).toBeDefined();
+            expect(skillQuery.getAllSkills()).toHaveLength(skillsBefore.length + 1);
+            expect(spellQuery.getSpells()).toHaveLength(spellsBefore.length + 1);
         });
 
         it('should only invalidate FeatureQuery cache once when registering features and traits', () => {
             const manager = ExtensionManager.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize defaults
             initializeFeatureDefaults();
 
             // Warm up cache - get specific class/race counts
-            const monkFeaturesBefore = featureRegistry.getClassFeatures('Monk', 20);
-            const elfTraitsBefore = featureRegistry.getRacialTraits('Elf');
+            const monkFeaturesBefore = featureQuery.getClassFeatures('Monk', 20);
+            const elfTraitsBefore = featureQuery.getRacialTraits('Elf');
 
             // Register both class features and racial traits
             manager.registerMultiple([
@@ -628,17 +628,17 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             ]);
 
             // Verify both are accessible (FeatureQuery cache invalidated only once)
-            expect(featureRegistry.getClassFeatureById('test_multi_feature')).toBeDefined();
-            expect(featureRegistry.getRacialTraitById('test_multi_trait')).toBeDefined();
-            expect(featureRegistry.getClassFeatures('Monk', 20)).toHaveLength(monkFeaturesBefore.length + 1);
-            expect(featureRegistry.getRacialTraits('Elf')).toHaveLength(elfTraitsBefore.length + 1);
+            expect(featureQuery.getClassFeatureById('test_multi_feature')).toBeDefined();
+            expect(featureQuery.getRacialTraitById('test_multi_trait')).toBeDefined();
+            expect(featureQuery.getClassFeatures('Monk', 20)).toHaveLength(monkFeaturesBefore.length + 1);
+            expect(featureQuery.getRacialTraits('Elf')).toHaveLength(elfTraitsBefore.length + 1);
         });
     });
 
     describe('Edge cases: validation failure behavior', () => {
         it('should NOT invalidate cache when validation fails', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
 
             // Initialize default skills
             initializeSkillDefaults();
@@ -656,10 +656,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('skills', [validSkill]);
 
             // Verify it's registered
-            expect(skillRegistry.isValidSkill('test_validation_skill')).toBe(true);
+            expect(skillQuery.isValidSkill('test_validation_skill')).toBe(true);
 
             // Warm up the cache by calling getAllSkills
-            const skillsBefore = skillRegistry.getAllSkills();
+            const skillsBefore = skillQuery.getAllSkills();
             const countBefore = skillsBefore.length;
 
             // Try to register an invalid skill (missing required 'ability' field)
@@ -681,15 +681,15 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             // - The count should be the same as before the failed registration
             // - The valid skill should still be accessible
             // - The invalid skill should NOT be registered
-            const skillsAfter = skillRegistry.getAllSkills();
+            const skillsAfter = skillQuery.getAllSkills();
             expect(skillsAfter).toHaveLength(countBefore);
-            expect(skillRegistry.isValidSkill('test_validation_skill')).toBe(true);
-            expect(skillRegistry.isValidSkill('test_invalid_skill')).toBe(false);
+            expect(skillQuery.isValidSkill('test_validation_skill')).toBe(true);
+            expect(skillQuery.isValidSkill('test_invalid_skill')).toBe(false);
         });
 
         it('should NOT invalidate SpellQuery cache when validation fails', () => {
             const manager = ExtensionManager.getInstance();
-            const spellRegistry = SpellQuery.getInstance();
+            const spellQuery = SpellQuery.getInstance();
 
             // Initialize default spells
             initializeSpellDefaults();
@@ -711,10 +711,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('spells', [validSpell]);
 
             // Verify it's registered
-            expect(spellRegistry.getSpell('test_validation_spell')).toBeDefined();
+            expect(spellQuery.getSpell('test_validation_spell')).toBeDefined();
 
             // Warm up the cache
-            const spellsBefore = spellRegistry.getSpells();
+            const spellsBefore = spellQuery.getSpells();
             const countBefore = spellsBefore.length;
 
             // Try to register an invalid spell (missing required 'level' field)
@@ -737,15 +737,15 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             }).toThrow();
 
             // Verify the cache was NOT invalidated
-            const spellsAfter = spellRegistry.getSpells();
+            const spellsAfter = spellQuery.getSpells();
             expect(spellsAfter).toHaveLength(countBefore);
-            expect(spellRegistry.getSpell('test_validation_spell')).toBeDefined();
-            expect(spellRegistry.getSpell('test_invalid_spell')).toBeUndefined();
+            expect(spellQuery.getSpell('test_validation_spell')).toBeDefined();
+            expect(spellQuery.getSpell('test_invalid_spell')).toBeUndefined();
         });
 
         it('should NOT invalidate FeatureQuery cache when validation fails', () => {
             const manager = ExtensionManager.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize default features
             initializeFeatureDefaults();
@@ -764,10 +764,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('classFeatures', [validFeature]);
 
             // Verify it's registered
-            expect(featureRegistry.getClassFeatureById('test_validation_feature')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_validation_feature')).toBeDefined();
 
             // Warm up the cache
-            const fighterFeaturesBefore = featureRegistry.getClassFeatures('Fighter', 20);
+            const fighterFeaturesBefore = featureQuery.getClassFeatures('Fighter', 20);
             const countBefore = fighterFeaturesBefore.length;
 
             // Try to register an invalid feature (missing required 'class' field)
@@ -787,17 +787,17 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             }).toThrow();
 
             // Verify the cache was NOT invalidated
-            const fighterFeaturesAfter = featureRegistry.getClassFeatures('Fighter', 20);
+            const fighterFeaturesAfter = featureQuery.getClassFeatures('Fighter', 20);
             expect(fighterFeaturesAfter).toHaveLength(countBefore);
-            expect(featureRegistry.getClassFeatureById('test_validation_feature')).toBeDefined();
-            expect(featureRegistry.getClassFeatureById('test_invalid_feature')).toBeUndefined();
+            expect(featureQuery.getClassFeatureById('test_validation_feature')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_invalid_feature')).toBeUndefined();
         });
     });
 
     describe('Edge cases: relative mode merging', () => {
         it('should invalidate cache after register() with mode: "relative" for skills', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
 
             // Initialize default skills
             initializeSkillDefaults();
@@ -815,10 +815,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('skills', [firstSkill], { mode: 'relative' });
 
             // Verify first skill is registered
-            expect(skillRegistry.isValidSkill('test_relative_skill_1')).toBe(true);
+            expect(skillQuery.isValidSkill('test_relative_skill_1')).toBe(true);
 
             // Warm up the cache
-            const skillsBefore = skillRegistry.getAllSkills();
+            const skillsBefore = skillQuery.getAllSkills();
             const countBefore = skillsBefore.length;
 
             // Register second batch of skills in relative mode (should merge with first batch)
@@ -834,21 +834,21 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('skills', [secondSkill], { mode: 'relative' });
 
             // Verify cache was invalidated and both skills are accessible
-            const skillsAfter = skillRegistry.getAllSkills();
+            const skillsAfter = skillQuery.getAllSkills();
             expect(skillsAfter).toHaveLength(countBefore + 1);
-            expect(skillRegistry.isValidSkill('test_relative_skill_1')).toBe(true);
-            expect(skillRegistry.isValidSkill('test_relative_skill_2')).toBe(true);
+            expect(skillQuery.isValidSkill('test_relative_skill_1')).toBe(true);
+            expect(skillQuery.isValidSkill('test_relative_skill_2')).toBe(true);
 
             // Verify both skills are in the registry
-            const skill1 = skillRegistry.getSkill('test_relative_skill_1');
-            const skill2 = skillRegistry.getSkill('test_relative_skill_2');
+            const skill1 = skillQuery.getSkill('test_relative_skill_1');
+            const skill2 = skillQuery.getSkill('test_relative_skill_2');
             expect(skill1?.name).toBe('Test Relative Skill 1');
             expect(skill2?.name).toBe('Test Relative Skill 2');
         });
 
         it('should invalidate cache after register() with mode: "relative" for spells', () => {
             const manager = ExtensionManager.getInstance();
-            const spellRegistry = SpellQuery.getInstance();
+            const spellQuery = SpellQuery.getInstance();
 
             // Initialize default spells
             initializeSpellDefaults();
@@ -870,10 +870,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('spells', [firstSpell], { mode: 'relative' });
 
             // Verify first spell is registered
-            expect(spellRegistry.getSpell('test_relative_spell_1')).toBeDefined();
+            expect(spellQuery.getSpell('test_relative_spell_1')).toBeDefined();
 
             // Warm up the cache
-            const spellsBefore = spellRegistry.getSpells();
+            const spellsBefore = spellQuery.getSpells();
             const countBefore = spellsBefore.length;
 
             // Register second batch of spells in relative mode
@@ -893,21 +893,21 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('spells', [secondSpell], { mode: 'relative' });
 
             // Verify cache was invalidated and both spells are accessible
-            const spellsAfter = spellRegistry.getSpells();
+            const spellsAfter = spellQuery.getSpells();
             expect(spellsAfter).toHaveLength(countBefore + 1);
-            expect(spellRegistry.getSpell('test_relative_spell_1')).toBeDefined();
-            expect(spellRegistry.getSpell('test_relative_spell_2')).toBeDefined();
+            expect(spellQuery.getSpell('test_relative_spell_1')).toBeDefined();
+            expect(spellQuery.getSpell('test_relative_spell_2')).toBeDefined();
 
             // Verify both spells are in the registry
-            const spell1 = spellRegistry.getSpell('test_relative_spell_1');
-            const spell2 = spellRegistry.getSpell('test_relative_spell_2');
+            const spell1 = spellQuery.getSpell('test_relative_spell_1');
+            const spell2 = spellQuery.getSpell('test_relative_spell_2');
             expect(spell1?.name).toBe('Test Relative Spell 1');
             expect(spell2?.name).toBe('Test Relative Spell 2');
         });
 
         it('should invalidate cache after register() with mode: "relative" for classFeatures', () => {
             const manager = ExtensionManager.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize default features
             initializeFeatureDefaults();
@@ -926,10 +926,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('classFeatures', [firstFeature], { mode: 'relative' });
 
             // Verify first feature is registered
-            expect(featureRegistry.getClassFeatureById('test_relative_feature_1')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_relative_feature_1')).toBeDefined();
 
             // Warm up the cache
-            const barbarianFeaturesBefore = featureRegistry.getClassFeatures('Barbarian', 20);
+            const barbarianFeaturesBefore = featureQuery.getClassFeatures('Barbarian', 20);
             const countBefore = barbarianFeaturesBefore.length;
 
             // Register second batch of features in relative mode
@@ -946,21 +946,21 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('classFeatures', [secondFeature], { mode: 'relative' });
 
             // Verify cache was invalidated and both features are accessible
-            const barbarianFeaturesAfter = featureRegistry.getClassFeatures('Barbarian', 20);
+            const barbarianFeaturesAfter = featureQuery.getClassFeatures('Barbarian', 20);
             expect(barbarianFeaturesAfter).toHaveLength(countBefore + 1);
-            expect(featureRegistry.getClassFeatureById('test_relative_feature_1')).toBeDefined();
-            expect(featureRegistry.getClassFeatureById('test_relative_feature_2')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_relative_feature_1')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_relative_feature_2')).toBeDefined();
 
             // Verify both features are in the registry
-            const feature1 = featureRegistry.getClassFeatureById('test_relative_feature_1');
-            const feature2 = featureRegistry.getClassFeatureById('test_relative_feature_2');
+            const feature1 = featureQuery.getClassFeatureById('test_relative_feature_1');
+            const feature2 = featureQuery.getClassFeatureById('test_relative_feature_2');
             expect(feature1?.name).toBe('Test Relative Feature 1');
             expect(feature2?.name).toBe('Test Relative Feature 2');
         });
 
         it('should merge items across multiple relative mode registrations', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
 
             // Initialize default skills
             initializeSkillDefaults();
@@ -997,14 +997,14 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
 
             // Verify all three skills are accessible via the registry
             // This requires cache invalidation after each registration
-            expect(skillRegistry.isValidSkill('test_multi_relative_1')).toBe(true);
-            expect(skillRegistry.isValidSkill('test_multi_relative_2')).toBe(true);
-            expect(skillRegistry.isValidSkill('test_multi_relative_3')).toBe(true);
+            expect(skillQuery.isValidSkill('test_multi_relative_1')).toBe(true);
+            expect(skillQuery.isValidSkill('test_multi_relative_2')).toBe(true);
+            expect(skillQuery.isValidSkill('test_multi_relative_3')).toBe(true);
 
             // Verify they're all in the registry
-            const skill1 = skillRegistry.getSkill('test_multi_relative_1');
-            const skill2 = skillRegistry.getSkill('test_multi_relative_2');
-            const skill3 = skillRegistry.getSkill('test_multi_relative_3');
+            const skill1 = skillQuery.getSkill('test_multi_relative_1');
+            const skill2 = skillQuery.getSkill('test_multi_relative_2');
+            const skill3 = skillQuery.getSkill('test_multi_relative_3');
             expect(skill1?.name).toBe('Multi Relative 1');
             expect(skill2?.name).toBe('Multi Relative 2');
             expect(skill3?.name).toBe('Multi Relative 3');
@@ -1014,7 +1014,7 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
     describe('Edge cases: empty items array', () => {
         it('should invalidate cache when registering empty array to skills', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
 
             // Initialize default skills
             initializeSkillDefaults();
@@ -1032,10 +1032,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('skills', [customSkill]);
 
             // Verify it's registered
-            expect(skillRegistry.isValidSkill('test_empty_array_skill')).toBe(true);
+            expect(skillQuery.isValidSkill('test_empty_array_skill')).toBe(true);
 
             // Warm up the cache
-            const skillsBefore = skillRegistry.getAllSkills();
+            const skillsBefore = skillQuery.getAllSkills();
             const countBefore = skillsBefore.length;
 
             // Now register an empty array (should trigger cache invalidation)
@@ -1044,16 +1044,16 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             }).not.toThrow();
 
             // Verify the cache was invalidated by calling getAllSkills again
-            const skillsAfter = skillRegistry.getAllSkills();
+            const skillsAfter = skillQuery.getAllSkills();
             expect(skillsAfter).toHaveLength(countBefore);
 
             // The custom skill should still be accessible (empty array doesn't remove existing items in relative mode)
-            expect(skillRegistry.isValidSkill('test_empty_array_skill')).toBe(true);
+            expect(skillQuery.isValidSkill('test_empty_array_skill')).toBe(true);
         });
 
         it('should invalidate cache when registering empty array to spells', () => {
             const manager = ExtensionManager.getInstance();
-            const spellRegistry = SpellQuery.getInstance();
+            const spellQuery = SpellQuery.getInstance();
 
             // Initialize default spells
             initializeSpellDefaults();
@@ -1075,10 +1075,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('spells', [customSpell]);
 
             // Verify it's registered
-            expect(spellRegistry.getSpell('test_empty_array_spell')).toBeDefined();
+            expect(spellQuery.getSpell('test_empty_array_spell')).toBeDefined();
 
             // Warm up the cache
-            const spellsBefore = spellRegistry.getSpells();
+            const spellsBefore = spellQuery.getSpells();
             const countBefore = spellsBefore.length;
 
             // Register an empty array
@@ -1087,16 +1087,16 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             }).not.toThrow();
 
             // Verify the cache was invalidated
-            const spellsAfter = spellRegistry.getSpells();
+            const spellsAfter = spellQuery.getSpells();
             expect(spellsAfter).toHaveLength(countBefore);
 
             // The custom spell should still be accessible
-            expect(spellRegistry.getSpell('test_empty_array_spell')).toBeDefined();
+            expect(spellQuery.getSpell('test_empty_array_spell')).toBeDefined();
         });
 
         it('should invalidate cache when registering empty array to classFeatures', () => {
             const manager = ExtensionManager.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize default features
             initializeFeatureDefaults();
@@ -1115,10 +1115,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('classFeatures', [customFeature]);
 
             // Verify it's registered
-            expect(featureRegistry.getClassFeatureById('test_empty_array_feature')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_empty_array_feature')).toBeDefined();
 
             // Warm up the cache
-            const paladinFeaturesBefore = featureRegistry.getClassFeatures('Paladin', 20);
+            const paladinFeaturesBefore = featureQuery.getClassFeatures('Paladin', 20);
             const countBefore = paladinFeaturesBefore.length;
 
             // Register an empty array
@@ -1127,18 +1127,18 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             }).not.toThrow();
 
             // Verify the cache was invalidated
-            const paladinFeaturesAfter = featureRegistry.getClassFeatures('Paladin', 20);
+            const paladinFeaturesAfter = featureQuery.getClassFeatures('Paladin', 20);
             expect(paladinFeaturesAfter).toHaveLength(countBefore);
 
             // The custom feature should still be accessible
-            expect(featureRegistry.getClassFeatureById('test_empty_array_feature')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_empty_array_feature')).toBeDefined();
         });
     });
 
     describe('Edge cases: replace mode', () => {
         it('should invalidate cache after register() with mode: "replace" for skills', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
 
             // Initialize default skills
             initializeSkillDefaults();
@@ -1156,10 +1156,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('skills', [firstSkill]);
 
             // Verify first skill is registered
-            expect(skillRegistry.isValidSkill('test_replace_skill_1')).toBe(true);
+            expect(skillQuery.isValidSkill('test_replace_skill_1')).toBe(true);
 
             // Warm up the cache
-            const skillsBefore = skillRegistry.getAllSkills();
+            const skillsBefore = skillQuery.getAllSkills();
             const countBefore = skillsBefore.length;
 
             // Register second batch with replace mode (should NOT merge with first batch)
@@ -1177,15 +1177,15 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
 
             // Verify cache was invalidated by checking the count changed
             // In replace mode, only custom items are returned, so count should be 1
-            const skillsAfter = skillRegistry.getAllSkills();
+            const skillsAfter = skillQuery.getAllSkills();
             expect(skillsAfter).toHaveLength(1);
 
             // Verify the new skill is accessible (this proves cache was invalidated and refreshed)
-            expect(skillRegistry.isValidSkill('test_replace_skill_2')).toBe(true);
-            expect(skillRegistry.getSkill('test_replace_skill_2')?.name).toBe('Test Replace Skill 2');
+            expect(skillQuery.isValidSkill('test_replace_skill_2')).toBe(true);
+            expect(skillQuery.getSkill('test_replace_skill_2')?.name).toBe('Test Replace Skill 2');
 
             // Verify the old skill is NOT accessible (replace mode replaced it)
-            expect(skillRegistry.isValidSkill('test_replace_skill_1')).toBe(false);
+            expect(skillQuery.isValidSkill('test_replace_skill_1')).toBe(false);
 
             // Verify only the new custom skill is in the manager's extensions (not merged)
             const skillsExtensions = manager.get('skills');
@@ -1196,7 +1196,7 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
 
         it('should invalidate cache after register() with mode: "replace" for spells', () => {
             const manager = ExtensionManager.getInstance();
-            const spellRegistry = SpellQuery.getInstance();
+            const spellQuery = SpellQuery.getInstance();
 
             // Initialize default spells
             initializeSpellDefaults();
@@ -1218,10 +1218,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('spells', [firstSpell]);
 
             // Verify first spell is registered
-            expect(spellRegistry.getSpell('test_replace_spell_1')).toBeDefined();
+            expect(spellQuery.getSpell('test_replace_spell_1')).toBeDefined();
 
             // Warm up the cache
-            const spellsBefore = spellRegistry.getSpells();
+            const spellsBefore = spellQuery.getSpells();
             const countBefore = spellsBefore.length;
 
             // Register second batch with replace mode
@@ -1243,15 +1243,15 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
 
             // Verify cache was invalidated
             // In replace mode, only custom items are returned, so count should be 1
-            const spellsAfter = spellRegistry.getSpells();
+            const spellsAfter = spellQuery.getSpells();
             expect(spellsAfter).toHaveLength(1);
 
             // Verify the new spell is accessible (this proves cache was invalidated and refreshed)
-            expect(spellRegistry.getSpell('test_replace_spell_2')).toBeDefined();
-            expect(spellRegistry.getSpell('test_replace_spell_2')?.name).toBe('Test Replace Spell 2');
+            expect(spellQuery.getSpell('test_replace_spell_2')).toBeDefined();
+            expect(spellQuery.getSpell('test_replace_spell_2')?.name).toBe('Test Replace Spell 2');
 
             // Verify the old spell is NOT accessible (replace mode replaced it)
-            expect(spellRegistry.getSpell('test_replace_spell_1')).toBeUndefined();
+            expect(spellQuery.getSpell('test_replace_spell_1')).toBeUndefined();
 
             // Verify only the new custom spell is in the manager's extensions
             const spellsExtensions = manager.get('spells');
@@ -1262,7 +1262,7 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
 
         it('should invalidate cache after register() with mode: "replace" for classFeatures', () => {
             const manager = ExtensionManager.getInstance();
-            const featureRegistry = FeatureQuery.getInstance();
+            const featureQuery = FeatureQuery.getInstance();
 
             // Initialize default features
             initializeFeatureDefaults();
@@ -1281,10 +1281,10 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('classFeatures', [firstFeature]);
 
             // Verify first feature is registered
-            expect(featureRegistry.getClassFeatureById('test_replace_feature_1')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_replace_feature_1')).toBeDefined();
 
             // Warm up the cache
-            const barbarianFeaturesBefore = featureRegistry.getClassFeatures('Barbarian', 20);
+            const barbarianFeaturesBefore = featureQuery.getClassFeatures('Barbarian', 20);
             const countBefore = barbarianFeaturesBefore.length;
 
             // Register second batch with replace mode
@@ -1303,15 +1303,15 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
 
             // Verify cache was invalidated
             // In replace mode, only custom items are returned, so only our custom feature exists
-            const barbarianFeaturesAfter = featureRegistry.getClassFeatures('Barbarian', 20);
+            const barbarianFeaturesAfter = featureQuery.getClassFeatures('Barbarian', 20);
             expect(barbarianFeaturesAfter).toHaveLength(1);
 
             // Verify the new feature is accessible (this proves cache was invalidated and refreshed)
-            expect(featureRegistry.getClassFeatureById('test_replace_feature_2')).toBeDefined();
-            expect(featureRegistry.getClassFeatureById('test_replace_feature_2')?.name).toBe('Test Replace Feature 2');
+            expect(featureQuery.getClassFeatureById('test_replace_feature_2')).toBeDefined();
+            expect(featureQuery.getClassFeatureById('test_replace_feature_2')?.name).toBe('Test Replace Feature 2');
 
             // Verify the old feature is NOT accessible (replace mode replaced it)
-            expect(featureRegistry.getClassFeatureById('test_replace_feature_1')).toBeUndefined();
+            expect(featureQuery.getClassFeatureById('test_replace_feature_1')).toBeUndefined();
 
             // Verify only the new custom feature is in the manager's extensions
             const featuresExtensions = manager.get('classFeatures');
@@ -1322,7 +1322,7 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
 
         it('should replace items with mode: "replace" - only new items accessible in extensions', () => {
             const manager = ExtensionManager.getInstance();
-            const skillRegistry = SkillQuery.getInstance();
+            const skillQuery = SkillQuery.getInstance();
 
             // Initialize default skills
             initializeSkillDefaults();
@@ -1348,11 +1348,11 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             ]);
 
             // Verify both are registered
-            expect(skillRegistry.isValidSkill('test_replace_multi_1')).toBe(true);
-            expect(skillRegistry.isValidSkill('test_replace_multi_2')).toBe(true);
+            expect(skillQuery.isValidSkill('test_replace_multi_1')).toBe(true);
+            expect(skillQuery.isValidSkill('test_replace_multi_2')).toBe(true);
 
             // Warm up cache
-            const skillsBefore = skillRegistry.getAllSkills();
+            const skillsBefore = skillQuery.getAllSkills();
 
             // Replace with a single skill
             // Replace mode replaces ALL custom items (and defaults are not included in replace mode)
@@ -1368,12 +1368,12 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             ], { mode: 'replace' });
 
             // Verify cache was invalidated and only the new skill is accessible
-            const skillsAfter = skillRegistry.getAllSkills();
+            const skillsAfter = skillQuery.getAllSkills();
             expect(skillsAfter).toHaveLength(1); // Only the new custom skill in replace mode
 
             // Verify only the new skill is accessible
-            expect(skillRegistry.isValidSkill('test_replace_multi_3')).toBe(true);
-            expect(skillRegistry.getSkill('test_replace_multi_3')?.name).toBe('Replace Multi 3');
+            expect(skillQuery.isValidSkill('test_replace_multi_3')).toBe(true);
+            expect(skillQuery.getSkill('test_replace_multi_3')?.name).toBe('Replace Multi 3');
 
             // Verify the old skills are NOT in the manager's extensions (they were replaced)
             const skillsExtensions = manager.get('skills');

@@ -142,8 +142,8 @@ function verifyExamplesCompile(): void {
     // Variables are intentionally unused - this is a compile-time verification test
     /* eslint-disable @typescript-eslint/no-unused-vars */
     const manager = ExtensionManager.getInstance();
-    const featureRegistry = FeatureQuery.getInstance();
-    const skillRegistry = SkillQuery.getInstance();
+    const featureQuery = FeatureQuery.getInstance();
+    const skillQuery = SkillQuery.getInstance();
     /* eslint-enable @typescript-eslint/no-unused-vars */
 
     // Example 1: Register custom race
@@ -154,7 +154,7 @@ function verifyExamplesCompile(): void {
     // manager.register('racialTraits', [fireDragonkinResistance]);
 
     // Example 3: Register skill with prerequisites
-    // skillRegistry.registerSkill(dragonSmithingSkill);
+    // skillQuery.registerSkill(dragonSmithingSkill);
 
     // Example 4: Register spell with prerequisites
     // manager.register('spells', [dragonBreathSpell]);

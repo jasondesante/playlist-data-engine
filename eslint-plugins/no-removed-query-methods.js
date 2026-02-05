@@ -70,16 +70,16 @@ export default {
 
     // Registry instance names that might be used
     const registryNames = [
-      'spellRegistry',
-      'SpellRegistry',
-      'skillRegistry',
-      'SkillRegistry',
-      'featureRegistry',
-      'FeatureRegistry',
+      'spellQuery',
+      'SpellQuery',
+      'skillQuery',
+      'SkillQuery',
+      'featureQuery',
+      'FeatureQuery',
     ];
 
     return {
-      // Detect calls like: spellRegistry.registerSpell(...)
+      // Detect calls like: spellQuery.registerSpell(...)
       CallExpression(node) {
         if (node.callee.type !== 'MemberExpression') {
           return;
@@ -93,12 +93,12 @@ export default {
           return; // Skip computed properties - we can't statically analyze them
         }
 
-        // Get the object name (e.g., "spellRegistry" from "spellRegistry.registerSpell")
+        // Get the object name (e.g., "spellQuery" from "spellQuery.registerSpell")
         let objectName = null;
         if (callee.object.type === 'Identifier') {
           objectName = callee.object.name;
         } else if (callee.object.type === 'MemberExpression') {
-          // Handle cases like SpellRegistry.getInstance().registerSpell()
+          // Handle cases like SpellQuery.getInstance().registerSpell()
           const member = callee.object;
           if (member.property?.type === 'Identifier' && member.property.name === 'getInstance') {
             if (member.object?.type === 'Identifier') {
