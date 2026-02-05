@@ -239,7 +239,7 @@ Rename `SpellQuery`, `SkillQuery`, and `FeatureQuery` to `SpellQuery`, `SkillQue
 
 ### 6.2 Test Suite Verification
 - [x] Run full test suite: `npm test` - **2096 tests passed**
-- [ ] Run coverage: `npm run test:coverage`
+- [x] Run coverage: `npm run test:coverage` - **77.77% coverage**
 - [x] Verify all tests pass
 - [x] Check for any skipped or pending tests (none)
 
