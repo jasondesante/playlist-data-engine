@@ -4313,12 +4313,14 @@ interface ValidationResult {
 
 **Location:** `src/core/features/FeatureRegistry.ts`
 
-**Convenience wrapper** around ExtensionManager for managing class features and racial traits with prerequisite validation and subrace support.
+Query and validation layer for class features and racial traits stored in ExtensionManager.
 
-**Architecture:** FeatureRegistry provides a convenient API that delegates to ExtensionManager as the single source of truth. All features and traits are stored in ExtensionManager; FeatureRegistry provides:
-- Registration methods that delegate to `ExtensionManager.register('classFeatures', [...])` and `ExtensionManager.register('racialTraits', [...])`
+**Architecture:** FeatureRegistry provides query methods and validation helpers. All features and traits are stored in ExtensionManager; FeatureRegistry provides:
 - Query methods that read from ExtensionManager with caching for performance
 - Feature-related helper methods (prerequisite validation, subrace support, etc.)
+- Cache invalidation for manual updates
+
+**Registration:** Use `ExtensionManager.register('classFeatures', [...])` or `ExtensionManager.register('racialTraits', [...])` directly. After registering, call `FeatureRegistry.getInstance().invalidateCache()` to refresh cached data.
 
 **Design principle:** No duplicate storage. All three registries (SpellRegistry, SkillRegistry, FeatureRegistry) follow the same pattern: they do not maintain their own copy of data. All data lives in ExtensionManager.
 
@@ -4330,19 +4332,11 @@ class FeatureRegistry {
     // Cache Management
     invalidateCache(): void
 
-    // Class Features (delegates to ExtensionManager)
-    registerClassFeature(feature: ClassFeature): void
-    registerClassFeatures(features: ClassFeature[]): void
-
     // Class Features (reads from ExtensionManager with caching)
     getClassFeatures(characterClass: Class, level?: number): ClassFeature[]
     getClassFeaturesForLevel(characterClass: Class, level: number): ClassFeature[]
     getClassFeatureById(featureId: string): ClassFeature | undefined
     getAllClassFeatures(): Map<string, ClassFeature[]>
-
-    // Racial Traits (delegates to ExtensionManager)
-    registerRacialTrait(trait: RacialTrait): void
-    registerRacialTraits(traits: RacialTrait[]): void
 
     // Racial Traits (reads from ExtensionManager with caching)
     getRacialTraits(race: Race): RacialTrait[]
@@ -4370,7 +4364,6 @@ class FeatureRegistry {
     // Equipment Features (static methods)
     static getEquipmentFeatures(equipmentName: string): ClassFeature[]
     static isValidEquipmentFeature(featureId: string): boolean
-    static registerEquipmentFeature(feature: ClassFeature): void
 }
 
 interface ClassFeature {
@@ -4460,14 +4453,10 @@ interface CharacterTrait {
 |--------|-----------|---------|-------------|
 | `getInstance()` | - | `FeatureRegistry` | Returns singleton instance |
 | `invalidateCache()` | - | `void` | Clear all caches (call after direct ExtensionManager manipulation) |
-| `registerClassFeature()` | `feature` | `void` | Register single class feature (delegates to ExtensionManager) |
-| `registerClassFeatures()` | `features[]` | `void` | Register multiple class features (delegates to ExtensionManager) |
 | `getClassFeatures()` | `class`, `level?` | `ClassFeature[]` | Get all features for class (filtered by level, reads from ExtensionManager with caching) |
 | `getClassFeaturesForLevel()` | `class`, `level` | `ClassFeature[]` | Get features for specific class level (reads from ExtensionManager with caching) |
 | `getClassFeatureById()` | `featureId` | `ClassFeature \| undefined` | Find feature by ID |
 | `getAllClassFeatures()` | - | `Map<string, ClassFeature[]>` | Get all class features by class (builds index from EM data with caching) |
-| `registerRacialTrait()` | `trait` | `void` | Register single racial trait (delegates to ExtensionManager) |
-| `registerRacialTraits()` | `traits[]` | `void` | Register multiple racial traits (delegates to ExtensionManager) |
 | `getRacialTraits()` | `race` | `RacialTrait[]` | Get traits for race (reads from ExtensionManager with caching) |
 | `getRacialTraitsForSubrace()` | `race`, `subrace` | `RacialTrait[]` | Get base + subrace-specific traits (reads from ExtensionManager with caching) |
 | `getBaseRacialTraits()` | `race` | `RacialTrait[]` | Get only base traits (no subrace, reads from ExtensionManager with caching) |
@@ -4485,17 +4474,20 @@ interface CharacterTrait {
 | `exportRacialTraits()` | - | `Record<string, RacialTrait[]>` | Export racial traits (reads from ExtensionManager; for class features, use ExtensionManager.get('classFeatures')) |
 | `getEquipmentFeatures()` | `equipmentName` | `ClassFeature[]` | Get features that can be granted by equipment (static) |
 | `isValidEquipmentFeature()` | `featureId` | `boolean` | Check if feature can be granted by equipment (static) |
-| `registerEquipmentFeature()` | `feature` | `void` | Register equipment-granted feature (static) |
 
 **Note on Registration:**
 
-Two ways to register class features (both store data in ExtensionManager):
-1. `ExtensionManager.getInstance().register('classFeatures', [featureData])` — direct
-2. `FeatureRegistry.getInstance().registerClassFeature(featureData)` — convenience wrapper
+**Class features** must be registered via ExtensionManager:
+```typescript
+ExtensionManager.getInstance().register('classFeatures', [featureData]);
+FeatureRegistry.getInstance().invalidateCache(); // Refresh cached data
+```
 
-Two ways to register racial traits (both store data in ExtensionManager):
-1. `ExtensionManager.getInstance().register('racialTraits', [traitData])` — direct
-2. `FeatureRegistry.getInstance().registerRacialTrait(traitData)` — convenience wrapper
+**Racial traits** must be registered via ExtensionManager:
+```typescript
+ExtensionManager.getInstance().register('racialTraits', [traitData]);
+FeatureRegistry.getInstance().invalidateCache(); // Refresh cached data
+```
 
 **Note on Initialization:**
 
@@ -4665,12 +4657,14 @@ interface WeightedSelectionOptions {
 
 **Location:** `src/core/skills/SkillRegistry.ts`
 
-**Convenience wrapper** around ExtensionManager for managing character skills with prerequisite validation and ability score associations.
+Query and validation layer for character skills stored in ExtensionManager.
 
-**Architecture:** SkillRegistry provides a convenient API that delegates to ExtensionManager as the single source of truth. All skills are stored in ExtensionManager; SkillRegistry provides:
-- Registration methods that delegate to `ExtensionManager.register('skills', [...])`
+**Architecture:** SkillRegistry provides query methods and validation helpers. All skills are stored in ExtensionManager; SkillRegistry provides:
 - Query methods that read from ExtensionManager with caching for performance
 - Skill-related helper methods (prerequisite validation, ability/category filtering, etc.)
+- Cache invalidation for manual updates
+
+**Registration:** Use `ExtensionManager.register('skills', [...])` directly. After registering, call `SkillRegistry.getInstance().invalidateCache()` to refresh cached data.
 
 **Design principle:** No duplicate storage. All data lives in ExtensionManager.
 
@@ -4681,10 +4675,6 @@ class SkillRegistry {
 
     // Cache Management
     invalidateCache(): void
-
-    // Registration (delegates to ExtensionManager)
-    registerSkill(skill: CustomSkill): void
-    registerSkills(skills: CustomSkill[]): void
 
     // Retrieval (reads from ExtensionManager with caching)
     getSkill(id: string): CustomSkill | undefined
@@ -4776,8 +4766,6 @@ interface SkillSelectionWeights {
 |--------|-----------|---------|-------------|
 | `getInstance()` | - | `SkillRegistry` | Returns singleton instance |
 | `invalidateCache()` | - | `void` | Clear all caches (call after direct ExtensionManager manipulation) |
-| `registerSkill()` | `skill` | `void` | Register single custom skill (delegates to ExtensionManager) |
-| `registerSkills()` | `skills[]` | `void` | Register multiple custom skills (delegates to ExtensionManager) |
 | `getSkill()` | `id` | `CustomSkill \| undefined` | Get skill by ID |
 | `getAllSkills()` | - | `CustomSkill[]` | Get all registered skills (reads from ExtensionManager with caching) |
 | `getSkillsByAbility()` | `ability` | `CustomSkill[]` | Get skills for specific ability (builds index from EM data with caching) |
@@ -4793,9 +4781,11 @@ interface SkillSelectionWeights {
 
 **Note on Registration:**
 
-Two ways to register skills (both store data in ExtensionManager):
-1. `ExtensionManager.getInstance().register('skills', [skillData])` — direct
-2. `SkillRegistry.getInstance().registerSkill(skillData)` — convenience wrapper
+Skills must be registered via ExtensionManager:
+```typescript
+ExtensionManager.getInstance().register('skills', [skillData]);
+SkillRegistry.getInstance().invalidateCache(); // Refresh cached data
+```
 
 **Note on Initialization:**
 
@@ -4923,12 +4913,14 @@ Spells can have prerequisites that must be met before a spellcaster can learn th
 
 **Location:** `src/core/spells/SpellRegistry.ts`
 
-**Convenience wrapper** around ExtensionManager for managing spells with prerequisite validation and school categorization.
+Query and validation layer for spells stored in ExtensionManager.
 
-**Architecture:** SpellRegistry provides a convenient API that delegates to ExtensionManager as the single source of truth. All spells are stored in ExtensionManager; SpellRegistry provides:
-- Registration methods that delegate to `ExtensionManager.register('spells', [...])`
+**Architecture:** SpellRegistry provides query methods and validation helpers. All spells are stored in ExtensionManager; SpellRegistry provides:
 - Query methods that read from ExtensionManager with caching for performance
 - Spell-related helper methods (prerequisite validation, class spell lists, etc.)
+- Cache invalidation for manual updates
+
+**Registration:** Use `ExtensionManager.register('spells', [...])` or `ExtensionManager.register('spells.${ClassName}', [...])` for class spell lists directly. After registering, call `SpellRegistry.getInstance().invalidateCache()` to refresh cached data.
 
 **Design principle:** No duplicate storage. All three registries (SpellRegistry, SkillRegistry, FeatureRegistry) follow the same pattern: they do not maintain their own copy of data. All data lives in ExtensionManager.
 
@@ -4936,11 +4928,6 @@ Spells can have prerequisites that must be met before a spellcaster can learn th
 class SpellRegistry {
     // Instance Management
     static getInstance(): SpellRegistry
-
-    // Registration (delegates to ExtensionManager)
-    registerSpell(spell: RegisteredSpell): void
-    registerSpells(spells: RegisteredSpell[]): void
-    registerClassSpellList(characterClass: Class, spellIds: string[]): void
 
     // Retrieval (reads from ExtensionManager with caching)
     getSpell(spellId: string): RegisteredSpell | undefined
@@ -5021,9 +5008,6 @@ interface ValidationResult {
 | Method | Parameters | Returns | Description |
 |--------|-----------|---------|-------------|
 | `getInstance()` | - | `SpellRegistry` | Returns singleton instance |
-| `registerSpell()` | `spell` | `void` | Register single custom spell (delegates to `ExtensionManager.register('spells', [...])`) |
-| `registerSpells()` | `spells[]` | `void` | Register multiple custom spells (delegates to `ExtensionManager.register('spells', [...])`) |
-| `registerClassSpellList()` | `class`, `spellIds[]` | `void` | Register spell list for a class (delegates to `ExtensionManager.register('spells.${class}', [...])`) |
 | `getSpell()` | `spellId` | `RegisteredSpell \| undefined` | Get spell by ID |
 | `getSpells()` | - | `RegisteredSpell[]` | Get all spells (reads from ExtensionManager with caching) |
 | `getSpellsByLevel()` | `level` | `RegisteredSpell[]` | Get spells of specific level (0-9) (queries ExtensionManager, builds index with caching) |
@@ -5041,9 +5025,9 @@ interface ValidationResult {
 
 **Usage Notes:**
 
-- **Registration:** Use `SpellRegistry.registerSpell()` for convenience or `ExtensionManager.register('spells', [...])` directly. Both methods end up in the same place (ExtensionManager).
-- **Querying:** Query methods read from ExtensionManager with lazy caching for performance. Caches are invalidated when spells are registered.
-- **Class Spell Lists:** Custom class spell lists can be registered via `registerClassSpellList()` or directly via `ExtensionManager.register('spells.${ClassName}', [...])`.
+- **Registration:** Use `ExtensionManager.register('spells', [...])` directly. After registering spells, call `SpellRegistry.getInstance().invalidateCache()` to refresh cached data.
+- **Class Spell Lists:** Register custom class spell lists via `ExtensionManager.register('spells.${ClassName}', [...])`. Spell IDs are validated during registration.
+- **Querying:** Query methods read from ExtensionManager with lazy caching for performance. Caches are invalidated when `invalidateCache()` is called.
 - **No Duplicate Storage:** All three registries (SpellRegistry, SkillRegistry, FeatureRegistry) follow the same pattern and do not maintain their own data copy. ExtensionManager is the single source of truth.
 
 ---

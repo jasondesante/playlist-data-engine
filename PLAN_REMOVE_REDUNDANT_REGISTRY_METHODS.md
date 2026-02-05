@@ -464,14 +464,23 @@ if (category.startsWith('spells.') && category !== 'spells') {
 - FeatureRegistry section (~line 4312)
 
 **Sub-tasks:**
-- [ ] Remove registration method documentation from all three registries
-  - [ ] SpellRegistry: `registerSpell()`, `registerSpells()`, `registerClassSpellList()`
-  - [ ] SkillRegistry: `registerSkill()`, `registerSkills()`
-  - [ ] FeatureRegistry: `registerClassFeature()`, `registerClassFeatures()`, `registerRacialTrait()`, `registerRacialTraits()`
-- [ ] Add prominent note: "Registration is done via ExtensionManager.register()"
-- [ ] Update Quick Reference tables to remove registration methods
-- [ ] Add cross-reference links to ExtensionManager documentation
-- [ ] Update example code blocks to use ExtensionManager
+- [x] Remove registration method documentation from all three registries
+  - [x] SpellRegistry: `registerSpell()`, `registerSpells()`, `registerClassSpellList()`
+  - [x] SkillRegistry: `registerSkill()`, `registerSkills()`
+  - [x] FeatureRegistry: `registerClassFeature()`, `registerClassFeatures()`, `registerRacialTrait()`, `registerRacialTraits()`
+- [x] Add prominent note: "Registration is done via ExtensionManager.register()"
+- [x] Update Quick Reference tables to remove registration methods
+- [x] Add cross-reference links to ExtensionManager documentation
+- [x] Update example code blocks to use ExtensionManager
+
+**Status:** ✅ COMPLETED
+- Removed "Convenience wrapper" language from all three registry sections
+- Removed all registration method declarations from TypeScript class definitions
+- Removed all registration methods from Method Reference tables
+- Updated "Note on Registration" and "Usage Notes" to emphasize ExtensionManager only
+- Added `invalidateCache()` calls to registration examples
+- All references to removed methods verified as removed via grep
+- Build passes successfully
 
 ---
 
