@@ -5,7 +5,7 @@
 
 import type { Combatant, SpellCastResult, StatusEffect } from '../types/Combat';
 import type { Spell } from '../types/Character';
-import { calculateDamage } from './DiceRoller';
+import { DiceRoller } from './DiceRoller';
 
 /**
  * SpellCaster - D&D 5e spell casting system
@@ -52,7 +52,7 @@ export class SpellCaster {
       // Check if this is an attack roll or saving throw
       if (spell.attack_roll) {
         // Attack roll spell (like Fire Bolt)
-        damage = calculateDamage(spell.damage_dice, 0, false);
+        damage = DiceRoller.calculateDamage(spell.damage_dice, 0, false);
       } else if (spell.saving_throw) {
         // Saving throw spell (like Fireball)
         saveDC = this.calculateSaveDC(caster, spell.saving_throw);
@@ -61,7 +61,7 @@ export class SpellCaster {
         for (const target of targets) {
           const saveResult = this.makeSavingThrow(target, spell.saving_throw, saveDC);
           if (!saveResult) {
-            damage = calculateDamage(spell.damage_dice, 0, false);
+            damage = DiceRoller.calculateDamage(spell.damage_dice, 0, false);
             target.currentHP -= damage.total;
             if (target.currentHP < 0) {
               target.currentHP = 0;

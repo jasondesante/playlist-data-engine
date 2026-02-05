@@ -3,7 +3,7 @@ import { CombatEngine } from '../../src/core/combat/CombatEngine';
 import { InitiativeRoller } from '../../src/core/combat/InitiativeRoller';
 import { AttackResolver } from '../../src/core/combat/AttackResolver';
 import { SpellCaster } from '../../src/core/combat/SpellCaster';
-import * as DiceRoller from '../../src/core/combat/DiceRoller';
+import { DiceRoller } from '../../src/core/combat/DiceRoller';
 import type { CharacterSheet, Attack, Spell, AbilityScores } from '../../src/core/types/Character';
 import type { Combatant } from '../../src/core/types/Combat';
 

@@ -233,23 +233,7 @@ export {
 export { CombatEngine } from './core/combat/CombatEngine.js';
 
 // Dice rolling utilities
-export {
-    rollDie,
-    rollMultipleDice,
-    parseDiceFormula,
-    rollD20,
-    rollWithAdvantage,
-    rollWithDisadvantage,
-    rollInitiative,
-    isCriticalHit,
-    isCriticalMiss,
-    doubleDamage,
-    calculateDamage,
-    rollSavingThrow,
-    rollAbilityCheck,
-    seededRoll,
-    rollPercentile
-} from './core/combat/DiceRoller.js';
+export { DiceRoller } from './core/combat/DiceRoller.js';
 
 // Combat system classes
 export { InitiativeRoller } from './core/combat/InitiativeRoller.js';

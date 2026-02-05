@@ -7,7 +7,7 @@
 
 import type { Combatant, AttackRoll, DamageRoll } from '../types/Combat';
 import type { Attack } from '../types/Character';
-import { calculateDamage } from './DiceRoller';
+import { DiceRoller } from './DiceRoller';
 
 /**
  * Result of a complete attack action
@@ -145,7 +145,7 @@ export class AttackResolver {
     const abilityModifier = this.getDamageModifier(attacker, attack);
     const damageDice = attack.damage_dice ?? '';
 
-    const damageResult = calculateDamage(damageDice, abilityModifier, isCritical);
+    const damageResult = DiceRoller.calculateDamage(damageDice, abilityModifier, isCritical);
 
     return {
       diceFormula: damageDice,
