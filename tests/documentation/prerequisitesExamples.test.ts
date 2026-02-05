@@ -62,9 +62,7 @@ describe('PREREQUISITES.md Code Examples', () => {
         // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         featureRegistry.reset();
         manager.resetAll();
-        // Invalidate caches after reset to ensure clean state
-        skillRegistry.invalidateCache();
-        featureRegistry.invalidateCache();
+        // Cache invalidation is now automatic via ExtensionManager.register() and resetAll()
     });
 
     /**
@@ -441,7 +439,7 @@ describe('PREREQUISITES.md Code Examples', () => {
         beforeEach(() => {
             // Reset ExtensionManager before each test to avoid duplicate errors
             manager.resetAll();
-            featureRegistry.invalidateCache();
+            // Cache invalidation is now automatic via resetAll()
         });
 
         it('should register all dragon-themed components without errors', () => {

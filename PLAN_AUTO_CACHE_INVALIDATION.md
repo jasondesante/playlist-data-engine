@@ -427,9 +427,16 @@ All 84 tests pass. Build successful. Cache invalidation is now automatic via `Ex
 ### Task 32: Clean up prerequisitesExamples.test.ts
 **File:** `tests/documentation/prerequisitesExamples.test.ts`
 
-- [ ] Search for `invalidateCache()` in examples
-- [ ] Remove `invalidateCache()` calls from examples
-- [ ] Run tests to verify examples compile correctly
+- [x] Search for `invalidateCache()` in examples
+- [x] Remove `invalidateCache()` calls from examples
+- [x] Run tests to verify examples compile correctly
+
+**Summary:** Removed 3 `invalidateCache()` calls:
+- Line 66: `skillRegistry.invalidateCache()` - redundant after `resetAll()`
+- Line 67: `featureRegistry.invalidateCache()` - redundant after `resetAll()`
+- Line 444: `featureRegistry.invalidateCache()` in `beforeEach()` - redundant after `resetAll()`
+
+All 12 tests pass. Build successful. Cache invalidation is now automatic via `ExtensionManager.register()` and `resetAll()`.
 
 ### Task 33: Clean up verify-registrations.ts
 **File:** `tests/runtime-verification/verify-registrations.ts`
