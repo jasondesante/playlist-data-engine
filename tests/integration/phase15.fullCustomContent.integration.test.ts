@@ -206,9 +206,17 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             extensionManager.register('appearance.hairColors', customHairColors);
 
             // Register custom spell and add to Wizard's spell list
-            // Note: Disable validation for spells.Wizard since it expects spell ID strings, not objects
             extensionManager.register('spells', [customPhoenixFlameSpell]);
-            extensionManager.register('spells.Wizard', ['phoenix_flame'], { validate: false });
+            // Add custom spell to Wizard's spell list via spells.Wizard
+            // This requires the full ClassSpellListData format with cantrips and spells_by_level
+            const wizardSpellList = {
+                class: 'Wizard',
+                cantrips: [],
+                spells_by_level: {
+                    1: ['phoenix_flame']
+                }
+            };
+            extensionManager.register('spells.Wizard', [wizardSpellList]);
             spellRegistry.invalidateCache();
 
             // Generate characters for each class and verify custom content appears

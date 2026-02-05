@@ -224,7 +224,13 @@ export const createTestSpell = (overrides?: Partial<Spell>): Spell => ({
 
 **Estimated fixes**: ~1 test
 
-**Status:** [ ] TODO
+**Status:** ✅ COMPLETED
+- Fixed test to use correct spell list registration format
+- Changed from using `classSpellLists.Wizard` to `spells.Wizard` (which is what SpellManager actually reads)
+- Updated ExtensionManager validation to handle `ClassSpellListData` objects in `spells.${ClassName}` categories
+- `validateItem()` method now skips spell validation for `ClassSpellListData` objects (detected by `spells_by_level` property)
+- Spell list validation now properly validates spell IDs inside `ClassSpellListData` objects (cantrips and spells_by_level)
+- All 27 tests passing
 
 #### Task 2.4: Fix part4.templateClassSystem.integration.test.ts
 

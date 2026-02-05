@@ -218,11 +218,14 @@ All tasks in Phase 1 have been completed. Key findings:
 - [x] Test the validation works by trying to register invalid spell IDs
 - [x] TypeScript compilation check
 
-**Status:** ✅ COMPLETED
-- Validation logic added at lines 287-306 in ExtensionManager.ts
+**Status:** ✅ COMPLETED (with improvements made during Task 2.3 of PLAN_FIX_PREEXISTING_TEST_BUGS)
+- Validation logic added at lines 287-346 in ExtensionManager.ts (expanded to handle ClassSpellListData)
 - Gets all spells from `spells` category via `this.get('spells')`
 - Creates a Set of spell IDs for efficient lookup
 - Validates each spell ID in the items array
+- **Improved**: Now handles both string arrays (old format) and ClassSpellListData objects (new format)
+- **Improved**: validateItem() method skips spell validation for ClassSpellListData objects (detected by `spells_by_level` property)
+- **Improved**: Validates spell IDs inside ClassSpellListData objects (cantrips and spells_by_level)
 - Throws descriptive error if any invalid spell IDs found
 - TypeScript compilation passes
 - Build completes successfully

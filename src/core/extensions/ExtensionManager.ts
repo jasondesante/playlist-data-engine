@@ -286,15 +286,47 @@ export class ExtensionManager {
 
         // Special validation for spell lists (spells.${ClassName})
         // Validates that all spell IDs exist in the spells registry
+        // Note: items can be either string[] (old format) or ClassSpellListData[] (new format)
         if (category.startsWith('spells.') && category !== 'spells') {
             const allSpells = this.get('spells');
             const spellIdSet = new Set(allSpells.map((s: any) => s.id));
-            const spellIds = items as string[];
             const invalidIds: string[] = [];
 
-            for (const spellId of spellIds) {
-                if (!spellIdSet.has(spellId)) {
-                    invalidIds.push(spellId);
+            // Check if items are ClassSpellListData objects (have spells_by_level property)
+            const isClassSpellListData = items.length > 0 && items[0] && typeof items[0] === 'object' && 'spells_by_level' in items[0];
+
+            if (isClassSpellListData) {
+                // Validate spell IDs inside each ClassSpellListData object
+                for (const spellList of items) {
+                    const list = spellList as any;
+                    // Validate cantrips
+                    if (list.cantrips && Array.isArray(list.cantrips)) {
+                        for (const cantripId of list.cantrips) {
+                            if (!spellIdSet.has(cantripId)) {
+                                invalidIds.push(cantripId);
+                            }
+                        }
+                    }
+                    // Validate spells_by_level
+                    if (list.spells_by_level) {
+                        for (const spells of Object.values(list.spells_by_level)) {
+                            if (Array.isArray(spells)) {
+                                for (const spellId of spells) {
+                                    if (!spellIdSet.has(spellId)) {
+                                        invalidIds.push(spellId);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Old format: string array of spell IDs
+                const spellIds = items as string[];
+                for (const spellId of spellIds) {
+                    if (!spellIdSet.has(spellId)) {
+                        invalidIds.push(spellId);
+                    }
                 }
             }
 
@@ -520,10 +552,16 @@ export class ExtensionManager {
             }
         } else if (category === 'spells' || category.startsWith('spells.')) {
             // Spells validation - use SpellValidator
-            const result = SpellValidator.validateSpell(item);
-            if (!result.valid) {
-                errors.push(...result.errors.map(e => `${prefix} ${e}`));
+            // Special case: spells.${ClassName} categories contain ClassSpellListData objects, not Spell objects
+            // Skip validation for ClassSpellListData objects (they have spells_by_level property)
+            const isClassSpellListData = item && typeof item === 'object' && 'spells_by_level' in item;
+            if (!isClassSpellListData) {
+                const result = SpellValidator.validateSpell(item);
+                if (!result.valid) {
+                    errors.push(...result.errors.map(e => `${prefix} ${e}`));
+                }
             }
+            // For ClassSpellListData objects, validation is handled separately in register() method
         } else if (category === 'races') {
             // Races must be a valid Race type OR a registered custom race
             const validRaces: readonly Race[] = DEFAULT_RACES;
