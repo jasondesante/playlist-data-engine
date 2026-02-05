@@ -987,6 +987,7 @@ Created `PLAN_FIX_PREEXISTING_TEST_BUGS.md` to systematically fix these pre-exis
 
 **Progress Update:**
 - Task 2.1 (customGeneration.integration.test.ts) ✅ COMPLETE - All 22 tests passing
+- Task 2.2 (phase10.fullPipeline.test.ts) ✅ COMPLETE - All 19 tests passing
 
 **Lessons Learned:**
 1. **Adding validation can expose latent bugs**: When we moved spell validation to ExtensionManager (Task 2.0), we improved the code quality, but this exposed pre-existing test bugs.
