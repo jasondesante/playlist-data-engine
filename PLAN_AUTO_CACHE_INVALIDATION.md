@@ -643,9 +643,22 @@ The tests use the pattern: register first batch → verify → warm cache → re
 All 2093 tests pass (4 new tests added). No new linting errors introduced.
 
 ### Task 47: Test replace mode
-- [ ] Test `register()` with `mode: 'replace'`
-- [ ] Verify cache is invalidated after replace
-- [ ] Verify only new items are accessible
+- [x] Test `register()` with `mode: 'replace'`
+- [x] Verify cache is invalidated after replace
+- [x] Verify only new items are accessible
+
+**Summary:** Created 4 comprehensive tests in `tests/integration/autoCacheInvalidation.test.ts` covering replace mode behavior for SkillRegistry, SpellRegistry, and FeatureRegistry. Tests verify that:
+1. When registering with `mode: 'replace'`, existing custom items are replaced (not merged)
+2. Cache is invalidated after replace mode registration
+3. Only new items are accessible via the registry after replace (old custom items are removed)
+4. In replace mode, defaults are NOT included - only custom items are returned by `get()`
+5. Multiple consecutive replace mode registrations work correctly
+
+The tests use the pattern: register first batch → verify → warm cache → register second batch in replace mode → verify cache was invalidated and only the new batch is accessible.
+
+All 2097 tests pass (4 new tests added). No new linting errors introduced. Build successful.
+
+**Key Finding:** Replace mode behavior is that it returns ONLY custom items (no defaults). This is the expected behavior as defined in `ExtensionManager.get()` method (lines 392-394). The cache invalidation works correctly in this mode.
 
 ### Task 48: Test class-specific categories
 - [ ] Test `register('spells.Wizard', ...)` invalidates SpellRegistry

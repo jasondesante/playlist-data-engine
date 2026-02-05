@@ -1130,4 +1130,252 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             expect(featureRegistry.getClassFeatureById('test_empty_array_feature')).toBeDefined();
         });
     });
+
+    describe('Edge cases: replace mode', () => {
+        it('should invalidate cache after register() with mode: "replace" for skills', () => {
+            const manager = ExtensionManager.getInstance();
+            const skillRegistry = SkillRegistry.getInstance();
+
+            // Initialize default skills
+            initializeSkillDefaults();
+
+            // Register first batch of skills
+            const firstSkill = {
+                id: 'test_replace_skill_1',
+                name: 'Test Replace Skill 1',
+                ability: 'STR' as const,
+                description: 'First skill for replace mode test',
+                categories: ['test'],
+                source: 'custom' as const
+            };
+
+            manager.register('skills', [firstSkill]);
+
+            // Verify first skill is registered
+            expect(skillRegistry.isValidSkill('test_replace_skill_1')).toBe(true);
+
+            // Warm up the cache
+            const skillsBefore = skillRegistry.getAllSkills();
+            const countBefore = skillsBefore.length;
+
+            // Register second batch with replace mode (should NOT merge with first batch)
+            // Replace mode returns ONLY custom items (no defaults)
+            const secondSkill = {
+                id: 'test_replace_skill_2',
+                name: 'Test Replace Skill 2',
+                ability: 'DEX' as const,
+                description: 'Second skill for replace mode test',
+                categories: ['test'],
+                source: 'custom' as const
+            };
+
+            manager.register('skills', [secondSkill], { mode: 'replace' });
+
+            // Verify cache was invalidated by checking the count changed
+            // In replace mode, only custom items are returned, so count should be 1
+            const skillsAfter = skillRegistry.getAllSkills();
+            expect(skillsAfter).toHaveLength(1);
+
+            // Verify the new skill is accessible (this proves cache was invalidated and refreshed)
+            expect(skillRegistry.isValidSkill('test_replace_skill_2')).toBe(true);
+            expect(skillRegistry.getSkill('test_replace_skill_2')?.name).toBe('Test Replace Skill 2');
+
+            // Verify the old skill is NOT accessible (replace mode replaced it)
+            expect(skillRegistry.isValidSkill('test_replace_skill_1')).toBe(false);
+
+            // Verify only the new custom skill is in the manager's extensions (not merged)
+            const skillsExtensions = manager.get('skills');
+            const foundInExtensions = skillsExtensions.filter((s: any) => s.id.startsWith('test_replace_skill'));
+            expect(foundInExtensions).toHaveLength(1);
+            expect(foundInExtensions[0].id).toBe('test_replace_skill_2');
+        });
+
+        it('should invalidate cache after register() with mode: "replace" for spells', () => {
+            const manager = ExtensionManager.getInstance();
+            const spellRegistry = SpellRegistry.getInstance();
+
+            // Initialize default spells
+            initializeSpellDefaults();
+
+            // Register first batch of spells
+            const firstSpell = {
+                id: 'test_replace_spell_1',
+                name: 'Test Replace Spell 1',
+                level: 1,
+                school: 'Evocation' as const,
+                casting_time: '1 action',
+                range: '60 feet',
+                components: ['V'],
+                duration: 'Instantaneous',
+                description: 'First spell for replace mode test',
+                source: 'custom' as const
+            };
+
+            manager.register('spells', [firstSpell]);
+
+            // Verify first spell is registered
+            expect(spellRegistry.getSpell('test_replace_spell_1')).toBeDefined();
+
+            // Warm up the cache
+            const spellsBefore = spellRegistry.getSpells();
+            const countBefore = spellsBefore.length;
+
+            // Register second batch with replace mode
+            // Replace mode returns ONLY custom items (no defaults)
+            const secondSpell = {
+                id: 'test_replace_spell_2',
+                name: 'Test Replace Spell 2',
+                level: 2,
+                school: 'Conjuration' as const,
+                casting_time: '1 action',
+                range: '30 feet',
+                components: ['V', 'S'],
+                duration: '1 minute',
+                description: 'Second spell for replace mode test',
+                source: 'custom' as const
+            };
+
+            manager.register('spells', [secondSpell], { mode: 'replace' });
+
+            // Verify cache was invalidated
+            // In replace mode, only custom items are returned, so count should be 1
+            const spellsAfter = spellRegistry.getSpells();
+            expect(spellsAfter).toHaveLength(1);
+
+            // Verify the new spell is accessible (this proves cache was invalidated and refreshed)
+            expect(spellRegistry.getSpell('test_replace_spell_2')).toBeDefined();
+            expect(spellRegistry.getSpell('test_replace_spell_2')?.name).toBe('Test Replace Spell 2');
+
+            // Verify the old spell is NOT accessible (replace mode replaced it)
+            expect(spellRegistry.getSpell('test_replace_spell_1')).toBeUndefined();
+
+            // Verify only the new custom spell is in the manager's extensions
+            const spellsExtensions = manager.get('spells');
+            const foundInExtensions = spellsExtensions.filter((s: any) => s.id.startsWith('test_replace_spell'));
+            expect(foundInExtensions).toHaveLength(1);
+            expect(foundInExtensions[0].id).toBe('test_replace_spell_2');
+        });
+
+        it('should invalidate cache after register() with mode: "replace" for classFeatures', () => {
+            const manager = ExtensionManager.getInstance();
+            const featureRegistry = FeatureRegistry.getInstance();
+
+            // Initialize default features
+            initializeFeatureDefaults();
+
+            // Register first batch of features
+            const firstFeature = {
+                id: 'test_replace_feature_1',
+                name: 'Test Replace Feature 1',
+                description: 'First feature for replace mode test',
+                type: 'passive' as const,
+                class: 'Barbarian',
+                level: 2,
+                source: 'custom' as const
+            };
+
+            manager.register('classFeatures', [firstFeature]);
+
+            // Verify first feature is registered
+            expect(featureRegistry.getClassFeatureById('test_replace_feature_1')).toBeDefined();
+
+            // Warm up the cache
+            const barbarianFeaturesBefore = featureRegistry.getClassFeatures('Barbarian', 20);
+            const countBefore = barbarianFeaturesBefore.length;
+
+            // Register second batch with replace mode
+            // Replace mode returns ONLY custom items (no defaults)
+            const secondFeature = {
+                id: 'test_replace_feature_2',
+                name: 'Test Replace Feature 2',
+                description: 'Second feature for replace mode test',
+                type: 'active' as const,
+                class: 'Barbarian',
+                level: 5,
+                source: 'custom' as const
+            };
+
+            manager.register('classFeatures', [secondFeature], { mode: 'replace' });
+
+            // Verify cache was invalidated
+            // In replace mode, only custom items are returned, so only our custom feature exists
+            const barbarianFeaturesAfter = featureRegistry.getClassFeatures('Barbarian', 20);
+            expect(barbarianFeaturesAfter).toHaveLength(1);
+
+            // Verify the new feature is accessible (this proves cache was invalidated and refreshed)
+            expect(featureRegistry.getClassFeatureById('test_replace_feature_2')).toBeDefined();
+            expect(featureRegistry.getClassFeatureById('test_replace_feature_2')?.name).toBe('Test Replace Feature 2');
+
+            // Verify the old feature is NOT accessible (replace mode replaced it)
+            expect(featureRegistry.getClassFeatureById('test_replace_feature_1')).toBeUndefined();
+
+            // Verify only the new custom feature is in the manager's extensions
+            const featuresExtensions = manager.get('classFeatures');
+            const foundInExtensions = featuresExtensions.filter((f: any) => f.id.startsWith('test_replace_feature'));
+            expect(foundInExtensions).toHaveLength(1);
+            expect(foundInExtensions[0].id).toBe('test_replace_feature_2');
+        });
+
+        it('should replace items with mode: "replace" - only new items accessible in extensions', () => {
+            const manager = ExtensionManager.getInstance();
+            const skillRegistry = SkillRegistry.getInstance();
+
+            // Initialize default skills
+            initializeSkillDefaults();
+
+            // Register multiple skills
+            manager.register('skills', [
+                {
+                    id: 'test_replace_multi_1',
+                    name: 'Replace Multi 1',
+                    ability: 'STR' as const,
+                    description: 'First of multiple',
+                    categories: ['test'],
+                    source: 'custom' as const
+                },
+                {
+                    id: 'test_replace_multi_2',
+                    name: 'Replace Multi 2',
+                    ability: 'DEX' as const,
+                    description: 'Second of multiple',
+                    categories: ['test'],
+                    source: 'custom' as const
+                }
+            ]);
+
+            // Verify both are registered
+            expect(skillRegistry.isValidSkill('test_replace_multi_1')).toBe(true);
+            expect(skillRegistry.isValidSkill('test_replace_multi_2')).toBe(true);
+
+            // Warm up cache
+            const skillsBefore = skillRegistry.getAllSkills();
+
+            // Replace with a single skill
+            // Replace mode replaces ALL custom items (and defaults are not included in replace mode)
+            manager.register('skills', [
+                {
+                    id: 'test_replace_multi_3',
+                    name: 'Replace Multi 3',
+                    ability: 'CON' as const,
+                    description: 'Replaces the previous batch',
+                    categories: ['test'],
+                    source: 'custom' as const
+                }
+            ], { mode: 'replace' });
+
+            // Verify cache was invalidated and only the new skill is accessible
+            const skillsAfter = skillRegistry.getAllSkills();
+            expect(skillsAfter).toHaveLength(1); // Only the new custom skill in replace mode
+
+            // Verify only the new skill is accessible
+            expect(skillRegistry.isValidSkill('test_replace_multi_3')).toBe(true);
+            expect(skillRegistry.getSkill('test_replace_multi_3')?.name).toBe('Replace Multi 3');
+
+            // Verify the old skills are NOT in the manager's extensions (they were replaced)
+            const skillsExtensions = manager.get('skills');
+            const foundInExtensions = skillsExtensions.filter((s: any) => s.id.startsWith('test_replace_multi'));
+            expect(foundInExtensions).toHaveLength(1);
+            expect(foundInExtensions[0].id).toBe('test_replace_multi_3');
+        });
+    });
 });
