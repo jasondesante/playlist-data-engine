@@ -4,15 +4,18 @@
  * Central registry for class features and racial traits.
  * Manages default and custom features with prerequisite validation.
  *
- * **Design:** This is a **convenience wrapper** around ExtensionManager.
- * All features are stored in ExtensionManager; FeatureRegistry provides:
- * - Convenient registration methods that delegate to ExtensionManager
+ * **Design:** FeatureRegistry provides query methods that read from ExtensionManager.
+ * All feature registration is done via ExtensionManager.register().
+ *
+ * This class provides:
  * - Query methods with caching for performance
  * - Feature-related helper methods
+ * - Prerequisite validation
  *
  * No duplicate storage - all data lives in ExtensionManager.
  *
- * **Note:** Both class features and racial traits now read from ExtensionManager.
+ * **Note:** Both class features and racial traits read from ExtensionManager.
+ * To register new features, use ExtensionManager.register() directly.
  */
 
 import type {
@@ -22,20 +25,20 @@ import type {
 } from './FeatureTypes.js';
 import type { Class, Race } from '../types/Character.js';
 import type { CharacterSheet } from '../types/Character.js';
-import { validateClassFeature, validateRacialTrait } from './FeatureValidator.js';
 import { getRaceData } from '../../utils/constants.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 
 /**
  * FeatureRegistry - Singleton class for managing features and traits
  *
- * The registry is a **convenience wrapper** around ExtensionManager.
+ * The registry provides query methods that read from ExtensionManager.
  * All class features and racial traits are stored in ExtensionManager; FeatureRegistry provides:
- * - Convenient registration methods that delegate to ExtensionManager
  * - Query methods with caching for performance
  * - Feature-related helper methods
+ * - Prerequisite validation
  *
  * Design principle: No duplicate storage. All feature data lives in ExtensionManager.
+ * To register new features, use ExtensionManager.register() directly.
  */
 export class FeatureRegistry {
     private static instance: FeatureRegistry;
@@ -77,165 +80,6 @@ export class FeatureRegistry {
         this.classFeaturesIndex = null;
         this.allRacialTraitsCache = null;
         this.racialTraitsIndex = null;
-    }
-
-
-    /**
-     * Register a single class feature
-     *
-     * Delegates to ExtensionManager.register('classFeatures', [...])
-     *
-     * @param feature - Class feature to register
-     * @throws Error if feature ID already exists or validation fails
-     */
-    registerClassFeature(feature: ClassFeature): void {
-        // Validate feature before registering
-        const validation = validateClassFeature(feature);
-        if (!validation.valid) {
-            throw new Error(`Invalid class feature "${feature.id}":\n${validation.errors.join('\n')}`);
-        }
-
-        // Check for duplicate feature ID
-        const existingFeatures = this.getAllClassFeaturesArray();
-        if (existingFeatures.some(f => f.id === feature.id)) {
-            throw new Error(`Class feature with ID "${feature.id}" already exists`);
-        }
-
-        // Ensure feature has source
-        const featureToRegister = {
-            ...feature,
-            source: feature.source || 'custom'
-        };
-
-        // Delegate to ExtensionManager
-        this.manager.register('classFeatures', [featureToRegister]);
-
-        // Invalidate cache
-        this.invalidateCache();
-    }
-
-    /**
-     * Register multiple class features at once
-     *
-     * Delegates to ExtensionManager.register('classFeatures', [...])
-     *
-     * @param features - Array of class features to register
-     * @throws Error if validation fails or if any feature ID already exists
-     */
-    registerClassFeatures(features: ClassFeature[]): void {
-        // Validate all features first
-        for (const feature of features) {
-            const validation = validateClassFeature(feature);
-            if (!validation.valid) {
-                throw new Error(`Invalid class feature "${feature.id}":\n${validation.errors.join('\n')}`);
-            }
-        }
-
-        // Check for duplicate feature IDs (both within batch and against existing features)
-        const existingFeatures = this.getAllClassFeaturesArray();
-        const existingIds = new Set(existingFeatures.map(f => f.id));
-        const newIds = new Set<string>();
-
-        for (const feature of features) {
-            if (existingIds.has(feature.id)) {
-                throw new Error(`Class feature with ID "${feature.id}" already exists`);
-            }
-            if (newIds.has(feature.id)) {
-                throw new Error(`Duplicate class feature ID "${feature.id}" in batch`);
-            }
-            newIds.add(feature.id);
-        }
-
-        // Ensure all features have source
-        const featuresToRegister = features.map(feature => ({
-            ...feature,
-            source: feature.source || 'custom'
-        }));
-
-        // Delegate to ExtensionManager
-        this.manager.register('classFeatures', featuresToRegister);
-
-        // Invalidate cache
-        this.invalidateCache();
-    }
-
-    /**
-     * Register a single racial trait
-     *
-     * Delegates to ExtensionManager.register('racialTraits', [...])
-     *
-     * @param trait - Racial trait to register
-     * @throws Error if trait ID already exists or validation fails
-     */
-    registerRacialTrait(trait: RacialTrait): void {
-        // Validate trait before registering
-        const validation = validateRacialTrait(trait);
-        if (!validation.valid) {
-            throw new Error(`Invalid racial trait "${trait.id}":\n${validation.errors.join('\n')}`);
-        }
-
-        // Check for duplicate trait ID
-        const existingTraits = this.getAllRacialTraitsArray();
-        if (existingTraits.some(t => t.id === trait.id)) {
-            throw new Error(`Racial trait with ID "${trait.id}" already exists`);
-        }
-
-        // Ensure trait has source
-        const traitToRegister = {
-            ...trait,
-            source: trait.source || 'custom'
-        };
-
-        // Delegate to ExtensionManager
-        this.manager.register('racialTraits', [traitToRegister]);
-
-        // Invalidate cache
-        this.invalidateCache();
-    }
-
-    /**
-     * Register multiple racial traits at once
-     *
-     * Delegates to ExtensionManager.register('racialTraits', [...])
-     *
-     * @param traits - Array of racial traits to register
-     * @throws Error if validation fails or if any trait ID already exists
-     */
-    registerRacialTraits(traits: RacialTrait[]): void {
-        // Validate all traits first
-        for (const trait of traits) {
-            const validation = validateRacialTrait(trait);
-            if (!validation.valid) {
-                throw new Error(`Invalid racial trait "${trait.id}":\n${validation.errors.join('\n')}`);
-            }
-        }
-
-        // Check for duplicate trait IDs (both within batch and against existing traits)
-        const existingTraits = this.getAllRacialTraitsArray();
-        const existingIds = new Set(existingTraits.map(t => t.id));
-        const newIds = new Set<string>();
-
-        for (const trait of traits) {
-            if (existingIds.has(trait.id)) {
-                throw new Error(`Racial trait with ID "${trait.id}" already exists`);
-            }
-            if (newIds.has(trait.id)) {
-                throw new Error(`Duplicate racial trait ID "${trait.id}" in batch`);
-            }
-            newIds.add(trait.id);
-        }
-
-        // Ensure all traits have source
-        const traitsToRegister = traits.map(trait => ({
-            ...trait,
-            source: trait.source || 'custom'
-        }));
-
-        // Delegate to ExtensionManager
-        this.manager.register('racialTraits', traitsToRegister);
-
-        // Invalidate cache
-        this.invalidateCache();
     }
 
     /**
@@ -817,28 +661,6 @@ export class FeatureRegistry {
         // All registered features can potentially be granted by equipment
         // The spawnWeight: 0 only affects random generation, not equipment references
         return true;
-    }
-
-    /**
-     * Register an equipment-granted feature
-     *
-     * These features have special handling as they are only active when
-     * the associated equipment is equipped. They are marked with the
-     * equipment source and can be referenced by equipment definitions.
-     *
-     * @param feature - Class feature to register as equipment-granted
-     * @throws Error if feature ID already exists or validation fails
-     */
-    static registerEquipmentFeature(feature: ClassFeature): void {
-        const registry = FeatureRegistry.getInstance();
-
-        // Mark the feature as equipment-grantable
-        const equipmentFeature: ClassFeature = {
-            ...feature,
-            tags: [...(feature.tags || []), 'equipment']
-        };
-
-        registry.registerClassFeature(equipmentFeature);
     }
 
     /**

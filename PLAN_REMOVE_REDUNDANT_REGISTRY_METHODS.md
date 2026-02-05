@@ -375,12 +375,23 @@ if (category.startsWith('spells.') && category !== 'spells') {
 **File:** `src/core/features/FeatureRegistry.ts`
 
 **Sub-tasks:**
-- [ ] Remove `registerClassFeature()` method (lines 91-123)
-- [ ] Remove `registerClassFeatures()` method (lines 125-168)
-- [ ] Remove `registerRacialTrait()` method (lines 170-202)
-- [ ] Remove `registerRacialTraits()` method (lines 204-247)
-- [ ] Verify `invalidateCache()` is public (already is)
-- [ ] TypeScript compilation check
+- [x] Remove `registerClassFeature()` method (lines 91-123)
+- [x] Remove `registerClassFeatures()` method (lines 125-168)
+- [x] Remove `registerRacialTrait()` method (lines 170-202)
+- [x] Remove `registerRacialTraits()` method (lines 204-247)
+- [x] Remove static `registerEquipmentFeature()` method
+- [x] Remove unused `validateClassFeature` and `validateRacialTrait` imports
+- [x] Verify `invalidateCache()` is public (already is)
+- [x] TypeScript compilation check
+
+**Status:** ✅ COMPLETED
+- All four registration methods removed (`registerClassFeature`, `registerClassFeatures`, `registerRacialTrait`, `registerRacialTraits`)
+- Static `registerEquipmentFeature()` method also removed
+- Removed unused `validateClassFeature` and `validateRacialTrait` imports
+- `invalidateCache()` is public (line 75)
+- Class documentation updated to remove "convenience wrapper" language
+- Build passes successfully (no new errors introduced)
+- TypeScript compilation passes with no errors
 
 **Methods to Keep (Query/Validation):**
 - Class Features:
