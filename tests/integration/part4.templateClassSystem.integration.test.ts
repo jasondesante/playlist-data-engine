@@ -167,8 +167,8 @@ describe('Integration: Part 4 Template-Based Class System', () => {
             const necromancer = CharacterGenerator.generate(
                 'test-seed-necromancer',
                 sampleAudioProfile,
-                'Test Necromancer',
-                { forceClass: asClass('Necromancer') }
+                sampleTrack,
+                { forceClass: asClass('Necromancer'), forceName: 'Test Necromancer' }
             );
 
             // Verify the character was generated with the custom class
@@ -364,8 +364,8 @@ describe('Integration: Part 4 Template-Based Class System', () => {
             const necromancer = CharacterGenerator.generate(
                 'test-seed-necromancer-full',
                 sampleAudioProfile,
-                'Test Necromancer',
-                { forceClass: asClass('Necromancer') }
+                sampleTrack,
+                { forceClass: asClass('Necromancer'), forceName: 'Test Necromancer' }
             );
 
             expect(necromancer.class).toBe('Necromancer');

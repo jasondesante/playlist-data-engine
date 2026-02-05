@@ -242,7 +242,12 @@ export const createTestSpell = (overrides?: Partial<Spell>): Spell => ({
 
 **Estimated fixes**: ~2 tests
 
-**Status:** [ ] TODO
+**Status:** ✅ COMPLETED
+- Replaced string track parameters with `sampleTrack` in 2 tests:
+  - Line 167: "should generate a character with a custom class that extends a base class"
+  - Line 364: "should support the Necromancer class example"
+- Added `forceName: 'Test Necromancer'` option to preserve test expectations
+- All 9 tests now passing (100% pass rate for this file)
 
 #### Task 2.5: Fix remaining test files
 
