@@ -87,6 +87,8 @@ Then reference it in your project code directly.
 - [Gaming Platform Integration](#gaming-platform-integration) - Integrate Steam and Discord for gaming bonuses
 - [Combat System](#combat-system) - Run turn-based D&D 5e combat
 - [Equipment System](#equipment-system) - Custom equipment, properties, enchanting, and batch spawning
+
+### Extensibility System
 - [Custom Features and Skills](#custom-features-and-skills) - Create custom class features, racial traits, and skills
 - [Custom Classes](#custom-classes) - Create entirely new classes or extend existing ones
 - [Spawn Rate Control](#spawn-rate-control) - Control how often custom content appears
@@ -97,9 +99,7 @@ Then reference it in your project code directly.
 - [Manual Level-Up Processing](#manual-level-up-processing) - Handle level-ups programmatically
 - [Hash Utilities and Deterministic Seeding](#hash-utilities-and-deterministic-seeding) - Generate deterministic seeds and random values
 - [Validation Schemas](#validation-schemas) - Runtime type validation with Zod schemas
-- [Custom Features and Skills](#custom-features-and-skills) - Create custom class features, racial traits, and skills
-- [Custom Classes](#custom-classes) - Create entirely new classes or extend existing ones
-- [Spawn Rate Control](#spawn-rate-control) - Control how often custom content appears
+
 
 ### Other Docs
 Read about other subjects in their respective docs

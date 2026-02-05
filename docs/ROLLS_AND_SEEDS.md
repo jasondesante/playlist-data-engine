@@ -9,12 +9,92 @@ Complete guide to the dice roller and seeded randomness in the Playlist Data Eng
 
 ## Table of Contents
 
-1. [Dice Roller](#dice-roller)
-2. [Initiative Roller](#initiative-roller)
-3. [Hash Utilities and Deterministic Seeding](#hash-utilities-and-deterministic-seeding)
-
+1. [Hash Utilities and Deterministic Seeding](#hash-utilities-and-deterministic-seeding)
+2. [Dice Roller](#dice-roller)
+3. [Initiative Roller](#initiative-roller)
 
 ---
+
+
+## Hash Utilities and Deterministic Seeding
+
+The hash utilities provide deterministic seed generation for reproducible character generation:
+
+```typescript
+import { generateSeed, hashSeedToFloat, hashSeedToInt, deriveSeed, SeededRNG } from 'playlist-data-engine';
+
+// Generate a deterministic seed from blockchain data
+// Takes THREE parameters: chainName, tokenAddress, tokenId
+const seed = generateSeed('ethereum', '0x123abc...', '42');
+console.log(seed);  // "ethereum-0x123abc...-42"
+
+// Hash seed to float (0.0 - 1.0)
+const float = hashSeedToFloat(seed);
+console.log(float);  // e.g., 0.6423...
+
+// Hash seed to integer in range
+const stat = hashSeedToInt(seed, 8, 18);  // Random stat between 8 and 17
+console.log(stat);  // e.g., 14
+
+// Derive new seeds for related random values
+const raceSeed = deriveSeed(seed, 'race');
+const classSeed = deriveSeed(seed, 'class');
+const statsSeed = deriveSeed(seed, 'stats');
+console.log(raceSeed);  // "ethereum-0x123abc...-42:race"
+
+// Use SeededRNG for complex deterministic random operations
+const rng = new SeededRNG(seed);
+
+// Generate random float in [0.0, 1.0)
+const randomValue = rng.random();
+
+// Generate random integer in range [min, max)
+const d20Roll = rng.randomInt(1, 21);
+const damage = rng.randomInt(1, 9);  // 1d8
+
+// Pick random element from array
+const races = ['Human', 'Elf', 'Dwarf', 'Halfling'];
+const race = rng.randomChoice(races);
+
+// Pick weighted random element (uses [value, weight] tuples)
+const treasureOptions = [
+  ['Gold', 50],
+  ['Gem', 30],
+  ['Artifact', 10]
+];
+const item = rng.weightedChoice(treasureOptions);
+console.log(item);  // 'Gold' (50% chance), 'Gem' (30% chance), or 'Artifact' (10% chance)
+
+// Shuffle array deterministically
+const cards = ['A', 'K', 'Q', 'J', '10', '9', '8', '7'];
+const shuffled = rng.shuffle([...cards]);
+```
+
+**Common Use Case: Blockchain-Based Character Generation**
+
+```typescript
+import { generateSeed, CharacterGenerator, AudioAnalyzer } from 'playlist-data-engine';
+
+// Given an NFT's blockchain data
+const nftData = {
+  chain: 'ethereum',
+  contractAddress: '0x1234567890abcdef...',
+  tokenId: '1234'
+};
+
+// Generate a deterministic seed
+const seed = generateSeed(nftData.chain, nftData.contractAddress, nftData.tokenId);
+
+// Generate character from seed and audio
+const analyzer = new AudioAnalyzer();
+const audio = await analyzer.extractSonicFingerprint(track.audio_url);
+const character = CharacterGenerator.generate(seed, audio, track);
+
+// The same NFT always generates the same character!
+```
+
+---
+
 
 ## Dice Roller
 
@@ -243,82 +323,5 @@ while (combatants.length > 1) {
 }
 ```
 
-
-## Hash Utilities and Deterministic Seeding
-
-The hash utilities provide deterministic seed generation for reproducible character generation:
-
-```typescript
-import { generateSeed, hashSeedToFloat, hashSeedToInt, deriveSeed, SeededRNG } from 'playlist-data-engine';
-
-// Generate a deterministic seed from blockchain data
-// Takes THREE parameters: chainName, tokenAddress, tokenId
-const seed = generateSeed('ethereum', '0x123abc...', '42');
-console.log(seed);  // "ethereum-0x123abc...-42"
-
-// Hash seed to float (0.0 - 1.0)
-const float = hashSeedToFloat(seed);
-console.log(float);  // e.g., 0.6423...
-
-// Hash seed to integer in range
-const stat = hashSeedToInt(seed, 8, 18);  // Random stat between 8 and 17
-console.log(stat);  // e.g., 14
-
-// Derive new seeds for related random values
-const raceSeed = deriveSeed(seed, 'race');
-const classSeed = deriveSeed(seed, 'class');
-const statsSeed = deriveSeed(seed, 'stats');
-console.log(raceSeed);  // "ethereum-0x123abc...-42:race"
-
-// Use SeededRNG for complex deterministic random operations
-const rng = new SeededRNG(seed);
-
-// Generate random float in [0.0, 1.0)
-const randomValue = rng.random();
-
-// Generate random integer in range [min, max)
-const d20Roll = rng.randomInt(1, 21);
-const damage = rng.randomInt(1, 9);  // 1d8
-
-// Pick random element from array
-const races = ['Human', 'Elf', 'Dwarf', 'Halfling'];
-const race = rng.randomChoice(races);
-
-// Pick weighted random element (uses [value, weight] tuples)
-const treasureOptions = [
-  ['Gold', 50],
-  ['Gem', 30],
-  ['Artifact', 10]
-];
-const item = rng.weightedChoice(treasureOptions);
-console.log(item);  // 'Gold' (50% chance), 'Gem' (30% chance), or 'Artifact' (10% chance)
-
-// Shuffle array deterministically
-const cards = ['A', 'K', 'Q', 'J', '10', '9', '8', '7'];
-const shuffled = rng.shuffle([...cards]);
-```
-
-**Common Use Case: Blockchain-Based Character Generation**
-
-```typescript
-import { generateSeed, CharacterGenerator, AudioAnalyzer } from 'playlist-data-engine';
-
-// Given an NFT's blockchain data
-const nftData = {
-  chain: 'ethereum',
-  contractAddress: '0x1234567890abcdef...',
-  tokenId: '1234'
-};
-
-// Generate a deterministic seed
-const seed = generateSeed(nftData.chain, nftData.contractAddress, nftData.tokenId);
-
-// Generate character from seed and audio
-const analyzer = new AudioAnalyzer();
-const audio = await analyzer.extractSonicFingerprint(track.audio_url);
-const character = CharacterGenerator.generate(seed, audio, track);
-
-// The same NFT always generates the same character!
-```
 
 ---
