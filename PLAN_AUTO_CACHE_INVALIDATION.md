@@ -473,16 +473,18 @@ All 20 tests pass. The script now correctly validates the new automatic cache in
 ### Task 35: Update EXTENSIBILITY_GUIDE.md
 **File:** `docs/EXTENSIBILITY_GUIDE.md`
 
-- [ ] Update spell registration section (~line 479): Remove note about manual invalidation
-- [ ] Remove `spellRegistry.invalidateCache()` from example (line 524)
-- [ ] Update feature registration section (~line 759): Remove note about manual invalidation
-- [ ] Remove `registry.invalidateCache()` from example (line 818)
-- [ ] Remove `featureRegistry.invalidateCache()` from example (line 822)
-- [ ] Update racial traits section (~line 949): Remove note about manual invalidation
-- [ ] Update skills section (~line 1014): Remove note about manual invalidation
-- [ ] Remove `registry.invalidateCache()` from example (line 1095)
-- [ ] Search file for any remaining `invalidateCache` references
-- [ ] Update section introductions to note automatic invalidation
+- [x] Update spell registration section (~line 479): Remove note about manual invalidation
+- [x] Remove `spellRegistry.invalidateCache()` from example (line 524)
+- [x] Update feature registration section (~line 759): Remove note about manual invalidation
+- [x] Remove `registry.invalidateCache()` from example (line 818)
+- [x] Remove `featureRegistry.invalidateCache()` from example (line 822)
+- [x] Update racial traits section (~line 949): Remove note about manual invalidation
+- [x] Update skills section (~line 1014): Remove note about manual invalidation
+- [x] Remove `registry.invalidateCache()` from example (line 1095)
+- [x] Search file for any remaining `invalidateCache` references
+- [x] Update section introductions to note automatic invalidation
+
+**Summary:** Removed 4 manual `invalidateCache()` calls from examples and 4 notes about manual cache invalidation, replacing them with notes that cache invalidation is automatic. All examples updated. Build successful.
 
 ### Task 36: Update DATA_ENGINE_REFERENCE.md
 **File:** `DATA_ENGINE_REFERENCE.md`

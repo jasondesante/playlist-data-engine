@@ -476,7 +476,7 @@ manager.setWeights('spells', {
 ===== SPELL REGISTRY FOR CUSTOM SPELLS =====
 Register and query custom spells with prerequisite validation
 
-**Note:** Spell registration is done via `ExtensionManager.register()`. After registration, you may need to call `SpellRegistry.getInstance().invalidateCache()` to ensure query methods return the latest data.
+**Note:** Spell registration is done via `ExtensionManager.register()`. Cache invalidation is automatic after registration.
 
 ```typescript
 
@@ -520,8 +520,7 @@ manager.register('spells', [
   }
 ]);
 
-// Invalidate cache to ensure query methods return latest data
-spellRegistry.invalidateCache();
+// Cache is automatically invalidated after registration
 
 // ===== QUERY SPELLS =====
 // Query spells by level, school, or class
@@ -756,7 +755,7 @@ manager.setWeights('classFeatures.Barbarian', {
 });
 ```
 
-**Note:** After registering features, call `FeatureRegistry.getInstance().invalidateCache()` to ensure query methods return the latest data.
+**Note:** Cache invalidation is automatic after registration via `ExtensionManager.register()`.
 
 **Feature Effect Types:**
 
@@ -814,12 +813,7 @@ const arcaneSmith = {
 // Option 1: Register via ExtensionManager (recommended)
 manager.register('classFeatures', [arcaneSmith]);
 
-// Invalidate cache to ensure query methods return latest data
-registry.invalidateCache();
-
-// Invalidate cache to ensure query methods return latest data
-const featureRegistry = FeatureRegistry.getInstance();
-featureRegistry.invalidateCache();
+// Cache is automatically invalidated after registration
 
 // ===== FEATURE REQUIRING SPELL KNOWLEDGE =====
 // Spellblade: Requires knowing specific spells
@@ -946,7 +940,7 @@ manager.setWeights('racialTraits', {
 });
 ```
 
-**Note:** After registering traits, call `FeatureRegistry.getInstance().invalidateCache()` to ensure query methods return the latest data.
+**Note:** Cache invalidation is automatic after registration via `ExtensionManager.register()`.
 
 **Get traits for a race:**
 
@@ -1011,7 +1005,7 @@ manager.setWeights('skills', {
 });
 ```
 
-**Note:** After registering skills, call `SkillRegistry.getInstance().invalidateCache()` to ensure query methods return the latest data.
+**Note:** Cache invalidation is automatic after registration via `ExtensionManager.register()`.
 
 **Register ability-specific skills:**
 
@@ -1091,8 +1085,7 @@ const dragonSmithing: CustomSkill = {
 // Option 1: Register via ExtensionManager (recommended)
 manager.register('skills', [dragonSmithing]);
 
-// Invalidate cache to ensure query methods return latest data
-registry.invalidateCache();
+// Cache is automatically invalidated after registration
 
 // ===== SKILL WITH ABILITY SCORE AND SKILL PREREQUISITES =====
 // Advanced Arcana: Requires INT 16 and proficiency in Arcana
