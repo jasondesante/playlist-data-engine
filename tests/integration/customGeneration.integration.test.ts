@@ -13,7 +13,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
-import { completeTestSpells, spellByName } from '../fixtures/spellFixtures';
+import { spellByName } from '../fixtures/spellFixtures';
 
 describe('Integration: Custom Data Generation', () => {
     let manager: ExtensionManager;
