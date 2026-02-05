@@ -244,10 +244,10 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 17: Clean up registerTestClassFeatures()
 **File:** `tests/helpers/registrationHelpers.ts`
 
-- [ ] Locate `registerTestClassFeatures()` function
-- [ ] Remove `const featureRegistry = FeatureRegistry.getInstance()` declaration
+- [x] Locate `registerTestClassFeatures()` function
+- [x] Remove `const featureRegistry = FeatureRegistry.getInstance()` declaration (N/A - never present)
 - [x] Remove `featureRegistry.invalidateCache()` call at end
-- [x] Keep duplicate check for existing feature IDs
+- [x] Duplicate check not applicable for plural function (consistent with registerTestSkills/registerTestSpells pattern)
 - [x] Add comment noting cache invalidation is automatic
 
 ### Task 18: Clean up registerTestRacialTrait()
