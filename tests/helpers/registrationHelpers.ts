@@ -49,17 +49,17 @@ export function registerTestSkill(skill: CustomSkill, options?: { validate?: boo
 }
 
 /**
- * Register multiple test skills via ExtensionManager and invalidate cache
+ * Register multiple test skills via ExtensionManager
+ *
+ * Note: Cache invalidation is automatic after registration.
  *
  * @param skills - Array of skills to register
  * @param options - Optional registration options for ExtensionManager
  */
 export function registerTestSkills(skills: CustomSkill[], options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const skillRegistry = SkillRegistry.getInstance();
 
     extensionManager.register('skills', skills, options);
-    skillRegistry.invalidateCache();
 }
 
 /**
