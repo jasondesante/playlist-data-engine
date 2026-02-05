@@ -26,9 +26,6 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
         // Reset instances for clean state
         manager.resetAll();
 
-        // Invalidate FeatureRegistry cache after EM reset
-        registry.invalidateCache();
-
         // Initialize with default features for each test
         initializeFeatureDefaults();
     });
@@ -288,7 +285,6 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             ];
 
             manager.register('classFeatures', customFeatures);
-            registry.invalidateCache();
 
             // Get features at exactly level 1 (defaults + our 2 custom)
             const level1Features = registry.getFeaturesForLevel('Bard', 1);
@@ -352,10 +348,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
 
             manager.register('classFeatures', [newFeature]);
 
-            // Invalidate cache explicitly
-            registry.invalidateCache();
-
-            // Verify new feature is visible after cache invalidation
+            // Verify new feature is visible (cache auto-invalidated by register())
             const newStats = registry.getRegistryStats();
             expect(newStats.totalClassFeatures).toBe(initialStats.totalClassFeatures + 1);
 
@@ -381,7 +374,6 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             };
 
             manager.register('classFeatures', [sorcererFeature]);
-            registry.invalidateCache();
 
             // Verify getRegisteredClasses sees the new class
             const newClasses = registry.getRegisteredClasses();
@@ -409,7 +401,6 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
                 };
 
                 manager.register('classFeatures', [feature]);
-                registry.invalidateCache();
 
                 const newStats = registry.getRegistryStats();
                 expect(newStats.totalClassFeatures).toBe(++featureCount);
@@ -470,7 +461,6 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
 
             // Register via ExtensionManager
             manager.register('classFeatures', [feature]);
-            registry.invalidateCache();
 
             // Try to register same ID via FeatureRegistry
             expect(() => {
@@ -490,17 +480,14 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             };
 
             manager.register('classFeatures', [feature]);
-            registry.invalidateCache();
             expect(registry.getClassFeatureById('test_persistence')).toBeDefined();
 
             // Reset and verify feature is gone
             manager.reset('classFeatures');
-            registry.invalidateCache();
             expect(registry.getClassFeatureById('test_persistence')).toBeUndefined();
 
             // Re-register and verify it's back
             manager.register('classFeatures', [feature]);
-            registry.invalidateCache(); // Need to invalidate after re-registration
             expect(registry.getClassFeatureById('test_persistence')).toBeDefined();
         });
 
@@ -530,7 +517,6 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             ];
 
             manager.register('classFeatures', newClassFeatures);
-            registry.invalidateCache();
 
             const newStats = registry.getRegistryStats();
             expect(newStats.totalClassFeatures).toBe(initialStats.totalClassFeatures + 2);
