@@ -630,4 +630,163 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             expect(skills.length).toBeGreaterThan(0);
         });
     });
+
+    describe('Edge cases: validation failure behavior', () => {
+        it('should NOT invalidate cache when validation fails', () => {
+            const manager = ExtensionManager.getInstance();
+            const skillRegistry = SkillRegistry.getInstance();
+
+            // Initialize default skills
+            initializeSkillDefaults();
+
+            // Register a valid skill first
+            const validSkill = {
+                id: 'test_validation_skill',
+                name: 'Test Validation Skill',
+                ability: 'STR' as const,
+                description: 'Test skill for validation failure test',
+                categories: ['test'],
+                source: 'custom' as const
+            };
+
+            manager.register('skills', [validSkill]);
+
+            // Verify it's registered
+            expect(skillRegistry.isValidSkill('test_validation_skill')).toBe(true);
+
+            // Warm up the cache by calling getAllSkills
+            const skillsBefore = skillRegistry.getAllSkills();
+            const countBefore = skillsBefore.length;
+
+            // Try to register an invalid skill (missing required 'ability' field)
+            const invalidSkill = {
+                id: 'test_invalid_skill',
+                name: 'Test Invalid Skill',
+                // Missing 'ability' field - this will fail validation
+                description: 'This skill should fail validation',
+                categories: ['test'],
+                source: 'custom' as const
+            };
+
+            // Attempting to register the invalid skill should throw an error
+            expect(() => {
+                manager.register('skills', [invalidSkill]);
+            }).toThrow();
+
+            // Verify the cache was NOT invalidated:
+            // - The count should be the same as before the failed registration
+            // - The valid skill should still be accessible
+            // - The invalid skill should NOT be registered
+            const skillsAfter = skillRegistry.getAllSkills();
+            expect(skillsAfter).toHaveLength(countBefore);
+            expect(skillRegistry.isValidSkill('test_validation_skill')).toBe(true);
+            expect(skillRegistry.isValidSkill('test_invalid_skill')).toBe(false);
+        });
+
+        it('should NOT invalidate SpellRegistry cache when validation fails', () => {
+            const manager = ExtensionManager.getInstance();
+            const spellRegistry = SpellRegistry.getInstance();
+
+            // Initialize default spells
+            initializeSpellDefaults();
+
+            // Register a valid spell first
+            const validSpell = {
+                id: 'test_validation_spell',
+                name: 'Test Validation Spell',
+                level: 1,
+                school: 'Evocation' as const,
+                casting_time: '1 action',
+                range: '60 feet',
+                components: ['V', 'S'],
+                duration: 'Instantaneous',
+                description: 'Test spell for validation failure test',
+                source: 'custom' as const
+            };
+
+            manager.register('spells', [validSpell]);
+
+            // Verify it's registered
+            expect(spellRegistry.getSpell('test_validation_spell')).toBeDefined();
+
+            // Warm up the cache
+            const spellsBefore = spellRegistry.getSpells();
+            const countBefore = spellsBefore.length;
+
+            // Try to register an invalid spell (missing required 'level' field)
+            const invalidSpell = {
+                id: 'test_invalid_spell',
+                name: 'Test Invalid Spell',
+                // Missing 'level' field - this will fail validation
+                school: 'Evocation' as const,
+                casting_time: '1 action',
+                range: '60 feet',
+                components: ['V'],
+                duration: 'Instantaneous',
+                description: 'This spell should fail validation',
+                source: 'custom' as const
+            };
+
+            // Attempting to register the invalid spell should throw an error
+            expect(() => {
+                manager.register('spells', [invalidSpell]);
+            }).toThrow();
+
+            // Verify the cache was NOT invalidated
+            const spellsAfter = spellRegistry.getSpells();
+            expect(spellsAfter).toHaveLength(countBefore);
+            expect(spellRegistry.getSpell('test_validation_spell')).toBeDefined();
+            expect(spellRegistry.getSpell('test_invalid_spell')).toBeUndefined();
+        });
+
+        it('should NOT invalidate FeatureRegistry cache when validation fails', () => {
+            const manager = ExtensionManager.getInstance();
+            const featureRegistry = FeatureRegistry.getInstance();
+
+            // Initialize default features
+            initializeFeatureDefaults();
+
+            // Register a valid feature first
+            const validFeature = {
+                id: 'test_validation_feature',
+                name: 'Test Validation Feature',
+                description: 'Test feature for validation failure test',
+                type: 'passive' as const,
+                class: 'Fighter',
+                level: 3,
+                source: 'custom' as const
+            };
+
+            manager.register('classFeatures', [validFeature]);
+
+            // Verify it's registered
+            expect(featureRegistry.getClassFeatureById('test_validation_feature')).toBeDefined();
+
+            // Warm up the cache
+            const fighterFeaturesBefore = featureRegistry.getClassFeatures('Fighter', 20);
+            const countBefore = fighterFeaturesBefore.length;
+
+            // Try to register an invalid feature (missing required 'class' field)
+            const invalidFeature = {
+                id: 'test_invalid_feature',
+                name: 'Test Invalid Feature',
+                description: 'This feature should fail validation',
+                type: 'passive' as const,
+                // Missing 'class' field - this will fail validation
+                level: 5,
+                source: 'custom' as const
+            };
+
+            // Attempting to register the invalid feature should throw an error
+            expect(() => {
+                manager.register('classFeatures', [invalidFeature]);
+            }).toThrow();
+
+            // Verify the cache was NOT invalidated
+            const fighterFeaturesAfter = featureRegistry.getClassFeatures('Fighter', 20);
+            expect(fighterFeaturesAfter).toHaveLength(countBefore);
+            expect(featureRegistry.getClassFeatureById('test_validation_feature')).toBeDefined();
+            expect(featureRegistry.getClassFeatureById('test_invalid_feature')).toBeUndefined();
+        });
+    });
 });

@@ -594,9 +594,23 @@ All 16 tests pass. Full test suite passes (2083/2083 tests).
 ## Phase 9: Edge Case Verification
 
 ### Task 44: Test validation failure doesn't invalidate cache
-- [ ] Create test registering invalid data
-- [ ] Verify cache is NOT invalidated when validation fails
-- [ ] Verify original data is still accessible
+- [x] Create test registering invalid data
+- [x] Verify cache is NOT invalidated when validation fails
+- [x] Verify original data is still accessible
+
+**Summary:** Created 3 comprehensive tests in `tests/integration/autoCacheInvalidation.test.ts` covering validation failure behavior for SkillRegistry, SpellRegistry, and FeatureRegistry. Tests verify that:
+1. When validation fails (e.g., missing required fields), an Error is thrown
+2. The cache is NOT invalidated because the throw exits the function before reaching `invalidateRegistryCache()`
+3. Original registered data remains accessible after a failed registration attempt
+4. The invalid data is NOT registered
+
+**Key Finding:** The existing implementation in `ExtensionManager.register()` (lines 281-364) already has the correct behavior:
+- Validation happens first (lines 281-288)
+- If validation fails, an Error is thrown
+- Cache invalidation only happens AFTER validation passes (line 364)
+- This means the cache is automatically preserved when validation fails
+
+All 2086 tests pass (3 new tests added). No new linting errors introduced.
 
 ### Task 45: Test empty items array
 - [ ] Test `register('skills', [])` with empty array
