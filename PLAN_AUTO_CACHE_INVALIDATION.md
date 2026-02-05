@@ -27,30 +27,95 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ## Phase 1: Research and Analysis
 
 ### Task 1: Identify all invalidateCache() usage in codebase
-- [ ] Search for all `invalidateCache()` calls in test files
-- [ ] Search for all `invalidateCache()` calls in documentation
-- [ ] Search for all `invalidateCache()` calls in source code
-- [ ] Categorize findings by file type (tests, docs, source)
-- [ ] Create inventory of all files requiring changes
+- [x] Search for all `invalidateCache()` calls in test files
+- [x] Search for all `invalidateCache()` calls in documentation
+- [x] Search for all `invalidateCache()` calls in source code
+- [x] Categorize findings by file type (tests, docs, source)
+- [x] Create inventory of all files requiring changes
+
+**Findings Summary:**
+
+**Test Files (92 occurrences):**
+- `tests/helpers/registrationHelpers.ts`: 8 calls
+- `tests/runtime-verification/verify-registrations.ts`: 20 calls (some are cache verification tests)
+- `tests/integration/featureIntegration.test.ts`: 10 calls
+- `tests/integration/racialTraitIntegration.test.ts`: ~20 calls
+- `tests/integration/skillIntegration.test.ts`: 3 calls
+- `tests/integration/phase15.fullCustomContent.integration.test.ts`: 5 calls
+- `tests/integration/prerequisitesAndRaces.integration.test.ts`: 1 call
+- `tests/unit/skillRegistry.test.ts`: 13 calls (some are testing cache behavior)
+- `tests/unit/skills.test.ts`: 1 call
+- `tests/unit/subraces.test.ts`: 2 calls
+- `tests/unit/sensors.test.ts`: 2 calls (KEEP - unrelated to ExtensionManager)
+- `tests/integration/fullSensorPipeline.test.ts`: 1 call (KEEP - unrelated to ExtensionManager)
+- `tests/documentation/examples-compilation.test.ts`: 4 calls
+- `tests/documentation/prerequisitesExamples.test.ts`: 2 calls
+
+**Documentation Files (26 occurrences):**
+- `docs/PREREQUISITES.md`: 5 calls
+- `docs/EXTENSIBILITY_GUIDE.md`: 9 calls
+- `docs/CUSTOM_CONTENT.md`: 1 call
+- `DATA_ENGINE_REFERENCE.md`: 8 calls
+- `USAGE_IN_OTHER_PROJECTS.md`: 2 calls
+- `PLAN_AUTO_CACHE_INVALIDATION.md`: 64 references (plan itself)
+
+**Source Code (8 occurrences):**
+- `src/core/skills/SkillRegistry.ts`: 3 references (JSDoc + method definition)
+- `src/core/spells/SpellRegistry.ts`: 4 references (JSDoc + method definition)
+- `src/core/features/FeatureRegistry.ts`: 2 references (method definition + internal call)
+- `src/core/sensors/WeatherAPIClient.ts`: 1 method definition (KEEP - unrelated)
+- `src/core/sensors/GeolocationProvider.ts`: 1 method definition (KEEP - unrelated)
+- `src/core/extensions/ExtensionManager.ts`: 1 comment (outdated)
+
+**Total files requiring changes:** ~20 files (excluding sensor-related code)
 
 ### Task 2: Analyze ExtensionManager.register() implementation
-- [ ] Read current `register()` method implementation
-- [ ] Read current `reset()` method implementation
-- [ ] Read current `resetAll()` method implementation
-- [ ] Identify where cache invalidation should be added
-- [ ] Verify no existing cache invalidation logic exists
+- [x] Read current `register()` method implementation
+- [x] Read current `reset()` method implementation
+- [x] Read current `resetAll()` method implementation
+- [x] Identify where cache invalidation should be added
+- [x] Verify no existing cache invalidation logic exists
+
+**ExtensionManager Findings:**
+- **`register()` method** (lines 266-359): Currently NO cache invalidation logic. Should add invalidation at end (after line 357) after weights are merged and after validation passes.
+- **`reset()` method** (lines 752-757): Currently NO cache invalidation logic. Has outdated comment on line 756 about manual invalidation.
+- **`resetAll()` method** (lines 762-765): Currently NO cache invalidation logic. Should invalidate ALL registry caches.
+- **Verified**: No existing automatic cache invalidation logic exists.
 
 ### Task 3: Analyze Registry invalidateCache() implementations
-- [ ] Read `SpellRegistry.invalidateCache()` implementation
-- [ ] Read `SkillRegistry.invalidateCache()` implementation
-- [ ] Read `FeatureRegistry.invalidateCache()` implementation
-- [ ] Verify all are idempotent (safe to call multiple times)
-- [ ] Document what each cache stores
+- [x] Read `SpellRegistry.invalidateCache()` implementation
+- [x] Read `SkillRegistry.invalidateCache()` implementation
+- [x] Read `FeatureRegistry.invalidateCache()` implementation
+- [x] Verify all are idempotent (safe to call multiple times)
+- [x] Document what each cache stores
+
+**Registry Analysis:**
+
+**SpellRegistry.invalidateCache()** (line 96):
+- ✅ Idempotent: Simply sets cache properties to null
+- Caches cleared: `allSpellsCache`, `levelCache`, `schoolCache`
+- Safe to call multiple times
+
+**SkillRegistry.invalidateCache()** (line 70):
+- ✅ Idempotent: Simply sets cache properties to null
+- Caches cleared: `allSkillsCache`, `abilityCache`, `categoryCache`
+- Safe to call multiple times
+
+**FeatureRegistry.invalidateCache()** (line 78):
+- ✅ Idempotent: Simply sets cache properties to null
+- Caches cleared: `allClassFeaturesCache`, `classFeaturesIndex`, `allRacialTraitsCache`, `racialTraitsIndex`
+- Safe to call multiple times
 
 ### Task 4: Document sensor registry cache handling
-- [ ] Identify sensor registries that have caches (WeatherAPIClient, GeolocationProvider)
-- [ ] Verify these are NOT affected by ExtensionManager.register()
-- [ ] Document that sensor tests should keep their invalidateCache() calls
+- [x] Identify sensor registries that have caches (WeatherAPIClient, GeolocationProvider)
+- [x] Verify these are NOT affected by ExtensionManager.register()
+- [x] Document that sensor tests should keep their invalidateCache() calls
+
+**Sensor Registry Cache Handling:**
+- **WeatherAPIClient.invalidateCache()** (line 459): Clears weather API cache (Map-based). NOT related to ExtensionManager.
+- **GeolocationProvider.invalidateCache()** (line 176): Clears geolocation cache. NOT related to ExtensionManager.
+- These sensor caches are separate from the Spell/Skill/Feature registries and are NOT affected by `ExtensionManager.register()`.
+- **Action**: Sensor tests in `tests/unit/sensors.test.ts` and `tests/integration/fullSensorPipeline.test.ts` should keep their `invalidateCache()` calls unchanged.
 
 ---
 
@@ -59,69 +124,71 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 5: Add registry imports to ExtensionManager
 **File:** `src/core/extensions/ExtensionManager.ts`
 
-- [ ] Add import for `SpellRegistry` from `../spells/SpellRegistry.js`
-- [ ] Add import for `SkillRegistry` from `../skills/SkillRegistry.js`
-- [ ] Add import for `FeatureRegistry` from `../features/FeatureRegistry.js`
-- [ ] Verify imports resolve correctly
-- [ ] Run linter to ensure no import issues
+- [x] Add import for `SpellRegistry` from `../spells/SpellRegistry.js`
+- [x] Add import for `SkillRegistry` from `../skills/SkillRegistry.js`
+- [x] Add import for `FeatureRegistry` from `../features/FeatureRegistry.js`
+- [x] Verify imports resolve correctly
+- [x] Run linter to ensure no import issues
 
 ### Task 6: Implement category-to-registry mapping helper
 **File:** `src/core/extensions/ExtensionManager.ts`
 
-- [ ] Create private method `getRegistryForCategory(category: ExtensionCategory)`
-- [ ] Add logic to map `spells*` and `classSpellLists*` to 'spell'
-- [ ] Add logic to map `skills*` and `skillLists*` to 'skill'
-- [ ] Add logic to map `classFeatures*` and `racialTraits*` to 'feature'
-- [ ] Return `null` for categories without registry caching
-- [ ] Add JSDoc comment explaining the mapping
+- [x] Create private method `getRegistryForCategory(category: ExtensionCategory)`
+- [x] Add logic to map `spells*` and `classSpellLists*` to 'spell'
+- [x] Add logic to map `skills*` and `skillLists*` to 'skill'
+- [x] Add logic to map `classFeatures*` and `racialTraits*` to 'feature'
+- [x] Return `null` for categories without registry caching
+- [x] Add JSDoc comment explaining the mapping
 
 ### Task 7: Implement cache invalidation helper method
 **File:** `src/core/extensions/ExtensionManager.ts`
 
-- [ ] Create private method `invalidateRegistryCache(category: ExtensionCategory)`
-- [ ] Call `getRegistryForCategory()` to determine registry type
-- [ ] Add switch statement to handle 'spell', 'skill', 'feature' cases
-- [ ] Call `SpellRegistry.getInstance().invalidateCache()` for spell categories
-- [ ] Call `SkillRegistry.getInstance().invalidateCache()` for skill categories
-- [ ] Call `FeatureRegistry.getInstance().invalidateCache()` for feature categories
-- [ ] Return early if no registry for category
-- [ ] Add JSDoc comment
+- [x] Create private method `invalidateRegistryCache(category: ExtensionCategory)`
+- [x] Call `getRegistryForCategory()` to determine registry type
+- [x] Add switch statement to handle 'spell', 'skill', 'feature' cases
+- [x] Call `SpellRegistry.getInstance().invalidateCache()` for spell categories
+- [x] Call `SkillRegistry.getInstance().invalidateCache()` for skill categories
+- [x] Call `FeatureRegistry.getInstance().invalidateCache()` for feature categories
+- [x] Return early if no registry for category
+- [x] Add JSDoc comment
 
 ### Task 8: Modify register() to auto-invalidate cache
 **File:** `src/core/extensions/ExtensionManager.ts`
 
-- [ ] Locate end of `register()` method (after weights merging, line ~357)
-- [ ] Add call to `this.invalidateRegistryCache(category)` at end of method
-- [ ] Verify invalidation happens AFTER successful registration
-- [ ] Verify invalidation happens AFTER validation passes
-- [ ] Add comment explaining automatic cache invalidation
-- [ ] Test compilation with TypeScript
+- [x] Locate end of `register()` method (after weights merging, line ~357)
+- [x] Add call to `this.invalidateRegistryCache(category)` at end of method
+- [x] Verify invalidation happens AFTER successful registration
+- [x] Verify invalidation happens AFTER validation passes
+- [x] Add comment explaining automatic cache invalidation
+- [x] Test compilation with TypeScript
 
 ### Task 9: Modify reset() to auto-invalidate cache
 **File:** `src/core/extensions/ExtensionManager.ts`
 
-- [ ] Locate `reset()` method (line 752)
-- [ ] Remove outdated comment about manual cache invalidation
-- [ ] Add call to `this.invalidateRegistryCache(category)`
-- [ ] Add updated comment about automatic invalidation
-- [ ] Test compilation
+- [x] Locate `reset()` method (line 752)
+- [x] Remove outdated comment about manual cache invalidation
+- [x] Add call to `this.invalidateRegistryCache(category)`
+- [x] Add updated comment about automatic invalidation
+- [x] Test compilation
 
 ### Task 10: Modify resetAll() to invalidate all registry caches
 **File:** `src/core/extensions/ExtensionManager.ts`
 
-- [ ] Locate `resetAll()` method (line 762)
-- [ ] Add call to `SpellRegistry.getInstance().invalidateCache()`
-- [ ] Add call to `SkillRegistry.getInstance().invalidateCache()`
-- [ ] Add call to `FeatureRegistry.getInstance().invalidateCache()`
-- [ ] Add comment explaining all caches are being cleared
-- [ ] Test compilation
+- [x] Locate `resetAll()` method (line 762)
+- [x] Add call to `SpellRegistry.getInstance().invalidateCache()`
+- [x] Add call to `SkillRegistry.getInstance().invalidateCache()`
+- [x] Add call to `FeatureRegistry.getInstance().invalidateCache()`
+- [x] Add comment explaining all caches are being cleared
+- [x] Test compilation
 
 ### Task 11: Verify registerMultiple() inherits behavior
 **File:** `src/core/extensions/ExtensionManager.ts`
 
-- [ ] Verify `registerMultiple()` calls `register()` in a loop
-- [ ] Confirm no changes needed (inherits automatic invalidation)
-- [ ] Document that each category's cache is invalidated separately
+- [x] Verify `registerMultiple()` calls `register()` in a loop
+- [x] Confirm no changes needed (inherits automatic invalidation)
+- [x] Document that each category's cache is invalidated separately
+
+**Phase 2 Status:** ✅ **COMPLETE** - All core implementation tasks done. Tests passing (2067/2067). Build successful.
 
 ---
 

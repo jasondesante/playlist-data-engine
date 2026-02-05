@@ -19,6 +19,9 @@ import { FeatureValidator } from '../features/FeatureValidator.js';
 import { SkillValidator } from '../skills/SkillValidator.js';
 import { SpellValidator } from '../spells/SpellValidator.js';
 import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
+import { SpellRegistry } from '../spells/SpellRegistry.js';
+import { SkillRegistry } from '../skills/SkillRegistry.js';
+import { FeatureRegistry } from '../features/FeatureRegistry.js';
 
 /**
  * Spawn modes for custom content
@@ -356,6 +359,9 @@ export class ExtensionManager {
             this.customWeights.set(category, { ...existingWeights, ...weights });
         }
 
+        // Automatically invalidate the appropriate registry cache
+        // This ensures query methods return fresh data after registration
+        this.invalidateRegistryCache(category);
     }
 
     /**
@@ -753,7 +759,8 @@ export class ExtensionManager {
         this.extensions.delete(category);
         this.customWeights.delete(category);
 
-        // Cache invalidation is handled by users calling registry.invalidateCache() if needed
+        // Automatically invalidate the appropriate registry cache
+        this.invalidateRegistryCache(category);
     }
 
     /**
@@ -762,6 +769,62 @@ export class ExtensionManager {
     resetAll(): void {
         this.extensions.clear();
         this.customWeights.clear();
+
+        // Invalidate all registry caches to ensure fresh data
+        SpellRegistry.getInstance().invalidateCache();
+        SkillRegistry.getInstance().invalidateCache();
+        FeatureRegistry.getInstance().invalidateCache();
+    }
+
+    /**
+     * Get the registry type for a given category
+     *
+     * Maps extension categories to their corresponding registries for automatic cache invalidation.
+     *
+     * @param category - The extension category
+     * @returns Registry type ('spell', 'skill', 'feature') or null if no registry caching
+     * @private
+     */
+    private getRegistryForCategory(category: ExtensionCategory): 'spell' | 'skill' | 'feature' | null {
+        // Spells and class spell lists map to SpellRegistry
+        if (category === 'spells' || category.startsWith('spells.') || category === 'classSpellLists' || category.startsWith('classSpellLists.')) {
+            return 'spell';
+        }
+
+        // Skills and skill lists map to SkillRegistry
+        if (category === 'skills' || category.startsWith('skills.') || category === 'skillLists' || category.startsWith('skillLists.')) {
+            return 'skill';
+        }
+
+        // Class features and racial traits map to FeatureRegistry
+        if (category === 'classFeatures' || category.startsWith('classFeatures.') || category === 'racialTraits' || category.startsWith('racialTraits.')) {
+            return 'feature';
+        }
+
+        // All other categories don't have registry caching
+        return null;
+    }
+
+    /**
+     * Invalidate the appropriate registry cache for a category
+     *
+     * Automatically invalidates the registry cache based on the category being registered.
+     * This ensures that query methods return fresh data after registration.
+     *
+     * @param category - The extension category to invalidate cache for
+     * @private
+     */
+    private invalidateRegistryCache(category: ExtensionCategory): void {
+        const registryType = this.getRegistryForCategory(category);
+
+        if (registryType === 'spell') {
+            SpellRegistry.getInstance().invalidateCache();
+        } else if (registryType === 'skill') {
+            SkillRegistry.getInstance().invalidateCache();
+        } else if (registryType === 'feature') {
+            FeatureRegistry.getInstance().invalidateCache();
+        }
+        // If registryType is null, no cache invalidation is needed
     }
 
     /**
