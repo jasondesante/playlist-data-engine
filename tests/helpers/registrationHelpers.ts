@@ -126,17 +126,18 @@ export function registerTestClassFeature(feature: ClassFeature, options?: { vali
 }
 
 /**
- * Register multiple test class features via ExtensionManager and invalidate cache
+ * Register multiple test class features via ExtensionManager
+ *
+ * Note: Cache invalidation is automatic after registration.
  *
  * @param features - Array of class features to register
  * @param options - Optional registration options for ExtensionManager
  */
 export function registerTestClassFeatures(features: ClassFeature[], options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
-    const featureRegistry = FeatureRegistry.getInstance();
 
     extensionManager.register('classFeatures', features, options);
-    featureRegistry.invalidateCache();
+    // Note: Cache invalidation is automatic after ExtensionManager.register()
 }
 
 /**
