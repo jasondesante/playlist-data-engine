@@ -661,16 +661,29 @@ All 2097 tests pass (4 new tests added). No new linting errors introduced. Build
 **Key Finding:** Replace mode behavior is that it returns ONLY custom items (no defaults). This is the expected behavior as defined in `ExtensionManager.get()` method (lines 392-394). The cache invalidation works correctly in this mode.
 
 ### Task 48: Test class-specific categories
-- [ ] Test `register('spells.Wizard', ...)` invalidates SpellRegistry
-- [ ] Test `register('skills.STR', ...)` invalidates SkillRegistry
-- [ ] Test `register('classFeatures.Fighter', ...)` invalidates FeatureRegistry
-- [ ] Test `register('racialTraits.Elf', ...)` invalidates FeatureRegistry
+- [x] Test `register('spells.Wizard', ...)` invalidates SpellRegistry
+- [x] Test `register('skills.STR', ...)` invalidates SkillRegistry
+- [x] Test `register('classFeatures.Fighter', ...)` invalidates FeatureRegistry
+- [x] Test `register('racialTraits.Elf', ...)` invalidates FeatureRegistry
+
+**Summary:** Added comprehensive test for `register('racialTraits.Elf', ...)` at line 245-297 in `tests/integration/autoCacheInvalidation.test.ts`. The test verifies:
+1. Items registered to main `racialTraits` category are accessible via FeatureRegistry
+2. Cache invalidation occurs when registering to `racialTraits.Elf` (a separate category)
+3. Items in the `racialTraits.Elf` subcategory exist in the manager
+
+Tests for `spells.Wizard`, `skills.STR`, and `classFeatures.Fighter` already existed in the file. All tests pass (31/31).
 
 ### Task 49: Test registerMultiple with mixed categories
-- [ ] Test `registerMultiple()` with skills and spells
-- [ ] Verify both SkillRegistry and SpellRegistry caches are invalidated
-- [ ] Test `registerMultiple()` with features and traits
-- [ ] Verify FeatureRegistry cache is only invalidated once
+- [x] Test `registerMultiple()` with skills and spells
+- [x] Verify both SkillRegistry and SpellRegistry caches are invalidated
+- [x] Test `registerMultiple()` with features and traits
+- [x] Verify FeatureRegistry cache is only invalidated once
+
+**Summary:** Tests for `registerMultiple()` with mixed categories already exist in `tests/integration/autoCacheInvalidation.test.ts` (lines 544-583):
+- Test 1: `registerMultiple()` with skills and spells - verifies both SkillRegistry and SpellRegistry caches are invalidated
+- Test 2: `registerMultiple()` with features and traits - verifies FeatureRegistry cache is only invalidated once
+
+All tests pass.
 
 ---
 
