@@ -234,7 +234,7 @@ character.subrace = 'Fire Dragonkin';
 Traits can require a specific subrace via prerequisites:
 
 ```typescript
-import { ExtensionManager, FeatureRegistry } from 'playlist-data-engine';
+import { ExtensionManager } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
 
@@ -255,8 +255,7 @@ manager.register('racialTraits', [{
     source: 'custom'
 }]);
 
-// Invalidate cache after registration
-FeatureRegistry.getInstance().invalidateCache();
+// Cache invalidation is automatic after registration
 ```
 
 **Type Augmentation for Custom Races:**
