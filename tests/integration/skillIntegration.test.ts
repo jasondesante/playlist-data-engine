@@ -18,8 +18,7 @@ describe('Phase 13.1: SkillRegistry Integration with ExtensionManager', () => {
         // Reset instances for clean state
         ExtensionManager.getInstance().resetAll();
 
-        // Invalidate SkillRegistry cache after EM reset
-        registry.invalidateCache();
+        // Note: Cache invalidation is now automatic after ExtensionManager.register()
 
         // Initialize with default skills for each test
         initializeSkillDefaults();
@@ -304,8 +303,7 @@ describe('Phase 13.1: SkillRegistry Integration with ExtensionManager', () => {
 
             manager.register('skills', [newSkill]);
 
-            // Invalidate cache explicitly
-            registry.invalidateCache();
+            // Note: Cache invalidation is automatic after ExtensionManager.register()
 
             // Verify new skill is visible after cache invalidation
             const newCount = registry.getAllSkills().length;

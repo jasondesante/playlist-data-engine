@@ -290,11 +290,13 @@ Implement automatic cache invalidation in `ExtensionManager.register()` to elimi
 ### Task 21: Clean up skillIntegration.test.ts
 **File:** `tests/integration/skillIntegration.test.ts`
 
-- [ ] Remove `SkillRegistry.getInstance().invalidateCache()` from `beforeEach()` (line 22)
-- [ ] Remove `invalidateCache()` call after registration (line 308)
-- [ ] Remove `invalidateCache()` call after registration (line 709)
-- [ ] Remove `SkillRegistry` import if no longer used
-- [ ] Run tests to verify they pass
+- [x] Remove `SkillRegistry.getInstance().invalidateCache()` from `beforeEach()` (line 22)
+- [x] Remove `invalidateCache()` call after registration (line 308)
+- [x] Remove `invalidateCache()` call after registration (line 709)
+- [x] Remove `SkillRegistry` import if no longer used
+- [x] Run tests to verify they pass
+
+**Summary:** Removed 2 `invalidateCache()` calls. The `SkillRegistry` import remains because the registry instance is used extensively throughout the tests for validation (not for cache invalidation). All 14 tests pass.
 
 ### Task 22: Clean up featureIntegration.test.ts
 **File:** `tests/integration/featureIntegration.test.ts`
