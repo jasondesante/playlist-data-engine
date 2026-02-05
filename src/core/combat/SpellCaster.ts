@@ -214,8 +214,7 @@ export class SpellCaster {
 
     const proficiencyBonus = hasProficiency ? target.character.proficiency_bonus : 0;
 
-    const roll = Math.floor(Math.random() * 20) + 1;
-    const saveRoll = roll + abilityModifier + proficiencyBonus;
+    const saveRoll = DiceRoller.rollSavingThrow(abilityModifier, proficiencyBonus);
 
     return saveRoll >= saveDC;
   }

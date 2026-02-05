@@ -71,7 +71,7 @@
 
 - [x] **4.1** Update SpellCaster to use DiceRoller static methods
   - [x] Import `DiceRoller` class
-  - [ ] Update `makeSavingThrow()` - replace `Math.floor(Math.random() * 20) + 1` with `DiceRoller.rollD20()` (noted: still uses inline, but functional)
+  - [x] Update `makeSavingThrow()` - replace `Math.floor(Math.random() * 20) + 1` with `DiceRoller.rollSavingThrow()`
   - [x] Update `calculateDamage` usage - change import to `DiceRoller.calculateDamage`
 
 ---
