@@ -11,7 +11,7 @@ Complete guide to XP, leveling, and stats in the Playlist Data Engine.
 
 1. [XP and Leveling](#xp-and-leveling)
 2. [Stat Strategies](#stat-strategies)
-2. [XP Scaling](#xp-scaling)
+3. [XP Scaling](#xp-scaling)
 
 ---
 
@@ -596,3 +596,102 @@ LevelUpProcessor.setUncappedConfig({});
 5. Config is global and affects ALL uncapped mode characters
 
 ---
+
+
+
+
+
+
+
+
+
+<!-- must check if the stuff below is in any way redundant with the rest of the docs -->
+
+
+
+### Understanding XP Bonus Calculation
+
+XP is calculated by combining multiple modifiers (capped at 3.0x total):
+
+```typescript
+import { XPCalculator } from 'playlist-data-engine';
+
+const xpCalc = new XPCalculator();
+
+// Base XP: 1 XP per second of listening
+const baseXP = 300;  // 5 minutes = 300 seconds
+
+// Environmental modifier examples:
+// - Running: 1.5x
+// - Walking: 1.2x
+// - Night time: 1.25x
+// - Extreme weather (rain/snow/storm): 1.4x
+// - High altitude (≥2000m): 1.3x
+
+// Gaming modifier examples:
+// - Base gaming bonus: +0.25x
+// - RPG game: +0.20x
+// - Action/FPS: +0.15x
+// - Multiplayer: +0.15x
+// - Long session (4+ hours): up to +0.20x
+
+// Total calculation (capped at 3.0x):
+const envMultiplier = 1.5;   // Running
+const gamingMultiplier = 1.55; // Playing RPG game
+const totalModifier = Math.min(3.0, envMultiplier * gamingMultiplier);
+const totalXP = Math.floor(baseXP * totalModifier);
+
+console.log(`Base: ${baseXP} XP, Total: ${totalXP} XP (${totalModifier.toFixed(2)}x)`);
+```
+
+### Manual Level-Up Processing
+
+For advanced use cases where you need to handle level-ups manually with full control over stat selection:
+
+```typescript
+import { LevelUpProcessor, StatManager } from 'playlist-data-engine';
+
+// ===== Method 1: Manual Stat Selection (D&D 5e Standard) =====
+// IMPORTANT: The default DnD5eStandardStrategy REQUIRES you to provide stat choice
+// via forcedAbilities. If you don't, processLevelUp() will throw an error!
+
+const statManager = new StatManager();  // Uses DnD5eStandardStrategy by default
+
+// When a character levels up, check if it's a stat increase level
+const statIncreaseLevels = [4, 8, 12, 16, 19];
+
+// 1. Process HP/proficiency/level-up benefits first
+const newLevel = character.level + 1;
+const benefits = LevelUpProcessor.processLevelUp(character, newLevel, character.seed);
+character = LevelUpProcessor.applyLevelUp(character, benefits);
+
+// 2. If this is a stat increase level, get player choice and apply stats
+if (statIncreaseLevels.includes(newLevel)) {
+  // Show UI to get player choice
+  const playerChoice = await showStatSelectionUI(); // Returns ['STR'] or ['DEX', 'CON'], etc.
+
+  // Apply stat increase with player's choice
+  const statResult = statManager.processLevelUp(character, newLevel, {
+    forcedAbilities: playerChoice
+  });
+
+  character = statResult.character;
+  console.log(`Stat increased: ${statResult.increases[0].ability} +${statResult.increases[0].delta}`);
+}
+
+// ===== Method 2: Auto-selection with Smart Strategy (Recommended) =====
+// This eliminates the need for manual stat selection entirely
+
+const smartStatManager = new StatManager({
+  strategy: 'dnD5e_smart'  // Automatically picks best stats based on class
+});
+
+const updater = new CharacterUpdater(smartStatManager);
+
+// Now level-ups are automatic! No manual stat selection needed.
+const result = updater.updateCharacterFromSession(character, session, track, listenCount);
+
+if (result.leveledUp) {
+  console.log(`Leveled up to ${result.newLevel}! Stats auto-increased.`);
+}
+```

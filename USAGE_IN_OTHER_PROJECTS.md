@@ -262,6 +262,39 @@ character.name = newName;
 console.log(`Renamed to: "${character.name}"`);
 ```
 
+
+### Deterministic Character Generation
+
+The same seed and audio profile always produces the same character:
+
+```typescript
+import { CharacterGenerator, AudioAnalyzer, type CharacterSheet } from 'playlist-data-engine';
+
+const seed = 'ethereum-0x123abc-1';
+const analyzer = new AudioAnalyzer();
+const audio = await analyzer.extractSonicFingerprint(track.audio_url);
+
+// Generate the same character every time (same inputs = same output)
+const char1 = CharacterGenerator.generate(seed, audio, track);
+const char2 = CharacterGenerator.generate(seed, audio, track);
+
+// Game mode affects the output, so different game modes = different characters
+const standardChar = CharacterGenerator.generate(seed, audio, track, { gameMode: 'standard' });
+const uncappedChar = CharacterGenerator.generate(seed, audio, track, { gameMode: 'uncapped' });
+
+console.log(char1.race === char2.race);  // true
+console.log(char1.class === char2.class);  // true
+console.log(JSON.stringify(char1) === JSON.stringify(char2));  // true
+
+// Use this for caching characters in your app
+const characterCache = new Map<string, CharacterSheet>();
+if (!characterCache.has(track.id)) {
+  characterCache.set(track.id, CharacterGenerator.generate(track.id, audio, track));
+}
+```
+
+
+
 ### Advanced Character Features
 
 ```typescript
@@ -314,251 +347,30 @@ if (appearance.aura_color) {
 }
 ```
 
+
+
+### Stat Strategies
+
+**For detailed documentation, see [XP_AND_STATS.md](docs/XP_AND_STATS.md)**
+
+### XP Scaling
+
+**For detailed documentation, see [XP_AND_STATS.md](docs/XP_AND_STATS.md)**
+
+
 ### Environmental Sensors
 
-```typescript
-import { EnvironmentalSensors } from 'playlist-data-engine';
-
-// Initialize sensors with weather API key
-const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
-
-// Request permissions
-const permissions = await sensors.requestPermissions(['geolocation', 'motion', 'weather']);
-console.log(`Permissions granted:`, permissions);
-
-// Get current environmental context
-const context = await sensors.updateSnapshot();
-
-// Calculate XP modifier based on environment
-const xpModifier = sensors.calculateXPModifier();
-console.log(`Environmental bonus: ${xpModifier.toFixed(2)}x`);
-// Examples:
-// - Running in rain: 1.5x
-// - Stationary indoors: 1.0x
-// - Walking at night: 1.25x
-// - High altitude + snow: 1.4x
-```
+**For detailed documentation, see [IRL_SENSORS.md](docs/IRL_SENSORS.md)**
 
 ### Gaming Platform Integration
 
-**Discord RPC Dual-Mode:**
+**For detailed documentation, see [IRL_SENSORS.md](docs/IRL_SENSORS.md)**
 
-The Discord RPC integration now works in both browser and server environments with automatic detection:
-
-- **Server Mode (Node.js)**: Full Discord Rich Presence when running in Node.js
-- **Browser Mode**: Graceful degradation with console warnings (API remains compatible)
-
-```typescript
-import { GamingPlatformSensors } from 'playlist-data-engine';
-
-// Initialize with Steam and Discord
-const gamingSensors = new GamingPlatformSensors({
-  steam: {
-    apiKey: process.env.STEAM_API_KEY,
-    steamId: '123456789',
-    pollInterval: 60000  // Check every 60 seconds
-  },
-  discord: {
-    clientId: process.env.DISCORD_CLIENT_ID  // Required for both modes
-  }
-});
-
-// Start monitoring
-gamingSensors.startMonitoring((context) => {
-  if (context.isActivelyGaming) {
-    const bonus = gamingSensors.calculateGamingBonus();
-    console.log(`Playing: ${context.currentGame?.name}, Bonus: ${bonus.toFixed(2)}x`);
-    // Examples:
-    // - Action game: 1.425x
-    // - RPG game: 1.55x
-    // - Multiplayer RPG: 1.8x
-  }
-});
-
-// Stop monitoring when done
-gamingSensors.stopMonitoring();
-```
-
-**Browser Compatibility Notes:**
-
-- The `@ryuziii/discord-rpc` package is now an **optional dependency**
-- In browser environments, Discord music presence gracefully degrades with warnings
-- Steam game detection works in both browser AND server modes
-- No configuration required - environment is detected automatically
 
 ### Combat System
 
-```typescript
-import {
-  CombatEngine,
-  CharacterGenerator,
-  AudioAnalyzer
-} from 'playlist-data-engine';
+**For detailed documentation, see [COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md)**
 
-// Initialize combat engine (optional configuration)
-const combat = new CombatEngine({
-  useEnvironment: true,    // Apply environmental bonuses
-  useMusic: false,         // Apply music bonuses (requires audio context)
-  tacticalMode: false,     // Enable advanced tactical rules
-  maxTurnsBeforeDraw: 100  // Max turns before draw
-});
-
-// Generate player character from audio
-const analyzer = new AudioAnalyzer();
-const audioProfile = await analyzer.extractSonicFingerprint(track.audio_url);
-const playerCharacter = CharacterGenerator.generate(track.id, audioProfile, track);
-
-// Create enemy characters (manually or from a database)
-const enemy1 = { /* CharacterSheet */ };
-const enemy2 = { /* CharacterSheet */ };
-
-// Start combat - rolls initiative, establishes turn order
-const combatInstance = combat.startCombat(
-  [playerCharacter],  // Player characters
-  [enemy1, enemy2],   // Enemies
-  environmentalContext // Optional environmental modifiers
-);
-
-// Execute combat turns
-while (combatInstance.isActive) {
-  const current = combat.getCurrentCombatant(combatInstance);
-
-  // Attack with equipped weapon - engine finds it automatically
-  const target = combat.getLivingCombatants(combatInstance).find(c => c.id !== current.id);
-
-  if (target) {
-    // Simple: just say who's attacking and who's getting hit
-    const action = combat.executeWeaponAttack(combatInstance, current, target);
-    console.log(action.result.description);
-
-    if (target.isDefeated) {
-      console.log(`${target.character.name} has been defeated!`);
-    }
-  }
-
-  // Move to next turn
-  combat.nextTurn(combatInstance);
-
-  // Check if combat ended
-  const result = combat.getCombatResult(combatInstance);
-  if (result) {
-    console.log(`Combat ended: ${result.description}`);
-    console.log(`XP awarded: ${result.xpAwarded}`);
-    console.log(`Rounds elapsed: ${result.roundsElapsed}`);
-    break;
-  }
-}
-```
-
-**Multiple Equipped Weapons:** If a character has multiple equipped weapons, specify which one:
-
-```typescript
-// Attack with a specific equipped weapon
-combat.executeWeaponAttack(combatInstance, current, target, 'Longsword');
-
-// Or just use the first equipped weapon (default)
-combat.executeWeaponAttack(combatInstance, current, target);
-```
-
-**Manual Attack Objects:** For special cases, you can still manually construct `Attack` objects using `executeAttack()` directly. See `Attack` type in DATA_ENGINE_REFERENCE.md for all available properties.
-
-The `DiceRoller` module provides utility functions for D&D-style dice rolling. These are standalone functions (not a class) that can be imported and used directly.
-
-```typescript
-import {
-  rollDie,
-  rollD20,
-  rollMultipleDice,
-  parseDiceFormula,
-  rollWithAdvantage,
-  rollWithDisadvantage,
-  rollInitiative,
-  calculateDamage,
-  doubleDamage,
-  rollSavingThrow,
-  rollAbilityCheck,
-  isCriticalHit,
-  isCriticalMiss,
-  seededRoll,
-  rollPercentile
-} from 'playlist-data-engine';
-
-// Basic dice rolling
-const d6Result = rollDie(6);           // Roll a single d6 (1-6)
-const d20Result = rollD20();           // Roll a d20 (1-20)
-const threeD6 = rollMultipleDice(3, 6); // Roll 3d6, returns [3, 5, 2]
-const percentile = rollPercentile();   // Roll d100 (1-100)
-
-// Parse and roll dice formulas
-const fireball = parseDiceFormula('8d6+5');
-console.log(`Fireball damage: ${fireball.total}`);  // Sum of all rolls + modifier
-console.log(`Individual rolls: ${fireball.rolls}`); // Array of each die result
-
-// Advantage and disadvantage
-const advRoll = rollWithAdvantage();
-console.log(`Rolled ${advRoll.roll1} and ${advRoll.roll2}, taking ${advRoll.result}`);
-
-const disadvRoll = rollWithDisadvantage();
-console.log(`Rolled ${disadvRoll.roll1} and ${disadvRoll.roll2}, taking ${disadvRoll.result}`);
-
-// Combat functions
-const initiative = rollInitiative(3);  // d20 + DEX modifier (e.g., +3)
-
-const damage = calculateDamage('2d6', 2, false);  // formula, modifier, critical?
-console.log(`Damage: ${damage.total} (${damage.rolls} + ${damage.modifier})`);
-
-const critDamage = calculateDamage('2d6', 2, true);  // Critical hit - dice doubled
-console.log(`Critical damage: ${critDamage.total}`);
-
-// Manual critical handling
-const baseRolls = rollMultipleDice(2, 6);  // [4, 3]
-const critRolls = doubleDamage(baseRolls);   // [4, 3, 4, 3]
-
-// Saving throws and ability checks
-const fortitudeSave = rollSavingThrow(2, 2);  // ability modifier + proficiency bonus
-const athleticsCheck = rollAbilityCheck(4, 0);  // ability modifier only
-
-// Critical detection
-const attackRoll = rollD20();
-if (isCriticalHit(attackRoll)) {
-  console.log('Critical hit! Double the damage dice!');
-}
-if (isCriticalMiss(attackRoll)) {
-  console.log('Critical miss! Attack fails automatically.');
-}
-
-// Seeded RNG for reproducible rolls
-const seeded = seededRoll(12345);  // Same seed always produces same result
-const anotherSeeded = seededRoll(12345);  // Will equal seeded
-```
-
-**Common Use Case: Custom Attack Resolution**
-
-```typescript
-import { rollD20, rollWithAdvantage, parseDiceFormula, isCriticalHit } from 'playlist-data-engine';
-
-function resolveAttack(attackBonus: number, targetAC: number, hasAdvantage: boolean) {
-  let d20Roll: number;
-
-  if (hasAdvantage) {
-    const result = rollWithAdvantage();
-    d20Roll = result.result;
-    console.log(`Advantage: rolled ${result.roll1} and ${result.roll2}`);
-  } else {
-    d20Roll = rollD20();
-  }
-
-  const total = d20Roll + attackBonus;
-  const hit = total >= targetAC;
-  const crit = isCriticalHit(d20Roll);
-
-  return { d20Roll, total, hit, crit };
-}
-
-const attack = resolveAttack(7, 15, true);
-console.log(`Attack roll: ${attack.d20Roll} + 7 = ${attack.total} vs AC 15`);
-console.log(attack.crit ? 'CRITICAL HIT!' : (attack.hit ? 'Hit!' : 'Miss!'));
-```
 
 ---
 
@@ -633,207 +445,10 @@ for (const track of playlist.tracks) {
 }
 ```
 
----
-
-## Common Patterns
-
-### Deterministic Character Generation
-
-The same seed and audio profile always produces the same character:
-
-```typescript
-import { CharacterGenerator, AudioAnalyzer, type CharacterSheet } from 'playlist-data-engine';
-
-const seed = 'ethereum-0x123abc-1';
-const analyzer = new AudioAnalyzer();
-const audio = await analyzer.extractSonicFingerprint(track.audio_url);
-
-// Generate the same character every time (same inputs = same output)
-const char1 = CharacterGenerator.generate(seed, audio, track);
-const char2 = CharacterGenerator.generate(seed, audio, track);
-
-// Game mode affects the output, so different game modes = different characters
-const standardChar = CharacterGenerator.generate(seed, audio, track, { gameMode: 'standard' });
-const uncappedChar = CharacterGenerator.generate(seed, audio, track, { gameMode: 'uncapped' });
-
-console.log(char1.race === char2.race);  // true
-console.log(char1.class === char2.class);  // true
-console.log(JSON.stringify(char1) === JSON.stringify(char2));  // true
-
-// Use this for caching characters in your app
-const characterCache = new Map<string, CharacterSheet>();
-if (!characterCache.has(track.id)) {
-  characterCache.set(track.id, CharacterGenerator.generate(track.id, audio, track));
-}
-```
-
-### Understanding XP Bonus Calculation
-
-XP is calculated by combining multiple modifiers (capped at 3.0x total):
-
-```typescript
-import { XPCalculator } from 'playlist-data-engine';
-
-const xpCalc = new XPCalculator();
-
-// Base XP: 1 XP per second of listening
-const baseXP = 300;  // 5 minutes = 300 seconds
-
-// Environmental modifier examples:
-// - Running: 1.5x
-// - Walking: 1.2x
-// - Night time: 1.25x
-// - Extreme weather (rain/snow/storm): 1.4x
-// - High altitude (≥2000m): 1.3x
-
-// Gaming modifier examples:
-// - Base gaming bonus: +0.25x
-// - RPG game: +0.20x
-// - Action/FPS: +0.15x
-// - Multiplayer: +0.15x
-// - Long session (4+ hours): up to +0.20x
-
-// Total calculation (capped at 3.0x):
-const envMultiplier = 1.5;   // Running
-const gamingMultiplier = 1.55; // Playing RPG game
-const totalModifier = Math.min(3.0, envMultiplier * gamingMultiplier);
-const totalXP = Math.floor(baseXP * totalModifier);
-
-console.log(`Base: ${baseXP} XP, Total: ${totalXP} XP (${totalModifier.toFixed(2)}x)`);
-```
-
-### Manual Level-Up Processing
-
-For advanced use cases where you need to handle level-ups manually with full control over stat selection:
-
-```typescript
-import { LevelUpProcessor, StatManager } from 'playlist-data-engine';
-
-// ===== Method 1: Manual Stat Selection (D&D 5e Standard) =====
-// IMPORTANT: The default DnD5eStandardStrategy REQUIRES you to provide stat choice
-// via forcedAbilities. If you don't, processLevelUp() will throw an error!
-
-const statManager = new StatManager();  // Uses DnD5eStandardStrategy by default
-
-// When a character levels up, check if it's a stat increase level
-const statIncreaseLevels = [4, 8, 12, 16, 19];
-
-// 1. Process HP/proficiency/level-up benefits first
-const newLevel = character.level + 1;
-const benefits = LevelUpProcessor.processLevelUp(character, newLevel, character.seed);
-character = LevelUpProcessor.applyLevelUp(character, benefits);
-
-// 2. If this is a stat increase level, get player choice and apply stats
-if (statIncreaseLevels.includes(newLevel)) {
-  // Show UI to get player choice
-  const playerChoice = await showStatSelectionUI(); // Returns ['STR'] or ['DEX', 'CON'], etc.
-
-  // Apply stat increase with player's choice
-  const statResult = statManager.processLevelUp(character, newLevel, {
-    forcedAbilities: playerChoice
-  });
-
-  character = statResult.character;
-  console.log(`Stat increased: ${statResult.increases[0].ability} +${statResult.increases[0].delta}`);
-}
-
-// ===== Method 2: Auto-selection with Smart Strategy (Recommended) =====
-// This eliminates the need for manual stat selection entirely
-
-const smartStatManager = new StatManager({
-  strategy: 'dnD5e_smart'  // Automatically picks best stats based on class
-});
-
-const updater = new CharacterUpdater(smartStatManager);
-
-// Now level-ups are automatic! No manual stat selection needed.
-const result = updater.updateCharacterFromSession(character, session, track, listenCount);
-
-if (result.leveledUp) {
-  console.log(`Leveled up to ${result.newLevel}! Stats auto-increased.`);
-}
-```
-
-### Hash Utilities and Deterministic Seeding
-
-The hash utilities provide deterministic seed generation for reproducible character generation:
-
-```typescript
-import { generateSeed, hashSeedToFloat, hashSeedToInt, deriveSeed, SeededRNG } from 'playlist-data-engine';
-
-// Generate a deterministic seed from blockchain data
-// Takes THREE parameters: chainName, tokenAddress, tokenId
-const seed = generateSeed('ethereum', '0x123abc...', '42');
-console.log(seed);  // "ethereum-0x123abc...-42"
-
-// Hash seed to float (0.0 - 1.0)
-const float = hashSeedToFloat(seed);
-console.log(float);  // e.g., 0.6423...
-
-// Hash seed to integer in range
-const stat = hashSeedToInt(seed, 8, 18);  // Random stat between 8 and 17
-console.log(stat);  // e.g., 14
-
-// Derive new seeds for related random values
-const raceSeed = deriveSeed(seed, 'race');
-const classSeed = deriveSeed(seed, 'class');
-const statsSeed = deriveSeed(seed, 'stats');
-console.log(raceSeed);  // "ethereum-0x123abc...-42:race"
-
-// Use SeededRNG for complex deterministic random operations
-const rng = new SeededRNG(seed);
-
-// Generate random float in [0.0, 1.0)
-const randomValue = rng.random();
-
-// Generate random integer in range [min, max)
-const d20Roll = rng.randomInt(1, 21);
-const damage = rng.randomInt(1, 9);  // 1d8
-
-// Pick random element from array
-const races = ['Human', 'Elf', 'Dwarf', 'Halfling'];
-const race = rng.randomChoice(races);
-
-// Pick weighted random element (uses [value, weight] tuples)
-const treasureOptions = [
-  ['Gold', 50],
-  ['Gem', 30],
-  ['Artifact', 10]
-];
-const item = rng.weightedChoice(treasureOptions);
-console.log(item);  // 'Gold' (50% chance), 'Gem' (30% chance), or 'Artifact' (10% chance)
-
-// Shuffle array deterministically
-const cards = ['A', 'K', 'Q', 'J', '10', '9', '8', '7'];
-const shuffled = rng.shuffle([...cards]);
-```
-
-**Common Use Case: Blockchain-Based Character Generation**
-
-```typescript
-import { generateSeed, CharacterGenerator, AudioAnalyzer } from 'playlist-data-engine';
-
-// Given an NFT's blockchain data
-const nftData = {
-  chain: 'ethereum',
-  contractAddress: '0x1234567890abcdef...',
-  tokenId: '1234'
-};
-
-// Generate a deterministic seed
-const seed = generateSeed(nftData.chain, nftData.contractAddress, nftData.tokenId);
-
-// Generate character from seed and audio
-const analyzer = new AudioAnalyzer();
-const audio = await analyzer.extractSonicFingerprint(track.audio_url);
-const character = CharacterGenerator.generate(seed, audio, track);
-
-// The same NFT always generates the same character!
-```
 
 ---
 
-### Validation Schemas
+## Validation Schemas
 
 The library exports Zod validation schemas for runtime type validation of playlist, audio, and character data. Use these to validate external data before processing or to ensure API responses match expected formats.
 
@@ -957,82 +572,6 @@ if (!audioResult.success) {
 
 ---
 
-
-### Sensor Dashboard
-
-The Sensor Dashboard provides formatted console output for sensor diagnostics during development and debugging. It displays sensor status, health indicators, cache statistics, performance metrics, and recent failures with optional ANSI color support (auto-disabled in non-TTY environments like CI).
-
-#### Basic Usage
-
-```typescript
-import { SensorDashboard, EnvironmentalSensors, GamingPlatformSensors } from 'playlist-data-engine';
-
-// Initialize sensors
-const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
-const gamingSensors = new GamingPlatformSensors({
-    steamApiKey: process.env.STEAM_API_KEY,
-    discordClientId: process.env.DISCORD_CLIENT_ID
-});
-
-// Get sensor data
-const envDiagnostics = sensors.getDiagnostics();
-const gamingDiagnostics = gamingSensors.getDiagnostics();
-
-// Display individual dashboards
-SensorDashboard.displayEnvironmentalDiagnostics(envDiagnostics);
-SensorDashboard.displayGamingDiagnostics(gamingDiagnostics);
-
-// Display combined system dashboard
-SensorDashboard.displaySystemDashboard({
-    environmental: envDiagnostics,
-    gaming: gamingDiagnostics
-});
-```
-
-#### Custom Configuration
-
-```typescript
-import { SensorDashboard, type DashboardConfig } from 'playlist-data-engine';
-
-const config: DashboardConfig = {
-    useColors: false,        // Disable colors (for CI/logs)
-    compact: true,           // Compact output mode
-    showTimestamp: false,    // Hide timestamp
-    maxFailures: 10          // Show up to 10 recent failures
-};
-
-SensorDashboard.displayEnvironmentalDiagnostics(diagnostics, config);
-```
-
-#### Dashboard Sections
-
-**Environmental Diagnostics:**
-- Sensor Status - Health, permissions, availability, consecutive failures, last error
-- Cache Statistics - Geolocation age/expiry, weather cache size, hit rates
-- API Performance - Weather/Forecast API calls, success rate, timing metrics (P95/P99)
-- Recent Failures - Error messages with retry status and time ago
-- Context Data - Available context types (geolocation, motion, weather, light, biome)
-
-**Gaming Diagnostics:**
-- Platform Status - Steam authentication/API key, Discord connection state
-- Gaming Context - Active gaming status, current game with session details
-- Polling Status - Active status, interval, exponential backoff multiplier
-- Cache - Game metadata cache size and cached games list
-- API Performance - Current Game/Metadata API metrics
-
-**Quick Health Summary (System Dashboard):**
-- Overall environmental sensor health count
-- Gaming platform connection status
-
-#### Available Exports
-
-- `SensorDashboard` - Object containing all dashboard display functions
-- `displayEnvironmentalDiagnostics()` - Display environmental sensor dashboard
-- `displayGamingDiagnostics()` - Display gaming platform sensor dashboard
-- `displaySystemDashboard()` - Display combined system dashboard
-- `DashboardConfig` type - Configuration options for dashboard output
-
----
 
 ## Extensibility System
 
