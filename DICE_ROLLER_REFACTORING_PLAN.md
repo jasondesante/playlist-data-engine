@@ -149,11 +149,11 @@
   - [x] Run `npm run build` to verify successful compilation
   - [x] Check for any build warnings or errors (clean build)
 
-- [ ] **8.3** Code review checklist
+- [x] **8.3** Code review checklist
   - [x] All dice rolling functionality now in DiceRoller class
-  - [ ] InitiativeRoller properly documented in ROLLS_AND_SEEDS.md
+  - [x] InitiativeRoller properly documented in ROLLS_AND_SEEDS.md
   - [x] All imports updated in AttackResolver, SpellCaster
-  - [ ] All examples in documentation updated to class syntax
+  - [x] All examples in documentation updated to class syntax
   - [x] Breaking changes documented (DiceRoller is now a class)
 
 ---
