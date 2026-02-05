@@ -790,6 +790,223 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
         });
     });
 
+    describe('Edge cases: relative mode merging', () => {
+        it('should invalidate cache after register() with mode: "relative" for skills', () => {
+            const manager = ExtensionManager.getInstance();
+            const skillRegistry = SkillRegistry.getInstance();
+
+            // Initialize default skills
+            initializeSkillDefaults();
+
+            // Register first batch of skills in relative mode
+            const firstSkill = {
+                id: 'test_relative_skill_1',
+                name: 'Test Relative Skill 1',
+                ability: 'STR' as const,
+                description: 'First skill for relative mode test',
+                categories: ['test'],
+                source: 'custom' as const
+            };
+
+            manager.register('skills', [firstSkill], { mode: 'relative' });
+
+            // Verify first skill is registered
+            expect(skillRegistry.isValidSkill('test_relative_skill_1')).toBe(true);
+
+            // Warm up the cache
+            const skillsBefore = skillRegistry.getAllSkills();
+            const countBefore = skillsBefore.length;
+
+            // Register second batch of skills in relative mode (should merge with first batch)
+            const secondSkill = {
+                id: 'test_relative_skill_2',
+                name: 'Test Relative Skill 2',
+                ability: 'DEX' as const,
+                description: 'Second skill for relative mode test',
+                categories: ['test'],
+                source: 'custom' as const
+            };
+
+            manager.register('skills', [secondSkill], { mode: 'relative' });
+
+            // Verify cache was invalidated and both skills are accessible
+            const skillsAfter = skillRegistry.getAllSkills();
+            expect(skillsAfter).toHaveLength(countBefore + 1);
+            expect(skillRegistry.isValidSkill('test_relative_skill_1')).toBe(true);
+            expect(skillRegistry.isValidSkill('test_relative_skill_2')).toBe(true);
+
+            // Verify both skills are in the registry
+            const skill1 = skillRegistry.getSkill('test_relative_skill_1');
+            const skill2 = skillRegistry.getSkill('test_relative_skill_2');
+            expect(skill1?.name).toBe('Test Relative Skill 1');
+            expect(skill2?.name).toBe('Test Relative Skill 2');
+        });
+
+        it('should invalidate cache after register() with mode: "relative" for spells', () => {
+            const manager = ExtensionManager.getInstance();
+            const spellRegistry = SpellRegistry.getInstance();
+
+            // Initialize default spells
+            initializeSpellDefaults();
+
+            // Register first batch of spells in relative mode
+            const firstSpell = {
+                id: 'test_relative_spell_1',
+                name: 'Test Relative Spell 1',
+                level: 1,
+                school: 'Evocation' as const,
+                casting_time: '1 action',
+                range: '60 feet',
+                components: ['V'],
+                duration: 'Instantaneous',
+                description: 'First spell for relative mode test',
+                source: 'custom' as const
+            };
+
+            manager.register('spells', [firstSpell], { mode: 'relative' });
+
+            // Verify first spell is registered
+            expect(spellRegistry.getSpell('test_relative_spell_1')).toBeDefined();
+
+            // Warm up the cache
+            const spellsBefore = spellRegistry.getSpells();
+            const countBefore = spellsBefore.length;
+
+            // Register second batch of spells in relative mode
+            const secondSpell = {
+                id: 'test_relative_spell_2',
+                name: 'Test Relative Spell 2',
+                level: 2,
+                school: 'Conjuration' as const,
+                casting_time: '1 action',
+                range: '30 feet',
+                components: ['V', 'S'],
+                duration: '1 minute',
+                description: 'Second spell for relative mode test',
+                source: 'custom' as const
+            };
+
+            manager.register('spells', [secondSpell], { mode: 'relative' });
+
+            // Verify cache was invalidated and both spells are accessible
+            const spellsAfter = spellRegistry.getSpells();
+            expect(spellsAfter).toHaveLength(countBefore + 1);
+            expect(spellRegistry.getSpell('test_relative_spell_1')).toBeDefined();
+            expect(spellRegistry.getSpell('test_relative_spell_2')).toBeDefined();
+
+            // Verify both spells are in the registry
+            const spell1 = spellRegistry.getSpell('test_relative_spell_1');
+            const spell2 = spellRegistry.getSpell('test_relative_spell_2');
+            expect(spell1?.name).toBe('Test Relative Spell 1');
+            expect(spell2?.name).toBe('Test Relative Spell 2');
+        });
+
+        it('should invalidate cache after register() with mode: "relative" for classFeatures', () => {
+            const manager = ExtensionManager.getInstance();
+            const featureRegistry = FeatureRegistry.getInstance();
+
+            // Initialize default features
+            initializeFeatureDefaults();
+
+            // Register first batch of features in relative mode
+            const firstFeature = {
+                id: 'test_relative_feature_1',
+                name: 'Test Relative Feature 1',
+                description: 'First feature for relative mode test',
+                type: 'passive' as const,
+                class: 'Barbarian',
+                level: 2,
+                source: 'custom' as const
+            };
+
+            manager.register('classFeatures', [firstFeature], { mode: 'relative' });
+
+            // Verify first feature is registered
+            expect(featureRegistry.getClassFeatureById('test_relative_feature_1')).toBeDefined();
+
+            // Warm up the cache
+            const barbarianFeaturesBefore = featureRegistry.getClassFeatures('Barbarian', 20);
+            const countBefore = barbarianFeaturesBefore.length;
+
+            // Register second batch of features in relative mode
+            const secondFeature = {
+                id: 'test_relative_feature_2',
+                name: 'Test Relative Feature 2',
+                description: 'Second feature for relative mode test',
+                type: 'active' as const,
+                class: 'Barbarian',
+                level: 5,
+                source: 'custom' as const
+            };
+
+            manager.register('classFeatures', [secondFeature], { mode: 'relative' });
+
+            // Verify cache was invalidated and both features are accessible
+            const barbarianFeaturesAfter = featureRegistry.getClassFeatures('Barbarian', 20);
+            expect(barbarianFeaturesAfter).toHaveLength(countBefore + 1);
+            expect(featureRegistry.getClassFeatureById('test_relative_feature_1')).toBeDefined();
+            expect(featureRegistry.getClassFeatureById('test_relative_feature_2')).toBeDefined();
+
+            // Verify both features are in the registry
+            const feature1 = featureRegistry.getClassFeatureById('test_relative_feature_1');
+            const feature2 = featureRegistry.getClassFeatureById('test_relative_feature_2');
+            expect(feature1?.name).toBe('Test Relative Feature 1');
+            expect(feature2?.name).toBe('Test Relative Feature 2');
+        });
+
+        it('should merge items across multiple relative mode registrations', () => {
+            const manager = ExtensionManager.getInstance();
+            const skillRegistry = SkillRegistry.getInstance();
+
+            // Initialize default skills
+            initializeSkillDefaults();
+
+            // First registration
+            manager.register('skills', [{
+                id: 'test_multi_relative_1',
+                name: 'Multi Relative 1',
+                ability: 'STR' as const,
+                description: 'First of multiple relative registrations',
+                categories: ['test'],
+                source: 'custom' as const
+            }], { mode: 'relative' });
+
+            // Second registration (should merge)
+            manager.register('skills', [{
+                id: 'test_multi_relative_2',
+                name: 'Multi Relative 2',
+                ability: 'DEX' as const,
+                description: 'Second of multiple relative registrations',
+                categories: ['test'],
+                source: 'custom' as const
+            }], { mode: 'relative' });
+
+            // Third registration (should merge with both previous)
+            manager.register('skills', [{
+                id: 'test_multi_relative_3',
+                name: 'Multi Relative 3',
+                ability: 'CON' as const,
+                description: 'Third of multiple relative registrations',
+                categories: ['test'],
+                source: 'custom' as const
+            }], { mode: 'relative' });
+
+            // Verify all three skills are accessible via the registry
+            // This requires cache invalidation after each registration
+            expect(skillRegistry.isValidSkill('test_multi_relative_1')).toBe(true);
+            expect(skillRegistry.isValidSkill('test_multi_relative_2')).toBe(true);
+            expect(skillRegistry.isValidSkill('test_multi_relative_3')).toBe(true);
+
+            // Verify they're all in the registry
+            const skill1 = skillRegistry.getSkill('test_multi_relative_1');
+            const skill2 = skillRegistry.getSkill('test_multi_relative_2');
+            const skill3 = skillRegistry.getSkill('test_multi_relative_3');
+            expect(skill1?.name).toBe('Multi Relative 1');
+            expect(skill2?.name).toBe('Multi Relative 2');
+            expect(skill3?.name).toBe('Multi Relative 3');
+        });
+    });
+
     describe('Edge cases: empty items array', () => {
         it('should invalidate cache when registering empty array to skills', () => {
             const manager = ExtensionManager.getInstance();

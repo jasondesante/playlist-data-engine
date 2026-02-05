@@ -628,9 +628,19 @@ The tests use the pattern: register a custom item → warm up cache → register
 All 2089 tests pass (3 new tests added). No new linting errors introduced.
 
 ### Task 46: Test relative mode merging
-- [ ] Test `register()` with `mode: 'relative'`
-- [ ] Verify cache is invalidated after merge
-- [ ] Verify new items are accessible
+- [x] Test `register()` with `mode: 'relative'`
+- [x] Verify cache is invalidated after merge
+- [x] Verify new items are accessible
+
+**Summary:** Created 4 comprehensive tests in `tests/integration/autoCacheInvalidation.test.ts` covering relative mode merging behavior for SkillRegistry, SpellRegistry, and FeatureRegistry. Tests verify that:
+1. When registering with `mode: 'relative'`, items from multiple registrations are merged (concatenated)
+2. Cache is invalidated after each relative mode registration
+3. New items from each registration are accessible via the registry
+4. Multiple consecutive relative mode registrations all work correctly, with cache invalidation after each
+
+The tests use the pattern: register first batch → verify → warm cache → register second batch in relative mode → verify cache was invalidated and both batches are accessible.
+
+All 2093 tests pass (4 new tests added). No new linting errors introduced.
 
 ### Task 47: Test replace mode
 - [ ] Test `register()` with `mode: 'replace'`
