@@ -14,7 +14,6 @@ import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator
 import { LevelUpProcessor } from '../../src/core/progression/LevelUpProcessor';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
-import { SpellRegistry } from '../../src/core/spells/SpellRegistry';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { WeightedSelector } from '../../src/core/extensions/WeightedSelector';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
@@ -46,13 +45,11 @@ function createMockTrack(title: string): PlaylistTrack {
 describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
     let featureRegistry: FeatureRegistry;
     let skillRegistry: SkillRegistry;
-    let spellRegistry: SpellRegistry;
     let extensionManager: ExtensionManager;
 
     beforeEach(() => {
         featureRegistry = FeatureRegistry.getInstance();
         skillRegistry = SkillRegistry.getInstance();
-        spellRegistry = SpellRegistry.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Reset all registries
@@ -69,8 +66,6 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
         featureRegistry.reset();
         // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
-        skillRegistry.invalidateCache();
-        spellRegistry.invalidateCache();
     });
 
     describe('Task 1: Test full character generation with all custom content', () => {
@@ -217,7 +212,6 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 }
             };
             extensionManager.register('spells.Wizard', [wizardSpellList]);
-            spellRegistry.invalidateCache();
 
             // Generate characters for each class and verify custom content appears
             const testClasses: Class[] = ['Fighter', 'Wizard', 'Rogue'];
@@ -676,9 +670,6 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 }
             });
 
-            // Invalidate cache so FeatureRegistry sees the new features
-            featureRegistry.invalidateCache();
-
             // Verify weights are set
             const weights = extensionManager.getWeights('classFeatures.Fighter');
             expect(weights['common_feature']).toBe(3.0);
@@ -717,9 +708,6 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                     'rare_custom_skill': 0.2     // Very rare
                 }
             });
-
-            // Invalidate cache so SkillRegistry sees the new skills
-            skillRegistry.invalidateCache();
 
             // Verify weights are set
             const weights = extensionManager.getWeights('skills');
@@ -818,9 +806,6 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                     'another_allowed_skill': 3
                 }
             });
-
-            // Invalidate cache so SkillRegistry sees the new skills
-            skillRegistry.invalidateCache();
 
             // Verify absolute mode is set
             const allData = extensionManager.get('skills');
