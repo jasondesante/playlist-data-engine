@@ -45,10 +45,10 @@
 
 **File:** `src/core/combat/InitiativeRoller.ts`
 
-- [ ] **2.1** Update InitiativeRoller to use DiceRoller static methods
-  - [ ] Import `DiceRoller` class
-  - [ ] Update `rollInitiativeForCombatant()` - replace `Math.floor(Math.random() * 20) + 1` with `DiceRoller.rollD20()`
-  - [ ] Update `rerollInitiativeForCombatant()` - replace `Math.floor(Math.random() * 20) + 1` with `DiceRoller.rollD20()`
+- [x] **2.1** Update InitiativeRoller to use DiceRoller static methods
+  - [x] Import `DiceRoller` class
+  - [x] Update `rollInitiativeForCombatant()` - replace `Math.floor(Math.random() * 20) + 1` with `DiceRoller.rollD20()`
+  - [x] Update `rerollInitiativeForCombatant()` - replace `Math.floor(Math.random() * 20) + 1` with `DiceRoller.rollD20()`
 
 ---
 

@@ -4,6 +4,7 @@
  */
 
 import type { Combatant } from '../types/Combat';
+import { DiceRoller } from './DiceRoller.js';
 
 /**
  * Result of initiative rolling
@@ -25,7 +26,7 @@ export class InitiativeRoller {
    */
   rollInitiativeForCombatant(combatant: Combatant): InitiativeResult {
     const dexModifier = combatant.character.ability_modifiers.dexterity ?? 0;
-    const d20Roll = Math.floor(Math.random() * 20) + 1; // Roll d20
+    const d20Roll = DiceRoller.rollD20();
     const initiativeTotal = d20Roll + dexModifier;
 
     // Update combatant's initiative
@@ -106,7 +107,7 @@ export class InitiativeRoller {
    */
   rerollInitiativeForCombatant(combatant: Combatant): number {
     const dexModifier = combatant.character.ability_modifiers.dexterity ?? 0;
-    const d20Roll = Math.floor(Math.random() * 20) + 1;
+    const d20Roll = DiceRoller.rollD20();
     combatant.initiative = d20Roll + dexModifier;
     return combatant.initiative;
   }
