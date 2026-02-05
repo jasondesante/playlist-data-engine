@@ -966,10 +966,10 @@ Pre-existing test bugs were exposed by stricter validation in ExtensionManager. 
      - `components: string[]` (required) ⬅️ **Missing**
      - `duration: string` (required) ⬅️ **Missing**
    - Affected test files:
-     - `tests/integration/customGeneration.integration.test.ts` (~15 failing tests)
-     - `tests/integration/phase10.fullPipeline.test.ts` (~18 failing tests)
-     - `tests/integration/phase15.fullCustomContent.integration.test.ts` (~1 failing test)
-     - `tests/integration/part4.templateClassSystem.integration.test.ts` (~2 failing tests)
+     - ~~`tests/integration/customGeneration.integration.test.ts`~~ ✅ FIXED (Task 2.1 complete)
+     - `tests/integration/phase10.fullPipeline.test.ts` (~18 failing tests) - TODO
+     - `tests/integration/phase15.fullCustomContent.integration.test.ts` (~1 failing test) - TODO
+     - `tests/integration/part4.templateClassSystem.integration.test.ts` (~2 failing tests) - TODO
      - Plus other test files
 
 2. **Wrong Track Parameter Type** (Minor - ~5 tests)
@@ -984,6 +984,9 @@ Created `PLAN_FIX_PREEXISTING_TEST_BUGS.md` to systematically fix these pre-exis
 - They are pre-existing issues that were exposed by better validation
 - Fixing them is out of scope for this plan
 - The registry method removal work is complete and successful
+
+**Progress Update:**
+- Task 2.1 (customGeneration.integration.test.ts) ✅ COMPLETE - All 22 tests passing
 
 **Lessons Learned:**
 1. **Adding validation can expose latent bugs**: When we moved spell validation to ExtensionManager (Task 2.0), we improved the code quality, but this exposed pre-existing test bugs.
