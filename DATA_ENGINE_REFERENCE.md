@@ -1531,24 +1531,41 @@ interface CharacterGeneratorOptions {
 }
 
 interface CharacterGeneratorExtensions {
-    spells?: SpellExtension[];           // Custom spells to add (spell names)
+    spells?: SpellExtension[];           // Custom spells to add
     equipment?: EquipmentExtension[];    // Custom equipment to add
     races?: RaceExtension[];             // Custom races to add (race names)
     classes?: ClassExtension[];          // Custom classes to add (class names)
     appearance?: AppearanceExtension;    // Custom appearance options
 }
 
-type SpellExtension = string;
-type EquipmentExtension = string;
+interface SpellExtension {
+    name: string;
+    level: number;                       // 0-9
+    school: string;                      // Valid school name
+    casting_time?: string;
+    range?: string;
+    duration?: string;
+    components?: string[];
+    description?: string;
+}
+
+interface EquipmentExtension {
+    name: string;
+    type: 'weapon' | 'armor' | 'item';
+    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+    weight: number;
+}
+
 type RaceExtension = string;
 type ClassExtension = string;
 
 interface AppearanceExtension {
-    hairColors?: string[];
+    bodyTypes?: string[];
     skinTones?: string[];
+    hairColors?: string[];
+    hairStyles?: string[];
     eyeColors?: string[];
-    builds?: string[];
-    heights?: string[];
+    facialFeatures?: string[];
 }
 
 interface CharacterSheet {

@@ -409,7 +409,7 @@ const character = CharacterGenerator.generate('my-seed', audioProfile, track);
 
 **Alternative: Convenience parameter in CharacterGenerator**
 
-You can also pass extensions directly to `CharacterGenerator.generate()` for one-off custom content:
+You can also pass extensions directly to `CharacterGenerator.generate()`:
 
 ```typescript
 const character = CharacterGenerator.generate(
@@ -423,8 +423,6 @@ const character = CharacterGenerator.generate(
     }
 );
 ```
-
-This is equivalent to registering via `ExtensionManager` before generation, but doesn't persist across multiple character generations.
 
 **Adjust spawn rates after registration:**
 
@@ -491,56 +489,13 @@ manager.setWeights('spells', {
 
 #### Spell Registry
 
-===== SPELL REGISTRY FOR CUSTOM SPELLS =====
-Register and query custom spells with prerequisite validation
-
-**Note:** Spell registration is done via `ExtensionManager.register()`. Cache invalidation is automatic after registration.
+Query spells and check prerequisites using SpellRegistry:
 
 ```typescript
-
-import { SpellRegistry, ExtensionManager } from 'playlist-data-engine';
+import { SpellRegistry } from 'playlist-data-engine';
 
 const spellRegistry = SpellRegistry.getInstance();
-const manager = ExtensionManager.getInstance();
 
-// ===== REGISTER CUSTOM SPELLS =====
-// Use ExtensionManager to register spells
-manager.register('spells', [
-  {
-    id: 'phoenix_fire',
-    name: 'Phoenix Fire',
-    level: 5,
-    school: 'Evocation',
-    casting_time: '1 action',
-    range: '60 feet',
-    components: ['V', 'S'],
-    duration: 'Instantaneous',
-    description: 'A burst of phoenix flame...',
-    prerequisites: {
-      level: 10,
-      abilities: { CHA: 16 }
-    },
-    classes: ['Sorcerer', 'Wizard'],
-    source: 'custom'
-  },
-  {
-    id: 'frost_breath',
-    name: 'Frost Breath',
-    level: 3,
-    school: 'Evocation',
-    casting_time: '1 action',
-    range: '30 ft cone',
-    components: ['V', 'S'],
-    duration: 'Instantaneous',
-    description: 'Exhale freezing cold...',
-    classes: ['Wizard', 'Sorcerer'],
-    source: 'custom'
-  }
-]);
-
-// Cache is automatically invalidated after registration
-
-// ===== QUERY SPELLS =====
 // Query spells by level, school, or class
 const fifthLevelSpells = spellRegistry.getSpellsByLevel(5);
 const evocationSpells = spellRegistry.getSpellsBySchool('Evocation');
@@ -550,20 +505,20 @@ const sorcererSpells = spellRegistry.getSpellsForClass('Sorcerer');
 const availableSpells = spellRegistry.getAvailableSpells(character);
 console.log(`Available spells: ${availableSpells.map(s => s.name).join(', ')}`);
 
-// Validate spell prerequisites
+// Get a specific spell
 const phoenixFire = spellRegistry.getSpell('phoenix_fire');
+
+// Validate spell prerequisites
 if (phoenixFire) {
-  const validation = spellRegistry.validatePrerequisites(phoenixFire, character);
-  if (!validation.valid) {
-    console.log(`Prerequisites not met: ${validation.errors.join(', ')}`);
-  }
+    const validation = spellRegistry.validatePrerequisites(phoenixFire, character);
+    if (!validation.valid) {
+        console.log(`Prerequisites not met: ${validation.errors.join(', ')}`);
+    }
 }
 
 // Registry statistics
 const stats = spellRegistry.getRegistryStats();
 console.log(`Total spells: ${stats.totalSpells} (${stats.customSpells} custom)`);
-
-
 ```
 
 
@@ -2691,25 +2646,17 @@ interface SkillListExtension {
     expertiseCount?: number;
 }
 
-// Character generator extensions
+// Character generator extensions (for CharacterGenerator.generate() extensions option)
 interface CharacterGeneratorExtensions {
-    spells?: SpellExtension[];
-    equipment?: EquipmentExtension[];
-    races?: string[];
-    classes?: string[];
-    appearance?: {
-        bodyTypes?: string[];
-        skinTones?: string[];
-        hairColors?: string[];
-        hairStyles?: string[];
-        eyeColors?: string[];
-        facialFeatures?: string[];
-    };
-    classFeatures?: ClassFeatureExtension[];
-    racialTraits?: RacialTraitExtension[];
-    skills?: SkillExtension[];
-    skillLists?: SkillListExtension[];
+    spells?: SpellExtension[];           // Custom spells to add
+    equipment?: EquipmentExtension[];    // Custom equipment to add
+    races?: string[];                    // Custom races to add (race names)
+    classes?: string[];                  // Custom classes to add (class names)
+    appearance?: AppearanceExtension;    // Custom appearance options
 }
+
+// Note: The extensions option only supports the above 5 categories.
+// For classFeatures, racialTraits, skills, and skillLists, use ExtensionManager.register() directly.
 ```
 
 ### All Categories
