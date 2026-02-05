@@ -489,18 +489,20 @@ All 20 tests pass. The script now correctly validates the new automatic cache in
 ### Task 36: Update DATA_ENGINE_REFERENCE.md
 **File:** `DATA_ENGINE_REFERENCE.md`
 
-- [ ] Update FeatureRegistry section (~line 4323): Note automatic invalidation
-- [ ] Remove manual `invalidateCache()` from example (line 4483)
-- [ ] Remove manual `invalidateCache()` from example (line 4489)
-- [ ] Update FeatureRegistry.invalidateCache() method description (~line 4455)
-- [ ] Update SkillRegistry section (~line 4667): Note automatic invalidation
-- [ ] Remove manual `invalidateCache()` from example (line 4787)
-- [ ] Update SkillRegistry.invalidateCache() method description (~line 4768)
-- [ ] Update SpellRegistry section (~line 4923): Note automatic invalidation
-- [ ] Remove manual `invalidateCache()` from example (line 5028)
-- [ ] Remove manual `invalidateCache()` from example (line 5030)
-- [ ] Update SpellRegistry.invalidateCache() method description
-- [ ] Search file for any remaining `invalidateCache` examples to remove
+- [x] Update FeatureRegistry section (~line 4323): Note automatic invalidation
+- [x] Remove manual `invalidateCache()` from example (line 4483)
+- [x] Remove manual `invalidateCache()` from example (line 4489)
+- [x] Update FeatureRegistry.invalidateCache() method description (~line 4455)
+- [x] Update SkillRegistry section (~line 4667): Note automatic invalidation
+- [x] Remove manual `invalidateCache()` from example (line 4787)
+- [x] Update SkillRegistry.invalidateCache() method description (~line 4768)
+- [x] Update SpellRegistry section (~line 4923): Note automatic invalidation
+- [x] Remove manual `invalidateCache()` from example (line 5028)
+- [x] Remove manual `invalidateCache()` from example (line 5030)
+- [x] Update SpellRegistry.invalidateCache() method description
+- [x] Search file for any remaining `invalidateCache` examples to remove
+
+**Summary:** Updated all three registry sections (FeatureRegistry, SkillRegistry, SpellRegistry) to note automatic cache invalidation after registration. Removed manual `invalidateCache()` calls from all code examples and updated method descriptions to indicate `invalidateCache()` is primarily for internal use. Build successful.
 
 ### Task 37: Update USAGE_IN_OTHER_PROJECTS.md
 **File:** `USAGE_IN_OTHER_PROJECTS.md`
