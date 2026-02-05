@@ -17,6 +17,7 @@ import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { ALL_RACES } from '../../src/utils/constants.js';
 import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
+import { registerTestRacialTrait, registerTestRacialTraits } from '../helpers/registrationHelpers.js';
 import type { RacialTrait } from '../../src/core/features/FeatureTypes.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 import type { AudioProfile } from '../../src/core/types/AudioProfile.js';
@@ -263,7 +264,7 @@ describe('Subrace Support', () => {
 
             // Register test traits
             for (const trait of baseElfTraits) {
-                featureRegistry.registerRacialTrait(trait);
+                registerTestRacialTrait(trait);
             }
         });
 
@@ -411,8 +412,8 @@ describe('Subrace Support', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerRacialTrait(highElfOnlyTrait);
-            featureRegistry.registerRacialTrait(woodElfOnlyTrait);
+            registerTestRacialTrait(highElfOnlyTrait);
+            registerTestRacialTrait(woodElfOnlyTrait);
         });
 
         it('should validate when character has required subrace', () => {
@@ -458,7 +459,7 @@ describe('Subrace Support', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerRacialTrait(noPrereqTrait);
+            registerTestRacialTrait(noPrereqTrait);
 
             const anyCharacter = createMockCharacter({ subrace: 'Any Subrace' });
             const trait = featureRegistry.getRacialTraitById('test_trait_no_prereq');
@@ -598,7 +599,7 @@ describe('Subrace Support', () => {
 
             // Register test traits
             for (const trait of baseElfTraits) {
-                featureRegistry.registerRacialTrait(trait);
+                registerTestRacialTrait(trait);
             }
         });
 
@@ -720,9 +721,9 @@ describe('Subrace Support', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerRacialTrait(fireDragonkinTrait);
-            featureRegistry.registerRacialTrait(iceDragonkinTrait);
-            featureRegistry.registerRacialTrait(baseDragonkinTrait);
+            registerTestRacialTrait(fireDragonkinTrait);
+            registerTestRacialTrait(iceDragonkinTrait);
+            registerTestRacialTrait(baseDragonkinTrait);
 
             // Get traits for Fire Dragonkin (using Dwarf race since we're using it as a stand-in)
             const fireDragonkinTraits = featureRegistry.getRacialTraitsForSubrace('Dwarf', 'Fire Dragonkin');
@@ -760,7 +761,7 @@ describe('Subrace Support', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerRacialTrait(lightningDragonkinTrait);
+            registerTestRacialTrait(lightningDragonkinTrait);
 
             const lightningDragonkinCharacter = createMockCharacter({
                 race: 'Dwarf',
@@ -835,9 +836,9 @@ describe('Subrace Support', () => {
                 source: 'default'
             };
 
-            featureRegistry.registerRacialTrait(hillDwarfTrait);
-            featureRegistry.registerRacialTrait(mountainDwarfTrait);
-            featureRegistry.registerRacialTrait(duergarTrait);
+            registerTestRacialTrait(hillDwarfTrait);
+            registerTestRacialTrait(mountainDwarfTrait);
+            registerTestRacialTrait(duergarTrait);
         });
 
         it('should only return Hill Dwarf traits for Hill Dwarf', () => {
@@ -920,7 +921,7 @@ describe('Subrace Support', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerRacialTrait(noPrereqTrait);
+            registerTestRacialTrait(noPrereqTrait);
             const trait = featureRegistry.getRacialTraitById('test_no_prereq');
 
             const result = featureRegistry.validatePrerequisites(trait!, character);
@@ -942,7 +943,7 @@ describe('Subrace Support', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerRacialTrait(baseTrait);
+            registerTestRacialTrait(baseTrait);
 
             const traits = featureRegistry.getRacialTraitsForSubrace('Elf', 'Invalid Subrace');
 
@@ -970,7 +971,7 @@ describe('Subrace Support', () => {
                     ],
                     source: 'custom'
                 };
-                featureRegistry.registerRacialTrait(trait);
+                registerTestRacialTrait(trait);
             }
 
             // Each subrace should get only its specific traits
@@ -1025,7 +1026,7 @@ describe('Subrace Support', () => {
 
             // Register test traits
             for (const trait of elfTraits) {
-                featureRegistry.registerRacialTrait(trait);
+                registerTestRacialTrait(trait);
             }
         });
 
@@ -1047,7 +1048,7 @@ describe('Subrace Support', () => {
                 source: 'default'
             };
 
-            featureRegistry.registerRacialTrait(dwarfTrait);
+            registerTestRacialTrait(dwarfTrait);
 
             const subraces = featureRegistry.getAvailableSubraces('Dwarf');
 
@@ -1121,7 +1122,7 @@ describe('Subrace Support', () => {
                 source: 'default'
             };
 
-            featureRegistry.registerRacialTrait(hillDwarfTrait);
+            registerTestRacialTrait(hillDwarfTrait);
 
             const audioProfile = createMockAudioProfile();
 
@@ -1163,7 +1164,7 @@ describe('Subrace Support', () => {
                 source: 'default'
             };
 
-            featureRegistry.registerRacialTrait(highElfTrait);
+            registerTestRacialTrait(highElfTrait);
 
             const audioProfile = createMockAudioProfile();
 

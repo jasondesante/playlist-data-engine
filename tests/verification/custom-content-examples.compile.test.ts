@@ -151,7 +151,7 @@ function verifyExamplesCompile(): void {
     // manager.register('races', ['Dragonkin']);
 
     // Example 2: Register subrace-specific trait
-    // featureRegistry.registerRacialTrait(fireDragonkinResistance);
+    // manager.register('racialTraits', [fireDragonkinResistance]);
 
     // Example 3: Register skill with prerequisites
     // skillRegistry.registerSkill(dragonSmithingSkill);

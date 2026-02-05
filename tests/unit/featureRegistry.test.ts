@@ -14,6 +14,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
+import { registerTestClassFeature, registerTestClassFeatures, registerTestRacialTrait, registerTestRacialTraits } from '../helpers/registrationHelpers.js';
 import type { ClassFeature, RacialTrait, Class, Race, AbilityScores } from '../../src/core/types/index.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 
@@ -115,7 +116,7 @@ describe('FeatureRegistry', () => {
                 tags: ['damage', 'dragon']
             };
 
-            registry.registerClassFeature(customFeature);
+            registerTestClassFeature(customFeature);
 
             const retrieved = registry.getClassFeatureById('custom_dragons_fury');
             expect(retrieved).toEqual(customFeature);
@@ -143,7 +144,7 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerClassFeatures(customFeatures);
+            registerTestClassFeatures(customFeatures);
 
             expect(registry.getClassFeatureById('custom_flame_strike')).toBeDefined();
             expect(registry.getClassFeatureById('custom_ice_shield')).toBeDefined();
@@ -160,10 +161,10 @@ describe('FeatureRegistry', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(feature);
+            registerTestClassFeature(feature);
 
             expect(() => {
-                registry.registerClassFeature(feature);
+                registerTestClassFeature(feature);
             }).toThrow('Class feature with ID "duplicate_feature" already exists');
         });
 
@@ -188,7 +189,7 @@ describe('FeatureRegistry', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeatures([barbarianFeature, fighterFeature]);
+            registerTestClassFeatures([barbarianFeature, fighterFeature]);
 
             const registeredClasses = registry.getRegisteredClasses();
             expect(registeredClasses).toContain('Barbarian');
@@ -209,7 +210,7 @@ describe('FeatureRegistry', () => {
                 ]
             };
 
-            registry.registerRacialTrait(customTrait);
+            registerTestRacialTrait(customTrait);
 
             const retrieved = registry.getRacialTraitById('custom_dragon_wings');
             expect(retrieved).toEqual(customTrait);
@@ -233,7 +234,7 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerRacialTraits(customTraits);
+            registerTestRacialTraits(customTraits);
 
             expect(registry.getRacialTraitById('custom_elf_magic')).toBeDefined();
             expect(registry.getRacialTraitById('custom_dwarf_stone')).toBeDefined();
@@ -248,10 +249,10 @@ describe('FeatureRegistry', () => {
                 source: 'custom'
             };
 
-            registry.registerRacialTrait(trait);
+            registerTestRacialTrait(trait);
 
             expect(() => {
-                registry.registerRacialTrait(trait);
+                registerTestRacialTrait(trait);
             }).toThrow('Racial trait with ID "duplicate_trait" already exists');
         });
 
@@ -272,7 +273,7 @@ describe('FeatureRegistry', () => {
                 source: 'custom'
             };
 
-            registry.registerRacialTraits([elfTrait, dwarfTrait]);
+            registerTestRacialTraits([elfTrait, dwarfTrait]);
 
             const registeredRaces = registry.getRegisteredRaces();
             expect(registeredRaces).toContain('Elf');
@@ -298,7 +299,7 @@ describe('FeatureRegistry', () => {
                 source: 'custom'
             };
 
-            registry.registerRacialTraits([highElfTrait, woodElfTrait]);
+            registerTestRacialTraits([highElfTrait, woodElfTrait]);
 
             // Get traits for High Elf subrace
             const highElfTraits = registry.getRacialTraitsForSubrace('Elf', 'High Elf');
@@ -345,7 +346,7 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerClassFeatures(testFeatures);
+            registerTestClassFeatures(testFeatures);
         });
 
         it('should get all features up to a given level', () => {
@@ -401,7 +402,7 @@ describe('FeatureRegistry', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(feature);
+            registerTestClassFeature(feature);
 
             const retrieved = registry.getClassFeatureById('retrieve_test');
             expect(retrieved).toEqual(feature);
@@ -421,7 +422,7 @@ describe('FeatureRegistry', () => {
                 source: 'custom'
             };
 
-            registry.registerRacialTrait(trait);
+            registerTestRacialTrait(trait);
 
             const retrieved = registry.getRacialTraitById('trait_retrieve_test');
             expect(retrieved).toEqual(trait);
@@ -459,7 +460,7 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerRacialTraits(testTraits);
+            registerTestRacialTraits(testTraits);
         });
 
         it('should get all traits for a race', () => {
@@ -493,7 +494,7 @@ describe('FeatureRegistry', () => {
                 source: 'custom'
             };
 
-            registry.registerRacialTraits([genericTrait, highElfTrait]);
+            registerTestRacialTraits([genericTrait, highElfTrait]);
 
             // Generic query returns both
             const allElfTraits = registry.getRacialTraits('Elf');
@@ -964,7 +965,7 @@ describe('FeatureRegistry', () => {
                 level: 1,
                 source: 'custom'
             };
-            registry.registerClassFeature(baseFeature);
+            registerTestClassFeature(baseFeature);
         });
 
         it('should validate met feature requirement', () => {
@@ -1013,7 +1014,7 @@ describe('FeatureRegistry', () => {
                 level: 3,
                 source: 'custom'
             };
-            registry.registerClassFeature(secondFeature);
+            registerTestClassFeature(secondFeature);
 
             const feature: ClassFeature = {
                 id: 'master_feature',
@@ -1123,7 +1124,7 @@ describe('FeatureRegistry', () => {
                 level: 1,
                 source: 'custom'
             };
-            registry.registerClassFeature(baseFeature);
+            registerTestClassFeature(baseFeature);
         });
 
         it('should validate multiple prerequisite types', () => {
@@ -1346,8 +1347,8 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerClassFeatures(features);
-            registry.registerRacialTraits(traits);
+            registerTestClassFeatures(features);
+            registerTestRacialTraits(traits);
 
             const stats = registry.getRegistryStats();
             // Note: Class features may include defaults from ExtensionManager
@@ -1399,7 +1400,7 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerClassFeatures(features);
+            registerTestClassFeatures(features);
 
             const classes = registry.getRegisteredClasses();
             // Note: Classes may include defaults from ExtensionManager
@@ -1438,7 +1439,7 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerRacialTraits(traits);
+            registerTestRacialTraits(traits);
 
             const races = registry.getRegisteredRaces();
             expect(races).toContain('Human');
@@ -1472,8 +1473,8 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerClassFeatures(features);
-            registry.registerRacialTraits(traits);
+            registerTestClassFeatures(features);
+            registerTestRacialTraits(traits);
 
             // After custom registration, total should include the custom traits
             expect(registry.getRegistryStats().totalRacialTraits).toBeGreaterThanOrEqual(1);
@@ -1533,8 +1534,8 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerClassFeatures(features);
-            registry.registerRacialTraits(traits);
+            registerTestClassFeatures(features);
+            registerTestRacialTraits(traits);
 
             expect(registry.getRegisteredClasses()).toContain('Fighter');
             expect(registry.getRegisteredRaces()).toContain('Human');
@@ -1584,7 +1585,7 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerRacialTraits(traits);
+            registerTestRacialTraits(traits);
 
             const exported = registry.exportRacialTraits();
 
@@ -1615,7 +1616,7 @@ describe('FeatureRegistry', () => {
                 }
             ];
 
-            registry.registerClassFeatures(features);
+            registerTestClassFeatures(features);
 
             // Use ExtensionManager to get class features
             const classFeatures = extensionManager.get('classFeatures') as ClassFeature[];

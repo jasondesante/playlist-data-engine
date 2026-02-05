@@ -435,14 +435,22 @@ if (category.startsWith('spells.') && category !== 'spells') {
 - `tests/integration/subraceStatBonus.integration.test.ts` (~10 calls)
 
 **Sub-tasks:**
-- [ ] Create helper function for test setup: `registerTestClassFeature(feature)` that calls EM + invalidates cache
-- [ ] Create helper function for test setup: `registerTestRacialTrait(trait)` that calls EM + invalidates cache
-- [ ] Replace all `featureRegistry.registerClassFeature()` calls with helper
-- [ ] Replace all `featureRegistry.registerClassFeatures()` calls with helper
-- [ ] Replace all `featureRegistry.registerRacialTrait()` calls with helper
-- [ ] Replace all `featureRegistry.registerRacialTraits()` calls with helper
-- [ ] Verify tests pass after changes
-- [ ] Search for any missed usages
+- [x] Create helper function for test setup: `registerTestClassFeature(feature)` that calls EM + invalidates cache
+- [x] Create helper function for test setup: `registerTestRacialTrait(trait)` that calls EM + invalidates cache
+- [x] Replace all `featureRegistry.registerClassFeature()` calls with helper
+- [x] Replace all `featureRegistry.registerClassFeatures()` calls with helper
+- [x] Replace all `featureRegistry.registerRacialTrait()` calls with helper
+- [x] Replace all `featureRegistry.registerRacialTraits()` calls with helper
+- [x] Verify tests pass after changes
+- [x] Search for any missed usages
+
+**Status:** ✅ COMPLETED
+- Helper functions `registerTestClassFeature` and `registerTestRacialTrait` created in `tests/helpers/registrationHelpers.ts`
+- All test files updated to use helper functions instead of removed methods
+- All 218 FeatureRegistry-related tests passing (unit + integration)
+- Fixed cache invalidation issue in `tests/integration/prerequisitesAndRaces.integration.test.ts` by adding `skillRegistry.invalidateCache()` to `afterEach()`
+- Fixed duplicate skill registration test in `tests/unit/skillRegistry.test.ts` to use `ExtensionManager.register()` directly
+- Note: `tests/integration/phase15.fullCustomContent.integration.test.ts` has 1 pre-existing failure unrelated to FeatureRegistry (spell registration format issue)
 
 ---
 

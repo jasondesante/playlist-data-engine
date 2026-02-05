@@ -11,6 +11,7 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js'
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { initializeFeatureDefaults } from '../../src/core/extensions/initializeDefaults.js';
 import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
+import { registerTestRacialTrait } from '../helpers/registrationHelpers.js';
 import type { RacialTrait } from '../../src/core/features/FeatureTypes.js';
 
 describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Traits', () => {
@@ -415,8 +416,8 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
     });
 
     describe('Additional integration tests for comprehensive coverage', () => {
-        it('should register via FeatureRegistry convenience wrapper and store in EM', () => {
-            // Use FeatureRegistry.registerRacialTrait() convenience method
+        it('should register via helper function and store in EM', () => {
+            // Use registerTestRacialTrait() helper function
             const customTrait: RacialTrait = {
                 id: 'test_wrapper_registration_racial',
                 name: 'Wrapper Registration Test - Racial',
@@ -426,7 +427,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
                 tags: ['test']
             };
 
-            registry.registerRacialTrait(customTrait);
+            registerTestRacialTrait(customTrait);
 
             // Verify it's in ExtensionManager
             const emTraits = manager.get('racialTraits') as RacialTrait[];
@@ -444,7 +445,7 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             };
 
             expect(() => {
-                registry.registerRacialTrait(invalidTrait as RacialTrait);
+                registerTestRacialTrait(invalidTrait as RacialTrait);
             }).toThrow();
         });
 
@@ -462,9 +463,9 @@ describe('Phase 11.2: FeatureRegistry/ExtensionManager Integration for Racial Tr
             manager.register('racialTraits', [trait]);
             registry.invalidateCache();
 
-            // Try to register same ID via FeatureRegistry
+            // Try to register same ID via helper
             expect(() => {
-                registry.registerRacialTrait(trait);
+                registerTestRacialTrait(trait);
             }).toThrow(/already exists/);
         });
 

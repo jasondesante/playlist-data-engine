@@ -17,6 +17,7 @@ import { LevelUpProcessor } from '../../src/core/progression/LevelUpProcessor.js
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
+import { registerTestClassFeature, registerTestClassFeatures } from '../helpers/registrationHelpers.js';
 import type { ClassFeature, AbilityScores } from '../../src/core/types/index.js';
 import type { CharacterSheet, Class } from '../../src/core/types/Character.js';
 
@@ -149,7 +150,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 tags: ['custom']
             };
 
-            registry.registerClassFeature(customFeature);
+            registerTestClassFeature(customFeature);
 
             // Level up to 2
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
@@ -181,7 +182,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 }
             ];
 
-            registry.registerClassFeatures(customFeatures);
+            registerTestClassFeatures(customFeatures);
 
             // Level up to 3
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 3, 'test-seed');
@@ -203,7 +204,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(customFeature);
+            registerTestClassFeature(customFeature);
 
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
             const updatedCharacter = LevelUpProcessor.applyLevelUp(mockCharacter, benefits);
@@ -230,7 +231,7 @@ describe('LevelUpProcessor with Custom Features', () => {
             mockCharacter.ability_scores.STR = 14;
             mockCharacter.ability_modifiers.STR = 2;
 
-            registry.registerClassFeature(customFeature);
+            registerTestClassFeature(customFeature);
 
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
@@ -250,7 +251,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(customFeature);
+            registerTestClassFeature(customFeature);
 
             // Try to level up to 2, but feature requires level 5
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
@@ -272,7 +273,7 @@ describe('LevelUpProcessor with Custom Features', () => {
             };
 
             // Character has INT 10 (doesn't meet requirement)
-            registry.registerClassFeature(customFeature);
+            registerTestClassFeature(customFeature);
 
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
@@ -302,7 +303,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeatures([baseFeature, advancedFeature]);
+            registerTestClassFeatures([baseFeature, advancedFeature]);
 
             // Level up to 2 (grants base feature)
             const benefits2 = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
@@ -327,7 +328,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(advancedFeature);
+            registerTestClassFeature(advancedFeature);
 
             // Level up to 3 (should NOT grant advanced feature)
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 3, 'test-seed');
@@ -346,7 +347,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(barbarianFeature);
+            registerTestClassFeature(barbarianFeature);
 
             // Our character is a Fighter, not a Barbarian
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
@@ -367,7 +368,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(elfFeature);
+            registerTestClassFeature(elfFeature);
 
             // Our character is Human, not Elf
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
@@ -388,7 +389,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(elfFeature);
+            registerTestClassFeature(elfFeature);
 
             // Change character to Elf
             mockCharacter.race = 'Elf';
@@ -415,7 +416,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(statBonusFeature);
+            registerTestClassFeature(statBonusFeature);
 
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
@@ -456,7 +457,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 }
             ];
 
-            registry.registerClassFeatures(features);
+            registerTestClassFeatures(features);
 
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
@@ -482,7 +483,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(noEffectFeature);
+            registerTestClassFeature(noEffectFeature);
 
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
@@ -512,7 +513,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(skillFeature);
+            registerTestClassFeature(skillFeature);
 
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
@@ -539,7 +540,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(speedFeature);
+            registerTestClassFeature(speedFeature);
 
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
@@ -565,7 +566,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(customFeature);
+            registerTestClassFeature(customFeature);
 
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
@@ -608,7 +609,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeatures([baseFeature, advancedFeature]);
+            registerTestClassFeatures([baseFeature, advancedFeature]);
 
             // Level up to 2 (grants base feature)
             const benefits2 = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
@@ -653,7 +654,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 }
             ];
 
-            registry.registerClassFeatures(features);
+            registerTestClassFeatures(features);
 
             // Track features gained
             const gainedFeatures: string[] = [];
@@ -710,7 +711,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 }
             ];
 
-            registry.registerClassFeatures(features);
+            registerTestClassFeatures(features);
 
             let currentChar = mockCharacter;
 
@@ -742,7 +743,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(customFeature);
+            registerTestClassFeature(customFeature);
 
             const benefits = LevelUpProcessor.processLevelUpWithoutStats(mockCharacter, 2, 'test-seed');
 
@@ -763,7 +764,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(effectFeature);
+            registerTestClassFeature(effectFeature);
 
             const benefits = LevelUpProcessor.processLevelUpWithoutStats(mockCharacter, 2, 'test-seed');
 
@@ -810,7 +811,7 @@ describe('LevelUpProcessor with Custom Features', () => {
             mockCharacter.ability_modifiers.STR = 2;
             mockCharacter.ability_modifiers.DEX = 2;
 
-            registry.registerClassFeatures([baseFeature, complexFeature]);
+            registerTestClassFeatures([baseFeature, complexFeature]);
 
             // First, level up to 2 to get base style
             const b2 = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'seed-2');
@@ -837,7 +838,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(customBarbarianFeature);
+            registerTestClassFeature(customBarbarianFeature);
 
             const benefits = LevelUpProcessor.processLevelUp(mockCharacter, 2, 'test-seed');
 
@@ -879,7 +880,7 @@ describe('LevelUpProcessor with Custom Features', () => {
                 source: 'custom'
             };
 
-            registry.registerClassFeature(featureWithEffect);
+            registerTestClassFeature(featureWithEffect);
 
             // The level-up processor creates a preview character for validation
             // Note: Currently, due to shallow copy, this may mutate the original character's ability_scores

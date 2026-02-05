@@ -22,6 +22,7 @@ import type { ClassFeature, RacialTrait } from '../../src/core/features/FeatureT
  *
  * @param skill - The skill to register
  * @param options - Optional registration options for ExtensionManager
+ * @throws {Error} If a skill with the same ID already exists
  *
  * @example
  * ```ts
@@ -37,6 +38,12 @@ import type { ClassFeature, RacialTrait } from '../../src/core/features/FeatureT
 export function registerTestSkill(skill: CustomSkill, options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
     const skillRegistry = SkillRegistry.getInstance();
+
+    // Check for duplicate ID to maintain test behavior from old SkillRegistry.registerSkill()
+    const existing = skillRegistry.getSkill(skill.id);
+    if (existing) {
+        throw new Error(`Skill with ID "${skill.id}" already exists`);
+    }
 
     extensionManager.register('skills', [skill], options);
     skillRegistry.invalidateCache();
@@ -89,10 +96,17 @@ export function registerTestSpells(spells: Spell[], options?: { validate?: boole
  *
  * @param feature - The class feature to register
  * @param options - Optional registration options for ExtensionManager
+ * @throws {Error} If a feature with the same ID already exists
  */
 export function registerTestClassFeature(feature: ClassFeature, options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
     const featureRegistry = FeatureRegistry.getInstance();
+
+    // Check for duplicate ID to maintain test behavior from old FeatureRegistry.registerClassFeature()
+    const existing = featureRegistry.getClassFeatureById(feature.id);
+    if (existing) {
+        throw new Error(`Class feature with ID "${feature.id}" already exists`);
+    }
 
     extensionManager.register('classFeatures', [feature], options);
     featureRegistry.invalidateCache();
@@ -117,10 +131,17 @@ export function registerTestClassFeatures(features: ClassFeature[], options?: { 
  *
  * @param trait - The racial trait to register
  * @param options - Optional registration options for ExtensionManager
+ * @throws {Error} If a trait with the same ID already exists
  */
 export function registerTestRacialTrait(trait: RacialTrait, options?: { validate?: boolean }): void {
     const extensionManager = ExtensionManager.getInstance();
     const featureRegistry = FeatureRegistry.getInstance();
+
+    // Check for duplicate ID to maintain test behavior from old FeatureRegistry.registerRacialTrait()
+    const existing = featureRegistry.getRacialTraitById(trait.id);
+    if (existing) {
+        throw new Error(`Racial trait with ID "${trait.id}" already exists`);
+    }
 
     extensionManager.register('racialTraits', [trait], options);
     featureRegistry.invalidateCache();

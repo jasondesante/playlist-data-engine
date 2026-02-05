@@ -17,6 +17,7 @@ import { AbilityScoreCalculator } from '../../src/core/generation/AbilityScoreCa
 import { getRaceData, RACE_DATA, ALL_RACES, DEFAULT_RACE_DATA_ARRAY } from '../../src/utils/constants.js';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
+import { registerTestRacialTrait, registerTestRacialTraits } from '../helpers/registrationHelpers.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 import type { AbilityScores } from '../../src/core/types/Character.js';
 
@@ -363,7 +364,7 @@ describe('Custom Races', () => {
             };
 
             expect(() => {
-                featureRegistry.registerRacialTrait(dragonTrait);
+                registerTestRacialTrait(dragonTrait);
             }).not.toThrow();
 
             const traits = featureRegistry.getRacialTraits('Dragonkin' as any);
@@ -402,7 +403,7 @@ describe('Custom Races', () => {
                 source: 'custom' as const
             };
 
-            featureRegistry.registerRacialTrait(highElfSpell);
+            registerTestRacialTrait(highElfSpell);
 
             const trait = featureRegistry.getRacialTraitById('high_elf_cantrip');
             expect(trait).toBeDefined();
@@ -445,7 +446,7 @@ describe('Custom Races', () => {
                 source: 'custom' as const
             };
 
-            featureRegistry.registerRacialTrait(dragonOnlyTrait);
+            registerTestRacialTrait(dragonOnlyTrait);
 
             const trait = featureRegistry.getRacialTraitById('dragon_wings');
             expect(trait).toBeDefined();
@@ -632,8 +633,8 @@ describe('Custom Races', () => {
                 source: 'custom' as const
             };
 
-            featureRegistry.registerRacialTrait(baseTrait);
-            featureRegistry.registerRacialTrait(highElfTrait);
+            registerTestRacialTrait(baseTrait);
+            registerTestRacialTrait(highElfTrait);
 
             // Get all traits for Elf
             const allTraits = featureRegistry.getRacialTraits('Elf');

@@ -521,7 +521,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
     describe('Class Features Examples', () => {
         it('should compile custom class features registration example', () => {
-            featureRegistry.registerClassFeatures([
+            manager.register('classFeatures', [
                 {
                     id: 'dragon_fury',
                     name: 'Dragon Fury',
@@ -571,7 +571,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         });
 
         it('should compile single feature registration example', () => {
-            featureRegistry.registerClassFeature({
+            manager.register('classFeatures', [{
                 id: 'single_feature',
                 name: 'Single Feature',
                 description: 'A single test feature',
@@ -579,7 +579,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
                 class: 'Fighter',
                 level: 1,
                 source: 'custom'
-            });
+            }]);
         });
 
         it('should compile feature with skill prerequisites example', () => {
@@ -600,7 +600,8 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
                 source: 'custom' as const
             };
 
-            featureRegistry.registerClassFeature(arcaneSmith);
+            manager.register('classFeatures', [arcaneSmith]);
+            featureRegistry.invalidateCache();
 
             const character = CharacterGenerator.generate('seed', mockAudioProfile, mockTrack, {
                 forceClass: 'Wizard'
@@ -636,7 +637,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
 
     describe('Racial Traits Examples', () => {
         it('should compile custom racial traits registration example', () => {
-            featureRegistry.registerRacialTraits([
+            manager.register('racialTraits', [
                 {
                     id: 'dragon_born_fire_resistance',
                     name: 'Fire Resistance',

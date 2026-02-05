@@ -11,6 +11,7 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js'
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry.js';
 import { initializeFeatureDefaults } from '../../src/core/extensions/initializeDefaults.js';
 import { DEFAULT_CLASS_FEATURES } from '../../src/core/features/DefaultFeatures.js';
+import { registerTestClassFeature, registerTestClassFeatures } from '../helpers/registrationHelpers.js';
 import type { ClassFeature } from '../../src/core/features/FeatureTypes.js';
 
 describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Features', () => {
@@ -422,8 +423,8 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
     });
 
     describe('Additional integration tests for comprehensive coverage', () => {
-        it('should register via FeatureRegistry convenience wrapper and store in EM', () => {
-            // Use FeatureRegistry.registerClassFeature() convenience method
+        it('should register via helper function and store in EM', () => {
+            // Use registerTestClassFeature() helper function
             const customFeature: ClassFeature = {
                 id: 'test_wrapper_registration',
                 name: 'Wrapper Registration Test',
@@ -434,7 +435,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
                 source: 'custom' as const
             };
 
-            registry.registerClassFeature(customFeature);
+            registerTestClassFeature(customFeature);
 
             // Verify it's in ExtensionManager
             const emFeatures = manager.get('classFeatures') as ClassFeature[];
@@ -452,7 +453,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
             };
 
             expect(() => {
-                registry.registerClassFeature(invalidFeature as ClassFeature);
+                registerTestClassFeature(invalidFeature as ClassFeature);
             }).toThrow();
         });
 
@@ -473,7 +474,7 @@ describe('Phase 8.2: FeatureRegistry/ExtensionManager Integration for Class Feat
 
             // Try to register same ID via FeatureRegistry
             expect(() => {
-                registry.registerClassFeature(feature);
+                registerTestClassFeature(feature);
             }).toThrow(/already exists/);
         });
 

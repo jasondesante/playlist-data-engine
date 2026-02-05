@@ -121,9 +121,11 @@ describe('SkillRegistry', () => {
 
             // ExtensionManager does not do duplicate detection
             // This test verifies that behavior - duplicates are allowed
+            // Use ExtensionManager.register() directly to test this behavior
             expect(() => {
-                registerTestSkill(skill);
-                registerTestSkill(skill);
+                ExtensionManager.getInstance().register('skills', [skill], { validate: false });
+                ExtensionManager.getInstance().register('skills', [skill], { validate: false });
+                registry.invalidateCache();
             }).not.toThrow();
 
             // Verify the skill exists (may have duplicate entries)

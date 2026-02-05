@@ -15,7 +15,7 @@ import { FeatureRegistry } from '../../src/core/features/FeatureRegistry';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
-import { registerTestSkill } from '../helpers/registrationHelpers.js';
+import { registerTestSkill, registerTestClassFeature, registerTestClassFeatures, registerTestRacialTrait } from '../helpers/registrationHelpers.js';
 import type { PlaylistTrack } from '../../src/core/types/Playlist';
 
 // Helper function to create a mock track with a custom title
@@ -78,7 +78,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 ]
             };
 
-            featureRegistry.registerClassFeature(customFeature);
+registerTestClassFeature(customFeature);
 
             // Generate a Fighter character
             const character = CharacterGenerator.generate(
@@ -120,7 +120,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             ];
 
             for (const feature of customFeatures) {
-                featureRegistry.registerClassFeature(feature);
+    registerTestClassFeature(feature);
             }
 
             // Generate a level 3 Wizard character
@@ -151,7 +151,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 ]
             };
 
-            featureRegistry.registerClassFeature(customFeature);
+registerTestClassFeature(customFeature);
 
             // Generate a Barbarian character
             const character = CharacterGenerator.generate(
@@ -182,7 +182,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 }
             };
 
-            featureRegistry.registerClassFeature(highLevelFeature);
+registerTestClassFeature(highLevelFeature);
 
             // Generate a level 5 Paladin (should not get the level 10 feature)
             const lowLevelCharacter = CharacterGenerator.generate(
@@ -220,7 +220,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 source: 'custom' as const
             };
 
-            featureRegistry.registerRacialTrait(customTrait);
+registerTestRacialTrait(customTrait);
 
             // Generate an Elf character (may need multiple tries due to random race selection)
             let character: ReturnType<typeof CharacterGenerator.generate>;
@@ -265,7 +265,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             ];
 
             for (const trait of customTraits) {
-                featureRegistry.registerRacialTrait(trait);
+    registerTestRacialTrait(trait);
             }
 
             // Generate a Dwarf character (may need multiple tries due to random race selection)
@@ -300,7 +300,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 source: 'custom' as const
             };
 
-            featureRegistry.registerRacialTrait(highElfTrait);
+registerTestRacialTrait(highElfTrait);
 
             // The character generation will need to support subrace selection
             // For now, verify the trait is registered
@@ -415,7 +415,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 effects: []
             };
 
-            featureRegistry.registerClassFeature(customFeature);
+registerTestClassFeature(customFeature);
 
             // Register custom skill
             const customSkill = {
@@ -457,7 +457,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 effects: []
             };
 
-            featureRegistry.registerClassFeature(customFeature);
+registerTestClassFeature(customFeature);
 
             // Register custom skill
             const customSkill = {
@@ -524,11 +524,11 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
             };
 
             // Register the feature once
-            featureRegistry.registerClassFeature(customFeature);
+registerTestClassFeature(customFeature);
 
             // Attempting to register again should throw
             expect(() => {
-                featureRegistry.registerClassFeature(customFeature);
+    registerTestClassFeature(customFeature);
             }).toThrow();
         });
 
@@ -567,7 +567,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 }
             };
 
-            featureRegistry.registerClassFeature(invalidFeature);
+registerTestClassFeature(invalidFeature);
 
             // Generate a level 1 Wizard
             const character = CharacterGenerator.generate(
@@ -595,7 +595,7 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 effects: []
             };
 
-            featureRegistry.registerClassFeature(customFeature);
+registerTestClassFeature(customFeature);
 
             // Verify feature is registered
             expect(featureRegistry.getClassFeatureById('test_reset_feature')).toBeDefined();
@@ -647,8 +647,8 @@ describe('Integration: CharacterGenerator with Custom Features and Skills', () =
                 effects: []
             };
 
-            featureRegistry.registerClassFeature(level1Feature);
-            featureRegistry.registerClassFeature(level5Feature);
+registerTestClassFeature(level1Feature);
+registerTestClassFeature(level5Feature);
 
             // Get features for level 3 (should only include level 1)
             const level3Features = featureRegistry.getClassFeatures('Paladin', 3);

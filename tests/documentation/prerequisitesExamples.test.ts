@@ -62,6 +62,9 @@ describe('PREREQUISITES.md Code Examples', () => {
         // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         featureRegistry.reset();
         manager.resetAll();
+        // Invalidate caches after reset to ensure clean state
+        skillRegistry.invalidateCache();
+        featureRegistry.invalidateCache();
     });
 
     /**
@@ -311,7 +314,7 @@ describe('PREREQUISITES.md Code Examples', () => {
 
             // This should not throw
             expect(() => {
-                FeatureRegistry.getInstance().registerClassFeature(arcaneMastery);
+                ExtensionManager.getInstance().register('classFeatures', [arcaneMastery]);
             }).not.toThrow();
         });
 
@@ -333,7 +336,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerClassFeature(arcaneMastery);
+            ExtensionManager.getInstance().register('classFeatures', [arcaneMastery]);
 
             // Create a qualified character with arcana proficiency
             const qualifiedCharacter = CharacterGenerator.generate(
@@ -371,7 +374,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerClassFeature(arcaneMastery);
+            ExtensionManager.getInstance().register('classFeatures', [arcaneMastery]);
 
             // Create a character without arcana proficiency
             const unqualifiedCharacter = CharacterGenerator.generate(
@@ -409,7 +412,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                 source: 'custom'
             };
 
-            featureRegistry.registerClassFeature(arcaneMastery);
+            ExtensionManager.getInstance().register('classFeatures', [arcaneMastery]);
 
             // Create a qualified character
             const qualifiedCharacter = CharacterGenerator.generate(
@@ -435,6 +438,12 @@ describe('PREREQUISITES.md Code Examples', () => {
      * Documentation: PREREQUISITES.md:369-445
      */
     describe('Task 7.4: Complete Dragon-Themed Content Example', () => {
+        beforeEach(() => {
+            // Reset ExtensionManager before each test to avoid duplicate errors
+            manager.resetAll();
+            featureRegistry.invalidateCache();
+        });
+
         it('should register all dragon-themed components without errors', () => {
             // Exact code from PREREQUISITES.md:412-484
             // 1. Register a custom race with subraces
@@ -455,7 +464,7 @@ describe('PREREQUISITES.md Code Examples', () => {
             // NOTE: Documentation example at PREREQUISITES.md:426-436 is missing 'description' field
             // The trait requires a description for validation, so we add it here
             expect(() => {
-                FeatureRegistry.getInstance().registerRacialTrait({
+                ExtensionManager.getInstance().register('racialTraits', [{
                     id: 'fire_dragonkin_fire_resistance',
                     name: 'Fire Resistance',
                     description: 'You have resistance to fire damage',  // Required by validation
@@ -466,7 +475,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                         { type: 'ability_unlock', target: 'fire_resistance', value: true }
                     ],
                     source: 'custom'
-                });
+                }]);
             }).not.toThrow();
 
             // 3. Register a skill with prerequisites
@@ -523,7 +532,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                 source: 'custom'
             };
             expect(() => {
-                FeatureRegistry.getInstance().registerClassFeature(arcSmithFeature);
+                ExtensionManager.getInstance().register('classFeatures', [arcSmithFeature]);
             }).not.toThrow();
         });
 
@@ -537,7 +546,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                 subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
             }]);
 
-            featureRegistry.registerRacialTrait({
+            ExtensionManager.getInstance().register('racialTraits', [{
                 id: 'fire_dragonkin_fire_resistance',
                 name: 'Fire Resistance',
                 description: 'You have resistance to fire damage',  // Required by validation
@@ -548,7 +557,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                     { type: 'ability_unlock', target: 'fire_resistance', value: true }
                 ],
                 source: 'custom'
-            });
+            }]);
 
             const dragonSmithingSkill: CustomSkill = {
                 id: 'dragon_smithing',
@@ -596,7 +605,7 @@ describe('PREREQUISITES.md Code Examples', () => {
                 ],
                 source: 'custom'
             };
-            featureRegistry.registerClassFeature(arcSmithFeature);
+            ExtensionManager.getInstance().register('classFeatures', [arcSmithFeature]);
 
             // Verify components are registered
             expect(skillRegistry.getSkill('dragon_smithing')).toBeDefined();

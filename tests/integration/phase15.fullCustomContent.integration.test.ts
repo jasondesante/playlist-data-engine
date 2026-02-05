@@ -14,11 +14,12 @@ import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator
 import { LevelUpProcessor } from '../../src/core/progression/LevelUpProcessor';
 import { FeatureRegistry } from '../../src/core/features/FeatureRegistry';
 import { SkillRegistry } from '../../src/core/skills/SkillRegistry';
+import { SpellRegistry } from '../../src/core/spells/SpellRegistry';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import { WeightedSelector } from '../../src/core/extensions/WeightedSelector';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData';
-import { registerTestSkill } from '../helpers/registrationHelpers.js';
+import { registerTestSkill, registerTestClassFeature, registerTestClassFeatures, registerTestRacialTrait } from '../helpers/registrationHelpers.js';
 import { Class, Race } from '../../src/core/types';
 import type { PlaylistTrack } from '../../src/core/types/Playlist';
 
@@ -45,11 +46,13 @@ function createMockTrack(title: string): PlaylistTrack {
 describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
     let featureRegistry: FeatureRegistry;
     let skillRegistry: SkillRegistry;
+    let spellRegistry: SpellRegistry;
     let extensionManager: ExtensionManager;
 
     beforeEach(() => {
         featureRegistry = FeatureRegistry.getInstance();
         skillRegistry = SkillRegistry.getInstance();
+        spellRegistry = SpellRegistry.getInstance();
         extensionManager = ExtensionManager.getInstance();
 
         // Reset all registries
@@ -66,6 +69,8 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
         featureRegistry.reset();
         // Note: SkillRegistry no longer has reset() - it reads from ExtensionManager
         extensionManager.resetAll();
+        skillRegistry.invalidateCache();
+        spellRegistry.invalidateCache();
     });
 
     describe('Task 1: Test full character generation with all custom content', () => {
@@ -167,22 +172,29 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             const customSkinTones = ['#FFD700', '#C0C0C0']; // Gold, Silver
             const customHairColors = ['#FF4500', '#9400D3']; // OrangeRed, DarkViolet
 
-            // Register custom spells for Wizard (needs to be a ClassSpellListData format)
-            const customWizardSpellList = {
-                class: 'Wizard' as Class,
-                cantrips: [], // No custom cantrips
-                spells_by_level: {
-                    2: ['Phoenix Flame'] // Add Phoenix Flame at level 2
+            // Register custom spell for Wizard
+            const customPhoenixFlameSpell = {
+                id: 'phoenix_flame',
+                name: 'Phoenix Flame',
+                level: 1,
+                school: 'Evocation',
+                casting_time: '1 action',
+                range: '60 ft',
+                components: ['V', 'S'],
+                duration: 'Instantaneous',
+                description: 'A flame that resembles a phoenix.',
+                prerequisites: {
+                    class: 'Wizard' as Class
                 }
             };
 
             // Register all custom content
             for (const feature of customClassFeatures) {
-                featureRegistry.registerClassFeature(feature);
+                registerTestClassFeature(feature);
             }
 
             for (const trait of customRacialTraits) {
-                featureRegistry.registerRacialTrait(trait);
+                registerTestRacialTrait(trait);
             }
 
             for (const skill of customSkills) {
@@ -193,8 +205,11 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             extensionManager.register('appearance.skinTones', customSkinTones);
             extensionManager.register('appearance.hairColors', customHairColors);
 
-            // Register custom spell list for Wizard
-            extensionManager.register('spells.Wizard', [customWizardSpellList]);
+            // Register custom spell and add to Wizard's spell list
+            // Note: Disable validation for spells.Wizard since it expects spell ID strings, not objects
+            extensionManager.register('spells', [customPhoenixFlameSpell]);
+            extensionManager.register('spells.Wizard', ['phoenix_flame'], { validate: false });
+            spellRegistry.invalidateCache();
 
             // Generate characters for each class and verify custom content appears
             const testClasses: Class[] = ['Fighter', 'Wizard', 'Rogue'];
@@ -243,7 +258,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                         ...(highLevelWizard.spells.known_spells || []),
                         ...(highLevelWizard.spells.cantrips || [])
                     ];
-                    expect(allSpells).toContain('Phoenix Flame');
+                    expect(allSpells).toContain('phoenix_flame');
                 }
             }
         });
@@ -352,9 +367,9 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 source: 'custom' as const
             };
 
-            featureRegistry.registerClassFeature(level1Feature);
-            featureRegistry.registerClassFeature(level3Feature);
-            featureRegistry.registerClassFeature(level5Feature);
+            registerTestClassFeature(level1Feature);
+            registerTestClassFeature(level3Feature);
+            registerTestClassFeature(level5Feature);
 
             // Generate a level 1 Paladin
             const character = CharacterGenerator.generate(
@@ -414,8 +429,8 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 source: 'custom' as const
             };
 
-            featureRegistry.registerClassFeature(baseFeature);
-            featureRegistry.registerClassFeature(advancedFeature);
+            registerTestClassFeature(baseFeature);
+            registerTestClassFeature(advancedFeature);
 
             // Generate level 1 Fighter
             const character = CharacterGenerator.generate(
@@ -452,7 +467,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 source: 'custom' as const
             };
 
-            featureRegistry.registerClassFeature(conBoostFeature);
+            registerTestClassFeature(conBoostFeature);
 
             // Generate level 1 Barbarian
             const character = CharacterGenerator.generate(
@@ -643,12 +658,18 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             };
 
             // Register via ExtensionManager (handles both storage and FeatureRegistry)
+            // Note: We need to register to both 'classFeatures.Fighter' for spawn rates
+            // and 'classFeatures' for FeatureRegistry to see the features
+            extensionManager.register('classFeatures', [rareFeature, commonFeature]);
             extensionManager.register('classFeatures.Fighter', [rareFeature, commonFeature], {
                 weights: {
                     'common_feature': 3.0,  // 3x more likely
                     'rare_feature': 0.5     // Half as likely
                 }
             });
+
+            // Invalidate cache so FeatureRegistry sees the new features
+            featureRegistry.invalidateCache();
 
             // Verify weights are set
             const weights = extensionManager.getWeights('classFeatures.Fighter');
@@ -688,6 +709,9 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                     'rare_custom_skill': 0.2     // Very rare
                 }
             });
+
+            // Invalidate cache so SkillRegistry sees the new skills
+            skillRegistry.invalidateCache();
 
             // Verify weights are set
             const weights = extensionManager.getWeights('skills');
@@ -787,6 +811,9 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 }
             });
 
+            // Invalidate cache so SkillRegistry sees the new skills
+            skillRegistry.invalidateCache();
+
             // Verify absolute mode is set
             const allData = extensionManager.get('skills');
             expect(Array.isArray(allData)).toBe(true);
@@ -849,7 +876,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
 
             // Attempting to register should fail validation
             expect(() => {
-                featureRegistry.registerClassFeature(invalidFeature);
+                registerTestClassFeature(invalidFeature);
             }).toThrow();
         });
 
@@ -865,7 +892,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
 
             // Attempting to register should fail validation
             expect(() => {
-                featureRegistry.registerRacialTrait(invalidTrait);
+                registerTestRacialTrait(invalidTrait);
             }).toThrow();
         });
 
@@ -959,11 +986,11 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 source: 'custom' as const
             };
 
-            featureRegistry.registerClassFeature(feature1);
+            registerTestClassFeature(feature1);
 
             // Second registration with same ID should throw
             expect(() => {
-                featureRegistry.registerClassFeature(feature2);
+                registerTestClassFeature(feature2);
             }).toThrow();
         });
 
@@ -983,7 +1010,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             };
 
             // Register the feature
-            featureRegistry.registerClassFeature(featureWithInvalidChain);
+            registerTestClassFeature(featureWithInvalidChain);
 
             // Validate prerequisites - should fail
             const character = CharacterGenerator.generate(
@@ -1009,7 +1036,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             };
 
             try {
-                featureRegistry.registerClassFeature(invalidFeature);
+                registerTestClassFeature(invalidFeature);
                 expect.fail('Should have thrown an error');
             } catch (error) {
                 expect(error).toBeDefined();
@@ -1058,7 +1085,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             }
 
             // Register all at once
-            featureRegistry.registerClassFeatures(largeFeatureSet);
+            registerTestClassFeatures(largeFeatureSet);
 
             // Verify all are registered
             const stats = featureRegistry.getRegistryStats();
@@ -1114,7 +1141,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
                 source: 'custom' as const
             };
 
-            featureRegistry.registerClassFeature(customFeature);
+            registerTestClassFeature(customFeature);
 
             // Verify it's registered
             expect(featureRegistry.getClassFeatureById('test_cycle_feature')).toBeDefined();
@@ -1146,7 +1173,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             // This is the ultimate integration test - custom content of ALL types
 
             // Custom class features
-            featureRegistry.registerClassFeature({
+            registerTestClassFeature({
                 id: 'champion_heroic_strike',
                 name: 'Heroic Strike',
                 type: 'active' as const,
@@ -1160,7 +1187,7 @@ describe('Integration: Phase 15.2 Full Custom Content Tests', () => {
             });
 
             // Custom racial traits
-            featureRegistry.registerRacialTrait({
+            registerTestRacialTrait({
                 id: 'human_versatility_master',
                 name: 'Versatility Master',
                 type: 'passive' as const,
