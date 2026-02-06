@@ -168,9 +168,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] **User note**: The extra typescript implementation examples are unnecessary - just explain the concept and link
   - **Summary**: Streamlined from 56 lines to 25 lines. Removed duplicate workflow (now in XP_AND_STATS.md), removed extra TypeScript example for manual stat selection (replaced with concise bullet point listing customization options with link to XP_AND_STATS.md). Added clear mention of game modes (standard vs uncapped) affecting stat behavior.
 
-- [ ] **Task 9**: Add links to deeper dives
-  - [ ] Subtask: Link "Advanced Character Features" → relevant sections
-  - [ ] Subtask: Link "Deterministic Character Generation" → ROLLS_AND_SEEDS.md if details needed
+- [x] **Task 9**: Add links to deeper dives
+  - [x] Subtask: Link "Advanced Character Features" → relevant sections
+  - [x] Subtask: Link "Deterministic Character Generation" → ROLLS_AND_SEEDS.md if details needed
+  - **Summary**: Added link to ROLLS_AND_SEEDS.md in "Deterministic Character Generation" section. Added 3 topic links at the top of "Advanced Character Features" section (XP_AND_STATS for skills, EXTENSIBILITY_GUIDE for spells, EQUIPMENT_SYSTEM for equipment).
 
 ### Phase 4: Specific Features Section
 

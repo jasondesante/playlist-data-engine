@@ -206,6 +206,8 @@ console.log(`Renamed to: "${character.name}"`);
 
 The same seed and audio profile always produces the same character:
 
+**For more details on deterministic seeding, hash utilities, and seeded randomness, see [ROLLS_AND_SEEDS.md](docs/ROLLS_AND_SEEDS.md)**
+
 ```typescript
 import { CharacterGenerator, AudioAnalyzer, type CharacterSheet } from 'playlist-data-engine';
 
@@ -235,6 +237,11 @@ if (!characterCache.has(track.id)) {
 
 
 ### Advanced Character Features
+
+**For deeper dives on specific topics:**
+- **Skills & Proficiencies**: See [XP_AND_STATS.md](docs/XP_AND_STATS.md) for stat strategies and progression
+- **Spells**: See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for custom spells and prerequisites
+- **Equipment**: See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for properties, enchanting, and templates
 
 ```typescript
 import { SkillAssigner, SpellManager, EquipmentGenerator, AppearanceGenerator, SeededRNG } from 'playlist-data-engine';
