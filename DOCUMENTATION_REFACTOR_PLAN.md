@@ -854,8 +854,9 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Other interfaces → link to source
   - **Summary**: Reduced from ~115 lines to ~55 lines (52% reduction). Kept EquipmentPropertyType and EquipmentCondition as clean lists (per subtask requirements). Converted 8 verbose TypeScript interface definitions (EquipmentProperty, EnhancedEquipment, EquipmentModification, EnhancedInventoryItem, EffectApplicationResult, EquipmentValidationResult, SpawnRandomOptions, TreasureHoardResult) to concise reference table with Type/Description/Location columns. Removed full type definitions, replaced with source links. Added "Also known as" synonyms for Equipment Types section.
 
-- [ ] **Task 80**: Transform EquipmentEffectApplier
-  - [ ] Subtask: Keep as method signature list
+- [x] **Task 80**: Transform EquipmentEffectApplier
+  - [x] Subtask: Keep as method signature list
+  - **Summary**: Reduced from ~27 lines to ~17 lines (37% reduction). Converted verbose TypeScript class signature to concise method reference table with 4 methods. Added "Also known as" synonyms for AI discoverability (Equipment effects manager, item bonus applier, equip/unequip handler). Added note that all equipment effects stack by default. Replaced inline type definitions with method descriptions in table format.
 
 - [ ] **Task 81**: Transform EquipmentValidator
   - [ ] Subtask: Keep as method signature list

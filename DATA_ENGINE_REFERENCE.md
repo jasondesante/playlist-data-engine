@@ -2195,32 +2195,18 @@ Conditional property triggers:
 | `TreasureHoardResult` | Result of generating treasure hoard | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
 
 ### EquipmentEffectApplier
+*Also known as: Equipment effects manager, item bonus applier, equip/unequip handler*
 
-**Location:** `src/core/equipment/EquipmentEffectApplier.ts`
+**Location:** [src/core/equipment/EquipmentEffectApplier.ts](src/core/equipment/EquipmentEffectApplier.ts)
 
-```typescript
-class EquipmentEffectApplier {
-    static equipItem(
-        character: CharacterSheet,
-        equipment: EnhancedEquipment,
-        instanceId?: string
-    ): EffectApplicationResult;
+Static class for applying and removing equipment effects when equipping/unequipping items. All equipment effects stack by default.
 
-    static unequipItem(
-        character: CharacterSheet,
-        equipmentName: string,
-        instanceId?: string
-    ): EffectApplicationResult;
-
-    static reapplyEquipmentEffects(
-        character: CharacterSheet
-    ): EffectApplicationResult;
-
-    static getActiveEffects(
-        character: CharacterSheet
-    ): EquipmentProperty[];
-}
-```
+| Method | Description |
+|--------|-------------|
+| `equipItem(character, equipment, instanceId?)` | Apply all effects from equipping an item (properties, features, skills, spells) |
+| `unequipItem(character, equipmentName, instanceId?)` | Remove all effects from unequipping an item |
+| `reapplyEquipmentEffects(character)` | Re-apply all equipment effects for updates/level-ups |
+| `getActiveEffects(character)` | Get array of all active equipment properties on character |
 
 ### EquipmentValidator
 
