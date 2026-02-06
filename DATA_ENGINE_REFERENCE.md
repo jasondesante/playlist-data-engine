@@ -2148,120 +2148,51 @@ Handles spell casting mechanics (spell slots, saving throws, spell damage).
 
 ### Equipment Types
 
+*Also known as: Item mods, enchantments, affixes, bonuses*
+
 **Location:** `src/core/types/Equipment.ts`
 
-```typescript
-// EquipmentPropertyType
-// Location: `src/core/types/Equipment.ts` (38-45)
-type EquipmentPropertyType =
-    | 'stat_bonus'           // +1 STR, +2 DEX, etc.
-    | 'skill_proficiency'    // Proficiency or expertise in skills
-    | 'ability_unlock'       // Darkvision, flight, etc.
-    | 'passive_modifier'     // Damage resistance, speed bonus, AC bonus
-    | 'special_property'     // Finesse, versatile, two-handed, etc.
-    | 'damage_bonus'         // +1d6 fire damage, etc.
-    | 'stat_requirement';    // Minimum stat required to use
+#### EquipmentPropertyType
 
-// EquipmentCondition
-// Location: `src/core/types/Equipment.ts` (51-59)
-type EquipmentCondition =
-    | { type: 'vs_creature_type'; value: string }
-    | { type: 'at_time_of_day'; value: 'day' | 'night' | 'dawn' | 'dusk' }
-    | { type: 'wielder_race'; value: string }
-    | { type: 'wielder_class'; value: string }
-    | { type: 'while_equipped'; value: boolean }
-    | { type: 'on_hit'; value: boolean }
-    | { type: 'on_damage_taken'; value: boolean }
-    | { type: 'custom'; value: string; description: string };
+Available equipment property types:
 
-// Equipment Property
-// Location: `src/core/types/Equipment.ts` (64-71)
-interface EquipmentProperty {
-    type: EquipmentPropertyType;
-    target: string;
-    value: number | string | boolean;
-    condition?: EquipmentCondition;
-    description?: string;
-    stackable?: boolean;
-}
+| Type | Description |
+|------|-------------|
+| `stat_bonus` | +1 STR, +2 DEX, etc. |
+| `skill_proficiency` | Proficiency or expertise in skills |
+| `ability_unlock` | Darkvision, flight, etc. |
+| `passive_modifier` | Damage resistance, speed bonus, AC bonus |
+| `special_property` | Finesse, versatile, two-handed, etc. |
+| `damage_bonus` | +1d6 fire damage, etc. |
+| `stat_requirement` | Minimum stat required to use |
 
-// Enhanced Equipment
-// Location: `src/core/types/Equipment.ts` (89-137)
-interface EnhancedEquipment {
-    name: string;
-    type: 'weapon' | 'armor' | 'item';
-    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-    weight: number;
-    properties?: EquipmentProperty[];
-    grantsFeatures?: Array<string | EquipmentMiniFeature>;
-    grantsSkills?: Array<{ skillId: string; level: 'proficient' | 'expertise' }>;
-    grantsSpells?: Array<{ spellId: string; level?: number; uses?: number; recharge?: string }>;
-    damage?: { dice: string; damageType: string; versatile?: string };
-    acBonus?: number;
-    weaponProperties?: string[];
-    spawnWeight?: number;
-    templateId?: string;
-    source?: 'default' | 'custom';
-    tags?: string[];
-}
+#### EquipmentCondition
 
-// Equipment Modification
-// Location: `src/core/types/Equipment.ts` (142-159)
-interface EquipmentModification {
-    id: string;
-    name: string;
-    properties: EquipmentProperty[];
-    addsFeatures?: Array<string | EquipmentMiniFeature>;
-    addsSkills?: Array<{ skillId: string; level: 'proficient' | 'expertise' }>;
-    addsSpells?: Array<{ spellId: string; level?: number; uses?: number; recharge?: string }>;
-    appliedAt: string;
-    source: string;
-}
+Conditional property triggers:
 
-// Enhanced Inventory Item
-// Location: `src/core/types/Equipment.ts` (164-177)
-// Note: Basic `InventoryItem` exists at `src/core/generation/EquipmentGenerator.ts` (37-41)
-interface EnhancedInventoryItem {
-    name: string;
-    quantity: number;
-    equipped: boolean;
-    modifications?: EquipmentModification[];
-    templateId?: string;
-    instanceId?: string;
-}
+| Type | Value |
+|------|-------|
+| `vs_creature_type` | string (e.g., "undead", "dragon") |
+| `at_time_of_day` | "day" \| "night" \| "dawn" \| "dusk" |
+| `wielder_race` | string (race name) |
+| `wielder_class` | string (class name) |
+| `while_equipped` | boolean |
+| `on_hit` | boolean |
+| `on_damage_taken` | boolean |
+| `custom` | value: string, description: string |
 
-// Effect Application Result
-// Location: `src/core/types/Equipment.ts` (231-238)
-interface EffectApplicationResult {
-    applied: boolean;
-    count: number;
-    errors: string[];
-}
+#### Equipment Interfaces
 
-// Equipment Validation Result
-// Location: `src/core/types/Equipment.ts` (243-248)
-interface EquipmentValidationResult {
-    valid: boolean;
-    errors?: string[];
-}
-
-// Spawn Random Options
-// Location: `src/core/types/Equipment.ts` (253-262)
-interface SpawnRandomOptions {
-    excludeZeroWeight?: boolean;
-    includeTypes?: ('weapon' | 'armor' | 'item')[];
-    minRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-    maxRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-}
-
-// Treasure Hoard Result
-// Location: `src/core/types/Equipment.ts` (267-274)
-interface TreasureHoardResult {
-    items: EnhancedEquipment[];
-    totalValue: number;
-    cr: number;
-}
-```
+| Type | Description | Location |
+|------|-------------|----------|
+| `EquipmentProperty` | Single property with type, target, value, optional condition | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `EnhancedEquipment` | Full equipment definition with properties, features, skills, spells, damage, AC | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `EquipmentModification` | Enchantment/curse applied to equipment with properties and additions | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `EnhancedInventoryItem` | Inventory item with quantity, equipped status, modifications | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `EffectApplicationResult` | Result of applying/removing equipment effects | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `EquipmentValidationResult` | Result of validating equipment data | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `SpawnRandomOptions` | Options for filtering random equipment spawns | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `TreasureHoardResult` | Result of generating treasure hoard | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
 
 ### EquipmentEffectApplier
 

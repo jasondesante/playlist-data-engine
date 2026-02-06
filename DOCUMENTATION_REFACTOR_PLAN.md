@@ -832,23 +832,27 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Remove examples (they're in COMBAT_SYSTEM.md)
   - **Summary**: Reduced from ~216 lines to ~85 lines (61% reduction). Converted CombatEngine from verbose method-by-method documentation to concise method reference table (16 methods). Converted InitiativeRoller, DiceRoller, AttackResolver, and SpellCaster from bullet lists to table format. Added "Also known as" synonyms for AI discoverability throughout (D&D 5e combat, turn-based combat, battle system, encounter system for CombatEngine; Turn order manager, initiative tracker for InitiativeRoller; Dice system, RNG, random number generator for DiceRoller; Attack handler, to-hit calculator for AttackResolver; Spell system, magic casting, spell slot manager for SpellCaster). Removed constructor code block (replaced with single-line constructor table). Added prominent link to COMBAT_SYSTEM.md for usage examples. All four helper classes now use consistent table format matching other sections.
 
-- [ ] **Task 76**: Transform InitiativeRoller
-  - [ ] Subtask: Keep as method list with descriptions
-  - [ ] Subtask: Remove detailed explanations
+- [x] **Task 76**: Transform InitiativeRoller
+  - [x] Subtask: Keep as method list with descriptions
+  - [x] Subtask: Remove detailed explanations
+  - **Summary**: Already completed as part of Task 75. Section has "Also known as" synonyms, location link, concise method reference table (7 methods), instance class note. No implementation details remain.
 
-- [ ] **Task 77**: Transform DiceRoller
-  - [ ] Subtask: Keep as method reference table
-  - [ ] Subtask: This is a useful reference - keep fairly detailed
+- [x] **Task 77**: Transform DiceRoller
+  - [x] Subtask: Keep as method reference table
+  - [x] Subtask: This is a useful reference - keep fairly detailed
+  - **Summary**: Already completed as part of Task 75. Section has "Also known as" synonyms, location link, organized method tables (Basic Dice, Formula Parsing, Advantage/Disadvantage, Combat, Saving Throws & Ability Checks, Critical Hit Detection, Seeded RNG). Static class note included. Kept fairly detailed as requested - comprehensive reference for all dice rolling utilities.
 
-- [ ] **Task 78**: Transform AttackResolver, SpellCaster
-  - [ ] Subtask: Keep as method lists
+- [x] **Task 78**: Transform AttackResolver, SpellCaster
+  - [x] Subtask: Keep as method lists
+  - **Summary**: Already completed as part of Task 75. Both AttackResolver (5 methods) and SpellCaster (9 methods) have "Also known as" synonyms, location links, instance class notes, and concise method reference tables. No implementation details remain.
 
 ### Phase 19: Equipment System (lines 4600-5000)
 
-- [ ] **Task 79**: Transform equipment types
-  - [ ] Subtask: EquipmentPropertyType → keep as list
-  - [ ] Subtask: EquipmentCondition → keep as list
-  - [ ] Subtask: Other interfaces → link to source
+- [x] **Task 79**: Transform equipment types
+  - [x] Subtask: EquipmentPropertyType → keep as list
+  - [x] Subtask: EquipmentCondition → keep as list
+  - [x] Subtask: Other interfaces → link to source
+  - **Summary**: Reduced from ~115 lines to ~55 lines (52% reduction). Kept EquipmentPropertyType and EquipmentCondition as clean lists (per subtask requirements). Converted 8 verbose TypeScript interface definitions (EquipmentProperty, EnhancedEquipment, EquipmentModification, EnhancedInventoryItem, EffectApplicationResult, EquipmentValidationResult, SpawnRandomOptions, TreasureHoardResult) to concise reference table with Type/Description/Location columns. Removed full type definitions, replaced with source links. Added "Also known as" synonyms for Equipment Types section.
 
 - [ ] **Task 80**: Transform EquipmentEffectApplier
   - [ ] Subtask: Keep as method signature list
