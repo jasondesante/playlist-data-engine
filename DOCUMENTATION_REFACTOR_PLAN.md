@@ -340,12 +340,114 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Any redundant with DATA_ENGINE_REFERENCE?
   - **Summary**: Streamlined spawn weight documentation by moving "Weight Values" table next to "Spawn Modes" table for better flow. Removed redundant detailed mode-by-mode explanations (Relative/Absolute/Default/Replace) in the "Spawn Rate System" section - these are now covered by the concise quick-reference table. The section now provides key behaviors summary and jumps directly to "Advanced Weight Configuration" examples which show practical patterns (hierarchical weights, per-class weights, zero weights, reset). Reduced from ~120 lines to ~40 lines (67% reduction) while keeping all practical examples.
 
-- [ ] **Task 34**: Create summary of changes (AUDIT TRAIL)
-  - [ ] Subtask: List what was removed (with reasoning - why was it redundant?)
-  - [ ] Subtask: List what was kept
-  - [ ] Subtask: Note any borderline calls (things that were close to being cut)
-  - [ ] **Purpose**: If something was removed that you actually wanted, you can see what/why and restore it
-  - [ ] **Where**: Append summary to this phase's section in plan file
+- [x] **Task 34**: Create summary of changes (AUDIT TRAIL)
+  - [x] Subtask: List what was removed (with reasoning - why was it redundant?)
+  - [x] Subtask: List what was kept
+  - [x] Subtask: Note any borderline calls (things that were close to being cut)
+  - **Purpose**: If something was removed that you actually wanted, you can see what/why and restore it
+  - **Where**: Summary appended below
+
+#### Phase 9 Audit Trail Summary
+
+**Total Changes**: EXTENSIBILITY_GUIDE.md reduced from 2,961 lines to 2,544 lines (~14% reduction, 417 lines removed)
+
+---
+
+**What Was Removed:**
+
+1. **Reference Section (Task 30)** - ~110 lines removed
+   - Full TypeScript type definitions for `ExtensionOptions`, `ClassFeature`, `RacialTrait`, `CustomSkill`, `SkillListDefinition`
+   - **Reasoning**: AI can find these in source code via links. Full definitions duplicated information readily available in TypeScript files.
+   - **Kept**: Link table showing type name → source file → description (essential for discoverability)
+
+2. **Validation Section (Task 30)** - ~190 lines removed
+   - Verbose validation error examples with full code blocks showing each validation failure case
+   - Duplicate explanations of validation rules that were already in table format
+   - **Reasoning**: Examples were repetitive and showed obvious error cases. The "Key Validation Rules" table already contained the essential information.
+
+3. **ExtensionManager Method Documentation (Task 31)** - ~55 lines removed
+   - Individual heading + description + example for each of 14 methods
+   - **Reasoning**: Format was extremely repetitive (each method got same treatment). Reference table provides same information more concisely.
+   - **Kept**: 3 focused examples showing practical usage patterns (registration, weights, inspection) instead of 14 individual examples
+
+4. **Spawn Rate System Detailed Explanations (Task 33)** - ~80 lines removed
+   - Detailed paragraphs for each spawn mode (Relative, Absolute, Default, Replace) explaining behavior
+   - **Reasoning**: The "Spawn Modes" table already contained mode descriptions and use cases. Paragraphs were redundant with the table.
+   - **Kept**: Key behaviors summary (one sentence each) and all "Advanced Weight Configuration" examples (practical patterns)
+
+---
+
+**What Was Kept:**
+
+1. **Category Table** (lines 30-72) - Essential reference showing all extensible categories with examples
+   - **Reasoning**: This is the authoritative reference for what can be extended. No other source has this comprehensive list with usage examples.
+
+2. **Three Focused Examples** (lines 138-192) - Registration, weights, inspection patterns
+   - **Reasoning**: Each shows a distinct, practical usage pattern. Not redundant with USAGE (which only has brief overview).
+
+3. **Spawn Modes Table** (lines 119-127) - Quick reference for mode behaviors
+   - **Reasoning**: Essential for understanding spawn rate system. Serves both quick lookup and detailed understanding needs.
+
+4. **Weight Values Table** (lines 128-137) - Numerical spawn rate guide
+   - **Reasoning**: Critical for users to understand how to set appropriate weights. No other source has this.
+
+5. **All Category-Specific Examples** (Equipment, Spells, Races, Classes, Features, Skills, Appearance, etc.)
+   - **Reasoning**: Each example demonstrates unique API patterns for that category. Not repetitive across categories.
+
+6. **Content Pack Examples** (lines 1322-1612)
+   - **Reasoning**: Show how to combine multiple extensions. Different from single-category examples.
+
+7. **Validation Key Rules Table** (lines 1624-1636)
+   - **Reasoning**: Concise reference for validation requirements. Essential for developers creating custom content.
+
+8. **Best Practices Section** (lines 1676-1768)
+   - **Reasoning**: Hard-earned wisdom not obvious from API. Value-add documentation.
+
+9. **Troubleshooting Section** (lines 1856-1926)
+   - **Reasoning**: Common issues and solutions. Practical help not found in API reference.
+
+10. **Export/Import System** (lines 1928-2058)
+    - **Reasoning**: Complete workflow for saving/loading content packs. Not found elsewhere.
+
+11. **Equipment Subcategories** (lines 2060-2296)
+    - **Reasoning**: Brief overview linking to EQUIPMENT_SYSTEM.md. Correct hub approach.
+
+---
+
+**Borderline Calls (Close to Being Cut):**
+
+1. **ID Format Requirements section** (lines 1637-1651, ~15 lines)
+   - **Why kept**: Formatting rules are not obvious from source. Validation errors are cryptic without this context.
+   - **Close call because**: Could arguably be in Validation section or just mentioned in Key Rules table.
+
+2. **Duplicate Detection section** (lines 1653-1663, ~11 lines)
+   - **Why kept**: Important behavior that's not obvious from API. Users need to know duplicates are auto-detected.
+   - **Close call because**: Could be merged into Validation section.
+
+3. **"Disabling Validation" note** (lines 1665-1673, ~9 lines)
+   - **Why kept**: Advanced use case that's not obvious. Warning is important.
+   - **Close call because**: Very niche - most users should never do this.
+
+4. **Helper Functions section** (lines 2453-2531, ~79 lines)
+   - **Why kept**: Data helper functions (`getClassData`, `getRaceData`, etc.) are critical for template-based custom classes. Not obvious from ExtensionManager API.
+   - **Close call because**: Some duplication with spec file. But spec is high-level, this is practical.
+
+5. **"All Categories" type list** (lines 2343-2437, ~95 lines)
+   - **Why kept**: Complete TypeScript type definition is useful for AI autocomplete and type safety. Shows the full taxonomy.
+   - **Close call because**: Quick reference table (lines 2439-2451) already has this info in compressed form.
+   - **Decision kept**: Both serve different purposes - type list is for developers writing code, quick reference is for scanning.
+
+---
+
+**Lines Added:**
+
+1. **Method reference table** (19 methods including 5 previously undocumented)
+2. **Spawn modes table** (consolidated from separate descriptions)
+3. **Weight values table** (moved next to spawn modes for better flow)
+
+---
+
+**Net Impact**: -417 lines (14% reduction) while improving scannability and adding missing method documentation.
 
 ### Phase 10: EQUIPMENT_SYSTEM.md Review
 
