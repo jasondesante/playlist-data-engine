@@ -827,9 +827,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 
 ### Phase 18: Combat System (lines 4100-4600)
 
-- [ ] **Task 75**: Transform CombatEngine
-  - [ ] Subtask: Keep as method reference table
-  - [ ] Subtask: Remove examples (they're in COMBAT_SYSTEM.md)
+- [x] **Task 75**: Transform CombatEngine
+  - [x] Subtask: Keep as method reference table
+  - [x] Subtask: Remove examples (they're in COMBAT_SYSTEM.md)
+  - **Summary**: Reduced from ~216 lines to ~85 lines (61% reduction). Converted CombatEngine from verbose method-by-method documentation to concise method reference table (16 methods). Converted InitiativeRoller, DiceRoller, AttackResolver, and SpellCaster from bullet lists to table format. Added "Also known as" synonyms for AI discoverability throughout (D&D 5e combat, turn-based combat, battle system, encounter system for CombatEngine; Turn order manager, initiative tracker for InitiativeRoller; Dice system, RNG, random number generator for DiceRoller; Attack handler, to-hit calculator for AttackResolver; Spell system, magic casting, spell slot manager for SpellCaster). Removed constructor code block (replaced with single-line constructor table). Added prominent link to COMBAT_SYSTEM.md for usage examples. All four helper classes now use consistent table format matching other sections.
 
 - [ ] **Task 76**: Transform InitiativeRoller
   - [ ] Subtask: Keep as method list with descriptions

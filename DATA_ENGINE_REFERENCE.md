@@ -1981,219 +1981,162 @@ Monitors Steam and Discord activity to award gaming bonuses. **Note:** Discord R
 
 ## Combat System
 
+*Also known as: D&D 5e combat, turn-based combat, battle system, encounter system*
+
+**For usage examples, see [COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md)**
+
+### CombatEngine
+
 **Location:** `src/core/combat/CombatEngine.ts`
 
-A full D&D 5e turn-based combat engine.
-
-#### Class: `CombatEngine`
+D&D 5e turn-based combat engine with initiative, attacks, spell casting, and damage mechanics.
 
 **Constructor:**
-```typescript
-new CombatEngine(config?: CombatConfig)
-```
+
+| Constructor | Description |
+|-------------|-------------|
+| `new CombatEngine(config?: CombatConfig)` | Initialize combat engine with optional configuration (useEnvironment, useMusic, tacticalMode, maxTurnsBeforeDraw, allowFleeing) |
 
 **Methods:**
 
-- `startCombat(players: CharacterSheet[], enemies: CharacterSheet[], environment?: EnvironmentalContext): CombatInstance`
-    - Rolls initiative and creates a combat session.
-- `getCurrentCombatant(combat: CombatInstance): Combatant`
-    - Returns the current active combatant.
-- `executeAttack(combat: CombatInstance, attacker: Combatant, target: Combatant, attack: Attack): CombatAction`
-    - Resolves an attack roll against AC and applies damage. Requires a pre-built `Attack` object.
-- `executeWeaponAttack(combat: CombatInstance, attacker: Combatant, target: Combatant, weaponName?: string): CombatAction`
-    - Automatically builds an `Attack` object from the attacker's equipped weapon(s) and executes the attack.
-    - If no `weaponName` is provided, uses the first equipped weapon.
-    - If `weaponName` is provided, uses that specific weapon (must be equipped).
-    - Throws an error if the attacker has no equipped weapons or the named weapon is not equipped.
-- `executeCastSpell(combat: CombatInstance, caster: Combatant, spell: Spell, targets: Combatant[]): CombatAction`
-    - Executes a spell casting action.
-- `executeDodge(combat: CombatInstance, combatant: Combatant): CombatAction`
-    - Executes dodge action (increases AC by 2 until next turn).
-- `executeDash(combat: CombatInstance, combatant: Combatant): CombatAction`
-    - Executes dash action (double movement speed).
-- `executeDisengage(combat: CombatInstance, combatant: Combatant): CombatAction`
-    - Executes disengage action (no opportunity attacks provoked).
-- `nextTurn(combat: CombatInstance): CombatInstance`
-    - Advances the turn order and resets action trackers.
-- `getCombatResult(combat: CombatInstance): CombatResult | null`
-    - Returns winner and rewards if combat is over.
-- `getCombatSummary(combat: CombatInstance): string`
-    - Returns formatted combat summary string.
-- `applyDamage(combatant: Combatant, damage: number): number`
-    - Applies damage to combatant (accounts for temp HP).
-- `healCombatant(combatant: Combatant, healing: number): number`
-    - Heals a combatant.
-- `applyTemporaryHP(combatant: Combatant, tempHP: number): void`
-    - Applies temporary hit points.
-- `getLivingCombatants(combat: CombatInstance): Combatant[]`
-    - Returns all non-defeated combatants.
-- `getDefeatedCombatants(combat: CombatInstance): Combatant[]`
-    - Returns all defeated combatants.
+| Method | Description |
+|--------|-------------|
+| `startCombat(players, enemies, environment?)` | Rolls initiative and creates combat session |
+| `getCurrentCombatant(combat)` | Returns current active combatant |
+| `executeAttack(combat, attacker, target, attack)` | Resolves attack roll vs AC and applies damage (requires pre-built Attack object) |
+| `executeWeaponAttack(combat, attacker, target, weaponName?)` | Auto-builds Attack from equipped weapon(s) and executes; uses first weapon or specific weapon if named; throws error if no weapon equipped |
+| `executeCastSpell(combat, caster, spell, targets)` | Executes spell casting action |
+| `executeDodge(combat, combatant)` | Executes dodge action (AC +2 until next turn) |
+| `executeDash(combat, combatant)` | Executes dash action (double movement speed) |
+| `executeDisengage(combat, combatant)` | Executes disengage action (no opportunity attacks) |
+| `nextTurn(combat)` | Advances turn order and resets action trackers |
+| `getCombatResult(combat)` | Returns winner and rewards if combat over (null if active) |
+| `getCombatSummary(combat)` | Returns formatted combat summary string |
+| `applyDamage(combatant, damage)` | Applies damage accounting for temp HP |
+| `healCombatant(combatant, healing)` | Heals combatant |
+| `applyTemporaryHP(combatant, tempHP)` | Applies temporary hit points |
+| `getLivingCombatants(combat)` | Returns all non-defeated combatants |
+| `getDefeatedCombatants(combat)` | Returns all defeated combatants |
 
-#### Helper: `InitiativeRoller` (instance class)
+### InitiativeRoller
+
+*Also known as: Turn order manager, initiative tracker*
 
 **Location:** `src/core/combat/InitiativeRoller.ts`
 
-> **Note**: This is an instance class. Create an instance with `new InitiativeRoller()` before using methods.
+> **Note:** Instance class - create with `new InitiativeRoller()`
 
-Manages the D&D 5e initiative system for combat. Handles rolling initiative, sorting combatants by turn order, and managing turn progression. Internally uses `DiceRoller.rollD20()` for all dice rolls.
+Manages D&D 5e initiative system (rolling, sorting, turn progression).
 
-**Initiative Rolling:**
+| Method | Description |
+|--------|-------------|
+| `rollInitiativeForCombatant(combatant)` | Rolls d20 + DEX, updates combatant in-place, returns InitiativeResult |
+| `rollInitiativeForAll(combatants)` | Rolls for all, sorts descending (DEX as tiebreaker), returns results and sorted array |
+| `getNextCombatant(combatants, currentIndex)` | Gets next combatant in order, wraps around, returns isNewRound flag |
+| `getInitiativeOrder(combatants)` | Returns formatted strings showing position, name, initiative, DEX |
+| `rerollInitiativeForCombatant(combatant)` | Re-rolls for specific combatant (when DEX modifier changes) |
+| `delayTurn(combatants, combatantId)` | Moves combatant one position later (Ready action) |
+| `resortByInitiative(combatants)` | Resorts by current values (mid-combat joins or changes) |
 
-- `rollInitiativeForCombatant(combatant: Combatant): InitiativeResult`
-    - Rolls initiative for a single combatant (d20 + DEX modifier)
-    - Updates the combatant's `initiative` property in-place
-    - Returns `InitiativeResult` with combatant, d20Roll, dexModifier, and initiativeTotal
-- `rollInitiativeForAll(combatants: Combatant[]): { results: InitiativeResult[], sortedCombatants: Combatant[] }`
-    - Rolls initiative for all combatants and sorts by descending initiative
-    - Higher initiative acts first; ties broken by higher DEX modifier
-    - Returns detailed roll results and the sorted combatant array
+### DiceRoller
 
-**Turn Management:**
-
-- `getNextCombatant(combatants: Combatant[], currentIndex: number): { combatant: Combatant, index: number, isNewRound: boolean }`
-    - Gets the next combatant in turn order
-    - Automatically wraps around to beginning when reaching the end of the list
-    - Returns the combatant, their new index, and whether a new round has started
-- `getInitiativeOrder(combatants: Combatant[]): string[]`
-    - Returns initiative order as an array of formatted strings for display
-    - Each string shows: position, name, initiative value, and DEX modifier
-    - Useful for displaying turn order to players
-
-**Mid-Combat Changes:**
-
-- `rerollInitiativeForCombatant(combatant: Combatant): number`
-    - Re-rolls initiative for a specific combatant
-    - Use when an effect changes a combatant's DEX modifier mid-combat
-    - Updates combatant's initiative in-place and returns the new value
-- `delayTurn(combatants: Combatant[], combatantId: string): Combatant[]`
-    - Delays a combatant's turn by moving them one position later in initiative order
-    - Used when a combatant takes the "Ready" action in D&D 5e
-    - Returns a new array with the combatant moved to the next position
-- `resortByInitiative(combatants: Combatant[]): Combatant[]`
-    - Resorts combatants by their current initiative values
-    - Use when new combatants join mid-combat or initiative values change
-    - Returns a new sorted array (higher initiative first, DEX as tiebreaker)
-
-#### Helper: `DiceRoller` (static class)
+*Also known as: Dice system, RNG, random number generator, d20 roller*
 
 **Location:** `src/core/combat/DiceRoller.ts`
 
-> **Note**: This is a static class. Call methods directly without instantiation: `DiceRoller.rollD20()`
+> **Note:** Static class - call methods directly without instantiation: `DiceRoller.rollD20()`
 
-Utility class for D&D-style dice rolling mechanics. All methods are static - no `new` needed.
+Utility class for D&D-style dice rolling mechanics.
 
-**Basic Dice Functions:**
+**Basic Dice:**
 
-- `DiceRoller.rollDie(sides: number): number`
-    - Roll a single die with the specified number of sides (4, 6, 8, 10, 12, 20, 100)
-    - Returns a value from 1 to sides
-- `DiceRoller.rollD20(): number`
-    - Roll a d20 (common for attacks, ability checks, saving throws)
-    - Returns a value from 1 to 20
-- `DiceRoller.rollMultipleDice(count: number, sides: number): number[]`
-    - Roll multiple dice of the same size
-    - Returns an array of individual roll results
-- `DiceRoller.rollPercentile(): number`
-    - Roll a d100 (percentile die)
-    - Returns a value from 1 to 100
+| Method | Description |
+|--------|-------------|
+| `rollDie(sides)` | Roll single die (4, 6, 8, 10, 12, 20, 100) |
+| `rollD20()` | Roll d20 for attacks, checks, saves |
+| `rollMultipleDice(count, sides)` | Roll multiple dice, return array |
+| `rollPercentile()` | Roll d100 |
 
 **Formula Parsing:**
 
-- `DiceRoller.parseDiceFormula(formula: string): { diceCount: number, diceSides: number, modifier: number, rolls: number[], total: number }`
-    - Parse and roll a dice formula string like "2d6+3" or "1d20-2"
-    - Returns an object with parsed formula data and results
+| Method | Description |
+|--------|-------------|
+| `parseDiceFormula(formula)` | Parse and roll "2d6+3", returns parsed data and results |
 
 **Advantage/Disadvantage:**
 
-- `DiceRoller.rollWithAdvantage(): { roll1: number, roll2: number, result: number }`
-    - Roll d20 with advantage (roll twice, take higher)
-    - Returns both rolls and the final result
-- `DiceRoller.rollWithDisadvantage(): { roll1: number, roll2: number, result: number }`
-    - Roll d20 with disadvantage (roll twice, take lower)
-    - Returns both rolls and the final result
+| Method | Description |
+|--------|-------------|
+| `rollWithAdvantage()` | Roll twice, take higher |
+| `rollWithDisadvantage()` | Roll twice, take lower |
 
-**Combat Functions:**
+**Combat:**
 
-- `DiceRoller.rollInitiative(dexModifier: number): number`
-    - Roll initiative (d20 + DEX modifier)
-    - Returns the initiative value
-- `DiceRoller.calculateDamage(formula: string, modifier: number, isCritical?: boolean): { rolls: number[], modifier: number, total: number, isCritical: boolean }`
-    - Calculate damage from a dice formula with optional modifier
-    - For critical hits, dice are doubled (not the modifier)
-    - Returns detailed damage breakdown
-- `DiceRoller.doubleDamage(rolls: number[]): number[]`
-    - Double the damage dice for a critical hit
-    - Returns a new array with each roll duplicated
+| Method | Description |
+|--------|-------------|
+| `rollInitiative(dexModifier)` | Roll d20 + DEX modifier |
+| `calculateDamage(formula, modifier, isCritical?)` | Calculate damage with optional modifier (doubles dice on crit) |
+| `doubleDamage(rolls)` | Double dice array for critical hit |
 
 **Saving Throws & Ability Checks:**
 
-- `DiceRoller.rollSavingThrow(abilityModifier: number, proficiencyBonus?: number): number`
-    - Roll a saving throw (d20 + ability modifier + proficiency bonus if proficient)
-    - Returns the total save result
-- `DiceRoller.rollAbilityCheck(abilityModifier: number, proficiencyBonus?: number): number`
-    - Roll an ability check (d20 + ability modifier + proficiency bonus if proficient)
-    - Returns the total check result
+| Method | Description |
+|--------|-------------|
+| `rollSavingThrow(abilityModifier, proficiencyBonus?)` | Roll d20 + ability + proficiency |
+| `rollAbilityCheck(abilityModifier, proficiencyBonus?)` | Roll d20 + ability + proficiency |
 
 **Critical Hit Detection:**
 
-- `DiceRoller.isCriticalHit(d20Roll: number): boolean`
-    - Check if a d20 roll is a critical hit (natural 20)
-- `DiceRoller.isCriticalMiss(d20Roll: number): boolean`
-    - Check if a d20 roll is a critical miss (natural 1)
+| Method | Description |
+|--------|-------------|
+| `isCriticalHit(d20Roll)` | Returns true if natural 20 |
+| `isCriticalMiss(d20Roll)` | Returns true if natural 1 |
 
 **Seeded RNG:**
 
-- `DiceRoller.seededRoll(seed: number): number`
-    - Generate a deterministic "seeded" d20 roll for reproducibility
-    - Uses a simple LCG algorithm
-    - Returns a value from 1 to 20
+| Method | Description |
+|--------|-------------|
+| `seededRoll(seed)` | Deterministic d20 for reproducibility (LCG algorithm) |
 
-#### Helper: `AttackResolver` (instance class)
+### AttackResolver
+
+*Also known as: Attack handler, melee/ranged attacks, to-hit calculator*
 
 **Location:** `src/core/combat/AttackResolver.ts`
 
-> **Note**: This is an instance class. Create an instance with `new AttackResolver()` before using methods.
+> **Note:** Instance class - create with `new AttackResolver()`
 
-Handles melee and ranged attack resolution (D&D 5e: d20 + attack bonus vs target AC).
+Handles melee and ranged attack resolution (d20 + attack bonus vs target AC).
 
-- `resolveAttack(attacker: Combatant, target: Combatant, attack: Attack): AttackResult`
-    - Resolves a complete attack action (roll vs AC, damage if hit)
-- `isInRange(attacker: Combatant, target: Combatant, attack: Attack): boolean`
-    - Checks if an attack is within range (melee: 5ft, ranged: attack.range)
-- `calculateAttackBonus(character: any, attackName: string, abilityModifier: number, isProficient: boolean): number`
-    - Calculates attack bonus (ability modifier + proficiency bonus if proficient)
-- `attackWithAdvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult`
-    - Resolves attack with advantage (roll twice, take higher)
-- `attackWithDisadvantage(attacker: Combatant, target: Combatant, attack: Attack): AttackResult`
-    - Resolves attack with disadvantage (roll twice, take lower)
+| Method | Description |
+|--------|-------------|
+| `resolveAttack(attacker, target, attack)` | Resolves complete attack (roll vs AC, damage if hit) |
+| `isInRange(attacker, target, attack)` | Checks if attack is within range (melee: 5ft, ranged: attack.range) |
+| `calculateAttackBonus(character, attackName, abilityModifier, isProficient)` | Calculates attack bonus (ability + proficiency if proficient) |
+| `attackWithAdvantage(attacker, target, attack)` | Resolves attack with advantage (roll twice, take higher) |
+| `attackWithDisadvantage(attacker, target, attack)` | Resolves attack with disadvantage (roll twice, take lower) |
 
-#### Helper: `SpellCaster` (instance class)
+### SpellCaster
+
+*Also known as: Spell system, magic casting, spell slot manager*
 
 **Location:** `src/core/combat/SpellCaster.ts`
 
-> **Note**: This is an instance class. Create an instance with `new SpellCaster()` before using methods.
+> **Note:** Instance class - create with `new SpellCaster()`
 
 Handles spell casting mechanics (spell slots, saving throws, spell damage).
 
-- `castSpell(caster: Combatant, spell: Spell, targets: Combatant[]): SpellCastResult`
-    - Casts a spell at one or more targets (handles slot consumption, attack rolls, saving throws)
-- `hasSpellSlot(caster: Combatant, spellLevel: number): boolean`
-    - Checks if caster has a spell slot of the given level available
-- `consumeSpellSlot(caster: Combatant, spellLevel: number): void`
-    - Consumes a spell slot
-- `restoreSpellSlots(caster: Combatant): void`
-    - Restores all spell slots to maximum (after long rest)
-- `calculateSaveDC(caster: Combatant, ability: string): number`
-    - Calculates spell save DC (8 + ability modifier + proficiency bonus)
-- `makeSavingThrow(target: Combatant, saveAbility: string, saveDC: number): boolean`
-    - Makes a saving throw against a spell (returns true if save succeeds)
-- `getSpellSlotInfo(caster: Combatant): string`
-    - Returns formatted spell slot information
-- `canUpcast(caster: Combatant, spell: Spell, targetSlotLevel: number): boolean`
-    - Checks if a spell can be upcast (cast using higher-level slot)
-- `upcastSpell(caster: Combatant, spell: Spell, targets: Combatant[], slotLevelUsed: number): SpellCastResult`
-    - Upcasts a spell using a higher-level spell slot
+| Method | Description |
+|--------|-------------|
+| `castSpell(caster, spell, targets)` | Casts spell with slot consumption, attack rolls, and saving throws |
+| `hasSpellSlot(caster, spellLevel)` | Checks if caster has slot of given level available |
+| `consumeSpellSlot(caster, spellLevel)` | Consumes a spell slot |
+| `restoreSpellSlots(caster)` | Restores all slots to maximum (after long rest) |
+| `calculateSaveDC(caster, ability)` | Calculates spell save DC (8 + ability + proficiency) |
+| `makeSavingThrow(target, saveAbility, saveDC)` | Makes saving throw against spell, returns true if succeeds |
+| `getSpellSlotInfo(caster)` | Returns formatted spell slot information |
+| `canUpcast(caster, spell, targetSlotLevel)` | Checks if spell can be upcast to higher level |
+| `upcastSpell(caster, spell, targets, slotLevelUsed)` | Upcasts spell using higher-level slot |
 
 ---
 
