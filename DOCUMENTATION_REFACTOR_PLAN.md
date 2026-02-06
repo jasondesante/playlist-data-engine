@@ -181,9 +181,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: **User note**: This is good as-is, keep it
   - **Summary**: Section is concise (13 lines), shows essential API usage, demonstrates key return properties. No changes needed.
 
-- [ ] **Task 11**: "Character Naming" review
-  - [ ] Subtask: Ensure manual vs deterministic naming is clearly mentioned
-  - [ ] Subtask: Can this be written cleaner while keeping the distinction?
+- [x] **Task 11**: "Character Naming" review
+  - [x] Subtask: Ensure manual vs deterministic naming is clearly mentioned
+  - [x] Subtask: Can this be written cleaner while keeping the distinction?
+  - **Summary**: Reduced from ~40 lines to ~25 lines. Replaced verbose examples with concise table showing three naming modes (Deterministic, Manual override, Non-deterministic). Removed verbose NamingEngine example (replaced with link to DATA_ENGINE_REFERENCE). Kept core example showing automatic name generation. The distinction between manual vs deterministic naming is now clearer in the table format.
 
 - [ ] **Task 12**: "Deterministic Character Generation" review
   - [ ] Subtask: Example shows the concept well - keep minimal
