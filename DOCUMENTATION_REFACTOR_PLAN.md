@@ -140,9 +140,9 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] **User note**: Lines 7-72 may be too detailed for things developers already know
   - **Summary**: Consolidated from 3 options to 2, removed `cp -r` option (unusual), kept `file:` (recommended) and `npm link` (common for dev). Changed headers to single "Installation" with indented options. Reduced from ~22 lines to ~18 lines.
 
-- [ ] **Task 5**: Simplify code blocks
-  - [ ] Subtask: Remove obvious comments
-  - [ ] Subtask: Keep only essential notes
+- [x] **Task 5**: Simplify code blocks
+  - [x] Subtask: Remove obvious comments ✓ No comments present - code blocks are already clean
+  - [x] Subtask: Keep only essential notes ✓ Labels "(Recommended)" and "(for development)" are essential guidance
 
 - [ ] **Task 6**: Consider consolidating to fewer options
   - [ ] Subtask: Could this be one option with alternatives mentioned?
