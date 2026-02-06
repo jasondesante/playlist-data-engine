@@ -242,8 +242,9 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 
 **Goal**: Brief overview + link to EQUIPMENT_SYSTEM.md.
 
-- [ ] **Task 20**: Review equipment section intro
-  - [ ] Subtask: Is the link to EQUIPMENT_SYSTEM.md prominent?
+- [x] **Task 20**: Review equipment section intro
+  - [x] Subtask: Is the link to EQUIPMENT_SYSTEM.md prominent?
+  - **Summary**: Streamlined from ~10 lines to ~9 lines. Removed redundant "Registering, Spawning, and Enchanting Custom Equipment" subsection (the content is fully covered in EQUIPMENT_SYSTEM.md). Changed section heading from "Equipment System Overview" to "Equipment System" for consistency with other sections. Replaced duplicate "For complete documentation/For more examples" links with single clean bullet list pointing to key EQUIPMENT_SYSTEM.md sections. The section now functions as a concise hub similar to the "Extensibility System" section.
 
 - [ ] **Task 21**: Review "Registering, Spawning, and Enchanting Custom Equipment"
   - [ ] Subtask: This is covered in EQUIPMENT_SYSTEM.md - can be reduced to minimal example or link

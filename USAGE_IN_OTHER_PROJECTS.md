@@ -369,15 +369,15 @@ The extensibility system allows you to add custom content at runtime, including 
 ---
 
 
-## Equipment System Overview
+## Equipment System
 
-The playlist-data-engine includes a comprehensive equipment system with custom items, properties, enchanting, and batch spawning.
+Comprehensive equipment system with custom items, properties, enchanting, templates, and batch spawning.
 
-**For complete documentation, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)**
-
-### Registering, Spawning, and Enchanting Custom Equipment
-
-**For more examples including conditional properties, inline features, spell granting, and templates, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)**
+**See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)** for:
+- Equipment properties — Stat bonuses, skills, abilities, damage, conditions
+- Equipment modification — Enchanting, cursing, upgrading at runtime
+- Equipment spawning — Batch spawn by rarity, tags, or templates
+- Equipment-granted features — Items that grant features, skills, or spells
 
 ---
 
