@@ -2304,85 +2304,45 @@ Batch spawning utilities for equipment. Spawns from lists, by rarity, by tags, r
 For usage examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md#batch-spawning).
 
 ### EquipmentGenerator
+*Also known as: Equipment manager, inventory system, gear handler, starting equipment provider*
 
 **Location:** `src/core/generation/EquipmentGenerator.ts`
 
-```typescript
-class EquipmentGenerator {
-    static getStartingEquipment(
-        characterClass: Class
-    ): { weapons: string[]; armor: string[]; items: string[] };
+Manages equipment assignment, inventory, and equipped items for characters. Supports extensibility through ExtensionManager for custom equipment. All equipment lookups check both default and custom equipment databases.
 
-    static initializeEquipment(
-        characterClass: Class
-    ): CharacterEquipment;
+#### Equipment Initialization
 
-    static addItem(
-        equipment: CharacterEquipment,
-        itemName: string,
-        quantity: number = 1
-    ): CharacterEquipment;
+| Method | Description |
+|--------|-------------|
+| `getStartingEquipment(characterClass: Class)` | Get starting equipment for a class (weapons, armor, items arrays) |
+| `initializeEquipment(characterClass: Class)` | Initialize complete equipment with starting gear, auto-equips primary weapon and armor |
 
-    static removeItem(
-        equipment: CharacterEquipment,
-        itemName: string,
-        quantity: number = 1
-    ): CharacterEquipment;
+#### Inventory Management
 
-    static equipItem(
-        equipment: CharacterEquipment,
-        itemName: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
+| Method | Description |
+|--------|-------------|
+| `addItem(equipment: CharacterEquipment, itemName: string, quantity?: number)` | Add item to inventory, returns updated equipment state |
+| `removeItem(equipment: CharacterEquipment, itemName: string, quantity?: number)` | Remove item from inventory, returns updated equipment state |
+| `equipItem(equipment: CharacterEquipment, itemName: string, character?: CharacterSheet)` | Equip item and apply equipment effects to character if provided |
+| `unequipItem(equipment: CharacterEquipment, itemName: string, character?: CharacterSheet)` | Unequip item and remove equipment effects from character if provided |
+| `getInventoryList(equipment: CharacterEquipment)` | Get flattened array of all inventory items |
+| `getEquipmentByType(equipment: CharacterEquipment, type: 'weapons' \| 'armor' \| 'items')` | Get items from specific equipment category |
 
-    static unequipItem(
-        equipment: CharacterEquipment,
-        itemName: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
+#### Equipment Modification
 
-    /**
-     * @internal Private method for internal use. Use getEquipmentDataStatic for external access.
-     */
-    private static getEquipmentData(
-        itemName: string
-    ): EnhancedEquipment | undefined;
+| Method | Description |
+|--------|-------------|
+| `addModification(equipment: CharacterEquipment, itemName: string, modification: EquipmentModification, instanceId?: string, character?: CharacterSheet)` | Add enchantment/curse to item, reapply effects if equipped |
+| `removeModification(equipment: CharacterEquipment, itemName: string, modificationId: string, character?: CharacterSheet)` | Remove modification from item, reapply remaining effects if equipped |
+| `getActiveEffects(equipment: CharacterEquipment, itemName: string, instanceId?: string)` | Get all active properties from base equipment and modifications |
 
-    static getEquipmentDataStatic(
-        itemName: string
-    ): EnhancedEquipment | undefined;
+#### Data Lookup
 
-    static getInventoryList(
-        equipment: CharacterEquipment
-    ): EnhancedInventoryItem[];
+| Method | Description |
+|--------|-------------|
+| `getEquipmentDataStatic(itemName: string)` | Get equipment data from extended database (defaults + custom) |
 
-    static getEquipmentByType(
-        equipment: CharacterEquipment,
-        type: 'weapons' | 'armor' | 'items'
-    ): EnhancedInventoryItem[];
-
-    static addModification(
-        equipment: CharacterEquipment,
-        itemName: string,
-        modification: EquipmentModification,
-        instanceId?: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    static removeModification(
-        equipment: CharacterEquipment,
-        itemName: string,
-        modificationId: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    static getActiveEffects(
-        equipment: CharacterEquipment,
-        itemName: string,
-        instanceId?: string
-    ): EquipmentProperty[];
-}
-```
+For equipment properties, enchanting, and custom equipment examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md).
 
 ---
 

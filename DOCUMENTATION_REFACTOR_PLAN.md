@@ -871,8 +871,9 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Remove example
   - **Summary**: Reduced from ~61 lines to ~27 lines (56% reduction). Converted verbose TypeScript class signature with full method definitions to concise method reference table. Removed separate Parameters/Returns columns - parameter signatures now embedded inline in Method column. Added "Also known as" synonyms for AI discoverability (Loot spawner, equipment batch generator, treasure hoard system). Added prominent link to EQUIPMENT_SYSTEM.md for usage examples.
 
-- [ ] **Task 84**: Transform EquipmentGenerator
-  - [ ] Subtask: Keep as method list
+- [x] **Task 84**: Transform EquipmentGenerator
+  - [x] Subtask: Keep as method list
+  - **Summary**: Reduced from ~85 lines to ~48 lines (44% reduction). Converted verbose TypeScript class signature with full method definitions to organized method reference tables (4 categories: Equipment Initialization, Inventory Management, Equipment Modification, Data Lookup). Added all 13 methods with parameter signatures inline. Added "Also known as" synonyms for AI discoverability (Equipment manager, inventory system, gear handler, starting equipment provider). Added prominent link to EQUIPMENT_SYSTEM.md for equipment properties, enchanting, and custom equipment documentation.
 
 ### Phase 20: Extensibility System (lines 5000-5205)
 
