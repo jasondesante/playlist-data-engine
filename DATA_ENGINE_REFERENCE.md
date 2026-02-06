@@ -1037,54 +1037,53 @@ Extracts metadata fields from playlist track data. All methods are static.
 
 ### AudioAnalyzer
 
-**Location:** `src/core/analysis/AudioAnalyzer.ts`
+*Also known as: Audio fingerprinting, frequency analysis, sonic analyzer*
 
-The `AudioAnalyzer` extracts sonic fingerprints from audio files using Web Audio API. It uses a "Triple Tap" strategy to analyze audio at 5%, 40%, and 70% marks for a representative profile.
+**Location:** [src/core/analysis/AudioAnalyzer.ts](src/core/analysis/AudioAnalyzer.ts)
 
-#### Class: `AudioAnalyzer`
+Extracts sonic fingerprints from audio files using Web Audio API. Analyzes frequency bands (bass, mid, treble dominance) for character generation.
 
-**Constructor:**
-```typescript
-new AudioAnalyzer(options?: AudioAnalyzerOptions)
-```
-- `options.includeAdvancedMetrics` (boolean): Calculate spectral centroid, rolloff, and zero crossing rate. Default: `false`.
-- `options.sampleRate` (number): Sample rate in Hz. Default: `44100`.
-- `options.fftSize` (number): FFT size (power of 2). Default: `2048`.
-- `options.trebleBoost` (number): Treble boost multiplier (0.0-1.0+). Default: `1`.
-- `options.bassBoost` (number): Bass boost multiplier (0.0-1.0+). Default: `1`.
-- `options.midBoost` (number): Mid boost multiplier (0.0-1.0+). Default: `1`.
+#### Constructor Options
 
-**Methods:**
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `includeAdvancedMetrics` | boolean | `false` | Calculate spectral_centroid, spectral_rolloff, zero_crossing_rate |
+| `sampleRate` | number | `44100` | Sample rate in Hz |
+| `fftSize` | number | `2048` | FFT size (must be power of 2) |
+| `trebleBoost` | number | `1` | Treble boost multiplier (0.0-1.0+) |
+| `bassBoost` | number | `1` | Bass boost multiplier (0.0-1.0+) |
+| `midBoost` | number | `1` | Mid boost multiplier (0.0-1.0+) |
 
-- `async extractSonicFingerprint(audioUrl: string): Promise<AudioProfile>`
-    - Downloads and analyzes the audio file.
-    - **Returns:** `AudioProfile` containing:
-        - `bass_dominance`, `mid_dominance`, `treble_dominance` (0-255 scale)
-        - `average_amplitude`
-        - `spectral_centroid`, `spectral_rolloff`, `zero_crossing_rate` (if enabled)
-        - `analysis_metadata`
+#### Methods
 
-#### Helper: `ColorExtractor`
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `extractSonicFingerprint(audioUrl: string)` | `Promise<AudioProfile>` | Downloads and analyzes audio file; returns bass/mid/treble dominance, average_amplitude, optional advanced metrics, and analysis_metadata |
 
-**Location:** `src/core/analysis/ColorExtractor.ts`
+### ColorExtractor
 
-Extracts dominant colors from an image URL.
+*Also known as: Color palette extractor, dominant colors, k-means color analyzer*
 
-- `async extractPalette(imageUrl: string): Promise<ColorPalette>`
-    - Uses K-Means clustering (k=4) to find dominant colors.
-    - Falls back to Median Cut algorithm if K-Means fails.
-    - Calculates brightness, saturation, and monochrome status.
+**Location:** [src/core/analysis/ColorExtractor.ts](src/core/analysis/ColorExtractor.ts)
 
-#### Helper: `SpectrumScanner`
+Extracts dominant colors from image URLs using K-Means clustering (k=4) with Median Cut fallback.
 
-**Location:** `src/core/analysis/SpectrumScanner.ts`
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `extractPalette(imageUrl: string)` | `Promise<ColorPalette>` | Extracts 4 dominant colors ranked by frequency; calculates brightness, saturation, monochrome status |
 
-Separates raw frequency data into bands.
+### SpectrumScanner
 
-- `static separateFrequencyBands(frequencyData: Uint8Array, sampleRate: number): FrequencyBands`
-    - **Bass:** 20Hz - 400Hz (380 Hz range, 11% of spectrum)
-    - **Mid:** 400Hz - 4kHz (3,600 Hz range, 52% of spectrum)
-    - **Treble:** 4kHz - 14kHz (10,000 Hz range, 37% of spectrum)
+*Also known as: Frequency band separator, FFT band analyzer*
+
+**Location:** [src/core/analysis/SpectrumScanner.ts](src/core/analysis/SpectrumScanner.ts)
+
+Separates raw frequency data into bands using rebalanced v2 ranges (prevents treble dominance).
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `separateFrequencyBands(frequencyData, sampleRate)` | `FrequencyBands` | Separates FFT data into bass (20-400Hz), mid (400Hz-4kHz), treble (4kHz-14kHz) bands |
+| `calculateDominance(band, bandWidthHz?)` | `number` | Calculates normalized average amplitude for a frequency band (bandwidth-aware) |
 
 ---
 
