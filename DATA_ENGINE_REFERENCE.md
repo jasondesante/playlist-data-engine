@@ -825,66 +825,23 @@ if (!result.success) {
 | `AbilityScoresSchema` | All six ability scores (STR, DEX, CON, INT, WIS, CHA) in range 1-20 |
 | `CharacterSheetSchema` | Complete character sheet (abilities, HP, skills, equipment, appearance, XP) |
 
-**Logging**
+#### Logging
 
-*Location: `src/utils/logger.ts`*
+*Location: [src/utils/logger.ts](src/utils/logger.ts)*
 
-The Logger utility provides centralized logging with consistent log levels across the application. It supports configurable verbosity, custom handlers for testing, and diagnostic mode for troubleshooting.
+Centralized logging utility with configurable log levels and diagnostic modes.
 
-```typescript
-enum LogLevel {
-    DEBUG = 0,   // Detailed debugging information
-    INFO = 1,    // General operational information
-    WARN = 2,    // Warning conditions that should be addressed
-    ERROR = 3,   // Error conditions that need attention
-    NONE = 4     // Disable all logging
-}
+**Log Levels**
 
-class Logger {
-    // Instance methods
-    debug(message: string, data?: unknown): void
-    info(message: string, data?: unknown): void
-    warn(message: string, data?: unknown): void
-    error(message: string, data?: unknown): void
+| Level | Value | Description |
+|-------|-------|-------------|
+| `DEBUG` | 0 | Detailed debugging information |
+| `INFO` | 1 | General operational information (default) |
+| `WARN` | 2 | Warning conditions that should be addressed |
+| `ERROR` | 3 | Error conditions that need attention |
+| `NONE` | 4 | Disable all logging |
 
-    // Static methods
-    static for(context: string): Logger
-    static setLevel(level: LogLevel): void
-    static getLevel(): LogLevel
-    static configure(config: LoggerConfig): void
-    static reset(): void
-
-    // Verbose mode (convenience for setting DEBUG level)
-    static enableVerbose(): void
-    static disableVerbose(): void
-    static setVerbose(enabled: boolean): void
-    static isVerbose(): boolean
-
-    // Diagnostic mode (maximum verbosity for troubleshooting)
-    static enableDiagnosticMode(): void
-    static disableDiagnosticMode(): void
-    static isDiagnosticMode(): boolean
-}
-
-function createLogger(context: string): Logger
-
-interface LogEntry {
-    timestamp: Date
-    level: LogLevel
-    context: string
-    message: string
-    data?: unknown
-}
-
-interface LoggerConfig {
-    level?: LogLevel
-    includeTimestamp?: boolean
-    includeContext?: boolean
-    customHandler?: (entry: LogEntry) => void
-}
-```
-
-**Method Reference:**
+**Method Reference**
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -906,72 +863,36 @@ interface LoggerConfig {
 | `Logger.disableDiagnosticMode()` | `void` | Disable diagnostic mode |
 | `Logger.isDiagnosticMode()` | `boolean` | Check if diagnostic mode is enabled |
 
-**Sensor Dashboard**
+**Types**
 
-*Location: `src/utils/sensorDashboard.ts`*
+*Location: [src/utils/logger.ts](src/utils/logger.ts)*
 
-The Sensor Dashboard provides formatted console output for sensor diagnostics during development and debugging. It displays sensor status, health indicators, cache statistics, performance metrics, and recent failures with optional color support.
+| Type | Description |
+|------|-------------|
+| `LogEntry` | Single log entry structure (timestamp, level, context, message, data) |
+| `LoggerConfig` | Configuration options (level, includeTimestamp, includeContext, customHandler) |
 
-```typescript
-interface DashboardConfig {
-    /** Use colors in output (default: true, auto-disabled in non-TTY environments) */
-    useColors?: boolean;
-    /** Compact mode for smaller output (default: false) */
-    compact?: boolean;
-    /** Show timestamp (default: true) */
-    showTimestamp?: boolean;
-    /** Maximum number of recent failures to show (default: 5) */
-    maxFailures?: number;
-}
-```
+#### Sensor Dashboard
 
-**Functions:**
+*Location: [src/utils/sensorDashboard.ts](src/utils/sensorDashboard.ts)*
 
-- `displayEnvironmentalDiagnostics(diagnostics, config?): void`
-    - Displays environmental sensor dashboard (GPS, motion, weather, light sensors)
-    - Shows sensor health, permissions, availability, cache stats, API performance, recent failures
-    - **Parameters:**
-        - `diagnostics`: Return value of `EnvironmentalSensors.getDiagnostics()`
-        - `config`: Optional `DashboardConfig` object
-- `displayGamingDiagnostics(diagnostics, config?): void`
-    - Displays gaming platform sensor dashboard (Steam, Discord)
-    - Shows platform connection status, current game, polling status, cache, API performance
-    - **Parameters:**
-        - `diagnostics`: Return value of `GamingPlatformSensors.getDiagnostics()`
-        - `config`: Optional `DashboardConfig` object
-- `displaySystemDashboard(data, config?): void`
-    - Displays a combined system dashboard with quick health summary
-    - **Parameters:**
-        - `data`: Object with optional `environmental` and `gaming` diagnostics
-        - `config`: Optional `DashboardConfig` object
+Diagnostic tool for visual console output during development and debugging. Displays sensor status, health indicators, cache statistics, performance metrics, and recent failures.
 
-**SensorDashboard Object:**
+**Functions**
 
-All dashboard functions are also available as methods of the `SensorDashboard` object:
+| Function | Description |
+|----------|-------------|
+| `displayEnvironmentalDiagnostics(diagnostics, config?)` | Displays environmental sensor dashboard (GPS, motion, weather, light sensors) |
+| `displayGamingDiagnostics(diagnostics, config?)` | Displays gaming platform sensor dashboard (Steam, Discord) |
+| `displaySystemDashboard(data, config?)` | Displays combined system dashboard with health summary |
 
-```typescript
-import { SensorDashboard } from 'playlist-data-engine';
+**Types**
 
-SensorDashboard.displayEnvironmentalDiagnostics(diagnostics);
-SensorDashboard.displayGamingDiagnostics(diagnostics);
-SensorDashboard.displaySystemDashboard({ environmental, gaming });
-```
+*Location: [src/utils/sensorDashboard.ts](src/utils/sensorDashboard.ts)*
 
-**Dashboard Output Sections:**
-
-*Environmental Diagnostics:*
-- Sensor Status (health, permissions, availability, consecutive failures, last error)
-- Cache Statistics (geolocation age/expiry, weather cache size, hit rates)
-- API Performance (Weather API, Forecast API - calls, success rate, avg/min/max/P95/P99 times)
-- Recent Failures (sensor type, error, retry attempt, time ago)
-- Context Data (geolocation, motion, weather, light, biome availability)
-
-*Gaming Diagnostics:*
-- Platform Status (Steam authentication/API key, Discord connection/client ID/state)
-- Gaming Context (active gaming, platform, current game with session duration/party size)
-- Polling Status (active status, interval, exponential backoff)
-- Cache (game metadata size, cached games list)
-- API Performance (Current Game API, Metadata API metrics)
+| Type | Description |
+|------|-------------|
+| `DashboardConfig` | Configuration options (useColors, compact, showTimestamp, maxFailures) |
 
 ---
 

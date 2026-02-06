@@ -680,14 +680,16 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Add note: "See src/utils/validators.ts for schema definitions"
   - **Summary**: Reduced from ~11 lines to ~17 lines but improved quality. Removed specific line number references (Commandment III: avoid line ranges). Converted bullet list to scannable table format with Schema/Validates columns. Added brief code example showing idiomatic Zod `safeParse()` usage pattern. Added "Also known as" synonyms for AI discoverability (Zod schemas, runtime validators, type validation).
 
-- [ ] **Task 48**: Transform Logger documentation
-  - [ ] Subtask: Keep LogLevel enum
-  - [ ] Subtask: Logger class → method reference table
-  - [ ] Subtask: LoggerConfig → link to source or keep minimal
+- [x] **Task 48**: Transform Logger documentation
+  - [x] Subtask: Keep LogLevel enum
+  - [x] Subtask: Logger class → method reference table
+  - [x] Subtask: LoggerConfig → link to source or keep minimal
+  - **Summary**: Reduced from ~80 lines to ~55 lines (31% reduction). Converted full TypeScript type definitions (LogLevel enum, Logger class, LogEntry, LoggerConfig) into scannable tables with source links. LogLevel converted to table format with Value column. Logger methods kept as comprehensive method reference table. LogEntry and LoggerConfig consolidated into Types table with source link. Removed verbose descriptive text at the top of the section.
 
-- [ ] **Task 49**: Transform Sensor Dashboard
-  - [ ] Subtask: Keep as concise reference (it's diagnostic tool, not core)
-  - [ ] Subtask: Functions list + DashboardConfig
+- [x] **Task 49**: Transform Sensor Dashboard
+  - [x] Subtask: Keep as concise reference (it's diagnostic tool, not core)
+  - [x] Subtask: Functions list + DashboardConfig
+  - **Summary**: Reduced from ~75 lines to ~20 lines (73% reduction). Removed verbose descriptions, example code blocks, and detailed "Dashboard Output Sections" (Environmental/Gaming diagnostics breakdown). Converted to concise function reference table (3 functions) with one-line descriptions each. Consolidated DashboardConfig into Types table with source link. Added note that this is a diagnostic tool for development/debugging.
 
 ### Phase 13: Game Data Reference (lines 1800-2100)
 
