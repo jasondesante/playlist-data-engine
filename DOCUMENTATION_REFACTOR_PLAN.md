@@ -197,9 +197,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Link to XP_AND_STATS.md for stat strategies
   - **Summary**: Streamlined from ~56 lines to ~38 lines. Removed verbose console.log statements in example, replaced with concise inline comments showing what each function returns. Moved "For deeper dives" links to bottom of section for cleaner flow. All three topic docs (XP_AND_STATS, EXTENSIBILITY_GUIDE, EQUIPMENT_SYSTEM) are now linked.
 
-- [ ] **Task 14**: "Environmental Sensors" and "Gaming Platform Integration"
-  - [ ] Subtask: These just link to IRL_SENSORS.md - good
-  - [ ] Subtask: Could add one-line each about what they provide
+- [x] **Task 14**: "Environmental Sensors" and "Gaming Platform Integration"
+  - [x] Subtask: These just link to IRL_SENSORS.md - good
+  - [x] Subtask: Could add one-line each about what they provide
+  - **Summary**: Added concise one-line descriptions for each section. Environmental Sensors: "GPS, motion, weather, and light sensors that provide XP modifiers based on real-world conditions (running, night, storm, altitude)." Gaming Platform Integration: "Steam game detection and Discord Rich Presence integration that provide XP bonuses based on gaming activity."
 
 - [ ] **Task 15**: "Combat System" link
   - [ ] Subtask: Just links to COMBAT_SYSTEM.md - correct approach

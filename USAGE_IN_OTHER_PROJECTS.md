@@ -263,9 +263,13 @@ const appearance = AppearanceGenerator.generate(track.id, character.class, audio
 
 ### Environmental Sensors
 
+GPS, motion, weather, and light sensors that provide XP modifiers based on real-world conditions (running, night, storm, altitude).
+
 **For detailed documentation, see [IRL_SENSORS.md](docs/IRL_SENSORS.md)**
 
 ### Gaming Platform Integration
+
+Steam game detection and Discord Rich Presence integration that provide XP bonuses based on gaming activity.
 
 **For detailed documentation, see [IRL_SENSORS.md](docs/IRL_SENSORS.md)**
 
