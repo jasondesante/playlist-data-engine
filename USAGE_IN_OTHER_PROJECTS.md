@@ -63,13 +63,13 @@ See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
 - Custom classes and races — Template-based class inheritance, custom races
 - Spawn rate control — Control custom content frequency
 
-### Equipment System
+### Equipment System Links
 See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for:
 - Custom equipment — Properties, enchanting, templates
 - Equipment spawning — Batch spawn by rarity, tags, or templates
 
 ### Developer Reference
-- [Equipment System Overview](#equipment-system) — Quick introduction
+- [Equipment System Overview](#equipment-system-overview) — Quick introduction
 - [Extensibility Overview](#extensibility-system) — Registration and custom content
 - [Validation Schemas](#validation-schemas) — Runtime type validation with Zod
 - [Development Workflow](#development-workflow) — Build, test, and reload
@@ -172,7 +172,7 @@ const updater = new CharacterUpdater(statManager);
 
 ## Specific Features
 
-### Color Extraction 
+### Color Extraction
 
 ```typescript
 import { ColorExtractor } from 'playlist-data-engine';
@@ -437,7 +437,7 @@ See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
 ---
 
 
-## Equipment System
+## Equipment System Overview
 
 The playlist-data-engine includes a comprehensive equipment system with custom items, properties, enchanting, and batch spawning.
 
