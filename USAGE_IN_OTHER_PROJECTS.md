@@ -442,48 +442,13 @@ All variables are optional. For complete configuration with examples and program
 
 ## Troubleshooting
 
-### Library changes not reflecting in my project
-
-If using `file://` paths:
-```bash
-# Rebuild the library
-cd /path/to/playlist-data-engine
-npm run build
-
-# Clear node_modules cache in your project
-cd /path/to/your/project
-rm -rf node_modules/.bin/playlist-data-engine
-```
-
-If using `npm link`, it should be instant.
-
-### TypeScript errors about types
-
-Make sure your project's `tsconfig.json` includes:
-```json
-{
-  "compilerOptions": {
-    "moduleResolution": "node",
-    "esModuleInterop": true
-  }
-}
-```
+### Library changes not reflecting
+- With `npm link`: Changes are instant
+- With `file://` paths: Run `npm run build` in the library, then clear your project's cache: `rm -rf node_modules/.bin/playlist-data-engine`
 
 ### Audio analysis not working
+The `AudioAnalyzer` uses the Web Audio API, which requires:
+1. A browser environment, **or**
+2. A Node.js polyfill like `web-audio-api`
 
-The AudioAnalyzer uses the Web Audio API, which requires either:
-1. A browser environment
-2. Mocked Web Audio API (for Node.js testing)
-3. A polyfill like `web-audio-api` npm package
-
----
-
-## Building Status
-
-✅ Library successfully built!
-- `dist/playlist-data-engine.mjs` - ES module (330 KB)
-- `dist/playlist-data-engine.js` - CommonJS (205 KB)
-- Type definitions available in `dist/index.d.ts`
-
-You now have a fully functional, bundled library ready to use in other projects!
-
+For TypeScript configuration issues, ensure `tsconfig.json` has `"moduleResolution": "node"` and `"esModuleInterop": true`.

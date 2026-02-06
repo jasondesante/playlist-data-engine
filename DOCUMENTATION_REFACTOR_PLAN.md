@@ -290,15 +290,17 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] **User note**: Summarized in-place
   - **Summary**: Reduced from ~21 lines to ~11 lines (48% reduction). Converted verbose bash code block with comments to clean table format. Removed redundant sentences about optional variables (clear from context). Added prominent link to `.env.example` for complete configuration.
 
-- [ ] **Task 28**: "Troubleshooting" section
-  - [ ] Subtask: Keep only common/non-obvious issues
-  - [ ] Subtask: Remove obvious solutions (e.g., "did you run npm install?")
-  - [ ] Subtask: Link to relevant docs for detailed help
-  - [ ] **User note**: Summarize in-place, don't create new files
+- [x] **Task 28**: "Troubleshooting" section
+  - [x] Subtask: Keep only common/non-obvious issues
+  - [x] Subtask: Remove obvious solutions (e.g., "did you run npm install?")
+  - [x] Subtask: Link to relevant docs for detailed help
+  - [x] **User note**: Summarized in-place, didn't create new files
+  - **Summary**: Reduced from ~36 lines to ~12 lines (67% reduction). Condensed "Library changes not reflecting" to bulleted format. Condensed "Audio analysis not working" to numbered list. Combined "TypeScript errors about types" into one-line note at bottom. Removed verbose code blocks and bash commands - developers know how to run npm and edit tsconfig.json.
 
-- [ ] **Task 29**: "Building Status" section
-  - [ ] Subtask: Is this necessary? It's build output that changes
-  - [ ] Subtask: Could be in a separate BUILD.md or CONTRIBUTING.md?
+- [x] **Task 29**: "Building Status" section
+  - [x] Subtask: Is this necessary? It's build output that changes
+  - [x] Subtask: Could be in a separate BUILD.md or CONTRIBUTING.md?
+  - **Summary**: REMOVED ENTIRELY. This section contained transient build output (file sizes, dates, build status messages) that doesn't belong in documentation. It's CI/build artifact information that changes with each build. Users can run `npm run build` themselves to see current output. If build status is needed, it belongs in CI/CD pipeline output, not user-facing documentation.
 
 ---
 
