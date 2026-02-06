@@ -781,12 +781,13 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Keep as method list
   - **Summary**: Already in transformed format. Section has location link, "Also known as" synonyms, concise description, and method reference table with all 3 methods (checkMastery, calculateMasteryBonus, isJustMastered). No changes needed - already follows Commandments I, II, IV, VI.
 
-- [ ] **Task 68**: Transform stat increase documentation
-  - [ ] Subtask: StatManager → keep as method reference table
-  - [ ] Subtask: Built-in strategies table is useful - keep
-  - [ ] Subtask: Strategy types table is useful - keep
-  - [ ] Subtask: Remove all examples (they're in XP_AND_STATS.md)
-  - [ ] Subtask: Remove "Optional Features" banked points/respec (implementation guide, not reference)
+- [x] **Task 68**: Transform stat increase documentation
+  - [x] Subtask: StatManager → keep as method reference table
+  - [x] Subtask: Built-in strategies table is useful - keep
+  - [x] Subtask: Strategy types table is useful - keep
+  - [x] Subtask: Remove all examples (they're in XP_AND_STATS.md)
+  - [x] Subtask: Remove "Optional Features" banked points/respec (implementation guide, not reference)
+  - **Summary**: Reduced from ~335 lines to ~65 lines (81% reduction). Converted verbose StatManager documentation with full type definitions and methods to concise method reference table (9 methods). Converted StatIncreaseConfig, StatIncreaseResult, and StatSelectionValidationError from full type definitions to concise Types table with source links. Kept Built-in Strategies table (7 strategies) and Strategy Types table (6 strategy values) - both are essential reference. Removed all verbose examples (updateConfig, stat decreases, manual selection, smart auto-selection, potion/item boosts, custom formulas) - these are fully covered in XP_AND_STATS.md. Removed "Optional Features" section with banked points and respec system examples (~70 lines) - implementation guide material, not reference. Added "Also known as" synonyms for AI discoverability (Stat boosts, ability score increases, stat progression, attribute increases). Added link to XP_AND_STATS.md for complete examples.
 
 ### Phase 17: Configuration & Sensors (lines 3600-4100)
 
