@@ -43,29 +43,34 @@ cp -r /path/to/playlist-data-engine/dist /path/to/your/project/vendor/
 - [Playlist Parsing and Character Generation](#basic-playlist-parsing-and-character-generation) — Parse playlists, analyze audio, generate characters
 - [XP from Listening](#earning-xp-from-listening-to-music) — Session tracking, XP calculation, level-ups
 
-### Advanced Pipeline
-- [Combining All Systems](#combining-all-systems) — Full pipeline with environmental and gaming context
-
 ### Specific Features
-- [Color Extraction and Naming](#color-extraction-and-character-naming) — Artwork colors and RPG-style names
+- [Color Extraction](#color-extraction) — Artwork color palette extraction
+- [Character Naming](#character-naming) — Automatic and manual RPG-style name generation
+- [Deterministic Character Generation](#deterministic-character-generation) — Same seed, same character
 - [Advanced Character Features](#advanced-character-features) — Skills, spells, equipment, appearance
+- [Stat Strategies](#stat-strategies) — Level-up stat increase options
+- [XP Scaling](#xp-scaling) — Progression configuration
 - [Environmental Sensors](#environmental-sensors) — GPS, motion, weather, light modifiers
 - [Gaming Platform Integration](#gaming-platform-integration) — Steam and Discord bonuses
 - [Combat System](#combat-system) — Turn-based D&D 5e combat
-- [Equipment System](#equipment-system) — Custom equipment, properties, enchanting
+
+### Advanced Pipeline
+- [Combining All Systems](#combining-all-systems) — Full pipeline with environmental and gaming context
 
 ### Extensibility
-- [Custom Features and Skills](#custom-features-and-skills) — Class features, racial traits, skills
-- [Custom Classes](#custom-classes) — New or extended classes
-- [Spawn Rate Control](#spawn-rate-control) — Control custom content frequency
+See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
+- Custom features and skills — Class features, racial traits, custom skills
+- Custom classes and races — Template-based class inheritance, custom races
+- Spawn rate control — Control custom content frequency
 
-### Common Patterns
-- [Deterministic Generation](#deterministic-character-generation) — Same seed, same character
-- [XP Bonus Calculation](#understanding-xp-bonus-calculation) — Environmental and gaming modifiers
-- [Manual Level-Up Processing](#manual-level-up-processing) — Programmatic level-ups
-- [Hash Utilities and Seeding](#hash-utilities-and-deterministic-seeding) — Deterministic seeds and RNG
+### Equipment System
+See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for:
+- Custom equipment — Properties, enchanting, templates
+- Equipment spawning — Batch spawn by rarity, tags, or templates
 
 ### Developer Reference
+- [Equipment System Overview](#equipment-system) — Quick introduction
+- [Extensibility Overview](#extensibility-system) — Registration and custom content
 - [Validation Schemas](#validation-schemas) — Runtime type validation with Zod
 - [Development Workflow](#development-workflow) — Build, test, and reload
 - [Environment Variables](#environment-variables) — API keys and sensor configuration

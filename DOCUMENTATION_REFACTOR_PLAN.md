@@ -119,10 +119,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Are the links to other docs prominent?
   - [x] Subtask: Remove any redundant explanations
 
-- [ ] **Task 2**: Optimize Table of Contents structure
-  - [ ] Subtask: Group examples logically (Basic → Advanced → Specific → Extensibility → Other Docs)
-  - [ ] Subtask: Check for any missing important sections
-  - [ ] Subtask: Ensure "Other Docs" section links are accurate
+- [x] **Task 2**: Optimize Table of Contents structure
+  - [x] Subtask: Group examples logically (Basic → Advanced → Specific → Extensibility → Other Docs)
+  - [x] Subtask: Check for any missing important sections
+  - [x] Subtask: Ensure "Other Docs" section links are accurate
 
 - [ ] **Task 3**: Verify all cross-links in TOC work
   - [ ] Subtask: Check each anchor link
