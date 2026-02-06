@@ -883,10 +883,11 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Remove any examples (they're in EXTENSIBILITY_GUIDE.md)
   - **Summary**: Reduced from ~123 lines to ~78 lines (37% reduction). Removed verbose TypeScript class signature block with full interface definitions. Converted to concise Types table with source links. Method reference table kept and improved with inline parameter signatures. Spawn modes table enhanced with "Use Case" column. Added "Also known as" synonyms for AI discoverability (Content registry, customization manager, spawn rate controller, mod registration system). Added prominent link to EXTENSIBILITY_GUIDE.md for usage examples.
 
-- [ ] **Task 86**: Transform FeatureQuery
-  - [ ] Subtask: Keep method reference table
-  - [ ] Subtask: Keep interface definitions (they're important)
-  - [ ] Subtask: Remove detailed explanations
+- [x] **Task 86**: Transform FeatureQuery
+  - [x] Subtask: Keep method reference table
+  - [x] Subtask: Keep interface definitions (they're important)
+  - [x] Subtask: Remove detailed explanations
+  - **Summary**: Reduced from ~180 lines to ~83 lines (54% reduction). Transformed both FeatureQuery (~53 lines) and FeatureValidator (~30 lines) from verbose documentation to concise reference format. Converted TypeScript class signatures and full interface definitions to scannable Types tables with source links. Removed verbose Architecture, Registration, and Design principle paragraphs. Removed "Note on Registration" and "Note on Initialization" code block examples. Removed detailed validation rules bullet points (replaced with link to PREREQUISITES.md). Added "Also known as" synonyms for AI discoverability (Feature registry, class feature system, racial trait system for FeatureQuery; Feature validation system, class feature validator, racial trait validator for FeatureValidator). Added prominent link to EXTENSIBILITY_GUIDE.md for usage examples. Method reference tables kept with inline parameter signatures.
 
 - [ ] **Task 87**: Transform SkillQuery, SpellQuery
   - [ ] Subtask: Keep as brief summaries if present

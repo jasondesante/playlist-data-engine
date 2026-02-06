@@ -2785,138 +2785,29 @@ Singleton registry for managing runtime customization of procedural generation l
 
 ### FeatureQuery
 
+*Also known as: Feature registry, class feature system, racial trait system*
+
 **Location:** `src/core/features/FeatureQuery.ts`
 
 Query and validation layer for class features and racial traits stored in ExtensionManager.
 
-**Architecture:** FeatureQuery provides query methods and validation helpers. All features and traits are stored in ExtensionManager; FeatureQuery provides:
-- Query methods that read from ExtensionManager with caching for performance
-- Feature-related helper methods (prerequisite validation, subrace support, etc.)
-- Cache invalidation for manual updates
+**For usage examples and detailed guides:** See [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
 
-**Registration:** Use `ExtensionManager.register('classFeatures', [...])` or `ExtensionManager.register('racialTraits', [...])` directly.
+---
 
-**Design principle:** No duplicate storage. All three registries (SpellQuery, SkillQuery, FeatureQuery) follow the same pattern: they do not maintain their own copy of data. All data lives in ExtensionManager.
+**Types:**
 
-```typescript
-class FeatureQuery {
-    // Instance Management
-    static getInstance(): FeatureQuery
-
-    // Class Features (reads from ExtensionManager with caching)
-    getClassFeatures(characterClass: Class, level?: number): ClassFeature[]
-    getClassFeaturesForLevel(characterClass: Class, level: number): ClassFeature[]
-    getClassFeatureById(featureId: string): ClassFeature | undefined
-    getAllClassFeatures(): Map<string, ClassFeature[]>
-
-    // Racial Traits (reads from ExtensionManager with caching)
-    getRacialTraits(race: Race): RacialTrait[]
-    getRacialTraitsForSubrace(race: Race, subrace: string): RacialTrait[]
-    getBaseRacialTraits(race: Race): RacialTrait[]
-    getSubraceTraits(race: Race, subrace: string): RacialTrait[]
-    getAvailableSubraces(race: Race): string[]
-    getRacialTraitById(traitId: string): RacialTrait | undefined
-    getAllRacialTraits(): Map<string, RacialTrait[]>
-
-    // Validation (delegates to FeatureValidator)
-    validatePrerequisites(feature: ClassFeature | RacialTrait, character: CharacterSheet): ValidationResult
-    validateFeaturePrerequisites(feature: ClassFeature, character: CharacterSheet): ValidationResult
-    validateTraitPrerequisites(trait: RacialTrait, character: CharacterSheet): ValidationResult
-    canGainFeature(feature: ClassFeature | RacialTrait, character: CharacterSheet): boolean
-
-    // Registry Statistics
-    getRegisteredClasses(): Class[]
-    getRegisteredRaces(): Race[]
-    getQueryStats(): { totalClassFeatures: number; totalRacialTraits: number; classesWithFeatures: number; racesWithTraits: number }
-
-    // Export (reads from ExtensionManager)
-    exportRacialTraits(): Record<string, RacialTrait[]>
-
-    // Equipment Features (static methods)
-    static getEquipmentFeatures(equipmentName: string): ClassFeature[]
-    static isValidEquipmentFeature(featureId: string): boolean
-}
-
-interface ClassFeature {
-    id: string;
-    name: string;
-    description: string;
-    type: FeatureType;
-    class: Class;
-    level: number;
-    prerequisites?: FeaturePrerequisite;
-    effects?: FeatureEffect[];
-    source: 'default' | 'custom';
-    tags?: string[];
-    lore?: string;
-}
-
-interface RacialTrait {
-    id: string;
-    name: string;
-    description: string;
-    race: Race;
-    subrace?: string;
-    prerequisites?: FeaturePrerequisite;
-    effects?: FeatureEffect[];
-    source: 'default' | 'custom';
-    tags?: string[];
-    lore?: string;
-}
-
-type FeatureType = 'passive' | 'active' | 'resource' | 'trigger';
-
-type FeatureEffectType =
-    | 'stat_bonus'
-    | 'skill_proficiency'
-    | 'ability_unlock'
-    | 'passive_modifier'
-    | 'resource_grant'
-    | 'spell_slot_bonus';
-
-interface FeatureEffect {
-    type: FeatureEffectType;
-    target: string;
-    value: number | string | boolean;
-    condition?: string;
-    description?: string;
-}
-
-interface FeaturePrerequisite {
-    level?: number;
-    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
-    class?: Class;
-    race?: Race;
-    subrace?: string;
-    features?: string[];
-    skills?: string[];
-    spells?: string[];
-    custom?: string;
-}
-
-interface ValidationResult {
-    valid: boolean;
-    errors?: string[];
-    unmet?: string[];
-}
-
-// Additional types for character storage
-
-interface CharacterFeature {
-    featureId: string;
-    name: string;
-    gainedAtLevel: number;
-    source: 'default' | 'custom';
-    state?: Record<string, number | boolean | string>;
-    choices?: Record<string, string | number | boolean>;
-}
-
-interface CharacterTrait {
-    traitId: string;
-    name: string;
-    source: 'default' | 'custom';
-}
-```
+| Type | Location | Description |
+|------|----------|-------------|
+| `ClassFeature` | `src/core/features/FeatureQuery.ts` | Class feature with id, name, description, type, class, level, prerequisites, effects, source, tags, lore |
+| `RacialTrait` | `src/core/features/FeatureQuery.ts` | Racial trait with id, name, description, race, optional subrace, prerequisites, effects, source, tags, lore |
+| `FeatureType` | `src/core/types/Character.ts` | Feature type: `'passive'` | `'active'` | `'resource'` | `'trigger'` |
+| `FeatureEffectType` | `src/core/types/Character.ts` | Effect type: `'stat_bonus'` | `'skill_proficiency'` | `'ability_unlock'` | `'passive_modifier'` | `'resource_grant'` | `'spell_slot_bonus'` |
+| `FeatureEffect` | `src/core/types/Character.ts` | Feature effect with type, target, value, optional condition, description |
+| `FeaturePrerequisite` | `src/core/types/Character.ts` | Prerequisite with level, abilities, class, race, subrace, features, skills, spells, custom |
+| `ValidationResult` | `src/core/features/FeatureValidator.ts` | Validation result with valid, errors, unmet |
+| `CharacterFeature` | `src/core/types/Character.ts` | Stored feature on character with featureId, name, gainedAtLevel, source, state, choices |
+| `CharacterTrait` | `src/core/types/Character.ts` | Stored trait on character with traitId, name, source |
 
 **Method Reference:**
 
@@ -2945,121 +2836,38 @@ interface CharacterTrait {
 | `getEquipmentFeatures()` | `equipmentName` | `ClassFeature[]` | Get features that can be granted by equipment (static) |
 | `isValidEquipmentFeature()` | `featureId` | `boolean` | Check if feature can be granted by equipment (static) |
 
-**Note on Registration:**
-
-**Class features** must be registered via ExtensionManager:
-```typescript
-ExtensionManager.getInstance().register('classFeatures', [featureData]);
-```
-
-**Racial traits** must be registered via ExtensionManager:
-```typescript
-ExtensionManager.getInstance().register('racialTraits', [traitData]);
-```
-
-**Note on Initialization:**
-
-Default class features and racial traits are initialized via ExtensionManager:
-```typescript
-ExtensionManager.getInstance().initializeDefaults('classFeatures', DEFAULT_CLASS_FEATURES)
-ExtensionManager.getInstance().initializeDefaults('racialTraits', DEFAULT_RACIAL_TRAITS)
-```
-
 ---
 
 ### FeatureValidator
+
+*Also known as: Feature validation system, class feature validator, racial trait validator*
 
 **Location:** `src/core/features/FeatureValidator.ts`
 
 Utility class for validating class features and racial traits against strict schemas. All methods are static.
 
-```typescript
-class FeatureValidator {
-    // Feature Validation
-    static validateClassFeature(feature: unknown): ValidationResult
-    static validateRacialTrait(trait: unknown): ValidationResult
+**For detailed validation rules and runtime behavior:** See [docs/PREREQUISITES.md#validation-system](docs/PREREQUISITES.md#validation-system)
 
-    // Batch Validation
-    static validateClassFeatures(features: unknown[]): ValidationResult
-    static validateRacialTraits(traits: unknown[]): ValidationResult
+---
 
-    // Component Validation
-    static validateEffect(effect: unknown): ValidationResult
-    static validatePrerequisites(prerequisites: unknown): ValidationResult
-}
+**Types:**
 
-interface ValidationResult {
-    valid: boolean;
-    errors: string[];
-}
+| Type | Location | Description |
+|------|----------|-------------|
+| `ValidationResult` | `src/core/features/FeatureValidator.ts` | Validation result with `valid: boolean` and `errors: string[]` |
 
-// Helper functions (convenience wrappers)
-function validateClassFeature(feature: unknown): ValidationResult
-function validateRacialTrait(trait: unknown): ValidationResult
-function validateClassFeatures(features: unknown[]): ValidationResult
-function validateRacialTraits(traits: unknown[]): ValidationResult
-```
+---
 
 **Method Reference:**
 
 | Method | Parameters | Returns | Description |
 |--------|-----------|---------|-------------|
-| `validateClassFeature()` | `feature: unknown` | `ValidationResult` | Validate class feature schema including required fields, enums, and value ranges |
-| `validateRacialTrait()` | `trait: unknown` | `ValidationResult` | Validate racial trait schema including required fields, enums, and value ranges |
+| `validateClassFeature()` | `feature: unknown` | `ValidationResult` | Validate class feature schema (id, name, description, type, class, level, source, prerequisites, effects) |
+| `validateRacialTrait()` | `trait: unknown` | `ValidationResult` | Validate racial trait schema (id, name, description, race, source, subrace, prerequisites, effects) |
 | `validateClassFeatures()` | `features: unknown[]` | `ValidationResult` | Validate array of class features with index-based error reporting |
 | `validateRacialTraits()` | `traits: unknown[]` | `ValidationResult` | Validate array of racial traits with index-based error reporting |
 | `validateEffect()` | `effect: unknown` | `ValidationResult` | Validate feature effect (type, target, value, condition) |
 | `validatePrerequisites()` | `prerequisites: unknown` | `ValidationResult` | Validate prerequisite object (level, abilities, class, race, subrace, features, skills, spells) |
-
-**Class Feature Validation Rules:**
-
-`validateClassFeature()` checks the following required fields:
-- `id` - Must be a string in `lowercase_with_underscores` format (e.g., `barbarian_rage`, `fighter_action_surge`)
-- `name` - Must be a string
-- `description` - Must be a string
-- `type` - Must be one of: `passive`, `active`, `resource`, `trigger`
-- `class` - Must be a valid default class or custom class registered via ExtensionManager
-- `level` - Must be a number between 1 and 20
-- `source` - Must be `default` or `custom`
-
-Optional fields validated:
-- `prerequisites` - Must pass prerequisite validation
-- `effects` - Array of effects, each must pass effect validation
-- `tags` - Array of strings
-- `lore` - String (flavor text)
-- `subrace` - String (for subrace-specific features)
-
-**Racial Trait Validation Rules:**
-
-`validateRacialTrait()` checks the following required fields:
-- `id` - Must be a string in `lowercase_with_underscores` format
-- `name` - Must be a string
-- `description` - Must be a string
-- `race` - Must be a valid default race or custom race registered via ExtensionManager
-- `source` - Must be `default` or `custom`
-
-Optional fields validated:
-- `subrace` - String (for subrace-specific traits)
-- `prerequisites` - Must pass prerequisite validation
-- `effects` - Array of effects, each must pass effect validation
-- `tags` - Array of strings
-- `lore` - String (flavor text)
-
-**Effect Validation Rules:**
-
-`validateEffect()` checks:
-- `type` - Must be one of: `stat_bonus`, `skill_proficiency`, `ability_unlock`, `passive_modifier`, `resource_grant`, `spell_slot_bonus`
-- `target` - Must be a string (target depends on effect type)
-- `value` - Required (number, string, or boolean depending on type)
-
-For `skill_proficiency` effects:
-- `value` - Must be one of: `none`, `proficient`, `expertise`
-
-**Prerequisite Validation:**
-
-**For detailed validation rules and runtime behavior:** See [docs/PREREQUISITES.md#validation-system](docs/PREREQUISITES.md#validation-system)
-
-`validatePrerequisites()` validates prerequisite objects and their runtime values against a character.
 
 ---
 
