@@ -674,10 +674,11 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: SeededRNG class - keep method reference table
   - **Summary**: Reduced from ~48 lines to ~36 lines (25% reduction). Converted hash functions from indented bullet list to cleaner table format. Removed duplicate SeededRNG class definition block (the method reference table already provides complete API documentation). Both sections now use consistent table format with source links.
 
-- [ ] **Task 47**: Transform Validation Schemas
-  - [ ] Subtask: List available schemas with brief descriptions
-  - [ ] Subtask: Remove schema definitions (they're Zod schemas in code)
-  - [ ] Subtask: Add note: "See src/utils/validators.ts for schema definitions"
+- [x] **Task 47**: Transform Validation Schemas
+  - [x] Subtask: List available schemas with brief descriptions
+  - [x] Subtask: Remove schema definitions (they're Zod schemas in code)
+  - [x] Subtask: Add note: "See src/utils/validators.ts for schema definitions"
+  - **Summary**: Reduced from ~11 lines to ~17 lines but improved quality. Removed specific line number references (Commandment III: avoid line ranges). Converted bullet list to scannable table format with Schema/Validates columns. Added brief code example showing idiomatic Zod `safeParse()` usage pattern. Added "Also known as" synonyms for AI discoverability (Zod schemas, runtime validators, type validation).
 
 - [ ] **Task 48**: Transform Logger documentation
   - [ ] Subtask: Keep LogLevel enum

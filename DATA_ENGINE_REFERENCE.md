@@ -802,15 +802,28 @@ Deterministic random number generator for reproducible results. The same seed al
 
 **Validation Schemas**
 
-*Location: `src/utils/validators.ts`*
+*Also known as: Zod schemas, runtime validators, type validation*
 
-Zod validation schemas for runtime type validation of playlist, audio, and character data.
+*Location:* `src/utils/validators.ts`
 
-- `PlaylistTrackSchema`: Validates track metadata (lines 14-48) - includes chain-specific validation (AR requires tx_id, other chains require token_address and token_id)
-- `ServerlessPlaylistSchema`: Validates full playlist (lines 53-61) - validates playlist structure with metadata and tracks array
-- `AudioProfileSchema`: Validates audio analysis (lines 66-89) - validates frequency analysis, color palette, and analysis metadata
-- `AbilityScoresSchema`: Validates ability scores (lines 94-101) - validates all six ability scores (STR, DEX, CON, INT, WIS, CHA) are in range 1-20
-- `CharacterSheetSchema`: Validates character data (lines 106-156) - comprehensive validation of complete character sheet including nested objects for abilities, HP, skills, equipment, appearance, and XP
+Zod schemas for runtime type validation. Use `safeParse()` for validation:
+
+```typescript
+import { PlaylistTrackSchema } from '@playlist-data-engine/utils';
+
+const result = PlaylistTrackSchema.safeParse(data);
+if (!result.success) {
+  console.error(result.error);
+}
+```
+
+| Schema | Validates |
+|--------|-----------|
+| `PlaylistTrackSchema` | Track metadata with chain-specific validation (AR: tx_id, others: token_address + token_id) |
+| `ServerlessPlaylistSchema` | Complete playlist structure (metadata + tracks array) |
+| `AudioProfileSchema` | Audio analysis (frequency, color palette, analysis metadata) |
+| `AbilityScoresSchema` | All six ability scores (STR, DEX, CON, INT, WIS, CHA) in range 1-20 |
+| `CharacterSheetSchema` | Complete character sheet (abilities, HP, skills, equipment, appearance, XP) |
 
 **Logging**
 
