@@ -312,10 +312,11 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 
 **Current**: 2,961 lines. **Goal**: Remove redundancy, keep examples.
 
-- [ ] **Task 30**: Audit for duplicate type definitions
-  - [ ] Subtask: Find types that exist in source code
-  - [ ] Subtask: Mark which ones can be replaced with source links
-  - [ ] Subtask: Identify types that need explanation (custom augmentation patterns)
+- [x] **Task 30**: Audit for duplicate type definitions
+  - [x] Subtask: Find types that exist in source code
+  - [x] Subtask: Mark which ones can be replaced with source links
+  - [x] Subtask: Identify types that need explanation (custom augmentation patterns)
+  - **Summary**: Streamlined Reference section from ~200 lines to ~90 lines (55% reduction). Replaced full type definitions with link table. Streamlined Validation section from ~250 lines to ~60 lines (76% reduction) - replaced full type definitions with key validation rules table.
 
 - [ ] **Task 31**: Audit for duplicate method signatures
   - [ ] Subtask: Find methods that just repeat what's in source

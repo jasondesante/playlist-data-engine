@@ -1729,248 +1729,47 @@ manager.register('spells', [{
 
 The extensibility system includes automatic validation. Invalid content is rejected with clear error messages.
 
-### Validation Rules
+**For complete type definitions, see [Type Definitions](#type-definitions) above.**
 
-#### Equipment
+### Key Validation Rules
+
+| Category | Required Fields | Validation Rules |
+|----------|-----------------|------------------|
+| **Equipment** | `name`, `type`, `rarity`, `weight` | Type must be `weapon`/`armor`/`item`; rarity must be valid; weight ≥ 0 |
+| **Spells** | `name`, `level`, `school` | Level 0-9; school must be valid D&D 5e school |
+| **Races** | String values | Must be valid race name (default or registered custom) |
+| **Classes** | String values | Must be valid class name (default or registered custom) |
+| **Appearance** | String values | Must be strings (not objects) |
+| **Features** | `id`, `name`, `description`, `type`, `class`, `level`, `source` | ID must be `lowercase_with_underscores`; IDs must be unique |
+| **Skills** | `id`, `name`, `ability`, `source` | ID must be `lowercase_with_underscores`; ability must be valid |
+| **Skill Lists** | `class`, `skillCount`, `availableSkills` | skillCount ≥ 0; skill IDs must exist |
+
+### ID Format Requirements
+
+All custom content IDs must use `lowercase_with_underscores` format:
 
 ```typescript
-{
-    name: string;        // Required, non-empty string
-    type: 'weapon' | 'armor' | 'item';  // Required, valid type
-    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';  // Required
-    weight: number;      // Required, non-negative
-}
+// Valid IDs
+'frost_rage'
+'necromancer_raise_dead'
+'dragon_smithing'
+
+// Invalid IDs
+'FrostRage'           // Error: Use lowercase
+'frost-rage'          // Error: Use underscores
+'frost.rage'          // Error: Use underscores
 ```
 
-**Invalid examples:**
+### Duplicate Detection
+
+The system automatically detects duplicate IDs:
 
 ```typescript
-// Missing required field
-{ name: 'Broken Sword', type: 'weapon' }  // Error: Missing rarity
+// Error: Feature ID 'rage' already exists
+manager.register('classFeatures', [{ id: 'rage', ... }]);
 
-// Invalid type
-{ name: 'Item', type: 'potion', rarity: 'common', weight: 1 }  // Error: Invalid type
-
-// Invalid rarity
-{ name: 'Item', type: 'item', rarity: 'mythic', weight: 1 }  // Error: Invalid rarity
-
-// Negative weight
-{ name: 'Item', type: 'item', rarity: 'common', weight: -1 }  // Error: Invalid weight
-```
-
-#### Spells
-
-```typescript
-{
-    name: string;        // Required, non-empty string
-    level: number;       // Required, 0-9
-    school: string;      // Required, valid school name
-    // Optional: casting_time, range, duration, components, description
-}
-```
-
-**Valid schools:**
-
-`'Abjuration'`, `'Conjuration'`, `'Divination'`, `'Enchantment'`, `'Evocation'`, `'Illusion'`, `'Necromancy'`, `'Transmutation'`
-
-**Invalid examples:**
-
-```typescript
-// Level out of range
-{ name: 'Spell', level: 10, school: 'Evocation' }  // Error: Level must be 0-9
-
-// Invalid school
-{ name: 'Spell', level: 1, school: 'Dark Magic' }  // Error: Invalid school
-```
-
-#### Races
-
-Must be a valid race name from the `Race` enum:
-
-`'Human'`, `'Elf'`, `'Dwarf'`, `'Halfling'`, `'Dragonborn'`, `'Gnome'`, `'Half-Elf'`, `'Half-Orc'`, `'Tiefling'`
-
-**Invalid example:**
-
-```typescript
-manager.register('races', ['Orc', 'Goblin']);  // Error: Invalid race
-```
-
-#### Classes
-
-Must be a valid class name from the `Class` enum:
-
-`'Barbarian'`, `'Bard'`, `'Cleric'`, `'Druid'`, `'Fighter'`, `'Monk'`, `'Paladin'`, `'Ranger'`, `'Rogue'`, `'Sorcerer'`, `'Warlock'`, `'Wizard'`
-
-**Invalid example:**
-
-```typescript
-manager.register('classes', ['Necromancer', 'Battlemage']);  // Error: Invalid class
-```
-
-#### Appearance
-
-All appearance options must be strings.
-
-**Invalid example:**
-
-```typescript
-manager.register('appearance.bodyTypes', [{ name: 'giant' }]);  // Error: Must be strings
-```
-
-#### Class Features
-
-```typescript
-{
-    id: string;              // Required, unique feature ID (lowercase_with_underscores)
-    name: string;            // Required, display name
-    description: string;     // Required, feature description
-    type: 'passive' | 'active' | 'resource' | 'trigger';  // Required
-    class: Class;            // Required, valid class name
-    level: number;           // Required, 1-20
-    prerequisites?: {        // Optional
-        level?: number;
-        features?: string[];
-        abilities?: Record<Ability, number>;
-        class?: Class;
-        race?: Race;
-        custom?: string;
-    };
-    effects?: Array<{        // Optional
-        type: 'stat_bonus' | 'skill_proficiency' | 'ability_unlock' | 'passive_modifier' | 'resource_grant' | 'spell_slot_bonus';
-        target: string;
-        value: number | string | boolean;
-        condition?: string;
-        description?: string;
-    }>;
-    source: 'default' | 'custom';  // Required
-    tags?: string[];          // Optional
-    lore?: string;           // Optional
-}
-```
-
-**Invalid examples:**
-
-```typescript
-// Missing required fields
-{ id: 'test' }  // Error: Missing name, description, type, class, level, source
-
-// Invalid ID format
-{ id: 'Test-Feature', name: 'Test', ... }  // Error: ID must be lowercase_with_underscores
-
-// Invalid type
-{ id: 'test', name: 'Test', type: 'invalid', ... }  // Error: Invalid feature type
-
-// Duplicate ID - will throw error during validation
-manager.register('classFeatures', [{ id: 'rage', ... }]);  // Error: Feature ID 'rage' already exists
-```
-
-#### Racial Traits
-
-```typescript
-{
-    id: string;              // Required, unique trait ID (lowercase_with_underscores)
-    name: string;            // Required, display name
-    description: string;     // Required, trait description
-    race: Race;              // Required, valid race name
-    subrace?: string;        // Optional, for subrace-specific traits
-    prerequisites?: {        // Optional (same format as class features)
-        level?: number;
-        features?: string[];
-        abilities?: Record<Ability, number>;
-        class?: Class;
-        race?: Race;
-        custom?: string;
-    };
-    effects?: Array<{        // Optional (same format as class features)
-        type: 'stat_bonus' | 'skill_proficiency' | 'ability_unlock' | 'passive_modifier' | 'resource_grant' | 'spell_slot_bonus';
-        target: string;
-        value: number | string | boolean;
-        condition?: string;
-        description?: string;
-    }>;
-    source: 'default' | 'custom';  // Required
-    tags?: string[];          // Optional
-    lore?: string;           // Optional
-}
-```
-
-**Invalid examples:**
-
-```typescript
-// Missing required fields
-{ id: 'test' }  // Error: Missing name, description, race, source
-
-// Invalid race
-{ id: 'test', name: 'Test', race: 'Orc', ... }  // Error: Invalid race
-
-// Duplicate ID - will throw error during validation
-manager.register('racialTraits', [{ id: 'darkvision', ... }]);  // Error: Trait ID 'darkvision' already exists
-```
-
-#### Skills
-
-```typescript
-{
-    id: string;              // Required, unique skill ID (lowercase_with_underscores)
-    name: string;            // Required, display name
-    ability: Ability;        // Required, one of: STR, DEX, CON, INT, WIS, CHA
-    description?: string;    // Optional
-    armorPenalty?: boolean;  // Optional
-    customProperties?: Record<string, string | number | boolean | string[]>;  // Optional
-    categories?: string[];   // Optional, for grouping
-    source: 'default' | 'custom';  // Required
-    tags?: string[];         // Optional
-    lore?: string;           // Optional
-}
-```
-
-**Invalid examples:**
-
-```typescript
-// Missing required fields
-{ id: 'test' }  // Error: Missing name, ability, source
-
-// Invalid ID format
-{ id: 'Test-Skill', name: 'Test', ability: 'STR', source: 'custom' }  // Error: ID must be lowercase_with_underscores
-
-// Invalid ability
-{ id: 'test', name: 'Test', ability: 'INVALID', source: 'custom' }  // Error: Invalid ability
-
-// Duplicate ID - will throw error during validation
-manager.register('skills', [{ id: 'athletics', ... }]);  // Error: Skill ID 'athletics' already exists
-```
-
-#### Skill Lists
-
-```typescript
-{
-    class: string;           // Required, class name
-    skillCount: number;      // Required, non-negative
-    availableSkills: string[];  // Required, array of skill IDs
-    selectionWeights?: {     // Optional
-        weights: Record<string, number>;
-        mode?: 'relative' | 'absolute' | 'default';
-    };
-    hasExpertise?: boolean;  // Optional
-    expertiseCount?: number; // Optional, non-negative
-}
-```
-
-**Invalid examples:**
-
-```typescript
-// Missing required fields
-{ class: 'Barbarian' }  // Error: Missing skillCount, availableSkills
-
-// Negative skill count
-{ class: 'Barbarian', skillCount: -1, availableSkills: [] }  // Error: skillCount must be non-negative
-
-// Invalid skill ID
-{
-    class: 'Barbarian',
-    skillCount: 2,
-    availableSkills: ['invalid_skill_id']
-}  // Error: Invalid skill ID 'invalid_skill_id'
+// Error: Skill ID 'athletics' already exists
+manager.register('skills', [{ id: 'athletics', ... }]);
 ```
 
 ### Disabling Validation
@@ -2611,140 +2410,34 @@ manager.register('equipment.templates', [
 
 ### Type Definitions
 
-**Note:** The extension interfaces below (`ClassFeatureExtension`, `RacialTraitExtension`, `SkillExtension`) match the actual exported types from the package (`ClassFeature`, `RacialTrait`, `CustomSkill`). You can import and use the actual types directly:
+**Import actual types from the package:**
 
 ```typescript
-import type { ClassFeature, RacialTrait, CustomSkill } from 'playlist-data-engine';
+import type {
+    ClassFeature,
+    RacialTrait,
+    CustomSkill,
+    ExtensionOptions,
+    ExtensionCategory
+} from 'playlist-data-engine';
 ```
 
+**Type reference tables:**
+
+| Type | Source | Description |
+|------|--------|-------------|
+| `ExtensionOptions` | [src/core/extensions/ExtensionManager.ts](../src/core/extensions/ExtensionManager.ts) | Registration options: mode, weights, validate |
+| `ClassFeature` | [src/core/features/FeatureTypes.ts](../src/core/features/FeatureTypes.ts) | Class features with prerequisites and effects |
+| `RacialTrait` | [src/core/features/FeatureTypes.ts](../src/core/features/FeatureTypes.ts) | Racial traits with prerequisites and effects |
+| `CustomSkill` | [src/core/skills/SkillTypes.ts](../src/core/skills/SkillTypes.ts) | Skills with prerequisites, categories, armor penalty |
+| `SkillListDefinition` | [src/core/skills/SkillTypes.ts](../src/core/skills/SkillTypes.ts) | Skill lists for class character generation |
+| `ExtensionCategory` | [src/core/extensions/ExtensionManager.ts](../src/core/extensions/ExtensionManager.ts) | All extensible category names |
+
+### Character Generator Extensions
+
+The `CharacterGenerator.generate()` `extensions` option supports a limited set of categories:
+
 ```typescript
-// Extension options
-interface ExtensionOptions {
-    mode?: 'relative' | 'absolute' | 'default' | 'replace';
-    weights?: Record<string, number>;
-    validate?: boolean;
-}
-
-// Spell extension
-interface SpellExtension {
-    name: string;
-    level: number;  // 0-9
-    school: string;  // Valid school name
-    casting_time?: string;
-    range?: string;
-    duration?: string;
-    components?: string[];
-    description?: string;
-}
-
-// Equipment extension
-interface EquipmentExtension {
-    name: string;
-    type: 'weapon' | 'armor' | 'item';
-    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-    weight: number;  // Non-negative
-}
-
-// Class feature extension (same as ClassFeature type)
-interface ClassFeatureExtension {
-    id: string;              // Unique feature ID (lowercase_with_underscores)
-    name: string;            // Display name
-    description: string;     // Feature description
-    type: 'passive' | 'active' | 'resource' | 'trigger';
-    class: Class;            // Class this feature belongs to
-    level: number;           // Level gained (1-20)
-    prerequisites?: {        // Optional prerequisites
-        level?: number;
-        features?: string[];
-        abilities?: Record<Ability, number>;
-        class?: Class;
-        race?: Race;
-        subrace?: string;
-        skills?: string[];
-        spells?: string[];
-        custom?: string;
-    };
-    effects?: Array<{        // Optional effects
-        type: 'stat_bonus' | 'skill_proficiency' | 'ability_unlock' | 'passive_modifier' | 'resource_grant' | 'spell_slot_bonus';
-        target: string;
-        value: number | string | boolean;
-        condition?: string;
-        description?: string;
-    }>;
-    source: 'default' | 'custom';
-    tags?: string[];
-    lore?: string;
-}
-
-// Racial trait extension (same as RacialTrait type)
-interface RacialTraitExtension {
-    id: string;              // Unique trait ID (lowercase_with_underscores)
-    name: string;            // Display name
-    description: string;     // Trait description
-    race: Race;              // Race this trait belongs to
-    subrace?: string;        // Optional subrace
-    prerequisites?: {        // Optional prerequisites (same format as features)
-        level?: number;
-        features?: string[];
-        abilities?: Record<Ability, number>;
-        class?: Class;
-        race?: Race;
-        subrace?: string;
-        skills?: string[];
-        spells?: string[];
-        custom?: string;
-    };
-    effects?: Array<{        // Optional effects (same format as features)
-        type: 'stat_bonus' | 'skill_proficiency' | 'ability_unlock' | 'passive_modifier' | 'resource_grant' | 'spell_slot_bonus';
-        target: string;
-        value: number | string | boolean;
-        condition?: string;
-        description?: string;
-    }>;
-    source: 'default' | 'custom';
-    tags?: string[];
-    lore?: string;
-}
-
-// Skill extension (same as CustomSkill type)
-interface SkillExtension {
-    id: string;              // Unique skill ID (lowercase_with_underscores)
-    name: string;            // Display name
-    ability: Ability;        // STR, DEX, CON, INT, WIS, or CHA
-    description?: string;
-    armorPenalty?: boolean;
-    customProperties?: Record<string, string | number | boolean | string[]>;
-    categories?: string[];
-    prerequisites?: {        // Optional prerequisites
-        level?: number;
-        abilities?: Record<Ability, number>;
-        class?: Class;
-        race?: Race;
-        subrace?: string;
-        features?: string[];
-        skills?: string[];
-        spells?: string[];
-        custom?: string;
-    };
-    source: 'default' | 'custom';
-    tags?: string[];
-    lore?: string;
-}
-
-// Skill list extension
-interface SkillListExtension {
-    class: string;           // Class name
-    skillCount: number;      // Number of skills to select
-    availableSkills: string[];  // Array of skill IDs
-    selectionWeights?: {     // Optional selection weights
-        weights: Record<string, number>;
-        mode?: 'relative' | 'absolute' | 'default';
-    };
-    hasExpertise?: boolean;
-    expertiseCount?: number;
-}
-
-// Character generator extensions (for CharacterGenerator.generate() extensions option)
 interface CharacterGeneratorExtensions {
     spells?: SpellExtension[];           // Custom spells to add
     equipment?: EquipmentExtension[];    // Custom equipment to add
@@ -2752,14 +2445,13 @@ interface CharacterGeneratorExtensions {
     classes?: string[];                  // Custom classes to add (class names)
     appearance?: AppearanceExtension;    // Custom appearance options
 }
-
-// Note: The extensions option only supports the above 5 categories.
-// For classFeatures, racialTraits, skills, and skillLists, use ExtensionManager.register() directly.
 ```
+
+**Important:** For `classFeatures`, `racialTraits`, `skills`, and `skillLists`, use `ExtensionManager.register()` directly instead of the `extensions` option.
 
 ### All Categories
 
-The complete list of extensible categories in the system:
+The complete list of extensible categories:
 
 ```typescript
 type ExtensionCategory =
