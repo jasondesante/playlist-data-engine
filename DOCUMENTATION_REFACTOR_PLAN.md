@@ -273,13 +273,15 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Then remove "Available Exports" from USAGE entirely, add only a link section
   - **Summary**: FUSION COMPLETE! DATA_ENGINE_REFERENCE.md now has a "Quick Export Reference" section at the top with categorized tables of all exports (115 lines). USAGE_IN_OTHER_PROJECTS.md "Available Exports" section replaced with brief pointer (17 lines) - reduced from 148 lines to 17 lines (88% reduction). File overall went from 653 to 520 lines (20% reduction). DATA_ENGINE_REFERENCE is now the single source of truth for export documentation with both quick reference and detailed sections.
 
-- [ ] **Task 25**: "Development Workflow" section
-  - [ ] Subtask: Keep only project-specific workflow commands
-  - [ ] Subtask: Remove obvious npm commands (install, test, build)
-  - [ ] **User note**: Condense to hints - developers know standard npm commands
+- [x] **Task 25**: "Development Workflow" section
+  - [x] Subtask: Keep only project-specific workflow commands
+  - [x] Subtask: Remove obvious npm commands (install, test, build)
+  - [x] **User note**: Condense to hints - developers know standard npm commands
+  - **Summary**: Combined "Development Workflow" and "Rebuilding After Changes" into a single concise section (6 lines). Removed verbose terminal examples, obvious `npm install`, and self-explanatory `cd` commands. Kept only the essential hint: `npm run dev` for watch mode and the concept of immediate availability with `file://` or `npm link`. Added link to `.env.example` for environment configuration. TOC updated with accurate description.
 
-- [ ] **Task 26**: "Rebuilding After Changes" section
-  - [ ] Subtask: Is this necessary? Can it be combined with Development Workflow?
+- [x] **Task 26**: "Rebuilding After Changes" section
+  - [x] Subtask: Is this necessary? Can it be combined with Development Workflow?
+  - **Summary**: Completed as part of Task 25. Section was merged into "Development Workflow" since both covered the same workflow concern. The rebuilding hint (`npm run dev`) is now part of the streamlined workflow section.
 
 - [ ] **Task 27**: "Environment Variables" section
   - [ ] Subtask: Convert to minimal table format

@@ -66,7 +66,7 @@ See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for:
 - [Equipment System Overview](#equipment-system-overview) — Quick introduction
 - [Extensibility Overview](#extensibility-system) — Registration and custom content
 - [Validation Schemas](#validation-schemas) — Runtime type validation with Zod
-- [Development Workflow](#development-workflow) — Build, test, and reload
+- [Development Workflow](#development-workflow) — Watch mode and hot reload
 - [Environment Variables](#environment-variables) — API keys and sensor configuration
 - [Troubleshooting](#troubleshooting) — Common issues
 
@@ -418,33 +418,11 @@ The reference includes:
 
 ## Development Workflow
 
-When working on both projects simultaneously:
+**Watch mode**: `npm run dev` rebuilds on file changes.
 
-```bash
-# Terminal 1: In playlist-data-engine directory
-cd /path/to/playlist-data-engine
-npm run dev  # Watch mode (optional)
+When developing with `file://` or `npm link`: changes in `src/` are available immediately after rebuild.
 
-# Terminal 2: In your other project
-cd /path/to/your/other/project
-npm install  # Links to the library
-
-# Any changes in playlist-data-engine/src will be available in your project
-# if using the file:// path or npm link
-```
-
----
-
-## Rebuilding After Changes
-
-After making changes to the engine source code:
-
-```bash
-cd /path/to/playlist-data-engine
-npm run build  # Rebuild distribution files
-```
-
-If using `file://` paths or `npm link`, the changes will automatically be available to your other project.
+**For complete environment configuration, see [`.env.example`](.env.example)** in the project root.
 
 ---
 
