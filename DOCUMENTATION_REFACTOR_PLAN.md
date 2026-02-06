@@ -808,10 +808,11 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Link to IRL_SENSORS.md for usage
   - **Summary**: Reduced from ~100 lines to ~55 lines (45% reduction). Converted verbose method-by-method documentation with inline descriptions to concise method reference table (22 methods). Removed implementation details ("pull-based data", "acceleration magnitude"). Converted helper classes (GeolocationProvider, MotionDetector, WeatherAPIClient, LightSensor) to consolidated table format. Added "Also known as" synonyms for AI discoverability (IRL sensors, real-world sensors, environmental context, GPS/weather integration). Added prominent link to IRL_SENSORS.md for usage examples.
 
-- [ ] **Task 72**: Transform environmental helpers
-  - [ ] Subtask: GeolocationProvider, MotionDetector → method lists
-  - [ ] Subtask: WeatherAPIClient → method list
-  - [ ] Subtask: LightSensor → method list
+- [x] **Task 72**: Transform environmental helpers
+  - [x] Subtask: GeolocationProvider, MotionDetector → method lists
+  - [x] Subtask: WeatherAPIClient → method list
+  - [x] Subtask: LightSensor → method list
+  - **Summary**: Expanded from ~8 lines (simple table) to ~100 lines (detailed method reference tables). Transformed each helper class into proper documentation format matching Gaming Platform Sensors section. GeolocationProvider: 8 methods with constructor signatures, biome types listed. MotionDetector: 4 methods with activity types. WeatherAPIClient: 18 methods including performance metrics and severe weather detection, severe weather types listed. LightSensor: 3 methods with experimental API note. All sections include source links and concise descriptions.
 
 - [ ] **Task 73**: Transform Gaming Platform Sensors
   - [ ] Subtask: GamingPlatformSensors → method reference table

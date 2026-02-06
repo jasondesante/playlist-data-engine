@@ -1806,12 +1806,101 @@ Integrates real-world data (GPS, Weather, Motion, Light) to influence XP generat
 
 ### Environmental Helper Classes
 
-| Class | Location | Methods | Description |
-|-------|----------|---------|-------------|
-| `GeolocationProvider` | `src/core/sensors/GeolocationProvider.ts` | `getCurrentPosition()`, `getBiome()` | Handles GPS data and biome detection |
-| `MotionDetector` | `src/core/sensors/MotionDetector.ts` | `startMonitoring()`, `detectActivity()` | Handles accelerometer and gyroscope data |
-| `WeatherAPIClient` | `src/core/sensors/WeatherAPIClient.ts` | `getWeather()` | Fetches weather data from OpenWeatherMap |
-| `LightSensor` | `src/core/sensors/LightSensor.ts` | `startMonitoring()` | Uses the AmbientLightSensor API for illuminance |
+#### Helper: `GeolocationProvider`
+
+**Location:** [src/core/sensors/GeolocationProvider.ts](src/core/sensors/GeolocationProvider.ts)
+
+Handles GPS data and biome detection with caching support.
+
+**Constructor:**
+```typescript
+new GeolocationProvider(cacheTTLMinutes?: number, useLocalStorage?: boolean)
+new GeolocationProvider(config: GeolocationSensorConfig)
+```
+
+**Methods:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `getCurrentPosition()` | `forceRefresh?: boolean` | `Promise<GeolocationData \| null>` | Gets current position, using cache unless force refresh |
+| `getBiome()` | `latitude: number, longitude: number, altitude?: number \| null` | `string` | Calculates biome type from coordinates (e.g., 'forest', 'desert', 'mountain_coastal') |
+| `getCachedPosition()` | - | `GeolocationData \| null` | Returns cached position without checking TTL |
+| `getCacheAge()` | - | `number \| null` | Returns age of cached position in milliseconds |
+| `isCacheExpired()` | - | `boolean` | Returns true if cache is expired or doesn't exist |
+| `invalidateCache()` | - | `void` | Clears all cached geolocation data |
+| `getCacheStats()` | - | `{ hits: number, misses: number }` | Returns cache statistics |
+| `resetCacheStats()` | - | `void` | Resets cache statistics to zero |
+
+**Biome Types:** `plains`, `forest`, `jungle`, `savanna`, `desert`, `tundra`, `taiga`, `mountain`, `swamp`, `valley`, `urban`, `coastal_urban`, `coastal_desert` (with optional `_coastal` suffix)
+
+#### Helper: `MotionDetector`
+
+**Location:** [src/core/sensors/MotionDetector.ts](src/core/sensors/MotionDetector.ts)
+
+Handles accelerometer and gyroscope data for activity detection.
+
+**Methods:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `startMonitoring()` | `callback: (data: MotionData) => void` | `void` | Starts listening for device motion events |
+| `stopMonitoring()` | - | `void` | Stops listening for motion events |
+| `getLastMotion()` | - | `MotionData \| null` | Returns the last recorded motion data |
+| `detectActivity()` | `data: MotionData` | `'stationary' \| 'walking' \| 'running' \| 'driving' \| 'unknown'` | Detects activity type based on motion intensity |
+
+#### Helper: `WeatherAPIClient`
+
+**Location:** [src/core/sensors/WeatherAPIClient.ts](src/core/sensors/WeatherAPIClient.ts)
+
+Fetches weather data and forecasts from OpenWeatherMap API.
+
+**Constructor:**
+```typescript
+new WeatherAPIClient(apiKey?: string, cacheTTLMinutes?: number, useLocalStorage?: boolean)
+new WeatherAPIClient(config: WeatherSensorConfig)
+```
+
+**Methods:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `getWeather()` | `latitude: number, longitude: number` | `Promise<WeatherData \| null>` | Fetches current weather for coordinates |
+| `getForecast()` | `latitude: number, longitude: number, hours?: number` | `Promise<ForecastData[] \| null>` | Fetches weather forecast (max 120 hours) |
+| `getUpcomingWeather()` | `latitude: number, longitude: number, hours?: number` | `Promise<UpcomingWeatherInfo \| null>` | Gets upcoming weather changes for XP modifier calculation |
+| `detectSevereWeather()` | `weather: WeatherData \| ForecastData` | `SevereWeatherAlert \| null` | Detects severe weather (blizzard, hurricane, tornado) |
+| `getSafetyWarning()` | `alert: SevereWeatherAlert` | `string` | Returns safety warning message for severe weather alert |
+| `invalidateCache()` | - | `void` | Clears all cached weather data |
+| `invalidateLocation()` | `latitude: number, longitude: number` | `void` | Clears cache for a specific location |
+| `invalidateForecastCache()` | - | `void` | Clears all forecast cache |
+| `invalidateForecastLocation()` | `latitude: number, longitude: number` | `void` | Clears forecast cache for a specific location |
+| `getCacheStats()` | - | `{ hits: number, misses: number }` | Returns cache statistics |
+| `resetCacheStats()` | - | `void` | Resets cache statistics to zero |
+| `getCacheSize()` | - | `number` | Returns number of cached entries |
+| `clearExpiredEntries()` | - | `number` | Clears expired cache entries, returns count cleared |
+| `clearExpiredForecastEntries()` | - | `number` | Clears expired forecast entries, returns count cleared |
+| `getWeatherApiMetrics()` | - | `PerformanceMetrics` | Returns performance metrics for weather API calls |
+| `getWeatherApiStatistics()` | - | `PerformanceStatistics & { p95: number, p99: number }` | Returns calculated statistics including percentiles |
+| `getForecastApiMetrics()` | - | `PerformanceMetrics` | Returns performance metrics for forecast API calls |
+| `getForecastApiStatistics()` | - | `PerformanceStatistics & { p95: number, p99: number }` | Returns calculated statistics for forecast API |
+| `resetPerformanceMetrics()` | - | `void` | Resets all performance metrics |
+
+**Severe Weather Types:** `Blizzard`, `Hurricane`, `Typhoon`, `Tornado`, `None`
+
+#### Helper: `LightSensor`
+
+**Location:** [src/core/sensors/LightSensor.ts](src/core/sensors/LightSensor.ts)
+
+Uses the experimental AmbientLightSensor API for illuminance detection.
+
+**Methods:**
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `startMonitoring()` | `callback: (data: LightData) => void` | `void` | Starts monitoring ambient light levels |
+| `stopMonitoring()` | - | `void` | Stops monitoring light |
+| `getLastReading()` | - | `LightData \| null` | Returns the last light sensor reading |
+
+**Note:** The AmbientLightSensor API is experimental and may not be available in all browsers. The class gracefully handles unavailability.
 
 ---
 
