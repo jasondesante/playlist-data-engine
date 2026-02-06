@@ -1525,7 +1525,7 @@ Calculates XP based on duration, activity, environment, and gaming context.
 
 | Type | Location | Description |
 |------|----------|-------------|
-| `ExperienceSystem` | [src/core/types/Progression.ts](src/core/types/Progression.ts) (76-98) | Configuration for XP calculation (rates, thresholds, bonuses) |
+| `ExperienceSystem` | [src/core/types/Progression.ts](src/core/types/Progression.ts) | Configuration for XP calculation (rates, thresholds, bonuses) |
 
 ---
 
@@ -1549,12 +1549,15 @@ Handles the mechanics of leveling up a character.
 | `processLevelUpWithoutStats(character, newLevel)` | Calculates benefits excluding stat increases (manual mode) |
 | `applyAutomaticBenefitsOnly(character, benefits)` | Applies HP/proficiency/features without stat increases |
 | `applyStatIncreasesOnly(character, statSelections)` | Applies stat increases to character with pending counter |
+| `setUncappedConfig(config)` | Sets custom formulas for uncapped mode progression (pass empty object to reset) |
+| `getUncappedConfig()` | Returns the current uncapped configuration |
 
 #### Types
 
 | Type | Location | Description |
 |------|----------|-------------|
-| `LevelUpBenefits` | [src/core/progression/LevelUpProcessor.ts](src/core/progression/LevelUpProcessor.ts) (25-63) | Benefits granted by leveling up (HP, proficiency, stats, spell slots, features) |
+| `LevelUpBenefits` | [src/core/progression/LevelUpProcessor.ts](src/core/progression/LevelUpProcessor.ts) | Benefits granted by leveling up (HP, proficiency, stats, spell slots, features) |
+| `UncappedProgressionConfig` | [src/core/progression/LevelUpProcessor.ts](src/core/progression/LevelUpProcessor.ts) | Custom formulas for uncapped mode XP thresholds and proficiency bonuses |
 
 ---
 
@@ -1950,75 +1953,7 @@ const epicCharacter = CharacterGenerator.generate(
 
 The `gameMode` is stored on the character and automatically used during level-ups.
 
-### Uncapped Progression Configuration
-
-For uncapped mode, you can provide custom formulas for XP thresholds and proficiency bonuses that apply to ALL levels (1-∞).
-
-```typescript
-import { LevelUpProcessor, type UncappedProgressionConfig } from 'playlist-data-engine';
-
-// Set custom formulas BEFORE generating characters
-LevelUpProcessor.setUncappedConfig({
-    // Your formula for XP: receives level, returns TOTAL XP required
-    xpFormula: (level: number) => number,
-    // Your formula for proficiency bonus: receives level, returns bonus
-    proficiencyBonusFormula: (level: number) => number
-});
-```
-
-**Interface: UncappedProgressionConfig**
-
-**Location:** `src/core/progression/LevelUpProcessor.ts` (75-82)
-
-```typescript
-export interface UncappedProgressionConfig {
-    /** Custom formula for calculating XP threshold for ANY level */
-    xpFormula?: (level: number) => number;
-    /** Custom formula for calculating proficiency bonus for ANY level */
-    proficiencyBonusFormula?: (level: number) => number;
-}
-```
-
-**Methods:**
-
-- `static setUncappedConfig(config: UncappedProgressionConfig): void`
-    - Sets custom formulas for uncapped mode progression
-    - Pass empty object `{}` to reset to default D&D 5e pattern
-
-- `static getUncappedConfig(): UncappedProgressionConfig | undefined`
-    - Returns the current uncapped configuration
-
-**Default Behavior (No Config Provided):**
-
-If no custom formulas are provided, uncapped mode uses the natural continuation of D&D 5e patterns:
-
-- **XP Formula**: `XP(n) = XP(n-1) + (n-1) × n × 500`
-  - Level 21: 565,000 XP
-  - Level 25: ~735,000 XP
-  - Level 30: ~1,120,000 XP
-
-- **Proficiency Bonus**: Continues +1 every 4 levels
-  - Level 21-24: 6
-  - Level 25-28: 7
-  - Level 29-32: 8, etc.
-
-**Example: Linear Scaling**
-
-```typescript
-LevelUpProcessor.setUncappedConfig({
-    xpFormula: (level) => (level - 1) * 50000,  // 50,000 XP per level
-    proficiencyBonusFormula: (level) => 2 + Math.floor((level - 1) / 2)  // +1 every 2 levels
-});
-```
-
-**Example: Exponential Scaling**
-
-```typescript
-LevelUpProcessor.setUncappedConfig({
-    xpFormula: (level) => Math.floor(1000 * Math.pow(1.5, level - 1)),
-    proficiencyBonusFormula: (level) => 2 + Math.floor(Math.sqrt(level))
-});
-```
+For uncapped progression configuration examples, see [XP_AND_STATS.md](docs/XP_AND_STATS.md#uncapped-mode-custom-formulas).
 
 ---
 
