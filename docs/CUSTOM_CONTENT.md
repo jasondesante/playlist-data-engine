@@ -2,7 +2,7 @@
 
 Complete guide to custom races, custom classes, and spawn rate control in the Playlist Data Engine.
 
-**For prerequisite details, see [PREREQUISITES.md](PREREQUISITES.md)**
+**For prerequisite details, see [PREREQUISITES.md](docs/PREREQUISITES.md)**
 **For API details, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md)**
 **For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md)**
 

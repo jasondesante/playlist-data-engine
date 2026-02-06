@@ -21,8 +21,7 @@ Complete guide to XP, leveling, and stats in the Playlist Data Engine.
 
 ### Earning XP from Listening to Music
 
-This is the core workflow: track a listening session, calculate XP earned, and apply it to your character. Level-ups happen automatically when XP thresholds are reached.
-**NOTE**: This first example is the same that's in USAGE_IN_OTHER_PROJECTS.md. 
+Track a listening session, calculate XP earned, and apply it to your character. Level-ups happen automatically when XP thresholds are reached. 
 
 ```typescript
 import {

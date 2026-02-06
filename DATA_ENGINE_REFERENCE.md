@@ -2,7 +2,7 @@
 
 Complete API reference for the Playlist Data Engine. Contains all type definitions, class constructors, and method signatures.
 
-**For quick overview, see [spec.md](specs/001-core-engine/spec.md)**
+**For quick overview, see [SPEC.md](specs/001-core-engine/SPEC.md)**
 **For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md)**
 
 ## Table of Contents
