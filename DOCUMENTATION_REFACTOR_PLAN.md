@@ -451,18 +451,18 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 
 ### Phase 10: EQUIPMENT_SYSTEM.md Review
 
-**Current**: 2,203 lines. **Goal**: Remove redundancy, keep examples.
+**Current**: 1,977 lines (was 2,203, ~10% reduction). **Goal**: Remove redundancy, keep examples.
 
-- [ ] **Task 35**: Audit for duplicate type definitions
-  - [ ] Subtask: Find equipment types that exist in source
-  - [ ] Subtask: Mark which can be replaced with source links
-  - [ ] Subtask: Keep property type table (it's the core reference)
+- [x] **Task 35**: Audit for duplicate type definitions
+  - [x] Subtask: Find equipment types that exist in source
+  - [x] Subtask: Mark which can be replaced with source links
+  - [x] Subtask: Keep property type table (it's the core reference)
 
-- [ ] **Task 36**: Audit for duplicate method signatures
-  - [ ] Subtask: Find EquipmentEffectApplier methods
-  - [ ] Subtask: Find EquipmentModifier methods
-  - [ ] Subtask: Find EquipmentSpawnHelper methods
-  - [ ] Subtask: Convert verbose method lists to reference tables
+- [x] **Task 36**: Audit for duplicate method signatures
+  - [x] Subtask: Find EquipmentEffectApplier methods
+  - [x] Subtask: Find EquipmentModifier methods
+  - [x] Subtask: Find EquipmentSpawnHelper methods
+  - [x] Subtask: Convert verbose method lists to reference tables
 
 - [ ] **Task 37**: Review equipment examples
   - [ ] Subtask: Are there too many similar examples?

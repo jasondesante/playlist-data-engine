@@ -157,16 +157,16 @@ Conditions control when properties apply:
 
 ### Property Interface
 
-```typescript
-interface EquipmentProperty {
-    type: EquipmentPropertyType;
-    target: string;
-    value: number | string | boolean;
-    condition?: EquipmentCondition;
-    description?: string;
-    stackable?: boolean;  // Default: true
-}
-```
+**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts) (lines 63-70)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| type | EquipmentPropertyType | The property type (stat_bonus, skill_proficiency, etc.) |
+| target | string | What the property affects (ability name, skill ID, etc.) |
+| value | number \| string \| boolean | The property's effect value |
+| condition | EquipmentCondition | Optional condition for when property applies |
+| description | string | Human-readable description |
+| stackable | boolean | Whether effects stack (default: true) |
 
 ### Property Examples
 
@@ -255,23 +255,18 @@ Remove from character.equipment_effects[]
 
 ### Character Equipment Effects Structure
 
-```typescript
-interface CharacterSheet {
-    equipment_effects?: {
-        source: string;              // Equipment name
-        instanceId?: string;         // For per-instance tracking
-        effects: EquipmentProperty[]; // Properties from this item
-        features: EquipmentFeature[]; // Features granted by this item
-        skills: EquipmentSkill[];    // Skills granted by this item
-        spells?: Array<{             // Spells granted by this item
-            spellId: string;
-            level?: number;
-            uses?: number;
-            recharge?: string;
-        }>;
-    }[];
-}
-```
+**Location:** [CharacterSheet.equipment_effects](../src/core/types/Character.ts)
+
+Equipment effects are tracked separately on the character for proper removal when unequipping.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| source | string | Equipment name |
+| instanceId | string | Per-instance tracking ID |
+| effects | EquipmentProperty[] | Properties from this item |
+| features | EquipmentFeature[] | Features granted by this item |
+| skills | EquipmentSkill[] | Skills granted by this item |
+| spells | Array<{spellId, level?, uses?, recharge?}> | Spells granted by this item |
 
 ---
 
@@ -281,56 +276,28 @@ The `EnhancedEquipment` interface extends the base equipment with advanced capab
 
 ### EnhancedEquipment Interface
 
-```typescript
-interface EnhancedEquipment {
-    // Base Properties
-    name: string;
-    type: 'weapon' | 'armor' | 'item';
-    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-    weight: number;
+**Location:** [src/utils/constants.ts](../src/utils/constants.ts) (lines 1368-1414)
+**Type alias:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts) (line 94)
 
-    // Advanced Properties
-    properties?: EquipmentProperty[];
+Complete equipment data structure with advanced properties support.
 
-    // Features granted when equipped
-    // Can reference existing FeatureQuery features OR define inline mini-features
-    grantsFeatures?: Array<string | EquipmentMiniFeature>;
-
-    // Skills granted when equipped
-    grantsSkills?: Array<{
-        skillId: string;
-        level: 'proficient' | 'expertise';
-    }>;
-
-    // Spells granted when equipped
-    grantsSpells?: Array<{
-        spellId: string;
-        level?: number;
-        uses?: number;
-        recharge?: string;
-    }>;
-
-    // D&D 5e Stats
-    damage?: {
-        dice: string;          // e.g., "1d8", "2d6"
-        damageType: string;    // e.g., "slashing", "fire"
-        versatile?: string;    // e.g., "1d10" if used two-handed
-    };
-    acBonus?: number;
-    weaponProperties?: string[];  // e.g., ["finesse", "versatile", "two-handed"]
-
-    // Spawn weight (0 = never random, still available to game logic)
-    spawnWeight?: number;
-
-    // Template support (for items like "Flaming Sword")
-    templateId?: string;
-
-    // Source tracking
-    source?: 'default' | 'custom';
-
-    tags?: string[];
-}
-```
+| Property | Type | Description |
+|----------|------|-------------|
+| name | string | Equipment name |
+| type | 'weapon' \| 'armor' \| 'item' | Equipment category |
+| rarity | 'common' \| 'uncommon' \| 'rare' \| 'very_rare' \| 'legendary' | Item rarity |
+| weight | number | Weight in pounds |
+| properties | EquipmentProperty[] | Optional advanced properties |
+| grantsFeatures | Array<string \| EquipmentMiniFeature> | Features granted when equipped |
+| grantsSkills | Array<{skillId, level}> | Skills granted when equipped |
+| grantsSpells | Array<{spellId, level?, uses?, recharge?}> | Spells granted when equipped |
+| damage | {dice, damageType, versatile?} | D&D 5e damage info |
+| acBonus | number | Armor class bonus |
+| weaponProperties | string[] | D&D 5e weapon properties |
+| spawnWeight | number | Spawn weight (0 = game-only) |
+| templateId | string | Template ID if created from template |
+| source | 'default' \| 'custom' | Source tracking |
+| tags | string[] | Search/filter tags |
 
 ### Rarity Levels
 
@@ -369,15 +336,17 @@ String references to features in the FeatureQuery:
 
 Equipment-specific features defined inline:
 
-```typescript
-interface EquipmentMiniFeature {
-    id: string;                  // Unique ID for this feature
-    name: string;
-    description: string;
-    effects: EquipmentProperty[]; // What this feature does
-    source: 'equipment_inline';   // Marks as equipment-specific
-}
-```
+**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts) (lines 76-82)
+
+Inline equipment-specific feature definition.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| id | string | Unique feature ID |
+| name | string | Feature name |
+| description | string | Feature description |
+| effects | EquipmentProperty[] | What this feature does |
+| source | 'equipment_inline' | Marks as equipment-specific |
 
 Example:
 
@@ -455,26 +424,20 @@ The `EquipmentModifier` class handles runtime equipment modifications including 
 
 ### EquipmentModification Interface
 
-```typescript
-interface EquipmentModification {
-    id: string;
-    name: string;
-    properties: EquipmentProperty[];
-    addsFeatures?: Array<string | EquipmentMiniFeature>;
-    addsSkills?: Array<{
-        skillId: string;
-        level: 'proficient' | 'expertise';
-    }>;
-    addsSpells?: Array<{
-        spellId: string;
-        level?: number;
-        uses?: number;
-        recharge?: string;
-    }>;
-    appliedAt: string;
-    source: string;
-}
-```
+**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts) (lines 99-116)
+
+Runtime modification to equipment (enchanting, cursing, upgrading).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| id | string | Unique modification ID |
+| name | string | Display name |
+| properties | EquipmentProperty[] | Properties added by modification |
+| addsFeatures | Array<string \| EquipmentMiniFeature> | Features granted |
+| addsSkills | Array<{skillId, level}> | Skills granted |
+| addsSpells | Array<{spellId, level?, uses?, recharge?}> | Spells granted |
+| appliedAt | string | ISO timestamp of application |
+| source | string | Source type ('enchantment', 'curse', 'upgrade', 'template') |
 
 ### Modification Methods
 
@@ -715,290 +678,101 @@ if (!validation.valid) {
 
 ### EquipmentEffectApplier
 
-Applies and removes equipment effects.
+**Location:** [src/core/equipment/EquipmentEffectApplier.ts](../src/core/equipment/EquipmentEffectApplier.ts)
 
-```typescript
-class EquipmentEffectApplier {
-    // Apply all effects from equipping an item
-    static equipItem(
-        character: CharacterSheet,
-        equipment: EnhancedEquipment,
-        instanceId?: string
-    ): EffectApplicationResult;
+Applies and removes equipment effects when items are equipped/unequipped.
 
-    // Remove all effects from unequipping an item
-    static unequipItem(
-        character: CharacterSheet,
-        equipmentName: string,
-        instanceId?: string
-    ): EffectApplicationResult;
-
-    // Re-apply all equipment effects (for updates/level-ups)
-    static reapplyEquipmentEffects(
-        character: CharacterSheet
-    ): EffectApplicationResult;
-
-    // Get all active equipment effects
-    static getActiveEffects(
-        character: CharacterSheet
-    ): EquipmentProperty[];
-}
-```
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| equipItem | character, equipment, instanceId? | EffectApplicationResult | Apply all effects from equipping an item |
+| unequipItem | character, equipmentName, instanceId? | EffectApplicationResult | Remove all effects from unequipping an item |
+| reapplyEquipmentEffects | character | EffectApplicationResult | Re-apply all equipment effects (for updates/level-ups) |
+| getActiveEffects | character | EquipmentProperty[] | Get all active equipment effects |
 
 ### EquipmentValidator
 
-Validates equipment data structures.
+**Location:** [src/core/equipment/EquipmentValidator.ts](../src/core/equipment/EquipmentValidator.ts)
 
-```typescript
-class EquipmentValidator {
-    // Validate a complete equipment object
-    static validateEquipment(
-        equipment: EnhancedEquipment
-    ): EquipmentValidationResult;
+Validates equipment data structures for runtime correctness.
 
-    // Validate a single equipment property
-    static validateProperty(
-        property: EquipmentProperty
-    ): EquipmentValidationResult;
-
-    // Validate feature reference
-    static validateEquipmentFeatureReference(
-        featureId: string
-    ): boolean;
-
-    // Validate skill reference
-    static validateEquipmentSkillReference(
-        skillId: string
-    ): boolean;
-
-    // Validate damage info
-    static validateDamageInfo(
-        damage: EnhancedEquipment['damage']
-    ): EquipmentValidationResult;
-
-    // Validate spawn weight
-    static validateSpawnWeight(
-        weight: number
-    ): EquipmentValidationResult;
-
-    // Validate modification
-    static validateModification(
-        modification: EquipmentModification
-    ): EquipmentValidationResult;
-}
-```
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| validateEquipment | equipment | EquipmentValidationResult | Validate a complete equipment object |
+| validateProperty | property | EquipmentValidationResult | Validate a single equipment property |
+| validateCondition | condition | EquipmentValidationResult | Validate an equipment condition |
+| validateFeatureReference | featureRef, index | EquipmentValidationResult | Validate feature reference (string or mini-feature) |
+| validateEquipmentFeatureReference | featureId | boolean | Check if feature ID exists in FeatureQuery |
+| validateSkillReference | skillId, index? | EquipmentValidationResult | Validate skill reference |
+| validateEquipmentSkillReference | skillId | boolean | Check if skill ID exists in SkillQuery |
+| validateDamageInfo | damage | EquipmentValidationResult | Validate damage information |
+| validateSpawnWeight | weight | EquipmentValidationResult | Validate spawn weight |
+| validateModification | modification | EquipmentValidationResult | Validate an equipment modification |
+| validateMiniFeature | miniFeature | EquipmentValidationResult | Validate an equipment mini-feature |
+| validateACBonus | acBonus | EquipmentValidationResult | Validate AC bonus value |
+| validateWeaponProperties | weaponProperties | EquipmentValidationResult | Validate weapon properties array |
 
 ### EquipmentModifier
 
-Handles equipment modification operations.
+**Location:** [src/core/equipment/EquipmentModifier.ts](../src/core/equipment/EquipmentModifier.ts)
 
-```typescript
-class EquipmentModifier {
-    // Enchant equipment with new properties
-    static enchant(
-        equipment: CharacterEquipment,
-        itemName: string,
-        enchantment: EquipmentModification,
-        character?: CharacterSheet
-    ): CharacterEquipment;
+Handles equipment modification operations (enchanting, cursing, upgrading, templates).
 
-    // Apply a template modification
-    static applyTemplate(
-        equipment: CharacterEquipment,
-        itemName: string,
-        templateId: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    // Curse equipment with negative effects
-    static curse(
-        equipment: CharacterEquipment,
-        itemName: string,
-        curse: EquipmentModification,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    // Upgrade equipment
-    static upgrade(
-        equipment: CharacterEquipment,
-        itemName: string,
-        upgrade: EquipmentModification,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    // Remove a modification
-    static removeModification(
-        equipment: CharacterEquipment,
-        itemName: string,
-        modificationId: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    // Get modification history
-    static getModificationHistory(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): EquipmentModification[];
-
-    // Get combined effects
-    static getCombinedEffects(
-        equipment: CharacterEquipment,
-        itemName: string,
-        instanceId?: string
-    ): EquipmentProperty[];
-
-    // Check for template
-    static hasTemplate(
-        equipment: CharacterEquipment,
-        itemName: string,
-        templateId: string
-    ): boolean;
-
-    // Check if item has any enchantments
-    static isEnchanted(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): boolean;
-
-    // Check if item has any curses
-    static isCursed(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): boolean;
-
-    // Get all templates applied to an item
-    static getAppliedTemplates(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): string[];
-
-    // Get all modification sources
-    static getModificationSources(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): string[];
-
-    // Count modifications by source
-    static countModificationsBySource(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): Record<string, number>;
-
-    // Get comprehensive item summary
-    static getItemSummary(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): { name: string; modifications: EquipmentModification[]; isCursed: boolean; isEnchanted: boolean };
-
-    // Remove all modifications
-    static removeAllModifications(
-        equipment: CharacterEquipment,
-        itemName: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    // Disenchant (remove enchantments, keep curses)
-    static disenchant(
-        equipment: CharacterEquipment,
-        itemName: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    // Lift curse (remove curses, keep enchantments)
-    static liftCurse(
-        equipment: CharacterEquipment,
-        itemName: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    // Factory methods
-    static createModification(
-        id: string,
-        name: string,
-        properties: EquipmentProperty[],
-        source: string
-    ): EquipmentModification;
-
-    static generateModificationId(prefix?: string): string;
-}
-```
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| enchant | equipment, itemName, enchantment, character? | CharacterEquipment | Enchant equipment with new properties |
+| applyTemplate | equipment, itemName, templateId, character? | CharacterEquipment | Apply a template modification |
+| curse | equipment, itemName, curse, character? | CharacterEquipment | Curse equipment with negative effects |
+| upgrade | equipment, itemName, upgrade, character? | CharacterEquipment | Upgrade equipment (improve properties) |
+| removeModification | equipment, itemName, modificationId, character? | CharacterEquipment | Remove a specific modification |
+| getModificationHistory | equipment, itemName | EquipmentModification[] | Get modification history for an item |
+| getCombinedEffects | equipment, itemName, instanceId? | EquipmentProperty[] | Get all active effects (base + mods) |
+| hasTemplate | equipment, itemName, templateId | boolean | Check if item has a specific template |
+| isEnchanted | equipment, itemName | boolean | Check if item has any enchantments |
+| isCursed | equipment, itemName | boolean | Check if item has any curses |
+| getAppliedTemplates | equipment, itemName | string[] | Get all templates applied to an item |
+| getModificationSources | equipment, itemName | string[] | Get all modification sources |
+| countModificationsBySource | equipment, itemName | Record<string, number> | Count modifications by source type |
+| getItemSummary | equipment, itemName | object | Get comprehensive item summary |
+| removeAllModifications | equipment, itemName, character? | CharacterEquipment | Remove all modifications |
+| disenchant | equipment, itemName, character? | CharacterEquipment | Remove enchantments, keep curses |
+| liftCurse | equipment, itemName, character? | CharacterEquipment | Remove curses, keep enchantments |
+| createModification | id, name, properties, source | EquipmentModification | Factory: create a modification |
+| createFeatureModification | id, name, properties, addsFeatures, source | EquipmentModification | Factory: create feature modification |
+| createSkillModification | id, name, properties, addsSkills, source | EquipmentModification | Factory: create skill modification |
+| createSpellModification | id, name, properties, addsSpells, source | EquipmentModification | Factory: create spell modification |
+| generateModificationId | prefix? | string | Generate a unique modification ID |
 
 ### EquipmentSpawnHelper
 
-Batch spawning utilities for equipment.
+**Location:** [src/core/equipment/EquipmentSpawnHelper.ts](../src/core/equipment/EquipmentSpawnHelper.ts)
 
-```typescript
-class EquipmentSpawnHelper {
-    // Spawn items from list of names
-    static spawnFromList(
-        itemNames: string[],
-        rng?: SeededRNG
-    ): (EnhancedEquipment | undefined)[];
+Batch spawning utilities for equipment generation.
 
-    // Spawn items by rarity
-    static spawnByRarity(
-        rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary',
-        count: number,
-        rng?: SeededRNG
-    ): EnhancedEquipment[];
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| spawnFromList | itemNames, rng? | (EnhancedEquipment \| undefined)[] | Spawn items from list of names |
+| spawnByRarity | rarity, count, rng? | EnhancedEquipment[] | Spawn items by rarity level |
+| spawnByTags | tags, count, rng?, options? | EnhancedEquipment[] | Spawn items matching tags |
+| spawnRandom | count, rng, options? | EnhancedEquipment[] | Spawn random equipment (respects weights) |
+| spawnFromTemplate | templateId, baseItemName? | EnhancedEquipment \| null | Spawn equipment from template |
+| spawnTreasureHoard | cr, rng | TreasureHoardResult | Spawn treasure hoard by CR |
+| addToCharacter | character, items, equip? | CharacterSheet | Add spawned items to character |
 
-    // Spawn items by tags
-    static spawnByTags(
-        tags: string[],
-        count: number,
-        rng?: SeededRNG,
-        options?: SpawnRandomOptions
-    ): EnhancedEquipment[];
-
-    // Spawn random equipment (respects weights)
-    static spawnRandom(
-        count: number,
-        rng: SeededRNG,
-        options?: SpawnRandomOptions
-    ): EnhancedEquipment[];
-
-    // Spawn from template
-    static spawnFromTemplate(
-        templateId: string,
-        baseItemName?: string
-    ): EnhancedEquipment | null;
-
-    // Spawn treasure hoard
-    static spawnTreasureHoard(
-        cr: number,
-        rng: SeededRNG
-    ): TreasureHoardResult;
-
-    // Add to character
-    static addToCharacter(
-        character: CharacterSheet,
-        items: EnhancedEquipment[],
-        equip?: boolean
-    ): CharacterSheet;
-}
-```
+---
 
 ### FeatureQuery (Equipment-Related Methods)
 
-The FeatureQuery provides static methods for working with equipment-granted features.
+**Location:** [src/core/features/FeatureQuery.ts](../src/core/features/FeatureQuery.ts)
 
-```typescript
-class FeatureQuery {
-    // Get features that can be granted by equipment
-    // Returns features tagged with 'equipment' or 'item', or custom features
-    static getEquipmentFeatures(equipmentName: string): ClassFeature[];
+Convenience methods for working with equipment-granted features. FeatureQuery is a wrapper around ExtensionManager (no duplicate storage).
 
-    // Check if a feature ID exists and can be granted by equipment
-    // Features with spawnWeight: 0 are still valid for equipment use
-    static isValidEquipmentFeature(featureId: string): boolean;
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| getEquipmentFeatures | equipmentName | ClassFeature[] | Get features grantable by equipment |
+| isValidEquipmentFeature | featureId | boolean | Check if feature ID exists (spawnWeight: 0 is valid) |
+| registerEquipmentFeature | feature | void | Register a feature for equipment use (adds 'equipment' tag) |
 
-    // Register a feature specifically for equipment use
-    // Automatically adds 'equipment' tag to the feature
-    static registerEquipmentFeature(feature: ClassFeature): void;
-}
-```
-
-**Note**: FeatureQuery is a convenience wrapper around ExtensionManager (reads from ExtensionManager with no duplicate storage). These methods are useful when creating custom equipment that grants features. Use `isValidEquipmentFeature()` to validate feature references in equipment definitions, and `registerEquipmentFeature()` to register features specifically designed for equipment items.
+**Note:** Use `isValidEquipmentFeature()` to validate feature references in equipment definitions, and `registerEquipmentFeature()` to register features specifically designed for equipment items.
 
 ---
 
