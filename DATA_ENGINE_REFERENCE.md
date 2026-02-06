@@ -1407,321 +1407,172 @@ export interface ExperienceSystem {
 
 **Location:** `src/core/progression/CharacterUpdater.ts`
 
+*Also known as: Character progression, XP handler, level-up manager, character advancement*
+
 Orchestrates applying session results to a character, handling leveling up and mastery.
 
-#### Class: `CharacterUpdater`
+**For usage examples, see [XP_AND_STATS.md](docs/XP_AND_STATS.md)**
 
-**Methods:**
+#### Method Reference
 
-- `constructor(statManager?: StatManager)`
-  - Creates a new CharacterUpdater instance
-  - Optionally accepts a StatManager to override the default stat increase strategy
-  - If no StatManager is provided, the strategy is auto-detected based on the character's gameMode
+| Method | Description |
+|--------|-------------|
+| `constructor(statManager?: StatManager)` | Creates instance with optional StatManager to override auto-detected strategy |
+| `addXP(character, xpAmount, source?)` | Add XP from any source (combat, quests, activities); triggers level-up system |
+| `updateCharacterFromSession(character, session, track?, previousListenCount?)` | Update character from listening session with XP calculation and mastery bonuses |
+| `applyPendingStatIncrease(character, primaryStat, secondaryStats?)` | Apply pending stat increase with user-selected stats (manual mode only) |
+| `hasPendingStatIncreases(character)` | Check if character has pending stat increases |
+| `getPendingStatIncreaseCount(character)` | Get count of pending stat increases |
 
-- `addXP(character: CharacterSheet, xpAmount: number, source?: string): Omit<CharacterUpdateResult, 'masteredTrack' | 'masteryBonusXP'>`
-  - Add XP from any source (combat, quests, custom activities)
-  - Triggers the same level-up system as listening sessions
-  - Returns detailed level-up breakdowns if character levels up
+#### Stat Strategy Auto-Detection
 
-- `updateCharacterFromSession(character: CharacterSheet, session: ListeningSession, track?: PlaylistTrack, previousListenCount?: number): CharacterUpdateResult`
-  - Update character from a completed listening session
-  - Calculates XP based on session duration and modifiers
-  - Handles track mastery bonuses
+`CharacterUpdater` auto-detects stat increase strategy based on character's `gameMode`:
 
-**Default Behavior - Auto-Detected by gameMode:**
+| Game Mode | Strategy | Behavior |
+|-----------|----------|----------|
+| `standard` (capped at 20) | `dnD5e` (manual) | 2-step level-up: XP adds HP/proficiency/features, stats require manual selection via `applyPendingStatIncrease()` |
+| `uncapped` | `dnD5e_smart` (auto) | 1-step level-up: Everything applied automatically, intelligently boosts primary/lowest stats |
 
-`CharacterUpdater` auto-detects the appropriate stat increase strategy based on the character's `gameMode`:
-
-- **Standard mode** (capped at level 20) → Manual D&D 5e rules (`dnD5e` strategy)
-  - 2-step level-up process: XP adds HP/proficiency/features, but stats require manual selection
-  - Stores pending stat increases in a counter
-  - User completes level-up by calling `applyPendingStatIncrease()`
-
-- **Uncapped mode** → Automatic stat selection (`dnD5e_smart` strategy)
-  - 1-step level-up process: Everything applied automatically
-  - Intelligently boosts class's primary stat or lowest stats
-  - No manual interaction required
-
-**To override the auto-detected strategy**, pass a custom `StatManager`:
-
+**Override with custom StatManager:**
 ```typescript
 import { StatManager, CharacterUpdater } from 'playlist-data-engine';
 
-// Force automatic mode even for standard characters
+// Force automatic mode for standard characters
 const statManager = new StatManager({ strategy: 'dnD5e_smart' });
 const updater = new CharacterUpdater(statManager);
-
-// Force manual mode even for uncapped characters
-const manualStatManager = new StatManager({ strategy: 'dnD5e' });
-const manualUpdater = new CharacterUpdater(manualStatManager);
 ```
 
-### addXP() - Adding XP from Any Source
+#### Types
 
-**Use this method** when you want to award XP from sources other than music listening:
+| Type | Location | Description |
+|------|----------|-------------|
+| `CharacterUpdateResult` | [src/core/progression/CharacterUpdater.ts](src/core/progression/CharacterUpdater.ts) (11-20) | Result of character update with XP, level-up, and mastery data |
+| `LevelUpDetail` | [src/core/types/Progression.ts](src/core/types/Progression.ts) | Detailed breakdown of individual level-up (HP, proficiency, stats, features, spell slots) |
+| `ApplyPendingStatIncreaseResult` | [src/core/types/Progression.ts](src/core/types/Progression.ts) | Result of applying pending stat increase with stat change details |
 
-```typescript
-const updater = new CharacterUpdater();
+---
 
-// Combat victory XP
-const combatResult = updater.addXP(character, 500, 'combat');
-
-// Quest completion XP
-const questResult = updater.addXP(character, 1000, 'quest');
-
-// Custom activity XP
-const customResult = updater.addXP(character, 250, 'exploration');
-
-// All sources return the same detailed level-up information
-if (combatResult.leveledUp && combatResult.levelUpDetails) {
-    console.log(`🎉 LEVELED UP to ${combatResult.newLevel}!`);
-
-    for (const detail of combatResult.levelUpDetails) {
-        console.log(`💚 HP: +${detail.hpIncrease} (new max: ${detail.newMaxHP})`);
-
-        if (detail.statIncreases && detail.statIncreases.length > 0) {
-            console.log(`📊 STATS INCREASED:`);
-            for (const stat of detail.statIncreases) {
-                console.log(`   ${stat.ability}: ${stat.oldValue} → ${stat.newValue} (+${stat.delta})`);
-            }
-        }
-    }
-}
-```
-
-**Return Type:**
-```typescript
-{
-    character: CharacterSheet;      // Updated character
-    xpEarned: number;               // XP amount added
-    leveledUp: boolean;             // Whether character leveled up
-    newLevel?: number;              // New level (if leveled up)
-    levelUpDetails?: LevelUpDetail[]; // Detailed breakdown of each level-up
-}
-```
-
-**Key Differences from `updateCharacterFromSession()`:**
-- No track mastery bonuses (specific to music listening)
-- Direct XP amount instead of calculated from session duration
-- **Auto-detects strategy based on character's gameMode**
-- Same level-up system and detailed breakdowns
-
-### Pending Stat Increases (Manual Level-Up)
-
-When using manual mode (standard gameMode or `dnD5e` strategy), level-ups become a 2-step process:
-
-1. **Step 1**: Add XP → Character gains level with HP/proficiency/features applied
-2. **Step 2**: User selects stats → Complete the level-up
-
-**Methods:**
-
-- `applyPendingStatIncrease(character: CharacterSheet, primaryStat: Ability, secondaryStats?: Ability[]): ApplyPendingStatIncreaseResult`
-  - Apply a pending stat increase with user-selected stats
-  - Only works if `pendingStatIncreases` counter > 0
-  - Validates D&D 5e rules: +2 to one ability OR +1 to two abilities
-  - Decrements the counter
-
-- `hasPendingStatIncreases(character: CharacterSheet): boolean`
-  - Check if character has pending stat increases
-
-- `getPendingStatIncreaseCount(character: CharacterSheet): number`
-  - Get the count of pending stat increases
-
-**Example - Manual Stat Selection:**
-
-```typescript
-import { CharacterUpdater } from 'playlist-data-engine';
-
-// Standard mode (capped) defaults to manual stat selection
-const character = CharacterGenerator.generate(seed, audio, track, { gameMode: 'standard' });
-const updater = new CharacterUpdater(); // No StatManager needed - auto-detected!
-
-// Step 1: Add XP - triggers level-up but PAUSES before stats
-const result = updater.addXP(character, 6500, 'quest');
-
-console.log(result.leveledUp); // true
-console.log(result.newLevel); // 5
-
-// Check for pending stat increases
-if (updater.hasPendingStatIncreases(character)) {
-    const count = updater.getPendingStatIncreaseCount(character);
-    console.log(`${count} stat increases pending!`);
-
-    // Step 2: User chooses +2 to STR
-    const completeResult = updater.applyPendingStatIncrease(character, 'STR');
-    console.log(`STR: ${completeResult.statIncreases[0].oldValue} → ${completeResult.statIncreases[0].newValue}`);
-
-    if (completeResult.remainingPending > 0) {
-        console.log(`${completeResult.remainingPending} more stat increases waiting!`);
-    }
-}
-
-// Or user chooses +1 to STR and +1 to DEX
-const result2 = updater.applyPendingStatIncrease(character, 'STR', ['DEX']);
-```
-
-**Return Type:**
-```typescript
-{
-    character: CharacterSheet;              // Updated character
-    statIncreases: Array<{                  // Stats that were increased
-        ability: Ability;
-        oldValue: number;
-        newValue: number;
-        delta: number;
-    }>;
-    remainingPending: number;               // Counter value after applying
-    timestamp: number;                      // Completion timestamp
-}
-```
-
-### CharacterUpdateResult
-
-**Location:** `src/core/progression/CharacterUpdater.ts` (9-18)
-
-Result of a character update operation. Now includes detailed level-up information!
-
-```typescript
-export interface CharacterUpdateResult {
-    character: CharacterSheet;
-    xpEarned: number;
-    leveledUp: boolean;
-    newLevel?: number;
-    masteredTrack: boolean;
-    masteryBonusXP: number;
-    /** Detailed breakdown of each level-up */
-    levelUpDetails?: LevelUpDetail[];
-}
-
-### LevelUpDetail
-
-**Location:** `src/core/types/Progression.ts` (219-254)
-
-```typescript
-export interface LevelUpDetail {
-    fromLevel: number;
-    toLevel: number;
-    hpIncrease: number;
-    newMaxHP: number;
-    proficiencyIncrease: number;
-    newProficiency: number;
-    statIncreases?: Array<{
-        ability: Ability;
-        oldValue: number;
-        newValue: number;
-        delta: number;
-    }>;
-    featuresGained?: string[];
-    newSpellSlots?: Record<number, number>;
-}
-```
-
-**Example - Displaying Level-Up Details:**
-
-```typescript
-const result = updater.updateCharacterFromSession(character, session, track, count);
-
-if (result.leveledUp && result.levelUpDetails) {
-    for (const detail of result.levelUpDetails) {
-        console.log(`=== Level ${detail.fromLevel} → ${detail.toLevel} ===`);
-        console.log(`HP: +${detail.hpIncrease} (new max: ${detail.newMaxHP})`);
-
-        if (detail.proficiencyIncrease > 0) {
-            console.log(`Proficiency: +${detail.proficiencyIncrease} (new: ${detail.newProficiency})`);
-        }
-
-        if (detail.statIncreases) {
-            for (const stat of detail.statIncreases) {
-                console.log(`${stat.ability}: ${stat.oldValue} → ${stat.newValue} (+${stat.delta})`);
-            }
-        }
-
-        if (detail.featuresGained) {
-            console.log(`New Features: ${detail.featuresGained.join(', ')}`);
-        }
-    }
-}
-```
-
-#### Helper: `SessionTracker`
+### SessionTracker
 
 **Location:** `src/core/progression/SessionTracker.ts`
 
-Manages active listening sessions.
+*Also known as: Session manager, listening tracker, session history*
 
-- `startSession(trackUuid: string, track?: PlaylistTrack, context?: object): string`
-    - Starts a session and returns a session ID.
-- `endSession(sessionId: string, durationOverride?: number): ListeningSession | null`
-    - Ends a session, calculates XP, and records it to history.
-- `getActiveSession(sessionId: string): ActiveSession | null`
-- `getSessionsForTrack(trackUuid: string): ListeningSession[]`
-- `isTrackMastered(trackUuid: string): boolean`
+Manages active listening sessions and records history.
 
-#### Helper: `XPCalculator`
+#### Method Reference
+
+| Method | Description |
+|--------|-------------|
+| `constructor(xpCalculator?)` | Creates instance with optional XPCalculator |
+| `startSession(trackUuid, track?, context?)` | Starts session and returns session ID |
+| `endSession(sessionId, durationOverride?, activityType?)` | Ends session, calculates XP, returns ListeningSession record |
+| `getActiveSession(sessionId)` | Gets active session without ending it |
+| `getActiveSessionDuration(sessionId)` | Returns current duration in seconds |
+| `updateSessionContext(sessionId, context)` | Updates environmental/gaming context for live session |
+| `getSessionHistory()` | Returns all completed listening sessions |
+| `getSessionsForTrack(trackUuid)` | Returns sessions for specific track |
+| `getTotalListeningTime()` | Returns total listening time across all sessions (seconds) |
+| `getTotalXPEarned()` | Returns total XP earned across all sessions |
+| `getTrackListeningTime(trackUuid)` | Returns total listening time for specific track (seconds) |
+| `getTrackListenCount(trackUuid)` | Returns number of times track has been listened to |
+| `isTrackMastered(trackUuid, masteryThreshold?)` | Checks if track has been mastered (default threshold: 10) |
+| `getSessionsInRange(startTime, endTime)` | Returns sessions within time range |
+| `getAverageSessionLength()` | Returns average session duration (seconds) |
+| `getLongestSession()` | Returns the session with longest duration |
+| `clearHistory()` | Clears all session history |
+| `clearActiveSessions()` | Clears all active sessions |
+| `getActiveSessionCount()` | Returns number of currently active sessions |
+| `getActiveSessionIds()` | Returns all active session IDs |
+
+#### Types
+
+| Type | Location | Description |
+|------|----------|-------------|
+| `ListeningSession` | [src/core/types/Progression.ts](src/core/types/Progression.ts) (60-71) | Record of single listening session with duration, XP, and context |
+| `ActiveSession` | [src/core/progression/SessionTracker.ts](src/core/progression/SessionTracker.ts) | Active session with start time and context |
+
+---
+
+### XPCalculator
 
 **Location:** `src/core/progression/XPCalculator.ts`
 
-Calculates XP based on duration and bonuses.
+*Also known as: XP calculator, experience calculator, leveling calculator*
 
-- `calculateSessionXP(session: ListeningSession, track?: PlaylistTrack): number`
-    - Applies base XP (1/sec), activity bonuses, environmental bonuses, and gaming bonuses.
-- `getXPToNextLevel(currentLevel: number): number`
-- `getLevelFromXP(totalXP: number): number`
+Calculates XP based on duration, activity, environment, and gaming context.
 
-#### Helper: `LevelUpProcessor`
+#### Constructor
+
+| Constructor | Description |
+|-------------|-------------|
+| `constructor(options?: Partial<ExperienceSystem>)` | Creates instance with optional XP system configuration |
+
+#### Method Reference
+
+| Method | Description |
+|--------|-------------|
+| `calculateSessionXP(session, track?)` | Calculates total XP for session with all multipliers applied |
+| `calculateTotalModifier(envContext?, gamingContext?)` | Calculates combined XP modifier (1.0 to 3.0) from environmental and gaming bonuses |
+| `getXPThresholdForLevel(level)` | Returns XP required for specific level (1-20) |
+| `getXPToNextLevel(currentLevel)` | Returns XP needed to advance from current level to next |
+| `getLevelFromXP(totalXP)` | Determines character level from total XP |
+| `isTrackMastered(listenCount)` | Checks if listen count meets mastery threshold |
+| `getMasteryBonusXP()` | Returns bonus XP for mastering a track |
+| `getConfig()` | Returns current configuration |
+
+#### Types
+
+| Type | Location | Description |
+|------|----------|-------------|
+| `ExperienceSystem` | [src/core/types/Progression.ts](src/core/types/Progression.ts) (76-98) | Configuration for XP calculation (rates, thresholds, bonuses) |
+
+---
+
+### LevelUpProcessor
 
 **Location:** `src/core/progression/LevelUpProcessor.ts`
 
+*Also known as: Level-up handler, character advancement*
+
 Handles the mechanics of leveling up a character.
 
-### LevelUpBenefits
+#### Method Reference
 
-**Location:** `src/core/progression/LevelUpProcessor.ts` (25-63)
+| Method | Description |
+|--------|-------------|
+| `processLevelUp(character, newLevel)` | Calculates level-up benefits for given level |
+| `applyLevelUp(character, benefits)` | Applies calculated benefits to character sheet |
+| `getXPThreshold(level, isUncapped?)` | Returns XP required for specific level (uses uncapped formula when `isUncapped: true`) |
+| `calculateLevel(totalXP, isUncapped?)` | Determines character level from total XP |
+| `setStatManager(statManager)` | Sets StatManager for stat increase handling |
+| `processLevelUpWithoutStats(character, newLevel)` | Calculates benefits excluding stat increases (manual mode) |
+| `applyAutomaticBenefitsOnly(character, benefits)` | Applies HP/proficiency/features without stat increases |
+| `applyStatIncreasesOnly(character, statSelections)` | Applies stat increases to character with pending counter |
 
-Benefits granted by leveling up.
+#### Types
 
-```typescript
-export interface LevelUpBenefits {
-    newLevel: number;
-    hitPointIncrease: number;
-    newHitPointsTotal: number;
-    proficiencyBonusIncrease: number;
-    newProficiencyBonus: number;
+| Type | Location | Description |
+|------|----------|-------------|
+| `LevelUpBenefits` | [src/core/progression/LevelUpProcessor.ts](src/core/progression/LevelUpProcessor.ts) (25-63) | Benefits granted by leveling up (HP, proficiency, stats, spell slots, features) |
 
-    /** New: Support multiple stat increases */
-    abilityScoreIncreases?: Array<{
-        ability: 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
-        increase: number;
-    }>;
+---
 
-    /** Deprecated: Kept for backward compatibility */
-    abilityScoreIncrease?: {
-        ability: 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
-        increase: number;
-    };
-
-    newSpellSlots?: Record<number, number>;
-    classFeatures?: string[];
-}
-```
-- `static applyLevelUp(character: CharacterSheet, benefits: LevelUpBenefits): CharacterSheet`
-    - Applies the calculated benefits to the character sheet.
-- `static getXPThreshold(level: number, isUncapped: boolean = false): number`
-    - Returns XP required for a specific level.
-    - `isUncapped`: When true, uses uncapped progression formula for levels beyond 20.
-
-#### Helper: `MasterySystem`
+### MasterySystem
 
 **Location:** `src/core/progression/MasterySystem.ts`
 
+*Also known as: Track mastery, song mastery, listening achievement*
+
 Tracks song mastery based on listen counts.
 
-- `checkMastery(listenCount: number): boolean`
-    - Returns true if listens >= `MASTERY_THRESHOLD` (default 10).
-- `calculateMasteryBonus(isMastered: boolean): number`
-    - Returns bonus XP if mastered.
-- `isJustMastered(previous: number, current: number): boolean`
-    - Returns true if mastery was achieved in the current session.
+#### Method Reference
+
+| Method | Description |
+|--------|-------------|
+| `checkMastery(listenCount)` | Returns true if listens meets mastery threshold (default: 10) |
+| `calculateMasteryBonus(isMastered)` | Returns bonus XP if mastered |
+| `isJustMastered(previous, current)` | Returns true if mastery was achieved in current session |
 
 ---
 
