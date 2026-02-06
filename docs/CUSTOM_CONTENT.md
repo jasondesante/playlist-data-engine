@@ -11,8 +11,8 @@ Complete guide to custom races, custom classes, and spawn rate control in the Pl
 ## Table of Contents
 
 1. [Custom Races](#custom-races)
+2. [Subrace Support](#subrace-support)
 2. [Custom Classes](#custom-classes)
-3. [Spawn Rate Control](#spawn-rate-control)
 
 ---
 
@@ -165,10 +165,10 @@ if (prereqs.subrace !== undefined) {
 FeatureQuery provides `getRacialTraitsForSubrace()`:
 
 ```typescript
-const registry = FeatureQuery.getInstance();
+const query = FeatureQuery.getInstance();
 
 // Get traits specific to High Elf subrace
-const highElfTraits = registry.getRacialTraitsForSubrace('Elf', 'High Elf');
+const highElfTraits = query.getRacialTraitsForSubrace('Elf', 'High Elf');
 ```
 
 ### Complete Subrace Registration Example

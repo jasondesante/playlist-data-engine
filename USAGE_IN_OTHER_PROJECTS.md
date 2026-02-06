@@ -448,6 +448,83 @@ for (const track of playlist.tracks) {
 
 ---
 
+## Extensibility System
+
+**For detailed extensibility documentation, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
+
+The extensibility system allows you to add custom content at runtime, including spells, equipment, races, classes, features, skills, and appearance options.
+
+### Registering Custom Equipment
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Add custom equipment
+manager.register('equipment', [
+    { name: 'Dragon Sword', type: 'weapon', rarity: 'rare', weight: 5 },
+    { name: 'Mithral Armor', type: 'armor', rarity: 'very_rare', weight: 10 }
+], {
+    weights: { 'Dragon Sword': 0.5 }  // Half as common
+});
+```
+
+### Registering Custom Spells
+
+```typescript
+manager.register('spells', [
+    {
+        name: 'Phoenix Fire',
+        level: 5,
+        school: 'Evocation',
+        casting_time: '1 action',
+        range: '60 feet',
+        duration: 'Instantaneous',
+        components: ['V', 'S'],
+        description: 'A burst of flame...'
+    }
+]);
+```
+
+### Spawn Rate Control
+
+```typescript
+// Control spawn rates with weights
+manager.setWeights('equipment', {
+    'Dragon Sword': 0.5,   // Rare
+    'Mithral Armor': 1.0   // Normal
+});
+```
+
+
+See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
+- Custom features, and spawn rates
+- Export/import functionality
+- Content pack creation
+
+**For detailed guides on specific topics:**
+- [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md) - Custom races, subraces, and classes
+- [docs/PREREQUISITES.md](docs/PREREQUISITES.md) - Complete guide to skill, spell, and feature prerequisites
+- [docs/EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) - Complete guide to equipment properties and modifications
+- [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md) - Complete API reference
+
+
+---
+
+
+## Equipment System
+
+The playlist-data-engine includes a comprehensive equipment system with custom items, properties, enchanting, and batch spawning.
+
+**For complete documentation, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)**
+
+### Registering, Spawning, and Enchanting Custom Equipment
+
+**For more examples including conditional properties, inline features, spell granting, and templates, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)**
+
+---
+
 ## Validation Schemas
 
 The library exports Zod validation schemas for runtime type validation of playlist, audio, and character data. Use these to validate external data before processing or to ensure API responses match expected formats.
@@ -573,716 +650,6 @@ if (!audioResult.success) {
 ---
 
 
-## Extensibility System
-
-**For detailed extensibility documentation, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
-
-The extensibility system allows you to add custom content at runtime, including spells, equipment, races, classes, features, skills, and appearance options.
-
-### Registering Custom Equipment
-
-```typescript
-import { ExtensionManager } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// Add custom equipment
-manager.register('equipment', [
-    { name: 'Dragon Sword', type: 'weapon', rarity: 'rare', weight: 5 },
-    { name: 'Mithral Armor', type: 'armor', rarity: 'very_rare', weight: 10 }
-], {
-    weights: { 'Dragon Sword': 0.5 }  // Half as common
-});
-```
-
-### Registering Custom Spells
-
-```typescript
-manager.register('spells', [
-    {
-        name: 'Phoenix Fire',
-        level: 5,
-        school: 'Evocation',
-        casting_time: '1 action',
-        range: '60 feet',
-        duration: 'Instantaneous',
-        components: ['V', 'S'],
-        description: 'A burst of flame...'
-    }
-]);
-```
-
-### Spawn Rate Control
-
-```typescript
-// Control spawn rates with weights
-manager.setWeights('equipment', {
-    'Dragon Sword': 0.5,   // Rare
-    'Mithral Armor': 1.0   // Normal
-});
-```
-
-**Spawn Modes:**
-| Mode | Description |
-|------|-------------|
-| `relative` | Add to default pool (default) |
-| `absolute` | Only custom items spawn |
-| `default` | All items equal weight |
-| `replace` | Clear previous custom data |
-
-See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
-- Custom classes and features
-- Equipment properties and modifications
-- Export/import functionality
-- Content pack creation
-
-**For detailed guides on specific topics:**
-- [docs/PREREQUISITES.md](docs/PREREQUISITES.md) - Complete guide to skill, spell, and feature prerequisites
-- [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md) - Custom races, classes, and spawn rate control
-- [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md) - Complete API reference
-
-### Example: Dragon-Themed Content
-
-This example demonstrates registering a complete dragon-themed content pack with custom race, subraces, skills, and spells:
-
-```typescript
-import { ExtensionManager, asClass } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// 1. Register a custom race with subraces
-manager.register('races.data', [{
-    race: 'Dragonkin',
-    ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
-    speed: 30,
-    traits: ['Draconic Ancestry', 'Darkvision'],
-    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
-}]);
-
-manager.register('races', ['Dragonkin']);
-
-// 2. Register subrace-specific racial traits
-manager.register('racialTraits', [{
-    id: 'fire_dragonkin_fire_resistance',
-    name: 'Fire Resistance',
-    description: 'You have resistance to fire damage.',
-    race: 'Dragonkin',
-    subrace: 'Fire Dragonkin',
-    prerequisites: { subrace: 'Fire Dragonkin' },
-    effects: [
-        { type: 'ability_unlock', target: 'fire_resistance', value: true }
-    ],
-    source: 'custom'
-}]);
-
-// Cache is automatically invalidated after registration
-
-// 3. Register a skill with prerequisites (feature + level + class)
-manager.register('skills.INT', [{
-    id: 'dragon_smithing',
-    name: 'Dragon Smithing',
-    description: 'Craft weapons from dragon scales',
-    ability: 'INT',
-    prerequisites: {
-        features: ['draconic_bloodline'],
-        level: 5,
-        class: asClass('Sorcerer')
-    },
-    source: 'custom'
-}]);
-
-// Cache is automatically invalidated after registration
-
-// 4. Register a spell with prerequisites
-manager.register('spells', [{
-    id: 'dragon_breath',
-    name: 'Dragon Breath',
-    level: 3,
-    school: 'Evocation',
-    casting_time: '1 action',
-    range: '60 ft cone',
-    components: ['V', 'S', 'M'],
-    duration: 'Instantaneous',
-    description: 'Exhale destructive energy',
-    prerequisites: {
-        features: ['dragon_bloodline'],
-        abilities: { CHA: 16 }
-    }
-}]);
-```
-
-### Example: Custom Necromancer Class
-
-This example demonstrates creating a custom "Necromancer" class that extends the Wizard base class:
-
-```typescript
-import { ExtensionManager, CharacterGenerator, asClass } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// 1. Register custom skill
-manager.register('skills.INT', [{
-    id: 'necromancy',
-    name: 'Necromancy',
-    ability: 'INT',
-    description: 'Knowledge of undead creation and control',
-    prerequisites: { class: 'Necromancer' },
-    source: 'custom'
-}]);
-
-// 2. Register custom class data (inherits from Wizard)
-manager.register('classes.data', [{
-    name: 'Necromancer',
-    baseClass: 'Wizard',  // Inherits from Wizard
-    // Only override what's different:
-    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
-    // All other properties (hit_die, saving_throws, etc.) are inherited from Wizard
-}]);
-
-// 3. Register the class name
-manager.register('classes', [asClass('Necromancer')]);
-
-// 4. Register custom features
-manager.register('classFeatures.Necromancer', [
-    {
-        id: 'necromancer_raise_dead',
-        name: 'Raise Undead',
-        description: 'Can raise undead creatures',
-        type: 'active',
-        level: 1,
-        class: 'Necromancer',
-        prerequisites: {
-            class: 'Necromancer',
-            abilities: { INT: 13 }
-        },
-        effects: [
-            { type: 'ability_unlock', target: 'raise_undead', value: true }
-        ],
-        source: 'custom'
-    }
-], { mode: 'replace' });
-
-// 5. Register custom spell list
-manager.register('classSpellLists.Necromancer', [{
-    cantrips: ['Mage Hand', 'Mending', 'Message'],
-    spells_by_level: {
-        1: ['Animate Dead', 'False Life', 'Ray of Sickness'],
-        2: ['Ray of Enfeeblement', 'Web'],
-        3: ['Animate Dead', 'Feign Death']
-    }
-}]);
-
-// 6. Generate a Necromancer character
-const track = { title: 'Dark Ritual', artist: 'Necromancer', genre: 'Dark Ambient', ...otherTrackFields };
-const character = CharacterGenerator.generate(
-    'test-seed',
-    sampleAudioProfile,
-    track,
-    { forceClass: 'Necromancer' }
-);
-```
-
----
-
-## Equipment System
-
-The playlist-data-engine includes a comprehensive equipment system with custom items, properties, enchanting, and batch spawning.
-
-**For complete documentation, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)**
-
-### Registering Custom Equipment
-
-```typescript
-import { ExtensionManager } from 'playlist-data-engine';
-import type { EnhancedEquipment } from 'playlist-data-engine';
-
-const flamingSword: EnhancedEquipment = {
-    name: 'Flaming Sword',
-    type: 'weapon',
-    rarity: 'rare',
-    weight: 3,
-    damage: { dice: '1d8', damageType: 'slashing' },
-    properties: [{
-        type: 'damage_bonus',
-        target: 'fire',
-        value: '1d6',
-        description: '+1d6 fire damage'
-    }],
-    spawnWeight: 0.1,
-    source: 'custom',
-    tags: ['magic', 'fire', 'weapon']
-};
-
-const manager = ExtensionManager.getInstance();
-manager.register('equipment', [flamingSword], {
-    mode: 'relative',
-    validate: true
-});
-```
-
-### Spawning Equipment
-
-```typescript
-import { EquipmentSpawnHelper, SeededRNG } from 'playlist-data-engine';
-
-const rng = new SeededRNG('loot_seed');
-
-// Spawn from list
-const items = EquipmentSpawnHelper.spawnFromList(['Flaming Sword', 'Shield']);
-
-// Spawn by rarity
-const rareItems = EquipmentSpawnHelper.spawnByRarity('rare', 3, rng);
-
-// Spawn random (respects spawn weights)
-const loot = EquipmentSpawnHelper.spawnRandom(5, rng, { excludeZeroWeight: true });
-
-// Add to character
-character = EquipmentSpawnHelper.addToCharacter(character, loot, false);
-```
-
-### Applying Equipment Effects
-
-```typescript
-import { EquipmentEffectApplier } from 'playlist-data-engine';
-
-// Equip item - applies all properties, features, skills, spells
-// instanceId is optional - use it when you want to track specific item instances
-const result = EquipmentEffectApplier.equipItem(character, equipment);
-// result: { applied: boolean, count: number, errors: string[] }
-
-// With instance tracking (for multiple identical items)
-const resultWithId = EquipmentEffectApplier.equipItem(character, equipment, 'instance_123');
-
-// Unequip item - removes all effects
-// instanceId is optional - only needed if you used it when equipping
-const unequipResult = EquipmentEffectApplier.unequipItem(character, 'Flaming Sword');
-// unequipResult: { applied: boolean, count: number, errors: string[] }
-
-// Unequip specific instance
-const unequipResultWithId = EquipmentEffectApplier.unequipItem(character, 'Flaming Sword', 'instance_123');
-```
-
-### Enchanting Equipment
-
-```typescript
-import { EquipmentModifier } from 'playlist-data-engine';
-
-// Create enchantment
-const enchantment = EquipmentModifier.createModification(
-    'plus_one_001',
-    '+1 Flaming Sword',
-    [{ type: 'passive_modifier', target: 'attack_roll', value: 1 }],
-    'enchantment'
-);
-
-// Apply to equipment
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Flaming Sword',
-    enchantment,
-    character
-);
-
-// Check if enchanted
-if (EquipmentModifier.isEnchanted(character.equipment, 'Flaming Sword')) {
-    console.log('Item is enchanted!');
-}
-
-// Get item summary
-const summary = EquipmentModifier.getItemSummary(character.equipment, 'Flaming Sword');
-console.log(summary);
-// { name: 'Flaming Sword', modifications: [...], isCursed: false, isEnchanted: true }
-```
-
-**For more examples including conditional properties, inline features, spell granting, and templates, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)**
-
----
-
-### Enchantment Library
-
-The Enchantment Library provides a comprehensive collection of predefined enchantments and curses that can be applied to equipment at runtime. All enchantments are `EquipmentModification` objects designed to work with `EquipmentModifier`.
-
-**For complete API documentation, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#enchantment-library)**
-
-#### Using Predefined Enchantments
-
-```typescript
-import { EquipmentModifier, WEAPON_ENCHANTMENTS, ARMOR_ENCHANTMENTS, RESISTANCE_ENCHANTMENTS } from 'playlist-data-engine';
-
-// Apply a +1 enhancement to a weapon
-const plusOne = WEAPON_ENCHANTMENTS.plusOne;
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Longsword',
-    plusOne,
-    character
-);
-
-// Add elemental damage
-const flaming = WEAPON_ENCHANTMENTS.flaming;  // +1d6 fire damage
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Longsword',
-    flaming,
-    character
-);
-
-// Improve armor
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Plate Armor',
-    ARMOR_ENCHANTMENTS.plusTwo,  // +2 AC
-    character
-);
-
-// Add resistance
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Cloak of Protection',
-    RESISTANCE_ENCHANTMENTS.fire,  // Fire resistance
-    character
-);
-```
-
-#### Creating Stat-Boosting Enchantments
-
-The `create*Enchantment` functions create stat bonuses with configurable levels (1-4):
-
-```typescript
-import {
-    createStrengthEnchantment,
-    createDexterityEnchantment,
-    createConstitutionEnchantment,
-    createIntelligenceEnchantment,
-    createWisdomEnchantment,
-    createCharismaEnchantment
-} from 'playlist-data-engine';
-
-// Create +2 Strength belt
-const beltOfStrength = createStrengthEnchantment(2);  // Bonus: 1-4
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Belt of Giant Strength',
-    beltOfStrength,
-    character
-);
-
-// Create +4 Intelligence circlet
-const circletOfIntellect = createIntelligenceEnchantment(4);
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Circlet of Intellect',
-    circletOfIntellect,
-    character
-);
-```
-
-#### Applying Curses
-
-```typescript
-import { EquipmentModifier, CURSES } from 'playlist-data-engine';
-
-// Apply a cursed item
-const cursedItem = EquipmentModifier.curse(
-    character.equipment,
-    'Ring of Weakness',
-    CURSES.weakness,  // -4 Strength
-    character
-);
-
-// Apply attunement lock (cannot remove without remove curse)
-const lockedItem = EquipmentModifier.curse(
-    character.equipment,
-    'Cursed Helmet',
-    CURSES.attunement,
-    character
-);
-```
-
-#### Combo Enchantments
-
-Special multi-effect enchantments for powerful items:
-
-```typescript
-import { ALL_ENCHANTMENTS } from 'playlist-data-engine';
-
-// Holy Avenger: +3 enhancement, radiant damage vs fiends/undead, +5 saves vs spells
-const holyAvenger = ALL_ENCHANTMENTS.holyAvenger;
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Holy Avenger',
-    holyAvenger,
-    character
-);
-
-// Dragon Slayer: +2 enhancement, extra damage vs dragons, fire resistance
-const dragonSlayer = ALL_ENCHANTMENTS.dragonSlayer;
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Dragon Slayer Sword',
-    dragonSlayer,
-    character
-);
-```
-
-#### Querying Enchantments
-
-```typescript
-import { getEnchantment, getCurse, getAllEnchantments, getAllCurses, getEnchantmentsByType } from 'playlist-data-engine';
-
-// Get specific enchantment by ID
-const ench = getEnchantment('enchantment_flaming');
-if (ench) {
-    console.log(ench.name);  // 'Flaming'
-}
-
-// Get all curses
-const allCurses = getAllCurses();
-console.log(`Available curses: ${allCurses.length}`);  // 17 curses
-
-// Get enchantments by type
-const weaponEnchants = getEnchantmentsByType('weapon');
-console.log(`Weapon enchantments: ${weaponEnchants.length}`);  // 16 enchantments
-```
-
-**Available Exports:**
-
-- **Collections**: `WEAPON_ENCHANTMENTS`, `ARMOR_ENCHANTMENTS`, `RESISTANCE_ENCHANTMENTS`, `CURSES`, `ALL_ENCHANTMENTS`
-- **Stat Boost Functions**: `createStrengthEnchantment`, `createDexterityEnchantment`, `createConstitutionEnchantment`, `createIntelligenceEnchantment`, `createWisdomEnchantment`, `createCharismaEnchantment` (each takes `bonus: 1 | 2 | 3 | 4`)
-- **Query Functions**: `getEnchantment`, `getCurse`, `getAllEnchantments`, `getAllCurses`, `getEnchantmentsByType`
-
----
-
-### Magic Item Examples
-
-The Magic Item Examples library provides 38 pre-built magic items that demonstrate all capabilities of the Advanced Equipment System. These include weapons, armor, wondrous items, cursed items, conditional items, and template-based items. They serve as reference implementations and test fixtures.
-
-**For complete API documentation, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#magic-item-examples)**
-
-#### Getting Magic Items by Name
-
-```typescript
-import { getMagicItem } from 'playlist-data-engine';
-
-// Get a specific magic item
-const flameTongue = getMagicItem('Flame Tongue');
-if (flameTongue) {
-    console.log(flameTongue.properties);
-    // Output: Array of equipment properties including damage_bonus and special_property
-}
-```
-
-#### Querying Magic Items
-
-```typescript
-import {
-    getMagicItemsByType,
-    getMagicItemsByRarity,
-    getCursedItems,
-    getItemsWithProperty
-} from 'playlist-data-engine';
-
-// Get all weapons
-const weapons = getMagicItemsByType('weapon');
-console.log(`Magic weapons: ${weapons.length}`);  // 4 weapons
-
-// Get all rare items
-const rareItems = getMagicItemsByRarity('rare');
-console.log(`Rare items: ${rareItems.length}`);  // ~15 rare items
-
-// Get cursed items
-const cursedItems = getCursedItems();
-cursedItems.forEach(item => {
-    console.log(`Cursed: ${item.name}`);
-    // Output: -1 Cursed Sword, Belt of Strength Drain, Helmet of Opposite Alignment
-});
-
-// Get all items with a specific property
-const statBonusItems = getItemsWithProperty('stat_bonus');
-console.log(`Items with stat bonuses: ${statBonusItems.length}`);
-```
-
-#### Applying Magic Equipment Templates
-
-Templates can be applied to base equipment to create magic variants:
-
-```typescript
-import { applyTemplate, EnhancedEquipment } from 'playlist-data-engine';
-
-// Define base equipment
-const baseLongsword: EnhancedEquipment = {
-    name: 'Longsword',
-    type: 'weapon',
-    rarity: 'common',
-    weight: 3,
-    damage: { dice: '1d8', damageType: 'slashing', versatile: '1d10' },
-    weaponProperties: ['finesse', 'versatile'],
-    source: 'base',
-    tags: ['martial', 'melee']
-};
-
-// Apply flaming template
-const flamingSword = applyTemplate(baseLongsword, 'flaming_weapon_template');
-if (flamingSword) {
-    console.log(flamingSword.name);  // "Longsword (flaming weapon template)"
-    console.log(flamingSword.properties);  // Combined properties from base + template
-}
-
-// Apply +1 enhancement
-const plusOneSword = applyTemplate(baseLongsword, 'plus_one_weapon');
-if (plusOneSword) {
-    console.log(plusOneSword.properties);  // Includes +1 attack/damage bonus
-}
-```
-
-#### Registering Magic Items with ExtensionManager
-
-Magic item examples can be registered as custom equipment for procedural generation:
-
-```typescript
-import { ExtensionManager, MAGIC_ITEM_EXAMPLES } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// Register all magic items as custom equipment
-manager.register('equipment', MAGIC_ITEM_EXAMPLES, {
-    mode: 'append',
-    weights: MAGIC_ITEM_EXAMPLES.reduce((acc, item) => {
-        acc[item.name] = item.spawnWeight ?? 0;
-        return acc;
-    }, {} as Record<string, number>)
-});
-
-// Now items will appear in random generation (respecting spawnWeight)
-// Note: Vorpal Sword and other legendary items have spawnWeight: 0,
-// so they won't appear randomly but can still be spawned by name
-```
-
-#### Direct Access to Magic Item Collections
-
-```typescript
-import { MAGIC_ITEM_EXAMPLES, MAGIC_EQUIPMENT_TEMPLATES } from 'playlist-data-engine';
-
-// Iterate through all magic items
-MAGIC_ITEM_EXAMPLES.forEach(item => {
-    console.log(`${item.name} (${item.rarity}) - ${item.type}`);
-});
-
-// Access specific template
-const viciousTemplate = MAGIC_EQUIPMENT_TEMPLATES.vicious_weapon_template;
-console.log(viciousTemplate.properties);
-```
-
-**Available Exports:**
-
-- **Collections**: `MAGIC_ITEM_EXAMPLES` (38 items), `MAGIC_EQUIPMENT_TEMPLATES` (9 templates)
-- **Query Functions**: `getMagicItem`, `getMagicItemsByType`, `getMagicItemsByRarity`, `getCursedItems`, `getItemsWithProperty`
-- **Template Function**: `applyTemplate` - Apply a template to base equipment
-
----
-
-### Configuration (NEW)
-
-The library provides centralized configuration options for sensors and progression systems. These configurations allow you to customize behavior such as cache TTLs, retry logic, XP modifiers, and level-up settings.
-
-#### Sensor Configuration
-
-Sensor configuration controls environmental and gaming platform sensor behavior, including caching, retry logic, and XP modifier calculations.
-
-```typescript
-import {
-    DEFAULT_SENSOR_CONFIG,
-    loadConfigFromEnv,
-    mergeConfig,
-    type SensorConfig
-} from 'playlist-data-engine';
-
-// Use default configuration
-const defaultConfig = DEFAULT_SENSOR_CONFIG;
-console.log(defaultConfig.xpModifier.maxModifier); // 3.0
-
-// Load configuration from environment variables
-// Reads: WEATHER_API_KEY, STEAM_API_KEY, STEAM_USER_ID, DISCORD_CLIENT_ID, XP_MAX_MODIFIER
-const envConfig = loadConfigFromEnv();
-
-// Merge custom configuration with defaults
-const customConfig = mergeConfig({
-    weather: {
-        cacheTTL: 15 * 60 * 1000, // 15 minutes (default: 12 minutes)
-        apiKey: 'your_api_key_here'
-    },
-    xpModifier: {
-        maxModifier: 2.5, // Lower cap (default: 3.0)
-        runningBonus: 0.6, // Higher bonus for running (default: 0.5)
-        nightBonus: 0.3 // Higher night bonus (default: 0.25)
-    },
-    gaming: {
-        steam: {
-            pollInterval: 30000 // Poll every 30 seconds (default: 60000)
-        }
-    }
-});
-
-// Use configuration with EnvironmentalSensors
-import { EnvironmentalSensors } from 'playlist-data-engine';
-
-const sensors = new EnvironmentalSensors(customConfig);
-```
-
-#### Progression Configuration
-
-Progression configuration controls XP calculation, stat increases, and level-up behavior.
-
-```typescript
-import {
-    DEFAULT_PROGRESSION_CONFIG,
-    mergeProgressionConfig,
-    type ProgressionConfig
-} from 'playlist-data-engine';
-
-// Use default configuration (D&D 5e standard)
-const defaultProgression = DEFAULT_PROGRESSION_CONFIG;
-console.log(defaultProgression.xp.level_thresholds); // D&D 5e XP thresholds
-
-// Customize progression settings
-const customProgression = mergeProgressionConfig({
-    xp: {
-        xp_per_second: 2, // Double XP rate (default: 1)
-        activity_bonuses: {
-            running: 2.0, // 2x XP while running (default: 1.5)
-            night_time: 1.5 // 1.5x XP at night (default: 1.25)
-        }
-    },
-    statIncrease: {
-        strategy: 'balanced', // Use balanced strategy instead of manual
-        autoApply: true // Automatically apply stat increases
-    },
-    levelUp: {
-        useAverageHP: true, // Use average HP instead of rolling
-        allowManualStatSelection: false // Disable manual selection
-    }
-});
-```
-
-**Available Exports:**
-
-**Sensor Configuration:**
-- `DEFAULT_SENSOR_CONFIG` - Default sensor configuration values
-- `loadConfigFromEnv()` - Load config from environment variables
-- `mergeConfig(userConfig?)` - Merge user config with defaults and env vars
-- `type SensorConfig` - Complete sensor configuration interface
-- `type GeolocationSensorConfig` - GPS sensor configuration
-- `type WeatherSensorConfig` - Weather API configuration
-- `type GamingSensorConfig` - Gaming platform configuration
-- `type XPModifierConfig` - XP modifier calculation settings
-- `type RetryConfig` - Retry behavior configuration
-
-**Progression Configuration:**
-- `DEFAULT_PROGRESSION_CONFIG` - Default D&D 5e progression values
-- `mergeProgressionConfig(userConfig?)` - Merge progression config with defaults
-- `type ProgressionConfig` - Progression system configuration interface
-
----
 
 ## Available Exports
 

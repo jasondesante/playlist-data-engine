@@ -477,15 +477,6 @@ manager.register('spells', customSpells, {
 });
 ```
 
-**Adjust spawn rates after registration:**
-
-```typescript
-manager.setWeights('spells', {
-    'Phoenix Fire': 0.3,   // Even rarer
-    'Mind Shield': 3.0     // Very common
-});
-```
-
 
 #### Spell Query
 
@@ -667,6 +658,79 @@ const character = CharacterGenerator.generate(
 #### Creating Custom Classes
 
 **See [CUSTOM_CONTENT.md](CUSTOM_CONTENT.md) for more information.**
+
+**Example: Custom Necromancer Class**
+
+This example demonstrates creating a custom "Necromancer" class that extends the Wizard base class:
+
+```typescript
+import { ExtensionManager, CharacterGenerator, asClass } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// 1. Register custom skill
+manager.register('skills.INT', [{
+    id: 'necromancy',
+    name: 'Necromancy',
+    ability: 'INT',
+    description: 'Knowledge of undead creation and control',
+    prerequisites: { class: 'Necromancer' },
+    source: 'custom'
+}]);
+
+// 2. Register custom class data (inherits from Wizard)
+manager.register('classes.data', [{
+    name: 'Necromancer',
+    baseClass: 'Wizard',  // Inherits from Wizard
+    // Only override what's different:
+    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
+    // All other properties (hit_die, saving_throws, etc.) are inherited from Wizard
+}]);
+
+// 3. Register the class name
+manager.register('classes', [asClass('Necromancer')]);
+
+// 4. Register custom features
+manager.register('classFeatures.Necromancer', [
+    {
+        id: 'necromancer_raise_dead',
+        name: 'Raise Undead',
+        description: 'Can raise undead creatures',
+        type: 'active',
+        level: 1,
+        class: 'Necromancer',
+        prerequisites: {
+            class: 'Necromancer',
+            abilities: { INT: 13 }
+        },
+        effects: [
+            { type: 'ability_unlock', target: 'raise_undead', value: true }
+        ],
+        source: 'custom'
+    }
+], { mode: 'replace' });
+
+// 5. Register custom spell list
+manager.register('classSpellLists.Necromancer', [{
+    cantrips: ['Mage Hand', 'Mending', 'Message'],
+    spells_by_level: {
+        1: ['Animate Dead', 'False Life', 'Ray of Sickness'],
+        2: ['Ray of Enfeeblement', 'Web'],
+        3: ['Animate Dead', 'Feign Death']
+    }
+}]);
+
+// 6. Generate a Necromancer character
+const track = { title: 'Dark Ritual', artist: 'Necromancer', genre: 'Dark Ambient', ...otherTrackFields };
+const character = CharacterGenerator.generate(
+    'test-seed',
+    sampleAudioProfile,
+    track,
+    { forceClass: 'Necromancer' }
+);
+```
+
+
 
 ### Class Features
 
@@ -925,6 +989,9 @@ const hillDwarfTraits = query.getRacialTraitsForSubrace('Dwarf', 'Hill Dwarf');
 
 // Get a specific trait
 const fireResistance = query.getRacialTraitById('dragon_born_fire_resistance');
+
+const featureStats = query.getQueryStats();
+console.log(`Features: ${featureStats.totalFeatures} (${featureStats.customFeatures} custom)`);
 ```
 
 ### Skills
@@ -1023,6 +1090,10 @@ const customSkills = query.getSkillsBySource('custom');
 
 // Check if skill exists
 const isValid = query.isValidSkill('survival_cold');  // true
+
+// Get registry statistics
+const skillStats = query.getQueryStats();
+console.log(`Skills: ${skillStats.totalSkills} (${skillStats.customSkills} custom)`);
 ```
 
 #### Skills with Prerequisites
@@ -1207,47 +1278,6 @@ manager.register('skillLists', [
 ]);
 ```
 
-#### Querying Registries
-
-You can query the FeatureQuery and SkillQuery to get information about registered features, skills, and registry statistics.
-
-**Note:** `FeatureQuery` and `SkillQuery` read from `ExtensionManager` with caching. Query methods fetch data from the single source of truth.
-
-```typescript
-import { FeatureQuery, SkillQuery } from 'playlist-data-engine';
-
-const featureQuery = FeatureQuery.getInstance();
-const skillQuery = SkillQuery.getInstance();
-
-// ===== FEATURE QUERIES =====
-
-// Get all features for a class at a specific level
-const barbarianLevel3Features = featureQuery.getClassFeatures('Barbarian', 3);
-console.log(`Barbarian level 3 features:`, barbarianLevel3Features.map(f => f.name));
-
-// Get all racial traits for a race
-const elfTraits = featureQuery.getRacialTraits('Elf');
-console.log(`Elf traits:`, elfTraits.map(t => t.name));
-
-// ===== SKILL QUERIES =====
-
-// Get skills by ability
-const wisdomSkills = skillQuery.getSkillsByAbility('WIS');
-console.log(`WIS skills:`, wisdomSkills.map(s => s.id));
-
-// Get skills by category
-const explorationSkills = skillQuery.getSkillsByCategory('exploration');
-console.log(`Exploration skills:`, explorationSkills.map(s => s.name));
-
-// ===== REGISTRY STATISTICS =====
-
-// Get registry statistics
-const featureStats = featureQuery.getQueryStats();
-console.log(`Features: ${featureStats.totalFeatures} (${featureStats.customFeatures} custom)`);
-
-const skillStats = skillQuery.getQueryStats();
-console.log(`Skills: ${skillStats.totalSkills} (${skillStats.customSkills} custom)`);
-```
 
 ### Appearance
 
@@ -1619,6 +1649,79 @@ registerArcticExpansionPack();
 const character = CharacterGenerator.generate(seed, audio, track, {forceName: 'Arctic Hero' });
 // Character may now have frost_rage, snow_walker, or survival_cold skill!
 ```
+
+
+### Example: Dragon-Themed Content
+
+This example demonstrates registering a complete dragon-themed content pack with custom race, subraces, skills, and spells:
+
+```typescript
+import { ExtensionManager, asClass } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// 1. Register a custom race with subraces
+manager.register('races.data', [{
+    race: 'Dragonkin',
+    ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
+    speed: 30,
+    traits: ['Draconic Ancestry', 'Darkvision'],
+    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
+}]);
+
+manager.register('races', ['Dragonkin']);
+
+// 2. Register subrace-specific racial traits
+manager.register('racialTraits', [{
+    id: 'fire_dragonkin_fire_resistance',
+    name: 'Fire Resistance',
+    description: 'You have resistance to fire damage.',
+    race: 'Dragonkin',
+    subrace: 'Fire Dragonkin',
+    prerequisites: { subrace: 'Fire Dragonkin' },
+    effects: [
+        { type: 'ability_unlock', target: 'fire_resistance', value: true }
+    ],
+    source: 'custom'
+}]);
+
+// Cache is automatically invalidated after registration
+
+// 3. Register a skill with prerequisites (feature + level + class)
+manager.register('skills.INT', [{
+    id: 'dragon_smithing',
+    name: 'Dragon Smithing',
+    description: 'Craft weapons from dragon scales',
+    ability: 'INT',
+    prerequisites: {
+        features: ['draconic_bloodline'],
+        level: 5,
+        class: asClass('Sorcerer')
+    },
+    source: 'custom'
+}]);
+
+// Cache is automatically invalidated after registration
+
+// 4. Register a spell with prerequisites
+manager.register('spells', [{
+    id: 'dragon_breath',
+    name: 'Dragon Breath',
+    level: 3,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '60 ft cone',
+    components: ['V', 'S', 'M'],
+    duration: 'Instantaneous',
+    description: 'Exhale destructive energy',
+    prerequisites: {
+        features: ['dragon_bloodline'],
+        abilities: { CHA: 16 }
+    }
+}]);
+```
+
+
 
 ---
 

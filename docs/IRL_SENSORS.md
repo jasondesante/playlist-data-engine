@@ -12,6 +12,7 @@ Complete guide to the environmental and gaming sensors in the Playlist Data Engi
 1. [Environmental Sensors](#environmental-sensors)
 2. [Gaming Sensors](#gaming-sensors)
 3. [Sensor Dashboard](#sensor-dashboard)
+4. [Sensor Configuration](#sensor-configuration)
 
 ---
 
@@ -172,3 +173,60 @@ SensorDashboard.displayEnvironmentalDiagnostics(diagnostics, config);
 
 
 ---
+
+## Sensor Configuration
+
+Sensor configuration controls environmental and gaming platform sensor behavior, including caching, retry logic, and XP modifier calculations.
+
+```typescript
+import {
+    DEFAULT_SENSOR_CONFIG,
+    loadConfigFromEnv,
+    mergeConfig,
+    type SensorConfig
+} from 'playlist-data-engine';
+
+// Use default configuration
+const defaultConfig = DEFAULT_SENSOR_CONFIG;
+console.log(defaultConfig.xpModifier.maxModifier); // 3.0
+
+// Load configuration from environment variables
+// Reads: WEATHER_API_KEY, STEAM_API_KEY, STEAM_USER_ID, DISCORD_CLIENT_ID, XP_MAX_MODIFIER
+const envConfig = loadConfigFromEnv();
+
+// Merge custom configuration with defaults
+const customConfig = mergeConfig({
+    weather: {
+        cacheTTL: 15 * 60 * 1000, // 15 minutes (default: 12 minutes)
+        apiKey: 'your_api_key_here'
+    },
+    xpModifier: {
+        maxModifier: 2.5, // Lower cap (default: 3.0)
+        runningBonus: 0.6, // Higher bonus for running (default: 0.5)
+        nightBonus: 0.3 // Higher night bonus (default: 0.25)
+    },
+    gaming: {
+        steam: {
+            pollInterval: 30000 // Poll every 30 seconds (default: 60000)
+        }
+    }
+});
+
+// Use configuration with EnvironmentalSensors
+import { EnvironmentalSensors } from 'playlist-data-engine';
+
+const sensors = new EnvironmentalSensors(customConfig);
+```
+
+**Available Exports:**
+
+**Sensor Configuration:**
+- `DEFAULT_SENSOR_CONFIG` - Default sensor configuration values
+- `loadConfigFromEnv()` - Load config from environment variables
+- `mergeConfig(userConfig?)` - Merge user config with defaults and env vars
+- `type SensorConfig` - Complete sensor configuration interface
+- `type GeolocationSensorConfig` - GPS sensor configuration
+- `type WeatherSensorConfig` - Weather API configuration
+- `type GamingSensorConfig` - Gaming platform configuration
+- `type XPModifierConfig` - XP modifier calculation settings
+- `type RetryConfig` - Retry behavior configuration

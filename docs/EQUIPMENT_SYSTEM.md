@@ -61,6 +61,9 @@ const rareItems = EquipmentSpawnHelper.spawnByRarity('rare', 3, rng);
 
 // Spawn random (respects spawn weights)
 const loot = EquipmentSpawnHelper.spawnRandom(5, rng, { excludeZeroWeight: true });
+
+// Add to character
+character = EquipmentSpawnHelper.addToCharacter(character, loot, false);
 ```
 
 ### 3. Apply Equipment Effects
@@ -69,10 +72,10 @@ const loot = EquipmentSpawnHelper.spawnRandom(5, rng, { excludeZeroWeight: true 
 import { EquipmentEffectApplier } from 'playlist-data-engine';
 
 // Equip item and apply effects
-const result = EquipmentEffectApplier.equipItem(character, equipment, 'instance_123');
+const result = EquipmentEffectApplier.equipItem(character, equipment);
 
 // Unequip and remove effects
-EquipmentEffectApplier.unequipItem(character, 'Flaming Sword', 'instance_123');
+EquipmentEffectApplier.unequipItem(character, 'Flaming Sword');
 ```
 
 **Next Steps**: See [Equipment Properties](#equipment-properties) for all property types, [API Reference](#api-reference) for complete class documentation.
@@ -690,11 +693,7 @@ const customSword: EnhancedEquipment = {
 
 // Register with ExtensionManager
 const manager = ExtensionManager.getInstance();
-manager.register('equipment', [customSword], {
-    mode: 'relative',
-    weights: { 'Blade of the Ages': 0.5 },
-    validate: true
-});
+manager.register('equipment', [customSword], { weights: { 'Blade of the Ages': 0.5 }});
 ```
 
 ### Validation
@@ -1144,14 +1143,12 @@ import { EquipmentModifier } from './src/core/equipment/EquipmentModifier.js';
 const enchantment = EquipmentModifier.createModification(
     'plus_one_001',
     '+1 Longsword',
-    [
-        {
-            type: 'passive_modifier',
-            target: 'attack_roll',
-            value: 1,
-            description: '+1 to attack rolls'
-        }
-    ],
+    [{
+        type: 'passive_modifier',
+        target: 'attack_roll',
+        value: 1,
+        description: '+1 to attack rolls'
+    }],
     'enchantment'
 );
 
@@ -1162,6 +1159,16 @@ const updatedEquipment = EquipmentModifier.enchant(
     enchantment,
     character
 );
+
+// Check if enchanted
+if (EquipmentModifier.isEnchanted(character.equipment, 'Longsword')) {
+    console.log('Item is enchanted!');
+}
+
+// Get item summary
+const summary = EquipmentModifier.getItemSummary(character.equipment, 'Longsword');
+console.log(summary);
+// { name: 'Longsword', modifications: [...], isCursed: false, isEnchanted: true }
 ```
 
 ### Example 7: Batch Spawning
@@ -1898,3 +1905,299 @@ function bossLoot(character: CharacterSheet, bossCR: number) {
 - [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md) - Complete API reference
 - [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md) - Usage examples
 - [specs/001-core-engine/SPEC.md](../specs/001-core-engine/SPEC.md) - Core engine specification
+
+
+
+
+
+
+
+
+
+
+**NEW STUFF That needs to be added to the docs**
+**I want to move the stuff below into the docs at the right spot, I don't want to change any of the docs, but just move it into the right spot that makes the most sense and flows the best and is added to the table of contents at the beginning**
+
+
+### Enchantment Library
+
+The Enchantment Library provides a comprehensive collection of predefined enchantments and curses that can be applied to equipment at runtime. All enchantments are `EquipmentModification` objects designed to work with `EquipmentModifier`.
+
+**For complete API documentation, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#enchantment-library)**
+
+#### Using Predefined Enchantments
+
+```typescript
+import { EquipmentModifier, WEAPON_ENCHANTMENTS, ARMOR_ENCHANTMENTS, RESISTANCE_ENCHANTMENTS } from 'playlist-data-engine';
+
+// Apply a +1 enhancement to a weapon
+const plusOne = WEAPON_ENCHANTMENTS.plusOne;
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Longsword',
+    plusOne,
+    character
+);
+
+// Add elemental damage
+const flaming = WEAPON_ENCHANTMENTS.flaming;  // +1d6 fire damage
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Longsword',
+    flaming,
+    character
+);
+
+// Improve armor
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Plate Armor',
+    ARMOR_ENCHANTMENTS.plusTwo,  // +2 AC
+    character
+);
+
+// Add resistance
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Cloak of Protection',
+    RESISTANCE_ENCHANTMENTS.fire,  // Fire resistance
+    character
+);
+```
+
+#### Creating Stat-Boosting Enchantments
+
+The `create*Enchantment` functions create stat bonuses with configurable levels (1-4):
+
+```typescript
+import {
+    createStrengthEnchantment,
+    createDexterityEnchantment,
+    createConstitutionEnchantment,
+    createIntelligenceEnchantment,
+    createWisdomEnchantment,
+    createCharismaEnchantment
+} from 'playlist-data-engine';
+
+// Create +2 Strength belt
+const beltOfStrength = createStrengthEnchantment(2);  // Bonus: 1-4
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Belt of Giant Strength',
+    beltOfStrength,
+    character
+);
+
+// Create +4 Intelligence circlet
+const circletOfIntellect = createIntelligenceEnchantment(4);
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Circlet of Intellect',
+    circletOfIntellect,
+    character
+);
+```
+
+#### Applying Curses
+
+```typescript
+import { EquipmentModifier, CURSES } from 'playlist-data-engine';
+
+// Apply a cursed item
+const cursedItem = EquipmentModifier.curse(
+    character.equipment,
+    'Ring of Weakness',
+    CURSES.weakness,  // -4 Strength
+    character
+);
+
+// Apply attunement lock (cannot remove without remove curse)
+const lockedItem = EquipmentModifier.curse(
+    character.equipment,
+    'Cursed Helmet',
+    CURSES.attunement,
+    character
+);
+```
+
+#### Combo Enchantments
+
+Special multi-effect enchantments for powerful items:
+
+```typescript
+import { ALL_ENCHANTMENTS } from 'playlist-data-engine';
+
+// Holy Avenger: +3 enhancement, radiant damage vs fiends/undead, +5 saves vs spells
+const holyAvenger = ALL_ENCHANTMENTS.holyAvenger;
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Holy Avenger',
+    holyAvenger,
+    character
+);
+
+// Dragon Slayer: +2 enhancement, extra damage vs dragons, fire resistance
+const dragonSlayer = ALL_ENCHANTMENTS.dragonSlayer;
+character.equipment = EquipmentModifier.enchant(
+    character.equipment,
+    'Dragon Slayer Sword',
+    dragonSlayer,
+    character
+);
+```
+
+#### Querying Enchantments
+
+```typescript
+import { getEnchantment, getCurse, getAllEnchantments, getAllCurses, getEnchantmentsByType } from 'playlist-data-engine';
+
+// Get specific enchantment by ID
+const ench = getEnchantment('enchantment_flaming');
+if (ench) {
+    console.log(ench.name);  // 'Flaming'
+}
+
+// Get all curses
+const allCurses = getAllCurses();
+console.log(`Available curses: ${allCurses.length}`);  // 17 curses
+
+// Get enchantments by type
+const weaponEnchants = getEnchantmentsByType('weapon');
+console.log(`Weapon enchantments: ${weaponEnchants.length}`);  // 16 enchantments
+```
+
+**Available Exports:**
+
+- **Collections**: `WEAPON_ENCHANTMENTS`, `ARMOR_ENCHANTMENTS`, `RESISTANCE_ENCHANTMENTS`, `CURSES`, `ALL_ENCHANTMENTS`
+- **Stat Boost Functions**: `createStrengthEnchantment`, `createDexterityEnchantment`, `createConstitutionEnchantment`, `createIntelligenceEnchantment`, `createWisdomEnchantment`, `createCharismaEnchantment` (each takes `bonus: 1 | 2 | 3 | 4`)
+- **Query Functions**: `getEnchantment`, `getCurse`, `getAllEnchantments`, `getAllCurses`, `getEnchantmentsByType`
+
+---
+
+### Magic Item Examples
+
+The Magic Item Examples library provides 38 pre-built magic items that demonstrate all capabilities of the Advanced Equipment System. These include weapons, armor, wondrous items, cursed items, conditional items, and template-based items. They serve as reference implementations and test fixtures.
+
+**For complete API documentation, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#magic-item-examples)**
+
+#### Getting Magic Items by Name
+
+```typescript
+import { getMagicItem } from 'playlist-data-engine';
+
+// Get a specific magic item
+const flameTongue = getMagicItem('Flame Tongue');
+if (flameTongue) {
+    console.log(flameTongue.properties);
+    // Output: Array of equipment properties including damage_bonus and special_property
+}
+```
+
+#### Querying Magic Items
+
+```typescript
+import {
+    getMagicItemsByType,
+    getMagicItemsByRarity,
+    getCursedItems,
+    getItemsWithProperty
+} from 'playlist-data-engine';
+
+// Get all weapons
+const weapons = getMagicItemsByType('weapon');
+console.log(`Magic weapons: ${weapons.length}`);  // 4 weapons
+
+// Get all rare items
+const rareItems = getMagicItemsByRarity('rare');
+console.log(`Rare items: ${rareItems.length}`);  // ~15 rare items
+
+// Get cursed items
+const cursedItems = getCursedItems();
+cursedItems.forEach(item => {
+    console.log(`Cursed: ${item.name}`);
+    // Output: -1 Cursed Sword, Belt of Strength Drain, Helmet of Opposite Alignment
+});
+
+// Get all items with a specific property
+const statBonusItems = getItemsWithProperty('stat_bonus');
+console.log(`Items with stat bonuses: ${statBonusItems.length}`);
+```
+
+#### Applying Magic Equipment Templates
+
+Templates can be applied to base equipment to create magic variants:
+
+```typescript
+import { applyTemplate, EnhancedEquipment } from 'playlist-data-engine';
+
+// Define base equipment
+const baseLongsword: EnhancedEquipment = {
+    name: 'Longsword',
+    type: 'weapon',
+    rarity: 'common',
+    weight: 3,
+    damage: { dice: '1d8', damageType: 'slashing', versatile: '1d10' },
+    weaponProperties: ['finesse', 'versatile'],
+    source: 'base',
+    tags: ['martial', 'melee']
+};
+
+// Apply flaming template
+const flamingSword = applyTemplate(baseLongsword, 'flaming_weapon_template');
+if (flamingSword) {
+    console.log(flamingSword.name);  // "Longsword (flaming weapon template)"
+    console.log(flamingSword.properties);  // Combined properties from base + template
+}
+
+// Apply +1 enhancement
+const plusOneSword = applyTemplate(baseLongsword, 'plus_one_weapon');
+if (plusOneSword) {
+    console.log(plusOneSword.properties);  // Includes +1 attack/damage bonus
+}
+```
+
+#### Registering Magic Items with ExtensionManager
+
+Magic item examples can be registered as custom equipment for procedural generation:
+
+```typescript
+import { ExtensionManager, MAGIC_ITEM_EXAMPLES } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register all magic items as custom equipment
+manager.register('equipment', MAGIC_ITEM_EXAMPLES, {
+    mode: 'append',
+    weights: MAGIC_ITEM_EXAMPLES.reduce((acc, item) => {
+        acc[item.name] = item.spawnWeight ?? 0;
+        return acc;
+    }, {} as Record<string, number>)
+});
+
+// Now items will appear in random generation (respecting spawnWeight)
+// Note: Vorpal Sword and other legendary items have spawnWeight: 0,
+// so they won't appear randomly but can still be spawned by name
+```
+
+#### Direct Access to Magic Item Collections
+
+```typescript
+import { MAGIC_ITEM_EXAMPLES, MAGIC_EQUIPMENT_TEMPLATES } from 'playlist-data-engine';
+
+// Iterate through all magic items
+MAGIC_ITEM_EXAMPLES.forEach(item => {
+    console.log(`${item.name} (${item.rarity}) - ${item.type}`);
+});
+
+// Access specific template
+const viciousTemplate = MAGIC_EQUIPMENT_TEMPLATES.vicious_weapon_template;
+console.log(viciousTemplate.properties);
+```
+
+**Available Exports:**
+
+- **Collections**: `MAGIC_ITEM_EXAMPLES` (38 items), `MAGIC_EQUIPMENT_TEMPLATES` (9 templates)
+- **Query Functions**: `getMagicItem`, `getMagicItemsByType`, `getMagicItemsByRarity`, `getCursedItems`, `getItemsWithProperty`
+- **Template Function**: `applyTemplate` - Apply a template to base equipment
+
+---

@@ -12,6 +12,7 @@ Complete guide to XP, leveling, and stats in the Playlist Data Engine.
 1. [XP and Leveling](#xp-and-leveling)
 2. [Stat Strategies](#stat-strategies)
 3. [XP Scaling](#xp-scaling)
+4. [Progression Configuration](#progression-configuration)
 
 ---
 
@@ -695,3 +696,47 @@ if (result.leveledUp) {
   console.log(`Leveled up to ${result.newLevel}! Stats auto-increased.`);
 }
 ```
+
+## Progression Configuration
+
+Progression configuration controls XP calculation, stat increases, and level-up behavior.
+
+```typescript
+import {
+    DEFAULT_PROGRESSION_CONFIG,
+    mergeProgressionConfig,
+    type ProgressionConfig
+} from 'playlist-data-engine';
+
+// Use default configuration (D&D 5e standard)
+const defaultProgression = DEFAULT_PROGRESSION_CONFIG;
+console.log(defaultProgression.xp.level_thresholds); // D&D 5e XP thresholds
+
+// Customize progression settings
+const customProgression = mergeProgressionConfig({
+    xp: {
+        xp_per_second: 2, // Double XP rate (default: 1)
+        activity_bonuses: {
+            running: 2.0, // 2x XP while running (default: 1.5)
+            night_time: 1.5 // 1.5x XP at night (default: 1.25)
+        }
+    },
+    statIncrease: {
+        strategy: 'balanced', // Use balanced strategy instead of manual
+        autoApply: true // Automatically apply stat increases
+    },
+    levelUp: {
+        useAverageHP: true, // Use average HP instead of rolling
+        allowManualStatSelection: false // Disable manual selection
+    }
+});
+```
+
+**Available Exports:**
+
+**Progression Configuration:**
+- `DEFAULT_PROGRESSION_CONFIG` - Default D&D 5e progression values
+- `mergeProgressionConfig(userConfig?)` - Merge progression config with defaults
+- `type ProgressionConfig` - Progression system configuration interface
+
+---
