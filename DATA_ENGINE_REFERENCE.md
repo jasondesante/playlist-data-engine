@@ -2285,65 +2285,23 @@ For usage examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md#equipm
 
 ### EquipmentSpawnHelper
 
-**Location:** `src/core/equipment/EquipmentSpawnHelper.ts`
+*Also known as: Loot spawner, equipment batch generator, treasure hoard system*
 
-Helper class for spawning multiple equipment items at once. Provides batch spawning utilities for spawning from lists, by rarity, by tags, randomly, from templates, and treasure hoards.
+**Location:** [src/core/equipment/EquipmentSpawnHelper.ts](src/core/equipment/EquipmentSpawnHelper.ts)
 
-```typescript
-class EquipmentSpawnHelper {
-    static spawnFromList(
-        itemNames: string[],
-        rng?: SeededRNG
-    ): (EnhancedEquipment | undefined)[];
+Batch spawning utilities for equipment. Spawns from lists, by rarity, by tags, randomly, from templates, and treasure hoards.
 
-    static spawnByRarity(
-        rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary',
-        count: number,
-        rng?: SeededRNG
-    ): EnhancedEquipment[];
+| Method | Description |
+|--------|-------------|
+| `spawnFromList(itemNames: string[], rng?: SeededRNG)` | Spawn multiple items from array of names (undefined for missing) |
+| `spawnByRarity(rarity, count: number, rng?: SeededRNG)` | Spawn items of specific rarity (common/uncommon/rare/very_rare/legendary) |
+| `spawnByTags(tags: string[], count: number, rng?: SeededRNG, options?: SpawnRandomOptions)` | Spawn items with specific tags using weighted selection |
+| `spawnRandom(count: number, rng: SeededRNG, options?: SpawnRandomOptions)` | Spawn random equipment respecting spawn weights |
+| `spawnFromTemplate(templateId: string, baseItemName?: string)` | Spawn item from template ID (null if not found) |
+| `spawnTreasureHoard(cr: number, rng: SeededRNG)` | Spawn treasure hoard based on challenge rating |
+| `addToCharacter(character: CharacterSheet, items: EnhancedEquipment[], equip?: boolean)` | Add spawned equipment to character inventory |
 
-    static spawnByTags(
-        tags: string[],
-        count: number,
-        rng?: SeededRNG,
-        options?: SpawnRandomOptions
-    ): EnhancedEquipment[];
-
-    static spawnRandom(
-        count: number,
-        rng: SeededRNG,
-        options?: SpawnRandomOptions
-    ): EnhancedEquipment[];
-
-    static spawnFromTemplate(
-        templateId: string,
-        baseItemName?: string
-    ): EnhancedEquipment | null;
-
-    static spawnTreasureHoard(
-        cr: number,
-        rng: SeededRNG
-    ): TreasureHoardResult;
-
-    static addToCharacter(
-        character: CharacterSheet,
-        items: EnhancedEquipment[],
-        equip?: boolean
-    ): CharacterSheet;
-}
-```
-
-**Method Reference:**
-
-| Method | Parameters | Returns | Description |
-|--------|-----------|---------|-------------|
-| `spawnFromList()` | `itemNames`, `rng?` | `(EnhancedEquipment \| undefined)[]` | Spawn multiple items from array of names (undefined for missing) |
-| `spawnByRarity()` | `rarity`, `count`, `rng?` | `EnhancedEquipment[]` | Spawn items of specific rarity |
-| `spawnByTags()` | `tags`, `count`, `rng`, `options?` | `EnhancedEquipment[]` | Spawn items with specific tags |
-| `spawnRandom()` | `count`, `rng`, `options?` | `EnhancedEquipment[]` | Spawn random equipment with weighted selection |
-| `spawnFromTemplate()` | `templateId`, `baseItemName?` | `EnhancedEquipment \| null` | Spawn item from template ID |
-| `spawnTreasureHoard()` | `cr`, `rng` | `TreasureHoardResult` | Spawn treasure hoard based on challenge rating |
-| `addToCharacter()` | `character`, `items`, `equip?` | `CharacterSheet` | Add spawned equipment to character |
+For usage examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md#batch-spawning).
 
 ### EquipmentGenerator
 
