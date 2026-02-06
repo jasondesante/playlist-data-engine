@@ -791,14 +791,16 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 
 ### Phase 17: Configuration & Sensors (lines 3600-4100)
 
-- [ ] **Task 69**: Transform Sensor Configuration
-  - [ ] Subtask: SensorConfig interfaces → link to source with key notes
-  - [ ] Subtask: Keep function list (loadConfigFromEnv, mergeConfig)
-  - [ ] Subtask: Environment variables → table format with link to .env.example
+- [x] **Task 69**: Transform Sensor Configuration
+  - [x] Subtask: SensorConfig interfaces → link to source with key notes
+  - [x] Subtask: Keep function list (loadConfigFromEnv, mergeConfig)
+  - [x] Subtask: Environment variables → table format with link to .env.example
+  - **Summary**: Reduced from ~100 lines to ~45 lines (55% reduction). Converted full TypeScript type definitions to concise tables (Configuration Types, Functions, Constants, Environment Variables). Added "Also known as" synonyms for AI discoverability. Added prominent link to .env.example for complete environment variable documentation. Replaced verbose code blocks with scannable reference tables.
 
-- [ ] **Task 70**: Transform Progression Configuration
-  - [ ] Subtask: ProgressionConfig → link to source
-  - [ ] Subtask: Keep function list
+- [x] **Task 70**: Transform Progression Configuration
+  - [x] Subtask: ProgressionConfig → link to source
+  - [x] Subtask: Keep function list
+  - **Summary**: Reduced from ~50 lines to ~25 lines (50% reduction). Converted full TypeScript type definition to concise table format. Replaced verbose code block with clean reference tables (Types, Functions, Constants). Added "Also known as" synonyms for AI discoverability.
 
 - [ ] **Task 71**: Transform EnvironmentalSensors
   - [ ] Subtask: Keep as method reference table

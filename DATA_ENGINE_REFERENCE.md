@@ -1696,153 +1696,74 @@ The engine provides centralized configuration options for sensors and progressio
 
 ### Sensor Configuration
 
-**Sensor Configuration Types**
+*Also known as: Sensor settings, environment configuration, runtime configuration*
 
-```typescript
-// Complete sensor configuration
-export interface SensorConfig {
-    geolocation: Partial<GeolocationSensorConfig>;
-    weather: Partial<WeatherSensorConfig>;
-    gaming: Partial<GamingSensorConfig>;
-    xpModifier: Partial<XPModifierConfig>;
-    retry: Partial<RetryConfig>;
-}
+**Location:** `src/core/config/sensorConfig.ts`
 
-// Individual sensor configs
-export interface GeolocationSensorConfig {
-    cacheTTL?: number;              // Default: 5 minutes
-    useLocalStorage?: boolean;      // Default: true
-    enableHighAccuracy?: boolean;   // Default: true
-    timeout?: number;               // Default: 5000ms
-}
+Centralized configuration for sensors, XP modifiers, and retry logic.
 
-export interface WeatherSensorConfig {
-    apiKey?: string;
-    cacheTTL?: number;              // Default: 12 minutes
-    forecastCacheTTL?: number;      // Default: 60 minutes
-    useLocalStorage?: boolean;      // Default: true
-}
+#### Configuration Types
 
-export interface GamingSensorConfig {
-    steam?: {
-        apiKey?: string;
-        steamId?: string;
-        pollInterval?: number;      // Default: 60000ms (1 minute)
-    };
-    discord?: {
-        clientId?: string;
-        enableRichPresence?: boolean; // Default: true
-        pollInterval?: number;      // Default: 60000ms
-    };
-    metadataCacheExpiry?: number;   // Default: 24 hours
-    maxBackoffMs?: number;         // Default: 10 minutes
-    xpModifier?: Partial<XPModifierConfig>;
-}
+| Type | Description |
+|------|-------------|
+| `SensorConfig` | Complete sensor configuration (geolocation, weather, gaming, xpModifier, retry) |
+| `GeolocationSensorConfig` | GPS sensor settings (cacheTTL, useLocalStorage, enableHighAccuracy, timeout) |
+| `WeatherSensorConfig` | Weather API settings (apiKey, cacheTTL, forecastCacheTTL, useLocalStorage) |
+| `GamingSensorConfig` | Steam/Discord settings (steam, discord, metadataCacheExpiry, maxBackoffMs, xpModifier) |
+| `XPModifierConfig` | XP multiplier settings (maxModifier, gaming bonuses, environmental bonuses) |
+| `RetryConfig` | Retry policy (enabled, maxRetries, delays, backoffMultiplier) |
 
-export interface XPModifierConfig {
-    maxModifier: number;           // Default: 3.0
-    maxGamingModifier: number;     // Default: 1.75
-    runningBonus: number;          // Default: 0.5
-    walkingBonus: number;          // Default: 0.2
-    stormBonus: number;            // Default: 0.4
-    snowBonus: number;             // Default: 0.3
-    nightBonus: number;            // Default: 0.25
-    altitudeThreshold: number;     // Default: 1000m
-    altitudeBonus: number;         // Default: 0.3
-    gamingBaseBonus: number;       // Default: 0.25
-    gamingRPGBonus: number;        // Default: 0.2
-    gamingMultiplayerBonus: number; // Default: 0.15
-}
+#### Functions
 
-export interface RetryConfig {
-    enabled: boolean;              // Default: true
-    maxRetries?: number;           // Default: 3
-    initialDelayMs?: number;       // Default: 1000ms
-    maxDelayMs?: number;           // Default: 10000ms
-    backoffMultiplier?: number;    // Default: 2
-}
-```
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `loadConfigFromEnv()` | `Partial<SensorConfig>` | Loads configuration from environment variables |
+| `mergeConfig(userConfig?)` | `Required<SensorConfig>` | Merges user config with environment config and defaults |
 
-**Available Exports:**
+#### Constants
 
-```typescript
-import {
-    DEFAULT_SENSOR_CONFIG,
-    loadConfigFromEnv,
-    mergeConfig,
-    type SensorConfig,
-    type GeolocationSensorConfig,
-    type WeatherSensorConfig,
-    type GamingSensorConfig,
-    type XPModifierConfig,
-    type RetryConfig
-} from 'playlist-data-engine';
-```
+| Constant | Type | Description |
+|----------|------|-------------|
+| `DEFAULT_SENSOR_CONFIG` | `Required<SensorConfig>` | Default configuration values for all sensors |
 
-**Functions:**
+#### Environment Variables
 
-- `loadConfigFromEnv(): Partial<SensorConfig>`
-    - Loads configuration from environment variables
-    - Reads `WEATHER_API_KEY`, `STEAM_API_KEY`, `STEAM_USER_ID`, `DISCORD_CLIENT_ID`, `XP_MAX_MODIFIER`
+| Variable | Purpose |
+|----------|---------|
+| `WEATHER_API_KEY` | OpenWeatherMap API key for weather-based XP modifiers |
+| `STEAM_API_KEY` | Steam Web API key for gaming-based XP modifiers |
+| `STEAM_USER_ID` | 64-bit Steam ID for game detection |
+| `DISCORD_CLIENT_ID` | Discord application ID for Rich Presence music status |
+| `XP_MAX_MODIFIER` | Maximum XP multiplier cap (default: 3.0) |
 
-- `mergeConfig(userConfig?: Partial<SensorConfig>): Required<SensorConfig>`
-    - Merges user config with environment config and defaults
-    - Priority: userConfig > envConfig > defaults
-
-**Constants:**
-
-- `DEFAULT_SENSOR_CONFIG: Required<SensorConfig>` - Default configuration values
+**For complete environment variable documentation and examples, see [.env.example](.env.example).**
 
 ### Progression Configuration
 
-**Progression Configuration Type**
+*Also known as: XP settings, level-up configuration, progression rules*
 
-```typescript
-export interface ProgressionConfig {
-    xp: {
-        level_thresholds: number[];
-        xp_per_second: number;
-        xp_per_track_completion: number;
-        activity_bonuses: {
-            stationary: number;
-            walking: number;
-            running: number;
-            driving: number;
-            night_time: number;
-            extreme_weather: number;
-            high_altitude: number;
-        };
-        track_mastery_threshold: number;
-        mastery_bonus_xp: number;
-    };
-    statIncrease: Partial<StatIncreaseConfig>;
-    levelUp: {
-        useAverageHP: boolean;
-        allowManualStatSelection: boolean;
-        showNotifications: boolean;
-    };
-}
-```
+**Location:** `src/core/config/progressionConfig.ts`
 
-**Available Exports:**
+Configuration for XP thresholds, stat increases, and level-up behavior.
 
-```typescript
-import {
-    DEFAULT_PROGRESSION_CONFIG,
-    mergeProgressionConfig,
-    type ProgressionConfig
-} from 'playlist-data-engine';
-```
+#### Types
 
-**Functions:**
+| Type | Description |
+|------|-------------|
+| `ProgressionConfig` | Complete progression configuration (xp, statIncrease, levelUp) |
+| `StatIncreaseConfig` | Stat increase strategy and configuration |
 
-- `mergeProgressionConfig(userConfig?: Partial<ProgressionConfig>): Required<ProgressionConfig>`
-    - Merges user configuration with defaults
-    - Returns complete configuration with all required fields
+#### Functions
 
-**Constants:**
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `mergeProgressionConfig(userConfig?)` | `Required<ProgressionConfig>` | Merges user configuration with defaults |
 
-- `DEFAULT_PROGRESSION_CONFIG: Required<ProgressionConfig>` - Default D&D 5e progression values
+#### Constants
+
+| Constant | Type | Description |
+|----------|------|-------------|
+| `DEFAULT_PROGRESSION_CONFIG` | `Required<ProgressionConfig>` | Default D&D 5e progression values |
 
 ---
 
