@@ -897,276 +897,94 @@ Diagnostic tool for visual console output during development and debugging. Disp
 ---
 
 ### Game Data Reference
+*Also known as: Game constants, RPG data, D&D 5e data*
 
-These constants are exported for use in your application.
+D&D 5e-inspired game constants for races, classes, XP, spells, and equipment.
 
 #### Available Races (`ALL_RACES`)
-- Human
-- Elf
-- Dwarf
-- Halfling
-- Dragonborn
-- Gnome
-- Half-Elf
-- Half-Orc
-- Tiefling
+*Also known as: Character races, playable races*
+
+Human, Elf, Dwarf, Halfling, Dragonborn, Gnome, Half-Elf, Half-Orc, Tiefling
 
 #### Available Classes (`ALL_CLASSES`)
-- Barbarian
-- Bard
-- Cleric
-- Druid
-- Fighter
-- Monk
-- Paladin
-- Ranger
-- Rogue
-- Sorcerer
-- Warlock
-- Wizard
+*Also known as: Character classes, job classes, professions*
+
+Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard
 
 #### Data Structures
-- `RACE_DATA`: Object containing ability bonuses, speed, and traits for each race.
-- `CLASS_DATA`: Object containing hit dice, saving throws, and skill options for each class.
-- `XP_THRESHOLDS`: Mapping of Level (1-20) to XP required.
-- `SPELL_DATABASE`: Comprehensive list of D&D 5e spells with details.
-- `EQUIPMENT_DATABASE`: Stats for weapons, armor, and items.
+*Also known as: Game databases, constant data*
+
+| Constant | Description | Source |
+|----------|-------------|--------|
+| `RACE_DATA` | Ability bonuses, speed, traits for each race | `src/utils/constants.ts` |
+| `CLASS_DATA` | Hit dice, saving throws, skill options for each class | `src/utils/constants.ts` |
+| `XP_THRESHOLDS` | Level (1-20) to XP required mapping | `src/utils/constants.ts` |
+| `SPELL_DATABASE` | D&D 5e spells with details | `src/utils/constants.ts` |
+| `EQUIPMENT_DATABASE` | Weapons, armor, items stats | `src/utils/constants.ts` |
 
 #### Helper Functions
+*Also known as: Data lookup functions, game data getters*
 
 **Location:** `src/utils/constants.ts`
 
-These helper functions retrieve data from both default constants and custom extensions registered via ExtensionManager.
+Retrieves data from default constants and custom extensions registered via ExtensionManager.
 
-```typescript
-/**
- * Get race data (default or custom)
- *
- * Checks both the built-in RACE_DATA and the ExtensionManager for custom race data.
- *
- * @param race - The race name to look up
- * @returns Race data entry or undefined if not found
- *
- * @example
- * // Get default race data
- * const elfData = getRaceData('Elf');
- * console.log(elfData.speed); // 30
- *
- * // Get custom race data (if registered via ExtensionManager)
- * const dragonkinData = getRaceData('Dragonkin');
- * if (dragonkinData) {
- *     console.log(dragonkinData.ability_bonuses);
- * }
- */
-export function getRaceData(race: string): RaceDataEntry | undefined
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `getRaceData()` | `race: string` | `RaceDataEntry \| undefined` | Race data (default or custom) |
+| `getClassData()` | `className: string` | `ClassDataEntry \| undefined` | Class data with template inheritance support |
+| `getClassSpellList()` | `className: string` | Spell list object \| undefined | Cantrips and spells by level |
+| `getSpellSlotsForClass()` | `className: string`, `characterLevel: number` | `Record<number, number> \| undefined` | Spell slots per level for class |
+| `getClassStartingEquipment()` | `className: string` | Equipment object \| undefined | Weapons, armor, items |
 
-/**
- * Get class data (default or custom)
- *
- * Checks both the default CLASS_DATA and the ExtensionManager for custom class data.
- *
- * For template-based custom classes (those with a baseClass property),
- * the base class data is merged with custom data, with custom properties
- * taking precedence.
- *
- * @param className - The class name to look up
- * @returns Class data entry or undefined if not found
- *
- * @example
- * // Get default class data
- * const wizardData = getClassData('Wizard');
- * console.log(wizardData.hit_die); // 6
- *
- * // Get custom class data (if registered via ExtensionManager)
- * const necromancerData = getClassData('Necromancer');
- * if (necromancerData) {
- *     console.log(necromancerData.baseClass); // 'Wizard'
- *     console.log(necromancerData.primary_ability); // 'INT'
- * }
- */
-export function getClassData(className: string): ClassDataEntry | undefined
-
-/**
- * Get spell list for a class (default or custom)
- *
- * Checks CLASS_SPELL_LISTS for default classes, or ExtensionManager
- * for custom spell lists registered via 'classSpellLists.${ClassName}'.
- *
- * @param className - The class name to look up
- * @returns Spell list with cantrips and spells_by_level, or undefined
- */
-export function getClassSpellList(className: string): {
-    cantrips: string[];
-    spells_by_level: Record<number, string[]>;
-} | undefined
-
-/**
- * Get spell slots for a class at a specific level (default or custom)
- *
- * Checks SPELL_SLOTS_BY_CLASS for default classes, or ExtensionManager
- * for custom spell slot progressions registered via 'classSpellSlots'.
- *
- * @param className - The class name to look up
- * @param characterLevel - The character level (1-20)
- * @returns Record of spell slots by level, or undefined
- */
-export function getSpellSlotsForClass(className: string, characterLevel: number): Record<number, number> | undefined
-
-/**
- * Get starting equipment for a class (default or custom)
- *
- * Checks CLASS_STARTING_EQUIPMENT for default classes, or ExtensionManager
- * for custom equipment registered via 'classStartingEquipment.${ClassName}'.
- *
- * @param className - The class name to look up
- * @returns Equipment object with weapons, armor, items arrays, or undefined
- */
-export function getClassStartingEquipment(className: string): {
-    weapons: string[];
-    armor: string[];
-    items: string[];
-} | undefined
-```
-
-#### Interface Definitions
+#### Type Definitions
 
 **RaceDataEntry**
+*Also known as: Race definition, racial stats*
 
-```typescript
-/**
- * Race data entry interface
- *
- * Defines the structure for race data including ability score bonuses,
- * base walking speed, traits, and available subraces. Used by RACE_DATA
- * and by custom races registered via ExtensionManager.
- */
-export interface RaceDataEntry {
-    /** Ability score bonuses granted by this race */
-    ability_bonuses: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
+**Location:** `src/utils/constants.ts` (31-43)
 
-    /** Base walking speed in feet */
-    speed: number;
-
-    /** Array of racial trait names/IDs */
-    traits: string[];
-
-    /** Optional: Available subraces for this race */
-    subraces?: string[];
-}
-```
+| Property | Type | Description |
+|----------|------|-------------|
+| `ability_bonuses` | `Partial<Record<Ability, number>>` | Ability score bonuses granted |
+| `speed` | `number` | Base walking speed in feet |
+| `traits` | `string[]` | Racial trait names/IDs |
+| `subraces` | `string[]` (optional) | Available subraces |
 
 **ClassDataEntry**
+*Also known as: Class definition, job stats*
 
-```typescript
-/**
- * Class data entry interface
- *
- * Defines the structure for class data including primary ability, hit die,
- * saving throws, spellcasting, skills, expertise, and optional audio preferences.
- *
- * ## Template-Based Class System
- *
- * This interface supports creating custom classes that extend (inherit from) existing
- * D&D 5e base classes through the `baseClass` property. This enables rapid
- * creation of specialized classes (e.g., "Necromancer" extending "Wizard") without
- * duplicating all base class properties.
- *
- * ### How Template Inheritance Works
- *
- * When `baseClass` is specified in a custom class registration:
- *
- * 1. **Base class lookup**: The system retrieves the base class data from CLASS_DATA
- * 2. **Property merging**: Base class properties are merged with custom class properties
- * 3. **Override behavior**: Custom properties take precedence over base class properties
- * 4. **Special handling for available_skills**: Custom skill list replaces base skill list
- *    (not merged), allowing complete customization of class skills
- */
-export interface ClassDataEntry {
-    /** Primary ability score for this class */
-    primary_ability: Ability;
+**Location:** `src/utils/constants.ts` (243-342)
 
-    /** Hit die size for this class */
-    hit_die: number;
+| Property | Type | Description |
+|----------|------|-------------|
+| `primary_ability` | `Ability` | Primary ability score |
+| `hit_die` | `number` | Hit die size |
+| `saving_throws` | `Ability[]` | Saving throw proficiencies |
+| `is_spellcaster` | `boolean` | Whether class can cast spells |
+| `skill_count` | `number` | Number of skills to choose |
+| `available_skills` | `string[]` | Available skills (includes custom) |
+| `has_expertise` | `boolean` | Whether class has expertise |
+| `expertise_count` | `number` (optional) | Number of expertise choices |
+| `baseClass` | `Class` (optional) | Base class for template inheritance |
+| `audio_preferences` | `object` (optional) | Audio preferences for affinity |
 
-    /** Saving throw proficiencies */
-    saving_throws: Ability[];
+**Template Inheritance:** Custom classes with `baseClass` inherit properties from base D&D 5e classes. Custom properties override base properties. `available_skills` replaces (not merges) the base list.
 
-    /** Whether this class can cast spells */
-    is_spellcaster: boolean;
+#### Prerequisites
+*Also known as: Requirements, conditions*
 
-    /** Number of skills to choose from */
-    skill_count: number;
+Skills, spells, and features can have prerequisites: base skills/spells/features, ability scores, minimum level, class/race requirements, or custom conditions.
 
-    /** Available skills for this class (includes custom skills) */
-    available_skills: string[];
+**See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)** for complete guide and examples.
 
-    /** Whether this class has expertise */
-    has_expertise: boolean;
+#### Type Helper Functions
+*Also known as: Type guards, type converters*
 
-    /** Number of expertise choices (if has_expertise is true) */
-    expertise_count?: number;
-
-    /**
-     * For template-based classes: the base class to inherit from
-     *
-     * When specified, the custom class will inherit properties from the base class,
-     * with custom properties overriding inherited ones.
-     */
-    baseClass?: Class;
-
-    /** Optional: Audio preferences for class affinity calculation */
-    audio_preferences?: {
-        primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
-        secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
-        tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
-        bass?: number;
-        treble?: number;
-        mid?: number;
-        amplitude?: number;
-    };
-}
-```
-
-**Prerequisites**
-
-**For comprehensive guide, examples, and API reference:** See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
-
-Skills, spells, and features can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced abilities that require:
-- Base skills, spells, or features
-- Specific ability scores
-- Minimum level
-- Class or race requirements
-- Custom conditions
-
-See [PREREQUISITES.md](docs/PREREQUISITES.md) for complete interface definitions and usage examples.
-
-**Type Helper Functions**
-
-```typescript
-/**
- * Convert a string to the Class type
- *
- * Use this function to register custom class names.
- *
- * @param value - The class name string
- * @returns The value branded as a Class type
- *
- * @example
- * const customClass: Class = asClass('Necromancer');
- */
-export function asClass(value: string): Class;
-
-/**
- * Type guard to check if a string is a valid Class (default or custom)
- *
- * This checks against both default D&D 5e classes and any custom classes
- * registered via ExtensionManager's 'classes.data' category.
- *
- * @param value - The value to check
- * @returns True if the value is a valid class name
- */
-export function isValidClass(value: string): value is Class;
-```
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `asClass()` | `value: string` | `Class` | Brands string as Class type for custom registration |
+| `isValidClass()` | `value: string` | `boolean` | Type guard for valid class (default or custom) |
 
 ---
 
