@@ -91,6 +91,24 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 - If the pattern exists elsewhere, replace with link instead
 - Only delete if truly redundant (exact duplicate)
 
+### IX. The Purpose Distinction Rule (NEW)
+**Different purposes justify apparent duplication.**
+
+Content that appears similar may serve different needs:
+- **Reference material** (tables, type lists) vs **usage examples** (how-to patterns)
+- **Quick reference** (brief) vs **deep dive** (comprehensive)
+- **Specification** (what it is) vs **documentation** (how to use it)
+
+Before removing "duplicate" content, ask: Does this serve a different purpose for the reader?
+
+### X. The TOC Sync Rule (NEW)
+**Table of Contents must always match actual section structure.**
+
+When reorganizing sections:
+- Update TOC immediately after structural changes
+- Verify section numbering matches
+- Check anchor links work after TOC updates
+
 ---
 
 ## Phase Structure
@@ -962,16 +980,29 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
     - CUSTOM_CONTENT.md line 15: Fixed duplicate "2." → "3." in TOC
   - **Summary**: Documentation is in excellent human-readable shape. Flow is logical, tables provide scannable reference, code examples are idiomatic and consistent.
 
-- [ ] **Task 94**: Create summary document
-  - [ ] Subtask: Document all changes made
-  - [ ] Subtask: Document any decisions made for future reference
-  - [ ] Subtask: Create list of any remaining issues to address
+- [x] **Task 94**: Create summary document
+  - [x] Subtask: Document all changes made
+  - [x] Subtask: Document any decisions made for future reference
+  - [x] Subtask: Create list of any remaining issues to address
+  - **Summary**: Created comprehensive DOCUMENTATION_REFACTOR_SUMMARY.md (~400 lines) documenting:
+    - Executive summary with overall impact statistics
+    - Complete phase-by-phase breakdown
+    - All audit trail summaries consolidated
+    - Decisions made for future reference
+    - Remaining issues to address (non-blocking)
+    - Success criteria status
+    - Lessons learned and recommendations
+    - File structure after refactor
 
-- [ ] **Task 95**: Update commandments if needed
-  - [ ] Subtask: Read all the notes in the plan that were written during this process
-  - [ ] Subtask: Did we learn anything that changes the commandments?
-  - [ ] Subtask: Add any new rules discovered
-  - [ ] Subtask: Refine existing rules for clarity
+- [x] **Task 95**: Update commandments if needed
+  - [x] Subtask: Read all the notes in the plan that were written during this process
+  - [x] Subtask: Did we learn anything that changes the commandments? ✓ No major changes needed
+  - [x] Subtask: Add any new rules discovered ✓ Added Commandments IX and X
+  - [x] Subtask: Refine existing rules for clarity ✓ Current rules are solid
+  - **Summary**: Added two new commandments based on lessons learned:
+    - **Commandment IX (Purpose Distinction Rule)**: Different purposes justify apparent duplication. Before removing "duplicate" content, assess whether it serves a different reader need (reference vs usage, quick vs comprehensive, spec vs docs).
+    - **Commandment X (TOC Sync Rule)**: TOC must always match actual section structure. Update TOC immediately after structural changes, verify numbering, check anchor links.
+    - **Assessment**: Original 8 commandments held up well throughout the refactor. No changes needed - only additions based on edge cases encountered.
 
 ---
 
