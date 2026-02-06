@@ -2933,137 +2933,41 @@ interface WeightedSelectionOptions {
 
 **Location:** `src/core/skills/SkillQuery.ts`
 
+*Also known as: Skill registry, custom skill system, proficiency manager*
+
 Query and validation layer for character skills stored in ExtensionManager.
 
-**Architecture:** SkillQuery provides query methods and validation helpers. All skills are stored in ExtensionManager; SkillQuery provides:
-- Query methods that read from ExtensionManager with caching for performance
-- Skill-related helper methods (prerequisite validation, ability/category filtering, etc.)
-- Cache invalidation for manual updates
+**For comprehensive guide, examples, and best practices:** See [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
 
-**Registration:** Use `ExtensionManager.register('skills', [...])` directly.
+#### Types
 
-**Design principle:** No duplicate storage. All data lives in ExtensionManager.
+| Type | Description | Location |
+|------|-------------|----------|
+| `CustomSkill` | Registered skill with ID, name, ability, source, prerequisites | [src/core/skills/SkillQuery.ts](src/core/skills/SkillQuery.ts) |
+| `SkillPrerequisite` | Prerequisites for skills (level, abilities, class, race, skills, features, spells) | [src/core/skills/SkillQuery.ts](src/core/skills/SkillQuery.ts) |
+| `SkillValidationResult` | Validation result with valid flag and errors array | [src/core/skills/SkillValidator.ts](src/core/skills/SkillValidator.ts) |
+| `SkillQueryStats` | Statistics about registered skills (totals, by ability, categories) | [src/core/skills/SkillQuery.ts](src/core/skills/SkillQuery.ts) |
+| `SkillProficiency` | Character skill proficiency with level and source | [src/core/types/Character.ts](src/core/types/Character.ts) |
+| `SkillListDefinition` | Class skill list with count and available skills | [src/core/types/Character.ts](src/core/types/Character.ts) |
+| `SkillSelectionWeights` | Weighted skill selection with spawn mode | [src/core/types/Character.ts](src/core/types/Character.ts) |
 
-```typescript
-class SkillQuery {
-    // Instance Management
-    static getInstance(): SkillQuery
+#### Method Reference
 
-    // Retrieval (reads from ExtensionManager with caching)
-    getSkill(id: string): CustomSkill | undefined
-    getAllSkills(): CustomSkill[]
-    getSkillsByAbility(ability: Ability): CustomSkill[]
-    getSkillsByCategory(category: string): CustomSkill[]
-    getCategories(): string[]
-    getSkillsBySource(source: 'default' | 'custom'): CustomSkill[]
-    getAvailableSkills(character: CharacterSheet): CustomSkill[]
-
-    // Validation (delegates to SkillValidator)
-    validatePrerequisites(skill: CustomSkill, character: CharacterSheet): SkillValidationResult
-    validateSkill(skill: CustomSkill): SkillValidationResult
-
-    // Query
-    isValidSkill(id: string): boolean
-    getSkillCount(): number
-    getQueryStats(): SkillQueryStats
-}
-
-type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
-
-interface CustomSkill {
-    id: string;
-    name: string;
-    description?: string;
-    ability: Ability;
-    armorPenalty?: boolean;
-    customProperties?: Record<string, string | number | boolean | string[]>;
-    categories?: string[];
-    source: 'default' | 'custom';
-    tags?: string[];
-    lore?: string;
-    prerequisites?: SkillPrerequisite;
-}
-
-interface SkillPrerequisite {
-    level?: number;
-    abilities?: Partial<Record<Ability, number>>;
-    class?: Class;
-    race?: Race;
-    subrace?: string;
-    skills?: string[];
-    features?: string[];
-    spells?: string[];
-    custom?: string;
-}
-
-interface SkillValidationResult {
-    valid: boolean;
-    errors: string[];
-}
-
-interface SkillQueryStats {
-    totalSkills: number;
-    defaultSkills: number;
-    customSkills: number;
-    skillsByAbility: Record<Ability, number>;
-    categories: string[];
-}
-
-// Additional types
-
-interface SkillProficiency {
-    skillId: string;
-    level: 'none' | 'proficient' | 'expertise';
-    source: 'class' | 'background' | 'feat' | 'custom' | 'racial' | 'other';
-    grantedBy?: string;
-}
-
-interface SkillListDefinition {
-    class: string;
-    skillCount: number;
-    availableSkills: string[];
-    selectionWeights?: SkillSelectionWeights;
-    hasExpertise?: boolean;
-    expertiseCount?: number;
-}
-
-interface SkillSelectionWeights {
-    weights: Record<string, number>;
-    mode?: 'relative' | 'absolute' | 'default';
-}
-```
-
-**Method Reference:**
-
-| Method | Parameters | Returns | Description |
-|--------|-----------|---------|-------------|
-| `getInstance()` | - | `SkillQuery` | Returns singleton instance |
-| `getSkill()` | `id` | `CustomSkill \| undefined` | Get skill by ID |
-| `getAllSkills()` | - | `CustomSkill[]` | Get all registered skills (reads from ExtensionManager with caching) |
-| `getSkillsByAbility()` | `ability` | `CustomSkill[]` | Get skills for specific ability (builds index from EM data with caching) |
-| `getSkillsByCategory()` | `category` | `CustomSkill[]` | Get skills in a specific category (builds index from EM data with caching) |
-| `getCategories()` | - | `string[]` | Get all categories in use (derived from EM data) |
-| `getSkillsBySource()` | `source` | `CustomSkill[]` | Get skills by source (default or custom) |
-| `getAvailableSkills()` | `character` | `CustomSkill[]` | Get skills character can learn (prerequisites met) |
-| `validatePrerequisites()` | `skill`, `character` | `SkillValidationResult` | Validate skill prerequisites (delegates to SkillValidator) |
-| `validateSkill()` | `skill` | `SkillValidationResult` | Validate skill data structure (delegates to SkillValidator) |
-| `isValidSkill()` | `id` | `boolean` | Check if skill ID exists in registry |
-| `getSkillCount()` | - | `number` | Get total skill count |
-| `getQueryStats()` | - | `SkillQueryStats` | Get statistics about registered skills |
-
-**Note on Registration:**
-
-Skills must be registered via ExtensionManager:
-```typescript
-ExtensionManager.getInstance().register('skills', [skillData]);
-```
-
-**Note on Initialization:**
-
-Default skills are initialized via ExtensionManager:
-```typescript
-ExtensionManager.getInstance().initializeDefaults('skills', DEFAULT_SKILLS)
-```
+| Method | Description |
+|--------|-------------|
+| `getInstance()` | Returns singleton instance |
+| `getSkill(id)` | Get skill by ID |
+| `getAllSkills()` | Get all registered skills (reads from ExtensionManager with caching) |
+| `getSkillsByAbility(ability)` | Get skills for specific ability (builds index from EM data with caching) |
+| `getSkillsByCategory(category)` | Get skills in a specific category (builds index from EM data with caching) |
+| `getCategories()` | Get all categories in use (derived from EM data) |
+| `getSkillsBySource(source)` | Get skills by source (default or custom) |
+| `getAvailableSkills(character)` | Get skills character can learn (prerequisites met) |
+| `validatePrerequisites(skill, character)` | Validate skill prerequisites (delegates to SkillValidator) |
+| `validateSkill(skill)` | Validate skill data structure (delegates to SkillValidator) |
+| `isValidSkill(id)` | Check if skill ID exists in registry |
+| `getSkillCount()` | Get total skill count |
+| `getQueryStats()` | Get statistics about registered skills |
 
 ---
 
@@ -3071,88 +2975,24 @@ ExtensionManager.getInstance().initializeDefaults('skills', DEFAULT_SKILLS)
 
 **Location:** `src/core/skills/SkillValidator.ts`
 
-Utility class for validating custom skills, skill proficiencies, and skill list definitions. All methods are static and validate against strict schemas.
+*Also known as: Skill validation system, proficiency validator*
 
-```typescript
-class SkillValidator {
-    // Skill Validation
-    static validateSkill(skill: unknown): SkillValidationResult
-    static validateSkills(skills: unknown[]): SkillValidationResult
+Utility class for validating custom skills, skill proficiencies, and skill list definitions. All methods are static.
 
-    // Skill Proficiency Validation
-    static validateSkillProficiency(proficiency: unknown): SkillValidationResult
-    static validateSkillProficiencies(proficiencies: unknown[]): SkillValidationResult
+#### Method Reference
 
-    // Skill List Definition Validation
-    static validateSkillListDefinition(skillList: unknown): SkillValidationResult
+| Method | Description |
+|--------|-------------|
+| `validateSkill(skill: unknown)` | Validate skill schema including required fields, ID format, ability, source |
+| `validateSkills(skills: unknown[])` | Validate multiple skills with index-based error reporting |
+| `validateSkillProficiency(proficiency: unknown)` | Validate skill proficiency (skillId, level, source) |
+| `validateSkillProficiencies(proficiencies: unknown[])` | Validate array of skill proficiencies |
+| `validateSkillListDefinition(skillList: unknown)` | Validate class skill list (class, skillCount, availableSkills, expertiseCount) |
+| `validateSkillPrerequisites(prerequisites, character)` | Validate prerequisites against character |
+| `isValidAbility(ability: string)` | Check if valid ability score (STR, DEX, CON, INT, WIS, CHA) |
+| `isValidSkillId(id: string)` | Check if skill ID follows lowercase_with_underscores format |
 
-    // Prerequisite Validation
-    static validateSkillPrerequisites(prerequisites: SkillPrerequisite | undefined, character: CharacterSheet): SkillValidationResult
-
-    // Type Guards
-    static isValidAbility(ability: string): ability is Ability
-    static isValidSkillId(id: string): boolean
-}
-
-interface SkillValidationResult {
-    valid: boolean;
-    errors: string[];
-}
-
-// Helper functions (convenience wrappers)
-function validateSkill(skill: unknown): SkillValidationResult
-function validateSkills(skills: unknown[]): SkillValidationResult
-function validateSkillProficiency(proficiency: unknown): SkillValidationResult
-function validateSkillProficiencies(proficiencies: unknown[]): SkillValidationResult
-function validateSkillListDefinition(skillList: unknown): SkillValidationResult
-function validateSkillPrerequisites(prerequisites: SkillPrerequisite | undefined, character: CharacterSheet): SkillValidationResult
-```
-
-**Method Reference:**
-
-| Method | Parameters | Returns | Description |
-|--------|-----------|---------|-------------|
-| `validateSkill()` | `skill: unknown` | `SkillValidationResult` | Validate skill schema including required fields, ID format, ability, source |
-| `validateSkills()` | `skills: unknown[]` | `SkillValidationResult` | Validate multiple skills with index-based error reporting |
-| `validateSkillProficiency()` | `proficiency: unknown` | `SkillValidationResult` | Validate skill proficiency (skillId, level, source) |
-| `validateSkillProficiencies()` | `proficiencies: unknown[]` | `SkillValidationResult` | Validate array of skill proficiencies |
-| `validateSkillListDefinition()` | `skillList: unknown` | `SkillValidationResult` | Validate class skill list (class, skillCount, availableSkills, expertiseCount) |
-| `validateSkillPrerequisites()` | `prerequisites`, `character` | `SkillValidationResult` | Validate prerequisites against character |
-| `isValidAbility()` | `ability: string` | `boolean` | Check if valid ability score (STR, DEX, CON, INT, WIS, CHA) |
-| `isValidSkillId()` | `id: string` | `boolean` | Check if skill ID follows lowercase_with_underscores format |
-
-**Skill Validation:**
-
-`validateSkill()` checks the following required fields:
-- `id` - Must be a string in lowercase_with_underscores format (e.g., `athletics`, `survival_cold`)
-- `name` - Must be a string
-- `ability` - Must be one of: STR, DEX, CON, INT, WIS, CHA
-- `source` - Must be 'default' or 'custom'
-
-Optional fields validated:
-- `description` - String
-- `armorPenalty` - Boolean (whether armor applies disadvantage)
-- `categories` - String array (skill categories for organization)
-- `tags` - String array (for filtering/searching)
-- `customProperties` - Record with string, number, boolean, or string[] values
-- `lore` - String (flavor text)
-
-**Skill Proficiency Validation:**
-
-`validateSkillProficiency()` checks skill proficiency objects:
-- `skillId` - Must follow lowercase_with_underscores format
-- `level` - Must be 'none', 'proficient', or 'expertise'
-- `source` - Must be 'class', 'background', 'feat', 'custom', 'racial', or 'other'
-- `grantedBy` - Optional string (what granted this proficiency)
-
-**Skill List Definition Validation:**
-
-`validateSkillListDefinition()` validates class skill list definitions:
-- `class` - String (class name)
-- `skillCount` - Non-negative integer (number of skills to choose)
-- `availableSkills` - String array (valid skill IDs to choose from)
-- `hasExpertise` - Optional boolean (whether class can get expertise)
-- `expertiseCount` - Optional non-negative integer (number of expertise choices)
+**Note:** For detailed prerequisite validation rules, see [docs/PREREQUISITES.md](docs/PREREQUISITES.md).
 
 ---
 
@@ -3168,6 +3008,72 @@ Skills can have prerequisites that must be met before a character can gain profi
 
 ---
 
+### SpellQuery
+
+**Location:** `src/core/spells/SpellQuery.ts`
+
+*Also known as: Spell registry, magic system, spellcaster manager*
+
+Query and validation layer for spells stored in ExtensionManager.
+
+**For comprehensive guide, examples, and best practices:** See [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
+
+#### Types
+
+| Type | Description | Location |
+|------|-------------|----------|
+| `RegisteredSpell` | Registered spell with ID, name, level, school, source, prerequisites | [src/core/spells/SpellQuery.ts](src/core/spells/SpellQuery.ts) |
+| `Spell` | Base spell interface with name, level, school, properties | [src/core/types/Character.ts](src/core/types/Character.ts) |
+| `SpellPrerequisite` | Prerequisites for spells (level, abilities, class, features, spells, skills) | [src/core/types/Character.ts](src/core/types/Character.ts) |
+| `ValidationResult` | Validation result with valid flag, errors, and warnings | [src/core/spells/SpellValidator.ts](src/core/spells/SpellValidator.ts) |
+| `SpellSchool` | Magic schools: Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation | [src/core/types/Character.ts](src/core/types/Character.ts) |
+
+#### Method Reference
+
+| Method | Description |
+|--------|-------------|
+| `getInstance()` | Returns singleton instance |
+| `getSpell(spellId)` | Get spell by ID |
+| `getSpells()` | Get all spells (reads from ExtensionManager with caching) |
+| `getSpellsByLevel(level)` | Get spells of specific level 0-9 (queries ExtensionManager, builds index with caching) |
+| `getSpellsBySchool(school)` | Get spells of specific school (queries ExtensionManager, builds index with caching) |
+| `getSpellsForClass(class)` | Get spells available to a class (filters by classes property) |
+| `getAvailableSpells(character)` | Get spells character can learn (prerequisites met) |
+| `getSpellsBySource(source)` | Get spells by source (default or custom) |
+| `getClassSpellList(class)` | Get spell list for a class (reads from ExtensionManager) |
+| `getSpellSlotsForClass(class, level)` | Get spell slots for class/level (delegates to constants helper) |
+| `validatePrerequisites(spell, character)` | Validate spell prerequisites (delegates to SpellValidator) |
+| `validateSpell(spell)` | Validate spell schema (delegates to SpellValidator) |
+| `hasSpell(spellId)` | Check if spell exists |
+| `getSpellCount()` | Get total spell count |
+| `getQueryStats()` | Get registry statistics (total, by source, by level, by school) |
+
+---
+
+### SpellValidator
+
+**Location:** `src/core/spells/SpellValidator.ts`
+
+*Also known as: Spell validation system, magic validator*
+
+Utility class for validating spells and their prerequisites. All methods are static.
+
+#### Method Reference
+
+| Method | Description |
+|--------|-------------|
+| `validateSpell(spell: unknown)` | Validate spell schema including prerequisites |
+| `validateSpells(spells: unknown[])` | Validate array of spells |
+| `validatePrerequisites(prerequisites: unknown)` | Validate prerequisite object structure |
+| `validateSpellPrerequisites(prerequisites, character)` | Validate prerequisites against character |
+| `isValidAbility(ability: string)` | Check if valid ability score |
+| `isValidSchool(school: string)` | Check if valid spell school |
+| `isValidSpellLevel(level: number)` | Check if valid spell level (0-9) |
+
+**Note:** For detailed prerequisite validation rules, see [docs/PREREQUISITES.md](docs/PREREQUISITES.md).
+
+---
+
 ### Spell Prerequisites
 
 **For comprehensive guide, examples, and best practices:** See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
@@ -3177,183 +3083,6 @@ Spells can have prerequisites that must be met before a spellcaster can learn th
 **Validation:**
 - `SpellValidator.validateSpellPrerequisites(prerequisites, character)` - Validate prerequisites against character
 - `SpellValidator.validateSpell(spell)` - Validate spell schema including prerequisites
-
----
-
-### SpellQuery
-
-**Location:** `src/core/spells/SpellQuery.ts`
-
-Query and validation layer for spells stored in ExtensionManager.
-
-**Architecture:** SpellQuery provides query methods and validation helpers. All spells are stored in ExtensionManager; SpellQuery provides:
-- Query methods that read from ExtensionManager with caching for performance
-- Spell-related helper methods (prerequisite validation, class spell lists, etc.)
-- Cache invalidation for manual updates
-
-**Registration:** Use `ExtensionManager.register('spells', [...])` or `ExtensionManager.register('spells.${ClassName}', [...])` for class spell lists directly.
-
-**Design principle:** No duplicate storage. All three registries (SpellQuery, SkillQuery, FeatureQuery) follow the same pattern: they do not maintain their own copy of data. All data lives in ExtensionManager.
-
-```typescript
-class SpellQuery {
-    // Instance Management
-    static getInstance(): SpellQuery
-
-    // Retrieval (reads from ExtensionManager with caching)
-    getSpell(spellId: string): RegisteredSpell | undefined
-    getSpells(): RegisteredSpell[]
-    getSpellsByLevel(level: number): RegisteredSpell[]
-    getSpellsBySchool(school: SpellSchool): RegisteredSpell[]
-    getSpellsForClass(characterClass: Class): RegisteredSpell[]
-    getAvailableSpells(character: CharacterSheet): RegisteredSpell[]
-    getSpellsBySource(source: 'default' | 'custom'): RegisteredSpell[]
-
-    // Class Spell Lists
-    getClassSpellList(characterClass: Class): string[]
-
-    // Spell Slots
-    getSpellSlotsForClass(characterClass: Class, level: number): number
-
-    // Validation
-    validatePrerequisites(spell: RegisteredSpell, character: CharacterSheet): ValidationResult
-    validateSpell(spell: RegisteredSpell): ValidationResult
-
-    // Query
-    hasSpell(spellId: string): boolean
-    getSpellCount(): number
-    getQueryStats(): { totalSpells: number; defaultSpells: number; customSpells: number; spellsByLevel: Record<number, number>; spellsBySchool: Record<SpellSchool, number>; classesWithSpells: number }
-}
-
-type SpellSchool =
-    | 'Abjuration'
-    | 'Conjuration'
-    | 'Divination'
-    | 'Enchantment'
-    | 'Evocation'
-    | 'Illusion'
-    | 'Necromancy'
-    | 'Transmutation';
-
-interface RegisteredSpell extends Spell {
-    id: string;
-    classes?: Class[];
-    source: 'default' | 'custom';
-}
-
-interface Spell {
-    id?: string;
-    name: string;
-    level: number;
-    school: SpellSchool;
-    prerequisites?: SpellPrerequisite;
-    description?: string;
-    casting_time?: string;
-    range?: string;
-    components?: string[];
-    duration?: string;
-    classes?: Class[];
-    source?: 'default' | 'custom';
-}
-
-interface SpellPrerequisite {
-    level?: number;
-    casterLevel?: number;
-    abilities?: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
-    class?: string;
-    features?: string[];
-    spells?: string[];
-    skills?: string[];
-    custom?: string;
-}
-
-interface ValidationResult {
-    valid: boolean;
-    errors: string[];
-    warnings?: string[];
-}
-```
-
-**Method Reference:**
-
-| Method | Parameters | Returns | Description |
-|--------|-----------|---------|-------------|
-| `getInstance()` | - | `SpellQuery` | Returns singleton instance |
-| `getSpell()` | `spellId` | `RegisteredSpell \| undefined` | Get spell by ID |
-| `getSpells()` | - | `RegisteredSpell[]` | Get all spells (reads from ExtensionManager with caching) |
-| `getSpellsByLevel()` | `level` | `RegisteredSpell[]` | Get spells of specific level (0-9) (queries ExtensionManager, builds index with caching) |
-| `getSpellsBySchool()` | `school` | `RegisteredSpell[]` | Get spells of specific school (queries ExtensionManager, builds index with caching) |
-| `getSpellsForClass()` | `class` | `RegisteredSpell[]` | Get spells available to a class (filters by `classes` property) |
-| `getAvailableSpells()` | `character` | `RegisteredSpell[]` | Get spells character can learn (prerequisites met) |
-| `getSpellsBySource()` | `source` | `RegisteredSpell[]` | Get spells by source (default or custom) |
-| `getClassSpellList()` | `class` | `string[]` | Get spell list for a class (reads from ExtensionManager) |
-| `getSpellSlotsForClass()` | `class`, `level` | `number` | Get spell slots for class/level (delegates to constants helper) |
-| `validatePrerequisites()` | `spell`, `character` | `ValidationResult` | Validate spell prerequisites (delegates to SpellValidator) |
-| `validateSpell()` | `spell` | `ValidationResult` | Validate spell schema (delegates to SpellValidator) |
-| `hasSpell()` | `spellId` | `boolean` | Check if spell exists |
-| `getSpellCount()` | - | `number` | Get total spell count |
-| `getQueryStats()` | - | `{ totalSpells, defaultSpells, customSpells, spellsByLevel, spellsBySchool, classesWithSpells }` | Get registry statistics (computed from ExtensionManager data) |
-
-**Usage Notes:**
-
-- **Registration:** Use `ExtensionManager.register('spells', [...])` directly.
-- **Class Spell Lists:** Register custom class spell lists via `ExtensionManager.register('spells.${ClassName}', [...])`. Spell IDs are validated during registration.
-- **Querying:** Query methods read from ExtensionManager with lazy caching for performance. Caches are automatically invalidated after registration.
-- **No Duplicate Storage:** All three registries (SpellQuery, SkillQuery, FeatureQuery) follow the same pattern and do not maintain their own data copy. ExtensionManager is the single source of truth.
-
----
-
-### SpellValidator
-
-**Location:** `src/core/spells/SpellValidator.ts`
-
-Utility class for validating spells and their prerequisites. All methods are static and validate against strict schemas.
-
-```typescript
-class SpellValidator {
-    // Spell Validation
-    static validateSpell(spell: unknown): SpellValidationResult
-    static validateSpells(spells: unknown[]): SpellValidationResult
-
-    // Prerequisite Validation
-    static validatePrerequisites(prerequisites: unknown): SpellValidationResult
-    static validateSpellPrerequisites(
-        prerequisites: SpellPrerequisite | undefined,
-        character: CharacterSheet
-    ): SpellValidationResult
-
-    // Type Guards
-    static isValidAbility(ability: string): ability is Ability
-    static isValidSchool(school: string): school is Spell['school']
-    static isValidSpellLevel(level: number): boolean
-}
-
-interface SpellValidationResult {
-    valid: boolean;
-    errors: string[];
-}
-
-// Helper functions (convenience wrappers)
-function validateSpell(spell: unknown): SpellValidationResult
-function validateSpells(spells: unknown[]): SpellValidationResult
-function validateSpellPrerequisitesSchema(prerequisites: unknown): SpellValidationResult
-function validateSpellPrerequisites(
-    prerequisites: SpellPrerequisite | undefined,
-    character: CharacterSheet
-): SpellValidationResult
-```
-
-**Method Reference:**
-
-| Method | Parameters | Returns | Description |
-|--------|-----------|---------|-------------|
-| `validateSpell()` | `spell: unknown` | `SpellValidationResult` | Validate spell schema including prerequisites |
-| `validateSpells()` | `spells: unknown[]` | `SpellValidationResult` | Validate array of spells |
-| `validatePrerequisites()` | `prerequisites: unknown` | `SpellValidationResult` | Validate prerequisite object structure |
-| `validateSpellPrerequisites()` | `prerequisites`, `character` | `SpellValidationResult` | Validate prerequisites against character |
-| `isValidAbility()` | `ability: string` | `boolean` | Check if valid ability score |
-| `isValidSchool()` | `school: string` | `boolean` | Check if valid spell school |
-| `isValidSpellLevel()` | `level: number` | `boolean` | Check if valid spell level (0-9) |
 
 ---
 

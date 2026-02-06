@@ -768,7 +768,7 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Remove all examples (they're in XP_AND_STATS.md)
   - **Summary**: Reduced from ~320 lines to ~130 lines (59% reduction). Converted verbose method documentation with full examples to concise method reference table. Replaced type definitions (CharacterUpdateResult, LevelUpDetail, ApplyPendingStatIncreaseResult) with link table format. Removed all verbose examples (combat XP, quest XP, manual stat selection) - these are fully covered in XP_AND_STATS.md. Kept stat strategy auto-detection as concise table. Added "Also known as" synonyms for AI discoverability. Also transformed SessionTracker, XPCalculator, LevelUpProcessor, and MasterySystem which were in the same section - all converted to table format with method references.
 
-- [ ] **Task 65**: Transform SessionTracker, XPCalculator
+- [x] **Task 65**: Transform SessionTracker, XPCalculator
   - [x] Subtask: Keep as method lists
   - **Summary**: Completed as part of Task 64. Both SessionTracker and XPCalculator converted to method reference tables with concise descriptions. Added "Also known as" synonyms for AI discoverability.
 
@@ -889,9 +889,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Remove detailed explanations
   - **Summary**: Reduced from ~180 lines to ~83 lines (54% reduction). Transformed both FeatureQuery (~53 lines) and FeatureValidator (~30 lines) from verbose documentation to concise reference format. Converted TypeScript class signatures and full interface definitions to scannable Types tables with source links. Removed verbose Architecture, Registration, and Design principle paragraphs. Removed "Note on Registration" and "Note on Initialization" code block examples. Removed detailed validation rules bullet points (replaced with link to PREREQUISITES.md). Added "Also known as" synonyms for AI discoverability (Feature registry, class feature system, racial trait system for FeatureQuery; Feature validation system, class feature validator, racial trait validator for FeatureValidator). Added prominent link to EXTENSIBILITY_GUIDE.md for usage examples. Method reference tables kept with inline parameter signatures.
 
-- [ ] **Task 87**: Transform SkillQuery, SpellQuery
-  - [ ] Subtask: Keep as brief summaries if present
-  - [ ] Subtask: Link to EXTENSIBILITY_GUIDE.md for details
+- [x] **Task 87**: Transform SkillQuery, SpellQuery
+  - [x] Subtask: Keep as brief summaries if present
+  - [x] Subtask: Link to EXTENSIBILITY_GUIDE.md for details
+  - **Summary**: Reduced SkillQuery and SkillValidator from ~230 lines to ~85 lines (63% reduction). Reduced SpellQuery and SpellValidator from ~195 lines to ~70 lines (64% reduction). Converted verbose documentation with full TypeScript type definitions, architecture explanations, and detailed validation descriptions to concise reference format. Replaced full type definitions with Types tables linking to source. Removed "Architecture", "Registration", "Design principle" paragraphs. Removed "Note on Registration" and "Note on Initialization" code blocks. Removed verbose validation detail subsections (Skill Validation, Skill Proficiency Validation, Skill List Definition Validation). Kept method reference tables with inline parameter signatures. Added "Also known as" synonyms for AI discoverability (Skill registry, custom skill system, proficiency manager for SkillQuery; Skill validation system, proficiency validator for SkillValidator; Spell registry, magic system, spellcaster manager for SpellQuery; Spell validation system, magic validator for SpellValidator). Added prominent links to EXTENSIBILITY_GUIDE.md for usage examples. Added "Note:" with link to PREREQUISITES.md for detailed validation rules.
 
 - [ ] **Task 88**: Review Cross-References section
   - [ ] Subtask: Ensure links work
