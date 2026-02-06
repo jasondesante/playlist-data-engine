@@ -12,7 +12,7 @@ Complete guide to custom races, custom classes, and spawn rate control in the Pl
 
 1. [Custom Races](#custom-races)
 2. [Subrace Support](#subrace-support)
-2. [Custom Classes](#custom-classes)
+3. [Custom Classes](#custom-classes)
 
 ---
 

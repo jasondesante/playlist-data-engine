@@ -238,7 +238,7 @@ All sources return the same detailed breakdown:
 
 ### Level-Up with Stat Increases
 
-**THE LEVELING UP A CHARACTER EXAMPLE IS NOTHING WITHOUT IMPROVED STATS!** Stats increase on level up at levels 4, 8, 12, 16, and 19 (standard mode) or every level (uncapped mode) following D&D 5e rules.
+Stats increase on level-up at levels 4, 8, 12, 16, and 19 (standard mode) or every level (uncapped mode) following D&D 5e rules.
 
 ```typescript
 import { StatManager, CharacterUpdater, CharacterGenerator } from 'playlist-data-engine';
@@ -339,7 +339,7 @@ for (const inc of potionResult.increases) {
     console.log(`${inc.ability}: ${inc.oldValue} → ${inc.newValue} (+${inc.delta})`);
 }
 
-// ===== OPTION 4: Stat Decreases (Curses, Poison) =====
+// ===== OPTION 5: Stat Decreases (Curses, Poison) =====
 const curseManager = new StatManager();
 
 // Curse of Weakness: -2 STR penalty
@@ -374,7 +374,7 @@ const restoreResult = curseManager.increaseStats(
     'item'
 );
 
-// ===== OPTION 5: Change Strategy Mid-Game =====
+// ===== OPTION 6: Change Strategy Mid-Game =====
 const flexibleManager = new StatManager();
 
 // Start with manual selection (early game)
