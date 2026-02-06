@@ -661,10 +661,11 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: SevereWeatherAlert → link to source
   - **Summary**: Reduced Gaming types section from ~40 lines to ~35 lines (13% reduction). Converted SevereWeatherAlert and GamingContext from full type definitions to concise property tables with source links. Added "Also known as" synonyms to SevereWeatherAlert and GamingContext for AI discoverability. Retained important Discord RPC limitation note in GamingContext description.
 
-- [ ] **Task 45**: Review Combat types
-  - [ ] Subtask: CombatInstance, Combatant → link to source
-  - [ ] Subtask: CombatAction, StatusEffect → link to source
-  - [ ] Subtask: DamageType, SavingThrowAbility → keep as enums
+- [x] **Task 45**: Review Combat types
+  - [x] Subtask: CombatInstance, Combatant → link to source
+  - [x] Subtask: CombatAction, StatusEffect → link to source
+  - [x] Subtask: DamageType, SavingThrowAbility → keep as enums
+  - **Summary**: Reduced from ~170 lines to ~135 lines (21% reduction). Converted CombatInstance, Combatant, CombatAction, and StatusEffect from full type definitions to concise property tables with source links. Consolidated additional combat types (CombatActionResult, AttackRoll, DamageRoll, SpellCastResult, CombatResult, CombatConfig) into a single reference table. Converted helper types (InitiativeResult, AttackResult, SpellSlots) to property tables with source links. Kept DamageType and SavingThrowAbility as enums (formatted as scannable lists). Added "Also known as" synonyms to Combat Types, StatusEffect, Damage Types, and Saving Throw Abilities for AI discoverability.
 
 ### Phase 12: Utilities Section (lines 1400-1800)
 

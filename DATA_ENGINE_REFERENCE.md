@@ -637,173 +637,135 @@ Steam gaming activity data. **Note:** Discord RPC CANNOT read game activity due 
 
 ### Combat Types
 
-**Location:** `src/core/types/Combat.ts`
+**Location:** [src/core/types/Combat.ts](src/core/types/Combat.ts)
 
 Core D&D 5e-inspired turn-based combat type definitions.
 
-### CombatInstance
+*Also known as: Combat system, battle system, turn-based combat*
+
+#### CombatInstance
 
 State of an active combat encounter.
 
-```typescript
-export interface CombatInstance {
-  id: string;
-  combatants: Combatant[];
-  currentTurnIndex: number;  // Index into combatants array
-  roundNumber: number;
-  environment?: EnvironmentalContext;
-  history: CombatAction[];   // Log of all actions taken
-  isActive: boolean;
-  winner?: Combatant;        // Set when combat ends
-  startTime: number;
-  lastUpdated: number;
-}
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | string | Unique identifier |
+| `combatants` | Combatant[] | All participants |
+| `currentTurnIndex` | number | Current turn position |
+| `roundNumber` | number | Current round |
+| `environment?` | EnvironmentalContext | Optional environmental context |
+| `history` | CombatAction[] | Action log |
+| `isActive` | boolean | Whether combat is ongoing |
+| `winner?` | Combatant | Winner when combat ends |
+| `startTime` | number | Combat start timestamp |
+| `lastUpdated` | number | Last update timestamp |
 
-export interface Combatant {
-  id: string;             // Unique ID within combat instance
-  character: CharacterSheet;
-  initiative: number;     // Initiative roll result
-  currentHP: number;      // Current hit points
-  temporaryHP?: number;   // Temporary hit points (damage is taken from these first)
-  statusEffects: StatusEffect[];
-  position?: {
-    x: number;
-    y: number;
-  };                      // Optional tactical position
-  isDefeated: boolean;    // Whether combatant is unconscious/defeated
-  actionUsed: boolean;    // Has action been used this turn
-  bonusActionUsed: boolean;
-  reactionUsed: boolean;
-  spellSlots?: {          // Remaining spell slots by level (if applicable)
-    [level: number]: number;
-  };
-}
+#### Combatant
 
-export interface CombatAction {
-  type: 'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready';
-  actor: Combatant;
-  target?: Combatant;
-  targets?: Combatant[];
-  attack?: Attack;
-  spell?: Spell;
-  result?: CombatActionResult;
-}
+A character participating in combat.
 
-export interface StatusEffect {
-  name: string;           // e.g., "Charmed", "Frightened", "Prone"
-  description: string;
-  duration: number;       // Rounds remaining
-  source?: string;        // Which combatant applied this
-  hasConcentration?: boolean;  // Some effects require concentration
-}
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | string | Unique ID within combat |
+| `character` | CharacterSheet | The character |
+| `initiative` | number | Initiative roll result |
+| `currentHP` | number | Current hit points |
+| `temporaryHP?` | number | Temp HP (absorbs damage first) |
+| `statusEffects` | StatusEffect[] | Active conditions |
+| `position?` | {x, y} | Tactical position |
+| `isDefeated` | boolean | Defeated state |
+| `actionUsed` | boolean | Action used this turn |
+| `bonusActionUsed` | boolean | Bonus action used |
+| `reactionUsed` | boolean | Reaction used |
+| `spellSlots?` | Record<number, number> | Remaining slots by level |
 
-export interface CombatActionResult {
-  success: boolean;
-  roll?: number;          // d20 roll result
-  isCritical?: boolean;
-  damage?: number;
-  damageType?: string;
-  targetHP?: number;
-  description: string;
-}
+#### CombatAction
 
-export interface AttackRoll {
-  d20Roll: number;        // The d20 roll (1-20)
-  attackBonus: number;    // Modifier added (ability mod + proficiency)
-  totalRoll: number;      // d20 + attackBonus
-  targetAC: number;       // Defense of target
-  hit: boolean;           // Whether attack hit
-  isCritical: boolean;    // Natural 20
-  isMiss: boolean;        // Natural 1
-}
+An action taken during combat.
 
-export interface DamageRoll {
-  diceFormula: string;    // e.g., "2d6", "1d8+3"
-  rolls: number[];        // Individual die rolls
-  modifier?: number;      // Ability modifier added
-  total: number;          // Sum of rolls + modifier
-  isCritical: boolean;    // If critical hit, dice are doubled
-}
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | ActionType | `'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready'` |
+| `actor` | Combatant | Who performed the action |
+| `target?` | Combatant | Single target |
+| `targets?` | Combatant[] | Multiple targets |
+| `attack?` | Attack | Attack data |
+| `spell?` | Spell | Spell data |
+| `result?` | CombatActionResult | Outcome |
 
-export interface SpellCastResult {
-  success: boolean;
-  spellName: string;
-  caster: Combatant;
-  targets: Combatant[];
-  saveDC?: number;        // Difficulty class for saving throw
-  damage?: DamageRoll;
-  effectsApplied: StatusEffect[];
-  spellSlotUsed: number;  // Spell level
-  description: string;
-}
+#### StatusEffect
 
-export interface CombatResult {
-  winner: Combatant;
-  defeated: Combatant[];
-  roundsElapsed: number;
-  totalTurns: number;
-  xpAwarded: number;
-  treasureAwarded?: {
-    gold: number;
-    items: any[];
-  };
-  description: string;
-}
+Temporary condition affecting a combatant.
 
-export interface CombatConfig {
-  useEnvironment?: boolean;     // Apply environmental context to combat (weather, altitude, etc.)
-  useMusic?: boolean;           // Apply music-based buffs to character stats
-  tacticalMode?: boolean;       // Enable position-based distance mechanics
-  maxTurnsBeforeDraw?: number;  // Turn limit before combat is a draw (default: 100)
-  allowFleeing?: boolean;       // Can combatants attempt to flee
-}
-```
+*Also known as: Condition, debuff, buff*
 
-### Additional Combat Types
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | string | Effect name (e.g., "Charmed", "Frightened") |
+| `description` | string | Effect description |
+| `duration` | number | Rounds remaining |
+| `source?` | string | Which combatant applied it |
+| `hasConcentration?` | boolean | Requires concentration |
 
-```typescript
-export type DamageType =
-  | 'slashing' | 'piercing' | 'bludgeoning'  // Physical
-  | 'fire' | 'cold' | 'lightning' | 'thunder' | 'poison' | 'acid'  // Elemental
-  | 'necrotic' | 'radiant' | 'psychic' | 'force';  // Magical
+#### Additional Combat Types
 
-export type SavingThrowAbility = 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma';
-```
+**Location:** [src/core/types/Combat.ts](src/core/types/Combat.ts)
 
-### Combat Helper Types
+| Type | Description |
+|------|-------------|
+| `CombatActionResult` | Outcome of a combat action (success, roll, damage) |
+| `AttackRoll` | Attack roll result (d20, bonus, hit/miss) |
+| `DamageRoll` | Damage roll result (dice, rolls, total) |
+| `SpellCastResult` | Spell casting outcome (success, save DC, effects) |
+| `CombatResult` | Final combat result (winner, XP, treasure) |
+| `CombatConfig` | Combat configuration options (environment, music, tactical) |
 
-**Locations:**
-- `InitiativeResult` → `src/core/combat/InitiativeRoller.ts` (11-16)
-- `AttackResult` → `src/core/combat/AttackResolver.ts` (15-23)
-- `SpellSlots` → `src/core/generation/SpellManager.ts` (24-31)
+#### Combat Helper Types
 
-```typescript
-export interface InitiativeResult {
-    combatant: Combatant;
-    d20Roll: number;
-    dexModifier: number;
-    initiativeTotal: number;
-}
+**InitiativeResult** — [src/core/combat/InitiativeRoller.ts](src/core/combat/InitiativeRoller.ts)
 
-export interface AttackResult {
-    attacker: Combatant;
-    target: Combatant;
-    attack: Attack;
-    attackRoll: AttackRoll;
-    damageRoll?: DamageRoll;
-    hpAfterDamage?: number;
-    description: string;
-}
+| Property | Type | Description |
+|----------|------|-------------|
+| `combatant` | Combatant | The combatant |
+| `d20Roll` | number | d20 roll |
+| `dexModifier` | number | DEX modifier |
+| `initiativeTotal` | number | Total initiative |
 
-export interface SpellSlots {
-    /** Record of spell slots by spell level (0-9) */
-    spell_slots: Record<number, { total: number; used: number }>;
-    /** Array of known spell names */
-    known_spells: string[];
-    /** Array of cantrip names */
-    cantrips: string[];
-}
-```
+**AttackResult** — [src/core/combat/AttackResolver.ts](src/core/combat/AttackResolver.ts)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `attacker` | Combatant | The attacker |
+| `target` | Combatant | The target |
+| `attack` | Attack | Attack used |
+| `attackRoll` | AttackRoll | Roll result |
+| `damageRoll?` | DamageRoll | Damage rolled |
+| `hpAfterDamage?` | number | Target HP after damage |
+| `description` | string | Result description |
+
+**SpellSlots** — [src/core/generation/SpellManager.ts](src/core/generation/SpellManager.ts)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `spell_slots` | Record<number, {total, used}> | Slots by level |
+| `known_spells` | string[] | Known spell names |
+| `cantrips` | string[] | Cantrip names |
+
+#### Damage Types
+
+*Also known as: Damage categories, element types*
+
+Physical: `slashing` | `piercing` | `bludgeoning`
+
+Elemental: `fire` | `cold` | `lightning` | `thunder` | `poison` | `acid`
+
+Magical: `necrotic` | `radiant` | `psychic` | `force`
+
+#### Saving Throw Abilities
+
+*Also known as: Save abilities, saves, saving throws*
+
+`strength` | `dexterity` | `constitution` | `intelligence` | `wisdom` | `charisma`
 
 ---
 
