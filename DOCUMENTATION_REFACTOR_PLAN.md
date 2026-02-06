@@ -335,9 +335,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Any redundant examples that duplicate USAGE? ✓ No - USAGE only has brief overview with links
   - **Summary**: ExtensionManager documentation is in good shape. Category table is authoritative reference. Registration examples show distinct patterns. Spawn rate system has both quick-reference table (lines 119-127) and detailed explanations (lines 186-303) - this is intentional redundancy serving different purposes (quick lookup vs. understanding). No changes needed.
 
-- [ ] **Task 33**: Review spawn weight system docs
-  - [ ] Subtask: Is this clear and well-explained?
-  - [ ] Subtask: Any redundant with DATA_ENGINE_REFERENCE?
+- [x] **Task 33**: Review spawn weight system docs
+  - [x] Subtask: Is this clear and well-explained?
+  - [x] Subtask: Any redundant with DATA_ENGINE_REFERENCE?
+  - **Summary**: Streamlined spawn weight documentation by moving "Weight Values" table next to "Spawn Modes" table for better flow. Removed redundant detailed mode-by-mode explanations (Relative/Absolute/Default/Replace) in the "Spawn Rate System" section - these are now covered by the concise quick-reference table. The section now provides key behaviors summary and jumps directly to "Advanced Weight Configuration" examples which show practical patterns (hierarchical weights, per-class weights, zero weights, reset). Reduced from ~120 lines to ~40 lines (67% reduction) while keeping all practical examples.
 
 - [ ] **Task 34**: Create summary of changes (AUDIT TRAIL)
   - [ ] Subtask: List what was removed (with reasoning - why was it redundant?)

@@ -120,10 +120,20 @@ const manager = ExtensionManager.getInstance();
 
 | Mode | Behavior | Use Case |
 |------|----------|----------|
-| `relative` | Custom weights added to default weights | Add custom items to existing pool |
-| `absolute` | Only custom items can spawn | Themed content packs, replace defaults |
+| `relative` | Custom items added to default pool with custom weights | Add custom items to existing pool |
+| `absolute` | Only custom items can spawn (defaults excluded) | Themed content packs, complete replacement |
 | `default` | All items have equal weight (1.0) | Disable custom spawn weights |
-| `replace` | Replace existing custom data | Hot-reload content packs during development |
+| `replace` | Clear previous custom data before registering | Hot-reload content packs during development |
+
+### Weight Values
+
+| Value | Effect |
+|-------|--------|
+| `0` | Never spawns |
+| `0.5` | Half as common as default |
+| `1.0` | Default spawn rate |
+| `2.0` | Twice as common as default |
+| `10.0` | Very common |
 
 ### Example: Registering Custom Content
 
@@ -185,74 +195,13 @@ if (manager.hasCustomData('equipment')) {
 
 ## Spawn Rate System
 
-The spawn rate system supports three modes:
+The spawn rate system controls how custom content is mixed with default content during procedural generation. See the [Spawn Modes table](#extensionmanager-api) above for mode descriptions.
 
-### Relative Mode (Default)
-
-Custom weights are added to default weights. This is the most common mode.
-
-```typescript
-manager.register('equipment', customItems, { mode: 'relative' });
-
-// With relative mode:
-// - Default items get weight 1.0
-// - Custom items can have custom weights
-// - Result: Mixed pool of default + custom items
-```
-
-### Absolute Mode
-
-Custom weights replace default weights. Only custom items can spawn.
-
-```typescript
-manager.register('equipment', customItems, { mode: 'absolute' });
-
-// With absolute mode:
-// - Only custom items in this category can spawn
-// - Default items are excluded
-// - Useful for themed content packs
-```
-
-### Default Mode
-
-All items (default + custom) have equal weight.
-
-```typescript
-manager.register('equipment', customItems, { mode: 'default' });
-
-// With default mode:
-// - All items have weight 1.0
-// - Equal probability for all items
-```
-
-### Replace Mode
-
-Replace mode clears existing custom data for the category before registering new items. This is useful for hot-reloading content packs.
-
-```typescript
-manager.register('equipment', customItems, { mode: 'replace' });
-
-// With replace mode:
-// - Any previously registered custom equipment is cleared
-// - New custom items are registered
-// - Default items remain untouched
-// - Useful for development and content pack reloading
-```
-
-**Use cases for replace mode:**
-- Hot-reloading content packs during development
-- Completely swapping out themed content
-- Testing different content packs without resetting
-
-### Weight Values
-
-| Value | Effect |
-|-------|--------|
-| `0` | Never spawns |
-| `0.5` | Half as common as default |
-| `1.0` | Default spawn rate |
-| `2.0` | Twice as common as default |
-| `10.0` | Very common |
+**Key behaviors:**
+- **relative** (default): Custom items join the default pool with custom weights applied
+- **absolute**: Only custom items spawn (defaults excluded)
+- **default**: All items have equal weight regardless of custom weights
+- **replace**: Clears existing custom data before registering new items (for hot-reloading)
 
 ### Advanced Weight Configuration
 
