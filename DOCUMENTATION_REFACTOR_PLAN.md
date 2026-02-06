@@ -669,9 +669,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 
 ### Phase 12: Utilities Section (lines 1400-1800)
 
-- [ ] **Task 46**: Transform Hash & Seed utilities
-  - [ ] Subtask: Function list table is good - keep but could be more concise
-  - [ ] Subtask: SeededRNG class - keep method reference table
+- [x] **Task 46**: Transform Hash & Seed utilities
+  - [x] Subtask: Function list table is good - keep but could be more concise
+  - [x] Subtask: SeededRNG class - keep method reference table
+  - **Summary**: Reduced from ~48 lines to ~36 lines (25% reduction). Converted hash functions from indented bullet list to cleaner table format. Removed duplicate SeededRNG class definition block (the method reference table already provides complete API documentation). Both sections now use consistent table format with source links.
 
 - [ ] **Task 47**: Transform Validation Schemas
   - [ ] Subtask: List available schemas with brief descriptions

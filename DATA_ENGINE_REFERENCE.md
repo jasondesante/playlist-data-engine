@@ -771,46 +771,30 @@ Magical: `necrotic` | `radiant` | `psychic` | `force`
 
 ### Utilities
 
-**Hashing & Seeds**
+#### Hashing & Seeds
 
-*Location: `src/utils/hash.ts`*
+*Location: [src/utils/hash.ts](src/utils/hash.ts)*
 
-- `generateSeed(chain: string, address: string, id: string): string`
-    - Creates a unique seed string.
-- `hashSeedToFloat(seed: string): number`
-    - Returns a float between 0.0 and 1.0.
-- `hashSeedToInt(seed: string, min: number, max: number): number`
-    - Returns an integer in range [min, max).
-- `deriveSeed(baseSeed: string, suffix: string): string`
-    - Creates a derived seed by appending a suffix to a base seed.
+Functions for deterministic seed generation and hashing from blockchain data.
 
-**Randomness**
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `generateSeed(chain, address, id)` | `string` | Creates a unique seed string from blockchain identifiers |
+| `hashSeedToFloat(seed)` | `number` | Float in range [0.0, 1.0) |
+| `hashSeedToInt(seed, min, max)` | `number` | Integer in range [min, max) |
+| `deriveSeed(baseSeed, suffix)` | `string` | Creates derived seed by appending suffix to base seed |
 
-*Location: `src/utils/random.ts`*
+#### SeededRNG
 
-```typescript
-class SeededRNG {
-    constructor(seed: string)
+*Location: [src/utils/random.ts](src/utils/random.ts)*
 
-    // Generate random values
-    random(): number                              // Returns float in [0.0, 1.0)
-    randomInt(min: number, max: number): number   // Returns integer in [min, max)
-    randomChoice<T>(array: T[]): T                // Selects random element from array
-    weightedChoice<T>(choices: [T, number][]): T  // Selects element using weights
-    shuffle<T>(array: T[]): T[]                   // Returns shuffled copy of array
-    reset(): void                                 // Resets internal counter (for testing)
-}
-```
-
-**SeededRNG** provides deterministic random number generation for reproducible results. The same seed always produces the same sequence of random values, making it ideal for blockchain-based character generation, procedural content, and testing.
-
-**Method Reference:**
+Deterministic random number generator for reproducible results. The same seed always produces the same sequence of random values.
 
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `constructor(seed)` | - | Creates a new RNG with the given seed string |
 | `random()` | `number` | Float in range [0.0, 1.0) |
-| `randomInt(min, max)` | `number` | Integer in range [min, max) - min is inclusive, max is exclusive |
+| `randomInt(min, max)` | `number` | Integer in range [min, max) - min inclusive, max exclusive |
 | `randomChoice(array)` | `T` | Random element from the array |
 | `weightedChoice(choices)` | `T` | Element from weighted choices - takes `[[value, weight], ...]` tuples |
 | `shuffle(array)` | `T[]` | New array with elements in random order |
