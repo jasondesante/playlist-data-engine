@@ -7,36 +7,158 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
 
 ## Table of Contents
 
-1. [Data Types](#data-types)
-2. [Core Modules](#core-modules)
-3. [Progression System](#progression-system)
-4. [Configuration](#configuration)
-5. [Environmental Sensors](#environmental-sensors)
-6. [Gaming Integration](#gaming-integration)
-6. [Combat System](#combat-system)
-7. [Equipment System](#equipment-system)
+1. [Quick Export Reference](#quick-export-reference)
+2. [Data Types](#data-types)
+3. [Core Modules](#core-modules)
+4. [Progression System](#progression-system)
+5. [Configuration](#configuration)
+6. [Environmental Sensors](#environmental-sensors)
+7. [Gaming Integration](#gaming-integration)
+8. [Combat System](#combat-system)
+9. [Equipment System](#equipment-system)
    - [Equipment Types](#equipment-types)
    - [Equipment Properties](#equipment-properties)
    - [Equipment Effects](#equipment-effects)
    - [Equipment Generator](#equipment-generator)
    - [Equipment Modifier](#equipment-modifier)
    - [Equipment Spawn Helper](#equipment-spawn-helper)
-8. [Extensibility System](#extensibility-system)
-   - [ExtensionManager](#extensionmanager)
-   - [FeatureQuery](#featurequery)
-   - [SkillQuery](#skillquery)
-   - [SpellQuery](#spellquery)
-   - [Per-Category Spawn Rate System](#per-category-spawn-rate-system)
-   - [WeightedSelector](#weightedselector)
-   - [CharacterGenerator Extensions](#charactergenerator-extensions)
-   - [Validation System](#validation-system)
-   - [Advanced Patterns](#advanced-patterns)
-   - [Skill Prerequisites](#skill-prerequisites)
-   - [Spell Prerequisites](#spell-prerequisites)
-   - [Custom Races](#custom-races)
-   - [Subrace Support](#subrace-support)
-   - [Custom Classes](#custom-classes)
-9. [Cross-References](#cross-references)
+10. [Extensibility System](#extensibility-system)
+    - [ExtensionManager](#extensionmanager)
+    - [FeatureQuery](#featurequery)
+    - [SkillQuery](#skillquery)
+    - [SpellQuery](#spellquery)
+    - [Per-Category Spawn Rate System](#per-category-spawn-rate-system)
+    - [WeightedSelector](#weightedselector)
+    - [CharacterGenerator Extensions](#charactergenerator-extensions)
+    - [Validation System](#validation-system)
+    - [Advanced Patterns](#advanced-patterns)
+    - [Skill Prerequisites](#skill-prerequisites)
+    - [Spell Prerequisites](#spell-prerequisites)
+    - [Custom Races](#custom-races)
+    - [Subrace Support](#subrace-support)
+    - [Custom Classes](#custom-classes)
+11. [Cross-References](#cross-references)
+
+---
+
+## Quick Export Reference
+
+A concise overview of all main exports from the library, organized by category.
+
+### Core Functionality
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `PlaylistParser` | Parse playlist JSON/Araweave data | [Core Modules](#core-modules) |
+| `MetadataExtractor` | Extract metadata from track objects | [Core Modules](#core-modules) |
+| `AudioAnalyzer` | Analyze audio frequency characteristics | [Core Modules](#core-modules) |
+| `SpectrumScanner` | Analyze frequency bands | [Core Modules](#core-modules) |
+| `ColorExtractor` | Extract color palettes from images | [Core Modules](#core-modules) |
+| `CharacterGenerator` | Generate D&D 5e characters deterministically | [Core Modules](#core-modules) |
+
+### Extensibility
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `ExtensionManager` | Register and manage custom content for all categories | [Extensibility System](#extensibility-system) |
+| `FeatureQuery` | Query custom class features and racial traits | [Extensibility System](#extensibility-system) |
+| `SkillQuery` | Query custom skills | [Extensibility System](#extensibility-system) |
+| `SpellQuery` | Query spells with prerequisite validation | [Extensibility System](#extensibility-system) |
+| `FeatureValidator` | Validate feature data structures | [Extensibility System](#extensibility-system) |
+| `SkillValidator` | Validate skill data structures | [Extensibility System](#extensibility-system) |
+| `SpellValidator` | Validate spell data structures | [Extensibility System](#extensibility-system) |
+| `FeatureEffectApplier` | Apply feature effects to characters | [Extensibility System](#extensibility-system) |
+| `WeightedSelector` | Weighted random selection with multiple modes | [Extensibility System](#extensibility-system) |
+| `ensureAllDefaultsInitialized()` | Initialize all default data | [Extensibility System](#extensibility-system) |
+
+### Character Generation
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `RaceSelector` | Select character races | [Core Modules](#core-modules) |
+| `ClassSuggester` | Suggest classes based on audio | [Core Modules](#core-modules) |
+| `AbilityScoreCalculator` | Calculate ability scores | [Core Modules](#core-modules) |
+| `SkillAssigner` | Assign skills and proficiencies | [Core Modules](#core-modules) |
+| `SpellManager` | Manage spells and casting | [Core Modules](#core-modules) |
+| `EquipmentGenerator` | Generate starting equipment | [Equipment System](#equipment-system) |
+| `NamingEngine` | Generate character names | [Core Modules](#core-modules) |
+| `AppearanceGenerator` | Generate character appearance | [Core Modules](#core-modules) |
+
+### Progression & Leveling
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `XPCalculator` | Calculate XP earned and thresholds | [Progression System](#progression-system) |
+| `SessionTracker` | Track listening sessions | [Progression System](#progression-system) |
+| `LevelUpProcessor` | Handle level-ups | [Progression System](#progression-system) |
+| `MasterySystem` | Track track mastery | [Progression System](#progression-system) |
+| `CharacterUpdater` | Apply sessions to characters | [Progression System](#progression-system) |
+| `StatManager` | Manage stat increases | [Stat Increase System](#stat-increase-system) |
+
+**Stat Increase Strategies:** `DnD5eStandardStrategy`, `DnD5eSmartStrategy`, `BalancedStrategy`, `PrimaryOnlyStrategy`, `RandomStrategy`, `ManualStrategy`, `createStatIncreaseStrategy` — see [Stat Increase System](#stat-increase-system)
+
+### Equipment System
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `EquipmentEffectApplier` | Apply/remove equipment effects when equipping/unequipping | [Equipment System](#equipment-system) |
+| `EquipmentModifier` | Enchant, curse, upgrade, and modify equipment | [Equipment System](#equipment-system) |
+| `EquipmentSpawnHelper` | Batch spawn equipment by rarity, tags, or templates | [Equipment System](#equipment-system) |
+
+**Additional Equipment:** Predefined enchantment library, 38+ pre-built magic items, templates — see [Equipment System](#equipment-system) and [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)
+
+### Sensors
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `EnvironmentalSensors` | GPS, motion, weather, light integration | [Environmental Sensors](#environmental-sensors) |
+| `GamingPlatformSensors` | Steam and Discord integration | [Gaming Integration](#gaming-integration) |
+
+> **Note:** `SteamAPIClient` and `DiscordRPCClient` are internal implementation classes. Not exported as part of the public API.
+
+### Combat System
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `CombatEngine` | Turn-based D&D 5e combat | [Combat System](#combat-system) |
+| `InitiativeRoller` | Roll initiative | [Combat System](#combat-system) |
+| `AttackResolver` | Resolve attack rolls | [Combat System](#combat-system) |
+| `SpellCaster` | Cast spells in combat | [Combat System](#combat-system) |
+| `DiceRoller` | Standalone dice rolling utilities | [Combat System](#combat-system) |
+
+### Utilities
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `generateSeed` | Generate deterministic seeds from blockchain data | [Utilities](#utilities) |
+| `hashSeedToFloat` | Hash seed to float in 0.0-1.0 range | [Utilities](#utilities) |
+| `hashSeedToInt` | Hash seed to integer in range | [Utilities](#utilities) |
+| `deriveSeed` | Derive new seed from base seed with suffix | [Utilities](#utilities) |
+| `SeededRNG` | Deterministic random number generator | [Utilities](#utilities) |
+| `Logger` / `createLogger` / `LogLevel` | Centralized logging utility | [Utilities](#utilities) |
+| `SensorDashboard` / `display*Diagnostics()` | Diagnostic dashboard for sensors | [Utilities](#utilities) |
+
+**Validation Schemas:** `PlaylistTrackSchema`, `ServerlessPlaylistSchema`, `AudioProfileSchema`, `AbilityScoresSchema`, `CharacterSheetSchema` — see [Utilities](#utilities)
+
+**Configuration:** `DEFAULT_SENSOR_CONFIG`, `loadConfigFromEnv()`, `mergeConfig()`, `DEFAULT_PROGRESSION_CONFIG`, `mergeProgressionConfig()` — see [Configuration](#configuration)
+
+### Type Exports
+
+All TypeScript types are exported, including:
+
+**Character Types:** `CharacterSheet`, `AbilityScores`, `Skill`, `ProficiencyLevel`, `Race`, `Class`, `Ability`, `GameMode` — see [Data Types](#data-types)
+
+**Generator Types:** `CharacterGeneratorOptions` (includes `gameMode`), `AudioProfile`, `ColorPalette`, `FrequencyBands` — see [Data Types](#data-types)
+
+**Context Types:** `EnvironmentalContext`, `GamingContext`, `ListeningSession` — see [Data Types](#data-types)
+
+**Stat Increase Types:** `StatIncreaseConfig`, `StatIncreaseResult`, `StatIncreaseStrategy`, `StatIncreaseOptions`, `StatIncreaseStrategyType`, `StatIncreaseFunction` — see [Stat Increase System](#stat-increase-system)
+
+**Extensibility Types:** `ClassFeature`, `RacialTrait`, `CustomSkill`, `FeatureEffect`, `FeaturePrerequisite`, `SkillPrerequisite`, `SpellPrerequisite`, `ValidationResult`, `ExtensionCategory` — see [Extensibility System](#extensibility-system) and [PREREQUISITES.md](docs/PREREQUISITES.md)
+
+**Equipment Types:** `EnhancedEquipment` (primary), `Equipment` (legacy), `InventoryItem`, `EquipmentProperty`, `EquipmentCondition`, `EquipmentModification`, `EnhancedInventoryItem`, `EquipmentMiniFeature`, `SpawnRandomOptions`, `TreasureHoardResult` — see [Equipment System](#equipment-system)
+
+**Game Data:** `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS` — see [Game Data Reference](#game-data-reference)
 
 ---
 

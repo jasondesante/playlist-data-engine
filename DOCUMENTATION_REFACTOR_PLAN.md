@@ -265,12 +265,13 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] **User note**: Condense to hints - developers know what Zod schemas are
   - **Summary**: Reduced from ~122 lines to ~12 lines (90% reduction). Removed verbose data examples for three different schema types (playlist track, character sheet, audio profile). Removed redundant "Validating X Data" subsections and the verbose bullet list of use cases. Kept single concise example showing Zod's `safeParse` pattern. The section now provides a minimal hint about available schemas and one idiomatic usage example.
 
-- [ ] **Task 24**: "Available Exports" section (lines 654-802) - DRAGON BALL Z FUSION
-  - [ ] Subtask: This content is spiritually the same as DATA_ENGINE_REFERENCE - they should FUSE
-  - [ ] Subtask: DATA_ENGINE_REFERENCE becomes the ONE definitive API/export reference (tables + source links)
-  - [ ] Subtask: USAGE replaces "Available Exports" with brief pointer to DATA_ENGINE_REFERENCE
-  - [ ] Subtask: Ensure DATA_ENGINE_REFERENCE has complete, well-organized export tables first
-  - [ ] Subtask: Then remove "Available Exports" from USAGE entirely, add only a link section
+- [x] **Task 24**: "Available Exports" section (lines 401-548) - DRAGON BALL Z FUSION
+  - [x] Subtask: This content is spiritually the same as DATA_ENGINE_REFERENCE - they should FUSE
+  - [x] Subtask: DATA_ENGINE_REFERENCE becomes the ONE definitive API/export reference (tables + source links)
+  - [x] Subtask: USAGE replaces "Available Exports" with brief pointer to DATA_ENGINE_REFERENCE
+  - [x] Subtask: Ensure DATA_ENGINE_REFERENCE has complete, well-organized export tables first
+  - [x] Subtask: Then remove "Available Exports" from USAGE entirely, add only a link section
+  - **Summary**: FUSION COMPLETE! DATA_ENGINE_REFERENCE.md now has a "Quick Export Reference" section at the top with categorized tables of all exports (115 lines). USAGE_IN_OTHER_PROJECTS.md "Available Exports" section replaced with brief pointer (17 lines) - reduced from 148 lines to 17 lines (88% reduction). File overall went from 653 to 520 lines (20% reduction). DATA_ENGINE_REFERENCE is now the single source of truth for export documentation with both quick reference and detailed sections.
 
 - [ ] **Task 25**: "Development Workflow" section
   - [ ] Subtask: Keep only project-specific workflow commands

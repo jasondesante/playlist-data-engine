@@ -62,6 +62,7 @@ See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for:
 - Equipment spawning — Batch spawn by rarity, tags, or templates
 
 ### Developer Reference
+- [Available Exports](#available-exports) — Complete API reference
 - [Equipment System Overview](#equipment-system-overview) — Quick introduction
 - [Extensibility Overview](#extensibility-system) — Registration and custom content
 - [Validation Schemas](#validation-schemas) — Runtime type validation with Zod
@@ -400,151 +401,18 @@ if (!result.success) {
 
 ## Available Exports
 
-The main exports from the library are:
+For a complete reference of all exports from the library, see **[DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md)**.
 
-### Core Functionality
-- `PlaylistParser` - Parse playlist JSON
-- `MetadataExtractor` - Extract metadata from track objects
-- `AudioAnalyzer` - Analyze audio frequency characteristics
-- `SpectrumScanner` - Analyze frequency bands
-- `ColorExtractor` - Extract color palettes from images
-- `CharacterGenerator` - Generate D&D 5e characters deterministically
-
-### Extensibility (NEW)
-- `ExtensionManager` - Register and manage custom content for all categories (single source of truth)
-- `FeatureQuery` - Query custom class features and racial traits (registration is done via ExtensionManager)
-- `SkillQuery` - Query custom skills (registration is done via ExtensionManager)
-- `SpellQuery` - Query spells with prerequisite validation (registration is done via ExtensionManager)
-- `FeatureValidator` - Validate feature data structures
-- `SkillValidator` - Validate skill data structures
-- `SpellValidator` - Validate spell data structures
-- `FeatureEffectApplier` - Apply feature effects to characters
-- `WeightedSelector` - Weighted random selection with multiple modes
-- `ensureAllDefaultsInitialized()` - Initialize all default data
-
-### Generation
-- `RaceSelector` - Select character races
-- `ClassSuggester` - Suggest classes based on audio
-- `AbilityScoreCalculator` - Calculate ability scores
-- `SkillAssigner` - Assign skills and proficiencies
-- `SpellManager` - Manage spells and casting
-- `EquipmentGenerator` - Generate starting equipment and manage inventory
-- `EquipmentEffectApplier` - Apply/remove equipment effects when equipping/unequipping
-- `EquipmentModifier` - Enchant, curse, upgrade, and modify equipment
-- `EquipmentSpawnHelper` - Batch spawn equipment by rarity, tags, or templates
-- `Enchantment Library (NEW)` - Predefined enchantments and curses for equipment
-- `Magic Item Examples (NEW)` - 38 pre-built magic items and equipment templates
-- `NamingEngine` - Generate character names
-- `AppearanceGenerator` - Generate character appearance
-
-### Progression
-- `XPCalculator` - Calculate XP earned and thresholds
-- `SessionTracker` - Track listening sessions
-- `LevelUpProcessor` - Handle level-ups
-- `MasterySystem` - Track track mastery
-- `CharacterUpdater` - Apply sessions to characters
-- `StatManager` - **NEW** - Manage stat increases (level-up, potions, custom formulas)
-
-### Stat Increase Strategies
-- `DnD5eStandardStrategy` - Default D&D 5e (manual selection)
-- `DnD5eSmartStrategy` - Intelligent auto-selection
-- `BalancedStrategy` - +1 to two lowest stats
-- `PrimaryOnlyStrategy` - Always boosts class primary
-- `RandomStrategy` - Random stat selection
-- `ManualStrategy` - Pure manual mode (always defers to `applyPendingStatIncrease()`)
-- `createStatIncreaseStrategy` - Factory function for creating strategies
-
-### Sensors
-- `EnvironmentalSensors` - GPS, motion, weather, light integration
-- `GamingPlatformSensors` - Steam and Discord integration
-
-> **Note**: `SteamAPIClient` and `DiscordRPCClient` are internal implementation classes used by `GamingPlatformSensors`. They are not exported as part of the public API.
-
-### Combat (Optional)
-- `CombatEngine` - Turn-based D&D 5e combat
-- `InitiativeRoller` - Roll initiative
-- `AttackResolver` - Resolve attack rolls
-- `SpellCaster` - Cast spells in combat
-- `DiceRoller` - Standalone dice rolling utilities (rollDie, rollD20, parseDiceFormula, rollWithAdvantage, calculateDamage, etc.)
-
-### Types & Constants
-All TypeScript types are exported, including:
-- `CharacterSheet`, `AbilityScores`, `Skill`, `ProficiencyLevel`
-- `Race`, `Class`, `Ability`, `GameMode` - `'standard'` or `'uncapped'` progression mode
-- `CharacterGeneratorOptions` - Includes `gameMode` option
-- `AudioProfile`, `ColorPalette`, `FrequencyBands`
-- `EnvironmentalContext`, `GamingContext`, `ListeningSession`
-- `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS`, etc.
-
-**Stat Increase Types (NEW):**
-- `StatIncreaseConfig` - Configuration for stat increase behavior
-- `StatIncreaseResult` - Result from stat operations with full change details
-- `StatIncreaseStrategy` - Strategy interface for custom formulas
-- `StatIncreaseOptions` - Options for stat selection (forced, excluded, etc.)
-- `StatIncreaseStrategyType` - Built-in strategy names ('dnD5e', 'dnD5e_smart', etc.)
-- `StatIncreaseFunction` - Simple function type for custom formulas
-
-**Extensibility Types (NEW):**
-- `ClassFeature` - Custom class feature definition with prerequisites and effects
-- `RacialTrait` - Custom racial trait definition
-- `CustomSkill` - Custom skill definition
-- `FeatureEffect` - Effect types (stat_bonus, skill_proficiency, ability_unlock, passive_modifier, resource_grant, spell_slot_bonus)
-- `FeaturePrerequisite` - Prerequisites for class features and racial traits (level, abilities, class, race, skills, spells, subrace, feature chains)
-- `SkillPrerequisite` - Prerequisites for learning custom skills (level, abilities, class, race, skills, features, spells)
-- `SpellPrerequisite` - Prerequisites for learning spells (level, caster level, abilities, class, features, spells, skills)
-- `ValidationResult` - Standard validation result for all prerequisite validation (valid, unmet, errors)
-- `ExtensionCategory` - All extensible categories (classFeatures, racialTraits, skills, equipment, appearance, etc.)
-
-**For detailed prerequisite documentation, see [PREREQUISITES.md](docs/PREREQUISITES.md)**
-
-**Equipment System Types (NEW):**
-- `EnhancedEquipment` - **Primary equipment type** - Full equipment definition with properties, features, skills, spells. Use this for type-safe equipment data with discriminated unions for EquipmentType, EquipmentRarity, EquipmentPropertyType, and EquipmentCondition
-- `Equipment` - **Legacy/base equipment type** from constants.ts with looser typing. Structurally similar to EnhancedEquipment but uses string literals instead of type unions. Kept for backward compatibility with internal code. Prefer `EnhancedEquipment` for new code
-- `InventoryItem` - Minimal inventory interface with name, quantity, and equipped properties. Used for simple inventory operations
-- `EquipmentProperty` - Individual equipment property (stat_bonus, skill_proficiency, ability_unlock, passive_modifier, special_property, damage_bonus, stat_requirement)
-- `EquipmentCondition` - Property conditions (vs_creature_type, at_time_of_day, wielder_race, wielder_class, while_equipped, on_hit, on_damage_taken, custom)
-- `EquipmentModification` - Runtime enchantment, curse, or upgrade
-- `EnhancedInventoryItem` - Inventory item with per-instance modifications (modifications, templateId, instanceId)
-- `EquipmentMiniFeature` - Inline equipment-specific feature definition
-- `SpawnRandomOptions` - Options for random equipment spawning
-- `TreasureHoardResult` - Treasure hoard with items and estimated value
-
-### Utilities
-- `generateSeed` - Generate deterministic seeds from blockchain data (chainName, tokenAddress, tokenId)
-- `hashSeedToFloat` - Hash seed to float in 0.0-1.0 range
-- `hashSeedToInt` - Hash seed to integer in range [min, max)
-- `deriveSeed` - Derive new seed from base seed with suffix
-- `SeededRNG` - Deterministic random number generator (random, randomInt, randomChoice, weightedChoice, shuffle)
-
-**Logger (NEW)**
-- `Logger` - Centralized logging utility with configurable log levels
-- `createLogger` - Convenience function to create a logger instance
-- `LogLevel` - Log level enum (DEBUG, INFO, WARN, ERROR, NONE)
-- `LogEntry` - Log entry structure type
-- `LoggerConfig` - Logger configuration options type
-
-**Sensor Dashboard (NEW)**
-- `SensorDashboard` - Diagnostic dashboard for visualizing sensor status in console
-- `displayEnvironmentalDiagnostics()` - Display environmental sensor diagnostics
-- `displayGamingDiagnostics()` - Display gaming platform sensor diagnostics
-- `displaySystemDashboard()` - Display combined system dashboard
-- `DashboardConfig` - Dashboard configuration options type
-
-**Validation Schemas**
-- `PlaylistTrackSchema` - Zod schema for validating playlist track metadata
-- `ServerlessPlaylistSchema` - Zod schema for validating full playlist structure
-- `AudioProfileSchema` - Zod schema for validating audio analysis results
-- `AbilityScoresSchema` - Zod schema for validating character ability scores
-- `CharacterSheetSchema` - Zod schema for validating complete character sheets
-
-**Configuration (NEW)**
-- `DEFAULT_SENSOR_CONFIG` - Default sensor configuration values
-- `loadConfigFromEnv()` - Load sensor config from environment variables
-- `mergeConfig(userConfig?)` - Merge sensor config with defaults
-- `DEFAULT_PROGRESSION_CONFIG` - Default D&D 5e progression values
-- `mergeProgressionConfig(userConfig?)` - Merge progression config with defaults
-- `type SensorConfig` - Sensor configuration interface
-- `type ProgressionConfig` - Progression configuration interface
+The reference includes:
+- **Quick Export Reference** — Concise overview of all exports organized by category
+- **Data Types** — Complete type definitions for all core data structures
+- **Core Modules** — PlaylistParser, AudioAnalyzer, CharacterGenerator, and more
+- **Progression System** — XP calculation, level-ups, stat increases
+- **Equipment System** — Properties, enchanting, spawning, templates
+- **Extensibility System** — ExtensionManager, FeatureQuery, SkillQuery, SpellQuery
+- **Combat System** — Turn-based combat, initiative, dice rolling
+- **Configuration** — Sensor and progression configuration
+- **Utilities** — Seeded RNG, logging, validation schemas
 
 ---
 
