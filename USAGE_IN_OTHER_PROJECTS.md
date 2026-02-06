@@ -428,25 +428,15 @@ When developing with `file://` or `npm link`: changes in `src/` are available im
 
 ## Environment Variables
 
-Some features require API keys:
+| Variable | Purpose |
+|----------|---------|
+| `WEATHER_API_KEY` | OpenWeatherMap API key for weather-based XP modifiers |
+| `STEAM_API_KEY` | Steam Web API key for game detection |
+| `STEAM_USER_ID` | Your 64-bit Steam ID |
+| `DISCORD_CLIENT_ID` | Discord application ID for Rich Presence |
+| `XP_MAX_MODIFIER` | Maximum XP multiplier (default: 3.0) |
 
-```bash
-# For environmental sensors (weather data)
-export WEATHER_API_KEY="your_openweathermap_api_key_here"
-
-# For Steam integration
-export STEAM_API_KEY="your_steam_api_key_here"
-export STEAM_USER_ID="your_64bit_steam_id_here"
-
-# For Discord integration
-export DISCORD_CLIENT_ID="your_discord_client_id_here"
-
-# Optional: Override maximum XP modifier (default: 3.0)
-# Set to 1.0 to disable all environmental/gaming bonuses
-export XP_MAX_MODIFIER="3.0"
-```
-
-All environment variables are optional. The system will use sensible defaults if not provided. For complete configuration options, see `.env.example` in the project root.
+All variables are optional. For complete configuration with examples and programmatic options, see **[`.env.example`](.env.example)**.
 
 ---
 

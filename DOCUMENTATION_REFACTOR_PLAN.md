@@ -283,11 +283,12 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Is this necessary? Can it be combined with Development Workflow?
   - **Summary**: Completed as part of Task 25. Section was merged into "Development Workflow" since both covered the same workflow concern. The rebuilding hint (`npm run dev`) is now part of the streamlined workflow section.
 
-- [ ] **Task 27**: "Environment Variables" section
-  - [ ] Subtask: Convert to minimal table format
-  - [ ] Subtask: Link to .env.example in project root for full details
-  - [ ] Subtask: Remove all verbose descriptions
-  - [ ] **User note**: Summarize in-place, don't create new files
+- [x] **Task 27**: "Environment Variables" section
+  - [x] Subtask: Convert to minimal table format
+  - [x] Subtask: Link to .env.example in project root for full details
+  - [x] Subtask: Remove all verbose descriptions
+  - [x] **User note**: Summarized in-place
+  - **Summary**: Reduced from ~21 lines to ~11 lines (48% reduction). Converted verbose bash code block with comments to clean table format. Removed redundant sentences about optional variables (clear from context). Added prominent link to `.env.example` for complete configuration.
 
 - [ ] **Task 28**: "Troubleshooting" section
   - [ ] Subtask: Keep only common/non-obvious issues
