@@ -2726,127 +2726,62 @@ The extensibility system allows runtime customization of ALL procedural generati
 
 ### ExtensionManager
 
+*Also known as: Content registry, customization manager, spawn rate controller, mod registration system*
+
 **Location:** `src/core/extensions/ExtensionManager.ts`
 
 Singleton registry for managing runtime customization of procedural generation lists with spawn rate control.
 
-```typescript
-class ExtensionManager {
-    // Instance Management
-    static getInstance(): ExtensionManager
+**For usage examples and detailed guides:** See [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
 
-    // Registration
-    register(category: ExtensionCategory, items: any[], options?: ExtensionOptions): void
-    registerMultiple(registrations: RegistrationEntry[]): void
+---
 
-    // Data Retrieval
-    get(category: ExtensionCategory): any[]
-    getDefaults(category: ExtensionCategory): any[]
-    getCustom(category: ExtensionCategory): any[]
+**Types:**
 
-    // Weight Management
-    setWeights(category: ExtensionCategory, weights: Record<string, number>): void
-    getWeights(category: ExtensionCategory): Record<string, number>
-    getDefaultWeights(category: ExtensionCategory): Record<string, number>
+| Type | Description |
+|------|-------------|
+| `ExtensionCategory` | All extensible category names (equipment, spells, races, classes, skills, appearance, etc.) |
+| `SpawnMode` | Spawn mode: `'relative'` | `'absolute'` | `'default'` | `'replace'` |
+| `ExtensionOptions` | Registration options: mode, weights, validate |
+| `RegistrationEntry` | Batch registration: category, items, options |
+| `ValidationResult` | Validation result: valid, errors, warnings |
 
-    // Spawn Mode Configuration
-    setMode(category: ExtensionCategory, mode: SpawnMode): void
-    getMode(category: ExtensionCategory): SpawnMode
-
-    // State Queries
-    hasCustomData(category: ExtensionCategory): boolean
-    getInfo(category?: ExtensionCategory): Record<string, any>
-    getRegisteredCategories(): ExtensionCategory[]
-
-    // Reset Operations
-    reset(category: ExtensionCategory): void
-    resetAll(): void
-
-    // Validation
-    validate(category: ExtensionCategory, items: any[]): ValidationResult
-
-    // Data Export
-    exportCustomData(): Record<string, any>
-    exportCustomDataForCategory(category: ExtensionCategory): any[]
-}
-
-type ExtensionCategory =
-    | 'equipment'
-    | 'equipment.properties'
-    | 'equipment.modifications'
-    | 'equipment.templates'
-    | 'appearance.bodyTypes'
-    | 'appearance.skinTones'
-    | 'appearance.hairColors'
-    | 'appearance.hairStyles'
-    | 'appearance.eyeColors'
-    | 'appearance.facialFeatures'
-    | 'spells'
-    | 'races'
-    | 'classes'
-    | `spells.${string}`
-    | 'classFeatures'
-    | `classFeatures.${string}`
-    | 'racialTraits'
-    | `racialTraits.${string}`
-    | 'skills'
-    | `skills.${string}`
-    | 'skillLists'
-    | `skillLists.${string}`;
-
-type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';
-
-interface ExtensionOptions {
-    mode?: SpawnMode;
-    weights?: Record<string, number>;
-    validate?: boolean;
-}
-
-interface RegistrationEntry {
-    category: ExtensionCategory;
-    items: any[];
-    options?: ExtensionOptions;
-}
-
-interface ValidationResult {
-    valid: boolean;
-    errors: string[];
-    warnings: string[];
-}
-```
+---
 
 **Method Reference:**
 
-| Method | Parameters | Returns | Description |
-|--------|-----------|---------|-------------|
-| `getInstance()` | - | `ExtensionManager` | Returns singleton instance |
-| `register()` | `category`, `items`, `options?` | `void` | Register items for a category with optional weights/mode |
-| `registerMultiple()` | `registrations[]` | `void` | Register multiple categories in a single call |
-| `get()` | `category` | `any[]` | Get combined defaults + custom items |
-| `getDefaults()` | `category` | `any[]` | Get default items only |
-| `getCustom()` | `category` | `any[]` | Get custom items only |
-| `setWeights()` | `category`, `weights` | `void` | Set spawn weights for items |
-| `getWeights()` | `category` | `Record<string, number>` | Get current weights |
-| `getDefaultWeights()` | `category` | `Record<string, number>` | Get default weights only |
-| `setMode()` | `category`, `mode` | `void` | Set spawn mode for category |
-| `getMode()` | `category` | `SpawnMode` | Get current spawn mode |
-| `hasCustomData()` | `category` | `boolean` | Check if category has custom data |
-| `getInfo()` | `category?` | `Record<string, any>` | Get detailed info about one or all categories |
-| `getRegisteredCategories()` | - | `ExtensionCategory[]` | List all categories with custom data |
-| `reset()` | `category` | `void` | Reset category to defaults |
-| `resetAll()` | - | `void` | Reset all categories to defaults |
-| `validate()` | `category`, `items` | `ValidationResult` | Validate items against category schema |
-| `exportCustomData()` | - | `Record<string, any>` | Export all custom data |
-| `exportCustomDataForCategory()` | `category` | `any[]` | Export custom data for single category |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getInstance()` | `ExtensionManager` | Returns singleton instance |
+| `register(category, items, options?)` | `void` | Register items for a category with optional weights/mode |
+| `registerMultiple(registrations[])` | `void` | Register multiple categories in a single call |
+| `get(category)` | `any[]` | Get combined defaults + custom items |
+| `getDefaults(category)` | `any[]` | Get default items only |
+| `getCustom(category)` | `any[]` | Get custom items only |
+| `setWeights(category, weights)` | `void` | Set spawn weights for items |
+| `getWeights(category)` | `Record<string, number>` | Get current weights |
+| `getDefaultWeights(category)` | `Record<string, number>` | Get default weights only |
+| `setMode(category, mode)` | `void` | Set spawn mode for category |
+| `getMode(category)` | `SpawnMode` | Get current spawn mode |
+| `hasCustomData(category)` | `boolean` | Check if category has custom data |
+| `getInfo(category?)` | `Record<string, any>` | Get detailed info about one or all categories |
+| `getRegisteredCategories()` | `ExtensionCategory[]` | List all categories with custom data |
+| `reset(category)` | `void` | Reset category to defaults |
+| `resetAll()` | `void` | Reset all categories to defaults |
+| `validate(category, items)` | `ValidationResult` | Validate items against category schema |
+| `exportCustomData()` | `Record<string, any>` | Export all custom data |
+| `exportCustomDataForCategory(category)` | `any[]` | Export custom data for single category |
+
+---
 
 **Spawn Modes:**
 
-| Mode | Behavior |
-|------|----------|
-| `relative` | Custom items added to default pool with custom weights |
-| `absolute` | Only custom items can spawn (ignore defaults) |
-| `default` | All items (default + custom) have equal weight |
-| `replace` | Clear previous custom data before registering new items |
+| Mode | Behavior | Use Case |
+|------|----------|----------|
+| `relative` | Custom items added to default pool with custom weights | Add custom items to existing pool |
+| `absolute` | Only custom items can spawn (ignore defaults) | Themed content packs, complete replacement |
+| `default` | All items (default + custom) have equal weight | Disable custom spawn weights |
+| `replace` | Clear previous custom data before registering new items | Hot-reload content packs during development |
 
 ### FeatureQuery
 
