@@ -454,49 +454,6 @@ for (const track of playlist.tracks) {
 
 The extensibility system allows you to add custom content at runtime, including spells, equipment, races, classes, features, skills, and appearance options.
 
-### Registering Custom Equipment
-
-```typescript
-import { ExtensionManager } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// Add custom equipment
-manager.register('equipment', [
-    { name: 'Dragon Sword', type: 'weapon', rarity: 'rare', weight: 5 },
-    { name: 'Mithral Armor', type: 'armor', rarity: 'very_rare', weight: 10 }
-], {
-    weights: { 'Dragon Sword': 0.5 }  // Half as common
-});
-```
-
-### Registering Custom Spells
-
-```typescript
-manager.register('spells', [
-    {
-        name: 'Phoenix Fire',
-        level: 5,
-        school: 'Evocation',
-        casting_time: '1 action',
-        range: '60 feet',
-        duration: 'Instantaneous',
-        components: ['V', 'S'],
-        description: 'A burst of flame...'
-    }
-]);
-```
-
-### Spawn Rate Control
-
-```typescript
-// Control spawn rates with weights
-manager.setWeights('equipment', {
-    'Dragon Sword': 0.5,   // Rare
-    'Mithral Armor': 1.0   // Normal
-});
-```
-
 
 See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
 - Custom features, and spawn rates
