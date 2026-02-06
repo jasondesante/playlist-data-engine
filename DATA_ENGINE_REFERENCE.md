@@ -1088,130 +1088,32 @@ Separates raw frequency data into bands using rebalanced v2 ranges (prevents tre
 ---
 
 ### CharacterGenerator
+*Also known as: Character builder, hero generator, PC creator, D&D character generator*
 
 **Location:** `src/core/generation/CharacterGenerator.ts`
 
-The `CharacterGenerator` creates deterministic D&D 5e character sheets based on a seed and an audio profile.
+Creates deterministic D&D 5e character sheets from a seed and audio profile.
 
 #### Class: `CharacterGenerator`
 
 **Methods:**
 
-```typescript
-class CharacterGenerator {
-    static generate(
-        seed: string,
-        audioProfile: AudioProfile,
-        track: PlaylistTrack,
-        options?: CharacterGeneratorOptions
-    ): CharacterSheet
-}
+| Method | Description |
+|--------|-------------|
+| `static generate(seed: string, audioProfile: AudioProfile, track: PlaylistTrack, options?: CharacterGeneratorOptions): CharacterSheet` | Generates a complete character sheet deterministically |
 
-interface CharacterGeneratorOptions {
-    level?: number;              // Starting level (1-20). Default: 1
-    forceClass?: Class;          // Override the suggested class
-    forceRace?: Race;            // Override the race selection
-    subrace?: string | 'pure';   // Subrace selection (see below)
-    gameMode?: GameMode;         // Game mode for stat progression. Default: 'standard'
-    forceName?: string;          // Override automatic name generation with custom name
-    deterministicName?: boolean; // Generate deterministic names (same seed = same name). Default: true
-    extensions?: CharacterGeneratorExtensions;  // Custom extensions for procedural generation
-}
+**Options:**
 
-interface CharacterGeneratorExtensions {
-    spells?: SpellExtension[];           // Custom spells to add
-    equipment?: EquipmentExtension[];    // Custom equipment to add
-    races?: RaceExtension[];             // Custom races to add (race names)
-    classes?: ClassExtension[];          // Custom classes to add (class names)
-    appearance?: AppearanceExtension;    // Custom appearance options
-}
-
-interface SpellExtension {
-    name: string;
-    level: number;                       // 0-9
-    school: string;                      // Valid school name
-    casting_time?: string;
-    range?: string;
-    duration?: string;
-    components?: string[];
-    description?: string;
-}
-
-interface EquipmentExtension {
-    name: string;
-    type: 'weapon' | 'armor' | 'item';
-    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-    weight: number;
-}
-
-type RaceExtension = string;
-type ClassExtension = string;
-
-interface AppearanceExtension {
-    bodyTypes?: string[];
-    skinTones?: string[];
-    hairColors?: string[];
-    hairStyles?: string[];
-    eyeColors?: string[];
-    facialFeatures?: string[];
-}
-
-interface CharacterSheet {
-    name: string;
-    race: Race;
-    subrace?: string;
-    class: Class;
-    level: number;
-    ability_scores: AbilityScores;
-    ability_modifiers: AbilityScores;
-    skills: Record<Skill, ProficiencyLevel>;
-    spells?: SpellSlots;
-    equipment: CharacterEquipment;
-    appearance: CharacterAppearance;
-    gameMode: 'standard' | 'uncapped';
-}
-
-type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
-
-/**
- * Branded type for extensible Class names
- *
- * This allows custom classes to be registered via ExtensionManager while maintaining
- * type safety. The default D&D 5e classes are available via DEFAULT_CLASSES constant.
- *
- * Use asClass() to convert a string to the Class type, and isValidClass()
- * to validate at runtime.
- *
- * @example
- * // Default D&D 5e classes
- * const defaultClass: Class = 'Wizard' as Class;
- *
- * // Custom class (must be registered via ExtensionManager first)
- * const customClass: Class = asClass('Necromancer');
- * if (isValidClass(customClass)) {
- *   // Safe to use
- * }
- */
-type Class = string & { readonly __ClassBrand: unique symbol };
-
-type Race = 'Dwarf' | 'Elf' | 'Halfling' | 'Human' | 'Dragonborn' | 'Gnome' | 'Half-Elf' | 'Half-Orc' | 'Tiefling';
-type ProficiencyLevel = 0 | 0.5 | 1 | 2;  // None, Half-proficiency, Proficient, Expertise
-```
-
-**Method Reference:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `seed` | `string` | Unique string (e.g., track ID) to ensure deterministic results |
-| `audioProfile` | `AudioProfile` | The audio analysis result (frequency, amplitude data) |
-| `track` | `PlaylistTrack` | Track metadata (title, artist, genre) for automatic name generation |
-| `options.level` | `number` | Starting level (1-20). Default: `1` |
-| `options.forceClass` | `Class` | Override the suggested class from audio analysis |
-| `options.forceRace` | `Race` | Override race selection (required when specifying subrace) |
-| `options.subrace` | `string \| 'pure'` | Subrace selection (see below) |
-| `options.gameMode` | `'standard' \| 'uncapped'` | Game mode for stat progression. Default: `'standard'` |
-| `options.forceName` | `string` | Force a specific name for the character |
-| `options.deterministicName` | `boolean` | Generate deterministic names (same seed = same name). Default: `true` |
+| Property | Type | Description |
+|----------|------|-------------|
+| `level` | `number` | Starting level (1-20). Default: `1` |
+| `forceClass` | `Class` | Override the suggested class from audio analysis |
+| `forceRace` | `Race` | Override race selection (required when specifying subrace) |
+| `subrace` | `string \| 'pure'` | Subrace selection |
+| `gameMode` | `'standard' \| 'uncapped'` | Game mode for stat progression. Default: `'standard'` |
+| `forceName` | `string` | Override automatic name generation with custom name |
+| `deterministicName` | `boolean` | Generate deterministic names (same seed = same name). Default: `true` |
+| `extensions` | `CharacterGeneratorExtensions` | Custom extensions for procedural generation |
 
 **Subrace Options:**
 
@@ -1221,150 +1123,138 @@ type ProficiencyLevel = 0 | 0.5 | 1 | 2;  // None, Half-proficiency, Proficient,
 | `'pure'` | Explicitly no subrace | None |
 | `'High Elf'`, etc. | Specific subrace | `forceRace` must be specified |
 
-**Returns:** A complete `CharacterSheet` with:
-- Race, Class, Level
-- Subrace (if specified or randomly selected)
-- Ability Scores (STR, DEX, etc.) with modifiers
-- Skills with proficiency levels
-- Spells (for spellcasting classes)
-- Equipment (starting gear)
-- Appearance (derived from audio/seed)
+**Returns:** A complete `CharacterSheet` with race, class, level, ability scores, skills, spells (if applicable), equipment, and appearance.
+
+**Types:**
+
+| Type | Source | Description |
+|------|--------|-------------|
+| `CharacterSheet` | `src/core/types/Character.ts` | Complete character data structure |
+| `CharacterGeneratorOptions` | `src/core/generation/CharacterGenerator.ts` | Generation options interface |
+| `CharacterGeneratorExtensions` | `src/core/generation/CharacterGenerator.ts` | Custom content extensions |
 
 #### Helper: `RaceSelector`
+*Also known as: Race picker, ancestry selector*
 
 **Location:** `src/core/generation/RaceSelector.ts`
 
 Deterministically selects a race based on the seed.
 
-- `static select(rng: SeededRNG): Race`
-    - Selects from: Dwarf, Elf, Halfling, Human, Dragonborn, Gnome, Half-Elf, Half-Orc, Tiefling.
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static select(rng: SeededRNG): Race` | Selects from: Dwarf, Elf, Halfling, Human, Dragonborn, Gnome, Half-Elf, Half-Orc, Tiefling |
 
 #### Helper: `ClassSuggester`
+*Also known as: Class recommender, job suggester*
 
 **Location:** `src/core/generation/ClassSuggester.ts`
 
 Suggests a class based on audio frequency dominance.
 
-- `static suggest(audioProfile: AudioProfile, rng: SeededRNG): Class`
-    - **High Bass:** Barbarian, Fighter, Paladin
-    - **High Treble:** Rogue, Ranger, Monk
-    - **High Mid:** Wizard, Cleric, Druid
-    - **High Amplitude:** Bard, Sorcerer, Warlock
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static suggest(audioProfile: AudioProfile, rng: SeededRNG): Class` | **High Bass:** Barbarian, Fighter, Paladin. **High Treble:** Rogue, Ranger, Monk. **High Mid:** Wizard, Cleric, Druid. **High Amplitude:** Bard, Sorcerer, Warlock |
 
 #### Helper: `AbilityScoreCalculator`
+*Also known as: Stat calculator, ability mapper*
 
 **Location:** `src/core/generation/AbilityScoreCalculator.ts`
 
 Maps audio profile to ability scores (STR, DEX, CON, INT, WIS, CHA).
 
-- `static calculateBaseScores(audioProfile: AudioProfile): AbilityScores`
-    - **STR:** Bass dominance
-    - **DEX:** Treble dominance
-    - **CON:** Average amplitude
-    - **INT:** Mid dominance
-    - **WIS:** Balance between bass and treble
-    - **CHA:** Combined mid and amplitude
-- `static applyRacialBonuses(baseScores: AbilityScores, race: Race): AbilityScores`
-    - Adds +2 bonuses based on race.
-- `static calculateModifiers(scores: AbilityScores): AbilityScores`
-    - Calculates D&D 5e modifiers (e.g., 15 -> +2).
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static calculateBaseScores(audioProfile: AudioProfile): AbilityScores` | **STR:** Bass dominance. **DEX:** Treble dominance. **CON:** Average amplitude. **INT:** Mid dominance. **WIS:** Balance between bass and treble. **CHA:** Combined mid and amplitude |
+| `static applyRacialBonuses(baseScores: AbilityScores, race: Race): AbilityScores` | Adds +2 bonuses based on race |
+| `static calculateModifiers(scores: AbilityScores): AbilityScores` | Calculates D&D 5e modifiers (e.g., 15 → +2) |
 
 #### Helper: `SkillAssigner`
+*Also known as: Proficiency assigner, skill selector*
 
 **Location:** `src/core/generation/SkillAssigner.ts`
 
 Assigns skill proficiencies based on class.
 
-- `static assignSkills(characterClass: Class, rng: SeededRNG, character?: CharacterSheet): Record<string, ProficiencyLevel>`
-    - Selects random skills from the class's available list.
-    - Handles "Expertise" for Bards and Rogues.
-    - Supports custom skills via SkillQuery (return type uses `string` instead of `Skill`).
-    - Optional `character` parameter enables prerequisite validation for custom skills.
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static assignSkills(characterClass: Class, rng: SeededRNG, character?: CharacterSheet): Record<string, ProficiencyLevel>` | Selects random skills from class's available list. Handles "Expertise" for Bards and Rogues. Supports custom skills via SkillQuery. Optional `character` enables prerequisite validation |
 
 #### Helper: `SpellManager`
+*Also known as: Spell manager, magic system, spell slot manager*
 
 **Location:** `src/core/generation/SpellManager.ts`
 
 Manages spells for spellcasting classes.
 
-- `static isSpellcaster(characterClass: Class): boolean`
-    - Returns true if the class can cast spells.
-- `static getSpellSlots(characterClass: Class, characterLevel: number): Record<number, { total: number; used: number }>`
-    - Gets spell slot counts for a class at a given level.
-- `static getCantrips(characterClass: Class): string[]`
-    - Returns all available cantrips for a spellcasting class.
-- `static getKnownSpells(characterClass: Class, characterLevel: number, character?: CharacterSheet): string[]`
-    - Returns all spells known by a spellcaster at a given level.
-    - If `character` is provided, filters spells by their prerequisites.
-- `static initializeSpells(characterClass: Class, characterLevel: number, character?: CharacterSheet): SpellSlots`
-    - Returns complete spell configuration with slots, known spells, and cantrips.
-- `static filterCharacterSpells(character: CharacterSheet): CharacterSheet`
-    - Filters a character's known spells and cantrips by their prerequisites.
-    - Returns an updated character sheet with only valid spells.
-- `static getSpellCountAtLevel(spellLevel: number, spellSlots: Record<number, { total: number; used: number }>): number`
-    - Returns number of spell slots at a given level.
-- `static useSpellSlot(spellSlots: Record<number, { total: number; used: number }>, spellLevel: number): Record<number, { total: number; used: number }>`
-    - Consumes one spell slot at the specified level.
-- `static restoreSpellSlots(spellSlots: Record<number, { total: number; used: number }>, spellLevel?: number): Record<number, { total: number; used: number }>`
-    - Restores spell slots at a specific level or all levels.
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static isSpellcaster(characterClass: Class): boolean` | Returns true if the class can cast spells |
+| `static getSpellSlots(characterClass: Class, characterLevel: number): Record<number, { total: number; used: number }>` | Gets spell slot counts for a class at a given level |
+| `static getCantrips(characterClass: Class): string[]` | Returns all available cantrips for a spellcasting class |
+| `static getKnownSpells(characterClass: Class, characterLevel: number, character?: CharacterSheet): string[]` | Returns all spells known by a spellcaster at a given level. If `character` provided, filters by prerequisites |
+| `static initializeSpells(characterClass: Class, characterLevel: number, character?: CharacterSheet): SpellSlots` | Returns complete spell configuration with slots, known spells, and cantrips |
+| `static filterCharacterSpells(character: CharacterSheet): CharacterSheet` | Filters known spells and cantrips by prerequisites, returns updated character sheet |
+| `static getSpellCountAtLevel(spellLevel: number, spellSlots: Record<number, { total: number; used: number }>): number` | Returns number of spell slots at a given level |
+| `static useSpellSlot(spellSlots: Record<number, { total: number; used: number }>, spellLevel: number): Record<number, { total: number; used: number }>` | Consumes one spell slot at the specified level |
+| `static restoreSpellSlots(spellSlots: Record<number, { total: number; used: number }>, spellLevel?: number): Record<number, { total: number; used: number }>` | Restores spell slots at a specific level or all levels |
 
 #### Helper: `EquipmentGenerator`
+*Also known as: Inventory manager, gear generator*
 
 **Location:** `src/core/generation/EquipmentGenerator.ts`
 
-Manages inventory and starting gear.
+Manages inventory and starting gear. For equipment properties, enchanting, and custom equipment, see [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md).
 
-- `static getStartingEquipment(characterClass: Class): { weapons: string[]; armor: string[]; items: string[] }`
-    - Returns starting equipment list for a class.
-- `static initializeEquipment(characterClass: Class): CharacterEquipment`
-    - Creates complete equipment state with starting gear equipped.
-- `static addItem(equipment: CharacterEquipment, itemName: string, quantity: number): CharacterEquipment`
-    - Adds an item to inventory and recalculates weight.
-- `static removeItem(equipment: CharacterEquipment, itemName: string, quantity: number): CharacterEquipment`
-    - Removes an item from inventory and recalculates weight.
-- `static equipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment`
-    - Equips an item from inventory.
-- `static unequipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment`
-    - Unequips an item from inventory.
-- `static getInventoryList(equipment: CharacterEquipment): InventoryItem[]`
-    - Returns flattened list of all inventory items.
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static getStartingEquipment(characterClass: Class): { weapons: string[]; armor: string[]; items: string[] }` | Returns starting equipment list for a class |
+| `static initializeEquipment(characterClass: Class): CharacterEquipment` | Creates complete equipment state with starting gear equipped |
+| `static addItem(equipment: CharacterEquipment, itemName: string, quantity: number): CharacterEquipment` | Adds an item to inventory and recalculates weight |
+| `static removeItem(equipment: CharacterEquipment, itemName: string, quantity: number): CharacterEquipment` | Removes an item from inventory and recalculates weight |
+| `static equipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment` | Equips an item from inventory |
+| `static unequipItem(equipment: CharacterEquipment, itemName: string): CharacterEquipment` | Unequips an item from inventory |
+| `static getInventoryList(equipment: CharacterEquipment): InventoryItem[]` | Returns flattened list of all inventory items |
 
 #### Helper: `AppearanceGenerator`
+*Also known as: Visual generator, appearance builder*
 
 **Location:** `src/core/generation/AppearanceGenerator.ts`
 
 Generates visual traits.
 
-- `static generate(seed: string, characterClass: Class, audioProfile: AudioProfile): CharacterAppearance`
-    - **Deterministic:** Body type, skin tone, hair style/color, eye color.
-    - **Dynamic:** Primary color (from album art), Aura color (magical classes).
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static generate(seed: string, characterClass: Class, audioProfile: AudioProfile): CharacterAppearance` | **Deterministic:** Body type, skin tone, hair style/color, eye color. **Dynamic:** Primary color (from album art), Aura color (magical classes) |
 
 #### Helper: `NamingEngine`
+*Also known as: Name generator, character namer*
 
 **Location:** `src/core/generation/NamingEngine.ts`
 
-**Note:** Internal API - automatically called by `CharacterGenerator.generate()`. Names are generated automatically based on track metadata, audio characteristics, and character class.
+**Note:** Internal API - automatically called by `CharacterGenerator.generate()`.
 
-Generates RPG-style character names from track metadata using 7 different naming formats with weighted distribution (20-20-10-20-15-10-5).
+Generates RPG-style character names from track metadata using 7 naming formats with weighted distribution (20-20-10-20-15-10-5). Audio characteristics provide ~50% influence through weighted selection, random choice provides ~50%.
 
-- `generateName(seed: string, track: PlaylistTrack, audioProfile: AudioProfile, characterClass: Class, deterministic?: boolean): string`
-    - **Parameters:**
-        - `seed`: Random seed (from CharacterGenerator)
-        - `track`: Track metadata (title, artist, genre)
-        - `audioProfile`: Audio characteristics (light influence via weights)
-        - `characterClass`: Actual D&D character class
-        - `deterministic`: If true, same seed = same name (default: false)
-    - **Naming Formats (with distribution):**
-        - **20%** Class Title: "Midnight Dreams the Wizard"
-        - **20%** Adjective Construct: "Hypnotic Midnight Dreams"
-        - **10%** Clan Construct: "Midnight Dreams of Daft Punk"
-        - **20%** Descriptive Epithet: "Midnight Dreams, the Swift Sage"
-        - **15%** Compound Adjective: "Thunder-Blessed Midnight Dreams"
-        - **10%** Artist-Inspired: "Daftsmith of the Crystal Spire"
-        - **5%** Mononym Subtitle: "Midnight [Dreams Eternal]"
-    - **Design principle:** Audio characteristics provide ~50% influence through weighted selection, random choice provides ~50% influence
-- `cleanTitle(title: string): string`
-    - Removes "(Official Video)", "[Remix]", "ft.", track numbers, file extensions, etc.
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `generateName(seed: string, track: PlaylistTrack, audioProfile: AudioProfile, characterClass: Class, deterministic?: boolean): string` | Generates name using weighted formats: Class Title (20%), Adjective Construct (20%), Clan Construct (10%), Descriptive Epithet (20%), Compound Adjective (15%), Artist-Inspired (10%), Mononym Subtitle (5%) |
+| `cleanTitle(title: string): string` | Removes "(Official Video)", "[Remix]", "ft.", track numbers, file extensions |
 
 ---
 

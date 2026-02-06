@@ -737,23 +737,28 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 
 ### Phase 15: Core Modules - Generation (lines 2600-3100)
 
-- [ ] **Task 59**: Transform CharacterGenerator
-  - [ ] Subtask: This is central - keep detailed documentation
-  - [ ] Subtask: Keep signature and description
+- [x] **Task 59**: Transform CharacterGenerator
+  - [x] Subtask: This is central - keep detailed documentation
+  - [x] Subtask: Keep signature and description
+  - **Summary**: Reduced from ~280 lines to ~170 lines (39% reduction). Converted verbose type definitions (CharacterGeneratorOptions, CharacterGeneratorExtensions, etc.) to concise tables. Added "Also known as" synonyms for AI discoverability. Removed redundant CharacterSheet type definition (linked to source instead). Streamlined method descriptions. Converted all helper classes (RaceSelector, ClassSuggester, AbilityScoreCalculator, SkillAssigner, SpellManager, EquipmentGenerator, AppearanceGenerator, NamingEngine) to consistent table format. Added link to EQUIPMENT_SYSTEM.md for EquipmentGenerator details.
 
-- [ ] **Task 60**: Transform generation helpers
-  - [ ] Subtask: RaceSelector, ClassSuggester, etc. → keep as tables
-  - [ ] Subtask: Remove implementation details
+- [x] **Task 60**: Transform generation helpers
+  - [x] Subtask: RaceSelector, ClassSuggester, etc. → keep as tables
+  - [x] Subtask: Remove implementation details
+  - **Summary**: Completed as part of Task 59. All generation helpers (RaceSelector, ClassSuggester, AbilityScoreCalculator) converted to consistent table format with source links.
 
-- [ ] **Task 61**: Transform SkillAssigner, SpellManager
-  - [ ] Subtask: Keep as method lists with brief descriptions
+- [x] **Task 61**: Transform SkillAssigner, SpellManager
+  - [x] Subtask: Keep as method lists with brief descriptions
+  - **Summary**: Completed as part of Task 59. Both classes converted to table format with concise one-line descriptions.
 
-- [ ] **Task 62**: Transform EquipmentGenerator
-  - [ ] Subtask: Keep as method list
-  - [ ] Subtask: Link to EQUIPMENT_SYSTEM.md for details
+- [x] **Task 62**: Transform EquipmentGenerator
+  - [x] Subtask: Keep as method list
+  - [x] Subtask: Link to EQUIPMENT_SYSTEM.md for details
+  - **Summary**: Completed as part of Task 59. Added link to EQUIPMENT_SYSTEM.md for equipment properties, enchanting, and custom equipment documentation.
 
-- [ ] **Task 63**: Transform AppearanceGenerator, NamingEngine
-  - [ ] Subtask: Keep as method lists
+- [x] **Task 63**: Transform AppearanceGenerator, NamingEngine
+  - [x] Subtask: Keep as method lists
+  - **Summary**: Completed as part of Task 59. Both classes converted to table format with concise descriptions. NamingEngine internal API note preserved.
 
 ### Phase 16: Progression System (lines 3100-3600)
 
