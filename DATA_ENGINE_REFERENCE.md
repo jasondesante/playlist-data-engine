@@ -473,220 +473,167 @@ Visual appearance details for a character.
 
 ### EnvironmentalContext
 
-**Location:** `src/core/types/Environmental.ts` (155-163)
+*Also known as: Environmental sensors, IRL sensors, real-world context*
 
-Aggregated environmental sensor data.
+**Location:** [src/core/types/Environmental.ts](src/core/types/Environmental.ts)
 
-```typescript
-export interface EnvironmentalContext {
-    geolocation?: GeolocationData;
-    motion?: MotionData;
-    weather?: WeatherData;
-    light?: LightData;
+Aggregated environmental sensor data that provides XP modifiers based on real-world conditions.
 
-    // Derived gameplay data
-    biome?: 'urban' | 'forest' | 'desert' | 'mountain' | 'valley' | 'water' | 'tundra' | 'plains' | 'jungle' | 'swamp' | 'taiga' | 'savanna';
+| Property | Type | Description |
+|----------|------|-------------|
+| geolocation | GeolocationData? | GPS position data |
+| motion | MotionData? | Device motion/acceleration |
+| weather | WeatherData? | Current weather conditions |
+| light | LightData? | Ambient light level |
+| biome | BiomeType? | Derived biome (12 types) |
+| environmental_xp_modifier | number? | Composite XP multiplier (0.5-3.0) |
+| timestamp | number | Unix timestamp |
 
-    // Composite XP multiplier (0.5 to 3.0)
-    environmental_xp_modifier?: number;
-    timestamp: number;
-}
+**Biome types:** urban, forest, desert, mountain, valley, water, tundra, plains, jungle, swamp, taiga, savanna
 
 ### GeolocationData
 
-**Location:** `src/core/types/Environmental.ts` (94-102)
+**Location:** [src/core/types/Environmental.ts](src/core/types/Environmental.ts)
 
-```typescript
-export interface GeolocationData {
-    latitude: number;
-    longitude: number;
-    altitude: number | null;      // Meters above sea level (null if unavailable)
-    accuracy: number;             // Meters
-    heading: number | null;       // Direction 0-360 degrees (null if unavailable)
-    speed: number | null;         // Meters per second (null if unavailable)
-    timestamp: number;            // Unix timestamp
-}
+GPS position and movement data.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| latitude | number | Latitude coordinate |
+| longitude | number | Longitude coordinate |
+| altitude | number \| null | Meters above sea level |
+| accuracy | number | Accuracy in meters |
+| heading | number \| null | Direction 0-360 degrees |
+| speed | number \| null | Meters per second |
+| timestamp | number | Unix timestamp |
 
 ### MotionData
 
-**Location:** `src/core/types/Environmental.ts` (104-122)
+**Location:** [src/core/types/Environmental.ts](src/core/types/Environmental.ts)
 
-```typescript
-export interface MotionData {
-    acceleration: {
-        x: number | null;  // m/s²
-        y: number | null;
-        z: number | null;
-    };
-    accelerationIncludingGravity: {
-        x: number;
-        y: number;
-        z: number;
-    };
-    rotationRate: {
-        alpha: number | null;  // degrees/second
-        beta: number | null;
-        gamma: number | null;
-    };
-    interval: number;          // Time interval between samples (ms)
-    timestamp: number;
-}
-```
+Device motion and acceleration data from accelerometer/gyroscope.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| acceleration | {x, y, z} | Acceleration without gravity (m/s²) |
+| accelerationIncludingGravity | {x, y, z} | Raw acceleration with gravity |
+| rotationRate | {alpha, beta, gamma} | Rotation rates (degrees/second) |
+| interval | number | Sample interval (ms) |
+| timestamp | number | Unix timestamp |
 
 ### WeatherData
 
-**Location:** `src/core/types/Environmental.ts` (124-134)
+**Location:** [src/core/types/Environmental.ts](src/core/types/Environmental.ts)
 
-```typescript
-export interface WeatherData {
-    temperature: number;          // Celsius
-    humidity: number;             // Percentage
-    pressure: number;             // hPa
-    weatherType: string;          // e.g., 'Clear', 'Rain', 'Clouds'
-    windSpeed: number;            // m/s
-    windDirection: number;        // Degrees
-    isNight: boolean;             // Based on sunrise/sunset times
-    moonPhase: number;            // 0.0 to 1.0 (new to full)
-    timestamp: number;
-}
-```
+Current weather conditions from OpenWeatherMap API.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| temperature | number | Temperature in Celsius |
+| humidity | number | Humidity percentage |
+| pressure | number | Atmospheric pressure (hPa) |
+| weatherType | string | Condition (Clear, Rain, Clouds, etc.) |
+| windSpeed | number | Wind speed (m/s) |
+| windDirection | number | Wind direction (degrees) |
+| isNight | boolean | Based on sunrise/sunset |
+| moonPhase | number | Moon phase 0.0-1.0 (new to full) |
+| timestamp | number | Unix timestamp |
 
 ### LightData
 
-**Location:** `src/core/types/Environmental.ts` (148-151)
+**Location:** [src/core/types/Environmental.ts](src/core/types/Environmental.ts)
 
-```typescript
-export interface LightData {
-    illuminance: number;          // lux (light intensity)
-    timestamp: number;
-}
-```
+Ambient light sensor data.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| illuminance | number | Light intensity in lux |
+| timestamp | number | Unix timestamp |
 
 ### ForecastData
 
-**Location:** `src/core/types/Environmental.ts` (136-146)
+*Also known as: Weather forecast*
 
-```typescript
-export interface ForecastData {
-    temperature: number;          // Celsius
-    humidity: number;             // Percentage
-    pressure: number;             // hPa
-    weatherType: string;          // e.g., 'Clear', 'Rain', 'Clouds'
-    windSpeed: number;           // m/s
-    windDirection: number;       // Degrees
-    timestamp: number;
-    forecastTime: Date;          // When this forecast is for
-    probabilityOfPrecipitation: number; // 0.0 to 1.0
-}
-```
+**Location:** [src/core/types/Environmental.ts](src/core/types/Environmental.ts)
 
-### Sensor-Related Types
+Weather forecast data for future time periods.
 
-**Location:** `src/core/types/Environmental.ts`
+| Property | Type | Description |
+|----------|------|-------------|
+| temperature | number | Forecast temperature (Celsius) |
+| humidity | number | Forecast humidity (%) |
+| pressure | number | Forecast pressure (hPa) |
+| weatherType | string | Forecast condition |
+| windSpeed | number | Forecast wind speed (m/s) |
+| windDirection | number | Forecast wind direction (degrees) |
+| timestamp | number | Current timestamp |
+| forecastTime | Date | When forecast applies |
+| probabilityOfPrecipitation | number | PoP 0.0-1.0 |
 
-```typescript
-export type SensorType = 'geolocation' | 'motion' | 'weather' | 'light'; // (1)
+### Sensor Types
 
-export interface PerformanceMetrics { // (6-19)
-    successCount: number;        // Number of successful API calls
-    errorCount: number;          // Number of failed API calls
-    totalTime: number;           // Total time spent on successful API calls (milliseconds)
-    minTime: number;             // Time of the fastest API call (milliseconds)
-    maxTime: number;             // Time of the slowest API call (milliseconds)
-    lastCallTimestamp: number | null;
-}
+*Also known as: Sensor status, sensor health, sensor diagnostics*
 
-export interface PerformanceStatistics { // (24-35)
-    average: number;             // Average API call time in milliseconds
-    min: number;                 // Minimum API call time in milliseconds
-    max: number;                 // Maximum API call time in milliseconds
-    totalCalls: number;          // Total number of API calls
-    successRate: number;         // Success rate as percentage (0-100)
-}
+**Location:** [src/core/types/Environmental.ts](src/core/types/Environmental.ts)
 
-export interface SensorPermission { // (37-41)
-    type: SensorType;
-    granted: boolean;
-    timestamp: number;
-}
+| Type | Description |
+|------|-------------|
+| **SensorType** | 'geolocation' \| 'motion' \| 'weather' \| 'light' |
+| **SensorHealthStatus** | 'healthy' \| 'degraded' \| 'failed' \| 'unknown' |
 
-export type SensorHealthStatus = 'healthy' | 'degraded' | 'failed' | 'unknown'; // (46)
+### Sensor Status & Monitoring
 
-export interface SensorStatus { // (51-60)
-    type: SensorType;
-    health: SensorHealthStatus;
-    lastSuccessTimestamp: number | null;
-    lastFailureTimestamp: number | null;
-    consecutiveFailures: number;
-    totalFailures: number;
-    lastError: string | null;
-    isRetrying: boolean;
-}
+**Location:** [src/core/types/Environmental.ts](src/core/types/Environmental.ts)
 
-export interface SensorFailureLog { // (65-71)
-    sensorType: SensorType;
-    timestamp: number;
-    error: string;
-    retryAttempt: number;
-    willRetry: boolean;
-}
-
-export interface SensorRetryConfig { // (76-81)
-    maxRetries: number;
-    initialDelayMs: number;
-    maxDelayMs: number;
-    backoffMultiplier: number;
-}
-
-export interface SensorRecoveryNotification { // (86-92)
-    sensorType: SensorType;
-    previousStatus: SensorHealthStatus;
-    newStatus: SensorHealthStatus;
-    timestamp: number;
-    message: string;
-}
-```
+| Interface | Description |
+|-----------|-------------|
+| **PerformanceMetrics** | API call metrics (success/error counts, timing) |
+| **PerformanceStatistics** | Computed stats (avg, min, max, success rate) |
+| **SensorPermission** | Permission grant status per sensor |
+| **SensorStatus** | Current health state (consecutive failures, retrying) |
+| **SensorFailureLog** | Failure log entry with retry info |
+| **SensorRetryConfig** | Retry policy (max retries, delays, backoff) |
+| **SensorRecoveryNotification** | Status change notification |
 
 ### SevereWeatherAlert
 
-**Location:** `src/core/sensors/WeatherAPIClient.ts` (50-56)
+*Also known as: Extreme weather, weather events*
 
-```typescript
-export interface SevereWeatherAlert {
-    type: SevereWeatherType;     // Enum: Blizzard, Hurricane, Typhoon, Tornado, None
-    xpBonus: number;             // 0.5 to 1.0 (50% to 100%)
-    severity: 'moderate' | 'high' | 'extreme';
-    message: string;
-    detectedAt: number;
-}
-```
+**Location:** [src/core/sensors/WeatherAPIClient.ts](src/core/sensors/WeatherAPIClient.ts)
 
-**Related:** `SevereWeatherType` enum defined at `src/core/sensors/WeatherAPIClient.ts` (39-44)
+Severe weather event that provides XP bonus.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| type | SevereWeatherType | Blizzard, Hurricane, Typhoon, Tornado, None |
+| xpBonus | number | XP bonus 0.5-1.0 (50%-100%) |
+| severity | 'moderate' \| 'high' \| 'extreme' | Alert severity level |
+| message | string | Alert description |
+| detectedAt | number | Detection timestamp |
+
+**SevereWeatherType:** Blizzard, Hurricane, Typhoon, Tornado, None
 
 ### GamingContext
 
-**Location:** `src/core/types/Progression.ts` (36-51)
+*Also known as: Game detection, gaming activity, Steam integration*
 
-Steam gaming activity data. Note: Discord RPC CANNOT read game activity due to platform limitations. Discord RPC is only used for SETTING music presence ("Listening to" status).
+**Location:** [src/core/types/Progression.ts](src/core/types/Progression.ts)
 
-```typescript
-export interface GamingContext {
-    isActivelyGaming: boolean;
-    platformSource: 'steam' | 'none';
+Steam gaming activity data. **Note:** Discord RPC CANNOT read game activity due to platform limitations. Discord RPC is only used for SETTING music presence ("Listening to" status).
 
-    currentGame?: {
-        name: string;
-        source: 'steam';
-        genre?: string[];
-        sessionDuration?: number;  // Minutes in current session
-        partySize?: number;        // Multiplayer party size
-    };
-
-    totalGamingMinutes: number;   // Lifetime gaming while listening
-    gamesPlayedWhileListening: string[];
-    lastUpdated: number;          // Timestamp of last check
-}
-```
+| Property | Type | Description |
+|----------|------|-------------|
+| isActivelyGaming | boolean | Currently playing a game |
+| platformSource | 'steam' \| 'none' | Detection platform |
+| currentGame | object? | Current game info |
+| currentGame.name | string | Game title |
+| currentGame.source | 'steam' | Data source |
+| currentGame.genre | string[]? | Game genres |
+| currentGame.sessionDuration | number? | Minutes in current session |
+| currentGame.partySize | number? | Multiplayer party size |
+| totalGamingMinutes | number | Lifetime gaming while listening |
+| gamesPlayedWhileListening | string[] | All games played |
+| lastUpdated | number | Last check timestamp |
 
 ### Combat Types
 

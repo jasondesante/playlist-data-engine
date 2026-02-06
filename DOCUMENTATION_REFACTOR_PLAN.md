@@ -650,14 +650,16 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: InventoryItem variants → link to source + note differences
   - **Summary**: Reduced Character Types section from ~350 lines to ~160 lines (54% reduction). Transformed verbose type definitions into scannable tables with source links. Kept Race, Class, Ability, Skill as tables (essential reference). Kept ProficiencyLevel, GameMode as tables (short). Converted Attack and Spell to property tables. Converted AbilityScores to property table with source link. CharacterSheet (KEY TYPE) converted to concise property table. InventoryItem variants consolidated into single comparison table with notes on differences. Added "Also known as" synonyms for Race and Class for AI discoverability.
 
-- [ ] **Task 43**: Transform Environmental types
-  - [ ] Subtask: EnvironmentalContext → link to source + key properties
-  - [ ] Subtask: GeolocationData, MotionData, WeatherData, LightData → link to source
-  - [ ] Subtask: Sensor types (SensorType, PerformanceMetrics, etc.) → link to source
+- [x] **Task 43**: Transform Environmental types
+  - [x] Subtask: EnvironmentalContext → link to source + key properties
+  - [x] Subtask: GeolocationData, MotionData, WeatherData, LightData → link to source
+  - [x] Subtask: Sensor types (SensorType, PerformanceMetrics, etc.) → link to source
+  - **Summary**: Reduced Environmental types section from ~180 lines to ~95 lines (47% reduction). Converted EnvironmentalContext, GeolocationData, MotionData, WeatherData, LightData, and ForecastData from full type definitions to concise property tables with source links. Consolidated sensor-related types into two tables (Sensor Types enum table and Sensor Status & Monitoring interface table). Added "Also known as" synonyms to EnvironmentalContext, ForecastData, and GamingContext for AI discoverability.
 
-- [ ] **Task 44**: Transform Gaming types
-  - [ ] Subtask: GamingContext → link to source + note about Discord limitation
-  - [ ] Subtask: SevereWeatherAlert → link to source
+- [x] **Task 44**: Transform Gaming types
+  - [x] Subtask: GamingContext → link to source + note about Discord limitation
+  - [x] Subtask: SevereWeatherAlert → link to source
+  - **Summary**: Reduced Gaming types section from ~40 lines to ~35 lines (13% reduction). Converted SevereWeatherAlert and GamingContext from full type definitions to concise property tables with source links. Added "Also known as" synonyms to SevereWeatherAlert and GamingContext for AI discoverability. Retained important Discord RPC limitation note in GamingContext description.
 
 - [ ] **Task 45**: Review Combat types
   - [ ] Subtask: CombatInstance, Combatant → link to source
