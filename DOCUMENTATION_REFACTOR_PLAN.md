@@ -629,10 +629,11 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 
 **Current**: Complete type definitions for every interface. **Goal**: Tables + source links.
 
-- [ ] **Task 40**: Transform Playlist/Track types
-  - [ ] Subtask: ServerlessPlaylist → link to source + key properties table
-  - [ ] Subtask: PlaylistTrack → link to source + note "contains audio_url"
-  - [ ] Subtask: RawArweavePlaylist → link to source + note it's input format
+- [x] **Task 40**: Transform Playlist/Track types
+  - [x] Subtask: ServerlessPlaylist → link to source + key properties table
+  - [x] Subtask: PlaylistTrack → link to source + note "contains audio_url"
+  - [x] Subtask: RawArweavePlaylist → link to source + note it's input format
+  - **Summary**: Reduced from ~85 lines to ~11 lines (87% reduction). Replaced full type definitions with concise table linking to source. Note added that PlaylistTrack contains audio_url (critical property).
 
 - [ ] **Task 41**: Transform Audio/Color types
   - [ ] Subtask: AudioProfile → link to source + property descriptions
