@@ -1905,223 +1905,77 @@ Uses the experimental AmbientLightSensor API for illuminance detection.
 ---
 
 ## Gaming Integration
+*Also known as: Gaming sensors, platform detection, game activity monitoring, Steam integration, Discord Rich Presence*
 
 **Location:** `src/core/sensors/GamingPlatformSensors.ts`
 
-Monitors Steam and Discord activity to award gaming bonuses.
+Monitors Steam and Discord activity to award gaming bonuses. **Note:** Discord RPC cannot read game activity (platform limitation) - only displays music status.
 
-#### Class: `GamingPlatformSensors`
+### GamingPlatformSensors
 
-**Constructor:**
-```typescript
-new GamingPlatformSensors(config: { steam?: { apiKey: string; steamId?: string; pollInterval?: number }; discord?: { clientId: string; enableRichPresence?: boolean; pollInterval?: number } })
-```
+| Method | Description |
+|--------|-------------|
+| `constructor(config?: { steam?, discord? })` | Initializes with optional Steam API key/ID and Discord client ID |
+| `authenticate(steamUserId?, discordUserId?)` | Authenticates with Steam (by ID) and Discord (connects RPC) |
+| `startMonitoring(callback?)` | Starts polling for gaming activity with optional context callback |
+| `stopMonitoring()` | Stops monitoring gaming activity |
+| `isPlayingGame(gameName)` | Checks if currently playing a specific game (case-insensitive) |
+| `calculateGamingBonus()` | Calculates gaming XP bonus multiplier (1.0 to 1.75, configurable) |
+| `getContext()` | Returns current `GamingContext` snapshot |
+| `recordGameSession(name, durationMinutes)` | Records a game session in gaming history |
+| `getDiagnostics()` | Returns comprehensive diagnostic report (Steam, Discord, cache, performance) |
+| `printDashboard(config?)` | Prints formatted gaming sensor dashboard to console |
 
-**Methods:**
-
-- `async authenticate(steamUserId?: string, discordUserId?: string): Promise<boolean>`
-    - Authenticates with Steam (by ID) and Discord (connects RPC).
-- `startMonitoring(callback?: (context: GamingContext) => void): void`
-    - Starts polling for gaming activity.
-- `stopMonitoring(): void`
-    - Stops monitoring gaming activity.
-- `isPlayingGame(gameName: string): boolean`
-    - Checks if currently playing a specific game.
-- `calculateGamingBonus(): number`
-    - Calculates gaming XP bonus multiplier (1.0 to 1.75).
-- `getContext(): GamingContext`
-    - Returns current gaming context snapshot.
-- `recordGameSession(gameName: string, durationMinutes: number): void`
-    - Records a game session in the gaming history.
-- `getDiagnostics(): { timestamp: number; steam: {...}; discord: {...}; gamingContext: GamingContext; polling: {...}; cache: {...}; performance: {...} }`
-    - Returns comprehensive diagnostic information.
-- `printDashboard(config?: DashboardConfig): void`
-    - Prints formatted gaming sensor dashboard to console.
-#### Helper: `SteamAPIClient`
-
+### SteamAPIClient
 **Location:** `src/core/sensors/SteamAPIClient.ts`
 
-Integrates with Steam Web API.
+| Method | Description |
+|--------|-------------|
+| `getCurrentGame(steamUserId)` | Fetches currently played game (name, appId, sessionDuration) |
+| `getGameMetadata(gameName)` | Fetches genre tags and description for gaming bonuses |
+| `getGameSchema(appId)` | Fetches game schema/stats from Steam |
+| `getCurrentGameApiStatistics()` | Returns performance metrics (avg, min, max, success rate, p95, p99) |
+| `getMetadataApiStatistics()` | Returns metadata API performance metrics |
+| `resetPerformanceMetrics()` | Resets all performance tracking counters |
 
-- `getCurrentGame(steamUserId: string): Promise<{ name: string; appId: number; source: 'steam'; sessionDuration?: number } | null>`
-    - Fetches currently played game.
-- `getGameMetadata(gameName: string): Promise<{ appId?: number; name: string; genre?: string[]; description?: string } | null>`
-    - Fetches genre tags and metadata for gaming bonuses.
-
-#### Helper: `DiscordRPCClient`
-
+### DiscordRPCClient
 **Location:** `src/core/sensors/DiscordRPCClient.ts`
 
-**Dual-Mode Support:**
-- **Server Mode (Node.js)**: Full Discord Rich Presence functionality when running in Node.js
-- **Browser Mode**: Graceful degradation with clear console warnings
+**⚠️ Important:** Discord RPC CANNOT read game activity. Use Steam API for game detection. Discord RPC is ONLY for displaying music status ("Listening to") on user's Discord profile.
 
-**Automatic Environment Detection**: The client auto-detects the environment and switches modes automatically. No configuration required.
+| Method | Description |
+|--------|-------------|
+| `constructor(clientId)` | Initializes with Discord application client ID (auto-detects environment) |
+| `connect()` | Connects to Discord RPC (server mode only; returns `false` in browser) |
+| `disconnect()` | Disconnects from Discord RPC |
+| `isConnectedToDiscord()` | Returns connection status (`false` in browser mode) |
+| `getConnectionState()` | Returns current `DiscordConnectionState` |
+| `getLastError()` | Returns last error message or `null` |
+| `setMusicActivity(musicDetails)` | Displays "Listening to {song}" on Discord profile (server only) |
+| `clearMusicActivity()` | Clears music activity from Discord (server only) |
+| `getUserInfo()` | Retrieves Discord user information (server only) |
 
-**⚠️ IMPORTANT**: Discord RPC CANNOT read or set game activity in any environment. It is ONLY for displaying music status ("Listening to").
-
-**Methods:**
-
-- `async connect(): Promise<boolean>`
-    - **Browser**: Always returns `false` with warning
-    - **Node.js**: Connects to Discord RPC when available
-- `disconnect(): void`
-    - Disconnects from Discord RPC (no-op in browser mode)
-- `isConnectedToDiscord(): boolean`
-    - Returns connection status (always `false` in browser mode)
-- `getConnectionState(): DiscordConnectionState`
-    - Returns current connection state
-- `getLastError(): string | null`
-    - **Browser**: Returns "Discord Rich Presence requires a server environment (Node.js)"
-    - **Node.js**: Returns last error or `null`
-- `setMusicActivity(musicDetails: { songName: string, artistName?: string, albumArtKey?: string, albumName?: string, startTime?: number, endTime?: number }): Promise<boolean>`
-    - Displays "Listening to {song}" on Discord profile with progress bar (server mode only)
-- `clearMusicActivity(): Promise<boolean>`
-    - Clears music activity from Discord Rich Presence (server mode only)
-- `async getUserInfo(): Promise<DiscordUserInfo | null>`
-    - Retrieves Discord user information (server mode only)
-
-### Discord RPC Environment Modes
-
-The `DiscordRPCClient` supports dual-mode operation:
-
-#### Server Mode (Node.js)
-When running in a Node.js environment, full Discord Rich Presence is available:
-- Real-time connection to Discord's IPC server
-- Music activity display on Discord profile
-- Progress bars, album art, and artist information
-- User info retrieval
-
-#### Browser Mode
-When running in browsers, Discord RPC gracefully degrades:
-- All methods return appropriate defaults (false, null)
-- Console warnings explain the limitation
-- Connection state is `DiscordUnavailable`
-- API remains fully compatible - no breaking changes
-
-**Note**: This behavior is automatic and requires no configuration changes.
+**Environment Modes:**
+- **Server (Node.js)**: Full Discord Rich Presence using `@ryuziii/discord-rpc`
+- **Browser**: Graceful degradation - methods return `false`/`null` with console warnings
+- **Detection**: Automatic - no configuration required
 
 ### Discord Types
 
-**Location:** `src/core/sensors/DiscordRPCClient.ts`
-
-```typescript
-// User information from Discord READY event (103-109)
-export interface DiscordUserInfo {
-    id: string;
-    username: string;
-    discriminator: string;
-    avatar?: string;        // Avatar hash
-    globalName?: string;    // Display name
-}
-
-// Music activity details - specific interface for music presence (191-199)
-export interface MusicActivityDetails {
-    songName: string;
-    artistName?: string;
-    albumArtKey?: string;
-    albumName?: string;       // For album art text
-    startTime?: number;       // Unix timestamp in seconds
-    endTime?: number;         // Unix timestamp in seconds (replaces durationSeconds)
-    durationSeconds?: number; // Deprecated: Use endTime instead (for backward compatibility)
-}
-
-// Discord Rich Presence activity structure (161-186)
-export interface DiscordActivity {
-    type?: ActivityType;       // Playing, Streaming, Listening, etc.
-    details?: string;          // Main activity text (max 128 chars)
-    state?: string;            // Secondary activity text (max 128 chars)
-    startTimestamp?: number;
-    endTimestamp?: number;
-    largeImageKey?: string;
-    largeImageText?: string;
-    smallImageKey?: string;
-    smallImageText?: string;
-    party?: DiscordActivityParty;
-    buttons?: DiscordActivityButton[];
-    secret?: string;
-    matchSecret?: string;
-    spectateSecret?: string;
-}
-
-// Discord RPC connection states (87-98)
-export enum DiscordConnectionState {
-    Disconnected = 'disconnected',
-    Connecting = 'connecting',
-    Connected = 'connected',
-    DiscordUnavailable = 'discord_unavailable',
-    Error = 'error',
-}
-
-// Activity types for Discord Rich Presence (115-121)
-export enum ActivityType {
-    Playing = 0,
-    Streaming = 1,
-    Listening = 2,
-    Watching = 3,
-    Competing = 5,
-}
-
-// Supporting types for DiscordActivity
-export interface DiscordActivityButton {
-    label: string;
-    url: string;
-}
-
-export interface DiscordActivityAssets {
-    largeImageKey?: string;
-    largeImageText?: string;
-    smallImageKey?: string;
-    smallImageText?: string;
-}
-
-export interface DiscordActivityTimestamps {
-    startTimestamp?: number;
-    endTimestamp?: number;
-}
-
-export interface DiscordActivityParty {
-    id?: string;
-    size?: [current: number, max: number];
-}
-
-// Discord RPC error codes (205-222)
-export enum DiscordRPCErrorCode {
-    InvalidOpcode = 4000,
-    InvalidPayload = 4001,
-    InvalidFrameBeforeHandshake = 4002,
-    InvalidFrame = 4003,
-    NotConnected = 4004,
-    AlreadyConnected = 4005,
-    InvalidPermissions = 4006,
-    InvalidClientId = 4007,
-}
-
-// Discord RPC error response structure (227-231)
-export interface DiscordRPCErrorResponse {
-    code: DiscordRPCErrorCode;
-    message: string;
-    evt?: string;
-}
-
-// Raw Discord RPC event data (237-252)
-export interface DiscordRPCRawEvent {
-    cmd?: string;
-    evt?: string;
-    nonce?: string;
-    data?: {
-        user?: {
-            id: string;
-            username: string;
-            discriminator: string;
-            avatar?: string;
-            global_name?: string;
-        };
-        [key: string]: unknown;
-    };
-    [key: string]: unknown;
-}
-```
+| Type | Description |
+|------|-------------|
+| `DiscordUserInfo` | User information from Discord READY event (id, username, discriminator, avatar, globalName) |
+| `MusicActivityDetails` | Music presence details (songName, artistName, albumArtKey, albumName, startTime, endTime) |
+| `DiscordActivity` | Rich Presence activity structure (type, details, state, timestamps, images, buttons) |
+| `DiscordConnectionState` | Connection states: `Disconnected`, `Connecting`, `Connected`, `DiscordUnavailable`, `Error` |
+| `ActivityType` | Activity types: `Playing` (0), `Streaming` (1), `Listening` (2), `Watching` (3), `Competing` (5) |
+| `DiscordActivityButton` | Button with label and URL for activity |
+| `DiscordActivityAssets` | Image assets (largeImageKey, largeImageText, smallImageKey, smallImageText) |
+| `DiscordActivityTimestamps` | Progress bar timestamps (startTimestamp, endTimestamp) |
+| `DiscordActivityParty` | Party information for multiplayer (id, size) |
+| `DiscordRPCErrorCode` | RPC error codes (4000-4007): InvalidOpcode, InvalidPayload, NotConnected, etc. |
+| `DiscordRPCErrorResponse` | Error response structure (code, message, evt) |
+| `DiscordRPCRawEvent` | Raw event data from Discord IPC |
 
 ---
 

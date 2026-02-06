@@ -814,14 +814,16 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: LightSensor → method list
   - **Summary**: Expanded from ~8 lines (simple table) to ~100 lines (detailed method reference tables). Transformed each helper class into proper documentation format matching Gaming Platform Sensors section. GeolocationProvider: 8 methods with constructor signatures, biome types listed. MotionDetector: 4 methods with activity types. WeatherAPIClient: 18 methods including performance metrics and severe weather detection, severe weather types listed. LightSensor: 3 methods with experimental API note. All sections include source links and concise descriptions.
 
-- [ ] **Task 73**: Transform Gaming Platform Sensors
-  - [ ] Subtask: GamingPlatformSensors → method reference table
-  - [ ] Subtask: SteamAPIClient → method list
-  - [ ] Subtask: DiscordRPCClient → method reference table
-  - [ ] Subtask: Remove Discord environment mode explanation (implementation detail)
+- [x] **Task 73**: Transform Gaming Platform Sensors
+  - [x] Subtask: GamingPlatformSensors → method reference table
+  - [x] Subtask: SteamAPIClient → method list
+  - [x] Subtask: DiscordRPCClient → method reference table
+  - [x] Subtask: Remove Discord environment mode explanation (implementation detail)
+  - **Summary**: Reduced from ~220 lines to ~85 lines (61% reduction). Converted GamingPlatformSensors (9 methods), SteamAPIClient (6 methods), and DiscordRPCClient (9 methods) from verbose documentation to concise method reference tables. Removed verbose "Dual-Mode Support" and "Automatic Environment Detection" explanations (implementation details). Kept essential note about Discord RPC limitation (cannot read game activity, only displays music status). Converted Discord types from full TypeScript definitions (12 interfaces/enums, ~120 lines) to concise reference table with descriptions. Added "Also known as" synonyms for AI discoverability (Gaming sensors, platform detection, game activity monitoring, Steam integration, Discord Rich Presence).
 
-- [ ] **Task 74**: Transform Discord types
-  - [ ] Subtask: Keep as tables or link to source
+- [x] **Task 74**: Transform Discord types
+  - [x] Subtask: Keep as tables or link to source
+  - **Summary**: Completed as part of Task 73. Discord types converted from full TypeScript definitions to concise reference table with 12 types (DiscordUserInfo, MusicActivityDetails, DiscordActivity, DiscordConnectionState, ActivityType, DiscordActivityButton, DiscordActivityAssets, DiscordActivityTimestamps, DiscordActivityParty, DiscordRPCErrorCode, DiscordRPCErrorResponse, DiscordRPCRawEvent) and one-line descriptions.
 
 ### Phase 18: Combat System (lines 4100-4600)
 
