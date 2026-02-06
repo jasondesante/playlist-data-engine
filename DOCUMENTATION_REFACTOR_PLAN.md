@@ -246,20 +246,24 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Is the link to EQUIPMENT_SYSTEM.md prominent?
   - **Summary**: Streamlined from ~10 lines to ~9 lines. Removed redundant "Registering, Spawning, and Enchanting Custom Equipment" subsection (the content is fully covered in EQUIPMENT_SYSTEM.md). Changed section heading from "Equipment System Overview" to "Equipment System" for consistency with other sections. Replaced duplicate "For complete documentation/For more examples" links with single clean bullet list pointing to key EQUIPMENT_SYSTEM.md sections. The section now functions as a concise hub similar to the "Extensibility System" section.
 
-- [ ] **Task 21**: Review "Registering, Spawning, and Enchanting Custom Equipment"
-  - [ ] Subtask: This is covered in EQUIPMENT_SYSTEM.md - can be reduced to minimal example or link
+- [x] **Task 21**: Review "Registering, Spawning, and Enchanting Custom Equipment"
+  - [x] Subtask: This is covered in EQUIPMENT_SYSTEM.md - can be reduced to minimal example or link
+  - **Summary**: Already completed in Task 20. The "Registering, Spawning, and Enchanting Custom Equipment" subsection was removed from USAGE_IN_OTHER_PROJECTS.md because the content is fully covered in EQUIPMENT_SYSTEM.md. The equipment section now provides a brief overview with a clean link to EQUIPMENT_SYSTEM.md for detailed documentation.
 
-- [ ] **Task 22**: Verify link to EQUIPMENT_SYSTEM.md
+- [x] **Task 22**: Verify link to EQUIPMENT_SYSTEM.md
+  - [x] Subtask: Link verified working
+  - **Summary**: The link `docs/EQUIPMENT_SYSTEM.md` in the Equipment System section is correct and functional.
 
 ### Phase 8: Back-Matter Cleanup
 
 **Goal**: Streamline everything after the main content.
 
-- [ ] **Task 23**: "Validation Schemas" section
-  - [ ] Subtask: Reduce to minimal hint: "All *Schema exports are Zod schemas for runtime validation"
-  - [ ] Subtask: Keep ONE example showing how to use schemas
-  - [ ] Subtask: Remove all schema definitions (they're in code)
-  - [ ] **User note**: Condense to hints - developers know what Zod schemas are
+- [x] **Task 23**: "Validation Schemas" section
+  - [x] Subtask: Reduce to minimal hint: "All *Schema exports are Zod schemas for runtime validation"
+  - [x] Subtask: Keep ONE example showing how to use schemas
+  - [x] Subtask: Remove all schema definitions (they're in code)
+  - [x] **User note**: Condense to hints - developers know what Zod schemas are
+  - **Summary**: Reduced from ~122 lines to ~12 lines (90% reduction). Removed verbose data examples for three different schema types (playlist track, character sheet, audio profile). Removed redundant "Validating X Data" subsections and the verbose bullet list of use cases. Kept single concise example showing Zod's `safeParse` pattern. The section now provides a minimal hint about available schemas and one idiomatic usage example.
 
 - [ ] **Task 24**: "Available Exports" section (lines 654-802) - DRAGON BALL Z FUSION
   - [ ] Subtask: This content is spiritually the same as DATA_ENGINE_REFERENCE - they should FUSE
