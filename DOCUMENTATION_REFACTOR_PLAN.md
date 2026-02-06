@@ -916,10 +916,19 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
     3. DATA_ENGINE_REFERENCE.md: Fixed spec link (spec.md → SPEC.md to match actual filename)
   - **Assessment**: Documentation is in excellent shape overall. The commandments have been followed consistently - USAGE flows well, topic docs have focused examples, DATA_ENGINE_REFERENCE is concise reference tables, cross-links are bidirectional. Only minor issues found.
 
-- [ ] **Task 90**: Redundancy check
-  - [ ] Subtask: Search for common patterns across all docs
-  - [ ] Subtask: Ensure no duplicated examples
-  - [ ] Subtask: Replace duplicates with links where found
+- [x] **Task 90**: Redundancy check
+  - [x] Subtask: Search for common patterns across all docs
+  - [x] Subtask: Ensure no duplicated examples
+  - [x] Subtask: Replace duplicates with links where found
+  - **Summary**: Comprehensive redundancy check completed. Found and fixed 2 duplicated type definitions:
+    - `ClassDataEntry` interface in DATA_ENGINE_REFERENCE.md (lines 3148-3161) → Replaced with concise property table linking to CUSTOM_CONTENT.md
+    - `RaceDataEntry` interface in DATA_ENGINE_REFERENCE.md (lines 3098-3103) → Replaced with concise property table linking to CUSTOM_CONTENT.md
+  - **Other findings**: All other apparent "duplications" are intentional:
+    - XP modifier tables: SPEC.md has authoritative reference table, XP_AND_STATS.md has practical usage examples (different purposes)
+    - Stat strategy tables: DATA_ENGINE_REFERENCE.md has quick reference, XP_AND_STATS.md has complete examples (correct separation)
+    - SessionTracker examples: USAGE has minimal example, XP_AND_STATS.md has comprehensive examples (different depth levels)
+    - "Also known as" synonyms: Intentional AI discoverability feature per Commandment IV
+    - Subrace interface snippets (lines 3120-3132): Minimal focused API pattern examples, not complete type definitions (appropriate for reference doc)
 
 - [ ] **Task 91**: Link verification
   - [ ] Subtask: Check all internal links work

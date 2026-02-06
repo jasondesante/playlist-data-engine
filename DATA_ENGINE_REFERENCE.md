@@ -3094,14 +3094,16 @@ The engine supports custom races through the ExtensionManager. Custom races can 
 
 #### API Interfaces
 
-```typescript
-interface RaceDataEntry {
-    ability_bonuses: Partial<Record<'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA', number>>;
-    speed: number;
-    traits: string[];
-    subraces?: string[];
-}
-```
+**Location:** [src/utils/constants.ts](src/utils/constants.ts)
+
+**RaceDataEntry** - Complete interface definition: [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md#racedataentry-interface)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `ability_bonuses` | `Partial<Record<Ability, number>>` | Ability score bonuses (e.g., `{ STR: 2, DEX: 1 }`) |
+| `speed` | number | Base speed in feet |
+| `traits` | string[] | Array of trait IDs for this race |
+| `subraces?` | string[] | Optional: Available subraces for this race |
 
 **Helper Functions:**
 - `getRaceData(race: string)` - Get race data from default or custom races
@@ -3144,21 +3146,23 @@ The engine supports template-based custom classes through the ExtensionManager. 
 
 #### API Interfaces
 
-```typescript
-interface ClassDataEntry {
-    name: string;
-    primary_ability: Ability;
-    hit_die: number;
-    saving_throws: Ability[];
-    is_spellcaster: boolean;
-    skill_count: number;
-    available_skills: string[];
-    has_expertise: boolean;
-    expertise_count?: number;
-    baseClass?: Class;
-    audio_preferences?: { ... };
-}
-```
+**Location:** [src/utils/constants.ts](src/utils/constants.ts)
+
+**ClassDataEntry** - Complete interface definition with JSDoc comments: [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md#classdataentry-interface)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | string | Class name |
+| `primary_ability` | Ability | Primary ability score |
+| `hit_die` | number | Hit die size (e.g., 10 for d10) |
+| `saving_throws` | Ability[] | Saving throw proficiencies |
+| `is_spellcaster` | boolean | Whether class can cast spells |
+| `skill_count` | number | Number of skills to choose |
+| `available_skills` | string[] | Available skills for this class |
+| `has_expertise` | boolean | Whether class has expertise |
+| `expertise_count?` | number | Number of expertise choices |
+| `baseClass?` | Class | For template-based classes: base class to inherit from |
+| `audio_preferences?` | object | Audio trait preferences for class affinity |
 
 **Helper Functions:**
 - `getClassData(className: string)` - Get class data from default or custom classes
