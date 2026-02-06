@@ -965,99 +965,103 @@ if (!validation.valid) {
 
 **Location:** [src/core/equipment/EquipmentEffectApplier.ts](../src/core/equipment/EquipmentEffectApplier.ts)
 
-Applies and removes equipment effects when items are equipped/unequipped.
-
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| equipItem | character, equipment, instanceId? | EffectApplicationResult | Apply all effects from equipping an item |
-| unequipItem | character, equipmentName, instanceId? | EffectApplicationResult | Remove all effects from unequipping an item |
-| reapplyEquipmentEffects | character | EffectApplicationResult | Re-apply all equipment effects (for updates/level-ups) |
-| getActiveEffects | character | EquipmentProperty[] | Get all active equipment effects |
+| Method | Description |
+|--------|-------------|
+| equipItem(character, equipment, instanceId?) | Apply all effects from equipping an item |
+| unequipItem(character, equipmentName, instanceId?) | Remove all effects from unequipping an item |
+| reapplyEquipmentEffects(character) | Re-apply all equipment effects (for updates/level-ups) |
+| getActiveEffects(character) | Get all active equipment effects |
 
 ### EquipmentValidator
 
 **Location:** [src/core/equipment/EquipmentValidator.ts](../src/core/equipment/EquipmentValidator.ts)
 
-Validates equipment data structures for runtime correctness.
+**Core Validation:**
+| Method | Description |
+|--------|-------------|
+| validateEquipment(equipment) | Validate complete equipment object |
+| validateProperty(property) | Validate single equipment property |
+| validateCondition(condition) | Validate equipment condition |
+| validateModification(modification) | Validate equipment modification |
 
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| validateEquipment | equipment | EquipmentValidationResult | Validate a complete equipment object |
-| validateProperty | property | EquipmentValidationResult | Validate a single equipment property |
-| validateCondition | condition | EquipmentValidationResult | Validate an equipment condition |
-| validateFeatureReference | featureRef, index | EquipmentValidationResult | Validate feature reference (string or mini-feature) |
-| validateEquipmentFeatureReference | featureId | boolean | Check if feature ID exists in FeatureQuery |
-| validateSkillReference | skillId, index? | EquipmentValidationResult | Validate skill reference |
-| validateEquipmentSkillReference | skillId | boolean | Check if skill ID exists in SkillQuery |
-| validateDamageInfo | damage | EquipmentValidationResult | Validate damage information |
-| validateSpawnWeight | weight | EquipmentValidationResult | Validate spawn weight |
-| validateModification | modification | EquipmentValidationResult | Validate an equipment modification |
-| validateMiniFeature | miniFeature | EquipmentValidationResult | Validate an equipment mini-feature |
-| validateACBonus | acBonus | EquipmentValidationResult | Validate AC bonus value |
-| validateWeaponProperties | weaponProperties | EquipmentValidationResult | Validate weapon properties array |
+**Reference Validation:**
+| Method | Description |
+|--------|-------------|
+| validateEquipmentFeatureReference(featureId) | Check if feature ID exists in FeatureQuery |
+| validateEquipmentSkillReference(skillId) | Check if skill ID exists in SkillQuery |
+
+**Field Validation:**
+| Method | Description |
+|--------|-------------|
+| validateDamageInfo(damage) | Validate damage information |
+| validateSpawnWeight(weight) | Validate spawn weight (0-1, inclusive) |
+| validateACBonus(acBonus) | Validate AC bonus value |
+| validateWeaponProperties(weaponProperties) | Validate weapon properties array |
 
 ### EquipmentModifier
 
 **Location:** [src/core/equipment/EquipmentModifier.ts](../src/core/equipment/EquipmentModifier.ts)
 
-Handles equipment modification operations (enchanting, cursing, upgrading, templates).
+**Modification Operations:**
+| Method | Description |
+|--------|-------------|
+| enchant(equipment, itemName, enchantment, character?) | Enchant equipment with new properties |
+| curse(equipment, itemName, curse, character?) | Curse equipment with negative effects |
+| upgrade(equipment, itemName, upgrade, character?) | Upgrade equipment (improve properties) |
+| applyTemplate(equipment, itemName, templateId, character?) | Apply a template modification |
+| removeModification(equipment, itemName, modificationId, character?) | Remove a specific modification |
+| disenchant(equipment, itemName, character?) | Remove enchantments, keep curses |
+| liftCurse(equipment, itemName, character?) | Remove curses, keep enchantments |
+| removeAllModifications(equipment, itemName, character?) | Remove all modifications |
 
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| enchant | equipment, itemName, enchantment, character? | CharacterEquipment | Enchant equipment with new properties |
-| applyTemplate | equipment, itemName, templateId, character? | CharacterEquipment | Apply a template modification |
-| curse | equipment, itemName, curse, character? | CharacterEquipment | Curse equipment with negative effects |
-| upgrade | equipment, itemName, upgrade, character? | CharacterEquipment | Upgrade equipment (improve properties) |
-| removeModification | equipment, itemName, modificationId, character? | CharacterEquipment | Remove a specific modification |
-| getModificationHistory | equipment, itemName | EquipmentModification[] | Get modification history for an item |
-| getCombinedEffects | equipment, itemName, instanceId? | EquipmentProperty[] | Get all active effects (base + mods) |
-| hasTemplate | equipment, itemName, templateId | boolean | Check if item has a specific template |
-| isEnchanted | equipment, itemName | boolean | Check if item has any enchantments |
-| isCursed | equipment, itemName | boolean | Check if item has any curses |
-| getAppliedTemplates | equipment, itemName | string[] | Get all templates applied to an item |
-| getModificationSources | equipment, itemName | string[] | Get all modification sources |
-| countModificationsBySource | equipment, itemName | Record<string, number> | Count modifications by source type |
-| getItemSummary | equipment, itemName | object | Get comprehensive item summary |
-| removeAllModifications | equipment, itemName, character? | CharacterEquipment | Remove all modifications |
-| disenchant | equipment, itemName, character? | CharacterEquipment | Remove enchantments, keep curses |
-| liftCurse | equipment, itemName, character? | CharacterEquipment | Remove curses, keep enchantments |
-| createModification | id, name, properties, source | EquipmentModification | Factory: create a modification |
-| createFeatureModification | id, name, properties, addsFeatures, source | EquipmentModification | Factory: create feature modification |
-| createSkillModification | id, name, properties, addsSkills, source | EquipmentModification | Factory: create skill modification |
-| createSpellModification | id, name, properties, addsSpells, source | EquipmentModification | Factory: create spell modification |
-| generateModificationId | prefix? | string | Generate a unique modification ID |
+**Query Methods:**
+| Method | Description |
+|--------|-------------|
+| getModificationHistory(equipment, itemName) | Get modification history for an item |
+| getCombinedEffects(equipment, itemName, instanceId?) | Get all active effects (base + mods) |
+| isEnchanted(equipment, itemName) | Check if item has any enchantments |
+| isCursed(equipment, itemName) | Check if item has any curses |
+| hasTemplate(equipment, itemName, templateId) | Check if item has a specific template |
+| getAppliedTemplates(equipment, itemName) | Get all templates applied to an item |
+| getItemSummary(equipment, itemName) | Get comprehensive item summary |
+
+**Factory Methods:**
+| Method | Description |
+|--------|-------------|
+| createModification(id, name, properties, source) | Create base modification |
+| createFeatureModification(id, name, properties, addsFeatures, source) | Create feature-granting modification |
+| createSkillModification(id, name, properties, addsSkills, source) | Create skill-granting modification |
+| createSpellModification(id, name, properties, addsSpells, source) | Create spell-granting modification |
+| generateModificationId(prefix?) | Generate a unique modification ID |
 
 ### EquipmentSpawnHelper
 
 **Location:** [src/core/equipment/EquipmentSpawnHelper.ts](../src/core/equipment/EquipmentSpawnHelper.ts)
 
-Batch spawning utilities for equipment generation.
-
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| spawnFromList | itemNames, rng? | (EnhancedEquipment \| undefined)[] | Spawn items from list of names |
-| spawnByRarity | rarity, count, rng? | EnhancedEquipment[] | Spawn items by rarity level |
-| spawnByTags | tags, count, rng?, options? | EnhancedEquipment[] | Spawn items matching tags |
-| spawnRandom | count, rng, options? | EnhancedEquipment[] | Spawn random equipment (respects weights) |
-| spawnFromTemplate | templateId, baseItemName? | EnhancedEquipment \| null | Spawn equipment from template |
-| spawnTreasureHoard | cr, rng | TreasureHoardResult | Spawn treasure hoard by CR |
-| addToCharacter | character, items, equip? | CharacterSheet | Add spawned items to character |
+**Spawn Methods:**
+| Method | Description |
+|--------|-------------|
+| spawnFromList(itemNames, rng?) | Spawn items from list of names |
+| spawnByRarity(rarity, count, rng?) | Spawn items by rarity level |
+| spawnByTags(tags, count, rng?, options?) | Spawn items matching tags |
+| spawnRandom(count, rng, options?) | Spawn random equipment (respects weights) |
+| spawnFromTemplate(templateId, baseItemName?) | Spawn equipment from template |
+| spawnTreasureHoard(cr, rng) | Spawn treasure hoard by CR |
+| addToCharacter(character, items, equip?) | Add spawned items to character |
 
 ---
 
-### FeatureQuery (Equipment-Related Methods)
+### FeatureQuery (Equipment-Related)
 
 **Location:** [src/core/features/FeatureQuery.ts](../src/core/features/FeatureQuery.ts)
 
-Convenience methods for working with equipment-granted features. FeatureQuery is a wrapper around ExtensionManager (no duplicate storage).
+Convenience methods for equipment-granted features.
 
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| getEquipmentFeatures | equipmentName | ClassFeature[] | Get features grantable by equipment |
-| isValidEquipmentFeature | featureId | boolean | Check if feature ID exists (spawnWeight: 0 is valid) |
-| registerEquipmentFeature | feature | void | Register a feature for equipment use (adds 'equipment' tag) |
-
-**Note:** Use `isValidEquipmentFeature()` to validate feature references in equipment definitions, and `registerEquipmentFeature()` to register features specifically designed for equipment items.
+| Method | Description |
+|--------|-------------|
+| getEquipmentFeatures(equipmentName) | Get features grantable by equipment |
+| isValidEquipmentFeature(featureId) | Check if feature ID exists (spawnWeight: 0 is valid) |
+| registerEquipmentFeature(feature) | Register feature for equipment use (adds 'equipment' tag) |
 
 ---
 
