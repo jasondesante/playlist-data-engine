@@ -234,314 +234,235 @@ export interface FrequencyBands {
 
 ### Character Types
 
-**Location:** `src/core/types/Character.ts`
+**Location:** [src/core/types/Character.ts](src/core/types/Character.ts)
 
-```typescript
-export type Race =
-    | 'Human'
-    | 'Elf'
-    | 'Dwarf'
-    | 'Halfling'
-    | 'Dragonborn'
-    | 'Gnome'
-    | 'Half-Elf'
-    | 'Half-Orc'
-    | 'Tiefling';
+#### Race
 
-/**
- * Branded type for extensible Class names
- *
- * This allows custom classes to be registered via ExtensionManager while maintaining
- * type safety. Use asClass() to convert a string to the Class type, and isValidClass()
- * to validate at runtime.
- */
-export type Class = string & { readonly __ClassBrand: unique symbol };
+*Also known as: Character race, playable race*
 
-export type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
+Branded type for extensible race names. Default D&D 5e races:
 
-export type Skill =
-    | 'athletics'
-    | 'acrobatics'
-    | 'sleight_of_hand'
-    | 'stealth'
-    | 'arcana'
-    | 'history'
-    | 'investigation'
-    | 'nature'
-    | 'religion'
-    | 'animal_handling'
-    | 'insight'
-    | 'medicine'
-    | 'perception'
-    | 'survival'
-    | 'deception'
-    | 'intimidation'
-    | 'performance'
-    | 'persuasion';
+| Race |
+|------|
+| Human |
+| Elf |
+| Dwarf |
+| Halfling |
+| Dragonborn |
+| Gnome |
+| Half-Elf |
+| Half-Orc |
+| Tiefling |
 
-export type ProficiencyLevel = 'none' | 'proficient' | 'expertise';
+**Custom races:** Can be registered via `ExtensionManager`. Use `asRace()` to cast strings and `isValidRace()` for runtime validation.
 
-export type GameMode = 'standard' | 'uncapped';
+#### Class
 
-export interface Attack {
-    name: string;
-    bonus?: number;
-    attack_bonus?: number;
-    damage?: string;
-    damage_dice?: string;
-    damage_type?: string;
-    type?: 'melee' | 'ranged' | 'spell';
-    range?: number;
-    /** Weapon properties (e.g., 'finesse', 'versatile', 'thrown', 'reach') */
-    properties?: string[];
-}
+*Also known as: Character class, job, profession*
 
-export interface Spell {
-    name: string;
-    level?: number;
-    school?: string;
-    casting_time?: string;
-    range?: string;
-    duration?: string;
-    components?: string[];
-    description?: string;
-    damage_dice?: string;
-    damage_type?: string;
-    attack_roll?: boolean;
-    saving_throw?: string;
-}
+Branded type for extensible class names. Default D&D 5e classes:
 
-export interface AbilityScores {
-    STR: number;
-    DEX: number;
-    CON: number;
-    INT: number;
-    WIS: number;
-    CHA: number;
-    // Aliases for compatibility
-    dexterity?: number;
-    strength?: number;
-    constitution?: number;
-}
-```
+| Class |
+|-------|
+| Barbarian |
+| Bard |
+| Cleric |
+| Druid |
+| Fighter |
+| Monk |
+| Paladin |
+| Ranger |
+| Rogue |
+| Sorcerer |
+| Warlock |
+| Wizard |
+
+**Custom classes:** Can be registered via `ExtensionManager`. Use `asClass()` to cast strings and `isValidClass()` for runtime validation.
+
+#### Ability
+
+Standard D&D 5e ability scores:
+
+| Ability | Description |
+|---------|-------------|
+| STR | Strength |
+| DEX | Dexterity |
+| CON | Constitution |
+| INT | Intelligence |
+| WIS | Wisdom |
+| CHA | Charisma |
+
+#### Skill
+
+Standard D&D 5e skills:
+
+| Skill | Ability |
+|-------|---------|
+| athletics | STR |
+| acrobatics | DEX |
+| sleight_of_hand | DEX |
+| stealth | DEX |
+| arcana | INT |
+| history | INT |
+| investigation | INT |
+| nature | INT |
+| religion | INT |
+| animal_handling | WIS |
+| insight | WIS |
+| medicine | WIS |
+| perception | WIS |
+| survival | WIS |
+| deception | CHA |
+| intimidation | CHA |
+| performance | CHA |
+| persuasion | CHA |
+
+#### ProficiencyLevel
+
+Skill proficiency levels:
+
+| Level | Description |
+|-------|-------------|
+| none | No proficiency |
+| proficient | Proficient (add proficiency bonus) |
+| expertise | Expertise (add 2× proficiency bonus) |
+
+#### GameMode
+
+Character progression rules:
+
+| Mode | Description |
+|------|-------------|
+| standard | D&D 5e rules (stats capped at 20, increases at levels 4/8/12/16/19, max level 20) |
+| uncapped | No stat limits, stat increases EVERY level (unlimited progression) |
+
+#### Attack
+
+**Location:** [src/core/types/Character.ts](src/core/types/Character.ts)
+
+*Also known as: Weapon attack, combat action*
+
+Combat attack representation.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| name | string | Attack name |
+| bonus | number? | Legacy bonus field (deprecated) |
+| attack_bonus | number? | Attack roll bonus |
+| damage | string? | Damage description |
+| damage_dice | string? | Damage dice (e.g., "1d8") |
+| damage_type | string? | Damage type (e.g., "fire", "slashing") |
+| type | 'melee' \| 'ranged' \| 'spell'? | Attack type |
+| range | number? | Range in feet |
+| properties | string[]? | Weapon properties (finesse, versatile, thrown, reach) |
+
+#### Spell
+
+**Location:** [src/core/types/Character.ts](src/core/types/Character.ts)
+
+Spell representation for casting.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| name | string | Spell name |
+| level | number? | Spell level (0-9) |
+| school | string? | Magic school |
+| casting_time | string? | Casting time (e.g., "1 action") |
+| range | string? | Spell range |
+| duration | string? | Duration |
+| components | string[]? | Components (V, S, M) |
+| description | string? | Spell description |
+| damage_dice | string? | Damage dice |
+| damage_type | string? | Damage type |
+| attack_roll | boolean? | Requires attack roll? |
+| saving_throw | string? | Saving throw ability |
+
+#### AbilityScores
+
+**Location:** [src/core/types/Character.ts](src/core/types/Character.ts)
+
+The six ability scores with optional aliases.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| STR | number | Strength score |
+| DEX | number | Dexterity score |
+| CON | number | Constitution score |
+| INT | number | Intelligence score |
+| WIS | number | Wisdom score |
+| CHA | number | Charisma score |
+| strength | number? | Alias for STR (backward compatibility) |
+| dexterity | number? | Alias for DEX (backward compatibility) |
+| constitution | number? | Alias for CON (backward compatibility) |
 
 ### CharacterSheet
 
-**Location:** `src/core/types/Character.ts` (229-373)
+**Location:** [src/core/types/Character.ts](src/core/types/Character.ts)
 
-The complete D&D 5e character object.
+The complete D&D 5e character object. This is the core data structure returned by `CharacterGenerator.generate()`.
 
-```typescript
-export interface CharacterSheet {
-    /** Character name */
-    name: string;
+| Property | Type | Description |
+|----------|------|-------------|
+| name | string | Character name |
+| race | Race | Character race |
+| subrace | string? | Subrace (e.g., 'High Elf', 'Hill Dwarf') |
+| class | Class | Character class |
+| level | number | Current level (1-20 or uncapped) |
+| ability_scores | AbilityScores | Base ability scores |
+| ability_modifiers | AbilityScores | Calculated modifiers |
+| proficiency_bonus | number | Proficiency bonus based on level |
+| hp | { current, max, temp } | Hit points |
+| armor_class | number | Armor class |
+| initiative | number | Initiative bonus |
+| speed | number | Speed in feet |
+| skills | Record\<string, ProficiencyLevel\> | Skill proficiencies |
+| saving_throws | Record\<Ability, boolean\> | Saving throw proficiencies |
+| racial_traits | string[] | Racial trait IDs |
+| class_features | string[] | Class feature IDs |
+| spells | SpellSlots? | Spell slots and known spells (if applicable) |
+| equipment | CharacterEquipment? | Equipment and inventory |
+| appearance | CharacterAppearance? | Visual appearance details |
+| xp | { current, next_level } | Experience points |
+| seed | string | Generation seed (deterministic) |
+| generated_at | string | Generation timestamp |
+| gameMode | GameMode? | Progression rules (standard/uncapped) |
+| pendingStatIncreases | number? | Number of pending stat increases awaiting selection |
+| feature_effects | FeatureEffect[]? | Effects from features/traits |
+| equipment_effects | EquipmentEffect[]? | Effects from equipped items |
 
-    /** Race */
-    race: Race;
+### InventoryItem Variants
 
-    /** Subrace (e.g., 'High Elf', 'Hill Dwarf', 'Wood Elf') */
-    subrace?: string;
+Three related types for equipment and inventory management.
 
-    /** Class */
-    class: Class;
+| Type | Location | Description |
+|------|----------|-------------|
+| **InventoryItem** | [src/core/generation/EquipmentGenerator.ts](src/core/generation/EquipmentGenerator.ts) | Basic inventory: name, quantity, equipped flag |
+| **EnhancedInventoryItem** | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) | Adds: modifications, templateId, instanceId (for enchantments, per-instance tracking) |
+| **CharacterEquipment** | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) | Container: weapons[], armor[], items[], totalWeight, equippedWeight |
 
-    /** Current level (1-20) */
-    level: number;
-
-    /** Ability scores */
-    ability_scores: AbilityScores;
-
-    /** Ability modifiers (calculated from scores) */
-    ability_modifiers: AbilityScores;
-
-    /** Proficiency bonus (based on level) */
-    proficiency_bonus: number;
-
-    /** Hit points */
-    hp: {
-        current: number;
-        max: number;
-        temp: number;
-    };
-
-    /** Armor class */
-    armor_class: number;
-
-    /** Initiative bonus */
-    initiative: number;
-
-    /** Speed in feet */
-    speed: number;
-
-    /** Skill proficiencies */
-    skills: Record<string, ProficiencyLevel>;
-
-    /** Saving throw proficiencies */
-    saving_throws: Record<Ability, boolean>;
-
-    /** Racial traits */
-    racial_traits: string[];
-
-    /** Class features */
-    class_features: string[];
-
-    /** Spells (for spellcasters) */
-    spells?: {
-        spell_slots: Record<number, { total: number; used: number }>;
-        known_spells: string[];
-        cantrips: string[];
-    };
-
-    /** Equipment */
-    equipment?: {
-        weapons: EnhancedInventoryItem[];
-        armor: EnhancedInventoryItem[];
-        items: EnhancedInventoryItem[];
-        totalWeight: number;
-        equippedWeight: number;
-    };
-
-    /** Character appearance */
-    appearance?: {
-        /** Deterministic features from seed */
-        body_type: string;
-        skin_tone: string;
-        hair_style: string;
-        hair_color: string;
-        eye_color: string;
-        facial_features: string[];
-
-        /** Dynamic features from audio/visual */
-        primary_color?: string;
-        secondary_color?: string;
-        accent_color?: string;
-        aura_color?: string;
-    };
-
-    /** Experience points */
-    xp: {
-        current: number;
-        next_level: number;
-    };
-
-    /** Track seed this character was generated from */
-    seed: string;
-
-    /** Generation timestamp */
-    generated_at: string;
-
-    /** Game mode for stat progression (standard = capped at 20, uncapped = no limits) */
-    gameMode?: GameMode;
-
-    /** Number of pending stat increases awaiting manual selection (counter) */
-    pendingStatIncreases?: number;
-
-    /**
-     * Feature effects applied to this character
-     * Stores effects from features and traits that modify character stats
-     *
-     * Effects include:
-     * - stat_bonus: Add to ability scores (e.g., +1 STR)
-     * - skill_proficiency: Grant proficiency or expertise in a skill
-     * - ability_unlock: Unlock new abilities (e.g., darkvision, flight)
-     * - passive_modifier: Add constant bonuses (e.g., +10 speed)
-     * - resource_grant: Grant resource pools (e.g., rage counts, ki points)
-     * - spell_slot_bonus: Grant additional spell slots
-     */
-    feature_effects?: FeatureEffect[];
-
-    /**
-     * Equipment-granted effects
-     * Tracks effects currently active from equipped items
-     * Separate from feature_effects to allow proper removal when unequipping
-     *
-     * STACKING: All equipment effects stack (e.g., two +1 STR items = +2 STR total)
-     */
-    equipment_effects?: {
-        /** Equipment name providing the effect */
-        source: string;
-
-        /** Instance ID for per-instance tracking */
-        instanceId?: string;
-
-        /** Effects from this equipment */
-        effects: EquipmentProperty[];
-
-        /** Features granted by this equipment (registry features or inline mini-features) */
-        features: EquipmentFeature[];
-
-        /** Skills granted by this equipment */
-        skills: EquipmentSkill[];
-
-        /** Spells granted by this equipment */
-        spells?: EquipmentSpell[];
-    }[];
-
-}
-```
-
-### InventoryItem
-
-**Location:** `src/core/generation/EquipmentGenerator.ts` (37-41)
-
-Basic inventory item structure.
-
-```typescript
-export interface InventoryItem {
-    name: string;
-    quantity: number;
-    equipped: boolean;
-}
-```
-
-### EnhancedInventoryItem
-
-**Location:** `src/core/types/Equipment.ts` (164-177)
-
-Enhanced inventory item with modification and instance tracking.
-
-```typescript
-export interface EnhancedInventoryItem {
-    name: string;
-    quantity: number;
-    equipped: boolean;
-    modifications?: EquipmentModification[];
-    templateId?: string;
-    instanceId?: string;
-}
-```
-
-### CharacterEquipment
-
-**Location:** `src/core/types/Equipment.ts` (183-189)
-
-Equipment and inventory state for a character.
-
-```typescript
-export interface CharacterEquipment {
-    weapons: EnhancedInventoryItem[];
-    armor: EnhancedInventoryItem[];
-    items: EnhancedInventoryItem[];
-    totalWeight: number;
-    equippedWeight: number;
-}
-```
+**Key differences:**
+- `InventoryItem` - Legacy/compatibility type
+- `EnhancedInventoryItem` - Current standard with enchantment support
+- `CharacterEquipment` - Character's complete inventory state
 
 ### CharacterAppearance
 
-**Location:** `src/core/generation/AppearanceGenerator.ts` (8-21)
+**Location:** [src/core/generation/AppearanceGenerator.ts](src/core/generation/AppearanceGenerator.ts)
 
 Visual appearance details for a character.
 
-```typescript
-export interface CharacterAppearance {
-    // Deterministic features (from seed)
-    body_type: 'slender' | 'athletic' | 'muscular' | 'stocky';
-    skin_tone: string;
-    hair_style: string;
-    hair_color: string;
-    eye_color: string;
-    facial_features: string[];
+| Property | Type | Description |
+|----------|------|-------------|
+| body_type | 'slender' \| 'athletic' \| 'muscular' \| 'stocky' | Deterministic (from seed) |
+| skin_tone | string | Deterministic (from seed) |
+| hair_style | string | Deterministic (from seed) |
+| hair_color | string | Deterministic (from seed) |
+| eye_color | string | Deterministic (from seed) |
+| facial_features | string[] | Deterministic (from seed) |
+| primary_color | string? | Dynamic (from audio/visual) |
+| secondary_color | string? | Dynamic (from audio/visual) |
+| accent_color | string? | Dynamic (from audio/visual) |
+| aura_color | string? | Dynamic (from audio/visual, magical classes only) |
     // Dynamic features (from audio/visual)
     primary_color?: string;
     secondary_color?: string;

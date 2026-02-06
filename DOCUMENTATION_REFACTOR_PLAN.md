@@ -641,13 +641,14 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: FrequencyBands → keep (it's short and useful)
   - **Summary**: Reduced from ~75 lines to ~35 lines (53% reduction). Converted AudioProfile and ColorPalette from full type definitions to concise property tables with source links. Removed incorrect note about dual ColorPalette definition (there's only one definition in AudioProfile.ts). Added "Also known as" synonyms to ColorPalette for AI discoverability. FrequencyBands section enhanced with clearer table format while keeping the type definition.
 
-- [ ] **Task 42**: Transform Character types
-  - [ ] Subtask: Race, Class, Ability, Skill → keep as enums (essential)
-  - [ ] Subtask: ProficiencyLevel, GameMode → keep (short)
-  - [ ] Subtask: Attack, Spell → keep as tables or link to source
-  - [ ] Subtask: AbilityScores → link to source
-  - [ ] Subtask: CharacterSheet → **KEY TYPE** - keep as concise table + full source link
-  - [ ] Subtask: InventoryItem variants → link to source + note differences
+- [x] **Task 42**: Transform Character types
+  - [x] Subtask: Race, Class, Ability, Skill → keep as enums (essential)
+  - [x] Subtask: ProficiencyLevel, GameMode → keep (short)
+  - [x] Subtask: Attack, Spell → keep as tables or link to source
+  - [x] Subtask: AbilityScores → link to source
+  - [x] Subtask: CharacterSheet → **KEY TYPE** - keep as concise table + full source link
+  - [x] Subtask: InventoryItem variants → link to source + note differences
+  - **Summary**: Reduced Character Types section from ~350 lines to ~160 lines (54% reduction). Transformed verbose type definitions into scannable tables with source links. Kept Race, Class, Ability, Skill as tables (essential reference). Kept ProficiencyLevel, GameMode as tables (short). Converted Attack and Spell to property tables. Converted AbilityScores to property table with source link. CharacterSheet (KEY TYPE) converted to concise property table. InventoryItem variants consolidated into single comparison table with notes on differences. Added "Also known as" synonyms for Race and Class for AI discoverability.
 
 - [ ] **Task 43**: Transform Environmental types
   - [ ] Subtask: EnvironmentalContext → link to source + key properties
