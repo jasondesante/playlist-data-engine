@@ -186,9 +186,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Can this be written cleaner while keeping the distinction?
   - **Summary**: Reduced from ~40 lines to ~25 lines. Replaced verbose examples with concise table showing three naming modes (Deterministic, Manual override, Non-deterministic). Removed verbose NamingEngine example (replaced with link to DATA_ENGINE_REFERENCE). Kept core example showing automatic name generation. The distinction between manual vs deterministic naming is now clearer in the table format.
 
-- [ ] **Task 12**: "Deterministic Character Generation" review
-  - [ ] Subtask: Example shows the concept well - keep minimal
-  - [ ] Subtask: Could reference ROLLS_AND_SEEDS.md for more detail?
+- [x] **Task 12**: "Deterministic Character Generation" review
+  - [x] Subtask: Example shows the concept well - keep minimal
+  - [x] Subtask: Could reference ROLLS_AND_SEEDS.md for more detail?
+  - **Summary**: Section is already in good shape. Link to ROLLS_AND_SEEDS.md was added in Task 9. Example is minimal and clearly shows the deterministic concept (same inputs = same output), the gameMode nuance, and a practical caching pattern. No changes needed.
 
 - [ ] **Task 13**: "Advanced Character Features" review
   - [ ] Subtask: **User note**: This could be written in a tighter way
