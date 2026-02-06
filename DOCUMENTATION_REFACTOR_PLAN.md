@@ -930,10 +930,11 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
     - "Also known as" synonyms: Intentional AI discoverability feature per Commandment IV
     - Subrace interface snippets (lines 3120-3132): Minimal focused API pattern examples, not complete type definitions (appropriate for reference doc)
 
-- [ ] **Task 91**: Link verification
-  - [ ] Subtask: Check all internal links work
-  - [ ] Subtask: Check all source file links are correct
-  - [ ] Subtask: Verify cross-references are bidirectional
+- [x] **Task 91**: Link verification
+  - [x] Subtask: Check all internal links work
+  - [x] Subtask: Check all source file links are correct
+  - [x] Subtask: Verify cross-references are bidirectional
+  - **Summary**: Fixed 1 broken anchor link (`#equipment-system-overview` → `#equipment-system`), removed 1 missing file reference (MIGRATION_GUIDE.md), added 20+ missing bidirectional cross-references across all topic docs (EQUIPMENT_SYSTEM, XP_AND_STATS, PREREQUISITES, COMBAT_SYSTEM, IRL_SENSORS, ROLLS_AND_SEEDS, CUSTOM_CONTENT, EXTENSIBILITY_GUIDE). All source file links verified valid.
 
 - [ ] **Task 92**: AI searchability test
   - [ ] Subtask: "How do I add custom equipment?" → finds ExtensionManager

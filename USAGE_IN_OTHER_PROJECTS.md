@@ -63,7 +63,7 @@ See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for:
 
 ### Developer Reference
 - [Available Exports](#available-exports) — Complete API reference
-- [Equipment System Overview](#equipment-system-overview) — Quick introduction
+- [Equipment System](#equipment-system) — Quick introduction
 - [Extensibility Overview](#extensibility-system) — Registration and custom content
 - [Validation Schemas](#validation-schemas) — Runtime type validation with Zod
 - [Development Workflow](#development-workflow) — Watch mode and hot reload

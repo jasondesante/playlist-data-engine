@@ -230,3 +230,11 @@ const sensors = new EnvironmentalSensors(customConfig);
 - `type GamingSensorConfig` - Gaming platform configuration
 - `type XPModifierConfig` - XP modifier calculation settings
 - `type RetryConfig` - Retry behavior configuration
+
+---
+
+## See Also
+
+- [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md) - Complete API reference
+- [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md) - Usage examples
+- [XP_AND_STATS.md](XP_AND_STATS.md) - XP calculation with sensor modifiers

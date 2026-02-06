@@ -647,3 +647,6 @@ const masterHerbalist = {
 - [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md) - Complete API reference
 - [CUSTOM_CONTENT.md](CUSTOM_CONTENT.md) - Custom races and classes guide
 - [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md) - Usage examples
+- [EXTENSIBILITY_GUIDE.md](EXTENSIBILITY_GUIDE.md) - Custom content registration
+- [XP_AND_STATS.md](XP_AND_STATS.md) - Progression and level requirements
+- [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md) - Equipment with prerequisites

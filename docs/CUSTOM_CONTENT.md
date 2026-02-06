@@ -753,3 +753,6 @@ manager.resetAll();
 - [PREREQUISITES.md](PREREQUISITES.md) - Prerequisites system guide
 - [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md) - Complete API reference
 - [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md) - Usage examples
+- [EXTENSIBILITY_GUIDE.md](EXTENSIBILITY_GUIDE.md) - Custom content registration and spawn rates
+- [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md) - Custom equipment
+- [XP_AND_STATS.md](XP_AND_STATS.md) - Progression and stat strategies

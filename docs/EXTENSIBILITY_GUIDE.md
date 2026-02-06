@@ -2535,9 +2535,12 @@ const equipment = getClassStartingEquipment('Necromancer');
 ## Support
 
 For more information, see:
-- [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md) - Complete API reference
-- [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Migration guide for breaking changes
-- [tests/integration/customGeneration.integration.test.ts](tests/integration/customGeneration.integration.test.ts) - Integration test examples
+- [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md) - Complete API reference
+- [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md) - Usage examples
+- [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md) - Equipment properties and enchanting
+- [XP_AND_STATS.md](XP_AND_STATS.md) - Progression and stat strategies
+- [PREREQUISITES.md](PREREQUISITES.md) - Feature and skill requirements
+- [tests/integration/customGeneration.integration.test.ts](../tests/integration/customGeneration.integration.test.ts) - Integration test examples
 
 
 

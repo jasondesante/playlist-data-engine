@@ -739,3 +739,11 @@ const customProgression = mergeProgressionConfig({
 - `type ProgressionConfig` - Progression system configuration interface
 
 ---
+
+## See Also
+
+- [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md) - Complete API reference
+- [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md) - Usage examples
+- [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md) - Equipment properties, enchanting, and effects
+- [PREREQUISITES.md](PREREQUISITES.md) - Level and ability requirements
+- [EXTENSIBILITY_GUIDE.md](EXTENSIBILITY_GUIDE.md) - Custom content registration

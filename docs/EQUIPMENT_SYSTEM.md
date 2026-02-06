@@ -1789,5 +1789,8 @@ function bossLoot(character: CharacterSheet, bossCR: number) {
 
 - [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md) - Complete API reference
 - [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md) - Usage examples
+- [EXTENSIBILITY_GUIDE.md](EXTENSIBILITY_GUIDE.md) - Custom content registration and spawn rates
+- [XP_AND_STATS.md](XP_AND_STATS.md) - Progression, stat increases, and level-ups
+- [PREREQUISITES.md](PREREQUISITES.md) - Level, ability, and skill requirements
 - [specs/001-core-engine/SPEC.md](../specs/001-core-engine/SPEC.md) - Core engine specification
 
