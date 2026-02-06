@@ -159,13 +159,14 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Is the output clear? ✓ Console.log statements are helpful and descriptive
   - **Summary**: Example is already optimal. No changes needed.
 
-- [ ] **Task 8**: Review "Earning XP from Listening to Music"
-  - [ ] Subtask: Is the workflow clear?
-  - [ ] Subtask: Mention default strategy depends on game mode (unlimited vs 20 level cap)
-  - [ ] Subtask: Mention you can change: stat strategies, how you earn XP, and level scaling
-  - [ ] Subtask: Summarize these options smartly - don't be verbose
-  - [ ] Subtask: Link to XP_AND_STATS.md for details - remove multiple TypeScript examples
-  - [ ] **User note**: The extra typescript implementation examples are unnecessary - just explain the concept and link
+- [x] **Task 8**: Review "Earning XP from Listening to Music"
+  - [x] Subtask: Is the workflow clear?
+  - [x] Subtask: Mention default strategy depends on game mode (unlimited vs 20 level cap)
+  - [x] Subtask: Mention you can change: stat strategies, how you earn XP, and level scaling
+  - [x] Subtask: Summarize these options smartly - don't be verbose
+  - [x] Subtask: Link to XP_AND_STATS.md for details - remove multiple TypeScript examples
+  - [x] **User note**: The extra typescript implementation examples are unnecessary - just explain the concept and link
+  - **Summary**: Streamlined from 56 lines to 25 lines. Removed duplicate workflow (now in XP_AND_STATS.md), removed extra TypeScript example for manual stat selection (replaced with concise bullet point listing customization options with link to XP_AND_STATS.md). Added clear mention of game modes (standard vs uncapped) affecting stat behavior.
 
 - [ ] **Task 9**: Add links to deeper dives
   - [ ] Subtask: Link "Advanced Character Features" → relevant sections

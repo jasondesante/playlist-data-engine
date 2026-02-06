@@ -111,59 +111,35 @@ console.log(`  STR: ${character.ability_scores.STR}, DEX: ${character.ability_sc
 
 ### Earning XP from Listening to Music
 
-This is the core workflow: track a listening session, calculate XP earned, and apply it to your character. Level-ups happen automatically when XP thresholds are reached.
+Track listening sessions, calculate XP earned (~1 XP/second with environmental/gaming bonuses), and apply to your character. Level-ups happen automatically when XP thresholds are reached.
 
 ```typescript
-import {
-  SessionTracker,
-  XPCalculator,
-  CharacterUpdater,
-  MasterySystem
-} from 'playlist-data-engine';
+import { SessionTracker, CharacterUpdater } from 'playlist-data-engine';
 
-// Track listening sessions
 const tracker = new SessionTracker();
-
-// Start a session - returns a sessionId (required for ending the session)
 const sessionId = tracker.startSession(track.id, track);
 
-// ... user listens to a track for 300 seconds ...
+// ... user listens ...
 
-// End the session - requires the sessionId returned from startSession()
 const session = tracker.endSession(sessionId);
-
 if (session) {
-  // Calculate XP earned
-  const xpCalc = new XPCalculator();
-  const totalXP = xpCalc.calculateSessionXP(session, track);  // ~1 XP per second + bonuses
-
-  // Apply session to character (handles level-ups and mastery)
   const updater = new CharacterUpdater();
   const previousListenCount = tracker.getTrackListenCount(track.id) - 1;
   const result = updater.updateCharacterFromSession(character, session, track, previousListenCount);
 
-  // ===== BASIC LEVEL-UP HANDLING =====
-  if (result.leveledUp) {
-    console.log(`Level up! Now level ${result.newLevel}`);
-  }
-
-  // Check for track mastery
-  if (result.masteredTrack) {
-    console.log(`Track mastered! ${result.masteryBonusXP} bonus XP unlocked!`);
-  }
+  if (result.leveledUp) console.log(`Level up! Now ${result.newLevel}`);
+  if (result.masteredTrack) console.log(`Track mastered! +${result.masteryBonusXP} bonus XP`);
 }
 ```
 
-**Note**: By default, `CharacterUpdater` uses automatic stat increases (`dnD5e_smart` strategy). Stats are intelligently selected based on the character's class and current stats - **no manual intervention required**. This ensures the simple example above works perfectly, with stats increasing automatically on level-up (at levels 4, 8, 12, 16, 19).
+**Customization**: Stat increases, XP sources, and level scaling are all configurable:
 
-To use manual D&D 5e rules (player must choose stats), pass a custom `StatManager`:
+- **Stat strategies**: Auto-smart (default), manual D&D 5e, balanced, primary-only, random, or custom formulas
+- **Game modes**: Standard (stats capped at 20, increases at levels 4/8/12/16/19) or uncapped (unlimited levels, every level)
+- **XP sources**: Music listening, combat, quests, or any custom activity
+- **Level scaling**: Default D&D 5e pattern or provide your own XP formulas
 
-```typescript
-import { StatManager } from 'playlist-data-engine';
-
-const statManager = new StatManager({ strategy: 'dnD5e' });
-const updater = new CharacterUpdater(statManager);
-```
+For complete details on progression, stat increases, and customization, see **[XP_AND_STATS.md](docs/XP_AND_STATS.md)**.
 
 
 ## Specific Features
