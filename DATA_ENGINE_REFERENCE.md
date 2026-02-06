@@ -2244,123 +2244,44 @@ Validates equipment data structures including complete equipment objects, indivi
 | `validateWeaponProperties(weaponProperties)` | Validate weapon properties array (supports range format "range_MIN_MAX") |
 
 ### EquipmentModifier
+*Also known as: Equipment enchantment system, item modification API, equipment curse/upgrade handler*
 
 **Location:** `src/core/equipment/EquipmentModifier.ts`
 
-```typescript
-class EquipmentModifier {
-    static enchant(
-        equipment: CharacterEquipment,
-        itemName: string,
-        enchantment: EquipmentModification,
-        character?: CharacterSheet
-    ): CharacterEquipment;
+Static class for equipment modification including enchanting (positive effects), cursing (negative effects), upgrading (improving properties), and template application.
 
-    static applyTemplate(
-        equipment: CharacterEquipment,
-        itemName: string,
-        templateId: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
+**Modification Operations:**
+| Method | Description |
+|--------|-------------|
+| `enchant(equipment, itemName, enchantment, character?)` | Apply positive modification (adds to `modifications` array) |
+| `applyTemplate(equipment, itemName, templateId, character?)` | Apply predefined template by ID |
+| `curse(equipment, itemName, curse, character?)` | Apply negative modification (adds to `modifications` array) |
+| `upgrade(equipment, itemName, upgrade, character?)` | Improve existing properties (same as enchant, semantic difference) |
+| `removeModification(equipment, itemName, modificationId, character?)` | Remove specific modification by ID |
+| `disenchant(equipment, itemName, character?)` | Remove all enchantments (keep curses) |
+| `liftCurse(equipment, itemName, character?)` | Remove all curses (keep enchantments) |
+| `removeAllModifications(equipment, itemName, character?)` | Remove all modifications (both enchantments and curses) |
 
-    static curse(
-        equipment: CharacterEquipment,
-        itemName: string,
-        curse: EquipmentModification,
-        character?: CharacterSheet
-    ): CharacterEquipment;
+**Query Methods:**
+| Method | Description |
+|--------|-------------|
+| `getCombinedEffects(equipment, itemName, instanceId?)` | Get all properties from base item + modifications |
+| `hasTemplate(equipment, itemName, templateId)` | Check if template is applied |
+| `isCursed(equipment, itemName)` | Check if item has any curse modifications |
+| `isEnchanted(equipment, itemName)` | Check if item has any enchantment modifications |
+| `getAppliedTemplates(equipment, itemName)` | Get list of applied template IDs |
+| `getModificationHistory(equipment, itemName)` | Get all modifications in application order |
+| `getModificationSources(equipment, itemName)` | Get list of unique modification sources |
+| `countModificationsBySource(equipment, itemName)` | Count modifications grouped by source |
+| `getItemSummary(equipment, itemName)` | Get item summary with modifications and flags |
 
-    static upgrade(
-        equipment: CharacterEquipment,
-        itemName: string,
-        upgrade: EquipmentModification,
-        character?: CharacterSheet
-    ): CharacterEquipment;
+**Factory Methods:**
+| Method | Description |
+|--------|-------------|
+| `createModification(id, name, properties, source)` | Create EquipmentModification object |
+| `generateModificationId(prefix?)` | Generate unique modification ID (timestamp-based) |
 
-    static removeModification(
-        equipment: CharacterEquipment,
-        itemName: string,
-        modificationId: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    static disenchant(
-        equipment: CharacterEquipment,
-        itemName: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    static liftCurse(
-        equipment: CharacterEquipment,
-        itemName: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    // Query methods
-    static getCombinedEffects(
-        equipment: CharacterEquipment,
-        itemName: string,
-        instanceId?: string
-    ): EquipmentProperty[];
-
-    static hasTemplate(
-        equipment: CharacterEquipment,
-        itemName: string,
-        templateId: string
-    ): boolean;
-
-    static isCursed(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): boolean;
-
-    static isEnchanted(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): boolean;
-
-    static getAppliedTemplates(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): string[];
-
-    static getModificationHistory(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): EquipmentModification[];
-
-    static removeAllModifications(
-        equipment: CharacterEquipment,
-        itemName: string,
-        character?: CharacterSheet
-    ): CharacterEquipment;
-
-    static getModificationSources(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): string[];
-
-    static countModificationsBySource(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): Record<string, number>;
-
-    static getItemSummary(
-        equipment: CharacterEquipment,
-        itemName: string
-    ): { name: string; modifications: EquipmentModification[]; isCursed: boolean; isEnchanted: boolean };
-
-    // Factory methods
-    static createModification(
-        id: string,
-        name: string,
-        properties: EquipmentProperty[],
-        source: string
-    ): EquipmentModification;
-
-    static generateModificationId(prefix?: string): string;
-}
-```
+For usage examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md#equipment-modification).
 
 ### EquipmentSpawnHelper
 
