@@ -221,20 +221,22 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 
 **Goal**: Hub section that points to deeper docs. Already cleaned up - just verify polish.
 
-- [ ] **Task 17**: Review current state
-  - [ ] Subtask: Is the one-sentence description clear and sufficient?
-  - [ ] Subtask: Are the bullet points under "See EXTENSIBILITY_GUIDE.md for:" useful?
+- [x] **Task 17**: Review current state
+  - [x] Subtask: Is the one-sentence description clear and sufficient? ✓ Yes
+  - [x] Subtask: Are the bullet points under "See EXTENSIBILITY_GUIDE.md for:" useful? ✓ No - redundant and vague; consolidated all links into single "Detailed guides:" list
+  - **Summary**: Streamlined section from ~17 lines to ~10 lines. Removed redundant "See... for:" subsection with vague bullets. Consolidated all links into a single clean "Detailed guides:" list with concise descriptions for each target doc.
 
-- [ ] **Task 18**: Verify all links work
-  - [ ] Subtask: EXTENSIBILITY_GUIDE.md
-  - [ ] Subtask: CUSTOM_CONTENT.md
-  - [ ] Subtask: PREREQUISITES.md
-  - [ ] Subtask: EQUIPMENT_SYSTEM.md
-  - [ ] Subtask: DATA_ENGINE_REFERENCE.md
+- [x] **Task 18**: Verify all links work
+  - [x] Subtask: EXTENSIBILITY_GUIDE.md ✓
+  - [x] Subtask: CUSTOM_CONTENT.md ✓
+  - [x] Subtask: PREREQUISITES.md ✓
+  - [x] Subtask: EQUIPMENT_SYSTEM.md ✓
+  - [x] Subtask: DATA_ENGINE_REFERENCE.md ✓
 
-- [ ] **Task 19**: Check for any remaining redundancy
-  - [ ] Subtask: Is there anything here that's duplicated elsewhere?
-  - [ ] Subtask: Is the section doing its job as a "hub" or is it trying to do too much?
+- [x] **Task 19**: Check for any remaining redundancy
+  - [x] Subtask: Is there anything here that's duplicated elsewhere? ✓ Yes - TOC "Extensibility" subsection had redundant bullets
+  - [x] Subtask: Is the section doing its job as a "hub" or is it trying to do too much? ✓ Now functions as clean hub; TOC simplified to single pointer
+  - **Summary**: Simplified TOC "Extensibility" from 4 lines with bullets to 1 line pointing to detailed section. Reduced redundancy - detailed "Extensibility System" section is now the single source of truth for extensibility links.
 
 ### Phase 7: Equipment System Section
 

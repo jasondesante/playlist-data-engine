@@ -54,10 +54,7 @@ cd /path/to/your/project && npm link playlist-data-engine
 - [Combining All Systems](#combining-all-systems) — Full pipeline with environmental and gaming context
 
 ### Extensibility
-See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
-- Custom features and skills — Class features, racial traits, custom skills
-- Custom classes and races — Template-based class inheritance, custom races
-- Spawn rate control — Control custom content frequency
+See [Extensibility System](#extensibility-system) below for complete extensibility documentation and links to detailed guides.
 
 ### Equipment System Links
 See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for:
@@ -359,20 +356,13 @@ for (const track of playlist.tracks) {
 
 ## Extensibility System
 
-**For detailed extensibility documentation, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
-
 The extensibility system allows you to add custom content at runtime, including spells, equipment, races, classes, features, skills, and appearance options.
 
-
-See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for:
-- Custom features, and spawn rates
-- Export/import functionality
-- Content pack creation
-
-**For detailed guides on specific topics:**
+**Detailed guides:**
+- [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) - Complete extensibility system (custom content, spawn rates, export/import, content packs)
 - [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md) - Custom races, subraces, and classes
-- [docs/PREREQUISITES.md](docs/PREREQUISITES.md) - Complete guide to skill, spell, and feature prerequisites
-- [docs/EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) - Complete guide to equipment properties and modifications
+- [docs/PREREQUISITES.md](docs/PREREQUISITES.md) - Skill, spell, and feature prerequisites
+- [docs/EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) - Equipment properties and modifications
 - [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md) - Complete API reference
 
 
