@@ -994,7 +994,7 @@ Skills, spells, and features can have prerequisites: base skills/spells/features
 
 **Location:** `src/core/parser/PlaylistParser.ts`
 
-The `PlaylistParser` is responsible for converting raw JSON data (typically from Arweave) into a standardized `ServerlessPlaylist` object. It handles metadata extraction, validation, and flattening of nested structures.
+Converts raw JSON data (Arweave) into standardized `ServerlessPlaylist` objects.
 
 #### Class: `PlaylistParser`
 
@@ -1002,34 +1002,36 @@ The `PlaylistParser` is responsible for converting raw JSON data (typically from
 ```typescript
 new PlaylistParser(options?: PlaylistParserOptions)
 ```
-- `options.validateAudioUrls` (boolean): If true, performs a HEAD request to verify audio URLs exist. Default: `false`.
-- `options.strict` (boolean): If true, throws errors on invalid tracks instead of skipping them. Default: `false`.
 
 **Methods:**
 
-- `async parse(data: RawArweavePlaylist): Promise<ServerlessPlaylist>`
-    - Parses the raw playlist data.
-    - **Returns:** A `ServerlessPlaylist` object containing metadata and an array of `PlaylistTrack` objects.
-    - **Throws:** Error if `strict` mode is on and parsing fails.
+| Method | Description |
+|--------|-------------|
+| `async parse(data: RawArweavePlaylist): Promise<ServerlessPlaylist>` | Parses raw playlist data into ServerlessPlaylist with metadata and track array |
+
+**Options:**
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `validateAudioUrls` | boolean | `false` | Perform HEAD request to verify audio URLs exist |
+| `strict` | boolean | `false` | Throw errors on invalid tracks instead of skipping |
 
 #### Helper: `MetadataExtractor`
 
 **Location:** `src/core/parser/MetadataExtractor.ts`
 
-Extracts metadata with priority queue logic. All methods are static.
+*Also known as: Metadata parser, field extractor*
 
-- `static extractAudioUrl(data: Record<string, unknown>): string | null`
-    - Extracts audio URL with priority: mp3_url > lossy_audio > audio_url > lossless_audio > animation_url
-- `static extractImageUrl(data: Record<string, unknown>): string | null`
-    - Extracts image URL with priority: image_small > image > image_large > image_thumb
-- `static extractTitle(data: Record<string, unknown>): string | null`
-    - Extracts name/title with priority: name > title
-- `static extractArtist(data: Record<string, unknown>): string | null`
-    - Extracts artist with priority: artist > created_by > minter
-- `static parseMetadata(metadata: unknown): Record<string, unknown> | null`
-    - Parses metadata string to JSON object with error handling
-- `static convertAttributes(attributes: unknown): Record<string, string | number> | null`
-    - Converts OpenSea-style attributes array to key-value object
+Extracts metadata fields from playlist track data. All methods are static.
+
+| Method | Description |
+|--------|-------------|
+| `static extractAudioUrl(data): string \| null` | Extracts audio URL with priority: mp3_url > lossy_audio > audio_url > lossless_audio > animation_url |
+| `static extractImageUrl(data): string \| null` | Extracts image URL with priority: image_small > image > image_large > image_thumb |
+| `static extractTitle(data): string \| null` | Extracts name/title with priority: name > title |
+| `static extractArtist(data): string \| null` | Extracts artist with priority: artist > created_by > minter |
+| `static parseMetadata(metadata): Record<string, unknown> \| null` | Parses metadata string to JSON object with error handling |
+| `static convertAttributes(attributes): Record<string, string \| number> \| null` | Converts OpenSea-style attributes array to key-value object |
 
 ---
 
