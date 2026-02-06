@@ -191,10 +191,11 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Could reference ROLLS_AND_SEEDS.md for more detail?
   - **Summary**: Section is already in good shape. Link to ROLLS_AND_SEEDS.md was added in Task 9. Example is minimal and clearly shows the deterministic concept (same inputs = same output), the gameMode nuance, and a practical caching pattern. No changes needed.
 
-- [ ] **Task 13**: "Advanced Character Features" review
-  - [ ] Subtask: **User note**: This could be written in a tighter way
-  - [ ] Subtask: Link to EQUIPMENT_SYSTEM.md for equipment details
-  - [ ] Subtask: Link to XP_AND_STATS.md for stat strategies
+- [x] **Task 13**: "Advanced Character Features" review
+  - [x] Subtask: **User note**: This could be written in a tighter way
+  - [x] Subtask: Link to EQUIPMENT_SYSTEM.md for equipment details
+  - [x] Subtask: Link to XP_AND_STATS.md for stat strategies
+  - **Summary**: Streamlined from ~56 lines to ~38 lines. Removed verbose console.log statements in example, replaced with concise inline comments showing what each function returns. Moved "For deeper dives" links to bottom of section for cleaner flow. All three topic docs (XP_AND_STATS, EXTENSIBILITY_GUIDE, EQUIPMENT_SYSTEM) are now linked.
 
 - [ ] **Task 14**: "Environmental Sensors" and "Gaming Platform Integration"
   - [ ] Subtask: These just link to IRL_SENSORS.md - good

@@ -218,60 +218,37 @@ if (!characterCache.has(track.id)) {
 
 ### Advanced Character Features
 
-**For deeper dives on specific topics:**
-- **Skills & Proficiencies**: See [XP_AND_STATS.md](docs/XP_AND_STATS.md) for stat strategies and progression
-- **Spells**: See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) for custom spells and prerequisites
-- **Equipment**: See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for properties, enchanting, and templates
+Characters are generated with complete skills, spells, equipment, and appearance. These are initialized automatically by `CharacterGenerator.generate()`.
 
 ```typescript
-import { SkillAssigner, SpellManager, EquipmentGenerator, AppearanceGenerator, SeededRNG } from 'playlist-data-engine';
+import { SkillAssigner, SpellManager, EquipmentGenerator, AppearanceGenerator } from 'playlist-data-engine';
 
 const character = CharacterGenerator.generate(track.id, audioProfile, track);
 
-// Assign skills based on class (returns Record<Skill, ProficiencyLevel>)
+// Skills and proficiencies (assigned by class)
 const rng = new SeededRNG(track.id);
 const skills = SkillAssigner.assignSkills(character.class, rng);
-console.log(`Proficient in:`, Object.entries(skills)
-  .filter(([_, level]) => level !== 'none')
-  .map(([skill, level]) => `${skill} (${level})`)
-  .join(', '));
-// Example: "athletics (proficient), perception (expertise), stealth (proficient)"
+// Returns: { athletics: 'proficient', perception: 'expertise', stealth: 'proficient', ... }
 
-// Generate spells for spellcasters
+// Spells (for spellcasting classes)
 if (SpellManager.isSpellcaster(character.class)) {
-  // Initialize complete spell configuration (slots, known spells, cantrips)
-  const spellConfig = SpellManager.initializeSpells(character.class, character.level);
-
-  console.log(`Cantrips: ${spellConfig.cantrips.join(', ')}`);
-  console.log(`Known spells: ${spellConfig.known_spells.join(', ')}`);
-  console.log(`Spell slots:`, spellConfig.spell_slots);
-
-  // Or get individual components
-  const spellSlots = SpellManager.getSpellSlots(character.class, character.level);
-  const cantrips = SpellManager.getCantrips(character.class);
-  const knownSpells = SpellManager.getKnownSpells(character.class, character.level);
+  const spells = SpellManager.initializeSpells(character.class, character.level);
+  // Returns: { cantrips, known_spells, spell_slots }
 }
-// For info on custom spells, see [EXTENSIBILITY_GUIDE.md](EXTENSIBILITY_GUIDE.md)
 
-// Generate starting equipment
+// Starting equipment (by class)
 const equipment = EquipmentGenerator.initializeEquipment(character.class);
-console.log(`Weapons:`, equipment.weapons.map(w => `${w.name} x${w.quantity}${w.equipped ? ' (equipped)' : ''}`).join(', '));
-console.log(`Armor:`, equipment.armor.map(a => `${a.name} x${a.quantity}${a.equipped ? ' (equipped)' : ''}`).join(', '));
-console.log(`Items:`, equipment.items.map(i => `${i.name} x${i.quantity}`).join(', '));
-console.log(`Total weight: ${equipment.totalWeight} lbs (${equipment.equippedWeight} lbs equipped)`);
-// For info on custom equipment, see [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md)
+// Returns: { weapons, armor, items, totalWeight, equippedWeight }
 
-// Generate appearance from seed, class, and audio profile
+// Appearance (from seed + audio profile)
 const appearance = AppearanceGenerator.generate(track.id, character.class, audioProfile);
-console.log(`Body type: ${appearance.body_type}`);
-console.log(`Hair: ${appearance.hair_color} ${appearance.hair_style}`);
-console.log(`Eyes: ${appearance.eye_color}`);
-console.log(`Skin tone: ${appearance.skin_tone}`);
-console.log(`Facial features: ${appearance.facial_features.join(', ')}`);
-if (appearance.aura_color) {
-  console.log(`Magical aura: ${appearance.aura_color}`);
-}
+// Returns: body_type, hair_color/style, eye_color, skin_tone, facial_features, aura_color
 ```
+
+**For deeper dives:**
+- **Skills & Proficiencies**: See [XP_AND_STATS.md](docs/XP_AND_STATS.md)
+- **Spells**: See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
+- **Equipment**: See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) (properties, enchanting, templates)
 
 
 
