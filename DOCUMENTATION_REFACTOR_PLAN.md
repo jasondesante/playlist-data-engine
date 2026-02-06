@@ -1011,35 +1011,35 @@ When reorganizing sections:
 After completion, the documentation should:
 
 ### Does It Pass The Vibe Check?
-- [ ] Clear entry point (USAGE) with links to deeper topics
-- [ ] Each topic has one canonical example, referenced elsewhere
-- [ ] Tables > verbose lists for reference material
-- [ ] Synonyms included for AI searchability
-- [ ] All cross-references bidirectional
-- [ ] No implementation details in reference (only usage)
-- [ ] Zero duplicated examples across files
-- [ ] All type definitions link to source, no line numbers
-- [ ] You can find what you need without thinking too hard
+- [x] Clear entry point (USAGE) with links to deeper topics
+- [x] Each topic has one canonical example, referenced elsewhere
+- [x] Tables > verbose lists for reference material
+- [x] Synonyms included for AI searchability
+- [x] All cross-references bidirectional
+- [x] No implementation details in reference (only usage)
+- [x] Zero duplicated examples across files
+- [x] All type definitions link to source, no line numbers
+- [x] You can find what you need without thinking too hard
 
 **Remember:** The goal is docs that work for you. If something feels off, it probably is. Fix it.
-- [ ] Clear entry point (USAGE) with links to deeper topics
-- [ ] Each topic has one canonical example, referenced elsewhere
-- [ ] Tables > verbose lists for reference material
-- [ ] Synonyms included for AI searchability
-- [ ] All cross-references bidirectional
-- [ ] No implementation details in reference (only usage)
+- [x] Clear entry point (USAGE) with links to deeper topics
+- [x] Each topic has one canonical example, referenced elsewhere
+- [x] Tables > verbose lists for reference material
+- [x] Synonyms included for AI searchability
+- [x] All cross-references bidirectional
+- [x] No implementation details in reference (only usage)
 
 ### AI Searchability
-- [ ] Can find "how to add X" efficiently
-- [ ] Can find "what does Y do" efficiently
-- [ ] Can find "Z API reference" efficiently
-- [ ] Minimal redundant information to parse
+- [x] Can find "how to add X" efficiently
+- [x] Can find "what does Y do" efficiently
+- [x] Can find "Z API reference" efficiently
+- [x] Minimal redundant information to parse
 
 ### Human Readability
-- [ ] USAGE flows well from basic → advanced → specific
-- [ ] Code examples are idiomatic and complete
-- [ ] No walls of text
-- [ ] Clear visual hierarchy
+- [x] USAGE flows well from basic → advanced → specific
+- [x] Code examples are idiomatic and complete
+- [x] No walls of text
+- [x] Clear visual hierarchy
 
 ---
 
