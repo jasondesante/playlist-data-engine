@@ -481,9 +481,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - Removed "NEW STUFF" placeholder note
   - Renumbered remaining examples 1-12
 
-- [ ] **Task 38**: Review API Reference section
-  - [ ] Subtask: Are the method reference tables useful?
-  - [ ] Subtask: Could they be more concise?
+- [x] **Task 38**: Review API Reference section
+  - [x] Subtask: Are the method reference tables useful? ✓ Yes - essential reference for equipment APIs
+  - [x] Subtask: Could they be more concise? ✓ Yes - grouped methods logically, simplified table format
+  - **Summary**: Streamlined API Reference from ~84 lines to ~75 lines (11% reduction). Reorganized EquipmentValidator into 3 logical groups (Core Validation, Reference Validation, Field Validation) and EquipmentModifier into 3 categories (Modification Operations, Query Methods, Factory Methods). Simplified table format by removing separate Parameters/Returns columns - method names now include parameter signatures inline. EquipmentEffectApplier, EquipmentSpawnHelper, and FeatureQuery sections were already concise and left unchanged.
 
 - [ ] **Task 39**: Create summary of changes (AUDIT TRAIL)
   - [ ] Subtask: List what was removed (with reasoning - why was it redundant?)
