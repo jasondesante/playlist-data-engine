@@ -894,9 +894,10 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Link to EXTENSIBILITY_GUIDE.md for details
   - **Summary**: Reduced SkillQuery and SkillValidator from ~230 lines to ~85 lines (63% reduction). Reduced SpellQuery and SpellValidator from ~195 lines to ~70 lines (64% reduction). Converted verbose documentation with full TypeScript type definitions, architecture explanations, and detailed validation descriptions to concise reference format. Replaced full type definitions with Types tables linking to source. Removed "Architecture", "Registration", "Design principle" paragraphs. Removed "Note on Registration" and "Note on Initialization" code blocks. Removed verbose validation detail subsections (Skill Validation, Skill Proficiency Validation, Skill List Definition Validation). Kept method reference tables with inline parameter signatures. Added "Also known as" synonyms for AI discoverability (Skill registry, custom skill system, proficiency manager for SkillQuery; Skill validation system, proficiency validator for SkillValidator; Spell registry, magic system, spellcaster manager for SpellQuery; Spell validation system, magic validator for SpellValidator). Added prominent links to EXTENSIBILITY_GUIDE.md for usage examples. Added "Note:" with link to PREREQUISITES.md for detailed validation rules.
 
-- [ ] **Task 88**: Review Cross-References section
-  - [ ] Subtask: Ensure links work
-  - [ ] Subtask: Add any missing cross-references
+- [x] **Task 88**: Review Cross-References section
+  - [x] Subtask: Ensure links work
+  - [x] Subtask: Add any missing cross-references
+  - **Summary**: Fixed spec link (spec.md → SPEC.md). Added 4 missing cross-references (XP_AND_STATS.md, COMBAT_SYSTEM.md, IRL_SENSORS.md, ROLLS_AND_SEEDS.md). Verified all 10 links work correctly. Cross-References section now includes all documentation files with consistent link format.
 
 ---
 

@@ -3169,9 +3169,13 @@ interface ClassDataEntry {
 
 ## Cross-References
 
-- For quick overview, see [spec.md](specs/001-core-engine/spec.md)
+- For quick overview, see [specs/001-core-engine/SPEC.md](specs/001-core-engine/SPEC.md)
 - For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md)
 - For equipment system guide, see [docs/EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)
 - For prerequisites guide, see [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
 - For custom content guide, see [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md)
 - For extensibility guide, see [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
+- For XP and stat system guide, see [docs/XP_AND_STATS.md](docs/XP_AND_STATS.md)
+- For combat system guide, see [docs/COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md)
+- For IRL sensors guide, see [docs/IRL_SENSORS.md](docs/IRL_SENSORS.md)
+- For rolls and seeds guide, see [docs/ROLLS_AND_SEEDS.md](docs/ROLLS_AND_SEEDS.md)
