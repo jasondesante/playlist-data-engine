@@ -318,10 +318,16 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Identify types that need explanation (custom augmentation patterns)
   - **Summary**: Streamlined Reference section from ~200 lines to ~90 lines (55% reduction). Replaced full type definitions with link table. Streamlined Validation section from ~250 lines to ~60 lines (76% reduction) - replaced full type definitions with key validation rules table.
 
-- [ ] **Task 31**: Audit for duplicate method signatures
-  - [ ] Subtask: Find methods that just repeat what's in source
-  - [ ] Subtask: Mark which can be replaced with reference tables
-  - [ ] Subtask: Keep methods that have non-obvious behavior
+- [x] **Task 31**: Audit for duplicate method signatures
+  - [x] Subtask: Find methods that just repeat what's in source ✓ Found 14 documented methods - each had heading + description + full example, very repetitive
+  - [x] Subtask: Mark which can be replaced with reference tables ✓ Converted to concise method reference table (19 methods → 1 table)
+  - [x] Subtask: Keep methods that have non-obvious behavior ✓ Kept examples for registration, weights, and inspection with practical usage patterns
+  - **Summary**: Reduced from ~160 lines to ~105 lines in "ExtensionManager API" section (34% reduction). Converted verbose method-by-method documentation (heading + description + example for each) into:
+    - Single method reference table (19 methods including 5 previously undocumented)
+    - Registration options table (3 options)
+    - Spawn modes table (4 modes with use cases)
+    - 3 focused examples showing practical patterns (registration, weights, inspection)
+  - **Added missing methods**: `registerMultiple()`, `setMode()`, `getCurrentOptions()`, `validate()`, `exportCustomDataForCategory()`
 
 - [ ] **Task 32**: Review ExtensionManager documentation
   - [ ] Subtask: Is the category table useful?

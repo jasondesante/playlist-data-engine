@@ -74,7 +74,7 @@ The extensibility system allows you to:
 
 ## ExtensionManager API
 
-The `ExtensionManager` is a singleton that manages all custom content. Get the instance:
+The `ExtensionManager` is a singleton that manages all custom content.
 
 ```typescript
 import { ExtensionManager } from 'playlist-data-engine';
@@ -82,11 +82,50 @@ import { ExtensionManager } from 'playlist-data-engine';
 const manager = ExtensionManager.getInstance();
 ```
 
+**Location:** [src/core/extensions/ExtensionManager.ts](../src/core/extensions/ExtensionManager.ts)
+
 ### Core Methods
 
-#### `register(category, items, options)`
+| Method | Parameters | Return | Description |
+|--------|------------|--------|-------------|
+| `register()` | `category`, `items`, `options?` | `void` | Register custom content for a category |
+| `registerMultiple()` | `registrations[]` | `void` | Register multiple categories at once |
+| `get()` | `category` | `any[]` | Get all items (defaults + custom) |
+| `getDefaults()` | `category` | `any[]` | Get default items only |
+| `getCustom()` | `category` | `any[]` | Get custom items only |
+| `setWeights()` | `category`, `weights` | `void` | Set spawn weights for items |
+| `getWeights()` | `category` | `Record` | Get current weights (defaults + custom) |
+| `getDefaultWeights()` | `category` | `Record` | Get default weights (all 1.0) |
+| `setMode()` | `category`, `mode` | `void` | Change spawn mode after registration |
+| `getMode()` | `category` | `SpawnMode \| undefined` | Get current spawn mode |
+| `hasCustomData()` | `category` | `boolean` | Check if category has custom data |
+| `validate()` | `category`, `items` | `ValidationResult` | Validate items without registering |
+| `reset()` | `category` | `void` | Reset category to defaults |
+| `resetAll()` | | `void` | Reset all categories to defaults |
+| `getInfo()` | `category?` | `Record` | Get info about registered extensions |
+| `getCurrentOptions()` | `category` | `ExtensionOptions \| undefined` | Get current registration options |
+| `exportCustomData()` | | `Record` | Export all custom data |
+| `exportCustomDataForCategory()` | `category` | `any[]` | Export custom data for single category |
+| `getRegisteredCategories()` | | `ExtensionCategory[]` | Get all categories with defaults |
 
-Register custom content for a category.
+### Registration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `mode` | `'relative' \| 'absolute' \| 'default' \| 'replace'` | `'relative'` | Spawn mode for this extension |
+| `weights` | `Record<string, number>` | `{}` | Custom spawn weights for items |
+| `validate` | `boolean` | `true` | Whether to validate items before registering |
+
+### Spawn Modes
+
+| Mode | Behavior | Use Case |
+|------|----------|----------|
+| `relative` | Custom weights added to default weights | Add custom items to existing pool |
+| `absolute` | Only custom items can spawn | Themed content packs, replace defaults |
+| `default` | All items have equal weight (1.0) | Disable custom spawn weights |
+| `replace` | Replace existing custom data | Hot-reload content packs during development |
+
+### Example: Registering Custom Content
 
 ```typescript
 manager.register(
@@ -95,149 +134,51 @@ manager.register(
         { name: 'Dragon Sword', type: 'weapon', rarity: 'legendary', weight: 5 }
     ],
     {
-        mode: 'relative',  // Add to defaults (default)
+        mode: 'relative',  // Add to defaults
         weights: { 'Dragon Sword': 0.5 },  // Half as common
-        validate: true  // Validate before registering (default)
+        validate: true  // Validate before registering
     }
 );
 ```
 
-#### `get(category)`
-
-Get all items for a category (defaults + custom).
+### Example: Working with Weights
 
 ```typescript
-const allEquipment = manager.get('equipment');
-// Returns: default equipment + custom equipment
-```
-
-#### `setWeights(category, weights)`
-
-Set spawn weights for a category.
-
-```typescript
+// Set spawn weights
 manager.setWeights('equipment', {
     'Longsword': 2,      // Twice as common
     'Dagger': 0.5,       // Half as common
     'Excalibur': 0.1     // Very rare
 });
-```
 
-#### `getWeights(category)`
-
-Get current weights for a category.
-
-```typescript
+// Get current weights
 const weights = manager.getWeights('equipment');
-// Returns: { 'Longsword': 2, 'Dagger': 0.5, ... }
+
+// Change spawn mode after registration
+manager.setMode('equipment', 'absolute');
 ```
 
-#### `reset(category)`
-
-Reset a category to defaults (removes all custom data).
+### Example: Inspecting Registered Data
 
 ```typescript
-manager.reset('equipment');
-```
-
-#### `resetAll()`
-
-Reset all categories to defaults.
-
-```typescript
-manager.resetAll();
-```
-
-#### `getDefaults(category)`
-
-Get default data only (no custom items).
-
-```typescript
-const defaultEquipment = manager.getDefaults('equipment');
-// Returns: default equipment only
-```
-
-#### `getCustom(category)`
-
-Get custom items only (no defaults).
-
-```typescript
-const customEquipment = manager.getCustom('equipment');
-// Returns: custom equipment only
-```
-
-#### `getDefaultWeights(category)`
-
-Get default weights only (all items have weight 1.0).
-
-```typescript
-const defaultWeights = manager.getDefaultWeights('equipment');
-// Returns: { 'Longsword': 1.0, 'Dagger': 1.0, ... }
-```
-
-#### `hasCustomData(category)`
-
-Check if a category has custom data registered.
-
-```typescript
+// Check if custom data exists
 if (manager.hasCustomData('equipment')) {
-    console.log('Custom equipment registered');
+    // Get info about registered extensions
+    const info = manager.getInfo('equipment');
+    console.log(info);
+    // {
+    //     hasCustomData: true,
+    //     defaultCount: 42,
+    //     customCount: 5,
+    //     totalCount: 47,
+    //     mode: 'relative',
+    //     weights: { ... },
+    //     registeredAt: 1234567890
+    // }
+
+    // Get just the custom items
+    const customItems = manager.getCustom('equipment');
 }
-```
-
-#### `getMode(category)`
-
-Get the registration mode for a category.
-
-```typescript
-const mode = manager.getMode('equipment');
-// Returns: 'relative' | 'absolute' | 'default' | undefined
-```
-
-#### `getInfo(category)`
-
-Get information about registered extensions.
-
-```typescript
-const info = manager.getInfo('spells');
-console.log(info);
-// {
-//     hasCustomData: true,
-//     defaultCount: 53,
-//     customCount: 5,
-//     totalCount: 58,
-//     mode: 'relative',
-//     weights: { ... },
-//     registeredAt: 1234567890
-// }
-```
-
-#### `exportCustomData()`
-
-Export all custom data (for debugging/saving).
-
-```typescript
-const customData = manager.exportCustomData();
-console.log(customData);
-// {
-//     extensions: {
-//         'spells': { items: [...], options: {...}, registeredAt: ... },
-//         'equipment': { items: [...], options: {...}, registeredAt: ... }
-//     },
-//     weights: {
-//         'spells': { 'Phoenix Fire': 0.5 },
-//         'equipment': { 'Sword': 2.0 }
-//     }
-// }
-```
-
-#### `getRegisteredCategories()`
-
-Get all categories with default data.
-
-```typescript
-const categories = manager.getRegisteredCategories();
-// Returns: ['equipment', 'spells', 'races', ...]
 ```
 
 ---
