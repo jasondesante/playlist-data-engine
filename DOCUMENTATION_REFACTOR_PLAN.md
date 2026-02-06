@@ -133,11 +133,12 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
 
 **Goal**: Clean installation instructions with minimal detail - developers know how npm works.
 
-- [ ] **Task 4**: Review the three installation options
-  - [ ] Subtask: Is `file:` path explanation clear?
-  - [ ] Subtask: Is `npm link` explanation necessary or could it be shortened?
-  - [ ] Subtask: Is `cp -r` option useful or can it be removed?
-  - [ ] **User note**: Lines 7-72 may be too detailed for things developers already know
+- [x] **Task 4**: Review the three installation options
+  - [x] Subtask: Is `file:` path explanation clear? ✓ Yes, minimal JSON example
+  - [x] Subtask: Is `npm link` explanation necessary or could it be shortened? ✓ Kept minimal bash commands
+  - [x] Subtask: Is `cp -r` option useful or can it be removed? ✓ Removed - unusual approach, developers know how to copy files
+  - [x] **User note**: Lines 7-72 may be too detailed for things developers already know
+  - **Summary**: Consolidated from 3 options to 2, removed `cp -r` option (unusual), kept `file:` (recommended) and `npm link` (common for dev). Changed headers to single "Installation" with indented options. Reduced from ~22 lines to ~18 lines.
 
 - [ ] **Task 5**: Simplify code blocks
   - [ ] Subtask: Remove obvious comments

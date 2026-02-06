@@ -12,7 +12,9 @@ Transform music playlists into D&D 5e-inspired RPG characters through audio/visu
 
 ---
 
-### Option 1: `file:` Path (Recommended)
+### Installation
+
+**Option 1: `file:` path (Recommended)**
 
 ```json
 {
@@ -22,17 +24,11 @@ Transform music playlists into D&D 5e-inspired RPG characters through audio/visu
 }
 ```
 
-### Option 2: npm link
+**Option 2: npm link** (for development)
 
 ```bash
 cd /path/to/playlist-data-engine && npm link
 cd /path/to/your/project && npm link playlist-data-engine
-```
-
-### Option 3: Copy dist folder
-
-```bash
-cp -r /path/to/playlist-data-engine/dist /path/to/your/project/vendor/
 ```
 
 ---
