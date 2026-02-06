@@ -202,8 +202,9 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Could add one-line each about what they provide
   - **Summary**: Added concise one-line descriptions for each section. Environmental Sensors: "GPS, motion, weather, and light sensors that provide XP modifiers based on real-world conditions (running, night, storm, altitude)." Gaming Platform Integration: "Steam game detection and Discord Rich Presence integration that provide XP bonuses based on gaming activity."
 
-- [ ] **Task 15**: "Combat System" link
-  - [ ] Subtask: Just links to COMBAT_SYSTEM.md - correct approach
+- [x] **Task 15**: "Combat System" link
+  - [x] Subtask: Just links to COMBAT_SYSTEM.md - correct approach
+  - **Summary**: Added concise one-line description for consistency with other sections: "Turn-based D&D 5e-inspired combat with initiative, attacks, spell casting, and dice rolling." The link-only approach to COMBAT_SYSTEM.md is correct as it contains the complete example.
 
 ### Phase 5: Advanced Examples Section
 

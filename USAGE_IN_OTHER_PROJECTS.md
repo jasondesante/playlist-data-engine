@@ -276,6 +276,8 @@ Steam game detection and Discord Rich Presence integration that provide XP bonus
 
 ### Combat System
 
+Turn-based D&D 5e-inspired combat with initiative, attacks, spell casting, and dice rolling.
+
 **For detailed documentation, see [COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md)**
 
 
