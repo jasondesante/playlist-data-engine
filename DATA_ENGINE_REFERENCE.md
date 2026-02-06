@@ -2209,40 +2209,39 @@ Static class for applying and removing equipment effects when equipping/unequipp
 | `getActiveEffects(character)` | Get array of all active equipment properties on character |
 
 ### EquipmentValidator
+*Also known as: Equipment validation, equipment data checker, property validator*
 
-**Location:** `src/core/equipment/EquipmentValidator.ts`
+**Location:** [src/core/equipment/EquipmentValidator.ts](src/core/equipment/EquipmentValidator.ts)
 
-```typescript
-class EquipmentValidator {
-    static validateEquipment(
-        equipment: EnhancedEquipment
-    ): EquipmentValidationResult;
+Validates equipment data structures including complete equipment objects, individual properties, feature/skill references, damage info, spawn weights, and modifications.
 
-    static validateProperty(
-        property: EquipmentProperty
-    ): EquipmentValidationResult;
+#### Core Validation
 
-    static validateEquipmentFeatureReference(
-        featureId: string
-    ): boolean;
+| Method | Description |
+|--------|-------------|
+| `validateEquipment(equipment)` | Validate complete equipment object (name, type, rarity, weight, properties, features, skills, spells, damage, AC, weapon properties, spawn weight, template, tags) |
+| `validateProperty(property)` | Validate single equipment property (type, target, value, condition, stackable, description) |
 
-    static validateEquipmentSkillReference(
-        skillId: string
-    ): boolean;
+#### Reference Validation
 
-    static validateDamageInfo(
-        damage: EnhancedEquipment['damage']
-    ): EquipmentValidationResult;
+| Method | Description |
+|--------|-------------|
+| `validateEquipmentFeatureReference(featureId)` | Check if feature ID exists in FeatureQuery (returns boolean) |
+| `validateEquipmentSkillReference(skillId)` | Check if skill ID exists in SkillQuery (returns boolean) |
+| `validateFeatureReference(featureRef, index)` | Validate feature reference (string ID or inline mini-feature object) |
+| `validateSkillReference(skillId, index?)` | Validate skill reference with optional array index for error messages |
 
-    static validateSpawnWeight(
-        weight: number
-    ): EquipmentValidationResult;
+#### Field Validation
 
-    static validateModification(
-        modification: EquipmentModification
-    ): EquipmentValidationResult;
-}
-```
+| Method | Description |
+|--------|-------------|
+| `validateDamageInfo(damage)` | Validate damage info (supports string format "1d8 slashing" or object format with dice, damageType, versatile) |
+| `validateSpawnWeight(weight)` | Validate spawn weight (non-negative number, 0 = never random but still usable) |
+| `validateModification(modification)` | Validate equipment modification (id, name, appliedAt, source, properties, addsFeatures, addsSkills, addsSpells) |
+| `validateCondition(condition)` | Validate equipment condition (type, value, description for custom) |
+| `validateMiniFeature(miniFeature)` | Validate inline equipment mini-feature (id, name, description, effects array, source) |
+| `validateACBonus(acBonus)` | Validate AC bonus value (non-negative finite number) |
+| `validateWeaponProperties(weaponProperties)` | Validate weapon properties array (supports range format "range_MIN_MAX") |
 
 ### EquipmentModifier
 

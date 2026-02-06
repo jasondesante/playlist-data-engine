@@ -858,8 +858,9 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Keep as method signature list
   - **Summary**: Reduced from ~27 lines to ~17 lines (37% reduction). Converted verbose TypeScript class signature to concise method reference table with 4 methods. Added "Also known as" synonyms for AI discoverability (Equipment effects manager, item bonus applier, equip/unequip handler). Added note that all equipment effects stack by default. Replaced inline type definitions with method descriptions in table format.
 
-- [ ] **Task 81**: Transform EquipmentValidator
-  - [ ] Subtask: Keep as method signature list
+- [x] **Task 81**: Transform EquipmentValidator
+  - [x] Subtask: Keep as method signature list
+  - **Summary**: Reduced from ~35 lines to ~35 lines but significantly improved quality and organization. Converted verbose TypeScript class signature to organized method reference tables (3 categories: Core Validation, Reference Validation, Field Validation). Added all 12 methods (5 previously undocumented: validateFeatureReference, validateSkillReference, validateCondition, validateMiniFeature, validateACBonus, validateWeaponProperties). Added "Also known as" synonyms for AI discoverability. Method descriptions now include parameter hints inline.
 
 - [ ] **Task 82**: Transform EquipmentModifier
   - [ ] Subtask: Keep as method signature list
