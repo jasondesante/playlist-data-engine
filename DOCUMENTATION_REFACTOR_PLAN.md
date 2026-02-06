@@ -635,10 +635,11 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: RawArweavePlaylist → link to source + note it's input format
   - **Summary**: Reduced from ~85 lines to ~11 lines (87% reduction). Replaced full type definitions with concise table linking to source. Note added that PlaylistTrack contains audio_url (critical property).
 
-- [ ] **Task 41**: Transform Audio/Color types
-  - [ ] Subtask: AudioProfile → link to source + property descriptions
-  - [ ] Subtask: ColorPalette → link to source + note about dual definition
-  - [ ] Subtask: FrequencyBands → keep (it's short and useful)
+- [x] **Task 41**: Transform Audio/Color types
+  - [x] Subtask: AudioProfile → link to source + property descriptions
+  - [x] Subtask: ColorPalette → link to source + note about dual definition
+  - [x] Subtask: FrequencyBands → keep (it's short and useful)
+  - **Summary**: Reduced from ~75 lines to ~35 lines (53% reduction). Converted AudioProfile and ColorPalette from full type definitions to concise property tables with source links. Removed incorrect note about dual ColorPalette definition (there's only one definition in AudioProfile.ts). Added "Also known as" synonyms to ColorPalette for AI discoverability. FrequencyBands section enhanced with clearer table format while keeping the type definition.
 
 - [ ] **Task 42**: Transform Character types
   - [ ] Subtask: Race, Class, Ability, Skill → keep as enums (essential)

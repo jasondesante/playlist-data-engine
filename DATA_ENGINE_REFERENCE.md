@@ -178,83 +178,57 @@ Type definitions for all core data structures.
 
 ### AudioProfile
 
+**Location:** [src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)
+
 Result of the `AudioAnalyzer`. Used to generate characters.
 
-```typescript
-export interface AudioProfile {
-    /** Bass dominance (0.0 - 1.0) */
-    bass_dominance: number;
-
-    /** Mid-range dominance (0.0 - 1.0) */
-    mid_dominance: number;
-
-    /** Treble dominance (0.0 - 1.0) */
-    treble_dominance: number;
-
-    /** Average amplitude (0.0 - 1.0) */
-    average_amplitude: number;
-
-    /** Advanced metrics (optional) */
-    spectral_centroid?: number;
-    spectral_rolloff?: number;
-    zero_crossing_rate?: number;
-
-    /** Color palette extracted from artwork (optional) */
-    color_palette?: ColorPalette;
-
-    /** Analysis metadata */
-    analysis_metadata: {
-        /** Duration of audio analyzed in seconds */
-        duration_analyzed: number;
-
-        /** Whether full buffer was analyzed (true for files < 3s) */
-        full_buffer_analyzed: boolean;
-
-        /** Sample positions used (percentages) */
-        sample_positions: number[];
-
-        /** Timestamp of analysis */
-        analyzed_at: string;
-    };
-}
-```
+| Property | Type | Description |
+|----------|------|-------------|
+| `bass_dominance` | number | Bass frequency dominance (0.0 - 1.0) |
+| `mid_dominance` | number | Mid-range frequency dominance (0.0 - 1.0) |
+| `treble_dominance` | number | Treble frequency dominance (0.0 - 1.0) |
+| `average_amplitude` | number | Average amplitude (0.0 - 1.0) |
+| `spectral_centroid?` | number | Advanced metric: spectral centroid |
+| `spectral_rolloff?` | number | Advanced metric: spectral rolloff |
+| `zero_crossing_rate?` | number | Advanced metric: zero crossing rate |
+| `color_palette?` | ColorPalette | Color palette extracted from artwork |
+| `analysis_metadata` | object | Duration, buffer status, sample positions, timestamp |
 
 ### ColorPalette
 
-Defines a color scheme derived from audio analysis.
+**Location:** [src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)
 
-```typescript
-export interface ColorPalette {
-    primary: string;
-    secondary: string;
-    tertiary: string;
-    background: string;
-    text: string;
-    isMonochrome: boolean;
-    brightness: number; // 0-1
-    saturation: number; // 0-1
-    colors: string[]; // Full palette
-}
-```
+Defines a color scheme derived from image analysis using k-means clustering.
 
-**Note**: There is also a ColorPalette definition in `AudioProfile.ts` with different property names (`primary_color` vs `primary`, `is_monochrome` vs `isMonochrome`). The definition above (from `ColorPalette.ts`) is the canonical version.
+*Also known as: Color scheme, palette, dominant colors*
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `colors` | string[] | Dominant colors ranked by frequency (hex format) |
+| `primary_color` | string | Most dominant color |
+| `secondary_color?` | string | Secondary color |
+| `accent_color?` | string | Accent color |
+| `brightness` | number | Average brightness (0.0 - 1.0) |
+| `saturation` | number | Average saturation (0.0 - 1.0) |
+| `is_monochrome` | boolean | Whether the image is monochrome |
 
 ### FrequencyBands
 
-Audio frequency band separation for analysis.
+**Location:** [src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)
 
-- Bass: 20Hz - 400Hz (380 Hz range, 11% of spectrum)
-- Mid: 400Hz - 4kHz (3,600 Hz range, 52% of spectrum)
-- Treble: 4kHz - 14kHz (10,000 Hz range, 37% of spectrum)
+Audio frequency band separation for analysis. Rebalanced v2 ranges prevent treble dominance.
+
+| Band | Range | Spectrum |
+|------|-------|----------|
+| Bass | 20Hz - 400Hz | 11% (380 Hz) |
+| Mid | 400Hz - 4kHz | 52% (3,600 Hz) |
+| Treble | 4kHz - 14kHz | 37% (10,000 Hz) |
 
 ```typescript
 export interface FrequencyBands {
-    /** Bass frequencies (20Hz - 400Hz) */
-    bass: number[];
-    /** Mid frequencies (400Hz - 4kHz) */
-    mid: number[];
-    /** Treble frequencies (4kHz - 14kHz) */
-    treble: number[];
+    bass: number[];   // Bass frequencies (20Hz - 400Hz)
+    mid: number[];    // Mid frequencies (400Hz - 4kHz)
+    treble: number[]; // Treble frequencies (4kHz - 14kHz)
 }
 ```
 
