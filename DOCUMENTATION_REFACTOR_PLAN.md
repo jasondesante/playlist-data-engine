@@ -802,10 +802,11 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Keep function list
   - **Summary**: Reduced from ~50 lines to ~25 lines (50% reduction). Converted full TypeScript type definition to concise table format. Replaced verbose code block with clean reference tables (Types, Functions, Constants). Added "Also known as" synonyms for AI discoverability.
 
-- [ ] **Task 71**: Transform EnvironmentalSensors
-  - [ ] Subtask: Keep as method reference table
-  - [ ] Subtask: Remove implementation details
-  - [ ] Subtask: Link to IRL_SENSORS.md for usage
+- [x] **Task 71**: Transform EnvironmentalSensors
+  - [x] Subtask: Keep as method reference table
+  - [x] Subtask: Remove implementation details
+  - [x] Subtask: Link to IRL_SENSORS.md for usage
+  - **Summary**: Reduced from ~100 lines to ~55 lines (45% reduction). Converted verbose method-by-method documentation with inline descriptions to concise method reference table (22 methods). Removed implementation details ("pull-based data", "acceleration magnitude"). Converted helper classes (GeolocationProvider, MotionDetector, WeatherAPIClient, LightSensor) to consolidated table format. Added "Also known as" synonyms for AI discoverability (IRL sensors, real-world sensors, environmental context, GPS/weather integration). Added prominent link to IRL_SENSORS.md for usage examples.
 
 - [ ] **Task 72**: Transform environmental helpers
   - [ ] Subtask: GeolocationProvider, MotionDetector → method lists

@@ -1768,105 +1768,50 @@ Configuration for XP thresholds, stat increases, and level-up behavior.
 ---
 
 ## Environmental Sensors
+*Also known as: IRL sensors, real-world sensors, environmental context, GPS/weather integration*
 
 **Location:** `src/core/sensors/EnvironmentalSensors.ts`
 
+**For usage examples, see [docs/IRL_SENSORS.md](docs/IRL_SENSORS.md)**
+
 Integrates real-world data (GPS, Weather, Motion, Light) to influence XP generation.
 
-#### Class: `EnvironmentalSensors`
+### EnvironmentalSensors
 
-**Constructor:**
-```typescript
-new EnvironmentalSensors(weatherApiKeyOrConfig?: string | { weather?: { apiKey?: string }; geolocation?: Partial<GeolocationSensorConfig>; retry?: Partial<RetryConfig>; xpModifier?: Partial<XPModifierConfig> }, retryConfig?: Partial<SensorRetryConfig>)
-```
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `requestPermissions()` | `types: SensorType[]` | `Promise<SensorPermission[]>` | Requests browser permissions for sensors |
+| `startMonitoring()` | `callback?: (context) => void` | `void` | Starts listening to sensor streams |
+| `stopMonitoring()` | - | `void` | Stops all sensor monitoring |
+| `updateSnapshot()` | - | `Promise<EnvironmentalContext>` | Fetches current pull-based data (geo, weather) |
+| `calculateXPModifier()` | - | `number` | Returns XP multiplier (1.0x - 3.0x) based on context |
+| `calculateXPModifierWithForecast()` | `forecastHours?: number` | `Promise<number>` | Calculates XP modifier including weather forecast |
+| `calculateXPModifierWithSevereWeather()` | - | `Promise<{ modifier, severeWeatherAlert, safetyWarning }>` | Calculates XP modifier with severe weather detection |
+| `detectSevereWeather()` | - | `SevereWeatherAlert \| null` | Detects severe weather from current conditions |
+| `getSevereWeatherWarning()` | - | `string \| null` | Returns safety warning for current severe weather |
+| `getSensorStatus()` | `sensorType: SensorType` | `SensorStatus \| null` | Returns current health status of a sensor |
+| `getAllSensorStatuses()` | - | `SensorStatus[]` | Returns status of all sensors |
+| `getFailureLog()` | `sensorType?: SensorType, limit?: number` | `SensorFailureLog[]` | Returns failure log entries, optionally filtered |
+| `getLastKnownGood()` | `sensorType: SensorType` | `any` | Returns last known good value for a sensor |
+| `clearFailureLog()` | - | `void` | Clears failure log entries |
+| `updateRetryConfig()` | `config: Partial<SensorRetryConfig>` | `void` | Updates retry configuration |
+| `onSensorRecovery()` | `callback: (notification) => void` | `() => void` | Registers sensor recovery callback, returns unsubscribe |
+| `getPermissions()` | - | `SensorPermission[]` | Returns current permission states |
+| `checkAvailability()` | `type: SensorType` | `boolean` | Checks if a sensor type is available in the current environment |
+| `getCurrentActivity()` | - | `'stationary' \| 'walking' \| 'running' \| 'driving' \| 'unknown'` | Returns current activity type from motion sensor |
+| `getDiagnostics()` | - | `{ timestamp, diagnosticMode, sensors, cache, performance, recentFailures, permissions, context }` | Returns comprehensive diagnostic information |
+| `enableDiagnosticMode()` | - | `void` | Enables diagnostic logging mode |
+| `disableDiagnosticMode()` | - | `void` | Disables diagnostic logging mode |
+| `printDashboard()` | `config?: DashboardConfig` | `void` | Prints formatted sensor dashboard to console |
 
-**Methods:**
+### Environmental Helper Classes
 
-- `async requestPermissions(types: SensorType[]): Promise<SensorPermission[]>`
-    - Requests browser permissions for 'geolocation', 'motion', 'light', etc.
-- `startMonitoring(callback?: (context: EnvironmentalContext) => void): void`
-    - Starts listening to sensor streams.
-- `stopMonitoring(): void`
-    - Stops all sensor monitoring.
-- `async updateSnapshot(): Promise<EnvironmentalContext>`
-    - Manually fetches current pull-based data (Geo, Weather) with retry logic.
-- `calculateXPModifier(): number`
-    - Returns a multiplier (1.0x - 3.0x) based on current context.
-- `async calculateXPModifierWithForecast(forecastHours?: number): Promise<number>`
-    - Calculates XP modifier including upcoming weather forecast.
-- `async calculateXPModifierWithSevereWeather(): Promise<{ modifier: number; severeWeatherAlert: SevereWeatherAlert | null; safetyWarning: string | null }>`
-    - Calculates XP modifier with severe weather detection.
-- `detectSevereWeather(): SevereWeatherAlert | null`
-    - Detects severe weather from current conditions.
-- `getSevereWeatherWarning(): string | null`
-    - Returns safety warning for current severe weather.
-- `getSensorStatus(sensorType: SensorType): SensorStatus | null`
-    - Returns current health status of a sensor.
-- `getAllSensorStatuses(): SensorStatus[]`
-    - Returns status of all sensors.
-- `getFailureLog(sensorType?: SensorType, limit?: number): SensorFailureLog[]`
-    - Returns failure log entries, optionally filtered.
-- `getLastKnownGood(sensorType: SensorType): any`
-    - Returns last known good value for a sensor.
-- `clearFailureLog(): void`
-    - Clears failure log entries.
-- `updateRetryConfig(config: Partial<SensorRetryConfig>): void`
-    - Updates retry configuration.
-- `onSensorRecovery(callback: (notification: SensorRecoveryNotification) => void): () => void`
-    - Registers callback for sensor recovery notifications, returns unsubscribe function.
-- `getPermissions(): SensorPermission[]`
-    - Returns current permission states.
-- `checkAvailability(type: SensorType): boolean`
-    - Checks if a sensor type is available in the current environment.
-- `getCurrentActivity(): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown'`
-    - Returns current activity type from motion sensor.
-- `getDiagnostics(): { timestamp: number; diagnosticMode: boolean; sensors: [...]; cache: {...}; performance: {...}; recentFailures: SensorFailureLog[]; permissions: SensorPermission[]; context: {...} }`
-    - Returns comprehensive diagnostic information.
-- `enableDiagnosticMode(): void`
-    - Enables diagnostic logging mode.
-- `disableDiagnosticMode(): void`
-    - Disables diagnostic logging mode.
-- `printDashboard(config?: DashboardConfig): void`
-    - Prints formatted sensor dashboard to console.
-
-#### Helper: `GeolocationProvider`
-
-**Location:** `src/core/sensors/GeolocationProvider.ts`
-
-Handles GPS data and biome detection.
-
-- `getCurrentPosition(): Promise<GeolocationData | null>`
-    - Returns lat, long, altitude, speed, etc.
-- `getBiome(latitude: number, longitude: number): string`
-    - Returns 'tundra', 'forest', 'urban', or 'plains' based on coordinates.
-
-#### Helper: `MotionDetector`
-
-**Location:** `src/core/sensors/MotionDetector.ts`
-
-Handles accelerometer and gyroscope data.
-
-- `startMonitoring(callback: (data: MotionData) => void): void`
-- `detectActivity(data: MotionData): 'stationary' | 'walking' | 'running' | 'driving'`
-    - Uses acceleration magnitude to infer activity type.
-
-#### Helper: `WeatherAPIClient`
-
-**Location:** `src/core/sensors/WeatherAPIClient.ts`
-
-Fetches weather data from OpenWeatherMap.
-
-- `getWeather(lat: number, lon: number): Promise<WeatherData | null>`
-    - Returns temp, humidity, weather type, and day/night status.
-
-#### Helper: `LightSensor`
-
-**Location:** `src/core/sensors/LightSensor.ts`
-
-Uses the AmbientLightSensor API.
-
-- `startMonitoring(callback: (data: LightData) => void): void`
-    - Returns illuminance in lux.
+| Class | Location | Methods | Description |
+|-------|----------|---------|-------------|
+| `GeolocationProvider` | `src/core/sensors/GeolocationProvider.ts` | `getCurrentPosition()`, `getBiome()` | Handles GPS data and biome detection |
+| `MotionDetector` | `src/core/sensors/MotionDetector.ts` | `startMonitoring()`, `detectActivity()` | Handles accelerometer and gyroscope data |
+| `WeatherAPIClient` | `src/core/sensors/WeatherAPIClient.ts` | `getWeather()` | Fetches weather data from OpenWeatherMap |
+| `LightSensor` | `src/core/sensors/LightSensor.ts` | `startMonitoring()` | Uses the AmbientLightSensor API for illuminance |
 
 ---
 
