@@ -464,10 +464,22 @@ When removing examples from DATA_ENGINE_REFERENCE.md:
   - [x] Subtask: Find EquipmentSpawnHelper methods
   - [x] Subtask: Convert verbose method lists to reference tables
 
-- [ ] **Task 37**: Review equipment examples
-  - [ ] Subtask: Are there too many similar examples?
-  - [ ] Subtask: Can any be consolidated?
-  - [ ] Subtask: Keep the unique ones that show different patterns
+- [x] **Task 37**: Review equipment examples
+  - [x] Subtask: Are there too many similar examples?
+  - [x] Subtask: Can any be consolidated?
+  - [x] Subtask: Keep the unique ones that show different patterns
+  - **Summary**: Reduced Examples section from 18 examples to 12 examples (33% reduction, ~300 lines removed). Removed redundant examples:
+    - Example 1 (Magic Weapon with Fire Damage) - covered in Example 6 (Fire Damage Two Methods)
+    - Example 5 (Conditional Effects) - covered in Example 13 (now Example 7, more comprehensive)
+    - Example 9 (Equipment Properties All Types) - redundant with Property Types table (lines 133-142)
+    - Example 10 (Items That Grant Features) - covered in Equipment-Granted Features section (lines 316-384)
+    - Added link reference to Property Types table when removing Example 9
+  - Moved Enchantment Library and Magic Item Examples sections from bottom of file to proper locations:
+    - Enchantment Library now follows Spawn Weights (section 10)
+    - Magic Item Examples now follows Enchantment Library (section 11)
+    - Updated TOC to reflect new section numbering
+  - Removed "NEW STUFF" placeholder note
+  - Renumbered remaining examples 1-12
 
 - [ ] **Task 38**: Review API Reference section
   - [ ] Subtask: Are the method reference tables useful?
