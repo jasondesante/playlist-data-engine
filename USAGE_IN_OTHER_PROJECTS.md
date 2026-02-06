@@ -1,113 +1,75 @@
-# Using Playlist Data Engine in Other Projects
+# Playlist Data Engine Usage Guide
 
-**For API details, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md)**
+Transform music playlists into D&D 5e-inspired RPG characters through audio/visual analysis and deterministic generation.
 
-Your Playlist Data Engine is now built and ready to use! Here are the recommended ways to use it in other projects on your local machine.
+**Quick Links:**
+- **[API Reference](DATA_ENGINE_REFERENCE.md)** — Complete class and method documentation
+- **[Extensibility Guide](docs/EXTENSIBILITY_GUIDE.md)** — Custom content, classes, races, skills
+- **[Equipment System](docs/EQUIPMENT_SYSTEM.md)** — Properties, enchanting, templates
+- **[Custom Classes & Races](docs/CUSTOM_CONTENT.md)** — Template-based class inheritance
+- **[XP and Leveling](docs/XP_AND_STATS.md)** — Progression, stat increases, mastery
+- **[Prerequisites](docs/PREREQUISITES.md)** — Level/ability/class/skill/feature requirements
 
-## Option 1: Using `file:` Path (Recommended for Development)
+---
 
-This is the most flexible option for local development and testing.
-
-### Step 1: Note the absolute path
-Find the absolute path to your built library. For example:
-```
-/path/to/playlist-data-engine
-```
-
-### Step 2: In your other project's `package.json`
-
-Add the library as a local dependency (replace `/path/to/playlist-data-engine` with your actual path):
+### Option 1: `file:` Path (Recommended)
 
 ```json
 {
   "dependencies": {
-    "playlist-data-engine": "file:///path/to/playlist-data-engine"
+    "playlist-data-engine": "file:/path/to/playlist-data-engine"
   }
 }
 ```
 
-### Step 3: Install it
+### Option 2: npm link
 
 ```bash
-cd /path/to/your/other/project
-npm install
+cd /path/to/playlist-data-engine && npm link
+cd /path/to/your/project && npm link playlist-data-engine
 ```
 
-The library will be symlinked to your workspace, so any changes you make to the source will immediately reflect in your other project.
-
----
-
-## Option 2: Using `npm link` (Alternative)
-
-This creates a global symlink that you can use across multiple projects.
-
-### Step 1: Create the global link
+### Option 3: Copy dist folder
 
 ```bash
-cd /path/to/playlist-data-engine
-npm link
+cp -r /path/to/playlist-data-engine/dist /path/to/your/project/vendor/
 ```
-
-### Step 2: In your other project, link it
-
-```bash
-cd /path/to/your/other/project
-npm link playlist-data-engine
-```
-
-The package will be available just like it was installed from npm.
-
----
-
-## Option 3: Copy the `dist` Folder (Static)
-
-If you want a completely isolated copy:
-
-```bash
-cp -r /path/to/playlist-data-engine/dist /path/to/your/project/vendor/playlist-data-engine
-```
-
-Then reference it in your project code directly.
 
 ---
 
 ## Usage Examples
 
-### Basic Examples
-- [Basic Playlist Parsing and Character Generation](#basic-playlist-parsing-and-character-generation) - Parse playlists, analyze audio, and generate characters
-- [Earning XP from Listening to Music](#earning-xp-from-listening-to-music) - Track sessions, calculate XP, handle level-ups
+### Basic
+- [Playlist Parsing and Character Generation](#basic-playlist-parsing-and-character-generation) — Parse playlists, analyze audio, generate characters
+- [XP from Listening](#earning-xp-from-listening-to-music) — Session tracking, XP calculation, level-ups
 
-### Advanced Examples
-- [Combining All Systems](#combining-all-systems) - Full pipeline with environmental and gaming context
+### Advanced Pipeline
+- [Combining All Systems](#combining-all-systems) — Full pipeline with environmental and gaming context
 
 ### Specific Features
-- [Color Extraction and Character Naming](#color-extraction-and-character-naming) - Extract colors from artwork and generate RPG-style names
-- [Advanced Character Features](#advanced-character-features) - Skills, spells, equipment, and appearance generation
-- [Environmental Sensors](#environmental-sensors) - Get environmental context and XP modifiers
-- [Gaming Platform Integration](#gaming-platform-integration) - Integrate Steam and Discord for gaming bonuses
-- [Combat System](#combat-system) - Run turn-based D&D 5e combat
-- [Equipment System](#equipment-system) - Custom equipment, properties, enchanting, and batch spawning
+- [Color Extraction and Naming](#color-extraction-and-character-naming) — Artwork colors and RPG-style names
+- [Advanced Character Features](#advanced-character-features) — Skills, spells, equipment, appearance
+- [Environmental Sensors](#environmental-sensors) — GPS, motion, weather, light modifiers
+- [Gaming Platform Integration](#gaming-platform-integration) — Steam and Discord bonuses
+- [Combat System](#combat-system) — Turn-based D&D 5e combat
+- [Equipment System](#equipment-system) — Custom equipment, properties, enchanting
 
-### Extensibility System
-- [Custom Features and Skills](#custom-features-and-skills) - Create custom class features, racial traits, and skills
-- [Custom Classes](#custom-classes) - Create entirely new classes or extend existing ones
-- [Spawn Rate Control](#spawn-rate-control) - Control how often custom content appears
+### Extensibility
+- [Custom Features and Skills](#custom-features-and-skills) — Class features, racial traits, skills
+- [Custom Classes](#custom-classes) — New or extended classes
+- [Spawn Rate Control](#spawn-rate-control) — Control custom content frequency
 
 ### Common Patterns
-- [Deterministic Character Generation](#deterministic-character-generation) - How the same seed always produces the same character
-- [Understanding XP Bonus Calculation](#understanding-xp-bonus-calculation) - How environmental and gaming modifiers combine
-- [Manual Level-Up Processing](#manual-level-up-processing) - Handle level-ups programmatically
-- [Hash Utilities and Deterministic Seeding](#hash-utilities-and-deterministic-seeding) - Generate deterministic seeds and random values
-- [Validation Schemas](#validation-schemas) - Runtime type validation with Zod schemas
+- [Deterministic Generation](#deterministic-character-generation) — Same seed, same character
+- [XP Bonus Calculation](#understanding-xp-bonus-calculation) — Environmental and gaming modifiers
+- [Manual Level-Up Processing](#manual-level-up-processing) — Programmatic level-ups
+- [Hash Utilities and Seeding](#hash-utilities-and-deterministic-seeding) — Deterministic seeds and RNG
 
-
-### Other Docs
-Read about other subjects in their respective docs
-- [Custom Classes and Races](docs/CUSTOM_CONTENT.md)
-- [Equipment System](docs/EQUIPMENT_SYSTEM.md)
-- [Extensibility Guide](docs/EXTENSIBILITY_GUIDE.md)
-- [Prerequisites](docs/PREREQUISITES.md)
-- [XP and Leveling](docs/XP_AND_STATS.md)
+### Developer Reference
+- [Validation Schemas](#validation-schemas) — Runtime type validation with Zod
+- [Development Workflow](#development-workflow) — Build, test, and reload
+- [Environment Variables](#environment-variables) — API keys and sensor configuration
+- [Troubleshooting](#troubleshooting) — Common issues
 
 ---
 
