@@ -21,7 +21,7 @@ import type {
 } from '../types/Equipment.js';
 import { SeededRNG } from '../../utils/random.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
-import { MAGIC_EQUIPMENT_TEMPLATES } from '../../utils/magicItemExamples.js';
+import { ITEM_CREATION_TEMPLATES } from '../../utils/equipmentConstants.js';
 
 /**
  * Rarity order for comparisons (common = 0, legendary = 4)
@@ -371,8 +371,8 @@ export class EquipmentSpawnHelper {
         }
 
         // If not found in ExtensionManager, try magicItemExamples
-        if (!template && templateId in MAGIC_EQUIPMENT_TEMPLATES) {
-            template = MAGIC_EQUIPMENT_TEMPLATES[templateId];
+        if (!template && templateId in ITEM_CREATION_TEMPLATES) {
+            template = ITEM_CREATION_TEMPLATES[templateId];
         }
 
         if (!template) {

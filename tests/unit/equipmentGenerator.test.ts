@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { EquipmentGenerator } from '../../src/core/generation/EquipmentGenerator.js';
 import { SeededRNG } from '../../src/utils/random.js';
 import type { Class } from '../../src/core/types/Character.js';
-import { CLASS_STARTING_EQUIPMENT, EQUIPMENT_DATABASE } from '../../src/utils/constants.js';
+import { CLASS_STARTING_EQUIPMENT, DEFAULT_EQUIPMENT } from '../../src/utils/equipmentConstants.js';
 
 describe('EquipmentGenerator', () => {
     describe('getStartingEquipment', () => {
@@ -161,7 +161,7 @@ describe('EquipmentGenerator', () => {
                 ];
 
                 for (const item of allItems) {
-                    expect(EQUIPMENT_DATABASE[item]).toBeDefined();
+                    expect(DEFAULT_EQUIPMENT[item]).toBeDefined();
                 }
             }
         });
@@ -169,7 +169,7 @@ describe('EquipmentGenerator', () => {
         it('should have valid equipment types', () => {
             const validTypes = ['weapon', 'armor', 'item'];
 
-            for (const [name, equipment] of Object.entries(EQUIPMENT_DATABASE)) {
+            for (const [name, equipment] of Object.entries(DEFAULT_EQUIPMENT)) {
                 expect(validTypes).toContain(equipment.type);
             }
         });
@@ -177,19 +177,19 @@ describe('EquipmentGenerator', () => {
         it('should have valid rarity levels', () => {
             const validRarities = ['common', 'uncommon', 'rare', 'very_rare', 'legendary'];
 
-            for (const [name, equipment] of Object.entries(EQUIPMENT_DATABASE)) {
+            for (const [name, equipment] of Object.entries(DEFAULT_EQUIPMENT)) {
                 expect(validRarities).toContain(equipment.rarity);
             }
         });
 
         it('should have non-negative weight values', () => {
-            for (const [name, equipment] of Object.entries(EQUIPMENT_DATABASE)) {
+            for (const [name, equipment] of Object.entries(DEFAULT_EQUIPMENT)) {
                 expect(equipment.weight).toBeGreaterThanOrEqual(0);
             }
         });
 
         it('should have reasonable weight values (< 100 lbs)', () => {
-            for (const [name, equipment] of Object.entries(EQUIPMENT_DATABASE)) {
+            for (const [name, equipment] of Object.entries(DEFAULT_EQUIPMENT)) {
                 expect(equipment.weight).toBeLessThan(100);
             }
         });
@@ -200,7 +200,7 @@ describe('EquipmentGenerator', () => {
             const weapons = ['Greataxe', 'Longsword', 'Shortsword', 'Rapier', 'Quarterstaff', 'Mace', 'Dagger'];
 
             for (const weapon of weapons) {
-                expect(EQUIPMENT_DATABASE[weapon].type).toBe('weapon');
+                expect(DEFAULT_EQUIPMENT[weapon].type).toBe('weapon');
             }
         });
 
@@ -208,7 +208,7 @@ describe('EquipmentGenerator', () => {
             const armors = ['Leather Armor', 'Scale Mail', 'Chain Mail', 'Plate Armor', 'Shield', 'No Armor'];
 
             for (const armor of armors) {
-                expect(EQUIPMENT_DATABASE[armor].type).toBe('armor');
+                expect(DEFAULT_EQUIPMENT[armor].type).toBe('armor');
             }
         });
 
@@ -216,7 +216,7 @@ describe('EquipmentGenerator', () => {
             const items = ['Spellbook', 'Holy Symbol', 'Arcane Focus', 'Druidic Focus', 'Lute', 'Thieves\' Tools'];
 
             for (const item of items) {
-                expect(EQUIPMENT_DATABASE[item].type).toBe('item');
+                expect(DEFAULT_EQUIPMENT[item].type).toBe('item');
             }
         });
     });
@@ -245,21 +245,21 @@ describe('EquipmentGenerator', () => {
 
     describe('Equipment Weight', () => {
         it('heavy armor should weigh more than light armor', () => {
-            const chainMail = EQUIPMENT_DATABASE['Chain Mail'];
-            const leatherArmor = EQUIPMENT_DATABASE['Leather Armor'];
+            const chainMail = DEFAULT_EQUIPMENT['Chain Mail'];
+            const leatherArmor = DEFAULT_EQUIPMENT['Leather Armor'];
 
             expect(chainMail.weight).toBeGreaterThan(leatherArmor.weight);
         });
 
         it('two-handed weapons should generally weigh more than one-handed', () => {
-            const greataxe = EQUIPMENT_DATABASE['Greataxe'];
-            const dagger = EQUIPMENT_DATABASE['Dagger'];
+            const greataxe = DEFAULT_EQUIPMENT['Greataxe'];
+            const dagger = DEFAULT_EQUIPMENT['Dagger'];
 
             expect(greataxe.weight).toBeGreaterThan(dagger.weight);
         });
 
         it('No Armor should have zero weight', () => {
-            expect(EQUIPMENT_DATABASE['No Armor'].weight).toBe(0);
+            expect(DEFAULT_EQUIPMENT['No Armor'].weight).toBe(0);
         });
     });
 
@@ -276,8 +276,8 @@ describe('EquipmentGenerator', () => {
             ];
 
             for (const pack of packs) {
-                expect(EQUIPMENT_DATABASE[pack]).toBeDefined();
-                expect(EQUIPMENT_DATABASE[pack].type).toBe('item');
+                expect(DEFAULT_EQUIPMENT[pack]).toBeDefined();
+                expect(DEFAULT_EQUIPMENT[pack].type).toBe('item');
             }
         });
 
@@ -290,7 +290,7 @@ describe('EquipmentGenerator', () => {
             ];
 
             for (const pack of packs) {
-                const weight = EQUIPMENT_DATABASE[pack].weight;
+                const weight = DEFAULT_EQUIPMENT[pack].weight;
                 expect(weight).toBeGreaterThanOrEqual(30);
                 expect(weight).toBeLessThanOrEqual(70);
             }
@@ -299,13 +299,13 @@ describe('EquipmentGenerator', () => {
 
     describe('Ammunition', () => {
         it('should have individual ammunition items in database', () => {
-            expect(EQUIPMENT_DATABASE['Arrow']).toBeDefined();
-            expect(EQUIPMENT_DATABASE['Bolt']).toBeDefined();
+            expect(DEFAULT_EQUIPMENT['Arrow']).toBeDefined();
+            expect(DEFAULT_EQUIPMENT['Bolt']).toBeDefined();
         });
 
         it('individual ammunition should be lightweight', () => {
-            expect(EQUIPMENT_DATABASE['Arrow'].weight).toBeLessThanOrEqual(0.1);
-            expect(EQUIPMENT_DATABASE['Bolt'].weight).toBeLessThanOrEqual(0.1);
+            expect(DEFAULT_EQUIPMENT['Arrow'].weight).toBeLessThanOrEqual(0.1);
+            expect(DEFAULT_EQUIPMENT['Bolt'].weight).toBeLessThanOrEqual(0.1);
         });
 
         it('Ranger should receive 20 Arrow items', () => {
@@ -320,7 +320,7 @@ describe('EquipmentGenerator', () => {
             const equipment = EquipmentGenerator.initializeEquipment('Ranger');
 
             const arrowItem = equipment.items.find((i) => i.name === 'Arrow');
-            const arrowWeight = arrowItem!.quantity * EQUIPMENT_DATABASE['Arrow'].weight;
+            const arrowWeight = arrowItem!.quantity * DEFAULT_EQUIPMENT['Arrow'].weight;
 
             expect(arrowWeight).toBeCloseTo(1.0, 0.01);
         });

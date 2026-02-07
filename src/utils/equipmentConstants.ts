@@ -23,6 +23,9 @@
 // Import Equipment interface from constants.ts (it's defined there)
 import type { Equipment } from './constants.js';
 
+// Import ExtensionManager for custom class equipment lookup
+import { ExtensionManager } from '../core/extensions/ExtensionManager.js';
+
 // Import equipment-related types from core types
 import type {
     EquipmentModification,
@@ -604,10 +607,22 @@ interface ClassStartingEquipmentData {
  * First checks the default CLASS_STARTING_EQUIPMENT constant, then checks
  * the ExtensionManager for custom equipment registered via 'classStartingEquipment.${ClassName}'.
  *
+ * The 'classStartingEquipment.${ClassName}' category expects an array of ClassStartingEquipmentData objects,
+ * each containing a class name and the equipment (weapons, armor, items).
+ *
  * This function is used by EquipmentGenerator during character creation.
  *
  * @param className - The class name to get starting equipment for
- * @returns The starting equipment with weapons, armor, and items arrays, or undefined if not found
+ * @returns Object with weapons, armor, and items arrays, or undefined if not found
+ *
+ * @example
+ * // Register custom starting equipment for a "Necromancer" class
+ * manager.register('classStartingEquipment.Necromancer', [{
+ *     class: 'Necromancer',
+ *     weapons: ['Bone Staff', 'Dagger'],
+ *     armor: ['No Armor'],
+ *     items: ['Arcane Focus', 'Skeleton Key', 'Dark Robes']
+ * }]);
  */
 export function getClassStartingEquipment(className: string): {
     weapons: string[];
@@ -621,20 +636,22 @@ export function getClassStartingEquipment(className: string): {
 
     // Check ExtensionManager for custom equipment
     try {
-        // Use a lazy import pattern to avoid circular dependency issues
-        // This requires the ExtensionManager to be initialized before this function is called
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { ExtensionManager } = require('../core/extensions/ExtensionManager.js');
         const manager = ExtensionManager.getInstance();
         const category = `classStartingEquipment.${className}` as const;
         const customEquipment = manager.get(category as any);
 
-        if (customEquipment) {
-            return customEquipment;
+        if (customEquipment && Array.isArray(customEquipment) && customEquipment.length > 0) {
+            // Return the first custom starting equipment for this class
+            const equipmentData = customEquipment[0] as ClassStartingEquipmentData;
+            return {
+                weapons: equipmentData.weapons,
+                armor: equipmentData.armor,
+                items: equipmentData.items
+            };
         }
     } catch (error) {
-        // ExtensionManager may not be available in all contexts
-        // This is expected in some test scenarios
+        // ExtensionManager not available (may be during initialization)
+        // Return undefined to fall back to default behavior
     }
 
     return undefined;

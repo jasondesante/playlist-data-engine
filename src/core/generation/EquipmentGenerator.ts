@@ -8,7 +8,7 @@
  */
 
 import type { Class, CharacterSheet } from '../types/Character.js';
-import { CLASS_STARTING_EQUIPMENT, EQUIPMENT_DATABASE, getClassStartingEquipment } from '../../utils/constants.js';
+import { CLASS_STARTING_EQUIPMENT, getClassStartingEquipment, DEFAULT_EQUIPMENT } from '../../utils/equipmentConstants.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureEquipmentDefaultsInitialized } from '../extensions/initializeDefaults.js';
 import type {

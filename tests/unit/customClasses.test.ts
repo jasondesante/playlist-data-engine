@@ -17,10 +17,10 @@ import {
     getClassData,
     getClassSpellList,
     getSpellSlotsForClass,
-    getClassStartingEquipment,
     CLASS_DATA,
     ALL_CLASSES
 } from '../../src/utils/constants.js';
+import { getClassStartingEquipment } from '../../src/utils/equipmentConstants.js';
 import { Class, asClass, DEFAULT_CLASSES } from '../../src/core/types/Character.js';
 
 describe('Custom Classes', () => {

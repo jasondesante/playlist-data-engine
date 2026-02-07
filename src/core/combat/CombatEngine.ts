@@ -15,7 +15,7 @@ import type { EnvironmentalContext } from '../types/Progression';
 import { InitiativeRoller } from './InitiativeRoller';
 import { AttackResolver } from './AttackResolver';
 import { SpellCaster } from './SpellCaster';
-import { EQUIPMENT_DATABASE } from '../../utils/constants.js';
+import { DEFAULT_EQUIPMENT } from '../../utils/equipmentConstants.js';
 import { SeededRNG } from '../../utils/random.js';
 
 /**
@@ -223,11 +223,11 @@ export class CombatEngine {
 
   /**
    * Build an Attack object from a weapon name
-   * Looks up weapon data from EQUIPMENT_DATABASE and constructs proper Attack
+   * Looks up weapon data from DEFAULT_EQUIPMENT and constructs proper Attack
    * Uses character's stats to calculate attack bonus
    */
   private buildAttackFromWeapon(weaponName: string, character: CharacterSheet): Attack {
-    const weaponData = EQUIPMENT_DATABASE[weaponName];
+    const weaponData = DEFAULT_EQUIPMENT[weaponName];
 
     if (!weaponData) {
       throw new Error(`Weapon "${weaponName}" not found in equipment database`);

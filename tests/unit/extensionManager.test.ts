@@ -11,7 +11,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ExtensionManager, type ExtensionCategory } from '../../src/core/extensions/ExtensionManager.js';
-import { SPELL_DATABASE, EQUIPMENT_DATABASE, ALL_RACES, ALL_CLASSES, DEFAULT_RACE_DATA_ARRAY } from '../../src/utils/constants.js';
+import { SPELL_DATABASE, ALL_RACES, ALL_CLASSES, DEFAULT_RACE_DATA_ARRAY } from '../../src/utils/constants.js';
+import { DEFAULT_EQUIPMENT } from '../../src/utils/equipmentConstants.js';
 
 describe('ExtensionManager', () => {
     let manager: ExtensionManager;
@@ -22,7 +23,7 @@ describe('ExtensionManager', () => {
         manager = new ExtensionManager() as ExtensionManager; // Access private constructor for testing
 
         // Initialize with some default data for testing
-        manager.initializeDefaults('equipment', Object.values(EQUIPMENT_DATABASE));
+        manager.initializeDefaults('equipment', Object.values(DEFAULT_EQUIPMENT));
         manager.initializeDefaults('spells', Object.values(SPELL_DATABASE));
         manager.initializeDefaults('races', [...ALL_RACES]);
         manager.initializeDefaults('races.data', [...DEFAULT_RACE_DATA_ARRAY]);
@@ -86,7 +87,7 @@ describe('ExtensionManager', () => {
             manager.register('equipment', customEquipment);
 
             const merged = manager.get('equipment');
-            expect(merged.length).toBeGreaterThan(Object.values(EQUIPMENT_DATABASE).length);
+            expect(merged.length).toBeGreaterThan(Object.values(DEFAULT_EQUIPMENT).length);
             expect(merged.some((e: { name: string }) => e.name === 'Dragon Sword')).toBe(true);
             expect(merged.some((e: { name: string }) => e.name === 'Magic Shield')).toBe(true);
         });
@@ -295,7 +296,7 @@ describe('ExtensionManager', () => {
 
             expect(manager.hasCustomData('equipment')).toBe(false);
             const merged = manager.get('equipment');
-            expect(merged).toEqual(Object.values(EQUIPMENT_DATABASE));
+            expect(merged).toEqual(Object.values(DEFAULT_EQUIPMENT));
         });
 
         it('should reset all categories', () => {
@@ -598,7 +599,7 @@ describe('ExtensionManager', () => {
             manager.register('equipment', []);
 
             const merged = manager.get('equipment');
-            expect(merged).toEqual(Object.values(EQUIPMENT_DATABASE));
+            expect(merged).toEqual(Object.values(DEFAULT_EQUIPMENT));
         });
 
         it('should handle registering the same category twice', () => {

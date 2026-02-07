@@ -412,17 +412,27 @@ export {
     SPELL_DATABASE,
     CLASS_SPELL_LISTS,
     SPELL_SLOTS_BY_CLASS,
-    CLASS_STARTING_EQUIPMENT,
-    EQUIPMENT_DATABASE,
     MASTERY_THRESHOLD,
     MASTERY_BONUS_XP,
     getRaceData,
     getRaceDataAsync,
     getClassData,
     getClassSpellList,
-    getSpellSlotsForClass,
-    getClassStartingEquipment
+    getSpellSlotsForClass
 } from './utils/constants.js';
+
+// ============================================================================
+// EQUIPMENT CONSTANTS
+// ============================================================================
+
+export {
+    DEFAULT_EQUIPMENT,
+    CLASS_STARTING_EQUIPMENT,
+    getClassStartingEquipment,
+    MAGIC_ITEMS,
+    ITEM_CREATION_TEMPLATES,
+    ENCHANTMENT_LIBRARY
+} from './utils/equipmentConstants.js';
 
 // ============================================================================
 // ENCHANTMENT & CURSE LIBRARY
