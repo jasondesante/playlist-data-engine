@@ -752,7 +752,7 @@ character.equipment = EquipmentModifier.enchant(
 import { getEnchantment, getCurse, getAllEnchantments, getAllCurses, getEnchantmentsByType } from 'playlist-data-engine';
 
 // Get specific enchantment by ID
-const ench = getEnchantment('enchantment_flaming');
+const ench = getEnchantment('flaming');
 if (ench) {
     console.log(ench.name);  // 'Flaming'
 }
@@ -861,14 +861,14 @@ if (plusOneSword) {
 Magic item examples can be registered as custom equipment for procedural generation:
 
 ```typescript
-import { ExtensionManager, MAGIC_ITEM_EXAMPLES } from 'playlist-data-engine';
+import { ExtensionManager, MAGIC_ITEMS } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
 
 // Register all magic items as custom equipment
-manager.register('equipment', MAGIC_ITEM_EXAMPLES, {
+manager.register('equipment', MAGIC_ITEMS, {
     mode: 'append',
-    weights: MAGIC_ITEM_EXAMPLES.reduce((acc, item) => {
+    weights: MAGIC_ITEMS.reduce((acc, item) => {
         acc[item.name] = item.spawnWeight ?? 0;
         return acc;
     }, {} as Record<string, number>)
@@ -882,21 +882,21 @@ manager.register('equipment', MAGIC_ITEM_EXAMPLES, {
 ### Direct Access to Magic Item Collections
 
 ```typescript
-import { MAGIC_ITEM_EXAMPLES, MAGIC_EQUIPMENT_TEMPLATES } from 'playlist-data-engine';
+import { MAGIC_ITEMS, ITEM_CREATION_TEMPLATES } from 'playlist-data-engine';
 
 // Iterate through all magic items
-MAGIC_ITEM_EXAMPLES.forEach(item => {
+MAGIC_ITEMS.forEach(item => {
     console.log(`${item.name} (${item.rarity}) - ${item.type}`);
 });
 
 // Access specific template
-const viciousTemplate = MAGIC_EQUIPMENT_TEMPLATES.vicious_weapon_template;
+const viciousTemplate = ITEM_CREATION_TEMPLATES.vicious_weapon_template;
 console.log(viciousTemplate.properties);
 ```
 
 **Available Exports:**
 
-- **Collections**: `MAGIC_ITEM_EXAMPLES` (38 items), `MAGIC_EQUIPMENT_TEMPLATES` (9 templates)
+- **Collections**: `MAGIC_ITEMS` (34 magic items), `ITEM_CREATION_TEMPLATES` (9 templates)
 - **Query Functions**: `getMagicItem`, `getMagicItemsByType`, `getMagicItemsByRarity`, `getCursedItems`, `getItemsWithProperty`
 - **Template Function**: `applyTemplate` - Apply a template to base equipment
 

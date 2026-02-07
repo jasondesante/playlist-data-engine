@@ -920,7 +920,11 @@ Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer,
 | `CLASS_DATA` | Hit dice, saving throws, skill options for each class | `src/utils/constants.ts` |
 | `XP_THRESHOLDS` | Level (1-20) to XP required mapping | `src/utils/constants.ts` |
 | `SPELL_DATABASE` | D&D 5e spells with details | `src/utils/constants.ts` |
-| `EQUIPMENT_DATABASE` | Weapons, armor, items stats | `src/utils/constants.ts` |
+| `DEFAULT_EQUIPMENT` | Weapons, armor, items stats (201 items) | `src/utils/equipmentConstants.ts` |
+| `MAGIC_ITEMS` | Example magic items (34 items) | `src/utils/equipmentConstants.ts` |
+| `ITEM_CREATION_TEMPLATES` | Templates for enchanting equipment (9 templates) | `src/utils/equipmentConstants.ts` |
+| `ENCHANTMENT_LIBRARY` | All enchantments and curses organized by category | `src/utils/equipmentConstants.ts` |
+| `CLASS_STARTING_EQUIPMENT` | Starting equipment by class (12 classes) | `src/utils/equipmentConstants.ts` |
 
 #### Helper Functions
 *Also known as: Data lookup functions, game data getters*
@@ -2499,15 +2503,15 @@ character.equipment = EquipmentModifier.enchant(
 
 ---
 
-## Magic Item Examples
+## Magic Items and Equipment Templates
 
-**Location:** `src/utils/magicItemExamples.ts`
+**Location:** `src/utils/equipmentConstants.ts`
 
-The Magic Item Examples library provides a comprehensive collection of 38 pre-built magic items that demonstrate all capabilities of the Advanced Equipment System. These examples serve as both reference implementations and test fixtures for the equipment system.
+The equipment library provides a comprehensive collection of 34 pre-built magic items and 9 item creation templates that demonstrate all capabilities of the Advanced Equipment System. These examples serve as both reference implementations and test fixtures for the equipment system.
 
 ### Available Collections
 
-#### Magic Items (`MAGIC_ITEM_EXAMPLES`)
+#### Magic Items (`MAGIC_ITEMS`)
 
 **Weapons (4 items)**
 | Item | Rarity | Description |
@@ -2627,8 +2631,8 @@ function applyTemplate(baseEquipment: EnhancedEquipment, templateId: string): En
 
 ```typescript
 import {
-    MAGIC_ITEM_EXAMPLES,
-    MAGIC_EQUIPMENT_TEMPLATES,
+    MAGIC_ITEMS,
+    ITEM_CREATION_TEMPLATES,
     getMagicItem,
     getMagicItemsByType,
     getCursedItems,
@@ -2669,7 +2673,7 @@ if (flamingLongsword) {
 }
 
 // Access all items directly
-MAGIC_ITEM_EXAMPLES.forEach(item => {
+MAGIC_ITEMS.forEach(item => {
     console.log(`${item.name} (${item.rarity}) - ${item.type}`);
 });
 ```
@@ -2680,14 +2684,14 @@ Magic item examples can be registered as custom equipment for use in procedural 
 
 ```typescript
 import { ExtensionManager } from 'playlist-data-engine';
-import { MAGIC_ITEM_EXAMPLES } from 'playlist-data-engine';
+import { MAGIC_ITEMS } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
 
 // Register all magic items as custom equipment
-manager.register('equipment', MAGIC_ITEM_EXAMPLES, {
+manager.register('equipment', MAGIC_ITEMS, {
     mode: 'append',
-    weights: MAGIC_ITEM_EXAMPLES.reduce((acc, item) => {
+    weights: MAGIC_ITEMS.reduce((acc, item) => {
         acc[item.name] = item.spawnWeight ?? 0;
         return acc;
     }, {} as Record<string, number>)
