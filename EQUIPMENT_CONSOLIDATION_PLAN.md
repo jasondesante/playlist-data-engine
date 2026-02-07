@@ -374,9 +374,9 @@ This is a **breaking API change** for external users who call `getEnchantment('e
 - [x] Verify types match `EnhancedEquipment` interface
 
 ### Task 12: Move ITEM_CREATION_TEMPLATES from magicItemExamples.ts
-- [ ] Copy `MAGIC_EQUIPMENT_TEMPLATES` from `src/utils/magicItemExamples.ts`
-- [ ] Rename to `ITEM_CREATION_TEMPLATES` (more descriptive than ENCHANTMENT_TEMPLATES)
-- [ ] Ensure all 11 templates are included:
+- [x] Copy `MAGIC_EQUIPMENT_TEMPLATES` from `src/utils/magicItemExamples.ts`
+- [x] Rename to `ITEM_CREATION_TEMPLATES` (more descriptive than ENCHANTMENT_TEMPLATES)
+- [x] Ensure all 9 templates are included:
   - `plus_one_weapon`, `plus_two_weapon`, `plus_three_weapon`
   - `flaming_weapon_template`, `frost_weapon_template`, `shocking_weapon_template`
   - `vicious_weapon_template`
