@@ -77,56 +77,272 @@ This plan consolidates all equipment-related constants into a single file and co
 **Goal**: Ensure moving `CLASS_STARTING_EQUIPMENT` won't break anything. Thoroughly investigate all usages.
 
 ### Task 1: Identify all files using CLASS_STARTING_EQUIPMENT
-- [ ] Search codebase for all imports of `CLASS_STARTING_EQUIPMENT`
-- [ ] Search for all imports of `getClassStartingEquipment` function
-- [ ] Document every file that references these exports
-- [ ] Check for any string-based references (like dynamic property access)
+- [x] Search codebase for all imports of `CLASS_STARTING_EQUIPMENT`
+- [x] Search for all imports of `getClassStartingEquipment` function
+- [x] Document every file that references these exports
+- [x] Check for any string-based references (like dynamic property access)
+
+**Files found using CLASS_STARTING_EQUIPMENT:**
+1. `src/utils/constants.ts` - Definition (lines 1419-1484, ~65 lines)
+2. `src/core/generation/EquipmentGenerator.ts` - Import and usage (line 11)
+3. `tests/unit/equipmentGenerator.test.ts` - Import and usage (line 9)
+4. `src/index.ts` - Re-export (line 415)
+
+**Files found using getClassStartingEquipment:**
+1. `src/utils/constants.ts` - Definition (lines 1625-1656)
+2. `src/core/generation/EquipmentGenerator.ts` - Usage (line 116)
+3. `src/index.ts` - Re-export (line 424)
+4. `tests/documentation/examples-compilation.test.ts` - Import and usage (line 27, 514-515)
+5. `specs/001-core-engine/SPEC.md` - Documentation (line 107)
+6. `DATA_ENGINE_REFERENCE.md` - Documentation (line 938)
+7. `docs/EXTENSIBILITY_GUIDE.md` - Documentation (line 2522-2529)
+8. `docs/CUSTOM_CONTENT.md` - Documentation (line 498-506)
+9. `tests/integration/part4.templateClassSystem.integration.test.ts` - Import and usage (line 16, 275)
+10. `tests/integration/customClasses.integration.test.ts` - Import and usage (line 19, 299)
+11. `tests/unit/customClasses.test.ts` - Import and usage (line 20, 454, 484, 1030)
+
+**Dynamic/ExtensionManager category references (not direct imports):**
+- `classStartingEquipment.${ClassName}` pattern used in ExtensionManager
+- Found in: tests (part4.templateClassSystem, customClasses), documentation (EXTENSIBILITY_GUIDE, CUSTOM_CONTENT)
+- These are string-based category registrations, not direct imports
 
 ### Task 2: Analyze CLASS_STARTING_EQUIPMENT usage patterns
-- [ ] Read `src/core/generation/EquipmentGenerator.ts` to understand how it's used
-- [ ] Check if `CLASS_STARTING_EQUIPMENT` is used during character creation
-- [ ] Check if it's used during character level-up
-- [ ] Check if it's used in any serialization/deserialization
-- [ ] Look for any JSON schema that references this structure
+- [x] Read `src/core/generation/EquipmentGenerator.ts` to understand how it's used
+- [x] Check if `CLASS_STARTING_EQUIPMENT` is used during character creation
+- [x] Check if it's used during character level-up
+- [x] Check if it's used in any serialization/deserialization
+- [x] Look for any JSON schema that references this structure
+
+**Usage Analysis:**
+
+1. **Primary Usage** (`EquipmentGenerator.getStartingEquipment()`):
+   - Calls `getClassStartingEquipment(characterClass)` helper function
+   - Helper first checks `CLASS_STARTING_EQUIPMENT` constant (default classes)
+   - Then checks ExtensionManager for `classStartingEquipment.${ClassName}` (custom classes)
+   - Returns `{ weapons: string[], armor: string[], items: string[] }` structure
+
+2. **Character Creation**:
+   - Used via `EquipmentGenerator.initializeEquipment()` during character creation
+   - Sets up initial inventory with weapons, armor, items
+   - Adds ammunition programmatically (Arrows, Bolts) based on class weapons
+
+3. **Level-Up**:
+   - NOT used during level-up (confirmed by code review)
+   - Starting equipment is only assigned at character creation
+
+4. **Serialization/Deserialization**:
+   - NOT used in any serialization (confirmed by code review)
+   - Character sheets store equipment as `CharacterEquipment` type (weapons/armor/items arrays)
+   - No reference back to `CLASS_STARTING_EQUIPMENT` after creation
+
+5. **Structure**:
+   ```typescript
+   Record<string, {
+       weapons: string[];
+       armor: string[];
+       items: string[];
+   }>
+   ```
+   - 12 default classes: Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard
+   - Each class has arrays of equipment item names (strings)
 
 ### Task 3: Check for related type dependencies
-- [ ] Search for TypeScript types that reference the class starting equipment structure
-- [ ] Check if any interfaces expect the specific property names (`weapons`, `armor`, `items`)
-- [ ] Look for any validation schemas that validate this structure
-- [ ] Check for any documentation that describes the structure location
+- [x] Search for TypeScript types that reference the class starting equipment structure
+- [x] Check if any interfaces expect the specific property names (`weapons`, `armor`, `items`)
+- [x] Look for any validation schemas that validate this structure
+- [x] Check for any documentation that describes the structure location
+
+**Type Dependencies Found:**
+
+1. **Internal Interface** (`ClassStartingEquipmentData`):
+   - Location: `src/utils/constants.ts:1595`
+   - Scope: Internal (not exported), used only by `getClassStartingEquipment()` function
+   - Properties: `class: string`, `weapons: string[]`, `armor: string[]`, `items: string[]`
+   - Used for ExtensionManager custom class equipment registration
+
+2. **Structure is inline/anonymous**:
+   - `CLASS_STARTING_EQUIPMENT` type: `Record<string, { weapons: string[], armor: string[], items: string[] }>`
+   - `getClassStartingEquipment()` return type: `{ weapons: string[], armor: string[], items: string[] } | undefined`
+   - No named exported type - structure is defined inline
+
+3. **No validation schemas found**:
+   - No JSON schemas or validation objects that reference this structure
+
+4. **Documentation**:
+   - `DATA_ENGINE_REFERENCE.md:1223` - Documents the function signature
+   - `docs/EXTENSIBILITY_GUIDE.md` - Documents how to register custom equipment
+   - `docs/CUSTOM_CONTENT.md` - Documents the pattern
+
+**Assessment**: Safe to move. The structure is simple (Record with 3 string arrays), no exported types reference it, and the helper function will move with it.
 
 ### Task 4: Check test file dependencies
-- [ ] Review all test files that use `CLASS_STARTING_EQUIPMENT`
-- [ ] Check if any tests mock or stub this constant
-- [ ] Check if any tests rely on the specific location in `constants.ts`
-- [ ] Document any test fixtures that need updating
+- [x] Review all test files that use `CLASS_STARTING_EQUIPMENT`
+- [x] Check if any tests mock or stub this constant
+- [x] Check if any tests rely on the specific location in `constants.ts`
+- [x] Document any test fixtures that need updating
+
+**Test Files Analysis:**
+
+1. **`tests/unit/equipmentGenerator.test.ts`**:
+   - Imports: `CLASS_STARTING_EQUIPMENT`, `EQUIPMENT_DATABASE` from `constants.js`
+   - Usage: Direct comparison tests (line 37, 156), validates equipment structure
+   - Mocking: No mocks or stubs - uses actual constant
+   - Safe to update: Yes - just change import path
+
+2. **`tests/documentation/examples-compilation.test.ts`**:
+   - Imports: `getClassStartingEquipment` from `constants.js`
+   - Usage: Compilability test for documentation examples
+   - Safe to update: Yes - just change import path
+
+3. **`tests/integration/part4.templateClassSystem.integration.test.ts`**:
+   - Imports: `getClassStartingEquipment` from `constants.js`
+   - Usage: Tests custom class equipment registration via ExtensionManager
+   - Safe to update: Yes - just change import path
+
+4. **`tests/integration/customClasses.integration.test.ts`**:
+   - Imports: `getClassStartingEquipment` from `constants.js`
+   - Usage: Tests custom class equipment registration
+   - Safe to update: Yes - just change import path
+
+5. **`tests/unit/customClasses.test.ts`**:
+   - Imports: `getClassStartingEquipment` from `constants.js`
+   - Usage: Tests custom class functionality (lines 454, 484, 1030)
+   - Safe to update: Yes - just change import path
+
+**No hardcoded paths or location dependencies found** - all imports use module resolution, not file paths.
 
 ### Task 5: Check for circular dependency risks
-- [ ] Verify `equipmentConstants.ts` won't create circular imports
-- [ ] Check if `constants.ts` imports from equipment-related files
-- [ ] Ensure import order won't cause initialization issues
-- [ ] Test import chain manually if needed
+- [x] Verify `equipmentConstants.ts` won't create circular imports
+- [x] Check if `constants.ts` imports from equipment-related files
+- [x] Ensure import order won't cause initialization issues
+- [x] Test import chain manually if needed
+
+**Circular Dependency Analysis:**
+
+1. **`constants.ts` imports**:
+   - Types from: `Character.ts`, `SpellTypes.ts`, `Equipment.ts`, `ExtensionManager.ts`
+   - Does NOT import from: `equipmentConstants.ts` (doesn't exist yet), `enchantmentLibrary.ts`, `magicItemExamples.ts`
+   - ✅ Safe - no existing imports from equipment files
+
+2. **Proposed `equipmentConstants.ts` imports**:
+   - Will need: `Equipment` types from `core/types/Equipment.ts`
+   - May need: `ExtensionManager` for helper function `getClassStartingEquipment()`
+   - ✅ Safe - these are type/utility imports, not circular
+
+3. **Import Chain**:
+   - `constants.ts` ← `types/Equipment.ts` (types only)
+   - `equipmentConstants.ts` ← `types/Equipment.ts` (types only)
+   - `equipmentConstants.ts` ← `extensions/ExtensionManager.ts` (for helper)
+   - ✅ No circular dependencies - all imports flow from types/core to constants
+
+**Conclusion**: Creating `equipmentConstants.ts` will NOT create circular dependencies.
 
 ### Task 6: Document findings and risks
-- [ ] Create summary of all files that will be affected
-- [ ] Identify any high-risk changes
-- [ ] Document any assumptions about safe moves
-- [ ] Update this plan if any new files are discovered
+- [x] Create summary of all files that will be affected
+- [x] Identify any high-risk changes
+- [x] Document any assumptions about safe moves
+- [x] Update this plan if any new files are discovered
+
+**Summary of Affected Files:**
+
+**Core Files (4):**
+1. `src/utils/constants.ts` - Remove constant and function definition
+2. `src/core/generation/EquipmentGenerator.ts` - Update import
+3. `src/index.ts` - Update re-export
+4. `src/utils/equipmentConstants.ts` - NEW FILE - Add constant and function
+
+**Test Files (5):**
+5. `tests/unit/equipmentGenerator.test.ts` - Update import
+6. `tests/documentation/examples-compilation.test.ts` - Update import
+7. `tests/integration/part4.templateClassSystem.integration.test.ts` - Update import
+8. `tests/integration/customClasses.integration.test.ts` - Update import
+9. `tests/unit/customClasses.test.ts` - Update import
+
+**Documentation Files (4):**
+10. `specs/001-core-engine/SPEC.md` - Update location reference
+11. `DATA_ENGINE_REFERENCE.md` - Update location reference
+12. `docs/EXTENSIBILITY_GUIDE.md` - Update location reference
+13. `docs/CUSTOM_CONTENT.md` - Update location reference
+
+**Risk Assessment:**
+- **Overall Risk**: LOW
+- **No circular dependencies** (verified)
+- **No runtime lookups by name** (only ExtensionManager category strings)
+- **Simple import path changes** (no structural changes to data)
+- **No type changes** (structure remains identical)
+
+**High-Risk Changes**: NONE IDENTIFIED
+
+**Assumptions:**
+1. Import statements can be updated with find-replace (verified pattern is consistent)
+2. The `getClassStartingEquipment()` function can move with the constant
+3. `ClassStartingEquipmentData` interface can move or stay (internal, not exported)
+4. ExtensionManager category strings (`classStartingEquipment.${ClassName}`) are unaffected
 
 ### Task 7: Verify no runtime lookups by name
-- [ ] Search for any code that accesses constants via string keys
-- [ ] Check ExtensionManager for any registration of this data
-- [ ] Look for any configuration files that reference the path
-- [ ] Check for any dynamic imports that might break
+- [x] Search for any code that accesses constants via string keys
+- [x] Check ExtensionManager for any registration of this data
+- [x] Look for any configuration files that reference the path
+- [x] Check for any dynamic imports that might break
+
+**Runtime Lookup Analysis:**
+
+1. **No string-key access to CLASS_STARTING_EQUIPMENT**:
+   - All code uses direct import and object access: `CLASS_STARTING_EQUIPMENT[className]`
+   - No `global['CLASS_STARTING_EQUIPMENT']` or similar patterns
+   - No `require('constants').CLASS_STARTING_EQUIPMENT` string-based requires
+
+2. **ExtensionManager uses category pattern, not constant name**:
+   - Pattern: `manager.register('classStartingEquipment.${ClassName}', data)`
+   - This is a registration category, NOT a reference to the constant location
+   - The `getClassStartingEquipment()` function reads from these categories
+   - ✅ Safe - categories are independent of file location
+
+3. **No configuration files reference the path**:
+   - No `.json` or `.yaml` config files found with references
+   - No `tsconfig` paths affecting this constant
+
+4. **No dynamic imports**:
+   - No `import('constants')` or `require('./constants')` patterns
+   - All imports are static ES6 imports
+
+**Conclusion**: No runtime lookups by file path or constant name. Safe to move.
 
 ### Task 8: Research enchantment/curse ID references
 **Goal**: Check if we can safely simplify IDs by removing `enchantment_` and `curse_` prefixes.
-- [ ] Search codebase for strings like `'enchantment_plus_one'`
-- [ ] Search codebase for strings like `'curse_berserker'`
-- [ ] Check if any saved data (characters, saves, configs) uses these IDs
-- [ ] Check if any tests reference these IDs directly
-- [ ] If found: Document them and decide if we need to maintain backward compatibility
-- [ ] If not found: Safe to simplify IDs (see Task 13 for new ID naming)
+- [x] Search codebase for strings like `'enchantment_plus_one'`
+- [x] Search codebase for strings like `'curse_berserker'`
+- [x] Check if any saved data (characters, saves, configs) uses these IDs
+- [x] Check if any tests reference these IDs directly
+- [x] If found: Document them and decide if we need to maintain backward compatibility
+- [x] If not found: Safe to simplify IDs (see Task 13 for new ID naming)
+
+**ID Reference Analysis:**
+
+**Found in Documentation (BREAKING - needs update):**
+1. `docs/EQUIPMENT_SYSTEM.md:755` - Uses `getEnchantment('enchantment_flaming')`
+   - This is user-facing documentation that MUST be updated if we simplify IDs
+
+**Found in Source Code (Internal - will be updated automatically):**
+2. `src/utils/enchantmentLibrary.ts` - All enchantment ID definitions (27 IDs with `enchantment_` prefix)
+3. `src/utils/enchantmentLibrary.ts` - All curse ID definitions (17 IDs with `curse_` prefix)
+4. `src/utils/magicItemExamples.ts` - Uses `target: 'curse_attunement'` (3 occurrences)
+
+**Found in Reference Documentation:**
+5. `DATA_ENGINE_REFERENCE.md:2452` - Documents `getEnchantment()` function signature
+6. `DATA_ENGINE_REFERENCE.md:2455` - Documents `getCurse()` function signature
+
+**No Saved Data References Found:**
+- No character sheets, save files, or config files use these IDs
+- IDs are only used in runtime lookup via `getEnchantment()` and `getCurse()`
+
+**Decision: SAFE to simplify IDs with documentation update**
+
+Since there are no saved data dependencies, we can simplify the IDs by removing the `enchantment_` and `curse_` prefixes. We just need to update:
+1. `docs/EQUIPMENT_SYSTEM.md` - Update example from `'enchantment_flaming'` to `'flaming'`
+2. The plan itself already has the new ID scheme documented
+
+This is a **breaking API change** for external users who call `getEnchantment('enchantment_flaming')`, but since the package is still in development and no external data depends on these IDs, it's acceptable.
 
 ---
 
@@ -610,9 +826,9 @@ ENCHANTMENT_LIBRARY = {
 ## Completion Criteria
 
 **Phase 0 (Research):**
-- [ ] All files using `CLASS_STARTING_EQUIPMENT` identified
-- [ ] Usage patterns documented
-- [ ] No circular dependencies or runtime lookups found
+- [x] All files using `CLASS_STARTING_EQUIPMENT` identified
+- [x] Usage patterns documented
+- [x] No circular dependencies or runtime lookups found
 
 **Phase 1 (Create Constants File):**
 - [ ] All equipment constants in `equipmentConstants.ts`
