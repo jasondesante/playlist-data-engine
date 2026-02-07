@@ -468,8 +468,7 @@ Visual appearance details for a character.
     secondary_color?: string;
     accent_color?: string;
     aura_color?: string;
-}
-```
+
 
 ### EnvironmentalContext
 
