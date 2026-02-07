@@ -10,17 +10,28 @@ This plan consolidates all equipment-related constants into a single file and co
 
 ## User Decisions Applied
 
-1. **Enchantment Naming**: Remove redundant prefixes
-   - `ENCHANTMENT_PLUS_ONE` → `PLUS_ONE`
-   - Access: `ENCHANTMENT_LIBRARY.ENCHANTMENTS.PLUS_ONE` or `ENCHANTMENT_LIBRARY.CURSES.BERSERKER`
+1. **Enchantment Structure**: Preserve the organized category structure
+   - `WEAPON_ENCHANTMENTS` - individual weapon enchantments
+   - `ARMOR_ENCHANTMENTS` - individual armor enchantments
+   - `RESISTANCE_ENCHANTMENTS` - individual resistance enchantments
+   - `COMBO_ENCHANTMENTS` - special multi-effect enchantments (Holy Avenger, etc.)
+   - `CURSES` - all curses
+   - `ALL_ENCHANTMENTS` - flattened combination of WEAPON + ARMOR + RESISTANCE + COMBO
+   - Rationale: Easier to flatten structured data than to reconstruct structure from flat data
 
-2. **Template Naming**: Use `ITEM_CREATION_TEMPLATES` (more descriptive than `ENCHANTMENT_TEMPLATES`)
+2. **Enchantment Naming**: Remove redundant prefixes
+   - **Property names** (for direct access): `ENCHANTMENT_PLUS_ONE` → `plusOne`
+   - **IDs** (for lookup, if Task 8 finds no conflicts): `'enchantment_plus_one'` → `'plus_one'`
+   - Access: `ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS.plusOne` or `ENCHANTMENT_LIBRARY.ALL_ENCHANTMENTS.plusOne`
+   - Lookup: `getEnchantment('plus_one')` - simpler without the `enchantment_` prefix
 
-3. **CLASS_STARTING_EQUIPMENT**: Move to equipmentConstants.ts, but add thorough research phase first
+3. **Template Naming**: Use `ITEM_CREATION_TEMPLATES` (more descriptive than `ENCHANTMENT_TEMPLATES`)
 
-4. **EnchantmentLibrary Class API**: Use existing functions only, no static properties for direct access
-   - Lookup: `EnchantmentLibrary.getEnchantment('PLUS_ONE')`
-   - Direct access: Import `ENCHANTMENT_LIBRARY` from equipmentConstants
+4. **CLASS_STARTING_EQUIPMENT**: Move to equipmentConstants.ts, but add thorough research phase first
+
+5. **EnchantmentLibrary Class API**: Use existing functions only, no static properties for direct access
+   - Lookup by simplified ID: `EnchantmentLibrary.getEnchantment('plus_one')` - searches ALL_ENCHANTMENTS
+   - Direct access: Import `ENCHANTMENT_LIBRARY` from equipmentConstants and access structured categories
 
 ---
 
@@ -108,6 +119,15 @@ This plan consolidates all equipment-related constants into a single file and co
 - [ ] Look for any configuration files that reference the path
 - [ ] Check for any dynamic imports that might break
 
+### Task 8: Research enchantment/curse ID references
+**Goal**: Check if we can safely simplify IDs by removing `enchantment_` and `curse_` prefixes.
+- [ ] Search codebase for strings like `'enchantment_plus_one'`
+- [ ] Search codebase for strings like `'curse_berserker'`
+- [ ] Check if any saved data (characters, saves, configs) uses these IDs
+- [ ] Check if any tests reference these IDs directly
+- [ ] If found: Document them and decide if we need to maintain backward compatibility
+- [ ] If not found: Safe to simplify IDs (see Task 13 for new ID naming)
+
 ---
 
 ## Phase 1: Create Consolidated Constants File
@@ -148,86 +168,106 @@ This plan consolidates all equipment-related constants into a single file and co
 
 ### Task 13: Create ENCHANTMENT_LIBRARY sub-object with renamed constants
 
-**IMPORTANT**: Remove redundant prefixes from constant names for cleaner access:
-- `ENCHANTMENT_PLUS_ONE` → `PLUS_ONE` (access: `ENCHANTMENT_LIBRARY.ENCHANTMENTS.PLUS_ONE`)
-- `CURSE_BERSERKER` → `BERSERKER` (access: `ENCHANTMENT_LIBRARY.CURSES.BERSERKER`)
+**IMPORTANT**: Two types of renaming to do:
 
-- [ ] Create nested object structure:
-  ```typescript
-  export const ENCHANTMENT_LIBRARY = {
-    ENCHANTMENTS: { ... },
-    CURSES: { ... },
-    COLLECTIONS: { ... }
-  };
-  ```
+1. **Property names** (for access via `ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS.xyz`):
+   - Remove redundant prefixes, use camelCase
+   - Example: `ENCHANTMENT_PLUS_ONE` → `plusOne`
 
-- [ ] Move and rename individual enchantment constants into `ENCHANTMENT_LIBRARY.ENCHANTMENTS`:
+2. **IDs inside each enchantment object** (for lookup via `getEnchantment(id)`):
+   - Remove `enchantment_` and `curse_` prefixes (redundant with `ENCHANTMENT_LIBRARY` namespace)
+   - Only if Task 8 finds no breaking references
+   - Example: `id: 'enchantment_plus_one'` → `id: 'plus_one'`
+
+**Structure to create:**
+```typescript
+export const ENCHANTMENT_LIBRARY = {
+    WEAPON_ENCHANTMENTS: { ... },   // Individual weapon enchantments
+    ARMOR_ENCHANTMENTS: { ... },    // Individual armor enchantments
+    RESISTANCE_ENCHANTMENTS: { ... }, // Individual resistance enchantments
+    COMBO_ENCHANTMENTS: { ... },    // Special multi-effect enchantments (Holy Avenger, etc.)
+    CURSES: { ... },                // All curses
+    ALL_ENCHANTMENTS: { ... }       // Flattened: WEAPON + ARMOR + RESISTANCE + COMBO
+};
+```
+
+- [ ] For each enchantment moved, update BOTH the property name AND the internal ID:
+  - [ ] Property: `ENCHANTMENT_PLUS_ONE` → `plusOne`
+  - [ ] ID: `id: 'enchantment_plus_one'` → `id: 'plus_one'` (if Task 8 confirms safe)
+
+- [ ] Move and rename individual weapon enchantment constants into `ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS` (update both property name AND internal ID):
   - [ ] Enhancement enchantments:
-    - [ ] `ENCHANTMENT_PLUS_ONE` → `PLUS_ONE`
-    - [ ] `ENCHANTMENT_PLUS_ONE_ARMOR` → `PLUS_ONE_ARMOR`
-    - [ ] `ENCHANTMENT_PLUS_TWO` → `PLUS_TWO`
-    - [ ] `ENCHANTMENT_PLUS_TWO_ARMOR` → `PLUS_TWO_ARMOR`
-    - [ ] `ENCHANTMENT_PLUS_THREE` → `PLUS_THREE`
+    - [ ] `ENCHANTMENT_PLUS_ONE` → `plusOne` (ID: `'enchantment_plus_one'` → `'plus_one'`)
+    - [ ] `ENCHANTMENT_PLUS_TWO` → `plusTwo` (ID: `'enchantment_plus_two'` → `'plus_two'`)
+    - [ ] `ENCHANTMENT_PLUS_THREE` → `plusThree` (ID: `'enchantment_plus_three'` → `'plus_three'`)
   - [ ] Elemental enchantments:
-    - [ ] `ENCHANTMENT_FLAMING` → `FLAMING`
-    - [ ] `ENCHANTMENT_FROST` → `FROST`
-    - [ ] `ENCHANTMENT_SHOCKING` → `SHOCKING`
-    - [ ] `ENCHANTMENT_THUNDERING` → `THUNDERING`
-    - [ ] `ENCHANTMENT_ACIDIC` → `ACIDIC`
-    - [ ] `ENCHANTMENT_POISON` → `POISON`
-    - [ ] `ENCHANTMENT_HOLY` → `HOLY`
+    - [ ] `ENCHANTMENT_FLAMING` → `flaming` (ID: `'enchantment_flaming'` → `'flaming'`)
+    - [ ] `ENCHANTMENT_FROST` → `frost` (ID: `'enchantment_frost'` → `'frost'`)
+    - [ ] `ENCHANTMENT_SHOCKING` → `shocking` (ID: `'enchantment_shocking'` → `'shocking'`)
+    - [ ] `ENCHANTMENT_THUNDERING` → `thundering` (ID: `'enchantment_thundering'` → `'thundering'`)
+    - [ ] `ENCHANTMENT_ACIDIC` → `acidic` (ID: `'enchantment_acidic'` → `'acidic'`)
+    - [ ] `ENCHANTMENT_POISON` → `poison` (ID: `'enchantment_poison'` → `'poison'`)
+    - [ ] `ENCHANTMENT_HOLY` → `holy` (ID: `'enchantment_holy'` → `'holy'`)
   - [ ] Special weapon enchantments:
-    - [ ] `ENCHANTMENT_VAMPIRIC` → `VAMPIRIC`
-    - [ ] `ENCHANTMENT_VORPAL_EDGE` → `VORPAL_EDGE`
-    - [ ] `ENCHANTMENT_KEEN_EDGE` → `KEEN_EDGE`
-    - [ ] `ENCHANTMENT_MIGHTY` → `MIGHTY`
-    - [ ] `ENCHANTMENT_RETURNING` → `RETURNING`
-    - [ ] `ENCHANTMENT_LIFESTEALING` → `LIFESTEALING`
-  - [ ] Resistance enchantments:
-    - [ ] `ENCHANTMENT_FIRE_RESISTANCE` → `FIRE_RESISTANCE`
-    - [ ] `ENCHANTMENT_COLD_RESISTANCE` → `COLD_RESISTANCE`
-    - [ ] `ENCHANTMENT_LIGHTNING_RESISTANCE` → `LIGHTNING_RESISTANCE`
-    - [ ] `ENCHANTMENT_ACID_RESISTANCE` → `ACID_RESISTANCE`
-    - [ ] `ENCHANTMENT_POISON_RESISTANCE` → `POISON_RESISTANCE`
-    - [ ] `ENCHANTMENT_NECROTIC_RESISTANCE` → `NECROTIC_RESISTANCE`
-    - [ ] `ENCHANTMENT_RADIANT_RESISTANCE` → `RADIANT_RESISTANCE`
-    - [ ] `ENCHANTMENT_THUNDER_RESISTANCE` → `THUNDER_RESISTANCE`
-    - [ ] `ENCHANTMENT_ALL_RESISTANCE` → `ALL_RESISTANCE`
-  - [ ] Combo enchantments:
-    - [ ] `ENCHANTMENT_HOLY_AVENGER` → `HOLY_AVENGER`
-    - [ ] `ENCHANTMENT_DRAGON_SLAYER` → `DRAGON_SLAYER`
-    - [ ] `ENCHANTMENT_DEMON_HUNTER` → `DEMON_HUNTER`
-    - [ ] `ENCHANTMENT_UNDEAD_BANE` → `UNDEAD_BANE`
+    - [ ] `ENCHANTMENT_VAMPIRIC` → `vampiric` (ID: `'enchantment_vampiric'` → `'vampiric'`)
+    - [ ] `ENCHANTMENT_VORPAL_EDGE` → `vorpalEdge` (ID: `'enchantment_vorpal_edge'` → `'vorpal_edge'`)
+    - [ ] `ENCHANTMENT_KEEN_EDGE` → `keenEdge` (ID: `'enchantment_keen_edge'` → `'keen_edge'`)
+    - [ ] `ENCHANTMENT_MIGHTY` → `mighty` (ID: `'enchantment_mighty'` → `'mighty'`)
+    - [ ] `ENCHANTMENT_RETURNING` → `returning` (ID: `'enchantment_returning'` → `'returning'`)
+    - [ ] `ENCHANTMENT_LIFESTEALING` → `lifestealing` (ID: `'enchantment_lifestealing'` → `'lifestealing'`)
+
+- [ ] Move and rename individual armor enchantment constants into `ENCHANTMENT_LIBRARY.ARMOR_ENCHANTMENTS` (update both property name AND internal ID):
+  - [ ] `ENCHANTMENT_PLUS_ONE_ARMOR` → `plusOne` (ID: `'enchantment_plus_one_armor'` → `'plus_one_armor'`)
+  - [ ] `ENCHANTMENT_PLUS_TWO_ARMOR` → `plusTwo` (ID: `'enchantment_plus_two_armor'` → `'plus_two_armor'`)
+
+- [ ] Move and rename individual resistance enchantment constants into `ENCHANTMENT_LIBRARY.RESISTANCE_ENCHANTMENTS` (update both property name AND internal ID):
+  - [ ] `ENCHANTMENT_FIRE_RESISTANCE` → `fire` (ID: `'enchantment_fire_resistance'` → `'fire_resistance'`)
+  - [ ] `ENCHANTMENT_COLD_RESISTANCE` → `cold` (ID: `'enchantment_cold_resistance'` → `'cold_resistance'`)
+  - [ ] `ENCHANTMENT_LIGHTNING_RESISTANCE` → `lightning` (ID: `'enchantment_lightning_resistance'` → `'lightning_resistance'`)
+  - [ ] `ENCHANTMENT_ACID_RESISTANCE` → `acid` (ID: `'enchantment_acid_resistance'` → `'acid_resistance'`)
+  - [ ] `ENCHANTMENT_POISON_RESISTANCE` → `poison` (ID: `'enchantment_poison_resistance'` → `'poison_resistance'`)
+  - [ ] `ENCHANTMENT_NECROTIC_RESISTANCE` → `necrotic` (ID: `'enchantment_necrotic_resistance'` → `'necrotic_resistance'`)
+  - [ ] `ENCHANTMENT_RADIANT_RESISTANCE` → `radiant` (ID: `'enchantment_radiant_resistance'` → `'radiant_resistance'`)
+  - [ ] `ENCHANTMENT_THUNDER_RESISTANCE` → `thunder` (ID: `'enchantment_thunder_resistance'` → `'thunder_resistance'`)
+  - [ ] `ENCHANTMENT_ALL_RESISTANCE` → `all` (ID: `'enchantment_all_resistance'` → `'all_resistance'`)
+
+- [ ] Move and rename combo enchantments into `ENCHANTMENT_LIBRARY.COMBO_ENCHANTMENTS` (update both property name AND internal ID):
+  - [ ] `ENCHANTMENT_HOLY_AVENGER` → `holyAvenger` (ID: `'enchantment_holy_avenger'` → `'holy_avenger'`)
+  - [ ] `ENCHANTMENT_DRAGON_SLAYER` → `dragonSlayer` (ID: `'enchantment_dragon_slayer'` → `'dragon_slayer'`)
+  - [ ] `ENCHANTMENT_DEMON_HUNTER` → `demonHunter` (ID: `'enchantment_demon_hunter'` → `'demon_hunter'`)
+  - [ ] `ENCHANTMENT_UNDEAD_BANE` → `undeadBane` (ID: `'enchantment_undead_bane'` → `'undead_bane'`)
 
 - [ ] Move and rename curse constants into `ENCHANTMENT_LIBRARY.CURSES`:
-  - [ ] Penalty curses:
-    - [ ] `CURSE_MINUS_ONE` → `MINUS_ONE`
-    - [ ] `CURSE_MINUS_TWO` → `MINUS_TWO`
+  - [ ] Penalty curses (update both property name AND internal ID):
+    - [ ] `CURSE_MINUS_ONE` → `minusOne` (ID: `'curse_minus_one'` → `'minus_one'`)
+    - [ ] `CURSE_MINUS_TWO` → `minusTwo` (ID: `'curse_minus_two'` → `'minus_two'`)
   - [ ] Stat curses:
-    - [ ] `CURSE_WEAKNESS` → `WEAKNESS`
-    - [ ] `CURSE_FEEBLEMIND` → `FEEBLEMIND`
-    - [ ] `CURSE_CLUMSINESS` → `CLUMSINESS`
-    - [ ] `CURSE_FRAILTY` → `FRAILTY`
-    - [ ] `CURSE_FOOLISHNESS` → `FOOLISHNESS`
-    - [ ] `CURSE_REPULSIVENESS` → `REPULSIVENESS`
+    - [ ] `CURSE_WEAKNESS` → `weakness` (ID: `'curse_weakness'` → `'weakness'`)
+    - [ ] `CURSE_FEEBLEMIND` → `feeblemind` (ID: `'curse_feeblemind'` → `'feeblemind'`)
+    - [ ] `CURSE_CLUMSINESS` → `clumsiness` (ID: `'curse_clumsiness'` → `'clumsiness'`)
+    - [ ] `CURSE_FRAILTY` → `frailty` (ID: `'curse_frailty'` → `'frailty'`)
+    - [ ] `CURSE_FOOLISHNESS` → `foolishness` (ID: `'curse_foolishness'` → `'foolishness'`)
+    - [ ] `CURSE_REPULSIVENESS` → `repulsiveness` (ID: `'curse_repulsiveness'` → `'repulsiveness'`)
   - [ ] Vulnerability curses:
-    - [ ] `CURSE_FIRE_VULNERABILITY` → `FIRE_VULNERABILITY`
-    - [ ] `CURSE_COLD_VULNERABILITY` → `COLD_VULNERABILITY`
+    - [ ] `CURSE_FIRE_VULNERABILITY` → `fireVulnerability` (ID: `'curse_fire_vulnerability'` → `'fire_vulnerability'`)
+    - [ ] `CURSE_COLD_VULNERABILITY` → `coldVulnerability` (ID: `'curse_cold_vulnerability'` → `'cold_vulnerability'`)
   - [ ] Special curses:
-    - [ ] `CURSE_LIFESTEAL` → `LIFESTEAL`
-    - [ ] `CURSE_ATTUNEMENT` → `ATTUNEMENT`
-    - [ ] `CURSE_BERSERKER` → `BERSERKER`
-    - [ ] `CURSE_HEAVY_BURDEN` → `HEAVY_BURDEN`
-    - [ ] `CURSE_LIGHT_SENSITIVITY` → `LIGHT_SENSITIVITY`
-    - [ ] `CURSE_INVISIBILITY` → `INVISIBILITY`
-    - [ ] `CURSE_HALLUCINATIONS` → `HALLUCINATIONS`
-    - [ ] `CURSE_BLOOD_MONEY` → `BLOOD_MONEY`
+    - [ ] `CURSE_LIFESTEAL` → `lifesteal` (ID: `'curse_lifesteal'` → `'lifesteal'`)
+    - [ ] `CURSE_ATTUNEMENT` → `attunement` (ID: `'curse_attunement'` → `'attunement'`)
+    - [ ] `CURSE_BERSERKER` → `berserker` (ID: `'curse_berserker'` → `'berserker'`)
+    - [ ] `CURSE_HEAVY_BURDEN` → `heavyBurden` (ID: `'curse_heavy_burden'` → `'heavy_burden'`)
+    - [ ] `CURSE_LIGHT_SENSITIVITY` → `lightSensitivity` (ID: `'curse_light_sensitivity'` → `'light_sensitivity'`)
+    - [ ] `CURSE_INVISIBILITY` → `invisibility` (ID: `'curse_invisibility'` → `'invisibility'`)
+    - [ ] `CURSE_HALLUCINATIONS` → `hallucinations` (ID: `'curse_hallucinations'` → `'hallucinations'`)
+    - [ ] `CURSE_BLOOD_MONEY` → `bloodMoney` (ID: `'curse_blood_money'` → `'blood_money'`)
 
-- [ ] Move collection constants into `ENCHANTMENT_LIBRARY.COLLECTIONS`:
-  - [ ] `WEAPON_ENCHANTMENTS` (update to reference renamed constants)
-  - [ ] `ARMOR_ENCHANTMENTS` (update to reference renamed constants)
-  - [ ] `RESISTANCE_ENCHANTMENTS` (update to reference renamed constants)
-  - [ ] `ALL_ENCHANTMENTS` (update to reference renamed constants)
+- [ ] Create `ENCHANTMENT_LIBRARY.ALL_ENCHANTMENTS` as flattened combination:
+  - [ ] Use spread operator: `...WEAPON_ENCHANTMENTS`
+  - [ ] Use spread operator: `...ARMOR_ENCHANTMENTS`
+  - [ ] Use spread operator: `...RESISTANCE_ENCHANTMENTS`
+  - [ ] Use spread operator: `...COMBO_ENCHANTMENTS`
+  - [ ] This provides a flat object when you don't care about categories
+  - [ ] Preserves structured categories in the sub-objects above
 
 ### Task 14: Add named exports
 - [ ] Export `DEFAULT_EQUIPMENT`
@@ -337,20 +377,35 @@ This plan consolidates all equipment-related constants into a single file and co
 
 ### Task 26: Convert utility functions to static methods
 
-**IMPORTANT**: These functions now use renamed constants (e.g., `PLUS_ONE` not `ENCHANTMENT_PLUS_ONE`)
+**IMPORTANT**: These functions now use the structured ENCHANTMENT_LIBRARY with categories (WEAPON_ENCHANTMENTS, ARMOR_ENCHANTMENTS, RESISTANCE_ENCHANTMENTS, COMBO_ENCHANTMENTS, CURSES) and flattened ALL_ENCHANTMENTS.
+
+**Key insight**: Keep the structure - it's easier to flatten than to reconstruct. Access pattern:
+- Structured: `ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS.plusOne`
+- Flat: `ENCHANTMENT_LIBRARY.ALL_ENCHANTMENTS.plusOne`
+- Lookup: `EnchantmentLibrary.getEnchantment('enchantment_plus_one')` (searches ALL_ENCHANTMENTS)
+
 - [ ] Convert `getEnchantment(id)` to static method
-  - [ ] Update to read from `ENCHANTMENT_CONSTANTS.ENCHANTMENTS`
-  - [ ] Note: ID lookup should work with new names (e.g., `getEnchantment('PLUS_ONE')`)
+  - [ ] Update to read from `ENCHANTMENT_CONSTANTS.ALL_ENCHANTMENTS`
+  - [ ] Note: ID lookup uses original IDs (e.g., `getEnchantment('enchantment_plus_one')`)
+  - [ ] Returns the first matching enchantment from the flat collection
+
 - [ ] Convert `getCurse(id)` to static method
   - [ ] Update to read from `ENCHANTMENT_CONSTANTS.CURSES`
-  - [ ] Note: ID lookup should work with new names (e.g., `getCurse('BERSERKER')`)
+  - [ ] Note: ID lookup uses original IDs (e.g., `getCurse('curse_berserker')`)
+
 - [ ] Convert `getAllEnchantments()` to static method
-  - [ ] Update to read from `ENCHANTMENT_CONSTANTS.ENCHANTMENTS` (all renamed enchantments)
+  - [ ] Update to read from `ENCHANTMENT_CONSTANTS.ALL_ENCHANTMENTS`
+  - [ ] Returns all enchantments as an array (weapon, armor, resistance, combo)
+
 - [ ] Convert `getAllCurses()` to static method
-  - [ ] Update to read from `ENCHANTMENT_CONSTANTS.CURSES` (all renamed curses)
+  - [ ] Update to read from `ENCHANTMENT_CONSTANTS.CURSES`
+
 - [ ] Convert `getEnchantmentsByType(type)` to static method
-  - [ ] Update to read from `ENCHANTMENT_CONSTANTS.COLLECTIONS`
-  - [ ] Ensure collections reference the renamed constants
+  - [ ] Update to read from `ENCHANTMENT_CONSTANTS` structured categories
+  - [ ] `type: 'weapon'` → `ENCHANTMENT_CONSTANTS.WEAPON_ENCHANTMENTS`
+  - [ ] `type: 'armor'` → `ENCHANTMENT_CONSTANTS.ARMOR_ENCHANTMENTS`
+  - [ ] `type: 'resistance'` → `ENCHANTMENT_CONSTANTS.RESISTANCE_ENCHANTMENTS`
+  - [ ] `type: 'combo'` → `ENCHANTMENT_CONSTANTS.COMBO_ENCHANTMENTS`
 
 ### Task 27: Verify class compiles
 - [ ] Run `tsc --noEmit` to check for type errors
@@ -421,8 +476,20 @@ This plan consolidates all equipment-related constants into a single file and co
 - [ ] Verify item creation templates can be applied
 - [ ] Verify enchantments can be created via EnchantmentLibrary class
 - [ ] Verify curses can be created via EnchantmentLibrary class
-- [ ] Test direct access: `ENCHANTMENT_LIBRARY.ENCHANTMENTS.PLUS_ONE`
-- [ ] Test lookup: `EnchantmentLibrary.getEnchantment('PLUS_ONE')`
+
+**Structured access verification (categories preserved):**
+- [ ] Test weapon enchantment: `ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS.plusOne`
+- [ ] Test armor enchantment: `ENCHANTMENT_LIBRARY.ARMOR_ENCHANTMENTS.plusOne`
+- [ ] Test resistance enchantment: `ENCHANTMENT_LIBRARY.RESISTANCE_ENCHANTMENTS.fire`
+- [ ] Test combo enchantment: `ENCHANTMENT_LIBRARY.COMBO_ENCHANTMENTS.holyAvenger`
+- [ ] Test curse: `ENCHANTMENT_LIBRARY.CURSES.berserker`
+- [ ] Test flat access: `ENCHANTMENT_LIBRARY.ALL_ENCHANTMENTS.plusOne`
+
+**Simplified ID lookup verification:**
+- [ ] Test lookup: `EnchantmentLibrary.getEnchantment('plus_one')` → finds weapon +1
+- [ ] Test lookup: `EnchantmentLibrary.getEnchantment('plus_one_armor')` → finds armor +1
+- [ ] Test lookup: `EnchantmentLibrary.getEnchantment('berserker')` → finds curse
+- [ ] Test by type: `EnchantmentLibrary.getEnchantmentsByType('weapon')`
 
 ### Task 35: Documentation updates
 - [ ] Update EQUIPMENT_SYSTEM.md if it references old file locations
@@ -469,24 +536,59 @@ const item = DEFAULT_EQUIPMENT['Longsword'];
 const magicItem = MAGIC_ITEMS.find(i => i.name === 'Flame Tongue');
 const template = ITEM_CREATION_TEMPLATES['plus_one_weapon'];
 
-// Access enchantments directly (from constants)
-const plusOne = ENCHANTMENT_LIBRARY.ENCHANTMENTS.PLUS_ONE;
-const berserkerCurse = ENCHANTMENT_LIBRARY.CURSES.BERSERKER;
+// Access enchantments by category (structured - preserves organization)
+const plusOne = ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS.plusOne;
+const plusOneArmor = ENCHANTMENT_LIBRARY.ARMOR_ENCHANTMENTS.plusOne;
+const fireResist = ENCHANTMENT_LIBRARY.RESISTANCE_ENCHANTMENTS.fire;
+const holyAvenger = ENCHANTMENT_LIBRARY.COMBO_ENCHANTMENTS.holyAvenger;
+const berserkerCurse = ENCHANTMENT_LIBRARY.CURSES.berserker;
+
+// Or access ALL enchantments flat (when category doesn't matter)
+const allEnchantments = ENCHANTMENT_LIBRARY.ALL_ENCHANTMENTS; // flattened
 
 // Or use lookup functions (from class)
-const enchantment = EnchantmentLibrary.getEnchantment('PLUS_ONE');
-const allEnchantments = EnchantmentLibrary.getAllEnchantments();
+const enchantment = EnchantmentLibrary.getEnchantment('plus_one');  // searches ALL_ENCHANTMENTS by simplified ID
+const weaponEnchantments = EnchantmentLibrary.getEnchantmentsByType('weapon');
 const statEnchantment = EnchantmentLibrary.createStrengthEnchantment(2);
+```
+
+### ENCHANTMENT_LIBRARY Structure
+
+```typescript
+ENCHANTMENT_LIBRARY = {
+  // Organized by category (preserves structure)
+  WEAPON_ENCHANTMENTS: { plusOne, plusTwo, plusThree, flaming, frost, ... },
+  ARMOR_ENCHANTMENTS: { plusOne, plusTwo },
+  RESISTANCE_ENCHANTMENTS: { fire, cold, lightning, acid, ... },
+  COMBO_ENCHANTMENTS: { holyAvenger, dragonSlayer, demonHunter, undeadBane },
+  CURSES: { minusOne, berserker, weakness, ... },
+
+  // Flattened (combines all above except CURSES)
+  ALL_ENCHANTMENTS: { ...WEAPON_ENCHANTMENTS, ...ARMOR_ENCHANTMENTS,
+                      ...RESISTANCE_ENCHANTMENTS, ...COMBO_ENCHANTMENTS }
+}
 ```
 
 ### Enchantment Naming Changes
 
 | Old Name | New Name | Access Pattern |
 |----------|----------|----------------|
-| `ENCHANTMENT_PLUS_ONE` | `PLUS_ONE` | `ENCHANTMENT_LIBRARY.ENCHANTMENTS.PLUS_ONE` |
-| `ENCHANTMENT_FLAMING` | `FLAMING` | `ENCHANTMENT_LIBRARY.ENCHANTMENTS.FLAMING` |
-| `CURSE_BERSERKER` | `BERSERKER` | `ENCHANTMENT_LIBRARY.CURSES.BERSERKER` |
-| `CURSE_WEAKNESS` | `WEAKNESS` | `ENCHANTMENT_LIBRARY.CURSES.WEAKNESS` |
+| `ENCHANTMENT_PLUS_ONE` | `plusOne` | `ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS.plusOne` |
+| `ENCHANTMENT_PLUS_ONE_ARMOR` | `plusOne` | `ENCHANTMENT_LIBRARY.ARMOR_ENCHANTMENTS.plusOne` |
+| `ENCHANTMENT_FLAMING` | `flaming` | `ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS.flaming` |
+| `ENCHANTMENT_FIRE_RESISTANCE` | `fire` | `ENCHANTMENT_LIBRARY.RESISTANCE_ENCHANTMENTS.fire` |
+| `ENCHANTMENT_HOLY_AVENGER` | `holyAvenger` | `ENCHANTMENT_LIBRARY.COMBO_ENCHANTMENTS.holyAvenger` |
+| `CURSE_BERSERKER` | `berserker` | `ENCHANTMENT_LIBRARY.CURSES.berserker` |
+| `CURSE_WEAKNESS` | `weakness` | `ENCHANTMENT_LIBRARY.CURSES.weakness` |
+
+**Note on `plusOne` naming conflict**: Both `WEAPON_ENCHANTMENTS.plusOne` and `ARMOR_ENCHANTMENTS.plusOne` exist, but they're in **different objects** so there's no conflict. They have different IDs:
+- Weapon: `{ id: 'plus_one', ... }`
+- Armor: `{ id: 'plus_one_armor', ... }`
+
+**Lookup works by simplified ID, not property name**:
+- `EnchantmentLibrary.getEnchantment('plus_one')` → finds weapon +1
+- `EnchantmentLibrary.getEnchantment('plus_one_armor')` → finds armor +1
+- Direct access by category: `ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS.plusOne` vs `ENCHANTMENT_LIBRARY.ARMOR_ENCHANTMENTS.plusOne`
 
 ---
 
@@ -499,7 +601,9 @@ const statEnchantment = EnchantmentLibrary.createStrengthEnchantment(2);
 | Type errors from renamed constants | Low | Type checking between phases |
 | Missing constant during move | Low | Checklist for each constant group |
 | CLASS_STARTING_EQUIPMENT breaking something | Medium | Phase 0 research before move |
-| Enchantment ID mismatches after rename | Medium | Update lookup functions to use new names |
+| Enchantment structure confusion | Low | Preserving WEAPON/ARMOR/RESISTANCE/COMBO categories + ALL_ENCHANTMENTS flat |
+| ID changes breaking saved data | Medium | Task 8 research - if found, consider backward compatibility layer |
+| ID lookup breaking | Low | Lookup functions updated to use new simplified IDs |
 
 ---
 
@@ -512,7 +616,9 @@ const statEnchantment = EnchantmentLibrary.createStrengthEnchantment(2);
 
 **Phase 1 (Create Constants File):**
 - [ ] All equipment constants in `equipmentConstants.ts`
-- [ ] Enchantment/curses renamed (prefixes removed)
+- [ ] ENCHANTMENT_LIBRARY structure created with categories: WEAPON_ENCHANTMENTS, ARMOR_ENCHANTMENTS, RESISTANCE_ENCHANTMENTS, COMBO_ENCHANTMENTS, CURSES
+- [ ] ALL_ENCHANTMENTS provided as flattened combination
+- [ ] Enchantments use camelCase naming (e.g., `plusOne`, `flaming`, `fireResist`)
 - [ ] File compiles without errors
 
 **Phase 2 (Update Imports):**
@@ -522,8 +628,9 @@ const statEnchantment = EnchantmentLibrary.createStrengthEnchantment(2);
 
 **Phase 3 (Refactor EnchantmentLibrary):**
 - [ ] `enchantmentLibrary.ts` converted to `EnchantmentLibrary` class
-- [ ] All methods work with renamed constants
-- [ ] Lookup functions use new naming (e.g., `getEnchantment('PLUS_ONE')`)
+- [ ] All methods work with structured categories (WEAPON_ENCHANTMENTS, etc.)
+- [ ] `getEnchantment()` searches ALL_ENCHANTMENTS using simplified IDs (e.g., `'plus_one'`, `'berserker'`)
+- [ ] `getEnchantmentsByType()` returns from appropriate category
 
 **Phase 4 (Public API):**
 - [ ] `src/index.ts` exports updated
