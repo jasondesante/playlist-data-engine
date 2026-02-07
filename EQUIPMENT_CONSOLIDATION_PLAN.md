@@ -415,11 +415,11 @@ export const ENCHANTMENT_LIBRARY = {
 };
 ```
 
-- [ ] For each enchantment moved, update BOTH the property name AND the internal ID:
-  - [ ] Property: `ENCHANTMENT_PLUS_ONE` → `plusOne`
-  - [ ] ID: `id: 'enchantment_plus_one'` → `id: 'plus_one'` (if Task 8 confirms safe)
+- [x] For each enchantment moved, update BOTH the property name AND the internal ID:
+  - [x] Property: `ENCHANTMENT_PLUS_ONE` → `plusOne`
+  - [x] ID: `id: 'enchantment_plus_one'` → `id: 'plus_one'` (if Task 8 confirms safe)
 
-- [ ] Move and rename individual weapon enchantment constants into `ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS` (update both property name AND internal ID):
+- [x] Move and rename individual weapon enchantment constants into `ENCHANTMENT_LIBRARY.WEAPON_ENCHANTMENTS` (update both property name AND internal ID):
   - [ ] Enhancement enchantments:
     - [ ] `ENCHANTMENT_PLUS_ONE` → `plusOne` (ID: `'enchantment_plus_one'` → `'plus_one'`)
     - [ ] `ENCHANTMENT_PLUS_TWO` → `plusTwo` (ID: `'enchantment_plus_two'` → `'plus_two'`)
@@ -440,11 +440,11 @@ export const ENCHANTMENT_LIBRARY = {
     - [ ] `ENCHANTMENT_RETURNING` → `returning` (ID: `'enchantment_returning'` → `'returning'`)
     - [ ] `ENCHANTMENT_LIFESTEALING` → `lifestealing` (ID: `'enchantment_lifestealing'` → `'lifestealing'`)
 
-- [ ] Move and rename individual armor enchantment constants into `ENCHANTMENT_LIBRARY.ARMOR_ENCHANTMENTS` (update both property name AND internal ID):
+- [x] Move and rename individual armor enchantment constants into `ENCHANTMENT_LIBRARY.ARMOR_ENCHANTMENTS` (update both property name AND internal ID):
   - [ ] `ENCHANTMENT_PLUS_ONE_ARMOR` → `plusOne` (ID: `'enchantment_plus_one_armor'` → `'plus_one_armor'`)
   - [ ] `ENCHANTMENT_PLUS_TWO_ARMOR` → `plusTwo` (ID: `'enchantment_plus_two_armor'` → `'plus_two_armor'`)
 
-- [ ] Move and rename individual resistance enchantment constants into `ENCHANTMENT_LIBRARY.RESISTANCE_ENCHANTMENTS` (update both property name AND internal ID):
+- [x] Move and rename individual resistance enchantment constants into `ENCHANTMENT_LIBRARY.RESISTANCE_ENCHANTMENTS` (update both property name AND internal ID):
   - [ ] `ENCHANTMENT_FIRE_RESISTANCE` → `fire` (ID: `'enchantment_fire_resistance'` → `'fire_resistance'`)
   - [ ] `ENCHANTMENT_COLD_RESISTANCE` → `cold` (ID: `'enchantment_cold_resistance'` → `'cold_resistance'`)
   - [ ] `ENCHANTMENT_LIGHTNING_RESISTANCE` → `lightning` (ID: `'enchantment_lightning_resistance'` → `'lightning_resistance'`)
@@ -455,43 +455,56 @@ export const ENCHANTMENT_LIBRARY = {
   - [ ] `ENCHANTMENT_THUNDER_RESISTANCE` → `thunder` (ID: `'enchantment_thunder_resistance'` → `'thunder_resistance'`)
   - [ ] `ENCHANTMENT_ALL_RESISTANCE` → `all` (ID: `'enchantment_all_resistance'` → `'all_resistance'`)
 
-- [ ] Move and rename combo enchantments into `ENCHANTMENT_LIBRARY.COMBO_ENCHANTMENTS` (update both property name AND internal ID):
+- [x] Move and rename combo enchantments into `ENCHANTMENT_LIBRARY.COMBO_ENCHANTMENTS` (update both property name AND internal ID):
   - [ ] `ENCHANTMENT_HOLY_AVENGER` → `holyAvenger` (ID: `'enchantment_holy_avenger'` → `'holy_avenger'`)
   - [ ] `ENCHANTMENT_DRAGON_SLAYER` → `dragonSlayer` (ID: `'enchantment_dragon_slayer'` → `'dragon_slayer'`)
   - [ ] `ENCHANTMENT_DEMON_HUNTER` → `demonHunter` (ID: `'enchantment_demon_hunter'` → `'demon_hunter'`)
   - [ ] `ENCHANTMENT_UNDEAD_BANE` → `undeadBane` (ID: `'enchantment_undead_bane'` → `'undead_bane'`)
 
-- [ ] Move and rename curse constants into `ENCHANTMENT_LIBRARY.CURSES`:
-  - [ ] Penalty curses (update both property name AND internal ID):
-    - [ ] `CURSE_MINUS_ONE` → `minusOne` (ID: `'curse_minus_one'` → `'minus_one'`)
-    - [ ] `CURSE_MINUS_TWO` → `minusTwo` (ID: `'curse_minus_two'` → `'minus_two'`)
-  - [ ] Stat curses:
-    - [ ] `CURSE_WEAKNESS` → `weakness` (ID: `'curse_weakness'` → `'weakness'`)
-    - [ ] `CURSE_FEEBLEMIND` → `feeblemind` (ID: `'curse_feeblemind'` → `'feeblemind'`)
-    - [ ] `CURSE_CLUMSINESS` → `clumsiness` (ID: `'curse_clumsiness'` → `'clumsiness'`)
-    - [ ] `CURSE_FRAILTY` → `frailty` (ID: `'curse_frailty'` → `'frailty'`)
-    - [ ] `CURSE_FOOLISHNESS` → `foolishness` (ID: `'curse_foolishness'` → `'foolishness'`)
-    - [ ] `CURSE_REPULSIVENESS` → `repulsiveness` (ID: `'curse_repulsiveness'` → `'repulsiveness'`)
-  - [ ] Vulnerability curses:
-    - [ ] `CURSE_FIRE_VULNERABILITY` → `fireVulnerability` (ID: `'curse_fire_vulnerability'` → `'fire_vulnerability'`)
-    - [ ] `CURSE_COLD_VULNERABILITY` → `coldVulnerability` (ID: `'curse_cold_vulnerability'` → `'cold_vulnerability'`)
-  - [ ] Special curses:
-    - [ ] `CURSE_LIFESTEAL` → `lifesteal` (ID: `'curse_lifesteal'` → `'lifesteal'`)
-    - [ ] `CURSE_ATTUNEMENT` → `attunement` (ID: `'curse_attunement'` → `'attunement'`)
-    - [ ] `CURSE_BERSERKER` → `berserker` (ID: `'curse_berserker'` → `'berserker'`)
-    - [ ] `CURSE_HEAVY_BURDEN` → `heavyBurden` (ID: `'curse_heavy_burden'` → `'heavy_burden'`)
-    - [ ] `CURSE_LIGHT_SENSITIVITY` → `lightSensitivity` (ID: `'curse_light_sensitivity'` → `'light_sensitivity'`)
-    - [ ] `CURSE_INVISIBILITY` → `invisibility` (ID: `'curse_invisibility'` → `'invisibility'`)
-    - [ ] `CURSE_HALLUCINATIONS` → `hallucinations` (ID: `'curse_hallucinations'` → `'hallucinations'`)
-    - [ ] `CURSE_BLOOD_MONEY` → `bloodMoney` (ID: `'curse_blood_money'` → `'blood_money'`)
+- [x] Move and rename curse constants into `ENCHANTMENT_LIBRARY.CURSES`:
+  - [x] Penalty curses (update both property name AND internal ID):
+    - [x] `CURSE_MINUS_ONE` → `minusOne` (ID: `'curse_minus_one'` → `'minus_one'`)
+    - [x] `CURSE_MINUS_TWO` → `minusTwo` (ID: `'curse_minus_two'` → `'minus_two'`)
+  - [x] Stat curses:
+    - [x] `CURSE_WEAKNESS` → `weakness` (ID: `'curse_weakness'` → `'weakness'`)
+    - [x] `CURSE_FEEBLEMIND` → `feeblemind` (ID: `'curse_feeblemind'` → `'feeblemind'`)
+    - [x] `CURSE_CLUMSINESS` → `clumsiness` (ID: `'curse_clumsiness'` → `'clumsiness'`)
+    - [x] `CURSE_FRAILTY` → `frailty` (ID: `'curse_frailty'` → `'frailty'`)
+    - [x] `CURSE_FOOLISHNESS` → `foolishness` (ID: `'curse_foolishness'` → `'foolishness'`)
+    - [x] `CURSE_REPULSIVENESS` → `repulsiveness` (ID: `'curse_repulsiveness'` → `'repulsiveness'`)
+  - [x] Vulnerability curses:
+    - [x] `CURSE_FIRE_VULNERABILITY` → `fireVulnerability` (ID: `'curse_fire_vulnerability'` → `'fire_vulnerability'`)
+    - [x] `CURSE_COLD_VULNERABILITY` → `coldVulnerability` (ID: `'curse_cold_vulnerability'` → `'cold_vulnerability'`)
+  - [x] Special curses:
+    - [x] `CURSE_LIFESTEAL` → `lifesteal` (ID: `'curse_lifesteal'` → `'lifesteal'`)
+    - [x] `CURSE_ATTUNEMENT` → `attunement` (ID: `'curse_attunement'` → `'attunement'`)
+    - [x] `CURSE_BERSERKER` → `berserker` (ID: `'curse_berserker'` → `'berserker'`)
+    - [x] `CURSE_HEAVY_BURDEN` → `heavyBurden` (ID: `'curse_heavy_burden'` → `'heavy_burden'`)
+    - [x] `CURSE_LIGHT_SENSITIVITY` → `lightSensitivity` (ID: `'curse_light_sensitivity'` → `'light_sensitivity'`)
+    - [x] `CURSE_INVISIBILITY` → `invisibility` (ID: `'curse_invisibility'` → `'invisibility'`)
+    - [x] `CURSE_HALLUCINATIONS` → `hallucinations` (ID: `'curse_hallucinations'` → `'hallucinations'`)
+    - [x] `CURSE_BLOOD_MONEY` → `bloodMoney` (ID: `'curse_blood_money'` → `'blood_money'`)
 
-- [ ] Create `ENCHANTMENT_LIBRARY.ALL_ENCHANTMENTS` as flattened combination:
-  - [ ] Use spread operator: `...WEAPON_ENCHANTMENTS`
-  - [ ] Use spread operator: `...ARMOR_ENCHANTMENTS`
-  - [ ] Use spread operator: `...RESISTANCE_ENCHANTMENTS`
-  - [ ] Use spread operator: `...COMBO_ENCHANTMENTS`
-  - [ ] This provides a flat object when you don't care about categories
-  - [ ] Preserves structured categories in the sub-objects above
+- [x] Create `ENCHANTMENT_LIBRARY.ALL_ENCHANTMENTS` as flattened combination:
+  - [x] Use spread operator: `...WEAPON_ENCHANTMENTS`
+  - [x] Use spread operator: `...ARMOR_ENCHANTMENTS`
+  - [x] Use spread operator: `...RESISTANCE_ENCHANTMENTS`
+  - [x] Use spread operator: `...COMBO_ENCHANTMENTS`
+  - [x] This provides a flat object when you don't care about categories
+  - [x] Preserves structured categories in the sub-objects above
+
+**Task 13 Summary:**
+- Created ENCHANTMENT_LIBRARY sub-object in equipmentConstants.ts
+- Moved and renamed all weapon enchantments (16): plusOne, plusTwo, plusThree, flaming, frost, shocking, thundering, acidic, poison, holy, vampiric, vorpalEdge, keenEdge, mighty, returning, lifestealing
+- Moved and renamed all armor enchantments (2): plusOne, plusTwo
+- Moved and renamed all resistance enchantments (9): fire, cold, lightning, acid, poison, necrotic, radiant, thunder, all
+- Moved and renamed all combo enchantments (4): holyAvenger, dragonSlayer, demonHunter, undeadBane
+- Moved and renamed all curses (17): minusOne, minusTwo, weakness, feeblemind, clumsiness, frailty, foolishness, repulsiveness, fireVulnerability, coldVulnerability, lifesteal, attunement, berserker, heavyBurden, lightSensitivity, invisibility, hallucinations, bloodMoney
+- Created ALL_ENCHANTMENTS as flattened combination of WEAPON + ARMOR + RESISTANCE + COMBO (31 entries)
+- Added stat boosting enchantment factory functions (6 functions for ability scores)
+- File compiles successfully
+- All 2127 tests pass
+- Total of 48 enchantments/curses + 6 factory functions organized in ENCHANTMENT_LIBRARY
 
 ### Task 14: Add named exports
 - [ ] Export `DEFAULT_EQUIPMENT`
