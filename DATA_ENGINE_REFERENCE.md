@@ -1015,6 +1015,7 @@ new PlaylistParser(options?: PlaylistParserOptions)
 |----------|------|---------|-------------|
 | `validateAudioUrls` | boolean | `false` | Perform HEAD request to verify audio URLs exist |
 | `strict` | boolean | `false` | Throw errors on invalid tracks instead of skipping |
+| `audioUrlValidationTimeout` | number | `5000` | Timeout in milliseconds for audio URL validation (prevents hanging) |
 
 #### Helper: `MetadataExtractor`
 
@@ -1995,7 +1996,7 @@ D&D 5e turn-based combat engine with initiative, attacks, spell casting, and dam
 
 | Constructor | Description |
 |-------------|-------------|
-| `new CombatEngine(config?: CombatConfig)` | Initialize combat engine with optional configuration (useEnvironment, useMusic, tacticalMode, maxTurnsBeforeDraw, allowFleeing) |
+| `new CombatEngine(config?: CombatConfig)` | Initialize combat engine with optional configuration (useEnvironment, useMusic, tacticalMode, maxTurnsBeforeDraw, allowFleeing, seed) |
 
 **Methods:**
 

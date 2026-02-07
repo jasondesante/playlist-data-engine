@@ -157,28 +157,62 @@ const anotherSeeded = DiceRoller.seededRoll(12345);  // Will equal seeded
 ```typescript
 import { DiceRoller } from 'playlist-data-engine';
 
-function resolveAttack(attackBonus: number, targetAC: number, hasAdvantage: boolean) {
+function resolveAttack(attackBonus: number, targetAC: number, hasAdvantage: boolean, hasDisadvantage: boolean) {
   let d20Roll: number;
+  let roll1: number | undefined;
+  let roll2: number | undefined;
+  let isCritical: boolean;
+  let isMiss: boolean;
 
   if (hasAdvantage) {
     const result = DiceRoller.rollWithAdvantage();
+    roll1 = result.roll1;
+    roll2 = result.roll2;
     d20Roll = result.result;
-    console.log(`Advantage: rolled ${result.roll1} and ${result.roll2}`);
+    // D&D 5e Sage Advice: With advantage, if EITHER die is a 20, it's a critical hit
+    isCritical = DiceRoller.isCriticalHit(roll1) || DiceRoller.isCriticalHit(roll2);
+    // With advantage, only check for fumble on the selected roll
+    isMiss = DiceRoller.isCriticalMiss(d20Roll);
+    console.log(`Advantage: rolled ${roll1} and ${roll2}, using ${d20Roll}`);
+  } else if (hasDisadvantage) {
+    const result = DiceRoller.rollWithDisadvantage();
+    roll1 = result.roll1;
+    roll2 = result.roll2;
+    d20Roll = result.result;
+    // D&D 5e Sage Advice: With disadvantage, if EITHER die is a 1, it's a critical miss
+    isMiss = DiceRoller.isCriticalMiss(roll1) || DiceRoller.isCriticalMiss(roll2);
+    // With disadvantage, only check for crit on the selected roll
+    isCritical = DiceRoller.isCriticalHit(d20Roll);
+    console.log(`Disadvantage: rolled ${roll1} and ${roll2}, using ${d20Roll}`);
   } else {
     d20Roll = DiceRoller.rollD20();
+    isCritical = DiceRoller.isCriticalHit(d20Roll);
+    isMiss = DiceRoller.isCriticalMiss(d20Roll);
   }
 
   const total = d20Roll + attackBonus;
-  const hit = total >= targetAC;
-  const crit = DiceRoller.isCriticalHit(d20Roll);
+  const hit = !isMiss && (isCritical || total >= targetAC);
 
-  return { d20Roll, total, hit, crit };
+  return { d20Roll, roll1, roll2, total, hit, isCritical, isMiss };
 }
 
-const attack = resolveAttack(7, 15, true);
+const attack = resolveAttack(7, 15, true, false);
 console.log(`Attack roll: ${attack.d20Roll} + 7 = ${attack.total} vs AC 15`);
-console.log(attack.crit ? 'CRITICAL HIT!' : (attack.hit ? 'Hit!' : 'Miss!'));
+if (attack.isCritical) {
+  console.log('CRITICAL HIT!');
+} else if (attack.isMiss) {
+  console.log('CRITICAL MISS!');
+} else if (attack.hit) {
+  console.log('Hit!');
+} else {
+  console.log('Miss!');
+}
 ```
+
+**Important:** D&D 5e rules for advantage/disadvantage with critical hits and misses:
+- **Advantage:** If EITHER die shows a 20, it's a critical hit
+- **Disadvantage:** If EITHER die shows a 1, it's a critical miss
+- This follows the official D&D 5e Sage Advice ruling
 
 ---
 

@@ -11,8 +11,9 @@ Complete guide to the environmental and gaming sensors in the Playlist Data Engi
 
 1. [Environmental Sensors](#environmental-sensors)
 2. [Gaming Sensors](#gaming-sensors)
-3. [Sensor Dashboard](#sensor-dashboard)
-4. [Sensor Configuration](#sensor-configuration)
+3. [Severe Weather Detection](#severe-weather-detection)
+4. [Sensor Dashboard](#sensor-dashboard)
+5. [Sensor Configuration](#sensor-configuration)
 
 ---
 
@@ -40,6 +41,9 @@ console.log(`Environmental bonus: ${xpModifier.toFixed(2)}x`);
 // - Stationary indoors: 1.0x
 // - Walking at night: 1.25x
 // - High altitude + snow: 1.4x
+// - Hurricane conditions (tropical): 2.25x (severe weather bonus applied)
+// - Typhoon conditions (temperate): 2.25x (severe weather bonus applied)
+// - Blizzard conditions: 2.0x (severe weather bonus applied)
 ```
 
 ---
@@ -96,6 +100,100 @@ gamingSensors.stopMonitoring();
 
 ---
 
+## Severe Weather Detection
+
+The EnvironmentalSensors can detect severe weather conditions that provide significant XP bonuses. These conditions are automatically detected based on current weather data and geographic location.
+
+### Severe Weather Types
+
+**Hurricane vs. Typhoon Classification:**
+
+The system correctly classifies tropical cyclones based on geographic location:
+- **Hurricane**: Tropical cyclone detected in tropical regions (between 23.5°N and 23.5°S)
+- **Typhoon**: Tropical cyclone detected outside tropical regions (temperate zones)
+
+This classification is important for accurate weather terminology and XP bonus calculations.
+
+**All Severe Weather Types:**
+
+| Type | Condition | XP Bonus | Severity Levels |
+|------|-----------|----------|-----------------|
+| **Blizzard** | Heavy snow + high winds (>25 km/h) | +50% (0.5x) | moderate, high, extreme |
+| **Hurricane** | Extreme winds (>118 km/h) in tropics | +75% (0.75x) | moderate, high, extreme |
+| **Typhoon** | Extreme winds (>118 km/h) in temperate | +75% (0.75x) | moderate, high, extreme |
+| **Tornado** | Tornado weather type detected | +100% (1.0x) | extreme |
+
+**Tropical Region Definition:**
+
+Tropical regions are defined as locations between the Tropic of Cancer (23.5°N) and the Tropic of Capricorn (23.5°S). This is where hurricanes typically form and occur.
+
+```typescript
+// Geographic boundaries
+// Northern Hemisphere:
+// - Tropical: 0° to 23.5°N (e.g., Singapore, Miami, Caribbean)
+// - Temperate: >23.5°N (e.g., Tokyo, New York, Southern Europe)
+
+// Southern Hemisphere:
+// - Tropical: 0° to 23.5°S (e.g., Rio de Janeiro, Northern Australia)
+// - Temperate: >23.5°S (e.g., Sydney, Southern Australia)
+```
+
+### Usage Example
+
+```typescript
+import { EnvironmentalSensors } from 'playlist-data-engine';
+
+const sensors = new EnvironmentalSensors(process.env.WEATHER_API_KEY);
+
+// Detect severe weather from current conditions
+const alert = await sensors.detectSevereWeather();
+
+if (alert) {
+    console.log(`🌀 ${alert.type} detected!`);
+    console.log(`XP Bonus: +${alert.xpBonus * 100}%`);
+    console.log(`Severity: ${alert.severity}`);
+    console.log(`Message: ${alert.message}`);
+
+    // Get safety warning
+    const warning = sensors.getSevereWeatherWarning();
+    console.log(`Safety: ${warning}`);
+}
+
+// Calculate XP modifier with severe weather
+const result = await sensors.calculateXPModifierWithSevereWeather();
+console.log(`Total XP modifier: ${result.modifier.toFixed(2)}x`);
+if (result.severeWeatherAlert) {
+    console.log(`Severe weather active: ${result.severeWeatherAlert.type}`);
+}
+```
+
+### Geographic Examples
+
+```typescript
+// Location-specific examples:
+
+// Singapore (1.35°N) - Tropical
+// → Hurricane detection (if wind >118 km/h)
+// → XP Bonus: +75%
+
+// Tokyo (35.68°N) - Temperate
+// → Typhoon detection (if wind >118 km/h)
+// → XP Bonus: +75%
+
+// Sydney (-33.87°S) - Temperate
+// → Typhoon detection (if wind >118 km/h)
+// → XP Bonus: +75%
+
+// Rio de Janeiro (-22.91°S) - Tropical
+// → Hurricane detection (if wind >118 km/h)
+// → XP Bonus: +75%
+
+// Boundary Cases:
+// - 23.5°N exactly: Typhoon (temperate)
+// - 23.49°N: Hurricane (tropical)
+```
+
+---
 
 ## Sensor Dashboard
 

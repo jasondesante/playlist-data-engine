@@ -28,7 +28,8 @@ const combat = new CombatEngine({
   useEnvironment: true,    // Apply environmental bonuses
   useMusic: false,         // Apply music bonuses (requires audio context)
   tacticalMode: false,     // Enable advanced tactical rules
-  maxTurnsBeforeDraw: 100  // Max turns before draw
+  maxTurnsBeforeDraw: 100, // Max turns before draw
+  seed: 'my-seed'          // Seed for deterministic treasure generation (optional)
 });
 
 // Generate player character from audio
