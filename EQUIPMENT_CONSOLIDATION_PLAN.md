@@ -351,9 +351,9 @@ This is a **breaking API change** for external users who call `getEnchantment('e
 **File**: `src/utils/equipmentConstants.ts`
 
 ### Task 8: Create file structure and add imports
-- [ ] Create `src/utils/equipmentConstants.ts`
-- [ ] Add necessary imports from types and existing files
-- [ ] Add JSDoc header explaining the file's purpose
+- [x] Create `src/utils/equipmentConstants.ts`
+- [x] Add necessary imports from types and existing files
+- [x] Add JSDoc header explaining the file's purpose
 
 ### Task 9: Move DEFAULT_EQUIPMENT from constants.ts
 - [ ] Copy `EQUIPMENT_DATABASE` from `src/utils/constants.ts` (lines 1661-2108, ~450 lines)
