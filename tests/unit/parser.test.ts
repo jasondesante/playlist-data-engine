@@ -374,5 +374,133 @@ describe('PlaylistParser', () => {
             // Restore original fetch
             vi.restoreAllMocks();
         });
+
+        it('should timeout audio URL validation when request takes too long', async () => {
+            // Mock fetch to simulate a hanging request that gets aborted
+            let fetchSignal: AbortSignal | null = null;
+            global.fetch = vi.fn((_, options) => {
+                // Store the signal for the test to use
+                if (options?.signal instanceof AbortSignal) {
+                    fetchSignal = options.signal as AbortSignal;
+                }
+                // Return a promise that never resolves but can observe abort
+                return new Promise((_, reject) => {
+                    if (fetchSignal) {
+                        fetchSignal.addEventListener('abort', () => {
+                            const error = new Error('The operation was aborted');
+                            error.name = 'AbortError';
+                            reject(error);
+                        });
+                    }
+                });
+            });
+
+            const parser = new PlaylistParser({
+                validateAudioUrls: true,
+                strict: false,
+                audioUrlValidationTimeout: 100, // Short timeout for test
+            });
+
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'ethereum',
+                        token_address: '0xabc',
+                        token_id: '1',
+                        platform: 'sound',
+                        metadata: JSON.stringify({
+                            name: 'Slow Track',
+                            artist: 'Artist',
+                            mp3_url: 'https://example.com/slow.mp3',
+                            image: 'https://example.com/image.jpg',
+                            duration: 180,
+                            genre: 'Test',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const startTime = Date.now();
+            const result = await parser.parse(rawData);
+            const elapsed = Date.now() - startTime;
+
+            // Should timeout and skip the track (no valid tracks)
+            expect(result.tracks).toHaveLength(0);
+
+            // Should complete within reasonable time (timeout + some margin)
+            // With 100ms timeout, should be well under 1 second
+            expect(elapsed).toBeLessThan(500);
+
+            // Verify the abort signal was triggered
+            expect(fetchSignal).toBeDefined();
+            expect(fetchSignal?.aborted).toBe(true);
+
+            // Restore original fetch
+            vi.restoreAllMocks();
+        });
+
+        it('should use custom timeout value when specified', async () => {
+            const customTimeout = 500; // Use a shorter timeout for tests
+            const parser = new PlaylistParser({
+                validateAudioUrls: true,
+                strict: false,
+                audioUrlValidationTimeout: customTimeout,
+            });
+
+            // Mock fetch that simulates hanging but responds to abort
+            let fetchSignal: AbortSignal | null = null;
+            global.fetch = vi.fn((_, options) => {
+                if (options?.signal instanceof AbortSignal) {
+                    fetchSignal = options.signal as AbortSignal;
+                }
+                return new Promise((_, reject) => {
+                    if (fetchSignal) {
+                        fetchSignal.addEventListener('abort', () => {
+                            const error = new Error('The operation was aborted');
+                            error.name = 'AbortError';
+                            reject(error);
+                        });
+                    }
+                });
+            });
+
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/playlist.jpg',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'ethereum',
+                        token_address: '0xabc',
+                        token_id: '1',
+                        platform: 'sound',
+                        metadata: JSON.stringify({
+                            name: 'Test Track',
+                            artist: 'Artist',
+                            mp3_url: 'https://example.com/test.mp3',
+                            image: 'https://example.com/image.jpg',
+                            duration: 180,
+                            genre: 'Test',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const startTime = Date.now();
+            await parser.parse(rawData);
+            const elapsed = Date.now() - startTime;
+
+            // Should use the custom timeout (500ms + some margin)
+            expect(elapsed).toBeGreaterThanOrEqual(customTimeout - 50);
+            expect(elapsed).toBeLessThan(customTimeout + 200);
+
+            // Restore original fetch
+            vi.restoreAllMocks();
+        });
     });
 });

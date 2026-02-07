@@ -13,6 +13,9 @@ export interface PlaylistParserOptions {
 
     /** Strict mode throws errors on invalid tracks */
     strict?: boolean;
+
+    /** Timeout in milliseconds for audio URL validation (default: 5000ms) */
+    audioUrlValidationTimeout?: number;
 }
 
 export class PlaylistParser {
@@ -22,6 +25,7 @@ export class PlaylistParser {
         this.options = {
             validateAudioUrls: false,
             strict: false,
+            audioUrlValidationTimeout: 5000,
             ...options,
         };
     }
@@ -179,13 +183,27 @@ export class PlaylistParser {
 
     /**
      * Validate that an audio URL is accessible
+     * @param url - The audio URL to validate
+     * @returns Promise<boolean> - true if URL is accessible, false otherwise
      */
     private async validateAudioUrl(url: string): Promise<boolean> {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.options.audioUrlValidationTimeout);
+
         try {
-            const response = await fetch(url, { method: 'HEAD' });
+            const response = await fetch(url, {
+                method: 'HEAD',
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
             return response.ok;
         } catch (error) {
-            console.warn(`Audio URL validation failed for ${url}:`, error);
+            clearTimeout(timeoutId);
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.warn(`Audio URL validation timed out after ${this.options.audioUrlValidationTimeout}ms: ${url}`);
+            } else {
+                console.warn(`Audio URL validation failed for ${url}:`, error);
+            }
             return false;
         }
     }
