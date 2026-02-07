@@ -943,10 +943,10 @@ ENCHANTMENT_LIBRARY = {
 - [x] No remaining references to old import paths
 
 **Phase 3 (Refactor EnchantmentLibrary):**
-- [ ] `enchantmentLibrary.ts` converted to `EnchantmentLibrary` class
-- [ ] All methods work with structured categories (WEAPON_ENCHANTMENTS, etc.)
-- [ ] `getEnchantment()` searches ALL_ENCHANTMENTS using simplified IDs (e.g., `'plus_one'`, `'berserker'`)
-- [ ] `getEnchantmentsByType()` returns from appropriate category
+- [x] `enchantmentLibrary.ts` converted to `EnchantmentLibrary` class
+- [x] All methods work with structured categories (WEAPON_ENCHANTMENTS, etc.)
+- [x] `getEnchantment()` searches ALL_ENCHANTMENTS using simplified IDs (e.g., `'plus_one'`, `'berserker'`)
+- [x] `getEnchantmentsByType()` returns from appropriate category
 
 **Phase 4 (Public API):**
 - [x] `src/index.ts` exports updated
@@ -998,5 +998,61 @@ ENCHANTMENT_LIBRARY = {
 - ⚠️ Pre-existing TypeScript errors in CharacterGenerator.ts (Race type issues - unrelated)
 
 **Next Steps:**
-- Phase 3: Refactor enchantmentLibrary.ts to EnchantmentLibrary class
-- Phase 4: Update documentation files
+- ~~Phase 3: Refactor enchantmentLibrary.ts to EnchantmentLibrary class~~ ✅ COMPLETE
+- Phase 4: Update public API in src/index.ts
+- Phase 5: Documentation updates
+
+---
+
+## Phase 3 Completion Summary
+
+**Date**: 2025-02-07
+
+**Status**: ✅ **COMPLETE**
+
+**What Was Accomplished:**
+
+1. **Converted enchantmentLibrary.ts to EnchantmentLibrary class**:
+   - Created new `src/utils/EnchantmentLibrary.ts` file
+   - Implemented `EnchantmentLibrary` class with private constructor (utility class pattern)
+   - All individual enchantment constants removed (now in equipmentConstants.ts)
+   - All collection constants removed (now in equipmentConstants.ts)
+
+2. **Implemented static methods**:
+   - `getEnchantment(id)` - searches ALL_ENCHANTMENTS by simplified ID
+   - `getCurse(id)` - searches CURSES by simplified ID
+   - `getAllEnchantments()` - returns all enchantments as array
+   - `getAllCurses()` - returns all curses as array
+   - `getEnchantmentsByType(type)` - returns enchantments by category
+
+3. **Implemented static factory methods**:
+   - `createStrengthEnchantment(bonus)`
+   - `createDexterityEnchantment(bonus)`
+   - `createConstitutionEnchantment(bonus)`
+   - `createIntelligenceEnchantment(bonus)`
+   - `createWisdomEnchantment(bonus)`
+   - `createCharismaEnchantment(bonus)`
+
+4. **Added backward compatibility exports**:
+   - Re-exported WEAPON_ENCHANTMENTS, ARMOR_ENCHANTMENTS, RESISTANCE_ENCHANTMENTS, CURSES, ALL_ENCHANTMENTS
+   - Re-exported utility functions as standalone functions that delegate to class methods
+   - Re-exported factory functions as standalone functions that delegate to class methods
+
+5. **Updated public API** (`src/index.ts`):
+   - Added `EnchantmentLibrary` class export
+   - Updated import path from `enchantmentLibrary.js` to `EnchantmentLibrary.js`
+
+**Test Results:**
+- ✅ 2127/2127 tests passing
+- ✅ Vite build passes
+- ⚠️ Pre-existing TypeScript errors in CharacterGenerator.ts (Race type issues - unrelated)
+
+**Key Changes:**
+- All enchantment data is now stored in `ENCHANTMENT_LIBRARY` in equipmentConstants.ts
+- The `EnchantmentLibrary` class provides static methods for data access
+- Backward compatibility is maintained through re-exports
+- ID lookup now uses simplified IDs (e.g., `'plus_one'` instead of `'enchantment_plus_one'`)
+
+**Next Steps:**
+- Phase 4: Update remaining public API exports and clean up magicItemExamples.ts
+- Phase 5: Documentation updates
