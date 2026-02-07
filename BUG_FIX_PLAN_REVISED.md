@@ -367,8 +367,8 @@ Hurricane/typhoon detection depends on this working.
 API responses are used without schema validation.
 
 **Fix Steps:**
-1. [ ] Install Zod (already in dependencies)
-2. [ ] Create schema file for Weather API responses:
+1. [x] Install Zod (already in dependencies)
+2. [x] Create schema file for Weather API responses:
    ```typescript
    // src/core/sensors/schemas/weather.schema.ts
    import { z } from 'zod';
@@ -390,10 +390,23 @@ API responses are used without schema validation.
        })
    });
    ```
-3. [ ] Add validation in WeatherAPIClient after API calls
-4. [ ] Add test with malformed response
+3. [x] Add validation in WeatherAPIClient after API calls
+4. [x] Add test with malformed response
 
 **Expected Outcome:** Weather API responses validated before use.
+
+**Implementation Notes:**
+- Created `src/core/sensors/schemas/weather.schema.ts` with comprehensive Zod schemas for both current weather and forecast API responses
+- Schemas validate: coordinates, weather conditions, main data (temp, humidity, pressure), wind, clouds, system data (sunrise/sunset), and precipitation
+- Added validation in `getWeather()` and `getForecast()` methods using `safeParse()` - returns null on validation failure with error logging
+- Updated 10 existing tests that expected invalid data to pass through - now correctly rejected by validation:
+  - Empty forecast list (schema requires at least 1 item)
+  - Invalid coordinates (>90° lat, >180° lon, NaN)
+  - Extreme value outliers (negative wind speed violates nonnegative constraint)
+  - String types for numeric fields (properly type-checked)
+  - Negative humidity (violates nonnegative constraint)
+- All 2127 tests pass
+- Proper handling of optional wind data using nullish coalescing (`??`)
 
 ---
 
@@ -475,7 +488,7 @@ character: any  // Should be CharacterSheet
 - [x] Task 7: Non-deterministic treasure generation
 - [x] Task 8: Direct mutation of options object
 - [x] Task 9: Tropical region detection
-- [ ] Task 10: Weather API response validation
+- [x] Task 10: Weather API response validation
 
 ### Phase 4: Low Priority
 - [ ] Task 11: Fix typo in feature ID

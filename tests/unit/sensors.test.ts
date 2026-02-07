@@ -3435,7 +3435,7 @@ describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
                         grnd_level: 933
                     },
                     wind: {
-                        speed: -9999, // Negative wind speed
+                        speed: -9999, // Negative wind speed (violates nonnegative constraint)
                         deg: -9999
                     },
                     visibility: 10000,
@@ -3457,12 +3457,8 @@ describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
 
             const weather = await weatherClient.getWeather(44.34, 10.99);
 
-            // Note: Current implementation does not validate extreme values
-            // This test documents current behavior - extreme values are passed through
-            expect(weather).not.toBeNull();
-            expect(weather?.temperature).toBe(-9999);
-            expect(weather?.humidity).toBe(999);
-            expect(weather?.windSpeed).toBe(-9999);
+            // With schema validation, negative wind speed is rejected (violates nonnegative constraint)
+            expect(weather).toBeNull();
         });
 
         it('should handle invalid sensor data types', async () => {
@@ -3505,11 +3501,8 @@ describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
 
             const weather = await weatherClient.getWeather(44.34, 10.99);
 
-            // JavaScript's loose typing means strings are not converted to numbers
-            // This test documents the current behavior - values remain as strings
-            expect(weather).not.toBeNull();
-            expect(typeof weather?.temperature).toBe('string');
-            expect(weather?.temperature).toBe('298.48');
+            // With schema validation, string types for numeric fields are rejected
+            expect(weather).toBeNull();
         });
 
         it('should handle missing required fields in API responses', async () => {
@@ -3599,8 +3592,8 @@ describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
 
             const forecast = await weatherClient.getForecast(44.34, 10.99, 24);
 
-            // Should return empty array when list is empty
-            expect(forecast).toEqual([]);
+            // With schema validation, empty list is rejected (schema requires at least 1 item)
+            expect(forecast).toBeNull();
         });
 
         it('should handle forecast items with missing data', async () => {
@@ -3670,8 +3663,8 @@ describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
 
             const weather = await weatherClient.getWeather(100, 0);
 
-            // Current implementation passes through invalid coordinates
-            expect(weather).not.toBeNull();
+            // With schema validation, invalid latitude is rejected
+            expect(weather).toBeNull();
         });
 
         it('should handle invalid longitude > 180', async () => {
@@ -3689,8 +3682,8 @@ describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
 
             const weather = await weatherClient.getWeather(0, 200);
 
-            // Current implementation passes through invalid coordinates
-            expect(weather).not.toBeNull();
+            // With schema validation, invalid longitude is rejected
+            expect(weather).toBeNull();
         });
 
         it('should handle NaN coordinates', async () => {
@@ -3708,9 +3701,8 @@ describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
 
             const weather = await weatherClient.getWeather(NaN, NaN);
 
-            // Current implementation handles NaN by using it directly
-            // The cache key generation will have NaN in it
-            expect(weather).not.toBeNull();
+            // With schema validation, NaN coordinates are rejected
+            expect(weather).toBeNull();
         });
     });
 
@@ -3734,9 +3726,8 @@ describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
 
             const weather = await weatherClient.getWeather(44.34, 10.99);
 
-            // Current implementation passes through invalid values
-            expect(weather).not.toBeNull();
-            expect(weather?.humidity).toBe(-10);
+            // With schema validation, negative humidity is rejected
+            expect(weather).toBeNull();
         });
 
         it('should handle humidity > 100%', async () => {
@@ -3752,13 +3743,14 @@ describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
                     },
                     wind: { speed: 0.62, deg: 349 },
                     sys: { sunrise: 1661834187, sunset: 1661882248 },
+                    dt: 1661870592,
                     cod: 200
                 })
             });
 
             const weather = await weatherClient.getWeather(44.34, 10.99);
 
-            // Current implementation passes through invalid values
+            // The schema accepts any nonnegative humidity (no max constraint)
             expect(weather).not.toBeNull();
             expect(weather?.humidity).toBe(150);
         });
@@ -3776,13 +3768,15 @@ describe('Edge Case Tests: Data Integrity & Malformed Responses', () => {
                     },
                     wind: { speed: 0.62, deg: 349 },
                     sys: { sunrise: 1661834187, sunset: 1661882248 },
+                    dt: 1661870592,
                     cod: 200
                 })
             });
 
             const weather = await weatherClient.getWeather(44.34, 10.99);
 
-            // Current implementation passes through invalid values
+            // The schema allows any number for pressure (no min constraint)
+            // In practice, real API responses won't have 0 pressure
             expect(weather).not.toBeNull();
             expect(weather?.pressure).toBe(0);
         });

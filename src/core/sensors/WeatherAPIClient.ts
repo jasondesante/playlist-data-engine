@@ -1,6 +1,7 @@
 import type { WeatherData, ForecastData, PerformanceMetrics, PerformanceStatistics } from '../types/Environmental';
 import type { WeatherSensorConfig } from '../config/sensorConfig.js';
 import { Logger } from '../../utils/logger.js';
+import { OpenWeatherMapCurrentResponseSchema, OpenWeatherMapForecastResponseSchema } from './schemas/weather.schema.js';
 
 interface CacheEntry {
     data: WeatherData;
@@ -422,17 +423,30 @@ export class WeatherAPIClient {
 
             const data = await response.json();
 
+            // Validate API response structure
+            const validationResult = OpenWeatherMapCurrentResponseSchema.safeParse(data);
+            if (!validationResult.success) {
+                this.logger.error('Weather API response validation failed', {
+                    errors: validationResult.error.issues,
+                    response: data
+                });
+                return null;
+            }
+
+            // Use validated data
+            const validatedData = validationResult.data;
+
             // Calculate isNight based on current time vs sunrise/sunset
             const now = Date.now() / 1000;
-            const isNight = now < data.sys.sunrise || now > data.sys.sunset;
+            const isNight = now < validatedData.sys.sunrise || now > validatedData.sys.sunset;
 
             const weatherData: WeatherData = {
-                temperature: data.main.temp,
-                humidity: data.main.humidity,
-                pressure: data.main.pressure,
-                weatherType: data.weather[0]?.main || 'Clear',
-                windSpeed: data.wind.speed,
-                windDirection: data.wind.deg,
+                temperature: validatedData.main.temp,
+                humidity: validatedData.main.humidity,
+                pressure: validatedData.main.pressure,
+                weatherType: validatedData.weather[0]?.main || 'Clear',
+                windSpeed: validatedData.wind?.speed ?? 0,
+                windDirection: validatedData.wind?.deg ?? 0,
                 isNight,
                 moonPhase: this.calculateMoonPhase(new Date()),
                 timestamp: Date.now()
@@ -593,17 +607,30 @@ export class WeatherAPIClient {
 
             const data = await response.json();
 
-            // Parse forecast data from API response
-            const forecastData: ForecastData[] = data.list.map((item: any) => ({
+            // Validate API response structure
+            const validationResult = OpenWeatherMapForecastResponseSchema.safeParse(data);
+            if (!validationResult.success) {
+                this.logger.error('Weather Forecast API response validation failed', {
+                    errors: validationResult.error.issues,
+                    response: data
+                });
+                return null;
+            }
+
+            // Use validated data
+            const validatedData = validationResult.data;
+
+            // Parse forecast data from validated API response
+            const forecastData: ForecastData[] = validatedData.list.map((item) => ({
                 temperature: item.main.temp,
                 humidity: item.main.humidity,
                 pressure: item.main.pressure,
                 weatherType: item.weather[0]?.main || 'Clear',
-                windSpeed: item.wind.speed,
-                windDirection: item.wind.deg,
+                windSpeed: item.wind?.speed ?? 0,
+                windDirection: item.wind?.deg ?? 0,
                 timestamp: Date.now(),
                 forecastTime: new Date(item.dt * 1000),
-                probabilityOfPrecipitation: item.pop || 0
+                probabilityOfPrecipitation: item.pop ?? 0
             }));
 
             // Store in forecast cache
