@@ -16,6 +16,7 @@ import { InitiativeRoller } from './InitiativeRoller';
 import { AttackResolver } from './AttackResolver';
 import { SpellCaster } from './SpellCaster';
 import { EQUIPMENT_DATABASE } from '../../utils/constants.js';
+import { SeededRNG } from '../../utils/random.js';
 
 /**
  * D&D 5e turn-based combat engine
@@ -27,12 +28,14 @@ import { EQUIPMENT_DATABASE } from '../../utils/constants.js';
  * - Critical hits (natural 20 = double damage dice)
  * - Spell casting with spell slots and saving throws
  * - Environmental modifiers and music bonuses
+ * - Deterministic treasure generation using seeded RNG
  */
 export class CombatEngine {
   private initiativeRoller: InitiativeRoller;
   private attackResolver: AttackResolver;
   private spellCaster: SpellCaster;
   private config: CombatConfig;
+  private rng: SeededRNG;
 
   /**
    * Initialize the combat engine with configuration options
@@ -43,9 +46,10 @@ export class CombatEngine {
    * @param {boolean} [config.tacticalMode=false] - Enable advanced tactical rules
    * @param {number} [config.maxTurnsBeforeDraw=100] - Max turns before combat draws
    * @param {boolean} [config.allowFleeing=false] - Allow combatants to flee
+   * @param {string} [config.seed] - Seed for deterministic treasure generation
    *
    * @example
-   * const combat = new CombatEngine({ tacticalMode: true });
+   * const combat = new CombatEngine({ tacticalMode: true, seed: 'my-seed' });
    */
   constructor(config: CombatConfig = {}) {
     this.initiativeRoller = new InitiativeRoller();
@@ -57,8 +61,11 @@ export class CombatEngine {
       tacticalMode: false,
       maxTurnsBeforeDraw: 100,
       allowFleeing: false,
+      seed: config.seed || `combat_${Date.now()}`,
       ...config
     };
+    // Initialize seeded RNG for deterministic treasure generation
+    this.rng = new SeededRNG(this.config.seed!);
   }
 
   /**
@@ -200,7 +207,7 @@ export class CombatEngine {
     }
 
     // Find the specific weapon or use the first equipped one
-    let selectedWeapon = weaponName
+    const selectedWeapon = weaponName
       ? equippedWeapons.find(w => w.name === weaponName)
       : equippedWeapons[0];
 
@@ -445,7 +452,7 @@ export class CombatEngine {
       totalTurns,
       xpAwarded,
       treasureAwarded: {
-        gold: Math.floor(Math.random() * 100),
+        gold: Math.floor(this.rng.random() * 100),
         items: []
       },
       description

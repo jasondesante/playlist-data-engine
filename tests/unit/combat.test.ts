@@ -1047,4 +1047,100 @@ describe('Combat System (T107-T116)', () => {
       expect(strMod + profBonus).toBe(4);
     });
   });
+
+  describe('Task 7: Deterministic Treasure Generation', () => {
+    it('should generate deterministic treasure with same seed', () => {
+      const player = createMockCharacter({ name: 'Player' });
+      const enemy = createMockCharacter({ name: 'Enemy', hp: { current: 1, max: 1 } });
+
+      // Create two combat engines with the same seed
+      const engine1 = new CombatEngine({ seed: 'test-seed-123' });
+      const engine2 = new CombatEngine({ seed: 'test-seed-123' });
+
+      const combat1 = engine1.startCombat([player], [enemy]);
+      const combat2 = engine2.startCombat([player], [enemy]);
+
+      // Defeat the enemy in both combats
+      combat1.combatants[1].currentHP = 0;
+      combat1.combatants[1].isDefeated = true;
+      combat1.isActive = false;
+      combat1.winner = combat1.combatants[0];
+
+      combat2.combatants[1].currentHP = 0;
+      combat2.combatants[1].isDefeated = true;
+      combat2.isActive = false;
+      combat2.winner = combat2.combatants[0];
+
+      const result1 = engine1.getCombatResult(combat1);
+      const result2 = engine2.getCombatResult(combat2);
+
+      // Treasure should be identical with the same seed
+      expect(result1?.treasureAwarded?.gold).toBe(result2?.treasureAwarded?.gold);
+      expect(result1?.treasureAwarded?.gold).toBeGreaterThanOrEqual(0);
+      expect(result1?.treasureAwarded?.gold).toBeLessThan(100);
+    });
+
+    it('should generate different treasure with different seeds', () => {
+      const player = createMockCharacter({ name: 'Player' });
+      const enemy = createMockCharacter({ name: 'Enemy', hp: { current: 1, max: 1 } });
+
+      // Create two combat engines with different seeds
+      const engine1 = new CombatEngine({ seed: 'seed-alpha' });
+      const engine2 = new CombatEngine({ seed: 'seed-beta' });
+
+      const combat1 = engine1.startCombat([player], [enemy]);
+      const combat2 = engine2.startCombat([player], [enemy]);
+
+      // Defeat the enemy in both combats
+      combat1.combatants[1].currentHP = 0;
+      combat1.combatants[1].isDefeated = true;
+      combat1.isActive = false;
+      combat1.winner = combat1.combatants[0];
+
+      combat2.combatants[1].currentHP = 0;
+      combat2.combatants[1].isDefeated = true;
+      combat2.isActive = false;
+      combat2.winner = combat2.combatants[0];
+
+      const result1 = engine1.getCombatResult(combat1);
+      const result2 = engine2.getCombatResult(combat2);
+
+      // Treasure should be different with different seeds (extremely unlikely to be the same)
+      expect(result1?.treasureAwarded?.gold).not.toBe(result2?.treasureAwarded?.gold);
+    });
+
+    it('should use seeded RNG for treasure generation', () => {
+      const player = createMockCharacter({ name: 'Player' });
+      const enemy = createMockCharacter({ name: 'Enemy', hp: { current: 1, max: 1 } });
+
+      // Create combat engine with known seed
+      const engine = new CombatEngine({ seed: 'predictable-seed' });
+      const combat = engine.startCombat([player], [enemy]);
+
+      // Defeat the enemy
+      combat.combatants[1].currentHP = 0;
+      combat.combatants[1].isDefeated = true;
+      combat.isActive = false;
+      combat.winner = combat.combatants[0];
+
+      const result = engine.getCombatResult(combat);
+
+      // Treasure should be generated and deterministic
+      expect(result?.treasureAwarded).toBeDefined();
+      expect(result?.treasureAwarded?.gold).toBeGreaterThanOrEqual(0);
+      expect(result?.treasureAwarded?.gold).toBeLessThan(100);
+      expect(result?.treasureAwarded?.items).toEqual([]);
+
+      // Verify the result is always the same for this seed by creating a new engine with the same seed
+      const engine2 = new CombatEngine({ seed: 'predictable-seed' });
+      const combat2 = engine2.startCombat([player], [enemy]);
+      combat2.combatants[1].currentHP = 0;
+      combat2.combatants[1].isDefeated = true;
+      combat2.isActive = false;
+      combat2.winner = combat2.combatants[0];
+
+      const result2 = engine2.getCombatResult(combat2);
+      expect(result2?.treasureAwarded?.gold).toBe(result?.treasureAwarded?.gold);
+    });
+  });
 });

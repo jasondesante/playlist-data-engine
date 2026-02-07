@@ -159,4 +159,5 @@ export interface CombatConfig {
   tacticalMode?: boolean;       // Enable position-based distance mechanics
   maxTurnsBeforeDraw?: number;  // Turn limit before combat is a draw (default: 100)
   allowFleeing?: boolean;       // Can combatants attempt to flee
+  seed?: string;                // Seed for deterministic RNG (treasure generation, etc.)
 }

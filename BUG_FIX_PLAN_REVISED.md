@@ -242,9 +242,9 @@ treasureAwarded: {
 Inconsistent with the rest of the codebase which uses seeded RNG.
 
 **Fix Steps:**
-1. [ ] Read `src/core/combat/CombatEngine.ts` lines 440-460
-2. [ ] Find how RNG is used elsewhere (likely `SeededRNG` from `src/utils/random.ts`)
-3. [ ] Update to use seeded RNG:
+1. [x] Read `src/core/combat/CombatEngine.ts` lines 440-460
+2. [x] Find how RNG is used elsewhere (likely `SeededRNG` from `src/utils/random.ts`)
+3. [x] Update to use seeded RNG:
    ```typescript
    import { SeededRNG } from '../../utils/random.js';
 
@@ -255,10 +255,19 @@ Inconsistent with the rest of the codebase which uses seeded RNG.
        items: []
    }
    ```
-4. [ ] Add seed parameter to `awardTreasure()` method
-5. [ ] Update tests to use fixed seeds for deterministic results
+4. [x] Add seed parameter to CombatConfig
+5. [x] Update tests to use fixed seeds for deterministic results
 
 **Expected Outcome:** Treasure generation uses seeded RNG for reproducibility.
+
+**Implementation Notes:**
+- Added `seed?: string` to `CombatConfig` interface in `src/core/types/Combat.ts`
+- Added `private rng: SeededRNG` member to `CombatEngine` class
+- Constructor now initializes RNG with provided seed or auto-generated seed
+- Changed `Math.random()` to `this.rng.random()` in `getCombatResult()`
+- Also fixed pre-existing lint issue: changed `let selectedWeapon` to `const selectedWeapon`
+- Added 3 new test cases covering deterministic treasure with same seed, different treasure with different seeds, and seeded RNG usage
+- All 2119 tests pass (2116 + 3 new)
 
 ---
 
@@ -431,7 +440,7 @@ character: any  // Should be CharacterSheet
 - [x] Task 6: Incorrect zero check in MotionDetector
 
 ### Phase 3: Medium Priority
-- [ ] Task 7: Non-deterministic treasure generation
+- [x] Task 7: Non-deterministic treasure generation
 - [ ] Task 8: Direct mutation of options object
 - [ ] Task 9: Tropical region detection
 - [ ] Task 10: Weather API response validation
