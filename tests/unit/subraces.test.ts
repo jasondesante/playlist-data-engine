@@ -1205,5 +1205,87 @@ describe('Subrace Support', () => {
                 );
             }).not.toThrow();
         });
+
+        it('should not mutate the options object when auto-detecting race from subrace', () => {
+            // First, register Elf traits with High Elf subrace
+            const highElfTrait: RacialTrait = {
+                id: 'high_elf_cantrip',
+                name: 'High Elf Cantrip',
+                description: 'Extra cantrip',
+                type: 'passive',
+                race: 'Elf',
+                subrace: 'High Elf',
+                effects: [{ type: 'passive_modifier', target: 'cantrip', value: 1 }],
+                source: 'default'
+            };
+
+            registerTestRacialTrait(highElfTrait);
+
+            const audioProfile = createMockAudioProfile();
+
+            // Create an options object with only subrace (no forceRace)
+            const options: CharacterGeneratorOptions = { subrace: 'High Elf' };
+
+            // Capture the original state of the options
+            const originalOptions = { ...options };
+
+            // Generate character - should auto-detect Elf from High Elf subrace
+            const character = CharacterGenerator.generate(
+                'no-mutation-test',
+                audioProfile,
+                createMockTrack('No Mutation'),
+                options
+            );
+
+            // Verify the character was generated correctly
+            expect(character.race).toBe('Elf');
+            expect(character.subrace).toBe('High Elf');
+
+            // Verify the options object was NOT mutated
+            expect(options).toEqual(originalOptions);
+            expect(options.forceRace).toBeUndefined();
+        });
+
+        it('should not mutate the options object when both forceRace and subrace are provided', () => {
+            // First, register Hill Dwarf trait
+            const hillDwarfTrait: RacialTrait = {
+                id: 'hill_dwarf_wisdom',
+                name: 'Hill Dwarf Wisdom',
+                description: 'Extra wisdom',
+                type: 'passive',
+                race: 'Dwarf',
+                subrace: 'Hill Dwarf',
+                effects: [{ type: 'stat_bonus', target: 'WIS', value: 1 }],
+                source: 'default'
+            };
+
+            registerTestRacialTrait(hillDwarfTrait);
+
+            const audioProfile = createMockAudioProfile();
+
+            // Create an options object with both forceRace and subrace
+            const options: CharacterGeneratorOptions = {
+                forceRace: 'Dwarf',
+                subrace: 'Hill Dwarf'
+            };
+
+            // Deep clone to capture original state
+            const originalOptions = JSON.parse(JSON.stringify(options));
+
+            // Generate character
+            const character = CharacterGenerator.generate(
+                'no-mutation-both-test',
+                audioProfile,
+                createMockTrack('No Mutation Both'),
+                options
+            );
+
+            // Verify the character was generated correctly
+            expect(character.race).toBe('Dwarf');
+            expect(character.subrace).toBe('Hill Dwarf');
+
+            // Verify the options object was NOT mutated
+            expect(JSON.stringify(options)).toBe(JSON.stringify(originalOptions));
+        });
     });
 });

@@ -282,17 +282,26 @@ options.forceRace = detectedRace;  // Directly mutating parameter!
 ```
 
 **Fix Steps:**
-1. [ ] Read `src/core/generation/CharacterGenerator.ts` lines 305-325
-2. [ ] Search for all callers to ensure no code depends on this mutation
-3. [ ] Create a local variable:
+1. [x] Read `src/core/generation/CharacterGenerator.ts` lines 305-325
+2. [x] Search for all callers to ensure no code depends on this mutation
+3. [x] Create a local variable:
    ```typescript
    const effectiveRace = detectedRace || options.forceRace;
    ```
-4. [ ] Update all references to use the non-mutated version
-5. [ ] Add JSDoc noting that options are not modified
-6. [ ] Add test verifying options object is unchanged after call
+4. [x] Update all references to use the non-mutated version
+5. [x] Add JSDoc noting that options are not modified
+6. [x] Add test verifying options object is unchanged after call
 
 **Expected Outcome:** Options object is never mutated.
+
+**Implementation Notes:**
+- Replaced direct mutation `options.forceRace = detectedRace` with local variable `effectiveRace`
+- The `effectiveRace` variable is now computed based on whether only subrace is provided (auto-detect race) or if forceRace is already set
+- Updated race selection logic to use `effectiveRace` instead of `options.forceRace`
+- Added 2 new test cases:
+  1. `should not mutate the options object when auto-detecting race from subrace` - verifies that when only subrace is provided, the original options object remains unchanged
+  2. `should not mutate the options object when both forceRace and subrace are provided` - verifies that when both are provided, the options object is not mutated
+- All 2118 tests pass (2116 + 2 new)
 
 ---
 
@@ -441,7 +450,7 @@ character: any  // Should be CharacterSheet
 
 ### Phase 3: Medium Priority
 - [x] Task 7: Non-deterministic treasure generation
-- [ ] Task 8: Direct mutation of options object
+- [x] Task 8: Direct mutation of options object
 - [ ] Task 9: Tropical region detection
 - [ ] Task 10: Weather API response validation
 

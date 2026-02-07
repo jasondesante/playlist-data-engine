@@ -292,15 +292,20 @@ export class CharacterGenerator {
         let subrace: string | undefined;
         const requestedSubrace = options.subrace;
 
+        // Determine the effective race (without mutating options)
+        // If only subrace is provided, auto-detect the race from the subrace
+        let effectiveRace: string | undefined;
         if (requestedSubrace === 'pure') {
             // Explicitly no subrace (race can be generated or forced)
             subrace = undefined;
+            effectiveRace = options.forceRace;
         } else if (requestedSubrace !== undefined) {
             // Specific subrace requested
             if (options.forceRace) {
                 // Both race and subrace specified - validate subrace exists for this race
                 // We'll validate later after race is determined
                 subrace = requestedSubrace;
+                effectiveRace = options.forceRace;
             } else {
                 // Only subrace specified - auto-detect race from subrace
                 const detectedRace = featureQuery.getRaceForSubrace(requestedSubrace);
@@ -311,15 +316,15 @@ export class CharacterGenerator {
                         `Example: { forceRace: 'Elf', subrace: 'High Elf' }`
                     );
                 }
-                // Use the detected race for this character
-                options.forceRace = detectedRace;
+                // Use the detected race for this character (without mutating options)
+                effectiveRace = detectedRace;
                 subrace = requestedSubrace;
             }
         }
         // If requestedSubrace is undefined, we'll randomly select a subrace later
 
-        // Select race deterministically from seed or use forced race
-        const race = options.forceRace || RaceSelector.select(rng);
+        // Select race deterministically from seed or use forced/effective race
+        const race = effectiveRace || RaceSelector.select(rng);
 
         // Validate subrace if both race and subrace were specified
         if (subrace !== undefined && requestedSubrace !== 'pure') {
