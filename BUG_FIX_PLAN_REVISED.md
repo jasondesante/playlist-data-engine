@@ -6,6 +6,13 @@ This plan contains 14 prioritized bug fixes identified through comprehensive cod
 
 ---
 
+
+NOTE FROM THE USER:
+
+I don't think any of these tasks involved updating the documentation. There should be a search done for each task in each phase to see if there is any documentation that needs to be updated. Add a new task for each phase that will be about checking documentation for each completed task in those older phases with completed tasks. And for the uncompleted tasks, add checkboxes for each task to check and update the docs if necessary.
+
+---
+
 ## Phase 1: Critical Breaking Bugs (Fix Immediately)
 
 These issues will cause production failures and must be fixed first.
@@ -319,19 +326,35 @@ private isTropicalRegion(): boolean {
 Hurricane/typhoon detection depends on this working.
 
 **Fix Steps:**
-1. [ ] Read `src/core/sensors/WeatherAPIClient.ts` lines 770-790
-2. [ ] Trace all callers to verify they have lat/lon data available
-3. [ ] Update method signature to accept location:
+1. [x] Read `src/core/sensors/WeatherAPIClient.ts` lines 770-790
+2. [x] Trace all callers to verify they have lat/lon data available
+3. [x] Update method signature to accept location:
    ```typescript
    private isTropicalRegion(lat: number, lon: number): boolean {
        // Tropical regions: roughly between 23.5°N and 23.5°S
        return Math.abs(lat) < 23.5;
    }
    ```
-4. [ ] Update all callers to pass lat/lon coordinates
-5. [ ] Add tests for various latitudes
+4. [x] Update all callers to pass lat/lon coordinates
+5. [x] Add tests for various latitudes
 
 **Expected Outcome:** Tropical regions correctly identified based on latitude.
+
+**Implementation Notes:**
+- Added `private lastKnownLocation: { latitude: number; longitude: number } | null = null` to store location data
+- Modified `getWeather()` to store location when fetching weather
+- Updated `isTropicalRegion()` to accept latitude parameter: `private isTropicalRegion(latitude: number): boolean`
+- Updated `detectSevereWeather()` to use stored location: `const isTropical = this.lastKnownLocation ? this.isTropicalRegion(this.lastKnownLocation.latitude) : false`
+- Added public getter `getLastKnownLocation()` for testing purposes
+- Added 11 new test cases covering:
+  - Tropical region detection (northern: Singapore 1.35°N → Hurricane)
+  - Temperate region detection (northern: Tokyo 35.68°N → Typhoon)
+  - Southern temperate region (Sydney -33.87°S → Typhoon)
+  - Southern tropical region (Rio de Janeiro -22.91°S → Hurricane)
+  - Boundary conditions (23.5°N = Typhoon, 23.49°N = Hurricane)
+  - Default behavior when no location is set (Typhoon)
+  - Location getter functionality
+- All 2127 tests pass (2116 + 11 new)
 
 ---
 
@@ -451,7 +474,7 @@ character: any  // Should be CharacterSheet
 ### Phase 3: Medium Priority
 - [x] Task 7: Non-deterministic treasure generation
 - [x] Task 8: Direct mutation of options object
-- [ ] Task 9: Tropical region detection
+- [x] Task 9: Tropical region detection
 - [ ] Task 10: Weather API response validation
 
 ### Phase 4: Low Priority

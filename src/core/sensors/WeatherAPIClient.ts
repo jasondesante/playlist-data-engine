@@ -68,6 +68,8 @@ export class WeatherAPIClient {
     private cacheStats: CacheStatistics = { hits: 0, misses: 0 };
     private useLocalStorage: boolean;
     private logger = Logger.for('WeatherAPIClient');
+    // Store last known location for tropical region detection
+    private lastKnownLocation: { latitude: number; longitude: number } | null = null;
 
     // Performance metrics for current weather API
     private weatherApiMetrics: PerformanceMetrics = {
@@ -393,6 +395,9 @@ export class WeatherAPIClient {
             return null;
         }
 
+        // Store location for tropical region detection
+        this.lastKnownLocation = { latitude, longitude };
+
         // Check cache first
         const cacheKey = this.getCacheKey(latitude, longitude);
         const cachedEntry = this.cache.get(cacheKey);
@@ -511,6 +516,15 @@ export class WeatherAPIClient {
      */
     getCacheSize(): number {
         return this.cache.size;
+    }
+
+    /**
+     * Get the last known location used for weather queries
+     * Used for tropical region detection in severe weather alerts
+     * @returns Last known location or null if no weather has been fetched
+     */
+    getLastKnownLocation(): { latitude: number; longitude: number } | null {
+        return this.lastKnownLocation ? { ...this.lastKnownLocation } : null;
     }
 
     /**
@@ -726,8 +740,10 @@ export class WeatherAPIClient {
         // Hurricane/Typhoon detection: Extreme winds with storm conditions
         if (windSpeedKmh > 118) {
             // Hurricane force winds: >118 km/h (Category 1+)
-            const isTropicalRegion = this.isTropicalRegion(); // Could be enhanced with lat/lon
-            const type = isTropicalRegion ? SevereWeatherType.Hurricane : SevereWeatherType.Typhoon;
+            const isTropical = this.lastKnownLocation
+                ? this.isTropicalRegion(this.lastKnownLocation.latitude)
+                : false;
+            const type = isTropical ? SevereWeatherType.Hurricane : SevereWeatherType.Typhoon;
 
             return {
                 type,
@@ -765,15 +781,18 @@ export class WeatherAPIClient {
     }
 
     /**
-     * Helper method to determine if current location is in tropical region
-     * This is a simplified version - in production, you'd pass lat/lon as parameters
+     * Helper method to determine if a location is in tropical region
      *
+     * Tropical regions are roughly between the Tropic of Cancer (23.5°N) and
+     * the Tropic of Capricorn (23.5°S). This is where hurricanes and typhoons
+     * are most likely to form.
+     *
+     * @param latitude Latitude in decimal degrees
      * @returns True if in tropical region (between 23.5°N and 23.5°S)
      */
-    private isTropicalRegion(): boolean {
-        // Default to false - this would need location context
-        // In production, enhance to accept lat/lon parameters
-        return false;
+    private isTropicalRegion(latitude: number): boolean {
+        // Tropical regions: between 23.5°N and 23.5°S (absolute value < 23.5)
+        return Math.abs(latitude) < 23.5;
     }
 
     /**

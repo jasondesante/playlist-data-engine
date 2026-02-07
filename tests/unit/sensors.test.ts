@@ -2313,6 +2313,338 @@ describe('WeatherAPIClient Severe Weather Detection', () => {
             expect(alert).not.toBeNull();
             expect(alert?.type).toBe('Blizzard');
         });
+
+        it('should detect hurricane when in tropical region (lat < 23.5°)', async () => {
+            // Miami, Florida: 25.76°N (just outside tropics, but close enough for testing)
+            // Actually let's use a truly tropical location
+            // Singapore: 1.35°N (well within tropics)
+            const tropicalLat = 1.35;
+
+            // First, fetch weather from tropical location to store location
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 103.82, lat: tropicalLat },
+                    weather: [{ id: 200, main: 'Thunderstorm', description: 'thunderstorm with light rain', icon: '11d' }],
+                    main: { temp: 30, feels_like: 35, temp_min: 29, temp_max: 31, pressure: 1008, humidity: 85, sea_level: 1010, grnd_level: 1008 },
+                    visibility: 10000,
+                    wind: { speed: 35, deg: 180 }, // ~126 km/h - hurricane force
+                    clouds: { all: 75 },
+                    dt: 1661870592,
+                    sys: { type: 1, id: 9460, country: 'SG', sunrise: 1661834187, sunset: 1661880960 },
+                    timezone: 28800,
+                    id: 1880252,
+                    name: 'Singapore',
+                    cod: 200
+                })
+            });
+            global.fetch = mockFetch;
+
+            await weatherClient.getWeather(tropicalLat, 103.82);
+
+            // Verify location was stored
+            const location = weatherClient.getLastKnownLocation();
+            expect(location).not.toBeNull();
+            expect(location?.latitude).toBe(tropicalLat);
+
+            // Now detect severe weather - should be Hurricane, not Typhoon
+            const hurricaneWeather: WeatherData = {
+                temperature: 30,
+                humidity: 90,
+                pressure: 950,
+                weatherType: 'Thunderstorm',
+                windSpeed: 35, // ~126 km/h - Category 1+ hurricane
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(hurricaneWeather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe(SevereWeatherType.Hurricane);
+            expect(alert?.xpBonus).toBe(0.75);
+        });
+
+        it('should detect typhoon when outside tropical region (lat > 23.5°N)', async () => {
+            // Tokyo, Japan: 35.68°N (well outside tropics)
+            const temperateLat = 35.68;
+
+            // Mock fetch for temperate location
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 139.69, lat: temperateLat },
+                    weather: [{ id: 200, main: 'Thunderstorm', description: 'thunderstorm', icon: '11d' }],
+                    main: { temp: 25, feels_like: 27, temp_min: 24, temp_max: 26, pressure: 1005, humidity: 80, sea_level: 1010, grnd_level: 1005 },
+                    visibility: 10000,
+                    wind: { speed: 35, deg: 180 },
+                    clouds: { all: 75 },
+                    dt: 1661870592,
+                    sys: { type: 1, id: 9460, country: 'JP', sunrise: 1661834187, sunset: 1661880960 },
+                    timezone: 32400,
+                    id: 1850147,
+                    name: 'Tokyo',
+                    cod: 200
+                })
+            });
+            global.fetch = mockFetch;
+
+            await weatherClient.getWeather(temperateLat, 139.69);
+
+            // Now detect severe weather - should be Typhoon, not Hurricane
+            const typhoonWeather: WeatherData = {
+                temperature: 25,
+                humidity: 85,
+                pressure: 960,
+                weatherType: 'Thunderstorm',
+                windSpeed: 40, // ~144 km/h
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(typhoonWeather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe(SevereWeatherType.Typhoon);
+            expect(alert?.xpBonus).toBe(0.75);
+        });
+
+        it('should detect typhoon in southern temperate region (lat < 23.5°S)', async () => {
+            // Sydney, Australia: 33.87°S (outside tropics)
+            const southernTemperateLat = -33.87;
+
+            // Mock fetch for southern temperate location
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 151.21, lat: southernTemperateLat },
+                    weather: [{ id: 200, main: 'Thunderstorm', description: 'thunderstorm', icon: '11d' }],
+                    main: { temp: 20, feels_like: 20, temp_min: 19, temp_max: 21, pressure: 1000, humidity: 75, sea_level: 1010, grnd_level: 1000 },
+                    visibility: 10000,
+                    wind: { speed: 38, deg: 180 },
+                    clouds: { all: 75 },
+                    dt: 1661870592,
+                    sys: { type: 1, id: 9460, country: 'AU', sunrise: 1661834187, sunset: 1661880960 },
+                    timezone: 36000,
+                    id: 2147714,
+                    name: 'Sydney',
+                    cod: 200
+                })
+            });
+            global.fetch = mockFetch;
+
+            await weatherClient.getWeather(southernTemperateLat, 151.21);
+
+            // Should be Typhoon in southern temperate region
+            const weather: WeatherData = {
+                temperature: 20,
+                humidity: 80,
+                pressure: 965,
+                weatherType: 'Thunderstorm',
+                windSpeed: 38,
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(weather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe(SevereWeatherType.Typhoon);
+        });
+
+        it('should detect hurricane in southern tropical region (lat between 23.5°S and 0)', async () => {
+            // Rio de Janeiro, Brazil: 22.91°S (just inside tropics)
+            const southernTropicalLat = -22.91;
+
+            // Mock fetch for southern tropical location
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: -43.17, lat: southernTropicalLat },
+                    weather: [{ id: 200, main: 'Thunderstorm', description: 'thunderstorm', icon: '11d' }],
+                    main: { temp: 28, feels_like: 32, temp_min: 27, temp_max: 29, pressure: 1005, humidity: 85, sea_level: 1010, grnd_level: 1005 },
+                    visibility: 10000,
+                    wind: { speed: 33, deg: 90 },
+                    clouds: { all: 75 },
+                    dt: 1661870592,
+                    sys: { type: 1, id: 9460, country: 'BR', sunrise: 1661834187, sunset: 1661880960 },
+                    timezone: -7200,
+                    id: 3451190,
+                    name: 'Rio de Janeiro',
+                    cod: 200
+                })
+            });
+            global.fetch = mockFetch;
+
+            await weatherClient.getWeather(southernTropicalLat, -43.17);
+
+            // Should be Hurricane in southern tropical region
+            const weather: WeatherData = {
+                temperature: 28,
+                humidity: 85,
+                pressure: 970,
+                weatherType: 'Thunderstorm',
+                windSpeed: 33,
+                windDirection: 90,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(weather);
+
+            expect(alert).not.toBeNull();
+            expect(alert?.type).toBe(SevereWeatherType.Hurricane);
+        });
+
+        it('should default to typhoon when no location has been stored', () => {
+            // Create new client without fetching weather (no location stored)
+            const newClient = new WeatherAPIClient('test-key');
+
+            const extremeWindWeather: WeatherData = {
+                temperature: 25,
+                humidity: 85,
+                pressure: 955,
+                weatherType: 'Thunderstorm',
+                windSpeed: 40,
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = newClient.detectSevereWeather(extremeWindWeather);
+
+            expect(alert).not.toBeNull();
+            // Without location data, defaults to Typhoon (non-tropical)
+            expect(alert?.type).toBe(SevereWeatherType.Typhoon);
+        });
+
+        it('should correctly identify location at exact Tropic of Cancer boundary (23.5°N)', async () => {
+            const boundaryLat = 23.5;
+
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 0, lat: boundaryLat },
+                    weather: [{ id: 200, main: 'Thunderstorm', description: 'thunderstorm', icon: '11d' }],
+                    main: { temp: 30, feels_like: 33, temp_min: 29, temp_max: 31, pressure: 1010, humidity: 80, sea_level: 1012, grnd_level: 1010 },
+                    visibility: 10000,
+                    wind: { speed: 35, deg: 180 },
+                    clouds: { all: 50 },
+                    dt: 1661870592,
+                    sys: { type: 1, id: 1, country: 'XX', sunrise: 1661834187, sunset: 1661880960 },
+                    timezone: 0,
+                    id: 1,
+                    name: 'Boundary',
+                    cod: 200
+                })
+            });
+            global.fetch = mockFetch;
+
+            await weatherClient.getWeather(boundaryLat, 0);
+
+            const weather: WeatherData = {
+                temperature: 30,
+                humidity: 80,
+                pressure: 960,
+                weatherType: 'Thunderstorm',
+                windSpeed: 35,
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(weather);
+
+            expect(alert).not.toBeNull();
+            // At exactly 23.5°, should be Typhoon (not tropical, uses strict < comparison)
+            expect(alert?.type).toBe(SevereWeatherType.Typhoon);
+        });
+
+        it('should correctly identify location just inside tropical zone (23.49°N)', async () => {
+            const justInsideTropicsLat = 23.49;
+
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 0, lat: justInsideTropicsLat },
+                    weather: [{ id: 200, main: 'Thunderstorm', description: 'thunderstorm', icon: '11d' }],
+                    main: { temp: 30, feels_like: 33, temp_min: 29, temp_max: 31, pressure: 1010, humidity: 80, sea_level: 1012, grnd_level: 1010 },
+                    visibility: 10000,
+                    wind: { speed: 35, deg: 180 },
+                    clouds: { all: 50 },
+                    dt: 1661870592,
+                    sys: { type: 1, id: 1, country: 'XX', sunrise: 1661834187, sunset: 1661880960 },
+                    timezone: 0,
+                    id: 1,
+                    name: 'Inside Tropics',
+                    cod: 200
+                })
+            });
+            global.fetch = mockFetch;
+
+            await weatherClient.getWeather(justInsideTropicsLat, 0);
+
+            const weather: WeatherData = {
+                temperature: 30,
+                humidity: 80,
+                pressure: 960,
+                weatherType: 'Thunderstorm',
+                windSpeed: 35,
+                windDirection: 180,
+                isNight: false,
+                moonPhase: 0.5,
+                timestamp: Date.now()
+            };
+
+            const alert = weatherClient.detectSevereWeather(weather);
+
+            expect(alert).not.toBeNull();
+            // At 23.49°, should be Hurricane (tropical)
+            expect(alert?.type).toBe(SevereWeatherType.Hurricane);
+        });
+
+        it('should return null for last known location initially', () => {
+            const newClient = new WeatherAPIClient('test-key');
+            expect(newClient.getLastKnownLocation()).toBeNull();
+        });
+
+        it('should return a copy of last known location (not the internal reference)', async () => {
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    coord: { lon: 0, lat: 0 },
+                    weather: [{ id: 800, main: 'Clear', description: 'clear sky', icon: '01d' }],
+                    main: { temp: 20, feels_like: 19, temp_min: 19, temp_max: 21, pressure: 1015, humidity: 50, sea_level: 1015, grnd_level: 1015 },
+                    visibility: 10000,
+                    wind: { speed: 3, deg: 180 },
+                    clouds: { all: 0 },
+                    dt: 1661870592,
+                    sys: { type: 1, id: 1, country: 'XX', sunrise: 1661834187, sunset: 1661880960 },
+                    timezone: 0,
+                    id: 1,
+                    name: 'Equator',
+                    cod: 200
+                })
+            });
+            global.fetch = mockFetch;
+
+            await weatherClient.getWeather(0, 0);
+
+            const location1 = weatherClient.getLastKnownLocation();
+            const location2 = weatherClient.getLastKnownLocation();
+
+            expect(location1).toEqual(location2);
+            expect(location1).not.toBe(location2); // Different references (copied)
+        });
     });
 
     describe('getSafetyWarning', () => {
