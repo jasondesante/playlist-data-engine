@@ -423,11 +423,18 @@ persistant_rage  // Should be "persistent_rage"
 ```
 
 **Fix Steps:**
-1. [ ] Change `persistant_rage` to `persistent_rage`
-2. [ ] Search codebase for any references to the typo
-3. [ ] Verify no lookups break
+1. [x] Change `persistant_rage` to `persistent_rage`
+2. [x] Search codebase for any references to the typo
+3. [x] Verify no lookups break
 
 **Expected Outcome:** Feature ID uses correct spelling.
+
+**Implementation Notes:**
+- Changed `barbarian_persistant_rage` to `barbarian_persistent_rage` in `src/core/features/DefaultFeatures.ts:119`
+- No code references found to the misspelled ID (only the bug fix plan referenced it)
+- No documentation references found to this feature ID
+- No tests reference this feature ID
+- All 2127 tests pass - no breakages
 
 ---
 
@@ -491,7 +498,7 @@ character: any  // Should be CharacterSheet
 - [x] Task 10: Weather API response validation
 
 ### Phase 4: Low Priority
-- [ ] Task 11: Fix typo in feature ID
+- [x] Task 11: Fix typo in feature ID
 - [ ] Task 12: Remove duplicate isAbility()
 - [ ] Task 13: Fix AttackResolver type
 

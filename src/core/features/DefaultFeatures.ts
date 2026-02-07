@@ -116,7 +116,7 @@ export const DEFAULT_CLASS_FEATURES: ClassFeature[] = [
         tags: ['survival']
     },
     {
-        id: 'barbarian_persistant_rage',
+        id: 'barbarian_persistent_rage',
         name: 'Persistent Rage',
         description: 'Your rage can\'t end early due to fatigue.',
         type: 'passive',
