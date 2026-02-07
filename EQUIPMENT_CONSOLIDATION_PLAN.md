@@ -507,16 +507,32 @@ export const ENCHANTMENT_LIBRARY = {
 - Total of 48 enchantments/curses + 6 factory functions organized in ENCHANTMENT_LIBRARY
 
 ### Task 14: Add named exports
-- [ ] Export `DEFAULT_EQUIPMENT`
-- [ ] Export `CLASS_STARTING_EQUIPMENT`
-- [ ] Export `getClassStartingEquipment`
-- [ ] Export `MAGIC_ITEMS`
-- [ ] Export `ITEM_CREATION_TEMPLATES`
-- [ ] Export `ENCHANTMENT_LIBRARY`
+- [x] Export `DEFAULT_EQUIPMENT`
+- [x] Export `CLASS_STARTING_EQUIPMENT`
+- [x] Export `getClassStartingEquipment`
+- [x] Export `MAGIC_ITEMS`
+- [x] Export `ITEM_CREATION_TEMPLATES`
+- [x] Export `ENCHANTMENT_LIBRARY`
+
+**Task 14 Summary:**
+- Verified all constants are already exported in equipmentConstants.ts
+- DEFAULT_EQUIPMENT exported (line 64)
+- CLASS_STARTING_EQUIPMENT exported (line 520)
+- getClassStartingEquipment exported (line 612)
+- MAGIC_ITEMS exported (line 665)
+- ITEM_CREATION_TEMPLATES exported (line 1723)
+- ENCHANTMENT_LIBRARY exported (line 1934)
+- All stat boosting factory functions exported (createStrengthEnchantment, etc.)
 
 ### Task 15: Verify file compiles
-- [ ] Run `tsc --noEmit` to check for type errors
-- [ ] Fix any import or type issues
+- [x] Run `tsc --noEmit` to check for type errors
+- [x] Fix any import or type issues
+
+**Task 15 Summary:**
+- Ran full project type check
+- equipmentConstants.ts has no type errors
+- Build completes successfully (vite build passes)
+- Note: Pre-existing TypeScript errors in CharacterGenerator.ts (Race type issues) and ExtensionManager.ts/FeatureQuery.ts (downlevelIteration flag) are unrelated to equipment consolidation work
 
 ---
 
