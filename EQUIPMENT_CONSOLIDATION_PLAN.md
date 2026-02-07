@@ -368,10 +368,10 @@ This is a **breaking API change** for external users who call `getEnchantment('e
 - [x] Verify this is safe based on Phase 0 research
 
 ### Task 11: Move MAGIC_ITEMS from magicItemExamples.ts
-- [ ] Copy `MAGIC_ITEM_EXAMPLES` from `src/utils/magicItemExamples.ts`
-- [ ] Rename to `MAGIC_ITEMS`
-- [ ] Ensure all 34 magic items are included
-- [ ] Verify types match `EnhancedEquipment` interface
+- [x] Copy `MAGIC_ITEM_EXAMPLES` from `src/utils/magicItemExamples.ts`
+- [x] Rename to `MAGIC_ITEMS`
+- [x] Ensure all 34 magic items are included
+- [x] Verify types match `EnhancedEquipment` interface
 
 ### Task 12: Move ITEM_CREATION_TEMPLATES from magicItemExamples.ts
 - [ ] Copy `MAGIC_EQUIPMENT_TEMPLATES` from `src/utils/magicItemExamples.ts`
