@@ -293,6 +293,81 @@ describe('EnvironmentalSensors', () => {
         expect(activity).toBe('stationary');
     });
 
+    it('should correctly handle acceleration values of exactly 0', () => {
+        // Regression test for: https://github.com/anthropics/claude-code/issues/XXX
+        // Zero is a valid acceleration value (e.g., device lying flat on table)
+        // Previous bug used truthy check (!acc.x) which treated 0 as falsy
+        const motionDetector = new MotionDetector();
+
+        // Device lying flat with no movement - gravity shows in Z axis
+        const activity1 = motionDetector.detectActivity({
+            acceleration: { x: 0, y: 0, z: 0 },
+            accelerationIncludingGravity: { x: 0, y: 0, z: 9.8 },
+            rotationRate: { alpha: null, beta: null, gamma: null },
+            interval: 16,
+            timestamp: Date.now()
+        });
+        // magnitude = sqrt(0 + 0 + 96.04) = 9.8, delta = 0 < 0.5 = stationary
+        expect(activity1).toBe('stationary');
+
+        // Device with exactly 0 on X and Y axes, positive on Z (e.g., held vertically)
+        const activity2 = motionDetector.detectActivity({
+            acceleration: { x: 0, y: 0, z: 0.5 },
+            accelerationIncludingGravity: { x: 0, y: 0, z: 15 },
+            rotationRate: { alpha: null, beta: null, gamma: null },
+            interval: 16,
+            timestamp: Date.now()
+        });
+        // magnitude = 15, delta = |15 - 9.8| = 5.2 >= 5.0 = driving
+        expect(activity2).toBe('driving');
+
+        // Device with exactly 0 on one axis (e.g., sliding along Y axis)
+        const activity3 = motionDetector.detectActivity({
+            acceleration: { x: 0.5, y: 0, z: 0.5 },
+            accelerationIncludingGravity: { x: 0, y: 2, z: 9.8 },
+            rotationRate: { alpha: null, beta: null, gamma: null },
+            interval: 16,
+            timestamp: Date.now()
+        });
+        // magnitude = sqrt(0 + 4 + 96.04) = 10, delta = 0.2 < 0.5 = stationary
+        expect(activity3).toBe('stationary');
+    });
+
+    it('should return unknown for null/undefined accelerationIncludingGravity values', () => {
+        // When sensor data is missing (null/undefined), should return 'unknown'
+        const motionDetector = new MotionDetector();
+
+        // All null - sensor not working
+        const activity1 = motionDetector.detectActivity({
+            acceleration: { x: null, y: null, z: null },
+            accelerationIncludingGravity: { x: null, y: null, z: null },
+            rotationRate: { alpha: null, beta: null, gamma: null },
+            interval: 16,
+            timestamp: Date.now()
+        });
+        expect(activity1).toBe('unknown');
+
+        // Partial null - one axis missing sensor data
+        const activity2 = motionDetector.detectActivity({
+            acceleration: { x: null, y: null, z: null },
+            accelerationIncludingGravity: { x: 1, y: null, z: 9.8 },
+            rotationRate: { alpha: null, beta: null, gamma: null },
+            interval: 16,
+            timestamp: Date.now()
+        });
+        expect(activity2).toBe('unknown');
+
+        // Undefined values
+        const activity3 = motionDetector.detectActivity({
+            acceleration: { x: undefined, y: undefined, z: undefined },
+            accelerationIncludingGravity: { x: undefined, y: 2, z: undefined },
+            rotationRate: { alpha: null, beta: null, gamma: null },
+            interval: 16,
+            timestamp: Date.now()
+        });
+        expect(activity3).toBe('unknown');
+    });
+
     it('should calculate XP modifier correctly', () => {
         // Mock context directly if possible, or use private access for testing
         // Since context is private, we can't set it directly without casting to any

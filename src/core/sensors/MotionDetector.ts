@@ -44,10 +44,16 @@ export class MotionDetector {
      * Detect activity type based on motion intensity
      * @param data MotionData to analyze
      * @returns 'stationary' | 'walking' | 'running' | 'driving' | 'unknown'
+     *
+     * @remarks
+     * Valid acceleration range: Any number (including 0) is valid.
+     * A value of 0 represents no acceleration in that axis.
+     * Only null or undefined values indicate missing sensor data.
      */
     detectActivity(data: MotionData): 'stationary' | 'walking' | 'running' | 'driving' | 'unknown' {
         const acc = data.accelerationIncludingGravity;
-        if (!acc.x || !acc.y || !acc.z) return 'unknown';
+        // Check for null/undefined explicitly - 0 is a valid acceleration value
+        if (acc.x == null || acc.y == null || acc.z == null) return 'unknown';
 
         // Calculate magnitude of acceleration vector (minus gravity approx 9.8)
         // This is a very rough heuristic

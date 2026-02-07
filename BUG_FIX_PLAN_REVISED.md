@@ -206,16 +206,22 @@ if (!acc.x || !acc.y || !acc.z) return 'unknown';
 Treats 0 as falsy, but acceleration of 0 is valid for stationary devices.
 
 **Fix Steps:**
-1. [ ] Read `src/core/sensors/MotionDetector.ts` lines 45-60
-2. [ ] Update condition to properly check for null/undefined:
+1. [x] Read `src/core/sensors/MotionDetector.ts` lines 45-60
+2. [x] Update condition to properly check for null/undefined:
    ```typescript
    if (acc.x == null || acc.y == null || acc.z == null) return 'unknown';
    ```
-3. [ ] Add test with acceleration values of exactly 0
-4. [ ] Add test with null/undefined values
-5. [ ] Document the valid range for acceleration values
+3. [x] Add test with acceleration values of exactly 0
+4. [x] Add test with null/undefined values
+5. [x] Document the valid range for acceleration values
 
 **Expected Outcome:** Zero acceleration values are correctly processed.
+
+**Implementation Notes:**
+- Changed from truthy check `!acc.x` to explicit null check `acc.x == null`
+- Added JSDoc comment clarifying that 0 is a valid acceleration value
+- Added 3 new test cases covering zero values on all axes, partial zero values, and null/undefined handling
+- All 2116 tests pass (2113 + 3 new)
 
 ---
 
@@ -422,7 +428,7 @@ character: any  // Should be CharacterSheet
 - [x] Task 3: Infinite recursion in SpellValidator
 - [x] Task 4: Critical hit with advantage logic
 - [x] Task 5: Audio URL validation timeout
-- [ ] Task 6: Incorrect zero check in MotionDetector
+- [x] Task 6: Incorrect zero check in MotionDetector
 
 ### Phase 3: Medium Priority
 - [ ] Task 7: Non-deterministic treasure generation
