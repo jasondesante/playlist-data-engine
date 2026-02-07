@@ -439,6 +439,7 @@ export {
 // ============================================================================
 
 export {
+    EnchantmentLibrary,
     WEAPON_ENCHANTMENTS,
     ARMOR_ENCHANTMENTS,
     RESISTANCE_ENCHANTMENTS,
@@ -455,7 +456,7 @@ export {
     createIntelligenceEnchantment,
     createWisdomEnchantment,
     createCharismaEnchantment
-} from './utils/enchantmentLibrary.js';
+} from './utils/EnchantmentLibrary.js';
 
 // ============================================================================
 // SENSOR DASHBOARD
