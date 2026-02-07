@@ -395,7 +395,7 @@ character: any  // Should be CharacterSheet
 
 ### Phase 1: Critical Breaking Bugs
 - [x] Task 1: Fix FeatureValidator ESM incompatibility
-- [ ] Task 2: Fix CombatEngine ESM incompatibility
+- [x] Task 2: Fix CombatEngine ESM incompatibility
 
 ### Phase 2: High Priority
 - [ ] Task 3: Infinite recursion in SpellValidator

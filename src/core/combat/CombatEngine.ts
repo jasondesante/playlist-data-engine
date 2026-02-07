@@ -15,6 +15,7 @@ import type { EnvironmentalContext } from '../types/Progression';
 import { InitiativeRoller } from './InitiativeRoller';
 import { AttackResolver } from './AttackResolver';
 import { SpellCaster } from './SpellCaster';
+import { EQUIPMENT_DATABASE } from '../../utils/constants.js';
 
 /**
  * D&D 5e turn-based combat engine
@@ -219,8 +220,6 @@ export class CombatEngine {
    * Uses character's stats to calculate attack bonus
    */
   private buildAttackFromWeapon(weaponName: string, character: CharacterSheet): Attack {
-    // Import dynamically to avoid circular dependency
-    const { EQUIPMENT_DATABASE } = require('../../utils/constants.js');
     const weaponData = EQUIPMENT_DATABASE[weaponName];
 
     if (!weaponData) {
