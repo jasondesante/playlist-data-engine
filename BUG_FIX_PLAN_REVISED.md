@@ -478,11 +478,17 @@ character: any  // Should be CharacterSheet
 ```
 
 **Fix Steps:**
-1. [ ] Change `character: any` to `character: CharacterSheet`
-2. [ ] Verify type is imported
-3. [ ] Run TypeScript compiler to check for cascading type issues
+1. [x] Change `character: any` to `character: CharacterSheet`
+2. [x] Verify type is imported
+3. [x] Run TypeScript compiler to check for cascading type issues
 
 **Expected Outcome:** Proper typing for character parameter.
+
+**Implementation Notes:**
+- Changed `character: any` to `character: CharacterSheet` at line 188
+- Added `CharacterSheet` to imports from `../types/Character`
+- All 2127 tests pass
+- No new TypeScript errors introduced (pre-existing errors in CharacterGenerator.ts are unrelated to this change)
 
 **Note:** Do NOT remove `any` from ExtensionManager or EquipmentValidator - those are intentional.
 
@@ -509,7 +515,7 @@ character: any  // Should be CharacterSheet
 ### Phase 4: Low Priority
 - [x] Task 11: Fix typo in feature ID
 - [x] Task 12: Remove duplicate isAbility()
-- [ ] Task 13: Fix AttackResolver type
+- [x] Task 13: Fix AttackResolver type
 
 ---
 

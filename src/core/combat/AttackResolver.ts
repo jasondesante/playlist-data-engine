@@ -6,7 +6,7 @@
  */
 
 import type { Combatant, AttackRoll, DamageRoll } from '../types/Combat';
-import type { Attack } from '../types/Character';
+import type { Attack, CharacterSheet } from '../types/Character';
 import { DiceRoller } from './DiceRoller';
 
 /**
@@ -185,7 +185,7 @@ export class AttackResolver {
    * Calculate attack bonus for a character
    * Ability modifier + proficiency bonus (if proficient with weapon)
    */
-  calculateAttackBonus(character: any, _attackName: string, abilityModifier: number, isProficient: boolean = false): number {
+  calculateAttackBonus(character: CharacterSheet, _attackName: string, abilityModifier: number, isProficient: boolean = false): number {
     let bonus = abilityModifier;
 
     if (isProficient) {
