@@ -382,6 +382,14 @@ This is a **breaking API change** for external users who call `getEnchantment('e
   - `vicious_weapon_template`
   - `plus_one_armor`, `plus_two_armor`
 
+**Task 12 Summary:**
+- Successfully moved 9 templates from magicItemExamples.ts to equipmentConstants.ts
+- Note: Plan mentioned 11 templates, but source only contains 9 - verified correct count
+- Added comprehensive JSDoc documentation with usage examples
+- File compiles without errors
+- All 2127 tests pass
+- Local commit created; push to remote requires auth
+
 ### Task 13: Create ENCHANTMENT_LIBRARY sub-object with renamed constants
 
 **IMPORTANT**: Two types of renaming to do:
