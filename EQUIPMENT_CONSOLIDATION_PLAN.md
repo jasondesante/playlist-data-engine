@@ -362,10 +362,10 @@ This is a **breaking API change** for external users who call `getEnchantment('e
 - [x] Verify types match `Equipment` interface
 
 ### Task 10: Move CLASS_STARTING_EQUIPMENT from constants.ts
-- [ ] Copy `CLASS_STARTING_EQUIPMENT` from `src/utils/constants.ts`
-- [ ] Keep same name and structure
-- [ ] Include the `getClassStartingEquipment()` helper function
-- [ ] Verify this is safe based on Phase 0 research
+- [x] Copy `CLASS_STARTING_EQUIPMENT` from `src/utils/constants.ts`
+- [x] Keep same name and structure
+- [x] Include the `getClassStartingEquipment()` helper function
+- [x] Verify this is safe based on Phase 0 research
 
 ### Task 11: Move MAGIC_ITEMS from magicItemExamples.ts
 - [ ] Copy `MAGIC_ITEM_EXAMPLES` from `src/utils/magicItemExamples.ts`
