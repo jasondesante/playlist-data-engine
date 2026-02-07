@@ -356,10 +356,10 @@ This is a **breaking API change** for external users who call `getEnchantment('e
 - [x] Add JSDoc header explaining the file's purpose
 
 ### Task 9: Move DEFAULT_EQUIPMENT from constants.ts
-- [ ] Copy `EQUIPMENT_DATABASE` from `src/utils/constants.ts` (lines 1661-2108, ~450 lines)
-- [ ] Rename to `DEFAULT_EQUIPMENT`
-- [ ] Ensure all 201 equipment entries are included
-- [ ] Verify types match `Equipment` interface
+- [x] Copy `EQUIPMENT_DATABASE` from `src/utils/constants.ts` (lines 1661-2108, ~450 lines)
+- [x] Rename to `DEFAULT_EQUIPMENT`
+- [x] Ensure all 201 equipment entries are included
+- [x] Verify types match `Equipment` interface
 
 ### Task 10: Move CLASS_STARTING_EQUIPMENT from constants.ts
 - [ ] Copy `CLASS_STARTING_EQUIPMENT` from `src/utils/constants.ts`
