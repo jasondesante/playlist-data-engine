@@ -472,12 +472,12 @@ export { SensorDashboard } from './utils/sensorDashboard.js';
 export type { DashboardConfig } from './utils/sensorDashboard.js';
 
 // ============================================================================
-// MAGIC ITEM EXAMPLES
+// MAGIC ITEM HELPER FUNCTIONS
 // ============================================================================
+// Note: MAGIC_ITEMS and ITEM_CREATION_TEMPLATES constants are exported from equipmentConstants.js above
+// This file only provides helper functions for working with magic items
 
 export {
-    MAGIC_ITEM_EXAMPLES,
-    MAGIC_EQUIPMENT_TEMPLATES,
     getMagicItem,
     getMagicItemsByType,
     getMagicItemsByRarity,

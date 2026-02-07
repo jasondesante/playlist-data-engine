@@ -732,27 +732,35 @@ export const ENCHANTMENT_LIBRARY = {
 ## Phase 4: Update Public API and Clean Up
 
 ### Task 28: Update src/index.ts exports
-- [ ] Update equipment-related imports:
-  - [ ] Change from `constants.ts` to `equipmentConstants.ts` where needed
-  - [ ] Change from `enchantmentLibrary.ts` to `EnchantmentLibrary.ts`
-  - [ ] Change from `magicItemExamples.ts` to `equipmentConstants.ts` (for constants)
+- [x] Update equipment-related imports:
+  - [x] Change from `constants.ts` to `equipmentConstants.ts` where needed
+  - [x] Change from `enchantmentLibrary.ts` to `EnchantmentLibrary.ts`
+  - [x] Change from `magicItemExamples.ts` to `equipmentConstants.ts` (for constants)
 
-- [ ] Update public API exports:
-  - [ ] Export `DEFAULT_EQUIPMENT` (was `EQUIPMENT_DATABASE`)
-  - [ ] Export `CLASS_STARTING_EQUIPMENT`
-  - [ ] Export `MAGIC_ITEMS` (was `MAGIC_ITEM_EXAMPLES`)
-  - [ ] Export `ITEM_CREATION_TEMPLATES` (was `MAGIC_EQUIPMENT_TEMPLATES`)
-  - [ ] Export `ENCHANTMENT_LIBRARY`
-  - [ ] Export `EnchantmentLibrary` class
-  - [ ] Keep all function exports (factory functions now accessed via class)
+- [x] Update public API exports:
+  - [x] Export `DEFAULT_EQUIPMENT` (was `EQUIPMENT_DATABASE`)
+  - [x] Export `CLASS_STARTING_EQUIPMENT`
+  - [x] Export `MAGIC_ITEMS` (was `MAGIC_ITEM_EXAMPLES`)
+  - [x] Export `ITEM_CREATION_TEMPLATES` (was `MAGIC_EQUIPMENT_TEMPLATES`)
+  - [x] Export `ENCHANTMENT_LIBRARY`
+  - [x] Export `EnchantmentLibrary` class
+  - [x] Keep all function exports (factory functions now accessed via class)
 
-- [ ] Update factory function exports to use class:
-  - [ ] `createStrengthEnchantment` → `EnchantmentLibrary.createStrengthEnchantment`
-  - [ ] `createDexterityEnchantment` → `EnchantmentLibrary.createDexterityEnchantment`
-  - [ ] `createConstitutionEnchantment` → `EnchantmentLibrary.createConstitutionEnchantment`
-  - [ ] `createIntelligenceEnchantment` → `EnchantmentLibrary.createIntelligenceEnchantment`
-  - [ ] `createWisdomEnchantment` → `EnchantmentLibrary.createWisdomEnchantment`
-  - [ ] `createCharismaEnchantment` → `EnchantmentLibrary.createCharismaEnchantment`
+- [x] Update factory function exports to use class:
+  - [x] `createStrengthEnchantment` → `EnchantmentLibrary.createStrengthEnchantment`
+  - [x] `createDexterityEnchantment` → `EnchantmentLibrary.createDexterityEnchantment`
+  - [x] `createConstitutionEnchantment` → `EnchantmentLibrary.createConstitutionEnchantment`
+  - [x] `createIntelligenceEnchantment` → `EnchantmentLibrary.createIntelligenceEnchantment`
+  - [x] `createWisdomEnchantment` → `EnchantmentLibrary.createWisdomEnchantment`
+  - [x] `createCharismaEnchantment` → `EnchantmentLibrary.createCharismaEnchantment`
+
+**Task 28 Summary:**
+- Updated `src/index.ts` to remove exports of `MAGIC_ITEM_EXAMPLES` and `MAGIC_EQUIPMENT_TEMPLATES` from `magicItemExamples.js`
+- These constants are now exported as `MAGIC_ITEMS` and `ITEM_CREATION_TEMPLATES` from `equipmentConstants.js` (already done in previous tasks)
+- Kept helper function exports from `magicItemExamples.js`: `getMagicItem`, `getMagicItemsByType`, `getMagicItemsByRarity`, `getCursedItems`, `getItemsWithProperty`, `applyTemplate`
+- Added comment explaining that MAGIC_ITEMS and ITEM_CREATION_TEMPLATES are exported from equipmentConstants.js
+- All 2127 tests pass
+- Vite build passes successfully
 
 ### Task 29: Clean up magicItemExamples.ts
 - [ ] Remove all constants (moved to equipmentConstants.ts)
