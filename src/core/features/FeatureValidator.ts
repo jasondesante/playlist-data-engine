@@ -28,6 +28,19 @@ export interface ValidationResult {
 }
 
 /**
+ * Validation options for features and traits
+ *
+ * Provides additional context for validation, such as custom races/classes
+ * registered via ExtensionManager.
+ */
+export interface ValidationOptions {
+    /** Custom races registered via ExtensionManager */
+    customRaces?: string[];
+    /** Custom classes registered via ExtensionManager */
+    customClasses?: string[];
+}
+
+/**
  * Valid feature types
  */
 const VALID_FEATURE_TYPES: ReadonlyArray<string> = ['passive', 'active', 'resource', 'trigger'] as const;
@@ -113,9 +126,10 @@ export class FeatureValidator {
      * Checks all required fields, enum values, and data constraints.
      *
      * @param feature - The class feature to validate
+     * @param options - Optional validation context (e.g., custom races/classes)
      * @returns Validation result with errors if any
      */
-    static validateClassFeature(feature: unknown): ValidationResult {
+    static validateClassFeature(feature: unknown, options?: ValidationOptions): ValidationResult {
         const errors: string[] = [];
 
         // Must be an object
@@ -190,7 +204,7 @@ export class FeatureValidator {
 
         // Validate prerequisites if present
         if (f.prerequisites !== undefined) {
-            const prereqResult = this.validatePrerequisites(f.prerequisites as FeaturePrerequisite);
+            const prereqResult = this.validatePrerequisites(f.prerequisites as FeaturePrerequisite, options);
             if (!prereqResult.valid) {
                 errors.push(...prereqResult.errors.map(e => `Prerequisites: ${e}`));
             }
@@ -222,9 +236,10 @@ export class FeatureValidator {
      * Checks all required fields, enum values, and data constraints.
      *
      * @param trait - The racial trait to validate
+     * @param options - Optional validation context (e.g., custom races)
      * @returns Validation result with errors if any
      */
-    static validateRacialTrait(trait: unknown): ValidationResult {
+    static validateRacialTrait(trait: unknown, options?: ValidationOptions): ValidationResult {
         const errors: string[] = [];
 
         // Must be an object
@@ -257,32 +272,13 @@ export class FeatureValidator {
         } else {
             // Check if it's a valid default race or custom race
             const isValidDefaultRace = VALID_RACES.includes(t.race);
+            const customRaces = options?.customRaces ?? [];
+            const isValidCustomRace = customRaces.includes(t.race);
 
-            // Check ExtensionManager for custom races (when require is available)
-            let isValidCustomRace = false;
-            let canCheckCustomRaces = false;
-            try {
-                // Dynamic require to avoid circular dependencies (works in Node.js CJS)
-                // In ESM/browser, require is not available, so we skip custom race check
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const ExtensionModule = typeof require !== 'undefined' ? require('../extensions/ExtensionManager.js') : undefined;
-                if (ExtensionModule) {
-                    canCheckCustomRaces = true;
-                    const manager = ExtensionModule.ExtensionManager.getInstance();
-                    const customRaces = manager.get('races');
-                    if (Array.isArray(customRaces) && customRaces.includes(t.race)) {
-                        isValidCustomRace = true;
-                    }
-                }
-            } catch {
-                // ExtensionManager not available, skip custom race check
-            }
-
-            // Only validate race if we can check both default and custom races
-            // In ESM/browser where require is unavailable, we allow any non-empty string
-            // ExtensionManager will handle the actual validation at registration time
-            if (canCheckCustomRaces && !isValidDefaultRace && !isValidCustomRace) {
-                errors.push(`Invalid race: "${t.race}". Must be one of: ${VALID_RACES.join(', ')} or a custom race registered via ExtensionManager.`);
+            // Validate race - allow default races or custom races
+            if (!isValidDefaultRace && !isValidCustomRace) {
+                const customRaceList = customRaces.length > 0 ? `, ${customRaces.join(', ')}` : '';
+                errors.push(`Invalid race: "${t.race}". Must be one of: ${VALID_RACES.join(',')}${customRaceList} or a custom race registered via ExtensionManager.`);
             }
         }
 
@@ -315,7 +311,7 @@ export class FeatureValidator {
 
         // Validate prerequisites if present
         if (t.prerequisites !== undefined) {
-            const prereqResult = this.validatePrerequisites(t.prerequisites as FeaturePrerequisite);
+            const prereqResult = this.validatePrerequisites(t.prerequisites as FeaturePrerequisite, options);
             if (!prereqResult.valid) {
                 errors.push(...prereqResult.errors.map(e => `Prerequisites: ${e}`));
             }
@@ -410,9 +406,10 @@ export class FeatureValidator {
      * Validate feature prerequisites
      *
      * @param prerequisites - The prerequisites to validate
+     * @param options - Optional validation context (e.g., custom races/classes)
      * @returns Validation result with errors if any
      */
-    static validatePrerequisites(prerequisites: unknown): ValidationResult {
+    static validatePrerequisites(prerequisites: unknown, options?: ValidationOptions): ValidationResult {
         const errors: string[] = [];
 
         // Must be an object
@@ -455,7 +452,12 @@ export class FeatureValidator {
             if (typeof p.class !== 'string') {
                 errors.push('Prerequisite class must be a string');
             } else if (!isValidClass(p.class)) {
-                errors.push(`Invalid prerequisite class: "${p.class}". Must be one of: ${DEFAULT_CLASSES.join(', ')} or a custom class registered via ExtensionManager.`);
+                const customClasses = options?.customClasses ?? [];
+                const isValidCustomClass = customClasses.includes(p.class);
+                if (!isValidCustomClass) {
+                    const customClassList = customClasses.length > 0 ? `, ${customClasses.join(', ')}` : '';
+                    errors.push(`Invalid prerequisite class: "${p.class}". Must be one of: ${DEFAULT_CLASSES.join(',')}${customClassList} or a custom class registered via ExtensionManager.`);
+                }
             }
         }
 
@@ -466,32 +468,13 @@ export class FeatureValidator {
             } else {
                 // Check if it's a valid default race or custom race
                 const isValidDefaultRace = VALID_RACES.includes(p.race);
+                const customRaces = options?.customRaces ?? [];
+                const isValidCustomRace = customRaces.includes(p.race);
 
-                // Check ExtensionManager for custom races (when require is available)
-                let isValidCustomRace = false;
-                let canCheckCustomRaces = false;
-                try {
-                    // Dynamic require to avoid circular dependencies (works in Node.js CJS)
-                    // In ESM/browser, require is not available, so we skip custom race check
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const ExtensionModule = typeof require !== 'undefined' ? require('../extensions/ExtensionManager.js') : undefined;
-                    if (ExtensionModule) {
-                        canCheckCustomRaces = true;
-                        const manager = ExtensionModule.ExtensionManager.getInstance();
-                        const customRaces = manager.get('races');
-                        if (Array.isArray(customRaces) && customRaces.includes(p.race)) {
-                            isValidCustomRace = true;
-                        }
-                    }
-                } catch {
-                    // ExtensionManager not available, skip custom race check
-                }
-
-                // Only validate race if we can check both default and custom races
-                // In ESM/browser where require is unavailable, we allow any non-empty string
-                // ExtensionManager will handle the actual validation at registration time
-                if (canCheckCustomRaces && !isValidDefaultRace && !isValidCustomRace) {
-                    errors.push(`Invalid prerequisite race: "${p.race}". Must be one of: ${VALID_RACES.join(', ')} or a custom race registered via ExtensionManager.`);
+                // Validate race - allow default races or custom races
+                if (!isValidDefaultRace && !isValidCustomRace) {
+                    const customRaceList = customRaces.length > 0 ? `, ${customRaces.join(', ')}` : '';
+                    errors.push(`Invalid prerequisite race: "${p.race}". Must be one of: ${VALID_RACES.join(',')}${customRaceList} or a custom race registered via ExtensionManager.`);
                 }
             }
         }
@@ -654,10 +637,11 @@ export class FeatureValidator {
  * Convenience function for quick validation.
  *
  * @param feature - The class feature to validate
+ * @param options - Optional validation context (e.g., custom races/classes)
  * @returns Validation result with errors if any
  */
-export function validateClassFeature(feature: unknown): ValidationResult {
-    return FeatureValidator.validateClassFeature(feature);
+export function validateClassFeature(feature: unknown, options?: ValidationOptions): ValidationResult {
+    return FeatureValidator.validateClassFeature(feature, options);
 }
 
 /**
@@ -666,10 +650,11 @@ export function validateClassFeature(feature: unknown): ValidationResult {
  * Convenience function for quick validation.
  *
  * @param trait - The racial trait to validate
+ * @param options - Optional validation context (e.g., custom races)
  * @returns Validation result with errors if any
  */
-export function validateRacialTrait(trait: unknown): ValidationResult {
-    return FeatureValidator.validateRacialTrait(trait);
+export function validateRacialTrait(trait: unknown, options?: ValidationOptions): ValidationResult {
+    return FeatureValidator.validateRacialTrait(trait, options);
 }
 
 /**

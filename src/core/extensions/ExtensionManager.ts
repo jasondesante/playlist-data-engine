@@ -15,7 +15,7 @@
 
 import type { Race, Class, Ability } from '../types/Character.js';
 import { DEFAULT_CLASSES, DEFAULT_RACES } from '../types/Character.js';
-import { FeatureValidator } from '../features/FeatureValidator.js';
+import { FeatureValidator, type ValidationOptions } from '../features/FeatureValidator.js';
 import { SkillValidator } from '../skills/SkillValidator.js';
 import { SpellValidator } from '../spells/SpellValidator.js';
 import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
@@ -711,14 +711,23 @@ export class ExtensionManager {
         }
         // Class Features validation - use FeatureValidator
         else if (category === 'classFeatures' || category.startsWith('classFeatures.')) {
-            const result = FeatureValidator.validateClassFeature(item);
+            // Get custom classes for validation
+            const customClasses = (this.get('classes') as string[] | undefined) ?? [];
+            const result = FeatureValidator.validateClassFeature(item, { customClasses });
             if (!result.valid) {
                 errors.push(...result.errors.map(e => `${prefix} ${e}`));
             }
         }
         // Racial Traits validation - use FeatureValidator
         else if (category === 'racialTraits' || category.startsWith('racialTraits.')) {
-            const result = FeatureValidator.validateRacialTrait(item);
+            // Get custom races for validation
+            const customRaces = (this.get('races') as string[] | undefined) ?? [];
+            // Also get races from races.data category
+            const customRaceData = this.get('races.data' as ExtensionCategory) as Array<{ race: string }> | undefined;
+            const customRaceNames = customRaceData?.map(d => d.race).filter(Boolean) ?? [];
+            // Combine both sources of custom races
+            const allCustomRaces = [...customRaces, ...customRaceNames];
+            const result = FeatureValidator.validateRacialTrait(item, { customRaces: allCustomRaces });
             if (!result.valid) {
                 errors.push(...result.errors.map(e => `${prefix} ${e}`));
             }

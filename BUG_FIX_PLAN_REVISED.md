@@ -394,7 +394,7 @@ character: any  // Should be CharacterSheet
 ## Implementation Checklist
 
 ### Phase 1: Critical Breaking Bugs
-- [ ] Task 1: Fix FeatureValidator ESM incompatibility
+- [x] Task 1: Fix FeatureValidator ESM incompatibility
 - [ ] Task 2: Fix CombatEngine ESM incompatibility
 
 ### Phase 2: High Priority

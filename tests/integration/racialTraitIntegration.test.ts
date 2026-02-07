@@ -256,6 +256,14 @@ describe('Phase 11.2: FeatureQuery/ExtensionManager Integration for Racial Trait
 
     describe('Task 11.2.4: getAvailableSubraces() derives from EM data', () => {
         it('should derive subraces from registered traits when RACE_DATA not available', () => {
+            // First register the custom race with race data
+            manager.register('races.data', [{
+                race: 'CustomRace',
+                speed: 30,
+                ability_bonuses: { STR: 2 },
+                traits: []
+            }]);
+
             // Create traits for a custom race with subraces
             const customTraits: RacialTrait[] = [
                 {
@@ -455,7 +463,7 @@ describe('Phase 11.2: FeatureQuery/ExtensionManager Integration for Racial Trait
                 id: 'test_persistence_racial',
                 name: 'Persistence Test Racial',
                 description: 'Test',
-                race: 'HalfOrc' as const,
+                race: 'Half-Orc' as const,
                 source: 'custom' as const,
                 tags: ['test']
             };
@@ -530,6 +538,14 @@ describe('Phase 11.2: FeatureQuery/ExtensionManager Integration for Racial Trait
         });
 
         it('should exportRacialTraits return correct data structure', () => {
+            // First register the custom race with race data
+            manager.register('races.data', [{
+                race: 'Goliath',
+                speed: 30,
+                ability_bonuses: { STR: 2 },
+                traits: []
+            }]);
+
             // Create a custom trait
             const customTrait: RacialTrait = {
                 id: 'test_export_trait',
