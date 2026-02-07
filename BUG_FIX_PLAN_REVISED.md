@@ -115,8 +115,8 @@ When attacking with advantage/disadvantage, criticals and fumbles are only check
 - **Disadvantage:** If EITHER die shows a 1, it's a critical fumble
 
 **Fix Steps:**
-1. [ ] Read `src/core/combat/AttackResolver.ts` lines 195-270
-2. [ ] Update critical hit and fumble detection to check both dice:
+1. [x] Read `src/core/combat/AttackResolver.ts` lines 195-270
+2. [x] Update critical hit and fumble detection to check both dice:
    ```typescript
    const d1 = this.rollDie(20);
    const d2 = this.rollDie(20);
@@ -133,11 +133,18 @@ When attacking with advantage/disadvantage, criticals and fumbles are only check
        ? (d1 === 1 || d2 === 1)
        : (d1 === 1);
    ```
-3. [ ] Add tests for all combinations (normal, advantage with 20 on d1, advantage with 20 on d2)
-4. [ ] Add tests for disadvantage fumble detection (1 on either die)
-5. [ ] Document the rules interpretation with Sage Advice reference
+3. [x] Add tests for all combinations (normal, advantage with 20 on d1, advantage with 20 on d2)
+4. [x] Add tests for disadvantage fumble detection (1 on either die)
+5. [x] Document the rules interpretation with Sage Advice reference
 
 **Expected Outcome:** Players with advantage get correct critical hit detection, and players with disadvantage get correct fumble detection.
+
+**Implementation Notes:**
+- Updated `attackWithAdvantage()` to check `roll1 || roll2` for critical hits
+- Updated `attackWithDisadvantage()` to check `roll1 || roll2` for critical misses
+- Added 10 new test cases covering all combinations of advantage/disadvantage crit/fumble scenarios
+- All 2109 tests pass (2099 + 10 new)
+- JSDoc comments added to document the D&D 5e Sage Advice rules interpretation
 
 ---
 
@@ -406,7 +413,7 @@ character: any  // Should be CharacterSheet
 
 ### Phase 2: High Priority
 - [x] Task 3: Infinite recursion in SpellValidator
-- [ ] Task 4: Critical hit with advantage logic
+- [x] Task 4: Critical hit with advantage logic
 - [ ] Task 5: Audio URL validation timeout
 - [ ] Task 6: Incorrect zero check in MotionDetector
 

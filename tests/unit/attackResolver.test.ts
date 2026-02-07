@@ -5,6 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { AttackResolver } from '../../src/core/combat/AttackResolver.js';
+import { DiceRoller } from '../../src/core/combat/DiceRoller.js';
 import type { Combatant } from '../../src/core/types/Combat.js';
 import type { CharacterSheet, Attack } from '../../src/core/types/Character.js';
 
@@ -450,6 +451,226 @@ describe('AttackResolver', () => {
             // If hit, should include STR modifier
             if (result.damageRoll) {
                 expect(result.damageRoll.total).toBeGreaterThan(0);
+            }
+        });
+
+        it('should score critical hit with advantage if first die is 20 (even if second is lower)', () => {
+            const resolver = new AttackResolver();
+
+            const attacker = createCombatant('Hero', 16, 10);
+            const target = createCombatant('Target', 10, 10, 20, 10);
+            const attack = createAttack('Longsword', '1d8', 'melee', [], 10);
+
+            // Mock rollWithAdvantage to return 20 on first die, 5 on second
+            const originalFn = DiceRoller.rollWithAdvantage;
+            (DiceRoller as any).rollWithAdvantage = () => ({ roll1: 20, roll2: 5, result: 20 });
+
+            try {
+                const result = resolver.attackWithAdvantage(attacker, target, attack);
+
+                // Should be a critical hit because first die is 20
+                expect(result.attackRoll.isCritical).toBe(true);
+                expect(result.description).toContain('advantage');
+            } finally {
+                (DiceRoller as any).rollWithAdvantage = originalFn;
+            }
+        });
+
+        it('should score critical hit with advantage if second die is 20 (even if first is lower)', () => {
+            const resolver = new AttackResolver();
+
+            const attacker = createCombatant('Hero', 16, 10);
+            const target = createCombatant('Target', 10, 10, 20, 10);
+            const attack = createAttack('Longsword', '1d8', 'melee', [], 10);
+
+            // Mock rollWithAdvantage to return 5 on first die, 20 on second
+            const originalFn = DiceRoller.rollWithAdvantage;
+            (DiceRoller as any).rollWithAdvantage = () => ({ roll1: 5, roll2: 20, result: 20 });
+
+            try {
+                const result = resolver.attackWithAdvantage(attacker, target, attack);
+
+                // Should be a critical hit because second die is 20
+                expect(result.attackRoll.isCritical).toBe(true);
+                expect(result.description).toContain('advantage');
+            } finally {
+                (DiceRoller as any).rollWithAdvantage = originalFn;
+            }
+        });
+
+        it('should score critical fumble with disadvantage if first die is 1 (even if second is higher)', () => {
+            const resolver = new AttackResolver();
+
+            const attacker = createCombatant('Hero', 16, 10);
+            const target = createCombatant('Target', 10, 10, 20, 10);
+            const attack = createAttack('Longsword', '1d8', 'melee', [], 10);
+
+            // Mock rollWithDisadvantage to return 1 on first die, 15 on second
+            const originalFn = DiceRoller.rollWithDisadvantage;
+            (DiceRoller as any).rollWithDisadvantage = () => ({ roll1: 1, roll2: 15, result: 1 });
+
+            try {
+                const result = resolver.attackWithDisadvantage(attacker, target, attack);
+
+                // Should be a critical miss because first die is 1
+                expect(result.attackRoll.isMiss).toBe(true);
+                expect(result.description).toContain('disadvantage');
+            } finally {
+                (DiceRoller as any).rollWithDisadvantage = originalFn;
+            }
+        });
+
+        it('should score critical fumble with disadvantage if second die is 1 (even if first is higher)', () => {
+            const resolver = new AttackResolver();
+
+            const attacker = createCombatant('Hero', 16, 10);
+            const target = createCombatant('Target', 10, 10, 20, 10);
+            const attack = createAttack('Longsword', '1d8', 'melee', [], 10);
+
+            // Mock rollWithDisadvantage to return 15 on first die, 1 on second
+            const originalFn = DiceRoller.rollWithDisadvantage;
+            (DiceRoller as any).rollWithDisadvantage = () => ({ roll1: 15, roll2: 1, result: 1 });
+
+            try {
+                const result = resolver.attackWithDisadvantage(attacker, target, attack);
+
+                // Should be a critical miss because second die is 1
+                expect(result.attackRoll.isMiss).toBe(true);
+                expect(result.description).toContain('disadvantage');
+            } finally {
+                (DiceRoller as any).rollWithDisadvantage = originalFn;
+            }
+        });
+
+        it('should not score critical hit with advantage when neither die is 20', () => {
+            const resolver = new AttackResolver();
+
+            const attacker = createCombatant('Hero', 16, 10);
+            const target = createCombatant('Target', 10, 10, 20, 10);
+            const attack = createAttack('Longsword', '1d8', 'melee', [], 10);
+
+            // Mock rollWithAdvantage to return 18 on first die, 15 on second (no 20s)
+            const originalFn = DiceRoller.rollWithAdvantage;
+            (DiceRoller as any).rollWithAdvantage = () => ({ roll1: 18, roll2: 15, result: 18 });
+
+            try {
+                const result = resolver.attackWithAdvantage(attacker, target, attack);
+
+                // Should NOT be a critical hit because neither die is 20
+                expect(result.attackRoll.isCritical).toBe(false);
+            } finally {
+                (DiceRoller as any).rollWithAdvantage = originalFn;
+            }
+        });
+
+        it('should not score critical fumble with disadvantage when neither die is 1', () => {
+            const resolver = new AttackResolver();
+
+            const attacker = createCombatant('Hero', 16, 10);
+            const target = createCombatant('Target', 10, 10, 20, 10);
+            const attack = createAttack('Longsword', '1d8', 'melee', [], 10);
+
+            // Mock rollWithDisadvantage to return 3 on first die, 5 on second (no 1s)
+            const originalFn = DiceRoller.rollWithDisadvantage;
+            (DiceRoller as any).rollWithDisadvantage = () => ({ roll1: 3, roll2: 5, result: 3 });
+
+            try {
+                const result = resolver.attackWithDisadvantage(attacker, target, attack);
+
+                // Should NOT be a critical miss because neither die is 1
+                expect(result.attackRoll.isMiss).toBe(false);
+            } finally {
+                (DiceRoller as any).rollWithDisadvantage = originalFn;
+            }
+        });
+
+        it('should score critical hit with advantage when both dice are 20', () => {
+            const resolver = new AttackResolver();
+
+            const attacker = createCombatant('Hero', 16, 10);
+            const target = createCombatant('Target', 10, 10, 20, 10);
+            const attack = createAttack('Longsword', '1d8', 'melee', [], 10);
+
+            // Mock rollWithAdvantage to return 20 on both dice
+            const originalFn = DiceRoller.rollWithAdvantage;
+            (DiceRoller as any).rollWithAdvantage = () => ({ roll1: 20, roll2: 20, result: 20 });
+
+            try {
+                const result = resolver.attackWithAdvantage(attacker, target, attack);
+
+                // Should be a critical hit
+                expect(result.attackRoll.isCritical).toBe(true);
+            } finally {
+                (DiceRoller as any).rollWithAdvantage = originalFn;
+            }
+        });
+
+        it('should score critical fumble with disadvantage when both dice are 1', () => {
+            const resolver = new AttackResolver();
+
+            const attacker = createCombatant('Hero', 16, 10);
+            const target = createCombatant('Target', 10, 10, 20, 10);
+            const attack = createAttack('Longsword', '1d8', 'melee', [], 10);
+
+            // Mock rollWithDisadvantage to return 1 on both dice
+            const originalFn = DiceRoller.rollWithDisadvantage;
+            (DiceRoller as any).rollWithDisadvantage = () => ({ roll1: 1, roll2: 1, result: 1 });
+
+            try {
+                const result = resolver.attackWithDisadvantage(attacker, target, attack);
+
+                // Should be a critical miss
+                expect(result.attackRoll.isMiss).toBe(true);
+            } finally {
+                (DiceRoller as any).rollWithDisadvantage = originalFn;
+            }
+        });
+
+        it('should allow critical hit with advantage even if the lower die would miss AC', () => {
+            const resolver = new AttackResolver();
+
+            const attacker = createCombatant('Hero', 10, 10); // No ability bonus
+            const target = createCombatant('Target', 10, 10, 20, 15); // AC 15
+            const attack = createAttack('Longsword', '1d8', 'melee', [], 0); // +0 attack bonus
+
+            // Mock rollWithAdvantage: roll1=20 (crit!), roll2=3 (would miss AC 15)
+            const originalFn = DiceRoller.rollWithAdvantage;
+            (DiceRoller as any).rollWithAdvantage = () => ({ roll1: 20, roll2: 3, result: 20 });
+
+            try {
+                const result = resolver.attackWithAdvantage(attacker, target, attack);
+
+                // Should be a critical hit because first die is 20
+                expect(result.attackRoll.isCritical).toBe(true);
+                expect(result.attackRoll.hit).toBe(true);
+                expect(result.damageRoll).toBeDefined();
+                // Critical damage should be doubled (2d8)
+                expect(result.damageRoll!.rolls.length).toBe(2);
+            } finally {
+                (DiceRoller as any).rollWithAdvantage = originalFn;
+            }
+        });
+
+        it('should cause critical fumble with disadvantage even if the higher die would hit AC', () => {
+            const resolver = new AttackResolver();
+
+            const attacker = createCombatant('Hero', 10, 10); // No ability bonus
+            const target = createCombatant('Target', 10, 10, 20, 10); // AC 10
+            const attack = createAttack('Longsword', '1d8', 'melee', [], 0); // +0 attack bonus
+
+            // Mock rollWithDisadvantage: roll1=1 (fumble!), roll2=18 (would hit AC 10)
+            const originalFn = DiceRoller.rollWithDisadvantage;
+            (DiceRoller as any).rollWithDisadvantage = () => ({ roll1: 1, roll2: 18, result: 1 });
+
+            try {
+                const result = resolver.attackWithDisadvantage(attacker, target, attack);
+
+                // Should be a critical miss because first die is 1
+                expect(result.attackRoll.isMiss).toBe(true);
+                expect(result.attackRoll.hit).toBe(false);
+                expect(result.damageRoll).toBeUndefined();
+            } finally {
+                (DiceRoller as any).rollWithDisadvantage = originalFn;
             }
         });
     });
