@@ -12,7 +12,7 @@
 
 import type { SpellPrerequisite, Spell } from './SpellTypes.js';
 import type { Ability, CharacterSheet } from '../types/Character.js';
-import { isValidAbility } from '../utils/AbilityConstants.js';
+import { isValidAbility as isValidAbilityCheck } from '../utils/AbilityConstants.js';
 import { validatePrerequisiteSchema, validatePrerequisites } from '../utils/PrerequisiteValidator.js';
 
 /**
@@ -210,7 +210,7 @@ export class SpellValidator {
      * @returns True if it's a valid ability
      */
     static isValidAbility(ability: string): ability is Ability {
-        return isValidAbility(ability);
+        return isValidAbilityCheck(ability);
     }
 
     /**

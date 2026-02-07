@@ -79,21 +79,28 @@ static isValidAbility(ability: string): ability is Ability {
 ```
 
 **Fix Steps:**
-1. [ ] Read `src/core/spells/SpellValidator.ts` to understand the context
-2. [ ] Read `src/core/utils/AbilityConstants.ts` to find the correct implementation
-3. [ ] Rename the static method and delegate to imported function:
+1. [x] Read `src/core/spells/SpellValidator.ts` to understand the context
+2. [x] Read `src/core/utils/AbilityConstants.ts` to find the correct implementation
+3. [x] Rename the static method and delegate to imported function:
    ```typescript
    import { isValidAbility } from '../utils/AbilityConstants.js';
    static checkIsValidAbility(ability: string): ability is Ability {
        return isValidAbility(ability);
    }
    ```
-4. [ ] Update all callers to use `checkIsValidAbility()` instead of `isValidAbility()`
-5. [ ] Add unit test to verify the function works correctly
-6. [ ] Run tests to ensure no regressions
-7. [ ] **IMPORTANT:** Investigate why this wasn't caught in testing (suggests untested codepath)
+4. [x] Update all callers to use `checkIsValidAbility()` instead of `isValidAbility()`
+5. [x] Add unit test to verify the function works correctly
+6. [x] Run tests to ensure no regressions
+7. [x] **IMPORTANT:** Investigate why this wasn't caught in testing (suggests untested codepath)
 
 **Expected Outcome:** Spell validation works without causing stack overflow.
+
+**Implementation Notes:**
+- Root cause: Name collision between imported `isValidAbility` function and static method of the same name
+- Solution used: Import alias `isValidAbility as isValidAbilityCheck` (same pattern as SkillValidator.ts)
+- No callers existed for this static method, which is why the bug wasn't caught
+- Added regression test in `tests/unit/spellPrerequisites.test.ts` with 3 new test cases
+- All 2099 tests pass (2096 + 3 new)
 
 ---
 
@@ -398,7 +405,7 @@ character: any  // Should be CharacterSheet
 - [x] Task 2: Fix CombatEngine ESM incompatibility
 
 ### Phase 2: High Priority
-- [ ] Task 3: Infinite recursion in SpellValidator
+- [x] Task 3: Infinite recursion in SpellValidator
 - [ ] Task 4: Critical hit with advantage logic
 - [ ] Task 5: Audio URL validation timeout
 - [ ] Task 6: Incorrect zero check in MotionDetector

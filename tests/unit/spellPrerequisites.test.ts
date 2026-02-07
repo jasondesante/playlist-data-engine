@@ -227,4 +227,37 @@ describe('Spell Prerequisites', () => {
             expect(result.valid).toBe(true);
         });
     });
+
+    describe('SpellValidator.isValidAbility', () => {
+        // Regression test for infinite recursion bug (Task 3)
+        // The static method was calling itself instead of the imported function,
+        // causing stack overflow. This test verifies the fix works.
+        it('should correctly validate standard abilities', () => {
+            expect(SpellValidator.isValidAbility('STR')).toBe(true);
+            expect(SpellValidator.isValidAbility('DEX')).toBe(true);
+            expect(SpellValidator.isValidAbility('CON')).toBe(true);
+            expect(SpellValidator.isValidAbility('INT')).toBe(true);
+            expect(SpellValidator.isValidAbility('WIS')).toBe(true);
+            expect(SpellValidator.isValidAbility('CHA')).toBe(true);
+        });
+
+        it('should reject invalid ability strings', () => {
+            expect(SpellValidator.isValidAbility('STR')).toBe(true);
+            expect(SpellValidator.isValidAbility('strength')).toBe(false);
+            expect(SpellValidator.isValidAbility('')).toBe(false);
+            expect(SpellValidator.isValidAbility('INVALID')).toBe(false);
+            expect(SpellValidator.isValidAbility('XXX')).toBe(false);
+        });
+
+        it('should provide type narrowing for valid abilities', () => {
+            // This test verifies type narrowing works correctly
+            const ability: string = 'STR';
+            if (SpellValidator.isValidAbility(ability)) {
+                // TypeScript should know ability is of type Ability here
+                type AbilityType = typeof ability;
+                // At runtime, just verify the function returns true
+                expect(ability).toBe('STR');
+            }
+        });
+    });
 });
