@@ -9,21 +9,7 @@
  */
 
 import type { CharacterSheet, Ability, ProficiencyLevel } from '../types/Character.js';
-
-/**
- * Check if a string is a valid ability score
- *
- * @param ability - The ability string to check
- * @returns True if it's a valid ability
- *
- * @example
- * isAbility('STR') // true
- * isAbility('strength') // false
- * isAbility('INVALID') // false
- */
-export function isAbility(ability: string): ability is Ability {
-    return ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].includes(ability);
-}
+import { isValidAbility as isAbility } from './AbilityConstants.js';
 
 /**
  * Apply an ability score bonus to a character

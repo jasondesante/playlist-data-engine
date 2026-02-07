@@ -29,3 +29,9 @@ export const VALID_ABILITIES: ReadonlyArray<string> = ['STR', 'DEX', 'CON', 'INT
 export function isValidAbility(ability: string): ability is Ability {
     return VALID_ABILITIES.includes(ability);
 }
+
+/**
+ * Alias for isValidAbility for backwards compatibility
+ * @deprecated Use isValidAbility instead
+ */
+export { isValidAbility as isAbility };

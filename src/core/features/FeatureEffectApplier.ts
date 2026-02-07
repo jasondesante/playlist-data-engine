@@ -8,7 +8,8 @@
 import type { ClassFeature, RacialTrait, FeatureEffect } from './FeatureTypes.js';
 import type { CharacterSheet, ProficiencyLevel } from '../types/Character.js';
 import type { EffectApplicationResult } from '../types/Equipment.js';
-import { isAbility, applyAbilityScoreBonus, applySkillProficiencyWithHierarchy } from '../utils/EffectApplierUtils.js';
+import { isAbility } from '../utils/AbilityConstants.js';
+import { applyAbilityScoreBonus, applySkillProficiencyWithHierarchy } from '../utils/EffectApplierUtils.js';
 
 /**
  * FeatureEffectApplier - Applies feature effects to character sheets

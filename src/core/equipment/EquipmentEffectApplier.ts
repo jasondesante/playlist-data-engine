@@ -18,7 +18,8 @@ import type {
 } from '../types/Equipment.js';
 import { FeatureQuery } from '../features/FeatureQuery.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
-import { isAbility, applyAbilityScoreBonus, applySkillProficiencyWithHierarchy } from '../utils/EffectApplierUtils.js';
+import { isAbility } from '../utils/AbilityConstants.js';
+import { applyAbilityScoreBonus, applySkillProficiencyWithHierarchy } from '../utils/EffectApplierUtils.js';
 
 /**
  * EquipmentEffectApplier - Applies and removes equipment effects

@@ -447,14 +447,23 @@ persistant_rage  // Should be "persistent_rage"
 The same function exists in two files.
 
 **Fix Steps:**
-1. [ ] Read both implementations to ensure they're identical
-2. [ ] Remove duplicate from `EffectApplierUtils.ts`
-3. [ ] Add import in `EffectApplierUtils.ts`:
+1. [x] Read both implementations to ensure they're identical
+2. [x] Remove duplicate from `EffectApplierUtils.ts`
+3. [x] Add import in `EffectApplierUtils.ts`:
    ```typescript
-   import { isAbility } from './AbilityConstants.js';
+   import { isValidAbility as isAbility } from './AbilityConstants.js';
    ```
+4. [x] Update imports in `EquipmentEffectApplier.ts` and `FeatureEffectApplier.ts`
+5. [x] Export alias `isAbility` from `AbilityConstants.ts` for backwards compatibility
 
 **Expected Outcome:** Single source of truth for ability validation.
+
+**Implementation Notes:**
+- Removed duplicate `isAbility()` function from `EffectApplierUtils.ts`
+- Added `export { isValidAbility as isAbility }` alias to `AbilityConstants.ts`
+- Updated imports in `EquipmentEffectApplier.ts` and `FeatureEffectApplier.ts` to import `isAbility` from `AbilityConstants.ts`
+- The function in `AbilityConstants.ts` is named `isValidAbility`, so an alias export was added for backwards compatibility
+- All 2127 tests pass
 
 ---
 
@@ -499,7 +508,7 @@ character: any  // Should be CharacterSheet
 
 ### Phase 4: Low Priority
 - [x] Task 11: Fix typo in feature ID
-- [ ] Task 12: Remove duplicate isAbility()
+- [x] Task 12: Remove duplicate isAbility()
 - [ ] Task 13: Fix AttackResolver type
 
 ---
