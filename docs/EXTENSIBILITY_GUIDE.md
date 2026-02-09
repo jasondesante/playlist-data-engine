@@ -8,13 +8,15 @@ This guide explains how to extend the Playlist Data Engine with custom content. 
 
 1. [Overview](#overview)
 2. [ExtensionManager API](#extensionmanager-api)
-3. [Spawn Rate System](#spawn-rate-system)
-4. [Category-Specific Examples](#category-specific-examples)
-5. [Creating Content Packs](#creating-content-packs)
-6. [Validation](#validation)
-7. [Best Practices](#best-practices)
-8. [Export/Import System](#exportimport-system)
-9. [Equipment Subcategories](#equipment-subcategories)
+3. [Helper Functions](#helper-functions)
+4. [Spawn Rate System](#spawn-rate-system)
+5. [Category-Specific Examples](#category-specific-examples)
+6. [Creating Content Packs](#creating-content-packs)
+7. [Validation](#validation)
+8. [Best Practices](#best-practices)
+9. [Export/Import System](#exportimport-system)
+10. [Equipment Subcategories](#equipment-subcategories)
+11. [Reference](#reference)
 
 ---
 
@@ -27,46 +29,39 @@ The extensibility system allows you to:
 - **Validate content** automatically with clear error messages
 - **Create content packs** that can be loaded at runtime
 
+**Location:** [src/core/extensions/ExtensionManager.ts](../src/core/extensions/ExtensionManager.ts)
+
 ### Supported Categories
 
 | Category | Description | Example |
 |----------|-------------|---------|
-| **Equipment** | | |
 | `equipment` | Weapons, armor, items | Custom weapons, magic items |
 | `equipment.templates` | Complete equipment templates | Pre-built items with properties |
-| **Appearance** | | |
 | `appearance.bodyTypes` | Character body shapes | 'giant', 'diminutive', etc. |
-| `appearance.skinTones` | Skin color options | Hex colors for skin tones |
-| `appearance.hairColors` | Hair color options | Hex colors for hair |
+| `appearance.skinTones` | Skin color options | Hex colors |
+| `appearance.hairColors` | Hair color options | Hex colors |
 | `appearance.hairStyles` | Hair style options | 'braided', 'mohawk', etc. |
-| `appearance.eyeColors` | Eye color options | Hex colors for eyes |
+| `appearance.eyeColors` | Eye color options | Hex colors |
 | `appearance.facialFeatures` | Facial features | 'scar', 'tattoo', etc. |
-| **Spells** | | |
-| `spells` | Arcane and divine magic | Custom spells for spellcasting classes |
-| `spells.{className}` | Class-specific spells | 'spells.Wizard' for custom wizard spells |
-| **Races** | | |
-| `races` | Race names | Custom races (uses Race enum) |
+| `spells` | Arcane and divine magic | Custom spells |
+| `spells.{className}` | Class-specific spells | 'spells.Wizard' |
+| `races` | Race names | Custom races |
 | `races.data` | Race data | Ability bonuses, speed, traits, subraces |
-| **Classes** | | |
-| `classes` | Class names | Custom classes (uses Class enum) |
-| `classes.data` | Class data | Hit die, saves, skills, spellcasting, etc. |
-| **Features** | | |
+| `classes` | Class names | Custom classes |
+| `classes.data` | Class data | Hit die, saves, skills, spellcasting |
 | `classFeatures` | All class features | Custom rage, metamagic, etc. |
-| `classFeatures.{className}` | Class-specific features | 'classFeatures.Barbarian', 'classFeatures.Wizard' |
-| `racialTraits` | All racial traits | Custom darkvision, stonecunning, etc. |
-| `racialTraits.{raceName}` | Race-specific traits | 'racialTraits.Elf', 'racialTraits.Dwarf' |
-| **Skills** | | |
-| `skills` | All skills (default + custom) | Custom survival, knowledge skills |
-| `skills.{ability}` | Ability-specific skills | 'skills.STR', 'skills.DEX', etc. |
+| `classFeatures.{className}` | Class-specific features | 'classFeatures.Barbarian' |
+| `racialTraits` | All racial traits | Custom darkvision, stonecunning |
+| `racialTraits.{raceName}` | Race-specific traits | 'racialTraits.Elf' |
+| `skills` | All skills (default + custom) | Custom survival, knowledge |
+| `skills.{ability}` | Ability-specific skills | 'skills.STR', 'skills.DEX' |
 | `skillLists` | All skill lists | Per-class skill selections |
-| `skillLists.{className}` | Class-specific skill lists | 'skillLists.Barbarian', 'skillLists.Wizard' |
-| **Class Magic** | | |
+| `skillLists.{className}` | Class-specific skill lists | 'skillLists.Barbarian' |
 | `classSpellLists` | All class spell lists | Class-specific spell selections |
-| `classSpellLists.{className}` | Class-specific spell list | Custom spell lists for classes |
+| `classSpellLists.{className}` | Class-specific spell list | Custom spell lists |
 | `classSpellSlots` | Spell slot progressions | Custom slot progressions by level |
-| **Class Gear** | | |
-| `classStartingEquipment` | All class starting equipment | Default gear for each class |
-| `classStartingEquipment.{className}` | Class-specific equipment | Custom starting equipment for classes |
+| `classStartingEquipment` | All class starting equipment | Default gear per class |
+| `classStartingEquipment.{className}` | Class-specific equipment | Custom starting equipment |
 
 ---
 
@@ -114,6 +109,8 @@ const manager = ExtensionManager.getInstance();
 | `weights` | `Record<string, number>` | `{}` | Custom spawn weights for items |
 | `validate` | `boolean` | `true` | Whether to validate items before registering |
 
+**Note:** Setting `mode` or `weights` during registration affects the entire category, not just the items being registered. This is a convenience equivalent to calling `setMode()` or `setWeights()` separately.
+
 ### Spawn Modes
 
 | Mode | Behavior | Use Case |
@@ -133,73 +130,87 @@ const manager = ExtensionManager.getInstance();
 | `2.0` | Twice as common as default |
 | `10.0` | Very common |
 
-### Example: Registering Custom Content
+### Usage Example
 
 ```typescript
-manager.register(
-    'equipment',
-    [
-        { name: 'Dragon Sword', type: 'weapon', rarity: 'legendary', weight: 5 }
-    ],
-    {
-        mode: 'relative',  // Add to defaults
-        weights: { 'Dragon Sword': 0.5 },  // Half as common
-        validate: true  // Validate before registering
-    }
-);
-```
+// Register custom equipment
+manager.register('equipment', [
+    { name: 'Dragon Sword', type: 'weapon', rarity: 'legendary', weight: 5 }
+], { mode: 'relative', weights: { 'Dragon Sword': 0.5 } });
 
-### Example: Working with Weights
-
-```typescript
-// Set spawn weights
+// Adjust weights
 manager.setWeights('equipment', {
-    'Longsword': 2,      // Twice as common
-    'Dagger': 0.5,       // Half as common
-    'Excalibur': 0.1     // Very rare
+    'Longsword': 2,
+    'Dagger': 0.5,
+    'Excalibur': 0.1
 });
-
-// Get current weights
 const weights = manager.getWeights('equipment');
 
-// Change spawn mode after registration
-manager.setMode('equipment', 'absolute');
-```
-
-### Example: Inspecting Registered Data
-
-```typescript
-// Check if custom data exists
+// Inspect registered data
 if (manager.hasCustomData('equipment')) {
-    // Get info about registered extensions
     const info = manager.getInfo('equipment');
-    console.log(info);
-    // {
-    //     hasCustomData: true,
-    //     defaultCount: 42,
-    //     customCount: 5,
-    //     totalCount: 47,
-    //     mode: 'relative',
-    //     weights: { ... },
-    //     registeredAt: 1234567890
-    // }
-
-    // Get just the custom items
     const customItems = manager.getCustom('equipment');
 }
 ```
 
 ---
 
+## Helper Functions
+
+The engine provides several helper functions for querying custom content. These complement `ExtensionManager` by providing read access to registered data.
+
+### Quick Reference
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `getClassData` | `className: string` | `ClassDataEntry \| undefined` | Class data with hit die, abilities, features |
+| `getRaceData` | `raceName: string` | `RaceDataEntry \| undefined` | Race data with speed, ability bonuses, traits |
+| `getClassSpellList` | `className: string` | Spell list object \| undefined | `{ cantrips: string[], spells_by_level: Record<number, string[]> }` |
+| `getSpellSlotsForClass` | `className, characterLevel` | Slot object \| undefined | `{ [level: number]: slots }` |
+| `getClassStartingEquipment` | `className: string` | Equipment object \| undefined | `{ weapons: [...], armor: [...], items: [...] }` |
+
+### Usage Examples
+
+```typescript
+import {
+    getClassData,
+    getRaceData,
+    getClassSpellList,
+    getSpellSlotsForClass,
+    getClassStartingEquipment
+} from 'playlist-data-engine';
+
+// Class data (default or custom)
+const wizardData = getClassData('Wizard');
+console.log(wizardData.hit_die); // 6
+
+const necromancerData = getClassData('Necromancer');
+if (necromancerData) {
+    console.log(necromancerData.baseClass); // 'Wizard'
+    console.log(necromancerData.primary_ability); // 'INT'
+}
+
+// Race data (default or custom)
+const elfData = getRaceData('Elf');
+console.log(elfData.speed); // 30
+
+const dragonkinData = getRaceData('Dragonkin');
+if (dragonkinData) {
+    console.log(dragonkinData.ability_bonuses);
+    // { STR: 2, CON: 1, CHA: 1 }
+}
+
+// Additional class queries
+const spellList = getClassSpellList('Necromancer');
+const slots = getSpellSlotsForClass('Necromancer', 5);
+const equipment = getClassStartingEquipment('Necromancer');
+```
+
+---
+
 ## Spawn Rate System
 
-The spawn rate system controls how custom content is mixed with default content during procedural generation. See the [Spawn Modes table](#extensionmanager-api) above for mode descriptions.
-
-**Key behaviors:**
-- **relative** (default): Custom items join the default pool with custom weights applied
-- **absolute**: Only custom items spawn (defaults excluded)
-- **default**: All items have equal weight regardless of custom weights
-- **replace**: Clears existing custom data before registering new items (for hot-reloading)
+The spawn rate system controls how custom content is mixed with default content during procedural generation. See the [Spawn Modes table](#extensionmanager-api) for mode descriptions.
 
 ### Advanced Weight Configuration
 
@@ -255,74 +266,7 @@ manager.resetAll();
 
 ### Equipment
 
-Register custom equipment through ExtensionManager:
-
-```typescript
-import { ExtensionManager } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-const customEquipment = [
-    {
-        name: 'Frost Brand',
-        type: 'weapon',
-        rarity: 'very_rare',
-        weight: 3
-    },
-    {
-        name: 'Mithral Chain Shirt',
-        type: 'armor',
-        rarity: 'rare',
-        weight: 10
-    },
-    {
-        name: 'Potion of Giant Strength',
-        type: 'item',
-        rarity: 'uncommon',
-        weight: 0.5
-    }
-];
-
-// Register custom equipment
-manager.register('equipment', customEquipment, {
-    weights: {
-        'Frost Brand': 0.1,                // Very rare
-        'Potion of Giant Strength': 2.0    // Common
-    }
-});
-
-// Now generate characters with the custom equipment available
-const character = CharacterGenerator.generate('my-seed', audioProfile, track);
-```
-
-**Alternative: Convenience parameter in CharacterGenerator**
-
-You can also pass extensions directly to `CharacterGenerator.generate()`:
-
-```typescript
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track,
-    {
-        extensions: {
-            equipment: customEquipment
-        }
-    }
-);
-```
-
-**Adjust spawn rates after registration:**
-
-```typescript
-const manager = ExtensionManager.getInstance();
-
-// Make Frost Brand even more rare
-manager.setWeights('equipment', {
-    'Frost Brand': 0.05,
-    'Potion of Giant Strength': 3.0  // Very common
-});
-```
+Register custom equipment through ExtensionManager or via the `CharacterGenerator.generate()` convenience parameter. For complete examples including registration, spawn rates, and the CharacterGenerator convenience method, see [Custom Equipment](EQUIPMENT_SYSTEM.md#custom-equipment).
 
 ### Spells
 
@@ -404,90 +348,7 @@ console.log(`Total spells: ${stats.totalSpells} (${stats.customSpells} custom)`)
 
 #### Spells with Prerequisites
 
-Spells can have prerequisites that must be met before a spellcaster can learn them. This allows for specialized spells that require specific features, abilities, spells, skills, level, or class.
-
-```typescript
-import { SpellValidator, SpellManager, ExtensionManager } from 'playlist-data-engine';
-
-// ===== SPELL WITH FEATURE PREREQUISITES =====
-// Dragon Breath: Requires Draconic Bloodline feature
-const dragonBreath = {
-    id: 'dragon_breath',
-    name: 'Dragon Breath',
-    level: 3,
-    school: 'Evocation',
-    casting_time: '1 action',
-    range: '60 ft cone',
-    components: ['V', 'S', 'M'],
-    duration: 'Instantaneous',
-    description: 'Exhale destructive energy',
-    prerequisites: {
-        features: ['dragon_bloodline'],
-        abilities: { CHA: 16 }
-    }
-};
-
-// ===== SPELL WITH LEVEL AND CLASS PREREQUISITES =====
-// Meteor Swarm: High-level evocation spell
-const limitedMeteorSwarm = {
-    id: 'limited_meteor_swarm',
-    name: 'Meteor Swarm',
-    level: 9,
-    school: 'Evocation',
-    casting_time: '1 action',
-    range: '1 mile',
-    components: ['V', 'S'],
-    duration: 'Instantaneous',
-    description: 'Blazing orbs rain down',
-    prerequisites: {
-        level: 17,  // Character must be level 17+
-        class: 'Wizard',
-        spells: ['Fireball']  // Must know Fireball first
-    }
-};
-
-// ===== SPELL WITH SKILL PREREQUISITES =====
-// Arcane Sword: Requires Arcana proficiency
-const arcaneSwordSpell = {
-    id: 'arcane_sword',
-    name: 'Arcane Sword',
-    level: 5,
-    school: 'Evocation',
-    casting_time: '1 bonus action',
-    range: '60 ft',
-    components: ['V', 'S', 'M'],
-    duration: 'Concentration, 1 minute',
-    description: 'Summon a sword of pure magic',
-    prerequisites: {
-        skills: ['arcana']  // Requires Arcana proficiency
-    }
-};
-
-// ===== REGISTER CUSTOM SPELLS =====
-const manager = ExtensionManager.getInstance();
-manager.register('spells', [dragonBreath, limitedMeteorSwarm, arcaneSwordSpell]);
-
-// ===== VALIDATE SPELL PREREQUISITES =====
-const character = CharacterGenerator.generate(seed, audioProfile, track, {forceName: 'Sorcerer'});
-const spell = SPELL_DATABASE['dragon_breath'];
-
-if (spell.prerequisites) {
-    const result = SpellValidator.validateSpellPrerequisites(spell.prerequisites, character);
-
-    if (!result.valid) {
-        console.log('Cannot learn this spell:', result.unmet);
-    }
-}
-
-// During character generation, SpellManager automatically filters
-// out spells that have unmet prerequisites
-const knownSpells = SpellManager.getKnownSpells(
-    character.class,
-    character.level,
-    character  // Pass character for prerequisite filtering
-);
-// Only includes spells whose prerequisites are met
-```
+Spells can have prerequisites that must be met before a spellcaster can learn them (features, abilities, spells, skills, level, or class). For full examples and usage, see [Spells with Prerequisites](PREREQUISITES.md#spells-with-prerequisites).
 
 ### Races
 
@@ -1843,129 +1704,63 @@ export function loadDarkFantasyPack() {
 
 The extensibility system includes automatic validation. Invalid content is rejected with clear error messages.
 
-**For complete type definitions, see [Type Definitions](#type-definitions) above.**
+**For complete type definitions, see [Reference](#reference).**
 
 ### Key Validation Rules
 
 | Category | Required Fields | Validation Rules |
 |----------|-----------------|------------------|
-| **Equipment** | `name`, `type`, `rarity`, `weight` | Type must be `weapon`/`armor`/`item`; rarity must be valid; weight ≥ 0 |
-| **Spells** | `name`, `level`, `school` | Level 0-9; school must be valid D&D 5e school |
-| **Races** | String values | Must be valid race name (default or registered custom) |
-| **Classes** | String values | Must be valid class name (default or registered custom) |
+| **Equipment** | `name`, `type`, `rarity`, `weight` | Type: `weapon`/`armor`/`item`; valid rarity; weight ≥ 0 |
+| **Spells** | `name`, `level`, `school` | Level 0-9; valid school (see `SpellSchool` type) |
+| **Races/Classes** | String values | Must be valid name (default or registered custom) |
 | **Appearance** | String values | Must be strings (not objects) |
-| **Features** | `id`, `name`, `description`, `type`, `class`, `level`, `source` | ID must be `lowercase_with_underscores`; IDs must be unique |
-| **Skills** | `id`, `name`, `ability`, `source` | ID must be `lowercase_with_underscores`; ability must be valid |
+| **Features** | `id`, `name`, `description`, `type`, `class`, `level`, `source` | ID: `lowercase_with_underscores`; must be unique |
+| **Skills** | `id`, `name`, `ability`, `source` | ID: `lowercase_with_underscores`; valid ability |
 | **Skill Lists** | `class`, `skillCount`, `availableSkills` | skillCount ≥ 0; skill IDs must exist |
 
-### ID Format Requirements
+### ID Format
 
-All custom content IDs must use `lowercase_with_underscores` format:
+All custom content IDs must use `lowercase_with_underscores` format.
 
-```typescript
-// Valid IDs
-'frost_rage'
-'necromancer_raise_dead'
-'dragon_smithing'
+| Valid | Invalid |
+|-------|---------|
+| `frost_rage` | `FrostRage` (use lowercase) |
+| `necromancer_raise_dead` | `frost-rage` (use underscores) |
+| `dragon_smithing` | `frost.rage` (use underscores) |
 
-// Invalid IDs
-'FrostRage'           // Error: Use lowercase
-'frost-rage'          // Error: Use underscores
-'frost.rage'          // Error: Use underscores
-```
+### Notes
 
-### Duplicate Detection
-
-The system automatically detects duplicate IDs:
-
-```typescript
-// Error: Feature ID 'rage' already exists
-manager.register('classFeatures', [{ id: 'rage', ... }]);
-
-// Error: Skill ID 'athletics' already exists
-manager.register('skills', [{ id: 'athletics', ... }]);
-```
-
-### Disabling Validation
-
-You can disable validation for advanced use cases:
-
-```typescript
-manager.register('equipment', customItems, { validate: false });
-```
-
-**Warning:** Disabling validation can cause runtime errors. Only use this if you're certain your data is valid.
+- **Duplicate IDs:** Automatically detected. Use `getCustom(category)` to check existing IDs before registering.
+- **Disable validation:** Use `{ validate: false }` to bypass (advanced use only—may cause runtime errors).
 
 ---
 
 ## Troubleshooting
 
-### Content Not Appearing
+| Problem | Solution |
+|---------|----------|
+| **Content not appearing** | 1. Register before `CharacterGenerator.generate()` 2. Check console for validation errors 3. Verify weights ≠ 0 4. Use correct category name (see [Supported Categories](#supported-categories)) |
+| **Validation errors** | Error messages include category, item index, and specific issue. Use `validate: false` to bypass (not recommended). |
+| **Content not persisting** | System is **runtime only**. Re-register on app startup. See [Export/Import System](#exportimport-system) for persistence patterns. |
+| **Spawn rates not working** | Check spawn mode. See [Spawn Modes](#extensionmanager-api). Use `getMode()` to verify current mode. |
+| **Duplicate ID errors** | Custom IDs must be unique. Use `getCustom(category)` to check existing IDs. |
 
-**Problem:** Custom content doesn't appear in generated characters.
-
-**Solution:** Check that:
-1. Content is registered before character generation
-2. Validation is not failing (check console for errors)
-3. Spawn weights are not set to 0
-4. You're using the correct category name
+### Debugging
 
 ```typescript
-// Debug: Check registered content
 const manager = ExtensionManager.getInstance();
-const info = manager.getInfo('equipment');
-console.log(info);
-// { hasCustomData: true, customCount: 5, totalCount: 42, ... }
-```
 
-### Validation Errors
+// Check registered content
+manager.getInfo('equipment');  // { hasCustomData, customCount, totalCount, mode, ... }
 
-**Problem:** Validation fails with unclear error.
+// Verify weights
+manager.getWeights('equipment');  // Current weights
 
-**Solution:** Read the error message carefully. It includes:
-- The category that failed
-- The item index
-- The specific validation error
+// Check current mode
+manager.getMode('equipment');  // 'relative' | 'absolute' | 'default' | undefined
 
-```typescript
-try {
-    manager.register('equipment', invalidItems);
-} catch (error) {
-    // Error: Invalid items for category 'equipment':
-    // Item 0: Missing or invalid 'name' property
-    // Item 1: Invalid 'type' (must be 'weapon', 'armor', or 'item')
-    console.error(error.message);
-}
-```
-
-### Content Not Persisting
-
-**Problem:** Custom content disappears between sessions.
-
-**Solution:** The extensibility system is **runtime only**. You must re-register content each session:
-
-```typescript
-// On app startup
-import { loadMyContentPack } from './my-content-pack';
-
-loadMyContentPack();
-```
-
-### Spawn Rates Not Working
-
-**Problem:** Custom spawn rates don't seem to affect generation.
-
-**Solution:** Check the spawn mode:
-
-```typescript
-// Relative: Custom weights added to defaults
-manager.register('equipment', items, { mode: 'relative' });
-
-// Absolute: Only custom items spawn
-manager.register('equipment', items, { mode: 'absolute' });
-
-// Default: All items equal weight
-manager.register('equipment', items, { mode: 'default' });
+// Validate without registering
+manager.validate('equipment', items);  // { valid: boolean, errors: string[] }
 ```
 
 ---
@@ -1974,7 +1769,9 @@ manager.register('equipment', items, { mode: 'default' });
 
 ### Type Definitions
 
-**Import actual types from the package:**
+**Location:** [src/core/extensions/ExtensionManager.ts](../src/core/extensions/ExtensionManager.ts)
+
+**Import types from the package:**
 
 ```typescript
 import type {
@@ -1982,11 +1779,10 @@ import type {
     RacialTrait,
     CustomSkill,
     ExtensionOptions,
-    ExtensionCategory
+    ExtensionCategory,
+    SpellSchool
 } from 'playlist-data-engine';
 ```
-
-**Type reference tables:**
 
 | Type | Source | Description |
 |------|--------|-------------|
@@ -1995,213 +1791,24 @@ import type {
 | `RacialTrait` | [src/core/features/FeatureTypes.ts](../src/core/features/FeatureTypes.ts) | Racial traits with prerequisites and effects |
 | `CustomSkill` | [src/core/skills/SkillTypes.ts](../src/core/skills/SkillTypes.ts) | Skills with prerequisites, categories, armor penalty |
 | `SkillListDefinition` | [src/core/skills/SkillTypes.ts](../src/core/skills/SkillTypes.ts) | Skill lists for class character generation |
+| `SpellSchool` | [src/core/spells/SpellTypes.ts](../src/core/spells/SpellTypes.ts) | D&D 5e schools of magic: Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation |
 | `ExtensionCategory` | [src/core/extensions/ExtensionManager.ts](../src/core/extensions/ExtensionManager.ts) | All extensible category names |
 
 ### Character Generator Extensions
 
-The `CharacterGenerator.generate()` `extensions` option supports a limited set of categories:
+The `CharacterGenerator.generate()` `extensions` option supports a limited set of categories.
 
-```typescript
-interface CharacterGeneratorExtensions {
-    spells?: SpellExtension[];           // Custom spells to add
-    equipment?: EquipmentExtension[];    // Custom equipment to add
-    races?: string[];                    // Custom races to add (race names)
-    classes?: string[];                  // Custom classes to add (class names)
-    appearance?: AppearanceExtension;    // Custom appearance options
-}
-```
+| Property | Type | Description |
+|----------|------|-------------|
+| `spells` | `SpellExtension[]` | Custom spells to add |
+| `equipment` | `EquipmentExtension[]` | Custom equipment to add |
+| `races` | `string[]` | Custom race names (uses Race enum) |
+| `classes` | `string[]` | Custom class names (uses Class enum) |
+| `appearance` | `AppearanceExtension` | Custom appearance options |
 
 **Important:** For `classFeatures`, `racialTraits`, `skills`, and `skillLists`, use `ExtensionManager.register()` directly instead of the `extensions` option.
 
-### All Categories
-
-The complete list of extensible categories:
-
-```typescript
-type ExtensionCategory =
-    // Equipment System
-    | 'equipment'                      // Weapons, armor, items
-    | 'equipment.templates'            // Complete equipment templates
-
-    // Appearance Options
-    | 'appearance.bodyTypes'           // Character body shapes
-    | 'appearance.skinTones'           // Skin color options
-    | 'appearance.hairColors'          // Hair color options
-    | 'appearance.hairStyles'          // Hair style options
-    | 'appearance.eyeColors'           // Eye color options
-    | 'appearance.facialFeatures'      // Facial features
-
-    // Spells
-    | 'spells'                         // All spells (default + custom)
-    | `spells.${string}`               // Class-specific spells
-
-    // Races
-    | 'races'                          // Race names (uses Race enum)
-    | 'races.data'                     // Race data (ability bonuses, speed, traits, subraces)
-
-    // Classes
-    | 'classes'                        // Class names (uses Class enum)
-    | 'classes.data'                   // Class data (hit die, saves, skills, etc.)
-
-    // Class Features
-    | 'classFeatures'                  // All class features
-    | 'classFeatures.Barbarian'
-    | 'classFeatures.Bard'
-    | 'classFeatures.Cleric'
-    | 'classFeatures.Druid'
-    | 'classFeatures.Fighter'
-    | 'classFeatures.Monk'
-    | 'classFeatures.Paladin'
-    | 'classFeatures.Ranger'
-    | 'classFeatures.Rogue'
-    | 'classFeatures.Sorcerer'
-    | 'classFeatures.Warlock'
-    | 'classFeatures.Wizard'
-    | `classFeatures.${string}`        // For custom class features
-
-    // Racial Traits
-    | 'racialTraits'                   // All racial traits
-    | 'racialTraits.Human'
-    | 'racialTraits.Elf'
-    | 'racialTraits.Dwarf'
-    | 'racialTraits.Halfling'
-    | 'racialTraits.Dragonborn'
-    | 'racialTraits.Gnome'
-    | 'racialTraits.Half-Elf'
-    | 'racialTraits.Half-Orc'
-    | 'racialTraits.Tiefling'
-    | `racialTraits.${string}` // For custom race racial traits
-
-    // Skills
-    | 'skills'                         // All skills (default + custom)
-    | 'skills.STR'                     // Strength-based skills
-    | 'skills.DEX'                     // Dexterity-based skills
-    | 'skills.CON'                     // Constitution-based skills
-    | 'skills.INT'                     // Intelligence-based skills
-    | 'skills.WIS'                     // Wisdom-based skills
-    | 'skills.CHA'                     // Charisma-based skills
-
-    // Skill Lists
-    | 'skillLists'                     // All skill lists
-    | 'skillLists.Barbarian'
-    | 'skillLists.Bard'
-    | 'skillLists.Cleric'
-    | 'skillLists.Druid'
-    | 'skillLists.Fighter'
-    | 'skillLists.Monk'
-    | 'skillLists.Paladin'
-    | 'skillLists.Ranger'
-    | 'skillLists.Rogue'
-    | 'skillLists.Sorcerer'
-    | 'skillLists.Warlock'
-    | 'skillLists.Wizard'
-    | `skillLists.${string}`           // For custom class skill lists
-
-    // Class Spell Lists
-    | 'classSpellLists'                // All class spell lists
-    | `classSpellLists.${string}`      // Class-specific spell lists
-
-    // Class Spell Slots
-    | 'classSpellSlots'                // Spell slot progressions
-
-    // Class Starting Equipment
-    | 'classStartingEquipment'         // All class starting equipment
-    | `classStartingEquipment.${string}`;  // Class-specific starting equipment
-```
-
-**Quick Reference by Category:**
-
-| Category | Description |
-|----------|-------------|
-| **Equipment** | `equipment`, `equipment.templates` |
-| **Appearance** | `appearance.bodyTypes`, `appearance.skinTones`, `appearance.hairColors`, `appearance.hairStyles`, `appearance.eyeColors`, `appearance.facialFeatures` |
-| **Spells** | `spells`, `spells.${className}` |
-| **Races** | `races`, `races.data` |
-| **Classes** | `classes`, `classes.data` |
-| **Features** | `classFeatures`, `classFeatures.${className}`, `racialTraits`, `racialTraits.${raceName}` |
-| **Skills** | `skills`, `skills.${ability}`, `skillLists`, `skillLists.${className}` |
-| **Class Magic** | `classSpellLists`, `classSpellLists.${className}`, `classSpellSlots` |
-| **Class Gear** | `classStartingEquipment`, `classStartingEquipment.${className}` |
-
-### Helper Functions
-
-The engine provides several helper functions for working with custom content:
-
-#### `getClassData(className)`
-
-Get class data for default or custom classes:
-
-```typescript
-import { getClassData } from 'playlist-data-engine';
-
-// Get default class data
-const wizardData = getClassData('Wizard');
-console.log(wizardData.hit_die); // 6
-
-// Get custom class data (if registered via ExtensionManager)
-const necromancerData = getClassData('Necromancer');
-if (necromancerData) {
-    console.log(necromancerData.baseClass); // 'Wizard'
-    console.log(necromancerData.primary_ability); // 'INT'
-}
-```
-
-For template-based custom classes (those with a `baseClass` property), the system merges properties:
-- Base class properties are spread first
-- Custom properties override base properties
-- `available_skills` is completely replaced (not merged)
-
-#### `getRaceData(raceName)`
-
-Get race data for default or custom races:
-
-```typescript
-import { getRaceData } from 'playlist-data-engine';
-
-// Get default race data
-const elfData = getRaceData('Elf');
-console.log(elfData.speed); // 30
-
-// Get custom race data (if registered via ExtensionManager)
-const dragonkinData = getRaceData('Dragonkin');
-if (dragonkinData) {
-    console.log(dragonkinData.ability_bonuses);
-    // { STR: 2, CON: 1, CHA: 1 }
-}
-```
-
-#### `getClassSpellList(className)`
-
-Get spell list for a class (default or custom):
-
-```typescript
-import { getClassSpellList } from 'playlist-data-engine';
-
-const spellList = getClassSpellList('Necromancer');
-// Returns: { cantrips: [...], spells_by_level: { 1: [...], 2: [...] } }
-```
-
-#### `getSpellSlotsForClass(className, characterLevel)`
-
-Get spell slots for a class at a specific level:
-
-```typescript
-import { getSpellSlotsForClass } from 'playlist-data-engine';
-
-const slots = getSpellSlotsForClass('Necromancer', 5);
-// Returns: { 1: 4, 2: 3, 3: 2 }
-```
-
-#### `getClassStartingEquipment(className)`
-
-Get starting equipment for a class:
-
-```typescript
-import { getClassStartingEquipment } from 'playlist-data-engine';
-
-const equipment = getClassStartingEquipment('Necromancer');
-// Returns: { weapons: [...], armor: [...], items: [...] }
-```
+For the complete list of supported categories, see [Supported Categories](#supported-categories) in the Overview.
 
 ---
 
@@ -2214,6 +1821,3 @@ For more information, see:
 - [XP_AND_STATS.md](XP_AND_STATS.md) - Progression and stat strategies
 - [PREREQUISITES.md](PREREQUISITES.md) - Feature and skill requirements
 - [tests/integration/customGeneration.integration.test.ts](../tests/integration/customGeneration.integration.test.ts) - Integration test examples
-
-
-

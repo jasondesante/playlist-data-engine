@@ -8,6 +8,14 @@
 import type { Class, Race } from '../types/Character.js';
 
 /**
+ * D&D 5e Schools of Magic
+ *
+ * The eight schools of magic categorize spells by their effects and methods.
+ * Used by the Spell interface and validation systems.
+ */
+export type SpellSchool = 'Abjuration' | 'Conjuration' | 'Divination' | 'Enchantment' | 'Evocation' | 'Illusion' | 'Necromancy' | 'Transmutation';
+
+/**
  * Prerequisites for learning a spell
  *
  * Spells can require:
@@ -59,7 +67,7 @@ export interface Spell {
 
     name: string;
     level: number;
-    school: 'Abjuration' | 'Conjuration' | 'Divination' | 'Enchantment' | 'Evocation' | 'Illusion' | 'Necromancy' | 'Transmutation';
+    school: SpellSchool;
     casting_time: string;
     range: string;
     components: string[];

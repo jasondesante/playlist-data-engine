@@ -3042,10 +3042,10 @@ Query and validation layer for spells stored in ExtensionManager.
 | Type | Description | Location |
 |------|-------------|----------|
 | `RegisteredSpell` | Registered spell with ID, name, level, school, source, prerequisites | [src/core/spells/SpellQuery.ts](src/core/spells/SpellQuery.ts) |
-| `Spell` | Base spell interface with name, level, school, properties | [src/core/types/Character.ts](src/core/types/Character.ts) |
-| `SpellPrerequisite` | Prerequisites for spells (level, abilities, class, features, spells, skills) | [src/core/types/Character.ts](src/core/types/Character.ts) |
+| `Spell` | Base spell interface with name, level, school, properties | [src/core/spells/SpellTypes.ts](src/core/spells/SpellTypes.ts) |
+| `SpellPrerequisite` | Prerequisites for spells (level, abilities, class, features, spells, skills) | [src/core/spells/SpellTypes.ts](src/core/spells/SpellTypes.ts) |
 | `ValidationResult` | Validation result with valid flag, errors, and warnings | [src/core/spells/SpellValidator.ts](src/core/spells/SpellValidator.ts) |
-| `SpellSchool` | Magic schools: Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation | [src/core/types/Character.ts](src/core/types/Character.ts) |
+| `SpellSchool` | Magic schools: Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation | [src/core/spells/SpellTypes.ts](src/core/spells/SpellTypes.ts) |
 
 #### Method Reference
 
@@ -3187,6 +3187,11 @@ The engine supports template-based custom classes through the ExtensionManager. 
 - `getClassData(className: string)` - Get class data from default or custom classes
 - `getClassSpellList(className: string)` - Get spell list for class
 - `getSpellSlotsForClass(className: string, level: number)` - Get spell slots for class
+
+---
+## Style Guide
+
+Documentation Style Guide for DATA_ENGINE_REFERENCE.md: This API reference prioritizes efficiency over exhaustiveness by organizing content into navigable sections (Quick Export Reference → Data Types → Core Modules → Specialized Systems). Key conventions: (1) Location links using italicized [src/path/file.ts](src/path/file.ts) format for all major definitions; (2) "Also known as" aliases in italics for discoverability under alternate search terms; (3) Structured tables for properties, methods, and options rather than copying raw TypeScript interfaces; (4) Cross-references to related docs (SPEC.md, USAGE_IN_OTHER_PROJECTS.md, specialized guides) rather than duplicating content; (5) Method reference tables with "Returns" and "Description" columns for APIs; (6) Type descriptions focus on purpose and key properties rather than full interface definitions—readers can click the location link for complete source. The goal is a scannable reference that directs readers to source files for complete implementations while providing sufficient context for most queries.
 
 ---
 

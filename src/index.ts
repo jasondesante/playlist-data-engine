@@ -116,8 +116,7 @@ export type {
     ContentPackData
 } from './core/extensions/ExtensionManager.js';
 
-export type { SpellPrerequisite, RaceDataEntry, CustomRaceDataEntry, ClassDataEntry, ClassSpellListData } from './utils/constants.js';
-export type { Spell, Equipment } from './utils/constants.js';
+export type { RaceDataEntry, CustomRaceDataEntry, ClassDataEntry, ClassSpellListData, Equipment } from './utils/constants.js';
 
 // Environmental types
 export type {
@@ -137,8 +136,10 @@ export type {
 // Spell types
 export type {
     RegisteredSpell,
-    SpellSchool
-} from './core/spells/SpellQuery.js';
+    SpellSchool,
+    SpellPrerequisite,
+    Spell
+} from './core/spells/index.js';
 
 export type {
     SpellValidationResult

@@ -989,6 +989,36 @@ const manager = ExtensionManager.getInstance();
 manager.register('equipment', [customSword], { weights: { 'Blade of the Ages': 0.5 }});
 ```
 
+### Register via CharacterGenerator
+
+As a convenience, you can pass extensions directly to `CharacterGenerator.generate()`:
+
+```typescript
+import { CharacterGenerator } from 'playlist-data-engine';
+
+const customEquipment = [
+    { name: 'Frost Brand', type: 'weapon', rarity: 'very_rare', weight: 3 },
+    { name: 'Mithral Chain Shirt', type: 'armor', rarity: 'rare', weight: 10 }
+];
+
+const character = CharacterGenerator.generate(
+    'my-seed',
+    audioProfile,
+    track,
+    { extensions: { equipment: customEquipment } }
+);
+```
+
+**Adjust spawn rates after registration:**
+
+```typescript
+const manager = ExtensionManager.getInstance();
+manager.setWeights('equipment', {
+    'Frost Brand': 0.05,
+    'Potion of Giant Strength': 3.0
+});
+```
+
 ### Validation
 
 All custom equipment is automatically validated:

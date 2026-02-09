@@ -14,24 +14,14 @@
  * **Registration:** Use ExtensionManager.register('spells', [...]) to register spells.
  */
 
-import type { Spell } from './SpellTypes.js';
+import type { Spell, SpellSchool } from './SpellTypes.js';
 import type { Class, CharacterSheet } from '../types/Character.js';
 import { SpellValidator, type SpellValidationResult } from './SpellValidator.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { getSpellSlotsForClass as getSpellSlotsForClassFromConstants } from '../../utils/constants.js';
 
-/**
- * Valid D&D 5e spell schools
- */
-export type SpellSchool =
-    | 'Abjuration'
-    | 'Conjuration'
-    | 'Divination'
-    | 'Enchantment'
-    | 'Evocation'
-    | 'Illusion'
-    | 'Necromancy'
-    | 'Transmutation';
+// Re-export SpellSchool for convenience
+export type { SpellSchool };
 
 /**
  * Extended Spell interface with optional query fields

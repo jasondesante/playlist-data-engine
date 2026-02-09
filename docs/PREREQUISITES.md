@@ -171,13 +171,15 @@ interface SpellPrerequisite {
 ### Spell with Prerequisites
 
 ```typescript
+import type { SpellSchool } from 'playlist-data-engine';
+
 interface Spell {
     /** Unique identifier (optional for backward compatibility) */
     id?: string;
 
     name: string;
     level: number;           // 0-9 (0 = cantrips)
-    school: 'Abjuration' | 'Conjuration' | 'Divination' | 'Enchantment' | 'Evocation' | 'Illusion' | 'Necromancy' | 'Transmutation';
+    school: SpellSchool;     // D&D 5e schools of magic
     casting_time: string;
     range: string;
     components: string[];
@@ -206,7 +208,7 @@ const dragonBreath = {
     id: 'dragon_breath',
     name: 'Dragon Breath',
     level: 3,
-    school: 'Evocation' as const,
+    school: 'Evocation',
     casting_time: '1 action',
     range: '60 ft cone',
     components: ['V', 'S', 'M'],
@@ -594,6 +596,94 @@ const masterHerbalist = {
     },
     source: 'custom'
 };
+```
+
+
+### Spells with Prerequisites
+
+Spells can have prerequisites that must be met before a spellcaster can learn them. This allows for specialized spells that require specific features, abilities, spells, skills, level, or class.
+
+```typescript
+import { SpellValidator, SpellManager, ExtensionManager } from 'playlist-data-engine';
+
+// ===== SPELL WITH FEATURE PREREQUISITES =====
+// Dragon Breath: Requires Draconic Bloodline feature
+const dragonBreath = {
+    id: 'dragon_breath',
+    name: 'Dragon Breath',
+    level: 3,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '60 ft cone',
+    components: ['V', 'S', 'M'],
+    duration: 'Instantaneous',
+    description: 'Exhale destructive energy',
+    prerequisites: {
+        features: ['dragon_bloodline'],
+        abilities: { CHA: 16 }
+    }
+};
+
+// ===== SPELL WITH LEVEL AND CLASS PREREQUISITES =====
+// Meteor Swarm: High-level evocation spell
+const limitedMeteorSwarm = {
+    id: 'limited_meteor_swarm',
+    name: 'Meteor Swarm',
+    level: 9,
+    school: 'Evocation',
+    casting_time: '1 action',
+    range: '1 mile',
+    components: ['V', 'S'],
+    duration: 'Instantaneous',
+    description: 'Blazing orbs rain down',
+    prerequisites: {
+        level: 17,  // Character must be level 17+
+        class: 'Wizard',
+        spells: ['Fireball']  // Must know Fireball first
+    }
+};
+
+// ===== SPELL WITH SKILL PREREQUISITES =====
+// Arcane Sword: Requires Arcana proficiency
+const arcaneSwordSpell = {
+    id: 'arcane_sword',
+    name: 'Arcane Sword',
+    level: 5,
+    school: 'Evocation',
+    casting_time: '1 bonus action',
+    range: '60 ft',
+    components: ['V', 'S', 'M'],
+    duration: 'Concentration, 1 minute',
+    description: 'Summon a sword of pure magic',
+    prerequisites: {
+        skills: ['arcana']  // Requires Arcana proficiency
+    }
+};
+
+// ===== REGISTER CUSTOM SPELLS =====
+const manager = ExtensionManager.getInstance();
+manager.register('spells', [dragonBreath, limitedMeteorSwarm, arcaneSwordSpell]);
+
+// ===== VALIDATE SPELL PREREQUISITES =====
+const character = CharacterGenerator.generate(seed, audioProfile, track, {forceName: 'Sorcerer'});
+const spell = SPELL_DATABASE['dragon_breath'];
+
+if (spell.prerequisites) {
+    const result = SpellValidator.validateSpellPrerequisites(spell.prerequisites, character);
+
+    if (!result.valid) {
+        console.log('Cannot learn this spell:', result.unmet);
+    }
+}
+
+// During character generation, SpellManager automatically filters
+// out spells that have unmet prerequisites
+const knownSpells = SpellManager.getKnownSpells(
+    character.class,
+    character.level,
+    character  // Pass character for prerequisite filtering
+);
+// Only includes spells whose prerequisites are met
 ```
 
 ---

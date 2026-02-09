@@ -294,7 +294,7 @@ export class CharacterGenerator {
 
         // Determine the effective race (without mutating options)
         // If only subrace is provided, auto-detect the race from the subrace
-        let effectiveRace: string | undefined;
+        let effectiveRace: Race | undefined;
         if (requestedSubrace === 'pure') {
             // Explicitly no subrace (race can be generated or forced)
             subrace = undefined;

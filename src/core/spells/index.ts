@@ -8,6 +8,6 @@ export { SpellValidator, validateSpell, validateSpells, validateSpellPrerequisit
 export { SpellQuery, getSpellQuery } from './SpellQuery.js';
 
 // Export spell types from SpellTypes.ts
-export type { SpellPrerequisite, Spell } from './SpellTypes.js';
-export type { RegisteredSpell, SpellSchool } from './SpellQuery.js';
+export type { SpellPrerequisite, Spell, SpellSchool } from './SpellTypes.js';
+export type { RegisteredSpell } from './SpellQuery.js';
 export type { SpellValidationResult } from './SpellValidator.js';
