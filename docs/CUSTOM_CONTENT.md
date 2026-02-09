@@ -46,26 +46,14 @@ The engine supports custom races through the ExtensionManager.
 
 *Also known as: Playable race, character race*
 
-The default D&D 5e races:
-
-| Race |
-|------|
-| Human |
-| Elf |
-| Dwarf |
-| Halfling |
-| Dragonborn |
-| Gnome |
-| Half-Elf |
-| Half-Orc |
-| Tiefling |
+For the complete list of default D&D 5e races and type definitions, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md#data-types).
 
 **Helper Functions:**
 
-| Function | Returns | Description |
-|----------|---------|-------------|
-| `asRace(value: string)` | `Race` | Convert a string to the Race type |
-| `isValidRace(value: string)` | `value is Race` | Type guard for valid race names |
+| Function | Description |
+|----------|-------------|
+| `asRace(value: string)` | Convert a string to the Race type |
+| `isValidRace(value: string)` | Type guard for valid race names |
 
 **Usage:**
 
@@ -82,6 +70,8 @@ if (isValidRace(raceName)) {
 ### RaceDataEntry
 
 **Location:** [src/utils/constants.ts](../src/utils/constants.ts)
+
+For complete type definitions, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md#data-types).
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -134,7 +124,7 @@ The ExtensionManager validates races in this order:
 
 ### getRaceData() Helper
 
-The `getRaceData()` function retrieves race data from both default and custom races:
+The `getRaceData()` function retrieves race data from both default and custom races. For complete API reference, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md#helper-functions).
 
 ```typescript
 import { getRaceData } from 'playlist-data-engine';
@@ -321,16 +311,20 @@ The Template Class System enables creating new classes that extend existing D&D 
 
 *Also known as: Class name type, branded class type*
 
+For the complete list of default D&D 5e classes and type definitions, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md#data-types).
+
 **Helper Functions:**
 
-| Function | Returns | Description |
-|----------|---------|-------------|
-| `asClass(value: string)` | `Class` | Convert a string to the Class type |
-| `isValidClass(value: string)` | `value is Class` | Type guard for valid class names |
+| Function | Description |
+|----------|-------------|
+| `asClass(value: string)` | Convert a string to the Class type |
+| `isValidClass(value: string)` | Type guard for valid class names |
 
 ### ClassDataEntry
 
 **Location:** [src/utils/constants.ts](../src/utils/constants.ts)
+
+For complete type definitions, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md#data-types).
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
@@ -357,15 +351,15 @@ The Template Class System enables creating new classes that extend existing D&D 
 | `tertiary?` | audio trait | Tertiary preference |
 | `bass?`, `treble?`, `mid?`, `amplitude?` | number | Optional weight values |
 
+See also: [DATA_ENGINE_REFERENCE.md - Audio Preferences](../DATA_ENGINE_REFERENCE.md#data-types)
+
 ### getClassData() Helper
 
 **Location:** [src/utils/constants.ts](../src/utils/constants.ts)
 
 Retrieves class data from default CLASS_DATA or ExtensionManager. For template-based classes, merges base class data with custom data (custom properties override).
 
-| Function | Returns | Description |
-|----------|---------|-------------|
-| `getClassData(className: string)` | `ClassDataEntry \| undefined` | Get class data (default or custom) |
+For complete API reference, see [DATA_ENGINE_REFERENCE.md - Helper Functions](../DATA_ENGINE_REFERENCE.md#helper-functions).
 
 **Property Override Behavior:**
 
@@ -384,11 +378,13 @@ Retrieves class data from default CLASS_DATA or ExtensionManager. For template-b
 
 **Location:** [src/utils/constants.ts](../src/utils/constants.ts)
 
-| Function | Returns | Description |
-|----------|---------|-------------|
-| `getClassSpellList(className: string)` | `{ cantrips: string[], spells_by_level: Record<number, string[]> } \| undefined` | Get spell list for a class |
-| `getSpellSlotsForClass(className: string, level: number)` | `Record<number, number> \| undefined` | Get spell slots at a level |
-| `getClassStartingEquipment(className: string)` | `{ weapons: string[], armor: string[], items: string[] } \| undefined` | Get starting equipment |
+For complete API reference, see [DATA_ENGINE_REFERENCE.md - Helper Functions](../DATA_ENGINE_REFERENCE.md#helper-functions).
+
+| Function | Description |
+|----------|-------------|
+| `getClassSpellList(className: string)` | Get spell list for a class |
+| `getSpellSlotsForClass(className: string, level: number)` | Get spell slots at a level |
+| `getClassStartingEquipment(className: string)` | Get starting equipment |
 
 ### Registering Custom Classes
 
@@ -511,26 +507,7 @@ const character = CharacterGenerator.generate(
 );
 ```
 
-**Class Data Properties:**
-
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `name` | string | Yes | Unique class name |
-| `baseClass` | Class | No | If specified, inherits properties from this class |
-| `primary_ability` | Ability | Yes* | Primary ability score (STR, DEX, CON, INT, WIS, CHA) - required if no baseClass |
-| `hit_die` | number | Yes* | Hit die size (6, 8, 10, 12) - required if no baseClass |
-| `saving_throws` | Ability[] | Yes* | Two saving throw abilities - required if no baseClass |
-| `is_spellcaster` | boolean | Yes* | Can this class cast spells - required if no baseClass |
-| `skill_count` | number | Yes* | Number of skill proficiencies - required if no baseClass |
-| `available_skills` | string[] | Yes* | Array of skill IDs - required if no baseClass |
-| `has_expertise` | boolean | Yes* | Has expertise feature - required if no baseClass |
-| `expertise_count` | number | No | Number of expertise choices (if has_expertise is true) |
-| `audio_preferences` | object | No | Audio affinity for class suggestion |
-
-**Default Classes:**
-
-The 12 default D&D 5e classes are always available:
-`Barbarian`, `Bard`, `Cleric`, `Druid`, `Fighter`, `Monk`, `Paladin`, `Ranger`, `Rogue`, `Sorcerer`, `Warlock`, `Wizard`
+**Note:** For complete ClassDataEntry property definitions and the full list of default D&D 5e classes, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md#data-types).
 
 ### Common Patterns
 

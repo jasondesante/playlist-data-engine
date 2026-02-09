@@ -14,7 +14,7 @@ Complete reference for the Playlist Data Engine's Advanced Equipment System.
 8. [Templates vs Instances](#templates-vs-instances)
 9. [Spawn Weights](#spawn-weights)
 10. [Enchantment Library](#enchantment-library)
-11. [Magic Item Examples](#magic-item-examples)
+11. [Magic Item System](#magic-item-system)
 12. [Custom Equipment](#custom-equipment)
 13. [API Reference](#api-reference)
 14. [Examples](#examples)
@@ -134,32 +134,36 @@ Equipment properties define how items affect gameplay. Each property has a type,
 
 **Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts)
 
-| Type | Description | Target Examples | Value Type |
-|------|-------------|-----------------|------------|
-| `stat_bonus` | Increases ability score | `STR`, `DEX`, `CON`, `INT`, `WIS`, `CHA` | number |
-| `skill_proficiency` | Grants skill proficiency/expertise | `stealth`, `perception`, etc. | `proficient` / `expertise` |
-| `ability_unlock` | Unlocks special abilities | `darkvision`, `flight`, etc. | boolean/number |
-| `passive_modifier` | Modifies passive values | `ac`, `speed`, `max_hp`, `saving_throws`, etc. | number |
-| `special_property` | Game-specific properties | `finesse`, `versatile`, `stealth_disadvantage` | boolean/string/number |
-| `damage_bonus` | Adds extra damage | `fire`, `cold`, `lightning` | dice string / number |
-| `stat_requirement` | Minimum stat required to use | `STR`, `DEX` | number |
+Equipment properties define how items affect gameplay. Each property has a type, target, value, optional condition, and optional description.
+
+**For complete reference**, see [DATA_ENGINE_REFERENCE.md - EquipmentPropertyType](../DATA_ENGINE_REFERENCE.md#equipmentpropertytype).
+
+| Type | Description |
+|------|-------------|
+| `stat_bonus` | Increases ability scores (STR, DEX, CON, INT, WIS, CHA) |
+| `skill_proficiency` | Grants skill proficiency or expertise |
+| `ability_unlock` | Unlocks special abilities (darkvision, flight, etc.) |
+| `passive_modifier` | Modifies passive values (AC, speed, HP, saving throws, etc.) |
+| `special_property` | Game-specific properties (finesse, versatile, etc.) |
+| `damage_bonus` | Adds extra damage (fire, cold, lightning, etc.) |
+| `stat_requirement` | Minimum stat required to use item |
 
 ### EquipmentCondition
 
 **Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts)
 
-Conditions control when properties apply.
+**For complete reference**, see [DATA_ENGINE_REFERENCE.md - EquipmentCondition](../DATA_ENGINE_REFERENCE.md#equipmentcondition).
 
-| Condition Type | Value Format | Description |
-|----------------|--------------|-------------|
-| `vs_creature_type` | string | Property applies vs specific creature (e.g., `dragon`) |
-| `at_time_of_day` | `day`/`night`/`dawn`/`dusk` | Property applies at specific time |
+| Type | Value Format | Description |
+|------|--------------|-------------|
+| `vs_creature_type` | string | Property applies vs specific creature |
+| `at_time_of_day` | day/night/dawn/dusk | Property applies at specific time |
 | `wielder_race` | string | Property applies only to specific race |
 | `wielder_class` | string | Property applies only to specific class |
 | `while_equipped` | boolean | Always true when equipped (default) |
 | `on_hit` | boolean | Triggers when weapon hits |
 | `on_damage_taken` | boolean | Triggers when wearer takes damage |
-| `custom` | string + description | Game-defined condition |
+| `custom` | value + description | Game-defined condition |
 
 ### EquipmentProperty
 
@@ -175,43 +179,7 @@ Defines how equipment affects gameplay.
 | `condition` | `EquipmentCondition` | Optional condition for when property applies |
 | `stackable` | boolean | Whether effects stack (default: true) |
 
-### Property Examples
-
-```typescript
-// Stat Bonus
-{
-    type: 'stat_bonus',
-    target: 'STR',
-    value: 2,
-    description: '+2 Strength'
-}
-
-// Skill Proficiency
-{
-    type: 'skill_proficiency',
-    target: 'stealth',
-    value: 'expertise',
-    description: 'Stealth expertise'
-}
-
-// Conditional Damage
-{
-    type: 'damage_bonus',
-    target: 'fire',
-    value: '2d6',
-    description: '+2d6 fire damage',
-    condition: { type: 'vs_creature_type', value: 'troll' }
-}
-
-// Passive Modifier
-{
-    type: 'passive_modifier',
-    target: 'ac',
-    value: 2,
-    description: '+2 AC',
-    stackable: true
-}
-```
+For property examples, see [Examples - Property Examples](#examples).
 
 ---
 
@@ -299,13 +267,17 @@ Primary equipment type with advanced properties support. Extends base equipment 
 
 ### Rarity Levels
 
-| Rarity | Spawn Weight (Typical) | Examples |
-|--------|----------------------|----------|
-| common | 1.0 | Longsword, Leather Armor |
-| uncommon | 0.5 | Light Crossbow, Hand Crossbow |
-| rare | 0.2 | Flame Tongue, Frost Brand |
-| very_rare | 0.1 | Dragonslayer Weapon |
-| legendary | 0.0 | Vorpal Sword (game-only) |
+Equipment rarity controls spawn frequency and typical power level.
+
+| Rarity | Spawn Weight (Typical) | Description |
+|--------|----------------------|-------------|
+| common | 1.0 | Standard items, spawn frequently |
+| uncommon | 0.5 | Slightly magical, spawn occasionally |
+| rare | 0.2 | Powerful magic items, spawn rarely |
+| very_rare | 0.1 | Very powerful, spawn very rarely |
+| legendary | 0.0 | Unique artifacts, never spawn randomly (game-only) |
+
+**Note:** The spawnWeight property on equipment can override these defaults. Items with `spawnWeight: 0` will never appear in random loot but can still be used by game logic.
 
 ---
 
@@ -315,20 +287,7 @@ Equipment can grant features in two ways:
 
 ### 1. Registry Feature References
 
-String references to features in the FeatureQuery:
-
-```typescript
-{
-    name: 'Ring of Free Action',
-    type: 'item',
-    rarity: 'rare',
-    weight: 0.1,
-    grantsFeatures: ['freedom_of_movement'],
-    spawnWeight: 0.2,
-    source: 'custom',
-    tags: ['magic', 'ring', 'movement']
-}
-```
+String references to features in the FeatureQuery. For examples, see [Examples - Registry Feature References](#examples).
 
 ### 2. Inline Mini-Features
 
@@ -344,56 +303,13 @@ Equipment-specific features defined inline.
 | `effects` | `EquipmentProperty[]` | What this feature does |
 | `source` | `'equipment_inline'` | Marks as equipment-specific |
 
-Example:
-
-```typescript
-{
-    name: 'Boots of Speed',
-    type: 'item',
-    rarity: 'rare',
-    weight: 1,
-    grantsFeatures: [
-        {
-            id: 'boots_of_speed_haste',
-            name: 'Haste',
-            description: 'While wearing these boots, you can use a bonus action to click them together. On your turn, you can increase your speed by 20 feet until the end of your turn.',
-            effects: [
-                {
-                    type: 'passive_modifier',
-                    target: 'speed',
-                    value: 20,
-                    description: '+20 speed'
-                }
-            ],
-            source: 'equipment_inline'
-        }
-    ],
-    spawnWeight: 0.15,
-    source: 'custom',
-    tags: ['magic', 'boots', 'speed']
-}
-```
+For inline feature examples, see [Examples - Inline Mini-Features](#examples).
 
 ---
 
 ## Equipment-Granted Skills
 
-Equipment can grant skill proficiencies or expertise:
-
-```typescript
-{
-    name: 'Thieves\' Tools',
-    type: 'item',
-    rarity: 'uncommon',
-    weight: 1,
-    grantsSkills: [
-        { skillId: 'thieves_tools', level: 'proficient' }
-    ],
-    spawnWeight: 1.0,
-    source: 'default',
-    tags: ['gear', 'tools', 'dexterity']
-}
-```
+Equipment can grant skill proficiencies or expertise. For examples, see [Examples - Equipment-Granted Skills](#examples).
 
 ### Skill Proficiency Hierarchy
 
@@ -436,63 +352,276 @@ Runtime modification for enchanting, cursing, or upgrading equipment.
 | `addsSpells` | Array<{spellId, level?, uses?, recharge?}> | Spells granted |
 | `source` | string | Source type ('enchantment', 'curse', 'upgrade', 'template') |
 
-### Modification Methods
+**For complete method reference**, see [DATA_ENGINE_REFERENCE.md - EquipmentModifier](../DATA_ENGINE_REFERENCE.md#equipmentmodifier) or [API Reference - EquipmentModifier](#api-reference).
 
-```typescript
-// Enchant equipment (adds positive effects)
-EquipmentModifier.enchant(
-    equipment,
-    'Longsword',
-    enchantment,
-    character
-);
-
-// Apply template
-EquipmentModifier.applyTemplate(
-    equipment,
-    'Longsword',
-    'flaming_weapon_template',
-    character
-);
-
-// Curse equipment (adds negative effects)
-EquipmentModifier.curse(
-    equipment,
-    'Ring',
-    curse,
-    character
-);
-
-// Upgrade equipment (improve properties)
-EquipmentModifier.upgrade(
-    equipment,
-    'Armor',
-    upgrade,
-    character
-);
-
-// Remove specific modification
-EquipmentModifier.removeModification(
-    equipment,
-    'Sword',
-    'mod_12345',
-    character
-);
-
-// Remove all enchantments (keep curses)
-EquipmentModifier.disenchant(equipment, 'Sword', character);
-
-// Remove all curses (keep enchantments)
-EquipmentModifier.liftCurse(equipment, 'Ring', character);
-```
+For usage examples, see:
+- [Examples - Templates vs Instances](#examples) - `applyTemplate`
+- [Examples - Enchantment Library](#examples) - `enchant`, `curse`
+- [Example 2: Enchanting Equipment](#example-2-enchanting-equipment) - `enchant`
+- [Example 8: Progressive Enchantment](#example-8-progressive-enchantment-through-gameplay) - `enchant`, `removeModification`
+- [Example 9: Removing Debuffs from Cursed Items](#example-9-removing-debuffs-from-cursed-items) - `disenchant`, `liftCurse`, `removeModification`
 
 ---
 
 ## Templates vs Instances
 
-The system supports both template-based and per-instance modifications.
+The system supports both template-based and per-instance modifications. For examples, see [Examples - Templates vs Instances](#examples).
 
-### Registering Templates with ExtensionManager
+---
+
+## Spawn Weights
+
+Spawn weights control item generation in random loot.
+
+### Weight System
+
+- **Weight > 0**: Item can spawn randomly (higher = more common)
+- **Weight = 0**: Item never spawns randomly, but can be used by game logic
+- **Default weight**: 1.0 for most items
+
+For spawning examples, see [Examples - Spawn Weights](#examples).
+
+---
+
+## Enchantment Library
+
+The Enchantment Library provides a comprehensive collection of predefined enchantments and curses that can be applied to equipment at runtime. All enchantments are `EquipmentModification` objects designed to work with `EquipmentModifier`.
+
+**For complete API documentation with all enchantment tables**, see [DATA_ENGINE_REFERENCE.md - Enchantment Library](../DATA_ENGINE_REFERENCE.md#enchantment-library).
+
+**Collections:** `WEAPON_ENCHANTMENTS`, `ARMOR_ENCHANTMENTS`, `RESISTANCE_ENCHANTMENTS`, `CURSES`, `ALL_ENCHANTMENTS`
+
+**Stat Boost Functions:** `createStrengthEnchantment`, `createDexterityEnchantment`, `createConstitutionEnchantment`, `createIntelligenceEnchantment`, `createWisdomEnchantment`, `createCharismaEnchantment` (each takes `bonus: 1 | 2 | 3 | 4`)
+
+**Query Functions:** `getEnchantment`, `getCurse`, `getAllEnchantments`, `getAllCurses`, `getEnchantmentsByType`
+
+For usage examples, see [Examples - Enchantment Library](#examples).
+
+---
+
+## Magic Item System
+
+The Magic Item Examples library provides 38 pre-built magic items that demonstrate all capabilities of the Advanced Equipment System. These include weapons, armor, wondrous items, cursed items, conditional items, and template-based items. They serve as reference implementations and test fixtures.
+
+**For complete API documentation with all item tables**, see [DATA_ENGINE_REFERENCE.md - Magic Items and Equipment Templates](../DATA_ENGINE_REFERENCE.md#magic-items-and-equipment-templates).
+
+**Collections:** `MAGIC_ITEMS` (34 items: weapons, armor, stat bonuses, skills, movement, defense, vision, spells, curses, conditional, template-based), `ITEM_CREATION_TEMPLATES` (9 templates)
+
+**Query Functions:** `getMagicItem`, `getMagicItemsByType`, `getMagicItemsByRarity`, `getCursedItems`, `getItemsWithProperty`, `applyTemplate`
+
+For usage examples, see [Examples - Magic Item Examples](#examples).
+
+---
+
+## Custom Equipment
+
+Custom equipment is registered through the ExtensionManager. For examples, see [Examples - Custom Equipment](#examples).
+
+### Validation
+
+All custom equipment is automatically validated using `EquipmentValidator.validateEquipment()`. See [API Reference - EquipmentValidator](#api-reference) for validation methods.
+
+---
+
+## API Reference
+
+**For complete API documentation with all method signatures**, see [DATA_ENGINE_REFERENCE.md - Equipment System](../DATA_ENGINE_REFERENCE.md#equipment-system).
+
+### Quick Class Reference
+
+| Class | Location | Description |
+|-------|----------|-------------|
+| `EquipmentEffectApplier` | [src/core/equipment/EquipmentEffectApplier.ts](../src/core/equipment/EquipmentEffectApplier.ts) | Apply/remove equipment effects when equipping/unequipping |
+| `EquipmentValidator` | [src/core/equipment/EquipmentValidator.ts](../src/core/equipment/EquipmentValidator.ts) | Validate equipment data structures |
+| `EquipmentModifier` | [src/core/equipment/EquipmentModifier.ts](../src/core/equipment/EquipmentModifier.ts) | Enchant, curse, upgrade, and modify equipment |
+| `EquipmentSpawnHelper` | [src/core/equipment/EquipmentSpawnHelper.ts](../src/core/equipment/EquipmentSpawnHelper.ts) | Batch spawn equipment by rarity, tags, or templates |
+| `EquipmentGenerator` | [src/core/generation/EquipmentGenerator.ts](../src/core/generation/EquipmentGenerator.ts) | Manage inventory and starting gear |
+
+### EquipmentEffectApplier
+
+**Location:** [src/core/equipment/EquipmentEffectApplier.ts](../src/core/equipment/EquipmentEffectApplier.ts)
+
+**For complete method reference**, see [DATA_ENGINE_REFERENCE.md - EquipmentEffectApplier](../DATA_ENGINE_REFERENCE.md#equipmenteffectapplier).
+
+**Key Methods:**
+- `equipItem(character, equipment, instanceId?)` - Apply all effects from equipping an item
+- `unequipItem(character, equipmentName, instanceId?)` - Remove all effects from unequipping an item
+- `reapplyEquipmentEffects(character)` - Re-apply all equipment effects (for updates/level-ups)
+- `getActiveEffects(character)` - Get all active equipment effects
+
+### EquipmentValidator
+
+**Location:** [src/core/equipment/EquipmentValidator.ts](../src/core/equipment/EquipmentValidator.ts)
+
+**For complete method reference**, see [DATA_ENGINE_REFERENCE.md - EquipmentValidator](../DATA_ENGINE_REFERENCE.md#equipmentvalidator).
+
+**Key Methods:**
+- `validateEquipment(equipment)` - Validate complete equipment object
+- `validateProperty(property)` - Validate single equipment property
+- `validateCondition(condition)` - Validate equipment condition
+- `validateModification(modification)` - Validate equipment modification
+- `validateEquipmentFeatureReference(featureId)` - Check if feature ID exists in FeatureQuery
+- `validateEquipmentSkillReference(skillId)` - Check if skill ID exists in SkillQuery
+
+### EquipmentModifier
+
+**Location:** [src/core/equipment/EquipmentModifier.ts](../src/core/equipment/EquipmentModifier.ts)
+
+**For complete method reference**, see [DATA_ENGINE_REFERENCE.md - EquipmentModifier](../DATA_ENGINE_REFERENCE.md#equipmentmodifier).
+
+**Modification Operations:**
+- `enchant(equipment, itemName, enchantment, character?)` - Enchant equipment with new properties
+- `curse(equipment, itemName, curse, character?)` - Curse equipment with negative effects
+- `upgrade(equipment, itemName, upgrade, character?)` - Upgrade equipment (improve properties)
+- `applyTemplate(equipment, itemName, templateId, character?)` - Apply a template modification
+- `removeModification(equipment, itemName, modificationId, character?)` - Remove a specific modification
+- `disenchant(equipment, itemName, character?)` - Remove enchantments, keep curses
+- `liftCurse(equipment, itemName, character?)` - Remove curses, keep enchantments
+
+**Query Methods:**
+- `getCombinedEffects(equipment, itemName, instanceId?)` - Get all active effects (base + mods)
+- `isEnchanted(equipment, itemName)` - Check if item has any enchantments
+- `isCursed(equipment, itemName)` - Check if item has any curses
+- `getItemSummary(equipment, itemName)` - Get comprehensive item summary
+
+### EquipmentSpawnHelper
+
+**Location:** [src/core/equipment/EquipmentSpawnHelper.ts](../src/core/equipment/EquipmentSpawnHelper.ts)
+
+**For complete method reference**, see [DATA_ENGINE_REFERENCE.md - EquipmentSpawnHelper](../DATA_ENGINE_REFERENCE.md#equipmentspawnhelper).
+
+**Key Methods:**
+- `spawnFromList(itemNames, rng?)` - Spawn items from list of names
+- `spawnByRarity(rarity, count, rng?)` - Spawn items by rarity level
+- `spawnByTags(tags, count, rng?, options?)` - Spawn items matching tags
+- `spawnRandom(count, rng, options?)` - Spawn random equipment (respects weights)
+- `spawnTreasureHoard(cr, rng)` - Spawn treasure hoard by CR
+- `addToCharacter(character, items, equip?)` - Add spawned items to character
+
+### FeatureQuery (Equipment-Related)
+
+**Location:** [src/core/features/FeatureQuery.ts](../src/core/features/FeatureQuery.ts)
+
+**For complete method reference**, see [DATA_ENGINE_REFERENCE.md - FeatureQuery](../DATA_ENGINE_REFERENCE.md#featurequery).
+
+**Key Methods:**
+- `getEquipmentFeatures(equipmentName)` - Get features grantable by equipment
+- `isValidEquipmentFeature(featureId)` - Check if feature ID exists (spawnWeight: 0 is valid)
+- `registerEquipmentFeature(feature)` - Register feature for equipment use (adds 'equipment' tag)
+
+---
+
+## Examples
+
+### Property Examples
+
+```typescript
+// Stat Bonus
+{
+    type: 'stat_bonus',
+    target: 'STR',
+    value: 2,
+    description: '+2 Strength'
+}
+
+// Skill Proficiency
+{
+    type: 'skill_proficiency',
+    target: 'stealth',
+    value: 'expertise',
+    description: 'Stealth expertise'
+}
+
+// Conditional Damage
+{
+    type: 'damage_bonus',
+    target: 'fire',
+    value: '2d6',
+    description: '+2d6 fire damage',
+    condition: { type: 'vs_creature_type', value: 'troll' }
+}
+
+// Passive Modifier
+{
+    type: 'passive_modifier',
+    target: 'ac',
+    value: 2,
+    description: '+2 AC',
+    stackable: true
+}
+```
+
+### Registry Feature References
+
+String references to features in the FeatureQuery:
+
+```typescript
+{
+    name: 'Ring of Free Action',
+    type: 'item',
+    rarity: 'rare',
+    weight: 0.1,
+    grantsFeatures: ['freedom_of_movement'],
+    spawnWeight: 0.2,
+    source: 'custom',
+    tags: ['magic', 'ring', 'movement']
+}
+```
+
+### Inline Mini-Features
+
+Equipment-specific features defined inline:
+
+```typescript
+{
+    name: 'Boots of Speed',
+    type: 'item',
+    rarity: 'rare',
+    weight: 1,
+    grantsFeatures: [
+        {
+            id: 'boots_of_speed_haste',
+            name: 'Haste',
+            description: 'While wearing these boots, you can use a bonus action to click them together. On your turn, you can increase your speed by 20 feet until the end of your turn.',
+            effects: [
+                {
+                    type: 'passive_modifier',
+                    target: 'speed',
+                    value: 20,
+                    description: '+20 speed'
+                }
+            ],
+            source: 'equipment_inline'
+        }
+    ],
+    spawnWeight: 0.15,
+    source: 'custom',
+    tags: ['magic', 'boots', 'speed']
+}
+```
+
+### Equipment-Granted Skills
+
+Equipment can grant skill proficiencies or expertise:
+
+```typescript
+{
+    name: 'Thieves\' Tools',
+    type: 'item',
+    rarity: 'uncommon',
+    weight: 1,
+    grantsSkills: [
+        { skillId: 'thieves_tools', level: 'proficient' }
+    ],
+    spawnWeight: 1.0,
+    source: 'default',
+    tags: ['gear', 'tools', 'dexterity']
+}
+```
+
+### Templates vs Instances
+
+#### Registering Templates with ExtensionManager
 
 Register pre-built equipment templates for creating magic items:
 
@@ -523,7 +652,7 @@ manager.register('equipment.templates', [
 ]);
 ```
 
-**Using Templates:**
+#### Using Templates
 
 ```typescript
 import { EquipmentModifier } from 'playlist-data-engine';
@@ -537,7 +666,7 @@ character.equipment = EquipmentModifier.applyTemplate(
 );
 ```
 
-### Per-Instance Modifications
+#### Per-Instance Modifications
 
 Each item can have unique modifications:
 
@@ -562,7 +691,7 @@ const enchantment: EquipmentModification = {
 EquipmentModifier.enchant(equipment, 'Longsword', enchantment, character);
 ```
 
-### Combined Effects
+#### Combined Effects
 
 Final effects are the combination of:
 1. Base equipment properties
@@ -578,19 +707,9 @@ const allEffects = EquipmentModifier.getCombinedEffects(
 );
 ```
 
----
+### Spawn Weights
 
-## Spawn Weights
-
-Spawn weights control item generation in random loot.
-
-### Weight System
-
-- **Weight > 0**: Item can spawn randomly (higher = more common)
-- **Weight = 0**: Item never spawns randomly, but can be used by game logic
-- **Default weight**: 1.0 for most items
-
-### Examples
+#### Spawn Weight Examples
 
 ```typescript
 // Common item - spawns frequently
@@ -615,7 +734,7 @@ Spawn weights control item generation in random loot.
 }
 ```
 
-### Spawning with Weights
+#### Spawning with Weights
 
 ```typescript
 // Spawn random items (respects weights)
@@ -629,15 +748,9 @@ const items = EquipmentSpawnHelper.spawnRandom(
 const rareItems = EquipmentSpawnHelper.spawnByRarity('rare', 2, rng);
 ```
 
----
+### Enchantment Library
 
-## Enchantment Library
-
-The Enchantment Library provides a comprehensive collection of predefined enchantments and curses that can be applied to equipment at runtime. All enchantments are `EquipmentModification` objects designed to work with `EquipmentModifier`.
-
-**For complete API documentation, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#enchantment-library)**
-
-### Using Predefined Enchantments
+#### Using Predefined Enchantments
 
 ```typescript
 import { EquipmentModifier, WEAPON_ENCHANTMENTS, ARMOR_ENCHANTMENTS, RESISTANCE_ENCHANTMENTS } from 'playlist-data-engine';
@@ -677,7 +790,7 @@ character.equipment = EquipmentModifier.enchant(
 );
 ```
 
-### Creating Stat-Boosting Enchantments
+#### Creating Stat-Boosting Enchantments
 
 The `create*Enchantment` functions create stat bonuses with configurable levels (1-4):
 
@@ -710,7 +823,7 @@ character.equipment = EquipmentModifier.enchant(
 );
 ```
 
-### Applying Curses
+#### Applying Curses
 
 ```typescript
 import { EquipmentModifier, CURSES } from 'playlist-data-engine';
@@ -732,7 +845,7 @@ const lockedItem = EquipmentModifier.curse(
 );
 ```
 
-### Combo Enchantments
+#### Combo Enchantments
 
 Special multi-effect enchantments for powerful items:
 
@@ -758,7 +871,7 @@ character.equipment = EquipmentModifier.enchant(
 );
 ```
 
-### Querying Enchantments
+#### Querying Enchantments
 
 ```typescript
 import { getEnchantment, getCurse, getAllEnchantments, getAllCurses, getEnchantmentsByType } from 'playlist-data-engine';
@@ -778,21 +891,9 @@ const weaponEnchants = getEnchantmentsByType('weapon');
 console.log(`Weapon enchantments: ${weaponEnchants.length}`);  // 16 enchantments
 ```
 
-**Available Exports:**
+### Magic Item Examples
 
-- **Collections**: `WEAPON_ENCHANTMENTS`, `ARMOR_ENCHANTMENTS`, `RESISTANCE_ENCHANTMENTS`, `CURSES`, `ALL_ENCHANTMENTS`
-- **Stat Boost Functions**: `createStrengthEnchantment`, `createDexterityEnchantment`, `createConstitutionEnchantment`, `createIntelligenceEnchantment`, `createWisdomEnchantment`, `createCharismaEnchantment` (each takes `bonus: 1 | 2 | 3 | 4`)
-- **Query Functions**: `getEnchantment`, `getCurse`, `getAllEnchantments`, `getAllCurses`, `getEnchantmentsByType`
-
----
-
-## Magic Item Examples
-
-The Magic Item Examples library provides 38 pre-built magic items that demonstrate all capabilities of the Advanced Equipment System. These include weapons, armor, wondrous items, cursed items, conditional items, and template-based items. They serve as reference implementations and test fixtures.
-
-**For complete API documentation, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md#magic-items)**
-
-### Getting Magic Items by Name
+#### Getting Magic Items by Name
 
 ```typescript
 import { getMagicItem } from 'playlist-data-engine';
@@ -805,7 +906,7 @@ if (flameTongue) {
 }
 ```
 
-### Querying Magic Items
+#### Querying Magic Items
 
 ```typescript
 import {
@@ -835,7 +936,7 @@ const statBonusItems = getItemsWithProperty('stat_bonus');
 console.log(`Items with stat bonuses: ${statBonusItems.length}`);
 ```
 
-### Applying Magic Equipment Templates
+#### Applying Magic Equipment Templates
 
 Templates can be applied to base equipment to create magic variants:
 
@@ -868,7 +969,7 @@ if (plusOneSword) {
 }
 ```
 
-### Registering Magic Items with ExtensionManager
+#### Registering Magic Items with ExtensionManager
 
 Magic item examples can be registered as custom equipment for procedural generation:
 
@@ -891,7 +992,7 @@ manager.register('equipment', MAGIC_ITEMS, {
 // so they won't appear randomly but can still be spawned by name
 ```
 
-### Direct Access to Magic Item Collections
+#### Direct Access to Magic Item Collections
 
 ```typescript
 import { MAGIC_ITEMS, ITEM_CREATION_TEMPLATES, ENCHANTMENT_LIBRARY } from 'playlist-data-engine';
@@ -906,19 +1007,9 @@ const viciousTemplate = ITEM_CREATION_TEMPLATES.vicious_weapon_template;
 console.log(viciousTemplate.properties);
 ```
 
-**Available Exports:**
+### Custom Equipment
 
-- **Collections**: `MAGIC_ITEMS` (34 magic items), `ITEM_CREATION_TEMPLATES` (9 templates), `ENCHANTMENT_LIBRARY.ALL_ENCHANTMENTS` (all enchantments and curses organized by category)
-- **Query Functions**: `getMagicItem`, `getMagicItemsByType`, `getMagicItemsByRarity`, `getCursedItems`, `getItemsWithProperty`
-- **Template Function**: `applyTemplate` - Apply a template to base equipment
-
----
-
-## Custom Equipment
-
-Custom equipment is registered through the ExtensionManager.
-
-### Registration Example
+#### Registration Example
 
 ```typescript
 import { ExtensionManager } from './src/core/extensions/ExtensionManager.js';
@@ -956,7 +1047,7 @@ const manager = ExtensionManager.getInstance();
 manager.register('equipment', [customSword], { weights: { 'Blade of the Ages': 0.5 }});
 ```
 
-### Register via CharacterGenerator
+#### Register via CharacterGenerator
 
 As a convenience, you can pass extensions directly to `CharacterGenerator.generate()`:
 
@@ -976,7 +1067,7 @@ const character = CharacterGenerator.generate(
 );
 ```
 
-**Adjust spawn rates after registration:**
+#### Adjust Spawn Rates After Registration
 
 ```typescript
 const manager = ExtensionManager.getInstance();
@@ -986,7 +1077,7 @@ manager.setWeights('equipment', {
 });
 ```
 
-### Validation
+#### Validation
 
 All custom equipment is automatically validated:
 
@@ -1000,114 +1091,6 @@ if (!validation.valid) {
 ```
 
 ---
-
-## API Reference
-
-### EquipmentEffectApplier
-
-**Location:** [src/core/equipment/EquipmentEffectApplier.ts](../src/core/equipment/EquipmentEffectApplier.ts)
-
-| Method | Description |
-|--------|-------------|
-| equipItem(character, equipment, instanceId?) | Apply all effects from equipping an item |
-| unequipItem(character, equipmentName, instanceId?) | Remove all effects from unequipping an item |
-| reapplyEquipmentEffects(character) | Re-apply all equipment effects (for updates/level-ups) |
-| getActiveEffects(character) | Get all active equipment effects |
-
-### EquipmentValidator
-
-**Location:** [src/core/equipment/EquipmentValidator.ts](../src/core/equipment/EquipmentValidator.ts)
-
-**Core Validation:**
-| Method | Description |
-|--------|-------------|
-| validateEquipment(equipment) | Validate complete equipment object |
-| validateProperty(property) | Validate single equipment property |
-| validateCondition(condition) | Validate equipment condition |
-| validateModification(modification) | Validate equipment modification |
-
-**Reference Validation:**
-| Method | Description |
-|--------|-------------|
-| validateEquipmentFeatureReference(featureId) | Check if feature ID exists in FeatureQuery |
-| validateEquipmentSkillReference(skillId) | Check if skill ID exists in SkillQuery |
-
-**Field Validation:**
-| Method | Description |
-|--------|-------------|
-| validateDamageInfo(damage) | Validate damage information |
-| validateSpawnWeight(weight) | Validate spawn weight (0-1, inclusive) |
-| validateACBonus(acBonus) | Validate AC bonus value |
-| validateWeaponProperties(weaponProperties) | Validate weapon properties array |
-
-### EquipmentModifier
-
-**Location:** [src/core/equipment/EquipmentModifier.ts](../src/core/equipment/EquipmentModifier.ts)
-
-**Modification Operations:**
-| Method | Description |
-|--------|-------------|
-| enchant(equipment, itemName, enchantment, character?) | Enchant equipment with new properties |
-| curse(equipment, itemName, curse, character?) | Curse equipment with negative effects |
-| upgrade(equipment, itemName, upgrade, character?) | Upgrade equipment (improve properties) |
-| applyTemplate(equipment, itemName, templateId, character?) | Apply a template modification |
-| removeModification(equipment, itemName, modificationId, character?) | Remove a specific modification |
-| disenchant(equipment, itemName, character?) | Remove enchantments, keep curses |
-| liftCurse(equipment, itemName, character?) | Remove curses, keep enchantments |
-| removeAllModifications(equipment, itemName, character?) | Remove all modifications |
-
-**Query Methods:**
-| Method | Description |
-|--------|-------------|
-| getModificationHistory(equipment, itemName) | Get modification history for an item |
-| getCombinedEffects(equipment, itemName, instanceId?) | Get all active effects (base + mods) |
-| isEnchanted(equipment, itemName) | Check if item has any enchantments |
-| isCursed(equipment, itemName) | Check if item has any curses |
-| hasTemplate(equipment, itemName, templateId) | Check if item has a specific template |
-| getAppliedTemplates(equipment, itemName) | Get all templates applied to an item |
-| getItemSummary(equipment, itemName) | Get comprehensive item summary |
-
-**Factory Methods:**
-| Method | Description |
-|--------|-------------|
-| createModification(id, name, properties, source) | Create base modification |
-| createFeatureModification(id, name, properties, addsFeatures, source) | Create feature-granting modification |
-| createSkillModification(id, name, properties, addsSkills, source) | Create skill-granting modification |
-| createSpellModification(id, name, properties, addsSpells, source) | Create spell-granting modification |
-| generateModificationId(prefix?) | Generate a unique modification ID |
-
-### EquipmentSpawnHelper
-
-**Location:** [src/core/equipment/EquipmentSpawnHelper.ts](../src/core/equipment/EquipmentSpawnHelper.ts)
-
-**Spawn Methods:**
-| Method | Description |
-|--------|-------------|
-| spawnFromList(itemNames, rng?) | Spawn items from list of names |
-| spawnByRarity(rarity, count, rng?) | Spawn items by rarity level |
-| spawnByTags(tags, count, rng?, options?) | Spawn items matching tags |
-| spawnRandom(count, rng, options?) | Spawn random equipment (respects weights) |
-| spawnFromTemplate(templateId, baseItemName?) | Spawn equipment from template |
-| spawnTreasureHoard(cr, rng) | Spawn treasure hoard by CR |
-| addToCharacter(character, items, equip?) | Add spawned items to character |
-
----
-
-### FeatureQuery (Equipment-Related)
-
-**Location:** [src/core/features/FeatureQuery.ts](../src/core/features/FeatureQuery.ts)
-
-Convenience methods for equipment-granted features.
-
-| Method | Description |
-|--------|-------------|
-| getEquipmentFeatures(equipmentName) | Get features grantable by equipment |
-| isValidEquipmentFeature(featureId) | Check if feature ID exists (spawnWeight: 0 is valid) |
-| registerEquipmentFeature(feature) | Register feature for equipment use (adds 'equipment' tag) |
-
----
-
-## Examples
 
 ### Example 1: Basic Equipment Types
 
