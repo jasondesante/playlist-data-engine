@@ -2,10 +2,6 @@
 
 Complete guide to the prerequisite system for skills, spells, and features in the Playlist Data Engine.
 
-**For API details, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md)**
-**For custom races/classes, see [CUSTOM_CONTENT.md](CUSTOM_CONTENT.md)**
-**For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md)**
-
 ---
 
 ## Table of Contents

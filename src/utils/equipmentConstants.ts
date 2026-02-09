@@ -9,7 +9,7 @@
  * - CLASS_STARTING_EQUIPMENT: Starting equipment by class (D&D 5e standard)
  * - MAGIC_ITEMS: Example magic items demonstrating all equipment system capabilities (34 items)
  * - ITEM_CREATION_TEMPLATES: Templates for enchanting base equipment (9 templates)
- * - ENCHANTMENT_LIBRARY: All enchantments and curses organized by category - TODO: Move from enchantmentLibrary.ts
+ * - ENCHANTMENT_LIBRARY: All enchantments and curses organized by category
  *
  * Access Patterns:
  * - Direct access: Import specific constants (e.g., `DEFAULT_EQUIPMENT`, `CLASS_STARTING_EQUIPMENT`, `MAGIC_ITEMS`)

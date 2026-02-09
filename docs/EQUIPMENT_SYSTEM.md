@@ -130,7 +130,9 @@ CharacterSheet
 
 Equipment properties define how items affect gameplay. Each property has a type, target, value, optional condition, and optional description.
 
-### Property Types
+### EquipmentPropertyType
+
+**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts)
 
 | Type | Description | Target Examples | Value Type |
 |------|-------------|-----------------|------------|
@@ -142,9 +144,11 @@ Equipment properties define how items affect gameplay. Each property has a type,
 | `damage_bonus` | Adds extra damage | `fire`, `cold`, `lightning` | dice string / number |
 | `stat_requirement` | Minimum stat required to use | `STR`, `DEX` | number |
 
-### Property Conditions
+### EquipmentCondition
 
-Conditions control when properties apply:
+**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts)
+
+Conditions control when properties apply.
 
 | Condition Type | Value Format | Description |
 |----------------|--------------|-------------|
@@ -157,18 +161,19 @@ Conditions control when properties apply:
 | `on_damage_taken` | boolean | Triggers when wearer takes damage |
 | `custom` | string + description | Game-defined condition |
 
-### Property Interface
+### EquipmentProperty
 
-**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts) (lines 63-70)
+**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts)
+
+Defines how equipment affects gameplay.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| type | EquipmentPropertyType | The property type (stat_bonus, skill_proficiency, etc.) |
-| target | string | What the property affects (ability name, skill ID, etc.) |
-| value | number \| string \| boolean | The property's effect value |
-| condition | EquipmentCondition | Optional condition for when property applies |
-| description | string | Human-readable description |
-| stackable | boolean | Whether effects stack (default: true) |
+| `type` | `EquipmentPropertyType` | Property type (stat_bonus, skill_proficiency, etc.) |
+| `target` | string | What the property affects (ability, skill, etc.) |
+| `value` | number \| string \| boolean | Effect value |
+| `condition` | `EquipmentCondition` | Optional condition for when property applies |
+| `stackable` | boolean | Whether effects stack (default: true) |
 
 ### Property Examples
 
@@ -278,28 +283,19 @@ The `EnhancedEquipment` interface extends the base equipment with advanced capab
 
 ### EnhancedEquipment Interface
 
-**Location:** [src/utils/constants.ts](../src/utils/constants.ts) (lines 1368-1414)
-**Type alias:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts) (line 94)
+**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts)
 
-Complete equipment data structure with advanced properties support.
+Primary equipment type with advanced properties support. Extends base equipment with properties, granted features/skills/spells, and spawn weights.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| name | string | Equipment name |
-| type | 'weapon' \| 'armor' \| 'item' | Equipment category |
-| rarity | 'common' \| 'uncommon' \| 'rare' \| 'very_rare' \| 'legendary' | Item rarity |
-| weight | number | Weight in pounds |
-| properties | EquipmentProperty[] | Optional advanced properties |
-| grantsFeatures | Array<string \| EquipmentMiniFeature> | Features granted when equipped |
-| grantsSkills | Array<{skillId, level}> | Skills granted when equipped |
-| grantsSpells | Array<{spellId, level?, uses?, recharge?}> | Spells granted when equipped |
-| damage | {dice, damageType, versatile?} | D&D 5e damage info |
-| acBonus | number | Armor class bonus |
-| weaponProperties | string[] | D&D 5e weapon properties |
-| spawnWeight | number | Spawn weight (0 = game-only) |
-| templateId | string | Template ID if created from template |
-| source | 'default' \| 'custom' | Source tracking |
-| tags | string[] | Search/filter tags |
+| `properties` | `EquipmentProperty[]` | Advanced properties (stat bonuses, damage, etc.) |
+| `grantsFeatures` | Array<string \| EquipmentMiniFeature> | Features granted when equipped |
+| `grantsSkills` | Array<{skillId, level}> | Skills granted when equipped |
+| `grantsSpells` | Array<{spellId, level?, uses?, recharge?}> | Spells granted when equipped |
+| `spawnWeight` | number | Spawn weight (0 = game-only) |
+| `source` | `'default' \| 'custom'` | Source tracking |
+| `tags` | string[] | Search/filter tags |
 
 ### Rarity Levels
 
@@ -336,19 +332,17 @@ String references to features in the FeatureQuery:
 
 ### 2. Inline Mini-Features
 
-Equipment-specific features defined inline:
+Equipment-specific features defined inline.
 
-**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts) (lines 76-82)
-
-Inline equipment-specific feature definition.
+**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| id | string | Unique feature ID |
-| name | string | Feature name |
-| description | string | Feature description |
-| effects | EquipmentProperty[] | What this feature does |
-| source | 'equipment_inline' | Marks as equipment-specific |
+| `id` | string | Unique feature ID |
+| `name` | string | Feature name |
+| `description` | string | Feature description |
+| `effects` | `EquipmentProperty[]` | What this feature does |
+| `source` | `'equipment_inline'` | Marks as equipment-specific |
 
 Example:
 
@@ -413,6 +407,8 @@ When equipment grants a skill proficiency:
 
 ## Equipment Modification
 
+**Location:** [src/core/equipment/EquipmentModifier.ts](../src/core/equipment/EquipmentModifier.ts)
+
 The `EquipmentModifier` class handles runtime equipment modifications including enchanting, cursing, and upgrading.
 
 ### Modification Types
@@ -426,20 +422,19 @@ The `EquipmentModifier` class handles runtime equipment modifications including 
 
 ### EquipmentModification Interface
 
-**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts) (lines 99-116)
+**Location:** [src/core/types/Equipment.ts](../src/core/types/Equipment.ts)
 
-Runtime modification to equipment (enchanting, cursing, upgrading).
+Runtime modification for enchanting, cursing, or upgrading equipment.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| id | string | Unique modification ID |
-| name | string | Display name |
-| properties | EquipmentProperty[] | Properties added by modification |
-| addsFeatures | Array<string \| EquipmentMiniFeature> | Features granted |
-| addsSkills | Array<{skillId, level}> | Skills granted |
-| addsSpells | Array<{spellId, level?, uses?, recharge?}> | Spells granted |
-| appliedAt | string | ISO timestamp of application |
-| source | string | Source type ('enchantment', 'curse', 'upgrade', 'template') |
+| `id` | string | Unique modification ID |
+| `name` | string | Display name |
+| `properties` | `EquipmentProperty[]` | Properties added by modification |
+| `addsFeatures` | Array<string \| EquipmentMiniFeature> | Features granted |
+| `addsSkills` | Array<{skillId, level}> | Skills granted |
+| `addsSpells` | Array<{spellId, level?, uses?, recharge?}> | Spells granted |
+| `source` | string | Source type ('enchantment', 'curse', 'upgrade', 'template') |
 
 ### Modification Methods
 
@@ -538,34 +533,6 @@ character.equipment = EquipmentModifier.applyTemplate(
     character.equipment,
     'Longsword',
     'flaming_sword',
-    character
-);
-```
-
-### Template-Based Items
-
-Templates define reusable enchantment patterns:
-
-```typescript
-// Define template
-const flamingWeaponTemplate = {
-    id: 'flaming_weapon_template',
-    name: 'Flaming Weapon',
-    properties: [
-        {
-            type: 'damage_bonus',
-            target: 'fire',
-            value: '1d6',
-            description: '+1d6 fire damage'
-        }
-    ]
-};
-
-// Apply template to any weapon
-const flamingSword = EquipmentModifier.applyTemplate(
-    equipment,
-    'Longsword',
-    'flaming_weapon_template',
     character
 );
 ```
@@ -823,7 +790,7 @@ console.log(`Weapon enchantments: ${weaponEnchants.length}`);  // 16 enchantment
 
 The Magic Item Examples library provides 38 pre-built magic items that demonstrate all capabilities of the Advanced Equipment System. These include weapons, armor, wondrous items, cursed items, conditional items, and template-based items. They serve as reference implementations and test fixtures.
 
-**For complete API documentation, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#magic-item-examples)**
+**For complete API documentation, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md#magic-items)**
 
 ### Getting Magic Items by Name
 
@@ -927,7 +894,7 @@ manager.register('equipment', MAGIC_ITEMS, {
 ### Direct Access to Magic Item Collections
 
 ```typescript
-import { MAGIC_ITEMS, ITEM_CREATION_TEMPLATES } from 'playlist-data-engine';
+import { MAGIC_ITEMS, ITEM_CREATION_TEMPLATES, ENCHANTMENT_LIBRARY } from 'playlist-data-engine';
 
 // Iterate through all magic items
 MAGIC_ITEMS.forEach(item => {
@@ -941,7 +908,7 @@ console.log(viciousTemplate.properties);
 
 **Available Exports:**
 
-- **Collections**: `MAGIC_ITEMS` (34 magic items), `ITEM_CREATION_TEMPLATES` (9 templates)
+- **Collections**: `MAGIC_ITEMS` (34 magic items), `ITEM_CREATION_TEMPLATES` (9 templates), `ENCHANTMENT_LIBRARY.ALL_ENCHANTMENTS` (all enchantments and curses organized by category)
 - **Query Functions**: `getMagicItem`, `getMagicItemsByType`, `getMagicItemsByRarity`, `getCursedItems`, `getItemsWithProperty`
 - **Template Function**: `applyTemplate` - Apply a template to base equipment
 

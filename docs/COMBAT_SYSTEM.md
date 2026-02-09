@@ -2,9 +2,6 @@
 
 Complete guide to the combat system in the Playlist Data Engine.
 
-**For API details, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REFERENCE.md)**
-**For other usage examples, see [USAGE_IN_OTHER_PROJECTS.md](../USAGE_IN_OTHER_PROJECTS.md)**
-
 ---
 
 ## Table of Contents
