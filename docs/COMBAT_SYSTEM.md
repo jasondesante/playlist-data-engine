@@ -10,6 +10,18 @@ Complete guide to the combat system in the Playlist Data Engine.
 ## Table of Contents
 
 1. [Combat System](#combat-system)
+   - [Treasure](#treasure)
+   - [Spell Casting](#spell-casting)
+   - [Combat Actions](#combat-actions)
+   - [HP Management](#hp-management)
+   - [Query Methods](#query-methods)
+   - [Action Economy](#action-economy)
+   - [Status Effects](#status-effects)
+   - [Combat History](#combat-history)
+   - [Spell Slots](#spell-slots)
+   - [Multiple Equipped Weapons](#multiple-equipped-weapons)
+   - [Unarmed Combat](#unarmed-combat)
+   - [Manual Attack Objects](#manual-attack-objects)
 2. [Dice Roller](#dice-roller)
 
 ---
@@ -83,7 +95,9 @@ while (combatInstance.isActive) {
 }
 ```
 
-**Treasure:** Configure custom loot rewards:
+### Treasure
+
+Configure custom loot rewards:
 
 ```typescript
 // Fixed gold amount (no randomness)
@@ -119,7 +133,9 @@ The `treasure` config supports:
 
 > **Note:** Treasure rewards are not automatically distributed to any character. The combat engine reports what was earned; it's up to your game to handle inventory management, gold splitting among party members, or whether loot is awarded at all.
 
-**Spell Casting:** Cast spells with automatic slot consumption:
+### Spell Casting
+
+Cast spells with automatic slot consumption:
 
 ```typescript
 // Cast a spell at one or more targets
@@ -143,7 +159,9 @@ action.result.spellSlotUsed;   // Slot level consumed (3)
 
 Spell slots are consumed automatically based on spell level. Cantrips (`level: 0`) consume no slots. Multi-target spells apply effects to all targets in the array.
 
-**Combat Actions:** Defensive and tactical actions:
+### Combat Actions
+
+Defensive and tactical actions:
 
 ```typescript
 // Dodge: +2 AC until your next turn starts
@@ -166,7 +184,9 @@ const fleeAction = combat.executeFlee(combatInstance, current);
 
 Fleeing requires `allowFleeing: true` in CombatEngine config. The combatant is removed from the active combat instance and a `'flee'` action is recorded in history.
 
-**HP Management:** Direct hit point manipulation:
+### HP Management
+
+Direct hit point manipulation:
 
 ```typescript
 // Apply damage - temporary HP is depleted first
@@ -180,7 +200,9 @@ combat.applyTemporaryHP(current, 5); // Sets temp HP to 5
 combat.applyTemporaryHP(current, 8); // Sets temp HP to 8 (replaces)
 ```
 
-**Query Methods:** Retrieve combat state information:
+### Query Methods
+
+Retrieve combat state information:
 
 ```typescript
 // Get all combatants with HP > 0
@@ -200,7 +222,9 @@ const current = combat.getCurrentCombatant(combatInstance);
 // { combatant: {...}, isDefeated: false, ... }
 ```
 
-**Action Economy:** Each combatant tracks action usage per turn:
+### Action Economy
+
+Each combatant tracks action usage per turn:
 
 ```typescript
 // Check action economy state
@@ -219,7 +243,9 @@ combatant.reactionUsed;      // boolean - reaction consumed
 
 Action economy enforcement is manual - check flags before executing actions that should consume specific action types.
 
-**Status Effects:** Combatants can have active conditions applied:
+### Status Effects
+
+Combatants can have active conditions applied:
 
 ```typescript
 // Access status effects on a combatant
@@ -250,7 +276,9 @@ interface StatusEffect {
 // See SpellCaster.applyStatusEffect() for effect application logic
 ```
 
-**Combat History:** Every action is recorded in `CombatInstance.history`:
+### Combat History
+
+Every action is recorded in `CombatInstance.history`:
 
 ```typescript
 // Access complete combat log
@@ -275,7 +303,9 @@ action.result;   // { success, roll?, damage?, description }
 // Useful for combat logs, replay systems, and analytics
 ```
 
-**Spell Slots:** Automatically initialized for spellcasting classes:
+### Spell Slots
+
+Automatically initialized for spellcasting classes:
 
 ```typescript
 // Spell slots are auto-initialized on combatant creation
@@ -295,7 +325,9 @@ wizard.spellSlots; // { 1: 2, 2: 0, 3: 0, ... } based on character level
 // Slots consumed via executeCastSpell(), restored via long rest mechanics
 ```
 
-**Multiple Equipped Weapons:** If a character has multiple equipped weapons, specify which one:
+### Multiple Equipped Weapons
+
+If a character has multiple equipped weapons, specify which one:
 
 ```typescript
 // Attack with a specific equipped weapon
@@ -305,7 +337,9 @@ combat.executeWeaponAttack(combatInstance, current, target, 'Longsword');
 combat.executeWeaponAttack(combatInstance, current, target);
 ```
 
-**Unarmed Combat:** Attack without weapons using fists or natural weapons:
+### Unarmed Combat
+
+Attack without weapons using fists or natural weapons:
 
 ```typescript
 // Explicitly use unarmed strike
@@ -318,7 +352,9 @@ combat.executeWeaponAttack(combatInstance, current, target);
 // Default unarmed: 1 + STR modifier damage, proficiency bonus applies
 ```
 
-**Manual Attack Objects:** For special cases, you can still manually construct `Attack` objects using `executeAttack()` directly. See `Attack` type in DATA_ENGINE_REFERENCE.md for all available properties.
+### Manual Attack Objects
+
+For special cases, you can still manually construct `Attack` objects using `executeAttack()` directly. See `Attack` type in DATA_ENGINE_REFERENCE.md for all available properties.
 
 ---
 
