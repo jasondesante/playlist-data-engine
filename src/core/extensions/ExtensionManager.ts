@@ -38,8 +38,6 @@ export type SpawnMode = 'relative' | 'absolute' | 'default' | 'replace';
 export type ExtensionCategory =
     | 'equipment'
     // Equipment System
-    | 'equipment.properties'      // For custom equipment property templates
-    | 'equipment.modifications'   // For custom modification templates
     | 'equipment.templates'       // For equipment templates (Flaming Sword, etc.)
     | 'appearance.bodyTypes'
     | 'appearance.skinTones'
@@ -79,6 +77,7 @@ export type ExtensionCategory =
     | 'racialTraits.Half-Elf'
     | 'racialTraits.Half-Orc'
     | 'racialTraits.Tiefling'
+    | `racialTraits.${string}` // For custom race racial traits
     // Skills
     | 'skills'
     | 'skills.STR'
@@ -249,6 +248,8 @@ export class ExtensionManager {
      */
     initializeDefaults(category: ExtensionCategory, data: any[]): void {
         this.defaultData.set(category, [...data]);
+        // Invalidate cache so fresh data is picked up
+        this.invalidateRegistryCache(category);
     }
 
     /**
@@ -908,5 +909,57 @@ export class ExtensionManager {
      */
     getRegisteredCategories(): ExtensionCategory[] {
         return Array.from(this.defaultData.keys());
+    }
+
+    /**
+     * Get all data from categories matching a prefix pattern
+     *
+     * Aggregates data from all categories that start with the given prefix.
+     * Useful for getting all items from race-specific or class-specific categories.
+     *
+     * For example, prefix 'racialTraits' will match:
+     * - 'racialTraits' (general category)
+     * - 'racialTraits.Elf' (race-specific category)
+     * - 'racialTraits.Dragonkin' (custom race-specific category)
+     *
+     * @param prefix - Category prefix to match (e.g., 'racialTraits', 'classFeatures')
+     * @returns Array of all items from matching categories
+     */
+    getAllFromPrefix(prefix: string): any[] {
+        const allItems: any[] = [];
+        const seenIds = new Set<string>();
+
+        // Helper to add items while avoiding duplicates (by id if present)
+        const addItems = (items: any[]) => {
+            for (const item of items) {
+                const itemId = item.id || JSON.stringify(item);
+                if (!seenIds.has(itemId)) {
+                    seenIds.add(itemId);
+                    allItems.push(item);
+                }
+            }
+        };
+
+        // Collect all unique categories that match the prefix
+        const matchingCategories = new Set<string>();
+
+        for (const category of this.defaultData.keys()) {
+            if (category === prefix || category.startsWith(prefix + '.')) {
+                matchingCategories.add(category);
+            }
+        }
+
+        for (const category of this.extensions.keys()) {
+            if (category === prefix || category.startsWith(prefix + '.')) {
+                matchingCategories.add(category);
+            }
+        }
+
+        // Get items from each matching category (this properly merges defaults + extensions)
+        for (const category of matchingCategories) {
+            addItems(this.get(category as ExtensionCategory));
+        }
+
+        return allItems;
     }
 }

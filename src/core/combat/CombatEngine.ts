@@ -363,6 +363,77 @@ export class CombatEngine {
   }
 
   /**
+   * Check if fleeing is allowed by configuration
+   */
+  canFlee(): boolean {
+    return this.config.allowFleeing === true;
+  }
+
+  /**
+   * Execute a flee action (combatant flees from combat)
+   *
+   * Removes the combatant from the active combat instance and records
+   * the flee action in combat history. Only available when allowFleeing
+   * configuration is enabled.
+   *
+   * @param combat - Combat instance
+   * @param combatant - Combatant attempting to flee
+   * @returns Combat action with result
+   * @throws {Error} If fleeing is not allowed by configuration
+   *
+   * @example
+   * const combat = combatEngine.startCombat([player], [enemy]);
+   * const current = combatEngine.getCurrentCombatant(combat);
+   *
+   * if (combatEngine.canFlee()) {
+   *   combatEngine.executeFlee(combat, current);
+   *   // current is now removed from combat.combatants
+   * }
+   */
+  executeFlee(combat: CombatInstance, combatant: Combatant): CombatAction {
+    if (!this.canFlee()) {
+      throw new Error('Fleeing is not allowed in this combat. Enable with allowFleeing: true in CombatConfig.');
+    }
+
+    const action: CombatAction = {
+      type: 'flee',
+      actor: combatant,
+      result: {
+        success: true,
+        description: `${combatant.character.name} flees from combat!`
+      }
+    };
+
+    // Add to history before removing combatant
+    combat.history.push(action);
+
+    // Remove combatant from the active combat instance
+    const combatantIndex = combat.combatants.findIndex(c => c.id === combatant.id);
+    if (combatantIndex !== -1) {
+      combat.combatants.splice(combatantIndex, 1);
+
+      // Adjust current turn index if needed
+      if (combatantIndex < combat.currentTurnIndex) {
+        combat.currentTurnIndex--;
+      } else if (combatantIndex === combat.currentTurnIndex) {
+        // If current combatant fled, move to next combatant
+        combat.currentTurnIndex = Math.min(combat.currentTurnIndex, combat.combatants.length - 1);
+      }
+    }
+
+    // Mark combatant as defeated (fled counts as leaving combat)
+    combatant.isDefeated = true;
+
+    // Update timestamp
+    combat.lastUpdated = Date.now();
+
+    // Check for combat end conditions (may end if all enemies or players fled)
+    this.checkCombatStatus(combat);
+
+    return action;
+  }
+
+  /**
    * Advance to the next turn
    * Resets action trackers and moves to next combatant
    */
@@ -445,6 +516,27 @@ export class CombatEngine {
       ? `${combat.winner.character.name} won the combat!`
       : 'Combat ended in a draw.';
 
+    // Calculate treasure based on config
+    let gold = 0;
+    let items: any[] = [];
+
+    if (this.config.treasure) {
+      // Custom treasure config
+      if (typeof this.config.treasure.gold === 'number') {
+        // Fixed amount
+        gold = this.config.treasure.gold;
+      } else if (typeof this.config.treasure.gold === 'object' && this.config.treasure.gold !== null) {
+        // Range: { min, max }
+        const { min, max } = this.config.treasure.gold;
+        gold = min + Math.floor(this.rng.random() * (max - min + 1));
+      }
+      // Default gold is 0 if not specified
+      items = this.config.treasure.items || [];
+    } else {
+      // Default: 0-99 gold
+      gold = Math.floor(this.rng.random() * 100);
+    }
+
     return {
       winner: combat.winner!,
       defeated,
@@ -452,8 +544,8 @@ export class CombatEngine {
       totalTurns,
       xpAwarded,
       treasureAwarded: {
-        gold: Math.floor(this.rng.random() * 100),
-        items: []
+        gold,
+        items
       },
       description
     };

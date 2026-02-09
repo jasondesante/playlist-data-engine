@@ -497,6 +497,51 @@ EquipmentModifier.liftCurse(equipment, 'Ring', character);
 
 The system supports both template-based and per-instance modifications.
 
+### Registering Templates with ExtensionManager
+
+Register pre-built equipment templates for creating magic items:
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register equipment templates
+manager.register('equipment.templates', [
+    {
+        id: 'flaming_sword',
+        name: 'Flaming Sword',
+        type: 'weapon',
+        rarity: 'rare',
+        weight: 3,
+        damage: { dice: '1d8', damageType: 'slashing' },
+        properties: [
+            {
+                type: 'damage_bonus',
+                target: 'fire',
+                value: '1d6',
+                description: '+1d6 fire damage'
+            }
+        ],
+        spawnWeight: 0.5
+    }
+]);
+```
+
+**Using Templates:**
+
+```typescript
+import { EquipmentModifier } from 'playlist-data-engine';
+
+// Apply a template to equipment
+character.equipment = EquipmentModifier.applyTemplate(
+    character.equipment,
+    'Longsword',
+    'flaming_sword',
+    character
+);
+```
+
 ### Template-Based Items
 
 Templates define reusable enchantment patterns:

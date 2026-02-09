@@ -44,7 +44,7 @@ export interface Combatant {
  * CombatAction - An action taken during combat
  */
 export interface CombatAction {
-  type: 'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready';
+  type: 'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready' | 'flee';
   actor: Combatant;
   target?: Combatant;
   targets?: Combatant[];
@@ -151,6 +151,17 @@ export type DamageType =
 export type SavingThrowAbility = 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma';
 
 /**
+ * Treasure Configuration Options
+ * - Fixed amount: `{ gold: 500 }` - always rewards exactly 500 gold
+ * - Range: `{ gold: { min: 100, max: 200 } }` - random amount between 100-200 (uses seed if provided)
+ * - Items: Optional array of items to award
+ */
+export interface TreasureConfig {
+  gold?: number | { min: number; max: number };
+  items?: any[];
+}
+
+/**
  * Combat Configuration Options
  */
 export interface CombatConfig {
@@ -160,4 +171,5 @@ export interface CombatConfig {
   maxTurnsBeforeDraw?: number;  // Turn limit before combat is a draw (default: 100)
   allowFleeing?: boolean;       // Can combatants attempt to flee
   seed?: string;                // Seed for deterministic RNG (treasure generation, etc.)
+  treasure?: TreasureConfig;    // Custom treasure rewards (overrides default 0-99 gold)
 }

@@ -277,18 +277,23 @@ describe('Automatic Cache Invalidation Integration Tests', () => {
             manager.register('racialTraits.Elf' as any, [elfTrait2]);
 
             // Verify the FeatureQuery cache was invalidated by querying again
-            // Note: racialTraits.Elf is a separate category from 'racialTraits', so items
-            // registered there don't show in getRacialTraits('Elf'). But the cache invalidation
-            // should have occurred, which we verify by checking the original trait is still accessible.
+            // Note: With the fix for race-specific racial trait categories, items registered
+            // to 'racialTraits.Elf' now DO show up in getRacialTraits('Elf'). This is the
+            // correct behavior - getAllRacialTraitsArray() aggregates from all racialTraits.* categories.
             const elfTraitsAfter = featureQuery.getRacialTraits('Elf');
-            expect(elfTraitsAfter).toHaveLength(countBefore);
+            expect(elfTraitsAfter).toHaveLength(countBefore + 1); // One more trait from racialTraits.Elf
 
-            // Verify the first trait is still accessible via FeatureQuery (cache was refreshed)
+            // Verify both traits are accessible via FeatureQuery (cache was refreshed)
             const trait1InRegistry = featureQuery.getRacialTraitById('test_elf_trait_1');
             expect(trait1InRegistry).toBeDefined();
             expect(trait1InRegistry?.name).toBe('Test Elf Trait 1');
 
-            // Also verify the second trait exists in the racialTraits.Elf category
+            // Verify the trait from racialTraits.Elf category is also accessible via FeatureQuery
+            const trait2InRegistry = featureQuery.getRacialTraitById('test_elf_trait_2');
+            expect(trait2InRegistry).toBeDefined();
+            expect(trait2InRegistry?.name).toBe('Test Elf Trait 2');
+
+            // Also verify the second trait exists in the racialTraits.Elf category directly
             const elfCategoryTraits = manager.get('racialTraits.Elf' as any);
             const foundInCategory = elfCategoryTraits.find((t: any) => t.id === 'test_elf_trait_2');
             expect(foundInCategory).toBeDefined();

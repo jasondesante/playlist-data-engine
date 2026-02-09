@@ -707,6 +707,19 @@ Temporary condition affecting a combatant.
 | `source?` | string | Which combatant applied it |
 | `hasConcentration?` | boolean | Requires concentration |
 
+#### TreasureConfig
+
+Configuration for custom combat loot rewards.
+
+*Also known as: Loot config, rewards*
+
+**Location:** [src/core/types/Combat.ts](src/core/types/Combat.ts)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `gold?` | number \| `{ min: number; max: number }` | Fixed amount, or range for seeded RNG (inclusive) |
+| `items?` | any[] | Custom items to award |
+
 #### Additional Combat Types
 
 **Location:** [src/core/types/Combat.ts](src/core/types/Combat.ts)
@@ -718,7 +731,8 @@ Temporary condition affecting a combatant.
 | `DamageRoll` | Damage roll result (dice, rolls, total) |
 | `SpellCastResult` | Spell casting outcome (success, save DC, effects) |
 | `CombatResult` | Final combat result (winner, XP, treasure) |
-| `CombatConfig` | Combat configuration options (environment, music, tactical) |
+| `CombatConfig` | Combat configuration options (environment, music, tactical, treasure) |
+| `TreasureConfig` | Custom loot rewards (fixed gold, range, items) |
 
 #### Combat Helper Types
 
@@ -2000,7 +2014,7 @@ D&D 5e turn-based combat engine with initiative, attacks, spell casting, and dam
 
 | Constructor | Description |
 |-------------|-------------|
-| `new CombatEngine(config?: CombatConfig)` | Initialize combat engine with optional configuration (useEnvironment, useMusic, tacticalMode, maxTurnsBeforeDraw, allowFleeing, seed) |
+| `new CombatEngine(config?: CombatConfig)` | Initialize combat engine with optional configuration (useEnvironment, useMusic, tacticalMode, maxTurnsBeforeDraw, allowFleeing, seed, treasure) |
 
 **Methods:**
 
@@ -2014,6 +2028,8 @@ D&D 5e turn-based combat engine with initiative, attacks, spell casting, and dam
 | `executeDodge(combat, combatant)` | Executes dodge action (AC +2 until next turn) |
 | `executeDash(combat, combatant)` | Executes dash action (double movement speed) |
 | `executeDisengage(combat, combatant)` | Executes disengage action (no opportunity attacks) |
+| `executeFlee(combat, combatant)` | Removes combatant from combat (requires `allowFleeing: true`) |
+| `canFlee()` | Returns true if fleeing is allowed by config |
 | `nextTurn(combat)` | Advances turn order and resets action trackers |
 | `getCombatResult(combat)` | Returns winner and rewards if combat over (null if active) |
 | `getCombatSummary(combat)` | Returns formatted combat summary string |
@@ -2717,8 +2733,6 @@ The extensibility system allows runtime customization of ALL procedural generati
 | Category | Description |
 |----------|-------------|
 | `equipment` | Weapons, armor, items |
-| `equipment.properties` | Equipment property templates (enchantments, curses) |
-| `equipment.modifications` | Modification templates |
 | `equipment.templates` | Complete equipment templates |
 | `spells` | Arcane and divine magic |
 | `races` | Character races |

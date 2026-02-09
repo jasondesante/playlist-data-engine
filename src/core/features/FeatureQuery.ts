@@ -103,12 +103,15 @@ export class FeatureQuery {
      * Get all racial traits as an array
      *
      * Reads from ExtensionManager with caching.
+     * Aggregates traits from both the general 'racialTraits' category and
+     * all race-specific categories (e.g., 'racialTraits.Elf', 'racialTraits.Dragonkin').
      *
      * @returns Array of all racial traits
      */
     private getAllRacialTraitsArray(): RacialTrait[] {
         if (!this.allRacialTraitsCache) {
-            const traits = this.manager.get('racialTraits');
+            // Aggregate from all racialTraits.* categories
+            const traits = this.manager.getAllFromPrefix('racialTraits');
             this.allRacialTraitsCache = traits as RacialTrait[];
         }
         return this.allRacialTraitsCache;

@@ -33,8 +33,6 @@ The extensibility system allows you to:
 |----------|-------------|---------|
 | **Equipment** | | |
 | `equipment` | Weapons, armor, items | Custom weapons, magic items |
-| `equipment.properties` | Equipment property templates | Enchantments, curses, special abilities |
-| `equipment.modifications` | Modification templates | Curses, upgrades, enchantments |
 | `equipment.templates` | Complete equipment templates | Pre-built items with properties |
 | **Appearance** | | |
 | `appearance.bodyTypes` | Character body shapes | 'giant', 'diminutive', etc. |
@@ -1611,319 +1609,6 @@ manager.register('spells', [{
 }]);
 ```
 
-
-
----
-
-## Validation
-
-The extensibility system includes automatic validation. Invalid content is rejected with clear error messages.
-
-**For complete type definitions, see [Type Definitions](#type-definitions) above.**
-
-### Key Validation Rules
-
-| Category | Required Fields | Validation Rules |
-|----------|-----------------|------------------|
-| **Equipment** | `name`, `type`, `rarity`, `weight` | Type must be `weapon`/`armor`/`item`; rarity must be valid; weight ≥ 0 |
-| **Spells** | `name`, `level`, `school` | Level 0-9; school must be valid D&D 5e school |
-| **Races** | String values | Must be valid race name (default or registered custom) |
-| **Classes** | String values | Must be valid class name (default or registered custom) |
-| **Appearance** | String values | Must be strings (not objects) |
-| **Features** | `id`, `name`, `description`, `type`, `class`, `level`, `source` | ID must be `lowercase_with_underscores`; IDs must be unique |
-| **Skills** | `id`, `name`, `ability`, `source` | ID must be `lowercase_with_underscores`; ability must be valid |
-| **Skill Lists** | `class`, `skillCount`, `availableSkills` | skillCount ≥ 0; skill IDs must exist |
-
-### ID Format Requirements
-
-All custom content IDs must use `lowercase_with_underscores` format:
-
-```typescript
-// Valid IDs
-'frost_rage'
-'necromancer_raise_dead'
-'dragon_smithing'
-
-// Invalid IDs
-'FrostRage'           // Error: Use lowercase
-'frost-rage'          // Error: Use underscores
-'frost.rage'          // Error: Use underscores
-```
-
-### Duplicate Detection
-
-The system automatically detects duplicate IDs:
-
-```typescript
-// Error: Feature ID 'rage' already exists
-manager.register('classFeatures', [{ id: 'rage', ... }]);
-
-// Error: Skill ID 'athletics' already exists
-manager.register('skills', [{ id: 'athletics', ... }]);
-```
-
-### Disabling Validation
-
-You can disable validation for advanced use cases:
-
-```typescript
-manager.register('equipment', customItems, { validate: false });
-```
-
-**Warning:** Disabling validation can cause runtime errors. Only use this if you're certain your data is valid.
-
----
-
-## Best Practices
-
-### 1. Use Descriptive Names
-
-```typescript
-// Good
-{ name: 'Sword of the Dawn', type: 'weapon', rarity: 'rare', weight: 3 }
-
-// Bad
-{ name: 'sword1', type: 'weapon', rarity: 'rare', weight: 3 }
-```
-
-### 2. Set Appropriate Spawn Rates
-
-```typescript
-// Good balance
-manager.setWeights('equipment', {
-    'Common Sword': 1.0,     // Default
-    'Rare Sword': 0.5,       // Half as common
-    'Legendary Sword': 0.1   // Very rare
-});
-
-// Bad - everything is legendary
-manager.setWeights('equipment', {
-    'Legendary Sword': 1.0,
-    'Legendary Armor': 1.0
-});
-```
-
-### 3. Use Themed Content Packs
-
-```typescript
-// Good - organized by theme
-loadDarkFantasyPack();
-loadHighFantasyPack();
-loadSciFiPack();
-
-// Bad - random mix of content
-register('equipment', [...darkFantasyItems, ...highFantasyItems, ...sciFiItems]);
-```
-
-### 4. Reset When Needed
-
-```typescript
-// Reset before loading new content
-const manager = ExtensionManager.getInstance();
-manager.resetAll();
-
-// Load fresh content
-loadMyContentPack();
-```
-
-### 5. Handle Validation Errors
-
-```typescript
-try {
-    manager.register('equipment', customItems);
-} catch (error) {
-    console.error('Failed to register equipment:', error.message);
-    // Handle error gracefully
-}
-```
-
-### 6. Use Absolute Mode for Themed Content
-
-```typescript
-// Good - absolute mode for themed content
-manager.register('equipment', darkFantasyItems, { mode: 'absolute' });
-
-// Bad - relative mode for themed content (default items will also spawn)
-manager.register('equipment', darkFantasyItems, { mode: 'relative' });
-```
-
-### 7. Document Your Content Packs
-
-```typescript
-/**
- * Dark Fantasy Content Pack
- *
- * Adds dark fantasy themed equipment, spells, and appearance options.
- *
- * Equipment: Soul Reaper (legendary), Shadow Cloak (very rare), etc.
- * Spells: Soul Drain, Shadow Step, Death Coil
- * Appearance: Dark skin tones, undead features
- *
- * @author Your Name
- * @version 1.0.0
- */
-export function loadDarkFantasyPack() {
-    // ...
-}
-```
-
----
-
-## Advanced Examples
-
-### Seasonal Content Packs
-
-```typescript
-// winter-pack.ts
-export function loadWinterPack() {
-    const manager = ExtensionManager.getInstance();
-
-    manager.register('equipment', [
-        { name: 'Frostbrand Sword', type: 'weapon', rarity: 'rare', weight: 3 },
-        { name: 'Ice Armor', type: 'armor', rarity: 'very_rare', weight: 20 },
-        { name: 'Potion of Warmth', type: 'item', rarity: 'uncommon', weight: 0.5 }
-    ]);
-
-    manager.register('spells', [
-        { name: 'Ice Storm', level: 4, school: 'Evocation' },
-        { name: 'Frost Ray', level: 2, school: 'Evocation' }
-    ]);
-
-    manager.register('appearance.skinTones', [
-        '#E0FFFF',  // Light cyan
-        '#B0E0E6',  // Powder blue
-        '#AFEEEE'   // Pale turquoise
-    ]);
-}
-
-// Usage in December
-loadWinterPack();
-```
-
-### Difficulty Modifiers
-
-```typescript
-// hard-mode-pack.ts
-export function loadHardModePack() {
-    const manager = ExtensionManager.getInstance();
-
-    // Reduce good equipment spawns
-    manager.setWeights('equipment', {
-        'Longsword': 0.5,
-        'Chain Mail': 0.3,
-        'Healing Potion': 0.2
-    });
-
-    // Increase dangerous item spawns
-    manager.register('equipment', [
-        { name: 'Cursed Blade', type: 'weapon', rarity: 'uncommon', weight: 3 },
-        { name: 'Trap Kit', type: 'item', rarity: 'common', weight: 2 }
-    ], {
-        weights: {
-            'Cursed Blade': 2.0,
-            'Trap Kit': 3.0
-        }
-    });
-}
-```
-
-### Genre-Specific Packs
-
-```typescript
-// horror-pack.ts
-export function loadHorrorPack() {
-    const manager = ExtensionManager.getInstance();
-
-    manager.register('equipment', [
-        { name: 'Vampire Fang', type: 'weapon', rarity: 'rare', weight: 1 },
-        { name: 'Holy Symbol', type: 'item', rarity: 'uncommon', weight: 0.5 }
-    ]);
-
-    manager.register('spells', [
-        { name: 'Turn Undead', level: 1, school: 'Evocation' },
-        { name: 'Detect Evil', level: 1, school: 'Divination' }
-    ]);
-
-    manager.register('appearance.facialFeatures', [
-        'bite marks',
-        'haunted eyes',
-        'deathly pallor'
-    ]);
-}
-```
-
----
-
-## Troubleshooting
-
-### Content Not Appearing
-
-**Problem:** Custom content doesn't appear in generated characters.
-
-**Solution:** Check that:
-1. Content is registered before character generation
-2. Validation is not failing (check console for errors)
-3. Spawn weights are not set to 0
-4. You're using the correct category name
-
-```typescript
-// Debug: Check registered content
-const manager = ExtensionManager.getInstance();
-const info = manager.getInfo('equipment');
-console.log(info);
-// { hasCustomData: true, customCount: 5, totalCount: 42, ... }
-```
-
-### Validation Errors
-
-**Problem:** Validation fails with unclear error.
-
-**Solution:** Read the error message carefully. It includes:
-- The category that failed
-- The item index
-- The specific validation error
-
-```typescript
-try {
-    manager.register('equipment', invalidItems);
-} catch (error) {
-    // Error: Invalid items for category 'equipment':
-    // Item 0: Missing or invalid 'name' property
-    // Item 1: Invalid 'type' (must be 'weapon', 'armor', or 'item')
-    console.error(error.message);
-}
-```
-
-### Content Not Persisting
-
-**Problem:** Custom content disappears between sessions.
-
-**Solution:** The extensibility system is **runtime only**. You must re-register content each session:
-
-```typescript
-// On app startup
-import { loadMyContentPack } from './my-content-pack';
-
-loadMyContentPack();
-```
-
-### Spawn Rates Not Working
-
-**Problem:** Custom spawn rates don't seem to affect generation.
-
-**Solution:** Check the spawn mode:
-
-```typescript
-// Relative: Custom weights added to defaults
-manager.register('equipment', items, { mode: 'relative' });
-
-// Absolute: Only custom items spawn
-manager.register('equipment', items, { mode: 'absolute' });
-
-// Default: All items equal weight
-manager.register('equipment', items, { mode: 'default' });
-```
-
 ---
 
 ## Export/Import System
@@ -2059,239 +1744,228 @@ console.log('Custom weights:', data.weights);
 
 ---
 
-## Equipment Subcategories
+## Best Practices
 
-The equipment system supports three subcategories for advanced customization: **properties**, **modifications**, and **templates**.
-
-**For complete equipment system documentation, see [EQUIPMENT_SYSTEM.md](EQUIPMENT_SYSTEM.md)**
-
-### Equipment Properties
-
-Register custom equipment property templates (enchantments, curses, special abilities):
+### 1. Use Descriptive Names
 
 ```typescript
-import { ExtensionManager } from 'playlist-data-engine';
+// Good
+{ name: 'Sword of the Dawn', type: 'weapon', rarity: 'rare', weight: 3 }
 
-const manager = ExtensionManager.getInstance();
+// Bad
+{ name: 'sword1', type: 'weapon', rarity: 'rare', weight: 3 }
+```
 
-// Register custom property templates
-manager.register('equipment.properties', [
-    {
-        type: 'damage_bonus',
-        target: 'lightning',
-        value: '1d6',
-        description: '+1d6 lightning damage',
-        requirements: {
-            abilities: { DEX: 13 }
-        }
-    },
-    {
-        type: 'spell_grant',
-        target: 'mage_armor',
-        value: 1,
-        description: 'Cast Mage Armor once per day',
-        requiresAttunement: true
-    },
-    {
-        type: 'passive_modifier',
-        target: 'AC',
-        value: 2,
-        description: '+2 Armor Class',
-        condition: 'while wearing light armor'
-    }
-], {
-    weights: {
-        'lightning_damage': 0.5,
-        'mage_armor_grant': 0.3
-    }
+### 2. Set Appropriate Spawn Rates
+
+```typescript
+// Good balance
+manager.setWeights('equipment', {
+    'Common Sword': 1.0,     // Default
+    'Rare Sword': 0.5,       // Half as common
+    'Legendary Sword': 0.1   // Very rare
+});
+
+// Bad - everything is legendary
+manager.setWeights('equipment', {
+    'Legendary Sword': 1.0,
+    'Legendary Armor': 1.0
 });
 ```
 
-**Property Types:**
-- `damage_bonus` - Bonus damage of a specific type
-- `spell_grant` - Grants spell usage
-- `passive_modifier` - Constant bonus to stats/rolls
-- `ability_unlock` - Unlocks new abilities (flight, darkvision)
-- `skill_proficiency` - Grants skill proficiency
-- `stat_bonus` - Increases ability scores
-- `resource_grant` - Grants resource pools (rage, ki)
-
-### Equipment Modifications
-
-Register custom modification templates (curses, upgrades, enchantments):
+### 3. Use Themed Content Packs
 
 ```typescript
-// Register modification templates
-manager.register('equipment.modifications', [
-    {
-        name: 'Flaming Enchantment',
-        type: 'enchantment',
-        properties: [
-            {
-                type: 'damage_bonus',
-                target: 'fire',
-                value: '1d6',
-                description: '+1d6 fire damage'
-            }
-        ],
-        requirements: {
-            rarity: 'rare',
-            type: 'weapon'
-        },
-        cost: { gold: 500, gems: 2 }
-    },
-    {
-        name: 'Cursed Binding',
-        type: 'curse',
-        properties: [
-            {
-                type: 'passive_modifier',
-                target: 'AC',
-                value: -2,
-                description: '-2 Armor Class'
-            },
-            {
-                type: 'skill_proficiency',
-                target: 'stealth',
-                value: 'disadvantage',
-                description: 'Disadvantage on Stealth checks'
-            }
-        ],
-        requirements: {
-            rarity: 'uncommon'
-        },
-        removable: false
-    }
-]);
+// Good - organized by theme
+loadDarkFantasyPack();
+loadHighFantasyPack();
+loadSciFiPack();
+
+// Bad - random mix of content
+register('equipment', [...darkFantasyItems, ...highFantasyItems, ...sciFiItems]);
 ```
 
-### Equipment Templates
-
-Register pre-built equipment templates (complete items with properties):
+### 4. Reset When Needed
 
 ```typescript
-// Register equipment templates
-manager.register('equipment.templates', [
-    {
-        name: 'Flaming Sword',
-        type: 'weapon',
-        rarity: 'rare',
-        weight: 3,
-        damage: { dice: '1d8', damageType: 'slashing' },
-        properties: [
-            {
-                type: 'damage_bonus',
-                target: 'fire',
-                value: '1d6',
-                description: '+1d6 fire damage'
-            },
-            {
-                type: 'spell_grant',
-                target: 'burning_hands',
-                value: 1,
-                description: 'Cast Burning Hands once per day'
-            }
-        ],
-        spawnWeight: 0.5,
-        source: 'custom',
-        tags: ['magic', 'fire', 'weapon']
-    },
-    {
-        name: 'Shadow Cloak',
-        type: 'armor',
-        rarity: 'very_rare',
-        weight: 5,
-        armorClass: 12,
-        properties: [
-            {
-                type: 'passive_modifier',
-                target: 'stealth',
-                value: 'advantage',
-                description: 'Advantage on Stealth checks'
-            },
-            {
-                type: 'spell_grant',
-                target: 'invisibility',
-                value: 1,
-                description: 'Cast Invisibility once per day'
-            }
-        ],
-        requiresAttunement: true,
-        spawnWeight: 0.2,
-        source: 'custom',
-        tags: ['magic', 'shadow', 'armor']
-    }
-]);
+// Reset before loading new content
+const manager = ExtensionManager.getInstance();
+manager.resetAll();
+
+// Load fresh content
+loadMyContentPack();
 ```
 
-**Using Templates in Character Generation:**
+### 5. Handle Validation Errors
 
 ```typescript
-import { CharacterGenerator } from 'playlist-data-engine';
-
-// Templates are automatically used when generating characters
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track
-);
-
-// Character may have Flaming Sword or Shadow Cloak based on spawn weights
+try {
+    manager.register('equipment', customItems);
+} catch (error) {
+    console.error('Failed to register equipment:', error.message);
+    // Handle error gracefully
+}
 ```
 
-### Template Modifiers
-
-Apply modification templates to equipment:
+### 6. Use Absolute Mode for Themed Content
 
 ```typescript
-import { EquipmentModifier } from 'playlist-data-engine';
+// Good - absolute mode for themed content
+manager.register('equipment', darkFantasyItems, { mode: 'absolute' });
 
-// EquipmentModifier uses static methods (not a singleton)
-
-// Apply an enchantment template to equipment
-const enchantedSword = EquipmentModifier.applyTemplate(
-    baseWeapon,
-    'Flaming Enchantment'
-);
-
-// Apply a curse (if not removable)
-const cursedItem = EquipmentModifier.applyTemplate(
-    baseItem,
-    'Cursed Binding'
-);
+// Bad - relative mode for themed content (default items will also spawn)
+manager.register('equipment', darkFantasyItems, { mode: 'relative' });
 ```
 
-### Combining Subcategories
-
-Create powerful combinations using all three subcategories:
+### 7. Document Your Content Packs
 
 ```typescript
-// 1. Define property templates
-manager.register('equipment.properties', [
-    { type: 'damage_bonus', target: 'poison', value: '1d4', ... }
-]);
+/**
+ * Dark Fantasy Content Pack
+ *
+ * Adds dark fantasy themed equipment, spells, and appearance options.
+ *
+ * Equipment: Soul Reaper (legendary), Shadow Cloak (very rare), etc.
+ * Spells: Soul Drain, Shadow Step, Death Coil
+ * Appearance: Dark skin tones, undead features
+ *
+ * @author Your Name
+ * @version 1.0.0
+ */
+export function loadDarkFantasyPack() {
+    // ...
+}
+```
 
-// 2. Define modification templates that use properties
-manager.register('equipment.modifications', [
-    {
-        name: 'Poison Coating',
-        type: 'enchantment',
-        properties: [{ type: 'damage_bonus', target: 'poison', value: '1d4', ... }]
-    }
-]);
+---
 
-// 3. Define complete equipment templates
-manager.register('equipment.templates', [
-    {
-        name: 'Assassin's Dagger',
-        type: 'weapon',
-        rarity: 'very_rare',
-        properties: [
-            { type: 'damage_bonus', target: 'poison', value: '1d6', ... },
-            { type: 'passive_modifier', target: 'initiative', value: 2, ... }
-        ]
-    }
-]);
+## Validation
+
+The extensibility system includes automatic validation. Invalid content is rejected with clear error messages.
+
+**For complete type definitions, see [Type Definitions](#type-definitions) above.**
+
+### Key Validation Rules
+
+| Category | Required Fields | Validation Rules |
+|----------|-----------------|------------------|
+| **Equipment** | `name`, `type`, `rarity`, `weight` | Type must be `weapon`/`armor`/`item`; rarity must be valid; weight ≥ 0 |
+| **Spells** | `name`, `level`, `school` | Level 0-9; school must be valid D&D 5e school |
+| **Races** | String values | Must be valid race name (default or registered custom) |
+| **Classes** | String values | Must be valid class name (default or registered custom) |
+| **Appearance** | String values | Must be strings (not objects) |
+| **Features** | `id`, `name`, `description`, `type`, `class`, `level`, `source` | ID must be `lowercase_with_underscores`; IDs must be unique |
+| **Skills** | `id`, `name`, `ability`, `source` | ID must be `lowercase_with_underscores`; ability must be valid |
+| **Skill Lists** | `class`, `skillCount`, `availableSkills` | skillCount ≥ 0; skill IDs must exist |
+
+### ID Format Requirements
+
+All custom content IDs must use `lowercase_with_underscores` format:
+
+```typescript
+// Valid IDs
+'frost_rage'
+'necromancer_raise_dead'
+'dragon_smithing'
+
+// Invalid IDs
+'FrostRage'           // Error: Use lowercase
+'frost-rage'          // Error: Use underscores
+'frost.rage'          // Error: Use underscores
+```
+
+### Duplicate Detection
+
+The system automatically detects duplicate IDs:
+
+```typescript
+// Error: Feature ID 'rage' already exists
+manager.register('classFeatures', [{ id: 'rage', ... }]);
+
+// Error: Skill ID 'athletics' already exists
+manager.register('skills', [{ id: 'athletics', ... }]);
+```
+
+### Disabling Validation
+
+You can disable validation for advanced use cases:
+
+```typescript
+manager.register('equipment', customItems, { validate: false });
+```
+
+**Warning:** Disabling validation can cause runtime errors. Only use this if you're certain your data is valid.
+
+---
+
+## Troubleshooting
+
+### Content Not Appearing
+
+**Problem:** Custom content doesn't appear in generated characters.
+
+**Solution:** Check that:
+1. Content is registered before character generation
+2. Validation is not failing (check console for errors)
+3. Spawn weights are not set to 0
+4. You're using the correct category name
+
+```typescript
+// Debug: Check registered content
+const manager = ExtensionManager.getInstance();
+const info = manager.getInfo('equipment');
+console.log(info);
+// { hasCustomData: true, customCount: 5, totalCount: 42, ... }
+```
+
+### Validation Errors
+
+**Problem:** Validation fails with unclear error.
+
+**Solution:** Read the error message carefully. It includes:
+- The category that failed
+- The item index
+- The specific validation error
+
+```typescript
+try {
+    manager.register('equipment', invalidItems);
+} catch (error) {
+    // Error: Invalid items for category 'equipment':
+    // Item 0: Missing or invalid 'name' property
+    // Item 1: Invalid 'type' (must be 'weapon', 'armor', or 'item')
+    console.error(error.message);
+}
+```
+
+### Content Not Persisting
+
+**Problem:** Custom content disappears between sessions.
+
+**Solution:** The extensibility system is **runtime only**. You must re-register content each session:
+
+```typescript
+// On app startup
+import { loadMyContentPack } from './my-content-pack';
+
+loadMyContentPack();
+```
+
+### Spawn Rates Not Working
+
+**Problem:** Custom spawn rates don't seem to affect generation.
+
+**Solution:** Check the spawn mode:
+
+```typescript
+// Relative: Custom weights added to defaults
+manager.register('equipment', items, { mode: 'relative' });
+
+// Absolute: Only custom items spawn
+manager.register('equipment', items, { mode: 'absolute' });
+
+// Default: All items equal weight
+manager.register('equipment', items, { mode: 'default' });
 ```
 
 ---
@@ -2347,8 +2021,6 @@ The complete list of extensible categories:
 type ExtensionCategory =
     // Equipment System
     | 'equipment'                      // Weapons, armor, items
-    | 'equipment.properties'           // Equipment property templates (enchantments, curses)
-    | 'equipment.modifications'        // Modification templates (upgrades, enchantments)
     | 'equipment.templates'            // Complete equipment templates
 
     // Appearance Options
@@ -2398,6 +2070,7 @@ type ExtensionCategory =
     | 'racialTraits.Half-Elf'
     | 'racialTraits.Half-Orc'
     | 'racialTraits.Tiefling'
+    | `racialTraits.${string}` // For custom race racial traits
 
     // Skills
     | 'skills'                         // All skills (default + custom)
@@ -2440,7 +2113,7 @@ type ExtensionCategory =
 
 | Category | Description |
 |----------|-------------|
-| **Equipment** | `equipment`, `equipment.properties`, `equipment.modifications`, `equipment.templates` |
+| **Equipment** | `equipment`, `equipment.templates` |
 | **Appearance** | `appearance.bodyTypes`, `appearance.skinTones`, `appearance.hairColors`, `appearance.hairStyles`, `appearance.eyeColors`, `appearance.facialFeatures` |
 | **Spells** | `spells`, `spells.${className}` |
 | **Races** | `races`, `races.data` |

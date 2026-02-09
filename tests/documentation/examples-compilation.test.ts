@@ -1248,78 +1248,7 @@ describe('EXTENSIBILITY_GUIDE.md Compilation Tests', () => {
         });
     });
 
-    describe('Equipment Subcategories Examples', () => {
-        it('should compile equipment properties example', () => {
-            manager.register('equipment.properties', [
-                {
-                    type: 'damage_bonus',
-                    target: 'lightning',
-                    value: '1d6',
-                    description: '+1d6 lightning damage',
-                    requirements: {
-                        abilities: { DEX: 13 }
-                    }
-                },
-                {
-                    type: 'spell_grant',
-                    target: 'mage_armor',
-                    value: 1,
-                    description: 'Cast Mage Armor once per day',
-                    requiresAttunement: true
-                },
-                {
-                    type: 'passive_modifier',
-                    target: 'AC',
-                    value: 2,
-                    description: '+2 Armor Class',
-                    condition: 'while wearing light armor'
-                }
-            ], {
-                weights: {
-                    'lightning_damage': 0.5,
-                    'mage_armor_grant': 0.3
-                }
-            });
-        });
-
-        it('should compile equipment modifications example', () => {
-            manager.register('equipment.modifications', [
-                {
-                    name: 'Flaming Enchantment',
-                    type: 'enchantment',
-                    properties: [
-                        {
-                            type: 'damage_bonus',
-                            target: 'fire',
-                            value: '1d6',
-                            description: '+1d6 fire damage'
-                        }
-                    ],
-                    requirements: {
-                        rarity: 'rare',
-                        type: 'weapon'
-                    },
-                    cost: { gold: 500, gems: 2 }
-                },
-                {
-                    name: 'Cursed Binding',
-                    type: 'curse',
-                    properties: [
-                        {
-                            type: 'passive_modifier',
-                            target: 'AC',
-                            value: -2,
-                            description: '-2 Armor Class'
-                        }
-                    ],
-                    requirements: {
-                        rarity: 'uncommon'
-                    },
-                    removable: false
-                }
-            ]);
-        });
-
+    describe('Equipment Templates Examples', () => {
         it('should compile equipment templates example', () => {
             manager.register('equipment.templates', [
                 {

@@ -624,6 +624,138 @@ describe('Combat System (T107-T116)', () => {
       expect(action.type).toBe('disengage');
       expect(action.result?.success).toBe(true);
     });
+
+    describe('Fleeing (Task 1)', () => {
+      it('should return false for canFlee when allowFleeing is not set', () => {
+        const combatEngine = new CombatEngine();
+        expect(combatEngine.canFlee()).toBe(false);
+      });
+
+      it('should return true for canFlee when allowFleeing is enabled', () => {
+        const combatEngine = new CombatEngine({ allowFleeing: true });
+        expect(combatEngine.canFlee()).toBe(true);
+      });
+
+      it('should throw error when fleeing is not allowed', () => {
+        const combatEngine = new CombatEngine({ allowFleeing: false });
+        const player = createMockCharacter();
+        const enemy = createMockCharacter();
+
+        const combat = combatEngine.startCombat([player], [enemy]);
+        const fleer = combat.combatants[0];
+
+        expect(() => combatEngine.executeFlee(combat, fleer)).toThrow('Fleeing is not allowed');
+      });
+
+      it('should execute flee action when allowFleeing is enabled', () => {
+        const combatEngine = new CombatEngine({ allowFleeing: true });
+        const player = createMockCharacter({ name: 'Player' });
+        const enemy = createMockCharacter({ name: 'Enemy' });
+
+        const combat = combatEngine.startCombat([player], [enemy]);
+        const fleer = combat.combatants[0];
+        const initialCombatantCount = combat.combatants.length;
+
+        const action = combatEngine.executeFlee(combat, fleer);
+
+        expect(action.type).toBe('flee');
+        expect(action.result?.success).toBe(true);
+        expect(action.result?.description).toContain('flees from combat');
+        expect(combat.combatants.length).toBe(initialCombatantCount - 1);
+        expect(combat.combatants.find(c => c.id === fleer.id)).toBeUndefined();
+      });
+
+      it('should add flee action to combat history', () => {
+        const combatEngine = new CombatEngine({ allowFleeing: true });
+        const player = createMockCharacter();
+        const enemy = createMockCharacter();
+
+        const combat = combatEngine.startCombat([player], [enemy]);
+        const fleer = combat.combatants[0];
+        const initialHistoryLength = combat.history.length;
+
+        combatEngine.executeFlee(combat, fleer);
+
+        expect(combat.history.length).toBe(initialHistoryLength + 1);
+        expect(combat.history[combat.history.length - 1].type).toBe('flee');
+      });
+
+      it('should mark combatant as defeated after fleeing', () => {
+        const combatEngine = new CombatEngine({ allowFleeing: true });
+        const player = createMockCharacter();
+        const enemy = createMockCharacter();
+
+        const combat = combatEngine.startCombat([player], [enemy]);
+        const fleer = combat.combatants[0];
+
+        expect(fleer.isDefeated).toBe(false);
+
+        combatEngine.executeFlee(combat, fleer);
+
+        expect(fleer.isDefeated).toBe(true);
+      });
+
+      it('should adjust current turn index when combatant before current flees', () => {
+        const combatEngine = new CombatEngine({ allowFleeing: true });
+        const player1 = createMockCharacter({ name: 'Player1' });
+        const player2 = createMockCharacter({ name: 'Player2' });
+        const enemy = createMockCharacter({ name: 'Enemy' });
+
+        const combat = combatEngine.startCombat([player1, player2], [enemy]);
+
+        // Move to second combatant's turn
+        combatEngine.nextTurn(combat);
+        const initialTurnIndex = combat.currentTurnIndex;
+
+        // First combatant flees
+        const fleer = combat.combatants[0];
+        combatEngine.executeFlee(combat, fleer);
+
+        // Turn index should be adjusted
+        expect(combat.currentTurnIndex).toBe(initialTurnIndex - 1);
+      });
+
+      it('should end combat when all enemies flee', () => {
+        const combatEngine = new CombatEngine({ allowFleeing: true });
+        const player = createMockCharacter({ name: 'Player' });
+        const enemy1 = createMockCharacter({ name: 'Enemy1' });
+        const enemy2 = createMockCharacter({ name: 'Enemy2' });
+
+        const combat = combatEngine.startCombat([player], [enemy1, enemy2]);
+        expect(combat.isActive).toBe(true);
+
+        // Both enemies flee
+        const enemy1Combatant = combat.combatants.find(c => c.character.name === 'Enemy1')!;
+        const enemy2Combatant = combat.combatants.find(c => c.character.name === 'Enemy2')!;
+
+        combatEngine.executeFlee(combat, enemy1Combatant);
+        expect(combat.isActive).toBe(true); // Still active, one enemy left
+
+        combatEngine.executeFlee(combat, enemy2Combatant);
+        expect(combat.isActive).toBe(false); // Combat ends
+        expect(combat.winner).toBeDefined();
+      });
+
+      it('should end combat when all players flee', () => {
+        const combatEngine = new CombatEngine({ allowFleeing: true });
+        const player1 = createMockCharacter({ name: 'Player1' });
+        const player2 = createMockCharacter({ name: 'Player2' });
+        const enemy = createMockCharacter({ name: 'Enemy' });
+
+        const combat = combatEngine.startCombat([player1, player2], [enemy]);
+        expect(combat.isActive).toBe(true);
+
+        // Both players flee
+        const player1Combatant = combat.combatants.find(c => c.character.name === 'Player1')!;
+        const player2Combatant = combat.combatants.find(c => c.character.name === 'Player2')!;
+
+        combatEngine.executeFlee(combat, player1Combatant);
+        expect(combat.isActive).toBe(true); // Still active, one player left
+
+        combatEngine.executeFlee(combat, player2Combatant);
+        expect(combat.isActive).toBe(false); // Combat ends
+      });
+    });
   });
 
   describe('Combat Damage and Healing', () => {
@@ -1141,6 +1273,131 @@ describe('Combat System (T107-T116)', () => {
 
       const result2 = engine2.getCombatResult(combat2);
       expect(result2?.treasureAwarded?.gold).toBe(result?.treasureAwarded?.gold);
+    });
+
+    it('should use fixed gold amount from treasure config', () => {
+      const player = createMockCharacter({ name: 'Player' });
+      const enemy = createMockCharacter({ name: 'Enemy', hp: { current: 1, max: 1, temp: 0 } });
+
+      // Create combat engine with fixed treasure
+      const engine = new CombatEngine({ treasure: { gold: 500 } });
+      const combat = engine.startCombat([player], [enemy]);
+
+      // Defeat the enemy
+      combat.combatants[1].currentHP = 0;
+      combat.combatants[1].isDefeated = true;
+      combat.isActive = false;
+      combat.winner = combat.combatants[0];
+
+      const result = engine.getCombatResult(combat);
+
+      expect(result?.treasureAwarded?.gold).toBe(500);
+    });
+
+    it('should use gold range from treasure config with seeded RNG', () => {
+      const player = createMockCharacter({ name: 'Player' });
+      const enemy = createMockCharacter({ name: 'Enemy', hp: { current: 1, max: 1, temp: 0 } });
+
+      // Create combat engine with gold range
+      const engine = new CombatEngine({
+        seed: 'range-seed',
+        treasure: { gold: { min: 100, max: 200 } }
+      });
+      const combat = engine.startCombat([player], [enemy]);
+
+      // Defeat the enemy
+      combat.combatants[1].currentHP = 0;
+      combat.combatants[1].isDefeated = true;
+      combat.isActive = false;
+      combat.winner = combat.combatants[0];
+
+      const result = engine.getCombatResult(combat);
+
+      // Should be within range (inclusive)
+      expect(result?.treasureAwarded?.gold).toBeGreaterThanOrEqual(100);
+      expect(result?.treasureAwarded?.gold).toBeLessThanOrEqual(200);
+
+      // Same seed should produce same result
+      const engine2 = new CombatEngine({
+        seed: 'range-seed',
+        treasure: { gold: { min: 100, max: 200 } }
+      });
+      const combat2 = engine2.startCombat([player], [enemy]);
+      combat2.combatants[1].currentHP = 0;
+      combat2.combatants[1].isDefeated = true;
+      combat2.isActive = false;
+      combat2.winner = combat2.combatants[0];
+
+      const result2 = engine2.getCombatResult(combat2);
+      expect(result2?.treasureAwarded?.gold).toBe(result?.treasureAwarded?.gold);
+    });
+
+    it('should include custom items from treasure config', () => {
+      const player = createMockCharacter({ name: 'Player' });
+      const enemy = createMockCharacter({ name: 'Enemy', hp: { current: 1, max: 1, temp: 0 } });
+
+      const customItems = [
+        { id: 'sword-1', name: 'Longsword', type: 'weapon' },
+        { id: 'potion-1', name: 'Health Potion', type: 'consumable' }
+      ];
+
+      // Create combat engine with custom items
+      const engine = new CombatEngine({ treasure: { items: customItems } });
+      const combat = engine.startCombat([player], [enemy]);
+
+      // Defeat the enemy
+      combat.combatants[1].currentHP = 0;
+      combat.combatants[1].isDefeated = true;
+      combat.isActive = false;
+      combat.winner = combat.combatants[0];
+
+      const result = engine.getCombatResult(combat);
+
+      expect(result?.treasureAwarded?.items).toEqual(customItems);
+    });
+
+    it('should support both fixed gold and custom items together', () => {
+      const player = createMockCharacter({ name: 'Player' });
+      const enemy = createMockCharacter({ name: 'Enemy', hp: { current: 1, max: 1, temp: 0 } });
+
+      const customItems = [{ id: 'ring-1', name: 'Ring of Protection', type: 'accessory' }];
+
+      // Create combat engine with full treasure config
+      const engine = new CombatEngine({
+        treasure: { gold: 1000, items: customItems }
+      });
+      const combat = engine.startCombat([player], [enemy]);
+
+      // Defeat the enemy
+      combat.combatants[1].currentHP = 0;
+      combat.combatants[1].isDefeated = true;
+      combat.isActive = false;
+      combat.winner = combat.combatants[0];
+
+      const result = engine.getCombatResult(combat);
+
+      expect(result?.treasureAwarded?.gold).toBe(1000);
+      expect(result?.treasureAwarded?.items).toEqual(customItems);
+    });
+
+    it('should default to 0 gold when treasure config has no gold specified', () => {
+      const player = createMockCharacter({ name: 'Player' });
+      const enemy = createMockCharacter({ name: 'Enemy', hp: { current: 1, max: 1, temp: 0 } });
+
+      // Create combat engine with only items, no gold
+      const engine = new CombatEngine({ treasure: { items: [] } });
+      const combat = engine.startCombat([player], [enemy]);
+
+      // Defeat the enemy
+      combat.combatants[1].currentHP = 0;
+      combat.combatants[1].isDefeated = true;
+      combat.isActive = false;
+      combat.winner = combat.combatants[0];
+
+      const result = engine.getCombatResult(combat);
+
+      expect(result?.treasureAwarded?.gold).toBe(0);
+      expect(result?.treasureAwarded?.items).toEqual([]);
     });
   });
 });
