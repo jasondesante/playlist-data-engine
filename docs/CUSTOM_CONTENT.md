@@ -115,6 +115,30 @@ const dragonkinData = getRaceData('Dragonkin');
 // Returns: { ability_bonuses: { STR: 2, CON: 1, CHA: 1 }, speed: 30, traits: [...] }
 ```
 
+### Controlling Race Spawn Rates
+
+Adjust how frequently custom (or default) races appear during character generation:
+
+```typescript
+import { ExtensionManager, CharacterGenerator } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register custom races
+manager.register('races', ['Dragonkin', 'Fairy', 'Elemental']);
+
+// Set spawn rates (relative weights)
+manager.setWeights('races', {
+    'Dragonkin': 0.3,  // Rare (30% of default weight)
+    'Fairy': 0.5,      // Uncommon (50% of default weight)
+    'Human': 2.0       // Common (2x default weight)
+});
+
+// Now custom races will be selected during character generation
+const character = CharacterGenerator.generate('my-seed', audioProfile, track);
+// character.race could be 'Dragonkin', 'Fairy', or any default race
+```
+
 ---
 
 ## Subrace Support
@@ -529,6 +553,28 @@ manager.register('classes.data', [{
 
 // Step 2: Register the class name for validation
 manager.register('classes', [asClass('Necromancer')]);
+```
+
+### Controlling Class Spawn Rates
+
+Adjust how frequently custom (or default) classes appear during character generation:
+
+```typescript
+import { ExtensionManager, CharacterGenerator } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Make certain classes more or less common
+manager.setWeights('classes', {
+    'Necromancer': 0.5,   // Rare (half default weight)
+    'Sorcerer': 2.0,      // Common (2x default weight)
+    'Warlock': 1.5,       // Uncommon (1.5x default weight)
+    'Paladin': 0.3        // Very rare
+});
+
+// Classes will be selected according to their weights during generation
+const character = CharacterGenerator.generate('my-seed', audioProfile, track);
+// character.class will favor Sorcerer and Warlock over Necromancer and Paladin
 ```
 
 **Overriding Audio Preferences for Default Classes:**

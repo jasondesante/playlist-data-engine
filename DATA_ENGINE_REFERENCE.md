@@ -1204,7 +1204,7 @@ Assigns skill proficiencies based on class.
 
 | Method | Description |
 |--------|-------------|
-| `static assignSkills(characterClass: Class, rng: SeededRNG, character?: CharacterSheet): Record<string, ProficiencyLevel>` | Selects random skills from class's available list. Handles "Expertise" for Bards and Rogues. Supports custom skills via SkillQuery. Optional `character` enables prerequisite validation |
+| `static assignSkills(characterClass: Class, rng: SeededRNG, character?: CharacterSheet): Record<string, ProficiencyLevel>` | Selects skills from class's available list using weighted selection (if registered via `skillLists` in ExtensionManager) or equal weights. Handles "Expertise" for Bards and Rogues. Supports custom skills via SkillQuery. Optional `character` enables prerequisite validation |
 
 #### Helper: `SpellManager`
 *Also known as: Spell manager, magic system, spell slot manager*
@@ -2967,8 +2967,8 @@ Query and validation layer for character skills stored in ExtensionManager.
 | `SkillValidationResult` | Validation result with valid flag and errors array | [src/core/skills/SkillValidator.ts](src/core/skills/SkillValidator.ts) |
 | `SkillQueryStats` | Statistics about registered skills (totals, by ability, categories) | [src/core/skills/SkillQuery.ts](src/core/skills/SkillQuery.ts) |
 | `SkillProficiency` | Character skill proficiency with level and source | [src/core/types/Character.ts](src/core/types/Character.ts) |
-| `SkillListDefinition` | Class skill list with count and available skills | [src/core/types/Character.ts](src/core/types/Character.ts) |
-| `SkillSelectionWeights` | Weighted skill selection with spawn mode | [src/core/types/Character.ts](src/core/types/Character.ts) |
+| `SkillListDefinition` | Class skill list with count, available skills, selection weights, and expertise settings. Register via `manager.register('skillLists', [...])` to control skill selection weights per class | [src/core/skills/SkillTypes.ts](src/core/skills/SkillTypes.ts) |
+| `SkillSelectionWeights` | Weighted skill selection with spawn mode (`'relative'`, `'absolute'`, `'default'`) and skill weight multipliers. Higher weight = more likely to be selected. Weight of 0 excludes skill from selection | [src/core/skills/SkillTypes.ts](src/core/skills/SkillTypes.ts) |
 
 #### Method Reference
 

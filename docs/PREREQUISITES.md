@@ -127,9 +127,75 @@ const dragonSmithing = {
 
 ExtensionManager.getInstance().register('skills', [dragonSmithing]);
 // Cache is automatically invalidated after registration
-```
 
----
+// ===== SKILL WITH ABILITY SCORE AND SKILL PREREQUISITES =====
+// Advanced Arcana: Requires INT 16 and proficiency in Arcana
+const advancedArcana = {
+    id: 'advanced_arcana',
+    name: 'Advanced Arcana',
+    description: 'Cast complex spells and understand magical theory',
+    ability: 'INT' as const,
+    prerequisites: {
+        abilities: { INT: 16 },  // Requires INT 16 or higher
+        skills: ['arcana'],       // Must already know Arcana
+        level: 7
+    },
+    source: 'custom' as const
+};
+
+ExtensionManager.getInstance().register('skills', [advancedArcana]);
+
+// ===== SKILL WITH SPELL PREREQUISITES =====
+// Spell Mastery: Requires knowing specific spells first
+const spellMasterySkill = {
+    id: 'spell_mastery',
+    name: 'Spell Mastery',
+    description: 'Improved control over known spells',
+    ability: 'INT' as const,
+    prerequisites: {
+        spells: ['Fireball', 'Lightning Bolt'],  // Must know these spells
+        class: 'Wizard' as const,
+        level: 10
+    },
+    source: 'custom' as const
+};
+
+ExtensionManager.getInstance().register('skills', [spellMasterySkill]);
+
+// ===== SKILL WITH RACE PREREQUISITES =====
+// Dwarven Combat Training: Dwarf only
+const dwarvenCombat = {
+    id: 'dwarven_warfare',
+    name: 'Dwarven Warfare',
+    description: 'Advanced dwarven combat techniques',
+    ability: 'STR' as const,
+    prerequisites: {
+        race: 'Dwarf' as const
+    },
+    source: 'custom' as const
+};
+
+ExtensionManager.getInstance().register('skills', [dwarvenCombat]);
+
+// ===== VALIDATING SKILL PREREQUISITES =====
+import { SkillQuery, SkillValidator, CharacterGenerator } from 'playlist-data-engine';
+
+const query = SkillQuery.getInstance();
+const character = CharacterGenerator.generate(seed, audioProfile, track);
+const skill = query.getSkill('dragon_smithing');
+
+if (skill && skill.prerequisites) {
+    const result = SkillValidator.validateSkillPrerequisites(skill.prerequisites, character);
+
+    if (!result.valid) {
+        console.log('Unmet prerequisites:', result.errors);
+        // Output example: ["Requires feature: draconic_bloodline", "Requires level 5 (current: 1)"]
+    }
+}
+
+// Skills with unmet prerequisites are automatically
+// filtered out during character generation
+```
 
 ## Spell Prerequisites
 
@@ -300,9 +366,67 @@ const arcaneMastery = {
 
 ExtensionManager.getInstance().register('classFeatures', [arcaneMastery]);
 // Cache is automatically invalidated after registration
-```
 
----
+// ===== FEATURE REQUIRING SPELL KNOWLEDGE =====
+// Spellblade: Requires knowing specific spells
+const spellblade = {
+    id: 'spellblade',
+    name: 'Spellblade',
+    description: 'Channel spells through your weapon',
+    type: 'active' as const,
+    level: 10,
+    class: 'Eldritch Knight' as const,
+    prerequisites: {
+        spells: ['Green-Flame Blade', 'Booming Blade'],
+        features: ['weapon_bond']
+    },
+    effects: [
+        { type: 'passive_modifier' as const, target: 'spell_strike_damage', value: 4 }
+    ],
+    source: 'custom' as const
+};
+
+ExtensionManager.getInstance().register('classFeatures', [spellblade]);
+
+// ===== RACIAL TRAIT WITH SKILL PREREQUISITES =====
+// Elven Battle Training: Requires proficiency in combat skills
+const elvenBattleTraining = {
+    id: 'elven_battle_training',
+    name: 'Elven Battle Training',
+    description: 'Advanced elven combat techniques',
+    type: 'active' as const,
+    race: 'Elf' as const,
+    prerequisites: {
+        skills: ['athletics', 'perception'],  // Must have both skills
+        level: 3
+    },
+    effects: [
+        { type: 'passive_modifier' as const, target: 'initiative', value: 2 }
+    ],
+    source: 'custom' as const
+};
+
+ExtensionManager.getInstance().register('racialTraits', [elvenBattleTraining]);
+
+// ===== VALIDATE FEATURE PREREQUISITES =====
+import { FeatureQuery, CharacterGenerator } from 'playlist-data-engine';
+
+const query = FeatureQuery.getInstance();
+const character = CharacterGenerator.generate(seed, audioProfile, track, { forceName: 'Elf Warrior' });
+const features = query.getClassFeatures('Wizard', character.level);
+const feature = features.find(f => f.id === 'arcane_mastery');
+
+if (feature) {
+    const result = query.validatePrerequisites(feature, character);
+
+    if (!result.valid) {
+        console.log('Cannot learn feature:', result.unmet || result.errors);
+    }
+}
+
+// Features with unmet prerequisites are automatically
+// excluded during character generation
+```
 
 ## Validation System
 

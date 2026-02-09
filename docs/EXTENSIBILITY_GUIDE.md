@@ -300,13 +300,8 @@ const customSpells = [
     }
 ];
 
-// Register custom spells with spawn weights
-manager.register('spells', customSpells, {
-    weights: {
-        'Phoenix Fire': 0.5,   // Rare
-        'Mind Shield': 2.0     // Common
-    }
-});
+// Register custom spells
+manager.register('spells', customSpells);
 ```
 
 
@@ -345,140 +340,18 @@ console.log(`Total spells: ${stats.totalSpells} (${stats.customSpells} custom)`)
 ```
 
 
-
-#### Spells with Prerequisites
+#### Spell Prerequisites
 
 Spells can have prerequisites that must be met before a spellcaster can learn them (features, abilities, spells, skills, level, or class). For full examples and usage, see [Spells with Prerequisites](PREREQUISITES.md#spells-with-prerequisites).
 
-### Races
 
-Add custom races:
+### Races / Subraces
 
-```typescript
-const manager = ExtensionManager.getInstance();
-
-// Register custom race names
-manager.register('races', ['Dragonkin', 'Fairy', 'Elemental']);
-
-// Set spawn rates
-manager.setWeights('races', {
-    'Dragonkin': 0.3,  // Rare
-    'Fairy': 0.5,      // Uncommon
-    'Human': 2.0       // Common
-});
-
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track
-);
-// Now Dragonkin and Fairy can be selected!
-```
-
-#### Races with Subraces
-
-The engine supports custom races with optional subrace variants. Register custom race data with subraces and the engine will validate and use it during character generation.
-
-**See [CUSTOM_CONTENT.md](CUSTOM_CONTENT.md) for more information.**
+Add custom races and subraces, and control their spawn rates. For complete examples including type augmentation, race data registration, validation, subrace support, and spawn rate control, see [Custom Races](CUSTOM_CONTENT.md#custom-races).
 
 ### Classes
 
-You can both adjust spawn rates for existing classes AND create entirely new custom classes.
-
-#### Adjust Spawn Rates for Existing Classes
-
-```typescript
-const manager = ExtensionManager.getInstance();
-
-// Make certain classes more or less common in character generation
-manager.setWeights('classes', {
-    'Sorcerer': 2.0,    // 2x as common
-    'Warlock': 1.5,     // 1.5x as common
-    'Paladin': 0.3      // Rare
-});
-
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track
-);
-```
-
-#### Creating Custom Classes
-
-**See [CUSTOM_CONTENT.md](CUSTOM_CONTENT.md) for more information.**
-
-**Example: Custom Necromancer Class**
-
-This example demonstrates creating a custom "Necromancer" class that extends the Wizard base class:
-
-```typescript
-import { ExtensionManager, CharacterGenerator, asClass } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// 1. Register custom skill
-manager.register('skills.INT', [{
-    id: 'necromancy',
-    name: 'Necromancy',
-    ability: 'INT',
-    description: 'Knowledge of undead creation and control',
-    prerequisites: { class: 'Necromancer' },
-    source: 'custom'
-}]);
-
-// 2. Register custom class data (inherits from Wizard)
-manager.register('classes.data', [{
-    name: 'Necromancer',
-    baseClass: 'Wizard',  // Inherits from Wizard
-    // Only override what's different:
-    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
-    // All other properties (hit_die, saving_throws, etc.) are inherited from Wizard
-}]);
-
-// 3. Register the class name
-manager.register('classes', [asClass('Necromancer')]);
-
-// 4. Register custom features
-manager.register('classFeatures.Necromancer', [
-    {
-        id: 'necromancer_raise_dead',
-        name: 'Raise Undead',
-        description: 'Can raise undead creatures',
-        type: 'active',
-        level: 1,
-        class: 'Necromancer',
-        prerequisites: {
-            class: 'Necromancer',
-            abilities: { INT: 13 }
-        },
-        effects: [
-            { type: 'ability_unlock', target: 'raise_undead', value: true }
-        ],
-        source: 'custom'
-    }
-], { mode: 'replace' });
-
-// 5. Register custom spell list
-manager.register('classSpellLists.Necromancer', [{
-    cantrips: ['Mage Hand', 'Mending', 'Message'],
-    spells_by_level: {
-        1: ['Animate Dead', 'False Life', 'Ray of Sickness'],
-        2: ['Ray of Enfeeblement', 'Web'],
-        3: ['Animate Dead', 'Feign Death']
-    }
-}]);
-
-// 6. Generate a Necromancer character
-const track = { title: 'Dark Ritual', artist: 'Necromancer', genre: 'Dark Ambient', ...otherTrackFields };
-const character = CharacterGenerator.generate(
-    'test-seed',
-    sampleAudioProfile,
-    track,
-    { forceClass: 'Necromancer' }
-);
-```
-
+Adjust spawn rates for existing classes or create entirely new custom classes. For complete examples including template inheritance, audio preferences, spawn rate control, and full class registration, see [Custom Classes](CUSTOM_CONTENT.md#custom-classes).
 
 
 ### Class Features
@@ -554,108 +427,7 @@ manager.setWeights('classFeatures.Barbarian', {
 
 **Feature Prerequisites:**
 
-```typescript
-{
-    level: 5,                    // Minimum level
-    abilities: { STR: 13 },      // Ability score requirements
-    features: ['rage'],          // Required features
-    class: 'Barbarian',          // Required class
-    race: 'Dwarf',               // Required race
-    custom: 'Must have seen dragon'  // Custom condition
-}
-```
-
-#### Features with Skill/Spell Prerequisites
-
-Class features and racial traits can require skills or spells as prerequisites, in addition to features, abilities, level, class, and race.
-
-```typescript
-import { ExtensionManager, FeatureQuery, FeatureValidator, CharacterGenerator } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-const query = FeatureQuery.getInstance();  // Convenience wrapper
-
-// ===== FEATURE REQUIRING SKILL PROFICIENCY =====
-// Arcane Smith: Requires Arcana skill proficiency
-const arcaneSmith = {
-    id: 'arcane_smith',
-    name: 'Arcane Smith',
-    description: 'Can enchant magical items',
-    type: 'passive',
-    level: 7,
-    class: 'Wizard',
-    prerequisites: {
-        skills: ['arcana'],  // Requires Arcana proficiency
-        level: 7
-    },
-    effects: [
-        { type: 'ability_unlock', target: 'item_enchantment', value: true }
-    ],
-    source: 'custom'
-};
-
-// Option 1: Register via ExtensionManager (recommended)
-manager.register('classFeatures', [arcaneSmith]);
-
-// Cache is automatically invalidated after registration
-
-// ===== FEATURE REQUIRING SPELL KNOWLEDGE =====
-// Spellblade: Requires knowing specific spells
-const spellblade = {
-    id: 'spellblade',
-    name: 'Spellblade',
-    description: 'Channel spells through your weapon',
-    type: 'active',
-    level: 10,
-    class: 'Eldritch Knight',
-    prerequisites: {
-        spells: ['Green-Flame Blade', 'Booming Blade'],
-        features: ['weapon_bond']
-    },
-    effects: [
-        { type: 'passive_modifier', target: 'spell_strike_damage', value: 4 }
-    ],
-    source: 'custom'
-};
-
-manager.register('classFeatures', [spellblade]);
-
-// ===== RACIAL TRAIT WITH SKILL PREREQUISITES =====
-// Elven Battle Training: Requires proficiency in a combat skill
-const elvenBattleTraining = {
-    id: 'elven_battle_training',
-    name: 'Elven Battle Training',
-    description: 'Advanced elven combat techniques',
-    type: 'active',
-    race: 'Elf',
-    prerequisites: {
-        skills: ['athletics', 'perception'],  // Must have both skills
-        level: 3
-    },
-    effects: [
-        { type: 'passive_modifier', target: 'initiative', value: 2 }
-    ],
-    source: 'custom'
-};
-
-manager.register('racialTraits', [elvenBattleTraining]);
-
-// ===== VALIDATE FEATURE PREREQUISITES =====
-const character = CharacterGenerator.generate(seed, audioProfile, track, {forceName: 'Elf Warrior'});
-const features = query.getClassFeatures('Wizard', character.level);
-const feature = features.find(f => f.id === 'arcane_smith');
-
-if (feature) {
-    const result = query.validatePrerequisites(feature, character);
-
-    if (!result.valid) {
-        console.log('Cannot learn feature:', result.errors);
-    }
-}
-
-// Features with unmet prerequisites are automatically
-// excluded during character generation
-```
+Features can require levels, abilities, skills, spells, features, class, race, subrace, or custom conditions. For complete examples including skill prerequisites, spell prerequisites, racial traits with prerequisites, and validation, see [Feature Prerequisites](PREREQUISITES.md#feature-prerequisites).
 
 ### Racial Traits
 
@@ -715,13 +487,6 @@ manager.register('racialTraits', [
         source: 'custom'
     }
 ]);
-
-// Set spawn rates for traits
-manager.setWeights('racialTraits', {
-    'dragon_born_fire_resistance': 1.0,
-    'fairy_flight': 0.3,  // Rare trait
-    'elemental_affinity': 0.5
-});
 ```
 
 
@@ -847,100 +612,7 @@ console.log(`Skills: ${skillStats.totalSkills} (${skillStats.customSkills} custo
 
 #### Skills with Prerequisites
 
-Skills can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced skills that require base skills, specific features, spells, ability scores, level, class, or race.
-
-```typescript
-import { ExtensionManager, SkillQuery, SkillValidator, CharacterGenerator } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-const query = SkillQuery.getInstance();
-
-// ===== SKILL WITH FEATURE PREREQUISITES =====
-// Dragon Smithing: Requires Draconic Bloodline feature
-const dragonSmithing: CustomSkill = {
-    id: 'dragon_smithing',
-    name: 'Dragon Smithing',
-    description: 'Craft weapons from dragon scales',
-    ability: 'INT',
-    prerequisites: {
-        features: ['draconic_bloodline'],  // Requires Sorcerer feature
-        level: 5,
-        class: 'Sorcerer'
-    },
-    source: 'custom'
-};
-
-// Option 1: Register via ExtensionManager (recommended)
-manager.register('skills', [dragonSmithing]);
-
-// Cache is automatically invalidated after registration
-
-// ===== SKILL WITH ABILITY SCORE AND SKILL PREREQUISITES =====
-// Advanced Arcana: Requires INT 16 and proficiency in Arcana
-const advancedArcana: CustomSkill = {
-    id: 'advanced_arcana',
-    name: 'Advanced Arcana',
-    description: 'Cast complex spells and understand magical theory',
-    ability: 'INT',
-    prerequisites: {
-        abilities: { INT: 16 },  // Requires INT 16 or higher
-        skills: ['arcana'],       // Must already know Arcana
-        level: 7
-    },
-    source: 'custom'
-};
-
-manager.register('skills', [advancedArcana]);
-
-// ===== SKILL WITH SPELL PREREQUISITES =====
-// Spell Mastery: Requires knowing specific spells first
-const spellMasterySkill: CustomSkill = {
-    id: 'spell_mastery',
-    name: 'Spell Mastery',
-    description: 'Improved control over known spells',
-    ability: 'INT',
-    prerequisites: {
-        spells: ['Fireball', 'Lightning Bolt'],  // Must know these spells
-        class: 'Wizard',
-        level: 10
-    },
-    source: 'custom'
-};
-
-manager.register('skills', [spellMasterySkill]);
-
-// ===== SKILL WITH RACE PREREQUISITES =====
-// Dwarven Combat Training: Dwarf only
-const dwarvenCombat: CustomSkill = {
-    id: 'dwarven_warfare',
-    name: 'Dwarven Warfare',
-    description: 'Advanced dwarven combat techniques',
-    ability: 'STR',
-    prerequisites: {
-        race: 'Dwarf'
-    },
-    source: 'custom'
-};
-
-manager.register('skills', [dwarvenCombat]);
-
-// ===== VALIDATING SKILL PREREQUISITES =====
-// Check if a character meets the requirements
-const character = CharacterGenerator.generate(seed, audioProfile, track);
-const skill = query.getSkill('dragon_smithing');
-
-if (skill && skill.prerequisites) {
-    const result = SkillValidator.validateSkillPrerequisites(skill.prerequisites, character);
-
-    if (!result.valid) {
-        console.log('Unmet prerequisites:', result.unmet);
-        // Output example: ["Requires feature: draconic_bloodline", "Requires level 5 (current: 1)"]
-    }
-}
-
-// Skills with unmet prerequisites are automatically
-// filtered out during character generation
-```
+Skills can have prerequisites that must be met before a character can gain proficiency in them. This allows for advanced skills that require base skills, specific features, spells, ability scores, level, class, or race. For complete examples including skill chains, ability prerequisites, spell prerequisites, race prerequisites, and validation, see [Skill Prerequisites](PREREQUISITES.md#skill-prerequisites).
 
 ### Skill Lists
 
@@ -988,193 +660,43 @@ manager.register('skillLists', [
         expertiseCount: 1
     }
 ]);
-
-// Set spawn rates for skill lists
-manager.setWeights('skillLists', {
-    'Barbarian': 1.0,
-    'Necromancer': 0.3  // Rare class
-});
-```
-
-**Create class-specific skill preferences:**
-
-```typescript
-// Favor exploration skills for Ranger
-manager.register('skillLists', [
-    {
-        class: 'Ranger',
-        skillCount: 3,
-        availableSkills: [
-            'athletics',
-            'survival',
-            'survival_cold',
-            'nature',
-            'stealth',
-            'perception',
-            'investigation'
-        ],
-        selectionWeights: {
-            weights: {
-                'survival': 2.0,
-                'survival_cold': 1.5,
-                'nature': 1.5,
-                'stealth': 1.0,
-                'perception': 1.0
-            },
-            mode: 'relative'
-        }
-    }
-]);
 ```
 
 
 ### Appearance
 
-#### Body Types
+Customize physical appearance options using ExtensionManager. **Tip:** Set mode to `'absolute'` to use only your custom options:
 
 ```typescript
-const customBodyTypes = ['giant', 'diminutive', 'elongated'];
-
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track,
-    {
-        extensions: {
-            appearance: {
-                bodyTypes: customBodyTypes
-            }
-        }
-    }
-);
-
-// Set weights
 const manager = ExtensionManager.getInstance();
+
+// Register custom appearance options
+manager.register('appearance.bodyTypes', ['giant', 'diminutive', 'elongated']);
+manager.register('appearance.hairStyles', ['mohawk', 'braided', 'pompadour', 'mullet']);
+manager.register('appearance.facialFeatures', ['crystal tattoo', 'runes on cheek', 'glowing eyes', 'fangs']);
+
+// Register custom colors (hex format)
+manager.register('appearance.skinTones', ['#8B7355', '#F5DEB3', '#FFE4C4']);
+manager.register('appearance.hairColors', ['#FF69B4', '#00CED1', '#9400D3']);
+manager.register('appearance.eyeColors', ['#FF0000', '#800080', '#C0C0C0']);
+
+// Use only custom options (exclude defaults)
+manager.setMode('appearance.bodyTypes', 'absolute');
+manager.setMode('appearance.hairStyles', 'absolute');
+manager.setMode('appearance.facialFeatures', 'absolute');
+manager.setMode('appearance.skinTones', 'absolute');
+manager.setMode('appearance.hairColors', 'absolute');
+manager.setMode('appearance.eyeColors', 'absolute');
+
+// Optional: Weight specific options
 manager.setWeights('appearance.bodyTypes', {
-    'giant': 0.2,
-    'diminutive': 0.3,
-    'athletic': 1.5  // More common
+    'giant': 0.2,       // Very rare
+    'diminutive': 0.3,  // Rare
+    'athletic': 1.5     // Common
 });
 ```
 
-#### Skin Tones
-
-```typescript
-const customSkinTones = [
-    '#8B7355',  // Deep bronze
-    '#F5DEB3',  // Wheat
-    '#FFE4C4'   // Bisque
-];
-
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track,
-    {
-        extensions: {
-            appearance: {
-                skinTones: customSkinTones
-            }
-        }
-    }
-);
-```
-
-#### Hair Colors
-
-```typescript
-const customHairColors = [
-    '#FF69B4',  // Hot pink
-    '#00CED1',  // Dark turquoise
-    '#9400D3'   // Dark violet
-];
-
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track,
-    {
-        extensions: {
-            appearance: {
-                hairColors: customHairColors
-            }
-        }
-    }
-);
-```
-
-#### Hair Styles
-
-```typescript
-const customHairStyles = ['mohawk', 'braided', 'pompadour', 'mullet'];
-
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track,
-    {
-        extensions: {
-            appearance: {
-                hairStyles: customHairStyles
-            }
-        }
-    }
-);
-```
-
-#### Eye Colors
-
-```typescript
-const customEyeColors = [
-    '#FF0000',  // Red
-    '#800080',  // Purple
-    '#C0C0C0'   // Silver
-];
-
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track,
-    {
-        extensions: {
-            appearance: {
-                eyeColors: customEyeColors
-            }
-        }
-    }
-);
-```
-
-#### Facial Features
-
-```typescript
-const customFacialFeatures = [
-    'crystal tattoo',
-    'runes on cheek',
-    'glowing eyes',
-    'fangs'
-];
-
-const character = CharacterGenerator.generate(
-    'my-seed',
-    audioProfile,
-    track,
-    {
-        extensions: {
-            appearance: {
-                facialFeatures: customFacialFeatures
-            }
-        }
-    }
-);
-
-// Weight features
-const manager = ExtensionManager.getInstance();
-manager.setWeights('appearance.facialFeatures', {
-    'crystal tattoo': 0.2,  // Very rare
-    'scar': 1.5             // Common
-});
-```
+**All appearance properties:** `bodyTypes`, `hairStyles`, `facialFeatures`, `skinTones`, `hairColors`, `eyeColors`
 
 ---
 
