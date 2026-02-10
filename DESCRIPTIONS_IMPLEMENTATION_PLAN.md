@@ -169,11 +169,13 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 `- [x] Verify build passes: `npm run build`
 
 #### Task 8: Magic Items
-- [ ] Move `MAGIC_ITEMS` from `src/utils/equipmentConstants.ts` to `src/constants/MagicItems.ts`.
-- [ ] **Find ALL files importing MAGIC_ITEMS**: `rg "MAGIC_ITEMS" --type ts`
-- [ ] Update **EACH** file to import from `../constants/MagicItems.js` instead
-- [ ] Remove `MAGIC_ITEMS` export from `src/utils/equipmentConstants.ts`
-`- [ ] Verify build passes: `npm run build`
+- [x] Move `MAGIC_ITEMS` from `src/utils/equipmentConstants.ts` to `src/constants/MagicItems.ts`.
+- [x] **Find ALL files importing MAGIC_ITEMS**: `rg "MAGIC_ITEMS" --type ts`
+- [x] Update **EACH** file to import from `../constants/MagicItems.js` instead
+    - Updated: `src/utils/magicItemExamples.ts`
+    - Updated: `src/index.ts`
+- [x] Remove `MAGIC_ITEMS` export from `src/utils/equipmentConstants.ts`
+- [x] Verify build passes: `npm run build`
 
 #### Task 9: Skills
 - [ ] Move `DEFAULT_SKILLS` from `src/core/skills/DefaultSkills.ts` to `src/constants/DefaultSkills.ts`.

@@ -2,10 +2,9 @@
  * Magic Item Helper Functions
  *
  * This file provides helper functions for working with magic items.
- * The actual magic item data and templates have been moved to equipmentConstants.ts.
  *
- * For the magic items collection, import MAGIC_ITEMS from './equipmentConstants.js'
- * For the templates collection, import ITEM_CREATION_TEMPLATES from './equipmentConstants.js'
+ * For the magic items collection, import MAGIC_ITEMS from '../constants/MagicItems.js'
+ * For the templates collection, import ITEM_CREATION_TEMPLATES from '../constants/ItemTemplates.js'
  *
  * Helper Functions:
  * - getMagicItem(name) - Get a specific magic item by name
@@ -19,9 +18,7 @@
  */
 
 import type { EnhancedEquipment } from '../core/types/Equipment.js';
-import {
-    MAGIC_ITEMS
-} from './equipmentConstants.js';
+import { MAGIC_ITEMS } from '../constants/MagicItems.js';
 import { ITEM_CREATION_TEMPLATES } from '../constants/ItemTemplates.js';
 
 /**

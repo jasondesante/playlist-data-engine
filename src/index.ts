@@ -453,9 +453,11 @@ export {
 } from './constants/DefaultEquipment.js';
 export {
     CLASS_STARTING_EQUIPMENT,
-    getClassStartingEquipment,
-    MAGIC_ITEMS
+    getClassStartingEquipment
 } from './utils/equipmentConstants.js';
+export {
+    MAGIC_ITEMS
+} from './constants/MagicItems.js';
 export {
     ITEM_CREATION_TEMPLATES
 } from './constants/ItemTemplates.js';
@@ -503,7 +505,7 @@ export type { DashboardConfig } from './utils/sensorDashboard.js';
 // ============================================================================
 // MAGIC ITEM HELPER FUNCTIONS
 // ============================================================================
-// Note: MAGIC_ITEMS and ITEM_CREATION_TEMPLATES constants are exported from equipmentConstants.js above
+// Note: MAGIC_ITEMS is exported from constants/MagicItems.js above
 // This file only provides helper functions for working with magic items
 
 export {
