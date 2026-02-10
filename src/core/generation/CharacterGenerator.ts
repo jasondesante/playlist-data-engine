@@ -3,7 +3,7 @@ import type { AudioProfile } from '../types/AudioProfile.js';
 import type { PlaylistTrack } from '../types/Playlist.js';
 import { SeededRNG } from '../../utils/random.js';
 import { NamingEngine } from './NamingEngine.js';
-import { getRaceData, getClassData, RACE_DATA, CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
+import { getRaceData, getClassData, CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
 import { RaceSelector } from './RaceSelector.js';
 import { ClassSuggester } from './ClassSuggester.js';
 import { AbilityScoreCalculator } from './AbilityScoreCalculator.js';

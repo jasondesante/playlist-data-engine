@@ -33,13 +33,16 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
     - Verified all imports work through the re-export in equipmentConstants.ts
 
 #### Task 3: Races
-- [ ] Move `RACE_DATA_IMPL` and `RACE_DATA` from `src/utils/constants.ts` to `src/constants/DefaultRaces.ts`.
-- [ ] Update imports in:
-    - [ ] `src/utils/constants.ts` (re-export)
-    - [ ] `src/core/generation/CharacterGenerator.ts`
-    - [ ] `src/core/extensions/initializeDefaults.ts`
-    - [ ] `src/core/features/FeatureQuery.ts`
-- [ ] Double check the imports to make sure there aren't any more that need updating.
+- [x] Move `RACE_DATA_IMPL` and `RACE_DATA` from `src/utils/constants.ts` to `src/constants/DefaultRaces.ts`.
+- [x] Update imports in:
+    - [x] `src/utils/constants.ts` (re-export)
+    - [x] `src/core/generation/CharacterGenerator.ts`
+    - [x] `src/core/extensions/initializeDefaults.ts`
+    - [x] `src/core/features/FeatureQuery.ts`
+- [x] Double check the imports to make sure there aren't any more that need updating.
+    - All imports work through the re-export in constants.ts
+    - Removed unused `RACE_DATA` import from CharacterGenerator.ts
+    - Added cache variables back to constants.ts for getClassDataAsync
 
 #### Task 4: Classes
 - [ ] Move `CLASS_DATA` from `src/utils/constants.ts` to `src/constants/DefaultClasses.ts`.
