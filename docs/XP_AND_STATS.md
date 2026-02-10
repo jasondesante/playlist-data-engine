@@ -165,13 +165,9 @@ celebrateLevelUp(bossResult, 'Boss Defeat'); // Reuses the celebration function 
 
 // ===== XP SOURCE TRACKING =====
 // Track where XP came from for analytics/achievements
-interface XPSource {
-    source: string;
-    amount: number;
-    timestamp: number;
-}
-
-const xpHistory: XPSource[] = [];
+// Note: XPSource is a custom application-level type (not from the engine)
+// Define it yourself based on your tracking needs:
+const xpHistory: Array<{ source: string; amount: number; timestamp: number }> = [];
 
 function addXPWithTracking(character: CharacterSheet, amount: number, source: string) {
     const result = updater.addXP(character, amount, source);
@@ -203,6 +199,10 @@ const questXP = xpHistory
 
 console.log(`Total Combat XP: ${combatXP}, Total Quest XP: ${questXP}`);
 ```
+
+**Type Reference:**
+- `CharacterUpdateResult` - Return type from `updateCharacterFromSession()` and `addXP()` - [*src/core/progression/CharacterUpdater.ts*](src/core/progression/CharacterUpdater.ts)
+- `LevelUpDetail` - Contains `fromLevel`, `toLevel`, `hpIncrease`, `statIncreases`, etc. - [*src/core/types/Progression.ts*](src/core/types/Progression.ts)
 
 **All XP Sources Return the Same Detailed Breakdown:**
 
@@ -488,10 +488,11 @@ The engine provides core stat manipulation but does NOT include:
 
 ```typescript
 // Your game's custom banked points system
-interface BankedPoints {
+// Note: These are custom application-level types (not from the engine)
+type BankedPoints = {
     available: number;
     history: Array<{ timestamp: number; source: string; amount: number }>;
-}
+};
 
 class CharacterWithBankedPoints {
     character: CharacterSheet;
@@ -574,6 +575,8 @@ const character = CharacterGenerator.generate(
 // Level 10: 450,000 XP
 // Proficiency: Level 1-2: 2, Level 3-4: 3, Level 5-6: 4, etc.
 ```
+
+**Type Reference:** `UncappedProgressionConfig` interface - [*src/core/progression/LevelUpProcessor.ts*](src/core/progression/LevelUpProcessor.ts)
 
 **Example: Exponential Scaling**
 
@@ -676,22 +679,8 @@ const customProgression = mergeProgressionConfig({
     }
 });
 
-// ===== CONFIGURATION INTERFACE =====
-interface ProgressionConfig {
-    xp: {
-        xp_per_second: number;
-        activity_bonuses: Record<string, number>;
-        max_multiplier: number;
-    };
-    statIncrease: {
-        strategy: 'dnD5e' | 'dnD5e_smart' | 'balanced' | ((...args: any[]) => any);
-        autoApply: boolean;
-    };
-    levelUp: {
-        useAverageHP: boolean;
-        allowManualStatSelection: boolean;
-    };
-}
+// For the complete `ProgressionConfig` interface definition, see:
+// [*src/core/config/progressionConfig.ts*](src/core/config/progressionConfig.ts)
 ```
 
 **Important Notes:**
@@ -699,7 +688,7 @@ interface ProgressionConfig {
 - Set configuration **before** generating characters or processing level-ups
 - `mergeProgressionConfig()` merges your settings with defaults - unset properties remain default
 
-**Available Exports:**
+**Available Exports:** [*src/core/config/progressionConfig.ts*](src/core/config/progressionConfig.ts)
 - `DEFAULT_PROGRESSION_CONFIG` - Default D&D 5e progression values
 - `mergeProgressionConfig(userConfig?)` - Merge progression config with defaults
 - `type ProgressionConfig` - Progression system configuration interface
