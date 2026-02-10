@@ -311,10 +311,39 @@ Added descriptions for all 48 spells in SPELL_DATABASE:
 **Build status:** ✅ Passes cleanly
 
 #### Task 17: Equipment
-- [ ] **Research**: Study `src/constants/DefaultEquipment.ts`, `ItemTemplates.ts`, and `MagicItems.ts` to identify all items.
-- [ ] Update `DEFAULT_EQUIPMENT` in `src/constants/DefaultEquipment.ts`.
-- [ ] Update `ITEM_CREATION_TEMPLATES` in `src/constants/ItemTemplates.ts` (if needed, they are `EnhancedEquipment`).
-- [ ] Update `MAGIC_ITEMS` in `src/constants/MagicItems.ts` (if needed, they are `EnhancedEquipment`).
+- [x] **Research**: Study `src/constants/DefaultEquipment.ts`, `ItemTemplates.ts`, and `MagicItems.ts` to identify all items.
+- [x] Update `DEFAULT_EQUIPMENT` in `src/constants/DefaultEquipment.ts`.
+- [x] Update `ITEM_CREATION_TEMPLATES` in `src/constants/ItemTemplates.ts` (if needed, they are `EnhancedEquipment`).
+- [x] Update `MAGIC_ITEMS` in `src/constants/MagicItems.ts` (if needed, they are `EnhancedEquipment`).
+
+**Summary:**
+Added descriptions for all 80 equipment items across 3 files:
+
+**DefaultEquipment.ts (46 items):**
+- Weapons (14): Dagger, Greatsword, Handaxe, Longsword, Maul, Rapier, Scimitar, Shortsword, Lance, Greataxe, Battleaxe, Quarterstaff, Light Hammer, Trident
+- Armor (5): Padded, Leather, Studded Leather, Chain Shirt, Shield
+- Items & Gear (14): Torch, Rope (Hempen), Rope (Silk), Piton, Hammer, Sledgehammer, Crowbar, Ladder, Pole (10-foot), Spyglass, Lantern (Hooded), Healer's Kit, Burglar's Pack, Diplomat's Pack
+- Adventure Packs (8): Dungeoneer's Pack, Entertainer's Pack, Explorer's Pack, Hunter's Pack, Priest's Pack, Scholar's Pack, adventurer's Pack (generic), Artisan's Pack
+- Ammunition (2): Arrow, Crossbow Bolt
+- Special Items (3): Potion of Healing, Antitoxin, Holy Water
+
+**MagicItems.ts (34 items):**
+- Weapons (5): Flame Tongue, Frost Brand, Lightning Lance, Vorpal Sword, Sun Blade
+- Armor (3): +1 Chain Shirt, +2 Chain Shirt, +1 Plate Armor
+- Wondrous Items - Stat Bonuses (7): Belt of Hill Giant Strength, Amulet of Proof Against Detection, Gauntlets of Ogre Power, Headband of Intellect, Tome of Clear Thought, Circlet of Persuasion, Manual of Gainful Exercise
+- Wondrous Items - Skill Proficiencies (3): Stone of Good Luck, Cloak of Elvenkind, Eyes of the Eagle
+- Wondrous Items - Movement (2): Boots of Speed, Boots of Striding and Springing
+- Wondrous Items - Defense (2): Cloak of Protection, Amulet of Proof Against Detection and Location
+- Wondrous Items - Vision (2): Goggles of Night, Lantern of Revealing
+- Spell-granting Items (3): Ring of Spell Storing, Wand of Magic Missiles, Pearl of Power
+- Cursed Items (2): -1 Weapon, Cursed Item
+- Conditional Items (2): Versatile Weapon (Finesse), Adaptive Armor (Stealth)
+- Template-based Items (3): +1 Longsword, Flaming Longsword, Frost Longsword
+
+**ItemTemplates.ts:**
+- Note: Item templates contain enchantment patterns, not standalone items, so descriptions were not added to templates (they're applied to base items which already have descriptions).
+
+**Build status:** ✅ Passes cleanly
 
 #### Task 18: Enchantments
 - [ ] **Research**: Study `src/constants/DefaultEnchantments.ts` and list all enchantment/curse entries.

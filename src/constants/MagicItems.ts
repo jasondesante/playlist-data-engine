@@ -44,6 +44,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         weight: 3,
         damage: { dice: '1d8', damageType: 'slashing', versatile: '1d10' },
         weaponProperties: ['finesse'],
+        description: 'A magic sword that can burst into flame, dealing extra fire damage and shedding light. The wielder can ignite or extinguish the flames as a bonus action.',
         properties: [
             {
                 type: 'damage_bonus',
@@ -91,6 +92,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         weight: 3,
         damage: { dice: '1d8', damageType: 'slashing', versatile: '1d10' },
         weaponProperties: ['finesse', 'versatile'],
+        description: 'A legendary weapon that decapitates creatures on a natural 20. One of the most powerful weapons in existence, capable of instantly slaying even the mightiest foes.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -122,6 +124,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         weight: 3,
         damage: { dice: '1d8', damageType: 'cold', versatile: '1d10' },
         weaponProperties: ['finesse', 'versatile'],
+        description: 'A freezing cold sword that deals extra cold damage and grants its wielder resistance to fire. Can extinguish non-magical flames with a mere thought.',
         properties: [
             {
                 type: 'damage_bonus',
@@ -158,6 +161,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         weight: 3,
         damage: { dice: '1d8', damageType: 'slashing', versatile: '1d10' },
         weaponProperties: ['finesse', 'versatile'],
+        description: 'A magical longsword enchanted against dragonkind. Deals devastating extra damage to dragons and glows in the presence of these ancient creatures.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -192,6 +196,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         rarity: 'uncommon',
         weight: 10,
         acBonus: 12,  // 12 + DEX (max 2)
+        description: 'Finely crafted armor made of mithral, a light and incredibly strong metal. Counts as light armor for all class features and imposes no disadvantage on Stealth.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -227,6 +232,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         rarity: 'rare',
         weight: 65,
         acBonus: 19,  // Base 18 + 1 enhancement
+        description: 'Magically enhanced plate armor that provides superior protection. The enchantment improves the armor\'s protective qualities while maintaining its strength requirement.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -262,6 +268,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         rarity: 'rare',
         weight: 20,
         acBonus: 16,
+        description: 'Exquisitely crafted elven armor that functions as light armor for all purposes. Can be worn even by those without armor proficiency and makes no sound when moved.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -306,6 +313,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'rare',
         weight: 1,
+        description: 'A belt woven from giant hair that grants the strength of a hill giant. While worn, your Strength score becomes 21, regardless of your actual strength.',
         properties: [
             {
                 type: 'stat_bonus',
@@ -330,6 +338,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 0.1,
+        description: 'A protective amulet that hides you from divination magic. Makes you difficult to detect through magical means and grants some protection against spells.',
         properties: [
             {
                 type: 'ability_unlock',
@@ -358,6 +367,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 0.1,
+        description: 'A forehead band embroidered with intellectual symbols. While worn, your Intelligence score becomes 19, making you brilliant regardless of your natural intellect.',
         properties: [
             {
                 type: 'stat_bonus',
@@ -385,6 +395,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 1,
+        description: 'Silent magical boots that make you an expert at stealth. Your steps make no sound, and you gain advantage or bonuses to Stealth checks.',
         grantsSkills: [
             { skillId: 'stealth', level: 'expertise' }
         ],
@@ -416,6 +427,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 0.1,
+        description: 'Magical gloves that make you a master of larceny. Grants expertise with thieves\' tools and proficiency in sleight of hand.',
         grantsSkills: [
             { skillId: 'thieves_tools', level: 'expertise' },
             { skillId: 'sleight_of_hand', level: 'proficient' }
@@ -446,6 +458,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'rare',
         weight: 1,
+        description: 'Magical boots that dramatically increase your speed and grant freedom of movement. You can dash as a bonus action and leave no trace when you walk.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -469,6 +482,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 1,
+        description: 'Magical boots that enhance your mobility. Move faster, jump farther, and require less running start for long and high jumps.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -503,6 +517,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'rare',
         weight: 1,
+        description: 'Magical boots that grant the power of flight. You can fly at will as a bonus action, though overuse temporarily exhausts their magic.',
         properties: [
             {
                 type: 'ability_unlock',
@@ -545,6 +560,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'rare',
         weight: 0.1,
+        description: 'A protective ring that enhances your defense. Grants a bonus to Armor Class and all saving throws, stacking with other protective items.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -575,6 +591,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 0.1,
+        description: 'A protective amulet that grants complete immunity to poison. Protects against both poison damage and the poisoned condition.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -603,6 +620,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 1,
+        description: 'A magical cloak that wraps you in protective energy. Grants bonuses to Armor Class and saving throws that stack with rings of protection.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -637,6 +655,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 0.1,
+        description: 'Magical lenses that grant darkvision. You can see in darkness as if it were dim light, out to a range of 60 feet.',
         properties: [
             {
                 type: 'ability_unlock',
@@ -659,6 +678,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 2,
+        description: 'A magical lantern that reveals invisible creatures and objects. Sheds light in a 60-foot radius and exposes anything hidden by illusion magic.',
         properties: [
             {
                 type: 'special_property',
@@ -691,6 +711,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'rare',
         weight: 0.1,
+        description: 'A magical ring that can store spells for later use. The caster places spells into the ring, and any creature can cast them regardless of class.',
         properties: [
             {
                 type: 'special_property',
@@ -716,6 +737,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 0.1,
+        description: 'A small pearl that glitters with magical energy. Once per day, you can use it to recover a spent 3rd level spell slot.',
         properties: [
             {
                 type: 'special_property',
@@ -739,6 +761,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 1,
+        description: 'A wand that fires unerring magic missiles. Contains 7 charges that refresh each dawn at sunrise.',
         properties: [
             {
                 type: 'special_property',
@@ -771,6 +794,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         weight: 3,
         damage: { dice: '1d8', damageType: 'slashing', versatile: '1d10' },
         weaponProperties: ['finesse', 'versatile'],
+        description: 'A maliciously enchanted sword that appears magical but impairs your combat abilities. Once attuned, it cannot be removed without breaking the curse.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -799,6 +823,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'uncommon',
         weight: 1,
+        description: 'A cursed belt that appears beneficial but actually drains your strength. Once donned, it cannot be removed until the curse is broken.',
         properties: [
             {
                 type: 'stat_bonus',
@@ -828,6 +853,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         type: 'item',
         rarity: 'rare',
         weight: 3,
+        description: 'A cursed helmet that slowly corrupts your alignment, turning you toward your moral opposite. Only detectable when it\'s too late.',
         properties: [
             {
                 type: 'special_property',
@@ -863,6 +889,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         weight: 2,
         damage: { dice: '1d4', damageType: 'slashing', versatile: '1d6' },
         weaponProperties: ['finesse', 'light', 'thrown'],
+        description: 'A druidic sickle blessed by moonlight. Deals extra radiant damage at night and gleams with silvery light when the moon is visible.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -894,6 +921,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         weight: 3,
         damage: { dice: '1d8', damageType: 'radiant', versatile: '1d10' },
         weaponProperties: ['finesse', 'versatile'],
+        description: 'A brilliant blade that thrives in sunlight but weakens in darkness. Deals devastating radiant damage during the day but becomes clumsy at night.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -937,6 +965,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         rarity: 'rare',
         weight: 40,
         acBonus: 15,
+        description: 'Magically crafted dwarven armor that only works properly for dwarf characters. Grants additional protection and saving throw bonuses to its intended users.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -975,6 +1004,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         weight: 4,
         damage: { dice: '1d6', damageType: 'bludgeoning', versatile: '1d8' },
         weaponProperties: ['versatile', 'two-handed'],
+        description: 'An arcane staff that enhances magical abilities for wizards. Grants bonuses to spell attacks and save DC, but only functions for wizards.',
         properties: [
             {
                 type: 'passive_modifier',
@@ -1012,6 +1042,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         damage: { dice: '1d8', damageType: 'slashing', versatile: '1d10' },
         weaponProperties: ['finesse', 'versatile'],
         templateId: 'flaming_weapon_template',
+        description: 'A longsword enchanted with fiery magic. Burns with magical flame and sheds light when its power is activated.',
         properties: [
             {
                 type: 'damage_bonus',
@@ -1043,6 +1074,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         damage: { dice: '1d8', damageType: 'cold', versatile: '1d10' },
         weaponProperties: ['finesse', 'versatile'],
         templateId: 'frost_weapon_template',
+        description: 'A longsword enchanted with icy magic. Freezes with cold power and can extinguish flames when wielded.',
         properties: [
             {
                 type: 'damage_bonus',
