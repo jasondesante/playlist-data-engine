@@ -143,6 +143,8 @@ Primary equipment type with advanced properties support. Extends base equipment 
 | `source` | `'default' \| 'custom'` | Source tracking |
 | `tags` | string[] | Search/filter tags |
 
+For an example of the `EnhancedEquipment` interface, see [Example 1: Comprehensive Custom Item](#example-1-comprehensive-custom-item).
+
 ---
 
 ## Equipment Properties
@@ -295,6 +297,8 @@ Equipment effects are tracked separately on the character for proper removal whe
 | features | EquipmentFeature[] | Features granted by this item |
 | skills | EquipmentSkill[] | Skills granted by this item |
 | spells | Array<{spellId, level?, uses?, recharge?}> | Spells granted by this item |
+
+For examples of equipment effects in use, see [Example 2: Enchanting Equipment](#example-2-enchanting-equipment) or [Example 8: Progressive Enchantment Through Gameplay](#example-8-progressive-enchantment-through-gameplay).
 
 ---
 
@@ -887,7 +891,7 @@ console.log(viciousTemplate.properties);
 
 Custom equipment is registered through the ExtensionManager or passed directly to `CharacterGenerator.generate()`. All custom equipment is automatically validated using `EquipmentValidator.validateEquipment()`. See [API Reference - EquipmentValidator](#api-reference) for validation methods.
 
-#### Example 1: Comprehensive Custom Item
+### Example 1: Comprehensive Custom Item
 
 This example shows a single item that combines multiple equipment capabilities—stat bonuses, AC bonuses, and skill proficiencies. You can include any or all of these properties on your custom items.
 
