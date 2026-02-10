@@ -38,8 +38,8 @@ import type {
     EnhancedEquipment
 } from '../core/types/Equipment.js';
 
-// Import DEFAULT_EQUIPMENT from the new location
-export { DEFAULT_EQUIPMENT } from '../constants/DefaultEquipment.js';
+// NOTE: DEFAULT_EQUIPMENT has been moved to src/constants/DefaultEquipment.ts
+// Please import DEFAULT_EQUIPMENT directly from '../constants/DefaultEquipment.js' instead
 
 // Re-export types for convenience
 export type {

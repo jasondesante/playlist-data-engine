@@ -6,7 +6,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { EquipmentGenerator } from '../../src/core/generation/EquipmentGenerator.js';
 import { SeededRNG } from '../../src/utils/random.js';
 import type { Class } from '../../src/core/types/Character.js';
-import { CLASS_STARTING_EQUIPMENT, DEFAULT_EQUIPMENT } from '../../src/utils/equipmentConstants.js';
+import { CLASS_STARTING_EQUIPMENT } from '../../src/utils/equipmentConstants.js';
+import { DEFAULT_EQUIPMENT } from '../../src/constants/DefaultEquipment.js';
 
 describe('EquipmentGenerator', () => {
     describe('getStartingEquipment', () => {

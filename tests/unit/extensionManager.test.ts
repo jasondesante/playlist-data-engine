@@ -12,7 +12,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ExtensionManager, type ExtensionCategory } from '../../src/core/extensions/ExtensionManager.js';
 import { SPELL_DATABASE, ALL_RACES, ALL_CLASSES, DEFAULT_RACE_DATA_ARRAY } from '../../src/utils/constants.js';
-import { DEFAULT_EQUIPMENT } from '../../src/utils/equipmentConstants.js';
+import { DEFAULT_EQUIPMENT } from '../../src/constants/DefaultEquipment.js';
 
 describe('ExtensionManager', () => {
     let manager: ExtensionManager;

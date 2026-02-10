@@ -15,7 +15,7 @@ import type { EnvironmentalContext } from '../types/Progression';
 import { InitiativeRoller } from './InitiativeRoller';
 import { AttackResolver } from './AttackResolver';
 import { SpellCaster } from './SpellCaster';
-import { DEFAULT_EQUIPMENT } from '../../utils/equipmentConstants.js';
+import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 import { SeededRNG } from '../../utils/random.js';
 
 /**

@@ -446,7 +446,9 @@ export {
 // ============================================================================
 
 export {
-    DEFAULT_EQUIPMENT,
+    DEFAULT_EQUIPMENT
+} from './constants/DefaultEquipment.js';
+export {
     CLASS_STARTING_EQUIPMENT,
     getClassStartingEquipment,
     MAGIC_ITEMS,
