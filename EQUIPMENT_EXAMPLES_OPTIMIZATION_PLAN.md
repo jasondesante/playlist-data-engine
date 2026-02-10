@@ -312,14 +312,16 @@ This section covers:
 
 ### Round 3: Concept Consolidation (Moderate Restructuring)
 
-#### Task 7: Consolidate template examples
-- [ ] Navigate to "Templates vs Instances" section (line ~615)
-- [ ] Rewrite as conceptual explanation only (no code blocks)
-- [ ] Explain the template vs instance concept in text
-- [ ] Add cross-reference: `// See Example 4 for code examples`
-- [ ] Keep the conceptual diagram if present
-- [ ] Remove any remaining code blocks from this section
-- [ ] Ensure Example 4 covers all template use cases
+#### Task 7: Consolidate template examples - **REVERTED** (content was unique, not duplicate)
+- [x] Navigate to "Templates vs Instances" section (line ~615)
+- [x] Rewrite as conceptual explanation only (no code blocks) - **REVERTED**
+- [x] Explain the template vs instance concept in text - **REVERTED**
+- [x] Add cross-reference: `// See Example 4 for code examples` - **REVERTED**
+- [x] Keep the conceptual diagram if present (N/A - no diagram existed)
+- [x] Remove any remaining code blocks from this section - **REVERTED**
+- [x] Ensure Example 4 covers all template use cases (confirmed - has both spawnFromTemplate and applyTemplate methods)
+
+**Note:** Task 7 was attempted but reverted. The "Per-Instance Modifications" and "Combined Effects" code examples are NOT covered in Example 4 (which is about templates). These are unique examples showing `instanceId` tracking and `getCombinedEffects()` usage. This section should be kept as-is.
 
 #### Task 8: Streamline Magic Item Examples section
 - [ ] Navigate to "Magic Item Examples" section (line ~887)
@@ -423,7 +425,7 @@ This section covers:
 **Round 2 Total: 30/30 checkboxes - ROUND 2 COMPLETE ✅**
 
 ### Round 3: Concept Consolidation
-- [ ] Task 7 (7 checkboxes)
+- [ ] Task 7 (7 checkboxes) - **REVERTED** (content was unique, not duplicate)
 - [ ] Task 8 (7 checkboxes)
 - [ ] Cross-Reference Updates (4 checkboxes)
 - [ ] Verification (4 checkboxes)

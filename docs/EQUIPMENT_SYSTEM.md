@@ -640,10 +640,7 @@ const allEffects = EquipmentModifier.getCombinedEffects(
 );
 ```
 
-### Spawn Weights
-
-
-#### Spawning with Weights
+### Spawning with Weights
 
 ```typescript
 // Spawn random items (respects weights)
