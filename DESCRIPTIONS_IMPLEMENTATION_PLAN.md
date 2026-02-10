@@ -20,13 +20,17 @@ This phase focuses on updating the TypeScript interfaces to support the `descrip
 To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable, we will move the large data objects to dedicated files in a new `src/constants` directory. This phase is broken down by data type, with specific tasks to update importing files.
 
 #### Task 2: Equipment
-- [ ] Move `DEFAULT_EQUIPMENT` from `src/utils/equipmentConstants.ts` to `src/constants/DefaultEquipment.ts`.
-- [ ] Update imports in:
-    - [ ] `src/utils/equipmentConstants.ts` (re-export or remove)
-    - [ ] `src/core/generation/EquipmentGenerator.ts`
-    - [ ] `src/core/combat/CombatEngine.ts`
-    - [ ] `src/core/extensions/initializeDefaults.ts`
-- [ ] Double check the imports to make sure there aren't any more that need updating.
+- [x] Move `DEFAULT_EQUIPMENT` from `src/utils/equipmentConstants.ts` to `src/constants/DefaultEquipment.ts`.
+- [x] Update imports in:
+    - [x] `src/utils/equipmentConstants.ts` (re-export or remove)
+    - [x] `src/core/generation/EquipmentGenerator.ts` - No changes needed, imports from equipmentConstants.ts which re-exports
+    - [x] `src/core/combat/CombatEngine.ts` - No changes needed, imports from equipmentConstants.ts which re-exports
+    - [x] `src/core/extensions/initializeDefaults.ts` - No changes needed, imports from equipmentConstants.ts which re-exports
+    - [x] `src/core/equipment/EquipmentSpawnHelper.ts` - No changes needed, imports from equipmentConstants.ts which re-exports
+    - [x] `src/index.ts` - No changes needed, imports from equipmentConstants.ts which re-exports
+    - [x] Test files - No changes needed, imports from equipmentConstants.ts which re-exports
+- [x] Double check the imports to make sure there aren't any more that need updating.
+    - Verified all imports work through the re-export in equipmentConstants.ts
 
 #### Task 3: Races
 - [ ] Move `RACE_DATA_IMPL` and `RACE_DATA` from `src/utils/constants.ts` to `src/constants/DefaultRaces.ts`.
