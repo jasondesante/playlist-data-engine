@@ -201,11 +201,25 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 
 #### Task 11: Helper Functions Assessment
 After moving all data, assess what remains in `src/utils/constants.ts`:
-- [ ] Review `src/utils/constants.ts` - identify what helper functions remain
-- [ ] If `getClassData`, `getClassDataAsync`, `getClassSpellList`, `getSpellSlotsForClass` are still needed:
-    - [ ] Consider moving them to a more appropriate location (e.g., `src/utils/classHelpers.ts`)
-    - [ ] OR keep them in constants.ts if that makes sense, but update internal imports properly
-- [ ] Document what functions remain and why
+- [x] Review `src/utils/constants.ts` - identify what helper functions remain
+- [x] If `getClassData`, `getClassDataAsync`, `getClassSpellList`, `getSpellSlotsForClass` are still needed:
+    - [x] Consider moving them to a more appropriate location (e.g., `src/utils/classHelpers.ts`)
+    - [x] OR keep them in constants.ts if that makes sense, but update internal imports properly
+- [x] Document what functions remain and why
+
+**Assessment Results:**
+The helper functions (`getClassData`, `getClassDataAsync`, `getClassSpellList`, `getSpellSlotsForClass`) will **remain in `src/utils/constants.ts`** because:
+1. They are data accessor functions that work with core D&D 5e constants - logically "constants utilities"
+2. Backward compatibility: codebase has many imports from this location
+3. Single source of truth for class/spell data access
+4. File is now well-organized after migrations
+
+**Remaining contents of `src/utils/constants.ts`:**
+- **Helper Functions**: `getClassData`, `getClassDataAsync`, `getClassSpellList`, `getSpellSlotsForClass`
+- **Type Exports**: `ClassDataEntry`, `Equipment`, `Spell`, `SpellPrerequisite` (backward compatibility)
+- **Constants**: `XP_THRESHOLDS`, `PROFICIENCY_BONUS`, `ALL_RACES`, `NAMING_DATA`, `ADJECTIVE_DATA`, `SKILL_ABILITY_MAP`
+- **Internal Imports**: `CLASS_DATA`, `CLASS_SPELL_LISTS`, `SPELL_SLOTS_BY_CLASS` (for helper function use only)
+- **Internal State**: `extensionManagerModule`, `extensionManagerPromise` (caching)
 
 #### Task 12: Test File Import Updates
 - [ ] Find all test files with old import paths: `rg "from ['\"].*utils/constants['\"]" tests/ --type ts`
