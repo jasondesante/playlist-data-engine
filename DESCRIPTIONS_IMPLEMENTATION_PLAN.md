@@ -243,8 +243,22 @@ All moved data (RACES, CLASSES, SPELLS, EQUIPMENT, ENCHANTMENTS, SKILLS, FEATURE
 This phase involves adding the actual description text to the newly organized files.
 
 #### Task 13: Races
-- [ ] **Research**: Study `src/constants/DefaultRaces.ts` and list all race entries requiring descriptions.
-- [ ] Update `RACE_DATA_IMPL` in `src/constants/DefaultRaces.ts` with descriptions.
+- [x] **Research**: Study `src/constants/DefaultRaces.ts` and list all race entries requiring descriptions.
+- [x] Update `RACE_DATA_IMPL` in `src/constants/DefaultRaces.ts` with descriptions.
+
+**Summary:**
+Added descriptions for all 9 races in RACE_DATA_IMPL:
+- Human: Emphasize versatility and ambition
+- Elf: Fey ancestry, grace, and connection to nature
+- Dwarf: Clan tradition, craftsmanship, and resilience
+- Halfling: Luck, comfort, and avoiding notice
+- Dragonborn: Draconic heritage, honor, and pride
+- Gnome: Curiosity, inventions, and magical affinity
+- Half-Elf: Bridge between cultures, charisma and adaptability
+- Half-Orc: Physical prowess, outcasts turned loyal companions
+- Tiefling: Infernal heritage, overcoming prejudice
+
+**Build status:** ✅ Passes cleanly
 
 #### Task 14: Classes
 - [ ] **Research**: Study `src/constants/DefaultClasses.ts` and list all class entries requiring descriptions.
