@@ -8,7 +8,9 @@
 
 import { ExtensionManager } from './ExtensionManager.js';
 import type { ExtensionCategory } from './ExtensionManager.js';
-import { SPELL_DATABASE, CLASS_SPELL_LISTS, ALL_RACES, ALL_CLASSES, DEFAULT_RACE_DATA_ARRAY } from '../../utils/constants.js';
+import { ALL_RACES, DEFAULT_RACE_DATA_ARRAY } from '../../utils/constants.js';
+import { SPELL_DATABASE, CLASS_SPELL_LISTS } from '../../constants/DefaultSpells.js';
+import { ALL_CLASSES } from '../../constants/DefaultClasses.js';
 import { DEFAULT_EQUIPMENT } from '../../utils/equipmentConstants.js';
 import type { Class } from '../types/Character.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../constants/DefaultFeatures.js';

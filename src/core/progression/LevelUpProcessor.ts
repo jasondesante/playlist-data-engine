@@ -11,7 +11,8 @@
  */
 
 import type { CharacterSheet, Class as CharacterClass, Ability, GameMode } from '../types/Character.js';
-import { CLASS_DATA, PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
+import { PROFICIENCY_BONUS, XP_THRESHOLDS } from '../../utils/constants.js';
+import { CLASS_DATA } from '../../constants/DefaultClasses.js';
 import { SeededRNG } from '../../utils/random.js';
 import type { StatManager } from './stat/StatManager.js';
 import { FeatureQuery } from '../features/FeatureQuery.js';

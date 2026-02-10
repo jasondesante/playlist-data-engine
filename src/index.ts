@@ -116,7 +116,7 @@ export type {
     ContentPackData
 } from './core/extensions/ExtensionManager.js';
 
-export type { RaceDataEntry, CustomRaceDataEntry, ClassDataEntry, ClassSpellListData, Equipment } from './utils/constants.js';
+export type { RaceDataEntry, CustomRaceDataEntry, ClassDataEntry, Equipment } from './utils/constants.js';
 
 // Environmental types
 export type {
@@ -402,21 +402,40 @@ export {
 // CONSTANTS
 // ============================================================================
 
+// Race data and helper functions
 export {
     RACE_DATA,
-    CLASS_DATA,
     ALL_RACES,
+    getRaceData,
+    getRaceDataAsync
+} from './utils/constants.js';
+
+// Class data and related constants
+export {
+    CLASS_DATA,
     ALL_CLASSES,
-    XP_THRESHOLDS,
-    PROFICIENCY_BONUS,
-    SKILL_ABILITY_MAP,
+    CLASS_AUDIO_PREFERENCES
+} from './constants/DefaultClasses.js';
+
+// Spell data and related constants
+export {
     SPELL_DATABASE,
     CLASS_SPELL_LISTS,
     SPELL_SLOTS_BY_CLASS,
+    type ClassSpellListData
+} from './constants/DefaultSpells.js';
+
+// XP and progression constants (still in constants.ts)
+export {
+    XP_THRESHOLDS,
+    PROFICIENCY_BONUS,
+    SKILL_ABILITY_MAP,
     MASTERY_THRESHOLD,
-    MASTERY_BONUS_XP,
-    getRaceData,
-    getRaceDataAsync,
+    MASTERY_BONUS_XP
+} from './utils/constants.js';
+
+// Helper functions (still in constants.ts)
+export {
     getClassData,
     getClassSpellList,
     getSpellSlotsForClass

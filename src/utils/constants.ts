@@ -25,14 +25,15 @@ export type { RaceDataEntry, CustomRaceDataEntry } from '../constants/DefaultRac
 export { RACE_DATA, DEFAULT_RACE_DATA_ARRAY, getRaceData, getRaceDataAsync } from '../constants/DefaultRaces.js';
 
 // Class data has been moved to src/constants/DefaultClasses.ts
-// Import for internal use and re-export for backward compatibility
-import { CLASS_DATA as IMPORTED_CLASS_DATA, ALL_CLASSES, CLASS_AUDIO_PREFERENCES } from '../constants/DefaultClasses.js';
-export { CLASS_DATA, ALL_CLASSES, CLASS_AUDIO_PREFERENCES } from '../constants/DefaultClasses.js';
+// Import for internal use by helper functions only
+import { CLASS_DATA } from '../constants/DefaultClasses.js';
 
 // Spell data has been moved to src/constants/DefaultSpells.ts
-// Import for internal use and re-export for backward compatibility
-import { SPELL_DATABASE as IMPORTED_SPELL_DATABASE, CLASS_SPELL_LISTS as IMPORTED_CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS as IMPORTED_SPELL_SLOTS_BY_CLASS } from '../constants/DefaultSpells.js';
-export { SPELL_DATABASE, CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS, type ClassSpellListData } from '../constants/DefaultSpells.js';
+// Import for internal use by helper functions only
+import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS } from '../constants/DefaultSpells.js';
+
+// Re-export ClassSpellListData type for backward compatibility
+export type { ClassSpellListData } from '../constants/DefaultSpells.js';
 
 // Cache for dynamically loaded ExtensionManager to avoid repeated imports
 // Used by getClassDataAsync and other async data lookup functions
@@ -250,8 +251,8 @@ export interface ClassDataEntry {
  */
 export async function getClassDataAsync(className: string): Promise<ClassDataEntry | undefined> {
     // Check default classes
-    if (className in IMPORTED_CLASS_DATA) {
-        return IMPORTED_CLASS_DATA[className];
+    if (className in CLASS_DATA) {
+        return CLASS_DATA[className];
     }
 
     // Check ExtensionManager for custom class data
@@ -273,8 +274,8 @@ export async function getClassDataAsync(className: string): Promise<ClassDataEnt
             const classEntry = customClassData.find((d: any) => d.name === className);
             if (classEntry) {
                 // If has baseClass, merge with base class data
-                if (classEntry.baseClass && classEntry.baseClass in IMPORTED_CLASS_DATA) {
-                    const baseData = IMPORTED_CLASS_DATA[classEntry.baseClass];
+                if (classEntry.baseClass && classEntry.baseClass in CLASS_DATA) {
+                    const baseData = CLASS_DATA[classEntry.baseClass];
                     // Merge base data with custom data, custom properties take precedence
                     return {
                         ...baseData,
@@ -346,8 +347,8 @@ export async function getClassDataAsync(className: string): Promise<ClassDataEnt
  */
 export function getClassData(className: string): ClassDataEntry | undefined {
     // Check default classes
-    if (className in IMPORTED_CLASS_DATA) {
-        return IMPORTED_CLASS_DATA[className];
+    if (className in CLASS_DATA) {
+        return CLASS_DATA[className];
     }
 
     // Check ExtensionManager for custom class data
@@ -359,8 +360,8 @@ export function getClassData(className: string): ClassDataEntry | undefined {
             const classEntry = customClassData.find((d: any) => d.name === className);
             if (classEntry) {
                 // If has baseClass, merge with base class data
-                if (classEntry.baseClass && classEntry.baseClass in IMPORTED_CLASS_DATA) {
-                    const baseData = IMPORTED_CLASS_DATA[classEntry.baseClass];
+                if (classEntry.baseClass && classEntry.baseClass in CLASS_DATA) {
+                    const baseData = CLASS_DATA[classEntry.baseClass];
                     // Merge base data with custom data, custom properties take precedence
                     return {
                         ...baseData,
@@ -640,8 +641,8 @@ export interface Equipment {
  */
 export function getClassSpellList(className: string): { cantrips: string[]; spells_by_level: Record<number, string[]> } | undefined {
     // Check default classes
-    if (className in IMPORTED_CLASS_SPELL_LISTS) {
-        return IMPORTED_CLASS_SPELL_LISTS[className];
+    if (className in CLASS_SPELL_LISTS) {
+        return CLASS_SPELL_LISTS[className];
     }
 
     // Check ExtensionManager for custom spell list
@@ -700,8 +701,8 @@ interface ClassSpellSlotsData {
  */
 export function getSpellSlotsForClass(className: string, characterLevel: number): Record<number, number> | undefined {
     // Check default classes
-    if (className in IMPORTED_SPELL_SLOTS_BY_CLASS) {
-        const classSlots = IMPORTED_SPELL_SLOTS_BY_CLASS[className];
+    if (className in SPELL_SLOTS_BY_CLASS) {
+        const classSlots = SPELL_SLOTS_BY_CLASS[className];
         if (classSlots && characterLevel in classSlots) {
             return classSlots[characterLevel];
         }

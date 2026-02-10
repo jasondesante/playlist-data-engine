@@ -8,7 +8,7 @@ import type { AudioProfile } from '../types/AudioProfile.js';
 import { SeededRNG } from '../../utils/random.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureClassDefaultsInitialized } from '../extensions/initializeDefaults.js';
-import { CLASS_AUDIO_PREFERENCES } from '../../utils/constants.js';
+import { CLASS_AUDIO_PREFERENCES } from '../../constants/DefaultClasses.js';
 
 /**
  * Audio trait types for class preference mapping

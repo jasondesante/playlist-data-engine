@@ -4,7 +4,8 @@
 
 import type { Class, CharacterSheet } from '../types/Character.js';
 // import type { SeededRNG } from '../../utils/random.js';
-import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS, SPELL_DATABASE, getClassSpellList, getSpellSlotsForClass } from '../../utils/constants.js';
+import { getClassSpellList, getSpellSlotsForClass } from '../../utils/constants.js';
+import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS, SPELL_DATABASE } from '../../constants/DefaultSpells.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureSpellDefaultsInitialized } from '../extensions/initializeDefaults.js';
 import { SpellValidator } from '../spells/SpellValidator.js';

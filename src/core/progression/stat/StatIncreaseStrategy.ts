@@ -22,7 +22,7 @@ import type {
     StatIncreaseStrategyType,
     StatIncreaseFunction
 } from '../../types/Progression.js';
-import { CLASS_DATA } from '../../../utils/constants.js';
+import { CLASS_DATA } from '../../../constants/DefaultClasses.js';
 
 /**
  * D&D 5e Standard Strategy
