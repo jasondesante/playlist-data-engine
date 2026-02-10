@@ -8,13 +8,13 @@ The goal is to ensure every entity in the Playlist Data Engine (Items, Spells, S
 ### Phase 1: Interfaces & Schema Updates
 This phase focuses on updating the TypeScript interfaces to support the `description` field.
 
-#### Task 1: 
+#### Task 1:
 
-- [ ] **Races**: Update `RaceDataEntry` in `src/utils/constants.ts` to include `description: string`.
-- [ ] **Classes**: Update `ClassDataEntry` in `src/utils/constants.ts` to include `description: string`.
-- [ ] **Equipment**: Update `Equipment` interface in `src/utils/constants.ts` to include `description?: string`.
+- [x] **Races**: Update `RaceDataEntry` in `src/utils/constants.ts` to include `description?: string`.
+- [x] **Classes**: Update `ClassDataEntry` in `src/utils/constants.ts` to include `description?: string`.
+- [x] **Equipment**: Update `Equipment` interface in `src/utils/constants.ts` to include `description?: string`.
     *   *Note*: `EnhancedEquipment` in `src/core/types/Equipment.ts` inherits from this, so it will automatically get the field.
-- [ ] **Enchantments**: Update `EquipmentModification` interface in `src/core/types/Equipment.ts` to include `description?: string`.
+- [x] **Enchantments**: Update `EquipmentModification` interface in `src/core/types/Equipment.ts` to include `description?: string`.
 
 ### Phase 2: File Organization
 To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable, we will move the large data objects to dedicated files in a new `src/constants` directory. This phase is broken down by data type, with specific tasks to update importing files.

@@ -113,6 +113,9 @@ export interface EquipmentModification {
     }>;
     appliedAt: string;
     source: string;
+
+    /** Optional: User-facing description of this modification */
+    description?: string;
 }
 
 /**

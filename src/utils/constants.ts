@@ -40,8 +40,20 @@ export interface RaceDataEntry {
 
     /** Optional: Available subraces for this race */
     subraces?: string[];
+
+    /** Optional: User-facing description of this race */
+    description?: string;
 }
 
+/**
+ * Custom race data entry interface
+ *
+ * Defines the structure for custom race data registered via ExtensionManager.
+ * Unlike RaceDataEntry (used for default races), custom races are stored as
+ * an array where each entry includes the race name as a property.
+ *
+ * Used by the 'races.data' category in ExtensionManager.
+ */
 /**
  * Custom race data entry interface
  *
@@ -368,6 +380,9 @@ export interface ClassDataEntry {
         mid?: number;
         amplitude?: number;
     };
+
+    /** Optional: User-facing description of this class */
+    description?: string;
 }
 
 /**
@@ -1411,6 +1426,9 @@ export interface Equipment {
     source?: 'default' | 'custom';
 
     tags?: string[];
+
+    /** Optional: User-facing description of this equipment */
+    description?: string;
 }
 
 // ===== Helper Functions for Custom Class Data =====
