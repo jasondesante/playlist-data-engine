@@ -3,176 +3,240 @@
 ## 1. Executive Summary
 The goal is to ensure every entity in the Playlist Data Engine (Items, Spells, Skills, Features, Classes, Races) possesses a user-facing `description` field. This document organizes the work into clear phases.
 
-## 2. Implementation Phases
+## 2. MIGRATION STANDARD (READ THIS FIRST)
 
-### Phase 1: Interfaces & Schema Updates
+### The Golden Rule
+**When moving data to new files, ALL import statements across the codebase must be updated to point to the new location.**
+
+### FORBIDDEN PATTERNS (Do NOT do this)
+```typescript
+// LAZY - Don't do this
+import { THING as IMPORTED_THING } from '../constants/DefaultThing.js';
+export { THING } from '../constants/DefaultThing.js';
+
+// ALSO LAZY - Don't do this
+export { THING } from '../constants/DefaultThing.js';  // Just re-exporting, not updating actual consumers
+```
+
+### REQUIRED PATTERN
+1. Move data to new file (e.g., `src/constants/DefaultThing.ts`)
+2. Find **ALL** files importing from old location using: `rg "from ['\"].*oldLocation['\"]" --type ts`
+3. Update **EACH** import to point to new location
+4. Remove old imports/exports from old location
+5. Run `npm run build` to verify nothing breaks
+6. Run tests to verify behavior is unchanged
+
+### How to Find All Files Needing Import Updates
+```bash
+# For things moved from constants.ts
+rg "from ['\"].*utils/constants['\"]" --type ts
+
+# For things moved from equipmentConstants.ts
+rg "from ['\"].*utils/equipmentConstants['\"]" --type ts
+
+# For things moved from DefaultFeatures.ts
+rg "from ['\"].*DefaultFeatures['\"]" --type ts
+```
+
+## 3. Implementation Phases
+
+### Phase 1: Fix Existing Lazy Re-Exports (DO THIS FIRST)
+**Before moving anything else, clean up the existing lazy re-export mess in constants.ts.**
+
+#### Task 1: Clean Up Lazy Imports in constants.ts
+- [ ] **Remove unused Class imports**: Delete `ALL_CLASSES` and `CLASS_AUDIO_PREFERENCES` from the Class import line in constants.ts (lines 29-30) - these are NEVER referenced.
+- [ ] **Remove unused Spell imports**: Delete `IMPORTED_SPELL_DATABASE` from the Spell import line in constants.ts (line 34) - this is NEVER referenced.
+- [ ] **Remove ALL re-export lines**: Delete lines 30 and 35 (the `export { ... } from '../constants/DefaultXXX.js'` lines).
+- [ ] **Rename remaining imports**: Change `IMPORTED_CLASS_DATA` → `CLASS_DATA`, `IMPORTED_CLASS_SPELL_LISTS` → `CLASS_SPELL_LISTS`, `IMPORTED_SPELL_SLOTS_BY_CLASS` → `SPELL_SLOTS_BY_CLASS` (remove the stupid `as IMPORTED_*` naming since we're not re-exporting).
+- [ ] **After cleanup**, constants.ts lines 27-35 should look like:
+  ```typescript
+  // Class data has been moved to src/constants/DefaultClasses.ts
+  // Import for internal use by helper functions only
+  import { CLASS_DATA } from '../constants/DefaultClasses.js';
+
+  // Spell data has been moved to src/constants/DefaultSpells.ts
+  // Import for internal use by helper functions only
+  import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS } from '../constants/DefaultSpells.js';
+  ```
+- [ ] **Verify build**: Run `npm run build` - if it fails, find the files still importing from old locations and update them instead of restoring re-exports.
+- [ ] **Run tests**: `npm test` to ensure nothing broke.
+
+---
+
+### Phase 1.5: Interfaces & Schema Updates
 This phase focuses on updating the TypeScript interfaces to support the `description` field.
 
-#### Task 1:
-
+#### Task 1.5: Interface Updates
 - [x] **Races**: Update `RaceDataEntry` in `src/utils/constants.ts` to include `description?: string`.
 - [x] **Classes**: Update `ClassDataEntry` in `src/utils/constants.ts` to include `description?: string`.
 - [x] **Equipment**: Update `Equipment` interface in `src/utils/constants.ts` to include `description?: string`.
     *   *Note*: `EnhancedEquipment` in `src/core/types/Equipment.ts` inherits from this, so it will automatically get the field.
 - [x] **Enchantments**: Update `EquipmentModification` interface in `src/core/types/Equipment.ts` to include `description?: string`.
 
-### Phase 2: File Organization
-To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable, we will move the large data objects to dedicated files in a new `src/constants` directory. This phase is broken down by data type, with specific tasks to update importing files.
+---
 
-#### Task 2: Equipment
+### Phase 2: File Organization - PROPER MIGRATION
+**PREVIOUSLY "DONE" TASKS MUST BE REDONE PROPERLY**
+
+To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable, we will move the large data objects to dedicated files in a new `src/constants` directory.
+
+**IMPORTANT**: Tasks 2-6 below were previously marked "complete" but used lazy re-exports. They must be redone.
+
+#### Task 2: Equipment (REDO)
 - [x] Move `DEFAULT_EQUIPMENT` from `src/utils/equipmentConstants.ts` to `src/constants/DefaultEquipment.ts`.
-- [x] Update imports in:
-    - [x] `src/utils/equipmentConstants.ts` (re-export or remove)
-    - [x] `src/core/generation/EquipmentGenerator.ts` - No changes needed, imports from equipmentConstants.ts which re-exports
-    - [x] `src/core/combat/CombatEngine.ts` - No changes needed, imports from equipmentConstants.ts which re-exports
-    - [x] `src/core/extensions/initializeDefaults.ts` - No changes needed, imports from equipmentConstants.ts which re-exports
-    - [x] `src/core/equipment/EquipmentSpawnHelper.ts` - No changes needed, imports from equipmentConstants.ts which re-exports
-    - [x] `src/index.ts` - No changes needed, imports from equipmentConstants.ts which re-exports
-    - [x] Test files - No changes needed, imports from equipmentConstants.ts which re-exports
-- [x] Double check the imports to make sure there aren't any more that need updating.
-    - Verified all imports work through the re-export in equipmentConstants.ts
+- [ ] **Find ALL files importing DEFAULT_EQUIPMENT**: `rg "DEFAULT_EQUIPMENT" --type ts`
+- [ ] Update **EACH** file to import from `../constants/DefaultEquipment.js` instead
+- [ ] Remove `DEFAULT_EQUIPMENT` export from `src/utils/equipmentConstants.ts`
+- [ ] Verify build passes: `npm run build`
 
-#### Task 3: Races
+#### Task 3: Races (REDO)
 - [x] Move `RACE_DATA_IMPL` and `RACE_DATA` from `src/utils/constants.ts` to `src/constants/DefaultRaces.ts`.
-- [x] Update imports in:
-    - [x] `src/utils/constants.ts` (re-export)
-    - [x] `src/core/generation/CharacterGenerator.ts`
-    - [x] `src/core/extensions/initializeDefaults.ts`
-    - [x] `src/core/features/FeatureQuery.ts`
-- [x] Double check the imports to make sure there aren't any more that need updating.
-    - All imports work through the re-export in constants.ts
-    - Removed unused `RACE_DATA` import from CharacterGenerator.ts
-    - Added cache variables back to constants.ts for getClassDataAsync
+- [ ] **Find ALL files importing RACE_DATA or RACE_DATA_IMPL**: `rg "RACE_DATA" --type ts`
+- [ ] Update **EACH** file to import from `../constants/DefaultRaces.js` instead
+- [ ] Remove `RACE_DATA`, `RACE_DATA_IMPL`, `DEFAULT_RACE_DATA_ARRAY`, `getRaceData`, `getRaceDataAsync` exports from `src/utils/constants.ts`
+- [ ] Verify build passes: `npm run build`
 
-#### Task 4: Classes
+#### Task 4: Classes (REDO)
 - [x] Move `CLASS_DATA` from `src/utils/constants.ts` to `src/constants/DefaultClasses.ts`.
-- [x] Update imports in:
-    - [x] `src/utils/constants.ts` (re-export)
-    - [x] `src/core/generation/CharacterGenerator.ts` - No changes needed, imports from constants.ts which re-exports
-    - [x] `src/core/progression/LevelUpProcessor.ts` - No changes needed, imports from constants.ts which re-exports
-    - [x] `src/core/progression/stat/StatIncreaseStrategy.ts` - No changes needed, imports from constants.ts which re-exports
-- [x] Double check the imports to make sure there aren't any more that need updating.
-    - All imports work through the re-export in constants.ts
+- [ ] **Find ALL files importing CLASS_DATA or ALL_CLASSES**: `rg "CLASS_DATA|ALL_CLASSES|CLASS_AUDIO_PREFERENCES" --type ts`
+- [ ] Update **EACH** file to import from `../constants/DefaultClasses.js` instead
+- [ ] For helper functions in `src/utils/constants.ts` that need CLASS_DATA internally:
+    - Import ONLY what's needed for internal use: `import { CLASS_DATA } from '../constants/DefaultClasses.js'`
+    - Do NOT re-export
+- [ ] Remove `CLASS_DATA`, `ALL_CLASSES`, `CLASS_AUDIO_PREFERENCES` re-exports from `src/utils/constants.ts`
+- [ ] Verify build passes: `npm run build`
 
-#### Task 5: Spells
+#### Task 5: Spells (REDO)
 - [x] Move `SPELL_DATABASE` from `src/utils/constants.ts` to `src/constants/DefaultSpells.ts`.
-- [x] Update imports in:
-    - [x] `src/utils/constants.ts` (re-export)
-    - [x] `src/core/generation/SpellManager.ts` - No changes needed, imports from constants.ts which re-exports
-    - [x] `src/core/extensions/initializeDefaults.ts` - No changes needed, imports from constants.ts which re-exports
-- [x] Double check the imports to make sure there aren't any more that need updating.
-    - All imports work through the re-export in constants.ts
-    - Added internal imports for use in helper functions (getClassSpellList, getSpellSlotsForClass)
+- [ ] **Find ALL files importing SPELL_DATABASE or related**: `rg "SPELL_DATABASE|CLASS_SPELL_LISTS|SPELL_SLOTS_BY_CLASS" --type ts`
+- [ ] Update **EACH** file to import from `../constants/DefaultSpells.js` instead
+- [ ] For helper functions in `src/utils/constants.ts` that need these internally:
+    - Import ONLY what's needed for internal use
+    - Do NOT re-export
+- [ ] Remove spell-related re-exports from `src/utils/constants.ts`
+- [ ] Verify build passes: `npm run build`
 
-#### Task 6: Enchantments
+#### Task 6: Enchantments (REDO)
 - [x] Move `ENCHANTMENT_LIBRARY` from `src/utils/equipmentConstants.ts` to `src/constants/DefaultEnchantments.ts`.
-- [x] Update imports in:
-    - [x] `src/utils/equipmentConstants.ts` (re-export)
-    - [x] `src/utils/EnchantmentLibrary.ts`
-- [x] Double check the imports to make sure there aren't any more that need updating.
-    - All imports work through the re-export in equipmentConstants.ts
-    - Created src/constants/DefaultEnchantments.ts with ENCHANTMENT_LIBRARY and stat boosting factory functions
-    - Updated documentation in EnchantmentLibrary.ts to reflect new location
+- [ ] **Find ALL files importing ENCHANTMENT_LIBRARY**: `rg "ENCHANTMENT_LIBRARY" --type ts`
+- [ ] Update **EACH** file to import from `../constants/DefaultEnchantments.js` instead
+- [ ] Remove `ENCHANTMENT_LIBRARY` export from `src/utils/equipmentConstants.ts`
+- [ ] Verify build passes: `npm run build`
 
 #### Task 7: Item Templates
 - [ ] Move `ITEM_CREATION_TEMPLATES` from `src/utils/equipmentConstants.ts` to `src/constants/ItemTemplates.ts`.
-- [ ] Update imports in:
-    - [x] `src/utils/equipmentConstants.ts` (re-export)
-- [x] Double check the imports to make sure there aren't any more that need updating.
-    - All imports work through the re-export in equipmentConstants.ts
-    - Created src/constants/DefaultEnchantments.ts with ENCHANTMENT_LIBRARY and stat boosting factory functions
-    - Updated documentation in EnchantmentLibrary.ts to reflect new location
+- [ ] **Find ALL files importing ITEM_CREATION_TEMPLATES**: `rg "ITEM_CREATION_TEMPLATES" --type ts`
+- [ ] Update **EACH** file to import from `../constants/ItemTemplates.js` instead
+- [ ] Remove `ITEM_CREATION_TEMPLATES` export from `src/utils/equipmentConstants.ts`
+- [ ] Verify build passes: `npm run build`
 
 #### Task 8: Magic Items
 - [ ] Move `MAGIC_ITEMS` from `src/utils/equipmentConstants.ts` to `src/constants/MagicItems.ts`.
-- [x] Update imports in:
-    - [x] `src/utils/equipmentConstants.ts` (re-export)
-    - [ ] `src/utils/magicItemExamples.ts`
-- [x] Double check the imports to make sure there aren't any more that need updating.
-    - All imports work through the re-export in equipmentConstants.ts
-    - Created src/constants/DefaultEnchantments.ts with ENCHANTMENT_LIBRARY and stat boosting factory functions
-    - Updated documentation in EnchantmentLibrary.ts to reflect new location
-
+- [ ] **Find ALL files importing MAGIC_ITEMS**: `rg "MAGIC_ITEMS" --type ts`
+- [ ] Update **EACH** file to import from `../constants/MagicItems.js` instead
+- [ ] Remove `MAGIC_ITEMS` export from `src/utils/equipmentConstants.ts`
+- [ ] Verify build passes: `npm run build`
 
 #### Task 9: Skills
 - [ ] Move `DEFAULT_SKILLS` from `src/core/skills/DefaultSkills.ts` to `src/constants/DefaultSkills.ts`.
-- [x] Update imports in:
-    - [ ] `src/core/skills/DefaultSkills.ts` (re-export or remove)
-    - [ ] `src/core/skills/index.ts`
-    - [ ] `src/core/extensions/initializeDefaults.ts`
-- [x] Double check the imports to make sure there aren't any more that need updating.
-    - All imports work through the re-export in equipmentConstants.ts
-    - Created src/constants/DefaultEnchantments.ts with ENCHANTMENT_LIBRARY and stat boosting factory functions
-    - Updated documentation in EnchantmentLibrary.ts to reflect new location
+- [ ] **Find ALL files importing DEFAULT_SKILLS**: `rg "DEFAULT_SKILLS" --type ts`
+- [ ] Update **EACH** file to import from `../constants/DefaultSkills.js` instead
+- [ ] Remove `DEFAULT_SKILLS` from `src/core/skills/DefaultSkills.ts` (or delete file if nothing else remains)
+- [ ] Verify build passes: `npm run build`
 
-
-#### Task 10: Features & Traits
+#### Task 10: Features & Traits (REDO)
 - [x] Move `DEFAULT_CLASS_FEATURES` and `DEFAULT_RACIAL_TRAITS` from `src/core/features/DefaultFeatures.ts` to `src/constants/DefaultFeatures.ts`.
-- [x] Veryify imports were updated in:
-    - [x] `src/core/features/DefaultFeatures.ts` (re-export or remove) - File does not exist, nothing to do
-    - [x] `src/core/features/index.ts` - Already exports from new location
-    - [x] `src/core/extensions/initializeDefaults.ts` - Already imports from new location
-- [x] Double check the imports to make sure there aren't any more that need updating.
-    - Updated 8 test files to import from `../../src/core/features/index.js` instead of old path
-    - Removed unused `Race` type import from DefaultFeatures.ts
+- [ ] **Find ALL files importing from DefaultFeatures**: `rg "from ['\"].*DefaultFeatures['\"]" --type ts`
+- [ ] **Find ALL files importing DEFAULT_CLASS_FEATURES or DEFAULT_RACIAL_TRAITS**: `rg "DEFAULT_CLASS_FEATURES|DEFAULT_RACIAL_TRAITS" --type ts`
+- [ ] Update **EACH** file to import from `../constants/DefaultFeatures.js` instead
+- [ ] Delete `src/core/features/DefaultFeatures.ts` if it still exists and is now empty
+- [ ] Verify build passes: `npm run build`
+
+#### Task 11: Helper Functions Assessment
+After moving all data, assess what remains in `src/utils/constants.ts`:
+- [ ] Review `src/utils/constants.ts` - identify what helper functions remain
+- [ ] If `getClassData`, `getClassDataAsync`, `getClassSpellList`, `getSpellSlotsForClass` are still needed:
+    - [ ] Consider moving them to a more appropriate location (e.g., `src/utils/classHelpers.ts`)
+    - [ ] OR keep them in constants.ts if that makes sense, but update internal imports properly
+- [ ] Document what functions remain and why
+
+#### Task 12: Test File Import Updates
+- [ ] Find all test files with old import paths: `rg "from ['\"].*utils/constants['\"]" tests/ --type ts`
+- [ ] Update all test file imports to use new locations
+- [ ] Run tests: `npm test`
+
+---
 
 ### Phase 3: Data Population
 This phase involves adding the actual description text to the newly organized files.
 
-#### Task 11: Races
+#### Task 13: Races
 - [ ] **Research**: Study `src/constants/DefaultRaces.ts` and list all race entries requiring descriptions.
 - [ ] Update `RACE_DATA_IMPL` in `src/constants/DefaultRaces.ts` with descriptions.
 
-#### Task 12: Classes
+#### Task 14: Classes
 - [ ] **Research**: Study `src/constants/DefaultClasses.ts` and list all class entries requiring descriptions.
 - [ ] Update `CLASS_DATA` in `src/constants/DefaultClasses.ts` with descriptions.
 
-#### Task 13: Skills
+#### Task 15: Skills
 - [ ] **Research**: Study `src/constants/DefaultSkills.ts` and list all skill entries requiring descriptions.
 - [ ] Update `DEFAULT_SKILLS` in `src/constants/DefaultSkills.ts`.
 
-#### Task 14: Spells
+#### Task 16: Spells
 - [ ] **Research**: Study `src/constants/DefaultSpells.ts` and list all spell entries requiring descriptions.
 - [ ] Update `SPELL_DATABASE` in `src/constants/DefaultSpells.ts`.
 
-#### Task 15: Equipment
+#### Task 17: Equipment
 - [ ] **Research**: Study `src/constants/DefaultEquipment.ts`, `ItemTemplates.ts`, and `MagicItems.ts` to identify all items.
 - [ ] Update `DEFAULT_EQUIPMENT` in `src/constants/DefaultEquipment.ts`.
 - [ ] Update `ITEM_CREATION_TEMPLATES` in `src/constants/ItemTemplates.ts` (if needed, they are `EnhancedEquipment`).
 - [ ] Update `MAGIC_ITEMS` in `src/constants/MagicItems.ts` (if needed, they are `EnhancedEquipment`).
 
-#### Task 16: Enchantments
+#### Task 18: Enchantments
 - [ ] **Research**: Study `src/constants/DefaultEnchantments.ts` and list all enchantment/curse entries.
 - [ ] Update `ENCHANTMENT_LIBRARY` in `src/constants/DefaultEnchantments.ts`.
     -   Target: ~50+ enchantments and curses.
 
-#### Task 17: Features & Traits
+#### Task 19: Features & Traits
 - [ ] **Research**: Study `src/constants/DefaultFeatures.ts` to identify any missing descriptions in Features or Traits.
 - [ ] Verify `DEFAULT_CLASS_FEATURES` in `src/constants/DefaultFeatures.ts`.
 - [ ] Verify `DEFAULT_RACIAL_TRAITS` in `src/constants/DefaultFeatures.ts`.
     *   *Note*: These should already have descriptions, but we will audit them to ensure quality and completeness.
 
+---
+
 ### Phase 4: Verification
 - [ ] **Compilation**: Run `npm run build` (or similar) to ensure no type errors.
 - [ ] **Data Integrity Check**:
-    - [ ] **Races**: Verify `getRaceData('Human')` returns a description.
-    - [ ] **Classes**: Verify `getClassData('Fighter')` returns a description.
-    - [ ] **Skills**: Verify `DEFAULT_SKILLS[0]` has a description.
-    - [ ] **Spells**: Verify `SPELL_DATABASE['Fireball']` has a description.
-    - [ ] **Equipment**: Verify `DEFAULT_EQUIPMENT['Longsword']` has a description.
-    - [ ] **Features**: Verify a sample from `DEFAULT_CLASS_FEATURES` (e.g., `barbarian_rage`).
-    - [ ] **Traits**: Verify a sample from `DEFAULT_RACIAL_TRAITS` (e.g., `elf_darkvision`).
-    - [ ] **Enchantments**: Verify a sample from `ENCHANTMENT_LIBRARY` (e.g., `plus_one`).
-    - [ ] **Templates**: Verify a sample from `ITEM_CREATION_TEMPLATES`.
-    - [ ] **Magic Items**: Verify a sample from `MAGIC_ITEMS`.
+    - [ ] **Races**: Verify importing from `../constants/DefaultRaces.js` works and has descriptions.
+    - [ ] **Classes**: Verify importing from `../constants/DefaultClasses.js` works and has descriptions.
+    - [ ] **Skills**: Verify importing from `../constants/DefaultSkills.js` works and has descriptions.
+    - [ ] **Spells**: Verify importing from `../constants/DefaultSpells.js` works and has descriptions.
+    - [ ] **Equipment**: Verify importing from `../constants/DefaultEquipment.js` works and has descriptions.
+    - [ ] **Features**: Verify importing from `../constants/DefaultFeatures.js` works and has descriptions.
+    - [ ] **Enchantments**: Verify importing from `../constants/DefaultEnchantments.js` works and has descriptions.
+    - [ ] **Templates**: Verify importing from `../constants/ItemTemplates.js` works.
+    - [ ] **Magic Items**: Verify importing from `../constants/MagicItems.js` works.
 
-## 3. Custom Data Considerations
+## 4. Custom Data Considerations
 - **ExtensionManager**: Custom races (`races.data`) and classes (`classes.data`) will use the updated interfaces.
 - **Backwards Compatibility**: The `description` field for Equipment, Spells, Skills, and Enchantments is optional (`?`), so existing custom data without descriptions will not break.
 - **Requirement**: For Races and Classes, since we are updating the core types `RaceDataEntry` and `ClassDataEntry`, we must decide if `description` is optional or required.
     -   *Decision*: Make it **optional** (`description?: string`) initially to avoid breaking existing custom extensions, then populate it for all defaults.
-- **New Files**: Ensure `ExtensionManager` and other consumers properly import from the new `src/constants/` locations if they were previously importing from `src/utils/constants.ts` (though we may re-export them to maintain compatibility).
+- **New Files**: Ensure `ExtensionManager` and other consumers properly import from the new `src/constants/` locations.
 
-## 4. Open Questions / Implementation Details
+## 5. Open Questions / Implementation Details
 - [ ] **Content Source**: Descriptions will be flavorful and consistent with 5e style.
 - [ ] **Markdown**: Basic Markdown support (bold, italic) is assumed for descriptions to match existing Feature description style.
+
+---
+
+## Summary of Tasks Needing Redo
+The following tasks were marked "complete" but used lazy re-exports and must be redone:
+- **Task 1**: Clean up the lazy import/re-export mess in constants.ts (DO THIS FIRST)
+- Task 2: Equipment
+- Task 3: Races
+- Task 4: Classes
+- Task 5: Spells
+- Task 6: Enchantments
+- Task 10: Features & Traits (partial)
