@@ -45,13 +45,14 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
     - Added cache variables back to constants.ts for getClassDataAsync
 
 #### Task 4: Classes
-- [ ] Move `CLASS_DATA` from `src/utils/constants.ts` to `src/constants/DefaultClasses.ts`.
-- [ ] Update imports in:
-    - [ ] `src/utils/constants.ts` (re-export)
-    - [ ] `src/core/generation/CharacterGenerator.ts`
-    - [ ] `src/core/progression/LevelUpProcessor.ts`
-    - [ ] `src/core/progression/stat/StatIncreaseStrategy.ts`
-- [ ] Double check the imports to make sure there aren't any more that need updating.
+- [x] Move `CLASS_DATA` from `src/utils/constants.ts` to `src/constants/DefaultClasses.ts`.
+- [x] Update imports in:
+    - [x] `src/utils/constants.ts` (re-export)
+    - [x] `src/core/generation/CharacterGenerator.ts` - No changes needed, imports from constants.ts which re-exports
+    - [x] `src/core/progression/LevelUpProcessor.ts` - No changes needed, imports from constants.ts which re-exports
+    - [x] `src/core/progression/stat/StatIncreaseStrategy.ts` - No changes needed, imports from constants.ts which re-exports
+- [x] Double check the imports to make sure there aren't any more that need updating.
+    - All imports work through the re-export in constants.ts
 
 #### Task 5: Spells
 - [ ] Move `SPELL_DATABASE` from `src/utils/constants.ts` to `src/constants/DefaultSpells.ts`.

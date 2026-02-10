@@ -24,6 +24,11 @@ export type { Spell, SpellPrerequisite };
 export type { RaceDataEntry, CustomRaceDataEntry } from '../constants/DefaultRaces.js';
 export { RACE_DATA, DEFAULT_RACE_DATA_ARRAY, getRaceData, getRaceDataAsync } from '../constants/DefaultRaces.js';
 
+// Class data has been moved to src/constants/DefaultClasses.ts
+// Import for internal use and re-export for backward compatibility
+import { CLASS_DATA as IMPORTED_CLASS_DATA, ALL_CLASSES, CLASS_AUDIO_PREFERENCES } from '../constants/DefaultClasses.js';
+export { CLASS_DATA, ALL_CLASSES, CLASS_AUDIO_PREFERENCES } from '../constants/DefaultClasses.js';
+
 // Cache for dynamically loaded ExtensionManager to avoid repeated imports
 // Used by getClassDataAsync and other async data lookup functions
 let extensionManagerModule: any = null;
@@ -240,8 +245,8 @@ export interface ClassDataEntry {
  */
 export async function getClassDataAsync(className: string): Promise<ClassDataEntry | undefined> {
     // Check default classes
-    if (className in CLASS_DATA) {
-        return CLASS_DATA[className];
+    if (className in IMPORTED_CLASS_DATA) {
+        return IMPORTED_CLASS_DATA[className];
     }
 
     // Check ExtensionManager for custom class data
@@ -263,8 +268,8 @@ export async function getClassDataAsync(className: string): Promise<ClassDataEnt
             const classEntry = customClassData.find((d: any) => d.name === className);
             if (classEntry) {
                 // If has baseClass, merge with base class data
-                if (classEntry.baseClass && classEntry.baseClass in CLASS_DATA) {
-                    const baseData = CLASS_DATA[classEntry.baseClass];
+                if (classEntry.baseClass && classEntry.baseClass in IMPORTED_CLASS_DATA) {
+                    const baseData = IMPORTED_CLASS_DATA[classEntry.baseClass];
                     // Merge base data with custom data, custom properties take precedence
                     return {
                         ...baseData,
@@ -336,8 +341,8 @@ export async function getClassDataAsync(className: string): Promise<ClassDataEnt
  */
 export function getClassData(className: string): ClassDataEntry | undefined {
     // Check default classes
-    if (className in CLASS_DATA) {
-        return CLASS_DATA[className];
+    if (className in IMPORTED_CLASS_DATA) {
+        return IMPORTED_CLASS_DATA[className];
     }
 
     // Check ExtensionManager for custom class data
@@ -349,8 +354,8 @@ export function getClassData(className: string): ClassDataEntry | undefined {
             const classEntry = customClassData.find((d: any) => d.name === className);
             if (classEntry) {
                 // If has baseClass, merge with base class data
-                if (classEntry.baseClass && classEntry.baseClass in CLASS_DATA) {
-                    const baseData = CLASS_DATA[classEntry.baseClass];
+                if (classEntry.baseClass && classEntry.baseClass in IMPORTED_CLASS_DATA) {
+                    const baseData = IMPORTED_CLASS_DATA[classEntry.baseClass];
                     // Merge base data with custom data, custom properties take precedence
                     return {
                         ...baseData,
@@ -369,225 +374,6 @@ export function getClassData(className: string): ClassDataEntry | undefined {
 
     return undefined;
 }
-
-// Class data with primary abilities and hit dice
-export const CLASS_DATA: Record<string, {
-    primary_ability: Ability;
-    hit_die: number;
-    saving_throws: Ability[];
-    is_spellcaster: boolean;
-    skill_count: number;
-    available_skills: Skill[];
-    has_expertise: boolean;
-    expertise_count?: number;
-}> = {
-    'Barbarian': {
-        primary_ability: 'STR',
-        hit_die: 12,
-        saving_throws: ['STR', 'CON'],
-        is_spellcaster: false,
-        skill_count: 2,
-        available_skills: ['athletics', 'animal_handling', 'intimidation', 'nature', 'perception', 'survival'],
-        has_expertise: false,
-    },
-    'Bard': {
-        primary_ability: 'CHA',
-        hit_die: 8,
-        saving_throws: ['DEX', 'CHA'],
-        is_spellcaster: true,
-        skill_count: 3,
-        available_skills: [
-            'athletics', 'acrobatics', 'sleight_of_hand', 'stealth',
-            'arcana', 'history', 'investigation', 'nature', 'religion',
-            'animal_handling', 'insight', 'medicine', 'perception', 'survival',
-            'deception', 'intimidation', 'performance', 'persuasion'
-        ],
-        has_expertise: true,
-        expertise_count: 2,
-    },
-    'Cleric': {
-        primary_ability: 'WIS',
-        hit_die: 8,
-        saving_throws: ['WIS', 'CHA'],
-        is_spellcaster: true,
-        skill_count: 2,
-        available_skills: ['history', 'insight', 'medicine', 'persuasion', 'religion'],
-        has_expertise: false,
-    },
-    'Druid': {
-        primary_ability: 'WIS',
-        hit_die: 8,
-        saving_throws: ['INT', 'WIS'],
-        is_spellcaster: true,
-        skill_count: 2,
-        available_skills: ['arcana', 'animal_handling', 'insight', 'medicine', 'nature', 'perception', 'religion', 'survival'],
-        has_expertise: false,
-    },
-    'Fighter': {
-        primary_ability: 'STR',
-        hit_die: 10,
-        saving_throws: ['STR', 'CON'],
-        is_spellcaster: false,
-        skill_count: 2,
-        available_skills: ['acrobatics', 'animal_handling', 'athletics', 'history', 'insight', 'intimidation', 'perception', 'survival'],
-        has_expertise: false,
-    },
-    'Monk': {
-        primary_ability: 'DEX',
-        hit_die: 8,
-        saving_throws: ['STR', 'DEX'],
-        is_spellcaster: false,
-        skill_count: 2,
-        available_skills: ['acrobatics', 'athletics', 'history', 'insight', 'religion', 'stealth'],
-        has_expertise: false,
-    },
-    'Paladin': {
-        primary_ability: 'STR',
-        hit_die: 10,
-        saving_throws: ['WIS', 'CHA'],
-        is_spellcaster: true,
-        skill_count: 2,
-        available_skills: ['athletics', 'insight', 'intimidation', 'medicine', 'persuasion', 'religion'],
-        has_expertise: false,
-    },
-    'Ranger': {
-        primary_ability: 'DEX',
-        hit_die: 10,
-        saving_throws: ['STR', 'DEX'],
-        is_spellcaster: true,
-        skill_count: 3,
-        available_skills: ['animal_handling', 'athletics', 'insight', 'investigation', 'nature', 'perception', 'stealth', 'survival'],
-        has_expertise: false,
-    },
-    'Rogue': {
-        primary_ability: 'DEX',
-        hit_die: 8,
-        saving_throws: ['DEX', 'INT'],
-        is_spellcaster: false,
-        skill_count: 4,
-        available_skills: ['acrobatics', 'athletics', 'deception', 'insight', 'intimidation', 'investigation', 'perception', 'performance', 'persuasion', 'sleight_of_hand', 'stealth'],
-        has_expertise: true,
-        expertise_count: 2,
-    },
-    'Sorcerer': {
-        primary_ability: 'CHA',
-        hit_die: 6,
-        saving_throws: ['CON', 'CHA'],
-        is_spellcaster: true,
-        skill_count: 2,
-        available_skills: ['arcana', 'deception', 'insight', 'intimidation', 'persuasion', 'religion'],
-        has_expertise: false,
-    },
-    'Warlock': {
-        primary_ability: 'CHA',
-        hit_die: 8,
-        saving_throws: ['WIS', 'CHA'],
-        is_spellcaster: true,
-        skill_count: 2,
-        available_skills: ['arcana', 'deception', 'history', 'intimidation', 'investigation', 'nature', 'religion'],
-        has_expertise: false,
-    },
-    'Wizard': {
-        primary_ability: 'INT',
-        hit_die: 6,
-        saving_throws: ['INT', 'WIS'],
-        is_spellcaster: true,
-        skill_count: 2,
-        available_skills: ['arcana', 'history', 'insight', 'investigation', 'medicine', 'religion'],
-        has_expertise: false,
-    },
-};
-
-/**
- * Audio preference data for class affinity calculation
- *
- * Each class has preferred audio traits that determine affinity:
- * - primary: The most important audio characteristic
- * - secondary: Optional secondary characteristic
- * - tertiary: Optional tertiary characteristic
- * - weights: Multipliers for each frequency band (0-1 range)
- *
- * Used by ClassSuggester for affinity-based class selection.
- */
-export const CLASS_AUDIO_PREFERENCES: Record<string, {
-    primary: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
-    secondary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
-    tertiary?: 'bass' | 'treble' | 'mid' | 'amplitude' | 'chaos';
-    bass?: number;
-    treble?: number;
-    mid?: number;
-    amplitude?: number;
-}> = {
-    'Barbarian': {
-        primary: 'bass',
-        secondary: 'amplitude',
-        bass: 1.0,
-        amplitude: 0.7
-    },
-    'Fighter': {
-        primary: 'bass',
-        secondary: 'amplitude',
-        bass: 0.9,
-        amplitude: 0.8
-    },
-    'Paladin': {
-        primary: 'bass',
-        secondary: 'mid',
-        bass: 0.8,
-        mid: 0.5
-    },
-    'Rogue': {
-        primary: 'treble',
-        treble: 1.0
-    },
-    'Ranger': {
-        primary: 'treble',
-        secondary: 'bass',
-        treble: 0.8,
-        bass: 0.5
-    },
-    'Monk': {
-        primary: 'treble',
-        secondary: 'mid',
-        treble: 0.7,
-        mid: 0.6
-    },
-    'Wizard': {
-        primary: 'mid',
-        mid: 1.0
-    },
-    'Cleric': {
-        primary: 'mid',
-        secondary: 'amplitude',
-        mid: 0.8,
-        amplitude: 0.6
-    },
-    'Druid': {
-        primary: 'mid',
-        secondary: 'bass',
-        mid: 0.7,
-        bass: 0.6
-    },
-    'Bard': {
-        primary: 'amplitude',
-        secondary: 'mid',
-        tertiary: 'treble',
-        amplitude: 0.8,
-        mid: 0.6,
-        treble: 0.3
-    },
-    'Sorcerer': {
-        primary: 'amplitude',
-        secondary: 'chaos',
-        amplitude: 0.9
-    },
-    'Warlock': {
-        primary: 'amplitude',
-        secondary: 'treble',
-        amplitude: 0.7,
-        treble: 0.5
-    },
-};
 
 // XP thresholds for levels 1-20
 export const XP_THRESHOLDS: Record<number, number> = {
@@ -633,22 +419,6 @@ export const ALL_RACES: Race[] = [
     asRace('Half-Elf'),
     asRace('Half-Orc'),
     asRace('Tiefling'),
-];
-
-// All classes in order
-export const ALL_CLASSES: Class[] = [
-    'Barbarian' as Class,
-    'Bard' as Class,
-    'Cleric' as Class,
-    'Druid' as Class,
-    'Fighter' as Class,
-    'Monk' as Class,
-    'Paladin' as Class,
-    'Ranger' as Class,
-    'Rogue' as Class,
-    'Sorcerer' as Class,
-    'Warlock' as Class,
-    'Wizard' as Class,
 ];
 
 // Adjective mapping for NamingEngine
