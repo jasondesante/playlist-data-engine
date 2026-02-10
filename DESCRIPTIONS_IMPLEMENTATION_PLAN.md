@@ -222,9 +222,20 @@ The helper functions (`getClassData`, `getClassDataAsync`, `getClassSpellList`, 
 - **Internal State**: `extensionManagerModule`, `extensionManagerPromise` (caching)
 
 #### Task 12: Test File Import Updates
-- [ ] Find all test files with old import paths: `rg "from ['\"].*utils/constants['\"]" tests/ --type ts`
-- [ ] Update all test file imports to use new locations
-- [ ] Run tests: `npm test`
+- [x] Find all test files with old import paths: `rg "from ['\"].*utils/constants['\"]" tests/ --type ts`
+- [x] Update all test file imports to use new locations
+- [x] Run tests: `npm test`
+
+**Summary of findings:**
+All test file imports are already using the correct new locations. The 5 files that still import from `utils/constants` are importing items that legitimately remain there (assessed in Task 11):
+- `MASTERY_THRESHOLD`, `MASTERY_BONUS_XP` - mastery system constants (not moved)
+- `ALL_RACES` - race name array (not moved)
+- `getClassData`, `getClassSpellList`, `getSpellSlotsForClass` - helper functions (remain in constants.ts)
+
+All moved data (RACES, CLASSES, SPELLS, EQUIPMENT, ENCHANTMENTS, SKILLS, FEATURES) are correctly imported from their new `src/constants/` locations.
+
+**Build status:** ✅ Passes cleanly (no errors)
+**Test status:** Tests fail due to pre-existing canvas native module issue, unrelated to imports
 
 ---
 
