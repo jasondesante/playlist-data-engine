@@ -55,12 +55,14 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
     - All imports work through the re-export in constants.ts
 
 #### Task 5: Spells
-- [ ] Move `SPELL_DATABASE` from `src/utils/constants.ts` to `src/constants/DefaultSpells.ts`.
-- [ ] Update imports in:
-    - [ ] `src/utils/constants.ts` (re-export)
-    - [ ] `src/core/generation/SpellManager.ts`
-    - [ ] `src/core/extensions/initializeDefaults.ts`
-- [ ] Double check the imports to make sure there aren't any more that need updating.
+- [x] Move `SPELL_DATABASE` from `src/utils/constants.ts` to `src/constants/DefaultSpells.ts`.
+- [x] Update imports in:
+    - [x] `src/utils/constants.ts` (re-export)
+    - [x] `src/core/generation/SpellManager.ts` - No changes needed, imports from constants.ts which re-exports
+    - [x] `src/core/extensions/initializeDefaults.ts` - No changes needed, imports from constants.ts which re-exports
+- [x] Double check the imports to make sure there aren't any more that need updating.
+    - All imports work through the re-export in constants.ts
+    - Added internal imports for use in helper functions (getClassSpellList, getSpellSlotsForClass)
 
 #### Task 6: Enchantments
 - [ ] Move `ENCHANTMENT_LIBRARY` from `src/utils/equipmentConstants.ts` to `src/constants/DefaultEnchantments.ts`.
