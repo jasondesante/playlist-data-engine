@@ -300,7 +300,7 @@ export {
 export {
     DEFAULT_SKILLS,
     DEFAULT_SKILL_CATEGORIES
-} from './core/skills/DefaultSkills.js';
+} from './constants/DefaultSkills.js';
 
 // Additional skill types
 export type {

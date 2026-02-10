@@ -5,8 +5,8 @@
  * These skills are loaded into the SkillQuery on initialization.
  */
 
-import type { CustomSkill } from './SkillTypes.js';
-import type { Ability } from '../types/Character.js';
+import type { CustomSkill } from '../core/skills/SkillTypes.js';
+import type { Ability } from '../core/types/Character.js';
 
 /**
  * Default 18 D&D 5e skills

@@ -16,7 +16,7 @@ import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 import type { Class } from '../types/Character.js';
 import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../constants/DefaultFeatures.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
-import { DEFAULT_SKILLS } from '../skills/DefaultSkills.js';
+import { DEFAULT_SKILLS } from '../../constants/DefaultSkills.js';
 import type { CustomSkill } from '../skills/SkillTypes.js';
 
 /**

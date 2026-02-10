@@ -14,7 +14,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
-import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
+import { DEFAULT_SKILLS } from '../../src/constants/DefaultSkills.js';
 import { registerTestSkill, registerTestSkills } from '../helpers/registrationHelpers.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
 import type { Ability } from '../../src/core/types/Character.js';

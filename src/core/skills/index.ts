@@ -21,7 +21,7 @@ export type { SkillValidationResult } from './SkillValidator.js';
 export { SkillQuery, getSkillQuery } from './SkillQuery.js';
 
 // Default skills
-export { DEFAULT_SKILLS, DEFAULT_SKILL_CATEGORIES } from './DefaultSkills.js';
+export { DEFAULT_SKILLS, DEFAULT_SKILL_CATEGORIES } from '../../constants/DefaultSkills.js';
 
 // SkillValidator - Validation for skills
 export {

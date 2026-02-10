@@ -13,7 +13,7 @@ import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { SkillAssigner } from '../../src/core/generation/SkillAssigner.js';
 import { SeededRNG } from '../../src/utils/random.js';
-import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
+import { DEFAULT_SKILLS } from '../../src/constants/DefaultSkills.js';
 import { registerTestSkill } from '../helpers/registrationHelpers.js';
 import type { CustomSkill, SkillPrerequisite } from '../../src/core/skills/SkillTypes.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';

@@ -9,7 +9,7 @@ import type { Class, Skill } from '../../src/core/types/Character.js';
 import { CLASS_DATA } from '../../src/constants/DefaultClasses.js';
 import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
-import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';
+import { DEFAULT_SKILLS } from '../../src/constants/DefaultSkills.js';
 import { registerTestSkill, registerTestSkills } from '../helpers/registrationHelpers.js';
 import type { CustomSkill } from '../../src/core/skills/SkillTypes.js';
 

@@ -178,11 +178,17 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 - [x] Verify build passes: `npm run build`
 
 #### Task 9: Skills
-- [ ] Move `DEFAULT_SKILLS` from `src/core/skills/DefaultSkills.ts` to `src/constants/DefaultSkills.ts`.
-- [ ] **Find ALL files importing DEFAULT_SKILLS**: `rg "DEFAULT_SKILLS" --type ts`
-- [ ] Update **EACH** file to import from `../constants/DefaultSkills.js` instead
-- [ ] Remove `DEFAULT_SKILLS` from `src/core/skills/DefaultSkills.ts` (or delete file if nothing else remains)
-`- [ ] Verify build passes: `npm run build`
+- [x] Move `DEFAULT_SKILLS` from `src/core/skills/DefaultSkills.ts` to `src/constants/DefaultSkills.ts`.
+- [x] **Find ALL files importing DEFAULT_SKILLS**: `rg "DEFAULT_SKILLS" --type ts`
+- [x] Update **EACH** file to import from `../constants/DefaultSkills.js` instead
+    - Updated: `src/index.ts`
+    - Updated: `src/core/extensions/initializeDefaults.ts`
+    - Updated: `src/core/skills/index.ts`
+    - Updated: `tests/unit/skills.test.ts`
+    - Updated: `tests/unit/skillPrerequisites.test.ts`
+    - Updated: `tests/unit/skillQuery.test.ts`
+- [x] Remove `DEFAULT_SKILLS` from `src/core/skills/DefaultSkills.ts` (deleted file)
+`- [x] Verify build passes: `npm run build`
 
 #### Task 10: Features & Traits (REDO)
 - [x] Move `DEFAULT_CLASS_FEATURES` and `DEFAULT_RACIAL_TRAITS` from `src/core/features/DefaultFeatures.ts` to `src/constants/DefaultFeatures.ts`.
