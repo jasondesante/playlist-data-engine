@@ -22,7 +22,7 @@ export type {
 export { FeatureQuery, getFeatureQuery } from './FeatureQuery.js';
 
 // Default features and traits
-export { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from './DefaultFeatures.js';
+export { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../constants/DefaultFeatures.js';
 
 // FeatureEffectApplier - Applies feature effects to characters
 export { FeatureEffectApplier } from './FeatureEffectApplier.js';

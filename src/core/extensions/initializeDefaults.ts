@@ -11,7 +11,7 @@ import type { ExtensionCategory } from './ExtensionManager.js';
 import { SPELL_DATABASE, CLASS_SPELL_LISTS, ALL_RACES, ALL_CLASSES, DEFAULT_RACE_DATA_ARRAY } from '../../utils/constants.js';
 import { DEFAULT_EQUIPMENT } from '../../utils/equipmentConstants.js';
 import type { Class } from '../types/Character.js';
-import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../features/DefaultFeatures.js';
+import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../constants/DefaultFeatures.js';
 import type { ClassFeature, RacialTrait } from '../features/FeatureTypes.js';
 import { DEFAULT_SKILLS } from '../skills/DefaultSkills.js';
 import type { CustomSkill } from '../skills/SkillTypes.js';

@@ -277,7 +277,7 @@ export type {
 export {
     DEFAULT_CLASS_FEATURES,
     DEFAULT_RACIAL_TRAITS
-} from './core/features/DefaultFeatures.js';
+} from './constants/DefaultFeatures.js';
 
 // ============================================================================
 // SKILLS SYSTEM

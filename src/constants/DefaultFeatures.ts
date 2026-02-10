@@ -5,9 +5,9 @@
  * for initializing the FeatureQuery.
  */
 
-import type { ClassFeature, RacialTrait } from './FeatureTypes.js';
-import type { Class, Race } from '../types/Character.js';
-import { asRace } from '../types/Character.js';
+import type { ClassFeature, RacialTrait } from '../core/features/FeatureTypes.js';
+import type { Class, Race } from '../core/types/Character.js';
+import { asRace } from '../core/types/Character.js';
 
 /**
  * Default Class Features for all 12 D&D 5e classes
