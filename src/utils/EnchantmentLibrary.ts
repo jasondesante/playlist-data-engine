@@ -41,7 +41,7 @@
  */
 
 import type { EquipmentModification } from '../core/types/Equipment.js';
-import { ENCHANTMENT_LIBRARY } from './equipmentConstants.js';
+import { ENCHANTMENT_LIBRARY } from '../constants/DefaultEnchantments.js';
 
 /**
  * Enchantment Library Class

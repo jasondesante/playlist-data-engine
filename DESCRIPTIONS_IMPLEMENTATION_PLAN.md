@@ -147,13 +147,15 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 
 #### Task 6: Enchantments (REDO)
 - [x] Move `ENCHANTMENT_LIBRARY` from `src/utils/equipmentConstants.ts` to `src/constants/DefaultEnchantments.ts`.
-- [ ] **Find ALL files importing ENCHANTMENT_LIBRARY**: `rg "ENCHANTMENT_LIBRARY" --type ts`
+- [x] **Find ALL files importing ENCHANTMENT_LIBRARY**: `rg "ENCHANTMENT_LIBRARY" --type ts`
 - [x] Update **EACH** file to import from `../constants/DefaultEnchantments.js` instead
     - Updated: `tests/unit/extensionManager.test.ts`
     - Updated: `tests/unit/spellManager.test.ts`
     - Updated: `tests/unit/spellPrerequisites.test.ts`
     - Updated: `tests/integration/prerequisitesAndRaces.integration.test.ts`
-- [ ] Remove `ENCHANTMENT_LIBRARY` export from `src/utils/equipmentConstants.ts`
+    - Updated: `src/utils/EnchantmentLibrary.ts`
+    - Updated: `src/index.ts`
+- [x] Remove `ENCHANTMENT_LIBRARY` export from `src/utils/equipmentConstants.ts`
 `- [x] Verify build passes: `npm run build`
 
 #### Task 7: Item Templates

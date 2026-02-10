@@ -455,9 +455,11 @@ export {
     CLASS_STARTING_EQUIPMENT,
     getClassStartingEquipment,
     MAGIC_ITEMS,
-    ITEM_CREATION_TEMPLATES,
-    ENCHANTMENT_LIBRARY
+    ITEM_CREATION_TEMPLATES
 } from './utils/equipmentConstants.js';
+export {
+    ENCHANTMENT_LIBRARY
+} from './constants/DefaultEnchantments.js';
 
 // ============================================================================
 // ENCHANTMENT & CURSE LIBRARY

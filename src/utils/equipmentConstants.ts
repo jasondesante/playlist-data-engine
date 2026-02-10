@@ -1269,15 +1269,4 @@ export { ITEM_CREATION_TEMPLATES } from '../constants/ItemTemplates.js';
 // ENCHANTMENT_LIBRARY
 // ============================================================================
 // NOTE: ENCHANTMENT_LIBRARY has been moved to src/constants/DefaultEnchantments.ts
-// It is re-exported below for backward compatibility.
-
-// Re-export ENCHANTMENT_LIBRARY from the new location
-export {
-    ENCHANTMENT_LIBRARY,
-    createStrengthEnchantment,
-    createDexterityEnchantment,
-    createConstitutionEnchantment,
-    createIntelligenceEnchantment,
-    createWisdomEnchantment,
-    createCharismaEnchantment
-} from '../constants/DefaultEnchantments.js';
+// Please import ENCHANTMENT_LIBRARY directly from '../constants/DefaultEnchantments.js' instead
