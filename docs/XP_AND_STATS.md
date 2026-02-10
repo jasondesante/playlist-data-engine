@@ -21,7 +21,7 @@ Complete guide to XP, leveling, and stats in the Playlist Data Engine.
 
 ### Earning XP from Listening to Music
 
-Track a listening session, calculate XP earned, and apply it to your character. Level-ups happen automatically when XP thresholds are reached. 
+Track a listening session, calculate XP earned with modifiers, and apply it to your character. Level-ups happen automatically when XP thresholds are reached.
 
 ```typescript
 import {
@@ -31,28 +31,43 @@ import {
   MasterySystem
 } from 'playlist-data-engine';
 
-// Track listening sessions
+// ===== STEP 1: TRACK LISTENING SESSIONS =====
 const tracker = new SessionTracker();
 
 // Start a session - returns a sessionId (required for ending the session)
 const sessionId = tracker.startSession(track.id, track);
 
-// ... user listens to a track for 300 seconds ...
+// ... user listens to a track for 300 seconds (5 minutes) ...
 
 // End the session - requires the sessionId returned from startSession()
 const session = tracker.endSession(sessionId);
 
 if (session) {
-  // Calculate XP earned
+  // ===== STEP 2: CALCULATE XP WITH MODIFIERS =====
   const xpCalc = new XPCalculator();
-  const totalXP = xpCalc.calculateSessionXP(session, track);  // ~1 XP per second + bonuses
 
-  // Apply session to character (handles level-ups and mastery)
+  // Base XP: 1 XP per second of listening
+  const baseXP = session.duration; // 300 seconds = 300 base XP
+
+  // Environmental modifiers (examples):
+  // - Running: 1.5x | Walking: 1.2x | Night time: 1.25x
+  // - Extreme weather: 1.4x | High altitude (≥2000m): 1.3x
+
+  // Gaming modifiers (examples):
+  // - Base gaming bonus: +0.25x
+  // - RPG game: +0.20x | Action/FPS: +0.15x | Multiplayer: +0.15x
+  // - Long session (4+ hours): up to +0.20x
+
+  // Total calculation is capped at 3.0x multiplier
+  // Example: Running (1.5x) + Playing RPG (1.75x) = 2.625x total
+  const totalXP = xpCalc.calculateSessionXP(session, track);
+
+  // ===== STEP 3: APPLY SESSION TO CHARACTER =====
   const updater = new CharacterUpdater();
   const previousListenCount = tracker.getTrackListenCount(track.id) - 1;
   const result = updater.updateCharacterFromSession(character, session, track, previousListenCount);
 
-  // ===== BASIC LEVEL-UP HANDLING =====
+  // ===== STEP 4: BASIC LEVEL-UP HANDLING =====
   if (result.leveledUp) {
     console.log(`Level up! Now level ${result.newLevel}`);
   }
@@ -75,19 +90,26 @@ const statManager = new StatManager({ strategy: 'dnD5e' });
 const updater = new CharacterUpdater(statManager);
 ```
 
-#### Detailed Level-Up Celebrations
+#### Comprehensive Level-Up Celebration & Multi-Source XP System
 
-The `levelUpDetails` returned by `updateCharacterFromSession()` contains everything you need for that "LEVELED UP!" celebration experience:
+The `levelUpDetails` returned by both `updateCharacterFromSession()` and `addXP()` contains everything you need for that "LEVELED UP!" celebration experience. Whether XP comes from music listening, combat, quests, or custom activities, the level-up system works identically.
 
 ```typescript
-// Same workflow as above, but with detailed level-up display
-const result = updater.updateCharacterFromSession(character, session, track, listenCount);
+import { CharacterUpdater } from 'playlist-data-engine';
 
-if (result.leveledUp && result.levelUpDetails) {
-    console.log(`🎉 LEVELED UP from ${result.levelUpDetails[0].fromLevel} to ${result.newLevel}!`);
+const updater = new CharacterUpdater();
 
-    // Each level-up has full details
-    for (const detail of result.levelUpDetails) {
+// ===== LEVEL-UP CELEBRATION FUNCTION (Reusable) =====
+function celebrateLevelUp(result: LevelUpResult, source: string) {
+    if (!result.leveledUp) return;
+
+    console.log(`🎉 LEVELED UP from ${source}!`);
+    console.log(`🎉 Level ${result.levelUpDetails![0].fromLevel} → ${result.newLevel}!`);
+
+    // Handle multiple level-ups (e.g., boss rewards)
+    console.log(`Gained ${result.levelUpDetails?.length} level(s) at once!`);
+
+    for (const detail of result.levelUpDetails!) {
         console.log(`\n=== Level ${detail.fromLevel} → ${detail.toLevel} ===`);
         console.log(`💚 HP: +${detail.hpIncrease} (new max: ${detail.newMaxHP})`);
 
@@ -112,49 +134,22 @@ if (result.leveledUp && result.levelUpDetails) {
     }
 }
 
-// Example output:
-// 🎉 LEVELED UP from 3 to 4!
-//
-// === Level 3 → 4 ===
-// 💚 HP: +7 (new max: 32)
-// ⚔️ Proficiency: +1 (new: 3)
-// 📊 STATS INCREASED:
-//    STR: 14 → 16 (+2)
-// ✨ NEW FEATURES: Ability Score Improvement
-```
-
-
-### Adding XP from Other Sources
-
-**NEW:** You can now add XP from any source (combat, quests, custom activities) and get the same detailed level-up breakdowns!
-
-```typescript
-import { CharacterUpdater } from 'playlist-data-engine';
-
-const updater = new CharacterUpdater();
+// ===== MUSIC LISTENING XP =====
+// Follow the same pattern from "Earning XP from Listening to Music" above
+// The celebrateLevelUp() function works identically for all XP sources
+const musicResult = updater.updateCharacterFromSession(character, session, track, listenCount);
+celebrateLevelUp(musicResult, 'Music Session');
 
 // ===== COMBAT XP =====
 // Award XP for defeating enemies
 const combatResult = updater.addXP(character, 500, 'combat');
-
-if (combatResult.leveledUp && combatResult.levelUpDetails) {
-    console.log(`🎉 LEVELED UP from combat!`);
-    for (const detail of combatResult.levelUpDetails) {
-        console.log(`💚 HP: +${detail.hpIncrease} (new max: ${detail.newMaxHP})`);
-
-        if (detail.statIncreases && detail.statIncreases.length > 0) {
-            console.log(`📊 STATS INCREASED:`);
-            for (const stat of detail.statIncreases) {
-                console.log(`   ${stat.ability}: ${stat.oldValue} → ${stat.newValue} (+${stat.delta})`);
-            }
-        }
-    }
-}
+celebrateLevelUp(combatResult, 'Combat');
 
 // ===== QUEST COMPLETION XP =====
 // Award XP for completing quests
 const questResult = updater.addXP(character, 1000, 'quest');
-console.log(`Quest complete! Earned ${questResult.xpEarned} XP.`);
+celebrateLevelUp(questResult, 'Quest Complete');
+console.log(`Earned ${questResult.xpEarned} XP.`);
 
 // ===== CUSTOM ACTIVITY XP =====
 // Award XP for exploration, crafting, social interactions, etc.
@@ -162,27 +157,14 @@ const explorationResult = updater.addXP(character, 250, 'exploration');
 const craftingResult = updater.addXP(character, 150, 'crafting');
 const socialResult = updater.addXP(character, 100, 'social');
 
-// ===== MASSIVE XP REWARD =====
-// Boss defeated or major milestone - multiple levels at once!
+// ===== MASSIVE XP REWARD (Boss/Milestone) =====
+// Boss defeated or major milestone - can trigger multiple level-ups at once!
 const bossResult = updater.addXP(character, 10000, 'boss_defeat');
+console.log(`🎉🎉🎉 BOSS DEFEATED!`);
+celebrateLevelUp(bossResult, 'Boss Defeat'); // Reuses the celebration function from above
 
-if (bossResult.leveledUp) {
-    console.log(`🎉🎉🎉 MULTIPLE LEVELS! ${bossResult.newLevel}`);
-    console.log(`Gained ${bossResult.levelUpDetails?.length} levels at once!`);
-
-    // Show each level-up
-    for (const detail of bossResult.levelUpDetails!) {
-        console.log(`\n=== Level ${detail.fromLevel} → ${detail.toLevel} ===`);
-        console.log(`💚 HP: +${detail.hpIncrease}`);
-
-        if (detail.featuresGained && detail.featuresGained.length > 0) {
-            console.log(`✨ ${detail.featuresGained.join(', ')}`);
-        }
-    }
-}
-
-// ===== TRACKING XP SOURCES =====
-// The 'source' parameter helps you track where XP came from
+// ===== XP SOURCE TRACKING =====
+// Track where XP came from for analytics/achievements
 interface XPSource {
     source: string;
     amount: number;
@@ -201,10 +183,11 @@ function addXPWithTracking(character: CharacterSheet, amount: number, source: st
         timestamp: Date.now()
     });
 
+    celebrateLevelUp(result, source);
     return result;
 }
 
-// Usage
+// Usage with tracking
 addXPWithTracking(character, 500, 'combat');
 addXPWithTracking(character, 1000, 'quest_main');
 addXPWithTracking(character, 250, 'side_quest');
@@ -214,24 +197,29 @@ const combatXP = xpHistory
     .filter(h => h.source.startsWith('combat'))
     .reduce((sum, h) => sum + h.amount, 0);
 
-console.log(`Total combat XP: ${combatXP}`);
+const questXP = xpHistory
+    .filter(h => h.source.startsWith('quest'))
+    .reduce((sum, h) => sum + h.amount, 0);
+
+console.log(`Total Combat XP: ${combatXP}, Total Quest XP: ${questXP}`);
 ```
 
-**Multiple XP Sources - Same Level-Up System:**
-
-Whether XP comes from music listening, combat, quests, or custom activities, the level-up system works identically:
+**All XP Sources Return the Same Detailed Breakdown:**
 
 | Source | Method | XP Calculation | Level-Up Details |
 |--------|--------|----------------|------------------|
-| Music Listening | `updateCharacterFromSession()` | Duration × modifiers | ✅ Yes |
-| Combat | `addXP()` | Direct amount | ✅ Yes |
-| Quests | `addXP()` | Direct amount | ✅ Yes |
-| Custom | `addXP()` | Direct amount | ✅ Yes |
+| Music Listening | `updateCharacterFromSession()` | Duration × modifiers | ✅ Full breakdown |
+| Combat | `addXP()` | Direct amount | ✅ Full breakdown |
+| Quests | `addXP()` | Direct amount | ✅ Full breakdown |
+| Custom Activities | `addXP()` | Direct amount | ✅ Full breakdown |
 
-All sources return the same detailed breakdown:
+**Level-Up Result Properties:**
 - `leveledUp` - Whether character leveled up
 - `newLevel` - New level (if leveled up)
 - `levelUpDetails` - Array of HP, stat, feature, and spell slot changes
+- `xpEarned` - Amount of XP earned
+- `masteredTrack` - (Music only) Whether track was mastered
+- `masteryBonusXP` - (Music only) Bonus XP from mastery
 
 
 ## Stat Strategies
@@ -241,7 +229,12 @@ All sources return the same detailed breakdown:
 Stats increase on level-up at levels 4, 8, 12, 16, and 19 (standard mode) or every level (uncapped mode) following D&D 5e rules.
 
 ```typescript
-import { StatManager, CharacterUpdater, CharacterGenerator } from 'playlist-data-engine';
+import {
+    StatManager,
+    CharacterUpdater,
+    CharacterGenerator,
+    LevelUpProcessor
+} from 'playlist-data-engine';
 
 // ===== GAME MODE SELECTION =====
 // Standard mode (default): D&D 5e rules - stats capped at 20, increases at levels 4, 8, 12, 16, 19
@@ -262,62 +255,105 @@ const uncappedCharacter = CharacterGenerator.generate(
     { gameMode: 'uncapped' }
 );
 
-// ===== OPTION 1: Auto-Detected Strategy (NEW DEFAULT!) =====
-// CharacterUpdater automatically detects strategy based on gameMode
-const updater = new CharacterUpdater(); // No StatManager needed!
+// ===== STRATEGY QUICK REFERENCE =====
+// All stat strategies use the same pattern - just change the strategy parameter:
+//
+// const statManager = new StatManager({ strategy: /* your choice here */ });
+// const updater = new CharacterUpdater(statManager);
+//
+// Available strategies:
+//   • 'dnD5e' (manual)         - Player chooses stats at level-up (2-step process)
+//   • 'dnD5e_smart' (auto)     - Intelligently selects based on class primary ability
+//   • 'balanced' (auto)        - Distributes evenly across all stats
+//   • Custom function          - Your own formula (see OPTION 6 below)
+//
+// Then use updater.addXP() - level-ups will use your chosen strategy automatically
 
-// For standard mode: 2-step level-up (manual stat selection)
+// ===== OPTION 1: Auto-Detected Strategy (Recommended) =====
+// CharacterUpdater automatically detects strategy based on gameMode - no StatManager needed!
+const updater = new CharacterUpdater();
+
+// Standard mode: 2-step level-up (manual stat selection required)
 const standardResult = updater.addXP(standardCharacter, 6500, 'quest');
 console.log(`Leveled up to ${standardResult.newLevel}!`);
 
-// Check for pending stat increases
 if (updater.hasPendingStatIncreases(standardCharacter)) {
     const count = updater.getPendingStatIncreaseCount(standardCharacter);
-    console.log(`${count} stat increases pending!`);
+    console.log(`${count} stat increases pending! Player must choose.`);
 
-    // User chooses +2 to STR
+    // Player chooses +2 to STR
     const completeResult = updater.applyPendingStatIncrease(standardCharacter, 'STR');
     console.log(`STR: ${completeResult.statIncreases[0].oldValue} → ${completeResult.statIncreases[0].newValue}`);
 
-    // Or user chooses +1 to STR and +1 to DEX
+    // Or player chooses +1 to STR and +1 to DEX
     const result2 = updater.applyPendingStatIncrease(standardCharacter, 'STR', ['DEX']);
 }
 
-// For uncapped mode: 1-step level-up (automatic stat selection)
+// Uncapped mode: 1-step level-up (automatic stat selection)
 const uncappedResult = updater.addXP(uncappedCharacter, 6500, 'quest');
 console.log(`Leveled up to ${uncappedResult.newLevel}!`);
 console.log(`Stats auto-increased: ${JSON.stringify(uncappedResult.levelUpDetails?.[0].statIncreases)}`);
 
-// ===== OPTION 2: Manual Stat Selection (Force Manual Mode) =====
+// ===== OPTION 2: Manual Stat Selection =====
+// Two approaches for the same end result - choose based on your needs:
+
+// APPROACH A: CharacterUpdater (Recommended)
+// Higher-level API - handles XP, level-up, and pending stats together
 const manualStatManager = new StatManager({ strategy: 'dnD5e' });
 const manualUpdater = new CharacterUpdater(manualStatManager);
 
-const result = manualUpdater.addXP(character, 6500, 'quest');
+const manualResult = manualUpdater.addXP(character, 6500, 'quest');
 
-// User must manually select stats (same as Option 1)
 if (manualUpdater.hasPendingStatIncreases(character)) {
-    const completeResult = manualUpdater.applyPendingStatIncrease(character, 'CON');
-    console.log(`CON increased!`);
+    // Show UI to get player choice (returns 'STR' or ['DEX', 'CON'])
+    const playerChoice = await showStatSelectionUI();
+
+    const completeResult = manualUpdater.applyPendingStatIncrease(
+        character,
+        playerChoice.primary,
+        playerChoice.secondary
+    );
+    console.log(`Stats increased: ${completeResult.statIncreases.map(s => s.ability).join(', ')}`);
+}
+
+// APPROACH B: LevelUpProcessor (Advanced)
+// Lower-level API - complete control over two-phase level-up process
+// Phase 1: Process HP/proficiency benefits
+// Phase 2: Apply stats after player choice
+const statManager = new StatManager();
+const statIncreaseLevels = [4, 8, 12, 16, 19];
+const newLevel = character.level + 1;
+
+// Phase 1: Process level-up benefits first
+const benefits = LevelUpProcessor.processLevelUp(character, newLevel, character.seed);
+character = LevelUpProcessor.applyLevelUp(character, benefits);
+
+// Phase 2: Get player choice and apply stats
+if (statIncreaseLevels.includes(newLevel)) {
+    const playerChoice = await showStatSelectionUI();
+    const statResult = statManager.processLevelUp(character, newLevel, {
+        forcedAbilities: playerChoice
+    });
+
+    character = statResult.character;
+    console.log(`Stat increased: ${statResult.increases[0].ability} +${statResult.increases[0].delta}`);
 }
 
 // ===== OPTION 3: Smart Auto-Selection (Force Auto Mode) =====
+// Automatically picks best stats based on class and current scores - no player input needed
+// Intelligently selects based on:
+// - Class primary ability (Fighter → STR/DEX, Wizard → INT, etc.)
+// - Current stat values (boosts lowest relevant stat if primary is high)
+// - D&D 5e rules (+2 to one, or +1 to two)
 const smartStatManager = new StatManager({
-    strategy: 'dnD5e_smart'  // Auto-selects best stats based on class and current scores
+    strategy: 'dnD5e_smart'
 });
 const smartUpdater = new CharacterUpdater(smartStatManager);
 
-// Stats automatically increase on level up - no player input required!
 const smartResult = smartUpdater.addXP(character, 6500, 'quest');
+console.log(`Leveled up to ${smartResult.newLevel}! Stats auto-increased.`);
 
-if (smartResult.leveledUp) {
-    console.log(`Leveled up to ${smartResult.newLevel}! Stats auto-increased.`);
-    // The engine intelligently chose which stats to increase based on:
-    // - Class primary ability
-    // - Current stat values (boosts lowest if primary is high)
-    // - D&D 5e rules
-}
-
-// ===== OPTION 4: Potion/Item Stat Boosts =====
+// ===== OPTION 4: Item-Based Stat Changes (Potions, Curses, Restorations) =====
 const itemStatManager = new StatManager();
 
 // Potion of Strength: +4 STR (temporary or permanent based on your game logic)
@@ -329,7 +365,7 @@ const potionResult = itemStatManager.increaseStats(
 
 character = potionResult.character;
 
-// Check if stat was capped at 20
+// Check if stat was capped at 20 (standard mode)
 if (potionResult.capped.length > 0) {
     console.log('Stat was capped at 20!');
 }
@@ -339,11 +375,8 @@ for (const inc of potionResult.increases) {
     console.log(`${inc.ability}: ${inc.oldValue} → ${inc.newValue} (+${inc.delta})`);
 }
 
-// ===== OPTION 5: Stat Decreases (Curses, Poison) =====
-const curseManager = new StatManager();
-
 // Curse of Weakness: -2 STR penalty
-const curseResult = curseManager.decreaseStats(
+const curseResult = itemStatManager.decreaseStats(
     character,
     [{ ability: 'STR', amount: 2 }],
     'event'
@@ -351,14 +384,8 @@ const curseResult = curseManager.decreaseStats(
 
 character = curseResult.character;
 
-// Check the decrease
-for (const dec of curseResult.increases) {
-    console.log(`${dec.ability}: ${dec.oldValue} → ${dec.newValue} (${dec.delta})`);
-    // Output: "STR: 16 → 14 (-2)"
-}
-
 // Poison: -1 DEX, -1 CON
-const poisonResult = curseManager.decreaseStats(
+const poisonResult = itemStatManager.decreaseStats(
     character,
     [
         { ability: 'DEX', amount: 1 },
@@ -368,24 +395,24 @@ const poisonResult = curseManager.decreaseStats(
 );
 
 // Remove curse with restoration potion
-const restoreResult = curseManager.increaseStats(
+const restoreResult = itemStatManager.increaseStats(
     character,
     [{ ability: 'STR', amount: 2 }],
     'item'
 );
 
-// ===== OPTION 6: Change Strategy Mid-Game =====
+// ===== OPTION 5: Change Strategy Mid-Game =====
+// Start with manual selection (early game), switch to auto later
 const flexibleManager = new StatManager();
 
-// Start with manual selection (early game)
+// Early game: Player chooses manually
 const earlyGame = flexibleManager.processLevelUp(character, 4, {
-    forcedAbilities: ['STR']  // Player chooses manually
+    forcedAbilities: ['STR']
 });
 
-// Mid-game: Switch to smart auto-selection
-// Example: After level 10, automate stat increases
+// Mid-game: Switch to smart auto-selection (e.g., after level 10)
 flexibleManager.updateConfig({
-    strategy: 'dnD5e_smart'  // Now automatic!
+    strategy: 'dnD5e_smart'
 });
 
 // Level-ups are now automatic - no manual input needed
@@ -398,21 +425,21 @@ flexibleManager.updateConfig({
 
 // ===== OPTION 6: Custom Level-Up Formula =====
 // Provide your own formula for stat selection (perfect for custom game mechanics!)
+// Example: Tank build that always prioritizes CON first, then DEX
 const tankStrategy = (character, amount, options) => {
-    // Always prioritize CON first (tank build), then DEX
     if (character.ability_scores.CON < 18) {
         return [{ ability: 'CON', amount }];
     }
     return [{ ability: 'DEX', amount }];
 };
 
+// Use the pattern from Strategy Quick Reference above
 const customStatManager = new StatManager({ strategy: tankStrategy });
 const customUpdater = new CharacterUpdater(customStatManager);
-
-// Your custom formula is now used for all level-ups!
+const customResult = customUpdater.addXP(character, 6500, 'quest');
 ```
 
-**Game Mode Comparison:**
+### Game Mode Comparison
 
 ```typescript
 // Standard mode (D&D 5e rules)
@@ -425,11 +452,35 @@ const uncapped = CharacterGenerator.generate(seed, audioProfile, track, { gameMo
 // Level 2, 3, 4... and beyond give +2 to one stat (or +1 to two)
 ```
 
-**Optional Features - Developer Implementation:**
+### HP Increases on Every Level
+
+The leveling system ensures HP increases on EVERY level up, not just at stat increase levels:
+
+```typescript
+// HP increases every level using class hit die + CON modifier
+// Example: Fighter (d10 hit die) with +2 CON:
+// Level 1 → 2: HP increases by 1d10+2 (avg 7.5)
+// Level 2 → 3: HP increases by 1d10+2
+// ...and so on for ALL levels!
+
+// Standard mode (capped at level 20):
+// - Ability scores increase at levels 4, 8, 12, 16, 19
+// - Each grants +2 to one ability or +1 to two abilities
+// - Stats are capped at 20
+// - HP increases EVERY level
+
+// Uncapped mode (unlimited levels):
+// - Ability scores increase at EVERY level
+// - Each grants +2 to one ability or +1 to two abilities
+// - No stat cap - grow infinitely!
+// - HP increases EVERY level
+```
+
+### Optional Features - Developer Implementation
 
 The engine provides core stat manipulation but does NOT include:
 
-1. **Banked Stat Points**: Stat increases must be applied immediately - they are not stored across sessions for later use. If your game needs a "spend points later" system, implement it yourself using `StatManager` as the building block.
+1. **Banked Stat Points**: Stat increases must be applied immediately. If your game needs a "spend points later" system, implement it yourself using `StatManager` as the building block.
 
 2. **Respec System**: There's no built-in stat respec system. Track the history of stat increases yourself and implement respec logic using `increaseStats` and `decreaseStats`.
 
@@ -462,28 +513,6 @@ class CharacterWithBankedPoints {
         this.banked.available -= amount;
     }
 }
-```
-
-**HP increases EVERY level (not just stat increase levels):**
-
-The leveling system ensures HP increases on EVERY level up, not just at stat increase levels:
-
-```typescript
-// HP increases every level using class hit die + CON modifier
-// For example, a Fighter (d10 hit die) with +2 CON:
-// Level 1 → Level 2: HP increases by 1d10+2 (avg 7.5)
-// Level 2 → Level 3: HP increases by 1d10+2
-// ...and so on for all levels!
-
-// Standard mode (capped at level 20):
-// - Ability scores increase at levels 4, 8, 12, 16, 19
-// - Each grants +2 to one ability or +1 to two abilities
-// - Stats are capped at 20
-
-// Uncapped mode (unlimited levels):
-// - Ability scores increase at EVERY level
-// - Each grants +2 to one ability or +1 to two abilities
-// - No stat cap - grow infinitely!
 ```
 
 ## XP Scaling
@@ -597,108 +626,9 @@ LevelUpProcessor.setUncappedConfig({});
 
 ---
 
-
-
-
-
-
-
-
-
-<!-- must check if the stuff below is in any way redundant with the rest of the docs -->
-
-
-
-### Understanding XP Bonus Calculation
-
-XP is calculated by combining multiple modifiers (capped at 3.0x total):
-
-```typescript
-import { XPCalculator } from 'playlist-data-engine';
-
-const xpCalc = new XPCalculator();
-
-// Base XP: 1 XP per second of listening
-const baseXP = 300;  // 5 minutes = 300 seconds
-
-// Environmental modifier examples:
-// - Running: 1.5x
-// - Walking: 1.2x
-// - Night time: 1.25x
-// - Extreme weather (rain/snow/storm): 1.4x
-// - High altitude (≥2000m): 1.3x
-
-// Gaming modifier examples:
-// - Base gaming bonus: +0.25x
-// - RPG game: +0.20x
-// - Action/FPS: +0.15x
-// - Multiplayer: +0.15x
-// - Long session (4+ hours): up to +0.20x
-
-// Total calculation (capped at 3.0x):
-const envMultiplier = 1.5;   // Running
-const gamingMultiplier = 1.55; // Playing RPG game
-const totalModifier = Math.min(3.0, envMultiplier * gamingMultiplier);
-const totalXP = Math.floor(baseXP * totalModifier);
-
-console.log(`Base: ${baseXP} XP, Total: ${totalXP} XP (${totalModifier.toFixed(2)}x)`);
-```
-
-### Manual Level-Up Processing
-
-For advanced use cases where you need to handle level-ups manually with full control over stat selection:
-
-```typescript
-import { LevelUpProcessor, StatManager } from 'playlist-data-engine';
-
-// ===== Method 1: Manual Stat Selection (D&D 5e Standard) =====
-// IMPORTANT: The default DnD5eStandardStrategy REQUIRES you to provide stat choice
-// via forcedAbilities. If you don't, processLevelUp() will throw an error!
-
-const statManager = new StatManager();  // Uses DnD5eStandardStrategy by default
-
-// When a character levels up, check if it's a stat increase level
-const statIncreaseLevels = [4, 8, 12, 16, 19];
-
-// 1. Process HP/proficiency/level-up benefits first
-const newLevel = character.level + 1;
-const benefits = LevelUpProcessor.processLevelUp(character, newLevel, character.seed);
-character = LevelUpProcessor.applyLevelUp(character, benefits);
-
-// 2. If this is a stat increase level, get player choice and apply stats
-if (statIncreaseLevels.includes(newLevel)) {
-  // Show UI to get player choice
-  const playerChoice = await showStatSelectionUI(); // Returns ['STR'] or ['DEX', 'CON'], etc.
-
-  // Apply stat increase with player's choice
-  const statResult = statManager.processLevelUp(character, newLevel, {
-    forcedAbilities: playerChoice
-  });
-
-  character = statResult.character;
-  console.log(`Stat increased: ${statResult.increases[0].ability} +${statResult.increases[0].delta}`);
-}
-
-// ===== Method 2: Auto-selection with Smart Strategy (Recommended) =====
-// This eliminates the need for manual stat selection entirely
-
-const smartStatManager = new StatManager({
-  strategy: 'dnD5e_smart'  // Automatically picks best stats based on class
-});
-
-const updater = new CharacterUpdater(smartStatManager);
-
-// Now level-ups are automatic! No manual stat selection needed.
-const result = updater.updateCharacterFromSession(character, session, track, listenCount);
-
-if (result.leveledUp) {
-  console.log(`Leveled up to ${result.newLevel}! Stats auto-increased.`);
-}
-```
-
 ## Progression Configuration
 
-Progression configuration controls XP calculation, stat increases, and level-up behavior.
+Customize XP calculation, stat increases, and level-up behavior globally across all characters.
 
 ```typescript
 import {
@@ -707,33 +637,69 @@ import {
     type ProgressionConfig
 } from 'playlist-data-engine';
 
-// Use default configuration (D&D 5e standard)
+// ===== VIEW DEFAULT CONFIGURATION =====
 const defaultProgression = DEFAULT_PROGRESSION_CONFIG;
 console.log(defaultProgression.xp.level_thresholds); // D&D 5e XP thresholds
 
-// Customize progression settings
+// ===== CUSTOMIZE PROGRESSION SETTINGS =====
 const customProgression = mergeProgressionConfig({
     xp: {
-        xp_per_second: 2, // Double XP rate (default: 1)
+        // Base XP rate (default: 1 XP per second)
+        xp_per_second: 2, // Double XP rate
+
+        // Environmental activity bonuses (multipliers applied to base XP)
         activity_bonuses: {
-            running: 2.0, // 2x XP while running (default: 1.5)
-            night_time: 1.5 // 1.5x XP at night (default: 1.25)
+            running: 2.0,      // 2x XP while running (default: 1.5)
+            walking: 1.2,      // 1.2x XP while walking
+            night_time: 1.5,   // 1.5x XP at night (default: 1.25)
+            // Weather bonuses
+            rain: 1.2,
+            snow: 1.3,
+            storm: 1.4,
+            // Gaming bonuses
+            gaming_base: 1.25, // Base gaming bonus
+            rpg_game: 0.2,     // Additional for RPG games
+            action_fps: 0.15,  // Additional for action/FPS
+            multiplayer: 0.15, // Additional for multiplayer
+            // Max multiplier cap
+            max_multiplier: 3.0 // Total cap on all modifiers (default: 3.0)
         }
     },
     statIncrease: {
-        strategy: 'balanced', // Use balanced strategy instead of manual
+        // Strategy: 'dnD5e' (manual), 'dnD5e_smart' (auto), 'balanced', or custom
+        strategy: 'balanced',
         autoApply: true // Automatically apply stat increases
     },
     levelUp: {
-        useAverageHP: true, // Use average HP instead of rolling
-        allowManualStatSelection: false // Disable manual selection
+        useAverageHP: true,           // Use average HP instead of rolling
+        allowManualStatSelection: false // Disable manual selection UI
     }
 });
+
+// ===== CONFIGURATION INTERFACE =====
+interface ProgressionConfig {
+    xp: {
+        xp_per_second: number;
+        activity_bonuses: Record<string, number>;
+        max_multiplier: number;
+    };
+    statIncrease: {
+        strategy: 'dnD5e' | 'dnD5e_smart' | 'balanced' | ((...args: any[]) => any);
+        autoApply: boolean;
+    };
+    levelUp: {
+        useAverageHP: boolean;
+        allowManualStatSelection: boolean;
+    };
+}
 ```
 
-**Available Exports:**
+**Important Notes:**
+- Configuration is **global** - affects all characters and all XP calculations
+- Set configuration **before** generating characters or processing level-ups
+- `mergeProgressionConfig()` merges your settings with defaults - unset properties remain default
 
-**Progression Configuration:**
+**Available Exports:**
 - `DEFAULT_PROGRESSION_CONFIG` - Default D&D 5e progression values
 - `mergeProgressionConfig(userConfig?)` - Merge progression config with defaults
 - `type ProgressionConfig` - Progression system configuration interface
