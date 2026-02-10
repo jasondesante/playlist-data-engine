@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { SpellManager } from '../../src/core/generation/SpellManager.js';
 import { SeededRNG } from '../../src/utils/random.js';
-import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS, SPELL_DATABASE } from '../../src/utils/constants.js';
+import { CLASS_SPELL_LISTS, SPELL_SLOTS_BY_CLASS, SPELL_DATABASE } from '../../src/constants/DefaultSpells.js';
 import type { Class } from '../../src/core/types/Character.js';
 
 describe('SpellManager', () => {

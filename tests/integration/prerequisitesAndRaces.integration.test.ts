@@ -23,7 +23,7 @@ import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { SpellValidator } from '../../src/core/spells/SpellValidator.js';
-import { SPELL_DATABASE } from '../../src/utils/constants.js';
+import { SPELL_DATABASE } from '../../src/constants/DefaultSpells.js';
 import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
 import { ALL_RACES } from '../../src/utils/constants.js';
 import { sampleAudioProfile, sampleTrack } from '../fixtures/sampleData.js';

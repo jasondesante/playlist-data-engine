@@ -89,6 +89,10 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 - [x] Move `DEFAULT_EQUIPMENT` from `src/utils/equipmentConstants.ts` to `src/constants/DefaultEquipment.ts`.
 - [x] **Find ALL files importing DEFAULT_EQUIPMENT**: `rg "DEFAULT_EQUIPMENT" --type ts`
 - [x] Update **EACH** file to import from `../constants/DefaultEquipment.js` instead
+    - Updated: `tests/unit/extensionManager.test.ts`
+    - Updated: `tests/unit/spellManager.test.ts`
+    - Updated: `tests/unit/spellPrerequisites.test.ts`
+    - Updated: `tests/integration/prerequisitesAndRaces.integration.test.ts`
 - [x] Remove `DEFAULT_EQUIPMENT` export from `src/utils/equipmentConstants.ts`
 - [x] Verify build passes: `npm run build`
 
@@ -96,6 +100,10 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 - [x] Move `RACE_DATA_IMPL` and `RACE_DATA` from `src/utils/constants.ts` to `src/constants/DefaultRaces.ts`.
 - [x] **Find ALL files importing RACE_DATA or RACE_DATA_IMPL**: `rg "RACE_DATA" --type ts`
 - [x] Update **EACH** file to import from `../constants/DefaultRaces.js` instead
+    - Updated: `tests/unit/extensionManager.test.ts`
+    - Updated: `tests/unit/spellManager.test.ts`
+    - Updated: `tests/unit/spellPrerequisites.test.ts`
+    - Updated: `tests/integration/prerequisitesAndRaces.integration.test.ts`
 - [x] Remove `RACE_DATA`, `RACE_DATA_IMPL`, `DEFAULT_RACE_DATA_ARRAY`, `getRaceData`, `getRaceDataAsync` exports from `src/utils/constants.ts`
 - [x] Verify build passes: `npm run build`
 
@@ -103,6 +111,10 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 - [x] Move `CLASS_DATA` from `src/utils/constants.ts` to `src/constants/DefaultClasses.ts`.
 - [x] **Find ALL files importing CLASS_DATA or ALL_CLASSES**: `rg "CLASS_DATA|ALL_CLASSES|CLASS_AUDIO_PREFERENCES" --type ts`
 - [x] Update **EACH** file to import from `../constants/DefaultClasses.js` instead
+    - Updated: `tests/unit/extensionManager.test.ts`
+    - Updated: `tests/unit/spellManager.test.ts`
+    - Updated: `tests/unit/spellPrerequisites.test.ts`
+    - Updated: `tests/integration/prerequisitesAndRaces.integration.test.ts`
     - Updated: `src/core/generation/CharacterGenerator.ts` (already correct)
     - Updated: `src/core/generation/ClassSuggester.ts` (already correct)
     - Updated: `src/core/extensions/initializeDefaults.ts` (already correct)
@@ -120,49 +132,58 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 
 #### Task 5: Spells (REDO)
 - [x] Move `SPELL_DATABASE` from `src/utils/constants.ts` to `src/constants/DefaultSpells.ts`.
-- [ ] **Find ALL files importing SPELL_DATABASE or related**: `rg "SPELL_DATABASE|CLASS_SPELL_LISTS|SPELL_SLOTS_BY_CLASS" --type ts`
-`- [x] Update **EACH** file to import from `../constants/DefaultSpells.js` instead
-- [ ] For helper functions in `src/utils/constants.ts` that need these internally:
+- [x] **Find ALL files importing SPELL_DATABASE or related**: `rg "SPELL_DATABASE|CLASS_SPELL_LISTS|SPELL_SLOTS_BY_CLASS" --type ts`
+- [x] Update **EACH** file to import from `../constants/DefaultSpells.js` instead
+    - Updated: `tests/unit/extensionManager.test.ts`
+    - Updated: `tests/unit/spellManager.test.ts`
+    - Updated: `tests/unit/spellPrerequisites.test.ts`
+    - Updated: `tests/integration/prerequisitesAndRaces.integration.test.ts`
+- [x] For helper functions in `src/utils/constants.ts` that need these internally:
     - Import ONLY what's needed for internal use
     - Do NOT re-export
-- [ ] Remove spell-related re-exports from `src/utils/constants.ts`
+- [x] Remove spell-related re-exports from `src/utils/constants.ts`
+    - Verified: No re-exports exist in constants.ts
 `- [x] Verify build passes: `npm run build`
 
 #### Task 6: Enchantments (REDO)
 - [x] Move `ENCHANTMENT_LIBRARY` from `src/utils/equipmentConstants.ts` to `src/constants/DefaultEnchantments.ts`.
 - [ ] **Find ALL files importing ENCHANTMENT_LIBRARY**: `rg "ENCHANTMENT_LIBRARY" --type ts`
-`- [x] Update **EACH** file to import from `../constants/DefaultEnchantments.js` instead
+- [x] Update **EACH** file to import from `../constants/DefaultEnchantments.js` instead
+    - Updated: `tests/unit/extensionManager.test.ts`
+    - Updated: `tests/unit/spellManager.test.ts`
+    - Updated: `tests/unit/spellPrerequisites.test.ts`
+    - Updated: `tests/integration/prerequisitesAndRaces.integration.test.ts`
 - [ ] Remove `ENCHANTMENT_LIBRARY` export from `src/utils/equipmentConstants.ts`
 `- [x] Verify build passes: `npm run build`
 
 #### Task 7: Item Templates
 - [ ] Move `ITEM_CREATION_TEMPLATES` from `src/utils/equipmentConstants.ts` to `src/constants/ItemTemplates.ts`.
 - [ ] **Find ALL files importing ITEM_CREATION_TEMPLATES**: `rg "ITEM_CREATION_TEMPLATES" --type ts`
-`- [x] Update **EACH** file to import from `../constants/ItemTemplates.js` instead
+- [ ] Update **EACH** file to import from `../constants/ItemTemplates.js` instead
 - [ ] Remove `ITEM_CREATION_TEMPLATES` export from `src/utils/equipmentConstants.ts`
-`- [x] Verify build passes: `npm run build`
+`- [ ] Verify build passes: `npm run build`
 
 #### Task 8: Magic Items
 - [ ] Move `MAGIC_ITEMS` from `src/utils/equipmentConstants.ts` to `src/constants/MagicItems.ts`.
 - [ ] **Find ALL files importing MAGIC_ITEMS**: `rg "MAGIC_ITEMS" --type ts`
-`- [x] Update **EACH** file to import from `../constants/MagicItems.js` instead
+- [ ] Update **EACH** file to import from `../constants/MagicItems.js` instead
 - [ ] Remove `MAGIC_ITEMS` export from `src/utils/equipmentConstants.ts`
-`- [x] Verify build passes: `npm run build`
+`- [ ] Verify build passes: `npm run build`
 
 #### Task 9: Skills
 - [ ] Move `DEFAULT_SKILLS` from `src/core/skills/DefaultSkills.ts` to `src/constants/DefaultSkills.ts`.
 - [ ] **Find ALL files importing DEFAULT_SKILLS**: `rg "DEFAULT_SKILLS" --type ts`
-`- [x] Update **EACH** file to import from `../constants/DefaultSkills.js` instead
+- [ ] Update **EACH** file to import from `../constants/DefaultSkills.js` instead
 - [ ] Remove `DEFAULT_SKILLS` from `src/core/skills/DefaultSkills.ts` (or delete file if nothing else remains)
-`- [x] Verify build passes: `npm run build`
+`- [ ] Verify build passes: `npm run build`
 
 #### Task 10: Features & Traits (REDO)
 - [x] Move `DEFAULT_CLASS_FEATURES` and `DEFAULT_RACIAL_TRAITS` from `src/core/features/DefaultFeatures.ts` to `src/constants/DefaultFeatures.ts`.
 - [ ] **Find ALL files importing from DefaultFeatures**: `rg "from ['\"].*DefaultFeatures['\"]" --type ts`
 - [ ] **Find ALL files importing DEFAULT_CLASS_FEATURES or DEFAULT_RACIAL_TRAITS**: `rg "DEFAULT_CLASS_FEATURES|DEFAULT_RACIAL_TRAITS" --type ts`
-`- [x] Update **EACH** file to import from `../constants/DefaultFeatures.js` instead
+- [ ] Update **EACH** file to import from `../constants/DefaultFeatures.js` instead
 - [ ] Delete `src/core/features/DefaultFeatures.ts` if it still exists and is now empty
-`- [x] Verify build passes: `npm run build`
+`- [ ] Verify build passes: `npm run build`
 
 #### Task 11: Helper Functions Assessment
 After moving all data, assess what remains in `src/utils/constants.ts`:

@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { SpellValidator } from '../../src/core/spells/SpellValidator.js';
 import { SpellManager } from '../../src/core/generation/SpellManager.js';
-import { SPELL_DATABASE } from '../../src/utils/constants.js';
+import { SPELL_DATABASE } from '../../src/constants/DefaultSpells.js';
 import type { Spell, SpellPrerequisite } from '../../src/utils/constants.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 
