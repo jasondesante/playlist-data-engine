@@ -192,11 +192,12 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 
 #### Task 10: Features & Traits (REDO)
 - [x] Move `DEFAULT_CLASS_FEATURES` and `DEFAULT_RACIAL_TRAITS` from `src/core/features/DefaultFeatures.ts` to `src/constants/DefaultFeatures.ts`.
-- [ ] **Find ALL files importing from DefaultFeatures**: `rg "from ['\"].*DefaultFeatures['\"]" --type ts`
-- [ ] **Find ALL files importing DEFAULT_CLASS_FEATURES or DEFAULT_RACIAL_TRAITS**: `rg "DEFAULT_CLASS_FEATURES|DEFAULT_RACIAL_TRAITS" --type ts`
-- [ ] Update **EACH** file to import from `../constants/DefaultFeatures.js` instead
-- [ ] Delete `src/core/features/DefaultFeatures.ts` if it still exists and is now empty
-`- [ ] Verify build passes: `npm run build`
+- [x] **Find ALL files importing from DefaultFeatures**: `rg "from ['\"].*DefaultFeatures['\"]" --type ts`
+- [x] **Find ALL files importing DEFAULT_CLASS_FEATURES or DEFAULT_RACIAL_TRAITS**: `rg "DEFAULT_CLASS_FEATURES|DEFAULT_RACIAL_TRAITS" --type ts`
+- [x] Update **EACH** file to import from `../constants/DefaultFeatures.js` instead
+    - All imports were already pointing to the correct location (`../../constants/DefaultFeatures.js`)
+- [x] Delete `src/core/features/DefaultFeatures.ts` - Already deleted (file no longer exists)
+- [x] Verify build passes: `npm run build` - Build successful (no errors)
 
 #### Task 11: Helper Functions Assessment
 After moving all data, assess what remains in `src/utils/constants.ts`:
