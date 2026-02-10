@@ -296,8 +296,19 @@ Added descriptions for all 18 skills in DEFAULT_SKILLS:
 **Build status:** ✅ Passes cleanly
 
 #### Task 16: Spells
-- [ ] **Research**: Study `src/constants/DefaultSpells.ts` and list all spell entries requiring descriptions.
-- [ ] Update `SPELL_DATABASE` in `src/constants/DefaultSpells.ts`.
+- [x] **Research**: Study `src/constants/DefaultSpells.ts` and list all spell entries requiring descriptions.
+- [x] Update `SPELL_DATABASE` in `src/constants/DefaultSpells.ts`.
+
+**Summary:**
+Added descriptions for all 48 spells in SPELL_DATABASE:
+- Cantrips (10): Acid Splash, Fire Bolt, Light, Mage Hand, Mending, Message, Prestidigitation, Sacred Flame, Shocking Grasp, Vicious Mockery
+- 1st Level (16): Burning Hands, Charm Person, Cure Wounds, Detect Magic, Disguise Self, Expeditious Retreat, False Life, Feather Fall, Grease, Healing Word, Identify, Mage Armor, Magic Missile, Shield, Sleep, Thunderwave
+- 2nd Level (13): Acid Arrow, Aganazzar's Scorcher, Blur, Detect Thoughts, Fireball, Hold Person, Invisibility, Knock, Misty Step, Mirror Image, Scorching Ray, Shatter, Suggestion
+- 3rd Level (8): Animate Dead, Blink, Counterspell, Dispel Magic, Lightning Bolt, Major Image, Sleet Storm, Telekinesis
+- 4th Level (4): Dimension Door, Greater Invisibility, Polymorph, Stoneskin
+- 5th Level (2): Cone of Cold, Teleportation Circle
+
+**Build status:** ✅ Passes cleanly
 
 #### Task 17: Equipment
 - [ ] **Research**: Study `src/constants/DefaultEquipment.ts`, `ItemTemplates.ts`, and `MagicItems.ts` to identify all items.
