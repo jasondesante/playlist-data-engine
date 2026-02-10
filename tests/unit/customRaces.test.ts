@@ -14,7 +14,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { AbilityScoreCalculator } from '../../src/core/generation/AbilityScoreCalculator.js';
-import { getRaceData, RACE_DATA, ALL_RACES, DEFAULT_RACE_DATA_ARRAY } from '../../src/utils/constants.js';
+import { ALL_RACES } from '../../src/utils/constants.js';
+import { getRaceData, RACE_DATA, DEFAULT_RACE_DATA_ARRAY } from '../../src/constants/DefaultRaces.js';
 import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/index.js';
 import { registerTestRacialTrait, registerTestRacialTraits } from '../helpers/registrationHelpers.js';

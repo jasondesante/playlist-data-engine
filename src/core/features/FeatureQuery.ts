@@ -25,7 +25,7 @@ import type {
 } from './FeatureTypes.js';
 import type { Class, Race } from '../types/Character.js';
 import type { CharacterSheet } from '../types/Character.js';
-import { getRaceData } from '../../utils/constants.js';
+import { getRaceData } from '../../constants/DefaultRaces.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 
 /**

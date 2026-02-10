@@ -405,10 +405,13 @@ export {
 // Race data and helper functions
 export {
     RACE_DATA,
-    ALL_RACES,
+    DEFAULT_RACE_DATA_ARRAY,
     getRaceData,
     getRaceDataAsync
-} from './utils/constants.js';
+} from './constants/DefaultRaces.js';
+
+// ALL_RACES is still defined in utils/constants.ts
+export { ALL_RACES } from './utils/constants.js';
 
 // Class data and related constants
 export {

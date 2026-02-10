@@ -94,10 +94,10 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 
 #### Task 3: Races (REDO)
 - [x] Move `RACE_DATA_IMPL` and `RACE_DATA` from `src/utils/constants.ts` to `src/constants/DefaultRaces.ts`.
-- [ ] **Find ALL files importing RACE_DATA or RACE_DATA_IMPL**: `rg "RACE_DATA" --type ts`
-`- [x] Update **EACH** file to import from `../constants/DefaultRaces.js` instead
-- [ ] Remove `RACE_DATA`, `RACE_DATA_IMPL`, `DEFAULT_RACE_DATA_ARRAY`, `getRaceData`, `getRaceDataAsync` exports from `src/utils/constants.ts`
-`- [x] Verify build passes: `npm run build`
+- [x] **Find ALL files importing RACE_DATA or RACE_DATA_IMPL**: `rg "RACE_DATA" --type ts`
+- [x] Update **EACH** file to import from `../constants/DefaultRaces.js` instead
+- [x] Remove `RACE_DATA`, `RACE_DATA_IMPL`, `DEFAULT_RACE_DATA_ARRAY`, `getRaceData`, `getRaceDataAsync` exports from `src/utils/constants.ts`
+- [x] Verify build passes: `npm run build`
 
 #### Task 4: Classes (REDO)
 - [x] Move `CLASS_DATA` from `src/utils/constants.ts` to `src/constants/DefaultClasses.ts`.

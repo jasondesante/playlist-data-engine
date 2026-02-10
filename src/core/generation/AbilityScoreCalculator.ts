@@ -5,7 +5,7 @@
 
 import type { AbilityScores } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
-import { getRaceData } from '../../utils/constants.js';
+import { getRaceData } from '../../constants/DefaultRaces.js';
 
 /**
  * Calculate D&D 5e ability scores and modifiers from audio characteristics

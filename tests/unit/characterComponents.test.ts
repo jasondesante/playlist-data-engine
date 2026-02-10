@@ -7,7 +7,8 @@ import { AbilityScoreCalculator } from '../../src/core/generation/AbilityScoreCa
 import { RaceSelector } from '../../src/core/generation/RaceSelector';
 import { ClassSuggester } from '../../src/core/generation/ClassSuggester';
 import { SeededRNG } from '../../src/utils/random';
-import { ALL_RACES, DEFAULT_RACE_DATA_ARRAY } from '../../src/utils/constants';
+import { ALL_RACES } from '../../src/utils/constants';
+import { DEFAULT_RACE_DATA_ARRAY } from '../../src/constants/DefaultRaces';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager';
 import type { AudioProfile } from '../../src/core/types/AudioProfile';
 

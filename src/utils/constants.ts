@@ -20,9 +20,10 @@ import type {
 export type { Spell, SpellPrerequisite };
 
 // Race data has been moved to src/constants/DefaultRaces.ts
-// Re-export here for backward compatibility
+// Import types for backward compatibility
 export type { RaceDataEntry, CustomRaceDataEntry } from '../constants/DefaultRaces.js';
-export { RACE_DATA, DEFAULT_RACE_DATA_ARRAY, getRaceData, getRaceDataAsync } from '../constants/DefaultRaces.js';
+// Note: RACE_DATA, DEFAULT_RACE_DATA_ARRAY, getRaceData, getRaceDataAsync are now exported directly from
+// ../constants/DefaultRaces.js - update imports to use that path instead
 
 // Class data has been moved to src/constants/DefaultClasses.ts
 // Import for internal use by helper functions only
