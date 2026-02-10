@@ -282,8 +282,18 @@ Added descriptions for all 12 classes in CLASS_DATA:
 **Build status:** ✅ Passes cleanly
 
 #### Task 15: Skills
-- [ ] **Research**: Study `src/constants/DefaultSkills.ts` and list all skill entries requiring descriptions.
-- [ ] Update `DEFAULT_SKILLS` in `src/constants/DefaultSkills.ts`.
+- [x] **Research**: Study `src/constants/DefaultSkills.ts` and list all skill entries requiring descriptions.
+- [x] Update `DEFAULT_SKILLS` in `src/constants/DefaultSkills.ts`.
+
+**Summary:**
+Added descriptions for all 18 skills in DEFAULT_SKILLS:
+- STR-based: Athletics (climbing, jumping, swimming)
+- DEX-based: Acrobatics (balancing, tumbling), Sleight of Hand (picking pockets, dexterity), Stealth (hiding, moving silently)
+- INT-based: Arcana (magic knowledge), History (historical lore), Investigation (deduction, clues), Nature (plants, animals, weather), Religion (deities, divine magic)
+- WIS-based: Animal Handling (calming animals), Insight (reading people, detecting lies), Medicine (diagnosing, stabilizing), Perception (awareness, noticing things), Survival (tracking, foraging, navigation)
+- CHA-based: Deception (lying, trickery), Intimidation (frightening), Performance (entertainment), Persuasion (influence through charm)
+
+**Build status:** ✅ Passes cleanly
 
 #### Task 16: Spells
 - [ ] **Research**: Study `src/constants/DefaultSpells.ts` and list all spell entries requiring descriptions.
