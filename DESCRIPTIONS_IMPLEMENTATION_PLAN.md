@@ -159,11 +159,14 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 `- [x] Verify build passes: `npm run build`
 
 #### Task 7: Item Templates
-- [ ] Move `ITEM_CREATION_TEMPLATES` from `src/utils/equipmentConstants.ts` to `src/constants/ItemTemplates.ts`.
-- [ ] **Find ALL files importing ITEM_CREATION_TEMPLATES**: `rg "ITEM_CREATION_TEMPLATES" --type ts`
-- [ ] Update **EACH** file to import from `../constants/ItemTemplates.js` instead
-- [ ] Remove `ITEM_CREATION_TEMPLATES` export from `src/utils/equipmentConstants.ts`
-`- [ ] Verify build passes: `npm run build`
+- [x] Move `ITEM_CREATION_TEMPLATES` from `src/utils/equipmentConstants.ts` to `src/constants/ItemTemplates.ts`.
+- [x] **Find ALL files importing ITEM_CREATION_TEMPLATES**: `rg "ITEM_CREATION_TEMPLATES" --type ts`
+- [x] Update **EACH** file to import from `../constants/ItemTemplates.js` instead
+    - Updated: `src/utils/magicItemExamples.ts`
+    - Updated: `src/core/equipment/EquipmentSpawnHelper.ts`
+    - Updated: `src/index.ts`
+- [x] Remove `ITEM_CREATION_TEMPLATES` export from `src/utils/equipmentConstants.ts`
+`- [x] Verify build passes: `npm run build`
 
 #### Task 8: Magic Items
 - [ ] Move `MAGIC_ITEMS` from `src/utils/equipmentConstants.ts` to `src/constants/MagicItems.ts`.

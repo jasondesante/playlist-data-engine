@@ -21,7 +21,7 @@ import type {
 } from '../types/Equipment.js';
 import { SeededRNG } from '../../utils/random.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
-import { ITEM_CREATION_TEMPLATES } from '../../utils/equipmentConstants.js';
+import { ITEM_CREATION_TEMPLATES } from '../../constants/ItemTemplates.js';
 
 /**
  * Rarity order for comparisons (common = 0, legendary = 4)

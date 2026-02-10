@@ -20,9 +20,9 @@
 
 import type { EnhancedEquipment } from '../core/types/Equipment.js';
 import {
-    MAGIC_ITEMS,
-    ITEM_CREATION_TEMPLATES
+    MAGIC_ITEMS
 } from './equipmentConstants.js';
+import { ITEM_CREATION_TEMPLATES } from '../constants/ItemTemplates.js';
 
 /**
  * Helper function to get magic item by name

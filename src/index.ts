@@ -454,9 +454,11 @@ export {
 export {
     CLASS_STARTING_EQUIPMENT,
     getClassStartingEquipment,
-    MAGIC_ITEMS,
-    ITEM_CREATION_TEMPLATES
+    MAGIC_ITEMS
 } from './utils/equipmentConstants.js';
+export {
+    ITEM_CREATION_TEMPLATES
+} from './constants/ItemTemplates.js';
 export {
     ENCHANTMENT_LIBRARY
 } from './constants/DefaultEnchantments.js';

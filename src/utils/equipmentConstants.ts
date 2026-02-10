@@ -1260,10 +1260,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
 // ITEM_CREATION_TEMPLATES
 // ============================================================================
 // NOTE: ITEM_CREATION_TEMPLATES has been moved to src/constants/ItemTemplates.ts
-// It is re-exported below for backward compatibility.
-
-// Re-export ITEM_CREATION_TEMPLATES from the new location
-export { ITEM_CREATION_TEMPLATES } from '../constants/ItemTemplates.js';
+// Please import ITEM_CREATION_TEMPLATES directly from '../constants/ItemTemplates.js' instead
 
 // ============================================================================
 // ENCHANTMENT_LIBRARY
