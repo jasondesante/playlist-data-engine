@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SkillAssigner } from '../../src/core/generation/SkillAssigner.js';
 import { SeededRNG } from '../../src/utils/random.js';
 import type { Class, Skill } from '../../src/core/types/Character.js';
-import { CLASS_DATA } from '../../src/utils/constants.js';
+import { CLASS_DATA } from '../../src/constants/DefaultClasses.js';
 import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { DEFAULT_SKILLS } from '../../src/core/skills/DefaultSkills.js';

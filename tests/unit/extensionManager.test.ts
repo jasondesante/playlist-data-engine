@@ -11,8 +11,9 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ExtensionManager, type ExtensionCategory } from '../../src/core/extensions/ExtensionManager.js';
-import { SPELL_DATABASE, ALL_RACES, ALL_CLASSES } from '../../src/utils/constants.js';
+import { SPELL_DATABASE, ALL_RACES } from '../../src/utils/constants.js';
 import { DEFAULT_RACE_DATA_ARRAY } from '../../src/constants/DefaultRaces.js';
+import { ALL_CLASSES } from '../../src/constants/DefaultClasses.js';
 import { DEFAULT_EQUIPMENT } from '../../src/constants/DefaultEquipment.js';
 
 describe('ExtensionManager', () => {

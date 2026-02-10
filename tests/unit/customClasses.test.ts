@@ -16,10 +16,9 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js'
 import {
     getClassData,
     getClassSpellList,
-    getSpellSlotsForClass,
-    CLASS_DATA,
-    ALL_CLASSES
+    getSpellSlotsForClass
 } from '../../src/utils/constants.js';
+import { CLASS_DATA, ALL_CLASSES } from '../../src/constants/DefaultClasses.js';
 import { getClassStartingEquipment } from '../../src/utils/equipmentConstants.js';
 import { Class, asClass, DEFAULT_CLASSES } from '../../src/core/types/Character.js';
 

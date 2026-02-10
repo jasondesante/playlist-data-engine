@@ -101,13 +101,22 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 
 #### Task 4: Classes (REDO)
 - [x] Move `CLASS_DATA` from `src/utils/constants.ts` to `src/constants/DefaultClasses.ts`.
-- [ ] **Find ALL files importing CLASS_DATA or ALL_CLASSES**: `rg "CLASS_DATA|ALL_CLASSES|CLASS_AUDIO_PREFERENCES" --type ts`
-`- [x] Update **EACH** file to import from `../constants/DefaultClasses.js` instead
-- [ ] For helper functions in `src/utils/constants.ts` that need CLASS_DATA internally:
-    - Import ONLY what's needed for internal use: `import { CLASS_DATA } from '../constants/DefaultClasses.js'`
-    - Do NOT re-export
-- [ ] Remove `CLASS_DATA`, `ALL_CLASSES`, `CLASS_AUDIO_PREFERENCES` re-exports from `src/utils/constants.ts`
-`- [x] Verify build passes: `npm run build`
+- [x] **Find ALL files importing CLASS_DATA or ALL_CLASSES**: `rg "CLASS_DATA|ALL_CLASSES|CLASS_AUDIO_PREFERENCES" --type ts`
+- [x] Update **EACH** file to import from `../constants/DefaultClasses.js` instead
+    - Updated: `src/core/generation/CharacterGenerator.ts` (already correct)
+    - Updated: `src/core/generation/ClassSuggester.ts` (already correct)
+    - Updated: `src/core/extensions/initializeDefaults.ts` (already correct)
+    - Updated: `src/core/progression/stat/StatIncreaseStrategy.ts` (already correct)
+    - Updated: `src/core/progression/LevelUpProcessor.ts` (already correct)
+    - Updated: `tests/unit/extensionManager.test.ts`
+    - Updated: `tests/unit/customClasses.test.ts`
+    - Updated: `tests/unit/skills.test.ts`
+- [x] For helper functions in `src/utils/constants.ts` that need CLASS_DATA internally:
+    - Verified: `import { CLASS_DATA } from '../constants/DefaultClasses.js'` is used for internal use only
+    - Verified: No re-exports exist in constants.ts
+- [x] Remove `CLASS_DATA`, `ALL_CLASSES`, `CLASS_AUDIO_PREFERENCES` re-exports from `src/utils/constants.ts`
+    - Verified: No re-exports exist - they were already cleaned up in Task 1
+- [x] Verify build passes: `npm run build`
 
 #### Task 5: Spells (REDO)
 - [x] Move `SPELL_DATABASE` from `src/utils/constants.ts` to `src/constants/DefaultSpells.ts`.
