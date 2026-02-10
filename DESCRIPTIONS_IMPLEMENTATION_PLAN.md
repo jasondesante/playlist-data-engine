@@ -261,8 +261,25 @@ Added descriptions for all 9 races in RACE_DATA_IMPL:
 **Build status:** ✅ Passes cleanly
 
 #### Task 14: Classes
-- [ ] **Research**: Study `src/constants/DefaultClasses.ts` and list all class entries requiring descriptions.
-- [ ] Update `CLASS_DATA` in `src/constants/DefaultClasses.ts` with descriptions.
+- [x] **Research**: Study `src/constants/DefaultClasses.ts` and list all class entries requiring descriptions.
+- [x] Update `CLASS_DATA` in `src/constants/DefaultClasses.ts` with descriptions.
+
+**Summary:**
+Added descriptions for all 12 classes in CLASS_DATA:
+- Barbarian: Primal rage and front-line combat
+- Bard: Inspiring magic through performance, versatile jack-of-all-trades
+- Cleric: Divine magic servant, healing and destruction
+- Druid: Nature priest, shapeshifting and elemental power
+- Fighter: Master of martial combat, versatile warrior
+- Monk: Martial artist, ki energy and supernatural abilities
+- Paladin: Holy warrior bound to sacred oath
+- Ranger: Wilderness hunter, favored enemy and terrain
+- Rogue: Stealthy trickster, skill master and devastating strikes
+- Sorcerer: Innate magic from bloodline or cosmic source
+- Warlock: Pact magic from otherworldly patrons
+- Wizard: Scholarly arcane magic, widest spell variety
+
+**Build status:** ✅ Passes cleanly
 
 #### Task 15: Skills
 - [ ] **Research**: Study `src/constants/DefaultSkills.ts` and list all skill entries requiring descriptions.

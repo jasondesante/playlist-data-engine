@@ -29,6 +29,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         skill_count: 2,
         available_skills: ['athletics', 'animal_handling', 'intimidation', 'nature', 'perception', 'survival'],
         has_expertise: false,
+        description: 'A fierce warrior of primitive background who can enter a battle rage. Barbarians draw on primal fury to unleash devastating attacks, shrug off wounds that would fell others, and channel their totem spirits\' power. They thrive on the front lines, where their rage makes them unstoppable forces of nature.',
     },
     'Bard': {
         primary_ability: 'CHA',
@@ -44,6 +45,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         ],
         has_expertise: true,
         expertise_count: 2,
+        description: 'An inspiring magician whose power echoes the music of creation. Bards weave magic through music, poetry, and performance, inspiring allies, demoralizing enemies, and wielding versatile spells. They are jack-of-all-trades who can fill any role, from frontline support to devastating spellcaster.',
     },
     'Cleric': {
         primary_ability: 'WIS',
@@ -53,6 +55,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         skill_count: 2,
         available_skills: ['history', 'insight', 'medicine', 'persuasion', 'religion'],
         has_expertise: false,
+        description: 'A priestly champion who wields divine magic in service of a higher power. Clerics serve as intermediaries between the mortal world and the divine, wielding healing and destructive magic granted by their deities. They can wear heavy armor, wield powerful weapons, and specialize in different domains of divine influence.',
     },
     'Druid': {
         primary_ability: 'WIS',
@@ -62,6 +65,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         skill_count: 2,
         available_skills: ['arcana', 'animal_handling', 'insight', 'medicine', 'nature', 'perception', 'religion', 'survival'],
         has_expertise: false,
+        description: 'A priest of the Old Faith, wielding the powers of nature and adopting animal forms. Druids revere nature and gain their magic from the natural world, commanding the elements, transforming into beasts, and calling upon the forces of life and growth. They serve as guardians of the wild places and mediators between civilization and nature.',
     },
     'Fighter': {
         primary_ability: 'STR',
@@ -71,6 +75,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         skill_count: 2,
         available_skills: ['acrobatics', 'animal_handling', 'athletics', 'history', 'insight', 'intimidation', 'perception', 'survival'],
         has_expertise: false,
+        description: 'A master of martial combat, skilled with a variety of weapons and armor. Fighters learn countless fighting techniques, specializing in certain styles of combat. They are the backbone of any adventuring party, capable of withstanding tremendous punishment while dishing out devastating damage through martial prowess alone.',
     },
     'Monk': {
         primary_ability: 'DEX',
@@ -80,6 +85,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         skill_count: 2,
         available_skills: ['acrobatics', 'athletics', 'history', 'insight', 'religion', 'stealth'],
         has_expertise: false,
+        description: 'A master of martial arts, harnessing the power of the body in pursuit of physical and spiritual perfection. Monks use their bodies as weapons, channeling ki energy to perform extraordinary feats. They are agile warriors who can strike with deadly precision, evade attacks with supernatural grace, and harness mystical abilities.',
     },
     'Paladin': {
         primary_ability: 'STR',
@@ -89,6 +95,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         skill_count: 2,
         available_skills: ['athletics', 'insight', 'intimidation', 'medicine', 'persuasion', 'religion'],
         has_expertise: false,
+        description: 'A holy warrior bound to a sacred oath. Paladins combine martial prowess with divine magic, smiting foes with holy fire and healing allies with sacred power. They are paragons of their beliefs, radiating auras that protect allies and punish enemies. Their strength comes from their unwavering devotion to their oath.',
     },
     'Ranger': {
         primary_ability: 'DEX',
@@ -98,6 +105,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         skill_count: 3,
         available_skills: ['animal_handling', 'athletics', 'insight', 'investigation', 'nature', 'perception', 'stealth', 'survival'],
         has_expertise: false,
+        description: 'A warrior who combats threats on the edges of civilization. Rangers are hunters and trackers who know the wilderness intimately, moving swiftly through natural terrain and striking from a distance. They develop supernatural connections to their chosen enemies and environments, gaining deadly precision against favored foes.',
     },
     'Rogue': {
         primary_ability: 'DEX',
@@ -108,6 +116,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         available_skills: ['acrobatics', 'athletics', 'deception', 'insight', 'intimidation', 'investigation', 'perception', 'performance', 'persuasion', 'sleight_of_hand', 'stealth'],
         has_expertise: true,
         expertise_count: 2,
+        description: 'A scoundrel who uses stealth and trickery to overcome obstacles and enemies. Rogues excel at skills, finding traps, and striking devastating blows from hiding. Whether as thieves, assassins, or spies, they are versatile problem-solvers who can disable threats before allies even know they exist.',
     },
     'Sorcerer': {
         primary_ability: 'CHA',
@@ -117,6 +126,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         skill_count: 2,
         available_skills: ['arcana', 'deception', 'insight', 'intimidation', 'persuasion', 'religion'],
         has_expertise: false,
+        description: 'A spellcaster who draws on inherent magic from a supernatural bloodline or cosmic source. Sorcerers have no need for spellbooks—their power comes from within, born of draconic heritage, wild magic, or other supernatural origins. They can manipulate and metamagic their spells in ways other casters cannot.',
     },
     'Warlock': {
         primary_ability: 'CHA',
@@ -126,6 +136,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         skill_count: 2,
         available_skills: ['arcana', 'deception', 'history', 'intimidation', 'investigation', 'nature', 'religion'],
         has_expertise: false,
+        description: 'A wielder of magic that is derived from a bargain with an extraplanar entity. Warlocks gain their powers through pacts with powerful beings—fiends, fey, Great Old Ones, or other eldritch entities. In exchange for service, they receive mystical abilities and can cast eldritch invocations that blur the line between spell and supernatural ability.',
     },
     'Wizard': {
         primary_ability: 'INT',
@@ -135,6 +146,7 @@ export const CLASS_DATA: Record<string, ClassDataEntry> = {
         skill_count: 2,
         available_skills: ['arcana', 'history', 'insight', 'investigation', 'medicine', 'religion'],
         has_expertise: false,
+        description: 'A scholarly magic-user capable of manipulating the structures of reality. Wizards are masters of arcane magic, studying spellbooks to unlock the secrets of the universe. They specialize in specific schools of magic, from evocation to illusion, and have access to the widest variety of spells of any class.',
     },
 };
 
