@@ -16,7 +16,7 @@ import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { ALL_RACES } from '../../src/utils/constants.js';
-import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
+import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/index.js';
 import { registerTestRacialTrait, registerTestRacialTraits } from '../helpers/registrationHelpers.js';
 import type { RacialTrait } from '../../src/core/features/FeatureTypes.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';

@@ -16,7 +16,7 @@ import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js'
 import { AbilityScoreCalculator } from '../../src/core/generation/AbilityScoreCalculator.js';
 import { getRaceData, RACE_DATA, ALL_RACES, DEFAULT_RACE_DATA_ARRAY } from '../../src/utils/constants.js';
 import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
-import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
+import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/index.js';
 import { registerTestRacialTrait, registerTestRacialTraits } from '../helpers/registrationHelpers.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';
 import type { AbilityScores } from '../../src/core/types/Character.js';

@@ -4,7 +4,7 @@ import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { initializeAllDefaults } from '../../src/core/extensions/initializeDefaults.js';
 import { ALL_RACES } from '../../src/utils/constants.js';
-import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
+import { DEFAULT_RACIAL_TRAITS } from '../../src/core/features/index.js';
 import { registerTestRacialTrait } from '../helpers/registrationHelpers.js';
 import type { RacialTrait } from '../../src/core/features/FeatureTypes.js';
 import type { AudioProfile } from '../../src/core/types/AudioProfile.js';

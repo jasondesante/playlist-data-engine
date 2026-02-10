@@ -86,11 +86,13 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
 
 #### Task 10: Features & Traits
 - [x] Move `DEFAULT_CLASS_FEATURES` and `DEFAULT_RACIAL_TRAITS` from `src/core/features/DefaultFeatures.ts` to `src/constants/DefaultFeatures.ts`.
-- [ ] Veryify imports were updated in:
-    - [ ] `src/core/features/DefaultFeatures.ts` (re-export or remove)
-    - [ ] `src/core/features/index.ts`
-    - [ ] `src/core/extensions/initializeDefaults.ts`
-- [ ] Double check the imports to make sure there aren't any more that need updating.
+- [x] Veryify imports were updated in:
+    - [x] `src/core/features/DefaultFeatures.ts` (re-export or remove) - File does not exist, nothing to do
+    - [x] `src/core/features/index.ts` - Already exports from new location
+    - [x] `src/core/extensions/initializeDefaults.ts` - Already imports from new location
+- [x] Double check the imports to make sure there aren't any more that need updating.
+    - Updated 8 test files to import from `../../src/core/features/index.js` instead of old path
+    - Removed unused `Race` type import from DefaultFeatures.ts
 
 ### Phase 3: Data Population
 This phase involves adding the actual description text to the newly organized files.

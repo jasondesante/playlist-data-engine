@@ -6,7 +6,7 @@
  */
 
 import type { ClassFeature, RacialTrait } from '../core/features/FeatureTypes.js';
-import type { Class, Race } from '../core/types/Character.js';
+import type { Class } from '../core/types/Character.js';
 import { asRace } from '../core/types/Character.js';
 
 /**

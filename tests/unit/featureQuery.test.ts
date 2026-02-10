@@ -13,7 +13,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
-import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
+import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/index.js';
 import { registerTestClassFeature, registerTestClassFeatures, registerTestRacialTrait, registerTestRacialTraits } from '../helpers/registrationHelpers.js';
 import type { ClassFeature, RacialTrait, Class, Race, AbilityScores } from '../../src/core/types/index.js';
 import type { CharacterSheet } from '../../src/core/types/Character.js';

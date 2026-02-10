@@ -11,7 +11,7 @@ import type { CharacterSheet, AbilityScores } from '../../src/core/types/Charact
 import type { PlaylistTrack } from '../../src/core/types/Playlist';
 import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
-import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/DefaultFeatures.js';
+import { DEFAULT_CLASS_FEATURES, DEFAULT_RACIAL_TRAITS } from '../../src/core/features/index.js';
 
 describe('SessionTracker (T068-T069)', () => {
     let tracker: SessionTracker;

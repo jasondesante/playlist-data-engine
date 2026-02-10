@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { ExtensionManager } from '../../src/core/extensions/ExtensionManager.js';
 import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { initializeFeatureDefaults } from '../../src/core/extensions/initializeDefaults.js';
-import { DEFAULT_CLASS_FEATURES } from '../../src/core/features/DefaultFeatures.js';
+import { DEFAULT_CLASS_FEATURES } from '../../src/core/features/index.js';
 import { registerTestClassFeature, registerTestClassFeatures } from '../helpers/registrationHelpers.js';
 import type { ClassFeature } from '../../src/core/features/FeatureTypes.js';
 
