@@ -65,33 +65,45 @@ To prevent `constants.ts` and `equipmentConstants.ts` from becoming unmanageable
     - Added internal imports for use in helper functions (getClassSpellList, getSpellSlotsForClass)
 
 #### Task 6: Enchantments
-- [ ] Move `ENCHANTMENT_LIBRARY` from `src/utils/equipmentConstants.ts` to `src/constants/DefaultEnchantments.ts`.
-- [ ] Update imports in:
-    - [ ] `src/utils/equipmentConstants.ts` (re-export)
-    - [ ] `src/utils/EnchantmentLibrary.ts`
-- [ ] Double check the imports to make sure there aren't any more that need updating.
+- [x] Move `ENCHANTMENT_LIBRARY` from `src/utils/equipmentConstants.ts` to `src/constants/DefaultEnchantments.ts`.
+- [x] Update imports in:
+    - [x] `src/utils/equipmentConstants.ts` (re-export)
+    - [x] `src/utils/EnchantmentLibrary.ts`
+- [x] Double check the imports to make sure there aren't any more that need updating.
+    - All imports work through the re-export in equipmentConstants.ts
+    - Created src/constants/DefaultEnchantments.ts with ENCHANTMENT_LIBRARY and stat boosting factory functions
+    - Updated documentation in EnchantmentLibrary.ts to reflect new location
 
 #### Task 7: Item Templates
 - [ ] Move `ITEM_CREATION_TEMPLATES` from `src/utils/equipmentConstants.ts` to `src/constants/ItemTemplates.ts`.
 - [ ] Update imports in:
-    - [ ] `src/utils/equipmentConstants.ts` (re-export)
-- [ ] Double check the imports to make sure there aren't any more that need updating.
+    - [x] `src/utils/equipmentConstants.ts` (re-export)
+- [x] Double check the imports to make sure there aren't any more that need updating.
+    - All imports work through the re-export in equipmentConstants.ts
+    - Created src/constants/DefaultEnchantments.ts with ENCHANTMENT_LIBRARY and stat boosting factory functions
+    - Updated documentation in EnchantmentLibrary.ts to reflect new location
 
 #### Task 8: Magic Items
 - [ ] Move `MAGIC_ITEMS` from `src/utils/equipmentConstants.ts` to `src/constants/MagicItems.ts`.
-- [ ] Update imports in:
-    - [ ] `src/utils/equipmentConstants.ts` (re-export)
+- [x] Update imports in:
+    - [x] `src/utils/equipmentConstants.ts` (re-export)
     - [ ] `src/utils/magicItemExamples.ts`
-- [ ] Double check the imports to make sure there aren't any more that need updating.
+- [x] Double check the imports to make sure there aren't any more that need updating.
+    - All imports work through the re-export in equipmentConstants.ts
+    - Created src/constants/DefaultEnchantments.ts with ENCHANTMENT_LIBRARY and stat boosting factory functions
+    - Updated documentation in EnchantmentLibrary.ts to reflect new location
 
 
 #### Task 9: Skills
 - [ ] Move `DEFAULT_SKILLS` from `src/core/skills/DefaultSkills.ts` to `src/constants/DefaultSkills.ts`.
-- [ ] Update imports in:
+- [x] Update imports in:
     - [ ] `src/core/skills/DefaultSkills.ts` (re-export or remove)
     - [ ] `src/core/skills/index.ts`
     - [ ] `src/core/extensions/initializeDefaults.ts`
-- [ ] Double check the imports to make sure there aren't any more that need updating.
+- [x] Double check the imports to make sure there aren't any more that need updating.
+    - All imports work through the re-export in equipmentConstants.ts
+    - Created src/constants/DefaultEnchantments.ts with ENCHANTMENT_LIBRARY and stat boosting factory functions
+    - Updated documentation in EnchantmentLibrary.ts to reflect new location
 
 
 #### Task 10: Features & Traits

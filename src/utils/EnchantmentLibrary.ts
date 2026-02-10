@@ -5,7 +5,7 @@
  * This class provides static methods for looking up enchantments by ID, retrieving all
  * enchantments of a specific type, and creating stat-boosting enchantments.
  *
- * The actual enchantment data is stored in `ENCHANTMENT_LIBRARY` in equipmentConstants.ts,
+ * The actual enchantment data is stored in `ENCHANTMENT_LIBRARY` in src/constants/DefaultEnchantments.ts,
  * organized by category:
  * - WEAPON_ENCHANTMENTS: Individual weapon enchantments (+1, flaming, frost, etc.)
  * - ARMOR_ENCHANTMENTS: Individual armor enchantments (+1, +2)
@@ -47,7 +47,7 @@ import { ENCHANTMENT_LIBRARY } from './equipmentConstants.js';
  * Enchantment Library Class
  *
  * Provides static methods for accessing enchantments and curses from the centralized
- * ENCHANTMENT_LIBRARY in equipmentConstants.ts.
+ * ENCHANTMENT_LIBRARY (re-exported from src/constants/DefaultEnchantments.ts).
  */
 export class EnchantmentLibrary {
     // ========================================================================
