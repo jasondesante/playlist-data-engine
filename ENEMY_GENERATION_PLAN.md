@@ -213,8 +213,10 @@ Audio profile influences:
 
 **File:** `src/constants/EnemyRarity.ts`
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Define `RARITY_CONFIGS` object mapping rarity to configuration:
+- [x] Define `RARITY_CONFIGS` object mapping rarity to configuration:
   ```typescript
   {
     common: { statMultiplier: 1.0, signatureDieSize: 6, extraAbilityCount: 0, hasResistances: false },
@@ -223,8 +225,13 @@ Audio profile influences:
     boss: { statMultiplier: 1.5, signatureDieSize: 12, extraAbilityCount: 3, hasResistances: true }
   }
   ```
-- [ ] Create helper function `getRarityConfig(rarity: EnemyRarity): RarityConfig`
-- [ ] Export all constants and utilities
+- [x] Create helper function `getRarityConfig(rarity: EnemyRarity): RarityConfig`
+- [x] Export all constants and utilities
+
+**Bonus additions:**
+- Added `getSignatureDie(rarity)` utility to return die notation string (e.g., 'd6', 'd8')
+- Added `getAllRarities()` utility to return all rarity tiers in order
+- Added `getHigherRarity(currentRarity)` utility to get next higher rarity tier
 
 ---
 
