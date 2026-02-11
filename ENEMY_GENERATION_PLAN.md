@@ -295,15 +295,30 @@ Audio profile influences:
 
 **File:** `src/core/combat/PartyAnalyzer.ts`
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Create `PartyAnalyzer` class with static methods
-- [ ] Implement `calculatePartyLevel(party: CharacterSheet[]): number` - averages party levels
-- [ ] Implement `calculatePartyStrength(party: CharacterSheet[]): number` - considers HP, AC, damage output
-- [ ] Implement `getXPBudget(party: CharacterSheet[], difficulty: 'easy' | 'medium' | 'hard' | 'deadly'): number`
-- [ ] Implement `getAverageAC(party: CharacterSheet[]): number` - for enemy attack bonus tuning
-- [ ] Implement `getAverageHP(party: CharacterSheet[]): number` - for enemy damage tuning
-- [ ] Implement `getPartySize(party: CharacterSheet[]): number` - utility for encounter scaling
-- [ ] Add unit tests for PartyAnalyzer
+- [x] Create `PartyAnalyzer` class with static methods
+- [x] Implement `calculatePartyLevel(party: CharacterSheet[]): number` - averages party levels
+- [x] Implement `calculatePartyStrength(party: CharacterSheet[]): number` - considers HP, AC, damage output
+- [x] Implement `getXPBudget(party: CharacterSheet[], difficulty: 'easy' | 'medium' | 'hard' | 'deadly'): number`
+- [x] Implement `getAverageAC(party: CharacterSheet[]): number` - for enemy attack bonus tuning
+- [x] Implement `getAverageHP(party: CharacterSheet[]): number` - for enemy damage tuning
+- [x] Implement `getPartySize(party: CharacterSheet[]): number` - utility for encounter scaling
+- [x] Add unit tests for PartyAnalyzer
+
+**Summary:**
+Created `PartyAnalyzer` class with static methods for analyzing party strength:
+- `calculatePartyLevel()` - Average party level
+- `calculatePartyStrength()` - Combined strength score
+- `getXPBudget()` - XP budget for encounters
+- `getAverageAC()` - Average armor class
+- `getAverageHP()` - Average hit points
+- `getPartySize()` - Party member count
+- `getAverageDamage()` - Estimated damage output
+- `analyzeParty()` - Complete analysis with all stats
+
+All methods handle edge cases (empty party, missing stats) and follow D&D 5e encounter building rules.
 
 ---
 
