@@ -153,21 +153,23 @@ Audio profile influences:
 
 **File:** `src/core/types/Enemy.ts`
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Define `EnemyCategory` type: 'humanoid' | 'beast' | 'undead' | 'dragon' | 'fiend' | 'construct' | 'elemental' | 'monstrosity'
-- [ ] Define `EnemyRarity` type: 'common' | 'uncommon' | 'elite' | 'boss'
-- [ ] Define `EnemyArchetype` type: 'brute' | 'archer' | 'support'
-- [ ] Define `EnemyMixMode` type: 'uniform' | 'custom' (V2: add 'category' | 'random')
-- [ ] Create `SignatureAbility` interface with: id, name, description, damageDie (base d6), damageType, attackType, range
-- [ ] Create `EnemyTemplate` interface with:
+- [x] Define `EnemyCategory` type: 'humanoid' | 'beast' | 'undead' | 'dragon' | 'fiend' | 'construct' | 'elemental' | 'monstrosity'
+- [x] Define `EnemyRarity` type: 'common' | 'uncommon' | 'elite' | 'boss'
+- [x] Define `EnemyArchetype` type: 'brute' | 'archer' | 'support'
+- [x] Define `EnemyMixMode` type: 'uniform' | 'custom' (V2: add 'category' | 'random')
+- [x] Create `SignatureAbility` interface with: id, name, description, damageDie (base d6), damageType, attackType, range
+- [x] Create `EnemyTemplate` interface with:
   - id, name, category, archetype
   - signatureAbility: SignatureAbility
   - baseStats: { str, dex, con, int, wis, cha }
   - baseHP, baseAC, baseSpeed
   - audioPreference: { bass: number, mid: number, treble: number }
   - resistances: array of damage types (for Elite+ scaling)
-- [ ] Create `RarityConfig` interface with: statMultiplier, signatureDieSize, extraAbilityCount, hasResistances
-- [ ] Create `EnemyGenerationOptions` interface for single enemy:
+- [x] Create `RarityConfig` interface with: statMultiplier, signatureDieSize, extraAbilityCount, hasResistances
+- [x] Create `EnemyGenerationOptions` interface for single enemy:
   ```typescript
   {
     seed: string;                              // Required - deterministic generation
@@ -178,7 +180,7 @@ Audio profile influences:
     track?: TrackData;                         // Optional - required if audioProfile provided
   }
   ```
-- [ ] Create `EncounterGenerationOptions` interface for groups:
+- [x] Create `EncounterGenerationOptions` interface for groups:
   ```typescript
   {
     seed: string;                              // Required - deterministic generation
@@ -197,6 +199,13 @@ Audio profile influences:
     enableLeaderPromotion?: boolean;           // Optional - default: true for groups > 3
   }
   ```
+
+**Additional types created (bonus/enhancements):**
+- `EncounterDifficulty` type: 'easy' | 'medium' | 'hard' | 'deadly'
+- `AudioPreference` interface: bass, mid, treble weights
+- `EnemyMetadata` interface: generation tracking metadata
+- `EnemyFeature` interface: reusable enemy ability structure
+- Type guards: `isValidEnemyCategory()`, `isValidEnemyRarity()`, `isValidEnemyArchetype()`, `isValidEncounterDifficulty()`
 
 ---
 
