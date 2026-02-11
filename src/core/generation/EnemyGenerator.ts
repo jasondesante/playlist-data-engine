@@ -17,12 +17,20 @@ import type {
     EnemyArchetype,
     EnemyCategory,
     EnemyGenerationOptions,
+    EncounterGenerationOptions,
     SignatureAbility
 } from '../types/Enemy.js';
 import { SeededRNG } from '../../utils/random.js';
 import { DEFAULT_ENEMY_TEMPLATES } from '../../constants/DefaultEnemies.js';
 import { getRarityConfig } from '../../constants/EnemyRarity.js';
 import { FeatureQuery } from '../features/FeatureQuery.js';
+import { PartyAnalyzer } from '../combat/PartyAnalyzer.js';
+import {
+    getCRFromXP,
+    getXPForCR,
+    getEncounterMultiplier,
+    getXPBudgetForParty
+} from '../../constants/EncounterBalance.js';
 
 /**
  * EnemyGenerator - Static class for enemy generation
@@ -631,5 +639,416 @@ export class EnemyGenerator {
     private static getDamageDieForRarity(rarity: EnemyRarity): string {
         const config = getRarityConfig(rarity);
         return `d${config.signatureDieSize}`;
+    }
+
+    /**
+     * Generate a CR from rarity for encounter calculations
+     *
+     * Maps rarity tiers to approximate Challenge Rating values.
+     * Common: CR 1/4, Uncommon: CR 1/2, Elite: CR 1, Boss: CR 2
+     *
+     * @param rarity - Enemy rarity tier
+     * @returns Approximate CR value
+     */
+    private static getCRForRarity(rarity: EnemyRarity): number {
+        const crMap: Record<EnemyRarity, number> = {
+            common: 0.25,
+            uncommon: 0.5,
+            elite: 1.0,
+            boss: 2.0
+        };
+        return crMap[rarity] || 0.25;
+    }
+
+    /**
+     * Get rarity from approximate CR
+     *
+     * Maps CR values back to rarity tiers for encounter building.
+     * CR < 0.5: common, CR < 1: uncommon, CR < 2: elite, CR >= 2: boss
+     *
+     * @param cr - Challenge Rating value
+     * @returns Corresponding rarity tier
+     */
+    private static getRarityFromCR(cr: number): EnemyRarity {
+        if (cr < 0.5) return 'common';
+        if (cr < 1.0) return 'uncommon';
+        if (cr < 2.0) return 'elite';
+        return 'boss';
+    }
+
+    /**
+     * Generate a balanced encounter for a party
+     *
+     * Uses PartyAnalyzer to determine appropriate enemy strength based on party level
+     * and desired difficulty. Supports leader promotion for larger groups.
+     *
+     * @param party - Array of party members' character sheets
+     * @param options - Encounter generation options
+     * @returns Array of generated enemies
+     *
+     * @example
+     * ```typescript
+     * const enemies = EnemyGenerator.generateEncounter(party, {
+     *   seed: 'dungeon-1',
+     *   difficulty: 'medium',
+     *   count: 5
+     * });
+     * // Returns 5 enemies balanced for the party's level
+     * // One enemy will be promoted to uncommon as leader
+     * ```
+     */
+    static generateEncounter(
+        party: CharacterSheet[],
+        options: EncounterGenerationOptions
+    ): CharacterSheet[] {
+        const {
+            seed,
+            count,
+            difficulty = 'medium',
+            baseRarity = 'common',
+            difficultyMultiplier = 1.0,
+            category,
+            archetype,
+            templateId,
+            enemyMix = 'uniform',
+            templates,
+            audioProfile,
+            track,
+            enableLeaderPromotion = true
+        } = options;
+
+        // Validate: track required if audioProfile provided
+        if (audioProfile && !track) {
+            throw new Error('track is required when audioProfile is provided');
+        }
+
+        // Handle empty party or zero count
+        if (count <= 0) {
+            return [];
+        }
+
+        // Calculate XP budget from party
+        const partyLevels = party.map(p => p.level);
+        const xpBudget = getXPBudgetForParty(partyLevels, difficulty);
+
+        // Apply difficulty multiplier
+        const adjustedBudget = Math.round(xpBudget * difficultyMultiplier);
+
+        // Get encounter multiplier for the count
+        const encounterMultiplier = getEncounterMultiplier(count);
+
+        // Calculate effective XP budget per enemy (after multiplier)
+        // Formula: (totalBudget / multiplier) / count
+        const xpPerEnemy = Math.round((adjustedBudget / encounterMultiplier) / count);
+
+        // Convert to CR
+        let targetCR = getCRFromXP(xpPerEnemy);
+
+        // Apply slight variance for variety (+/- 1 step)
+        const rng = EnemyGenerator.getSeededRNG(seed);
+        const varianceRoll = rng.random();
+        if (varianceRoll < 0.25) {
+            // Slightly harder
+            targetCR = Math.min(targetCR * 1.5, 30);
+        } else if (varianceRoll > 0.75) {
+            // Slightly easier
+            targetCR = Math.max(targetCR * 0.67, 0.125);
+        }
+
+        // Determine rarity from CR
+        const rarity = EnemyGenerator.getRarityFromCR(targetCR);
+
+        // Select templates for mix mode
+        const selectedTemplates = EnemyGenerator.selectTemplatesForMix(
+            count,
+            rng,
+            enemyMix,
+            templates,
+            category,
+            archetype,
+            audioProfile
+        );
+
+        // Generate each enemy
+        const enemies: CharacterSheet[] = [];
+        for (let i = 0; i < count; i++) {
+            const template = selectedTemplates[i];
+            if (!template) {
+                throw new Error(`No template available for enemy at index ${i}`);
+            }
+
+            const enemy = EnemyGenerator.generate({
+                seed: `${seed}-${i}`,
+                templateId: template.id,
+                rarity,
+                difficultyMultiplier,
+                audioProfile,
+                track
+            });
+
+            enemies.push(enemy);
+        }
+
+        // Apply leader promotion
+        if (enableLeaderPromotion) {
+            EnemyGenerator.applyLeaderPromotion(enemies, rng, baseRarity);
+        }
+
+        return enemies;
+    }
+
+    /**
+     * Generate an encounter based on target CR (no party needed)
+     *
+     * Creates enemies at a specific Challenge Rating, independent of any party.
+     * Useful for pre-planned encounters or when the party strength is unknown.
+     *
+     * @param options - Encounter generation options (must include targetCR)
+     * @returns Array of generated enemies
+     *
+     * @example
+     * ```typescript
+     * const enemies = EnemyGenerator.generateEncounterByCR({
+     *   seed: 'cr5-encounter',
+     *   targetCR: 5,
+     *   count: 3
+     * });
+     * // Returns 3 enemies at approximately CR 5 each
+     * ```
+     */
+    static generateEncounterByCR(options: EncounterGenerationOptions): CharacterSheet[] {
+        const {
+            seed,
+            count = 1,
+            targetCR = 1,
+            baseRarity = 'common',
+            difficultyMultiplier = 1.0,
+            category,
+            archetype,
+            templateId,
+            enemyMix = 'uniform',
+            templates,
+            audioProfile,
+            track,
+            enableLeaderPromotion = true
+        } = options;
+
+        // Validate: track required if audioProfile provided
+        if (audioProfile && !track) {
+            throw new Error('track is required when audioProfile is provided');
+        }
+
+        // Handle zero count
+        if (count <= 0) {
+            return [];
+        }
+
+        // Validate targetCR
+        if (targetCR < 0) {
+            throw new Error(`Invalid targetCR: ${targetCR}. Must be >= 0`);
+        }
+
+        // Get encounter multiplier for the count
+        const encounterMultiplier = getEncounterMultiplier(count);
+
+        // Apply multiplier to target CR (groups of weaker enemies)
+        // When multiplier > 1, we can use slightly higher CR since action economy favors players
+        let effectiveCR = targetCR;
+        if (encounterMultiplier > 1 && count > 1) {
+            // Slightly reduce individual CR for groups
+            effectiveCR = Math.max(targetCR / Math.sqrt(encounterMultiplier), 0.125);
+        }
+
+        // Determine rarity from CR
+        const rarity = EnemyGenerator.getRarityFromCR(effectiveCR);
+
+        // Create RNG
+        const rng = EnemyGenerator.getSeededRNG(seed);
+
+        // Select templates for mix mode
+        const selectedTemplates = EnemyGenerator.selectTemplatesForMix(
+            count,
+            rng,
+            enemyMix,
+            templates,
+            category,
+            archetype,
+            audioProfile
+        );
+
+        // Generate each enemy
+        const enemies: CharacterSheet[] = [];
+        for (let i = 0; i < count; i++) {
+            const template = selectedTemplates[i];
+            if (!template) {
+                throw new Error(`No template available for enemy at index ${i}`);
+            }
+
+            const enemy = EnemyGenerator.generate({
+                seed: `${seed}-${i}`,
+                templateId: template.id,
+                rarity,
+                difficultyMultiplier,
+                audioProfile,
+                track
+            });
+
+            enemies.push(enemy);
+        }
+
+        // Apply leader promotion
+        if (enableLeaderPromotion) {
+            EnemyGenerator.applyLeaderPromotion(enemies, rng, baseRarity);
+        }
+
+        return enemies;
+    }
+
+    /**
+     * Select templates for each enemy in an encounter based on mix mode
+     *
+     * Handles uniform, custom, category, and random mix modes.
+     *
+     * @param count - Number of enemies to generate
+     * @param rng - Seeded RNG for deterministic selection
+     * @param enemyMix - Mix mode to use
+     * @param templates - Custom template list for 'custom' mode
+     * @param category - Category filter for 'category' mode
+     * @param archetype - Archetype filter
+     * @param audioProfile - Optional audio profile for weighting
+     * @returns Array of selected templates (one per enemy)
+     */
+    private static selectTemplatesForMix(
+        count: number,
+        rng: SeededRNG,
+        enemyMix: 'uniform' | 'custom',
+        templates?: string[],
+        category?: EnemyCategory,
+        archetype?: EnemyArchetype,
+        audioProfile?: AudioProfile
+    ): EnemyTemplate[] {
+        const result: EnemyTemplate[] = [];
+
+        if (enemyMix === 'custom' && templates) {
+            // Custom mix: use provided templates directly
+            for (let i = 0; i < count; i++) {
+                const templateId = templates[i % templates.length];
+                const template = EnemyGenerator.getTemplateById(templateId);
+                if (!template) {
+                    throw new Error(`Unknown template ID in custom mix: ${templateId}`);
+                }
+                result.push(template);
+            }
+        } else {
+            // Uniform mode: select one template for all enemies
+            const singleTemplate = EnemyGenerator.selectTemplate(
+                rng,
+                category,
+                archetype,
+                audioProfile
+            );
+
+            // All enemies use the same template
+            for (let i = 0; i < count; i++) {
+                result.push(singleTemplate);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Apply leader promotion to a group of enemies
+     *
+     * Promotes one or more enemies to higher rarity tiers based on group size.
+     * This creates "leader" enemies that are stronger than their followers.
+     *
+     * Promotion rules:
+     * - 4-6 enemies: 1 enemy promoted +1 tier
+     * - 7-9 enemies: 1 enemy promoted +2 tiers
+     * - 10+ enemies: 2 enemies promoted (1 one tier, 1 two tiers)
+     *
+     * @param enemies - Array of generated enemies (will be modified in place)
+     * @param rng - Seeded RNG for deterministic selection
+     * @param baseRarity - The base rarity before promotion
+     */
+    private static applyLeaderPromotion(
+        enemies: CharacterSheet[],
+        rng: SeededRNG,
+        baseRarity: EnemyRarity
+    ): void {
+        const count = enemies.length;
+
+        if (count < 4) {
+            // No leader for small groups
+            return;
+        }
+
+        // Determine promotion rules
+        const promotions: Array<{ index: number; rarity: EnemyRarity }> = [];
+
+        if (count >= 4 && count <= 6) {
+            // One leader, one tier up
+            const leaderIndex = rng.randomInt(0, count);
+            const newRarity = EnemyGenerator.promoteRarity(baseRarity, 1);
+            promotions.push({ index: leaderIndex, rarity: newRarity });
+        } else if (count >= 7 && count <= 9) {
+            // One leader, two tiers up
+            const leaderIndex = rng.randomInt(0, count);
+            const newRarity = EnemyGenerator.promoteRarity(baseRarity, 2);
+            promotions.push({ index: leaderIndex, rarity: newRarity });
+        } else if (count >= 10) {
+            // Two leaders: one one tier, one two tiers
+            const leader1Index = rng.randomInt(0, count);
+            let leader2Index = rng.randomInt(0, count);
+            // Ensure second leader is different from first
+            while (leader2Index === leader1Index && count > 1) {
+                leader2Index = rng.randomInt(0, count);
+            }
+            promotions.push(
+                { index: leader1Index, rarity: EnemyGenerator.promoteRarity(baseRarity, 1) },
+                { index: leader2Index, rarity: EnemyGenerator.promoteRarity(baseRarity, 2) }
+            );
+        }
+
+        // Re-generate promoted enemies with new rarity
+        for (const promotion of promotions) {
+            const originalEnemy = enemies[promotion.index];
+            // Get the template ID from the enemy's name (which matches template name)
+            const templateId = originalEnemy.name.toLowerCase().replace(/\s+/g, '-');
+            const template = EnemyGenerator.getTemplateById(templateId);
+
+            if (template) {
+                const promotedEnemy = EnemyGenerator.generate({
+                    seed: originalEnemy.seed as string + '-promoted',
+                    templateId: template.id,
+                    rarity: promotion.rarity
+                });
+                enemies[promotion.index] = promotedEnemy;
+            }
+        }
+    }
+
+    /**
+     * Promote a rarity by a number of tiers
+     *
+     * Increases rarity tier by specified amount, capped at 'boss'.
+     *
+     * @param currentRarity - Starting rarity
+     * @param tiers - Number of tiers to promote
+     * @returns Promoted rarity (capped at 'boss')
+     *
+     * @example
+     * ```typescript
+     * promoteRarity('common', 1); // 'uncommon'
+     * promoteRarity('uncommon', 2); // 'boss'
+     * promoteRarity('elite', 5); // 'boss' (capped)
+     * ```
+     */
+    private static promoteRarity(currentRarity: EnemyRarity, tiers: number): EnemyRarity {
+        const rarities: EnemyRarity[] = ['common', 'uncommon', 'elite', 'boss'];
+        const currentIndex = rarities.indexOf(currentRarity);
+        const newIndex = Math.min(currentIndex + tiers, rarities.length - 1);
+        return rarities[newIndex];
     }
 }

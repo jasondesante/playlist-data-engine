@@ -358,24 +358,32 @@ Consolidates: Core structure + Single enemy generation
 
 **File:** `src/core/generation/EnemyGenerator.ts` (continued)
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Implement `selectTemplate()` method:
-  - [ ] Filter templates by category if specified
-  - [ ] Filter templates by archetype if specified
-  - [ ] If audioProfile provided, calculate simple audio preference weight
-  - [ ] Use weighted random selection via SeededRNG
-  - [ ] Return selected EnemyTemplate
-- [ ] Implement simple audio weighting:
+- [x] Implement `selectTemplate()` method:
+  - [x] Filter templates by category if specified
+  - [x] Filter templates by archetype if specified
+  - [x] If audioProfile provided, calculate simple audio preference weight
+  - [x] Use weighted random selection via SeededRNG
+  - [x] Return selected EnemyTemplate
+- [x] Implement simple audio weighting:
   ```typescript
   // Simple dot product: template.weight * audioProfile.frequencyBand
   // Bass-heavy audio → higher weight for bass-preferring templates
   // No complex scoring, just multiply and pick
   ```
-- [ ] Add fallback to uniform random when no audio provided
+- [x] Add fallback to uniform random when no audio provided
 
 **Simplifications from original plan:**
 - Audio matching is simple weighted random, not complex scoring algorithm
 - TemplateId lookup handled in `generate()`, not here
+
+**Summary:**
+Implemented `selectTemplate()` method (lines 151-184) and `weightedSelectionByAudio()` helper (lines 201-222).
+- Filters templates by category and archetype when specified
+- Uses audio profile for weighted selection via dot product approach
+- Falls back to uniform random selection when no audio provided
 
 ---
 
@@ -426,22 +434,33 @@ Added `selectExtraAbilities()` helper that filters and randomly selects features
 
 **File:** `src/core/generation/EnemyGenerator.ts` (continued)
 
+**Status:** ✅ COMPLETED (Integrated into `generate()` method)
+
 **Subtasks:**
-- [ ] Implement `createEnemy()` method:
+- [x] Implement `createEnemy()` method:
   ```typescript
   createEnemy(template: EnemyTemplate, options: EnemyGenerationOptions, rng: SeededRNG): CharacterSheet
   ```
-- [ ] Stat calculation:
-  - [ ] Scale base stats using rarity config multiplier
-  - [ ] ~~Audio-influenced stat adjustments~~ (deferred to V2)
-- [ ] Combat stats:
-  - [ ] Calculate HP: `baseHP × rarity multiplier`
-  - [ ] Calculate AC: `baseAC + DEX modifier`
-  - [ ] Calculate attack bonus: `proficiency + STR/DEX` (proficiency = level-based)
-- [ ] Abilities via `generateAbilities()`
-- [ ] Apply resistances if Elite/Boss (from template's resistance list)
-- [ ] Build CharacterSheet with natural weapon (no equipment generation for V1)
-- [ ] Return complete CharacterSheet
+  - Implemented inline in `generate()` method (per plan simplifications)
+- [x] Stat calculation:
+  - [x] Scale base stats using rarity config multiplier
+  - [x] ~~Audio-influenced stat adjustments~~ (deferred to V2)
+- [x] Combat stats:
+  - [x] Calculate HP: `baseHP × rarity multiplier`
+  - [x] Calculate AC: `baseAC + DEX modifier`
+  - [x] Calculate attack bonus: `proficiency + STR/DEX` (proficiency = level-based)
+- [x] Abilities via `generateAbilities()`
+- [x] Apply resistances if Elite/Boss (from template's resistance list)
+- [x] Build CharacterSheet with natural weapon (no equipment generation for V1)
+- [x] Return complete CharacterSheet
+
+**Summary:**
+All enemy creation functionality is implemented inline within the `generate()` method (lines 443-602).
+- Stats are scaled by rarity multiplier
+- HP calculated with rarity and difficulty multipliers
+- AC calculated as base AC + DEX modifier
+- Natural weapon generated from signature ability
+- CharacterSheet built with all required fields
 
 **Simplifications from original plan:**
 - ~~Audio stat influence~~ - deferred to V2 (was bass→STR/CON, treble→DEX)
@@ -454,8 +473,10 @@ Added `selectExtraAbilities()` helper that filters and randomly selects features
 
 **File:** `src/core/generation/EnemyGenerator.ts` (continued)
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Implement public `generateEncounter()` method (two modes):
+- [x] Implement public `generateEncounter()` method (two modes):
   ```typescript
   // Party-based mode
   generateEncounter(party: CharacterSheet[], options: EncounterGenerationOptions): CharacterSheet[]
@@ -464,32 +485,40 @@ Added `selectExtraAbilities()` helper that filters and randomly selects features
   generateEncounterByCR(options: EncounterGenerationOptions): CharacterSheet[]
   ```
 
-- [ ] **Party-based mode**:
-  - [ ] Use PartyAnalyzer to get party level and XP budget
-  - [ ] Apply difficulty multiplier to XP budget
-  - [ ] Apply ENEMY_COUNT_MULTIPLIER for group encounters
-  - [ ] Calculate per-enemy CR from remaining XP budget
-  - [ ] Generate each enemy with derived seed (baseSeed + index)
-  - [ ] Add slight CR variance (+/- 1 step) for variety
+- [x] **Party-based mode**:
+  - [x] Use PartyAnalyzer to get party level and XP budget
+  - [x] Apply difficulty multiplier to XP budget
+  - [x] Apply ENEMY_COUNT_MULTIPLIER for group encounters
+  - [x] Calculate per-enemy CR from remaining XP budget
+  - [x] Generate each enemy with derived seed (baseSeed + index)
+  - [x] Add slight CR variance (+/- 1 step) for variety
 
-- [ ] **CR-based mode**:
-  - [ ] Use targetCR directly instead of party analysis
-  - [ ] Apply ENEMY_COUNT_MULTIPLIER for group encounters
-  - [ ] Calculate per-enemy CR from target
-  - [ ] Generate enemies as above
+- [x] **CR-based mode**:
+  - [x] Use targetCR directly instead of party analysis
+  - [x] Apply ENEMY_COUNT_MULTIPLIER for group encounters
+  - [x] Calculate per-enemy CR from target
+  - [x] Generate enemies as above
 
-- [ ] **Leader promotion logic** (`applyLeaderPromotion()`):
-  - [ ] Check enemy count and enableLeaderPromotion flag
-  - [ ] Promote enemies based on count thresholds (4-6: +1 tier, 7-9: +2 tiers, 10+: 2 leaders)
-  - [ ] Cap at 'boss' rarity
-  - [ ] Select leader(s) randomly from generated enemies
+- [x] **Leader promotion logic** (`applyLeaderPromotion()`):
+  - [x] Check enemy count and enableLeaderPromotion flag
+  - [x] Promote enemies based on count thresholds (4-6: +1 tier, 7-9: +2 tiers, 10+: 2 leaders)
+  - [x] Cap at 'boss' rarity
+  - [x] Select leader(s) randomly from generated enemies
 
-- [ ] **Mixed type handling** (`selectTemplatesForMix()`):
-  - [ ] 'uniform': All enemies use same template (selected once)
-  - [ ] 'custom': Use provided templates array directly
-  - ~~'category' and 'random'~~ - deferred to V2
+- [x] **Mixed type handling** (`selectTemplatesForMix()`):
+  - [x] 'uniform': All enemies use same template (selected once)
+  - [x] 'custom': Use provided templates array directly
+  - [x] ~~'category' and 'random'~~ - deferred to V2
 
-- [ ] Handle edge cases: empty party, count of 0, very large groups
+- [x] Handle edge cases: empty party, count of 0, very large groups
+
+**Summary:**
+Implemented `generateEncounter()` for party-based encounters and `generateEncounterByCR()` for CR-based encounters.
+- Uses PartyAnalyzer for balanced encounter generation
+- Applies encounter multipliers for group fights
+- Supports leader promotion for groups > 3
+- Handles uniform and custom enemy mix modes
+- Includes helper methods: `getCRForRarity()`, `getRarityFromCR()`, `selectTemplatesForMix()`, `applyLeaderPromotion()`, `promoteRarity()`
 
 ---
 
@@ -497,12 +526,21 @@ Added `selectExtraAbilities()` helper that filters and randomly selects features
 
 **File:** `src/core/generation/index.ts`
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Add import for EnemyGenerator
-- [ ] Add imports for enemy types from Enemy.ts
-- [ ] Export EnemyGenerator class
-- [ ] Export all enemy types and interfaces
-- [ ] Verify no naming conflicts with existing exports
+- [x] Add import for EnemyGenerator
+- [x] Add imports for enemy types from Enemy.ts
+- [x] Export EnemyGenerator class
+- [x] Export all enemy types and interfaces
+- [x] Verify no naming conflicts with existing exports
+
+**Summary:**
+Created `src/core/generation/index.ts` with:
+- Export of EnemyGenerator class
+- Export of all enemy-related types
+- Export of existing generation utilities (CharacterGenerator, NamingEngine, etc.)
+- Export of type guard functions
 
 ---
 
