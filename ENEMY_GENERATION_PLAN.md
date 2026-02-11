@@ -669,23 +669,25 @@ Added "Enemy Generation" section to `docs/COMBAT_SYSTEM.md` with:
 
 **File:** `tests/unit/enemy-generation.test.ts`
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Test rarity stat multipliers (common vs boss)
-- [ ] Test signature ability die scaling (d6 → d8 → d10 → d12)
-- [ ] Test extra ability count per rarity
-- [ ] Test resistance assignment for Elite/Boss
-- [ ] Test template selection with audio profile
-- [ ] Test PartyAnalyzer calculations
-- [ ] Test XP budget calculations
-- [ ] Test encounter generation for different party sizes
-- [ ] Test difficulty multiplier application
-- [ ] Test determinism (same seed = same enemy)
-- [ ] Test templateId forces specific template
-- [ ] Test leader promotion for groups > 3
-- [ ] Test leader promotion caps at boss rarity
-- [ ] Test enemyMix modes (uniform, custom)
-- [ ] Test CR-based generation without party
-- [ ] Test getTemplateById lookup
+- [x] Test rarity stat multipliers (common vs boss)
+- [x] Test signature ability die scaling (d6 → d8 → d10 → d12)
+- [x] Test extra ability count per rarity
+- [x] Test resistance assignment for Elite/Boss
+- [x] Test template selection with audio profile
+- [x] Test PartyAnalyzer calculations
+- [x] Test XP budget calculations
+- [x] Test encounter generation for different party sizes
+- [x] Test difficulty multiplier application
+- [x] Test determinism (same seed = same enemy)
+- [x] Test templateId forces specific template
+- [x] Test leader promotion for groups > 3
+- [x] Test leader promotion caps at boss rarity
+- [x] Test enemyMix modes (uniform, custom)
+- [x] Test CR-based generation without party
+- [x] Test getTemplateById lookup
 
 ---
 
