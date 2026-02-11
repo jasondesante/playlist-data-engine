@@ -7,6 +7,7 @@ Complete guide to the combat system in the Playlist Data Engine.
 ## Table of Contents
 
 1. [Combat System](#combat-system)
+   - [Enemy Generation](#enemy-generation)
    - [Treasure](#treasure)
    - [Spell Casting](#spell-casting)
    - [Combat Actions](#combat-actions)
@@ -29,7 +30,8 @@ Complete guide to the combat system in the Playlist Data Engine.
 import {
   CombatEngine,
   CharacterGenerator,
-  AudioAnalyzer
+  AudioAnalyzer,
+  EnemyGenerator
 } from 'playlist-data-engine';
 
 // Initialize combat engine (optional configuration)
@@ -91,6 +93,76 @@ while (combatInstance.isActive) {
   }
 }
 ```
+
+### Enemy Generation
+
+Generate balanced combat encounters automatically:
+
+```typescript
+import {
+  CombatEngine,
+  EnemyGenerator
+} from 'playlist-data-engine';
+
+// Generate a specific enemy by template
+const boss = EnemyGenerator.generate({
+  seed: 'dungeon-boss-001',
+  templateId: 'orc',
+  rarity: 'boss'
+});
+// → Orc Boss with d12 signature ability, +50% stats, 3 extra abilities
+
+// Generate a random enemy matching criteria
+const randomEnemy = EnemyGenerator.generate({
+  seed: 'wild-encounter-1',
+  category: 'humanoid',
+  archetype: 'brute',
+  rarity: 'elite'
+});
+// → Random humanoid brute (Orc or Bandit) at elite tier
+
+// Generate encounter balanced for party
+const party = [player1, player2, player3, player4];
+const enemies = EnemyGenerator.generateEncounter(party, {
+  seed: 'dungeon-1-room-5',
+  difficulty: 'medium',
+  count: 5,
+  category: 'beast'
+});
+// → 5 beast enemies at appropriate CR for party level
+// One enemy auto-promotes to elite leader (groups > 3)
+
+// Generate encounter by CR (no party needed)
+const cr3Enemies = EnemyGenerator.generateEncounterByCR({
+  seed: 'cr3-encounter',
+  targetCR: 3,
+  count: 4
+});
+// → 4 enemies at approximately CR 3 each
+
+// Audio-influenced generation
+const audioEnemies = EnemyGenerator.generateEncounter(party, {
+  seed: 'music-combat',
+  audioProfile: audioProfile,
+  track: currentTrack,
+  count: 4
+});
+// → Template selection weighted by audio characteristics
+// Bass-heavy → more brutes, Treble-heavy → more archers
+```
+
+Start combat with generated enemies:
+
+```typescript
+const combat = new CombatEngine();
+const combatInstance = combat.startCombat(
+  party,
+  enemies,
+  environmentalContext
+);
+```
+
+> **For complete documentation:** See [ENEMY_GENERATION.md](../../ENEMY_GENERATION.md) for full details on rarity tiers, leader promotion, encounter balance, template system, and API reference.
 
 ### Treasure
 

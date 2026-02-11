@@ -629,10 +629,24 @@ Created comprehensive `ENEMY_GENERATION.md` documentation file (19,183 bytes) wi
 
 **File:** `COMBAT_SYSTEM.md`
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Add "Enemy Generation" section
-- [ ] Add basic usage examples
-- [ ] Reference ENEMY_GENERATION.md for full documentation
+- [x] Add "Enemy Generation" section
+- [x] Add basic usage examples
+- [x] Reference ENEMY_GENERATION.md for full documentation
+
+**Summary:**
+Added "Enemy Generation" section to `docs/COMBAT_SYSTEM.md` with:
+- Import update to include EnemyGenerator
+- Table of Contents update
+- Basic usage examples covering:
+  - Generate specific enemy by template
+  - Generate random enemy by category/archetype
+  - Generate encounter balanced for party
+  - Generate encounter by CR (no party needed)
+  - Audio-influenced generation
+- Reference to ENEMY_GENERATION.md for full documentation
 
 ---
 
