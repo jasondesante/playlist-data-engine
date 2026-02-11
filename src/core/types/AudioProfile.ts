@@ -37,6 +37,28 @@ export interface AudioProfile {
         /** Timestamp of analysis */
         analyzed_at: string;
     };
+
+    /** RMS (Root Mean Square) energy (0.0 - 1.0) */
+    rms_energy?: number;
+
+    /** Dynamic range (Peak - RMS) (0.0 - 1.0) */
+    dynamic_range?: number;
+}
+
+/**
+ * Event in a full timeline analysis
+ */
+export interface AudioTimelineEvent {
+    timestamp: number;
+    duration: number;
+    bass: number;
+    mid: number;
+    treble: number;
+    amplitude: number; // RMS for this segment.
+    peak: number;      // Peak amplitude for this segment.
+    spectral_centroid?: number;
+    spectral_rolloff?: number;
+    zero_crossing_rate?: number;
 }
 
 export interface ColorPalette {

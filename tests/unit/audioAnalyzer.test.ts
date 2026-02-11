@@ -62,7 +62,18 @@ describe('AudioAnalyzer', () => {
             expect(profile.average_amplitude).toBeGreaterThanOrEqual(0);
             expect(profile.average_amplitude).toBeLessThanOrEqual(1);
 
-            console.log('✓ All frequency values within valid range [0, 1]');
+            expect(profile.rms_energy).toBeDefined();
+            expect(profile.rms_energy).toBeGreaterThanOrEqual(0);
+            expect(profile.rms_energy).toBeLessThanOrEqual(1);
+
+            expect(profile.dynamic_range).toBeDefined();
+            // Dynamic range should be Peak - RMS. Since peak is abs max and RMS is root mean square, 
+            // peak >= RMS, so dynamic_range >= 0.
+            expect(profile.dynamic_range).toBeGreaterThanOrEqual(0);
+
+            console.log('✓ All frequency and amplitude values within valid range [0, 1]');
+            console.log(`  RMS Energy: ${((profile.rms_energy || 0) * 100).toFixed(1)}%`);
+            console.log(`  Dynamic Range: ${((profile.dynamic_range || 0) * 100).toFixed(1)}%`);
         });
 
         it('should verify duration was measured correctly', async () => {
@@ -134,6 +145,58 @@ describe('AudioAnalyzer', () => {
             console.log(`  Zero Crossing Rate: ${profile.zero_crossing_rate?.toFixed(4)}`);
         });
     });
+
+    describe('Full Song Timeline Analysis', () => {
+        it('should perform timeline analysis with fixed count strategy', async () => {
+            const audioUrl = TEST_AUDIO_URLS.arweaveTrack;
+            const count = 10;
+            const timeline = await analyzer.analyzeTimeline(audioUrl, { type: 'count', count });
+
+            expect(timeline).toBeDefined();
+            expect(timeline.length).toBe(count);
+
+            timeline.forEach((event, i) => {
+                expect(event.timestamp).toBeDefined();
+                expect(event.timestamp).toBeGreaterThanOrEqual(0);
+                expect(event.duration).toBeGreaterThan(0);
+                expect(event.bass + event.mid + event.treble).toBeCloseTo(1.0, 5);
+                expect(event.amplitude).toBeGreaterThanOrEqual(0);
+                expect(event.peak).toBeGreaterThanOrEqual(event.amplitude);
+
+                expect(event.spectral_centroid).toBeDefined();
+                expect(event.spectral_centroid).toBeGreaterThanOrEqual(0);
+
+                expect(event.spectral_rolloff).toBeDefined();
+                expect(event.spectral_rolloff).toBeGreaterThanOrEqual(0);
+                expect(event.spectral_rolloff).toBeLessThanOrEqual(1);
+
+                expect(event.zero_crossing_rate).toBeDefined();
+                expect(event.zero_crossing_rate).toBeGreaterThanOrEqual(0);
+                expect(event.zero_crossing_rate).toBeLessThanOrEqual(1);
+            });
+
+            console.log(`✓ Timeline analysis (count: ${count}) success. Generated ${timeline.length} data points.`);
+            console.log(`  First point spectral centroid: ${timeline[0].spectral_centroid?.toFixed(2)}`);
+            console.log(`  First point ZCR: ${timeline[0].zero_crossing_rate?.toFixed(4)}`);
+        });
+
+        it('should perform timeline analysis with interval strategy', async () => {
+            const audioUrl = TEST_AUDIO_URLS.arweaveTrack;
+            const intervalSeconds = 2; // sample every 2 seconds
+            const timeline = await analyzer.analyzeTimeline(audioUrl, { type: 'interval', intervalSeconds });
+
+            expect(timeline).toBeDefined();
+            expect(timeline.length).toBeGreaterThan(0);
+
+            // Verify timestamps are roughly 2s apart
+            if (timeline.length > 1) {
+                expect(timeline[1].timestamp - timeline[0].timestamp).toBeCloseTo(intervalSeconds, 5);
+            }
+
+            console.log(`✓ Timeline analysis (interval: ${intervalSeconds}s) success. Generated ${timeline.length} data points.`);
+        });
+    });
+
 
     describe('Error Handling', () => {
         it('should handle invalid URLs gracefully', async () => {

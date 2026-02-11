@@ -189,11 +189,41 @@ Result of the `AudioAnalyzer`. Used to generate characters.
 | `mid_dominance` | number | Mid-range frequency dominance (0.0 - 1.0) |
 | `treble_dominance` | number | Treble frequency dominance (0.0 - 1.0) |
 | `average_amplitude` | number | Average amplitude (0.0 - 1.0) |
+| `rms_energy?` | number | Root Mean Square energy (perceived loudness) |
+| `dynamic_range?` | number | Difference between Peak and RMS (track "punch") |
 | `spectral_centroid?` | number | Advanced metric: spectral centroid |
 | `spectral_rolloff?` | number | Advanced metric: spectral rolloff |
 | `zero_crossing_rate?` | number | Advanced metric: zero crossing rate |
 | `color_palette?` | ColorPalette | Color palette extracted from artwork |
 | `analysis_metadata` | object | Duration, buffer status, sample positions, timestamp |
+
+### SamplingStrategy
+
+Used by `analyzeTimeline` to determine how often to sample the audio.
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `type: 'interval'` | object | Sample every `intervalSeconds` |
+| `type: 'count'` | object | Generate exactly `count` samples across the whole song |
+
+### AudioTimelineEvent
+
+Data point for a specific segment of audio.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `timestamp` | number | Start time of the segment in seconds |
+| `duration` | number | Duration of the segment in seconds |
+| `bass` | number | Bass dominance for this segment (0.0 - 1.0) |
+| `mid` | number | Mid dominance for this segment (0.0 - 1.0) |
+| `treble` | number | Treble dominance for this segment (0.0 - 1.0) |
+| `amplitude` | number | RMS amplitude (energy) for this segment |
+| `peak` | number | Maximum peak amplitude for this segment |
+| `spectral_centroid?` | number | Advanced metric: spectral centroid |
+| `spectral_rolloff?` | number | Advanced metric: spectral rolloff |
+| `zero_crossing_rate?` | number | Advanced metric: zero crossing rate |
+
+
 
 ### ColorPalette
 
@@ -1077,7 +1107,9 @@ Extracts sonic fingerprints from audio files using Web Audio API. Analyzes frequ
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `extractSonicFingerprint(audioUrl: string)` | `Promise<AudioProfile>` | Downloads and analyzes audio file; returns bass/mid/treble dominance, average_amplitude, optional advanced metrics, and analysis_metadata |
+| `extractSonicFingerprint(audioUrl: string)` | `Promise<AudioProfile>` | Downloads and analyzes audio file; returns bass/mid/treble dominance, average_amplitude, RMS energy, dynamic range, optional advanced metrics, and analysis_metadata |
+| `analyzeTimeline(audioUrl: string, strategy: SamplingStrategy)` | `Promise<AudioTimelineEvent[]>` | Performs full-song analysis, returning an array of frequency and amplitude data points over time |
+
 
 ### ColorExtractor
 

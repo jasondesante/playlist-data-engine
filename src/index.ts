@@ -18,7 +18,8 @@ export type {
 export type {
     AudioProfile,
     ColorPalette,
-    FrequencyBands
+    FrequencyBands,
+    AudioTimelineEvent
 } from './core/types/AudioProfile.js';
 
 // Character types
@@ -201,7 +202,7 @@ export { NamingEngine } from './core/generation/NamingEngine.js';
 
 export { PlaylistParser } from './core/parser/PlaylistParser.js';
 export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
-export { AudioAnalyzer, type AudioAnalyzerOptions } from './core/analysis/AudioAnalyzer.js';
+export { AudioAnalyzer, type AudioAnalyzerOptions, type SamplingStrategy } from './core/analysis/AudioAnalyzer.js';
 export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
 export { ColorExtractor } from './core/analysis/ColorExtractor.js';
 

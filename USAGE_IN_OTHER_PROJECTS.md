@@ -93,6 +93,7 @@ const analyzer = new AudioAnalyzer();
 const track = playlist.tracks[0];
 const audioProfile = await analyzer.extractSonicFingerprint(track.audio_url);
 console.log(`Bass: ${audioProfile.bass_dominance}, Mid: ${audioProfile.mid_dominance}, Treble: ${audioProfile.treble_dominance}`);
+console.log(`RMS Energy: ${audioProfile.rms_energy}, Dynamic Range: ${audioProfile.dynamic_range}`);
 
 // Generate character deterministically from audio
 const character = CharacterGenerator.generate(
@@ -106,6 +107,39 @@ console.log(`  Race: ${character.race}`);
 console.log(`  Class: ${character.class}`);
 console.log(`  STR: ${character.ability_scores.STR}, DEX: ${character.ability_scores.DEX}`);
 ```
+
+### Full Song Analysis
+
+Perform a detailed, segment-by-segment analysis of the entire song. This is ideal for generating game levels or showing a song's progression over time.
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+
+// Option A: Sample every 2 seconds
+const timelineInterval = await analyzer.analyzeTimeline(audioUrl, { 
+  type: 'interval', 
+  intervalSeconds: 2 
+});
+
+// Option B: Generate exactly 100 data points across the song
+const timelineCount = await analyzer.analyzeTimeline(audioUrl, { 
+  type: 'count', 
+  count: 100 
+});
+
+// Access timeline data
+timelineCount.forEach(event => {
+  console.log(`[${event.timestamp}s]`);
+  console.log(`  Energy: ${event.amplitude}`); // RMS amplitude for segment
+  console.log(`  Frequency: B:${event.bass} M:${event.mid} T:${event.treble}`);
+  console.log(`  Spectral Centroid: ${event.spectral_centroid}`);
+  console.log(`  Zero Crossing Rate: ${event.zero_crossing_rate}`);
+  console.log(`  Peak: ${event.peak}`);
+});
+```
+
 
 ### Earning XP from Listening to Music
 

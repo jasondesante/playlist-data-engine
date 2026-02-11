@@ -2,8 +2,12 @@
  * Audio analysis using Web Audio API with "Triple Tap" strategy
  */
 
-import type { AudioProfile, FrequencyBands } from '../types/AudioProfile.js';
+import type { AudioProfile, AudioTimelineEvent, FrequencyBands } from '../types/AudioProfile.js';
 import { SpectrumScanner } from './SpectrumScanner.js';
+
+export type SamplingStrategy =
+    | { type: 'interval'; intervalSeconds: number } // e.g., every 1s
+    | { type: 'count'; count: number };             // e.g., exactly 100 points
 
 export interface AudioAnalyzerOptions {
     /** Include advanced metrics (spectral_centroid, spectral_rolloff, zero_crossing_rate) */
@@ -86,24 +90,7 @@ export class AudioAnalyzer {
      * Uses "Triple Tap" strategy: analyze at 5%, 40%, and 70% positions
      */
     async extractSonicFingerprint(audioUrl: string): Promise<AudioProfile> {
-        // Fetch audio data
-        const response = await fetch(audioUrl);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch audio: ${response.statusText}`);
-        }
-
-        const arrayBuffer = await response.arrayBuffer();
-
-        // Decode audio data
-        const AudioContextClass = (globalThis as any).AudioContext || (window as any)?.AudioContext;
-        if (!AudioContextClass) {
-            throw new Error('AudioContext not available in this environment');
-        }
-        const audioContext = new AudioContextClass();
-        const audioBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
-            audioContext.decodeAudioData(arrayBuffer, resolve, reject);
-        });
-
+        const audioBuffer = await this.fetchAndDecode(audioUrl);
         const duration = audioBuffer.duration;
 
         // Determine if we should analyze the full buffer (< 3 seconds)
@@ -158,6 +145,9 @@ export class AudioAnalyzer {
 
         // Calculate average amplitude
         const averageAmplitude = this.calculateAverageAmplitude(audioBuffer);
+        const rmsEnergy = this.calculateRMS(audioBuffer);
+        const peakAmplitude = this.calculatePeak(audioBuffer);
+        const dynamicRange = peakAmplitude - rmsEnergy;
 
         // Build audio profile
         const profile: AudioProfile = {
@@ -171,6 +161,8 @@ export class AudioAnalyzer {
                 sample_positions: samplePositions,
                 analyzed_at: new Date().toISOString(),
             },
+            rms_energy: rmsEnergy,
+            dynamic_range: dynamicRange,
         };
 
         // Add advanced metrics if requested
@@ -187,6 +179,109 @@ export class AudioAnalyzer {
         }
 
         return profile;
+    }
+
+    /**
+     * Perform detailed timeline analysis of the entire song
+     *
+     * @param audioUrl URL of the audio file to analyze
+     * @param strategy strategy for sampling (interval-based or count-based)
+     */
+    async analyzeTimeline(audioUrl: string, strategy: SamplingStrategy): Promise<AudioTimelineEvent[]> {
+        const audioBuffer = await this.fetchAndDecode(audioUrl);
+        const duration = audioBuffer.duration;
+        const sampleRate = audioBuffer.sampleRate;
+
+        const timeline: AudioTimelineEvent[] = [];
+        let samplePoints: number[] = [];
+
+        if (strategy.type === 'interval') {
+            const interval = strategy.intervalSeconds;
+            for (let t = 0; t < duration; t += interval) {
+                samplePoints.push(t);
+            }
+        } else {
+            const count = strategy.count;
+            const interval = duration / count;
+            for (let i = 0; i < count; i++) {
+                samplePoints.push(i * interval);
+            }
+        }
+
+        for (const startTime of samplePoints) {
+            // Determine segment length (cap at 1 second or duration remaining)
+            const remaining = duration - startTime;
+            const segmentDuration = Math.min(1.0, remaining);
+
+            if (segmentDuration <= 0) break;
+
+            const startSample = Math.floor(startTime * sampleRate);
+            const endSample = Math.floor((startTime + segmentDuration) * sampleRate);
+
+            // Extract frequency data
+            const audioData = this.extractAudioSegment(audioBuffer, startSample, endSample);
+            const fftBins = this.performFFT(audioData, this.options.fftSize!);
+
+            const frequencyData = new Uint8Array(fftBins.length);
+            for (let i = 0; i < fftBins.length; i++) {
+                frequencyData[i] = Math.min(255, Math.round(fftBins[i]));
+            }
+
+            const bands = SpectrumScanner.separateFrequencyBands(frequencyData, sampleRate);
+
+            // Calculate dominance (normalized 0-1)
+            const bassDom = SpectrumScanner.calculateDominance(bands.bass, 380) * this.options.bassBoost!;
+            const midDom = SpectrumScanner.calculateDominance(bands.mid, 3600) * this.options.midBoost!;
+            const trebleDom = SpectrumScanner.calculateDominance(bands.treble, 10000) * this.options.trebleBoost!;
+            const total = (bassDom + midDom + trebleDom) || 1;
+
+            // Calculate amplitude metrics for this segment
+            const rms = this.calculateRMS(audioBuffer, startSample, endSample);
+            const peak = this.calculatePeak(audioBuffer, startSample, endSample);
+
+            const allFrequencies = [
+                ...bands.bass,
+                ...bands.mid,
+                ...bands.treble,
+            ];
+
+            timeline.push({
+                timestamp: startTime,
+                duration: segmentDuration,
+                bass: bassDom / total,
+                mid: midDom / total,
+                treble: trebleDom / total,
+                amplitude: rms,
+                peak: peak,
+                spectral_centroid: this.calculateSpectralCentroid(allFrequencies),
+                spectral_rolloff: this.calculateSpectralRolloff(allFrequencies),
+                zero_crossing_rate: this.calculateZeroCrossingRate(audioBuffer, startSample, endSample),
+            });
+        }
+
+        return timeline;
+    }
+
+    /**
+     * Shared logic to fetch and decode audio from a URL
+     */
+    private async fetchAndDecode(audioUrl: string): Promise<AudioBuffer> {
+        const response = await fetch(audioUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch audio: ${response.statusText}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const AudioContextClass = (globalThis as any).AudioContext || (window as any)?.AudioContext;
+
+        if (!AudioContextClass) {
+            throw new Error('AudioContext not available in this environment');
+        }
+
+        const audioContext = new AudioContextClass();
+        return await new Promise<AudioBuffer>((resolve, reject) => {
+            audioContext.decodeAudioData(arrayBuffer, resolve, reject);
+        });
     }
 
     /**
@@ -398,6 +493,43 @@ export class AudioAnalyzer {
     }
 
     /**
+     * Calculate RMS (Root Mean Square) energy - more representative of perceived loudness
+     */
+    private calculateRMS(audioBuffer: AudioBuffer, startSample: number = 0, endSample: number = audioBuffer.length): number {
+        let squareSum = 0;
+        let count = 0;
+
+        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+            const data = audioBuffer.getChannelData(channel);
+            const end = Math.min(endSample, data.length);
+            for (let i = startSample; i < end; i++) {
+                squareSum += data[i] * data[i];
+                count++;
+            }
+        }
+
+        return count > 0 ? Math.sqrt(squareSum / count) : 0;
+    }
+
+    /**
+     * Calculate Peak amplitude
+     */
+    private calculatePeak(audioBuffer: AudioBuffer, startSample: number = 0, endSample: number = audioBuffer.length): number {
+        let max = 0;
+
+        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+            const data = audioBuffer.getChannelData(channel);
+            const end = Math.min(endSample, data.length);
+            for (let i = startSample; i < end; i++) {
+                const val = Math.abs(data[i]);
+                if (val > max) max = val;
+            }
+        }
+
+        return max;
+    }
+
+    /**
      * Calculate spectral centroid (brightness)
      */
     private calculateSpectralCentroid(frequencies: number[]): number {
@@ -433,13 +565,16 @@ export class AudioAnalyzer {
     /**
      * Calculate zero crossing rate (measure of noisiness/percussiveness)
      */
-    private calculateZeroCrossingRate(audioBuffer: AudioBuffer): number {
+    private calculateZeroCrossingRate(audioBuffer: AudioBuffer, startSample: number = 0, endSample: number = audioBuffer.length): number {
         let crossings = 0;
         let totalSamples = 0;
 
         for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
             const data = audioBuffer.getChannelData(channel);
-            for (let i = 1; i < data.length; i++) {
+            const end = Math.min(endSample, data.length);
+            const start = Math.max(0, startSample);
+
+            for (let i = Math.max(1, start + 1); i < end; i++) {
                 if ((data[i - 1] >= 0 && data[i] < 0) || (data[i - 1] < 0 && data[i] >= 0)) {
                     crossings++;
                 }
