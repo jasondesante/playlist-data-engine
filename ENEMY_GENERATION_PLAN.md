@@ -548,10 +548,12 @@ Created `src/core/generation/index.ts` with:
 
 **File:** `ENEMY_GENERATION.md`
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Create comprehensive documentation file
-- [ ] **Overview**: System philosophy and design decisions
-- [ ] **Quick Start**: Simple examples
+- [x] Create comprehensive documentation file
+- [x] **Overview**: System philosophy and design decisions
+- [x] **Quick Start**: Simple examples
   ```typescript
   // Generate a specific enemy by name
   const orc = EnemyGenerator.generate({
@@ -599,14 +601,27 @@ Created `src/core/generation/index.ts` with:
     count: 4
   });
   ```
-- [ ] **Generation Modes**: Explain party-based vs CR-based
-- [ ] **Rarity Tiers**: Explain the scaling system with examples
-- [ ] **Leader Promotion**: Explain auto rarity mix for groups > 3
-- [ ] **Mixed Types**: Explain enemyMix options (V1: uniform + custom)
-- [ ] **Template System**: List available templates and their IDs
-- [ ] **Audio Integration**: Explain how audio affects template selection
-- [ ] **Encounter Balance**: Explain XP budget and difficulty
-- [ ] **API Reference**: Full method signatures
+- [x] **Generation Modes**: Explain party-based vs CR-based
+- [x] **Rarity Tiers**: Explain the scaling system with examples
+- [x] **Leader Promotion**: Explain auto rarity mix for groups > 3
+- [x] **Mixed Types**: Explain enemyMix options (V1: uniform + custom)
+- [x] **Template System**: List available templates and their IDs
+- [x] **Audio Integration**: Explain how audio affects template selection
+- [x] **Encounter Balance**: Explain XP budget and difficulty
+- [x] **API Reference**: Full method signatures
+
+**Summary:**
+Created comprehensive `ENEMY_GENERATION.md` documentation file (19,183 bytes) with:
+- Complete overview of enemy generation system design philosophy
+- Quick start examples covering all major use cases
+- Detailed explanation of party-based vs CR-based generation modes
+- Rarity tier system with stat multipliers, die scaling, and extra abilities
+- Leader promotion rules for groups > 3 enemies
+- Mixed enemy type modes (uniform and custom)
+- Complete template reference table with all 10 templates
+- Audio integration explanation for template selection
+- Encounter balance explanation with XP budget tables and multipliers
+- Full API reference with type definitions
 
 ---
 
