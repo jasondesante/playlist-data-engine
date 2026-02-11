@@ -239,19 +239,26 @@ Audio profile influences:
 
 **File:** `src/constants/DefaultEnemies.ts`
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Define Humanoid Brute templates (Orc, Bandit)
-- [ ] Define Humanoid Archer templates (Hunter, Goblin Archer)
-- [ ] Define Humanoid Support templates (Shaman, Cultist)
-- [ ] Define Beast Brute templates (Bear, Boar)
-- [ ] Define Beast "Archer" templates (Giant Spider, Stirge)
-- [ ] Each template includes:
+- [x] Define Humanoid Brute templates (Orc, Bandit)
+- [x] Define Humanoid Archer templates (Hunter, Goblin Archer)
+- [x] Define Humanoid Support templates (Shaman, Cultist)
+- [x] Define Beast Brute templates (Bear, Boar)
+- [x] Define Beast "Archer" templates (Giant Spider, Stirge)
+- [x] Each template includes:
   - Signature ability with d6 base die
   - Audio preference weights
   - Base stats appropriate to archetype
   - Type-appropriate resistances for Elite+ tier
-- [ ] Export `DEFAULT_ENEMY_TEMPLATES` array (10 templates)
-- [ ] Add JSDoc comments explaining template structure
+- [x] Export `DEFAULT_ENEMY_TEMPLATES` array (10 templates)
+- [x] Add JSDoc comments explaining template structure
+
+**Bonus additions:**
+- Added `getTemplateById(id)` helper function for template lookup by ID
+- Added `getTemplatesByCategory(category)` helper function for filtering by category
+- Added `getTemplatesByArchetype(archetype)` helper function for filtering by archetype
 
 ---
 
