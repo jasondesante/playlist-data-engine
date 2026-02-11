@@ -197,6 +197,71 @@ export { AppearanceGenerator } from './core/generation/AppearanceGenerator.js';
 export { NamingEngine } from './core/generation/NamingEngine.js';
 
 // ============================================================================
+// ENEMY GENERATION
+// ============================================================================
+
+export { EnemyGenerator } from './core/generation/EnemyGenerator.js';
+
+// Enemy types
+export type {
+    EnemyCategory,
+    EnemyRarity,
+    EnemyArchetype,
+    EnemyMixMode,
+    EncounterDifficulty,
+    SignatureAbility,
+    AudioPreference,
+    EnemyTemplate,
+    RarityConfig,
+    EnemyGenerationOptions,
+    EncounterGenerationOptions,
+    EnemyMetadata,
+    EnemyFeature
+} from './core/types/Enemy.js';
+
+export {
+    isValidEnemyCategory,
+    isValidEnemyRarity,
+    isValidEnemyArchetype,
+    isValidEncounterDifficulty
+} from './core/types/Enemy.js';
+
+// Enemy constants
+export {
+    RARITY_CONFIGS,
+    getRarityConfig,
+    getSignatureDie,
+    getAllRarities,
+    getHigherRarity
+} from './constants/EnemyRarity.js';
+
+export {
+    DEFAULT_ENEMY_TEMPLATES,
+    getTemplateById,
+    getTemplatesByCategory,
+    getTemplatesByArchetype
+} from './constants/DefaultEnemies.js';
+
+export {
+    XP_BUDGET_PER_LEVEL,
+    ENEMY_COUNT_MULTIPLIER,
+    CR_TO_XP,
+    TUNING_FACTORS,
+    getXPForCR,
+    getCRFromXP,
+    applyTuning,
+    getXPBudgetPerLevel,
+    getXPBudgetForParty,
+    getEncounterMultiplier,
+    calculateAdjustedXP,
+    getAveragePartyLevel,
+    isValidEncounterDifficulty as isValidEncounterDifficultyUtil
+} from './constants/EncounterBalance.js';
+
+// Party analysis
+export { PartyAnalyzer, type PartyAnalysis } from './core/combat/PartyAnalyzer.js';
+
+// ============================================================================
 // PLAYLIST PARSING & ANALYSIS
 // ============================================================================
 
