@@ -12,7 +12,10 @@
       "WebSearch",
       "Bash(npx vitest run:*)",
       "Bash(find:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

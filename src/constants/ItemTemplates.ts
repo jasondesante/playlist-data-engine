@@ -15,8 +15,9 @@
  *
  * @example
  * ```typescript
- * import { applyTemplate } from './utils/magicItemExamples.js';
- * import { DEFAULT_EQUIPMENT, ITEM_CREATION_TEMPLATES } from './utils/equipmentConstants.js';
+ * import { applyTemplate } from '../utils/magicItemExamples.js';
+ * import { DEFAULT_EQUIPMENT } from './DefaultEquipment.js';
+ * import { ITEM_CREATION_TEMPLATES } from './ItemTemplates.js';
  *
  * const baseSword = DEFAULT_EQUIPMENT['Longsword'];
  * const flamingSword = applyTemplate(baseSword, 'flaming_weapon_template');

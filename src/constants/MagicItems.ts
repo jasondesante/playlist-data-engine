@@ -182,6 +182,37 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         tags: ['magic', 'weapon', 'versatile', 'dragon_slaying']
     },
 
+    /**
+     * Lightning Lance - Lightning damage reach weapon
+     * Demonstrates: damage_bonus with lightning type, reach property
+     */
+    {
+        name: 'Lightning Lance',
+        type: 'weapon',
+        rarity: 'rare',
+        weight: 6,
+        damage: { dice: '1d6', damageType: 'piercing' },
+        weaponProperties: ['reach', 'two-handed'],
+        description: 'A spear crackling with electrical energy that extends your reach. Deals extra lightning damage on hits and can arc to nearby enemies.',
+        properties: [
+            {
+                type: 'damage_bonus',
+                target: 'lightning_damage',
+                value: '1d6',
+                description: '+1d6 lightning damage on hit'
+            },
+            {
+                type: 'special_property',
+                target: 'lightning_arc',
+                value: 'half_damage',
+                description: 'On critical hit, lightning arcs to another creature within 10ft for half damage'
+            }
+        ],
+        spawnWeight: 0.1,
+        source: 'custom',
+        tags: ['magic', 'weapon', 'lightning', 'reach']
+    },
+
     // ========================================================================
     // ARMOR
     // ========================================================================
@@ -220,6 +251,54 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         spawnWeight: 0.2,
         source: 'custom',
         tags: ['magic', 'armor', 'light', 'mithral']
+    },
+
+    /**
+     * +1 Chain Shirt - Light armor with enhancement
+     * Demonstrates: stacking AC bonuses for light armor
+     */
+    {
+        name: '+1 Chain Shirt',
+        type: 'armor',
+        rarity: 'rare',
+        weight: 20,
+        acBonus: 14,  // Base 13 + 1 enhancement
+        description: 'Magically reinforced chain armor that provides improved protection without adding extra weight. The enchanted metal links deflect blows more effectively than ordinary chain.',
+        properties: [
+            {
+                type: 'passive_modifier',
+                target: 'ac',
+                value: 14,
+                description: 'Fixed AC: 14 (13 base + 1 enhancement)'
+            }
+        ],
+        spawnWeight: 0.15,
+        source: 'custom',
+        tags: ['magic', 'armor', 'light', 'enhanced']
+    },
+
+    /**
+     * +2 Chain Shirt - Light armor with greater enhancement
+     * Demonstrates: higher stacking AC bonuses
+     */
+    {
+        name: '+2 Chain Shirt',
+        type: 'armor',
+        rarity: 'very_rare',
+        weight: 20,
+        acBonus: 15,  // Base 13 + 2 enhancement
+        description: 'Superiorly enchanted chain armor with powerful protective magic. The links are magically hardened to provide exceptional defense while remaining flexible.',
+        properties: [
+            {
+                type: 'passive_modifier',
+                target: 'ac',
+                value: 15,
+                description: 'Fixed AC: 15 (13 base + 2 enhancement)'
+            }
+        ],
+        spawnWeight: 0.1,
+        source: 'custom',
+        tags: ['magic', 'armor', 'light', 'enhanced']
     },
 
     /**
