@@ -15,7 +15,8 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
 6. [Environmental Sensors](#environmental-sensors)
 7. [Gaming Integration](#gaming-integration)
 8. [Combat System](#combat-system)
-9. [Equipment System](#equipment-system)
+9. [Enemy Generation](#enemy-generation)
+10. [Equipment System](#equipment-system)
    - [Equipment Types](#equipment-types)
    - [EquipmentEffectApplier](#equipmenteffectapplier)
    - [EquipmentValidator](#equipmentvalidator)
@@ -126,6 +127,8 @@ A concise overview of all main exports from the library, organized by category.
 | `AttackResolver` | Resolve attack rolls | [Combat System](#combat-system) |
 | `SpellCaster` | Cast spells in combat | [Combat System](#combat-system) |
 | `DiceRoller` | Standalone dice rolling utilities | [Combat System](#combat-system) |
+| `EnemyGenerator` | Generate enemies and encounters | [Enemy Generation](#enemy-generation) |
+| `PartyAnalyzer` | Analyze party strength for encounters | [Enemy Generation](#enemy-generation) |
 
 ### Utilities
 
@@ -158,6 +161,8 @@ All TypeScript types are exported, including:
 **Extensibility Types:** `ClassFeature`, `RacialTrait`, `CustomSkill`, `FeatureEffect`, `FeaturePrerequisite`, `SkillPrerequisite`, `SpellPrerequisite`, `ValidationResult`, `ExtensionCategory` — see [Extensibility System](#extensibility-system) and [PREREQUISITES.md](docs/PREREQUISITES.md)
 
 **Equipment Types:** `EnhancedEquipment` (primary), `Equipment` (legacy), `InventoryItem`, `EquipmentProperty`, `EquipmentCondition`, `EquipmentModification`, `EnhancedInventoryItem`, `EquipmentMiniFeature`, `SpawnRandomOptions`, `TreasureHoardResult` — see [Equipment System](#equipment-system)
+
+**Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature` — see [Enemy Generation](#enemy-generation)
 
 **Game Data:** `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS` — see [Game Data Reference](#game-data-reference)
 
@@ -2196,6 +2201,262 @@ Handles spell casting mechanics (spell slots, saving throws, spell damage).
 | `getSpellSlotInfo(caster)` | Returns formatted spell slot information |
 | `canUpcast(caster, spell, targetSlotLevel)` | Checks if spell can be upcast to higher level |
 | `upcastSpell(caster, spell, targets, slotLevelUsed)` | Upcasts spell using higher-level slot |
+
+---
+
+## Enemy Generation
+
+**For usage examples, see [ENEMY_GENERATION.md](ENEMY_GENERATION.md)**
+
+### EnemyGenerator
+
+**Location:** `src/core/generation/EnemyGenerator.ts`
+
+Deterministic enemy generator that creates balanced encounters based on party strength or target CR. All generation is seeded for reproducibility.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static generate(options: EnemyGenerationOptions): CharacterSheet` | Generate a single enemy from template or by category/archetype |
+| `static generateEncounter(party: CharacterSheet[], options: EncounterGenerationOptions): CharacterSheet[]` | Generate encounter balanced for party (analyzes party strength) |
+| `static generateEncounterByCR(options: EncounterGenerationOptions): CharacterSheet[]` | Generate encounter by target CR (no party required) |
+| `static getTemplateById(id: string): EnemyTemplate \| undefined` | Get enemy template by ID (e.g., 'orc', 'goblin-archer') |
+
+**Single Enemy Generation:**
+
+```typescript
+// Generate a specific elite orc
+const orc = EnemyGenerator.generate({
+  seed: 'my-encounter',
+  templateId: 'orc',
+  rarity: 'elite'
+});
+
+// Generate a random humanoid brute
+const enemy = EnemyGenerator.generate({
+  seed: 'random-1',
+  category: 'humanoid',
+  archetype: 'brute',
+  rarity: 'common'
+});
+
+// With audio influence
+const enemy = EnemyGenerator.generate({
+  seed: 'audio-1',
+  audioProfile: profile,
+  track: trackData,
+  difficultyMultiplier: 1.2
+});
+```
+
+**Encounter Generation:**
+
+```typescript
+// Party-based balanced encounter
+const enemies = EnemyGenerator.generateEncounter(party, {
+  seed: 'dungeon-1',
+  difficulty: 'medium',
+  count: 5  // Will auto-promote 1 to uncommon as leader
+});
+
+// CR-based encounter (no party needed)
+const enemies = EnemyGenerator.generateEncounterByCR({
+  seed: 'cr5-encounter',
+  targetCR: 5,
+  count: 3
+});
+```
+
+**Generation Options (EnemyGenerationOptions):**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `seed` | `string` | **Required** - Base seed for deterministic generation |
+| `templateId?` | `string` | Force specific template (e.g., 'orc', 'goblin-archer') |
+| `rarity?` | `EnemyRarity` | Rarity tier (default: 'common') |
+| `difficultyMultiplier?` | `number` | Fine-tune difficulty (default: 1.0) |
+| `audioProfile?` | `AudioProfile` | Influences template selection |
+| `track?` | `PlaylistTrack` | Required if audioProfile provided |
+
+**Encounter Options (EncounterGenerationOptions):**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `seed` | `string` | **Required** - Base seed for deterministic generation |
+| `count` | `number` | **Required** - Number of enemies to generate |
+| `difficulty?` | `EncounterDifficulty` | Party mode: easy/medium/hard/deadly (default: 'medium') |
+| `targetCR?` | `number` | CR mode: Target CR for encounter |
+| `baseRarity?` | `EnemyRarity` | Base rarity before leader promotion (default: 'common') |
+| `difficultyMultiplier?` | `number` | Fine-tune difficulty (default: 1.0) |
+| `category?` | `EnemyCategory` | Filter by category |
+| `archetype?` | `EnemyArchetype` | Filter by archetype |
+| `templateId?` | `string` | Force specific template for all enemies |
+| `enemyMix?` | `EnemyMixMode` | Mix mode: 'uniform' or 'custom' |
+| `templates?` | `string[]` | Template IDs for 'custom' mix mode |
+| `audioProfile?` | `AudioProfile` | Influences template selection |
+| `track?` | `PlaylistTrack` | Required if audioProfile provided |
+| `enableLeaderPromotion?` | `boolean` | Auto-promote leaders for groups > 3 (default: true) |
+
+**Rarity Scaling:**
+
+| Rarity | Stat Multiplier | Signature Die | Extra Abilities | Resistances |
+|--------|-----------------|----------------|-----------------|-------------|
+| `common` | 1.0× | d6 | 0 | None |
+| `uncommon` | 1.1× | d8 | 1 | None |
+| `elite` | 1.25× | d10 | 2 | Type-based |
+| `boss` | 1.5× | d12 | 3 | Type-based |
+
+**Leader Promotion (groups > 3):**
+
+| Enemy Count | Leader Rule |
+|-------------|-------------|
+| 1-3 | No leader, all same rarity |
+| 4-6 | 1 enemy promoted to next rarity tier |
+| 7-9 | 1 enemy promoted two tiers up |
+| 10+ | 2 enemies promoted (1 one tier, 1 two tiers) |
+
+### PartyAnalyzer
+
+**Location:** `src/core/combat/PartyAnalyzer.ts`
+
+Analyzes party strength for encounter generation using D&D 5e encounter building rules.
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `static calculatePartyLevel(party: CharacterSheet[]): number` | `number` | Average party level (rounded down) |
+| `static calculatePartyStrength(party: CharacterSheet[]): number` | `number` | Combined strength score |
+| `static getXPBudget(party: CharacterSheet[], difficulty: EncounterDifficulty): number` | `number` | XP budget for encounter |
+| `static getAverageAC(party: CharacterSheet[]): number` | `number` | Average armor class |
+| `static getAverageHP(party: CharacterSheet[]): number` | `number` | Average hit points |
+| `static getPartySize(party: CharacterSheet[]): number` | `number` | Party member count |
+| `static getAverageDamage(party: CharacterSheet[]): number` | `number` | Estimated damage output |
+| `static analyzeParty(party: CharacterSheet[]): PartyAnalysis` | `PartyAnalysis` | Complete analysis with all stats |
+
+**PartyAnalysis Interface:**
+
+```typescript
+interface PartyAnalysis {
+  averageLevel: number;      // Average party level
+  partySize: number;         // Number of party members
+  averageAC: number;         // Average armor class
+  averageHP: number;         // Average hit points
+  averageDamage: number;      // Estimated damage output
+  totalStrength: number;      // Abstract strength score
+  easyXP: number;           // XP budget for easy difficulty
+  mediumXP: number;         // XP budget for medium difficulty
+  hardXP: number;           // XP budget for hard difficulty
+  deadlyXP: number;         // XP budget for deadly difficulty
+}
+```
+
+### Encounter Balance Constants
+
+**Location:** `src/constants/EncounterBalance.ts`
+
+D&D 5e official encounter building tables for balanced encounters.
+
+**XP Budget Per Level:**
+
+```typescript
+XP_BUDGET_PER_LEVEL[level][difficulty]
+// Example: XP_BUDGET_PER_LEVEL[5]['medium'] = 500
+```
+
+| Level | Easy | Medium | Hard | Deadly |
+|-------|-------|--------|-------|--------|
+| 1 | 25 | 50 | 75 | 100 |
+| 5 | 250 | 500 | 750 | 1000 |
+| 10 | 600 | 1200 | 1800 | 2400 |
+| 15 | 1600 | 3200 | 4800 | 6400 |
+| 20 | 5000 | 10000 | 15000 | 20000 |
+
+**CR to XP Conversion:**
+
+```typescript
+CR_TO_XP[cr]  // Returns XP value for given CR
+// Example: CR_TO_XP[5] = 1800
+```
+
+| CR | XP | CR | XP | CR | XP |
+|----|-----|----|-----|----|
+| 0 | 10 | 5 | 1800 | 15 | 13000 |
+| 1/8 | 25 | 6 | 2300 | 20 | 25000 |
+| 1/4 | 50 | 10 | 5900 | 30+ | Scales up |
+
+**Utility Functions:**
+
+| Function | Description |
+|----------|-------------|
+| `getXPForCR(cr: number): number` | Convert CR to XP |
+| `getCRFromXP(xp: number): number` | Convert XP to CR |
+| `applyTuning(xpBudget: number, tuningFactor: number): number` | Apply difficulty tuning factor |
+| `getXPBudgetPerLevel(level: number, difficulty: EncounterDifficulty): number` | Get XP budget for single character |
+| `getXPBudgetForParty(levels: number[], difficulty: EncounterDifficulty): number` | Get total XP budget for party |
+| `getEncounterMultiplier(enemyCount: number): number` | Get encounter multiplier for group size |
+| `calculateAdjustedXP(enemyCRs: number[], multiplier: number): number` | Calculate adjusted XP with multiplier |
+| `getAveragePartyLevel(levels: number[]): number` | Calculate average party level |
+
+### Enemy Type Definitions
+
+**Location:** `src/core/types/Enemy.ts`
+
+**EnemyCategory:**
+
+| Value | Description |
+|--------|-------------|
+| `humanoid` | Civilized races that fight with weapons/armor |
+| `beast` | Natural animals and magical creatures |
+| `undead` | Undead creatures (future V2) |
+| `dragon` | Dragon type creatures (future V2) |
+| `fiend` | Fiendish creatures (future V2) |
+| `construct` | Construct creatures (future V2) |
+| `elemental` | Elemental creatures (future V2) |
+| `monstrosity` | Monstrosities (future V2) |
+
+**EnemyRarity:**
+
+| Value | Stat Multiplier | Signature Die | Extra Abilities |
+|--------|-----------------|----------------|-----------------|
+| `common` | 1.0× | d6 | 0 |
+| `uncommon` | 1.1× | d8 | 1 |
+| `elite` | 1.25× | d10 | 2 |
+| `boss` | 1.5× | d12 | 3 |
+
+**EnemyArchetype:**
+
+| Value | Description |
+|--------|-------------|
+| `brute` | High HP, high damage, melee-focused |
+| `archer` | Ranged specialist, high accuracy, lower HP |
+| `support` | Buffs allies, debuffs enemies, control abilities |
+
+**EnemyMixMode:**
+
+| Value | Description |
+|--------|-------------|
+| `uniform` | All enemies use same template (default) |
+| `custom` | Use specific templates array |
+
+**EncounterDifficulty:**
+
+| Value | Description |
+|--------|-------------|
+| `easy` | 40-50% of medium XP budget |
+| `medium` | Standard balanced fight (100%) |
+| `hard` | 150-200% of medium XP budget |
+| `deadly` | 250%+ of medium XP budget |
+
+**Type Guards:**
+
+| Function | Description |
+|----------|-------------|
+| `isValidEnemyCategory(value: unknown): value is EnemyCategory` | Check if valid enemy category |
+| `isValidEnemyRarity(value: unknown): value is EnemyRarity` | Check if valid rarity tier |
+| `isValidEnemyArchetype(value: unknown): value is EnemyArchetype` | Check if valid archetype |
+| `isValidEncounterDifficulty(value: unknown): value is EncounterDifficulty` | Check if valid difficulty |
 
 ---
 
