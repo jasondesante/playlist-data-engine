@@ -654,12 +654,14 @@ Added "Enemy Generation" section to `docs/COMBAT_SYSTEM.md` with:
 
 **File:** `DATA_ENGINE_REFERENCE.md`
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Add "Enemy Generation" section to the reference
-- [ ] Document EnemyGenerator class and methods
-- [ ] Document EnemyTemplate interface
-- [ ] Document EnemyRarity scaling
-- [ ] Add XP budget and CR conversion reference tables
+- [x] Add "Enemy Generation" section to the reference
+- [x] Document EnemyGenerator class and methods
+- [x] Document EnemyTemplate interface
+- [x] Document EnemyRarity scaling
+- [x] Add XP budget and CR conversion reference tables
 
 ---
 
