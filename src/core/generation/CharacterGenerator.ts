@@ -361,8 +361,8 @@ export class CharacterGenerator {
             );
         })();
 
-        // Calculate base ability scores from audio profile
-        const baseScores = AbilityScoreCalculator.calculateBaseScores(audioProfile);
+        // Calculate base ability scores from audio profile (50% random + 50% audio)
+        const baseScores = AbilityScoreCalculator.calculateBaseScores(audioProfile, rng);
 
         // Apply racial bonuses
         const abilityScores = AbilityScoreCalculator.applyRacialBonuses(baseScores, race);

@@ -6,51 +6,164 @@
 import type { AbilityScores } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
 import { getRaceData } from '../../constants/DefaultRaces.js';
+import type { SeededRNG } from '../../utils/random.js';
+
+type Ability = keyof AbilityScores;
+
+/**
+ * Mapping of frequency band to assigned abilities
+ */
+interface FrequencyMapping {
+    /** The two abilities assigned to this frequency band */
+    abilities: [Ability, Ability];
+    /** Whether first ability gets spice (randomized per character) */
+    firstHasSpice: boolean;
+}
 
 /**
  * Calculate D&D 5e ability scores and modifiers from audio characteristics
  *
- * Maps audio frequency dominance to six core abilities:
- * - STR: Strength (bass dominance)
- * - DEX: Dexterity (treble dominance)
- * - CON: Constitution (amplitude/power)
- * - INT: Intelligence (mid dominance)
- * - WIS: Wisdom (balance between bass and treble)
- * - CHA: Charisma (combined mid + amplitude)
+ * NEW SYSTEM (v2):
+ * - Each frequency band (bass/mid/treble) is randomly assigned to 2 abilities
+ * - 50% random + 50% audio-influenced for each ability
+ * - One of each pair gets "spice" (combined with additional audio metrics)
+ * - One of each pair uses pure dominance value
+ *
+ * This ensures every song generates different stat distributions.
  */
 export class AbilityScoreCalculator {
     /**
+     * Get a spiced audio value for a frequency band
+     * Combines the dominance value with an additional metric for variety
+     */
+    private static getSpicedValue(
+        band: 'bass' | 'mid' | 'treble',
+        dominance: number,
+        audioProfile: AudioProfile
+    ): number {
+        // Get the spice value, falling back to dominance if unavailable
+        let spiceValue: number;
+
+        switch (band) {
+            case 'bass':
+                // Bass pairs well with RMS energy (power) or dynamic range
+                spiceValue = audioProfile.rms_energy ?? audioProfile.dynamic_range ?? dominance;
+                break;
+            case 'mid':
+                // Mid pairs with spectral centroid (brightness) or dynamic range
+                spiceValue = audioProfile.spectral_centroid ?? audioProfile.dynamic_range ?? dominance;
+                break;
+            case 'treble':
+                // Treble pairs with zero crossing rate (noisiness) or spectral centroid
+                spiceValue = audioProfile.zero_crossing_rate ?? audioProfile.spectral_centroid ?? dominance;
+                break;
+        }
+
+        // Average the dominance and spice values
+        return (dominance + spiceValue) / 2;
+    }
+
+    /**
+     * Create frequency-to-ability mappings using seeded RNG
+     * Each frequency (bass/mid/treble) gets assigned 2 unique abilities
+     */
+    private static createFrequencyMappings(rng: SeededRNG): Map<'bass' | 'mid' | 'treble', FrequencyMapping> {
+        const abilities: Ability[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+        const mappings = new Map<'bass' | 'mid' | 'treble', FrequencyMapping>();
+
+        // Shuffle abilities randomly
+        const shuffled = rng.shuffle(abilities);
+
+        // Assign 2 abilities to each frequency band
+        const bands: Array<'bass' | 'mid' | 'treble'> = ['bass', 'mid', 'treble'];
+
+        for (let i = 0; i < 3; i++) {
+            const band = bands[i];
+            const ability1 = shuffled[i * 2];
+            const ability2 = shuffled[i * 2 + 1];
+
+            // Randomly decide which ability gets the spice (50/50)
+            const firstHasSpice = rng.random() < 0.5;
+
+            mappings.set(band, {
+                abilities: [ability1, ability2],
+                firstHasSpice
+            });
+        }
+
+        return mappings;
+    }
+
+    /**
      * Calculate base ability scores (8-15) from audio profile frequencies
      *
-     * Maps audio frequency analysis to six D&D 5e ability scores:
-     * - High bass → High Strength
-     * - High treble → High Dexterity
-     * - High amplitude → High Constitution
-     * - High mid-range → High Intelligence and Charisma
-     * - Balanced → High Wisdom
+     * NEW SYSTEM:
+     * - Randomly assigns bass/mid/treble to ability pairs (deterministic per seed)
+     * - 50% random + 50% audio for each score
+     * - One ability per pair gets "spiced" audio value
+     * - Result: 8-15 range (D&D 5e standard array range)
      *
-     * @param {AudioProfile} audioProfile - Frequency analysis (bass/mid/treble/amplitude dominance)
+     * @param {AudioProfile} audioProfile - Frequency analysis results
+     * @param {SeededRNG} rng - Seeded random number generator for reproducibility
      * @returns {AbilityScores} Base scores (before racial bonuses), range 8-15
-     *
-     * @example
-     * const audioProfile = await analyzer.extractSonicFingerprint(audioUrl);
-     * const baseScores = AbilityScoreCalculator.calculateBaseScores(audioProfile);
-     * console.log(`STR: ${baseScores.STR}, DEX: ${baseScores.DEX}`);
      */
-    static calculateBaseScores(audioProfile: AudioProfile): AbilityScores {
-        const { bass_dominance, mid_dominance, treble_dominance, average_amplitude } = audioProfile;
+    static calculateBaseScores(audioProfile: AudioProfile, rng: SeededRNG): AbilityScores {
+        const { bass_dominance, mid_dominance, treble_dominance } = audioProfile;
 
-        // Map audio characteristics to ability scores (8-15 base range)
-        const baseRange = 7; // 8-15
+        // Create frequency-to-ability mappings
+        const mappings = this.createFrequencyMappings(rng);
 
-        return {
-            STR: Math.floor(8 + bass_dominance * baseRange),
-            DEX: Math.floor(8 + treble_dominance * baseRange),
-            CON: Math.floor(8 + average_amplitude * baseRange),
-            INT: Math.floor(8 + mid_dominance * baseRange),
-            WIS: Math.floor(8 + (1 - Math.abs(bass_dominance - treble_dominance)) * baseRange),
-            CHA: Math.floor(8 + (mid_dominance + average_amplitude) / 2 * baseRange),
+        // Initialize all abilities to minimum
+        const scores: AbilityScores = {
+            STR: 8,
+            DEX: 8,
+            CON: 8,
+            INT: 8,
+            WIS: 8,
+            CHA: 8
         };
+
+        const audioMultiplier = 3.5; // 50% of range (7 total)
+        const randomMultiplier = 3.5; // 50% of range
+
+        // Process each frequency band
+        for (const [band, mapping] of mappings) {
+            const [ability1, ability2] = mapping.abilities;
+            const firstHasSpice = mapping.firstHasSpice;
+
+            // Get the dominance value for this band
+            let dominance: number;
+            switch (band) {
+                case 'bass':
+                    dominance = bass_dominance;
+                    break;
+                case 'mid':
+                    dominance = mid_dominance;
+                    break;
+                case 'treble':
+                    dominance = treble_dominance;
+                    break;
+            }
+
+            // Calculate audio influence for each ability
+            const audioValue1 = firstHasSpice
+                ? this.getSpicedValue(band, dominance, audioProfile)
+                : dominance;
+
+            const audioValue2 = firstHasSpice
+                ? dominance
+                : this.getSpicedValue(band, dominance, audioProfile);
+
+            // Generate random values (0-1) for each ability
+            const randomValue1 = rng.random();
+            const randomValue2 = rng.random();
+
+            // Calculate final scores: 8 + (random * 3.5) + (audio * 3.5)
+            scores[ability1] = Math.floor(8 + (randomValue1 * randomMultiplier) + (audioValue1 * audioMultiplier));
+            scores[ability2] = Math.floor(8 + (randomValue2 * randomMultiplier) + (audioValue2 * audioMultiplier));
+        }
+
+        return scores;
     }
 
     /**

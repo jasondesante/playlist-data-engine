@@ -1215,14 +1215,20 @@ Suggests a class based on audio frequency dominance.
 
 **Location:** `src/core/generation/AbilityScoreCalculator.ts`
 
-Maps audio profile to ability scores (STR, DEX, CON, INT, WIS, CHA).
+Maps audio profile to ability scores (STR, DEX, CON, INT, WIS, CHA) using a randomized, 50/50 system.
+
+**System (v2):**
+- Each frequency band (bass/mid/treble) is randomly assigned to 2 abilities
+- 50% random + 50% audio-influenced for each score
+- One of each pair gets "spice" (combined with additional audio metrics like rms_energy, spectral_centroid)
+- Result: 8-15 base range (D&D 5e standard array range)
 
 **Methods:**
 
 | Method | Description |
 |--------|-------------|
-| `static calculateBaseScores(audioProfile: AudioProfile): AbilityScores` | **STR:** Bass dominance. **DEX:** Treble dominance. **CON:** Average amplitude. **INT:** Mid dominance. **WIS:** Balance between bass and treble. **CHA:** Combined mid and amplitude |
-| `static applyRacialBonuses(baseScores: AbilityScores, race: Race): AbilityScores` | Adds +2 bonuses based on race |
+| `static calculateBaseScores(audioProfile: AudioProfile, rng: SeededRNG): AbilityScores` | Randomly assigns bass/mid/treble to ability pairs; calculates 50% random + 50% audio (8-15 range) |
+| `static applyRacialBonuses(baseScores: AbilityScores, race: Race): AbilityScores` | Adds +2 bonuses based on race (capped at 20) |
 | `static calculateModifiers(scores: AbilityScores): AbilityScores` | Calculates D&D 5e modifiers (e.g., 15 → +2) |
 
 #### Helper: `SkillAssigner`
