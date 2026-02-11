@@ -266,16 +266,28 @@ Audio profile influences:
 
 **File:** `src/constants/EncounterBalance.ts`
 
+**Status:** ✅ COMPLETED
+
 **Subtasks:**
-- [ ] Create `XP_BUDGET_PER_LEVEL` object with easy/medium/hard/deadly XP thresholds for levels 1-20 (D&D 5e official)
-- [ ] Create `ENEMY_COUNT_MULTIPLIER` object (D&D 5e official: 1=1x, 2=1.5x, 3=2x, 4=2x, 5=2x, 6=2x, 7=2.5x, etc.)
-- [ ] Create `CR_TO_XP` mapping (CR 0=10, CR 0.125=25, CR 0.25=50, CR 0.5=100, CR 1=200, up to CR 30)
-- [ ] Create `TUNING_FACTORS` object for adjusting difficulty (default 1.0, can be tuned up/down)
-- [ ] Add utility functions:
+- [x] Create `XP_BUDGET_PER_LEVEL` object with easy/medium/hard/deadly XP thresholds for levels 1-20 (D&D 5e official)
+- [x] Create `ENEMY_COUNT_MULTIPLIER` object (D&D 5e official: 1=1x, 2=1.5x, 3=2x, 4=2x, 5=2x, 6=2x, 7=1.5x, etc.)
+- [x] Create `CR_TO_XP` mapping (CR 0=10, CR 0.125=25, CR 0.25=50, CR 0.5=100, CR 1=200, up to CR 30)
+- [x] Create `TUNING_FACTORS` object for adjusting difficulty (default 1.0, can be tuned up/down)
+- [x] Add utility functions:
   - `getXPForCR(cr: number): number`
   - `getCRFromXP(xp: number): number`
   - `applyTuning(xpBudget: number, tuningFactor: number): number`
-- [ ] Export all constants and utility functions
+- [x] Export all constants and utility functions
+
+**Bonus additions:**
+- Added `getXPBudgetPerLevel(level, difficulty)` - Get XP budget for single character
+- Added `getXPBudgetForParty(levels, difficulty)` - Get total XP budget for entire party
+- Added `getEncounterMultiplier(enemyCount)` - Get multiplier for number of enemies
+- Added `calculateAdjustedXP(enemyCRs, multiplier)` - Calculate adjusted XP with encounter multiplier
+- Added `getAveragePartyLevel(levels)` - Calculate average party level
+- Added `isValidEncounterDifficulty(value)` - Type guard for difficulty values
+- Comprehensive JSDoc documentation with examples
+- Note: Encounter multipliers follow D&D 5e DMG (1=1x, 2=1.5x, 3-6=2x, 7-10=1.5x, 11-14=1x, 15+=1x)
 
 ---
 
