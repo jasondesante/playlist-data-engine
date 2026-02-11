@@ -1,0 +1,644 @@
+# Enemy Generation System - Implementation Plan
+
+## Overview
+
+Add an enemy generation system that creates balanced encounters based on party strength, with support for audio-based generation and flexible difficulty scaling.
+
+## Design Philosophy
+
+- **Elegant over complex**: Reuse existing systems (FeatureQuery, SeededRNG) rather than building parallel systems
+- **Infinite scaling**: Any enemy template can scale from Common to Boss tier
+- **Signature + extras**: Every enemy type has ONE signature ability shared across all rarities (scaled), higher rarities gain additional abilities from the existing FeatureQuery pool
+- **Audio-influenced**: Audio profile affects both template selection AND stat distribution
+
+---
+
+## Core Design Decisions
+
+### Rarity Tier System
+
+| Rarity | Stats | Signature Ability | Extra Abilities | Resistances |
+|--------|-------|-------------------|-----------------|-------------|
+| Common | Base | d6 version | None | None |
+| Uncommon | +10% | d8 version | 1 from pool | None |
+| Elite | +25% | d10 version | 2 from pool | Type-based |
+| Boss | +50% | d12 version | 3 from pool | Type-based |
+
+**Signature Ability Scaling**: The signature ability uses dice that scale by rarity (d6 → d8 → d10 → d12). All rarities share the same ability concept, just with different damage dice.
+
+**Extra Abilities**: Drawn from the existing FeatureQuery pool, filtered by archetype compatibility. Higher rarities get more picks.
+
+**Resistances**: Elite and Boss enemies gain type-appropriate resistances/immunities (e.g., Fire Elemental = fire immunity, Undead = necrotic resistance).
+
+### Auto Rarity Mix (Leader System)
+
+When generating encounters with **more than 3 enemies**, the system automatically promotes one enemy to a higher rarity tier as a "leader":
+
+| Enemy Count | Leader Rule |
+|-------------|-------------|
+| 1-3 | No leader, all same rarity |
+| 4-6 | 1 enemy promoted to next rarity tier |
+| 7-9 | 1 enemy promoted two tiers up |
+| 10+ | 2 enemies promoted (1 one tier, 1 two tiers) |
+
+Example: Generate 5 goblins at common rarity → Result: 1 uncommon goblin leader + 4 common goblins
+
+### Mixed Enemy Types
+
+Encounters can contain different enemy types. The `enemyMix` option controls this:
+
+```typescript
+// All same type (default)
+{ enemyMix: 'uniform' }
+
+// Specific mix defined by user
+{ enemyMix: 'custom', templates: ['orc', 'orc', 'goblin-archer'] }
+```
+
+**V2 additions:**
+```typescript
+// Mix of types from same category
+{ enemyMix: 'category', category: 'humanoid' }
+
+// Completely random mix
+{ enemyMix: 'random' }
+```
+
+### Generation Modes
+
+Two ways to generate encounters:
+
+1. **Party-based**: Analyze party strength → calculate balanced encounter
+2. **CR-based**: Specify target CR directly → generate enemies matching that CR
+
+Both modes support audio influence, difficulty multipliers, and all other options.
+
+### Template Structure
+
+Each template has:
+- **Fixed archetype**: All instances of this template share the same combat role
+- **One signature ability**: Shared across all rarities, scaled by dice
+- **Category**: Humanoid, Beast, Dragon, Undead, etc.
+- **Audio preference**: Weighting for template selection based on audio profile
+
+### Audio Integration
+
+Audio profile influences:
+1. **Template Selection**: Bass-heavy audio → more likely to select brute templates, treble-heavy → archers/skirmishers
+2. **Stat Distribution**: Bass → higher STR/CON, treble → higher DEX, mid → balanced
+
+### Spell System
+
+- **Innate spellcasting only**: Caster-type enemies have a pre-set list of spells they can cast
+- **No spell slots**: Simplified system where spells are treated as special abilities
+- **Reuse FeatureQuery**: Spells are just features with spell-like effects
+
+### Encounter Balance
+
+- **D&D 5e XP Budget**: Use official tables with tuning capability
+- **Party Analyzer**: Calculate party strength, provide XP budget for desired difficulty
+- **Multi-enemy scaling**: Apply D&D's encounter multiplier for group fights
+
+---
+
+## Initial Template Scope
+
+### Categories (This Implementation)
+- **Humanoid**: Civilized races that fight with weapons/armor
+- **Beast**: Natural animals and magical creatures
+
+### Categories (Future Implementation)
+- Undead, Dragon, Fiend, Construct, Elemental, Monstrosity
+
+### Archetypes (This Implementation)
+- **Brute**: High HP, high damage, melee-focused
+- **Archer**: Ranged specialist, high accuracy, lower HP
+- **Support**: Buffs allies, debuffs enemies, control abilities
+
+### Planned Templates (10-15 total)
+
+#### Humanoid - Brute
+| Template | Signature Ability | Audio Preference |
+|----------|------------------|------------------|
+| Orc | Savage Strike (bonus melee damage) | Bass-heavy |
+| Bandit | Cheap Shot (bonus damage vs flat-footed) | Mid-range |
+
+#### Humanoid - Archer
+| Template | Signature Ability | Audio Preference |
+|----------|------------------|------------------|
+| Hunter | Precise Shot (ignore half cover) | Treble-heavy |
+| Goblin Archer | Sneaky Shot (bonus damage from hiding) | Treble-heavy |
+
+#### Humanoid - Support
+| Template | Signature Ability | Audio Preference |
+|----------|------------------|------------------|
+| Shaman | Spirit Bond (ally damage boost) | Mid-range |
+| Cultist | Dark Blessing (ally AC bonus) | Mid-range |
+
+#### Beast - Brute
+| Template | Signature Ability | Audio Preference |
+|----------|------------------|------------------|
+| Bear | Maul (multiattack with grapple) | Bass-heavy |
+| Boar | Gore Charge (bonus damage on charge) | Bass-heavy |
+
+#### Beast - "Archer" (Ranged)
+| Template | Signature Ability | Audio Preference |
+|----------|------------------|------------------|
+| Giant Spider | Web Spray (ranged restrain) | Treble-heavy |
+| Stirge | Blood Drain (ranged life steal) | Treble-heavy |
+
+---
+
+## Task 1: Create Enemy Type Definitions
+
+**File:** `src/core/types/Enemy.ts`
+
+**Subtasks:**
+- [ ] Define `EnemyCategory` type: 'humanoid' | 'beast' | 'undead' | 'dragon' | 'fiend' | 'construct' | 'elemental' | 'monstrosity'
+- [ ] Define `EnemyRarity` type: 'common' | 'uncommon' | 'elite' | 'boss'
+- [ ] Define `EnemyArchetype` type: 'brute' | 'archer' | 'support'
+- [ ] Define `EnemyMixMode` type: 'uniform' | 'custom' (V2: add 'category' | 'random')
+- [ ] Create `SignatureAbility` interface with: id, name, description, damageDie (base d6), damageType, attackType, range
+- [ ] Create `EnemyTemplate` interface with:
+  - id, name, category, archetype
+  - signatureAbility: SignatureAbility
+  - baseStats: { str, dex, con, int, wis, cha }
+  - baseHP, baseAC, baseSpeed
+  - audioPreference: { bass: number, mid: number, treble: number }
+  - resistances: array of damage types (for Elite+ scaling)
+- [ ] Create `RarityConfig` interface with: statMultiplier, signatureDieSize, extraAbilityCount, hasResistances
+- [ ] Create `EnemyGenerationOptions` interface for single enemy:
+  ```typescript
+  {
+    seed: string;                              // Required - deterministic generation
+    templateId?: string;                       // Optional - force specific template (e.g., 'orc', 'giant-spider')
+    rarity?: EnemyRarity;                      // Optional - default: 'common'
+    difficultyMultiplier?: number;             // Optional - default: 1.0
+    audioProfile?: AudioProfile;               // Optional - influences stats
+    track?: TrackData;                         // Optional - required if audioProfile provided
+  }
+  ```
+- [ ] Create `EncounterGenerationOptions` interface for groups:
+  ```typescript
+  {
+    seed: string;                              // Required - deterministic generation
+    count: number;                             // Required - number of enemies
+    difficulty?: 'easy' | 'medium' | 'hard' | 'deadly';  // Optional - for party-based, default: 'medium'
+    targetCR?: number;                         // Optional - for CR-based generation (no party needed)
+    baseRarity?: EnemyRarity;                  // Optional - default rarity before leader promotion
+    difficultyMultiplier?: number;             // Optional - fine-tune difficulty, default: 1.0
+    category?: EnemyCategory;                  // Optional - filter by category
+    archetype?: EnemyArchetype;                // Optional - filter by archetype
+    templateId?: string;                       // Optional - force specific template for all
+    enemyMix?: EnemyMixMode;                   // Optional - default: 'uniform' (V1: only 'uniform' | 'custom')
+    templates?: string[];                      // Optional - for 'custom' mix mode
+    audioProfile?: AudioProfile;               // Optional - influences selection
+    track?: TrackData;                         // Optional - required if audioProfile provided
+    enableLeaderPromotion?: boolean;           // Optional - default: true for groups > 3
+  }
+  ```
+
+---
+
+## Task 2: Create Rarity Configuration
+
+**File:** `src/constants/EnemyRarity.ts`
+
+**Subtasks:**
+- [ ] Define `RARITY_CONFIGS` object mapping rarity to configuration:
+  ```typescript
+  {
+    common: { statMultiplier: 1.0, signatureDieSize: 6, extraAbilityCount: 0, hasResistances: false },
+    uncommon: { statMultiplier: 1.1, signatureDieSize: 8, extraAbilityCount: 1, hasResistances: false },
+    elite: { statMultiplier: 1.25, signatureDieSize: 10, extraAbilityCount: 2, hasResistances: true },
+    boss: { statMultiplier: 1.5, signatureDieSize: 12, extraAbilityCount: 3, hasResistances: true }
+  }
+  ```
+- [ ] Create helper function `getRarityConfig(rarity: EnemyRarity): RarityConfig`
+- [ ] Export all constants and utilities
+
+---
+
+## Task 3: Create Enemy Template Constants
+
+**File:** `src/constants/DefaultEnemies.ts`
+
+**Subtasks:**
+- [ ] Define Humanoid Brute templates (Orc, Bandit)
+- [ ] Define Humanoid Archer templates (Hunter, Goblin Archer)
+- [ ] Define Humanoid Support templates (Shaman, Cultist)
+- [ ] Define Beast Brute templates (Bear, Boar)
+- [ ] Define Beast "Archer" templates (Giant Spider, Stirge)
+- [ ] Each template includes:
+  - Signature ability with d6 base die
+  - Audio preference weights
+  - Base stats appropriate to archetype
+  - Type-appropriate resistances for Elite+ tier
+- [ ] Export `DEFAULT_ENEMY_TEMPLATES` array (10 templates)
+- [ ] Add JSDoc comments explaining template structure
+
+---
+
+## Task 4: Create Encounter Balance Constants
+
+**File:** `src/constants/EncounterBalance.ts`
+
+**Subtasks:**
+- [ ] Create `XP_BUDGET_PER_LEVEL` object with easy/medium/hard/deadly XP thresholds for levels 1-20 (D&D 5e official)
+- [ ] Create `ENEMY_COUNT_MULTIPLIER` object (D&D 5e official: 1=1x, 2=1.5x, 3=2x, 4=2x, 5=2x, 6=2x, 7=2.5x, etc.)
+- [ ] Create `CR_TO_XP` mapping (CR 0=10, CR 0.125=25, CR 0.25=50, CR 0.5=100, CR 1=200, up to CR 30)
+- [ ] Create `TUNING_FACTORS` object for adjusting difficulty (default 1.0, can be tuned up/down)
+- [ ] Add utility functions:
+  - `getXPForCR(cr: number): number`
+  - `getCRFromXP(xp: number): number`
+  - `applyTuning(xpBudget: number, tuningFactor: number): number`
+- [ ] Export all constants and utility functions
+
+---
+
+## Task 5: Create Party Analyzer
+
+**File:** `src/core/combat/PartyAnalyzer.ts`
+
+**Subtasks:**
+- [ ] Create `PartyAnalyzer` class with static methods
+- [ ] Implement `calculatePartyLevel(party: CharacterSheet[]): number` - averages party levels
+- [ ] Implement `calculatePartyStrength(party: CharacterSheet[]): number` - considers HP, AC, damage output
+- [ ] Implement `getXPBudget(party: CharacterSheet[], difficulty: 'easy' | 'medium' | 'hard' | 'deadly'): number`
+- [ ] Implement `getAverageAC(party: CharacterSheet[]): number` - for enemy attack bonus tuning
+- [ ] Implement `getAverageHP(party: CharacterSheet[]): number` - for enemy damage tuning
+- [ ] Implement `getPartySize(party: CharacterSheet[]): number` - utility for encounter scaling
+- [ ] Add unit tests for PartyAnalyzer
+
+---
+
+## Task 6: Create Enemy Generator - Core + Generate Method
+
+**File:** `src/core/generation/EnemyGenerator.ts`
+
+Consolidates: Core structure + Single enemy generation
+
+**Subtasks:**
+- [ ] Create `EnemyGenerator` class with static methods
+- [ ] Add imports: SeededRNG, CharacterSheet, AudioProfile, types from Enemy.ts, RarityConfig
+- [ ] Add private helper: `getSeededRNG(seed: string, index?: number): SeededRNG`
+- [ ] Implement private `scaleStatsForRarity(baseStats: AbilityScores, rarity: EnemyRarity): AbilityScores`
+- [ ] Add `getTemplateById(id: string): EnemyTemplate | undefined` helper
+- [ ] Implement public `generate()` method:
+  ```typescript
+  generate(options: EnemyGenerationOptions): CharacterSheet
+  ```
+  - [ ] Validate inputs (seed required, track required if audioProfile provided)
+  - [ ] Create SeededRNG from seed
+  - [ ] If templateId provided, look up template directly via `getTemplateById()`
+  - [ ] Otherwise, select template via `selectTemplate()`
+  - [ ] Create enemy via `createEnemy()`
+  - [ ] Apply difficultyMultiplier to HP and damage if specified
+  - [ ] Return CharacterSheet with enemy name = template name
+
+**Simplifications from original plan:**
+- ~~CR/level conversion functions~~ - use inline formula: `level = Math.max(1, Math.floor(cr))`
+- Enemy name is simply the template name (e.g., "Orc", "Giant Spider")
+
+---
+
+## Task 7: Create Enemy Generator - Template Selection
+
+**File:** `src/core/generation/EnemyGenerator.ts` (continued)
+
+**Subtasks:**
+- [ ] Implement `selectTemplate()` method:
+  - [ ] Filter templates by category if specified
+  - [ ] Filter templates by archetype if specified
+  - [ ] If audioProfile provided, calculate simple audio preference weight
+  - [ ] Use weighted random selection via SeededRNG
+  - [ ] Return selected EnemyTemplate
+- [ ] Implement simple audio weighting:
+  ```typescript
+  // Simple dot product: template.weight * audioProfile.frequencyBand
+  // Bass-heavy audio → higher weight for bass-preferring templates
+  // No complex scoring, just multiply and pick
+  ```
+- [ ] Add fallback to uniform random when no audio provided
+
+**Simplifications from original plan:**
+- Audio matching is simple weighted random, not complex scoring algorithm
+- TemplateId lookup handled in `generate()`, not here
+
+---
+
+## Task 8: Create Enemy Generator - Ability Generation
+
+**File:** `src/core/generation/EnemyGenerator.ts` (continued)
+
+Consolidates: Signature ability scaling + Extra abilities
+
+**Subtasks:**
+- [ ] Implement `generateAbilities()` method that returns all abilities for an enemy:
+  ```typescript
+  generateAbilities(template: EnemyTemplate, rarity: EnemyRarity, rng: SeededRNG): Feature[]
+  ```
+- [ ] Signature ability scaling:
+  - [ ] Get die size from RarityConfig (d6/d8/d10/d12)
+  - [ ] Create Feature using existing Feature format
+  - [ ] Include damage formula with scaled die
+- [ ] Extra abilities selection:
+  - [ ] Get extra ability count from RarityConfig (0/1/2/3)
+  - [ ] If count > 0, query FeatureQuery for archetype-matching abilities
+  - [ ] Random selection via SeededRNG
+  - [ ] Return combined array: [signature, ...extras]
+- [ ] Ensure all abilities use existing Feature format for combat integration
+
+**Simplifications from original plan:**
+- Combined into single method since both produce Features
+- No complex archetype compatibility scoring - just filter by archetype tag
+
+---
+
+## Task 9: Create Enemy Generator - Enemy Creation
+
+**File:** `src/core/generation/EnemyGenerator.ts` (continued)
+
+**Subtasks:**
+- [ ] Implement `createEnemy()` method:
+  ```typescript
+  createEnemy(template: EnemyTemplate, options: EnemyGenerationOptions, rng: SeededRNG): CharacterSheet
+  ```
+- [ ] Stat calculation:
+  - [ ] Scale base stats using rarity config multiplier
+  - [ ] ~~Audio-influenced stat adjustments~~ (deferred to V2)
+- [ ] Combat stats:
+  - [ ] Calculate HP: `baseHP × rarity multiplier`
+  - [ ] Calculate AC: `baseAC + DEX modifier`
+  - [ ] Calculate attack bonus: `proficiency + STR/DEX` (proficiency = level-based)
+- [ ] Abilities via `generateAbilities()`
+- [ ] Apply resistances if Elite/Boss (from template's resistance list)
+- [ ] Build CharacterSheet with natural weapon (no equipment generation for V1)
+- [ ] Return complete CharacterSheet
+
+**Simplifications from original plan:**
+- ~~Audio stat influence~~ - deferred to V2 (was bass→STR/CON, treble→DEX)
+- ~~Equipment generation~~ - enemies use "natural weapon" or unarmed strike feature instead of items
+- ~~Innate spellcasting~~ - spells are just features in the ability pool, no special handling needed
+
+---
+
+## Task 10: Create Enemy Generator - Encounter Generation
+
+**File:** `src/core/generation/EnemyGenerator.ts` (continued)
+
+**Subtasks:**
+- [ ] Implement public `generateEncounter()` method (two modes):
+  ```typescript
+  // Party-based mode
+  generateEncounter(party: CharacterSheet[], options: EncounterGenerationOptions): CharacterSheet[]
+
+  // CR-based mode (no party needed)
+  generateEncounterByCR(options: EncounterGenerationOptions): CharacterSheet[]
+  ```
+
+- [ ] **Party-based mode**:
+  - [ ] Use PartyAnalyzer to get party level and XP budget
+  - [ ] Apply difficulty multiplier to XP budget
+  - [ ] Apply ENEMY_COUNT_MULTIPLIER for group encounters
+  - [ ] Calculate per-enemy CR from remaining XP budget
+  - [ ] Generate each enemy with derived seed (baseSeed + index)
+  - [ ] Add slight CR variance (+/- 1 step) for variety
+
+- [ ] **CR-based mode**:
+  - [ ] Use targetCR directly instead of party analysis
+  - [ ] Apply ENEMY_COUNT_MULTIPLIER for group encounters
+  - [ ] Calculate per-enemy CR from target
+  - [ ] Generate enemies as above
+
+- [ ] **Leader promotion logic** (`applyLeaderPromotion()`):
+  - [ ] Check enemy count and enableLeaderPromotion flag
+  - [ ] Promote enemies based on count thresholds (4-6: +1 tier, 7-9: +2 tiers, 10+: 2 leaders)
+  - [ ] Cap at 'boss' rarity
+  - [ ] Select leader(s) randomly from generated enemies
+
+- [ ] **Mixed type handling** (`selectTemplatesForMix()`):
+  - [ ] 'uniform': All enemies use same template (selected once)
+  - [ ] 'custom': Use provided templates array directly
+  - ~~'category' and 'random'~~ - deferred to V2
+
+- [ ] Handle edge cases: empty party, count of 0, very large groups
+
+---
+
+## Task 11: Update Generation Index Exports
+
+**File:** `src/core/generation/index.ts`
+
+**Subtasks:**
+- [ ] Add import for EnemyGenerator
+- [ ] Add imports for enemy types from Enemy.ts
+- [ ] Export EnemyGenerator class
+- [ ] Export all enemy types and interfaces
+- [ ] Verify no naming conflicts with existing exports
+
+---
+
+## Task 12: Create Enemy Generation Documentation
+
+**File:** `ENEMY_GENERATION.md`
+
+**Subtasks:**
+- [ ] Create comprehensive documentation file
+- [ ] **Overview**: System philosophy and design decisions
+- [ ] **Quick Start**: Simple examples
+  ```typescript
+  // Generate a specific enemy by name
+  const orc = EnemyGenerator.generate({
+    seed: 'my-encounter',
+    templateId: 'orc',
+    rarity: 'elite'
+  });
+
+  // Generate a random humanoid brute
+  const enemy = EnemyGenerator.generate({
+    seed: 'random-1',
+    category: 'humanoid',
+    archetype: 'brute',
+    rarity: 'common'
+  });
+
+  // Generate encounter balanced for party (medium difficulty)
+  const enemies = EnemyGenerator.generateEncounter(party, {
+    seed: 'dungeon-1',
+    difficulty: 'medium',
+    count: 5  // Will auto-promote 1 to uncommon as leader
+  });
+
+  // Generate encounter by CR (no party needed)
+  const enemies = EnemyGenerator.generateEncounterByCR({
+    seed: 'cr5-encounter',
+    targetCR: 5,
+    count: 3
+  });
+
+  // Generate specific mix of enemies
+  const enemies = EnemyGenerator.generateEncounterByCR({
+    seed: 'custom-mix',
+    targetCR: 3,
+    enemyMix: 'custom',
+    templates: ['orc', 'orc', 'goblin-archer', 'goblin-archer', 'shaman']
+  });
+
+  // Audio-influenced generation
+  const enemies = EnemyGenerator.generateEncounter(party, {
+    seed: 'audio-encounter',
+    audioProfile: profile,
+    track: trackData,
+    difficulty: 'hard',
+    count: 4
+  });
+  ```
+- [ ] **Generation Modes**: Explain party-based vs CR-based
+- [ ] **Rarity Tiers**: Explain the scaling system with examples
+- [ ] **Leader Promotion**: Explain auto rarity mix for groups > 3
+- [ ] **Mixed Types**: Explain enemyMix options (V1: uniform + custom)
+- [ ] **Template System**: List available templates and their IDs
+- [ ] **Audio Integration**: Explain how audio affects template selection
+- [ ] **Encounter Balance**: Explain XP budget and difficulty
+- [ ] **API Reference**: Full method signatures
+
+---
+
+## Task 13: Update Combat System Documentation
+
+**File:** `COMBAT_SYSTEM.md`
+
+**Subtasks:**
+- [ ] Add "Enemy Generation" section
+- [ ] Add basic usage examples
+- [ ] Reference ENEMY_GENERATION.md for full documentation
+
+---
+
+## Task 14: Update Data Engine Reference
+
+**File:** `DATA_ENGINE_REFERENCE.md`
+
+**Subtasks:**
+- [ ] Add "Enemy Generation" section to the reference
+- [ ] Document EnemyGenerator class and methods
+- [ ] Document EnemyTemplate interface
+- [ ] Document EnemyRarity scaling
+- [ ] Add XP budget and CR conversion reference tables
+
+---
+
+## Task 15: Create Unit Tests
+
+**File:** `tests/unit/enemy-generation.test.ts`
+
+**Subtasks:**
+- [ ] Test rarity stat multipliers (common vs boss)
+- [ ] Test signature ability die scaling (d6 → d8 → d10 → d12)
+- [ ] Test extra ability count per rarity
+- [ ] Test resistance assignment for Elite/Boss
+- [ ] Test template selection with audio profile
+- [ ] Test PartyAnalyzer calculations
+- [ ] Test XP budget calculations
+- [ ] Test encounter generation for different party sizes
+- [ ] Test difficulty multiplier application
+- [ ] Test determinism (same seed = same enemy)
+- [ ] Test templateId forces specific template
+- [ ] Test leader promotion for groups > 3
+- [ ] Test leader promotion caps at boss rarity
+- [ ] Test enemyMix modes (uniform, custom)
+- [ ] Test CR-based generation without party
+- [ ] Test getTemplateById lookup
+
+---
+
+## Task 16: Create Integration Tests
+
+**File:** `tests/integration/enemy-encounter.test.ts`
+
+**Subtasks:**
+- [ ] Create test helper to build mock party of various levels
+- [ ] Test: Level 3 party of 4 generates appropriate medium encounter
+- [ ] Test: Audio profile influences template selection (bass → brutes)
+- [ ] Test: Elite enemy has resistances, common does not
+- [ ] Test: Boss has d12 signature, common has d6
+- [ ] Test: Generated enemies work in CombatEngine
+- [ ] Test: Encounter balance feels right (medium = fair fight)
+- [ ] Test: Specific template by ID generates correctly
+- [ ] Test: 5 enemies has 1 leader at higher rarity
+- [ ] Test: 8 enemies has 1 leader at +2 tiers
+- [ ] Test: CR-based encounter matches target CR total
+- [ ] Test: Custom mix uses exact templates specified
+
+---
+
+## Task 17: Verification and Final Testing
+
+**Subtasks:**
+- [ ] Run all unit tests and verify they pass
+- [ ] Run all integration tests and verify they pass
+- [ ] Manual test: Generate various rarities, verify scaling looks correct
+- [ ] Manual test: Generate encounters, verify balance feels appropriate
+- [ ] Manual test: Audio-based generation, verify template selection
+- [ ] Manual test: Generate by templateId, verify correct template used
+- [ ] Manual test: Generate group of 5, verify 1 leader exists
+- [ ] Manual test: Generate by CR, verify total XP matches
+- [ ] Manual test: Custom mix encounter, verify correct templates
+- [ ] Verify documentation examples are accurate and runnable
+- [ ] TypeScript compilation with no errors
+- [ ] Verify no existing tests were broken
+
+---
+
+## Summary of Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/core/types/Enemy.ts` | Enemy type definitions and interfaces |
+| `src/constants/EnemyRarity.ts` | Rarity configuration (stat multipliers, die sizes) |
+| `src/constants/DefaultEnemies.ts` | 10 enemy templates (Humanoid + Beast) |
+| `src/constants/EncounterBalance.ts` | D&D 5e XP budget tables with tuning |
+| `src/core/combat/PartyAnalyzer.ts` | Party strength calculator |
+| `src/core/generation/EnemyGenerator.ts` | Main enemy generator |
+| `ENEMY_GENERATION.md` | User documentation |
+| `tests/unit/enemy-generation.test.ts` | Unit tests |
+| `tests/integration/enemy-encounter.test.ts` | Integration tests |
+
+---
+
+## Summary of Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/core/generation/index.ts` | Add EnemyGenerator and type exports |
+| `COMBAT_SYSTEM.md` | Add enemy generation section |
+| `DATA_ENGINE_REFERENCE.md` | Add enemy generation reference |
+
+---
+
+## Future Enhancements (Out of Scope)
+
+These are natural evolutions to add after the core system is implemented:
+
+1. **Additional Categories**: Undead, Dragon, Fiend, Construct, Elemental, Monstrosity
+2. **Legendary System**: Legendary actions and resistances for boss-tier enemies
+3. **Pack Tactics**: Synergy bonuses when multiple enemies of same type are together
+4. **Named Enemies**: Procedural name/title generation for unique enemies
+5. **Lair Actions**: Environment-specific abilities for boss encounters
+6. **Minion System**: Weak enemies that die in one hit but come in swarms
+7. **Dynamic Difficulty**: Enemies that adapt mid-combat based on how the fight is going
+
+---
+
+## Deferred to V2
+
+The following were simplified or removed from V1 to keep implementation focused:
+
+| Feature | V1 Approach | V2 Enhancement |
+|---------|-------------|----------------|
+| **Audio stat influence** | Audio only affects template selection | Audio also affects stat distribution (bass→STR/CON, treble→DEX) |
+| **Equipment generation** | Enemies use "natural weapon" feature | Generate actual weapons/armor based on archetype |
+| **enemyMix modes** | Only 'uniform' and 'custom' | Add 'category' and 'random' modes |
+| **CR/Level conversion** | Inline formula `level = Math.max(1, Math.floor(cr))` | Dedicated functions with tuning |
+| **Innate spellcasting** | Spells are just features in ability pool | Dedicated spell slot system for caster enemies |
