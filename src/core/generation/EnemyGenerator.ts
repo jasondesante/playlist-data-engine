@@ -11,19 +11,18 @@
 
 import type { CharacterSheet, AbilityScores } from '../types/Character.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
-import type { PlaylistTrack } from '../types/Playlist.js';
 import type {
     EnemyTemplate,
     EnemyRarity,
     EnemyArchetype,
     EnemyCategory,
     EnemyGenerationOptions,
-    SignatureAbility,
-    RarityConfig
+    SignatureAbility
 } from '../types/Enemy.js';
 import { SeededRNG } from '../../utils/random.js';
 import { DEFAULT_ENEMY_TEMPLATES } from '../../constants/DefaultEnemies.js';
-import { getRarityConfig, RARITY_CONFIGS } from '../../constants/EnemyRarity.js';
+import { getRarityConfig } from '../../constants/EnemyRarity.js';
+import { FeatureQuery } from '../features/FeatureQuery.js';
 
 /**
  * EnemyGenerator - Static class for enemy generation
@@ -53,6 +52,22 @@ import { getRarityConfig, RARITY_CONFIGS } from '../../constants/EnemyRarity.js'
  * ```
  */
 export class EnemyGenerator {
+    /**
+     * Archetype tag mappings for feature selection
+     *
+     * Maps each enemy archetype to feature tags that are appropriate
+     * for selecting extra abilities from FeatureQuery.
+     *
+     * Brutes benefit from durability and melee damage abilities
+     * Archers benefit from accuracy and mobility abilities
+     * Support enemies benefit from healing and buff abilities
+     */
+    private static readonly ARCHETYPE_TAGS: Record<EnemyArchetype, string[]> = {
+        brute: ['combat', 'damage', 'defense', 'melee', 'durability'],
+        archer: ['combat', 'ranged', 'accuracy', 'mobility', 'stealth'],
+        support: ['support', 'healing', 'buff', 'control', 'utility']
+    };
+
     /**
      * Get a seeded RNG instance with optional index offset
      *
@@ -267,6 +282,132 @@ export class EnemyGenerator {
     }
 
     /**
+     * Generate all abilities for an enemy
+     *
+     * Returns an array containing:
+     * 1. The signature ability (scaled by rarity)
+     * 2. Extra abilities selected from FeatureQuery based on archetype
+     *
+     * @param template - Enemy template
+     * @param rarity - Enemy rarity tier
+     * @param rng - Seeded RNG for deterministic selection
+     * @returns Array of ability objects compatible with CharacterSheet
+     *
+     * @example
+     * ```typescript
+     * const abilities = generateAbilities(orcTemplate, 'elite', rng);
+     * // Returns: [scaledSignatureAbility, extraFeature1, extraFeature2]
+     * ```
+     */
+    private static generateAbilities(
+        template: EnemyTemplate,
+        rarity: EnemyRarity,
+        rng: SeededRNG
+    ): Record<string, unknown>[] {
+        // Start with signature ability
+        const signatureAbility = EnemyGenerator.scaleSignatureAbility(
+            template.signatureAbility,
+            rarity
+        );
+
+        const abilities: Record<string, unknown>[] = [signatureAbility];
+
+        // Get extra ability count from rarity config
+        const rarityConfig = getRarityConfig(rarity);
+        const extraCount = rarityConfig.extraAbilityCount;
+
+        // Only add extra abilities for higher rarities
+        if (extraCount > 0) {
+            const extraAbilities = EnemyGenerator.selectExtraAbilities(
+                template.archetype,
+                extraCount,
+                rng
+            );
+
+            // Add extra abilities to the array
+            abilities.push(...extraAbilities);
+        }
+
+        return abilities;
+    }
+
+    /**
+     * Select extra abilities from FeatureQuery based on archetype
+     *
+     * Filters class features by archetype-appropriate tags and randomly
+     * selects the requested number of abilities.
+     *
+     * @param archetype - Enemy archetype for tag filtering
+     * @param count - Number of abilities to select
+     * @param rng - Seeded RNG for deterministic selection
+     * @returns Array of selected feature objects
+     */
+    private static selectExtraAbilities(
+        archetype: EnemyArchetype,
+        count: number,
+        rng: SeededRNG
+    ): Record<string, unknown>[] {
+        // Get tags for this archetype
+        const archetypeTags = EnemyGenerator.ARCHETYPE_TAGS[archetype];
+
+        // Get FeatureQuery instance
+        const featureQuery = FeatureQuery.getInstance();
+
+        // Get all class features using public API
+        const featuresMap = featureQuery.getAllClassFeatures();
+        const allFeatures: typeof featuresMap extends Map<string, infer T> ? T : never[] = [];
+        for (const features of featuresMap.values()) {
+            allFeatures.push(...features);
+        }
+
+        // Filter features by archetype tags
+        // A feature matches if it has at least one matching tag
+        const matchingFeatures = allFeatures.filter(feature => {
+            if (!feature.tags || feature.tags.length === 0) {
+                return false;
+            }
+
+            // Check if any feature tag matches any archetype tag
+            return feature.tags.some(tag =>
+                archetypeTags.some(archetypeTag =>
+                    tag.toLowerCase().includes(archetypeTag.toLowerCase()) ||
+                    archetypeTag.toLowerCase().includes(tag.toLowerCase())
+                )
+            );
+        });
+
+        // If no matching features, return empty array
+        if (matchingFeatures.length === 0) {
+            return [];
+        }
+
+        // Randomly select the requested number of features
+        const selected: typeof allFeatures = [];
+
+        // Create a copy of matching features to avoid duplicates
+        const available = [...matchingFeatures];
+
+        for (let i = 0; i < count && available.length > 0; i++) {
+            const index = rng.randomInt(0, available.length);
+            selected.push(available[index]!);
+            available.splice(index, 1);
+        }
+
+        // Convert features to ability objects
+        return selected.map(feature => ({
+            id: feature.id,
+            name: feature.name,
+            description: feature.description,
+            type: feature.type,
+            class: 'Enemy' as const,
+            level: 1,
+            source: feature.source,
+            tags: feature.tags || [],
+            effects: feature.effects || []
+        }));
+    }
+
+    /**
      * Generate a single enemy character
      *
      * Creates a CharacterSheet representing an enemy with:
@@ -364,31 +505,12 @@ export class EnemyGenerator {
         // Proficiency bonus based on level
         const proficiencyBonus = Math.ceil(1 + (level - 1) / 4);
 
-        // Generate signature ability
-        const signatureAbility = EnemyGenerator.scaleSignatureAbility(
-            template.signatureAbility,
-            rarity
-        );
+        // Generate all abilities (signature + extras from FeatureQuery)
+        const abilities = EnemyGenerator.generateAbilities(template, rarity, rng);
 
-        // Build abilities array
-        const abilities: unknown[] = [signatureAbility];
-
-        // Add extra abilities for higher rarities
-        const extraAbilityCount = rarityConfig.extraAbilityCount;
-        if (extraAbilityCount > 0) {
-            // TODO: Task 8 - Query FeatureQuery for archetype abilities
-            // For now, we only add the signature ability
-            // Extra abilities will be added in Task 8
-        }
-
-        // Build resistances/immunities for Elite+ enemies
-        let resistances: string[] | undefined;
-        let immunities: string[] | undefined;
-
-        if (rarityConfig.hasResistances && template.resistances) {
-            resistances = template.resistances.resistances;
-            immunities = template.resistances.immunities;
-        }
+        // Note: Resistances/immunities for Elite+ enemies will be integrated in V2
+        // when CharacterSheet type is extended to support them
+        // Currently tracked via template.resistances but not applied to character sheet
 
         // Create natural weapon attack based on signature ability
         const naturalWeapon = {
@@ -408,7 +530,9 @@ export class EnemyGenerator {
             name: template.name,
 
             // Enemies don't use standard race/class - use placeholder values
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             race: 'Enemy' as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             class: 'Monster' as any,
             subrace: rarity,
             level,
@@ -443,10 +567,12 @@ export class EnemyGenerator {
 
             // Use abilities array with signature + extras
             racial_traits: [], // Enemies don't have racial traits
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             class_features: abilities.map((a: any) => (a.id || a.name || `${a}`)),
 
             // No equipment - enemies use natural weapons
             equipment: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 weapons: [naturalWeapon as any],
                 armor: [],
                 items: [],

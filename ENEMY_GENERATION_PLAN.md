@@ -326,25 +326,27 @@ All methods handle edge cases (empty party, missing stats) and follow D&D 5e enc
 
 **File:** `src/core/generation/EnemyGenerator.ts`
 
+**Status:** ✅ COMPLETED
+
 Consolidates: Core structure + Single enemy generation
 
 **Subtasks:**
-- [ ] Create `EnemyGenerator` class with static methods
-- [ ] Add imports: SeededRNG, CharacterSheet, AudioProfile, types from Enemy.ts, RarityConfig
-- [ ] Add private helper: `getSeededRNG(seed: string, index?: number): SeededRNG`
-- [ ] Implement private `scaleStatsForRarity(baseStats: AbilityScores, rarity: EnemyRarity): AbilityScores`
-- [ ] Add `getTemplateById(id: string): EnemyTemplate | undefined` helper
-- [ ] Implement public `generate()` method:
+- [x] Create `EnemyGenerator` class with static methods
+- [x] Add imports: SeededRNG, CharacterSheet, AudioProfile, types from Enemy.ts, RarityConfig
+- [x] Add private helper: `getSeededRNG(seed: string, index?: number): SeededRNG`
+- [x] Implement private `scaleStatsForRarity(baseStats: AbilityScores, rarity: EnemyRarity): AbilityScores`
+- [x] Add `getTemplateById(id: string): EnemyTemplate | undefined` helper
+- [x] Implement public `generate()` method:
   ```typescript
   generate(options: EnemyGenerationOptions): CharacterSheet
   ```
-  - [ ] Validate inputs (seed required, track required if audioProfile provided)
-  - [ ] Create SeededRNG from seed
-  - [ ] If templateId provided, look up template directly via `getTemplateById()`
-  - [ ] Otherwise, select template via `selectTemplate()`
-  - [ ] Create enemy via `createEnemy()`
-  - [ ] Apply difficultyMultiplier to HP and damage if specified
-  - [ ] Return CharacterSheet with enemy name = template name
+  - [x] Validate inputs (seed required, track required if audioProfile provided)
+  - [x] Create SeededRNG from seed
+  - [x] If templateId provided, look up template directly via `getTemplateById()`
+  - [x] Otherwise, select template via `selectTemplate()`
+  - [x] Create enemy (inline in generate method, no separate createEnemy() in V1)
+  - [x] Apply difficultyMultiplier to HP and damage if specified
+  - [x] Return CharacterSheet with enemy name = template name
 
 **Simplifications from original plan:**
 - ~~CR/level conversion functions~~ - use inline formula: `level = Math.max(1, Math.floor(cr))`
@@ -381,27 +383,42 @@ Consolidates: Core structure + Single enemy generation
 
 **File:** `src/core/generation/EnemyGenerator.ts` (continued)
 
+**Status:** ✅ COMPLETED
+
 Consolidates: Signature ability scaling + Extra abilities
 
 **Subtasks:**
-- [ ] Implement `generateAbilities()` method that returns all abilities for an enemy:
+- [x] Implement `generateAbilities()` method that returns all abilities for an enemy:
   ```typescript
   generateAbilities(template: EnemyTemplate, rarity: EnemyRarity, rng: SeededRNG): Feature[]
   ```
-- [ ] Signature ability scaling:
-  - [ ] Get die size from RarityConfig (d6/d8/d10/d12)
-  - [ ] Create Feature using existing Feature format
-  - [ ] Include damage formula with scaled die
-- [ ] Extra abilities selection:
-  - [ ] Get extra ability count from RarityConfig (0/1/2/3)
-  - [ ] If count > 0, query FeatureQuery for archetype-matching abilities
-  - [ ] Random selection via SeededRNG
-  - [ ] Return combined array: [signature, ...extras]
-- [ ] Ensure all abilities use existing Feature format for combat integration
+- [x] Signature ability scaling:
+  - [x] Get die size from RarityConfig (d6/d8/d10/d12)
+  - [x] Create Feature using existing Feature format
+  - [x] Include damage formula with scaled die
+- [x] Extra abilities selection:
+  - [x] Get extra ability count from RarityConfig (0/1/2/3)
+  - [x] If count > 0, query FeatureQuery for archetype-matching abilities
+  - [x] Random selection via SeededRNG
+  - [x] Return combined array: [signature, ...extras]
+- [x] Ensure all abilities use existing Feature format for combat integration
 
 **Simplifications from original plan:**
 - Combined into single method since both produce Features
 - No complex archetype compatibility scoring - just filter by archetype tag
+
+**Summary:**
+Implemented `generateAbilities()` method that:
+1. Creates a scaled signature ability using the rarity's die size
+2. Selects extra abilities from FeatureQuery based on archetype tags
+3. Returns combined array of all abilities
+
+Added `ARCHETYPE_TAGS` mapping to link enemy archetypes to appropriate feature tags:
+- Brute: combat, damage, defense, melee, durability
+- Archer: combat, ranged, accuracy, mobility, stealth
+- Support: support, healing, buff, control, utility
+
+Added `selectExtraAbilities()` helper that filters and randomly selects features from the FeatureQuery pool matching the archetype's tags.
 
 ---
 
