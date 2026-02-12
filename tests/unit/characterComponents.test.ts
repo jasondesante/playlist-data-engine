@@ -95,13 +95,28 @@ describe('AbilityScoreCalculator', () => {
     };
 
     it('should calculate base scores from audio profile', () => {
-        const scores = AbilityScoreCalculator.calculateBaseScores(mockProfile);
+        const rng = new SeededRNG('test-seed');
+        const scores = AbilityScoreCalculator.calculateBaseScores(mockProfile, rng);
 
-        // Base range is 8-15. 
-        // STR: 8 + 1.0 * 7 = 15
-        // DEX: 8 + 0.0 * 7 = 8
-        expect(scores.STR).toBe(15);
-        expect(scores.DEX).toBe(8);
+        // With v2 system, abilities are randomly assigned to frequency bands
+        // Verify all scores are in valid range (8-15 for base scores)
+        expect(scores.STR).toBeGreaterThanOrEqual(8);
+        expect(scores.STR).toBeLessThanOrEqual(15);
+        expect(scores.DEX).toBeGreaterThanOrEqual(8);
+        expect(scores.DEX).toBeLessThanOrEqual(15);
+        expect(scores.CON).toBeGreaterThanOrEqual(8);
+        expect(scores.CON).toBeLessThanOrEqual(15);
+        expect(scores.INT).toBeGreaterThanOrEqual(8);
+        expect(scores.INT).toBeLessThanOrEqual(15);
+        expect(scores.WIS).toBeGreaterThanOrEqual(8);
+        expect(scores.WIS).toBeLessThanOrEqual(15);
+        expect(scores.CHA).toBeGreaterThanOrEqual(8);
+        expect(scores.CHA).toBeLessThanOrEqual(15);
+
+        // Verify deterministic behavior - same seed produces same scores
+        const rng2 = new SeededRNG('test-seed');
+        const scores2 = AbilityScoreCalculator.calculateBaseScores(mockProfile, rng2);
+        expect(scores).toEqual(scores2);
     });
 
     it('should apply racial bonuses correctly', () => {

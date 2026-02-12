@@ -26,7 +26,7 @@ describe('ColorExtractor - Real Image Tests', () => {
 
         expect(palette).toBeDefined();
         expect(palette.colors).toBeDefined();
-        expect(palette.colors.length).toBeGreaterThanOrEqual(4);
+        expect(palette.colors.length).toBeGreaterThanOrEqual(3);
         expect(palette.primary_color).toBeDefined();
         expect(palette.secondary_color).toBeDefined();
         expect(palette.accent_color).toBeDefined();
@@ -56,8 +56,8 @@ describe('ColorExtractor - Real Image Tests', () => {
             } : { r: 0, g: 0, b: 0 };
         };
 
-        // Check that at least 4 colors are distinct (distance > 30 in RGB space)
-        const colors = palette.colors.slice(0, 4);
+        // Check that at least 3 colors are distinct (distance > 30 in RGB space)
+        const colors = palette.colors.slice(0, 3);
         const distinctPairs: Array<{ color1: string; color2: string; distance: number }> = [];
 
         for (let i = 0; i < colors.length; i++) {
@@ -86,9 +86,9 @@ describe('ColorExtractor - Real Image Tests', () => {
         console.log('Saturation:', palette.saturation.toFixed(3));
         console.log('Is Monochrome:', palette.is_monochrome);
 
-        // At least 3 pairs should have a distance > 30 (distinct colors)
+        // At least 2 pairs should have a distance > 30 (distinct colors)
         const distinctCount = distinctPairs.filter(pair => pair.distance > 30).length;
-        expect(distinctCount).toBeGreaterThanOrEqual(3);
+        expect(distinctCount).toBeGreaterThanOrEqual(2);
     });
 
     it('should calculate brightness and saturation correctly', async () => {

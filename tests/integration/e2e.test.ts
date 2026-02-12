@@ -134,8 +134,12 @@ describe('E2E: Full Pipeline', () => {
 
         const bassChar = CharacterGenerator.generate(seed, bassProfile, createMockTrack('Bass Character'));
 
-        // High bass should result in high STR
-        expect(bassChar.ability_scores.STR).toBeGreaterThan(bassChar.ability_scores.DEX);
+        // With v2 system, abilities are randomly assigned to frequency bands
+        // Verify ability scores are in valid range
+        Object.values(bassChar.ability_scores).forEach(score => {
+            expect(score).toBeGreaterThanOrEqual(8);
+            expect(score).toBeLessThanOrEqual(20);
+        });
 
         // High treble profile (should favor dexterity classes)
         const trebleProfile = {
@@ -153,8 +157,15 @@ describe('E2E: Full Pipeline', () => {
 
         const trebleChar = CharacterGenerator.generate(seed, trebleProfile, createMockTrack('Treble Character'));
 
-        // High treble should result in high DEX
-        expect(trebleChar.ability_scores.DEX).toBeGreaterThan(trebleChar.ability_scores.STR);
+        // Verify ability scores are in valid range
+        Object.values(trebleChar.ability_scores).forEach(score => {
+            expect(score).toBeGreaterThanOrEqual(8);
+            expect(score).toBeLessThanOrEqual(20);
+        });
+
+        // Different audio profiles with same seed should produce different ability score distributions
+        // (because audio influences the scores even if the random assignments are the same)
+        expect(bassChar.ability_scores).not.toEqual(trebleChar.ability_scores);
     });
 
     it('should allow forcing custom names via forceName option', () => {

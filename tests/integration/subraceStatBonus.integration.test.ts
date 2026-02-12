@@ -83,7 +83,7 @@ describe('Subrace Stat Bonus Application', () => {
         const audioProfile = createMockAudioProfile();
 
         // Generate a Hill Dwarf Cleric
-        const character = CharacterGenerator.generate(
+        const hillDwarf = CharacterGenerator.generate(
             seed,
             audioProfile,
             createMockTrack('Hill Dwarf Cleric'),
@@ -91,21 +91,29 @@ describe('Subrace Stat Bonus Application', () => {
         );
 
         // The character should have the hill_dwarf_wisdom trait
-        expect(character.racial_traits).toContain('hill_dwarf_wisdom');
+        expect(hillDwarf.racial_traits).toContain('hill_dwarf_wisdom');
 
         // Verify subrace is set
-        expect(character.subrace).toBe('Hill Dwarf');
+        expect(hillDwarf.subrace).toBe('Hill Dwarf');
 
-        // WIS calculation: 8 + (1 - |bass - treble|) × 7 + Hill Dwarf +1
-        // bass=0.5, treble=0.5: WIS = 8 + (1 - 0) × 7 + 1 = 16
-        expect(character.ability_scores.WIS).toBe(16);
-        expect(character.ability_modifiers.WIS).toBe(3); // +3 modifier for WIS 16
+        // Generate a pure Dwarf (no subrace) with the same seed for comparison
+        const pureDwarf = CharacterGenerator.generate(
+            seed,
+            audioProfile,
+            createMockTrack('Pure Dwarf'),
+            { forceRace: 'Dwarf', subrace: 'pure', forceClass: 'Cleric' }
+        );
 
-        // CON calculation: Base 10 + average_amplitude × 7 + Dwarf CON +2
-        // average_amplitude=0.5: CON = 10 + 0 + 2 = 12 ( Dwarf +2 from RACE_DATA, CON from audio gives 0 with amp 0.5)
-        // Actually: 8 + 0.5*7 = 11.5 -> 11, +2 from Dwarf = 13
-        expect(character.ability_scores.CON).toBe(13);
-        expect(character.ability_modifiers.CON).toBe(1);
+        // Hill Dwarf should have +1 WIS compared to pure Dwarf (same seed = same base scores)
+        expect(hillDwarf.ability_scores.WIS).toBe(pureDwarf.ability_scores.WIS + 1);
+
+        // Verify WIS modifier is recalculated correctly
+        const expectedWisModifier = Math.floor((hillDwarf.ability_scores.WIS - 10) / 2);
+        expect(hillDwarf.ability_modifiers.WIS).toBe(expectedWisModifier);
+
+        // Both should have Dwarf CON +2 bonus applied
+        // CON scores should be the same since they're both Dwarves with same seed
+        expect(hillDwarf.ability_scores.CON).toBe(pureDwarf.ability_scores.CON);
     });
 
     it('should apply Mountain Dwarf +2 STR stat bonus correctly', () => {
@@ -127,24 +135,33 @@ describe('Subrace Stat Bonus Application', () => {
         const seed = 'mountain-dwarf-test';
         const audioProfile = createMockAudioProfile();
 
-        const character = CharacterGenerator.generate(
+        const mountainDwarf = CharacterGenerator.generate(
             seed,
             audioProfile,
             createMockTrack('Mountain Dwarf Cleric'),
             { forceRace: 'Dwarf', subrace: 'Mountain Dwarf', forceClass: 'Cleric' }
         );
 
-        expect(character.racial_traits).toContain('mountain_dwarf_strength');
-        expect(character.subrace).toBe('Mountain Dwarf');
+        expect(mountainDwarf.racial_traits).toContain('mountain_dwarf_strength');
+        expect(mountainDwarf.subrace).toBe('Mountain Dwarf');
 
-        // STR calculation: Base 8 + bass_dominance × 7 + Mountain Dwarf +2
-        // bass_dominance=0.5: STR = 8 + 0.5 × 7 + 2 = 8 + 3 + 2 = 13
-        expect(character.ability_scores.STR).toBe(13);
-        expect(character.ability_modifiers.STR).toBe(1); // +1 modifier for STR 13
+        // Generate a pure Dwarf (no subrace) with the same seed for comparison
+        const pureDwarf = CharacterGenerator.generate(
+            seed,
+            audioProfile,
+            createMockTrack('Pure Dwarf'),
+            { forceRace: 'Dwarf', subrace: 'pure', forceClass: 'Cleric' }
+        );
 
-        // Dwarf CON +2 from RACE_DATA
-        expect(character.ability_scores.CON).toBe(13);
-        expect(character.ability_modifiers.CON).toBe(1);
+        // Mountain Dwarf should have +2 STR compared to pure Dwarf (same seed = same base scores)
+        expect(mountainDwarf.ability_scores.STR).toBe(pureDwarf.ability_scores.STR + 2);
+
+        // Verify STR modifier is recalculated correctly
+        const expectedStrModifier = Math.floor((mountainDwarf.ability_scores.STR - 10) / 2);
+        expect(mountainDwarf.ability_modifiers.STR).toBe(expectedStrModifier);
+
+        // Both should have Dwarf CON +2 bonus applied
+        expect(mountainDwarf.ability_scores.CON).toBe(pureDwarf.ability_scores.CON);
     });
 
     it('should not apply subrace bonus to characters without that subrace', () => {
@@ -178,10 +195,20 @@ describe('Subrace Stat Bonus Application', () => {
         expect(pureDwarf.racial_traits).not.toContain('hill_dwarf_wisdom');
         expect(pureDwarf.subrace).toBeUndefined();
 
-        // WIS should be base only (no +1 from Hill Dwarf)
-        // WIS = 8 + (1 - |0.5 - 0.5|) × 7 = 8 + 7 = 15
-        expect(pureDwarf.ability_scores.WIS).toBe(15);
-        expect(pureDwarf.ability_modifiers.WIS).toBe(2);
+        // Generate a Hill Dwarf with the same seed for comparison
+        const hillDwarf = CharacterGenerator.generate(
+            seed,
+            audioProfile,
+            createMockTrack('Hill Dwarf'),
+            { forceRace: 'Dwarf', subrace: 'Hill Dwarf', forceClass: 'Cleric' }
+        );
+
+        // Pure Dwarf WIS should be exactly 1 less than Hill Dwarf (no +1 bonus)
+        expect(pureDwarf.ability_scores.WIS).toBe(hillDwarf.ability_scores.WIS - 1);
+
+        // Verify ability scores are in valid range (8-20)
+        expect(pureDwarf.ability_scores.WIS).toBeGreaterThanOrEqual(8);
+        expect(pureDwarf.ability_scores.WIS).toBeLessThanOrEqual(20);
     });
 
     it('should verify subrace trait ID is stored and subrace property is set', () => {

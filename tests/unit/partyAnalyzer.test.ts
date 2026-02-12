@@ -450,8 +450,8 @@ describe('PartyAnalyzer', () => {
 
             expect(analysis.partySize).toBe(4);
             expect(analysis.averageLevel).toBe(5);
-            expect(analysis.averageAC).toBe((18 + 16 + 12 + 15) / 4);
-            expect(analysis.averageHP).toBe((45 + 30 + 25 + 35) / 4);
+            expect(analysis.averageAC).toBe(15); // Math.round((18 + 16 + 12 + 15) / 4) = 15
+            expect(analysis.averageHP).toBe(34); // Math.round((45 + 30 + 25 + 35) / 4) = 34
             expect(analysis.averageDamage).toBeGreaterThan(0);
             expect(analysis.totalStrength).toBeGreaterThan(0);
 

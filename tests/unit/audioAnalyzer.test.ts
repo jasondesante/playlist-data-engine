@@ -46,7 +46,7 @@ describe('AudioAnalyzer', () => {
                 console.error('Failed to analyze audio:', error);
                 throw error;
             }
-        });
+        }, 30000); // 30 second timeout for network requests
 
         it('should verify frequency ranges are valid (0-1)', async () => {
             const audioUrl = TEST_AUDIO_URLS.arweaveTrack;
@@ -67,14 +67,14 @@ describe('AudioAnalyzer', () => {
             expect(profile.rms_energy).toBeLessThanOrEqual(1);
 
             expect(profile.dynamic_range).toBeDefined();
-            // Dynamic range should be Peak - RMS. Since peak is abs max and RMS is root mean square, 
+            // Dynamic range should be Peak - RMS. Since peak is abs max and RMS is root mean square,
             // peak >= RMS, so dynamic_range >= 0.
             expect(profile.dynamic_range).toBeGreaterThanOrEqual(0);
 
             console.log('✓ All frequency and amplitude values within valid range [0, 1]');
             console.log(`  RMS Energy: ${((profile.rms_energy || 0) * 100).toFixed(1)}%`);
             console.log(`  Dynamic Range: ${((profile.dynamic_range || 0) * 100).toFixed(1)}%`);
-        });
+        }, 30000);
 
         it('should verify duration was measured correctly', async () => {
             const audioUrl = TEST_AUDIO_URLS.arweaveTrack;
@@ -86,7 +86,7 @@ describe('AudioAnalyzer', () => {
             expect(profile.analysis_metadata.duration_analyzed).toBeLessThan(1800);
 
             console.log(`✓ Duration measured: ${profile.analysis_metadata.duration_analyzed.toFixed(2)}s`);
-        });
+        }, 30000);
 
         it('should verify sample positions match expected Triple Tap or full buffer', async () => {
             const audioUrl = TEST_AUDIO_URLS.arweaveTrack;
@@ -107,7 +107,7 @@ describe('AudioAnalyzer', () => {
                 expect(positions).toContain(0.70);
                 console.log('✓ Longer audio file: Triple Tap sampling (5%, 40%, 70%) applied');
             }
-        });
+        }, 30000);
 
         it('should verify frequency balance is reasonable (all bands detected)', async () => {
             const audioUrl = TEST_AUDIO_URLS.arweaveTrack;
@@ -123,7 +123,7 @@ describe('AudioAnalyzer', () => {
 
             console.log(`✓ Frequency bands detected: ${frequencySum.toFixed(3)}`);
             console.log(`  Bass: ${(profile.bass_dominance * 100).toFixed(1)}%, Mid: ${(profile.mid_dominance * 100).toFixed(1)}%, Treble: ${(profile.treble_dominance * 100).toFixed(1)}%`);
-        });
+        }, 30000);
 
         it('should include advanced metrics when requested', async () => {
             const audioUrl = TEST_AUDIO_URLS.arweaveTrack;
@@ -143,7 +143,7 @@ describe('AudioAnalyzer', () => {
             console.log(`  Spectral Centroid: ${profile.spectral_centroid?.toFixed(0)}Hz`);
             console.log(`  Spectral Rolloff: ${profile.spectral_rolloff?.toFixed(0)}Hz`);
             console.log(`  Zero Crossing Rate: ${profile.zero_crossing_rate?.toFixed(4)}`);
-        });
+        }, 30000);
     });
 
     describe('Full Song Timeline Analysis', () => {

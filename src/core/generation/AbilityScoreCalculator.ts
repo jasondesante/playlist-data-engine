@@ -51,11 +51,23 @@ export class AbilityScoreCalculator {
                 break;
             case 'mid':
                 // Mid pairs with spectral centroid (brightness) or dynamic range
-                spiceValue = audioProfile.spectral_centroid ?? audioProfile.dynamic_range ?? dominance;
+                // Normalize spectral_centroid from Hz (typically 100-10000) to 0-1 range
+                if (audioProfile.spectral_centroid !== undefined) {
+                    spiceValue = Math.min(1, Math.max(0, (audioProfile.spectral_centroid - 100) / 9900));
+                } else {
+                    spiceValue = audioProfile.dynamic_range ?? dominance;
+                }
                 break;
             case 'treble':
                 // Treble pairs with zero crossing rate (noisiness) or spectral centroid
-                spiceValue = audioProfile.zero_crossing_rate ?? audioProfile.spectral_centroid ?? dominance;
+                // Normalize spectral_centroid from Hz (typically 100-10000) to 0-1 range
+                if (audioProfile.zero_crossing_rate !== undefined) {
+                    spiceValue = audioProfile.zero_crossing_rate;
+                } else if (audioProfile.spectral_centroid !== undefined) {
+                    spiceValue = Math.min(1, Math.max(0, (audioProfile.spectral_centroid - 100) / 9900));
+                } else {
+                    spiceValue = dominance;
+                }
                 break;
         }
 
