@@ -77,6 +77,14 @@ export class EnemyGenerator {
     };
 
     /**
+     * Maximum stat increase from audio influence
+     *
+     * This prevents extreme stat values from audio profiles.
+     * Audio influence is additive to rarity scaling, not multiplicative.
+     */
+    private static readonly MAX_AUDIO_INFLUENCE = 2;
+
+    /**
      * Get a seeded RNG instance with optional index offset
      *
      * Creates a deterministic RNG from seed. When index is provided,
@@ -89,6 +97,96 @@ export class EnemyGenerator {
     private static getSeededRNG(seed: string, index?: number): SeededRNG {
         const derivedSeed = index !== undefined ? `${seed}-${index}` : seed;
         return new SeededRNG(derivedSeed);
+    }
+
+    /**
+     * Apply audio influence to ability scores
+     *
+     * Applies subtle stat adjustments based on audio profile characteristics.
+     * This is additive to rarity scaling, providing flavor rather than major power shifts.
+     *
+     * Frequency band → stat mapping:
+     * - Bass dominance → +1 to STR and CON
+     * - Treble dominance → +1 to DEX
+     * - Mid dominance → +1 to WIS and CHA
+     * - Balanced → +1 to all (smaller bonus)
+     *
+     * Maximum total increase from audio influence is capped at +2 per stat
+     * to prevent extreme values.
+     *
+     * @param stats - Base ability scores to modify
+     * @param audioProfile - Audio profile for influence calculation
+     * @returns Modified ability scores with audio influence applied
+     *
+     * @example
+     * ```typescript
+     * const stats = { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 8, CHA: 8 };
+     * const audioProfile = { bass_dominance: 0.8, mid_dominance: 0.1, treble_dominance: 0.1 };
+     * const modified = applyAudioStatInfluence(stats, audioProfile);
+     * // Returns: { STR: 17, DEX: 12, CON: 15, INT: 10, WIS: 8, CHA: 8 } (bass → STR, CON)
+     * ```
+     */
+    private static applyAudioStatInfluence(
+        stats: AbilityScores,
+        audioProfile: AudioProfile
+    ): AbilityScores {
+        const { bass_dominance = 0, mid_dominance = 0, treble_dominance = 0 } = audioProfile;
+
+        // Calculate influence bonuses (each max 1 point per dominant frequency)
+        let strBonus = 0;
+        let dexBonus = 0;
+        let conBonus = 0;
+        let wisBonus = 0;
+        let chaBonus = 0;
+
+        // Bass influence → STR and CON
+        if (bass_dominance > 0.6) {
+            strBonus = 1;
+            conBonus = 1;
+        } else if (bass_dominance > 0.4) {
+            // Moderate bass gives partial bonus to one stat
+            strBonus = 1;
+        }
+
+        // Treble influence → DEX
+        if (treble_dominance > 0.6) {
+            dexBonus = 1;
+        }
+
+        // Mid influence → WIS and CHA
+        if (mid_dominance > 0.6) {
+            wisBonus = 1;
+            chaBonus = 1;
+        } else if (mid_dominance > 0.4) {
+            // Moderate mid gives partial bonus to one stat
+            wisBonus = 1;
+        }
+
+        // Balanced audio (no single frequency dominates) → small bonus to all
+        const isBalanced =
+            bass_dominance < 0.5 &&
+            mid_dominance < 0.5 &&
+            treble_dominance < 0.5 &&
+            Math.abs(bass_dominance - mid_dominance) < 0.2 &&
+            Math.abs(mid_dominance - treble_dominance) < 0.2;
+
+        if (isBalanced) {
+            strBonus = 1;
+            dexBonus = 1;
+            conBonus = 1;
+            wisBonus = 1;
+            chaBonus = 1;
+        }
+
+        // Apply bonuses with cap
+        return {
+            STR: Math.min(stats.STR + strBonus, stats.STR + EnemyGenerator.MAX_AUDIO_INFLUENCE),
+            DEX: Math.min(stats.DEX + dexBonus, stats.DEX + EnemyGenerator.MAX_AUDIO_INFLUENCE),
+            CON: Math.min(stats.CON + conBonus, stats.CON + EnemyGenerator.MAX_AUDIO_INFLUENCE),
+            INT: stats.INT, // INT not affected by audio
+            WIS: Math.min(stats.WIS + wisBonus, stats.WIS + EnemyGenerator.MAX_AUDIO_INFLUENCE),
+            CHA: Math.min(stats.CHA + chaBonus, stats.CHA + EnemyGenerator.MAX_AUDIO_INFLUENCE)
+        };
     }
 
     /**
@@ -420,9 +518,14 @@ export class EnemyGenerator {
      *
      * Creates a CharacterSheet representing an enemy with:
      * - Template-based stats scaled by rarity
+     * - Audio-influenced stat adjustments (when audioProfile provided)
      * - Signature ability with scaled damage die
      * - Extra abilities from FeatureQuery (for higher rarities)
      * - Resistances for Elite+ tiers
+     *
+     * Audio influence applies subtle stat bonuses based on frequency dominance:
+     * - Bass → STR/CON, Treble → DEX, Mid → WIS/CHA, Balanced → +1 to all
+     * - Maximum +2 increase per stat from audio (capped)
      *
      * @param options - Generation options
      * @returns Enemy character sheet
@@ -439,10 +542,10 @@ export class EnemyGenerator {
      *   rarity: 'elite'
      * });
      *
-     * // Generate with audio influence
+     * // Generate with audio influence (bass-heavy audio → stronger STR/CON)
      * const enemy = EnemyGenerator.generate({
      *   seed: 'battle-1',
-     *   audioProfile: profile,
+     *   audioProfile: { bass_dominance: 0.8, mid_dominance: 0.1, treble_dominance: 0.1 },
      *   track: trackData,
      *   rarity: 'uncommon'
      * });
@@ -482,7 +585,12 @@ export class EnemyGenerator {
         }
 
         // Scale stats by rarity
-        const scaledStats = EnemyGenerator.scaleStatsForRarity(template.baseStats, rarity);
+        let scaledStats = EnemyGenerator.scaleStatsForRarity(template.baseStats, rarity);
+
+        // Apply audio influence if audioProfile provided
+        if (audioProfile) {
+            scaledStats = EnemyGenerator.applyAudioStatInfluence(scaledStats, audioProfile);
+        }
 
         // Calculate ability modifiers from scaled stats
         const abilityModifiers: AbilityScores = {

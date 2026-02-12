@@ -30,21 +30,23 @@ V1 implementation must be complete before starting V2 work. See `ENEMY_GENERATIO
 **File:** `src/core/generation/EnemyGenerator.ts`
 
 **Subtasks:**
-- [ ] Add private `applyAudioStatInfluence()` method:
+- [x] Add private `applyAudioStatInfluence()` method:
   ```typescript
   applyAudioStatInfluence(stats: AbilityScores, audioProfile: AudioProfile): AbilityScores
   ```
-- [ ] Implement frequency band → stat mapping:
+- [x] Implement frequency band → stat mapping:
   - Bass dominance → +1 to STR and CON
   - Treble dominance → +1 to DEX
   - Mid dominance → +1 to WIS and CHA
   - Balanced → +1 to all (smaller bonus)
-- [ ] Update `createEnemy()` to call this when audioProfile is provided
-- [ ] Cap stat increases to prevent extreme values (max +2 from audio)
+- [x] Update `createEnemy()` to call this when audioProfile is provided
+- [x] Cap stat increases to prevent extreme values (max +2 from audio)
 
 **Notes:**
 - This is additive to rarity scaling, not multiplicative
 - Should feel like a subtle flavor, not a massive power shift
+
+**Status:** ✅ Completed - Implemented with MAX_AUDIO_INFLUENCE constant (2) and applied in generate() method
 
 ---
 
