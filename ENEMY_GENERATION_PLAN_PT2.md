@@ -478,7 +478,65 @@ EnemyGenerator.generateEncounter(party, {
 
 ---
 
-## Task 18: V2 Unit Tests
+## Task 18: Update DATA_ENGINE_REFERENCE.md
+
+**File:** `DATA_ENGINE_REFERENCE.md`
+
+**Subtasks:**
+- [ ] Update **EnemyGenerator** section with new methods:
+  - [ ] Add `crToLevel()` and `levelToCR()` functions to methods table
+  - [ ] Update `generateEncounter()` to note new `enemyMix` modes
+- [ ] Update **EncounterGenerationOptions** table:
+  - [ ] Add `enemyMix: 'category' | 'random'` options
+  - [ ] Add `allowMixedCategories?: boolean`
+  - [ ] Add `lairFeatures?: boolean`
+  - [ ] Add `minRarity?: EnemyRarity` and `maxRarity?: EnemyRarity`
+- [ ] Update **EnemyCategory** table:
+  - [ ] Remove "(future V2)" notes from undead, dragon, fiend, construct, elemental, monstrosity
+- [ ] Update **EnemyMixMode** table:
+  - [ ] Add `category` mode with description
+  - [ ] Add `random` mode with description
+- [ ] Add new **EquipmentGenerator** section:
+  - [ ] Location: `src/core/generation/EquipmentGenerator.ts`
+  - [ ] Table of methods: `generateEquipment()`, etc.
+  - [ ] EquipmentTemplate interface summary
+  - [ ] EquipmentConfig interface summary
+- [ ] Add new **SpellcastingGenerator** section:
+  - [ ] Location: `src/core/generation/SpellcastingGenerator.ts`
+  - [ ] Table of methods: `generateSpellList()`, etc.
+  - [ ] InnateSpell interface summary
+  - [ ] SpellList interface summary
+  - [ ] SpellcastingConfig interface summary
+- [ ] Add new **LegendaryGenerator** section:
+  - [ ] Location: `src/core/generation/LegendaryGenerator.ts`
+  - [ ] Table of methods: `generateLegendaryActions()`, etc.
+  - [ ] LegendaryAction interface summary
+  - [ ] LegendaryConfig interface summary
+- [ ] Add **Boss Enhancements** subsection under EnemyGenerator:
+  - [ ] Document legendary resistances (3/day default)
+  - [ ] Document legendary actions (3 per round)
+  - [ ] Document ultimate ability (once per encounter)
+- [ ] Add **Audio Stat Influence** subsection under EnemyGenerator:
+  - [ ] Document frequency band → stat mapping table
+  - [ ] Note max +2 cap from audio
+- [ ] Add cross-references to new template files in Enemy Type Definitions section:
+  - [ ] [Undead.ts](src/constants/EnemyTemplates/Undead.ts)
+  - [ ] [Fiend.ts](src/constants/EnemyTemplates/Fiend.ts)
+  - [ ] [Elemental.ts](src/constants/EnemyTemplates/Elemental.ts)
+  - [ ] [Construct.ts](src/constants/EnemyTemplates/Construct.ts)
+  - [ ] [Dragon.ts](src/constants/EnemyTemplates/Dragon.ts)
+  - [ ] [Monstrosity.ts](src/constants/EnemyTemplates/Monstrosity.ts)
+
+**Notes:**
+- Follow existing documentation style guide conventions
+- Use "Also known as" aliases where helpful for discoverability
+- Include location links for all new files using `[src/path/file.ts](src/path/file.ts)` format
+- Tables for interfaces should summarize key properties, not copy full definitions
+- Cross-reference to ENEMY_GENERATION.md for usage examples
+
+---
+
+## Task 19: V2 Unit Tests
 
 **File:** `tests/unit/enemy-generation-v2.test.ts`
 
@@ -496,7 +554,7 @@ EnemyGenerator.generateEncounter(party, {
 
 ---
 
-## Task 19: V2 Integration Tests
+## Task 20: V2 Integration Tests
 
 **File:** `tests/integration/enemy-encounter-v2.test.ts`
 
@@ -514,7 +572,7 @@ EnemyGenerator.generateEncounter(party, {
 
 ---
 
-## Task 20: Verification
+## Task 21: Verification
 
 **Subtasks:**
 - [ ] All V2 unit tests pass
@@ -555,6 +613,7 @@ EnemyGenerator.generateEncounter(party, {
 | `src/core/generation/EnemyGenerator.ts` | Add V2 features |
 | `src/constants/DefaultEnemies.ts` | Re-export from new template files |
 | `ENEMY_GENERATION.md` | Add V2 documentation |
+| `DATA_ENGINE_REFERENCE.md` | Add V2 API reference (generators, types, options) |
 
 ---
 
