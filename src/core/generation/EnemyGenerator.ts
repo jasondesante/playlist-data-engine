@@ -33,6 +33,7 @@ import {
 } from '../../constants/EncounterBalance.js';
 import { EnemyEquipmentGenerator } from './EnemyEquipmentGenerator.js';
 import { SpellcastingGenerator } from './SpellcastingGenerator.js';
+import { LegendaryGenerator } from './LegendaryGenerator.js';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 
 /**
@@ -644,6 +645,39 @@ export class EnemyGenerator {
 
         // Generate all abilities (signature + extras from FeatureQuery)
         const abilities = EnemyGenerator.generateAbilities(template, rarity, rng, cr);
+
+        // Generate legendary actions for boss rarity
+        let legendaryActions: Record<string, unknown>[] = [];
+        if (LegendaryGenerator.shouldHaveLegendary(rarity)) {
+            // Create dedicated RNG for legendary action generation
+            const legendaryRNG = EnemyGenerator.getSeededRNG(`${seed}-legendary`);
+            const legendaryConfig = LegendaryGenerator.generateWithRNG({
+                archetype: template.archetype,
+                cr,
+                rng: legendaryRNG
+            });
+
+            // Convert legendary actions to feature objects
+            legendaryActions = legendaryConfig.actions.map(action => ({
+                id: action.id,
+                name: action.name,
+                description: action.description,
+                type: 'active' as const,
+                class: 'Enemy' as const,
+                level: 1,
+                source: 'legendary' as const,
+                tags: action.tags || ['legendary'],
+                effects: [],
+                // Include legendary-specific data
+                legendary_cost: action.cost,
+                legendary_effect: action.effect,
+                legendary_damage: action.damage,
+                legendary_damage_type: action.damageType
+            }));
+
+            // Add legendary actions to abilities
+            abilities.push(...legendaryActions);
+        }
 
         // Note: Resistances/immunities for Elite+ enemies will be integrated in V2
         // when CharacterSheet type is extended to support them

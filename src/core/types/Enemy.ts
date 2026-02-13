@@ -388,3 +388,59 @@ export function isValidEncounterDifficulty(value: unknown): value is EncounterDi
     const validDifficulties: EncounterDifficulty[] = ['easy', 'medium', 'hard', 'deadly'];
     return typeof value === 'string' && validDifficulties.includes(value as EncounterDifficulty);
 }
+
+/**
+ * Legendary action for boss enemies
+ *
+ * Legendary actions are special abilities that boss enemies can use at the end
+ * of another creature's turn, spending legendary action points.
+ */
+export interface LegendaryAction {
+    /** Unique identifier for this action */
+    id: string;
+
+    /** Display name shown to players */
+    name: string;
+
+    /** Detailed description of what the action does */
+    description: string;
+
+    /** Cost in legendary action points (1, 2, or 3) */
+    cost: number;
+
+    /** Effect description for combat system */
+    effect: string;
+
+    /** Damage dice if this action deals damage */
+    damage?: string;
+
+    /** Damage type for damaging actions */
+    damageType?: string;
+
+    /** Archetypes this action is appropriate for */
+    archetypes: EnemyArchetype[];
+
+    /** Tags for filtering and categorization */
+    tags?: string[];
+}
+
+/**
+ * Legendary configuration for boss-tier enemies
+ *
+ * Contains all legendary-specific data for a boss enemy,
+ * including legendary resistances per day and available legendary actions.
+ */
+export interface LegendaryConfig {
+    /** Number of legendary resistances per day */
+    resistances: number;
+
+    /** Legendary actions available to this boss */
+    actions: LegendaryAction[];
+
+    /** Optional lair action hint for encounter design */
+    lairActionHint?: string;
+}
+
+// Re-export legendary types from LegendaryGenerator for convenience
+// These are defined in LegendaryGenerator.ts but exposed here for type imports
+export type { LegendaryAction as LegendaryActionFromGenerator, LegendaryConfig as LegendaryConfigFromGenerator } from '../generation/LegendaryGenerator.js';

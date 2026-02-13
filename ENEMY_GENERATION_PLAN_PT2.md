@@ -345,7 +345,7 @@ EnemyGenerator.generateEncounter(party, {
 - Varied resistances based on element type
 - 51 unit tests added covering template structure, resistances, audio preferences, generation, scaling, audio-influenced selection, category mix mode, integration, and base stats
 
-**Status:** ✅ Completed - Full elemental category implemented with 51 passing unit tests
+**Status:** ✅ Completed - Legendary Actions System implemented with 39 passing unit tests
 
 ---
 
@@ -453,7 +453,7 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/core/generation/LegendaryGenerator.ts` (new file)
 
 **Subtasks:**
-- [ ] Define `LegendaryAction` interface:
+- [x] Define `LegendaryAction` interface:
   ```typescript
   interface LegendaryAction {
     id: string;
@@ -464,13 +464,13 @@ EnemyGenerator.generateEncounter(party, {
     damage?: string;
   }
   ```
-- [ ] Create `LEGENDARY_ACTIONS` constant pool organized by archetype
-- [ ] Implement `generateLegendaryActions()`:
+- [x] Create `LEGENDARY_ACTIONS` constant pool organized by archetype
+- [x] Implement `generateLegendaryActions()`:
   - Select 3 legendary actions for boss enemies
   - Weighted by archetype compatibility
   - Include at least one movement option
-- [ ] Define `LEGENDARY_RESISTANCES` constant: number per CR tier
-- [ ] Update `createEnemy()` to add legendary system for boss rarity
+- [x] Define `LEGENDARY_RESISTANCES` constant: number per CR tier
+- [x] Update `createEnemy()` to add legendary system for boss rarity
 
 **Legendary Action Pool (examples):**
 
@@ -509,7 +509,7 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/core/types/Enemy.ts`
 
 **Subtasks:**
-- [ ] Update `EnemyCategory` to include all new categories:
+- [x] Update `EnemyCategory` to include all new categories:
   ```typescript
   type EnemyCategory = 'humanoid' | 'beast' | 'undead' | 'dragon' |
                        'fiend' | 'construct' | 'elemental' | 'monstrosity';
@@ -518,7 +518,7 @@ EnemyGenerator.generateEncounter(party, {
   ```typescript
   type EnemyMixMode = 'uniform' | 'custom' | 'category' | 'random';
   ```
-- [ ] Add `LegendaryConfig` interface:
+- [x] Add `LegendaryConfig` interface:
   ```typescript
   interface LegendaryConfig {
     resistances: number;      // Uses per day

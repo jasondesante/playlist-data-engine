@@ -49,6 +49,18 @@ export type {
     SpellcastingGenerationOptionsWithRNG
 } from './SpellcastingGenerator.js';
 
+// Legendary actions system
+export {
+    LegendaryGenerator,
+    LEGENDARY_ACTIONS,
+    LEGENDARY_RESISTANCES,
+    LEGENDARY_ACTION_COUNT
+} from './LegendaryGenerator.js';
+export type {
+    LegendaryAction,
+    LegendaryConfig
+} from './LegendaryGenerator.js';
+
 // Export enemy types for convenience
 export type {
     EnemyCategory,
