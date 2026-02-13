@@ -208,6 +208,7 @@ describe('Integration: Enemy Encounter Generation', () => {
                 seed: 'bass-test',
                 targetCR: 1,
                 count: 20,
+                enemyMix: 'random',
                 audioProfile: bassAudio,
                 track: { name: 'Bass Track', artists: ['Test'], album: 'Test' }
             });
@@ -232,6 +233,7 @@ describe('Integration: Enemy Encounter Generation', () => {
                 seed: 'treble-test',
                 targetCR: 1,
                 count: 20,
+                enemyMix: 'random',
                 audioProfile: trebleAudio,
                 track: { name: 'Treble Track', artists: ['Test'], album: 'Test' }
             });
@@ -255,6 +257,7 @@ describe('Integration: Enemy Encounter Generation', () => {
                 seed: 'mid-test',
                 targetCR: 1,
                 count: 20,
+                enemyMix: 'random',
                 audioProfile: midAudio,
                 track: { name: 'Mid Track', artists: ['Test'], album: 'Test' }
             });

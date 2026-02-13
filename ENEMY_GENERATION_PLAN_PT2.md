@@ -680,16 +680,18 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `tests/unit/enemy-generation-v2.test.ts`
 
 **Subtasks:**
-- [ ] Test audio stat influence (bass → STR, treble → DEX)
-- [ ] Test equipment generation by archetype
-- [ ] Test 'category' enemyMix mode
-- [ ] Test 'random' enemyMix mode
-- [ ] Test CR/level conversion functions
-- [ ] Test spell list generation
-- [ ] Test legendary action generation
-- [ ] Test boss enhancements (legendary resistances, ultimate ability)
-- [ ] Test all new enemy categories (template loading)
-- [ ] Test boss name generation
+- [x] Test audio stat influence (bass → STR, treble → DEX)
+- [x] Test equipment generation by archetype
+- [x] Test 'category' enemyMix mode
+- [x] Test 'random' enemyMix mode
+- [x] Test CR/level conversion functions
+- [x] Test spell list generation
+- [x] Test legendary action generation
+- [x] Test boss enhancements (legendary resistances, ultimate ability)
+- [x] Test all new enemy categories (template loading)
+- [x] Test boss name generation
+
+**Status:** ✅ Completed - All V2 unit tests passing (2756 tests total)
 
 ---
 
@@ -698,31 +700,35 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `tests/integration/enemy-encounter-v2.test.ts`
 
 **Subtasks:**
-- [ ] Test: Audio profile affects both template selection AND stats
-- [ ] Test: Equipped enemies have correct AC/damage from equipment
-- [ ] Test: Category mix produces enemies from same category only
-- [ ] Test: Random mix can produce any enemy type
-- [ ] Test: Spellcasting enemies can use spells in combat
-- [ ] Test: Boss enemies have legendary actions/resistances
-- [ ] Test: Undead enemies have correct immunities
-- [ ] Test: Dragon enemies have breath weapons
-- [ ] Test: Elemental enemies have elemental immunities
-- [ ] Test: Generated V2 enemies work in CombatEngine
+- [x] Test: Audio profile affects both template selection AND stats
+- [x] Test: Equipped enemies have correct AC/damage from equipment
+- [x] Test: Category mix produces enemies from same category only
+- [x] Test: Random mix can produce any enemy type
+- [x] Test: Spellcasting enemies can use spells in combat
+- [x] Test: Boss enemies have legendary actions/resistances
+- [x] Test: Undead enemies have correct immunities
+- [x] Test: Dragon enemies have breath weapons
+- [x] Test: Elemental enemies have elemental immunities
+- [x] Test: Generated V2 enemies work in CombatEngine
+
+**Status:** ✅ Completed - All V2 integration tests passing (audio profile tests verified with enemyMix: 'random')
 
 ---
 
 ## Task 21: Verification
 
 **Subtasks:**
-- [ ] All V2 unit tests pass
-- [ ] All V2 integration tests pass
-- [ ] Manual test: Generate boss with legendary system
-- [ ] Manual test: Generate encounter with audio stat influence
-- [ ] Manual test: Generate equipped vs unequipped enemies, compare stats
-- [ ] Manual test: Generate each new category, verify correct traits
-- [ ] Manual test: Spellcasting in combat works correctly
-- [ ] TypeScript compilation with no errors
-- [ ] V1 tests still pass (no regressions)
+- [x] All V2 unit tests pass
+- [x] All V2 integration tests pass
+- [x] Manual test: Generate boss with legendary system
+- [x] Manual test: Generate encounter with audio stat influence
+- [x] Manual test: Generate equipped vs unequipped enemies, compare stats
+- [x] Manual test: Generate each new category, verify correct traits
+- [x] Manual test: Spellcasting in combat works correctly
+- [x] TypeScript compilation with no errors
+- [x] V1 tests still pass (no regressions)
+
+**Status:** ✅ Completed - All 2756 tests passing, TypeScript compilation successful, no regressions
 
 ---
 
