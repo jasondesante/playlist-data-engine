@@ -354,9 +354,9 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/constants/EnemyTemplates/Construct.ts`
 
 **Subtasks:**
-- [ ] Create `Construct.ts` file with construct templates
-- [ ] Define construct-specific traits: poison immunity, psychic immunity, no healing
-- [ ] Create templates:
+- [x] Create `Construct.ts` file with construct templates
+- [x] Define construct-specific traits: poison immunity, psychic immunity, no healing
+- [x] Create templates:
 
 | Template | Archetype | Signature Ability | Audio Pref |
 |----------|-----------|-------------------|------------|
@@ -365,8 +365,8 @@ EnemyGenerator.generateEncounter(party, {
 | Shield Guardian | Support | Protection Aura (ally AC bonus) | Mid |
 | Golem | Brute | Immutable Form (status immunity) | Bass |
 
-- [ ] Add to main templates export
-- [ ] Add unit tests for construct generation
+- [x] Add to main templates export
+- [x] Add unit tests for construct generation
 
 ---
 

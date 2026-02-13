@@ -13,12 +13,15 @@
  * - Beast: Brute, "Archer" (Ranged)
  * - Undead: Archer, Brute, Support
  * - Fiend: Archer, Support, Brute
+ * - Elemental: Brute, Archer, Support
+ * - Construct: Brute, Archer, Support
  */
 
 import type { EnemyTemplate } from '../core/types/Enemy.js';
 import { UNDEAD_TEMPLATES } from './EnemyTemplates/Undead.js';
 import { FIEND_TEMPLATES } from './EnemyTemplates/Fiend.js';
 import { ELEMENTAL_TEMPLATES } from './EnemyTemplates/Elemental.js';
+import { CONSTRUCT_TEMPLATES } from './EnemyTemplates/Construct.js';
 
 /**
  * V1 enemy templates (humanoid and beast)
@@ -457,14 +460,15 @@ const V1_TEMPLATES: EnemyTemplate[] = [
 /**
  * Default enemy templates
  *
- * Combines V1 templates (humanoid, beast) and V2 templates (undead, fiend, elemental).
- * Total: 22 templates spanning 5 categories.
+ * Combines V1 templates (humanoid, beast) and V2 templates (undead, fiend, elemental, construct).
+ * Total: 26 templates spanning 6 categories.
  */
 export const DEFAULT_ENEMY_TEMPLATES: EnemyTemplate[] = [
     ...V1_TEMPLATES,
     ...UNDEAD_TEMPLATES,
     ...FIEND_TEMPLATES,
-    ...ELEMENTAL_TEMPLATES
+    ...ELEMENTAL_TEMPLATES,
+    ...CONSTRUCT_TEMPLATES
 ];
 
 /**
