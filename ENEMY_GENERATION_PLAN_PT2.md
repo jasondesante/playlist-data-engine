@@ -610,49 +610,61 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `DATA_ENGINE_REFERENCE.md`
 
 **Subtasks:**
-- [ ] Update **EnemyGenerator** section with new methods:
-  - [ ] Add `crToLevel()` and `levelToCR()` functions to methods table
-  - [ ] Update `generateEncounter()` to note new `enemyMix` modes
-- [ ] Update **EncounterGenerationOptions** table:
-  - [ ] Add `enemyMix: 'category' | 'random'` options
-  - [ ] Add `allowMixedCategories?: boolean`
-  - [ ] Add `lairFeatures?: boolean`
-  - [ ] Add `minRarity?: EnemyRarity` and `maxRarity?: EnemyRarity`
-- [ ] Update **EnemyCategory** table:
-  - [ ] Remove "(future V2)" notes from undead, dragon, fiend, construct, elemental, monstrosity
-- [ ] Update **EnemyMixMode** table:
-  - [ ] Add `category` mode with description
-  - [ ] Add `random` mode with description
-- [ ] Add new **EquipmentGenerator** section:
-  - [ ] Location: `src/core/generation/EquipmentGenerator.ts`
-  - [ ] Table of methods: `generateEquipment()`, etc.
-  - [ ] EquipmentTemplate interface summary
-  - [ ] EquipmentConfig interface summary
-- [ ] Add new **SpellcastingGenerator** section:
-  - [ ] Location: `src/core/generation/SpellcastingGenerator.ts`
-  - [ ] Table of methods: `generateSpellList()`, etc.
-  - [ ] InnateSpell interface summary
-  - [ ] SpellList interface summary
-  - [ ] SpellcastingConfig interface summary
-- [ ] Add new **LegendaryGenerator** section:
-  - [ ] Location: `src/core/generation/LegendaryGenerator.ts`
-  - [ ] Table of methods: `generateLegendaryActions()`, etc.
-  - [ ] LegendaryAction interface summary
-  - [ ] LegendaryConfig interface summary
-- [ ] Add **Boss Enhancements** subsection under EnemyGenerator:
-  - [ ] Document legendary resistances (3/day default)
-  - [ ] Document legendary actions (3 per round)
-  - [ ] Document ultimate ability (once per encounter)
-- [ ] Add **Audio Stat Influence** subsection under EnemyGenerator:
-  - [ ] Document frequency band → stat mapping table
-  - [ ] Note max +2 cap from audio
-- [ ] Add cross-references to new template files in Enemy Type Definitions section:
-  - [ ] [Undead.ts](src/constants/EnemyTemplates/Undead.ts)
-  - [ ] [Fiend.ts](src/constants/EnemyTemplates/Fiend.ts)
-  - [ ] [Elemental.ts](src/constants/EnemyTemplates/Elemental.ts)
-  - [ ] [Construct.ts](src/constants/EnemyTemplates/Construct.ts)
-  - [ ] [Dragon.ts](src/constants/EnemyTemplates/Dragon.ts)
-  - [ ] [Monstrosity.ts](src/constants/EnemyTemplates/Monstrosity.ts)
+- [x] Update **EnemyGenerator** section with new methods:
+  - [x] Add `crToLevel()` and `levelToCR()` functions to methods table
+  - [x] Update `generateEncounter()` to note new `enemyMix` modes
+- [x] Update **EncounterGenerationOptions** table:
+  - [x] Add `enemyMix: 'category' | 'random'` options
+  - [x] Add `allowMixedCategories?: boolean`
+  - [x] Add `lairFeatures?: boolean`
+  - [x] Add `minRarity?: EnemyRarity` and `maxRarity?: EnemyRarity`
+- [x] Update **EnemyCategory** table:
+  - [x] Remove "(future V2)" notes from undead, dragon, fiend, construct, elemental, monstrosity
+- [x] Update **EnemyMixMode** table:
+  - [x] Add `category` mode with description
+  - [x] Add `random` mode with description
+- [x] Add new **EnemyEquipmentGenerator** section:
+  - [x] Location: `src/core/generation/EnemyEquipmentGenerator.ts`
+  - [x] Table of methods: `generateEquipment()`, etc.
+  - [x] EquipmentTemplate interface summary
+  - [x] EquipmentConfig interface summary
+- [x] Add new **SpellcastingGenerator** section:
+  - [x] Location: `src/core/generation/SpellcastingGenerator.ts`
+  - [x] Table of methods: `generateSpellList()`, etc.
+  - [x] InnateSpell interface summary
+  - [x] SpellList interface summary
+  - [x] SpellcastingConfig interface summary
+- [x] Add new **LegendaryGenerator** section:
+  - [x] Location: `src/core/generation/LegendaryGenerator.ts`
+  - [x] Table of methods: `generateLegendaryActions()`, etc.
+  - [x] LegendaryAction interface summary
+  - [x] LegendaryConfig interface summary
+- [x] Add **Boss Enhancements** subsection under EnemyGenerator:
+  - [x] Document legendary resistances (3/day default)
+  - [x] Document legendary actions (3 per round)
+  - [x] Document ultimate ability (once per encounter)
+- [x] Add **Audio Stat Influence** subsection under EnemyGenerator:
+  - [x] Document frequency band → stat mapping table
+  - [x] Note max +2 cap from audio
+- [x] Add cross-references to new template files in Enemy Type Definitions section:
+  - [x] [Undead.ts](src/constants/EnemyTemplates/Undead.ts)
+  - [x] [Fiend.ts](src/constants/EnemyTemplates/Fiend.ts)
+  - [x] [Elemental.ts](src/constants/EnemyTemplates/Elemental.ts)
+  - [x] [Construct.ts](src/constants/EnemyTemplates/Construct.ts)
+  - [x] [Dragon.ts](src/constants/EnemyTemplates/Dragon.ts)
+  - [x] [Monstrosity.ts](src/constants/EnemyTemplates/Monstrosity.ts)
+
+**Status:** ✅ Completed - Added comprehensive V2 documentation to DATA_ENGINE_REFERENCE.md including:
+  - CR/Level conversion functions (crToLevel, levelToCR, roundLevel, roundCR, formatLevel, formatCR, createCRTuning)
+  - Updated EncounterGenerationOptions with V2 options (allowMixedCategories, lairFeatures, minRarity, maxRarity)
+  - Updated EnemyCategory descriptions (removed "future V2" notes, added proper descriptions)
+  - Updated EnemyMixMode table (added category and random modes)
+  - New EnemyEquipmentGenerator section with methods, EquipmentTemplate, and EquipmentConfig interfaces
+  - New SpellcastingGenerator section with all methods and interfaces (InnateSpell, SpellcastingConfig)
+  - New LegendaryGenerator section with all methods and interfaces (LegendaryAction, LegendaryConfig)
+  - Boss Enhancements subsection (legendary resistances, actions, name generation, ultimate ability)
+  - Audio Stat Influence subsection (frequency band to stat mapping table)
+  - Cross-references to all new template files (Undead, Fiend, Elemental, Construct, Dragon, Monstrosity)
 
 **Notes:**
 - Follow existing documentation style guide conventions

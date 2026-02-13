@@ -2223,6 +2223,22 @@ Deterministic enemy generator that creates balanced encounters based on party st
 | `static generateEncounterByCR(options: EncounterGenerationOptions): CharacterSheet[]` | Generate encounter by target CR (no party required) |
 | `static getTemplateById(id: string): EnemyTemplate \| undefined` | Get enemy template by ID (e.g., 'orc', 'goblin-archer') |
 
+### CR/Level Conversion
+
+**Location:** `src/core/generation/CRLevelConverter.ts`
+
+Bidirectional conversion between Challenge Rating (CR) and character level for enemy generation and encounter balancing.
+
+| Method | Description |
+|--------|-------------|
+| `crToLevel(cr: number, tuning?: CRTuningConfig): number` | Convert CR to character level (CR 1 = level 1, supports fractional CR) |
+| `levelToCR(level: number, tuning?: CRTuningConfig): number` | Convert character level to CR (inverse of crToLevel) |
+| `roundLevel(level: number, minLevel?: number, maxLevel?: number): number` | Round level to nearest valid character level (default: 1-20) |
+| `roundCR(cr: number): number` | Round CR to nearest valid step (0, 1/8, 1/4, 1/2, 1, 2, etc.) |
+| `formatLevel(level: number): string` | Format level with fractional notation (e.g., "0 (1/4)") |
+| `formatCR(cr: number): string` | Format CR with fractional notation (e.g., "1/4", "1/2") |
+| `createCRTuning(options?: Partial<CRTuningConfig>): CRTuningConfig` | Create custom CR tuning configuration |
+
 **Single Enemy Generation:**
 
 ```typescript
@@ -2292,11 +2308,15 @@ const enemies = EnemyGenerator.generateEncounterByCR({
 | `category?` | `EnemyCategory` | Filter by category |
 | `archetype?` | `EnemyArchetype` | Filter by archetype |
 | `templateId?` | `string` | Force specific template for all enemies |
-| `enemyMix?` | `EnemyMixMode` | Mix mode: 'uniform' or 'custom' |
+| `enemyMix?` | `EnemyMixMode` | Mix mode: 'uniform', 'custom', 'category', or 'random' |
 | `templates?` | `string[]` | Template IDs for 'custom' mix mode |
 | `audioProfile?` | `AudioProfile` | Influences template selection |
 | `track?` | `PlaylistTrack` | Required if audioProfile provided |
 | `enableLeaderPromotion?` | `boolean` | Auto-promote leaders for groups > 3 (default: true) |
+| `allowMixedCategories?` | `boolean` | Allow mixed categories in 'random' mode (default: true) |
+| `lairFeatures?` | `boolean` | Include lair action hints for bosses (default: false) |
+| `minRarity?` | `EnemyRarity` | Force minimum rarity tier for all enemies |
+| `maxRarity?` | `EnemyRarity` | Cap maximum rarity tier for all enemies |
 
 **Rarity Scaling:**
 
@@ -2399,6 +2419,172 @@ CR_TO_XP[cr]  // Returns XP value for given CR
 | `calculateAdjustedXP(enemyCRs: number[], multiplier: number): number` | Calculate adjusted XP with multiplier |
 | `getAveragePartyLevel(levels: number[]): number` | Calculate average party level |
 
+### EnemyEquipmentGenerator
+*Also known as: Enemy equipment manager, gear generator*
+
+**Location:** `src/core/generation/EnemyEquipmentGenerator.ts`
+
+Generates equipment for enemy characters based on archetype and rarity. Equipment selection is deterministic and uses seeded RNG for reproducibility.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static generate(options: EnemyEquipmentGenerationOptions): EquipmentConfig` | Generate equipment configuration with weapon, armor, and optional shield |
+| `static getEquipmentName(templateId: string): string` | Get actual equipment name from template ID |
+| `static getAllTemplates(): EquipmentTemplate[]` | Get all equipment templates |
+| `static getTemplateById(id: string): EquipmentTemplate \| undefined` | Get equipment template by ID |
+
+**EquipmentTemplate Interface:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique identifier |
+| `name` | `string` | Display name |
+| `type` | `'weapon' \| 'armor' \| 'shield'` | Equipment type |
+| `archetype` | `EnemyArchetype[]` | Applicable archetypes |
+| `rarity` | `EnemyRarity[]` | Applicable rarity tiers |
+| `damage?` | `string` | Damage dice (e.g., "1d8") for weapons |
+| `acBonus?` | `number` | AC bonus for armor/shields |
+
+**EquipmentConfig Interface:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `weapon?` | `EquipmentTemplate` | Selected weapon template |
+| `armor?` | `EquipmentTemplate` | Selected armor template |
+| `shield?` | `EquipmentTemplate` | Selected shield template (if applicable) |
+
+### SpellcastingGenerator
+*Also known as: Enemy spell system, caster generator*
+
+**Location:** `src/core/generation/SpellcastingGenerator.ts`
+
+Generates innate spellcasting abilities for enemy casters. Unlike player spellcasting, enemies use a simplified system with predefined spell lists.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static generateSpellList(options: SpellcastingGenerationOptions): SpellcastingConfig` | Generate spell list with seed string |
+| `static generateSpellListWithRNG(options: SpellcastingGenerationOptionsWithRNG): SpellcastingConfig` | Same as above but accepts SeededRNG directly |
+| `static getSpellSlotsForCR(cr: number): Record<number, number>` | Get spell slot configuration for a given CR |
+| `static shouldHaveSpellcasting(archetype: EnemyArchetype, rarity: EnemyRarity): boolean` | Check if enemy archetype/rarity combo should have spellcasting |
+| `static archetypeCanCast(archetype: EnemyArchetype): boolean` | Check if archetype has spellcasting capability |
+| `static getSpellListForArchetype(archetype: EnemyArchetype): SpellList \| undefined` | Get complete spell list for an archetype |
+| `static spellToFeature(spell: InnateSpell): Record<string, unknown> & { isSpell: boolean }` | Convert spell to Feature object |
+| `static spellsToFeatures(config: SpellcastingConfig): Array<Record<string, unknown> & { isSpell: boolean }>` | Convert all spells in config to Feature array |
+
+**InnateSpell Interface:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique identifier |
+| `name` | `string` | Display name |
+| `level` | `number` | Spell level (0 = cantrip, 1-9 = spell level) |
+| `school` | `string` | Magical school (evocation, necromancy, etc.) |
+| `effect` | `string` | Description of what spell does |
+| `damage?` | `string` | Damage dice (e.g., "2d6") for damaging spells |
+| `save?` | `string` | Save type (e.g., "DEX") |
+| `damageType?` | `string` | Damage type for resistance calculations |
+| `range?` | `number` | Range in feet |
+| `concentration?` | `boolean` | Whether spell requires concentration |
+| `tags?` | `string[]` | Classification tags |
+
+**SpellcastingConfig Interface:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `cantrips` | `InnateSpell[]` | Cantrips enemy knows (always available) |
+| `spells` | `InnateSpell[]` | Spells enemy knows (may have limited slots) |
+| `slots` | `Record<number, number>` | Spell slots available per level |
+
+### LegendaryGenerator
+*Also known as: Boss action system, legendary action generator*
+
+**Location:** `src/core/generation/LegendaryGenerator.ts`
+
+Generates legendary actions and resistances for boss-tier enemies. Bosses receive 3 legendary actions per round and 3 legendary resistances per day.
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `static generate(options: { archetype: EnemyArchetype, cr: number, seed: string }): LegendaryConfig` | Generate legendary configuration with seed string |
+| `static generateWithRNG(options: { archetype: EnemyArchetype, cr: number, rng: SeededRNG }): LegendaryConfig` | Same as above but accepts SeededRNG directly |
+| `static getResistancesForCR(cr: number): number` | Get legendary resistances per day for a given CR |
+| `static getActionById(id: string): LegendaryAction \| undefined` | Get legendary action by ID |
+| `static getActionsForArchetype(archetype: EnemyArchetype): LegendaryAction[]` | Get all legendary actions for an archetype |
+| `static shouldHaveLegendary(rarity: EnemyRarity): boolean` | Check if rarity tier should have legendary actions |
+
+**LegendaryAction Interface:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique identifier |
+| `name` | `string` | Display name |
+| `description` | `string` | Detailed description |
+| `cost` | `number` | Cost in legendary action points (1-3) |
+| `effect` | `string` | Effect description for combat system |
+| `damage?` | `string` | Damage dice if this action deals damage |
+| `damageType?` | `string` | Damage type for damaging actions |
+| `archetypes` | `EnemyArchetype[]` | Archetypes this action is appropriate for |
+| `tags?` | `string[]` | Tags for filtering (movement, damage, control, etc.) |
+
+**LegendaryConfig Interface:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `resistances` | `number` | Number of legendary resistances per day |
+| `actions` | `LegendaryAction[]` | Array of legendary actions available to this boss |
+| `lairActionHint?` | `string` | Optional lair action hint for encounter design |
+
+### Boss Enhancements
+
+Boss-tier enemies receive special enhancements beyond standard rarity scaling:
+
+**Legendary Resistances:**
+- 3 per day for CR 1-10
+- 4 per day for CR 11-15
+- 5 per day for CR 16-20
+- 6 per day for CR 21+
+
+**Legendary Actions:**
+- 3 actions available per round
+- At least one movement option guaranteed
+- Actions selected from archetype-specific pool
+
+**Boss Name Generation:**
+- Epic titles added to base name (e.g., "Grognak the Destroyer")
+- Titles selected from archetypal pools
+- Examples: "the Destroyer", "Lord of Ruin", "the Unbroken"
+
+**Ultimate Ability:**
+- Once-per-encounter ability
+- Enhanced signature ability (2× damage dice)
+- Marked with `uses_per_encounter: 1` and `max_uses_per_encounter: 1`
+
+**Note:** Boss enemies do NOT receive spellcasting - they get ultimate abilities instead.
+
+### Audio Stat Influence
+
+Audio profile affects enemy stat distribution during generation. This is a subtle flavor modifier, not a massive power shift.
+
+**Frequency Band → Stat Mapping:**
+
+| Audio Dominance | Stat Bonus | Max Bonus |
+|-----------------|-------------|------------|
+| Bass dominance | +1 STR, +1 CON | +2 total |
+| Treble dominance | +1 DEX | +2 total |
+| Mid dominance | +1 WIS, +1 CHA | +2 total |
+| Balanced (no clear dominance) | +1 to all abilities (smaller) | +2 total |
+
+**Implementation Notes:**
+- Applied after base stat calculation
+- Capped at MAX_AUDIO_INFLUENCE (2) to prevent extreme values
+- Additive to rarity scaling, not multiplicative
+- Determined by comparing bass_dominance, treble_dominance, and mid_dominance values
+
 ### Enemy Type Definitions
 
 **Location:** `src/core/types/Enemy.ts`
@@ -2409,12 +2595,12 @@ CR_TO_XP[cr]  // Returns XP value for given CR
 |--------|-------------|
 | `humanoid` | Civilized races that fight with weapons/armor |
 | `beast` | Natural animals and magical creatures |
-| `undead` | Undead creatures (future V2) |
-| `dragon` | Dragon type creatures (future V2) |
-| `fiend` | Fiendish creatures (future V2) |
-| `construct` | Construct creatures (future V2) |
-| `elemental` | Elemental creatures (future V2) |
-| `monstrosity` | Monstrosities (future V2) |
+| `undead` | Undead creatures with necrotic resistance and poison immunity |
+| `dragon` | Dragon type creatures with elemental immunities and breath weapons |
+| `fiend` | Fiendish creatures with fire/cold resistance and poison immunity |
+| `construct` | Construct creatures with poison/psychic immunity and no healing |
+| `elemental` | Elemental creatures with immunity to their element type |
+| `monstrosity` | Monstrosities with varied unique abilities |
 
 **EnemyRarity:**
 
@@ -2439,6 +2625,8 @@ CR_TO_XP[cr]  // Returns XP value for given CR
 |--------|-------------|
 | `uniform` | All enemies use same template (default) |
 | `custom` | Use specific templates array |
+| `category` | Random mix of enemies from same category |
+| `random` | Completely random enemy mix from all templates |
 
 **EncounterDifficulty:**
 
@@ -2457,6 +2645,23 @@ CR_TO_XP[cr]  // Returns XP value for given CR
 | `isValidEnemyRarity(value: unknown): value is EnemyRarity` | Check if valid rarity tier |
 | `isValidEnemyArchetype(value: unknown): value is EnemyArchetype` | Check if valid archetype |
 | `isValidEncounterDifficulty(value: unknown): value is EncounterDifficulty` | Check if valid difficulty |
+
+### Enemy Template Files
+
+**For usage examples, see [ENEMY_GENERATION.md](ENEMY_GENERATION.md)**
+
+The following template files contain enemy definitions organized by category:
+
+| Template File | Location | Description |
+|---------------|----------|-------------|
+| **Humanoid** | [`src/constants/EnemyTemplates/Humanoid.ts`](src/constants/EnemyTemplates/Humanoid.ts) | Basic civilized enemies (orc, goblin, etc.) |
+| **Beast** | [`src/constants/EnemyTemplates/Beast.ts`](src/constants/EnemyTemplates/Beast.ts) | Natural animals and magical creatures |
+| **Undead** | [`src/constants/EnemyTemplates/Undead.ts`](src/constants/EnemyTemplates/Undead.ts) | Undead creatures with necrotic resistance and poison immunity |
+| **Fiend** | [`src/constants/EnemyTemplates/Fiend.ts`](src/constants/EnemyTemplates/Fiend.ts) | Fiendish creatures with fire/cold resistance and poison immunity |
+| **Elemental** | [`src/constants/EnemyTemplates/Elemental.ts`](src/constants/EnemyTemplates/Elemental.ts) | Elemental creatures with immunity to their element type |
+| **Construct** | [`src/constants/EnemyTemplates/Construct.ts`](src/constants/EnemyTemplates/Construct.ts) | Construct creatures with poison/psychic immunity and no healing |
+| **Dragon** | [`src/constants/EnemyTemplates/Dragon.ts`](src/constants/EnemyTemplates/Dragon.ts) | Dragon type creatures with elemental immunities and breath weapons |
+| **Monstrosity** | [`src/constants/EnemyTemplates/Monstrosity.ts`](src/constants/EnemyTemplates/Monstrosity.ts) | Monstrosities with varied unique abilities |
 
 ---
 
