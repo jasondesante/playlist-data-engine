@@ -494,15 +494,24 @@ EnemyGenerator.generateEncounter(party, {
   - Legendary resistances (3/day by default)
   - Legendary actions (3 per round)
   - Lair action hint (for encounter design)
-- [ ] Add `generateBossFeatures()` method for boss-specific abilities:
+- [x] Add `generateBossFeatures()` method for boss-specific abilities:
   - Signature ability gets enhanced version (d12 → 2d12)
   - Add one "ultimate" ability usable once per encounter
-- [ ] Update `createEnemy()` to call boss enhancements for boss rarity
-- [ ] Add boss-specific name prefixes/suffixes (optional flavor):
+- [x] Update `createEnemy()` to call boss enhancements for boss rarity
+- [x] Add boss-specific name prefixes/suffixes (optional flavor):
   - "Grognak the Destroyer"
   - "Vexis, Lord of Bones"
 
-**Status:** ✅ Partially Completed - Legendary config (resistances, actions, lair hint) is now stored in `legendary_config` field on boss character sheets. Legendary actions were already being added to class_features. Added 7 passing unit tests in `tests/unit/boss-legendary-config.test.ts`.
+**Status:** ✅ Completed - Boss features fully implemented including:
+  - `generateBossFeatures()` method that creates enhanced signature ability (2x damage dice) and ultimate ability
+  - `generateBossName()` method that adds epic titles like "the Destroyer", "Lord of Ruin", etc.
+  - `generateUltimateAbility()` method with archetype-specific ultimate abilities
+  - Boss rarity enemies now receive boss name with titles and enhanced abilities instead of spellcasting
+  - Legendary config (resistances, actions, lair hint) is stored in `legendary_config` field
+
+**Notes:**
+- Boss enemies do NOT receive spellcasting - they get ultimate abilities instead
+- Ultimate abilities are marked with `uses_per_encounter: 1` and `max_uses_per_encounter: 1`
 
 ---
 

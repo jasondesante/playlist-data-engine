@@ -392,6 +392,309 @@ export class EnemyGenerator {
     }
 
     /**
+     * Boss title suffixes for name generation
+     *
+     * Used to add epic titles to boss enemies.
+     */
+    private static readonly BOSS_TITLES = [
+        'the Destroyer',
+        'the Unbreakable',
+        'the Annihilator',
+        'the Fearless',
+        'the Ancient',
+        'Lord of Ruin',
+        'the World-Ender',
+        'the Eternal',
+        'King of Ruin',
+        'the Indomitable',
+        'the Void Walker',
+        'Master of Destruction',
+        'the Fallen',
+        'the Ascendant',
+        'the Heartless',
+        'Sovereign of Pain',
+        'the Soul Render',
+        'the Undying',
+        'the Chaos Bringer',
+        'Lord of Death',
+        'the World Breaker',
+        'the Timeless',
+        'the Forgotten'
+    ];
+
+    /**
+     * Boss title prefixes for name generation
+     *
+     * Alternative title format for boss enemies.
+     */
+    private static readonly BOSS_PREFIXES = [
+        'Great',
+        'Eternal',
+        'Ancient',
+        'Dread',
+        'High',
+        'Dark',
+        'Void',
+        'Blood',
+        'Iron',
+        'Storm'
+    ];
+
+    /**
+     * Generate boss-specific name enhancements
+     *
+     * Adds epic title or prefix to boss name for flavor.
+     * Format options:
+     * - "{name}, {title}" (e.g., "Orc, the Destroyer")
+     * - "{prefix} {name}" (e.g., "Great Orc")
+     * - "{name} of {realm}" (e.g., "Orc of the Void")
+     *
+     * @param baseName - Base enemy name from template
+     * @param rng - Seeded RNG for deterministic selection
+     * @returns Enhanced boss name
+     *
+     * @example
+     * ```typescript
+     * generateBossName('Orc', rng); // "Orc, the Destroyer"
+     * generateBossName('Bear', rng); // "Great Bear"
+     * generateBossName('Dragon', rng); // "Dragon of the Void"
+     * ```
+     */
+    private static generateBossName(baseName: string, rng: SeededRNG): string {
+        const formatRoll = rng.random();
+
+        // 50%: suffix format "{name}, {title}"
+        if (formatRoll < 0.5) {
+            const title = rng.randomChoice(EnemyGenerator.BOSS_TITLES);
+            return `${baseName}, ${title}`;
+        }
+
+        // 30%: prefix format "{prefix} {name}"
+        if (formatRoll < 0.8) {
+            const prefix = rng.randomChoice(EnemyGenerator.BOSS_PREFIXES);
+            return `${prefix} ${baseName}`;
+        }
+
+        // 20%: of-format "{name} of {realm}"
+        const realms = [
+            'the Void', 'Ruin', 'Pain', 'Death', 'the Abyss',
+            'the Forgotten Lands', 'Eternal Night', 'Chaos', 'Doom',
+            'the Broken World', 'Shadows', 'the Endless Void'
+        ];
+        const realm = rng.randomChoice(realms);
+        return `${baseName} of ${realm}`;
+    }
+
+    /**
+     * Generate boss-specific ability enhancements
+     *
+     * For boss rarity, enhances the signature ability and adds an ultimate ability:
+     * - Signature ability damage dice are doubled (d12 → 2d12)
+     * - Ultimate ability: One powerful ability usable once per encounter
+     *
+     * @param template - Enemy template
+     * @param signatureAbility - Already scaled signature ability
+     * @param rng - Seeded RNG for deterministic selection
+     * @returns Array of boss-enhanced abilities
+     *
+     * @example
+     * ```typescript
+     * const bossFeatures = generateBossFeatures(orcTemplate, scaledSignature, rng);
+     * // Returns: [enhancedSignatureAbility, ultimateAbility]
+     * ```
+     */
+    private static generateBossFeatures(
+        template: EnemyTemplate,
+        signatureAbility: Record<string, unknown>,
+        rng: SeededRNG
+    ): Record<string, unknown>[] {
+        const bossFeatures: Record<string, unknown>[] = [];
+
+        // Enhance signature ability: double the damage dice for boss
+        // d6 → 2d6, d8 → 2d8, d10 → 2d10, d12 → 2d12
+        const enhancedSignature = { ...signatureAbility };
+        if (enhancedSignature.attack && typeof enhancedSignature.attack === 'object') {
+            const attack = enhancedSignature.attack as { damage_dice?: string; damage?: string };
+            if (attack.damage_dice) {
+                // Extract die size and double it
+                const match = attack.damage_dice.match(/^d(\d+)$/);
+                if (match) {
+                    const dieSize = parseInt(match[1]!, 10);
+                    attack.damage_dice = `2d${dieSize}`;
+                    // Also update the full damage string
+                    const damageMatch = attack.damage?.match(/^(\d+d\d+)(\s*\+\s*\d+)?$/);
+                    if (damageMatch) {
+                        const baseDice = damageMatch[1];
+                        const modifier = damageMatch[2] || '';
+                        attack.damage = `${baseDice.replace(/^d\d+$/, `2d${dieSize}`)}${modifier}`;
+                    }
+                }
+            }
+        }
+        bossFeatures.push(enhancedSignature);
+
+        // Generate ultimate ability based on archetype
+        const ultimateAbility = EnemyGenerator.generateUltimateAbility(template.archetype, rng);
+        bossFeatures.push(ultimateAbility);
+
+        return bossFeatures;
+    }
+
+    /**
+     * Generate an ultimate ability for boss enemies
+     *
+     * Creates a powerful ability usable once per encounter.
+     * Each archetype has its own pool of ultimate abilities.
+     *
+     * @param archetype - Enemy archetype for ability selection
+     * @param rng - Seeded RNG for deterministic selection
+     * @returns Ultimate ability as a feature object
+     */
+    private static generateUltimateAbility(
+        archetype: EnemyArchetype,
+        rng: SeededRNG
+    ): Record<string, unknown> {
+        // Ultimate ability pools by archetype
+        const bruteUltimates: Array<{ id: string; name: string; description: string; damage: string; damageType: string }> = [
+            {
+                id: 'cataclysmic_smash',
+                name: 'Cataclysmic Smash',
+                description: 'The boss unleashes all its power in a devastating blow that cracks the earth itself.',
+                damage: '6d12 + 10',
+                damageType: 'bludgeoning'
+            },
+            {
+                id: 'unbreaking_frenzy',
+                name: 'Unbreaking Frenzy',
+                description: 'The boss enters a state of pure rage, attacking everything nearby with impossible speed.',
+                damage: '4d10 + 8',
+                damageType: 'slashing'
+            },
+            {
+                id: 'world_ender',
+                name: 'World Ender',
+                description: 'A single attack charged with all the boss\'s strength, capable of felling the mightiest foes.',
+                damage: '8d8 + 12',
+                damageType: 'bludgeoning'
+            }
+        ];
+
+        const archerUltimates: Array<{ id: string; name: string; description: string; damage: string; damageType: string }> = [
+            {
+                id: 'phantom_ barrage',
+                name: 'Phantom Barrage',
+                description: 'The boss fires ethereal arrows that phase through cover, striking all enemies in a massive cone.',
+                damage: '5d8 + 8',
+                damageType: 'piercing'
+            },
+            {
+                id: 'death_from_above',
+                name: 'Death from Above',
+                description: 'The boss leaps impossibly high, then rains destruction in a devastating area attack.',
+                damage: '4d10 + 10',
+                damageType: 'piercing'
+            },
+            {
+                id: 'final_Stand',
+                name: 'Final Stand',
+                description: 'With uncanny precision, the boss fires a single arrow that cannot miss, dealing massive damage.',
+                damage: '10d6 + 15',
+                damageType: 'piercing'
+            }
+        ];
+
+        type UltimateAbilityWithDamage = {
+            id: string;
+            name: string;
+            description: string;
+            damage: string;
+            damageType: string;
+        };
+
+        type UltimateAbilityWithEffect = {
+            id: string;
+            name: string;
+            description: string;
+            effect: string;
+        };
+
+        const supportUltimates: UltimateAbilityWithEffect[] = [
+            {
+                id: 'dark_miracle',
+                name: 'Dark Miracle',
+                description: 'The boss performs a ritual of incredible power, completely healing itself and all allies.',
+                effect: 'Heal self and all allies for 50% max HP'
+            },
+            {
+                id: 'soul_anchor',
+                name: 'Soul Anchor',
+                description: 'The boss binds the souls of all creatures nearby, preventing all movement and actions for a duration.',
+                effect: 'AoE stun/paralyze all creatures, no save'
+            },
+            {
+                id: 'realm_of_despair',
+                name: 'Realm of Despair',
+                description: 'The boss projects an aura of pure hopelessness, weakening all enemies\' attacks and defenses.',
+                effect: 'All enemies have disadvantage on attacks and -2 AC'
+            }
+        ];
+
+        // Select ultimate based on archetype
+        let selected: UltimateAbilityWithDamage | UltimateAbilityWithEffect;
+        let damageType = 'bludgeoning';
+
+        switch (archetype) {
+            case 'brute':
+                selected = rng.randomChoice(bruteUltimates) as UltimateAbilityWithDamage | UltimateAbilityWithEffect;
+                damageType = 'bludgeoning';
+                break;
+            case 'archer':
+                selected = rng.randomChoice(archerUltimates) as UltimateAbilityWithDamage | UltimateAbilityWithEffect;
+                damageType = 'piercing';
+                break;
+            case 'support':
+                selected = rng.randomChoice(supportUltimates) as UltimateAbilityWithDamage | UltimateAbilityWithEffect;
+                break;
+            default:
+                selected = rng.randomChoice(bruteUltimates) as UltimateAbilityWithDamage | UltimateAbilityWithEffect;
+                damageType = 'bludgeoning';
+        }
+
+        // Build ultimate ability feature object
+        const ultimate: Record<string, unknown> = {
+            id: selected.id,
+            name: selected.name,
+            description: selected.description,
+            type: 'ultimate' as const,
+            class: 'Enemy' as const,
+            level: 1,
+            source: 'boss' as const,
+            tags: ['ultimate', 'once_per_encounter', archetype],
+            effects: [],
+            uses_per_encounter: 1,
+            max_uses_per_encounter: 1
+        };
+
+        // Add damage info for combat abilities
+        if ('damage' in selected) {
+            const damageAbility = selected as UltimateAbilityWithDamage;
+            ultimate.attack = {
+                name: damageAbility.name,
+                damage: damageAbility.damage,
+                damage_dice: damageAbility.damage,
+                damage_type: damageType,
+                type: archetype === 'archer' ? 'ranged' : 'melee',
+                properties: ['ultimate', 'once_per_encounter']
+            };
+        } else {
+            const effectAbility = selected as UltimateAbilityWithEffect;
+            ultimate.effect = effectAbility.effect;
+        }
+
+        return ultimate;
+    }
+
+    /**
      * Generate all abilities for an enemy
      *
      * Returns an array containing:
@@ -643,8 +946,27 @@ export class EnemyGenerator {
         // Calculate CR for spell slot determination
         const cr = EnemyGenerator.getCRForRarity(rarity);
 
+        // Check if enemy should have spellcasting
+        const shouldHaveSpells = SpellcastingGenerator.shouldHaveSpellcasting(template.archetype, rarity);
+
         // Generate all abilities (signature + extras from FeatureQuery)
-        const abilities = EnemyGenerator.generateAbilities(template, rarity, rng, cr);
+        let abilities = EnemyGenerator.generateAbilities(template, rarity, rng, cr);
+
+        // Apply boss-specific enhancements for boss rarity
+        // This replaces the signature ability with an enhanced version (double damage dice)
+        // and adds an ultimate ability usable once per encounter
+        // Boss enemies do NOT get spellcasting - they get ultimate abilities instead
+        if (rarity === 'boss') {
+            // Extract the original signature ability (first element) for enhancement
+            const signatureAbility = abilities[0];
+            const bossFeatures = EnemyGenerator.generateBossFeatures(
+                template,
+                signatureAbility,
+                rng
+            );
+            // Replace abilities with boss-enhanced versions
+            abilities = bossFeatures;
+        }
 
         // Generate legendary actions for boss rarity
         let legendaryActions: Record<string, unknown>[] = [];
@@ -755,8 +1077,8 @@ export class EnemyGenerator {
 
         // Build the character sheet
         const character: CharacterSheet = {
-            // Use template name as enemy name
-            name: template.name,
+            // Use template name as enemy name, with boss enhancement
+            name: rarity === 'boss' ? EnemyGenerator.generateBossName(template.name, rng) : template.name,
 
             // Enemies don't use standard race/class - use placeholder values
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
