@@ -11,18 +11,20 @@
  * Templates are organized by category and archetype:
  * - Humanoid: Brute, Archer, Support
  * - Beast: Brute, "Archer" (Ranged)
+ * - Undead: Archer, Brute, Support
  */
 
 import type { EnemyTemplate } from '../core/types/Enemy.js';
+import { UNDEAD_TEMPLATES } from './EnemyTemplates/Undead.js';
 
 /**
- * Default enemy templates
+ * V1 enemy templates (humanoid and beast)
  *
  * These 10 templates provide the foundation for enemy generation.
  * Each template is scaled by rarity tier (common/uncommon/elite/boss)
  * which affects stats, signature ability damage dice, and extra abilities.
  */
-export const DEFAULT_ENEMY_TEMPLATES: EnemyTemplate[] = [
+const V1_TEMPLATES: EnemyTemplate[] = [
     // ========================================
     // HUMANOID - BRUTE
     // ========================================
@@ -450,9 +452,25 @@ export const DEFAULT_ENEMY_TEMPLATES: EnemyTemplate[] = [
 ];
 
 /**
+ * Default enemy templates
+ *
+ * Combines V1 templates (humanoid, beast) and V2 templates (undead).
+ * Total: 14 templates spanning 3 categories.
+ */
+export const DEFAULT_ENEMY_TEMPLATES: EnemyTemplate[] = [
+    ...V1_TEMPLATES,
+    ...UNDEAD_TEMPLATES
+];
+
+/**
+ * All enemy templates export (alias for DEFAULT_ENEMY_TEMPLATES)
+ */
+export const ALL_ENEMY_TEMPLATES: EnemyTemplate[] = DEFAULT_ENEMY_TEMPLATES;
+
+/**
  * Helper function to get a template by ID
  *
- * @param id - The template ID (e.g., 'orc', 'goblin-archer')
+ * @param id - The template ID (e.g., 'orc', 'goblin-archer', 'skeleton')
  * @returns The matching template, or undefined if not found
  *
  * @example
@@ -470,13 +488,16 @@ export function getTemplateById(id: string): EnemyTemplate | undefined {
 /**
  * Get all templates for a specific category
  *
- * @param category - The enemy category ('humanoid', 'beast', etc.)
+ * @param category - The enemy category ('humanoid', 'beast', 'undead', etc.)
  * @returns Array of templates in the specified category
  *
  * @example
  * ```typescript
  * const humanoids = getTemplatesByCategory('humanoid');
  * console.log(humanoids.length); // 6 (Orc, Bandit, Hunter, Goblin Archer, Shaman, Cultist)
+ *
+ * const undead = getTemplatesByCategory('undead');
+ * console.log(undead.length); // 4 (Skeleton, Zombie, Wight, Ghost)
  * ```
  */
 export function getTemplatesByCategory(category: string): EnemyTemplate[] {
@@ -492,7 +513,7 @@ export function getTemplatesByCategory(category: string): EnemyTemplate[] {
  * @example
  * ```typescript
  * const brutes = getTemplatesByArchetype('brute');
- * console.log(brutes.length); // 4 (Orc, Bandit, Bear, Boar)
+ * console.log(brutes.length); // 6 (Orc, Bandit, Bear, Boar, Zombie, Wight)
  * ```
  */
 export function getTemplatesByArchetype(archetype: string): EnemyTemplate[] {

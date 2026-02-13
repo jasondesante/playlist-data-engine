@@ -32,6 +32,7 @@ import {
     getXPBudgetForParty
 } from '../../constants/EncounterBalance.js';
 import { EnemyEquipmentGenerator } from './EnemyEquipmentGenerator.js';
+import { SpellcastingGenerator } from './SpellcastingGenerator.js';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 
 /**
@@ -410,7 +411,8 @@ export class EnemyGenerator {
     private static generateAbilities(
         template: EnemyTemplate,
         rarity: EnemyRarity,
-        rng: SeededRNG
+        rng: SeededRNG,
+        cr?: number
     ): Record<string, unknown>[] {
         // Start with signature ability
         const signatureAbility = EnemyGenerator.scaleSignatureAbility(
@@ -419,6 +421,23 @@ export class EnemyGenerator {
         );
 
         const abilities: Record<string, unknown>[] = [signatureAbility];
+
+        // Check if enemy should have spellcasting
+        if (SpellcastingGenerator.shouldHaveSpellcasting(template.archetype, rarity)) {
+            const spellCR = cr || EnemyGenerator.getCRForRarity(rarity);
+            const spellConfig = SpellcastingGenerator.generateSpellListWithRNG({
+                archetype: template.archetype,
+                rarity,
+                cr: spellCR,
+                rng
+            });
+
+            // Convert spells to feature objects with isSpell property
+            const spellFeatures = SpellcastingGenerator.spellsToFeatures(spellConfig);
+
+            // Add spell features to abilities
+            abilities.push(...spellFeatures as Record<string, unknown>[]);
+        }
 
         // Get extra ability count from rarity config
         const rarityConfig = getRarityConfig(rarity);
@@ -620,8 +639,11 @@ export class EnemyGenerator {
         // Proficiency bonus based on level
         const proficiencyBonus = Math.ceil(1 + (level - 1) / 4);
 
+        // Calculate CR for spell slot determination
+        const cr = EnemyGenerator.getCRForRarity(rarity);
+
         // Generate all abilities (signature + extras from FeatureQuery)
-        const abilities = EnemyGenerator.generateAbilities(template, rarity, rng);
+        const abilities = EnemyGenerator.generateAbilities(template, rarity, rng, cr);
 
         // Note: Resistances/immunities for Elite+ enemies will be integrated in V2
         // when CharacterSheet type is extended to support them

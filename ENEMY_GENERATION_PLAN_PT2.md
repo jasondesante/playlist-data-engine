@@ -200,8 +200,8 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/core/generation/SpellcastingGenerator.ts` (new file)
 
 **Subtasks:**
-- [ ] Create `SpellcastingGenerator` class
-- [ ] Define `InnateSpell` interface:
+- [x] Create `SpellcastingGenerator` class
+- [x] Define `InnateSpell` interface:
   ```typescript
   interface InnateSpell {
     id: string;
@@ -213,33 +213,54 @@ EnemyGenerator.generateEncounter(party, {
     save?: string;   // e.g., "DEX"
   }
   ```
-- [ ] Define `SpellList` interface:
+- [x] Define `SpellList` interface:
   ```typescript
   interface SpellList {
     archetype: EnemyArchetype;
-    spells: {
-      cantrips: InnateSpell[];
-      level1: InnateSpell[];
-      level2: InnateSpell[];
-      // etc.
-    };
+    cantrips: InnateSpell[];
+    level1: InnateSpell[];
+    level2: InnateSpell[];
+    level3: InnateSpell[];
+    level4?: InnateSpell[];
   }
   ```
-- [ ] Create spell lists by archetype:
-  - **Support**: Buffs, debuffs, healing (Bless, Bane, Cure Wounds)
-  - **Archer**: Utility, escape, crowd control (Misty Step, Hold Person)
-  - **Brute**: Damage, self-buffs (Burning Hands, Divine Favor)
-- [ ] Implement `generateSpellList()`:
+- [x] Create spell lists by archetype:
+  - **Support**: Buffs, debuffs, healing (Bless, Bane, Cure Wounds, Revivify, Spiritual Weapon, etc.)
+  - **Archer**: Utility, escape, crowd control (Misty Step, Hold Person, Web, etc.)
+  - **Brute**: Damage, self-buffs (Fire Bolt, Divine Favor, Magic Stone, Shillelagh, etc.)
+- [x] Implement `generateSpellList()`:
   - Select spells based on enemy archetype
   - Number of spells based on rarity (boss gets more than elite)
   - Cantrip + spell slots determined by CR
-- [ ] Create `SPELL_SLOTS_BY_CR` lookup table
-- [ ] Update `generateAbilities()` to include spells as Features
-- [ ] Mark spell Features with `isSpell: true` property
+- [x] Create `SPELL_SLOTS_BY_CR` lookup table
+- [x] Update `generateAbilities()` to include spells as Features
+- [x] Mark spell Features with `isSpell: true` property
+
+**Additional Implementation:**
+- Created `SpellcastingConfig` interface for generated spell configuration
+- Created `SpellcastingGenerationOptions` interface for generation options
+- Created `SPELL_SLOTS_BY_CR` constant mapping CR to spell slots
+- Implemented static methods:
+  - `generateSpellList()` - Main spell generation with seed string
+  - `generateSpellListWithRNG()` - Same as above but accepts SeededRNG directly
+  - `getSpellSlotsForCR()` - Returns slot configuration for a given CR
+  - `shouldHaveSpellcasting()` - Determines if an enemy archetype/rarity combo should have spellcasting
+  - `spellToFeature()` - Converts InnateSpell to Feature object with `isSpell: true` marker
+  - `spellsToFeatures()` - Converts spell configuration to Feature array
+  - `getSpellListForArchetype()` - Returns spell list for a given archetype
+- Updated `EnemyGenerator.ts` generateAbilities() to accept optional `cr` parameter
+- Spell lists per archetype:
+  - **Support**: 13 cantrips, 9 level 1 spells, 7 level 2 spells, 7 level 3 spells
+  - **Archer**: 12 cantrips, 9 level 1 spells, 7 level 2 spells, 7 level 3 spells
+  - **Brute**: 14 cantrips, 11 level 1 spells, 7 level 2 spells, 7 level 3 spells, 7 level 4 spells
 
 **Notes:**
 - Spells are still Features for combat integration
 - This just provides structure for selection and slot management
+- Support archetype always gets spellcasting; other archetypes need elite+ rarity
+- 14 unit tests added covering spell slots, archetype availability, spell list generation, and spell-to-feature conversion
+
+**Status:** ✅ Completed - Full spellcasting system implemented with 14 passing unit tests
 
 ---
 
@@ -248,9 +269,9 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/constants/EnemyTemplates/Undead.ts`
 
 **Subtasks:**
-- [ ] Create `Undead.ts` file with undead templates
-- [ ] Define undead-specific resistances: necrotic resistance, poison immunity
-- [ ] Create templates:
+- [x] Create `Undead.ts` file with undead templates
+- [x] Define undead-specific resistances: necrotic resistance, poison immunity
+- [x] Create templates:
 
 | Template | Archetype | Signature Ability | Audio Pref |
 |----------|-----------|-------------------|------------|
@@ -259,8 +280,10 @@ EnemyGenerator.generateEncounter(party, {
 | Wight | Brute | Life Drain (damage + self heal) | Mid |
 | Ghost | Support | Horrifying Visage (fear debuff) | Mid |
 
-- [ ] Add to main templates export
-- [ ] Add unit tests for undead generation
+- [x] Add to main templates export
+- [x] Add unit tests for undead generation
+
+**Status:** ✅ Completed - Created Undead.ts with 4 templates (Skeleton, Zombie, Wight, Ghost). All undead have necrotic resistance and poison immunity. Ghost also has multiple additional resistances (acid, cold, fire, lightning, thunder). 51 unit tests added and passing.
 
 ---
 

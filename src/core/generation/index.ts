@@ -36,6 +36,19 @@ export {
 } from './CRLevelConverter.js';
 export type { CRTuningConfig } from './CRLevelConverter.js';
 
+// Spellcasting system
+export {
+    SpellcastingGenerator,
+    SPELL_SLOTS_BY_CR
+} from './SpellcastingGenerator.js';
+export type {
+    InnateSpell,
+    SpellList,
+    SpellcastingConfig,
+    SpellcastingGenerationOptions,
+    SpellcastingGenerationOptionsWithRNG
+} from './SpellcastingGenerator.js';
+
 // Export enemy types for convenience
 export type {
     EnemyCategory,
