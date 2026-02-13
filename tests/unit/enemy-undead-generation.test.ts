@@ -444,8 +444,8 @@ describe('Undead Template Integration', () => {
     });
 
     it('should include undead in total template count', () => {
-        // Should have 10 V1 templates + 4 undead = 14 total
-        expect(DEFAULT_ENEMY_TEMPLATES.length).toBe(14);
+        // Should have 10 V1 templates + 4 undead + 4 fiend = 18 total
+        expect(DEFAULT_ENEMY_TEMPLATES.length).toBe(18);
     });
 });
 

@@ -212,9 +212,9 @@ describe('Integration: Enemy Encounter Generation', () => {
                 track: { name: 'Bass Track', artists: ['Test'], album: 'Test' }
             });
 
-            // Check that many enemies are brute types (Orc, Bear, Bandit, Boar)
+            // Check that many enemies are brute types (Orc, Bear, Bandit, Boar, Zombie, Wight, Lemure, Demon)
             const bruteTypes = enemies.filter(e =>
-                ['Orc', 'Bear', 'Bandit', 'Boar'].includes(e.name)
+                ['Orc', 'Bear', 'Bandit', 'Boar', 'Zombie', 'Wight', 'Lemure', 'Demon'].includes(e.name)
             );
 
             // With strong bass preference, should get more brutes
@@ -236,9 +236,9 @@ describe('Integration: Enemy Encounter Generation', () => {
                 track: { name: 'Treble Track', artists: ['Test'], album: 'Test' }
             });
 
-            // Check that many enemies are archer types
+            // Check that many enemies are archer types (Hunter, Goblin Archer, Giant Spider, Stirge, Skeleton, Imp)
             const archerTypes = enemies.filter(e =>
-                ['Hunter', 'Goblin Archer', 'Giant Spider', 'Stirge'].includes(e.name)
+                ['Hunter', 'Goblin Archer', 'Giant Spider', 'Stirge', 'Skeleton', 'Imp'].includes(e.name)
             );
 
             expect(archerTypes.length).toBeGreaterThan(5);
@@ -259,9 +259,9 @@ describe('Integration: Enemy Encounter Generation', () => {
                 track: { name: 'Mid Track', artists: ['Test'], album: 'Test' }
             });
 
-            // Check that some enemies are support types
+            // Check that some enemies are support types (Shaman, Cultist, Ghost, Quasit)
             const supportTypes = enemies.filter(e =>
-                ['Shaman', 'Cultist'].includes(e.name)
+                ['Shaman', 'Cultist', 'Ghost', 'Quasit'].includes(e.name)
             );
 
             // With mid-heavy audio, should get preference for support types

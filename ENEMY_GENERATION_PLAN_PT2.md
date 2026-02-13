@@ -292,9 +292,9 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/constants/EnemyTemplates/Fiend.ts`
 
 **Subtasks:**
-- [ ] Create `Fiend.ts` file with fiend templates
-- [ ] Define fiend-specific resistances: fire resistance, cold resistance
-- [ ] Create templates:
+- [x] Create `Fiend.ts` file with fiend templates
+- [x] Define fiend-specific resistances: fire resistance, cold resistance
+- [x] Create templates:
 
 | Template | Archetype | Signature Ability | Audio Pref |
 |----------|-----------|-------------------|------------|
@@ -303,8 +303,10 @@ EnemyGenerator.generateEncounter(party, {
 | Lemure | Brute | Hellish Resilience (damage reduction) | Bass |
 | Demon | Brute | Chaos Claw (random damage type) | Bass |
 
-- [ ] Add to main templates export
-- [ ] Add unit tests for fiend generation
+- [x] Add to main templates export
+- [x] Add unit tests for fiend generation
+
+**Status:** ✅ Completed - Created Fiend.ts with 4 templates (Imp, Quasit, Lemure, Demon). All fiends have fire and cold resistance, plus poison immunity. 54 unit tests added and passing. Fiend templates integrated into DEFAULT_ENEMY_TEMPLATES (now 18 total).
 
 ---
 

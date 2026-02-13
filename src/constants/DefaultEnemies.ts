@@ -12,10 +12,12 @@
  * - Humanoid: Brute, Archer, Support
  * - Beast: Brute, "Archer" (Ranged)
  * - Undead: Archer, Brute, Support
+ * - Fiend: Archer, Support, Brute
  */
 
 import type { EnemyTemplate } from '../core/types/Enemy.js';
 import { UNDEAD_TEMPLATES } from './EnemyTemplates/Undead.js';
+import { FIEND_TEMPLATES } from './EnemyTemplates/Fiend.js';
 
 /**
  * V1 enemy templates (humanoid and beast)
@@ -454,12 +456,13 @@ const V1_TEMPLATES: EnemyTemplate[] = [
 /**
  * Default enemy templates
  *
- * Combines V1 templates (humanoid, beast) and V2 templates (undead).
- * Total: 14 templates spanning 3 categories.
+ * Combines V1 templates (humanoid, beast) and V2 templates (undead, fiend).
+ * Total: 18 templates spanning 4 categories.
  */
 export const DEFAULT_ENEMY_TEMPLATES: EnemyTemplate[] = [
     ...V1_TEMPLATES,
-    ...UNDEAD_TEMPLATES
+    ...UNDEAD_TEMPLATES,
+    ...FIEND_TEMPLATES
 ];
 
 /**
@@ -470,7 +473,7 @@ export const ALL_ENEMY_TEMPLATES: EnemyTemplate[] = DEFAULT_ENEMY_TEMPLATES;
 /**
  * Helper function to get a template by ID
  *
- * @param id - The template ID (e.g., 'orc', 'goblin-archer', 'skeleton')
+ * @param id - The template ID (e.g., 'orc', 'goblin-archer', 'skeleton', 'imp')
  * @returns The matching template, or undefined if not found
  *
  * @example
