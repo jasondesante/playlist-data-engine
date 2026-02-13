@@ -13,9 +13,6 @@ import type { PlaylistTrack } from './Playlist.js';
 
 /**
  * Enemy categories for classification and filtering
- *
- * V1 Implementation: humanoid, beast
- * V2 Future: undead, dragon, fiend, construct, elemental, monstrosity
  */
 export type EnemyCategory =
     | 'humanoid'
@@ -36,16 +33,11 @@ export type EnemyRarity = 'common' | 'uncommon' | 'elite' | 'boss';
 
 /**
  * Combat archetypes that define enemy role in battle
- *
- * V1 Implementation: brute, archer, support
  */
 export type EnemyArchetype = 'brute' | 'archer' | 'support';
 
 /**
  * Enemy mix modes for encounter generation
- *
- * V1 Implementation: uniform, custom
- * V2: category, random
  */
 export type EnemyMixMode = 'uniform' | 'custom' | 'category' | 'random';
 
@@ -248,7 +240,6 @@ export interface EncounterGenerationOptions {
     /** Optional - Enable leader promotion for groups > 3 (default: true) */
     enableLeaderPromotion?: boolean;
 
-    // --- V2 options ---
     /** Optional - Allow mixing enemy categories in 'random' mode (default: false) */
     allowMixedCategories?: boolean;
 
