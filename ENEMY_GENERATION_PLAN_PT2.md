@@ -414,9 +414,9 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/constants/EnemyTemplates/Monstrosity.ts`
 
 **Subtasks:**
-- [ ] Create `Monstrosity.ts` file with monstrosity templates
-- [ ] Monstrosities have varied traits, no universal category traits
-- [ ] Create templates:
+- [x] Create `Monstrosity.ts` file with monstrosity templates
+- [x] Monstrosities have varied traits, no universal category traits
+- [x] Create templates:
 
 | Template | Archetype | Signature Ability | Audio Pref |
 |----------|-----------|-------------------|------------|
@@ -425,8 +425,26 @@ EnemyGenerator.generateEncounter(party, {
 | Mimic | Brute | Adhesive (grapple on hit) | Mid |
 | Basilisk | Support | Petrifying Gaze (save or stunned) | Mid |
 
-- [ ] Add to main templates export
-- [ ] Add unit tests for monstrosity generation
+- [x] Add to main templates export
+- [x] Add unit tests for monstrosity generation
+
+**Additional Implementation:**
+- Created `MONSTROSITY_TEMPLATES` constant with 4 templates
+- Owlbear: Multiattack with multiattack property, bass audio preference, high STR/CON
+- Griffin: Dive Attack with charge/flying properties, treble audio preference, high DEX
+- Mimic: Adhesive with grapple/ambush properties, mid audio preference, acid resistance
+- Basilisk: Petrifying Gaze with stun/debuff/control, mid audio preference, poison resistance
+- Helper functions: `getMonstrosityTemplateById()`, `getMonstrosityTemplates()`, `getMonstrosityTemplatesByArchetype()`
+- Updated `DEFAULT_ENEMY_TEMPLATES` to include monstrosities (now 34 total templates)
+- Updated documentation comments in DefaultEnemies.ts
+
+**Notes:**
+- Monstrosities are bizarre creatures that defy normal classification
+- No universal category traits - each creature has unique abilities
+- Varied resistances: mimic (acid), basilisk (poison), owlbear/griffin (none)
+- 47 unit tests added covering template structure, resistances, audio preferences, generation, scaling, audio-influenced selection, category mix mode, integration, and base stats
+
+**Status:** ✅ Completed - Full monstrosity category implemented with 47 passing unit tests
 
 ---
 

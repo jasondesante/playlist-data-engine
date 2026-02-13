@@ -15,6 +15,8 @@
  * - Fiend: Archer, Support, Brute
  * - Elemental: Brute, Archer, Support
  * - Construct: Brute, Archer, Support
+ * - Dragon: Brute, Archer
+ * - Monstrosity: Brute, Archer, Support
  */
 
 import type { EnemyTemplate } from '../core/types/Enemy.js';
@@ -23,6 +25,7 @@ import { FIEND_TEMPLATES } from './EnemyTemplates/Fiend.js';
 import { ELEMENTAL_TEMPLATES } from './EnemyTemplates/Elemental.js';
 import { CONSTRUCT_TEMPLATES } from './EnemyTemplates/Construct.js';
 import { DRAGON_TEMPLATES } from './EnemyTemplates/Dragon.js';
+import { MONSTROSITY_TEMPLATES } from './EnemyTemplates/Monstrosity.js';
 
 /**
  * V1 enemy templates (humanoid and beast)
@@ -461,8 +464,8 @@ const V1_TEMPLATES: EnemyTemplate[] = [
 /**
  * Default enemy templates
  *
- * Combines V1 templates (humanoid, beast) and V2 templates (undead, fiend, elemental, construct, dragon).
- * Total: 30 templates spanning 7 categories.
+ * Combines V1 templates (humanoid, beast) and V2 templates (undead, fiend, elemental, construct, dragon, monstrosity).
+ * Total: 34 templates spanning 8 categories.
  */
 export const DEFAULT_ENEMY_TEMPLATES: EnemyTemplate[] = [
     ...V1_TEMPLATES,
@@ -470,7 +473,8 @@ export const DEFAULT_ENEMY_TEMPLATES: EnemyTemplate[] = [
     ...FIEND_TEMPLATES,
     ...ELEMENTAL_TEMPLATES,
     ...CONSTRUCT_TEMPLATES,
-    ...DRAGON_TEMPLATES
+    ...DRAGON_TEMPLATES,
+    ...MONSTROSITY_TEMPLATES
 ];
 
 /**
@@ -512,6 +516,9 @@ export function getTemplateById(id: string): EnemyTemplate | undefined {
  *
  * const elementals = getTemplatesByCategory('elemental');
  * console.log(elementals.length); // 4 (Fire Elemental, Water Elemental, Air Elemental, Earth Elemental)
+ *
+ * const monstrosities = getTemplatesByCategory('monstrosity');
+ * console.log(monstrosities.length); // 4 (Owlbear, Griffin, Mimic, Basilisk)
  * ```
  */
 export function getTemplatesByCategory(category: string): EnemyTemplate[] {

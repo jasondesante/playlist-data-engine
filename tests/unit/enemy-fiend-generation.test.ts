@@ -452,8 +452,8 @@ describe('Fiend Template Integration', () => {
     });
 
     it('should include fiends in total template count', () => {
-        // Should have 10 V1 templates + 4 undead + 4 fiend + 4 elemental + 4 construct + 4 dragon = 30 total
-        expect(DEFAULT_ENEMY_TEMPLATES.length).toBe(30);
+        // Should have 10 V1 templates + 4 undead + 4 fiend + 4 elemental + 4 construct + 4 dragon + 4 monstrosity = 34 total
+        expect(DEFAULT_ENEMY_TEMPLATES.length).toBe(34);
     });
 });
 
