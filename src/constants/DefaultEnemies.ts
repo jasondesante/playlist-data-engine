@@ -22,6 +22,7 @@ import { UNDEAD_TEMPLATES } from './EnemyTemplates/Undead.js';
 import { FIEND_TEMPLATES } from './EnemyTemplates/Fiend.js';
 import { ELEMENTAL_TEMPLATES } from './EnemyTemplates/Elemental.js';
 import { CONSTRUCT_TEMPLATES } from './EnemyTemplates/Construct.js';
+import { DRAGON_TEMPLATES } from './EnemyTemplates/Dragon.js';
 
 /**
  * V1 enemy templates (humanoid and beast)
@@ -460,15 +461,16 @@ const V1_TEMPLATES: EnemyTemplate[] = [
 /**
  * Default enemy templates
  *
- * Combines V1 templates (humanoid, beast) and V2 templates (undead, fiend, elemental, construct).
- * Total: 26 templates spanning 6 categories.
+ * Combines V1 templates (humanoid, beast) and V2 templates (undead, fiend, elemental, construct, dragon).
+ * Total: 30 templates spanning 7 categories.
  */
 export const DEFAULT_ENEMY_TEMPLATES: EnemyTemplate[] = [
     ...V1_TEMPLATES,
     ...UNDEAD_TEMPLATES,
     ...FIEND_TEMPLATES,
     ...ELEMENTAL_TEMPLATES,
-    ...CONSTRUCT_TEMPLATES
+    ...CONSTRUCT_TEMPLATES,
+    ...DRAGON_TEMPLATES
 ];
 
 /**

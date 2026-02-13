@@ -452,8 +452,8 @@ describe('Construct Template Integration', () => {
     });
 
     it('should include constructs in total template count', () => {
-        // Should have 10 V1 templates + 4 undead + 4 fiend + 4 elemental + 4 construct = 26 total
-        expect(DEFAULT_ENEMY_TEMPLATES.length).toBe(26);
+        // Should have 10 V1 templates + 4 undead + 4 fiend + 4 elemental + 4 construct + 4 dragon = 30 total
+        expect(DEFAULT_ENEMY_TEMPLATES.length).toBe(30);
     });
 });
 
