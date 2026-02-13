@@ -18,6 +18,7 @@
 import type { EnemyTemplate } from '../core/types/Enemy.js';
 import { UNDEAD_TEMPLATES } from './EnemyTemplates/Undead.js';
 import { FIEND_TEMPLATES } from './EnemyTemplates/Fiend.js';
+import { ELEMENTAL_TEMPLATES } from './EnemyTemplates/Elemental.js';
 
 /**
  * V1 enemy templates (humanoid and beast)
@@ -456,13 +457,14 @@ const V1_TEMPLATES: EnemyTemplate[] = [
 /**
  * Default enemy templates
  *
- * Combines V1 templates (humanoid, beast) and V2 templates (undead, fiend).
- * Total: 18 templates spanning 4 categories.
+ * Combines V1 templates (humanoid, beast) and V2 templates (undead, fiend, elemental).
+ * Total: 22 templates spanning 5 categories.
  */
 export const DEFAULT_ENEMY_TEMPLATES: EnemyTemplate[] = [
     ...V1_TEMPLATES,
     ...UNDEAD_TEMPLATES,
-    ...FIEND_TEMPLATES
+    ...FIEND_TEMPLATES,
+    ...ELEMENTAL_TEMPLATES
 ];
 
 /**
@@ -501,6 +503,9 @@ export function getTemplateById(id: string): EnemyTemplate | undefined {
  *
  * const undead = getTemplatesByCategory('undead');
  * console.log(undead.length); // 4 (Skeleton, Zombie, Wight, Ghost)
+ *
+ * const elementals = getTemplatesByCategory('elemental');
+ * console.log(elementals.length); // 4 (Fire Elemental, Water Elemental, Air Elemental, Earth Elemental)
  * ```
  */
 export function getTemplatesByCategory(category: string): EnemyTemplate[] {

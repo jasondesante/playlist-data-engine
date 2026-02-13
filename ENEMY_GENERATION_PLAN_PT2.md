@@ -315,9 +315,9 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/constants/EnemyTemplates/Elemental.ts`
 
 **Subtasks:**
-- [ ] Create `Elemental.ts` file with elemental templates
-- [ ] Define elemental-specific resistances: immunity to own element
-- [ ] Create templates:
+- [x] Create `Elemental.ts` file with elemental templates
+- [x] Define elemental-specific resistances: immunity to own element
+- [x] Create templates:
 
 | Template | Archetype | Signature Ability | Audio Pref |
 |----------|-----------|-------------------|------------|
@@ -326,8 +326,26 @@ EnemyGenerator.generateEncounter(party, {
 | Air Elemental | Archer | Wind Blast (ranged push) | Treble |
 | Earth Elemental | Brute | Earth Slam (AoE + prone) | Bass |
 
-- [ ] Add to main templates export
-- [ ] Add unit tests for elemental generation
+- [x] Add to main templates export
+- [x] Add unit tests for elemental generation
+
+**Additional Implementation:**
+- Created `ELEMENTAL_TEMPLATES` constant with 4 templates
+- Fire Elemental: Fire immunity, Burning Touch with ongoing fire damage, bass audio preference
+- Water Elemental: Cold immunity, fire and necrotic resistance, Whirlpool with control/restrain/pull, mid audio preference
+- Air Elemental: Lightning immunity, thunder resistance, Wind Blast with push/control, treble audio preference
+- Earth Elemental: Poison immunity, necrotic resistance, Earth Slam with AoE/prone, bass audio preference
+- Helper functions: `getElementalTemplateById()`, `getElementalTemplates()`, `getElementalTemplatesByArchetype()`
+- Updated `DEFAULT_ENEMY_TEMPLATES` to include elementals (now 22 total templates)
+- Updated documentation comments in DefaultEnemies.ts
+
+**Notes:**
+- Elementals are living manifestations of natural forces
+- Each has immunity to their own element
+- Varied resistances based on element type
+- 51 unit tests added covering template structure, resistances, audio preferences, generation, scaling, audio-influenced selection, category mix mode, integration, and base stats
+
+**Status:** ✅ Completed - Full elemental category implemented with 51 passing unit tests
 
 ---
 
