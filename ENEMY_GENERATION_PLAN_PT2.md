@@ -152,21 +152,21 @@ EnemyGenerator.generateEncounter(party, {
 
 ## Task 5: CR/Level Conversion Functions
 
-**File:** `src/core/generation/EnemyGenerator.ts` (or utility file)
+**File:** `src/core/generation/CRLevelConverter.ts` (new file)
 
 **Subtasks:**
-- [ ] Create `crToLevel(cr: number): number`:
+- [x] Create `crToLevel(cr: number): number`:
   ```typescript
   // D&D 5e mapping with smooth interpolation
   // CR 0 = level 0, CR 1 = level 1, CR 2 = level 2, etc.
   // Fractional CRs: CR 0.25 = level 0.5, CR 0.5 = level 0.75
   ```
-- [ ] Create `levelToCR(level: number): number`:
+- [x] Create `levelToCR(level: number): number`:
   ```typescript
   // Inverse of above
   // Apply tuning factors for game balance
   ```
-- [ ] Create `CR_TUNING` config object:
+- [x] Create `CR_TUNING` config object:
   ```typescript
   const CR_TUNING = {
     baseMultiplier: 1.0,
@@ -174,12 +174,24 @@ EnemyGenerator.generateEncounter(party, {
     customCurve: [] // Optional custom CR/level mappings
   };
   ```
-- [ ] Replace inline formulas in V1 code with these functions
-- [ ] Add unit tests for conversion accuracy
+- [x] Replace inline formulas in V1 code with these functions
+- [x] Add unit tests for conversion accuracy
+
+**Additional Implementation:**
+- Created `CRTuningConfig` interface with baseMultiplier, levelOffset, customCurve, minLevel, maxLevel
+- Created `DEFAULT_CR_TUNING` constant with standard D&D 5e values
+- Added `roundLevel()` function to round fractional levels to integers
+- Added `roundCR()` function to round to standard CR steps (0, 1/8, 1/4, 1/2, 1, 2, etc.)
+- Added `formatLevel()` and `formatCR()` formatting utilities for display
+- Added `createCRTuning()` factory function for custom tuning configs
+- Exported all functions from `src/core/generation/index.ts`
 
 **Notes:**
 - Keep V1 inline formula as fallback if functions not available
 - Tuning allows game balance adjustments without code changes
+- 54 unit tests added covering all conversion scenarios, bidirectional consistency, rounding, formatting, and edge cases
+
+**Status:** ✅ Completed - Full CR/Level conversion system implemented with 54 passing unit tests
 
 ---
 

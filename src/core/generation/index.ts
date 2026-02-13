@@ -23,6 +23,19 @@ export { EquipmentGenerator } from './EquipmentGenerator.js';
 export { SkillAssigner } from './SkillAssigner.js';
 export { SpellManager } from './SpellManager.js';
 
+// CR/Level conversion utilities
+export {
+    crToLevel,
+    levelToCR,
+    roundLevel,
+    roundCR,
+    formatLevel,
+    formatCR,
+    createCRTuning,
+    DEFAULT_CR_TUNING
+} from './CRLevelConverter.js';
+export type { CRTuningConfig } from './CRLevelConverter.js';
+
 // Export enemy types for convenience
 export type {
     EnemyCategory,
