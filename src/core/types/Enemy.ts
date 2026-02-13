@@ -247,6 +247,19 @@ export interface EncounterGenerationOptions {
 
     /** Optional - Enable leader promotion for groups > 3 (default: true) */
     enableLeaderPromotion?: boolean;
+
+    // --- V2 options ---
+    /** Optional - Allow mixing enemy categories in 'random' mode (default: false) */
+    allowMixedCategories?: boolean;
+
+    /** Optional - Include lair actions for boss enemies (default: false) */
+    lairFeatures?: boolean;
+
+    /** Optional - Force minimum rarity for all enemies */
+    minRarity?: EnemyRarity;
+
+    /** Optional - Cap maximum rarity for all enemies */
+    maxRarity?: EnemyRarity;
 }
 
 /**
@@ -444,3 +457,7 @@ export interface LegendaryConfig {
 // Re-export legendary types from LegendaryGenerator for convenience
 // These are defined in LegendaryGenerator.ts but exposed here for type imports
 export type { LegendaryAction as LegendaryActionFromGenerator, LegendaryConfig as LegendaryConfigFromGenerator } from '../generation/LegendaryGenerator.js';
+
+// Re-export spellcasting types from SpellcastingGenerator for convenience
+// These are defined in SpellcastingGenerator.ts but exposed here for type imports
+export type { InnateSpell, SpellcastingConfig } from '../generation/SpellcastingGenerator.js';

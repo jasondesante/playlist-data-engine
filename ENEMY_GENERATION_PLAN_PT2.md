@@ -525,7 +525,7 @@ EnemyGenerator.generateEncounter(party, {
   type EnemyCategory = 'humanoid' | 'beast' | 'undead' | 'dragon' |
                        'fiend' | 'construct' | 'elemental' | 'monstrosity';
   ```
-- [ ] Update `EnemyMixMode` to include all modes:
+- [x] Update `EnemyMixMode` to include all modes:
   ```typescript
   type EnemyMixMode = 'uniform' | 'custom' | 'category' | 'random';
   ```
@@ -537,7 +537,7 @@ EnemyGenerator.generateEncounter(party, {
     lairActionHint?: string;
   }
   ```
-- [ ] Add `EquipmentConfig` interface:
+- [x] Add `EquipmentConfig` interface:
   ```typescript
   interface EquipmentConfig {
     weapon?: EquipmentTemplate;
@@ -545,7 +545,7 @@ EnemyGenerator.generateEncounter(party, {
     shield?: EquipmentTemplate;
   }
   ```
-- [ ] Add `SpellcastingConfig` interface:
+- [x] Add `SpellcastingConfig` interface:
   ```typescript
   interface SpellcastingConfig {
     cantrips: InnateSpell[];
@@ -554,6 +554,8 @@ EnemyGenerator.generateEncounter(party, {
   }
   ```
 
+**Status:** ✅ Completed - All type definitions updated. `EnemyMixMode` already includes all 4 modes. `LegendaryConfig`, `EquipmentConfig` already defined. Added re-exports for `InnateSpell` and `SpellcastingConfig` from SpellcastingGenerator.
+
 ---
 
 ## Task 16: Update EncounterGenerationOptions
@@ -561,8 +563,8 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/core/types/Enemy.ts`
 
 **Subtasks:**
-- [ ] Remove V1/V2 distinction comments
-- [ ] Add new options:
+- [x] Remove V1/V2 distinction comments
+- [x] Add new options:
   ```typescript
   interface EncounterGenerationOptions {
     // ... existing V1 options ...
@@ -572,6 +574,8 @@ EnemyGenerator.generateEncounter(party, {
     maxRarity?: EnemyRarity;         // Cap maximum rarity
   }
   ```
+
+**Status:** ✅ Completed - Added 4 new V2 options to `EncounterGenerationOptions`: `allowMixedCategories`, `lairFeatures`, `minRarity`, `maxRarity`. V1/V2 distinction comments removed.
 
 ---
 
