@@ -1086,7 +1086,7 @@ export class EnemyGenerator {
     private static selectTemplatesForMix(
         count: number,
         rng: SeededRNG,
-        enemyMix: 'uniform' | 'custom',
+        enemyMix: 'uniform' | 'custom' | 'category' | 'random',
         templates?: string[],
         category?: EnemyCategory,
         archetype?: EnemyArchetype,
@@ -1102,6 +1102,34 @@ export class EnemyGenerator {
                 if (!template) {
                     throw new Error(`Unknown template ID in custom mix: ${templateId}`);
                 }
+                result.push(template);
+            }
+        } else if (enemyMix === 'category') {
+            // Category mode: validate category is provided, then mix enemies from the same category
+            if (!category) {
+                throw new Error('category option is required when using enemyMix: "category"');
+            }
+
+            // For each enemy, randomly select from templates in the specified category
+            for (let i = 0; i < count; i++) {
+                const template = EnemyGenerator.selectTemplate(
+                    rng,
+                    category,
+                    archetype,
+                    audioProfile
+                );
+                result.push(template);
+            }
+        } else if (enemyMix === 'random') {
+            // Random mode: select from ALL available templates independently
+            // Each enemy can be any template, creating thematically disjoint encounters
+            for (let i = 0; i < count; i++) {
+                const template = EnemyGenerator.selectTemplate(
+                    rng,
+                    undefined, // No category filter - select from all
+                    archetype,
+                    audioProfile
+                );
                 result.push(template);
             }
         } else {

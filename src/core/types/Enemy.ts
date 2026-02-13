@@ -45,9 +45,9 @@ export type EnemyArchetype = 'brute' | 'archer' | 'support';
  * Enemy mix modes for encounter generation
  *
  * V1 Implementation: uniform, custom
- * V2 Future: category, random
+ * V2: category, random
  */
-export type EnemyMixMode = 'uniform' | 'custom';
+export type EnemyMixMode = 'uniform' | 'custom' | 'category' | 'random';
 
 /**
  * Difficulty settings for party-based encounters

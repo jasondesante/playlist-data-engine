@@ -97,13 +97,13 @@ V1 implementation must be complete before starting V2 work. See `ENEMY_GENERATIO
 **File:** `src/core/generation/EnemyGenerator.ts`
 
 **Subtasks:**
-- [ ] Update `EnemyMixMode` type to include `'category'`
-- [ ] Update `selectTemplatesForMix()` to handle 'category' mode:
-  - [ ] Filter templates by the provided `category` option
-  - [ ] For each enemy, randomly select from filtered templates
-  - [ ] Use weighted selection if audioProfile provided
-- [ ] Add validation: `category` option required when using 'category' mode
-- [ ] Update documentation with examples
+- [x] Update `EnemyMixMode` type to include `'category'`
+- [x] Update `selectTemplatesForMix()` to handle 'category' mode:
+  - [x] Filter templates by the provided `category` option
+  - [x] For each enemy, randomly select from filtered templates
+  - [x] Use weighted selection if audioProfile provided
+- [x] Add validation: `category` option required when using 'category' mode
+- [x] Update documentation with examples
 
 **Example:**
 ```typescript
@@ -124,12 +124,12 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/core/generation/EnemyGenerator.ts`
 
 **Subtasks:**
-- [ ] Update `EnemyMixMode` type to include `'random'`
-- [ ] Update `selectTemplatesForMix()` to handle 'random' mode:
-  - [ ] Select from ALL available templates
-  - [ ] Use weighted selection if audioProfile provided
-  - [ ] Each enemy independently randomized
-- [ ] Update documentation with examples and warnings
+- [x] Update `EnemyMixMode` type to include `'random'`
+- [x] Update `selectTemplatesForMix()` to handle 'random' mode:
+  - [x] Select from ALL available templates
+  - [x] Use weighted selection if audioProfile provided
+  - [x] Each enemy independently randomized
+- [x] Update documentation with examples and warnings
 
 **Example:**
 ```typescript
@@ -145,6 +145,8 @@ EnemyGenerator.generateEncounter(party, {
 **Notes:**
 - This can create thematically disjoint encounters - use with intent
 - Consider adding `allowMixedCategories: boolean` option for validation
+
+**Status:** ✅ Completed - Implemented alongside Task 3. Both 'category' and 'random' mix modes added in single update.
 
 ---
 

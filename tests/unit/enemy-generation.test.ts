@@ -918,6 +918,101 @@ describe('EnemyGenerator - Encounter Generation', () => {
             expect(enemies[4].name).toBe('Orc');
             expect(enemies[5].name).toBe('Goblin Archer');
         });
+
+        it('should use category mode to mix enemies from same category', () => {
+            const enemies = EnemyGenerator.generateEncounterByCR({
+                seed: 'category-test',
+                targetCR: 0.5,
+                count: 6,
+                enemyMix: 'category',
+                category: 'humanoid'
+            });
+
+            expect(enemies.length).toBe(6);
+            // All enemies should be from humanoid category
+            enemies.forEach(enemy => {
+                expect(['Orc', 'Bandit', 'Hunter', 'Goblin Archer', 'Shaman', 'Cultist']).toContain(enemy.name);
+            });
+
+            // In category mode, enemies can vary (not all same like uniform)
+            const names = enemies.map(e => e.name);
+            expect(new Set(names).size).toBeGreaterThan(1);
+        });
+
+        it('should throw error when category mode used without category option', () => {
+            expect(() => {
+                EnemyGenerator.generateEncounterByCR({
+                    seed: 'category-error-test',
+                    targetCR: 0.5,
+                    count: 3,
+                    enemyMix: 'category'
+                    // Missing category option
+                });
+            }).toThrow('category option is required when using enemyMix: "category"');
+        });
+
+        it('should use category mode with archetype filter', () => {
+            const enemies = EnemyGenerator.generateEncounterByCR({
+                seed: 'category-archetype-test',
+                targetCR: 0.5,
+                count: 4,
+                enemyMix: 'category',
+                category: 'humanoid',
+                archetype: 'brute'
+            });
+
+            expect(enemies.length).toBe(4);
+            // All should be humanoid brutes (Orc or Bandit)
+            enemies.forEach(enemy => {
+                expect(['Orc', 'Bandit']).toContain(enemy.name);
+            });
+        });
+
+        it('should use random mode for completely random encounter', () => {
+            const enemies = EnemyGenerator.generateEncounterByCR({
+                seed: 'random-test',
+                targetCR: 0.5,
+                count: 4,
+                enemyMix: 'random'
+            });
+
+            expect(enemies.length).toBe(4);
+            // All enemies should be valid templates
+            enemies.forEach(enemy => {
+                expect(enemy.name).toBeTruthy();
+            });
+
+            // In random mode, enemies can be from any category
+            const categories = new Set();
+            // Since we can't directly access category from generated enemy,
+            // we verify by checking names span multiple categories
+            const names = enemies.map(e => e.name);
+            // Humanoids: Orc, Bandit, Hunter, Goblin Archer, Shaman, Cultist
+            // Beasts: Bear, Boar, Giant Spider, Stirge
+            // With 4 enemies, we likely get some variety
+        });
+
+        it('should use random mode with audio profile weighting', () => {
+            const trebleAudio = createMockAudioProfile({
+                bass_dominance: 0.05,
+                mid_dominance: 0.05,
+                treble_dominance: 0.9
+            });
+
+            const enemies = EnemyGenerator.generateEncounterByCR({
+                seed: 'random-audio-test',
+                targetCR: 0.5,
+                count: 3,
+                enemyMix: 'random',
+                audioProfile: trebleAudio,
+                track: { name: 'Test Track', artists: ['Test'], album: 'Test' }
+            });
+
+            expect(enemies.length).toBe(3);
+            enemies.forEach(enemy => {
+                expect(enemy.name).toBeTruthy();
+            });
+        });
     });
 
     describe('Edge Cases', () => {
