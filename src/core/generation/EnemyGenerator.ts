@@ -33,7 +33,7 @@ import {
 } from '../../constants/EncounterBalance.js';
 import { EnemyEquipmentGenerator } from './EnemyEquipmentGenerator.js';
 import { SpellcastingGenerator } from './SpellcastingGenerator.js';
-import { LegendaryGenerator } from './LegendaryGenerator.js';
+import { LegendaryGenerator, type LegendaryAction, type LegendaryConfig } from './LegendaryGenerator.js';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 
 /**
@@ -648,10 +648,11 @@ export class EnemyGenerator {
 
         // Generate legendary actions for boss rarity
         let legendaryActions: Record<string, unknown>[] = [];
+        let legendaryConfig: LegendaryConfig | undefined;
         if (LegendaryGenerator.shouldHaveLegendary(rarity)) {
             // Create dedicated RNG for legendary action generation
             const legendaryRNG = EnemyGenerator.getSeededRNG(`${seed}-legendary`);
-            const legendaryConfig = LegendaryGenerator.generateWithRNG({
+            legendaryConfig = LegendaryGenerator.generateWithRNG({
                 archetype: template.archetype,
                 cr,
                 rng: legendaryRNG
@@ -824,7 +825,23 @@ export class EnemyGenerator {
 
             // Metadata
             seed,
-            generated_at: new Date().toISOString()
+            generated_at: new Date().toISOString(),
+
+            // Legendary configuration for boss enemies
+            ...(legendaryConfig ? {
+                legendary_config: {
+                    resistances_per_day: legendaryConfig.resistances,
+                    actions: legendaryConfig.actions.map(action => ({
+                        id: action.id,
+                        name: action.name,
+                        cost: action.cost,
+                        effect: action.effect,
+                        damage: action.damage,
+                        damage_type: action.damageType
+                    })),
+                    lair_action_hint: legendaryConfig.lairActionHint
+                }
+            } : {})
         };
 
         return character;

@@ -490,7 +490,7 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `src/core/generation/EnemyGenerator.ts`
 
 **Subtasks:**
-- [ ] Update boss rarity generation to include:
+- [x] Update boss rarity generation to include:
   - Legendary resistances (3/day by default)
   - Legendary actions (3 per round)
   - Lair action hint (for encounter design)
@@ -501,6 +501,8 @@ EnemyGenerator.generateEncounter(party, {
 - [ ] Add boss-specific name prefixes/suffixes (optional flavor):
   - "Grognak the Destroyer"
   - "Vexis, Lord of Bones"
+
+**Status:** ✅ Partially Completed - Legendary config (resistances, actions, lair hint) is now stored in `legendary_config` field on boss character sheets. Legendary actions were already being added to class_features. Added 7 passing unit tests in `tests/unit/boss-legendary-config.test.ts`.
 
 ---
 

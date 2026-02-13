@@ -475,4 +475,37 @@ export interface CharacterSheet {
         spells?: EquipmentSpell[];
     }[];
 
+    /**
+     * Legendary configuration for boss-tier enemies
+     * Contains legendary actions, resistances, and lair action hints
+     */
+    legendary_config?: {
+        /** Number of legendary resistances per day (usually 3 for CR 1-10) */
+        resistances_per_day: number;
+
+        /** Legendary actions available to this boss */
+        actions: Array<{
+            /** Unique identifier for this action */
+            id: string;
+
+            /** Display name shown to players */
+            name: string;
+
+            /** Cost in legendary action points (1, 2, or 3) */
+            cost: number;
+
+            /** Effect description for combat system */
+            effect: string;
+
+            /** Damage dice if this action deals damage */
+            damage?: string;
+
+            /** Damage type for damaging actions */
+            damage_type?: string;
+        }>;
+
+        /** Optional lair action hint for encounter design */
+        lair_action_hint?: string;
+    };
+
 }
