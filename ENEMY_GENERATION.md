@@ -335,11 +335,44 @@ const enemies = EnemyGenerator.generateEncounter(party, {
 // Templates cycle if count exceeds array length
 ```
 
-### Future V2 Modes
+### Category Mode
 
-Planned for V2:
-- **`'category'`**: Random mix from templates within the same category
-- **`'random'`**: Completely random mix from all available templates
+Random mix from templates within the same category.
+
+```typescript
+const enemies = EnemyGenerator.generateEncounter(party, {
+    seed: 'undead-crypt',
+    count: 6,
+    category: 'undead',
+    enemyMix: 'category'
+});
+
+// Result: Random mix of undead enemies (Skeleton, Zombie, Wight, Ghost)
+// Could produce: 2 Skeletons, 2 Zombies, 1 Wight, 1 Ghost
+```
+
+**Rules:**
+- All enemies come from the specified category
+- Each enemy is independently randomized from templates in that category
+- Audio weighting applies if `audioProfile` provided
+- Requires `category` option to be specified
+
+### Random Mode
+
+Completely random mix from all available templates.
+
+```typescript
+const enemies = EnemyGenerator.generateEncounter(party, {
+    seed: 'chaos-encounter',
+    count: 4,
+    enemyMix: 'random'
+});
+
+// Result: Completely random enemies
+// Could produce: 1 Orc, 1 Fire Elemental, 1 Imp, 1 Basilisk
+```
+
+**Warning:** This can create thematically disjoint encounters. Use with intent.
 
 ---
 
@@ -361,7 +394,7 @@ Templates are the foundation of enemy generation. Each template defines:
 | `audioPreference` | Weights for audio-influenced selection |
 | `resistances` | Damage resistances/immunities for Elite+ tier |
 
-### Available Templates (V1)
+### Available Templates (V1 + V2)
 
 #### Humanoid - Brute
 
@@ -397,6 +430,122 @@ Templates are the foundation of enemy generation. Each template defines:
 |-----|--------|------------------|-------------------|
 | `giant-spider` | Giant Spider | Web Spray (ranged restrain) | Treble-heavy |
 | `stirge` | Stirge | Blood Drain (ranged life steal) | Treble-heavy |
+
+#### Undead - Archer
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `skeleton` | Skeleton | Bone Shot (piercing damage bonus) | Treble |
+| `ghost` | Ghost | Horrifying Visage (fear debuff) | Mid |
+
+#### Undead - Brute
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `zombie` | Zombie | Undead Grip (grapple + bite) | Bass |
+| `wight` | Wight | Life Drain (damage + self heal) | Mid |
+
+**Undead Traits:** Necrotic resistance, poison immunity
+
+#### Fiend - Archer
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `imp` | Imp | Sting (poison damage) | Treble |
+
+#### Fiend - Brute
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `lemure` | Lemure | Hellish Resilience (damage reduction) | Bass |
+| `demon` | Demon | Chaos Claw (random damage type) | Bass |
+
+#### Fiend - Support
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `quasit` | Quasit | Fear Aura (debuff) | Mid |
+
+**Fiend Traits:** Fire resistance, cold resistance, poison immunity
+
+#### Elemental - Brute
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `fire-elemental` | Fire Elemental | Burning Touch (fire + ongoing) | Bass |
+| `earth-elemental` | Earth Elemental | Earth Slam (AoE + prone) | Bass |
+
+#### Elemental - Archer
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `air-elemental` | Air Elemental | Wind Blast (ranged push) | Treble |
+
+#### Elemental - Support
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `water-elemental` | Water Elemental | Whirlpool (restrain + pull) | Mid |
+
+**Elemental Traits:** Fire (fire immunity), Water (cold immunity, fire/necrotic resistance), Air (lightning immunity, thunder resistance), Earth (poison immunity, necrotic resistance)
+
+#### Construct - Brute
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `animated-armor` | Animated Armor | Slam (force damage) | Bass |
+| `golem` | Golem | Immutable Form (status immunity) | Bass |
+
+#### Construct - Archer
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `flying-sword` | Flying Sword | Diving Strike (bonus on charge) | Treble |
+
+#### Construct - Support
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `shield-guardian` | Shield Guardian | Protection Aura (ally AC bonus) | Mid |
+
+**Construct Traits:** Poison immunity, psychic immunity, no healing
+
+#### Dragon - Brute
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `young-red-dragon` | Young Red Dragon | Fire Breath (AoE fire) | Bass |
+| `dragon-wyrmling` | Dragon Wyrmling | Bite + Claw (multiattack) | Mid |
+| `drake` | Drake | Tail Swipe (knockback) | Bass |
+
+#### Dragon - Archer
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `young-blue-dragon` | Young Blue Dragon | Lightning Breath (line lightning) | Treble |
+
+**Dragon Traits:** Young Red (fire immunity), Young Blue (lightning immunity, thunder resistance), Wyrmling (acid resistance), Drake (cold resistance)
+
+#### Monstrosity - Brute
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `owlbear` | Owlbear | Multiattack (beak + claws) | Bass |
+| `mimic` | Mimic | Adhesive (grapple on hit) | Mid |
+
+#### Monstrosity - Archer
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `griffin` | Griffin | Dive Attack (bonus from flight) | Treble |
+
+#### Monstrosity - Support
+
+| ID | Name | Signature Ability | Audio Preference |
+|-----|--------|------------------|-------------------|
+| `basilisk` | Basilisk | Pertrifying Gaze (save or stunned) | Mid |
+
+**Monstrosity Traits:** Varied resistances: mimic (acid), basilisk (poison), owlbear/griffin (none)
 
 ### Get Template by ID
 
@@ -437,12 +586,231 @@ const score =
 
 Higher scores = more likely to be selected.
 
-### 2. Stat Distribution (V2 - Planned)
+### 2. Stat Distribution (V2)
 
-V2 will extend audio influence to affect individual ability scores:
-- **Bass-heavy** → Higher STR, CON
-- **Treble-heavy** → Higher DEX
-- **Mid-heavy** → Balanced stats
+Audio profiles now also influence individual ability scores:
+
+| Audio Characteristic | Stat Bonuses |
+|---------------------|---------------|
+| High bass dominance | +1 to STR and CON |
+| High treble dominance | +1 to DEX |
+| High mid dominance | +1 to WIS and CHA |
+| Balanced (all similar) | +1 to all stats (smaller bonus) |
+
+**Maximum bonus:** +2 to any single stat from audio influence
+
+This is additive to rarity scaling, not multiplicative.
+
+---
+
+## V2 Features
+
+### Equipment Generation (V2)
+
+Enemies are now equipped with actual weapons and armor based on their archetype and rarity.
+
+**EquipmentGenerator** provides:
+- Weapons selected by archetype (brute/archer/support)
+- Armor scaled by rarity (common→boss gets better gear)
+- Shields for applicable archetypes (archers don't get shields)
+
+#### Equipment by Archetype
+
+| Archetype | Weapons | Armor |
+|-----------|---------|-------|
+| **Brute** | Greataxe, Longsword, Handaxe, Mace | Scale Mail, Chain Mail, Plate Armor (boss only) |
+| **Archer** | Longbow, Light Crossbow, Shortsword, Dagger | Leather Armor (light for mobility) |
+| **Support** | Quarterstaff, Mace, Dagger | Scale Mail, Chain Mail, Shield available |
+
+#### Shield Probability by Rarity
+
+| Rarity | Shield Chance |
+|--------|---------------|
+| Common | 25% |
+| Uncommon | 50% |
+| Elite | 75% |
+| Boss | 100% |
+
+**Example:**
+```typescript
+// Generate an elite brute with equipment
+const enemy = EnemyGenerator.generate({
+    seed: 'elite-orc-1',
+    templateId: 'orc',
+    rarity: 'elite'
+});
+
+// Equipment is stored on the enemy
+console.log(enemy.equipment_config?.weapon?.name); // 'Greataxe'
+console.log(enemy.equipment_config?.armor?.name);   // 'Chain Mail'
+console.log(enemy.equipment_config?.shield?.name);  // 'Shield' (75% chance)
+```
+
+---
+
+### Spellcasting System (V2)
+
+Some enemies gain innate spellcasting abilities based on archetype and rarity.
+
+#### Spell Availability
+
+| Archetype | Common | Uncommon | Elite | Boss |
+|-----------|--------|----------|-------|------|
+| **Support** | ✅ Always | ✅ Always | ✅ Always | ✅ Always |
+| **Archer** | ❌ No | ❌ No | ✅ Elite+ | ✅ Elite+ |
+| **Brute** | ❌ No | ❌ No | ✅ Elite+ | ✅ Elite+ |
+
+#### Spell Slots by CR
+
+| CR | Level 1 | Level 2 | Level 3 | Level 4 |
+|----|----------|----------|----------|----------|
+| 0-0.5 | 0 | 0 | 0 | 0 |
+| 1 | 3 | 0 | 0 | 0 |
+| 2 | 4 | 0 | 0 | 0 |
+| 3 | 4 | 2 | 0 | 0 |
+| 4 | 4 | 3 | 0 | 0 |
+| 5 | 4 | 3 | 2 | 0 |
+| 6-7 | 4 | 3 | 3 | 0 |
+| 8+ | 4 | 3 | 3 | 1-2 |
+
+#### Spell List Examples
+
+**Support Spells:**
+- Cantrips: Sacred Flame, Guidance, Resistance
+- Level 1: Bless, Bane, Cure Wounds, Healing Word, Command
+- Level 2: Aid, Lesser Restoration, Spiritual Weapon, Shatter
+- Level 3: Spirit Guardians, Revivify, Mass Healing Word
+
+**Archer Spells:**
+- Cantrips: Ray of Frost, Shocking Grasp, True Strike
+- Level 1: Misty Step, Hold Person, Ray of Sickness, Thunderwave
+- Level 2: Web, Invisibility, Melf's Acid Arrow, Scorching Ray
+- Level 3: Fly, Lightning Bolt, Gaseous Form
+
+**Brute Spells:**
+- Cantrips: Fire Bolt, Shillelagh, Thorn Whip
+- Level 1: Burning Hands, Divine Favor, Magic Stone, Zephyr Strike
+- Level 2: Shatter, Branding Smite, Spiritual Weapon, Flame Blade
+- Level 3: Call Lightning, Elemental Weapon, Blur
+
+**Example:**
+```typescript
+// Generate an elite shaman with spellcasting
+const enemy = EnemyGenerator.generate({
+    seed: 'elite-shaman',
+    templateId: 'shaman',
+    rarity: 'elite'
+});
+
+// Spells are converted to Features with isSpell: true
+console.log(enemy.class_features.filter(f => f.isSpell)); // 2 cantrips + 3 spells
+```
+
+---
+
+### Legendary System (V2)
+
+Boss-tier enemies gain legendary actions and resistances.
+
+#### Legendary Actions
+
+Bosses receive **3 legendary actions** selected from their archetype pool:
+
+| Archetype | Sample Actions |
+|-----------|----------------|
+| **Brute** | Tail Attack (1), Devour (3), Trample (2), Charge (1) |
+| **Archer** | Snipe (1), Volley Shot (2), Shadow Step (2), Multi-Shot (3) |
+| **Support** | Rally (1), Frightful Presence (1), Healing Aura (2), Command Ally (2) |
+| **Universal** | Teleport (2), Detect (1) |
+
+*Costs are in legendary action points (typically 3 per round)*
+
+#### Legendary Resistances
+
+Bosses gain legendary resistances per day based on CR:
+
+| CR Range | Resistances/Day |
+|----------|-----------------|
+| CR 1-4 | 3 |
+| CR 5-10 | 3 |
+| CR 11-15 | 4 |
+| CR 16-20 | 5 |
+| CR 21+ | 6 |
+
+#### Boss Enhancements
+
+Boss enemies also receive:
+- **Enhanced Signature Ability:** 2x damage dice (d12 → 2d12)
+- **Ultimate Ability:** One special ability usable once per encounter
+- **Epic Name:** Title added to name (e.g., "Grognak the Destroyer")
+
+**Example:**
+```typescript
+// Generate a boss with legendary system
+const enemy = EnemyGenerator.generate({
+    seed: 'boss-dragon',
+    templateId: 'young-red-dragon',
+    rarity: 'boss'
+});
+
+console.log(enemy.legendary_config?.resistances); // 3 per day
+console.log(enemy.legendary_config?.actions);    // 3 legendary actions
+console.log(enemy.name.includes('the'));      // true (epic title added)
+```
+
+---
+
+### CR/Level Conversion (V2)
+
+Dedicated functions for converting between Challenge Rating and character level.
+
+#### Conversion Functions
+
+```typescript
+import { crToLevel, levelToCR, roundLevel, roundCR } from 'playlist-data-engine';
+
+// CR to Level
+crToLevel(1);     // 1
+crToLevel(0.25);   // 0.25
+crToLevel(5);     // 5
+
+// Level to CR (inverse)
+levelToCR(5);     // 5
+
+// Round to valid values
+roundLevel(0.7);   // 1 (nearest integer)
+roundCR(0.3);      // 0.25 (nearest CR step)
+
+// Format for display
+formatLevel(0.25);  // "0 (1/4)"
+formatCR(0.25);     // "1/4"
+```
+
+#### Tuning Configuration
+
+Customize conversion with tuning parameters:
+
+```typescript
+import { createCRTuning } from 'playlist-data-engine';
+
+// Harder enemies: CR converts to higher levels
+const hardMode = createCRTuning({
+    baseMultiplier: 1.2  // CR 5 = Level 6
+});
+
+// Softer enemies: CR converts to lower levels
+const easyMode = createCRTuning({
+    baseMultiplier: 0.8  // CR 5 = Level 4
+});
+
+// Custom curve for specific breakpoints
+const customCurve = createCRTuning({
+    customCurve: new Map([
+        [5, 7],  // CR 5 = Level 7
+        [10, 15] // CR 10 = Level 15
+    ])
+});
+```
 
 ---
 
@@ -607,11 +975,16 @@ interface EncounterGenerationOptions {
     category?: EnemyCategory;               // Optional
     archetype?: EnemyArchetype;             // Optional
     templateId?: string;                  // Optional
-    enemyMix?: 'uniform' | 'custom';    // Optional - default 'uniform'
+    enemyMix?: 'uniform' | 'custom' | 'category' | 'random';  // V2: added category, random
     templates?: string[];                 // For custom mix
     audioProfile?: AudioProfile;            // Optional
     track?: PlaylistTrack;                  // Required if audioProfile
     enableLeaderPromotion?: boolean;       // Optional - default true
+    // V2 additions:
+    allowMixedCategories?: boolean;         // For 'random' mode validation
+    lairFeatures?: boolean;                // Include lair actions for bosses
+    minRarity?: EnemyRarity;               // Force minimum rarity
+    maxRarity?: EnemyRarity;               // Cap maximum rarity
 }
 ```
 
@@ -627,12 +1000,12 @@ type EnemyRarity = 'common' | 'uncommon' | 'elite' | 'boss';
 type EnemyCategory =
     | 'humanoid'
     | 'beast'
-    | 'undead'       // V2
-    | 'dragon'       // V2
-    | 'fiend'        // V2
-    | 'construct'     // V2
-    | 'elemental'     // V2
-    | 'monstrosity'; // V2
+    | 'undead'
+    | 'dragon'
+    | 'fiend'
+    | 'construct'
+    | 'elemental'
+    | 'monstrosity';
 ```
 
 #### EnemyArchetype

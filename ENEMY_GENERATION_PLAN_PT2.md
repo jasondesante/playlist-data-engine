@@ -584,13 +584,24 @@ EnemyGenerator.generateEncounter(party, {
 **File:** `ENEMY_GENERATION.md`
 
 **Subtasks:**
-- [ ] Add V2 features section
-- [ ] Document all new enemy categories with examples
-- [ ] Document legendary system with examples
-- [ ] Document equipment generation
-- [ ] Document spellcasting system
-- [ ] Update API reference with all new options
-- [ ] Add "Migration from V1" section if needed
+- [x] Add V2 features section
+- [x] Document all new enemy categories with examples
+- [x] Document legendary system with examples
+- [x] Document equipment generation
+- [x] Document spellcasting system
+- [x] Update API reference with all new options
+- [x] Add "Migration from V1" section if needed
+
+**Status:** ✅ Completed - Added comprehensive V2 features documentation including:
+  - V2 Features section with Equipment Generation, Spellcasting System, Legendary System, and CR/Level Conversion
+  - All new enemy categories (Undead, Fiend, Elemental, Construct, Dragon, Monstrosity) documented with full template tables
+  - Legendary system with examples (legendary actions, resistances, boss enhancements)
+  - Equipment generation by archetype with shield probability table
+  - Spellcasting system with availability table and spell slot progression
+  - CR/Level conversion functions with tuning configuration examples
+  - Updated API reference with V2 options (category, random enemyMix modes, minRarity, maxRarity, allowMixedCategories, lairFeatures)
+  - Audio stat influence documentation updated to reflect V2 implementation
+  - EnemyCategory type updated to remove "(future V2)" notes
 
 ---
 
