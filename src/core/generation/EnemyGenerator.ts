@@ -31,6 +31,8 @@ import {
     getEncounterMultiplier,
     getXPBudgetForParty
 } from '../../constants/EncounterBalance.js';
+import { EnemyEquipmentGenerator } from './EnemyEquipmentGenerator.js';
+import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
 
 /**
  * EnemyGenerator - Static class for enemy generation
@@ -611,9 +613,6 @@ export class EnemyGenerator {
             maxHp = Math.round(maxHp * difficultyMultiplier);
         }
 
-        // AC = base AC + DEX modifier
-        const armorClass = template.baseAC + abilityModifiers.DEX;
-
         // Calculate level from CR (simplified formula)
         // For V1, we use a simple level 1-3 mapping based on rarity
         const level = EnemyGenerator.getLevelForRarity(rarity);
@@ -628,17 +627,74 @@ export class EnemyGenerator {
         // when CharacterSheet type is extended to support them
         // Currently tracked via template.resistances but not applied to character sheet
 
-        // Create natural weapon attack based on signature ability
-        const naturalWeapon = {
-            name: template.signatureAbility.name,
-            damage: `${EnemyGenerator.getDamageDieForRarity(rarity)} + ${EnemyGenerator.getAbilityModifierForRarity(rarity)}`,
-            damage_dice: EnemyGenerator.getDamageDieForRarity(rarity),
-            damage_type: template.signatureAbility.damageType,
-            type: template.signatureAbility.attackType,
-            range: template.signatureAbility.range,
-            properties: template.signatureAbility.properties || [],
-            equipped: true
-        };
+        // Generate equipment for this enemy
+        const equipmentConfig = EnemyEquipmentGenerator.generate({
+            archetype: template.archetype,
+            rarity,
+            seed: `${seed}-equipment`
+        });
+
+        // Build weapon array from equipment config
+        const weapons: Array<{ name: string; damage: string; damage_dice: string; damage_type: string; type: string; range?: number; properties?: string[]; equipped: boolean }> = [];
+
+        if (equipmentConfig.weapon) {
+            const weaponName = EnemyEquipmentGenerator.getEquipmentName(equipmentConfig.weapon.id);
+            const weaponData = DEFAULT_EQUIPMENT[weaponName];
+
+            if (weaponData) {
+                // Use signature ability damage die (scales by rarity: d6->d8->d10->d12)
+                const signatureDamageDie = EnemyGenerator.getDamageDieForRarity(rarity);
+                weapons.push({
+                    name: weaponName,
+                    damage: `${signatureDamageDie} + ${EnemyGenerator.getAbilityModifierForRarity(rarity)}`,
+                    damage_dice: signatureDamageDie,
+                    damage_type: weaponData.damage?.damageType || template.signatureAbility.damageType,
+                    type: template.signatureAbility.attackType,
+                    range: template.signatureAbility.range,
+                    properties: equipmentConfig.weapon.properties || [],
+                    equipped: true
+                });
+            }
+        }
+
+        // If no weapon generated, use signature ability as natural weapon
+        if (weapons.length === 0) {
+            weapons.push({
+                name: template.signatureAbility.name,
+                damage: `${EnemyGenerator.getDamageDieForRarity(rarity)} + ${EnemyGenerator.getAbilityModifierForRarity(rarity)}`,
+                damage_dice: EnemyGenerator.getDamageDieForRarity(rarity),
+                damage_type: template.signatureAbility.damageType,
+                type: template.signatureAbility.attackType,
+                range: template.signatureAbility.range,
+                properties: template.signatureAbility.properties || [],
+                equipped: true
+            });
+        }
+
+        // Build armor array from equipment config
+        const armor: string[] = [];
+        let acModifier = 0;
+
+        if (equipmentConfig.armor) {
+            const armorName = EnemyEquipmentGenerator.getEquipmentName(equipmentConfig.armor.id);
+            armor.push(armorName);
+            // Use armor's AC bonus instead of base template AC
+            if (equipmentConfig.armor.acBonus) {
+                acModifier = equipmentConfig.armor.acBonus - template.baseAC;
+            }
+        }
+
+        // Shield bonus
+        if (equipmentConfig.shield) {
+            const shieldName = EnemyEquipmentGenerator.getEquipmentName(equipmentConfig.shield.id);
+            armor.push(shieldName);
+            if (equipmentConfig.shield.acBonus) {
+                acModifier += equipmentConfig.shield.acBonus;
+            }
+        }
+
+        // Recalculate AC with equipment modifiers
+        const armorClass = template.baseAC + abilityModifiers.DEX + acModifier;
 
         // Build the character sheet
         const character: CharacterSheet = {
@@ -686,11 +742,12 @@ export class EnemyGenerator {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             class_features: abilities.map((a: any) => (a.id || a.name || `${a}`)),
 
-            // No equipment - enemies use natural weapons
+            // Equipment - enemies now use generated equipment
             equipment: {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                weapons: [naturalWeapon as any],
-                armor: [],
+                weapons: weapons as any,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                armor: armor as any,
                 items: [],
                 totalWeight: 0,
                 equippedWeight: 0

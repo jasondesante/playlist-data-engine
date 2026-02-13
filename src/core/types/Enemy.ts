@@ -334,6 +334,54 @@ export function isValidEnemyArchetype(value: unknown): value is EnemyArchetype {
 }
 
 /**
+ * Equipment template for enemy generation
+ *
+ * Defines equipment options for enemies based on archetype and rarity.
+ * Used by EquipmentGenerator to select appropriate weapons/armor for enemies.
+ */
+export interface EquipmentTemplate {
+    /** Unique identifier for this equipment template */
+    id: string;
+
+    /** Display name of the equipment */
+    name: string;
+
+    /** Equipment type: weapon, armor, or shield */
+    type: 'weapon' | 'armor' | 'shield';
+
+    /** Archetypes that can use this equipment */
+    archetypes: EnemyArchetype[];
+
+    /** Rarity tiers that can spawn this equipment */
+    rarities: EnemyRarity[];
+
+    /** Damage dice (for weapons) */
+    damage?: string;
+
+    /** AC bonus (for armor/shields) */
+    acBonus?: number;
+
+    /** Weapon properties (e.g., ['reach', 'two-handed']) */
+    properties?: string[];
+}
+
+/**
+ * Equipment configuration for generated enemies
+ *
+ * Contains the equipment assigned to an enemy during generation.
+ */
+export interface EquipmentConfig {
+    /** Primary weapon (if any) */
+    weapon?: EquipmentTemplate;
+
+    /** Armor (if any) */
+    armor?: EquipmentTemplate;
+
+    /** Shield (if any) */
+    shield?: EquipmentTemplate;
+}
+
+/**
  * Type guard to check if a value is a valid EncounterDifficulty
  */
 export function isValidEncounterDifficulty(value: unknown): value is EncounterDifficulty {

@@ -52,11 +52,11 @@ V1 implementation must be complete before starting V2 work. See `ENEMY_GENERATIO
 
 ## Task 2: Equipment Generation System
 
-**File:** `src/core/generation/EquipmentGenerator.ts` (new file)
+**File:** `src/core/generation/EnemyEquipmentGenerator.ts` (new file)
 
 **Subtasks:**
-- [ ] Create `EquipmentGenerator` class with static methods
-- [ ] Define `EquipmentTemplate` interface:
+- [x] Create `EnemyEquipmentGenerator` class with static methods
+- [x] Define `EquipmentTemplate` interface:
   ```typescript
   interface EquipmentTemplate {
     id: string;
@@ -69,20 +69,26 @@ V1 implementation must be complete before starting V2 work. See `ENEMY_GENERATIO
     properties?: string[]; // e.g., ["reach", "two-handed"]
   }
   ```
-- [ ] Create equipment templates by archetype:
-  - **Brute**: Greatsword, Greataxe, Heavy Armor, Shield
-  - **Archer**: Longbow, Shortbow, Light Armor, Dagger (backup)
-  - **Support**: Quarterstaff, Light Armor, Shield
-- [ ] Implement `generateEquipment()`:
+- [x] Create equipment templates by archetype:
+  - **Brute**: Greataxe, Longsword, Handaxe, Mace
+  - **Archer**: Longbow, Light Crossbow, Shortsword, Dagger (backup)
+  - **Support**: Quarterstaff, Mace, Dagger
+- [x] Implement `generateEquipment()`:
   - Select appropriate weapon based on archetype
   - Select armor based on archetype + rarity
   - Higher rarity = better equipment (elite gets better stuff than common)
-- [ ] Update `createEnemy()` in EnemyGenerator to use EquipmentGenerator
-- [ ] Remove "natural weapon" fallback for equipped enemies
+- [x] Update `generate()` in EnemyGenerator to use EnemyEquipmentGenerator
+- [x] Equipment affects combat stats (AC from armor, signature damage dice for attacks)
 
 **Notes:**
-- Reuse existing item system if available (ItemTemplates, etc.)
-- Equipment should affect combat stats (AC, damage dice)
+- Created `src/constants/EnemyEquipment.ts` with equipment templates organized by archetype and rarity
+- Enemies now receive actual equipment names (Greataxe, Chain Mail, etc.) from DEFAULT_EQUIPMENT
+- Signature ability damage dice (d6/d8/d10/d12) are used for weapon damage, scaled by rarity
+- Shield availability: starts at uncommon rarity, with probability increasing by tier (25% common, 50% uncommon, 75% elite, 100% boss)
+- Archers do not receive shields (two-handed weapons)
+- Plate armor only available to boss-tier brutes
+
+**Status:** ✅ Completed - Equipment generation fully implemented with 31 passing unit tests
 
 ---
 
