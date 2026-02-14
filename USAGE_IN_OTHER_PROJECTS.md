@@ -132,11 +132,11 @@ const timelineCount = await analyzer.analyzeTimeline(audioUrl, {
 // Access timeline data
 timelineCount.forEach(event => {
   console.log(`[${event.timestamp}s]`);
-  console.log(`  Energy: ${event.amplitude}`); // RMS amplitude for segment
+  console.log(`  Energy: ${event.rms_energy} (RMS), Peak: ${event.peak}`);
+  console.log(`  Dynamic Range: ${event.dynamic_range}`);
   console.log(`  Frequency: B:${event.bass} M:${event.mid} T:${event.treble}`);
   console.log(`  Spectral Centroid: ${event.spectral_centroid}`);
   console.log(`  Zero Crossing Rate: ${event.zero_crossing_rate}`);
-  console.log(`  Peak: ${event.peak}`);
 });
 ```
 

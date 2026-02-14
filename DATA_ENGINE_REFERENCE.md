@@ -222,11 +222,13 @@ Data point for a specific segment of audio.
 | `bass` | number | Bass dominance for this segment (0.0 - 1.0) |
 | `mid` | number | Mid dominance for this segment (0.0 - 1.0) |
 | `treble` | number | Treble dominance for this segment (0.0 - 1.0) |
-| `amplitude` | number | RMS amplitude (energy) for this segment |
+| `amplitude` | number | RMS amplitude for this segment (backward compatibility) |
+| `rms_energy` | number | RMS energy for this segment (same as amplitude, for clarity) |
 | `peak` | number | Maximum peak amplitude for this segment |
-| `spectral_centroid?` | number | Advanced metric: spectral centroid |
-| `spectral_rolloff?` | number | Advanced metric: spectral rolloff |
-| `zero_crossing_rate?` | number | Advanced metric: zero crossing rate |
+| `dynamic_range` | number | Dynamic range within this segment (peak - RMS) |
+| `spectral_centroid` | number | Frequency brightness measure (always populated) |
+| `spectral_rolloff` | number | Frequency below which 85% of energy is contained (always populated) |
+| `zero_crossing_rate` | number | Measure of noisiness/percussiveness (always populated) |
 
 
 

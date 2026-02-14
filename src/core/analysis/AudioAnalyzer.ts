@@ -229,10 +229,13 @@ export class AudioAnalyzer {
 
             const bands = SpectrumScanner.separateFrequencyBands(frequencyData, sampleRate);
 
-            // Calculate dominance (normalized 0-1)
-            const bassDom = SpectrumScanner.calculateDominance(bands.bass, 380) * this.options.bassBoost!;
-            const midDom = SpectrumScanner.calculateDominance(bands.mid, 3600) * this.options.midBoost!;
-            const trebleDom = SpectrumScanner.calculateDominance(bands.treble, 10000) * this.options.trebleBoost!;
+            // Calculate dominance using per-bin average (no bandwidth normalization).
+            // FFT bins are evenly spaced in Hz, so per-bin average already accounts for
+            // different band widths. Dividing by bandwidth would double-normalize and
+            // massively inflate bass (smallest bandwidth → largest value).
+            const bassDom = SpectrumScanner.calculateDominance(bands.bass) * this.options.bassBoost!;
+            const midDom = SpectrumScanner.calculateDominance(bands.mid) * this.options.midBoost!;
+            const trebleDom = SpectrumScanner.calculateDominance(bands.treble) * this.options.trebleBoost!;
             const total = (bassDom + midDom + trebleDom) || 1;
 
             // Calculate amplitude metrics for this segment
@@ -252,7 +255,9 @@ export class AudioAnalyzer {
                 mid: midDom / total,
                 treble: trebleDom / total,
                 amplitude: rms,
+                rms_energy: rms,
                 peak: peak,
+                dynamic_range: peak - rms,
                 spectral_centroid: this.calculateSpectralCentroid(allFrequencies),
                 spectral_rolloff: this.calculateSpectralRolloff(allFrequencies),
                 zero_crossing_rate: this.calculateZeroCrossingRate(audioBuffer, startSample, endSample),

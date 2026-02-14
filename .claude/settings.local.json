@@ -15,7 +15,8 @@
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(node:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "mcp__RepoPrompt__context_builder"
     ],
     "deny": [],
     "ask": []

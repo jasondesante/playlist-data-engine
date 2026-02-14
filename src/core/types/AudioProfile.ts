@@ -54,11 +54,13 @@ export interface AudioTimelineEvent {
     bass: number;
     mid: number;
     treble: number;
-    amplitude: number; // RMS for this segment.
-    peak: number;      // Peak amplitude for this segment.
-    spectral_centroid?: number;
-    spectral_rolloff?: number;
-    zero_crossing_rate?: number;
+    amplitude: number;           // RMS for this segment (kept for backward compatibility)
+    rms_energy: number;          // RMS energy for this segment (same as amplitude, for clarity)
+    peak: number;                // Peak amplitude for this segment.
+    dynamic_range: number;       // Dynamic range within this segment (peak - RMS).
+    spectral_centroid: number;   // Frequency brightness measure (always populated)
+    spectral_rolloff: number;    // Frequency below which 85% of energy is contained (always populated)
+    zero_crossing_rate: number;  // Measure of noisiness/percussiveness (always populated)
 }
 
 export interface ColorPalette {
