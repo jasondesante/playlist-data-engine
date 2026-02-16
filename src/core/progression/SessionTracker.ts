@@ -267,6 +267,33 @@ export class SessionTracker {
     }
 
     /**
+     * Get total XP earned for a specific track.
+     * Used by the prestige system to calculate track-level XP.
+     * @param trackUuid - The track UUID
+     * @returns Total XP earned from sessions for this track
+     */
+    getTrackXPTotal(trackUuid: string): number {
+        return this.getSessionsForTrack(trackUuid).reduce(
+            (total, session) => total + session.total_xp_earned,
+            0
+        );
+    }
+
+    /**
+     * Clear all sessions for a specific track.
+     * Used by the prestige system to reset track progress after prestiging.
+     * @param trackUuid - The track UUID to clear sessions for
+     * @returns Number of sessions that were removed
+     */
+    clearTrackSessions(trackUuid: string): number {
+        const initialLength = this.sessionHistory.length;
+        this.sessionHistory = this.sessionHistory.filter(
+            (session) => session.track_uuid !== trackUuid
+        );
+        return initialLength - this.sessionHistory.length;
+    }
+
+    /**
      * Clear all session history
      * Useful for testing or resetting
      */

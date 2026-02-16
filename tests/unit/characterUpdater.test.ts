@@ -106,9 +106,19 @@ describe('CharacterUpdater', () => {
             expect(result.character.level).toBe(3);
         });
 
-        it('should award mastery bonus', () => {
-            // Previous count 9, current will be 10 -> Mastery!
-            const result = updater.updateCharacterFromSession(mockCharacter, mockSession, mockTrack, MASTERY_THRESHOLD - 1);
+        it('should award mastery bonus when BOTH thresholds are crossed', () => {
+            // Previous: 9 plays, 900 XP (both just under threshold)
+            // Current: 10 plays, 900 + 180 = 1080 XP (both thresholds crossed)
+            const result = updater.updateCharacterFromSession(
+                mockCharacter,
+                mockSession,
+                mockTrack,
+                {
+                    previousListenCount: MASTERY_THRESHOLD - 1, // 9 plays
+                    previousXP: 900, // Just under 1000 XP threshold
+                    prestigeLevel: 0
+                }
+            );
 
             expect(result.masteredTrack).toBe(true);
             expect(result.masteryBonusXP).toBe(MASTERY_BONUS_XP);
@@ -116,17 +126,52 @@ describe('CharacterUpdater', () => {
             expect(result.xpEarned).toBeGreaterThan(mockSession.duration_seconds + MASTERY_BONUS_XP);
         });
 
-        it('should NOT award mastery bonus if not crossing threshold', () => {
-            // Previous count 5, current 6
-            const result = updater.updateCharacterFromSession(mockCharacter, mockSession, mockTrack, 5);
+        it('should NOT award mastery if only plays threshold is crossed (need both)', () => {
+            // Previous: 9 plays, 500 XP (plays threshold will be crossed, but not XP)
+            const result = updater.updateCharacterFromSession(
+                mockCharacter,
+                mockSession,
+                mockTrack,
+                {
+                    previousListenCount: 9,
+                    previousXP: 500, // Not enough - with 180 XP will only be 680
+                    prestigeLevel: 0
+                }
+            );
+
+            expect(result.masteredTrack).toBe(false);
+            expect(result.masteryBonusXP).toBe(0);
+        });
+
+        it('should NOT award mastery if only XP threshold is crossed (need both)', () => {
+            // Previous: 5 plays, 950 XP (XP threshold will be crossed, but not plays)
+            const result = updater.updateCharacterFromSession(
+                mockCharacter,
+                mockSession,
+                mockTrack,
+                {
+                    previousListenCount: 5, // Not enough - will be 6
+                    previousXP: 950, // With 180 XP will cross threshold
+                    prestigeLevel: 0
+                }
+            );
 
             expect(result.masteredTrack).toBe(false);
             expect(result.masteryBonusXP).toBe(0);
         });
 
         it('should NOT award mastery bonus if already mastered', () => {
-            // Previous count 10, current 11
-            const result = updater.updateCharacterFromSession(mockCharacter, mockSession, mockTrack, MASTERY_THRESHOLD);
+            // Previous: 10 plays, 1000 XP (already mastered)
+            const result = updater.updateCharacterFromSession(
+                mockCharacter,
+                mockSession,
+                mockTrack,
+                {
+                    previousListenCount: MASTERY_THRESHOLD, // 10 plays - already mastered
+                    previousXP: 1000, // Already has enough XP
+                    prestigeLevel: 0
+                }
+            );
 
             expect(result.masteredTrack).toBe(false);
             expect(result.masteryBonusXP).toBe(0);

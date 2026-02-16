@@ -11,7 +11,7 @@ import { CharacterGenerator } from '../../src/core/generation/CharacterGenerator
 import { XPCalculator } from '../../src/core/progression/XPCalculator';
 import { SessionTracker } from '../../src/core/progression/SessionTracker';
 import { LevelUpProcessor } from '../../src/core/progression/LevelUpProcessor';
-import { MasterySystem } from '../../src/core/progression/MasterySystem';
+import { PrestigeSystem } from '../../src/core/progression/PrestigeSystem';
 import { CharacterUpdater } from '../../src/core/progression/CharacterUpdater';
 import { samplePlaylistData, sampleAudioProfile } from '../fixtures/sampleData';
 import type { CharacterSheet } from '../../src/core/types/Character';
@@ -195,14 +195,18 @@ describe('E2E: Progression & Leveling System', () => {
         const xpCalc = new XPCalculator();
         const tracker = new SessionTracker();
         const processor = new LevelUpProcessor();
-        const mastery = new MasterySystem();
         const updater = new CharacterUpdater();
 
         expect(xpCalc).toBeDefined();
         expect(tracker).toBeDefined();
         expect(processor).toBeDefined();
-        expect(mastery).toBeDefined();
+        expect(PrestigeSystem).toBeDefined();
         expect(updater).toBeDefined();
+
+        // Verify PrestigeSystem static methods work
+        expect(PrestigeSystem.getPlaysThreshold(0)).toBe(10);
+        expect(PrestigeSystem.getXPThreshold(0)).toBe(1000);
+        expect(PrestigeSystem.isMastered(10, 1000, 0)).toBe(true);
     });
 
 });

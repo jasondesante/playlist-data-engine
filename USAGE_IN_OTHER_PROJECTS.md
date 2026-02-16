@@ -8,6 +8,7 @@ Transform music playlists into D&D 5e-inspired RPG characters through audio/visu
 - **[Equipment System](docs/EQUIPMENT_SYSTEM.md)** — Properties, enchanting, templates
 - **[Custom Classes & Races](docs/CUSTOM_CONTENT.md)** — Template-based class inheritance
 - **[XP and Leveling](docs/XP_AND_STATS.md)** — Progression, stat increases, mastery
+- **[Prestige System](docs/XP_AND_STATS.md#track-mastery-prestige-system)** — Reset for badge upgrades after mastering
 - **[Prerequisites](docs/PREREQUISITES.md)** — Level/ability/class/skill/feature requirements
 
 ---
@@ -46,6 +47,7 @@ cd /path/to/your/project && npm link playlist-data-engine
 - [Advanced Character Features](#advanced-character-features) — Skills, spells, equipment, appearance
 - [Stat Strategies](#stat-strategies) — Level-up stat increase options
 - [XP Scaling](#xp-scaling) — Progression configuration
+- [Prestige System](docs/XP_AND_STATS.md#track-mastery-prestige-system) — Reset for badge upgrades after mastering tracks
 - [Environmental Sensors](#environmental-sensors) — GPS, motion, weather, light modifiers
 - [Gaming Platform Integration](#gaming-platform-integration) — Steam and Discord bonuses
 - [Combat System](#combat-system) — Turn-based D&D 5e combat
@@ -171,7 +173,7 @@ if (session) {
 - **XP sources**: Music listening, combat, quests, or any custom activity
 - **Level scaling**: Default D&D 5e pattern or provide your own XP formulas
 
-For complete details on progression, stat increases, and customization, see **[XP_AND_STATS.md](docs/XP_AND_STATS.md)**.
+For complete details on progression, stat increases, prestige system, and customization, see **[XP_AND_STATS.md](docs/XP_AND_STATS.md)**.
 
 
 ## Specific Features

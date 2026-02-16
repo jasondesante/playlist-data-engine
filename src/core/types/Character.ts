@@ -12,6 +12,7 @@ import type {
     EquipmentMiniFeature,
     EnhancedInventoryItem
 } from './Equipment.js';
+import type { PrestigeLevel } from './Prestige.js';
 
 /**
  * Branded type for extensible Race names
@@ -433,6 +434,13 @@ export interface CharacterSheet {
 
     /** Number of pending stat increases awaiting manual selection (counter) */
     pendingStatIncreases?: number;
+
+    /**
+     * Prestige level for track mastery (0-10, defaults to 0)
+     * Higher prestige levels require more plays and XP to master a track
+     * @see PrestigeLevel
+     */
+    prestige_level?: PrestigeLevel;
 
     /**
      * Feature effects applied to this character

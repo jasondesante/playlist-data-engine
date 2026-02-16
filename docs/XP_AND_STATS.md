@@ -10,9 +10,10 @@ Complete guide to XP, leveling, and stats in the Playlist Data Engine.
 ## Table of Contents
 
 1. [XP and Leveling](#xp-and-leveling)
-2. [Stat Strategies](#stat-strategies)
-3. [XP Scaling](#xp-scaling)
-4. [Progression Configuration](#progression-configuration)
+2. [Track Mastery Prestige System](#track-mastery-prestige-system)
+3. [Stat Strategies](#stat-strategies)
+4. [XP Scaling](#xp-scaling)
+5. [Progression Configuration](#progression-configuration)
 
 ---
 
@@ -220,6 +221,190 @@ console.log(`Total Combat XP: ${combatXP}, Total Quest XP: ${questXP}`);
 - `xpEarned` - Amount of XP earned
 - `masteredTrack` - (Music only) Whether track was mastered
 - `masteryBonusXP` - (Music only) Bonus XP from mastery
+
+
+## Track Mastery Prestige System
+
+The prestige system allows players to reset their character after mastering a track (meeting BOTH plays AND XP thresholds) in exchange for a visual badge upgrade. Higher prestige levels require more plays and XP.
+
+**Key Features:**
+- 10 prestige levels (Roman numerals I-X)
+- Dual requirements: plays AND XP (prevents "cheesing" via play/pause spam)
+- 1.5x scaling per level (10 plays + 1,000 XP at base, up to 584 plays + 57,666 XP at max)
+- Character resets to level 1, but equipment is preserved
+
+### Checking Prestige Eligibility
+
+```typescript
+import {
+  SessionTracker,
+  CharacterUpdater,
+  PrestigeSystem,
+  type PrestigeLevel
+} from 'playlist-data-engine';
+
+const tracker = new SessionTracker();
+const updater = new CharacterUpdater();
+
+// Get character's current prestige level
+const prestigeLevel: PrestigeLevel = character.prestige_level ?? 0;
+
+// Get track progress
+const listenCount = tracker.getTrackListenCount(track.id);
+const totalXP = tracker.getTrackXPTotal(track.id);
+
+// Check if character can prestige
+const canPrestige = PrestigeSystem.canPrestige(prestigeLevel, listenCount, totalXP);
+
+if (canPrestige) {
+  console.log(`✅ Character can prestige!`);
+}
+
+// Get full prestige info for UI display
+const info = PrestigeSystem.getPrestigeInfo(prestigeLevel, listenCount, totalXP);
+console.log(`Plays: ${info.currentPlays}/${info.playsThreshold} (${Math.round(info.playsProgress * 100)}%)`);
+console.log(`XP: ${info.currentXP}/${info.xpThreshold} (${Math.round(info.xpProgress * 100)}%)`);
+console.log(`Mastered: ${info.isMastered}`);
+console.log(`Can Prestige: ${info.canPrestige}`);
+console.log(`Max Prestige: ${info.isMaxPrestige}`);
+```
+
+### Executing Prestige
+
+```typescript
+import {
+  SessionTracker,
+  CharacterUpdater,
+  AudioAnalyzer,
+  CharacterGenerator
+} from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+const tracker = new SessionTracker();
+const updater = new CharacterUpdater();
+
+// Get audio profile for regeneration
+const audioProfile = await analyzer.extractSonicFingerprint(track.audio_url);
+
+// Execute prestige (resets character to level 1, preserves equipment)
+const result = updater.resetCharacterForPrestige(
+  character,
+  tracker,       // SessionTracker to clear track sessions
+  track.id,      // Track UUID
+  audioProfile,  // For character regeneration
+  track          // Track metadata
+);
+
+if (result.success) {
+  // Update your character state with the regenerated character
+  character = (result as any).character;
+
+  console.log(result.message);
+  // "Successfully prestiged to level I! New mastery requirements: 15 plays, 1,500 XP"
+
+  console.log(`New prestige level: ${PrestigeSystem.toRomanNumeral(result.newPrestigeLevel)}`);
+  console.log(`Previous level: ${PrestigeSystem.toRomanNumeral(result.previousPrestigeLevel)}`);
+} else {
+  console.log(`Prestige failed: ${result.message}`);
+}
+```
+
+### Displaying Prestige-Aware Mastery Progress
+
+```typescript
+import { PrestigeSystem, type PrestigeLevel } from 'playlist-data-engine';
+
+// Get character's prestige level (defaults to 0)
+const prestigeLevel: PrestigeLevel = character.prestige_level ?? 0;
+
+// Get progress info
+const listenCount = tracker.getTrackListenCount(track.id);
+const totalXP = tracker.getTrackXPTotal(track.id);
+const info = PrestigeSystem.getPrestigeInfo(prestigeLevel, listenCount, totalXP);
+
+// Display in UI
+const prestigeRoman = PrestigeSystem.toRomanNumeral(prestigeLevel);
+const playsPercent = Math.round(info.playsProgress * 100);
+const xpPercent = Math.round(info.xpProgress * 100);
+
+console.log(`Prestige ${prestigeRoman || 'None'}`);
+console.log(`Plays: ${info.currentPlays}/${info.playsThreshold} (${playsPercent}%)`);
+console.log(`XP: ${info.currentXP.toLocaleString()}/${info.xpThreshold.toLocaleString()} (${xpPercent}%)`);
+
+// Check if both requirements are met (mastered)
+if (info.isMastered) {
+  console.log(`🎉 Track Mastered!`);
+
+  // Can they prestige?
+  if (info.canPrestige) {
+    const nextLevel = PrestigeSystem.getNextPrestigeLevel(prestigeLevel);
+    console.log(`Ready to prestige to ${PrestigeSystem.toRomanNumeral(nextLevel!)}!`);
+  }
+
+  // Are they at max prestige?
+  if (info.isMaxPrestige) {
+    console.log(`⭐ Maximum Prestige Achieved!`);
+  }
+}
+```
+
+### Setting Custom Thresholds
+
+For special cases (events, difficulty adjustments), you can override the default thresholds:
+
+```typescript
+import { PrestigeSystem } from 'playlist-data-engine';
+
+// Set custom thresholds for prestige level 5
+PrestigeSystem.setCustomThresholds(5, {
+  playsThreshold: 100,   // Override calculated 77
+  xpThreshold: 10000     // Override calculated 7,594
+});
+
+// Set only plays threshold (XP uses calculated value)
+PrestigeSystem.setCustomThresholds(3, {
+  playsThreshold: 50
+});
+
+// Reset plays to calculated value
+PrestigeSystem.setCustomThresholds(3, {
+  playsThreshold: null
+});
+
+// Check if custom thresholds exist
+const hasCustom = PrestigeSystem.hasCustomThresholds(5);
+
+// Get custom thresholds
+const custom = PrestigeSystem.getCustomThresholds(5);
+
+// Clear custom thresholds for specific level
+PrestigeSystem.clearCustomThresholds(5);
+
+// Clear all custom thresholds
+PrestigeSystem.clearCustomThresholds();
+
+// View all threshold values (for debugging/display)
+const allThresholds = PrestigeSystem.getAllThresholds();
+allThresholds.forEach(t => {
+  console.log(`Prestige ${t.level}: ${t.plays} plays, ${t.xp} XP`);
+});
+```
+
+### Threshold Reference
+
+| Prestige | Plays | XP |
+|----------|-------|-----|
+| 0 | 10 | 1,000 |
+| I | 15 | 1,500 |
+| II | 23 | 2,250 |
+| III | 34 | 3,375 |
+| IV | 51 | 5,063 |
+| V | 77 | 7,594 |
+| VI | 115 | 11,391 |
+| VII | 173 | 17,086 |
+| VIII | 259 | 25,629 |
+| IX | 389 | 38,444 |
+| X (max) | 584 | 57,666 |
 
 
 ## Stat Strategies

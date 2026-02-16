@@ -93,7 +93,7 @@ A concise overview of all main exports from the library, organized by category.
 | `XPCalculator` | Calculate XP earned and thresholds | [Progression System](#progression-system) |
 | `SessionTracker` | Track listening sessions | [Progression System](#progression-system) |
 | `LevelUpProcessor` | Handle level-ups | [Progression System](#progression-system) |
-| `MasterySystem` | Track track mastery | [Progression System](#progression-system) |
+| `PrestigeSystem` | Track mastery prestige and thresholds | [Progression System](#progression-system) |
 | `CharacterUpdater` | Apply sessions to characters | [Progression System](#progression-system) |
 | `StatManager` | Manage stat increases | [Stat Increase System](#stat-increase-system) |
 
@@ -157,6 +157,8 @@ All TypeScript types are exported, including:
 **Context Types:** `EnvironmentalContext`, `GamingContext`, `ListeningSession` — see [Data Types](#data-types)
 
 **Stat Increase Types:** `StatIncreaseConfig`, `StatIncreaseResult`, `StatIncreaseStrategy`, `StatIncreaseOptions`, `StatIncreaseStrategyType`, `StatIncreaseFunction` — see [Stat Increase System](#stat-increase-system)
+
+**Prestige Types:** `PrestigeLevel`, `PrestigeInfo`, `PrestigeResult`, `CustomThresholds` — see [Prestige System](#prestige-system)
 
 **Extensibility Types:** `ClassFeature`, `RacialTrait`, `CustomSkill`, `FeatureEffect`, `FeaturePrerequisite`, `SkillPrerequisite`, `SpellPrerequisite`, `ValidationResult`, `ExtensionCategory` — see [Extensibility System](#extensibility-system) and [PREREQUISITES.md](docs/PREREQUISITES.md)
 
@@ -465,6 +467,7 @@ The complete D&D 5e character object. This is the core data structure returned b
 | generated_at | string | Generation timestamp |
 | gameMode | GameMode? | Progression rules (standard/uncapped) |
 | pendingStatIncreases | number? | Number of pending stat increases awaiting selection |
+| prestige_level | PrestigeLevel? | Track mastery prestige level (0-10, defaults to 0) |
 | feature_effects | FeatureEffect[]? | Effects from features/traits |
 | equipment_effects | EquipmentEffect[]? | Effects from equipped items |
 
@@ -1483,10 +1486,13 @@ Orchestrates applying session results to a character, handling leveling up and m
 |--------|-------------|
 | `constructor(statManager?: StatManager)` | Creates instance with optional StatManager to override auto-detected strategy |
 | `addXP(character, xpAmount, source?)` | Add XP from any source (combat, quests, activities); triggers level-up system |
-| `updateCharacterFromSession(character, session, track?, previousListenCount?)` | Update character from listening session with XP calculation and mastery bonuses |
+| `updateCharacterFromSession(character, session, track?, options?)` | Update character from listening session with XP calculation and mastery bonuses; options include `previousListenCount`, `previousXP`, `prestigeLevel` |
 | `applyPendingStatIncrease(character, primaryStat, secondaryStats?)` | Apply pending stat increase with user-selected stats (manual mode only) |
 | `hasPendingStatIncreases(character)` | Check if character has pending stat increases |
 | `getPendingStatIncreaseCount(character)` | Get count of pending stat increases |
+| `resetCharacterForPrestige(character, sessionTracker, trackUuid, audioProfile, track)` | Reset character for prestige; returns `PrestigeResult & { character: CharacterSheet }` with regenerated level 1 character (equipment preserved, prestige_level incremented) |
+| `canPrestige(character, sessionTracker, trackUuid)` | Check if character can prestige for a specific track |
+| `getPrestigeInfo(character, sessionTracker, trackUuid)` | Get prestige progress info for character/track combination |
 
 #### Stat Strategy Auto-Detection
 
@@ -1540,10 +1546,12 @@ Manages active listening sessions and records history.
 | `getTotalXPEarned()` | Returns total XP earned across all sessions |
 | `getTrackListeningTime(trackUuid)` | Returns total listening time for specific track (seconds) |
 | `getTrackListenCount(trackUuid)` | Returns number of times track has been listened to |
+| `getTrackXPTotal(trackUuid)` | Returns total XP earned for specific track (used by prestige system) |
 | `isTrackMastered(trackUuid, masteryThreshold?)` | Checks if track has been mastered (default threshold: 10) |
 | `getSessionsInRange(startTime, endTime)` | Returns sessions within time range |
 | `getAverageSessionLength()` | Returns average session duration (seconds) |
 | `getLongestSession()` | Returns the session with longest duration |
+| `clearTrackSessions(trackUuid)` | Clears all sessions for a track (used by prestige system to reset progress) |
 | `clearHistory()` | Clears all session history |
 | `clearActiveSessions()` | Clears all active sessions |
 | `getActiveSessionCount()` | Returns number of currently active sessions |
@@ -1625,21 +1633,84 @@ Handles the mechanics of leveling up a character.
 
 ---
 
-### MasterySystem
+### PrestigeSystem
 
-**Location:** `src/core/progression/MasterySystem.ts`
+**Location:** *[src/core/progression/PrestigeSystem.ts](src/core/progression/PrestigeSystem.ts)*
 
-*Also known as: Track mastery, song mastery, listening achievement*
+*Also known as: Track mastery, prestige system, mastery progression*
 
-Tracks song mastery based on listen counts.
+Handles the prestige mechanic where players reset their character after mastering a track in exchange for visual badge upgrades. Uses dual requirements (plays AND XP) to prevent "cheesing" the system.
+
+#### Key Concepts
+
+- **Prestige Levels:** 10 levels (0-10), where 0 = no prestige, 1-10 = Roman numerals I-X
+- **Dual Requirements:** Must meet BOTH plays AND XP thresholds to master
+- **Scaling:** 1.5x per prestige level for both plays and XP
+- **Reset on Prestige:** Level → 1, XP → 0, stats reset, listen count → 0
+- **Preserved:** Equipment only
+
+#### Threshold Values
+
+| Prestige | Plays Required | XP Required |
+|----------|---------------|-------------|
+| 0 | 10 | 1,000 |
+| I | 15 | 1,500 |
+| II | 23 | 2,250 |
+| III | 34 | 3,375 |
+| IV | 51 | 5,063 |
+| V | 77 | 7,594 |
+| VI | 115 | 11,391 |
+| VII | 173 | 17,086 |
+| VIII | 259 | 25,629 |
+| IX | 389 | 38,444 |
+| X (max) | 584 | 57,666 |
 
 #### Method Reference
 
-| Method | Description |
-|--------|-------------|
-| `checkMastery(listenCount)` | Returns true if listens meets mastery threshold (default: 10) |
-| `calculateMasteryBonus(isMastered)` | Returns bonus XP if mastered |
-| `isJustMastered(previous, current)` | Returns true if mastery was achieved in current session |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getPlaysThreshold(prestigeLevel)` | number | Plays required for mastery at given prestige level |
+| `getXPThreshold(prestigeLevel)` | number | XP required for mastery at given prestige level |
+| `setCustomThresholds(prestigeLevel, thresholds)` | void | Override default thresholds for a level (null = use calculated) |
+| `clearCustomThresholds(prestigeLevel?)` | void | Clear custom thresholds (omit level to clear all) |
+| `hasCustomThresholds(prestigeLevel)` | boolean | Check if custom thresholds exist for a level |
+| `getCustomThresholds(prestigeLevel)` | CustomThresholds \| undefined | Get custom thresholds for a level |
+| `isMastered(listenCount, totalXP, prestigeLevel)` | boolean | Check if track is mastered (meets BOTH thresholds) |
+| `canPrestige(prestigeLevel, listenCount, totalXP)` | boolean | Check if character can prestige (mastered AND not at max) |
+| `isJustMastered(prevPlays, currPlays, prevXP, currXP, prestigeLevel)` | boolean | Check if mastery was achieved this session |
+| `calculateMasteryBonus(isMastered)` | number | Bonus XP for achieving mastery |
+| `getPrestigeInfo(prestigeLevel, listenCount, totalXP)` | PrestigeInfo | Complete prestige info for UI display |
+| `toRomanNumeral(level)` | string | Convert level to Roman numeral (empty for 0) |
+| `getNextPrestigeLevel(currentLevel)` | PrestigeLevel \| null | Get next level or null if at max |
+| `createSuccessResult(previousLevel, newLevel)` | PrestigeResult | Create success result object |
+| `createFailureResult(reason, currentLevel)` | PrestigeResult | Create failure result object |
+| `getAllThresholds()` | Array | Get all threshold values for display/debugging |
+
+#### Constants
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `PRESTIGE_ROMAN_NUMERALS` | Record | Roman numeral mapping for levels 0-10 |
+| `MAX_PRESTIGE_LEVEL` | 10 | Maximum prestige level achievable |
+| `BASE_PLAYS_THRESHOLD` | 10 | Base plays required at prestige 0 |
+| `BASE_XP_THRESHOLD` | 1000 | Base XP required at prestige 0 |
+| `PRESTIGE_SCALING_FACTOR` | 1.5 | Multiplier per prestige level |
+
+#### Types
+
+| Type | Location | Description |
+|------|----------|-------------|
+| `PrestigeLevel` | [src/core/types/Prestige.ts](src/core/types/Prestige.ts) | Union type: 0 \| 1 \| 2 \| 3 \| 4 \| 5 \| 6 \| 7 \| 8 \| 9 \| 10 |
+| `PrestigeInfo` | [src/core/types/Prestige.ts](src/core/types/Prestige.ts) | Complete prestige info with progress, thresholds, and status |
+| `PrestigeResult` | [src/core/types/Prestige.ts](src/core/types/Prestige.ts) | Result of prestige operation with success/failure info |
+| `CustomThresholds` | [src/core/types/Prestige.ts](src/core/types/Prestige.ts) | Custom threshold overrides (playsThreshold, xpThreshold) |
+
+#### Helper Functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `isPrestigeLevel(value)` | boolean | Type guard for valid PrestigeLevel |
+| `toPrestigeLevel(value)` | PrestigeLevel | Convert number to PrestigeLevel (clamped 0-10) |
 
 ---
 

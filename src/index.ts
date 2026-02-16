@@ -53,6 +53,24 @@ export type {
     LevelUpDetail
 } from './core/types/Progression.js';
 
+// Prestige types
+export type {
+    PrestigeLevel,
+    PrestigeInfo,
+    PrestigeResult,
+    CustomThresholds
+} from './core/types/Prestige.js';
+
+export {
+    PRESTIGE_ROMAN_NUMERALS,
+    MAX_PRESTIGE_LEVEL,
+    BASE_PLAYS_THRESHOLD,
+    BASE_XP_THRESHOLD,
+    PRESTIGE_SCALING_FACTOR,
+    isPrestigeLevel,
+    toPrestigeLevel
+} from './core/types/Prestige.js';
+
 export type { LevelUpBenefits, UncappedProgressionConfig } from './core/progression/LevelUpProcessor.js';
 export type { CharacterUpdateResult, ApplyPendingStatIncreaseResult } from './core/progression/CharacterUpdater.js';
 
@@ -278,8 +296,8 @@ export { ColorExtractor } from './core/analysis/ColorExtractor.js';
 export { XPCalculator } from './core/progression/XPCalculator.js';
 export { SessionTracker } from './core/progression/SessionTracker.js';
 export { LevelUpProcessor } from './core/progression/LevelUpProcessor.js';
-export { MasterySystem } from './core/progression/MasterySystem.js';
 export { CharacterUpdater } from './core/progression/CharacterUpdater.js';
+export { PrestigeSystem } from './core/progression/PrestigeSystem.js';
 
 // Stat Increase System
 export { StatManager } from './core/progression/stat/StatManager.js';

@@ -1,10 +1,14 @@
 import type { CharacterSheet, Ability } from '../types/Character.js';
 import type { ListeningSession, LevelUpDetail, ApplyPendingStatIncreaseResult } from '../types/Progression.js';
 import type { PlaylistTrack } from '../types/Playlist.js';
+import type { PrestigeLevel, PrestigeResult } from '../types/Prestige.js';
+import type { AudioProfile } from '../types/AudioProfile.js';
 import { XPCalculator } from './XPCalculator.js';
 import { LevelUpProcessor } from './LevelUpProcessor.js';
-import { MasterySystem } from './MasterySystem.js';
 import { StatManager } from './stat/StatManager.js';
+import { PrestigeSystem } from './PrestigeSystem.js';
+import { SessionTracker } from './SessionTracker.js';
+import { CharacterGenerator } from '../generation/CharacterGenerator.js';
 
 export type { ApplyPendingStatIncreaseResult } from '../types/Progression.js';
 
@@ -24,12 +28,10 @@ export interface CharacterUpdateResult {
  */
 export class CharacterUpdater {
     private xpCalculator: XPCalculator;
-    private masterySystem: MasterySystem;
     private statManager?: StatManager;
 
     constructor(statManager?: StatManager) {
         this.xpCalculator = new XPCalculator();
-        this.masterySystem = new MasterySystem();
 
         // StatManager is optional - will be auto-detected based on gameMode when addXP() is called
         this.statManager = statManager;
@@ -212,36 +214,54 @@ export class CharacterUpdater {
      * @param character - The character to update
      * @param session - The completed listening session
      * @param track - The track that was listened to (optional, but needed for mastery/completion bonus)
+     * @param options - Optional parameters for mastery calculation
+     * @param options.previousListenCount - Listen count before this session (defaults to 0)
+     * @param options.previousXP - Total track XP before this session (defaults to 0)
+     * @param options.prestigeLevel - Character's prestige level (defaults to character's prestige_level or 0)
      * @returns Result object containing updated character and event details
      */
     public updateCharacterFromSession(
         character: CharacterSheet,
         session: ListeningSession,
         track?: PlaylistTrack,
-        previousListenCount: number = 0
+        options?: {
+            previousListenCount?: number;
+            previousXP?: number;
+            prestigeLevel?: PrestigeLevel;
+        }
     ): CharacterUpdateResult {
-        // 1. Calculate XP earned
-        let xpEarned = this.xpCalculator.calculateSessionXP(session, track);
+        // Extract options with defaults
+        const previousListenCount = options?.previousListenCount ?? 0;
+        const previousXP = options?.previousXP ?? 0;
+        const prestigeLevel: PrestigeLevel = options?.prestigeLevel ?? character.prestige_level ?? 0;
 
-        // 2. Check for Mastery
+        // 1. Calculate XP earned
+        const sessionXP = this.xpCalculator.calculateSessionXP(session, track);
+
+        // 2. Check for Mastery (dual requirement: plays AND XP)
         let masteredTrack = false;
         let masteryBonusXP = 0;
 
         if (track) {
-            // Check if mastery threshold was JUST crossed
-            // We assume the session has already been recorded in the tracker, so current count includes this session
-            // But here we might need the caller to provide the counts.
-            // For simplicity, let's assume the caller passes the *previous* count, and we know this session adds 1.
             const currentListenCount = previousListenCount + 1;
+            const currentXP = previousXP + sessionXP;
 
-            if (this.masterySystem.isJustMastered(previousListenCount, currentListenCount)) {
+            if (PrestigeSystem.isJustMastered(
+                previousListenCount,
+                currentListenCount,
+                previousXP,
+                currentXP,
+                prestigeLevel
+            )) {
                 masteredTrack = true;
-                masteryBonusXP = this.masterySystem.calculateMasteryBonus(true);
-                xpEarned += masteryBonusXP;
+                masteryBonusXP = PrestigeSystem.calculateMasteryBonus(true);
             }
         }
 
-        // 3. Use the generic addXP method for level-up processing
+        // 3. Total XP to add (session + mastery bonus)
+        const xpEarned = sessionXP + masteryBonusXP;
+
+        // 4. Use the generic addXP method for level-up processing
         const result = this.addXP(character, xpEarned, 'listening');
 
         return {
@@ -348,5 +368,177 @@ export class CharacterUpdater {
      */
     public getPendingStatIncreaseCount(character: CharacterSheet): number {
         return character.pendingStatIncreases || 0;
+    }
+
+    /**
+     * Reset a character for prestige after mastering a track.
+     *
+     * This is the main prestige execution function that handles the full prestige operation:
+     * 1. Validates: Check can prestige (not at max, meets thresholds)
+     * 2. Preserves equipment
+     * 3. Clears track sessions (calls sessionTracker.clearTrackSessions(trackUuid))
+     * 4. Regenerates base level 1 character from seed
+     * 5. Restores equipment
+     * 6. Re-applies equipment effects
+     * 7. Increments prestige_level
+     * 8. Returns result with success/failure info
+     *
+     * @param character - The character to prestige
+     * @param sessionTracker - SessionTracker instance to clear track sessions
+     * @param trackUuid - UUID of the track being prestiged
+     * @param audioProfile - Audio profile for character regeneration
+     * @param track - Track metadata for character regeneration
+     * @returns PrestigeResult indicating success/failure and new prestige level
+     *
+     * @example
+     * ```typescript
+     * const result = updater.resetCharacterForPrestige(
+     *   character,
+     *   sessionTracker,
+     *   trackUuid,
+     *   audioProfile,
+     *   track
+     * );
+     *
+     * if (result.success) {
+     *   console.log(result.message); // "Successfully prestiged to level I! ..."
+     * } else {
+     *   console.log(result.message); // "Prestige failed: ..."
+     * }
+     * ```
+     */
+    public resetCharacterForPrestige(
+        character: CharacterSheet,
+        sessionTracker: SessionTracker,
+        trackUuid: string,
+        audioProfile: AudioProfile,
+        track: PlaylistTrack
+    ): PrestigeResult {
+        const currentPrestigeLevel: PrestigeLevel = character.prestige_level ?? 0;
+
+        // 1. Check if already at max prestige
+        if (currentPrestigeLevel >= 10) {
+            return PrestigeSystem.createFailureResult(
+                'Already at maximum prestige level',
+                currentPrestigeLevel
+            );
+        }
+
+        // 2. Get current track progress
+        const listenCount = sessionTracker.getTrackListenCount(trackUuid);
+        const totalXP = sessionTracker.getTrackXPTotal(trackUuid);
+
+        // 3. Check if track is mastered (meets BOTH plays AND XP thresholds)
+        if (!PrestigeSystem.canPrestige(currentPrestigeLevel, listenCount, totalXP)) {
+            const playsThreshold = PrestigeSystem.getPlaysThreshold(currentPrestigeLevel);
+            const xpThreshold = PrestigeSystem.getXPThreshold(currentPrestigeLevel);
+
+            if (listenCount < playsThreshold && totalXP < xpThreshold) {
+                return PrestigeSystem.createFailureResult(
+                    `Need ${playsThreshold - listenCount} more plays and ${(xpThreshold - totalXP).toLocaleString()} more XP to prestige`,
+                    currentPrestigeLevel
+                );
+            } else if (listenCount < playsThreshold) {
+                return PrestigeSystem.createFailureResult(
+                    `Need ${playsThreshold - listenCount} more plays to prestige (XP requirement met)`,
+                    currentPrestigeLevel
+                );
+            } else {
+                return PrestigeSystem.createFailureResult(
+                    `Need ${(xpThreshold - totalXP).toLocaleString()} more XP to prestige (plays requirement met)`,
+                    currentPrestigeLevel
+                );
+            }
+        }
+
+        // 4. Preserve equipment
+        const preservedEquipment = character.equipment ? {
+            weapons: [...character.equipment.weapons],
+            armor: [...character.equipment.armor],
+            items: [...character.equipment.items],
+            totalWeight: character.equipment.totalWeight,
+            equippedWeight: character.equipment.equippedWeight,
+        } : null;
+
+        // 5. Clear track sessions
+        sessionTracker.clearTrackSessions(trackUuid);
+
+        // 6. Regenerate base level 1 character from seed
+        const newPrestigeLevel = PrestigeSystem.getNextPrestigeLevel(currentPrestigeLevel);
+        if (newPrestigeLevel === null) {
+            return PrestigeSystem.createFailureResult(
+                'Cannot prestige beyond maximum level',
+                currentPrestigeLevel
+            );
+        }
+
+        // Regenerate character using original seed
+        const regeneratedCharacter = CharacterGenerator.generate(
+            character.seed,
+            audioProfile,
+            track,
+            {
+                level: 1,
+                gameMode: character.gameMode,
+                forceName: character.name, // Keep the same name
+            }
+        );
+
+        // 7. Restore equipment
+        if (preservedEquipment) {
+            regeneratedCharacter.equipment = preservedEquipment;
+        }
+
+        // 8. Set new prestige level
+        regeneratedCharacter.prestige_level = newPrestigeLevel;
+
+        // 9. Create success result
+        const result = PrestigeSystem.createSuccessResult(currentPrestigeLevel, newPrestigeLevel);
+
+        // Return result with the regenerated character
+        return {
+            ...result,
+            character: regeneratedCharacter,
+        } as PrestigeResult & { character: CharacterSheet };
+    }
+
+    /**
+     * Check if a character can prestige for a specific track.
+     *
+     * @param character - The character to check
+     * @param sessionTracker - SessionTracker instance for getting track stats
+     * @param trackUuid - UUID of the track to check
+     * @returns True if the character can prestige
+     */
+    public canPrestige(
+        character: CharacterSheet,
+        sessionTracker: SessionTracker,
+        trackUuid: string
+    ): boolean {
+        const prestigeLevel: PrestigeLevel = character.prestige_level ?? 0;
+        const listenCount = sessionTracker.getTrackListenCount(trackUuid);
+        const totalXP = sessionTracker.getTrackXPTotal(trackUuid);
+
+        return PrestigeSystem.canPrestige(prestigeLevel, listenCount, totalXP);
+    }
+
+    /**
+     * Get prestige info for a character and track combination.
+     *
+     * @param character - The character to get info for
+     * @param sessionTracker - SessionTracker instance for getting track stats
+     * @param trackUuid - UUID of the track
+     * @returns PrestigeInfo object with current progress
+     */
+    public getPrestigeInfo(
+        character: CharacterSheet,
+        sessionTracker: SessionTracker,
+        trackUuid: string
+    ): ReturnType<typeof PrestigeSystem.getPrestigeInfo> {
+        const prestigeLevel: PrestigeLevel = character.prestige_level ?? 0;
+        const listenCount = sessionTracker.getTrackListenCount(trackUuid);
+        const totalXP = sessionTracker.getTrackXPTotal(trackUuid);
+
+        return PrestigeSystem.getPrestigeInfo(prestigeLevel, listenCount, totalXP);
     }
 }
