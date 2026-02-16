@@ -3,11 +3,11 @@ import type { ListeningSession, LevelUpDetail, ApplyPendingStatIncreaseResult } 
 import type { PlaylistTrack } from '../types/Playlist.js';
 import type { PrestigeLevel, PrestigeResult } from '../types/Prestige.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
+import type { ISessionTracker } from '../types/ISessionTracker.js';
 import { XPCalculator } from './XPCalculator.js';
 import { LevelUpProcessor } from './LevelUpProcessor.js';
 import { StatManager } from './stat/StatManager.js';
 import { PrestigeSystem } from './PrestigeSystem.js';
-import { SessionTracker } from './SessionTracker.js';
 import { CharacterGenerator } from '../generation/CharacterGenerator.js';
 
 export type { ApplyPendingStatIncreaseResult } from '../types/Progression.js';
@@ -409,7 +409,7 @@ export class CharacterUpdater {
      */
     public resetCharacterForPrestige(
         character: CharacterSheet,
-        sessionTracker: SessionTracker,
+        sessionTracker: ISessionTracker,
         trackUuid: string,
         audioProfile: AudioProfile,
         track: PlaylistTrack
@@ -512,7 +512,7 @@ export class CharacterUpdater {
      */
     public canPrestige(
         character: CharacterSheet,
-        sessionTracker: SessionTracker,
+        sessionTracker: ISessionTracker,
         trackUuid: string
     ): boolean {
         const prestigeLevel: PrestigeLevel = character.prestige_level ?? 0;
@@ -532,7 +532,7 @@ export class CharacterUpdater {
      */
     public getPrestigeInfo(
         character: CharacterSheet,
-        sessionTracker: SessionTracker,
+        sessionTracker: ISessionTracker,
         trackUuid: string
     ): ReturnType<typeof PrestigeSystem.getPrestigeInfo> {
         const prestigeLevel: PrestigeLevel = character.prestige_level ?? 0;

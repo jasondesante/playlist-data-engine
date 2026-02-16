@@ -92,6 +92,7 @@ A concise overview of all main exports from the library, organized by category.
 |--------|-------------|---------|
 | `XPCalculator` | Calculate XP earned and thresholds | [Progression System](#progression-system) |
 | `SessionTracker` | Track listening sessions | [Progression System](#progression-system) |
+| `ISessionTracker` | Interface for session tracking (dependency injection) | [Progression System](#progression-system) |
 | `LevelUpProcessor` | Handle level-ups | [Progression System](#progression-system) |
 | `PrestigeSystem` | Track mastery prestige and thresholds | [Progression System](#progression-system) |
 | `CharacterUpdater` | Apply sessions to characters | [Progression System](#progression-system) |
@@ -1380,6 +1381,38 @@ new SessionTracker(xpCalculator?: XPCalculator)
     - Returns number of currently active sessions.
 - `getActiveSessionIds(): string[]`
     - Returns all active session IDs.
+- `getTrackXPTotal(trackUuid: string): number`
+    - Returns total XP earned for a specific track (used by prestige system).
+- `clearTrackSessions(trackUuid: string): number`
+    - Clears all sessions for a track, returns count removed (used by prestige system).
+
+### ISessionTracker
+
+**Location:** `src/core/types/ISessionTracker.ts`
+
+Interface for session tracking operations required by the prestige system. Allows consumers using different state management approaches (Zustand, Redux, etc.) to provide adapters for `CharacterUpdater.resetCharacterForPrestige()`.
+
+```typescript
+export interface ISessionTracker {
+    getTrackListenCount(trackUuid: string): number;
+    getTrackXPTotal(trackUuid: string): number;
+    clearTrackSessions(trackUuid: string): number;
+}
+```
+
+**Usage with Zustand adapter:**
+```typescript
+import { type ISessionTracker, CharacterUpdater } from 'playlist-data-engine';
+import { useSessionStore } from './stores/sessionStore';
+
+const zustandAdapter: ISessionTracker = {
+    getTrackListenCount: (id) => useSessionStore.getState().getTrackListenCount(id),
+    getTrackXPTotal: (id) => useSessionStore.getState().getTrackXPTotal(id),
+    clearTrackSessions: (id) => useSessionStore.getState().clearTrackSessions(id),
+};
+
+const result = updater.resetCharacterForPrestige(character, zustandAdapter, trackUuid, audioProfile, track);
+```
 
 ### ListeningSession
 

@@ -61,6 +61,9 @@ export type {
     CustomThresholds
 } from './core/types/Prestige.js';
 
+// Session tracker interface (for dependency injection)
+export type { ISessionTracker } from './core/types/ISessionTracker.js';
+
 export {
     PRESTIGE_ROMAN_NUMERALS,
     MAX_PRESTIGE_LEVEL,

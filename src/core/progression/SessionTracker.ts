@@ -9,6 +9,7 @@ import type {
     GamingContext,
 } from '../types/Progression.js';
 import type { PlaylistTrack } from '../types/Playlist.js';
+import type { ISessionTracker } from '../types/ISessionTracker.js';
 import { XPCalculator } from './XPCalculator.js';
 
 /**
@@ -25,8 +26,9 @@ interface ActiveSession {
 /**
  * SessionTracker class - Records and manages listening sessions
  * Tracks active sessions and calculates XP earned
+ * Implements ISessionTracker for dependency injection flexibility
  */
-export class SessionTracker {
+export class SessionTracker implements ISessionTracker {
     private activeSessions: Map<string, ActiveSession> = new Map();
     private sessionHistory: ListeningSession[] = [];
     private xpCalculator: XPCalculator;
