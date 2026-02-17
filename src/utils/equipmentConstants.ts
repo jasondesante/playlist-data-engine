@@ -77,9 +77,9 @@ export const CLASS_STARTING_EQUIPMENT: Record<string, {
         items: ['Explorer\'s Pack', 'Javelin'],
     },
     'Bard': {
-        weapons: ['Rapier', 'Dagger'],
+        weapons: ['Rapier', 'Dagger', 'Dagger'],
         armor: ['Leather Armor'],
-        items: ['Lute', 'Entertainer\'s Pack', 'Dagger'],
+        items: ['Lute', 'Entertainer\'s Pack'],
     },
     'Cleric': {
         weapons: ['Mace', 'Light Crossbow'],
@@ -92,8 +92,8 @@ export const CLASS_STARTING_EQUIPMENT: Record<string, {
         items: ['Druidic Focus', 'Explorer\'s Pack'],
     },
     'Fighter': {
-        weapons: ['Longsword', 'Shield'],
-        armor: ['Chain Mail'],
+        weapons: ['Longsword'],
+        armor: ['Chain Mail', 'Shield'],
         items: ['Martial Melee Weapon', 'Bedroll', 'Rope'],
     },
     'Monk': {
@@ -102,19 +102,19 @@ export const CLASS_STARTING_EQUIPMENT: Record<string, {
         items: ['Insignia', 'Traveler\'s Pack', 'Dart'],
     },
     'Paladin': {
-        weapons: ['Longsword', 'Shield'],
-        armor: ['Chain Mail'],
+        weapons: ['Longsword'],
+        armor: ['Chain Mail', 'Shield'],
         items: ['Holy Symbol', 'Priest\'s Pack'],
     },
     'Ranger': {
-        weapons: ['Longsword', 'Shortsword', 'Longbow'],
-        armor: ['Leather Armor', 'Dagger'],
+        weapons: ['Longsword', 'Shortsword', 'Longbow', 'Dagger'],
+        armor: ['Leather Armor'],
         items: ['Explorer\'s Pack'],  // Arrows added programmatically in EquipmentGenerator
     },
     'Rogue': {
-        weapons: ['Rapier', 'Hand Crossbow'],
+        weapons: ['Rapier', 'Hand Crossbow', 'Dagger'],
         armor: ['Leather Armor'],
-        items: ['Burglar\'s Pack', 'Thieves\' Tools', 'Dagger'],
+        items: ['Burglar\'s Pack', 'Thieves\' Tools'],
     },
     'Sorcerer': {
         weapons: ['Light Crossbow', 'Dagger'],

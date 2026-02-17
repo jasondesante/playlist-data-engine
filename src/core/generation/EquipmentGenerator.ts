@@ -8,16 +8,15 @@
  */
 
 import type { Class, CharacterSheet } from '../types/Character.js';
-import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
-import { CLASS_STARTING_EQUIPMENT, getClassStartingEquipment } from '../../utils/equipmentConstants.js';
+import { getClassStartingEquipment } from '../../utils/equipmentConstants.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ensureEquipmentDefaultsInitialized } from '../extensions/initializeDefaults.js';
 import type {
-    CharacterEquipment,
-    EnhancedEquipment,
-    EnhancedInventoryItem,
-    EquipmentProperty,
-    EquipmentModification
+  CharacterEquipment,
+  EnhancedEquipment,
+  EnhancedInventoryItem,
+  EquipmentProperty,
+  EquipmentModification
 } from '../types/Equipment.js';
 import { EquipmentEffectApplier } from '../equipment/EquipmentEffectApplier.js';
 
@@ -25,10 +24,10 @@ import { EquipmentEffectApplier } from '../equipment/EquipmentEffectApplier.js';
  * Basic equipment data interface (for backward compatibility)
  */
 export interface Equipment {
-    name: string;
-    type: 'weapon' | 'armor' | 'item';
-    rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
-    weight: number;
+  name: string;
+  type: 'weapon' | 'armor' | 'item';
+  rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
+  weight: number;
 }
 
 /**
@@ -77,26 +76,7 @@ export class EquipmentGenerator {
     return allEquipment.find((eq: EnhancedEquipment) => eq.name === itemName);
   }
 
-  /**
-   * Get all equipment names from extended database
-   *
-   * @returns Array of all equipment names
-   */
-  private static getAllEquipmentNames(): string[] {
-    const manager = ExtensionManager.getInstance();
-    const allEquipment = manager.get('equipment');
-    return allEquipment.map((eq: Equipment) => eq.name);
-  }
 
-  /**
-   * Check if equipment exists in extended database
-   *
-   * @param itemName - Name of the equipment to check
-   * @returns true if equipment exists
-   */
-  private static hasEquipment(itemName: string): boolean {
-    return this.getEquipmentData(itemName) !== undefined;
-  }
 
   /**
    * Get starting equipment for a class
@@ -142,33 +122,46 @@ export class EquipmentGenerator {
     const armor: EnhancedInventoryItem[] = [];
     const items: EnhancedInventoryItem[] = [];
 
-    // Add weapons
-    for (const weaponName of startingEquipment.weapons) {
-      const existing = weapons.find((w) => w.name === weaponName);
-      if (existing) {
-        existing.quantity += 1;
-      } else {
-        weapons.push({ name: weaponName, quantity: 1, equipped: false });
-      }
-    }
+    const allStartingItems = [
+      ...startingEquipment.weapons,
+      ...startingEquipment.armor,
+      ...startingEquipment.items
+    ];
 
-    // Add armor
-    for (const armorName of startingEquipment.armor) {
-      const existing = armor.find((a) => a.name === armorName);
-      if (existing) {
-        existing.quantity += 1;
-      } else {
-        armor.push({ name: armorName, quantity: 1, equipped: false });
-      }
-    }
+    // Add all items to their correct categories based on type
+    for (const itemName of allStartingItems) {
+      const itemData = this.getEquipmentData(itemName);
 
-    // Add items
-    for (const itemName of startingEquipment.items) {
-      const existing = items.find((i) => i.name === itemName);
-      if (existing) {
-        existing.quantity += 1;
+      // If item data exists, use its type for categorization
+      if (itemData) {
+        let targetList: EnhancedInventoryItem[];
+
+        if (itemData.type === 'weapon') {
+          targetList = weapons;
+        } else if (itemData.type === 'armor') {
+          targetList = armor;
+        } else {
+          targetList = items;
+        }
+
+        const existing = targetList.find((i) => i.name === itemName);
+        if (existing) {
+          existing.quantity += 1;
+        } else {
+          targetList.push({ name: itemName, quantity: 1, equipped: false });
+        }
       } else {
-        items.push({ name: itemName, quantity: 1, equipped: false });
+        // If item data doesn't exist (custom item not registered?), 
+        // fallback to putting it in 'items' or try to guess?
+        // For now, we'll log a warning and add to 'items' as a safe default
+        console.warn(`EquipmentGenerator: Unknown item "${itemName}" in starting equipment.`);
+
+        const existing = items.find((i) => i.name === itemName);
+        if (existing) {
+          existing.quantity += 1;
+        } else {
+          items.push({ name: itemName, quantity: 1, equipped: false });
+        }
       }
     }
 
@@ -557,7 +550,7 @@ export class EquipmentGenerator {
    * @param weapons - Array of weapon names the class starts with
    * @returns Ammunition type ('Arrow', 'Bolt', etc.) or null if not applicable
    */
-  private static getAmmunitionType(characterClass: Class, weapons: string[]): string | null {
+  private static getAmmunitionType(_characterClass: Class, weapons: string[]): string | null {
     // Check if class has weapons that require ammunition
     const hasLongbow = weapons.some(w => w === 'Longbow');
     const hasShortbow = weapons.some(w => w === 'Shortbow');  // If added later
