@@ -381,6 +381,32 @@ export class GamingPlatformSensors {
     }
 
     /**
+     * Get game schema (achievements, stats) for a Steam app
+     * @param appId Steam app ID
+     * @returns Game schema containing achievements and player stats, or null if unavailable
+     */
+    async fetchGameSchema(appId: number): Promise<{
+        gameName?: string;
+        gameVersion?: string;
+        availableGameStats?: {
+            achievements?: Array<{
+                name: string;
+                displayName: string;
+                description?: string;
+                icon?: string;
+                hidden?: number;
+            }>;
+            stats?: Array<{
+                name: string;
+                displayName?: string;
+                value: number;
+            }>;
+        };
+    } | null> {
+        return this.steam.getGameSchema(appId);
+    }
+
+    /**
      * Print a formatted dashboard to the console with gaming sensor status information
      * Useful for debugging and monitoring during development
      *
