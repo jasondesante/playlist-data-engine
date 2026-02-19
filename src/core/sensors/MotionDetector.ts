@@ -55,6 +55,10 @@ export class MotionDetector {
         // Check for null/undefined explicitly - 0 is a valid acceleration value
         if (acc.x == null || acc.y == null || acc.z == null) return 'unknown';
 
+        // Check for all-zero values - this typically means the device doesn't have
+        // a real accelerometer (e.g., desktop browser) and we can't detect activity
+        if (acc.x === 0 && acc.y === 0 && acc.z === 0) return 'unknown';
+
         // Calculate magnitude of acceleration vector (minus gravity approx 9.8)
         // This is a very rough heuristic
         const magnitude = Math.sqrt(acc.x ** 2 + acc.y ** 2 + acc.z ** 2);
