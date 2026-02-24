@@ -538,6 +538,36 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         description: 'A warm woolen blanket for sleeping. Provides basic warmth and comfort during rest in cold environments.'
     },
 
+    // ===== CLOTHING ITEMS =====
+
+    'Costume': {
+        name: 'Costume',
+        type: 'item',
+        rarity: 'common',
+        weight: 4,
+        spawnWeight: 1.0,
+        tags: ['gear', 'clothing', 'performance'],
+        description: 'A set of performer\'s clothing suitable for stage appearances and entertaining. Includes colorful fabrics and decorative elements.'
+    },
+    'Traveler\'s Clothes': {
+        name: 'Traveler\'s Clothes',
+        type: 'item',
+        rarity: 'common',
+        weight: 4,
+        spawnWeight: 1.0,
+        tags: ['gear', 'clothing'],
+        description: 'Sturdy, practical clothing designed for long journeys. Includes boots, a cloak, and weather-appropriate garb for the road.'
+    },
+    'Vestments': {
+        name: 'Vestments',
+        type: 'item',
+        rarity: 'common',
+        weight: 2,
+        spawnWeight: 1.0,
+        tags: ['gear', 'clothing', 'religious'],
+        description: 'Ceremonial robes worn by priests and other religious figures. Often adorned with symbols of faith and made of fine materials.'
+    },
+
     // ===== ADVENTURE PACKS =====
 
     'Burglar\'s Pack': {

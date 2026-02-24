@@ -143,10 +143,10 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Mess Kit - weight 1, tags: gear, camp, dining
   - [x] Blanket - weight 3, tags: gear, camp, comfort
 
-- [ ] **3.4 Add Clothing Items**
-  - [ ] Costume - weight 4, tags: gear, clothing, performance
-  - [ ] Traveler's Clothes - weight 4, tags: gear, clothing
-  - [ ] Vestments - weight 2, tags: gear, clothing, religious
+- [x] **3.4 Add Clothing Items**
+  - [x] Costume - weight 4, tags: gear, clothing, performance
+  - [x] Traveler's Clothes - weight 4, tags: gear, clothing
+  - [x] Vestments - weight 2, tags: gear, clothing, religious
 
 - [ ] **3.5 Add Religious Items**
   - [ ] Alms Box - weight 0, tags: gear, religious, container
