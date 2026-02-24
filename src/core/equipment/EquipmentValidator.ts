@@ -12,10 +12,12 @@ import type {
     EquipmentCondition,
     EquipmentModification,
     EquipmentMiniFeature,
-    EquipmentValidationResult
+    EquipmentValidationResult,
+    BoxContents
 } from '../types/Equipment.js';
 import { FeatureQuery } from '../features/FeatureQuery.js';
 import { SkillQuery } from '../skills/SkillQuery.js';
+import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import type { Ability } from '../types/Character.js';
 
 /**
@@ -26,7 +28,7 @@ const VALID_ABILITIES: Ability[] = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
 /**
  * The valid equipment types
  */
-const VALID_EQUIPMENT_TYPES = ['weapon', 'armor', 'item'];
+const VALID_EQUIPMENT_TYPES = ['weapon', 'armor', 'item', 'box'];
 
 /**
  * The valid rarity levels
@@ -246,6 +248,17 @@ export class EquipmentValidator {
         if (equipment.tags) {
             if (!Array.isArray(equipment.tags)) {
                 errors.push('tags must be an array');
+            }
+        }
+
+        // Validate boxContents if present (required for type: 'box')
+        if (equipment.type === 'box' && !equipment.boxContents) {
+            errors.push('Equipment of type "box" must have a boxContents property');
+        }
+        if (equipment.boxContents !== undefined) {
+            const boxValidation = this.validateBoxContents(equipment.boxContents);
+            if (!boxValidation.valid) {
+                errors.push(...(boxValidation.errors || []));
             }
         }
 
@@ -685,6 +698,115 @@ export class EquipmentValidator {
             errors.push('Spawn weight must be non-negative (0 = never random, still usable by game logic)');
         } else if (!Number.isFinite(weight)) {
             errors.push('Spawn weight must be a finite number');
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors: errors.length > 0 ? errors : undefined
+        };
+    }
+
+    /**
+     * Validate box contents configuration
+     *
+     * Validates the boxContents property for box-type equipment:
+     * - drops must be an array
+     * - each drop must have a non-empty pool array
+     * - each pool entry must have a valid weight
+     * - each pool entry must have either itemName or gold (not both)
+     * - pool weights should sum to 100 (warns but does not fail)
+     * - itemName references must exist in the equipment registry
+     *
+     * @param boxContents - BoxContents object to validate
+     * @returns Validation result with any errors
+     */
+    static validateBoxContents(boxContents: BoxContents): EquipmentValidationResult {
+        const errors: string[] = [];
+
+        if (!boxContents || typeof boxContents !== 'object') {
+            errors.push('boxContents must be an object');
+            return { valid: false, errors };
+        }
+
+        if (!Array.isArray(boxContents.drops)) {
+            errors.push('boxContents.drops must be an array');
+            return { valid: false, errors };
+        }
+
+        if (boxContents.consumeOnOpen !== undefined && typeof boxContents.consumeOnOpen !== 'boolean') {
+            errors.push('boxContents.consumeOnOpen must be a boolean');
+        }
+
+        for (let dropIndex = 0; dropIndex < boxContents.drops.length; dropIndex++) {
+            const drop = boxContents.drops[dropIndex];
+
+            if (!drop || !Array.isArray(drop.pool)) {
+                errors.push(`boxContents.drops[${dropIndex}]: pool must be an array`);
+                continue;
+            }
+
+            if (drop.pool.length === 0) {
+                errors.push(`boxContents.drops[${dropIndex}]: pool must not be empty`);
+                continue;
+            }
+
+            let totalWeight = 0;
+
+            for (let poolIndex = 0; poolIndex < drop.pool.length; poolIndex++) {
+                const entry = drop.pool[poolIndex];
+                const prefix = `boxContents.drops[${dropIndex}].pool[${poolIndex}]`;
+
+                // Validate weight
+                if (typeof entry.weight !== 'number' || entry.weight < 0) {
+                    errors.push(`${prefix}: weight must be a non-negative number`);
+                } else {
+                    totalWeight += entry.weight;
+                }
+
+                // Validate mutual exclusivity of itemName and gold
+                if (entry.itemName !== undefined && entry.gold !== undefined) {
+                    errors.push(`${prefix}: itemName and gold are mutually exclusive`);
+                }
+
+                // Must have at least one of itemName or gold
+                if (entry.itemName === undefined && entry.gold === undefined) {
+                    errors.push(`${prefix}: must have either itemName or gold`);
+                }
+
+                // Validate itemName if present
+                if (entry.itemName !== undefined) {
+                    if (typeof entry.itemName !== 'string' || entry.itemName.length === 0) {
+                        errors.push(`${prefix}: itemName must be a non-empty string`);
+                    } else {
+                        // Validate itemName exists in equipment registry
+                        const manager = ExtensionManager.getInstance();
+                        const allEquipment = manager.get('equipment') as Array<{ name: string }>;
+                        const found = allEquipment.some(eq => eq.name === entry.itemName);
+                        if (!found) {
+                            errors.push(`${prefix}: itemName "${entry.itemName}" not found in equipment registry`);
+                        }
+                    }
+                }
+
+                // Validate gold if present
+                if (entry.gold !== undefined) {
+                    if (typeof entry.gold !== 'number' || entry.gold < 0) {
+                        errors.push(`${prefix}: gold must be a non-negative number`);
+                    }
+                }
+
+                // Validate quantity if present
+                if (entry.quantity !== undefined) {
+                    if (typeof entry.quantity !== 'number' || entry.quantity < 1 || !Number.isInteger(entry.quantity)) {
+                        errors.push(`${prefix}: quantity must be a positive integer`);
+                    }
+                }
+            }
+
+            // Warn if pool weights don't sum to 100
+            if (drop.pool.length > 0 && Math.abs(totalWeight - 100) > 0.001) {
+                errors.push(`boxContents.drops[${dropIndex}]: pool weights sum to ${totalWeight}, expected 100`);
+            }
         }
 
         return {

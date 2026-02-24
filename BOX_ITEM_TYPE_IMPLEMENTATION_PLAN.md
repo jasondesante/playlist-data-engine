@@ -227,11 +227,11 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Boxes can be specified in `treasure.items[]` array — updated `TreasureConfig.items` and `CombatResult.treasureAwarded.items` from `any[]` to `Equipment[]` (supports `type: 'box'` items)
   - [x] No auto-opening - boxes awarded as unopened items (pass-through behavior, no auto-open logic added)
 
-- [ ] **5.4 Update EquipmentValidator**
-  - [ ] File: `src/core/equipment/EquipmentValidator.ts`
-  - [ ] Add validation for `boxContents` property
-  - [ ] Validate weight sums in pools
-  - [ ] Validate itemName references exist in registry
+- [x] **5.4 Update EquipmentValidator**
+  - [x] File: `src/core/equipment/EquipmentValidator.ts`
+  - [x] Add validation for `boxContents` property
+  - [x] Validate weight sums in pools
+  - [x] Validate itemName references exist in registry
 
 ---
 
@@ -452,8 +452,8 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 2: ✅ Complete
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
-- Phase 5: 🔄 In Progress (3/4 tasks complete)
+- Phase 5: ✅ Complete
 - Phase 6: ⬜ Not Started
 - Phase 7: ⬜ Not Started
 
-*Last updated: 2026-02-24 (Tasks 5.1, 5.2, 5.3 complete)*
+*Last updated: 2026-02-24 (Task 5.4 complete — EquipmentValidator now validates boxContents: pool presence, weight sums to 100, mutual exclusivity of itemName/gold, quantity as positive integer, and itemName registry lookup)*
