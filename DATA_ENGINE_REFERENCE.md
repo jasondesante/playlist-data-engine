@@ -23,6 +23,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [Equipment Generator](#equipment-generator)
    - [Equipment Modifier](#equipment-modifier)
    - [Equipment Spawn Helper](#equipment-spawn-helper)
+   - [BoxOpener](#boxopener)
 10. [Extensibility System](#extensibility-system)
     - [ExtensionManager](#extensionmanager)
     - [FeatureQuery](#featurequery)
@@ -107,6 +108,7 @@ A concise overview of all main exports from the library, organized by category.
 | `EquipmentEffectApplier` | Apply/remove equipment effects when equipping/unequipping | [Equipment System](#equipment-system) |
 | `EquipmentModifier` | Enchant, curse, upgrade, and modify equipment | [Equipment System](#equipment-system) |
 | `EquipmentSpawnHelper` | Batch spawn equipment by rarity, tags, or templates | [Equipment System](#equipment-system) |
+| `BoxOpener` | Open box-type items and generate their contents | [Equipment System](#boxopener) |
 
 **Additional Equipment:** Predefined enchantment library, 38+ pre-built magic items, templates — see [Equipment System](#equipment-system) and [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)
 
@@ -164,6 +166,8 @@ All TypeScript types are exported, including:
 **Extensibility Types:** `ClassFeature`, `RacialTrait`, `CustomSkill`, `FeatureEffect`, `FeaturePrerequisite`, `SkillPrerequisite`, `SpellPrerequisite`, `ValidationResult`, `ExtensionCategory` — see [Extensibility System](#extensibility-system) and [PREREQUISITES.md](docs/PREREQUISITES.md)
 
 **Equipment Types:** `EnhancedEquipment` (primary), `Equipment` (legacy), `InventoryItem`, `EquipmentProperty`, `EquipmentCondition`, `EquipmentModification`, `EnhancedInventoryItem`, `EquipmentMiniFeature`, `SpawnRandomOptions`, `TreasureHoardResult` — see [Equipment System](#equipment-system)
+
+**Box Types:** `BoxDropPool`, `BoxDrop`, `BoxContents`, `BoxOpenResult` — see [BoxOpener](#boxopener)
 
 **Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature` — see [Enemy Generation](#enemy-generation)
 
@@ -2824,6 +2828,10 @@ Conditional property triggers:
 | `EquipmentValidationResult` | Result of validating equipment data | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
 | `SpawnRandomOptions` | Options for filtering random equipment spawns | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
 | `TreasureHoardResult` | Result of generating treasure hoard | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `BoxDropPool` | Single entry in a box drop pool (weight, itemName, quantity, gold) | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `BoxDrop` | A single drop slot containing a weighted pool of possible items | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `BoxContents` | Box configuration (drops array and consumeOnOpen flag) | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `BoxOpenResult` | Result of opening a box (items array, gold total, consumeBox flag) | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
 
 ### EquipmentEffectApplier
 *Also known as: Equipment effects manager, item bonus applier, equip/unequip handler*
@@ -2931,8 +2939,79 @@ Batch spawning utilities for equipment. Spawns from lists, by rarity, by tags, r
 | `spawnFromTemplate(templateId: string, baseItemName?: string)` | Spawn item from template ID (null if not found) |
 | `spawnTreasureHoard(cr: number, rng: SeededRNG)` | Spawn treasure hoard based on challenge rating |
 | `addToCharacter(character: CharacterSheet, items: EnhancedEquipment[], equip?: boolean)` | Add spawned equipment to character inventory |
+| `openBoxForCharacter(character: CharacterSheet, boxName: string, rng: SeededRNG)` | Open a named box in the character's inventory, remove it, add contents — see [BoxOpener](#boxopener) |
 
 For usage examples, see [EQUIPMENT_SYSTEM.md](../docs/EQUIPMENT_SYSTEM.md#batch-spawning).
+
+### BoxOpener
+
+*Also known as: Loot box opener, pack unboxer, drop generator*
+
+**Location:** [src/core/equipment/BoxOpener.ts](src/core/equipment/BoxOpener.ts)
+
+Static utility class for opening `type: 'box'` equipment items and generating their contents. Supports guaranteed containers (like adventure packs), probability-based loot boxes, gold drops, quantity parameters for bulk items, and nested boxes (which are added unopened). All results are deterministic when given the same `SeededRNG` seed.
+
+#### Methods
+
+| Method | Description |
+|--------|-------------|
+| `openBox(box: Equipment, rng: SeededRNG): BoxOpenResult` | Open a box and generate its contents. Processes each `BoxDrop` slot, selects one entry per slot via weighted random, handles gold and item drops, and returns items + gold total. |
+| `isBox(equipment: Equipment): boolean` | Return `true` if the equipment has `type: 'box'` and a `boxContents` property. |
+| `previewContents(box: Equipment)` | Preview all possible items and gold range without opening. Returns `{ possibleItems: string[], possibleGold: { min, max }, totalDrops: number }`. Useful for UI tooltips. |
+
+#### BoxOpenResult
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `items` | `Equipment[]` | All items generated from the box drops |
+| `gold` | `number` | Total gold awarded from gold-type drops |
+| `consumeBox` | `boolean` | Whether the box should be removed from inventory (controlled by `boxContents.consumeOnOpen`) |
+
+#### Box Type Interfaces
+
+| Interface | Key Properties | Description |
+|-----------|---------------|-------------|
+| `BoxDropPool` | `weight`, `itemName?`, `quantity?`, `gold?` | Single entry in a drop pool. Weights in a pool should sum to 100. `itemName` and `gold` are mutually exclusive. |
+| `BoxDrop` | `pool: BoxDropPool[]` | One drop slot — exactly one entry from the pool is selected per drop. |
+| `BoxContents` | `drops: BoxDrop[]`, `consumeOnOpen?` | Full box configuration. `consumeOnOpen` defaults to `true`. |
+
+#### Usage Examples
+
+```typescript
+import { BoxOpener, EquipmentSpawnHelper, SeededRNG } from 'playlist-data-engine';
+
+const rng = new SeededRNG('my-seed');
+
+// --- Open a box directly ---
+const explorersPack = /* Equipment with type: 'box' */;
+const result = BoxOpener.openBox(explorersPack, rng);
+console.log(result.items);      // Generated Equipment[] (e.g., 26 items for Explorer's Pack)
+console.log(result.gold);       // Gold total (0 for packs, non-zero for treasure chests)
+console.log(result.consumeBox); // true (pack is consumed on open)
+
+// --- Check if an item is a box ---
+if (BoxOpener.isBox(someItem)) {
+    const preview = BoxOpener.previewContents(someItem);
+    console.log(preview.possibleItems);            // ['Backpack', 'Bedroll', ...]
+    console.log(preview.possibleGold);             // { min: 0, max: 0 }
+    console.log(preview.totalDrops);               // 8
+}
+
+// --- Open a box already in a character's inventory ---
+// (removes box from inventory, adds contents)
+EquipmentSpawnHelper.openBoxForCharacter(character, "Explorer's Pack", rng);
+```
+
+#### Box Behavior Rules
+
+- **Guaranteed containers**: Pools with a single entry (weight 100) always drop that item.
+- **Probability boxes**: Multiple pool entries with different weights — one is selected per drop.
+- **Nested boxes**: If a drop resolves to another `type: 'box'` item, it is added to inventory unopened (no recursive opening).
+- **Quantity**: `BoxDropPool.quantity` creates multiple copies of the same item in one drop (e.g., `quantity: 10` for Torch adds 10 torch items).
+- **Gold drops**: Use `gold` instead of `itemName` in a pool entry for a gold award.
+- **Deterministic**: Same seed + same box = same result every time.
+
+For comprehensive examples and all box definitions, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#box-equipment-type).
 
 ### EquipmentGenerator
 *Also known as: Equipment manager, inventory system, gear handler, starting equipment provider*

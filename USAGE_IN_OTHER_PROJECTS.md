@@ -62,6 +62,7 @@ See [Extensibility System](#extensibility-system) below for complete extensibili
 See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) for:
 - Custom equipment — Properties, enchanting, templates
 - Equipment spawning — Batch spawn by rarity, tags, or templates
+- Box items — Containers, adventure packs, loot boxes (see also [BoxOpener](DATA_ENGINE_REFERENCE.md#boxopener))
 
 ### Developer Reference
 - [Available Exports](#available-exports) — Complete API reference
@@ -408,13 +409,54 @@ The extensibility system allows you to add custom content at runtime, including 
 
 ## Equipment System
 
-Comprehensive equipment system with custom items, properties, enchanting, templates, and batch spawning.
+Comprehensive equipment system with custom items, properties, enchanting, templates, batch spawning, and box-type containers.
 
 **See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md)** for:
 - Equipment properties — Stat bonuses, skills, abilities, damage, conditions
 - Equipment modification — Enchanting, cursing, upgrading at runtime
 - Equipment spawning — Batch spawn by rarity, tags, or templates
 - Equipment-granted features — Items that grant features, skills, or spells
+- Box items — Containers, adventure packs, and loot boxes
+
+### Box Items (Containers & Loot Boxes)
+
+Box-type equipment (`type: 'box'`) can contain other items and gold. This covers both guaranteed containers (like adventure packs that always give specific items) and probability-based loot boxes.
+
+```typescript
+import { BoxOpener, EquipmentSpawnHelper, SeededRNG } from 'playlist-data-engine';
+
+const rng = new SeededRNG('player-seed');
+
+// --- Check if an item in inventory is a box ---
+const someItem = character.equipment.items[0];
+if (BoxOpener.isBox(someItem)) {
+    // Preview possible contents without opening
+    const preview = BoxOpener.previewContents(someItem);
+    console.log(preview.possibleItems);  // ['Backpack', 'Bedroll', 'Torch', ...]
+    console.log(preview.possibleGold);   // { min: 0, max: 0 }
+    console.log(preview.totalDrops);     // 8
+}
+
+// --- Open a box directly ---
+const result = BoxOpener.openBox(someItem, rng);
+console.log(result.items);       // Equipment[] generated from the box
+console.log(result.gold);        // Total gold awarded
+console.log(result.consumeBox);  // true = remove box from inventory
+
+// --- Open a named box from a character's inventory ---
+// (finds "Explorer's Pack" in inventory, opens it, removes it, adds contents)
+EquipmentSpawnHelper.openBoxForCharacter(character, "Explorer's Pack", rng);
+```
+
+**Box behavior:**
+- **Guaranteed drops** — Single-entry pool (weight 100) always gives that item
+- **Weighted random** — Multi-entry pool selects one item per drop slot
+- **Quantity** — `quantity: 10` for Torch gives 10 torch items in one drop
+- **Gold drops** — Pool entries with `gold` award gold instead of items
+- **Nested boxes** — Boxes inside boxes are added unopened (no recursive opening)
+- **Deterministic** — Same seed + same box = same result every time
+
+For all built-in pack definitions and custom box examples, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#box-equipment-type) and [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#boxopener).
 
 ---
 
