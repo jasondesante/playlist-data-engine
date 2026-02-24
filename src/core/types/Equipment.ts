@@ -29,7 +29,8 @@ export type EquipmentRarity =
 export type EquipmentType =
     | 'weapon'
     | 'armor'
-    | 'item';
+    | 'item'
+    | 'box';
 
 /**
  * Equipment property types that affect gameplay
@@ -80,6 +81,72 @@ export interface EquipmentMiniFeature {
     effects: EquipmentProperty[];  // What this mini-feature does
     source: 'equipment_inline';    // Marks this as equipment-specific (not in main registry)
 }
+
+// ============================================================================
+// BOX ITEM TYPE INTERFACES
+// ============================================================================
+
+/**
+ * Pool entry for a single item that can drop from a box
+ *
+ * Each entry in a drop pool represents a possible item that could be
+ * generated when a box is opened. The weight determines the probability
+ * relative to other entries in the same pool.
+ */
+export interface BoxDropPool {
+    /** Probability weight (weights in pool should sum to 100) */
+    weight: number;
+    /** Item name to spawn (must exist in equipment registry) */
+    itemName?: string;
+    /** Quantity if selected (e.g., 10 torches, 20 arrows) */
+    quantity?: number;
+    /** Gold amount instead of item (mutually exclusive with itemName) */
+    gold?: number;
+}
+
+/**
+ * A single "drop" - one item generated from a pool
+ *
+ * When a box is opened, each drop generates one item by selecting
+ * from its pool using weighted random selection.
+ */
+export interface BoxDrop {
+    /** Pool of possible items. Weights should sum to 100. */
+    pool: BoxDropPool[];
+}
+
+/**
+ * Box contents configuration
+ *
+ * Defines what a box item contains when opened. Supports both
+ * guaranteed containers (like Explorer's Pack) and probability-based
+ * loot boxes.
+ */
+export interface BoxContents {
+    /** Number of drops to generate when box is opened */
+    drops: BoxDrop[];
+    /** Whether box is consumed on open (default: true) */
+    consumeOnOpen?: boolean;
+}
+
+/**
+ * Result of opening a box
+ *
+ * Contains all items and gold generated from opening a box,
+ * along with metadata about whether the box should be consumed.
+ */
+export interface BoxOpenResult {
+    /** Items generated from the box */
+    items: BaseEquipment[];
+    /** Gold generated from the box */
+    gold: number;
+    /** Whether the box should be consumed */
+    consumeBox: boolean;
+}
+
+// ============================================================================
+// END BOX ITEM TYPE INTERFACES
+// ============================================================================
 
 /**
  * Enhanced equipment interface with optional advanced properties
@@ -214,7 +281,7 @@ export interface SpawnRandomOptions {
     /** Exclude items with spawnWeight: 0 (game-only items) */
     excludeZeroWeight?: boolean;
     /** Only include specific equipment types */
-    includeTypes?: ('weapon' | 'armor' | 'item')[];
+    includeTypes?: ('weapon' | 'armor' | 'item' | 'box')[];
     /** Minimum rarity level (inclusive) */
     minRarity?: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
     /** Maximum rarity level (inclusive) */

@@ -96,7 +96,12 @@ export type {
     EffectApplicationResult,
     EquipmentValidationResult,
     SpawnRandomOptions,
-    TreasureHoardResult
+    TreasureHoardResult,
+    // Box item types
+    BoxDropPool,
+    BoxDrop,
+    BoxContents,
+    BoxOpenResult
 } from './core/types/Equipment.js';
 
 // Combat types

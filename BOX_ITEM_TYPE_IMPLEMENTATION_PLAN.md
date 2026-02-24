@@ -14,9 +14,9 @@ Add a new "box" equipment type that represents items containing other items. Thi
 ## Phase 1: Type Definitions
 *Estimated complexity: Low*
 
-- [ ] **1.1 Add Box Type to EquipmentType Union**
-  - [ ] Open `src/core/types/Equipment.ts`
-  - [ ] Add `'box'` to `EquipmentType` union (line ~29-32)
+- [x] **1.1 Add Box Type to EquipmentType Union**
+  - [x] Open `src/core/types/Equipment.ts`
+  - [x] Add `'box'` to `EquipmentType` union (line ~29-32)
   ```typescript
   export type EquipmentType =
       | 'weapon'
@@ -25,8 +25,8 @@ Add a new "box" equipment type that represents items containing other items. Thi
       | 'box';  // NEW
   ```
 
-- [ ] **1.2 Define Box Content Interfaces**
-  - [ ] Add to `src/core/types/Equipment.ts` (before `EnhancedEquipment` type alias)
+- [x] **1.2 Define Box Content Interfaces**
+  - [x] Add to `src/core/types/Equipment.ts` (before `EnhancedEquipment` type alias)
   ```typescript
   /** Pool entry for a single item that can drop from a box */
   export interface BoxDropPool {
@@ -65,14 +65,14 @@ Add a new "box" equipment type that represents items containing other items. Thi
   }
   ```
 
-- [ ] **1.3 Update Equipment Interface**
-  - [ ] Open `src/utils/constants.ts`
-  - [ ] Import box types from `../core/types/Equipment.js`
-  - [ ] Add `boxContents?: BoxContents` to `Equipment` interface
-  - [ ] Update `SpawnRandomOptions.includeTypes` to include `'box'`
+- [x] **1.3 Update Equipment Interface**
+  - [x] Open `src/utils/constants.ts`
+  - [x] Import box types from `../core/types/Equipment.js`
+  - [x] Add `boxContents?: BoxContents` to `Equipment` interface
+  - [x] Update `SpawnRandomOptions.includeTypes` to include `'box'`
 
-- [ ] **1.4 Export Types from Index**
-  - [ ] Update `src/index.ts` to export new box types
+- [x] **1.4 Export Types from Index**
+  - [x] Update `src/index.ts` to export new box types
 
 ---
 
@@ -443,7 +443,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 ---
 
 ## Progress Tracking
-- Phase 1: ⬜ Not Started
+- Phase 1: ✅ Complete
 - Phase 2: ⬜ Not Started
 - Phase 3: ⬜ Not Started
 - Phase 4: ⬜ Not Started
@@ -451,4 +451,4 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 6: ⬜ Not Started
 - Phase 7: ⬜ Not Started
 
-*Last updated: 2026-02-23*
+*Last updated: 2026-02-24*

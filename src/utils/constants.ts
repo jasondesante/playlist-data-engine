@@ -12,7 +12,8 @@ import type {
     EquipmentPropertyType,
     EquipmentCondition,
     EquipmentProperty,
-    EquipmentMiniFeature
+    EquipmentMiniFeature,
+    BoxContents
 } from '../core/types/Equipment.js';
 
 // Re-export spell types for backward compatibility
@@ -623,6 +624,9 @@ export interface Equipment {
 
     /** Optional: User-facing description of this equipment */
     description?: string;
+
+    /** Box contents (only for type: 'box') */
+    boxContents?: BoxContents;
 }
 
 // ===== Helper Functions for Custom Class Data =====
