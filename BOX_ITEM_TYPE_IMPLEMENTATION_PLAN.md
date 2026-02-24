@@ -131,10 +131,10 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Piton - weight 0.25, tags: gear, climbing, utility
   - [x] Small Knife - weight 1, tags: gear, tool, utility
 
-- [ ] **3.2 Add Light Sources**
-  - [ ] Candle - weight 0, tags: gear, light, consumable
-  - [ ] Hooded Lantern - weight 2, tags: gear, light
-  - [ ] Oil Flask - weight 1, tags: gear, light, consumable
+- [x] **3.2 Add Light Sources**
+  - [x] Candle - weight 0, tags: gear, light, consumable
+  - [x] Hooded Lantern - weight 2, tags: gear, light
+  - [x] Oil Flask - weight 1, tags: gear, light, consumable
 
 - [ ] **3.3 Add Survival Items**
   - [ ] Bedroll - weight 7, tags: gear, camp, comfort

@@ -463,6 +463,42 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         description: 'A small utility knife useful for cutting rope, skinning game, and other everyday tasks. Not designed for combat.'
     },
 
+    // ===== LIGHT SOURCES =====
+
+    'Candle': {
+        name: 'Candle',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        properties: [
+            { type: 'special_property', target: 'light', value: 'dim_light_5ft', description: 'Sheds dim light 5ft, bright 2ft' }
+        ],
+        spawnWeight: 1.0,
+        tags: ['gear', 'light', 'consumable'],
+        description: 'A simple wax candle that burns for about an hour. Provides dim light in a 5-foot radius, bright light in a 2-foot radius.'
+    },
+    'Hooded Lantern': {
+        name: 'Hooded Lantern',
+        type: 'item',
+        rarity: 'common',
+        weight: 2,
+        properties: [
+            { type: 'special_property', target: 'light', value: 'bright_light_30ft', description: 'Sheds bright light 30ft, dim 30ft when unhooded' }
+        ],
+        spawnWeight: 1.0,
+        tags: ['gear', 'light'],
+        description: 'A metal lantern with a hood that can be raised or lowered to control the light. Burns for 6 hours on a flask of oil. Sheds bright light in a 30-foot cone and dim light for an additional 30 feet when unhooded.'
+    },
+    'Oil Flask': {
+        name: 'Oil Flask',
+        type: 'item',
+        rarity: 'common',
+        weight: 1,
+        spawnWeight: 1.0,
+        tags: ['gear', 'light', 'consumable'],
+        description: 'A flask of oil suitable for fueling lanterns. Can also be used as a weapon when thrown and ignited, dealing fire damage. Burns for 6 hours in a lantern.'
+    },
+
     // ===== ADVENTURE PACKS =====
 
     'Burglar\'s Pack': {
