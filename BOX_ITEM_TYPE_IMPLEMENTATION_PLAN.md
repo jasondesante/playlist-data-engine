@@ -253,14 +253,15 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Starting equipment packs remain unopened
   - [x] Combat rewards can include boxes
 
-- [ ] **6.3 Manual Verification**
+- [x] **6.3 Manual Verification**
   ```typescript
   import { BoxOpener, SeededRNG } from 'playlist-data-engine';
 
   const rng = new SeededRNG('test-seed');
   const result = BoxOpener.openBox(explorersPack, rng);
-  console.log(result.items); // Should always be same 8 items
+  console.log(result.items); // 26 items: 6 singles + Torch×10 + Rations×10
   ```
+  Verified via `tsx` script: 26 items (Backpack, Bedroll, Mess Kit, Tinderbox, Waterskin, Rope, Torch×10, Rations×10), deterministic across seeds, `isBox()` and `previewContents()` work correctly. Note: plan comment said "8 items" but that refers to 8 drops — actual item count is 26 due to quantity params.
 
 ---
 
@@ -453,7 +454,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
-- Phase 6: 🟡 In Progress (6.3 Manual Verification remaining)
+- Phase 6: ✅ Complete
 - Phase 7: ⬜ Not Started
 
-*Last updated: 2026-02-24 (Task 6.2 complete — 25 integration tests added in `tests/integration/boxSystem.integration.test.ts` covering: adding boxes to character inventory, opening boxes removes them and adds contents, starting equipment packs remain unopened for all classes (Ranger/Barbarian/Rogue/Cleric/Wizard/Sorcerer/Bard), and combat rewards including boxes. All 2878 tests passing, build clean.)*
+*Last updated: 2026-02-24 (Task 6.3 complete — Manual verification via tsx script confirmed: BoxOpener.openBox(explorersPack, rng) produces 26 deterministic items (Backpack, Bedroll, Mess Kit, Tinderbox, Waterskin, Rope, Torch×10, Rations×10), isBox() and previewContents() work correctly. All 53 box tests pass (28 unit + 25 integration). Build clean.)*
