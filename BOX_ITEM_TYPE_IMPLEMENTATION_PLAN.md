@@ -247,11 +247,11 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Test gold drops
   - [x] Test seeded RNG produces same results
 
-- [ ] **6.2 Integration Tests**
-  - [ ] Add box to character inventory
-  - [ ] Open box removes from inventory and adds contents
-  - [ ] Starting equipment packs remain unopened
-  - [ ] Combat rewards can include boxes
+- [x] **6.2 Integration Tests**
+  - [x] Add box to character inventory
+  - [x] Open box removes from inventory and adds contents
+  - [x] Starting equipment packs remain unopened
+  - [x] Combat rewards can include boxes
 
 - [ ] **6.3 Manual Verification**
   ```typescript
@@ -453,7 +453,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
-- Phase 6: 🟡 In Progress
+- Phase 6: 🟡 In Progress (6.3 Manual Verification remaining)
 - Phase 7: ⬜ Not Started
 
-*Last updated: 2026-02-24 (Task 6.1 complete — 28 unit tests added for BoxOpener covering: guaranteed packs, loot box weights, mixed drops, quantity parameter, nested boxes, gold drops, seeded RNG determinism, isBox, and previewContents. All 2853 tests passing, build clean.)*
+*Last updated: 2026-02-24 (Task 6.2 complete — 25 integration tests added in `tests/integration/boxSystem.integration.test.ts` covering: adding boxes to character inventory, opening boxes removes them and adds contents, starting equipment packs remain unopened for all classes (Ranger/Barbarian/Rogue/Cleric/Wizard/Sorcerer/Bard), and combat rewards including boxes. All 2878 tests passing, build clean.)*
