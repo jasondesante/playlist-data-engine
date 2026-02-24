@@ -136,12 +136,12 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Hooded Lantern - weight 2, tags: gear, light
   - [x] Oil Flask - weight 1, tags: gear, light, consumable
 
-- [ ] **3.3 Add Survival Items**
-  - [ ] Bedroll - weight 7, tags: gear, camp, comfort
-  - [ ] Rations (1 day) - weight 2, tags: gear, food, consumable
-  - [ ] Tinderbox - weight 1, tags: gear, fire, utility
-  - [ ] Mess Kit - weight 1, tags: gear, camp, dining
-  - [ ] Blanket - weight 3, tags: gear, camp, comfort
+- [x] **3.3 Add Survival Items**
+  - [x] Bedroll - weight 7, tags: gear, camp, comfort
+  - [x] Rations (1 day) - weight 2, tags: gear, food, consumable
+  - [x] Tinderbox - weight 1, tags: gear, fire, utility
+  - [x] Mess Kit - weight 1, tags: gear, camp, dining
+  - [x] Blanket - weight 3, tags: gear, camp, comfort
 
 - [ ] **3.4 Add Clothing Items**
   - [ ] Costume - weight 4, tags: gear, clothing, performance

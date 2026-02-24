@@ -343,7 +343,7 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         name: 'Bedroll',
         type: 'item',
         rarity: 'common',
-        weight: 10,
+        weight: 7,
         spawnWeight: 1.0,
         tags: ['gear', 'camp', 'comfort'],
         description: 'A padded blanket roll used for sleeping outdoors. Essential comfort for adventurers on the road.'
@@ -497,6 +497,45 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         spawnWeight: 1.0,
         tags: ['gear', 'light', 'consumable'],
         description: 'A flask of oil suitable for fueling lanterns. Can also be used as a weapon when thrown and ignited, dealing fire damage. Burns for 6 hours in a lantern.'
+    },
+
+    // ===== SURVIVAL ITEMS =====
+
+    'Rations': {
+        name: 'Rations',
+        type: 'item',
+        rarity: 'common',
+        weight: 2,
+        spawnWeight: 1.0,
+        tags: ['gear', 'food', 'consumable'],
+        description: 'One day\'s worth of dried meat, hard bread, and other preserved food. Essential for surviving long journeys without access to fresh food.'
+    },
+    'Tinderbox': {
+        name: 'Tinderbox',
+        type: 'item',
+        rarity: 'common',
+        weight: 1,
+        spawnWeight: 1.0,
+        tags: ['gear', 'fire', 'utility'],
+        description: 'A small container with flint, steel, and tinder for starting fires. Essential for lighting torches, campfires, and lanterns.'
+    },
+    'Mess Kit': {
+        name: 'Mess Kit',
+        type: 'item',
+        rarity: 'common',
+        weight: 1,
+        spawnWeight: 1.0,
+        tags: ['gear', 'camp', 'dining'],
+        description: 'A tin box containing a cup, bowl, and simple eating utensils. Collapses flat for easy packing and storage.'
+    },
+    'Blanket': {
+        name: 'Blanket',
+        type: 'item',
+        rarity: 'common',
+        weight: 3,
+        spawnWeight: 1.0,
+        tags: ['gear', 'camp', 'comfort'],
+        description: 'A warm woolen blanket for sleeping. Provides basic warmth and comfort during rest in cold environments.'
     },
 
     // ===== ADVENTURE PACKS =====
