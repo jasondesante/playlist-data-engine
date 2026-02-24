@@ -716,11 +716,23 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
     },
     'Entertainer\'s Pack': {
         name: 'Entertainer\'s Pack',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
         weight: 58,
         spawnWeight: 1.0,
         tags: ['gear', 'pack', 'bard'],
+        boxContents: {
+            drops: [
+                { pool: [{ weight: 100, itemName: 'Backpack' }] },
+                { pool: [{ weight: 100, itemName: 'Bedroll' }] },
+                { pool: [{ weight: 100, itemName: 'Costume', quantity: 2 }] },
+                { pool: [{ weight: 100, itemName: 'Candle', quantity: 5 }] },
+                { pool: [{ weight: 100, itemName: 'Rations', quantity: 5 }] },
+                { pool: [{ weight: 100, itemName: 'Waterskin' }] },
+                { pool: [{ weight: 100, itemName: 'Disguise Kit' }] }
+            ],
+            consumeOnOpen: true
+        },
         description: 'A backpack containing a bard\'s performance gear: a backpack, a bedroll, 2 costumes, 5 candles, 5 days\' rations, a waterskin, and a disguise kit.'
     },
     'Priest\'s Pack': {

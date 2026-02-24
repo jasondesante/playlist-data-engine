@@ -168,7 +168,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 ## Phase 4: Convert Packs to Boxes
 *Estimated complexity: Medium (15 items)*
 
-- [ ] **4.1 Convert Basic Packs**
+- [x] **4.1 Convert Basic Packs**
   - [x] **Backpack** (lines 360-368) - empty container, `drops: []`
   - [x] **Burglar's Pack** (lines 402-410) - 14 drops (full D&D 5e contents)
     - Backpack, Ball Bearings x1000, String 10ft, Bell, Candle x5, Crowbar, Hammer, Piton x10, Hooded Lantern, Oil Flask x2, Rations x5, Tinderbox, Waterskin, Rope 50ft
@@ -176,7 +176,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
     - Backpack, Bedroll, Mess Kit, Tinderbox, Waterskin, Rope 50ft, Torch x10, Rations x10
 
 - [ ] **4.2 Convert Class-Specific Packs**
-  - [ ] **Entertainer's Pack** (lines 420-428) - 8 drops
+  - [x] **Entertainer's Pack** (lines 420-428) - 8 drops
     - Backpack, Bedroll, Costume x2, Candle x5, Rations x5, Waterskin, Disguise Kit
   - [ ] **Priest's Pack** (lines 429-437) - 10 drops
     - Backpack, Blanket, Candle x10, Tinderbox, Alms Box, Incense x2, Censer, Vestments, Rations x2, Waterskin
