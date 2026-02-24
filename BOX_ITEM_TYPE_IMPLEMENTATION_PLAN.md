@@ -153,12 +153,12 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Incense (block) - weight 0, tags: gear, religious, consumable
   - [x] Censer - weight 2, tags: gear, religious
 
-- [ ] **3.6 Add Writing Items**
-  - [ ] Book of Lore - weight 5, tags: gear, book, knowledge
-  - [ ] Bottle of Ink - weight 0, tags: gear, writing, consumable
-  - [ ] Ink Pen - weight 0, tags: gear, writing
-  - [ ] Parchment (sheet) - weight 0, tags: gear, writing, consumable
-  - [ ] Bag of Sand - weight 0, tags: gear, writing, utility
+- [x] **3.6 Add Writing Items**
+  - [x] Book of Lore - weight 5, tags: gear, book, knowledge
+  - [x] Bottle of Ink - weight 0, tags: gear, writing, consumable
+  - [x] Ink Pen - weight 0, tags: gear, writing
+  - [x] Parchment (sheet) - weight 0, tags: gear, writing, consumable
+  - [x] Bag of Sand - weight 0, tags: gear, writing, utility
 
 - [ ] **3.7 Add Tools**
   - [ ] Disguise Kit - weight 3, tags: gear, deception, rogue

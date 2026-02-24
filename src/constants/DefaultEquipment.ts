@@ -598,6 +598,54 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         description: 'A metal container suspended on chains, used for burning incense during religious ceremonies. Often made of silver or brass and adorned with religious symbols.'
     },
 
+    // ===== WRITING ITEMS =====
+
+    'Book of Lore': {
+        name: 'Book of Lore',
+        type: 'item',
+        rarity: 'common',
+        weight: 5,
+        spawnWeight: 1.0,
+        tags: ['gear', 'book', 'knowledge'],
+        description: 'A scholarly tome containing accumulated knowledge on various subjects. Scholars and wizards often carry these to reference arcane theories, historical accounts, or arcane formulas.'
+    },
+    'Bottle of Ink': {
+        name: 'Bottle of Ink',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 1.0,
+        tags: ['gear', 'writing', 'consumable'],
+        description: 'A small glass bottle containing black ink, sealed with a stopper. Used with an ink pen for writing on parchment or paper.'
+    },
+    'Ink Pen': {
+        name: 'Ink Pen',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 1.0,
+        tags: ['gear', 'writing'],
+        description: 'A wooden pen with a metal nib, designed to be dipped in ink for writing. Essential for scribes, scholars, and anyone needing to keep written records.'
+    },
+    'Parchment': {
+        name: 'Parchment',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 1.0,
+        tags: ['gear', 'writing', 'consumable'],
+        description: 'A single sheet of parchment made from animal skin, used for writing important documents, letters, or arcane inscriptions. More durable than paper but also more expensive.'
+    },
+    'Bag of Sand': {
+        name: 'Bag of Sand',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 1.0,
+        tags: ['gear', 'writing', 'utility'],
+        description: 'A small cloth bag filled with fine sand. Sprinkled over freshly written text to absorb excess ink and speed drying, preventing smudges and blots.'
+    },
+
     // ===== ADVENTURE PACKS =====
 
     'Burglar\'s Pack': {
