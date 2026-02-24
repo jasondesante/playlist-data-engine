@@ -268,13 +268,13 @@ Add a new "box" equipment type that represents items containing other items. Thi
 ## Phase 7: Documentation
 *Estimated complexity: Low*
 
-- [ ] **7.1 Update Equipment System Documentation**
-  - [ ] File: `docs/EQUIPMENT_SYSTEM.md`
-  - [ ] Document new `'box'` equipment type
-  - [ ] Explain `BoxContents`, `BoxDrop`, `BoxDropPool` interfaces
-  - [ ] Provide examples of guaranteed containers vs loot boxes
-  - [ ] Document nested box behavior
-  - [ ] Document quantity parameter usage
+- [x] **7.1 Update Equipment System Documentation**
+  - [x] File: `docs/EQUIPMENT_SYSTEM.md`
+  - [x] Document new `'box'` equipment type
+  - [x] Explain `BoxContents`, `BoxDrop`, `BoxDropPool` interfaces
+  - [x] Provide examples of guaranteed containers vs loot boxes
+  - [x] Document nested box behavior
+  - [x] Document quantity parameter usage
 
 - [ ] **7.2 Update Combat System Documentation**
   - [ ] File: `docs/COMBAT_SYSTEM.md`
@@ -455,6 +455,6 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
 - Phase 6: ✅ Complete
-- Phase 7: ⬜ Not Started
+- Phase 7: 🔄 In Progress (7.1 complete, 7.2 and 7.3 remaining)
 
-*Last updated: 2026-02-24 (Task 6.3 complete — Manual verification via tsx script confirmed: BoxOpener.openBox(explorersPack, rng) produces 26 deterministic items (Backpack, Bedroll, Mess Kit, Tinderbox, Waterskin, Rope, Torch×10, Rations×10), isBox() and previewContents() work correctly. All 53 box tests pass (28 unit + 25 integration). Build clean.)*
+*Last updated: 2026-02-24 (Task 7.1 complete — Added full "Box Equipment Type" section to docs/EQUIPMENT_SYSTEM.md: BoxDropPool/BoxDrop/BoxContents/BoxOpenResult interface tables, BoxOpener class reference, guaranteed container vs loot box vs mixed box examples, quantity parameter usage, nested box behavior, non-consuming boxes, custom box registration, and API reference entry. Build clean.)*
