@@ -238,14 +238,14 @@ Add a new "box" equipment type that represents items containing other items. Thi
 ## Phase 6: Testing & Verification
 *Estimated complexity: Medium*
 
-- [ ] **6.1 Unit Tests for BoxOpener**
-  - [ ] Test guaranteed pack (Explorer's Pack always gives same items)
-  - [ ] Test loot box with probability weights
-  - [ ] Test mixed box (guaranteed + random drops)
-  - [ ] Test quantity parameter (20 arrows)
-  - [ ] Test nested boxes (Treasure Cache → Goblin Chest)
-  - [ ] Test gold drops
-  - [ ] Test seeded RNG produces same results
+- [x] **6.1 Unit Tests for BoxOpener**
+  - [x] Test guaranteed pack (Explorer's Pack always gives same items)
+  - [x] Test loot box with probability weights
+  - [x] Test mixed box (guaranteed + random drops)
+  - [x] Test quantity parameter (20 arrows)
+  - [x] Test nested boxes (Treasure Cache → Goblin Chest)
+  - [x] Test gold drops
+  - [x] Test seeded RNG produces same results
 
 - [ ] **6.2 Integration Tests**
   - [ ] Add box to character inventory
@@ -453,7 +453,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
-- Phase 6: ⬜ Not Started
+- Phase 6: 🟡 In Progress
 - Phase 7: ⬜ Not Started
 
-*Last updated: 2026-02-24 (Task 5.4 complete — EquipmentValidator now validates boxContents: pool presence, weight sums to 100, mutual exclusivity of itemName/gold, quantity as positive integer, and itemName registry lookup)*
+*Last updated: 2026-02-24 (Task 6.1 complete — 28 unit tests added for BoxOpener covering: guaranteed packs, loot box weights, mixed drops, quantity parameter, nested boxes, gold drops, seeded RNG determinism, isBox, and previewContents. All 2853 tests passing, build clean.)*
