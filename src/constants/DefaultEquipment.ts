@@ -694,11 +694,24 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
     },
     'Explorer\'s Pack': {
         name: 'Explorer\'s Pack',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
         weight: 59,
         spawnWeight: 1.0,
         tags: ['gear', 'pack', 'general'],
+        boxContents: {
+            drops: [
+                { pool: [{ weight: 100, itemName: 'Backpack' }] },
+                { pool: [{ weight: 100, itemName: 'Bedroll' }] },
+                { pool: [{ weight: 100, itemName: 'Mess Kit' }] },
+                { pool: [{ weight: 100, itemName: 'Tinderbox' }] },
+                { pool: [{ weight: 100, itemName: 'Waterskin' }] },
+                { pool: [{ weight: 100, itemName: 'Rope' }] },
+                { pool: [{ weight: 100, itemName: 'Torch', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Rations', quantity: 10 }] }
+            ],
+            consumeOnOpen: true
+        },
         description: 'A backpack containing gear for wilderness exploration: a backpack, a bedroll, mess kit, tinderbox, 10 torches, and 10 days\' rations. Includes a waterskin and 50 feet of hempen rope.'
     },
     'Entertainer\'s Pack': {
