@@ -221,11 +221,11 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Keep packs as unopened boxes (don't auto-open starting equipment) - already the default behavior
   - [x] Updated legacy `Equipment` interface to include `'box'` type
 
-- [ ] **5.3 Update Combat Engine (Minimal)**
-  - [ ] File: `src/core/combat/CombatEngine.ts`
-  - [ ] Combat system already supports arbitrary items in rewards
-  - [ ] Boxes can be specified in `treasure.items[]` array
-  - [ ] No auto-opening - boxes awarded as unopened items
+- [x] **5.3 Update Combat Engine (Minimal)**
+  - [x] File: `src/core/combat/CombatEngine.ts`
+  - [x] Combat system already supports arbitrary items in rewards
+  - [x] Boxes can be specified in `treasure.items[]` array — updated `TreasureConfig.items` and `CombatResult.treasureAwarded.items` from `any[]` to `Equipment[]` (supports `type: 'box'` items)
+  - [x] No auto-opening - boxes awarded as unopened items (pass-through behavior, no auto-open logic added)
 
 - [ ] **5.4 Update EquipmentValidator**
   - [ ] File: `src/core/equipment/EquipmentValidator.ts`
@@ -452,8 +452,8 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 2: ✅ Complete
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
-- Phase 5: 🔄 In Progress (2/4 tasks complete)
+- Phase 5: 🔄 In Progress (3/4 tasks complete)
 - Phase 6: ⬜ Not Started
 - Phase 7: ⬜ Not Started
 
-*Last updated: 2026-02-24 (Tasks 5.1, 5.2 complete)*
+*Last updated: 2026-02-24 (Tasks 5.1, 5.2, 5.3 complete)*

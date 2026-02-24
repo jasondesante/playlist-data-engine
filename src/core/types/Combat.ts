@@ -5,6 +5,7 @@
 
 import type { CharacterSheet, Attack, Spell } from './Character';
 import type { EnvironmentalContext } from './Progression';
+import type { Equipment } from '../../utils/constants.ts';
 
 /**
  * StatusEffect - Temporary condition affecting a combatant
@@ -132,7 +133,7 @@ export interface CombatResult {
   xpAwarded: number;
   treasureAwarded?: {
     gold: number;
-    items: any[];
+    items: Equipment[];
   };
   description: string;
 }
@@ -154,11 +155,11 @@ export type SavingThrowAbility = 'strength' | 'dexterity' | 'constitution' | 'in
  * Treasure Configuration Options
  * - Fixed amount: `{ gold: 500 }` - always rewards exactly 500 gold
  * - Range: `{ gold: { min: 100, max: 200 } }` - random amount between 100-200 (uses seed if provided)
- * - Items: Optional array of items to award
+ * - Items: Optional array of items to award (supports any Equipment type including boxes)
  */
 export interface TreasureConfig {
   gold?: number | { min: number; max: number };
-  items?: any[];
+  items?: Equipment[];
 }
 
 /**

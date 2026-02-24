@@ -12,6 +12,7 @@ import type {
   CombatResult
 } from '../types/Combat';
 import type { EnvironmentalContext } from '../types/Progression';
+import type { Equipment } from '../../utils/constants.js';
 import { InitiativeRoller } from './InitiativeRoller';
 import { AttackResolver } from './AttackResolver';
 import { SpellCaster } from './SpellCaster';
@@ -518,7 +519,7 @@ export class CombatEngine {
 
     // Calculate treasure based on config
     let gold = 0;
-    let items: any[] = [];
+    let items: Equipment[] = [];
 
     if (this.config.treasure) {
       // Custom treasure config
