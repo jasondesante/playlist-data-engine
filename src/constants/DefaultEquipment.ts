@@ -761,39 +761,90 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
     },
     'Dungeon Delver\'s Pack': {
         name: 'Dungeon Delver\'s Pack',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
         weight: 48,
         spawnWeight: 1.0,
         tags: ['gear', 'pack', 'dungeon'],
+        boxContents: {
+            drops: [
+                { pool: [{ weight: 100, itemName: 'Backpack' }] },
+                { pool: [{ weight: 100, itemName: 'Crowbar' }] },
+                { pool: [{ weight: 100, itemName: 'Hammer' }] },
+                { pool: [{ weight: 100, itemName: 'Piton', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Torch', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Tinderbox' }] },
+                { pool: [{ weight: 100, itemName: 'Rations', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Waterskin' }] },
+                { pool: [{ weight: 100, itemName: 'Rope' }] }
+            ],
+            consumeOnOpen: true
+        },
         description: 'A backpack optimized for dungeon exploration. Contains a backpack, crowbar, hammer, 10 pitons, 10 torches, a tinderbox, 10 days\' rations, and a waterskin. Includes 50 feet of hempen rope.'
     },
     'Dungeoneer\'s Pack': {
         name: 'Dungeoneer\'s Pack',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
         weight: 48,
         spawnWeight: 1.0,
         tags: ['gear', 'pack', 'dungeon'],
+        boxContents: {
+            drops: [
+                { pool: [{ weight: 100, itemName: 'Backpack' }] },
+                { pool: [{ weight: 100, itemName: 'Crowbar' }] },
+                { pool: [{ weight: 100, itemName: 'Hammer' }] },
+                { pool: [{ weight: 100, itemName: 'Piton', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Torch', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Tinderbox' }] },
+                { pool: [{ weight: 100, itemName: 'Rations', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Waterskin' }] },
+                { pool: [{ weight: 100, itemName: 'Rope' }] }
+            ],
+            consumeOnOpen: true
+        },
         description: 'A backpack optimized for underground exploration. Contains a backpack, crowbar, hammer, 10 pitons, 10 torches, a tinderbox, 10 days\' rations, and a waterskin. Includes 50 feet of hempen rope.'
     },
     'Scholar\'s Pack': {
         name: 'Scholar\'s Pack',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
         weight: 49,
         spawnWeight: 1.0,
         tags: ['gear', 'pack', 'wizard'],
-        description: 'A backpack containing a scholar\'s supplies: a backpack, a book of lore, a bottle of ink, an ink pen, 10 sheets of parchment, a little bag of sand, and a small knife.'
+        boxContents: {
+            drops: [
+                { pool: [{ weight: 100, itemName: 'Backpack' }] },
+                { pool: [{ weight: 100, itemName: 'Book of Lore' }] },
+                { pool: [{ weight: 100, itemName: 'Bottle of Ink' }] },
+                { pool: [{ weight: 100, itemName: 'Ink Pen' }] },
+                { pool: [{ weight: 100, itemName: 'Parchment', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Bag of Sand' }] }
+            ],
+            consumeOnOpen: true
+        },
+        description: 'A backpack containing a scholar\'s supplies: a backpack, a book of lore, a bottle of ink, an ink pen, 10 sheets of parchment, and a little bag of sand.'
     },
     'Traveler\'s Pack': {
         name: 'Traveler\'s Pack',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
-        weight: 64,
+        weight: 43,
         spawnWeight: 1.0,
         tags: ['gear', 'pack', 'general'],
-        description: 'A comprehensive backpack for long-distance travel. Contains clothing, food, water, and basic survival gear for extended journeys.'
+        boxContents: {
+            drops: [
+                { pool: [{ weight: 100, itemName: 'Backpack' }] },
+                { pool: [{ weight: 100, itemName: 'Bedroll' }] },
+                { pool: [{ weight: 100, itemName: 'Mess Kit' }] },
+                { pool: [{ weight: 100, itemName: 'Rations', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Waterskin' }] },
+                { pool: [{ weight: 100, itemName: 'Traveler\'s Clothes' }] },
+                { pool: [{ weight: 100, itemName: 'Rope' }] }
+            ],
+            consumeOnOpen: true
+        },
+        description: 'A backpack for long-distance travel: a backpack, a bedroll, a mess kit, 10 days\' rations, a waterskin, traveler\'s clothes, and 50 feet of hempen rope.'
     },
 
     // ===== AMMUNITION =====

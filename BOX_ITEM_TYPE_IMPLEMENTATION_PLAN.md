@@ -175,21 +175,21 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] **Explorer's Pack** (lines 411-419) - 8 drops
     - Backpack, Bedroll, Mess Kit, Tinderbox, Waterskin, Rope 50ft, Torch x10, Rations x10
 
-- [ ] **4.2 Convert Class-Specific Packs**
+- [x] **4.2 Convert Class-Specific Packs**
   - [x] **Entertainer's Pack** (lines 420-428) - 8 drops
     - Backpack, Bedroll, Costume x2, Candle x5, Rations x5, Waterskin, Disguise Kit
   - [x] **Priest's Pack** (lines 429-437) - 10 drops
     - Backpack, Blanket, Candle x10, Tinderbox, Alms Box, Incense x2, Censer, Vestments, Rations x2, Waterskin
-  - [ ] **Scholar's Pack** (lines 456-464) - 6 drops
+  - [x] **Scholar's Pack** (lines 456-464) - 6 drops
     - Backpack, Book of Lore, Bottle of Ink, Ink Pen, Parchment x10, Bag of Sand
 
-- [ ] **4.3 Convert Dungeon Packs**
-  - [ ] **Dungeon Delver's Pack** (lines 438-446) - 9 drops
+- [x] **4.3 Convert Dungeon Packs**
+  - [x] **Dungeon Delver's Pack** (lines 438-446) - 9 drops
     - Backpack, Crowbar, Hammer, Piton x10, Torch x10, Tinderbox, Rations x10, Waterskin, Rope 50ft
-  - [ ] **Dungeoneer's Pack** (lines 447-455) - 9 drops (same as Delver's)
+  - [x] **Dungeoneer's Pack** (lines 447-455) - 9 drops (same as Delver's)
 
-- [ ] **4.4 Convert General Packs**
-  - [ ] **Traveler's Pack** (lines 465-473) - 7 drops
+- [x] **4.4 Convert General Packs**
+  - [x] **Traveler's Pack** (lines 465-473) - 7 drops
     - Backpack, Bedroll, Mess Kit, Rations x10, Waterskin, Traveler's Clothes, Rope 50ft
 
 - [ ] **4.5 Convert Container Items**
