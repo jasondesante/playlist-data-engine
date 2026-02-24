@@ -169,7 +169,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 *Estimated complexity: Medium (15 items)*
 
 - [ ] **4.1 Convert Basic Packs**
-  - [ ] **Backpack** (lines 360-368) - empty container, `drops: []`
+  - [x] **Backpack** (lines 360-368) - empty container, `drops: []`
   - [ ] **Burglar's Pack** (lines 402-410) - 8 drops with specific items
     - Backpack, Ball Bearings x1000, String 10ft, Bell, Crowbar, Hammer, Piton x5
   - [ ] **Explorer's Pack** (lines 411-419) - 8 drops

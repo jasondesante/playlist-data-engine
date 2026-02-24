@@ -359,11 +359,15 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
     },
     'Backpack': {
         name: 'Backpack',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
         weight: 5,
         spawnWeight: 1.0,
         tags: ['gear', 'container', 'storage'],
+        boxContents: {
+            drops: [],
+            consumeOnOpen: false
+        },
         description: 'A leather backpack for carrying adventuring gear. Essential storage for any traveling adventurer.'
     },
     'Torch': {

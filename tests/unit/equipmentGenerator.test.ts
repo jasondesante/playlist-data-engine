@@ -168,7 +168,7 @@ describe('EquipmentGenerator', () => {
         });
 
         it('should have valid equipment types', () => {
-            const validTypes = ['weapon', 'armor', 'item'];
+            const validTypes = ['weapon', 'armor', 'item', 'box'];
 
             for (const [name, equipment] of Object.entries(DEFAULT_EQUIPMENT)) {
                 expect(validTypes).toContain(equipment.type);
