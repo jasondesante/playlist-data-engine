@@ -17,11 +17,13 @@ import type {
     EnhancedEquipment,
     EnhancedInventoryItem,
     SpawnRandomOptions,
-    TreasureHoardResult
+    TreasureHoardResult,
+    BoxOpenResult
 } from '../types/Equipment.js';
 import { SeededRNG } from '../../utils/random.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import { ITEM_CREATION_TEMPLATES } from '../../constants/ItemTemplates.js';
+import { BoxOpener } from './BoxOpener.js';
 
 /**
  * Rarity order for comparisons (common = 0, legendary = 4)
@@ -515,6 +517,7 @@ export class EquipmentSpawnHelper {
                     character.equipment.armor.push(inventoryItem);
                     break;
                 case 'item':
+                case 'box':
                     character.equipment.items.push(inventoryItem);
                     break;
             }
@@ -527,6 +530,70 @@ export class EquipmentSpawnHelper {
         }
 
         return character;
+    }
+
+    /**
+     * Open a box item in a character's inventory
+     *
+     * Finds the named box in the character's items, opens it using BoxOpener,
+     * removes it from inventory (if consumeOnOpen), and adds the box contents
+     * to the character's inventory.
+     *
+     * @param character - Character whose inventory contains the box
+     * @param boxName - Name of the box item to open
+     * @param rng - SeededRNG for deterministic results
+     * @returns Object with updated character and BoxOpenResult, or null if box not found
+     *
+     * @example
+     * ```typescript
+     * const rng = new SeededRNG('open_pack');
+     * const result = EquipmentSpawnHelper.openBoxForCharacter(character, "Explorer's Pack", rng);
+     * if (result) {
+     *     character = result.character;
+     *     console.log(`Received ${result.result.gold} gold`);
+     *     console.log(`Received ${result.result.items.length} items`);
+     * }
+     * ```
+     */
+    static openBoxForCharacter(
+        character: CharacterSheet,
+        boxName: string,
+        rng: SeededRNG
+    ): { character: CharacterSheet; result: BoxOpenResult } | null {
+        // Character must have equipment and items
+        if (!character.equipment?.items) {
+            return null;
+        }
+
+        // Find the box in the character's items inventory
+        const boxIndex = character.equipment.items.findIndex(item => item.name === boxName);
+        if (boxIndex === -1) {
+            return null;
+        }
+
+        // Look up box data from registry
+        const manager = ExtensionManager.getInstance();
+        const allEquipment = manager.get('equipment') as EnhancedEquipment[];
+        const boxData = allEquipment.find(eq => eq.name === boxName);
+
+        if (!boxData || boxData.type !== 'box') {
+            return null;
+        }
+
+        // Open the box
+        const result = BoxOpener.openBox(boxData, rng);
+
+        // Remove from inventory if box is consumed on open
+        if (result.consumeBox) {
+            character.equipment.items.splice(boxIndex, 1);
+            character.equipment.totalWeight -= boxData.weight;
+        }
+
+        // Add items from box to character inventory
+        const itemsAsEnhanced = result.items as EnhancedEquipment[];
+        character = this.addToCharacter(character, itemsAsEnhanced, false);
+
+        return { character, result };
     }
 
     // ==========================================
