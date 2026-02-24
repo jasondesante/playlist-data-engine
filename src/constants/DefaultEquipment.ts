@@ -646,6 +646,18 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         description: 'A small cloth bag filled with fine sand. Sprinkled over freshly written text to absorb excess ink and speed drying, preventing smudges and blots.'
     },
 
+    // ===== TOOLS =====
+
+    'Disguise Kit': {
+        name: 'Disguise Kit',
+        type: 'item',
+        rarity: 'common',
+        weight: 3,
+        spawnWeight: 1.0,
+        tags: ['gear', 'deception', 'rogue'],
+        description: 'A kit containing cosmetics, hair dye, and small props to create disguises. Includes makeup, false facial hair, and other materials needed to change one\'s appearance. Essential for spies, actors, and rogues who need to assume different identities.'
+    },
+
     // ===== ADVENTURE PACKS =====
 
     'Burglar\'s Pack': {

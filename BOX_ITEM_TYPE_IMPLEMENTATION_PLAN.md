@@ -160,8 +160,8 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Parchment (sheet) - weight 0, tags: gear, writing, consumable
   - [x] Bag of Sand - weight 0, tags: gear, writing, utility
 
-- [ ] **3.7 Add Tools**
-  - [ ] Disguise Kit - weight 3, tags: gear, deception, rogue
+- [x] **3.7 Add Tools**
+  - [x] Disguise Kit - weight 3, tags: gear, deception, rogue
 
 ---
 
@@ -445,7 +445,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 ## Progress Tracking
 - Phase 1: ✅ Complete
 - Phase 2: ✅ Complete
-- Phase 3: ⬜ Not Started
+- Phase 3: ✅ Complete
 - Phase 4: ⬜ Not Started
 - Phase 5: ⬜ Not Started
 - Phase 6: ⬜ Not Started
