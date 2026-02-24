@@ -208,11 +208,12 @@ Add a new "box" equipment type that represents items containing other items. Thi
 ## Phase 5: Integration Updates
 *Estimated complexity: Low-Medium*
 
-- [ ] **5.1 Update EquipmentSpawnHelper**
-  - [ ] File: `src/core/equipment/EquipmentSpawnHelper.ts`
-  - [ ] Update `spawnRandom()` to support `includeTypes: ['box']`
-  - [ ] Add `openBoxForCharacter(character, boxName, rng)` method
+- [x] **5.1 Update EquipmentSpawnHelper**
+  - [x] File: `src/core/equipment/EquipmentSpawnHelper.ts`
+  - [x] Update `spawnRandom()` to support `includeTypes: ['box']` — already worked via existing `includeTypes` filter; `SpawnRandomOptions.includeTypes` already typed as `('weapon' | 'armor' | 'item' | 'box')[]`
+  - [x] Add `openBoxForCharacter(character, boxName, rng)` method
     - Opens box, removes from inventory, adds contents
+  - [x] Fixed `addToCharacter()` to handle `type: 'box'` (boxes now stored in `items[]` instead of silently dropped)
 
 - [ ] **5.2 Update EquipmentGenerator**
   - [ ] File: `src/core/generation/EquipmentGenerator.ts`
@@ -450,8 +451,8 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 2: ✅ Complete
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
-- Phase 5: ⬜ Not Started
+- Phase 5: 🔄 In Progress (1/4 done)
 - Phase 6: ⬜ Not Started
 - Phase 7: ⬜ Not Started
 
-*Last updated: 2026-02-24*
+*Last updated: 2026-02-24 (Task 5.1 complete)*
