@@ -25,7 +25,7 @@ import { EquipmentEffectApplier } from '../equipment/EquipmentEffectApplier.js';
  */
 export interface Equipment {
   name: string;
-  type: 'weapon' | 'armor' | 'item';
+  type: 'weapon' | 'armor' | 'item' | 'box';
   rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary';
   weight: number;
 }

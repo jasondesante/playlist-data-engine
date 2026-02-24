@@ -215,10 +215,11 @@ Add a new "box" equipment type that represents items containing other items. Thi
     - Opens box, removes from inventory, adds contents
   - [x] Fixed `addToCharacter()` to handle `type: 'box'` (boxes now stored in `items[]` instead of silently dropped)
 
-- [ ] **5.2 Update EquipmentGenerator**
-  - [ ] File: `src/core/generation/EquipmentGenerator.ts`
-  - [ ] Handle boxes in `initializeEquipment()` - boxes go to `items[]` array
-  - [ ] Keep packs as unopened boxes (don't auto-open starting equipment)
+- [x] **5.2 Update EquipmentGenerator**
+  - [x] File: `src/core/generation/EquipmentGenerator.ts`
+  - [x] Handle boxes in `initializeEquipment()` - boxes already go to `items[]` array via `else` branch
+  - [x] Keep packs as unopened boxes (don't auto-open starting equipment) - already the default behavior
+  - [x] Updated legacy `Equipment` interface to include `'box'` type
 
 - [ ] **5.3 Update Combat Engine (Minimal)**
   - [ ] File: `src/core/combat/CombatEngine.ts`
@@ -451,8 +452,8 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 2: ✅ Complete
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
-- Phase 5: 🔄 In Progress (1/4 done)
+- Phase 5: 🔄 In Progress (2/4 tasks complete)
 - Phase 6: ⬜ Not Started
 - Phase 7: ⬜ Not Started
 
-*Last updated: 2026-02-24 (Task 5.1 complete)*
+*Last updated: 2026-02-24 (Tasks 5.1, 5.2 complete)*
