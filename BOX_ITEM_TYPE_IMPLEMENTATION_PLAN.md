@@ -276,11 +276,11 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Document nested box behavior
   - [x] Document quantity parameter usage
 
-- [ ] **7.2 Update Combat System Documentation**
-  - [ ] File: `docs/COMBAT_SYSTEM.md`
-  - [ ] Document box rewards in treasure drops
-  - [ ] Explain how boxes are awarded as unopened items
-  - [ ] Provide example treasure configurations with boxes
+- [x] **7.2 Update Combat System Documentation**
+  - [x] File: `docs/COMBAT_SYSTEM.md`
+  - [x] Document box rewards in treasure drops
+  - [x] Explain how boxes are awarded as unopened items
+  - [x] Provide example treasure configurations with boxes
 
 - [ ] **7.3 Update API Documentation**
   - [ ] Document `BoxOpener` class and methods
@@ -455,6 +455,6 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
 - Phase 6: ✅ Complete
-- Phase 7: 🔄 In Progress (7.1 complete, 7.2 and 7.3 remaining)
+- Phase 7: 🔄 In Progress (7.1 and 7.2 complete, 7.3 remaining)
 
-*Last updated: 2026-02-24 (Task 7.1 complete — Added full "Box Equipment Type" section to docs/EQUIPMENT_SYSTEM.md: BoxDropPool/BoxDrop/BoxContents/BoxOpenResult interface tables, BoxOpener class reference, guaranteed container vs loot box vs mixed box examples, quantity parameter usage, nested box behavior, non-consuming boxes, custom box registration, and API reference entry. Build clean.)*
+*Last updated: 2026-02-24 (Task 7.2 complete — Added "Box Rewards" subsection to docs/COMBAT_SYSTEM.md: documented `Equipment[]` typing for treasure items, awarding boxes as unopened treasure, opening boxes after combat via `EquipmentSpawnHelper.openBoxForCharacter()`, box behavior rules (never auto-opened, nested boxes stay nested, consumed on open by default, deterministic), `BoxOpener.isBox()` and `previewContents()` usage, and boss loot box example. Build clean.)*
