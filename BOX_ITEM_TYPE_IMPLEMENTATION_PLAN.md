@@ -79,8 +79,8 @@ Add a new "box" equipment type that represents items containing other items. Thi
 ## Phase 2: BoxOpener Utility
 *Estimated complexity: Medium*
 
-- [ ] **2.1 Create BoxOpener Class**
-  - [ ] Create new file `src/core/equipment/BoxOpener.ts`
+- [x] **2.1 Create BoxOpener Class**
+  - [x] Create new file `src/core/equipment/BoxOpener.ts`
   ```typescript
   import type { Equipment, BoxContents, BoxDropPool, BoxOpenResult } from '../types/Equipment.js';
   import { SeededRNG } from '../../utils/random.js';
@@ -106,16 +106,16 @@ Add a new "box" equipment type that represents items containing other items. Thi
   }
   ```
 
-- [ ] **2.2 Implement openBox Logic**
-  - [ ] Validate box has `boxContents`
-  - [ ] For each drop, select one item from pool using weighted random
-  - [ ] Handle `quantity` for bulk items
-  - [ ] Handle `gold` drops
-  - [ ] Return `BoxOpenResult` with items array and gold total
+- [x] **2.2 Implement openBox Logic**
+  - [x] Validate box has `boxContents`
+  - [x] For each drop, select one item from pool using weighted random
+  - [x] Handle `quantity` for bulk items
+  - [x] Handle `gold` drops
+  - [x] Return `BoxOpenResult` with items array and gold total
 
-- [ ] **2.3 Handle Nested Boxes**
-  - [ ] When a drop result is another box type item, add it as-is (unopened)
-  - [ ] Don't recursively open nested boxes
+- [x] **2.3 Handle Nested Boxes**
+  - [x] When a drop result is another box type item, add it as-is (unopened)
+  - [x] Don't recursively open nested boxes
 
 ---
 
@@ -421,7 +421,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 ### New Files
 | File | Purpose |
 |------|---------|
-| `src/core/equipment/BoxOpener.ts` | Box opening logic with weighted random selection |
+| `src/core/equipment/BoxOpener.ts` | Box opening logic with weighted random selection, nested box handling, gold drops |
 
 ### Modified Files
 | File | Changes |
@@ -444,7 +444,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 
 ## Progress Tracking
 - Phase 1: ✅ Complete
-- Phase 2: ⬜ Not Started
+- Phase 2: ✅ Complete
 - Phase 3: ⬜ Not Started
 - Phase 4: ⬜ Not Started
 - Phase 5: ⬜ Not Started

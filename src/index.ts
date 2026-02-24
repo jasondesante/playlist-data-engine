@@ -341,6 +341,7 @@ export { EquipmentModifier } from './core/equipment/EquipmentModifier.js';
 export { EquipmentEffectApplier } from './core/equipment/EquipmentEffectApplier.js';
 export { EquipmentValidator } from './core/equipment/EquipmentValidator.js';
 export { EquipmentSpawnHelper } from './core/equipment/EquipmentSpawnHelper.js';
+export { BoxOpener } from './core/equipment/BoxOpener.js';
 
 // ============================================================================
 // FEATURES SYSTEM
