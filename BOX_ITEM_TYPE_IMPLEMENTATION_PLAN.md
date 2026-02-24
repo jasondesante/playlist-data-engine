@@ -122,14 +122,14 @@ Add a new "box" equipment type that represents items containing other items. Thi
 ## Phase 3: Add Missing Pack Items
 *Estimated complexity: Medium (27 items)*
 
-- [ ] **3.1 Add Utility Items**
-  - [ ] Ball Bearings (bag of 1,000) - weight 2, tags: gear, utility, rogue
-  - [ ] String (10 feet) - weight 0, tags: gear, utility
-  - [ ] Bell - weight 0, tags: gear, utility, alarm
-  - [ ] Crowbar - weight 5, tags: gear, tool, utility
-  - [ ] Hammer - weight 3, tags: gear, tool, utility
-  - [ ] Piton - weight 0.25, tags: gear, climbing, utility
-  - [ ] Small Knife - weight 1, tags: gear, tool, utility
+- [x] **3.1 Add Utility Items**
+  - [x] Ball Bearings (bag of 1,000) - weight 2, tags: gear, utility, rogue
+  - [x] String (10 feet) - weight 0, tags: gear, utility
+  - [x] Bell - weight 0, tags: gear, utility, alarm
+  - [x] Crowbar - weight 5, tags: gear, tool, utility
+  - [x] Hammer - weight 3, tags: gear, tool, utility
+  - [x] Piton - weight 0.25, tags: gear, climbing, utility
+  - [x] Small Knife - weight 1, tags: gear, tool, utility
 
 - [ ] **3.2 Add Light Sources**
   - [ ] Candle - weight 0, tags: gear, light, consumable

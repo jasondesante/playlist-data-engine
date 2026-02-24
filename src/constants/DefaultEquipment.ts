@@ -397,6 +397,72 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         description: 'Ink and a quill pen for writing. Useful for recording maps, copying spells, and documenting adventures.'
     },
 
+    // ===== UTILITY ITEMS =====
+
+    'Ball Bearings': {
+        name: 'Ball Bearings',
+        type: 'item',
+        rarity: 'common',
+        weight: 2,
+        spawnWeight: 1.0,
+        tags: ['gear', 'utility', 'rogue'],
+        description: 'A bag containing 1,000 tiny metal balls. Scattered on the ground, they create a treacherous surface that can cause creatures to fall prone.'
+    },
+    'String': {
+        name: 'String',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 1.0,
+        tags: ['gear', 'utility'],
+        description: '10 feet of sturdy string. Useful for tripwires, tying items together, or countless other creative purposes.'
+    },
+    'Bell': {
+        name: 'Bell',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 1.0,
+        tags: ['gear', 'utility', 'alarm'],
+        description: 'A small brass bell that rings when disturbed. Perfect for creating warning systems or signaling.'
+    },
+    'Crowbar': {
+        name: 'Crowbar',
+        type: 'item',
+        rarity: 'common',
+        weight: 5,
+        spawnWeight: 1.0,
+        tags: ['gear', 'tool', 'utility'],
+        description: 'A heavy iron bar used for prying open doors, chests, and other stuck objects. Grants advantage on Strength checks to force objects open.'
+    },
+    'Hammer': {
+        name: 'Hammer',
+        type: 'item',
+        rarity: 'common',
+        weight: 3,
+        spawnWeight: 1.0,
+        tags: ['gear', 'tool', 'utility'],
+        description: 'A sturdy hammer designed for driving pitons into walls and other heavy work. Essential for dungeon exploration.'
+    },
+    'Piton': {
+        name: 'Piton',
+        type: 'item',
+        rarity: 'common',
+        weight: 0.25,
+        spawnWeight: 1.0,
+        tags: ['gear', 'climbing', 'utility'],
+        description: 'A metal spike with a ring at one end. Driven into cracks to create climbing anchors or secure rope lines.'
+    },
+    'Small Knife': {
+        name: 'Small Knife',
+        type: 'item',
+        rarity: 'common',
+        weight: 1,
+        spawnWeight: 1.0,
+        tags: ['gear', 'tool', 'utility'],
+        description: 'A small utility knife useful for cutting rope, skinning game, and other everyday tasks. Not designed for combat.'
+    },
+
     // ===== ADVENTURE PACKS =====
 
     'Burglar\'s Pack': {
