@@ -148,10 +148,10 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Traveler's Clothes - weight 4, tags: gear, clothing
   - [x] Vestments - weight 2, tags: gear, clothing, religious
 
-- [ ] **3.5 Add Religious Items**
-  - [ ] Alms Box - weight 0, tags: gear, religious, container
-  - [ ] Incense (block) - weight 0, tags: gear, religious, consumable
-  - [ ] Censer - weight 2, tags: gear, religious
+- [x] **3.5 Add Religious Items**
+  - [x] Alms Box - weight 0, tags: gear, religious, container
+  - [x] Incense (block) - weight 0, tags: gear, religious, consumable
+  - [x] Censer - weight 2, tags: gear, religious
 
 - [ ] **3.6 Add Writing Items**
   - [ ] Book of Lore - weight 5, tags: gear, book, knowledge

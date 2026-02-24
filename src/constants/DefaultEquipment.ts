@@ -568,6 +568,36 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         description: 'Ceremonial robes worn by priests and other religious figures. Often adorned with symbols of faith and made of fine materials.'
     },
 
+    // ===== RELIGIOUS ITEMS =====
+
+    'Alms Box': {
+        name: 'Alms Box',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 1.0,
+        tags: ['gear', 'religious', 'container'],
+        description: 'A small wooden box with a slot for collecting alms and donations. Used by priests and mendicants to gather charitable offerings.'
+    },
+    'Incense': {
+        name: 'Incense',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 1.0,
+        tags: ['gear', 'religious', 'consumable'],
+        description: 'A block of aromatic incense used in religious ceremonies and rituals. Burns slowly to produce fragrant smoke during prayers and worship.'
+    },
+    'Censer': {
+        name: 'Censer',
+        type: 'item',
+        rarity: 'common',
+        weight: 2,
+        spawnWeight: 1.0,
+        tags: ['gear', 'religious'],
+        description: 'A metal container suspended on chains, used for burning incense during religious ceremonies. Often made of silver or brass and adorned with religious symbols.'
+    },
+
     // ===== ADVENTURE PACKS =====
 
     'Burglar\'s Pack': {
