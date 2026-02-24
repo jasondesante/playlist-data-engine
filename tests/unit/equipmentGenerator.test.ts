@@ -278,7 +278,8 @@ describe('EquipmentGenerator', () => {
 
             for (const pack of packs) {
                 expect(DEFAULT_EQUIPMENT[pack]).toBeDefined();
-                expect(DEFAULT_EQUIPMENT[pack].type).toBe('item');
+                // Packs can be either 'item' (not yet converted) or 'box' (converted to box type)
+                expect(['item', 'box']).toContain(DEFAULT_EQUIPMENT[pack].type);
             }
         });
 

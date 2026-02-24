@@ -170,8 +170,8 @@ Add a new "box" equipment type that represents items containing other items. Thi
 
 - [ ] **4.1 Convert Basic Packs**
   - [x] **Backpack** (lines 360-368) - empty container, `drops: []`
-  - [ ] **Burglar's Pack** (lines 402-410) - 8 drops with specific items
-    - Backpack, Ball Bearings x1000, String 10ft, Bell, Crowbar, Hammer, Piton x5
+  - [x] **Burglar's Pack** (lines 402-410) - 14 drops (full D&D 5e contents)
+    - Backpack, Ball Bearings x1000, String 10ft, Bell, Candle x5, Crowbar, Hammer, Piton x10, Hooded Lantern, Oil Flask x2, Rations x5, Tinderbox, Waterskin, Rope 50ft
   - [ ] **Explorer's Pack** (lines 411-419) - 8 drops
     - Backpack, Bedroll, Mess Kit, Tinderbox, Waterskin, Rope 50ft, Torch x10, Rations x10
 

@@ -666,11 +666,30 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
 
     'Burglar\'s Pack': {
         name: 'Burglar\'s Pack',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
         weight: 44,
         spawnWeight: 1.0,
         tags: ['gear', 'pack', 'rogue'],
+        boxContents: {
+            drops: [
+                { pool: [{ weight: 100, itemName: 'Backpack' }] },
+                { pool: [{ weight: 100, itemName: 'Ball Bearings', quantity: 1000 }] },
+                { pool: [{ weight: 100, itemName: 'String' }] },
+                { pool: [{ weight: 100, itemName: 'Bell' }] },
+                { pool: [{ weight: 100, itemName: 'Candle', quantity: 5 }] },
+                { pool: [{ weight: 100, itemName: 'Crowbar' }] },
+                { pool: [{ weight: 100, itemName: 'Hammer' }] },
+                { pool: [{ weight: 100, itemName: 'Piton', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Hooded Lantern' }] },
+                { pool: [{ weight: 100, itemName: 'Oil Flask', quantity: 2 }] },
+                { pool: [{ weight: 100, itemName: 'Rations', quantity: 5 }] },
+                { pool: [{ weight: 100, itemName: 'Tinderbox' }] },
+                { pool: [{ weight: 100, itemName: 'Waterskin' }] },
+                { pool: [{ weight: 100, itemName: 'Rope' }] }
+            ],
+            consumeOnOpen: true
+        },
         description: 'A backpack containing gear for a rogue: a backpack, a bag of 1,000 ball bearings, 10 feet of string, a bell, 5 candles, a crowbar, a hammer, 10 pitons, a hooded lantern, 2 flasks of oil, 5 days\' rations, a tinderbox, and a waterskin. Includes a pack with 50 feet of hempen rope strapped to the side.'
     },
     'Explorer\'s Pack': {
