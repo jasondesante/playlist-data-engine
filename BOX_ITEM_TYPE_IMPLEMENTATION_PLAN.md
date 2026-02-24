@@ -178,7 +178,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - [ ] **4.2 Convert Class-Specific Packs**
   - [x] **Entertainer's Pack** (lines 420-428) - 8 drops
     - Backpack, Bedroll, Costume x2, Candle x5, Rations x5, Waterskin, Disguise Kit
-  - [ ] **Priest's Pack** (lines 429-437) - 10 drops
+  - [x] **Priest's Pack** (lines 429-437) - 10 drops
     - Backpack, Blanket, Candle x10, Tinderbox, Alms Box, Incense x2, Censer, Vestments, Rations x2, Waterskin
   - [ ] **Scholar's Pack** (lines 456-464) - 6 drops
     - Backpack, Book of Lore, Bottle of Ink, Ink Pen, Parchment x10, Bag of Sand

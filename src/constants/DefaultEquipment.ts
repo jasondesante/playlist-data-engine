@@ -737,11 +737,26 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
     },
     'Priest\'s Pack': {
         name: 'Priest\'s Pack',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
         weight: 33,
         spawnWeight: 1.0,
         tags: ['gear', 'pack', 'cleric'],
+        boxContents: {
+            drops: [
+                { pool: [{ weight: 100, itemName: 'Backpack' }] },
+                { pool: [{ weight: 100, itemName: 'Blanket' }] },
+                { pool: [{ weight: 100, itemName: 'Candle', quantity: 10 }] },
+                { pool: [{ weight: 100, itemName: 'Tinderbox' }] },
+                { pool: [{ weight: 100, itemName: 'Alms Box' }] },
+                { pool: [{ weight: 100, itemName: 'Incense', quantity: 2 }] },
+                { pool: [{ weight: 100, itemName: 'Censer' }] },
+                { pool: [{ weight: 100, itemName: 'Vestments' }] },
+                { pool: [{ weight: 100, itemName: 'Rations', quantity: 2 }] },
+                { pool: [{ weight: 100, itemName: 'Waterskin' }] }
+            ],
+            consumeOnOpen: true
+        },
         description: 'A backpack containing a priest\'s supplies: a backpack, a blanket, 10 candles, a tinderbox, an alms box, 2 blocks of incense, a censer, vestments, 2 days\' rations, and a waterskin.'
     },
     'Dungeon Delver\'s Pack': {
