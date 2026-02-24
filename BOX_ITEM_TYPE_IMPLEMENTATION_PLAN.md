@@ -282,10 +282,10 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] Explain how boxes are awarded as unopened items
   - [x] Provide example treasure configurations with boxes
 
-- [ ] **7.3 Update API Documentation**
-  - [ ] Document `BoxOpener` class and methods
-  - [ ] Document new types in type reference
-  - [ ] Add usage examples to README or examples folder
+- [x] **7.3 Update API Documentation**
+  - [x] Document `BoxOpener` class and methods
+  - [x] Document new types in type reference
+  - [x] Add usage examples to README or examples folder
 
 ---
 
@@ -455,6 +455,6 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
 - Phase 6: ✅ Complete
-- Phase 7: 🔄 In Progress (7.1 and 7.2 complete, 7.3 remaining)
+- Phase 7: ✅ Complete
 
-*Last updated: 2026-02-24 (Task 7.2 complete — Added "Box Rewards" subsection to docs/COMBAT_SYSTEM.md: documented `Equipment[]` typing for treasure items, awarding boxes as unopened treasure, opening boxes after combat via `EquipmentSpawnHelper.openBoxForCharacter()`, box behavior rules (never auto-opened, nested boxes stay nested, consumed on open by default, deterministic), `BoxOpener.isBox()` and `previewContents()` usage, and boss loot box example. Build clean.)*
+*Last updated: 2026-02-24 (Task 7.3 complete — Updated DATA_ENGINE_REFERENCE.md: added BoxOpener to Equipment System quick export table, added full BoxOpener section with method table (openBox, isBox, previewContents), BoxOpenResult properties, box interface table (BoxDropPool, BoxDrop, BoxContents, BoxOpenResult), code examples, and behavior rules. Added openBoxForCharacter to EquipmentSpawnHelper table. Added box types to Type Exports and Equipment Interfaces. Updated Table of Contents. Updated USAGE_IN_OTHER_PROJECTS.md: added Box Items subsection with working code examples. Build clean.)*
