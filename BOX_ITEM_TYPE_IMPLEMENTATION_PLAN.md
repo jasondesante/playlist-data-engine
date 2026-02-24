@@ -192,13 +192,16 @@ Add a new "box" equipment type that represents items containing other items. Thi
   - [x] **Traveler's Pack** (lines 465-473) - 7 drops
     - Backpack, Bedroll, Mess Kit, Rations x10, Waterskin, Traveler's Clothes, Rope 50ft
 
-- [ ] **4.5 Convert Container Items**
-  - [ ] **Waterskin** (lines 381-389) - empty container or contains water
-    - Can be empty `drops: []` or contain water item
-  - [ ] **Component Pouch** (lines 305-313) - empty or contains spell components
-    - Optional: pre-filled with common components
-  - [ ] **Healer's Kit** (lines 333-341) - contains bandages, salves
-    - 10 charges of healing supplies
+- [x] **4.5 Convert Container Items**
+  - [x] ~~**Waterskin** (lines 381-389) - empty container or contains water~~
+    - ~~Can be empty `drops: []` or contain water item~~
+    - **DECISION: NOT A BOX** - Waterskin remains a standalone item (type: 'item'), not converted to box type.
+
+  - [x] **Component Pouch** (lines 305-313) - empty container for spell components
+    - Converted to box type with `drops: []` and `consumeOnOpen: false`
+  - [x] **Healer's Kit** (lines 333-341) - contains bandages, salves
+    - Converted to box type with 10 Medical Supply items
+    - Added new "Medical Supply" item (single-use bandage/salve)
 
 ---
 
@@ -446,7 +449,7 @@ Add a new "box" equipment type that represents items containing other items. Thi
 - Phase 1: ✅ Complete
 - Phase 2: ✅ Complete
 - Phase 3: ✅ Complete
-- Phase 4: ⬜ Not Started
+- Phase 4: ✅ Complete
 - Phase 5: ⬜ Not Started
 - Phase 6: ⬜ Not Started
 - Phase 7: ⬜ Not Started

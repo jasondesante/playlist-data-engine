@@ -304,12 +304,16 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
     },
     'Component Pouch': {
         name: 'Component Pouch',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
         weight: 2,
         spawnWeight: 1.0,
-        tags: ['gear', 'components'],
-        description: 'A pouch containing the material components needed for most spells. A practical alternative to an arcane focus.'
+        tags: ['gear', 'components', 'spellcasting'],
+        boxContents: {
+            drops: [],
+            consumeOnOpen: false
+        },
+        description: 'A pouch containing small compartments for storing material components needed for spells. A practical alternative to an arcane focus. Assumes to contain all material components without specific gold costs.'
     },
     'Lute': {
         name: 'Lute',
@@ -332,12 +336,18 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
     },
     'Healer\'s Kit': {
         name: 'Healer\'s Kit',
-        type: 'item',
+        type: 'box',
         rarity: 'common',
         weight: 3,
         spawnWeight: 1.0,
         tags: ['gear', 'healing', 'consumable'],
-        description: 'A collection of bandages, salves, and tools for treating wounds. Essential for stabilizing dying creatures and providing medical aid.'
+        boxContents: {
+            drops: [
+                { pool: [{ weight: 100, itemName: 'Medical Supply', quantity: 10 }] }
+            ],
+            consumeOnOpen: false
+        },
+        description: 'A collection of bandages, salves, and tools for treating wounds. Contains 10 medical supplies. Essential for stabilizing dying creatures and providing medical aid.'
     },
     'Bedroll': {
         name: 'Bedroll',
@@ -513,6 +523,24 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         spawnWeight: 1.0,
         tags: ['gear', 'food', 'consumable'],
         description: 'One day\'s worth of dried meat, hard bread, and other preserved food. Essential for surviving long journeys without access to fresh food.'
+    },
+    'Water': {
+        name: 'Water',
+        type: 'item',
+        rarity: 'common',
+        weight: 5,
+        spawnWeight: 1.0,
+        tags: ['gear', 'drink', 'consumable'],
+        description: 'Clean drinking water essential for survival. Typically stored in a waterskin and consumed during rest periods.'
+    },
+    'Medical Supply': {
+        name: 'Medical Supply',
+        type: 'item',
+        rarity: 'common',
+        weight: 0.3,
+        spawnWeight: 1.0,
+        tags: ['gear', 'healing', 'consumable'],
+        description: 'A single-use bandage, salve, or medical tool for treating wounds. Used to stabilize dying creatures or provide basic first aid.'
     },
     'Tinderbox': {
         name: 'Tinderbox',
