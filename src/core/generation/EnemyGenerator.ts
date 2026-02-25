@@ -195,27 +195,50 @@ export class EnemyGenerator {
     }
 
     /**
-     * Scale ability scores based on rarity tier
+     * Scale ability scores based on rarity tier and optional CR
      *
      * Applies the rarity multiplier to each ability score.
+     * If CR is provided, also applies fractional CR reduction for sub-level enemies.
      * Results are rounded to nearest integer.
+     *
+     * The multipliers are applied in order:
+     * 1. Fractional CR multiplier (if CR < 1) - reduces stats for sub-level enemies
+     * 2. Rarity multiplier - adds complexity-based stat scaling
      *
      * @param baseStats - Base ability scores from template
      * @param rarity - Rarity tier for scaling
+     * @param cr - Optional Challenge Rating for fractional CR stat reduction
      * @returns Scaled ability scores
      *
      * @example
      * ```typescript
+     * // Rarity only (backward compatible)
      * scaleStatsForRarity({ STR: 16, DEX: 12, CON: 14 }, 'elite');
      * // Returns: { STR: 20, DEX: 15, CON: 18 } (1.25x multiplier)
+     *
+     * // With fractional CR (CR 0.25 = 75% stats before rarity)
+     * scaleStatsForRarity({ STR: 16, DEX: 12, CON: 14 }, 'elite', 0.25);
+     * // Returns: { STR: 15, DEX: 11, CON: 14 } (0.75 * 1.25 = 0.9375x multiplier)
      * ```
      */
     private static scaleStatsForRarity(
         baseStats: AbilityScores,
-        rarity: EnemyRarity
+        rarity: EnemyRarity,
+        cr?: number
     ): AbilityScores {
         const config = getRarityConfig(rarity);
-        const multiplier = config.statMultiplier;
+
+        // Build combined multiplier:
+        // 1. Start with rarity multiplier
+        let multiplier = config.statMultiplier;
+
+        // 2. Apply fractional CR reduction ONLY when CR is explicitly provided
+        //    This is for when CR is passed as a separate parameter (Task 1.4)
+        //    We do NOT apply this when deriving CR from rarity (backward compat)
+        if (cr !== undefined) {
+            const crMultiplier = EnemyGenerator.getStatMultiplierForFractionalCR(cr);
+            multiplier = crMultiplier * multiplier;
+        }
 
         return {
             STR: Math.round(baseStats.STR * multiplier),
@@ -930,6 +953,11 @@ export class EnemyGenerator {
 
         // Calculate HP and AC
         const rarityConfig = getRarityConfig(rarity);
+
+        // Get CR for this enemy (used for spell slot determination)
+        const cr = EnemyGenerator.getCRForRarity(rarity);
+
+        // Calculate HP with rarity multiplier (no fractional CR reduction when deriving CR from rarity)
         let maxHp = Math.round(template.baseHP * rarityConfig.statMultiplier);
 
         // Apply difficulty multiplier to HP
@@ -944,10 +972,7 @@ export class EnemyGenerator {
         // Proficiency bonus based on level
         const proficiencyBonus = Math.ceil(1 + (level - 1) / 4);
 
-        // Calculate CR for spell slot determination
-        const cr = EnemyGenerator.getCRForRarity(rarity);
-
-        // Check if enemy should have spellcasting
+        // Check if enemy should have spellcasting (using cr calculated above)
         const shouldHaveSpells = SpellcastingGenerator.shouldHaveSpellcasting(template.archetype, rarity);
 
         // Generate all abilities (signature + extras from FeatureQuery)

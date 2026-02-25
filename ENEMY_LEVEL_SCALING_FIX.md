@@ -48,7 +48,10 @@ Fix the enemy generation system to properly scale enemy levels based on target C
       return 1.0;                  // CR 1+ = full stats
   }
   ```
-- [ ] Apply this multiplier BEFORE rarity's statMultiplier
+- [x] Apply this multiplier BEFORE rarity's statMultiplier
+  - Updated `scaleStatsForRarity()` to accept optional `cr` parameter
+  - When CR is provided, applies fractional CR multiplier before rarity multiplier
+  - Maintains backward compatibility when CR is not provided
 
 ### Task 1.4: Update generate() Method
 - [ ] Modify `generate()` signature:
