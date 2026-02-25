@@ -210,12 +210,12 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 - [x] Test CR 20 → level 20
 
 ### Task 5.2: Integration Tests for CR + Rarity Independence
-- [ ] Test CR 0.25 + common → weak simple enemy
-- [ ] Test CR 0.25 + boss → weak complex enemy (goblin chieftain)
-- [ ] Test CR 10 + common → strong simple enemy (ancient beast)
-- [ ] Test CR 10 + boss → strong complex enemy (dragon)
-- [ ] Verify rarity affects ability count, not level
-- [ ] Verify CR affects level and base stats, not ability count
+- [x] Test CR 0.25 + common → weak simple enemy
+- [x] Test CR 0.25 + boss → weak complex enemy (goblin chieftain)
+- [x] Test CR 10 + common → strong simple enemy (ancient beast)
+- [x] Test CR 10 + boss → strong complex enemy (dragon)
+- [x] Verify rarity affects ability count, not level
+- [x] Verify CR affects level and base stats, not ability count
 
 ### Task 5.3: CR-Based Gradual Rarity Scaling Tests (Opt-In)
 - [ ] Test `scaleRarityWithCR: false` (default) → uses explicit defaultRarity
