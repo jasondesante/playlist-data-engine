@@ -115,6 +115,12 @@ export interface CustomSkill {
      */
     lore?: string;
 
+    /** Optional icon URL for small UI display */
+    icon?: string;
+
+    /** Optional image URL for larger display */
+    image?: string;
+
     /**
      * Prerequisites for learning this skill
      *
