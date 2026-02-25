@@ -317,8 +317,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   ```
   - **Note**: Replaced 'Ring of Protection' with 'Scale Mail' and 'Potion of Greater Healing' with 'Medical Supply (5x)' since those items don't exist in the equipment database yet.
 
-- [ ] **5.4 Add Multi-Requirement Box**
-  - [ ] Box requiring multiple different items:
+- [x] **5.4 Add Multi-Requirement Box**
+  - [x] Box requiring multiple different items:
   ```typescript
   'Royal Treasury Box': {
       name: 'Royal Treasury Box',
@@ -335,20 +335,21 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
           drops: [
               { pool: [{ weight: 100, gold: 1000 }] },
               { pool: [
-                  { weight: 35, itemName: 'Longsword +1' },
-                  { weight: 35, itemName: 'Chain Mail +1' },
-                  { weight: 20, itemName: 'Ring of Protection' },
-                  { weight: 10, itemName: 'Cloak of Elvenkind' }
+                  { weight: 30, itemName: 'Plate Armor' },
+                  { weight: 25, itemName: 'Chain Mail' },
+                  { weight: 25, itemName: 'Greataxe' },
+                  { weight: 20, itemName: 'Longsword' }
               ]},
               { pool: [
-                  { weight: 60, itemName: 'Potion of Greater Healing' },
-                  { weight: 40, itemName: 'Potion of Heroism' }
+                  { weight: 60, itemName: 'Medical Supply', quantity: 10 },
+                  { weight: 40, itemName: 'Thieves\' Tools' }
               ]}
           ]
       },
-      description: 'A royal treasury box sealed with magic. Requires a Golden Key and 200 Gold Coins to open.'
+      description: 'A royal treasury box sealed with powerful magic. Requires a Golden Key and 200 Gold Coins to open.'
   }
   ```
+  - **Note**: Modified drops to use existing equipment items (Plate Armor, Chain Mail, Greataxe, Longsword, Medical Supply, Thieves' Tools) instead of items that don't exist in the database.
 
 - [ ] **5.5 Add Quantity-Based Requirement Box**
   - [ ] Box requiring multiple of the same item:

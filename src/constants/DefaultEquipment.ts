@@ -566,6 +566,34 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         },
         description: 'A gilded strongbox with a magical lock. Consumes 100 Gold Coins to unlock.'
     },
+    'Royal Treasury Box': {
+        name: 'Royal Treasury Box',
+        type: 'box',
+        rarity: 'very_rare',
+        weight: 20,
+        spawnWeight: 0.1,
+        tags: ['loot', 'treasure', 'royal', 'locked'],
+        boxContents: {
+            openRequirements: [
+                { itemName: 'Golden Key' },
+                { itemName: 'Gold Coin', quantity: 200 }
+            ],
+            drops: [
+                { pool: [{ weight: 100, gold: 1000 }] },
+                { pool: [
+                    { weight: 30, itemName: 'Plate Armor' },
+                    { weight: 25, itemName: 'Chain Mail' },
+                    { weight: 25, itemName: 'Greataxe' },
+                    { weight: 20, itemName: 'Longsword' }
+                ]},
+                { pool: [
+                    { weight: 60, itemName: 'Medical Supply', quantity: 10 },
+                    { weight: 40, itemName: 'Thieves\' Tools' }
+                ]}
+            ]
+        },
+        description: 'A royal treasury box sealed with powerful magic. Requires a Golden Key and 200 Gold Coins to open.'
+    },
 
     // ===== LIGHT SOURCES =====
 
