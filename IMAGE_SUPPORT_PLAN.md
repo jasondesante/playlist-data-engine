@@ -254,11 +254,11 @@ manager.batchByCategory('equipment', 'rarity', {
   - [x] Update race registration examples with icons
   - [x] Update class registration examples with icons
 
-- [ ] **Task 6.6: Update docs/CONTENT_PACKS.md**
-  - [ ] Add icon fields to Basic Content Pack example
-  - [ ] Add icon fields to Themed Content Pack example
-  - [ ] Add icon fields to Dragon-Themed Content example
-  - [ ] Add batch image method example for content packs
+- [x] **Task 6.6: Update docs/CONTENT_PACKS.md**
+  - [x] Add icon fields to Basic Content Pack example
+  - [x] Add icon fields to Themed Content Pack example
+  - [x] Add icon fields to Dragon-Themed Content example
+  - [x] Add batch image method example for content packs
 
 **Documentation pattern to follow:**
 ```typescript

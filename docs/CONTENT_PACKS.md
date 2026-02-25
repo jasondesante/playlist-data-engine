@@ -35,8 +35,8 @@ export function loadContentPack() {
 
     // Custom equipment
     manager.register('equipment', [
-        { name: 'Dragon Scale Armor', type: 'armor', rarity: 'very_rare', weight: 15 },
-        { name: 'Flame Tongue', type: 'weapon', rarity: 'rare', weight: 3 }
+        { name: 'Dragon Scale Armor', type: 'armor', rarity: 'very_rare', weight: 15, icon: '/icons/armor/dragon-scale.png' },
+        { name: 'Flame Tongue', type: 'weapon', rarity: 'rare', weight: 3, icon: '/icons/weapons/flame-tongue.png' }
     ], {
         weights: {
             'Dragon Scale Armor': 0.3,
@@ -46,8 +46,8 @@ export function loadContentPack() {
 
     // Custom spells
     manager.register('spells', [
-        { name: 'Dragon Breath', level: 3, school: 'Evocation' },
-        { name: 'Scale Hardening', level: 2, school: 'Transmutation' }
+        { name: 'Dragon Breath', level: 3, school: 'Evocation', icon: '/icons/spells/dragon-breath.png' },
+        { name: 'Scale Hardening', level: 2, school: 'Transmutation', icon: '/icons/spells/scale-hardening.png' }
     ]);
 
     // Custom races
@@ -93,9 +93,9 @@ export function loadDarkFantasyPack() {
 
     // Dark fantasy equipment
     manager.register('equipment', [
-        { name: 'Soul Reaver', type: 'weapon', rarity: 'legendary', weight: 4 },
-        { name: 'Shadow Cloak', type: 'armor', rarity: 'very_rare', weight: 5 },
-        { name: 'Blood Chalice', type: 'item', rarity: 'rare', weight: 2 }
+        { name: 'Soul Reaver', type: 'weapon', rarity: 'legendary', weight: 4, icon: '/icons/weapons/soul-reaver.png' },
+        { name: 'Shadow Cloak', type: 'armor', rarity: 'very_rare', weight: 5, icon: '/icons/armor/shadow-cloak.png' },
+        { name: 'Blood Chalice', type: 'item', rarity: 'rare', weight: 2, icon: '/icons/items/blood-chalice.png' }
     ], {
         mode: 'absolute',  // Only dark fantasy items spawn
         weights: {
@@ -107,9 +107,9 @@ export function loadDarkFantasyPack() {
 
     // Dark fantasy spells
     manager.register('spells', [
-        { name: 'Soul Drain', level: 4, school: 'Necromancy' },
-        { name: 'Shadow Step', level: 2, school: 'Conjuration' },
-        { name: 'Death Coil', level: 3, school: 'Necromancy' }
+        { name: 'Soul Drain', level: 4, school: 'Necromancy', icon: '/icons/spells/soul-drain.png' },
+        { name: 'Shadow Step', level: 2, school: 'Conjuration', icon: '/icons/spells/shadow-step.png' },
+        { name: 'Death Coil', level: 3, school: 'Necromancy', icon: '/icons/spells/death-coil.png' }
     ]);
 
     // Dark fantasy appearance
@@ -158,7 +158,8 @@ function registerArcticExpansionPack() {
                 description: '+3 cold damage while raging'
             }
         ],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/features/frost-rage.png'
     };
 
     const snowWalker = {
@@ -183,7 +184,8 @@ function registerArcticExpansionPack() {
                 description: '+5 Survival in cold environments'
             }
         ],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/features/snow-walker.png'
     };
 
     // ===== CUSTOM SKILLS =====
@@ -194,7 +196,8 @@ function registerArcticExpansionPack() {
         ability: 'WIS',
         armorPenalty: true,
         categories: ['exploration', 'environmental'],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/skills/cold-survival.png'
     };
 
     const iceFishing = {
@@ -204,7 +207,8 @@ function registerArcticExpansionPack() {
         ability: 'WIS',
         armorPenalty: false,
         categories: ['exploration', 'survival'],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/skills/ice-fishing.png'
     };
 
     // ===== REGISTER EVERYTHING =====
@@ -266,7 +270,8 @@ manager.register('races.data', [{
     ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
     speed: 30,
     traits: ['Draconic Ancestry', 'Darkvision'],
-    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
+    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin'],
+    icon: '/icons/races/dragonkin.png'
 }]);
 
 manager.register('races', ['Dragonkin']);
@@ -282,7 +287,8 @@ manager.register('racialTraits', [{
     effects: [
         { type: 'ability_unlock', target: 'fire_resistance', value: true }
     ],
-    source: 'custom'
+    source: 'custom',
+    icon: '/icons/traits/fire-resistance.png'
 }]);
 
 // Cache is automatically invalidated after registration
@@ -298,7 +304,8 @@ manager.register('skills.INT', [{
         level: 5,
         class: asClass('Sorcerer')
     },
-    source: 'custom'
+    source: 'custom',
+    icon: '/icons/skills/dragon-smithing.png'
 }]);
 
 // Cache is automatically invalidated after registration
@@ -317,7 +324,8 @@ manager.register('spells', [{
     prerequisites: {
         features: ['dragon_bloodline'],
         abilities: { CHA: 16 }
-    }
+    },
+    icon: '/icons/spells/dragon-breath.png'
 }]);
 ```
 
@@ -338,7 +346,7 @@ const manager = ExtensionManager.getInstance();
 
 // Register some custom content
 manager.register('equipment', [
-    { name: 'Dragon Sword', type: 'weapon', rarity: 'rare', weight: 5 }
+    { name: 'Dragon Sword', type: 'weapon', rarity: 'rare', weight: 5, icon: '/icons/weapons/dragon-sword.png' }
 ], {
     weights: { 'Dragon Sword': 0.5 }
 });
@@ -416,8 +424,8 @@ export function loadDragonPack() {
 
     // Use replace mode to clear any previous dragon content
     manager.register('equipment', [
-        { name: 'Dragon Scale Armor', type: 'armor', rarity: 'very_rare', weight: 15 },
-        { name: 'Flame Tongue', type: 'weapon', rarity: 'rare', weight: 3 }
+        { name: 'Dragon Scale Armor', type: 'armor', rarity: 'very_rare', weight: 15, icon: '/icons/armor/dragon-scale.png' },
+        { name: 'Flame Tongue', type: 'weapon', rarity: 'rare', weight: 3, icon: '/icons/weapons/flame-tongue.png' }
     ], {
         mode: 'relative',
         weights: {
@@ -427,7 +435,7 @@ export function loadDragonPack() {
     });
 
     manager.register('spells', [
-        { name: 'Dragon Breath', level: 3, school: 'Evocation' }
+        { name: 'Dragon Breath', level: 3, school: 'Evocation', icon: '/icons/spells/dragon-breath.png' }
     ]);
 }
 
@@ -436,6 +444,97 @@ export function saveDragonPack(): ContentPackData {
     loadDragonPack();
     const manager = ExtensionManager.getInstance();
     return manager.exportCustomData();
+}
+```
+
+### Batch Image Methods for Content Packs
+
+Use batch methods to efficiently add icons and images to all items in a content pack:
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// Register content first (without icons)
+manager.register('equipment', [
+    { name: 'Dragon Scale Armor', type: 'armor', rarity: 'very_rare', weight: 15 },
+    { name: 'Flame Tongue', type: 'weapon', rarity: 'rare', weight: 3 },
+    { name: 'Dragon Shield', type: 'shield', rarity: 'rare', weight: 5 }
+]);
+
+// Method 1: batchAddIcons - Add icons to specific items by name
+manager.batchAddIcons('equipment', {
+    'Dragon Scale Armor': '/icons/armor/dragon-scale.png',
+    'Flame Tongue': '/icons/weapons/flame-tongue.png',
+    'Dragon Shield': '/icons/shields/dragon-shield.png'
+});
+
+// Method 2: batchAddImages - Add larger images to specific items
+manager.batchAddImages('equipment', {
+    'Dragon Scale Armor': '/images/equipment/dragon-scale-armor.png'
+});
+
+// Method 3: batchUpdateImages - Add same icon to items matching a predicate
+manager.batchUpdateImages('spells',
+    spell => spell.level === 0,  // All cantrips
+    { icon: '/icons/spells/cantrip-icon.png' }
+);
+
+// Method 4: batchByCategory - Add icons based on a property value
+// Example: Add icons by spell school
+manager.batchByCategory('spells', 'school', {
+    'Evocation': '/icons/schools/fire.png',
+    'Necromancy': '/icons/schools/skull.png',
+    'Abjuration': '/icons/schools/shield.png',
+    'Conjuration': '/icons/schools/portal.png',
+    'Divination': '/icons/schools/eye.png',
+    'Enchantment': '/icons/schools/charm.png',
+    'Illusion': '/icons/schools/mask.png',
+    'Transmutation': '/icons/schools/alchemy.png'
+});
+
+// Example: Add icons by equipment rarity
+manager.batchByCategory('equipment', 'rarity', {
+    'legendary': '/icons/rarity/star-gold.png',
+    'very_rare': '/icons/rarity/star-purple.png',
+    'rare': '/icons/rarity/star-blue.png',
+    'uncommon': '/icons/rarity/star-green.png',
+    'common': '/icons/rarity/star-white.png'
+});
+
+// Example: Complete content pack with batch icons
+function loadElementalPackWithIcons() {
+    const manager = ExtensionManager.getInstance();
+
+    // Register spells
+    manager.register('spells', [
+        { name: 'Fireball', level: 3, school: 'Evocation' },
+        { name: 'Ice Storm', level: 4, school: 'Evocation' },
+        { name: 'Lightning Bolt', level: 3, school: 'Evocation' },
+        { name: 'Mage Armor', level: 1, school: 'Abjuration' }
+    ]);
+
+    // Register equipment
+    manager.register('equipment', [
+        { name: 'Staff of Fire', type: 'weapon', rarity: 'rare' },
+        { name: 'Frost Brand', type: 'weapon', rarity: 'very_rare' },
+        { name: 'Robe of Elements', type: 'armor', rarity: 'legendary' }
+    ]);
+
+    // Apply icons in bulk by category
+    manager.batchByCategory('spells', 'school', {
+        'Evocation': '/icons/schools/evocation.png',
+        'Abjuration': '/icons/schools/abjuration.png'
+    });
+
+    manager.batchByCategory('equipment', 'rarity', {
+        'legendary': '/icons/rarity/legendary.png',
+        'very_rare': '/icons/rarity/very-rare.png',
+        'rare': '/icons/rarity/rare.png'
+    });
+
+    console.log('Elemental Pack loaded with icons!');
 }
 ```
 
