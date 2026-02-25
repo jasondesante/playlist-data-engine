@@ -92,9 +92,9 @@ image?: string;
   - [x] Add import for `validateImageFields`
   - [x] Add image validation in `validateSpell` method (~L129)
 
-- [ ] **Task 3.2: Update SkillValidator**
-  - [ ] Add import for `validateImageFields`
-  - [ ] Add image validation in `validateSkill` method (~L146)
+- [x] **Task 3.2: Update SkillValidator**
+  - [x] Add import for `validateImageFields`
+  - [x] Add image validation in `validateSkill` method (~L146)
 
 - [ ] **Task 3.3: Update FeatureValidator**
   - [ ] Add import for `validateImageFields`

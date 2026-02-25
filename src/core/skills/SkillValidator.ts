@@ -14,6 +14,7 @@ import type { SkillValidationResult, SkillPrerequisite } from './SkillTypes.js';
 import type { CharacterSheet, Ability } from '../types/Character.js';
 import { VALID_ABILITIES, isValidAbility as isValidAbilityCheck } from '../utils/AbilityConstants.js';
 import { validatePrerequisites } from '../utils/PrerequisiteValidator.js';
+import { validateImageFields } from '../utils/ImageValidator.js';
 
 // Re-export validation result type for consistency with other registries
 export type { SkillValidationResult };
@@ -144,6 +145,10 @@ export class SkillValidator {
         if (s.lore !== undefined && typeof s.lore !== 'string') {
             errors.push('Skill lore must be a string');
         }
+
+        // Validate icon and image fields
+        const imageErrors = validateImageFields({ icon: s.icon, image: s.image });
+        errors.push(...imageErrors.map(e => `Skill ${e}`));
 
         return {
             valid: errors.length === 0,
