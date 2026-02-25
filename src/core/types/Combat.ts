@@ -16,6 +16,12 @@ export interface StatusEffect {
   duration: number;       // Rounds remaining
   source?: string;        // Which combatant applied this
   hasConcentration?: boolean;  // Some effects require concentration
+
+  /** Optional icon URL for small UI display */
+  icon?: string;
+
+  /** Optional image URL for larger display */
+  image?: string;
 }
 
 /**

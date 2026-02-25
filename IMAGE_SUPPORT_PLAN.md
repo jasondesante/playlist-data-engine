@@ -52,9 +52,9 @@ Add optional `icon` and `image` URL fields to all entity types managed by Extens
   - [x] Edit `src/core/types/Enemy.ts`
   - [x] Add `icon?: string` and `image?: string` after `resistances` field (~L143)
 
-- [ ] **Task 1.8: Add image fields to StatusEffect interface**
-  - [ ] Edit `src/core/types/Combat.ts`
-  - [ ] Add `icon?: string` and `image?: string` after `hasConcentration` field (~L19)
+- [x] **Task 1.8: Add image fields to StatusEffect interface**
+  - [x] Edit `src/core/types/Combat.ts`
+  - [x] Add `icon?: string` and `image?: string` after `hasConcentration` field (~L19)
 
 - [ ] **Task 1.9: Add image fields to RaceDataEntry interface**
   - [ ] Edit `src/constants/DefaultRaces.ts`
