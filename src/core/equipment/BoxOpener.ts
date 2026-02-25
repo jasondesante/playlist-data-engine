@@ -302,12 +302,21 @@ export class BoxOpener {
      * useful for UI displays or tooltips.
      *
      * @param box - The box equipment to preview
-     * @returns Object with possible items and total gold range
+     * @returns Object with possible items, gold range, total drops, and any opening requirements
+     *
+     * @example
+     * ```typescript
+     * const preview = BoxOpener.previewContents(lockedChest);
+     * console.log('Possible items:', preview.possibleItems);
+     * console.log('Requires:', preview.openRequirements);
+     * // [{ itemName: 'Iron Key' }]
+     * ```
      */
     static previewContents(box: Equipment): {
         possibleItems: string[];
         possibleGold: { min: number; max: number };
         totalDrops: number;
+        openRequirements?: BoxOpenRequirement[];
     } {
         if (!box.boxContents) {
             return {
@@ -333,10 +342,22 @@ export class BoxOpener {
             }
         }
 
-        return {
+        const result: {
+            possibleItems: string[];
+            possibleGold: { min: number; max: number };
+            totalDrops: number;
+            openRequirements?: BoxOpenRequirement[];
+        } = {
             possibleItems: Array.from(possibleItems),
             possibleGold: { min: minGold, max: maxGold },
             totalDrops: box.boxContents.drops.length
         };
+
+        // Include opening requirements if present
+        if (box.boxContents.openRequirements && box.boxContents.openRequirements.length > 0) {
+            result.openRequirements = box.boxContents.openRequirements;
+        }
+
+        return result;
     }
 }

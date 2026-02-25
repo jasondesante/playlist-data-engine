@@ -132,8 +132,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   - [x] When inventory not provided, skip requirement checks (backward compatible)
   - [x] When requirements not met, return result with `success: false` and error
 
-- [ ] **2.4 Update previewContents Method**
-  - [ ] Add requirements info to preview:
+- [x] **2.4 Update previewContents Method**
+  - [x] Add requirements info to preview:
   ```typescript
   static previewContents(box: Equipment): {
       possibleItems: string[];
