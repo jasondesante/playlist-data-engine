@@ -667,4 +667,635 @@ describe('BoxOpener', () => {
             expect(preview.possibleGold).toEqual({ min: 0, max: 0 });
         });
     });
+
+    // -----------------------------------------------------------------------
+    // 6.1 — checkRequirements (Box Opening Requirements)
+    // -----------------------------------------------------------------------
+    describe('checkRequirements', () => {
+        it('should return null when box has no requirements', () => {
+            const box = makeItem('Simple Box', {
+                type: 'box',
+                boxContents: {
+                    drops: [{ pool: [{ weight: 100, gold: 50 }] }],
+                },
+            });
+            const inventory: any[] = [];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).toBeNull();
+        });
+
+        it('should return null when box has no boxContents', () => {
+            const box = makeItem('Box Without Contents', {
+                type: 'box',
+            });
+            const inventory: any[] = [];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).toBeNull();
+        });
+
+        it('should return MISSING_ITEM error when required item is not in inventory', () => {
+            const box = makeItem('Locked Chest', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }],
+                    drops: [{ pool: [{ weight: 100, gold: 50 }] }],
+                },
+            });
+            const inventory: any[] = []; // Empty inventory - no Iron Key
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).not.toBeNull();
+            expect(result!.code).toBe('MISSING_ITEM');
+            expect(result!.message).toContain('Iron Key');
+            expect(result!.requirement).toEqual({ itemName: 'Iron Key' });
+        });
+
+        it('should return INSUFFICIENT_QUANTITY error when item quantity is too low', () => {
+            const box = makeItem('Thieves Cache', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Lockpick', quantity: 3 }],
+                    drops: [{ pool: [{ weight: 100, gold: 75 }] }],
+                },
+            });
+            const inventory = [
+                { name: 'Lockpick', quantity: 1, equipped: false }, // Only 1, need 3
+            ];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).not.toBeNull();
+            expect(result!.code).toBe('INSUFFICIENT_QUANTITY');
+            expect(result!.message).toContain('Lockpick');
+            expect(result!.message).toContain('1');
+            expect(result!.message).toContain('3');
+            expect(result!.requirement).toEqual({ itemName: 'Lockpick', quantity: 3 });
+        });
+
+        it('should return null when all requirements are met (single item)', () => {
+            const box = makeItem('Locked Chest', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }],
+                    drops: [{ pool: [{ weight: 100, gold: 50 }] }],
+                },
+            });
+            const inventory = [
+                { name: 'Iron Key', quantity: 1, equipped: false },
+            ];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).toBeNull();
+        });
+
+        it('should return null when requirement is met with quantity > 1', () => {
+            const box = makeItem('Thieves Cache', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Lockpick', quantity: 3 }],
+                    drops: [{ pool: [{ weight: 100, gold: 75 }] }],
+                },
+            });
+            const inventory = [
+                { name: 'Lockpick', quantity: 5, equipped: false }, // Have 5, need 3
+            ];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).toBeNull();
+        });
+
+        it('should return null when multiple requirements are all met', () => {
+            const box = makeItem('Royal Treasury Box', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [
+                        { itemName: 'Golden Key' },
+                        { itemName: 'Gold Coin', quantity: 200 },
+                    ],
+                    drops: [{ pool: [{ weight: 100, gold: 1000 }] }],
+                },
+            });
+            const inventory = [
+                { name: 'Golden Key', quantity: 1, equipped: false },
+                { name: 'Gold Coin', quantity: 250, equipped: false }, // Have 250, need 200
+            ];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).toBeNull();
+        });
+
+        it('should return error when one of multiple requirements is not met (missing item)', () => {
+            const box = makeItem('Royal Treasury Box', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [
+                        { itemName: 'Golden Key' },
+                        { itemName: 'Gold Coin', quantity: 200 },
+                    ],
+                    drops: [{ pool: [{ weight: 100, gold: 1000 }] }],
+                },
+            });
+            const inventory = [
+                { name: 'Gold Coin', quantity: 250, equipped: false }, // Have gold, but no key
+            ];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).not.toBeNull();
+            expect(result!.code).toBe('MISSING_ITEM');
+            expect(result!.message).toContain('Golden Key');
+        });
+
+        it('should return error when one of multiple requirements is not met (insufficient quantity)', () => {
+            const box = makeItem('Royal Treasury Box', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [
+                        { itemName: 'Golden Key' },
+                        { itemName: 'Gold Coin', quantity: 200 },
+                    ],
+                    drops: [{ pool: [{ weight: 100, gold: 1000 }] }],
+                },
+            });
+            const inventory = [
+                { name: 'Golden Key', quantity: 1, equipped: false },
+                { name: 'Gold Coin', quantity: 100, equipped: false }, // Have key, but only 100 gold
+            ];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).not.toBeNull();
+            expect(result!.code).toBe('INSUFFICIENT_QUANTITY');
+            expect(result!.message).toContain('Gold Coin');
+            expect(result!.message).toContain('100');
+            expect(result!.message).toContain('200');
+        });
+
+        it('should check requirements in order and return first failure', () => {
+            const box = makeItem('Multi-Requirement Box', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [
+                        { itemName: 'First Item' },
+                        { itemName: 'Second Item' },
+                        { itemName: 'Third Item' },
+                    ],
+                    drops: [],
+                },
+            });
+            const inventory = [
+                { name: 'First Item', quantity: 1, equipped: false },
+                // Missing 'Second Item' - should fail here
+                { name: 'Third Item', quantity: 1, equipped: false },
+            ];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).not.toBeNull();
+            expect(result!.code).toBe('MISSING_ITEM');
+            expect(result!.message).toContain('Second Item');
+        });
+
+        it('should default quantity to 1 when not specified', () => {
+            const box = makeItem('Box With Implicit Quantity', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }], // No quantity specified
+                    drops: [],
+                },
+            });
+            const inventory = [
+                { name: 'Iron Key', quantity: 1, equipped: false }, // Exactly 1 should be enough
+            ];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).toBeNull();
+        });
+
+        it('should return INSUFFICIENT_QUANTITY when item exists with quantity 0', () => {
+            const box = makeItem('Box With Implicit Quantity', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }],
+                    drops: [],
+                },
+            });
+            const inventory = [
+                { name: 'Iron Key', quantity: 0, equipped: false }, // Zero quantity
+            ];
+
+            const result = BoxOpener.checkRequirements(box, inventory);
+
+            expect(result).not.toBeNull();
+            expect(result!.code).toBe('INSUFFICIENT_QUANTITY');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 6.2 — canOpen (Boolean wrapper around checkRequirements)
+    // -----------------------------------------------------------------------
+    describe('canOpen', () => {
+        it('should return true for boxes without requirements', () => {
+            const box = makeItem('Simple Box', {
+                type: 'box',
+                boxContents: {
+                    drops: [{ pool: [{ weight: 100, gold: 50 }] }],
+                },
+            });
+            const inventory: any[] = [];
+
+            expect(BoxOpener.canOpen(box, inventory)).toBe(true);
+        });
+
+        it('should return true when all requirements are met', () => {
+            const box = makeItem('Locked Chest', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }],
+                    drops: [],
+                },
+            });
+            const inventory = [
+                { name: 'Iron Key', quantity: 1, equipped: false },
+            ];
+
+            expect(BoxOpener.canOpen(box, inventory)).toBe(true);
+        });
+
+        it('should return false when requirements are not met', () => {
+            const box = makeItem('Locked Chest', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }],
+                    drops: [],
+                },
+            });
+            const inventory: any[] = []; // No key
+
+            expect(BoxOpener.canOpen(box, inventory)).toBe(false);
+        });
+
+        it('should return false when quantity is insufficient', () => {
+            const box = makeItem('Thieves Cache', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Lockpick', quantity: 3 }],
+                    drops: [],
+                },
+            });
+            const inventory = [
+                { name: 'Lockpick', quantity: 2, equipped: false }, // Need 3, have 2
+            ];
+
+            expect(BoxOpener.canOpen(box, inventory)).toBe(false);
+        });
+
+        it('should return true when multiple requirements are all met', () => {
+            const box = makeItem('Royal Treasury Box', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [
+                        { itemName: 'Golden Key' },
+                        { itemName: 'Gold Coin', quantity: 200 },
+                    ],
+                    drops: [],
+                },
+            });
+            const inventory = [
+                { name: 'Golden Key', quantity: 1, equipped: false },
+                { name: 'Gold Coin', quantity: 300, equipped: false },
+            ];
+
+            expect(BoxOpener.canOpen(box, inventory)).toBe(true);
+        });
+
+        it('should return false when one of multiple requirements is missing', () => {
+            const box = makeItem('Royal Treasury Box', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [
+                        { itemName: 'Golden Key' },
+                        { itemName: 'Gold Coin', quantity: 200 },
+                    ],
+                    drops: [],
+                },
+            });
+            const inventory = [
+                { name: 'Gold Coin', quantity: 300, equipped: false }, // No key
+            ];
+
+            expect(BoxOpener.canOpen(box, inventory)).toBe(false);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 6.3 — getRequirementsDescription
+    // -----------------------------------------------------------------------
+    describe('getRequirementsDescription', () => {
+        it('should return null for boxes without requirements', () => {
+            const box = makeItem('Simple Box', {
+                type: 'box',
+                boxContents: {
+                    drops: [],
+                },
+            });
+
+            expect(BoxOpener.getRequirementsDescription(box)).toBeNull();
+        });
+
+        it('should return null for boxes without boxContents', () => {
+            const box = makeItem('Box Without Contents', {
+                type: 'box',
+            });
+
+            expect(BoxOpener.getRequirementsDescription(box)).toBeNull();
+        });
+
+        it('should return description for single item requirement', () => {
+            const box = makeItem('Locked Chest', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }],
+                    drops: [],
+                },
+            });
+
+            const desc = BoxOpener.getRequirementsDescription(box);
+            expect(desc).toBe('Requires: Iron Key');
+        });
+
+        it('should include quantity in description when > 1', () => {
+            const box = makeItem('Thieves Cache', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Lockpick', quantity: 3 }],
+                    drops: [],
+                },
+            });
+
+            const desc = BoxOpener.getRequirementsDescription(box);
+            expect(desc).toBe('Requires: 3 Lockpick');
+        });
+
+        it('should handle multiple requirements', () => {
+            const box = makeItem('Royal Treasury Box', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [
+                        { itemName: 'Golden Key' },
+                        { itemName: 'Gold Coin', quantity: 200 },
+                    ],
+                    drops: [],
+                },
+            });
+
+            const desc = BoxOpener.getRequirementsDescription(box);
+            expect(desc).toBe('Requires: Golden Key, 200 Gold Coin');
+        });
+
+        it('should handle multiple requirements with mixed quantities', () => {
+            const box = makeItem('Complex Box', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [
+                        { itemName: 'Iron Key', quantity: 2 },
+                        { itemName: 'Lockpick', quantity: 5 },
+                        { itemName: 'Golden Key' },
+                    ],
+                    drops: [],
+                },
+            });
+
+            const desc = BoxOpener.getRequirementsDescription(box);
+            expect(desc).toBe('Requires: 2 Iron Key, 5 Lockpick, Golden Key');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 6.3 — openBox with Requirements
+    // -----------------------------------------------------------------------
+    describe('openBox with requirements', () => {
+        it('should open normally when no requirements', () => {
+            const box = makeItem('Simple Box', {
+                type: 'box',
+                boxContents: {
+                    drops: [{ pool: [{ weight: 100, gold: 50 }] }],
+                },
+            });
+            const rng = new SeededRNG('no-req-test');
+
+            const result = BoxOpener.openBox(box, rng);
+
+            expect(result.success).toBe(true);
+            expect(result.gold).toBe(50);
+            expect(result.items).toHaveLength(0);
+            expect(result.consumedItems).toBeUndefined();
+        });
+
+        it('should open normally when requirements are met (with inventory)', () => {
+            const box = makeItem('Locked Chest', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }],
+                    drops: [{ pool: [{ weight: 100, gold: 50 }] }],
+                },
+            });
+            const rng = new SeededRNG('req-met-test');
+            const inventory = [
+                { name: 'Iron Key', quantity: 1, equipped: false },
+            ];
+
+            const result = BoxOpener.openBox(box, rng, inventory);
+
+            expect(result.success).toBe(true);
+            expect(result.gold).toBe(50);
+            expect(result.consumedItems).toEqual([{ name: 'Iron Key', quantity: 1 }]);
+        });
+
+        it('should return error when requirements not met', () => {
+            const box = makeItem('Locked Chest', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }],
+                    drops: [{ pool: [{ weight: 100, gold: 50 }] }],
+                },
+            });
+            const rng = new SeededRNG('req-not-met-test');
+            const inventory: any[] = []; // No key
+
+            const result = BoxOpener.openBox(box, rng, inventory);
+
+            expect(result.success).toBe(false);
+            expect(result.items).toHaveLength(0);
+            expect(result.gold).toBe(0);
+            expect(result.error).toBeDefined();
+            expect(result.error!.code).toBe('MISSING_ITEM');
+            expect(result.consumedItems).toBeUndefined();
+        });
+
+        it('should be backward compatible (no inventory parameter = skip checks)', () => {
+            const box = makeItem('Locked Chest', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }],
+                    drops: [{ pool: [{ weight: 100, gold: 50 }] }],
+                },
+            });
+            const rng = new SeededRNG('backward-compat-test');
+            // No inventory parameter provided
+
+            const result = BoxOpener.openBox(box, rng);
+
+            // Should succeed without checking requirements (backward compatible)
+            expect(result.success).toBe(true);
+            expect(result.gold).toBe(50);
+        });
+
+        it('should return consumedItems list when successfully opened with requirements', () => {
+            const box = makeItem('Thieves Cache', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Lockpick', quantity: 3 }],
+                    drops: [{ pool: [{ weight: 100, gold: 75 }] }],
+                },
+            });
+            const rng = new SeededRNG('consumed-items-test');
+            const inventory = [
+                { name: 'Lockpick', quantity: 5, equipped: false },
+            ];
+
+            const result = BoxOpener.openBox(box, rng, inventory);
+
+            expect(result.success).toBe(true);
+            expect(result.consumedItems).toEqual([{ name: 'Lockpick', quantity: 3 }]);
+        });
+
+        it('should handle multiple requirements and return all in consumedItems', () => {
+            const box = makeItem('Royal Treasury Box', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [
+                        { itemName: 'Golden Key' },
+                        { itemName: 'Gold Coin', quantity: 200 },
+                    ],
+                    drops: [{ pool: [{ weight: 100, gold: 1000 }] }],
+                },
+            });
+            const rng = new SeededRNG('multi-consumed-test');
+            const inventory = [
+                { name: 'Golden Key', quantity: 1, equipped: false },
+                { name: 'Gold Coin', quantity: 500, equipped: false },
+            ];
+
+            const result = BoxOpener.openBox(box, rng, inventory);
+
+            expect(result.success).toBe(true);
+            expect(result.consumedItems).toEqual([
+                { name: 'Golden Key', quantity: 1 },
+                { name: 'Gold Coin', quantity: 200 },
+            ]);
+        });
+
+        it('should return error with requirement details when quantity insufficient', () => {
+            const box = makeItem('Thieves Cache', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Lockpick', quantity: 3 }],
+                    drops: [],
+                },
+            });
+            const rng = new SeededRNG('insufficient-qty-test');
+            const inventory = [
+                { name: 'Lockpick', quantity: 2, equipped: false }, // Need 3, have 2
+            ];
+
+            const result = BoxOpener.openBox(box, rng, inventory);
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBeDefined();
+            expect(result.error!.code).toBe('INSUFFICIENT_QUANTITY');
+            expect(result.error!.requirement).toEqual({ itemName: 'Lockpick', quantity: 3 });
+            expect(result.error!.message).toContain('2');
+            expect(result.error!.message).toContain('3');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 6.3 — previewContents with requirements
+    // -----------------------------------------------------------------------
+    describe('previewContents with requirements', () => {
+        it('should include openRequirements in preview when present', () => {
+            const box = makeItem('Locked Chest', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [{ itemName: 'Iron Key' }],
+                    drops: [{ pool: [{ weight: 100, gold: 50 }] }],
+                },
+            });
+
+            const preview = BoxOpener.previewContents(box);
+
+            expect(preview.openRequirements).toBeDefined();
+            expect(preview.openRequirements).toHaveLength(1);
+            expect(preview.openRequirements![0]).toEqual({ itemName: 'Iron Key' });
+        });
+
+        it('should include multiple requirements in preview', () => {
+            const box = makeItem('Royal Treasury Box', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [
+                        { itemName: 'Golden Key' },
+                        { itemName: 'Gold Coin', quantity: 200 },
+                    ],
+                    drops: [{ pool: [{ weight: 100, gold: 1000 }] }],
+                },
+            });
+
+            const preview = BoxOpener.previewContents(box);
+
+            expect(preview.openRequirements).toBeDefined();
+            expect(preview.openRequirements).toHaveLength(2);
+            expect(preview.openRequirements).toEqual([
+                { itemName: 'Golden Key' },
+                { itemName: 'Gold Coin', quantity: 200 },
+            ]);
+        });
+
+        it('should not include openRequirements when not present', () => {
+            const box = makeItem('Simple Box', {
+                type: 'box',
+                boxContents: {
+                    drops: [{ pool: [{ weight: 100, gold: 50 }] }],
+                },
+            });
+
+            const preview = BoxOpener.previewContents(box);
+
+            expect(preview.openRequirements).toBeUndefined();
+        });
+
+        it('should not include openRequirements when empty array', () => {
+            const box = makeItem('Box With Empty Requirements', {
+                type: 'box',
+                boxContents: {
+                    openRequirements: [],
+                    drops: [],
+                },
+            });
+
+            const preview = BoxOpener.previewContents(box);
+
+            expect(preview.openRequirements).toBeUndefined();
+        });
+    });
 });

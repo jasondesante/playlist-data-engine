@@ -412,8 +412,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 ## Phase 6: Testing
 *Estimated complexity: Medium*
 
-- [ ] **6.1 Unit Tests for Requirement Validation**
-  - [ ] Test `BoxOpener.checkRequirements()`:
+- [x] **6.1 Unit Tests for Requirement Validation**
+  - [x] Test `BoxOpener.checkRequirements()`:
     - Returns null when no requirements
     - Returns error for missing item
     - Returns error for insufficient item quantity
@@ -421,20 +421,31 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
     - Returns null when multiple requirements all met
     - Returns error when one of multiple requirements not met
 
-- [ ] **6.2 Unit Tests for canOpen**
-  - [ ] Test `BoxOpener.canOpen()`:
+- [x] **6.2 Unit Tests for canOpen**
+  - [x] Test `BoxOpener.canOpen()`:
     - Returns true for boxes without requirements
     - Returns true when requirements are met
     - Returns false when requirements are not met
 
-- [ ] **6.3 Unit Tests for openBox with Requirements**
-  - [ ] Test `BoxOpener.openBox()` with requirements:
+- [x] **6.3 Unit Tests for openBox with Requirements**
+  - [x] Test `BoxOpener.openBox()` with requirements:
     - Opens normally when no requirements
     - Opens when requirements are met (inventory provided)
     - Returns error when requirements not met
     - Backward compatible (works without inventory param)
 
-- [ ] **6.4 Integration Tests for openBoxForCharacter**
+- [x] **6.4 Additional Unit Tests Added** (beyond original plan)
+  - [x] Test `BoxOpener.getRequirementsDescription()`:
+    - Returns null for boxes without requirements
+    - Returns description for single item requirement
+    - Includes quantity in description when > 1
+    - Handles multiple requirements
+  - [x] Test `BoxOpener.previewContents()` with requirements:
+    - Includes openRequirements in preview when present
+    - Includes multiple requirements in preview
+    - Does not include openRequirements when not present
+
+- [ ] **6.5 Integration Tests for openBoxForCharacter**
   - [ ] Test `EquipmentSpawnHelper.openBoxForCharacter()`:
     - Opens box without requirements normally
     - Consumes required item from inventory
@@ -444,7 +455,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
     - Returns proper error messages
     - Character inventory is updated correctly after consumption
 
-- [ ] **6.5 Validator Tests**
+- [ ] **6.6 Validator Tests**
   - [ ] Test `EquipmentValidator.validateBoxOpenRequirement()`:
     - Valid with itemName and default quantity
     - Valid with itemName and explicit quantity
@@ -453,7 +464,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
     - Invalid with non-integer quantity
     - Invalid with quantity < 1
 
-- [ ] **6.6 Manual Verification Script**
+- [ ] **6.7 Manual Verification Script**
   ```typescript
   import { BoxOpener, ExtensionManager, SeededRNG } from 'playlist-data-engine';
 
@@ -692,7 +703,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
-- Phase 6: ⬜ Not Started
+- Phase 6: 🟡 In Progress (6.1, 6.2, 6.3, 6.4 complete)
 - Phase 7: ⬜ Not Started
 - Phase 8: ⬜ Not Started
 
