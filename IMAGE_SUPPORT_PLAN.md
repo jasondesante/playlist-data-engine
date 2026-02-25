@@ -142,9 +142,9 @@ export type ImageSupportedCategory =
   - [x] Invalidate registry cache after updates
   - [x] Return count of items updated
 
-- [ ] **Task 4.3: Implement batchAddImages method**
-  - [ ] Add method after `batchAddIcons`
-  - [ ] Same pattern as `batchAddIcons` but for `image` field
+- [x] **Task 4.3: Implement batchAddImages method**
+  - [x] Add method after `batchAddIcons`
+  - [x] Same pattern as `batchAddIcons` but for `image` field
 
 - [ ] **Task 4.4: Implement batchUpdateImages method**
   - [ ] Add method after `batchAddImages`

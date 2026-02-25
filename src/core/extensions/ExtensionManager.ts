@@ -1066,6 +1066,84 @@ export class ExtensionManager {
     }
 
     /**
+     * Batch add images to items in a category by identifier
+     *
+     * Adds or updates the `image` field on items that match the provided identifiers.
+     * All items not in the imageMap are preserved unchanged.
+     *
+     * @param category - The category to update (must support images)
+     * @param imageMap - Object mapping item identifiers to image URLs
+     * @param identifierKey - Optional property to use as identifier (defaults to 'id' for spells, 'name' for others)
+     * @returns Number of items updated
+     * @throws Error if any image URL is invalid
+     *
+     * @example
+     * // Add images to specific spells
+     * manager.batchAddImages('spells', {
+     *     'fireball': '/assets/spells/fireball-full.png',
+     *     'magic_missile': '/assets/spells/magic-missile-full.png'
+     * });
+     *
+     * // Add images to equipment
+     * manager.batchAddImages('equipment', {
+     *     'Longsword': '/assets/equipment/longsword-full.png'
+     * });
+     */
+    batchAddImages(
+        category: ImageSupportedCategory,
+        imageMap: Record<string, string>,
+        identifierKey?: string
+    ): number {
+        // Determine the identifier key based on category
+        const idKey = identifierKey ?? this.getDefaultIdentifierKey(category);
+
+        // Validate all URLs first
+        const invalidUrls: string[] = [];
+        for (const [identifier, url] of Object.entries(imageMap)) {
+            if (!isValidImageUrl(url)) {
+                invalidUrls.push(`${identifier}: ${url}`);
+            }
+        }
+        if (invalidUrls.length > 0) {
+            throw new Error(
+                `Invalid image URLs for category '${category}':\n${invalidUrls.map(u => `  - ${u}`).join('\n')}\n` +
+                `URLs must start with: http://, https://, /, or assets/`
+            );
+        }
+
+        // Get current items and update images
+        const items = this.get(category);
+        const updatedItems: any[] = [];
+        let updateCount = 0;
+
+        for (const item of items) {
+            const identifier = item[idKey];
+            const imageUrl = imageMap[identifier];
+
+            if (imageUrl) {
+                // Create a copy with updated image
+                updatedItems.push({ ...item, image: imageUrl });
+                updateCount++;
+            } else {
+                // Keep original item
+                updatedItems.push(item);
+            }
+        }
+
+        // Store updated items in extensions
+        this.extensions.set(category, {
+            items: updatedItems,
+            options: { mode: 'replace' },
+            registeredAt: Date.now()
+        });
+
+        // Invalidate cache
+        this.invalidateRegistryCache(category);
+
+        return updateCount;
+    }
+
+    /**
      * Get the default identifier key for a category
      *
      * Different categories use different identifier properties:
