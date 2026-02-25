@@ -625,6 +625,12 @@ export interface Equipment {
     /** Optional: User-facing description of this equipment */
     description?: string;
 
+    /** Optional icon URL for small UI display */
+    icon?: string;
+
+    /** Optional image URL for larger display */
+    image?: string;
+
     /** Box contents (only for type: 'box') */
     boxContents?: BoxContents;
 }
