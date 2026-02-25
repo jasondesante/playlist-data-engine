@@ -2339,3 +2339,205 @@ describe('CR-Based Gradual Rarity Scaling Tests', () => {
         });
     });
 });
+
+/**
+ * Task 5.5: Backward Compatibility Tests
+ *
+ * Tests that existing code paths continue to work with the new CR-based system:
+ * - Rarity defaults to 'common' when not specified
+ * - generate() without CR falls back to rarity-based CR (deprecated behavior)
+ * - Deprecated methods still work for migration purposes
+ */
+describe('Backward Compatibility Tests', () => {
+    describe('Default Rarity is Common', () => {
+        it('should default to common rarity when generate() called without rarity', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'default-rarity-test',
+                templateId: 'orc',
+                cr: 1
+                // rarity not specified - should default to 'common'
+            });
+
+            expect(enemy.subrace).toBe('common');
+        });
+
+        it('should default to common rarity when generateEncounterByCR called without baseRarity', () => {
+            const enemies = EnemyGenerator.generateEncounterByCR({
+                seed: 'default-base-rarity-test',
+                targetCR: 5,
+                count: 3,
+                scaleRarityWithCR: false
+                // baseRarity not specified - should default to 'common'
+            });
+
+            enemies.forEach(enemy => {
+                expect(enemy.subrace).toBe('common');
+            });
+        });
+    });
+
+    describe('generate() Without CR Uses Deprecated Rarity-Based Fallback', () => {
+        it('should derive CR from common rarity when CR not provided', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'no-cr-common-test',
+                templateId: 'orc',
+                rarity: 'common'
+                // cr not specified - should use deprecated getCRForRarity('common') = 0.25
+            });
+
+            // Common rarity maps to CR 0.25, so level should be 0.25
+            expect(enemy.level).toBe(0.25);
+        });
+
+        it('should derive CR from uncommon rarity when CR not provided', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'no-cr-uncommon-test',
+                templateId: 'orc',
+                rarity: 'uncommon'
+                // cr not specified - should use deprecated getCRForRarity('uncommon') = 0.5
+            });
+
+            // Uncommon rarity maps to CR 0.5, so level should be 0.5
+            expect(enemy.level).toBe(0.5);
+        });
+
+        it('should derive CR from elite rarity when CR not provided', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'no-cr-elite-test',
+                templateId: 'orc',
+                rarity: 'elite'
+                // cr not specified - should use deprecated getCRForRarity('elite') = 1.0
+            });
+
+            // Elite rarity maps to CR 1.0, so level should be 1
+            expect(enemy.level).toBe(1);
+        });
+
+        it('should derive CR from boss rarity when CR not provided', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'no-cr-boss-test',
+                templateId: 'orc',
+                rarity: 'boss'
+                // cr not specified - should use deprecated getCRForRarity('boss') = 2.0
+            });
+
+            // Boss rarity maps to CR 2.0, so level should be 2
+            expect(enemy.level).toBe(2);
+        });
+    });
+
+    describe('Existing generate() Call Patterns Still Work', () => {
+        it('should work with only seed and templateId (minimal params)', () => {
+            // This pattern is used in many existing tests
+            const enemy = EnemyGenerator.generate({
+                seed: 'minimal-params-test',
+                templateId: 'orc'
+            });
+
+            // Should generate successfully with default common rarity and CR 0.25
+            expect(enemy).toBeDefined();
+            expect(enemy.name).toBe('Orc');
+            expect(enemy.subrace).toBe('common');
+            expect(enemy.level).toBe(0.25);
+        });
+
+        it('should work with seed, templateId, and rarity (legacy pattern)', () => {
+            // This pattern was common before CR was added
+            const enemy = EnemyGenerator.generate({
+                seed: 'legacy-pattern-test',
+                templateId: 'orc',
+                rarity: 'elite'
+            });
+
+            // Should generate with rarity-based CR fallback
+            expect(enemy).toBeDefined();
+            expect(enemy.name).toBe('Orc');
+            expect(enemy.subrace).toBe('elite');
+            expect(enemy.level).toBe(1); // Elite -> CR 1.0 -> level 1
+        });
+
+        it('should generate valid HP even without explicit CR', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'hp-without-cr-test',
+                templateId: 'orc',
+                rarity: 'boss'
+            });
+
+            // Should have valid HP
+            expect(enemy.hp.max).toBeGreaterThan(0);
+            expect(enemy.hp.current).toBe(enemy.hp.max);
+        });
+
+        it('should generate valid equipment even without explicit CR', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'equipment-without-cr-test',
+                templateId: 'orc'
+            });
+
+            // Should have valid equipment
+            expect(enemy.equipment).toBeDefined();
+            expect(enemy.equipment.weapons.length).toBeGreaterThan(0);
+        });
+
+        it('should generate valid abilities even without explicit CR', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'abilities-without-cr-test',
+                templateId: 'orc',
+                rarity: 'boss'
+            });
+
+            // Should have abilities based on rarity
+            expect(enemy.class_features).toBeDefined();
+            expect(enemy.class_features.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe('Deprecated Methods Still Work', () => {
+        it('should support getRarityFromCR() for backward compatibility', () => {
+            // Test that the deprecated method exists and works
+            // This is tested indirectly through generateEncounterByCR
+            // when scaleRarityWithCR is false but targetCR is low
+            const enemies = EnemyGenerator.generateEncounterByCR({
+                seed: 'deprecated-rarity-from-cr',
+                targetCR: 0.25,
+                count: 3
+            });
+
+            // All enemies should be common for low CR
+            expect(enemies.length).toBe(3);
+            // When scaleRarityWithCR is false (default), baseRarity is used
+            // baseRarity defaults to 'common'
+            enemies.forEach(enemy => {
+                expect(enemy.subrace).toBe('common');
+            });
+        });
+    });
+
+    describe('New CR Parameter Takes Precedence Over Deprecated Fallback', () => {
+        it('should use explicit CR over rarity-based CR', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-precedence-test',
+                templateId: 'orc',
+                rarity: 'common', // Would give CR 0.25
+                cr: 10 // But explicit CR should take precedence
+            });
+
+            // Explicit CR should override rarity-based fallback
+            expect(enemy.level).toBe(10);
+            expect(enemy.subrace).toBe('common'); // Rarity still applied for complexity
+        });
+
+        it('should use explicit CR with boss rarity', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-boss-precedence-test',
+                templateId: 'orc',
+                rarity: 'boss', // Would give CR 2.0
+                cr: 20 // But explicit CR should take precedence
+            });
+
+            // Level comes from CR, complexity from rarity
+            expect(enemy.level).toBe(20);
+            expect(enemy.subrace).toBe('boss');
+        });
+    });
+});

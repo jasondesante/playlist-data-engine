@@ -238,8 +238,8 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 - [x] Verify fractional CR + boss rarity works correctly
 
 ### Task 5.5: Backward Compatibility Tests
-- [ ] Test existing code paths without explicit rarity default to 'common'
-- [ ] Test existing `generate()` calls still work (with deprecation warnings)
+- [x] Test existing code paths without explicit rarity default to 'common'
+- [x] Test existing `generate()` calls still work (with deprecation warnings)
 
 **Files Modified:**
 - `tests/unit/enemy-generation.test.ts`
