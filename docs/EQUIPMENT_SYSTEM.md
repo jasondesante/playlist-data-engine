@@ -34,6 +34,7 @@ const flamingSword = {
     rarity: 'rare',
     weight: 3,
     damage: { dice: '1d8', damageType: 'slashing' },
+    icon: '/icons/weapons/flaming-sword.png',
     properties: [{
         type: 'damage_bonus',
         target: 'fire',
@@ -143,6 +144,8 @@ Primary equipment type with advanced properties support. Extends base equipment 
 | `spawnWeight` | number | Spawn weight (0 = game-only) |
 | `source` | `'default' \| 'custom'` | Source tracking |
 | `tags` | string[] | Search/filter tags |
+| `icon` | string | Optional icon URL for small UI display |
+| `image` | string | Optional image URL for larger display |
 
 For an example of the `EnhancedEquipment` interface, see [Example 1: Comprehensive Custom Item](#example-1-comprehensive-custom-item).
 
@@ -596,6 +599,7 @@ const explorersPack = {
     type: 'box',
     rarity: 'common',
     weight: 59,
+    icon: '/icons/containers/backpack.png',
     boxContents: {
         drops: [
             { pool: [{ weight: 100, itemName: 'Backpack' }] },
@@ -626,6 +630,7 @@ const goblinChest = {
     type: 'box',
     rarity: 'uncommon',
     weight: 5,
+    icon: '/icons/containers/chest.png',
     boxContents: {
         drops: [{
             pool: [
@@ -654,6 +659,8 @@ const dragonHoard = {
     type: 'box',
     rarity: 'rare',
     weight: 10,
+    icon: '/icons/containers/treasure-chest.png',
+    image: '/images/equipment/dragon-hoard.png',
     boxContents: {
         drops: [
             { pool: [{ weight: 100, gold: 500 }] },                    // Always 500 gold
@@ -705,6 +712,7 @@ const treasureCache = {
     type: 'box',
     rarity: 'uncommon',
     weight: 8,
+    icon: '/icons/containers/cache.png',
     boxContents: {
         drops: [
             { pool: [{ weight: 100, itemName: 'Goblin Treasure Chest' }] }, // adds chest unopened
@@ -749,6 +757,7 @@ const componentPouch = {
     type: 'box',
     rarity: 'common',
     weight: 2,
+    icon: '/icons/items/pouch.png',
     boxContents: {
         drops: [],            // Empty — no automatic contents
         consumeOnOpen: false  // Stays in inventory
@@ -772,6 +781,7 @@ const lockedChest = {
     type: 'box',
     rarity: 'uncommon',
     weight: 10,
+    icon: '/icons/containers/locked-chest.png',
     boxContents: {
         openRequirements: [
             { itemName: 'Iron Key' }  // Consumes 1 Iron Key when opened
@@ -1500,6 +1510,8 @@ const cloakOfTheElder: EnhancedEquipment = {
     type: 'item',
     rarity: 'very_rare',
     weight: 1,
+    icon: '/icons/items/cloak-elder.png',
+    image: '/images/equipment/cloak-of-the-elder.png',
 
     // Stat bonuses: increases ability scores
     properties: [

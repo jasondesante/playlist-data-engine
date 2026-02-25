@@ -234,11 +234,11 @@ manager.batchByCategory('equipment', 'rarity', {
   - [x] Add example of using batch image methods
   - [x] Update box items examples with icons
 
-- [ ] **Task 6.3: Update docs/EQUIPMENT_SYSTEM.md**
-  - [ ] Add `icon?` and `image?` rows to EnhancedEquipment interface table
-  - [ ] Update Quick Start example with icon field
-  - [ ] Update custom equipment examples with icons
-  - [ ] Add box icon examples
+- [x] **Task 6.3: Update docs/EQUIPMENT_SYSTEM.md**
+  - [x] Add `icon?` and `image?` rows to EnhancedEquipment interface table
+  - [x] Update Quick Start example with icon field
+  - [x] Update custom equipment examples with icons
+  - [x] Add box icon examples
 
 - [ ] **Task 6.4: Update docs/EXTENSIBILITY_GUIDE.md**
   - [ ] Add icon/image fields to equipment registration examples
