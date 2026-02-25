@@ -120,9 +120,9 @@ errors.push(...imageErrors.map(e => `${EntityType} ${e}`));
 
 ## Phase 4: Batch Methods in ExtensionManager
 
-- [ ] **Task 4.1: Add ImageSupportedCategory type**
-  - [ ] Edit `src/core/extensions/ExtensionManager.ts`
-  - [ ] Add type definition for categories that support images
+- [x] **Task 4.1: Add ImageSupportedCategory type**
+  - [x] Edit `src/core/extensions/ExtensionManager.ts`
+  - [x] Add type definition for categories that support images
 
 ```typescript
 export type ImageSupportedCategory =

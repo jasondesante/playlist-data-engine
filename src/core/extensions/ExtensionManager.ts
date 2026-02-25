@@ -112,6 +112,19 @@ export type ExtensionCategory =
     | `classStartingEquipment.${string}`;
 
 /**
+ * Categories that support icon and image fields
+ * These entity types have optional icon and image URL properties
+ */
+export type ImageSupportedCategory =
+    | 'spells'
+    | 'skills'
+    | 'classFeatures'
+    | 'racialTraits'
+    | 'equipment'
+    | 'races.data'
+    | 'classes.data';
+
+/**
  * Options for registering custom data
  */
 export interface ExtensionOptions {
