@@ -332,10 +332,20 @@ describe('AttackResolver', () => {
             const target = createCombatant('Target', 10, 10, 20, 0);
             const attack = createAttack('Unarmed', '', 'melee');
 
-            // Should throw error for invalid dice formula
-            expect(() => {
-                resolver.resolveAttack(attacker, target, attack);
-            }).toThrow('Invalid dice formula: ');
+            // Natural 1 (5% chance) causes critical miss and skips damage roll.
+            // Try multiple times to ensure we get a hit and trigger the error.
+            let errorThrown = false;
+            for (let i = 0; i < 50; i++) {
+                try {
+                    resolver.resolveAttack(attacker, target, attack);
+                } catch (e) {
+                    expect((e as Error).message).toContain('Invalid dice formula: ');
+                    errorThrown = true;
+                    break;
+                }
+            }
+            // With 50 attempts, chance of all missing is 0.95^50 ≈ 0.0000002
+            expect(errorThrown).toBe(true);
         });
 
         it('should handle missing attack type (defaults to melee)', () => {

@@ -528,15 +528,16 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 ## Phase 8: Build & Verify
 *Estimated complexity: Low*
 
-- [ ] **8.1 TypeScript Build**
-  - [ ] Run `npm run build`
-  - [ ] Verify no TypeScript errors
-  - [ ] Verify all exports are correct
+- [x] **8.1 TypeScript Build**
+  - [x] Run `npm run build`
+  - [x] Verify no TypeScript errors
+  - [x] Verify all exports are correct
 
-- [ ] **8.2 Run Test Suite**
-  - [ ] Run `npm test`
-  - [ ] All existing tests pass
-  - [ ] All new tests pass
+- [x] **8.2 Run Test Suite**
+  - [x] Run `npm test`
+  - [x] All existing tests pass (2934 tests)
+  - [x] All new tests pass
+  - [x] Fixed flaky test in attackResolver.test.ts (invalid dice formula test had 5% failure rate due to critical miss randomness)
 
 - [ ] **8.3 Verify Examples**
   - [ ] Run manual verification script
