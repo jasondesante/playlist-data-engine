@@ -36,7 +36,9 @@ export class BoxOpener {
      *
      * @param box - The box equipment to open (must have boxContents)
      * @param rng - SeededRNG for deterministic results
-     * @returns BoxOpenResult with items and gold
+     * @param inventory - Optional character inventory for requirement checking.
+     *                     If not provided, requirements are skipped (backward compatible).
+     * @returns BoxOpenResult with items, gold, and consumed items if requirements were met
      *
      * @example
      * ```typescript
@@ -45,9 +47,22 @@ export class BoxOpener {
      * // result.items - array of generated items
      * // result.gold - total gold from drops
      * // result.consumeBox - whether box should be consumed
+     *
+     * // With inventory (requirement checking enabled)
+     * const inventory = [{ name: 'Iron Key', quantity: 1, equipped: false }];
+     * const result = BoxOpener.openBox(lockedChest, rng, inventory);
+     * if (result.success) {
+     *     console.log('Consumed:', result.consumedItems);
+     * } else {
+     *     console.log('Cannot open:', result.error?.message);
+     * }
      * ```
      */
-    static openBox(box: Equipment, rng: SeededRNG): BoxOpenResult {
+    static openBox(
+        box: Equipment,
+        rng: SeededRNG,
+        inventory?: EnhancedInventoryItem[]
+    ): BoxOpenResult {
         // Validate box has contents
         if (!box.boxContents) {
             return {
@@ -60,6 +75,20 @@ export class BoxOpener {
                     message: `Box "${box.name}" has no contents defined.`
                 }
             };
+        }
+
+        // Check requirements if inventory is provided
+        if (inventory !== undefined && box.boxContents.openRequirements) {
+            const requirementError = this.checkRequirements(box, inventory);
+            if (requirementError) {
+                return {
+                    success: false,
+                    items: [],
+                    gold: 0,
+                    consumeBox: false,
+                    error: requirementError
+                };
+            }
         }
 
         const boxContents: BoxContents = box.boxContents;
@@ -111,11 +140,21 @@ export class BoxOpener {
         // Determine if box should be consumed (default: true)
         const consumeBox = boxContents.consumeOnOpen !== false;
 
+        // Build consumed items list if requirements were checked and met
+        let consumedItems: { name: string; quantity: number }[] | undefined;
+        if (inventory !== undefined && boxContents.openRequirements) {
+            consumedItems = boxContents.openRequirements.map(req => ({
+                name: req.itemName,
+                quantity: req.quantity ?? 1
+            }));
+        }
+
         return {
             success: true,
             items,
             gold,
-            consumeBox
+            consumeBox,
+            consumedItems
         };
     }
 

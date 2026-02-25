@@ -120,8 +120,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   ): boolean
   ```
 
-- [ ] **2.3 Update openBox Method Signature**
-  - [ ] Modify `openBox()` to accept inventory:
+- [x] **2.3 Update openBox Method Signature**
+  - [x] Modify `openBox()` to accept inventory:
   ```typescript
   static openBox(
       box: Equipment,
@@ -129,8 +129,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
       inventory?: EnhancedInventoryItem[]
   ): BoxOpenResult
   ```
-  - [ ] When inventory not provided, skip requirement checks (backward compatible)
-  - [ ] When requirements not met, return result with `success: false` and error
+  - [x] When inventory not provided, skip requirement checks (backward compatible)
+  - [x] When requirements not met, return result with `success: false` and error
 
 - [ ] **2.4 Update previewContents Method**
   - [ ] Add requirements info to preview:
