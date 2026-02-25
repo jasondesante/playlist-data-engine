@@ -146,12 +146,12 @@ export type ImageSupportedCategory =
   - [x] Add method after `batchAddIcons`
   - [x] Same pattern as `batchAddIcons` but for `image` field
 
-- [ ] **Task 4.4: Implement batchUpdateImages method**
-  - [ ] Add method after `batchAddImages`
-  - [ ] Accept category, predicate function, and updates object
-  - [ ] Validate URLs before applying
-  - [ ] Apply to all items matching predicate
-  - [ ] Return count of items updated
+- [x] **Task 4.4: Implement batchUpdateImages method**
+  - [x] Add method after `batchAddImages`
+  - [x] Accept category, predicate function, and updates object
+  - [x] Validate URLs before applying
+  - [x] Apply to all items matching predicate
+  - [x] Return count of items updated
 
 - [ ] **Task 4.5: Implement batchByCategory method**
   - [ ] Add method for bulk images by category/property

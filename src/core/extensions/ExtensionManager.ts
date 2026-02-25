@@ -1144,6 +1144,94 @@ export class ExtensionManager {
     }
 
     /**
+     * Batch update icons and/or images for items matching a predicate
+     *
+     * Updates all items in a category that match the given predicate function
+     * with the specified icon and/or image URLs. Useful for bulk operations
+     * based on item properties (e.g., all cantrips, all rare equipment).
+     *
+     * @param category - The category to update (must support images)
+     * @param predicate - Function that returns true for items to update
+     * @param updates - Object containing icon and/or image URLs to apply
+     * @returns Number of items updated
+     * @throws Error if any URL is invalid
+     *
+     * @example
+     * // Add same icon to all cantrips
+     * manager.batchUpdateImages('spells',
+     *     spell => spell.level === 0,
+     *     { icon: '/assets/spells/cantrip-icon.png' }
+     * );
+     *
+     * // Add images to all rare equipment
+     * manager.batchUpdateImages('equipment',
+     *     item => item.rarity === 'rare',
+     *     { icon: '/assets/icons/rare.png', image: '/assets/images/rare-bg.png' }
+     * );
+     *
+     * // Update all evocation spells
+     * manager.batchUpdateImages('spells',
+     *     spell => spell.school === 'Evocation',
+     *     { icon: '/assets/icons/fire.png' }
+     * );
+     */
+    batchUpdateImages<T = any>(
+        category: ImageSupportedCategory,
+        predicate: (item: T) => boolean,
+        updates: { icon?: string; image?: string }
+    ): number {
+        // Validate URLs if provided
+        const invalidUrls: string[] = [];
+        if (updates.icon !== undefined && !isValidImageUrl(updates.icon)) {
+            invalidUrls.push(`icon: ${updates.icon}`);
+        }
+        if (updates.image !== undefined && !isValidImageUrl(updates.image)) {
+            invalidUrls.push(`image: ${updates.image}`);
+        }
+        if (invalidUrls.length > 0) {
+            throw new Error(
+                `Invalid URLs in updates:\n${invalidUrls.map(u => `  - ${u}`).join('\n')}\n` +
+                `URLs must start with: http://, https://, /, or assets/`
+            );
+        }
+
+        // Get current items and update matching items
+        const items = this.get(category);
+        const updatedItems: any[] = [];
+        let updateCount = 0;
+
+        for (const item of items) {
+            if (predicate(item as T)) {
+                // Create a copy with updated image fields
+                const updatedItem = { ...item };
+                if (updates.icon !== undefined) {
+                    updatedItem.icon = updates.icon;
+                }
+                if (updates.image !== undefined) {
+                    updatedItem.image = updates.image;
+                }
+                updatedItems.push(updatedItem);
+                updateCount++;
+            } else {
+                // Keep original item
+                updatedItems.push(item);
+            }
+        }
+
+        // Store updated items in extensions
+        this.extensions.set(category, {
+            items: updatedItems,
+            options: { mode: 'replace' },
+            registeredAt: Date.now()
+        });
+
+        // Invalidate cache
+        this.invalidateRegistryCache(category);
+
+        return updateCount;
+    }
+
+    /**
      * Get the default identifier key for a category
      *
      * Different categories use different identifier properties:
