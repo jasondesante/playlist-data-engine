@@ -218,18 +218,18 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 - [x] Verify CR affects level and base stats, not ability count
 
 ### Task 5.3: CR-Based Gradual Rarity Scaling Tests (Opt-In)
-- [ ] Test `scaleRarityWithCR: false` (default) → uses explicit defaultRarity
-- [ ] Test `scaleRarityWithCR: true` with various CR tiers:
-  - [ ] CR 1 (Low) → [common, common, common]
-  - [ ] CR 4 (Low-Medium) → [uncommon, common, common]
-  - [ ] CR 8 (Medium) → [uncommon, uncommon, common]
-  - [ ] CR 13 (Medium-High) → [uncommon, uncommon, uncommon]
-  - [ ] CR 18 (High) → [elite, uncommon, uncommon]
-  - [ ] CR 25 (Very High) → [elite, elite, uncommon]
-  - [ ] CR 35 (Epic) → [elite, elite, elite]
-- [ ] Test party of 5 with various CRs
-- [ ] Test boss + count > 1 → error or auto-reduce to count=1
-- [ ] Test CR applies correctly to each enemy regardless of scaled rarity
+- [x] Test `scaleRarityWithCR: false` (default) → uses explicit defaultRarity
+- [x] Test `scaleRarityWithCR: true` with various CR tiers:
+  - [x] CR 1 (Low) → [common, common, common]
+  - [x] CR 4 (Low-Medium) → [uncommon, common, common]
+  - [x] CR 8 (Medium) → [uncommon, uncommon, common]
+  - [x] CR 13 (Medium-High) → [uncommon, uncommon, uncommon]
+  - [x] CR 18 (High) → [elite, uncommon, uncommon]
+  - [x] CR 25 (Very High) → [elite, elite, uncommon]
+  - [x] CR 35 (Epic) → [elite, elite, elite]
+- [x] Test party of 5 with various CRs
+- [x] Test boss + count > 1 → error or auto-reduce to count=1
+- [x] Test CR applies correctly to each enemy regardless of scaled rarity
 
 ### Task 5.4: Fractional CR Tests
 - [ ] Test CR 0.25 enemy has ~75% base stats
