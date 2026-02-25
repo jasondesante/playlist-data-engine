@@ -191,21 +191,21 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 ## Phase 4: Validator Updates
 *Estimated complexity: Low*
 
-- [ ] **4.1 Add validateBoxOpenRequirement Method**
-  - [ ] File: `src/core/equipment/EquipmentValidator.ts`
-  - [ ] New validation method:
+- [x] **4.1 Add validateBoxOpenRequirement Method**
+  - [x] File: `src/core/equipment/EquipmentValidator.ts`
+  - [x] New validation method:
   ```typescript
   static validateBoxOpenRequirement(
       requirement: BoxOpenRequirement
   ): EquipmentValidationResult
   ```
-  - [ ] Validate:
+  - [x] Validate:
     - `itemName` must be a non-empty string (required)
     - `itemName` must exist in equipment registry
     - `quantity` must be a positive integer if present (default: 1)
 
-- [ ] **4.2 Update validateBoxContents Method**
-  - [ ] Add validation for `openRequirements` field:
+- [x] **4.2 Update validateBoxContents Method**
+  - [x] Add validation for `openRequirements` field:
   ```typescript
   // In validateBoxContents()
   if (boxContents.openRequirements !== undefined) {
@@ -686,7 +686,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 - Phase 1: ✅ Complete
 - Phase 2: ✅ Complete
 - Phase 3: ✅ Complete
-- Phase 4: ⬜ Not Started
+- Phase 4: ✅ Complete
 - Phase 5: ⬜ Not Started
 - Phase 6: ⬜ Not Started
 - Phase 7: ⬜ Not Started

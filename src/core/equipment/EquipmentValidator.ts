@@ -13,7 +13,8 @@ import type {
     EquipmentModification,
     EquipmentMiniFeature,
     EquipmentValidationResult,
-    BoxContents
+    BoxContents,
+    BoxOpenRequirement
 } from '../types/Equipment.js';
 import { FeatureQuery } from '../features/FeatureQuery.js';
 import { SkillQuery } from '../skills/SkillQuery.js';
@@ -737,6 +738,20 @@ export class EquipmentValidator {
             errors.push('boxContents.consumeOnOpen must be a boolean');
         }
 
+        // Validate openRequirements if present
+        if (boxContents.openRequirements !== undefined) {
+            if (!Array.isArray(boxContents.openRequirements)) {
+                errors.push('boxContents.openRequirements must be an array');
+            } else {
+                for (let i = 0; i < boxContents.openRequirements.length; i++) {
+                    const reqValidation = this.validateBoxOpenRequirement(boxContents.openRequirements[i]);
+                    if (!reqValidation.valid) {
+                        errors.push(...(reqValidation.errors || []).map(e => `openRequirements[${i}]: ${e}`));
+                    }
+                }
+            }
+        }
+
         for (let dropIndex = 0; dropIndex < boxContents.drops.length; dropIndex++) {
             const drop = boxContents.drops[dropIndex];
 
@@ -806,6 +821,51 @@ export class EquipmentValidator {
             // Warn if pool weights don't sum to 100
             if (drop.pool.length > 0 && Math.abs(totalWeight - 100) > 0.001) {
                 errors.push(`boxContents.drops[${dropIndex}]: pool weights sum to ${totalWeight}, expected 100`);
+            }
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors: errors.length > 0 ? errors : undefined
+        };
+    }
+
+    /**
+     * Validate a box open requirement
+     *
+     * Validates individual requirements for opening a box:
+     * - itemName must be a non-empty string (required)
+     * - itemName must exist in the equipment registry
+     * - quantity must be a positive integer if present (default: 1)
+     *
+     * @param requirement - BoxOpenRequirement object to validate
+     * @returns Validation result with any errors
+     */
+    static validateBoxOpenRequirement(requirement: BoxOpenRequirement): EquipmentValidationResult {
+        const errors: string[] = [];
+
+        if (!requirement || typeof requirement !== 'object') {
+            errors.push('BoxOpenRequirement must be an object');
+            return { valid: false, errors };
+        }
+
+        // Validate itemName (required)
+        if (!requirement.itemName || typeof requirement.itemName !== 'string' || requirement.itemName.length === 0) {
+            errors.push('BoxOpenRequirement.itemName must be a non-empty string');
+        } else {
+            // Validate itemName exists in equipment registry
+            const manager = ExtensionManager.getInstance();
+            const allEquipment = manager.get('equipment') as Array<{ name: string }>;
+            const found = allEquipment.some(eq => eq.name === requirement.itemName);
+            if (!found) {
+                errors.push(`BoxOpenRequirement.itemName "${requirement.itemName}" not found in equipment registry`);
+            }
+        }
+
+        // Validate quantity (optional, must be positive integer if present)
+        if (requirement.quantity !== undefined) {
+            if (typeof requirement.quantity !== 'number' || requirement.quantity < 1 || !Number.isInteger(requirement.quantity)) {
+                errors.push('BoxOpenRequirement.quantity must be a positive integer');
             }
         }
 
