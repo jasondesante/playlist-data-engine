@@ -775,4 +775,107 @@ describe('Integration: Edge Cases and Error Handling', () => {
             });
         });
     });
+
+    describe('Boss Always Single Rule (Task 2.4)', () => {
+        it('should throw error when generateEncounterByCR called with boss rarity and count > 1', () => {
+            expect(() => {
+                EnemyGenerator.generateEncounterByCR({
+                    seed: 'boss-validation-test',
+                    targetCR: 5,
+                    count: 3,
+                    baseRarity: 'boss'
+                });
+            }).toThrow(/Boss encounters must have count=1/);
+        });
+
+        it('should throw error when generateEncounter called with boss rarity and count > 1', () => {
+            const party = PARTY_PRESETS.LEVEL_3_PARTY_OF_4();
+
+            expect(() => {
+                EnemyGenerator.generateEncounter(party, {
+                    seed: 'boss-party-validation-test',
+                    difficulty: 'deadly',
+                    count: 2,
+                    baseRarity: 'boss'
+                });
+            }).toThrow(/Boss encounters must have count=1/);
+        });
+
+        it('should allow boss encounter with count = 1', () => {
+            const boss = EnemyGenerator.generateEncounterByCR({
+                seed: 'valid-boss-test',
+                targetCR: 10,
+                count: 1,
+                baseRarity: 'boss'
+            });
+
+            expect(boss.length).toBe(1);
+            expect(boss[0].subrace).toBe('boss');
+        });
+
+        it('should allow non-boss rarities with count > 1', () => {
+            const enemies = EnemyGenerator.generateEncounterByCR({
+                seed: 'elite-group-test',
+                targetCR: 5,
+                count: 4,
+                baseRarity: 'elite',
+                enableLeaderPromotion: false // Disable promotion to keep all at elite
+            });
+
+            expect(enemies.length).toBe(4);
+            enemies.forEach(enemy => {
+                expect(enemy.subrace).toBe('elite');
+            });
+        });
+
+        it('should allow common, uncommon, and elite rarities with any count', () => {
+            // Common
+            const commonEnemies = EnemyGenerator.generateEncounterByCR({
+                seed: 'common-group-test',
+                targetCR: 1,
+                count: 5,
+                baseRarity: 'common'
+            });
+            expect(commonEnemies.length).toBe(5);
+
+            // Uncommon
+            const uncommonEnemies = EnemyGenerator.generateEncounterByCR({
+                seed: 'uncommon-group-test',
+                targetCR: 2,
+                count: 4,
+                baseRarity: 'uncommon'
+            });
+            expect(uncommonEnemies.length).toBe(4);
+
+            // Elite
+            const eliteEnemies = EnemyGenerator.generateEncounterByCR({
+                seed: 'elite-group-test-2',
+                targetCR: 5,
+                count: 3,
+                baseRarity: 'elite'
+            });
+            expect(eliteEnemies.length).toBe(3);
+        });
+
+        it('should include helpful error message when boss + count > 1', () => {
+            try {
+                EnemyGenerator.generateEncounterByCR({
+                    seed: 'boss-error-message-test',
+                    targetCR: 5,
+                    count: 3,
+                    baseRarity: 'boss'
+                });
+                // Should not reach here
+                expect(true).toBe(false);
+            } catch (error) {
+                expect(error).toBeInstanceOf(Error);
+                const message = (error as Error).message;
+                // Check error message contains helpful guidance
+                expect(message).toContain('Boss encounters must have count=1');
+                expect(message).toContain('Requested count=3');
+                expect(message).toContain("baseRarity='boss'");
+                expect(message).toContain('common/uncommon/elite');
+            }
+        });
+    });
 });

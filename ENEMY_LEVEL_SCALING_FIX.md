@@ -135,9 +135,9 @@ Fix the enemy generation system to properly scale enemy levels based on target C
   - No automatic scaling
 
 ### Task 2.4: Boss Always Single Rule
-- [ ] Add validation: if rarity is 'boss', enforce single enemy
-- [ ] Add error/warning if user requests boss + count > 1
-- [ ] Document that boss encounters are always 1vparty
+- [x] Add validation: if rarity is 'boss', enforce single enemy
+- [x] Add error/warning if user requests boss + count > 1
+- [x] Document that boss encounters are always 1vparty
 
 ### Task 2.5: Ensure Rarity Only Controls Complexity
 - [ ] Verify rarity controls ONLY:

@@ -1354,6 +1354,8 @@ export class EnemyGenerator {
      * @param options - Encounter generation options
      * @returns Array of generated enemies
      *
+     * @throws Error if baseRarity='boss' and count > 1 (boss encounters must be single enemy)
+     *
      * @example
      * ```typescript
      * const enemies = EnemyGenerator.generateEncounter(party, {
@@ -1363,6 +1365,18 @@ export class EnemyGenerator {
      * });
      * // Returns 5 enemies balanced for the party's level
      * // One enemy will be promoted to uncommon as leader
+     * ```
+     *
+     * @example
+     * ```typescript
+     * // Boss encounters must be single enemy (1vparty design)
+     * const boss = EnemyGenerator.generateEncounter(party, {
+     *   seed: 'boss-fight',
+     *   difficulty: 'deadly',
+     *   count: 1,
+     *   baseRarity: 'boss'
+     * });
+     * // Returns 1 boss enemy designed for solo encounter
      * ```
      */
     static generateEncounter(
@@ -1394,6 +1408,17 @@ export class EnemyGenerator {
         // Handle empty party or zero count
         if (count <= 0) {
             return [];
+        }
+
+        // Validate: boss encounters must be single enemy (Task 2.4)
+        // Boss enemies are designed for 1vparty encounters and should not be generated in groups
+        if (baseRarity === 'boss' && count > 1) {
+            throw new Error(
+                `Boss encounters must have count=1. Requested count=${count} with baseRarity='boss'. ` +
+                `Boss enemies are designed for solo encounters against a party. ` +
+                `Use a lower rarity (common/uncommon/elite) for multi-enemy encounters, ` +
+                `or set count=1 for a boss encounter.`
+            );
         }
 
         // Calculate XP budget from party
@@ -1480,6 +1505,8 @@ export class EnemyGenerator {
      * @param options - Encounter generation options (must include targetCR)
      * @returns Array of generated enemies
      *
+     * @throws Error if baseRarity='boss' and count > 1 (boss encounters must be single enemy)
+     *
      * @example
      * ```typescript
      * const enemies = EnemyGenerator.generateEncounterByCR({
@@ -1488,6 +1515,18 @@ export class EnemyGenerator {
      *   count: 3
      * });
      * // Returns 3 enemies at approximately CR 5 each
+     * ```
+     *
+     * @example
+     * ```typescript
+     * // Boss encounters must be single enemy (1vparty design)
+     * const boss = EnemyGenerator.generateEncounterByCR({
+     *   seed: 'boss-fight',
+     *   targetCR: 10,
+     *   count: 1,
+     *   baseRarity: 'boss'
+     * });
+     * // Returns 1 boss enemy designed for solo encounter
      * ```
      */
     static generateEncounterByCR(options: EncounterGenerationOptions): CharacterSheet[] {
@@ -1521,6 +1560,17 @@ export class EnemyGenerator {
         // Validate targetCR
         if (targetCR < 0) {
             throw new Error(`Invalid targetCR: ${targetCR}. Must be >= 0`);
+        }
+
+        // Validate: boss encounters must be single enemy (Task 2.4)
+        // Boss enemies are designed for 1vparty encounters and should not be generated in groups
+        if (baseRarity === 'boss' && count > 1) {
+            throw new Error(
+                `Boss encounters must have count=1. Requested count=${count} with baseRarity='boss'. ` +
+                `Boss enemies are designed for solo encounters against a party. ` +
+                `Use a lower rarity (common/uncommon/elite) for multi-enemy encounters, ` +
+                `or set count=1 for a boss encounter.`
+            );
         }
 
         // Get encounter multiplier for the count
