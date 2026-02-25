@@ -507,6 +507,18 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         description: 'A master key that can open many different locks. Consumed when used to open a locked box.'
     },
 
+    // ===== CURRENCY =====
+
+    'Gold Coin': {
+        name: 'Gold Coin',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 0,  // Not randomly spawned - earned through gameplay
+        tags: ['currency', 'gold', 'money'],
+        description: 'A standard gold coin used as currency throughout the realm. Can be consumed to open certain magical locks.'
+    },
+
     // ===== LOCKED BOXES =====
 
     'Locked Chest': {
@@ -530,6 +542,29 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
             ]
         },
         description: 'A sturdy locked chest. Requires an Iron Key to open.'
+    },
+    'Gilded Strongbox': {
+        name: 'Gilded Strongbox',
+        type: 'box',
+        rarity: 'rare',
+        weight: 15,
+        spawnWeight: 0.3,
+        tags: ['loot', 'treasure', 'gold-locked'],
+        boxContents: {
+            openRequirements: [
+                { itemName: 'Gold Coin', quantity: 100 }
+            ],
+            drops: [
+                { pool: [{ weight: 100, gold: 250 }] },
+                { pool: [
+                    { weight: 40, itemName: 'Longsword' },
+                    { weight: 30, itemName: 'Chain Mail' },
+                    { weight: 20, itemName: 'Scale Mail' },
+                    { weight: 10, itemName: 'Medical Supply', quantity: 5 }
+                ]}
+            ]
+        },
+        description: 'A gilded strongbox with a magical lock. Consumes 100 Gold Coins to unlock.'
     },
 
     // ===== LIGHT SOURCES =====

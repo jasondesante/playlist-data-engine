@@ -288,8 +288,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   ```
   - **Note**: Replaced 'Potion of Healing' with 'Medical Supply' (3x) since Potion of Healing doesn't exist in the equipment database yet.
 
-- [ ] **5.3 Add Gilded Box (Gold Coin Requirement)**
-  - [ ] Box requiring Gold Coins to open (gold as item):
+- [x] **5.3 Add Gilded Box (Gold Coin Requirement)**
+  - [x] Box requiring Gold Coins to open (gold as item):
   ```typescript
   'Gilded Strongbox': {
       name: 'Gilded Strongbox',
@@ -307,14 +307,15 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
               { pool: [
                   { weight: 40, itemName: 'Longsword' },
                   { weight: 30, itemName: 'Chain Mail' },
-                  { weight: 20, itemName: 'Ring of Protection' },
-                  { weight: 10, itemName: 'Potion of Greater Healing' }
+                  { weight: 20, itemName: 'Scale Mail' },
+                  { weight: 10, itemName: 'Medical Supply', quantity: 5 }
               ]}
           ]
       },
       description: 'A gilded strongbox with a magical lock. Consumes 100 Gold Coins to unlock.'
   }
   ```
+  - **Note**: Replaced 'Ring of Protection' with 'Scale Mail' and 'Potion of Greater Healing' with 'Medical Supply (5x)' since those items don't exist in the equipment database yet.
 
 - [ ] **5.4 Add Multi-Requirement Box**
   - [ ] Box requiring multiple different items:
@@ -390,8 +391,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   }
   ```
 
-- [ ] **5.7 Add Gold Coin Item (if not exists)**
-  - [ ] Currency item for gold-based requirements:
+- [x] **5.7 Add Gold Coin Item (if not exists)**
+  - [x] Currency item for gold-based requirements:
   ```typescript
   'Gold Coin': {
       name: 'Gold Coin',
@@ -400,7 +401,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
       weight: 0,
       spawnWeight: 0,  // Not randomly spawned
       tags: ['currency', 'gold', 'money'],
-      description: 'A standard gold coin used as currency throughout the realm.'
+      description: 'A standard gold coin used as currency throughout the realm. Can be consumed to open certain magical locks.'
   }
   ```
 
