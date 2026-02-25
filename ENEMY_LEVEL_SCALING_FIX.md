@@ -25,9 +25,9 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 ## Phase 1: Core Fix - CRLevelConverter Integration
 
 ### Task 1.1: Import CRLevelConverter
-- [ ] Verify `CRLevelConverter.ts` exists and has `crToLevel()` function
-- [ ] Add import for `crToLevel` from `./CRLevelConverter` in EnemyGenerator.ts
-- [ ] Verify the import works with existing test suite
+- [x] Verify `CRLevelConverter.ts` exists and has `crToLevel()` function
+- [x] Add import for `crToLevel` from `./CRLevelConverter` in EnemyGenerator.ts
+- [x] Verify the import works with existing test suite
 
 ### Task 1.2: Add getLevelFromCR() Method
 - [ ] Create new private static method `getLevelFromCR(cr: number): number`

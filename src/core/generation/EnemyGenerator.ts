@@ -35,6 +35,7 @@ import { EnemyEquipmentGenerator } from './EnemyEquipmentGenerator.js';
 import { SpellcastingGenerator } from './SpellcastingGenerator.js';
 import { LegendaryGenerator, type LegendaryAction, type LegendaryConfig } from './LegendaryGenerator.js';
 import { DEFAULT_EQUIPMENT } from '../../constants/DefaultEquipment.js';
+import { crToLevel } from './CRLevelConverter.js';
 
 /**
  * EnemyGenerator - Static class for enemy generation
