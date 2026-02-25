@@ -1171,6 +1171,38 @@ export class EnemyGenerator {
     }
 
     /**
+     * Get character level based on Challenge Rating
+     *
+     * In D&D 5e, CR is approximately equal to level for most creatures.
+     * A CR 5 enemy is roughly equivalent to a level 5 character.
+     *
+     * This method uses CRLevelConverter.crToLevel() for the conversion,
+     * which handles:
+     * - CR 0.25 → level 0.25 (sub-level enemy, reduced base stats)
+     * - CR 0.5 → level 0.5 (sub-level enemy, reduced base stats)
+     * - CR 1+ → level = CR (standard mapping)
+     *
+     * Fractional CRs represent "sub-level" enemies that are weaker than
+     * a level 1 character. These should have reduced stats applied via
+     * getStatMultiplierForFractionalCR().
+     *
+     * @param cr - Challenge Rating (supports fractional values like 0.25, 0.5)
+     * @returns Character level (may be fractional for sub-level enemies)
+     *
+     * @example
+     * ```typescript
+     * getLevelFromCR(0.25); // 0.25 (sub-level)
+     * getLevelFromCR(0.5);  // 0.5 (sub-level)
+     * getLevelFromCR(1);    // 1
+     * getLevelFromCR(5);    // 5
+     * getLevelFromCR(10);   // 10
+     * ```
+     */
+    private static getLevelFromCR(cr: number): number {
+        return crToLevel(cr);
+    }
+
+    /**
      * Get character level based on rarity
      *
      * Simple rarity-to-level mapping for V1.
@@ -1178,6 +1210,9 @@ export class EnemyGenerator {
      *
      * @param rarity - Enemy rarity tier
      * @returns Character level
+     *
+     * @deprecated Level should come from CR, not rarity. Use getLevelFromCR() instead.
+     *             This method will be removed in a future version.
      */
     private static getLevelForRarity(rarity: EnemyRarity): number {
         const levels: Record<EnemyRarity, number> = {

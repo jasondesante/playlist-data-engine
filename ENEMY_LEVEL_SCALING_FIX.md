@@ -30,7 +30,7 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 - [x] Verify the import works with existing test suite
 
 ### Task 1.2: Add getLevelFromCR() Method
-- [ ] Create new private static method `getLevelFromCR(cr: number): number`
+- [x] Create new private static method `getLevelFromCR(cr: number): number`
 - [ ] Use `crToLevel(cr)` for the conversion
 - [ ] Handle fractional CRs specially:
   - CR 0.25 → level 0.25 (sub-level enemy, reduced base stats)
