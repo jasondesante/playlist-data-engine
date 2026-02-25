@@ -473,28 +473,16 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
     - Valid with quantity of 1 (minimum valid)
     - Valid with large quantity values (10000)
 
-- [ ] **6.7 Manual Verification Script**
-  ```typescript
-  import { BoxOpener, ExtensionManager, SeededRNG } from 'playlist-data-engine';
-
-  const rng = new SeededRNG('test-requirements');
-  const manager = ExtensionManager.getInstance();
-
-  // Test locked chest
-  const lockedChest = manager.get('equipment').find(e => e.name === 'Locked Chest');
-
-  // Should fail without key
-  const result1 = BoxOpener.openBox(lockedChest, rng, []);
-  console.log('Without key:', result1.success); // false
-  console.log('Error:', result1.error?.message); // "Missing required item: Iron Key"
-
-  // Should succeed with key
-  const inventory = [{ name: 'Iron Key', quantity: 1, equipped: false }];
-  const result2 = BoxOpener.openBox(lockedChest, rng, inventory);
-  console.log('With key:', result2.success); // true
-  console.log('Items received:', result2.items.length);
-  console.log('Consumed:', result2.consumedItems); // [{ name: 'Iron Key', quantity: 1 }]
-  ```
+- [x] **6.7 Manual Verification Script**
+  - [x] Created `examples/boxOpenRequirementsDemo.ts`
+  - [x] Script verifies all 4 locked box types:
+    - Locked Chest (single item requirement)
+    - Gilded Strongbox (gold coin quantity requirement)
+    - Royal Treasury Box (multiple requirements)
+    - Thieves' Cache (quantity requirement)
+  - [x] Also verifies standard boxes without requirements (backward compatibility)
+  - [x] Verifies all key items exist (Iron Key, Golden Key, Skeleton Key, Lockpick, Gold Coin)
+  - [x] All 39 verification tests pass
 
 ---
 
@@ -712,7 +700,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
-- Phase 6: 🟡 In Progress (6.1, 6.2, 6.3, 6.4, 6.5 complete)
+- Phase 6: ✅ Complete
 - Phase 7: ⬜ Not Started
 - Phase 8: ⬜ Not Started
 
