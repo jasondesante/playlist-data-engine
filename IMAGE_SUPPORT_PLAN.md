@@ -44,9 +44,9 @@ Add optional `icon` and `image` URL fields to all entity types managed by Extens
   - [x] Edit `src/utils/constants.ts`
   - [x] Add `icon?: string` and `image?: string` after `description` field (~L626)
 
-- [ ] **Task 1.6: Add image fields to ClassDataEntry interface**
-  - [ ] Edit `src/utils/constants.ts`
-  - [ ] Add `icon?: string` and `image?: string` after `description` field (~L176)
+- [x] **Task 1.6: Add image fields to ClassDataEntry interface**
+  - [x] Edit `src/utils/constants.ts`
+  - [x] Add `icon?: string` and `image?: string` after `description` field (~L176)
 
 - [ ] **Task 1.7: Add image fields to EnemyTemplate interface**
   - [ ] Edit `src/core/types/Enemy.ts`

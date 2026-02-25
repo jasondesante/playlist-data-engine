@@ -173,6 +173,12 @@ export interface ClassDataEntry {
 
     /** Optional: User-facing description of this class */
     description?: string;
+
+    /** Optional icon URL for small UI display */
+    icon?: string;
+
+    /** Optional image URL for larger display */
+    image?: string;
 }
 
 /**
