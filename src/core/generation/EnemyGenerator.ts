@@ -1193,6 +1193,10 @@ export class EnemyGenerator {
             seed,
             generated_at: new Date().toISOString(),
 
+            // CR for frontend validation (enables verifying CR → level mapping)
+            // Undefined if CR was not explicitly provided (backward compat)
+            ...(cr !== undefined ? { cr } : {}),
+
             // Legendary configuration for boss enemies
             ...(legendaryConfig ? {
                 legendary_config: {

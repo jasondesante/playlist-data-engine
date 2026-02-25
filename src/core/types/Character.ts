@@ -516,4 +516,20 @@ export interface CharacterSheet {
         lair_action_hint?: string;
     };
 
+    /**
+     * Challenge Rating for enemy characters
+     * Used by EnemyGenerator to track the CR that was used to generate this enemy.
+     * This enables frontend validation that CR → level mapping is correct.
+     *
+     * For enemies: `cr` is the Challenge Rating used during generation
+     * For player characters: `cr` is undefined
+     *
+     * @example
+     * // Frontend validation: verify CR maps to correct level
+     * const enemy = EnemyGenerator.generate({ seed: 'test', cr: 8, rarity: 'elite' });
+     * console.log(enemy.cr);   // 8
+     * console.log(enemy.level); // 8 (CR ≈ level in D&D 5e)
+     */
+    cr?: number;
+
 }
