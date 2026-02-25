@@ -489,16 +489,16 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 ## Phase 7: Documentation Updates
 *Estimated complexity: Medium*
 
-- [ ] **7.1 Update EQUIPMENT_SYSTEM.md**
-  - [ ] File: `docs/EQUIPMENT_SYSTEM.md`
-  - [ ] Add "Opening Requirements" subsection under "Box Equipment Type"
-  - [ ] Document `BoxOpenRequirement` interface
-  - [ ] Add examples for each requirement type:
+- [x] **7.1 Update EQUIPMENT_SYSTEM.md**
+  - [x] File: `docs/EQUIPMENT_SYSTEM.md`
+  - [x] Add "Opening Requirements" subsection under "Box Equipment Type"
+  - [x] Document `BoxOpenRequirement` interface
+  - [x] Add examples for each requirement type:
     - Item requirement
     - Gold requirement
     - Quantity requirement
     - Combined requirements
-  - [ ] Document error handling
+  - [x] Document error handling
 
 - [ ] **7.2 Update COMBAT_SYSTEM.md**
   - [ ] File: `docs/COMBAT_SYSTEM.md`

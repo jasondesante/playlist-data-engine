@@ -463,6 +463,26 @@ The full configuration for what a box contains.
 |----------|------|----------|-------------|
 | `drops` | `BoxDrop[]` | Yes | Each entry represents one draw; the box generates one result per drop |
 | `consumeOnOpen` | boolean | No | Whether the box is removed from inventory after opening (default: `true`) |
+| `openRequirements` | `BoxOpenRequirement[]` | No | Optional requirements that must be satisfied to open the box |
+
+#### BoxOpenRequirement
+
+A single requirement that must be met to open a box. Represents an item (and quantity) that must be consumed from inventory.
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `itemName` | string | Yes | Item name that must be consumed (must exist in character inventory) |
+| `quantity` | number | No | Quantity of item required (default: 1) |
+
+#### BoxOpenError
+
+Error returned when box cannot be opened due to unmet requirements.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `code` | `'MISSING_ITEM' \| 'INSUFFICIENT_QUANTITY' \| 'NO_BOX_CONTENTS'` | Error code for programmatic handling |
+| `message` | string | Human-readable error message |
+| `requirement` | `BoxOpenRequirement` | The requirement that was not met (if applicable) |
 
 #### BoxOpenResult
 
@@ -470,9 +490,12 @@ The result returned by `BoxOpener.openBox()`.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `items` | `Equipment[]` | All items generated from the box |
+| `success` | boolean | Whether the box was successfully opened |
+| `items` | `Equipment[]` | All items generated from the box (empty if not opened) |
 | `gold` | number | Total gold generated from gold drops |
 | `consumeBox` | boolean | Whether the box should be removed from inventory |
+| `error` | `BoxOpenError` | Error if box could not be opened (optional) |
+| `consumedItems` | `{ name: string; quantity: number }[]` | Items consumed to open the box (optional) |
 
 ### BoxOpener Class
 
@@ -482,13 +505,16 @@ Static utility class for opening box-type equipment.
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `openBox` | `(box: Equipment, rng: SeededRNG): BoxOpenResult` | Open a box and generate all its contents |
+| `openBox` | `(box: Equipment, rng: SeededRNG, inventory?: EnhancedInventoryItem[]): BoxOpenResult` | Open a box and generate all its contents; checks requirements if inventory provided |
 | `isBox` | `(equipment: Equipment): boolean` | Check if equipment is a valid (openable) box |
-| `previewContents` | `(box: Equipment): { possibleItems, possibleGold, totalDrops }` | List all possible outcomes without opening |
+| `checkRequirements` | `(box: Equipment, inventory: EnhancedInventoryItem[]): BoxOpenError \| null` | Check if box requirements are met; returns null if satisfied |
+| `canOpen` | `(box: Equipment, inventory: EnhancedInventoryItem[]): boolean` | Simple boolean check if box can be opened |
+| `getRequirementsDescription` | `(box: Equipment): string \| null` | Human-readable description of requirements |
+| `previewContents` | `(box: Equipment): { possibleItems, possibleGold, totalDrops, openRequirements? }` | List all possible outcomes without opening |
 
 #### openBox
 
-Iterates over every `BoxDrop` in `boxContents.drops`, selects one `BoxDropPool` entry using weighted random selection, and returns the aggregated result.
+Iterates over every `BoxDrop` in `boxContents.drops`, selects one `BoxDropPool` entry using weighted random selection, and returns the aggregated result. If `inventory` is provided and the box has `openRequirements`, requirements are checked before opening.
 
 ```typescript
 import { BoxOpener, SeededRNG } from 'playlist-data-engine';
@@ -496,8 +522,9 @@ import { BoxOpener, SeededRNG } from 'playlist-data-engine';
 const rng = new SeededRNG('my-seed');
 const result = BoxOpener.openBox(explorersPack, rng);
 
-console.log(result.items);       // Equipment[] — all generated items
-console.log(result.gold);        // number — total gold from gold drops
+console.log(result.success);      // boolean — whether the box was opened
+console.log(result.items);         // Equipment[] — all generated items
+console.log(result.gold);          // number — total gold from gold drops
 console.log(result.consumeBox);  // boolean — whether to remove from inventory
 ```
 
@@ -511,13 +538,52 @@ if (BoxOpener.isBox(item)) {
 
 #### previewContents
 
-Returns all *possible* outcomes without consuming RNG state. Useful for tooltips or shop previews.
+Returns all *possible* outcomes without consuming RNG state. Useful for tooltips or shop previews. Also returns `openRequirements` if the box has any.
 
 ```typescript
 const preview = BoxOpener.previewContents(goblinChest);
-// preview.possibleItems  → ['Shortsword', 'Leather Armor', "Thieves' Tools"]
-// preview.possibleGold   → { min: 0, max: 50 }
-// preview.totalDrops     → 1
+// preview.possibleItems     → ['Shortsword', 'Leather Armor', "Thieves' Tools"]
+// preview.possibleGold      → { min: 0, max: 50 }
+// preview.totalDrops        → 1
+// preview.openRequirements  → [{ itemName: 'Iron Key' }] (if present)
+```
+
+#### checkRequirements
+
+Check if all box requirements are met by the given inventory. Returns `null` if all requirements are satisfied, or a `BoxOpenError` if not.
+
+```typescript
+const inventory = [{ name: 'Iron Key', quantity: 1, equipped: false }];
+const error = BoxOpener.checkRequirements(lockedChest, inventory);
+
+if (error) {
+    console.log(error.code);    // 'MISSING_ITEM' or 'INSUFFICIENT_QUANTITY'
+    console.log(error.message); // Human-readable error
+}
+```
+
+#### canOpen
+
+Simple boolean check useful for UI purposes (showing lock icons, enabling/disabling buttons).
+
+```typescript
+const inventory = [{ name: 'Iron Key', quantity: 1, equipped: false }];
+
+if (BoxOpener.canOpen(lockedChest, inventory)) {
+    console.log('You can open this chest!');
+}
+```
+
+#### getRequirementsDescription
+
+Returns a human-readable string describing what items are needed to open the box, useful for tooltips.
+
+```typescript
+const desc = BoxOpener.getRequirementsDescription(lockedChest);
+// "Requires: Iron Key"
+
+const multiDesc = BoxOpener.getRequirementsDescription(royalTreasuryBox);
+// "Requires: Golden Key, 200 Gold Coins"
 ```
 
 ### Guaranteed Containers
@@ -690,6 +756,237 @@ const componentPouch = {
     tags: ['gear', 'magic', 'spellcasting'],
     description: 'A pouch for holding spell components.'
 };
+```
+
+### Opening Requirements
+
+Boxes can have optional **opening requirements** that must be satisfied before they can be opened. Requirements are items that get consumed from the character's inventory when the box is successfully opened.
+
+#### Basic Item Requirement
+
+A locked chest requiring a single key:
+
+```typescript
+const lockedChest = {
+    name: 'Locked Chest',
+    type: 'box',
+    rarity: 'uncommon',
+    weight: 10,
+    boxContents: {
+        openRequirements: [
+            { itemName: 'Iron Key' }  // Consumes 1 Iron Key when opened
+        ],
+        drops: [
+            { pool: [{ weight: 100, gold: 50 }] },
+            { pool: [
+                { weight: 50, itemName: 'Shortsword' },
+                { weight: 30, itemName: 'Leather Armor' },
+                { weight: 20, itemName: 'Medical Supply', quantity: 3 }
+            ]}
+        ]
+    },
+    description: 'A sturdy locked chest. Requires an Iron Key to open.'
+};
+```
+
+#### Gold Coin Requirement
+
+Gold requirements use `"Gold Coin"` as the item name with a quantity:
+
+```typescript
+const gildedStrongbox = {
+    name: 'Gilded Strongbox',
+    type: 'box',
+    rarity: 'rare',
+    weight: 15,
+    boxContents: {
+        openRequirements: [
+            { itemName: 'Gold Coin', quantity: 100 }  // Consumes 100 Gold Coins
+        ],
+        drops: [
+            { pool: [{ weight: 100, gold: 250 }] },
+            { pool: [
+                { weight: 40, itemName: 'Longsword' },
+                { weight: 30, itemName: 'Chain Mail' },
+                { weight: 20, itemName: 'Scale Mail' }
+            ]}
+        ]
+    },
+    description: 'A gilded strongbox with a magical lock. Consumes 100 Gold Coins to unlock.'
+};
+```
+
+#### Quantity-Based Requirement
+
+Some boxes require multiple of the same item:
+
+```typescript
+const thievesCache = {
+    name: "Thieves' Cache",
+    type: 'box',
+    rarity: 'uncommon',
+    weight: 5,
+    boxContents: {
+        openRequirements: [
+            { itemName: 'Lockpick', quantity: 3 }  // Consumes 3 Lockpicks
+        ],
+        drops: [
+            { pool: [{ weight: 100, gold: 75 }] },
+            { pool: [
+                { weight: 50, itemName: "Thieves' Tools" },
+                { weight: 30, itemName: 'Dagger' },
+                { weight: 20, itemName: 'Disguise Kit' }
+            ]}
+        ]
+    },
+    description: 'A hidden cache with a complex lock. Requires 3 lockpicks to crack.'
+};
+```
+
+#### Multiple Requirements
+
+Boxes can require multiple different items simultaneously. ALL requirements must be satisfied:
+
+```typescript
+const royalTreasuryBox = {
+    name: 'Royal Treasury Box',
+    type: 'box',
+    rarity: 'very_rare',
+    weight: 20,
+    boxContents: {
+        openRequirements: [
+            { itemName: 'Golden Key' },              // Need 1 Golden Key
+            { itemName: 'Gold Coin', quantity: 200 } // AND 200 Gold Coins
+        ],
+        drops: [
+            { pool: [{ weight: 100, gold: 1000 }] },
+            { pool: [
+                { weight: 30, itemName: 'Plate Armor' },
+                { weight: 25, itemName: 'Chain Mail' },
+                { weight: 25, itemName: 'Greataxe' },
+                { weight: 20, itemName: 'Longsword' }
+            ]}
+        ]
+    },
+    description: 'A royal treasury box sealed with powerful magic. Requires a Golden Key and 200 Gold Coins.'
+};
+```
+
+#### Checking Requirements Before Opening
+
+Use `BoxOpener.checkRequirements()` to validate if a character can open a box:
+
+```typescript
+import { BoxOpener, SeededRNG } from 'playlist-data-engine';
+
+const inventory = [
+    { name: 'Iron Key', quantity: 1, equipped: false },
+    { name: 'Gold Coin', quantity: 150, equipped: false }
+];
+
+// Check if requirements are met
+const error = BoxOpener.checkRequirements(lockedChest, inventory);
+
+if (error) {
+    console.log(`Cannot open: ${error.message}`);
+    // error.code → 'MISSING_ITEM' or 'INSUFFICIENT_QUANTITY'
+    // error.requirement → The specific unmet requirement
+}
+```
+
+#### Opening with Requirements
+
+When opening a box with `BoxOpener.openBox()`, provide the inventory to enable requirement checking:
+
+```typescript
+const rng = new SeededRNG('loot-seed');
+
+// With inventory - requirements are checked
+const result = BoxOpener.openBox(lockedChest, rng, inventory);
+
+if (result.success) {
+    console.log('Box opened!');
+    console.log('Items received:', result.items);
+    console.log('Items consumed:', result.consumedItems);
+    // consumedItems → [{ name: 'Iron Key', quantity: 1 }]
+} else {
+    console.log('Failed to open:', result.error?.message);
+}
+
+// Without inventory - requirements are skipped (backward compatible)
+const legacyResult = BoxOpener.openBox(lockedChest, rng);
+// Always succeeds regardless of requirements
+```
+
+#### Character Integration with EquipmentSpawnHelper
+
+When using `EquipmentSpawnHelper.openBoxForCharacter()`, requirements are automatically checked and items consumed from the character's inventory:
+
+```typescript
+import { EquipmentSpawnHelper, SeededRNG } from 'playlist-data-engine';
+
+const rng = new SeededRNG('character-loot');
+const outcome = EquipmentSpawnHelper.openBoxForCharacter(character, 'Locked Chest', rng);
+
+if (outcome) {
+    character = outcome.character;  // Updated with consumed requirements and new items
+    console.log('Items:', outcome.result.items);
+    console.log('Gold:', outcome.result.gold);
+    console.log('Consumed:', outcome.result.consumedItems);
+} else {
+    console.log('Box not found in inventory');
+}
+
+// If requirements not met, outcome.result.success will be false
+// and outcome.result.error will contain the failure reason
+```
+
+#### Error Handling
+
+When a box cannot be opened, the result includes an error object:
+
+```typescript
+interface BoxOpenError {
+    code: 'MISSING_ITEM' | 'INSUFFICIENT_QUANTITY' | 'NO_BOX_CONTENTS';
+    message: string;
+    requirement?: BoxOpenRequirement;
+}
+
+// Example error handling
+const result = BoxOpener.openBox(box, rng, inventory);
+
+if (!result.success && result.error) {
+    switch (result.error.code) {
+        case 'MISSING_ITEM':
+            console.log(`You don't have any ${result.error.requirement?.itemName}`);
+            break;
+        case 'INSUFFICIENT_QUANTITY':
+            console.log(`Not enough ${result.error.requirement?.itemName}`);
+            break;
+        case 'NO_BOX_CONTENTS':
+            console.log('This box is empty');
+            break;
+    }
+}
+```
+
+#### UI Helper Methods
+
+BoxOpener provides convenience methods for UI integration:
+
+```typescript
+// Boolean check for enabling/disabling open button
+const canOpen = BoxOpener.canOpen(box, character.equipment.items);
+
+// Human-readable requirement description for tooltips
+const desc = BoxOpener.getRequirementsDescription(box);
+// "Requires: Iron Key"
+// "Requires: Golden Key, 200 Gold Coins"
+// null (if no requirements)
+
+// Preview contents with requirements included
+const preview = BoxOpener.previewContents(box);
+// preview.openRequirements → [{ itemName: 'Iron Key' }] or undefined
 ```
 
 ### Registering Custom Box Items
