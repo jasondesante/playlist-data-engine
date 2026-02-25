@@ -141,6 +141,12 @@ export interface EnemyTemplate {
         /** Damage types immune (zero damage) */
         immunities?: DamageType[];
     };
+
+    /** Optional icon URL for small UI display */
+    icon?: string;
+
+    /** Optional image URL for larger display */
+    image?: string;
 }
 
 /**
