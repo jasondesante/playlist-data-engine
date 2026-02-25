@@ -459,14 +459,19 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
     - Weight tracking during consumption
     - Partial quantity consumption (e.g., have 5, consume 3 = 2 left)
 
-- [ ] **6.6 Validator Tests**
-  - [ ] Test `EquipmentValidator.validateBoxOpenRequirement()`:
+- [x] **6.6 Validator Tests**
+  - [x] Test `EquipmentValidator.validateBoxOpenRequirement()`:
     - Valid with itemName and default quantity
     - Valid with itemName and explicit quantity
     - Invalid with empty itemName
     - Invalid with non-existent itemName
     - Invalid with non-integer quantity
     - Invalid with quantity < 1
+  - [x] Additional tests added:
+    - Invalid with negative quantity
+    - Invalid with non-object requirement (null/undefined)
+    - Valid with quantity of 1 (minimum valid)
+    - Valid with large quantity values (10000)
 
 - [ ] **6.7 Manual Verification Script**
   ```typescript

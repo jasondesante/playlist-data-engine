@@ -11,11 +11,12 @@ import type {
     EnhancedEquipment,
     EquipmentProperty,
     EquipmentModification,
-    EquipmentMiniFeature
+    EquipmentMiniFeature,
+    BoxOpenRequirement
 } from '../../src/core/types/Equipment.js';
 import { FeatureQuery } from '../../src/core/features/FeatureQuery.js';
 import { SkillQuery } from '../../src/core/skills/SkillQuery.js';
-import { initializeFeatureDefaults, initializeSkillDefaults } from '../../src/core/extensions/initializeDefaults.js';
+import { ensureAllDefaultsInitialized } from '../../src/core/extensions/initializeDefaults.js';
 
 describe('EquipmentValidator', () => {
     let featureQuery: FeatureQuery;
@@ -26,9 +27,8 @@ describe('EquipmentValidator', () => {
         featureQuery = FeatureQuery.getInstance();
         skillQuery = SkillQuery.getInstance();
 
-        // Initialize defaults using ExtensionManager initialization functions
-        initializeFeatureDefaults();
-        initializeSkillDefaults();
+        // Initialize all defaults (features, skills, equipment) using ExtensionManager
+        ensureAllDefaultsInitialized();
     });
 
     afterEach(() => {
@@ -1061,6 +1061,115 @@ describe('EquipmentValidator', () => {
             };
 
             const result = EquipmentValidator.validateEquipment(equipment);
+            expect(result.valid).toBe(true);
+        });
+    });
+
+    describe('validateBoxOpenRequirement', () => {
+        it('should validate a requirement with itemName and default quantity (1)', () => {
+            // 'Iron Key' is a known item in the equipment registry
+            const requirement: BoxOpenRequirement = {
+                itemName: 'Iron Key'
+            };
+
+            const result = EquipmentValidator.validateBoxOpenRequirement(requirement);
+            expect(result.valid).toBe(true);
+            expect(result.errors).toBeUndefined();
+        });
+
+        it('should validate a requirement with itemName and explicit quantity', () => {
+            const requirement: BoxOpenRequirement = {
+                itemName: 'Gold Coin',
+                quantity: 100
+            };
+
+            const result = EquipmentValidator.validateBoxOpenRequirement(requirement);
+            expect(result.valid).toBe(true);
+            expect(result.errors).toBeUndefined();
+        });
+
+        it('should reject requirement with empty itemName', () => {
+            const requirement: BoxOpenRequirement = {
+                itemName: ''
+            };
+
+            const result = EquipmentValidator.validateBoxOpenRequirement(requirement);
+            expect(result.valid).toBe(false);
+            expect(result.errors?.some(e => e.includes('itemName must be a non-empty string'))).toBe(true);
+        });
+
+        it('should reject requirement with non-existent itemName', () => {
+            const requirement: BoxOpenRequirement = {
+                itemName: 'NonExistentItemThatDoesNotExist'
+            };
+
+            const result = EquipmentValidator.validateBoxOpenRequirement(requirement);
+            expect(result.valid).toBe(false);
+            expect(result.errors?.some(e => e.includes('not found in equipment registry'))).toBe(true);
+        });
+
+        it('should reject requirement with non-integer quantity', () => {
+            const requirement: BoxOpenRequirement = {
+                itemName: 'Iron Key',
+                quantity: 2.5
+            };
+
+            const result = EquipmentValidator.validateBoxOpenRequirement(requirement);
+            expect(result.valid).toBe(false);
+            expect(result.errors?.some(e => e.includes('quantity must be a positive integer'))).toBe(true);
+        });
+
+        it('should reject requirement with quantity less than 1', () => {
+            const requirement: BoxOpenRequirement = {
+                itemName: 'Iron Key',
+                quantity: 0
+            };
+
+            const result = EquipmentValidator.validateBoxOpenRequirement(requirement);
+            expect(result.valid).toBe(false);
+            expect(result.errors?.some(e => e.includes('quantity must be a positive integer'))).toBe(true);
+        });
+
+        it('should reject requirement with negative quantity', () => {
+            const requirement: BoxOpenRequirement = {
+                itemName: 'Iron Key',
+                quantity: -5
+            };
+
+            const result = EquipmentValidator.validateBoxOpenRequirement(requirement);
+            expect(result.valid).toBe(false);
+            expect(result.errors?.some(e => e.includes('quantity must be a positive integer'))).toBe(true);
+        });
+
+        it('should reject non-object requirement', () => {
+            const result = EquipmentValidator.validateBoxOpenRequirement(null as any);
+            expect(result.valid).toBe(false);
+            expect(result.errors?.some(e => e.includes('must be an object'))).toBe(true);
+        });
+
+        it('should reject undefined requirement', () => {
+            const result = EquipmentValidator.validateBoxOpenRequirement(undefined as any);
+            expect(result.valid).toBe(false);
+            expect(result.errors?.some(e => e.includes('must be an object'))).toBe(true);
+        });
+
+        it('should validate quantity of 1 (minimum valid)', () => {
+            const requirement: BoxOpenRequirement = {
+                itemName: 'Iron Key',
+                quantity: 1
+            };
+
+            const result = EquipmentValidator.validateBoxOpenRequirement(requirement);
+            expect(result.valid).toBe(true);
+        });
+
+        it('should validate large quantity values', () => {
+            const requirement: BoxOpenRequirement = {
+                itemName: 'Gold Coin',
+                quantity: 10000
+            };
+
+            const result = EquipmentValidator.validateBoxOpenRequirement(requirement);
             expect(result.valid).toBe(true);
         });
     });
