@@ -24,9 +24,9 @@ Add optional `icon` and `image` URL fields to all entity types managed by Extens
 
 ## Phase 1: Type Definitions
 
-- [ ] **Task 1.1: Add image fields to Spell interface**
-  - [ ] Edit `src/core/spells/SpellTypes.ts`
-  - [ ] Add `icon?: string` and `image?: string` after `description` field (~L77)
+- [x] **Task 1.1: Add image fields to Spell interface**
+  - [x] Edit `src/core/spells/SpellTypes.ts`
+  - [x] Add `icon?: string` and `image?: string` after `description` field (~L77)
 
 - [ ] **Task 1.2: Add image fields to CustomSkill interface**
   - [ ] Edit `src/core/skills/SkillTypes.ts`

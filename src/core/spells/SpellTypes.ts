@@ -76,6 +76,12 @@ export interface Spell {
     /** Optional description of what the spell does */
     description?: string;
 
+    /** Optional icon URL for small UI display */
+    icon?: string;
+
+    /** Optional image URL for larger display */
+    image?: string;
+
     /** Prerequisites for learning this spell */
     prerequisites?: SpellPrerequisite;
 }
