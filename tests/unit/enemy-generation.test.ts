@@ -1167,3 +1167,261 @@ describe('EnemyGenerator Error Handling', () => {
         }).toThrow('Unknown template ID in custom mix: nonexistent');
     });
 });
+
+/**
+ * Task 5.1: Unit Tests for getLevelFromCR()
+ *
+ * Tests the CR → level mapping and fractional CR stat reduction.
+ * These tests verify the fix for enemy level scaling where:
+ * - Level is now derived from CR (not rarity)
+ * - Fractional CRs (0.25, 0.5) create sub-level enemies with reduced stats
+ */
+describe('CR to Level Conversion Tests', () => {
+    describe('CR to Level Mapping', () => {
+        it('should map CR 0.25 to level 0.25 (sub-level enemy)', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-quarter-test',
+                templateId: 'orc',
+                cr: 0.25,
+                rarity: 'common'
+            });
+
+            expect(enemy.level).toBe(0.25);
+        });
+
+        it('should map CR 0.5 to level 0.5 (sub-level enemy)', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-half-test',
+                templateId: 'orc',
+                cr: 0.5,
+                rarity: 'common'
+            });
+
+            expect(enemy.level).toBe(0.5);
+        });
+
+        it('should map CR 1 to level 1', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-one-test',
+                templateId: 'orc',
+                cr: 1,
+                rarity: 'common'
+            });
+
+            expect(enemy.level).toBe(1);
+        });
+
+        it('should map CR 5 to level 5', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-five-test',
+                templateId: 'orc',
+                cr: 5,
+                rarity: 'common'
+            });
+
+            expect(enemy.level).toBe(5);
+        });
+
+        it('should map CR 10 to level 10', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-ten-test',
+                templateId: 'orc',
+                cr: 10,
+                rarity: 'common'
+            });
+
+            expect(enemy.level).toBe(10);
+        });
+
+        it('should map CR 20 to level 20', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-twenty-test',
+                templateId: 'orc',
+                cr: 20,
+                rarity: 'common'
+            });
+
+            expect(enemy.level).toBe(20);
+        });
+    });
+
+    describe('Fractional CR Stat Reduction', () => {
+        // Orc base stats: STR 16, DEX 12, CON 14, INT 8, WIS 10, CHA 8
+        // Common rarity has statMultiplier: 1.0
+
+        it('should apply 75% stat multiplier for CR 0.25', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-quarter-stats-test',
+                templateId: 'orc',
+                cr: 0.25,
+                rarity: 'common'
+            });
+
+            // Base STR 16 * 0.75 (fractional CR multiplier) * 1.0 (common) = 12
+            expect(enemy.ability_scores.STR).toBe(12);
+            // Base DEX 12 * 0.75 = 9
+            expect(enemy.ability_scores.DEX).toBe(9);
+            // Base CON 14 * 0.75 = 10.5 ≈ 10 or 11
+            expect(enemy.ability_scores.CON).toBeGreaterThanOrEqual(10);
+            expect(enemy.ability_scores.CON).toBeLessThanOrEqual(11);
+        });
+
+        it('should apply 85% stat multiplier for CR 0.5', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-half-stats-test',
+                templateId: 'orc',
+                cr: 0.5,
+                rarity: 'common'
+            });
+
+            // Base STR 16 * 0.85 (fractional CR multiplier) * 1.0 (common) = 13.6 ≈ 14
+            expect(enemy.ability_scores.STR).toBe(14);
+            // Base DEX 12 * 0.85 = 10.2 ≈ 10
+            expect(enemy.ability_scores.DEX).toBe(10);
+            // Base CON 14 * 0.85 = 11.9 ≈ 12
+            expect(enemy.ability_scores.CON).toBe(12);
+        });
+
+        it('should apply 100% stat multiplier for CR 1 (no reduction)', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-one-stats-test',
+                templateId: 'orc',
+                cr: 1,
+                rarity: 'common'
+            });
+
+            // Base STR 16 * 1.0 (no fractional reduction) * 1.0 (common) = 16
+            expect(enemy.ability_scores.STR).toBe(16);
+            // Base DEX 12 * 1.0 = 12
+            expect(enemy.ability_scores.DEX).toBe(12);
+            // Base CON 14 * 1.0 = 14
+            expect(enemy.ability_scores.CON).toBe(14);
+        });
+
+        it('should apply 100% stat multiplier for CR 5+ (no reduction)', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-five-stats-test',
+                templateId: 'orc',
+                cr: 5,
+                rarity: 'common'
+            });
+
+            // CR 1+ gets no fractional reduction, full base stats
+            expect(enemy.ability_scores.STR).toBe(16);
+            expect(enemy.ability_scores.DEX).toBe(12);
+            expect(enemy.ability_scores.CON).toBe(14);
+        });
+
+        it('should stack fractional CR multiplier before rarity multiplier', () => {
+            // Test CR 0.25 with boss rarity
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-quarter-boss-test',
+                templateId: 'orc',
+                cr: 0.25,
+                rarity: 'boss'
+            });
+
+            // Base STR 16 * 0.75 (CR 0.25) * 1.12 (boss) = 13.44 ≈ 13
+            // Fractional CR is applied BEFORE rarity multiplier
+            expect(enemy.ability_scores.STR).toBe(13);
+            // Base DEX 12 * 0.75 * 1.12 = 10.08 ≈ 10
+            expect(enemy.ability_scores.DEX).toBe(10);
+            // Base CON 14 * 0.75 * 1.12 = 11.76 ≈ 12
+            expect(enemy.ability_scores.CON).toBe(12);
+
+            // Level should still be 0.25 (from CR)
+            expect(enemy.level).toBe(0.25);
+        });
+
+        it('should stack CR 0.5 multiplier with boss rarity', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-half-boss-test',
+                templateId: 'orc',
+                cr: 0.5,
+                rarity: 'boss'
+            });
+
+            // Base STR 16 * 0.85 (CR 0.5) * 1.12 (boss) = 15.232 ≈ 15
+            expect(enemy.ability_scores.STR).toBe(15);
+            // Base DEX 12 * 0.85 * 1.12 = 11.424 ≈ 11
+            expect(enemy.ability_scores.DEX).toBe(11);
+            // Base CON 14 * 0.85 * 1.12 = 13.328 ≈ 13
+            expect(enemy.ability_scores.CON).toBe(13);
+
+            // Level should be 0.5 (from CR)
+            expect(enemy.level).toBe(0.5);
+        });
+    });
+
+    describe('HP Scaling with Fractional CR', () => {
+        it('should reduce HP for CR 0.25 enemies', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-quarter-hp-test',
+                templateId: 'orc',
+                cr: 0.25,
+                rarity: 'common'
+            });
+
+            // HP should be reduced by the 75% multiplier
+            // Orc baseHP * 0.75 * (con modifier effect)
+            // The key is that CR 0.25 should have lower HP than CR 1
+            const enemyCR1 = EnemyGenerator.generate({
+                seed: 'cr-one-hp-compare',
+                templateId: 'orc',
+                cr: 1,
+                rarity: 'common'
+            });
+
+            expect(enemy.hp.max).toBeLessThan(enemyCR1.hp.max);
+        });
+
+        it('should reduce HP for CR 0.5 enemies', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'cr-half-hp-test',
+                templateId: 'orc',
+                cr: 0.5,
+                rarity: 'common'
+            });
+
+            // HP should be reduced by the 85% multiplier
+            const enemyCR1 = EnemyGenerator.generate({
+                seed: 'cr-one-hp-compare-2',
+                templateId: 'orc',
+                cr: 1,
+                rarity: 'common'
+            });
+
+            expect(enemy.hp.max).toBeLessThan(enemyCR1.hp.max);
+        });
+    });
+
+    describe('Level Override', () => {
+        it('should use explicit level override when provided', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'level-override-test',
+                templateId: 'orc',
+                cr: 5,
+                level: 10, // Override level 5 (from CR) with 10
+                rarity: 'common'
+            });
+
+            expect(enemy.level).toBe(10);
+        });
+
+        it('should still apply CR-based stat scaling with level override', () => {
+            const enemy = EnemyGenerator.generate({
+                seed: 'level-override-stats-test',
+                templateId: 'orc',
+                cr: 0.25, // Fractional CR should still apply stat reduction
+                level: 5, // Override level
+                rarity: 'common'
+            });
+
+            // Level should be overridden to 5
+            expect(enemy.level).toBe(5);
+
+            // But stats should still be reduced by CR 0.25 (75%)
+            expect(enemy.ability_scores.STR).toBe(12); // 16 * 0.75
+        });
+    });
+});

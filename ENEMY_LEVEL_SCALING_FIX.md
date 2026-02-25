@@ -202,12 +202,12 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 ## Phase 5: Add Tests
 
 ### Task 5.1: Unit Tests for getLevelFromCR()
-- [ ] Test CR 0.25 → level with reduced stats (75% multiplier)
-- [ ] Test CR 0.5 → level with reduced stats (85% multiplier)
-- [ ] Test CR 1 → level 1, full stats
-- [ ] Test CR 5 → level 5
-- [ ] Test CR 10 → level 10
-- [ ] Test CR 20 → level 20
+- [x] Test CR 0.25 → level with reduced stats (75% multiplier)
+- [x] Test CR 0.5 → level with reduced stats (85% multiplier)
+- [x] Test CR 1 → level 1, full stats
+- [x] Test CR 5 → level 5
+- [x] Test CR 10 → level 10
+- [x] Test CR 20 → level 20
 
 ### Task 5.2: Integration Tests for CR + Rarity Independence
 - [ ] Test CR 0.25 + common → weak simple enemy
