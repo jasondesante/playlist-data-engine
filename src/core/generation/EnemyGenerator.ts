@@ -1374,6 +1374,7 @@ export class EnemyGenerator {
             count,
             difficulty = 'medium',
             baseRarity = 'common',
+            scaleRarityWithCR = false,
             difficultyMultiplier = 1.0,
             category,
             archetype,
@@ -1423,8 +1424,12 @@ export class EnemyGenerator {
             targetCR = Math.max(targetCR * 0.67, 0.125);
         }
 
-        // Use baseRarity (defaults to 'common') - CR and rarity are independent axes
-        const rarity = baseRarity;
+        // Calculate rarity distribution based on scaleRarityWithCR option (Task 2.3)
+        // When enabled, rarity scales gradually with CR
+        // When disabled (default), use explicit baseRarity for all enemies
+        const rarityDistribution = scaleRarityWithCR
+            ? EnemyGenerator.getRarityDistribution(count, targetCR)
+            : Array(count).fill(baseRarity) as EnemyRarity[];
 
         // Select templates for mix mode
         const selectedTemplates = EnemyGenerator.selectTemplatesForMix(
@@ -1449,7 +1454,7 @@ export class EnemyGenerator {
                 seed: `${seed}-${i}`,
                 templateId: template.id,
                 cr: targetCR, // Pass CR for proper level scaling (Task 1.4)
-                rarity,
+                rarity: rarityDistribution[i], // Use distributed rarity (Task 2.3)
                 difficultyMultiplier,
                 audioProfile,
                 track
@@ -1458,8 +1463,8 @@ export class EnemyGenerator {
             enemies.push(enemy);
         }
 
-        // Apply leader promotion
-        if (enableLeaderPromotion) {
+        // Apply leader promotion (skip if scaleRarityWithCR is enabled - already scaled)
+        if (enableLeaderPromotion && !scaleRarityWithCR) {
             EnemyGenerator.applyLeaderPromotion(enemies, rng, baseRarity);
         }
 
@@ -1491,6 +1496,7 @@ export class EnemyGenerator {
             count = 1,
             targetCR = 1,
             baseRarity = 'common',
+            scaleRarityWithCR = false,
             difficultyMultiplier = 1.0,
             category,
             archetype,
@@ -1528,8 +1534,13 @@ export class EnemyGenerator {
             effectiveCR = Math.max(targetCR / Math.sqrt(encounterMultiplier), 0.125);
         }
 
-        // Use baseRarity (defaults to 'common') - CR and rarity are independent axes
-        const rarity = baseRarity;
+        // Calculate rarity distribution based on scaleRarityWithCR option (Task 2.3)
+        // When enabled, rarity scales gradually with CR
+        // When disabled (default), use explicit baseRarity for all enemies
+        // Note: Use targetCR for rarity scaling (user-specified), not effectiveCR (internal)
+        const rarityDistribution = scaleRarityWithCR
+            ? EnemyGenerator.getRarityDistribution(count, targetCR)
+            : Array(count).fill(baseRarity) as EnemyRarity[];
 
         // Create RNG
         const rng = EnemyGenerator.getSeededRNG(seed);
@@ -1557,7 +1568,7 @@ export class EnemyGenerator {
                 seed: `${seed}-${i}`,
                 templateId: template.id,
                 cr: effectiveCR, // Pass CR for proper level scaling (Task 1.4)
-                rarity,
+                rarity: rarityDistribution[i], // Use distributed rarity (Task 2.3)
                 difficultyMultiplier,
                 audioProfile,
                 track
@@ -1566,8 +1577,8 @@ export class EnemyGenerator {
             enemies.push(enemy);
         }
 
-        // Apply leader promotion
-        if (enableLeaderPromotion) {
+        // Apply leader promotion (skip if scaleRarityWithCR is enabled - already scaled)
+        if (enableLeaderPromotion && !scaleRarityWithCR) {
             EnemyGenerator.applyLeaderPromotion(enemies, rng, baseRarity);
         }
 
@@ -1735,6 +1746,111 @@ export class EnemyGenerator {
      * @param currentRarity - Starting rarity
      * @param tiers - Number of tiers to promote
      * @returns Promoted rarity (capped at 'boss')
+     *
+     * @example
+    // =========================================
+    // CR-Based Gradual Rarity Scaling (Task 2.3)
+    // =========================================
+
+    /**
+     * CR tier definitions for gradual rarity scaling
+     *
+     * When scaleRarityWithCR is enabled, higher CR encounters
+     * automatically include upgraded rarities to match difficulty.
+     */
+    private static readonly CR_TIERS = {
+        LOW:         { min: 0,    max: 2,   upgrades: 0 },  // CR 0-2
+        LOW_MEDIUM:  { min: 3,    max: 5,   upgrades: 1 },  // CR 3-5
+        MEDIUM:      { min: 6,    max: 10,  upgrades: 2 },  // CR 6-10
+        MEDIUM_HIGH: { min: 11,   max: 15,  upgrades: 3 },  // CR 11-15
+        HIGH:        { min: 16,   max: 20,  upgrades: 4 },  // CR 16-20
+        VERY_HIGH:   { min: 21,   max: 30,  upgrades: 5 },  // CR 21-30
+        EPIC:        { min: 31,   max: Infinity, upgrades: 6 }, // CR 31+
+    };
+
+    /**
+     * Calculate the number of rarity upgrade points based on CR
+     *
+     * Higher CR encounters get more upgrade points to distribute
+     * across enemies, creating more challenging encounters.
+     *
+     * @param cr - Challenge Rating
+     * @returns Number of upgrade points to distribute
+     *
+     * @example
+     * ```typescript
+     * calculateUpgradePoints(1);  // 0 (Low tier)
+     * calculateUpgradePoints(4);  // 1 (Low-Medium tier)
+     * calculateUpgradePoints(8);  // 2 (Medium tier)
+     * calculateUpgradePoints(18); // 4 (High tier)
+     * calculateUpgradePoints(35); // 6 (Epic tier)
+     * ```
+     */
+    private static calculateUpgradePoints(cr: number): number {
+        if (cr >= EnemyGenerator.CR_TIERS.EPIC.min) return 6;        // Epic: CR 31+
+        if (cr >= EnemyGenerator.CR_TIERS.VERY_HIGH.min) return 5;   // Very High: CR 21-30
+        if (cr >= EnemyGenerator.CR_TIERS.HIGH.min) return 4;        // High: CR 16-20
+        if (cr >= EnemyGenerator.CR_TIERS.MEDIUM_HIGH.min) return 3; // Medium-High: CR 11-15
+        if (cr >= EnemyGenerator.CR_TIERS.MEDIUM.min) return 2;      // Medium: CR 6-10
+        if (cr >= EnemyGenerator.CR_TIERS.LOW_MEDIUM.min) return 1;  // Low-Medium: CR 3-5
+        return 0;                                                     // Low: CR 0-2
+    }
+
+    /**
+     * Upgrade rarity by one step, capped at elite
+     *
+     * CR-based scaling caps at 'elite' to preserve 'boss' for
+     * explicit boss encounters only.
+     *
+     * @param rarity - Current rarity
+     * @returns Upgraded rarity (capped at elite)
+     */
+    private static upgradeRarity(rarity: EnemyRarity): EnemyRarity {
+        if (rarity === 'common') return 'uncommon';
+        if (rarity === 'uncommon') return 'elite';
+        return 'elite'; // Already elite or boss, cap at elite
+    }
+
+    /**
+     * Calculate rarity distribution for enemies based on CR
+     *
+     * Distributes upgrade points across enemies one at a time,
+     * ensuring even distribution of upgraded enemies.
+     *
+     * @param enemyCount - Number of enemies in the encounter
+     * @param cr - Challenge Rating
+     * @returns Array of rarities (one per enemy)
+     *
+     * @example
+     * ```typescript
+     * getRarityDistribution(3, 1);  // [common, common, common]
+     * getRarityDistribution(3, 4);  // [uncommon, common, common]
+     * getRarityDistribution(3, 8);  // [uncommon, uncommon, common]
+     * getRarityDistribution(3, 18); // [elite, uncommon, uncommon]
+     * getRarityDistribution(3, 35); // [elite, elite, elite]
+     * ```
+     */
+    private static getRarityDistribution(enemyCount: number, cr: number): EnemyRarity[] {
+        const upgradePoints = EnemyGenerator.calculateUpgradePoints(cr);
+        const rarities: EnemyRarity[] = Array(enemyCount).fill('common') as EnemyRarity[];
+
+        // Distribute upgrades one at a time across enemies
+        for (let i = 0; i < upgradePoints; i++) {
+            const enemyIndex = i % enemyCount;
+            rarities[enemyIndex] = EnemyGenerator.upgradeRarity(rarities[enemyIndex]);
+        }
+
+        return rarities;
+    }
+
+    /**
+     * Promote rarity by a number of tiers
+     *
+     * Used by leader promotion system. Caps at boss tier.
+     *
+     * @param currentRarity - Starting rarity
+     * @param tiers - Number of tiers to promote
+     * @returns Promoted rarity
      *
      * @example
      * ```typescript

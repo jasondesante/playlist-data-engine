@@ -89,11 +89,11 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 - [x] Document that rarity is independent of CR by default
 
 ### Task 2.3: Implement CR-Based Gradual Rarity Scaling (Opt-In Feature)
-- [ ] When `scaleRarityWithCR: true` (opt-in) and generating multiple enemies:
+- [x] When `scaleRarityWithCR: true` (opt-in) and generating multiple enemies:
   - Rarity scales **gradually with CR**
   - Start with all commons, upgrade one at a time as CR increases
   - **Boss**: Always single enemy (enforced - boss is always alone)
-- [ ] CR Tier definitions:
+- [x] CR Tier definitions:
   ```typescript
   // CR Tiers and their upgrade points
   const CR_TIERS = {
@@ -106,7 +106,7 @@ Fix the enemy generation system to properly scale enemy levels based on target C
       EPIC:        { min: 31,   max: Infinity, upgrades: 6 }, // CR 30+
   };
   ```
-- [ ] Implementation approach:
+- [x] Implementation approach:
   ```typescript
   function calculateUpgradePoints(cr: number): number {
       if (cr >= 31) return 6;  // Epic: CR 30+
@@ -130,7 +130,7 @@ Fix the enemy generation system to properly scale enemy levels based on target C
       return rarities;
   }
   ```
-- [ ] When `scaleRarityWithCR: false` (default):
+- [x] When `scaleRarityWithCR: false` (default):
   - Use explicit `defaultRarity` for all enemies
   - No automatic scaling
 
