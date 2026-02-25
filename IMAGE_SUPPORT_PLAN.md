@@ -73,11 +73,11 @@ image?: string;
 
 ## Phase 2: URL Validation Utility
 
-- [ ] **Task 2.1: Create ImageValidator utility**
-  - [ ] Create new file `src/core/utils/ImageValidator.ts`
-  - [ ] Implement `isValidImageUrl(url: string): boolean`
-  - [ ] Implement `validateImageUrl(value: unknown, fieldName: string): { valid: boolean; errors: string[] }`
-  - [ ] Implement `validateImageFields(obj: { icon?: unknown; image?: unknown }): string[]`
+- [x] **Task 2.1: Create ImageValidator utility**
+  - [x] Create new file `src/core/utils/ImageValidator.ts`
+  - [x] Implement `isValidImageUrl(url: string): boolean`
+  - [x] Implement `validateImageUrl(value: unknown, fieldName: string): { valid: boolean; errors: string[] }`
+  - [x] Implement `validateImageFields(obj: { icon?: unknown; image?: unknown }): string[]`
 
 **Validation logic:**
 - Valid prefixes: `http://`, `https://`, `/`, `assets/`
