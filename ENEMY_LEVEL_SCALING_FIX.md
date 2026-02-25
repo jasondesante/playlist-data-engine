@@ -65,10 +65,10 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 - [x] Apply fractional CR stat reduction before rarity multiplier
 
 ### Task 1.5: Update generateEncounterByCR() Method
-- [ ] Calculate level from targetCR using `getLevelFromCR()`
-- [ ] **Remove** `getRarityFromCR()` call - rarity should be explicit or default
-- [ ] Pass both `cr` and `rarity` separately to `generate()`
-- [ ] Add default rarity (e.g., 'common') if not specified
+- [x] Calculate level from targetCR using `getLevelFromCR()` (already handled in generate() via Task 1.4)
+- [x] **Remove** `getRarityFromCR()` call - rarity should be explicit or default
+- [x] Pass both `cr` and `rarity` separately to `generate()`
+- [x] Add default rarity (e.g., 'common') if not specified (baseRarity already defaults to 'common')
 
 **Files Modified:**
 - `src/core/generation/EnemyGenerator.ts`

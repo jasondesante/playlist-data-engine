@@ -1524,8 +1524,8 @@ export class EnemyGenerator {
             effectiveCR = Math.max(targetCR / Math.sqrt(encounterMultiplier), 0.125);
         }
 
-        // Determine rarity from CR
-        const rarity = EnemyGenerator.getRarityFromCR(effectiveCR);
+        // Use baseRarity (defaults to 'common') - CR and rarity are independent axes
+        const rarity = baseRarity;
 
         // Create RNG
         const rng = EnemyGenerator.getSeededRNG(seed);
