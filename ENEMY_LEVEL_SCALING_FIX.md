@@ -250,9 +250,9 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 ## Phase 6: Verification
 
 ### Task 6.1: Run Full Test Suite
-- [ ] Run `npm test` - all tests must pass
-- [ ] Run integration tests
-- [ ] Run linting (`npm run lint`)
+- [x] Run `npm test` - all tests must pass
+- [x] Run integration tests
+- [x] Run linting (`npm run lint`)
 
 ### Task 6.2: Manual Verification - CR-Based Gradual Rarity (Opt-In)
 - [ ] Generate party with `scaleRarityWithCR: false` → verify uses defaultRarity
