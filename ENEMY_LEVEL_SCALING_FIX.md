@@ -189,9 +189,9 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 - [x] Document that CRLevelConverter is now used
 
 ### Task 4.2: Update USAGE_IN_OTHER_PROJECTS.md
-- [ ] Document the new `cr` parameter requirement
-- [ ] Document the decoupled `rarity` parameter
-- [ ] Provide examples of CR + Rarity combinations
+- [x] Document the new `cr` parameter requirement
+- [x] Document the decoupled `rarity` parameter
+- [x] Provide examples of CR + Rarity combinations
 
 **Files Modified:**
 - `docs/ENEMY_GENERATION.md`

@@ -6,6 +6,7 @@ Transform music playlists into D&D 5e-inspired RPG characters through audio/visu
 - **[API Reference](DATA_ENGINE_REFERENCE.md)** — Complete class and method documentation
 - **[Extensibility Guide](docs/EXTENSIBILITY_GUIDE.md)** — Custom content, classes, races, skills
 - **[Equipment System](docs/EQUIPMENT_SYSTEM.md)** — Properties, enchanting, templates
+- **[Enemy Generation](docs/ENEMY_GENERATION.md)** — CR-based enemies, encounters, rarity scaling
 - **[Custom Classes & Races](docs/CUSTOM_CONTENT.md)** — Template-based class inheritance
 - **[XP and Leveling](docs/XP_AND_STATS.md)** — Progression, stat increases, mastery
 - **[Prestige System](docs/XP_AND_STATS.md#track-mastery-prestige-system)** — Reset for badge upgrades after mastering
@@ -51,6 +52,7 @@ cd /path/to/your/project && npm link playlist-data-engine
 - [Environmental Sensors](#environmental-sensors) — GPS, motion, weather, light modifiers
 - [Gaming Platform Integration](#gaming-platform-integration) — Steam and Discord bonuses
 - [Combat System](#combat-system) — Turn-based D&D 5e combat
+- [Enemy Generation](#enemy-generation) — CR-based enemies, encounters, CR vs Rarity independence
 
 ### Advanced Pipeline
 - [Combining All Systems](#combining-all-systems) — Full pipeline with environmental and gaming context
@@ -315,6 +317,114 @@ Turn-based D&D 5e-inspired combat with initiative, attacks, spell casting, and d
 
 **For detailed documentation, see [COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md)**
 
+
+### Enemy Generation
+
+Generate enemies and balanced encounters using the `EnemyGenerator` class. The system uses **two independent axes** for enemy creation:
+
+| Concept | Determines | Examples |
+|---------|------------|----------|
+| **Challenge Rating (CR)** | Power level (stats, HP, level) | Weak beast vs. ancient dragon |
+| **Rarity** | Complexity (abilities, resistances) | Simple guard vs. complex spellcaster |
+
+**Key principle:** Any CR can combine with any rarity.
+
+```typescript
+import { EnemyGenerator } from 'playlist-data-engine';
+
+// Generate a specific enemy at CR 5 with elite rarity
+const enemy = EnemyGenerator.generate({
+    seed: 'dungeon-orc',
+    templateId: 'orc',
+    cr: 5,              // Power: Level 5, full stats
+    rarity: 'elite'     // Complexity: d10 signature, 2 extra abilities
+});
+
+console.log(enemy.level);  // 5 (derived from CR)
+```
+
+#### CR + Rarity Combinations
+
+Different combinations create diverse enemies:
+
+| CR | Rarity | Result | Example |
+|----|--------|--------|---------|
+| 0.25 | Common | Weak, simple | Goblin grunt |
+| 0.25 | Boss | Weak, complex | Goblin chieftain |
+| 5 | Common | Strong, simple | Dire wolf |
+| 5 | Boss | Strong, complex | Werewolf alpha |
+| 20 | Common | Epic, simple | Ancient purple worm |
+| 20 | Boss | Epic, complex | Ancient red dragon |
+
+```typescript
+// Weak but complex enemy (goblin chieftain)
+const chieftain = EnemyGenerator.generate({
+    seed: 'goblin-leader',
+    templateId: 'goblin',
+    cr: 0.25,           // Level 0.25, 75% base stats
+    rarity: 'boss'      // d12 signature, 3 extra abilities, legendary actions
+});
+
+// Strong but simple enemy (ancient beast)
+const beast = EnemyGenerator.generate({
+    seed: 'ancient-beast',
+    templateId: 'purple-worm',
+    cr: 20,             // Level 20, full stats
+    rarity: 'common'    // d6 signature, no extra abilities
+});
+```
+
+#### Generate Balanced Encounters
+
+```typescript
+// Generate 3 enemies for a level 5 party (medium difficulty)
+const enemies = EnemyGenerator.generateEncounter(party, {
+    seed: 'dungeon-room-1',
+    difficulty: 'medium',
+    count: 3
+});
+
+// Or generate by specific CR
+const cr5Enemies = EnemyGenerator.generateEncounterByCR({
+    seed: 'cr5-encounter',
+    targetCR: 5,
+    count: 3,
+    baseRarity: 'common'   // All enemies start at common rarity
+});
+
+// Opt-in: Scale rarity with CR (higher CR = higher average rarity)
+const scaledEnemies = EnemyGenerator.generateEncounterByCR({
+    seed: 'scaling-encounter',
+    targetCR: 18,          // High CR
+    count: 3,
+    scaleRarityWithCR: true  // Results in [elite, uncommon, uncommon]
+});
+```
+
+#### Fractional CRs
+
+Enemies with fractional CR values (0.25, 0.5) get reduced base stats:
+
+| CR | Stat Multiplier | Description |
+|----|-----------------|-------------|
+| 0.25 | 75% | Sub-level enemy (goblin grunt) |
+| 0.5 | 85% | Sub-level enemy (giant rat) |
+| 1+ | 100% | Full stats |
+
+```typescript
+const grunt = EnemyGenerator.generate({
+    seed: 'weak-goblin',
+    cr: 0.25,           // 75% base stats
+    rarity: 'common'
+});
+```
+
+**For detailed documentation**, see [ENEMY_GENERATION.md](docs/ENEMY_GENERATION.md) for:
+- Complete template list
+- Rarity tier breakdowns
+- Leader promotion system
+- Audio-influenced generation
+- Encounter balance formulas
 
 ---
 
