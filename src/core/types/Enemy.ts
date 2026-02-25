@@ -213,6 +213,13 @@ export interface EnemyGenerationOptions {
  * Supports two generation modes:
  * 1. Party-based: Analyze party strength for balanced encounter
  * 2. CR-based: Generate enemies matching target CR directly
+ *
+ * CR vs Rarity Distinction:
+ * - **CR (Challenge Rating)**: Determines power level (stats, HP, level, proficiency)
+ * - **Rarity**: Determines complexity (abilities, resistances, legendary actions)
+ *
+ * By default, rarity is **independent of CR**. Set `scaleRarityWithCR: true` to enable
+ * automatic rarity scaling based on CR tier (opt-in feature).
  */
 export interface EncounterGenerationOptions {
     /** Required - Seed for deterministic generation */
@@ -230,8 +237,29 @@ export interface EncounterGenerationOptions {
     targetCR?: number;
 
     // --- Common options ---
-    /** Optional - Base rarity before leader promotion (default: 'common') */
+    /**
+     * Optional - Base rarity for all enemies (default: 'common')
+     *
+     * Rarity is independent of CR by default. Use `scaleRarityWithCR: true` to enable
+     * automatic rarity scaling based on CR tier.
+     */
     baseRarity?: EnemyRarity;
+
+    /**
+     * Optional - Enable automatic rarity scaling based on CR (default: false)
+     *
+     * When enabled, rarities scale gradually with CR:
+     * - CR 0-2: all common
+     * - CR 3-5: one uncommon upgrade per party
+     * - CR 6-10: two uncommon upgrades
+     * - CR 11-15: three uncommon upgrades
+     * - CR 16-20: one elite + uncommon upgrades
+     * - CR 21-30: two elite + uncommon upgrades
+     * - CR 31+: all elite
+     *
+     * When disabled (default), uses explicit `baseRarity` for all enemies.
+     */
+    scaleRarityWithCR?: boolean;
 
     /** Optional - Fine-tune difficulty multiplier (default: 1.0) */
     difficultyMultiplier?: number;

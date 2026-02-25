@@ -83,10 +83,10 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 - [x] Keep `getRarityFromCR()` as deprecated but don't remove (backward compat)
 
 ### Task 2.2: Update EncounterGenerationOptions
-- [ ] Add optional `defaultRarity?: EnemyRarity` parameter
-- [ ] Default to 'common' if not specified
-- [ ] Add optional `scaleRarityWithCR?: boolean` parameter (default: **false** - opt-in)
-- [ ] Document that rarity is independent of CR by default
+- [x] Add optional `defaultRarity?: EnemyRarity` parameter (note: `baseRarity` already exists with this purpose)
+- [x] Default to 'common' if not specified (already implemented)
+- [x] Add optional `scaleRarityWithCR?: boolean` parameter (default: **false** - opt-in)
+- [x] Document that rarity is independent of CR by default
 
 ### Task 2.3: Implement CR-Based Gradual Rarity Scaling (Opt-In Feature)
 - [ ] When `scaleRarityWithCR: true` (opt-in) and generating multiple enemies:
