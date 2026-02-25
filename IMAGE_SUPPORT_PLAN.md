@@ -135,12 +135,12 @@ export type ImageSupportedCategory =
     | 'classes.data';
 ```
 
-- [ ] **Task 4.2: Implement batchAddIcons method**
-  - [ ] Add method after `getAllFromPrefix` (~L928)
-  - [ ] Accept category, iconMap (name/id -> URL), and optional identifierKey
-  - [ ] Validate each URL before applying
-  - [ ] Invalidate registry cache after updates
-  - [ ] Return count of items updated
+- [x] **Task 4.2: Implement batchAddIcons method**
+  - [x] Add method after `getAllFromPrefix` (~L928)
+  - [x] Accept category, iconMap (name/id -> URL), and optional identifierKey
+  - [x] Validate each URL before applying
+  - [x] Invalidate registry cache after updates
+  - [x] Return count of items updated
 
 - [ ] **Task 4.3: Implement batchAddImages method**
   - [ ] Add method after `batchAddIcons`

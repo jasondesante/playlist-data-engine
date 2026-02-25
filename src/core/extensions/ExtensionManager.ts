@@ -22,7 +22,7 @@ import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
 import { SpellQuery } from '../spells/SpellQuery.js';
 import { SkillQuery } from '../skills/SkillQuery.js';
 import { FeatureQuery } from '../features/FeatureQuery.js';
-import { validateImageFields } from '../utils/ImageValidator.js';
+import { validateImageFields, isValidImageUrl } from '../utils/ImageValidator.js';
 
 /**
  * Spawn modes for custom content
@@ -981,5 +981,107 @@ export class ExtensionManager {
         }
 
         return allItems;
+    }
+
+    // ============================================================
+    // BATCH IMAGE METHODS
+    // ============================================================
+
+    /**
+     * Batch add icons to items in a category
+     *
+     * Updates the `icon` field for multiple items identified by name or custom key.
+     * Validates all URLs before applying any changes.
+     *
+     * @param category - The category to update (must support image fields)
+     * @param iconMap - Map of item identifier to icon URL
+     * @param identifierKey - Property to match items by (default: 'name' or 'id' for spells)
+     * @returns Number of items updated
+     * @throws Error if any URL is invalid or category doesn't support images
+     *
+     * @example
+     * // Add icons to specific spells
+     * manager.batchAddIcons('spells', {
+     *     'fireball': '/assets/spells/fireball.png',
+     *     'magic_missile': '/assets/spells/magic-missile.png'
+     * });
+     *
+     * // Add icons to equipment
+     * manager.batchAddIcons('equipment', {
+     *     'Longsword': '/assets/equipment/longsword.png'
+     * });
+     */
+    batchAddIcons(
+        category: ImageSupportedCategory,
+        iconMap: Record<string, string>,
+        identifierKey?: string
+    ): number {
+        // Determine the identifier key based on category
+        const idKey = identifierKey ?? this.getDefaultIdentifierKey(category);
+
+        // Validate all URLs first
+        const invalidUrls: string[] = [];
+        for (const [identifier, url] of Object.entries(iconMap)) {
+            if (!isValidImageUrl(url)) {
+                invalidUrls.push(`${identifier}: ${url}`);
+            }
+        }
+        if (invalidUrls.length > 0) {
+            throw new Error(
+                `Invalid icon URLs for category '${category}':\n${invalidUrls.map(u => `  - ${u}`).join('\n')}\n` +
+                `URLs must start with: http://, https://, /, or assets/`
+            );
+        }
+
+        // Get current items and update icons
+        const items = this.get(category);
+        const updatedItems: any[] = [];
+        let updateCount = 0;
+
+        for (const item of items) {
+            const identifier = item[idKey];
+            const iconUrl = iconMap[identifier];
+
+            if (iconUrl) {
+                // Create a copy with updated icon
+                updatedItems.push({ ...item, icon: iconUrl });
+                updateCount++;
+            } else {
+                // Keep original item
+                updatedItems.push(item);
+            }
+        }
+
+        // Store updated items in extensions
+        this.extensions.set(category, {
+            items: updatedItems,
+            options: { mode: 'replace' },
+            registeredAt: Date.now()
+        });
+
+        // Invalidate cache
+        this.invalidateRegistryCache(category);
+
+        return updateCount;
+    }
+
+    /**
+     * Get the default identifier key for a category
+     *
+     * Different categories use different identifier properties:
+     * - Spells use 'id' (e.g., 'fireball', 'magic_missile')
+     * - Most other categories use 'name'
+     *
+     * @param category - The category to get the identifier key for
+     * @returns The default identifier property name
+     * @private
+     */
+    private getDefaultIdentifierKey(category: ImageSupportedCategory): string {
+        // Spells and class spell lists use 'id' as their identifier
+        if (category === 'spells' || category.startsWith('spells.')) {
+            return 'id';
+        }
+        // All other categories use 'name'
+        return 'name';
     }
 }
