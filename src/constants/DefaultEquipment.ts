@@ -477,6 +477,36 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         description: 'A small utility knife useful for cutting rope, skinning game, and other everyday tasks. Not designed for combat.'
     },
 
+    // ===== KEYS =====
+
+    'Iron Key': {
+        name: 'Iron Key',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 0.5,
+        tags: ['key', 'utility', 'consumable'],
+        description: 'A simple iron key that can unlock certain containers. Consumed when used to open a locked box.'
+    },
+    'Golden Key': {
+        name: 'Golden Key',
+        type: 'item',
+        rarity: 'uncommon',
+        weight: 0,
+        spawnWeight: 0.2,
+        tags: ['key', 'utility', 'consumable', 'valuable'],
+        description: 'An ornate golden key for unlocking valuable chests. Consumed when used to open a locked box.'
+    },
+    'Skeleton Key': {
+        name: 'Skeleton Key',
+        type: 'item',
+        rarity: 'rare',
+        weight: 0,
+        spawnWeight: 0.1,
+        tags: ['key', 'utility', 'consumable', 'universal'],
+        description: 'A master key that can open many different locks. Consumed when used to open a locked box.'
+    },
+
     // ===== LIGHT SOURCES =====
 
     'Candle': {

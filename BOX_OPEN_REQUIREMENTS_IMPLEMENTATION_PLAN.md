@@ -227,9 +227,9 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 ## Phase 5: Example Boxes
 *Estimated complexity: Low*
 
-- [ ] **5.1 Add Key Item**
-  - [ ] File: `src/constants/DefaultEquipment.ts`
-  - [ ] Add key items for locked boxes:
+- [x] **5.1 Add Key Item**
+  - [x] File: `src/constants/DefaultEquipment.ts`
+  - [x] Add key items for locked boxes:
   ```typescript
   'Iron Key': {
       name: 'Iron Key',
