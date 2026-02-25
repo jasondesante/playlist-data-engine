@@ -20,6 +20,7 @@ import { FeatureQuery } from '../features/FeatureQuery.js';
 import { SkillQuery } from '../skills/SkillQuery.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 import type { Ability } from '../types/Character.js';
+import { validateImageFields } from '../utils/ImageValidator.js';
 
 /**
  * The valid ability scores
@@ -262,6 +263,10 @@ export class EquipmentValidator {
                 errors.push(...(boxValidation.errors || []));
             }
         }
+
+        // Validate icon and image fields
+        const imageErrors = validateImageFields({ icon: equipment.icon, image: equipment.image });
+        errors.push(...imageErrors.map(e => `Equipment ${e}`));
 
         return {
             valid: errors.length === 0,

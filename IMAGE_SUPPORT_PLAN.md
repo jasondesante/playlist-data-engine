@@ -101,9 +101,9 @@ image?: string;
   - [x] Add image validation in `validateClassFeature` method (~L199)
   - [x] Add image validation in `validateRacialTrait` method (~L306)
 
-- [ ] **Task 3.4: Update EquipmentValidator**
-  - [ ] Add import for `validateImageFields`
-  - [ ] Add image validation in `validateEquipment` method (~L264)
+- [x] **Task 3.4: Update EquipmentValidator**
+  - [x] Add import for `validateImageFields`
+  - [x] Add image validation in `validateEquipment` method (~L264)
 
 - [ ] **Task 3.5: Update ExtensionManager validation**
   - [ ] Add import for `validateImageFields`
