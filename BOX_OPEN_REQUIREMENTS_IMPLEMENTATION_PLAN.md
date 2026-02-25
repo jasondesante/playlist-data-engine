@@ -445,8 +445,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
     - Includes multiple requirements in preview
     - Does not include openRequirements when not present
 
-- [ ] **6.5 Integration Tests for openBoxForCharacter**
-  - [ ] Test `EquipmentSpawnHelper.openBoxForCharacter()`:
+- [x] **6.5 Integration Tests for openBoxForCharacter**
+  - [x] Test `EquipmentSpawnHelper.openBoxForCharacter()`:
     - Opens box without requirements normally
     - Consumes required item from inventory
     - Consumes multiple items when quantity > 1
@@ -454,6 +454,10 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
     - Fails gracefully when insufficient quantity
     - Returns proper error messages
     - Character inventory is updated correctly after consumption
+  - [x] Additional integration tests added:
+    - Multiple requirements (both satisfied and one missing)
+    - Weight tracking during consumption
+    - Partial quantity consumption (e.g., have 5, consume 3 = 2 left)
 
 - [ ] **6.6 Validator Tests**
   - [ ] Test `EquipmentValidator.validateBoxOpenRequirement()`:
@@ -703,7 +707,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
-- Phase 6: 🟡 In Progress (6.1, 6.2, 6.3, 6.4 complete)
+- Phase 6: 🟡 In Progress (6.1, 6.2, 6.3, 6.4, 6.5 complete)
 - Phase 7: ⬜ Not Started
 - Phase 8: ⬜ Not Started
 
