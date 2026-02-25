@@ -144,6 +144,7 @@ A concise overview of all main exports from the library, organized by category.
 | `SeededRNG` | Deterministic random number generator | [Utilities](#utilities) |
 | `Logger` / `createLogger` / `LogLevel` | Centralized logging utility | [Utilities](#utilities) |
 | `SensorDashboard` / `display*Diagnostics()` | Diagnostic dashboard for sensors | [Utilities](#utilities) |
+| `ImageValidator` | Validate icon/image URL fields | [Utilities](#utilities) |
 
 **Validation Schemas:** `PlaylistTrackSchema`, `ServerlessPlaylistSchema`, `AudioProfileSchema`, `AbilityScoresSchema`, `CharacterSheetSchema` — see [Utilities](#utilities)
 
@@ -417,6 +418,8 @@ Spell representation for casting.
 | duration | string? | Duration |
 | components | string[]? | Components (V, S, M) |
 | description | string? | Spell description |
+| icon | string? | Optional icon URL for small UI display |
+| image | string? | Optional image URL for larger display |
 | damage_dice | string? | Damage dice |
 | damage_type | string? | Damage type |
 | attack_roll | boolean? | Requires attack roll? |
@@ -931,6 +934,39 @@ Centralized logging utility with configurable log levels and diagnostic modes.
 | `LogEntry` | Single log entry structure (timestamp, level, context, message, data) |
 | `LoggerConfig` | Configuration options (level, includeTimestamp, includeContext, customHandler) |
 
+#### ImageValidator
+
+*Location: [src/core/utils/ImageValidator.ts](src/core/utils/ImageValidator.ts)*
+
+*Also known as: Image URL validator, icon validator, image field validation*
+
+Validates icon and image URL fields for all entity types. Ensures URLs follow allowed formats before storage.
+
+**Valid URL Prefixes:** `http://`, `https://`, `/`, `assets/`
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `isValidImageUrl(url)` | `boolean` | Check if URL string is a valid format |
+| `validateImageUrl(value, fieldName)` | `ImageValidationResult` | Validate single image field (returns errors array) |
+| `validateImageFields(obj)` | `string[]` | Validate both icon and image fields on an object |
+| `getValidImagePrefixes()` | `ReadonlyArray<string>` | Get list of valid URL prefixes |
+
+**Types**
+
+| Type | Description |
+|------|-------------|
+| `ImageValidationResult` | Validation result with `valid: boolean` and `errors: string[]` |
+
+**Usage Example:**
+```typescript
+import { validateImageFields } from '@playlist-data-engine/core';
+
+const errors = validateImageFields({ icon: '/assets/icon.png', image: 'https://example.com/image.png' });
+if (errors.length > 0) {
+    console.error('Invalid image URLs:', errors);
+}
+```
+
 #### Sensor Dashboard
 
 *Location: [src/utils/sensorDashboard.ts](src/utils/sensorDashboard.ts)*
@@ -1013,6 +1049,8 @@ Retrieves data from default constants and custom extensions registered via Exten
 | `speed` | `number` | Base walking speed in feet |
 | `traits` | `string[]` | Racial trait names/IDs |
 | `subraces` | `string[]` (optional) | Available subraces |
+| `icon` | `string` (optional) | Icon URL for small UI display |
+| `image` | `string` (optional) | Image URL for larger display |
 
 **ClassDataEntry**
 *Also known as: Class definition, job stats*
@@ -1031,6 +1069,8 @@ Retrieves data from default constants and custom extensions registered via Exten
 | `expertise_count` | `number` (optional) | Number of expertise choices |
 | `baseClass` | `Class` (optional) | Base class for template inheritance |
 | `audio_preferences` | `object` (optional) | Audio preferences for affinity |
+| `icon` | `string` (optional) | Icon URL for small UI display |
+| `image` | `string` (optional) | Image URL for larger display |
 
 **Template Inheritance:** Custom classes with `baseClass` inherit properties from base D&D 5e classes. Custom properties override base properties. `available_skills` replaces (not merges) the base list.
 
@@ -2821,7 +2861,7 @@ Conditional property triggers:
 | Type | Description | Location |
 |------|-------------|----------|
 | `EquipmentProperty` | Single property with type, target, value, optional condition | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
-| `EnhancedEquipment` | Full equipment definition with properties, features, skills, spells, damage, AC | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
+| `EnhancedEquipment` | Full equipment definition with properties, features, skills, spells, damage, AC, icon, image | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
 | `EquipmentModification` | Enchantment/curse applied to equipment with properties and additions | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
 | `EnhancedInventoryItem` | Inventory item with quantity, equipped status, modifications | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
 | `EffectApplicationResult` | Result of applying/removing equipment effects | [src/core/types/Equipment.ts](src/core/types/Equipment.ts) |
@@ -3487,6 +3527,7 @@ Singleton registry for managing runtime customization of procedural generation l
 | Type | Description |
 |------|-------------|
 | `ExtensionCategory` | All extensible category names (equipment, spells, races, classes, skills, appearance, etc.) |
+| `ImageSupportedCategory` | Categories that support icon/image fields: `spells`, `skills`, `classFeatures`, `racialTraits`, `equipment`, `races.data`, `classes.data` |
 | `SpawnMode` | Spawn mode: `'relative'` | `'absolute'` | `'default'` | `'replace'` |
 | `ExtensionOptions` | Registration options: mode, weights, validate |
 | `RegistrationEntry` | Batch registration: category, items, options |
@@ -3517,6 +3558,10 @@ Singleton registry for managing runtime customization of procedural generation l
 | `validate(category, items)` | `ValidationResult` | Validate items against category schema |
 | `exportCustomData()` | `Record<string, any>` | Export all custom data |
 | `exportCustomDataForCategory(category)` | `any[]` | Export custom data for single category |
+| `batchAddIcons(category, iconMap, identifierKey?)` | `number` | Add icons to items matching names/IDs. Returns count updated. Validates URLs first. |
+| `batchAddImages(category, imageMap, identifierKey?)` | `number` | Add images to items matching names/IDs. Returns count updated. Validates URLs first. |
+| `batchUpdateImages(category, predicate, updates)` | `number` | Update icon/image on all items matching predicate. Returns count updated. |
+| `batchByCategory(category, property, valueToImageMap)` | `number` | Add icons/images by property value (e.g., school, rarity). Returns count updated. |
 
 ---
 
@@ -3528,6 +3573,49 @@ Singleton registry for managing runtime customization of procedural generation l
 | `absolute` | Only custom items can spawn (ignore defaults) | Themed content packs, complete replacement |
 | `default` | All items (default + custom) have equal weight | Disable custom spawn weights |
 | `replace` | Clear previous custom data before registering new items | Hot-reload content packs during development |
+
+**Image Supported Categories:**
+
+The following categories support `icon` and `image` fields for batch operations:
+
+| Category | Entity Type | Identifier Key |
+|----------|-------------|----------------|
+| `spells` | Spell | `name` or `id` |
+| `skills` | CustomSkill | `id` |
+| `classFeatures` | ClassFeature | `id` |
+| `racialTraits` | RacialTrait | `id` |
+| `equipment` | EnhancedEquipment | `name` |
+| `races.data` | RaceDataEntry | `name` (race name) |
+| `classes.data` | ClassDataEntry | `name` (class name) |
+
+**Batch Image Methods Usage:**
+```typescript
+const manager = ExtensionManager.getInstance();
+
+// Add icons to specific spells
+manager.batchAddIcons('spells', {
+    'Fireball': '/assets/spells/fireball.png',
+    'Magic Missile': '/assets/spells/magic-missile.png'
+});
+
+// Add same icon to all cantrips
+manager.batchUpdateImages('spells',
+    spell => spell.level === 0,
+    { icon: '/assets/spells/cantrip-icon.png' }
+);
+
+// Add icons by spell school
+manager.batchByCategory('spells', 'school', {
+    'Evocation': '/assets/icons/fire.png',
+    'Necromancy': '/assets/icons/skull.png'
+});
+
+// Add icons by equipment rarity
+manager.batchByCategory('equipment', 'rarity', {
+    'legendary': '/assets/icons/star-gold.png',
+    'very_rare': '/assets/icons/star-purple.png'
+});
+```
 
 ### FeatureQuery
 
@@ -3545,8 +3633,8 @@ Query and validation layer for class features and racial traits stored in Extens
 
 | Type | Location | Description |
 |------|----------|-------------|
-| `ClassFeature` | `src/core/features/FeatureQuery.ts` | Class feature with id, name, description, type, class, level, prerequisites, effects, source, tags, lore |
-| `RacialTrait` | `src/core/features/FeatureQuery.ts` | Racial trait with id, name, description, race, optional subrace, prerequisites, effects, source, tags, lore |
+| `ClassFeature` | `src/core/features/FeatureQuery.ts` | Class feature with id, name, description, type, class, level, prerequisites, effects, source, tags, lore, icon, image |
+| `RacialTrait` | `src/core/features/FeatureQuery.ts` | Racial trait with id, name, description, race, optional subrace, prerequisites, effects, source, tags, lore, icon, image |
 | `FeatureType` | `src/core/types/Character.ts` | Feature type: `'passive'` | `'active'` | `'resource'` | `'trigger'` |
 | `FeatureEffectType` | `src/core/types/Character.ts` | Effect type: `'stat_bonus'` | `'skill_proficiency'` | `'ability_unlock'` | `'passive_modifier'` | `'resource_grant'` | `'spell_slot_bonus'` |
 | `FeatureEffect` | `src/core/types/Character.ts` | Feature effect with type, target, value, optional condition, description |
@@ -3689,7 +3777,7 @@ Query and validation layer for character skills stored in ExtensionManager.
 
 | Type | Description | Location |
 |------|-------------|----------|
-| `CustomSkill` | Registered skill with ID, name, ability, source, prerequisites | [src/core/skills/SkillQuery.ts](src/core/skills/SkillQuery.ts) |
+| `CustomSkill` | Registered skill with ID, name, ability, source, prerequisites, icon, image | [src/core/skills/SkillQuery.ts](src/core/skills/SkillQuery.ts) |
 | `SkillPrerequisite` | Prerequisites for skills (level, abilities, class, race, skills, features, spells) | [src/core/skills/SkillQuery.ts](src/core/skills/SkillQuery.ts) |
 | `SkillValidationResult` | Validation result with valid flag and errors array | [src/core/skills/SkillValidator.ts](src/core/skills/SkillValidator.ts) |
 | `SkillQueryStats` | Statistics about registered skills (totals, by ability, categories) | [src/core/skills/SkillQuery.ts](src/core/skills/SkillQuery.ts) |
@@ -3768,7 +3856,7 @@ Query and validation layer for spells stored in ExtensionManager.
 
 | Type | Description | Location |
 |------|-------------|----------|
-| `RegisteredSpell` | Registered spell with ID, name, level, school, source, prerequisites | [src/core/spells/SpellQuery.ts](src/core/spells/SpellQuery.ts) |
+| `RegisteredSpell` | Registered spell with ID, name, level, school, source, prerequisites, icon, image | [src/core/spells/SpellQuery.ts](src/core/spells/SpellQuery.ts) |
 | `Spell` | Base spell interface with name, level, school, properties | [src/core/spells/SpellTypes.ts](src/core/spells/SpellTypes.ts) |
 | `SpellPrerequisite` | Prerequisites for spells (level, abilities, class, features, spells, skills) | [src/core/spells/SpellTypes.ts](src/core/spells/SpellTypes.ts) |
 | `ValidationResult` | Validation result with valid flag, errors, and warnings | [src/core/spells/SpellValidator.ts](src/core/spells/SpellValidator.ts) |

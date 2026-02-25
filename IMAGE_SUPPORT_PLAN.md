@@ -223,11 +223,11 @@ manager.batchByCategory('equipment', 'rarity', {
 
 ## Phase 6: Documentation Updates
 
-- [ ] **Task 6.1: Update DATA_ENGINE_REFERENCE.md**
-  - [ ] Add `icon?` and `image?` to type definition tables (Equipment, Spell, ClassFeature, CustomSkill, RaceDataEntry, ClassDataEntry)
-  - [ ] Add ImageValidator to exported utilities section
-  - [ ] Add batch image methods to ExtensionManager API section
-  - [ ] Update example snippets to include icon/image fields
+- [x] **Task 6.1: Update DATA_ENGINE_REFERENCE.md**
+  - [x] Add `icon?` and `image?` to type definition tables (Equipment, Spell, ClassFeature, CustomSkill, RaceDataEntry, ClassDataEntry)
+  - [x] Add ImageValidator to exported utilities section
+  - [x] Add batch image methods to ExtensionManager API section
+  - [x] Update example snippets to include icon/image fields
 
 - [ ] **Task 6.2: Update USAGE_IN_OTHER_PROJECTS.md**
   - [ ] Add icon/image fields to equipment examples
