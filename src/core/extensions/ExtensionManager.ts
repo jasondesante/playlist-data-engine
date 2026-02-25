@@ -22,6 +22,7 @@ import { EquipmentValidator } from '../equipment/EquipmentValidator.js';
 import { SpellQuery } from '../spells/SpellQuery.js';
 import { SkillQuery } from '../skills/SkillQuery.js';
 import { FeatureQuery } from '../features/FeatureQuery.js';
+import { validateImageFields } from '../utils/ImageValidator.js';
 
 /**
  * Spawn modes for custom content
@@ -626,6 +627,9 @@ export class ExtensionManager {
             if (item.subraces !== undefined && !Array.isArray(item.subraces)) {
                 errors.push(`${prefix} Race 'subraces' must be an array of strings (if provided)`);
             }
+            // Validate icon and image fields
+            const imageErrors = validateImageFields({ icon: item.icon, image: item.image });
+            errors.push(...imageErrors.map(e => `${prefix} Race ${e}`));
         } else if (category === 'classes') {
             // Classes must be a valid Class type (default or custom)
             const itemStr = item as string;
@@ -704,6 +708,9 @@ export class ExtensionManager {
             if (item.audio_preferences !== undefined && typeof item.audio_preferences !== 'object') {
                 errors.push(`${prefix} Class 'audio_preferences' must be an object (if provided)`);
             }
+            // Validate icon and image fields
+            const imageErrors = validateImageFields({ icon: item.icon, image: item.image });
+            errors.push(...imageErrors.map(e => `${prefix} Class ${e}`));
         } else if (category.startsWith('appearance.')) {
             // Appearance items must be strings
             if (typeof item !== 'string') {

@@ -105,10 +105,10 @@ image?: string;
   - [x] Add import for `validateImageFields`
   - [x] Add image validation in `validateEquipment` method (~L264)
 
-- [ ] **Task 3.5: Update ExtensionManager validation**
-  - [ ] Add import for `validateImageFields`
-  - [ ] Add image validation for `races.data` category in `validateItem` (~L624)
-  - [ ] Add image validation for `classes.data` category in `validateItem` (~L703)
+- [x] **Task 3.5: Update ExtensionManager validation**
+  - [x] Add import for `validateImageFields`
+  - [x] Add image validation for `races.data` category in `validateItem` (~L624)
+  - [x] Add image validation for `classes.data` category in `validateItem` (~L703)
 
 **Validation pattern:**
 ```typescript
