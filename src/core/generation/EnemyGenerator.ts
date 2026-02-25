@@ -903,6 +903,8 @@ export class EnemyGenerator {
     static generate(options: EnemyGenerationOptions): CharacterSheet {
         const {
             seed,
+            cr: explicitCR,
+            level: explicitLevel,
             templateId,
             rarity = 'common',
             difficultyMultiplier = 1.0,
@@ -933,8 +935,21 @@ export class EnemyGenerator {
             template = EnemyGenerator.selectTemplate(rng, category, archetype, audioProfile);
         }
 
-        // Scale stats by rarity
-        let scaledStats = EnemyGenerator.scaleStatsForRarity(template.baseStats, rarity);
+        // Calculate CR: use explicit CR or fall back to rarity-based CR (backward compat)
+        // This allows gradual migration to the new CR-based system
+        const cr = explicitCR ?? EnemyGenerator.getCRForRarity(rarity);
+
+        // Calculate level: use explicit level override, or derive from CR
+        // Level is now determined by CR, not rarity (per Task 1.4)
+        const level = explicitLevel ?? EnemyGenerator.getLevelFromCR(cr);
+
+        // Scale stats by rarity, passing CR for fractional CR stat reduction
+        // When CR is explicitly provided (not derived from rarity), apply fractional reduction
+        let scaledStats = EnemyGenerator.scaleStatsForRarity(
+            template.baseStats,
+            rarity,
+            explicitCR // Only pass CR if explicitly provided (not derived from rarity)
+        );
 
         // Apply audio influence if audioProfile provided
         if (audioProfile) {
@@ -954,22 +969,21 @@ export class EnemyGenerator {
         // Calculate HP and AC
         const rarityConfig = getRarityConfig(rarity);
 
-        // Get CR for this enemy (used for spell slot determination)
-        const cr = EnemyGenerator.getCRForRarity(rarity);
-
-        // Calculate HP with rarity multiplier (no fractional CR reduction when deriving CR from rarity)
-        let maxHp = Math.round(template.baseHP * rarityConfig.statMultiplier);
+        // Calculate HP with rarity multiplier
+        // Apply fractional CR reduction only when CR is explicitly provided (not derived from rarity)
+        let hpMultiplier = rarityConfig.statMultiplier;
+        if (explicitCR !== undefined) {
+            const crMultiplier = EnemyGenerator.getStatMultiplierForFractionalCR(cr);
+            hpMultiplier = crMultiplier * hpMultiplier;
+        }
+        let maxHp = Math.round(template.baseHP * hpMultiplier);
 
         // Apply difficulty multiplier to HP
         if (difficultyMultiplier !== 1.0) {
             maxHp = Math.round(maxHp * difficultyMultiplier);
         }
 
-        // Calculate level from CR (simplified formula)
-        // For V1, we use a simple level 1-3 mapping based on rarity
-        const level = EnemyGenerator.getLevelForRarity(rarity);
-
-        // Proficiency bonus based on level
+        // Proficiency bonus based on level (level now comes from CR, not rarity)
         const proficiencyBonus = Math.ceil(1 + (level - 1) / 4);
 
         // Check if enemy should have spellcasting (using cr calculated above)
@@ -1430,6 +1444,7 @@ export class EnemyGenerator {
             const enemy = EnemyGenerator.generate({
                 seed: `${seed}-${i}`,
                 templateId: template.id,
+                cr: targetCR, // Pass CR for proper level scaling (Task 1.4)
                 rarity,
                 difficultyMultiplier,
                 audioProfile,
@@ -1537,6 +1552,7 @@ export class EnemyGenerator {
             const enemy = EnemyGenerator.generate({
                 seed: `${seed}-${i}`,
                 templateId: template.id,
+                cr: effectiveCR, // Pass CR for proper level scaling (Task 1.4)
                 rarity,
                 difficultyMultiplier,
                 audioProfile,

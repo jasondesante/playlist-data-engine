@@ -172,15 +172,29 @@ export interface RarityConfig {
  * Options for generating a single enemy
  *
  * All generation is deterministic based on the provided seed
+ *
+ * CR vs Rarity Distinction:
+ * - **CR (Challenge Rating)**: Determines power level (stats, HP, level, proficiency)
+ * - **Rarity**: Determines complexity (abilities, resistances, legendary actions)
+ *
+ * Any CR can combine with any rarity:
+ * - CR 0.25 + Boss = Goblin chieftain (weak but complex)
+ * - CR 20 + Common = Ancient beast (powerful but simple)
  */
 export interface EnemyGenerationOptions {
     /** Required - Seed for deterministic generation */
     seed: string;
 
+    /** Optional - Challenge Rating for power scaling (default: derived from rarity for backward compat) */
+    cr?: number;
+
+    /** Optional - Level override (default: derived from CR via getLevelFromCR) */
+    level?: number;
+
     /** Optional - Force specific template by ID */
     templateId?: string;
 
-    /** Optional - Rarity tier (default: 'common') */
+    /** Optional - Rarity tier (default: 'common') - affects complexity, not power */
     rarity?: EnemyRarity;
 
     /** Optional - Difficulty multiplier (default: 1.0) */

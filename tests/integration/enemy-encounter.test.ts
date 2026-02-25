@@ -155,9 +155,10 @@ describe('Integration: Enemy Encounter Generation', () => {
             expect(enemies.length).toBe(3);
 
             // Level 3 party should face enemies that provide some challenge
-            // Enemies should have reasonable stats (not CR 0)
+            // Note: Level now comes from CR (not rarity), so fractional levels are valid
+            // for low CR enemies (CR 0.25 = level 0.25, CR 0.5 = level 0.5, etc.)
             enemies.forEach(enemy => {
-                expect(enemy.level).toBeGreaterThanOrEqual(1);
+                expect(enemy.level).toBeGreaterThan(0);
                 expect(enemy.hp.max).toBeGreaterThan(5);
             });
         });

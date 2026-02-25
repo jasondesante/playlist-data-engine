@@ -54,15 +54,15 @@ Fix the enemy generation system to properly scale enemy levels based on target C
   - Maintains backward compatibility when CR is not provided
 
 ### Task 1.4: Update generate() Method
-- [ ] Modify `generate()` signature:
+- [x] Modify `generate()` signature:
   - Accept optional `level?: number` parameter (overrides CR-based level)
   - Accept **required** `cr: number` parameter (for stat scaling)
   - Rarity remains a parameter but does NOT affect level
-- [ ] Update level calculation:
+- [x] Update level calculation:
   ```typescript
   const level = options.level ?? EnemyGenerator.getLevelFromCR(cr);
   ```
-- [ ] Apply fractional CR stat reduction before rarity multiplier
+- [x] Apply fractional CR stat reduction before rarity multiplier
 
 ### Task 1.5: Update generateEncounterByCR() Method
 - [ ] Calculate level from targetCR using `getLevelFromCR()`
