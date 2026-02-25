@@ -78,9 +78,9 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 ## Phase 2: Decouple Rarity from CR
 
 ### Task 2.1: Remove getRarityFromCR() Usage
-- [ ] Find all usages of `getRarityFromCR()` in the codebase
-- [ ] Replace with explicit rarity parameter or default value
-- [ ] Keep `getRarityFromCR()` as deprecated but don't remove (backward compat)
+- [x] Find all usages of `getRarityFromCR()` in the codebase
+- [x] Replace with explicit rarity parameter or default value
+- [x] Keep `getRarityFromCR()` as deprecated but don't remove (backward compat)
 
 ### Task 2.2: Update EncounterGenerationOptions
 - [ ] Add optional `defaultRarity?: EnemyRarity` parameter

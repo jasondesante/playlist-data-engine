@@ -1327,6 +1327,10 @@ export class EnemyGenerator {
     /**
      * Get rarity from approximate CR
      *
+     * @deprecated Rarity and CR are now independent axes. Use explicit `baseRarity` parameter
+     * instead of deriving rarity from CR. This method is kept for backward compatibility
+     * but should not be used in new code.
+     *
      * Maps CR values back to rarity tiers for encounter building.
      * CR < 0.5: common, CR < 1: uncommon, CR < 2: elite, CR >= 2: boss
      *
@@ -1419,8 +1423,8 @@ export class EnemyGenerator {
             targetCR = Math.max(targetCR * 0.67, 0.125);
         }
 
-        // Determine rarity from CR
-        const rarity = EnemyGenerator.getRarityFromCR(targetCR);
+        // Use baseRarity (defaults to 'common') - CR and rarity are independent axes
+        const rarity = baseRarity;
 
         // Select templates for mix mode
         const selectedTemplates = EnemyGenerator.selectTemplatesForMix(
