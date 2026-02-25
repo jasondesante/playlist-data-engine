@@ -160,8 +160,8 @@ export type ImageSupportedCategory =
   - [x] Validate URLs before applying
   - [x] Return count of items updated
 
-- [ ] **Task 4.6: Add private validateImageField helper**
-  - [ ] Add private method for URL validation used by batch methods
+- [x] **Task 4.6: Add private validateImageField helper**
+  - [x] Add private method for URL validation used by batch methods
 
 **Usage examples:**
 ```typescript

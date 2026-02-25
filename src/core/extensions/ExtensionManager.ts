@@ -1019,17 +1019,14 @@ export class ExtensionManager {
         // Determine the identifier key based on category
         const idKey = identifierKey ?? this.getDefaultIdentifierKey(category);
 
-        // Validate all URLs first
-        const invalidUrls: string[] = [];
-        for (const [identifier, url] of Object.entries(iconMap)) {
-            if (!isValidImageUrl(url)) {
-                invalidUrls.push(`${identifier}: ${url}`);
-            }
-        }
-        if (invalidUrls.length > 0) {
+        // Validate all URLs first using private helper
+        const validations: Array<[string, string]> = Object.entries(iconMap).map(
+            ([identifier, url]) => [url, identifier]
+        );
+        const errors = this.validateImageFields(validations);
+        if (errors.length > 0) {
             throw new Error(
-                `Invalid icon URLs for category '${category}':\n${invalidUrls.map(u => `  - ${u}`).join('\n')}\n` +
-                `URLs must start with: http://, https://, /, or assets/`
+                `Invalid icon URLs for category '${category}':\n${errors.map(e => `  - ${e}`).join('\n')}`
             );
         }
 
@@ -1097,17 +1094,14 @@ export class ExtensionManager {
         // Determine the identifier key based on category
         const idKey = identifierKey ?? this.getDefaultIdentifierKey(category);
 
-        // Validate all URLs first
-        const invalidUrls: string[] = [];
-        for (const [identifier, url] of Object.entries(imageMap)) {
-            if (!isValidImageUrl(url)) {
-                invalidUrls.push(`${identifier}: ${url}`);
-            }
-        }
-        if (invalidUrls.length > 0) {
+        // Validate all URLs first using private helper
+        const validations: Array<[string, string]> = Object.entries(imageMap).map(
+            ([identifier, url]) => [url, identifier]
+        );
+        const errors = this.validateImageFields(validations);
+        if (errors.length > 0) {
             throw new Error(
-                `Invalid image URLs for category '${category}':\n${invalidUrls.map(u => `  - ${u}`).join('\n')}\n` +
-                `URLs must start with: http://, https://, /, or assets/`
+                `Invalid image URLs for category '${category}':\n${errors.map(e => `  - ${e}`).join('\n')}`
             );
         }
 
@@ -1180,18 +1174,18 @@ export class ExtensionManager {
         predicate: (item: T) => boolean,
         updates: { icon?: string; image?: string }
     ): number {
-        // Validate URLs if provided
-        const invalidUrls: string[] = [];
-        if (updates.icon !== undefined && !isValidImageUrl(updates.icon)) {
-            invalidUrls.push(`icon: ${updates.icon}`);
+        // Validate URLs if provided using private helper
+        const validations: Array<[string, string]> = [];
+        if (updates.icon !== undefined) {
+            validations.push([updates.icon, 'icon']);
         }
-        if (updates.image !== undefined && !isValidImageUrl(updates.image)) {
-            invalidUrls.push(`image: ${updates.image}`);
+        if (updates.image !== undefined) {
+            validations.push([updates.image, 'image']);
         }
-        if (invalidUrls.length > 0) {
+        const errors = this.validateImageFields(validations);
+        if (errors.length > 0) {
             throw new Error(
-                `Invalid URLs in updates:\n${invalidUrls.map(u => `  - ${u}`).join('\n')}\n` +
-                `URLs must start with: http://, https://, /, or assets/`
+                `Invalid URLs in updates:\n${errors.map(e => `  - ${e}`).join('\n')}`
             );
         }
 
@@ -1270,26 +1264,24 @@ export class ExtensionManager {
         property: keyof T,
         valueMap: Record<string, string | { icon?: string; image?: string }>
     ): number {
-        // Validate all URLs first
-        const invalidUrls: string[] = [];
+        // Validate all URLs first using private helper
+        const validations: Array<[string, string]> = [];
         for (const [propertyValue, updates] of Object.entries(valueMap)) {
             if (typeof updates === 'string') {
-                if (!isValidImageUrl(updates)) {
-                    invalidUrls.push(`${propertyValue}: ${updates}`);
-                }
+                validations.push([updates, propertyValue]);
             } else {
-                if (updates.icon !== undefined && !isValidImageUrl(updates.icon)) {
-                    invalidUrls.push(`${propertyValue}.icon: ${updates.icon}`);
+                if (updates.icon !== undefined) {
+                    validations.push([updates.icon, `${propertyValue}.icon`]);
                 }
-                if (updates.image !== undefined && !isValidImageUrl(updates.image)) {
-                    invalidUrls.push(`${propertyValue}.image: ${updates.image}`);
+                if (updates.image !== undefined) {
+                    validations.push([updates.image, `${propertyValue}.image`]);
                 }
             }
         }
-        if (invalidUrls.length > 0) {
+        const errors = this.validateImageFields(validations);
+        if (errors.length > 0) {
             throw new Error(
-                `Invalid URLs in valueMap for category '${category}':\n${invalidUrls.map(u => `  - ${u}`).join('\n')}\n` +
-                `URLs must start with: http://, https://, /, or assets/`
+                `Invalid URLs in valueMap for category '${category}':\n${errors.map(e => `  - ${e}`).join('\n')}`
             );
         }
 
@@ -1356,5 +1348,44 @@ export class ExtensionManager {
         }
         // All other categories use 'name'
         return 'name';
+    }
+
+    /**
+     * Validate an image URL field
+     *
+     * Checks if a URL is valid for use as an icon or image field.
+     * Returns null if valid, or an error message string if invalid.
+     *
+     * @param url - The URL string to validate
+     * @param fieldName - Descriptive name for error messages (e.g., 'icon', 'image', 'Fireball.icon')
+     * @returns Error message if invalid, null if valid
+     * @private
+     */
+    private validateImageField(url: string, fieldName: string): string | null {
+        if (!isValidImageUrl(url)) {
+            return `${fieldName}: ${url} (URLs must start with: http://, https://, /, or assets/)`;
+        }
+        return null;
+    }
+
+    /**
+     * Validate multiple image URLs and collect errors
+     *
+     * Convenience method that validates multiple URLs and returns
+     * all validation errors as an array.
+     *
+     * @param validations - Array of [url, fieldName] tuples to validate
+     * @returns Array of error messages (empty if all valid)
+     * @private
+     */
+    private validateImageFields(validations: Array<[url: string, fieldName: string]>): string[] {
+        const errors: string[] = [];
+        for (const [url, fieldName] of validations) {
+            const error = this.validateImageField(url, fieldName);
+            if (error !== null) {
+                errors.push(error);
+            }
+        }
+        return errors;
     }
 }
