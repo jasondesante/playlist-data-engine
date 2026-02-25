@@ -161,16 +161,16 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 ## Phase 3: Update Type Definitions
 
 ### Task 3.1: Update EnemyGenerationOptions Interface
-- [ ] Add optional `level?: number` parameter (overrides CR-based level)
-- [ ] Add **required** `cr: number` parameter (for power scaling)
-- [ ] Ensure `rarity` is independent (default to 'common')
-- [ ] Add JSDoc explaining CR vs Rarity distinction
+- [x] Add optional `level?: number` parameter (overrides CR-based level) - Already existed
+- [x] Add **required** `cr: number` parameter (for power scaling) - Kept optional with strong recommendation for backward compat
+- [x] Ensure `rarity` is independent (default to 'common') - Already existed
+- [x] Add JSDoc explaining CR vs Rarity distinction - Enhanced with table and examples
 
 ### Task 3.2: Update EncounterGenerationOptions Interface
-- [ ] Add optional `defaultRarity?: EnemyRarity` parameter
-- [ ] Add optional `scaleRarityWithCR?: boolean` parameter (default: **false**)
-- [ ] Document that rarity is independent of targetCR by default
-- [ ] Default to 'common' if not specified
+- [x] Add optional `defaultRarity?: EnemyRarity` parameter - Already existed as `baseRarity`
+- [x] Add optional `scaleRarityWithCR?: boolean` parameter (default: **false**) - Already existed
+- [x] Document that rarity is independent of targetCR by default - Already documented
+- [x] Default to 'common' if not specified - Already documented
 
 **Files Modified:**
 - `src/core/types/Enemy.ts`

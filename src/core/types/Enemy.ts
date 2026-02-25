@@ -173,28 +173,60 @@ export interface RarityConfig {
  *
  * All generation is deterministic based on the provided seed
  *
- * CR vs Rarity Distinction:
- * - **CR (Challenge Rating)**: Determines power level (stats, HP, level, proficiency)
- * - **Rarity**: Determines complexity (abilities, resistances, legendary actions)
+ * ## CR vs Rarity Distinction
  *
- * Any CR can combine with any rarity:
+ * **CR (Challenge Rating)** and **Rarity** are two INDEPENDENT axes:
+ *
+ * | Property | Determines | Examples |
+ * |----------|------------|----------|
+ * | **CR** | Power level (stats, HP, level, proficiency) | Weak beast vs. ancient dragon |
+ * | **Rarity** | Complexity (abilities, resistances, legendary actions) | Simple guard vs. complex spellcaster |
+ *
+ * **Any CR can combine with any rarity:**
  * - CR 0.25 + Boss = Goblin chieftain (weak but complex)
  * - CR 20 + Common = Ancient beast (powerful but simple)
+ *
+ * **CR is the primary power-scaling parameter.** Always provide `cr` for predictable enemy power.
+ * If omitted, CR is derived from rarity (deprecated behavior for backward compatibility).
  */
 export interface EnemyGenerationOptions {
     /** Required - Seed for deterministic generation */
     seed: string;
 
-    /** Optional - Challenge Rating for power scaling (default: derived from rarity for backward compat) */
+    /**
+     * Challenge Rating for power scaling.
+     *
+     * **RECOMMENDED** - Always provide CR for predictable power scaling.
+     * Determines level, HP, and base stats. Fractional CRs (0.25, 0.5) create sub-level enemies
+     * with reduced stats (75%/85% respectively).
+     *
+     * If omitted, falls back to rarity-based CR (deprecated for backward compatibility).
+     *
+     * @example
+     * ```typescript
+     * // Generate a CR 5 elite enemy
+     * EnemyGenerator.generate({ seed: 'test', cr: 5, rarity: 'elite' });
+     *
+     * // Generate a weak but complex boss (CR 0.25 + boss)
+     * EnemyGenerator.generate({ seed: 'test', cr: 0.25, rarity: 'boss' });
+     * ```
+     */
     cr?: number;
 
-    /** Optional - Level override (default: derived from CR via getLevelFromCR) */
+    /**
+     * Optional level override. If provided, overrides CR-based level calculation.
+     * Default: derived from CR via CRLevelConverter (CR ≈ level in D&D 5e)
+     */
     level?: number;
 
     /** Optional - Force specific template by ID */
     templateId?: string;
 
-    /** Optional - Rarity tier (default: 'common') - affects complexity, not power */
+    /**
+     * Rarity tier for complexity scaling.
+     * Affects ability count, resistances, and legendary actions - NOT power level.
+     * @default 'common'
+     */
     rarity?: EnemyRarity;
 
     /** Optional - Difficulty multiplier (default: 1.0) */
