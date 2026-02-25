@@ -260,8 +260,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   }
   ```
 
-- [ ] **5.2 Add Locked Chest Box**
-  - [ ] Box requiring Iron Key to open:
+- [x] **5.2 Add Locked Chest Box**
+  - [x] Box requiring Iron Key to open:
   ```typescript
   'Locked Chest': {
       name: 'Locked Chest',
@@ -279,13 +279,14 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
               { pool: [
                   { weight: 50, itemName: 'Shortsword' },
                   { weight: 30, itemName: 'Leather Armor' },
-                  { weight: 20, itemName: 'Potion of Healing' }
+                  { weight: 20, itemName: 'Medical Supply', quantity: 3 }
               ]}
           ]
       },
       description: 'A sturdy locked chest. Requires an Iron Key to open.'
   }
   ```
+  - **Note**: Replaced 'Potion of Healing' with 'Medical Supply' (3x) since Potion of Healing doesn't exist in the equipment database yet.
 
 - [ ] **5.3 Add Gilded Box (Gold Coin Requirement)**
   - [ ] Box requiring Gold Coins to open (gold as item):

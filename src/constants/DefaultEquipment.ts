@@ -507,6 +507,31 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         description: 'A master key that can open many different locks. Consumed when used to open a locked box.'
     },
 
+    // ===== LOCKED BOXES =====
+
+    'Locked Chest': {
+        name: 'Locked Chest',
+        type: 'box',
+        rarity: 'uncommon',
+        weight: 10,
+        spawnWeight: 0.5,
+        tags: ['loot', 'treasure', 'locked'],
+        boxContents: {
+            openRequirements: [
+                { itemName: 'Iron Key' }
+            ],
+            drops: [
+                { pool: [{ weight: 100, gold: 50 }] },
+                { pool: [
+                    { weight: 50, itemName: 'Shortsword' },
+                    { weight: 30, itemName: 'Leather Armor' },
+                    { weight: 20, itemName: 'Medical Supply', quantity: 3 }
+                ]}
+            ]
+        },
+        description: 'A sturdy locked chest. Requires an Iron Key to open.'
+    },
+
     // ===== LIGHT SOURCES =====
 
     'Candle': {
