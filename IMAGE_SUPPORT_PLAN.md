@@ -96,10 +96,10 @@ image?: string;
   - [x] Add import for `validateImageFields`
   - [x] Add image validation in `validateSkill` method (~L146)
 
-- [ ] **Task 3.3: Update FeatureValidator**
-  - [ ] Add import for `validateImageFields`
-  - [ ] Add image validation in `validateClassFeature` method (~L199)
-  - [ ] Add image validation in `validateRacialTrait` method (~L306)
+- [x] **Task 3.3: Update FeatureValidator**
+  - [x] Add import for `validateImageFields`
+  - [x] Add image validation in `validateClassFeature` method (~L199)
+  - [x] Add image validation in `validateRacialTrait` method (~L306)
 
 - [ ] **Task 3.4: Update EquipmentValidator**
   - [ ] Add import for `validateImageFields`

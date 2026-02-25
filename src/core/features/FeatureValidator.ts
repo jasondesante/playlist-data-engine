@@ -14,6 +14,7 @@ import type { FeaturePrerequisite } from './FeatureTypes.js';
 import type { Ability } from '../types/Character.js';
 import { DEFAULT_CLASSES, isValidClass } from '../types/Character.js';
 import { VALID_ABILITIES, isValidAbility } from '../utils/AbilityConstants.js';
+import { validateImageFields } from '../utils/ImageValidator.js';
 
 /**
  * Validation result interface
@@ -202,6 +203,10 @@ export class FeatureValidator {
             errors.push('Feature subrace must be a string');
         }
 
+        // Validate icon and image fields
+        const imageErrors = validateImageFields({ icon: f.icon, image: f.image });
+        errors.push(...imageErrors.map(e => `Feature ${e}`));
+
         // Validate prerequisites if present
         if (f.prerequisites !== undefined) {
             const prereqResult = this.validatePrerequisites(f.prerequisites as FeaturePrerequisite, options);
@@ -308,6 +313,10 @@ export class FeatureValidator {
         if (t.subrace !== undefined && typeof t.subrace !== 'string') {
             errors.push('Trait subrace must be a string');
         }
+
+        // Validate icon and image fields
+        const imageErrors = validateImageFields({ icon: t.icon, image: t.image });
+        errors.push(...imageErrors.map(e => `Trait ${e}`));
 
         // Validate prerequisites if present
         if (t.prerequisites !== undefined) {
