@@ -506,6 +506,15 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
         tags: ['key', 'utility', 'consumable', 'universal'],
         description: 'A master key that can open many different locks. Consumed when used to open a locked box.'
     },
+    'Lockpick': {
+        name: 'Lockpick',
+        type: 'item',
+        rarity: 'common',
+        weight: 0,
+        spawnWeight: 0.8,
+        tags: ['gear', 'rogue', 'consumable', 'tool'],
+        description: 'A simple lockpick. Multiple may be needed for complex locks, as they often break during use.'
+    },
 
     // ===== CURRENCY =====
 
@@ -593,6 +602,28 @@ export const DEFAULT_EQUIPMENT: Record<string, Equipment> = {
             ]
         },
         description: 'A royal treasury box sealed with powerful magic. Requires a Golden Key and 200 Gold Coins to open.'
+    },
+    'Thieves\' Cache': {
+        name: 'Thieves\' Cache',
+        type: 'box',
+        rarity: 'uncommon',
+        weight: 5,
+        spawnWeight: 0.4,
+        tags: ['loot', 'treasure', 'rogue', 'locked'],
+        boxContents: {
+            openRequirements: [
+                { itemName: 'Lockpick', quantity: 3 }
+            ],
+            drops: [
+                { pool: [{ weight: 100, gold: 75 }] },
+                { pool: [
+                    { weight: 50, itemName: 'Thieves\' Tools' },
+                    { weight: 30, itemName: 'Dagger' },
+                    { weight: 20, itemName: 'Disguise Kit' }
+                ]}
+            ]
+        },
+        description: 'A hidden cache with a complex lock. Requires 3 lockpicks to crack (consumed in the process).'
     },
 
     // ===== LIGHT SOURCES =====

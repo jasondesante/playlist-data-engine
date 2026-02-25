@@ -351,8 +351,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   ```
   - **Note**: Modified drops to use existing equipment items (Plate Armor, Chain Mail, Greataxe, Longsword, Medical Supply, Thieves' Tools) instead of items that don't exist in the database.
 
-- [ ] **5.5 Add Quantity-Based Requirement Box**
-  - [ ] Box requiring multiple of the same item:
+- [x] **5.5 Add Quantity-Based Requirement Box**
+  - [x] Box requiring multiple of the same item:
   ```typescript
   'Thieves\' Cache': {
       name: 'Thieves\' Cache',
@@ -370,16 +370,17 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
               { pool: [
                   { weight: 50, itemName: 'Thieves\' Tools' },
                   { weight: 30, itemName: 'Dagger' },
-                  { weight: 20, itemName: 'Cloak of Elvenkind' }
+                  { weight: 20, itemName: 'Disguise Kit' }
               ]}
           ]
       },
       description: 'A hidden cache with a complex lock. Requires 3 lockpicks to crack (consumed in the process).'
   }
   ```
+  - **Note**: Replaced 'Cloak of Elvenkind' with 'Disguise Kit' since Cloak of Elvenkind doesn't exist in the equipment database.
 
-- [ ] **5.6 Add Lockpick Item**
-  - [ ] Consumable item for thieves' cache:
+- [x] **5.6 Add Lockpick Item**
+  - [x] Consumable item for thieves' cache:
   ```typescript
   'Lockpick': {
       name: 'Lockpick',
@@ -388,7 +389,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
       weight: 0,
       spawnWeight: 0.8,
       tags: ['gear', 'rogue', 'consumable', 'tool'],
-      description: 'A simple lockpick. Multiple may be needed for complex locks.'
+      description: 'A simple lockpick. Multiple may be needed for complex locks, as they often break during use.'
   }
   ```
 
@@ -690,7 +691,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 - Phase 2: ✅ Complete
 - Phase 3: ✅ Complete
 - Phase 4: ✅ Complete
-- Phase 5: ⬜ Not Started
+- Phase 5: ✅ Complete
 - Phase 6: ⬜ Not Started
 - Phase 7: ⬜ Not Started
 - Phase 8: ⬜ Not Started
