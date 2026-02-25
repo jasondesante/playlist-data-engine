@@ -35,6 +35,12 @@ export interface RaceDataEntry {
 
     /** Optional: User-facing description of this race */
     description?: string;
+
+    /** Optional icon URL for small UI display */
+    icon?: string;
+
+    /** Optional image URL for larger display */
+    image?: string;
 }
 
 /**
