@@ -203,7 +203,11 @@ export class EnemyGenerator {
      *
      * The multipliers are applied in order:
      * 1. Fractional CR multiplier (if CR < 1) - reduces stats for sub-level enemies
-     * 2. Rarity multiplier - adds complexity-based stat scaling
+     * 2. Rarity multiplier - minor complexity-based stat adjustment (max 12%)
+     *
+     * DESIGN PRINCIPLE: Rarity affects complexity, CR affects power.
+     * The rarity statMultiplier is intentionally small (1.0-1.12) to avoid
+     * overpowering enemies. CR handles the primary power scaling.
      *
      * @param baseStats - Base ability scores from template
      * @param rarity - Rarity tier for scaling
@@ -214,11 +218,11 @@ export class EnemyGenerator {
      * ```typescript
      * // Rarity only (backward compatible)
      * scaleStatsForRarity({ STR: 16, DEX: 12, CON: 14 }, 'elite');
-     * // Returns: { STR: 20, DEX: 15, CON: 18 } (1.25x multiplier)
+     * // Returns: { STR: 17, DEX: 13, CON: 15 } (1.07x multiplier - minor complexity boost)
      *
      * // With fractional CR (CR 0.25 = 75% stats before rarity)
      * scaleStatsForRarity({ STR: 16, DEX: 12, CON: 14 }, 'elite', 0.25);
-     * // Returns: { STR: 15, DEX: 11, CON: 14 } (0.75 * 1.25 = 0.9375x multiplier)
+     * // Returns: { STR: 13, DEX: 10, CON: 11 } (0.75 * 1.07 = 0.8025x multiplier)
      * ```
      */
     private static scaleStatsForRarity(

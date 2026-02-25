@@ -140,13 +140,16 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 - [x] Document that boss encounters are always 1vparty
 
 ### Task 2.5: Ensure Rarity Only Controls Complexity
-- [ ] Verify rarity controls ONLY:
+- [x] Verify rarity controls ONLY:
   - `statMultiplier` (minor stat boost for complexity)
   - `signatureDieSize` (dice for signature abilities)
   - `extraAbilityCount` (additional special abilities)
   - `hasResistances` (damage resistances)
-- [ ] Rarity should NOT control level or base stats
-- [ ] Consider reducing `statMultiplier` values (currently 1.0-1.5x) since CR handles power
+- [x] Rarity should NOT control level or base stats
+- [x] Consider reducing `statMultiplier` values (currently 1.0-1.5x) since CR handles power
+  - **DONE**: Reduced to 1.0/1.03/1.07/1.12 (max 12% instead of 50%)
+  - Updated JSDoc in EnemyGenerator.ts to document the design principle
+  - Updated EnemyRarity.ts header comments to clarify CR vs Rarity distinction
 
 **Files Modified:**
 - `src/core/generation/EnemyGenerator.ts`

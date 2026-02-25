@@ -2,13 +2,17 @@
  * Enemy Rarity Configuration
  *
  * Defines scaling factors and properties for each enemy rarity tier.
- * Rarities scale enemies from Common (base stats) to Boss (significantly enhanced).
+ * Rarity controls **complexity**, not power. CR handles power scaling.
  *
- * Rarity progression:
+ * Design Principle: Any CR can combine with any rarity:
+ * - CR 0.25 + Boss = Goblin chieftain (weak but complex)
+ * - CR 20 + Common = Ancient beast (powerful but simple)
+ *
+ * Rarity progression (complexity-based, minimal stat impact):
  * - Common: Base enemy with standard stats
- * - Uncommon: +10% stats, stronger signature ability, 1 extra ability
- * - Elite: +25% stats, stronger signature ability, 2 extra abilities, gains resistances
- * - Boss: +50% stats, strongest signature ability, 3 extra abilities, full resistances
+ * - Uncommon: Minor stat adjustment, stronger signature ability, 1 extra ability
+ * - Elite: Small stat adjustment, stronger signature ability, 2 extra abilities, gains resistances
+ * - Boss: Moderate stat adjustment, strongest signature ability, 3 extra abilities, legendary actions
  */
 
 import type { EnemyRarity, RarityConfig } from '../core/types/Enemy.js';
@@ -17,10 +21,13 @@ import type { EnemyRarity, RarityConfig } from '../core/types/Enemy.js';
  * Rarity configuration for each enemy tier
  *
  * These values define how enemies scale across rarity tiers:
- * - statMultiplier: Applied to base ability scores from template
+ * - statMultiplier: Minor complexity-based stat adjustment (CR handles power)
  * - signatureDieSize: Number of sides on signature ability damage die (d6/d8/d10/d12)
  * - extraAbilityCount: Number of additional abilities from FeatureQuery pool
  * - hasResistances: Whether this rarity gains template resistances/immunities
+ *
+ * Note: statMultiplier is kept small (max 12%) since CR determines power level.
+ * These multipliers provide subtle complexity-based flavor, not power scaling.
  */
 export const RARITY_CONFIGS: Record<EnemyRarity, RarityConfig> = {
     common: {
@@ -30,19 +37,19 @@ export const RARITY_CONFIGS: Record<EnemyRarity, RarityConfig> = {
         hasResistances: false
     },
     uncommon: {
-        statMultiplier: 1.1,
+        statMultiplier: 1.03,
         signatureDieSize: 8,
         extraAbilityCount: 1,
         hasResistances: false
     },
     elite: {
-        statMultiplier: 1.25,
+        statMultiplier: 1.07,
         signatureDieSize: 10,
         extraAbilityCount: 2,
         hasResistances: true
     },
     boss: {
-        statMultiplier: 1.5,
+        statMultiplier: 1.12,
         signatureDieSize: 12,
         extraAbilityCount: 3,
         hasResistances: true

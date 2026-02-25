@@ -105,19 +105,19 @@ describe('Enemy Rarity Configuration', () => {
             expect(config.statMultiplier).toBe(1.0);
         });
 
-        it('should have uncommon rarity with 1.1 multiplier', () => {
+        it('should have uncommon rarity with 1.03 multiplier (minor complexity boost)', () => {
             const config = getRarityConfig('uncommon');
-            expect(config.statMultiplier).toBe(1.1);
+            expect(config.statMultiplier).toBe(1.03);
         });
 
-        it('should have elite rarity with 1.25 multiplier', () => {
+        it('should have elite rarity with 1.07 multiplier (minor complexity boost)', () => {
             const config = getRarityConfig('elite');
-            expect(config.statMultiplier).toBe(1.25);
+            expect(config.statMultiplier).toBe(1.07);
         });
 
-        it('should have boss rarity with 1.5 multiplier', () => {
+        it('should have boss rarity with 1.12 multiplier (minor complexity boost)', () => {
             const config = getRarityConfig('boss');
-            expect(config.statMultiplier).toBe(1.5);
+            expect(config.statMultiplier).toBe(1.12);
         });
 
         it('should scale stats correctly from common to boss', () => {
@@ -131,13 +131,14 @@ describe('Enemy Rarity Configuration', () => {
             });
             expect(commonEnemy.ability_scores.STR).toBe(16);
 
-            // Boss - 1.5x (16 * 1.5 = 24)
+            // Boss - 1.12x (16 * 1.12 = 17.92 ≈ 18)
+            // Note: Rarity provides MINOR stat scaling; CR handles power scaling
             const bossEnemy = EnemyGenerator.generate({
                 seed: 'test-boss',
                 templateId: 'orc',
                 rarity: 'boss'
             });
-            expect(bossEnemy.ability_scores.STR).toBe(24); // 16 * 1.5 = 24
+            expect(bossEnemy.ability_scores.STR).toBe(18); // 16 * 1.12 = 17.92 ≈ 18
         });
     });
 
