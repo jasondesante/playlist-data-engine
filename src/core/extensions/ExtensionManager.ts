@@ -1232,6 +1232,113 @@ export class ExtensionManager {
     }
 
     /**
+     * Batch update icons/images for items based on a property value mapping
+     *
+     * Updates items in a category where the specified property matches a key in the valueMap.
+     * Useful for bulk operations based on categories like spell school, equipment rarity, etc.
+     *
+     * @param category - The category to update (must support images)
+     * @param property - The property name to match against (e.g., 'school', 'rarity')
+     * @param valueMap - Map of property values to icon/image URLs. Values can be:
+     *                   - A string URL (will be applied as the icon)
+     *                   - An object with icon and/or image properties
+     * @returns Number of items updated
+     * @throws Error if any URL is invalid
+     *
+     * @example
+     * // Add icons by spell school
+     * manager.batchByCategory('spells', 'school', {
+     *     'Evocation': '/assets/icons/fire.png',
+     *     'Necromancy': '/assets/icons/skull.png',
+     *     'Abjuration': '/assets/icons/shield.png'
+     * });
+     *
+     * // Add icons by equipment rarity
+     * manager.batchByCategory('equipment', 'rarity', {
+     *     'legendary': '/assets/icons/star-gold.png',
+     *     'very_rare': '/assets/icons/star-purple.png',
+     *     'rare': '/assets/icons/star-blue.png'
+     * });
+     *
+     * // Add both icon and image by rarity
+     * manager.batchByCategory('equipment', 'rarity', {
+     *     'legendary': { icon: '/assets/icons/legendary.png', image: '/assets/images/legendary-bg.png' }
+     * });
+     */
+    batchByCategory<T = any>(
+        category: ImageSupportedCategory,
+        property: keyof T,
+        valueMap: Record<string, string | { icon?: string; image?: string }>
+    ): number {
+        // Validate all URLs first
+        const invalidUrls: string[] = [];
+        for (const [propertyValue, updates] of Object.entries(valueMap)) {
+            if (typeof updates === 'string') {
+                if (!isValidImageUrl(updates)) {
+                    invalidUrls.push(`${propertyValue}: ${updates}`);
+                }
+            } else {
+                if (updates.icon !== undefined && !isValidImageUrl(updates.icon)) {
+                    invalidUrls.push(`${propertyValue}.icon: ${updates.icon}`);
+                }
+                if (updates.image !== undefined && !isValidImageUrl(updates.image)) {
+                    invalidUrls.push(`${propertyValue}.image: ${updates.image}`);
+                }
+            }
+        }
+        if (invalidUrls.length > 0) {
+            throw new Error(
+                `Invalid URLs in valueMap for category '${category}':\n${invalidUrls.map(u => `  - ${u}`).join('\n')}\n` +
+                `URLs must start with: http://, https://, /, or assets/`
+            );
+        }
+
+        // Get current items and update matching items
+        const items = this.get(category);
+        const updatedItems: any[] = [];
+        let updateCount = 0;
+
+        for (const item of items) {
+            const propertyValue = String(item[property as string] ?? '');
+            const updates = valueMap[propertyValue];
+
+            if (updates !== undefined) {
+                // Create a copy with updated image fields
+                const updatedItem = { ...item };
+                if (typeof updates === 'string') {
+                    // String is applied as icon
+                    updatedItem.icon = updates;
+                } else {
+                    // Object can have both icon and image
+                    if (updates.icon !== undefined) {
+                        updatedItem.icon = updates.icon;
+                    }
+                    if (updates.image !== undefined) {
+                        updatedItem.image = updates.image;
+                    }
+                }
+                updatedItems.push(updatedItem);
+                updateCount++;
+            } else {
+                // Keep original item
+                updatedItems.push(item);
+            }
+        }
+
+        // Store updated items in extensions
+        this.extensions.set(category, {
+            items: updatedItems,
+            options: { mode: 'replace' },
+            registeredAt: Date.now()
+        });
+
+        // Invalidate cache
+        this.invalidateRegistryCache(category);
+
+        return updateCount;
+    }
+
+    /**
      * Get the default identifier key for a category
      *
      * Different categories use different identifier properties:

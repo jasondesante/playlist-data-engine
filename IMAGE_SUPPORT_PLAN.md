@@ -153,12 +153,12 @@ export type ImageSupportedCategory =
   - [x] Apply to all items matching predicate
   - [x] Return count of items updated
 
-- [ ] **Task 4.5: Implement batchByCategory method**
-  - [ ] Add method for bulk images by category/property
-  - [ ] Accept category, property name (e.g., 'school', 'rarity'), value-to-image map
-  - [ ] Example: All evocation spells get fire icon, all rare equipment gets blue border icon
-  - [ ] Validate URLs before applying
-  - [ ] Return count of items updated
+- [x] **Task 4.5: Implement batchByCategory method**
+  - [x] Add method for bulk images by category/property
+  - [x] Accept category, property name (e.g., 'school', 'rarity'), value-to-image map
+  - [x] Example: All evocation spells get fire icon, all rare equipment gets blue border icon
+  - [x] Validate URLs before applying
+  - [x] Return count of items updated
 
 - [ ] **Task 4.6: Add private validateImageField helper**
   - [ ] Add private method for URL validation used by batch methods
