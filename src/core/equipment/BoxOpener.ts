@@ -225,6 +225,38 @@ export class BoxOpener {
     }
 
     /**
+     * Check if a box can be opened with given inventory
+     *
+     * Simple boolean check useful for UI purposes (showing lock icons, etc).
+     *
+     * @param box - The box to check
+     * @param inventory - Character's items inventory
+     * @returns true if box can be opened, false otherwise
+     *
+     * @example
+     * ```typescript
+     * const box = { name: 'Locked Chest', boxContents: { openRequirements: [{ itemName: 'Iron Key' }] } };
+     * const inventory = [{ name: 'Iron Key', quantity: 1, equipped: false }];
+     *
+     * if (BoxOpener.canOpen(box, inventory)) {
+     *     console.log('You can open this chest!');
+     * }
+     * ```
+     */
+    static canOpen(
+        box: Equipment,
+        inventory: EnhancedInventoryItem[]
+    ): boolean {
+        // No requirements = always can open
+        if (!box.boxContents?.openRequirements) {
+            return true;
+        }
+
+        // Return true if no error from checkRequirements
+        return this.checkRequirements(box, inventory) === null;
+    }
+
+    /**
      * Preview what a box could contain without actually opening it
      *
      * Returns all possible items that could drop from the box,

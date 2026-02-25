@@ -107,8 +107,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   ): BoxOpenError | null
   ```
 
-- [ ] **2.2 Add canOpen Method**
-  - [ ] Simple boolean check for UI use:
+- [x] **2.2 Add canOpen Method**
+  - [x] Simple boolean check for UI use:
   ```typescript
   /**
    * Check if a box can be opened with given inventory
@@ -684,7 +684,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 
 ## Progress Tracking
 - Phase 1: ✅ Complete
-- Phase 2: ⬜ Not Started
+- Phase 2: 🔄 In Progress (2.1, 2.2 complete)
 - Phase 3: ⬜ Not Started
 - Phase 4: ⬜ Not Started
 - Phase 5: ⬜ Not Started
