@@ -31,16 +31,16 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 
 ### Task 1.2: Add getLevelFromCR() Method
 - [x] Create new private static method `getLevelFromCR(cr: number): number`
-- [ ] Use `crToLevel(cr)` for the conversion
-- [ ] Handle fractional CRs specially:
+- [x] Use `crToLevel(cr)` for the conversion
+- [x] Handle fractional CRs specially:
   - CR 0.25 → level 0.25 (sub-level enemy, reduced base stats)
   - CR 0.5 → level 0.5 (sub-level enemy, reduced base stats)
   - CR 1+ → level = CR (standard mapping)
-- [ ] Add JSDoc explaining CR ≈ level in D&D 5e
-- [ ] Deprecate `getLevelForRarity()` - level comes from CR, not rarity
+- [x] Add JSDoc explaining CR ≈ level in D&D 5e
+- [x] Deprecate `getLevelForRarity()` - level comes from CR, not rarity
 
 ### Task 1.3: Add getStatMultiplierForFractionalCR() Method
-- [ ] Create method to reduce stats for sub-level enemies:
+- [x] Create method to reduce stats for sub-level enemies:
   ```typescript
   private static getStatMultiplierForFractionalCR(cr: number): number {
       if (cr < 0.5) return 0.75;  // CR 0.25 = 75% stats

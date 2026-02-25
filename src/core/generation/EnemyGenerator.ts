@@ -1203,6 +1203,35 @@ export class EnemyGenerator {
     }
 
     /**
+     * Get stat multiplier for fractional CR enemies
+     *
+     * Sub-level enemies (CR < 1) have reduced base stats to represent
+     * their weaker nature. This multiplier is applied BEFORE the rarity
+     * stat multiplier.
+     *
+     * Multiplier values:
+     * - CR < 0.5 (e.g., CR 0.25): 75% base stats
+     * - CR 0.5-0.99: 85% base stats
+     * - CR 1+: 100% base stats (no reduction)
+     *
+     * @param cr - Challenge Rating (supports fractional values)
+     * @returns Stat multiplier (0.75, 0.85, or 1.0)
+     *
+     * @example
+     * ```typescript
+     * getStatMultiplierForFractionalCR(0.25); // 0.75
+     * getStatMultiplierForFractionalCR(0.5);  // 0.85
+     * getStatMultiplierForFractionalCR(1);    // 1.0
+     * getStatMultiplierForFractionalCR(5);    // 1.0
+     * ```
+     */
+    private static getStatMultiplierForFractionalCR(cr: number): number {
+        if (cr < 0.5) return 0.75;  // CR 0.25 = 75% stats
+        if (cr < 1.0) return 0.85;  // CR 0.5 = 85% stats
+        return 1.0;                  // CR 1+ = full stats
+    }
+
+    /**
      * Get character level based on rarity
      *
      * Simple rarity-to-level mapping for V1.
