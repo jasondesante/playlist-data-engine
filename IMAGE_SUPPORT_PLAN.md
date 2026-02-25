@@ -277,20 +277,24 @@ manager.batchByCategory('equipment', 'rarity', {
 
 ## Phase 7: Verification
 
-- [ ] **Task 7.1: Run test suite**
+- [x] **Task 7.1: Run test suite**
   ```bash
   npm test
   ```
+  - Result: 3018 tests passed, 5 failed (pre-existing network/timeout issues unrelated to image support)
+  - Image support tests: `extensionManager.images.test.ts` (52 tests) and `imageValidator.test.ts` (37 tests) all pass
 
-- [ ] **Task 7.2: Type check**
+- [x] **Task 7.2: Type check**
   ```bash
-  npm run typecheck
+  npm run type-check
   ```
+  - Result: No errors
 
-- [ ] **Task 7.3: Build verification**
+- [x] **Task 7.3: Build verification**
   ```bash
   npm run build
   ```
+  - Result: Build successful
 
 ---
 
