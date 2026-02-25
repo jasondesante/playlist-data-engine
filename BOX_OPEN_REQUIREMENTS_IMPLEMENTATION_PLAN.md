@@ -500,10 +500,10 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
     - Combined requirements
   - [x] Document error handling
 
-- [ ] **7.2 Update COMBAT_SYSTEM.md**
-  - [ ] File: `docs/COMBAT_SYSTEM.md`
-  - [ ] Note that combat reward boxes may have opening requirements
-  - [ ] Example of awarding locked boxes as loot
+- [x] **7.2 Update COMBAT_SYSTEM.md**
+  - [x] File: `docs/COMBAT_SYSTEM.md`
+  - [x] Note that combat reward boxes may have opening requirements
+  - [x] Example of awarding locked boxes as loot
 
 - [ ] **7.3 Update DATA_ENGINE_REFERENCE.md**
   - [ ] File: `docs/DATA_ENGINE_REFERENCE.md`

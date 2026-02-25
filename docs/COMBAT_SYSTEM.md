@@ -10,6 +10,7 @@ Complete guide to the combat system in the Playlist Data Engine.
    - [Enemy Generation](#enemy-generation)
    - [Treasure](#treasure)
    - [Box Rewards](#box-rewards)
+     - [Locked Box Rewards](#locked-box-rewards)
    - [Spell Casting](#spell-casting)
    - [Combat Actions](#combat-actions)
    - [HP Management](#hp-management)
@@ -283,6 +284,168 @@ if (combatResult) {
 - **Nested boxes stay nested.** If a box contains another box, the inner box is added to inventory unopened.
 - **Consumed on open by default.** When opened, boxes are removed from inventory unless `consumeOnOpen: false` is set.
 - **Deterministic.** Opening with the same seed and box produces identical contents every time.
+- **Locked boxes require items to open.** Boxes with `openRequirements` need specific items (keys, gold coins, etc.) to be consumed from inventory when opened.
+
+#### Locked Box Rewards
+
+Some treasure boxes have **opening requirements** — items that must be consumed from the character's inventory before the box can be opened. This adds strategic decisions: should the player open a locked chest now, save the key for later, or trade the unopened chest?
+
+##### Awarding Locked Boxes as Loot
+
+Locked boxes are configured with `openRequirements` in their `boxContents`:
+
+```typescript
+import { CombatEngine } from 'playlist-data-engine';
+
+// A locked chest that requires a key to open
+const lockedDungeonChest = {
+  id: 'dungeon-chest-001',
+  name: 'Dungeon Chest',
+  type: 'box' as const,
+  rarity: 'uncommon' as const,
+  weight: 10,
+  boxContents: {
+    openRequirements: [
+      { itemName: 'Iron Key' }  // Consumes 1 Iron Key when opened
+    ],
+    drops: [
+      { pool: [{ weight: 100, gold: 100 }] },
+      { pool: [
+        { weight: 40, itemName: 'Longsword' },
+        { weight: 35, itemName: 'Chain Mail' },
+        { weight: 25, itemName: 'Medical Supply', quantity: 3 }
+      ]}
+    ]
+  },
+  tags: ['loot', 'treasure', 'locked', 'dungeon'],
+  description: 'A heavy iron-bound chest. Requires an Iron Key to open.'
+};
+
+const combat = new CombatEngine({
+  seed: 'dungeon-boss-001',
+  treasure: {
+    gold: { min: 50, max: 150 },
+    items: [lockedDungeonChest]
+  }
+});
+```
+
+##### Handling Locked Box Opens After Combat
+
+When a character tries to open a locked box from combat rewards, requirements are checked automatically:
+
+```typescript
+import {
+  CombatEngine,
+  EquipmentSpawnHelper,
+  BoxOpener,
+  SeededRNG
+} from 'playlist-data-engine';
+
+// After combat - add items to inventory first
+const combatResult = combat.getCombatResult(combatInstance);
+if (combatResult) {
+  // Add all awarded items to character inventory
+  for (const item of combatResult.treasureAwarded.items) {
+    EquipmentSpawnHelper.addToCharacter(character, item);
+  }
+}
+
+// Later, when player wants to open the chest
+const rng = new SeededRNG('open-chest');
+const outcome = EquipmentSpawnHelper.openBoxForCharacter(
+  character,
+  'Dungeon Chest',
+  rng
+);
+
+if (outcome) {
+  if (outcome.result.success) {
+    character = outcome.character;
+    console.log('Chest opened!');
+    console.log('Gold received:', outcome.result.gold);
+    console.log('Items received:', outcome.result.items.map(i => i.name));
+    console.log('Items consumed:', outcome.result.consumedItems);
+    // → Items consumed: [{ name: 'Iron Key', quantity: 1 }]
+  } else {
+    // Requirements not met
+    console.log('Cannot open:', outcome.result.error?.message);
+    // → "Cannot open: Missing required item: Iron Key"
+  }
+}
+```
+
+##### Checking Requirements Before Opening
+
+Use `BoxOpener.canOpen()` to check if the character has the required items:
+
+```typescript
+// Check if character can open the box (for UI: enable/disable button)
+const canOpen = BoxOpener.canOpen(
+  dungeonChest,
+  character.equipment.items
+);
+
+if (!canOpen) {
+  // Show what's needed
+  const desc = BoxOpener.getRequirementsDescription(dungeonChest);
+  console.log(desc); // "Requires: Iron Key"
+}
+
+// Get detailed error info if requirements not met
+const error = BoxOpener.checkRequirements(dungeonChest, character.equipment.items);
+if (error) {
+  console.log(error.code);    // 'MISSING_ITEM' or 'INSUFFICIENT_QUANTITY'
+  console.log(error.message); // Human-readable message
+}
+```
+
+##### Multiple Requirements
+
+Boxes can require multiple different items. All requirements must be satisfied:
+
+```typescript
+const royalTreasuryBox = {
+  name: 'Royal Treasury Box',
+  type: 'box' as const,
+  rarity: 'very_rare' as const,
+  weight: 20,
+  boxContents: {
+    openRequirements: [
+      { itemName: 'Golden Key' },           // 1 Golden Key
+      { itemName: 'Gold Coin', quantity: 200 } // 200 Gold Coins
+    ],
+    drops: [
+      { pool: [{ weight: 100, gold: 1000 }] },
+      { pool: [
+        { weight: 30, itemName: 'Plate Armor' },
+        { weight: 25, itemName: 'Greataxe' },
+        { weight: 25, itemName: 'Longsword' },
+        { weight: 20, itemName: 'Chain Mail' }
+      ]}
+    ]
+  },
+  description: 'A royal treasury box. Requires a Golden Key and 200 Gold Coins.'
+};
+
+// Preview requirements for UI
+const preview = BoxOpener.previewContents(royalTreasuryBox);
+console.log(preview.openRequirements);
+// → [{ itemName: 'Golden Key' }, { itemName: 'Gold Coin', quantity: 200 }]
+```
+
+##### Strategic Loot Design
+
+Consider these patterns when designing locked box rewards:
+
+| Box Type | Requirements | Use Case |
+|----------|--------------|----------|
+| Key-locked | Single key item | Standard treasure rooms, miniboss drops |
+| Gold-locked | Gold Coins (quantity) | Gambling-style boxes, shops |
+| Multi-locked | Key + Gold | High-value boss loot, rare treasures |
+| Quantity-locked | Multiple of same item | Skill-based rewards (e.g., 3 Lockpicks) |
+
+> **See also:** [EQUIPMENT_SYSTEM.md — Opening Requirements](EQUIPMENT_SYSTEM.md#opening-requirements) for complete documentation of `BoxOpenRequirement`, `BoxOpenError`, and all `BoxOpener` methods.
 
 #### Checking if a Reward Is a Box
 
