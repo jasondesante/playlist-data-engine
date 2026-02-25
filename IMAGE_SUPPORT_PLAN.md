@@ -202,13 +202,13 @@ manager.batchByCategory('equipment', 'rarity', {
 
 ## Phase 5: Unit Tests
 
-- [ ] **Task 5.1: Create ImageValidator tests**
-  - [ ] Create `tests/unit/imageValidator.test.ts`
-  - [ ] Test `isValidImageUrl` with valid URLs (http, https, /, assets/)
-  - [ ] Test `isValidImageUrl` with invalid URLs (ftp, empty, relative)
-  - [ ] Test `validateImageUrl` with undefined values
-  - [ ] Test `validateImageUrl` with non-string values
-  - [ ] Test `validateImageFields` with both icon and image
+- [x] **Task 5.1: Create ImageValidator tests**
+  - [x] Create `tests/unit/imageValidator.test.ts`
+  - [x] Test `isValidImageUrl` with valid URLs (http, https, /, assets/)
+  - [x] Test `isValidImageUrl` with invalid URLs (ftp, empty, relative)
+  - [x] Test `validateImageUrl` with undefined values
+  - [x] Test `validateImageUrl` with non-string values
+  - [x] Test `validateImageFields` with both icon and image
 
 - [ ] **Task 5.2: Create ExtensionManager image method tests**
   - [ ] Create `tests/unit/extensionManager.images.test.ts`
