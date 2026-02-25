@@ -248,11 +248,11 @@ manager.batchByCategory('equipment', 'rarity', {
   - [x] Add icon/image fields to skill examples
   - [x] Add batch image method usage examples
 
-- [ ] **Task 6.5: Update docs/CUSTOM_CONTENT.md**
-  - [ ] Add `icon?` row to RaceDataEntry property table
-  - [ ] Add `icon?` row to ClassDataEntry property table
-  - [ ] Update race registration examples with icons
-  - [ ] Update class registration examples with icons
+- [x] **Task 6.5: Update docs/CUSTOM_CONTENT.md**
+  - [x] Add `icon?` row to RaceDataEntry property table
+  - [x] Add `icon?` row to ClassDataEntry property table
+  - [x] Update race registration examples with icons
+  - [x] Update class registration examples with icons
 
 - [ ] **Task 6.6: Update docs/CONTENT_PACKS.md**
   - [ ] Add icon fields to Basic Content Pack example

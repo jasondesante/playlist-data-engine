@@ -80,6 +80,8 @@ For complete type definitions, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REF
 | `speed` | number | Base speed in feet |
 | `traits` | string[] | Array of trait IDs for this race |
 | `subraces?` | string[] | Optional available subraces |
+| `icon?` | string | Optional icon URL for small UI display |
+| `image?` | string | Optional image URL for larger display |
 
 ### Registering Custom Races
 
@@ -94,7 +96,9 @@ manager.register('races.data', [{
     ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
     speed: 30,
     traits: ['Draconic Ancestry', 'Darkvision'],
-    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
+    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin'],
+    icon: '/icons/races/dragonkin.png',
+    image: '/images/races/dragonkin-full.png'
 }]);
 
 // Step 2: Register the race name (enables validation)
@@ -217,7 +221,9 @@ manager.register('races.data', [{
     ability_bonuses: { STR: 2, CON: 1, CHA: 1 },
     speed: 30,
     traits: ['Draconic Ancestry', 'Darkvision'],
-    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin']
+    subraces: ['Fire Dragonkin', 'Ice Dragonkin', 'Lightning Dragonkin'],
+    icon: '/icons/races/dragonkin.png',
+    image: '/images/races/dragonkin-full.png'
 }]);
 
 // ===== REGISTER SUBRACE-SPECIFIC TRAITS =====
@@ -339,6 +345,8 @@ For complete type definitions, see [DATA_ENGINE_REFERENCE.md](../DATA_ENGINE_REF
 | `has_expertise` | boolean | Yes* | Has expertise feature |
 | `expertise_count?` | number | No | Number of expertise choices |
 | `audio_preferences?` | object | No | Audio affinity for class suggestion |
+| `icon?` | string | No | Optional icon URL for small UI display |
+| `image?` | string | No | Optional image URL for larger display |
 
 *Required only if `baseClass` is not specified.
 
@@ -401,7 +409,9 @@ manager.register('classes.data', [{
     name: 'Necromancer',
     baseClass: 'Wizard',  // Inherits from Wizard
     // Only override what's different:
-    available_skills: ['arcana', 'medicine', 'religion', 'necromancy']
+    available_skills: ['arcana', 'medicine', 'religion', 'necromancy'],
+    icon: '/icons/classes/necromancer.png',
+    image: '/images/classes/necromancer-full.png'
     // All other properties (hit_die, saving_throws, etc.) are inherited from Wizard
 }]);
 
@@ -467,7 +477,9 @@ manager.register('classes.data', [{
     is_spellcaster: true,
     skill_count: 3,
     available_skills: ['arcana', 'nature', 'religion', 'insight', 'medicine'],
-    has_expertise: false
+    has_expertise: false,
+    icon: '/icons/classes/runecaster.png',
+    image: '/images/classes/runecaster-full.png'
 }]);
 
 // Step 2: Register the class name
@@ -521,7 +533,8 @@ Here are common patterns for creating custom classes using the template system:
     baseClass: 'Wizard',
     hit_die: 10,           // More durable than standard Wizard
     saving_throws: ['INT', 'CON'],  // CON instead of WIS
-    available_skills: ['arcana', 'athletics', 'intimidation']
+    available_skills: ['arcana', 'athletics', 'intimidation'],
+    icon: '/icons/classes/battlemage.png'
 }
 ```
 
@@ -533,7 +546,8 @@ Here are common patterns for creating custom classes using the template system:
     baseClass: 'Fighter',
     is_spellcaster: true,  // Add spellcasting
     primary_ability: 'STR',  // Keep Fighter primary
-    available_skills: ['athletics', 'acrobatics', 'arcana', 'intimidation']
+    available_skills: ['athletics', 'acrobatics', 'arcana', 'intimidation'],
+    icon: '/icons/classes/spellsword.png'
 }
 ```
 
@@ -544,7 +558,8 @@ Here are common patterns for creating custom classes using the template system:
     name: 'Beastmaster',
     baseClass: 'Ranger',
     skill_count: 3,  // Extra skill for animal handling
-    available_skills: ['animal_handling', 'nature', 'survival', 'perception']
+    available_skills: ['animal_handling', 'nature', 'survival', 'perception'],
+    icon: '/icons/classes/beastmaster.png'
 }
 ```
 
