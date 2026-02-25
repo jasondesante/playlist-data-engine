@@ -516,12 +516,12 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
     - Update `openBox()` signature with new param
   - [x] Update `previewContents()` return type documentation
 
-- [ ] **7.4 Update USAGE_IN_OTHER_PROJECTS.md**
-  - [ ] File: `docs/USAGE_IN_OTHER_PROJECTS.md`
-  - [ ] Add "Locked Boxes" subsection under "Box Items"
-  - [ ] Working code example for checking requirements
-  - [ ] Working code example for opening locked box
-  - [ ] Working code example for handling errors
+- [x] **7.4 Update USAGE_IN_OTHER_PROJECTS.md**
+  - [x] File: `USAGE_IN_OTHER_PROJECTS.md` (at root, not docs/)
+  - [x] Add "Locked Boxes" subsection under "Box Items"
+  - [x] Working code example for checking requirements
+  - [x] Working code example for opening locked box
+  - [x] Working code example for handling errors
 
 ---
 
@@ -701,7 +701,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 - Phase 4: ✅ Complete
 - Phase 5: ✅ Complete
 - Phase 6: ✅ Complete
-- Phase 7: ⬜ Not Started
+- Phase 7: ✅ Complete
 - Phase 8: ⬜ Not Started
 
 *Last updated: 2026-02-25*

@@ -458,6 +458,92 @@ EquipmentSpawnHelper.openBoxForCharacter(character, "Explorer's Pack", rng);
 
 For all built-in pack definitions and custom box examples, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#box-equipment-type) and [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#boxopener).
 
+### Locked Boxes (Opening Requirements)
+
+Boxes can have optional opening requirements that must be satisfied before the box can be opened. This is useful for locked chests requiring keys, treasure boxes that cost gold to unlock, or caches requiring consumable tools.
+
+```typescript
+import { BoxOpener, EquipmentSpawnHelper, SeededRNG } from 'playlist-data-engine';
+
+const rng = new SeededRNG('player-seed');
+
+// --- Check if a box has requirements ---
+const inventory = character.equipment.items; // Character's item inventory
+const boxItem = inventory.find(item => item.name === 'Locked Chest');
+
+if (BoxOpener.isBox(boxItem)) {
+    // Preview shows requirements along with possible contents
+    const preview = BoxOpener.previewContents(boxItem);
+    if (preview.openRequirements) {
+        console.log('Requirements:', preview.openRequirements);
+        // [{ itemName: 'Iron Key' }]
+    }
+}
+
+// --- Check if player can open a box (boolean check for UI) ---
+if (BoxOpener.canOpen(boxItem, inventory)) {
+    console.log('You have the required items to open this box!');
+} else {
+    // Get human-readable description of what's needed
+    const description = BoxOpener.getRequirementsDescription(boxItem);
+    console.log(description); // "Requires: Iron Key"
+}
+
+// --- Open a locked box (with requirement checking) ---
+const result = BoxOpener.openBox(boxItem, rng, inventory);
+
+if (result.success) {
+    console.log(`Opened! Consumed:`, result.consumedItems);
+    // [{ name: 'Iron Key', quantity: 1 }]
+
+    console.log(`Received ${result.items.length} items and ${result.gold} gold`);
+    console.log(`Box consumed: ${result.consumeBox}`);
+} else {
+    console.log(`Cannot open: ${result.error?.message}`);
+    // "Missing required item: Iron Key" or
+    // "Insufficient Gold Coin: have 50, need 100"
+}
+
+// --- Open a locked box directly from character inventory ---
+const openResult = EquipmentSpawnHelper.openBoxForCharacter(
+    character,
+    'Locked Chest',
+    rng
+);
+
+if (openResult) {
+    if (openResult.result.success) {
+        // Box opened - character is updated automatically:
+        // - Required items consumed from inventory
+        // - Box removed from inventory (if consumeOnOpen: true)
+        // - New items added to inventory
+        character = openResult.character;
+        console.log('Consumed:', openResult.result.consumedItems);
+    } else {
+        // Requirements not met - character unchanged
+        console.log('Failed:', openResult.result.error?.code);
+        // 'MISSING_ITEM' or 'INSUFFICIENT_QUANTITY'
+    }
+}
+```
+
+**Requirement types:**
+
+| Type | Example | Behavior |
+|------|---------|----------|
+| **Single item** | `{ itemName: 'Iron Key' }` | Requires 1 of the item |
+| **Quantity** | `{ itemName: 'Lockpick', quantity: 3 }` | Requires multiple of the same item |
+| **Gold cost** | `{ itemName: 'Gold Coin', quantity: 100 }` | Gold treated as an item with quantity |
+| **Multiple** | Array of requirements | ALL requirements must be satisfied |
+
+**Requirement validation:**
+- Requirements are checked atomically (all or nothing)
+- If any requirement fails, no items are consumed
+- When all requirements are met, ALL required items are consumed
+- The box contents are then generated as normal
+
+For built-in locked boxes (Locked Chest, Gilded Strongbox, Royal Treasury Box, Thieves' Cache) and custom locked box definitions, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#opening-requirements).
+
 ---
 
 ## Validation Schemas
