@@ -32,9 +32,9 @@ Add optional `icon` and `image` URL fields to all entity types managed by Extens
   - [x] Edit `src/core/skills/SkillTypes.ts`
   - [x] Add `icon?: string` and `image?: string` after `lore` field (~L116)
 
-- [ ] **Task 1.3: Add image fields to ClassFeature interface**
-  - [ ] Edit `src/core/features/FeatureTypes.ts`
-  - [ ] Add `icon?: string` and `image?: string` after `lore` field (~L152)
+- [x] **Task 1.3: Add image fields to ClassFeature interface**
+  - [x] Edit `src/core/features/FeatureTypes.ts`
+  - [x] Add `icon?: string` and `image?: string` after `lore` field (~L152)
 
 - [ ] **Task 1.4: Add image fields to RacialTrait interface**
   - [ ] Edit `src/core/features/FeatureTypes.ts`

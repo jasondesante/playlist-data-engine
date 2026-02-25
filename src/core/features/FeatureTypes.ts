@@ -150,6 +150,12 @@ export interface ClassFeature {
 
     /** Optional flavor text or lore */
     lore?: string;
+
+    /** Optional icon URL for small UI display */
+    icon?: string;
+
+    /** Optional image URL for larger display */
+    image?: string;
 }
 
 /**
