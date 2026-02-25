@@ -210,14 +210,14 @@ manager.batchByCategory('equipment', 'rarity', {
   - [x] Test `validateImageUrl` with non-string values
   - [x] Test `validateImageFields` with both icon and image
 
-- [ ] **Task 5.2: Create ExtensionManager image method tests**
-  - [ ] Create `tests/unit/extensionManager.images.test.ts`
-  - [ ] Test `batchAddIcons` with valid URLs
-  - [ ] Test `batchAddIcons` throws on invalid URLs
-  - [ ] Test `batchAddImages` with valid URLs
-  - [ ] Test `batchUpdateImages` with predicate matching items
-  - [ ] Test `batchUpdateImages` returns 0 for no matches
-  - [ ] Test cache invalidation after batch updates
+- [x] **Task 5.2: Create ExtensionManager image method tests**
+  - [x] Create `tests/unit/extensionManager.images.test.ts`
+  - [x] Test `batchAddIcons` with valid URLs
+  - [x] Test `batchAddIcons` throws on invalid URLs
+  - [x] Test `batchAddImages` with valid URLs
+  - [x] Test `batchUpdateImages` with predicate matching items
+  - [x] Test `batchUpdateImages` returns 0 for no matches
+  - [x] Test cache invalidation after batch updates
 
 ---
 
