@@ -35,6 +35,7 @@ The Enemy Generation System creates balanced combat encounters through:
 - **Infinite scaling**: Any template scales from Common to Boss tier
 - **Signature + extras**: Every enemy has ONE signature ability (scaled by rarity) plus extra abilities from the feature pool
 - **Audio-influenced**: Audio affects both template selection AND stat distribution (V2)
+- **CR vs Rarity independence**: CR determines power (level, stats), Rarity determines complexity (abilities, resistances). Any combination is valid.
 
 ---
 
@@ -45,27 +46,29 @@ The Enemy Generation System creates balanced combat encounters through:
 ```typescript
 import { EnemyGenerator } from 'playlist-data-engine';
 
-// Generate an elite Orc with signature ability scaled to d10
+// Generate an elite Orc at CR 5 with signature ability scaled to d10
 const orc = EnemyGenerator.generate({
     seed: 'dungeon-1-entrance',
     templateId: 'orc',
-    rarity: 'elite'
+    cr: 5,              // Power level: Level 5, full stats
+    rarity: 'elite'     // Complexity: d10 signature, 2 extra abilities
 });
 
 console.log(orc.name); // 'Orc'
-console.log(orc.hp.max); // 19 (15 HP × 1.25 elite multiplier)
+console.log(orc.level); // 5 (derived from CR)
 console.log(orc.class_features); // ['orc_savage_strike', ...extra abilities]
 ```
 
 ### Generate a Random Enemy by Category/Archetype
 
 ```typescript
-// Generate a random humanoid brute (could be Orc or Bandit)
+// Generate a random humanoid brute at CR 3 (could be Orc or Bandit)
 const enemy = EnemyGenerator.generate({
     seed: 'random-encounter',
     category: 'humanoid',
     archetype: 'brute',
-    rarity: 'uncommon'
+    cr: 3,              // Power level: Level 3
+    rarity: 'uncommon'  // Complexity: d8 signature, 1 extra ability
 });
 ```
 
@@ -201,16 +204,86 @@ const enemies = EnemyGenerator.generateEncounterByCR({
 
 ---
 
+## CR vs Rarity: Two Independent Axes
+
+The enemy generation system uses **two independent axes** to create diverse enemies:
+
+| Concept | Determines | Examples |
+|---------|------------|----------|
+| **Challenge Rating (CR)** | Power level (stats, HP, level, proficiency) | Weak beast vs. ancient dragon |
+| **Rarity** | Complexity (abilities, resistances, legendary actions) | Simple guard vs. complex spellcaster |
+
+### Key Design Principle
+
+**Any CR can combine with any rarity:**
+
+| CR | Rarity | Result | Example |
+|----|--------|--------|---------|
+| 0.25 | Common | Weak, simple | Goblin grunt |
+| 0.25 | Boss | Weak, complex | Goblin chieftain |
+| 5 | Common | Strong, simple | Dire wolf |
+| 5 | Boss | Strong, complex | Werewolf alpha |
+| 20 | Common | Epic, simple | Ancient purple worm |
+| 20 | Boss | Epic, complex | Ancient red dragon |
+
+### How It Works
+
+1. **CR determines power**: Level is derived from CR using `CRLevelConverter.crToLevel()`. Higher CR = higher level = stronger stats.
+2. **Rarity determines complexity**: Rarity controls ability count, signature die size, and special features. Higher rarity = more complex = more abilities.
+3. **Fractional CRs** (0.25, 0.5) get reduced base stats (75-85%) to represent "sub-level" enemies.
+
+### Example: Same Rarity, Different CR
+
+```typescript
+// Both are COMMON rarity, but very different power levels
+const grunt = EnemyGenerator.generate({
+    seed: 'grunt',
+    templateId: 'goblin',
+    cr: 0.25,           // Level 0.25, 75% base stats
+    rarity: 'common'    // d6 signature, no extra abilities
+});
+
+const ancientBeast = EnemyGenerator.generate({
+    seed: 'beast',
+    templateId: 'purple-worm',
+    cr: 20,             // Level 20, full stats
+    rarity: 'common'    // d6 signature, no extra abilities (same complexity!)
+});
+```
+
+### Example: Same CR, Different Rarity
+
+```typescript
+// Both are CR 5, but very different complexity
+const simpleWolf = EnemyGenerator.generate({
+    seed: 'wolf',
+    templateId: 'dire-wolf',
+    cr: 5,              // Level 5, full stats
+    rarity: 'common'    // d6 signature, 0 extra abilities
+});
+
+const complexAlpha = EnemyGenerator.generate({
+    seed: 'alpha',
+    templateId: 'werewolf',
+    cr: 5,              // Level 5, full stats (same power!)
+    rarity: 'boss'      // d12 signature, 3 extra abilities, legendary actions
+});
+```
+
+---
+
 ## Rarity Tiers
 
-Every enemy template can be generated at four rarity tiers:
+Every enemy template can be generated at four rarity tiers. **Note**: Rarity affects complexity, not power (CR handles power).
 
 | Rarity | Stat Multiplier | Signature Die | Extra Abilities | Resistances |
 |--------|-----------------|----------------|-----------------|-------------|
 | **Common** | 1.0× (base) | d6 | 0 | None |
-| **Uncommon** | 1.1× (+10%) | d8 | 1 | None |
-| **Elite** | 1.25× (+25%) | d10 | 2 | Type-based |
-| **Boss** | 1.5× (+50%) | d12 | 3 | Type-based |
+| **Uncommon** | 1.03× (+3%) | d8 | 1 | None |
+| **Elite** | 1.07× (+7%) | d10 | 2 | Type-based |
+| **Boss** | 1.12× (+12%) | d12 | 3 | Type-based |
+
+**Why are stat multipliers so small?** Rarity is about complexity, not power. The 3-12% stat adjustment provides subtle flavor, while CR (via level) handles the bulk of power scaling. This allows creating weak-but-complex enemies (CR 0.25 + Boss = goblin chieftain) or strong-but-simple enemies (CR 20 + Common = ancient beast).
 
 ### Signature Ability Scaling
 
@@ -223,7 +296,7 @@ The signature ability is the core ability that defines an enemy type. It scales 
 | Elite | d10 + 4 | 1d10 + 4 slashing damage |
 | Boss | d12 + 6 | 1d12 + 6 slashing damage |
 
-The damage bonus (+2/+3/+4/+6) represents the increasing ability modifier as enemies grow in power.
+The damage bonus (+2/+3/+4/+6) represents the increasing ability modifier based on rarity complexity. Note that the die size increases with rarity, while CR determines the underlying power level.
 
 ### Extra Abilities
 
@@ -295,6 +368,62 @@ const enemies = EnemyGenerator.generateEncounter(party, {
     enableLeaderPromotion: false
 });
 // All 5 enemies remain at base rarity
+```
+
+---
+
+## CR-Based Gradual Rarity Scaling (Opt-In)
+
+By default, rarity is independent of CR. However, you can enable automatic rarity scaling based on CR by setting `scaleRarityWithCR: true`.
+
+### How It Works
+
+When enabled, the system distributes rarity upgrades across enemies based on the target CR:
+
+| CR Tier | CR Range | Upgrade Points | Party of 3 Result |
+|---------|----------|----------------|-------------------|
+| Low | 0-2 | 0 | [common, common, common] |
+| Low-Medium | 3-5 | 1 | [uncommon, common, common] |
+| Medium | 6-10 | 2 | [uncommon, uncommon, common] |
+| Medium-High | 11-15 | 3 | [uncommon, uncommon, uncommon] |
+| High | 16-20 | 4 | [elite, uncommon, uncommon] |
+| Very High | 21-30 | 5 | [elite, elite, uncommon] |
+| Epic | 30+ | 6 | [elite, elite, elite] |
+
+**Upgrade Path:** common → uncommon → elite (per enemy)
+
+### Example Usage
+
+```typescript
+// Default behavior: rarity is independent of CR
+const lowCR = EnemyGenerator.generateEncounterByCR({
+    seed: 'low-cr',
+    targetCR: 2,
+    count: 3,
+    baseRarity: 'common'  // All enemies are common
+});
+
+// With scaling enabled: rarity increases with CR
+const highCR = EnemyGenerator.generateEncounterByCR({
+    seed: 'high-cr',
+    targetCR: 18,
+    count: 3,
+    scaleRarityWithCR: true  // Results in [elite, uncommon, uncommon]
+});
+```
+
+### Boss Rule
+
+When rarity is 'boss', count is automatically enforced to 1. Bosses are always 1vparty encounters.
+
+```typescript
+// This will generate only 1 enemy, not 3
+const boss = EnemyGenerator.generateEncounterByCR({
+    seed: 'boss-encounter',
+    targetCR: 10,
+    count: 3,            // Will be overridden to 1
+    baseRarity: 'boss'   // Forces count = 1
+});
 ```
 
 ---
@@ -760,9 +889,66 @@ console.log(enemy.name.includes('the'));      // true (epic title added)
 
 ---
 
+### Fractional CR Stat Reduction
+
+When generating enemies with fractional CR values (0.25, 0.5), the system applies automatic stat reduction to represent "sub-level" enemies:
+
+| CR | Level | Stat Multiplier | Description |
+|----|-------|-----------------|-------------|
+| 0.25 | 0.25 | 75% | Sub-level enemy (e.g., goblin grunt) |
+| 0.5 | 0.5 | 85% | Sub-level enemy (e.g., giant rat) |
+| 1+ | CR | 100% | Full stats (standard enemy) |
+
+**This multiplier is applied BEFORE the rarity stat multiplier**, so:
+
+```typescript
+// CR 0.25 + Elite = 75% × 107% = ~80% base stats
+const grunt = EnemyGenerator.generate({
+    seed: 'grunt',
+    cr: 0.25,
+    rarity: 'elite'  // Complex but still weak
+});
+```
+
+**Example:**
+```typescript
+// A CR 0.25 enemy has reduced base stats
+const goblin = EnemyGenerator.generate({
+    seed: 'weak-goblin',
+    templateId: 'goblin',
+    cr: 0.25,           // 75% base stats
+    rarity: 'common'
+});
+
+// Same template at CR 5 has full stats
+const warrior = EnemyGenerator.generate({
+    seed: 'strong-goblin',
+    templateId: 'goblin',
+    cr: 5,              // 100% base stats
+    rarity: 'common'
+});
+```
+
+---
+
 ### CR/Level Conversion (V2)
 
-Dedicated functions for converting between Challenge Rating and character level.
+Dedicated functions for converting between Challenge Rating and character level. **The EnemyGenerator now uses `CRLevelConverter.crToLevel()` for all CR → level conversions.**
+
+#### CR → Level Mapping
+
+The enemy generation system uses the following mapping:
+
+| CR | Level | Stat Multiplier | Notes |
+|----|-------|-----------------|-------|
+| 0.25 | 0.25 | 75% | Sub-level enemy |
+| 0.5 | 0.5 | 85% | Sub-level enemy |
+| 1 | 1 | 100% | Standard enemy |
+| 5 | 5 | 100% | Standard enemy |
+| 10 | 10 | 100% | Standard enemy |
+| 20 | 20 | 100% | Standard enemy |
+
+**Key insight:** CR ≈ level in D&D 5e. A CR 5 enemy is roughly equivalent to a level 5 character.
 
 #### Conversion Functions
 
@@ -952,15 +1138,19 @@ static getTemplateById(id: string): EnemyTemplate | undefined
 ```typescript
 interface EnemyGenerationOptions {
     seed: string;                        // Required
+    cr?: number;                         // Recommended - target Challenge Rating (determines level/stats)
     templateId?: string;                 // Optional - force template
-    rarity?: EnemyRarity;               // Optional - default 'common'
-    difficultyMultiplier?: number;          // Optional - default 1.0
-    audioProfile?: AudioProfile;          // Optional
+    rarity?: EnemyRarity;                // Optional - default 'common' (determines complexity)
+    difficultyMultiplier?: number;       // Optional - default 1.0
+    audioProfile?: AudioProfile;         // Optional
     track?: PlaylistTrack;               // Required if audioProfile
-    category?: EnemyCategory;              // Optional
-    archetype?: EnemyArchetype;            // Optional
+    category?: EnemyCategory;            // Optional
+    archetype?: EnemyArchetype;          // Optional
+    level?: number;                      // Optional - overrides CR-based level (rarely needed)
 }
 ```
+
+**Important:** The `cr` parameter determines the enemy's power level (level and base stats). The `rarity` parameter determines complexity (abilities, signature die, resistances). These are independent - any CR can combine with any rarity.
 
 #### EncounterGenerationOptions
 
@@ -968,25 +1158,30 @@ interface EnemyGenerationOptions {
 interface EncounterGenerationOptions {
     seed: string;                        // Required
     count: number;                       // Required
-    difficulty?: EncounterDifficulty;       // Party-based mode
-    targetCR?: number;                    // CR-based mode
+    difficulty?: EncounterDifficulty;    // Party-based mode
+    targetCR?: number;                   // CR-based mode - determines power level
     baseRarity?: EnemyRarity;            // Optional - default 'common'
-    difficultyMultiplier?: number;          // Optional - default 1.0
-    category?: EnemyCategory;               // Optional
-    archetype?: EnemyArchetype;             // Optional
-    templateId?: string;                  // Optional
+    scaleRarityWithCR?: boolean;         // Optional - default false (opt-in CR-based rarity scaling)
+    difficultyMultiplier?: number;       // Optional - default 1.0
+    category?: EnemyCategory;            // Optional
+    archetype?: EnemyArchetype;          // Optional
+    templateId?: string;                 // Optional
     enemyMix?: 'uniform' | 'custom' | 'category' | 'random';  // V2: added category, random
-    templates?: string[];                 // For custom mix
-    audioProfile?: AudioProfile;            // Optional
-    track?: PlaylistTrack;                  // Required if audioProfile
-    enableLeaderPromotion?: boolean;       // Optional - default true
+    templates?: string[];                // For custom mix
+    audioProfile?: AudioProfile;         // Optional
+    track?: PlaylistTrack;               // Required if audioProfile
+    enableLeaderPromotion?: boolean;     // Optional - default true
     // V2 additions:
-    allowMixedCategories?: boolean;         // For 'random' mode validation
-    lairFeatures?: boolean;                // Include lair actions for bosses
-    minRarity?: EnemyRarity;               // Force minimum rarity
-    maxRarity?: EnemyRarity;               // Cap maximum rarity
+    allowMixedCategories?: boolean;      // For 'random' mode validation
+    lairFeatures?: boolean;              // Include lair actions for bosses
+    minRarity?: EnemyRarity;             // Force minimum rarity
+    maxRarity?: EnemyRarity;             // Cap maximum rarity
 }
 ```
+
+**CR vs Rarity:** By default, `targetCR` and `baseRarity` are independent. Set `scaleRarityWithCR: true` to opt-in to automatic rarity scaling based on CR (higher CR = higher average rarity).
+
+**Boss Encounters:** When rarity is 'boss', count is automatically enforced to 1 (bosses are always 1vparty).
 
 #### EnemyRarity
 

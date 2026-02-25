@@ -180,13 +180,13 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 ## Phase 4: Update Documentation
 
 ### Task 4.1: Fix ENEMY_GENERATION.md Discrepancies
-- [ ] Document the **CR vs Rarity** independence model
-- [ ] Add examples of combined CR + Rarity:
+- [x] Document the **CR vs Rarity** independence model
+- [x] Add examples of combined CR + Rarity:
   - CR 0.25 + Boss = Goblin chieftain (weak but complex)
   - CR 20 + Common = Ancient beast (powerful but simple)
-- [ ] Document fractional CR stat reduction (75-85% base stats)
-- [ ] Update level scaling table to show CR → level mapping
-- [ ] Document that CRLevelConverter is now used
+- [x] Document fractional CR stat reduction (75-85% base stats)
+- [x] Update level scaling table to show CR → level mapping
+- [x] Document that CRLevelConverter is now used
 
 ### Task 4.2: Update USAGE_IN_OTHER_PROJECTS.md
 - [ ] Document the new `cr` parameter requirement
