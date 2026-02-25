@@ -232,10 +232,10 @@ Fix the enemy generation system to properly scale enemy levels based on target C
 - [x] Test CR applies correctly to each enemy regardless of scaled rarity
 
 ### Task 5.4: Fractional CR Tests
-- [ ] Test CR 0.25 enemy has ~75% base stats
-- [ ] Test CR 0.5 enemy has ~85% base stats
-- [ ] Test CR 1+ enemy has 100% base stats
-- [ ] Verify fractional CR + boss rarity works correctly
+- [x] Test CR 0.25 enemy has ~75% base stats
+- [x] Test CR 0.5 enemy has ~85% base stats
+- [x] Test CR 1+ enemy has 100% base stats
+- [x] Verify fractional CR + boss rarity works correctly
 
 ### Task 5.5: Backward Compatibility Tests
 - [ ] Test existing code paths without explicit rarity default to 'common'
