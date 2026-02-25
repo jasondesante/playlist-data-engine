@@ -158,9 +158,9 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 ## Phase 3: EquipmentSpawnHelper Updates
 *Estimated complexity: Medium*
 
-- [ ] **3.1 Update openBoxForCharacter Method**
-  - [ ] File: `src/core/equipment/EquipmentSpawnHelper.ts`
-  - [ ] Modify to check requirements before opening:
+- [x] **3.1 Update openBoxForCharacter Method**
+  - [x] File: `src/core/equipment/EquipmentSpawnHelper.ts`
+  - [x] Modify to check requirements before opening:
   ```typescript
   static openBoxForCharacter(
       character: CharacterSheet,
@@ -168,13 +168,13 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
       rng: SeededRNG
   ): { character: CharacterSheet; result: BoxOpenResult } | null
   ```
-  - [ ] Check requirements using `BoxOpener.checkRequirements()`
-  - [ ] If requirements not met, return result with error (don't modify character)
-  - [ ] If requirements met, consume required items from character inventory
-  - [ ] Then proceed with opening box as before
+  - [x] Check requirements using `BoxOpener.checkRequirements()`
+  - [x] If requirements not met, return result with error (don't modify character)
+  - [x] If requirements met, consume required items from character inventory
+  - [x] Then proceed with opening box as before
 
-- [ ] **3.2 Add consumeItemFromCharacter Helper**
-  - [ ] Private method to consume items from inventory:
+- [x] **3.2 Add consumeItemFromCharacter Helper**
+  - [x] Private method to consume items from inventory:
   ```typescript
   private static consumeItemFromCharacter(
       character: CharacterSheet,
@@ -182,9 +182,9 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
       quantity: number
   ): { success: boolean; character: CharacterSheet }
   ```
-  - [ ] Finds item in character's `equipment.items[]`
-  - [ ] Reduces quantity or removes item if quantity reaches 0
-  - [ ] Updates `totalWeight` accordingly
+  - [x] Finds item in character's `equipment.items[]`
+  - [x] Reduces quantity or removes item if quantity reaches 0
+  - [x] Updates `totalWeight` accordingly
 
 ---
 
@@ -685,7 +685,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 ## Progress Tracking
 - Phase 1: ✅ Complete
 - Phase 2: ✅ Complete
-- Phase 3: ⬜ Not Started
+- Phase 3: ✅ Complete
 - Phase 4: ⬜ Not Started
 - Phase 5: ⬜ Not Started
 - Phase 6: ⬜ Not Started

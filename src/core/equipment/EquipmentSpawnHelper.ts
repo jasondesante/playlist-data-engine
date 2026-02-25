@@ -539,6 +539,11 @@ export class EquipmentSpawnHelper {
      * removes it from inventory (if consumeOnOpen), and adds the box contents
      * to the character's inventory.
      *
+     * If the box has opening requirements:
+     * - Checks requirements using BoxOpener.checkRequirements()
+     * - If requirements not met, returns error result without modifying character
+     * - If requirements met, consumes required items from inventory before opening
+     *
      * @param character - Character whose inventory contains the box
      * @param boxName - Name of the box item to open
      * @param rng - SeededRNG for deterministic results
@@ -552,6 +557,16 @@ export class EquipmentSpawnHelper {
      *     character = result.character;
      *     console.log(`Received ${result.result.gold} gold`);
      *     console.log(`Received ${result.result.items.length} items`);
+     * }
+     *
+     * // With requirements
+     * const lockedResult = EquipmentSpawnHelper.openBoxForCharacter(character, "Locked Chest", rng);
+     * if (lockedResult) {
+     *     if (lockedResult.result.success) {
+     *         console.log('Opened chest!', lockedResult.result.consumedItems);
+     *     } else {
+     *         console.log('Cannot open:', lockedResult.result.error?.message);
+     *     }
      * }
      * ```
      */
@@ -580,13 +595,39 @@ export class EquipmentSpawnHelper {
             return null;
         }
 
-        // Open the box
-        const result = BoxOpener.openBox(boxData, rng);
+        // Get character's items inventory for requirement checking
+        const inventory = character.equipment.items;
+
+        // Open the box (with requirement checking via inventory param)
+        const result = BoxOpener.openBox(boxData, rng, inventory);
+
+        // If box failed to open (requirements not met), return result with error
+        // Don't modify character in this case
+        if (!result.success) {
+            return { character, result };
+        }
+
+        // Box opened successfully - consume required items from inventory
+        if (result.consumedItems && result.consumedItems.length > 0) {
+            for (const consumed of result.consumedItems) {
+                const consumeResult = this.consumeItemFromCharacter(
+                    character,
+                    consumed.name,
+                    consumed.quantity
+                );
+                // Update character reference with modified character
+                character = consumeResult.character;
+            }
+        }
 
         // Remove from inventory if box is consumed on open
-        if (result.consumeBox) {
-            character.equipment.items.splice(boxIndex, 1);
-            character.equipment.totalWeight -= boxData.weight;
+        if (result.consumeBox && character.equipment?.items) {
+            // Re-find the box index since it may have shifted after consuming items
+            const currentBoxIndex = character.equipment.items.findIndex(item => item.name === boxName);
+            if (currentBoxIndex !== -1) {
+                character.equipment.items.splice(currentBoxIndex, 1);
+                character.equipment.totalWeight -= boxData.weight;
+            }
         }
 
         // Add items from box to character inventory
@@ -594,6 +635,59 @@ export class EquipmentSpawnHelper {
         character = this.addToCharacter(character, itemsAsEnhanced, false);
 
         return { character, result };
+    }
+
+    /**
+     * Consume items from a character's inventory
+     *
+     * Private helper that reduces the quantity of an item in the character's
+     * items inventory, or removes it entirely if quantity reaches 0.
+     * Updates totalWeight accordingly.
+     *
+     * @param character - Character to consume from
+     * @param itemName - Name of the item to consume
+     * @param quantity - Quantity to consume
+     * @returns Object with success status and updated character
+     */
+    private static consumeItemFromCharacter(
+        character: CharacterSheet,
+        itemName: string,
+        quantity: number
+    ): { success: boolean; character: CharacterSheet } {
+        // Character must have equipment and items
+        if (!character.equipment?.items) {
+            return { success: false, character };
+        }
+
+        // Find the item in character's items inventory
+        const itemIndex = character.equipment.items.findIndex(item => item.name === itemName);
+        if (itemIndex === -1) {
+            return { success: false, character };
+        }
+
+        const inventoryItem = character.equipment.items[itemIndex];
+
+        // Check if we have enough quantity
+        if (inventoryItem.quantity < quantity) {
+            return { success: false, character };
+        }
+
+        // Get item weight from equipment registry for weight tracking
+        const manager = ExtensionManager.getInstance();
+        const allEquipment = manager.get('equipment') as EnhancedEquipment[];
+        const itemData = allEquipment.find(eq => eq.name === itemName);
+        const itemWeight = itemData?.weight ?? 0;
+
+        // Reduce quantity or remove item
+        inventoryItem.quantity -= quantity;
+        character.equipment.totalWeight -= itemWeight * quantity;
+
+        // Remove item from inventory if quantity reaches 0
+        if (inventoryItem.quantity <= 0) {
+            character.equipment.items.splice(itemIndex, 1);
+        }
+
+        return { success: true, character };
     }
 
     // ==========================================
