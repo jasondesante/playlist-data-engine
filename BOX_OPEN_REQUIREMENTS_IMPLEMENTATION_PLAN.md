@@ -539,9 +539,10 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   - [x] All new tests pass
   - [x] Fixed flaky test in attackResolver.test.ts (invalid dice formula test had 5% failure rate due to critical miss randomness)
 
-- [ ] **8.3 Verify Examples**
-  - [ ] Run manual verification script
-  - [ ] Test all example boxes work correctly
+- [x] **8.3 Verify Examples**
+  - [x] Run manual verification script
+  - [x] Test all example boxes work correctly
+  - [x] All 39 verification tests pass (Locked Chest, Gilded Strongbox, Royal Treasury Box, Thieves' Cache, Explorer's Pack, key items)
 
 ---
 
@@ -703,6 +704,6 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 - Phase 5: ✅ Complete
 - Phase 6: ✅ Complete
 - Phase 7: ✅ Complete
-- Phase 8: 🔄 In Progress (8.1, 8.2 done; 8.3 remaining)
+- Phase 8: ✅ Complete
 
 *Last updated: 2026-02-25*
