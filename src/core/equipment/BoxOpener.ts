@@ -296,6 +296,51 @@ export class BoxOpener {
     }
 
     /**
+     * Get human-readable description of box requirements
+     *
+     * Returns a formatted string describing what items are needed to open the box,
+     * useful for UI displays or tooltips.
+     *
+     * @param box - The box equipment to get requirements description for
+     * @returns Formatted description string like "Requires: Iron Key" or
+     *          "Requires: Iron Key, 100 Gold Coins", or null if no requirements
+     *
+     * @example
+     * ```typescript
+     * const lockedChest = { boxContents: { openRequirements: [{ itemName: 'Iron Key' }] } };
+     * console.log(BoxOpener.getRequirementsDescription(lockedChest));
+     * // "Requires: Iron Key"
+     *
+     * const multiReq = { boxContents: { openRequirements: [
+     *     { itemName: 'Golden Key' },
+     *     { itemName: 'Gold Coin', quantity: 200 }
+     * ]}};
+     * console.log(BoxOpener.getRequirementsDescription(multiReq));
+     * // "Requires: Golden Key, 200 Gold Coins"
+     * ```
+     */
+    static getRequirementsDescription(box: Equipment): string | null {
+        // No requirements = no description needed
+        if (!box.boxContents?.openRequirements || box.boxContents.openRequirements.length === 0) {
+            return null;
+        }
+
+        const requirements = box.boxContents.openRequirements;
+        const parts: string[] = [];
+
+        for (const req of requirements) {
+            const quantity = req.quantity ?? 1;
+            if (quantity === 1) {
+                parts.push(req.itemName);
+            } else {
+                parts.push(`${quantity} ${req.itemName}`);
+            }
+        }
+
+        return `Requires: ${parts.join(', ')}`;
+    }
+
+    /**
      * Preview what a box could contain without actually opening it
      *
      * Returns all possible items that could drop from the box,
