@@ -13,7 +13,7 @@
  */
 
 import type { Equipment } from '../../utils/constants.js';
-import type { BoxContents, BoxDropPool, BoxOpenError, BoxOpenResult, EnhancedEquipment } from '../types/Equipment.js';
+import type { BoxContents, BoxDropPool, BoxOpenError, BoxOpenRequirement, BoxOpenResult, EnhancedInventoryItem, EnhancedEquipment } from '../types/Equipment.js';
 import { SeededRNG } from '../../utils/random.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 
@@ -160,6 +160,68 @@ export class BoxOpener {
      */
     static isBox(equipment: Equipment): boolean {
         return equipment.type === 'box' && equipment.boxContents !== undefined;
+    }
+
+    /**
+     * Check if box requirements are met
+     *
+     * Validates that the character's inventory contains all required items
+     * in sufficient quantities to open the box.
+     *
+     * @param box - The box to check requirements for
+     * @param inventory - Character's items inventory
+     * @returns null if all requirements are met, BoxOpenError if not
+     *
+     * @example
+     * ```typescript
+     * const box = { name: 'Locked Chest', boxContents: { openRequirements: [{ itemName: 'Iron Key' }] } };
+     * const inventory = [{ name: 'Iron Key', quantity: 1, equipped: false }];
+     *
+     * const error = BoxOpener.checkRequirements(box, inventory);
+     * if (error) {
+     *     console.log(`Cannot open: ${error.message}`);
+     * }
+     * ```
+     */
+    static checkRequirements(
+        box: Equipment,
+        inventory: EnhancedInventoryItem[]
+    ): BoxOpenError | null {
+        // No requirements = always allowed
+        if (!box.boxContents?.openRequirements) {
+            return null;
+        }
+
+        const requirements = box.boxContents.openRequirements;
+
+        // Check each requirement
+        for (const requirement of requirements) {
+            const requiredQuantity = requirement.quantity ?? 1;
+
+            // Find the item in inventory
+            const inventoryItem = inventory.find(item => item.name === requirement.itemName);
+
+            // Check if item exists
+            if (!inventoryItem) {
+                return {
+                    code: 'MISSING_ITEM' as const,
+                    message: `Missing required item: ${requirement.itemName}`,
+                    requirement
+                };
+            }
+
+            // Check if quantity is sufficient
+            if (inventoryItem.quantity < requiredQuantity) {
+                return {
+                    code: 'INSUFFICIENT_QUANTITY' as const,
+                    message: `Insufficient ${requirement.itemName}: have ${inventoryItem.quantity}, need ${requiredQuantity}`,
+                    requirement
+                };
+            }
+        }
+
+        // All requirements met
+        return null;
     }
 
     /**

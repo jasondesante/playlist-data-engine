@@ -91,9 +91,9 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 ## Phase 2: BoxOpener Updates
 *Estimated complexity: Medium*
 
-- [ ] **2.1 Add Requirement Validation Method**
-  - [ ] File: `src/core/equipment/BoxOpener.ts`
-  - [ ] Add static method to check requirements:
+- [x] **2.1 Add Requirement Validation Method**
+  - [x] File: `src/core/equipment/BoxOpener.ts`
+  - [x] Add static method to check requirements:
   ```typescript
   /**
    * Check if box requirements are met
