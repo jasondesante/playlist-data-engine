@@ -703,6 +703,6 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 - Phase 5: ✅ Complete
 - Phase 6: ✅ Complete
 - Phase 7: ✅ Complete
-- Phase 8: ⬜ Not Started
+- Phase 8: 🔄 In Progress (8.1, 8.2 done; 8.3 remaining)
 
 *Last updated: 2026-02-25*
