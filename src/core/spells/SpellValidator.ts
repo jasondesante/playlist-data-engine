@@ -14,6 +14,7 @@ import type { SpellPrerequisite, Spell } from './SpellTypes.js';
 import type { Ability, CharacterSheet } from '../types/Character.js';
 import { isValidAbility as isValidAbilityCheck } from '../utils/AbilityConstants.js';
 import { validatePrerequisiteSchema, validatePrerequisites } from '../utils/PrerequisiteValidator.js';
+import { validateImageFields } from '../utils/ImageValidator.js';
 
 /**
  * Valid D&D 5e spell schools
@@ -127,6 +128,10 @@ export class SpellValidator {
         if (s.description !== undefined && typeof s.description !== 'string') {
             errors.push('Spell description must be a string');
         }
+
+        // Validate icon and image fields
+        const imageErrors = validateImageFields({ icon: s.icon, image: s.image });
+        errors.push(...imageErrors.map(e => `Spell ${e}`));
 
         // Validate prerequisites if present
         if (s.prerequisites !== undefined) {

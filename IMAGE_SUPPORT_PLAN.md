@@ -88,9 +88,9 @@ image?: string;
 
 ## Phase 3: Update Existing Validators
 
-- [ ] **Task 3.1: Update SpellValidator**
-  - [ ] Add import for `validateImageFields`
-  - [ ] Add image validation in `validateSpell` method (~L129)
+- [x] **Task 3.1: Update SpellValidator**
+  - [x] Add import for `validateImageFields`
+  - [x] Add image validation in `validateSpell` method (~L129)
 
 - [ ] **Task 3.2: Update SkillValidator**
   - [ ] Add import for `validateImageFields`
