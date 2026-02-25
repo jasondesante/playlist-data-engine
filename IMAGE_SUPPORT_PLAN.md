@@ -229,10 +229,10 @@ manager.batchByCategory('equipment', 'rarity', {
   - [x] Add batch image methods to ExtensionManager API section
   - [x] Update example snippets to include icon/image fields
 
-- [ ] **Task 6.2: Update USAGE_IN_OTHER_PROJECTS.md**
-  - [ ] Add icon/image fields to equipment examples
-  - [ ] Add example of using batch image methods
-  - [ ] Update box items examples with icons
+- [x] **Task 6.2: Update USAGE_IN_OTHER_PROJECTS.md**
+  - [x] Add icon/image fields to equipment examples
+  - [x] Add example of using batch image methods
+  - [x] Update box items examples with icons
 
 - [ ] **Task 6.3: Update docs/EQUIPMENT_SYSTEM.md**
   - [ ] Add `icon?` and `image?` rows to EnhancedEquipment interface table

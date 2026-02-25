@@ -403,6 +403,82 @@ The extensibility system allows you to add custom content at runtime, including 
 - [docs/EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) - Equipment properties and modifications
 - [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md) - Complete API reference
 
+### Image Support (Icons and Images)
+
+All entity types support optional `icon` and `image` URL fields for UI display. Use batch methods to add images to multiple items at once.
+
+**Valid URL prefixes:** `http://`, `https://`, `/`, `assets/`
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// --- Register custom content with images ---
+manager.register('equipment', [{
+    name: 'Dragon Scale Armor',
+    type: 'armor',
+    rarity: 'very_rare',
+    weight: 15,
+    icon: '/icons/armor/dragon-scale.png',
+    image: '/images/equipment/dragon-scale-armor.png'
+}]);
+
+// --- Batch add icons by name ---
+manager.batchAddIcons('spells', {
+    'Fireball': '/assets/spells/fireball.png',
+    'Magic Missile': '/assets/spells/magic-missile.png'
+});
+
+// --- Batch add images by name ---
+manager.batchAddImages('equipment', {
+    'Longsword': '/assets/equipment/longsword.png'
+});
+
+// --- Update all items matching a condition ---
+// Add same icon to all cantrips
+manager.batchUpdateImages('spells',
+    spell => spell.level === 0,
+    { icon: '/assets/spells/cantrip-icon.png' }
+);
+
+// --- Add icons by property value ---
+// All evocation spells get fire icon
+manager.batchByCategory('spells', 'school', {
+    'Evocation': '/assets/icons/fire.png',
+    'Necromancy': '/assets/icons/skull.png',
+    'Abjuration': '/assets/icons/shield.png'
+});
+
+// Add icons by equipment rarity
+manager.batchByCategory('equipment', 'rarity', {
+    'legendary': '/assets/icons/star-gold.png',
+    'very_rare': '/assets/icons/star-purple.png',
+    'rare': '/assets/icons/star-blue.png'
+});
+```
+
+**Supported categories:** `spells`, `skills`, `classFeatures`, `racialTraits`, `equipment`, `races.data`, `classes.data`
+
+**Image validation:**
+```typescript
+import { validateImageFields, isValidImageUrl } from 'playlist-data-engine';
+
+// Validate both icon and image on an object
+const errors = validateImageFields({
+    icon: '/assets/icon.png',
+    image: 'https://example.com/image.png'
+});
+if (errors.length > 0) {
+    console.error('Invalid image URLs:', errors);
+}
+
+// Check a single URL
+if (!isValidImageUrl('ftp://invalid.com/file.png')) {
+    console.log('URL must start with http, https, /, or assets/');
+}
+```
+
 
 ---
 
@@ -455,6 +531,26 @@ EquipmentSpawnHelper.openBoxForCharacter(character, "Explorer's Pack", rng);
 - **Gold drops** — Pool entries with `gold` award gold instead of items
 - **Nested boxes** — Boxes inside boxes are added unopened (no recursive opening)
 - **Deterministic** — Same seed + same box = same result every time
+
+**Box with icon and image:**
+```typescript
+// Define a custom box with visual assets
+const treasureBox = {
+    name: 'Treasure Chest',
+    type: 'box',
+    rarity: 'rare',
+    weight: 5,
+    icon: '/icons/box/treasure-chest.png',
+    image: '/images/equipment/treasure-chest-open.png',
+    box: {
+        drops: [
+            { pool: [{ name: 'Gold Coin', gold: { min: 50, max: 100 }, weight: 100 }] },
+            { pool: [{ name: 'Ruby', weight: 30 }, { name: 'Sapphire', weight: 30 }] }
+        ],
+        consumeOnOpen: true
+    }
+};
+```
 
 For all built-in pack definitions and custom box examples, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#box-equipment-type) and [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#boxopener).
 
