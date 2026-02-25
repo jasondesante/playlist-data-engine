@@ -101,7 +101,9 @@ export type {
     BoxDropPool,
     BoxDrop,
     BoxContents,
-    BoxOpenResult
+    BoxOpenResult,
+    BoxOpenRequirement,
+    BoxOpenError
 } from './core/types/Equipment.js';
 
 // Combat types

@@ -17,9 +17,9 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 ## Phase 1: Type Definitions
 *Estimated complexity: Low*
 
-- [ ] **1.1 Define BoxOpenRequirement Interface**
-  - [ ] Open `src/core/types/Equipment.ts`
-  - [ ] Add new interface after `BoxOpenResult`:
+- [x] **1.1 Define BoxOpenRequirement Interface**
+  - [x] Open `src/core/types/Equipment.ts`
+  - [x] Add new interface after `BoxOpenResult`:
   ```typescript
   /**
    * A single requirement that must be met to open a box
@@ -35,8 +35,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   }
   ```
 
-- [ ] **1.2 Update BoxContents Interface**
-  - [ ] Add `openRequirements` property to `BoxContents`:
+- [x] **1.2 Update BoxContents Interface**
+  - [x] Add `openRequirements` property to `BoxContents`:
   ```typescript
   export interface BoxContents {
       /** Number of drops to generate when box is opened */
@@ -48,8 +48,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   }
   ```
 
-- [ ] **1.3 Define BoxOpenError Type**
-  - [ ] Add error result type for failed open attempts:
+- [x] **1.3 Define BoxOpenError Type**
+  - [x] Add error result type for failed open attempts:
   ```typescript
   /**
    * Error returned when box cannot be opened due to unmet requirements
@@ -64,8 +64,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   }
   ```
 
-- [ ] **1.4 Update BoxOpenResult Interface**
-  - [ ] Extend to support error states:
+- [x] **1.4 Update BoxOpenResult Interface**
+  - [x] Extend to support error states:
   ```typescript
   export interface BoxOpenResult {
       /** Whether the box was successfully opened */
@@ -83,8 +83,8 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   }
   ```
 
-- [ ] **1.5 Export New Types from Index**
-  - [ ] Update `src/index.ts` to export `BoxOpenRequirement` and `BoxOpenError`
+- [x] **1.5 Export New Types from Index**
+  - [x] Update `src/index.ts` to export `BoxOpenRequirement` and `BoxOpenError`
 
 ---
 
@@ -683,7 +683,7 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 ---
 
 ## Progress Tracking
-- Phase 1: ⬜ Not Started
+- Phase 1: ✅ Complete
 - Phase 2: ⬜ Not Started
 - Phase 3: ⬜ Not Started
 - Phase 4: ⬜ Not Started
@@ -692,4 +692,4 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
 - Phase 7: ⬜ Not Started
 - Phase 8: ⬜ Not Started
 
-*Last updated: 2026-02-24*
+*Last updated: 2026-02-25*

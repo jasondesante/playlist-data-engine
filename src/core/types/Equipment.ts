@@ -127,6 +127,8 @@ export interface BoxContents {
     drops: BoxDrop[];
     /** Whether box is consumed on open (default: true) */
     consumeOnOpen?: boolean;
+    /** Optional requirements to open this box (all must be satisfied) */
+    openRequirements?: BoxOpenRequirement[];
 }
 
 /**
@@ -136,12 +138,43 @@ export interface BoxContents {
  * along with metadata about whether the box should be consumed.
  */
 export interface BoxOpenResult {
-    /** Items generated from the box */
+    /** Whether the box was successfully opened */
+    success: boolean;
+    /** Items generated from the box (empty if not opened) */
     items: BaseEquipment[];
     /** Gold generated from the box */
     gold: number;
     /** Whether the box should be consumed */
     consumeBox: boolean;
+    /** Error if box could not be opened */
+    error?: BoxOpenError;
+    /** Items consumed to open the box */
+    consumedItems?: { name: string; quantity: number }[];
+}
+
+/**
+ * A single requirement that must be met to open a box
+ *
+ * Represents an item (and quantity) that must be consumed from inventory.
+ * Gold requirements use a "Gold Coin" item with quantity.
+ */
+export interface BoxOpenRequirement {
+    /** Item name that must be consumed (must exist in character inventory) */
+    itemName: string;
+    /** Quantity of item required (default: 1) */
+    quantity?: number;
+}
+
+/**
+ * Error returned when box cannot be opened due to unmet requirements
+ */
+export interface BoxOpenError {
+    /** Error code for programmatic handling */
+    code: 'MISSING_ITEM' | 'INSUFFICIENT_QUANTITY' | 'NO_BOX_CONTENTS';
+    /** Human-readable error message */
+    message: string;
+    /** The requirement that was not met */
+    requirement?: BoxOpenRequirement;
 }
 
 // ============================================================================

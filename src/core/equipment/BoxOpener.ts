@@ -13,7 +13,7 @@
  */
 
 import type { Equipment } from '../../utils/constants.js';
-import type { BoxContents, BoxDropPool, BoxOpenResult, EnhancedEquipment } from '../types/Equipment.js';
+import type { BoxContents, BoxDropPool, BoxOpenError, BoxOpenResult, EnhancedEquipment } from '../types/Equipment.js';
 import { SeededRNG } from '../../utils/random.js';
 import { ExtensionManager } from '../extensions/ExtensionManager.js';
 
@@ -51,9 +51,14 @@ export class BoxOpener {
         // Validate box has contents
         if (!box.boxContents) {
             return {
+                success: false,
                 items: [],
                 gold: 0,
-                consumeBox: false
+                consumeBox: false,
+                error: {
+                    code: 'NO_BOX_CONTENTS' as const,
+                    message: `Box "${box.name}" has no contents defined.`
+                }
             };
         }
 
@@ -107,6 +112,7 @@ export class BoxOpener {
         const consumeBox = boxContents.consumeOnOpen !== false;
 
         return {
+            success: true,
             items,
             gold,
             consumeBox
