@@ -240,13 +240,13 @@ manager.batchByCategory('equipment', 'rarity', {
   - [x] Update custom equipment examples with icons
   - [x] Add box icon examples
 
-- [ ] **Task 6.4: Update docs/EXTENSIBILITY_GUIDE.md**
-  - [ ] Add icon/image fields to equipment registration examples
-  - [ ] Add icon/image fields to spell registration examples
-  - [ ] Add icon/image fields to class feature examples
-  - [ ] Add icon/image fields to racial trait examples
-  - [ ] Add icon/image fields to skill examples
-  - [ ] Add batch image method usage examples
+- [x] **Task 6.4: Update docs/EXTENSIBILITY_GUIDE.md**
+  - [x] Add icon/image fields to equipment registration examples
+  - [x] Add icon/image fields to spell registration examples
+  - [x] Add icon/image fields to class feature examples
+  - [x] Add icon/image fields to racial trait examples
+  - [x] Add icon/image fields to skill examples
+  - [x] Add batch image method usage examples
 
 - [ ] **Task 6.5: Update docs/CUSTOM_CONTENT.md**
   - [ ] Add `icon?` row to RaceDataEntry property table

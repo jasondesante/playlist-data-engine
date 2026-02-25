@@ -11,12 +11,13 @@ This guide explains how to extend the Playlist Data Engine with custom content. 
 3. [Helper Functions](#helper-functions)
 4. [Spawn Rate System](#spawn-rate-system)
 5. [Category-Specific Examples](#category-specific-examples)
-6. [Content Packs](#content-packs)
-7. [Best Practices](#best-practices)
-8. [Validation](#validation)
-9. [Troubleshooting](#troubleshooting)
-10. [Reference](#reference)
-11. [Support](#support)
+6. [Batch Image Methods](#batch-image-methods)
+7. [Content Packs](#content-packs)
+8. [Best Practices](#best-practices)
+9. [Validation](#validation)
+10. [Troubleshooting](#troubleshooting)
+11. [Reference](#reference)
+12. [Support](#support)
 
 ---
 
@@ -100,6 +101,10 @@ const manager = ExtensionManager.getInstance();
 | `exportCustomData()` | | `Record` | Export all custom data |
 | `exportCustomDataForCategory()` | `category` | `any[]` | Export custom data for single category |
 | `getRegisteredCategories()` | | `ExtensionCategory[]` | Get all categories with defaults |
+| `batchAddIcons()` | `category`, `iconMap`, `identifierKey?` | `number` | Add icons to items by name/ID. Returns count updated. |
+| `batchAddImages()` | `category`, `imageMap`, `identifierKey?` | `number` | Add images to items by name/ID. Returns count updated. |
+| `batchUpdateImages()` | `category`, `predicate`, `updates` | `number` | Update icon/image on items matching predicate. Returns count. |
+| `batchByCategory()` | `category`, `property`, `valueMap` | `number` | Add icons/images by property value (e.g., school). Returns count. |
 
 ### Registration Options
 
@@ -133,9 +138,16 @@ const manager = ExtensionManager.getInstance();
 ### Usage Example
 
 ```typescript
-// Register custom equipment
+// Register custom equipment with icon/image
 manager.register('equipment', [
-    { name: 'Dragon Sword', type: 'weapon', rarity: 'legendary', weight: 5 }
+    {
+        name: 'Dragon Sword',
+        type: 'weapon',
+        rarity: 'legendary',
+        weight: 5,
+        icon: '/icons/weapons/dragon-sword.png',
+        image: '/images/equipment/dragon-sword.png'
+    }
 ], { mode: 'relative', weights: { 'Dragon Sword': 0.5 } });
 
 // Adjust weights
@@ -286,7 +298,9 @@ const customSpells = [
         range: '60 feet',
         duration: 'Instantaneous',
         components: ['V', 'S'],
-        description: 'A burst of flame engulfs the target...'
+        description: 'A burst of flame engulfs the target...',
+        icon: '/icons/spells/phoenix-fire.png',
+        image: '/images/spells/phoenix-fire.png'
     },
     {
         name: 'Mind Shield',
@@ -296,7 +310,9 @@ const customSpells = [
         range: 'Self',
         duration: '1 minute',
         components: ['S'],
-        description: 'You gain resistance to psychic damage...'
+        description: 'You gain resistance to psychic damage...',
+        icon: '/icons/spells/mind-shield.png',
+        image: '/images/spells/mind-shield.png'
     }
 ];
 
@@ -383,7 +399,9 @@ manager.register('classFeatures', [
                 condition: 'while raging'
             }
         ],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/features/dragon-fury.png',
+        image: '/images/features/dragon-fury.png'
     },
     {
         id: 'arcane_shield',
@@ -403,7 +421,9 @@ manager.register('classFeatures', [
                 value: true
             }
         ],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/features/arcane-shield.png',
+        image: '/images/features/arcane-shield.png'
     }
 ]);
 
@@ -452,7 +472,9 @@ manager.register('racialTraits', [
                 value: 'fire'
             }
         ],
-        source: 'default'
+        source: 'default',
+        icon: '/icons/traits/fire-resistance.png',
+        image: '/images/traits/fire-resistance.png'
     },
     {
         id: 'fairy_flight',
@@ -470,7 +492,9 @@ manager.register('racialTraits', [
                 condition: 'level 5+'
             }
         ],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/traits/fey-wings.png',
+        image: '/images/traits/fey-wings.png'
     },
     {
         id: 'elemental_affinity',
@@ -484,7 +508,9 @@ manager.register('racialTraits', [
                 value: true
             }
         ],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/traits/elemental-affinity.png',
+        image: '/images/traits/elemental-affinity.png'
     }
 ]);
 ```
@@ -526,7 +552,9 @@ manager.register('skills', [
         ability: 'WIS',
         armorPenalty: false,
         categories: ['exploration', 'environmental'],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/skills/survival-cold.png',
+        image: '/images/skills/survival-cold.png'
     },
     {
         id: 'arcana_crystal',
@@ -535,7 +563,9 @@ manager.register('skills', [
         ability: 'INT',
         armorPenalty: false,
         categories: ['knowledge', 'magical'],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/skills/arcana-crystal.png',
+        image: '/images/skills/arcana-crystal.png'
     },
     {
         id: 'intimidation_war',
@@ -544,7 +574,9 @@ manager.register('skills', [
         ability: 'CHA',
         armorPenalty: false,
         categories: ['combat', 'social'],
-        source: 'custom'
+        source: 'custom',
+        icon: '/icons/skills/intimidation-war.png',
+        image: '/images/skills/intimidation-war.png'
     }
 ]);
 
@@ -697,6 +729,81 @@ manager.setWeights('appearance.bodyTypes', {
 ```
 
 **All appearance properties:** `bodyTypes`, `hairStyles`, `facialFeatures`, `skinTones`, `hairColors`, `eyeColors`
+
+### Batch Image Methods
+
+Use batch methods to add icons and images to multiple items at once. All methods validate URLs before applying changes.
+
+**Supported categories:** `spells`, `skills`, `classFeatures`, `racialTraits`, `equipment`, `races.data`, `classes.data`
+
+**Valid URL prefixes:** `http://`, `https://`, `/`, `assets/`
+
+```typescript
+import { ExtensionManager } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// --- Add icons to specific items by name ---
+manager.batchAddIcons('spells', {
+    'Fireball': '/assets/spells/fireball.png',
+    'Magic Missile': '/assets/spells/magic-missile.png'
+});
+
+manager.batchAddIcons('equipment', {
+    'Longsword': '/assets/equipment/longsword.png'
+});
+
+// --- Add images to specific items ---
+manager.batchAddImages('spells', {
+    'Fireball': '/assets/spells/fireball-full.png'
+});
+
+// --- Update by predicate (matches items and applies updates) ---
+// Add same icon to all cantrips
+manager.batchUpdateImages('spells',
+    spell => spell.level === 0,
+    { icon: '/assets/spells/cantrip-icon.png' }
+);
+
+// Add images to all rare equipment
+manager.batchUpdateImages('equipment',
+    item => item.rarity === 'rare',
+    { icon: '/assets/icons/rare.png', image: '/assets/images/rare-bg.png' }
+);
+
+// --- Update by category property ---
+// Add icons by spell school
+manager.batchByCategory('spells', 'school', {
+    'Evocation': '/assets/icons/fire.png',
+    'Necromancy': '/assets/icons/skull.png',
+    'Abjuration': '/assets/icons/shield.png'
+});
+
+// Add icons by equipment rarity
+manager.batchByCategory('equipment', 'rarity', {
+    'legendary': '/assets/icons/star-gold.png',
+    'very_rare': '/assets/icons/star-purple.png',
+    'rare': '/assets/icons/star-blue.png'
+});
+
+// Add both icon and image by rarity
+manager.batchByCategory('equipment', 'rarity', {
+    'legendary': {
+        icon: '/assets/icons/legendary.png',
+        image: '/assets/images/legendary-bg.png'
+    }
+});
+```
+
+**Error handling:**
+```typescript
+try {
+    manager.batchAddIcons('spells', { 'Fireball': 'ftp://invalid.com/icon.png' });
+} catch (error) {
+    console.error('Invalid URL format:', error.message);
+    // URLs must start with http://, https://, /, or assets/
+}
+```
 
 ---
 
