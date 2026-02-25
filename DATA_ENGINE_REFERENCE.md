@@ -167,7 +167,7 @@ All TypeScript types are exported, including:
 
 **Equipment Types:** `EnhancedEquipment` (primary), `Equipment` (legacy), `InventoryItem`, `EquipmentProperty`, `EquipmentCondition`, `EquipmentModification`, `EnhancedInventoryItem`, `EquipmentMiniFeature`, `SpawnRandomOptions`, `TreasureHoardResult` — see [Equipment System](#equipment-system)
 
-**Box Types:** `BoxDropPool`, `BoxDrop`, `BoxContents`, `BoxOpenResult` — see [BoxOpener](#boxopener)
+**Box Types:** `BoxDropPool`, `BoxDrop`, `BoxContents`, `BoxOpenResult`, `BoxOpenRequirement`, `BoxOpenError` — see [BoxOpener](#boxopener)
 
 **Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature` — see [Enemy Generation](#enemy-generation)
 
@@ -2955,17 +2955,23 @@ Static utility class for opening `type: 'box'` equipment items and generating th
 
 | Method | Description |
 |--------|-------------|
-| `openBox(box: Equipment, rng: SeededRNG): BoxOpenResult` | Open a box and generate its contents. Processes each `BoxDrop` slot, selects one entry per slot via weighted random, handles gold and item drops, and returns items + gold total. |
+| `openBox(box: Equipment, rng: SeededRNG, inventory?: EnhancedInventoryItem[]): BoxOpenResult` | Open a box and generate its contents. If `inventory` provided and box has `openRequirements`, validates requirements first and consumes required items. Returns `success: false` with error if requirements not met. |
+| `checkRequirements(box: Equipment, inventory: EnhancedInventoryItem[]): BoxOpenError \| null` | Check if box opening requirements are met. Returns `null` if all requirements satisfied, or `BoxOpenError` with details of first unmet requirement. |
+| `canOpen(box: Equipment, inventory: EnhancedInventoryItem[]): boolean` | Simple boolean check for UI use. Returns `true` if box can be opened with given inventory. |
+| `getRequirementsDescription(box: Equipment): string \| null` | Get human-readable description of requirements. Returns `null` if no requirements, or string like "Requires: Iron Key" or "Requires: 3 Lockpicks". |
 | `isBox(equipment: Equipment): boolean` | Return `true` if the equipment has `type: 'box'` and a `boxContents` property. |
-| `previewContents(box: Equipment)` | Preview all possible items and gold range without opening. Returns `{ possibleItems: string[], possibleGold: { min, max }, totalDrops: number }`. Useful for UI tooltips. |
+| `previewContents(box: Equipment)` | Preview all possible items, gold range, and requirements without opening. Returns `{ possibleItems: string[], possibleGold: { min, max }, totalDrops: number, openRequirements?: BoxOpenRequirement[] }`. Useful for UI tooltips. |
 
 #### BoxOpenResult
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `items` | `Equipment[]` | All items generated from the box drops |
+| `success` | `boolean` | Whether the box was successfully opened. `false` if requirements not met. |
+| `items` | `BaseEquipment[]` | All items generated from the box drops (empty if not opened) |
 | `gold` | `number` | Total gold awarded from gold-type drops |
 | `consumeBox` | `boolean` | Whether the box should be removed from inventory (controlled by `boxContents.consumeOnOpen`) |
+| `error` | `BoxOpenError?` | Error details if box could not be opened (requirements not met) |
+| `consumedItems` | `{ name: string; quantity: number }[]?` | Items consumed from inventory to open the box (only when requirements exist) |
 
 #### Box Type Interfaces
 
@@ -2973,7 +2979,9 @@ Static utility class for opening `type: 'box'` equipment items and generating th
 |-----------|---------------|-------------|
 | `BoxDropPool` | `weight`, `itemName?`, `quantity?`, `gold?` | Single entry in a drop pool. Weights in a pool should sum to 100. `itemName` and `gold` are mutually exclusive. |
 | `BoxDrop` | `pool: BoxDropPool[]` | One drop slot — exactly one entry from the pool is selected per drop. |
-| `BoxContents` | `drops: BoxDrop[]`, `consumeOnOpen?` | Full box configuration. `consumeOnOpen` defaults to `true`. |
+| `BoxContents` | `drops: BoxDrop[]`, `consumeOnOpen?`, `openRequirements?` | Full box configuration. `consumeOnOpen` defaults to `true`. `openRequirements` is an optional array of items that must be consumed to open. |
+| `BoxOpenRequirement` | `itemName`, `quantity?` | A single requirement to open a box. `itemName` is the item to consume, `quantity` defaults to 1. Gold requirements use `"Gold Coin"` as itemName. |
+| `BoxOpenError` | `code`, `message`, `requirement?` | Error returned when box cannot be opened. `code` is `'MISSING_ITEM'`, `'INSUFFICIENT_QUANTITY'`, or `'NO_BOX_CONTENTS'`. |
 
 #### Usage Examples
 
@@ -3000,6 +3008,35 @@ if (BoxOpener.isBox(someItem)) {
 // --- Open a box already in a character's inventory ---
 // (removes box from inventory, adds contents)
 EquipmentSpawnHelper.openBoxForCharacter(character, "Explorer's Pack", rng);
+
+// --- Locked boxes with requirements ---
+const inventory = character.equipment.items; // EnhancedInventoryItem[]
+
+// Check if a locked box can be opened
+const lockedChest = EquipmentSpawnHelper.getEquipmentDataStatic('Locked Chest');
+if (BoxOpener.canOpen(lockedChest, inventory)) {
+    // Open the locked box (consumes required item from inventory)
+    const result = BoxOpener.openBox(lockedChest, rng, inventory);
+    if (result.success) {
+        console.log('Box opened! Consumed:', result.consumedItems);
+        console.log('Got:', result.items.map(i => i.name));
+    }
+} else {
+    // Show user what's needed
+    console.log(BoxOpener.getRequirementsDescription(lockedChest));
+    // Output: "Requires: 1 Iron Key"
+}
+
+// Preview requirements without opening
+const preview = BoxOpener.previewContents(lockedChest);
+console.log(preview.openRequirements); // [{ itemName: 'Iron Key' }]
+
+// Check requirements programmatically
+const error = BoxOpener.checkRequirements(lockedChest, inventory);
+if (error) {
+    console.log(`Cannot open: ${error.message}`);
+    console.log(`Missing: ${error.requirement?.itemName}`);
+}
 ```
 
 #### Box Behavior Rules
@@ -3010,6 +3047,7 @@ EquipmentSpawnHelper.openBoxForCharacter(character, "Explorer's Pack", rng);
 - **Quantity**: `BoxDropPool.quantity` creates multiple copies of the same item in one drop (e.g., `quantity: 10` for Torch adds 10 torch items).
 - **Gold drops**: Use `gold` instead of `itemName` in a pool entry for a gold award.
 - **Deterministic**: Same seed + same box = same result every time.
+- **Opening requirements**: Boxes with `openRequirements` require consuming items from inventory. All requirements must be met (atomic operation). Gold requirements use `"Gold Coin"` as itemName with quantity.
 
 For comprehensive examples and all box definitions, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#box-equipment-type).
 

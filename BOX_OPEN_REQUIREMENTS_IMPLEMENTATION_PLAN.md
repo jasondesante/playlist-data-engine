@@ -505,16 +505,16 @@ Add optional opening requirements to box-type equipment. Boxes can now require c
   - [x] Note that combat reward boxes may have opening requirements
   - [x] Example of awarding locked boxes as loot
 
-- [ ] **7.3 Update DATA_ENGINE_REFERENCE.md**
-  - [ ] File: `docs/DATA_ENGINE_REFERENCE.md`
-  - [ ] Add `BoxOpenRequirement` to type exports
-  - [ ] Add `BoxOpenError` to type exports
-  - [ ] Update `BoxOpener` method table:
+- [x] **7.3 Update DATA_ENGINE_REFERENCE.md**
+  - [x] File: `docs/DATA_ENGINE_REFERENCE.md`
+  - [x] Add `BoxOpenRequirement` to type exports
+  - [x] Add `BoxOpenError` to type exports
+  - [x] Update `BoxOpener` method table:
     - Add `checkRequirements()` method
     - Add `canOpen()` method
     - Add `getRequirementsDescription()` method
     - Update `openBox()` signature with new param
-  - [ ] Update `previewContents()` return type documentation
+  - [x] Update `previewContents()` return type documentation
 
 - [ ] **7.4 Update USAGE_IN_OTHER_PROJECTS.md**
   - [ ] File: `docs/USAGE_IN_OTHER_PROJECTS.md`
