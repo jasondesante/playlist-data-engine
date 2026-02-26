@@ -349,6 +349,43 @@ export interface TempoDetectorConfig {
 }
 
 /**
+ * Configuration for the DownbeatDetector
+ */
+export interface DownbeatDetectorConfig {
+    /** Measure lengths to try (default: [2, 3, 4, 6]) */
+    measureLengths?: number[];
+
+    /** Minimum intensity difference to consider a downbeat (default: 0.1) */
+    minIntensityDifference?: number;
+
+    /** Weight for pattern analysis vs autocorrelation (0-1, default: 0.5) */
+    patternWeight?: number;
+}
+
+/**
+ * Result of downbeat detection
+ */
+export interface DownbeatDetectionResult {
+    /** Detected beats with updated downbeat information */
+    beats: Beat[];
+
+    /** Detected number of beats per measure */
+    beatsPerMeasure: number;
+
+    /** Confidence in the downbeat detection (0-1) */
+    confidence: number;
+
+    /** Method that was used ('pattern' | 'autocorrelation' | 'combined') */
+    method: 'pattern' | 'autocorrelation' | 'combined';
+
+    /** Score for each measure length candidate */
+    measureLengthScores: Map<number, number>;
+
+    /** Phase offset of the first downbeat (in beats) */
+    phaseOffset: number;
+}
+
+/**
  * Progress information during beat map generation
  */
 export interface BeatMapGenerationProgress {

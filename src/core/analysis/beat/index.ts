@@ -22,6 +22,8 @@ export type {
     OSEConfig,
     BeatTrackerConfig,
     TempoDetectorConfig,
+    DownbeatDetectorConfig,
+    DownbeatDetectionResult,
     BeatMapGenerationProgress,
 } from '../../types/BeatMap.js';
 
@@ -37,6 +39,7 @@ export {
 export { OnsetStrengthEnvelope, type OSEResult } from './OnsetStrengthEnvelope.js';
 export { TempoDetector } from './TempoDetector.js';
 export { BeatTracker, type BeatTrackingResult } from './BeatTracker.js';
+export { DownbeatDetector } from './DownbeatDetector.js';
 
 // Utilities
 export {

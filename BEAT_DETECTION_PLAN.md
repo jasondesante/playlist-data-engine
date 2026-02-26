@@ -415,37 +415,37 @@ end
 
 Identify measure boundaries by analyzing intensity patterns.
 
-- [ ] Implement downbeat detection in `BeatTracker.ts` or separate `DownbeatDetector.ts`
+- [x] Implement downbeat detection in `BeatTracker.ts` or separate `DownbeatDetector.ts`
 
-  - [ ] **Approach 1: Intensity Pattern Analysis**
-    - [ ] Collect intensity values for all beats
-    - [ ] Try different groupings (2, 3, 4 beats per measure)
-    - [ ] For each grouping, calculate variance of position-relative intensities
-    - [ ] Choose grouping that produces most consistent pattern (strong-weak-weak-weak, etc.)
+  - [x] **Approach 1: Intensity Pattern Analysis**
+    - [x] Collect intensity values for all beats
+    - [x] Try different groupings (2, 3, 4 beats per measure)
+    - [x] For each grouping, calculate variance of position-relative intensities
+    - [x] Choose grouping that produces most consistent pattern (strong-weak-weak-weak, etc.)
 
-  - [ ] **Approach 2: Autocorrelation of Intensity Sequence**
-    - [ ] Create intensity sequence array
-    - [ ] Autocorrelate at lags corresponding to 2, 3, 4, 6 beats
-    - [ ] Choose period with strongest correlation
+  - [x] **Approach 2: Autocorrelation of Intensity Sequence**
+    - [x] Create intensity sequence array
+    - [x] Autocorrelate at lags corresponding to 2, 3, 4, 6 beats
+    - [x] Choose period with strongest correlation
 
-  - [ ] **Assign beatInMeasure labels**
-    - [ ] Identify the strongest beat in each detected measure
-    - [ ] Mark as downbeat (beatInMeasure = 0, isDownbeat = true)
-    - [ ] Number subsequent beats 1, 2, 3, etc.
-    - [ ] Handle songs that start mid-measure
+  - [x] **Assign beatInMeasure labels**
+    - [x] Identify the strongest beat in each detected measure
+    - [x] Mark as downbeat (beatInMeasure = 0, isDownbeat = true)
+    - [x] Number subsequent beats 1, 2, 3, etc.
+    - [x] Handle songs that start mid-measure
 
-  - [ ] **Measure Number Assignment**
-    - [ ] Count measures from first downbeat
-    - [ ] `measureNumber = Math.floor(beatIndex / beatsPerMeasure)`
+  - [x] **Measure Number Assignment**
+    - [x] Count measures from first downbeat
+    - [x] `measureNumber = Math.floor(beatIndex / beatsPerMeasure)`
 
 ### Tests
 
-- [ ] Create `/tests/unit/beat/downbeatDetector.test.ts`
-  - [ ] Test with 4/4 music with emphasized downbeats
-  - [ ] Test with 3/4 waltz pattern
-  - [ ] Test with 6/8 compound meter
-  - [ ] Test with songs starting mid-measure
-  - [ ] Test with songs lacking clear downbeat emphasis
+- [x] Create `/tests/unit/beat/downbeatDetector.test.ts`
+  - [x] Test with 4/4 music with emphasized downbeats
+  - [x] Test with 3/4 waltz pattern
+  - [x] Test with 6/8 compound meter
+  - [x] Test with songs starting mid-measure
+  - [x] Test with songs lacking clear downbeat emphasis
 
 ---
 
