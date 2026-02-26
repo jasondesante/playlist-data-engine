@@ -758,9 +758,9 @@ TPS3(τ) = TPS(τ) + 0.33×TPS(3τ) + 0.33×TPS(3τ-1) + 0.33×TPS(3τ+1)
 | `src/index.ts` | Modify | ✅ Complete |
 | `tests/unit/beat/*.test.ts` | Create | ✅ Complete (Phase 1-7) |
 | `tests/integration/beatDetection.integration.test.ts` | Create | ✅ Complete |
-| `docs/AUDIO_ANALYSIS.md` | Create (Phase 10) |
-| `DATA_ENGINE_REFERENCE.md` | Modify - add beat detection exports to reference (Phase 10) |
-| `USAGE_IN_OTHER_PROJECTS.md` | Modify - add reference link (Phase 10) |
+| `docs/AUDIO_ANALYSIS.md` | Create (Phase 10) | ✅ Complete |
+| `DATA_ENGINE_REFERENCE.md` | Modify - add beat detection exports to reference (Phase 10) | ✅ Complete |
+| `USAGE_IN_OTHER_PROJECTS.md` | Modify - add reference link (Phase 10) | ✅ Complete |
 
 ---
 
