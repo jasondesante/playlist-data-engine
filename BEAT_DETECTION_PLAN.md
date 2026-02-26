@@ -17,25 +17,24 @@ Implement a rhythm game support system that enables precise beat timing for game
 
 ## Key Design Principles
 
-### Predictive Beat Tracking (Not Just Onset Detection)
+### Dynamic Programming Beat Tracking (State-of-the-Art)
 
-Unlike simple onset detection which finds all transient moments, this system uses **predictive beat tracking** to find the true pulse:
+Unlike simple onset detection or moving-window predictions, this system will utilize a **Dynamic Programming approach** for offline analysis.
 
-1. **Detect onsets** using spectral flux (all transient moments)
-2. **Track the pulse** by predicting when the next beat should occur
-3. **Filter subdivisions** (8th/16th notes) by using an acceptance window around predicted beat times
-4. **Lock in** when subdivisions consistently fall at midpoints between accepted beats
+> [!NOTE]
+> **What is the Ellis Algorithm?**
+> This approach is based on Daniel P.W. Ellis's seminal 2007 paper *"Beat Tracking by Dynamic Programming"* (which is the foundation for tools like python's `librosa` beat tracker). Instead of guessing beats one by one as the song plays, it recursively analyzes the entire audio file to find the absolutely perfect sequence of beats. It guarantees finding the best possible rhythmic path through the song, ignoring localized mistakes or complex drum fills that often trick real-time algorithms.
+>
+> *Reference: [Beat Tracking by Dynamic Programming (Ellis, 2007)](https://www.ee.columbia.edu/~dpwe/pubs/Ellis07-beattrack.pdf)*
 
-```
-Example: Song at 120 BPM (beat every 0.5s)
-Onsets detected:  0.00s, 0.25s, 0.50s, 0.75s, 1.00s, 1.25s...
-                   ↓            ↓            ↓
-Accepted beats:  YES   ignore   YES   ignore   YES
-                        (8th)          (8th)
+This approach guarantees finding the globally optimal beat sequence for the entire track:
 
-The system anticipates beats at ~0.5s intervals and filters out
-onsets that fall outside the expected window.
-```
+1. **Extract Onset Strength Envelope (OSE)**: Compute bass-weighted spectral flux to highlight transient moments across all audio frames.
+2. **Global Tempo Estimation**: Use autocorrelation on the OSE to find the dominant tempo or tempo period (estimating the song's base BPM).
+3. **Dynamic Programming Search**: Algorithmically find the sequence of beats that maximizes two scores simultaneously:
+   - *Observation Score*: Beats should align precisely with peaks in the Onset Strength Envelope.
+   - *Transition Score*: The time interval between beats should remain consistent with the estimated base tempo.
+4. **Natural Subdivision Filtering**: The mathematical penalty for deviating from the target tempo automatically filters out 8th/16th note subdivisions; placing a beat on every subdivision would severely violate the tempo transition score, meaning the math naturally rejects "off-beats".
 
 ### Fluid Tempo Handling
 
@@ -73,9 +72,11 @@ Create the foundational types for the beat detection system.
     - [ ] Include `hopSizeMs` (default 10) - milliseconds between FFT frames
     - [ ] Include `fftSize` (default 2048) - FFT window size
     - [ ] Include `rollingBpmWindowSize` (default 8) - number of beats for rolling BPM calculation
-    - [ ] Include `predictionTolerance` (default 0.2) - 20% tolerance for beat prediction window
+    - [ ] Include `dpPenaltyFactor` (default 1.0) - weight of tempo consistency vs onset strength
   - [ ] Define `BeatStreamOptions` interface
     - [ ] Include `anticipationTime` (default 2.0s) - time before beat to emit 'upcoming' event
+    - [ ] Include `userOffsetMs` (default 0) - player-calibrated audio/visual offset
+    - [ ] Include `compensateOutputLatency` (default true) - auto-adjust using AudioContext.outputLatency
     - [ ] Include `timingTolerance` (default 0.01s = 10ms)
   - [ ] Define `BeatMapJSON` interface for serialization (same as BeatMap but JSON-safe)
 
@@ -97,25 +98,23 @@ Implement the core algorithm for detecting note attacks (onsets/transients) and 
   - [ ] Leverage existing FFT infrastructure from AudioAnalyzer (`performFFT`, `extractAudioSegment`)
   - [ ] Return onset times with strength values
 
-### 2.2: Predictive Beat Tracker
+### 2.2: Dynamic Programming Beat Tracker
 
 - [ ] Create `/src/core/analysis/beat/BeatTracker.ts`
-  - [ ] Implement `trackBeats(onsets, options)` method
-  - [ ] Implement predictive beat tracking algorithm:
+  - [ ] Implement `trackBeats(onsetEnvelope, estimatedTempo, options)` method
+  - [ ] Implement Dynamic Programming beat tracking algorithm (based on the Ellis algorithm):
     ```
-    1. Initialize with first few onsets to estimate initial pulse
-    2. Predict when next beat should occur (based on rolling average of recent intervals)
-    3. Create acceptance window around predicted time (e.g., 80% - 120% of expected interval)
-    4. If onset falls in window → accept as beat, update prediction
-    5. If onset outside window → likely subdivision (8th/16th note), ignore
-    6. Repeat until all onsets processed
+    1. Calculate target inter-beat interval from estimated tempo.
+    2. Define objective function: Score = Onset Strength - (Penalty * Tempo Deviation).
+    3. Forward pass: For each time frame, find best previous beat time that maximizes cumulative score.
+    4. Store back-pointers to trace the optimal path.
+    5. Backward pass: Start from highest scoring beat near the end and trace back to get sequence.
     ```
-  - [ ] Implement rolling BPM calculation (average of last N beat intervals)
-  - [ ] Implement subdivision detection (when onsets consistently fall at 50% of beat interval)
+  - [ ] Algorithm automatically handles subdivisions by penalizing large deviations from the target tempo interval.
+  - [ ] Implement rolling BPM calculation (average of last N beat intervals) for the output BeatMap.
   - [ ] Handle edge cases:
-    - [ ] Silence sections (no onsets for extended period) → maintain last known pulse
-    - [ ] Tempo changes → gradually adjust prediction window
-    - [ ] False starts → don't lock in until consistent pattern found
+    - [ ] Silence sections (no onsets) → DP automatically steps forward by target interval with 0 onset score.
+    - [ ] Tempo changes → DP algorithm naturally accommodates gradual tempo drift within penalty bounds.
 
 ### 2.3: Downbeat Detection
 
@@ -170,7 +169,7 @@ Orchestrate onset detection and beat tracking to generate complete beat maps.
   - [ ] Implement `generateBeatMap(audioUrl, audioId)` method
   - [ ] Implement `generateBeatMapFromBuffer(audioBuffer, audioId)` method
   - [ ] Integrate OnsetDetector for raw onset detection
-  - [ ] Integrate BeatTracker for predictive pulse tracking
+  - [ ] Integrate BeatTracker for Dynamic Programming pulse tracking
   - [ ] Integrate TempoDetector for initial BPM estimation
   - [ ] Implement `getProgress()` for progress tracking
   - [ ] Implement `cancel()` for cancellation
@@ -207,14 +206,16 @@ Implement real-time beat event streaming synchronized with audio playback.
   - [ ] Implement `start()` method
   - [ ] Implement `stop()` method
   - [ ] Implement `seek(time)` method for seeking
-  - [ ] Implement audio clock synchronization:
-    - [ ] Use `AudioContext.currentTime` as ground truth
-    - [ ] Use `requestAnimationFrame` for smooth updates
-    - [ ] Target ±10ms timing tolerance
+  - [ ] Implement audio clock synchronization & Latency Compensation:
+    - [ ] Use `AudioContext.currentTime` as ground truth.
+    - [ ] Apply `AudioContext.outputLatency` and `baseLatency` to align logic with actual audio output.
+    - [ ] Apply user-calibrated `userOffsetMs` to accommodate specific hardware delay.
+    - [ ] Use a lookahead queue with `requestAnimationFrame` or Web Workers to schedule events slightly in the future.
+    - [ ] Target sample-accurate scheduling for audio, and ±10ms timing precision for visual events.
   - [ ] Implement anticipation system:
-    - [ ] Emit 'upcoming' events at configurable time before beat (default 2.0s)
-    - [ ] Emit 'exact' event when beat time is reached
-    - [ ] Emit 'passed' event if beat was missed
+    - [ ] Emit 'upcoming' events ahead of time (e.g., 2.0s) so UI can spawn elements.
+    - [ ] Emit 'exact' event when the true synchronized beat time is reached.
+    - [ ] Emit 'passed' event if beat was missed.
   - [ ] Implement `getUpcomingBeats(count)` for pre-rendering animations
   - [ ] Implement `getBeatAtTime(time)` query
   - [ ] Implement `getSyncState()` for debugging
@@ -309,9 +310,9 @@ Update documentation to reflect the new beat detection system.
   - [ ] Constructor with `fftSize`, `hopSizeMs` parameters
   - [ ] `detectOnsets(audioBuffer, options)` method
 - [ ] Document `BeatTracker` class
-  - [ ] `trackBeats(onsets, options)` method
-  - [ ] Predictive beat tracking algorithm
-  - [ ] Subdivision filtering
+  - [ ] `trackBeats(onsetEnvelope, estimatedTempo, options)` method
+  - [ ] Dynamic Programming beat tracking algorithm
+  - [ ] Subdivision filtering via DP penalty
   - [ ] Rolling BPM calculation
 - [ ] Document `TempoDetector` class
   - [ ] `estimateInitialBpm(onsets, options)` method
@@ -337,7 +338,7 @@ Update documentation to reflect the new beat detection system.
   - [ ] Rolling BPM calculation
 - [ ] Note about scope: Data engine only (no UI/frontend)
 - [ ] Reference to showcase project for visual implementation
-- [ ] Document fluid tempo handling and predictive beat tracking
+- [ ] Document fluid tempo handling and Dynamic Programming beat tracking
 
 ### Documentation Style Guidelines
 
@@ -370,7 +371,7 @@ Update documentation to reflect the new beat detection system.
 - [x] Time signature → **Time signature agnostic - we detect beats, not measures**
 - [x] Anticipation time → **2.0s default for animation pre-rendering**
 - [x] Hop size → **10ms default, configurable**
-- [x] Subdivision filtering → **Predictive beat tracking with acceptance windows**
+- [x] Subdivision filtering → **Dynamic Programming with tempo transition penalty**
 
 ---
 
@@ -423,7 +424,7 @@ const generator = new BeatMapGenerator({
   noiseFloorThreshold: 0.1,      // Minimum threshold to prevent noise
   hopSizeMs: 10,                  // 10ms between FFT frames
   rollingBpmWindowSize: 8,        // Calculate BPM from last 8 beats
-  predictionTolerance: 0.2        // 20% tolerance for beat prediction window
+  dpPenaltyFactor: 1.0            // DP weight for tempo consistency
 });
 
 const beatMap = await generator.generateBeatMap('song.mp3', 'track-001');
@@ -440,7 +441,9 @@ const json = beatMap.toJSON();
 const audioContext = new AudioContext();
 const beatStream = new BeatStream(beatMap, audioContext, {
   anticipationTime: 2.0,          // 2 seconds for animation pre-rendering
-  timingTolerance: 0.01           // 10ms
+  timingTolerance: 0.01,          // 10ms
+  userOffsetMs: 0,                // Adjustable player latency offset
+  compensateOutputLatency: true   // Auto-adjust for hardware/OS delay
 });
 
 // Subscribe to beat events (data engine emits these)
