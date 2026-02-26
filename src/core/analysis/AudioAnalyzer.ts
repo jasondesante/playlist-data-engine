@@ -1,9 +1,17 @@
 /**
  * Audio analysis using Web Audio API with "Triple Tap" strategy
+ *
+ * Provides three audio analysis modes:
+ * 1. Triple Tap Real-Time Analysis - Peak detection at playhead position
+ * 2. Full Song Timeline Analysis - Configurable data points across entire track
+ * 3. Beat Detection System - Ellis DP algorithm for rhythm game support
  */
 
 import type { AudioProfile, AudioTimelineEvent, FrequencyBands } from '../types/AudioProfile.js';
+import type { BeatMap, BeatMapGeneratorOptions, BeatStreamOptions } from '../types/BeatMap.js';
 import { SpectrumScanner } from './SpectrumScanner.js';
+import { BeatMapGenerator, type ProgressCallback } from './beat/BeatMapGenerator.js';
+import { BeatStream } from './beat/BeatStream.js';
 
 export type SamplingStrategy =
     | { type: 'interval'; intervalSeconds: number } // e.g., every 1s
@@ -267,6 +275,145 @@ export class AudioAnalyzer {
         return timeline;
     }
 
+    // ==================== Beat Detection System ====================
+
+    /**
+     * Generate a beat map from an audio URL
+     *
+     * Uses the Ellis Dynamic Programming beat tracking algorithm to detect
+     * beats and downbeats throughout the entire audio track.
+     *
+     * @param audioUrl - URL of the audio file to analyze
+     * @param audioId - Unique identifier for the audio source
+     * @param options - Beat map generation options (optional)
+     * @param onProgress - Optional progress callback for long-running analysis
+     * @returns Promise resolving to the generated beat map
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     * const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001', {
+     *   minBpm: 60,
+     *   maxBpm: 180,
+     *   dpAlpha: 680,
+     * });
+     * console.log(`Detected ${beatMap.beats.length} beats at ${beatMap.bpm} BPM`);
+     * ```
+     */
+    async generateBeatMap(
+        audioUrl: string,
+        audioId: string,
+        options?: BeatMapGeneratorOptions,
+        onProgress?: ProgressCallback
+    ): Promise<BeatMap> {
+        const generator = new BeatMapGenerator(options);
+        return generator.generateBeatMap(audioUrl, audioId, onProgress);
+    }
+
+    /**
+     * Generate a beat map from an AudioBuffer
+     *
+     * Use this method when you already have the audio decoded.
+     *
+     * @param audioBuffer - Decoded audio buffer
+     * @param audioId - Unique identifier for the audio source
+     * @param options - Beat map generation options (optional)
+     * @param onProgress - Optional progress callback for long-running analysis
+     * @returns Promise resolving to the generated beat map
+     *
+     * @example
+     * ```typescript
+     * const audioBuffer = await analyzer.fetchAndDecodeAudio('song.mp3');
+     * const beatMap = await analyzer.generateBeatMapFromBuffer(audioBuffer, 'track-001');
+     * ```
+     */
+    async generateBeatMapFromBuffer(
+        audioBuffer: AudioBuffer,
+        audioId: string,
+        options?: BeatMapGeneratorOptions,
+        onProgress?: ProgressCallback
+    ): Promise<BeatMap> {
+        const generator = new BeatMapGenerator(options);
+        return generator.generateBeatMapFromBuffer(audioBuffer, audioId, onProgress);
+    }
+
+    /**
+     * Create a BeatStream for real-time beat event streaming
+     *
+     * The BeatStream emits beat events synchronized with audio playback,
+     * with configurable anticipation time for pre-rendering.
+     *
+     * @param beatMap - The beat map containing beat data
+     * @param audioContext - The Web Audio API AudioContext for timing
+     * @param options - Stream options (anticipation time, latency compensation, etc.)
+     * @returns BeatStream instance for subscribing to beat events
+     *
+     * @example
+     * ```typescript
+     * const beatStream = analyzer.createBeatStream(beatMap, audioContext, {
+     *   anticipationTime: 2.0,  // 2 seconds for animation pre-rendering
+     *   compensateOutputLatency: true,
+     * });
+     *
+     * const unsubscribe = beatStream.subscribe((event) => {
+     *   if (event.type === 'upcoming') {
+     *     // Pre-render beat visual
+     *   } else if (event.type === 'exact') {
+     *     // Beat is happening now
+     *   }
+     * });
+     *
+     * beatStream.start();
+     * ```
+     */
+    createBeatStream(
+        beatMap: BeatMap,
+        audioContext: AudioContext,
+        options?: BeatStreamOptions
+    ): BeatStream {
+        return new BeatStream(beatMap, audioContext, options);
+    }
+
+    /**
+     * Serialize a beat map to JSON string
+     *
+     * @param beatMap - Beat map to serialize
+     * @returns JSON string
+     */
+    static beatMapToJSON(beatMap: BeatMap): string {
+        return BeatMapGenerator.toJSON(beatMap);
+    }
+
+    /**
+     * Parse a beat map from JSON string
+     *
+     * @param jsonString - JSON string to parse
+     * @returns Beat map
+     */
+    static beatMapFromJSON(jsonString: string): BeatMap {
+        return BeatMapGenerator.fromJSON(jsonString);
+    }
+
+    /**
+     * Save a beat map to a file (Node.js only)
+     *
+     * @param beatMap - Beat map to save
+     * @param filePath - Path to save to
+     */
+    static async saveBeatMapToFile(beatMap: BeatMap, filePath: string): Promise<void> {
+        return BeatMapGenerator.saveToFile(beatMap, filePath);
+    }
+
+    /**
+     * Load a beat map from a file (Node.js only)
+     *
+     * @param filePath - Path to load from
+     * @returns Beat map
+     */
+    static async loadBeatMapFromFile(filePath: string): Promise<BeatMap> {
+        return BeatMapGenerator.loadFromFile(filePath);
+    }
+
     /**
      * Shared logic to fetch and decode audio from a URL
      */
@@ -330,8 +477,11 @@ export class AudioAnalyzer {
 
     /**
      * Extract audio segment from buffer
+     *
+     * Mixes all channels down to mono and extracts the specified sample range.
+     * Made protected to allow beat detection classes to access audio data.
      */
-    private extractAudioSegment(
+    protected extractAudioSegment(
         audioBuffer: AudioBuffer,
         startSample: number,
         endSample: number
@@ -353,8 +503,10 @@ export class AudioAnalyzer {
     /**
      * Simple FFT implementation for frequency analysis
      * Uses Cooley-Tukey algorithm
+     *
+     * Made protected to allow beat detection classes to access FFT functionality.
      */
-    private performFFT(signal: Float32Array, fftSize: number): number[] {
+    protected performFFT(signal: Float32Array, fftSize: number): number[] {
         // Pad signal to nearest power of 2
         const paddedSize = Math.pow(2, Math.ceil(Math.log2(Math.min(signal.length, fftSize))));
         const real = new Float32Array(paddedSize);

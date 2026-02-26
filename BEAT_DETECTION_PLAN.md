@@ -537,20 +537,20 @@ Implement real-time beat event streaming synchronized with audio playback.
 
 Integrate beat detection with existing AudioAnalyzer and export public API.
 
-- [ ] Modify `/src/core/analysis/AudioAnalyzer.ts`
-  - [ ] Add `generateBeatMap(audioUrl, options)` method
-  - [ ] Add `createBeatStream(beatMap, audioContext, options)` method
-  - [ ] Make `performFFT` and `extractAudioSegment` accessible to beat detection classes
-- [ ] Create `/src/core/analysis/beat/index.ts`
-  - [ ] Export BeatMapGenerator
-  - [ ] Export BeatStream
-  - [ ] Export OnsetStrengthEnvelope
-  - [ ] Export BeatTracker
-  - [ ] Export TempoDetector
-  - [ ] Export utility functions (toJSON, fromJSON)
-- [ ] Modify `/src/index.ts`
-  - [ ] Export all beat-related types
-  - [ ] Export all beat-related classes
+- [x] Modify `/src/core/analysis/AudioAnalyzer.ts`
+  - [x] Add `generateBeatMap(audioUrl, options)` method
+  - [x] Add `createBeatStream(beatMap, audioContext, options)` method
+  - [x] Make `performFFT` and `extractAudioSegment` accessible to beat detection classes
+- [x] Create `/src/core/analysis/beat/index.ts`
+  - [x] Export BeatMapGenerator
+  - [x] Export BeatStream
+  - [x] Export OnsetStrengthEnvelope
+  - [x] Export BeatTracker
+  - [x] Export TempoDetector
+  - [x] Export utility functions (toJSON, fromJSON)
+- [x] Modify `/src/index.ts`
+  - [x] Export all beat-related types
+  - [x] Export all beat-related classes
 
 ---
 
@@ -754,8 +754,8 @@ TPS3(τ) = TPS(τ) + 0.33×TPS(3τ) + 0.33×TPS(3τ-1) + 0.33×TPS(3τ+1)
 | `src/core/analysis/beat/BeatStream.ts` | Create | ✅ Complete |
 | `src/core/analysis/beat/utils/audioUtils.ts` | Create | ✅ Complete |
 | `src/core/analysis/beat/index.ts` | Create | ✅ Complete |
-| `src/core/analysis/AudioAnalyzer.ts` | Modify |
-| `src/index.ts` | Modify |
+| `src/core/analysis/AudioAnalyzer.ts` | Modify | ✅ Complete |
+| `src/index.ts` | Modify | ✅ Complete |
 | `tests/unit/beat/*.test.ts` | Create | ✅ Complete (Phase 1-7) |
 | `tests/integration/beatDetection.integration.test.ts` | Create |
 | `docs/AUDIO_ANALYSIS.md` | Create (Phase 10) |

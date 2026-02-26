@@ -330,6 +330,33 @@ export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
 export { ColorExtractor } from './core/analysis/ColorExtractor.js';
 
 // ============================================================================
+// BEAT DETECTION SYSTEM
+// ============================================================================
+
+// Core beat detection classes
+export { BeatMapGenerator, type ProgressCallback } from './core/analysis/beat/BeatMapGenerator.js';
+export { BeatStream } from './core/analysis/beat/BeatStream.js';
+export { OnsetStrengthEnvelope, type OSEResult } from './core/analysis/beat/OnsetStrengthEnvelope.js';
+export { BeatTracker, type BeatTrackingResult } from './core/analysis/beat/BeatTracker.js';
+export { TempoDetector } from './core/analysis/beat/TempoDetector.js';
+export { DownbeatDetector } from './core/analysis/beat/DownbeatDetector.js';
+
+// Beat detection utilities
+export {
+    hzToMel,
+    melToHz,
+    resampleAudio,
+    createMelFilterbank,
+    highPassFilter,
+    gaussianSmooth,
+    calculateStdDev,
+    performFFT as performBeatFFT,
+    performSTFT,
+    type ResampledAudio,
+    type STFTResult,
+} from './core/analysis/beat/utils/audioUtils.js';
+
+// ============================================================================
 // PROGRESSION SYSTEM
 // ============================================================================
 
