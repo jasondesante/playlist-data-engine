@@ -660,8 +660,8 @@ Create a dedicated documentation file covering all audio analysis features:
 
 ### USAGE_IN_OTHER_PROJECTS.md Updates
 
-- [ ] Add reference link to `docs/AUDIO_ANALYSIS.md` in Quick Links section
-- [ ] Add brief entry in Usage Examples index pointing to Audio Analysis doc
+- [x] Add reference link to `docs/AUDIO_ANALYSIS.md` in Quick Links section
+- [x] Add brief entry in Usage Examples index pointing to Audio Analysis doc
 
 ### Documentation Style Guidelines
 

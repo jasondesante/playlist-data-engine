@@ -4,6 +4,7 @@ Transform music playlists into D&D 5e-inspired RPG characters through audio/visu
 
 **Quick Links:**
 - **[API Reference](DATA_ENGINE_REFERENCE.md)** — Complete class and method documentation
+- **[Audio Analysis](docs/AUDIO_ANALYSIS.md)** — Triple-tap real-time, full timeline, beat detection
 - **[Extensibility Guide](docs/EXTENSIBILITY_GUIDE.md)** — Custom content, classes, races, skills
 - **[Equipment System](docs/EQUIPMENT_SYSTEM.md)** — Properties, enchanting, templates
 - **[Enemy Generation](docs/ENEMY_GENERATION.md)** — CR-based enemies, encounters, rarity scaling
@@ -53,6 +54,10 @@ cd /path/to/your/project && npm link playlist-data-engine
 - [Gaming Platform Integration](#gaming-platform-integration) — Steam and Discord bonuses
 - [Combat System](#combat-system) — Turn-based D&D 5e combat
 - [Enemy Generation](#enemy-generation) — CR-based enemies, encounters, CR vs Rarity independence
+
+### Audio Analysis
+- [Full Song Analysis](#full-song-analysis) — Segment-by-segment timeline analysis for visualization
+- [Beat Detection](docs/AUDIO_ANALYSIS.md) — Rhythm game timing, beat maps, button press accuracy
 
 ### Advanced Pipeline
 - [Combining All Systems](#combining-all-systems) — Full pipeline with environmental and gaming context
