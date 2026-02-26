@@ -129,8 +129,8 @@ Implement the perceptual onset strength envelope as described in Ellis Section 3
 
 ### 2.1: Onset Strength Envelope Calculator
 
-- [ ] Create `/src/core/analysis/beat/OnsetStrengthEnvelope.ts`
-  - [ ] Implement constructor with config:
+- [x] Create `/src/core/analysis/beat/OnsetStrengthEnvelope.ts`
+  - [x] Implement constructor with config:
     ```typescript
     interface OSEConfig {
       targetSampleRate: number;    // Default: 8000 (paper resamples to 8kHz)
@@ -141,21 +141,21 @@ Implement the perceptual onset strength envelope as described in Ellis Section 3
       gaussianSmoothMs: number;     // Default: 20 ms - smoothing window
     }
     ```
-  - [ ] Implement `calculate(audioBuffer: AudioBuffer): Float32Array` method
+  - [x] Implement `calculate(audioBuffer: AudioBuffer): Float32Array` method
 
-  - [ ] **Step 1: Audio Preprocessing**
-    - [ ] Resample audio to 8 kHz (reduces computational load, focuses on beat-relevant frequencies)
-    - [ ] Store original sample rate for time conversion
+  - [x] **Step 1: Audio Preprocessing**
+    - [x] Resample audio to 8 kHz (reduces computational load, focuses on beat-relevant frequencies)
+    - [x] Store original sample rate for time conversion
 
-  - [ ] **Step 2: Mel Spectrogram Calculation**
-    - [ ] Compute STFT magnitude using 32ms windows (256 samples @ 8kHz)
-    - [ ] Apply Hann window function
-    - [ ] Hop size: 10ms (80 samples @ 8kHz) - slightly larger than paper's 4ms
-    - [ ] Convert to 40 Mel bands via weighted summing of spectrogram values
-    - [ ] Use Mel scale formula: `m = 2595 * log10(1 + f/700)` for frequency mapping
-    - [ ] Implement Mel filterbank creation (triangular filters)
+  - [x] **Step 2: Mel Spectrogram Calculation**
+    - [x] Compute STFT magnitude using 32ms windows (256 samples @ 8kHz)
+    - [x] Apply Hann window function
+    - [x] Hop size: 10ms (80 samples @ 8kHz) - slightly larger than paper's 4ms
+    - [x] Convert to 40 Mel bands via weighted summing of spectrogram values
+    - [x] Use Mel scale formula: `m = 2595 * log10(1 + f/700)` for frequency mapping
+    - [x] Implement Mel filterbank creation (triangular filters)
 
-  - [ ] **Step 3: Onset Strength Calculation** (Ellis Section 3.1)
+  - [x] **Step 3: Onset Strength Calculation** (Ellis Section 3.1)
     ```
     For each Mel band:
       1. Convert magnitude to dB: dB = 20 * log10(magnitude + ε)
@@ -168,32 +168,32 @@ Implement the perceptual onset strength envelope as described in Ellis Section 3
       7. Normalize by dividing by standard deviation (critical for DP balance!)
     ```
 
-  - [ ] **Step 4: Normalization**
-    - [ ] Calculate standard deviation of the envelope
-    - [ ] Divide entire envelope by std dev (ensures consistent α scaling across songs)
-    - [ ] This normalization is **critical** according to the paper - the balance between terms depends on envelope scale
+  - [x] **Step 4: Normalization**
+    - [x] Calculate standard deviation of the envelope
+    - [x] Divide entire envelope by std dev (ensures consistent α scaling across songs)
+    - [x] This normalization is **critical** according to the paper - the balance between terms depends on envelope scale
 
-  - [ ] Return onset strength envelope as Float32Array with metadata (sample rate, frame count)
+  - [x] Return onset strength envelope as Float32Array with metadata (sample rate, frame count)
 
 ### 2.2: Helper Functions
 
-- [ ] Create `/src/core/analysis/beat/utils/audioUtils.ts`
-  - [ ] `resampleAudio(buffer: AudioBuffer, targetRate: number): Float32Array`
-  - [ ] `createMelFilterbank(numBands: number, fftSize: number, sampleRate: number): Float32Array[]`
-  - [ ] `hzToMel(hz: number): number` - `2595 * log10(1 + f/700)`
-  - [ ] `melToHz(mel: number): number` - `700 * (10^(m/2595) - 1)`
-  - [ ] `highPassFilter(signal: Float32Array, cutoff: number, sampleRate: number): Float32Array`
-  - [ ] `gaussianSmooth(signal: Float32Array, windowMs: number, sampleRate: number): Float32Array`
+- [x] Create `/src/core/analysis/beat/utils/audioUtils.ts`
+  - [x] `resampleAudio(buffer: AudioBuffer, targetRate: number): Float32Array`
+  - [x] `createMelFilterbank(numBands: number, fftSize: number, sampleRate: number): Float32Array[]`
+  - [x] `hzToMel(hz: number): number` - `2595 * log10(1 + f/700)`
+  - [x] `melToHz(mel: number): number` - `700 * (10^(m/2595) - 1)`
+  - [x] `highPassFilter(signal: Float32Array, cutoff: number, sampleRate: number): Float32Array`
+  - [x] `gaussianSmooth(signal: Float32Array, windowMs: number, sampleRate: number): Float32Array`
 
 ### Tests
 
-- [ ] Create `/tests/unit/beat/onsetStrengthEnvelope.test.ts`
-  - [ ] Test with synthetic click track (known onset times)
-  - [ ] Test that peaks align with onset moments
-  - [ ] Test silence produces near-zero envelope
-  - [ ] Test normalization produces std dev ≈ 1.0
-  - [ ] Test Mel filterbank creation
-  - [ ] Compare output shape/characteristics to librosa.onset.onset_strength
+- [x] Create `/tests/unit/beat/onsetStrengthEnvelope.test.ts`
+  - [x] Test with synthetic click track (known onset times)
+  - [x] Test that peaks align with onset moments
+  - [x] Test silence produces near-zero envelope
+  - [x] Test normalization produces std dev ≈ 1.0
+  - [x] Test Mel filterbank creation
+  - [x] Compare output shape/characteristics to librosa.onset.onset_strength
 
 ---
 
