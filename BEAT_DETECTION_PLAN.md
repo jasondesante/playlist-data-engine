@@ -576,79 +576,79 @@ Create comprehensive audio analysis documentation and update reference files.
 
 Create a dedicated documentation file covering all audio analysis features:
 
-- [ ] **Section: Overview**
-  - [ ] Explain the three audio analysis modes available in the engine
-  - [ ] Link to relevant source files
+- [x] **Section: Overview**
+  - [x] Explain the three audio analysis modes available in the engine
+  - [x] Link to relevant source files
 
-- [ ] **Section: 3-Tap Real-Time Analysis** (existing feature)
-  - [ ] Document the original `AudioAnalyzer` real-time analysis
-  - [ ] Peak detection at playhead position
-  - [ ] Spectral centroid calculation
-  - [ ] RMS (loudness) extraction
-  - [ ] Usage example for real-time visualization
+- [x] **Section: 3-Tap Real-Time Analysis** (existing feature)
+  - [x] Document the original `AudioAnalyzer` real-time analysis
+  - [x] Peak detection at playhead position
+  - [x] Spectral centroid calculation
+  - [x] RMS (loudness) extraction
+  - [x] Usage example for real-time visualization
 
-- [ ] **Section: Full Song Analysis** (existing feature)
-  - [ ] Document `analyzeFullTrack()` method
-  - [ ] Configurable data points across entire track
-  - [ ] Options for analysis resolution
-  - [ ] Usage example for waveform rendering / timeline visualization
+- [x] **Section: Full Song Analysis** (existing feature)
+  - [x] Document `analyzeTimeline()` method
+  - [x] Configurable data points across entire track
+  - [x] Options for analysis resolution
+  - [x] Usage example for waveform rendering / timeline visualization
 
-- [ ] **Section: Beat Detection System** (new feature)
-  - [ ] **Types**
-    - [ ] `Beat` interface (timestamp, beatInMeasure, isDownbeat, measureNumber, intensity, confidence)
-    - [ ] `BeatMap` interface (audioId, duration, beats, bpm, metadata)
-    - [ ] `BeatMapMetadata` (version, algorithm, threshold settings)
-    - [ ] `BeatEvent` interface (beat, currentBpm, audioTime, timeUntilBeat, type)
-    - [ ] `BeatStreamCallback` type
-    - [ ] `AudioSyncState` interface
-    - [ ] `BeatMapGeneratorOptions` interface
-    - [ ] `BeatStreamOptions` interface
-    - [ ] `BeatMapJSON` interface
-  - [ ] **Classes**
-    - [ ] `BeatMapGenerator` - generate beat maps from audio
-      - [ ] Constructor with `BeatMapGeneratorOptions`
-      - [ ] `generateBeatMap(audioUrl, audioId)` method
-      - [ ] `generateBeatMapFromBuffer(audioBuffer, audioId)` method
-      - [ ] `getProgress()`, `cancel()` methods
-      - [ ] `toJSON()`, `fromJSON()`, `saveToFile()`, `loadFromFile()` methods
-    - [ ] `BeatStream` - real-time beat event streaming
-      - [ ] Constructor with `BeatMap`, `AudioContext`, and options
-      - [ ] `subscribe(callback)` method returning unsubscribe function
-      - [ ] `start()`, `stop()`, `seek(time)` methods
-      - [ ] `getUpcomingBeats(count)`, `getBeatAtTime(time)` methods
-      - [ ] `getSyncState()`, `getCurrentBpm()` methods
-      - [ ] `checkButtonPress(timestamp)`, `getLastBeatAccuracy()` methods
-    - [ ] `OnsetStrengthEnvelope` - perceptual onset detection
-      - [ ] Constructor with config
-      - [ ] `calculate(audioBuffer)` method
-      - [ ] Mel filterbank generation
-      - [ ] Half-wave rectification and normalization
-    - [ ] `BeatTracker` - Ellis DP algorithm
-      - [ ] `trackBeats(onsetEnvelope, tempoEstimate, config)` method
-      - [ ] Dynamic Programming algorithm explanation
-      - [ ] Transition cost function: `F(Δt, τ) = -(log(Δt/τ))²`
-      - [ ] Subdivision filtering via α penalty
-    - [ ] `TempoDetector` - global tempo estimation
-      - [ ] `estimateTempo(onsetEnvelope, hopSize)` method
-      - [ ] Autocorrelation with perceptual weighting
-      - [ ] TPS2/TPS3 for duple/triple detection
-  - [ ] **Usage Examples**
-    - [ ] Basic BeatMap Generation - Generate beat map from audio URL
-    - [ ] BeatMap Serialization - Save/load beat maps (JSON and file)
-    - [ ] Beat Stream Setup - Subscribe to beat events during playback
-    - [ ] Button Press Detection - Rhythm game input accuracy
-    - [ ] Pre-rendering Beats - Get upcoming beats for visual spawning
-    - [ ] Rolling BPM - Get current tempo during playback
-    - [ ] Pre-analysis phase (BeatMap generation)
-    - [ ] Gameplay phase (BeatStream with audio sync)
-    - [ ] Anticipation system (upcoming/exact/passed events at 2.0s)
-    - [ ] Accuracy levels (Perfect ±10ms, Great ±25ms, Good ±50ms, Miss)
-  - [ ] **Algorithm Details**
-    - [ ] Ellis Dynamic Programming beat tracking explanation
-    - [ ] Fluid tempo handling (rolling BPM from actual intervals)
-    - [ ] Subdivision filtering mechanism
-  - [ ] **Scope Note**: Data engine only (no UI/frontend)
-  - [ ] Reference to showcase project for visual implementation
+- [x] **Section: Beat Detection System** (new feature)
+  - [x] **Types**
+    - [x] `Beat` interface (timestamp, beatInMeasure, isDownbeat, measureNumber, intensity, confidence)
+    - [x] `BeatMap` interface (audioId, duration, beats, bpm, metadata)
+    - [x] `BeatMapMetadata` (version, algorithm, threshold settings)
+    - [x] `BeatEvent` interface (beat, currentBpm, audioTime, timeUntilBeat, type)
+    - [x] `BeatStreamCallback` type
+    - [x] `AudioSyncState` interface
+    - [x] `BeatMapGeneratorOptions` interface
+    - [x] `BeatStreamOptions` interface
+    - [x] `BeatMapJSON` interface
+  - [x] **Classes**
+    - [x] `BeatMapGenerator` - generate beat maps from audio
+      - [x] Constructor with `BeatMapGeneratorOptions`
+      - [x] `generateBeatMap(audioUrl, audioId)` method
+      - [x] `generateBeatMapFromBuffer(audioBuffer, audioId)` method
+      - [x] `getProgress()`, `cancel()` methods
+      - [x] `toJSON()`, `fromJSON()`, `saveToFile()`, `loadFromFile()` methods
+    - [x] `BeatStream` - real-time beat event streaming
+      - [x] Constructor with `BeatMap`, `AudioContext`, and options
+      - [x] `subscribe(callback)` method returning unsubscribe function
+      - [x] `start()`, `stop()`, `seek(time)` methods
+      - [x] `getUpcomingBeats(count)`, `getBeatAtTime(time)` methods
+      - [x] `getSyncState()`, `getCurrentBpm()` methods
+      - [x] `checkButtonPress(timestamp)`, `getLastBeatAccuracy()` methods
+    - [x] `OnsetStrengthEnvelope` - perceptual onset detection
+      - [x] Constructor with config
+      - [x] `calculate(audioBuffer)` method
+      - [x] Mel filterbank generation
+      - [x] Half-wave rectification and normalization
+    - [x] `BeatTracker` - Ellis DP algorithm
+      - [x] `trackBeats(onsetEnvelope, tempoEstimate, config)` method
+      - [x] Dynamic Programming algorithm explanation
+      - [x] Transition cost function: `F(Δt, τ) = -(log(Δt/τ))²`
+      - [x] Subdivision filtering via α penalty
+    - [x] `TempoDetector` - global tempo estimation
+      - [x] `estimateTempo(onsetEnvelope, hopSize)` method
+      - [x] Autocorrelation with perceptual weighting
+      - [x] TPS2/TPS3 for duple/triple detection
+  - [x] **Usage Examples**
+    - [x] Basic BeatMap Generation - Generate beat map from audio URL
+    - [x] BeatMap Serialization - Save/load beat maps (JSON and file)
+    - [x] Beat Stream Setup - Subscribe to beat events during playback
+    - [x] Button Press Detection - Rhythm game input accuracy
+    - [x] Pre-rendering Beats - Get upcoming beats for visual spawning
+    - [x] Rolling BPM - Get current tempo during playback
+    - [x] Pre-analysis phase (BeatMap generation)
+    - [x] Gameplay phase (BeatStream with audio sync)
+    - [x] Anticipation system (upcoming/exact/passed events at 2.0s)
+    - [x] Accuracy levels (Perfect ±10ms, Great ±25ms, Good ±50ms, Miss)
+  - [x] **Algorithm Details**
+    - [x] Ellis Dynamic Programming beat tracking explanation
+    - [x] Fluid tempo handling (rolling BPM from actual intervals)
+    - [x] Subdivision filtering mechanism
+  - [x] **Scope Note**: Data engine only (no UI/frontend)
+  - [x] Reference to showcase project for visual implementation
 
 ### DATA_ENGINE_REFERENCE.md Updates
 
