@@ -10,13 +10,21 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
 1. [Quick Export Reference](#quick-export-reference)
 2. [Data Types](#data-types)
 3. [Core Modules](#core-modules)
-4. [Progression System](#progression-system)
-5. [Configuration](#configuration)
-6. [Environmental Sensors](#environmental-sensors)
-7. [Gaming Integration](#gaming-integration)
-8. [Combat System](#combat-system)
-9. [Enemy Generation](#enemy-generation)
-10. [Equipment System](#equipment-system)
+4. [Beat Detection](#beat-detection)
+   - [BeatMapGenerator](#beatmapgenerator)
+   - [BeatStream](#beatstream)
+   - [OnsetStrengthEnvelope](#onsetstrengthenvelope)
+   - [BeatTracker](#beattracker)
+   - [TempoDetector](#tempodetector)
+   - [DownbeatDetector](#downbeatdetector)
+   - [Beat Detection Utilities](#beat-detection-utilities)
+5. [Progression System](#progression-system)
+6. [Configuration](#configuration)
+7. [Environmental Sensors](#environmental-sensors)
+8. [Gaming Integration](#gaming-integration)
+9. [Combat System](#combat-system)
+10. [Enemy Generation](#enemy-generation)
+11. [Equipment System](#equipment-system)
    - [Equipment Types](#equipment-types)
    - [EquipmentEffectApplier](#equipmenteffectapplier)
    - [EquipmentValidator](#equipmentvalidator)
@@ -24,7 +32,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [Equipment Modifier](#equipment-modifier)
    - [Equipment Spawn Helper](#equipment-spawn-helper)
    - [BoxOpener](#boxopener)
-10. [Extensibility System](#extensibility-system)
+12. [Extensibility System](#extensibility-system)
     - [ExtensionManager](#extensionmanager)
     - [FeatureQuery](#featurequery)
     - [FeatureValidator](#featurevalidator)
@@ -40,7 +48,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
     - [Custom Classes](#custom-classes)
 
     **For spawn rates, CharacterGenerator extensions, validation rules, and advanced patterns, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
-11. [Cross-References](#cross-references)
+13. [Cross-References](#cross-references)
 
 ---
 
@@ -133,6 +141,21 @@ A concise overview of all main exports from the library, organized by category.
 | `EnemyGenerator` | Generate enemies and encounters | [Enemy Generation](#enemy-generation) |
 | `PartyAnalyzer` | Analyze party strength for encounters | [Enemy Generation](#enemy-generation) |
 
+### Beat Detection
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `BeatMapGenerator` | Generate beat maps from audio (Ellis DP algorithm) | [Beat Detection](#beat-detection) |
+| `BeatStream` | Real-time beat event streaming synchronized with audio | [Beat Detection](#beat-detection) |
+| `OnsetStrengthEnvelope` | Perceptual onset strength envelope calculation (Mel spectrogram) | [Beat Detection](#beat-detection) |
+| `BeatTracker` | Dynamic Programming beat tracking (Ellis algorithm) | [Beat Detection](#beat-detection) |
+| `TempoDetector` | Global tempo estimation with perceptual weighting | [Beat Detection](#beat-detection) |
+| `DownbeatDetector` | Identify measure boundaries by intensity patterns | [Beat Detection](#beat-detection) |
+
+**Beat Utilities:** `hzToMel`, `melToHz`, `resampleAudio`, `createMelFilterbank`, `highPassFilter`, `gaussianSmooth`, `calculateStdDev`, `performBeatFFT`, `performSTFT` — see [Beat Detection Utilities](#beat-detection-utilities)
+
+**Beat Constants:** `DEFAULT_BEATMAP_GENERATOR_OPTIONS`, `DEFAULT_BEATSTREAM_OPTIONS`, `BEAT_ACCURACY_THRESHOLDS`, `BEAT_DETECTION_VERSION`, `BEAT_DETECTION_ALGORITHM`
+
 ### Utilities
 
 | Export | Description | Section |
@@ -171,6 +194,8 @@ All TypeScript types are exported, including:
 **Box Types:** `BoxDropPool`, `BoxDrop`, `BoxContents`, `BoxOpenResult`, `BoxOpenRequirement`, `BoxOpenError` — see [BoxOpener](#boxopener)
 
 **Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature` — see [Enemy Generation](#enemy-generation)
+
+**Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `DownbeatDetectorConfig`, `DownbeatDetectionResult`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
 **Game Data:** `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS` — see [Game Data Reference](#game-data-reference)
 
@@ -1367,6 +1392,264 @@ Generates RPG-style character names from track metadata using 7 naming formats w
 |--------|-------------|
 | `generateName(seed: string, track: PlaylistTrack, audioProfile: AudioProfile, characterClass: Class, deterministic?: boolean): string` | Generates name using weighted formats: Class Title (20%), Adjective Construct (20%), Clan Construct (10%), Descriptive Epithet (20%), Compound Adjective (15%), Artist-Inspired (10%), Mononym Subtitle (5%) |
 | `cleanTitle(title: string): string` | Removes "(Official Video)", "[Remix]", "ft.", track numbers, file extensions |
+
+---
+
+## Beat Detection
+
+Beat detection system based on the Ellis Dynamic Programming algorithm. Provides pre-analysis beat map generation and real-time beat event streaming synchronized with audio playback.
+
+**For comprehensive documentation including usage examples, see [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)**
+
+### Beat Types
+
+**Location:** `src/core/types/BeatMap.ts`
+
+| Type | Description | Key Properties |
+|------|-------------|----------------|
+| `Beat` | Single detected beat | `timestamp`, `beatInMeasure`, `isDownbeat`, `measureNumber`, `intensity`, `confidence` |
+| `BeatMap` | Complete beat map for a track | `audioId`, `duration`, `beats`, `bpm`, `metadata` |
+| `BeatMapMetadata` | Algorithm settings used | `version`, `algorithm`, `minBpm`, `maxBpm`, `dpAlpha`, `hopSizeMs`, `melBands` |
+| `BeatEvent` | Event emitted during playback | `beat`, `currentBpm`, `audioTime`, `timeUntilBeat`, `type` |
+| `AudioSyncState` | Synchronization state for debugging | `audioContextTime`, `audioElementTime`, `drift`, `isSynchronized`, `outputLatency` |
+| `TempoEstimate` | Tempo detection result | `primaryBpm`, `secondaryBpm`, `primaryWeight`, `secondaryWeight`, `isDuple`, `targetIntervalSeconds` |
+| `BeatMapGeneratorOptions` | Configuration for generation | `minBpm`, `maxBpm`, `intensityThreshold`, `hopSizeMs`, `dpAlpha`, `melBands`, `tempoCenter`, `tempoWidth` |
+| `BeatStreamOptions` | Configuration for streaming | `anticipationTime`, `userOffsetMs`, `compensateOutputLatency`, `timingTolerance` |
+| `ButtonPressResult` | Button press accuracy result | `accuracy`, `offset`, `matchedBeat`, `absoluteOffset` |
+
+### BeatMapGenerator
+
+**Location:** `src/core/analysis/beat/BeatMapGenerator.ts`
+
+Generates beat maps from audio using the Ellis DP algorithm. Analyzes entire track to detect beats and identify downbeats.
+
+**Constructor:**
+
+```typescript
+constructor(options?: BeatMapGeneratorOptions)
+```
+
+**Options (with defaults):**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `minBpm` | 60 | Minimum BPM to detect |
+| `maxBpm` | 180 | Maximum BPM to detect |
+| `intensityThreshold` | 0.3 | Intensity threshold for beat detection |
+| `noiseFloorThreshold` | 0.1 | Minimum threshold to prevent noise detection |
+| `hopSizeMs` | 10 | Milliseconds between FFT frames |
+| `fftSize` | 2048 | FFT window size in samples |
+| `rollingBpmWindowSize` | 8 | Number of beats for rolling BPM calculation |
+| `dpAlpha` | 680 | Ellis balance factor for tempo consistency |
+| `melBands` | 40 | Number of Mel frequency bands for OSE |
+| `highPassCutoff` | 0.4 | Hz, removes DC offset from OSE |
+| `gaussianSmoothMs` | 20 | Gaussian smoothing window for OSE |
+| `tempoCenter` | 0.5 | Seconds, center of tempo perception bias (120 BPM) |
+| `tempoWidth` | 1.4 | Octaves, width of tempo perception weighting |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `generateBeatMap(audioUrl: string, audioId: string, progressCallback?: ProgressCallback): Promise<BeatMap>` | Generate beat map from audio URL |
+| `generateBeatMapFromBuffer(audioBuffer: AudioBuffer, audioId: string, progressCallback?: ProgressCallback): Promise<BeatMap>` | Generate beat map from AudioBuffer |
+| `getProgress(): BeatMapGenerationProgress` | Get current generation progress |
+| `cancel(): void` | Cancel ongoing generation |
+| `static toJSON(beatMap: BeatMap): string` | Export beat map as JSON string |
+| `static fromJSON(json: string): BeatMap` | Load beat map from JSON string |
+| `static saveToFile(beatMap: BeatMap, path: string): Promise<void>` | Save beat map to disk (Node.js only) |
+| `static loadFromFile(path: string): Promise<BeatMap>` | Load beat map from disk (Node.js only) |
+
+### BeatStream
+
+**Location:** `src/core/analysis/beat/BeatStream.ts`
+
+Real-time beat event streaming synchronized with audio playback. Emits upcoming, exact, and passed beat events.
+
+**Constructor:**
+
+```typescript
+constructor(beatMap: BeatMap, audioContext: AudioContext, options?: BeatStreamOptions)
+```
+
+**Options (with defaults):**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `anticipationTime` | 2.0 | Time before beat to emit 'upcoming' event (seconds) |
+| `userOffsetMs` | 0 | Player-calibrated audio/visual offset |
+| `compensateOutputLatency` | true | Auto-adjust using AudioContext.outputLatency |
+| `timingTolerance` | 0.01 | Synchronization tolerance (10ms) |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `subscribe(callback: BeatStreamCallback): () => void` | Subscribe to beat events, returns unsubscribe function |
+| `start(): void` | Start streaming beat events |
+| `stop(): void` | Stop streaming beat events |
+| `seek(time: number): void` | Seek to a specific time in seconds |
+| `getUpcomingBeats(count: number): Beat[]` | Get next N beats for pre-rendering animations |
+| `getBeatAtTime(time: number): Beat \| null` | Get beat at specific time |
+| `getSyncState(): AudioSyncState` | Get current synchronization state for debugging |
+| `getCurrentBpm(): number` | Get current BPM calculated from recent beat intervals |
+| `checkButtonPress(timestamp: number): ButtonPressResult` | Check button press accuracy against nearest beat |
+| `getLastBeatAccuracy(): ButtonPressResult \| null` | Get accuracy of last button press |
+
+**Accuracy Levels:** Perfect (±10ms), Great (±25ms), Good (±50ms), Miss
+
+### OnsetStrengthEnvelope
+
+**Location:** `src/core/analysis/beat/OnsetStrengthEnvelope.ts`
+
+Calculates perceptual onset strength envelope using Mel spectrogram as described in Ellis Section 3.1.
+
+**Constructor:**
+
+```typescript
+constructor(config?: OSEConfig)
+```
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `targetSampleRate` | 8000 | Target sample rate for resampling |
+| `fftWindowSize` | 32 | FFT window size in milliseconds |
+| `hopSizeMs` | 10 | Hop size in milliseconds |
+| `melBands` | 40 | Number of Mel frequency bands |
+| `highPassCutoff` | 0.4 | High-pass filter cutoff in Hz |
+| `gaussianSmoothMs` | 20 | Gaussian smoothing window in ms |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `calculate(audioBuffer: AudioBuffer): OSEResult` | Calculate onset strength envelope from audio buffer |
+
+**OSEResult:**
+
+| Property | Description |
+|----------|-------------|
+| `envelope` | Float32Array of onset strength values |
+| `sampleRate` | Sample rate of the envelope |
+| `frameCount` | Number of frames |
+| `hopSize` | Hop size in samples |
+
+### BeatTracker
+
+**Location:** `src/core/analysis/beat/BeatTracker.ts`
+
+Dynamic Programming beat tracker implementing the Ellis algorithm. Finds globally optimal beat sequence.
+
+**Constructor:**
+
+```typescript
+constructor(config?: BeatTrackerConfig)
+```
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `dpAlpha` | 680 | Ellis balance factor |
+| `minPredecessorRatio` | 0.5 | Minimum predecessor ratio (τp/2) |
+| `maxPredecessorRatio` | 2.0 | Maximum predecessor ratio (2τp) |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `trackBeats(onsetEnvelope: Float32Array, tempoEstimate: TempoEstimate, config?: { hopSize: number, sampleRate: number }): BeatTrackingResult` | Track beats using DP algorithm |
+
+**BeatTrackingResult:**
+
+| Property | Description |
+|----------|-------------|
+| `beats` | Array of Beat objects |
+| `rawBeatIndices` | Frame indices of detected beats |
+| `scores` | Cumulative scores at each beat |
+
+### TempoDetector
+
+**Location:** `src/core/analysis/beat/TempoDetector.ts`
+
+Estimates global tempo using autocorrelation with perceptual weighting (Ellis Section 3.2).
+
+**Constructor:**
+
+```typescript
+constructor(config?: TempoDetectorConfig)
+```
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `tempoCenter` | 0.5 | Tempo center in seconds (120 BPM) |
+| `tempoWidth` | 1.4 | Tempo width in octaves |
+| `minBpm` | 60 | Minimum BPM |
+| `maxBpm` | 180 | Maximum BPM |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `estimateTempo(onsetEnvelope: Float32Array, hopSize: number): TempoEstimate` | Estimate tempo from onset envelope |
+
+### DownbeatDetector
+
+**Location:** `src/core/analysis/beat/DownbeatDetector.ts`
+
+Identifies measure boundaries by analyzing intensity patterns and autocorrelation.
+
+**Constructor:**
+
+```typescript
+constructor(config?: DownbeatDetectorConfig)
+```
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `measureLengths` | [2, 3, 4, 6] | Measure lengths to try |
+| `minIntensityDifference` | 0.1 | Minimum intensity difference for downbeat |
+| `patternWeight` | 0.5 | Weight for pattern analysis vs autocorrelation |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `detectDownbeats(beats: Beat[]): DownbeatDetectionResult` | Detect downbeats in beat array |
+
+### Beat Detection Utilities
+
+**Location:** `src/core/analysis/beat/utils/audioUtils.ts`
+
+| Function | Description |
+|----------|-------------|
+| `hzToMel(hz: number): number` | Convert Hz to Mel scale: `2595 * log10(1 + f/700)` |
+| `melToHz(mel: number): number` | Convert Mel to Hz: `700 * (10^(m/2595) - 1)` |
+| `resampleAudio(buffer: AudioBuffer, targetRate: number): ResampledAudio` | Resample audio to target sample rate |
+| `createMelFilterbank(numBands: number, fftSize: number, sampleRate: number): Float32Array[]` | Create Mel filterbank (triangular filters) |
+| `highPassFilter(signal: Float32Array, cutoff: number, sampleRate: number): Float32Array` | Apply high-pass filter to signal |
+| `gaussianSmooth(signal: Float32Array, windowMs: number, sampleRate: number): Float32Array` | Gaussian smoothing on signal |
+| `calculateStdDev(signal: Float32Array): number` | Calculate standard deviation of signal |
+| `performFFT(samples: Float32Array): Float32Array` | Perform FFT on audio samples |
+| `performSTFT(samples: Float32Array, fftSize: number, hopSize: number): STFTResult` | Perform Short-Time Fourier Transform |
+
+### Beat Detection Constants
+
+**Location:** `src/core/types/BeatMap.ts`
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `DEFAULT_BEATMAP_GENERATOR_OPTIONS` | See above | Default BeatMapGenerator options |
+| `DEFAULT_BEATSTREAM_OPTIONS` | See above | Default BeatStream options |
+| `BEAT_ACCURACY_THRESHOLDS` | `{ perfect: 0.010, great: 0.025, good: 0.050 }` | Accuracy thresholds in seconds |
+| `BEAT_DETECTION_VERSION` | `'1.0.0'` | Algorithm version |
+| `BEAT_DETECTION_ALGORITHM` | `'ellis-dp-v1'` | Algorithm identifier |
 
 ---
 

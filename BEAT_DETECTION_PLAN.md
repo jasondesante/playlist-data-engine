@@ -652,11 +652,11 @@ Create a dedicated documentation file covering all audio analysis features:
 
 ### DATA_ENGINE_REFERENCE.md Updates
 
-- [ ] Add Beat Detection types to [Quick Export Reference](#quick-export-reference) table
-  - [ ] `BeatMapGenerator`, `BeatStream`, `OnsetStrengthEnvelope`, `BeatTracker`, `TempoDetector`
-  - [ ] Utility functions: `beatMapToJSON`, `beatMapFromJSON`
-- [ ] Add beat detection types to the main reference sections (these reference the actual code)
-- [ ] Update Table of Contents if needed
+- [x] Add Beat Detection types to [Quick Export Reference](#quick-export-reference) table
+  - [x] `BeatMapGenerator`, `BeatStream`, `OnsetStrengthEnvelope`, `BeatTracker`, `TempoDetector`
+  - [x] Utility functions: `beatMapToJSON`, `beatMapFromJSON`
+- [x] Add beat detection types to the main reference sections (these reference the actual code)
+- [x] Update Table of Contents if needed
 
 ### USAGE_IN_OTHER_PROJECTS.md Updates
 
