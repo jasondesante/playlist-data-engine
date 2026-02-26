@@ -201,8 +201,8 @@ Implement the perceptual onset strength envelope as described in Ellis Section 3
 
 Implement global tempo estimation using autocorrelation with perceptual weighting (Ellis Section 3.2).
 
-- [ ] Create `/src/core/analysis/beat/TempoDetector.ts`
-  - [ ] Implement constructor with config:
+- [x] Create `/src/core/analysis/beat/TempoDetector.ts`
+  - [x] Implement constructor with config:
     ```typescript
     interface TempoDetectorConfig {
       tempoCenter: number;      // Default: 0.5 seconds (120 BPM)
@@ -212,9 +212,9 @@ Implement global tempo estimation using autocorrelation with perceptual weightin
     }
     ```
 
-  - [ ] **Implement `estimateTempo(onsetEnvelope: Float32Array, hopSize: number): TempoEstimate`**
+  - [x] **Implement `estimateTempo(onsetEnvelope: Float32Array, hopSize: number): TempoEstimate`**
 
-  - [ ] **Step 1: Autocorrelation**
+  - [x] **Step 1: Autocorrelation**
     ```
     TPS(τ) = W(τ) × Σ O(t) × O(t-τ)
 
@@ -223,7 +223,7 @@ Implement global tempo estimation using autocorrelation with perceptual weightin
       O(t) = onset strength envelope value at frame t
     ```
 
-  - [ ] **Step 2: Perceptual Weighting Function** (Ellis Equation 6)
+  - [x] **Step 2: Perceptual Weighting Function** (Ellis Equation 6)
     ```
     W(τ) = exp(-0.5 × (log₂(τ/τ₀) / στ)²)
 
@@ -232,25 +232,25 @@ Implement global tempo estimation using autocorrelation with perceptual weightin
       στ = 1.4 octaves (width of tempo perception bias)
     ```
 
-    - [ ] This weighting biases toward human tempo perception (120 BPM)
-    - [ ] Downweights periods far from the center
+    - [x] This weighting biases toward human tempo perception (120 BPM)
+    - [x] Downweights periods far from the center
 
-  - [ ] **Step 3: Primary Tempo Detection**
-    - [ ] Find τ that maximizes TPS(τ)
-    - [ ] Convert to BPM: `bpm = 60 / (τ × hopSizeSeconds)`
+  - [x] **Step 3: Primary Tempo Detection**
+    - [x] Find τ that maximizes TPS(τ)
+    - [x] Convert to BPM: `bpm = 60 / (τ × hopSizeSeconds)`
 
-  - [ ] **Step 4: Secondary Tempo & Metrical Level** (Ellis Equations 7 & 8)
+  - [x] **Step 4: Secondary Tempo & Metrical Level** (Ellis Equations 7 & 8)
     ```
     TPS2(τ) = TPS(τ) + 0.5×TPS(2τ) + 0.25×TPS(2τ-1) + 0.25×TPS(2τ+1)
     TPS3(τ) = TPS(τ) + 0.33×TPS(3τ) + 0.33×TPS(3τ-1) + 0.33×TPS(3τ+1)
     ```
 
-    - [ ] Calculate both TPS2 and TPS3
-    - [ ] Whichever is larger determines duple vs triple meter
-    - [ ] The larger peak gives the "faster" tempo level
-    - [ ] This improves accuracy from 77% to 84% per paper
+    - [x] Calculate both TPS2 and TPS3
+    - [x] Whichever is larger determines duple vs triple meter
+    - [x] The larger peak gives the "faster" tempo level
+    - [x] This improves accuracy from 77% to 84% per paper
 
-  - [ ] **Step 5: Return TempoEstimate**
+  - [x] **Step 5: Return TempoEstimate**
     ```typescript
     interface TempoEstimate {
       primaryBpm: number;        // Main tempo estimate
@@ -262,15 +262,15 @@ Implement global tempo estimation using autocorrelation with perceptual weightin
     }
     ```
 
-  - [ ] Handle edge cases:
-    - [ ] Very short audio clips
-    - [ ] Monotonic/non-rhythmic audio
+  - [x] Handle edge cases:
+    - [x] Very short audio clips
+    - [x] Monotonic/non-rhythmic audio
 
-- [ ] Create `/tests/unit/beat/tempoDetector.test.ts`
-  - [ ] Test with known BPM click tracks (60, 90, 120, 150 BPM)
-  - [ ] Test BPM estimation accuracy within ±5 BPM
-  - [ ] Test duple vs triple detection
-  - [ ] Test that 120 BPM is preferred when ambiguous
+- [x] Create `/tests/unit/beat/tempoDetector.test.ts`
+  - [x] Test with known BPM click tracks (60, 90, 120, 150 BPM)
+  - [x] Test BPM estimation accuracy within ±5 BPM
+  - [x] Test duple vs triple detection
+  - [x] Test that 120 BPM is preferred when ambiguous
 
 ---
 

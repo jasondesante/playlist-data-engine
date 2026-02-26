@@ -35,6 +35,7 @@ export {
 
 // Classes
 export { OnsetStrengthEnvelope, type OSEResult } from './OnsetStrengthEnvelope.js';
+export { TempoDetector } from './TempoDetector.js';
 
 // Utilities
 export {
