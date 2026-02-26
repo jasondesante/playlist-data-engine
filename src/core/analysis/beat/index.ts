@@ -40,6 +40,8 @@ export { OnsetStrengthEnvelope, type OSEResult } from './OnsetStrengthEnvelope.j
 export { TempoDetector } from './TempoDetector.js';
 export { BeatTracker, type BeatTrackingResult } from './BeatTracker.js';
 export { DownbeatDetector } from './DownbeatDetector.js';
+export { BeatMapGenerator, type ProgressCallback } from './BeatMapGenerator.js';
+export { BeatStream } from './BeatStream.js';
 
 // Utilities
 export {
