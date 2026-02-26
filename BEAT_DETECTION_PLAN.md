@@ -117,7 +117,7 @@ Create the foundational types for the beat detection system.
   - [ ] Define `BeatStreamOptions` interface
     - [ ] Include `anticipationTime` (default 2.0s) - time before beat to emit 'upcoming' event
     - [ ] Include `userOffsetMs` (default 0) - player-calibrated audio/visual offset
-    - [ ] Include `compensateOutputLatency` (default true) - auto-adjust using AudioContext.outputLatency
+    - [ ] Include `compensateOutputLatency` (default true) - auto-adjust using AudioContext.outputLatency (fallback to 0 if unsupported)
     - [ ] Include `timingTolerance` (default 0.01s = 10ms)
   - [ ] Define `BeatMapJSON` interface for serialization (same as BeatMap but JSON-safe)
 
@@ -308,9 +308,9 @@ Implement the core DP algorithm as described in Ellis Section 2.
 
   - [ ] **Step 2: Forward Pass - Calculate Best Scores** (Ellis Equations 3 & 4)
     ```typescript
-    // Initialize
-    const backlink = new Array(length).fill(-1);
-    const cumscore = onsetEnvelope.slice(); // Copy as initial scores
+    // Initialize (Using Typed Arrays for max performance)
+    const backlink = new Int32Array(length).fill(-1);
+    const cumscore = new Float32Array(onsetEnvelope); // Copy as initial scores
 
     // Forward pass
     for (let i = maxPrange + 1; i < length; i++) {
@@ -457,18 +457,18 @@ Orchestrate onset detection and beat tracking to generate complete beat maps.
   - [ ] Implement constructor with BeatMapGeneratorOptions
   - [ ] Implement `generateBeatMap(audioUrl, audioId)` method
   - [ ] Implement `generateBeatMapFromBuffer(audioBuffer, audioId)` method
-  - [ ] **Pipeline:**
+  - [ ] **Pipeline (Run inside a Web Worker to prevent main thread blocking):**
     ```
-    1. Load/decode audio
-    2. Calculate Onset Strength Envelope (Phase 2)
-    3. Estimate Tempo (Phase 3)
-    4. Run DP Beat Tracker (Phase 4)
-    5. Detect Downbeats (Phase 5)
-    6. Calculate rolling BPM for metadata
-    7. Assemble BeatMap
+    1. Load/decode audio (Main thread, pass Float32Array to worker)
+    2. Calculate Onset Strength Envelope (Phase 2 - Worker)
+    3. Estimate Tempo (Phase 3 - Worker)
+    4. Run DP Beat Tracker (Phase 4 - Worker)
+    5. Detect Downbeats (Phase 5 - Worker)
+    6. Calculate rolling BPM for metadata (Worker)
+    7. Assemble BeatMap (Worker → Main thread)
     ```
-  - [ ] Implement `getProgress()` for progress tracking
-  - [ ] Implement `cancel()` for cancellation
+  - [ ] Implement `getProgress()` for progress tracking (via Worker messages)
+  - [ ] Implement `cancel()` for cancellation (via Worker termination)
   - [ ] **JSON Serialization Support:**
     - [ ] `toJSON()` method - export beat map as JSON string
     - [ ] `fromJSON(jsonString)` static method - load beat map from JSON
@@ -504,7 +504,7 @@ Implement real-time beat event streaming synchronized with audio playback.
   - [ ] Implement `seek(time)` method for seeking
   - [ ] Implement audio clock synchronization & Latency Compensation:
     - [ ] Use `AudioContext.currentTime` as ground truth.
-    - [ ] Apply `AudioContext.outputLatency` and `baseLatency` to align logic with actual audio output.
+    - [ ] Apply `AudioContext.outputLatency` and `baseLatency` to align logic with actual audio output. Gracfully fallback to `0` if undefined (e.g., in Safari/older browsers).
     - [ ] Apply user-calibrated `userOffsetMs` to accommodate specific hardware delay.
     - [ ] Use a lookahead queue with `requestAnimationFrame` or Web Workers to schedule events slightly in the future.
     - [ ] Target sample-accurate scheduling for audio, and ±10ms timing precision for visual events.
