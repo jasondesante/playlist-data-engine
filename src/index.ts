@@ -22,6 +22,36 @@ export type {
     AudioTimelineEvent
 } from './core/types/AudioProfile.js';
 
+// Beat detection types
+export type {
+    Beat,
+    BeatMap,
+    BeatMapMetadata,
+    BeatEvent,
+    BeatEventType,
+    BeatStreamCallback,
+    AudioSyncState,
+    BeatMapGeneratorOptions,
+    BeatStreamOptions,
+    BeatMapJSON,
+    BeatAccuracy,
+    ButtonPressResult,
+    TempoEstimate,
+    OSEConfig,
+    BeatTrackerConfig,
+    TempoDetectorConfig,
+    BeatMapGenerationProgress,
+} from './core/types/BeatMap.js';
+
+// Beat detection constants
+export {
+    DEFAULT_BEATMAP_GENERATOR_OPTIONS,
+    DEFAULT_BEATSTREAM_OPTIONS,
+    BEAT_ACCURACY_THRESHOLDS,
+    BEAT_DETECTION_VERSION,
+    BEAT_DETECTION_ALGORITHM,
+} from './core/types/BeatMap.js';
+
 // Character types
 export type {
     CharacterSheet,

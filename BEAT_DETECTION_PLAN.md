@@ -90,36 +90,36 @@ The "quantization" we do is labeling, not grid-snapping:
 
 Create the foundational types for the beat detection system.
 
-- [ ] Create `/src/core/types/BeatMap.ts`
-  - [ ] Define `Beat` interface (timestamp, beatInMeasure, isDownbeat, measureNumber, intensity, confidence)
-  - [ ] Define `BeatMap` interface (audioId, duration, beats, bpm, metadata)
+- [x] Create `/src/core/types/BeatMap.ts`
+  - [x] Define `Beat` interface (timestamp, beatInMeasure, isDownbeat, measureNumber, intensity, confidence)
+  - [x] Define `BeatMap` interface (audioId, duration, beats, bpm, metadata)
     - Note: No `tempoChanges` array - BPM is calculated dynamically from beat intervals
     - Note: No `timeSignature` - we detect beats, not measures. Downbeats identified by intensity.
-  - [ ] Define `BeatMapMetadata` with version, algorithm info, threshold settings
-  - [ ] Define `BeatEvent` interface (beat, currentBpm, audioTime, timeUntilBeat, type)
-  - [ ] Define `BeatStreamCallback` type
-  - [ ] Define `AudioSyncState` interface
-  - [ ] Define `BeatMapGeneratorOptions` interface
-    - [ ] Include `minBpm` (default 60), `maxBpm` (default 180)
-    - [ ] Include `intensityThreshold` (0.0-1.0, default 0.3)
-    - [ ] Include `noiseFloorThreshold` (default 0.1) - minimum threshold to prevent noise detection
-    - [ ] Include `hopSizeMs` (default 10) - milliseconds between FFT frames
-    - [ ] Include `fftSize` (default 2048) - FFT window size
-    - [ ] Include `rollingBpmWindowSize` (default 8) - number of beats for rolling BPM calculation
-    - [ ] Include `dpAlpha` (default 680) - Ellis balance factor for tempo consistency vs onset strength
+  - [x] Define `BeatMapMetadata` with version, algorithm info, threshold settings
+  - [x] Define `BeatEvent` interface (beat, currentBpm, audioTime, timeUntilBeat, type)
+  - [x] Define `BeatStreamCallback` type
+  - [x] Define `AudioSyncState` interface
+  - [x] Define `BeatMapGeneratorOptions` interface
+    - [x] Include `minBpm` (default 60), `maxBpm` (default 180)
+    - [x] Include `intensityThreshold` (0.0-1.0, default 0.3)
+    - [x] Include `noiseFloorThreshold` (default 0.1) - minimum threshold to prevent noise detection
+    - [x] Include `hopSizeMs` (default 10) - milliseconds between FFT frames
+    - [x] Include `fftSize` (default 2048) - FFT window size
+    - [x] Include `rollingBpmWindowSize` (default 8) - number of beats for rolling BPM calculation
+    - [x] Include `dpAlpha` (default 680) - Ellis balance factor for tempo consistency vs onset strength
       - Higher values = stricter tempo adherence (good for songs with clear beats)
       - Lower values = more flexibility for songs with weak/irregular beats
-    - [ ] Include `melBands` (default 40) - number of Mel frequency bands for OSE
-    - [ ] Include `highPassCutoff` (default 0.4) - Hz, removes DC offset from OSE
-    - [ ] Include `gaussianSmoothMs` (default 20) - Gaussian smoothing window for OSE
-    - [ ] Include `tempoCenter` (default 0.5) - seconds, center of tempo perception bias (120 BPM)
-    - [ ] Include `tempoWidth` (default 1.4) - octaves, width of tempo perception weighting
-  - [ ] Define `BeatStreamOptions` interface
-    - [ ] Include `anticipationTime` (default 2.0s) - time before beat to emit 'upcoming' event
-    - [ ] Include `userOffsetMs` (default 0) - player-calibrated audio/visual offset
-    - [ ] Include `compensateOutputLatency` (default true) - auto-adjust using AudioContext.outputLatency (fallback to 0 if unsupported)
-    - [ ] Include `timingTolerance` (default 0.01s = 10ms)
-  - [ ] Define `BeatMapJSON` interface for serialization (same as BeatMap but JSON-safe)
+    - [x] Include `melBands` (default 40) - number of Mel frequency bands for OSE
+    - [x] Include `highPassCutoff` (default 0.4) - Hz, removes DC offset from OSE
+    - [x] Include `gaussianSmoothMs` (default 20) - Gaussian smoothing window for OSE
+    - [x] Include `tempoCenter` (default 0.5) - seconds, center of tempo perception bias (120 BPM)
+    - [x] Include `tempoWidth` (default 1.4) - octaves, width of tempo perception weighting
+  - [x] Define `BeatStreamOptions` interface
+    - [x] Include `anticipationTime` (default 2.0s) - time before beat to emit 'upcoming' event
+    - [x] Include `userOffsetMs` (default 0) - player-calibrated audio/visual offset
+    - [x] Include `compensateOutputLatency` (default true) - auto-adjust using AudioContext.outputLatency (fallback to 0 if unsupported)
+    - [x] Include `timingTolerance` (default 0.01s = 10ms)
+  - [x] Define `BeatMapJSON` interface for serialization (same as BeatMap but JSON-safe)
 
 ---
 
