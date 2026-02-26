@@ -569,78 +569,98 @@ Test the complete system with real audio files.
 
 ## Phase 10: Documentation Update
 
-Update documentation to reflect the new beat detection system.
+Create comprehensive audio analysis documentation and update reference files.
+
+### Create `docs/AUDIO_ANALYSIS.md`
+
+Create a dedicated documentation file covering all audio analysis features:
+
+- [ ] **Section: Overview**
+  - [ ] Explain the three audio analysis modes available in the engine
+  - [ ] Link to relevant source files
+
+- [ ] **Section: 3-Tap Real-Time Analysis** (existing feature)
+  - [ ] Document the original `AudioAnalyzer` real-time analysis
+  - [ ] Peak detection at playhead position
+  - [ ] Spectral centroid calculation
+  - [ ] RMS (loudness) extraction
+  - [ ] Usage example for real-time visualization
+
+- [ ] **Section: Full Song Analysis** (existing feature)
+  - [ ] Document `analyzeFullTrack()` method
+  - [ ] Configurable data points across entire track
+  - [ ] Options for analysis resolution
+  - [ ] Usage example for waveform rendering / timeline visualization
+
+- [ ] **Section: Beat Detection System** (new feature)
+  - [ ] **Types**
+    - [ ] `Beat` interface (timestamp, beatInMeasure, isDownbeat, measureNumber, intensity, confidence)
+    - [ ] `BeatMap` interface (audioId, duration, beats, bpm, metadata)
+    - [ ] `BeatMapMetadata` (version, algorithm, threshold settings)
+    - [ ] `BeatEvent` interface (beat, currentBpm, audioTime, timeUntilBeat, type)
+    - [ ] `BeatStreamCallback` type
+    - [ ] `AudioSyncState` interface
+    - [ ] `BeatMapGeneratorOptions` interface
+    - [ ] `BeatStreamOptions` interface
+    - [ ] `BeatMapJSON` interface
+  - [ ] **Classes**
+    - [ ] `BeatMapGenerator` - generate beat maps from audio
+      - [ ] Constructor with `BeatMapGeneratorOptions`
+      - [ ] `generateBeatMap(audioUrl, audioId)` method
+      - [ ] `generateBeatMapFromBuffer(audioBuffer, audioId)` method
+      - [ ] `getProgress()`, `cancel()` methods
+      - [ ] `toJSON()`, `fromJSON()`, `saveToFile()`, `loadFromFile()` methods
+    - [ ] `BeatStream` - real-time beat event streaming
+      - [ ] Constructor with `BeatMap`, `AudioContext`, and options
+      - [ ] `subscribe(callback)` method returning unsubscribe function
+      - [ ] `start()`, `stop()`, `seek(time)` methods
+      - [ ] `getUpcomingBeats(count)`, `getBeatAtTime(time)` methods
+      - [ ] `getSyncState()`, `getCurrentBpm()` methods
+      - [ ] `checkButtonPress(timestamp)`, `getLastBeatAccuracy()` methods
+    - [ ] `OnsetStrengthEnvelope` - perceptual onset detection
+      - [ ] Constructor with config
+      - [ ] `calculate(audioBuffer)` method
+      - [ ] Mel filterbank generation
+      - [ ] Half-wave rectification and normalization
+    - [ ] `BeatTracker` - Ellis DP algorithm
+      - [ ] `trackBeats(onsetEnvelope, tempoEstimate, config)` method
+      - [ ] Dynamic Programming algorithm explanation
+      - [ ] Transition cost function: `F(Δt, τ) = -(log(Δt/τ))²`
+      - [ ] Subdivision filtering via α penalty
+    - [ ] `TempoDetector` - global tempo estimation
+      - [ ] `estimateTempo(onsetEnvelope, hopSize)` method
+      - [ ] Autocorrelation with perceptual weighting
+      - [ ] TPS2/TPS3 for duple/triple detection
+  - [ ] **Usage Examples**
+    - [ ] Basic BeatMap Generation - Generate beat map from audio URL
+    - [ ] BeatMap Serialization - Save/load beat maps (JSON and file)
+    - [ ] Beat Stream Setup - Subscribe to beat events during playback
+    - [ ] Button Press Detection - Rhythm game input accuracy
+    - [ ] Pre-rendering Beats - Get upcoming beats for visual spawning
+    - [ ] Rolling BPM - Get current tempo during playback
+    - [ ] Pre-analysis phase (BeatMap generation)
+    - [ ] Gameplay phase (BeatStream with audio sync)
+    - [ ] Anticipation system (upcoming/exact/passed events at 2.0s)
+    - [ ] Accuracy levels (Perfect ±10ms, Great ±25ms, Good ±50ms, Miss)
+  - [ ] **Algorithm Details**
+    - [ ] Ellis Dynamic Programming beat tracking explanation
+    - [ ] Fluid tempo handling (rolling BPM from actual intervals)
+    - [ ] Subdivision filtering mechanism
+  - [ ] **Scope Note**: Data engine only (no UI/frontend)
+  - [ ] Reference to showcase project for visual implementation
 
 ### DATA_ENGINE_REFERENCE.md Updates
 
 - [ ] Add Beat Detection types to [Quick Export Reference](#quick-export-reference) table
   - [ ] `BeatMapGenerator`, `BeatStream`, `OnsetStrengthEnvelope`, `BeatTracker`, `TempoDetector`
   - [ ] Utility functions: `beatMapToJSON`, `beatMapFromJSON`
-- [ ] Add new section: [Beat Detection System](#beat-detection-system)
-  - [ ] Document `Beat` interface (timestamp, beatInMeasure, isDownbeat, intensity, confidence)
-  - [ ] Document `BeatMap` interface (audioId, duration, beats, bpm, metadata)
-  - [ ] Document `BeatMapMetadata` (version, algorithm, threshold settings)
-  - [ ] Document `BeatEvent` interface (beat, currentBpm, audioTime, timeUntilBeat, type)
-  - [ ] Document `BeatStreamCallback` type
-  - [ ] Document `AudioSyncState` interface
-  - [ ] Document `BeatMapGeneratorOptions` interface
-  - [ ] Document `BeatStreamOptions` interface
-  - [ ] Document `BeatMapJSON` interface
-- [ ] Document `BeatMapGenerator` class
-  - [ ] Constructor with `BeatMapGeneratorOptions`
-  - [ ] `generateBeatMap(audioUrl, audioId)` method
-  - [ ] `generateBeatMapFromBuffer(audioBuffer, audioId)` method
-  - [ ] `getProgress()` method
-  - [ ] `cancel()` method
-  - [ ] `toJSON()`, `fromJSON()`, `saveToFile()`, `loadFromFile()` methods
-- [ ] Document `BeatStream` class
-  - [ ] Constructor with `BeatMap`, `AudioContext`, and options
-  - [ ] `subscribe(callback)` method returning unsubscribe function
-  - [ ] `start()`, `stop()`, `seek(time)` methods
-  - [ ] `getUpcomingBeats(count)` method
-  - [ ] `getBeatAtTime(time)` method
-  - [ ] `getSyncState()` method
-  - [ ] `getCurrentBpm()` method (rolling BPM)
-  - [ ] `checkButtonPress(timestamp)` method
-  - [ ] `getLastBeatAccuracy()` method
-- [ ] Document `OnsetStrengthEnvelope` class
-  - [ ] Constructor with config
-  - [ ] `calculate(audioBuffer)` method
-  - [ ] Mel filterbank generation
-  - [ ] Half-wave rectification and normalization
-- [ ] Document `BeatTracker` class
-  - [ ] `trackBeats(onsetEnvelope, tempoEstimate, config)` method
-  - [ ] Dynamic Programming algorithm
-  - [ ] Transition cost function: `F(Δt, τ) = -(log(Δt/τ))²`
-  - [ ] Forward pass and backward pass
-  - [ ] Subdivision filtering via α penalty
-- [ ] Document `TempoDetector` class
-  - [ ] `estimateTempo(onsetEnvelope, hopSize)` method
-  - [ ] Autocorrelation with perceptual weighting
-  - [ ] TPS2/TPS3 for duple/triple detection
-- [ ] Update Table of Contents with Beat Detection System section
+- [ ] Add beat detection types to the main reference sections (these reference the actual code)
+- [ ] Update Table of Contents if needed
 
 ### USAGE_IN_OTHER_PROJECTS.md Updates
 
-- [ ] Add new section: [Beat Detection & Rhythm Games](#beat-detection--rhythm-games)
-  - [ ] Add to Quick Links section at top
-  - [ ] Add to Usage Examples index
-- [ ] Add beat detection usage examples:
-  - [ ] Basic BeatMap Generation - Generate beat map from audio URL
-  - [ ] BeatMap Serialization - Save/load beat maps (JSON and file)
-  - [ ] Beat Stream Setup - Subscribe to beat events during playback
-  - [ ] Button Press Detection - Rhythm game input accuracy
-  - [ ] Pre-rendering Beats - Get upcoming beats for visual spawning
-  - [ ] Rolling BPM - Get current tempo during playback
-- [ ] Add code examples showing:
-  - [ ] Pre-analysis phase (BeatMap generation)
-  - [ ] Gameplay phase (BeatStream with audio sync)
-  - [ ] Anticipation system (upcoming/exact/passed events at 2.0s)
-  - [ ] Accuracy levels (Perfect ±10ms, Great ±25ms, Good ±50ms, Miss)
-  - [ ] Rolling BPM calculation
-- [ ] Note about scope: Data engine only (no UI/frontend)
-- [ ] Reference to showcase project for visual implementation
-- [ ] Document fluid tempo handling and Dynamic Programming beat tracking
+- [ ] Add reference link to `docs/AUDIO_ANALYSIS.md` in Quick Links section
+- [ ] Add brief entry in Usage Examples index pointing to Audio Analysis doc
 
 ### Documentation Style Guidelines
 
@@ -737,8 +757,9 @@ TPS3(τ) = TPS(τ) + 0.33×TPS(3τ) + 0.33×TPS(3τ-1) + 0.33×TPS(3τ+1)
 | `src/index.ts` | Modify |
 | `tests/unit/beat/*.test.ts` | Create |
 | `tests/integration/beatDetection.integration.test.ts` | Create |
-| `DATA_ENGINE_REFERENCE.md` | Modify (Phase 10) |
-| `USAGE_IN_OTHER_PROJECTS.md` | Modify (Phase 10) |
+| `docs/AUDIO_ANALYSIS.md` | Create (Phase 10) |
+| `DATA_ENGINE_REFERENCE.md` | Modify - add beat detection exports to reference (Phase 10) |
+| `USAGE_IN_OTHER_PROJECTS.md` | Modify - add reference link (Phase 10) |
 
 ---
 
@@ -751,8 +772,9 @@ After implementation:
 4. Test button press detection with ±10ms accuracy
 5. Compare output to librosa.beat.beat_track for reference
 6. Verify documentation updated:
-   - DATA_ENGINE_REFERENCE.md includes Beat Detection System section
-   - USAGE_IN_OTHER_PROJECTS.md includes beat detection examples
+   - `docs/AUDIO_ANALYSIS.md` created with all three analysis modes documented
+   - DATA_ENGINE_REFERENCE.md includes beat detection types/classes in its exports reference
+   - USAGE_IN_OTHER_PROJECTS.md includes reference link to Audio Analysis doc
    - All new types, classes, and methods documented
 
 ---
