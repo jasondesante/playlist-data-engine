@@ -36,6 +36,7 @@ export {
 // Classes
 export { OnsetStrengthEnvelope, type OSEResult } from './OnsetStrengthEnvelope.js';
 export { TempoDetector } from './TempoDetector.js';
+export { BeatTracker, type BeatTrackingResult } from './BeatTracker.js';
 
 // Utilities
 export {

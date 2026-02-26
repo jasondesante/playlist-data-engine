@@ -278,8 +278,8 @@ Implement global tempo estimation using autocorrelation with perceptual weightin
 
 Implement the core DP algorithm as described in Ellis Section 2.
 
-- [ ] Create `/src/core/analysis/beat/BeatTracker.ts`
-  - [ ] Implement constructor with config:
+- [x] Create `/src/core/analysis/beat/BeatTracker.ts`
+  - [x] Implement constructor with config:
     ```typescript
     interface BeatTrackerConfig {
       dpAlpha: number;           // Default: 680 (Ellis optimal)
@@ -288,9 +288,9 @@ Implement the core DP algorithm as described in Ellis Section 2.
     }
     ```
 
-  - [ ] **Implement `trackBeats(onsetEnvelope, tempoEstimate, config): Beat[]`**
+  - [x] **Implement `trackBeats(onsetEnvelope, tempoEstimate, config): Beat[]`**
 
-  - [ ] **Step 1: Precompute Transition Costs** (Ellis Equation 2)
+  - [x] **Step 1: Precompute Transition Costs** (Ellis Equation 2)
     ```typescript
     // For all possible predecessor intervals
     const prange = Math.round(2 * period) to Math.round(period / 2);
@@ -302,11 +302,11 @@ Implement the core DP algorithm as described in Ellis Section 2.
     }
     ```
 
-    - [ ] Note: This is the **only** place α is used
-    - [ ] Larger α = stricter tempo adherence
-    - [ ] The log-squared formulation is symmetric: F(kτ, τ) = F(τ/k, τ)
+    - [x] Note: This is the **only** place α is used
+    - [x] Larger α = stricter tempo adherence
+    - [x] The log-squared formulation is symmetric: F(kτ, τ) = F(τ/k, τ)
 
-  - [ ] **Step 2: Forward Pass - Calculate Best Scores** (Ellis Equations 3 & 4)
+  - [x] **Step 2: Forward Pass - Calculate Best Scores** (Ellis Equations 3 & 4)
     ```typescript
     // Initialize (Using Typed Arrays for max performance)
     const backlink = new Int32Array(length).fill(-1);
@@ -330,10 +330,10 @@ Implement the core DP algorithm as described in Ellis Section 2.
     }
     ```
 
-    - [ ] Search range limits: τ = t - 2τp to t - τp/2
-    - [ ] This is O(n) complexity despite searching exponential space
+    - [x] Search range limits: τ = t - 2τp to t - τp/2
+    - [x] This is O(n) complexity despite searching exponential space
 
-  - [ ] **Step 3: Backward Pass - Extract Beat Sequence**
+  - [x] **Step 3: Backward Pass - Extract Beat Sequence**
     ```typescript
     // Start from highest cumulative score (near end)
     let [_, beats] = max(cumscore);
@@ -344,28 +344,28 @@ Implement the core DP algorithm as described in Ellis Section 2.
     }
     ```
 
-    - [ ] Start from frame with highest cumscore (typically within τp of end)
-    - [ ] Follow backlinks until reaching beginning
-    - [ ] Convert frame indices to timestamps: `time = frameIndex * hopSizeSeconds`
+    - [x] Start from frame with highest cumscore (typically within τp of end)
+    - [x] Follow backlinks until reaching beginning
+    - [x] Convert frame indices to timestamps: `time = frameIndex * hopSizeSeconds`
 
-  - [ ] **Step 4: Handle Edge Cases**
-    - [ ] **Silence sections**: DP naturally "fills in" beats at target interval with 0 onset score
-    - [ ] **Start/end trimming**: Use discounted best score curve to find first/last valid beats
+  - [x] **Step 4: Handle Edge Cases**
+    - [x] **Silence sections**: DP naturally "fills in" beats at target interval with 0 onset score
+    - [x] **Start/end trimming**: Use discounted best score curve to find first/last valid beats
       ```
       // C*(t) grows steadily, but plot difference from straight line
       // connecting origin to final value to find beat boundaries
       discountedScore[t] = cumscore[t] - (t / length) * cumscore[length-1]
       ```
-    - [ ] **Tempo drift**: DP naturally accommodates ±10% drift from target
+    - [x] **Tempo drift**: DP naturally accommodates ±10% drift from target
 
-  - [ ] **Step 5: Convert to Beat Objects**
-    - [ ] For each beat frame, create Beat object with:
+  - [x] **Step 5: Convert to Beat Objects**
+    - [x] For each beat frame, create Beat object with:
       - timestamp (seconds)
       - intensity (onset strength at that frame)
       - confidence (derived from local score contribution)
-    - [ ] Apply downbeat detection (see Phase 5)
+    - [x] Apply downbeat detection (see Phase 5)
 
-  - [ ] Return array of Beat objects
+  - [x] Return array of Beat objects
 
 ### Reference Implementation (from Ellis Figure 1)
 
@@ -398,16 +398,16 @@ end
 
 ### Tests
 
-- [ ] Create `/tests/unit/beat/beatTracker.test.ts`
-  - [ ] Test with 120 BPM click track (quarter notes)
-  - [ ] Verify beat times are within ±20ms of expected
-  - [ ] Test filtering of 8th note subdivisions (should reject)
-  - [ ] Test filtering of 16th note subdivisions (should reject)
-  - [ ] Test with gradual tempo drift (±10% variation)
-  - [ ] Test silence handling (should still produce beats at target interval)
-  - [ ] Test with different α values (100 vs 680 vs 1000)
-  - [ ] Verify backlink chain produces valid sequence
-  - [ ] Compare results to librosa.beat.beat_track output
+- [x] Create `/tests/unit/beat/beatTracker.test.ts`
+  - [x] Test with 120 BPM click track (quarter notes)
+  - [x] Verify beat times are within ±20ms of expected
+  - [x] Test filtering of 8th note subdivisions (should reject)
+  - [x] Test filtering of 16th note subdivisions (should reject)
+  - [x] Test with gradual tempo drift (±10% variation)
+  - [x] Test silence handling (should still produce beats at target interval)
+  - [x] Test with different α values (100 vs 680 vs 1000)
+  - [x] Verify backlink chain produces valid sequence
+  - [x] Compare results to librosa.beat.beat_track output (skipped - requires external comparison)
 
 ---
 
