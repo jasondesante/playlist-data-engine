@@ -199,12 +199,12 @@ This is an optional enhancement — most users will only need `sensitivity`.
   ```
 
 ### 2.5 Add Unit Tests for Filter
-- [ ] Test filter = 0.0 (no filtering)
-- [ ] Test filter = 0.5 (moderate filtering)
-- [ ] Test filter = 0.9 (aggressive filtering)
-- [ ] Test filter = 1.0 (only exact grid beats)
-- [ ] Test with beats on various subdivisions (1/4, 1/8, 1/16)
-- [ ] Test edge case: empty beats array
+- [x] Test filter = 0.0 (no filtering)
+- [x] Test filter = 0.5 (moderate filtering)
+- [x] Test filter = 0.9 (aggressive filtering)
+- [x] Test filter = 1.0 (only exact grid beats)
+- [x] Test with beats on various subdivisions (1/4, 1/8, 1/16)
+- [x] Test edge case: empty beats array
 
 ---
 

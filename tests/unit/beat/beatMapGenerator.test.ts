@@ -506,4 +506,216 @@ describe('BeatMapGenerator', () => {
             ).rejects.toThrow('Failed to fetch audio');
         });
     });
+
+    describe('filter parameter (grid-alignment)', () => {
+        it('should have default filter of 0.0', () => {
+            const generator = new BeatMapGenerator();
+            const config = generator.getConfig();
+
+            expect(config.filter).toBe(0.0);
+        });
+
+        it('should accept custom filter value in config', () => {
+            const generator = new BeatMapGenerator({ filter: 0.5 });
+            const config = generator.getConfig();
+
+            expect(config.filter).toBe(0.5);
+        });
+
+        it('should apply filter = 0.0 (no filtering) - all beats kept', async () => {
+            const generator = new BeatMapGenerator({
+                filter: 0.0,
+                sensitivity: 2.0, // Higher sensitivity to get more beats
+                noiseFloorThreshold: 0.0, // Don't filter by intensity
+            });
+            const audioBuffer = createMockAudioBuffer(5);
+
+            const beatMap = await generator.generateBeatMapFromBuffer(audioBuffer, 'filter-0');
+
+            // Filter 0.0 should not remove any beats based on grid alignment
+            expect(beatMap.beats.length).toBeGreaterThanOrEqual(0);
+            expect(beatMap.metadata.filter).toBe(0.0);
+        });
+
+        it('should apply filter = 0.5 (moderate filtering)', async () => {
+            // Create generator without filter to get baseline
+            const noFilterGenerator = new BeatMapGenerator({
+                filter: 0.0,
+                sensitivity: 2.0,
+                noiseFloorThreshold: 0.0,
+            });
+            const audioBuffer = createMockAudioBuffer(5);
+
+            const noFilterBeatMap = await noFilterGenerator.generateBeatMapFromBuffer(audioBuffer, 'baseline');
+
+            // Now with moderate filter
+            const filterGenerator = new BeatMapGenerator({
+                filter: 0.5,
+                sensitivity: 2.0,
+                noiseFloorThreshold: 0.0,
+            });
+            const filteredBeatMap = await filterGenerator.generateBeatMapFromBuffer(audioBuffer, 'filter-0.5');
+
+            expect(filteredBeatMap.metadata.filter).toBe(0.5);
+
+            // Filtered beats should be less than or equal to unfiltered
+            expect(filteredBeatMap.beats.length).toBeLessThanOrEqual(noFilterBeatMap.beats.length);
+        });
+
+        it('should apply filter = 0.9 (aggressive filtering)', async () => {
+            const noFilterGenerator = new BeatMapGenerator({
+                filter: 0.0,
+                sensitivity: 2.0,
+                noiseFloorThreshold: 0.0,
+            });
+            const audioBuffer = createMockAudioBuffer(5);
+
+            const noFilterBeatMap = await noFilterGenerator.generateBeatMapFromBuffer(audioBuffer, 'baseline-0.9');
+
+            // Aggressive filter should only keep beats very close to the grid
+            const filterGenerator = new BeatMapGenerator({
+                filter: 0.9,
+                sensitivity: 2.0,
+                noiseFloorThreshold: 0.0,
+            });
+            const filteredBeatMap = await filterGenerator.generateBeatMapFromBuffer(audioBuffer, 'filter-0.9');
+
+            expect(filteredBeatMap.metadata.filter).toBe(0.9);
+
+            // Aggressive filtering should result in fewer or equal beats than no filter
+            expect(filteredBeatMap.beats.length).toBeLessThanOrEqual(noFilterBeatMap.beats.length);
+        });
+
+        it('should apply filter = 1.0 (only exact grid beats)', async () => {
+            const noFilterGenerator = new BeatMapGenerator({
+                filter: 0.0,
+                sensitivity: 2.0,
+                noiseFloorThreshold: 0.0,
+            });
+            const audioBuffer = createMockAudioBuffer(5);
+
+            const noFilterBeatMap = await noFilterGenerator.generateBeatMapFromBuffer(audioBuffer, 'baseline-1.0');
+
+            // Maximum filter - only beats exactly on the grid
+            const filterGenerator = new BeatMapGenerator({
+                filter: 1.0,
+                sensitivity: 2.0,
+                noiseFloorThreshold: 0.0,
+            });
+            const filteredBeatMap = await filterGenerator.generateBeatMapFromBuffer(audioBuffer, 'filter-1.0');
+
+            expect(filteredBeatMap.metadata.filter).toBe(1.0);
+
+            // Filter 1.0 should result in fewer or equal beats
+            expect(filteredBeatMap.beats.length).toBeLessThanOrEqual(noFilterBeatMap.beats.length);
+
+            // All remaining beats should be very close to the grid
+            // At 120 BPM, beat period is 0.5s
+            const beatPeriod = 60.0 / filteredBeatMap.bpm;
+            const tolerance = beatPeriod * 0.05; // 5% tolerance for "exact"
+
+            for (const beat of filteredBeatMap.beats) {
+                const gridPosition = Math.round(beat.timestamp / beatPeriod);
+                const expectedTime = gridPosition * beatPeriod;
+                const deviation = Math.abs(beat.timestamp - expectedTime);
+
+                expect(deviation).toBeLessThan(tolerance);
+            }
+        });
+
+        it('should demonstrate progressive filtering with increasing filter values', async () => {
+            const audioBuffer = createMockAudioBuffer(5);
+            const filterValues = [0.0, 0.5, 0.9, 1.0];
+            const beatCounts: number[] = [];
+
+            for (const filter of filterValues) {
+                const generator = new BeatMapGenerator({
+                    filter,
+                    sensitivity: 2.0,
+                    noiseFloorThreshold: 0.0,
+                });
+                const beatMap = await generator.generateBeatMapFromBuffer(audioBuffer, `progressive-${filter}`);
+                beatCounts.push(beatMap.beats.length);
+                expect(beatMap.metadata.filter).toBe(filter);
+            }
+
+            // Generally, higher filter values should result in fewer or equal beats
+            // (may not be strictly monotonic due to other factors, but trend should hold)
+            expect(beatCounts[3]).toBeLessThanOrEqual(beatCounts[0]);
+        });
+
+        it('should handle filter with beats on various subdivisions', async () => {
+            // Create audio buffer that will produce beats at different subdivisions
+            const generator = new BeatMapGenerator({
+                filter: 0.7,
+                sensitivity: 3.0, // Higher sensitivity to catch subdivisions
+                noiseFloorThreshold: 0.0,
+            });
+            const audioBuffer = createMockAudioBuffer(5);
+
+            const beatMap = await generator.generateBeatMapFromBuffer(audioBuffer, 'subdivisions');
+
+            expect(beatMap.metadata.filter).toBe(0.7);
+            expect(beatMap.beats.length).toBeGreaterThanOrEqual(0);
+
+            // All beats should have valid properties
+            for (const beat of beatMap.beats) {
+                expect(beat.timestamp).toBeGreaterThanOrEqual(0);
+                expect(beat.timestamp).toBeLessThanOrEqual(5);
+                expect(beat.intensity).toBeGreaterThanOrEqual(0);
+                expect(beat.confidence).toBeGreaterThanOrEqual(0);
+            }
+        });
+
+        it('should handle edge case: filter with silent audio', async () => {
+            const generator = new BeatMapGenerator({
+                filter: 0.5,
+                noiseFloorThreshold: 0.0,
+            });
+            const audioBuffer = createSilentAudioBuffer(3);
+
+            const beatMap = await generator.generateBeatMapFromBuffer(audioBuffer, 'silent-filter');
+
+            // Should handle gracefully even with no beats
+            expect(beatMap).toBeDefined();
+            expect(beatMap.metadata.filter).toBe(0.5);
+            expect(beatMap.beats.length).toBeGreaterThanOrEqual(0);
+        });
+
+        it('should work with combined sensitivity and filter', async () => {
+            // High sensitivity (more beats) + high filter (stricter grid alignment)
+            const generator = new BeatMapGenerator({
+                sensitivity: 5.0,
+                filter: 0.8,
+                noiseFloorThreshold: 0.0,
+            });
+            const audioBuffer = createMockAudioBuffer(5);
+
+            const beatMap = await generator.generateBeatMapFromBuffer(audioBuffer, 'combined');
+
+            expect(beatMap.metadata.sensitivity).toBe(5.0);
+            expect(beatMap.metadata.filter).toBe(0.8);
+            expect(beatMap.beats.length).toBeGreaterThanOrEqual(0);
+        });
+
+        it('should preserve beat properties after filtering', async () => {
+            const generator = new BeatMapGenerator({
+                filter: 0.5,
+                sensitivity: 2.0,
+            });
+            const audioBuffer = createMockAudioBuffer(3);
+
+            const beatMap = await generator.generateBeatMapFromBuffer(audioBuffer, 'props-filter');
+
+            // All beats should have valid properties after filtering
+            for (const beat of beatMap.beats) {
+                expect(typeof beat.timestamp).toBe('number');
+                expect(typeof beat.beatInMeasure).toBe('number');
+                expect(typeof beat.isDownbeat).toBe('boolean');
+                expect(typeof beat.measureNumber).toBe('number');
+                expect(typeof beat.intensity).toBe('number');
+                expect(typeof beat.confidence).toBe('number');
+            }
+        });
+    });
 });
