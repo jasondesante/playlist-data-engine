@@ -1,7 +1,7 @@
 {
   "name": "playlist-data-engine",
   "description": "TypeScript library for parsing music playlists, analyzing audio signatures, and generating D&D 5e-inspired characters with progression, combat, and sensor integration",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "main": "./dist/playlist-data-engine.js",
   "module": "./dist/playlist-data-engine.mjs",

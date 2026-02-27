@@ -322,4 +322,4 @@ interface BeatMapGeneratorOptions {
 - [x] All unit tests pass
 - [x] Integration tests pass
 - [x] Documentation updated
-- [ ] Ready to publish new engine version
+- [x] Ready to publish new engine version
