@@ -324,6 +324,9 @@ export interface BeatTrackerConfig {
     /** Ellis balance factor (default: 680) */
     dpAlpha?: number;
 
+    /** Sensitivity multiplier (0.1-10, default: 1.0) */
+    sensitivity?: number;
+
     /** Minimum predecessor ratio (default: 0.5 = τp/2) */
     minPredecessorRatio?: number;
 

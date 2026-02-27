@@ -197,6 +197,7 @@ export class BeatMapGenerator {
 
             const beatTracker = new BeatTracker({
                 dpAlpha: this.options.dpAlpha,
+                sensitivity: this.options.sensitivity,
             });
 
             const trackingResult = beatTracker.trackBeats(

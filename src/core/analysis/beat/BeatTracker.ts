@@ -24,6 +24,7 @@ import type { Beat, BeatTrackerConfig, TempoEstimate } from '../../types/BeatMap
  */
 const DEFAULT_BEAT_TRACKER_CONFIG: Required<BeatTrackerConfig> = {
     dpAlpha: 680,           // Ellis optimal balance factor
+    sensitivity: 1.0,       // Sensitivity multiplier (1.0 = default behavior)
     minPredecessorRatio: 0.5,   // τp/2 - minimum predecessor interval
     maxPredecessorRatio: 2.0,   // 2τp - maximum predecessor interval
 };
@@ -121,6 +122,15 @@ export class BeatTracker {
             };
         }
 
+        // Calculate effective dpAlpha based on sensitivity
+        // Higher sensitivity = lower effective dpAlpha = more flexible = more beats
+        // Lower sensitivity = higher effective dpAlpha = stricter tempo = fewer beats
+        const sensitivity = this.config.sensitivity;
+        const effectiveDpAlpha = Math.round(this.config.dpAlpha / sensitivity);
+
+        // Clamp to reasonable bounds (prevent extreme values)
+        const clampedDpAlpha = Math.max(10, Math.min(10000, effectiveDpAlpha));
+
         // Step 1: Precompute transition costs
         // Search range: from τp/2 to 2τp (as per Ellis)
         const minPredecessor = Math.max(1, Math.round(period * this.config.minPredecessorRatio));
@@ -135,7 +145,7 @@ export class BeatTracker {
             // Transition cost: -(log(deltaT/period))² scaled by alpha
             // Using log2 for consistency with paper's notation
             const logRatio = Math.log(deltaT / period);
-            transitionCosts[i] = -this.config.dpAlpha * logRatio * logRatio;
+            transitionCosts[i] = -clampedDpAlpha * logRatio * logRatio;
         }
 
         // Step 2: Forward pass - calculate best scores with backlinks

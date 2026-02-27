@@ -63,7 +63,7 @@ This is an optional enhancement — most users will only need `sensitivity`.
   ```
 
 ### 1.2 Add Sensitivity to BeatTracker Config
-- [ ] In `BeatTracker.ts`, add to `BeatTrackerConfig`:
+- [x] In `BeatTracker.ts`, add to `BeatTrackerConfig`:
   ```typescript
   export interface BeatTrackerConfig {
       dpAlpha?: number;
@@ -73,7 +73,7 @@ This is an optional enhancement — most users will only need `sensitivity`.
       maxPredecessorRatio?: number;
   }
   ```
-- [ ] In `trackBeats()`, calculate effective dpAlpha:
+- [x] In `trackBeats()`, calculate effective dpAlpha:
   ```typescript
   const sensitivity = this.config.sensitivity ?? 1.0;
   const effectiveDpAlpha = Math.round(this.config.dpAlpha / sensitivity);
@@ -81,10 +81,10 @@ This is an optional enhancement — most users will only need `sensitivity`.
   // Clamp to reasonable bounds (prevent extreme values)
   const clampedDpAlpha = Math.max(10, Math.min(10000, effectiveDpAlpha));
   ```
-- [ ] Use `clampedDpAlpha` in transition cost calculation
+- [x] Use `clampedDpAlpha` in transition cost calculation
 
 ### 1.3 Sensitivity Mapping Logic
-- [ ] Implement mapping:
+- [x] Implement mapping:
   ```typescript
   // sensitivity 0.1 → dpAlpha * 10 = 6800 (very strict, fewer beats)
   // sensitivity 1.0 → dpAlpha * 1 = 680 (default)
@@ -93,7 +93,7 @@ This is an optional enhancement — most users will only need `sensitivity`.
   ```
 
 ### 1.4 Pass Sensitivity from BeatMapGenerator
-- [ ] In `BeatMapGenerator.ts`, create BeatTracker with sensitivity:
+- [x] In `BeatMapGenerator.ts`, create BeatTracker with sensitivity:
   ```typescript
   const beatTracker = new BeatTracker({
       dpAlpha: this.options.dpAlpha,
