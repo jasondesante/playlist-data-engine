@@ -30,6 +30,7 @@ import { OnsetStrengthEnvelope, type OSEResult } from './OnsetStrengthEnvelope.j
 import { TempoDetector } from './TempoDetector.js';
 import { BeatTracker } from './BeatTracker.js';
 import { DownbeatDetector } from './DownbeatDetector.js';
+import { Logger } from '../../../utils/logger.js';
 
 /**
  * Progress callback type
@@ -71,6 +72,8 @@ interface GenerationState {
  * const loadedBeatMap = BeatMapGenerator.fromJSON(json);
  * ```
  */
+const logger = Logger.for('BeatMapGenerator');
+
 export class BeatMapGenerator {
     private options: Required<BeatMapGeneratorOptions>;
     private state: GenerationState | null = null;
@@ -223,7 +226,15 @@ export class BeatMapGenerator {
             // Step 6: Finalize (3%)
             this.updateProgress('finalizing', 98, 'Finalizing beat map...');
 
-            const beats = this.applyIntensityThreshold(downbeatResult.beats);
+            // Post-processing: filter beats by grid alignment if filter > 0
+            let beats = downbeatResult.beats;
+            const filter = this.options.filter;
+            if (filter > 0) {
+                beats = this.filterBeatsByGridAlignment(beats, tempoEstimate, filter);
+            }
+
+            // Apply noise floor threshold
+            beats = this.applyIntensityThreshold(beats);
 
             // Build metadata
             const metadata: BeatMapMetadata = {
@@ -299,6 +310,51 @@ export class BeatMapGenerator {
             // Keep beats that are above the noise floor
             return beat.intensity >= threshold;
         });
+    }
+
+    /**
+     * Filter beats by how well they align with the tempo grid.
+     *
+     * This post-processing step removes beats that deviate significantly from
+     * the expected quarter-note grid based on the detected tempo.
+     *
+     * @param beats - Beats to filter
+     * @param tempoEstimate - Tempo estimate with beat period
+     * @param filterThreshold - Grid alignment threshold (0.0-1.0)
+     * @returns Filtered beats
+     */
+    private filterBeatsByGridAlignment(
+        beats: Beat[],
+        tempoEstimate: TempoEstimate,
+        filterThreshold: number
+    ): Beat[] {
+        if (filterThreshold <= 0) return beats;
+
+        const beatPeriod = 60.0 / tempoEstimate.primaryBpm; // seconds per beat
+
+        // Calculate max allowed deviation based on threshold
+        // threshold 0.0 = allow any deviation
+        // threshold 1.0 = allow 0 deviation (only exact grid)
+        // threshold 0.5 = allow 50% of a half-beat deviation
+        const maxDeviation = (1.0 - filterThreshold) * (beatPeriod / 2);
+
+        const filtered = beats.filter(beat => {
+            // Calculate how far this beat is from the nearest grid position
+            const gridPosition = Math.round(beat.timestamp / beatPeriod);
+            const expectedTime = gridPosition * beatPeriod;
+            const deviation = Math.abs(beat.timestamp - expectedTime);
+
+            return deviation <= maxDeviation;
+        });
+
+        logger.debug('Filtered beats by grid alignment', {
+            originalCount: beats.length,
+            filteredCount: filtered.length,
+            threshold: filterThreshold,
+            maxDeviationMs: maxDeviation * 1000,
+        });
+
+        return filtered;
     }
 
     /**

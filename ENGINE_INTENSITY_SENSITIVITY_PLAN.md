@@ -133,7 +133,7 @@ This is an optional enhancement — most users will only need `sensitivity`.
   ```
 
 ### 2.2 Implement Grid-Alignment Filter in BeatMapGenerator
-- [ ] Add new method in `BeatMapGenerator.ts`:
+- [x] Add new method in `BeatMapGenerator.ts`:
   ```typescript
   /**
    * Filter beats by how well they align with the tempo grid.
@@ -177,10 +177,10 @@ This is an optional enhancement — most users will only need `sensitivity`.
       return filtered;
   }
   ```
-- [ ] Call this method after beat tracking when `filter > 0`
+- [x] Call this method after beat tracking when `filter > 0`
 
 ### 2.3 Integration in generateBeatMapFromBuffer
-- [ ] Apply filter after downbeat detection:
+- [x] Apply filter after downbeat detection:
   ```typescript
   // Post-processing: filter beats by grid alignment
   let beats = downbeatResult.beats;
@@ -190,7 +190,7 @@ This is an optional enhancement — most users will only need `sensitivity`.
   ```
 
 ### 2.4 Add Filter to Metadata
-- [ ] In `BeatMap.ts`, add to `BeatMapMetadata`:
+- [x] In `BeatMap.ts`, add to `BeatMapMetadata`:
   ```typescript
   interface BeatMapMetadata {
       // ... existing fields
@@ -211,7 +211,7 @@ This is an optional enhancement — most users will only need `sensitivity`.
 ## Phase 3: Integration & Documentation
 
 ### 3.1 Update BeatMapGenerator.generateBeatMapFromBuffer
-- [ ] Apply both parameters:
+- [x] Apply both parameters:
   ```typescript
   const sensitivity = this.options.sensitivity ?? 1.0;
   const filter = this.options.filter ?? 0.0;
