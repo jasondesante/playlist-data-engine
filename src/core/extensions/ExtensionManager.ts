@@ -444,13 +444,25 @@ export class ExtensionManager {
     /**
      * Get spawn weights for a category
      * @param category - The category to get weights for
-     * @returns Combined default and custom weights
+     * @returns Combined default and custom weights (all items have weights)
      */
     getWeights(category: ExtensionCategory): Record<string, number> {
         const defaults = this.getDefaultWeights(category);
         const custom = this.customWeights.get(category) || {};
 
-        return { ...defaults, ...custom };
+        // Also include default weights for custom items that don't have explicit weights
+        const customItems = this.getCustom(category);
+        const customItemDefaultWeights: Record<string, number> = {};
+
+        for (const item of customItems) {
+            const name = typeof item === 'string' ? item : item.name;
+            // Use 'in' operator to check for key existence (handles weight 0 correctly)
+            if (name && !(name in defaults) && !(name in custom)) {
+                customItemDefaultWeights[name] = 1.0;
+            }
+        }
+
+        return { ...defaults, ...customItemDefaultWeights, ...custom };
     }
 
     /**
