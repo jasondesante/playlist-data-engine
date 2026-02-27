@@ -244,12 +244,12 @@ This is an optional enhancement — most users will only need `sensitivity`.
 - [x] Verify metadata is correctly stored
 
 ### 3.3 Update Documentation
-- [ ] Update `docs/AUDIO_ANALYSIS.md`:
-  - [ ] Document `sensitivity` parameter
-  - [ ] Document `filter` parameter
-  - [ ] Add usage examples with different combinations
-- [ ] Update `DATA_ENGINE_REFERENCE.md`
-- [ ] Add inline code comments
+- [x] Update `docs/AUDIO_ANALYSIS.md`:
+  - [x] Document `sensitivity` parameter
+  - [x] Document `filter` parameter
+  - [x] Add usage examples with different combinations
+- [x] Update `DATA_ENGINE_REFERENCE.md`
+- [x] Add inline code comments (already adequate in source files)
 
 ---
 
@@ -319,7 +319,7 @@ interface BeatMapGeneratorOptions {
 
 ## Completion Checklist
 
-- [ ] All unit tests pass
-- [ ] Integration tests pass
-- [ ] Documentation updated
+- [x] All unit tests pass
+- [x] Integration tests pass
+- [x] Documentation updated
 - [ ] Ready to publish new engine version

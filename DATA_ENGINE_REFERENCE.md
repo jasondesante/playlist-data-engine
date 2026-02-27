@@ -1409,11 +1409,11 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 |------|-------------|----------------|
 | `Beat` | Single detected beat | `timestamp`, `beatInMeasure`, `isDownbeat`, `measureNumber`, `intensity`, `confidence` |
 | `BeatMap` | Complete beat map for a track | `audioId`, `duration`, `beats`, `bpm`, `metadata` |
-| `BeatMapMetadata` | Algorithm settings used | `version`, `algorithm`, `minBpm`, `maxBpm`, `dpAlpha`, `hopSizeMs`, `melBands` |
+| `BeatMapMetadata` | Algorithm settings used | `version`, `algorithm`, `minBpm`, `maxBpm`, `sensitivity`, `filter`, `dpAlpha`, `hopSizeMs`, `melBands` |
 | `BeatEvent` | Event emitted during playback | `beat`, `currentBpm`, `audioTime`, `timeUntilBeat`, `type` |
 | `AudioSyncState` | Synchronization state for debugging | `audioContextTime`, `audioElementTime`, `drift`, `isSynchronized`, `outputLatency` |
 | `TempoEstimate` | Tempo detection result | `primaryBpm`, `secondaryBpm`, `primaryWeight`, `secondaryWeight`, `isDuple`, `targetIntervalSeconds` |
-| `BeatMapGeneratorOptions` | Configuration for generation | `minBpm`, `maxBpm`, `intensityThreshold`, `hopSizeMs`, `dpAlpha`, `melBands`, `tempoCenter`, `tempoWidth` |
+| `BeatMapGeneratorOptions` | Configuration for generation | `minBpm`, `maxBpm`, `sensitivity`, `filter`, `hopSizeMs`, `dpAlpha`, `melBands`, `tempoCenter`, `tempoWidth` |
 | `BeatStreamOptions` | Configuration for streaming | `anticipationTime`, `userOffsetMs`, `compensateOutputLatency`, `timingTolerance` |
 | `ButtonPressResult` | Button press accuracy result | `accuracy`, `offset`, `matchedBeat`, `absoluteOffset` |
 
@@ -1435,7 +1435,8 @@ constructor(options?: BeatMapGeneratorOptions)
 |--------|---------|-------------|
 | `minBpm` | 60 | Minimum BPM to detect |
 | `maxBpm` | 180 | Maximum BPM to detect |
-| `intensityThreshold` | 0.3 | Intensity threshold for beat detection |
+| `sensitivity` | 1.0 | Pre-processing sensitivity (0.1-10.0) |
+| `filter` | 0.0 | Post-processing grid-alignment filter (0.0-1.0) |
 | `noiseFloorThreshold` | 0.1 | Minimum threshold to prevent noise detection |
 | `hopSizeMs` | 10 | Milliseconds between FFT frames |
 | `fftSize` | 2048 | FFT window size in samples |

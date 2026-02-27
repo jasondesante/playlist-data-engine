@@ -186,6 +186,68 @@ Provide beat timing data and synchronization primitives. This is the **data engi
 
 ---
 
+### Sensitivity & Filter Controls
+
+The beat detection system provides two parameters for fine-tuning beat detection:
+
+| Parameter | Range | Default | Purpose |
+|-----------|-------|---------|---------|
+| **`sensitivity`** | 0.1 - 10.0 | 1.0 | Pre-processing: controls tempo strictness |
+| **`filter`** | 0.0 - 1.0 | 0.0 | Post-processing: filters beats by grid alignment |
+
+#### Sensitivity (Pre-Processing)
+
+The `sensitivity` parameter controls how aggressively the beat detection algorithm works by adjusting the effective `dpAlpha` value:
+
+```typescript
+effectiveDpAlpha = dpAlpha / sensitivity
+```
+
+| Sensitivity | effectiveDpAlpha | Result |
+|-------------|------------------|--------|
+| 0.1 | 6800 | Very strict tempo, fewer beats detected |
+| 0.5 | 1360 | Strict tempo, fewer beats than default |
+| 1.0 | 680 | Default algorithm behavior |
+| 2.0 | 340 | More flexible, more beats detected |
+| 5.0 | 136 | Very flexible, detects subdivisions |
+| 10.0 | 68 | Maximum flexibility, many beats |
+
+**When to use:**
+- **Low sensitivity (0.1-0.5)**: Songs with very consistent tempo where you want only the strongest beats
+- **Default (1.0)**: Most music, balanced detection
+- **High sensitivity (2.0-5.0)**: Complex rhythms, syncopated music, or when you want to capture subdivisions
+- **Very high (10.0)**: Experimental, may include noise
+
+#### Filter (Post-Processing)
+
+The `filter` parameter removes beats that deviate from the expected tempo grid:
+
+| Filter | Behavior |
+|--------|----------|
+| 0.0 | No filtering (default, all detected beats kept) |
+| 0.5 | Remove beats significantly off the 1/4 note grid |
+| 0.9 | Keep only beats very close to the grid |
+| 1.0 | Keep only beats exactly on the grid |
+
+**When to use:**
+- **0.0**: Keep all detected beats (default)
+- **0.3-0.5**: Remove clearly off-grid beats while keeping natural timing variations
+- **0.7-0.9**: Strict quantization for rhythm games requiring precise grid timing
+- **1.0**: Only beats exactly on tempo grid (may remove too many beats)
+
+#### Parameter Combinations
+
+| Sensitivity | Filter | Result |
+|-------------|--------|--------|
+| 0.5 | 0.0 | Fewer beats detected, all kept |
+| 1.0 | 0.0 | Default detection, all kept |
+| 2.0 | 0.0 | More beats detected (including subdivisions) |
+| 1.0 | 0.5 | Default detection, off-grid beats removed |
+| 2.0 | 0.5 | More beats detected, off-grid beats removed |
+| 2.0 | 1.0 | Many beats detected, only exact grid beats kept |
+
+---
+
 ### Types
 
 #### Beat
@@ -229,7 +291,8 @@ Algorithm settings used for detection:
 | `algorithm` | `string` | Algorithm identifier (e.g., 'ellis-dp-v1') |
 | `minBpm` | `number` | Minimum BPM threshold |
 | `maxBpm` | `number` | Maximum BPM threshold |
-| `intensityThreshold` | `number` | Onset intensity threshold (0-1) |
+| `sensitivity` | `number` | Pre-processing sensitivity (0.1-10.0) |
+| `filter` | `number` | Post-processing grid-alignment filter (0.0-1.0) |
 | `noiseFloorThreshold` | `number` | Noise floor threshold |
 | `hopSizeMs` | `number` | Milliseconds between FFT frames |
 | `fftSize` | `number` | FFT window size in samples |
@@ -265,7 +328,8 @@ Configuration for beat map generation:
 |----------|------|---------|-------------|
 | `minBpm` | `number` | 60 | Minimum BPM to detect |
 | `maxBpm` | `number` | 180 | Maximum BPM to detect |
-| `intensityThreshold` | `number` | 0.3 | Intensity threshold (0-1) |
+| `sensitivity` | `number` | 1.0 | Pre-processing sensitivity (0.1-10.0) |
+| `filter` | `number` | 0.0 | Post-processing grid-alignment filter (0.0-1.0) |
 | `noiseFloorThreshold` | `number` | 0.1 | Noise floor threshold |
 | `hopSizeMs` | `number` | 10 | Milliseconds between FFT frames |
 | `fftSize` | `number` | 2048 | FFT window size in samples |
@@ -472,6 +536,102 @@ const generator = new BeatMapGenerator({
 const beatMap = await generator.generateBeatMap('song.mp3', 'track-001', (progress) => {
   console.log(`${progress.phase}: ${progress.progress}% - ${progress.message}`);
 });
+```
+
+#### Sensitivity Control Examples
+
+```typescript
+import { BeatMapGenerator } from 'playlist-data-engine';
+
+// Low sensitivity: strict tempo, fewer beats (good for simple 4/4 songs)
+const strictGenerator = new BeatMapGenerator({
+  sensitivity: 0.5,  // Fewer beats, only the strongest ones
+});
+
+// Default sensitivity: balanced detection
+const defaultGenerator = new BeatMapGenerator({
+  sensitivity: 1.0,  // Standard behavior
+});
+
+// High sensitivity: more beats, captures subdivisions
+const sensitiveGenerator = new BeatMapGenerator({
+  sensitivity: 3.0,  // More beats, including 1/8 and 1/16 notes
+});
+
+const strictBeatMap = await strictGenerator.generateBeatMap('simple-beat.mp3', 'track-001');
+const defaultBeatMap = await defaultGenerator.generateBeatMap('song.mp3', 'track-002');
+const sensitiveBeatMap = await sensitiveGenerator.generateBeatMap('complex-rhythm.mp3', 'track-003');
+
+console.log(`Strict: ${strictBeatMap.beats.length} beats`);
+console.log(`Default: ${defaultBeatMap.beats.length} beats`);
+console.log(`Sensitive: ${sensitiveBeatMap.beats.length} beats`);
+```
+
+#### Filter Control Examples
+
+```typescript
+import { BeatMapGenerator } from 'playlist-data-engine';
+
+// No filtering: keep all detected beats (default)
+const noFilter = new BeatMapGenerator({
+  filter: 0.0,  // All beats kept
+});
+
+// Moderate filtering: remove clearly off-grid beats
+const moderateFilter = new BeatMapGenerator({
+  filter: 0.5,  // Remove beats far from the grid
+});
+
+// Strict filtering: only grid-aligned beats
+const strictFilter = new BeatMapGenerator({
+  filter: 0.9,  // Only beats very close to the grid
+});
+
+const allBeats = await noFilter.generateBeatMap('song.mp3', 'track-001');
+const gridBeats = await strictFilter.generateBeatMap('song.mp3', 'track-001');
+
+console.log(`All beats: ${allBeats.beats.length}`);
+console.log(`Grid-aligned only: ${gridBeats.beats.length}`);
+```
+
+#### Combined Sensitivity + Filter Examples
+
+```typescript
+import { BeatMapGenerator } from 'playlist-data-engine';
+
+// Rhythm game preset: high sensitivity + strict filter
+// Detects many beats, then removes off-grid ones
+const rhythmGameGenerator = new BeatMapGenerator({
+  sensitivity: 2.0,  // Detect subdivisions
+  filter: 0.7,       // Remove off-grid beats
+});
+
+// Casual game preset: low sensitivity + no filter
+// Only the strongest beats, all kept
+const casualGameGenerator = new BeatMapGenerator({
+  sensitivity: 0.5,  // Only strong beats
+  filter: 0.0,       // Keep all detected beats
+});
+
+// Expert rhythm game: very high sensitivity + strict filter
+// Maximum beat detection, quantized to grid
+const expertGenerator = new BeatMapGenerator({
+  sensitivity: 5.0,  // Detect all rhythmic elements
+  filter: 0.9,       // Strict grid alignment
+});
+
+// Compare results
+const song = 'complex-drum-track.mp3';
+const rhythmBeatMap = await rhythmGameGenerator.generateBeatMap(song, 'rhythm-001');
+const casualBeatMap = await casualGameGenerator.generateBeatMap(song, 'casual-001');
+const expertBeatMap = await expertGenerator.generateBeatMap(song, 'expert-001');
+
+console.log(`Rhythm game: ${rhythmBeatMap.beats.length} beats`);
+console.log(`Casual game: ${casualBeatMap.beats.length} beats`);
+console.log(`Expert: ${expertBeatMap.beats.length} beats`);
+
+// Metadata shows the settings used
+console.log(`Rhythm settings:`, rhythmBeatMap.metadata.sensitivity, rhythmBeatMap.metadata.filter);
 ```
 
 #### BeatMap Serialization
