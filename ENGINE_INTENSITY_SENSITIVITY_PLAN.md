@@ -235,13 +235,13 @@ This is an optional enhancement — most users will only need `sensitivity`.
   ```
 
 ### 3.2 Integration Tests
-- [ ] Test combinations:
-  - [ ] Low sensitivity + No filter
-  - [ ] High sensitivity + No filter
-  - [ ] Default sensitivity + High filter
-  - [ ] High sensitivity + High filter
-- [ ] Test with various audio types (steady beats, syncopated, complex rhythms)
-- [ ] Verify metadata is correctly stored
+- [x] Test combinations:
+  - [x] Low sensitivity + No filter
+  - [x] High sensitivity + No filter
+  - [x] Default sensitivity + High filter
+  - [x] High sensitivity + High filter
+- [x] Test with various audio types (steady beats, syncopated, complex rhythms)
+- [x] Verify metadata is correctly stored
 
 ### 3.3 Update Documentation
 - [ ] Update `docs/AUDIO_ANALYSIS.md`:

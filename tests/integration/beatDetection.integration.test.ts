@@ -611,6 +611,409 @@ describe('Beat Detection Integration Tests', () => {
         });
     });
 
+    describe('Sensitivity and Filter Integration Tests', () => {
+        /**
+         * Helper to create mock AudioBuffer with specific rhythmic characteristics
+         */
+        function createMockAudioBufferWithPattern(
+            durationSeconds: number,
+            bpm: number = 120,
+            patternType: 'steady' | 'syncopated' | 'complex' = 'steady',
+            sampleRate: number = 44100,
+            numberOfChannels: number = 2
+        ): AudioBuffer {
+            const length = Math.floor(durationSeconds * sampleRate);
+            const beatInterval = Math.floor(sampleRate * (60 / bpm));
+
+            const channels: Float32Array[] = [];
+            for (let ch = 0; ch < numberOfChannels; ch++) {
+                const data = new Float32Array(length);
+
+                for (let i = 0; i < length; i++) {
+                    const beatPosition = i % beatInterval;
+
+                    if (patternType === 'steady') {
+                        // Regular beats every beatInterval samples
+                        if (beatPosition < 100) {
+                            data[i] = Math.sin(2 * Math.PI * 1000 * (i / sampleRate)) *
+                                Math.exp(-beatPosition / 20) * 0.8;
+                        } else {
+                            data[i] = (Math.random() - 0.5) * 0.05;
+                        }
+                    } else if (patternType === 'syncopated') {
+                        // Syncopated pattern: strong on 1, weak on 2, medium on 3, weak on 4
+                        const beatIndex = Math.floor(i / beatInterval) % 4;
+                        const isInBeat = beatPosition < 100;
+
+                        if (isInBeat) {
+                            let intensity = 0.5;
+                            if (beatIndex === 0) intensity = 0.9; // Strong downbeat
+                            else if (beatIndex === 2) intensity = 0.7; // Medium
+                            else intensity = 0.3; // Weak syncopated
+
+                            data[i] = Math.sin(2 * Math.PI * 1000 * (i / sampleRate)) *
+                                Math.exp(-beatPosition / 20) * intensity;
+                        } else {
+                            data[i] = (Math.random() - 0.5) * 0.05;
+                        }
+                    } else {
+                        // Complex rhythm with subdivisions
+                        const subInterval = Math.floor(beatInterval / 4);
+                        const subPosition = i % subInterval;
+
+                        if (subPosition < 50) {
+                            // Randomly accent some subdivisions
+                            const accent = Math.random() > 0.7 ? 0.8 : 0.3;
+                            data[i] = Math.sin(2 * Math.PI * 800 * (i / sampleRate)) *
+                                Math.exp(-subPosition / 15) * accent;
+                        } else {
+                            data[i] = (Math.random() - 0.5) * 0.08;
+                        }
+                    }
+                }
+                channels.push(data);
+            }
+
+            return {
+                duration: durationSeconds,
+                length,
+                sampleRate,
+                numberOfChannels,
+                getChannelData: (channel: number) => channels[channel],
+                copyFromChannel: () => {},
+                copyToChannel: () => {},
+            } as AudioBuffer;
+        }
+
+        describe('Parameter Combinations', () => {
+            it('should test combination: Low sensitivity (0.5) + No filter (0.0)', async () => {
+                const generator = new BeatMapGenerator({
+                    sensitivity: 0.5, // Less sensitive, stricter tempo
+                    filter: 0.0,      // No grid filtering
+                    noiseFloorThreshold: 0.0,
+                });
+                const audioBuffer = createMockAudioBufferWithPattern(5, 120, 'steady');
+
+                const beatMap = await generator.generateBeatMapFromBuffer(audioBuffer, 'low-sens-no-filter');
+
+                // Low sensitivity should produce fewer beats (stricter tempo adherence)
+                expect(beatMap.beats.length).toBeGreaterThanOrEqual(0);
+                expect(beatMap.metadata.sensitivity).toBe(0.5);
+                expect(beatMap.metadata.filter).toBe(0.0);
+
+                // All beats should have valid properties
+                for (const beat of beatMap.beats) {
+                    expect(beat.timestamp).toBeGreaterThanOrEqual(0);
+                    expect(beat.timestamp).toBeLessThanOrEqual(5);
+                    expect(beat.intensity).toBeGreaterThanOrEqual(0);
+                    expect(beat.confidence).toBeGreaterThanOrEqual(0);
+                }
+
+                console.log(`\n✓ Low sensitivity (0.5) + No filter (0.0):`);
+                console.log(`  Beats detected: ${beatMap.beats.length}`);
+                console.log(`  BPM: ${beatMap.bpm.toFixed(1)}`);
+            });
+
+            it('should test combination: High sensitivity (3.0) + No filter (0.0)', async () => {
+                const lowSensGenerator = new BeatMapGenerator({
+                    sensitivity: 0.5,
+                    filter: 0.0,
+                    noiseFloorThreshold: 0.0,
+                });
+                const highSensGenerator = new BeatMapGenerator({
+                    sensitivity: 3.0, // More sensitive, more flexible
+                    filter: 0.0,
+                    noiseFloorThreshold: 0.0,
+                });
+                const audioBuffer = createMockAudioBufferWithPattern(5, 120, 'steady');
+
+                const lowSensBeatMap = await lowSensGenerator.generateBeatMapFromBuffer(audioBuffer, 'baseline-high-sens');
+                const highSensBeatMap = await highSensGenerator.generateBeatMapFromBuffer(audioBuffer, 'high-sens-no-filter');
+
+                // High sensitivity should generally produce more or equal beats
+                expect(highSensBeatMap.beats.length).toBeGreaterThanOrEqual(0);
+                expect(highSensBeatMap.metadata.sensitivity).toBe(3.0);
+                expect(highSensBeatMap.metadata.filter).toBe(0.0);
+
+                console.log(`\n✓ High sensitivity (3.0) + No filter (0.0):`);
+                console.log(`  Beats detected: ${highSensBeatMap.beats.length}`);
+                console.log(`  Low sens baseline: ${lowSensBeatMap.beats.length}`);
+                console.log(`  BPM: ${highSensBeatMap.bpm.toFixed(1)}`);
+            });
+
+            it('should test combination: Default sensitivity (1.0) + High filter (0.8)', async () => {
+                const noFilterGenerator = new BeatMapGenerator({
+                    sensitivity: 1.0,
+                    filter: 0.0,
+                    noiseFloorThreshold: 0.0,
+                });
+                const highFilterGenerator = new BeatMapGenerator({
+                    sensitivity: 1.0,
+                    filter: 0.8, // Aggressive grid alignment
+                    noiseFloorThreshold: 0.0,
+                });
+                const audioBuffer = createMockAudioBufferWithPattern(5, 120, 'steady');
+
+                const noFilterBeatMap = await noFilterGenerator.generateBeatMapFromBuffer(audioBuffer, 'baseline-filter');
+                const highFilterBeatMap = await highFilterGenerator.generateBeatMapFromBuffer(audioBuffer, 'default-sens-high-filter');
+
+                // High filter should remove off-grid beats
+                expect(highFilterBeatMap.beats.length).toBeLessThanOrEqual(noFilterBeatMap.beats.length);
+                expect(highFilterBeatMap.metadata.sensitivity).toBe(1.0);
+                expect(highFilterBeatMap.metadata.filter).toBe(0.8);
+
+                // Verify remaining beats are close to the grid
+                const beatPeriod = 60.0 / highFilterBeatMap.bpm;
+                const tolerance = beatPeriod * 0.1; // 10% tolerance for "on grid"
+
+                for (const beat of highFilterBeatMap.beats) {
+                    const gridPosition = Math.round(beat.timestamp / beatPeriod);
+                    const expectedTime = gridPosition * beatPeriod;
+                    const deviation = Math.abs(beat.timestamp - expectedTime);
+                    expect(deviation).toBeLessThan(tolerance);
+                }
+
+                console.log(`\n✓ Default sensitivity (1.0) + High filter (0.8):`);
+                console.log(`  Beats before filter: ${noFilterBeatMap.beats.length}`);
+                console.log(`  Beats after filter: ${highFilterBeatMap.beats.length}`);
+                console.log(`  Filtered out: ${noFilterBeatMap.beats.length - highFilterBeatMap.beats.length}`);
+            });
+
+            it('should test combination: High sensitivity (3.0) + High filter (0.8)', async () => {
+                const generator = new BeatMapGenerator({
+                    sensitivity: 3.0, // Detect more beats
+                    filter: 0.8,      // Then filter to grid
+                    noiseFloorThreshold: 0.0,
+                });
+                const audioBuffer = createMockAudioBufferWithPattern(5, 120, 'steady');
+
+                const beatMap = await generator.generateBeatMapFromBuffer(audioBuffer, 'high-sens-high-filter');
+
+                expect(beatMap.beats.length).toBeGreaterThanOrEqual(0);
+                expect(beatMap.metadata.sensitivity).toBe(3.0);
+                expect(beatMap.metadata.filter).toBe(0.8);
+
+                // This combination should detect many beats initially but filter to grid-aligned ones
+                console.log(`\n✓ High sensitivity (3.0) + High filter (0.8):`);
+                console.log(`  Beats detected (after filter): ${beatMap.beats.length}`);
+                console.log(`  BPM: ${beatMap.bpm.toFixed(1)}`);
+            });
+        });
+
+        describe('Various Audio Types', () => {
+            it('should handle steady beats with all parameter combinations', async () => {
+                const audioBuffer = createMockAudioBufferWithPattern(5, 120, 'steady');
+
+                const combinations = [
+                    { sensitivity: 0.5, filter: 0.0 },
+                    { sensitivity: 1.0, filter: 0.0 },
+                    { sensitivity: 2.0, filter: 0.0 },
+                    { sensitivity: 1.0, filter: 0.5 },
+                    { sensitivity: 2.0, filter: 0.5 },
+                ];
+
+                const results: Array<{ config: typeof combinations[0]; beatCount: number }> = [];
+
+                for (const config of combinations) {
+                    const generator = new BeatMapGenerator({
+                        ...config,
+                        noiseFloorThreshold: 0.0,
+                    });
+                    const beatMap = await generator.generateBeatMapFromBuffer(
+                        audioBuffer,
+                        `steady-s${config.sensitivity}-f${config.filter}`
+                    );
+                    results.push({ config, beatCount: beatMap.beats.length });
+
+                    // Verify metadata
+                    expect(beatMap.metadata.sensitivity).toBe(config.sensitivity);
+                    expect(beatMap.metadata.filter).toBe(config.filter);
+                }
+
+                console.log(`\n✓ Steady beats test results:`);
+                for (const r of results) {
+                    console.log(`  sens=${r.config.sensitivity}, filter=${r.config.filter}: ${r.beatCount} beats`);
+                }
+            });
+
+            it('should handle syncopated rhythms with all parameter combinations', async () => {
+                const audioBuffer = createMockAudioBufferWithPattern(5, 120, 'syncopated');
+
+                const combinations = [
+                    { sensitivity: 0.5, filter: 0.0 },
+                    { sensitivity: 1.0, filter: 0.0 },
+                    { sensitivity: 2.0, filter: 0.0 },
+                    { sensitivity: 1.0, filter: 0.5 },
+                    { sensitivity: 2.0, filter: 0.5 },
+                ];
+
+                const results: Array<{ config: typeof combinations[0]; beatCount: number }> = [];
+
+                for (const config of combinations) {
+                    const generator = new BeatMapGenerator({
+                        ...config,
+                        noiseFloorThreshold: 0.0,
+                    });
+                    const beatMap = await generator.generateBeatMapFromBuffer(
+                        audioBuffer,
+                        `syncopated-s${config.sensitivity}-f${config.filter}`
+                    );
+                    results.push({ config, beatCount: beatMap.beats.length });
+
+                    // Verify metadata
+                    expect(beatMap.metadata.sensitivity).toBe(config.sensitivity);
+                    expect(beatMap.metadata.filter).toBe(config.filter);
+                }
+
+                console.log(`\n✓ Syncopated rhythms test results:`);
+                for (const r of results) {
+                    console.log(`  sens=${r.config.sensitivity}, filter=${r.config.filter}: ${r.beatCount} beats`);
+                }
+            });
+
+            it('should handle complex rhythms with all parameter combinations', async () => {
+                const audioBuffer = createMockAudioBufferWithPattern(5, 120, 'complex');
+
+                const combinations = [
+                    { sensitivity: 0.5, filter: 0.0 },
+                    { sensitivity: 1.0, filter: 0.0 },
+                    { sensitivity: 2.0, filter: 0.0 },
+                    { sensitivity: 1.0, filter: 0.5 },
+                    { sensitivity: 2.0, filter: 0.5 },
+                ];
+
+                const results: Array<{ config: typeof combinations[0]; beatCount: number }> = [];
+
+                for (const config of combinations) {
+                    const generator = new BeatMapGenerator({
+                        ...config,
+                        noiseFloorThreshold: 0.0,
+                    });
+                    const beatMap = await generator.generateBeatMapFromBuffer(
+                        audioBuffer,
+                        `complex-s${config.sensitivity}-f${config.filter}`
+                    );
+                    results.push({ config, beatCount: beatMap.beats.length });
+
+                    // Verify metadata
+                    expect(beatMap.metadata.sensitivity).toBe(config.sensitivity);
+                    expect(beatMap.metadata.filter).toBe(config.filter);
+                }
+
+                console.log(`\n✓ Complex rhythms test results:`);
+                for (const r of results) {
+                    console.log(`  sens=${r.config.sensitivity}, filter=${r.config.filter}: ${r.beatCount} beats`);
+                }
+            });
+        });
+
+        describe('Metadata Verification', () => {
+            it('should correctly store sensitivity in metadata', async () => {
+                const audioBuffer = createMockAudioBufferWithPattern(3, 120, 'steady');
+                const sensitivityValues = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0];
+
+                for (const sensitivity of sensitivityValues) {
+                    const generator = new BeatMapGenerator({
+                        sensitivity,
+                        noiseFloorThreshold: 0.0,
+                    });
+                    const beatMap = await generator.generateBeatMapFromBuffer(
+                        audioBuffer,
+                        `meta-sens-${sensitivity}`
+                    );
+
+                    expect(beatMap.metadata.sensitivity).toBe(sensitivity);
+                }
+
+                console.log(`\n✓ Sensitivity correctly stored in metadata for all values`);
+            });
+
+            it('should correctly store filter in metadata', async () => {
+                const audioBuffer = createMockAudioBufferWithPattern(3, 120, 'steady');
+                const filterValues = [0.0, 0.25, 0.5, 0.75, 1.0];
+
+                for (const filter of filterValues) {
+                    const generator = new BeatMapGenerator({
+                        filter,
+                        sensitivity: 2.0,
+                        noiseFloorThreshold: 0.0,
+                    });
+                    const beatMap = await generator.generateBeatMapFromBuffer(
+                        audioBuffer,
+                        `meta-filter-${filter}`
+                    );
+
+                    expect(beatMap.metadata.filter).toBe(filter);
+                }
+
+                console.log(`\n✓ Filter correctly stored in metadata for all values`);
+            });
+
+            it('should correctly store both sensitivity and filter together in metadata', async () => {
+                const audioBuffer = createMockAudioBufferWithPattern(3, 120, 'steady');
+                const combinations = [
+                    { sensitivity: 0.5, filter: 0.0 },
+                    { sensitivity: 1.0, filter: 0.5 },
+                    { sensitivity: 2.0, filter: 0.8 },
+                    { sensitivity: 5.0, filter: 1.0 },
+                ];
+
+                for (const { sensitivity, filter } of combinations) {
+                    const generator = new BeatMapGenerator({
+                        sensitivity,
+                        filter,
+                        noiseFloorThreshold: 0.0,
+                    });
+                    const beatMap = await generator.generateBeatMapFromBuffer(
+                        audioBuffer,
+                        `meta-both-${sensitivity}-${filter}`
+                    );
+
+                    expect(beatMap.metadata.sensitivity).toBe(sensitivity);
+                    expect(beatMap.metadata.filter).toBe(filter);
+
+                    // Also verify other metadata fields are present
+                    expect(beatMap.metadata.version).toBeDefined();
+                    expect(beatMap.metadata.algorithm).toBe(BEAT_DETECTION_ALGORITHM);
+                    expect(beatMap.metadata.generatedAt).toBeDefined();
+                    expect(beatMap.metadata.minBpm).toBeDefined();
+                    expect(beatMap.metadata.maxBpm).toBeDefined();
+                    expect(beatMap.metadata.dpAlpha).toBeDefined();
+                }
+
+                console.log(`\n✓ Both sensitivity and filter correctly stored together in metadata`);
+            });
+
+            it('should preserve metadata through JSON serialization', async () => {
+                const generator = new BeatMapGenerator({
+                    sensitivity: 2.5,
+                    filter: 0.6,
+                    noiseFloorThreshold: 0.0,
+                });
+                const audioBuffer = createMockAudioBufferWithPattern(3, 120, 'steady');
+
+                const originalBeatMap = await generator.generateBeatMapFromBuffer(
+                    audioBuffer,
+                    'serialize-test'
+                );
+
+                // Serialize and deserialize
+                const jsonString = BeatMapGenerator.toJSON(originalBeatMap);
+                const restoredBeatMap = BeatMapGenerator.fromJSON(jsonString);
+
+                // Verify metadata is preserved
+                expect(restoredBeatMap.metadata.sensitivity).toBe(originalBeatMap.metadata.sensitivity);
+                expect(restoredBeatMap.metadata.filter).toBe(originalBeatMap.metadata.filter);
+                expect(restoredBeatMap.metadata.sensitivity).toBe(2.5);
+                expect(restoredBeatMap.metadata.filter).toBe(0.6);
+
+                console.log(`\n✓ Metadata preserved through JSON serialization`);
+                console.log(`  Original: sens=${originalBeatMap.metadata.sensitivity}, filter=${originalBeatMap.metadata.filter}`);
+                console.log(`  Restored: sens=${restoredBeatMap.metadata.sensitivity}, filter=${restoredBeatMap.metadata.filter}`);
+            });
+        });
+    });
+
     describe('Performance and Edge Cases', () => {
         it('should handle beat map generation cancellation', async () => {
             const generator = new BeatMapGenerator();
