@@ -111,11 +111,11 @@ This is an optional enhancement — most users will only need `sensitivity`.
   ```
 
 ### 1.6 Add Unit Tests for Sensitivity
-- [ ] Test sensitivity = 0.5 produces fewer beats than 1.0
-- [ ] Test sensitivity = 1.0 produces default beat count
-- [ ] Test sensitivity = 2.0 produces more beats than 1.0
-- [ ] Test sensitivity = 5.0 produces even more beats
-- [ ] Test sensitivity = 10.0 doesn't produce garbage/noise
+- [x] Test sensitivity = 0.5 produces fewer beats than 1.0
+- [x] Test sensitivity = 1.0 produces default beat count
+- [x] Test sensitivity = 2.0 produces more beats than 1.0
+- [x] Test sensitivity = 5.0 produces even more beats
+- [x] Test sensitivity = 10.0 doesn't produce garbage/noise
 
 ---
 

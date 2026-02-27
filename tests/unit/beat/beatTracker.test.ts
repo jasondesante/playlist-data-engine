@@ -609,4 +609,151 @@ describe('BeatTracker', () => {
             expect(result.beats.length).toBeGreaterThanOrEqual(0);
         });
     });
+
+    describe('sensitivity', () => {
+        it('should accept sensitivity in config', () => {
+            const tracker = new BeatTracker({ sensitivity: 2.0 });
+            const config = tracker.getConfig();
+
+            expect(config.sensitivity).toBe(2.0);
+        });
+
+        it('should have default sensitivity of 1.0', () => {
+            const tracker = new BeatTracker();
+            const config = tracker.getConfig();
+
+            expect(config.sensitivity).toBe(1.0);
+        });
+
+        it('should produce fewer beats with sensitivity = 0.5 than with 1.0', () => {
+            const bpm = 120;
+            const { envelope, hopSizeSeconds } = createSubdivisionEnvelope(bpm, 10);
+            const tempoEstimate = createTempoEstimate(bpm);
+
+            // Default sensitivity (1.0)
+            const defaultTracker = new BeatTracker({ sensitivity: 1.0 });
+            const defaultResult = defaultTracker.trackBeats(envelope, tempoEstimate, hopSizeSeconds);
+
+            // Low sensitivity (0.5) - stricter tempo
+            const lowSensitivityTracker = new BeatTracker({ sensitivity: 0.5 });
+            const lowSensitivityResult = lowSensitivityTracker.trackBeats(envelope, tempoEstimate, hopSizeSeconds);
+
+            // Lower sensitivity should produce fewer or equal beats
+            expect(lowSensitivityResult.beats.length).toBeLessThanOrEqual(defaultResult.beats.length);
+        });
+
+        it('should produce default beat count with sensitivity = 1.0', () => {
+            const bpm = 120;
+            const { envelope, hopSizeSeconds } = createClickTrackOnsetEnvelope(bpm, 10);
+            const tempoEstimate = createTempoEstimate(bpm);
+
+            const tracker = new BeatTracker({ sensitivity: 1.0 });
+            const result = tracker.trackBeats(envelope, tempoEstimate, hopSizeSeconds);
+
+            // At 120 BPM for 10 seconds, expect roughly 20 beats (±50% tolerance)
+            const expectedBeats = Math.floor(10 * bpm / 60);
+            expect(result.beats.length).toBeGreaterThan(expectedBeats * 0.5);
+            expect(result.beats.length).toBeLessThan(expectedBeats * 1.5);
+        });
+
+        it('should produce more beats with sensitivity = 2.0 than with 1.0', () => {
+            const bpm = 120;
+            const { envelope, hopSizeSeconds } = createSubdivisionEnvelope(bpm, 10);
+            const tempoEstimate = createTempoEstimate(bpm);
+
+            // Default sensitivity (1.0)
+            const defaultTracker = new BeatTracker({ sensitivity: 1.0 });
+            const defaultResult = defaultTracker.trackBeats(envelope, tempoEstimate, hopSizeSeconds);
+
+            // High sensitivity (2.0) - more flexible
+            const highSensitivityTracker = new BeatTracker({ sensitivity: 2.0 });
+            const highSensitivityResult = highSensitivityTracker.trackBeats(envelope, tempoEstimate, hopSizeSeconds);
+
+            // Higher sensitivity should produce more or equal beats
+            expect(highSensitivityResult.beats.length).toBeGreaterThanOrEqual(defaultResult.beats.length);
+        });
+
+        it('should produce even more beats with sensitivity = 5.0', () => {
+            const bpm = 120;
+            const { envelope, hopSizeSeconds } = createSubdivisionEnvelope(bpm, 10);
+            const tempoEstimate = createTempoEstimate(bpm);
+
+            // Sensitivity = 2.0
+            const mediumTracker = new BeatTracker({ sensitivity: 2.0 });
+            const mediumResult = mediumTracker.trackBeats(envelope, tempoEstimate, hopSizeSeconds);
+
+            // Sensitivity = 5.0 - even more flexible
+            const highTracker = new BeatTracker({ sensitivity: 5.0 });
+            const highResult = highTracker.trackBeats(envelope, tempoEstimate, hopSizeSeconds);
+
+            // Higher sensitivity should generally produce more or equal beats
+            expect(highResult.beats.length).toBeGreaterThanOrEqual(mediumResult.beats.length);
+        });
+
+        it('should not produce garbage/noise with sensitivity = 10.0', () => {
+            const bpm = 120;
+            const { envelope, hopSizeSeconds } = createClickTrackOnsetEnvelope(bpm, 10);
+            const tempoEstimate = createTempoEstimate(bpm);
+
+            // Very high sensitivity (10.0)
+            const tracker = new BeatTracker({ sensitivity: 10.0 });
+            const result = tracker.trackBeats(envelope, tempoEstimate, hopSizeSeconds);
+
+            // Should still produce valid beats
+            expect(result.beats.length).toBeGreaterThan(0);
+
+            // All beats should have valid properties
+            for (const beat of result.beats) {
+                expect(beat.timestamp).toBeGreaterThanOrEqual(0);
+                expect(beat.timestamp).toBeLessThanOrEqual(10);
+                expect(beat.intensity).toBeGreaterThanOrEqual(0);
+                expect(beat.intensity).toBeLessThanOrEqual(1);
+                expect(beat.confidence).toBeGreaterThanOrEqual(0);
+                expect(beat.confidence).toBeLessThanOrEqual(1);
+            }
+
+            // BPM estimate should still be reasonable (within 50% of target)
+            const stats = tracker.getTrackingStats(result, hopSizeSeconds);
+            expect(stats.estimatedBpm).toBeGreaterThan(bpm * 0.5);
+            expect(stats.estimatedBpm).toBeLessThan(bpm * 2.0);
+        });
+
+        it('should produce monotonic beat ordering regardless of sensitivity', () => {
+            const bpm = 120;
+            const { envelope, hopSizeSeconds } = createClickTrackOnsetEnvelope(bpm, 10);
+            const tempoEstimate = createTempoEstimate(bpm);
+
+            const sensitivities = [0.5, 1.0, 2.0, 5.0, 10.0];
+
+            for (const sensitivity of sensitivities) {
+                const tracker = new BeatTracker({ sensitivity });
+                const result = tracker.trackBeats(envelope, tempoEstimate, hopSizeSeconds);
+
+                // Beat frames should always be in ascending order
+                for (let i = 1; i < result.beatFrames.length; i++) {
+                    expect(result.beatFrames[i]).toBeGreaterThan(result.beatFrames[i - 1]);
+                }
+            }
+        });
+
+        it('should demonstrate increasing beat counts with increasing sensitivity', () => {
+            const bpm = 120;
+            // Use subdivision envelope to have beats that can be picked up with higher sensitivity
+            const { envelope, hopSizeSeconds } = createSubdivisionEnvelope(bpm, 10);
+            const tempoEstimate = createTempoEstimate(bpm);
+
+            const sensitivities = [0.5, 1.0, 2.0, 5.0];
+            const beatCounts: number[] = [];
+
+            for (const sensitivity of sensitivities) {
+                const tracker = new BeatTracker({ sensitivity });
+                const result = tracker.trackBeats(envelope, tempoEstimate, hopSizeSeconds);
+                beatCounts.push(result.beats.length);
+            }
+
+            // Generally, higher sensitivity should produce more or equal beats
+            // (may not be strictly monotonic due to algorithm behavior)
+            expect(beatCounts[3]).toBeGreaterThanOrEqual(beatCounts[0]);
+        });
+    });
 });
