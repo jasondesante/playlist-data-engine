@@ -122,12 +122,12 @@ This is an optional enhancement — most users will only need `sensitivity`.
 ## Phase 2: Post-Processing Filter (Grid-Alignment)
 
 ### 2.1 Add Filter Parameter to Options
-- [ ] In `BeatMap.ts`, add to `BeatMapGeneratorOptions`:
+- [x] In `BeatMap.ts`, add to `BeatMapGeneratorOptions`:
   ```typescript
   /** Post-processing grid-alignment filter (0.0-1.0, default: 0.0) */
   filter?: number;
   ```
-- [ ] Add to defaults:
+- [x] Add to defaults:
   ```typescript
   filter: 0.0,
   ```

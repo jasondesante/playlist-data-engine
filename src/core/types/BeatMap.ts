@@ -47,6 +47,9 @@ export interface BeatMapMetadata {
     /** Pre-processing sensitivity used (0.1 - 10.0) */
     sensitivity: number;
 
+    /** Post-processing grid-alignment filter used (0.0 - 1.0) */
+    filter: number;
+
     /** Noise floor threshold for filtering low-energy detections */
     noiseFloorThreshold: number;
 
@@ -172,6 +175,9 @@ export interface BeatMapGeneratorOptions {
 
     /** Pre-processing sensitivity (0.1-10.0, default: 1.0) */
     sensitivity?: number;
+
+    /** Post-processing grid-alignment filter (0.0-1.0, default: 0.0) */
+    filter?: number;
 
     /** Minimum threshold to prevent noise detection (default: 0.1) */
     noiseFloorThreshold?: number;
@@ -412,6 +418,7 @@ export const DEFAULT_BEATMAP_GENERATOR_OPTIONS: Required<BeatMapGeneratorOptions
     minBpm: 60,
     maxBpm: 180,
     sensitivity: 1.0,
+    filter: 0.0,
     noiseFloorThreshold: 0.1,
     hopSizeMs: 10,
     fftSize: 2048,

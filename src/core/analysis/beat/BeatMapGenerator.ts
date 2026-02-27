@@ -232,6 +232,7 @@ export class BeatMapGenerator {
                 minBpm: this.options.minBpm,
                 maxBpm: this.options.maxBpm,
                 sensitivity: this.options.sensitivity,
+                filter: this.options.filter,
                 noiseFloorThreshold: this.options.noiseFloorThreshold,
                 hopSizeMs: this.options.hopSizeMs,
                 fftSize: this.options.fftSize,
