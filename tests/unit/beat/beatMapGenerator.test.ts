@@ -75,7 +75,7 @@ describe('BeatMapGenerator', () => {
 
             expect(config.minBpm).toBe(60);
             expect(config.maxBpm).toBe(180);
-            expect(config.intensityThreshold).toBe(0.3);
+            expect(config.sensitivity).toBe(1.0);
             expect(config.noiseFloorThreshold).toBe(0.1);
             expect(config.hopSizeMs).toBe(10);
             expect(config.fftSize).toBe(2048);
@@ -104,7 +104,7 @@ describe('BeatMapGenerator', () => {
             expect(config.dpAlpha).toBe(500);
             expect(config.hopSizeMs).toBe(5);
             // Defaults should still be applied for unspecified options
-            expect(config.intensityThreshold).toBe(0.3);
+            expect(config.sensitivity).toBe(1.0);
             expect(config.melBands).toBe(40);
         });
     });
@@ -380,7 +380,7 @@ describe('BeatMapGenerator', () => {
                     algorithm: BEAT_DETECTION_ALGORITHM,
                     minBpm: 60,
                     maxBpm: 180,
-                    intensityThreshold: 0.3,
+                    sensitivity: 1.0,
                     noiseFloorThreshold: 0.1,
                     hopSizeMs: 10,
                     fftSize: 2048,
@@ -414,7 +414,7 @@ describe('BeatMapGenerator', () => {
                     algorithm: BEAT_DETECTION_ALGORITHM,
                     minBpm: 60,
                     maxBpm: 180,
-                    intensityThreshold: 0.3,
+                    sensitivity: 1.0,
                     noiseFloorThreshold: 0.1,
                     hopSizeMs: 10,
                     fftSize: 2048,

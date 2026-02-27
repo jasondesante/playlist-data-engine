@@ -62,7 +62,7 @@ function createMockBeatMap(
             algorithm: BEAT_DETECTION_ALGORITHM,
             minBpm: 60,
             maxBpm: 180,
-            intensityThreshold: 0.3,
+            sensitivity: 1.0,
             noiseFloorThreshold: 0.1,
             hopSizeMs: 10,
             fftSize: 2048,

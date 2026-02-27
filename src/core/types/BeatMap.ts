@@ -44,8 +44,8 @@ export interface BeatMapMetadata {
     /** Maximum BPM threshold used during detection */
     maxBpm: number;
 
-    /** Onset intensity threshold (0.0 - 1.0) */
-    intensityThreshold: number;
+    /** Pre-processing sensitivity used (0.1 - 10.0) */
+    sensitivity: number;
 
     /** Noise floor threshold for filtering low-energy detections */
     noiseFloorThreshold: number;
@@ -170,8 +170,8 @@ export interface BeatMapGeneratorOptions {
     /** Maximum BPM to detect (default: 180) */
     maxBpm?: number;
 
-    /** Intensity threshold for beat detection (0.0-1.0, default: 0.3) */
-    intensityThreshold?: number;
+    /** Pre-processing sensitivity (0.1-10.0, default: 1.0) */
+    sensitivity?: number;
 
     /** Minimum threshold to prevent noise detection (default: 0.1) */
     noiseFloorThreshold?: number;
@@ -408,7 +408,7 @@ export interface BeatMapGenerationProgress {
 export const DEFAULT_BEATMAP_GENERATOR_OPTIONS: Required<BeatMapGeneratorOptions> = {
     minBpm: 60,
     maxBpm: 180,
-    intensityThreshold: 0.3,
+    sensitivity: 1.0,
     noiseFloorThreshold: 0.1,
     hopSizeMs: 10,
     fftSize: 2048,

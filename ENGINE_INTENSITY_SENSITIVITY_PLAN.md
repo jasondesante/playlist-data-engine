@@ -52,12 +52,12 @@ This is an optional enhancement — most users will only need `sensitivity`.
 ## Phase 1: Pre-Processing Sensitivity
 
 ### 1.1 Rename intensityThreshold → sensitivity
-- [ ] In `BeatMap.ts`, rename `intensityThreshold` to `sensitivity` in `BeatMapGeneratorOptions`:
+- [x] In `BeatMap.ts`, rename `intensityThreshold` to `sensitivity` in `BeatMapGeneratorOptions`:
   ```typescript
   /** Pre-processing sensitivity (0.1-10.0, default: 1.0) */
   sensitivity?: number;
   ```
-- [ ] Update default:
+- [x] Update default:
   ```typescript
   sensitivity: 1.0,
   ```
@@ -102,7 +102,7 @@ This is an optional enhancement — most users will only need `sensitivity`.
   ```
 
 ### 1.5 Update Metadata
-- [ ] In `BeatMap.ts`, update `BeatMapMetadata`:
+- [x] In `BeatMap.ts`, update `BeatMapMetadata`:
   ```typescript
   interface BeatMapMetadata {
       // ... existing fields

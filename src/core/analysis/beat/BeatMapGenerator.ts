@@ -230,7 +230,7 @@ export class BeatMapGenerator {
                 algorithm: BEAT_DETECTION_ALGORITHM,
                 minBpm: this.options.minBpm,
                 maxBpm: this.options.maxBpm,
-                intensityThreshold: this.options.intensityThreshold,
+                sensitivity: this.options.sensitivity,
                 noiseFloorThreshold: this.options.noiseFloorThreshold,
                 hopSizeMs: this.options.hopSizeMs,
                 fftSize: this.options.fftSize,
