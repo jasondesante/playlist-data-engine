@@ -134,7 +134,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
 ## Phase 3: BeatStreamOptions Updates
 
 ### Task 3.1: Add Threshold Options to BeatStreamOptions
-- [ ] Update `BeatStreamOptions` interface in `src/core/types/BeatMap.ts`
+- [x] Update `BeatStreamOptions` interface in `src/core/types/BeatMap.ts`
   ```typescript
   export interface BeatStreamOptions {
       /** Time before beat to emit 'upcoming' event in seconds (default: 2.0) */
@@ -166,7 +166,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
   ```
 
 ### Task 3.2: Update DEFAULT_BEATSTREAM_OPTIONS
-- [ ] Add new defaults in `src/core/types/BeatMap.ts`
+- [x] Add new defaults in `src/core/types/BeatMap.ts`
   ```typescript
   export const DEFAULT_BEATSTREAM_OPTIONS: Required<BeatStreamOptions> = {
       anticipationTime: 2.0,

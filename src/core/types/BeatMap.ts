@@ -232,6 +232,18 @@ export interface BeatStreamOptions {
 
     /** Timing tolerance for synchronization in seconds (default: 0.01 = 10ms) */
     timingTolerance?: number;
+
+    /**
+     * Difficulty preset for accuracy thresholds (default: 'hard')
+     * Ignored if customThresholds is provided.
+     */
+    difficultyPreset?: DifficultyPreset;
+
+    /**
+     * Custom accuracy thresholds (in seconds)
+     * If provided, overrides difficultyPreset.
+     */
+    customThresholds?: Partial<AccuracyThresholds>;
 }
 
 /**
@@ -489,6 +501,8 @@ export const DEFAULT_BEATSTREAM_OPTIONS: Required<BeatStreamOptions> = {
     userOffsetMs: 0,
     compensateOutputLatency: true,
     timingTolerance: 0.01,
+    difficultyPreset: 'hard',
+    customThresholds: {},
 };
 
 /**
