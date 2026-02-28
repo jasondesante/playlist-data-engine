@@ -64,6 +64,7 @@ export { BeatTracker, type BeatTrackingResult } from './BeatTracker.js';
 export { DownbeatDetector } from './DownbeatDetector.js';
 export { BeatMapGenerator, type ProgressCallback } from './BeatMapGenerator.js';
 export { BeatStream } from './BeatStream.js';
+export { BeatInterpolator } from './BeatInterpolator.js';
 
 // Utilities
 export {
