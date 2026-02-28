@@ -565,17 +565,17 @@ describe('BeatStream', () => {
 
     describe('checkButtonPress', () => {
         it('should return perfect for press within 10ms of beat', () => {
-            const stream = new BeatStream(beatMap, audioContext);
+            const stream = new BeatStream(beatMap, audioContext, { difficultyPreset: 'hard' });
 
             const result = stream.checkButtonPress(1.005);
 
             expect(result.accuracy).toBe('perfect');
             expect(result.matchedBeat.timestamp).toBe(1.0);
-            expect(result.absoluteOffset).toBeLessThanOrEqual(BEAT_ACCURACY_THRESHOLDS.perfect);
+            expect(result.absoluteOffset).toBeLessThanOrEqual(HARD_ACCURACY_THRESHOLDS.perfect);
         });
 
         it('should return great for press within 25ms of beat', () => {
-            const stream = new BeatStream(beatMap, audioContext);
+            const stream = new BeatStream(beatMap, audioContext, { difficultyPreset: 'hard' });
 
             const result = stream.checkButtonPress(1.020);
 
@@ -584,7 +584,7 @@ describe('BeatStream', () => {
         });
 
         it('should return good for press within 50ms of beat', () => {
-            const stream = new BeatStream(beatMap, audioContext);
+            const stream = new BeatStream(beatMap, audioContext, { difficultyPreset: 'hard' });
 
             const result = stream.checkButtonPress(1.045);
 
@@ -619,7 +619,7 @@ describe('BeatStream', () => {
         });
 
         it('should update last button press result', () => {
-            const stream = new BeatStream(beatMap, audioContext);
+            const stream = new BeatStream(beatMap, audioContext, { difficultyPreset: 'hard' });
 
             stream.checkButtonPress(1.005);
             const lastResult = stream.getLastBeatAccuracy();
@@ -639,7 +639,7 @@ describe('BeatStream', () => {
         });
 
         it('should return the last button press result', () => {
-            const stream = new BeatStream(beatMap, audioContext);
+            const stream = new BeatStream(beatMap, audioContext, { difficultyPreset: 'hard' });
 
             stream.checkButtonPress(1.005);
             stream.checkButtonPress(2.020);
@@ -868,14 +868,14 @@ describe('BeatStream', () => {
     });
 
     describe('difficulty presets', () => {
-        it('should use hard preset by default', () => {
+        it('should use medium preset by default', () => {
             const stream = new BeatStream(beatMap, audioContext);
             const thresholds = stream.getAccuracyThresholds();
 
-            expect(thresholds.perfect).toBe(HARD_ACCURACY_THRESHOLDS.perfect);
-            expect(thresholds.great).toBe(HARD_ACCURACY_THRESHOLDS.great);
-            expect(thresholds.good).toBe(HARD_ACCURACY_THRESHOLDS.good);
-            expect(thresholds.ok).toBe(HARD_ACCURACY_THRESHOLDS.ok);
+            expect(thresholds.perfect).toBe(MEDIUM_ACCURACY_THRESHOLDS.perfect);
+            expect(thresholds.great).toBe(MEDIUM_ACCURACY_THRESHOLDS.great);
+            expect(thresholds.good).toBe(MEDIUM_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBe(MEDIUM_ACCURACY_THRESHOLDS.ok);
         });
 
         it('should use easy preset when specified', () => {
@@ -1099,7 +1099,7 @@ describe('BeatStream', () => {
             expect(options.customThresholds).toEqual(customThresholds);
         });
 
-        it('should use hard preset as base when custom thresholds are provided without preset', () => {
+        it('should use medium preset as base when custom thresholds are provided without preset', () => {
             const stream = new BeatStream(beatMap, audioContext, {
                 customThresholds: {
                     perfect: 0.100, // Override just perfect
@@ -1109,10 +1109,10 @@ describe('BeatStream', () => {
 
             // Custom perfect
             expect(thresholds.perfect).toBe(0.100);
-            // Rest from hard preset (default)
-            expect(thresholds.great).toBe(HARD_ACCURACY_THRESHOLDS.great);
-            expect(thresholds.good).toBe(HARD_ACCURACY_THRESHOLDS.good);
-            expect(thresholds.ok).toBe(HARD_ACCURACY_THRESHOLDS.ok);
+            // Rest from medium preset (default)
+            expect(thresholds.great).toBe(MEDIUM_ACCURACY_THRESHOLDS.great);
+            expect(thresholds.good).toBe(MEDIUM_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBe(MEDIUM_ACCURACY_THRESHOLDS.ok);
         });
 
         it('should return a copy of thresholds from getAccuracyThresholds', () => {
@@ -1192,9 +1192,9 @@ describe('BeatStream', () => {
             const thresholds = stream.getAccuracyThresholds();
             expect(thresholds.perfect).toBe(0.100);
             expect(thresholds.great).toBe(0.150);
-            // Rest from hard preset (default)
-            expect(thresholds.good).toBe(HARD_ACCURACY_THRESHOLDS.good);
-            expect(thresholds.ok).toBe(HARD_ACCURACY_THRESHOLDS.ok);
+            // Rest from medium preset (default)
+            expect(thresholds.good).toBe(MEDIUM_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBe(MEDIUM_ACCURACY_THRESHOLDS.ok);
         });
 
         it('should update both preset and custom thresholds', () => {

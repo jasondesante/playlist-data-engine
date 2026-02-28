@@ -462,7 +462,7 @@ describe('Beat Detection Integration Tests', () => {
     });
 
     describe('Difficulty Presets and Custom Thresholds', () => {
-        it('should use hard preset by default', async () => {
+        it('should use medium preset by default', async () => {
             const beatMap: BeatMap = {
                 audioId: 'preset-test',
                 duration: 5,
@@ -493,12 +493,12 @@ describe('Beat Detection Integration Tests', () => {
             const beatStream = new BeatStream(beatMap, mockAudioContext);
 
             const thresholds = beatStream.getAccuracyThresholds();
-            expect(thresholds.perfect).toBe(HARD_ACCURACY_THRESHOLDS.perfect);
-            expect(thresholds.great).toBe(HARD_ACCURACY_THRESHOLDS.great);
-            expect(thresholds.good).toBe(HARD_ACCURACY_THRESHOLDS.good);
-            expect(thresholds.ok).toBe(HARD_ACCURACY_THRESHOLDS.ok);
+            expect(thresholds.perfect).toBe(MEDIUM_ACCURACY_THRESHOLDS.perfect);
+            expect(thresholds.great).toBe(MEDIUM_ACCURACY_THRESHOLDS.great);
+            expect(thresholds.good).toBe(MEDIUM_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBe(MEDIUM_ACCURACY_THRESHOLDS.ok);
 
-            console.log(`\n✓ Hard preset is used by default`);
+            console.log(`\n✓ Medium preset is used by default`);
             console.log(`  Perfect: ±${thresholds.perfect * 1000}ms`);
             console.log(`  Great: ±${thresholds.great * 1000}ms`);
             console.log(`  Good: ±${thresholds.good * 1000}ms`);
@@ -794,7 +794,7 @@ describe('Beat Detection Integration Tests', () => {
             };
 
             const mockAudioContext = createMockAudioContext();
-            const beatStream = new BeatStream(beatMap, mockAudioContext);
+            const beatStream = new BeatStream(beatMap, mockAudioContext, { difficultyPreset: 'hard' });
 
             // Test perfect accuracy (within 10ms)
             const perfect = beatStream.checkButtonPress(1.005);
@@ -818,10 +818,10 @@ describe('Beat Detection Integration Tests', () => {
             expect(miss.accuracy).toBe('miss');
 
             console.log(`\n✓ Button press accuracy detection works`);
-            console.log(`  Perfect (±${BEAT_ACCURACY_THRESHOLDS.perfect * 1000}ms): ${perfect.accuracy}`);
-            console.log(`  Great (±${BEAT_ACCURACY_THRESHOLDS.great * 1000}ms): ${great.accuracy}`);
-            console.log(`  Good (±${BEAT_ACCURACY_THRESHOLDS.good * 1000}ms): ${good.accuracy}`);
-            console.log(`  Ok (±${BEAT_ACCURACY_THRESHOLDS.ok * 1000}ms): ${ok.accuracy}`);
+            console.log(`  Perfect (±${HARD_ACCURACY_THRESHOLDS.perfect * 1000}ms): ${perfect.accuracy}`);
+            console.log(`  Great (±${HARD_ACCURACY_THRESHOLDS.great * 1000}ms): ${great.accuracy}`);
+            console.log(`  Good (±${HARD_ACCURACY_THRESHOLDS.good * 1000}ms): ${good.accuracy}`);
+            console.log(`  Ok (±${HARD_ACCURACY_THRESHOLDS.ok * 1000}ms): ${ok.accuracy}`);
             console.log(`  Miss: ${miss.accuracy}`);
         });
     });

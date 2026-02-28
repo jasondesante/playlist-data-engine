@@ -22,7 +22,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
   - **Medium**: perfect=±45ms, great=±90ms, good=±135ms, ok=±200ms
   - **Hard**: perfect=±10ms, great=±25ms, good=±50ms, ok=±100ms (current behavior)
 - **Custom thresholds**: Allow manual configuration of all 4 thresholds via `BeatStreamOptions`
-- **Backward compatible**: Default behavior unchanged (Hard preset)
+- **Backward compatible**: Default behavior unchanged (Medium preset)
 
 ---
 
@@ -152,7 +152,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
       timingTolerance?: number;
 
       /**
-       * Difficulty preset for accuracy thresholds (default: 'hard')
+       * Difficulty preset for accuracy thresholds (default: 'medium')
        * Ignored if customThresholds is provided.
        */
       difficultyPreset?: DifficultyPreset;
@@ -173,7 +173,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
       userOffsetMs: 0,
       compensateOutputLatency: true,
       timingTolerance: 0.01,
-      difficultyPreset: 'hard',
+      difficultyPreset: 'medium',
       customThresholds: {},
   };
   ```

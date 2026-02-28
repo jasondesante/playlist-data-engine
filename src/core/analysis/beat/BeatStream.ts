@@ -623,7 +623,7 @@ export class BeatStream {
     private resolveThresholds(): AccuracyThresholds {
         // If custom thresholds provided, merge with defaults from preset
         if (this.options.customThresholds && Object.keys(this.options.customThresholds).length > 0) {
-            const base = getAccuracyThresholdsForPreset(this.options.difficultyPreset || 'hard');
+            const base = getAccuracyThresholdsForPreset(this.options.difficultyPreset || 'medium');
             return {
                 ...base,
                 ...this.options.customThresholds,
@@ -631,7 +631,7 @@ export class BeatStream {
         }
 
         // Otherwise use preset
-        return getAccuracyThresholdsForPreset(this.options.difficultyPreset || 'hard');
+        return getAccuracyThresholdsForPreset(this.options.difficultyPreset || 'medium');
     }
 
     /**

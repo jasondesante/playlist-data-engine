@@ -739,7 +739,7 @@ function onPlayerButtonPress() {
 | `ok` | ±250ms | ±200ms | ±100ms | Acceptable |
 | `miss` | >250ms | >200ms | >100ms | Missed the beat |
 
-**Default**: Hard difficulty (original behavior for backward compatibility)
+**Default**: Medium difficulty (balanced experience for most players)
 
 See [Configuring Difficulty](#configuring-difficulty) for how to customize thresholds.
 
@@ -762,12 +762,12 @@ const easyStream = analyzer.createBeatStream(beatMap, audioContext, {
   difficultyPreset: 'easy'
 });
 
-// Medium mode - balanced difficulty
+// Medium mode - balanced difficulty (default)
 const mediumStream = analyzer.createBeatStream(beatMap, audioContext, {
   difficultyPreset: 'medium'
 });
 
-// Hard mode - strict timing (default)
+// Hard mode - strict timing
 const hardStream = analyzer.createBeatStream(beatMap, audioContext, {
   difficultyPreset: 'hard'
 });
