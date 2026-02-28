@@ -450,13 +450,13 @@ After quarter note (QN) is established:
 
 ### 6.1 Unit Tests - Quarter Note Detection
 Create `tests/unit/beat/quarterNoteDetection.test.ts`:
-- [ ] Test: Regular intervals at 120 BPM → detects 0.5s quarter note
-- [ ] Test: Intervals with some 2× gaps → still detects 0.5s
-- [ ] Test: Intervals with single anomaly → ignores anomaly
-- [ ] Test: All intervals at 2× (half-notes) → detects 1.0s, suggests 0.5s alternative
-- [ ] Test: Empty beat array → graceful failure
-- [ ] Test: Single beat → graceful failure
-- [ ] Test: Confidence calculation varies with peak prominence
+- [x] Test: Regular intervals at 120 BPM → detects 0.5s quarter note
+- [x] Test: Intervals with some 2× gaps → still detects 0.5s
+- [x] Test: Intervals with single anomaly → ignores anomaly
+- [x] Test: All intervals at 2× (half-notes) → detects 1.0s, suggests 0.5s alternative
+- [x] Test: Empty beat array → graceful failure
+- [x] Test: Single beat → graceful failure
+- [x] Test: Confidence calculation varies with peak prominence
 
 ### 6.2 Unit Tests - Gap Analysis
 Create `tests/unit/beat/gapAnalysis.test.ts`:
