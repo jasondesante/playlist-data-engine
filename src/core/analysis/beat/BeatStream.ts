@@ -45,7 +45,9 @@ import type {
 import {
     DEFAULT_BEATSTREAM_OPTIONS,
     BEAT_ACCURACY_THRESHOLDS,
+    getAccuracyThresholdsForPreset,
 } from '../../types/BeatMap.js';
+import type { AccuracyThresholds } from '../../types/BeatMap.js';
 
 /**
  * Internal state for a beat event that has been scheduled
@@ -551,6 +553,28 @@ export class BeatStream {
     }
 
     // ==================== Button Press Detection ====================
+
+    /**
+     * Resolve the effective accuracy thresholds based on options
+     *
+     * If custom thresholds are provided, they are merged with the base preset.
+     * Otherwise, the preset thresholds are used directly.
+     *
+     * @returns The effective accuracy thresholds
+     */
+    private resolveThresholds(): AccuracyThresholds {
+        // If custom thresholds provided, merge with defaults from preset
+        if (this.options.customThresholds && Object.keys(this.options.customThresholds).length > 0) {
+            const base = getAccuracyThresholdsForPreset(this.options.difficultyPreset || 'hard');
+            return {
+                ...base,
+                ...this.options.customThresholds,
+            };
+        }
+
+        // Otherwise use preset
+        return getAccuracyThresholdsForPreset(this.options.difficultyPreset || 'hard');
+    }
 
     /**
      * Check the accuracy of a button press
