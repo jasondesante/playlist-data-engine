@@ -500,10 +500,22 @@ Create `tests/integration/beatInterpolation.integration.test.ts`:
 - [ ] Example: Accessing detected vs merged streams
 - [ ] Example: Customizing options
 
-### 7.3 Update Reference Docs
-- [ ] Add "Beat Interpolation" section to DATA_ENGINE_REFERENCE.md
-- [ ] Document algorithm selection guidance
-- [ ] Document option tuning guidelines
+### 7.3 Update DATA_ENGINE_REFERENCE.md
+- [ ] Add `BeatInterpolator` to API reference table
+- [ ] Add `InterpolatedBeatMap` type to types reference
+- [ ] Add `BeatInterpolationOptions` to options reference
+- [ ] Add `BeatSource` and `BeatWithSource` types
+- [ ] Document algorithm selection (histogram-grid, adaptive-phase-locked, dual-pass)
+- [ ] Document all option parameters with defaults
+
+### 7.4 Update AUDIO_ANALYSIS.md
+- [ ] Add "Beat Interpolation" section with conceptual explanation
+- [ ] Explain dense section priority for quarter note detection
+- [ ] Explain Pace + Anchors model
+- [ ] Explain confidence model (grid alignment, anchor confidence, pace confidence)
+- [ ] Add usage examples for both detected and merged streams
+- [ ] Add guidance on when to use each algorithm
+- [ ] Add option tuning guidelines
 
 ---
 
