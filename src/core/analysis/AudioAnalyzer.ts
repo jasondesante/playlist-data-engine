@@ -8,10 +8,11 @@
  */
 
 import type { AudioProfile, AudioTimelineEvent, FrequencyBands } from '../types/AudioProfile.js';
-import type { BeatMap, BeatMapGeneratorOptions, BeatStreamOptions } from '../types/BeatMap.js';
+import type { BeatMap, BeatMapGeneratorOptions, BeatStreamOptions, BeatInterpolationOptions, InterpolatedBeatMap } from '../types/BeatMap.js';
 import { SpectrumScanner } from './SpectrumScanner.js';
 import { BeatMapGenerator, type ProgressCallback } from './beat/BeatMapGenerator.js';
 import { BeatStream } from './beat/BeatStream.js';
+import { BeatInterpolator } from './beat/BeatInterpolator.js';
 
 export type SamplingStrategy =
     | { type: 'interval'; intervalSeconds: number } // e.g., every 1s
@@ -372,6 +373,134 @@ export class AudioAnalyzer {
         options?: BeatStreamOptions
     ): BeatStream {
         return new BeatStream(beatMap, audioContext, options);
+    }
+
+    // ==================== Beat Interpolation ====================
+
+    /**
+     * Interpolate a beat map to fill gaps in detected beats
+     *
+     * This is a post-processing pass that runs AFTER BeatMap generation to fill
+     * gaps where detected beats are missing. Uses dense section priority to
+     * determine the quarter note interval, then generates interpolated beats.
+     *
+     * Three interpolation algorithms are available for research/comparison:
+     * - histogram-grid: Fixed grid based on histogram peak detection
+     * - adaptive-phase-locked: Phase tracking at anchor points with tempo drift handling
+     * - dual-pass: KDE + weighted clustering with confidence scoring (default)
+     *
+     * @param beatMap - The beat map to interpolate
+     * @param options - Interpolation options (optional)
+     * @returns Interpolated beat map with two output streams
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     * const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
+     *
+     * // Interpolate with default options
+     * const interpolated = analyzer.interpolateBeatMap(beatMap);
+     *
+     * // Access original detected beats
+     * console.log(`Detected: ${interpolated.detectedBeats.length} beats`);
+     *
+     * // Access merged beats (interpolated + detected)
+     * console.log(`Total: ${interpolated.mergedBeats.length} beats`);
+     *
+     * // Use specific algorithm
+     * const adaptive = analyzer.interpolateBeatMap(beatMap, {
+     *   algorithm: 'adaptive-phase-locked',
+     * });
+     * ```
+     */
+    interpolateBeatMap(
+        beatMap: BeatMap,
+        options?: BeatInterpolationOptions
+    ): InterpolatedBeatMap {
+        const interpolator = new BeatInterpolator(options);
+        return interpolator.interpolate(beatMap);
+    }
+
+    /**
+     * Generate a beat map with interpolation in a single step
+     *
+     * Convenience method that combines beat map generation and interpolation.
+     * This is useful when you always want interpolated beats and don't need
+     * the intermediate BeatMap.
+     *
+     * @param audioUrl - URL of the audio file to analyze
+     * @param audioId - Unique identifier for the audio source
+     * @param beatMapOptions - Beat map generation options (optional)
+     * @param interpolationOptions - Interpolation options (optional)
+     * @param onProgress - Optional progress callback for long-running analysis
+     * @returns Promise resolving to the interpolated beat map
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     *
+     * // Generate with interpolation in one step
+     * const interpolated = await analyzer.generateBeatMapWithInterpolation(
+     *   'song.mp3',
+     *   'track-001',
+     *   { minBpm: 60, maxBpm: 180 }, // BeatMap options
+     *   { algorithm: 'dual-pass' }   // Interpolation options
+     * );
+     *
+     * console.log(`Total beats: ${interpolated.mergedBeats.length}`);
+     * console.log(`Quarter note: ${interpolated.quarterNoteBpm} BPM`);
+     * ```
+     */
+    async generateBeatMapWithInterpolation(
+        audioUrl: string,
+        audioId: string,
+        beatMapOptions?: BeatMapGeneratorOptions,
+        interpolationOptions?: BeatInterpolationOptions,
+        onProgress?: ProgressCallback
+    ): Promise<InterpolatedBeatMap> {
+        // Generate the beat map first
+        const beatMap = await this.generateBeatMap(audioUrl, audioId, beatMapOptions, onProgress);
+
+        // Then interpolate
+        return this.interpolateBeatMap(beatMap, interpolationOptions);
+    }
+
+    /**
+     * Generate a beat map with interpolation from an AudioBuffer in a single step
+     *
+     * Use this method when you already have the audio decoded and want
+     * interpolated beats in a single call.
+     *
+     * @param audioBuffer - Decoded audio buffer
+     * @param audioId - Unique identifier for the audio source
+     * @param beatMapOptions - Beat map generation options (optional)
+     * @param interpolationOptions - Interpolation options (optional)
+     * @param onProgress - Optional progress callback for long-running analysis
+     * @returns Promise resolving to the interpolated beat map
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     * const audioBuffer = await analyzer.fetchAndDecodeAudio('song.mp3');
+     *
+     * const interpolated = await analyzer.generateBeatMapWithInterpolationFromBuffer(
+     *   audioBuffer,
+     *   'track-001'
+     * );
+     * ```
+     */
+    async generateBeatMapWithInterpolationFromBuffer(
+        audioBuffer: AudioBuffer,
+        audioId: string,
+        beatMapOptions?: BeatMapGeneratorOptions,
+        interpolationOptions?: BeatInterpolationOptions,
+        onProgress?: ProgressCallback
+    ): Promise<InterpolatedBeatMap> {
+        // Generate the beat map first
+        const beatMap = await this.generateBeatMapFromBuffer(audioBuffer, audioId, beatMapOptions, onProgress);
+
+        // Then interpolate
+        return this.interpolateBeatMap(beatMap, interpolationOptions);
     }
 
     /**

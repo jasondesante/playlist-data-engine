@@ -427,8 +427,8 @@ After quarter note (QN) is established:
 ## Phase 5: Integration
 
 ### 5.1 AudioAnalyzer Integration
-- [ ] Add `interpolateBeatMap(beatMap: BeatMap, options?: BeatInterpolationOptions): InterpolatedBeatMap` method
-- [ ] Add convenience method `generateBeatMapWithInterpolation()` that combines generation + interpolation
+- [x] Add `interpolateBeatMap(beatMap: BeatMap, options?: BeatInterpolationOptions): InterpolatedBeatMap` method
+- [x] Add convenience method `generateBeatMapWithInterpolation()` that combines generation + interpolation
 
 ### 5.2 BeatStream Compatibility
 - [ ] Verify BeatStream works with `BeatWithSource[]` (should work via extends Beat)
