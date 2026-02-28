@@ -101,7 +101,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
   ```
 
 ### Task 2.2: Update Default Thresholds Constant
-- [ ] Rename and update `BEAT_ACCURACY_THRESHOLDS` to use the new structure
+- [x] Rename and update `BEAT_ACCURACY_THRESHOLDS` to use the new structure
   ```typescript
   /**
    * Default accuracy thresholds (Hard difficulty)

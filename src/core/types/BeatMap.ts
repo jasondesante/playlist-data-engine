@@ -492,16 +492,10 @@ export const DEFAULT_BEATSTREAM_OPTIONS: Required<BeatStreamOptions> = {
 };
 
 /**
- * Accuracy thresholds for button press detection (in seconds)
+ * Default accuracy thresholds (Hard difficulty)
+ * @deprecated Use HARD_ACCURACY_THRESHOLDS or getAccuracyThresholdsForPreset() instead
  */
-export const BEAT_ACCURACY_THRESHOLDS = {
-    /** Perfect: within ±10ms */
-    perfect: 0.010,
-    /** Great: within ±25ms */
-    great: 0.025,
-    /** Good: within ±50ms */
-    good: 0.050,
-} as const;
+export const BEAT_ACCURACY_THRESHOLDS: AccuracyThresholds = HARD_ACCURACY_THRESHOLDS;
 
 /**
  * Current version of the beat detection algorithm
