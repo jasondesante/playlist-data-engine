@@ -25,6 +25,9 @@ import {
     DEFAULT_BEATMAP_GENERATOR_OPTIONS,
     BEAT_DETECTION_VERSION,
     BEAT_DETECTION_ALGORITHM,
+    getHopSizeMs,
+    getMelBands,
+    getGaussianSmoothMs,
 } from '../../types/BeatMap.js';
 import { OnsetStrengthEnvelope, type OSEResult } from './OnsetStrengthEnvelope.js';
 import { TempoDetector } from './TempoDetector.js';
@@ -108,7 +111,29 @@ export class BeatMapGenerator {
      * @param options - Configuration options (all optional, defaults provided)
      */
     constructor(options: BeatMapGeneratorOptions = {}) {
-        this.options = { ...DEFAULT_BEATMAP_GENERATOR_OPTIONS, ...options };
+        // Start with defaults
+        const mergedOptions = { ...DEFAULT_BEATMAP_GENERATOR_OPTIONS, ...options };
+
+        // Resolve mode configs to numeric values
+        // Mode takes precedence over direct values when both are provided
+        const hopSizeMs = options.hopSizeMode
+            ? getHopSizeMs(options.hopSizeMode)
+            : options.hopSizeMs ?? DEFAULT_BEATMAP_GENERATOR_OPTIONS.hopSizeMs;
+
+        const melBands = options.melBandsMode
+            ? getMelBands(options.melBandsMode)
+            : options.melBands ?? DEFAULT_BEATMAP_GENERATOR_OPTIONS.melBands;
+
+        const gaussianSmoothMs = options.gaussianSmoothMode
+            ? getGaussianSmoothMs(options.gaussianSmoothMode)
+            : options.gaussianSmoothMs ?? DEFAULT_BEATMAP_GENERATOR_OPTIONS.gaussianSmoothMs;
+
+        this.options = {
+            ...mergedOptions,
+            hopSizeMs,
+            melBands,
+            gaussianSmoothMs,
+        };
     }
 
     /**

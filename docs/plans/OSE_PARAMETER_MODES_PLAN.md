@@ -315,10 +315,10 @@ Add tests for new functionality.
   - [x] Test `getMelBands()` with all modes
   - [x] Test `getGaussianSmoothMs()` with all modes
 
-- [ ] **9.2 Integration tests**
-  - [ ] Test OnsetStrengthEnvelope with mode configs
-  - [ ] Test BeatMapGenerator with mode configs
-  - [ ] Test backward compatibility with direct numeric values
+- [x] **9.2 Integration tests**
+  - [x] Test OnsetStrengthEnvelope with mode configs
+  - [x] Test BeatMapGenerator with mode configs
+  - [x] Test backward compatibility with direct numeric values
 
 **File**: `src/core/types/__tests__/BeatMap.test.ts` (or similar)
 
