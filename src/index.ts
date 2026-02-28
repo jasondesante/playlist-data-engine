@@ -44,6 +44,13 @@ export type {
     AccuracyThresholds,
     DifficultyPreset,
     ThresholdValidationResult,
+    // OSE Parameter Mode types
+    HopSizeMode,
+    HopSizeConfig,
+    MelBandsMode,
+    MelBandsConfig,
+    GaussianSmoothMode,
+    GaussianSmoothConfig,
 } from './core/types/BeatMap.js';
 
 // Beat detection constants
@@ -58,6 +65,14 @@ export {
     HARD_ACCURACY_THRESHOLDS,
     getAccuracyThresholdsForPreset,
     validateThresholds,
+    // OSE Parameter Mode presets
+    HOP_SIZE_PRESETS,
+    MEL_BANDS_PRESETS,
+    GAUSSIAN_SMOOTH_PRESETS,
+    // OSE Parameter Mode helper functions
+    getHopSizeMs,
+    getMelBands,
+    getGaussianSmoothMs,
 } from './core/types/BeatMap.js';
 
 // Character types

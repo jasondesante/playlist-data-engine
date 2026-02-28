@@ -266,13 +266,13 @@ Ensure the generator passes mode configs through to OSE.
 
 Ensure new types and functions are exported from the package.
 
-- [ ] **7.1 Update BeatMap.ts exports**
-  - [ ] Export all new types
-  - [ ] Export all new constants
-  - [ ] Export all helper functions
+- [x] **7.1 Update BeatMap.ts exports**
+  - [x] Export all new types
+  - [x] Export all new constants
+  - [x] Export all helper functions
 
-- [ ] **7.2 Update package index exports**
-  - [ ] Add to `src/index.ts` or equivalent entry point
+- [x] **7.2 Update package index exports**
+  - [x] Add to `src/index.ts` or equivalent entry point
 
 **Files**: `src/core/types/BeatMap.ts`, `src/index.ts`
 
