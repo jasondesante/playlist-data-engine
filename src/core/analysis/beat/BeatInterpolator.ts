@@ -37,6 +37,11 @@ import type {
     QuarterNoteDetection,
     GapAnalysis,
     InterpolationMetadata,
+    InterpolatedBeatMapJSON,
+    BeatWithSourceJSON,
+    QuarterNoteDetectionJSON,
+    GapAnalysisJSON,
+    InterpolationMetadataJSON,
 } from '../../types/BeatMap.js';
 import {
     DEFAULT_BEAT_INTERPOLATION_OPTIONS,
@@ -1256,5 +1261,204 @@ export class BeatInterpolator {
                 tempoDriftRatio: 1,
             },
         };
+    }
+
+    // ==================== Static Methods ====================
+
+    /**
+     * Convert an InterpolatedBeatMap to JSON string
+     *
+     * @param interpolatedBeatMap - Interpolated beat map to serialize
+     * @returns JSON string
+     *
+     * @example
+     * ```typescript
+     * const interpolator = new BeatInterpolator();
+     * const interpolatedBeatMap = interpolator.interpolate(beatMap);
+     *
+     * // Serialize to JSON for storage
+     * const json = BeatInterpolator.toJSON(interpolatedBeatMap);
+     * localStorage.setItem('beatmap', json);
+     * ```
+     */
+    static toJSON(interpolatedBeatMap: InterpolatedBeatMap): string {
+        const json: InterpolatedBeatMapJSON = {
+            audioId: interpolatedBeatMap.audioId,
+            duration: interpolatedBeatMap.duration,
+            detectedBeats: interpolatedBeatMap.detectedBeats.map(beat => ({
+                timestamp: beat.timestamp,
+                beatInMeasure: beat.beatInMeasure,
+                isDownbeat: beat.isDownbeat,
+                measureNumber: beat.measureNumber,
+                intensity: beat.intensity,
+                confidence: beat.confidence,
+            })),
+            mergedBeats: interpolatedBeatMap.mergedBeats.map(beat => ({
+                timestamp: beat.timestamp,
+                beatInMeasure: beat.beatInMeasure,
+                isDownbeat: beat.isDownbeat,
+                measureNumber: beat.measureNumber,
+                intensity: beat.intensity,
+                confidence: beat.confidence,
+                source: beat.source,
+                distanceToAnchor: beat.distanceToAnchor,
+                nearestAnchorTimestamp: beat.nearestAnchorTimestamp,
+            })),
+            quarterNoteInterval: interpolatedBeatMap.quarterNoteInterval,
+            quarterNoteBpm: interpolatedBeatMap.quarterNoteBpm,
+            quarterNoteConfidence: interpolatedBeatMap.quarterNoteConfidence,
+            originalMetadata: interpolatedBeatMap.originalMetadata,
+            interpolationMetadata: {
+                algorithm: interpolatedBeatMap.interpolationMetadata.algorithm,
+                quarterNoteDetection: {
+                    intervalSeconds: interpolatedBeatMap.interpolationMetadata.quarterNoteDetection.intervalSeconds,
+                    bpm: interpolatedBeatMap.interpolationMetadata.quarterNoteDetection.bpm,
+                    confidence: interpolatedBeatMap.interpolationMetadata.quarterNoteDetection.confidence,
+                    histogramPeak: interpolatedBeatMap.interpolationMetadata.quarterNoteDetection.histogramPeak,
+                    secondaryPeaks: interpolatedBeatMap.interpolationMetadata.quarterNoteDetection.secondaryPeaks,
+                    method: interpolatedBeatMap.interpolationMetadata.quarterNoteDetection.method,
+                    denseSectionCount: interpolatedBeatMap.interpolationMetadata.quarterNoteDetection.denseSectionCount,
+                    denseSectionBeats: interpolatedBeatMap.interpolationMetadata.quarterNoteDetection.denseSectionBeats,
+                },
+                gapAnalysis: {
+                    totalGaps: interpolatedBeatMap.interpolationMetadata.gapAnalysis.totalGaps,
+                    halfNoteGaps: interpolatedBeatMap.interpolationMetadata.gapAnalysis.halfNoteGaps,
+                    anomalies: interpolatedBeatMap.interpolationMetadata.gapAnalysis.anomalies,
+                    avgGapSize: interpolatedBeatMap.interpolationMetadata.gapAnalysis.avgGapSize,
+                    gridAlignmentScore: interpolatedBeatMap.interpolationMetadata.gapAnalysis.gridAlignmentScore,
+                },
+                detectedBeatCount: interpolatedBeatMap.interpolationMetadata.detectedBeatCount,
+                interpolatedBeatCount: interpolatedBeatMap.interpolationMetadata.interpolatedBeatCount,
+                totalBeatCount: interpolatedBeatMap.interpolationMetadata.totalBeatCount,
+                interpolationRatio: interpolatedBeatMap.interpolationMetadata.interpolationRatio,
+                avgInterpolatedConfidence: interpolatedBeatMap.interpolationMetadata.avgInterpolatedConfidence,
+                tempoDriftRatio: interpolatedBeatMap.interpolationMetadata.tempoDriftRatio,
+            },
+        };
+
+        return JSON.stringify(json, null, 2);
+    }
+
+    /**
+     * Parse an InterpolatedBeatMap from JSON string
+     *
+     * @param jsonString - JSON string to parse
+     * @returns Interpolated beat map
+     *
+     * @example
+     * ```typescript
+     * // Load from storage
+     * const json = localStorage.getItem('beatmap');
+     * const interpolatedBeatMap = BeatInterpolator.fromJSON(json);
+     *
+     * // Use the loaded beat map
+     * console.log(interpolatedBeatMap.mergedBeats.length);
+     * ```
+     */
+    static fromJSON(jsonString: string): InterpolatedBeatMap {
+        const json: InterpolatedBeatMapJSON = JSON.parse(jsonString);
+
+        return {
+            audioId: json.audioId,
+            duration: json.duration,
+            detectedBeats: json.detectedBeats.map(beat => ({
+                timestamp: beat.timestamp,
+                beatInMeasure: beat.beatInMeasure,
+                isDownbeat: beat.isDownbeat,
+                measureNumber: beat.measureNumber,
+                intensity: beat.intensity,
+                confidence: beat.confidence,
+            })),
+            mergedBeats: json.mergedBeats.map(beat => ({
+                timestamp: beat.timestamp,
+                beatInMeasure: beat.beatInMeasure,
+                isDownbeat: beat.isDownbeat,
+                measureNumber: beat.measureNumber,
+                intensity: beat.intensity,
+                confidence: beat.confidence,
+                source: beat.source,
+                distanceToAnchor: beat.distanceToAnchor,
+                nearestAnchorTimestamp: beat.nearestAnchorTimestamp,
+            })),
+            quarterNoteInterval: json.quarterNoteInterval,
+            quarterNoteBpm: json.quarterNoteBpm,
+            quarterNoteConfidence: json.quarterNoteConfidence,
+            originalMetadata: json.originalMetadata,
+            interpolationMetadata: {
+                algorithm: json.interpolationMetadata.algorithm,
+                quarterNoteDetection: {
+                    intervalSeconds: json.interpolationMetadata.quarterNoteDetection.intervalSeconds,
+                    bpm: json.interpolationMetadata.quarterNoteDetection.bpm,
+                    confidence: json.interpolationMetadata.quarterNoteDetection.confidence,
+                    histogramPeak: json.interpolationMetadata.quarterNoteDetection.histogramPeak,
+                    secondaryPeaks: json.interpolationMetadata.quarterNoteDetection.secondaryPeaks,
+                    method: json.interpolationMetadata.quarterNoteDetection.method,
+                    denseSectionCount: json.interpolationMetadata.quarterNoteDetection.denseSectionCount,
+                    denseSectionBeats: json.interpolationMetadata.quarterNoteDetection.denseSectionBeats,
+                },
+                gapAnalysis: {
+                    totalGaps: json.interpolationMetadata.gapAnalysis.totalGaps,
+                    halfNoteGaps: json.interpolationMetadata.gapAnalysis.halfNoteGaps,
+                    anomalies: json.interpolationMetadata.gapAnalysis.anomalies,
+                    avgGapSize: json.interpolationMetadata.gapAnalysis.avgGapSize,
+                    gridAlignmentScore: json.interpolationMetadata.gapAnalysis.gridAlignmentScore,
+                },
+                detectedBeatCount: json.interpolationMetadata.detectedBeatCount,
+                interpolatedBeatCount: json.interpolationMetadata.interpolatedBeatCount,
+                totalBeatCount: json.interpolationMetadata.totalBeatCount,
+                interpolationRatio: json.interpolationMetadata.interpolationRatio,
+                avgInterpolatedConfidence: json.interpolationMetadata.avgInterpolatedConfidence,
+                tempoDriftRatio: json.interpolationMetadata.tempoDriftRatio,
+            },
+        };
+    }
+
+    /**
+     * Save an InterpolatedBeatMap to a file (Node.js only)
+     *
+     * @param interpolatedBeatMap - Interpolated beat map to save
+     * @param filePath - Path to save to
+     *
+     * @example
+     * ```typescript
+     * const interpolator = new BeatInterpolator();
+     * const interpolatedBeatMap = interpolator.interpolate(beatMap);
+     * await BeatInterpolator.saveToFile(interpolatedBeatMap, './beatmap.json');
+     * ```
+     */
+    static async saveToFile(interpolatedBeatMap: InterpolatedBeatMap, filePath: string): Promise<void> {
+        // Check if we're in a Node.js environment
+        if (typeof process === 'undefined' || !process.versions?.node) {
+            throw new Error('saveToFile is only available in Node.js environment');
+        }
+
+        // Dynamic import for Node.js fs/promises
+        const { writeFile } = await import('fs/promises');
+        const json = BeatInterpolator.toJSON(interpolatedBeatMap);
+        await writeFile(filePath, json, 'utf-8');
+    }
+
+    /**
+     * Load an InterpolatedBeatMap from a file (Node.js only)
+     *
+     * @param filePath - Path to load from
+     * @returns Interpolated beat map
+     *
+     * @example
+     * ```typescript
+     * const interpolatedBeatMap = await BeatInterpolator.loadFromFile('./beatmap.json');
+     * console.log(interpolatedBeatMap.mergedBeats.length);
+     * ```
+     */
+    static async loadFromFile(filePath: string): Promise<InterpolatedBeatMap> {
+        // Check if we're in a Node.js environment
+        if (typeof process === 'undefined' || !process.versions?.node) {
+            throw new Error('loadFromFile is only available in Node.js environment');
+        }
+
+        // Dynamic import for Node.js fs/promises
+        const { readFile } = await import('fs/promises');
+        const jsonString = await readFile(filePath, 'utf-8');
+        return BeatInterpolator.fromJSON(jsonString);
     }
 }

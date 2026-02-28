@@ -38,6 +38,12 @@ export type {
     InterpolationMetadata,
     InterpolatedBeatMap,
     BeatInterpolationOptions,
+    // JSON serialization types for interpolation
+    BeatWithSourceJSON,
+    QuarterNoteDetectionJSON,
+    GapAnalysisJSON,
+    InterpolationMetadataJSON,
+    InterpolatedBeatMapJSON,
 } from '../../types/BeatMap.js';
 
 export {

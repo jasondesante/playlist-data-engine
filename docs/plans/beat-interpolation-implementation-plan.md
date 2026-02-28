@@ -441,8 +441,8 @@ After quarter note (QN) is established:
   ```
 
 ### 5.3 Serialization
-- [ ] Add `InterpolatedBeatMapJSON` interface
-- [ ] Add `BeatInterpolator.toJSON()` / `fromJSON()` static methods
+- [x] Add `InterpolatedBeatMapJSON` interface
+- [x] Add `BeatInterpolator.toJSON()` / `fromJSON()` static methods
 
 ---
 

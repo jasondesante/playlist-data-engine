@@ -424,6 +424,86 @@ export interface BeatMapJSON {
 }
 
 /**
+ * JSON-serializable version of BeatWithSource
+ */
+export interface BeatWithSourceJSON {
+    timestamp: number;
+    beatInMeasure: number;
+    isDownbeat: boolean;
+    measureNumber: number;
+    intensity: number;
+    confidence: number;
+    source: BeatSource;
+    distanceToAnchor?: number;
+    nearestAnchorTimestamp?: number;
+}
+
+/**
+ * JSON-serializable version of QuarterNoteDetection
+ */
+export interface QuarterNoteDetectionJSON {
+    intervalSeconds: number;
+    bpm: number;
+    confidence: number;
+    histogramPeak: number;
+    secondaryPeaks: number[];
+    method: 'histogram' | 'kde' | 'tempo-detector-fallback';
+    denseSectionCount: number;
+    denseSectionBeats: number;
+}
+
+/**
+ * JSON-serializable version of GapAnalysis
+ */
+export interface GapAnalysisJSON {
+    totalGaps: number;
+    halfNoteGaps: number;
+    anomalies: number[];
+    avgGapSize: number;
+    gridAlignmentScore: number;
+}
+
+/**
+ * JSON-serializable version of InterpolationMetadata
+ */
+export interface InterpolationMetadataJSON {
+    algorithm: InterpolationAlgorithm;
+    quarterNoteDetection: QuarterNoteDetectionJSON;
+    gapAnalysis: GapAnalysisJSON;
+    detectedBeatCount: number;
+    interpolatedBeatCount: number;
+    totalBeatCount: number;
+    interpolationRatio: number;
+    avgInterpolatedConfidence: number;
+    tempoDriftRatio: number;
+}
+
+/**
+ * JSON-serializable version of InterpolatedBeatMap
+ *
+ * Ensures all values are JSON-safe for serialization/deserialization operations.
+ * Use with BeatInterpolator.toJSON() and BeatInterpolator.fromJSON() methods.
+ */
+export interface InterpolatedBeatMapJSON {
+    audioId: string;
+    duration: number;
+    detectedBeats: Array<{
+        timestamp: number;
+        beatInMeasure: number;
+        isDownbeat: boolean;
+        measureNumber: number;
+        intensity: number;
+        confidence: number;
+    }>;
+    mergedBeats: BeatWithSourceJSON[];
+    quarterNoteInterval: number;
+    quarterNoteBpm: number;
+    quarterNoteConfidence: number;
+    originalMetadata: BeatMapMetadata;
+    interpolationMetadata: InterpolationMetadataJSON;
+}
+
+/**
  * Tempo estimation result from the TempoDetector
  */
 export interface TempoEstimate {
