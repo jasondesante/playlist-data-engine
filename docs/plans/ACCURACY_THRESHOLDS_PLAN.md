@@ -289,10 +289,10 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
   - [x] Update existing threshold boundary tests
 
 ### Task 6.2: Update Integration Tests
-- [ ] Update `tests/integration/beatDetection.integration.test.ts`
-  - [ ] Add tests for preset selection
-  - [ ] Add tests for custom threshold override
-  - [ ] Update accuracy detection tests to include 'ok'
+- [x] Update `tests/integration/beatDetection.integration.test.ts`
+  - [x] Add tests for preset selection
+  - [x] Add tests for custom threshold override
+  - [x] Update accuracy detection tests to include 'ok'
 
 ---
 

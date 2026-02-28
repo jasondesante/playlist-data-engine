@@ -26,7 +26,12 @@ import {
     BEAT_DETECTION_VERSION,
     BEAT_DETECTION_ALGORITHM,
     BEAT_ACCURACY_THRESHOLDS,
+    EASY_ACCURACY_THRESHOLDS,
+    MEDIUM_ACCURACY_THRESHOLDS,
+    HARD_ACCURACY_THRESHOLDS,
+    getAccuracyThresholdsForPreset,
 } from '../../src/core/types/BeatMap.js';
+import type { AccuracyThresholds, DifficultyPreset } from '../../src/core/types/BeatMap.js';
 import { TEST_AUDIO_URLS, TEST_AUDIO_CHARACTERISTICS } from '../fixtures/testAudioUrls.js';
 
 // Skip integration tests if running in CI without network access
@@ -454,6 +459,310 @@ describe('Beat Detection Integration Tests', () => {
 
             console.log(`\n✓ Rolling BPM calculation: ${bpm.toFixed(1)} BPM (expected ~120)`);
         });
+    });
+
+    describe('Difficulty Presets and Custom Thresholds', () => {
+        it('should use hard preset by default', async () => {
+            const beatMap: BeatMap = {
+                audioId: 'preset-test',
+                duration: 5,
+                beats: [
+                    { timestamp: 1.0, beatInMeasure: 0, isDownbeat: true, measureNumber: 0, intensity: 0.8, confidence: 0.9 },
+                ],
+                bpm: 60,
+                metadata: {
+                    version: BEAT_DETECTION_VERSION,
+                    algorithm: BEAT_DETECTION_ALGORITHM,
+                    minBpm: 60,
+                    maxBpm: 180,
+                    sensitivity: 1.0,
+                    noiseFloorThreshold: 0.1,
+                    hopSizeMs: 10,
+                    fftSize: 2048,
+                    dpAlpha: 680,
+                    melBands: 40,
+                    highPassCutoff: 0.4,
+                    gaussianSmoothMs: 20,
+                    tempoCenter: 0.5,
+                    tempoWidth: 1.4,
+                    generatedAt: new Date().toISOString(),
+                },
+            };
+
+            const mockAudioContext = createMockAudioContext();
+            const beatStream = new BeatStream(beatMap, mockAudioContext);
+
+            const thresholds = beatStream.getAccuracyThresholds();
+            expect(thresholds.perfect).toBe(HARD_ACCURACY_THRESHOLDS.perfect);
+            expect(thresholds.great).toBe(HARD_ACCURACY_THRESHOLDS.great);
+            expect(thresholds.good).toBe(HARD_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBe(HARD_ACCURACY_THRESHOLDS.ok);
+
+            console.log(`\n✓ Hard preset is used by default`);
+            console.log(`  Perfect: ±${thresholds.perfect * 1000}ms`);
+            console.log(`  Great: ±${thresholds.great * 1000}ms`);
+            console.log(`  Good: ±${thresholds.good * 1000}ms`);
+            console.log(`  Ok: ±${thresholds.ok * 1000}ms`);
+        });
+
+        it('should apply easy preset correctly', async () => {
+            const beatMap: BeatMap = {
+                audioId: 'easy-preset-test',
+                duration: 5,
+                beats: [
+                    { timestamp: 1.0, beatInMeasure: 0, isDownbeat: true, measureNumber: 0, intensity: 0.8, confidence: 0.9 },
+                ],
+                bpm: 60,
+                metadata: {
+                    version: BEAT_DETECTION_VERSION,
+                    algorithm: BEAT_DETECTION_ALGORITHM,
+                    minBpm: 60,
+                    maxBpm: 180,
+                    sensitivity: 1.0,
+                    noiseFloorThreshold: 0.1,
+                    hopSizeMs: 10,
+                    fftSize: 2048,
+                    dpAlpha: 680,
+                    melBands: 40,
+                    highPassCutoff: 0.4,
+                    gaussianSmoothMs: 20,
+                    tempoCenter: 0.5,
+                    tempoWidth: 1.4,
+                    generatedAt: new Date().toISOString(),
+                },
+            };
+
+            const mockAudioContext = createMockAudioContext();
+            const beatStream = new BeatStream(beatMap, mockAudioContext, {
+                difficultyPreset: 'easy',
+            });
+
+            const thresholds = beatStream.getAccuracyThresholds();
+            expect(thresholds.perfect).toBe(EASY_ACCURACY_THRESHOLDS.perfect);
+            expect(thresholds.great).toBe(EASY_ACCURACY_THRESHOLDS.great);
+            expect(thresholds.good).toBe(EASY_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBe(EASY_ACCURACY_THRESHOLDS.ok);
+
+            // Verify easy thresholds are more forgiving than hard
+            expect(thresholds.perfect).toBeGreaterThan(HARD_ACCURACY_THRESHOLDS.perfect);
+            expect(thresholds.great).toBeGreaterThan(HARD_ACCURACY_THRESHOLDS.great);
+            expect(thresholds.good).toBeGreaterThan(HARD_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBeGreaterThan(HARD_ACCURACY_THRESHOLDS.ok);
+
+            // Test accuracy classification with easy preset
+            // Easy: perfect=±75ms, great=±125ms, good=±175ms, ok=±250ms
+            const perfectResult = beatStream.checkButtonPress(1.050); // 50ms off
+            expect(perfectResult.accuracy).toBe('perfect');
+
+            const greatResult = beatStream.checkButtonPress(1.100); // 100ms off
+            expect(greatResult.accuracy).toBe('great');
+
+            const goodResult = beatStream.checkButtonPress(1.150); // 150ms off
+            expect(goodResult.accuracy).toBe('good');
+
+            const okResult = beatStream.checkButtonPress(1.200); // 200ms off
+            expect(okResult.accuracy).toBe('ok');
+
+            const missResult = beatStream.checkButtonPress(1.300); // 300ms off
+            expect(missResult.accuracy).toBe('miss');
+
+            console.log(`\n✓ Easy preset applied correctly`);
+            console.log(`  Perfect: ±${thresholds.perfect * 1000}ms`);
+            console.log(`  Great: ±${thresholds.great * 1000}ms`);
+            console.log(`  Good: ±${thresholds.good * 1000}ms`);
+            console.log(`  Ok: ±${thresholds.ok * 1000}ms`);
+        });
+
+        it('should apply medium preset correctly', async () => {
+            const beatMap: BeatMap = {
+                audioId: 'medium-preset-test',
+                duration: 5,
+                beats: [
+                    { timestamp: 1.0, beatInMeasure: 0, isDownbeat: true, measureNumber: 0, intensity: 0.8, confidence: 0.9 },
+                ],
+                bpm: 60,
+                metadata: {
+                    version: BEAT_DETECTION_VERSION,
+                    algorithm: BEAT_DETECTION_ALGORITHM,
+                    minBpm: 60,
+                    maxBpm: 180,
+                    sensitivity: 1.0,
+                    noiseFloorThreshold: 0.1,
+                    hopSizeMs: 10,
+                    fftSize: 2048,
+                    dpAlpha: 680,
+                    melBands: 40,
+                    highPassCutoff: 0.4,
+                    gaussianSmoothMs: 20,
+                    tempoCenter: 0.5,
+                    tempoWidth: 1.4,
+                    generatedAt: new Date().toISOString(),
+                },
+            };
+
+            const mockAudioContext = createMockAudioContext();
+            const beatStream = new BeatStream(beatMap, mockAudioContext, {
+                difficultyPreset: 'medium',
+            });
+
+            const thresholds = beatStream.getAccuracyThresholds();
+            expect(thresholds.perfect).toBe(MEDIUM_ACCURACY_THRESHOLDS.perfect);
+            expect(thresholds.great).toBe(MEDIUM_ACCURACY_THRESHOLDS.great);
+            expect(thresholds.good).toBe(MEDIUM_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBe(MEDIUM_ACCURACY_THRESHOLDS.ok);
+
+            // Verify medium is between easy and hard
+            expect(thresholds.perfect).toBeGreaterThan(HARD_ACCURACY_THRESHOLDS.perfect);
+            expect(thresholds.perfect).toBeLessThan(EASY_ACCURACY_THRESHOLDS.perfect);
+
+            console.log(`\n✓ Medium preset applied correctly`);
+            console.log(`  Perfect: ±${thresholds.perfect * 1000}ms`);
+            console.log(`  Great: ±${thresholds.great * 1000}ms`);
+            console.log(`  Good: ±${thresholds.good * 1000}ms`);
+            console.log(`  Ok: ±${thresholds.ok * 1000}ms`);
+        });
+
+        it('should apply custom thresholds correctly', async () => {
+            const beatMap: BeatMap = {
+                audioId: 'custom-threshold-test',
+                duration: 5,
+                beats: [
+                    { timestamp: 1.0, beatInMeasure: 0, isDownbeat: true, measureNumber: 0, intensity: 0.8, confidence: 0.9 },
+                ],
+                bpm: 60,
+                metadata: {
+                    version: BEAT_DETECTION_VERSION,
+                    algorithm: BEAT_DETECTION_ALGORITHM,
+                    minBpm: 60,
+                    maxBpm: 180,
+                    sensitivity: 1.0,
+                    noiseFloorThreshold: 0.1,
+                    hopSizeMs: 10,
+                    fftSize: 2048,
+                    dpAlpha: 680,
+                    melBands: 40,
+                    highPassCutoff: 0.4,
+                    gaussianSmoothMs: 20,
+                    tempoCenter: 0.5,
+                    tempoWidth: 1.4,
+                    generatedAt: new Date().toISOString(),
+                },
+            };
+
+            const customThresholds: Partial<AccuracyThresholds> = {
+                perfect: 0.050,  // ±50ms
+                great: 0.100,    // ±100ms
+                good: 0.150,     // ±150ms
+                ok: 0.200,       // ±200ms
+            };
+
+            const mockAudioContext = createMockAudioContext();
+            const beatStream = new BeatStream(beatMap, mockAudioContext, {
+                customThresholds,
+            });
+
+            const thresholds = beatStream.getAccuracyThresholds();
+            expect(thresholds.perfect).toBe(0.050);
+            expect(thresholds.great).toBe(0.100);
+            expect(thresholds.good).toBe(0.150);
+            expect(thresholds.ok).toBe(0.200);
+
+            // Test accuracy classification with custom thresholds
+            const perfectResult = beatStream.checkButtonPress(1.040); // 40ms off
+            expect(perfectResult.accuracy).toBe('perfect');
+
+            const greatResult = beatStream.checkButtonPress(1.075); // 75ms off
+            expect(greatResult.accuracy).toBe('great');
+
+            const goodResult = beatStream.checkButtonPress(1.125); // 125ms off
+            expect(goodResult.accuracy).toBe('good');
+
+            const okResult = beatStream.checkButtonPress(1.175); // 175ms off
+            expect(okResult.accuracy).toBe('ok');
+
+            const missResult = beatStream.checkButtonPress(1.250); // 250ms off
+            expect(missResult.accuracy).toBe('miss');
+
+            console.log(`\n✓ Custom thresholds applied correctly`);
+            console.log(`  Perfect: ±${thresholds.perfect * 1000}ms`);
+            console.log(`  Great: ±${thresholds.great * 1000}ms`);
+            console.log(`  Good: ±${thresholds.good * 1000}ms`);
+            console.log(`  Ok: ±${thresholds.ok * 1000}ms`);
+        });
+
+        it('should merge partial custom thresholds with preset', async () => {
+            const beatMap: BeatMap = {
+                audioId: 'partial-custom-test',
+                duration: 5,
+                beats: [
+                    { timestamp: 1.0, beatInMeasure: 0, isDownbeat: true, measureNumber: 0, intensity: 0.8, confidence: 0.9 },
+                ],
+                bpm: 60,
+                metadata: {
+                    version: BEAT_DETECTION_VERSION,
+                    algorithm: BEAT_DETECTION_ALGORITHM,
+                    minBpm: 60,
+                    maxBpm: 180,
+                    sensitivity: 1.0,
+                    noiseFloorThreshold: 0.1,
+                    hopSizeMs: 10,
+                    fftSize: 2048,
+                    dpAlpha: 680,
+                    melBands: 40,
+                    highPassCutoff: 0.4,
+                    gaussianSmoothMs: 20,
+                    tempoCenter: 0.5,
+                    tempoWidth: 1.4,
+                    generatedAt: new Date().toISOString(),
+                },
+            };
+
+            const mockAudioContext = createMockAudioContext();
+            const beatStream = new BeatStream(beatMap, mockAudioContext, {
+                difficultyPreset: 'medium',
+                customThresholds: {
+                    perfect: 0.060, // Override just perfect
+                },
+            });
+
+            const thresholds = beatStream.getAccuracyThresholds();
+            // Custom perfect threshold
+            expect(thresholds.perfect).toBe(0.060);
+            // Other thresholds from medium preset
+            expect(thresholds.great).toBe(MEDIUM_ACCURACY_THRESHOLDS.great);
+            expect(thresholds.good).toBe(MEDIUM_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBe(MEDIUM_ACCURACY_THRESHOLDS.ok);
+
+            console.log(`\n✓ Partial custom thresholds merged with preset`);
+            console.log(`  Perfect (custom): ±${thresholds.perfect * 1000}ms`);
+            console.log(`  Great (from medium): ±${thresholds.great * 1000}ms`);
+            console.log(`  Good (from medium): ±${thresholds.good * 1000}ms`);
+            console.log(`  Ok (from medium): ±${thresholds.ok * 1000}ms`);
+        });
+
+        it('should verify getAccuracyThresholdsForPreset function', async () => {
+            // Test all presets
+            const easyThresholds = getAccuracyThresholdsForPreset('easy');
+            expect(easyThresholds).toEqual(EASY_ACCURACY_THRESHOLDS);
+
+            const mediumThresholds = getAccuracyThresholdsForPreset('medium');
+            expect(mediumThresholds).toEqual(MEDIUM_ACCURACY_THRESHOLDS);
+
+            const hardThresholds = getAccuracyThresholdsForPreset('hard');
+            expect(hardThresholds).toEqual(HARD_ACCURACY_THRESHOLDS);
+
+            const customThresholds = getAccuracyThresholdsForPreset('custom');
+            expect(customThresholds).toEqual(HARD_ACCURACY_THRESHOLDS);
+
+            // Verify progressive difficulty
+            expect(easyThresholds.perfect).toBeGreaterThan(mediumThresholds.perfect);
+            expect(mediumThresholds.perfect).toBeGreaterThan(hardThresholds.perfect);
+
+            console.log(`\n✓ getAccuracyThresholdsForPreset function works correctly`);
+            console.log(`  Easy perfect: ±${easyThresholds.perfect * 1000}ms`);
+            console.log(`  Medium perfect: ±${mediumThresholds.perfect * 1000}ms`);
+            console.log(`  Hard perfect: ±${hardThresholds.perfect * 1000}ms`);
+        });
 
         it('should detect button press accuracy correctly', async () => {
             const beatMap: BeatMap = {
@@ -500,14 +809,19 @@ describe('Beat Detection Integration Tests', () => {
             const good = beatStream.checkButtonPress(1.045);
             expect(good.accuracy).toBe('good');
 
-            // Test miss (outside 50ms)
-            const miss = beatStream.checkButtonPress(1.100);
+            // Test ok accuracy (within 100ms)
+            const ok = beatStream.checkButtonPress(1.075);
+            expect(ok.accuracy).toBe('ok');
+
+            // Test miss (outside 100ms)
+            const miss = beatStream.checkButtonPress(1.150);
             expect(miss.accuracy).toBe('miss');
 
             console.log(`\n✓ Button press accuracy detection works`);
             console.log(`  Perfect (±${BEAT_ACCURACY_THRESHOLDS.perfect * 1000}ms): ${perfect.accuracy}`);
             console.log(`  Great (±${BEAT_ACCURACY_THRESHOLDS.great * 1000}ms): ${great.accuracy}`);
             console.log(`  Good (±${BEAT_ACCURACY_THRESHOLDS.good * 1000}ms): ${good.accuracy}`);
+            console.log(`  Ok (±${BEAT_ACCURACY_THRESHOLDS.ok * 1000}ms): ${ok.accuracy}`);
             console.log(`  Miss: ${miss.accuracy}`);
         });
     });
@@ -1103,10 +1417,23 @@ Per Ellis 2007 paper ("Beat Tracking by Dynamic Programming"):
     - Balance factor α = 680 (paper optimal)
 
   Button Press Accuracy (for rhythm games):
+
+    Difficulty Presets:
+    - Easy:   perfect=±75ms, great=±125ms, good=±175ms, ok=±250ms
+    - Medium: perfect=±45ms, great=±90ms,  good=±135ms, ok=±200ms
+    - Hard:   perfect=±10ms, great=±25ms,  good=±50ms,  ok=±100ms
+
+    Default (Hard preset):
     - Perfect: ±${BEAT_ACCURACY_THRESHOLDS.perfect * 1000}ms
     - Great:   ±${BEAT_ACCURACY_THRESHOLDS.great * 1000}ms
     - Good:    ±${BEAT_ACCURACY_THRESHOLDS.good * 1000}ms
-    - Miss:    >${BEAT_ACCURACY_THRESHOLDS.good * 1000}ms from any beat
+    - Ok:      ±${BEAT_ACCURACY_THRESHOLDS.ok * 1000}ms
+    - Miss:    >${BEAT_ACCURACY_THRESHOLDS.ok * 1000}ms from any beat
+
+  Custom Thresholds:
+    - Pass customThresholds option to BeatStream constructor
+    - Partial thresholds merge with selected preset
+    - Example: { perfect: 0.050, great: 0.100, good: 0.150, ok: 0.200 }
 
   Notes:
     - Real audio analysis requires Web Audio API (browser or Node.js with polyfill)
