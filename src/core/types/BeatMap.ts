@@ -456,6 +456,71 @@ export interface GaussianSmoothConfig {
 }
 
 // ============================================================================
+// OSE Parameter Helper Functions
+// ============================================================================
+
+/**
+ * Convert hop size mode to actual milliseconds value
+ *
+ * @param config - Hop size configuration (default: { mode: 'standard' })
+ * @returns Hop size in milliseconds
+ *
+ * @example
+ * ```typescript
+ * // Using preset modes
+ * getHopSizeMs({ mode: 'standard' });  // 4ms (Ellis 2007 paper spec)
+ * getHopSizeMs({ mode: 'efficient' }); // 10ms (fast analysis)
+ * getHopSizeMs({ mode: 'hq' });        // 2ms (maximum precision)
+ *
+ * // Using custom value (clamped to 1-50ms)
+ * getHopSizeMs({ mode: 'custom', customValue: 5 }); // 5ms
+ * getHopSizeMs({ mode: 'custom', customValue: 100 }); // 50ms (clamped)
+ * ```
+ */
+export function getHopSizeMs(config: HopSizeConfig = { mode: 'standard' }): number {
+    if (config.mode === 'custom') {
+        // Validate and clamp custom value to reasonable range
+        const value = config.customValue ?? HOP_SIZE_PRESETS.standard;
+        return Math.max(1, Math.min(50, value)); // Clamp 1-50ms
+    }
+    return HOP_SIZE_PRESETS[config.mode];
+}
+
+/**
+ * Convert mel bands mode to actual count
+ *
+ * @param config - Mel bands configuration (default: { mode: 'standard' })
+ * @returns Number of mel bands
+ *
+ * @example
+ * ```typescript
+ * getMelBands({ mode: 'standard' }); // 40 bands (librosa default)
+ * getMelBands({ mode: 'detailed' }); // 64 bands (better resolution)
+ * getMelBands({ mode: 'maximum' });  // 80 bands (maximum detail)
+ * ```
+ */
+export function getMelBands(config: MelBandsConfig = { mode: 'standard' }): number {
+    return MEL_BANDS_PRESETS[config.mode];
+}
+
+/**
+ * Convert gaussian smooth mode to actual milliseconds value
+ *
+ * @param config - Gaussian smooth configuration (default: { mode: 'standard' })
+ * @returns Smoothing window in milliseconds
+ *
+ * @example
+ * ```typescript
+ * getGaussianSmoothMs({ mode: 'minimal' });  // 10ms (preserves transients)
+ * getGaussianSmoothMs({ mode: 'standard' }); // 20ms (paper default)
+ * getGaussianSmoothMs({ mode: 'smooth' });   // 40ms (cleaner peaks)
+ * ```
+ */
+export function getGaussianSmoothMs(config: GaussianSmoothConfig = { mode: 'standard' }): number {
+    return GAUSSIAN_SMOOTH_PRESETS[config.mode];
+}
+
+// ============================================================================
 // OSE Configuration
 // ============================================================================
 

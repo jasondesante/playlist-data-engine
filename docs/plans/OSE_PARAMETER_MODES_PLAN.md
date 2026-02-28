@@ -82,19 +82,19 @@ export interface GaussianSmoothConfig {
 
 Create helper functions to convert mode configs to actual parameter values.
 
-- [ ] **2.1 Add `getHopSizeMs()` function**
-  - [ ] Accept `HopSizeConfig` parameter
-  - [ ] Return numeric hop size in milliseconds
-  - [ ] Handle 'custom' mode with validation
-  - [ ] Add JSDoc documentation
+- [x] **2.1 Add `getHopSizeMs()` function**
+  - [x] Accept `HopSizeConfig` parameter
+  - [x] Return numeric hop size in milliseconds
+  - [x] Handle 'custom' mode with validation
+  - [x] Add JSDoc documentation
 
-- [ ] **2.2 Add `getMelBands()` function**
-  - [ ] Accept `MelBandsConfig` parameter
-  - [ ] Return numeric mel bands count
+- [x] **2.2 Add `getMelBands()` function**
+  - [x] Accept `MelBandsConfig` parameter
+  - [x] Return numeric mel bands count
 
-- [ ] **2.3 Add `getGaussianSmoothMs()` function**
-  - [ ] Accept `GaussianSmoothConfig` parameter
-  - [ ] Return numeric smoothing window in milliseconds
+- [x] **2.3 Add `getGaussianSmoothMs()` function**
+  - [x] Accept `GaussianSmoothConfig` parameter
+  - [x] Return numeric smoothing window in milliseconds
 
 ### Proposed Functions
 
