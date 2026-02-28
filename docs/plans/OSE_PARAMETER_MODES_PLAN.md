@@ -26,10 +26,10 @@ Define new types and constants for parameter modes.
   - [x] Add `MelBandsConfig` interface
   - [x] Add `MEL_BANDS_PRESETS` constant object
 
-- [ ] **1.3 Add Gaussian Smooth Mode Types**
-  - [ ] Add `GaussianSmoothMode` type: `'minimal' | 'standard' | 'smooth'`
-  - [ ] Add `GaussianSmoothConfig` interface
-  - [ ] Add `GAUSSIAN_SMOOTH_PRESETS` constant object
+- [x] **1.3 Add Gaussian Smooth Mode Types**
+  - [x] Add `GaussianSmoothMode` type: `'minimal' | 'standard' | 'smooth'`
+  - [x] Add `GaussianSmoothConfig` interface
+  - [x] Add `GAUSSIAN_SMOOTH_PRESETS` constant object
 
 ### Proposed Constants
 

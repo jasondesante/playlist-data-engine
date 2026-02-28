@@ -426,6 +426,35 @@ export interface MelBandsConfig {
     mode: MelBandsMode;
 }
 
+/**
+ * Tier 2: Gaussian smooth mode for controlling onset envelope smoothing
+ *
+ * Gaussian smoothing determines how much the onset envelope is smoothed.
+ * More smoothing = cleaner peaks but may miss fast transients.
+ */
+export type GaussianSmoothMode = 'minimal' | 'standard' | 'smooth';
+
+/**
+ * Preset gaussian smoothing values in milliseconds
+ *
+ * - minimal: 10ms - Preserves fast transients
+ * - standard: 20ms - Paper default - RECOMMENDED
+ * - smooth: 40ms - Cleaner peaks, less noise
+ */
+export const GAUSSIAN_SMOOTH_PRESETS = {
+    minimal: 10,    // Preserves fast transients
+    standard: 20,   // Paper default
+    smooth: 40,     // Cleaner peaks, less noise
+} as const;
+
+/**
+ * Configuration for gaussian smooth mode selection
+ */
+export interface GaussianSmoothConfig {
+    /** The gaussian smooth mode to use */
+    mode: GaussianSmoothMode;
+}
+
 // ============================================================================
 // OSE Configuration
 // ============================================================================
