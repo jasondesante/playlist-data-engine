@@ -289,13 +289,13 @@ Update documentation to describe the new mode system.
   - [x] Add mode-to-value reference tables
   - [x] Update OSEConfig table to include mode properties
 
-- [ ] **8.2 Update DATA_ENGINE_REFERENCE.md**
-  - [ ] Add new types to Types Overview section (`HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig`)
-  - [ ] Add new constants to Constants section (`HOP_SIZE_PRESETS`, `MEL_BANDS_PRESETS`, `GAUSSIAN_SMOOTH_PRESETS`)
-  - [ ] Add new helper functions to Functions section (`getHopSizeMs`, `getMelBands`, `getGaussianSmoothMs`)
-  - [ ] Update `BeatMapGeneratorOptions` table to include mode properties
-  - [ ] Update `OSEConfig` table to include mode properties
-  - [ ] Add usage examples with mode configs
+- [x] **8.2 Update DATA_ENGINE_REFERENCE.md**
+  - [x] Add new types to Types Overview section (`HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig`)
+  - [x] Add new constants to Constants section (`HOP_SIZE_PRESETS`, `MEL_BANDS_PRESETS`, `GAUSSIAN_SMOOTH_PRESETS`)
+  - [x] Add new helper functions to Functions section (`getHopSizeMs`, `getMelBands`, `getGaussianSmoothMs`)
+  - [x] Update `BeatMapGeneratorOptions` table to include mode properties
+  - [x] Update `OSEConfig` table to include mode properties
+  - [x] Add usage examples with mode configs
 
 - [ ] **8.3 Update JSDoc comments**
   - [ ] Add examples showing mode usage
