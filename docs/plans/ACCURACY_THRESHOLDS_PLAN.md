@@ -241,7 +241,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
 ## Phase 5: Export Updates
 
 ### Task 5.1: Update Beat Module Exports
-- [ ] Add new exports to `src/core/analysis/beat/index.ts`
+- [x] Add new exports to `src/core/analysis/beat/index.ts`
   ```typescript
   export {
       // ... existing exports ...

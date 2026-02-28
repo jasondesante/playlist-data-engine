@@ -25,6 +25,9 @@ export type {
     DownbeatDetectorConfig,
     DownbeatDetectionResult,
     BeatMapGenerationProgress,
+    // Accuracy threshold types
+    AccuracyThresholds,
+    DifficultyPreset,
 } from '../../types/BeatMap.js';
 
 export {
@@ -33,6 +36,11 @@ export {
     BEAT_ACCURACY_THRESHOLDS,
     BEAT_DETECTION_VERSION,
     BEAT_DETECTION_ALGORITHM,
+    // Difficulty preset thresholds
+    EASY_ACCURACY_THRESHOLDS,
+    MEDIUM_ACCURACY_THRESHOLDS,
+    HARD_ACCURACY_THRESHOLDS,
+    getAccuracyThresholdsForPreset,
 } from '../../types/BeatMap.js';
 
 // Classes
