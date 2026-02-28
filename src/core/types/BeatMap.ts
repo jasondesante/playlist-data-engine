@@ -830,6 +830,226 @@ export interface ThresholdValidationResult {
     errors: string[];
 }
 
+// ============================================================================
+// Beat Interpolation Types
+// ============================================================================
+
+/**
+ * Source of a beat - whether it was detected by the algorithm or interpolated
+ */
+export type BeatSource = 'detected' | 'interpolated';
+
+/**
+ * Available interpolation algorithms for beat grid generation
+ *
+ * - histogram-grid: Fixed grid based on histogram peak detection
+ * - adaptive-phase-locked: Phase tracking at anchor points with tempo drift handling
+ * - dual-pass: KDE + weighted clustering with confidence scoring
+ */
+export type InterpolationAlgorithm = 'histogram-grid' | 'adaptive-phase-locked' | 'dual-pass';
+
+/**
+ * A beat with source information for interpolation
+ *
+ * Extends the base Beat interface with fields tracking the beat's origin
+ * and relationship to detected beats.
+ */
+export interface BeatWithSource extends Beat {
+    /** Whether this beat was detected or interpolated */
+    source: BeatSource;
+
+    /** Distance in seconds to the nearest detected beat (for interpolated beats) */
+    distanceToAnchor?: number;
+
+    /** Timestamp of the nearest detected beat (for interpolated beats) */
+    nearestAnchorTimestamp?: number;
+}
+
+/**
+ * Result of quarter note detection with dense section priority
+ *
+ * The quarter note interval is determined by analyzing beat intervals,
+ * with higher weight given to intervals from dense sections (consecutive
+ * beats at regular spacing).
+ */
+export interface QuarterNoteDetection {
+    /** Detected quarter note duration in seconds */
+    intervalSeconds: number;
+
+    /** Equivalent BPM (60 / intervalSeconds) */
+    bpm: number;
+
+    /** Confidence in the detection (0-1) */
+    confidence: number;
+
+    /** Raw histogram peak value for the detected interval */
+    histogramPeak: number;
+
+    /** Other significant peaks (e.g., half-note = 2× quarter note) */
+    secondaryPeaks: number[];
+
+    /** Method used for detection */
+    method: 'histogram' | 'kde' | 'tempo-detector-fallback';
+
+    /** Number of dense sections that contributed to the detection */
+    denseSectionCount: number;
+
+    /** Total beats from dense sections used in the detection */
+    denseSectionBeats: number;
+}
+
+/**
+ * Analysis of gaps between detected beats
+ *
+ * Identifies missing beats and anomalies in the detected beat pattern.
+ */
+export interface GapAnalysis {
+    /** Total number of gaps found between detected beats */
+    totalGaps: number;
+
+    /** Number of gaps that are exactly 2× quarter note (half-note gaps) */
+    halfNoteGaps: number;
+
+    /** Indices of beats that appear to be anomalies (false positives) */
+    anomalies: number[];
+
+    /** Average gap size in beats (1.0 = one quarter note) */
+    avgGapSize: number;
+
+    /** How well the detected beats align to the grid (0-1, higher is better) */
+    gridAlignmentScore: number;
+}
+
+/**
+ * Metadata about the interpolation process
+ */
+export interface InterpolationMetadata {
+    /** Algorithm used for interpolation */
+    algorithm: InterpolationAlgorithm;
+
+    /** Quarter note detection details */
+    quarterNoteDetection: QuarterNoteDetection;
+
+    /** Gap analysis results */
+    gapAnalysis: GapAnalysis;
+
+    /** Number of originally detected beats */
+    detectedBeatCount: number;
+
+    /** Number of beats added by interpolation */
+    interpolatedBeatCount: number;
+
+    /** Total beats in the merged output */
+    totalBeatCount: number;
+
+    /** Ratio of interpolated beats to total beats */
+    interpolationRatio: number;
+
+    /** Average confidence of interpolated beats */
+    avgInterpolatedConfidence: number;
+
+    /** Ratio of maximum local tempo to minimum local tempo (drift indicator) */
+    tempoDriftRatio: number;
+}
+
+/**
+ * Complete interpolated beat map with two output streams
+ *
+ * Contains both the original detected beats and a merged stream that
+ * includes interpolated beats to fill gaps.
+ */
+export interface InterpolatedBeatMap {
+    /** Unique identifier for the audio source */
+    audioId: string;
+
+    /** Duration of the audio in seconds */
+    duration: number;
+
+    /** Original detected beats only (unchanged from BeatMap) */
+    detectedBeats: Beat[];
+
+    /** Interpolated beats with detected beats overriding at same positions */
+    mergedBeats: BeatWithSource[];
+
+    /** Detected quarter note interval in seconds */
+    quarterNoteInterval: number;
+
+    /** Equivalent BPM for the quarter note */
+    quarterNoteBpm: number;
+
+    /** Confidence in the quarter note detection */
+    quarterNoteConfidence: number;
+
+    /** Metadata from the original BeatMap */
+    originalMetadata: BeatMapMetadata;
+
+    /** Metadata about the interpolation process */
+    interpolationMetadata: InterpolationMetadata;
+}
+
+/**
+ * Options for beat interpolation
+ *
+ * Controls how the interpolation algorithm generates the beat grid.
+ */
+export interface BeatInterpolationOptions {
+    /** Interpolation algorithm to use (default: 'dual-pass') */
+    algorithm?: InterpolationAlgorithm;
+
+    /** Minimum confidence for a beat to be used as an anchor (default: 0.3) */
+    minAnchorConfidence?: number;
+
+    /** Tolerance in seconds for snapping detected beats to grid (default: 0.05) */
+    gridSnapTolerance?: number;
+
+    /**
+     * Rate of tempo adaptation at anchor points (0-1, default: 0.3)
+     * 0 = fixed tempo, 1 = full adaptation to each anchor
+     */
+    tempoAdaptationRate?: number;
+
+    /** Whether to extrapolate grid before first detected beat (default: true) */
+    extrapolateStart?: boolean;
+
+    /** Whether to extrapolate grid after last detected beat (default: true) */
+    extrapolateEnd?: boolean;
+
+    /**
+     * Multiplier for anomaly detection (default: 0.4)
+     * Intervals < (1 - threshold) × QN or > (1 + threshold) × QN are flagged
+     */
+    anomalyThreshold?: number;
+
+    /** Minimum beats to count as a dense section (default: 3) */
+    denseSectionMinBeats?: number;
+
+    /** Weight for grid alignment in confidence calculation (default: 0.5) */
+    gridAlignmentWeight?: number;
+
+    /** Weight for anchor confidence in confidence calculation (default: 0.3) */
+    anchorConfidenceWeight?: number;
+
+    /** Weight for pace confidence in confidence calculation (default: 0.2) */
+    paceConfidenceWeight?: number;
+}
+
+/**
+ * Default values for BeatInterpolationOptions
+ */
+export const DEFAULT_BEAT_INTERPOLATION_OPTIONS: Required<BeatInterpolationOptions> = {
+    algorithm: 'dual-pass',
+    minAnchorConfidence: 0.3,
+    gridSnapTolerance: 0.05,
+    tempoAdaptationRate: 0.3,
+    extrapolateStart: true,
+    extrapolateEnd: true,
+    anomalyThreshold: 0.4,
+    denseSectionMinBeats: 3,
+    gridAlignmentWeight: 0.5,
+    anchorConfidenceWeight: 0.3,
+    paceConfidenceWeight: 0.2,
+};
+
 /**
  * Validate accuracy thresholds for correctness
  *

@@ -29,6 +29,15 @@ export type {
     AccuracyThresholds,
     DifficultyPreset,
     ThresholdValidationResult,
+    // Beat interpolation types
+    BeatSource,
+    InterpolationAlgorithm,
+    BeatWithSource,
+    QuarterNoteDetection,
+    GapAnalysis,
+    InterpolationMetadata,
+    InterpolatedBeatMap,
+    BeatInterpolationOptions,
 } from '../../types/BeatMap.js';
 
 export {
@@ -44,6 +53,8 @@ export {
     getAccuracyThresholdsForPreset,
     // Validation helper
     validateThresholds,
+    // Beat interpolation defaults
+    DEFAULT_BEAT_INTERPOLATION_OPTIONS,
 } from '../../types/BeatMap.js';
 
 // Classes

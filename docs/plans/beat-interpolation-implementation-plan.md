@@ -195,9 +195,9 @@ After quarter note (QN) is established:
 ## Phase 1: Type Definitions & Interfaces
 
 ### 1.1 Add New Types to BeatMap.ts
-- [ ] Add `BeatSource` type (`'detected' | 'interpolated'`)
-- [ ] Add `InterpolationAlgorithm` type (`'histogram-grid' | 'adaptive-phase-locked' | 'dual-pass'`)
-- [ ] Add `BeatWithSource` interface extending `Beat`:
+- [x] Add `BeatSource` type (`'detected' | 'interpolated'`)
+- [x] Add `InterpolationAlgorithm` type (`'histogram-grid' | 'adaptive-phase-locked' | 'dual-pass'`)
+- [x] Add `BeatWithSource` interface extending `Beat`:
   ```typescript
   interface BeatWithSource extends Beat {
       source: BeatSource;
@@ -205,7 +205,7 @@ After quarter note (QN) is established:
       nearestAnchorTimestamp?: number;  // timestamp of nearest detected beat
   }
   ```
-- [ ] Add `QuarterNoteDetection` interface:
+- [x] Add `QuarterNoteDetection` interface:
   ```typescript
   interface QuarterNoteDetection {
       intervalSeconds: number;          // detected quarter note duration
@@ -218,7 +218,7 @@ After quarter note (QN) is established:
       denseSectionBeats: number;        // total beats from dense sections
   }
   ```
-- [ ] Add `GapAnalysis` interface:
+- [x] Add `GapAnalysis` interface:
   ```typescript
   interface GapAnalysis {
       totalGaps: number;                // number of gaps found
@@ -228,7 +228,7 @@ After quarter note (QN) is established:
       gridAlignmentScore: number;       // how well beats align to grid (0-1)
   }
   ```
-- [ ] Add `InterpolationMetadata` interface:
+- [x] Add `InterpolationMetadata` interface:
   ```typescript
   interface InterpolationMetadata {
       algorithm: InterpolationAlgorithm;
@@ -242,7 +242,7 @@ After quarter note (QN) is established:
       tempoDriftRatio: number;          // max local tempo / min local tempo
   }
   ```
-- [ ] Add `InterpolatedBeatMap` interface:
+- [x] Add `InterpolatedBeatMap` interface:
   ```typescript
   interface InterpolatedBeatMap {
       audioId: string;
@@ -262,7 +262,7 @@ After quarter note (QN) is established:
       interpolationMetadata: InterpolationMetadata;
   }
   ```
-- [ ] Add `BeatInterpolationOptions` interface:
+- [x] Add `BeatInterpolationOptions` interface:
   ```typescript
   interface BeatInterpolationOptions {
       algorithm?: InterpolationAlgorithm;  // default: 'dual-pass'
@@ -278,11 +278,11 @@ After quarter note (QN) is established:
       paceConfidenceWeight?: number;       // weight for pace confidence (default: 0.2)
   }
   ```
-- [ ] Add `DEFAULT_BEAT_INTERPOLATION_OPTIONS` constant
+- [x] Add `DEFAULT_BEAT_INTERPOLATION_OPTIONS` constant
 
 ### 1.2 Update Module Exports
-- [ ] Export new types from `src/core/analysis/beat/index.ts`
-- [ ] Export new types from `src/core/types/BeatMap.ts`
+- [x] Export new types from `src/core/analysis/beat/index.ts`
+- [x] Export new types from `src/core/types/BeatMap.ts`
 
 ---
 
