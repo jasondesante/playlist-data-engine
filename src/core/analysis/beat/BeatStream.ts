@@ -41,12 +41,21 @@ import type {
     AudioSyncState,
     ButtonPressResult,
     BeatAccuracy,
+    InterpolatedBeatMap,
+    BeatWithSource,
 } from '../../types/BeatMap.js';
 import {
     DEFAULT_BEATSTREAM_OPTIONS,
     getAccuracyThresholdsForPreset,
 } from '../../types/BeatMap.js';
 import type { AccuracyThresholds } from '../../types/BeatMap.js';
+
+/**
+ * Type guard to check if an object is an InterpolatedBeatMap
+ */
+function isInterpolatedBeatMap(map: BeatMap | InterpolatedBeatMap): map is InterpolatedBeatMap {
+    return 'mergedBeats' in map && 'detectedBeats' in map;
+}
 
 /**
  * Internal state for a beat event that has been scheduled
@@ -91,9 +100,15 @@ interface StreamState {
  *
  * Emits beat events ('upcoming', 'exact', 'passed') synchronized with audio
  * playback using the Web Audio API for precise timing.
+ *
+ * Supports both BeatMap and InterpolatedBeatMap:
+ * - When given a BeatMap, uses the beats array directly
+ * - When given an InterpolatedBeatMap with useInterpolatedBeats: true, uses mergedBeats
+ * - When given an InterpolatedBeatMap with useInterpolatedBeats: false, uses detectedBeats
  */
 export class BeatStream {
-    private beatMap: BeatMap;
+    private beatMap: BeatMap | InterpolatedBeatMap;
+    private normalizedBeatMap: BeatMap;
     private audioContext: AudioContext;
     private options: Required<BeatStreamOptions>;
     private state: StreamState;
@@ -104,13 +119,25 @@ export class BeatStream {
     /**
      * Create a new BeatStream
      *
-     * @param beatMap - The beat map containing beat data
+     * @param beatMap - The beat map containing beat data (BeatMap or InterpolatedBeatMap)
      * @param audioContext - The Web Audio API AudioContext for timing
      * @param options - Configuration options
      * @param rollingBpmWindowSize - Number of beats for rolling BPM calculation (default: 8)
+     *
+     * @example
+     * ```typescript
+     * // With a regular BeatMap
+     * const beatStream = new BeatStream(beatMap, audioContext);
+     *
+     * // With an InterpolatedBeatMap using interpolated beats
+     * const interpolatedMap = interpolator.interpolate(beatMap);
+     * const beatStream = new BeatStream(interpolatedMap, audioContext, {
+     *     useInterpolatedBeats: true
+     * });
+     * ```
      */
     constructor(
-        beatMap: BeatMap,
+        beatMap: BeatMap | InterpolatedBeatMap,
         audioContext: AudioContext,
         options: BeatStreamOptions = {},
         rollingBpmWindowSize: number = 8
@@ -119,6 +146,9 @@ export class BeatStream {
         this.audioContext = audioContext;
         this.options = { ...DEFAULT_BEATSTREAM_OPTIONS, ...options };
         this.rollingBpmWindowSize = rollingBpmWindowSize;
+
+        // Normalize the beat map for internal use
+        this.normalizedBeatMap = this.createNormalizedBeatMap(beatMap);
 
         this.state = {
             isRunning: false,
@@ -136,10 +166,44 @@ export class BeatStream {
     }
 
     /**
+     * Create a normalized BeatMap for internal use
+     *
+     * Handles both BeatMap and InterpolatedBeatMap inputs, selecting the appropriate
+     * beat array based on the map type and useInterpolatedBeats option.
+     */
+    private createNormalizedBeatMap(map: BeatMap | InterpolatedBeatMap): BeatMap {
+        if (isInterpolatedBeatMap(map)) {
+            // It's an InterpolatedBeatMap
+            if (this.options.useInterpolatedBeats) {
+                // Use merged beats (interpolated + detected)
+                return {
+                    audioId: map.audioId,
+                    duration: map.duration,
+                    beats: map.mergedBeats,
+                    bpm: map.quarterNoteBpm,
+                    metadata: map.originalMetadata,
+                };
+            } else {
+                // Use detected beats only
+                return {
+                    audioId: map.audioId,
+                    duration: map.duration,
+                    beats: map.detectedBeats,
+                    bpm: map.quarterNoteBpm,
+                    metadata: map.originalMetadata,
+                };
+            }
+        } else {
+            // It's a regular BeatMap, use as-is
+            return map;
+        }
+    }
+
+    /**
      * Initialize scheduled beats array
      */
     private initializeScheduledBeats(): ScheduledBeat[] {
-        return this.beatMap.beats.map((beat, index) => ({
+        return this.normalizedBeatMap.beats.map((beat, index) => ({
             beat,
             index,
             upcomingEmitted: false,
@@ -305,7 +369,7 @@ export class BeatStream {
      */
     seek(time: number): void {
         // Clamp time to valid range
-        const clampedTime = Math.max(0, Math.min(time, this.beatMap.duration));
+        const clampedTime = Math.max(0, Math.min(time, this.normalizedBeatMap.duration));
 
         this.state.pauseTime = clampedTime;
 
@@ -489,7 +553,7 @@ export class BeatStream {
         const currentTime = this.getCurrentAudioTime();
         const upcomingBeats: Beat[] = [];
 
-        for (const beat of this.beatMap.beats) {
+        for (const beat of this.normalizedBeatMap.beats) {
             const timeUntilBeat = beat.timestamp - currentTime;
 
             // Include beats at current position and in the future within anticipation window
@@ -519,7 +583,7 @@ export class BeatStream {
     getBeatAtTime(time: number): Beat | null {
         const tolerance = this.options.timingTolerance;
 
-        for (const beat of this.beatMap.beats) {
+        for (const beat of this.normalizedBeatMap.beats) {
             if (Math.abs(beat.timestamp - time) <= tolerance) {
                 return beat;
             }
@@ -537,7 +601,7 @@ export class BeatStream {
         const currentTime = this.getCurrentAudioTime();
         let currentBeat: Beat | null = null;
 
-        for (const beat of this.beatMap.beats) {
+        for (const beat of this.normalizedBeatMap.beats) {
             if (beat.timestamp <= currentTime) {
                 currentBeat = beat;
             } else {
@@ -556,7 +620,7 @@ export class BeatStream {
     getNextBeat(): Beat | null {
         const currentTime = this.getCurrentAudioTime();
 
-        for (const beat of this.beatMap.beats) {
+        for (const beat of this.normalizedBeatMap.beats) {
             if (beat.timestamp > currentTime) {
                 return beat;
             }
@@ -580,7 +644,7 @@ export class BeatStream {
         const recentBeats: Beat[] = [];
 
         // Collect beats that have passed or are near
-        for (const beat of this.beatMap.beats) {
+        for (const beat of this.normalizedBeatMap.beats) {
             if (beat.timestamp <= currentTime + 0.1) {
                 recentBeats.push(beat);
             }
@@ -588,7 +652,7 @@ export class BeatStream {
 
         // Need at least 2 beats to calculate interval
         if (recentBeats.length < 2) {
-            return this.beatMap.bpm;
+            return this.normalizedBeatMap.bpm;
         }
 
         // Get the last N beats (up to window size)
@@ -647,7 +711,7 @@ export class BeatStream {
         let nearestBeat: Beat | null = null;
         let smallestOffset = Infinity;
 
-        for (const beat of this.beatMap.beats) {
+        for (const beat of this.normalizedBeatMap.beats) {
             const offset = timestamp - beat.timestamp;
             const absoluteOffset = Math.abs(offset);
 
@@ -737,23 +801,38 @@ export class BeatStream {
      * Get the beat map duration
      */
     getDuration(): number {
-        return this.beatMap.duration;
+        return this.normalizedBeatMap.duration;
     }
 
     /**
-     * Get the beat map being used
+     * Get the original beat map (may be BeatMap or InterpolatedBeatMap)
+     *
+     * @returns The original beat map passed to the constructor
      */
-    getBeatMap(): BeatMap {
+    getBeatMap(): BeatMap | InterpolatedBeatMap {
         return this.beatMap;
+    }
+
+    /**
+     * Get the normalized beat map used internally
+     *
+     * This is always a BeatMap, regardless of whether the original was
+     * a BeatMap or InterpolatedBeatMap.
+     *
+     * @returns The normalized beat map
+     */
+    getNormalizedBeatMap(): BeatMap {
+        return this.normalizedBeatMap;
     }
 
     /**
      * Update the beat map (e.g., after manual editing)
      *
-     * @param beatMap - New beat map to use
+     * @param beatMap - New beat map to use (BeatMap or InterpolatedBeatMap)
      */
-    setBeatMap(beatMap: BeatMap): void {
+    setBeatMap(beatMap: BeatMap | InterpolatedBeatMap): void {
         this.beatMap = beatMap;
+        this.normalizedBeatMap = this.createNormalizedBeatMap(beatMap);
         this.scheduledBeats = this.initializeScheduledBeats();
     }
 

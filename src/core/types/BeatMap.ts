@@ -304,6 +304,30 @@ export interface BeatStreamOptions {
      * If provided, overrides difficultyPreset.
      */
     customThresholds?: Partial<AccuracyThresholds>;
+
+    /**
+     * Use interpolated beats from InterpolatedBeatMap (default: false)
+     * If true and an InterpolatedBeatMap is provided to the BeatStream constructor,
+     * the stream will use mergedBeats (interpolated + detected) instead of
+     * the original detectedBeats.
+     *
+     * This allows seamless use of beat interpolation without modifying the BeatMap.
+     *
+     * @example
+     * ```typescript
+     * // With interpolation
+     * const interpolatedMap = interpolator.interpolate(beatMap);
+     * const beatStream = new BeatStream(interpolatedMap, audioContext, {
+     *     useInterpolatedBeats: true  // Use mergedBeats
+     * });
+     *
+     * // Without interpolation (original behavior)
+     * const beatStream = new BeatStream(beatMap, audioContext, {
+     *     useInterpolatedBeats: false  // Use beats array
+     * });
+     * ```
+     */
+    useInterpolatedBeats?: boolean;
 }
 
 /**
@@ -793,6 +817,7 @@ export const DEFAULT_BEATSTREAM_OPTIONS: Required<BeatStreamOptions> = {
     timingTolerance: 0.01,
     difficultyPreset: 'medium',
     customThresholds: {},
+    useInterpolatedBeats: false,
 };
 
 /**

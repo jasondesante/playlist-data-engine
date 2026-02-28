@@ -348,7 +348,7 @@ After quarter note (QN) is established:
 ## Phase 3: Interpolation Algorithms
 
 ### 3.1 Approach 1: Histogram-Based Fixed Grid
-- [ ] Implement `interpolateHistogramGrid()`:
+- [x] Implement `interpolateHistogramGrid()`:
   ```
   1. Use quarterNote.intervalSeconds as fixed grid spacing
   2. Start grid from first detected beat timestamp
@@ -361,7 +361,7 @@ After quarter note (QN) is established:
   ```
 
 ### 3.2 Approach 2: Adaptive Phase-Locked Grid
-- [ ] Implement `interpolateAdaptivePhaseLocked()`:
+- [x] Implement `interpolateAdaptivePhaseLocked()`:
   ```
   1. Start with quarter note interval
   2. Track current phase and running tempo
@@ -376,24 +376,24 @@ After quarter note (QN) is established:
   ```
 
 ### 3.3 Approach 3: Dual-Pass with Confidence Scoring
-- [ ] Implement `interpolateDualPass()`:
+- [x] Implement `interpolateDualPass()`:
 
   **Pass 1: Enhanced Quarter Note Detection**
-  - [ ] Apply Gaussian KDE for smooth peak finding
-  - [ ] Weight intervals by beat confidence
-  - [ ] Consider regularity of intervals
-  - [ ] Return quarter note with higher confidence
+  - [x] Apply Gaussian KDE for smooth peak finding
+  - [x] Weight intervals by beat confidence
+  - [x] Consider regularity of intervals
+  - [x] Return quarter note with higher confidence
 
   **Pass 2: Grid with Distributed Error Correction**
-  - [ ] Generate initial grid from first beat
-  - [ ] For each anchor point:
+  - [x] Generate initial grid from first beat
+  - [x] For each anchor point:
     - Calculate cumulative error from expected position
     - Distribute error across all beats since last anchor
     - Update running tempo with EMA
-  - [ ] Generate interpolated beats with corrected positions
+  - [x] Generate interpolated beats with corrected positions
 
   **Pass 3: Confidence Scoring**
-  - [ ] For each interpolated beat:
+  - [x] For each interpolated beat:
     - Calculate distance to nearest detected beat
     - Apply decay: `conf = baseConf * exp(-decayRate * distanceBeats)`
     - Factor in local tempo consistency
@@ -404,7 +404,7 @@ After quarter note (QN) is established:
 ## Phase 4: Merge & Output Logic
 
 ### 4.1 Merge Implementation
-- [ ] Create `mergeBeats(detected: Beat[], gridBeats: BeatWithSource[], tolerance: number): BeatWithSource[]`:
+- [x] Create `mergeBeats(detected: Beat[], gridBeats: BeatWithSource[], tolerance: number): BeatWithSource[]`:
   ```
   1. Sort both arrays by timestamp
   2. Iterate through grid beats
@@ -416,11 +416,11 @@ After quarter note (QN) is established:
   ```
 
 ### 4.2 Output Assembly
-- [ ] Create `assembleOutput()` method:
-  - [ ] `detectedBeats` = original BeatMap.beats (unchanged)
-  - [ ] `mergedBeats` = result of merge algorithm
-  - [ ] Calculate statistics (counts, ratios, averages)
-  - [ ] Assemble InterpolatedBeatMap
+- [x] Create `assembleOutput()` method:
+  - [x] `detectedBeats` = original BeatMap.beats (unchanged)
+  - [x] `mergedBeats` = result of merge algorithm
+  - [x] Calculate statistics (counts, ratios, averages)
+  - [x] Assemble InterpolatedBeatMap
 
 ---
 
@@ -431,8 +431,8 @@ After quarter note (QN) is established:
 - [x] Add convenience method `generateBeatMapWithInterpolation()` that combines generation + interpolation
 
 ### 5.2 BeatStream Compatibility
-- [ ] Verify BeatStream works with `BeatWithSource[]` (should work via extends Beat)
-- [ ] Add option to BeatStream to use either stream:
+- [x] Verify BeatStream works with `BeatWithSource[]` (should work via extends Beat)
+- [x] Add option to BeatStream to use either stream:
   ```typescript
   interface BeatStreamOptions {
       // ... existing options
