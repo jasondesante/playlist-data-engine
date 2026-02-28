@@ -21,10 +21,10 @@ Define new types and constants for parameter modes.
   - [x] Add `HopSizeConfig` interface with `mode` and optional `customValue`
   - [x] Add `HOP_SIZE_PRESETS` constant object with preset values
 
-- [ ] **1.2 Add Mel Bands Mode Types**
-  - [ ] Add `MelBandsMode` type: `'standard' | 'detailed' | 'maximum'`
-  - [ ] Add `MelBandsConfig` interface
-  - [ ] Add `MEL_BANDS_PRESETS` constant object
+- [x] **1.2 Add Mel Bands Mode Types**
+  - [x] Add `MelBandsMode` type: `'standard' | 'detailed' | 'maximum'`
+  - [x] Add `MelBandsConfig` interface
+  - [x] Add `MEL_BANDS_PRESETS` constant object
 
 - [ ] **1.3 Add Gaussian Smooth Mode Types**
   - [ ] Add `GaussianSmoothMode` type: `'minimal' | 'standard' | 'smooth'`

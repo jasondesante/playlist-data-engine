@@ -397,6 +397,35 @@ export interface HopSizeConfig {
     customValue?: number;
 }
 
+/**
+ * Tier 2: Mel bands mode for controlling frequency resolution
+ *
+ * Mel bands determine the frequency resolution of the onset detection.
+ * More bands = better frequency resolution but slightly slower analysis.
+ */
+export type MelBandsMode = 'standard' | 'detailed' | 'maximum';
+
+/**
+ * Preset mel bands values
+ *
+ * - standard: 40 bands - Paper default, librosa default - RECOMMENDED
+ * - detailed: 64 bands - Better frequency resolution
+ * - maximum: 80 bands - Maximum detail
+ */
+export const MEL_BANDS_PRESETS = {
+    standard: 40,   // Paper default, librosa default
+    detailed: 64,   // Better frequency resolution
+    maximum: 80,    // Maximum detail
+} as const;
+
+/**
+ * Configuration for mel bands mode selection
+ */
+export interface MelBandsConfig {
+    /** The mel bands mode to use */
+    mode: MelBandsMode;
+}
+
 // ============================================================================
 // OSE Configuration
 // ============================================================================
