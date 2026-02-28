@@ -140,14 +140,14 @@ export function getGaussianSmoothMs(config: GaussianSmoothConfig = { mode: 'stan
 
 Extend `OSEConfig` to support mode-based configuration.
 
-- [ ] **3.1 Add mode-based properties to OSEConfig**
-  - [ ] Add optional `hopSizeMode` property (alternative to `hopSizeMs`)
-  - [ ] Add optional `melBandsMode` property (alternative to `melBands`)
-  - [ ] Add optional `gaussianSmoothMode` property (alternative to `gaussianSmoothMs`)
+- [x] **3.1 Add mode-based properties to OSEConfig**
+  - [x] Add optional `hopSizeMode` property (alternative to `hopSizeMs`)
+  - [x] Add optional `melBandsMode` property (alternative to `melBands`)
+  - [x] Add optional `gaussianSmoothMode` property (alternative to `gaussianSmoothMs`)
 
-- [ ] **3.2 Update DEFAULT_OSE_CONFIG**
-  - [ ] Change `hopSizeMs` default from 10 to 4 (paper spec)
-  - [ ] Add default mode values alongside numeric defaults
+- [x] **3.2 Update DEFAULT_OSE_CONFIG**
+  - [x] Change `hopSizeMs` default from 10 to 4 (paper spec)
+  - [x] Add default mode values alongside numeric defaults
 
 ### Proposed Interface Update
 

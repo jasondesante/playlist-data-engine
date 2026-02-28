@@ -94,7 +94,7 @@ describe('OnsetStrengthEnvelope', () => {
 
             expect(config.targetSampleRate).toBe(8000);
             expect(config.fftWindowSize).toBe(32);
-            expect(config.hopSizeMs).toBe(10);
+            expect(config.hopSizeMs).toBe(4); // Ellis 2007 paper specification
             expect(config.melBands).toBe(40);
             expect(config.highPassCutoff).toBe(0.4);
             expect(config.gaussianSmoothMs).toBe(20);
@@ -129,7 +129,7 @@ describe('OnsetStrengthEnvelope', () => {
 
             expect(result.envelope).toBeInstanceOf(Float32Array);
             expect(result.numFrames).toBeGreaterThan(0);
-            expect(result.hopSizeSeconds).toBe(0.01); // 10ms
+            expect(result.hopSizeSeconds).toBe(0.004); // 4ms (Ellis 2007 paper spec)
             expect(result.effectiveSampleRate).toBe(8000);
             expect(result.duration).toBe(2);
         });

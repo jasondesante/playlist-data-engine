@@ -534,17 +534,26 @@ export interface OSEConfig {
     /** FFT window size in milliseconds (default: 32) */
     fftWindowSize?: number;
 
-    /** Hop size in milliseconds (default: 10) */
+    /** Hop size in milliseconds (default: 4) - use with hopSizeMode or direct value */
     hopSizeMs?: number;
+
+    /** Hop size mode (alternative to hopSizeMs) - default: 'standard' */
+    hopSizeMode?: HopSizeConfig;
 
     /** Number of Mel frequency bands (default: 40) */
     melBands?: number;
+
+    /** Mel bands mode (alternative to melBands) - default: 'standard' */
+    melBandsMode?: MelBandsConfig;
 
     /** High-pass filter cutoff in Hz (default: 0.4) */
     highPassCutoff?: number;
 
     /** Gaussian smoothing window in ms (default: 20) */
     gaussianSmoothMs?: number;
+
+    /** Gaussian smooth mode (alternative to gaussianSmoothMs) - default: 'standard' */
+    gaussianSmoothMode?: GaussianSmoothConfig;
 }
 
 /**

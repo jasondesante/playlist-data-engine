@@ -11,7 +11,12 @@
  * Reference: https://www.ee.columbia.edu/~dpwe/pubs/Ellis07-beattrack.pdf
  */
 
-import type { OSEConfig } from '../../types/BeatMap.js';
+import type {
+    OSEConfig,
+    HopSizeConfig,
+    MelBandsConfig,
+    GaussianSmoothConfig,
+} from '../../types/BeatMap.js';
 import {
     resampleAudio,
     createMelFilterbank,
@@ -27,10 +32,13 @@ import {
 const DEFAULT_OSE_CONFIG: Required<OSEConfig> = {
     targetSampleRate: 8000,    // Paper resamples to 8kHz
     fftWindowSize: 32,          // 32ms windows (paper's specification)
-    hopSizeMs: 10,              // 10ms between frames (paper uses 4ms, we use 10ms for efficiency)
+    hopSizeMs: 4,               // 4ms between frames (Ellis 2007 paper specification)
+    hopSizeMode: { mode: 'standard' } as HopSizeConfig,  // Default to standard mode
     melBands: 40,               // 40 Mel bands for perceptual weighting
+    melBandsMode: { mode: 'standard' } as MelBandsConfig, // Default to standard mode
     highPassCutoff: 0.4,        // 0.4 Hz to remove DC offset
     gaussianSmoothMs: 20,       // 20ms Gaussian smoothing window
+    gaussianSmoothMode: { mode: 'standard' } as GaussianSmoothConfig, // Default to standard mode
 };
 
 /**
