@@ -498,6 +498,25 @@ export const DEFAULT_BEATSTREAM_OPTIONS: Required<BeatStreamOptions> = {
 export const BEAT_ACCURACY_THRESHOLDS: AccuracyThresholds = HARD_ACCURACY_THRESHOLDS;
 
 /**
+ * Get accuracy thresholds for a difficulty preset
+ * @param preset - The difficulty preset ('easy', 'medium', 'hard', or 'custom')
+ * @returns The accuracy thresholds for the specified preset
+ * @note 'custom' preset returns hard thresholds as a base for customization
+ */
+export function getAccuracyThresholdsForPreset(preset: DifficultyPreset): AccuracyThresholds {
+    switch (preset) {
+        case 'easy':
+            return EASY_ACCURACY_THRESHOLDS;
+        case 'medium':
+            return MEDIUM_ACCURACY_THRESHOLDS;
+        case 'hard':
+        case 'custom':
+        default:
+            return HARD_ACCURACY_THRESHOLDS;
+    }
+}
+
+/**
  * Current version of the beat detection algorithm
  */
 export const BEAT_DETECTION_VERSION = '1.0.0';

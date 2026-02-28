@@ -111,7 +111,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
   ```
 
 ### Task 2.3: Add Preset Lookup Function
-- [ ] Add helper function in `src/core/types/BeatMap.ts`
+- [x] Add helper function in `src/core/types/BeatMap.ts`
   ```typescript
   /**
    * Get accuracy thresholds for a difficulty preset
