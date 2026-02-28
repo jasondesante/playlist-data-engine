@@ -260,6 +260,36 @@ export interface AccuracyThresholds {
 export type DifficultyPreset = 'easy' | 'medium' | 'hard' | 'custom';
 
 /**
+ * Easy difficulty thresholds (forgiving)
+ */
+export const EASY_ACCURACY_THRESHOLDS: AccuracyThresholds = {
+    perfect: 0.075,  // ±75ms
+    great: 0.125,    // ±125ms
+    good: 0.175,     // ±175ms
+    ok: 0.250,       // ±250ms
+} as const;
+
+/**
+ * Medium difficulty thresholds (balanced)
+ */
+export const MEDIUM_ACCURACY_THRESHOLDS: AccuracyThresholds = {
+    perfect: 0.045,  // ±45ms
+    great: 0.090,    // ±90ms
+    good: 0.135,     // ±135ms
+    ok: 0.200,       // ±200ms
+} as const;
+
+/**
+ * Hard difficulty thresholds (strict - original behavior)
+ */
+export const HARD_ACCURACY_THRESHOLDS: AccuracyThresholds = {
+    perfect: 0.010,  // ±10ms
+    great: 0.025,    // ±25ms
+    good: 0.050,     // ±50ms
+    ok: 0.100,       // ±100ms
+} as const;
+
+/**
  * Result of a button press accuracy check
  */
 export interface ButtonPressResult {

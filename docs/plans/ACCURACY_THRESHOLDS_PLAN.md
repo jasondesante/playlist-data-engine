@@ -67,7 +67,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
 ## Phase 2: Constants and Presets
 
 ### Task 2.1: Define Difficulty Preset Thresholds
-- [ ] Add preset constants in `src/core/types/BeatMap.ts`
+- [x] Add preset constants in `src/core/types/BeatMap.ts`
   ```typescript
   /**
    * Easy difficulty thresholds (forgiving)
