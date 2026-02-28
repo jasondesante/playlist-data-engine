@@ -254,9 +254,9 @@ constructor(config: OSEConfig = {}) {
 
 Ensure the generator passes mode configs through to OSE.
 
-- [ ] **6.1 Update BeatMapGenerator to pass modes to OSE**
-  - [ ] Extract mode configs from options
-  - [ ] Pass to OnsetStrengthEnvelope constructor
+- [x] **6.1 Update BeatMapGenerator to pass modes to OSE**
+  - [x] Extract mode configs from options
+  - [x] Pass to OnsetStrengthEnvelope constructor
 
 **File**: `src/core/analysis/beat/BeatMapGenerator.ts`
 

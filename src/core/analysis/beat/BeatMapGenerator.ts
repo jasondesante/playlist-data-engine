@@ -167,9 +167,12 @@ export class BeatMapGenerator {
                 targetSampleRate: 8000,
                 fftWindowSize: 32,
                 hopSizeMs: this.options.hopSizeMs,
+                hopSizeMode: this.options.hopSizeMode,
                 melBands: this.options.melBands,
+                melBandsMode: this.options.melBandsMode,
                 highPassCutoff: this.options.highPassCutoff,
                 gaussianSmoothMs: this.options.gaussianSmoothMs,
+                gaussianSmoothMode: this.options.gaussianSmoothMode,
             });
 
             const oseResult = ose.calculate(audioBuffer);
