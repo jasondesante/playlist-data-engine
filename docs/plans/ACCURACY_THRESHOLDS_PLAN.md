@@ -35,7 +35,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
   ```
 
 ### Task 1.2: Create AccuracyThresholds Interface
-- [ ] Add new `AccuracyThresholds` interface in `src/core/types/BeatMap.ts`
+- [x] Add new `AccuracyThresholds` interface in `src/core/types/BeatMap.ts`
   ```typescript
   /**
    * Accuracy thresholds for button press detection (in seconds)

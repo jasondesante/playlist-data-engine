@@ -240,6 +240,21 @@ export interface BeatStreamOptions {
 export type BeatAccuracy = 'perfect' | 'great' | 'good' | 'ok' | 'miss';
 
 /**
+ * Accuracy thresholds for button press detection (in seconds)
+ * Used to configure difficulty levels for rhythm games.
+ */
+export interface AccuracyThresholds {
+    /** Perfect: within this threshold (seconds) */
+    perfect: number;
+    /** Great: within this threshold (seconds) */
+    great: number;
+    /** Good: within this threshold (seconds) */
+    good: number;
+    /** Ok: within this threshold (seconds) */
+    ok: number;
+}
+
+/**
  * Result of a button press accuracy check
  */
 export interface ButtonPressResult {
