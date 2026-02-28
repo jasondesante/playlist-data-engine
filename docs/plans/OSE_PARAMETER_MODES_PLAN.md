@@ -309,11 +309,11 @@ Update documentation to describe the new mode system.
 
 Add tests for new functionality.
 
-- [ ] **9.1 Unit tests for helper functions**
-  - [ ] Test `getHopSizeMs()` with all modes
-  - [ ] Test `getHopSizeMs()` custom value clamping
-  - [ ] Test `getMelBands()` with all modes
-  - [ ] Test `getGaussianSmoothMs()` with all modes
+- [x] **9.1 Unit tests for helper functions**
+  - [x] Test `getHopSizeMs()` with all modes
+  - [x] Test `getHopSizeMs()` custom value clamping
+  - [x] Test `getMelBands()` with all modes
+  - [x] Test `getGaussianSmoothMs()` with all modes
 
 - [ ] **9.2 Integration tests**
   - [ ] Test OnsetStrengthEnvelope with mode configs
