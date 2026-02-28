@@ -16,10 +16,10 @@ Expose Onset Strength Envelope (OSE) parameters to the frontend through a tiered
 
 Define new types and constants for parameter modes.
 
-- [ ] **1.1 Add Hop Size Mode Types**
-  - [ ] Add `HopSizeMode` type: `'efficient' | 'full' | 'hq' | 'custom'`
-  - [ ] Add `HopSizeConfig` interface with `mode` and optional `customValue`
-  - [ ] Add `HOP_SIZE_PRESETS` constant object with preset values
+- [x] **1.1 Add Hop Size Mode Types**
+  - [x] Add `HopSizeMode` type: `'efficient' | 'standard' | 'hq' | 'custom'`
+  - [x] Add `HopSizeConfig` interface with `mode` and optional `customValue`
+  - [x] Add `HOP_SIZE_PRESETS` constant object with preset values
 
 - [ ] **1.2 Add Mel Bands Mode Types**
   - [ ] Add `MelBandsMode` type: `'standard' | 'detailed' | 'maximum'`

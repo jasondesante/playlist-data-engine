@@ -362,6 +362,45 @@ export interface TempoEstimate {
     targetIntervalSeconds: number;
 }
 
+// ============================================================================
+// OSE Parameter Modes
+// ============================================================================
+
+/**
+ * Tier 1: Hop size mode for controlling beat detection precision
+ *
+ * Hop size determines the time resolution of onset detection.
+ * Smaller values = more precise but slower analysis.
+ */
+export type HopSizeMode = 'efficient' | 'standard' | 'hq' | 'custom';
+
+/**
+ * Preset hop size values in milliseconds
+ *
+ * - efficient: 10ms - Fast analysis, reduced precision (legacy default)
+ * - standard: 4ms - Paper specification (Ellis 2007) - RECOMMENDED
+ * - hq: 2ms - High quality, maximum precision
+ */
+export const HOP_SIZE_PRESETS = {
+    efficient: 10,  // Fast analysis, reduced precision
+    standard: 4,    // Paper specification (Ellis 2007) - DEFAULT
+    hq: 2,          // High quality, maximum precision
+} as const;
+
+/**
+ * Configuration for hop size mode selection
+ */
+export interface HopSizeConfig {
+    /** The hop size mode to use */
+    mode: HopSizeMode;
+    /** Custom hop size in milliseconds (only used when mode === 'custom') */
+    customValue?: number;
+}
+
+// ============================================================================
+// OSE Configuration
+// ============================================================================
+
 /**
  * Configuration for Onset Strength Envelope calculation
  */
