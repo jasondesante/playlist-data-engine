@@ -460,10 +460,10 @@ Create `tests/unit/beat/quarterNoteDetection.test.ts`:
 
 ### 6.2 Unit Tests - Gap Analysis
 Create `tests/unit/beat/gapAnalysis.test.ts`:
-- [ ] Test: Identify half-note gaps (2× ratio)
-- [ ] Test: Identify anomalies (single unusual interval)
-- [ ] Test: Calculate grid alignment score
-- [ ] Test: Handle silent sections (surrounding beats aligned)
+- [x] Test: Identify half-note gaps (2× ratio)
+- [x] Test: Identify anomalies (single unusual interval)
+- [x] Test: Calculate grid alignment score
+- [x] Test: Handle silent sections (surrounding beats aligned)
 
 ### 6.3 Unit Tests - Interpolation Algorithms
 Create `tests/unit/beat/beatInterpolator.test.ts`:
