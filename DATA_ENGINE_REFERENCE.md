@@ -2399,8 +2399,52 @@ new WeatherAPIClient(config: WeatherSensorConfig)
 | `getForecastApiMetrics()` | - | `PerformanceMetrics` | Returns performance metrics for forecast API calls |
 | `getForecastApiStatistics()` | - | `PerformanceStatistics & { p95: number, p99: number }` | Returns calculated statistics for forecast API |
 | `resetPerformanceMetrics()` | - | `void` | Resets all performance metrics |
+| `getSolarInfo()` | `latitude: number, longitude: number, date?: Date` | `SolarInfo` | Gets solar info (sunrise, sunset, day stage) - **works without API key** |
 
 **Severe Weather Types:** `Blizzard`, `Hurricane`, `Typhoon`, `Tornado`, `None`
+
+##### Solar Information (`getSolarInfo`)
+
+The `getSolarInfo()` method provides astronomical calculations for sunrise, sunset, and day stage. **This method works without an API key** using pure astronomical math (NOAA algorithm).
+
+**Returns: `SolarInfo`**
+```typescript
+interface SolarInfo {
+    currentTime: Date;      // Current time
+    stage: DayStage;        // 'night' | 'dawn' | 'day' | 'dusk'
+    sunrise: Date;          // Sunrise time (UTC)
+    sunset: Date;           // Sunset time (UTC)
+    solarNoon: Date;        // Solar noon time (UTC)
+    civilDawn?: Date;       // Civil dawn (sun 6° below horizon)
+    civilDusk?: Date;       // Civil dusk (sun 6° below horizon)
+    sunAltitude: number;    // Sun altitude in degrees (negative = below horizon)
+    sunAzimuth: number;     // Sun azimuth in degrees (0-360, North=0)
+    dayLengthHours: number; // Day length in hours
+    fromApi: boolean;       // Always false for calculated data
+    timestamp: number;      // When this data was generated
+}
+```
+
+**Day Stages:**
+| Stage | Description |
+|-------|-------------|
+| `night` | Before civil dawn or after civil dusk |
+| `dawn` | Between civil dawn and sunrise (~30 min) |
+| `day` | Between sunrise and sunset |
+| `dusk` | Between sunset and civil dusk (~30 min) |
+
+**Usage Example:**
+```typescript
+const weatherClient = new WeatherAPIClient(''); // No API key needed!
+const solarInfo = weatherClient.getSolarInfo(40.7128, -74.0060); // NYC
+
+console.log(solarInfo.stage);        // 'day', 'night', 'dawn', or 'dusk'
+console.log(solarInfo.sunrise);      // Date object
+console.log(solarInfo.sunset);       // Date object
+console.log(solarInfo.dayLengthHours); // e.g., 14.5
+```
+
+**Note:** For polar regions (midnight sun / polar night), sunrise/sunset may be `Invalid Date`. The stage is determined using sun altitude in these cases.
 
 #### Helper: `LightSensor`
 

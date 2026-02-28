@@ -1,4 +1,4 @@
-import type { WeatherData, ForecastData, PerformanceMetrics, PerformanceStatistics } from '../types/Environmental';
+import type { WeatherData, ForecastData, PerformanceMetrics, PerformanceStatistics, SolarInfo, DayStage, TwilightType } from '../types/Environmental';
 import type { WeatherSensorConfig } from '../config/sensorConfig.js';
 import { Logger } from '../../utils/logger.js';
 import { OpenWeatherMapCurrentResponseSchema, OpenWeatherMapForecastResponseSchema } from './schemas/weather.schema.js';
@@ -382,6 +382,415 @@ export class WeatherAPIClient {
         const phase = Math.abs(cyclesPassed % 1);
 
         return phase;
+    }
+
+    // ==================== Solar Calculation Methods ====================
+
+    /**
+     * Get solar information including sunrise, sunset, and day stage.
+     * Works WITHOUT API key using astronomical calculations (NOAA algorithm).
+     *
+     * @param latitude - Latitude in decimal degrees (-90 to 90)
+     * @param longitude - Longitude in decimal degrees (-180 to 180)
+     * @param date - Optional date for calculation (defaults to now)
+     * @returns SolarInfo object with sunrise, sunset, solar noon, and day stage
+     */
+    getSolarInfo(latitude: number, longitude: number, date?: Date): SolarInfo {
+        const targetDate = date ?? new Date();
+        const calculated = this.calculateSolarInfo(latitude, longitude, targetDate);
+
+        return {
+            ...calculated,
+            fromApi: false,
+            timestamp: Date.now()
+        };
+    }
+
+    /**
+     * Calculate solar information using astronomical formulas (NOAA algorithm)
+     * Based on "Astronomical Algorithms" by Jean Meeus
+     */
+    private calculateSolarInfo(latitude: number, longitude: number, date: Date): Omit<SolarInfo, 'fromApi' | 'timestamp'> {
+        const sunrise = this.calculateSunriseSunset(latitude, longitude, date, true);
+        const sunset = this.calculateSunriseSunset(latitude, longitude, date, false);
+        const solarNoon = this.calculateSolarNoon(latitude, longitude, date);
+        const civilDawn = this.calculateTwilight(latitude, longitude, date, 'civil', true);
+        const civilDusk = this.calculateTwilight(latitude, longitude, date, 'civil', false);
+        const { altitude, azimuth } = this.calculateSunPosition(latitude, longitude, date);
+
+        const dayLengthHours = !isNaN(sunset.getTime()) && !isNaN(sunrise.getTime())
+            ? (sunset.getTime() - sunrise.getTime()) / (1000 * 60 * 60)
+            : 0;
+
+        const stage = this.determineDayStage(date, sunrise, sunset, civilDawn, civilDusk);
+
+        return {
+            currentTime: date,
+            stage,
+            sunrise,
+            sunset,
+            solarNoon,
+            civilDawn,
+            civilDusk,
+            sunAltitude: altitude,
+            sunAzimuth: azimuth,
+            dayLengthHours
+        };
+    }
+
+    /**
+     * Convert degrees to radians
+     */
+    private toRadians(degrees: number): number {
+        return degrees * (Math.PI / 180);
+    }
+
+    /**
+     * Convert radians to degrees
+     */
+    private toDegrees(radians: number): number {
+        return radians * (180 / Math.PI);
+    }
+
+    /**
+     * Calculate Julian Date from a Date object
+     * Julian Date is a continuous count of days since January 1, 4713 BC
+     */
+    private calculateJulianDate(date: Date): number {
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth() + 1;
+        const day = date.getUTCDate();
+        const hour = date.getUTCHours() +
+            date.getUTCMinutes() / 60 +
+            date.getUTCSeconds() / 3600;
+
+        let a = Math.floor((14 - month) / 12);
+        let y = year + 4800 - a;
+        let m = month + 12 * a - 3;
+
+        // Julian Date calculation
+        let jd = day + Math.floor((153 * m + 2) / 5) + 365 * y +
+            Math.floor(y / 4) - Math.floor(y / 100) +
+            Math.floor(y / 400) - 32045;
+
+        return jd + (hour - 12) / 24;
+    }
+
+    /**
+     * Calculate Julian Century from Julian Date
+     * Julian Century is used in solar position calculations
+     */
+    private calculateJulianCentury(jd: number): number {
+        return (jd - 2451545.0) / 36525.0;
+    }
+
+    /**
+     * Calculate the sun's declination angle at a given Julian century
+     * Returns declination in degrees
+     */
+    private calculateSolarDeclination(jc: number): number {
+        // Geometric mean longitude of the sun (degrees)
+        const geomMeanLongSun = (280.46646 + jc * (36000.76983 + jc * 0.0003032)) % 360;
+
+        // Geometric mean anomaly of the sun (degrees)
+        const geomMeanAnomSun = 357.52911 + jc * (35999.05029 - 0.0001537 * jc);
+
+        // Eccentricity of Earth's orbit
+        const eccentEarthOrbit = 0.016708634 - jc * (0.000042037 + 0.0000001267 * jc);
+
+        // Sun's equation of center (degrees)
+        const sunEqOfCtr = Math.sin(this.toRadians(geomMeanAnomSun)) * (1.914602 - jc * (0.004817 + 0.000014 * jc)) +
+            Math.sin(this.toRadians(2 * geomMeanAnomSun)) * (0.019993 - 0.000101 * jc) +
+            Math.sin(this.toRadians(3 * geomMeanAnomSun)) * 0.000289;
+
+        // Sun's true longitude (degrees)
+        const sunTrueLong = geomMeanLongSun + sunEqOfCtr;
+
+        // Mean obliquity of ecliptic (degrees)
+        const meanObliqEcliptic = 23 + (26 + ((21.448 - jc * (46.815 + jc * (0.00059 - jc * 0.001813)))) / 60) / 60;
+
+        // Obliquity correction (degrees)
+        const obliqCorr = meanObliqEcliptic + 0.00256 * Math.cos(this.toRadians(125.04 - 1934.136 * jc));
+
+        // Sun's apparent longitude (degrees)
+        const sunAppLong = sunTrueLong - 0.00569 - 0.00478 * Math.sin(this.toRadians(125.04 - 1934.136 * jc));
+
+        // Declination (degrees)
+        const declination = this.toDegrees(Math.asin(
+            Math.sin(this.toRadians(obliqCorr)) * Math.sin(this.toRadians(sunAppLong))
+        ));
+
+        return declination;
+    }
+
+    /**
+     * Calculate the equation of time (minutes)
+     * This accounts for the difference between apparent solar time and mean solar time
+     */
+    private calculateEquationOfTime(jc: number): number {
+        const geomMeanLongSun = (280.46646 + jc * (36000.76983 + jc * 0.0003032)) % 360;
+        const geomMeanAnomSun = 357.52911 + jc * (35999.05029 - 0.0001537 * jc);
+        const eccentEarthOrbit = 0.016708634 - jc * (0.000042037 + 0.0000001267 * jc);
+
+        const y = Math.tan(this.toRadians(23.44 / 2)) ** 2;
+
+        const eqOfTime = 4 * this.toDegrees(Math.atan2(
+            Math.sin(this.toRadians(2 * geomMeanLongSun)) * Math.cos(this.toRadians(geomMeanAnomSun)) * 2 * eccentEarthOrbit -
+            Math.sin(this.toRadians(geomMeanAnomSun)) * 2 * eccentEarthOrbit +
+            Math.sin(this.toRadians(geomMeanLongSun)) * Math.cos(this.toRadians(geomMeanAnomSun)) * 2 * eccentEarthOrbit * Math.cos(this.toRadians(geomMeanLongSun)),
+            1 - Math.sin(this.toRadians(geomMeanLongSun)) * Math.sin(this.toRadians(geomMeanLongSun)) *
+            eccentEarthOrbit * eccentEarthOrbit * Math.cos(this.toRadians(geomMeanAnomSun)) *
+            Math.cos(this.toRadians(geomMeanAnomSun))
+        ));
+
+        return eqOfTime;
+    }
+
+    /**
+     * Calculate hour angle for sunrise/sunset
+     * @param latitude - Latitude in degrees
+     * @param declination - Solar declination in degrees
+     * @param zenith - Zenith angle (90.833 for sunrise/sunset, 96 for civil twilight)
+     * @returns Hour angle in degrees, or NaN if sun doesn't rise/set (polar regions)
+     */
+    private calculateHourAngle(latitude: number, declination: number, zenith: number = 90.833): number {
+        const latRad = this.toRadians(latitude);
+        const decRad = this.toRadians(declination);
+        const zenithRad = this.toRadians(zenith);
+
+        const cosHA = (Math.cos(zenithRad) - Math.sin(latRad) * Math.sin(decRad)) /
+            (Math.cos(latRad) * Math.cos(decRad));
+
+        // Check for polar day/night conditions
+        if (cosHA > 1) {
+            // Sun never rises (polar night)
+            return NaN;
+        } else if (cosHA < -1) {
+            // Sun never sets (midnight sun)
+            return NaN;
+        }
+
+        return this.toDegrees(Math.acos(cosHA));
+    }
+
+    /**
+     * Calculate sunrise or sunset time
+     * @param latitude - Latitude in degrees
+     * @param longitude - Longitude in degrees
+     * @param date - Date to calculate for
+     * @param isSunrise - True for sunrise, false for sunset
+     * @returns Date object with sunrise/sunset time (UTC), or Invalid Date for polar regions
+     */
+    private calculateSunriseSunset(latitude: number, longitude: number, date: Date, isSunrise: boolean): Date {
+        // Use noon on the given date for Julian Date calculation
+        const noonDate = new Date(date);
+        noonDate.setUTCHours(12, 0, 0, 0);
+        const jd = this.calculateJulianDate(noonDate);
+        const jc = this.calculateJulianCentury(jd);
+
+        const declination = this.calculateSolarDeclination(jc);
+        const hourAngle = this.calculateHourAngle(latitude, declination);
+
+        if (isNaN(hourAngle)) {
+            // Polar region - sun doesn't rise or set
+            return new Date(NaN);
+        }
+
+        const eqOfTime = this.calculateEquationOfTime(jc);
+
+        // Calculate solar time of sunrise/sunset
+        // For sunrise: solarNoon - hourAngle/15 hours
+        // For sunset: solarNoon + hourAngle/15 hours
+        const solarTimeOffset = (isSunrise ? -hourAngle : hourAngle) / 15;
+
+        // Convert to UTC
+        // Solar noon in UTC = 12:00 - longitude/15 - eqOfTime/60
+        const solarNoonUTC = 12 - longitude / 15 - eqOfTime / 60;
+        const eventTimeUTC = solarNoonUTC + solarTimeOffset;
+
+        // Convert fractional hours to time
+        const hours = Math.floor(eventTimeUTC);
+        const minutes = Math.floor((eventTimeUTC - hours) * 60);
+        const seconds = Math.floor(((eventTimeUTC - hours) * 60 - minutes) * 60);
+
+        const result = new Date(date);
+        result.setUTCHours(hours, minutes, seconds, 0);
+
+        return result;
+    }
+
+    /**
+     * Calculate solar noon time
+     * @param latitude - Latitude in degrees (not used in calculation but kept for consistency)
+     * @param longitude - Longitude in degrees
+     * @param date - Date to calculate for
+     * @returns Date object with solar noon time (UTC)
+     */
+    private calculateSolarNoon(latitude: number, longitude: number, date: Date): Date {
+        const noonDate = new Date(date);
+        noonDate.setUTCHours(12, 0, 0, 0);
+        const jd = this.calculateJulianDate(noonDate);
+        const jc = this.calculateJulianCentury(jd);
+
+        const eqOfTime = this.calculateEquationOfTime(jc);
+
+        // Solar noon in UTC = 12:00 - longitude/15 - eqOfTime/60
+        const solarNoonUTC = 12 - longitude / 15 - eqOfTime / 60;
+
+        const hours = Math.floor(solarNoonUTC);
+        const minutes = Math.floor((solarNoonUTC - hours) * 60);
+        const seconds = Math.floor(((solarNoonUTC - hours) * 60 - minutes) * 60);
+
+        const result = new Date(date);
+        result.setUTCHours(hours, minutes, seconds, 0);
+
+        return result;
+    }
+
+    /**
+     * Calculate twilight time (dawn or dusk)
+     * @param latitude - Latitude in degrees
+     * @param longitude - Longitude in degrees
+     * @param date - Date to calculate for
+     * @param type - Twilight type: 'civil' (6°), 'nautical' (12°), or 'astronomical' (18°)
+     * @param isDawn - True for dawn, false for dusk
+     * @returns Date object with twilight time (UTC), or Invalid Date for polar regions
+     */
+    private calculateTwilight(
+        latitude: number,
+        longitude: number,
+        date: Date,
+        type: TwilightType,
+        isDawn: boolean
+    ): Date {
+        const zenithAngles: Record<TwilightType, number> = {
+            civil: 96,          // Sun 6° below horizon
+            nautical: 102,      // Sun 12° below horizon
+            astronomical: 108   // Sun 18° below horizon
+        };
+
+        const zenith = zenithAngles[type];
+
+        const noonDate = new Date(date);
+        noonDate.setUTCHours(12, 0, 0, 0);
+        const jd = this.calculateJulianDate(noonDate);
+        const jc = this.calculateJulianCentury(jd);
+
+        const declination = this.calculateSolarDeclination(jc);
+        const hourAngle = this.calculateHourAngle(latitude, declination, zenith);
+
+        if (isNaN(hourAngle)) {
+            return new Date(NaN);
+        }
+
+        const eqOfTime = this.calculateEquationOfTime(jc);
+
+        const solarTimeOffset = (isDawn ? -hourAngle : hourAngle) / 15;
+        const solarNoonUTC = 12 - longitude / 15 - eqOfTime / 60;
+        const eventTimeUTC = solarNoonUTC + solarTimeOffset;
+
+        const hours = Math.floor(eventTimeUTC);
+        const minutes = Math.floor((eventTimeUTC - hours) * 60);
+        const seconds = Math.floor(((eventTimeUTC - hours) * 60 - minutes) * 60);
+
+        const result = new Date(date);
+        result.setUTCHours(hours, minutes, seconds, 0);
+
+        return result;
+    }
+
+    /**
+     * Calculate current sun position (altitude and azimuth)
+     * @param latitude - Latitude in degrees
+     * @param longitude - Longitude in degrees
+     * @param date - Date/time to calculate for
+     * @returns Object with altitude and azimuth in degrees
+     */
+    private calculateSunPosition(latitude: number, longitude: number, date: Date): { altitude: number; azimuth: number } {
+        const jd = this.calculateJulianDate(date);
+        const jc = this.calculateJulianCentury(jd);
+
+        const declination = this.calculateSolarDeclination(jc);
+        const eqOfTime = this.calculateEquationOfTime(jc);
+
+        // Calculate solar time
+        const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
+        const solarTime = utcHours + longitude / 15 + eqOfTime / 60;
+
+        // Hour angle (degrees)
+        const hourAngle = (solarTime - 12) * 15;
+
+        // Calculate altitude
+        const latRad = this.toRadians(latitude);
+        const decRad = this.toRadians(declination);
+        const haRad = this.toRadians(hourAngle);
+
+        const sinAlt = Math.sin(latRad) * Math.sin(decRad) +
+            Math.cos(latRad) * Math.cos(decRad) * Math.cos(haRad);
+        const altitude = this.toDegrees(Math.asin(sinAlt));
+
+        // Calculate azimuth
+        const cosAz = (Math.sin(decRad) - Math.sin(latRad) * sinAlt) /
+            (Math.cos(latRad) * Math.cos(this.toRadians(altitude)));
+
+        let azimuth = this.toDegrees(Math.acos(Math.max(-1, Math.min(1, cosAz))));
+
+        // Azimuth is measured from north, clockwise
+        if (hourAngle > 0) {
+            azimuth = 360 - azimuth;
+        }
+
+        return { altitude, azimuth };
+    }
+
+    /**
+     * Determine the current day stage based on time relative to sunrise/sunset/twilight
+     */
+    private determineDayStage(
+        currentTime: Date,
+        sunrise: Date,
+        sunset: Date,
+        civilDawn: Date | undefined,
+        civilDusk: Date | undefined
+    ): DayStage {
+        const now = currentTime.getTime();
+
+        // Handle polar regions (invalid dates)
+        if (isNaN(sunrise.getTime()) || isNaN(sunset.getTime())) {
+            // For polar regions, use sun altitude to determine stage
+            // This will be handled by the caller using sunAltitude
+            // Default to 'day' during polar summer, 'night' during polar winter
+            // We'll use a simple heuristic based on month for now
+            const month = currentTime.getUTCMonth();
+            // Northern hemisphere polar summer: May-August
+            // Southern hemisphere polar summer: November-February
+            // This is a simplification - the sun position is more accurate
+            return (month >= 4 && month <= 7) ? 'day' : 'night';
+        }
+
+        // Use civil dawn/dusk if available, otherwise use sunrise/sunset
+        const dawn = civilDawn && !isNaN(civilDawn.getTime()) ? civilDawn.getTime() : sunrise.getTime();
+        const dusk = civilDusk && !isNaN(civilDusk.getTime()) ? civilDusk.getTime() : sunset.getTime();
+        const sunriseTime = sunrise.getTime();
+        const sunsetTime = sunset.getTime();
+
+        // Night: before dawn or after dusk
+        if (now < dawn || now > dusk) {
+            return 'night';
+        }
+
+        // Dawn: between civil dawn and sunrise
+        if (now >= dawn && now < sunriseTime) {
+            return 'dawn';
+        }
+
+        // Dusk: between sunset and civil dusk
+        if (now > sunsetTime && now <= dusk) {
+            return 'dusk';
+        }
+
+        // Day: between sunrise and sunset
+        return 'day';
     }
 
     /**

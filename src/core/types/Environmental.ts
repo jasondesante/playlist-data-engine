@@ -145,6 +145,50 @@ export interface ForecastData {
     probabilityOfPrecipitation: number; // 0.0 to 1.0
 }
 
+/**
+ * Day stage categories based on sun position
+ */
+export type DayStage = 'night' | 'dawn' | 'day' | 'dusk';
+
+/**
+ * Twilight type definitions (based on sun angle below horizon)
+ * - civil: Sun 6° below horizon (brightest stars visible)
+ * - nautical: Sun 12° below horizon (horizon visible at sea)
+ * - astronomical: Sun 18° below horizon (full darkness)
+ */
+export type TwilightType = 'astronomical' | 'nautical' | 'civil';
+
+/**
+ * Solar information including sunrise, sunset, and day stage.
+ * Works without API key using astronomical calculations.
+ */
+export interface SolarInfo {
+    /** Current time */
+    currentTime: Date;
+    /** Current day stage */
+    stage: DayStage;
+    /** Sunrise time (when sun first appears above horizon) */
+    sunrise: Date;
+    /** Sunset time (when sun last appears above horizon) */
+    sunset: Date;
+    /** Solar noon (when sun is at highest point) */
+    solarNoon: Date;
+    /** Civil dawn time (sun 6° below horizon, approaching sunrise) */
+    civilDawn?: Date;
+    /** Civil dusk time (sun 6° below horizon, after sunset) */
+    civilDusk?: Date;
+    /** Current sun altitude in degrees (negative = below horizon) */
+    sunAltitude: number;
+    /** Current sun azimuth in degrees (0-360, North = 0) */
+    sunAzimuth: number;
+    /** Day length in hours */
+    dayLengthHours: number;
+    /** Whether data came from API (true) or calculated astronomically (false) */
+    fromApi: boolean;
+    /** Timestamp when this data was generated */
+    timestamp: number;
+}
+
 export interface LightData {
     illuminance: number; // lux
     timestamp: number;
@@ -160,4 +204,34 @@ export interface EnvironmentalContext {
     biome?: BiomeType;
     timestamp: number;
     environmental_xp_modifier?: number;
+}
+
+/**
+ * A single source of XP bonus
+ */
+export interface XPBonusSource {
+    /** Unique identifier for this bonus type */
+    id: string;
+    /** Human-readable label for display */
+    label: string;
+    /** Emoji icon for UI display */
+    icon: string;
+    /** The bonus multiplier value (e.g., 0.25 for +25%) */
+    bonus: number;
+    /** Whether this bonus is currently active */
+    active: boolean;
+}
+
+/**
+ * Detailed breakdown of the XP modifier calculation
+ */
+export interface XpModifierBreakdown {
+    /** Final computed modifier (1.0 - 3.0) */
+    total: number;
+    /** Base value, always 1.0 */
+    baseValue: number;
+    /** All possible bonus sources with their active state */
+    sources: XPBonusSource[];
+    /** Only the currently active bonuses (convenience) */
+    activeBonuses: XPBonusSource[];
 }

@@ -10,7 +10,9 @@ import type {
     GeolocationData,
     WeatherData,
     MotionData,
-    LightData
+    LightData,
+    XPBonusSource,
+    XpModifierBreakdown
 } from '../types/Environmental';
 import type { GeolocationSensorConfig, WeatherSensorConfig, XPModifierConfig, RetryConfig } from '../config/sensorConfig.js';
 import { GeolocationProvider } from './GeolocationProvider';
@@ -592,6 +594,88 @@ export class EnvironmentalSensors {
         }
 
         return Math.min(modifier, this.xpConfig.maxModifier);
+    }
+
+    /**
+     * Get detailed breakdown of XP modifier with active bonus sources
+     * Uses last known good values if current readings are unavailable
+     * @returns XpModifierBreakdown with total, sources, and active bonuses
+     */
+    getXpModifierBreakdown(): XpModifierBreakdown {
+        const sources: XPBonusSource[] = [];
+
+        // Motion bonuses - check current or last known good
+        const motionData = this.context.motion || this.getLastKnownGood('motion')?.motion;
+        const activity = motionData ? this.motion.detectActivity(motionData) : null;
+
+        sources.push({
+            id: 'running',
+            label: 'Running',
+            icon: '\u{1F3C3}',
+            bonus: this.xpConfig.runningBonus,
+            active: activity === 'running'
+        });
+
+        sources.push({
+            id: 'walking',
+            label: 'Walking',
+            icon: '\u{1F6B6}',
+            bonus: this.xpConfig.walkingBonus,
+            active: activity === 'walking'
+        });
+
+        // Weather bonuses - check current or last known good
+        const weatherData = this.context.weather || this.getLastKnownGood('weather')?.weather;
+        const weatherType = weatherData?.weatherType?.toLowerCase() || '';
+
+        sources.push({
+            id: 'storm',
+            label: 'Stormy Weather',
+            icon: '\u{1F327}\u{FE0F}',
+            bonus: this.xpConfig.stormBonus,
+            active: weatherType.includes('rain') || weatherType.includes('storm')
+        });
+
+        sources.push({
+            id: 'snow',
+            label: 'Snowy Weather',
+            icon: '\u{2744}\u{FE0F}',
+            bonus: this.xpConfig.snowBonus,
+            active: weatherType.includes('snow')
+        });
+
+        sources.push({
+            id: 'night',
+            label: 'Night Time',
+            icon: '\u{1F319}',
+            bonus: this.xpConfig.nightBonus,
+            active: weatherData?.isNight ?? false
+        });
+
+        // Geolocation bonuses - check current or last known good
+        const geoData = this.context.geolocation || this.getLastKnownGood('geolocation')?.geolocation;
+        const isHighAltitude = geoData?.altitude && geoData.altitude > this.xpConfig.altitudeThreshold;
+
+        sources.push({
+            id: 'altitude',
+            label: 'High Altitude',
+            icon: '\u{26F0}\u{FE0F}',
+            bonus: this.xpConfig.altitudeBonus,
+            active: !!isHighAltitude
+        });
+
+        const activeBonuses = sources.filter(s => s.active);
+        const total = Math.min(
+            1.0 + activeBonuses.reduce((sum, s) => sum + s.bonus, 0),
+            this.xpConfig.maxModifier
+        );
+
+        return {
+            total,
+            baseValue: 1.0,
+            sources,
+            activeBonuses
+        };
     }
 
     /**

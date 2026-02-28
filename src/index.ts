@@ -197,7 +197,12 @@ export type {
     SensorRetryConfig,
     SensorRecoveryNotification,
     ForecastData,
-    BiomeType
+    BiomeType,
+    XPBonusSource,
+    XpModifierBreakdown,
+    DayStage,
+    TwilightType,
+    SolarInfo
 } from './core/types/Environmental.js';
 
 // Spell types
