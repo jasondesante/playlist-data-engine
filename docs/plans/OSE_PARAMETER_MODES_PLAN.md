@@ -206,15 +206,15 @@ Extend generator options to support mode-based configuration.
 
 Modify the class to resolve mode configs to actual values.
 
-- [ ] **5.1 Update constructor to resolve modes**
-  - [ ] Check for `hopSizeMode` and use `getHopSizeMs()` if present
-  - [ ] Check for `melBandsMode` and use `getMelBands()` if present
-  - [ ] Check for `gaussianSmoothMode` and use `getGaussianSmoothMs()` if present
-  - [ ] Fall back to direct numeric values if modes not specified
+- [x] **5.1 Update constructor to resolve modes**
+  - [x] Check for `hopSizeMode` and use `getHopSizeMs()` if present
+  - [x] Check for `melBandsMode` and use `getMelBands()` if present
+  - [x] Check for `gaussianSmoothMode` and use `getGaussianSmoothMs()` if present
+  - [x] Fall back to direct numeric values if modes not specified
 
-- [ ] **5.2 Maintain backward compatibility**
-  - [ ] Existing code using direct numeric values should continue to work
-  - [ ] Mode configs take precedence when both are provided
+- [x] **5.2 Maintain backward compatibility**
+  - [x] Existing code using direct numeric values should continue to work
+  - [x] Mode configs take precedence when both are provided
 
 ### Proposed Constructor Update
 

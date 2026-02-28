@@ -18,6 +18,11 @@ import type {
     GaussianSmoothConfig,
 } from '../../types/BeatMap.js';
 import {
+    getHopSizeMs,
+    getMelBands,
+    getGaussianSmoothMs,
+} from '../../types/BeatMap.js';
+import {
     resampleAudio,
     createMelFilterbank,
     highPassFilter,
@@ -82,9 +87,48 @@ export class OnsetStrengthEnvelope {
      * Create a new Onset Strength Envelope calculator
      *
      * @param config - Configuration options (all optional, defaults provided)
+     *
+     * @example
+     * ```typescript
+     * // Using mode-based configuration (recommended)
+     * const ose = new OnsetStrengthEnvelope({
+     *   hopSizeMode: { mode: 'standard' },    // 4ms (Ellis 2007 paper spec)
+     *   melBandsMode: { mode: 'detailed' },   // 64 bands
+     *   gaussianSmoothMode: { mode: 'smooth' } // 40ms
+     * });
+     *
+     * // Using direct numeric values (backward compatible)
+     * const ose = new OnsetStrengthEnvelope({
+     *   hopSizeMs: 4,
+     *   melBands: 40,
+     *   gaussianSmoothMs: 20
+     * });
+     * ```
      */
     constructor(config: OSEConfig = {}) {
-        this.config = { ...DEFAULT_OSE_CONFIG, ...config };
+        // Resolve hop size from mode or direct value
+        // Mode takes precedence when both are provided
+        const hopSizeMs = config.hopSizeMode
+            ? getHopSizeMs(config.hopSizeMode)
+            : config.hopSizeMs ?? DEFAULT_OSE_CONFIG.hopSizeMs;
+
+        // Resolve mel bands from mode or direct value
+        const melBands = config.melBandsMode
+            ? getMelBands(config.melBandsMode)
+            : config.melBands ?? DEFAULT_OSE_CONFIG.melBands;
+
+        // Resolve gaussian smooth from mode or direct value
+        const gaussianSmoothMs = config.gaussianSmoothMode
+            ? getGaussianSmoothMs(config.gaussianSmoothMode)
+            : config.gaussianSmoothMs ?? DEFAULT_OSE_CONFIG.gaussianSmoothMs;
+
+        this.config = {
+            ...DEFAULT_OSE_CONFIG,
+            ...config,
+            hopSizeMs,
+            melBands,
+            gaussianSmoothMs,
+        };
     }
 
     /**
