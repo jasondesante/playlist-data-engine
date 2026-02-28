@@ -190,13 +190,13 @@ export interface OSEConfig {
 
 Extend generator options to support mode-based configuration.
 
-- [ ] **4.1 Add mode properties to BeatMapGeneratorOptions**
-  - [ ] Add `hopSizeMode?: HopSizeConfig`
-  - [ ] Add `melBandsMode?: MelBandsConfig`
-  - [ ] Add `gaussianSmoothMode?: GaussianSmoothConfig`
+- [x] **4.1 Add mode properties to BeatMapGeneratorOptions**
+  - [x] Add `hopSizeMode?: HopSizeConfig`
+  - [x] Add `melBandsMode?: MelBandsConfig`
+  - [x] Add `gaussianSmoothMode?: GaussianSmoothConfig`
 
-- [ ] **4.2 Update DEFAULT_BEATMAP_GENERATOR_OPTIONS**
-  - [ ] Add default mode configurations
+- [x] **4.2 Update DEFAULT_BEATMAP_GENERATOR_OPTIONS**
+  - [x] Add default mode configurations
 
 **File**: `src/core/types/BeatMap.ts`
 

@@ -77,7 +77,7 @@ describe('BeatMapGenerator', () => {
             expect(config.maxBpm).toBe(180);
             expect(config.sensitivity).toBe(1.0);
             expect(config.noiseFloorThreshold).toBe(0.1);
-            expect(config.hopSizeMs).toBe(10);
+            expect(config.hopSizeMs).toBe(4);  // Changed to 4 (Ellis 2007 paper spec)
             expect(config.fftSize).toBe(2048);
             expect(config.rollingBpmWindowSize).toBe(8);
             expect(config.dpAlpha).toBe(680);
@@ -86,6 +86,10 @@ describe('BeatMapGenerator', () => {
             expect(config.gaussianSmoothMs).toBe(20);
             expect(config.tempoCenter).toBe(0.5);
             expect(config.tempoWidth).toBe(1.4);
+            // Mode-based defaults
+            expect(config.hopSizeMode).toEqual({ mode: 'standard' });
+            expect(config.melBandsMode).toEqual({ mode: 'standard' });
+            expect(config.gaussianSmoothMode).toEqual({ mode: 'standard' });
         });
 
         it('should create instance with custom config', () => {

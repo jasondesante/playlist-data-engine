@@ -212,6 +212,17 @@ export interface BeatMapGeneratorOptions {
 
     /** Tempo width in octaves for perception weighting (default: 1.4) */
     tempoWidth?: number;
+
+    // Mode-based alternatives (Tier 1 & Tier 2 controls)
+
+    /** Hop size mode (alternative to hopSizeMs) - default: 'standard' (4ms) */
+    hopSizeMode?: HopSizeConfig;
+
+    /** Mel bands mode (alternative to melBands) - default: 'standard' (40 bands) */
+    melBandsMode?: MelBandsConfig;
+
+    /** Gaussian smooth mode (alternative to gaussianSmoothMs) - default: 'standard' (20ms) */
+    gaussianSmoothMode?: GaussianSmoothConfig;
 }
 
 /**
@@ -653,7 +664,7 @@ export const DEFAULT_BEATMAP_GENERATOR_OPTIONS: Required<BeatMapGeneratorOptions
     sensitivity: 1.0,
     filter: 0.0,
     noiseFloorThreshold: 0.1,
-    hopSizeMs: 10,
+    hopSizeMs: 4,           // Changed from 10 to 4 (Ellis 2007 paper spec)
     fftSize: 2048,
     rollingBpmWindowSize: 8,
     dpAlpha: 680,
@@ -662,6 +673,10 @@ export const DEFAULT_BEATMAP_GENERATOR_OPTIONS: Required<BeatMapGeneratorOptions
     gaussianSmoothMs: 20,
     tempoCenter: 0.5,
     tempoWidth: 1.4,
+    // Mode-based configurations (default to standard modes)
+    hopSizeMode: { mode: 'standard' },
+    melBandsMode: { mode: 'standard' },
+    gaussianSmoothMode: { mode: 'standard' },
 };
 
 /**
