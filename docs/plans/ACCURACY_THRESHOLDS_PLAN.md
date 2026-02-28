@@ -259,7 +259,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
   ```
 
 ### Task 5.2: Update Main Index Exports
-- [ ] Add new exports to `src/index.ts`
+- [x] Add new exports to `src/index.ts`
   ```typescript
   // Beat detection constants
   export {

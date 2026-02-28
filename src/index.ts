@@ -41,6 +41,8 @@ export type {
     BeatTrackerConfig,
     TempoDetectorConfig,
     BeatMapGenerationProgress,
+    AccuracyThresholds,
+    DifficultyPreset,
 } from './core/types/BeatMap.js';
 
 // Beat detection constants
@@ -50,6 +52,10 @@ export {
     BEAT_ACCURACY_THRESHOLDS,
     BEAT_DETECTION_VERSION,
     BEAT_DETECTION_ALGORITHM,
+    EASY_ACCURACY_THRESHOLDS,
+    MEDIUM_ACCURACY_THRESHOLDS,
+    HARD_ACCURACY_THRESHOLDS,
+    getAccuracyThresholdsForPreset,
 } from './core/types/BeatMap.js';
 
 // Character types
