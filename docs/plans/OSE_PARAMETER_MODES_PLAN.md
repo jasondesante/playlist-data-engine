@@ -282,12 +282,12 @@ Ensure new types and functions are exported from the package.
 
 Update documentation to describe the new mode system.
 
-- [ ] **8.1 Update AUDIO_ANALYSIS.md**
-  - [ ] Add section on "OSE Parameter Modes"
-  - [ ] Document Tier 1 (Primary) and Tier 2 (Advanced) controls
-  - [ ] Add usage examples with mode configs
-  - [ ] Add mode-to-value reference tables
-  - [ ] Update OSEConfig table to include mode properties
+- [x] **8.1 Update AUDIO_ANALYSIS.md**
+  - [x] Add section on "OSE Parameter Modes"
+  - [x] Document Tier 1 (Primary) and Tier 2 (Advanced) controls
+  - [x] Add usage examples with mode configs
+  - [x] Add mode-to-value reference tables
+  - [x] Update OSEConfig table to include mode properties
 
 - [ ] **8.2 Update DATA_ENGINE_REFERENCE.md**
   - [ ] Add new types to Types Overview section (`HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig`)

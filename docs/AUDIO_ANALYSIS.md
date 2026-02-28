@@ -186,6 +186,160 @@ Provide beat timing data and synchronization primitives. This is the **data engi
 
 ---
 
+### OSE Parameter Modes
+
+The Onset Strength Envelope (OSE) calculation uses several parameters that affect beat detection quality and performance. To make these parameters more accessible, the engine provides a **tiered mode system** that maps user-friendly mode names to optimized technical values.
+
+#### Tier 1: Primary Controls (Hop Size)
+
+Hop size determines the time resolution of onset detection. Smaller values = more precise but slower analysis.
+
+| Mode | Value | Description | Use Case |
+|------|-------|-------------|----------|
+| `'efficient'` | 10ms | Fast analysis, reduced precision | Preview mode, quick scans |
+| `'standard'` | 4ms | Paper specification (Ellis 2007) | **Recommended for most use cases** |
+| `'hq'` | 2ms | High quality, maximum precision | Critical timing, rhythm games |
+| `'custom'` | user-defined | Custom hop size (1-50ms, clamped) | Specialized requirements |
+
+**Default Change**: The default hop size changed from 10ms to 4ms to match the Ellis 2007 paper specification. Users who prefer the previous behavior can opt into `'efficient'` mode.
+
+#### Tier 2: Advanced Controls
+
+##### Mel Bands Mode
+
+Mel bands determine the frequency resolution of onset detection. More bands = better frequency resolution but slightly slower analysis.
+
+| Mode | Value | Description | Use Case |
+|------|-------|-------------|----------|
+| `'standard'` | 40 bands | Paper default, librosa default | **Recommended for most use cases** |
+| `'detailed'` | 64 bands | Better frequency resolution | Complex instrumentation |
+| `'maximum'` | 80 bands | Maximum detail | Orchestral, dense mixes |
+
+##### Gaussian Smooth Mode
+
+Gaussian smoothing determines how much the onset envelope is smoothed. More smoothing = cleaner peaks but may miss fast transients.
+
+| Mode | Value | Description | Use Case |
+|------|-------|-------------|----------|
+| `'minimal'` | 10ms | Preserves fast transients | Percussive music, electronic |
+| `'standard'` | 20ms | Paper default | **Recommended for most use cases** |
+| `'smooth'` | 40ms | Cleaner peaks, less noise | Smooth jazz, ambient |
+
+#### Usage Examples
+
+##### Using Hop Size Modes
+
+```typescript
+import { BeatMapGenerator } from 'playlist-data-engine';
+
+// Standard mode (default) - paper specification
+const standardGenerator = new BeatMapGenerator({
+  hopSizeMode: { mode: 'standard' }  // 4ms (Ellis 2007 paper spec)
+});
+
+// Efficient mode - fast analysis, reduced precision
+const efficientGenerator = new BeatMapGenerator({
+  hopSizeMode: { mode: 'efficient' }  // 10ms
+});
+
+// HQ mode - maximum precision
+const hqGenerator = new BeatMapGenerator({
+  hopSizeMode: { mode: 'hq' }  // 2ms
+});
+
+// Custom mode - user-defined value
+const customGenerator = new BeatMapGenerator({
+  hopSizeMode: { mode: 'custom', customValue: 5 }  // 5ms
+});
+
+// Backward compatible - direct value still works
+const legacyGenerator = new BeatMapGenerator({
+  hopSizeMs: 10  // Direct numeric value (legacy behavior)
+});
+```
+
+##### Using Advanced Controls
+
+```typescript
+import { BeatMapGenerator } from 'playlist-data-engine';
+
+// Mel bands configuration
+const detailedGenerator = new BeatMapGenerator({
+  melBandsMode: { mode: 'detailed' }  // 64 bands
+});
+
+// Gaussian smoothing configuration
+const smoothGenerator = new BeatMapGenerator({
+  gaussianSmoothMode: { mode: 'smooth' }  // 40ms
+});
+
+// Combined configuration
+const configuredGenerator = new BeatMapGenerator({
+  hopSizeMode: { mode: 'standard' },       // 4ms (paper spec)
+  melBandsMode: { mode: 'detailed' },      // 64 bands
+  gaussianSmoothMode: { mode: 'standard' } // 20ms
+});
+```
+
+##### Using Helper Functions
+
+```typescript
+import {
+  getHopSizeMs,
+  getMelBands,
+  getGaussianSmoothMs,
+  HOP_SIZE_PRESETS,
+  MEL_BANDS_PRESETS,
+  GAUSSIAN_SMOOTH_PRESETS,
+} from 'playlist-data-engine';
+
+// Convert mode to value
+const hopSize = getHopSizeMs({ mode: 'standard' });  // 4
+const melBands = getMelBands({ mode: 'detailed' });  // 64
+const smoothMs = getGaussianSmoothMs({ mode: 'smooth' });  // 40
+
+// Access presets directly
+console.log(HOP_SIZE_PRESETS.efficient);  // 10
+console.log(HOP_SIZE_PRESETS.standard);   // 4
+console.log(HOP_SIZE_PRESETS.hq);         // 2
+
+// Custom values are clamped to valid range (1-50ms)
+const customHop = getHopSizeMs({ mode: 'custom', customValue: 100 });  // 50 (clamped)
+```
+
+#### Mode-to-Value Reference
+
+| Parameter | Mode | Value | Notes |
+|-----------|------|-------|-------|
+| Hop Size | `efficient` | 10ms | Legacy default |
+| Hop Size | `standard` | 4ms | **Current default**, paper spec |
+| Hop Size | `hq` | 2ms | Maximum precision |
+| Mel Bands | `standard` | 40 | Paper/librosa default |
+| Mel Bands | `detailed` | 64 | Better resolution |
+| Mel Bands | `maximum` | 80 | Maximum detail |
+| Gaussian Smooth | `minimal` | 10ms | Preserves transients |
+| Gaussian Smooth | `standard` | 20ms | Paper default |
+| Gaussian Smooth | `smooth` | 40ms | Cleaner peaks |
+
+#### Precedence Rules
+
+When both mode and direct value are provided, **mode takes precedence**:
+
+```typescript
+// Mode wins - uses 4ms from mode, not 10ms from hopSizeMs
+const generator = new BeatMapGenerator({
+  hopSizeMs: 10,
+  hopSizeMode: { mode: 'standard' }  // This wins
+});
+
+// Use direct value only when mode is not specified
+const legacyGenerator = new BeatMapGenerator({
+  hopSizeMs: 10  // Uses 10ms (no mode specified)
+});
+```
+
+---
+
 ### Sensitivity & Filter Controls
 
 The beat detection system provides two parameters for fine-tuning beat detection:
@@ -331,13 +485,16 @@ Configuration for beat map generation:
 | `sensitivity` | `number` | 1.0 | Pre-processing sensitivity (0.1-10.0) |
 | `filter` | `number` | 0.0 | Post-processing grid-alignment filter (0.0-1.0) |
 | `noiseFloorThreshold` | `number` | 0.1 | Noise floor threshold |
-| `hopSizeMs` | `number` | 10 | Milliseconds between FFT frames |
+| `hopSizeMs` | `number` | 4 | Milliseconds between FFT frames |
+| `hopSizeMode` | `HopSizeConfig` | `{ mode: 'standard' }` | Hop size mode (alternative to `hopSizeMs`) |
 | `fftSize` | `number` | 2048 | FFT window size in samples |
 | `rollingBpmWindowSize` | `number` | 8 | Beats for rolling BPM calculation |
 | `dpAlpha` | `number` | 680 | Ellis balance factor |
 | `melBands` | `number` | 40 | Mel frequency bands for OSE |
+| `melBandsMode` | `MelBandsConfig` | `{ mode: 'standard' }` | Mel bands mode (alternative to `melBands`) |
 | `highPassCutoff` | `number` | 0.4 | High-pass filter cutoff (Hz) |
 | `gaussianSmoothMs` | `number` | 20 | Gaussian smoothing window (ms) |
+| `gaussianSmoothMode` | `GaussianSmoothConfig` | `{ mode: 'standard' }` | Gaussian smooth mode (alternative to `gaussianSmoothMs`) |
 | `tempoCenter` | `number` | 0.5 | Tempo center (seconds, 0.5 = 120 BPM) |
 | `tempoWidth` | `number` | 1.4 | Tempo width in octaves |
 
@@ -442,10 +599,13 @@ new OnsetStrengthEnvelope(config?: OSEConfig)
 |----------|------|---------|-------------|
 | `targetSampleRate` | `number` | 8000 | Resample to this rate (Hz) |
 | `fftWindowSize` | `number` | 32 | FFT window size (ms) |
-| `hopSizeMs` | `number` | 10 | Hop size (ms) |
+| `hopSizeMs` | `number` | 4 | Hop size (ms) - use with `hopSizeMode` or direct value |
+| `hopSizeMode` | `HopSizeConfig` | `{ mode: 'standard' }` | Hop size mode (alternative to `hopSizeMs`) |
 | `melBands` | `number` | 40 | Number of Mel bands |
+| `melBandsMode` | `MelBandsConfig` | `{ mode: 'standard' }` | Mel bands mode (alternative to `melBands`) |
 | `highPassCutoff` | `number` | 0.4 | High-pass filter cutoff (Hz) |
 | `gaussianSmoothMs` | `number` | 20 | Smoothing window (ms) |
+| `gaussianSmoothMode` | `GaussianSmoothConfig` | `{ mode: 'standard' }` | Gaussian smooth mode (alternative to `gaussianSmoothMs`) |
 
 ---
 
