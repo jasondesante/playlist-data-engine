@@ -389,11 +389,32 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
 
 ---
 
+## Phase 9: Mid-Stream Difficulty Changes
+
+### Task 9.1: Add setDifficulty() Method
+- [x] Add `setDifficulty()` method to BeatStream class
+  - Accepts `{ preset?: DifficultyPreset, customThresholds?: Partial<AccuracyThresholds> }`
+  - Updates internal options and re-resolves thresholds
+  - Works while stream is running
+
+### Task 9.2: Add Unit Tests for setDifficulty
+- [x] Add tests for changing preset mid-stream
+- [x] Add tests for changing custom thresholds mid-stream
+- [x] Add tests for immediate effect on button press accuracy
+- [x] Add tests for options persistence
+
+### Task 9.3: Update Documentation
+- [x] Update DATA_ENGINE_REFERENCE.md with setDifficulty method
+- [x] Update AUDIO_ANALYSIS.md with "Changing Difficulty Mid-Stream" section
+
+---
+
 ## Questions/Unknowns
 
 - [x] ~~Should we validate that thresholds are in ascending order (perfect < great < good < ok)?~~
   **Answer: Yes - implemented in validateThresholds()**
-- [ ] Should we expose a method to change difficulty mid-stream, or require re-creation?
+- [x] ~~Should we expose a method to change difficulty mid-stream, or require re-creation?~~
+  **Answer: Yes - implemented `setDifficulty()` method for mid-stream changes (see Phase 9)**
 - [x] ~~Should we add a `validateThresholds()` helper for frontend use?~~
   **Answer: Yes - implemented in Phase 8**
 

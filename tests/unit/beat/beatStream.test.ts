@@ -1147,4 +1147,154 @@ describe('BeatStream', () => {
             expect(thresholds).toEqual(HARD_ACCURACY_THRESHOLDS);
         });
     });
+
+    describe('setDifficulty', () => {
+        it('should change difficulty preset mid-stream', () => {
+            const stream = new BeatStream(beatMap, audioContext, {
+                difficultyPreset: 'hard',
+            });
+
+            // Start with hard
+            expect(stream.getAccuracyThresholds().perfect).toBe(HARD_ACCURACY_THRESHOLDS.perfect);
+
+            // Change to easy
+            stream.setDifficulty({ preset: 'easy' });
+            expect(stream.getAccuracyThresholds().perfect).toBe(EASY_ACCURACY_THRESHOLDS.perfect);
+            expect(stream.getAccuracyThresholds().great).toBe(EASY_ACCURACY_THRESHOLDS.great);
+        });
+
+        it('should change to medium preset', () => {
+            const stream = new BeatStream(beatMap, audioContext);
+
+            stream.setDifficulty({ preset: 'medium' });
+            expect(stream.getAccuracyThresholds().perfect).toBe(MEDIUM_ACCURACY_THRESHOLDS.perfect);
+        });
+
+        it('should change to hard preset', () => {
+            const stream = new BeatStream(beatMap, audioContext, {
+                difficultyPreset: 'easy',
+            });
+
+            stream.setDifficulty({ preset: 'hard' });
+            expect(stream.getAccuracyThresholds().perfect).toBe(HARD_ACCURACY_THRESHOLDS.perfect);
+        });
+
+        it('should update custom thresholds', () => {
+            const stream = new BeatStream(beatMap, audioContext);
+
+            stream.setDifficulty({
+                customThresholds: {
+                    perfect: 0.100,
+                    great: 0.150,
+                },
+            });
+
+            const thresholds = stream.getAccuracyThresholds();
+            expect(thresholds.perfect).toBe(0.100);
+            expect(thresholds.great).toBe(0.150);
+            // Rest from hard preset (default)
+            expect(thresholds.good).toBe(HARD_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBe(HARD_ACCURACY_THRESHOLDS.ok);
+        });
+
+        it('should update both preset and custom thresholds', () => {
+            const stream = new BeatStream(beatMap, audioContext);
+
+            stream.setDifficulty({
+                preset: 'easy',
+                customThresholds: { perfect: 0.050 },
+            });
+
+            const thresholds = stream.getAccuracyThresholds();
+            expect(thresholds.perfect).toBe(0.050);
+            // Rest from easy preset
+            expect(thresholds.great).toBe(EASY_ACCURACY_THRESHOLDS.great);
+            expect(thresholds.good).toBe(EASY_ACCURACY_THRESHOLDS.good);
+            expect(thresholds.ok).toBe(EASY_ACCURACY_THRESHOLDS.ok);
+        });
+
+        it('should clear custom thresholds when empty object provided', () => {
+            const stream = new BeatStream(beatMap, audioContext, {
+                difficultyPreset: 'easy',
+                customThresholds: { perfect: 0.100 },
+            });
+
+            // Verify custom threshold is set
+            expect(stream.getAccuracyThresholds().perfect).toBe(0.100);
+
+            // Clear custom thresholds
+            stream.setDifficulty({ customThresholds: {} });
+
+            // Should now use easy preset directly
+            expect(stream.getAccuracyThresholds().perfect).toBe(EASY_ACCURACY_THRESHOLDS.perfect);
+        });
+
+        it('should affect button press accuracy immediately after change', () => {
+            const stream = new BeatStream(beatMap, audioContext, {
+                difficultyPreset: 'hard',
+            });
+
+            // With hard preset, 110ms offset is a miss (ok threshold is ±100ms)
+            let result = stream.checkButtonPress(1.110);
+            expect(result.accuracy).toBe('miss');
+
+            // Change to easy preset
+            stream.setDifficulty({ preset: 'easy' });
+
+            // With easy preset, 110ms offset is great (great threshold is ±125ms)
+            result = stream.checkButtonPress(1.110);
+            expect(result.accuracy).toBe('great');
+        });
+
+        it('should work while stream is running', () => {
+            const stream = new BeatStream(beatMap, audioContext, {
+                difficultyPreset: 'hard',
+            });
+
+            stream.start();
+
+            // Change difficulty while running
+            stream.setDifficulty({ preset: 'easy' });
+
+            expect(stream.getAccuracyThresholds().perfect).toBe(EASY_ACCURACY_THRESHOLDS.perfect);
+
+            stream.stop();
+        });
+
+        it('should update options to reflect new preset', () => {
+            const stream = new BeatStream(beatMap, audioContext, {
+                difficultyPreset: 'hard',
+            });
+
+            stream.setDifficulty({ preset: 'easy' });
+
+            const options = stream.getOptions();
+            expect(options.difficultyPreset).toBe('easy');
+        });
+
+        it('should update options to reflect new custom thresholds', () => {
+            const stream = new BeatStream(beatMap, audioContext);
+
+            const customThresholds = { perfect: 0.075 };
+            stream.setDifficulty({ customThresholds });
+
+            const options = stream.getOptions();
+            expect(options.customThresholds).toEqual(customThresholds);
+        });
+
+        it('should not modify other options when changing difficulty', () => {
+            const stream = new BeatStream(beatMap, audioContext, {
+                difficultyPreset: 'hard',
+                anticipationTime: 3.0,
+                userOffsetMs: 50,
+            });
+
+            stream.setDifficulty({ preset: 'easy' });
+
+            const options = stream.getOptions();
+            expect(options.anticipationTime).toBe(3.0);
+            expect(options.userOffsetMs).toBe(50);
+            expect(options.difficultyPreset).toBe('easy');
+        });
+    });
 });

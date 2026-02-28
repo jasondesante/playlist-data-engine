@@ -1502,6 +1502,7 @@ constructor(beatMap: BeatMap, audioContext: AudioContext, options?: BeatStreamOp
 | `checkButtonPress(timestamp: number): ButtonPressResult` | Check button press accuracy against nearest beat using configured thresholds |
 | `getLastBeatAccuracy(): ButtonPressResult \| null` | Get accuracy of last button press |
 | `getAccuracyThresholds(): AccuracyThresholds` | Get current accuracy thresholds being used |
+| `setDifficulty(options: { preset?: DifficultyPreset, customThresholds?: Partial<AccuracyThresholds> }): void` | Change difficulty settings mid-stream for adaptive gameplay |
 
 **Accuracy Levels:** Perfect, Great, Good, Ok, Miss (thresholds vary by difficulty preset)
 

@@ -167,6 +167,50 @@ export class BeatStream {
         return { ...this.state.thresholds };
     }
 
+    /**
+     * Change difficulty settings mid-stream
+     *
+     * Allows changing the difficulty preset and/or custom thresholds without
+     * recreating the BeatStream. Useful for:
+     * - Adaptive difficulty (adjust based on player performance)
+     * - Practice mode (try different difficulties without restarting)
+     * - Accessibility (let players adjust on the fly)
+     *
+     * @param options - Difficulty options
+     * @param options.preset - New difficulty preset ('easy', 'medium', 'hard')
+     * @param options.customThresholds - Custom threshold overrides (merged with preset)
+     *
+     * @example
+     * ```typescript
+     * // Switch to easy mode
+     * beatStream.setDifficulty({ preset: 'easy' });
+     *
+     * // Use custom thresholds
+     * beatStream.setDifficulty({
+     *     preset: 'medium',
+     *     customThresholds: { perfect: 0.060 }  // Looser perfect window
+     * });
+     *
+     * // Clear custom thresholds and use preset only
+     * beatStream.setDifficulty({ preset: 'hard', customThresholds: {} });
+     * ```
+     */
+    setDifficulty(options: {
+        preset?: import('../../types/BeatMap.js').DifficultyPreset;
+        customThresholds?: Partial<AccuracyThresholds>;
+    }): void {
+        // Update options
+        if (options.preset !== undefined) {
+            this.options.difficultyPreset = options.preset;
+        }
+        if (options.customThresholds !== undefined) {
+            this.options.customThresholds = options.customThresholds;
+        }
+
+        // Re-resolve thresholds with new options
+        this.state.thresholds = this.resolveThresholds();
+    }
+
     // ==================== Core Methods ====================
 
     /**

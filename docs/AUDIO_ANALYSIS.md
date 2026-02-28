@@ -877,6 +877,50 @@ interface ThresholdValidationResult {
 }
 ```
 
+##### Changing Difficulty Mid-Stream
+
+Use `setDifficulty()` to change difficulty settings while the BeatStream is running. This enables adaptive difficulty gameplay where the game adjusts based on player performance.
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+const audioContext = new AudioContext();
+const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
+
+// Start with hard difficulty
+const stream = analyzer.createBeatStream(beatMap, audioContext, {
+  difficultyPreset: 'hard'
+});
+
+stream.start();
+
+// Later, adjust difficulty based on player performance
+function onPlayerPerformanceUpdate(accuracy: number) {
+  if (accuracy < 0.5) {
+    // Player struggling - switch to easy
+    stream.setDifficulty({ preset: 'easy' });
+  } else if (accuracy > 0.9) {
+    // Player doing great - switch to hard
+    stream.setDifficulty({ preset: 'hard' });
+  }
+}
+
+// You can also use custom thresholds
+stream.setDifficulty({
+  preset: 'medium',
+  customThresholds: { perfect: 0.060 }  // Looser perfect window
+});
+
+// Clear custom thresholds and use preset only
+stream.setDifficulty({ preset: 'easy', customThresholds: {} });
+```
+
+**Use Cases:**
+- **Adaptive difficulty**: Automatically adjust based on player performance
+- **Practice mode**: Let players try different difficulties without restarting
+- **Accessibility**: Allow players to adjust difficulty on the fly
+
 ##### UI Integration Example
 
 Here's how you might integrate difficulty selection in a rhythm game UI:
