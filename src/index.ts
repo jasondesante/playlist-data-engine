@@ -43,6 +43,7 @@ export type {
     BeatMapGenerationProgress,
     AccuracyThresholds,
     DifficultyPreset,
+    ThresholdValidationResult,
 } from './core/types/BeatMap.js';
 
 // Beat detection constants
@@ -56,6 +57,7 @@ export {
     MEDIUM_ACCURACY_THRESHOLDS,
     HARD_ACCURACY_THRESHOLDS,
     getAccuracyThresholdsForPreset,
+    validateThresholds,
 } from './core/types/BeatMap.js';
 
 // Character types

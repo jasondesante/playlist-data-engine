@@ -28,6 +28,7 @@ export type {
     // Accuracy threshold types
     AccuracyThresholds,
     DifficultyPreset,
+    ThresholdValidationResult,
 } from '../../types/BeatMap.js';
 
 export {
@@ -41,6 +42,8 @@ export {
     MEDIUM_ACCURACY_THRESHOLDS,
     HARD_ACCURACY_THRESHOLDS,
     getAccuracyThresholdsForPreset,
+    // Validation helper
+    validateThresholds,
 } from '../../types/BeatMap.js';
 
 // Classes

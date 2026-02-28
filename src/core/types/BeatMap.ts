@@ -531,6 +531,81 @@ export function getAccuracyThresholdsForPreset(preset: DifficultyPreset): Accura
 }
 
 /**
+ * Result of validating accuracy thresholds
+ */
+export interface ThresholdValidationResult {
+    /** Whether the thresholds are valid */
+    valid: boolean;
+    /** List of validation error messages (empty if valid) */
+    errors: string[];
+}
+
+/**
+ * Validate accuracy thresholds for correctness
+ *
+ * Checks that:
+ * - All provided threshold values are positive numbers
+ * - Thresholds are in ascending order (perfect < great < good < ok)
+ *
+ * @param thresholds - The thresholds to validate (can be partial)
+ * @returns Validation result with detailed error messages
+ *
+ * @example
+ * ```typescript
+ * // Valid thresholds
+ * const result = validateThresholds({ perfect: 0.05, great: 0.1, good: 0.15, ok: 0.2 });
+ * console.log(result.valid); // true
+ *
+ * // Invalid thresholds (not ascending)
+ * const invalid = validateThresholds({ perfect: 0.1, great: 0.05 });
+ * console.log(invalid.valid); // false
+ * console.log(invalid.errors); // ['great (0.05) must be greater than perfect (0.1)']
+ * ```
+ */
+export function validateThresholds(thresholds: Partial<AccuracyThresholds>): ThresholdValidationResult {
+    const errors: string[] = [];
+    const thresholdKeys: (keyof AccuracyThresholds)[] = ['perfect', 'great', 'good', 'ok'];
+
+    // Check for invalid (non-positive) values
+    for (const key of thresholdKeys) {
+        if (key in thresholds) {
+            const value = thresholds[key];
+            if (value === undefined || value === null) {
+                errors.push(`${key} is undefined or null`);
+            } else if (typeof value !== 'number' || isNaN(value)) {
+                errors.push(`${key} must be a number, got ${typeof value}`);
+            } else if (value < 0) {
+                errors.push(`${key} must be positive, got ${value}`);
+            }
+        }
+    }
+
+    // If there are value errors, return early
+    if (errors.length > 0) {
+        return { valid: false, errors };
+    }
+
+    // Check ascending order for provided thresholds
+    const providedThresholds = thresholdKeys.filter(key => key in thresholds && thresholds[key] !== undefined);
+
+    for (let i = 0; i < providedThresholds.length - 1; i++) {
+        const current = providedThresholds[i];
+        const next = providedThresholds[i + 1];
+        const currentValue = thresholds[current]!;
+        const nextValue = thresholds[next]!;
+
+        if (currentValue >= nextValue) {
+            errors.push(`${next} (${nextValue}) must be greater than ${current} (${currentValue})`);
+        }
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors,
+    };
+}
+
+/**
  * Current version of the beat detection algorithm
  */
 export const BEAT_DETECTION_VERSION = '1.0.0';

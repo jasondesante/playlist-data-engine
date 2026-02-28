@@ -834,6 +834,49 @@ const stream = analyzer.createBeatStream(beatMap, audioContext, {
 const currentThresholds = stream.getAccuracyThresholds();
 ```
 
+##### Validating Custom Thresholds
+
+Use `validateThresholds()` to validate custom thresholds before passing them to BeatStream. This helps catch configuration errors early and provides helpful error messages.
+
+```typescript
+import { validateThresholds, type AccuracyThresholds } from 'playlist-data-engine';
+
+// Validate custom thresholds before use
+const customThresholds: Partial<AccuracyThresholds> = {
+  perfect: 0.050,
+  great: 0.100,
+  good: 0.150,
+  ok: 0.200,
+};
+
+const result = validateThresholds(customThresholds);
+
+if (!result.valid) {
+  console.error('Invalid thresholds:', result.errors);
+  // Example errors:
+  // - "great (0.05) must be greater than perfect (0.1)"
+  // - "perfect must be positive, got -0.01"
+} else {
+  // Safe to use with BeatStream
+  const stream = analyzer.createBeatStream(beatMap, audioContext, {
+    customThresholds
+  });
+}
+```
+
+**Validation Rules:**
+- All threshold values must be positive numbers (including zero)
+- Thresholds must be in ascending order: `perfect < great < good < ok`
+- Partial thresholds are validated only for the values provided
+
+**Return Type:**
+```typescript
+interface ThresholdValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+```
+
 ##### UI Integration Example
 
 Here's how you might integrate difficulty selection in a rhythm game UI:

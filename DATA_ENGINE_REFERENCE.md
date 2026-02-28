@@ -1418,6 +1418,7 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `ButtonPressResult` | Button press accuracy result | `accuracy`, `offset`, `matchedBeat`, `absoluteOffset` |
 | `AccuracyThresholds` | Accuracy thresholds for difficulty | `perfect`, `great`, `good`, `ok` |
 | `DifficultyPreset` | Preset difficulty levels | `'easy'` \| `'medium'` \| `'hard'` \| `'custom'` |
+| `ThresholdValidationResult` | Validation result for thresholds | `valid: boolean`, `errors: string[]` |
 
 ### BeatMapGenerator
 
@@ -1666,6 +1667,7 @@ constructor(config?: DownbeatDetectorConfig)
 | `MEDIUM_ACCURACY_THRESHOLDS` | `{ perfect: 0.045, great: 0.090, good: 0.135, ok: 0.200 }` | Medium difficulty thresholds (±45ms, ±90ms, ±135ms, ±200ms) |
 | `HARD_ACCURACY_THRESHOLDS` | `{ perfect: 0.010, great: 0.025, good: 0.050, ok: 0.100 }` | Hard difficulty thresholds (±10ms, ±25ms, ±50ms, ±100ms) |
 | `getAccuracyThresholdsForPreset(preset)` | Returns `AccuracyThresholds` | Get thresholds for a difficulty preset (`'easy'`, `'medium'`, `'hard'`, `'custom'`) |
+| `validateThresholds(thresholds)` | Returns `ThresholdValidationResult` | Validate custom thresholds for correctness (checks positive values and ascending order) |
 | `BEAT_DETECTION_VERSION` | `'1.0.0'` | Algorithm version |
 | `BEAT_DETECTION_ALGORITHM` | `'ellis-dp-v1'` | Algorithm identifier |
 

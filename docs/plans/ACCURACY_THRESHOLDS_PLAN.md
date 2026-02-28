@@ -355,11 +355,47 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
 
 ---
 
+## Phase 8: Validation Helper (Added)
+
+### Task 8.1: Add validateThresholds() Helper
+- [x] Add `validateThresholds()` function in `src/core/types/BeatMap.ts`
+  - Validates that all threshold values are positive numbers
+  - Validates that thresholds are in ascending order (perfect < great < good < ok)
+  - Returns validation result with detailed error messages
+  ```typescript
+  export interface ThresholdValidationResult {
+      valid: boolean;
+      errors: string[];
+  }
+
+  export function validateThresholds(thresholds: Partial<AccuracyThresholds>): ThresholdValidationResult;
+  ```
+
+### Task 8.2: Export validateThresholds from Beat Module
+- [x] Add export to `src/core/analysis/beat/index.ts`
+
+### Task 8.3: Export validateThresholds from Main Index
+- [x] Add export to `src/index.ts`
+
+### Task 8.4: Add Unit Tests for validateThresholds
+- [x] Add tests for valid thresholds
+- [x] Add tests for invalid (non-ascending) thresholds
+- [x] Add tests for negative/invalid values
+- [x] Add tests for partial thresholds
+
+### Task 8.5: Update Documentation
+- [x] Update DATA_ENGINE_REFERENCE.md with validateThresholds documentation
+- [x] Update AUDIO_ANALYSIS.md with usage example
+
+---
+
 ## Questions/Unknowns
 
-- [ ] Should we validate that thresholds are in ascending order (perfect < great < good < ok)?
+- [x] ~~Should we validate that thresholds are in ascending order (perfect < great < good < ok)?~~
+  **Answer: Yes - implemented in validateThresholds()**
 - [ ] Should we expose a method to change difficulty mid-stream, or require re-creation?
-- [ ] Should we add a `validateThresholds()` helper for frontend use?
+- [x] ~~Should we add a `validateThresholds()` helper for frontend use?~~
+  **Answer: Yes - implemented in Phase 8**
 
 ---
 
