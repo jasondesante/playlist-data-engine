@@ -467,11 +467,11 @@ Create `tests/unit/beat/gapAnalysis.test.ts`:
 
 ### 6.3 Unit Tests - Interpolation Algorithms
 Create `tests/unit/beat/beatInterpolator.test.ts`:
-- [ ] Test Approach 1: Fixed grid matches expected timestamps
-- [ ] Test Approach 2: Adaptive grid adjusts at anchors
-- [ ] Test Approach 3: Confidence scoring works correctly
-- [ ] Test: All approaches produce same beat count for simple case
-- [ ] Test: Detected beats override interpolated in merge
+- [x] Test Approach 1: Fixed grid matches expected timestamps
+- [x] Test Approach 2: Adaptive grid adjusts at anchors
+- [x] Test Approach 3: Confidence scoring works correctly
+- [x] Test: All approaches produce same beat count for simple case
+- [x] Test: Detected beats override interpolated in merge
 
 ### 6.4 Integration Tests
 Create `tests/integration/beatInterpolation.integration.test.ts`:
