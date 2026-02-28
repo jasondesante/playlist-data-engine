@@ -114,18 +114,24 @@ export class BeatMapGenerator {
         // Start with defaults
         const mergedOptions = { ...DEFAULT_BEATMAP_GENERATOR_OPTIONS, ...options };
 
+        // Track which mode configs were explicitly provided
+        // Only pass mode configs to OSE if they were explicitly set by the caller
+        const explicitHopSizeMode = options.hopSizeMode;
+        const explicitMelBandsMode = options.melBandsMode;
+        const explicitGaussianSmoothMode = options.gaussianSmoothMode;
+
         // Resolve mode configs to numeric values
         // Mode takes precedence over direct values when both are provided
-        const hopSizeMs = options.hopSizeMode
-            ? getHopSizeMs(options.hopSizeMode)
+        const hopSizeMs = explicitHopSizeMode
+            ? getHopSizeMs(explicitHopSizeMode)
             : options.hopSizeMs ?? DEFAULT_BEATMAP_GENERATOR_OPTIONS.hopSizeMs;
 
-        const melBands = options.melBandsMode
-            ? getMelBands(options.melBandsMode)
+        const melBands = explicitMelBandsMode
+            ? getMelBands(explicitMelBandsMode)
             : options.melBands ?? DEFAULT_BEATMAP_GENERATOR_OPTIONS.melBands;
 
-        const gaussianSmoothMs = options.gaussianSmoothMode
-            ? getGaussianSmoothMs(options.gaussianSmoothMode)
+        const gaussianSmoothMs = explicitGaussianSmoothMode
+            ? getGaussianSmoothMs(explicitGaussianSmoothMode)
             : options.gaussianSmoothMs ?? DEFAULT_BEATMAP_GENERATOR_OPTIONS.gaussianSmoothMs;
 
         this.options = {
@@ -133,6 +139,11 @@ export class BeatMapGenerator {
             hopSizeMs,
             melBands,
             gaussianSmoothMs,
+            // Only keep mode configs if they were explicitly provided
+            // This prevents default mode configs from overriding resolved numeric values
+            ...(explicitHopSizeMode ? { hopSizeMode: explicitHopSizeMode } : {}),
+            ...(explicitMelBandsMode ? { melBandsMode: explicitMelBandsMode } : {}),
+            ...(explicitGaussianSmoothMode ? { gaussianSmoothMode: explicitGaussianSmoothMode } : {}),
         };
     }
 
@@ -212,16 +223,17 @@ export class BeatMapGenerator {
             this.updateProgress('ose_calculation', 10, 'Calculating onset strength envelope...');
             if (this.state.cancelled) throw new Error('Generation cancelled');
 
+            // Pass only resolved numeric values to OSE, not mode configs.
+            // The numeric values have already been resolved from modes in the constructor.
+            // Passing mode configs here would cause them to take precedence and re-resolve
+            // to default values, ignoring the user's selected numeric values.
             const ose = new OnsetStrengthEnvelope({
                 targetSampleRate: 8000,
                 fftWindowSize: 32,
                 hopSizeMs: this.options.hopSizeMs,
-                hopSizeMode: this.options.hopSizeMode,
                 melBands: this.options.melBands,
-                melBandsMode: this.options.melBandsMode,
                 highPassCutoff: this.options.highPassCutoff,
                 gaussianSmoothMs: this.options.gaussianSmoothMs,
-                gaussianSmoothMode: this.options.gaussianSmoothMode,
             });
 
             const oseResult = ose.calculate(audioBuffer);
