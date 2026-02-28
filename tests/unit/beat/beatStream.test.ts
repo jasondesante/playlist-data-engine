@@ -833,25 +833,31 @@ describe('BeatStream', () => {
             expect(BEAT_ACCURACY_THRESHOLDS.perfect).toBe(0.010);
             expect(BEAT_ACCURACY_THRESHOLDS.great).toBe(0.025);
             expect(BEAT_ACCURACY_THRESHOLDS.good).toBe(0.050);
+            expect(BEAT_ACCURACY_THRESHOLDS.ok).toBe(0.100);
         });
 
         it('should classify accuracy correctly at boundaries', () => {
             const stream = new BeatStream(beatMap, audioContext);
+            const thresholds = stream.getAccuracyThresholds();
 
-            // Just inside perfect (use 0.009 to stay safely within 0.010 threshold)
-            const perfectResult = stream.checkButtonPress(1.0 + BEAT_ACCURACY_THRESHOLDS.perfect - 0.001);
+            // Just inside perfect
+            const perfectResult = stream.checkButtonPress(1.0 + thresholds.perfect - 0.001);
             expect(perfectResult.accuracy).toBe('perfect');
 
-            // Just inside great (use 0.024 to stay safely within 0.025 threshold)
-            const greatResult = stream.checkButtonPress(1.0 + BEAT_ACCURACY_THRESHOLDS.great - 0.001);
+            // Just inside great
+            const greatResult = stream.checkButtonPress(1.0 + thresholds.great - 0.001);
             expect(greatResult.accuracy).toBe('great');
 
-            // Just inside good (use 0.049 to stay safely within 0.050 threshold)
-            const goodResult = stream.checkButtonPress(1.0 + BEAT_ACCURACY_THRESHOLDS.good - 0.001);
+            // Just inside good
+            const goodResult = stream.checkButtonPress(1.0 + thresholds.good - 0.001);
             expect(goodResult.accuracy).toBe('good');
 
-            // Just outside good = miss
-            const missResult = stream.checkButtonPress(1.0 + BEAT_ACCURACY_THRESHOLDS.good + 0.001);
+            // Just inside ok
+            const okResult = stream.checkButtonPress(1.0 + thresholds.ok - 0.001);
+            expect(okResult.accuracy).toBe('ok');
+
+            // Just outside ok = miss
+            const missResult = stream.checkButtonPress(1.0 + thresholds.ok + 0.001);
             expect(missResult.accuracy).toBe('miss');
         });
     });

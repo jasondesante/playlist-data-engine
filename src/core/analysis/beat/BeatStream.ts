@@ -44,7 +44,6 @@ import type {
 } from '../../types/BeatMap.js';
 import {
     DEFAULT_BEATSTREAM_OPTIONS,
-    BEAT_ACCURACY_THRESHOLDS,
     getAccuracyThresholdsForPreset,
 } from '../../types/BeatMap.js';
 import type { AccuracyThresholds } from '../../types/BeatMap.js';
@@ -629,14 +628,18 @@ export class BeatStream {
         const offset = timestamp - nearestBeat.timestamp;
         const absoluteOffset = Math.abs(offset);
 
-        // Determine accuracy level
+        // Determine accuracy level using configured thresholds
         let accuracy: BeatAccuracy;
-        if (absoluteOffset <= BEAT_ACCURACY_THRESHOLDS.perfect) {
+        const thresholds = this.state.thresholds;
+
+        if (absoluteOffset <= thresholds.perfect) {
             accuracy = 'perfect';
-        } else if (absoluteOffset <= BEAT_ACCURACY_THRESHOLDS.great) {
+        } else if (absoluteOffset <= thresholds.great) {
             accuracy = 'great';
-        } else if (absoluteOffset <= BEAT_ACCURACY_THRESHOLDS.good) {
+        } else if (absoluteOffset <= thresholds.good) {
             accuracy = 'good';
+        } else if (absoluteOffset <= thresholds.ok) {
+            accuracy = 'ok';
         } else {
             accuracy = 'miss';
         }
