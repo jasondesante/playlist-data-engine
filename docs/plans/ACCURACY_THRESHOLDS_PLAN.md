@@ -299,17 +299,17 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
 ## Phase 7: Documentation Updates
 
 ### Task 7.1: Update DATA_ENGINE_REFERENCE.md
-- [ ] Update "Beat Detection Types" table to include:
+- [x] Update "Beat Detection Types" table to include:
   - `AccuracyThresholds` interface
   - `DifficultyPreset` type
-- [ ] Update "Beat Detection Constants" table to include:
+- [x] Update "Beat Detection Constants" table to include:
   - `EASY_ACCURACY_THRESHOLDS`
   - `MEDIUM_ACCURACY_THRESHOLDS`
   - `HARD_ACCURACY_THRESHOLDS`
   - `getAccuracyThresholdsForPreset()`
-- [ ] Update `BeatStreamOptions` documentation
-- [ ] Update `ButtonPressResult` accuracy levels (add 'ok')
-- [ ] Update `checkButtonPress` method documentation
+- [x] Update `BeatStreamOptions` documentation
+- [x] Update `ButtonPressResult` accuracy levels (add 'ok')
+- [x] Update `checkButtonPress` method documentation
 
 ### Task 7.2: Update AUDIO_ANALYSIS.md
 - [ ] Update "Button Press Accuracy" section with:

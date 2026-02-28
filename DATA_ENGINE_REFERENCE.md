@@ -195,7 +195,7 @@ All TypeScript types are exported, including:
 
 **Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature` — see [Enemy Generation](#enemy-generation)
 
-**Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `DownbeatDetectorConfig`, `DownbeatDetectionResult`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
+**Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `AccuracyThresholds`, `DifficultyPreset`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `DownbeatDetectorConfig`, `DownbeatDetectionResult`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
 **Game Data:** `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS` — see [Game Data Reference](#game-data-reference)
 
@@ -1414,8 +1414,10 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `AudioSyncState` | Synchronization state for debugging | `audioContextTime`, `audioElementTime`, `drift`, `isSynchronized`, `outputLatency` |
 | `TempoEstimate` | Tempo detection result | `primaryBpm`, `secondaryBpm`, `primaryWeight`, `secondaryWeight`, `isDuple`, `targetIntervalSeconds` |
 | `BeatMapGeneratorOptions` | Configuration for generation | `minBpm`, `maxBpm`, `sensitivity`, `filter`, `hopSizeMs`, `dpAlpha`, `melBands`, `tempoCenter`, `tempoWidth` |
-| `BeatStreamOptions` | Configuration for streaming | `anticipationTime`, `userOffsetMs`, `compensateOutputLatency`, `timingTolerance` |
+| `BeatStreamOptions` | Configuration for streaming | `anticipationTime`, `userOffsetMs`, `compensateOutputLatency`, `timingTolerance`, `difficultyPreset`, `customThresholds` |
 | `ButtonPressResult` | Button press accuracy result | `accuracy`, `offset`, `matchedBeat`, `absoluteOffset` |
+| `AccuracyThresholds` | Accuracy thresholds for difficulty | `perfect`, `great`, `good`, `ok` |
+| `DifficultyPreset` | Preset difficulty levels | `'easy'` \| `'medium'` \| `'hard'` \| `'custom'` |
 
 ### BeatMapGenerator
 
@@ -1481,6 +1483,8 @@ constructor(beatMap: BeatMap, audioContext: AudioContext, options?: BeatStreamOp
 | `userOffsetMs` | 0 | Player-calibrated audio/visual offset |
 | `compensateOutputLatency` | true | Auto-adjust using AudioContext.outputLatency |
 | `timingTolerance` | 0.01 | Synchronization tolerance (10ms) |
+| `difficultyPreset` | `'hard'` | Difficulty preset (`'easy'`, `'medium'`, `'hard'`, `'custom'`). Ignored if `customThresholds` provided. |
+| `customThresholds` | `{}` | Custom accuracy thresholds (partial `AccuracyThresholds`). Overrides `difficultyPreset`. |
 
 **Methods:**
 
@@ -1494,10 +1498,19 @@ constructor(beatMap: BeatMap, audioContext: AudioContext, options?: BeatStreamOp
 | `getBeatAtTime(time: number): Beat \| null` | Get beat at specific time |
 | `getSyncState(): AudioSyncState` | Get current synchronization state for debugging |
 | `getCurrentBpm(): number` | Get current BPM calculated from recent beat intervals |
-| `checkButtonPress(timestamp: number): ButtonPressResult` | Check button press accuracy against nearest beat |
+| `checkButtonPress(timestamp: number): ButtonPressResult` | Check button press accuracy against nearest beat using configured thresholds |
 | `getLastBeatAccuracy(): ButtonPressResult \| null` | Get accuracy of last button press |
+| `getAccuracyThresholds(): AccuracyThresholds` | Get current accuracy thresholds being used |
 
-**Accuracy Levels:** Perfect (±10ms), Great (±25ms), Good (±50ms), Miss
+**Accuracy Levels:** Perfect, Great, Good, Ok, Miss (thresholds vary by difficulty preset)
+
+**Difficulty Presets:**
+
+| Preset | Perfect | Great | Good | Ok |
+|--------|---------|-------|------|-----|
+| Easy | ±75ms | ±125ms | ±175ms | ±250ms |
+| Medium | ±45ms | ±90ms | ±135ms | ±200ms |
+| Hard | ±10ms | ±25ms | ±50ms | ±100ms |
 
 ### OnsetStrengthEnvelope
 
@@ -1648,7 +1661,11 @@ constructor(config?: DownbeatDetectorConfig)
 |----------|-------|-------------|
 | `DEFAULT_BEATMAP_GENERATOR_OPTIONS` | See above | Default BeatMapGenerator options |
 | `DEFAULT_BEATSTREAM_OPTIONS` | See above | Default BeatStream options |
-| `BEAT_ACCURACY_THRESHOLDS` | `{ perfect: 0.010, great: 0.025, good: 0.050 }` | Accuracy thresholds in seconds |
+| `BEAT_ACCURACY_THRESHOLDS` | Same as `HARD_ACCURACY_THRESHOLDS` | Accuracy thresholds in seconds (**deprecated**, use `HARD_ACCURACY_THRESHOLDS` or `getAccuracyThresholdsForPreset()`) |
+| `EASY_ACCURACY_THRESHOLDS` | `{ perfect: 0.075, great: 0.125, good: 0.175, ok: 0.250 }` | Easy difficulty thresholds (±75ms, ±125ms, ±175ms, ±250ms) |
+| `MEDIUM_ACCURACY_THRESHOLDS` | `{ perfect: 0.045, great: 0.090, good: 0.135, ok: 0.200 }` | Medium difficulty thresholds (±45ms, ±90ms, ±135ms, ±200ms) |
+| `HARD_ACCURACY_THRESHOLDS` | `{ perfect: 0.010, great: 0.025, good: 0.050, ok: 0.100 }` | Hard difficulty thresholds (±10ms, ±25ms, ±50ms, ±100ms) |
+| `getAccuracyThresholdsForPreset(preset)` | Returns `AccuracyThresholds` | Get thresholds for a difficulty preset (`'easy'`, `'medium'`, `'hard'`, `'custom'`) |
 | `BEAT_DETECTION_VERSION` | `'1.0.0'` | Algorithm version |
 | `BEAT_DETECTION_ALGORITHM` | `'ellis-dp-v1'` | Algorithm identifier |
 
