@@ -255,6 +255,11 @@ export interface AccuracyThresholds {
 }
 
 /**
+ * Preset difficulty levels for accuracy thresholds
+ */
+export type DifficultyPreset = 'easy' | 'medium' | 'hard' | 'custom';
+
+/**
  * Result of a button press accuracy check
  */
 export interface ButtonPressResult {
