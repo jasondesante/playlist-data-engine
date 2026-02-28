@@ -237,7 +237,7 @@ export interface BeatStreamOptions {
 /**
  * Accuracy levels for button press detection
  */
-export type BeatAccuracy = 'perfect' | 'great' | 'good' | 'miss';
+export type BeatAccuracy = 'perfect' | 'great' | 'good' | 'ok' | 'miss';
 
 /**
  * Result of a button press accuracy check

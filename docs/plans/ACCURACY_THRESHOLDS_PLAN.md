@@ -29,7 +29,7 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
 ## Phase 1: Type Definitions
 
 ### Task 1.1: Update BeatAccuracy Type
-- [ ] Add `'ok'` to `BeatAccuracy` type in `src/core/types/BeatMap.ts`
+- [x] Add `'ok'` to `BeatAccuracy` type in `src/core/types/BeatMap.ts`
   ```typescript
   export type BeatAccuracy = 'perfect' | 'great' | 'good' | 'ok' | 'miss';
   ```
