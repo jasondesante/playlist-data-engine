@@ -165,6 +165,31 @@ export interface AudioSyncState {
 
 /**
  * Options for BeatMapGenerator
+ *
+ * ## OSE Parameter Modes
+ *
+ * OSE parameters support two configuration styles:
+ * - **Mode-based**: Use `hopSizeMode`, `melBandsMode`, `gaussianSmoothMode` for preset values
+ * - **Direct numeric**: Use `hopSizeMs`, `melBands`, `gaussianSmoothMs` for exact control
+ *
+ * **Precedence**: When both mode and direct value are provided, mode takes precedence.
+ *
+ * @example
+ * ```typescript
+ * // Mode-based configuration (recommended)
+ * const options: BeatMapGeneratorOptions = {
+ *   hopSizeMode: { mode: 'standard' },      // 4ms (Ellis 2007 paper spec)
+ *   melBandsMode: { mode: 'detailed' },     // 64 bands
+ *   gaussianSmoothMode: { mode: 'smooth' }  // 40ms
+ * };
+ *
+ * // Direct numeric configuration (backward compatible)
+ * const options: BeatMapGeneratorOptions = {
+ *   hopSizeMs: 4,
+ *   melBands: 40,
+ *   gaussianSmoothMs: 20
+ * };
+ * ```
  */
 export interface BeatMapGeneratorOptions {
     /** Minimum BPM to detect (default: 60) */
@@ -182,7 +207,11 @@ export interface BeatMapGeneratorOptions {
     /** Minimum threshold to prevent noise detection (default: 0.1) */
     noiseFloorThreshold?: number;
 
-    /** Milliseconds between FFT frames (default: 10) */
+    /**
+     * Milliseconds between FFT frames (default: 4).
+     * Ignored if hopSizeMode is provided.
+     * @see hopSizeMode for mode-based configuration
+     */
     hopSizeMs?: number;
 
     /** FFT window size in samples (default: 2048) */
@@ -198,13 +227,21 @@ export interface BeatMapGeneratorOptions {
      */
     dpAlpha?: number;
 
-    /** Number of Mel frequency bands for OSE (default: 40) */
+    /**
+     * Number of Mel frequency bands for OSE (default: 40).
+     * Ignored if melBandsMode is provided.
+     * @see melBandsMode for mode-based configuration
+     */
     melBands?: number;
 
     /** High-pass filter cutoff in Hz, removes DC offset from OSE (default: 0.4) */
     highPassCutoff?: number;
 
-    /** Gaussian smoothing window in ms for OSE (default: 20) */
+    /**
+     * Gaussian smoothing window in ms for OSE (default: 20).
+     * Ignored if gaussianSmoothMode is provided.
+     * @see gaussianSmoothMode for mode-based configuration
+     */
     gaussianSmoothMs?: number;
 
     /** Tempo center in seconds for perception bias (default: 0.5 = 120 BPM) */
@@ -215,13 +252,25 @@ export interface BeatMapGeneratorOptions {
 
     // Mode-based alternatives (Tier 1 & Tier 2 controls)
 
-    /** Hop size mode (alternative to hopSizeMs) - default: 'standard' (4ms) */
+    /**
+     * Hop size mode configuration.
+     * Takes precedence over hopSizeMs when both are provided.
+     * @default { mode: 'standard' } (4ms)
+     */
     hopSizeMode?: HopSizeConfig;
 
-    /** Mel bands mode (alternative to melBands) - default: 'standard' (40 bands) */
+    /**
+     * Mel bands mode configuration.
+     * Takes precedence over melBands when both are provided.
+     * @default { mode: 'standard' } (40 bands)
+     */
     melBandsMode?: MelBandsConfig;
 
-    /** Gaussian smooth mode (alternative to gaussianSmoothMs) - default: 'standard' (20ms) */
+    /**
+     * Gaussian smooth mode configuration.
+     * Takes precedence over gaussianSmoothMs when both are provided.
+     * @default { mode: 'standard' } (20ms)
+     */
     gaussianSmoothMode?: GaussianSmoothConfig;
 }
 
@@ -537,6 +586,37 @@ export function getGaussianSmoothMs(config: GaussianSmoothConfig = { mode: 'stan
 
 /**
  * Configuration for Onset Strength Envelope calculation
+ *
+ * ## Parameter Modes vs Direct Values
+ *
+ * OSE parameters support two configuration styles:
+ * - **Mode-based**: Use `hopSizeMode`, `melBandsMode`, `gaussianSmoothMode` for preset values
+ * - **Direct numeric**: Use `hopSizeMs`, `melBands`, `gaussianSmoothMs` for exact control
+ *
+ * **Precedence**: When both mode and direct value are provided, mode takes precedence.
+ *
+ * @example
+ * ```typescript
+ * // Mode-based configuration (recommended)
+ * const config: OSEConfig = {
+ *   hopSizeMode: { mode: 'standard' },     // 4ms (Ellis 2007 paper spec)
+ *   melBandsMode: { mode: 'detailed' },    // 64 bands
+ *   gaussianSmoothMode: { mode: 'smooth' } // 40ms
+ * };
+ *
+ * // Direct numeric configuration (backward compatible)
+ * const config: OSEConfig = {
+ *   hopSizeMs: 4,
+ *   melBands: 40,
+ *   gaussianSmoothMs: 20
+ * };
+ *
+ * // Mixed - mode takes precedence (hopSizeMs is ignored)
+ * const config: OSEConfig = {
+ *   hopSizeMode: { mode: 'hq' },  // Uses 2ms
+ *   hopSizeMs: 10                  // Ignored because hopSizeMode is set
+ * };
+ * ```
  */
 export interface OSEConfig {
     /** Target sample rate for resampling (default: 8000 Hz) */
@@ -545,25 +625,49 @@ export interface OSEConfig {
     /** FFT window size in milliseconds (default: 32) */
     fftWindowSize?: number;
 
-    /** Hop size in milliseconds (default: 4) - use with hopSizeMode or direct value */
+    /**
+     * Hop size in milliseconds (default: 4).
+     * Ignored if hopSizeMode is provided.
+     * @see hopSizeMode for mode-based configuration
+     */
     hopSizeMs?: number;
 
-    /** Hop size mode (alternative to hopSizeMs) - default: 'standard' */
+    /**
+     * Hop size mode configuration.
+     * Takes precedence over hopSizeMs when both are provided.
+     * @default { mode: 'standard' }
+     */
     hopSizeMode?: HopSizeConfig;
 
-    /** Number of Mel frequency bands (default: 40) */
+    /**
+     * Number of Mel frequency bands (default: 40).
+     * Ignored if melBandsMode is provided.
+     * @see melBandsMode for mode-based configuration
+     */
     melBands?: number;
 
-    /** Mel bands mode (alternative to melBands) - default: 'standard' */
+    /**
+     * Mel bands mode configuration.
+     * Takes precedence over melBands when both are provided.
+     * @default { mode: 'standard' }
+     */
     melBandsMode?: MelBandsConfig;
 
     /** High-pass filter cutoff in Hz (default: 0.4) */
     highPassCutoff?: number;
 
-    /** Gaussian smoothing window in ms (default: 20) */
+    /**
+     * Gaussian smoothing window in ms (default: 20).
+     * Ignored if gaussianSmoothMode is provided.
+     * @see gaussianSmoothMode for mode-based configuration
+     */
     gaussianSmoothMs?: number;
 
-    /** Gaussian smooth mode (alternative to gaussianSmoothMs) - default: 'standard' */
+    /**
+     * Gaussian smooth mode configuration.
+     * Takes precedence over gaussianSmoothMs when both are provided.
+     * @default { mode: 'standard' }
+     */
     gaussianSmoothMode?: GaussianSmoothConfig;
 }
 

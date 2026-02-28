@@ -86,14 +86,21 @@ export class OnsetStrengthEnvelope {
     /**
      * Create a new Onset Strength Envelope calculator
      *
+     * ## Configuration Options
+     *
+     * OSE parameters can be configured using either mode-based configs or direct numeric values.
+     *
+     * **Precedence**: When both mode and direct value are provided, mode takes precedence.
+     * For example, if both `hopSizeMode` and `hopSizeMs` are set, `hopSizeMode` wins.
+     *
      * @param config - Configuration options (all optional, defaults provided)
      *
      * @example
      * ```typescript
      * // Using mode-based configuration (recommended)
      * const ose = new OnsetStrengthEnvelope({
-     *   hopSizeMode: { mode: 'standard' },    // 4ms (Ellis 2007 paper spec)
-     *   melBandsMode: { mode: 'detailed' },   // 64 bands
+     *   hopSizeMode: { mode: 'standard' },     // 4ms (Ellis 2007 paper spec)
+     *   melBandsMode: { mode: 'detailed' },    // 64 bands
      *   gaussianSmoothMode: { mode: 'smooth' } // 40ms
      * });
      *
@@ -102,6 +109,12 @@ export class OnsetStrengthEnvelope {
      *   hopSizeMs: 4,
      *   melBands: 40,
      *   gaussianSmoothMs: 20
+     * });
+     *
+     * // Mixed - mode takes precedence (hopSizeMs is ignored)
+     * const ose = new OnsetStrengthEnvelope({
+     *   hopSizeMode: { mode: 'hq' },  // Uses 2ms
+     *   hopSizeMs: 10                  // Ignored because hopSizeMode is set
      * });
      * ```
      */

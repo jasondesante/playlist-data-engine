@@ -51,9 +51,33 @@ interface GenerationState {
  * Generates complete beat maps from audio files using the Ellis DP algorithm.
  * Supports progress tracking, cancellation, and JSON serialization.
  *
+ * ## Parameter Modes
+ *
+ * OSE parameters can be configured using either mode-based configs or direct numeric values.
+ * When both are provided, mode-based configs take precedence over numeric values.
+ *
+ * ### Tier 1: Primary Controls
+ * - `hopSizeMode` - Controls beat detection precision (efficient/standard/hq/custom)
+ * - `hopSizeMs` - Direct hop size in milliseconds (backward compatible)
+ *
+ * ### Tier 2: Advanced Controls
+ * - `melBandsMode` - Controls frequency resolution (standard/detailed/maximum)
+ * - `gaussianSmoothMode` - Controls onset envelope smoothing (minimal/standard/smooth)
+ *
  * @example
  * ```typescript
+ * // Using mode-based configuration (recommended)
  * const generator = new BeatMapGenerator({
+ *   hopSizeMode: { mode: 'standard' },      // 4ms (Ellis 2007 paper spec)
+ *   melBandsMode: { mode: 'detailed' },     // 64 bands
+ *   gaussianSmoothMode: { mode: 'smooth' }  // 40ms
+ * });
+ *
+ * // Using direct numeric values (backward compatible)
+ * const generator = new BeatMapGenerator({
+ *   hopSizeMs: 4,
+ *   melBands: 40,
+ *   gaussianSmoothMs: 20,
  *   minBpm: 60,
  *   maxBpm: 180,
  *   dpAlpha: 680,
