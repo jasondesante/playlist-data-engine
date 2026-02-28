@@ -204,9 +204,9 @@ Add configurable beat tap accuracy thresholds to the playlist-data-engine, allow
   ```
 
 ### Task 4.2: Store Resolved Thresholds in BeatStream
-- [ ] Add thresholds property to BeatStream state
-- [ ] Initialize thresholds in constructor
-- [ ] Add getter method for current thresholds
+- [x] Add thresholds property to BeatStream state
+- [x] Initialize thresholds in constructor
+- [x] Add getter method for current thresholds
   ```typescript
   /**
    * Get the current accuracy thresholds being used

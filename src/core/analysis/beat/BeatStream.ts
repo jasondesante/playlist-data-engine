@@ -83,6 +83,8 @@ interface StreamState {
     rafId: number | null;
     /** Last button press result */
     lastButtonPress: ButtonPressResult | null;
+    /** Resolved accuracy thresholds based on difficulty preset and custom thresholds */
+    thresholds: AccuracyThresholds;
 }
 
 /**
@@ -127,6 +129,7 @@ export class BeatStream {
             pauseTime: 0,
             rafId: null,
             lastButtonPress: null,
+            thresholds: this.resolveThresholds(),
         };
 
         this.subscribers = new Set();
@@ -151,6 +154,18 @@ export class BeatStream {
      */
     getOptions(): Required<BeatStreamOptions> {
         return { ...this.options };
+    }
+
+    /**
+     * Get the current accuracy thresholds being used
+     *
+     * Returns the resolved thresholds based on the difficulty preset
+     * and any custom threshold overrides.
+     *
+     * @returns The current accuracy thresholds
+     */
+    getAccuracyThresholds(): AccuracyThresholds {
+        return { ...this.state.thresholds };
     }
 
     // ==================== Core Methods ====================
