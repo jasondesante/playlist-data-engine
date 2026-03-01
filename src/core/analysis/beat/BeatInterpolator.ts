@@ -248,7 +248,11 @@ export class BeatInterpolator {
         // Step 5: Multi-tempo analysis (Phase 4)
         // Identify tempo clusters and extract tempos
         const tempoClusters = this.identifyTempoClusters(beats);
-        const detectedClusterTempos = tempoClusters.map(c => Math.round(c.bpm));
+        const rawClusterTempos = tempoClusters.map(c => Math.round(c.bpm));
+
+        // Filter out octave multiples from detected tempos
+        // (e.g., 60 BPM and 120 BPM should be treated as the same tempo)
+        const detectedClusterTempos = this.filterOctaveMultiples(rawClusterTempos);
         const hasMultipleTempos = detectedClusterTempos.length > 1;
 
         // Initialize multi-tempo metadata fields
@@ -625,6 +629,43 @@ export class BeatInterpolator {
         const actualRatio = tempoA / tempoB;
 
         return octaveRatios.some(ratio => Math.abs(actualRatio - ratio) <= tolerance);
+    }
+
+    /**
+     * Filter out octave multiples from a list of tempos
+     *
+     * When multiple tempos are detected but some are octave multiples of others,
+     * we keep only one representative tempo. This prevents false detection of
+     * "multiple tempos" when the track is actually at a consistent tempo but
+     * detected at different octaves (e.g., 60 BPM and 120 BPM).
+     *
+     * Algorithm:
+     * 1. Sort tempos in ascending order
+     * 2. For each tempo, check if it's an octave multiple of any already-kept tempo
+     * 3. If not an octave multiple of any kept tempo, add it to the result
+     *
+     * @param tempos - Array of tempo values in BPM
+     * @returns Filtered array with octave multiples removed
+     */
+    private filterOctaveMultiples(tempos: number[]): number[] {
+        if (tempos.length <= 1) {
+            return tempos;
+        }
+
+        // Sort tempos in ascending order
+        const sorted = [...tempos].sort((a, b) => a - b);
+        const filtered: number[] = [];
+
+        for (const tempo of sorted) {
+            // Check if this tempo is an octave multiple of any already-kept tempo
+            const isOctaveOfKept = filtered.some(kept => this.isOctaveMultiple(tempo, kept));
+
+            if (!isOctaveOfKept) {
+                filtered.push(tempo);
+            }
+        }
+
+        return filtered;
     }
 
     // ==================== Section Boundary Detection (Phase 3) ====================

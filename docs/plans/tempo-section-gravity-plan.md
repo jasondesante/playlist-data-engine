@@ -499,7 +499,13 @@ interpolate(beatMap, { enableMultiTempo: true })
     - Verifies `hasMultipleTempos: true`, `hasMultiTempoApplied: true`, `tempoSections.length >= 3`
     - Verifies sections don't overlap and are ordered chronologically
     - Verifies tempo spread between first and last section is significant (>30%)
-  - [ ] **Octave-related tempos (half/double)** — 60 BPM → 120 BPM, should NOT trigger sections (filtered by `isOctaveMultiple`)
+  - [x] **Octave-related tempos (half/double)** — 60 BPM → 120 BPM, should NOT trigger sections (filtered by `isOctaveMultiple`)
+    - Test added in `Phase 7: Multi-Tempo Edge Cases` > `Octave-related tempos (half/double)` describe block
+    - Four tests: (1) 60→120 BPM (double tempo), (2) 120→60 BPM (half tempo), (3) various octave pairs, (4) non-octave tempos still trigger
+    - Added `filterOctaveMultiples()` method to filter octave-related tempos from the detected cluster tempos list
+    - Modified `interpolate()` to use filtered tempos for `hasMultipleTempos` determination
+    - Verifies `hasMultipleTempos: false` and `hasMultiTempoApplied: falsy` when tempos are octave multiples
+    - Verifies multi-tempo still triggers for non-octave tempos (e.g., 100→150 BPM)
   - [ ] **Short cluster** — 3 beats at 128 BPM → 4 beats at 140 BPM, should NOT trigger (cluster needs 4+ beats)
   - [ ] **Cluster with gaps** — should NOT trigger (must be consecutive detected beats)
   - [ ] **Single beat between clusters** — verify phase alignment assigns to correct section

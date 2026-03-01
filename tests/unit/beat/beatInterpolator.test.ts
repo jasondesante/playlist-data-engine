@@ -2155,4 +2155,175 @@ describe('Phase 7: Multi-Tempo Edge Cases', () => {
             }
         })
     })
+
+    describe('Octave-related tempos (half/double)', () => {
+        it('should NOT trigger sections when tempos are octave multiples (60 BPM -> 120 BPM)', () => {
+            // This test verifies that when two clusters have tempos that are
+            // octave multiples of each other (half or double), the isOctaveMultiple()
+            // function filters them out and they should NOT create separate sections.
+            //
+            // 60 BPM and 120 BPM represent the same musical tempo, just detected
+            // at different octaves. This is NOT a true tempo change.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,  // 10% threshold
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 60    // Slow (1 beat per second)
+            const bpm2 = 120   // Double tempo (0.5s per beat) - octave multiple
+            const interval1 = 60 / bpm1  // 1.0s
+            const interval2 = 60 / bpm2  // 0.5s
+
+            // First cluster: 5 beats at 60 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // GAP between clusters to ensure they would be detected as separate
+            const lastBeat1 = beats[beats.length - 1].timestamp
+            const gap = 2.0  // 2 second gap
+            const section2Start = lastBeat1 + gap
+
+            // Second cluster: 5 beats at 120 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should NOT detect multiple tempos because 60 and 120 are octave multiples
+            // and should be filtered by isOctaveMultiple()
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+            expect(result.interpolationMetadata.tempoSections).toBeUndefined()
+        })
+
+        it('should NOT trigger sections for half-tempo octave (120 BPM -> 60 BPM)', () => {
+            // Test the reverse case: starting fast, then going slow (half tempo)
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 120   // Fast
+            const bpm2 = 60    // Half tempo (octave multiple)
+            const interval1 = 60 / bpm1  // 0.5s
+            const interval2 = 60 / bpm2  // 1.0s
+
+            // First cluster: 5 beats at 120 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // GAP
+            const lastBeat1 = beats[beats.length - 1].timestamp
+            const gap = 2.0
+            const section2Start = lastBeat1 + gap
+
+            // Second cluster: 5 beats at 60 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should NOT trigger multi-tempo
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+        })
+
+        it('should NOT trigger sections for various octave-related tempo pairs', () => {
+            // Test multiple octave-related tempo pairs
+
+            const octavePairs = [
+                { bpm1: 80, bpm2: 160 },   // Double
+                { bpm1: 100, bpm2: 50 },   // Half
+                { bpm1: 70, bpm2: 140 },   // Double
+                { bpm1: 90, bpm2: 45 },    // Half
+            ]
+
+            for (const { bpm1, bpm2 } of octavePairs) {
+                const interpolator = new BeatInterpolator({
+                    tempoSectionThreshold: 0.1,
+                    minClusterBeats: 4,
+                    enableMultiTempo: true,
+                })
+
+                const beats: Beat[] = []
+                const interval1 = 60 / bpm1
+                const interval2 = 60 / bpm2
+
+                // First cluster: 5 beats at bpm1
+                for (let i = 0; i < 5; i++) {
+                    beats.push(createBeat(i * interval1))
+                }
+
+                // GAP
+                const lastBeat1 = beats[beats.length - 1].timestamp
+                const gap = 2.0
+                const section2Start = lastBeat1 + gap
+
+                // Second cluster: 5 beats at bpm2
+                for (let i = 0; i < 5; i++) {
+                    beats.push(createBeat(section2Start + i * interval2))
+                }
+
+                const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+                const result = interpolator.interpolate(beatMap)
+
+                // Should NOT trigger multi-tempo for octave multiples
+                expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+                expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+            }
+        })
+
+        it('should still trigger sections for non-octave tempos at similar values', () => {
+            // Verify that tempos that are NOT octave multiples still trigger sections
+            // 100 BPM vs 150 BPM is NOT an octave multiple (ratio = 0.667, not 0.5 or 2)
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 100   // NOT an octave multiple with 150
+            const bpm2 = 150   // 100 * 2 = 200, so 150 is NOT an octave multiple (ratio = 0.667)
+            const interval1 = 60 / bpm1  // 0.6s
+            const interval2 = 60 / bpm2  // 0.4s
+
+            // First cluster: 5 beats at 100 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // GAP
+            const lastBeat1 = beats[beats.length - 1].timestamp
+            const gap = 2.0
+            const section2Start = lastBeat1 + gap
+
+            // Second cluster: 5 beats at 150 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should detect multiple tempos and apply multi-tempo since these are NOT octave multiples
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+        })
+    })
 })
