@@ -2789,4 +2789,167 @@ describe('Phase 7: Multi-Tempo Edge Cases', () => {
             }
         })
     })
+
+    describe('Very short track', () => {
+        it('SHOULD trigger sections with 8 beats total (4 at each tempo) - beat count only, no minimum duration', () => {
+            // This test verifies that a very short track still triggers multi-tempo
+            // when both clusters meet the minClusterBeats threshold.
+            // The key insight is that track duration doesn't matter - only beat count per cluster.
+            //
+            // Track: 8 beats total
+            // - 4 beats at 100 BPM (meets minClusterBeats)
+            // - 4 beats at 150 BPM (meets minClusterBeats)
+            // - Gap between sections to ensure boundary detection
+            // Expected: multi-tempo SHOULD trigger
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 100
+            const bpm2 = 150  // 50% difference - well above 10% threshold
+            const interval1 = 60 / bpm1  // 0.6s
+            const interval2 = 60 / bpm2  // 0.4s
+
+            // First cluster: exactly 4 beats at 100 BPM
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+            // Total duration: 0 to 1.8s (3 intervals for 4 beats)
+
+            // Gap between sections to ensure boundary detection
+            const lastBeatSection1 = beats[beats.length - 1].timestamp  // 1.8s
+            const gap = 1.0  // Clear gap to ensure boundary detection
+
+            // Second cluster: exactly 4 beats at 150 BPM
+            const section2Start = lastBeatSection1 + gap  // 2.8s
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+            // Section 2 ends at: 2.8 + 3 * 0.4 = 4.0s
+
+            const totalDuration = beats[beats.length - 1].timestamp + 0.5  // 4.5s total track
+            const beatMap = createBeatMap(beats, totalDuration)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should detect multiple tempos and apply multi-tempo
+            // Both clusters meet minClusterBeats of 4
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+
+            // Verify the sections have distinct tempos
+            const sections = result.interpolationMetadata.tempoSections!
+            const firstSection = sections[0]
+            const lastSection = sections[sections.length - 1]
+
+            // First section should be close to 100 BPM
+            expect(firstSection.bpm).toBeLessThan(120)
+            // Last section should be close to 150 BPM
+            expect(lastSection.bpm).toBeGreaterThan(130)
+
+            // Verify total beat count in sections equals our 8 beats
+            const totalBeatsInSection = sections.reduce((sum, s) => sum + s.beatCount, 0)
+            expect(totalBeatsInSection).toBe(8)
+        })
+
+        it('should NOT trigger sections when track is too short (3 beats at each tempo)', () => {
+            // Control test: with only 3 beats per cluster (below minClusterBeats of 4),
+            // multi-tempo should NOT trigger
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 100
+            const bpm2 = 150  // 50% difference
+            const interval1 = 60 / bpm1  // 0.6s
+            const interval2 = 60 / bpm2  // 0.4s
+
+            // First cluster: only 3 beats at 100 BPM (below minClusterBeats)
+            for (let i = 0; i < 3; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Gap between sections
+            const lastBeatSection1 = beats[beats.length - 1].timestamp
+            const gap = 1.0
+
+            // Second cluster: only 3 beats at 150 BPM (below minClusterBeats)
+            const section2Start = lastBeatSection1 + gap
+            for (let i = 0; i < 3; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const totalDuration = beats[beats.length - 1].timestamp + 0.5
+            const beatMap = createBeatMap(beats, totalDuration)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should NOT detect multiple tempos because neither cluster meets minClusterBeats
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+        })
+
+        it('should trigger sections with short track using faster tempos', () => {
+            // This test verifies that even a very short track (in seconds)
+            // triggers multi-tempo when the beat count requirement is met.
+            // Using faster tempos to create a shorter track in seconds but still 8 beats.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 200  // Fast tempo
+            const bpm2 = 300  // 50% faster
+            const interval1 = 60 / bpm1  // 0.3s
+            const interval2 = 60 / bpm2  // 0.2s
+
+            // First cluster: 4 beats at 200 BPM
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+            // Ends at 0.9s
+
+            // Gap to ensure boundary detection
+            const lastBeatSection1 = beats[beats.length - 1].timestamp
+            const gap = 1.0  // Sufficient gap to create boundary
+
+            // Second cluster: 4 beats at 300 BPM
+            const section2Start = lastBeatSection1 + gap  // 1.9s
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+            // Ends at 1.9 + 3 * 0.2 = 2.5s
+
+            const totalDuration = beats[beats.length - 1].timestamp + 0.3  // ~2.8s total (very short!)
+            const beatMap = createBeatMap(beats, totalDuration)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should still detect and apply multi-tempo
+            // Track is under 3 seconds but both clusters meet minClusterBeats
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+
+            // Verify the sections have distinct tempos
+            const sections = result.interpolationMetadata.tempoSections!
+            const firstSection = sections[0]
+            const lastSection = sections[sections.length - 1]
+
+            // First section should be close to 200 BPM
+            expect(firstSection.bpm).toBeGreaterThan(180)
+            // Last section should be close to 300 BPM
+            expect(lastSection.bpm).toBeGreaterThan(270)
+        })
+    })
 })

@@ -520,7 +520,11 @@ interpolate(beatMap, { enableMultiTempo: true })
     - Test added in `Phase 7: Multi-Tempo Edge Cases` > `Single beat between clusters` describe block
     - Three tests: (1) single beat phase-aligned with first cluster, (2) single beat phase-aligned with second cluster, (3) single ambiguous beat in gap
     - Verifies multi-tempo detection and section assignment work correctly with single connecting beat
-  - [ ] **Very short track** — 8 beats total (4 at each tempo), SHOULD trigger (beat count only, no minimum duration)
+  - [x] **Very short track** — 8 beats total (4 at each tempo), SHOULD trigger (beat count only, no minimum duration)
+    - Test added in `Phase 7: Multi-Tempo Edge Cases` > `Very short track` describe block
+    - Three tests: (1) 8 beats (4+4) triggers multi-tempo, (2) 6 beats (3+3) does NOT trigger (below threshold), (3) short track with fast tempos still triggers
+    - Verifies track duration doesn't matter - only beat count per cluster matters
+    - Confirms minClusterBeats threshold is correctly enforced regardless of total track length
 
 - [ ] Add test helper functions
   - [ ] `createMultiTempoBeats(tempos: {bpm, duration}[])`
