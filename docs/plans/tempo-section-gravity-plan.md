@@ -481,7 +481,11 @@ interpolate(beatMap, { enableMultiTempo: true })
     - Two tests: (1) 120→126 BPM (5% drift), (2) 140→147 BPM (5% drift at higher tempo)
     - Verifies `hasMultipleTempos: false` and `hasMultiTempoApplied: falsy` (undefined or false)
     - Confirms gradual drift across entire track does NOT trigger multi-tempo (below 10% threshold)
-  - [ ] **Single tempo track** — no multi-tempo activation, behaves exactly as before
+  - [x] **Single tempo track** — no multi-tempo activation, behaves exactly as before
+    - Test added in `Phase 7: Multi-Tempo Edge Cases` > `Single tempo track` describe block
+    - Three tests: (1) basic single tempo, (2) enableMultiTempo flag comparison, (3) various tempos (60-180 BPM)
+    - Verifies `hasMultipleTempos: false` and `hasMultiTempoApplied: falsy`
+    - Confirms single-tempo tracks work identically regardless of `enableMultiTempo` flag
   - [ ] **Two distinct tempo sections with clear boundary** — SHOULD trigger sections with hard boundary
   - [ ] **Three tempo sections** — multiple boundaries detected correctly
   - [ ] **Octave-related tempos (half/double)** — 60 BPM → 120 BPM, should NOT trigger sections (filtered by `isOctaveMultiple`)
