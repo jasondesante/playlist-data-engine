@@ -12,7 +12,8 @@ import type {
     MotionData,
     LightData,
     XPBonusSource,
-    XpModifierBreakdown
+    XpModifierBreakdown,
+    SolarInfo
 } from '../types/Environmental';
 import type { GeolocationSensorConfig, WeatherSensorConfig, XPModifierConfig, RetryConfig } from '../config/sensorConfig.js';
 import { GeolocationProvider } from './GeolocationProvider';
@@ -991,5 +992,21 @@ export class EnvironmentalSensors {
      */
     printDashboard(config?: DashboardConfig): void {
         SensorDashboard.displayEnvironmentalDiagnostics(this.getDiagnostics(), config);
+    }
+
+    /**
+     * Get solar information including sunrise, sunset, and day stage.
+     * Works WITHOUT API key using astronomical calculations (NOAA algorithm).
+     * Uses current geolocation if available.
+     *
+     * @param date - Optional date for calculation (defaults to now)
+     * @returns SolarInfo object with sunrise, sunset, solar noon, and day stage, or null if no location available
+     */
+    getSolarInfo(date?: Date): SolarInfo | null {
+        const geoData = this.context.geolocation || this.getLastKnownGood('geolocation')?.geolocation;
+        if (!geoData) {
+            return null;
+        }
+        return this.weather.getSolarInfo(geoData.latitude, geoData.longitude, date);
     }
 }
