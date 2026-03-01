@@ -79,12 +79,21 @@ export {
     formatComparisonTable,
     comparisonToJSON,
     ALL_ALGORITHMS,
+    // Visualization utilities
+    generateASCIIVisualization,
+    generateHTMLVisualization,
+    generateAlgorithmComparisonVisualization,
+    generateVisualizationData,
 } from './utils/beatInterpolationComparison.js';
 export type {
     MetricComparison,
     AlgorithmPairComparison,
     InterpolationComparisonResult,
     ComparisonOptions,
+    // Visualization types
+    VisualizationOptions,
+    ASCIIVisualizationResult,
+    HTMLVisualizationResult,
 } from './utils/beatInterpolationComparison.js';
 
 // Utilities

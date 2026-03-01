@@ -12,6 +12,10 @@ import {
     formatComparisonTable,
     comparisonToJSON,
     ALL_ALGORITHMS,
+    generateASCIIVisualization,
+    generateHTMLVisualization,
+    generateAlgorithmComparisonVisualization,
+    generateVisualizationData,
 } from '../../../src/core/analysis/beat/utils/beatInterpolationComparison.js';
 import { BeatInterpolator } from '../../../src/core/analysis/beat/BeatInterpolator.js';
 import type { Beat, BeatMap, BeatMapMetadata, BeatWithSource, InterpolatedBeatMap } from '../../../src/core/types/BeatMap.js';
@@ -498,6 +502,334 @@ describe('Beat Interpolation Comparison Utility', () => {
 
             // Results should still be valid
             expect(comparison.results['dual-pass'].mergedBeats.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe('generateASCIIVisualization', () => {
+        it('should generate ASCII visualization for interpolated beat map', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createBeatsWithGaps(bpm, duration, [3, 7]);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateASCIIVisualization(interpolatedMap);
+
+            expect(result.visualization).toBeDefined();
+            expect(result.visualization.length).toBeGreaterThan(0);
+            expect(result.legend).toBeDefined();
+            expect(result.legend).toContain('Legend');
+            expect(result.stats).toBeDefined();
+        });
+
+        it('should include stats about the visualized section', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createBeatsWithGaps(bpm, duration, [3, 7]);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateASCIIVisualization(interpolatedMap);
+
+            expect(result.stats.detectedCount).toBeGreaterThanOrEqual(0);
+            expect(result.stats.interpolatedCount).toBeGreaterThanOrEqual(0);
+            expect(result.stats.beatsPerSecond).toBeGreaterThan(0);
+            expect(result.stats.timeRange).toHaveLength(2);
+        });
+
+        it('should respect time range option', () => {
+            const bpm = 120;
+            const duration = 10;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateASCIIVisualization(interpolatedMap, {
+                timeRange: [2, 4],
+            });
+
+            expect(result.stats.timeRange[0]).toBe(2);
+            expect(result.stats.timeRange[1]).toBe(4);
+        });
+
+        it('should handle empty beat map', () => {
+            const beatMap = createBeatMap([], 5, 120);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateASCIIVisualization(interpolatedMap);
+
+            expect(result.visualization).toBeDefined();
+            expect(result.stats.detectedCount).toBe(0);
+            expect(result.stats.interpolatedCount).toBe(0);
+        });
+
+        it('should show confidence when enabled', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateASCIIVisualization(interpolatedMap, {
+                showConfidence: true,
+            });
+
+            expect(result.visualization).toContain('Conf:');
+        });
+
+        it('should use custom characters', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateASCIIVisualization(interpolatedMap, {
+                detectedChar: 'D',
+                interpolatedChar: 'I',
+                downbeatChar: 'X',
+            });
+
+            expect(result.legend).toContain('X = Downbeat');
+            expect(result.legend).toContain('D = Detected');
+            expect(result.legend).toContain('I = Interpolated');
+        });
+    });
+
+    describe('generateHTMLVisualization', () => {
+        it('should generate complete HTML document', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateHTMLVisualization(interpolatedMap);
+
+            expect(result.html).toContain('<!DOCTYPE html>');
+            expect(result.html).toContain('<svg');
+            expect(result.html).toContain('</html>');
+        });
+
+        it('should generate standalone SVG', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateHTMLVisualization(interpolatedMap);
+
+            expect(result.svg).toContain('<svg');
+            expect(result.svg).toContain('</svg>');
+        });
+
+        it('should suggest filename based on audio ID', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateHTMLVisualization(interpolatedMap);
+
+            expect(result.suggestedFilename).toContain('beat-viz-');
+            expect(result.suggestedFilename).toContain('.html');
+        });
+
+        it('should include beat statistics in HTML', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createBeatsWithGaps(bpm, duration, [3, 7]);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateHTMLVisualization(interpolatedMap);
+
+            expect(result.html).toContain('Detected beats:');
+            expect(result.html).toContain('Interpolated beats:');
+            expect(result.html).toContain('Beat density:');
+        });
+
+        it('should respect width and height options', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const result = generateHTMLVisualization(interpolatedMap, {
+                width: 100,
+                height: 50,
+            });
+
+            // Width and height are scaled by 10 and 12 respectively
+            expect(result.svg).toContain('width="1000"');
+            expect(result.svg).toContain('height="600"');
+        });
+    });
+
+    describe('generateAlgorithmComparisonVisualization', () => {
+        it('should generate comparison visualization', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const comparison = compareInterpolationApproaches(beatMap);
+            const viz = generateAlgorithmComparisonVisualization(comparison);
+
+            expect(viz).toBeDefined();
+            expect(viz.length).toBeGreaterThan(0);
+        });
+
+        it('should include all algorithms', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const comparison = compareInterpolationApproaches(beatMap);
+            const viz = generateAlgorithmComparisonVisualization(comparison);
+
+            expect(viz).toContain('histogram-grid');
+            expect(viz).toContain('adaptive-phase-locked');
+            expect(viz).toContain('dual-pass');
+        });
+
+        it('should show recommendation', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const comparison = compareInterpolationApproaches(beatMap);
+            const viz = generateAlgorithmComparisonVisualization(comparison);
+
+            expect(viz).toContain('Recommended:');
+            expect(viz).toContain('confidence');
+        });
+    });
+
+    describe('generateVisualizationData', () => {
+        it('should generate data for external plotting', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createBeatsWithGaps(bpm, duration, [3, 7]);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const data = generateVisualizationData(interpolatedMap);
+
+            expect(data.beats).toBeDefined();
+            expect(data.detectedBeats).toBeDefined();
+            expect(data.interpolatedBeats).toBeDefined();
+            expect(data.metadata).toBeDefined();
+        });
+
+        it('should include all required beat properties', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const data = generateVisualizationData(interpolatedMap);
+
+            for (const beat of data.beats) {
+                expect(beat).toHaveProperty('timestamp');
+                expect(beat).toHaveProperty('confidence');
+                expect(beat).toHaveProperty('source');
+                expect(beat).toHaveProperty('isDownbeat');
+                expect(beat).toHaveProperty('intensity');
+                expect(['detected', 'interpolated']).toContain(beat.source);
+            }
+        });
+
+        it('should include all required metadata', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const data = generateVisualizationData(interpolatedMap);
+
+            expect(data.metadata).toHaveProperty('audioId');
+            expect(data.metadata).toHaveProperty('duration');
+            expect(data.metadata).toHaveProperty('quarterNoteBpm');
+            expect(data.metadata).toHaveProperty('quarterNoteConfidence');
+            expect(data.metadata).toHaveProperty('totalBeats');
+            expect(data.metadata).toHaveProperty('detectedCount');
+            expect(data.metadata).toHaveProperty('interpolatedCount');
+        });
+
+        it('should correctly separate detected and interpolated beats', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createBeatsWithGaps(bpm, duration, [3, 7]);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const data = generateVisualizationData(interpolatedMap);
+
+            const detectedCount = data.beats.filter(b => b.source === 'detected').length;
+            const interpolatedCount = data.beats.filter(b => b.source === 'interpolated').length;
+
+            expect(data.detectedBeats.length).toBe(detectedCount);
+            expect(data.interpolatedBeats.length).toBe(interpolatedCount);
+            expect(data.metadata.detectedCount).toBe(detectedCount);
+            expect(data.metadata.interpolatedCount).toBe(interpolatedCount);
+        });
+
+        it('should be JSON serializable', () => {
+            const bpm = 120;
+            const duration = 5;
+            const beats = createRegularBeats(bpm, duration);
+            const beatMap = createBeatMap(beats, duration, bpm);
+
+            const interpolator = new BeatInterpolator();
+            const interpolatedMap = interpolator.interpolate(beatMap);
+
+            const data = generateVisualizationData(interpolatedMap);
+
+            expect(() => JSON.stringify(data)).not.toThrow();
+
+            const serialized = JSON.stringify(data);
+            const parsed = JSON.parse(serialized);
+
+            expect(parsed.beats.length).toBe(data.beats.length);
+            expect(parsed.metadata.audioId).toBe(data.metadata.audioId);
         });
     });
 });

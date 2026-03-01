@@ -523,7 +523,7 @@ Create `tests/integration/beatInterpolation.integration.test.ts`:
 
 ### 8.1 Comparison Utilities
 - [x] Create utility to compare outputs of different approaches
-- [ ] Create utility to visualize detected vs interpolated beats
+- [x] Create utility to visualize detected vs interpolated beats
 - [x] Create utility to calculate accuracy metrics against ground truth
 
 ### 8.2 Debugging Output
