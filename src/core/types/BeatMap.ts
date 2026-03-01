@@ -77,6 +77,31 @@ export interface DownbeatSegment {
 }
 
 /**
+ * Downbeat configuration for manual placement
+ * Supports multiple segments for time signature changes within a track
+ */
+export interface DownbeatConfig {
+    /**
+     * Array of downbeat segments
+     * - For simple tracks: single segment with startBeat: 0
+     * - For time signature changes: multiple segments ordered by startBeat
+     *
+     * Each segment defines its own downbeat anchor and time signature.
+     * The downbeatBeatIndex is absolute (not relative to segment start).
+     */
+    segments: DownbeatSegment[];
+}
+
+/** Default downbeat config (first beat is the one, 4/4 time) */
+export const DEFAULT_DOWNBEAT_CONFIG: DownbeatConfig = {
+    segments: [{
+        startBeat: 0,
+        downbeatBeatIndex: 0,
+        timeSignature: DEFAULT_TIME_SIGNATURE,
+    }],
+};
+
+/**
  * Metadata about the beat detection algorithm and settings used
  */
 export interface BeatMapMetadata {

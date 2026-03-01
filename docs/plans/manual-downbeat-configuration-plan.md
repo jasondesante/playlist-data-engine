@@ -125,7 +125,7 @@ This is because you need to see the beat map to know which beat should be the do
   }
   ```
 
-- [ ] Add `DownbeatConfig` interface
+- [x] Add `DownbeatConfig` interface
   ```typescript
   /**
    * Downbeat configuration for manual placement
