@@ -175,6 +175,13 @@ export interface BeatMap {
 
     /** Algorithm metadata and settings */
     metadata: BeatMapMetadata;
+
+    /**
+     * The downbeat configuration used to generate this beat map
+     * Only stored if explicitly provided; undefined means default (beat 0 = downbeat, 4/4 time)
+     * Stored for reproducibility and reprocessing
+     */
+    downbeatConfig?: DownbeatConfig;
 }
 
 /**
@@ -494,6 +501,12 @@ export interface BeatMapJSON {
     }>;
     bpm: number;
     metadata: BeatMapMetadata;
+    /**
+     * The downbeat configuration used to generate this beat map
+     * Only stored if explicitly provided; undefined means default (beat 0 = downbeat, 4/4 time)
+     * Stored for reproducibility and reprocessing
+     */
+    downbeatConfig?: DownbeatConfig;
 }
 
 /**

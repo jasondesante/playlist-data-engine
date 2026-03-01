@@ -155,7 +155,7 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 1.2 Update BeatMap Type
 
-- [ ] Add optional `downbeatConfig` field to `BeatMap` interface
+- [x] Add optional `downbeatConfig` field to `BeatMap` interface
   ```typescript
   export interface BeatMap {
       // ... existing fields ...
