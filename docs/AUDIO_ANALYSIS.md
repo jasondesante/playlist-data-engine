@@ -1269,7 +1269,7 @@ const analyzer = new AudioAnalyzer();
 // Generate a beat map
 const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
 
-// Interpolate with default options (dual-pass algorithm)
+// Interpolate with default options
 const interpolated = analyzer.interpolateBeatMap(beatMap);
 
 console.log(`Detected beats: ${interpolated.detectedBeats.length}`);
@@ -1295,45 +1295,6 @@ const interpolated = await analyzer.generateBeatMapWithInterpolation(
 
 console.log(`Total beats: ${interpolated.mergedBeats.length}`);
 console.log(`Quarter note confidence: ${interpolated.quarterNoteConfidence}`);
-```
-
----
-
-### Selecting Different Algorithms
-
-Three interpolation algorithms are available for research and comparison:
-
-| Algorithm | Description | Best For |
-|-----------|-------------|----------|
-| `'histogram-grid'` | Fixed grid based on histogram peak | Consistent tempo, simple songs |
-| `'adaptive-phase-locked'` | Phase tracking with tempo drift handling | Songs with slight tempo variations |
-| `'dual-pass'` | KDE + weighted clustering with confidence scoring | **Default**, best overall accuracy |
-
-```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
-
-const analyzer = new AudioAnalyzer();
-const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
-
-// Fixed histogram grid - fastest, no drift handling
-const histogramGrid = analyzer.interpolateBeatMap(beatMap, {
-  algorithm: 'histogram-grid'
-});
-
-// Adaptive phase-locked - handles tempo drift
-const adaptive = analyzer.interpolateBeatMap(beatMap, {
-  algorithm: 'adaptive-phase-locked'
-});
-
-// Dual-pass - most accurate (default)
-const dualPass = analyzer.interpolateBeatMap(beatMap, {
-  algorithm: 'dual-pass'
-});
-
-// Compare results
-console.log(`Histogram: ${histogramGrid.mergedBeats.length} beats`);
-console.log(`Adaptive: ${adaptive.mergedBeats.length} beats`);
-console.log(`Dual-pass: ${dualPass.mergedBeats.length} beats`);
 ```
 
 ---
@@ -1412,9 +1373,6 @@ const analyzer = new AudioAnalyzer();
 const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
 
 const interpolated = analyzer.interpolateBeatMap(beatMap, {
-  // Algorithm selection
-  algorithm: 'dual-pass',
-
   // Anchor filtering - beats below this confidence aren't used as anchors
   minAnchorConfidence: 0.3,
 
@@ -1442,7 +1400,6 @@ const interpolated = analyzer.interpolateBeatMap(beatMap, {
 
 // Access interpolation metadata
 const meta = interpolated.interpolationMetadata;
-console.log(`Algorithm: ${meta.algorithm}`);
 console.log(`Detected: ${meta.detectedBeatCount}`);
 console.log(`Interpolated: ${meta.interpolatedBeatCount}`);
 console.log(`Interpolation ratio: ${(meta.interpolationRatio * 100).toFixed(1)}%`);
@@ -1454,7 +1411,6 @@ console.log(`Tempo drift ratio: ${meta.tempoDriftRatio.toFixed(2)}`);
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `algorithm` | `string` | `'dual-pass'` | Interpolation algorithm |
 | `minAnchorConfidence` | `number` | `0.3` | Minimum confidence to be an anchor |
 | `gridSnapTolerance` | `number` | `0.05` | Seconds tolerance for grid snapping |
 | `tempoAdaptationRate` | `number` | `0.3` | Tempo drift adaptation (0-1) |
