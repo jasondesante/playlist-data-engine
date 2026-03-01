@@ -11,21 +11,21 @@ Add beat interpolation capability as a **post-processing analysis pass** that ru
 ## Requirements Summary
 
 ### Must Have
-- [ ] Detect quarter note interval using **dense section priority** (weight intervals from sections with consistent beat detection higher than sparse sections)
-- [ ] Implement **Pace + Anchors model**: pace sets grid spacing, anchors validate and override
-- [ ] Generate complete beat grid from first detected beat
-- [ ] Detected beats override interpolated beats at same positions
-- [ ] Two output streams: `detectedBeats[]` (original) and `mergedBeats[]` (interpolated + detected override)
-- [ ] Mark all beats with `source: 'detected' | 'interpolated'` field
-- [ ] Extrapolate grid from edges (before first / after last detected beat)
+- [x] Detect quarter note interval using **dense section priority** (weight intervals from sections with consistent beat detection higher than sparse sections)
+- [x] Implement **Pace + Anchors model**: pace sets grid spacing, anchors validate and override
+- [x] Generate complete beat grid from first detected beat
+- [x] Detected beats override interpolated beats at same positions
+- [x] Two output streams: `detectedBeats[]` (original) and `mergedBeats[]` (interpolated + detected override)
+- [x] Mark all beats with `source: 'detected' | 'interpolated'` field
+- [x] Extrapolate grid from edges (before first / after last detected beat)
 
 ### Should Have
-- [ ] **Trust the grid** for silent sections: if surrounding anchors align, interpolate through with full confidence
-- [ ] **Equal confidence** for all beats in a validated gap (no decay based on distance)
-- [ ] Confidence based on: grid alignment (50%), anchor confidence (30%), pace confidence (20%)
-- [ ] Anomaly detection: distinguish single unusual intervals from consistent patterns
-- [ ] Anchor-point tempo adaptation (slight drift correction at each detected beat)
-- [ ] All 3 interpolation algorithms selectable for research/comparison
+- [x] **Trust the grid** for silent sections: if surrounding anchors align, interpolate through with full confidence
+- [x] **Equal confidence** for all beats in a validated gap (no decay based on distance)
+- [x] Confidence based on: grid alignment (50%), anchor confidence (30%), pace confidence (20%)
+- [x] Anomaly detection: distinguish single unusual intervals from consistent patterns
+- [x] Anchor-point tempo adaptation (slight drift correction at each detected beat)
+- [x] All 3 interpolation algorithms selectable for research/comparison
 
 ### Future Enhancement
 - [ ] Section-based tempo change detection (distinct tempo sections)
