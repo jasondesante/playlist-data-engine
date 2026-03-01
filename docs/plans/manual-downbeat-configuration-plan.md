@@ -11,12 +11,14 @@
 - ✅ Phase 6: Clean Up TempoDetector (all tasks complete)
 - ✅ Phase 7: Update Tests (all tasks complete)
 
+**In Progress Phases:**
+- ⏳ Phase 8: Update Documentation (8.1 and 8.3 complete, 8.2 pending)
+
 **Pending Phases:**
-- ⏳ Phase 8: Update Documentation
 - ⏳ Phase 9: Verification (build/test pass, backward compat pending)
 
 **Build Status:** ✅ Passing (no TypeScript errors)
-**Test Status:** ✅ All 3661 tests passing (1 flaky performance test unrelated to changes)
+**Test Status:** ✅ All 3674 tests passing
 
 **Bug Fix Applied (2026-03-01):**
 - Fixed measure number continuation across segment boundaries in `reapplyDownbeatConfig()`, `BeatMapGenerator.applyMeasureLabels()`, and `BeatInterpolator.reassignBeatPositions()`. Previously, measure numbers reset at each segment boundary; now they continue incrementing as specified in the design.
@@ -626,9 +628,9 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 
 ### 8.1 Update AUDIO_ANALYSIS.md
 
-- [ ] Remove `DownbeatDetector` from "Source Files" table
-- [ ] Remove DownbeatDetector section (if exists)
-- [ ] Add new section for manual downbeat configuration:
+- [x] Remove `DownbeatDetector` from "Source Files" table
+- [x] Remove DownbeatDetector section (if exists)
+- [x] Add new section for manual downbeat configuration:
   ```markdown
   #### Downbeat Configuration
 
@@ -731,10 +733,10 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
   \`\`\`
   ```
 
-- [ ] Update `Beat` type documentation to clarify `beatInMeasure` is derived from config
-- [ ] Update `BeatMap` type docs to include optional `downbeatConfig` field
-- [ ] Update progress phases documentation (replace `downbeat_detection` with `measure_labeling`)
-- [ ] Emphasize that `downbeatBeatIndex` is 0-indexed (beat numbers start at 0)
+- [x] Update `Beat` type documentation to clarify `beatInMeasure` is derived from config
+- [x] Update `BeatMap` type docs to include optional `downbeatConfig` field
+- [x] Update progress phases documentation (replace `downbeat_detection` with `measure_labeling`)
+- [x] Emphasize that `downbeatBeatIndex` is 0-indexed (beat numbers start at 0)
 
 ### 8.2 Update DATA_ENGINE_REFERENCE.md
 
@@ -751,11 +753,11 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 
 ### 8.3 Update Type Documentation in AUDIO_ANALYSIS.md
 
-- [ ] Add `TimeSignatureConfig` to types table
-- [ ] Add `DownbeatSegment` to types table
-- [ ] Add `DownbeatConfig` to types table
-- [ ] Remove `DownbeatDetectorConfig` and `DownbeatDetectionResult` from docs
-- [ ] Remove `isDuple` from `TempoEstimate` documentation
+- [x] Add `TimeSignatureConfig` to types table
+- [x] Add `DownbeatSegment` to types table
+- [x] Add `DownbeatConfig` to types table
+- [x] Remove `DownbeatDetectorConfig` and `DownbeatDetectionResult` from docs
+- [x] Remove `isDuple` from `TempoEstimate` documentation
 
 ---
 

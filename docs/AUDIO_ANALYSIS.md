@@ -25,7 +25,6 @@ The engine's audio analysis is powered by the Web Audio API and provides three d
 | **OnsetStrengthEnvelope** | [src/core/analysis/beat/OnsetStrengthEnvelope.ts](../src/core/analysis/beat/OnsetStrengthEnvelope.ts) |
 | **BeatTracker** (Ellis DP) | [src/core/analysis/beat/BeatTracker.ts](../src/core/analysis/beat/BeatTracker.ts) |
 | **TempoDetector** | [src/core/analysis/beat/TempoDetector.ts](../src/core/analysis/beat/TempoDetector.ts) |
-| **DownbeatDetector** | [src/core/analysis/beat/DownbeatDetector.ts](../src/core/analysis/beat/DownbeatDetector.ts) |
 | **BeatInterpolator** | [src/core/analysis/beat/BeatInterpolator.ts](../src/core/analysis/beat/BeatInterpolator.ts) |
 | **Beat Types** | [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts) |
 | **Audio Types** | [src/core/types/AudioProfile.ts](../src/core/types/AudioProfile.ts) |
@@ -412,11 +411,13 @@ Represents a single detected beat:
 | Property | Type | Description |
 |----------|------|-------------|
 | `timestamp` | `number` | Time in seconds from audio start |
-| `beatInMeasure` | `number` | Position in measure (0 = downbeat) |
-| `isDownbeat` | `boolean` | Whether this is the first beat of a measure |
-| `measureNumber` | `number` | Measure index (0-indexed) |
+| `beatInMeasure` | `number` | Position in measure (0 = downbeat). Derived from `downbeatConfig`. |
+| `isDownbeat` | `boolean` | Whether this is the first beat of a measure. Derived from `downbeatConfig`. |
+| `measureNumber` | `number` | Measure index (0-indexed). Derived from `downbeatConfig`. |
 | `intensity` | `number` | Onset strength (0-1, normalized) |
 | `confidence` | `number` | Detection confidence (0-1) |
+
+**Note**: The `beatInMeasure`, `isDownbeat`, and `measureNumber` properties are derived from the manual downbeat configuration (or defaults if not specified). See [Downbeat Configuration](#downbeat-configuration) for details.
 
 **Source**: [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts)
 
@@ -431,8 +432,47 @@ Complete beat map for a single audio track:
 | `beats` | `Beat[]` | Array of all detected beats |
 | `bpm` | `number` | Initial BPM estimate |
 | `metadata` | `BeatMapMetadata` | Algorithm settings and version info |
+| `downbeatConfig?` | `DownbeatConfig` | Optional downbeat configuration (only stored if explicitly provided) |
 
-**Note**: BPM is calculated dynamically during playback from actual beat intervals, not stored as a static value.
+**Notes**:
+- BPM is calculated dynamically during playback from actual beat intervals, not stored as a static value.
+- The `downbeatConfig` field is optional. If undefined, the default configuration was used (beat 0 = downbeat, 4/4 time).
+
+**Source**: [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts)
+
+#### TimeSignatureConfig
+
+Time signature configuration for beat grid:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `beatsPerMeasure` | `number` | `4` | Number of beats per measure (4 = 4/4 time, 3 = 3/4 time) |
+
+**Source**: [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts)
+
+#### DownbeatSegment
+
+A segment of downbeat configuration (supports time signature changes):
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `startBeat` | `number` | Beat index where this segment starts (0-indexed) |
+| `downbeatBeatIndex` | `number` | Absolute beat index that is the "one" (downbeat) - 0-indexed |
+| `timeSignature` | `TimeSignatureConfig` | Time signature for this segment |
+
+**Note**: Segments are contiguous. If segment 1 has `startBeat: 0` and segment 2 has `startBeat: 32`, segment 1 covers beats 0-31 and segment 2 covers beats 32+. There are no gaps.
+
+**Source**: [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts)
+
+#### DownbeatConfig
+
+Downbeat configuration for manual placement:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `segments` | `DownbeatSegment[]` | Array of downbeat segments (ordered by startBeat) |
+
+**Default**: `{ segments: [{ startBeat: 0, downbeatBeatIndex: 0, timeSignature: { beatsPerMeasure: 4 } }] }`
 
 **Source**: [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts)
 
@@ -536,8 +576,8 @@ new BeatMapGenerator(options?: BeatMapGeneratorOptions)
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `generateBeatMap` | `audioUrl`, `audioId`, `onProgress?` | `Promise<BeatMap>` | Generate beat map from audio URL |
-| `generateBeatMapFromBuffer` | `audioBuffer`, `audioId`, `onProgress?` | `Promise<BeatMap>` | Generate from decoded AudioBuffer |
+| `generateBeatMap` | `audioUrl`, `audioId`, `downbeatConfig?`, `onProgress?` | `Promise<BeatMap>` | Generate beat map from audio URL |
+| `generateBeatMapFromBuffer` | `audioBuffer`, `audioId`, `downbeatConfig?`, `onProgress?` | `Promise<BeatMap>` | Generate from decoded AudioBuffer |
 | `getProgress` | - | `BeatMapGenerationProgress` | Get current generation progress |
 | `cancel` | - | `void` | Cancel ongoing generation |
 | `toJSON` | `beatMap` | `string` | Serialize beat map to JSON |
@@ -1211,7 +1251,7 @@ This function:
 - **No grid quantization**: Beat timestamps are the actual detected moments, not snapped to a BPM grid
 - **Rolling BPM calculation**: Current BPM is derived from the actual intervals between recent beats
 - **Works with drifting tempo**: The DP algorithm naturally accommodates gradual tempo drift within ±10% of target
-- **Time signature agnostic**: We detect beats, not measures. Downbeats identified by intensity pattern.
+- **Time signature agnostic**: We detect beats, not measures. Downbeats are configured manually via `downbeatConfig`.
 
 ---
 
@@ -1231,6 +1271,121 @@ The frontend provides:
 - Animation and effects
 - User interface
 - Score display
+
+---
+
+## Downbeat Configuration
+
+The data engine uses manual downbeat configuration rather than automatic detection. This provides consistent, predictable results across all music genres.
+
+**IMPORTANT: The Typical Workflow**
+
+You usually don't know the correct downbeat position until AFTER generating the beat map. The recommended workflow is:
+
+1. **Generate** the beat map first (uses default config: beat 0 = downbeat, 4/4 time)
+2. **Examine** the beat map to identify which beat is actually the "one"
+3. **Reapply** the correct configuration using `reapplyDownbeatConfig()`
+
+This approach is more practical than trying to configure upfront.
+
+### Configuration Types
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `segments` | `DownbeatSegment[]` | `[{ startBeat: 0, downbeatBeatIndex: 0, timeSignature: { beatsPerMeasure: 4 } }]` | Array of config segments |
+
+Each `DownbeatSegment` has:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `startBeat` | `number` | Beat index where this segment starts (segments are contiguous) |
+| `downbeatBeatIndex` | `number` | Absolute beat index that is the "one" (downbeat) - 0-indexed |
+| `timeSignature.beatsPerMeasure` | `number` | Beats per measure (4 = 4/4 time) |
+
+**Note**: Segments are CONTIGUOUS. If segment 1 has `startBeat: 0` and segment 2 has `startBeat: 32`, then segment 1 covers beats 0-31 and segment 2 covers beats 32+. There are no gaps.
+
+### Usage Examples
+
+**Recommended: Generate first, then configure:**
+
+```typescript
+import { BeatMapGenerator, reapplyDownbeatConfig } from 'playlist-data-engine';
+
+const generator = new BeatMapGenerator();
+
+// Step 1: Generate with default config
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+
+// Step 2: Examine beat map, identify that beat 9 is actually the "one"
+
+// Step 3: Apply correct configuration
+const correctedMap = reapplyDownbeatConfig(beatMap, {
+  segments: [{
+    startBeat: 0,
+    downbeatBeatIndex: 9,  // Beat 9 is the "one"
+    timeSignature: { beatsPerMeasure: 4 },
+  }],
+});
+// Beats 1, 5, 9, 13, 17... are now downbeats
+```
+
+**3/4 time waltz:**
+
+```typescript
+import { BeatMapGenerator, reapplyDownbeatConfig } from 'playlist-data-engine';
+
+const generator = new BeatMapGenerator();
+const beatMap = await generator.generateBeatMap('waltz.mp3', 'track-2');
+const waltzMap = reapplyDownbeatConfig(beatMap, {
+  segments: [{
+    startBeat: 0,
+    downbeatBeatIndex: 0,
+    timeSignature: { beatsPerMeasure: 3 },
+  }],
+});
+// Every 3rd beat is a downbeat: 0, 3, 6, 9...
+```
+
+**Time signature change (4/4 → 3/4 at beat 32):**
+
+```typescript
+const beatMap = await generator.generateBeatMap('mixed.mp3', 'track-3');
+const mixedMap = reapplyDownbeatConfig(beatMap, {
+  segments: [
+    { startBeat: 0, downbeatBeatIndex: 0, timeSignature: { beatsPerMeasure: 4 } },
+    { startBeat: 32, downbeatBeatIndex: 32, timeSignature: { beatsPerMeasure: 3 } },
+  ],
+});
+// Beats 0-31: 4/4 time (beats 0, 4, 8... are downbeats)
+// Beats 32+: 3/4 time (beats 32, 35, 38... are downbeats)
+// Note: Measure numbers continue incrementing across the change
+```
+
+**Pickup beats:**
+
+```typescript
+// Song starts 2 beats before the first measure
+const beatMap = await generator.generateBeatMap('pickup.mp3', 'track-4');
+const pickupMap = reapplyDownbeatConfig(beatMap, {
+  segments: [{
+    startBeat: 0,
+    downbeatBeatIndex: 2,  // Beat 2 is the first downbeat
+    timeSignature: { beatsPerMeasure: 4 },
+  }],
+});
+// Beat 0: beatInMeasure=2 (pickup beat 3)
+// Beat 1: beatInMeasure=3 (pickup beat 4)
+// Beat 2: beatInMeasure=0 (downbeat, measure 0)
+// Beat 3: beatInMeasure=1, measure 0
+// Beat 6: beatInMeasure=0 (downbeat, measure 1)
+```
+
+### Key Points
+
+- **0-indexed beat numbers**: The first beat is beat 0, not beat 1. This is consistent with array indexing.
+- **Bidirectional calculation**: Setting `downbeatBeatIndex: 9` means beats 1, 5, 9, 13, 17... are downbeats (calculated both forward and backward from beat 9).
+- **Measure continuation**: Measure numbers don't reset when time signature changes - they continue incrementing across segment boundaries.
+- **Config storage**: `downbeatConfig` is only stored in the BeatMap if explicitly provided. If undefined, the default was used.
 
 ---
 
