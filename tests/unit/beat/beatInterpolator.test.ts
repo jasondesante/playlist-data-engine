@@ -136,6 +136,213 @@ function createBeatsWithTempoDrift(
     return beats;
 }
 
+// ============================================================================
+// Multi-Tempo Test Helpers (Phase 7)
+// ============================================================================
+
+/**
+ * Options for each tempo section in createMultiTempoBeats
+ */
+interface TempoSectionInput {
+    /** Tempo in BPM for this section */
+    bpm: number;
+    /** Duration of this section in seconds */
+    duration: number;
+    /** Optional: Number of beats in this section (calculated from bpm/duration if not provided) */
+    beatCount?: number;
+    /** Optional: Gap before this section in seconds (default: 1.0 for sections after the first) */
+    gapBefore?: number;
+}
+
+/**
+ * Result from createMultiTempoBeats containing beats and metadata about sections
+ */
+interface MultiTempoBeatsResult {
+    /** All beats across all sections */
+    beats: Beat[];
+    /** Total duration of the track */
+    totalDuration: number;
+    /** Information about each section */
+    sections: Array<{
+        bpm: number;
+        start: number;
+        end: number;
+        beatCount: number;
+    }>;
+}
+
+/**
+ * Creates beats for multi-tempo tracks with distinct sections.
+ *
+ * Each section has a consistent tempo, and sections are separated by gaps
+ * to ensure clear boundaries for multi-tempo detection.
+ *
+ * @param sections - Array of tempo section configurations
+ * @returns Beats and metadata for the multi-tempo track
+ *
+ * @example
+ * // Create a track with 3 sections at different tempos
+ * const { beats, totalDuration, sections } = createMultiTempoBeats([
+ *     { bpm: 100, duration: 3.0 },  // 5 beats at 100 BPM
+ *     { bpm: 140, duration: 2.5 },  // 6 beats at 140 BPM
+ *     { bpm: 180, duration: 2.0 },  // 6 beats at 180 BPM
+ * ]);
+ */
+function createMultiTempoBeats(sections: TempoSectionInput[]): MultiTempoBeatsResult {
+    const beats: Beat[] = [];
+    const resultSections: MultiTempoBeatsResult['sections'] = [];
+    let currentTime = 0;
+
+    for (let i = 0; i < sections.length; i++) {
+        const section = sections[i];
+        const interval = 60 / section.bpm;
+
+        // Apply gap before section (except for first section)
+        if (i > 0) {
+            const gap = section.gapBefore ?? 1.0;
+            currentTime += gap;
+        }
+
+        const sectionStart = currentTime;
+
+        // Calculate beat count from duration if not provided
+        const beatCount = section.beatCount ?? Math.floor(section.duration * section.bpm / 60);
+
+        // Create beats for this section
+        for (let j = 0; j < beatCount; j++) {
+            beats.push(createBeat(currentTime, {
+                beatInMeasure: beats.length % 4,
+                isDownbeat: beats.length % 4 === 0,
+                measureNumber: Math.floor(beats.length / 4),
+            }));
+            currentTime += interval;
+        }
+
+        const sectionEnd = currentTime;
+
+        resultSections.push({
+            bpm: section.bpm,
+            start: sectionStart,
+            end: sectionEnd,
+            beatCount,
+        });
+    }
+
+    return {
+        beats,
+        totalDuration: currentTime + 0.5, // Add small buffer at end
+        sections: resultSections,
+    };
+}
+
+/**
+ * Expected section for assertTempoSections
+ */
+interface ExpectedTempoSection {
+    /** Expected BPM (will check within tolerance) */
+    bpm: number;
+    /** Optional: Minimum expected BPM */
+    minBpm?: number;
+    /** Optional: Maximum expected BPM */
+    maxBpm?: number;
+    /** Optional: BPM tolerance (default: 5) */
+    bpmTolerance?: number;
+}
+
+/**
+ * Result of tempo section assertion
+ */
+interface TempoSectionAssertionResult {
+    /** Whether all assertions passed */
+    passed: boolean;
+    /** Error messages for failed assertions */
+    errors: string[];
+}
+
+/**
+ * Asserts that tempo sections match expected values.
+ *
+ * This helper verifies:
+ * - Correct number of sections
+ * - Each section's BPM is within tolerance
+ * - Sections are ordered chronologically
+ * - Sections don't overlap
+ *
+ * @param result - The interpolation result to check
+ * @param expectedSections - Array of expected section configurations
+ * @returns Assertion result with pass/fail status and any errors
+ *
+ * @example
+ * const result = interpolator.interpolate(beatMap);
+ * const assertion = assertTempoSections(result, [
+ *     { bpm: 100, bpmTolerance: 5 },
+ *     { bpm: 150, bpmTolerance: 10 },
+ * ]);
+ * expect(assertion.passed).toBe(true);
+ */
+function assertTempoSections(
+    result: { interpolationMetadata: { tempoSections?: Array<{ bpm: number; start: number; end: number }> } },
+    expectedSections: ExpectedTempoSection[]
+): TempoSectionAssertionResult {
+    const errors: string[] = [];
+    const sections = result.interpolationMetadata.tempoSections;
+
+    // Check if sections exist
+    if (!sections) {
+        errors.push('tempoSections is undefined - multi-tempo analysis not applied');
+        return { passed: false, errors };
+    }
+
+    // Check number of sections
+    if (sections.length !== expectedSections.length) {
+        errors.push(
+            `Expected ${expectedSections.length} sections, got ${sections.length}`
+        );
+    }
+
+    // Check each expected section
+    for (let i = 0; i < expectedSections.length; i++) {
+        const expected = expectedSections[i];
+        const actual = sections[i];
+
+        if (!actual) {
+            errors.push(`Section ${i} does not exist`);
+            continue;
+        }
+
+        const tolerance = expected.bpmTolerance ?? 5;
+
+        // Check BPM using explicit min/max if provided, otherwise use tolerance
+        const minBpm = expected.minBpm ?? expected.bpm - tolerance;
+        const maxBpm = expected.maxBpm ?? expected.bpm + tolerance;
+
+        if (actual.bpm < minBpm || actual.bpm > maxBpm) {
+            errors.push(
+                `Section ${i}: expected BPM ${expected.bpm} (±${tolerance}), got ${actual.bpm}`
+            );
+        }
+    }
+
+    // Check chronological ordering and non-overlap
+    for (let i = 1; i < sections.length; i++) {
+        if (sections[i].start < sections[i - 1].end) {
+            errors.push(
+                `Sections ${i - 1} and ${i} overlap: [${sections[i - 1].start}-${sections[i - 1].end}] vs [${sections[i].start}-${sections[i].end}]`
+            );
+        }
+        if (sections[i].start < sections[i - 1].start) {
+            errors.push(
+                `Section ${i} starts before section ${i - 1}: ${sections[i].start} < ${sections[i - 1].start}`
+            );
+        }
+    }
+
+    return {
+        passed: errors.length === 0,
+        errors,
+    };
+}
+
 describe('Beat Interpolation Algorithms', () => {
     describe('Approach 1: Fixed grid matches expected timestamps', () => {
         it('should generate grid at exact quarter note intervals', () => {
@@ -2950,6 +3157,393 @@ describe('Phase 7: Multi-Tempo Edge Cases', () => {
             expect(firstSection.bpm).toBeGreaterThan(180)
             // Last section should be close to 300 BPM
             expect(lastSection.bpm).toBeGreaterThan(270)
+        })
+    })
+})
+
+// ============================================================================
+// Multi-Tempo Test Helpers Tests
+// ============================================================================
+
+describe('Multi-Tempo Test Helpers', () => {
+    describe('createMultiTempoBeats', () => {
+        it('should create beats for a single section', () => {
+            const { beats, totalDuration, sections } = createMultiTempoBeats([
+                { bpm: 120, duration: 2.0 },
+            ])
+
+            // Should have correct number of beats (120 BPM * 2 seconds = 4 beats)
+            expect(beats.length).toBe(4)
+            expect(sections.length).toBe(1)
+
+            // Section metadata should be correct
+            expect(sections[0].bpm).toBe(120)
+            expect(sections[0].beatCount).toBe(4)
+            expect(sections[0].start).toBe(0)
+        })
+
+        it('should create beats for two sections with gap', () => {
+            const { beats, sections } = createMultiTempoBeats([
+                { bpm: 100, duration: 3.0 },  // 5 beats
+                { bpm: 140, duration: 2.5 },  // ~6 beats
+            ])
+
+            // Should have two sections
+            expect(sections.length).toBe(2)
+
+            // First section
+            expect(sections[0].bpm).toBe(100)
+            expect(sections[0].beatCount).toBe(5)
+
+            // Second section should start after a gap
+            expect(sections[1].start).toBeGreaterThan(sections[0].end)
+            expect(sections[1].bpm).toBe(140)
+
+            // Total beats should be sum of both sections
+            expect(beats.length).toBe(sections[0].beatCount + sections[1].beatCount)
+        })
+
+        it('should create beats for three sections', () => {
+            const { beats, sections } = createMultiTempoBeats([
+                { bpm: 80, duration: 2.0 },   // ~3 beats
+                { bpm: 120, duration: 2.0 },  // 4 beats
+                { bpm: 160, duration: 2.0 },  // ~5 beats
+            ])
+
+            expect(sections.length).toBe(3)
+
+            // Sections should be in order
+            expect(sections[0].start).toBeLessThan(sections[1].start)
+            expect(sections[1].start).toBeLessThan(sections[2].start)
+
+            // Tempos should match
+            expect(sections[0].bpm).toBe(80)
+            expect(sections[1].bpm).toBe(120)
+            expect(sections[2].bpm).toBe(160)
+        })
+
+        it('should respect custom beatCount', () => {
+            const { beats, sections } = createMultiTempoBeats([
+                { bpm: 120, duration: 5.0, beatCount: 4 },  // Override: only 4 beats
+            ])
+
+            expect(beats.length).toBe(4)
+            expect(sections[0].beatCount).toBe(4)
+        })
+
+        it('should respect custom gapBefore', () => {
+            const { sections } = createMultiTempoBeats([
+                { bpm: 120, duration: 1.0 },
+                { bpm: 140, duration: 1.0, gapBefore: 2.5 },
+            ])
+
+            // Gap should be 2.5 seconds
+            const gap = sections[1].start - sections[0].end
+            expect(gap).toBeCloseTo(2.5, 1)
+        })
+
+        it('should work with BeatInterpolator to detect multi-tempo', () => {
+            // This test verifies that beats created by createMultiTempoBeats
+            // are correctly detected by BeatInterpolator
+            const { beats, totalDuration, sections: inputSections } = createMultiTempoBeats([
+                { bpm: 100, duration: 3.0, beatCount: 5 },  // 5 beats at 100 BPM
+                { bpm: 150, duration: 2.5, beatCount: 5 },  // 5 beats at 150 BPM
+            ])
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beatMap = createBeatMap(beats, totalDuration)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should detect multiple tempos
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+        })
+
+        it('should create beats with consistent intervals within each section', () => {
+            const { beats, sections } = createMultiTempoBeats([
+                { bpm: 120, duration: 2.0 },
+            ])
+
+            const interval = 60 / 120 // 0.5 seconds
+
+            // Check that beats are at consistent intervals
+            for (let i = 1; i < beats.length; i++) {
+                const actualInterval = beats[i].timestamp - beats[i - 1].timestamp
+                expect(actualInterval).toBeCloseTo(interval, 2)
+            }
+        })
+    })
+
+    describe('assertTempoSections', () => {
+        it('should pass when sections match expected BPMs', () => {
+            const mockResult = {
+                interpolationMetadata: {
+                    tempoSections: [
+                        { bpm: 100, start: 0, end: 3 },
+                        { bpm: 150, start: 4, end: 7 },
+                    ],
+                },
+            }
+
+            const assertion = assertTempoSections(mockResult, [
+                { bpm: 100 },
+                { bpm: 150 },
+            ])
+
+            expect(assertion.passed).toBe(true)
+            expect(assertion.errors.length).toBe(0)
+        })
+
+        it('should fail when tempoSections is undefined', () => {
+            const mockResult = {
+                interpolationMetadata: {},
+            }
+
+            const assertion = assertTempoSections(mockResult, [
+                { bpm: 100 },
+            ])
+
+            expect(assertion.passed).toBe(false)
+            expect(assertion.errors[0]).toContain('undefined')
+        })
+
+        it('should fail when section count mismatches', () => {
+            const mockResult = {
+                interpolationMetadata: {
+                    tempoSections: [
+                        { bpm: 100, start: 0, end: 3 },
+                    ],
+                },
+            }
+
+            const assertion = assertTempoSections(mockResult, [
+                { bpm: 100 },
+                { bpm: 150 },
+            ])
+
+            expect(assertion.passed).toBe(false)
+            expect(assertion.errors[0]).toContain('Expected 2 sections')
+        })
+
+        it('should fail when BPM is outside tolerance', () => {
+            const mockResult = {
+                interpolationMetadata: {
+                    tempoSections: [
+                        { bpm: 100, start: 0, end: 3 },
+                        { bpm: 180, start: 4, end: 7 },  // Expected 150, got 180
+                    ],
+                },
+            }
+
+            const assertion = assertTempoSections(mockResult, [
+                { bpm: 100 },
+                { bpm: 150, bpmTolerance: 10 },
+            ])
+
+            expect(assertion.passed).toBe(false)
+            expect(assertion.errors[0]).toContain('Section 1')
+            expect(assertion.errors[0]).toContain('150')
+            expect(assertion.errors[0]).toContain('180')
+        })
+
+        it('should respect custom bpmTolerance', () => {
+            const mockResult = {
+                interpolationMetadata: {
+                    tempoSections: [
+                        { bpm: 105, start: 0, end: 3 },  // 5 BPM off
+                    ],
+                },
+            }
+
+            // With default tolerance (5), this should pass
+            const assertion1 = assertTempoSections(mockResult, [{ bpm: 100 }])
+            expect(assertion1.passed).toBe(true)
+
+            // With tighter tolerance (2), this should fail
+            const assertion2 = assertTempoSections(mockResult, [
+                { bpm: 100, bpmTolerance: 2 },
+            ])
+            expect(assertion2.passed).toBe(false)
+        })
+
+        it('should respect minBpm and maxBpm', () => {
+            const mockResult = {
+                interpolationMetadata: {
+                    tempoSections: [
+                        { bpm: 105, start: 0, end: 3 },
+                    ],
+                },
+            }
+
+            const assertion = assertTempoSections(mockResult, [
+                { bpm: 100, minBpm: 103, maxBpm: 107 },
+            ])
+
+            expect(assertion.passed).toBe(true)
+        })
+
+        it('should fail when sections overlap', () => {
+            const mockResult = {
+                interpolationMetadata: {
+                    tempoSections: [
+                        { bpm: 100, start: 0, end: 5 },
+                        { bpm: 150, start: 4, end: 8 },  // Overlaps with first
+                    ],
+                },
+            }
+
+            const assertion = assertTempoSections(mockResult, [
+                { bpm: 100 },
+                { bpm: 150 },
+            ])
+
+            expect(assertion.passed).toBe(false)
+            expect(assertion.errors.some(e => e.includes('overlap'))).toBe(true)
+        })
+
+        it('should fail when sections are not in chronological order', () => {
+            const mockResult = {
+                interpolationMetadata: {
+                    tempoSections: [
+                        { bpm: 100, start: 5, end: 8 },
+                        { bpm: 150, start: 0, end: 3 },  // Starts before first
+                    ],
+                },
+            }
+
+            const assertion = assertTempoSections(mockResult, [
+                { bpm: 100 },
+                { bpm: 150 },
+            ])
+
+            expect(assertion.passed).toBe(false)
+            expect(assertion.errors.some(e => e.includes('starts before'))).toBe(true)
+        })
+
+        it('should work with real interpolation result', () => {
+            // Create a real multi-tempo track
+            const { beats, totalDuration } = createMultiTempoBeats([
+                { bpm: 100, duration: 3.0, beatCount: 5 },
+                { bpm: 150, duration: 2.5, beatCount: 5 },
+            ])
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beatMap = createBeatMap(beats, totalDuration)
+            const result = interpolator.interpolate(beatMap)
+
+            // Use assertTempoSections to verify
+            const assertion = assertTempoSections(result, [
+                { bpm: 100, bpmTolerance: 10 },
+                { bpm: 150, bpmTolerance: 10 },
+            ])
+
+            expect(assertion.passed).toBe(true)
+        })
+    })
+
+    describe('createMultiTempoBeats + assertTempoSections integration', () => {
+        it('should create and verify a two-section track', () => {
+            const { beats, totalDuration } = createMultiTempoBeats([
+                { bpm: 90, duration: 3.0, beatCount: 5 },
+                { bpm: 140, duration: 2.5, beatCount: 6 },
+            ])
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beatMap = createBeatMap(beats, totalDuration)
+            const result = interpolator.interpolate(beatMap)
+
+            // Verify multi-tempo was applied
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+
+            // Use assertTempoSections for detailed verification
+            const assertion = assertTempoSections(result, [
+                { bpm: 90, bpmTolerance: 10 },
+                { bpm: 140, bpmTolerance: 10 },
+            ])
+
+            expect(assertion.passed).toBe(true)
+        })
+
+        it('should create and verify a three-section track', () => {
+            const { beats, totalDuration } = createMultiTempoBeats([
+                { bpm: 80, duration: 2.5, beatCount: 5 },
+                { bpm: 120, duration: 2.0, beatCount: 5 },
+                { bpm: 160, duration: 2.0, beatCount: 5 },
+            ])
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beatMap = createBeatMap(beats, totalDuration)
+            const result = interpolator.interpolate(beatMap)
+
+            // Verify multi-tempo was applied
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+
+            // Use assertTempoSections for detailed verification
+            const assertion = assertTempoSections(result, [
+                { bpm: 80, bpmTolerance: 10 },
+                { bpm: 120, bpmTolerance: 10 },
+                { bpm: 160, bpmTolerance: 10 },
+            ])
+
+            expect(assertion.passed).toBe(true)
+        })
+
+        it('should simplify test code compared to manual beat creation', () => {
+            // This test demonstrates how createMultiTempoBeats simplifies
+            // test code compared to manually creating beats
+
+            // BEFORE (manual):
+            // const beats: Beat[] = []
+            // const bpm1 = 100, bpm2 = 150
+            // const interval1 = 60 / bpm1, interval2 = 60 / bpm2
+            // for (let i = 0; i < 5; i++) { beats.push(createBeat(i * interval1)) }
+            // const lastBeat = beats[beats.length - 1].timestamp
+            // for (let i = 0; i < 5; i++) { beats.push(createBeat(lastBeat + 1.0 + i * interval2)) }
+
+            // AFTER (with helper):
+            const { beats, totalDuration } = createMultiTempoBeats([
+                { bpm: 100, duration: 3.0, beatCount: 5 },
+                { bpm: 150, duration: 2.5, beatCount: 5 },
+            ])
+
+            // Both should produce equivalent results
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beatMap = createBeatMap(beats, totalDuration)
+            const result = interpolator.interpolate(beatMap)
+
+            // Verify with assertTempoSections
+            const assertion = assertTempoSections(result, [
+                { bpm: 100, bpmTolerance: 10 },
+                { bpm: 150, bpmTolerance: 10 },
+            ])
+
+            expect(assertion.passed).toBe(true)
         })
     })
 })

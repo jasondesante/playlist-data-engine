@@ -526,9 +526,22 @@ interpolate(beatMap, { enableMultiTempo: true })
     - Verifies track duration doesn't matter - only beat count per cluster matters
     - Confirms minClusterBeats threshold is correctly enforced regardless of total track length
 
-- [ ] Add test helper functions
-  - [ ] `createMultiTempoBeats(tempos: {bpm, duration}[])`
-  - [ ] `assertTempoSections(result, expectedSections)`
+- [x] Add test helper functions
+  - [x] `createMultiTempoBeats(tempos: {bpm, duration}[])`
+  - [x] `assertTempoSections(result, expectedSections)`
+
+**Implementation notes:**
+- Added `TempoSectionInput` and `MultiTempoBeatsResult` interfaces for type safety
+- Added `createMultiTempoBeats()` helper function that creates beats for multi-tempo tracks
+  - Supports arbitrary number of sections with configurable BPM, duration, beatCount, and gapBefore
+  - Returns beats array, totalDuration, and section metadata
+- Added `ExpectedTempoSection` and `TempoSectionAssertionResult` interfaces
+- Added `assertTempoSections()` helper function that verifies tempo sections
+  - Checks section count, BPM within tolerance, chronological ordering, non-overlap
+  - Supports custom bpmTolerance, minBpm, maxBpm for flexible assertions
+- Added 22 new tests for the helper functions in "Multi-Tempo Test Helpers" describe block
+- All 116 beatInterpolator tests pass
+- Build passes cleanly
 
 ## Dependencies
 
