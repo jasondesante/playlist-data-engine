@@ -506,7 +506,11 @@ interpolate(beatMap, { enableMultiTempo: true })
     - Modified `interpolate()` to use filtered tempos for `hasMultipleTempos` determination
     - Verifies `hasMultipleTempos: false` and `hasMultiTempoApplied: falsy` when tempos are octave multiples
     - Verifies multi-tempo still triggers for non-octave tempos (e.g., 100→150 BPM)
-  - [ ] **Short cluster** — 3 beats at 128 BPM → 4 beats at 140 BPM, should NOT trigger (cluster needs 4+ beats)
+  - [x] **Short cluster** — 3 beats at 128 BPM → 4 beats at 140 BPM, should NOT trigger (cluster needs 4+ beats)
+    - Test added in `Phase 7: Multi-Tempo Edge Cases` > `Short cluster (below minClusterBeats threshold)` describe block
+    - Three tests: (1) 3 beats at 128 BPM + 4 beats at 140 BPM (only second cluster verified), (2) both clusters with only 3 beats (neither verified), (3) control test with both clusters verified
+    - Verifies `hasMultipleTempos: false` when the only "conflicting" cluster doesn't meet `minClusterBeats` threshold
+    - Verifies multi-tempo DOES trigger when both clusters meet the threshold (control test)
   - [ ] **Cluster with gaps** — should NOT trigger (must be consecutive detected beats)
   - [ ] **Single beat between clusters** — verify phase alignment assigns to correct section
   - [ ] **Very short track** — 8 beats total (4 at each tempo), SHOULD trigger (beat count only, no minimum duration)

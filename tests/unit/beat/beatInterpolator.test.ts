@@ -2326,4 +2326,137 @@ describe('Phase 7: Multi-Tempo Edge Cases', () => {
             expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
         })
     })
+
+    describe('Short cluster (below minClusterBeats threshold)', () => {
+        it('should NOT trigger sections when one cluster has only 3 beats (below minClusterBeats of 4)', () => {
+            // This test verifies that a cluster with fewer than minClusterBeats (default: 4)
+            // is NOT considered a valid cluster for multi-tempo detection.
+            //
+            // Setup:
+            // - 3 beats at 128 BPM → forms a dense section (3 >= denseSectionMinBeats of 3)
+            //                       but NOT a verified cluster (3 < minClusterBeats of 4)
+            // - 4 beats at 140 BPM → forms both a dense section AND a verified cluster
+            //
+            // Expected: Only ONE verified cluster → hasMultipleTempos should be false
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,  // 10% threshold
+                minClusterBeats: 4,          // Default, explicit for clarity
+                enableMultiTempo: true,
+                denseSectionMinBeats: 3,     // Default, explicit for clarity
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 128
+            const bpm2 = 140  // ~9.4% difference - just below 10% threshold, but the key test is cluster validity
+            const interval1 = 60 / bpm1  // ~0.469s
+            const interval2 = 60 / bpm2  // ~0.429s
+
+            // First "cluster": Only 3 beats at 128 BPM
+            // This is NOT enough for a verified cluster (needs 4+)
+            for (let i = 0; i < 3; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Gap between the two sections
+            const lastBeat128 = beats[beats.length - 1].timestamp
+            const gapDuration = 1.5  // 1.5 second gap
+
+            // Second cluster: 4 beats at 140 BPM (enough for a valid cluster)
+            const section2Start = lastBeat128 + gapDuration
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should NOT detect multiple tempos because the 3-beat "cluster"
+            // is not verified (doesn't meet minClusterBeats requirement)
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+            expect(result.interpolationMetadata.tempoSections).toBeUndefined()
+        })
+
+        it('should NOT trigger sections when both clusters have only 3 beats each', () => {
+            // Even with a significant tempo difference, if neither cluster has
+            // enough beats to be verified, multi-tempo should not trigger.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+                denseSectionMinBeats: 3,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 100
+            const bpm2 = 160  // 60% difference - well above threshold
+            const interval1 = 60 / bpm1  // 0.6s
+            const interval2 = 60 / bpm2  // 0.375s
+
+            // First "cluster": Only 3 beats at 100 BPM (NOT verified)
+            for (let i = 0; i < 3; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Gap
+            const lastBeat100 = beats[beats.length - 1].timestamp
+            const gapDuration = 1.0
+
+            // Second "cluster": Only 3 beats at 160 BPM (NOT verified)
+            const section2Start = lastBeat100 + gapDuration
+            for (let i = 0; i < 3; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should NOT detect multiple tempos because neither cluster is verified
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+        })
+
+        it('SHOULD trigger sections when both clusters meet minClusterBeats', () => {
+            // Control test: Verify that with the SAME tempo difference but with
+            // enough beats in each cluster, multi-tempo DOES trigger.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 100
+            const bpm2 = 160  // 60% difference
+            const interval1 = 60 / bpm1
+            const interval2 = 60 / bpm2
+
+            // First cluster: 4 beats at 100 BPM (verified)
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Gap
+            const lastBeat100 = beats[beats.length - 1].timestamp
+            const gapDuration = 1.0
+
+            // Second cluster: 4 beats at 160 BPM (verified)
+            const section2Start = lastBeat100 + gapDuration
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // SHOULD detect multiple tempos because both clusters are verified
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+        })
+    })
 })
