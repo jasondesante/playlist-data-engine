@@ -481,9 +481,9 @@ Create `tests/integration/beatInterpolation.integration.test.ts`:
 - [x] Test: Performance benchmark (<100ms for 5-min song)
 
 ### 6.5 Test Utilities
-- [ ] Create synthetic beat map generator for testing
-- [ ] Create beat map with known gaps for testing
-- [ ] Create beat map with known anomalies for testing
+- [x] Create synthetic beat map generator for testing
+- [x] Create beat map with known gaps for testing
+- [x] Create beat map with known anomalies for testing
 
 ---
 
