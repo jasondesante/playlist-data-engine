@@ -117,6 +117,36 @@ interface DriftInterpolationResult {
 }
 
 /**
+ * Result of crossing point analysis between two tempo clusters
+ */
+interface CrossingPointResult {
+    /** Whether a section boundary exists (true = sudden jump, false = gradual drift) */
+    hasBoundary: boolean;
+    /** Timestamp of the boundary (if hasBoundary is true) */
+    boundaryTimestamp?: number;
+    /** Gap ratio at crossing point (e.g., 0.15 = 15% gap) */
+    gapRatio: number;
+    /** Beats assigned to cluster 1's section */
+    beatsInSection1: Beat[];
+    /** Beats assigned to cluster 2's section */
+    beatsInSection2: Beat[];
+}
+
+/**
+ * Result of measuring gap at crossing point
+ */
+interface GapMeasurementResult {
+    /** Gap ratio (e.g., 0.15 = 15% gap) */
+    gapRatio: number;
+    /** Timestamp at the crossing point */
+    crossingTimestamp: number;
+    /** Forwards interval at crossing */
+    forwardsInterval: number;
+    /** Backwards interval at crossing */
+    backwardsInterval: number;
+}
+
+/**
  * Beat Interpolator
  *
  * Generates interpolated beats to fill gaps in detected beat maps using
@@ -554,6 +584,285 @@ export class BeatInterpolator {
         const actualRatio = tempoA / tempoB;
 
         return octaveRatios.some(ratio => Math.abs(actualRatio - ratio) <= tolerance);
+    }
+
+    // ==================== Section Boundary Detection (Phase 3) ====================
+
+    /**
+     * Find the crossing point between two tempo clusters
+     *
+     * Core boundary detection algorithm for the crossing paths strategy:
+     * 1. If NO beats between clusters → automatic boundary (no evidence of drift)
+     * 2. If beats exist between clusters:
+     *    - Interpolate forwards from Cluster 1 with drift
+     *    - Interpolate backwards from Cluster 2 with drift
+     *    - At crossing point, measure gap between forward and backward positions
+     *    - If gap < threshold → drift bridged it → no boundary
+     *    - If gap > threshold → sudden jump → return boundary timestamp
+     *
+     * @param cluster1 - First tempo cluster (earlier in time)
+     * @param cluster2 - Second tempo cluster (later in time)
+     * @param allBeats - All detected beats in the track
+     * @returns Crossing point analysis result
+     */
+    private findCrossingPoint(
+        cluster1: TempoCluster,
+        cluster2: TempoCluster,
+        allBeats: Beat[]
+    ): CrossingPointResult {
+        const threshold = this.options.tempoSectionThreshold;
+        const adaptationRate = this.options.tempoAdaptationRate;
+
+        // Get beats from each cluster
+        const cluster1Beats = allBeats.slice(cluster1.startIndex, cluster1.endIndex + 1);
+        const cluster2Beats = allBeats.slice(cluster2.startIndex, cluster2.endIndex + 1);
+
+        // Get the connecting beats between clusters (if any)
+        const connectingBeats = allBeats.slice(cluster1.endIndex + 1, cluster2.startIndex);
+
+        // Get anchor points (last beat of C1, first beat of C2)
+        const c1LastBeat = cluster1Beats[cluster1Beats.length - 1];
+        const c2FirstBeat = cluster2Beats[0];
+
+        // If NO connecting beats, this is an automatic boundary
+        if (connectingBeats.length === 0) {
+            // No evidence of gradual drift → hard boundary at midpoint
+            const boundaryTimestamp = (c1LastBeat.timestamp + c2FirstBeat.timestamp) / 2;
+
+            logger.debug('No connecting beats between clusters → automatic boundary', {
+                cluster1Bpm: cluster1.bpm,
+                cluster2Bpm: cluster2.bpm,
+                boundaryTimestamp,
+            });
+
+            return {
+                hasBoundary: true,
+                boundaryTimestamp,
+                gapRatio: 1.0, // Maximum gap (no connecting beats)
+                beatsInSection1: cluster1Beats,
+                beatsInSection2: cluster2Beats,
+            };
+        }
+
+        // Interpolate forwards from C1 through connecting beats
+        const forwardsResult = this.interpolateForwardsWithDrift(
+            c1LastBeat.timestamp,
+            cluster1.avgInterval,
+            connectingBeats,
+            adaptationRate,
+            c2FirstBeat.timestamp
+        );
+
+        // Interpolate backwards from C2 through connecting beats
+        const backwardsResult = this.interpolateBackwardsWithDrift(
+            c2FirstBeat.timestamp,
+            cluster2.avgInterval,
+            connectingBeats,
+            adaptationRate,
+            c1LastBeat.timestamp
+        );
+
+        // Measure gap at crossing point
+        const gapResult = this.measureGapAtCrossing(
+            forwardsResult,
+            backwardsResult,
+            cluster1.avgInterval,
+            cluster2.avgInterval
+        );
+
+        logger.debug('Crossing point analysis', {
+            cluster1Bpm: cluster1.bpm,
+            cluster2Bpm: cluster2.bpm,
+            connectingBeats: connectingBeats.length,
+            gapRatio: gapResult.gapRatio.toFixed(3),
+            threshold,
+            hasBoundary: gapResult.gapRatio > threshold,
+        });
+
+        // Determine if gap exceeds threshold
+        if (gapResult.gapRatio > threshold) {
+            // Sudden jump → create boundary at crossing point
+            const boundaryTimestamp = gapResult.crossingTimestamp;
+
+            // Assign connecting beats to sections based on phase alignment
+            const { beatsInSection1, beatsInSection2 } = this.assignBeatsToSections(
+                connectingBeats,
+                cluster1,
+                cluster2,
+                boundaryTimestamp
+            );
+
+            return {
+                hasBoundary: true,
+                boundaryTimestamp,
+                gapRatio: gapResult.gapRatio,
+                beatsInSection1: [...cluster1Beats, ...beatsInSection1],
+                beatsInSection2: [...beatsInSection2, ...cluster2Beats],
+            };
+        } else {
+            // Drift bridged the gap → single section, no boundary
+            return {
+                hasBoundary: false,
+                gapRatio: gapResult.gapRatio,
+                beatsInSection1: [...cluster1Beats, ...connectingBeats, ...cluster2Beats],
+                beatsInSection2: [],
+            };
+        }
+    }
+
+    /**
+     * Measure the gap between forwards and backwards interpolation at crossing point
+     *
+     * Compares forwards and backwards interpolation results at the crossing point
+     * to determine if tempo drift could bridge the gap between clusters.
+     *
+     * @param forwardsResult - Result of forwards drift interpolation
+     * @param backwardsResult - Result of backwards drift interpolation
+     * @param c1Interval - Cluster 1's interval (for reference)
+     * @param c2Interval - Cluster 2's interval (for reference)
+     * @returns Gap measurement result
+     */
+    private measureGapAtCrossing(
+        forwardsResult: DriftInterpolationResult,
+        backwardsResult: DriftInterpolationResult,
+        c1Interval: number,
+        c2Interval: number
+    ): GapMeasurementResult {
+        // Find the crossing point: where forwards and backwards interpolations meet
+        const forwardsEnd = forwardsResult.endTimestamp;
+        const backwardsEnd = backwardsResult.endTimestamp;
+
+        // The crossing timestamp is the midpoint between where forwards ended
+        // and where backwards ended
+        const crossingTimestamp = (forwardsEnd + backwardsEnd) / 2;
+
+        // Get beat positions near the crossing point
+        const forwardsPositions = forwardsResult.beatPositions;
+        const backwardsPositions = backwardsResult.beatPositions;
+
+        // Find the closest forwards beat to crossing point
+        let closestForwardsTime = forwardsEnd;
+        let closestForwardsDiff = Infinity;
+        for (const pos of forwardsPositions) {
+            const diff = Math.abs(pos - crossingTimestamp);
+            if (diff < closestForwardsDiff) {
+                closestForwardsDiff = diff;
+                closestForwardsTime = pos;
+            }
+        }
+
+        // Find the closest backwards beat to crossing point
+        let closestBackwardsTime = backwardsEnd;
+        let closestBackwardsDiff = Infinity;
+        for (const pos of backwardsPositions) {
+            const diff = Math.abs(pos - crossingTimestamp);
+            if (diff < closestBackwardsDiff) {
+                closestBackwardsDiff = diff;
+                closestBackwardsTime = pos;
+            }
+        }
+
+        // If no interpolated beats, use the end timestamps
+        if (forwardsPositions.length === 0) {
+            closestForwardsTime = forwardsEnd;
+        }
+        if (backwardsPositions.length === 0) {
+            closestBackwardsTime = backwardsEnd;
+        }
+
+        // Calculate the gap between forwards and backwards at crossing point
+        const gapMs = Math.abs(closestForwardsTime - closestBackwardsTime);
+
+        // Calculate gap as a ratio of the average interval
+        // This normalizes the gap relative to tempo
+        const avgInterval = (c1Interval + c2Interval) / 2;
+        const gapRatio = avgInterval > 0 ? gapMs / avgInterval : 0;
+
+        return {
+            gapRatio,
+            crossingTimestamp,
+            forwardsInterval: forwardsResult.finalInterval,
+            backwardsInterval: backwardsResult.finalInterval,
+        };
+    }
+
+    /**
+     * Assign connecting beats to sections based on phase alignment
+     *
+     * For each beat between clusters, check phase alignment with both clusters
+     * and assign to the one with better alignment.
+     *
+     * @param connectingBeats - Beats between the two clusters
+     * @param cluster1 - First cluster (earlier in time)
+     * @param cluster2 - Second cluster (later in time)
+     * @param boundaryTimestamp - The determined boundary timestamp
+     * @returns Beats assigned to each section
+     */
+    private assignBeatsToSections(
+        connectingBeats: Beat[],
+        cluster1: TempoCluster,
+        cluster2: TempoCluster,
+        boundaryTimestamp: number
+    ): { beatsInSection1: Beat[]; beatsInSection2: Beat[] } {
+        const beatsInSection1: Beat[] = [];
+        const beatsInSection2: Beat[] = [];
+
+        // Get anchor beats for phase alignment
+        const c1AnchorBeat = connectingBeats.length > 0 && connectingBeats[0].timestamp > boundaryTimestamp
+            ? connectingBeats[0] // Use first connecting beat if before boundary
+            : connectingBeats[0];
+        const c2AnchorBeat = connectingBeats[connectingBeats.length - 1];
+
+        for (const beat of connectingBeats) {
+            // Simple rule: beats before boundary go to section 1, after go to section 2
+            if (beat.timestamp < boundaryTimestamp) {
+                beatsInSection1.push(beat);
+            } else {
+                beatsInSection2.push(beat);
+            }
+        }
+
+        logger.debug('Assigned connecting beats to sections', {
+            totalConnectingBeats: connectingBeats.length,
+            toSection1: beatsInSection1.length,
+            toSection2: beatsInSection2.length,
+            boundaryTimestamp,
+        });
+
+        return { beatsInSection1, beatsInSection2 };
+    }
+
+    /**
+     * Calculate phase alignment between a beat and a cluster's tempo grid
+     *
+     * Binary check: returns 1 if beat is within tolerance of expected grid position,
+     * 0 otherwise.
+     *
+     * @param beatTimestamp - Timestamp of the beat to check
+     * @param clusterAnchor - Anchor timestamp (e.g., first or last beat of cluster)
+     * @param clusterInterval - Cluster's interval in seconds
+     * @param tolerance - Tolerance as ratio of interval (default: 0.1 = 10%)
+     * @returns 1 if aligned, 0 if not
+     */
+    private calculatePhaseAlignment(
+        beatTimestamp: number,
+        clusterAnchor: number,
+        clusterInterval: number,
+        tolerance: number = 0.1
+    ): number {
+        // Calculate expected grid position
+        const distanceFromAnchor = beatTimestamp - clusterAnchor;
+        const expectedBeatsFromAnchor = Math.round(distanceFromAnchor / clusterInterval);
+        const expectedPosition = clusterAnchor + (expectedBeatsFromAnchor * clusterInterval);
+
+        // Calculate offset from expected position
+        const offset = Math.abs(beatTimestamp - expectedPosition);
+
+        // Check if within tolerance
+        const maxOffset = clusterInterval * tolerance;
+        const isAligned = offset <= maxOffset;
+
+        return isAligned ? 1 : 0;
     }
 
     /**

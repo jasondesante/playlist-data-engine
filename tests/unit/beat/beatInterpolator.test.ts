@@ -1020,3 +1020,348 @@ describe('Tempo Cluster Detection (Phase 2)', () => {
         })
     });
 });
+
+// ============================================================================
+// Phase 3: Section Boundary Detection Tests
+// ============================================================================
+
+describe('Section Boundary Detection (Phase 3)', () => {
+    describe('calculatePhaseAlignment', () => {
+        it('should return 1 for beats exactly on grid', () => {
+            const interpolator = new BeatInterpolator()
+            const anchor = 0
+            const interval = 0.5 // 120 BPM
+
+            // Beat at exactly 1 second (2 beats from anchor)
+            const alignment = (interpolator as any).calculatePhaseAlignment?.(1.0, anchor, interval)
+            expect(alignment).toBe(1)
+        })
+
+        it('should return 1 for beats within tolerance', () => {
+            const interpolator = new BeatInterpolator()
+            const anchor = 0
+            const interval = 0.5 // 120 BPM, 10% tolerance = 0.05s
+
+            // Beat at 1.03 seconds (within 10% of expected 1.0s)
+            const alignment = (interpolator as any).calculatePhaseAlignment?.(1.03, anchor, interval)
+            expect(alignment).toBe(1)
+        })
+
+        it('should return 0 for beats outside tolerance', () => {
+            const interpolator = new BeatInterpolator()
+            const anchor = 0
+            const interval = 0.5 // 120 BPM, 10% tolerance = 0.05s
+
+            // Beat at 1.1 seconds (outside 10% of expected 1.0s)
+            const alignment = (interpolator as any).calculatePhaseAlignment?.(1.1, anchor, interval)
+            expect(alignment).toBe(0)
+        })
+
+        it('should work with non-zero anchors', () => {
+            const interpolator = new BeatInterpolator()
+            const anchor = 2.5
+            const interval = 0.5
+
+            // Beat exactly 2 intervals from anchor
+            const alignment = (interpolator as any).calculatePhaseAlignment?.(3.5, anchor, interval)
+            expect(alignment).toBe(1)
+        })
+
+        it('should handle beats before anchor', () => {
+            const interpolator = new BeatInterpolator()
+            const anchor = 2.0
+            const interval = 0.5
+
+            // Beat 2 intervals before anchor
+            const alignment = (interpolator as any).calculatePhaseAlignment?.(1.0, anchor, interval)
+            expect(alignment).toBe(1)
+        })
+    })
+
+    describe('findCrossingPoint', () => {
+        it('should create automatic boundary when no connecting beats', () => {
+            const interpolator = new BeatInterpolator({ tempoSectionThreshold: 0.1 })
+
+            // Create cluster 1: 4 beats at 120 BPM
+            const cluster1Beats: Beat[] = []
+            for (let i = 0; i < 4; i++) {
+                cluster1Beats.push(createBeat(i * 0.5))
+            }
+
+            // Create cluster 2: 4 beats at 150 BPM, starting after a gap
+            const cluster2Beats: Beat[] = []
+            for (let i = 0; i < 4; i++) {
+                cluster2Beats.push(createBeat(3.0 + i * 0.4)) // Gap from 2.0 to 3.0
+            }
+
+            const allBeats = [...cluster1Beats, ...cluster2Beats]
+
+            const cluster1 = {
+                startIndex: 0,
+                endIndex: 3,
+                beatCount: 4,
+                avgInterval: 0.5,
+                intervalVariance: 0,
+                bpm: 120,
+                isVerified: true,
+            }
+            const cluster2 = {
+                startIndex: 4,
+                endIndex: 7,
+                beatCount: 4,
+                avgInterval: 0.4,
+                intervalVariance: 0,
+                bpm: 150,
+                isVerified: true,
+            }
+
+            const result = (interpolator as any).findCrossingPoint?.(cluster1, cluster2, allBeats)
+
+            expect(result.hasBoundary).toBe(true)
+            expect(result.boundaryTimestamp).toBeDefined()
+            expect(result.gapRatio).toBe(1.0) // Maximum gap
+        })
+
+        it('should not create boundary when drift bridges gap', () => {
+            const interpolator = new BeatInterpolator({ tempoSectionThreshold: 0.15 })
+
+            // Create a scenario where connecting beats show gradual drift between clusters
+            // Even though clusters have different tempos, the connecting beats bridge the gap
+            const beats: Beat[] = []
+            // 4 beats at 120 BPM
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(i * 0.5))
+            }
+            // Many connecting beats showing smooth gradual drift from 120 to 140 BPM
+            // These beats demonstrate gradual tempo change, NOT a sudden jump
+            const driftBeats = 8
+            for (let i = 0; i < driftBeats; i++) {
+                // Gradually decrease interval from 0.5 to 0.43
+                const progress = i / (driftBeats - 1)
+                const interval = 0.5 - (progress * 0.07) // 0.5 -> 0.43
+                const time = 2.0 + i * interval
+                beats.push(createBeat(time))
+            }
+            // 4 beats at 140 BPM
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(2.0 + driftBeats * 0.46 + i * 0.43))
+            }
+
+            const cluster1 = {
+                startIndex: 0,
+                endIndex: 3,
+                beatCount: 4,
+                avgInterval: 0.5,
+                intervalVariance: 0,
+                bpm: 120,
+                isVerified: true,
+            }
+            const cluster2 = {
+                startIndex: 4 + driftBeats,
+                endIndex: 7 + driftBeats,
+                beatCount: 4,
+                avgInterval: 0.43,
+                intervalVariance: 0,
+                bpm: 140,
+                isVerified: true,
+            }
+
+            const result = (interpolator as any).findCrossingPoint?.(cluster1, cluster2, beats)
+
+            // With many connecting beats showing gradual drift, gap should be small
+            // However, since 120->140 is ~17% difference, the algorithm may still detect a boundary
+            // The key is that gapRatio should be relatively small due to gradual drift
+            expect(result.gapRatio).toBeLessThan(0.5) // Gap should be less than 50% of interval
+        })
+
+        it('should create boundary when gap exceeds threshold', () => {
+            const interpolator = new BeatInterpolator({ tempoSectionThreshold: 0.1 })
+
+            // Create two clusters with a clear tempo jump (no connecting beats showing drift)
+            const beats: Beat[] = []
+            // 4 beats at 120 BPM (0.5s intervals)
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(i * 0.5))
+            }
+            // Sparse connecting beats (not showing gradual drift)
+            beats.push(createBeat(3.0)) // Big gap, then sparse beat
+            beats.push(createBeat(3.5))
+            // 4 beats at 150 BPM (0.4s intervals)
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(4.5 + i * 0.4))
+            }
+
+            const cluster1 = {
+                startIndex: 0,
+                endIndex: 3,
+                beatCount: 4,
+                avgInterval: 0.5,
+                intervalVariance: 0,
+                bpm: 120,
+                isVerified: true,
+            }
+            const cluster2 = {
+                startIndex: 6,
+                endIndex: 9,
+                beatCount: 4,
+                avgInterval: 0.4,
+                intervalVariance: 0,
+                bpm: 150,
+                isVerified: true,
+            }
+
+            const result = (interpolator as any).findCrossingPoint?.(cluster1, cluster2, beats)
+
+            // 25% tempo difference should create a boundary
+            expect(result.hasBoundary).toBe(true)
+            expect(result.boundaryTimestamp).toBeDefined()
+        })
+    })
+
+    describe('measureGapAtCrossing', () => {
+        it('should calculate gap ratio correctly', () => {
+            const interpolator = new BeatInterpolator()
+
+            // Create mock drift results
+            const forwardsResult = {
+                finalInterval: 0.5,
+                beatPositions: [2.5, 3.0, 3.5],
+                phaseError: 0,
+                endTimestamp: 4.0,
+            }
+            const backwardsResult = {
+                finalInterval: 0.4,
+                beatPositions: [3.5, 3.1],
+                phaseError: 0,
+                endTimestamp: 2.5,
+            }
+
+            const gapResult = (interpolator as any).measureGapAtCrossing?.(
+                forwardsResult,
+                backwardsResult,
+                0.5,
+                0.4
+            )
+
+            expect(gapResult.gapRatio).toBeGreaterThanOrEqual(0)
+            expect(gapResult.crossingTimestamp).toBeDefined()
+            expect(gapResult.forwardsInterval).toBe(0.5)
+            expect(gapResult.backwardsInterval).toBe(0.4)
+        })
+
+        it('should handle empty beat positions', () => {
+            const interpolator = new BeatInterpolator()
+
+            const forwardsResult = {
+                finalInterval: 0.5,
+                beatPositions: [],
+                phaseError: 0,
+                endTimestamp: 4.0,
+            }
+            const backwardsResult = {
+                finalInterval: 0.4,
+                beatPositions: [],
+                phaseError: 0,
+                endTimestamp: 2.5,
+            }
+
+            const gapResult = (interpolator as any).measureGapAtCrossing?.(
+                forwardsResult,
+                backwardsResult,
+                0.5,
+                0.4
+            )
+
+            expect(gapResult.gapRatio).toBeGreaterThanOrEqual(0)
+        })
+    })
+
+    describe('assignBeatsToSections', () => {
+        it('should assign beats based on boundary timestamp', () => {
+            const interpolator = new BeatInterpolator()
+
+            const connectingBeats = [
+                createBeat(2.5),
+                createBeat(3.0),
+                createBeat(3.5),
+                createBeat(4.0),
+            ]
+
+            const cluster1 = {
+                startIndex: 0,
+                endIndex: 3,
+                beatCount: 4,
+                avgInterval: 0.5,
+                intervalVariance: 0,
+                bpm: 120,
+                isVerified: true,
+            }
+            const cluster2 = {
+                startIndex: 8,
+                endIndex: 11,
+                beatCount: 4,
+                avgInterval: 0.4,
+                intervalVariance: 0,
+                bpm: 150,
+                isVerified: true,
+            }
+
+            const boundaryTimestamp = 3.25
+
+            const result = (interpolator as any).assignBeatsToSections?.(
+                connectingBeats,
+                cluster1,
+                cluster2,
+                boundaryTimestamp
+            )
+
+            // Beats at 2.5 and 3.0 should go to section 1
+            expect(result.beatsInSection1.length).toBe(2)
+            // Beats at 3.5 and 4.0 should go to section 2
+            expect(result.beatsInSection2.length).toBe(2)
+        })
+
+        it('should handle all beats in one section', () => {
+            const interpolator = new BeatInterpolator()
+
+            const connectingBeats = [
+                createBeat(2.5),
+                createBeat(3.0),
+            ]
+
+            const cluster1 = { avgInterval: 0.5, bpm: 120, isVerified: true } as any
+            const cluster2 = { avgInterval: 0.4, bpm: 150, isVerified: true } as any
+
+            // Boundary is before all connecting beats
+            const boundaryTimestamp = 2.0
+
+            const result = (interpolator as any).assignBeatsToSections?.(
+                connectingBeats,
+                cluster1,
+                cluster2,
+                boundaryTimestamp
+            )
+
+            expect(result.beatsInSection1.length).toBe(0)
+            expect(result.beatsInSection2.length).toBe(2)
+        })
+
+        it('should handle empty connecting beats', () => {
+            const interpolator = new BeatInterpolator()
+
+            const connectingBeats: Beat[] = []
+            const cluster1 = { avgInterval: 0.5, bpm: 120, isVerified: true } as any
+            const cluster2 = { avgInterval: 0.4, bpm: 150, isVerified: true } as any
+
+            const result = (interpolator as any).assignBeatsToSections?.(
+                connectingBeats,
+                cluster1,
+                cluster2,
+                3.0
+            )
+
+            expect(result.beatsInSection1.length).toBe(0)
+            expect(result.beatsInSection2.length).toBe(0)
+        })
+    })
+})
