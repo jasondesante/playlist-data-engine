@@ -198,7 +198,7 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 1.4 Validation Constants and Function
 
-- [ ] Add validation for downbeatConfig
+- [x] Add validation for downbeatConfig
   ```typescript
   /** Minimum beats per measure */
   export const MIN_BEATS_PER_MEASURE = 2;
@@ -265,10 +265,10 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 1.4 Remove Obsolete Types
 
-- [ ] Remove `DownbeatDetectorConfig` interface
-- [ ] Remove `DownbeatDetectionResult` interface
-- [ ] Remove `isDuple` field from `TempoEstimate` interface (no longer used)
-- [ ] Update `BeatMapGenerationProgress.phase` to remove `'downbeat_detection'`
+- [x] Remove `DownbeatDetectorConfig` interface
+- [x] Remove `DownbeatDetectionResult` interface
+- [x] Remove `isDuple` field from `TempoEstimate` interface (no longer used)
+- [x] Update `BeatMapGenerationProgress.phase` to remove `'downbeat_detection'`
   - Replace with `'measure_labeling'` or similar
 
 ---
@@ -277,11 +277,11 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 2.1 Delete DownbeatDetector.ts
 
-- [ ] Delete `src/core/analysis/beat/DownbeatDetector.ts` entirely
+- [x] Delete `src/core/analysis/beat/DownbeatDetector.ts` entirely
 
 ### 2.2 Update Exports in index.ts
 
-- [ ] Remove from `src/core/analysis/beat/index.ts`:
+- [x] Remove from `src/core/analysis/beat/index.ts`:
   ```typescript
   // DELETE:
   export { DownbeatDetector } from './DownbeatDetector.js';
@@ -290,7 +290,7 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 2.3 Update Main Export in src/index.ts
 
-- [ ] Remove from `src/index.ts`:
+- [x] Remove from `src/index.ts`:
   ```typescript
   // DELETE:
   export { DownbeatDetector } from './core/analysis/beat/DownbeatDetector.js';
@@ -298,7 +298,7 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 2.4 Delete Test File
 
-- [ ] Delete `tests/unit/beat/downbeatDetector.test.ts` entirely
+- [x] Delete `tests/unit/beat/downbeatDetector.test.ts` entirely
 
 ---
 
@@ -306,7 +306,7 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 3.1 Remove DownbeatDetector Import
 
-- [ ] Remove import:
+- [x] Remove import:
   ```typescript
   // DELETE:
   import { DownbeatDetector } from './DownbeatDetector.js';
@@ -314,7 +314,7 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 3.2 Update generateBeatMap() Signature
 
-- [ ] Add optional `downbeatConfig` parameter:
+- [x] Add optional `downbeatConfig` parameter:
   ```typescript
   async generateBeatMap(
       audioFilePath: string,
@@ -329,7 +329,7 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 3.3 Add Downbeat Calculation Utility
 
-- [ ] Add internal utility function for calculating beat measure info with segment support:
+- [x] Add internal utility function for calculating beat measure info with segment support:
   ```typescript
   /**
    * Calculate measure information for all beats based on manual config
@@ -407,8 +407,9 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 3.4 Update Generation Pipeline
 
-- [ ] Remove Step 5 (Downbeat Detection) from `generateBeatMap()`
-- [ ] Replace with measure labeling step using `applyMeasureLabels()`
+- [x] Remove Step 5 (Downbeat Detection) from `generateBeatMap()`
+- [x] Replace with measure labeling step using `applyMeasureLabels()`
+- [ ] Add optional `downbeatConfig` parameter to `generateBeatMap()` method signature
 - [ ] Validate downbeatConfig structurally at the start of `generateBeatMap()`:
   ```typescript
   if (downbeatConfig) {
@@ -582,19 +583,19 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 
 ### 6.1 Remove isDuple Calculation
 
-- [ ] Remove `isDuple` calculation from `estimateTempo()` method (lines 117-122)
-- [ ] Remove `isDuple` from return value
-- [ ] Remove related variables: `tps2`, `tps3`, and the branching logic for duple vs triple
+- [x] Remove `isDuple` calculation from `estimateTempo()` method (lines 117-122)
+- [x] Remove `isDuple` from return value
+- [x] Remove related variables: `tps2`, `tps3`, and the branching logic for duple vs triple
 
 ### 6.2 Keep TPS2/TPS3 Methods
 
-- [ ] Keep `calculateTPS2()` and `calculateTPS3()` methods (part of Ellis algorithm, may be useful later)
-- [ ] Add JSDoc note that these are currently unused but kept for algorithm completeness
+- [x] Keep `calculateTPS2()` and `calculateTPS3()` methods (part of Ellis algorithm, may be useful later)
+- [x] Add JSDoc note that these are currently unused but kept for algorithm completeness
 
 ### 6.3 Update Secondary BPM Logic
 
-- [ ] Simplify secondary BPM calculation (currently branches on `isDuple`)
-- [ ] Default to duple behavior (half-tempo secondary) since that's most common
+- [x] Simplify secondary BPM calculation (currently branches on `isDuple`)
+- [x] Default to duple behavior (half-tempo secondary) since that's most common
 
 ---
 
@@ -602,11 +603,11 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 
 ### 7.1 Delete DownbeatDetector Tests
 
-- [ ] Delete `tests/unit/beat/downbeatDetector.test.ts` (done in Phase 2)
+- [x] Delete `tests/unit/beat/downbeatDetector.test.ts` (done in Phase 2)
 
 ### 7.2 Update Integration Tests
 
-- [ ] Search for tests that reference `DownbeatDetector` and update
+- [x] Search for tests that reference `DownbeatDetector` and update
 - [ ] Add tests for `applyMeasureLabels()` behavior:
   - [ ] Test default config (beat 0 = downbeat, 4/4 time)
   - [ ] Test custom downbeat index (e.g., beat 9)
@@ -623,8 +624,8 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 
 ### 7.4 Update TempoDetector Tests
 
-- [ ] Remove tests for `isDuple` field
-- [ ] Update tests that expect `isDuple` in `TempoEstimate`
+- [x] Remove tests for `isDuple` field
+- [x] Update tests that expect `isDuple` in `TempoEstimate`
 
 ### 7.5 Add Reprocess Function Tests
 

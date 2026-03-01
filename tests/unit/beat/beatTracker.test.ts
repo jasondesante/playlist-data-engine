@@ -67,7 +67,6 @@ function createTempoEstimate(bpm: number): TempoEstimate {
         secondaryBpm: bpm / 2,
         primaryWeight: 1.0,
         secondaryWeight: 0.5,
-        isDuple: true,
         targetIntervalSeconds: 60 / bpm,
     };
 }

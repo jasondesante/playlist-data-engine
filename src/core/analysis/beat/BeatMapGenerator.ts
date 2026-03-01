@@ -21,6 +21,7 @@ import type {
     BeatMapGenerationProgress,
     TempoEstimate,
     DownbeatConfig,
+    DownbeatSegment,
 } from '../../types/BeatMap.js';
 import {
     DEFAULT_BEATMAP_GENERATOR_OPTIONS,
@@ -29,11 +30,13 @@ import {
     getHopSizeMs,
     getMelBands,
     getGaussianSmoothMs,
+    DEFAULT_DOWNBEAT_CONFIG,
+    validateDownbeatConfig,
+    validateDownbeatConfigAgainstBeats,
 } from '../../types/BeatMap.js';
 import { OnsetStrengthEnvelope, type OSEResult } from './OnsetStrengthEnvelope.js';
 import { TempoDetector } from './TempoDetector.js';
 import { BeatTracker } from './BeatTracker.js';
-import { DownbeatDetector } from './DownbeatDetector.js';
 import { Logger } from '../../../utils/logger.js';
 
 /**
@@ -292,30 +295,30 @@ export class BeatMapGenerator {
             this.updateProgress('beat_tracking', 85, `${trackingResult.beats.length} beats detected.`);
             if (this.state.cancelled) throw new Error('Generation cancelled');
 
-            // Step 5: Detect Downbeats (10%)
-            this.updateProgress('downbeat_detection', 87, 'Detecting downbeats...');
+            // Step 5: Apply Measure Labels (10%)
+            // Uses manual downbeat configuration (default: beat 0 = downbeat, 4/4 time)
+            this.updateProgress('measure_labeling', 87, 'Applying measure labels...');
             if (this.state.cancelled) throw new Error('Generation cancelled');
 
-            const downbeatDetector = new DownbeatDetector();
-            const downbeatResult = downbeatDetector.detectDownbeats(
-                trackingResult.beats,
-                tempoEstimate
-            );
-            this.updateProgress('downbeat_detection', 97, 'Downbeats detected.');
+            // Use default config for now (manual config can be applied later via reapplyDownbeatConfig)
+            const downbeatConfig = DEFAULT_DOWNBEAT_CONFIG;
+            const beats = this.applyMeasureLabels(trackingResult.beats, downbeatConfig);
+
+            this.updateProgress('measure_labeling', 97, 'Measure labels applied.');
             if (this.state.cancelled) throw new Error('Generation cancelled');
 
             // Step 6: Finalize (3%)
             this.updateProgress('finalizing', 98, 'Finalizing beat map...');
 
             // Post-processing: filter beats by grid alignment if filter > 0
-            let beats = downbeatResult.beats;
+            let processedBeats = beats;
             const filter = this.options.filter;
             if (filter > 0) {
-                beats = this.filterBeatsByGridAlignment(beats, tempoEstimate, filter);
+                processedBeats = this.filterBeatsByGridAlignment(processedBeats, tempoEstimate, filter);
             }
 
             // Apply noise floor threshold
-            beats = this.applyIntensityThreshold(beats);
+            processedBeats = this.applyIntensityThreshold(processedBeats);
 
             // Build metadata
             const metadata: BeatMapMetadata = {
@@ -340,7 +343,7 @@ export class BeatMapGenerator {
             const beatMap: BeatMap = {
                 audioId,
                 duration,
-                beats,
+                beats: processedBeats,
                 bpm: tempoEstimate.primaryBpm,
                 metadata,
             };
@@ -391,6 +394,70 @@ export class BeatMapGenerator {
             // Keep beats that are above the noise floor
             return beat.intensity >= threshold;
         });
+    }
+
+    /**
+     * Apply measure labels to beats based on downbeat configuration
+     *
+     * Calculates beatInMeasure, isDownbeat, and measureNumber for each beat
+     * based on the provided downbeat configuration.
+     *
+     * @param beats - Beats to label (with timestamps)
+     * @param config - Downbeat configuration
+     * @returns Beats with measure information populated
+     */
+    private applyMeasureLabels(
+        beats: Beat[],
+        config: DownbeatConfig
+    ): Beat[] {
+        return beats.map((beat, index) => {
+            // Find the active segment for this beat
+            const segment = this.findActiveSegment(config.segments, index);
+            const { downbeatBeatIndex, timeSignature } = segment;
+            const { beatsPerMeasure } = timeSignature;
+
+            // Calculate position relative to the anchor downbeat
+            // Using modulo arithmetic that works bidirectionally
+            const distanceFromAnchor = index - downbeatBeatIndex;
+
+            // Calculate position in measure (0 to beatsPerMeasure-1)
+            // Handle negative distances correctly for pickup beats
+            const beatInMeasure = ((distanceFromAnchor % beatsPerMeasure) + beatsPerMeasure) % beatsPerMeasure;
+
+            // This beat is a downbeat if it's at position 0 in the measure
+            const isDownbeat = beatInMeasure === 0;
+
+            // Calculate measure number (0-indexed from first downbeat)
+            // Measures before the anchor downbeat will have negative numbers,
+            // but we floor to 0 for practical purposes
+            const measureNumber = Math.max(0, Math.floor(distanceFromAnchor / beatsPerMeasure));
+
+            return {
+                ...beat,
+                beatInMeasure,
+                isDownbeat,
+                measureNumber,
+            };
+        });
+    }
+
+    /**
+     * Find the active segment for a given beat index
+     * Segments must be ordered by startBeat in ascending order
+     */
+    private findActiveSegment(
+        segments: DownbeatSegment[],
+        beatIndex: number
+    ): DownbeatSegment {
+        let activeSegment = segments[0];
+        for (const segment of segments) {
+            if (segment.startBeat <= beatIndex) {
+                activeSegment = segment;
+            } else {
+                break;
+            }
+        }
+        return activeSegment;
     }
 
     /**

@@ -101,6 +101,75 @@ export const DEFAULT_DOWNBEAT_CONFIG: DownbeatConfig = {
     }],
 };
 
+// ============================================================================
+// Downbeat Configuration Validation
+// ============================================================================
+
+/** Minimum beats per measure */
+export const MIN_BEATS_PER_MEASURE = 2;
+
+/** Maximum beats per measure */
+export const MAX_BEATS_PER_MEASURE = 12;
+
+/**
+ * Validate downbeat configuration (structural validation only)
+ *
+ * Note: Beat count validation (e.g., downbeatBeatIndex < totalBeats) happens
+ * inside generateBeatMap() AFTER beat detection, since we don't know the
+ * total beat count until then.
+ *
+ * @param config - The downbeat configuration to validate
+ * @throws Error if configuration is invalid
+ */
+export function validateDownbeatConfig(config: DownbeatConfig): void {
+    if (!config.segments || config.segments.length === 0) {
+        throw new Error('DownbeatConfig must have at least one segment');
+    }
+
+    for (const segment of config.segments) {
+        if (segment.startBeat < 0) {
+            throw new Error(`startBeat must be non-negative, got ${segment.startBeat}`);
+        }
+        if (segment.downbeatBeatIndex < 0) {
+            throw new Error(`downbeatBeatIndex must be non-negative, got ${segment.downbeatBeatIndex}`);
+        }
+        const { beatsPerMeasure } = segment.timeSignature;
+        if (beatsPerMeasure < MIN_BEATS_PER_MEASURE || beatsPerMeasure > MAX_BEATS_PER_MEASURE) {
+            throw new Error(
+                `beatsPerMeasure must be between ${MIN_BEATS_PER_MEASURE} and ${MAX_BEATS_PER_MEASURE}, got ${beatsPerMeasure}`
+            );
+        }
+    }
+
+    // Verify segments are ordered by startBeat
+    for (let i = 1; i < config.segments.length; i++) {
+        if (config.segments[i].startBeat <= config.segments[i - 1].startBeat) {
+            throw new Error('Segments must be ordered by startBeat in ascending order');
+        }
+    }
+}
+
+/**
+ * Validate downbeat config against actual beat count
+ * Called inside generateBeatMap() after beat detection
+ *
+ * @param config - The downbeat configuration to validate
+ * @param totalBeats - The total number of beats in the beat map
+ * @throws Error if downbeatBeatIndex exceeds total beats
+ */
+export function validateDownbeatConfigAgainstBeats(
+    config: DownbeatConfig,
+    totalBeats: number
+): void {
+    for (const segment of config.segments) {
+        if (segment.downbeatBeatIndex >= totalBeats) {
+            throw new Error(
+                `downbeatBeatIndex ${segment.downbeatBeatIndex} exceeds total beats ${totalBeats}`
+            );
+        }
+    }
+}
+
 /**
  * Metadata about the beat detection algorithm and settings used
  */
@@ -604,9 +673,6 @@ export interface TempoEstimate {
     /** Relative strength of the secondary tempo (0.0 - 1.0) */
     secondaryWeight: number;
 
-    /** True if duple meter (2/4, 4/4), false if triple meter (3/4, 6/8) */
-    isDuple: boolean;
-
     /** Target inter-beat interval in seconds for DP tracker */
     targetIntervalSeconds: number;
 }
@@ -895,48 +961,11 @@ export interface TempoDetectorConfig {
 }
 
 /**
- * Configuration for the DownbeatDetector
- */
-export interface DownbeatDetectorConfig {
-    /** Measure lengths to try (default: [2, 3, 4, 6]) */
-    measureLengths?: number[];
-
-    /** Minimum intensity difference to consider a downbeat (default: 0.1) */
-    minIntensityDifference?: number;
-
-    /** Weight for pattern analysis vs autocorrelation (0-1, default: 0.5) */
-    patternWeight?: number;
-}
-
-/**
- * Result of downbeat detection
- */
-export interface DownbeatDetectionResult {
-    /** Detected beats with updated downbeat information */
-    beats: Beat[];
-
-    /** Detected number of beats per measure */
-    beatsPerMeasure: number;
-
-    /** Confidence in the downbeat detection (0-1) */
-    confidence: number;
-
-    /** Method that was used ('pattern' | 'autocorrelation' | 'combined') */
-    method: 'pattern' | 'autocorrelation' | 'combined';
-
-    /** Score for each measure length candidate */
-    measureLengthScores: Map<number, number>;
-
-    /** Phase offset of the first downbeat (in beats) */
-    phaseOffset: number;
-}
-
-/**
  * Progress information during beat map generation
  */
 export interface BeatMapGenerationProgress {
     /** Current phase of generation */
-    phase: 'loading' | 'preprocessing' | 'ose_calculation' | 'tempo_estimation' | 'beat_tracking' | 'downbeat_detection' | 'finalizing' | 'complete' | 'error';
+    phase: 'loading' | 'preprocessing' | 'ose_calculation' | 'tempo_estimation' | 'beat_tracking' | 'measure_labeling' | 'finalizing' | 'complete' | 'error';
 
     /** Progress percentage (0-100) */
     progress: number;

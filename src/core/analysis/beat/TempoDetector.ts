@@ -114,46 +114,27 @@ export class TempoDetector {
         const primaryLag = this.findPeak(weightedAutocorr, 0, weightedAutocorr.length);
         const primaryBpm = this.lagToBpm(primaryLag + autocorr.minLag, hopSizeSeconds);
 
-        // Step 4: Calculate TPS2 and TPS3 for meter detection (Ellis Equations 7 & 8)
-        const tps2 = this.calculateTPS2(autocorr.values, primaryLag);
-        const tps3 = this.calculateTPS3(autocorr.values, primaryLag);
+        // Step 4: TPS2/TPS3 calculations (Ellis Equations 7 & 8) are kept for algorithm completeness
+        // but no longer used for meter detection - meter is now configured manually via DownbeatConfig
+        // const tps2 = this.calculateTPS2(autocorr.values, primaryLag);
+        // const tps3 = this.calculateTPS3(autocorr.values, primaryLag);
 
-        // Determine meter: larger value indicates correct metrical level
-        const isDuple = tps2 >= tps3;
+        // Secondary tempo is at half the primary period (most common case)
+        const secondaryBpm = primaryBpm / 2;
 
-        // Secondary tempo is at double or half the primary period
-        // If we're in duple meter (TPS2 won), secondary is at half tempo (2x lag)
-        // If we're in triple meter (TPS3 won), we have a more complex relationship
-        let secondaryBpm: number;
-        let primaryWeight: number;
-        let secondaryWeight: number;
+        // Get the relative strengths
+        const primaryStrength = weightedAutocorr[primaryLag] || 0;
+        const doubleLagIdx = Math.min(primaryLag * 2, weightedAutocorr.length - 1);
+        const doubleStrength = weightedAutocorr[doubleLagIdx] || 0;
+        const halfLagIdx = Math.max(Math.floor(primaryLag / 2), 0);
+        const halfStrength = weightedAutocorr[halfLagIdx] || 0;
 
-        if (isDuple) {
-            // Duple meter: secondary is half-tempo (or we could look at double-time)
-            secondaryBpm = primaryBpm / 2;
-            // Get the relative strengths
-            const primaryStrength = weightedAutocorr[primaryLag] || 0;
-            const doubleLagIdx = Math.min(primaryLag * 2, weightedAutocorr.length - 1);
-            const doubleStrength = weightedAutocorr[doubleLagIdx] || 0;
-            const halfLagIdx = Math.max(Math.floor(primaryLag / 2), 0);
-            const halfStrength = weightedAutocorr[halfLagIdx] || 0;
-
-            // Secondary weight based on relative strength
-            primaryWeight = 1.0;
-            secondaryWeight = Math.max(doubleStrength, halfStrength) / (primaryStrength + 0.001);
-        } else {
-            // Triple meter: secondary is at 1/3 tempo
-            secondaryBpm = primaryBpm / 3;
-            const primaryStrength = weightedAutocorr[primaryLag] || 0;
-            const tripleLagIdx = Math.min(primaryLag * 3, weightedAutocorr.length - 1);
-            const tripleStrength = weightedAutocorr[tripleLagIdx] || 0;
-
-            primaryWeight = 1.0;
-            secondaryWeight = tripleStrength / (primaryStrength + 0.001);
-        }
-
-        // Clamp secondary weight
-        secondaryWeight = Math.min(Math.max(secondaryWeight, 0), 1);
+        // Secondary weight based on relative strength
+        const primaryWeight = 1.0;
+        const secondaryWeight = Math.min(Math.max(
+            Math.max(doubleStrength, halfStrength) / (primaryStrength + 0.001),
+            0
+        ), 1);
 
         // Target interval for DP tracker
         const targetIntervalSeconds = 60 / primaryBpm;
@@ -163,7 +144,6 @@ export class TempoDetector {
             secondaryBpm,
             primaryWeight,
             secondaryWeight,
-            isDuple,
             targetIntervalSeconds,
         };
     }
@@ -370,7 +350,6 @@ export class TempoDetector {
             secondaryBpm: 60,
             primaryWeight: 1.0,
             secondaryWeight: 0.5,
-            isDuple: true,
             targetIntervalSeconds: 0.5,
         };
     }

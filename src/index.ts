@@ -46,6 +46,9 @@ export type {
     ThresholdValidationResult,
     // Time Signature types
     TimeSignatureConfig,
+    // Downbeat configuration types
+    DownbeatSegment,
+    DownbeatConfig,
     // OSE Parameter Mode types
     HopSizeMode,
     HopSizeConfig,
@@ -74,6 +77,11 @@ export {
     DEFAULT_BEATMAP_GENERATOR_OPTIONS,
     DEFAULT_BEATSTREAM_OPTIONS,
     DEFAULT_TIME_SIGNATURE,
+    DEFAULT_DOWNBEAT_CONFIG,
+    MIN_BEATS_PER_MEASURE,
+    MAX_BEATS_PER_MEASURE,
+    validateDownbeatConfig,
+    validateDownbeatConfigAgainstBeats,
     BEAT_ACCURACY_THRESHOLDS,
     BEAT_DETECTION_VERSION,
     BEAT_DETECTION_ALGORITHM,
@@ -386,7 +394,6 @@ export { BeatStream } from './core/analysis/beat/BeatStream.js';
 export { OnsetStrengthEnvelope, type OSEResult } from './core/analysis/beat/OnsetStrengthEnvelope.js';
 export { BeatTracker, type BeatTrackingResult } from './core/analysis/beat/BeatTracker.js';
 export { TempoDetector } from './core/analysis/beat/TempoDetector.js';
-export { DownbeatDetector } from './core/analysis/beat/DownbeatDetector.js';
 export { BeatInterpolator } from './core/analysis/beat/BeatInterpolator.js';
 
 // Beat detection utilities

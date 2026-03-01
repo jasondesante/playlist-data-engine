@@ -22,13 +22,15 @@ export type {
     OSEConfig,
     BeatTrackerConfig,
     TempoDetectorConfig,
-    DownbeatDetectorConfig,
-    DownbeatDetectionResult,
     BeatMapGenerationProgress,
     // Accuracy threshold types
     AccuracyThresholds,
     DifficultyPreset,
     ThresholdValidationResult,
+    // Downbeat configuration types
+    TimeSignatureConfig,
+    DownbeatSegment,
+    DownbeatConfig,
     // Beat interpolation types
     BeatSource,
     BeatWithSource,
@@ -60,13 +62,19 @@ export {
     validateThresholds,
     // Beat interpolation defaults
     DEFAULT_BEAT_INTERPOLATION_OPTIONS,
+    // Downbeat configuration constants and validation
+    DEFAULT_TIME_SIGNATURE,
+    DEFAULT_DOWNBEAT_CONFIG,
+    MIN_BEATS_PER_MEASURE,
+    MAX_BEATS_PER_MEASURE,
+    validateDownbeatConfig,
+    validateDownbeatConfigAgainstBeats,
 } from '../../types/BeatMap.js';
 
 // Classes
 export { OnsetStrengthEnvelope, type OSEResult } from './OnsetStrengthEnvelope.js';
 export { TempoDetector } from './TempoDetector.js';
 export { BeatTracker, type BeatTrackingResult } from './BeatTracker.js';
-export { DownbeatDetector } from './DownbeatDetector.js';
 export { BeatMapGenerator, type ProgressCallback } from './BeatMapGenerator.js';
 export { BeatStream } from './BeatStream.js';
 export { BeatInterpolator } from './BeatInterpolator.js';

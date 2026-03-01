@@ -231,14 +231,12 @@ describe('TempoDetector', () => {
             expect(estimate).toHaveProperty('secondaryBpm');
             expect(estimate).toHaveProperty('primaryWeight');
             expect(estimate).toHaveProperty('secondaryWeight');
-            expect(estimate).toHaveProperty('isDuple');
             expect(estimate).toHaveProperty('targetIntervalSeconds');
 
             expect(typeof estimate.primaryBpm).toBe('number');
             expect(typeof estimate.secondaryBpm).toBe('number');
             expect(typeof estimate.primaryWeight).toBe('number');
             expect(typeof estimate.secondaryWeight).toBe('number');
-            expect(typeof estimate.isDuple).toBe('boolean');
             expect(typeof estimate.targetIntervalSeconds).toBe('number');
         });
 
