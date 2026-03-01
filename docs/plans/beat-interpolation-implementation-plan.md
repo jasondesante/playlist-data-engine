@@ -501,12 +501,12 @@ Create `tests/integration/beatInterpolation.integration.test.ts`:
 - [x] Example: Customizing options
 
 ### 7.3 Update DATA_ENGINE_REFERENCE.md
-- [ ] Add `BeatInterpolator` to API reference table
-- [ ] Add `InterpolatedBeatMap` type to types reference
-- [ ] Add `BeatInterpolationOptions` to options reference
-- [ ] Add `BeatSource` and `BeatWithSource` types
-- [ ] Document algorithm selection (histogram-grid, adaptive-phase-locked, dual-pass)
-- [ ] Document all option parameters with defaults
+- [x] Add `BeatInterpolator` to API reference table
+- [x] Add `InterpolatedBeatMap` type to types reference
+- [x] Add `BeatInterpolationOptions` to options reference
+- [x] Add `BeatSource` and `BeatWithSource` types
+- [x] Document algorithm selection (histogram-grid, adaptive-phase-locked, dual-pass)
+- [x] Document all option parameters with defaults
 
 ### 7.4 Update AUDIO_ANALYSIS.md
 - [ ] Add "Beat Interpolation" section with conceptual explanation

@@ -151,6 +151,7 @@ A concise overview of all main exports from the library, organized by category.
 | `BeatTracker` | Dynamic Programming beat tracking (Ellis algorithm) | [Beat Detection](#beat-detection) |
 | `TempoDetector` | Global tempo estimation with perceptual weighting | [Beat Detection](#beat-detection) |
 | `DownbeatDetector` | Identify measure boundaries by intensity patterns | [Beat Detection](#beat-detection) |
+| `BeatInterpolator` | Fill gaps in beat maps with interpolated beats | [Beat Detection](#beat-detection) |
 
 **Beat Utilities:** `hzToMel`, `melToHz`, `resampleAudio`, `createMelFilterbank`, `highPassFilter`, `gaussianSmooth`, `calculateStdDev`, `performBeatFFT`, `performSTFT` — see [Beat Detection Utilities](#beat-detection-utilities)
 
@@ -198,6 +199,8 @@ All TypeScript types are exported, including:
 **Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature` — see [Enemy Generation](#enemy-generation)
 
 **Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `AccuracyThresholds`, `DifficultyPreset`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `DownbeatDetectorConfig`, `DownbeatDetectionResult`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
+
+**Beat Interpolation Types:** `BeatSource`, `InterpolationAlgorithm`, `BeatWithSource`, `QuarterNoteDetection`, `GapAnalysis`, `InterpolationMetadata`, `InterpolatedBeatMap`, `BeatInterpolationOptions`, `InterpolatedBeatMapJSON` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
 **OSE Parameter Mode Types:** `HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig` — see [OSE Parameter Modes](#ose-parameter-modes)
 
@@ -1429,6 +1432,14 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `AccuracyThresholds` | Accuracy thresholds for difficulty | `perfect`, `great`, `good`, `ok` |
 | `DifficultyPreset` | Preset difficulty levels | `'easy'` \| `'medium'` \| `'hard'` \| `'custom'` |
 | `ThresholdValidationResult` | Validation result for thresholds | `valid: boolean`, `errors: string[]` |
+| `BeatSource` | Source of a beat | `'detected'` \| `'interpolated'` |
+| `InterpolationAlgorithm` | Interpolation algorithm selection | `'histogram-grid'` \| `'adaptive-phase-locked'` \| `'dual-pass'` |
+| `BeatWithSource` | Beat with source information | `source`, `distanceToAnchor?`, `nearestAnchorTimestamp?` (extends `Beat`) |
+| `QuarterNoteDetection` | Quarter note detection result | `intervalSeconds`, `bpm`, `confidence`, `histogramPeak`, `secondaryPeaks`, `method`, `denseSectionCount`, `denseSectionBeats` |
+| `GapAnalysis` | Gap analysis between beats | `totalGaps`, `halfNoteGaps`, `anomalies`, `avgGapSize`, `gridAlignmentScore` |
+| `InterpolationMetadata` | Metadata about interpolation | `algorithm`, `quarterNoteDetection`, `gapAnalysis`, `detectedBeatCount`, `interpolatedBeatCount`, `totalBeatCount`, `interpolationRatio`, `avgInterpolatedConfidence`, `tempoDriftRatio` |
+| `InterpolatedBeatMap` | Beat map with interpolation | `audioId`, `duration`, `detectedBeats`, `mergedBeats`, `quarterNoteInterval`, `quarterNoteBpm`, `quarterNoteConfidence`, `originalMetadata`, `interpolationMetadata` |
+| `BeatInterpolationOptions` | Configuration for interpolation | `algorithm`, `minAnchorConfidence`, `gridSnapTolerance`, `tempoAdaptationRate`, `extrapolateStart`, `extrapolateEnd`, `anomalyThreshold`, `denseSectionMinBeats`, `gridAlignmentWeight`, `anchorConfidenceWeight`, `paceConfidenceWeight` |
 
 ### BeatMapGenerator
 
@@ -1654,6 +1665,115 @@ constructor(config?: DownbeatDetectorConfig)
 | Method | Description |
 |--------|-------------|
 | `detectDownbeats(beats: Beat[]): DownbeatDetectionResult` | Detect downbeats in beat array |
+
+### BeatInterpolator
+
+**Location:** `src/core/analysis/beat/BeatInterpolator.ts`
+
+Post-processing pass that fills gaps in beat maps with interpolated beats. Uses the **Pace + Anchors model** with **dense section priority** to determine the quarter note interval, then generates a complete beat grid.
+
+**Key Concepts:**
+
+- **Pace**: The quarter note interval established from dense sections (sections with consistent beat detection)
+- **Anchors**: Individual detected beats that validate the grid and override interpolated beats
+- **Dense Section Priority**: Intervals from sections with consistent beat detection are weighted higher than sparse sections
+- **Two Output Streams**: `detectedBeats` (original) and `mergedBeats` (interpolated + detected override)
+
+**Three Interpolation Algorithms:**
+
+| Algorithm | Description | Best For |
+|-----------|-------------|----------|
+| `'histogram-grid'` | Fixed grid based on histogram peak detection | Stable tempo, simple use cases |
+| `'adaptive-phase-locked'` | Phase tracking at anchor points with tempo drift handling | Slight tempo variations |
+| `'dual-pass'` | KDE + weighted clustering with confidence scoring | **Recommended** - most accurate |
+
+**Constructor:**
+
+```typescript
+constructor(options?: BeatInterpolationOptions)
+```
+
+**Options (with defaults):**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `algorithm` | `'dual-pass'` | Interpolation algorithm to use |
+| `minAnchorConfidence` | 0.3 | Minimum confidence for a beat to be used as an anchor |
+| `gridSnapTolerance` | 0.05 | Tolerance in seconds for snapping detected beats to grid |
+| `tempoAdaptationRate` | 0.3 | Rate of tempo adaptation at anchor points (0=fixed, 1=full) |
+| `extrapolateStart` | true | Whether to extrapolate grid before first detected beat |
+| `extrapolateEnd` | true | Whether to extrapolate grid after last detected beat |
+| `anomalyThreshold` | 0.4 | Multiplier for anomaly detection (0.4 = 40% deviation) |
+| `denseSectionMinBeats` | 3 | Minimum beats to count as a dense section |
+| `gridAlignmentWeight` | 0.5 | Weight for grid alignment in confidence calculation |
+| `anchorConfidenceWeight` | 0.3 | Weight for anchor confidence in confidence calculation |
+| `paceConfidenceWeight` | 0.2 | Weight for pace confidence in confidence calculation |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `interpolate(beatMap: BeatMap): InterpolatedBeatMap` | Interpolate beats in a beat map |
+| `getConfig(): Required<BeatInterpolationOptions>` | Get current configuration |
+| `static toJSON(interpolatedBeatMap: InterpolatedBeatMap): string` | Export interpolated beat map as JSON string |
+| `static fromJSON(jsonString: string): InterpolatedBeatMap` | Load interpolated beat map from JSON string |
+| `static saveToFile(interpolatedBeatMap: InterpolatedBeatMap, filePath: string): Promise<void>` | Save to disk (Node.js only) |
+| `static loadFromFile(filePath: string): Promise<InterpolatedBeatMap>` | Load from disk (Node.js only) |
+
+**Usage:**
+
+```typescript
+import { BeatInterpolator, BeatMapGenerator } from 'playlist-data-engine';
+
+// Generate beat map
+const generator = new BeatMapGenerator();
+const beatMap = await generator.generateBeatMap(audioUrl, 'track-1');
+
+// Create interpolator with default options
+const interpolator = new BeatInterpolator();
+
+// Or with custom options
+const customInterpolator = new BeatInterpolator({
+  algorithm: 'dual-pass',
+  minAnchorConfidence: 0.5,
+  gridSnapTolerance: 0.03,
+  tempoAdaptationRate: 0.2,
+});
+
+// Interpolate beats
+const interpolatedMap = interpolator.interpolate(beatMap);
+
+// Access original detected beats
+console.log('Detected beats:', interpolatedMap.detectedBeats.length);
+
+// Access merged beats (interpolated + detected)
+console.log('Merged beats:', interpolatedMap.mergedBeats.length);
+
+// Check interpolation metadata
+console.log('Quarter note BPM:', interpolatedMap.quarterNoteBpm);
+console.log('Interpolation ratio:', interpolatedMap.interpolationMetadata.interpolationRatio);
+
+// Use with BeatStream
+const beatStream = new BeatStream(interpolatedMap, audioContext, {
+  useInterpolatedBeats: true,  // Use mergedBeats instead of beats
+});
+```
+
+**Confidence Model:**
+
+Interpolated beat confidence is calculated from three components:
+
+| Component | Default Weight | Description |
+|-----------|----------------|-------------|
+| Grid Alignment | 50% | How well surrounding anchors align to the established pace |
+| Anchor Confidence | 30% | Average confidence of detected beats bounding this gap |
+| Pace Confidence | 20% | Confidence in the quarter note detection itself |
+
+**Constants:**
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `DEFAULT_BEAT_INTERPOLATION_OPTIONS` | See above | Default interpolation options |
 
 ### Beat Detection Utilities
 
