@@ -416,6 +416,10 @@ export class BeatMapGenerator {
      * Calculates beatInMeasure, isDownbeat, and measureNumber for each beat
      * based on the provided downbeat configuration.
      *
+     * IMPORTANT: Measure numbers CONTINUE across segment boundaries.
+     * When time signature changes, measure number doesn't reset - it keeps
+     * incrementing. Only the beatsPerMeasure changes.
+     *
      * @param beats - Beats to label (with timestamps)
      * @param config - Downbeat configuration
      * @returns Beats with measure information populated
@@ -424,9 +428,13 @@ export class BeatMapGenerator {
         beats: Beat[],
         config: DownbeatConfig
     ): Beat[] {
+        // Pre-compute measure offsets for each segment to continue numbering across boundaries
+        const measureOffsets = this.computeMeasureOffsets(config.segments, beats.length);
+
         return beats.map((beat, index) => {
             // Find the active segment for this beat
-            const segment = this.findActiveSegment(config.segments, index);
+            const segmentIndex = this.findActiveSegmentIndex(config.segments, index);
+            const segment = config.segments[segmentIndex];
             const { downbeatBeatIndex, timeSignature } = segment;
             const { beatsPerMeasure } = timeSignature;
 
@@ -441,10 +449,13 @@ export class BeatMapGenerator {
             // This beat is a downbeat if it's at position 0 in the measure
             const isDownbeat = beatInMeasure === 0;
 
-            // Calculate measure number (0-indexed from first downbeat)
+            // Calculate measure number within this segment
             // Measures before the anchor downbeat will have negative numbers,
             // but we floor to 0 for practical purposes
-            const measureNumber = Math.max(0, Math.floor(distanceFromAnchor / beatsPerMeasure));
+            const measureInSegment = Math.max(0, Math.floor(distanceFromAnchor / beatsPerMeasure));
+
+            // Add the offset from previous segments to continue numbering
+            const measureNumber = measureInSegment + measureOffsets[segmentIndex];
 
             return {
                 ...beat,
@@ -456,22 +467,60 @@ export class BeatMapGenerator {
     }
 
     /**
-     * Find the active segment for a given beat index
-     * Segments must be ordered by startBeat in ascending order
+     * Compute measure offsets for each segment to continue numbering across boundaries
+     *
+     * @param segments - Array of downbeat segments (must be ordered by startBeat)
+     * @param totalBeats - Total number of beats
+     * @returns Array of measure offsets for each segment
      */
-    private findActiveSegment(
+    private computeMeasureOffsets(segments: DownbeatSegment[], totalBeats: number): number[] {
+        const offsets: number[] = [];
+
+        for (let i = 0; i < segments.length; i++) {
+            if (i === 0) {
+                offsets.push(0);
+            } else {
+                // Calculate what measure the previous segment ended at
+                const prevSegment = segments[i - 1];
+                const { downbeatBeatIndex: prevAnchor, timeSignature: prevTimeSig } = prevSegment;
+                const prevBeatsPerMeasure = prevTimeSig.beatsPerMeasure;
+
+                // The previous segment ends at the beat just before this segment starts
+                const lastBeatOfPrevSegment = segments[i].startBeat - 1;
+
+                // Calculate the measure number at the end of the previous segment
+                const distanceFromAnchor = lastBeatOfPrevSegment - prevAnchor;
+                const lastMeasureOfPrevSegment = Math.max(0, Math.floor(distanceFromAnchor / prevBeatsPerMeasure));
+
+                // This segment starts at the next measure number
+                offsets.push(lastMeasureOfPrevSegment + 1);
+            }
+        }
+
+        return offsets;
+    }
+
+    /**
+     * Find the index of the active segment for a given beat index
+     * Segments are contiguous - each covers beats until the next segment starts
+     *
+     * @param segments - Array of downbeat segments (must be ordered by startBeat)
+     * @param beatIndex - The beat index to find the active segment for
+     * @returns The index of the active segment
+     */
+    private findActiveSegmentIndex(
         segments: DownbeatSegment[],
         beatIndex: number
-    ): DownbeatSegment {
-        let activeSegment = segments[0];
-        for (const segment of segments) {
-            if (segment.startBeat <= beatIndex) {
-                activeSegment = segment;
+    ): number {
+        let activeIndex = 0;
+        for (let i = 0; i < segments.length; i++) {
+            if (segments[i].startBeat <= beatIndex) {
+                activeIndex = i;
             } else {
                 break;
             }
         }
-        return activeSegment;
+        return activeIndex;
     }
 
     /**

@@ -9,16 +9,17 @@
 - ✅ Phase 4: Update Beat Interpolation (all tasks complete)
 - ✅ Phase 5: Add reapplyDownbeatConfig function (all tasks complete)
 - ✅ Phase 6: Clean Up TempoDetector (all tasks complete)
-
-**Partially Completed Phases:**
-- 🔄 Phase 7: Update Tests (tempoDetector tests updated, new tests pending)
+- ✅ Phase 7: Update Tests (all tasks complete)
 
 **Pending Phases:**
 - ⏳ Phase 8: Update Documentation
 - ⏳ Phase 9: Verification (build/test pass, backward compat pending)
 
 **Build Status:** ✅ Passing (no TypeScript errors)
-**Test Status:** ✅ All 3608 tests passing (1 flaky memory test unrelated to changes)
+**Test Status:** ✅ All 3661 tests passing (1 flaky performance test unrelated to changes)
+
+**Bug Fix Applied (2026-03-01):**
+- Fixed measure number continuation across segment boundaries in `reapplyDownbeatConfig()`, `BeatMapGenerator.applyMeasureLabels()`, and `BeatInterpolator.reassignBeatPositions()`. Previously, measure numbers reset at each segment boundary; now they continue incrementing as specified in the design.
 
 ---
 
@@ -587,13 +588,14 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 ### 7.2 Update Integration Tests
 
 - [x] Search for tests that reference `DownbeatDetector` and update
-- [ ] Add tests for `applyMeasureLabels()` behavior:
-  - [ ] Test default config (beat 0 = downbeat, 4/4 time)
-  - [ ] Test custom downbeat index (e.g., beat 9)
-  - [ ] Test bidirectional calculation (beats before and after anchor)
-  - [ ] Test different time signatures (3/4, 6/8)
-  - [ ] Test pickup beats (correct beatInMeasure for beats before first downbeat)
-  - [ ] Test time signature changes (multiple segments)
+- [x] Add tests for `applyMeasureLabels()` behavior (in `tests/unit/beat/downbeatConfig.test.ts`):
+  - [x] Test default config (beat 0 = downbeat, 4/4 time)
+  - [x] Test custom downbeat index (e.g., beat 9)
+  - [x] Test bidirectional calculation (beats before and after anchor)
+  - [x] Test different time signatures (3/4, 6/8)
+  - [x] Test pickup beats (correct beatInMeasure for beats before first downbeat)
+  - [x] Test time signature changes (multiple segments)
+  - [x] Test measure number continuation across segment boundaries
 
 ### 7.3 Update BeatMapGenerator Tests
 
@@ -608,15 +610,15 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 
 ### 7.5 Add Reprocess Function Tests
 
-- [ ] Test `reapplyDownbeatConfig()` standalone function
-- [ ] Verify beats are correctly relabeled with new config
-- [ ] Verify original BeatMap is not modified (immutability)
-- [ ] Test error when downbeatBeatIndex exceeds total beats
+- [x] Test `reapplyDownbeatConfig()` standalone function
+- [x] Verify beats are correctly relabeled with new config
+- [x] Verify original BeatMap is not modified (immutability)
+- [x] Test error when downbeatBeatIndex exceeds total beats
 
 ### 7.6 Add Validation Tests
 
-- [ ] Test `validateDownbeatConfig()` with valid configs
-- [ ] Test validation errors for invalid configs (negative values, out of range, etc.)
+- [x] Test `validateDownbeatConfig()` with valid configs
+- [x] Test validation errors for invalid configs (negative values, out of range, etc.)
 
 ---
 
