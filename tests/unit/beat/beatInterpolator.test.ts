@@ -839,3 +839,181 @@ describe('Beat Interpolation Algorithms', () => {
         });
     });
 });
+
+describe('Tempo Cluster Detection (Phase 2)', () => {
+    describe('identifyTempoClusters', () => {
+        it('should return empty array when no beats', () => {
+            const interpolator = new BeatInterpolator();
+            const beats: Beat[] = [];
+            const clusters = (interpolator as any).identifyTempoClusters?.(beats);
+            expect(clusters).toEqual([]);
+        });
+
+        it('should return empty array when only one beat', () => {
+            const interpolator = new BeatInterpolator()
+            const beats: Beat[] = [createBeat(0)];
+            const clusters = (interpolator as any).identifyTempoClusters?.(beats)
+            expect(clusters).toEqual([]);
+        });
+
+        it('should return empty array when beats are not in dense sections', () => {
+            const interpolator = new BeatInterpolator({ denseSectionMinBeats: 5 })
+            // Create beats with high variance (not consistent enough for dense sections)
+            const beats: Beat[] = [
+                createBeat(0),
+                createBeat(0.1),  // 100ms gap = 10x faster
+                createBeat(0.5),  // 400ms gap - very different
+                createBeat(0.6),  // 100ms gap - back to fast
+            ]
+            const clusters = (interpolator as any).identifyTempoClusters?.(beats)
+            expect(clusters).toEqual([]);
+        });
+
+        it('should return single verified cluster for consistent beats at same tempo', () => {
+            const interpolator = new BeatInterpolator({ minClusterBeats: 4 })
+            // Create 8 beats at 120 BPM (0.5s intervals)
+            const beats: Beat[] = []
+            for (let i = 0; i < 8; i++) {
+                beats.push(createBeat(i * 0.5))
+            }
+            const clusters = (interpolator as any).identifyTempoClusters?.(beats)
+            expect(clusters.length).toBe(1)
+            expect(clusters[0].bpm).toBeCloseTo(120, 1)
+            expect(clusters[0].isVerified).toBe(true)
+            expect(clusters[0].beatCount).toBe(8)
+        });
+
+        it('should merge adjacent sections with similar tempo', () => {
+            const interpolator = new BeatInterpolator({ minClusterBeats: 4 })
+            // Create two groups of 4 beats each at similar tempo (120 and 125 BPM)
+            const beats: Beat[] = []
+            // First 4 beats at 120 BPM
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(i * 0.5))
+            }
+            // Next 4 beats at 125 BPM (0.48s intervals - close to 0.5)
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(2 + i * 0.48))
+            }
+            const clusters = (interpolator as any).identifyTempoClusters?.(beats)
+            // Should merge into one cluster since tempos are similar (within 10% threshold)
+            expect(clusters.length).toBe(1)
+            expect(clusters[0].beatCount).toBe(8)
+        });
+
+        it('should return multiple clusters for clearly different tempos', () => {
+            const interpolator = new BeatInterpolator({ minClusterBeats: 4, tempoSectionThreshold: 0.1 })
+            // Create two groups of 4+ beats at clearly different tempos
+            const beats: Beat[] = []
+            // First 5 beats at 120 BPM (0.5s intervals)
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * 0.5))
+            }
+            // Next 5 beats at 150 BPM (0.4s intervals - 25% difference)
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(2.5 + i * 0.4))
+            }
+            const clusters = (interpolator as any).identifyTempoClusters?.(beats)
+            // Should have two separate clusters
+            expect(clusters.length).toBe(2)
+            expect(clusters[0].bpm).toBeCloseTo(120, 1)
+            expect(clusters[1].bpm).toBeCloseTo(150, 1)
+        });
+
+        it('should filter out unverified clusters (less than minClusterBeats)', () => {
+            const interpolator = new BeatInterpolator({ minClusterBeats: 5 })
+            // Create 4 beats at 120 BPM (not enough to be verified)
+            const beats: Beat[] = []
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(i * 0.5))
+            }
+            const clusters = (interpolator as any).identifyTempoClusters?.(beats)
+            // Should return empty since 4 < 5 minClusterBeats
+            expect(clusters).toEqual([])
+        });
+    });
+
+    describe('findConflictingClusters', () => {
+        it('should return null when fewer than 2 clusters', () => {
+            const interpolator = new BeatInterpolator()
+            expect((interpolator as any).findConflictingClusters?.([])).toBeNull()
+            const singleCluster: any[] = [{ bpm: 120 }]
+            expect((interpolator as any).findConflictingClusters?.(singleCluster)).toBeNull()
+        })
+
+        it('should return null when clusters have similar tempos', () => {
+            const interpolator = new BeatInterpolator({ tempoSectionThreshold: 0.1 })
+            const clusters: any[] = [
+                { bpm: 120, startIndex: 0, endIndex: 3 },
+                { bpm: 125, startIndex: 4, endIndex: 7 }, // ~4% difference, below 10% threshold
+            ]
+            const conflicts = (interpolator as any).findConflictingClusters?.(clusters)
+            expect(conflicts).toBeNull()
+        })
+
+        it('should return conflicts when clusters have clearly different tempos', () => {
+            const interpolator = new BeatInterpolator({ tempoSectionThreshold: 0.1 })
+            const clusters: any[] = [
+                { bpm: 120, startIndex: 0, endIndex: 3 },
+                { bpm: 150, startIndex: 4, endIndex: 7 }, // 25% difference, above 10% threshold
+            ]
+            const conflicts = (interpolator as any).findConflictingClusters?.(clusters)
+            expect(conflicts).not.toBeNull()
+            expect(conflicts!.length).toBe(1)
+            expect(conflicts![0].cluster1.bpm).toBe(120)
+            expect(conflicts![0].cluster2.bpm).toBe(150)
+        })
+
+        it('should filter out octave multiples as conflicts', () => {
+            const interpolator = new BeatInterpolator({ tempoSectionThreshold: 0.1 })
+            const clusters: any[] = [
+                { bpm: 60, startIndex: 0, endIndex: 3 },
+                { bpm: 120, startIndex: 4, endIndex: 7 }, // Double tempo - same actual tempo
+            ]
+            const conflicts = (interpolator as any).findConflictingClusters?.(clusters)
+            // Should return null since 60 and 120 BPM are octave multiples
+            expect(conflicts).toBeNull()
+        })
+
+        it('should detect multiple conflicts', () => {
+            const interpolator = new BeatInterpolator({ tempoSectionThreshold: 0.1 })
+            const clusters: any[] = [
+                { bpm: 100, startIndex: 0, endIndex: 3 },
+                { bpm: 120, startIndex: 4, endIndex: 7 }, // 20% difference from 100
+                { bpm: 150, startIndex: 8, endIndex: 11 }, // 25% difference from 120
+            ]
+            const conflicts = (interpolator as any).findConflictingClusters?.(clusters)
+            expect(conflicts).not.toBeNull()
+            expect(conflicts!.length).toBeGreaterThan(1)
+        })
+    })
+
+    describe('isOctaveMultiple', () => {
+        it('should return true for half tempo', () => {
+            const interpolator = new BeatInterpolator()
+            expect((interpolator as any).isOctaveMultiple?.(60, 120)).toBe(true)
+            expect((interpolator as any).isOctaveMultiple?.(120, 60)).toBe(true)
+        })
+
+        it('should return true for double tempo', () => {
+            const interpolator = new BeatInterpolator()
+            expect((interpolator as any).isOctaveMultiple?.(120, 60)).toBe(true)
+            expect((interpolator as any).isOctaveMultiple?.(240, 120)).toBe(true)
+        })
+
+        it('should return false for non-octave tempos', () => {
+            const interpolator = new BeatInterpolator()
+            expect((interpolator as any).isOctaveMultiple?.(100, 120)).toBe(false)
+            expect((interpolator as any).isOctaveMultiple?.(120, 150)).toBe(false)
+            expect((interpolator as any).isOctaveMultiple?.(90, 120)).toBe(false)
+        })
+
+        it('should handle slight variations within tolerance', () => {
+            const interpolator = new BeatInterpolator()
+            // 62 BPM is close to 60 BPM * 2 = 120, within 10% tolerance
+            expect((interpolator as any).isOctaveMultiple?.(62, 123)).toBe(true)
+            // 59 BPM is close to 60 BPM, within 10% tolerance of 60 * 2 = 120
+            expect((interpolator as any).isOctaveMultiple?.(118, 59)).toBe(true)
+        })
+    });
+});

@@ -404,6 +404,158 @@ export class BeatInterpolator {
         return sections;
     }
 
+    // ==================== Tempo Cluster Detection (Phase 2) ====================
+
+    /**
+     * Identify tempo clusters from dense sections
+     *
+     * Builds on identifyDenseSections() output to group dense sections by tempo
+     * similarity and create verified tempo clusters for multi-tempo detection.
+     *
+     * Algorithm:
+     * 1. Convert dense sections to cluster candidates with BPM
+     * 2. Group sections by tempo similarity (within tempoSectionThreshold)
+     * 3. Merge adjacent sections with similar tempo into clusters
+     * 4. Filter clusters by minClusterBeats requirement
+     * 5. Return only verified clusters
+     *
+     * @param beats - Detected beats to analyze
+     * @returns Array of verified tempo clusters
+     */
+    private identifyTempoClusters(beats: Beat[]): TempoCluster[] {
+        // Get dense sections first
+        const denseSections = this.identifyDenseSections(beats);
+
+        if (denseSections.length === 0) {
+            return [];
+        }
+
+        const threshold = this.options.tempoSectionThreshold;
+        const minBeats = this.options.minClusterBeats;
+
+        // Convert dense sections to cluster candidates with BPM
+        const candidates: TempoCluster[] = denseSections.map(section => ({
+            ...section,
+            bpm: 60 / section.avgInterval,
+            isVerified: section.beatCount >= minBeats,
+        }));
+
+        // If only one section, return it only if verified
+        if (candidates.length === 1) {
+            return candidates[0].isVerified ? candidates : [];
+        }
+
+        // Sort by start index to process in order
+        candidates.sort((a, b) => a.startIndex - b.startIndex);
+
+        // Merge adjacent sections with similar tempo
+        const merged: TempoCluster[] = [candidates[0]];
+
+        for (let i = 1; i < candidates.length; i++) {
+            const current = candidates[i];
+            const previous = merged[merged.length - 1];
+
+            // Check if sections are adjacent (end of previous + 1 = start of current)
+            const isAdjacent = previous.endIndex + 1 >= current.startIndex;
+
+            // Check tempo similarity using interval ratio
+            const tempoRatio = Math.min(previous.avgInterval, current.avgInterval) /
+                Math.max(previous.avgInterval, current.avgInterval);
+            const isSimilarTempo = (1 - tempoRatio) <= threshold;
+
+            if (isAdjacent && isSimilarTempo) {
+                // Merge sections
+                const mergedIntervals = [];
+                for (let j = previous.startIndex; j <= current.endIndex && j < beats.length - 1; j++) {
+                    mergedIntervals.push(beats[j + 1].timestamp - beats[j].timestamp);
+                }
+
+                const mergedAvg = mergedIntervals.reduce((a, b) => a + b, 0) / mergedIntervals.length;
+                const mergedVar = mergedIntervals.reduce(
+                    (sum, int) => sum + Math.pow(int - mergedAvg, 2), 0
+                ) / mergedIntervals.length;
+
+                merged[merged.length - 1] = {
+                    startIndex: previous.startIndex,
+                    endIndex: current.endIndex,
+                    beatCount: previous.beatCount + current.beatCount,
+                    avgInterval: mergedAvg,
+                    intervalVariance: mergedVar,
+                    bpm: 60 / mergedAvg,
+                    isVerified: (previous.beatCount + current.beatCount) >= minBeats,
+                };
+            } else {
+                merged.push(current);
+            }
+        }
+
+        // Return only verified clusters
+        return merged.filter(c => c.isVerified);
+    }
+
+    /**
+     * Find conflicting tempo clusters
+     *
+     * Checks if any two verified clusters have tempos that differ by more than
+     * the tempoSectionThreshold. Filters out octave-related tempos (e.g., 60 BPM
+     * vs 120 BPM are considered the same tempo).
+     *
+     * @param clusters - Verified tempo clusters to analyze
+     * @returns Array of conflicting cluster pairs, or null if no conflicts
+     */
+    private findConflictingClusters(
+        clusters: TempoCluster[]
+    ): Array<{ cluster1: TempoCluster; cluster2: TempoCluster }> | null {
+        if (clusters.length < 2) {
+            return null;
+        }
+
+        const threshold = this.options.tempoSectionThreshold;
+        const conflicts: Array<{ cluster1: TempoCluster; cluster2: TempoCluster }> = [];
+
+        // Check all pairs of clusters
+        for (let i = 0; i < clusters.length; i++) {
+            for (let j = i + 1; j < clusters.length; j++) {
+                const c1 = clusters[i];
+                const c2 = clusters[j];
+
+                // Skip if tempos are octave multiples (same tempo, different octave)
+                if (this.isOctaveMultiple(c1.bpm, c2.bpm)) {
+                    continue;
+                }
+
+                // Calculate tempo difference as ratio
+                const tempoRatio = Math.min(c1.bpm, c2.bpm) / Math.max(c1.bpm, c2.bpm);
+                const tempoDifference = 1 - tempoRatio;
+
+                // If difference exceeds threshold, it's a conflict
+                if (tempoDifference > threshold) {
+                    conflicts.push({ cluster1: c1, cluster2: c2 });
+                }
+            }
+        }
+
+        return conflicts.length > 0 ? conflicts : null;
+    }
+
+    /**
+     * Check if two tempos are octave multiples
+     *
+     * Used to filter out false "conflicts" where two clusters are actually
+     * at the same tempo but detected at different octaves (e.g., 60 BPM vs 120 BPM).
+     *
+     * @param tempoA - First tempo in BPM
+     * @param tempoB - Second tempo in BPM
+     * @param tolerance - Tolerance for ratio comparison (default: 0.1 = 10%)
+     * @returns True if tempos are ~0.5x or ~2x each other
+     */
+    private isOctaveMultiple(tempoA: number, tempoB: number, tolerance: number = 0.1): boolean {
+        const octaveRatios = [0.5, 2]; // half, double (actual octave multiples)
+        const actualRatio = tempoA / tempoB;
+
+        return octaveRatios.some(ratio => Math.abs(actualRatio - ratio) <= tolerance);
+    }
+
     /**
      * Calculate weighted intervals between beats
      *
