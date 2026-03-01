@@ -903,15 +903,18 @@ describe('Tempo Cluster Detection (Phase 2)', () => {
 
         it('should return multiple clusters for clearly different tempos', () => {
             const interpolator = new BeatInterpolator({ minClusterBeats: 4, tempoSectionThreshold: 0.1 })
-            // Create two groups of 4+ beats at clearly different tempos
+            // Create two groups of 4+ beats at clearly different tempos with a GAP
+            // The gap ensures identifyDenseSections sees them as separate sections
             const beats: Beat[] = []
             // First 5 beats at 120 BPM (0.5s intervals)
             for (let i = 0; i < 5; i++) {
                 beats.push(createBeat(i * 0.5))
             }
-            // Next 5 beats at 150 BPM (0.4s intervals - 25% difference)
+            // GAP: Skip the next beat position (would be at 2.5s at 120 BPM)
+            // This creates a clear separation between sections
+            // Next 5 beats at 150 BPM (0.4s intervals), starting AFTER the gap
             for (let i = 0; i < 5; i++) {
-                beats.push(createBeat(2.5 + i * 0.4))
+                beats.push(createBeat(3.5 + i * 0.4)) // Start at 3.5s, not 2.5s
             }
             const clusters = (interpolator as any).identifyTempoClusters?.(beats)
             // Should have two separate clusters
