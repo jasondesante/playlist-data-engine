@@ -28,6 +28,24 @@ export interface Beat {
     confidence: number;
 }
 
+// ============================================================================
+// Time Signature Configuration
+// ============================================================================
+
+/**
+ * Time signature configuration for beat grid
+ * Defaults to 4/4 time if not specified
+ */
+export interface TimeSignatureConfig {
+    /** Number of beats per measure (default: 4 for 4/4 time) */
+    beatsPerMeasure: number;
+}
+
+/** Default time signature (4/4) */
+export const DEFAULT_TIME_SIGNATURE: TimeSignatureConfig = {
+    beatsPerMeasure: 4,
+};
+
 /**
  * Metadata about the beat detection algorithm and settings used
  */

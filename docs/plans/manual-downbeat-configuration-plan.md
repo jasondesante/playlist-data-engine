@@ -75,7 +75,7 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 1.1 Add New Types in BeatMap.ts
 
-- [ ] Add `TimeSignatureConfig` interface
+- [x] Add `TimeSignatureConfig` interface
   ```typescript
   /**
    * Time signature configuration for beat grid

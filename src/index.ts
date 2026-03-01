@@ -44,6 +44,8 @@ export type {
     AccuracyThresholds,
     DifficultyPreset,
     ThresholdValidationResult,
+    // Time Signature types
+    TimeSignatureConfig,
     // OSE Parameter Mode types
     HopSizeMode,
     HopSizeConfig,
@@ -71,6 +73,7 @@ export type {
 export {
     DEFAULT_BEATMAP_GENERATOR_OPTIONS,
     DEFAULT_BEATSTREAM_OPTIONS,
+    DEFAULT_TIME_SIGNATURE,
     BEAT_ACCURACY_THRESHOLDS,
     BEAT_DETECTION_VERSION,
     BEAT_DETECTION_ALGORITHM,
