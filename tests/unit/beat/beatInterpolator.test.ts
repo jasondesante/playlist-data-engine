@@ -1890,4 +1890,131 @@ describe('Phase 7: Multi-Tempo Edge Cases', () => {
             }
         })
     })
+
+    describe('Two distinct tempo sections with clear boundary', () => {
+        it('SHOULD trigger sections with hard boundary when tempo changes suddenly between clusters', () => {
+            // This test verifies that when two distinct tempo sections exist with a
+            // sudden tempo change (not gradual drift), the multi-tempo feature
+            // SHOULD create separate sections with a hard boundary.
+            //
+            // Key difference from "gap" test: There ARE connecting beats, but they
+            // don't show gradual drift - the tempo change is sudden.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,  // 10% threshold
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+                tempoAdaptationRate: 0.3,  // Lower adaptation rate to detect sudden changes
+                denseSectionMinBeats: 3,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 100
+            const bpm2 = 160  // 60% difference - well above 10% threshold
+            const interval1 = 60 / bpm1  // 0.6s
+            const interval2 = 60 / bpm2  // 0.375s
+
+            // First cluster: 6 beats at 100 BPM
+            for (let i = 0; i < 6; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // A few "ambiguous" beats that are NOT showing gradual drift
+            // These beats are at neither tempo - they're just sparse/detected
+            // at irregular intervals (simulating a detection gap or unclear section)
+            const lastBeat100 = beats[beats.length - 1].timestamp
+            // Add 2 beats with irregular intervals (not gradual transition)
+            beats.push(createBeat(lastBeat100 + 0.7))   // Not at either tempo's grid
+            beats.push(createBeat(lastBeat100 + 1.1))   // Irregular spacing
+
+            // Second cluster: 6 beats at 160 BPM
+            const lastAmbiguousBeat = beats[beats.length - 1].timestamp
+            const gapAfterAmbiguous = 0.5  // Small gap before second cluster starts
+            for (let i = 0; i < 6; i++) {
+                beats.push(createBeat(lastAmbiguousBeat + gapAfterAmbiguous + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should detect multiple tempos
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.detectedClusterTempos).toBeDefined()
+            expect(result.interpolationMetadata.detectedClusterTempos!.length).toBeGreaterThanOrEqual(2)
+
+            // Multi-tempo SHOULD be applied because the tempo change is sudden
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+
+            // Verify the sections have distinct tempos
+            const sections = result.interpolationMetadata.tempoSections!
+            const firstSection = sections[0]
+            const lastSection = sections[sections.length - 1]
+
+            // First section should be close to 100 BPM
+            expect(firstSection.bpm).toBeLessThan(120)
+            // Last section should be close to 160 BPM
+            expect(lastSection.bpm).toBeGreaterThan(140)
+
+            // There should be a clear boundary (sections don't overlap)
+            for (let i = 1; i < sections.length; i++) {
+                expect(sections[i].start).toBeGreaterThanOrEqual(sections[i - 1].end)
+            }
+        })
+
+        it('SHOULD create hard boundary when connecting beats do not bridge tempo gap', () => {
+            // Another test case: two clusters with a few connecting beats that
+            // are phase-aligned with one cluster but not bridging the tempo gap
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+                tempoAdaptationRate: 0.3,
+                denseSectionMinBeats: 3,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 90   // Slow section
+            const bpm2 = 140  // Fast section (55% difference)
+            const interval1 = 60 / bpm1  // ~0.667s
+            const interval2 = 60 / bpm2  // ~0.429s
+
+            // First cluster: 5 beats at 90 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Connecting beat that's phase-aligned with first section
+            // (continues at first section's tempo for one more beat)
+            const lastBeat90 = beats[beats.length - 1].timestamp
+            beats.push(createBeat(lastBeat90 + interval1))  // One beat at 90 BPM
+
+            // Then a gap (no gradual transition)
+            const afterConnection = beats[beats.length - 1].timestamp
+
+            // Second cluster: 5 beats at 140 BPM (starting after a gap)
+            const gapDuration = 1.5  // Gap with no beats
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(afterConnection + gapDuration + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should detect multiple tempos and apply multi-tempo
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+
+            // Verify sections have distinct BPM values
+            const tempos = result.interpolationMetadata.tempoSections!.map(s => s.bpm)
+            const hasDistinctTempos = tempos.some((t, i) =>
+                tempos.some((t2, j) => i !== j && Math.abs(t - t2) > 10)
+            )
+            expect(hasDistinctTempos).toBe(true)
+        })
+    })
 })

@@ -486,7 +486,12 @@ interpolate(beatMap, { enableMultiTempo: true })
     - Three tests: (1) basic single tempo, (2) enableMultiTempo flag comparison, (3) various tempos (60-180 BPM)
     - Verifies `hasMultipleTempos: false` and `hasMultiTempoApplied: falsy`
     - Confirms single-tempo tracks work identically regardless of `enableMultiTempo` flag
-  - [ ] **Two distinct tempo sections with clear boundary** — SHOULD trigger sections with hard boundary
+  - [x] **Two distinct tempo sections with clear boundary** — SHOULD trigger sections with hard boundary
+    - Test added in `Phase 7: Multi-Tempo Edge Cases` > `Two distinct tempo sections with clear boundary` describe block
+    - Two tests: (1) sudden tempo change with ambiguous connecting beats, (2) connecting beats that don't bridge tempo gap
+    - Uses 100→160 BPM (60% difference) and 90→140 BPM (55% difference) to ensure detection
+    - Verifies `hasMultipleTempos: true`, `hasMultiTempoApplied: true`, and `tempoSections.length >= 2`
+    - Confirms hard boundary is created when tempo change is sudden (not gradual drift)
   - [ ] **Three tempo sections** — multiple boundaries detected correctly
   - [ ] **Octave-related tempos (half/double)** — 60 BPM → 120 BPM, should NOT trigger sections (filtered by `isOctaveMultiple`)
   - [ ] **Short cluster** — 3 beats at 128 BPM → 4 beats at 140 BPM, should NOT trigger (cluster needs 4+ beats)
