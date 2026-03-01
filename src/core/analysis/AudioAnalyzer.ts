@@ -381,13 +381,9 @@ export class AudioAnalyzer {
      * Interpolate a beat map to fill gaps in detected beats
      *
      * This is a post-processing pass that runs AFTER BeatMap generation to fill
-     * gaps where detected beats are missing. Uses dense section priority to
-     * determine the quarter note interval, then generates interpolated beats.
-     *
-     * Three interpolation algorithms are available for research/comparison:
-     * - histogram-grid: Fixed grid based on histogram peak detection
-     * - adaptive-phase-locked: Phase tracking at anchor points with tempo drift handling
-     * - dual-pass: KDE + weighted clustering with confidence scoring (default)
+     * gaps where detected beats are missing. Uses the Adaptive Phase-Locked Grid
+     * algorithm with dense section priority to determine the quarter note interval,
+     * then generates interpolated beats with tempo drift handling.
      *
      * @param beatMap - The beat map to interpolate
      * @param options - Interpolation options (optional)
@@ -406,11 +402,6 @@ export class AudioAnalyzer {
      *
      * // Access merged beats (interpolated + detected)
      * console.log(`Total: ${interpolated.mergedBeats.length} beats`);
-     *
-     * // Use specific algorithm
-     * const adaptive = analyzer.interpolateBeatMap(beatMap, {
-     *   algorithm: 'adaptive-phase-locked',
-     * });
      * ```
      */
     interpolateBeatMap(
@@ -443,8 +434,7 @@ export class AudioAnalyzer {
      * const interpolated = await analyzer.generateBeatMapWithInterpolation(
      *   'song.mp3',
      *   'track-001',
-     *   { minBpm: 60, maxBpm: 180 }, // BeatMap options
-     *   { algorithm: 'dual-pass' }   // Interpolation options
+     *   { minBpm: 60, maxBpm: 180 }  // BeatMap options
      * );
      *
      * console.log(`Total beats: ${interpolated.mergedBeats.length}`);
