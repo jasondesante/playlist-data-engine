@@ -3,17 +3,15 @@
  *
  * Post-processing pass that runs AFTER BeatMap generation to fill gaps
  * where detected beats are missing. Uses dense section priority to determine
- * the quarter note interval, then generates interpolated beats on the grid.
+ * the quarter note interval, then generates interpolated beats using the
+ * Adaptive Phase-Locked Grid algorithm.
  *
- * Three interpolation algorithms are available for research/comparison:
- * - histogram-grid: Fixed grid based on histogram peak detection
- * - adaptive-phase-locked: Phase tracking at anchor points with tempo drift handling
- * - dual-pass: KDE + weighted clustering with confidence scoring
+ * The Adaptive Phase-Locked approach uses anchor points (detected beats) to
+ * track tempo drift and maintain phase alignment throughout the track.
  *
  * @example
  * ```typescript
  * const interpolator = new BeatInterpolator({
- *   algorithm: 'dual-pass',
  *   minAnchorConfidence: 0.3,
  *   gridSnapTolerance: 0.05,
  * });

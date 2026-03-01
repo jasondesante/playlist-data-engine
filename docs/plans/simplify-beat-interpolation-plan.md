@@ -101,12 +101,12 @@ Based on research and testing, the **Adaptive Phase-Locked Grid** algorithm has 
 ### 2.3 Update Constructor and Config
 - [x] Remove algorithm from options merging
 - [x] Update `getConfig()` return type (remove algorithm field)
-- [ ] Update class-level JSDoc to remove multi-algorithm references
+- [x] Update class-level JSDoc to remove multi-algorithm references
 
 ### 2.4 Update Static Methods
 - [x] Update `toJSON()` to not include algorithm field
 - [x] Update `fromJSON()` to handle missing algorithm field (backward compatibility)
-- [ ] Update `saveToFile()` / `loadFromFile()` if affected
+- [x] Update `saveToFile()` / `loadFromFile()` if affected (not affected - use toJSON/fromJSON)
 
 ### 2.5 Update Edge Case Handlers
 - [x] Update `createEmptyInterpolatedBeatMap()` - remove algorithm from metadata
