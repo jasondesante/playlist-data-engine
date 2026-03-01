@@ -72,6 +72,21 @@ export { BeatMapGenerator, type ProgressCallback } from './BeatMapGenerator.js';
 export { BeatStream } from './BeatStream.js';
 export { BeatInterpolator } from './BeatInterpolator.js';
 
+// Comparison utilities
+export {
+    compareInterpolationApproaches,
+    calculateAccuracyAgainstGroundTruth,
+    formatComparisonTable,
+    comparisonToJSON,
+    ALL_ALGORITHMS,
+} from './utils/beatInterpolationComparison.js';
+export type {
+    MetricComparison,
+    AlgorithmPairComparison,
+    InterpolationComparisonResult,
+    ComparisonOptions,
+} from './utils/beatInterpolationComparison.js';
+
 // Utilities
 export {
     hzToMel,
