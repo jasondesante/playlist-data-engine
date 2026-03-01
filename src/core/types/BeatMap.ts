@@ -787,6 +787,19 @@ export interface GapAnalysisJSON {
 }
 
 /**
+ * JSON-serializable version of TempoSection
+ */
+export interface TempoSectionJSON {
+    start: number;
+    end: number;
+    bpm: number;
+    intervalSeconds: number;
+    beatCount: number;
+    startBeatIndex: number;
+    endBeatIndex: number;
+}
+
+/**
  * JSON-serializable version of InterpolationMetadata
  */
 export interface InterpolationMetadataJSON {
@@ -798,6 +811,14 @@ export interface InterpolationMetadataJSON {
     interpolationRatio: number;
     avgInterpolatedConfidence: number;
     tempoDriftRatio: number;
+    /** Tempos found during normal analysis (e.g., [128, 140]) */
+    detectedClusterTempos?: number[];
+    /** Quick flag for checking if multi-tempo re-analysis is available */
+    hasMultipleTempos: boolean;
+    /** Full section data (only after multi-tempo re-analysis) */
+    tempoSections?: TempoSectionJSON[];
+    /** True only after multi-tempo re-analysis completes */
+    hasMultiTempoApplied?: boolean;
 }
 
 /**
@@ -1298,6 +1319,42 @@ export interface GapAnalysis {
     gridAlignmentScore: number;
 }
 
+// ============================================================================
+// Tempo Section Detection (Multi-Tempo Support)
+// ============================================================================
+
+/**
+ * Represents a distinct tempo section within a track
+ *
+ * When a track has multiple distinct tempo sections (e.g., a slow intro at 90 BPM
+ * followed by a fast section at 140 BPM), each section is represented by this interface.
+ *
+ * Sections have hard boundaries - no morphing/blending between tempos.
+ * This is only populated when multi-tempo analysis is enabled and detects multiple tempos.
+ */
+export interface TempoSection {
+    /** Section start time in seconds */
+    start: number;
+
+    /** Section end time in seconds */
+    end: number;
+
+    /** Tempo for this section in BPM */
+    bpm: number;
+
+    /** Quarter note interval in seconds (60 / bpm) */
+    intervalSeconds: number;
+
+    /** Number of detected beats in this section's cluster */
+    beatCount: number;
+
+    /** Index of the first beat in this section */
+    startBeatIndex: number;
+
+    /** Index of the last beat in this section */
+    endBeatIndex: number;
+}
+
 /**
  * Metadata about the interpolation process
  */
@@ -1325,6 +1382,34 @@ export interface InterpolationMetadata {
 
     /** Ratio of maximum local tempo to minimum local tempo (drift indicator) */
     tempoDriftRatio: number;
+
+    // ========================================================================
+    // Multi-Tempo Section Detection (Populated when enabled)
+    // ========================================================================
+
+    /**
+     * Tempos found during normal analysis (e.g., [128, 140])
+     * Populated by normal analysis - cheap to compute
+     */
+    detectedClusterTempos?: number[];
+
+    /**
+     * Quick flag for checking if multi-tempo re-analysis is available
+     * True if detectedClusterTempos has more than one tempo
+     */
+    hasMultipleTempos: boolean;
+
+    /**
+     * Full section data with boundaries
+     * Only populated after multi-tempo re-analysis (enableMultiTempo: true)
+     */
+    tempoSections?: TempoSection[];
+
+    /**
+     * True only after multi-tempo re-analysis completes
+     * Used to distinguish between "detected multi-tempo" and "applied multi-tempo"
+     */
+    hasMultiTempoApplied?: boolean;
 }
 
 /**
@@ -1404,6 +1489,29 @@ export interface BeatInterpolationOptions {
 
     /** Weight for pace confidence in confidence calculation (default: 0.2) */
     paceConfidenceWeight?: number;
+
+    // ========================================================================
+    // Multi-Tempo Section Detection Options
+    // ========================================================================
+
+    /**
+     * Tempo difference threshold for section detection (default: 0.1 = 10%)
+     * Two tempos must differ by more than this ratio to be considered separate sections
+     */
+    tempoSectionThreshold?: number;
+
+    /**
+     * Minimum beats for a valid tempo cluster (default: 4)
+     * Clusters with fewer beats are not considered for multi-tempo detection
+     */
+    minClusterBeats?: number;
+
+    /**
+     * Enable multi-tempo analysis and interpolation (default: false)
+     * If true and hasMultipleTempos is detected, runs crossing paths analysis
+     * and applies per-section interpolation
+     */
+    enableMultiTempo?: boolean;
 }
 
 /**
@@ -1420,6 +1528,10 @@ export const DEFAULT_BEAT_INTERPOLATION_OPTIONS: Required<BeatInterpolationOptio
     gridAlignmentWeight: 0.5,
     anchorConfidenceWeight: 0.3,
     paceConfidenceWeight: 0.2,
+    // Multi-tempo defaults
+    tempoSectionThreshold: 0.1,
+    minClusterBeats: 4,
+    enableMultiTempo: false,
 };
 
 /**

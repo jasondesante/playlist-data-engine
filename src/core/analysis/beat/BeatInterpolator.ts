@@ -42,6 +42,8 @@ import type {
     InterpolationMetadataJSON,
     DownbeatConfig,
     DownbeatSegment,
+    TempoSection,
+    TempoSectionJSON,
 } from '../../types/BeatMap.js';
 import {
     DEFAULT_BEAT_INTERPOLATION_OPTIONS,
@@ -60,6 +62,17 @@ interface DenseSection {
     beatCount: number;
     avgInterval: number;
     intervalVariance: number;
+}
+
+/**
+ * Internal structure for tempo cluster information
+ * Extends DenseSection with tempo-specific fields for multi-tempo detection
+ */
+interface TempoCluster extends DenseSection {
+    /** Tempo in BPM for this cluster */
+    bpm: number;
+    /** Whether this cluster has enough beats to be valid (>= minClusterBeats) */
+    isVerified: boolean;
 }
 
 /**
@@ -214,6 +227,11 @@ export class BeatInterpolator {
                 : 0,
             avgInterpolatedConfidence,
             tempoDriftRatio,
+            // Multi-tempo fields (populated in later phases when enabled)
+            detectedClusterTempos: undefined,
+            hasMultipleTempos: false,
+            tempoSections: undefined,
+            hasMultiTempoApplied: undefined,
         };
 
         logger.debug('Interpolation complete', {
@@ -1221,6 +1239,11 @@ export class BeatInterpolator {
                 interpolationRatio: 0,
                 avgInterpolatedConfidence: 0,
                 tempoDriftRatio: 1,
+                // Multi-tempo fields
+                detectedClusterTempos: undefined,
+                hasMultipleTempos: false,
+                tempoSections: undefined,
+                hasMultiTempoApplied: undefined,
             },
         };
     }
@@ -1270,6 +1293,11 @@ export class BeatInterpolator {
                 interpolationRatio: 0,
                 avgInterpolatedConfidence: 0,
                 tempoDriftRatio: 1,
+                // Multi-tempo fields
+                detectedClusterTempos: undefined,
+                hasMultipleTempos: false,
+                tempoSections: undefined,
+                hasMultiTempoApplied: undefined,
             },
         };
     }
@@ -1343,6 +1371,19 @@ export class BeatInterpolator {
                 interpolationRatio: interpolatedBeatMap.interpolationMetadata.interpolationRatio,
                 avgInterpolatedConfidence: interpolatedBeatMap.interpolationMetadata.avgInterpolatedConfidence,
                 tempoDriftRatio: interpolatedBeatMap.interpolationMetadata.tempoDriftRatio,
+                // Multi-tempo fields
+                detectedClusterTempos: interpolatedBeatMap.interpolationMetadata.detectedClusterTempos,
+                hasMultipleTempos: interpolatedBeatMap.interpolationMetadata.hasMultipleTempos,
+                tempoSections: interpolatedBeatMap.interpolationMetadata.tempoSections?.map(section => ({
+                    start: section.start,
+                    end: section.end,
+                    bpm: section.bpm,
+                    intervalSeconds: section.intervalSeconds,
+                    beatCount: section.beatCount,
+                    startBeatIndex: section.startBeatIndex,
+                    endBeatIndex: section.endBeatIndex,
+                })),
+                hasMultiTempoApplied: interpolatedBeatMap.interpolationMetadata.hasMultiTempoApplied,
             },
         };
 
@@ -1419,6 +1460,19 @@ export class BeatInterpolator {
                 interpolationRatio: json.interpolationMetadata.interpolationRatio,
                 avgInterpolatedConfidence: json.interpolationMetadata.avgInterpolatedConfidence,
                 tempoDriftRatio: json.interpolationMetadata.tempoDriftRatio,
+                // Multi-tempo fields (with backward compatibility defaults)
+                detectedClusterTempos: json.interpolationMetadata.detectedClusterTempos,
+                hasMultipleTempos: json.interpolationMetadata.hasMultipleTempos ?? false,
+                tempoSections: json.interpolationMetadata.tempoSections?.map(section => ({
+                    start: section.start,
+                    end: section.end,
+                    bpm: section.bpm,
+                    intervalSeconds: section.intervalSeconds,
+                    beatCount: section.beatCount,
+                    startBeatIndex: section.startBeatIndex,
+                    endBeatIndex: section.endBeatIndex,
+                })),
+                hasMultiTempoApplied: json.interpolationMetadata.hasMultiTempoApplied,
             },
         };
     }
