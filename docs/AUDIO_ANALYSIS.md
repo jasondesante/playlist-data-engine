@@ -1644,7 +1644,153 @@ All interpolated beats in a validated gap have **equal confidence** (no decay ba
 | Sparse beat detection | ✅ Yes |
 | Visualization with beat-synchronized effects | ✅ Yes |
 | Original beat detection quality | ❌ Use `detectedBeats` |
-| Songs with extreme tempo changes | ⚠️ Use section-based (future) |
+| Songs with sudden tempo changes | ✅ Use `enableMultiTempo` |
+
+---
+
+### Multi-Tempo Detection
+
+For tracks with **sudden tempo changes** (e.g., a track that jumps from 128 BPM to 140 BPM), enable multi-tempo detection. This feature identifies distinct tempo sections and handles them separately.
+
+> **⚠️ Important**: This feature is **conservative by design**. It only activates when there's undeniable evidence of a sudden tempo change. The default is ALWAYS gradual drift, which works for 99% of tracks.
+
+#### When Multi-Tempo Activates
+
+**All three conditions must be true:**
+
+1. **2+ valid tempo clusters exist** — Each cluster needs 4+ consecutive detected beats at a consistent tempo
+2. **Clusters have >10% tempo difference** — Configurable via `tempoSectionThreshold`
+3. **Crossing point check fails** — Drift-based interpolation cannot bridge the gap between clusters
+
+If any condition is false, the feature does nothing and lets gradual drift handle it naturally.
+
+#### Basic Usage
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+const beatMap = await analyzer.generateBeatMap('song-with-tempo-change.mp3', 'track-001');
+
+// First, check if multi-tempo was detected
+const interpolated = analyzer.interpolateBeatMap(beatMap);
+console.log(`Has multiple tempos: ${interpolated.interpolationMetadata.hasMultipleTempos}`);
+console.log(`Detected tempos: ${interpolated.interpolationMetadata.detectedClusterTempos}`);
+
+// If multi-tempo detected, re-analyze with it enabled
+if (interpolated.interpolationMetadata.hasMultipleTempos) {
+  const multiTempoResult = analyzer.interpolateBeatMap(beatMap, {
+    enableMultiTempo: true,
+  });
+
+  console.log(`Sections: ${multiTempoResult.interpolationMetadata.tempoSections?.length}`);
+  multiTempoResult.interpolationMetadata.tempoSections?.forEach((section, i) => {
+    console.log(`Section ${i + 1}: ${section.bpm} BPM (${section.start}s - ${section.end}s)`);
+  });
+}
+```
+
+#### One-Pass Multi-Tempo
+
+Alternatively, enable multi-tempo in a single pass:
+
+```typescript
+const analyzer = new AudioAnalyzer();
+const interpolated = analyzer.interpolateBeatMap(beatMap, {
+  enableMultiTempo: true,  // Will auto-apply if multiple tempos detected
+});
+
+// Check if multi-tempo was actually applied
+if (interpolated.interpolationMetadata.hasMultiTempoApplied) {
+  console.log('Multi-tempo analysis was applied');
+}
+```
+
+#### The "Crossing Paths" Boundary Strategy
+
+Multi-tempo uses a **crossing paths** strategy to determine section boundaries:
+
+```
+Cluster 1 (128 BPM)       Connecting Beats (evidence)      Cluster 2 (140 BPM)
+       │                        │    │    │    │                 │
+       ▼                        ▼    ▼    ▼    ▼                 ▼
+   Beat Beat Beat  →  130→132→135→138→139  →  Beat Beat Beat
+       │                 (gradual drift)                     │
+       │                                                      │
+       └────────────────── SAME SECTION ─────────────────────┘
+                          (drift bridged the gap)
+
+
+Cluster 1 (128 BPM)       Gap (no evidence)          Cluster 2 (140 BPM)
+       │                     │    │                        │
+       ▼                     ▼    ▼                        ▼
+   Beat Beat Beat  →  [silence or sparse beats]  →  Beat Beat Beat
+       │                  (no drift path)                  │
+       │                                                      │
+       └────────────── TWO SECTIONS ─────────────────────────┘
+                     (boundary at crossing point)
+```
+
+**Algorithm:**
+1. Detect clusters at different tempos (endpoints)
+2. Look at detected beats BETWEEN clusters (the evidence)
+3. Interpolate forwards through connecting beats WITH drift
+4. Interpolate backwards through connecting beats WITH drift
+5. At crossing point, measure the gap
+6. **If gap < threshold** → drift bridged it → single section
+7. **If gap > threshold** → sudden jump → two sections with boundary
+
+#### Gradual Drift vs Sudden Change
+
+| Type | Cause | Detection |
+|------|-------|-----------|
+| **Gradual drift** | Beats slightly push/pull tempo over time | Forwards and backwards interpolation **meet** |
+| **Hard section change** | Tempo jumped suddenly (not enough beats to drift) | Forwards and backwards interpolation **don't meet** |
+
+Both types use the same drift-based interpolation. The difference is whether drift could bridge the gap.
+
+#### Configuration Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `tempoSectionThreshold` | `0.1` | Tempo difference threshold (10%) |
+| `minClusterBeats` | `4` | Minimum beats for a valid tempo cluster |
+| `enableMultiTempo` | `false` | Enable multi-tempo analysis |
+
+```typescript
+const interpolated = analyzer.interpolateBeatMap(beatMap, {
+  enableMultiTempo: true,
+  tempoSectionThreshold: 0.15,  // 15% threshold (more lenient)
+  minClusterBeats: 6,           // Require 6 beats per cluster (stricter)
+});
+```
+
+#### Octave Filtering
+
+The system automatically filters out octave-related tempos (half/double). A 60 BPM section followed by a 120 BPM section is treated as the **same tempo**, not a section change.
+
+#### Output Metadata
+
+After multi-tempo analysis, the `interpolationMetadata` includes:
+
+| Field | Description |
+|-------|-------------|
+| `detectedClusterTempos` | Array of detected tempos (e.g., `[128, 140]`) |
+| `hasMultipleTempos` | `true` if 2+ tempos detected |
+| `tempoSections` | Array of `TempoSection` objects with boundaries |
+| `hasMultiTempoApplied` | `true` after multi-tempo re-analysis completes |
+
+```typescript
+interface TempoSection {
+  start: number;          // Section start time in seconds
+  end: number;            // Section end time in seconds
+  bpm: number;            // Tempo for this section
+  intervalSeconds: number; // Quarter note interval
+  beatCount: number;      // Detected beats in this section
+  startBeatIndex: number; // Index of first beat
+  endBeatIndex: number;   // Index of last beat
+}
+```
 
 ---
 

@@ -199,7 +199,7 @@ All TypeScript types are exported, including:
 
 **Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `AccuracyThresholds`, `DifficultyPreset`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `TimeSignatureConfig`, `DownbeatSegment`, `DownbeatConfig`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
-**Beat Interpolation Types:** `BeatSource`, `BeatWithSource`, `QuarterNoteDetection`, `GapAnalysis`, `InterpolationMetadata`, `InterpolatedBeatMap`, `BeatInterpolationOptions`, `InterpolatedBeatMapJSON` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
+**Beat Interpolation Types:** `BeatSource`, `BeatWithSource`, `QuarterNoteDetection`, `GapAnalysis`, `InterpolationMetadata`, `InterpolatedBeatMap`, `BeatInterpolationOptions`, `InterpolatedBeatMapJSON`, `TempoSection`, `TempoSectionJSON` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
 **OSE Parameter Mode Types:** `HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig` — see [OSE Parameter Modes](#ose-parameter-modes)
 
@@ -1438,9 +1438,10 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `BeatWithSource` | Beat with source information | `source`, `distanceToAnchor?`, `nearestAnchorTimestamp?` (extends `Beat`) |
 | `QuarterNoteDetection` | Quarter note detection result | `intervalSeconds`, `bpm`, `confidence`, `histogramPeak`, `secondaryPeaks`, `method`, `denseSectionCount`, `denseSectionBeats` |
 | `GapAnalysis` | Gap analysis between beats | `totalGaps`, `halfNoteGaps`, `anomalies`, `avgGapSize`, `gridAlignmentScore` |
-| `InterpolationMetadata` | Metadata about interpolation | `quarterNoteDetection`, `gapAnalysis`, `detectedBeatCount`, `interpolatedBeatCount`, `totalBeatCount`, `interpolationRatio`, `avgInterpolatedConfidence`, `tempoDriftRatio` |
+| `InterpolationMetadata` | Metadata about interpolation | `quarterNoteDetection`, `gapAnalysis`, `detectedBeatCount`, `interpolatedBeatCount`, `totalBeatCount`, `interpolationRatio`, `avgInterpolatedConfidence`, `tempoDriftRatio`, `detectedClusterTempos?`, `hasMultipleTempos`, `tempoSections?`, `hasMultiTempoApplied?` |
+| `TempoSection` | Tempo section with boundaries | `start`, `end`, `bpm`, `intervalSeconds`, `beatCount`, `startBeatIndex`, `endBeatIndex` |
 | `InterpolatedBeatMap` | Beat map with interpolation | `audioId`, `duration`, `detectedBeats`, `mergedBeats`, `quarterNoteInterval`, `quarterNoteBpm`, `quarterNoteConfidence`, `originalMetadata`, `interpolationMetadata` |
-| `BeatInterpolationOptions` | Configuration for interpolation | `minAnchorConfidence`, `gridSnapTolerance`, `tempoAdaptationRate`, `extrapolateStart`, `extrapolateEnd`, `anomalyThreshold`, `denseSectionMinBeats`, `gridAlignmentWeight`, `anchorConfidenceWeight`, `paceConfidenceWeight` |
+| `BeatInterpolationOptions` | Configuration for interpolation | `minAnchorConfidence`, `gridSnapTolerance`, `tempoAdaptationRate`, `extrapolateStart`, `extrapolateEnd`, `anomalyThreshold`, `denseSectionMinBeats`, `gridAlignmentWeight`, `anchorConfidenceWeight`, `paceConfidenceWeight`, `tempoSectionThreshold`, `minClusterBeats`, `enableMultiTempo` |
 
 ### BeatMapGenerator
 
@@ -1722,6 +1723,9 @@ constructor(options?: BeatInterpolationOptions)
 | `gridAlignmentWeight` | 0.5 | Weight for grid alignment in confidence calculation |
 | `anchorConfidenceWeight` | 0.3 | Weight for anchor confidence in confidence calculation |
 | `paceConfidenceWeight` | 0.2 | Weight for pace confidence in confidence calculation |
+| `tempoSectionThreshold` | 0.1 | Tempo difference threshold for section detection (10%) |
+| `minClusterBeats` | 4 | Minimum beats for a valid tempo cluster |
+| `enableMultiTempo` | false | Enable multi-tempo analysis for tracks with tempo changes |
 
 **Methods:**
 
