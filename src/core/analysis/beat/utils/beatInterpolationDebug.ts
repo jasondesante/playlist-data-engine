@@ -28,6 +28,7 @@ import type {
     InterpolatedBeatMap,
     QuarterNoteDetection,
     GapAnalysis,
+    TempoSection,
 } from '../../../types/BeatMap.js';
 
 // ============================================================================
@@ -142,6 +143,71 @@ export interface BeatDebugInfo {
 }
 
 /**
+ * Debug information for a tempo section
+ */
+export interface TempoSectionDebugInfo {
+    /** Section index (0-based) */
+    index: number;
+
+    /** Section start time in seconds */
+    start: number;
+
+    /** Section end time in seconds */
+    end: number;
+
+    /** Duration of section in seconds */
+    duration: number;
+
+    /** Tempo for this section in BPM */
+    bpm: number;
+
+    /** Quarter note interval in seconds */
+    intervalSeconds: number;
+
+    /** Number of detected beats in this section */
+    beatCount: number;
+
+    /** Index of first beat in this section */
+    startBeatIndex: number;
+
+    /** Index of last beat in this section */
+    endBeatIndex: number;
+
+    /** BPM change from previous section (null for first section) */
+    bpmChangeFromPrevious: number | null;
+
+    /** Percentage change from previous section (null for first section) */
+    percentChangeFromPrevious: number | null;
+}
+
+/**
+ * Multi-tempo debug information
+ */
+export interface MultiTempoDebugInfo {
+    /** Whether multi-tempo was detected */
+    hasMultipleTempos: boolean;
+
+    /** Whether multi-tempo analysis was applied */
+    hasMultiTempoApplied: boolean;
+
+    /** Detected cluster tempos from normal analysis */
+    detectedClusterTempos: number[];
+
+    /** Full tempo section data (only after multi-tempo re-analysis) */
+    sections: TempoSectionDebugInfo[];
+
+    /** Number of sections */
+    sectionCount: number;
+
+    /** BPM range (min to max) */
+    bpmRange: {
+        min: number;
+        max: number;
+        spread: number;
+    };
+}
+
+/**
  * Complete debug report for beat interpolation
  */
 export interface InterpolationDebugReport {
@@ -246,6 +312,9 @@ export interface InterpolationDebugReport {
         /** Beats per second (overall density) */
         beatsPerSecond: number;
     };
+
+    /** Multi-tempo section debug info */
+    multiTempo: MultiTempoDebugInfo;
 }
 
 /**
@@ -267,6 +336,9 @@ export interface DebugOutputOptions {
     /** Whether to include tempo drift data */
     includeTempoDrift?: boolean;
 
+    /** Whether to include multi-tempo section data */
+    includeMultiTempo?: boolean;
+
     /** Histogram bucket size in seconds */
     histogramBucketSize?: number;
 }
@@ -280,6 +352,7 @@ export const DEFAULT_DEBUG_OUTPUT_OPTIONS: Required<DebugOutputOptions> = {
     includeGapDetails: true,
     includeBeatDetails: true,
     includeTempoDrift: true,
+    includeMultiTempo: true,
     histogramBucketSize: 0.005, // 5ms buckets
 };
 
@@ -506,6 +579,66 @@ export function collectTempoDriftData(
     };
 }
 
+/**
+ * Collect multi-tempo section debug information
+ *
+ * @param interpolationMetadata - The interpolation metadata from the beat map
+ * @returns Multi-tempo debug information
+ */
+export function collectMultiTempoDebugInfo(
+    interpolationMetadata: InterpolatedBeatMap['interpolationMetadata']
+): MultiTempoDebugInfo {
+    const {
+        hasMultipleTempos = false,
+        hasMultiTempoApplied = false,
+        detectedClusterTempos = [],
+        tempoSections = [],
+    } = interpolationMetadata;
+
+    // Convert TempoSection to TempoSectionDebugInfo with additional debug fields
+    const sectionDebugInfos: TempoSectionDebugInfo[] = tempoSections.map((section, index) => {
+        const prevSection = index > 0 ? tempoSections[index - 1] : null;
+        const bpmChange = prevSection ? section.bpm - prevSection.bpm : null;
+        const percentChange = prevSection && prevSection.bpm > 0
+            ? ((section.bpm - prevSection.bpm) / prevSection.bpm) * 100
+            : null;
+
+        return {
+            index,
+            start: section.start,
+            end: section.end,
+            duration: section.end - section.start,
+            bpm: section.bpm,
+            intervalSeconds: section.intervalSeconds,
+            beatCount: section.beatCount,
+            startBeatIndex: section.startBeatIndex,
+            endBeatIndex: section.endBeatIndex,
+            bpmChangeFromPrevious: bpmChange,
+            percentChangeFromPrevious: percentChange,
+        };
+    });
+
+    // Calculate BPM range
+    const allBpms = detectedClusterTempos.length > 0
+        ? detectedClusterTempos
+        : [interpolationMetadata.quarterNoteDetection.bpm];
+    const minBpm = Math.min(...allBpms);
+    const maxBpm = Math.max(...allBpms);
+
+    return {
+        hasMultipleTempos,
+        hasMultiTempoApplied,
+        detectedClusterTempos,
+        sections: sectionDebugInfos,
+        sectionCount: sectionDebugInfos.length,
+        bpmRange: {
+            min: minBpm,
+            max: maxBpm,
+            spread: maxBpm - minBpm,
+        },
+    };
+}
+
 // ============================================================================
 // Main Debug Report Generator
 // ============================================================================
@@ -557,6 +690,22 @@ export function generateDebugReport(
             maxTempo: interpolationMetadata.quarterNoteDetection.bpm,
             driftRatio: 1.0,
             dataPoints: [],
+        };
+
+    // Collect multi-tempo section data
+    const multiTempo = opts.includeMultiTempo
+        ? collectMultiTempoDebugInfo(interpolationMetadata)
+        : {
+            hasMultipleTempos: false,
+            hasMultiTempoApplied: false,
+            detectedClusterTempos: [],
+            sections: [],
+            sectionCount: 0,
+            bpmRange: {
+                min: interpolationMetadata.quarterNoteDetection.bpm,
+                max: interpolationMetadata.quarterNoteDetection.bpm,
+                spread: 0,
+            },
         };
 
     // Calculate summary statistics
@@ -611,6 +760,7 @@ export function generateDebugReport(
                 ? mergedBeats.length / interpolatedBeatMap.duration
                 : 0,
         },
+        multiTempo,
     };
 }
 
@@ -729,6 +879,35 @@ export function formatDebugReportToConsole(report: InterpolationDebugReport): st
             lines.push(`  ${point.timestamp.toFixed(2)}s: ${point.localTempo.toFixed(1)} BPM (${deviation}) [${source}]`);
         }
         lines.push('');
+    }
+
+    // Multi-tempo section info
+    if (report.multiTempo) {
+        lines.push('-'.repeat(40));
+        lines.push('MULTI-TEMPO DETECTION');
+        lines.push('-'.repeat(40));
+        lines.push(`Has multiple tempos: ${report.multiTempo.hasMultipleTempos ? 'YES' : 'NO'}`);
+        lines.push(`Multi-tempo applied: ${report.multiTempo.hasMultiTempoApplied ? 'YES' : 'NO'}`);
+
+        if (report.multiTempo.detectedClusterTempos.length > 0) {
+            lines.push(`Detected cluster tempos: [${report.multiTempo.detectedClusterTempos.map(t => t.toFixed(1)).join(', ')}]`);
+        }
+
+        lines.push(`BPM range: ${report.multiTempo.bpmRange.min.toFixed(1)} - ${report.multiTempo.bpmRange.max.toFixed(1)} (spread: ${report.multiTempo.bpmRange.spread.toFixed(1)})`);
+        lines.push('');
+
+        // Section details
+        if (report.multiTempo.sections.length > 0) {
+            lines.push(`Tempo sections (${report.multiTempo.sectionCount} detected):`);
+            for (const section of report.multiTempo.sections) {
+                const changeInfo = section.bpmChangeFromPrevious !== null && section.percentChangeFromPrevious !== null
+                    ? ` (change: ${section.bpmChangeFromPrevious >= 0 ? '+' : ''}${section.bpmChangeFromPrevious.toFixed(1)} BPM, ${section.percentChangeFromPrevious >= 0 ? '+' : ''}${section.percentChangeFromPrevious.toFixed(1)}%)`
+                    : '';
+                lines.push(`  Section ${section.index + 1}: ${section.start.toFixed(2)}s - ${section.end.toFixed(2)}s (${section.duration.toFixed(2)}s)`);
+                lines.push(`           ${section.bpm.toFixed(1)} BPM | ${section.beatCount} beats | beats ${section.startBeatIndex}-${section.endBeatIndex}${changeInfo}`);
+            }
+            lines.push('');
+        }
     }
 
     // Per-beat details (first 10)
@@ -910,6 +1089,98 @@ export function generateConfidenceVisualization(
     return lines.join('\n');
 }
 
+/**
+ * Generate an ASCII visualization of tempo sections
+ *
+ * Shows section boundaries and per-section tempos as a timeline.
+ *
+ * @param report - Debug report
+ * @param width - Width of the visualization in characters
+ * @returns ASCII visualization string
+ */
+export function generateTempoSectionVisualization(
+    report: InterpolationDebugReport,
+    width: number = 60
+): string {
+    const lines: string[] = [];
+    const { multiTempo, duration } = report;
+
+    lines.push('TEMPO SECTION VISUALIZATION');
+    lines.push('');
+
+    if (!multiTempo.hasMultipleTempos) {
+        lines.push('Single tempo track - no sections to visualize');
+        lines.push(`Base tempo: ${report.tempoDrift.baseTempo.toFixed(1)} BPM`);
+        return lines.join('\n');
+    }
+
+    // If sections are available, show detailed visualization
+    if (multiTempo.sections.length > 0) {
+        // Create timeline visualization
+        const timelineHeight = 8;
+        const grid: string[][] = Array(timelineHeight).fill(null).map(() => Array(width).fill(' '));
+
+        const minBpm = multiTempo.bpmRange.min;
+        const maxBpm = multiTempo.bpmRange.max;
+        const bpmRange = maxBpm - minBpm;
+
+        // Draw section regions
+        for (const section of multiTempo.sections) {
+            const startX = Math.floor((section.start / duration) * width);
+            const endX = Math.floor((section.end / duration) * width);
+
+            // Calculate Y position for this section's BPM
+            const normalizedBpm = bpmRange > 0
+                ? (section.bpm - minBpm) / bpmRange
+                : 0.5;
+            const bpmY = Math.floor((1 - normalizedBpm) * (timelineHeight - 1));
+            const clampedY = Math.max(0, Math.min(timelineHeight - 1, bpmY));
+
+            // Draw horizontal line for section
+            for (let x = startX; x < endX && x < width; x++) {
+                grid[clampedY][x] = '█';
+            }
+
+            // Draw section boundary markers
+            if (startX >= 0 && startX < width) {
+                for (let y = 0; y < timelineHeight; y++) {
+                    if (y !== clampedY) {
+                        grid[y][startX] = '│';
+                    }
+                }
+            }
+        }
+
+        // Render grid
+        lines.push(`    ${maxBpm.toFixed(0)} BPM ┌${'─'.repeat(width)}┐`);
+        for (let y = 0; y < timelineHeight; y++) {
+            const row = grid[y].join('');
+            lines.push(`           │${row}│`);
+        }
+        lines.push(`    ${minBpm.toFixed(0)} BPM └${'─'.repeat(width)}┘`);
+        lines.push(`           0s${' '.repeat(width - 6)}${duration.toFixed(0)}s`);
+        lines.push('');
+
+        // Legend with section info
+        lines.push('Sections:');
+        for (const section of multiTempo.sections) {
+            const bar = '█'.repeat(Math.max(1, Math.floor((section.duration / duration) * 20)));
+            lines.push(`  ${section.index + 1}: ${section.bpm.toFixed(1)} BPM [${bar}] ${section.start.toFixed(1)}s-${section.end.toFixed(1)}s`);
+        }
+    } else {
+        // No sections applied yet, just show detected tempos
+        lines.push('Detected tempos (sections not yet applied):');
+        for (const tempo of multiTempo.detectedClusterTempos) {
+            lines.push(`  • ${tempo.toFixed(1)} BPM`);
+        }
+    }
+
+    lines.push('');
+    lines.push(`Status: ${multiTempo.hasMultiTempoApplied ? 'Multi-tempo analysis applied' : 'Multi-tempo detected but not applied (use enableMultiTempo: true)'}`);
+
+    return lines.join('\n');
+}
+
 // ============================================================================
 // Convenience Class
 // ============================================================================
@@ -972,6 +1243,13 @@ export class BeatInterpolationDebug {
      */
     getConfidenceVisualization(width?: number): string {
         return generateConfidenceVisualization(this.report, width);
+    }
+
+    /**
+     * Get tempo section visualization
+     */
+    getTempoSectionVisualization(width?: number): string {
+        return generateTempoSectionVisualization(this.report, width);
     }
 
     /**

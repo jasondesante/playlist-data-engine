@@ -20,10 +20,12 @@ import {
     collectGapDetails,
     collectBeatDebugInfo,
     collectTempoDriftData,
+    collectMultiTempoDebugInfo,
     formatDebugReportToConsole,
     formatDebugReportToJSON,
     generateTempoDriftVisualization,
     generateConfidenceVisualization,
+    generateTempoSectionVisualization,
     BeatInterpolationDebug,
     DEFAULT_DEBUG_OUTPUT_OPTIONS,
 } from '../../../src/core/analysis/beat/utils/beatInterpolationDebug.js';
@@ -33,6 +35,8 @@ import type {
     GapDetail,
     BeatDebugInfo,
     TempoDriftPoint,
+    TempoSectionDebugInfo,
+    MultiTempoDebugInfo,
 } from '../../../src/core/analysis/beat/utils/beatInterpolationDebug.js';
 
 // Helper to create a beat with default values
@@ -705,7 +709,160 @@ describe('Beat Interpolation Debug Utility', () => {
             expect(DEFAULT_DEBUG_OUTPUT_OPTIONS.includeGapDetails).toBe(true);
             expect(DEFAULT_DEBUG_OUTPUT_OPTIONS.includeBeatDetails).toBe(true);
             expect(DEFAULT_DEBUG_OUTPUT_OPTIONS.includeTempoDrift).toBe(true);
+            expect(DEFAULT_DEBUG_OUTPUT_OPTIONS.includeMultiTempo).toBe(true);
             expect(DEFAULT_DEBUG_OUTPUT_OPTIONS.histogramBucketSize).toBe(0.005);
+        });
+    });
+
+    describe('collectMultiTempoDebugInfo', () => {
+        it('should return default values for single-tempo track', () => {
+            const interpolator = new BeatInterpolator();
+            const beats = createRegularBeats(120, 5);
+            const beatMap = createBeatMap(beats, 5, 120);
+            const interpolatedBeatMap = interpolator.interpolate(beatMap);
+
+            const multiTempoInfo = collectMultiTempoDebugInfo(interpolatedBeatMap.interpolationMetadata);
+
+            expect(multiTempoInfo.hasMultipleTempos).toBe(false);
+            expect(multiTempoInfo.hasMultiTempoApplied).toBe(false);
+            expect(multiTempoInfo.sectionCount).toBe(0);
+            expect(multiTempoInfo.sections).toEqual([]);
+        });
+
+        it('should include BPM range from base tempo', () => {
+            const interpolator = new BeatInterpolator();
+            const beats = createRegularBeats(120, 5);
+            const beatMap = createBeatMap(beats, 5, 120);
+            const interpolatedBeatMap = interpolator.interpolate(beatMap);
+
+            const multiTempoInfo = collectMultiTempoDebugInfo(interpolatedBeatMap.interpolationMetadata);
+
+            expect(multiTempoInfo.bpmRange.min).toBe(120);
+            expect(multiTempoInfo.bpmRange.max).toBe(120);
+            expect(multiTempoInfo.bpmRange.spread).toBe(0);
+        });
+    });
+
+    describe('generateTempoSectionVisualization', () => {
+        it('should show single tempo message for non-multi-tempo track', () => {
+            const interpolator = new BeatInterpolator();
+            const beats = createRegularBeats(120, 5);
+            const beatMap = createBeatMap(beats, 5, 120);
+            const interpolatedBeatMap = interpolator.interpolate(beatMap);
+
+            const report = generateDebugReport(interpolatedBeatMap);
+            const viz = generateTempoSectionVisualization(report);
+
+            expect(viz).toContain('TEMPO SECTION VISUALIZATION');
+            expect(viz).toContain('Single tempo track');
+        });
+
+        it('should handle report with no beats', () => {
+            const report: InterpolationDebugReport = {
+                audioId: 'test',
+                duration: 1,
+                generatedAt: new Date().toISOString(),
+                quarterNoteDetection: {
+                    intervalSeconds: 0.5,
+                    bpm: 120,
+                    confidence: 0.8,
+                    method: 'histogram',
+                    denseSectionCount: 0,
+                    denseSectionBeats: 0,
+                    histogram: [],
+                },
+                gapAnalysis: {
+                    totalGaps: 0,
+                    halfNoteGaps: 0,
+                    anomalyCount: 0,
+                    anomalyIndices: [],
+                    avgGapSize: 1,
+                    gridAlignmentScore: 1,
+                    gaps: [],
+                },
+                beats: [],
+                tempoDrift: {
+                    baseTempo: 120,
+                    minTempo: 120,
+                    maxTempo: 120,
+                    driftRatio: 1,
+                    dataPoints: [],
+                },
+                summary: {
+                    detectedBeatCount: 0,
+                    interpolatedBeatCount: 0,
+                    totalBeatCount: 0,
+                    interpolationRatio: 0,
+                    avgInterpolatedConfidence: 0,
+                    avgDetectedConfidence: 0,
+                    beatsPerSecond: 0,
+                },
+                multiTempo: {
+                    hasMultipleTempos: false,
+                    hasMultiTempoApplied: false,
+                    detectedClusterTempos: [],
+                    sections: [],
+                    sectionCount: 0,
+                    bpmRange: { min: 120, max: 120, spread: 0 },
+                },
+            };
+
+            const viz = generateTempoSectionVisualization(report);
+            expect(viz).toContain('Single tempo track');
+        });
+    });
+
+    describe('Multi-tempo in debug report', () => {
+        it('should include multiTempo field in report', () => {
+            const interpolator = new BeatInterpolator();
+            const beats = createRegularBeats(120, 5);
+            const beatMap = createBeatMap(beats, 5, 120);
+            const interpolatedBeatMap = interpolator.interpolate(beatMap);
+
+            const report = generateDebugReport(interpolatedBeatMap);
+
+            expect(report.multiTempo).toBeDefined();
+            expect(report.multiTempo.hasMultipleTempos).toBe(false);
+        });
+
+        it('should skip multiTempo when disabled', () => {
+            const interpolator = new BeatInterpolator();
+            const beats = createRegularBeats(120, 5);
+            const beatMap = createBeatMap(beats, 5, 120);
+            const interpolatedBeatMap = interpolator.interpolate(beatMap);
+
+            const report = generateDebugReport(interpolatedBeatMap, { includeMultiTempo: false });
+
+            expect(report.multiTempo.sectionCount).toBe(0);
+        });
+    });
+
+    describe('formatDebugReportToConsole with multiTempo', () => {
+        it('should include multi-tempo section in output', () => {
+            const interpolator = new BeatInterpolator();
+            const beats = createRegularBeats(120, 5);
+            const beatMap = createBeatMap(beats, 5, 120);
+            const interpolatedBeatMap = interpolator.interpolate(beatMap);
+
+            const report = generateDebugReport(interpolatedBeatMap);
+            const consoleOutput = formatDebugReportToConsole(report);
+
+            expect(consoleOutput).toContain('MULTI-TEMPO DETECTION');
+            expect(consoleOutput).toContain('Has multiple tempos');
+        });
+    });
+
+    describe('BeatInterpolationDebug class with multiTempo', () => {
+        it('should return tempo section visualization', () => {
+            const interpolator = new BeatInterpolator();
+            const beats = createRegularBeats(120, 5);
+            const beatMap = createBeatMap(beats, 5, 120);
+            const interpolatedBeatMap = interpolator.interpolate(beatMap);
+
+            const debug = new BeatInterpolationDebug(interpolatedBeatMap);
+            const viz = debug.getTempoSectionVisualization();
+
+            expect(viz).toContain('TEMPO SECTION VISUALIZATION');
         });
     });
 

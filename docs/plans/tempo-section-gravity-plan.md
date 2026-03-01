@@ -445,10 +445,27 @@ interpolate(beatMap, { enableMultiTempo: true })
 
 ## Phase 7: Debug & Testing
 
-- [ ] Update `beatInterpolationDebug.ts`
-  - [ ] Add section boundary visualization
-  - [ ] Show per-section tempo in debug report
-  - [ ] Add `TempoSectionDebugInfo` type
+- [x] Update `beatInterpolationDebug.ts`
+  - [x] Add section boundary visualization
+  - [x] Show per-section tempo in debug report
+  - [x] Add `TempoSectionDebugInfo` type
+
+**Implementation notes:**
+- Added `TempoSectionDebugInfo` interface with debug-specific fields (bpmChangeFromPrevious, percentChangeFromPrevious)
+- Added `MultiTempoDebugInfo` interface for comprehensive multi-tempo debug data
+- Added `collectMultiTempoDebugInfo()` function to extract multi-tempo metadata
+- Updated `InterpolationDebugReport` interface to include `multiTempo` field
+- Added `includeMultiTempo` option to `DebugOutputOptions` (default: true)
+- Updated `formatDebugReportToConsole()` to display MULTI-TEMPO DETECTION section with:
+  - hasMultipleTempos and hasMultiTempoApplied flags
+  - Detected cluster tempos array
+  - BPM range (min/max/spread)
+  - Per-section details with BPM change calculations
+- Added `generateTempoSectionVisualization()` function for ASCII timeline visualization
+- Added `getTempoSectionVisualization()` method to `BeatInterpolationDebug` class
+- Added 8 new tests for multi-tempo debug features
+- All 48 debug tests pass
+- Build passes cleanly
 
 - [ ] Add test cases to `beatInterpolator.test.ts`
   - [ ] **Two clusters with gradual drift between** — 128 BPM cluster → connecting beats showing drift → 140 BPM cluster, should NOT trigger sections
