@@ -1233,6 +1233,309 @@ The frontend provides:
 
 ---
 
+## Beat Interpolation
+
+Beat interpolation is a **post-processing pass** that runs after BeatMap generation to fill gaps where detected beats may be missing. This is useful for rhythm games that need a complete beat grid, even in sections where beat detection was sparse or silent.
+
+### Overview
+
+The interpolation system uses a **Pace + Anchors model**:
+- **Pace**: The quarter note interval established from dense sections (where detection works well)
+- **Anchors**: Individual detected beats that validate and override interpolated beats
+
+The result is an `InterpolatedBeatMap` with two output streams:
+- `detectedBeats[]` — Original detected beats only
+- `mergedBeats[]` — Interpolated beats + detected beats (detected beats override at same positions)
+
+### Source Files
+
+| Component | Location |
+|-----------|----------|
+| **BeatInterpolator** | [src/core/analysis/beat/BeatInterpolator.ts](../src/core/analysis/beat/BeatInterpolator.ts) |
+| **Interpolation Types** | [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts) |
+
+---
+
+### Basic Interpolation with Defaults
+
+The simplest way to use beat interpolation is with the default settings:
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+
+// Generate a beat map
+const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
+
+// Interpolate with default options (dual-pass algorithm)
+const interpolated = analyzer.interpolateBeatMap(beatMap);
+
+console.log(`Detected beats: ${interpolated.detectedBeats.length}`);
+console.log(`Total beats (merged): ${interpolated.mergedBeats.length}`);
+console.log(`Interpolated beats: ${interpolated.interpolationMetadata.interpolatedBeatCount}`);
+console.log(`Quarter note: ${interpolated.quarterNoteBpm} BPM`);
+```
+
+#### One-Step Generation + Interpolation
+
+For convenience, you can generate and interpolate in a single call:
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+
+// Generate beat map with interpolation in one step
+const interpolated = await analyzer.generateBeatMapWithInterpolation(
+  'song.mp3',
+  'track-001'
+);
+
+console.log(`Total beats: ${interpolated.mergedBeats.length}`);
+console.log(`Quarter note confidence: ${interpolated.quarterNoteConfidence}`);
+```
+
+---
+
+### Selecting Different Algorithms
+
+Three interpolation algorithms are available for research and comparison:
+
+| Algorithm | Description | Best For |
+|-----------|-------------|----------|
+| `'histogram-grid'` | Fixed grid based on histogram peak | Consistent tempo, simple songs |
+| `'adaptive-phase-locked'` | Phase tracking with tempo drift handling | Songs with slight tempo variations |
+| `'dual-pass'` | KDE + weighted clustering with confidence scoring | **Default**, best overall accuracy |
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
+
+// Fixed histogram grid - fastest, no drift handling
+const histogramGrid = analyzer.interpolateBeatMap(beatMap, {
+  algorithm: 'histogram-grid'
+});
+
+// Adaptive phase-locked - handles tempo drift
+const adaptive = analyzer.interpolateBeatMap(beatMap, {
+  algorithm: 'adaptive-phase-locked'
+});
+
+// Dual-pass - most accurate (default)
+const dualPass = analyzer.interpolateBeatMap(beatMap, {
+  algorithm: 'dual-pass'
+});
+
+// Compare results
+console.log(`Histogram: ${histogramGrid.mergedBeats.length} beats`);
+console.log(`Adaptive: ${adaptive.mergedBeats.length} beats`);
+console.log(`Dual-pass: ${dualPass.mergedBeats.length} beats`);
+```
+
+---
+
+### Accessing Detected vs Merged Streams
+
+The `InterpolatedBeatMap` provides two beat streams for different use cases:
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+const interpolated = await analyzer.generateBeatMapWithInterpolation(
+  'song.mp3',
+  'track-001'
+);
+
+// Stream 1: Original detected beats only (no interpolation)
+const detectedBeats = interpolated.detectedBeats;
+console.log(`Original detected: ${detectedBeats.length} beats`);
+
+// Stream 2: Merged beats (interpolated + detected override)
+const mergedBeats = interpolated.mergedBeats;
+console.log(`Merged total: ${mergedBeats.length} beats`);
+
+// Each merged beat has a source field
+mergedBeats.forEach(beat => {
+  if (beat.source === 'detected') {
+    console.log(`[${beat.timestamp.toFixed(2)}s] Detected beat (confidence: ${beat.confidence.toFixed(2)})`);
+  } else {
+    console.log(`[${beat.timestamp.toFixed(2)}s] Interpolated beat (distance to anchor: ${beat.distanceToAnchor?.toFixed(2)}s)`);
+  }
+});
+```
+
+#### Using Merged Beats with BeatStream
+
+You can use interpolated beats directly with BeatStream:
+
+```typescript
+import { AudioAnalyzer, BeatStream } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+const audioContext = new AudioContext();
+
+// Generate interpolated beat map
+const interpolated = await analyzer.generateBeatMapWithInterpolation(
+  'song.mp3',
+  'track-001'
+);
+
+// Create BeatStream with interpolated beats
+const beatStream = analyzer.createBeatStream(interpolated, audioContext, {
+  useInterpolatedBeats: true,  // Use mergedBeats instead of detectedBeats
+  anticipationTime: 2.0,
+});
+
+// Subscribe to beat events (now includes interpolated beats)
+beatStream.subscribe((event) => {
+  console.log(`Beat at ${event.beat.timestamp}s (source: ${(event.beat as any).source || 'detected'})`);
+});
+
+beatStream.start();
+```
+
+---
+
+### Customizing Options
+
+Fine-tune interpolation behavior with these options:
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
+
+const interpolated = analyzer.interpolateBeatMap(beatMap, {
+  // Algorithm selection
+  algorithm: 'dual-pass',
+
+  // Anchor filtering - beats below this confidence aren't used as anchors
+  minAnchorConfidence: 0.3,
+
+  // Grid snapping - how close a detected beat must be to override (seconds)
+  gridSnapTolerance: 0.05,
+
+  // Tempo adaptation - how much to adjust tempo at each anchor (0=fixed, 1=full)
+  tempoAdaptationRate: 0.3,
+
+  // Extrapolation - extend grid before first/after last detected beat
+  extrapolateStart: true,
+  extrapolateEnd: true,
+
+  // Anomaly detection - multiplier for detecting unusual intervals
+  anomalyThreshold: 0.4,
+
+  // Dense section threshold - minimum beats to establish pace
+  denseSectionMinBeats: 3,
+
+  // Confidence weights (must sum to 1.0)
+  gridAlignmentWeight: 0.5,    // How well anchors align to grid
+  anchorConfidenceWeight: 0.3, // Average confidence of bounding anchors
+  paceConfidenceWeight: 0.2,   // Quarter note detection confidence
+});
+
+// Access interpolation metadata
+const meta = interpolated.interpolationMetadata;
+console.log(`Algorithm: ${meta.algorithm}`);
+console.log(`Detected: ${meta.detectedBeatCount}`);
+console.log(`Interpolated: ${meta.interpolatedBeatCount}`);
+console.log(`Interpolation ratio: ${(meta.interpolationRatio * 100).toFixed(1)}%`);
+console.log(`Avg interpolated confidence: ${meta.avgInterpolatedConfidence.toFixed(2)}`);
+console.log(`Tempo drift ratio: ${meta.tempoDriftRatio.toFixed(2)}`);
+```
+
+#### Option Reference
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `algorithm` | `string` | `'dual-pass'` | Interpolation algorithm |
+| `minAnchorConfidence` | `number` | `0.3` | Minimum confidence to be an anchor |
+| `gridSnapTolerance` | `number` | `0.05` | Seconds tolerance for grid snapping |
+| `tempoAdaptationRate` | `number` | `0.3` | Tempo drift adaptation (0-1) |
+| `extrapolateStart` | `boolean` | `true` | Extrapolate before first beat |
+| `extrapolateEnd` | `boolean` | `true` | Extrapolate after last beat |
+| `anomalyThreshold` | `number` | `0.4` | Anomaly detection multiplier |
+| `denseSectionMinBeats` | `number` | `3` | Min beats for dense section |
+| `gridAlignmentWeight` | `number` | `0.5` | Grid alignment confidence weight |
+| `anchorConfidenceWeight` | `number` | `0.3` | Anchor confidence weight |
+| `paceConfidenceWeight` | `number` | `0.2` | Pace confidence weight |
+
+---
+
+### Serialization
+
+Save and load interpolated beat maps:
+
+```typescript
+import { AudioAnalyzer, BeatInterpolator } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+const interpolated = await analyzer.generateBeatMapWithInterpolation(
+  'song.mp3',
+  'track-001'
+);
+
+// Serialize to JSON
+const jsonString = BeatInterpolator.toJSON(interpolated);
+
+// Save to file (Node.js)
+// await fs.writeFile('./beatmaps/track-001-interpolated.json', jsonString);
+
+// Load from JSON
+const loaded = BeatInterpolator.fromJSON(jsonString);
+
+console.log(`Loaded ${loaded.mergedBeats.length} beats`);
+```
+
+---
+
+### How It Works
+
+#### Quarter Note Detection (Dense Section Priority)
+
+The quarter note interval is determined by analyzing intervals between detected beats, with **higher weight given to dense sections** (where beats are detected consistently):
+
+1. Identify dense sections (3+ consecutive beats at similar intervals)
+2. Build a weighted histogram of all intervals
+3. Weight intervals by density, consistency, and confidence
+4. The histogram peak becomes the quarter note
+
+#### Gap Analysis
+
+After quarter note detection, the system analyzes gaps:
+- **Half-note gaps** (2× quarter note): Interpolate 1 beat in between
+- **Longer gaps**: Interpolate N-1 beats to fill
+- **Anomalies**: Single unusual intervals are ignored (likely false positives)
+
+#### Confidence Model
+
+Interpolated beat confidence is calculated from three factors:
+- **Grid alignment (50%)**: How well surrounding anchors align to the grid
+- **Anchor confidence (30%)**: Average confidence of bounding detected beats
+- **Pace confidence (20%)**: Confidence in the quarter note detection
+
+All interpolated beats in a validated gap have **equal confidence** (no decay based on distance).
+
+---
+
+### When to Use Beat Interpolation
+
+| Use Case | Recommended |
+|----------|-------------|
+| Rhythm games needing complete beat grid | ✅ Yes |
+| Silent sections in songs | ✅ Yes |
+| Sparse beat detection | ✅ Yes |
+| Visualization with beat-synchronized effects | ✅ Yes |
+| Original beat detection quality | ❌ Use `detectedBeats` |
+| Songs with extreme tempo changes | ⚠️ Use section-based (future) |
+
+---
+
 ## References
 
 - [Beat Tracking by Dynamic Programming (Ellis, 2007)](https://www.ee.columbia.edu/~dpwe/pubs/Ellis07-beattrack.pdf)

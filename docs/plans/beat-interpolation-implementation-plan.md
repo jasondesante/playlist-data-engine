@@ -495,10 +495,10 @@ Create `tests/integration/beatInterpolation.integration.test.ts`:
 - [x] Inline comments explaining algorithm steps
 
 ### 7.2 Usage Documentation
-- [ ] Example: Basic interpolation with defaults
-- [ ] Example: Selecting different algorithms
-- [ ] Example: Accessing detected vs merged streams
-- [ ] Example: Customizing options
+- [x] Example: Basic interpolation with defaults
+- [x] Example: Selecting different algorithms
+- [x] Example: Accessing detected vs merged streams
+- [x] Example: Customizing options
 
 ### 7.3 Update DATA_ENGINE_REFERENCE.md
 - [ ] Add `BeatInterpolator` to API reference table
