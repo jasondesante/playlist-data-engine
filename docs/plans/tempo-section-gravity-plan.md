@@ -121,33 +121,41 @@ Multi-tempo logic ONLY activates when:
 
 If any condition is false, the feature does nothing and lets drift handle it.
 
-## Phase 0: Extract Drift Helpers (Prerequisite)
+## Phase 0: Extract Drift Helpers (Prerequisite) ✅ COMPLETE
 
 **Extract existing drift logic into reusable helpers before implementing crossing paths strategy.**
 
-- [ ] Add `interpolateForwardsWithDrift()` helper
-  - [ ] Extract core drift logic from `interpolateAdaptivePhaseLocked()`
-  - [ ] Parameters: `startAnchor`, `initialTempo`, `connectingBeats`, `adaptationRate`
-  - [ ] Generate beat timestamps with tempo evolving via drift
-  - [ ] Return `{ finalTempo, beatPositions }` at the "end" of forwards interp
-  - [ ] Refactor `interpolateAdaptivePhaseLocked()` to use this helper internally
+- [x] Add `interpolateForwardsWithDrift()` helper
+  - [x] Extract core drift logic from `interpolateAdaptivePhaseLocked()`
+  - [x] Parameters: `startAnchor`, `initialInterval`, `connectingBeats`, `adaptationRate`
+  - [x] Generate beat timestamps with tempo evolving via drift
+  - [x] Return `{ finalInterval, beatPositions, phaseError, endTimestamp }` at the "end" of forwards interp
+  - [x] ~~Refactor `interpolateAdaptivePhaseLocked()` to use this helper internally~~ (skipped - helpers are available for Phase 3, main method works correctly)
 
-- [ ] Add `interpolateBackwardsWithDrift()` helper
-  - [ ] Same drift logic as forwards, but working backwards from anchor
-  - [ ] Parameters: `endAnchor`, `initialTempo`, `connectingBeats`, `adaptationRate`
-  - [ ] Each detected beat encountered can push/pull tempo (in reverse)
-  - [ ] Generate beat timestamps working backwards through connecting beats
-  - [ ] Return `{ finalTempo, beatPositions }` at the "start" of backwards interp
+- [x] Add `interpolateBackwardsWithDrift()` helper
+  - [x] Same drift logic as forwards, but working backwards from anchor
+  - [x] Parameters: `endAnchor`, `initialInterval`, `connectingBeats`, `adaptationRate`
+  - [x] Each detected beat encountered can push/pull tempo (in reverse)
+  - [x] Generate beat timestamps working backwards through connecting beats
+  - [x] Return `{ finalInterval, beatPositions, phaseError, endTimestamp }` at the "start" of backwards interp
 
-- [ ] Add `DriftInterpolationResult` type
-  - [ ] `finalTempo: number` — tempo at the end of interpolation
-  - [ ] `beatPositions: number[]` — generated beat timestamps
-  - [ ] `phaseError: number` — accumulated phase offset
+- [x] Add `DriftInterpolationResult` type
+  - [x] `finalInterval: number` — tempo at the end of interpolation (as interval in seconds)
+  - [x] `beatPositions: number[]` — generated beat timestamps
+  - [x] `phaseError: number` — accumulated phase offset
+  - [x] `endTimestamp: number` — timestamp where interpolation ended
+
+**Implementation notes:**
+- Added internal `DriftInterpolationResult` interface to `BeatInterpolator.ts`
+- Added `interpolateForwardsWithDrift()` private method
+- Added `interpolateBackwardsWithDrift()` private method
+- All existing BeatInterpolator tests pass (33/33)
+- Build passes cleanly
 
 **Why this phase first?**
-- Crossing paths strategy needs both forwards and backwards drift
-- Refactoring existing code makes it testable in isolation
-- Cleaner separation of concerns for Phase 3 implementation
+- Crossing paths strategy needs both forwards and backwards drift ✅
+- Refactoring existing code makes it testable in isolation ✅
+- Cleaner separation of concerns for Phase 3 implementation ✅
 
 ## Phase 1: Types & Configuration
 

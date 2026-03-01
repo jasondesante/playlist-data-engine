@@ -84,6 +84,26 @@ interface GridBeat {
 }
 
 /**
+ * Result of drift-based interpolation
+ *
+ * Used by the crossing paths strategy to measure how tempo evolves
+ * when interpolating through connecting beats between clusters.
+ */
+interface DriftInterpolationResult {
+    /** Tempo (interval in seconds) at the end of interpolation */
+    finalInterval: number;
+
+    /** Generated beat timestamps */
+    beatPositions: number[];
+
+    /** Accumulated phase offset from the original grid */
+    phaseError: number;
+
+    /** The timestamp where interpolation ended */
+    endTimestamp: number;
+}
+
+/**
  * Beat Interpolator
  *
  * Generates interpolated beats to fill gaps in detected beat maps using
@@ -606,6 +626,164 @@ export class BeatInterpolator {
     ): BeatWithSource[] {
         // Use adaptive phase-locked approach (sole algorithm after simplification)
         return this.interpolateAdaptivePhaseLocked(beatMap, quarterNote);
+    }
+
+    // ==================== Drift Interpolation Helpers ====================
+
+    /**
+     * Interpolate forwards from a start anchor through connecting beats with drift
+     *
+     * Used by the crossing paths strategy to determine how tempo evolves when
+     * interpolating from one cluster towards another. Each detected beat encountered
+     * can push/pull the tempo based on phase alignment.
+     *
+     * @param startAnchor - Starting beat timestamp (anchor point)
+     * @param initialInterval - Initial tempo as interval in seconds
+     * @param connectingBeats - Beats to interpolate through (sorted by timestamp)
+     * @param adaptationRate - How quickly tempo adapts (0-1)
+     * @param stopAtTimestamp - Optional timestamp to stop interpolation at
+     * @returns Drift interpolation result with final tempo and beat positions
+     */
+    private interpolateForwardsWithDrift(
+        startAnchor: number,
+        initialInterval: number,
+        connectingBeats: Beat[],
+        adaptationRate: number,
+        stopAtTimestamp?: number
+    ): DriftInterpolationResult {
+        const beatPositions: number[] = [];
+        let currentInterval = initialInterval;
+        let currentPhase = startAnchor;
+
+        // Filter beats that are after start anchor and before stop point
+        const relevantBeats = connectingBeats.filter(beat => {
+            if (beat.timestamp <= startAnchor) return false;
+            if (stopAtTimestamp !== undefined && beat.timestamp > stopAtTimestamp) return false;
+            return true;
+        });
+
+        let lastAnchorTime = startAnchor;
+
+        for (let i = 0; i < relevantBeats.length; i++) {
+            const nextAnchor = relevantBeats[i];
+            const gapDuration = nextAnchor.timestamp - lastAnchorTime;
+
+            // Calculate expected beats in gap
+            const expectedBeats = Math.round(gapDuration / currentInterval);
+
+            if (expectedBeats > 0) {
+                // Calculate phase error
+                const expectedNextTime = currentPhase + (expectedBeats * currentInterval);
+                const phaseError = nextAnchor.timestamp - expectedNextTime;
+
+                // Distribute error across beats with adaptation rate
+                const tempoAdjustment = (phaseError / expectedBeats) * adaptationRate;
+                currentInterval = currentInterval + tempoAdjustment;
+
+                // Generate interpolated beats
+                for (let j = 1; j < expectedBeats; j++) {
+                    const time = lastAnchorTime + (j * currentInterval);
+                    if (stopAtTimestamp !== undefined && time > stopAtTimestamp) break;
+                    beatPositions.push(time);
+                }
+            }
+
+            // Update phase and anchor for next iteration
+            currentPhase = nextAnchor.timestamp;
+            lastAnchorTime = nextAnchor.timestamp;
+        }
+
+        // Calculate final phase error (difference from ideal grid)
+        const idealBeats = beatPositions.length;
+        const expectedFinalTime = startAnchor + (idealBeats * initialInterval);
+        const phaseError = (beatPositions.length > 0)
+            ? beatPositions[beatPositions.length - 1] - expectedFinalTime
+            : 0;
+
+        return {
+            finalInterval: currentInterval,
+            beatPositions,
+            phaseError,
+            endTimestamp: lastAnchorTime,
+        };
+    }
+
+    /**
+     * Interpolate backwards from an end anchor through connecting beats with drift
+     *
+     * Used by the crossing paths strategy to determine how tempo evolves when
+     * interpolating from one cluster backwards towards another. Each detected beat
+     * encountered can push/pull the tempo (in reverse time direction).
+     *
+     * @param endAnchor - Ending beat timestamp (anchor point)
+     * @param initialInterval - Initial tempo as interval in seconds
+     * @param connectingBeats - Beats to interpolate through (sorted by timestamp)
+     * @param adaptationRate - How quickly tempo adapts (0-1)
+     * @param stopAtTimestamp - Optional timestamp to stop interpolation at
+     * @returns Drift interpolation result with final tempo and beat positions
+     */
+    private interpolateBackwardsWithDrift(
+        endAnchor: number,
+        initialInterval: number,
+        connectingBeats: Beat[],
+        adaptationRate: number,
+        stopAtTimestamp?: number
+    ): DriftInterpolationResult {
+        const beatPositions: number[] = [];
+        let currentInterval = initialInterval;
+        let currentPhase = endAnchor;
+
+        // Filter beats that are before end anchor and after stop point
+        const relevantBeats = connectingBeats.filter(beat => {
+            if (beat.timestamp >= endAnchor) return false;
+            if (stopAtTimestamp !== undefined && beat.timestamp < stopAtTimestamp) return false;
+            return true;
+        }).reverse(); // Process in reverse order
+
+        let lastAnchorTime = endAnchor;
+
+        for (let i = 0; i < relevantBeats.length; i++) {
+            const prevAnchor = relevantBeats[i];
+            const gapDuration = lastAnchorTime - prevAnchor.timestamp;
+
+            // Calculate expected beats in gap
+            const expectedBeats = Math.round(gapDuration / currentInterval);
+
+            if (expectedBeats > 0) {
+                // Calculate phase error (working backwards)
+                const expectedPrevTime = currentPhase - (expectedBeats * currentInterval);
+                const phaseError = prevAnchor.timestamp - expectedPrevTime;
+
+                // Distribute error across beats with adaptation rate
+                const tempoAdjustment = (phaseError / expectedBeats) * adaptationRate;
+                currentInterval = currentInterval + tempoAdjustment;
+
+                // Generate interpolated beats (backwards)
+                for (let j = 1; j < expectedBeats; j++) {
+                    const time = lastAnchorTime - (j * currentInterval);
+                    if (stopAtTimestamp !== undefined && time < stopAtTimestamp) break;
+                    beatPositions.unshift(time); // Add to front since going backwards
+                }
+            }
+
+            // Update phase and anchor for next iteration
+            currentPhase = prevAnchor.timestamp;
+            lastAnchorTime = prevAnchor.timestamp;
+        }
+
+        // Calculate final phase error (difference from ideal grid)
+        const idealBeats = beatPositions.length;
+        const expectedStartTime = endAnchor - (idealBeats * initialInterval);
+        const phaseError = (beatPositions.length > 0)
+            ? beatPositions[0] - expectedStartTime
+            : 0;
+
+        return {
+            finalInterval: currentInterval,
+            beatPositions,
+            phaseError,
+            endTimestamp: lastAnchorTime,
+        };
     }
 
     /**
