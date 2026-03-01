@@ -1364,4 +1364,153 @@ describe('Section Boundary Detection (Phase 3)', () => {
             expect(result.beatsInSection2.length).toBe(0)
         })
     })
+
+    // ==================== Phase 4: Multi-Tempo Analysis Flow ====================
+
+    describe('Phase 4: Multi-Tempo Analysis', () => {
+        describe('interpolate with multi-tempo detection (enableMultiTempo: false)', () => {
+            it('should detect multiple tempos but not apply multi-tempo by default', () => {
+                const interpolator = new BeatInterpolator({
+                    tempoSectionThreshold: 0.1,
+                    minClusterBeats: 4,
+                    enableMultiTempo: false, // Default
+                })
+
+                // Create two clusters at clearly different tempos with a gap
+                const beats: Beat[] = []
+                // 5 beats at 120 BPM (0.5s intervals)
+                for (let i = 0; i < 5; i++) {
+                    beats.push(createBeat(i * 0.5))
+                }
+                // GAP: Start at 4.0s instead of 2.5s to create separation
+                // 5 beats at 150 BPM (0.4s intervals)
+                for (let i = 0; i < 5; i++) {
+                    beats.push(createBeat(4.0 + i * 0.4))
+                }
+
+                const beatMap = createBeatMap(beats, 10)
+                const result = interpolator.interpolate(beatMap)
+
+                // Should detect multiple tempos
+                expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+                expect(result.interpolationMetadata.detectedClusterTempos).toBeDefined()
+                expect(result.interpolationMetadata.detectedClusterTempos!.length).toBe(2)
+
+                // But multi-tempo should NOT be applied
+                expect(result.interpolationMetadata.hasMultiTempoApplied).toBeUndefined()
+                expect(result.interpolationMetadata.tempoSections).toBeUndefined()
+            })
+
+            it('should not detect multiple tempos for single-tempo track', () => {
+                const interpolator = new BeatInterpolator()
+                const beats = createRegularBeats(120, 10)
+                const beatMap = createBeatMap(beats, 10)
+                const result = interpolator.interpolate(beatMap)
+
+                expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+                // Single tempo is still detected, just not "multiple" tempos
+                expect(result.interpolationMetadata.detectedClusterTempos).toEqual([120])
+            })
+        })
+
+        describe('interpolate with multi-tempo enabled (enableMultiTempo: true)', () => {
+            it('should apply multi-tempo when enabled and multiple tempos detected', () => {
+                const interpolator = new BeatInterpolator({
+                    tempoSectionThreshold: 0.1,
+                    minClusterBeats: 4,
+                    enableMultiTempo: true,
+                })
+
+                // Create two clusters at clearly different tempos with a gap
+                const beats: Beat[] = []
+                // 5 beats at 120 BPM (0.5s intervals)
+                for (let i = 0; i < 5; i++) {
+                    beats.push(createBeat(i * 0.5))
+                }
+                // GAP: Start at 4.0s to create clear separation
+                // 5 beats at 150 BPM (0.4s intervals)
+                for (let i = 0; i < 5; i++) {
+                    beats.push(createBeat(4.0 + i * 0.4))
+                }
+
+                const beatMap = createBeatMap(beats, 10)
+                const result = interpolator.interpolate(beatMap)
+
+                // Should detect multiple tempos
+                expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+
+                // Multi-tempo should be applied
+                expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+                expect(result.interpolationMetadata.tempoSections).toBeDefined()
+                expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+            })
+
+            it('should not apply multi-tempo to single-tempo track even when enabled', () => {
+                const interpolator = new BeatInterpolator({
+                    enableMultiTempo: true,
+                })
+
+                const beats = createRegularBeats(120, 10)
+                const beatMap = createBeatMap(beats, 10)
+                const result = interpolator.interpolate(beatMap)
+
+                // Single tempo track should not trigger multi-tempo
+                expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+                expect(result.interpolationMetadata.hasMultiTempoApplied).toBeUndefined()
+            })
+        })
+
+        describe('canApplyMultiTempo', () => {
+            it('should return true when multiple tempos detected but not applied', () => {
+                const interpolator = new BeatInterpolator({
+                    tempoSectionThreshold: 0.1,
+                    minClusterBeats: 4,
+                    enableMultiTempo: false,
+                })
+
+                const beats: Beat[] = []
+                for (let i = 0; i < 5; i++) {
+                    beats.push(createBeat(i * 0.5))
+                }
+                for (let i = 0; i < 5; i++) {
+                    beats.push(createBeat(4.0 + i * 0.4))
+                }
+
+                const beatMap = createBeatMap(beats, 10)
+                const result = interpolator.interpolate(beatMap)
+
+                expect(interpolator.canApplyMultiTempo(result)).toBe(true)
+            })
+
+            it('should return false when multi-tempo already applied', () => {
+                const interpolator = new BeatInterpolator({
+                    tempoSectionThreshold: 0.1,
+                    minClusterBeats: 4,
+                    enableMultiTempo: true,
+                })
+
+                const beats: Beat[] = []
+                for (let i = 0; i < 5; i++) {
+                    beats.push(createBeat(i * 0.5))
+                }
+                for (let i = 0; i < 5; i++) {
+                    beats.push(createBeat(4.0 + i * 0.4))
+                }
+
+                const beatMap = createBeatMap(beats, 10)
+                const result = interpolator.interpolate(beatMap)
+
+                expect(interpolator.canApplyMultiTempo(result)).toBe(false)
+            })
+
+            it('should return false for single-tempo track', () => {
+                const interpolator = new BeatInterpolator()
+                const beats = createRegularBeats(120, 10)
+                const beatMap = createBeatMap(beats, 10)
+                const result = interpolator.interpolate(beatMap)
+
+                expect(interpolator.canApplyMultiTempo(result)).toBe(false)
+            })
+        })
+    })
 })
