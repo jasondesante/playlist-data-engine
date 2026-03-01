@@ -475,10 +475,10 @@ Create `tests/unit/beat/beatInterpolator.test.ts`:
 
 ### 6.4 Integration Tests
 Create `tests/integration/beatInterpolation.integration.test.ts`:
-- [ ] Test: Full pipeline with real audio file
-- [ ] Test: Compare all 3 approaches on same audio
-- [ ] Test: Interpolated beats align with actual beats within tolerance
-- [ ] Test: Performance benchmark (<100ms for 5-min song)
+- [x] Test: Full pipeline with real audio file
+- [x] Test: Compare all 3 approaches on same audio
+- [x] Test: Interpolated beats align with actual beats within tolerance
+- [x] Test: Performance benchmark (<100ms for 5-min song)
 
 ### 6.5 Test Utilities
 - [ ] Create synthetic beat map generator for testing
