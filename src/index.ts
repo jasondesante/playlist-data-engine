@@ -51,6 +51,21 @@ export type {
     MelBandsConfig,
     GaussianSmoothMode,
     GaussianSmoothConfig,
+    // Beat Interpolation types
+    BeatSource,
+    BeatWithSource,
+    InterpolationAlgorithm,
+    BeatInterpolationOptions,
+    InterpolatedBeatMap,
+    QuarterNoteDetection,
+    GapAnalysis,
+    InterpolationMetadata,
+    // Beat Interpolation JSON types
+    BeatWithSourceJSON,
+    InterpolatedBeatMapJSON,
+    QuarterNoteDetectionJSON,
+    GapAnalysisJSON,
+    InterpolationMetadataJSON,
 } from './core/types/BeatMap.js';
 
 // Beat detection constants
@@ -73,6 +88,8 @@ export {
     getHopSizeMs,
     getMelBands,
     getGaussianSmoothMs,
+    // Beat Interpolation constants
+    DEFAULT_BEAT_INTERPOLATION_OPTIONS,
 } from './core/types/BeatMap.js';
 
 // Character types
@@ -368,6 +385,7 @@ export { OnsetStrengthEnvelope, type OSEResult } from './core/analysis/beat/Onse
 export { BeatTracker, type BeatTrackingResult } from './core/analysis/beat/BeatTracker.js';
 export { TempoDetector } from './core/analysis/beat/TempoDetector.js';
 export { DownbeatDetector } from './core/analysis/beat/DownbeatDetector.js';
+export { BeatInterpolator } from './core/analysis/beat/BeatInterpolator.js';
 
 // Beat detection utilities
 export {
