@@ -217,8 +217,8 @@ Based on research and testing, the **Adaptive Phase-Locked Grid** algorithm has 
 - [x] Add section on tuning parameters (if any new ones added) - skipped, no new parameters added
 
 ### 6.3 Update beat-interpolation-implementation-plan.md
-- [ ] Add note that algorithm selection has been removed
-- [ ] Mark the research phase as complete with conclusion
+- [x] Add note that algorithm selection has been removed
+- [x] Mark the research phase as complete with conclusion
 
 ---
 

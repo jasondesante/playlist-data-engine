@@ -4,7 +4,11 @@
 
 Add beat interpolation capability as a **post-processing analysis pass** that runs AFTER the BeatMap is generated but BEFORE the BeatStream is created. This pass analyzes the entire BeatMap to determine the quarter note interval, identify anomalies, and generate interpolated beats to fill gaps where detected beats are on the grid but not at quarter-note intervals.
 
-**Research Intent**: This implementation includes 3 selectable approaches for experimentation and comparison to determine which works best.
+> **⚠️ Note: Algorithm Selection Removed**
+>
+> After extensive research and testing, the **Adaptive Phase-Locked Grid** algorithm was determined to be the best approach. The other two algorithms (Histogram-Based Fixed Grid and Dual-Pass with Confidence Scoring) have been removed. The implementation now uses only Adaptive Phase-Locked Grid. See `simplify-beat-interpolation-plan.md` for details on the removal.
+
+**Research Complete**: The 3 selectable approaches were implemented and compared. **Adaptive Phase-Locked Grid** provides the best balance of accuracy and tempo drift handling.
 
 ---
 
@@ -25,7 +29,7 @@ Add beat interpolation capability as a **post-processing analysis pass** that ru
 - [x] Confidence based on: grid alignment (50%), anchor confidence (30%), pace confidence (20%)
 - [x] Anomaly detection: distinguish single unusual intervals from consistent patterns
 - [x] Anchor-point tempo adaptation (slight drift correction at each detected beat)
-- [x] All 3 interpolation algorithms selectable for research/comparison
+- [x] ~~All 3 interpolation algorithms selectable for research/comparison~~ **Removed**: Adaptive Phase-Locked Grid is now the sole algorithm
 
 ### Future Enhancement
 - [ ] Section-based tempo change detection (distinct tempo sections)
@@ -69,22 +73,14 @@ Add beat interpolation capability as a **post-processing analysis pass** that ru
 │  └─────────────────────────────────────────────────────────────┘   │
 │                              ↓                                      │
 │  ┌─────────────────────────────────────────────────────────────┐   │
-│  │  Step 3: Grid Generation (3 selectable approaches)           │   │
+│  │  Step 3: Grid Generation                                     │   │
 │  │                                                              │   │
-│  │  Approach 1: Fixed Histogram Grid                            │   │
-│  │  - Use histogram peak as fixed quarter note                  │   │
-│  │  - Generate rigid grid from first detected beat              │   │
-│  │  - No tempo drift handling                                   │   │
-│  │                                                              │   │
-│  │  Approach 2: Adaptive Phase-Locked Grid                      │   │
-│  │  - Same quarter note detection                               │   │
+│  │  Adaptive Phase-Locked Grid (sole algorithm)                 │   │
+│  │  - Quarter note detection from dense sections                │   │
 │  │  - Phase tracking at each detected beat anchor               │   │
 │  │  - Allow tempo to drift slightly between anchors             │   │
 │  │                                                              │   │
-│  │  Approach 3: Dual-Pass with Confidence Scoring               │   │
-│  │  - KDE + weighted clustering for quarter note                │   │
-│  │  - Distributed error correction at anchors                   │   │
-│  │  - Confidence scoring based on distance from anchors         │   │
+│  │  Note: Other approaches removed after research concluded.    │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 │                              ↓                                      │
 │  ┌─────────────────────────────────────────────────────────────┐   │
@@ -196,7 +192,7 @@ After quarter note (QN) is established:
 
 ### 1.1 Add New Types to BeatMap.ts
 - [x] Add `BeatSource` type (`'detected' | 'interpolated'`)
-- [x] Add `InterpolationAlgorithm` type (`'histogram-grid' | 'adaptive-phase-locked' | 'dual-pass'`)
+- [x] ~~Add `InterpolationAlgorithm` type (`'histogram-grid' | 'adaptive-phase-locked' | 'dual-pass'`)~~ **Removed** - no longer needed
 - [x] Add `BeatWithSource` interface extending `Beat`:
   ```typescript
   interface BeatWithSource extends Beat {
@@ -231,7 +227,7 @@ After quarter note (QN) is established:
 - [x] Add `InterpolationMetadata` interface:
   ```typescript
   interface InterpolationMetadata {
-      algorithm: InterpolationAlgorithm;
+      // Note: 'algorithm' field removed - Adaptive Phase-Locked Grid is now the sole algorithm
       quarterNoteDetection: QuarterNoteDetection;
       gapAnalysis: GapAnalysis;
       detectedBeatCount: number;
@@ -265,7 +261,7 @@ After quarter note (QN) is established:
 - [x] Add `BeatInterpolationOptions` interface:
   ```typescript
   interface BeatInterpolationOptions {
-      algorithm?: InterpolationAlgorithm;  // default: 'dual-pass'
+      // Note: 'algorithm' option removed - Adaptive Phase-Locked Grid is now the sole algorithm
       minAnchorConfidence?: number;        // min confidence to use as anchor (default: 0.3)
       gridSnapTolerance?: number;          // seconds tolerance for snapping (default: 0.05)
       tempoAdaptationRate?: number;        // 0=fixed, 1=full adaptation (default: 0.3)
@@ -304,13 +300,10 @@ After quarter note (QN) is established:
       // Step 2: Gap analysis
       private analyzeGaps(beats: Beat[], quarterNote: number): GapAnalysis;
 
-      // Step 3: Grid generation (delegates to algorithm)
+      // Step 3: Grid generation (uses Adaptive Phase-Locked Grid)
       private generateGrid(beatMap: BeatMap, qn: QuarterNoteDetection): BeatWithSource[];
 
-      // Algorithm implementations
-      private interpolateHistogramGrid(...): BeatWithSource[];
-      private interpolateAdaptivePhaseLocked(...): BeatWithSource[];
-      private interpolateDualPass(...): BeatWithSource[];
+      // Note: interpolateHistogramGrid and interpolateDualPass removed
 
       // Merge logic
       private mergeBeats(detected: Beat[], interpolated: BeatWithSource[]): BeatWithSource[];
@@ -347,20 +340,12 @@ After quarter note (QN) is established:
 
 ## Phase 3: Interpolation Algorithms
 
-### 3.1 Approach 1: Histogram-Based Fixed Grid
-- [x] Implement `interpolateHistogramGrid()`:
-  ```
-  1. Use quarterNote.intervalSeconds as fixed grid spacing
-  2. Start grid from first detected beat timestamp
-  3. Generate timestamps: t0, t0+QN, t0+2*QN, ... until end
-  4. Extend backwards to start of audio
-  5. For each grid position:
-     - If detected beat within tolerance: use detected beat
-     - Else: create interpolated beat
-  6. Mark all beats with source field
-  ```
+> **Note**: After research and testing, only **Approach 2 (Adaptive Phase-Locked Grid)** is now used. Approaches 1 and 3 have been removed from the codebase. See `simplify-beat-interpolation-plan.md` for details.
 
-### 3.2 Approach 2: Adaptive Phase-Locked Grid
+### 3.1 ~~Approach 1: Histogram-Based Fixed Grid~~ **REMOVED**
+- [x] ~~Implement `interpolateHistogramGrid()`:~~ **Removed in simplification**
+
+### 3.2 Approach 2: Adaptive Phase-Locked Grid ✓ **CURRENT ALGORITHM**
 - [x] Implement `interpolateAdaptivePhaseLocked()`:
   ```
   1. Start with quarter note interval
@@ -375,29 +360,8 @@ After quarter note (QN) is established:
   5. Mark all beats with source field
   ```
 
-### 3.3 Approach 3: Dual-Pass with Confidence Scoring
-- [x] Implement `interpolateDualPass()`:
-
-  **Pass 1: Enhanced Quarter Note Detection**
-  - [x] Apply Gaussian KDE for smooth peak finding
-  - [x] Weight intervals by beat confidence
-  - [x] Consider regularity of intervals
-  - [x] Return quarter note with higher confidence
-
-  **Pass 2: Grid with Distributed Error Correction**
-  - [x] Generate initial grid from first beat
-  - [x] For each anchor point:
-    - Calculate cumulative error from expected position
-    - Distribute error across all beats since last anchor
-    - Update running tempo with EMA
-  - [x] Generate interpolated beats with corrected positions
-
-  **Pass 3: Confidence Scoring**
-  - [x] For each interpolated beat:
-    - Calculate distance to nearest detected beat
-    - Apply decay: `conf = baseConf * exp(-decayRate * distanceBeats)`
-    - Factor in local tempo consistency
-    - Factor in grid alignment score
+### 3.3 ~~Approach 3: Dual-Pass with Confidence Scoring~~ **REMOVED**
+- [x] ~~Implement `interpolateDualPass()`:~~ **Removed in simplification**
 
 ---
 
@@ -467,16 +431,16 @@ Create `tests/unit/beat/gapAnalysis.test.ts`:
 
 ### 6.3 Unit Tests - Interpolation Algorithms
 Create `tests/unit/beat/beatInterpolator.test.ts`:
-- [x] Test Approach 1: Fixed grid matches expected timestamps
+- [x] ~~Test Approach 1: Fixed grid matches expected timestamps~~ **Removed**
 - [x] Test Approach 2: Adaptive grid adjusts at anchors
-- [x] Test Approach 3: Confidence scoring works correctly
-- [x] Test: All approaches produce same beat count for simple case
+- [x] ~~Test Approach 3: Confidence scoring works correctly~~ **Removed**
+- [x] ~~Test: All approaches produce same beat count for simple case~~ **Removed**
 - [x] Test: Detected beats override interpolated in merge
 
 ### 6.4 Integration Tests
 Create `tests/integration/beatInterpolation.integration.test.ts`:
 - [x] Test: Full pipeline with real audio file
-- [x] Test: Compare all 3 approaches on same audio
+- [x] ~~Test: Compare all 3 approaches on same audio~~ **Removed** (algorithm comparison no longer needed)
 - [x] Test: Interpolated beats align with actual beats within tolerance
 - [x] Test: Performance benchmark (<100ms for 5-min song)
 
@@ -496,7 +460,7 @@ Create `tests/integration/beatInterpolation.integration.test.ts`:
 
 ### 7.2 Usage Documentation
 - [x] Example: Basic interpolation with defaults
-- [x] Example: Selecting different algorithms
+- [x] ~~Example: Selecting different algorithms~~ **Removed** (only one algorithm now)
 - [x] Example: Accessing detected vs merged streams
 - [x] Example: Customizing options
 
@@ -505,7 +469,7 @@ Create `tests/integration/beatInterpolation.integration.test.ts`:
 - [x] Add `InterpolatedBeatMap` type to types reference
 - [x] Add `BeatInterpolationOptions` to options reference
 - [x] Add `BeatSource` and `BeatWithSource` types
-- [x] Document algorithm selection (histogram-grid, adaptive-phase-locked, dual-pass)
+- [x] ~~Document algorithm selection (histogram-grid, adaptive-phase-locked, dual-pass)~~ **Removed**
 - [x] Document all option parameters with defaults
 
 ### 7.4 Update AUDIO_ANALYSIS.md
@@ -514,15 +478,17 @@ Create `tests/integration/beatInterpolation.integration.test.ts`:
 - [x] Explain Pace + Anchors model
 - [x] Explain confidence model (grid alignment, anchor confidence, pace confidence)
 - [x] Add usage examples for both detected and merged streams
-- [x] Add guidance on when to use each algorithm
+- [x] ~~Add guidance on when to use each algorithm~~ **Removed** (only one algorithm now)
 - [x] Add option tuning guidelines
 
 ---
 
 ## Phase 8: Research & Experimentation Tools
 
-### 8.1 Comparison Utilities
-- [x] Create utility to compare outputs of different approaches
+> **Note**: Algorithm comparison utilities have been removed. Only single-algorithm visualization and debugging tools remain.
+
+### 8.1 ~~Comparison Utilities~~ **REMOVED**
+- [x] ~~Create utility to compare outputs of different approaches~~ **Removed in simplification**
 - [x] Create utility to visualize detected vs interpolated beats
 - [x] Create utility to calculate accuracy metrics against ground truth
 
@@ -575,7 +541,7 @@ Phase 8 (Research Tools) ◄─────────────────�
 | **Coverage** | 95%+ of quarter notes present | Count beats in merged vs expected |
 | **Performance** | <100ms for 5-minute song | Benchmark test |
 | **Reliability** | No crashes on edge cases | Edge case tests pass |
-| **Research Value** | Can compare all 3 approaches | Selection API works |
+| ~~**Research Value**~~ | ~~Can compare all 3 approaches~~ | ~~Selection API works~~ **Removed** |
 
 ---
 
@@ -608,20 +574,25 @@ Phase 8 (Research Tools) ◄─────────────────�
 
 ## Remaining Questions
 
-1. **Anomaly threshold**: What multiplier defines an anomaly? (Start with 0.3-0.4× or 2.5-3× quarter note)
-2. **Grid snap tolerance**: How close does a detected beat need to be to "override"? (Start with 50ms)
-3. **Dense section threshold**: How many consecutive beats at similar intervals count as "dense"? (Start with 3)
-4. **Confidence weights**: Are the default weights (50% grid, 30% anchor, 20% pace) appropriate?
+> **Resolved**: The research phase is complete. The following questions were answered through implementation and testing:
 
-These can be tuned through experimentation with the 3 approaches.
+1. **Anomaly threshold**: What multiplier defines an anomaly? → **Resolved**: 0.3-0.4× or 2.5-3× quarter note
+2. **Grid snap tolerance**: How close does a detected beat need to be to "override"? → **Resolved**: 50ms
+3. **Dense section threshold**: How many consecutive beats at similar intervals count as "dense"? → **Resolved**: 3
+4. **Confidence weights**: Are the default weights (50% grid, 30% anchor, 20% pace) appropriate? → **Resolved**: Yes, these work well
+5. **Which algorithm to keep?** → **Resolved**: Adaptive Phase-Locked Grid (see `simplify-beat-interpolation-plan.md`)
 
 ---
 
 ## Next Steps
 
-1. **Review and approve** this plan
-2. **Start Phase 1**: Add type definitions
-3. **Implement Phase 2**: Core analysis (quarter note detection + gap analysis)
-4. **Implement Phase 3**: All 3 algorithms for comparison
-5. **Test and compare** approaches on real audio
-6. **Document findings** and recommended defaults
+> **Implementation Complete**: All phases have been implemented. Algorithm selection has been simplified to use only Adaptive Phase-Locked Grid.
+
+~~1. **Review and approve** this plan~~ ✓
+~~2. **Start Phase 1**: Add type definitions~~ ✓
+~~3. **Implement Phase 2**: Core analysis (quarter note detection + gap analysis)~~ ✓
+~~4. **Implement Phase 3**: All 3 algorithms for comparison~~ ✓
+~~5. **Test and compare** approaches on real audio~~ ✓
+~~6. **Document findings** and recommended defaults~~ ✓
+
+**Conclusion**: Adaptive Phase-Locked Grid provides the best balance of accuracy and tempo drift handling. The other two algorithms (Histogram-Based Fixed Grid and Dual-Pass with Confidence Scoring) have been removed to simplify the API and reduce maintenance burden.
