@@ -492,7 +492,13 @@ interpolate(beatMap, { enableMultiTempo: true })
     - Uses 100→160 BPM (60% difference) and 90→140 BPM (55% difference) to ensure detection
     - Verifies `hasMultipleTempos: true`, `hasMultiTempoApplied: true`, and `tempoSections.length >= 2`
     - Confirms hard boundary is created when tempo change is sudden (not gradual drift)
-  - [ ] **Three tempo sections** — multiple boundaries detected correctly
+  - [x] **Three tempo sections** — multiple boundaries detected correctly
+    - Test added in `Phase 7: Multi-Tempo Edge Cases` > `Three tempo sections with multiple boundaries` describe block
+    - Two tests: (1) three distinct sections (100→140→180 BPM), (2) chronological ordering verification (80→120→160 BPM)
+    - Uses gaps between all sections to ensure clear boundaries
+    - Verifies `hasMultipleTempos: true`, `hasMultiTempoApplied: true`, `tempoSections.length >= 3`
+    - Verifies sections don't overlap and are ordered chronologically
+    - Verifies tempo spread between first and last section is significant (>30%)
   - [ ] **Octave-related tempos (half/double)** — 60 BPM → 120 BPM, should NOT trigger sections (filtered by `isOctaveMultiple`)
   - [ ] **Short cluster** — 3 beats at 128 BPM → 4 beats at 140 BPM, should NOT trigger (cluster needs 4+ beats)
   - [ ] **Cluster with gaps** — should NOT trigger (must be consecutive detected beats)

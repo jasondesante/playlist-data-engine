@@ -2017,4 +2017,142 @@ describe('Phase 7: Multi-Tempo Edge Cases', () => {
             expect(hasDistinctTempos).toBe(true)
         })
     })
+
+    describe('Three tempo sections with multiple boundaries', () => {
+        it('SHOULD detect three distinct tempo sections with boundaries between each', () => {
+            // This test verifies that when a track has THREE distinct tempo sections
+            // with gaps between them, the multi-tempo feature creates all three sections
+            // with correct boundaries between each pair.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,  // 10% threshold
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 100   // First section
+            const bpm2 = 140   // Second section (40% faster than first)
+            const bpm3 = 180   // Third section (29% faster than second)
+            const interval1 = 60 / bpm1  // 0.6s
+            const interval2 = 60 / bpm2  // ~0.429s
+            const interval3 = 60 / bpm3  // ~0.333s
+
+            // First cluster: 5 beats at 100 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // GAP between first and second section
+            const lastBeat1 = beats[beats.length - 1].timestamp
+            const gap1 = 1.5  // 1.5 second gap
+            const section2Start = lastBeat1 + gap1
+
+            // Second cluster: 5 beats at 140 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            // GAP between second and third section
+            const lastBeat2 = beats[beats.length - 1].timestamp
+            const gap2 = 1.0  // 1 second gap
+            const section3Start = lastBeat2 + gap2
+
+            // Third cluster: 5 beats at 180 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(section3Start + i * interval3))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should detect multiple tempos
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.detectedClusterTempos).toBeDefined()
+            expect(result.interpolationMetadata.detectedClusterTempos!.length).toBeGreaterThanOrEqual(3)
+
+            // Multi-tempo SHOULD be applied
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(3)
+
+            // Verify the sections
+            const sections = result.interpolationMetadata.tempoSections!
+
+            // Each section should have distinct tempos
+            const tempos = sections.map(s => s.bpm)
+            expect(tempos.length).toBeGreaterThanOrEqual(3)
+
+            // Verify sections don't overlap (boundaries are hard)
+            for (let i = 1; i < sections.length; i++) {
+                expect(sections[i].start).toBeGreaterThanOrEqual(sections[i - 1].end)
+            }
+
+            // Verify tempo progression: should see slow -> medium -> fast
+            // At minimum, the first detected tempo should be slower than the last
+            const firstSectionTempo = sections[0].bpm
+            const lastSectionTempo = sections[sections.length - 1].bpm
+            expect(lastSectionTempo).toBeGreaterThan(firstSectionTempo)
+
+            // The tempo spread should be significant (at least 30% between first and last)
+            const tempoSpread = (lastSectionTempo - firstSectionTempo) / firstSectionTempo
+            expect(tempoSpread).toBeGreaterThan(0.3)
+        })
+
+        it('SHOULD correctly order three sections chronologically', () => {
+            // Verify that three sections are ordered correctly by time
+            // and that each boundary is properly detected
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 80    // Slow
+            const bpm2 = 120   // Medium (50% faster)
+            const bpm3 = 160   // Fast (33% faster than medium)
+            const interval1 = 60 / bpm1  // 0.75s
+            const interval2 = 60 / bpm2  // 0.5s
+            const interval3 = 60 / bpm3  // 0.375s
+
+            // First section: 6 beats at 80 BPM
+            for (let i = 0; i < 6; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Gap and second section
+            const afterSection1 = beats[beats.length - 1].timestamp + 1.0
+            for (let i = 0; i < 6; i++) {
+                beats.push(createBeat(afterSection1 + i * interval2))
+            }
+
+            // Gap and third section
+            const afterSection2 = beats[beats.length - 1].timestamp + 1.0
+            for (let i = 0; i < 6; i++) {
+                beats.push(createBeat(afterSection2 + i * interval3))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Verify multi-tempo applied
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+
+            const sections = result.interpolationMetadata.tempoSections!
+            expect(sections.length).toBeGreaterThanOrEqual(3)
+
+            // Sections should be ordered chronologically
+            for (let i = 1; i < sections.length; i++) {
+                expect(sections[i].start).toBeGreaterThanOrEqual(sections[i - 1].start)
+                expect(sections[i].start).toBeGreaterThanOrEqual(sections[i - 1].end)
+            }
+
+            // Verify start beat indices are in order
+            for (let i = 1; i < sections.length; i++) {
+                expect(sections[i].startBeatIndex).toBeGreaterThanOrEqual(sections[i - 1].startBeatIndex)
+            }
+        })
+    })
 })
