@@ -170,6 +170,110 @@ export function validateDownbeatConfigAgainstBeats(
     }
 }
 
+// ============================================================================
+// Reapply Downbeat Configuration
+// ============================================================================
+
+/**
+ * Find the active segment for a given beat index
+ * Segments are contiguous - each covers beats until the next segment starts
+ *
+ * @param segments - Array of downbeat segments (must be ordered by startBeat)
+ * @param beatIndex - The beat index to find the active segment for
+ * @returns The active segment for the given beat index
+ */
+function findActiveSegment(
+    segments: DownbeatSegment[],
+    beatIndex: number
+): DownbeatSegment {
+    let activeSegment = segments[0];
+    for (const segment of segments) {
+        if (segment.startBeat <= beatIndex) {
+            activeSegment = segment;
+        } else {
+            break;
+        }
+    }
+    return activeSegment;
+}
+
+/**
+ * Reapply downbeat configuration to recalculate measure labels
+ *
+ * This is the PRIMARY way to set downbeat configuration. The typical workflow is:
+ * 1. Generate beat map with default config
+ * 2. Examine the beat map to identify the correct downbeat position
+ * 3. Call this function to apply the correct configuration
+ *
+ * This does NOT re-analyze audio - it only recalculates measure labels.
+ *
+ * @param beatMap - The original beat map
+ * @param newConfig - New downbeat configuration to apply
+ * @returns New BeatMap with updated measure labels (original is not modified)
+ * @throws Error if configuration is invalid or downbeatBeatIndex exceeds total beats
+ *
+ * @example
+ * ```typescript
+ * // Generate first, then configure
+ * const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+ *
+ * // After examining, you identify beat 9 as the downbeat
+ * const correctedMap = reapplyDownbeatConfig(beatMap, {
+ *   segments: [{
+ *     startBeat: 0,
+ *     downbeatBeatIndex: 9,  // Beat 9 is the "one"
+ *     timeSignature: { beatsPerMeasure: 4 },
+ *   }],
+ * });
+ * // Beats 1, 5, 9, 13, 17... are now downbeats
+ * ```
+ */
+export function reapplyDownbeatConfig(
+    beatMap: BeatMap,
+    newConfig: DownbeatConfig
+): BeatMap {
+    // Validate the new configuration
+    validateDownbeatConfig(newConfig);
+    validateDownbeatConfigAgainstBeats(newConfig, beatMap.beats.length);
+
+    // Recalculate measure labels for each beat
+    const updatedBeats = beatMap.beats.map((beat, index) => {
+        // Find the active segment for this beat
+        const segment = findActiveSegment(newConfig.segments, index);
+        const { downbeatBeatIndex, timeSignature } = segment;
+        const { beatsPerMeasure } = timeSignature;
+
+        // Calculate position relative to the anchor downbeat
+        const distanceFromAnchor = index - downbeatBeatIndex;
+
+        // Calculate position in measure (0 to beatsPerMeasure-1)
+        // Handle negative distances correctly for pickup beats
+        const beatInMeasure = ((distanceFromAnchor % beatsPerMeasure) + beatsPerMeasure) % beatsPerMeasure;
+
+        // This beat is a downbeat if it's at position 0 in the measure
+        const isDownbeat = beatInMeasure === 0;
+
+        // Calculate measure number (0-indexed from first downbeat)
+        // Measures before the anchor downbeat will have negative numbers,
+        // but we floor to 0 for practical purposes
+        const measureNumber = Math.max(0, Math.floor(distanceFromAnchor / beatsPerMeasure));
+
+        return {
+            ...beat,
+            beatInMeasure,
+            isDownbeat,
+            measureNumber,
+        };
+    });
+
+    // Return new BeatMap with updated beats and config
+    return {
+        ...beatMap,
+        beats: updatedBeats,
+        downbeatConfig: newConfig,
+    };
+}
+
 /**
  * Metadata about the beat detection algorithm and settings used
  */

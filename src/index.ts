@@ -82,6 +82,7 @@ export {
     MAX_BEATS_PER_MEASURE,
     validateDownbeatConfig,
     validateDownbeatConfigAgainstBeats,
+    reapplyDownbeatConfig,
     BEAT_ACCURACY_THRESHOLDS,
     BEAT_DETECTION_VERSION,
     BEAT_DETECTION_ALGORITHM,

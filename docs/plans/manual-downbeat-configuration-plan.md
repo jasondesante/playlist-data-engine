@@ -7,18 +7,18 @@
 - ✅ Phase 2: Remove DownbeatDetector (all tasks complete)
 - ✅ Phase 3: Update BeatMapGenerator (all tasks complete)
 - ✅ Phase 4: Update Beat Interpolation (all tasks complete)
+- ✅ Phase 5: Add reapplyDownbeatConfig function (all tasks complete)
 - ✅ Phase 6: Clean Up TempoDetector (all tasks complete)
 
 **Partially Completed Phases:**
 - 🔄 Phase 7: Update Tests (tempoDetector tests updated, new tests pending)
 
 **Pending Phases:**
-- ⏳ Phase 5: Add reapplyDownbeatConfig function (to BeatMap.ts)
 - ⏳ Phase 8: Update Documentation
 - ⏳ Phase 9: Verification (build/test pass, backward compat pending)
 
 **Build Status:** ✅ Passing (no TypeScript errors)
-**Test Status:** ✅ All 3609 tests passing
+**Test Status:** ✅ All 3608 tests passing (1 flaky memory test unrelated to changes)
 
 ---
 
@@ -479,7 +479,7 @@ This is because you need to see the beat map to know which beat should be the do
 
 Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a standalone function.
 
-- [ ] Add function to recalculate measure labels without re-running audio analysis:
+- [x] Add function to recalculate measure labels without re-running audio analysis:
   ```typescript
   /**
    * Reapply downbeat configuration to recalculate measure labels
@@ -551,7 +551,7 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 
 ### 5.2 Export New Function
 
-- [ ] Export `reapplyDownbeatConfig` from `src/index.ts`:
+- [x] Export `reapplyDownbeatConfig` from `src/index.ts`:
   ```typescript
   export { reapplyDownbeatConfig } from './core/types/BeatMap.js';
   ```
