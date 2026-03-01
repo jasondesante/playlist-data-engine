@@ -47,6 +47,36 @@ export const DEFAULT_TIME_SIGNATURE: TimeSignatureConfig = {
 };
 
 /**
+ * A segment of downbeat configuration
+ * Used to support time signature changes within a track
+ *
+ * Segments are CONTIGUOUS - each segment covers all beats from its startBeat
+ * until the next segment's startBeat (or end of track). There are no gaps.
+ *
+ * Example: If segment 1 has startBeat: 0 and segment 2 has startBeat: 32,
+ * then segment 1 covers beats 0-31 and segment 2 covers beats 32+.
+ */
+export interface DownbeatSegment {
+    /**
+     * Beat index where this segment starts
+     * The first segment should typically have startBeat: 0
+     */
+    startBeat: number;
+
+    /**
+     * Beat index that represents the "one" (downbeat) in this segment
+     * This is an absolute beat index, not relative to startBeat
+     *
+     * Example: If set to 9 with beatsPerMeasure: 4, then beats 1, 5, 9, 13, 17... are downbeats
+     * (calculated bidirectionally from beat 9)
+     */
+    downbeatBeatIndex: number;
+
+    /** Time signature for this segment */
+    timeSignature: TimeSignatureConfig;
+}
+
+/**
  * Metadata about the beat detection algorithm and settings used
  */
 export interface BeatMapMetadata {

@@ -92,7 +92,7 @@ This is because you need to see the beat map to know which beat should be the do
   };
   ```
 
-- [ ] Add `DownbeatSegment` interface for supporting time signature changes
+- [x] Add `DownbeatSegment` interface for supporting time signature changes
   ```typescript
   /**
    * A segment of downbeat configuration
