@@ -31,7 +31,6 @@ export type {
     ThresholdValidationResult,
     // Beat interpolation types
     BeatSource,
-    InterpolationAlgorithm,
     BeatWithSource,
     QuarterNoteDetection,
     GapAnalysis,

@@ -392,7 +392,7 @@ describe('Beat Interpolation Debug Utility', () => {
 
     describe('generateDebugReport', () => {
         it('should generate a complete debug report', () => {
-            const interpolator = new BeatInterpolator({ algorithm: 'dual-pass' });
+            const interpolator = new BeatInterpolator();
             const beats = createRegularBeats(120, 5);
             const beatMap = createBeatMap(beats, 5, 120);
             const interpolatedBeatMap = interpolator.interpolate(beatMap);
@@ -401,7 +401,6 @@ describe('Beat Interpolation Debug Utility', () => {
 
             expect(report.audioId).toBe('test-audio-id');
             expect(report.duration).toBe(5);
-            expect(report.algorithm).toBe('dual-pass');
             expect(report.generatedAt).toBeDefined();
         });
 
@@ -711,37 +710,17 @@ describe('Beat Interpolation Debug Utility', () => {
     });
 
     describe('Integration: Debug with interpolation approaches', () => {
-        it('should work with histogram-grid algorithm', () => {
-            const interpolator = new BeatInterpolator({ algorithm: 'histogram-grid' });
+        it('should work with default algorithm (adaptive-phase-locked)', () => {
+            const interpolator = new BeatInterpolator();
             const beats = createRegularBeats(120, 5);
             const beatMap = createBeatMap(beats, 5, 120);
             const interpolatedBeatMap = interpolator.interpolate(beatMap);
 
             const report = generateDebugReport(interpolatedBeatMap);
 
-            expect(report.algorithm).toBe('histogram-grid');
-        });
-
-        it('should work with adaptive-phase-locked algorithm', () => {
-            const interpolator = new BeatInterpolator({ algorithm: 'adaptive-phase-locked' });
-            const beats = createRegularBeats(120, 5);
-            const beatMap = createBeatMap(beats, 5, 120);
-            const interpolatedBeatMap = interpolator.interpolate(beatMap);
-
-            const report = generateDebugReport(interpolatedBeatMap);
-
-            expect(report.algorithm).toBe('adaptive-phase-locked');
-        });
-
-        it('should work with dual-pass algorithm', () => {
-            const interpolator = new BeatInterpolator({ algorithm: 'dual-pass' });
-            const beats = createRegularBeats(120, 5);
-            const beatMap = createBeatMap(beats, 5, 120);
-            const interpolatedBeatMap = interpolator.interpolate(beatMap);
-
-            const report = generateDebugReport(interpolatedBeatMap);
-
-            expect(report.algorithm).toBe('dual-pass');
+            // Verify the report was generated successfully
+            expect(report.audioId).toBe('test-audio-id');
+            expect(report.summary.totalBeatCount).toBeGreaterThan(0);
         });
 
         it('should show gaps in beat map with missing beats', () => {

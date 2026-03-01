@@ -129,7 +129,6 @@ export class BeatInterpolator {
             detectedBeats: beats.length,
             duration,
             originalBpm: bpm,
-            algorithm: this.options.algorithm,
         });
 
         // Edge case: no beats
@@ -184,7 +183,6 @@ export class BeatInterpolator {
 
         // Assemble interpolation metadata
         const interpolationMetadata: InterpolationMetadata = {
-            algorithm: this.options.algorithm,
             quarterNoteDetection: quarterNote,
             gapAnalysis,
             detectedBeatCount: beats.length,
@@ -605,15 +603,8 @@ export class BeatInterpolator {
         quarterNote: QuarterNoteDetection,
         gapAnalysis: GapAnalysis
     ): BeatWithSource[] {
-        switch (this.options.algorithm) {
-            case 'histogram-grid':
-                return this.interpolateHistogramGrid(beatMap, quarterNote);
-            case 'adaptive-phase-locked':
-                return this.interpolateAdaptivePhaseLocked(beatMap, quarterNote);
-            case 'dual-pass':
-            default:
-                return this.interpolateDualPass(beatMap, quarterNote, gapAnalysis);
-        }
+        // Use adaptive phase-locked approach (sole algorithm after simplification)
+        return this.interpolateAdaptivePhaseLocked(beatMap, quarterNote);
     }
 
     /**
@@ -1185,7 +1176,6 @@ export class BeatInterpolator {
             quarterNoteConfidence: 0,
             originalMetadata: beatMap.metadata,
             interpolationMetadata: {
-                algorithm: this.options.algorithm,
                 quarterNoteDetection: {
                     intervalSeconds: 0.5,
                     bpm: 120,
@@ -1235,7 +1225,6 @@ export class BeatInterpolator {
             quarterNoteConfidence: 0.1,
             originalMetadata: beatMap.metadata,
             interpolationMetadata: {
-                algorithm: this.options.algorithm,
                 quarterNoteDetection: {
                     intervalSeconds: 0.5,
                     bpm: 120,
@@ -1309,7 +1298,6 @@ export class BeatInterpolator {
             quarterNoteConfidence: interpolatedBeatMap.quarterNoteConfidence,
             originalMetadata: interpolatedBeatMap.originalMetadata,
             interpolationMetadata: {
-                algorithm: interpolatedBeatMap.interpolationMetadata.algorithm,
                 quarterNoteDetection: {
                     intervalSeconds: interpolatedBeatMap.interpolationMetadata.quarterNoteDetection.intervalSeconds,
                     bpm: interpolatedBeatMap.interpolationMetadata.quarterNoteDetection.bpm,
@@ -1385,7 +1373,7 @@ export class BeatInterpolator {
             quarterNoteConfidence: json.quarterNoteConfidence,
             originalMetadata: json.originalMetadata,
             interpolationMetadata: {
-                algorithm: json.interpolationMetadata.algorithm,
+                // Note: algorithm field is ignored for backward compatibility
                 quarterNoteDetection: {
                     intervalSeconds: json.interpolationMetadata.quarterNoteDetection.intervalSeconds,
                     bpm: json.interpolationMetadata.quarterNoteDetection.bpm,

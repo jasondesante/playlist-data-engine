@@ -54,7 +54,6 @@ export type {
     // Beat Interpolation types
     BeatSource,
     BeatWithSource,
-    InterpolationAlgorithm,
     BeatInterpolationOptions,
     InterpolatedBeatMap,
     QuarterNoteDetection,

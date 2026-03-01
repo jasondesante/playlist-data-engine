@@ -871,13 +871,12 @@ describe('Beat Interpolation Integration Tests', () => {
             const beats = createBeatsWithGaps(bpm, duration, [5, 10, 15, 20]);
             const beatMap = createBeatMap(beats, duration, bpm);
 
-            const interpolator = new BeatInterpolator({ algorithm: 'dual-pass' });
+            const interpolator = new BeatInterpolator();
             const result = interpolator.interpolate(beatMap);
 
             const meta = result.interpolationMetadata;
 
             // Verify all metadata fields
-            expect(meta.algorithm).toBe('dual-pass');
             expect(meta.detectedBeatCount).toBe(beats.length);
             expect(meta.interpolatedBeatCount).toBeGreaterThan(0);
             expect(meta.totalBeatCount).toBe(result.mergedBeats.length);

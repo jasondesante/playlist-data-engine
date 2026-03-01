@@ -23,9 +23,14 @@ import type {
     BeatMap,
     BeatWithSource,
     InterpolatedBeatMap,
-    InterpolationAlgorithm,
     InterpolationMetadata,
 } from '../../../types/BeatMap.js';
+
+/**
+ * Local type for comparison utility (will be removed when this file is deleted)
+ * @deprecated This comparison utility will be removed in favor of the single adaptive-phase-locked algorithm
+ */
+type InterpolationAlgorithm = 'histogram-grid' | 'adaptive-phase-locked' | 'dual-pass';
 
 /**
  * All available interpolation algorithms
@@ -189,8 +194,8 @@ export function compareInterpolationApproaches(
     const results: Record<InterpolationAlgorithm, InterpolatedBeatMap> = {} as Record<InterpolationAlgorithm, InterpolatedBeatMap>;
 
     for (const algorithm of ALL_ALGORITHMS) {
+        // Note: algorithm option is deprecated, using default adaptive-phase-locked
         const interpolator = new BeatInterpolator({
-            algorithm,
             ...opts.interpolationOptions,
         });
         results[algorithm] = interpolator.interpolate(beatMap);

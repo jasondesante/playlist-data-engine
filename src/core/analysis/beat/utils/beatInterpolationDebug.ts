@@ -3,13 +3,13 @@
  *
  * Provides detailed debug output for the beat interpolation process.
  * This tool is designed for research, development, and troubleshooting
- * to understand how the interpolation algorithms work.
+ * to understand how the interpolation algorithm works.
  *
  * @example
  * ```typescript
  * import { BeatInterpolator, generateDebugReport } from './beat/index.js';
  *
- * const interpolator = new BeatInterpolator({ algorithm: 'dual-pass' });
+ * const interpolator = new BeatInterpolator();
  * const interpolatedBeatMap = interpolator.interpolate(beatMap);
  *
  * // Generate a complete debug report
@@ -26,7 +26,6 @@ import type {
     BeatMap,
     BeatWithSource,
     InterpolatedBeatMap,
-    InterpolationAlgorithm,
     QuarterNoteDetection,
     GapAnalysis,
 } from '../../../types/BeatMap.js';
@@ -151,9 +150,6 @@ export interface InterpolationDebugReport {
 
     /** Audio duration in seconds */
     duration: number;
-
-    /** Algorithm used */
-    algorithm: InterpolationAlgorithm;
 
     /** When this report was generated */
     generatedAt: string;
@@ -578,7 +574,6 @@ export function generateDebugReport(
     return {
         audioId: interpolatedBeatMap.audioId,
         duration: interpolatedBeatMap.duration,
-        algorithm: interpolationMetadata.algorithm,
         generatedAt: new Date().toISOString(),
         quarterNoteDetection: {
             intervalSeconds: quarterNoteInterval,
@@ -640,7 +635,6 @@ export function formatDebugReportToConsole(report: InterpolationDebugReport): st
     // Basic info
     lines.push(`Audio ID: ${report.audioId}`);
     lines.push(`Duration: ${report.duration.toFixed(2)}s`);
-    lines.push(`Algorithm: ${report.algorithm}`);
     lines.push(`Generated: ${report.generatedAt}`);
     lines.push('');
 

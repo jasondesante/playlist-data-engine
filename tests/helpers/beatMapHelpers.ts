@@ -14,7 +14,6 @@ import type {
     BeatSource,
     BeatWithSource,
     InterpolatedBeatMap,
-    InterpolationAlgorithm,
     QuarterNoteDetection,
     GapAnalysis,
     InterpolationMetadata,

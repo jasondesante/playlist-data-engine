@@ -803,7 +803,6 @@ describe('Beat Interpolation Algorithms', () => {
             const result = interpolator.interpolate(beatMap);
             const meta = result.interpolationMetadata;
 
-            expect(meta).toHaveProperty('algorithm');
             expect(meta).toHaveProperty('quarterNoteDetection');
             expect(meta).toHaveProperty('gapAnalysis');
             expect(meta).toHaveProperty('detectedBeatCount');

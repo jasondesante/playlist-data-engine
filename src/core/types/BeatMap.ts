@@ -467,7 +467,6 @@ export interface GapAnalysisJSON {
  * JSON-serializable version of InterpolationMetadata
  */
 export interface InterpolationMetadataJSON {
-    algorithm: InterpolationAlgorithm;
     quarterNoteDetection: QuarterNoteDetectionJSON;
     gapAnalysis: GapAnalysisJSON;
     detectedBeatCount: number;
@@ -945,15 +944,6 @@ export interface ThresholdValidationResult {
 export type BeatSource = 'detected' | 'interpolated';
 
 /**
- * Available interpolation algorithms for beat grid generation
- *
- * - histogram-grid: Fixed grid based on histogram peak detection
- * - adaptive-phase-locked: Phase tracking at anchor points with tempo drift handling
- * - dual-pass: KDE + weighted clustering with confidence scoring
- */
-export type InterpolationAlgorithm = 'histogram-grid' | 'adaptive-phase-locked' | 'dual-pass';
-
-/**
  * A beat with source information for interpolation
  *
  * Extends the base Beat interface with fields tracking the beat's origin
@@ -1029,9 +1019,6 @@ export interface GapAnalysis {
  * Metadata about the interpolation process
  */
 export interface InterpolationMetadata {
-    /** Algorithm used for interpolation */
-    algorithm: InterpolationAlgorithm;
-
     /** Quarter note detection details */
     quarterNoteDetection: QuarterNoteDetection;
 
@@ -1096,11 +1083,9 @@ export interface InterpolatedBeatMap {
  * Options for beat interpolation
  *
  * Controls how the interpolation algorithm generates the beat grid.
+ * Uses the Adaptive Phase-Locked Grid algorithm for beat interpolation.
  */
 export interface BeatInterpolationOptions {
-    /** Interpolation algorithm to use (default: 'dual-pass') */
-    algorithm?: InterpolationAlgorithm;
-
     /** Minimum confidence for a beat to be used as an anchor (default: 0.3) */
     minAnchorConfidence?: number;
 
@@ -1142,7 +1127,6 @@ export interface BeatInterpolationOptions {
  * Default values for BeatInterpolationOptions
  */
 export const DEFAULT_BEAT_INTERPOLATION_OPTIONS: Required<BeatInterpolationOptions> = {
-    algorithm: 'dual-pass',
     minAnchorConfidence: 0.3,
     gridSnapTolerance: 0.05,
     tempoAdaptationRate: 0.3,
