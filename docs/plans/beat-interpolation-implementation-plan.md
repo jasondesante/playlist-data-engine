@@ -509,13 +509,13 @@ Create `tests/integration/beatInterpolation.integration.test.ts`:
 - [x] Document all option parameters with defaults
 
 ### 7.4 Update AUDIO_ANALYSIS.md
-- [ ] Add "Beat Interpolation" section with conceptual explanation
-- [ ] Explain dense section priority for quarter note detection
-- [ ] Explain Pace + Anchors model
-- [ ] Explain confidence model (grid alignment, anchor confidence, pace confidence)
-- [ ] Add usage examples for both detected and merged streams
-- [ ] Add guidance on when to use each algorithm
-- [ ] Add option tuning guidelines
+- [x] Add "Beat Interpolation" section with conceptual explanation
+- [x] Explain dense section priority for quarter note detection
+- [x] Explain Pace + Anchors model
+- [x] Explain confidence model (grid alignment, anchor confidence, pace confidence)
+- [x] Add usage examples for both detected and merged streams
+- [x] Add guidance on when to use each algorithm
+- [x] Add option tuning guidelines
 
 ---
 

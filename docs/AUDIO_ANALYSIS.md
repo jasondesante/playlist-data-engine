@@ -26,6 +26,7 @@ The engine's audio analysis is powered by the Web Audio API and provides three d
 | **BeatTracker** (Ellis DP) | [src/core/analysis/beat/BeatTracker.ts](../src/core/analysis/beat/BeatTracker.ts) |
 | **TempoDetector** | [src/core/analysis/beat/TempoDetector.ts](../src/core/analysis/beat/TempoDetector.ts) |
 | **DownbeatDetector** | [src/core/analysis/beat/DownbeatDetector.ts](../src/core/analysis/beat/DownbeatDetector.ts) |
+| **BeatInterpolator** | [src/core/analysis/beat/BeatInterpolator.ts](../src/core/analysis/beat/BeatInterpolator.ts) |
 | **Beat Types** | [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts) |
 | **Audio Types** | [src/core/types/AudioProfile.ts](../src/core/types/AudioProfile.ts) |
 
