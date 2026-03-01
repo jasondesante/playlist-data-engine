@@ -6,13 +6,13 @@
 - ✅ Phase 1: Type System Updates (all tasks complete)
 - ✅ Phase 2: Remove DownbeatDetector (all tasks complete)
 - ✅ Phase 3: Update BeatMapGenerator (all tasks complete)
+- ✅ Phase 4: Update Beat Interpolation (all tasks complete)
 - ✅ Phase 6: Clean Up TempoDetector (all tasks complete)
 
 **Partially Completed Phases:**
 - 🔄 Phase 7: Update Tests (tempoDetector tests updated, new tests pending)
 
 **Pending Phases:**
-- ⏳ Phase 4: Update Beat Interpolation
 - ⏳ Phase 5: Add reapplyDownbeatConfig function (to BeatMap.ts)
 - ⏳ Phase 8: Update Documentation
 - ⏳ Phase 9: Verification (build/test pass, backward compat pending)
@@ -467,55 +467,12 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 4.1 Update BeatInterpolator.ts
 
-- [ ] Update `interpolate()` method to receive `BeatMap` (which contains `downbeatConfig`)
-- [ ] Update `reassignBeatPositions()` to read config from `BeatMap.downbeatConfig`:
-  ```typescript
-  private reassignBeatPositions(
-      beats: BeatWithSource[],
-      downbeatConfig: DownbeatConfig
-  ): void {
-      for (let i = 0; i < beats.length; i++) {
-          const beat = beats[i];
-
-          // Find the active segment for this beat
-          const segment = this.findActiveSegment(downbeatConfig.segments, i);
-          const { downbeatBeatIndex, timeSignature } = segment;
-          const { beatsPerMeasure } = timeSignature;
-
-          const distanceFromAnchor = i - downbeatBeatIndex;
-          const beatInMeasure = ((distanceFromAnchor % beatsPerMeasure) + beatsPerMeasure) % beatsPerMeasure;
-          const isDownbeat = beatInMeasure === 0;
-          const measureNumber = Math.max(0, Math.floor(distanceFromAnchor / beatsPerMeasure));
-
-          beat.beatInMeasure = beatInMeasure;
-          beat.isDownbeat = isDownbeat;
-          beat.measureNumber = measureNumber;
-      }
-  }
-
-  /**
-   * Find the active segment for a given beat index
-   */
-  private findActiveSegment(
-      segments: DownbeatSegment[],
-      beatIndex: number
-  ): DownbeatSegment {
-      let activeSegment = segments[0];
-      for (const segment of segments) {
-          if (segment.startBeat <= beatIndex) {
-              activeSegment = segment;
-          } else {
-              break;
-          }
-      }
-      return activeSegment;
-  }
-  ```
-- [ ] Remove the logic that tries to infer `beatsPerMeasure` from detected beats (lines 778-792)
-- [ ] Update `mergeBeats()` to pass `downbeatConfig` to `reassignBeatPositions()`
+- [x] Update `interpolate()` method to receive `BeatMap` (which contains `downbeatConfig`)
+- [x] Update `reassignBeatPositions()` to read config from `BeatMap.downbeatConfig`
+- [x] Remove the logic that tries to infer `beatsPerMeasure` from detected beats (lines 778-792)
+- [x] Update `mergeBeats()` to pass `downbeatConfig` to `reassignBeatPositions()`
 
 ---
-
 ## Phase 5: Add reapplyDownbeatConfig Function
 
 ### 5.1 Add Standalone Function in BeatMap.ts

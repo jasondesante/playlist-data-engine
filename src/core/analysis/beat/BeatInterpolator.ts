@@ -40,9 +40,12 @@ import type {
     QuarterNoteDetectionJSON,
     GapAnalysisJSON,
     InterpolationMetadataJSON,
+    DownbeatConfig,
+    DownbeatSegment,
 } from '../../types/BeatMap.js';
 import {
     DEFAULT_BEAT_INTERPOLATION_OPTIONS,
+    DEFAULT_DOWNBEAT_CONFIG,
 } from '../../types/BeatMap.js';
 import { Logger } from '../../../utils/logger.js';
 
@@ -120,7 +123,7 @@ export class BeatInterpolator {
      * @returns Interpolated beat map with two output streams
      */
     interpolate(beatMap: BeatMap): InterpolatedBeatMap {
-        const { beats, audioId, duration, metadata, bpm } = beatMap;
+        const { beats, audioId, duration, metadata, bpm, downbeatConfig } = beatMap;
 
         logger.debug('Starting beat interpolation', {
             audioId,
@@ -166,7 +169,7 @@ export class BeatInterpolator {
         const gridBeats = this.generateGrid(beatMap, quarterNote, gapAnalysis);
 
         // Step 4: Merge detected beats with grid
-        const mergedBeats = this.mergeBeats(beats, gridBeats);
+        const mergedBeats = this.mergeBeats(beats, gridBeats, downbeatConfig);
 
         // Calculate statistics
         const interpolatedCount = mergedBeats.filter(b => b.source === 'interpolated').length;
@@ -716,11 +719,13 @@ export class BeatInterpolator {
      *
      * @param detectedBeats - Original detected beats
      * @param gridBeats - Grid beats (interpolated)
+     * @param downbeatConfig - Downbeat configuration from the BeatMap
      * @returns Merged beats with source information
      */
     private mergeBeats(
         detectedBeats: Beat[],
-        gridBeats: BeatWithSource[]
+        gridBeats: BeatWithSource[],
+        downbeatConfig?: DownbeatConfig
     ): BeatWithSource[] {
         const tolerance = this.options.gridSnapTolerance;
         const merged: BeatWithSource[] = [];
@@ -763,59 +768,80 @@ export class BeatInterpolator {
         merged.sort((a, b) => a.timestamp - b.timestamp);
 
         // Reassign beat positions (beatInMeasure, measureNumber) based on merged sequence
-        this.reassignBeatPositions(merged);
+        this.reassignBeatPositions(merged, downbeatConfig);
 
         return merged;
     }
 
     /**
      * Reassign beat positions (beatInMeasure, isDownbeat, measureNumber)
-     * based on the merged beat sequence.
+     * based on the merged beat sequence using the provided downbeat configuration.
+     *
+     * Supports multiple segments for time signature changes within a track.
      *
      * @param beats - Merged beats to update
+     * @param downbeatConfig - Downbeat configuration from BeatMap (undefined = default)
      */
-    private reassignBeatPositions(beats: BeatWithSource[]): void {
-        // Find the first detected downbeat to establish the measure pattern
-        let beatsPerMeasure = 4; // Default to 4/4 time
-        let firstDownbeatIndex = beats.findIndex(b => b.source === 'detected' && b.isDownbeat);
-
-        // If no detected downbeat, find pattern from detected beats
-        if (firstDownbeatIndex === -1) {
-            // Look for downbeats in detected beats to determine measure length
-            const detectedBeats = beats.filter(b => b.source === 'detected');
-            for (let i = 0; i < detectedBeats.length; i++) {
-                if (detectedBeats[i].isDownbeat) {
-                    firstDownbeatIndex = beats.indexOf(detectedBeats[i]);
-                    break;
-                }
-            }
-        }
-
-        // Assign positions
-        let measureNumber = 0;
-        let beatInMeasure = 0;
+    private reassignBeatPositions(
+        beats: BeatWithSource[],
+        downbeatConfig?: DownbeatConfig
+    ): void {
+        // Use provided config or default
+        const config = downbeatConfig ?? DEFAULT_DOWNBEAT_CONFIG;
 
         for (let i = 0; i < beats.length; i++) {
             const beat = beats[i];
 
-            // If this is a detected downbeat, reset to measure start
-            if (beat.source === 'detected' && beat.isDownbeat) {
-                beatInMeasure = 0;
-                measureNumber = beat.measureNumber;
-            }
+            // Find the active segment for this beat
+            const segment = this.findActiveSegment(config.segments, i);
+            const { downbeatBeatIndex, timeSignature } = segment;
+            const { beatsPerMeasure } = timeSignature;
 
-            // Assign current position
+            // Calculate position relative to the anchor downbeat
+            // Using modulo arithmetic that works bidirectionally
+            const distanceFromAnchor = i - downbeatBeatIndex;
+
+            // Calculate position in measure (0 to beatsPerMeasure-1)
+            // Handle negative distances correctly for pickup beats
+            const beatInMeasure = ((distanceFromAnchor % beatsPerMeasure) + beatsPerMeasure) % beatsPerMeasure;
+
+            // This beat is a downbeat if it's at position 0 in the measure
+            const isDownbeat = beatInMeasure === 0;
+
+            // Calculate measure number (0-indexed from first downbeat)
+            // Measures before the anchor downbeat will have negative numbers,
+            // but we floor to 0 for practical purposes
+            const measureNumber = Math.max(0, Math.floor(distanceFromAnchor / beatsPerMeasure));
+
+            // Assign calculated values
             beat.beatInMeasure = beatInMeasure;
-            beat.isDownbeat = beatInMeasure === 0;
+            beat.isDownbeat = isDownbeat;
             beat.measureNumber = measureNumber;
+        }
+    }
 
-            // Advance to next beat
-            beatInMeasure++;
-            if (beatInMeasure >= beatsPerMeasure) {
-                beatInMeasure = 0;
-                measureNumber++;
+    /**
+     * Find the active segment for a given beat index
+     * Segments must be ordered by startBeat in ascending order
+     *
+     * @param segments - Array of downbeat segments
+     * @param beatIndex - The beat index to find the segment for
+     * @returns The active segment for the given beat
+     */
+    private findActiveSegment(
+        segments: DownbeatSegment[],
+        beatIndex: number
+    ): DownbeatSegment {
+        // Find the last segment whose startBeat is <= beatIndex
+        let activeSegment = segments[0];
+        for (const segment of segments) {
+            if (segment.startBeat <= beatIndex) {
+                activeSegment = segment;
+            } else {
+                break;
             }
         }
+        return activeSegment;
     }
 
     // ==================== Helper Methods ====================
