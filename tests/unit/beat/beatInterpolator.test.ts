@@ -2459,4 +2459,166 @@ describe('Phase 7: Multi-Tempo Edge Cases', () => {
             expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
         })
     })
+
+    describe('Cluster with gaps (non-consecutive beats)', () => {
+        it('should NOT trigger sections when beats at same tempo have gaps between them', () => {
+            // This test verifies that a "cluster" with gaps (non-consecutive beats)
+            // should NOT form a valid cluster for multi-tempo detection.
+            //
+            // Setup:
+            // - 2 beats at 128 BPM
+            // - Gap (large interval, not consecutive)
+            // - 2 beats at 128 BPM (same tempo but split by gap)
+            // - Gap
+            // - 4 beats at 140 BPM (forms a valid cluster)
+            //
+            // The first 4 beats at 128 BPM are NOT consecutive - they're split into
+            // two 2-beat sections by a gap. Neither 2-beat section is enough for
+            // a valid cluster (needs minClusterBeats of 4).
+            //
+            // Expected: Only ONE verified cluster (140 BPM) → hasMultipleTempos should be false
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,  // 10% threshold
+                minClusterBeats: 4,          // Need 4+ consecutive beats
+                enableMultiTempo: true,
+                denseSectionMinBeats: 3,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 128
+            const bpm2 = 150  // 17% difference - well above 10% threshold
+            const interval1 = 60 / bpm1  // ~0.469s
+            const interval2 = 60 / bpm2  // 0.4s
+
+            // First mini-section: 2 beats at 128 BPM (NOT enough for a cluster)
+            for (let i = 0; i < 2; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Gap (breaks consecutiveness)
+            const lastBeat1a = beats[beats.length - 1].timestamp
+            const gapDuration1 = 1.5  // Large gap - clearly not consecutive
+
+            // Second mini-section: 2 more beats at 128 BPM (same tempo)
+            // But NOT consecutive with the first 2 beats due to the gap
+            const section1bStart = lastBeat1a + gapDuration1
+            for (let i = 0; i < 2; i++) {
+                beats.push(createBeat(section1bStart + i * interval1))
+            }
+
+            // Another gap
+            const lastBeat1b = beats[beats.length - 1].timestamp
+            const gapDuration2 = 1.5
+
+            // Third section: 4 beats at 150 BPM (forms a valid cluster)
+            const section2Start = lastBeat1b + gapDuration2
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should NOT detect multiple tempos because:
+            // - The 4 beats at 128 BPM are NOT consecutive (split by gap)
+            // - Each 2-beat section is below minClusterBeats threshold
+            // - Only the 150 BPM section forms a valid cluster
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+            expect(result.interpolationMetadata.tempoSections).toBeUndefined()
+        })
+
+        it('SHOULD trigger sections when beats are truly consecutive at different tempos', () => {
+            // Control test: Verify that with truly consecutive beats at different tempos,
+            // multi-tempo DOES trigger.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 128
+            const bpm2 = 150  // 17% difference
+            const interval1 = 60 / bpm1
+            const interval2 = 60 / bpm2
+
+            // First cluster: 4 CONSECUTIVE beats at 128 BPM
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Gap between sections (this is fine - between different tempo sections)
+            const lastBeat128 = beats[beats.length - 1].timestamp
+            const gapDuration = 1.0
+
+            // Second cluster: 4 CONSECUTIVE beats at 150 BPM
+            const section2Start = lastBeat128 + gapDuration
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // SHOULD detect multiple tempos because both clusters are verified
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+        })
+
+        it('should NOT trigger when 3 beats + gap + 3 beats at same tempo (both below threshold)', () => {
+            // Even with 6 total beats at the same tempo, if they're split into
+            // two 3-beat sections by a gap, neither section meets minClusterBeats.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+                denseSectionMinBeats: 3,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 128
+            const bpm2 = 160  // 25% difference
+            const interval1 = 60 / bpm1
+            const interval2 = 60 / bpm2
+
+            // First mini-section: 3 beats at 128 BPM
+            for (let i = 0; i < 3; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Gap
+            const lastBeat1a = beats[beats.length - 1].timestamp
+            const gapDuration = 1.5
+
+            // Second mini-section: 3 more beats at 128 BPM
+            const section1bStart = lastBeat1a + gapDuration
+            for (let i = 0; i < 3; i++) {
+                beats.push(createBeat(section1bStart + i * interval1))
+            }
+
+            // Gap
+            const lastBeat1b = beats[beats.length - 1].timestamp
+
+            // Third section: 4 beats at 160 BPM (valid cluster)
+            const section2Start = lastBeat1b + gapDuration
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should NOT detect multiple tempos
+            // The 6 beats at 128 BPM are split into two 3-beat sections
+            // Neither meets minClusterBeats of 4
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+        })
+    })
 })

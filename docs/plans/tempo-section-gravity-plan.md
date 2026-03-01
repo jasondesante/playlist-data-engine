@@ -511,7 +511,11 @@ interpolate(beatMap, { enableMultiTempo: true })
     - Three tests: (1) 3 beats at 128 BPM + 4 beats at 140 BPM (only second cluster verified), (2) both clusters with only 3 beats (neither verified), (3) control test with both clusters verified
     - Verifies `hasMultipleTempos: false` when the only "conflicting" cluster doesn't meet `minClusterBeats` threshold
     - Verifies multi-tempo DOES trigger when both clusters meet the threshold (control test)
-  - [ ] **Cluster with gaps** — should NOT trigger (must be consecutive detected beats)
+  - [x] **Cluster with gaps** — should NOT trigger (must be consecutive detected beats)
+    - Test added in `Phase 7: Multi-Tempo Edge Cases` > `Cluster with gaps (non-consecutive beats)` describe block
+    - Three tests: (1) 2+2 beats at 128 BPM (split by gap) + 4 beats at 150 BPM, (2) control test with consecutive beats, (3) 3+3 beats at 128 BPM (split by gap) + 4 beats at 160 BPM
+    - Verifies `hasMultipleTempos: false` when beats at same tempo are split by gaps (not consecutive)
+    - Verifies multi-tempo DOES trigger when beats are truly consecutive (control test)
   - [ ] **Single beat between clusters** — verify phase alignment assigns to correct section
   - [ ] **Very short track** — 8 beats total (4 at each tempo), SHOULD trigger (beat count only, no minimum duration)
 
