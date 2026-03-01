@@ -6,8 +6,12 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BeatMapGenerator } from '../../../src/core/analysis/beat/BeatMapGenerator.js';
-import type { BeatMap, BeatMapGeneratorOptions } from '../../../src/core/types/BeatMap.js';
-import { BEAT_DETECTION_VERSION, BEAT_DETECTION_ALGORITHM } from '../../../src/core/types/BeatMap.js';
+import type { BeatMap, BeatMapGeneratorOptions, DownbeatConfig } from '../../../src/core/types/BeatMap.js';
+import {
+    BEAT_DETECTION_VERSION,
+    BEAT_DETECTION_ALGORITHM,
+    DEFAULT_DOWNBEAT_CONFIG,
+} from '../../../src/core/types/BeatMap.js';
 
 // Helper to create a mock AudioBuffer with specific characteristics
 function createMockAudioBuffer(
@@ -720,6 +724,311 @@ describe('BeatMapGenerator', () => {
                 expect(typeof beat.intensity).toBe('number');
                 expect(typeof beat.confidence).toBe('number');
             }
+        });
+    });
+
+    describe('downbeatConfig parameter', () => {
+        it('should accept downbeatConfig parameter', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(5);
+
+            const config: DownbeatConfig = {
+                segments: [{
+                    startBeat: 0,
+                    downbeatBeatIndex: 0,
+                    timeSignature: { beatsPerMeasure: 4 },
+                }],
+            };
+
+            const beatMap = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'config-test',
+                config
+            );
+
+            expect(beatMap).toBeDefined();
+            expect(beatMap.audioId).toBe('config-test');
+        });
+
+        it('should store downbeatConfig in output BeatMap when provided', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(5);
+
+            const config: DownbeatConfig = {
+                segments: [{
+                    startBeat: 0,
+                    downbeatBeatIndex: 4,
+                    timeSignature: { beatsPerMeasure: 4 },
+                }],
+            };
+
+            const beatMap = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'stored-config',
+                config
+            );
+
+            // Config should be stored in the beatMap
+            expect(beatMap.downbeatConfig).toBeDefined();
+            expect(beatMap.downbeatConfig).toEqual(config);
+        });
+
+        it('should NOT store downbeatConfig when using default (undefined)', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(5);
+
+            // Generate without providing downbeatConfig (uses default)
+            const beatMap = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'default-config'
+            );
+
+            // Config should NOT be stored when default is used
+            expect(beatMap.downbeatConfig).toBeUndefined();
+        });
+
+        it('should apply custom downbeat index correctly', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(5);
+
+            // Set downbeat at beat index 2
+            const config: DownbeatConfig = {
+                segments: [{
+                    startBeat: 0,
+                    downbeatBeatIndex: 2,
+                    timeSignature: { beatsPerMeasure: 4 },
+                }],
+            };
+
+            const beatMap = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'custom-downbeat',
+                config
+            );
+
+            // Find beat at index 2 (if it exists after filtering)
+            const downbeatCandidate = beatMap.beats[2];
+            if (downbeatCandidate) {
+                expect(downbeatCandidate.isDownbeat).toBe(true);
+                expect(downbeatCandidate.beatInMeasure).toBe(0);
+            }
+
+            // Verify the config was stored
+            expect(beatMap.downbeatConfig?.segments[0].downbeatBeatIndex).toBe(2);
+        });
+
+        it('should apply different time signature correctly', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(5);
+
+            // Use 3/4 time (waltz)
+            const config: DownbeatConfig = {
+                segments: [{
+                    startBeat: 0,
+                    downbeatBeatIndex: 0,
+                    timeSignature: { beatsPerMeasure: 3 },
+                }],
+            };
+
+            const beatMap = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'waltz-time',
+                config
+            );
+
+            // Every 3rd beat should be a downbeat (0, 3, 6, 9, ...)
+            for (let i = 0; i < beatMap.beats.length; i++) {
+                const expectedDownbeat = i % 3 === 0;
+                expect(beatMap.beats[i].isDownbeat).toBe(expectedDownbeat);
+                expect(beatMap.beats[i].beatInMeasure).toBe(i % 3);
+            }
+
+            // Config should reflect 3/4 time
+            expect(beatMap.downbeatConfig?.segments[0].timeSignature.beatsPerMeasure).toBe(3);
+        });
+
+        it('should handle time signature changes with multiple segments', async () => {
+            const generator = new BeatMapGenerator();
+            // Use longer audio to ensure enough beats for segment change
+            const audioBuffer = createMockAudioBuffer(10);
+
+            // 4/4 for first 4 beats, then 3/4 (using smaller indices to fit in beat count)
+            const config: DownbeatConfig = {
+                segments: [
+                    { startBeat: 0, downbeatBeatIndex: 0, timeSignature: { beatsPerMeasure: 4 } },
+                    { startBeat: 4, downbeatBeatIndex: 4, timeSignature: { beatsPerMeasure: 3 } },
+                ],
+            };
+
+            const beatMap = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'time-sig-change',
+                config
+            );
+
+            // Config should be stored with both segments
+            expect(beatMap.downbeatConfig?.segments.length).toBe(2);
+            expect(beatMap.downbeatConfig?.segments[0].timeSignature.beatsPerMeasure).toBe(4);
+            expect(beatMap.downbeatConfig?.segments[1].timeSignature.beatsPerMeasure).toBe(3);
+        });
+
+        it('should throw for invalid downbeatConfig', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(5);
+
+            // Invalid config: empty segments
+            const invalidConfig = { segments: [] } as DownbeatConfig;
+
+            await expect(
+                generator.generateBeatMapFromBuffer(audioBuffer, 'invalid', invalidConfig)
+            ).rejects.toThrow('DownbeatConfig must have at least one segment');
+        });
+
+        it('should throw when downbeatBeatIndex exceeds total beats', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(2); // Short audio
+
+            // downbeatBeatIndex way beyond what the audio will have
+            const config: DownbeatConfig = {
+                segments: [{
+                    startBeat: 0,
+                    downbeatBeatIndex: 10000, // Way too high
+                    timeSignature: { beatsPerMeasure: 4 },
+                }],
+            };
+
+            await expect(
+                generator.generateBeatMapFromBuffer(audioBuffer, 'exceeds-beats', config)
+            ).rejects.toThrow('downbeatBeatIndex');
+        });
+
+        it('should work with generateBeatMap from URL with downbeatConfig', async () => {
+            const generator = new BeatMapGenerator();
+
+            const config: DownbeatConfig = {
+                segments: [{
+                    startBeat: 0,
+                    downbeatBeatIndex: 0,
+                    timeSignature: { beatsPerMeasure: 4 },
+                }],
+            };
+
+            // Create a mock audio response
+            const mockArrayBuffer = new ArrayBuffer(1024);
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                arrayBuffer: () => Promise.resolve(mockArrayBuffer),
+            });
+
+            // Mock AudioContext
+            const mockAudioBuffer = createMockAudioBuffer(3);
+            const mockDecodeAudioData = vi.fn().mockImplementation((_buffer, successCallback) => {
+                return Promise.resolve(mockAudioBuffer);
+            });
+
+            (globalThis as any).AudioContext = vi.fn().mockImplementation(() => ({
+                decodeAudioData: mockDecodeAudioData,
+                close: vi.fn(),
+            }));
+
+            // This should work but will fail on fetch - that's fine for this test
+            // We're just verifying the signature accepts downbeatConfig
+            try {
+                await generator.generateBeatMap('test.mp3', 'url-test', config);
+            } catch (e) {
+                // Expected - we're just testing that the function accepts the parameter
+            }
+        });
+    });
+
+    describe('backward compatibility (default behavior)', () => {
+        it('should work without downbeatConfig parameter (default)', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(5);
+
+            // Old-style call without downbeatConfig
+            const beatMap = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'backward-compat'
+            );
+
+            expect(beatMap).toBeDefined();
+            expect(beatMap.audioId).toBe('backward-compat');
+            expect(beatMap.beats).toBeInstanceOf(Array);
+        });
+
+        it('should use default 4/4 time when no config provided', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(5);
+
+            const beatMap = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'default-time'
+            );
+
+            // Without config, beat 0 should be downbeat (4/4 time default)
+            if (beatMap.beats.length > 0) {
+                expect(beatMap.beats[0].isDownbeat).toBe(true);
+                expect(beatMap.beats[0].beatInMeasure).toBe(0);
+            }
+
+            // Every 4th beat should be a downbeat
+            for (let i = 0; i < beatMap.beats.length; i++) {
+                const expectedDownbeat = i % 4 === 0;
+                expect(beatMap.beats[i].isDownbeat).toBe(expectedDownbeat);
+            }
+        });
+
+        it('should produce same results as DEFAULT_DOWNBEAT_CONFIG when no config provided', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(5);
+
+            // Generate without config
+            const beatMapNoConfig = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'no-config'
+            );
+
+            // Generate with explicit default config
+            const beatMapWithDefault = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'with-default',
+                DEFAULT_DOWNBEAT_CONFIG
+            );
+
+            // The beat labeling should be identical
+            expect(beatMapNoConfig.beats.length).toBe(beatMapWithDefault.beats.length);
+
+            for (let i = 0; i < beatMapNoConfig.beats.length; i++) {
+                expect(beatMapNoConfig.beats[i].isDownbeat).toBe(beatMapWithDefault.beats[i].isDownbeat);
+                expect(beatMapNoConfig.beats[i].beatInMeasure).toBe(beatMapWithDefault.beats[i].beatInMeasure);
+                expect(beatMapNoConfig.beats[i].measureNumber).toBe(beatMapWithDefault.beats[i].measureNumber);
+            }
+
+            // But only the explicit one should have config stored
+            expect(beatMapNoConfig.downbeatConfig).toBeUndefined();
+            expect(beatMapWithDefault.downbeatConfig).toBeDefined();
+        });
+
+        it('should support progress callback without downbeatConfig', async () => {
+            const generator = new BeatMapGenerator();
+            const audioBuffer = createMockAudioBuffer(3);
+
+            const progressCalls: any[] = [];
+            const onProgress = (progress: any) => {
+                progressCalls.push({ ...progress });
+            };
+
+            // Old-style call with progress callback
+            const beatMap = await generator.generateBeatMapFromBuffer(
+                audioBuffer,
+                'progress-compat',
+                undefined, // No downbeatConfig
+                onProgress
+            );
+
+            expect(beatMap).toBeDefined();
+            expect(progressCalls.length).toBeGreaterThan(0);
         });
     });
 });

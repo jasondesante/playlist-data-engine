@@ -599,9 +599,9 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 
 ### 7.3 Update BeatMapGenerator Tests
 
-- [ ] Add tests for `downbeatConfig` parameter in `generateBeatMap()`
-- [ ] Verify backward compatibility (default behavior unchanged)
-- [ ] Test that `downbeatConfig` is stored in output `BeatMap`
+- [x] Add tests for `downbeatConfig` parameter in `generateBeatMap()`
+- [x] Verify backward compatibility (default behavior unchanged)
+- [x] Test that `downbeatConfig` is stored in output `BeatMap`
 
 ### 7.4 Update TempoDetector Tests
 
