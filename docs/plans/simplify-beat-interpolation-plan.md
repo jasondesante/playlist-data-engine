@@ -80,9 +80,9 @@ Based on research and testing, the **Adaptive Phase-Locked Grid** algorithm has 
 ## Phase 2: BeatInterpolator Class Refactoring
 
 ### 2.1 Remove Unused Algorithm Methods
-- [ ] Delete `interpolateHistogramGrid()` method (~lines 620-700)
-- [ ] Delete `interpolateDualPass()` method (~lines 800-920)
-- [ ] Rename `interpolateAdaptivePhaseLocked()` to `generateBeatGrid()` or keep name
+- [x] Delete `interpolateHistogramGrid()` method (~lines 620-700)
+- [x] Delete `interpolateDualPass()` method (~lines 800-920)
+- [x] Rename `interpolateAdaptivePhaseLocked()` to `generateBeatGrid()` or keep name (kept existing name)
 
 ### 2.2 Simplify generateGrid() Method
 - [x] Remove switch statement that delegates to algorithms
