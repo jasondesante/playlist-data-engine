@@ -8,7 +8,7 @@
  */
 
 import type { AudioProfile, AudioTimelineEvent, FrequencyBands } from '../types/AudioProfile.js';
-import type { BeatMap, BeatMapGeneratorOptions, BeatStreamOptions, BeatInterpolationOptions, InterpolatedBeatMap } from '../types/BeatMap.js';
+import type { BeatMap, BeatMapGeneratorOptions, BeatStreamOptions, BeatInterpolationOptions, InterpolatedBeatMap, DownbeatConfig } from '../types/BeatMap.js';
 import { SpectrumScanner } from './SpectrumScanner.js';
 import { BeatMapGenerator, type ProgressCallback } from './beat/BeatMapGenerator.js';
 import { BeatStream } from './beat/BeatStream.js';
@@ -284,9 +284,15 @@ export class AudioAnalyzer {
      * Uses the Ellis Dynamic Programming beat tracking algorithm to detect
      * beats and downbeats throughout the entire audio track.
      *
+     * IMPORTANT: The typical workflow is to generate FIRST with default config,
+     * examine the beat map to identify the correct downbeat, then use
+     * reapplyDownbeatConfig() to set it. You usually don't know the correct
+     * downbeat until after seeing the generated beat map.
+     *
      * @param audioUrl - URL of the audio file to analyze
      * @param audioId - Unique identifier for the audio source
      * @param options - Beat map generation options (optional)
+     * @param downbeatConfig - Optional manual downbeat configuration (defaults to beat 0 = downbeat, 4/4 time)
      * @param onProgress - Optional progress callback for long-running analysis
      * @returns Promise resolving to the generated beat map
      *
@@ -305,10 +311,11 @@ export class AudioAnalyzer {
         audioUrl: string,
         audioId: string,
         options?: BeatMapGeneratorOptions,
+        downbeatConfig?: DownbeatConfig,
         onProgress?: ProgressCallback
     ): Promise<BeatMap> {
         const generator = new BeatMapGenerator(options);
-        return generator.generateBeatMap(audioUrl, audioId, onProgress);
+        return generator.generateBeatMap(audioUrl, audioId, downbeatConfig, onProgress);
     }
 
     /**
@@ -316,9 +323,15 @@ export class AudioAnalyzer {
      *
      * Use this method when you already have the audio decoded.
      *
+     * IMPORTANT: The typical workflow is to generate FIRST with default config,
+     * examine the beat map to identify the correct downbeat, then use
+     * reapplyDownbeatConfig() to set it. You usually don't know the correct
+     * downbeat until after seeing the generated beat map.
+     *
      * @param audioBuffer - Decoded audio buffer
      * @param audioId - Unique identifier for the audio source
      * @param options - Beat map generation options (optional)
+     * @param downbeatConfig - Optional manual downbeat configuration (defaults to beat 0 = downbeat, 4/4 time)
      * @param onProgress - Optional progress callback for long-running analysis
      * @returns Promise resolving to the generated beat map
      *
@@ -332,10 +345,11 @@ export class AudioAnalyzer {
         audioBuffer: AudioBuffer,
         audioId: string,
         options?: BeatMapGeneratorOptions,
+        downbeatConfig?: DownbeatConfig,
         onProgress?: ProgressCallback
     ): Promise<BeatMap> {
         const generator = new BeatMapGenerator(options);
-        return generator.generateBeatMapFromBuffer(audioBuffer, audioId, onProgress);
+        return generator.generateBeatMapFromBuffer(audioBuffer, audioId, downbeatConfig, onProgress);
     }
 
     /**
@@ -445,11 +459,12 @@ export class AudioAnalyzer {
         audioUrl: string,
         audioId: string,
         beatMapOptions?: BeatMapGeneratorOptions,
+        downbeatConfig?: DownbeatConfig,
         interpolationOptions?: BeatInterpolationOptions,
         onProgress?: ProgressCallback
     ): Promise<InterpolatedBeatMap> {
         // Generate the beat map first
-        const beatMap = await this.generateBeatMap(audioUrl, audioId, beatMapOptions, onProgress);
+        const beatMap = await this.generateBeatMap(audioUrl, audioId, beatMapOptions, downbeatConfig, onProgress);
 
         // Then interpolate
         return this.interpolateBeatMap(beatMap, interpolationOptions);
@@ -483,11 +498,12 @@ export class AudioAnalyzer {
         audioBuffer: AudioBuffer,
         audioId: string,
         beatMapOptions?: BeatMapGeneratorOptions,
+        downbeatConfig?: DownbeatConfig,
         interpolationOptions?: BeatInterpolationOptions,
         onProgress?: ProgressCallback
     ): Promise<InterpolatedBeatMap> {
         // Generate the beat map first
-        const beatMap = await this.generateBeatMapFromBuffer(audioBuffer, audioId, beatMapOptions, onProgress);
+        const beatMap = await this.generateBeatMapFromBuffer(audioBuffer, audioId, beatMapOptions, downbeatConfig, onProgress);
 
         // Then interpolate
         return this.interpolateBeatMap(beatMap, interpolationOptions);

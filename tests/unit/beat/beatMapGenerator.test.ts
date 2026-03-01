@@ -204,7 +204,7 @@ describe('BeatMapGenerator', () => {
                 progressCalls.push({ ...progress });
             };
 
-            await generator.generateBeatMapFromBuffer(audioBuffer, 'progress-test', onProgress);
+            await generator.generateBeatMapFromBuffer(audioBuffer, 'progress-test', undefined, onProgress);
 
             // Should have received progress updates
             expect(progressCalls.length).toBeGreaterThan(0);

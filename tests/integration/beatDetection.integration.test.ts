@@ -110,6 +110,7 @@ describe('Beat Detection Integration Tests', () => {
                 generatedBeatMap = await generator.generateBeatMap(
                     audioUrl,
                     'arweave-test-track',
+                    undefined,
                     onProgress
                 );
 

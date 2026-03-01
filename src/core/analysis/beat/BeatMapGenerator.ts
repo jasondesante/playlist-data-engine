@@ -20,6 +20,7 @@ import type {
     BeatMapJSON,
     BeatMapGenerationProgress,
     TempoEstimate,
+    DownbeatConfig,
 } from '../../types/BeatMap.js';
 import {
     DEFAULT_BEATMAP_GENERATOR_OPTIONS,
@@ -159,14 +160,22 @@ export class BeatMapGenerator {
     /**
      * Generate a beat map from an audio URL
      *
+     * IMPORTANT: The typical workflow is to generate FIRST with default config,
+     * examine the beat map to identify the correct downbeat, then use
+     * reapplyDownbeatConfig() to set it. You usually don't know the correct
+     * downbeat until after seeing the generated beat map.
+     *
      * @param audioUrl - URL of the audio file
      * @param audioId - Unique identifier for the audio source
+     * @param downbeatConfig - Optional manual downbeat configuration (defaults to beat 0 = downbeat, 4/4 time)
+     *                          If provided, will be stored in the resulting BeatMap
      * @param onProgress - Optional progress callback
      * @returns Generated beat map
      */
     async generateBeatMap(
         audioUrl: string,
         audioId: string,
+        downbeatConfig?: DownbeatConfig,
         onProgress?: ProgressCallback
     ): Promise<BeatMap> {
         // Initialize state
@@ -185,7 +194,7 @@ export class BeatMapGenerator {
             }
 
             // Step 2: Generate beat map from buffer
-            return await this.generateBeatMapFromBuffer(audioBuffer, audioId, onProgress);
+            return await this.generateBeatMapFromBuffer(audioBuffer, audioId, downbeatConfig, onProgress);
         } finally {
             this.state = null;
         }
@@ -194,14 +203,22 @@ export class BeatMapGenerator {
     /**
      * Generate a beat map from an AudioBuffer
      *
+     * IMPORTANT: The typical workflow is to generate FIRST with default config,
+     * examine the beat map to identify the correct downbeat, then use
+     * reapplyDownbeatConfig() to set it. You usually don't know the correct
+     * downbeat until after seeing the generated beat map.
+     *
      * @param audioBuffer - Decoded audio buffer
      * @param audioId - Unique identifier for the audio source
+     * @param downbeatConfig - Optional manual downbeat configuration (defaults to beat 0 = downbeat, 4/4 time)
+     *                          If provided, will be stored in the resulting BeatMap
      * @param onProgress - Optional progress callback
      * @returns Generated beat map
      */
     async generateBeatMapFromBuffer(
         audioBuffer: AudioBuffer,
         audioId: string,
+        downbeatConfig?: DownbeatConfig,
         onProgress?: ProgressCallback
     ): Promise<BeatMap> {
         // Initialize state if not already

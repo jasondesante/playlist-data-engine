@@ -174,7 +174,7 @@ This is because you need to see the beat map to know which beat should be the do
 
 ### 1.3 Update generateBeatMap() Signature
 
-- [ ] Add optional `downbeatConfig` parameter to `generateBeatMap()` method
+- [x] Add optional `downbeatConfig` parameter to `generateBeatMap()` method
   ```typescript
   /**
    * Generate a beat map for an audio file
