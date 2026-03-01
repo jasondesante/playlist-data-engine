@@ -5,10 +5,10 @@
 **Completed Phases:**
 - ✅ Phase 1: Type System Updates (all tasks complete)
 - ✅ Phase 2: Remove DownbeatDetector (all tasks complete)
+- ✅ Phase 3: Update BeatMapGenerator (all tasks complete)
 - ✅ Phase 6: Clean Up TempoDetector (all tasks complete)
 
 **Partially Completed Phases:**
-- 🔄 Phase 3: Update BeatMapGenerator (measure labeling done, optional parameter pending)
 - 🔄 Phase 7: Update Tests (tempoDetector tests updated, new tests pending)
 
 **Pending Phases:**
@@ -431,20 +431,20 @@ This is because you need to see the beat map to know which beat should be the do
 
 - [x] Remove Step 5 (Downbeat Detection) from `generateBeatMap()`
 - [x] Replace with measure labeling step using `applyMeasureLabels()`
-- [ ] Add optional `downbeatConfig` parameter to `generateBeatMap()` method signature
-- [ ] Validate downbeatConfig structurally at the start of `generateBeatMap()`:
+- [x] Add optional `downbeatConfig` parameter to `generateBeatMap()` method signature
+- [x] Validate downbeatConfig structurally at the start of `generateBeatMap()`:
   ```typescript
   if (downbeatConfig) {
       validateDownbeatConfig(downbeatConfig);
   }
   ```
-- [ ] Validate beat counts AFTER beat tracking (before applying labels):
+- [x] Validate beat counts AFTER beat tracking (before applying labels):
   ```typescript
   if (downbeatConfig) {
       validateDownbeatConfigAgainstBeats(downbeatConfig, beats.length);
   }
   ```
-- [ ] Store downbeatConfig in BeatMap ONLY if explicitly provided:
+- [x] Store downbeatConfig in BeatMap ONLY if explicitly provided:
   ```typescript
   const beatMap: BeatMap = {
       trackId,
@@ -454,7 +454,7 @@ This is because you need to see the beat map to know which beat should be the do
       // ... other fields ...
   };
   ```
-- [ ] Update progress phases:
+- [x] Update progress phases:
   ```typescript
   // OLD: 'downbeat_detection'
   // NEW: 'measure_labeling'

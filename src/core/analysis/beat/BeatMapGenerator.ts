@@ -232,6 +232,11 @@ export class BeatMapGenerator {
             };
         }
 
+        // Validate downbeatConfig structurally if provided
+        if (downbeatConfig) {
+            validateDownbeatConfig(downbeatConfig);
+        }
+
         try {
             const duration = audioBuffer.duration;
 
@@ -300,9 +305,15 @@ export class BeatMapGenerator {
             this.updateProgress('measure_labeling', 87, 'Applying measure labels...');
             if (this.state.cancelled) throw new Error('Generation cancelled');
 
-            // Use default config for now (manual config can be applied later via reapplyDownbeatConfig)
-            const downbeatConfig = DEFAULT_DOWNBEAT_CONFIG;
-            const beats = this.applyMeasureLabels(trackingResult.beats, downbeatConfig);
+            // Use provided config or default
+            const configToUse = downbeatConfig ?? DEFAULT_DOWNBEAT_CONFIG;
+
+            // Validate beat counts against config (must happen after beat tracking)
+            if (downbeatConfig) {
+                validateDownbeatConfigAgainstBeats(downbeatConfig, trackingResult.beats.length);
+            }
+
+            const beats = this.applyMeasureLabels(trackingResult.beats, configToUse);
 
             this.updateProgress('measure_labeling', 97, 'Measure labels applied.');
             if (this.state.cancelled) throw new Error('Generation cancelled');
@@ -346,6 +357,9 @@ export class BeatMapGenerator {
                 beats: processedBeats,
                 bpm: tempoEstimate.primaryBpm,
                 metadata,
+                // Only include downbeatConfig if it was explicitly provided
+                // undefined means default was used
+                ...(downbeatConfig ? { downbeatConfig } : {}),
             };
 
             this.updateProgress('complete', 100, 'Beat map generation complete.');
