@@ -1009,4 +1009,18 @@ export class EnvironmentalSensors {
         }
         return this.weather.getSolarInfo(geoData.latitude, geoData.longitude, date);
     }
+
+    /**
+     * Get solar information for specific coordinates.
+     * Works WITHOUT API key using astronomical calculations (NOAA algorithm).
+     * Use this when you have coordinates from an external source (e.g., persisted React state).
+     *
+     * @param latitude - Latitude in decimal degrees (-90 to 90)
+     * @param longitude - Longitude in decimal degrees (-180 to 180)
+     * @param date - Optional date for calculation (defaults to now)
+     * @returns SolarInfo object with sunrise, sunset, solar noon, and day stage
+     */
+    getSolarInfoForCoords(latitude: number, longitude: number, date?: Date): SolarInfo {
+        return this.weather.getSolarInfo(latitude, longitude, date);
+    }
 }
