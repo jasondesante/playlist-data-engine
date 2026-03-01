@@ -476,7 +476,11 @@ interpolate(beatMap, { enableMultiTempo: true })
     - Test uses 120 BPM and 150 BPM (25% difference, well above 10% threshold) to ensure conflict detection triggers
     - Creates a 2-second gap with no beats between clusters
     - Verifies `hasMultiTempoApplied: true` and `tempoSections.length >= 2`
-  - [ ] **Gradual tempo drift** — tempo drifts 5% over track, should NOT trigger sections
+  - [x] **Gradual tempo drift** — tempo drifts 5% over track, should NOT trigger sections
+    - Test added in `Phase 7: Multi-Tempo Edge Cases` > `Gradual tempo drift` describe block
+    - Two tests: (1) 120→126 BPM (5% drift), (2) 140→147 BPM (5% drift at higher tempo)
+    - Verifies `hasMultipleTempos: false` and `hasMultiTempoApplied: falsy` (undefined or false)
+    - Confirms gradual drift across entire track does NOT trigger multi-tempo (below 10% threshold)
   - [ ] **Single tempo track** — no multi-tempo activation, behaves exactly as before
   - [ ] **Two distinct tempo sections with clear boundary** — SHOULD trigger sections with hard boundary
   - [ ] **Three tempo sections** — multiple boundaries detected correctly

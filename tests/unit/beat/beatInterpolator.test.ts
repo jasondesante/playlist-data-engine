@@ -1690,4 +1690,93 @@ describe('Phase 7: Multi-Tempo Edge Cases', () => {
             expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
         })
     })
+
+    describe('Gradual tempo drift', () => {
+        it('should NOT trigger sections when tempo drifts 5% over track (below 10% threshold)', () => {
+            // This test verifies that gradual tempo drift across an entire track
+            // does NOT trigger multi-tempo sections. The 5% drift is below the 10%
+            // threshold, so all beats should be treated as a single section.
+            //
+            // Unlike the "two clusters with drift" tests, this test has NO distinct
+            // clusters - the tempo continuously drifts throughout the entire track.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,  // 10% threshold
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+                tempoAdaptationRate: 0.5,
+                denseSectionMinBeats: 3,
+            })
+
+            const beats: Beat[] = []
+            const startBpm = 120
+            const endBpm = startBpm * 1.05  // 5% drift = 126 BPM
+            const totalBeats = 30  // Enough beats to span the track
+
+            // Calculate the interval range
+            const startInterval = 60 / startBpm  // 0.5s
+            const endInterval = 60 / endBpm      // ~0.476s
+
+            // Create beats with gradually decreasing intervals (tempo increasing)
+            // Each beat has a slightly shorter interval than the previous
+            let currentTime = 0
+            for (let i = 0; i < totalBeats; i++) {
+                beats.push(createBeat(currentTime))
+
+                // Linear interpolation of interval from start to end
+                const progress = (i + 1) / totalBeats
+                const interval = startInterval - (progress * (startInterval - endInterval))
+                currentTime += interval
+            }
+
+            const beatMap = createBeatMap(beats, currentTime + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should NOT detect multiple tempos because the drift is only 5%
+            // which is below the 10% threshold
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            // hasMultiTempoApplied should be undefined (not applied) or false
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+            expect(result.interpolationMetadata.tempoSections).toBeUndefined()
+
+            // The track should have a single BPM (the average or detected BPM)
+            expect(result.quarterNoteBpm).toBeGreaterThan(0)
+        })
+
+        it('should NOT trigger sections with gradual drift even at higher starting tempo', () => {
+            // Test with different tempo range: 140 BPM -> 147 BPM (5% drift)
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+                tempoAdaptationRate: 0.5,
+                denseSectionMinBeats: 3,
+            })
+
+            const beats: Beat[] = []
+            const startBpm = 140
+            const endBpm = startBpm * 1.05  // 5% drift = 147 BPM
+            const totalBeats = 25
+
+            const startInterval = 60 / startBpm  // ~0.429s
+            const endInterval = 60 / endBpm      // ~0.408s
+
+            let currentTime = 0
+            for (let i = 0; i < totalBeats; i++) {
+                beats.push(createBeat(currentTime))
+
+                const progress = (i + 1) / totalBeats
+                const interval = startInterval - (progress * (startInterval - endInterval))
+                currentTime += interval
+            }
+
+            const beatMap = createBeatMap(beats, currentTime + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should NOT trigger multi-tempo
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            // hasMultiTempoApplied should be undefined (not applied) or false
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+        })
+    })
 })
