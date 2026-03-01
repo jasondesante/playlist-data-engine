@@ -527,7 +527,7 @@ Create `tests/integration/beatInterpolation.integration.test.ts`:
 - [x] Create utility to calculate accuracy metrics against ground truth
 
 ### 8.2 Debugging Output
-- [ ] Add optional debug output showing:
+- [x] Add optional debug output showing:
   - Quarter note detection histogram
   - Gap analysis results
   - Per-beat confidence scores

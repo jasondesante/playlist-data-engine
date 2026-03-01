@@ -96,6 +96,29 @@ export type {
     HTMLVisualizationResult,
 } from './utils/beatInterpolationComparison.js';
 
+// Debug utilities
+export {
+    generateDebugReport,
+    collectHistogramData,
+    collectGapDetails,
+    collectBeatDebugInfo,
+    collectTempoDriftData,
+    formatDebugReportToConsole,
+    formatDebugReportToJSON,
+    generateTempoDriftVisualization,
+    generateConfidenceVisualization,
+    BeatInterpolationDebug,
+    DEFAULT_DEBUG_OUTPUT_OPTIONS,
+} from './utils/beatInterpolationDebug.js';
+export type {
+    HistogramEntry,
+    GapDetail,
+    TempoDriftPoint,
+    BeatDebugInfo,
+    InterpolationDebugReport,
+    DebugOutputOptions,
+} from './utils/beatInterpolationDebug.js';
+
 // Utilities
 export {
     hzToMel,
