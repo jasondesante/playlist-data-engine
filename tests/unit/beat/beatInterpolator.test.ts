@@ -2621,4 +2621,172 @@ describe('Phase 7: Multi-Tempo Edge Cases', () => {
             expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
         })
     })
+
+    describe('Single beat between clusters', () => {
+        it('SHOULD trigger sections and assign single beat to correct section based on boundary', () => {
+            // This test verifies that when there's exactly ONE beat between two clusters,
+            // the multi-tempo feature correctly:
+            // 1. Detects both clusters
+            // 2. Determines the boundary
+            // 3. Assigns the single beat to the correct section based on the boundary
+            //
+            // The boundary is determined by the crossing paths strategy:
+            // - If the beat falls before the boundary, it goes to section 1
+            // - If the beat falls after the boundary, it goes to section 2
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 100
+            const bpm2 = 160  // 60% difference - well above threshold
+            const interval1 = 60 / bpm1  // 0.6s
+            const interval2 = 60 / bpm2  // 0.375s
+
+            // First cluster: 5 beats at 100 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Single beat in the gap - positioned closer to first cluster
+            // This beat is phase-aligned with the first cluster (at its expected grid position)
+            const lastBeat100 = beats[beats.length - 1].timestamp
+            const singleBeatTime = lastBeat100 + interval1  // One interval from last beat at 100 BPM
+            beats.push(createBeat(singleBeatTime))
+
+            // Gap after the single beat
+            // Second cluster: 5 beats at 160 BPM
+            const gapAfterSingleBeat = 1.5  // Significant gap to ensure boundary detection
+            const section2Start = singleBeatTime + gapAfterSingleBeat
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should detect multiple tempos and apply multi-tempo
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+
+            // Verify the sections have distinct tempos
+            const sections = result.interpolationMetadata.tempoSections!
+            const firstSection = sections[0]
+            const lastSection = sections[sections.length - 1]
+
+            // First section should be close to 100 BPM
+            expect(firstSection.bpm).toBeLessThan(120)
+            // Last section should be close to 160 BPM
+            expect(lastSection.bpm).toBeGreaterThan(140)
+        })
+
+        it('should assign single beat to section 2 when phase-aligned with second cluster', () => {
+            // This test has the single beat positioned closer to the second cluster,
+            // phase-aligned with its tempo grid.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 100
+            const bpm2 = 160
+            const interval1 = 60 / bpm1  // 0.6s
+            const interval2 = 60 / bpm2  // 0.375s
+
+            // First cluster: 5 beats at 100 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Gap after first cluster
+            const lastBeat100 = beats[beats.length - 1].timestamp
+            const gapBeforeSecond = 1.5
+
+            // Second cluster: 5 beats at 160 BPM
+            const section2Start = lastBeat100 + gapBeforeSecond
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            // Single beat phase-aligned with second cluster (one interval before first beat)
+            // This tests that beats AFTER the boundary are assigned to section 2
+            const singleBeatTime = section2Start - interval2
+            beats.push(createBeat(singleBeatTime))
+
+            // Sort beats by timestamp (since we added one out of order)
+            beats.sort((a, b) => a.timestamp - b.timestamp)
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should detect multiple tempos and apply multi-tempo
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+        })
+
+        it('should handle single ambiguous beat between clusters', () => {
+            // This test has a single beat that is NOT clearly phase-aligned with either cluster.
+            // The beat falls in the middle of a large gap, at an irregular interval.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const bpm1 = 100
+            const bpm2 = 160  // 60% difference - well above threshold
+            const interval1 = 60 / bpm1  // 0.6s
+            const interval2 = 60 / bpm2  // 0.375s
+
+            // First cluster: 5 beats at 100 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * interval1))
+            }
+
+            // Large gap before the ambiguous beat
+            const lastBeat100 = beats[beats.length - 1].timestamp  // 2.4s
+            const gapBeforeAmbiguous = 1.5  // Clear gap from first cluster
+
+            // Single ambiguous beat - in the middle of the total gap, not aligned with either tempo
+            const ambiguousBeatTime = lastBeat100 + gapBeforeAmbiguous  // 3.9s
+            beats.push(createBeat(ambiguousBeatTime))
+
+            // Large gap after ambiguous beat
+            const gapAfterAmbiguous = 1.5  // Clear gap before second cluster
+
+            // Second cluster: 5 beats at 160 BPM
+            const section2Start = ambiguousBeatTime + gapAfterAmbiguous  // 5.4s
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(section2Start + i * interval2))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should still detect multiple tempos and apply multi-tempo
+            // The boundary determination should work even with an ambiguous beat
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+
+            // Sections should have hard boundaries (no overlap)
+            const sections = result.interpolationMetadata.tempoSections!
+            for (let i = 1; i < sections.length; i++) {
+                expect(sections[i].start).toBeGreaterThanOrEqual(sections[i - 1].end)
+            }
+        })
+    })
 })

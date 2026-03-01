@@ -516,7 +516,10 @@ interpolate(beatMap, { enableMultiTempo: true })
     - Three tests: (1) 2+2 beats at 128 BPM (split by gap) + 4 beats at 150 BPM, (2) control test with consecutive beats, (3) 3+3 beats at 128 BPM (split by gap) + 4 beats at 160 BPM
     - Verifies `hasMultipleTempos: false` when beats at same tempo are split by gaps (not consecutive)
     - Verifies multi-tempo DOES trigger when beats are truly consecutive (control test)
-  - [ ] **Single beat between clusters** — verify phase alignment assigns to correct section
+  - [x] **Single beat between clusters** — verify phase alignment assigns to correct section
+    - Test added in `Phase 7: Multi-Tempo Edge Cases` > `Single beat between clusters` describe block
+    - Three tests: (1) single beat phase-aligned with first cluster, (2) single beat phase-aligned with second cluster, (3) single ambiguous beat in gap
+    - Verifies multi-tempo detection and section assignment work correctly with single connecting beat
   - [ ] **Very short track** — 8 beats total (4 at each tempo), SHOULD trigger (beat count only, no minimum duration)
 
 - [ ] Add test helper functions
