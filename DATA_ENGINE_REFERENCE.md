@@ -16,7 +16,6 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [OnsetStrengthEnvelope](#onsetstrengthenvelope)
    - [BeatTracker](#beattracker)
    - [TempoDetector](#tempodetector)
-   - [DownbeatDetector](#downbeatdetector)
    - [Beat Detection Utilities](#beat-detection-utilities)
 5. [Progression System](#progression-system)
 6. [Configuration](#configuration)
@@ -150,7 +149,7 @@ A concise overview of all main exports from the library, organized by category.
 | `OnsetStrengthEnvelope` | Perceptual onset strength envelope calculation (Mel spectrogram) | [Beat Detection](#beat-detection) |
 | `BeatTracker` | Dynamic Programming beat tracking (Ellis algorithm) | [Beat Detection](#beat-detection) |
 | `TempoDetector` | Global tempo estimation with perceptual weighting | [Beat Detection](#beat-detection) |
-| `DownbeatDetector` | Identify measure boundaries by intensity patterns | [Beat Detection](#beat-detection) |
+| `reapplyDownbeatConfig` | Recalculate measure labels from manual configuration | [Beat Detection](#beat-detection) |
 | `BeatInterpolator` | Fill gaps in beat maps with interpolated beats | [Beat Detection](#beat-detection) |
 
 **Beat Utilities:** `hzToMel`, `melToHz`, `resampleAudio`, `createMelFilterbank`, `highPassFilter`, `gaussianSmooth`, `calculateStdDev`, `performBeatFFT`, `performSTFT` — see [Beat Detection Utilities](#beat-detection-utilities)
@@ -198,7 +197,7 @@ All TypeScript types are exported, including:
 
 **Enemy Types:** `EnemyCategory`, `EnemyRarity`, `EnemyArchetype`, `EnemyMixMode`, `EncounterDifficulty`, `SignatureAbility`, `AudioPreference`, `EnemyTemplate`, `RarityConfig`, `EnemyGenerationOptions`, `EncounterGenerationOptions`, `EnemyMetadata`, `EnemyFeature` — see [Enemy Generation](#enemy-generation)
 
-**Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `AccuracyThresholds`, `DifficultyPreset`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `DownbeatDetectorConfig`, `DownbeatDetectionResult`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
+**Beat Detection Types:** `Beat`, `BeatMap`, `BeatMapMetadata`, `BeatEvent`, `BeatEventType`, `BeatStreamCallback`, `AudioSyncState`, `BeatMapGeneratorOptions`, `BeatStreamOptions`, `BeatMapJSON`, `BeatAccuracy`, `ButtonPressResult`, `AccuracyThresholds`, `DifficultyPreset`, `TempoEstimate`, `OSEConfig`, `BeatTrackerConfig`, `TempoDetectorConfig`, `TimeSignatureConfig`, `DownbeatSegment`, `DownbeatConfig`, `BeatMapGenerationProgress` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
 **Beat Interpolation Types:** `BeatSource`, `BeatWithSource`, `QuarterNoteDetection`, `GapAnalysis`, `InterpolationMetadata`, `InterpolatedBeatMap`, `BeatInterpolationOptions`, `InterpolatedBeatMapJSON` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
@@ -1414,12 +1413,15 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 
 | Type | Description | Key Properties |
 |------|-------------|----------------|
-| `Beat` | Single detected beat | `timestamp`, `beatInMeasure`, `isDownbeat`, `measureNumber`, `intensity`, `confidence` |
-| `BeatMap` | Complete beat map for a track | `audioId`, `duration`, `beats`, `bpm`, `metadata` |
+| `Beat` | Single detected beat (measure fields derived from `downbeatConfig`) | `timestamp`, `beatInMeasure`, `isDownbeat`, `measureNumber`, `intensity`, `confidence` |
+| `BeatMap` | Complete beat map for a track | `audioId`, `duration`, `beats`, `bpm`, `metadata`, `downbeatConfig?` |
+| `TimeSignatureConfig` | Time signature configuration | `beatsPerMeasure` |
+| `DownbeatSegment` | Segment with downbeat and time signature | `startBeat`, `downbeatBeatIndex`, `timeSignature` |
+| `DownbeatConfig` | Manual downbeat configuration | `segments` |
 | `BeatMapMetadata` | Algorithm settings used | `version`, `algorithm`, `minBpm`, `maxBpm`, `sensitivity`, `filter`, `dpAlpha`, `hopSizeMs`, `melBands` |
 | `BeatEvent` | Event emitted during playback | `beat`, `currentBpm`, `audioTime`, `timeUntilBeat`, `type` |
 | `AudioSyncState` | Synchronization state for debugging | `audioContextTime`, `audioElementTime`, `drift`, `isSynchronized`, `outputLatency` |
-| `TempoEstimate` | Tempo detection result | `primaryBpm`, `secondaryBpm`, `primaryWeight`, `secondaryWeight`, `isDuple`, `targetIntervalSeconds` |
+| `TempoEstimate` | Tempo detection result | `primaryBpm`, `secondaryBpm`, `primaryWeight`, `secondaryWeight`, `targetIntervalSeconds` |
 | `BeatMapGeneratorOptions` | Configuration for generation | `minBpm`, `maxBpm`, `sensitivity`, `filter`, `hopSizeMs`, `hopSizeMode`, `dpAlpha`, `melBands`, `melBandsMode`, `gaussianSmoothMs`, `gaussianSmoothMode`, `tempoCenter`, `tempoWidth` |
 | `HopSizeMode` | Hop size mode selection | `'efficient'` \| `'standard'` \| `'hq'` \| `'custom'` |
 | `HopSizeConfig` | Hop size mode configuration | `mode`, `customValue?` |
@@ -1444,7 +1446,7 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 
 **Location:** `src/core/analysis/beat/BeatMapGenerator.ts`
 
-Generates beat maps from audio using the Ellis DP algorithm. Analyzes entire track to detect beats and identify downbeats.
+Generates beat maps from audio using the Ellis DP algorithm. Analyzes entire track to detect beats and apply measure labels from optional `downbeatConfig`.
 
 **Constructor:**
 
@@ -1478,7 +1480,7 @@ constructor(options?: BeatMapGeneratorOptions)
 
 | Method | Description |
 |--------|-------------|
-| `generateBeatMap(audioUrl: string, audioId: string, progressCallback?: ProgressCallback): Promise<BeatMap>` | Generate beat map from audio URL |
+| `generateBeatMap(audioUrl: string, audioId: string, downbeatConfig?: DownbeatConfig, progressCallback?: ProgressCallback): Promise<BeatMap>` | Generate beat map from audio URL |
 | `generateBeatMapFromBuffer(audioBuffer: AudioBuffer, audioId: string, progressCallback?: ProgressCallback): Promise<BeatMap>` | Generate beat map from AudioBuffer |
 | `getProgress(): BeatMapGenerationProgress` | Get current generation progress |
 | `cancel(): void` | Cancel ongoing generation |
@@ -1639,31 +1641,53 @@ constructor(config?: TempoDetectorConfig)
 |--------|-------------|
 | `estimateTempo(onsetEnvelope: Float32Array, hopSize: number): TempoEstimate` | Estimate tempo from onset envelope |
 
-### DownbeatDetector
+### reapplyDownbeatConfig
 
-**Location:** `src/core/analysis/beat/DownbeatDetector.ts`
+**Location:** `src/core/types/BeatMap.ts`
 
-Identifies measure boundaries by analyzing intensity patterns and autocorrelation.
+Standalone function that recalculates measure labels based on a new `DownbeatConfig`. This is the primary way to set downbeat configuration - the typical workflow is to generate the beat map first with default config, examine it to identify the correct downbeat position, then call this function to apply the correct configuration.
 
-**Constructor:**
+**Note:** This does NOT re-analyze audio - it only recalculates measure labels.
+
+**Signature:**
 
 ```typescript
-constructor(config?: DownbeatDetectorConfig)
+function reapplyDownbeatConfig(beatMap: BeatMap, newConfig: DownbeatConfig): BeatMap
 ```
 
-**Config Options:**
+**Parameters:**
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `measureLengths` | [2, 3, 4, 6] | Measure lengths to try |
-| `minIntensityDifference` | 0.1 | Minimum intensity difference for downbeat |
-| `patternWeight` | 0.5 | Weight for pattern analysis vs autocorrelation |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `beatMap` | `BeatMap` | The original beat map |
+| `newConfig` | `DownbeatConfig` | New downbeat configuration to apply |
 
-**Methods:**
+**Returns:** New `BeatMap` with updated measure labels (original is not modified)
 
-| Method | Description |
-|--------|-------------|
-| `detectDownbeats(beats: Beat[]): DownbeatDetectionResult` | Detect downbeats in beat array |
+**Throws:** Error if configuration is invalid or `downbeatBeatIndex` exceeds total beats
+
+**Usage:**
+
+```typescript
+import { BeatMapGenerator, reapplyDownbeatConfig } from 'playlist-data-engine';
+
+const generator = new BeatMapGenerator();
+
+// Step 1: Generate with default config (beat 0 = downbeat, 4/4 time)
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+
+// Step 2: Examine beat map, identify that beat 9 is actually the "one"
+
+// Step 3: Apply correct configuration
+const correctedMap = reapplyDownbeatConfig(beatMap, {
+  segments: [{
+    startBeat: 0,
+    downbeatBeatIndex: 9,  // Beat 9 is the "one"
+    timeSignature: { beatsPerMeasure: 4 },
+  }],
+});
+// Beats 1, 5, 9, 13, 17... are now downbeats
+```
 
 ### BeatInterpolator
 

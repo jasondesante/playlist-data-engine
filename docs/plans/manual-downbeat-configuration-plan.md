@@ -10,12 +10,14 @@
 - ✅ Phase 5: Add reapplyDownbeatConfig function (all tasks complete)
 - ✅ Phase 6: Clean Up TempoDetector (all tasks complete)
 - ✅ Phase 7: Update Tests (all tasks complete)
+- ✅ Phase 8: Update Documentation (all tasks complete)
+- ✅ Phase 9: Verification (all tasks complete)
 
 **In Progress Phases:**
-- ⏳ Phase 8: Update Documentation (8.1 and 8.3 complete, 8.2 pending)
+- None
 
 **Pending Phases:**
-- ⏳ Phase 9: Verification (build/test pass, backward compat pending)
+- None
 
 **Build Status:** ✅ Passing (no TypeScript errors)
 **Test Status:** ✅ All 3674 tests passing
@@ -740,16 +742,16 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 
 ### 8.2 Update DATA_ENGINE_REFERENCE.md
 
-- [ ] Remove `DownbeatDetector` from table of contents
-- [ ] Remove `DownbeatDetector` from class summary table
-- [ ] Remove entire `DownbeatDetector` section (~line 1642)
-- [ ] Update `TempoEstimate` type table: remove `isDuple` field
-- [ ] Update `Beat` type docs: clarify `beatInMeasure`, `isDownbeat`, `measureNumber` are derived from config
-- [ ] Add `TimeSignatureConfig`, `DownbeatSegment`, and `DownbeatConfig` to types table
-- [ ] Update `generateBeatMap()` signature to show optional `downbeatConfig` parameter
-- [ ] Add `reapplyDownbeatConfig()` function to exports/docs
-- [ ] Update `BeatMapGenerator` description to remove "identify downbeats"
-- [ ] Document that `downbeatConfig` in `BeatMap` is optional (omitted if default used)
+- [x] Remove `DownbeatDetector` from table of contents
+- [x] Remove `DownbeatDetector` from class summary table
+- [x] Remove entire `DownbeatDetector` section (~line 1642)
+- [x] Update `TempoEstimate` type table: remove `isDuple` field
+- [x] Update `Beat` type docs: clarify `beatInMeasure`, `isDownbeat`, `measureNumber` are derived from config
+- [x] Add `TimeSignatureConfig`, `DownbeatSegment`, and `DownbeatConfig` to types table
+- [x] Update `generateBeatMap()` signature to show optional `downbeatConfig` parameter
+- [x] Add `reapplyDownbeatConfig()` function to exports/docs
+- [x] Update `BeatMapGenerator` description to remove "identify downbeats"
+- [x] Document that `downbeatConfig` in `BeatMap` is optional (omitted if default used)
 
 ### 8.3 Update Type Documentation in AUDIO_ANALYSIS.md
 
@@ -781,7 +783,7 @@ Since `BeatMap` is an interface (not a class), `reapplyDownbeatConfig` must be a
 ### 9.4 Backward Compatibility
 
 - [x] Existing code using defaults continues to work
-- [ ] BeatMaps generated with old code can still be loaded
+- [x] BeatMaps generated with old code can still be loaded
 - [x] Default behavior: beat 0 is downbeat, 4/4 time
 
 ---
