@@ -1514,3 +1514,180 @@ describe('Section Boundary Detection (Phase 3)', () => {
         })
     })
 })
+
+// ============================================================================
+// Phase 7: Multi-Tempo Edge Cases (Integration Tests)
+// ============================================================================
+
+describe('Phase 7: Multi-Tempo Edge Cases', () => {
+    describe('Two clusters with gradual drift between', () => {
+        it('should NOT trigger sections when gradual drift bridges the gap between clusters', () => {
+            // This test verifies the core principle: "DON'T GET IN THE WAY"
+            // When there are two clear clusters with connecting beats that show
+            // gradual drift between them, the multi-tempo feature should NOT
+            // create separate sections.
+            //
+            // The key is that identifyDenseSections must find two separate clusters,
+            // and findCrossingPoint must determine that drift bridges the gap.
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,  // 10% threshold
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+                tempoAdaptationRate: 0.5,  // Allow tempo to drift
+                denseSectionMinBeats: 3,  // Minimum beats for a dense section
+            })
+
+            const beats: Beat[] = []
+            const interval128 = 60 / 128  // ~0.469s
+            const interval140 = 60 / 140  // ~0.429s
+
+            // First cluster: 5 beats at 128 BPM (these should form a dense section)
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * interval128))
+            }
+
+            // Connecting beats showing gradual drift from 128 to 140 BPM
+            // Use a FEW connecting beats that show gradual drift
+            // The variance in these beats should prevent them from forming a dense section
+            // but they should still connect the two clusters
+            const lastBeat128 = beats[beats.length - 1].timestamp
+            const driftBeatsCount = 4  // Fewer drift beats
+            for (let i = 0; i < driftBeatsCount; i++) {
+                // Gradually decrease interval from interval128 to interval140
+                const progress = (i + 0.5) / driftBeatsCount  // Start mid-drift
+                const interval = interval128 - (progress * (interval128 - interval140))
+                const time = lastBeat128 + (i + 1) * interval
+                beats.push(createBeat(time))
+            }
+
+            // Second cluster: 5 beats at 140 BPM (these should form another dense section)
+            const lastDriftBeat = beats[beats.length - 1].timestamp
+            for (let i = 1; i <= 5; i++) {
+                beats.push(createBeat(lastDriftBeat + i * interval140))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // The behavior depends on whether the system detects two separate clusters.
+            // If the drift beats connect the clusters smoothly enough that they merge
+            // into one section, then hasMultipleTempos will be false (single section).
+            // If two clusters are detected, the crossing paths analysis should determine
+            // that drift bridges the gap (no boundary).
+            //
+            // Either outcome is acceptable for this "gradual drift" test:
+            // 1. Single section detected (drift too gradual to separate)
+            // 2. Two sections detected but drift bridges gap (no boundary created)
+
+            const hasMultipleTempos = result.interpolationMetadata.hasMultipleTempos
+
+            if (hasMultipleTempos) {
+                // If multiple tempos are detected, multi-tempo should NOT be applied
+                // because the crossing paths analysis should find that drift bridges the gap
+                expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+                expect(result.interpolationMetadata.tempoSections).toBeUndefined()
+            } else {
+                // If only one tempo is detected, that's also acceptable -
+                // it means the drift was gradual enough to merge into one section
+                expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            }
+        })
+
+        it('should NOT trigger sections when connecting beats smoothly transition between tempos', () => {
+            // Similar test but with a different tempo pair (120 -> 135 BPM)
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+                tempoAdaptationRate: 0.5,
+                denseSectionMinBeats: 3,
+            })
+
+            const beats: Beat[] = []
+            const interval120 = 0.5  // 60/120
+            const interval135 = 60 / 135  // ~0.444s
+
+            // First cluster: 6 beats at 120 BPM
+            for (let i = 0; i < 6; i++) {
+                beats.push(createBeat(i * interval120))
+            }
+
+            // Connecting beats with smooth transition
+            const lastBeat120 = beats[beats.length - 1].timestamp
+            const transitionBeats = 5
+            for (let i = 0; i < transitionBeats; i++) {
+                const progress = (i + 0.5) / transitionBeats
+                const interval = interval120 - (progress * (interval120 - interval135))
+                const time = lastBeat120 + (i + 1) * interval
+                beats.push(createBeat(time))
+            }
+
+            // Second cluster: 6 beats at 135 BPM
+            const lastTransitionBeat = beats[beats.length - 1].timestamp
+            for (let i = 1; i <= 6; i++) {
+                beats.push(createBeat(lastTransitionBeat + i * interval135))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Either single section or multi-tempo not applied is acceptable
+            const hasMultipleTempos = result.interpolationMetadata.hasMultipleTempos
+
+            if (hasMultipleTempos) {
+                expect(result.interpolationMetadata.hasMultiTempoApplied).toBeFalsy()
+            } else {
+                expect(result.interpolationMetadata.hasMultipleTempos).toBe(false)
+            }
+        })
+    })
+
+    describe('Two clusters with gap between', () => {
+        it('SHOULD trigger sections when there is a gap between clusters (no connecting beats)', () => {
+            // When two clusters have a gap (no connecting beats showing drift),
+            // the multi-tempo feature SHOULD create separate sections.
+            //
+            // IMPORTANT: The tempo difference must be >10% to trigger the conflict detection.
+            // 120 BPM vs 150 BPM = 25% difference (well above threshold)
+
+            const interpolator = new BeatInterpolator({
+                tempoSectionThreshold: 0.1,
+                minClusterBeats: 4,
+                enableMultiTempo: true,
+            })
+
+            const beats: Beat[] = []
+            const interval120 = 0.5  // 60/120 = 0.5s
+            const interval150 = 60 / 150  // 0.4s
+
+            // First cluster: 5 beats at 120 BPM
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(i * interval120))
+            }
+
+            // GAP: No beats between clusters (this is the key difference from gradual drift)
+            // Just start the second cluster after a significant time gap
+
+            // Second cluster: 5 beats at 150 BPM, starting after a gap
+            const lastBeat120 = beats[beats.length - 1].timestamp
+            const gapDuration = 2.0  // 2 second gap with no beats
+            for (let i = 0; i < 5; i++) {
+                beats.push(createBeat(lastBeat120 + gapDuration + i * interval150))
+            }
+
+            const beatMap = createBeatMap(beats, beats[beats.length - 1].timestamp + 1)
+            const result = interpolator.interpolate(beatMap)
+
+            // Should detect multiple tempos
+            expect(result.interpolationMetadata.hasMultipleTempos).toBe(true)
+            expect(result.interpolationMetadata.detectedClusterTempos).toBeDefined()
+            expect(result.interpolationMetadata.detectedClusterTempos!.length).toBeGreaterThanOrEqual(2)
+
+            // Multi-tempo SHOULD be applied because there's a gap (no evidence of drift)
+            expect(result.interpolationMetadata.hasMultiTempoApplied).toBe(true)
+            expect(result.interpolationMetadata.tempoSections).toBeDefined()
+            expect(result.interpolationMetadata.tempoSections!.length).toBeGreaterThanOrEqual(2)
+        })
+    })
+})
