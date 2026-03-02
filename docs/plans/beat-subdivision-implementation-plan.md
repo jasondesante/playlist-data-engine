@@ -696,10 +696,10 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 8.2 Update DATA_ENGINE_REFERENCE.md
 
-- [ ] Add `BeatSubdivider` to class summary
-- [ ] Add new types to types table
-- [ ] Document `SubdivisionConfig` options
-- [ ] Add usage examples
+- [x] Add `BeatSubdivider` to class summary
+- [x] Add new types to types table
+- [x] Document `SubdivisionConfig` options
+- [x] Add usage examples
 
 ### 8.3 Add JSDoc Comments
 
