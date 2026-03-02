@@ -1668,6 +1668,48 @@ export const DEFAULT_SUBDIVISION_CONFIG: SubdivisionConfig = {
 };
 
 // ============================================================================
+// Unified Beat Map (Foundation for Subdivision)
+// ============================================================================
+
+/**
+ * A unified beat map with detected + interpolated beats merged
+ *
+ * This is the foundation for subdivision. All beats are treated equally
+ * regardless of whether they were originally detected or interpolated.
+ * Detected beats are flagged for accent/rhythm pattern use.
+ *
+ * Created from an InterpolatedBeatMap by the unifyBeatMap() utility.
+ */
+export interface UnifiedBeatMap {
+    /** Unique identifier for the audio source */
+    audioId: string;
+
+    /** Duration of the audio in seconds */
+    duration: number;
+
+    /** All beats (detected + interpolated) as a single unified list */
+    beats: Beat[];
+
+    /** Indices of beats that were originally detected (for accent lookup) */
+    detectedBeatIndices: number[];
+
+    /** Quarter note interval in seconds (primary tempo) */
+    quarterNoteInterval: number;
+
+    /** Equivalent BPM for the quarter note (primary tempo) */
+    quarterNoteBpm: number;
+
+    /** The downbeat configuration inherited from interpolation */
+    downbeatConfig: DownbeatConfig;
+
+    /** Tempo sections for multi-tempo support (from InterpolationMetadata) */
+    tempoSections?: TempoSection[];
+
+    /** Metadata from the original beat map */
+    originalMetadata: BeatMapMetadata;
+}
+
+// ============================================================================
 // Version and Algorithm Identifiers
 // ============================================================================
 
