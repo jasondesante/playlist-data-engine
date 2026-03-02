@@ -64,6 +64,9 @@ export type {
     QuarterNoteDetection,
     GapAnalysis,
     InterpolationMetadata,
+    // Tempo Section types (multi-tempo support)
+    TempoSection,
+    TempoSectionJSON,
     // Beat Interpolation JSON types
     BeatWithSourceJSON,
     InterpolatedBeatMapJSON,
