@@ -416,8 +416,11 @@ Represents a single detected beat:
 | `measureNumber` | `number` | Measure index (0-indexed). Derived from `downbeatConfig`. |
 | `intensity` | `number` | Onset strength (0-1, normalized) |
 | `confidence` | `number` | Detection confidence (0-1) |
+| `requiredKey` | `string?` | Optional required key for rhythm game charts (e.g., 'up', 'down', 'left', 'right') |
 
 **Note**: The `beatInMeasure`, `isDownbeat`, and `measureNumber` properties are derived from the manual downbeat configuration (or defaults if not specified). See [Downbeat Configuration](#downbeat-configuration) for details.
+
+**Note**: The `requiredKey` property is used for rhythm game chart creation. When specified, the player must press the matching key for the beat to count as a hit. See [Chart Creation with Required Keys](#chart-creation-with-required-keys) for details.
 
 **Source**: [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts)
 
@@ -515,6 +518,29 @@ Event emitted by BeatStream during playback:
 
 **Source**: [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts)
 
+#### ButtonPressResult
+
+Result of a button press accuracy check from `checkButtonPress()`:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `accuracy` | `BeatAccuracy` | Accuracy level: 'perfect' \| 'great' \| 'good' \| 'ok' \| 'miss' \| 'wrongKey' |
+| `offset` | `number` | Time difference from nearest beat in seconds (negative = early, positive = late) |
+| `matchedBeat` | `Beat` | The beat that was matched (nearest beat to the press) |
+| `absoluteOffset` | `number` | Absolute time difference in seconds |
+| `keyMatch` | `boolean` | Whether the pressed key matched the required key (true if no key required) |
+| `pressedKey` | `string?` | The key that was pressed (passed to checkButtonPress) |
+| `requiredKey` | `string?` | The required key from the matched beat (undefined if beat has no required key) |
+
+**Key Matching Behavior:**
+- If beat has no `requiredKey`: `keyMatch` is `true`, accuracy is timing-based
+- If beat has `requiredKey` and `pressedKey` matches: `keyMatch` is `true`, accuracy is timing-based
+- If beat has `requiredKey` and `pressedKey` doesn't match: `keyMatch` is `false`, accuracy is `'wrongKey'`
+- If beat has `requiredKey` but no `pressedKey` provided: `keyMatch` is `false`, accuracy is `'miss'`
+- If `ignoreKeyRequirements: true` in BeatStreamOptions: Key checking is bypassed, timing-only evaluation
+
+**Source**: [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts)
+
 #### BeatMapGeneratorOptions
 
 Configuration for beat map generation:
@@ -553,6 +579,7 @@ Configuration for beat streaming:
 | `timingTolerance` | `number` | 0.01 | Synchronization tolerance (seconds, 10ms) |
 | `difficultyPreset` | `DifficultyPreset` | 'hard' | Difficulty preset for accuracy thresholds |
 | `customThresholds` | `Partial<AccuracyThresholds>` | {} | Custom thresholds (overrides preset) |
+| `ignoreKeyRequirements` | `boolean` | false | When true, beats with requiredKey use timing-only evaluation (easy mode) |
 
 **Source**: [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts)
 
@@ -611,7 +638,7 @@ new BeatStream(beatMap: BeatMap, audioContext: AudioContext, options?: BeatStrea
 | `getBeatAtTime` | `time: number` | `Beat \| undefined` | Find beat at specific time |
 | `getSyncState` | - | `AudioSyncState` | Get synchronization state for debugging |
 | `getCurrentBpm` | - | `number` | Get current BPM from rolling calculation |
-| `checkButtonPress` | `timestamp: number` | `ButtonPressResult` | Check button press accuracy |
+| `checkButtonPress` | `timestamp: number, pressedKey?: string` | `ButtonPressResult` | Check button press accuracy with optional key validation |
 | `getLastBeatAccuracy` | - | `ButtonPressResult \| null` | Get last press accuracy |
 
 ---
@@ -925,7 +952,7 @@ function onPlayerButtonPress() {
   console.log(`Offset: ${result.offset * 1000}ms (${result.offset < 0 ? 'early' : 'late'})`);
   console.log(`Matched beat at: ${result.matchedBeat.timestamp}s`);
 
-  // Result.accuracy is one of: 'perfect' | 'great' | 'good' | 'ok' | 'miss'
+  // Result.accuracy is one of: 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKey'
   return result;
 }
 ```
@@ -939,6 +966,7 @@ function onPlayerButtonPress() {
 | `good` | ±175ms | ±135ms | ±50ms | Good timing |
 | `ok` | ±250ms | ±200ms | ±100ms | Acceptable |
 | `miss` | >250ms | >200ms | >100ms | Missed the beat |
+| `wrongKey` | — | — | — | Correct timing but wrong key pressed (for charts with required keys) |
 
 **Default**: Medium difficulty (balanced experience for most players)
 
@@ -1255,16 +1283,144 @@ This function:
 
 ---
 
+## Chart Creation with Required Keys
+
+The beat detection system supports rhythm game chart creation through the `requiredKey` property on beats. This enables Guitar Hero/DDR-style gameplay where specific keys must be pressed for specific beats.
+
+### Overview
+
+| Concept | Description |
+|---------|-------------|
+| **Required Key** | An optional property on a beat that specifies which key must be pressed |
+| **Chart** | A beat map (typically `SubdividedBeatMap`) that has required key assignments |
+| **WrongKey** | A new accuracy type for when timing is correct but the wrong key was pressed |
+
+### How Key Matching Works
+
+The engine performs **simple string comparison** — it does not validate or care about the physical input source:
+
+```typescript
+// Engine logic (simplified)
+if (beat.requiredKey && pressedKey !== beat.requiredKey) {
+    result.accuracy = 'wrongKey';
+}
+```
+
+**Frontend responsibility**: Map physical inputs to logical key strings before calling the engine:
+
+| Physical Input | Pass to Engine |
+|----------------|----------------|
+| Keyboard arrow keys | `"up"`, `"down"`, `"left"`, `"right"` |
+| Game controller D-pad | `"up"`, `"down"`, `"left"`, `"right"` |
+| Game controller face buttons | `"a"`, `"b"`, `"x"`, `"y"` |
+| Touch screen zones | Any string you define |
+
+The engine doesn't know or care if "up" came from a keyboard, controller, or touch screen — it just matches strings.
+
+### Helper Functions
+
+The engine provides utility functions for managing required keys on beat maps:
+
+```typescript
+import {
+    assignKeyToBeat,
+    assignKeysToBeats,
+    extractKeyMap,
+    clearAllKeys,
+    hasRequiredKeys,
+    getKeyCount,
+    getUsedKeys,
+} from 'playlist-data-engine';
+```
+
+| Function | Purpose |
+|----------|---------|
+| `assignKeyToBeat(beatMap, index, key)` | Assign a key to a single beat (immutable) |
+| `assignKeysToBeats(beatMap, assignments)` | Bulk assign keys to multiple beats |
+| `extractKeyMap(beatMap)` | Get a Map of beatIndex → requiredKey |
+| `clearAllKeys(beatMap)` | Remove all key assignments |
+| `hasRequiredKeys(beatMap)` | Check if any keys are assigned |
+| `getKeyCount(beatMap)` | Count beats with keys |
+| `getUsedKeys(beatMap)` | Get unique keys used (sorted) |
+
+### Creating a Chart
+
+```typescript
+import {
+    BeatMapGenerator,
+    assignKeysToBeats,
+    BeatStream,
+} from 'playlist-data-engine';
+
+const generator = new BeatMapGenerator();
+const audioContext = new AudioContext();
+
+// Step 1: Generate beat map
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+
+// Step 2: Assign required keys to create a chart
+const chartMap = assignKeysToBeats(beatMap, [
+    { beatIndex: 0, key: 'left' },
+    { beatIndex: 1, key: 'down' },
+    { beatIndex: 2, key: 'up' },
+    { beatIndex: 3, key: 'right' },
+    // ... more assignments
+]);
+
+// Step 3: Use in gameplay
+const beatStream = new BeatStream(chartMap, audioContext);
+beatStream.start();
+
+// Step 4: On player input
+function onPlayerInput(physicalKey: string) {
+    // Map physical input to logical key (frontend responsibility)
+    const logicalKey = mapInputToKey(physicalKey); // e.g., 'ArrowUp' -> 'up'
+
+    const result = beatStream.checkButtonPress(audioContext.currentTime, logicalKey);
+
+    if (result.accuracy === 'wrongKey') {
+        console.log(`Wrong key! Pressed ${result.pressedKey}, needed ${result.requiredKey}`);
+    } else {
+        console.log(`Accuracy: ${result.accuracy}`);
+    }
+}
+```
+
+### Easy Mode (Ignore Key Requirements)
+
+For accessibility or easier gameplay, you can bypass key checking:
+
+```typescript
+// Easy mode: timing-only evaluation even if beat has required key
+const easyStream = new BeatStream(chartMap, audioContext, {
+    ignoreKeyRequirements: true,
+});
+
+// Player can press any key - only timing matters
+const result = easyStream.checkButtonPress(timestamp, 'any-key');
+// result.accuracy will be timing-based, never 'wrongKey'
+```
+
+### Key Assignment Best Practices
+
+1. **Use consistent key names**: Pick a convention (e.g., lowercase: 'up', 'down', 'left', 'right')
+2. **Assign keys after beat map generation**: Keys are assigned as a post-processing step
+3. **Test with `hasRequiredKeys()`**: Verify a beat map is actually a chart before gameplay
+4. **Use `getUsedKeys()` for UI**: Determine which buttons to display based on the chart
+
+---
+
 ### Scope Note
 
 This is the **data engine only** — no frontend/UI components. The data engine emits beat events and provides button press timing data. Building a playable rhythm game demo (visual feedback, note spawning, etc.) should be done in a separate frontend project (e.g., `playlist-data-showcase`).
 
 The data engine provides:
 - Beat event stream (`upcoming`, `exact`, `passed`)
-- Button press accuracy detection (`perfect`, `great`, `good`, `ok`, `miss`)
+- Button press accuracy detection (`perfect`, `great`, `good`, `ok`, `miss`, `wrongKey`)
 - Configurable difficulty presets (easy, medium, hard) and custom thresholds
 - Rolling BPM calculation
 - Beat pre-rendering data
+- Chart creation with required keys and key validation helpers
 
 The frontend provides:
 - Visual note spawning

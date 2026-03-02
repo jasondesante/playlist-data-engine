@@ -186,11 +186,11 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 ## Phase 5: Documentation Updates
 
 ### Task 5.1: Update AUDIO_ANALYSIS.md
-- [ ] Document the `requiredKey` property on Beat interface
-- [ ] Add section on "Chart Creation" explaining required keys
-- [ ] Document the new `wrongKey` accuracy type
-- [ ] Update ButtonPressResult documentation with new fields
-- [ ] Document how key matching works (string comparison, frontend responsibility)
+- [x] Document the `requiredKey` property on Beat interface
+- [x] Add section on "Chart Creation" explaining required keys
+- [x] Document the new `wrongKey` accuracy type
+- [x] Update ButtonPressResult documentation with new fields
+- [x] Document how key matching works (string comparison, frontend responsibility)
 
 ### Task 5.2: Update DATA_ENGINE_REFERENCE.md
 - [ ] Add `requiredKey` to Beat type reference
