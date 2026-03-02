@@ -263,7 +263,7 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 - ~~Helper function location~~ → New file `beatKeyHelpers.ts`
 
 ### To Resolve During Implementation
-- [ ] Should there be a `clearAllKeys()` helper? (Added as Task 4.4)
+- [x] ~~Should there be a `clearAllKeys()` helper?~~ (Added as Task 4.4) ✓
 
 ---
 
@@ -293,7 +293,7 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 - [x] Round-trip `toJSON()`/`fromJSON()` maintains required keys
 
 ### Documentation & Testing
-- [ ] Documentation updated in AUDIO_ANALYSIS.md and DATA_ENGINE_REFERENCE.md
+- [x] Documentation updated in AUDIO_ANALYSIS.md and DATA_ENGINE_REFERENCE.md
 - [x] Unit tests cover new functionality
 - [x] Integration tests with SubdividedBeatMap pass
 
