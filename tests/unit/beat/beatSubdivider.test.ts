@@ -15,12 +15,18 @@ import type {
     SubdivisionConfig,
     BeatMapMetadata,
     DownbeatConfig,
+    TempoSection,
 } from '../../../src/core/types/BeatMap.js';
 import {
     DEFAULT_DOWNBEAT_CONFIG,
     DEFAULT_SUBDIVISION_CONFIG,
     BEAT_DETECTION_VERSION,
     BEAT_DETECTION_ALGORITHM,
+    validateSubdivisionConfig,
+    validateSubdivisionConfigAgainstBeats,
+    validateSubdivisionDensity,
+    MAX_SUBDIVISION_DENSITY,
+    getSubdivisionDensity,
 } from '../../../src/core/types/BeatMap.js';
 
 // ============================================================================
@@ -3996,6 +4002,441 @@ describe('BeatSubdivider - Segment Tests', () => {
             const result = subdivider.subdivide(unifiedMap, config);
 
             // Assert - max density should be 4 (sixteenth)
+            expect(result.subdivisionMetadata.maxDensity).toBe(4);
+        });
+    });
+});
+
+// ============================================================================
+// Edge Cases Tests
+// ============================================================================
+
+describe('BeatSubdivider - Edge Cases', () => {
+    // ========================================================================
+    // Tempo Changes (Multi-Tempo Tracks)
+    // ========================================================================
+
+    describe('Tempo changes (multi-tempo tracks)', () => {
+        /**
+         * Helper to create a unified beat map with multiple tempo sections
+         */
+        function createMultiTempoBeatMap(): UnifiedBeatMap {
+            const bpm1 = 120; // First section: 120 BPM
+            const bpm2 = 90;  // Second section: 90 BPM
+            const interval1 = 60 / bpm1; // 0.5 seconds
+            const interval2 = 60 / bpm2; // ~0.667 seconds
+
+            // Create 4 beats at 120 BPM, then 4 beats at 90 BPM
+            const beats: Beat[] = [];
+
+            // Section 1: beats 0-3 at 120 BPM (timestamps: 0, 0.5, 1.0, 1.5)
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(i * interval1, {
+                    beatInMeasure: i % 4,
+                    isDownbeat: i % 4 === 0,
+                    measureNumber: Math.floor(i / 4),
+                }));
+            }
+
+            // Section 2: beats 4-7 at 90 BPM (starting from 2.0)
+            const section2Start = beats[3].timestamp + interval1; // 2.0
+            for (let i = 0; i < 4; i++) {
+                beats.push(createBeat(section2Start + i * interval2, {
+                    beatInMeasure: i % 4,
+                    isDownbeat: i % 4 === 0,
+                    measureNumber: 1 + Math.floor(i / 4),
+                }));
+            }
+
+            // Create tempo sections
+            const tempoSections: TempoSection[] = [
+                {
+                    start: 0,
+                    end: section2Start,
+                    bpm: bpm1,
+                    intervalSeconds: interval1,
+                    beatCount: 4,
+                    startBeatIndex: 0,
+                    endBeatIndex: 3,
+                },
+                {
+                    start: section2Start,
+                    end: section2Start + 4 * interval2,
+                    bpm: bpm2,
+                    intervalSeconds: interval2,
+                    beatCount: 4,
+                    startBeatIndex: 4,
+                    endBeatIndex: 7,
+                },
+            ];
+
+            return {
+                audioId: 'multi-tempo-test',
+                duration: section2Start + 4 * interval2,
+                beats,
+                detectedBeatIndices: beats.map((_, i) => i),
+                quarterNoteInterval: interval1, // Primary tempo
+                quarterNoteBpm: bpm1,
+                downbeatConfig: DEFAULT_DOWNBEAT_CONFIG,
+                tempoSections,
+                originalMetadata: createDefaultMetadata(),
+            };
+        }
+
+        it('should detect multiple tempos in metadata', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createMultiTempoBeatMap();
+
+            // Act
+            const result = subdivider.subdivide(unifiedMap);
+
+            // Assert
+            expect(result.subdivisionMetadata.hasMultipleTempos).toBe(true);
+            expect(result.tempoSections).toBeDefined();
+            expect(result.tempoSections?.length).toBe(2);
+        });
+
+        it('should handle eighth notes with multi-tempo track', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createMultiTempoBeatMap();
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'eighth' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - 8 original beats + 7 interpolated = 15 beats
+            expect(result.beats.length).toBe(15);
+            expect(result.subdivisionMetadata.hasMultipleTempos).toBe(true);
+        });
+
+        it('should handle sixteenth notes with multi-tempo track', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createMultiTempoBeatMap();
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'sixteenth' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - 8 original beats + 7*3 interpolated = 29 beats
+            expect(result.beats.length).toBe(29);
+        });
+
+        it('should handle segment transition within multi-tempo track', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createMultiTempoBeatMap();
+
+            // Act - switch from quarter to eighth at beat 4 (where tempo changes)
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 4, subdivision: 'eighth' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - 4 quarters + 4 quarters with 3 eighths interpolated = 11 beats
+            expect(result.beats.length).toBe(11);
+            expect(result.subdivisionMetadata.subdivisionsUsed).toEqual(
+                expect.arrayContaining(['quarter', 'eighth'])
+            );
+        });
+
+        it('should preserve tempo sections in output', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createMultiTempoBeatMap();
+
+            // Act
+            const result = subdivider.subdivide(unifiedMap);
+
+            // Assert
+            expect(result.tempoSections).toEqual(unifiedMap.tempoSections);
+        });
+
+        it('should handle triplet8 with multi-tempo track', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createMultiTempoBeatMap();
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'triplet8' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - 8 original beats + 7*2 triplet beats = 22 beats
+            expect(result.beats.length).toBe(22);
+        });
+
+        it('should handle dotted4 with multi-tempo track', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createMultiTempoBeatMap();
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'dotted4' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - dotted4 is phase-independent, generates beats at 1.5x intervals
+            expect(result.beats.length).toBeGreaterThan(0);
+            expect(result.subdivisionMetadata.hasMultipleTempos).toBe(true);
+        });
+
+        it('should handle single tempo (no tempoSections) without issues', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+            // unifiedMap does NOT have tempoSections defined
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'eighth' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - should work normally without tempoSections
+            expect(result.beats.length).toBe(15);
+            expect(result.subdivisionMetadata.hasMultipleTempos).toBe(false);
+        });
+    });
+
+    // ========================================================================
+    // Subdivision Config Validation
+    // ========================================================================
+
+    describe('Subdivision config with startBeat exceeding beat count (validation)', () => {
+        it('should allow segment starting beyond beat count (no-op)', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - segment starts at beat 100, but we only have 8 beats
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 100, subdivision: 'eighth' }, // Beyond beat count
+                ],
+            };
+            // Should NOT throw - segment simply won't apply
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - only first segment applies
+            expect(result.beats.length).toBe(8);
+        });
+
+        it('should throw error for empty beat map with non-zero startBeat', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createUnifiedBeatMap([], { bpm: 120 });
+
+            // Act & Assert
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 5, subdivision: 'quarter' }],
+            };
+            expect(() => subdivider.subdivide(unifiedMap, config)).toThrow(
+                'Cannot apply subdivision config with multiple segments or non-zero startBeat to empty beat map'
+            );
+        });
+
+        it('should throw error for empty beat map with multiple segments', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createUnifiedBeatMap([], { bpm: 120 });
+
+            // Act & Assert
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 4, subdivision: 'eighth' },
+                ],
+            };
+            expect(() => subdivider.subdivide(unifiedMap, config)).toThrow(
+                'Cannot apply subdivision config with multiple segments or non-zero startBeat to empty beat map'
+            );
+        });
+
+        it('should allow default config on empty beat map', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createUnifiedBeatMap([], { bpm: 120 });
+
+            // Act - should not throw
+            const result = subdivider.subdivide(unifiedMap);
+
+            // Assert
+            expect(result.beats.length).toBe(0);
+        });
+
+        it('should validate startBeat is non-negative', () => {
+            // Arrange - use validation function directly
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: -1, subdivision: 'quarter' }],
+            };
+
+            // Act & Assert
+            expect(() => validateSubdivisionConfig(config)).toThrow(
+                'startBeat must be non-negative'
+            );
+        });
+
+        it('should validate segments are ordered by startBeat', () => {
+            // Arrange - segments out of order
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 4, subdivision: 'eighth' },
+                    { startBeat: 0, subdivision: 'quarter' }, // Should be first
+                ],
+            };
+
+            // Act & Assert
+            expect(() => validateSubdivisionConfig(config)).toThrow(
+                'Segments must be ordered by startBeat'
+            );
+        });
+
+        it('should validate subdivision type is valid', () => {
+            // Arrange
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'invalid' as SubdivisionType }],
+            };
+
+            // Act & Assert
+            expect(() => validateSubdivisionConfig(config)).toThrow(
+                'Invalid subdivision type'
+            );
+        });
+
+        it('should validate config has at least one segment', () => {
+            // Arrange
+            const config: SubdivisionConfig = {
+                segments: [],
+            };
+
+            // Act & Assert
+            expect(() => validateSubdivisionConfig(config)).toThrow(
+                'must have at least one segment'
+            );
+        });
+    });
+
+    // ========================================================================
+    // Density Limit Enforcement
+    // ========================================================================
+
+    describe('Density limit enforcement', () => {
+        it('should have MAX_SUBDIVISION_DENSITY constant set to 4', () => {
+            // Assert - sixteenth notes (4x) are the maximum
+            expect(MAX_SUBDIVISION_DENSITY).toBe(4);
+        });
+
+        it('should not throw for half notes (0.5x density)', () => {
+            // Act & Assert - should not throw
+            expect(() => validateSubdivisionDensity('half')).not.toThrow();
+            expect(getSubdivisionDensity('half')).toBe(0.5);
+        });
+
+        it('should not throw for quarter notes (1x density)', () => {
+            // Act & Assert - should not throw
+            expect(() => validateSubdivisionDensity('quarter')).not.toThrow();
+            expect(getSubdivisionDensity('quarter')).toBe(1);
+        });
+
+        it('should not throw for eighth notes (2x density)', () => {
+            // Act & Assert - should not throw
+            expect(() => validateSubdivisionDensity('eighth')).not.toThrow();
+            expect(getSubdivisionDensity('eighth')).toBe(2);
+        });
+
+        it('should not throw for triplet8 (2x density)', () => {
+            // Act & Assert - should not throw
+            expect(() => validateSubdivisionDensity('triplet8')).not.toThrow();
+            expect(getSubdivisionDensity('triplet8')).toBe(2);
+        });
+
+        it('should not throw for triplet4 (2x density)', () => {
+            // Act & Assert - should not throw
+            expect(() => validateSubdivisionDensity('triplet4')).not.toThrow();
+            expect(getSubdivisionDensity('triplet4')).toBe(2);
+        });
+
+        it('should not throw for dotted4 (4x density)', () => {
+            // Act & Assert - should not throw
+            expect(() => validateSubdivisionDensity('dotted4')).not.toThrow();
+            expect(getSubdivisionDensity('dotted4')).toBe(4);
+        });
+
+        it('should not throw for dotted8 (4x density)', () => {
+            // Act & Assert - should not throw
+            expect(() => validateSubdivisionDensity('dotted8')).not.toThrow();
+            expect(getSubdivisionDensity('dotted8')).toBe(4);
+        });
+
+        it('should not throw for sixteenth notes (4x density - maximum)', () => {
+            // Act & Assert - should not throw (at the limit)
+            expect(() => validateSubdivisionDensity('sixteenth')).not.toThrow();
+            expect(getSubdivisionDensity('sixteenth')).toBe(4);
+        });
+
+        it('should report correct maxDensity for sixteenth subdivision', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'sixteenth' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - maxDensity should be 4 (at the limit)
+            expect(result.subdivisionMetadata.maxDensity).toBe(4);
+        });
+
+        it('should report correct maxDensity for half subdivision (below limit)', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'half' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - maxDensity should be 1 (0.5 rounds up to baseline 1)
+            expect(result.subdivisionMetadata.maxDensity).toBe(1);
+        });
+
+        it('should report correct maxDensity for segment transition to maximum density', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 16);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - transition from half to sixteenth
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'half' },        // 0.5x
+                    { startBeat: 8, subdivision: 'sixteenth' },   // 4x
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - maxDensity should be 4 (from sixteenth segment)
             expect(result.subdivisionMetadata.maxDensity).toBe(4);
         });
     });
