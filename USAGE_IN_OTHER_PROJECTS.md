@@ -40,6 +40,7 @@ cd /path/to/your/project && npm link playlist-data-engine
 
 ### Basic
 - [Playlist Parsing and Character Generation](#basic-playlist-parsing-and-character-generation) — Parse playlists, analyze audio, generate characters
+- [Quick Data Extraction](#quick-data-extraction) — Simple arrays of URLs, titles, artists from playlists
 - [XP from Listening](#earning-xp-from-listening-to-music) — Session tracking, XP calculation, level-ups
 
 ### Specific Features
@@ -116,6 +117,51 @@ console.log(`Generated: ${character.name}`);
 console.log(`  Race: ${character.race}`);
 console.log(`  Class: ${character.class}`);
 console.log(`  STR: ${character.ability_scores.STR}, DEX: ${character.ability_scores.DEX}`);
+```
+
+### Quick Data Extraction
+
+For simple use cases where you just need arrays of URLs or basic data from a playlist:
+
+```typescript
+import {
+  PlaylistParser,
+  getAudioUrls,
+  getImageUrls,
+  getTrackTitles,
+  getArtists,
+  getGenres,
+  getTags,
+  getTotalDuration,
+  getTrackCount,
+  getTracks,
+  getFullTracks
+} from 'playlist-data-engine';
+
+// Parse playlist first (existing flow)
+const parser = new PlaylistParser();
+const playlist = await parser.parse(rawPlaylistData);
+
+// Simple array extraction
+const urls = getAudioUrls(playlist);       // ['https://...', 'https://...']
+const images = getImageUrls(playlist);     // ['https://...', 'https://...']
+const titles = getTrackTitles(playlist);   // ['Song 1', 'Song 2']
+const artists = getArtists(playlist);      // ['Artist A', 'Artist B']
+const genres = getGenres(playlist);        // ['Electronic', 'Hip-Hop']
+const tags = getTags(playlist);            // ['chill', 'upbeat']
+const duration = getTotalDuration(playlist); // 1234 (seconds)
+const count = getTrackCount(playlist);     // 10
+
+// Simplified track objects
+const tracks = getTracks(playlist);
+// [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...' }, ...]
+
+// Full track data (all available fields)
+const fullTracks = getFullTracks(playlist);
+// [{ id, title, artist, album, duration, genre, tags, audio_url, image_url, ... }, ...]
+
+// Use in your app - example: add all audio URLs to a player
+urls.forEach(url => audioPlayer.add(url));
 ```
 
 ### Full Song Analysis
