@@ -645,10 +645,10 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 7.2 Segment Tests
 
-- [ ] Test single segment (default)
-- [ ] Test multiple segments
-- [ ] Test segment transitions at various beat indices
-- [ ] Test segment with different subdivisions
+- [x] Test single segment (default)
+- [x] Test multiple segments
+- [x] Test segment transitions at various beat indices
+- [x] Test segment with different subdivisions
 
 ### 7.3 Detected Beat Tests
 

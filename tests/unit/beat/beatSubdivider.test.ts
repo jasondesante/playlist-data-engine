@@ -3518,3 +3518,449 @@ describe('BeatSubdivider - Dotted8 Notes (Swing)', () => {
         expect(longInterval / shortInterval).toBeCloseTo(2, 1); // Long is ~2x short
     });
 });
+
+// ============================================================================
+// Segment Tests
+// ============================================================================
+
+describe('BeatSubdivider - Segment Tests', () => {
+
+    // ------------------------------------------------------------------------
+    // 7.2.1: Test single segment (default)
+    // ------------------------------------------------------------------------
+
+    describe('Single segment (default)', () => {
+        it('should apply quarter subdivision to entire track with single default segment', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 16); // 16 beats = 4 measures
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - use single segment with quarter subdivision
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'quarter' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            expect(result.beats).toHaveLength(16);
+            expect(result.subdivisionMetadata.segmentCount).toBe(1);
+            expect(result.subdivisionMetadata.subdivisionsUsed).toEqual(['quarter']);
+            expect(result.beats.every(b => b.subdivisionType === 'quarter')).toBe(true);
+        });
+
+        it('should apply eighth subdivision to entire track with single segment', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - single segment with eighth subdivision
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'eighth' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - 8 quarter notes become 15 eighth notes (8 original + 7 interpolated)
+            expect(result.beats).toHaveLength(15);
+            expect(result.subdivisionMetadata.segmentCount).toBe(1);
+            expect(result.subdivisionMetadata.subdivisionsUsed).toEqual(['eighth']);
+            expect(result.beats.every(b => b.subdivisionType === 'eighth')).toBe(true);
+        });
+
+        it('should apply half subdivision to entire track with single segment', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 16); // 4 measures
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - single segment with half subdivision
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'half' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - half notes: beats at positions 0 and 2 only (8 beats from 16)
+            expect(result.beats).toHaveLength(8);
+            expect(result.subdivisionMetadata.segmentCount).toBe(1);
+            expect(result.subdivisionMetadata.subdivisionsUsed).toEqual(['half']);
+            expect(result.beats.every(b => b.subdivisionType === 'half')).toBe(true);
+        });
+
+        it('should use default config when no config is provided', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - no config provided (should use DEFAULT_SUBDIVISION_CONFIG)
+            const result = subdivider.subdivide(unifiedMap);
+
+            // Assert - should behave like quarter notes
+            expect(result.beats).toHaveLength(8);
+            expect(result.subdivisionMetadata.segmentCount).toBe(1);
+            expect(result.subdivisionMetadata.subdivisionsUsed).toEqual(['quarter']);
+            expect(result.beats.every(b => b.subdivisionType === 'quarter')).toBe(true);
+        });
+
+        it('should preserve detected beat indices correctly with single segment', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            // Only first and fifth beats are detected (downbeats)
+            const detectedIndices = [0, 4];
+            const unifiedMap = createUnifiedBeatMap(beats, {
+                bpm: 120,
+                detectedBeatIndices: detectedIndices,
+            });
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'quarter' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - detected beat indices should match original positions
+            expect(result.detectedBeatIndices).toEqual([0, 4]);
+            expect(result.beats[0].isDetected).toBe(true);
+            expect(result.beats[4].isDetected).toBe(true);
+            expect(result.beats[1].isDetected).toBe(false);
+        });
+    });
+
+    // ------------------------------------------------------------------------
+    // 7.2.2: Test multiple segments
+    // ------------------------------------------------------------------------
+
+    describe('Multiple segments', () => {
+        it('should transition from quarter to eighth at specified beat index', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 16); // 16 beats
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - quarter for first 8 beats, then eighth for rest
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 8, subdivision: 'eighth' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            // Beats 0-7: 8 quarter notes (unchanged)
+            // Beats 8-15: 8 original + 7 interpolated = 15 eighth notes
+            // Total: 8 + 15 = 23 beats
+            expect(result.beats).toHaveLength(23);
+            expect(result.subdivisionMetadata.segmentCount).toBe(2);
+            expect(result.subdivisionMetadata.subdivisionsUsed).toContain('quarter');
+            expect(result.subdivisionMetadata.subdivisionsUsed).toContain('eighth');
+
+            // First 8 beats should be quarter
+            for (let i = 0; i < 8; i++) {
+                expect(result.beats[i].subdivisionType).toBe('quarter');
+            }
+
+            // Remaining beats should be eighth
+            for (let i = 8; i < result.beats.length; i++) {
+                expect(result.beats[i].subdivisionType).toBe('eighth');
+            }
+        });
+
+        it('should handle three segments with different subdivisions', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 24); // 24 beats = 6 measures
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - quarter → eighth → half
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },   // Beats 0-7 (8 beats)
+                    { startBeat: 8, subdivision: 'eighth' },    // Beats 8-15 (8 beats → 15 subdivided)
+                    { startBeat: 16, subdivision: 'half' },     // Beats 16-23 (8 beats → 4 subdivided)
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            // Segment 1: 8 quarter notes
+            // Segment 2: 8 quarter notes → 15 eighth notes
+            // Segment 3: 8 quarter notes → 4 half notes
+            // Total: 8 + 15 + 4 = 27 beats
+            expect(result.beats).toHaveLength(27);
+            expect(result.subdivisionMetadata.segmentCount).toBe(3);
+            expect(result.subdivisionMetadata.subdivisionsUsed).toEqual(
+                expect.arrayContaining(['quarter', 'eighth', 'half'])
+            );
+        });
+
+        it('should handle adjacent segments with same subdivision', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 16);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - two segments both using quarter
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 8, subdivision: 'quarter' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - should still produce 16 beats
+            expect(result.beats).toHaveLength(16);
+            expect(result.beats.every(b => b.subdivisionType === 'quarter')).toBe(true);
+        });
+    });
+
+    // ------------------------------------------------------------------------
+    // 7.2.3: Test segment transitions at various beat indices
+    // ------------------------------------------------------------------------
+
+    describe('Segment transitions at various beat indices', () => {
+        it('should transition at beat 0 (start of track)', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - start with eighth immediately
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'eighth' }],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            expect(result.beats).toHaveLength(15);
+            expect(result.beats[0].subdivisionType).toBe('eighth');
+        });
+
+        it('should transition at beat 1 (second beat)', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - quarter for first beat, then eighth
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 1, subdivision: 'eighth' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            // Beat 0: 1 quarter note
+            // Beats 1-7: 7 quarter notes → 13 eighth notes
+            // Total: 1 + 13 = 14 beats
+            expect(result.beats).toHaveLength(14);
+            expect(result.beats[0].subdivisionType).toBe('quarter');
+            expect(result.beats[1].subdivisionType).toBe('eighth');
+        });
+
+        it('should transition at beat 4 (measure boundary)', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 16);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - quarter for first measure, eighth after
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 4, subdivision: 'eighth' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            // Beats 0-3: 4 quarter notes
+            // Beats 4-15: 12 quarter notes → 23 eighth notes
+            // Total: 4 + 23 = 27 beats
+            expect(result.beats).toHaveLength(27);
+
+            // Verify transition point
+            expect(result.beats[3].subdivisionType).toBe('quarter');
+            expect(result.beats[4].subdivisionType).toBe('eighth');
+        });
+
+        it('should transition at last beat', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - quarter for all but last beat
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 7, subdivision: 'eighth' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            // Beats 0-6: 7 quarter notes
+            // Beat 7: 1 quarter note → 1 eighth note (no interpolation at end)
+            // Total: 7 + 1 = 8 beats
+            expect(result.beats).toHaveLength(8);
+        });
+
+        it('should handle transition from high density to low density', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 16);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - eighth for first half, half for second half
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'eighth' },
+                    { startBeat: 8, subdivision: 'half' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            // Beats 0-7: 8 quarter notes → 15 eighth notes
+            // Beats 8-15: 8 quarter notes → 4 half notes
+            // Total: 15 + 4 = 19 beats
+            expect(result.beats).toHaveLength(19);
+
+            // Verify transition
+            expect(result.beats[14].subdivisionType).toBe('eighth');
+            expect(result.beats[15].subdivisionType).toBe('half');
+        });
+    });
+
+    // ------------------------------------------------------------------------
+    // 7.2.4: Test segment with different subdivisions
+    // ------------------------------------------------------------------------
+
+    describe('Segment with different subdivisions', () => {
+        it('should handle quarter to triplet8 transition', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 12);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 4, subdivision: 'triplet8' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            // Beats 0-3: 4 quarter notes
+            // Beats 4-11: 8 quarter notes → 8 original + 14 interpolated = 22 triplet8 notes
+            // Total: 4 + 22 = 26 beats
+            expect(result.beats).toHaveLength(26);
+            expect(result.subdivisionMetadata.subdivisionsUsed).toEqual(
+                expect.arrayContaining(['quarter', 'triplet8'])
+            );
+        });
+
+        it('should handle triplet8 to dotted8 transition', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 12);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'triplet8' },
+                    { startBeat: 6, subdivision: 'dotted8' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            // Beats 0-5: 6 quarter notes → 6 + 10 = 16 triplet8 notes
+            // Beats 6-11: 6 quarter notes → 6 + 5 = 11 dotted8 notes
+            // Total: 16 + 11 = 27 beats
+            expect(result.beats).toHaveLength(27);
+            expect(result.subdivisionMetadata.subdivisionsUsed).toEqual(
+                expect.arrayContaining(['triplet8', 'dotted8'])
+            );
+        });
+
+        it('should handle sixteenth to quarter transition (density decrease)', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 12);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'sixteenth' },
+                    { startBeat: 4, subdivision: 'quarter' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert
+            // Beats 0-3: 4 quarter notes → 4 original + 9 interpolated = 13 sixteenth notes
+            // Beats 4-11: 8 quarter notes → 8 quarter notes
+            // Total: 13 + 8 = 21 beats
+            expect(result.beats).toHaveLength(21);
+
+            // Verify subdivision types
+            expect(result.beats[12].subdivisionType).toBe('sixteenth');
+            expect(result.beats[13].subdivisionType).toBe('quarter');
+        });
+
+        it('should handle dotted4 subdivision in segment', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 12);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 4, subdivision: 'dotted4' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - dotted4 is phase-independent, creates different count
+            // Beats 0-3: 4 quarter notes
+            // Beats 4-11: dotted4 pattern (phase-independent)
+            expect(result.beats.length).toBeGreaterThan(4); // Should have more than just the first segment
+            expect(result.subdivisionMetadata.subdivisionsUsed).toEqual(
+                expect.arrayContaining(['quarter', 'dotted4'])
+            );
+        });
+
+        it('should report correct maxDensity for segments with different densities', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 16);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Act - quarter (1x) → eighth (2x) → sixteenth (4x)
+            const config: SubdivisionConfig = {
+                segments: [
+                    { startBeat: 0, subdivision: 'quarter' },
+                    { startBeat: 4, subdivision: 'eighth' },
+                    { startBeat: 8, subdivision: 'sixteenth' },
+                ],
+            };
+            const result = subdivider.subdivide(unifiedMap, config);
+
+            // Assert - max density should be 4 (sixteenth)
+            expect(result.subdivisionMetadata.maxDensity).toBe(4);
+        });
+    });
+});
