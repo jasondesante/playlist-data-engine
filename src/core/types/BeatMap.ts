@@ -1629,6 +1629,45 @@ export type SubdivisionType =
   | 'dotted8';   // Swing pattern (2/3 + 1/3 quarters)
 
 // ============================================================================
+// Subdivision Configuration
+// ============================================================================
+
+/**
+ * A segment of subdivision configuration
+ *
+ * Segments are CONTIGUOUS - each segment covers all beats from its startBeat
+ * until the next segment's startBeat (or end of track). There are no gaps.
+ *
+ * Example: If segment 1 has startBeat: 0 with 'quarter' and segment 2 has
+ * startBeat: 32 with 'eighth', then beats 0-31 are quarter notes and
+ * beats 32+ are eighth notes.
+ */
+export interface SubdivisionSegment {
+    /** Beat index where this subdivision starts */
+    startBeat: number;
+
+    /** Type of subdivision to apply */
+    subdivision: SubdivisionType;
+}
+
+/**
+ * Subdivision configuration for rhythm pattern generation
+ * Supports multiple segments for subdivision changes within a track
+ */
+export interface SubdivisionConfig {
+    /** Array of subdivision segments ordered by startBeat */
+    segments: SubdivisionSegment[];
+}
+
+/** Default subdivision config (quarter notes throughout) */
+export const DEFAULT_SUBDIVISION_CONFIG: SubdivisionConfig = {
+    segments: [{
+        startBeat: 0,
+        subdivision: 'quarter',
+    }],
+};
+
+// ============================================================================
 // Version and Algorithm Identifiers
 // ============================================================================
 

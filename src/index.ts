@@ -73,6 +73,10 @@ export type {
     QuarterNoteDetectionJSON,
     GapAnalysisJSON,
     InterpolationMetadataJSON,
+    // Subdivision types
+    SubdivisionType,
+    SubdivisionSegment,
+    SubdivisionConfig,
 } from './core/types/BeatMap.js';
 
 // Beat detection constants
@@ -81,6 +85,7 @@ export {
     DEFAULT_BEATSTREAM_OPTIONS,
     DEFAULT_TIME_SIGNATURE,
     DEFAULT_DOWNBEAT_CONFIG,
+    DEFAULT_SUBDIVISION_CONFIG,
     MIN_BEATS_PER_MEASURE,
     MAX_BEATS_PER_MEASURE,
     validateDownbeatConfig,

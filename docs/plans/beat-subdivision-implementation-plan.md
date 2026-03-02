@@ -429,9 +429,9 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 1.2 Add SubdivisionSegment and SubdivisionConfig
 
-- [ ] Add `SubdivisionSegment` interface
-- [ ] Add `SubdivisionConfig` interface
-- [ ] Add `DEFAULT_SUBDIVISION_CONFIG` constant
+- [x] Add `SubdivisionSegment` interface
+- [x] Add `SubdivisionConfig` interface
+- [x] Add `DEFAULT_SUBDIVISION_CONFIG` constant
 
 ### 1.3 Add UnifiedBeatMap
 
