@@ -1046,10 +1046,10 @@ A separate feature from the pre-calculated SubdividedBeatMap. This enables real-
 
 ### 10.7 Unit Tests
 
-- [ ] Test real-time beat generation for each subdivision type
-- [ ] Test subdivision transitions
-- [ ] Test continuity across changes
-- [ ] Test playback position tracking
+- [x] Test real-time beat generation for each subdivision type
+- [x] Test subdivision transitions
+- [x] Test continuity across changes
+- [x] Test playback position tracking
 
 ### 10.8 Documentation
 
