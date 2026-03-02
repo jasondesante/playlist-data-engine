@@ -101,6 +101,9 @@ interface SubdivisionContext {
 
     /** Maximum density encountered (for metadata) */
     maxDensity: number;
+
+    /** Whether we have multiple tempo sections */
+    hasMultipleTempos: boolean;
 }
 
 /**
@@ -160,6 +163,7 @@ export class BeatSubdivider {
             config,
             subdivisionsUsed: new Set(),
             maxDensity: 1,
+            hasMultipleTempos: !!unifiedMap.tempoSections && unifiedMap.tempoSections.length > 1,
         };
 
         // Process all segments
@@ -278,7 +282,7 @@ export class BeatSubdivider {
         context: SubdivisionContext
     ): SubdividedBeat[] {
         const { subdivision } = segment;
-        const { unifiedMap, options } = context;
+        const { unifiedMap, options, hasMultipleTempos } = context;
 
         // Get the quarter note interval (may be overridden by tempo sections)
         const quarterNoteInterval = unifiedMap.quarterNoteInterval;
@@ -291,22 +295,22 @@ export class BeatSubdivider {
                 return this.subdivideHalf(beats, globalStartIndex, unifiedMap);
 
             case 'eighth':
-                return this.subdivideEighth(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options);
+                return this.subdivideEighth(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options, hasMultipleTempos);
 
             case 'sixteenth':
-                return this.subdivideSixteenth(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options);
+                return this.subdivideSixteenth(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options, hasMultipleTempos);
 
             case 'triplet8':
-                return this.subdivideTriplet8(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options);
+                return this.subdivideTriplet8(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options, hasMultipleTempos);
 
             case 'triplet4':
-                return this.subdivideTriplet4(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options);
+                return this.subdivideTriplet4(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options, hasMultipleTempos);
 
             case 'dotted4':
-                return this.subdivideDotted4(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options);
+                return this.subdivideDotted4(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options, hasMultipleTempos);
 
             case 'dotted8':
-                return this.subdivideDotted8(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options);
+                return this.subdivideDotted8(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options, hasMultipleTempos);
 
             default:
                 // TypeScript exhaustive check
@@ -377,13 +381,16 @@ export class BeatSubdivider {
      *
      * Inserts a new beat midway between each quarter note.
      * New beat has beatInMeasure = original + 0.5.
+     *
+     * When hasMultipleTempos is true, uses tempo-aware interval calculation.
      */
     private subdivideEighth(
         beats: Beat[],
         globalStartIndex: number,
         unifiedMap: UnifiedBeatMap,
         quarterNoteInterval: number,
-        options: Required<BeatSubdividerOptions>
+        options: Required<BeatSubdividerOptions>,
+        hasMultipleTempos: boolean
     ): SubdividedBeat[] {
         const result: SubdividedBeat[] = [];
 
@@ -403,12 +410,18 @@ export class BeatSubdivider {
             // Add interpolated eighth note between this and next beat
             if (i < beats.length - 1) {
                 const nextBeat = beats[i + 1];
+
+                // Use tempo-aware interval if we have multiple tempos
+                const effectiveInterval = hasMultipleTempos
+                    ? this.getQuarterNoteIntervalForTimestamp(unifiedMap, beat.timestamp)
+                    : quarterNoteInterval;
+
                 const interpolatedBeat = this.createInterpolatedBeat(
                     beat,
                     nextBeat,
                     0.5,
                     'eighth',
-                    quarterNoteInterval,
+                    effectiveInterval,
                     options
                 );
                 result.push(interpolatedBeat);
@@ -423,13 +436,16 @@ export class BeatSubdivider {
      *
      * Inserts 3 beats evenly spaced between each quarter note.
      * Labels: original, +0.25, +0.5, +0.75
+     *
+     * When hasMultipleTempos is true, uses tempo-aware interval calculation.
      */
     private subdivideSixteenth(
         beats: Beat[],
         globalStartIndex: number,
         unifiedMap: UnifiedBeatMap,
         quarterNoteInterval: number,
-        options: Required<BeatSubdividerOptions>
+        options: Required<BeatSubdividerOptions>,
+        hasMultipleTempos: boolean
     ): SubdividedBeat[] {
         const result: SubdividedBeat[] = [];
 
@@ -450,6 +466,11 @@ export class BeatSubdivider {
             if (i < beats.length - 1) {
                 const nextBeat = beats[i + 1];
 
+                // Use tempo-aware interval if we have multiple tempos
+                const effectiveInterval = hasMultipleTempos
+                    ? this.getQuarterNoteIntervalForTimestamp(unifiedMap, beat.timestamp)
+                    : quarterNoteInterval;
+
                 // Add beats at 0.25, 0.5, 0.75
                 for (let offset = 0.25; offset < 1; offset += 0.25) {
                     const interpolatedBeat = this.createInterpolatedBeat(
@@ -457,7 +478,7 @@ export class BeatSubdivider {
                         nextBeat,
                         offset,
                         'sixteenth',
-                        quarterNoteInterval,
+                        effectiveInterval,
                         options
                     );
                     result.push(interpolatedBeat);
@@ -473,13 +494,16 @@ export class BeatSubdivider {
      *
      * Interval = quarterNoteInterval / 3
      * Labels: 0, 0.33, 0.66, 1, 1.33, 1.66...
+     *
+     * When hasMultipleTempos is true, uses tempo-aware interval calculation.
      */
     private subdivideTriplet8(
         beats: Beat[],
         globalStartIndex: number,
         unifiedMap: UnifiedBeatMap,
         quarterNoteInterval: number,
-        options: Required<BeatSubdividerOptions>
+        options: Required<BeatSubdividerOptions>,
+        hasMultipleTempos: boolean
     ): SubdividedBeat[] {
         const result: SubdividedBeat[] = [];
 
@@ -500,6 +524,11 @@ export class BeatSubdivider {
             if (i < beats.length - 1) {
                 const nextBeat = beats[i + 1];
 
+                // Use tempo-aware interval if we have multiple tempos
+                const effectiveInterval = hasMultipleTempos
+                    ? this.getQuarterNoteIntervalForTimestamp(unifiedMap, beat.timestamp)
+                    : quarterNoteInterval;
+
                 // Triplet offsets: 1/3 and 2/3
                 const tripletOffsets = [1/3, 2/3];
 
@@ -509,7 +538,7 @@ export class BeatSubdivider {
                         nextBeat,
                         offset,
                         'triplet8',
-                        quarterNoteInterval,
+                        effectiveInterval,
                         options
                     );
                     result.push(interpolatedBeat);
@@ -525,16 +554,18 @@ export class BeatSubdivider {
      *
      * Interval = quarterNoteInterval * 2 / 3
      * Labels: 0, 0.66, 1.33, 2, 2.66, 3.33...
+     *
+     * When hasMultipleTempos is true, uses tempo-aware interval calculation.
      */
     private subdivideTriplet4(
         beats: Beat[],
         globalStartIndex: number,
         unifiedMap: UnifiedBeatMap,
         quarterNoteInterval: number,
-        options: Required<BeatSubdividerOptions>
+        options: Required<BeatSubdividerOptions>,
+        hasMultipleTempos: boolean
     ): SubdividedBeat[] {
         const result: SubdividedBeat[] = [];
-        const tripletInterval = (quarterNoteInterval * 2) / 3;
 
         for (let i = 0; i < beats.length; i++) {
             const beat = beats[i];
@@ -566,6 +597,11 @@ export class BeatSubdivider {
             if (i < beats.length - 1) {
                 const nextBeat = beats[i + 1];
 
+                // Use tempo-aware interval if we have multiple tempos
+                const effectiveInterval = hasMultipleTempos
+                    ? this.getQuarterNoteIntervalForTimestamp(unifiedMap, beat.timestamp)
+                    : quarterNoteInterval;
+
                 // For triplet4, we add one beat at 2/3 between quarters
                 // (not 1/3, as that would be too dense)
                 const interpolatedBeat = this.createInterpolatedBeat(
@@ -573,7 +609,7 @@ export class BeatSubdivider {
                     nextBeat,
                     2/3,
                     'triplet4',
-                    quarterNoteInterval,
+                    effectiveInterval,
                     options
                 );
                 result.push(interpolatedBeat);
@@ -589,16 +625,19 @@ export class BeatSubdivider {
      * Phase-independent: Doesn't care about measure boundaries.
      * Pattern: 0, 1.5, 3, 4.5, 6...
      * Creates 3-beat groups in 4/4 time (cross-rhythm).
+     *
+     * When hasMultipleTempos is true, uses tempo-aware interval calculation.
+     * Each generated beat uses the interval from its corresponding tempo section.
      */
     private subdivideDotted4(
         beats: Beat[],
         globalStartIndex: number,
         unifiedMap: UnifiedBeatMap,
         quarterNoteInterval: number,
-        options: Required<BeatSubdividerOptions>
+        options: Required<BeatSubdividerOptions>,
+        hasMultipleTempos: boolean
     ): SubdividedBeat[] {
         const result: SubdividedBeat[] = [];
-        const dottedInterval = quarterNoteInterval * 1.5;
 
         if (beats.length === 0) {
             return result;
@@ -617,11 +656,17 @@ export class BeatSubdivider {
             // Find the closest original beat for intensity/confidence interpolation
             const closestBeat = this.findClosestBeat(beats, currentTime);
 
+            // Use tempo-aware interval if we have multiple tempos
+            const effectiveInterval = hasMultipleTempos
+                ? this.getQuarterNoteIntervalForTimestamp(unifiedMap, currentTime)
+                : quarterNoteInterval;
+            const dottedInterval = effectiveInterval * 1.5;
+
             const dottedBeat: SubdividedBeat = {
                 timestamp: currentTime,
-                beatInMeasure: this.calculateBeatInMeasure(currentTime, firstBeat.timestamp, quarterNoteInterval),
+                beatInMeasure: this.calculateBeatInMeasure(currentTime, firstBeat.timestamp, effectiveInterval),
                 isDownbeat: false, // Dotted pattern doesn't align with downbeats
-                measureNumber: this.calculateMeasureNumber(currentTime, firstBeat.timestamp, quarterNoteInterval, unifiedMap.downbeatConfig),
+                measureNumber: this.calculateMeasureNumber(currentTime, firstBeat.timestamp, effectiveInterval, unifiedMap.downbeatConfig),
                 intensity: closestBeat.intensity,
                 confidence: closestBeat.confidence * 0.9, // Slightly lower confidence for generated
                 isDetected: false,
@@ -630,6 +675,7 @@ export class BeatSubdivider {
 
             result.push(dottedBeat);
 
+            // Advance by the dotted interval for this tempo section
             currentTime += dottedInterval;
             beatIndex++;
         }
@@ -643,13 +689,16 @@ export class BeatSubdivider {
      * Long: 2/3 of quarter (≈0.667), Short: 1/3 of quarter (≈0.333)
      * Labels: 0, 0.667, 1, 1.667, 2, 2.667...
      * Classic swing feel.
+     *
+     * When hasMultipleTempos is true, uses tempo-aware interval calculation.
      */
     private subdivideDotted8(
         beats: Beat[],
         globalStartIndex: number,
         unifiedMap: UnifiedBeatMap,
         quarterNoteInterval: number,
-        options: Required<BeatSubdividerOptions>
+        options: Required<BeatSubdividerOptions>,
+        hasMultipleTempos: boolean
     ): SubdividedBeat[] {
         const result: SubdividedBeat[] = [];
 
@@ -670,13 +719,18 @@ export class BeatSubdivider {
             if (i < beats.length - 1) {
                 const nextBeat = beats[i + 1];
 
+                // Use tempo-aware interval if we have multiple tempos
+                const effectiveInterval = hasMultipleTempos
+                    ? this.getQuarterNoteIntervalForTimestamp(unifiedMap, beat.timestamp)
+                    : quarterNoteInterval;
+
                 // Swing: long note is 2/3, short note is 1/3
                 const interpolatedBeat = this.createInterpolatedBeat(
                     beat,
                     nextBeat,
                     2/3,
                     'dotted8',
-                    quarterNoteInterval,
+                    effectiveInterval,
                     options
                 );
                 result.push(interpolatedBeat);
@@ -781,6 +835,90 @@ export class BeatSubdivider {
         }
 
         return indices;
+    }
+
+    // ========================================================================
+    // Tempo-Aware Subdivision Helpers
+    // ========================================================================
+
+    /**
+     * Get the tempo section for a given timestamp
+     *
+     * @param tempoSections - Array of tempo sections (or undefined)
+     * @param timestamp - The timestamp to look up
+     * @returns The matching tempo section, or undefined if none
+     */
+    private getTempoSectionForTimestamp(
+        tempoSections: TempoSection[] | undefined,
+        timestamp: number
+    ): TempoSection | undefined {
+        if (!tempoSections || tempoSections.length === 0) {
+            return undefined;
+        }
+
+        // Find the section that contains this timestamp
+        for (const section of tempoSections) {
+            if (timestamp >= section.start && timestamp < section.end) {
+                return section;
+            }
+        }
+
+        // Handle edge case: timestamp is at or past the end
+        // Return the last section
+        return tempoSections[tempoSections.length - 1];
+    }
+
+    /**
+     * Get the quarter note interval for a given timestamp
+     *
+     * Returns the interval from the tempo section if available,
+     * otherwise falls back to the primary quarterNoteInterval.
+     *
+     * @param unifiedMap - The unified beat map
+     * @param timestamp - The timestamp to get the interval for
+     * @returns The quarter note interval in seconds
+     */
+    private getQuarterNoteIntervalForTimestamp(
+        unifiedMap: UnifiedBeatMap,
+        timestamp: number
+    ): number {
+        const section = this.getTempoSectionForTimestamp(
+            unifiedMap.tempoSections,
+            timestamp
+        );
+
+        if (section) {
+            return section.intervalSeconds;
+        }
+
+        return unifiedMap.quarterNoteInterval;
+    }
+
+    /**
+     * Get the tempo section for a given beat index
+     *
+     * @param tempoSections - Array of tempo sections (or undefined)
+     * @param beatIndex - The beat index to look up
+     * @returns The matching tempo section, or undefined if none
+     */
+    private getTempoSectionForBeatIndex(
+        tempoSections: TempoSection[] | undefined,
+        beatIndex: number
+    ): TempoSection | undefined {
+        if (!tempoSections || tempoSections.length === 0) {
+            return undefined;
+        }
+
+        // Find the section that contains this beat index
+        for (const section of tempoSections) {
+            if (beatIndex >= section.startBeatIndex && beatIndex <= section.endBeatIndex) {
+                return section;
+            }
+        }
+
+        // Handle edge case: beat index is past the end
+        // Return the last section
+        return tempoSections[tempoSections.length - 1];
     }
 
     /**

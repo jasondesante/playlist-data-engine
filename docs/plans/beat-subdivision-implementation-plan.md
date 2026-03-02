@@ -6,7 +6,7 @@
 - Phase 1: Type System Updates (complete)
 - Phase 2: Create UnifiedBeatMap (complete)
 - Phase 3: Create BeatSubdivider Core (complete)
-- Phase 4: Implement Subdivision Algorithms (mostly complete - tempo-aware pending)
+- Phase 4: Implement Subdivision Algorithms (complete)
 - Phase 5: Segment Support (complete)
 - Phase 6: Integration (mostly complete - convenience function pending)
 
@@ -14,7 +14,6 @@
 - None
 
 **Pending Phases:**
-- Phase 4.9: Tempo-Aware Subdivision
 - Phase 6.2: Add Convenience Functions
 - Phase 6.3: Update BeatStream (Optional)
 - Phase 7: Testing
@@ -579,11 +578,11 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 4.9 Tempo-Aware Subdivision
 
-- [ ] Implement tempo-aware subdivision support
-  - [ ] Accept `tempoSections` from UnifiedBeatMap
-  - [ ] Use each section's `intervalSeconds` for subdivision calculations
-  - [ ] Handle section boundaries correctly
-  - [ ] Fall back to primary `quarterNoteInterval` if no tempoSections
+- [x] Implement tempo-aware subdivision support
+  - [x] Accept `tempoSections` from UnifiedBeatMap
+  - [x] Use each section's `intervalSeconds` for subdivision calculations
+  - [x] Handle section boundaries correctly
+  - [x] Fall back to primary `quarterNoteInterval` if no tempoSections
 
 ---
 
