@@ -101,6 +101,9 @@ export { BeatSubdivider, type BeatSubdividerOptions } from './BeatSubdivider.js'
 // Beat map unification (for subdivision)
 export { unifyBeatMap } from './utils/unifyBeatMap.js';
 
+// Beat map subdivision convenience function
+export { subdivideBeatMap } from './utils/subdivideBeatMap.js';
+
 // Debug utilities
 export {
     generateDebugReport,

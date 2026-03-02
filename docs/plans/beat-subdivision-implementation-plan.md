@@ -8,13 +8,12 @@
 - Phase 3: Create BeatSubdivider Core (complete)
 - Phase 4: Implement Subdivision Algorithms (complete)
 - Phase 5: Segment Support (complete)
-- Phase 6: Integration (mostly complete - convenience function pending)
+- Phase 6: Integration (complete)
 
 **In Progress Phases:**
 - None
 
 **Pending Phases:**
-- Phase 6.2: Add Convenience Functions
 - Phase 6.3: Update BeatStream (Optional)
 - Phase 7: Testing
 - Phase 8: Documentation
@@ -618,10 +617,10 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 6.2 Add Convenience Functions
 
-- [ ] Add `subdivideBeatMap()` convenience function that:
-  - [ ] Takes `InterpolatedBeatMap` + `SubdivisionConfig`
-  - [ ] Unifies, then subdivides
-  - [ ] Returns `SubdividedBeatMap`
+- [x] Add `subdivideBeatMap()` convenience function that:
+  - [x] Takes `InterpolatedBeatMap` + `SubdivisionConfig`
+  - [x] Unifies, then subdivides
+  - [x] Returns `SubdividedBeatMap`
 
 ### 6.3 Update BeatStream (Optional)
 

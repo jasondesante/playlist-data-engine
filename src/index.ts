@@ -417,6 +417,7 @@ export { TempoDetector } from './core/analysis/beat/TempoDetector.js';
 export { BeatInterpolator } from './core/analysis/beat/BeatInterpolator.js';
 export { BeatSubdivider, type BeatSubdividerOptions } from './core/analysis/beat/BeatSubdivider.js';
 export { unifyBeatMap } from './core/analysis/beat/utils/unifyBeatMap.js';
+export { subdivideBeatMap } from './core/analysis/beat/utils/subdivideBeatMap.js';
 
 // Beat detection utilities
 export {
