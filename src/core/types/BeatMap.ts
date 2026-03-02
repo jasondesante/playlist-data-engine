@@ -891,6 +891,55 @@ export interface InterpolatedBeatMapJSON {
 }
 
 /**
+ * JSON-serializable version of SubdividedBeat
+ *
+ * Extends Beat with subdivision-specific fields.
+ * Use with BeatSubdivider.toJSON() and BeatSubdivider.fromJSON() methods.
+ */
+export interface SubdividedBeatJSON {
+    timestamp: number;
+    beatInMeasure: number;
+    isDownbeat: boolean;
+    measureNumber: number;
+    intensity: number;
+    confidence: number;
+    requiredKey?: string;
+    isDetected: boolean;
+    originalBeatIndex?: number;
+    subdivisionType: SubdivisionType;
+}
+
+/**
+ * JSON-serializable version of SubdivisionMetadata
+ */
+export interface SubdivisionMetadataJSON {
+    originalBeatCount: number;
+    subdividedBeatCount: number;
+    averageDensityMultiplier: number;
+    segmentCount: number;
+    subdivisionsUsed: SubdivisionType[];
+    hasMultipleTempos: boolean;
+    maxDensity: number;
+}
+
+/**
+ * JSON-serializable version of SubdividedBeatMap
+ *
+ * Ensures all values are JSON-safe for serialization/deserialization operations.
+ * Use with BeatSubdivider.toJSON() and BeatSubdivider.fromJSON() methods.
+ */
+export interface SubdividedBeatMapJSON {
+    audioId: string;
+    duration: number;
+    beats: SubdividedBeatJSON[];
+    detectedBeatIndices: number[];
+    subdivisionConfig: SubdivisionConfig;
+    downbeatConfig: DownbeatConfig;
+    tempoSections?: TempoSectionJSON[];
+    subdivisionMetadata: SubdivisionMetadataJSON;
+}
+
+/**
  * Tempo estimation result from the TempoDetector
  */
 export interface TempoEstimate {

@@ -94,10 +94,10 @@ Beat (base)
 ## Phase 2: BeatStream Logic Changes
 
 ### Task 2.1: Add SubdividedBeatMap Support to BeatStream
-- [ ] Update `BeatStream` to accept `SubdividedBeatMap` in addition to `BeatMap | InterpolatedBeatMap`
-- [ ] Add type guard `isSubdividedBeatMap()` similar to `isInterpolatedBeatMap()`
-- [ ] Update `createNormalizedBeatMap()` to handle `SubdividedBeatMap`
-- [ ] Ensure `SubdividedBeat` type works with existing beat iteration logic
+- [x] Update `BeatStream` to accept `SubdividedBeatMap` in addition to `BeatMap | InterpolatedBeatMap`
+- [x] Add type guard `isSubdividedBeatMap()` similar to `isInterpolatedBeatMap()`
+- [x] Update `createNormalizedBeatMap()` to handle `SubdividedBeatMap`
+- [x] Ensure `SubdividedBeat` type works with existing beat iteration logic
 
 ### Task 2.2: Update checkButtonPress Method
 - [x] Add optional `pressedKey?: string` parameter to `checkButtonPress(timestamp: number, pressedKey?: string)`
@@ -132,14 +132,14 @@ Beat (base)
 - [x] Update `fromJSON()` to restore `requiredKey` from JSON
 
 ### Task 3.2: Update SubdividedBeatMap Serialization (if applicable)
-- [ ] Verify `SubdividedBeatMap.toJSON()` preserves `requiredKey` on beats
-- [ ] Verify `SubdividedBeatMap.fromJSON()` restores `requiredKey` on beats
-- [ ] Add `SubdividedBeatMapJSON` interface if not already present
+- [x] Verify `SubdividedBeatMap.toJSON()` preserves `requiredKey` on beats
+- [x] Verify `SubdividedBeatMap.fromJSON()` restores `requiredKey` on beats
+- [x] Add `SubdividedBeatMapJSON` interface if not already present
 
 ### Task 3.3: Verify Interpolation Behavior
-- [ ] Review `BeatInterpolator.ts` - interpolated beats start without `requiredKey` (expected)
-- [ ] Keys are assigned after subdivision is complete, not during interpolation
-- [ ] No changes needed - this is the intended behavior
+- [x] Review `BeatInterpolator.ts` - interpolated beats start without `requiredKey` (expected)
+- [x] Keys are assigned after subdivision is complete, not during interpolation
+- [x] No changes needed - this is the intended behavior
 
 ### Task 3.4: Update BeatMapGenerator Serialization
 - [x] Verify `saveToFile()` and `loadFromFile()` handle `requiredKey` property
@@ -272,7 +272,7 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 - [x] `BeatStreamOptions` includes `ignoreKeyRequirements?: boolean`
 
 ### BeatStream Integration
-- [ ] BeatStream accepts `SubdividedBeatMap` as input
+- [x] BeatStream accepts `SubdividedBeatMap` as input
 - [x] `checkButtonPress(timestamp, pressedKey?)` validates key when required
 - [x] `ignoreKeyRequirements` in BeatStreamOptions bypasses key checking
 - [x] Missing `pressedKey` when key required returns `'miss'`

@@ -36,6 +36,7 @@ import type {
     SubdivisionMetadata,
     SubdivisionType,
     TempoSection,
+    SubdividedBeatMapJSON,
 } from '../../types/BeatMap.js';
 import {
     DEFAULT_SUBDIVISION_CONFIG,
@@ -944,5 +945,173 @@ export class BeatSubdivider {
             hasMultipleTempos: !!unifiedMap.tempoSections && unifiedMap.tempoSections.length > 1,
             maxDensity: context.maxDensity,
         };
+    }
+
+    // ========================================================================
+    // Serialization Methods
+    // ========================================================================
+
+    /**
+     * Convert a SubdividedBeatMap to a JSON string
+     *
+     * @param subdividedBeatMap - Subdivided beat map to serialize
+     * @returns JSON string
+     *
+     * @example
+     * ```typescript
+     * const subdividedMap = subdivider.subdivide(unifiedMap, config);
+     *
+     * // Serialize to JSON for storage
+     * const json = BeatSubdivider.toJSON(subdividedMap);
+     * localStorage.setItem('subdividedMap', json);
+     * ```
+     */
+    static toJSON(subdividedBeatMap: SubdividedBeatMap): string {
+        const json: SubdividedBeatMapJSON = {
+            audioId: subdividedBeatMap.audioId,
+            duration: subdividedBeatMap.duration,
+            beats: subdividedBeatMap.beats.map(beat => ({
+                timestamp: beat.timestamp,
+                beatInMeasure: beat.beatInMeasure,
+                isDownbeat: beat.isDownbeat,
+                measureNumber: beat.measureNumber,
+                intensity: beat.intensity,
+                confidence: beat.confidence,
+                requiredKey: beat.requiredKey,
+                isDetected: beat.isDetected,
+                originalBeatIndex: beat.originalBeatIndex,
+                subdivisionType: beat.subdivisionType,
+            })),
+            detectedBeatIndices: subdividedBeatMap.detectedBeatIndices,
+            subdivisionConfig: subdividedBeatMap.subdivisionConfig,
+            downbeatConfig: subdividedBeatMap.downbeatConfig,
+            tempoSections: subdividedBeatMap.tempoSections?.map(section => ({
+                start: section.start,
+                end: section.end,
+                bpm: section.bpm,
+                intervalSeconds: section.intervalSeconds,
+                beatCount: section.beatCount,
+                startBeatIndex: section.startBeatIndex,
+                endBeatIndex: section.endBeatIndex,
+            })),
+            subdivisionMetadata: {
+                originalBeatCount: subdividedBeatMap.subdivisionMetadata.originalBeatCount,
+                subdividedBeatCount: subdividedBeatMap.subdivisionMetadata.subdividedBeatCount,
+                averageDensityMultiplier: subdividedBeatMap.subdivisionMetadata.averageDensityMultiplier,
+                segmentCount: subdividedBeatMap.subdivisionMetadata.segmentCount,
+                subdivisionsUsed: subdividedBeatMap.subdivisionMetadata.subdivisionsUsed,
+                hasMultipleTempos: subdividedBeatMap.subdivisionMetadata.hasMultipleTempos,
+                maxDensity: subdividedBeatMap.subdivisionMetadata.maxDensity,
+            },
+        };
+
+        return JSON.stringify(json);
+    }
+
+    /**
+     * Parse a SubdividedBeatMap from a JSON string
+     *
+     * @param jsonString - JSON string to parse
+     * @returns Subdivided beat map
+     *
+     * @example
+     * ```typescript
+     * // Load from storage
+     * const json = localStorage.getItem('subdividedMap');
+     * const subdividedMap = BeatSubdivider.fromJSON(json);
+     *
+     * // Use the loaded beat map
+     * console.log(subdividedMap.beats.length);
+     * ```
+     */
+    static fromJSON(jsonString: string): SubdividedBeatMap {
+        const json: SubdividedBeatMapJSON = JSON.parse(jsonString);
+
+        return {
+            audioId: json.audioId,
+            duration: json.duration,
+            beats: json.beats.map(beat => ({
+                timestamp: beat.timestamp,
+                beatInMeasure: beat.beatInMeasure,
+                isDownbeat: beat.isDownbeat,
+                measureNumber: beat.measureNumber,
+                intensity: beat.intensity,
+                confidence: beat.confidence,
+                requiredKey: beat.requiredKey,
+                isDetected: beat.isDetected,
+                originalBeatIndex: beat.originalBeatIndex,
+                subdivisionType: beat.subdivisionType,
+            })),
+            detectedBeatIndices: json.detectedBeatIndices,
+            subdivisionConfig: json.subdivisionConfig,
+            downbeatConfig: json.downbeatConfig,
+            tempoSections: json.tempoSections?.map(section => ({
+                start: section.start,
+                end: section.end,
+                bpm: section.bpm,
+                intervalSeconds: section.intervalSeconds,
+                beatCount: section.beatCount,
+                startBeatIndex: section.startBeatIndex,
+                endBeatIndex: section.endBeatIndex,
+            })),
+            subdivisionMetadata: {
+                originalBeatCount: json.subdivisionMetadata.originalBeatCount,
+                subdividedBeatCount: json.subdivisionMetadata.subdividedBeatCount,
+                averageDensityMultiplier: json.subdivisionMetadata.averageDensityMultiplier,
+                segmentCount: json.subdivisionMetadata.segmentCount,
+                subdivisionsUsed: json.subdivisionMetadata.subdivisionsUsed,
+                hasMultipleTempos: json.subdivisionMetadata.hasMultipleTempos,
+                maxDensity: json.subdivisionMetadata.maxDensity,
+            },
+        };
+    }
+
+    /**
+     * Save a SubdividedBeatMap to a file (Node.js only)
+     *
+     * @param subdividedBeatMap - Subdivided beat map to save
+     * @param filePath - Path to save the file
+     *
+     * @example
+     * ```typescript
+     * await BeatSubdivider.saveToFile(subdividedMap, 'chart.json');
+     * ```
+     */
+    static async saveToFile(
+        subdividedBeatMap: SubdividedBeatMap,
+        filePath: string
+    ): Promise<void> {
+        // Check if we're in a Node.js environment
+        if (typeof process === 'undefined' || !process.versions?.node) {
+            throw new Error('saveToFile is only available in Node.js environment');
+        }
+
+        // Dynamic import for Node.js fs/promises
+        const { writeFile } = await import('fs/promises');
+        const json = BeatSubdivider.toJSON(subdividedBeatMap);
+        await writeFile(filePath, json, 'utf-8');
+    }
+
+    /**
+     * Load a SubdividedBeatMap from a file (Node.js only)
+     *
+     * @param filePath - Path to load the file from
+     * @returns Subdivided beat map
+     *
+     * @example
+     * ```typescript
+     * const subdividedMap = await BeatSubdivider.loadFromFile('chart.json');
+     * ```
+     */
+    static async loadFromFile(filePath: string): Promise<SubdividedBeatMap> {
+        // Check if we're in a Node.js environment
+        if (typeof process === 'undefined' || !process.versions?.node) {
+            throw new Error('loadFromFile is only available in Node.js environment');
+        }
+
+        // Dynamic import for Node.js fs/promises
+        const { readFile } = await import('fs/promises');
+        const jsonString = await readFile(filePath, 'utf-8');
+        return BeatSubdivider.fromJSON(jsonString);
     }
 }

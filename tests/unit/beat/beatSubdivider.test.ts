@@ -4440,4 +4440,193 @@ describe('BeatSubdivider - Edge Cases', () => {
             expect(result.subdivisionMetadata.maxDensity).toBe(4);
         });
     });
+
+    // ========================================================================
+    // Serialization Tests
+    // ========================================================================
+
+    describe('Serialization (toJSON/fromJSON)', () => {
+        it('should serialize and deserialize a SubdividedBeatMap', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'eighth' }],
+            };
+            const original = subdivider.subdivide(unifiedMap, config);
+
+            // Act
+            const json = BeatSubdivider.toJSON(original);
+            const restored = BeatSubdivider.fromJSON(json);
+
+            // Assert
+            expect(restored.audioId).toBe(original.audioId);
+            expect(restored.duration).toBe(original.duration);
+            expect(restored.beats.length).toBe(original.beats.length);
+            expect(restored.detectedBeatIndices).toEqual(original.detectedBeatIndices);
+            expect(restored.subdivisionConfig).toEqual(original.subdivisionConfig);
+            expect(restored.subdivisionMetadata).toEqual(original.subdivisionMetadata);
+        });
+
+        it('should preserve requiredKey on beats during serialization', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 4);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'quarter' }],
+            };
+            const original = subdivider.subdivide(unifiedMap, config);
+
+            // Add requiredKey to beats
+            original.beats[0].requiredKey = 'left';
+            original.beats[1].requiredKey = 'down';
+            original.beats[2].requiredKey = 'up';
+            // beat 3 has no requiredKey
+
+            // Act
+            const json = BeatSubdivider.toJSON(original);
+            const restored = BeatSubdivider.fromJSON(json);
+
+            // Assert
+            expect(restored.beats[0].requiredKey).toBe('left');
+            expect(restored.beats[1].requiredKey).toBe('down');
+            expect(restored.beats[2].requiredKey).toBe('up');
+            expect(restored.beats[3].requiredKey).toBeUndefined();
+        });
+
+        it('should preserve SubdividedBeat-specific fields during serialization', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 4);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'eighth' }],
+            };
+            const original = subdivider.subdivide(unifiedMap, config);
+
+            // Act
+            const json = BeatSubdivider.toJSON(original);
+            const restored = BeatSubdivider.fromJSON(json);
+
+            // Assert - check SubdividedBeat-specific fields
+            for (let i = 0; i < original.beats.length; i++) {
+                expect(restored.beats[i].isDetected).toBe(original.beats[i].isDetected);
+                expect(restored.beats[i].subdivisionType).toBe(original.beats[i].subdivisionType);
+                expect(restored.beats[i].originalBeatIndex).toBe(original.beats[i].originalBeatIndex);
+            }
+        });
+
+        it('should preserve downbeatConfig during serialization', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const customDownbeatConfig: DownbeatConfig = {
+                segments: [{
+                    startBeat: 0,
+                    downbeatBeatIndex: 4,
+                    timeSignature: { beatsPerMeasure: 4 },
+                }],
+            };
+            const unifiedMap = createUnifiedBeatMap(beats, {
+                bpm: 120,
+                downbeatConfig: customDownbeatConfig,
+            });
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'quarter' }],
+            };
+            const original = subdivider.subdivide(unifiedMap, config);
+
+            // Act
+            const json = BeatSubdivider.toJSON(original);
+            const restored = BeatSubdivider.fromJSON(json);
+
+            // Assert
+            expect(restored.downbeatConfig).toEqual(customDownbeatConfig);
+        });
+
+        it('should preserve tempo sections during serialization', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+            // Add tempo sections
+            unifiedMap.tempoSections = [
+                {
+                    start: 0,
+                    end: 1.0,
+                    bpm: 120,
+                    intervalSeconds: 0.5,
+                    beatCount: 4,
+                    startBeatIndex: 0,
+                    endBeatIndex: 3,
+                },
+                {
+                    start: 1.0,
+                    end: 2.0,
+                    bpm: 140,
+                    intervalSeconds: 0.428,
+                    beatCount: 4,
+                    startBeatIndex: 4,
+                    endBeatIndex: 7,
+                },
+            ];
+
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'quarter' }],
+            };
+            const original = subdivider.subdivide(unifiedMap, config);
+
+            // Act
+            const json = BeatSubdivider.toJSON(original);
+            const restored = BeatSubdivider.fromJSON(json);
+
+            // Assert
+            expect(restored.tempoSections).toBeDefined();
+            expect(restored.tempoSections?.length).toBe(2);
+            expect(restored.tempoSections?.[0].bpm).toBe(120);
+            expect(restored.tempoSections?.[1].bpm).toBe(140);
+        });
+
+        it('should produce valid JSON string', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 4);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'quarter' }],
+            };
+            const original = subdivider.subdivide(unifiedMap, config);
+
+            // Act
+            const json = BeatSubdivider.toJSON(original);
+
+            // Assert - should be parseable JSON
+            expect(() => JSON.parse(json)).not.toThrow();
+            const parsed = JSON.parse(json);
+            expect(parsed.audioId).toBe(original.audioId);
+        });
+
+        it('should handle empty SubdividedBeatMap', () => {
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const unifiedMap = createUnifiedBeatMap([], { bpm: 120, duration: 10 });
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'quarter' }],
+            };
+            const original = subdivider.subdivide(unifiedMap, config);
+
+            // Act
+            const json = BeatSubdivider.toJSON(original);
+            const restored = BeatSubdivider.fromJSON(json);
+
+            // Assert
+            expect(restored.beats.length).toBe(0);
+            expect(restored.detectedBeatIndices.length).toBe(0);
+            expect(restored.subdivisionMetadata.originalBeatCount).toBe(0);
+            expect(restored.subdivisionMetadata.subdividedBeatCount).toBe(0);
+        });
+    });
 });
