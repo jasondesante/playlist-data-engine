@@ -2324,6 +2324,349 @@ const subdividedMap = subdivideBeatMap(interpolatedMap, config);
 
 ---
 
+## Real-Time Subdivision Playground (Practice Mode)
+
+A separate feature from the pre-calculated SubdividedBeatMap, the Real-Time Subdivision Playground enables instant subdivision switching during playback for practice mode. Users can start with quarter notes and instantly switch to eighth notes (or any subdivision) while practicing.
+
+### Key Distinction
+
+| Feature | SubdividedBeatMap | Real-Time Playground |
+|---------|-------------------|---------------------|
+| Purpose | Level creation | Practice mode |
+| Timing | Pre-calculated | Generated on-the-fly |
+| Storage | Saved with level | Not stored |
+| Switching | Via config segments | Via button click during playback |
+| Complexity | Lower (static) | Higher (dynamic) |
+
+### Source Files
+
+| Component | Location |
+|-----------|----------|
+| **SubdivisionPlaybackController** | [src/core/playback/SubdivisionPlaybackController.ts](../src/core/playback/SubdivisionPlaybackController.ts) |
+
+---
+
+### Basic Usage
+
+Create a real-time controller for practice mode:
+
+```typescript
+import {
+  BeatMapGenerator,
+  BeatInterpolator,
+  unifyBeatMap,
+  SubdivisionPlaybackController
+} from 'playlist-data-engine';
+
+// Generate and unify (done once)
+const generator = new BeatMapGenerator();
+const interpolator = new BeatInterpolator();
+
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+const interpolatedMap = interpolator.interpolate(beatMap);
+const unifiedMap = unifyBeatMap(interpolatedMap);
+
+// Create real-time controller for practice mode
+const audioContext = new AudioContext();
+const controller = new SubdivisionPlaybackController(
+  unifiedMap,
+  audioContext,
+  {
+    initialSubdivision: 'quarter',
+    transitionMode: 'next-downbeat',
+    onSubdivisionChange: (oldType, newType) => {
+    console.log(`Switched from ${oldType} to ${newType}`);
+  },
+  }
+);
+
+// Subscribe to beat events
+const unsubscribe = controller.subscribe((event) => {
+  if (event.type === 'upcoming') {
+    // Pre-render beat visual
+    console.log(`Beat approaching in ${event.timeUntilBeat}s`);
+  } else if (event.type === 'exact') {
+    // Beat is happening now
+    console.log('Beat!', event.beat);
+  }
+});
+
+// Start playback
+controller.play();
+```
+
+---
+
+### Real-Time Subdivision Switching
+
+Change subdivision during playback
+
+```typescript
+// User clicks "Eighth Notes" button in practice mode
+document.getElementById('eighth-btn').onclick = () => {
+  controller.setSubdivision('eighth');  // Switches in real-time!
+};
+
+// User clicks "Half Notes" button
+document.getElementById('half-btn').onclick = () => {
+  controller.setSubdivision('half');  // Slows down the beat grid
+};
+
+// User clicks "Quarter Notes" button
+document.getElementById('quarter-btn').onclick = () => {
+  controller.setSubdivision('quarter');  // Back to normal
+};
+```
+
+---
+
+### Transition Modes
+
+The `transitionMode` option controls how subdivision changes are applied:
+
+| Mode | Behavior |
+|------|----------|
+| `'immediate'` | Switch instantly at the current position |
+| `'next-downbeat'` | Wait for the next downbeat before switching |
+| `'next-measure'` | Wait for the next measure before switching |
+
+```typescript
+// Immediate mode - switches right away
+const immediateController = new SubdivisionPlaybackController(
+  unifiedMap,
+  audioContext,
+  { transitionMode: 'immediate' }
+);
+
+// Next-downbeat mode - waits for beat 1 ofconst downbeatController = new SubdivisionPlaybackController(
+  unifiedMap,
+  audioContext,
+  { transitionMode: 'next-downbeat' }
+);
+
+// Next-measure mode - waits for start of next measure
+const measureController = new SubdivisionPlaybackController(
+  unifiedMap,
+  audioContext,
+  { transitionMode: 'next-measure' }
+);
+```
+
+---
+
+### Playback Control
+
+Control playback with standard methods
+
+```typescript
+// Start playback
+controller.play();
+
+// Pause playback
+controller.pause();
+
+// Resume playback
+controller.resume();
+
+// Stop playback (resets position)
+controller.stop();
+
+// Seek to a specific time
+controller.seek(30.5);  // Jump to 30.5 seconds
+
+// Get current state
+console.log('Running:', controller.isRunning());
+console.log('Paused:', controller.isPaused());
+console.log('Current time:', controller.getCurrentTime());
+console.log('Duration:', controller.getDuration());
+```
+
+---
+
+### Beat Query Methods
+
+Get beats for display or analysis
+
+```typescript
+// Get beats in a time range
+const beats = controller.getBeatsInRange(10, 15);
+console.log(`Beats between 10s and 15s: ${beats.length}`);
+
+// Get upcoming beats for pre-rendering
+const upcomingBeats = controller.getUpcomingBeats(5);
+console.log(`Next 5 beats:`, upcomingBeats);
+
+// Get beat at specific time
+const beat = controller.getBeatAtTime(12.5);
+if (beat) {
+  console.log('Beat at 12.5s:', beat);
+}
+
+// Get current beat (most recently passed)
+const currentBeat = controller.getCurrentBeat();
+
+// Get next beat
+const nextBeat = controller.getNextBeat();
+```
+
+---
+
+### Options Interface
+
+#### SubdivisionPlaybackOptions
+
+```typescript
+interface SubdivisionPlaybackOptions {
+  /** Starting subdivision type (default: 'quarter') */
+  initialSubdivision?: SubdivisionType;
+
+  /** How to handle subdivision changes (default: 'immediate') */
+  transitionMode?: 'immediate' | 'next-downbeat' | 'next-measure';
+
+  /** Callback when subdivision changes */
+  onSubdivisionChange?: (oldType: SubdivisionType, newType: SubdivisionType) => void;
+
+  /** Anticipation time for beat events in seconds (default: 2.0) */
+  anticipationTime?: number;
+
+  /** Timing tolerance for beat event detection in seconds (default: 0.01) */
+  timingTolerance?: number;
+
+  /** User-calibrated offset in milliseconds (default: 0) */
+  userOffsetMs?: number;
+
+  /** Whether to compensate for output latency (default: true) */
+  compensateOutputLatency?: boolean;
+}
+```
+
+---
+
+### Event Types
+
+#### SubdivisionBeatEvent
+
+```typescript
+interface SubdivisionBeatEvent {
+  /** The beat that triggered this event */
+  beat: SubdividedBeat;
+
+  /** Current subdivision type */
+  currentSubdivision: SubdivisionType;
+
+  /** Audio context time when event was emitted */
+  audioTime: number;
+
+  /** Time until the beat (negative if passed) */
+  timeUntilBeat: number;
+
+  /** Type of event: 'upcoming', 'exact', or 'passed' */
+  type: BeatEventType;
+}
+```
+
+#### BeatEventType
+
+Events are emitted at different times during playback:
+
+| Type | When | Use Case |
+|------|------|----------|
+| `'upcoming'` | Beat is within `anticipationTime` | Pre-render visuals, prepare animations |
+| `'exact'` | Beat time is reached (within tolerance) | Trigger sounds, haptics |
+| `'passed'` | Beat time has passed | Clean up, logging |
+
+```typescript
+type BeatEventType = 'upcoming' | 'exact' | 'passed';
+```
+
+#### SubdivisionCallback
+
+```typescript
+type SubdivisionCallback = (event: SubdivisionBeatEvent) => void;
+```
+
+---
+
+### SubdivisionPlaybackController Class
+
+**Source**: [src/core/playback/SubdivisionPlaybackController.ts](../src/core/playback/SubdivisionPlaybackController.ts)
+
+#### Constructor
+
+```typescript
+new SubdivisionPlaybackController(
+  unifiedMap: UnifiedBeatMap,
+  audioContext: AudioContext,
+  options?: SubdivisionPlaybackOptions
+)
+```
+
+#### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `subdivision` | `SubdivisionType` | Current subdivision type (read-only) |
+| `beatMap` | `UnifiedBeatMap` | The unified beat map (read-only) |
+
+#### Methods
+
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `subscribe` | `callback: SubdivisionCallback` | `() => void` | Subscribe to beat events, returns unsubscribe function |
+| `setSubdivision` | `type: SubdivisionType` | `void` | Change subdivision in real-time |
+| `play` | - | `void` | Start streaming beat events |
+| `pause` | - | `void` | Pause event emission, preserves position |
+| `resume` | - | `void` | Resume from paused position |
+| `stop` | - | `void` | Stop playback and reset state |
+| `seek` | `time: number` | `void` | Jump to a specific time |
+| `getBeatsInRange` | `startTime: number`, `endTime: number` | `SubdividedBeat[]` | Get beats in a time range |
+| `getUpcomingBeats` | `count: number` | `SubdividedBeat[]` | Get upcoming beats within anticipation window |
+| `getBeatAtTime` | `time: number` | `SubdividedBeat \| null` | Get beat at specific time |
+| `getCurrentBeat` | - | `SubdividedBeat \| null` | Get current (most recent) beat |
+| `getNextBeat` | - | `SubdividedBeat \| null` | Get next beat |
+| `isRunning` | - | `boolean` | Check if playback is active |
+| `isPaused` | - | `boolean` | Check if playback is paused |
+| `getCurrentTime` | - | `number` | Get current playback position |
+| `getDuration` | - | `number` | Get beat map duration |
+| `getOptions` | - | `Required<SubdivisionPlaybackOptions>` | Get current options |
+| `setBeatMap` | `unifiedMap: UnifiedBeatMap` | `void` | Update the beat map |
+| `dispose` | - | `void` | Clean up resources |
+
+---
+
+### Practice Mode UI Concept
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  PRACTICE MODE - Song.mp3                                       │
+│                                                                 │
+│  [Quarter] [Eighth] [Half] [Triplets] [Swing]                   │
+│     ↑                                                           │
+│   (active)                                                      │
+│                                                                 │
+│  ▶ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+│                    ↑    ↑    ↑    ↑                             │
+│                   beat events flow based on active              │
+│                   subdivision type                              │
+│                                                                 │
+│  Current: Eighth Notes | Next beat in: 0.234s                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Use Cases for Real-Time Playground
+
+| Use Case | Recommended |
+|----------|-------------|
+| Practice mode with dynamic difficulty | ✅ Yes |
+| Learning rhythm patterns | ✅ Yes |
+| Interactive beat visualization | ✅ Yes |
+| Live performance tools | ✅ Yes |
+| Pre-calculated level creation | ❌ Use SubdividedBeatMap directly |
+
+---
+
 ## References
 
 - [Beat Tracking by Dynamic Programming (Ellis, 2007)](https://www.ee.columbia.edu/~dpwe/pubs/Ellis07-beattrack.pdf)

@@ -149,12 +149,13 @@ A concise overview of all main exports from the library, organized by category.
 | `BeatStream` | Real-time beat event streaming synchronized with audio | [Beat Detection](#beat-detection) |
 | `OnsetStrengthEnvelope` | Perceptual onset strength envelope calculation (Mel spectrogram) | [Beat Detection](#beat-detection) |
 | `BeatTracker` | Dynamic Programming beat tracking (Ellis algorithm) | [Beat Detection](#beat-detection) |
-| `TempoDetector` | Global tempo estimation with perceptual weighting | [Beat Detection](#beat-detection) |
+| `TempoDetector` | Global tempo estimation with perceptual weighting | [ [Beat Detection](#beat-detection) |
 | `reapplyDownbeatConfig` | Recalculate measure labels from manual configuration | [Beat Detection](#beat-detection) |
 | `BeatInterpolator` | Fill gaps in beat maps with interpolated beats | [Beat Detection](#beat-detection) |
 | `BeatSubdivider` | Subdivide beat maps into rhythmic patterns (half, eighth, sixteenth, triplets, dotted) | [Beat Detection](#beat-detection) |
 | `unifyBeatMap` | Convert InterpolatedBeatMap to UnifiedBeatMap for subdivision | [Beat Detection](#beat-detection) |
 | `subdivideBeatMap` | One-step convenience function for subdivision | [Beat Detection](#beat-detection) |
+| `SubdivisionPlaybackController` | Real-time subdivision switching for practice mode | [Beat Detection](#beat-detection) |
 
 **Beat Utilities:** `hzToMel`, `melToHz`, `resampleAudio`, `createMelFilterbank`, `highPassFilter`, `gaussianSmooth`, `calculateStdDev`, `performBeatFFT`, `performSTFT` — see [Beat Detection Utilities](#beat-detection-utilities)
 
