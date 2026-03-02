@@ -61,7 +61,7 @@ export interface GrooveState {
 
 // Configuration options
 export interface GrooveAnalyzerOptions {
-  /** Minimum hits to establish a pocket (default: 2) */
+  /** Minimum hits to establish a pocket (default: 3) */
   minHitsForPocket: number;
 
   /** Base pocket window as fraction of beat (default: 0.03125 = 1/32 note) */
@@ -76,17 +76,25 @@ export interface GrooveAnalyzerOptions {
   /** Hotness loss on pocket break (default: 20) */
   hotnessLossOnBreak: number;
 
-  /** Number of recent hits to average for pocket establishment */
+  /** Hotness loss on missed beat (default: 10) */
+  hotnessLossOnMiss: number;
+
+  /** Number of recent hits to average for pocket establishment (default: 4) */
   averagingWindowSize: number;
+
+  /** Dead zone around zero for neutral classification in seconds (default: 0.010 = ±10ms) */
+  neutralDeadZone: number;
 }
 
 export const DEFAULT_GROOVE_OPTIONS: GrooveAnalyzerOptions = {
-  minHitsForPocket: 2,
+  minHitsForPocket: 3,
   basePocketWindowFraction: 0.03125, // 1/32 note
   minPocketWindowSeconds: 0.015,     // 15ms floor
   hotnessGainPerHit: 8,
   hotnessLossOnBreak: 20,
+  hotnessLossOnMiss: 10,
   averagingWindowSize: 4,
+  neutralDeadZone: 0.010,            // ±10ms (20ms total)
 };
 ```
 
@@ -100,6 +108,7 @@ Create `src/core/analysis/beat/GrooveAnalyzer.ts`.
   - [ ] Constructor accepting `GrooveAnalyzerOptions`
   - [ ] Private state tracking properties
   - [ ] `recordHit(offset: number, bpm: number): GrooveResult` method
+  - [ ] `recordMiss(): GrooveResult` method (for missed beats)
   - [ ] `getState(): GrooveState` method
   - [ ] `reset(): void` method
 
@@ -109,14 +118,21 @@ Create `src/core/analysis/beat/GrooveAnalyzer.ts`.
   - [ ] Determine direction from average (push = negative, pull = positive)
   - [ ] Only establish pocket after `minHitsForPocket` consistent hits
 
-- [ ] **2.3 Consistency Calculation**
+- [ ] **2.3 Consistency Calculation (Quadratic Falloff)**
   - [ ] Calculate distance from current hit to established pocket center
   - [ ] Calculate current pocket window (BPM-aware + progressive tightening)
-  - [ ] Return consistency score (1.0 = perfect, 0.0 = outside window)
+  - [ ] Return consistency score using **quadratic falloff**:
+    ```typescript
+    // 1.0 = perfect (at pocket center), 0.0 = outside window
+    const normalizedDistance = distanceFromPocket / pocketWindow;
+    if (normalizedDistance >= 1) return 0;
+    return 1 - (normalizedDistance * normalizedDistance);  // Quadratic falloff
+    ```
 
 - [ ] **2.4 Hotness/Meter Logic**
-  - [ ] Increase hotness when hit is within pocket window
-  - [ ] Decrease hotness when hit breaks pocket
+  - [ ] Increase hotness when hit is within pocket window (+8 default)
+  - [ ] Decrease hotness when hit breaks pocket (-20 default)
+  - [ ] Decrease hotness when beat is missed (-10 default, via `recordMiss()`)
   - [ ] Progressive window tightening as hotness increases
   - [ ] Clamp hotness to 0-100 range
 
@@ -167,14 +183,26 @@ export class GrooveAnalyzer {
   }
 
   recordHit(offset: number, bpm: number): GrooveResult {
-    // 1. Add to recent offsets
-    // 2. Update running average
-    // 3. Determine pocket direction
+    // 1. Add to recent offsets (rolling window)
+    // 2. Update running average (simple moving average)
+    // 3. Determine pocket direction from average
     // 4. Calculate pocket window (BPM-aware + progressive)
-    // 5. Check if hit is in pocket
-    // 6. Update hotness
-    // 7. Update streak
-    // 8. Return result
+    // 5. Calculate consistency (quadratic falloff)
+    // 6. Check if hit is in pocket
+    // 7. Update hotness (+gain if in pocket, -break if outside)
+    // 8. Update streak
+    // 9. Return result
+  }
+
+  /**
+   * Record a missed beat (user didn't press)
+   * Reduces hotness by configured miss penalty (default: 10)
+   * Resets streak but does NOT clear the established pocket
+   */
+  recordMiss(): GrooveResult {
+    this.hotness = Math.max(0, this.hotness - this.options.hotnessLossOnMiss);
+    this.streakLength = 0;
+    return this.getState();
   }
 
   getState(): GrooveState {
@@ -203,25 +231,36 @@ export class GrooveAnalyzer {
   }
 
   private updateRunningAverage(): void {
-    // Exponential moving average or simple average
+    // Simple moving average of recent offsets
+    if (this.recentOffsets.length === 0) return;
+    this.establishedOffset = this.recentOffsets.reduce((a, b) => a + b, 0) / this.recentOffsets.length;
+  }
+
+  private calculateConsistency(distanceFromPocket: number, pocketWindow: number): number {
+    const normalizedDistance = distanceFromPocket / pocketWindow;
+    if (normalizedDistance >= 1) return 0;
+    // Quadratic falloff: 1.0 at center, 0.0 at edge
+    return 1 - (normalizedDistance * normalizedDistance);
   }
 
   private determineDirection(offset: number): GrooveDirection {
-    if (Math.abs(offset) < 0.010) return 'neutral'; // 10ms dead zone (on beat)
+    // Use configurable dead zone (±10ms by default = 20ms total)
+    if (Math.abs(offset) < this.options.neutralDeadZone) return 'neutral';
     return offset < 0 ? 'push' : 'pull';
-  }
-
-  private checkDirectionChange(newDirection: GrooveDirection): boolean {
-    // If we have an established pocket and direction flips, reset combo
-    if (this.pocketDirection !== 'neutral' &&
-        newDirection !== 'neutral' &&
-        this.pocketDirection !== newDirection) {
-      return true; // Direction changed - break combo
-    }
-    return false;
   }
 }
 ```
+
+### Direction Change Behavior (Gradual Shift)
+
+When the user's timing drifts from one direction to another (e.g., push → pull):
+
+1. **No hard reset** - The rolling average naturally shifts as new hits come in
+2. **Pocket window follows** - As the average shifts, so does the pocket center
+3. **Hotness affected** - During the transition, hits may fall outside the moving pocket, reducing hotness
+4. **Natural transition** - This creates a smooth feel where the groove meter adapts to the player's evolving feel
+
+This approach is more forgiving and feels more musical than a hard reset on direction change.
 
 ---
 
@@ -234,9 +273,12 @@ export class GrooveAnalyzer {
 - [ ] **3.2 Export from main engine index**
   - [ ] Add to `src/index.ts` public exports
 
-- [ ] **3.3 Integration with BeatStream (optional)**
-  - [ ] Consider if `BeatStream` should optionally create/manage a `GrooveAnalyzer`
-  - [ ] Or keep separate - frontend creates both and connects them
+- [ ] **3.3 Standalone Integration (No BeatStream Coupling)**
+  - [x] Decision: GrooveAnalyzer is a standalone class
+  - [ ] Frontend creates and manages GrooveAnalyzer separately from BeatStream
+  - [ ] Frontend calls `recordHit(offset, bpm)` after each button press
+  - [ ] Frontend calls `recordMiss()` when user doesn't press on a beat
+  - [ ] This keeps the engine modular and allows flexible frontend implementations
 
 ---
 
@@ -245,26 +287,38 @@ export class GrooveAnalyzer {
 Create `tests/unit/beat/grooveAnalyzer.test.ts`.
 
 - [ ] **4.1 Pocket Detection Tests**
-  - [ ] Establishes pocket after 2-3 consistent hits
+  - [ ] Establishes pocket after 3 consistent hits (minHitsForPocket)
   - [ ] Correctly identifies push direction (negative offsets)
   - [ ] Correctly identifies pull direction (positive offsets)
-  - [ ] Returns neutral when offsets are near zero
+  - [ ] Returns neutral when offsets are within ±10ms dead zone
+  - [ ] Direction shifts gradually as hitting pattern changes
 
 - [ ] **4.2 Consistency Calculation Tests**
-  - [ ] Returns 1.0 consistency when hit is exactly on pocket
+  - [ ] Returns 1.0 consistency when hit is exactly on pocket center
   - [ ] Returns 0.0 consistency when hit is outside window
-  - [ ] Returns partial consistency for near-pocket hits
+  - [ ] Returns partial consistency with quadratic falloff:
+    - [ ] 50% to edge = 0.75 consistency (1 - 0.5²)
+    - [ ] 70% to edge = 0.51 consistency (1 - 0.7²)
+    - [ ] 90% to edge = 0.19 consistency (1 - 0.9²)
 
 - [ ] **4.3 Hotness/Meter Tests**
-  - [ ] Hotness increases on consistent hits
-  - [ ] Hotness decreases on pocket breaks
+  - [ ] Hotness increases by 8 on consistent hits (in pocket)
+  - [ ] Hotness decreases by 20 on pocket breaks
+  - [ ] Hotness decreases by 10 on missed beats (recordMiss)
   - [ ] Hotness clamped to 0-100
-  - [ ] Progressive tightening works correctly
+  - [ ] Progressive tightening works correctly at higher hotness
 
-- [ ] **4.4 Edge Cases**
-  - [ ] First hit returns sensible defaults
+- [ ] **4.4 Missed Beat Tests**
+  - [ ] recordMiss() reduces hotness by configured amount (default 10)
+  - [ ] recordMiss() resets streak to 0
+  - [ ] recordMiss() does NOT clear established pocket
+
+- [ ] **4.5 Edge Cases**
+  - [ ] First hit returns sensible defaults (no pocket yet)
+  - [ ] Second hit still no pocket (need 3 hits)
   - [ ] Reset clears all state
-  - [ ] BPM changes affect pocket window correctly
+  - [ ] BPM changes affect pocket window correctly (auto-adjust)
+  - [ ] Rolling window maintains correct size (drops old hits)
 
 ---
 
@@ -289,12 +343,16 @@ Create `tests/unit/beat/grooveAnalyzer.test.ts`.
     // Frontend integration during gameplay
     const grooveAnalyzer = new GrooveAnalyzer();
 
-    // After each button press during gameplay
-    const result = grooveAnalyzer.recordHit(timingError, currentBpm);
+    // On each button press during gameplay
+    const buttonResult = beatStream.checkButtonPress(timestamp);
+    const grooveResult = grooveAnalyzer.recordHit(buttonResult.offset, beatStream.getCurrentBpm());
+
+    // When user misses a beat (doesn't press)
+    grooveAnalyzer.recordMiss();
 
     // Read the groove state for UI display
-    if (result.pocketDirection !== 'neutral') {
-      console.log(`${result.pocketDirection} groove: ${result.hotness}%`);
+    if (grooveResult.pocketDirection !== 'neutral') {
+      console.log(`${grooveResult.pocketDirection} groove: ${grooveResult.hotness}%`);
     }
     ```
 
@@ -312,37 +370,79 @@ Create `tests/unit/beat/grooveAnalyzer.test.ts`.
 |----------|--------|-----------|
 | Time-based decay | No | Engine provides score, frontend decides decay behavior |
 | Pocket window | Progressive tightening | Harder to maintain at higher levels |
-| Pocket establishment | 2-3 hits (fast) | Responsive feel for practice sessions |
+| Pocket establishment | 3 hits | More deliberate establishment, less jittery |
 | Window calculation | BPM-aware (1/32 note) | Musical timing, not fixed ms |
+| Consistency formula | Quadratic falloff | More forgiving near center, steeper drop at edges |
+| Direction change | Gradual shift | Rolling average naturally adapts, no hard reset |
+| Missed beats | Reduce hotness (-10) | Lighter penalty than pocket break, streak resets |
+| Integration | Standalone class | Frontend manages separately, cleaner separation |
+| Serialization | Not needed | Ephemeral "fun" metric, no persistence required |
+| Multi-tempo | Auto-adjust | Per-hit BPM handles tempo changes automatically |
+| Neutral dead zone | ±10ms (20ms total) | Tight tolerance for "on beat" classification |
+| Average type | Simple moving average | Easier to understand, more stable |
 
 ---
 
 ## Questions/Unknowns
 
-- [ ] Should `GrooveAnalyzer` need BPM passed per-hit, or cached from construction?
-  - **Recommendation:** Per-hit (BPM can change in some songs)
+### Resolved Questions
+
+- [x] ~~Should `GrooveAnalyzer` need BPM passed per-hit, or cached from construction?~~
+  - **Answer:** Per-hit (BPM can change in some songs, auto-adjusts naturally)
 
 - [x] ~~Should breaking pocket reset streak or just reduce hotness?~~
   - **Answer:** Reduce hotness (chunk taken out), streak continues if still hitting
 
 - [x] ~~How to handle direction changes mid-session?~~
-  - **Answer:** Direction change (push → pull or pull → push) breaks the groove combo and starts fresh. User must re-establish a new pocket.
+  - **Answer:** Gradual shift - rolling average naturally drifts to new direction, no hard reset
+
+- [x] ~~What happens when user misses a beat entirely?~~
+  - **Answer:** `recordMiss()` reduces hotness by 10, resets streak, but keeps established pocket
+
+- [x] ~~Should GrooveAnalyzer integrate with BeatStream?~~
+  - **Answer:** No - standalone class, frontend manages both and connects them
+
+- [x] ~~How should consistency be calculated for partial hits?~~
+  - **Answer:** Quadratic falloff from center (1.0) to edge (0.0)
+
+- [x] ~~Should groove state be serializable?~~
+  - **Answer:** No - ephemeral fun metric, no persistence needed
+
+### No Open Questions
+
+All design questions have been resolved.
 
 ## Behavior Clarifications
 
 **Groove Meter Activation:**
 - Meter only activates when playing consistently AHEAD or BEHIND the beat
-- Playing perfectly on the beat = no groove meter (neutral)
+- Playing perfectly on the beat (within ±10ms) = no groove meter (neutral)
 - Meter has dual quality: **direction** (pushed/pulled) + **intensity** (hotness 0-100)
+- Requires 3 consistent hits to establish a pocket
 
-**Direction Change = Reset:**
-- If established pocket is +30ms (pull) and user suddenly hits -20ms (push), the combo breaks
-- New pocket must be established from scratch
-- This prevents "gaming" the system by oscillating
+**Direction Change = Gradual Shift:**
+- If established pocket is +30ms (pull) and user starts hitting -20ms (push), the rolling average gradually shifts
+- The pocket center follows the player's evolving feel
+- During transition, some hits may fall outside the moving pocket (reducing hotness)
+- This feels more musical than hard resets
+
+**Missed Beats:**
+- Calling `recordMiss()` reduces hotness by 10 (lighter than pocket break's 20)
+- Streak resets to 0
+- Established pocket is NOT cleared - the groove can recover
+- Frontend should call this when user doesn't press on a beat
+
+**Consistency Calculation (Quadratic Falloff):**
+- At pocket center: 1.0 (perfect)
+- At 50% to edge: 0.75 (1 - 0.5²)
+- At 70% to edge: 0.51 (1 - 0.7²)
+- At 90% to edge: 0.19 (1 - 0.9²)
+- At/beyond edge: 0.0 (outside window)
 
 **Frontend Responsibility:**
-- Engine provides: hotness, direction, consistency, streak
+- Engine provides: hotness, direction, consistency, streak, pocket window
 - Frontend decides: visual representation, decay over time, what "hot" looks like
+- Frontend must call `recordMiss()` when user doesn't press on a beat
 
 ---
 

@@ -54,24 +54,27 @@ After interpolation completes, the detected + interpolated beats are merged into
 
 ### Core Feature: Pre-Calculated SubdividedBeatMap (Phases 1-9)
 
-1. Create `UnifiedBeatMap` type that flattens detected + interpolated beats
+1. Create `UnifiedBeatMap` type that flattens detected + interpolated beats (with tempoSections support)
 2. Create `SubdivisionType` enum for all subdivision types
 3. Create `SubdivisionConfig` with segment support (like `DownbeatConfig`)
 4. Implement `BeatSubdivider` class with subdivision algorithms
 5. Support half notes (0.5x density), eighth notes (2x), sixteenth notes (4x)
 6. Support eighth triplets (3 per quarter) and quarter triplets (3 per half note)
-7. Support dotted quarter (1.5x interval) and dotted eighth (swing pattern)
+7. Support dotted quarter (1.5x interval) and dotted eighth (swing pattern: 2/3 + 1/3)
 8. Support segment-based subdivision changes at any beat index
 9. Preserve detected beat information for accent patterns
-10. Use decimal beat labels (0, 0.5, 1, 1.5...) for subdivisions
+10. Use decimal beat labels (0, 0.5, 1, 1.5...) in SubdividedBeat only (base Beat stays integer)
+11. Tempo-aware subdivision using TempoSection intervals for multi-tempo tracks
+12. Hard density limit at sixteenth notes (4x)
+13. Validation: `validateSubdivisionConfig()` and `validateSubdivisionConfigAgainstBeats()`
 
 ### Practice Mode Feature: Real-Time Subdivision Playground (Phase 10)
 
-11. Create `SubdivisionPlaybackController` for real-time subdivision switching
-12. Enable instant switching between subdivision types during playback
-13. Support practice mode workflow: start with quarters, switch to eighths, etc.
-14. Provide configurable transition modes (immediate vs. next-downbeat)
-15. Integrate with existing beat event system for UI updates
+14. Create `SubdivisionPlaybackController` for real-time subdivision switching
+15. Enable instant switching between subdivision types during playback
+16. Support practice mode workflow: start with quarters, switch to eighths, etc.
+17. Provide configurable transition modes (immediate vs. next-downbeat)
+18. Integrate with existing beat event system for UI updates
 
 ---
 
@@ -87,7 +90,10 @@ After interpolation completes, the detected + interpolated beats are merged into
       ▼                        ▼                          ▼                         ▼
   beats: Beat[]      detectedBeats: Beat[]        beats: Beat[]            beats: SubdividedBeat[]
                      mergedBeats: BeatWithSource[] detectedBeatIndices       subdivisionConfig
-                                                        isDetected flag       subdivisionMetadata
+                     interpolationMetadata:        tempoSections?            detectedBeatIndices
+                       - tempoSections?            downbeatConfig            downbeatConfig (inherited)
+                                                        isDetected flag       tempoSections? (inherited)
+                                                                              subdivisionMetadata
 ```
 
 ---
@@ -103,21 +109,24 @@ After interpolation completes, the detected + interpolated beats are merged into
  * - quarter: Default, 1x density (unchanged)
  * - half: 0.5x density (beats on 1 and 3 only)
  * - eighth: 2x density (beat between each quarter)
- * - sixteenth: 4x density (3 beats between each quarter)
+ * - sixteenth: 4x density (3 beats between each quarter) - MAXIMUM DENSITY
  * - triplet8: Eighth triplets (3 beats per quarter note)
  * - triplet4: Quarter triplets (3 beats per half note)
  * - dotted4: Dotted quarter (every 1.5 quarters, phase-independent)
- * - dotted8: Dotted eighth (swing long-short pattern)
+ * - dotted8: Dotted eighth (swing long-short pattern: 2/3 + 1/3)
+ *
+ * Note: Sixteenth notes (4x) are the maximum supported density.
+ * Higher densities are not supported and will throw an error.
  */
 export type SubdivisionType =
   | 'quarter'    // 1x density (no change)
   | 'half'       // 0.5x density (beats 1 and 3)
   | 'eighth'     // 2x density
-  | 'sixteenth'  // 4x density
+  | 'sixteenth'  // 4x density (MAXIMUM)
   | 'triplet8'   // 3 beats per quarter (eighth triplets)
   | 'triplet4'   // 3 beats per half note (quarter triplets)
   | 'dotted4'    // Every 1.5 quarters (phase-independent)
-  | 'dotted8';   // Swing pattern (0.66 + 0.33 quarters)
+  | 'dotted8';   // Swing pattern (2/3 + 1/3 quarters)
 ```
 
 ### SubdivisionConfig (Like DownbeatConfig)
@@ -182,14 +191,17 @@ export interface UnifiedBeatMap {
     /** Indices of beats that were originally detected (for accent lookup) */
     detectedBeatIndices: number[];
 
-    /** Quarter note interval in seconds */
+    /** Quarter note interval in seconds (primary tempo) */
     quarterNoteInterval: number;
 
-    /** Equivalent BPM for the quarter note */
+    /** Equivalent BPM for the quarter note (primary tempo) */
     quarterNoteBpm: number;
 
     /** The downbeat configuration inherited from interpolation */
     downbeatConfig: DownbeatConfig;
+
+    /** Tempo sections for multi-tempo support (from InterpolationMetadata) */
+    tempoSections?: TempoSection[];
 
     /** Metadata from the original beat map */
     originalMetadata: BeatMapMetadata;
@@ -222,8 +234,11 @@ export interface SubdividedBeatMap {
     /** The subdivision configuration used */
     subdivisionConfig: SubdivisionConfig;
 
-    /** The downbeat configuration inherited from interpolation */
+    /** The downbeat configuration inherited from UnifiedBeatMap (preserved unchanged) */
     downbeatConfig: DownbeatConfig;
+
+    /** Tempo sections inherited from UnifiedBeatMap (for reference) */
+    tempoSections?: TempoSection[];
 
     /** Metadata about the subdivision process */
     subdivisionMetadata: SubdivisionMetadata;
@@ -231,12 +246,19 @@ export interface SubdividedBeatMap {
 
 /**
  * A beat in a subdivided beat map
+ *
+ * Note: beatInMeasure is a DECIMAL in SubdividedBeat (e.g., 0.5, 1.25, 2.75)
+ * while the base Beat interface uses integers. This allows for positions
+ * like "the 'and' of beat 1" (1.5) or swing patterns.
  */
 export interface SubdividedBeat extends Beat {
+    /** Position within the measure as a decimal (e.g., 0, 0.5, 1, 1.5 for eighth notes) */
+    beatInMeasure: number;
+
     /** Whether this beat was originally detected (vs interpolated) */
     isDetected: boolean;
 
-    /** Index of the original quarter-note beat this came from (if applicable) */
+    /** Index of the original beat in the UnifiedBeatMap (input to subdivider) */
     originalBeatIndex?: number;
 
     /** The subdivision type that created this beat */
@@ -261,6 +283,12 @@ export interface SubdivisionMetadata {
 
     /** Subdivision types used */
     subdivisionsUsed: SubdivisionType[];
+
+    /** Whether the track has multiple tempo sections */
+    hasMultipleTempos: boolean;
+
+    /** Maximum density encountered (for validation against limit) */
+    maxDensity: number;
 }
 ```
 
@@ -279,7 +307,7 @@ export interface SubdivisionMetadata {
 | triplet8 | 0, 0.33, 0.66, 1, 1.33, 1.66... | 3 beats per quarter |
 | triplet4 | 0, 0.66, 1.33, 2, 2.66, 3.33... | 3 beats per half note |
 | dotted4 | 0, 1.5, 3, 4.5, 6... | Phase-independent |
-| dotted8 | 0, 0.66, 1, 1.66, 2... | Swing long-short |
+| dotted8 | 0, 0.667, 1, 1.667, 2... | Swing long-short (2/3 + 1/3) |
 
 ### Subdivision Rules
 
@@ -287,38 +315,43 @@ export interface SubdivisionMetadata {
 - Keep beats where `beatInMeasure % 2 === 0` (positions 0 and 2)
 - Discard beats at positions 1 and 3
 - Uses downbeat info to determine measure positions
+- **Measure numbers are preserved** from the original quarter-note grid (not recalculated)
 - Example: Beats at 0, 2, 4, 6... are kept (downbeats and beat 3s)
 
 #### Eighth Notes (2x density)
 - Insert new beat midway between each quarter note
 - New beat has `beatInMeasure = original + 0.5`
-- Inherit intensity/confidence from neighboring beats
+- **Intensity/confidence: linear average of neighboring beats**
 
 #### Sixteenth Notes (4x density)
 - Insert 3 new beats evenly spaced between each quarter note
 - Labels: original, +0.25, +0.5, +0.75
-- Useful for very fast passages
+- **This is the MAXIMUM supported density** (hard limit)
+- Intensity/confidence: linear average of neighboring beats
 
 #### Eighth Triplets (triplet8)
 - 3 beats per quarter note
 - Labels: 0, 0.33, 0.66, 1, 1.33, 1.66...
 - Interval = quarterNoteInterval / 3
+- Intensity/confidence: linear average of neighboring beats
 
 #### Quarter Triplets (triplet4)
 - 3 beats per half note (same density as eighth notes but different feel)
 - Labels: 0, 0.66, 1.33, 2, 2.66, 3.33...
 - Interval = quarterNoteInterval * 2 / 3
+- Intensity/confidence: linear average of neighboring beats
 
 #### Dotted Quarter (dotted4)
 - Beats at intervals of 1.5x quarter note
 - **Phase-independent**: Doesn't care about measure boundaries
 - Pattern: 0, 1.5, 3, 4.5, 6...
 - Creates 3-beat groups in 4/4 time (cross-rhythm)
+- Intensity/confidence: linear average of neighboring beats
 
 #### Dotted Eighth (dotted8)
 - Swing long-short pattern
-- Long: 0.66 of quarter, Short: 0.34 of quarter
-- Labels: 0, 0.66, 1, 1.66, 2, 2.66...
+- Long: 2/3 of quarter (≈0.667), Short: 1/3 of quarter (≈0.333)
+- Labels: 0, 0.667, 1, 1.667, 2, 2.667...
 - Classic swing feel
 
 ### Segment Transitions
@@ -327,6 +360,24 @@ export interface SubdivisionMetadata {
 - No waiting for measure boundaries
 - Pattern continues from that point with new subdivision
 - Example: Quarter → Eighth at beat 32 means beat 32 is the first eighth note
+
+### Tempo-Aware Subdivision (Multi-Tempo Support)
+
+When the UnifiedBeatMap contains multiple tempo sections (from `InterpolationMetadata.tempoSections`), subdivision must be tempo-aware:
+
+- **Each TempoSection has its own `intervalSeconds`** - use this for subdivision calculations within that section
+- **Section boundaries**: Subdivision intervals change at tempo section boundaries
+- **Example**: If section 1 is 120 BPM and section 2 is 90 BPM, eighth note intervals are 250ms in section 1 and ~333ms in section 2
+- The `BeatSubdivider` accepts `tempoSections` from `UnifiedBeatMap` and calculates appropriate intervals per section
+
+```typescript
+// Tempo-aware subdivision example
+const unifiedMap = unifyBeatMap(interpolatedMap);
+// unifiedMap.tempoSections contains tempo information
+
+const subdividedMap = subdivider.subdivide(unifiedMap, config);
+// Subdivision uses correct intervals for each tempo section
+```
 
 ### Detected Beat Preservation
 
@@ -401,8 +452,17 @@ export interface SubdivisionMetadata {
 
 ### 1.5 Add Validation Functions
 
-- [ ] Add `validateSubdivisionConfig()` function
+- [ ] Add `validateSubdivisionConfig()` function (structural validation)
+  - [ ] Verify segments array is non-empty
+  - [ ] Verify segments are ordered by startBeat
+  - [ ] Verify startBeat >= 0 for all segments
+  - [ ] Verify subdivision type is valid
 - [ ] Add `validateSubdivisionConfigAgainstBeats()` function
+  - [ ] Verify startBeat values don't exceed total beat count
+  - [ ] Similar to `validateDownbeatConfigAgainstBeats()`
+- [ ] Add density validation
+  - [ ] Define MAX_DENSITY = 4 (sixteenth notes)
+  - [ ] Throw error if subdivision would exceed max density
 
 ---
 
@@ -415,6 +475,7 @@ export interface SubdivisionMetadata {
   - [ ] Flatten `mergedBeats` into single `Beat[]`
   - [ ] Remove `source` field distinction
   - [ ] Build `detectedBeatIndices` array
+  - [ ] Extract `tempoSections` from InterpolationMetadata (for tempo-aware subdivision)
   - [ ] Add `isDetected` would be on SubdividedBeat, not here
 
 ### 2.2 Unit Tests for Unification
@@ -510,9 +571,17 @@ export interface SubdivisionMetadata {
 ### 4.8 Dotted Eighth (dotted8)
 
 - [ ] Implement `subdivideDotted8()`
-  - [ ] Swing pattern: 0.66 + 0.34 of quarter
-  - [ ] Long beat at 0.66, short at 0.34
+  - [ ] Swing pattern: **2/3 + 1/3** of quarter (0.667 + 0.333)
+  - [ ] Long beat at 2/3, short at 1/3
   - [ ] Labels alternate pattern
+
+### 4.9 Tempo-Aware Subdivision
+
+- [ ] Implement tempo-aware subdivision support
+  - [ ] Accept `tempoSections` from UnifiedBeatMap
+  - [ ] Use each section's `intervalSeconds` for subdivision calculations
+  - [ ] Handle section boundaries correctly
+  - [ ] Fall back to primary `quarterNoteInterval` if no tempoSections
 
 ---
 
@@ -593,14 +662,25 @@ export interface SubdivisionMetadata {
 - [ ] Empty beat map
 - [ ] Single beat
 - [ ] Very short track
-- [ ] Tempo changes (if supported)
+- [ ] Tempo changes (multi-tempo tracks)
 - [ ] Multiple time signatures
+- [ ] Subdivision config with startBeat exceeding beat count (validation)
+- [ ] Density limit enforcement (error on > sixteenth)
 
 ### 7.5 Beat Label Tests
 
 - [ ] Verify decimal labels for each subdivision
 - [ ] Test measure number calculation
 - [ ] Test downbeat marking preservation
+- [ ] Verify measure numbers are preserved for half notes
+
+### 7.6 Tempo-Aware Subdivision Tests
+
+- [ ] Test subdivision with single tempo (no tempoSections)
+- [ ] Test subdivision with multiple tempo sections
+- [ ] Verify correct intervals used per section
+- [ ] Test section boundary handling
+- [ ] Test subdivision config segments that span tempo section boundaries
 
 ---
 
@@ -685,9 +765,7 @@ Phase 8 (Documentation) ──────────────────�
         ▼                                                           │
 Phase 9 (Verification) ─────────────────────────────────────────────┤
         │                                                           │
-        │   ┌───────────────────────────────────────────────────────┘
-        │   │
-        ▼   ▼
+        ▼                                                           │
 Phase 10 (Real-Time Playground) ────────────────────────────────────┘
         │
         │  (Depends on UnifiedBeatMap from Phase 2 and
@@ -696,9 +774,7 @@ Phase 10 (Real-Time Playground) ────────────────
     [Practice Mode Feature]
 ```
 
-**Note:** Phases 1-9 are for the pre-calculated SubdividedBeatMap (level creation).
-Phase 10 is a separate feature for real-time practice mode and can be implemented
-after the core subdivision algorithms are working.
+**Note:** All 10 phases are included in the MVP. Phase 10 (Real-Time Playground) is part of the initial implementation scope.
 
 ---
 
@@ -707,10 +783,14 @@ after the core subdivision algorithms are working.
 | Question | Status | Resolution |
 |----------|--------|------------|
 | Should subdivision affect measure numbers? | Resolved | Keep consistent with downbeat config |
-| How to handle intensity/confidence for new beats? | Open | Interpolate from neighbors? |
+| How to handle intensity/confidence for new beats? | Resolved | Linear average of neighboring beats |
 | Should we support nested subdivisions? | Deferred | Not for v1 |
-| Max density limit? | Open | Sixteenth may be enough |
-| How does this interact with multi-tempo? | Open | May need special handling |
+| Max density limit? | Resolved | Hard limit at sixteenth (4x density) |
+| How does this interact with multi-tempo? | Resolved | Tempo-aware: use each TempoSection's intervalSeconds |
+| beatInMeasure decimal support? | Resolved | SubdividedBeat only (base Beat stays integer) |
+| originalBeatIndex semantics? | Resolved | References UnifiedBeatMap index (input to subdivider) |
+| DownbeatConfig in SubdividedBeatMap? | Resolved | Inherit and preserve from UnifiedBeatMap |
+| Phase 10 scope? | Resolved | Include in MVP (not deferred) |
 
 ---
 
@@ -723,14 +803,16 @@ after the core subdivision algorithms are working.
 | Build Success | TypeScript compiles | `npm run build` |
 | Tests Pass | All tests pass | `npm test` |
 | Quarter Notes | No change from input | Unit test |
-| Half Notes | 0.5x density, correct beats | Unit test |
+| Half Notes | 0.5x density, correct beats, measure numbers preserved | Unit test |
 | Eighth Notes | 2x density, correct positions | Unit test |
-| Sixteenth Notes | 4x density, correct positions | Unit test |
+| Sixteenth Notes | 4x density, correct positions, **hard limit enforced** | Unit test |
 | Triplets | 3 beats per unit, correct feel | Unit test |
-| Dotted Notes | Phase-independent or swing | Unit test |
+| Dotted Notes | Phase-independent or swing (2/3 + 1/3) | Unit test |
 | Segments | Changes at beat index | Unit test |
 | Detected Beats | Preserved with flag | Unit test |
-| Decimal Labels | Correct for each subdivision | Unit test |
+| Decimal Labels | Correct for each subdivision (SubdividedBeat only) | Unit test |
+| Tempo-Aware | Correct intervals per TempoSection | Unit test |
+| Validation | Config validation catches errors | Unit test |
 | Documentation | Complete with examples | Manual review |
 
 ### Practice Mode Feature (Phase 10)
@@ -751,22 +833,21 @@ after the core subdivision algorithms are working.
 
 | Phase | Hours | Notes |
 |-------|-------|-------|
-| Phase 1: Types | 2 | SubdivisionType, configs, new interfaces |
-| Phase 2: UnifiedBeatMap | 1 | Simple flattening utility |
-| Phase 3: BeatSubdivider Core | 2 | Class skeleton, options, main method |
-| Phase 4: Subdivision Algorithms | 4 | 8 subdivision types to implement |
+| Phase 1: Types | 2 | SubdivisionType, configs, new interfaces, validation functions |
+| Phase 2: UnifiedBeatMap | 1.5 | Flattening utility + tempoSections support |
+| Phase 3: BeatSubdivider Core | 2.5 | Class skeleton, options, main method, tempo-aware support |
+| Phase 4: Subdivision Algorithms | 5 | 8 subdivision types + tempo-aware calculations |
 | Phase 5: Segment Support | 2 | Segment processing, transitions |
 | Phase 6: Integration | 1 | Exports, convenience functions |
-| Phase 7: Testing | 4 | Comprehensive test coverage |
-| Phase 8: Documentation | 2 | AUDIO_ANALYSIS.md, DATA_ENGINE_REFERENCE.md |
+| Phase 7: Testing | 5 | Comprehensive test coverage including multi-tempo |
+| Phase 8: Documentation | 2.5 | AUDIO_ANALYSIS.md, DATA_ENGINE_REFERENCE.md |
 | Phase 9: Verification | 1 | Build, test, export verification |
-| **Subtotal (Core)** | **19** | Pre-calculated SubdividedBeatMap |
 | Phase 10: Real-Time Playground | 4 | Practice mode controller, real-time switching |
-| **Total** | **23** | |
+| **Total** | **26.5** | All phases included in MVP |
 
 **Implementation Priority:**
-1. **Phases 1-9** (Core): Required for level creation workflow
-2. **Phase 10** (Real-Time): Optional, can be added later for practice mode
+1. **Phases 1-9** (Core): Pre-calculated SubdividedBeatMap for level creation
+2. **Phase 10** (Real-Time): Practice mode feature - included in MVP
 
 ---
 
@@ -847,16 +928,16 @@ const swingMap = subdivider.subdivide(unifiedMap, {
 
 1. **Review and approve** this plan
 2. **Start Phase 1**: Add new types to `BeatMap.ts`
-3. **Work through phases** sequentially (1-9 for core feature)
+3. **Work through phases** sequentially (1-10, all included in MVP)
 4. **Run tests** after each phase
 5. **Update documentation** when code changes complete (Phase 8)
 6. **Verify build** and functionality
-7. **(Optional) Phase 10**: Add real-time practice mode feature after core is stable
+7. **Implement Phase 10**: Real-time practice mode feature
 
-**Recommended Approach:**
+**Implementation Approach:**
 - Complete Phases 1-9 first (pre-calculated subdivision for level creation)
-- Use and test the core feature in production
-- Add Phase 10 (real-time playground) when practice mode is needed
+- Implement Phase 10 (real-time playground) as part of MVP
+- All 10 phases are included in the initial implementation scope
 
 ---
 
@@ -1064,14 +1145,20 @@ document.getElementById('quarter-btn').onclick = () => {
 | Decision | Choice |
 |----------|--------|
 | Processing pipeline | Detect → Interpolate → Unify → Subdivide |
-| Beat labels | Decimal system (0, 0.5, 1, 1.5...) |
+| Beat labels | Decimal system (0, 0.5, 1, 1.5...) in **SubdividedBeat only** |
 | Detected beat preservation | Boolean flag + separate array |
 | Config structure | Segments array (like DownbeatConfig) |
 | Subdivision types | Enum/string values |
 | Segment transitions | Immediate at beat index |
-| Half-note logic | Keep beats 1 and 3 (downbeat + beat 3) |
+| Half-note logic | Keep beats 1 and 3 (downbeat + beat 3), **preserve measure numbers** |
 | Dotted patterns | Phase-independent (don't care about measures) |
-| New beat intensity | Interpolate from neighbors |
-| **Two separate features** | Pre-calculated SubdividedBeatMap + Real-Time Playground |
+| New beat intensity | **Linear average of neighboring beats** |
+| Swing pattern (dotted8) | **2/3 + 1/3** (not 0.66 + 0.34) |
+| Maximum density | **Hard limit at sixteenth (4x)** |
+| Multi-tempo support | **Tempo-aware**: use each TempoSection's intervalSeconds |
+| Validation | `validateSubdivisionConfig()` + `validateSubdivisionConfigAgainstBeats()` |
+| originalBeatIndex | References **UnifiedBeatMap** index (input to subdivider) |
+| DownbeatConfig in SubdividedBeatMap | **Inherit and preserve** from UnifiedBeatMap |
+| Phase 10 scope | **Included in MVP** (not deferred) |
 | **Real-time controller** | Separate class, wraps UnifiedBeatMap |
 | **Real-time transitions** | Configurable (immediate or next-downbeat) |
