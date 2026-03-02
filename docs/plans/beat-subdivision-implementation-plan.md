@@ -640,7 +640,7 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
   - [x] Sixteenth (density 4x)
   - [x] Triplet8 (3 per quarter)
   - [x] Triplet4 (3 per half)
-  - [ ] Dotted4 (phase-independent)
+  - [x] Dotted4 (phase-independent)
   - [ ] Dotted8 (swing pattern)
 
 ### 7.2 Segment Tests
