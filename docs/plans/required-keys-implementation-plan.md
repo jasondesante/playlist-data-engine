@@ -200,9 +200,9 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 - [x] Add example of creating a chart with required keys
 
 ### Task 5.3: Add Code Examples
-- [ ] Example: Creating a simple 2-key chart
-- [ ] Example: Checking button press with key validation
-- [ ] Example: Using ignoreKeyRequirements to bypass key checking
+- [x] Example: Creating a simple 2-key chart
+- [x] Example: Checking button press with key validation
+- [x] Example: Using ignoreKeyRequirements to bypass key checking
 
 ---
 

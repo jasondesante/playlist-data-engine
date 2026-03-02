@@ -1408,6 +1408,145 @@ const result = easyStream.checkButtonPress(timestamp, 'any-key');
 3. **Test with `hasRequiredKeys()`**: Verify a beat map is actually a chart before gameplay
 4. **Use `getUsedKeys()` for UI**: Determine which buttons to display based on the chart
 
+### Code Examples
+
+#### Example 1: Creating a Simple 2-Key Chart
+
+This example shows how to create a basic rhythm game chart with two keys (left and right):
+
+```typescript
+import {
+    BeatMapGenerator,
+    assignKeysToBeats,
+    hasRequiredKeys,
+    getKeyCount,
+    getUsedKeys,
+} from 'playlist-data-engine';
+
+const generator = new BeatMapGenerator();
+
+// Step 1: Generate the base beat map from audio
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+console.log(`Generated ${beatMap.beats.length} beats`);
+
+// Step 2: Create a simple 2-key chart by assigning keys to beats
+// This creates an alternating left-right pattern
+const assignments = beatMap.beats.map((_, index) => ({
+    beatIndex: index,
+    key: index % 2 === 0 ? 'left' : 'right',
+}));
+
+const chartMap = assignKeysToBeats(beatMap, assignments);
+
+// Step 3: Verify the chart
+console.log(`Has required keys: ${hasRequiredKeys(chartMap)}`); // true
+console.log(`Key count: ${getKeyCount(chartMap)}`); // Same as beat count
+console.log(`Keys used: ${getUsedKeys(chartMap).join(', ')}`); // "left, right"
+```
+
+#### Example 2: Checking Button Press with Key Validation
+
+This example shows how to handle player input with key validation:
+
+```typescript
+import { BeatStream, type ButtonPressResult } from 'playlist-data-engine';
+
+const audioContext = new AudioContext();
+const beatStream = new BeatStream(chartMap, audioContext);
+beatStream.start();
+
+// Map physical keyboard inputs to logical keys
+function mapInputToKey(physicalKey: string): string | null {
+    const keyMap: Record<string, string> = {
+        'ArrowLeft': 'left',
+        'ArrowRight': 'right',
+        'ArrowUp': 'up',
+        'ArrowDown': 'down',
+    };
+    return keyMap[physicalKey] ?? null;
+}
+
+// Handle player button press
+function onPlayerInput(keyboardEvent: KeyboardEvent) {
+    const logicalKey = mapInputToKey(keyboardEvent.key);
+    if (!logicalKey) return; // Ignore unmapped keys
+
+    const timestamp = audioContext.currentTime;
+    const result: ButtonPressResult = beatStream.checkButtonPress(timestamp, logicalKey);
+
+    // Handle different accuracy results
+    switch (result.accuracy) {
+        case 'wrongKey':
+            console.log(`❌ Wrong key! Pressed '${result.pressedKey}', needed '${result.requiredKey}'`);
+            console.log(`   Timing was: ${result.offset > 0 ? 'late' : 'early'} by ${Math.abs(result.offset).toFixed(3)}s`);
+            break;
+        case 'miss':
+            console.log(`❌ Missed! No beat nearby or no key pressed when required`);
+            break;
+        case 'perfect':
+        case 'great':
+        case 'good':
+        case 'ok':
+            console.log(`✓ ${result.accuracy.toUpperCase()}! Key match: ${result.keyMatch}`);
+            console.log(`   Offset: ${result.offset.toFixed(3)}s`);
+            break;
+    }
+}
+
+// Listen for keyboard input
+document.addEventListener('keydown', onPlayerInput);
+```
+
+#### Example 3: Using ignoreKeyRequirements to Bypass Key Checking
+
+This example shows how to create an easy mode where timing matters but key doesn't:
+
+```typescript
+import { BeatStream, type BeatStreamOptions } from 'playlist-data-engine';
+
+const audioContext = new AudioContext();
+
+// Normal mode: key requirements enforced
+const normalOptions: BeatStreamOptions = {
+    difficultyPreset: 'hard',
+    ignoreKeyRequirements: false, // default
+};
+const normalStream = new BeatStream(chartMap, audioContext, normalOptions);
+normalStream.start();
+
+// Easy mode: timing-only evaluation, any key works
+const easyOptions: BeatStreamOptions = {
+    difficultyPreset: 'easy',
+    ignoreKeyRequirements: true, // Bypass key checking
+};
+const easyStream = new BeatStream(chartMap, audioContext, easyOptions);
+easyStream.start();
+
+// Compare behavior with the same input
+function testBothModes() {
+    const timestamp = audioContext.currentTime;
+
+    // Suppose beat 0 requires 'left' but player presses 'right'
+    const normalResult = normalStream.checkButtonPress(timestamp, 'right');
+    const easyResult = easyStream.checkButtonPress(timestamp, 'right');
+
+    console.log('Normal mode:', normalResult.accuracy); // 'wrongKey'
+    console.log('Easy mode:', easyResult.accuracy);     // Timing-based (e.g., 'perfect')
+
+    // In easy mode, keyMatch is always true regardless of actual key
+    console.log('Easy mode keyMatch:', easyResult.keyMatch); // true
+}
+
+// Use case: Let players choose their difficulty
+function createStream(difficulty: 'easy' | 'normal' | 'hard'): BeatStream {
+    const options: BeatStreamOptions = {
+        difficultyPreset: difficulty,
+        ignoreKeyRequirements: difficulty === 'easy',
+    };
+    return new BeatStream(chartMap, audioContext, options);
+}
+```
+
 ---
 
 ### Scope Note
