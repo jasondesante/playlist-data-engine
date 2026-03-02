@@ -135,7 +135,9 @@ import {
   getTotalDuration,
   getTrackCount,
   getTracks,
-  getFullTracks
+  getFullTracks,
+  getVRMs,
+  getVRMTracks
 } from 'playlist-data-engine';
 
 // Parse playlist first (existing flow)
@@ -159,6 +161,11 @@ const tracks = getTracks(playlist);
 // Full track data (all available fields)
 const fullTracks = getFullTracks(playlist);
 // [{ id, title, artist, album, duration, genre, tags, audio_url, image_url, ... }, ...]
+
+// VRM extraction (for tracks with 3D avatar models)
+const vrms = getVRMs(playlist);            // ['https://...', ...]
+const vrmTracks = getVRMTracks(playlist);
+// [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', vrm: 'https://...' }, ...]
 
 // Use in your app - example: add all audio URLs to a player
 urls.forEach(url => audioPlayer.add(url));

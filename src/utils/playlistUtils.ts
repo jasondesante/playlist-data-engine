@@ -21,6 +21,15 @@ export interface SimpleTrack {
     image_url: string;
 }
 
+/** Track object with VRM data for getVRMTracks() */
+export interface VRMTrack {
+    title: string;
+    artist: string;
+    audio_url: string;
+    image_url: string;
+    vrm: string;
+}
+
 // =============================================================================
 // EXTRACTION HELPERS
 // =============================================================================
@@ -59,6 +68,30 @@ function extractImageUrlFromTrack(track: PlaylistTrack | RawArweavePlaylist['tra
         const parsed = MetadataExtractor.parseMetadata(track.metadata);
         if (parsed) {
             return MetadataExtractor.extractImageUrl(parsed);
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Extract VRM URL from a track (handles both parsed and raw)
+ * VRM is an optional field in track metadata
+ */
+function extractVRMFromTrack(track: PlaylistTrack | RawArweavePlaylist['tracks'][number]): string | null {
+    // Parsed track - check if vrm exists in the track object
+    if ('audio_url' in track) {
+        // For parsed tracks, we need to check the raw metadata
+        // The vrm field isn't part of the standard PlaylistTrack interface
+        // so we need to access it through the raw metadata
+        return null;
+    }
+
+    // Raw track - needs metadata parsing
+    if ('metadata' in track) {
+        const parsed = MetadataExtractor.parseMetadata(track.metadata);
+        if (parsed && typeof parsed.vrm === 'string' && parsed.vrm) {
+            return parsed.vrm;
         }
     }
 
@@ -392,6 +425,81 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
                 });
             }
         }
+    }
+
+    return tracks;
+}
+
+// =============================================================================
+// VRM EXTRACTION FUNCTIONS
+// =============================================================================
+
+/**
+ * Get all VRM URLs from playlist tracks
+ * VRM is an optional field in track metadata (3D avatar model files)
+ * @param playlist - Parsed or raw playlist
+ * @returns Array of VRM URLs (only from tracks that have a vrm field)
+ *
+ * @example
+ * const vrms = getVRMs(playlist);
+ * // ['https://arweave.net/avatar1.vrm', 'https://arweave.net/avatar2.vrm']
+ */
+export function getVRMs(playlist: PlaylistInput): string[] {
+    const vrms: string[] = [];
+
+    for (const track of playlist.tracks) {
+        const vrm = extractVRMFromTrack(track);
+        if (vrm) {
+            vrms.push(vrm);
+        }
+    }
+
+    return vrms;
+}
+
+/**
+ * Get tracks that have VRM data (3D avatar model files)
+ * Returns simplified track objects with vrm field included
+ * @param playlist - Parsed or raw playlist
+ * @returns Array of track objects that have a vrm field
+ *
+ * @example
+ * const vrmTracks = getVRMTracks(playlist);
+ * // [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', vrm: '...' }, ...]
+ */
+export function getVRMTracks(playlist: PlaylistInput): VRMTrack[] {
+    const tracks: VRMTrack[] = [];
+
+    for (const track of playlist.tracks) {
+        const vrm = extractVRMFromTrack(track);
+        if (!vrm) continue;
+
+        const audio_url = extractAudioUrlFromTrack(track);
+        const image_url = extractImageUrlFromTrack(track);
+
+        let title = '';
+        let artist = '';
+
+        // Parsed track
+        if ('title' in track) {
+            title = track.title || '';
+            artist = track.artist || '';
+        } else if ('metadata' in track) {
+            // Raw track
+            const parsed = MetadataExtractor.parseMetadata(track.metadata);
+            if (parsed) {
+                title = MetadataExtractor.extractTitle(parsed) || '';
+                artist = MetadataExtractor.extractArtist(parsed) || '';
+            }
+        }
+
+        tracks.push({
+            title,
+            artist,
+            audio_url: audio_url || '',
+            image_url: image_url || '',
+            vrm
+        });
     }
 
     return tracks;
