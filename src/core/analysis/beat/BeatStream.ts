@@ -758,11 +758,13 @@ export class BeatStream {
      * Check the accuracy of a button press
      *
      * Determines how close the button press was to the nearest beat.
+     * If the beat has a requiredKey, validates that the pressedKey matches.
      *
      * @param timestamp - The time of the button press (use audioContext.currentTime)
-     * @returns Button press result with accuracy level
+     * @param pressedKey - Optional key that was pressed (for key-matching beats)
+     * @returns Button press result with accuracy level and key match info
      */
-    checkButtonPress(timestamp: number): ButtonPressResult {
+    checkButtonPress(timestamp: number, pressedKey?: string): ButtonPressResult {
         // Find the nearest beat to the press time
         let nearestBeat: Beat | null = null;
         let smallestOffset = Infinity;
@@ -784,6 +786,9 @@ export class BeatStream {
                 offset: timestamp,
                 matchedBeat: null as any,
                 absoluteOffset: timestamp,
+                keyMatch: true, // No beat to match against, so technically "matched"
+                pressedKey,
+                requiredKey: undefined,
             };
             this.state.lastButtonPress = result;
             return result;
@@ -808,11 +813,35 @@ export class BeatStream {
             accuracy = 'miss';
         }
 
+        // Check key matching if the beat has a required key
+        const ignoreKeyRequirements = this.options.ignoreKeyRequirements ?? false;
+        const hasRequiredKey = nearestBeat.requiredKey !== undefined;
+        let keyMatch = true;
+
+        // Only check key matching if:
+        // 1. Key requirements are not being ignored
+        // 2. The beat has a required key
+        if (!ignoreKeyRequirements && hasRequiredKey) {
+            if (pressedKey === undefined) {
+                // No key provided but beat requires one - treat as miss
+                accuracy = 'miss';
+                keyMatch = false;
+            } else if (pressedKey !== nearestBeat.requiredKey) {
+                // Wrong key pressed
+                accuracy = 'wrongKey';
+                keyMatch = false;
+            }
+            // else: correct key pressed, keep timing-based accuracy
+        }
+
         const result: ButtonPressResult = {
             accuracy,
             offset,
             matchedBeat: nearestBeat,
             absoluteOffset,
+            keyMatch,
+            pressedKey,
+            requiredKey: nearestBeat.requiredKey,
         };
 
         this.state.lastButtonPress = result;

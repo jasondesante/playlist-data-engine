@@ -76,18 +76,18 @@ Beat (base)
 - [x] Add `requiredKey?: string` to `SubdividedBeatJSON` if created (N/A - doesn't exist yet, deferred to Phase 3)
 
 ### Task 1.2: Add WrongKey Accuracy Type
-- [ ] Update `BeatAccuracy` type to include `'wrongKey'`:
+- [x] Update `BeatAccuracy` type to include `'wrongKey'`:
   ```typescript
   export type BeatAccuracy = 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKey';
   ```
-- [ ] Add `keyMatch: boolean` property to `ButtonPressResult` interface
-- [ ] Add `pressedKey?: string` property to `ButtonPressResult` interface
-- [ ] Add `requiredKey?: string` property to `ButtonPressResult` interface (convenience copy from matched beat)
+- [x] Add `keyMatch: boolean` property to `ButtonPressResult` interface
+- [x] Add `pressedKey?: string` property to `ButtonPressResult` interface
+- [x] Add `requiredKey?: string` property to `ButtonPressResult` interface (convenience copy from matched beat)
 
 ### Task 1.3: Add ignoreKeyRequirements to BeatStreamOptions
-- [ ] Add `ignoreKeyRequirements?: boolean` to `BeatStreamOptions` interface
-- [ ] Default value: `false` (key requirements enforced by default)
-- [ ] When `true`: timing-only evaluation even if beat has required key (easy mode behavior)
+- [x] Add `ignoreKeyRequirements?: boolean` to `BeatStreamOptions` interface
+- [x] Default value: `false` (key requirements enforced by default)
+- [x] When `true`: timing-only evaluation even if beat has required key (easy mode behavior)
 
 ---
 
@@ -100,27 +100,27 @@ Beat (base)
 - [ ] Ensure `SubdividedBeat` type works with existing beat iteration logic
 
 ### Task 2.2: Update checkButtonPress Method
-- [ ] Add optional `pressedKey?: string` parameter to `checkButtonPress(timestamp: number, pressedKey?: string)`
-- [ ] Get `ignoreKeyRequirements` from stream options (available via `this.options`)
-- [ ] After finding nearest beat and calculating timing accuracy:
-  - [ ] Check if beat has `requiredKey` defined
-  - [ ] Check if `ignoreKeyRequirements` is false (key checking enabled)
-  - [ ] If key required and `pressedKey` doesn't match `requiredKey`:
-    - [ ] Set `accuracy = 'wrongKey'`
-    - [ ] Set `keyMatch = false`
-  - [ ] Otherwise:
-    - [ ] Keep existing timing-based accuracy
-    - [ ] Set `keyMatch = true` (or `true` if no key required)
+- [x] Add optional `pressedKey?: string` parameter to `checkButtonPress(timestamp: number, pressedKey?: string)`
+- [x] Get `ignoreKeyRequirements` from stream options (available via `this.options`)
+- [x] After finding nearest beat and calculating timing accuracy:
+  - [x] Check if beat has `requiredKey` defined
+  - [x] Check if `ignoreKeyRequirements` is false (key checking enabled)
+  - [x] If key required and `pressedKey` doesn't match `requiredKey`:
+    - [x] Set `accuracy = 'wrongKey'`
+    - [x] Set `keyMatch = false`
+  - [x] Otherwise:
+    - [x] Keep existing timing-based accuracy
+    - [x] Set `keyMatch = true` (or `true` if no key required)
 
 ### Task 2.3: Update ButtonPressResult Construction
-- [ ] Add `pressedKey` to result (the key that was passed in)
-- [ ] Add `requiredKey` to result (copy from `matchedBeat.requiredKey`)
-- [ ] Add `keyMatch` to result (boolean)
+- [x] Add `pressedKey` to result (the key that was passed in)
+- [x] Add `requiredKey` to result (copy from `matchedBeat.requiredKey`)
+- [x] Add `keyMatch` to result (boolean)
 
 ### Task 2.4: Handle Edge Cases
-- [ ] Beat has no `requiredKey` → timing-only evaluation (existing behavior)
-- [ ] `ignoreKeyRequirements: true` → timing-only evaluation even if beat has required key
-- [ ] `pressedKey` not provided but beat requires key → treat as `'miss'` (no valid button press)
+- [x] Beat has no `requiredKey` → timing-only evaluation (existing behavior)
+- [x] `ignoreKeyRequirements: true` → timing-only evaluation even if beat has required key
+- [x] `pressedKey` not provided but beat requires key → treat as `'miss'` (no valid button press)
 
 ---
 
@@ -267,15 +267,15 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 ### Type System
 - [x] Beat type has optional `requiredKey?: string` field
 - [x] `SubdividedBeat` inherits `requiredKey` from Beat
-- [ ] `BeatAccuracy` type includes `'wrongKey'`
-- [ ] `ButtonPressResult` includes `keyMatch`, `pressedKey`, `requiredKey` fields
-- [ ] `BeatStreamOptions` includes `ignoreKeyRequirements?: boolean`
+- [x] `BeatAccuracy` type includes `'wrongKey'`
+- [x] `ButtonPressResult` includes `keyMatch`, `pressedKey`, `requiredKey` fields
+- [x] `BeatStreamOptions` includes `ignoreKeyRequirements?: boolean`
 
 ### BeatStream Integration
 - [ ] BeatStream accepts `SubdividedBeatMap` as input
-- [ ] `checkButtonPress(timestamp, pressedKey?)` validates key when required
-- [ ] `ignoreKeyRequirements` in BeatStreamOptions bypasses key checking
-- [ ] Missing `pressedKey` when key required returns `'miss'`
+- [x] `checkButtonPress(timestamp, pressedKey?)` validates key when required
+- [x] `ignoreKeyRequirements` in BeatStreamOptions bypasses key checking
+- [x] Missing `pressedKey` when key required returns `'miss'`
 
 ### Helper Functions
 - [ ] `assignKeyToBeat()` works with all beat map types

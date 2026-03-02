@@ -653,12 +653,24 @@ export interface BeatStreamOptions {
      * ```
      */
     useInterpolatedBeats?: boolean;
+
+    /**
+     * Ignore required key assignments on beats (default: false)
+     * When true, beats with requiredKey will use timing-only evaluation,
+     * ignoring key matching. Useful for "easy mode" gameplay.
+     *
+     * When false (default), if a beat has a requiredKey:
+     * - Correct key: timing-based accuracy (perfect/great/good/ok/miss)
+     * - Wrong key: accuracy becomes 'wrongKey' regardless of timing
+     * - No key provided: treated as 'miss'
+     */
+    ignoreKeyRequirements?: boolean;
 }
 
 /**
  * Accuracy levels for button press detection
  */
-export type BeatAccuracy = 'perfect' | 'great' | 'good' | 'ok' | 'miss';
+export type BeatAccuracy = 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKey';
 
 /**
  * Accuracy thresholds for button press detection (in seconds)
@@ -725,6 +737,25 @@ export interface ButtonPressResult {
 
     /** Absolute time difference in seconds */
     absoluteOffset: number;
+
+    /**
+     * Whether the pressed key matched the required key (if any).
+     * True if: no key required, or pressedKey matches requiredKey.
+     * False if: key required but wrong key pressed (accuracy will be 'wrongKey').
+     */
+    keyMatch: boolean;
+
+    /**
+     * The key that was pressed (passed to checkButtonPress).
+     * Undefined if no key was provided.
+     */
+    pressedKey?: string;
+
+    /**
+     * The required key from the matched beat (convenience copy).
+     * Undefined if the beat has no required key.
+     */
+    requiredKey?: string;
 }
 
 /**
@@ -1214,6 +1245,7 @@ export const DEFAULT_BEATSTREAM_OPTIONS: Required<BeatStreamOptions> = {
     difficultyPreset: 'medium',
     customThresholds: {},
     useInterpolatedBeats: false,
+    ignoreKeyRequirements: false,
 };
 
 /**
