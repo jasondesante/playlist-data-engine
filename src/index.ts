@@ -81,6 +81,11 @@ export type {
     SubdividedBeat,
     SubdividedBeatMap,
     SubdivisionMetadata,
+    // Real-Time Subdivision Playback types
+    SubdivisionTransitionMode,
+    SubdivisionPlaybackOptions,
+    SubdivisionBeatEvent,
+    SubdivisionCallback,
 } from './core/types/BeatMap.js';
 
 // Beat detection constants
@@ -90,6 +95,7 @@ export {
     DEFAULT_TIME_SIGNATURE,
     DEFAULT_DOWNBEAT_CONFIG,
     DEFAULT_SUBDIVISION_CONFIG,
+    DEFAULT_SUBDIVISION_PLAYBACK_OPTIONS,
     MAX_SUBDIVISION_DENSITY,
     VALID_SUBDIVISION_TYPES,
     isValidSubdivisionType,
@@ -312,6 +318,22 @@ export {
 export { Logger, createLogger, LogLevel } from './utils/logger.js';
 export type { LogEntry, LoggerConfig } from './utils/logger.js';
 
+// Playlist utilities
+export {
+    type PlaylistInput,
+    type SimpleTrack,
+    getAudioUrls,
+    getImageUrls,
+    getTrackTitles,
+    getArtists,
+    getGenres,
+    getTags,
+    getTotalDuration,
+    getTrackCount,
+    getTracks,
+    getFullTracks
+} from './utils/playlistUtils.js';
+
 // Type helpers
 export { asClass, isValidClass } from './core/types/Character.js';
 
@@ -418,6 +440,9 @@ export { BeatInterpolator } from './core/analysis/beat/BeatInterpolator.js';
 export { BeatSubdivider, type BeatSubdividerOptions } from './core/analysis/beat/BeatSubdivider.js';
 export { unifyBeatMap } from './core/analysis/beat/utils/unifyBeatMap.js';
 export { subdivideBeatMap } from './core/analysis/beat/utils/subdivideBeatMap.js';
+
+// Subdivision Playback Controller (Practice Mode)
+export { SubdivisionPlaybackController } from './core/playback/SubdivisionPlaybackController.js';
 
 // Beat detection utilities
 export {

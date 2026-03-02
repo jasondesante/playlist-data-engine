@@ -2062,6 +2062,117 @@ export function validateSubdivisionDensity(subdivision: SubdivisionType): void {
 }
 
 // ============================================================================
+// Real-Time Subdivision Playback Types (Practice Mode)
+// ============================================================================
+
+/**
+ * Transition mode for subdivision changes during playback
+ *
+ * - 'immediate': Switch subdivision instantly at the current position
+ * - 'next-downbeat': Wait for the next downbeat before switching
+ * - 'next-measure': Wait for the next measure before switching
+ */
+export type SubdivisionTransitionMode = 'immediate' | 'next-downbeat' | 'next-measure';
+
+/**
+ * Options for the SubdivisionPlaybackController
+ *
+ * @example
+ * ```typescript
+ * const controller = new SubdivisionPlaybackController(unifiedMap, audioContext, {
+ *   initialSubdivision: 'quarter',
+ *   transitionMode: 'next-downbeat',
+ *   anticipationTime: 2.0,
+ *   onSubdivisionChange: (oldType, newType) => {
+ *     console.log(`Switched from ${oldType} to ${newType}`);
+ *   },
+ * });
+ * ```
+ */
+export interface SubdivisionPlaybackOptions {
+    /** Starting subdivision type (default: 'quarter') */
+    initialSubdivision?: SubdivisionType;
+
+    /** How to handle subdivision changes (default: 'immediate') */
+    transitionMode?: SubdivisionTransitionMode;
+
+    /** Callback when subdivision changes */
+    onSubdivisionChange?: (oldType: SubdivisionType, newType: SubdivisionType) => void;
+
+    /** Anticipation time for beat events in seconds (default: 2.0) */
+    anticipationTime?: number;
+
+    /** Timing tolerance for beat event detection in seconds (default: 0.01) */
+    timingTolerance?: number;
+
+    /** User-calibrated offset in milliseconds (default: 0) */
+    userOffsetMs?: number;
+
+    /** Whether to compensate for output latency (default: true) */
+    compensateOutputLatency?: boolean;
+}
+
+/**
+ * Default options for SubdivisionPlaybackController
+ */
+export const DEFAULT_SUBDIVISION_PLAYBACK_OPTIONS: Required<SubdivisionPlaybackOptions> = {
+    initialSubdivision: 'quarter',
+    transitionMode: 'immediate',
+    onSubdivisionChange: undefined as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    anticipationTime: 2.0,
+    timingTolerance: 0.01,
+    userOffsetMs: 0,
+    compensateOutputLatency: true,
+};
+
+/**
+ * Event emitted by the SubdivisionPlaybackController during playback
+ *
+ * @example
+ * ```typescript
+ * controller.subscribe((event) => {
+ *   console.log(`Beat at ${event.beat.timestamp}s, subdivision: ${event.currentSubdivision}`);
+ *   console.log(`Time until beat: ${event.timeUntilBeat}s`);
+ * });
+ * ```
+ */
+export interface SubdivisionBeatEvent {
+    /** The beat this event relates to */
+    beat: SubdividedBeat;
+
+    /** Current subdivision type being used */
+    currentSubdivision: SubdivisionType;
+
+    /** Time until the beat occurs (negative if passed) */
+    timeUntilBeat: number;
+
+    /** Current audio context time in seconds */
+    audioTime: number;
+
+    /** Type of event: 'upcoming', 'exact', or 'passed' */
+    type: BeatEventType;
+}
+
+/**
+ * Callback function type for SubdivisionPlaybackController subscriptions
+ */
+export type SubdivisionCallback = (event: SubdivisionBeatEvent) => void;
+
+/**
+ * Internal state for a scheduled beat in the subdivision playback controller
+ */
+interface ScheduledSubdivisionBeat {
+    /** The beat being scheduled */
+    beat: SubdividedBeat;
+    /** Whether the 'upcoming' event has been emitted */
+    upcomingEmitted: boolean;
+    /** Whether the 'exact' event has been emitted */
+    exactEmitted: boolean;
+    /** Whether the 'passed' event has been emitted */
+    passedEmitted: boolean;
+}
+
+// ============================================================================
 // Version and Algorithm Identifiers
 // ============================================================================
 

@@ -959,8 +959,8 @@ A separate feature from the pre-calculated SubdividedBeatMap. This enables real-
 
 ### 10.1 Create SubdivisionPlaybackController
 
-- [ ] Create `src/core/playback/SubdivisionPlaybackController.ts`
-- [ ] Class that wraps `UnifiedBeatMap` and provides real-time subdivision
+- [x] Create `src/core/playback/SubdivisionPlaybackController.ts`
+- [x] Class that wraps `UnifiedBeatMap` and provides real-time subdivision
   ```typescript
   export class SubdivisionPlaybackController {
       constructor(
@@ -990,23 +990,23 @@ A separate feature from the pre-calculated SubdividedBeatMap. This enables real-
 
 ### 10.2 Real-Time Beat Generation
 
-- [ ] Implement on-the-fly beat generation
-  - [ ] Calculate beat positions from current subdivision type
-  - [ ] Use `quarterNoteInterval` as base
-  - [ ] Generate beats in time range requested
-  - [ ] Maintain continuity across subdivision changes
+- [x] Implement on-the-fly beat generation
+  - [x] Calculate beat positions from current subdivision type
+  - [x] Use `quarterNoteInterval` as base
+  - [x] Generate beats in time range requested
+  - [x] Maintain continuity across subdivision changes
 
 ### 10.3 Subdivision Transition Handling
 
-- [ ] Handle transitions when user clicks button
-  - [ ] Calculate next beat position for new subdivision
-  - [ ] Option 1: Wait for next downbeat (musical)
-  - [ ] Option 2: Immediate switch (immediate)
-  - [ ] Configurable via `transitionMode` option
+- [x] Handle transitions when user clicks button
+  - [x] Calculate next beat position for new subdivision
+  - [x] Option 1: Wait for next downbeat (musical)
+  - [x] Option 2: Immediate switch (immediate)
+  - [x] Configurable via `transitionMode` option
 
 ### 10.4 Options Interface
 
-- [ ] Add `SubdivisionPlaybackOptions`
+- [x] Add `SubdivisionPlaybackOptions`
   ```typescript
   export interface SubdivisionPlaybackOptions {
       /** Starting subdivision type */
@@ -1025,7 +1025,7 @@ A separate feature from the pre-calculated SubdividedBeatMap. This enables real-
 
 ### 10.5 Beat Event Types
 
-- [ ] Add `SubdivisionBeatEvent` type
+- [x] Add `SubdivisionBeatEvent` type
   ```typescript
   export interface SubdivisionBeatEvent {
       beat: SubdividedBeat;
@@ -1039,10 +1039,10 @@ A separate feature from the pre-calculated SubdividedBeatMap. This enables real-
 
 ### 10.6 Integration with BeatStream
 
-- [ ] Consider relationship with existing `BeatStream`
-  - [ ] Option A: Extend BeatStream with subdivision support
-  - [ ] Option B: Separate controller that uses UnifiedBeatMap directly
-  - [ ] Recommendation: Separate controller (cleaner separation)
+- [x] Consider relationship with existing `BeatStream`
+  - [x] Option A: Extend BeatStream with subdivision support
+  - [x] Option B: Separate controller that uses UnifiedBeatMap directly
+  - [x] Recommendation: Separate controller (cleaner separation)
 
 ### 10.7 Unit Tests
 
