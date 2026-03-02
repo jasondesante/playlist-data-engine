@@ -5,15 +5,18 @@
 **Completed Phases:**
 - Phase 1: Type System Updates (complete)
 - Phase 2: Create UnifiedBeatMap (complete)
+- Phase 3: Create BeatSubdivider Core (complete)
+- Phase 4: Implement Subdivision Algorithms (mostly complete - tempo-aware pending)
+- Phase 5: Segment Support (complete)
+- Phase 6: Integration (mostly complete - convenience function pending)
 
 **In Progress Phases:**
 - None
 
 **Pending Phases:**
-- Phase 3: Create BeatSubdivider Core
-- Phase 4: Implement Subdivision Algorithms
-- Phase 5: Segment Support
-- Phase 6: Integration
+- Phase 4.9: Tempo-Aware Subdivision
+- Phase 6.2: Add Convenience Functions
+- Phase 6.3: Update BeatStream (Optional)
 - Phase 7: Testing
 - Phase 8: Documentation
 - Phase 9: Verification
@@ -489,8 +492,8 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 3.1 Create BeatSubdivider Class
 
-- [ ] Create `src/core/analysis/beat/BeatSubdivider.ts`
-- [ ] Add class skeleton:
+- [x] Create `src/core/analysis/beat/BeatSubdivider.ts`
+- [x] Add class skeleton:
   ```typescript
   export class BeatSubdivider {
       constructor(options?: BeatSubdividerOptions) {}
@@ -504,17 +507,17 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 3.2 Add Options Interface
 
-- [ ] Add `BeatSubdividerOptions` interface
-  - [ ] `tolerance?: number` - for detected beat alignment
-  - [ ] `defaultIntensity?: number` - for new beats
-  - [ ] `defaultConfidence?: number` - for new beats
+- [x] Add `BeatSubdividerOptions` interface
+  - [x] `tolerance?: number` - for detected beat alignment
+  - [x] `defaultIntensity?: number` - for new beats
+  - [x] `defaultConfidence?: number` - for new beats
 
 ### 3.3 Implement Main subdivide() Method
 
-- [ ] Validate config
-- [ ] Process each segment
-- [ ] Combine results
-- [ ] Build metadata
+- [x] Validate config
+- [x] Process each segment
+- [x] Combine results
+- [x] Build metadata
 
 ---
 
@@ -522,57 +525,57 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 4.1 Quarter Notes (No-op)
 
-- [ ] Implement `subdivideQuarter()` - pass through unchanged
-- [ ] Update beat labels to use subdivisionType
+- [x] Implement `subdivideQuarter()` - pass through unchanged
+- [x] Update beat labels to use subdivisionType
 
 ### 4.2 Half Notes
 
-- [ ] Implement `subdivideHalf()`
-  - [ ] Filter beats where `beatInMeasure % 2 === 0`
-  - [ ] Recalculate beatInMeasure (0, 2, 4... → 0, 1, 2...)
-  - [ ] Update measure numbers if needed
+- [x] Implement `subdivideHalf()`
+  - [x] Filter beats where `beatInMeasure % 2 === 0`
+  - [x] Recalculate beatInMeasure (0, 2, 4... → 0, 1, 2...)
+  - [x] Update measure numbers if needed
 
 ### 4.3 Eighth Notes
 
-- [ ] Implement `subdivideEighth()`
-  - [ ] For each pair of quarter notes, insert new beat at midpoint
-  - [ ] Calculate new beatInMeasure (decimal)
-  - [ ] Interpolate intensity/confidence from neighbors
+- [x] Implement `subdivideEighth()`
+  - [x] For each pair of quarter notes, insert new beat at midpoint
+  - [x] Calculate new beatInMeasure (decimal)
+  - [x] Interpolate intensity/confidence from neighbors
 
 ### 4.4 Sixteenth Notes
 
-- [ ] Implement `subdivideSixteenth()`
-  - [ ] Insert 3 beats between each quarter
-  - [ ] Labels: +0.25, +0.5, +0.75
+- [x] Implement `subdivideSixteenth()`
+  - [x] Insert 3 beats between each quarter
+  - [x] Labels: +0.25, +0.5, +0.75
 
 ### 4.5 Eighth Triplets (triplet8)
 
-- [ ] Implement `subdivideTriplet8()`
-  - [ ] 3 beats per quarter note
-  - [ ] Interval = quarterNoteInterval / 3
-  - [ ] Labels: 0, 0.33, 0.66, 1...
+- [x] Implement `subdivideTriplet8()`
+  - [x] 3 beats per quarter note
+  - [x] Interval = quarterNoteInterval / 3
+  - [x] Labels: 0, 0.33, 0.66, 1...
 
 ### 4.6 Quarter Triplets (triplet4)
 
-- [ ] Implement `subdivideTriplet4()`
-  - [ ] 3 beats per half note
-  - [ ] Interval = quarterNoteInterval * 2 / 3
-  - [ ] Labels: 0, 0.66, 1.33, 2...
+- [x] Implement `subdivideTriplet4()`
+  - [x] 3 beats per half note
+  - [x] Interval = quarterNoteInterval * 2 / 3
+  - [x] Labels: 0, 0.66, 1.33, 2...
 
 ### 4.7 Dotted Quarter (dotted4)
 
-- [ ] Implement `subdivideDotted4()`
-  - [ ] Phase-independent pattern
-  - [ ] Interval = quarterNoteInterval * 1.5
-  - [ ] Start from first beat, continue to end
-  - [ ] Recalculate beatInMeasure based on position
+- [x] Implement `subdivideDotted4()`
+  - [x] Phase-independent pattern
+  - [x] Interval = quarterNoteInterval * 1.5
+  - [x] Start from first beat, continue to end
+  - [x] Recalculate beatInMeasure based on position
 
 ### 4.8 Dotted Eighth (dotted8)
 
-- [ ] Implement `subdivideDotted8()`
-  - [ ] Swing pattern: **2/3 + 1/3** of quarter (0.667 + 0.333)
-  - [ ] Long beat at 2/3, short at 1/3
-  - [ ] Labels alternate pattern
+- [x] Implement `subdivideDotted8()`
+  - [x] Swing pattern: **2/3 + 1/3** of quarter (0.667 + 0.333)
+  - [x] Long beat at 2/3, short at 1/3
+  - [x] Labels alternate pattern
 
 ### 4.9 Tempo-Aware Subdivision
 
@@ -588,21 +591,21 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 5.1 Segment Processing
 
-- [ ] Implement `processSegments()` method
-  - [ ] Find active segment for each beat range
-  - [ ] Apply appropriate subdivision
-  - [ ] Handle transitions at segment boundaries
+- [x] Implement `processSegments()` method
+  - [x] Find active segment for each beat range
+  - [x] Apply appropriate subdivision
+  - [x] Handle transitions at segment boundaries
 
 ### 5.2 Segment Boundary Handling
 
-- [ ] Ensure smooth transitions between segments
-- [ ] Immediate change at beat index (no measure boundary wait)
-- [ ] Recalculate beatInMeasure after each segment
+- [x] Ensure smooth transitions between segments
+- [x] Immediate change at beat index (no measure boundary wait)
+- [x] Recalculate beatInMeasure after each segment
 
 ### 5.3 Segment Metadata
 
-- [ ] Track which beats came from which segment
-- [ ] Build `subdivisionMetadata.subdivisionsUsed`
+- [x] Track which beats came from which segment
+- [x] Build `subdivisionMetadata.subdivisionsUsed`
 
 ---
 
@@ -610,9 +613,9 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 6.1 Update Exports
 
-- [ ] Export `BeatSubdivider` from `src/core/analysis/beat/index.ts`
-- [ ] Export new types from `src/index.ts`
-- [ ] Export `unifyBeatMap` utility
+- [x] Export `BeatSubdivider` from `src/core/analysis/beat/index.ts`
+- [x] Export new types from `src/index.ts`
+- [x] Export `unifyBeatMap` utility
 
 ### 6.2 Add Convenience Functions
 

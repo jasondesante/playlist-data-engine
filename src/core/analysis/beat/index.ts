@@ -47,6 +47,13 @@ export type {
     InterpolatedBeatMapJSON,
     // Unified beat map types (for subdivision)
     UnifiedBeatMap,
+    // Subdivision types
+    SubdivisionType,
+    SubdivisionSegment,
+    SubdivisionConfig,
+    SubdividedBeat,
+    SubdividedBeatMap,
+    SubdivisionMetadata,
 } from '../../types/BeatMap.js';
 
 export {
@@ -71,6 +78,15 @@ export {
     MAX_BEATS_PER_MEASURE,
     validateDownbeatConfig,
     validateDownbeatConfigAgainstBeats,
+    // Subdivision configuration constants and validation
+    DEFAULT_SUBDIVISION_CONFIG,
+    MAX_SUBDIVISION_DENSITY,
+    VALID_SUBDIVISION_TYPES,
+    isValidSubdivisionType,
+    getSubdivisionDensity,
+    validateSubdivisionConfig,
+    validateSubdivisionConfigAgainstBeats,
+    validateSubdivisionDensity,
 } from '../../types/BeatMap.js';
 
 // Classes
@@ -80,6 +96,7 @@ export { BeatTracker, type BeatTrackingResult } from './BeatTracker.js';
 export { BeatMapGenerator, type ProgressCallback } from './BeatMapGenerator.js';
 export { BeatStream } from './BeatStream.js';
 export { BeatInterpolator } from './BeatInterpolator.js';
+export { BeatSubdivider, type BeatSubdividerOptions } from './BeatSubdivider.js';
 
 // Beat map unification (for subdivision)
 export { unifyBeatMap } from './utils/unifyBeatMap.js';

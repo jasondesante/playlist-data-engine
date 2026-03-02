@@ -77,6 +77,10 @@ export type {
     SubdivisionType,
     SubdivisionSegment,
     SubdivisionConfig,
+    UnifiedBeatMap,
+    SubdividedBeat,
+    SubdividedBeatMap,
+    SubdivisionMetadata,
 } from './core/types/BeatMap.js';
 
 // Beat detection constants
@@ -86,6 +90,13 @@ export {
     DEFAULT_TIME_SIGNATURE,
     DEFAULT_DOWNBEAT_CONFIG,
     DEFAULT_SUBDIVISION_CONFIG,
+    MAX_SUBDIVISION_DENSITY,
+    VALID_SUBDIVISION_TYPES,
+    isValidSubdivisionType,
+    getSubdivisionDensity,
+    validateSubdivisionConfig,
+    validateSubdivisionConfigAgainstBeats,
+    validateSubdivisionDensity,
     MIN_BEATS_PER_MEASURE,
     MAX_BEATS_PER_MEASURE,
     validateDownbeatConfig,
@@ -404,6 +415,8 @@ export { OnsetStrengthEnvelope, type OSEResult } from './core/analysis/beat/Onse
 export { BeatTracker, type BeatTrackingResult } from './core/analysis/beat/BeatTracker.js';
 export { TempoDetector } from './core/analysis/beat/TempoDetector.js';
 export { BeatInterpolator } from './core/analysis/beat/BeatInterpolator.js';
+export { BeatSubdivider, type BeatSubdividerOptions } from './core/analysis/beat/BeatSubdivider.js';
+export { unifyBeatMap } from './core/analysis/beat/utils/unifyBeatMap.js';
 
 // Beat detection utilities
 export {
