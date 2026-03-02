@@ -9,6 +9,7 @@
 - Phase 4: Implement Subdivision Algorithms (complete)
 - Phase 5: Segment Support (complete)
 - Phase 6: Integration (complete)
+- Phase 6.3: Update BeatStream (complete)
 - Phase 7: Testing (complete)
 - Phase 8: Documentation (complete)
 - Phase 9: Verification (complete)
@@ -18,7 +19,7 @@
 - None
 
 **Pending Phases:**
-- Phase 6.3: Update BeatStream (Optional - deferred)
+- None
 
 ---
 
@@ -624,8 +625,13 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 6.3 Update BeatStream (Optional)
 
-- [ ] Consider if `BeatStream` should accept `SubdividedBeatMap`
-- [ ] May need new `useSubdividedBeats` option
+- [x] Consider if `BeatStream` should accept `SubdividedBeatMap`
+- [x] May need new `useSubdividedBeats` option
+  - **Decision**: No new option needed - BeatStream now auto-detects SubdividedBeatMap via type guard
+  - Updated constructor to accept `BeatMap | InterpolatedBeatMap | SubdividedBeatMap`
+  - Updated `createNormalizedBeatMap()` to handle SubdividedBeatMap
+  - Added unit tests for SubdividedBeatMap support in beatStream.test.ts
+  - Updated documentation in AUDIO_ANALYSIS.md and DATA_ENGINE_REFERENCE.md
 
 ---
 

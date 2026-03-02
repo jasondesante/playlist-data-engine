@@ -2324,6 +2324,80 @@ const subdividedMap = subdivideBeatMap(interpolatedMap, config);
 
 ---
 
+### Using SubdividedBeatMap with BeatStream
+
+The `BeatStream` class accepts `SubdividedBeatMap` directly, allowing you to stream beat events from subdivided beats:
+
+```typescript
+import {
+  BeatMapGenerator,
+  BeatInterpolator,
+  BeatStream,
+  unifyBeatMap,
+  subdivideBeatMap
+} from 'playlist-data-engine';
+
+// Generate and process beat map
+const generator = new BeatMapGenerator();
+const interpolator = new BeatInterpolator();
+
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+const interpolatedMap = interpolator.interpolate(beatMap);
+
+// Subdivide to eighth notes
+const subdividedMap = subdivideBeatMap(interpolatedMap, {
+  segments: [{ startBeat: 0, subdivision: 'eighth' }]
+});
+
+// Create BeatStream from SubdividedBeatMap
+const audioContext = new AudioContext();
+const beatStream = new BeatStream(subdividedMap, audioContext, {
+  anticipationTime: 2.0,
+  difficultyPreset: 'medium'
+});
+
+// Subscribe to beat events (includes all subdivided beats)
+beatStream.subscribe((event) => {
+  if (event.type === 'exact') {
+    console.log(`Beat at ${event.beat.timestamp}s`);
+    // Access subdivision-specific properties
+    const subdividedBeat = event.beat;
+    console.log(`Subdivision: ${subdividedBeat.subdivisionType}`);
+    console.log(`Is detected: ${subdividedBeat.isDetected}`);
+  }
+});
+
+beatStream.start();
+```
+
+**Key Points:**
+
+- `BeatStream` automatically detects `SubdividedBeatMap` and uses the subdivided beats
+- The `subdivisionType` and `isDetected` properties are preserved on each beat
+- BPM is calculated from the subdivided beat intervals
+- Works with all subdivision types (quarter, half, eighth, sixteenth, triplets, dotted)
+
+**Changing Beat Maps:**
+
+You can switch between different subdivision configurations during runtime:
+
+```typescript
+// Start with quarter notes
+const quarterMap = subdivideBeatMap(interpolatedMap, {
+  segments: [{ startBeat: 0, subdivision: 'quarter' }]
+});
+const stream = new BeatStream(quarterMap, audioContext);
+stream.start();
+
+// Later, switch to eighth notes
+const eighthMap = subdivideBeatMap(interpolatedMap, {
+  segments: [{ startBeat: 0, subdivision: 'eighth' }]
+});
+stream.setBeatMap(eighthMap);
+```
+
+---
+
 ## Real-Time Subdivision Playground (Practice Mode)
 
 A separate feature from the pre-calculated SubdividedBeatMap, the Real-Time Subdivision Playground enables instant subdivision switching during playback for practice mode. Users can start with quarter notes and instantly switch to eighth notes (or any subdivision) while practicing.

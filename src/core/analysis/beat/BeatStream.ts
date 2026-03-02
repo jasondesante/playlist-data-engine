@@ -43,6 +43,7 @@ import type {
     BeatAccuracy,
     InterpolatedBeatMap,
     BeatWithSource,
+    SubdividedBeatMap,
 } from '../../types/BeatMap.js';
 import {
     DEFAULT_BEATSTREAM_OPTIONS,
@@ -53,8 +54,15 @@ import type { AccuracyThresholds } from '../../types/BeatMap.js';
 /**
  * Type guard to check if an object is an InterpolatedBeatMap
  */
-function isInterpolatedBeatMap(map: BeatMap | InterpolatedBeatMap): map is InterpolatedBeatMap {
+function isInterpolatedBeatMap(map: BeatMap | InterpolatedBeatMap | SubdividedBeatMap): map is InterpolatedBeatMap {
     return 'mergedBeats' in map && 'detectedBeats' in map;
+}
+
+/**
+ * Type guard to check if an object is a SubdividedBeatMap
+ */
+function isSubdividedBeatMap(map: BeatMap | InterpolatedBeatMap | SubdividedBeatMap): map is SubdividedBeatMap {
+    return 'subdivisionConfig' in map && 'subdivisionMetadata' in map;
 }
 
 /**
@@ -101,13 +109,14 @@ interface StreamState {
  * Emits beat events ('upcoming', 'exact', 'passed') synchronized with audio
  * playback using the Web Audio API for precise timing.
  *
- * Supports both BeatMap and InterpolatedBeatMap:
+ * Supports BeatMap, InterpolatedBeatMap, and SubdividedBeatMap:
  * - When given a BeatMap, uses the beats array directly
  * - When given an InterpolatedBeatMap with useInterpolatedBeats: true, uses mergedBeats
  * - When given an InterpolatedBeatMap with useInterpolatedBeats: false, uses detectedBeats
+ * - When given a SubdividedBeatMap, uses the subdivided beats array directly
  */
 export class BeatStream {
-    private beatMap: BeatMap | InterpolatedBeatMap;
+    private beatMap: BeatMap | InterpolatedBeatMap | SubdividedBeatMap;
     private normalizedBeatMap: BeatMap;
     private audioContext: AudioContext;
     private options: Required<BeatStreamOptions>;
@@ -119,7 +128,7 @@ export class BeatStream {
     /**
      * Create a new BeatStream
      *
-     * @param beatMap - The beat map containing beat data (BeatMap or InterpolatedBeatMap)
+     * @param beatMap - The beat map containing beat data (BeatMap, InterpolatedBeatMap, or SubdividedBeatMap)
      * @param audioContext - The Web Audio API AudioContext for timing
      * @param options - Configuration options
      * @param rollingBpmWindowSize - Number of beats for rolling BPM calculation (default: 8)
@@ -134,10 +143,17 @@ export class BeatStream {
      * const beatStream = new BeatStream(interpolatedMap, audioContext, {
      *     useInterpolatedBeats: true
      * });
+     *
+     * // With a SubdividedBeatMap (e.g., eighth notes)
+     * const unifiedMap = unifyBeatMap(interpolatedMap);
+     * const subdividedMap = subdivider.subdivide(unifiedMap, {
+     *     segments: [{ startBeat: 0, subdivision: 'eighth' }]
+     * });
+     * const beatStream = new BeatStream(subdividedMap, audioContext);
      * ```
      */
     constructor(
-        beatMap: BeatMap | InterpolatedBeatMap,
+        beatMap: BeatMap | InterpolatedBeatMap | SubdividedBeatMap,
         audioContext: AudioContext,
         options: BeatStreamOptions = {},
         rollingBpmWindowSize: number = 8
@@ -168,11 +184,51 @@ export class BeatStream {
     /**
      * Create a normalized BeatMap for internal use
      *
-     * Handles both BeatMap and InterpolatedBeatMap inputs, selecting the appropriate
-     * beat array based on the map type and useInterpolatedBeats option.
+     * Handles BeatMap, InterpolatedBeatMap, and SubdividedBeatMap inputs,
+     * selecting the appropriate beat array based on the map type and options.
      */
-    private createNormalizedBeatMap(map: BeatMap | InterpolatedBeatMap): BeatMap {
-        if (isInterpolatedBeatMap(map)) {
+    private createNormalizedBeatMap(map: BeatMap | InterpolatedBeatMap | SubdividedBeatMap): BeatMap {
+        if (isSubdividedBeatMap(map)) {
+            // It's a SubdividedBeatMap - use the subdivided beats
+            // Calculate BPM from beat intervals if available, otherwise use a default
+            let bpm = 120; // Default BPM
+            if (map.beats.length >= 2) {
+                // Calculate BPM from the first two beats
+                const interval = map.beats[1].timestamp - map.beats[0].timestamp;
+                if (interval > 0) {
+                    bpm = 60 / interval;
+                }
+            }
+
+            // Create metadata from subdivision metadata
+            const metadata = {
+                version: '1.0.0',
+                algorithm: 'subdivision',
+                minBpm: bpm,
+                maxBpm: bpm,
+                sensitivity: 1.0,
+                filter: 0.0,
+                noiseFloorThreshold: 0.1,
+                hopSizeMs: 4,
+                fftSize: 2048,
+                dpAlpha: 680,
+                melBands: 40,
+                highPassCutoff: 0.4,
+                gaussianSmoothMs: 20,
+                tempoCenter: 0.5,
+                tempoWidth: 1.4,
+                generatedAt: new Date().toISOString(),
+            };
+
+            return {
+                audioId: map.audioId,
+                duration: map.duration,
+                beats: map.beats,
+                bpm,
+                metadata,
+                downbeatConfig: map.downbeatConfig,
+            };
+        } else if (isInterpolatedBeatMap(map)) {
             // It's an InterpolatedBeatMap
             if (this.options.useInterpolatedBeats) {
                 // Use merged beats (interpolated + detected)
@@ -805,11 +861,11 @@ export class BeatStream {
     }
 
     /**
-     * Get the original beat map (may be BeatMap or InterpolatedBeatMap)
+     * Get the original beat map (may be BeatMap, InterpolatedBeatMap, or SubdividedBeatMap)
      *
      * @returns The original beat map passed to the constructor
      */
-    getBeatMap(): BeatMap | InterpolatedBeatMap {
+    getBeatMap(): BeatMap | InterpolatedBeatMap | SubdividedBeatMap {
         return this.beatMap;
     }
 
@@ -828,9 +884,9 @@ export class BeatStream {
     /**
      * Update the beat map (e.g., after manual editing)
      *
-     * @param beatMap - New beat map to use (BeatMap or InterpolatedBeatMap)
+     * @param beatMap - New beat map to use (BeatMap, InterpolatedBeatMap, or SubdividedBeatMap)
      */
-    setBeatMap(beatMap: BeatMap | InterpolatedBeatMap): void {
+    setBeatMap(beatMap: BeatMap | InterpolatedBeatMap | SubdividedBeatMap): void {
         this.beatMap = beatMap;
         this.normalizedBeatMap = this.createNormalizedBeatMap(beatMap);
         this.scheduledBeats = this.initializeScheduledBeats();

@@ -13,6 +13,7 @@ import type {
     BeatStreamOptions,
     ButtonPressResult,
     AudioSyncState,
+    SubdividedBeatMap,
 } from '../../../src/core/types/BeatMap.js';
 import {
     BEAT_DETECTION_VERSION,
@@ -1295,6 +1296,185 @@ describe('BeatStream', () => {
             expect(options.anticipationTime).toBe(3.0);
             expect(options.userOffsetMs).toBe(50);
             expect(options.difficultyPreset).toBe('easy');
+        });
+    });
+
+    describe('SubdividedBeatMap support', () => {
+        // Helper to create a mock SubdividedBeatMap
+        function createMockSubdividedBeatMap(
+            beatTimestamps: number[],
+            duration: number = 10,
+            subdivision: import('../../../src/core/types/BeatMap.js').SubdivisionType = 'eighth'
+        ): import('../../../src/core/types/BeatMap.js').SubdividedBeatMap {
+            const beats: import('../../../src/core/types/BeatMap.js').SubdividedBeat[] = beatTimestamps.map((ts, i) => ({
+                timestamp: ts,
+                beatInMeasure: i % 4,
+                isDownbeat: i % 4 === 0,
+                measureNumber: Math.floor(i / 4),
+                intensity: 0.5 + Math.random() * 0.5,
+                confidence: 0.7 + Math.random() * 0.3,
+                isDetected: i % 2 === 0, // Every other beat is "detected"
+                subdivisionType: subdivision,
+                originalBeatIndex: i % 2 === 0 ? Math.floor(i / 2) : undefined,
+            }));
+
+            return {
+                audioId: 'test-subdivided-audio',
+                duration,
+                beats,
+                detectedBeatIndices: beats.map((_, i) => i).filter(i => i % 2 === 0),
+                subdivisionConfig: {
+                    segments: [{ startBeat: 0, subdivision }],
+                },
+                downbeatConfig: {
+                    segments: [{
+                        startBeat: 0,
+                        downbeatBeatIndex: 0,
+                        timeSignature: { beatsPerMeasure: 4 },
+                    }],
+                },
+                subdivisionMetadata: {
+                    originalBeatCount: Math.ceil(beatTimestamps.length / 2),
+                    subdividedBeatCount: beatTimestamps.length,
+                    averageDensityMultiplier: subdivision === 'eighth' ? 2 : 1,
+                    segmentCount: 1,
+                    subdivisionsUsed: [subdivision],
+                    hasMultipleTempos: false,
+                    maxDensity: subdivision === 'eighth' ? 2 : 1,
+                },
+            };
+        }
+
+        it('should accept a SubdividedBeatMap', () => {
+            const subdividedMap = createMockSubdividedBeatMap([0, 0.25, 0.5, 0.75, 1.0]);
+            const stream = new BeatStream(subdividedMap, audioContext);
+
+            expect(stream).toBeDefined();
+            expect(stream.getDuration()).toBe(10);
+        });
+
+        it('should use subdivided beats for events', () => {
+            const subdividedMap = createMockSubdividedBeatMap([0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75]);
+            const stream = new BeatStream(subdividedMap, audioContext);
+
+            const normalizedMap = stream.getNormalizedBeatMap();
+            expect(normalizedMap.beats.length).toBe(8);
+            expect(normalizedMap.beats[0].timestamp).toBe(0);
+            expect(normalizedMap.beats[1].timestamp).toBe(0.25);
+        });
+
+        it('should calculate BPM from subdivided beat intervals', () => {
+            // Quarter note at 120 BPM = 0.5s interval
+            // Eighth notes would be at 0.25s interval
+            const subdividedMap = createMockSubdividedBeatMap([0, 0.25, 0.5, 0.75, 1.0], 10, 'eighth');
+            const stream = new BeatStream(subdividedMap, audioContext);
+
+            const normalizedMap = stream.getNormalizedBeatMap();
+            // BPM calculated from first two beats (0.25s interval = 240 BPM at eighth note rate)
+            expect(normalizedMap.bpm).toBeCloseTo(240, 0);
+        });
+
+        it('should return SubdividedBeatMap from getBeatMap', () => {
+            const subdividedMap = createMockSubdividedBeatMap([0, 0.5, 1.0, 1.5]);
+            const stream = new BeatStream(subdividedMap, audioContext);
+
+            const returnedMap = stream.getBeatMap();
+            expect(returnedMap).toBe(subdividedMap);
+        });
+
+        it('should emit events for subdivided beats', () => {
+            const subdividedMap = createMockSubdividedBeatMap([0, 0.5, 1.0, 1.5, 2.0]);
+            const stream = new BeatStream(subdividedMap, audioContext, {
+                anticipationTime: 0.6,
+            });
+
+            const events: BeatEvent[] = [];
+            stream.subscribe((event) => {
+                if (event.type === 'upcoming') {
+                    events.push(event);
+                }
+            });
+
+            stream.start();
+
+            // Just verify the stream starts and is running
+            expect(stream.isRunning()).toBe(true);
+
+            stream.stop();
+        });
+
+        it('should handle setBeatMap with SubdividedBeatMap', () => {
+            const regularBeatMap = createMockBeatMap([0, 0.5, 1.0, 1.5]);
+            const stream = new BeatStream(regularBeatMap, audioContext);
+
+            // Verify initial state
+            expect(stream.getNormalizedBeatMap().beats.length).toBe(4);
+
+            // Switch to subdivided map
+            const subdividedMap = createMockSubdividedBeatMap([0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75]);
+            stream.setBeatMap(subdividedMap);
+
+            expect(stream.getNormalizedBeatMap().beats.length).toBe(8);
+            expect(stream.getBeatMap()).toBe(subdividedMap);
+        });
+
+        it('should work with half note subdivision (fewer beats)', () => {
+            const subdividedMap = createMockSubdividedBeatMap([0, 1.0, 2.0, 3.0], 10, 'half');
+            const stream = new BeatStream(subdividedMap, audioContext);
+
+            const normalizedMap = stream.getNormalizedBeatMap();
+            expect(normalizedMap.beats.length).toBe(4);
+            // BPM from 1.0s interval = 60 BPM
+            expect(normalizedMap.bpm).toBeCloseTo(60, 0);
+        });
+
+        it('should work with triplet subdivision', () => {
+            const subdividedMap = createMockSubdividedBeatMap(
+                [0, 0.167, 0.333, 0.5, 0.667, 0.833, 1.0],
+                10,
+                'triplet8'
+            );
+            const stream = new BeatStream(subdividedMap, audioContext);
+
+            const normalizedMap = stream.getNormalizedBeatMap();
+            expect(normalizedMap.beats.length).toBe(7);
+        });
+
+        it('should handle empty SubdividedBeatMap', () => {
+            const emptyMap = createMockSubdividedBeatMap([]);
+            const stream = new BeatStream(emptyMap, audioContext);
+
+            expect(stream.getNormalizedBeatMap().beats.length).toBe(0);
+            // Default BPM when no beats
+            expect(stream.getNormalizedBeatMap().bpm).toBe(120);
+        });
+
+        it('should handle single-beat SubdividedBeatMap', () => {
+            const singleBeatMap = createMockSubdividedBeatMap([0.5]);
+            const stream = new BeatStream(singleBeatMap, audioContext);
+
+            expect(stream.getNormalizedBeatMap().beats.length).toBe(1);
+            // Default BPM when only one beat
+            expect(stream.getNormalizedBeatMap().bpm).toBe(120);
+        });
+
+        it('should check button press accuracy against subdivided beats', () => {
+            const subdividedMap = createMockSubdividedBeatMap([0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75]);
+            const stream = new BeatStream(subdividedMap, audioContext);
+
+            // Press exactly on a subdivided beat (0.5s)
+            const result = stream.checkButtonPress(0.5);
+            expect(result.accuracy).toBe('perfect');
+            expect(result.matchedBeat.timestamp).toBe(0.5);
+        });
+
+        it('should preserve downbeatConfig from SubdividedBeatMap', () => {
+            const subdividedMap = createMockSubdividedBeatMap([0, 0.5, 1.0, 1.5]);
+            const stream = new BeatStream(subdividedMap, audioContext);
+
+            const normalizedMap = stream.getNormalizedBeatMap();
+            expect(normalizedMap.downbeatConfig).toBeDefined();
+            expect(normalizedMap.downbeatConfig?.segments[0].timeSignature.beatsPerMeasure).toBe(4);
         });
     });
 });

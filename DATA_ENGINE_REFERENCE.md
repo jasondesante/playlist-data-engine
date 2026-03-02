@@ -1571,10 +1571,15 @@ constructor(options?: BeatMapGeneratorOptions)
 
 Real-time beat event streaming synchronized with audio playback. Emits upcoming, exact, and passed beat events.
 
+**Supported Input Types:**
+- `BeatMap` - Standard beat map with detected beats
+- `InterpolatedBeatMap` - Beat map with interpolated beats (use `useInterpolatedBeats` option)
+- `SubdividedBeatMap` - Beat map with subdivision applied (eighth notes, triplets, etc.)
+
 **Constructor:**
 
 ```typescript
-constructor(beatMap: BeatMap, audioContext: AudioContext, options?: BeatStreamOptions)
+constructor(beatMap: BeatMap | InterpolatedBeatMap | SubdividedBeatMap, audioContext: AudioContext, options?: BeatStreamOptions)
 ```
 
 **Options (with defaults):**
