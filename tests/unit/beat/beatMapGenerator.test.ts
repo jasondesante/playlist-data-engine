@@ -408,6 +408,205 @@ describe('BeatMapGenerator', () => {
             expect(restoredBeatMap.beats.length).toBe(0);
             expect(restoredBeatMap.audioId).toBe('empty');
         });
+
+        it('should preserve requiredKey on beats during serialization', () => {
+            // Create a beat map with requiredKey on some beats
+            const beatMapWithKeys: BeatMap = {
+                audioId: 'keys-test',
+                duration: 2.0,
+                beats: [
+                    {
+                        timestamp: 0.0,
+                        beatInMeasure: 0,
+                        isDownbeat: true,
+                        measureNumber: 0,
+                        intensity: 0.8,
+                        confidence: 0.9,
+                        requiredKey: 'left',
+                    },
+                    {
+                        timestamp: 0.5,
+                        beatInMeasure: 1,
+                        isDownbeat: false,
+                        measureNumber: 0,
+                        intensity: 0.7,
+                        confidence: 0.85,
+                        requiredKey: 'down',
+                    },
+                    {
+                        timestamp: 1.0,
+                        beatInMeasure: 2,
+                        isDownbeat: false,
+                        measureNumber: 0,
+                        intensity: 0.6,
+                        confidence: 0.8,
+                        // No requiredKey on this beat
+                    },
+                    {
+                        timestamp: 1.5,
+                        beatInMeasure: 3,
+                        isDownbeat: false,
+                        measureNumber: 0,
+                        intensity: 0.75,
+                        confidence: 0.88,
+                        requiredKey: 'up',
+                    },
+                ],
+                bpm: 120,
+                metadata: {
+                    version: BEAT_DETECTION_VERSION,
+                    algorithm: BEAT_DETECTION_ALGORITHM,
+                    minBpm: 60,
+                    maxBpm: 180,
+                    sensitivity: 1.0,
+                    noiseFloorThreshold: 0.1,
+                    hopSizeMs: 10,
+                    fftSize: 2048,
+                    dpAlpha: 680,
+                    melBands: 40,
+                    highPassCutoff: 0.4,
+                    gaussianSmoothMs: 20,
+                    tempoCenter: 0.5,
+                    tempoWidth: 1.4,
+                    generatedAt: new Date().toISOString(),
+                },
+            };
+
+            // Serialize and deserialize
+            const jsonString = BeatMapGenerator.toJSON(beatMapWithKeys);
+            const restoredBeatMap = BeatMapGenerator.fromJSON(jsonString);
+
+            // Verify requiredKey is preserved
+            expect(restoredBeatMap.beats[0].requiredKey).toBe('left');
+            expect(restoredBeatMap.beats[1].requiredKey).toBe('down');
+            expect(restoredBeatMap.beats[2].requiredKey).toBeUndefined();
+            expect(restoredBeatMap.beats[3].requiredKey).toBe('up');
+        });
+
+        it('should handle round-trip with mixed beats (some with keys, some without)', () => {
+            // Create a beat map with a mix of beats with and without keys
+            const mixedBeatMap: BeatMap = {
+                audioId: 'mixed-keys',
+                duration: 4.0,
+                beats: [
+                    // Beat 0: has key
+                    { timestamp: 0.0, beatInMeasure: 0, isDownbeat: true, measureNumber: 0, intensity: 0.9, confidence: 0.95, requiredKey: 'a' },
+                    // Beat 1: no key
+                    { timestamp: 0.5, beatInMeasure: 1, isDownbeat: false, measureNumber: 0, intensity: 0.7, confidence: 0.85 },
+                    // Beat 2: has key
+                    { timestamp: 1.0, beatInMeasure: 2, isDownbeat: false, measureNumber: 0, intensity: 0.8, confidence: 0.9, requiredKey: 'b' },
+                    // Beat 3: no key
+                    { timestamp: 1.5, beatInMeasure: 3, isDownbeat: false, measureNumber: 0, intensity: 0.6, confidence: 0.8 },
+                    // Beat 4: has key
+                    { timestamp: 2.0, beatInMeasure: 0, isDownbeat: true, measureNumber: 1, intensity: 0.85, confidence: 0.92, requiredKey: 'x' },
+                    // Beat 5: no key
+                    { timestamp: 2.5, beatInMeasure: 1, isDownbeat: false, measureNumber: 1, intensity: 0.65, confidence: 0.82 },
+                    // Beat 6: has key
+                    { timestamp: 3.0, beatInMeasure: 2, isDownbeat: false, measureNumber: 1, intensity: 0.75, confidence: 0.87, requiredKey: 'y' },
+                    // Beat 7: no key
+                    { timestamp: 3.5, beatInMeasure: 3, isDownbeat: false, measureNumber: 1, intensity: 0.55, confidence: 0.78 },
+                ],
+                bpm: 120,
+                metadata: {
+                    version: BEAT_DETECTION_VERSION,
+                    algorithm: BEAT_DETECTION_ALGORITHM,
+                    minBpm: 60,
+                    maxBpm: 180,
+                    sensitivity: 1.0,
+                    noiseFloorThreshold: 0.1,
+                    hopSizeMs: 10,
+                    fftSize: 2048,
+                    dpAlpha: 680,
+                    melBands: 40,
+                    highPassCutoff: 0.4,
+                    gaussianSmoothMs: 20,
+                    tempoCenter: 0.5,
+                    tempoWidth: 1.4,
+                    generatedAt: new Date().toISOString(),
+                },
+            };
+
+            // First round-trip
+            const json1 = BeatMapGenerator.toJSON(mixedBeatMap);
+            const restored1 = BeatMapGenerator.fromJSON(json1);
+
+            // Verify all beats have correct requiredKey status
+            expect(restored1.beats[0].requiredKey).toBe('a');
+            expect(restored1.beats[1].requiredKey).toBeUndefined();
+            expect(restored1.beats[2].requiredKey).toBe('b');
+            expect(restored1.beats[3].requiredKey).toBeUndefined();
+            expect(restored1.beats[4].requiredKey).toBe('x');
+            expect(restored1.beats[5].requiredKey).toBeUndefined();
+            expect(restored1.beats[6].requiredKey).toBe('y');
+            expect(restored1.beats[7].requiredKey).toBeUndefined();
+
+            // Second round-trip (to verify stability)
+            const json2 = BeatMapGenerator.toJSON(restored1);
+            const restored2 = BeatMapGenerator.fromJSON(json2);
+
+            // Verify again
+            expect(restored2.beats[0].requiredKey).toBe('a');
+            expect(restored2.beats[1].requiredKey).toBeUndefined();
+            expect(restored2.beats[2].requiredKey).toBe('b');
+            expect(restored2.beats[3].requiredKey).toBeUndefined();
+            expect(restored2.beats[4].requiredKey).toBe('x');
+            expect(restored2.beats[5].requiredKey).toBeUndefined();
+            expect(restored2.beats[6].requiredKey).toBe('y');
+            expect(restored2.beats[7].requiredKey).toBeUndefined();
+
+            // Verify other properties are also preserved
+            expect(restored2.beats.length).toBe(8);
+            expect(restored2.bpm).toBe(120);
+            expect(restored2.audioId).toBe('mixed-keys');
+        });
+
+        it('should preserve all other beat properties alongside requiredKey', () => {
+            const beatMapWithKeys: BeatMap = {
+                audioId: 'full-props',
+                duration: 1.0,
+                beats: [
+                    {
+                        timestamp: 0.0,
+                        beatInMeasure: 0,
+                        isDownbeat: true,
+                        measureNumber: 0,
+                        intensity: 0.95,
+                        confidence: 0.98,
+                        requiredKey: 'right',
+                    },
+                ],
+                bpm: 120,
+                metadata: {
+                    version: BEAT_DETECTION_VERSION,
+                    algorithm: BEAT_DETECTION_ALGORITHM,
+                    minBpm: 60,
+                    maxBpm: 180,
+                    sensitivity: 1.0,
+                    noiseFloorThreshold: 0.1,
+                    hopSizeMs: 10,
+                    fftSize: 2048,
+                    dpAlpha: 680,
+                    melBands: 40,
+                    highPassCutoff: 0.4,
+                    gaussianSmoothMs: 20,
+                    tempoCenter: 0.5,
+                    tempoWidth: 1.4,
+                    generatedAt: new Date().toISOString(),
+                },
+            };
+
+            const jsonString = BeatMapGenerator.toJSON(beatMapWithKeys);
+            const restored = BeatMapGenerator.fromJSON(jsonString);
+
+            // All properties should be preserved
+            expect(restored.beats[0].timestamp).toBe(0.0);
+            expect(restored.beats[0].beatInMeasure).toBe(0);
+            expect(restored.beats[0].isDownbeat).toBe(true);
+            expect(restored.beats[0].measureNumber).toBe(0);
+            expect(restored.beats[0].intensity).toBe(0.95);
+            expect(restored.beats[0].confidence).toBe(0.98);
+            expect(restored.beats[0].requiredKey).toBe('right');
+        });
     });
 
     describe('saveToFile / loadFromFile', () => {
@@ -441,6 +640,103 @@ describe('BeatMapGenerator', () => {
             // Let's just verify the methods exist
             expect(typeof BeatMapGenerator.saveToFile).toBe('function');
             expect(typeof BeatMapGenerator.loadFromFile).toBe('function');
+        });
+
+        it('should preserve requiredKey when saving and loading from file', async () => {
+            // This test runs in Node.js environment (vitest/node)
+            const { writeFile, readFile, unlink } = await import('fs/promises');
+            const { tmpdir } = await import('os');
+            const { join } = await import('path');
+
+            // Create a beat map with requiredKey on some beats
+            const beatMapWithKeys: BeatMap = {
+                audioId: 'file-keys-test',
+                duration: 2.0,
+                beats: [
+                    {
+                        timestamp: 0.0,
+                        beatInMeasure: 0,
+                        isDownbeat: true,
+                        measureNumber: 0,
+                        intensity: 0.8,
+                        confidence: 0.9,
+                        requiredKey: 'left',
+                    },
+                    {
+                        timestamp: 0.5,
+                        beatInMeasure: 1,
+                        isDownbeat: false,
+                        measureNumber: 0,
+                        intensity: 0.7,
+                        confidence: 0.85,
+                        requiredKey: 'down',
+                    },
+                    {
+                        timestamp: 1.0,
+                        beatInMeasure: 2,
+                        isDownbeat: false,
+                        measureNumber: 0,
+                        intensity: 0.6,
+                        confidence: 0.8,
+                        // No requiredKey on this beat
+                    },
+                    {
+                        timestamp: 1.5,
+                        beatInMeasure: 3,
+                        isDownbeat: false,
+                        measureNumber: 0,
+                        intensity: 0.75,
+                        confidence: 0.88,
+                        requiredKey: 'up',
+                    },
+                ],
+                bpm: 120,
+                metadata: {
+                    version: BEAT_DETECTION_VERSION,
+                    algorithm: BEAT_DETECTION_ALGORITHM,
+                    minBpm: 60,
+                    maxBpm: 180,
+                    sensitivity: 1.0,
+                    noiseFloorThreshold: 0.1,
+                    hopSizeMs: 10,
+                    fftSize: 2048,
+                    dpAlpha: 680,
+                    melBands: 40,
+                    highPassCutoff: 0.4,
+                    gaussianSmoothMs: 20,
+                    tempoCenter: 0.5,
+                    tempoWidth: 1.4,
+                    generatedAt: new Date().toISOString(),
+                },
+            };
+
+            const tempFile = join(tmpdir(), `beatmap-keys-test-${Date.now()}.json`);
+
+            try {
+                // Save to file
+                await BeatMapGenerator.saveToFile(beatMapWithKeys, tempFile);
+
+                // Load from file
+                const loadedBeatMap = await BeatMapGenerator.loadFromFile(tempFile);
+
+                // Verify requiredKey is preserved
+                expect(loadedBeatMap.beats[0].requiredKey).toBe('left');
+                expect(loadedBeatMap.beats[1].requiredKey).toBe('down');
+                expect(loadedBeatMap.beats[2].requiredKey).toBeUndefined();
+                expect(loadedBeatMap.beats[3].requiredKey).toBe('up');
+
+                // Verify other properties are also correct
+                expect(loadedBeatMap.audioId).toBe('file-keys-test');
+                expect(loadedBeatMap.bpm).toBe(120);
+                expect(loadedBeatMap.beats.length).toBe(4);
+            } finally {
+                // Clean up temp file
+                try {
+                    await unlink(tempFile);
+                } catch {
+                    // Ignore cleanup errors
+                }
+            }
         });
     });
 

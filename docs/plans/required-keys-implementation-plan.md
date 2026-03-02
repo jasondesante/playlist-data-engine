@@ -228,9 +228,9 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 - [x] Test clearAllKeys removes all keys
 
 ### Task 6.4: Unit Tests for Serialization
-- [ ] Test toJSON/fromJSON preserves requiredKey
-- [ ] Test saveToFile/loadFromFile preserves requiredKey
-- [ ] Test round-trip with mixed beats (some with keys, some without)
+- [x] Test toJSON/fromJSON preserves requiredKey
+- [x] Test saveToFile/loadFromFile preserves requiredKey
+- [x] Test round-trip with mixed beats (some with keys, some without)
 
 ---
 
@@ -295,7 +295,7 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 ### Documentation & Testing
 - [ ] Documentation updated in AUDIO_ANALYSIS.md and DATA_ENGINE_REFERENCE.md
 - [x] Unit tests cover new functionality
-- [ ] Integration tests with SubdividedBeatMap pass
+- [x] Integration tests with SubdividedBeatMap pass
 
 ---
 

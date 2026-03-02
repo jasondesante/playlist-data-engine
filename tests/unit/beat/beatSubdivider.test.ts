@@ -4629,4 +4629,127 @@ describe('BeatSubdivider - Edge Cases', () => {
             expect(restored.subdivisionMetadata.subdividedBeatCount).toBe(0);
         });
     });
+
+    // ========================================================================
+    // File I/O Tests (saveToFile/loadFromFile)
+    // ========================================================================
+
+    describe('File I/O (saveToFile/loadFromFile)', () => {
+        it('should preserve requiredKey when saving and loading SubdividedBeatMap from file', async () => {
+            // This test runs in Node.js environment (vitest/node)
+            const { unlink } = await import('fs/promises');
+            const { tmpdir } = await import('os');
+            const { join } = await import('path');
+
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 4);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'eighth' }],
+            };
+            const original = subdivider.subdivide(unifiedMap, config);
+
+            // Add requiredKey to some beats
+            original.beats[0].requiredKey = 'left';
+            original.beats[1].requiredKey = 'down';
+            original.beats[2].requiredKey = 'up';
+            // beats 3+ have no requiredKey
+
+            const tempFile = join(tmpdir(), `subdivided-beatmap-keys-test-${Date.now()}.json`);
+
+            try {
+                // Act - save to file
+                await BeatSubdivider.saveToFile(original, tempFile);
+
+                // Act - load from file
+                const loaded = await BeatSubdivider.loadFromFile(tempFile);
+
+                // Assert - requiredKey should be preserved
+                expect(loaded.beats[0].requiredKey).toBe('left');
+                expect(loaded.beats[1].requiredKey).toBe('down');
+                expect(loaded.beats[2].requiredKey).toBe('up');
+                expect(loaded.beats[3].requiredKey).toBeUndefined();
+
+                // Assert - other SubdividedBeatMap properties should be preserved
+                expect(loaded.audioId).toBe(original.audioId);
+                expect(loaded.duration).toBe(original.duration);
+                expect(loaded.beats.length).toBe(original.beats.length);
+                expect(loaded.subdivisionConfig).toEqual(original.subdivisionConfig);
+                expect(loaded.detectedBeatIndices).toEqual(original.detectedBeatIndices);
+
+                // Assert - SubdividedBeat-specific fields should be preserved
+                for (let i = 0; i < original.beats.length; i++) {
+                    expect(loaded.beats[i].isDetected).toBe(original.beats[i].isDetected);
+                    expect(loaded.beats[i].subdivisionType).toBe(original.beats[i].subdivisionType);
+                    expect(loaded.beats[i].originalBeatIndex).toBe(original.beats[i].originalBeatIndex);
+                }
+            } finally {
+                // Clean up temp file
+                try {
+                    await unlink(tempFile);
+                } catch {
+                    // Ignore cleanup errors
+                }
+            }
+        });
+
+        it('should handle round-trip file I/O with mixed beats (some with keys, some without)', async () => {
+            const { unlink } = await import('fs/promises');
+            const { tmpdir } = await import('os');
+            const { join } = await import('path');
+
+            // Arrange
+            const subdivider = new BeatSubdivider();
+            const beats = createRegularQuarterNotes(120, 8);
+            const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+            const config: SubdivisionConfig = {
+                segments: [{ startBeat: 0, subdivision: 'quarter' }],
+            };
+            const original = subdivider.subdivide(unifiedMap, config);
+
+            // Add requiredKey to every other beat
+            for (let i = 0; i < original.beats.length; i++) {
+                if (i % 2 === 0) {
+                    original.beats[i].requiredKey = `key-${i}`;
+                }
+            }
+
+            const tempFile = join(tmpdir(), `subdivided-mixed-keys-${Date.now()}.json`);
+
+            try {
+                // First save/load cycle
+                await BeatSubdivider.saveToFile(original, tempFile);
+                const loaded1 = await BeatSubdivider.loadFromFile(tempFile);
+
+                // Second save/load cycle (stability test)
+                const tempFile2 = join(tmpdir(), `subdivided-mixed-keys-2-${Date.now()}.json`);
+                await BeatSubdivider.saveToFile(loaded1, tempFile2);
+                const loaded2 = await BeatSubdivider.loadFromFile(tempFile2);
+
+                // Assert - keys should be preserved through multiple cycles
+                for (let i = 0; i < original.beats.length; i++) {
+                    if (i % 2 === 0) {
+                        expect(loaded2.beats[i].requiredKey).toBe(`key-${i}`);
+                    } else {
+                        expect(loaded2.beats[i].requiredKey).toBeUndefined();
+                    }
+                }
+
+                // Clean up second temp file
+                try {
+                    await unlink(tempFile2);
+                } catch {
+                    // Ignore cleanup errors
+                }
+            } finally {
+                // Clean up temp file
+                try {
+                    await unlink(tempFile);
+                } catch {
+                    // Ignore cleanup errors
+                }
+            }
+        });
+    });
 });
