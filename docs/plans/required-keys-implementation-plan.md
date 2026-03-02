@@ -209,16 +209,16 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 ## Phase 6: Testing
 
 ### Task 6.1: Unit Tests for Type Changes
-- [ ] Test Beat interface accepts optional requiredKey
-- [ ] Test ButtonPressResult includes new fields
-- [ ] Test BeatAccuracy includes 'wrongKey'
+- [x] Test Beat interface accepts optional requiredKey
+- [x] Test ButtonPressResult includes new fields
+- [x] Test BeatAccuracy includes 'wrongKey'
 
 ### Task 6.2: Unit Tests for checkButtonPress
-- [ ] Test timing-only evaluation when no requiredKey on beat
-- [ ] Test wrongKey returned when pressedKey doesn't match requiredKey
-- [ ] Test correct key returns timing-based accuracy
-- [ ] Test ignoreKeyRequirements bypasses key checking
-- [ ] Test missing pressedKey when key required returns 'miss'
+- [x] Test timing-only evaluation when no requiredKey on beat
+- [x] Test wrongKey returned when pressedKey doesn't match requiredKey
+- [x] Test correct key returns timing-based accuracy
+- [x] Test ignoreKeyRequirements bypasses key checking
+- [x] Test missing pressedKey when key required returns 'miss'
 
 ### Task 6.3: Unit Tests for Helpers
 - [ ] Test assignKeyToBeat with valid key
@@ -294,7 +294,7 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 
 ### Documentation & Testing
 - [ ] Documentation updated in AUDIO_ANALYSIS.md and DATA_ENGINE_REFERENCE.md
-- [ ] Unit tests cover new functionality
+- [x] Unit tests cover new functionality
 - [ ] Integration tests with SubdividedBeatMap pass
 
 ---

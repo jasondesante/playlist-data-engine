@@ -1477,4 +1477,159 @@ describe('BeatStream', () => {
             expect(normalizedMap.downbeatConfig?.segments[0].timeSignature.beatsPerMeasure).toBe(4);
         });
     });
+
+    // ==================== Required Key Tests (Phase 6: Task 6.1 & 6.2) ====================
+
+    describe('required key functionality', () => {
+        // Task 6.1: Type System Tests
+        describe('type system (Task 6.1)', () => {
+            it('should accept Beat with optional requiredKey property', () => {
+                const beatWithKey: Beat = createMockBeat(1.0, { requiredKey: 'up' });
+                expect(beatWithKey.requiredKey).toBe('up');
+
+                const beatWithoutKey: Beat = createMockBeat(1.0);
+                expect(beatWithoutKey.requiredKey).toBeUndefined();
+            });
+
+            it('should have wrongKey in BeatAccuracy type', () => {
+                // This test verifies the type system includes 'wrongKey'
+                const accuracyLevels: BeatAccuracy[] = ['perfect', 'great', 'good', 'ok', 'miss', 'wrongKey'];
+                expect(accuracyLevels).toContain('wrongKey');
+            });
+
+            it('should include keyMatch in ButtonPressResult', () => {
+                const beatMapWithKeys = createMockBeatMap([0, 0.5, 1.0]);
+                beatMapWithKeys.beats[0].requiredKey = 'up';
+                const stream = new BeatStream(beatMapWithKeys, audioContext, { difficultyPreset: 'hard' });
+
+                const result = stream.checkButtonPress(0.005, 'up');
+
+                expect(result).toHaveProperty('keyMatch');
+                expect(result).toHaveProperty('pressedKey');
+                expect(result).toHaveProperty('requiredKey');
+            });
+        });
+
+        // Task 6.2: checkButtonPress Tests
+        describe('checkButtonPress with required keys (Task 6.2)', () => {
+            it('should return timing-based accuracy when beat has no requiredKey', () => {
+                const beatMapNoKeys = createMockBeatMap([0, 0.5, 1.0]);
+                const stream = new BeatStream(beatMapNoKeys, audioContext, { difficultyPreset: 'hard' });
+
+                // Press with any key - should use timing only
+                const result = stream.checkButtonPress(1.005, 'up');
+
+                expect(result.accuracy).toBe('perfect');
+                expect(result.keyMatch).toBe(true);
+                expect(result.requiredKey).toBeUndefined();
+            });
+
+            it('should return wrongKey when pressedKey does not match requiredKey', () => {
+                const beatMapWithKeys = createMockBeatMap([0, 0.5, 1.0]);
+                beatMapWithKeys.beats[2].requiredKey = 'up';
+                const stream = new BeatStream(beatMapWithKeys, audioContext, { difficultyPreset: 'hard' });
+
+                // Press at perfect timing but wrong key
+                const result = stream.checkButtonPress(1.005, 'down');
+
+                expect(result.accuracy).toBe('wrongKey');
+                expect(result.keyMatch).toBe(false);
+                expect(result.pressedKey).toBe('down');
+                expect(result.requiredKey).toBe('up');
+            });
+
+            it('should return timing-based accuracy when correct key is pressed', () => {
+                const beatMapWithKeys = createMockBeatMap([0, 0.5, 1.0]);
+                beatMapWithKeys.beats[2].requiredKey = 'up';
+                const stream = new BeatStream(beatMapWithKeys, audioContext, { difficultyPreset: 'hard' });
+
+                // Press at perfect timing with correct key
+                const result = stream.checkButtonPress(1.005, 'up');
+
+                expect(result.accuracy).toBe('perfect');
+                expect(result.keyMatch).toBe(true);
+                expect(result.pressedKey).toBe('up');
+                expect(result.requiredKey).toBe('up');
+            });
+
+            it('should bypass key checking when ignoreKeyRequirements is true', () => {
+                const beatMapWithKeys = createMockBeatMap([0, 0.5, 1.0]);
+                beatMapWithKeys.beats[2].requiredKey = 'up';
+                const stream = new BeatStream(beatMapWithKeys, audioContext, {
+                    difficultyPreset: 'hard',
+                    ignoreKeyRequirements: true,
+                });
+
+                // Press at perfect timing but wrong key - should still be perfect because we're ignoring keys
+                const result = stream.checkButtonPress(1.005, 'down');
+
+                expect(result.accuracy).toBe('perfect');
+                expect(result.keyMatch).toBe(true);
+                expect(result.requiredKey).toBe('up');
+            });
+
+            it('should return miss when pressedKey is not provided but beat requires a key', () => {
+                const beatMapWithKeys = createMockBeatMap([0, 0.5, 1.0]);
+                beatMapWithKeys.beats[2].requiredKey = 'up';
+                const stream = new BeatStream(beatMapWithKeys, audioContext, { difficultyPreset: 'hard' });
+
+                // Press at perfect timing but don't provide a key
+                const result = stream.checkButtonPress(1.005);
+
+                expect(result.accuracy).toBe('miss');
+                expect(result.keyMatch).toBe(false);
+                expect(result.pressedKey).toBeUndefined();
+                expect(result.requiredKey).toBe('up');
+            });
+
+            it('should handle multiple beats with different required keys', () => {
+                const beatMapWithKeys = createMockBeatMap([0, 0.5, 1.0, 1.5, 2.0]);
+                beatMapWithKeys.beats[0].requiredKey = 'left';
+                beatMapWithKeys.beats[1].requiredKey = 'down';
+                beatMapWithKeys.beats[2].requiredKey = 'up';
+                beatMapWithKeys.beats[3].requiredKey = 'right';
+                beatMapWithKeys.beats[4].requiredKey = 'left';
+                const stream = new BeatStream(beatMapWithKeys, audioContext, { difficultyPreset: 'hard' });
+
+                // Test correct key for first beat
+                const result1 = stream.checkButtonPress(0.005, 'left');
+                expect(result1.accuracy).toBe('perfect');
+                expect(result1.keyMatch).toBe(true);
+
+                // Test wrong key for second beat
+                const result2 = stream.checkButtonPress(0.505, 'up');
+                expect(result2.accuracy).toBe('wrongKey');
+                expect(result2.keyMatch).toBe(false);
+
+                // Test correct key for third beat
+                const result3 = stream.checkButtonPress(1.005, 'up');
+                expect(result3.accuracy).toBe('perfect');
+                expect(result3.keyMatch).toBe(true);
+            });
+
+            it('should return great with correct key (not wrongKey) for slightly off timing', () => {
+                const beatMapWithKeys = createMockBeatMap([0, 0.5, 1.0]);
+                beatMapWithKeys.beats[2].requiredKey = 'up';
+                const stream = new BeatStream(beatMapWithKeys, audioContext, { difficultyPreset: 'hard' });
+
+                // Press at great timing with correct key
+                const result = stream.checkButtonPress(1.020, 'up');
+
+                expect(result.accuracy).toBe('great');
+                expect(result.keyMatch).toBe(true);
+            });
+
+            it('should return wrongKey even for perfect timing if key is wrong', () => {
+                const beatMapWithKeys = createMockBeatMap([0, 0.5, 1.0]);
+                beatMapWithKeys.beats[2].requiredKey = 'a';
+                const stream = new BeatStream(beatMapWithKeys, audioContext, { difficultyPreset: 'hard' });
+
+                // Press at perfect timing with completely wrong key
+                const result = stream.checkButtonPress(1.000, 'b');
+
+                expect(result.accuracy).toBe('wrongKey');
+                expect(result.keyMatch).toBe(false);
+            });
+        });
+    });
 });
