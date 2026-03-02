@@ -152,29 +152,34 @@ Beat (base)
 Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 
 ### Task 4.1: Create Key Assignment Helper
-- [ ] Add `assignKeyToBeat<T extends BeatMap>(beatMap: T, beatIndex: number, key: string | null): T`
-- [ ] Returns new beat map with updated beat (immutability)
-- [ ] `null` key removes the required key
-- [ ] Generic to work with `BeatMap`, `InterpolatedBeatMap`, `UnifiedBeatMap`, `SubdividedBeatMap`
+- [x] Add `assignKeyToBeat<T extends BeatMap>(beatMap: T, beatIndex: number, key: string | null): T`
+- [x] Returns new beat map with updated beat (immutability)
+- [x] `null` key removes the required key
+- [x] Generic to work with `BeatMap`, `InterpolatedBeatMap`, `UnifiedBeatMap`, `SubdividedBeatMap`
 
 ### Task 4.2: Create Bulk Key Assignment Helper
-- [ ] Add `assignKeysToBeats<T extends BeatMap>(beatMap: T, assignments: Array<{beatIndex: number, key: string | null}>): T`
-- [ ] Efficient batch updates for chart creation
-- [ ] Useful for UI "paint/brush" mode (future)
+- [x] Add `assignKeysToBeats<T extends BeatMap>(beatMap: T, assignments: Array<{beatIndex: number, key: string | null}>): T`
+- [x] Efficient batch updates for chart creation
+- [x] Useful for UI "paint/brush" mode (future)
 
 ### Task 4.3: Create Key Map Extraction Helper
-- [ ] Add `extractKeyMap(beatMap: BeatMap): Map<number, string>`
-- [ ] Returns a map of beatIndex → requiredKey for beats that have keys
-- [ ] Useful for serialization and UI display
+- [x] Add `extractKeyMap(beatMap: BeatMap): Map<number, string>`
+- [x] Returns a map of beatIndex → requiredKey for beats that have keys
+- [x] Useful for serialization and UI display
 
 ### Task 4.4: Create Clear All Keys Helper
-- [ ] Add `clearAllKeys<T extends BeatMap>(beatMap: T): T`
-- [ ] Returns new beat map with all `requiredKey` properties removed
-- [ ] Useful for resetting a chart
+- [x] Add `clearAllKeys<T extends BeatMap>(beatMap: T): T`
+- [x] Returns new beat map with all `requiredKey` properties removed
+- [x] Useful for resetting a chart
 
 ### Task 4.5: Export Helpers from index.ts
-- [ ] Add exports to `src/core/analysis/beat/index.ts`
-- [ ] Add exports to main `src/index.ts` if needed
+- [x] Add exports to `src/core/analysis/beat/index.ts`
+- [x] Add exports to main `src/index.ts` if needed
+
+### Task 4.6: Additional Helper Functions (Bonus)
+- [x] Add `hasRequiredKeys(beatMap): boolean` - Check if any keys are assigned
+- [x] Add `getKeyCount(beatMap): number` - Count beats with keys
+- [x] Add `getUsedKeys(beatMap): string[]` - Get unique keys used
 
 ---
 
@@ -278,10 +283,10 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 - [x] Missing `pressedKey` when key required returns `'miss'`
 
 ### Helper Functions
-- [ ] `assignKeyToBeat()` works with all beat map types
-- [ ] `assignKeysToBeats()` handles batch assignments
-- [ ] `extractKeyMap()` returns correct key map
-- [ ] `clearAllKeys()` removes all key assignments
+- [x] `assignKeyToBeat()` works with all beat map types
+- [x] `assignKeysToBeats()` handles batch assignments
+- [x] `extractKeyMap()` returns correct key map
+- [x] `clearAllKeys()` removes all key assignments
 
 ### Serialization
 - [x] Serialization preserves required key data on all beat types

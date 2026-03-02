@@ -322,6 +322,7 @@ export type { LogEntry, LoggerConfig } from './utils/logger.js';
 export {
     type PlaylistInput,
     type SimpleTrack,
+    type VRMTrack,
     getAudioUrls,
     getImageUrls,
     getTrackTitles,
@@ -331,7 +332,9 @@ export {
     getTotalDuration,
     getTrackCount,
     getTracks,
-    getFullTracks
+    getFullTracks,
+    getVRMs,
+    getVRMTracks
 } from './utils/playlistUtils.js';
 
 // Type helpers
@@ -440,6 +443,19 @@ export { BeatInterpolator } from './core/analysis/beat/BeatInterpolator.js';
 export { BeatSubdivider, type BeatSubdividerOptions } from './core/analysis/beat/BeatSubdivider.js';
 export { unifyBeatMap } from './core/analysis/beat/utils/unifyBeatMap.js';
 export { subdivideBeatMap } from './core/analysis/beat/utils/subdivideBeatMap.js';
+
+// Beat Key Helpers (for rhythm game chart creation)
+export {
+    assignKeyToBeat,
+    assignKeysToBeats,
+    extractKeyMap,
+    clearAllKeys,
+    hasRequiredKeys,
+    getKeyCount,
+    getUsedKeys,
+    type KeyAssignableBeatMap,
+    type KeyAssignment,
+} from './core/analysis/beat/beatKeyHelpers.js';
 
 // Subdivision Playback Controller (Practice Mode)
 export { SubdivisionPlaybackController } from './core/playback/SubdivisionPlaybackController.js';

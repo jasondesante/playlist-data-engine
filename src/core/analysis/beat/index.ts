@@ -141,3 +141,16 @@ export {
     type ResampledAudio,
     type STFTResult,
 } from './utils/audioUtils.js';
+
+// Beat Key Helpers (for rhythm game chart creation)
+export {
+    assignKeyToBeat,
+    assignKeysToBeats,
+    extractKeyMap,
+    clearAllKeys,
+    hasRequiredKeys,
+    getKeyCount,
+    getUsedKeys,
+    type KeyAssignableBeatMap,
+    type KeyAssignment,
+} from './beatKeyHelpers.js';
