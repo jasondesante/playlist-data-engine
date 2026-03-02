@@ -641,7 +641,7 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
   - [x] Triplet8 (3 per quarter)
   - [x] Triplet4 (3 per half)
   - [x] Dotted4 (phase-independent)
-  - [ ] Dotted8 (swing pattern)
+  - [x] Dotted8 (swing pattern)
 
 ### 7.2 Segment Tests
 
