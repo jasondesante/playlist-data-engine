@@ -26,6 +26,14 @@ export interface Beat {
 
     /** Confidence score for this beat detection (0.0 - 1.0) */
     confidence: number;
+
+    /**
+     * Optional required key for rhythm game chart creation.
+     * When specified, this key must be pressed for the beat to count as a hit.
+     * Frontend maps physical inputs to these strings before calling the engine.
+     * @example 'up', 'down', 'left', 'right', 'a', 'b', 'x', 'y'
+     */
+    requiredKey?: string;
 }
 
 // ============================================================================
@@ -735,6 +743,7 @@ export interface BeatMapJSON {
         measureNumber: number;
         intensity: number;
         confidence: number;
+        requiredKey?: string;
     }>;
     bpm: number;
     metadata: BeatMapMetadata;
@@ -756,6 +765,7 @@ export interface BeatWithSourceJSON {
     measureNumber: number;
     intensity: number;
     confidence: number;
+    requiredKey?: string;
     source: BeatSource;
     distanceToAnchor?: number;
     nearestAnchorTimestamp?: number;
@@ -837,6 +847,7 @@ export interface InterpolatedBeatMapJSON {
         measureNumber: number;
         intensity: number;
         confidence: number;
+        requiredKey?: string;
     }>;
     mergedBeats: BeatWithSourceJSON[];
     quarterNoteInterval: number;

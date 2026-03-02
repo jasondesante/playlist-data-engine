@@ -69,11 +69,11 @@ Beat (base)
 ## Phase 1: Type System Changes
 
 ### Task 1.1: Extend Beat Interface
-- [ ] Add `requiredKey?: string` property to `Beat` interface in [BeatMap.ts](src/core/types/BeatMap.ts)
-- [ ] Update `BeatMapJSON` interface to include `requiredKey` in beat array type
-- [ ] Verify `BeatWithSource` inherits automatically (extends Beat) ✓
-- [ ] Verify `SubdividedBeat` inherits automatically (extends Beat) ✓
-- [ ] Add `requiredKey?: string` to `SubdividedBeatJSON` if created
+- [x] Add `requiredKey?: string` property to `Beat` interface in [BeatMap.ts](src/core/types/BeatMap.ts)
+- [x] Update `BeatMapJSON` interface to include `requiredKey` in beat array type
+- [x] Verify `BeatWithSource` inherits automatically (extends Beat) ✓
+- [x] Verify `SubdividedBeat` inherits automatically (extends Beat) ✓
+- [x] Add `requiredKey?: string` to `SubdividedBeatJSON` if created (N/A - doesn't exist yet, deferred to Phase 3)
 
 ### Task 1.2: Add WrongKey Accuracy Type
 - [ ] Update `BeatAccuracy` type to include `'wrongKey'`:
@@ -127,9 +127,9 @@ Beat (base)
 ## Phase 3: Serialization Updates
 
 ### Task 3.1: Update BeatMapJSON Serialization
-- [ ] Verify `BeatMapJSON` beats array type includes `requiredKey?: string`
-- [ ] Update `toJSON()` to include `requiredKey` in beat mapping
-- [ ] Update `fromJSON()` to restore `requiredKey` from JSON
+- [x] Verify `BeatMapJSON` beats array type includes `requiredKey?: string`
+- [x] Update `toJSON()` to include `requiredKey` in beat mapping
+- [x] Update `fromJSON()` to restore `requiredKey` from JSON
 
 ### Task 3.2: Update SubdividedBeatMap Serialization (if applicable)
 - [ ] Verify `SubdividedBeatMap.toJSON()` preserves `requiredKey` on beats
@@ -142,8 +142,8 @@ Beat (base)
 - [ ] No changes needed - this is the intended behavior
 
 ### Task 3.4: Update BeatMapGenerator Serialization
-- [ ] Verify `saveToFile()` and `loadFromFile()` handle `requiredKey` property
-- [ ] Test round-trip serialization with required keys
+- [x] Verify `saveToFile()` and `loadFromFile()` handle `requiredKey` property
+- [x] Test round-trip serialization with required keys
 
 ---
 
@@ -265,8 +265,8 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 ## Success Criteria
 
 ### Type System
-- [ ] Beat type has optional `requiredKey?: string` field
-- [ ] `SubdividedBeat` inherits `requiredKey` from Beat
+- [x] Beat type has optional `requiredKey?: string` field
+- [x] `SubdividedBeat` inherits `requiredKey` from Beat
 - [ ] `BeatAccuracy` type includes `'wrongKey'`
 - [ ] `ButtonPressResult` includes `keyMatch`, `pressedKey`, `requiredKey` fields
 - [ ] `BeatStreamOptions` includes `ignoreKeyRequirements?: boolean`
@@ -284,8 +284,8 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 - [ ] `clearAllKeys()` removes all key assignments
 
 ### Serialization
-- [ ] Serialization preserves required key data on all beat types
-- [ ] Round-trip `toJSON()`/`fromJSON()` maintains required keys
+- [x] Serialization preserves required key data on all beat types
+- [x] Round-trip `toJSON()`/`fromJSON()` maintains required keys
 
 ### Documentation & Testing
 - [ ] Documentation updated in AUDIO_ANALYSIS.md and DATA_ENGINE_REFERENCE.md

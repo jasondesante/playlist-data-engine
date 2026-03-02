@@ -2045,6 +2045,7 @@ export class BeatInterpolator {
                 measureNumber: beat.measureNumber,
                 intensity: beat.intensity,
                 confidence: beat.confidence,
+                ...(beat.requiredKey !== undefined && { requiredKey: beat.requiredKey }),
             })),
             mergedBeats: interpolatedBeatMap.mergedBeats.map(beat => ({
                 timestamp: beat.timestamp,
@@ -2053,6 +2054,7 @@ export class BeatInterpolator {
                 measureNumber: beat.measureNumber,
                 intensity: beat.intensity,
                 confidence: beat.confidence,
+                ...(beat.requiredKey !== undefined && { requiredKey: beat.requiredKey }),
                 source: beat.source,
                 distanceToAnchor: beat.distanceToAnchor,
                 nearestAnchorTimestamp: beat.nearestAnchorTimestamp,
@@ -2134,6 +2136,7 @@ export class BeatInterpolator {
                 measureNumber: beat.measureNumber,
                 intensity: beat.intensity,
                 confidence: beat.confidence,
+                ...(beat.requiredKey !== undefined && { requiredKey: beat.requiredKey }),
             })),
             mergedBeats: json.mergedBeats.map(beat => ({
                 timestamp: beat.timestamp,
@@ -2142,6 +2145,7 @@ export class BeatInterpolator {
                 measureNumber: beat.measureNumber,
                 intensity: beat.intensity,
                 confidence: beat.confidence,
+                ...(beat.requiredKey !== undefined && { requiredKey: beat.requiredKey }),
                 source: beat.source,
                 distanceToAnchor: beat.distanceToAnchor,
                 nearestAnchorTimestamp: beat.nearestAnchorTimestamp,
