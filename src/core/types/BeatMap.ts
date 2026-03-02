@@ -1599,6 +1599,39 @@ export function validateThresholds(thresholds: Partial<AccuracyThresholds>): Thr
     };
 }
 
+// ============================================================================
+// Beat Subdivision Types
+// ============================================================================
+
+/**
+ * Types of beat subdivision
+ *
+ * - quarter: Default, 1x density (unchanged)
+ * - half: 0.5x density (beats on 1 and 3 only)
+ * - eighth: 2x density (beat between each quarter)
+ * - sixteenth: 4x density (3 beats between each quarter) - MAXIMUM DENSITY
+ * - triplet8: Eighth triplets (3 beats per quarter note)
+ * - triplet4: Quarter triplets (3 beats per half note)
+ * - dotted4: Dotted quarter (every 1.5 quarters, phase-independent)
+ * - dotted8: Dotted eighth (swing long-short pattern: 2/3 + 1/3)
+ *
+ * Note: Sixteenth notes (4x) are the maximum supported density.
+ * Higher densities are not supported and will throw an error.
+ */
+export type SubdivisionType =
+  | 'quarter'    // 1x density (no change)
+  | 'half'       // 0.5x density (beats 1 and 3)
+  | 'eighth'     // 2x density
+  | 'sixteenth'  // 4x density (MAXIMUM)
+  | 'triplet8'   // 3 beats per quarter (eighth triplets)
+  | 'triplet4'   // 3 beats per half note (quarter triplets)
+  | 'dotted4'    // Every 1.5 quarters (phase-independent)
+  | 'dotted8';   // Swing pattern (2/3 + 1/3 quarters)
+
+// ============================================================================
+// Version and Algorithm Identifiers
+// ============================================================================
+
 /**
  * Current version of the beat detection algorithm
  */

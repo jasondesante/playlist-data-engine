@@ -420,7 +420,7 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 1.1 Add SubdivisionType
 
-- [ ] Add `SubdivisionType` type to `BeatMap.ts`
+- [x] Add `SubdivisionType` type to `BeatMap.ts`
   ```typescript
   export type SubdivisionType =
     | 'quarter' | 'half' | 'eighth' | 'sixteenth'
