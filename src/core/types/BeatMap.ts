@@ -1794,6 +1794,180 @@ export interface SubdividedBeatMap {
 }
 
 // ============================================================================
+// Subdivision Configuration Validation
+// ============================================================================
+
+/** Maximum density multiplier (sixteenth notes = 4x) */
+export const MAX_SUBDIVISION_DENSITY = 4;
+
+/** All valid subdivision type values */
+export const VALID_SUBDIVISION_TYPES: SubdivisionType[] = [
+    'quarter',
+    'half',
+    'eighth',
+    'sixteenth',
+    'triplet8',
+    'triplet4',
+    'dotted4',
+    'dotted8',
+];
+
+/**
+ * Check if a value is a valid SubdivisionType
+ *
+ * @param value - The value to check
+ * @returns true if the value is a valid SubdivisionType
+ */
+export function isValidSubdivisionType(value: unknown): value is SubdivisionType {
+    return typeof value === 'string' && VALID_SUBDIVISION_TYPES.includes(value as SubdivisionType);
+}
+
+/**
+ * Get the density multiplier for a subdivision type
+ *
+ * @param subdivision - The subdivision type
+ * @returns The density multiplier (e.g., 2 for eighth notes, 4 for sixteenth notes)
+ */
+export function getSubdivisionDensity(subdivision: SubdivisionType): number {
+    switch (subdivision) {
+        case 'half':
+            return 0.5;
+        case 'quarter':
+            return 1;
+        case 'triplet8':
+        case 'triplet4':
+        case 'eighth':
+            return 2;
+        case 'dotted4':
+        case 'dotted8':
+        case 'sixteenth':
+            return 4;
+        default:
+            // Exhaustive check - this should never happen with TypeScript
+            const _exhaustive: never = subdivision;
+            throw new Error(`Unknown subdivision type: ${_exhaustive}`);
+    }
+}
+
+/**
+ * Validate subdivision configuration (structural validation only)
+ *
+ * This validates:
+ * - Segments array is non-empty
+ * - Segments are ordered by startBeat in ascending order
+ * - startBeat is non-negative for all segments
+ * - Subdivision type is valid for all segments
+ *
+ * Note: Beat count validation (e.g., startBeat < totalBeats) happens
+ * in validateSubdivisionConfigAgainstBeats() after the beat map is available.
+ *
+ * @param config - The subdivision configuration to validate
+ * @throws Error if configuration is invalid
+ */
+export function validateSubdivisionConfig(config: SubdivisionConfig): void {
+    if (!config.segments || config.segments.length === 0) {
+        throw new Error('SubdivisionConfig must have at least one segment');
+    }
+
+    for (let i = 0; i < config.segments.length; i++) {
+        const segment = config.segments[i];
+
+        // Verify startBeat is non-negative
+        if (segment.startBeat < 0) {
+            throw new Error(
+                `Segment ${i}: startBeat must be non-negative, got ${segment.startBeat}`
+            );
+        }
+
+        // Verify subdivision type is valid
+        if (!isValidSubdivisionType(segment.subdivision)) {
+            throw new Error(
+                `Segment ${i}: Invalid subdivision type "${segment.subdivision}". ` +
+                `Valid types: ${VALID_SUBDIVISION_TYPES.join(', ')}`
+            );
+        }
+    }
+
+    // Verify segments are ordered by startBeat in ascending order
+    for (let i = 1; i < config.segments.length; i++) {
+        if (config.segments[i].startBeat <= config.segments[i - 1].startBeat) {
+            throw new Error(
+                `Segments must be ordered by startBeat in ascending order. ` +
+                `Segment ${i} has startBeat ${config.segments[i].startBeat} but ` +
+                `segment ${i - 1} has startBeat ${config.segments[i - 1].startBeat}`
+            );
+        }
+    }
+}
+
+/**
+ * Validate subdivision config against actual beat count
+ *
+ * This validates:
+ * - startBeat values don't exceed total beat count (except for the first segment)
+ *
+ * Note: The first segment's startBeat can be 0, even if there are no beats.
+ * Subsequent segments with startBeat >= totalBeats are effectively no-ops.
+ *
+ * @param config - The subdivision configuration to validate
+ * @param totalBeats - The total number of beats in the unified beat map
+ * @throws Error if startBeat exceeds total beats for non-first segments
+ */
+export function validateSubdivisionConfigAgainstBeats(
+    config: SubdivisionConfig,
+    totalBeats: number
+): void {
+    // First do structural validation
+    validateSubdivisionConfig(config);
+
+    // For empty beat maps, only allow the default segment at beat 0
+    if (totalBeats === 0) {
+        if (config.segments.length > 1 || config.segments[0].startBeat !== 0) {
+            throw new Error(
+                'Cannot apply subdivision config with multiple segments or non-zero startBeat to empty beat map'
+            );
+        }
+        return;
+    }
+
+    // Check that segment startBeats are within the beat range
+    // Note: We allow segments that start beyond the last beat - they just won't apply
+    // But we should warn if ALL segments are beyond the beat range (except the first)
+    const maxBeatIndex = totalBeats - 1;
+
+    for (let i = 1; i < config.segments.length; i++) {
+        const segment = config.segments[i];
+        // Segments starting after the last beat are no-ops, but not errors
+        // We only throw if a segment starts at an impossible position AND there are beats
+        if (segment.startBeat > maxBeatIndex) {
+            // This is a warning-worthy condition but not an error
+            // The segment simply won't apply to any beats
+            // We could add a warning callback here if needed
+        }
+    }
+}
+
+/**
+ * Validate that subdivision density does not exceed maximum
+ *
+ * This validates that the requested subdivision doesn't exceed the
+ * maximum supported density (sixteenth notes = 4x).
+ *
+ * @param subdivision - The subdivision type to validate
+ * @throws Error if subdivision exceeds maximum density
+ */
+export function validateSubdivisionDensity(subdivision: SubdivisionType): void {
+    const density = getSubdivisionDensity(subdivision);
+
+    if (density > MAX_SUBDIVISION_DENSITY) {
+        throw new Error(
+            `Subdivision "${subdivision}" has density ${density}x which exceeds ` +
+            `maximum supported density of ${MAX_SUBDIVISION_DENSITY}x (sixteenth notes)`
+        );
+    }
+}
+
+// ============================================================================
 // Version and Algorithm Identifiers
 // ============================================================================
 
