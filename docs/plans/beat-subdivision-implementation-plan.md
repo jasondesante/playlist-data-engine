@@ -634,7 +634,7 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 ### 7.1 Unit Tests for BeatSubdivider
 
 - [ ] Test each subdivision type:
-  - [ ] Quarter (no-op)
+  - [x] Quarter (no-op)
   - [ ] Half (density halved, correct beats kept)
   - [ ] Eighth (density doubled, correct positions)
   - [ ] Sixteenth (density 4x)
