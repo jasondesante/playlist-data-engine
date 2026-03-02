@@ -1710,6 +1710,90 @@ export interface UnifiedBeatMap {
 }
 
 // ============================================================================
+// Subdivided Beat Map (Result of Subdivision)
+// ============================================================================
+
+/**
+ * A beat in a subdivided beat map
+ *
+ * Note: beatInMeasure is a DECIMAL in SubdividedBeat (e.g., 0.5, 1.25, 2.75)
+ * while the base Beat interface uses integers. This allows for positions
+ * like "the 'and' of beat 1" (1.5) or swing patterns.
+ */
+export interface SubdividedBeat extends Beat {
+    /** Position within the measure as a decimal (e.g., 0, 0.5, 1, 1.5 for eighth notes) */
+    beatInMeasure: number;
+
+    /** Whether this beat was originally detected (vs interpolated or subdivision-generated) */
+    isDetected: boolean;
+
+    /** Index of the original beat in the UnifiedBeatMap (input to subdivider) */
+    originalBeatIndex?: number;
+
+    /** The subdivision type that created this beat */
+    subdivisionType: SubdivisionType;
+}
+
+/**
+ * Metadata about the subdivision process
+ */
+export interface SubdivisionMetadata {
+    /** Number of beats in the original unified map */
+    originalBeatCount: number;
+
+    /** Number of beats after subdivision */
+    subdividedBeatCount: number;
+
+    /** Overall density multiplier (2.0 = twice as many beats) */
+    averageDensityMultiplier: number;
+
+    /** Number of subdivision segments */
+    segmentCount: number;
+
+    /** Subdivision types used */
+    subdivisionsUsed: SubdivisionType[];
+
+    /** Whether the track has multiple tempo sections */
+    hasMultipleTempos: boolean;
+
+    /** Maximum density encountered (for validation against limit) */
+    maxDensity: number;
+}
+
+/**
+ * A beat map with subdivision applied
+ *
+ * The beat grid has been transformed according to the subdivision config,
+ * which may add beats (eighth, sixteenth, triplets), remove beats (half),
+ * or reposition beats (dotted patterns).
+ */
+export interface SubdividedBeatMap {
+    /** Unique identifier for the audio source */
+    audioId: string;
+
+    /** Duration of the audio in seconds */
+    duration: number;
+
+    /** Beats after subdivision applied */
+    beats: SubdividedBeat[];
+
+    /** Indices of beats that were originally detected (for accent lookup) */
+    detectedBeatIndices: number[];
+
+    /** The subdivision configuration used */
+    subdivisionConfig: SubdivisionConfig;
+
+    /** The downbeat configuration inherited from UnifiedBeatMap (preserved unchanged) */
+    downbeatConfig: DownbeatConfig;
+
+    /** Tempo sections inherited from UnifiedBeatMap (for reference) */
+    tempoSections?: TempoSection[];
+
+    /** Metadata about the subdivision process */
+    subdivisionMetadata: SubdivisionMetadata;
+}
+
+// ============================================================================
 // Version and Algorithm Identifiers
 // ============================================================================
 

@@ -442,12 +442,12 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 1.4 Add SubdividedBeatMap
 
-- [ ] Add `SubdividedBeat` interface (extends Beat)
-  - [ ] `isDetected: boolean`
-  - [ ] `originalBeatIndex?: number`
-  - [ ] `subdivisionType: SubdivisionType`
-- [ ] Add `SubdividedBeatMap` interface
-- [ ] Add `SubdivisionMetadata` interface
+- [x] Add `SubdividedBeat` interface (extends Beat)
+  - [x] `isDetected: boolean`
+  - [x] `originalBeatIndex?: number`
+  - [x] `subdivisionType: SubdivisionType`
+- [x] Add `SubdividedBeatMap` interface
+- [x] Add `SubdivisionMetadata` interface
 
 ### 1.5 Add Validation Functions
 
