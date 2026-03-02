@@ -4,12 +4,12 @@
 
 **Completed Phases:**
 - Phase 1: Type System Updates (complete)
+- Phase 2: Create UnifiedBeatMap (complete)
 
 **In Progress Phases:**
 - None
 
 **Pending Phases:**
-- Phase 2: Create UnifiedBeatMap
 - Phase 3: Create BeatSubdivider Core
 - Phase 4: Implement Subdivision Algorithms
 - Phase 5: Segment Support
@@ -469,19 +469,19 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 2.1 Create unifyBeatMap Utility
 
-- [ ] Create `src/core/analysis/beat/utils/unifyBeatMap.ts`
-- [ ] Implement `unifyBeatMap(interpolatedBeatMap: InterpolatedBeatMap): UnifiedBeatMap`
-  - [ ] Flatten `mergedBeats` into single `Beat[]`
-  - [ ] Remove `source` field distinction
-  - [ ] Build `detectedBeatIndices` array
-  - [ ] Extract `tempoSections` from InterpolationMetadata (for tempo-aware subdivision)
-  - [ ] Add `isDetected` would be on SubdividedBeat, not here
+- [x] Create `src/core/analysis/beat/utils/unifyBeatMap.ts`
+- [x] Implement `unifyBeatMap(interpolatedBeatMap: InterpolatedBeatMap): UnifiedBeatMap`
+  - [x] Flatten `mergedBeats` into single `Beat[]`
+  - [x] Remove `source` field distinction
+  - [x] Build `detectedBeatIndices` array
+  - [x] Extract `tempoSections` from InterpolationMetadata (for tempo-aware subdivision)
+  - [x] Add `isDetected` would be on SubdividedBeat, not here
 
 ### 2.2 Unit Tests for Unification
 
-- [ ] Test flattening of merged beats
-- [ ] Test detected beat index tracking
-- [ ] Test that all metadata is preserved
+- [x] Test flattening of merged beats
+- [x] Test detected beat index tracking
+- [x] Test that all metadata is preserved
 
 ---
 

@@ -844,6 +844,8 @@ export interface InterpolatedBeatMapJSON {
     quarterNoteConfidence: number;
     originalMetadata: BeatMapMetadata;
     interpolationMetadata: InterpolationMetadataJSON;
+    /** The downbeat configuration inherited from the original BeatMap */
+    downbeatConfig?: DownbeatConfig;
 }
 
 /**
@@ -1445,6 +1447,12 @@ export interface InterpolatedBeatMap {
 
     /** Metadata about the interpolation process */
     interpolationMetadata: InterpolationMetadata;
+
+    /**
+     * The downbeat configuration inherited from the original BeatMap
+     * Used for subdivision to determine measure boundaries
+     */
+    downbeatConfig?: DownbeatConfig;
 }
 
 /**

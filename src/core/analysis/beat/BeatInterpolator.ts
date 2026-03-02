@@ -326,6 +326,7 @@ export class BeatInterpolator {
             quarterNoteConfidence: quarterNote.confidence,
             originalMetadata: metadata,
             interpolationMetadata,
+            downbeatConfig,
         };
     }
 
@@ -1956,6 +1957,7 @@ export class BeatInterpolator {
                 tempoSections: undefined,
                 hasMultiTempoApplied: undefined,
             },
+            downbeatConfig: beatMap.downbeatConfig,
         };
     }
 
@@ -2010,6 +2012,7 @@ export class BeatInterpolator {
                 tempoSections: undefined,
                 hasMultiTempoApplied: undefined,
             },
+            downbeatConfig: beatMap.downbeatConfig,
         };
     }
 
@@ -2096,6 +2099,7 @@ export class BeatInterpolator {
                 })),
                 hasMultiTempoApplied: interpolatedBeatMap.interpolationMetadata.hasMultiTempoApplied,
             },
+            downbeatConfig: interpolatedBeatMap.downbeatConfig,
         };
 
         return JSON.stringify(json, null, 2);
@@ -2185,6 +2189,7 @@ export class BeatInterpolator {
                 })),
                 hasMultiTempoApplied: json.interpolationMetadata.hasMultiTempoApplied,
             },
+            downbeatConfig: json.downbeatConfig,
         };
     }
 

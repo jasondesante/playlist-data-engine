@@ -45,6 +45,8 @@ export type {
     GapAnalysisJSON,
     InterpolationMetadataJSON,
     InterpolatedBeatMapJSON,
+    // Unified beat map types (for subdivision)
+    UnifiedBeatMap,
 } from '../../types/BeatMap.js';
 
 export {
@@ -78,6 +80,9 @@ export { BeatTracker, type BeatTrackingResult } from './BeatTracker.js';
 export { BeatMapGenerator, type ProgressCallback } from './BeatMapGenerator.js';
 export { BeatStream } from './BeatStream.js';
 export { BeatInterpolator } from './BeatInterpolator.js';
+
+// Beat map unification (for subdivision)
+export { unifyBeatMap } from './utils/unifyBeatMap.js';
 
 // Debug utilities
 export {
