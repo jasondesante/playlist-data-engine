@@ -221,11 +221,11 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 - [x] Test missing pressedKey when key required returns 'miss'
 
 ### Task 6.3: Unit Tests for Helpers
-- [ ] Test assignKeyToBeat with valid key
-- [ ] Test assignKeyToBeat with null (removes key)
-- [ ] Test assignKeysToBeats batch assignment
-- [ ] Test extractKeyMap returns correct map
-- [ ] Test clearAllKeys removes all keys
+- [x] Test assignKeyToBeat with valid key
+- [x] Test assignKeyToBeat with null (removes key)
+- [x] Test assignKeysToBeats batch assignment
+- [x] Test extractKeyMap returns correct map
+- [x] Test clearAllKeys removes all keys
 
 ### Task 6.4: Unit Tests for Serialization
 - [ ] Test toJSON/fromJSON preserves requiredKey
