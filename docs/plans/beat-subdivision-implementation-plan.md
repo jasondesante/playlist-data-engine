@@ -639,7 +639,7 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
   - [x] Eighth (density doubled, correct positions)
   - [x] Sixteenth (density 4x)
   - [x] Triplet8 (3 per quarter)
-  - [ ] Triplet4 (3 per half)
+  - [x] Triplet4 (3 per half)
   - [ ] Dotted4 (phase-independent)
   - [ ] Dotted8 (swing pattern)
 
