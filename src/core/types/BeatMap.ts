@@ -1661,6 +1661,24 @@ export interface SubdivisionSegment {
 /**
  * Subdivision configuration for rhythm pattern generation
  * Supports multiple segments for subdivision changes within a track
+ *
+ * @example
+ * ```typescript
+ * // Single subdivision throughout the track
+ * const simpleConfig: SubdivisionConfig = {
+ *   segments: [{ startBeat: 0, subdivision: 'eighth' }],
+ * };
+ *
+ * // Multiple subdivisions changing over time
+ * const dynamicConfig: SubdivisionConfig = {
+ *   segments: [
+ *     { startBeat: 0, subdivision: 'quarter' },      // Intro: quarter notes
+ *     { startBeat: 32, subdivision: 'eighth' },      // Verse: eighth notes
+ *     { startBeat: 96, subdivision: 'half' },        // Bridge: half notes
+ *     { startBeat: 128, subdivision: 'triplet8' },   // Solo: triplets
+ *   ],
+ * };
+ * ```
  */
 export interface SubdivisionConfig {
     /** Array of subdivision segments ordered by startBeat */
@@ -1687,6 +1705,23 @@ export const DEFAULT_SUBDIVISION_CONFIG: SubdivisionConfig = {
  * Detected beats are flagged for accent/rhythm pattern use.
  *
  * Created from an InterpolatedBeatMap by the unifyBeatMap() utility.
+ *
+ * @example
+ * ```typescript
+ * import { BeatMapGenerator, BeatInterpolator, unifyBeatMap } from 'playlist-data-engine';
+ *
+ * // Generate and interpolate beat map
+ * const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+ * const interpolatedMap = interpolator.interpolate(beatMap);
+ *
+ * // Create unified beat map (foundation for subdivision)
+ * const unifiedMap = unifyBeatMap(interpolatedMap);
+ *
+ * // Access detected beats for accent patterns
+ * const detectedBeats = unifiedMap.beats.filter((_, i) =>
+ *   unifiedMap.detectedBeatIndices.includes(i)
+ * );
+ * ```
  */
 export interface UnifiedBeatMap {
     /** Unique identifier for the audio source */
@@ -1727,6 +1762,24 @@ export interface UnifiedBeatMap {
  * Note: beatInMeasure is a DECIMAL in SubdividedBeat (e.g., 0.5, 1.25, 2.75)
  * while the base Beat interface uses integers. This allows for positions
  * like "the 'and' of beat 1" (1.5) or swing patterns.
+ *
+ * @example
+ * ```typescript
+ * // Eighth note positions in 4/4 time
+ * // beatInMeasure values: 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5
+ *
+ * // Triplet positions in 4/4 time
+ * // beatInMeasure values: 0, 0.33, 0.66, 1, 1.33, 1.66...
+ *
+ * // Check if a beat was originally detected
+ * if (beat.isDetected) {
+ *   // Use for accent patterns
+ *   playAccentSound(beat);
+ * }
+ *
+ * // Get original position before subdivision
+ * const originalIndex = beat.originalBeatIndex; // undefined for generated beats
+ * ```
  */
 export interface SubdividedBeat extends Beat {
     /** Position within the measure as a decimal (e.g., 0, 0.5, 1, 1.5 for eighth notes) */
@@ -1744,6 +1797,18 @@ export interface SubdividedBeat extends Beat {
 
 /**
  * Metadata about the subdivision process
+ *
+ * @example
+ * ```typescript
+ * const metadata = subdividedMap.subdivisionMetadata;
+ *
+ * console.log(`Original beats: ${metadata.originalBeatCount}`);
+ * console.log(`Subdivided beats: ${metadata.subdividedBeatCount}`);
+ * console.log(`Density multiplier: ${metadata.averageDensityMultiplier}x`);
+ * console.log(`Subdivisions used: ${metadata.subdivisionsUsed.join(', ')}`);
+ * console.log(`Has tempo changes: ${metadata.hasMultipleTempos}`);
+ * console.log(`Max density: ${metadata.maxDensity}x`);
+ * ```
  */
 export interface SubdivisionMetadata {
     /** Number of beats in the original unified map */
@@ -1774,6 +1839,27 @@ export interface SubdivisionMetadata {
  * The beat grid has been transformed according to the subdivision config,
  * which may add beats (eighth, sixteenth, triplets), remove beats (half),
  * or reposition beats (dotted patterns).
+ *
+ * @example
+ * ```typescript
+ * import { BeatSubdivider, unifyBeatMap } from 'playlist-data-engine';
+ *
+ * const subdivider = new BeatSubdivider();
+ * const unifiedMap = unifyBeatMap(interpolatedMap);
+ *
+ * // Apply subdivision
+ * const subdividedMap = subdivider.subdivide(unifiedMap, {
+ *   segments: [{ startBeat: 0, subdivision: 'eighth' }],
+ * });
+ *
+ * // Access subdivision results
+ * console.log(`Original beats: ${subdividedMap.subdivisionMetadata.originalBeatCount}`);
+ * console.log(`Subdivided beats: ${subdividedMap.subdivisionMetadata.subdividedBeatCount}`);
+ * console.log(`Density multiplier: ${subdividedMap.subdivisionMetadata.averageDensityMultiplier}`);
+ *
+ * // Filter beats by type
+ * const detectedBeats = subdividedMap.beats.filter(b => b.isDetected);
+ * ```
  */
 export interface SubdividedBeatMap {
     /** Unique identifier for the audio source */
