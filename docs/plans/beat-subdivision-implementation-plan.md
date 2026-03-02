@@ -1058,7 +1058,7 @@ A separate feature from the pre-calculated SubdividedBeatMap. This enables real-
   - [x] Add code examples for SubdivisionPlaybackController
   - [x] Document SubdivisionPlaybackOptions interface
   - [x] Add practice mode UI concept diagram
-- [ ] Update DATA_ENGINE_REFERENCE.md
+- [x] Update DATA_ENGINE_REFERENCE.md
   - [x] Add SubdivisionPlaybackController to class summary table
   - [x] Add new types: SubdivisionPlaybackOptions, SubdivisionBeatEvent, SubdivisionCallback
   - [x] Document setSubdivision() method

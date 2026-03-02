@@ -1513,6 +1513,10 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `SubdividedBeatMap` | Beat map after subdivision | `audioId`, `duration`, `beats`, `detectedBeatIndices`, `subdivisionConfig`, `downbeatConfig`, `tempoSections?`, `subdivisionMetadata` |
 | `SubdivisionMetadata` | Metadata about subdivision process | `originalBeatCount`, `subdividedBeatCount`, `averageDensityMultiplier`, `segmentCount`, `subdivisionsUsed`, `hasMultipleTempos`, `maxDensity` |
 | `BeatSubdividerOptions` | Configuration for BeatSubdivider | `tolerance`, `defaultIntensity`, `defaultConfidence` |
+| `SubdivisionPlaybackOptions` | Configuration for real-time subdivision controller | `initialSubdivision`, `transitionMode`, `onSubdivisionChange`, `anticipationTime`, `timingTolerance`, `userOffsetMs`, `compensateOutputLatency` |
+| `SubdivisionBeatEvent` | Event emitted during playback | `beat`, `currentSubdivision`, `timeUntilBeat`, `audioTime`, `type` |
+| `SubdivisionCallback` | Callback type for beat events | `(event: SubdivisionBeatEvent) => void` |
+| `SubdivisionTransitionMode` | Transition mode for subdivision changes | `'immediate'` \| `'next-downbeat'` \| `'next-measure'` |
 
 ### BeatMapGenerator
 
@@ -2066,6 +2070,164 @@ const subdividedMap = subdivideBeatMap(interpolatedMap, config, {
 });
 ```
 
+### SubdivisionPlaybackController
+
+**Location:** `src/core/playback/SubdivisionPlaybackController.ts`
+
+Real-time subdivision controller for practice mode. Enables instant switching between subdivision types during playback, allowing users to practice with different rhythmic densities (e.g., start with quarter notes, then switch to eighth notes).
+
+**Key Concepts:**
+
+- **Real-Time Generation**: Beats are generated on-the-fly based on current subdivision type
+- **Instant Switching**: Change subdivision type at any time during playback
+- **Transition Modes**: Configurable behavior for when subdivision changes take effect
+- **Web Audio Integration**: Precise timing using AudioContext for synchronization
+
+**Constructor:**
+
+```typescript
+constructor(
+    unifiedMap: UnifiedBeatMap,
+    audioContext: AudioContext,
+    options?: SubdivisionPlaybackOptions
+)
+```
+
+**Options (with defaults):**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `initialSubdivision` | `'quarter'` | Starting subdivision type |
+| `transitionMode` | `'immediate'` | How to handle subdivision changes (`'immediate'`, `'next-downbeat'`, `'next-measure'`) |
+| `onSubdivisionChange` | `undefined` | Callback when subdivision changes `(oldType, newType) => void` |
+| `anticipationTime` | `2.0` | Time before beat to emit 'upcoming' event (seconds) |
+| `timingTolerance` | `0.01` | Tolerance for beat event detection (10ms) |
+| `userOffsetMs` | `0` | User-calibrated audio/visual offset (milliseconds) |
+| `compensateOutputLatency` | `true` | Auto-adjust using AudioContext.outputLatency |
+
+**Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `subdivision` | `SubdivisionType` | Get the current subdivision type (read-only) |
+| `beatMap` | `UnifiedBeatMap` | Get the unified beat map (read-only) |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `subscribe(callback: SubdivisionCallback): () => void` | Subscribe to beat events, returns unsubscribe function |
+| `setSubdivision(type: SubdivisionType): void` | Change subdivision type in real-time |
+| `play(): void` | Start streaming beat events |
+| `stop(): void` | Stop streaming and reset state |
+| `pause(): void` | Pause event emission (preserves position) |
+| `resume(): void` | Resume paused playback |
+| `seek(time: number): void` | Seek to a specific time in seconds |
+| `getBeatsInRange(startTime: number, endTime: number): SubdividedBeat[]` | Get beats in a time range |
+| `getUpcomingBeats(count: number): SubdividedBeat[]` | Get upcoming beats for pre-rendering |
+| `getBeatAtTime(time: number): SubdividedBeat \| null` | Get beat at specific time |
+| `getCurrentBeat(): SubdividedBeat \| null` | Get the current (most recent) beat |
+| `getNextBeat(): SubdividedBeat \| null` | Get the next beat |
+| `getCurrentTime(): number` | Get current playback position in seconds |
+| `getDuration(): number` | Get beat map duration in seconds |
+| `getOptions(): Required<SubdivisionPlaybackOptions>` | Get current playback options |
+| `setBeatMap(unifiedMap: UnifiedBeatMap): void` | Update the unified beat map |
+| `isRunning(): boolean` | Check if controller is running |
+| `isPaused(): boolean` | Check if controller is paused |
+| `dispose(): void` | Clean up resources |
+
+**Transition Modes:**
+
+| Mode | Description |
+|------|-------------|
+| `'immediate'` | Switch subdivision instantly at current position |
+| `'next-downbeat'` | Wait for the next downbeat before switching |
+| `'next-measure'` | Wait for the next measure before switching |
+
+**Usage - Practice Mode:**
+
+```typescript
+import {
+    BeatMapGenerator,
+    BeatInterpolator,
+    unifyBeatMap,
+    SubdivisionPlaybackController
+} from 'playlist-data-engine';
+
+// Generate and unify (done once)
+const generator = new BeatMapGenerator();
+const interpolator = new BeatInterpolator();
+
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+const interpolatedMap = interpolator.interpolate(beatMap);
+const unifiedMap = unifyBeatMap(interpolatedMap);
+
+// Create real-time controller for practice mode
+const controller = new SubdivisionPlaybackController(
+    unifiedMap,
+    audioContext,
+    {
+        initialSubdivision: 'quarter',
+        transitionMode: 'next-downbeat',
+        onSubdivisionChange: (oldType, newType) => {
+            console.log(`Switched from ${oldType} to ${newType}`);
+        },
+    }
+);
+
+// Subscribe to beat events
+controller.subscribe((event) => {
+    switch (event.type) {
+        case 'upcoming':
+            // Pre-render beat visual (event.timeUntilBeat seconds until beat)
+            break;
+        case 'exact':
+            // Beat is happening now - play sound
+            playBeatSound(event.beat);
+            break;
+        case 'passed':
+            // Beat was missed
+            break;
+    }
+});
+
+// Start playback
+controller.play();
+
+// User clicks "Eighth Notes" button in practice mode
+document.getElementById('eighth-btn').onclick = () => {
+    controller.setSubdivision('eighth');  // Switches in real-time!
+};
+
+// User clicks "Half Notes" button
+document.getElementById('half-btn').onclick = () => {
+    controller.setSubdivision('half');  // Slows down the beat grid
+};
+
+// User clicks "Quarter Notes" button
+document.getElementById('quarter-btn').onclick = () => {
+    controller.setSubdivision('quarter');  // Back to normal
+};
+```
+
+**Event Types:**
+
+The `SubdivisionBeatEvent` includes:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `beat` | `SubdividedBeat` | The beat this event relates to |
+| `currentSubdivision` | `SubdivisionType` | Current subdivision type being used |
+| `timeUntilBeat` | `number` | Time until the beat occurs (negative if passed) |
+| `audioTime` | `number` | Current audio context time in seconds |
+| `type` | `'upcoming'` \| `'exact'` \| `'passed'` | Type of event |
+
+**Constants:**
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `DEFAULT_SUBDIVISION_PLAYBACK_OPTIONS` | `{ initialSubdivision: 'quarter', transitionMode: 'immediate', ... }` | Default playback options |
+
 ### Beat Detection Utilities
 
 **Location:** `src/core/analysis/beat/utils/audioUtils.ts`
@@ -2106,6 +2268,7 @@ const subdividedMap = subdivideBeatMap(interpolatedMap, config, {
 | `validateSubdivisionConfig(config)` | Throws on error | Validate subdivision config structure |
 | `validateSubdivisionConfigAgainstBeats(config, totalBeats)` | Throws on error | Validate config against beat count |
 | `validateSubdivisionDensity(subdivision)` | Throws on error | Validate density doesn't exceed max |
+| `DEFAULT_SUBDIVISION_PLAYBACK_OPTIONS` | `{ initialSubdivision: 'quarter', transitionMode: 'immediate', anticipationTime: 2.0, timingTolerance: 0.01, userOffsetMs: 0, compensateOutputLatency: true }` | Default options for SubdivisionPlaybackController |
 
 ### OSE Parameter Modes
 
