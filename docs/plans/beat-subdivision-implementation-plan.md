@@ -652,18 +652,18 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 ### 7.3 Detected Beat Tests
 
-- [ ] Test detected beat preservation (flag)
-- [ ] Test detectedBeatIndices array accuracy
-- [ ] Test half notes removing detected beats
-- [ ] Test new beats NOT being marked as detected
+- [x] Test detected beat preservation (flag)
+- [x] Test detectedBeatIndices array accuracy
+- [x] Test half notes removing detected beats
+- [x] Test new beats NOT being marked as detected
 
 ### 7.4 Edge Cases
 
-- [ ] Empty beat map
-- [ ] Single beat
-- [ ] Very short track
+- [x] Empty beat map
+- [x] Single beat
+- [x] Very short track
 - [ ] Tempo changes (multi-tempo tracks)
-- [ ] Multiple time signatures
+- [x] Multiple time signatures
 - [ ] Subdivision config with startBeat exceeding beat count (validation)
 - [ ] Density limit enforcement (error on > sixteenth)
 

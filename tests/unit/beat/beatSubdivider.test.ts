@@ -339,6 +339,42 @@ describe('BeatSubdivider - Quarter Notes (no-op)', () => {
         expect(result.audioId).toBe(unifiedMap.audioId);
         expect(result.duration).toBe(unifiedMap.duration);
     });
+
+    it('should handle very short track with only 2 beats', () => {
+        // Arrange - very short track with only 2 beats
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 2);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap);
+
+        // Assert
+        expect(result.beats).toHaveLength(2);
+        expect(result.subdivisionMetadata.originalBeatCount).toBe(2);
+        expect(result.subdivisionMetadata.subdividedBeatCount).toBe(2);
+        expect(result.beats[0].isDetected).toBe(true);
+        expect(result.beats[1].isDetected).toBe(true);
+    });
+
+    it('should handle very short track with eighth note subdivision', () => {
+        // Arrange - 2 beats, subdivide to eighth notes
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 2);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            segments: [{ startBeat: 0, subdivision: 'eighth' }],
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - 2 beats → 3 beats (original + 1 interpolated between them)
+        expect(result.beats).toHaveLength(3);
+        expect(result.beats[0].isDetected).toBe(true);  // original
+        expect(result.beats[1].isDetected).toBe(false); // interpolated
+        expect(result.beats[2].isDetected).toBe(true);  // original
+    });
 });
 
 // ============================================================================
