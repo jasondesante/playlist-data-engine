@@ -193,11 +193,11 @@ Create a new file: `src/core/analysis/beat/beatKeyHelpers.ts`
 - [x] Document how key matching works (string comparison, frontend responsibility)
 
 ### Task 5.2: Update DATA_ENGINE_REFERENCE.md
-- [ ] Add `requiredKey` to Beat type reference
-- [ ] Add `wrongKey` to BeatAccuracy type reference
-- [ ] Document new ButtonPressResult fields
-- [ ] Document `ignoreKeyRequirements` in BeatStreamOptions section
-- [ ] Add example of creating a chart with required keys
+- [x] Add `requiredKey` to Beat type reference
+- [x] Add `wrongKey` to BeatAccuracy type reference
+- [x] Document new ButtonPressResult fields
+- [x] Document `ignoreKeyRequirements` in BeatStreamOptions section
+- [x] Add example of creating a chart with required keys
 
 ### Task 5.3: Add Code Examples
 - [ ] Example: Creating a simple 2-key chart

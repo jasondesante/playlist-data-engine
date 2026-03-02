@@ -157,6 +157,8 @@ A concise overview of all main exports from the library, organized by category.
 | `subdivideBeatMap` | One-step convenience function for subdivision | [Beat Detection](#beat-detection) |
 | `SubdivisionPlaybackController` | Real-time subdivision switching for practice mode | [Beat Detection](#beat-detection) |
 
+**Beat Key Helpers:** `assignKeyToBeat`, `assignKeysToBeats`, `extractKeyMap`, `clearAllKeys`, `hasRequiredKeys`, `getKeyCount`, `getUsedKeys` — see [Beat Key Helper Functions](#beat-key-helper-functions)
+
 **Beat Utilities:** `hzToMel`, `melToHz`, `resampleAudio`, `createMelFilterbank`, `highPassFilter`, `gaussianSmooth`, `calculateStdDev`, `performBeatFFT`, `performSTFT` — see [Beat Detection Utilities](#beat-detection-utilities)
 
 **Beat Constants:** `DEFAULT_BEATMAP_GENERATOR_OPTIONS`, `DEFAULT_BEATSTREAM_OPTIONS`, `BEAT_ACCURACY_THRESHOLDS`, `BEAT_DETECTION_VERSION`, `BEAT_DETECTION_ALGORITHM`, `HOP_SIZE_PRESETS`, `MEL_BANDS_PRESETS`, `GAUSSIAN_SMOOTH_PRESETS`
@@ -207,6 +209,8 @@ All TypeScript types are exported, including:
 **Beat Interpolation Types:** `BeatSource`, `BeatWithSource`, `QuarterNoteDetection`, `GapAnalysis`, `InterpolationMetadata`, `InterpolatedBeatMap`, `BeatInterpolationOptions`, `InterpolatedBeatMapJSON`, `TempoSection`, `TempoSectionJSON` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
 **Beat Subdivision Types:** `SubdivisionType`, `SubdivisionSegment`, `SubdivisionConfig`, `UnifiedBeatMap`, `SubdividedBeat`, `SubdividedBeatMap`, `SubdivisionMetadata`, `BeatSubdividerOptions` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
+
+**Beat Key Types:** `KeyAssignableBeatMap`, `KeyAssignment` — see [Beat Key Helper Functions](#beat-key-helper-functions)
 
 **OSE Parameter Mode Types:** `HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig` — see [OSE Parameter Modes](#ose-parameter-modes)
 
@@ -1201,6 +1205,13 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 | `getTracks(playlist)` | `SimpleTrack[]` | Simplified objects: `{ title, artist, audio_url, image_url }` |
 | `getFullTracks(playlist)` | `object[]` | All available track data as plain objects |
 
+#### VRM Extraction Functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `getVRMs(playlist)` | `string[]` | VRM URLs from tracks that have the optional `vrm` field |
+| `getVRMTracks(playlist)` | `VRMTrack[]` | Track objects with VRM data: `{ title, artist, audio_url, image_url, vrm }` |
+
 #### Types
 
 ```typescript
@@ -1212,12 +1223,20 @@ interface SimpleTrack {
     audio_url: string;
     image_url: string;
 }
+
+interface VRMTrack {
+    title: string;
+    artist: string;
+    audio_url: string;
+    image_url: string;
+    vrm: string;
+}
 ```
 
 #### Usage Example
 
 ```typescript
-import { PlaylistParser, getAudioUrls, getArtists, getTracks } from 'playlist-data-engine';
+import { PlaylistParser, getAudioUrls, getArtists, getTracks, getVRMTracks } from 'playlist-data-engine';
 
 const parser = new PlaylistParser();
 const playlist = await parser.parse(rawPlaylistData);
@@ -1229,6 +1248,10 @@ const artists = getArtists(playlist);     // ['Artist A', 'Artist B']
 // Object extraction
 const tracks = getTracks(playlist);
 // [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...' }, ...]
+
+// VRM extraction (for tracks with 3D avatar models)
+const vrmTracks = getVRMTracks(playlist);
+// [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', vrm: 'https://...' }, ...]
 ```
 
 ---
@@ -1476,7 +1499,7 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 
 | Type | Description | Key Properties |
 |------|-------------|----------------|
-| `Beat` | Single detected beat (measure fields derived from `downbeatConfig`) | `timestamp`, `beatInMeasure`, `isDownbeat`, `measureNumber`, `intensity`, `confidence` |
+| `Beat` | Single detected beat (measure fields derived from `downbeatConfig`) | `timestamp`, `beatInMeasure`, `isDownbeat`, `measureNumber`, `intensity`, `confidence`, `requiredKey?` |
 | `BeatMap` | Complete beat map for a track | `audioId`, `duration`, `beats`, `bpm`, `metadata`, `downbeatConfig?` |
 | `TimeSignatureConfig` | Time signature configuration | `beatsPerMeasure` |
 | `DownbeatSegment` | Segment with downbeat and time signature | `startBeat`, `downbeatBeatIndex`, `timeSignature` |
@@ -1492,8 +1515,8 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `MelBandsConfig` | Mel bands mode configuration | `mode` |
 | `GaussianSmoothMode` | Gaussian smooth mode selection | `'minimal'` \| `'standard'` \| `'smooth'` |
 | `GaussianSmoothConfig` | Gaussian smooth mode configuration | `mode` |
-| `BeatStreamOptions` | Configuration for streaming | `anticipationTime`, `userOffsetMs`, `compensateOutputLatency`, `timingTolerance`, `difficultyPreset`, `customThresholds` |
-| `ButtonPressResult` | Button press accuracy result | `accuracy`, `offset`, `matchedBeat`, `absoluteOffset` |
+| `BeatStreamOptions` | Configuration for streaming | `anticipationTime`, `userOffsetMs`, `compensateOutputLatency`, `timingTolerance`, `difficultyPreset`, `customThresholds`, `useInterpolatedBeats`, `ignoreKeyRequirements` |
+| `ButtonPressResult` | Button press accuracy result | `accuracy`, `offset`, `matchedBeat`, `absoluteOffset`, `keyMatch`, `pressedKey?`, `requiredKey?` |
 | `AccuracyThresholds` | Accuracy thresholds for difficulty | `perfect`, `great`, `good`, `ok` |
 | `DifficultyPreset` | Preset difficulty levels | `'easy'` \| `'medium'` \| `'hard'` \| `'custom'` |
 | `ThresholdValidationResult` | Validation result for thresholds | `valid: boolean`, `errors: string[]` |
@@ -1509,7 +1532,7 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `SubdivisionSegment` | Segment with subdivision config | `startBeat`, `subdivision` |
 | `SubdivisionConfig` | Subdivision configuration for rhythm patterns | `segments` |
 | `UnifiedBeatMap` | Unified beat map (detected + interpolated merged) | `audioId`, `duration`, `beats`, `detectedBeatIndices`, `quarterNoteInterval`, `quarterNoteBpm`, `downbeatConfig`, `tempoSections?`, `originalMetadata` |
-| `SubdividedBeat` | Beat in a subdivided map (decimal beatInMeasure) | `beatInMeasure` (decimal), `isDetected`, `originalBeatIndex?`, `subdivisionType` |
+| `SubdividedBeat` | Beat in a subdivided map (extends Beat, includes `requiredKey?`) | `beatInMeasure` (decimal), `isDetected`, `originalBeatIndex?`, `subdivisionType`, `requiredKey?` |
 | `SubdividedBeatMap` | Beat map after subdivision | `audioId`, `duration`, `beats`, `detectedBeatIndices`, `subdivisionConfig`, `downbeatConfig`, `tempoSections?`, `subdivisionMetadata` |
 | `SubdivisionMetadata` | Metadata about subdivision process | `originalBeatCount`, `subdividedBeatCount`, `averageDensityMultiplier`, `segmentCount`, `subdivisionsUsed`, `hasMultipleTempos`, `maxDensity` |
 | `BeatSubdividerOptions` | Configuration for BeatSubdivider | `tolerance`, `defaultIntensity`, `defaultConfidence` |
@@ -1592,6 +1615,8 @@ constructor(beatMap: BeatMap | InterpolatedBeatMap | SubdividedBeatMap, audioCon
 | `timingTolerance` | 0.01 | Synchronization tolerance (10ms) |
 | `difficultyPreset` | `'hard'` | Difficulty preset (`'easy'`, `'medium'`, `'hard'`, `'custom'`). Ignored if `customThresholds` provided. |
 | `customThresholds` | `{}` | Custom accuracy thresholds (partial `AccuracyThresholds`). Overrides `difficultyPreset`. |
+| `useInterpolatedBeats` | `false` | Use `mergedBeats` from `InterpolatedBeatMap` instead of `beats` |
+| `ignoreKeyRequirements` | `false` | Ignore required key assignments on beats (easy mode - timing-only evaluation) |
 
 **Methods:**
 
@@ -1605,12 +1630,12 @@ constructor(beatMap: BeatMap | InterpolatedBeatMap | SubdividedBeatMap, audioCon
 | `getBeatAtTime(time: number): Beat \| null` | Get beat at specific time |
 | `getSyncState(): AudioSyncState` | Get current synchronization state for debugging |
 | `getCurrentBpm(): number` | Get current BPM calculated from recent beat intervals |
-| `checkButtonPress(timestamp: number): ButtonPressResult` | Check button press accuracy against nearest beat using configured thresholds |
+| `checkButtonPress(timestamp: number, pressedKey?: string): ButtonPressResult` | Check button press accuracy against nearest beat using configured thresholds. Optional `pressedKey` for key-matching beats. |
 | `getLastBeatAccuracy(): ButtonPressResult \| null` | Get accuracy of last button press |
 | `getAccuracyThresholds(): AccuracyThresholds` | Get current accuracy thresholds being used |
 | `setDifficulty(options: { preset?: DifficultyPreset, customThresholds?: Partial<AccuracyThresholds> }): void` | Change difficulty settings mid-stream for adaptive gameplay |
 
-**Accuracy Levels:** Perfect, Great, Good, Ok, Miss (thresholds vary by difficulty preset)
+**Accuracy Levels:** Perfect, Great, Good, Ok, Miss, WrongKey (thresholds vary by difficulty preset; WrongKey is for correct timing but wrong key press)
 
 **Difficulty Presets:**
 
@@ -1619,6 +1644,111 @@ constructor(beatMap: BeatMap | InterpolatedBeatMap | SubdividedBeatMap, audioCon
 | Easy | ±75ms | ±125ms | ±175ms | ±250ms |
 | Medium | ±45ms | ±90ms | ±135ms | ±200ms |
 | Hard | ±10ms | ±25ms | ±50ms | ±100ms |
+
+### Beat Key Helper Functions
+
+**Location:** `src/core/analysis/beat/beatKeyHelpers.ts`
+
+Utility functions for assigning and managing required keys on beat maps. Used for rhythm game chart creation where specific keys must be pressed for specific beats.
+
+**Types:**
+
+| Type | Description | Key Properties |
+|------|-------------|----------------|
+| `KeyAssignableBeatMap` | Union type of beat maps supporting key assignment | `BeatMap` \| `InterpolatedBeatMap` \| `UnifiedBeatMap` \| `SubdividedBeatMap` |
+| `KeyAssignment` | Assignment for bulk key operations | `beatIndex`, `key` (string or null to remove) |
+
+**Functions:**
+
+| Function | Description |
+|----------|-------------|
+| `assignKeyToBeat<T>(beatMap: T, beatIndex: number, key: string \| null): T` | Assign a required key to a single beat (immutable). Pass `null` to remove. |
+| `assignKeysToBeats<T>(beatMap: T, assignments: KeyAssignment[]): T` | Bulk assign keys to multiple beats in one operation |
+| `extractKeyMap(beatMap): Map<number, string>` | Extract map of beatIndex → requiredKey for beats with keys |
+| `clearAllKeys<T>(beatMap: T): T` | Remove all required key assignments from a beat map |
+| `hasRequiredKeys(beatMap): boolean` | Check if any beats have required keys assigned |
+| `getKeyCount(beatMap): number` | Count beats with required keys |
+| `getUsedKeys(beatMap): string[]` | Get unique keys used (sorted alphabetically) |
+
+**Key Matching Behavior:**
+
+The engine performs simple string comparison for key matching. The frontend is responsible for mapping physical inputs to logical key strings before calling the engine:
+
+- Keyboard arrow keys → pass `"up"`, `"down"`, `"left"`, `"right"`
+- Game controller D-pad → pass `"up"`, `"down"`, `"left"`, `"right"`
+- Game controller face buttons → pass `"a"`, `"b"`, `"x"`, `"y"`
+- Touch screen zones → pass any custom string
+
+### Chart Creation Example
+
+Create a rhythm game chart with required keys:
+
+```typescript
+import {
+    BeatMapGenerator,
+    BeatInterpolator,
+    BeatSubdivider,
+    unifyBeatMap,
+    SubdivisionConfig,
+    BeatStream,
+    assignKeysToBeats,
+    extractKeyMap,
+    getUsedKeys,
+} from 'playlist-data-engine';
+
+// Step 1: Generate beat map from audio
+const generator = new BeatMapGenerator();
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+
+// Step 2: Interpolate to fill gaps
+const interpolator = new BeatInterpolator();
+const interpolatedMap = interpolator.interpolate(beatMap);
+
+// Step 3: Unify for subdivision
+const unifiedMap = unifyBeatMap(interpolatedMap);
+
+// Step 4: Subdivide for rhythm patterns
+const subdivisionConfig: SubdivisionConfig = {
+    segments: [{ startBeat: 0, subdivision: 'eighth' }]
+};
+const subdivider = new BeatSubdivider();
+const subdividedMap = subdivider.subdivide(unifiedMap, subdivisionConfig);
+
+// Step 5: Assign required keys to create a chart
+const chartMap = assignKeysToBeats(subdividedMap, [
+    { beatIndex: 0, key: 'left' },
+    { beatIndex: 1, key: 'down' },
+    { beatIndex: 2, key: 'up' },
+    { beatIndex: 3, key: 'right' },
+    // ... more assignments
+]);
+
+// Step 6: Check what keys are used
+const usedKeys = getUsedKeys(chartMap);
+// ['down', 'left', 'right', 'up']
+
+// Step 7: Use in gameplay
+const beatStream = new BeatStream(chartMap, audioContext);
+
+// Step 8: On player input - frontend maps physical input to string
+function onPlayerInput(physicalKey: string) {
+    // Map physical input to logical key
+    const keyMap = { 'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right' };
+    const pressedKey = keyMap[physicalKey];
+
+    const result = beatStream.checkButtonPress(audioContext.currentTime, pressedKey);
+
+    // result.accuracy: 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKey'
+    // result.keyMatch: true | false
+    // result.requiredKey: the key the beat required (if any)
+    // result.pressedKey: the key that was passed in
+}
+
+// Easy mode: ignore key requirements (timing-only evaluation)
+const easyStream = new BeatStream(chartMap, audioContext, {
+    ignoreKeyRequirements: true,
+});
+```
 
 ### OnsetStrengthEnvelope
 
