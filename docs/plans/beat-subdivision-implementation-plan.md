@@ -635,7 +635,7 @@ const subdividedMap = subdivider.subdivide(unifiedMap, config);
 
 - [ ] Test each subdivision type:
   - [x] Quarter (no-op)
-  - [ ] Half (density halved, correct beats kept)
+  - [x] Half (density halved, correct beats kept)
   - [ ] Eighth (density doubled, correct positions)
   - [ ] Sixteenth (density 4x)
   - [ ] Triplet8 (3 per quarter)
