@@ -53,6 +53,11 @@ export type {
     SubdividedBeat,
     SubdividedBeatMap,
     SubdivisionMetadata,
+    // Groove analyzer types
+    GrooveDirection,
+    GrooveResult,
+    GrooveState,
+    GrooveAnalyzerOptions,
 } from '../../types/BeatMap.js';
 
 export {
@@ -86,6 +91,8 @@ export {
     validateSubdivisionConfig,
     validateSubdivisionConfigAgainstBeats,
     validateSubdivisionDensity,
+    // Groove analyzer defaults
+    DEFAULT_GROOVE_OPTIONS,
 } from '../../types/BeatMap.js';
 
 // Classes
@@ -96,6 +103,7 @@ export { BeatMapGenerator, type ProgressCallback } from './BeatMapGenerator.js';
 export { BeatStream } from './BeatStream.js';
 export { BeatInterpolator } from './BeatInterpolator.js';
 export { BeatSubdivider, type BeatSubdividerOptions } from './BeatSubdivider.js';
+export { GrooveAnalyzer } from './GrooveAnalyzer.js';
 
 // Beat map unification (for subdivision)
 export { unifyBeatMap } from './utils/unifyBeatMap.js';

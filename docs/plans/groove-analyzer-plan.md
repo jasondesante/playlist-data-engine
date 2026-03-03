@@ -104,24 +104,24 @@ export const DEFAULT_GROOVE_OPTIONS: GrooveAnalyzerOptions = {
 
 Create `src/core/analysis/beat/GrooveAnalyzer.ts`.
 
-- [ ] **2.1 Class Structure**
-  - [ ] Constructor accepting `GrooveAnalyzerOptions`
-  - [ ] Private state tracking properties
-  - [ ] `recordHit(offset: number, bpm: number): GrooveResult` method
-  - [ ] `recordMiss(): GrooveResult` method (for missed beats)
-  - [ ] `getState(): GrooveState` method
-  - [ ] `reset(): void` method
+- [x] **2.1 Class Structure**
+  - [x] Constructor accepting `GrooveAnalyzerOptions`
+  - [x] Private state tracking properties
+  - [x] `recordHit(offset: number, bpm: number): GrooveResult` method
+  - [x] `recordMiss(): GrooveResult` method (for missed beats)
+  - [x] `getState(): GrooveState` method
+  - [x] `reset(): void` method
 
-- [ ] **2.2 Pocket Detection Logic**
-  - [ ] Track recent hit offsets in rolling window (default: 4 hits)
-  - [ ] Calculate running average of offsets
-  - [ ] Determine direction from average (push = negative, pull = positive)
-  - [ ] Only establish pocket after `minHitsForPocket` consistent hits
+- [x] **2.2 Pocket Detection Logic**
+  - [x] Track recent hit offsets in rolling window (default: 4 hits)
+  - [x] Calculate running average of offsets
+  - [x] Determine direction from average (push = negative, pull = positive)
+  - [x] Only establish pocket after `minHitsForPocket` consistent hits
 
-- [ ] **2.3 Consistency Calculation (Quadratic Falloff)**
-  - [ ] Calculate distance from current hit to established pocket center
-  - [ ] Calculate current pocket window (BPM-aware + progressive tightening)
-  - [ ] Return consistency score using **quadratic falloff**:
+- [x] **2.3 Consistency Calculation (Quadratic Falloff)**
+  - [x] Calculate distance from current hit to established pocket center
+  - [x] Calculate current pocket window (BPM-aware + progressive tightening)
+  - [x] Return consistency score using **quadratic falloff**:
     ```typescript
     // 1.0 = perfect (at pocket center), 0.0 = outside window
     const normalizedDistance = distanceFromPocket / pocketWindow;
@@ -129,14 +129,14 @@ Create `src/core/analysis/beat/GrooveAnalyzer.ts`.
     return 1 - (normalizedDistance * normalizedDistance);  // Quadratic falloff
     ```
 
-- [ ] **2.4 Hotness/Meter Logic**
-  - [ ] Increase hotness when hit is within pocket window (+8 default)
-  - [ ] Decrease hotness when hit breaks pocket (-20 default)
-  - [ ] Decrease hotness when beat is missed (-10 default, via `recordMiss()`)
-  - [ ] Progressive window tightening as hotness increases
-  - [ ] Clamp hotness to 0-100 range
+- [x] **2.4 Hotness/Meter Logic**
+  - [x] Increase hotness when hit is within pocket window (+8 default)
+  - [x] Decrease hotness when hit breaks pocket (-20 default)
+  - [x] Decrease hotness when beat is missed (-10 default, via `recordMiss()`)
+  - [x] Progressive window tightening as hotness increases
+  - [x] Clamp hotness to 0-100 range
 
-- [ ] **2.5 BPM-Aware Window Calculation**
+- [x] **2.5 BPM-Aware Window Calculation**
   ```
   // Step 1: Calculate 1/32 note duration at current BPM
   beatDuration = 60 / BPM  // in seconds
@@ -266,19 +266,19 @@ This approach is more forgiving and feels more musical than a hard reset on dire
 
 ## Phase 3: Exports & Integration
 
-- [ ] **3.1 Export from beat index**
-  - [ ] Add exports to `src/core/analysis/beat/index.ts`
-  - [ ] Add types to `src/core/types/BeatMap.ts` exports
+- [x] **3.1 Export from beat index**
+  - [x] Add exports to `src/core/analysis/beat/index.ts`
+  - [x] Add types to `src/core/types/BeatMap.ts` exports
 
-- [ ] **3.2 Export from main engine index**
-  - [ ] Add to `src/index.ts` public exports
+- [x] **3.2 Export from main engine index**
+  - [x] Add to `src/index.ts` public exports
 
-- [ ] **3.3 Standalone Integration (No BeatStream Coupling)**
+- [x] **3.3 Standalone Integration (No BeatStream Coupling)**
   - [x] Decision: GrooveAnalyzer is a standalone class
-  - [ ] Frontend creates and manages GrooveAnalyzer separately from BeatStream
-  - [ ] Frontend calls `recordHit(offset, bpm)` after each button press
-  - [ ] Frontend calls `recordMiss()` when user doesn't press on a beat
-  - [ ] This keeps the engine modular and allows flexible frontend implementations
+  - [x] Frontend creates and manages GrooveAnalyzer separately from BeatStream
+  - [x] Frontend calls `recordHit(offset, bpm)` after each button press
+  - [x] Frontend calls `recordMiss()` when user doesn't press on a beat
+  - [x] This keeps the engine modular and allows flexible frontend implementations
 
 ---
 

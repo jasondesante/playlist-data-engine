@@ -85,6 +85,11 @@ export type {
     SubdivisionPlaybackOptions,
     SubdivisionBeatEvent,
     SubdivisionCallback,
+    // Groove analyzer types
+    GrooveDirection,
+    GrooveResult,
+    GrooveState,
+    GrooveAnalyzerOptions,
 } from './core/types/BeatMap.js';
 
 // Beat detection constants
@@ -125,6 +130,8 @@ export {
     getGaussianSmoothMs,
     // Beat Interpolation constants
     DEFAULT_BEAT_INTERPOLATION_OPTIONS,
+    // Groove analyzer defaults
+    DEFAULT_GROOVE_OPTIONS,
 } from './core/types/BeatMap.js';
 
 // Character types
@@ -440,6 +447,7 @@ export { BeatTracker, type BeatTrackingResult } from './core/analysis/beat/BeatT
 export { TempoDetector } from './core/analysis/beat/TempoDetector.js';
 export { BeatInterpolator } from './core/analysis/beat/BeatInterpolator.js';
 export { BeatSubdivider, type BeatSubdividerOptions } from './core/analysis/beat/BeatSubdivider.js';
+export { GrooveAnalyzer } from './core/analysis/beat/GrooveAnalyzer.js';
 export { unifyBeatMap } from './core/analysis/beat/utils/unifyBeatMap.js';
 export { subdivideBeatMap } from './core/analysis/beat/utils/subdivideBeatMap.js';
 
