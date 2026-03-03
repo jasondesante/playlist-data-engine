@@ -15,11 +15,11 @@ A "groove meter" system that rewards **consistency in timing feel** rather than 
 
 Define all types in `src/core/types/BeatMap.ts` alongside existing beat-related types.
 
-- [ ] **1.1 Add GrooveAnalyzer Types**
-  - [ ] `GrooveDirection` - 'push' | 'pull' | 'neutral'
-  - [ ] `GrooveResult` - Return type for `recordHit()`
-  - [ ] `GrooveState` - Current analyzer state snapshot
-  - [ ] `GrooveAnalyzerOptions` - Configuration options
+- [x] **1.1 Add GrooveAnalyzer Types**
+  - [x] `GrooveDirection` - 'push' | 'pull' | 'neutral'
+  - [x] `GrooveResult` - Return type for `recordHit()`
+  - [x] `GrooveState` - Current analyzer state snapshot
+  - [x] `GrooveAnalyzerOptions` - Configuration options
 
 ```typescript
 // Direction of the established pocket

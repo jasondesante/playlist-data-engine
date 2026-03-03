@@ -2313,3 +2313,112 @@ export const BEAT_DETECTION_VERSION = '1.0.0';
  * Algorithm identifier for the Ellis DP beat tracker
  */
 export const BEAT_DETECTION_ALGORITHM = 'ellis-dp-v1';
+
+// ============================================================================
+// Groove Analyzer Types
+// ============================================================================
+
+/**
+ * Direction of the established pocket relative to the beat
+ *
+ * - 'push': Playing ahead of the beat (rushing, negative offset)
+ * - 'pull': Playing behind the beat (dragging, positive offset)
+ * - 'neutral': Playing on the beat (within ±10ms dead zone)
+ */
+export type GrooveDirection = 'push' | 'pull' | 'neutral';
+
+/**
+ * Result returned after each hit recorded by the GrooveAnalyzer
+ *
+ * Provides all information needed for UI display and game feedback.
+ */
+export interface GrooveResult {
+    /** Direction of current pocket */
+    pocketDirection: GrooveDirection;
+
+    /** Running average offset in seconds (established pocket center) */
+    establishedOffset: number;
+
+    /** How close this hit was to the pocket (0-1, 1 = perfect consistency) */
+    consistency: number;
+
+    /** Current hotness/meter value (0-100) */
+    hotness: number;
+
+    /** Current streak length within pocket */
+    streakLength: number;
+
+    /** Whether this hit was in the pocket window */
+    inPocket: boolean;
+
+    /** Current pocket window size in seconds (changes with hotness) */
+    pocketWindow: number;
+}
+
+/**
+ * Snapshot of current groove analyzer state
+ *
+ * Used for UI display and state inspection.
+ */
+export interface GrooveState {
+    /** Direction of established pocket */
+    pocketDirection: GrooveDirection;
+
+    /** Running average offset in seconds */
+    establishedOffset: number;
+
+    /** Current hotness/meter value (0-100) */
+    hotness: number;
+
+    /** Current streak length within pocket */
+    streakLength: number;
+
+    /** Total number of hits recorded */
+    hitCount: number;
+
+    /** Current pocket window size in seconds */
+    pocketWindow: number;
+}
+
+/**
+ * Configuration options for the GrooveAnalyzer
+ */
+export interface GrooveAnalyzerOptions {
+    /** Minimum hits to establish a pocket (default: 3) */
+    minHitsForPocket: number;
+
+    /** Base pocket window as fraction of beat (default: 0.03125 = 1/32 note) */
+    basePocketWindowFraction: number;
+
+    /** Minimum pocket window in seconds (floor for progressive tightening) */
+    minPocketWindowSeconds: number;
+
+    /** Hotness gain per consistent hit (default: 8) */
+    hotnessGainPerHit: number;
+
+    /** Hotness loss on pocket break (default: 20) */
+    hotnessLossOnBreak: number;
+
+    /** Hotness loss on missed beat (default: 10) */
+    hotnessLossOnMiss: number;
+
+    /** Number of recent hits to average for pocket establishment (default: 4) */
+    averagingWindowSize: number;
+
+    /** Dead zone around zero for neutral classification in seconds (default: 0.010 = ±10ms) */
+    neutralDeadZone: number;
+}
+
+/**
+ * Default configuration options for the GrooveAnalyzer
+ */
+export const DEFAULT_GROOVE_OPTIONS: GrooveAnalyzerOptions = {
+    minHitsForPocket: 3,
+    basePocketWindowFraction: 0.03125, // 1/32 note
+    minPocketWindowSeconds: 0.015,     // 15ms floor
+    hotnessGainPerHit: 8,
+    hotnessLossOnBreak: 20,
+    hotnessLossOnMiss: 10,
+    averagingWindowSize: 4,
+    neutralDeadZone: 0.010,            // ±10ms (20ms total)
+};
