@@ -185,30 +185,30 @@ Tests written for the old behavior need to be updated to match the new behavior.
 ### 5.1 Update DATA_ENGINE_REFERENCE.md
 
 #### Type Exports Section
-- [ ] Remove `SegmentSubdivisionConfig` from type tables
-- [ ] Remove `SubdivisionSegment` from type tables
-- [ ] Update `SubdivisionConfig` to show per-beat format:
+- [x] Remove `SegmentSubdivisionConfig` from type tables
+- [x] Remove `SubdivisionSegment` from type tables
+- [x] Update `SubdivisionConfig` to show per-beat format:
   ```typescript
   interface SubdivisionConfig {
       beatSubdivisions: Map<number, SubdivisionType>;
       defaultSubdivision: SubdivisionType;
   }
   ```
-- [ ] Add `'rest'` to SubdivisionType documentation
+- [x] Add `'rest'` to SubdivisionType documentation
 
 #### Function Reference Section
-- [ ] Remove `isPerBeatSubdivisionConfig` from reference
-- [ ] Remove `isSegmentSubdivisionConfig` from reference
-- [ ] Remove `validateSegmentSubdivisionConfig` from reference
-- [ ] Update `validateSubdivisionConfig` to show per-beat validation only
+- [x] Remove `isPerBeatSubdivisionConfig` from reference
+- [x] Remove `isSegmentSubdivisionConfig` from reference
+- [x] Remove `validateSegmentSubdivisionConfig` from reference
+- [x] Update `validateSubdivisionConfig` to show per-beat validation only
 
 #### BeatSubdivider Section
-- [ ] Update examples to use per-beat `SubdivisionConfig`
-- [ ] Remove any segment-based examples
-- [ ] Add example showing `'rest'` usage
+- [x] Update examples to use per-beat `SubdivisionConfig`
+- [x] Remove any segment-based examples
+- [x] Add example showing `'rest'` usage
 
 #### Quick Start Example
-- [ ] Update to use per-beat config format
+- [x] Update to use per-beat config format
 
 ### 5.2 Update AUDIO_ANALYSIS.md
 

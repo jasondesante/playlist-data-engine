@@ -208,7 +208,7 @@ All TypeScript types are exported, including:
 
 **Beat Interpolation Types:** `BeatSource`, `BeatWithSource`, `QuarterNoteDetection`, `GapAnalysis`, `InterpolationMetadata`, `InterpolatedBeatMap`, `BeatInterpolationOptions`, `InterpolatedBeatMapJSON`, `TempoSection`, `TempoSectionJSON` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
-**Beat Subdivision Types:** `SubdivisionType`, `SubdivisionSegment`, `SubdivisionConfig`, `UnifiedBeatMap`, `SubdividedBeat`, `SubdividedBeatMap`, `SubdivisionMetadata`, `BeatSubdividerOptions` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
+**Beat Subdivision Types:** `SubdivisionType`, `SubdivisionConfig`, `UnifiedBeatMap`, `SubdividedBeat`, `SubdividedBeatMap`, `SubdivisionMetadata`, `BeatSubdividerOptions` — see [Beat Detection](#beat-detection) and [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)
 
 **Beat Key Types:** `KeyAssignableBeatMap`, `KeyAssignment` — see [Beat Key Helper Functions](#beat-key-helper-functions)
 
@@ -1529,11 +1529,11 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `InterpolatedBeatMap` | Beat map with interpolation | `audioId`, `duration`, `detectedBeats`, `mergedBeats`, `quarterNoteInterval`, `quarterNoteBpm`, `quarterNoteConfidence`, `originalMetadata`, `interpolationMetadata` |
 | `BeatInterpolationOptions` | Configuration for interpolation | `minAnchorConfidence`, `gridSnapTolerance`, `tempoAdaptationRate`, `extrapolateStart`, `extrapolateEnd`, `anomalyThreshold`, `denseSectionMinBeats`, `gridAlignmentWeight`, `anchorConfidenceWeight`, `paceConfidenceWeight`, `tempoSectionThreshold`, `minClusterBeats`, `enableMultiTempo` |
 | `SubdivisionType` | Types of beat subdivision | `'quarter'` \| `'half'` \| `'eighth'` \| `'sixteenth'` \| `'triplet8'` \| `'triplet4'` \| `'dotted4'` \| `'dotted8'` \| `'rest'` |
-| `PerBeatSubdivisionConfig` | Per-beat subdivision config | `version: 2`, `beatSubdivisions: Map<number, SubdivisionType>`, `defaultSubdivision` |
+| `SubdivisionConfig` | Per-beat subdivision config | `beatSubdivisions: Map<number, SubdivisionType>`, `defaultSubdivision` |
 | `UnifiedBeatMap` | Unified beat map (detected + interpolated merged) | `audioId`, `duration`, `beats`, `detectedBeatIndices`, `quarterNoteInterval`, `quarterNoteBpm`, `downbeatConfig`, `tempoSections?`, `originalMetadata` |
 | `SubdividedBeat` | Beat in a subdivided map (extends Beat, includes `requiredKey?`) | `beatInMeasure` (decimal), `isDetected`, `originalBeatIndex?`, `subdivisionType`, `requiredKey?` |
 | `SubdividedBeatMap` | Beat map after subdivision | `audioId`, `duration`, `beats`, `detectedBeatIndices`, `subdivisionConfig`, `downbeatConfig`, `tempoSections?`, `subdivisionMetadata` |
-| `SubdivisionMetadata` | Metadata about subdivision process | `originalBeatCount`, `subdividedBeatCount`, `averageDensityMultiplier`, `segmentCount`, `subdivisionsUsed`, `hasMultipleTempos`, `maxDensity` |
+| `SubdivisionMetadata` | Metadata about subdivision process | `originalBeatCount`, `subdividedBeatCount`, `averageDensityMultiplier`, `explicitBeatCount`, `subdivisionsUsed`, `hasMultipleTempos`, `maxDensity` |
 | `BeatSubdividerOptions` | Configuration for BeatSubdivider | `tolerance`, `defaultIntensity`, `defaultConfidence` |
 | `SubdivisionPlaybackOptions` | Configuration for real-time subdivision controller | `initialSubdivision`, `transitionMode`, `onSubdivisionChange`, `anticipationTime`, `timingTolerance`, `userOffsetMs`, `compensateOutputLatency` |
 | `SubdivisionBeatEvent` | Event emitted during playback | `beat`, `currentSubdivision`, `timeUntilBeat`, `audioTime`, `type` |
@@ -1707,8 +1707,7 @@ const interpolatedMap = interpolator.interpolate(beatMap);
 const unifiedMap = unifyBeatMap(interpolatedMap);
 
 // Step 4: Subdivide for rhythm patterns
-const subdivisionConfig: PerBeatSubdivisionConfig = {
-    version: 2,
+const subdivisionConfig: SubdivisionConfig = {
     beatSubdivisions: new Map([
         [0, 'eighth'],   // All beats get eighth notes
     ]),
@@ -2036,7 +2035,7 @@ constructor(options?: BeatSubdividerOptions)
 
 | Method | Description |
 |--------|-------------|
-| `subdivide(unifiedMap: UnifiedBeatMap, config?: PerBeatSubdivisionConfig): SubdividedBeatMap` | Subdivide a unified beat map according to per-beat configuration |
+| `subdivide(unifiedMap: UnifiedBeatMap, config?: SubdivisionConfig): SubdividedBeatMap` | Subdivide a unified beat map according to per-beat configuration |
 
 **Subdivision Types:**
 
@@ -2050,6 +2049,7 @@ constructor(options?: BeatSubdividerOptions)
 | `'triplet4'` | 2x | Quarter triplets (3 per half) | 0, 0.66, 1.33, 2, 2.66, 3.33... |
 | `'dotted4'` | 2.67x | Dotted quarter (phase-independent) | 0, 1.5, 3, 4.5, 6... |
 | `'dotted8'` | 2x | Swing long-short (2/3 + 1/3) | 0, 0.667, 1, 1.667, 2... |
+| `'rest'` | 0x | No beat generated (creates gaps) | (none) |
 
 **Usage:**
 
@@ -2059,7 +2059,7 @@ import {
     BeatInterpolator,
     BeatSubdivider,
     unifyBeatMap,
-    type PerBeatSubdivisionConfig
+    type SubdivisionConfig
 } from 'playlist-data-engine';
 
 const generator = new BeatMapGenerator();
@@ -2076,8 +2076,7 @@ const interpolatedMap = interpolator.interpolate(beatMap);
 const unifiedMap = unifyBeatMap(interpolatedMap);
 
 // Step 4: Create per-beat subdivision configuration
-const subdivisionConfig: PerBeatSubdivisionConfig = {
-    version: 2,
+const subdivisionConfig: SubdivisionConfig = {
     beatSubdivisions: new Map([
         // Assign subdivisions to specific beats
         [0, 'quarter'],   // Beat 0: quarter note
@@ -2107,19 +2106,17 @@ The `beatSubdivisions` map allows assigning different subdivisions to specific b
 
 | Function | Description |
 |----------|-------------|
-| `validateSubdivisionConfig(config)` | Structural validation for any subdivision config |
-| `validatePerBeatSubdivisionConfig(config)` | Validate PerBeatSubdivisionConfig structure |
+| `validateSubdivisionConfig(config)` | Structural validation for subdivision config |
 | `validateSubdivisionConfigAgainstBeats(config, totalBeats)` | Validate beat indices against beat count |
 | `validateSubdivisionDensity(subdivision)` | Ensure density doesn't exceed maximum (4x) |
 | `isValidSubdivisionType(value)` | Type guard for SubdivisionType |
-| `isPerBeatSubdivisionConfig(config)` | Type guard to check if config is PerBeatSubdivisionConfig |
 | `getSubdivisionDensity(subdivision)` | Get density multiplier for a subdivision type |
 
 **Constants:**
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `DEFAULT_PER_BEAT_SUBDIVISION_CONFIG` | `{ version: 2, beatSubdivisions: new Map(), defaultSubdivision: 'quarter' }` | Default per-beat subdivision config |
+| `DEFAULT_SUBDIVISION_CONFIG` | `{ beatSubdivisions: new Map(), defaultSubdivision: 'quarter' }` | Default subdivision config |
 | `MAX_SUBDIVISION_DENSITY` | 4 | Maximum density (sixteenth notes) |
 | `VALID_SUBDIVISION_TYPES` | Array of all valid types | For validation |
 
@@ -2193,16 +2190,15 @@ function subdivideBeatMap(
 **Usage:**
 
 ```typescript
-import { BeatInterpolator, subdivideBeatMap, type PerBeatSubdivisionConfig } from 'playlist-data-engine';
+import { BeatInterpolator, subdivideBeatMap, type SubdivisionConfig } from 'playlist-data-engine';
 
 const interpolator = new BeatInterpolator();
 const interpolatedMap = interpolator.interpolate(beatMap);
 
 // One-step subdivision with per-beat config
-const config: PerBeatSubdivisionConfig = {
-    version: 2,
+const config: SubdivisionConfig = {
     beatSubdivisions: new Map([
-        [0, 'quarter'],   // Beats 0-31: quarter notes
+        [0, 'quarter'],   // Beat 0: quarter notes
         [32, 'eighth'],   // Beat 32+: eighth notes
     ]),
     defaultSubdivision: 'eighth',
@@ -2406,14 +2402,12 @@ The `SubdivisionBeatEvent` includes:
 | `validateThresholds(thresholds)` | Returns `ThresholdValidationResult` | Validate custom thresholds for correctness (checks positive values and ascending order) |
 | `BEAT_DETECTION_VERSION` | `'1.0.0'` | Algorithm version |
 | `BEAT_DETECTION_ALGORITHM` | `'ellis-dp-v1'` | Algorithm identifier |
-| `DEFAULT_PER_BEAT_SUBDIVISION_CONFIG` | `{ version: 2, beatSubdivisions: new Map(), defaultSubdivision: 'quarter' }` | Default per-beat subdivision config |
+| `DEFAULT_SUBDIVISION_CONFIG` | `{ beatSubdivisions: new Map(), defaultSubdivision: 'quarter' }` | Default subdivision config |
 | `MAX_SUBDIVISION_DENSITY` | 4 | Maximum subdivision density (sixteenth notes) |
 | `VALID_SUBDIVISION_TYPES` | `['quarter', 'half', 'eighth', 'sixteenth', 'triplet8', 'triplet4', 'dotted4', 'dotted8', 'rest']` | All valid subdivision types |
 | `isValidSubdivisionType(value)` | Returns boolean | Type guard for SubdivisionType |
-| `isPerBeatSubdivisionConfig(config)` | Returns boolean | Type guard to check if config is PerBeatSubdivisionConfig |
 | `getSubdivisionDensity(subdivision)` | Returns number | Get density multiplier (0, 0.5, 1, 2, or 4) |
 | `validateSubdivisionConfig(config)` | Throws on error | Validate subdivision config structure |
-| `validatePerBeatSubdivisionConfig(config)` | Throws on error | Validate PerBeatSubdivisionConfig structure |
 | `validateSubdivisionConfigAgainstBeats(config, totalBeats)` | Throws on error | Validate config against beat count |
 | `validateSubdivisionDensity(subdivision)` | Throws on error | Validate density doesn't exceed max |
 | `DEFAULT_SUBDIVISION_PLAYBACK_OPTIONS` | `{ initialSubdivision: 'quarter', transitionMode: 'immediate', anticipationTime: 2.0, timingTolerance: 0.01, userOffsetMs: 0, compensateOutputLatency: true }` | Default options for SubdivisionPlaybackController |
