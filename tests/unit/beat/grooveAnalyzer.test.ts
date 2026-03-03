@@ -319,6 +319,229 @@ describe('GrooveAnalyzer', () => {
         });
     });
 
+    describe('4.2 Consistency Calculation Tests', () => {
+        // Use a large window size so the rolling average doesn't shift much with one hit
+        const LARGE_WINDOW = 100;
+        const WINDOW_FILL_COUNT = LARGE_WINDOW; // Fill the window completely
+
+        describe('Returns 1.0 consistency when hit is exactly on pocket center', () => {
+            beforeEach(() => {
+                analyzer = new GrooveAnalyzer();
+            });
+
+            it('should return 1.0 consistency when hit is exactly at established offset', () => {
+                // Establish pocket at 30ms
+                analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                const result3 = analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                expect(result3.inPocket).toBe(true);
+
+                // Hit exactly on pocket center
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                expect(result.consistency).toBe(1.0);
+                expect(result.inPocket).toBe(true);
+            });
+
+            it('should return 1.0 consistency for negative offset at pocket center', () => {
+                // Establish pocket at -25ms (push)
+                analyzer.recordHit(-25 * MS, DEFAULT_BPM);
+                analyzer.recordHit(-25 * MS, DEFAULT_BPM);
+                analyzer.recordHit(-25 * MS, DEFAULT_BPM);
+
+                // Hit exactly on pocket center
+                const result = analyzer.recordHit(-25 * MS, DEFAULT_BPM);
+                expect(result.consistency).toBe(1.0);
+                expect(result.inPocket).toBe(true);
+            });
+
+            it('should return 1.0 consistency at neutral pocket center', () => {
+                // Establish neutral pocket
+                analyzer.recordHit(0, DEFAULT_BPM);
+                analyzer.recordHit(0, DEFAULT_BPM);
+                analyzer.recordHit(0, DEFAULT_BPM);
+
+                // Hit exactly on center
+                const result = analyzer.recordHit(0, DEFAULT_BPM);
+                expect(result.consistency).toBe(1.0);
+                expect(result.inPocket).toBe(true);
+            });
+        });
+
+        describe('Returns 0.0 consistency when hit is outside window', () => {
+            beforeEach(() => {
+                analyzer = new GrooveAnalyzer({ averagingWindowSize: LARGE_WINDOW });
+            });
+
+            it('should return 0.0 consistency when hit is far beyond pocket window', () => {
+                // Fill the window with hits at 0ms to establish a stable pocket
+                for (let i = 0; i < WINDOW_FILL_COUNT; i++) {
+                    analyzer.recordHit(0, DEFAULT_BPM);
+                }
+                const state = analyzer.getState();
+                const pocketWindow = state.pocketWindow;
+
+                // Hit well outside the window
+                const outsideOffset = pocketWindow * 3; // 300% to edge
+                const result = analyzer.recordHit(outsideOffset, DEFAULT_BPM);
+
+                expect(result.consistency).toBe(0);
+                expect(result.inPocket).toBe(false);
+            });
+
+            it('should return 0.0 consistency when hit is far before pocket', () => {
+                // Fill the window with hits at 0ms
+                for (let i = 0; i < WINDOW_FILL_COUNT; i++) {
+                    analyzer.recordHit(0, DEFAULT_BPM);
+                }
+                const state = analyzer.getState();
+                const pocketWindow = state.pocketWindow;
+
+                // Hit well before the pocket window
+                const outsideOffset = -pocketWindow * 3; // -300% to edge
+                const result = analyzer.recordHit(outsideOffset, DEFAULT_BPM);
+
+                expect(result.consistency).toBe(0);
+                expect(result.inPocket).toBe(false);
+            });
+
+            it('should return 0.0 consistency when hit is at 150% to edge (outside window)', () => {
+                // Fill the window with hits at 0ms
+                for (let i = 0; i < WINDOW_FILL_COUNT; i++) {
+                    analyzer.recordHit(0, DEFAULT_BPM);
+                }
+                const state = analyzer.getState();
+                const pocketWindow = state.pocketWindow;
+
+                // Hit at 150% of the window - definitely outside even with rolling average shift
+                const outsideOffset = pocketWindow * 1.5;
+                const result = analyzer.recordHit(outsideOffset, DEFAULT_BPM);
+
+                // With large window, the average shift is minimal (1.5/100 = 0.015)
+                // New avg = pocketWindow * 0.015, distance = 1.5 * pocketWindow - 0.015 * pocketWindow = 1.485 * pocketWindow
+                // Normalized = 1.485, which is > 1, so consistency = 0
+                expect(result.consistency).toBe(0);
+                expect(result.inPocket).toBe(false);
+            });
+        });
+
+        describe('Returns partial consistency with quadratic falloff', () => {
+            beforeEach(() => {
+                // Use large window to minimize average shift on single hit
+                analyzer = new GrooveAnalyzer({ averagingWindowSize: LARGE_WINDOW });
+            });
+
+            it('should return ~0.75 consistency at 50% to edge', () => {
+                // Fill the window with hits at 0ms to establish a stable pocket
+                for (let i = 0; i < WINDOW_FILL_COUNT; i++) {
+                    analyzer.recordHit(0, DEFAULT_BPM);
+                }
+                const state = analyzer.getState();
+                const pocketWindow = state.pocketWindow;
+
+                // Hit at 50% of the way to the edge
+                const halfWayOffset = pocketWindow * 0.5;
+                const result = analyzer.recordHit(halfWayOffset, DEFAULT_BPM);
+
+                // With large window, average barely shifts, so consistency should be close to theoretical
+                // Quadratic falloff: 1 - (0.5 * 0.5) = 0.75
+                expect(result.consistency).toBeCloseTo(0.75, 1);
+                expect(result.inPocket).toBe(true);
+            });
+
+            it('should return ~0.51 consistency at 70% to edge', () => {
+                // Fill the window with hits at 0ms
+                for (let i = 0; i < WINDOW_FILL_COUNT; i++) {
+                    analyzer.recordHit(0, DEFAULT_BPM);
+                }
+                const state = analyzer.getState();
+                const pocketWindow = state.pocketWindow;
+
+                // Hit at 70% of the way to the edge
+                const seventyPercentOffset = pocketWindow * 0.7;
+                const result = analyzer.recordHit(seventyPercentOffset, DEFAULT_BPM);
+
+                // Quadratic falloff: 1 - (0.7 * 0.7) = 1 - 0.49 = 0.51
+                expect(result.consistency).toBeCloseTo(0.51, 1);
+                expect(result.inPocket).toBe(true);
+            });
+
+            it('should return ~0.19 consistency at 90% to edge', () => {
+                // Fill the window with hits at 0ms
+                for (let i = 0; i < WINDOW_FILL_COUNT; i++) {
+                    analyzer.recordHit(0, DEFAULT_BPM);
+                }
+                const state = analyzer.getState();
+                const pocketWindow = state.pocketWindow;
+
+                // Hit at 90% of the way to the edge
+                const ninetyPercentOffset = pocketWindow * 0.9;
+                const result = analyzer.recordHit(ninetyPercentOffset, DEFAULT_BPM);
+
+                // Quadratic falloff: 1 - (0.9 * 0.9) = 1 - 0.81 = 0.19
+                expect(result.consistency).toBeCloseTo(0.19, 1);
+                expect(result.inPocket).toBe(true);
+            });
+
+            it('should return correct falloff for negative offset (push direction)', () => {
+                // Fill the window with hits at -40ms
+                for (let i = 0; i < WINDOW_FILL_COUNT; i++) {
+                    analyzer.recordHit(-40 * MS, DEFAULT_BPM);
+                }
+                const state = analyzer.getState();
+                const pocketWindow = state.pocketWindow;
+
+                // Hit at 50% of the way toward edge (more negative)
+                const halfWayOffset = -40 * MS - (pocketWindow * 0.5);
+                const result = analyzer.recordHit(halfWayOffset, DEFAULT_BPM);
+
+                // Should be close to 0.75 consistency
+                expect(result.consistency).toBeCloseTo(0.75, 1);
+            });
+
+            it('should return correct falloff for positive offset (pull direction)', () => {
+                // Fill the window with hits at 40ms
+                for (let i = 0; i < WINDOW_FILL_COUNT; i++) {
+                    analyzer.recordHit(40 * MS, DEFAULT_BPM);
+                }
+                const state = analyzer.getState();
+                const pocketWindow = state.pocketWindow;
+
+                // Hit at 50% of the way toward edge (more positive)
+                const halfWayOffset = 40 * MS + (pocketWindow * 0.5);
+                const result = analyzer.recordHit(halfWayOffset, DEFAULT_BPM);
+
+                // Should be close to 0.75 consistency
+                expect(result.consistency).toBeCloseTo(0.75, 1);
+            });
+
+            it('should verify quadratic curve at multiple points', () => {
+                // Test multiple points on the quadratic curve
+                const testCases = [
+                    { percentToEdge: 0.1, expected: 1 - 0.1 * 0.1 },  // 0.99
+                    { percentToEdge: 0.3, expected: 1 - 0.3 * 0.3 },  // 0.91
+                    { percentToEdge: 0.5, expected: 1 - 0.5 * 0.5 },  // 0.75
+                    { percentToEdge: 0.7, expected: 1 - 0.7 * 0.7 },  // 0.51
+                    { percentToEdge: 0.9, expected: 1 - 0.9 * 0.9 },  // 0.19
+                ];
+
+                testCases.forEach(({ percentToEdge, expected }) => {
+                    // Create fresh analyzer for each test case
+                    const testAnalyzer = new GrooveAnalyzer({ averagingWindowSize: LARGE_WINDOW });
+
+                    // Fill the window with hits at 0ms
+                    for (let i = 0; i < WINDOW_FILL_COUNT; i++) {
+                        testAnalyzer.recordHit(0, DEFAULT_BPM);
+                    }
+                    const pocketWindow = testAnalyzer.getState().pocketWindow;
+
+                    const offset = pocketWindow * percentToEdge;
+                    const result = testAnalyzer.recordHit(offset, DEFAULT_BPM);
+                    expect(result.consistency).toBeCloseTo(expected, 1);
+                });
+            });
+        });
+    });
+
     describe('getState()', () => {
         beforeEach(() => {
             analyzer = new GrooveAnalyzer();

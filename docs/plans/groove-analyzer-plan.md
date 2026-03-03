@@ -293,13 +293,13 @@ Create `tests/unit/beat/grooveAnalyzer.test.ts`.
   - [x] Returns neutral when offsets are within ±10ms dead zone
   - [x] Direction shifts gradually as hitting pattern changes
 
-- [ ] **4.2 Consistency Calculation Tests**
-  - [ ] Returns 1.0 consistency when hit is exactly on pocket center
-  - [ ] Returns 0.0 consistency when hit is outside window
-  - [ ] Returns partial consistency with quadratic falloff:
-    - [ ] 50% to edge = 0.75 consistency (1 - 0.5²)
-    - [ ] 70% to edge = 0.51 consistency (1 - 0.7²)
-    - [ ] 90% to edge = 0.19 consistency (1 - 0.9²)
+- [x] **4.2 Consistency Calculation Tests**
+  - [x] Returns 1.0 consistency when hit is exactly on pocket center
+  - [x] Returns 0.0 consistency when hit is outside window
+  - [x] Returns partial consistency with quadratic falloff:
+    - [x] 50% to edge = 0.75 consistency (1 - 0.5²)
+    - [x] 70% to edge = 0.51 consistency (1 - 0.7²)
+    - [x] 90% to edge = 0.19 consistency (1 - 0.9²)
 
 - [ ] **4.3 Hotness/Meter Tests**
   - [ ] Hotness increases by 8 on consistent hits (in pocket)
