@@ -74,12 +74,12 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 - [x] Rename `DEFAULT_PER_BEAT_SUBDIVISION_CONFIG` to `DEFAULT_SUBDIVISION_CONFIG`
 
 ### 2.2 Remove Segment Type Guards and Validators
-- [ ] Delete `isPerBeatSubdivisionConfig()` function (no longer needed)
-- [ ] Delete `isSegmentSubdivisionConfig()` function
-- [ ] Delete `validateSegmentSubdivisionConfig()` function
-- [ ] Delete `validateSegmentSubdivisionConfigAgainstBeats()` function
-- [ ] Rename `validatePerBeatSubdivisionConfig()` to `validateSubdivisionConfig()`
-- [ ] Rename `validatePerBeatSubdivisionConfigAgainstBeats()` to `validateSubdivisionConfigAgainstBeats()`
+- [x] Delete `isPerBeatSubdivisionConfig()` function (no longer needed)
+- [x] Delete `isSegmentSubdivisionConfig()` function
+- [x] Delete `validateSegmentSubdivisionConfig()` function
+- [x] Delete `validateSegmentSubdivisionConfigAgainstBeats()` function
+- [x] Rename `validatePerBeatSubdivisionConfig()` to `validateSubdivisionConfig()`
+- [x] Rename `validatePerBeatSubdivisionConfigAgainstBeats()` to `validateSubdivisionConfigAgainstBeats()`
 
 ### 2.3 Update BeatSubdivider.ts
 - [ ] Remove `SegmentSubdivisionConfig` import
@@ -159,21 +159,7 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 
 ---
 
-## Phase 5: Update Frontend Store (if applicable)
-
-### 5.1 Update beatDetectionStore.ts
-- [ ] Change `subdivisionConfig` type from `SegmentSubdivisionConfig` to `SubdivisionConfig`
-- [ ] Update `setSubdivisionConfig()` action parameter type
-- [ ] Update any UI components that create segment-based configs
-
-### 5.2 Update React Components
-- [ ] [BeatPracticeView.tsx](src/components/ui/BeatPracticeView.tsx) - Update config creation
-- [ ] [BeatTimeline.tsx](src/components/ui/BeatTimeline.tsx) - Remove `isSegmentSubdivisionConfig` usage
-- [ ] Any other components using subdivision config
-
----
-
-## Phase 6: Update Documentation
+## Phase 5: Update Documentation
 
 > **IMPORTANT:** Documentation must reflect that segment-based is REMOVED, not just "legacy".
 > The docs should show ONLY the per-beat approach.
@@ -250,7 +236,7 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 
 ---
 
-## Phase 7: Final Cleanup
+## Phase 6: Final Cleanup
 
 ### 7.1 Remove Deprecated Comments
 - [ ] Remove any `@deprecated` tags that referenced segment-based as legacy
@@ -282,17 +268,13 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 
 1. ~~**Rest beat representation**~~: **DECIDED** - No beat at all in SubdividedBeatMap (cleaner for rhythm games)
 
-2. **Migration path**: Since this removes the segment format entirely, any stored configs using segments would break. Is there existing user data that needs migration?
-   - Check localStorage in frontend
-   - Check any saved chart files
-
-3. ~~**SubdivisionMetadata.segmentCount**~~: **DECIDED** - Remove and replace with `explicitBeatCount`
+2. ~~**SubdivisionMetadata.segmentCount**~~: **DECIDED** - Remove and replace with `explicitBeatCount`
 
 ---
 
 ## Estimated Impact
 
-**Files Modified:** ~15-20 files
+**Files Modified:** ~10 files (THIS PROJECT ONLY)
 
 | File | Changes |
 |------|---------|
@@ -302,8 +284,6 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 | `src/index.ts` | Export changes |
 | `src/core/analysis/beat/index.ts` | Export changes |
 | `tests/unit/beat/beatSubdivider.test.ts` | Test updates |
-| `tests/unit/beat/beatKeyHelpers.test.ts` | Test updates |
-| `tests/unit/beat/beatStream.test.ts` | Test updates |
 | `DATA_ENGINE_REFERENCE.md` | Documentation rewrite |
 | `docs/AUDIO_ANALYSIS.md` | Documentation rewrite |
 
