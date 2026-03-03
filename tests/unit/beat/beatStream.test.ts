@@ -14,6 +14,7 @@ import type {
     ButtonPressResult,
     AudioSyncState,
     SubdividedBeatMap,
+    BeatAccuracy,
 } from '../../../src/core/types/BeatMap.js';
 import {
     BEAT_DETECTION_VERSION,
@@ -69,6 +70,7 @@ function createMockBeatMap(
             minBpm: 60,
             maxBpm: 180,
             sensitivity: 1.0,
+            filter: 0.5,
             noiseFloorThreshold: 0.1,
             hopSizeMs: 10,
             fftSize: 2048,
@@ -88,7 +90,6 @@ function createMockAudioContext(): AudioContext {
     let currentTime = 0;
 
     const context = {
-        currentTime: 0,
         get currentTime() {
             return currentTime;
         },
@@ -1324,7 +1325,8 @@ describe('BeatStream', () => {
                 beats,
                 detectedBeatIndices: beats.map((_, i) => i).filter(i => i % 2 === 0),
                 subdivisionConfig: {
-                    segments: [{ startBeat: 0, subdivision }],
+                    beatSubdivisions: new Map(),
+                    defaultSubdivision: subdivision,
                 },
                 downbeatConfig: {
                     segments: [{
@@ -1337,7 +1339,7 @@ describe('BeatStream', () => {
                     originalBeatCount: Math.ceil(beatTimestamps.length / 2),
                     subdividedBeatCount: beatTimestamps.length,
                     averageDensityMultiplier: subdivision === 'eighth' ? 2 : 1,
-                    segmentCount: 1,
+                    explicitBeatCount: 0,
                     subdivisionsUsed: [subdivision],
                     hasMultipleTempos: false,
                     maxDensity: subdivision === 'eighth' ? 2 : 1,
