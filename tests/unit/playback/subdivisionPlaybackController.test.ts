@@ -280,7 +280,7 @@ describe('SubdivisionPlaybackController - Real-Time Beat Generation', () => {
     });
 
     describe('Half Notes', () => {
-        it('should generate half notes (0.5x density)', () => {
+        it('should generate half notes (keeps original beats, no interpolation)', () => {
             const controller = new SubdivisionPlaybackController(
                 unifiedMap,
                 mockAudio.context,
@@ -289,13 +289,13 @@ describe('SubdivisionPlaybackController - Real-Time Beat Generation', () => {
 
             const beats = controller.getBeatsInRange(0, 8);
 
-            // Half notes at 120 BPM = 1s interval
-            // 8 seconds with 1s intervals: 0, 1, 2, 3, 4, 5, 6, 7 = 8 beats
-            expect(beats.length).toBe(8);
+            // Half notes: keeps all original beats, no interpolation
+            // 16 quarter notes = 16 beats with half subdivision
+            expect(beats.length).toBe(16);
             expect(beats.every(b => b.subdivisionType === 'half')).toBe(true);
         });
 
-        it('should keep only downbeats and beat 3s for half notes', () => {
+        it('should keep all original beats for half notes', () => {
             const controller = new SubdivisionPlaybackController(
                 unifiedMap,
                 mockAudio.context,
@@ -304,13 +304,18 @@ describe('SubdivisionPlaybackController - Real-Time Beat Generation', () => {
 
             const beats = controller.getBeatsInRange(0, 4);
 
-            // Half notes should be at 0, 1, 2, 3, 4 seconds
+            // Half notes keep all original beats at 0.5s intervals
+            // 0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0 = 9 beats
             const timestamps = beats.map(b => b.timestamp);
             expect(timestamps[0]).toBeCloseTo(0, 2);
-            expect(timestamps[1]).toBeCloseTo(1, 2);
-            expect(timestamps[2]).toBeCloseTo(2, 2);
-            expect(timestamps[3]).toBeCloseTo(3, 2);
-            expect(timestamps[4]).toBeCloseTo(4, 2);
+            expect(timestamps[1]).toBeCloseTo(0.5, 2);
+            expect(timestamps[2]).toBeCloseTo(1, 2);
+            expect(timestamps[3]).toBeCloseTo(1.5, 2);
+            expect(timestamps[4]).toBeCloseTo(2, 2);
+            expect(timestamps[5]).toBeCloseTo(2.5, 2);
+            expect(timestamps[6]).toBeCloseTo(3, 2);
+            expect(timestamps[7]).toBeCloseTo(3.5, 2);
+            expect(timestamps[8]).toBeCloseTo(4, 2);
         });
     });
 
@@ -399,7 +404,7 @@ describe('SubdivisionPlaybackController - Real-Time Beat Generation', () => {
     });
 
     describe('Dotted Quarter (dotted4)', () => {
-        it('should generate dotted quarter pattern (1.5x interval)', () => {
+        it('should generate dotted quarter pattern (keeps original beats)', () => {
             const controller = new SubdivisionPlaybackController(
                 unifiedMap,
                 mockAudio.context,
@@ -408,11 +413,11 @@ describe('SubdivisionPlaybackController - Real-Time Beat Generation', () => {
 
             const beats = controller.getBeatsInRange(0, 8);
 
-            // Dotted quarter interval = quarterNoteInterval * 1.5 = 0.5 * 1.5 = 0.75s
+            // Dotted quarter: keeps all original beats, no interpolation
             expect(beats.every(b => b.subdivisionType === 'dotted4')).toBe(true);
         });
 
-        it('should be phase-independent', () => {
+        it('should keep original beats at quarter note intervals', () => {
             const controller = new SubdivisionPlaybackController(
                 unifiedMap,
                 mockAudio.context,
@@ -421,11 +426,16 @@ describe('SubdivisionPlaybackController - Real-Time Beat Generation', () => {
 
             const beats = controller.getBeatsInRange(0, 3);
 
-            // Pattern: 0, 0.75, 1.5, 2.25, 3.0
+            // Dotted4 keeps original beats at 0.5s intervals
+            // 0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0 = 7 beats
+            expect(beats.length).toBe(7);
             expect(beats[0].timestamp).toBeCloseTo(0, 2);
-            expect(beats[1].timestamp).toBeCloseTo(0.75, 2);
-            expect(beats[2].timestamp).toBeCloseTo(1.5, 2);
-            expect(beats[3].timestamp).toBeCloseTo(2.25, 2);
+            expect(beats[1].timestamp).toBeCloseTo(0.5, 2);
+            expect(beats[2].timestamp).toBeCloseTo(1.0, 2);
+            expect(beats[3].timestamp).toBeCloseTo(1.5, 2);
+            expect(beats[4].timestamp).toBeCloseTo(2.0, 2);
+            expect(beats[5].timestamp).toBeCloseTo(2.5, 2);
+            expect(beats[6].timestamp).toBeCloseTo(3.0, 2);
         });
     });
 
@@ -667,10 +677,11 @@ describe('SubdivisionPlaybackController - Continuity', () => {
 
         const beats = controller.getBeatsInRange(0, 4);
 
-        // Half notes should be at 0, 1, 2, 3, 4
-        expect(beats.length).toBe(5);
+        // Half notes: keeps all original beats at 0.5s intervals
+        // 0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0 = 9 beats
+        expect(beats.length).toBe(9);
         expect(beats[0].timestamp).toBeCloseTo(0, 2);
-        expect(beats[4].timestamp).toBeCloseTo(4, 2);
+        expect(beats[8].timestamp).toBeCloseTo(4, 2);
     });
 });
 

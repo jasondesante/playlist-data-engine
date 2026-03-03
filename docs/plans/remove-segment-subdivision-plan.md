@@ -160,8 +160,8 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 ### 4.2 Update Other Test Files
 - [x] [beatKeyHelpers.test.ts](tests/unit/beat/beatKeyHelpers.test.ts) - Update subdivision config usage
 - [x] [beatStream.test.ts](tests/unit/beat/beatStream.test.ts) - Update subdivision config usage
-- [ ] [unifyBeatMap.test.ts](tests/unit/beat/unifyBeatMap.test.ts) - Check for segment usage
-- [ ] [subdivisionPlaybackController.test.ts](tests/unit/playback/subdivisionPlaybackController.test.ts) - Update config format
+- [x] [unifyBeatMap.test.ts](tests/unit/beat/unifyBeatMap.test.ts) - No changes needed (segments reference is for downbeatConfig, not subdivision)
+- [x] [subdivisionPlaybackController.test.ts](tests/unit/playback/subdivisionPlaybackController.test.ts) - Updated for new behavior (half/dotted4 keep all beats)
 
 ### 4.3 Behavioral Changes Requiring Test Updates
 
