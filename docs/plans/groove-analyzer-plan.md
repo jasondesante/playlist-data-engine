@@ -333,12 +333,12 @@ Create `tests/unit/beat/grooveAnalyzer.test.ts`.
   - [x] Add GrooveAnalyzer section
   - [x] Document API and options
 
-- [ ] **5.3 Update AUDIO_ANALYSIS.md**
-  - [ ] Add "Groove Analysis" section explaining the style meter concept
-  - [ ] Explain when to use it (during beat map playback for practice/learning)
-  - [ ] Document the two-axis system: direction (push/pull/neutral) + intensity (hotness 0-100)
-  - [ ] Add example showing how to connect GrooveAnalyzer to BeatStream hits
-  - [ ] Example code:
+- [x] **5.3 Update AUDIO_ANALYSIS.md**
+  - [x] Add "Groove Analysis" section explaining the style meter concept
+  - [x] Explain when to use it (during beat map playback for practice/learning)
+  - [x] Document the two-axis system: direction (push/pull/neutral) + intensity (hotness 0-100)
+  - [x] Add example showing how to connect GrooveAnalyzer to BeatStream hits
+  - [x] Example code:
     ```typescript
     // Frontend integration during gameplay
     const grooveAnalyzer = new GrooveAnalyzer();

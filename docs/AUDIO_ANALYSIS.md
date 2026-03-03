@@ -3072,6 +3072,318 @@ new SubdivisionPlaybackController(
 
 ---
 
+## Groove Analysis
+
+The GrooveAnalyzer is a "style meter" system that rewards **consistency in timing feel** rather than proximity to perfect center. Inspired by Devil May Cry's style meter, it's not about being mechanically perfect—it's about establishing and maintaining a consistent "pocket."
+
+### Core Philosophy
+
+| Timing Pattern | Traditional Scoring | GrooveAnalyzer |
+|----------------|---------------------|----------------|
+| Hit perfectly on beat | Perfect score | Neutral (no groove) |
+| Hit consistently 30ms late | Imperfect score | **GOOD** (you're in a pocket) |
+| Hit on beat after establishing late pocket | Perfect score | **BAD** (you broke the feel) |
+
+The meter charges when you maintain consistency to **your established pocket**, not to absolute perfection.
+
+### Source Files
+
+| Component | Location |
+|-----------|----------|
+| **GrooveAnalyzer** | [src/core/analysis/beat/GrooveAnalyzer.ts](../src/core/analysis/beat/GrooveAnalyzer.ts) |
+| **Groove Types** | [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts) |
+
+---
+
+### When to Use
+
+Use GrooveAnalyzer during beat map playback for:
+
+- **Practice/Learning Mode**: Help players develop consistent timing feel
+- **Style Scoring**: Reward players who find and maintain a groove
+- **Visual Feedback**: Display groove direction and intensity in real-time
+- **Progress Tracking**: Track how well players maintain their pocket over time
+
+**Not for**: Competitive scoring where absolute precision matters (use `BeatStream.checkButtonPress()` directly instead).
+
+---
+
+### The Two-Axis System
+
+The groove meter has two quality dimensions:
+
+#### Axis 1: Direction (Where's your pocket?)
+
+| Direction | Meaning | Offset |
+|-----------|---------|--------|
+| `push` | Ahead of the beat | Negative (e.g., -30ms) |
+| `pull` | Behind the beat | Positive (e.g., +30ms) |
+| `neutral` | On the beat | Within ±10ms dead zone |
+
+#### Axis 2: Intensity (How consistent?)
+
+| Hotness | Meaning | Window Size |
+|---------|---------|-------------|
+| 0% | No groove established | Full (1/32 note) |
+| 50% | Moderate consistency | Tightened |
+| 100% | Locked in | Minimum (15ms floor) |
+
+**Progressive Tightening**: As hotness increases, the pocket window shrinks, requiring more precise consistency to maintain.
+
+---
+
+### Basic Usage
+
+```typescript
+import {
+  BeatMapGenerator,
+  BeatInterpolator,
+  unifyBeatMap,
+  BeatStream,
+  GrooveAnalyzer
+} from 'playlist-data-engine';
+
+// 1. Generate beat map (done once per song)
+const generator = new BeatMapGenerator();
+const interpolator = new BeatInterpolator();
+
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+const interpolatedMap = interpolator.interpolate(beatMap);
+const unifiedMap = unifyBeatMap(interpolatedMap);
+
+// 2. Create BeatStream for timing and GrooveAnalyzer for feel
+const audioContext = new AudioContext();
+const beatStream = new BeatStream(unifiedMap, audioContext);
+const grooveAnalyzer = new GrooveAnalyzer();
+
+// 3. Start playback
+beatStream.start();
+
+// 4. On each button press during gameplay
+function onButtonPress(timestamp: number) {
+  // Check timing accuracy
+  const buttonResult = beatStream.checkButtonPress(timestamp);
+
+  // Analyze groove feel (offset + current BPM)
+  const grooveResult = grooveAnalyzer.recordHit(
+    buttonResult.offset,
+    beatStream.getCurrentBpm()
+  );
+
+  // Use the results
+  console.log(`Direction: ${grooveResult.pocketDirection}`);
+  console.log(`Hotness: ${grooveResult.hotness}%`);
+  console.log(`Consistency: ${grooveResult.consistency}`);
+  console.log(`In Pocket: ${grooveResult.inPocket}`);
+}
+
+// 5. When user misses a beat (doesn't press)
+function onMissedBeat() {
+  const grooveResult = grooveAnalyzer.recordMiss();
+  console.log(`Hotness dropped to: ${grooveResult.hotness}%`);
+}
+```
+
+---
+
+### Integration with BeatStream
+
+The GrooveAnalyzer is a **standalone class**—it does not integrate directly with BeatStream. This separation provides flexibility:
+
+| Component | Responsibility |
+|-----------|----------------|
+| `BeatStream` | Beat timing, synchronization, button press accuracy |
+| `GrooveAnalyzer` | Feel/pocket tracking, style meter, consistency scoring |
+| **Frontend** | Connects both, displays results |
+
+```typescript
+// Frontend integration during gameplay
+const grooveAnalyzer = new GrooveAnalyzer();
+
+// On each button press during gameplay
+const buttonResult = beatStream.checkButtonPress(timestamp);
+const grooveResult = grooveAnalyzer.recordHit(buttonResult.offset, beatStream.getCurrentBpm());
+
+// When user misses a beat (doesn't press)
+grooveAnalyzer.recordMiss();
+
+// Read the groove state for UI display
+if (grooveResult.pocketDirection !== 'neutral') {
+  console.log(`${grooveResult.pocketDirection} groove: ${grooveResult.hotness}%`);
+}
+```
+
+---
+
+### GrooveAnalyzer Constructor
+
+```typescript
+new GrooveAnalyzer(options?: Partial<GrooveAnalyzerOptions>)
+```
+
+#### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `minHitsForPocket` | `number` | `3` | Minimum hits to establish a pocket |
+| `basePocketWindowFraction` | `number` | `0.03125` | Base window as fraction of beat (1/32 note) |
+| `minPocketWindowSeconds` | `number` | `0.015` | Minimum window size (15ms floor) |
+| `hotnessGainPerHit` | `number` | `8` | Hotness increase on consistent hit |
+| `hotnessLossOnBreak` | `number` | `20` | Hotness decrease on pocket break |
+| `hotnessLossOnMiss` | `number` | `10` | Hotness decrease on missed beat |
+| `averagingWindowSize` | `number` | `4` | Recent hits to average for pocket |
+| `neutralDeadZone` | `number` | `0.010` | Dead zone for neutral (±10ms) |
+
+#### Custom Configuration Example
+
+```typescript
+const grooveAnalyzer = new GrooveAnalyzer({
+  minHitsForPocket: 5,          // Require more hits to establish pocket
+  hotnessGainPerHit: 10,        // Faster meter buildup
+  hotnessLossOnBreak: 30,       // Harsher penalty for breaking pocket
+  neutralDeadZone: 0.015,       // Larger neutral zone (±15ms)
+});
+```
+
+---
+
+### Methods
+
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `recordHit` | `offset: number`, `bpm: number` | `GrooveResult` | Record a button press and get groove analysis |
+| `recordMiss` | - | `GrooveResult` | Record a missed beat (reduces hotness, resets streak) |
+| `getState` | - | `GrooveState` | Get current state snapshot |
+| `reset` | - | `void` | Clear all state and start fresh |
+
+---
+
+### Result Types
+
+#### GrooveResult (from `recordHit` / `recordMiss`)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `pocketDirection` | `GrooveDirection` | Current pocket direction ('push', 'pull', 'neutral') |
+| `establishedOffset` | `number` | Running average offset in seconds (pocket center) |
+| `consistency` | `number` | How close hit was to pocket (0-1, quadratic falloff) |
+| `hotness` | `number` | Current meter value (0-100) |
+| `streakLength` | `number` | Current streak of consistent hits |
+| `inPocket` | `boolean` | Whether this hit was within pocket window |
+| `pocketWindow` | `number` | Current window size in seconds |
+
+#### GrooveState (from `getState`)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `pocketDirection` | `GrooveDirection` | Established pocket direction |
+| `establishedOffset` | `number` | Running average offset in seconds |
+| `hotness` | `number` | Current meter value (0-100) |
+| `streakLength` | `number` | Current streak of consistent hits |
+| `hitCount` | `number` | Total hits recorded this session |
+| `pocketWindow` | `number` | Current window size in seconds |
+
+---
+
+### BPM-Aware Window Calculation
+
+The pocket window adapts to tempo:
+
+```
+beatDuration = 60 / BPM
+thirtySecondNote = beatDuration / 8
+baseWindow = thirtySecondNote × fraction
+pocketWindow = baseWindow - (baseWindow - minWindow) × (hotness / 100)
+```
+
+| BPM | Base Window | At 50% Hotness | At 100% Hotness |
+|-----|-------------|----------------|-----------------|
+| 90 BPM | 41.7ms | 25.8ms | 15ms |
+| 120 BPM | 31.3ms | 20.6ms | 15ms |
+| 140 BPM | 26.8ms | 18.4ms | 15ms |
+
+---
+
+### Consistency Calculation (Quadratic Falloff)
+
+Consistency uses quadratic falloff for a more forgiving feel near the pocket center:
+
+| Distance from Center | Consistency |
+|---------------------|-------------|
+| 0% (at center) | 1.00 |
+| 50% to edge | 0.75 |
+| 70% to edge | 0.51 |
+| 90% to edge | 0.19 |
+| 100%+ (outside) | 0.00 |
+
+Formula: `consistency = 1 - (normalizedDistance²)`
+
+---
+
+### Behavior Details
+
+#### Pocket Establishment
+
+- Requires 3 consistent hits (configurable via `minHitsForPocket`)
+- Rolling average of last 4 hits determines pocket center
+- Direction is determined from the average, not individual hits
+
+#### Direction Changes
+
+When timing drifts from one direction to another:
+
+1. **No hard reset** — Rolling average naturally shifts
+2. **Pocket follows** — Window center moves with the average
+3. **Hotness affected** — During transition, hits may fall outside pocket
+4. **Smooth feel** — More musical than hard resets
+
+#### Missed Beats
+
+- Hotness reduced by 10 (configurable, lighter than pocket break's 20)
+- Streak resets to 0
+- Established pocket is **NOT** cleared — groove can recover
+- Frontend should call `recordMiss()` when user doesn't press on a beat
+
+#### Breaking Pocket
+
+- Hotness reduced by 20 (configurable)
+- Streak **continues** (per design decision)
+- Pocket center continues to adapt via rolling average
+
+---
+
+### UI Concept
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  GROOVE METER                                                    │
+│                                                                 │
+│     PUSH ←──────────[●]──────────→ PULL                        │
+│                     ↑                                           │
+│              Your pocket                                        │
+│                                                                 │
+│  Hotness: ████████████░░░░░░░░ 62%                              │
+│  Streak:  14 hits                                               │
+│  Consistency: 0.87                                              │
+│                                                                 │
+│  "Locked in behind the beat!"                                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Use Cases
+
+| Use Case | Recommended |
+|----------|-------------|
+| Practice mode with feel feedback | ✅ Yes |
+| Style-based scoring | ✅ Yes |
+| Rhythm training tools | ✅ Yes |
+| Visual groove indicators | ✅ Yes |
+| Competitive precision scoring | ❌ Use BeatStream directly |
+
+---
+
 ## References
 
 - [Beat Tracking by Dynamic Programming (Ellis, 2007)](https://www.ee.columbia.edu/~dpwe/pubs/Ellis07-beattrack.pdf)
