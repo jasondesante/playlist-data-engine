@@ -165,7 +165,7 @@ export class BeatSubdivider {
 
         // Track subdivision types used and max density for metadata
         const subdivisionsUsed = new Set<SubdivisionType>();
-        let maxDensity = 1;
+        let maxDensity = 0; // Start at 0; will be updated by actual subdivision densities
         const hasMultipleTempos = !!unifiedMap.tempoSections && unifiedMap.tempoSections.length > 1;
 
         // Track explicit beat count (beats with non-default subdivision)

@@ -3713,6 +3713,369 @@ describe('BeatSubdivider - Dotted8 Notes (Swing)', () => {
 
 
 // ============================================================================
+// Rest Subdivision Tests
+// ============================================================================
+
+describe('BeatSubdivider - Rest Subdivision', () => {
+    it('should skip a beat when marked as rest', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [1, 'rest'], // Beat at index 1 should be skipped
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - 3 beats (beat 1 is skipped)
+        expect(result.beats).toHaveLength(3);
+        expect(result.beats[0].beatInMeasure).toBe(0); // Beat 0 kept
+        expect(result.beats[1].beatInMeasure).toBe(2); // Beat 2 (beat 1 skipped)
+        expect(result.beats[2].beatInMeasure).toBe(3); // Beat 3 kept
+    });
+
+    it('should produce no beats when all beats are rests', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [0, 'rest'],
+                [1, 'rest'],
+                [2, 'rest'],
+                [3, 'rest'],
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - no beats produced
+        expect(result.beats).toHaveLength(0);
+        expect(result.detectedBeatIndices).toHaveLength(0);
+    });
+
+    it('should include rest in subdivisionsUsed metadata', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [1, 'rest'],
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert
+        expect(result.subdivisionMetadata.subdivisionsUsed).toContain('rest');
+        expect(result.subdivisionMetadata.subdivisionsUsed).toContain('quarter');
+    });
+
+    it('should track explicitBeatCount correctly with rests', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [0, 'eighth'], // explicit
+                [1, 'rest'],   // explicit
+                [2, 'quarter'], // explicit (same as default but still explicit)
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - 3 explicit assignments (beats 0, 1, 2)
+        expect(result.subdivisionMetadata.explicitBeatCount).toBe(3);
+    });
+
+    it('should create rhythm pattern with alternating rests', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 8);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [1, 'rest'],
+                [3, 'rest'],
+                [5, 'rest'],
+                [7, 'rest'],
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - 4 beats (odd beats skipped)
+        expect(result.beats).toHaveLength(4);
+        // Verify timestamps - only beats 0, 2, 4, 6 remain
+        expect(result.beats[0].timestamp).toBeCloseTo(0, 3);
+        expect(result.beats[1].timestamp).toBeCloseTo(1.0, 3); // beat 2 at 2 * 0.5s
+        expect(result.beats[2].timestamp).toBeCloseTo(2.0, 3); // beat 4 at 4 * 0.5s
+        expect(result.beats[3].timestamp).toBeCloseTo(3.0, 3); // beat 6 at 6 * 0.5s
+    });
+
+    it('should work with rest as default subdivision', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [0, 'quarter'], // Only beat 0 is kept
+            ]),
+            defaultSubdivision: 'rest', // All other beats are rests
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - only beat 0
+        expect(result.beats).toHaveLength(1);
+        expect(result.beats[0].beatInMeasure).toBe(0);
+    });
+
+    it('should skip rest beats with no interpolated beats generated', () => {
+        // Arrange - rest beats should not produce any interpolated beats
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [1, 'rest'],
+                [2, 'eighth'], // Beat 2 with eighth should produce 1 interpolated beat
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert:
+        // Beat 0 (quarter): 1 beat
+        // Beat 1 (rest): 0 beats
+        // Beat 2 (eighth): 1 beat + 1 interpolated = 2 beats
+        // Beat 3 (quarter): 1 beat
+        // Total: 1 + 0 + 2 + 1 = 4 beats
+        expect(result.beats).toHaveLength(4);
+    });
+
+    it('should preserve downbeatConfig and other map properties with rests', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const customDownbeatConfig: DownbeatConfig = {
+            segments: [{ startBeat: 0, timeSignature: { beatsPerMeasure: 4 } }],
+        };
+        const unifiedMap = createUnifiedBeatMap(beats, {
+            bpm: 120,
+            downbeatConfig: customDownbeatConfig,
+        });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [2, 'rest'],
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert
+        expect(result.downbeatConfig).toEqual(customDownbeatConfig);
+        expect(result.audioId).toBe('test-audio-id');
+    });
+
+    it('should update detectedBeatIndices correctly when beats are skipped', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, {
+            bpm: 120,
+            detectedBeatIndices: [0, 1, 2, 3], // All beats detected
+        });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [1, 'rest'], // Beat 1 is skipped
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - 3 beats remain, all detected
+        // Beat 0 → index 0 (detected)
+        // Beat 1 → skipped
+        // Beat 2 → index 1 (detected)
+        // Beat 3 → index 2 (detected)
+        expect(result.detectedBeatIndices).toEqual([0, 1, 2]);
+    });
+
+    it('should handle single beat marked as rest', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 1);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [0, 'rest'],
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - no beats
+        expect(result.beats).toHaveLength(0);
+    });
+
+    it('should handle empty beatSubdivisions map with rest default', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map(), // Empty map
+            defaultSubdivision: 'rest',  // All beats are rests
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - no beats
+        expect(result.beats).toHaveLength(0);
+        expect(result.subdivisionMetadata.explicitBeatCount).toBe(0);
+    });
+
+    it('should create syncopated rhythm pattern with rests', () => {
+        // Arrange - Create a syncopated pattern: play, rest, rest, play
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 8);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [1, 'rest'],
+                [2, 'rest'],
+                [5, 'rest'],
+                [6, 'rest'],
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - 4 beats remain (0, 3, 4, 7)
+        expect(result.beats).toHaveLength(4);
+        expect(result.beats[0].beatInMeasure).toBe(0); // Beat 0
+        expect(result.beats[1].beatInMeasure).toBe(3); // Beat 3
+        expect(result.beats[2].beatInMeasure).toBe(0); // Beat 4 (new measure)
+        expect(result.beats[3].beatInMeasure).toBe(3); // Beat 7
+    });
+
+    it('should set maxDensity to 0 when all beats are rests', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map(),
+            defaultSubdivision: 'rest',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - maxDensity should be 0 for rest
+        expect(result.subdivisionMetadata.maxDensity).toBe(0);
+    });
+
+    it('should work with mixed subdivision types including rest', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [0, 'eighth'],  // 1 beat + 1 interpolated = 2
+                [1, 'rest'],    // 0 beats
+                [2, 'sixteenth'], // 1 beat + 3 interpolated = 4
+                // Beat 3 uses default (quarter) = 1 beat
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert: 2 + 0 + 4 + 1 = 7 beats
+        expect(result.beats).toHaveLength(7);
+        expect(result.subdivisionMetadata.subdivisionsUsed).toContain('eighth');
+        expect(result.subdivisionMetadata.subdivisionsUsed).toContain('rest');
+        expect(result.subdivisionMetadata.subdivisionsUsed).toContain('sixteenth');
+        expect(result.subdivisionMetadata.subdivisionsUsed).toContain('quarter');
+    });
+
+    it('should handle rest at the beginning of the beat map', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [0, 'rest'], // First beat is rest
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - 3 beats, starting from beat 1
+        expect(result.beats).toHaveLength(3);
+        expect(result.beats[0].beatInMeasure).toBe(1); // Was beat 1
+    });
+
+    it('should handle rest at the end of the beat map', () => {
+        // Arrange
+        const subdivider = new BeatSubdivider();
+        const beats = createRegularQuarterNotes(120, 4);
+        const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map([
+                [3, 'rest'], // Last beat is rest
+            ]),
+            defaultSubdivision: 'quarter',
+        };
+
+        // Act
+        const result = subdivider.subdivide(unifiedMap, config);
+
+        // Assert - 3 beats
+        expect(result.beats).toHaveLength(3);
+        expect(result.beats[2].beatInMeasure).toBe(2); // Last beat is beat 2
+    });
+});
+
+
+// ============================================================================
 // Edge Cases Tests
 // ============================================================================
 

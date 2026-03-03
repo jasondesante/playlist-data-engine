@@ -148,10 +148,10 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 ### 4.1 Update beatSubdivider.test.ts
 - [x] Remove "Segment Tests" section (lines 3564-4008)
 - [x] Update imports to use new types (added `SubdivisionType`)
-- [ ] Add test cases for `'rest'` subdivision type
+- [x] Add test cases for `'rest'` subdivision type (16 tests added)
 - [x] Update existing tests to use `SubdivisionConfig` (per-beat format) - PARTIAL
   - Most config patterns updated from `segments` to `beatSubdivisions`/`defaultSubdivision`
-  - **REMAINING**: 35 tests still failing due to behavior changes:
+  - **REMAINING**: 41 tests still failing due to behavior changes:
     - Half Notes tests expect beats to be REMOVED, but new impl keeps all beats
     - Dotted4 tests expect phase-independent generation, new impl keeps original beats
     - Validation tests for old segment format need to be rewritten
