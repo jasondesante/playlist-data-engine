@@ -164,7 +164,7 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 > **IMPORTANT:** Documentation must reflect that segment-based is REMOVED, not just "legacy".
 > The docs should show ONLY the per-beat approach.
 
-### 6.1 Update DATA_ENGINE_REFERENCE.md
+### 5.1 Update DATA_ENGINE_REFERENCE.md
 
 #### Type Exports Section
 - [ ] Remove `SegmentSubdivisionConfig` from type tables
@@ -192,7 +192,7 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 #### Quick Start Example
 - [ ] Update to use per-beat config format
 
-### 6.2 Update AUDIO_ANALYSIS.md
+### 5.2 Update AUDIO_ANALYSIS.md
 
 #### Beat Subdivision Section (~line 2092)
 - [ ] Rewrite overview to focus on per-beat approach
@@ -228,7 +228,7 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 - [ ] Search for `segments:` pattern and update all examples
 - [ ] Update to use per-beat Map format
 
-### 6.3 Update Code Examples in Source Files
+### 5.3 Update Code Examples in Source Files
 - [ ] Update JSDoc examples in [BeatMap.ts](src/core/types/BeatMap.ts)
 - [ ] Update JSDoc examples in [BeatSubdivider.ts](src/core/analysis/beat/BeatSubdivider.ts)
 - [ ] Update examples in [subdivideBeatMap.ts](src/core/analysis/beat/utils/subdivideBeatMap.ts)
@@ -238,12 +238,12 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 
 ## Phase 6: Final Cleanup
 
-### 7.1 Remove Deprecated Comments
+### 6.1 Remove Deprecated Comments
 - [ ] Remove any `@deprecated` tags that referenced segment-based as legacy
 - [ ] Clean up migration-related comments
 - [ ] Remove "version 2" references (no version field needed)
 
-### 7.2 Update Constants
+### 6.2 Update Constants
 - [ ] Verify `DEFAULT_SUBDIVISION_CONFIG` uses new format:
   ```typescript
   export const DEFAULT_SUBDIVISION_CONFIG: SubdivisionConfig = {
@@ -252,7 +252,7 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
   };
   ```
 
-### 7.3 Build & Test Verification
+### 6.3 Build & Test Verification
 - [ ] Run `npm run build` to verify no TypeScript errors
 - [ ] Run `npm test` to verify all tests pass
 - [ ] Grep for any remaining references to `SegmentSubdivisionConfig`
