@@ -1786,6 +1786,65 @@ export const DEFAULT_SUBDIVISION_CONFIG: SubdivisionConfig = {
 };
 
 // ============================================================================
+// Per-Beat Subdivision Configuration (v2)
+// ============================================================================
+
+/**
+ * Per-beat subdivision configuration for rhythm pattern generation
+ *
+ * This configuration allows each beat to have its own subdivision type,
+ * enabling fine-grained control for creating complex rhythmic phrases.
+ * Uses a sparse Map for efficient storage - beats not in the map use
+ * the default subdivision.
+ *
+ * @example
+ * ```typescript
+ * // Create a rhythm phrase with varying subdivisions
+ * const config: PerBeatSubdivisionConfig = {
+ *   version: 2,
+ *   beatSubdivisions: new Map([
+ *     [0, 'quarter'],   // Beat 0: quarter note
+ *     [1, 'eighth'],    // Beat 1: eighth notes
+ *     [2, 'eighth'],    // Beat 2: eighth notes
+ *     [3, 'quarter'],   // Beat 3: quarter note
+ *   ]),
+ *   defaultSubdivision: 'quarter',
+ * };
+ *
+ * // Sparse representation - only specify beats that differ from default
+ * const sparseConfig: PerBeatSubdivisionConfig = {
+ *   version: 2,
+ *   beatSubdivisions: new Map([
+ *     [4, 'triplet8'],  // Only beat 4 uses triplets
+ *     [8, 'triplet8'],  // Only beat 8 uses triplets
+ *   ]),
+ *   defaultSubdivision: 'quarter',  // All other beats are quarter notes
+ * };
+ * ```
+ */
+export interface PerBeatSubdivisionConfig {
+    /** Version identifier for migration (always 2 for per-beat format) */
+    version: 2;
+
+    /**
+     * Subdivision type for each beat index (sparse).
+     * Beats not in this map use the defaultSubdivision.
+     * Key: beat index (0-based), Value: subdivision type
+     */
+    beatSubdivisions: Map<number, SubdivisionType>;
+
+    /** Default subdivision for beats not in the beatSubdivisions map */
+    defaultSubdivision: SubdivisionType;
+}
+
+/** Default per-beat subdivision config (quarter notes throughout) */
+export const DEFAULT_PER_BEAT_SUBDIVISION_CONFIG: PerBeatSubdivisionConfig = {
+    version: 2,
+    beatSubdivisions: new Map(),
+    defaultSubdivision: 'quarter',
+};
+
+// ============================================================================
 // Unified Beat Map (Foundation for Subdivision)
 // ============================================================================
 
