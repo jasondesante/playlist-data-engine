@@ -158,7 +158,7 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
     - Serialization tests need to compare new config format
 
 ### 4.2 Update Other Test Files
-- [ ] [beatKeyHelpers.test.ts](tests/unit/beat/beatKeyHelpers.test.ts) - Update subdivision config usage
+- [x] [beatKeyHelpers.test.ts](tests/unit/beat/beatKeyHelpers.test.ts) - Update subdivision config usage
 - [ ] [beatStream.test.ts](tests/unit/beat/beatStream.test.ts) - Update subdivision config usage
 - [ ] [unifyBeatMap.test.ts](tests/unit/beat/unifyBeatMap.test.ts) - Check for segment usage
 - [ ] [subdivisionPlaybackController.test.ts](tests/unit/playback/subdivisionPlaybackController.test.ts) - Update config format

@@ -178,7 +178,8 @@ function createMockSubdividedBeatMap(beats: SubdividedBeat[] = []): SubdividedBe
         beats,
         detectedBeatIndices: [],
         subdivisionConfig: {
-            segments: [{ startBeat: 0, subdivision: 'quarter' }],
+            beatSubdivisions: new Map(),
+            defaultSubdivision: 'quarter',
         },
         downbeatConfig: {
             segments: [{ startBeat: 0, downbeatBeatIndex: 0, timeSignature: { beatsPerMeasure: 4 } }],
@@ -187,7 +188,7 @@ function createMockSubdividedBeatMap(beats: SubdividedBeat[] = []): SubdividedBe
             originalBeatCount: 10,
             subdividedBeatCount: beats.length,
             averageDensityMultiplier: 1.0,
-            segmentCount: 1,
+            explicitBeatCount: 0,
             subdivisionsUsed: ['quarter'],
             hasMultipleTempos: false,
             maxDensity: 1,
