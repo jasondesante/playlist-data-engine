@@ -1734,80 +1734,13 @@ export type SubdivisionType =
 // Subdivision Configuration
 // ============================================================================
 
-/**
- * A segment of subdivision configuration
- *
- * Segments are CONTIGUOUS - each segment covers all beats from its startBeat
- * until the next segment's startBeat (or end of track). There are no gaps.
- *
- * Example: If segment 1 has startBeat: 0 with 'quarter' and segment 2 has
- * startBeat: 32 with 'eighth', then beats 0-31 are quarter notes and
- * beats 32+ are eighth notes.
- */
-export interface SubdivisionSegment {
-    /** Beat index where this subdivision starts */
-    startBeat: number;
-
-    /** Type of subdivision to apply */
-    subdivision: SubdivisionType;
-}
-
-/**
- * Segment-based subdivision configuration for rhythm pattern generation
- * Supports multiple segments for subdivision changes within a track
- *
- * @deprecated Use `SubdivisionConfig` (union type) for new code.
- * This interface is kept for reference and backwards compatibility.
- * For per-beat control, use `PerBeatSubdivisionConfig`.
- *
- * @example
- * ```typescript
- * // Single subdivision throughout the track
- * const simpleConfig: SegmentSubdivisionConfig = {
- *   segments: [{ startBeat: 0, subdivision: 'eighth' }],
- * };
- *
- * // Multiple subdivisions changing over time
- * const dynamicConfig: SegmentSubdivisionConfig = {
- *   segments: [
- *     { startBeat: 0, subdivision: 'quarter' },      // Intro: quarter notes
- *     { startBeat: 32, subdivision: 'eighth' },      // Verse: eighth notes
- *     { startBeat: 96, subdivision: 'half' },        // Bridge: half notes
- *     { startBeat: 128, subdivision: 'triplet8' },   // Solo: triplets
- *   ],
- * };
- * ```
- */
-export interface SegmentSubdivisionConfig {
-    /** Array of subdivision segments ordered by startBeat */
-    segments: SubdivisionSegment[];
-}
-
-/**
- * Union type for subdivision configuration.
- *
- * Accepts either:
- * - `SegmentSubdivisionConfig`: Legacy segment-based configuration
- * - `PerBeatSubdivisionConfig`: New per-beat configuration for fine-grained control
- *
- * Use `isPerBeatSubdivisionConfig()` type guard to distinguish between formats.
- */
-export type SubdivisionConfig = SegmentSubdivisionConfig | PerBeatSubdivisionConfig;
-
-/** Default subdivision config (quarter notes throughout) */
-export const DEFAULT_SUBDIVISION_CONFIG: SegmentSubdivisionConfig = {
-    segments: [{
-        startBeat: 0,
-        subdivision: 'quarter',
-    }],
-};
 
 // ============================================================================
-// Per-Beat Subdivision Configuration (v2)
+// Subdivision Configuration
 // ============================================================================
 
 /**
- * Per-beat subdivision configuration for rhythm pattern generation
+ * Subdivision configuration for rhythm pattern generation
  *
  * This configuration allows each beat to have its own subdivision type,
  * enabling fine-grained control for creating complex rhythmic phrases.
@@ -1817,8 +1750,7 @@ export const DEFAULT_SUBDIVISION_CONFIG: SegmentSubdivisionConfig = {
  * @example
  * ```typescript
  * // Create a rhythm phrase with varying subdivisions
- * const config: PerBeatSubdivisionConfig = {
- *   version: 2,
+ * const config: SubdivisionConfig = {
  *   beatSubdivisions: new Map([
  *     [0, 'quarter'],   // Beat 0: quarter note
  *     [1, 'eighth'],    // Beat 1: eighth notes
@@ -1829,20 +1761,27 @@ export const DEFAULT_SUBDIVISION_CONFIG: SegmentSubdivisionConfig = {
  * };
  *
  * // Sparse representation - only specify beats that differ from default
- * const sparseConfig: PerBeatSubdivisionConfig = {
- *   version: 2,
+ * const sparseConfig: SubdivisionConfig = {
  *   beatSubdivisions: new Map([
  *     [4, 'triplet8'],  // Only beat 4 uses triplets
  *     [8, 'triplet8'],  // Only beat 8 uses triplets
  *   ]),
  *   defaultSubdivision: 'quarter',  // All other beats are quarter notes
  * };
+ *
+ * // Create gaps in rhythm using 'rest'
+ * const configWithRests: SubdivisionConfig = {
+ *   beatSubdivisions: new Map([
+ *     [0, 'quarter'],   // Beat 0: quarter note
+ *     [1, 'rest'],      // Beat 1: no beat (rest)
+ *     [2, 'eighth'],    // Beat 2: eighth notes
+ *     [3, 'rest'],      // Beat 3: no beat (rest)
+ *   ]),
+ *   defaultSubdivision: 'quarter',
+ * };
  * ```
  */
-export interface PerBeatSubdivisionConfig {
-    /** Version identifier for migration (always 2 for per-beat format) */
-    version: 2;
-
+export interface SubdivisionConfig {
     /**
      * Subdivision type for each beat index (sparse).
      * Beats not in this map use the defaultSubdivision.
@@ -1854,9 +1793,8 @@ export interface PerBeatSubdivisionConfig {
     defaultSubdivision: SubdivisionType;
 }
 
-/** Default per-beat subdivision config (quarter notes throughout) */
-export const DEFAULT_PER_BEAT_SUBDIVISION_CONFIG: PerBeatSubdivisionConfig = {
-    version: 2,
+/** Default subdivision config (quarter notes throughout) */
+export const DEFAULT_SUBDIVISION_CONFIG: SubdivisionConfig = {
     beatSubdivisions: new Map(),
     defaultSubdivision: 'quarter',
 };

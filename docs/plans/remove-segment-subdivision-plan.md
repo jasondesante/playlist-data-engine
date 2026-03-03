@@ -65,13 +65,13 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 > This phase REMOVES them entirely since we're going per-beat only.
 
 ### 2.1 Remove Segment Types from BeatMap.ts
-- [ ] Delete `SubdivisionSegment` interface
-- [ ] Delete `SegmentSubdivisionConfig` interface
-- [ ] Delete `DEFAULT_SUBDIVISION_CONFIG` (segment-based default)
-- [ ] Remove the union type definition
-- [ ] Remove `version` field from `PerBeatSubdivisionConfig` (no longer needed without migration)
-- [ ] Rename `PerBeatSubdivisionConfig` to `SubdivisionConfig` (the only config type)
-- [ ] Rename `DEFAULT_PER_BEAT_SUBDIVISION_CONFIG` to `DEFAULT_SUBDIVISION_CONFIG`
+- [x] Delete `SubdivisionSegment` interface
+- [x] Delete `SegmentSubdivisionConfig` interface
+- [x] Delete `DEFAULT_SUBDIVISION_CONFIG` (segment-based default)
+- [x] Remove the union type definition
+- [x] Remove `version` field from `PerBeatSubdivisionConfig` (no longer needed without migration)
+- [x] Rename `PerBeatSubdivisionConfig` to `SubdivisionConfig` (the only config type)
+- [x] Rename `DEFAULT_PER_BEAT_SUBDIVISION_CONFIG` to `DEFAULT_SUBDIVISION_CONFIG`
 
 ### 2.2 Remove Segment Type Guards and Validators
 - [ ] Delete `isPerBeatSubdivisionConfig()` function (no longer needed)
