@@ -147,7 +147,8 @@ export class BeatStream {
      * // With a SubdividedBeatMap (e.g., eighth notes)
      * const unifiedMap = unifyBeatMap(interpolatedMap);
      * const subdividedMap = subdivider.subdivide(unifiedMap, {
-     *     segments: [{ startBeat: 0, subdivision: 'eighth' }]
+     *     beatSubdivisions: new Map(),
+     *     defaultSubdivision: 'eighth',
      * });
      * const beatStream = new BeatStream(subdividedMap, audioContext);
      * ```

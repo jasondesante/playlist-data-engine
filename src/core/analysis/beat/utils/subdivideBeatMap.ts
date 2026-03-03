@@ -11,12 +11,13 @@
  * const interpolator = new BeatInterpolator();
  * const interpolatedMap = interpolator.interpolate(beatMap);
  *
- * // One-step subdivision
+ * // One-step subdivision with per-beat config
  * const subdividedMap = subdivideBeatMap(interpolatedMap, {
- *   segments: [
- *     { startBeat: 0, subdivision: 'quarter' },
- *     { startBeat: 32, subdivision: 'eighth' },
- *   ],
+ *   beatSubdivisions: new Map([
+ *     [0, 'quarter'],
+ *     [32, 'eighth'],
+ *   ]),
+ *   defaultSubdivision: 'quarter',
  * });
  * ```
  */
@@ -48,12 +49,13 @@ import { unifyBeatMap } from './unifyBeatMap.js';
  * // Basic usage with default config (quarter notes)
  * const subdividedMap = subdivideBeatMap(interpolatedMap);
  *
- * // With custom subdivision config
+ * // With custom per-beat subdivision config
  * const subdividedMap = subdivideBeatMap(interpolatedMap, {
- *   segments: [
- *     { startBeat: 0, subdivision: 'quarter' },
- *     { startBeat: 32, subdivision: 'eighth' },
- *   ],
+ *   beatSubdivisions: new Map([
+ *     [0, 'quarter'],
+ *     [32, 'eighth'],
+ *   ]),
+ *   defaultSubdivision: 'quarter',
  * });
  *
  * // With subdivider options
