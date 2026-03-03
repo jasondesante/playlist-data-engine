@@ -292,6 +292,11 @@ export class BeatSubdivider {
             // Check if this is a detected beat
             const isDetected = unifiedMap.detectedBeatIndices.includes(beatIndex);
 
+            // Skip beat generation entirely for 'rest' subdivision
+            if (subdivision === 'rest') {
+                continue;
+            }
+
             // Add the original beat
             subdividedBeats.push({
                 ...beat,
@@ -461,6 +466,10 @@ export class BeatSubdivider {
                 ));
                 break;
 
+            case 'rest':
+                // No beats generated for rest - return empty array
+                break;
+
             default:
                 // TypeScript exhaustive check
                 const _exhaustive: never = subdivision;
@@ -613,6 +622,10 @@ export class BeatSubdivider {
 
             case 'dotted8':
                 return this.subdivideDotted8(beats, globalStartIndex, unifiedMap, quarterNoteInterval, options, hasMultipleTempos);
+
+            case 'rest':
+                // No beats generated for rest - return empty array
+                return [];
 
             default:
                 // TypeScript exhaustive check

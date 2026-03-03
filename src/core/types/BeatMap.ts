@@ -1714,6 +1714,7 @@ export function validateThresholds(thresholds: Partial<AccuracyThresholds>): Thr
  * - triplet4: Quarter triplets (3 beats per half note)
  * - dotted4: Dotted quarter (every 1.5 quarters, phase-independent)
  * - dotted8: Dotted eighth (swing long-short pattern: 2/3 + 1/3)
+ * - rest: 0x density (no beats generated - used for gaps in rhythm patterns)
  *
  * Note: Sixteenth notes (4x) are the maximum supported density.
  * Higher densities are not supported and will throw an error.
@@ -1726,7 +1727,8 @@ export type SubdivisionType =
   | 'triplet8'   // 3 beats per quarter (eighth triplets)
   | 'triplet4'   // 3 beats per half note (quarter triplets)
   | 'dotted4'    // Every 1.5 quarters (phase-independent)
-  | 'dotted8';   // Swing pattern (2/3 + 1/3 quarters)
+  | 'dotted8'    // Swing pattern (2/3 + 1/3 quarters)
+  | 'rest';      // No beats generated (0x density)
 
 // ============================================================================
 // Subdivision Configuration
@@ -1751,18 +1753,22 @@ export interface SubdivisionSegment {
 }
 
 /**
- * Subdivision configuration for rhythm pattern generation
+ * Segment-based subdivision configuration for rhythm pattern generation
  * Supports multiple segments for subdivision changes within a track
+ *
+ * @deprecated Use `SubdivisionConfig` (union type) for new code.
+ * This interface is kept for reference and backwards compatibility.
+ * For per-beat control, use `PerBeatSubdivisionConfig`.
  *
  * @example
  * ```typescript
  * // Single subdivision throughout the track
- * const simpleConfig: SubdivisionConfig = {
+ * const simpleConfig: SegmentSubdivisionConfig = {
  *   segments: [{ startBeat: 0, subdivision: 'eighth' }],
  * };
  *
  * // Multiple subdivisions changing over time
- * const dynamicConfig: SubdivisionConfig = {
+ * const dynamicConfig: SegmentSubdivisionConfig = {
  *   segments: [
  *     { startBeat: 0, subdivision: 'quarter' },      // Intro: quarter notes
  *     { startBeat: 32, subdivision: 'eighth' },      // Verse: eighth notes
@@ -1772,13 +1778,24 @@ export interface SubdivisionSegment {
  * };
  * ```
  */
-export interface SubdivisionConfig {
+export interface SegmentSubdivisionConfig {
     /** Array of subdivision segments ordered by startBeat */
     segments: SubdivisionSegment[];
 }
 
+/**
+ * Union type for subdivision configuration.
+ *
+ * Accepts either:
+ * - `SegmentSubdivisionConfig`: Legacy segment-based configuration
+ * - `PerBeatSubdivisionConfig`: New per-beat configuration for fine-grained control
+ *
+ * Use `isPerBeatSubdivisionConfig()` type guard to distinguish between formats.
+ */
+export type SubdivisionConfig = SegmentSubdivisionConfig | PerBeatSubdivisionConfig;
+
 /** Default subdivision config (quarter notes throughout) */
-export const DEFAULT_SUBDIVISION_CONFIG: SubdivisionConfig = {
+export const DEFAULT_SUBDIVISION_CONFIG: SegmentSubdivisionConfig = {
     segments: [{
         startBeat: 0,
         subdivision: 'quarter',
@@ -2055,6 +2072,7 @@ export const VALID_SUBDIVISION_TYPES: SubdivisionType[] = [
     'triplet4',
     'dotted4',
     'dotted8',
+    'rest',
 ];
 
 /**
@@ -2075,6 +2093,8 @@ export function isValidSubdivisionType(value: unknown): value is SubdivisionType
  */
 export function getSubdivisionDensity(subdivision: SubdivisionType): number {
     switch (subdivision) {
+        case 'rest':
+            return 0;
         case 'half':
             return 0.5;
         case 'quarter':
@@ -2094,8 +2114,49 @@ export function getSubdivisionDensity(subdivision: SubdivisionType): number {
     }
 }
 
+// ============================================================================
+// Subdivision Config Type Guards
+// ============================================================================
+
+/**
+ * Type guard to check if a SubdivisionConfig is the per-beat format.
+ *
+ * @param config - The subdivision configuration to check
+ * @returns true if the config is PerBeatSubdivisionConfig
+ */
+export function isPerBeatSubdivisionConfig(config: SubdivisionConfig): config is PerBeatSubdivisionConfig {
+    return (config as PerBeatSubdivisionConfig).version === 2;
+}
+
+/**
+ * Type guard to check if a SubdivisionConfig is the segment-based format.
+ *
+ * @param config - The subdivision configuration to check
+ * @returns true if the config is SegmentSubdivisionConfig
+ */
+export function isSegmentSubdivisionConfig(config: SubdivisionConfig): config is SegmentSubdivisionConfig {
+    return 'segments' in config;
+}
+
 /**
  * Validate subdivision configuration (structural validation only)
+ *
+ * This validates both segment-based and per-beat configurations.
+ * Dispatches to the appropriate validator based on config type.
+ *
+ * @param config - The subdivision configuration to validate
+ * @throws Error if configuration is invalid
+ */
+export function validateSubdivisionConfig(config: SubdivisionConfig): void {
+    if (isPerBeatSubdivisionConfig(config)) {
+        validatePerBeatSubdivisionConfig(config);
+    } else {
+        validateSegmentSubdivisionConfig(config);
+    }
+}
+
+/**
+ * Validate segment-based subdivision configuration (structural validation only)
  *
  * This validates:
  * - Segments array is non-empty
@@ -2106,12 +2167,12 @@ export function getSubdivisionDensity(subdivision: SubdivisionType): number {
  * Note: Beat count validation (e.g., startBeat < totalBeats) happens
  * in validateSubdivisionConfigAgainstBeats() after the beat map is available.
  *
- * @param config - The subdivision configuration to validate
+ * @param config - The segment-based subdivision configuration to validate
  * @throws Error if configuration is invalid
  */
-export function validateSubdivisionConfig(config: SubdivisionConfig): void {
+export function validateSegmentSubdivisionConfig(config: SegmentSubdivisionConfig): void {
     if (!config.segments || config.segments.length === 0) {
-        throw new Error('SubdivisionConfig must have at least one segment');
+        throw new Error('SegmentSubdivisionConfig must have at least one segment');
     }
 
     for (let i = 0; i < config.segments.length; i++) {
@@ -2146,17 +2207,68 @@ export function validateSubdivisionConfig(config: SubdivisionConfig): void {
 }
 
 /**
- * Validate subdivision config against actual beat count
+ * Validate per-beat subdivision configuration (structural validation only)
  *
  * This validates:
- * - startBeat values don't exceed total beat count (except for the first segment)
+ * - Version is exactly 2
+ * - beatSubdivisions is a Map
+ * - All subdivision types in the map are valid
+ * - defaultSubdivision is a valid subdivision type
  *
- * Note: The first segment's startBeat can be 0, even if there are no beats.
- * Subsequent segments with startBeat >= totalBeats are effectively no-ops.
+ * @param config - The per-beat subdivision configuration to validate
+ * @throws Error if configuration is invalid
+ */
+export function validatePerBeatSubdivisionConfig(config: PerBeatSubdivisionConfig): void {
+    // Verify version
+    if (config.version !== 2) {
+        throw new Error(
+            `PerBeatSubdivisionConfig must have version: 2, got ${config.version}`
+        );
+    }
+
+    // Verify beatSubdivisions is a Map
+    if (!(config.beatSubdivisions instanceof Map)) {
+        throw new Error(
+            'PerBeatSubdivisionConfig.beatSubdivisions must be a Map'
+        );
+    }
+
+    // Verify all subdivision types in the map are valid
+    for (const [beatIndex, subdivision] of config.beatSubdivisions) {
+        // Verify beat index is non-negative
+        if (beatIndex < 0) {
+            throw new Error(
+                `Beat index must be non-negative, got ${beatIndex}`
+            );
+        }
+
+        // Verify subdivision type is valid
+        if (!isValidSubdivisionType(subdivision)) {
+            throw new Error(
+                `Beat ${beatIndex}: Invalid subdivision type "${subdivision}". ` +
+                `Valid types: ${VALID_SUBDIVISION_TYPES.join(', ')}`
+            );
+        }
+    }
+
+    // Verify defaultSubdivision is valid
+    if (!isValidSubdivisionType(config.defaultSubdivision)) {
+        throw new Error(
+            `Invalid defaultSubdivision "${config.defaultSubdivision}". ` +
+            `Valid types: ${VALID_SUBDIVISION_TYPES.join(', ')}`
+        );
+    }
+}
+
+/**
+ * Validate subdivision config against actual beat count
+ *
+ * This validates both segment-based and per-beat configurations.
+ * Dispatches to the appropriate validator based on config type.
  *
  * @param config - The subdivision configuration to validate
  * @param totalBeats - The total number of beats in the unified beat map
- * @throws Error if startBeat exceeds total beats for non-first segments
+ * @throws Error if configuration is invalid for the given beat count
  */
 export function validateSubdivisionConfigAgainstBeats(
     config: SubdivisionConfig,
@@ -2165,6 +2277,30 @@ export function validateSubdivisionConfigAgainstBeats(
     // First do structural validation
     validateSubdivisionConfig(config);
 
+    if (isPerBeatSubdivisionConfig(config)) {
+        validatePerBeatSubdivisionConfigAgainstBeats(config, totalBeats);
+    } else {
+        validateSegmentSubdivisionConfigAgainstBeats(config, totalBeats);
+    }
+}
+
+/**
+ * Validate segment-based subdivision config against actual beat count
+ *
+ * This validates:
+ * - startBeat values don't exceed total beat count (except for the first segment)
+ *
+ * Note: The first segment's startBeat can be 0, even if there are no beats.
+ * Subsequent segments with startBeat >= totalBeats are effectively no-ops.
+ *
+ * @param config - The segment-based subdivision configuration to validate
+ * @param totalBeats - The total number of beats in the unified beat map
+ * @throws Error if startBeat exceeds total beats for non-first segments
+ */
+export function validateSegmentSubdivisionConfigAgainstBeats(
+    config: SegmentSubdivisionConfig,
+    totalBeats: number
+): void {
     // For empty beat maps, only allow the default segment at beat 0
     if (totalBeats === 0) {
         if (config.segments.length > 1 || config.segments[0].startBeat !== 0) {
@@ -2188,6 +2324,41 @@ export function validateSubdivisionConfigAgainstBeats(
             // This is a warning-worthy condition but not an error
             // The segment simply won't apply to any beats
             // We could add a warning callback here if needed
+        }
+    }
+}
+
+/**
+ * Validate per-beat subdivision config against actual beat count
+ *
+ * This validates:
+ * - Beat indices in beatSubdivisions don't exceed total beat count
+ *
+ * Note: Beat indices beyond the beat count are no-ops (they just won't apply).
+ *
+ * @param config - The per-beat subdivision configuration to validate
+ * @param totalBeats - The total number of beats in the unified beat map
+ * @throws Error if beat index configuration is invalid
+ */
+export function validatePerBeatSubdivisionConfigAgainstBeats(
+    config: PerBeatSubdivisionConfig,
+    totalBeats: number
+): void {
+    // For empty beat maps, beatSubdivisions should be empty
+    if (totalBeats === 0 && config.beatSubdivisions.size > 0) {
+        throw new Error(
+            'Cannot apply per-beat subdivision config with beat assignments to empty beat map'
+        );
+    }
+
+    // Check that beat indices are within range
+    // Note: We allow indices beyond the beat count - they just won't apply
+    const maxBeatIndex = totalBeats - 1;
+
+    for (const [beatIndex] of config.beatSubdivisions) {
+        if (beatIndex > maxBeatIndex) {
+            // This is a warning-worthy condition but not an error
+            // The beat assignment simply won't apply
         }
     }
 }
