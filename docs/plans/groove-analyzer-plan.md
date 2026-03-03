@@ -301,24 +301,24 @@ Create `tests/unit/beat/grooveAnalyzer.test.ts`.
     - [x] 70% to edge = 0.51 consistency (1 - 0.7²)
     - [x] 90% to edge = 0.19 consistency (1 - 0.9²)
 
-- [ ] **4.3 Hotness/Meter Tests**
-  - [ ] Hotness increases by 8 on consistent hits (in pocket)
-  - [ ] Hotness decreases by 20 on pocket breaks
-  - [ ] Hotness decreases by 10 on missed beats (recordMiss)
-  - [ ] Hotness clamped to 0-100
-  - [ ] Progressive tightening works correctly at higher hotness
+- [x] **4.3 Hotness/Meter Tests**
+  - [x] Hotness increases by 8 on consistent hits (in pocket)
+  - [x] Hotness decreases by 20 on pocket breaks
+  - [x] Hotness decreases by 10 on missed beats (recordMiss)
+  - [x] Hotness clamped to 0-100
+  - [x] Progressive tightening works correctly at higher hotness
 
-- [ ] **4.4 Missed Beat Tests**
-  - [ ] recordMiss() reduces hotness by configured amount (default 10)
-  - [ ] recordMiss() resets streak to 0
-  - [ ] recordMiss() does NOT clear established pocket
+- [x] **4.4 Missed Beat Tests**
+  - [x] recordMiss() reduces hotness by configured amount (default 10)
+  - [x] recordMiss() resets streak to 0
+  - [x] recordMiss() does NOT clear established pocket
 
-- [ ] **4.5 Edge Cases**
-  - [ ] First hit returns sensible defaults (no pocket yet)
-  - [ ] Second hit still no pocket (need 3 hits)
-  - [ ] Reset clears all state
-  - [ ] BPM changes affect pocket window correctly (auto-adjust)
-  - [ ] Rolling window maintains correct size (drops old hits)
+- [x] **4.5 Edge Cases**
+  - [x] First hit returns sensible defaults (no pocket yet)
+  - [x] Second hit still no pocket (need 3 hits)
+  - [x] Reset clears all state
+  - [x] BPM changes affect pocket window correctly (auto-adjust)
+  - [x] Rolling window maintains correct size (drops old hits)
 
 ---
 
