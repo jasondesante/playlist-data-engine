@@ -329,9 +329,9 @@ Create `tests/unit/beat/grooveAnalyzer.test.ts`.
   - [x] Document all types/interfaces
   - [x] Include usage examples
 
-- [ ] **5.2 Update DATA_ENGINE_REFERENCE.md**
-  - [ ] Add GrooveAnalyzer section
-  - [ ] Document API and options
+- [x] **5.2 Update DATA_ENGINE_REFERENCE.md**
+  - [x] Add GrooveAnalyzer section
+  - [x] Document API and options
 
 - [ ] **5.3 Update AUDIO_ANALYSIS.md**
   - [ ] Add "Groove Analysis" section explaining the style meter concept

@@ -13,6 +13,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
 4. [Beat Detection](#beat-detection)
    - [BeatMapGenerator](#beatmapgenerator)
    - [BeatStream](#beatstream)
+   - [GrooveAnalyzer](#grooveanalyzer)
    - [OnsetStrengthEnvelope](#onsetstrengthenvelope)
    - [BeatTracker](#beattracker)
    - [TempoDetector](#tempodetector)
@@ -147,6 +148,7 @@ A concise overview of all main exports from the library, organized by category.
 |--------|-------------|---------|
 | `BeatMapGenerator` | Generate beat maps from audio (Ellis DP algorithm) | [Beat Detection](#beat-detection) |
 | `BeatStream` | Real-time beat event streaming synchronized with audio | [Beat Detection](#beat-detection) |
+| `GrooveAnalyzer` | "Groove meter" for rhythm game consistency tracking | [Beat Detection](#beat-detection) |
 | `OnsetStrengthEnvelope` | Perceptual onset strength envelope calculation (Mel spectrogram) | [Beat Detection](#beat-detection) |
 | `BeatTracker` | Dynamic Programming beat tracking (Ellis algorithm) | [Beat Detection](#beat-detection) |
 | `TempoDetector` | Global tempo estimation with perceptual weighting | [ [Beat Detection](#beat-detection) |
@@ -1539,6 +1541,10 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `SubdivisionBeatEvent` | Event emitted during playback | `beat`, `currentSubdivision`, `timeUntilBeat`, `audioTime`, `type` |
 | `SubdivisionCallback` | Callback type for beat events | `(event: SubdivisionBeatEvent) => void` |
 | `SubdivisionTransitionMode` | Transition mode for subdivision changes | `'immediate'` \| `'next-downbeat'` \| `'next-measure'` |
+| `GrooveDirection` | Direction of established pocket relative to beat | `'push'` \| `'pull'` \| `'neutral'` |
+| `GrooveResult` | Result returned after each hit recorded | `pocketDirection`, `establishedOffset`, `consistency`, `hotness`, `streakLength`, `inPocket`, `pocketWindow` |
+| `GrooveState` | Snapshot of current groove analyzer state | `pocketDirection`, `establishedOffset`, `hotness`, `streakLength`, `hitCount`, `pocketWindow` |
+| `GrooveAnalyzerOptions` | Configuration for GrooveAnalyzer | `minHitsForPocket`, `basePocketWindowFraction`, `minPocketWindowSeconds`, `hotnessGainPerHit`, `hotnessLossOnBreak`, `hotnessLossOnMiss`, `averagingWindowSize`, `neutralDeadZone` |
 
 ### BeatMapGenerator
 
@@ -1751,6 +1757,126 @@ const easyStream = new BeatStream(chartMap, audioContext, {
     ignoreKeyRequirements: true,
 });
 ```
+
+### GrooveAnalyzer
+
+**Location:** `src/core/analysis/beat/GrooveAnalyzer.ts`
+
+A "groove meter" system that rewards **consistency in timing feel** rather than proximity to perfect center. Inspired by Devil May Cry's style meter - it's not about being mechanically perfect, it's about establishing and maintaining a consistent "pocket."
+
+**Core Philosophy:**
+- Hitting consistently 30ms behind the beat = GOOD (you're in a pocket)
+- Hitting perfectly on beat after establishing a behind-beat pocket = BAD (you broke the feel)
+- The meter charges when you maintain consistency to YOUR established pocket, not to absolute perfection
+
+**Constructor:**
+
+```typescript
+constructor(options?: Partial<GrooveAnalyzerOptions>)
+```
+
+**Options (with defaults):**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `minHitsForPocket` | 3 | Minimum hits to establish a pocket |
+| `basePocketWindowFraction` | 0.03125 | Base pocket window as fraction of beat (1/32 note) |
+| `minPocketWindowSeconds` | 0.015 | Minimum pocket window (15ms floor for progressive tightening) |
+| `hotnessGainPerHit` | 8 | Hotness gain per consistent hit |
+| `hotnessLossOnBreak` | 20 | Hotness loss on pocket break |
+| `hotnessLossOnMiss` | 10 | Hotness loss on missed beat |
+| `averagingWindowSize` | 4 | Number of recent hits to average for pocket establishment |
+| `neutralDeadZone` | 0.010 | Dead zone around zero for neutral classification (±10ms = 20ms total) |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `recordHit(offset: number, bpm: number): GrooveResult` | Record a button press hit and get groove analysis. Offset is timing offset in seconds (negative = early/push, positive = late/pull). BPM is current tempo for BPM-aware window calculation. |
+| `recordMiss(): GrooveResult` | Record a missed beat (user didn't press). Reduces hotness by configured miss penalty, resets streak, but keeps established pocket. |
+| `getState(): GrooveState` | Get current groove analyzer state snapshot |
+| `reset(): void` | Reset the analyzer to initial state |
+
+**Pocket Detection:**
+
+The analyzer tracks recent hit offsets in a rolling window (default: 4 hits) and calculates a running average to establish a "pocket center." Direction is determined from the average:
+- **push**: Playing ahead of the beat (negative offset, rushing)
+- **pull**: Playing behind the beat (positive offset, dragging)
+- **neutral**: Playing on the beat (within ±10ms dead zone)
+
+**Consistency Calculation (Quadratic Falloff):**
+
+```typescript
+// 1.0 = perfect (at pocket center), 0.0 = outside window
+const normalizedDistance = distanceFromPocket / pocketWindow;
+if (normalizedDistance >= 1) return 0;
+return 1 - (normalizedDistance * normalizedDistance);  // Quadratic falloff
+```
+
+- At pocket center: 1.0 (perfect)
+- At 50% to edge: 0.75 (1 - 0.5²)
+- At 70% to edge: 0.51 (1 - 0.7²)
+- At 90% to edge: 0.19 (1 - 0.9²)
+- At/beyond edge: 0.0 (outside window)
+
+**BPM-Aware Window Calculation:**
+
+The pocket window scales with tempo using 1/32 note as the base unit:
+
+```typescript
+beatDuration = 60 / BPM           // in seconds
+thirtySecondNote = beatDuration / 8
+baseWindow = thirtySecondNote / 2 // half of 1/32 note each direction
+
+// Progressive tightening at higher hotness
+pocketWindow = baseWindow - (baseWindow - minWindow) * (hotness / 100)
+```
+
+Example at 120 BPM:
+- beatDuration = 500ms
+- 1/32 note = 62.5ms
+- baseWindow = 31.25ms
+- At 0% hotness: 31.25ms window
+- At 50% hotness: 20.6ms window
+- At 100% hotness: 15ms window
+
+**Usage:**
+
+```typescript
+import { GrooveAnalyzer } from 'playlist-data-engine';
+
+const grooveAnalyzer = new GrooveAnalyzer();
+
+// On each button press during gameplay
+const buttonResult = beatStream.checkButtonPress(timestamp);
+const grooveResult = grooveAnalyzer.recordHit(buttonResult.offset, beatStream.getCurrentBpm());
+
+// Read the groove state for UI display
+if (grooveResult.pocketDirection !== 'neutral') {
+  console.log(`${grooveResult.pocketDirection} groove: ${grooveResult.hotness}%`);
+}
+
+// When user misses a beat (doesn't press)
+grooveAnalyzer.recordMiss();
+
+// Get full state for UI
+const state = grooveAnalyzer.getState();
+// state.hotness: 0-100
+// state.pocketDirection: 'push' | 'pull' | 'neutral'
+// state.consistency: 0-1
+// state.streakLength: number
+// state.establishedOffset: seconds from perfect
+
+// Reset for new song
+grooveAnalyzer.reset();
+```
+
+**Design Notes:**
+
+- **Standalone Class**: GrooveAnalyzer is standalone - frontend creates and manages it separately from BeatStream
+- **Direction Change = Gradual Shift**: Rolling average naturally drifts to new direction, no hard reset
+- **No Serialization**: Ephemeral "fun" metric, no persistence required
+- **Frontend Responsibility**: Engine provides hotness, direction, consistency - frontend decides visual representation
 
 ### OnsetStrengthEnvelope
 
