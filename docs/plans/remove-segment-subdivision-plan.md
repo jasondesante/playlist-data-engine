@@ -247,7 +247,7 @@ Tests written for the old behavior need to be updated to match the new behavior.
 - [x] Update to use per-beat Map format
 
 ### 5.3 Update Code Examples in Source Files
-- [ ] Update JSDoc examples in [BeatMap.ts](src/core/types/BeatMap.ts)
+- [x] Update JSDoc examples in [BeatMap.ts](src/core/types/BeatMap.ts)
 - [ ] Update JSDoc examples in [BeatSubdivider.ts](src/core/analysis/beat/BeatSubdivider.ts)
 - [ ] Update examples in [subdivideBeatMap.ts](src/core/analysis/beat/utils/subdivideBeatMap.ts)
 - [ ] Update examples in [BeatStream.ts](src/core/analysis/beat/BeatStream.ts)

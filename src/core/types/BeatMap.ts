@@ -1955,7 +1955,8 @@ export interface SubdivisionMetadata {
  *
  * // Apply subdivision
  * const subdividedMap = subdivider.subdivide(unifiedMap, {
- *   segments: [{ startBeat: 0, subdivision: 'eighth' }],
+ *   beatSubdivisions: new Map(),
+ *   defaultSubdivision: 'eighth',
  * });
  *
  * // Access subdivision results
