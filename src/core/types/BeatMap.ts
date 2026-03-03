@@ -933,7 +933,7 @@ export interface SubdividedBeatMapJSON {
     duration: number;
     beats: SubdividedBeatJSON[];
     detectedBeatIndices: number[];
-    subdivisionConfig: SubdivisionConfig;
+    subdivisionConfig: SubdivisionConfigJSON;
     downbeatConfig: DownbeatConfig;
     tempoSections?: TempoSectionJSON[];
     subdivisionMetadata: SubdivisionMetadataJSON;
@@ -1790,6 +1790,15 @@ export interface SubdivisionConfig {
     beatSubdivisions: Map<number, SubdivisionType>;
 
     /** Default subdivision for beats not in the beatSubdivisions map */
+    defaultSubdivision: SubdivisionType;
+}
+
+/** JSON-serializable version of SubdivisionConfig */
+export interface SubdivisionConfigJSON {
+    /** Subdivision assignments as array of [beatIndex, subdivisionType] tuples */
+    beatSubdivisions: [number, SubdivisionType][];
+
+    /** Default subdivision for beats not in the beatSubdivisions array */
     defaultSubdivision: SubdivisionType;
 }
 

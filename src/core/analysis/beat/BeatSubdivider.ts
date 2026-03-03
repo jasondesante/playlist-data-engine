@@ -35,6 +35,7 @@ import type {
     SubdividedBeat,
     SubdividedBeatMap,
     SubdivisionConfig,
+    SubdivisionConfigJSON,
     SubdivisionMetadata,
     SubdivisionType,
     TempoSection,
@@ -634,7 +635,7 @@ export class BeatSubdivider {
             })),
             detectedBeatIndices: subdividedBeatMap.detectedBeatIndices,
             subdivisionConfig: {
-                beatSubdivisions: beatSubdivisionsArray as unknown as Map<number, SubdivisionType>,
+                beatSubdivisions: beatSubdivisionsArray,
                 defaultSubdivision: subdividedBeatMap.subdivisionConfig.defaultSubdivision,
             },
             downbeatConfig: subdividedBeatMap.downbeatConfig,
@@ -681,8 +682,9 @@ export class BeatSubdivider {
         const json: SubdividedBeatMapJSON = JSON.parse(jsonString);
 
         // Convert array back to Map
-        const beatSubdivisionsEntries = json.subdivisionConfig.beatSubdivisions as unknown as [number, SubdivisionType][];
-        const beatSubdivisionsMap = new Map<number, SubdivisionType>(beatSubdivisionsEntries || []);
+        const beatSubdivisionsMap = new Map<number, SubdivisionType>(
+            json.subdivisionConfig.beatSubdivisions || []
+        );
 
         return {
             audioId: json.audioId,
