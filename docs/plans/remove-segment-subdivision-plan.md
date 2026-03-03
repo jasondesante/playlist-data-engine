@@ -213,12 +213,12 @@ Tests written for the old behavior need to be updated to match the new behavior.
 ### 5.2 Update AUDIO_ANALYSIS.md
 
 #### Beat Subdivision Section (~line 2092)
-- [ ] Rewrite overview to focus on per-beat approach
-- [ ] Remove "Segment-Based Configuration" subsection entirely
-- [ ] Add "Per-Beat Configuration" section with examples
+- [x] Rewrite overview to focus on per-beat approach
+- [x] Remove "Segment-Based Configuration" subsection entirely
+- [x] Add "Per-Beat Configuration" section with examples
 
 #### Subdivision Types Section
-- [ ] Add `'rest'` type documentation:
+- [x] Add `'rest'` type documentation:
   ```
   #### Rest (0x Density)
   No beats generated - used for creating gaps in rhythm patterns.
@@ -237,14 +237,14 @@ Tests written for the old behavior need to be updated to match the new behavior.
   ```
 
 #### Type Definitions Section (~line 2465)
-- [ ] Remove `SubdivisionSegment` interface definition
-- [ ] Remove `SegmentSubdivisionConfig` interface definition
-- [ ] Update `SubdivisionConfig` to show per-beat format only
-- [ ] Update `SubdividedBeatMap` to show new config type
+- [x] Remove `SubdivisionSegment` interface definition
+- [x] Remove `SegmentSubdivisionConfig` interface definition
+- [x] Update `SubdivisionConfig` to show per-beat format only
+- [x] Update `SubdividedBeatMap` to show new config type
 
 #### All Code Examples
-- [ ] Search for `segments:` pattern and update all examples
-- [ ] Update to use per-beat Map format
+- [x] Search for `segments:` pattern and update all examples
+- [x] Update to use per-beat Map format
 
 ### 5.3 Update Code Examples in Source Files
 - [ ] Update JSDoc examples in [BeatMap.ts](src/core/types/BeatMap.ts)
