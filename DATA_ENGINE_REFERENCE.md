@@ -2278,6 +2278,7 @@ constructor(
 | `getDuration(): number` | Get beat map duration in seconds |
 | `getOptions(): Required<SubdivisionPlaybackOptions>` | Get current playback options |
 | `setBeatMap(unifiedMap: UnifiedBeatMap): void` | Update the unified beat map |
+| `checkButtonPress(timestamp: number, thresholds?: AccuracyThresholds): ButtonPressResult` | Check tap accuracy against current subdivision's beats (no key matching, optional custom thresholds) |
 | `isRunning(): boolean` | Check if controller is running |
 | `isPaused(): boolean` | Check if controller is paused |
 | `dispose(): void` | Clean up resources |

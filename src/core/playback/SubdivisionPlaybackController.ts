@@ -43,10 +43,14 @@ import type {
     SubdivisionBeatEvent,
     SubdivisionCallback,
     BeatEventType,
+    AccuracyThresholds,
+    ButtonPressResult,
+    BeatAccuracy,
 } from '../types/BeatMap.js';
 import {
     DEFAULT_SUBDIVISION_PLAYBACK_OPTIONS,
     isValidSubdivisionType,
+    getAccuracyThresholdsForPreset,
 } from '../types/BeatMap.js';
 import { BeatSubdivider, type BeatSubdividerOptions } from '../analysis/beat/BeatSubdivider.js';
 import { Logger } from '../../utils/logger.js';
@@ -75,6 +79,8 @@ interface PlaybackState {
     pendingSubdivision: SubdivisionType | null;
     /** Scheduled beats for current subdivision */
     scheduledBeats: Map<string, { beat: SubdividedBeat; upcomingEmitted: boolean; exactEmitted: boolean; passedEmitted: boolean }>;
+    /** Accuracy thresholds for button press evaluation */
+    thresholds: AccuracyThresholds;
 }
 
 /**
@@ -145,6 +151,7 @@ export class SubdivisionPlaybackController {
             currentSubdivision: this.options.initialSubdivision,
             pendingSubdivision: null,
             scheduledBeats: new Map(),
+            thresholds: getAccuracyThresholdsForPreset('medium'),
         };
 
         this.subscribers = new Set();
@@ -753,6 +760,82 @@ export class SubdivisionPlaybackController {
      */
     getDuration(): number {
         return this.unifiedMap.duration;
+    }
+
+    /**
+     * Check a button press against the current subdivision's beats.
+     *
+     * This method evaluates tap accuracy against the subdivided beat grid,
+     * not the original quarter notes. Use this when real-time subdivision
+     * is active to ensure tap feedback matches the visual beat positions.
+     *
+     * Note: Key matching is not supported in subdivision mode - all beats are
+     * treated as tap-only. This differs from BeatStream.checkButtonPress which
+     * supports key-matching beats.
+     *
+     * @param timestamp - The time of the button press (audio time in seconds)
+     * @param thresholds - Optional accuracy thresholds to override defaults
+     * @returns Button press result with accuracy level and matched beat
+     */
+    checkButtonPress(timestamp: number, thresholds?: AccuracyThresholds): ButtonPressResult {
+        // Use provided thresholds or fall back to stored thresholds
+        const resolvedThresholds = thresholds ?? this.state.thresholds;
+        // Get all subdivided beats
+        const beats = Array.from(this.state.scheduledBeats.values()).map(entry => entry.beat);
+
+        // Find the nearest beat to the press time
+        let nearestBeat: SubdividedBeat | null = null;
+        let smallestOffset = Infinity;
+
+        for (const beat of beats) {
+            const offset = timestamp - beat.timestamp;
+            const absoluteOffset = Math.abs(offset);
+
+            if (absoluteOffset < smallestOffset) {
+                smallestOffset = absoluteOffset;
+                nearestBeat = beat;
+            }
+        }
+
+        // If no beats found, return miss
+        if (!nearestBeat) {
+            return {
+                accuracy: 'miss',
+                offset: timestamp,
+                matchedBeat: null as any,
+                absoluteOffset: timestamp,
+                keyMatch: true,
+                pressedKey: undefined,
+                requiredKey: undefined,
+            };
+        }
+
+        const offset = timestamp - nearestBeat.timestamp;
+        const absoluteOffset = Math.abs(offset);
+
+        // Determine accuracy level using thresholds
+        let accuracy: BeatAccuracy;
+        if (absoluteOffset <= resolvedThresholds.perfect) {
+            accuracy = 'perfect';
+        } else if (absoluteOffset <= resolvedThresholds.great) {
+            accuracy = 'great';
+        } else if (absoluteOffset <= resolvedThresholds.good) {
+            accuracy = 'good';
+        } else if (absoluteOffset <= resolvedThresholds.ok) {
+            accuracy = 'ok';
+        } else {
+            accuracy = 'miss';
+        }
+
+        return {
+            accuracy,
+            offset,
+            matchedBeat: nearestBeat as any,
+            absoluteOffset,
+            keyMatch: true,
+            pressedKey: undefined,
+            requiredKey: undefined,
+        };
     }
 
     /**

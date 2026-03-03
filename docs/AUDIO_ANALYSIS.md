@@ -3034,6 +3034,7 @@ new SubdivisionPlaybackController(
 | `getDuration` | - | `number` | Get beat map duration |
 | `getOptions` | - | `Required<SubdivisionPlaybackOptions>` | Get current options |
 | `setBeatMap` | `unifiedMap: UnifiedBeatMap` | `void` | Update the beat map |
+| `checkButtonPress` | `timestamp: number`, `thresholds?: AccuracyThresholds` | `ButtonPressResult` | Check tap accuracy against current subdivision's beats (no key matching, optional custom thresholds) |
 | `dispose` | - | `void` | Clean up resources |
 
 ---
