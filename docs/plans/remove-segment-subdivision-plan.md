@@ -146,16 +146,34 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 ## Phase 4: Update Tests
 
 ### 4.1 Update beatSubdivider.test.ts
-- [ ] Remove all segment-based test cases
-- [ ] Update imports to use new types
+- [x] Remove "Segment Tests" section (lines 3564-4008)
+- [x] Update imports to use new types (added `SubdivisionType`)
 - [ ] Add test cases for `'rest'` subdivision type
-- [ ] Update existing tests to use `SubdivisionConfig` (per-beat format)
+- [x] Update existing tests to use `SubdivisionConfig` (per-beat format) - PARTIAL
+  - Most config patterns updated from `segments` to `beatSubdivisions`/`defaultSubdivision`
+  - **REMAINING**: 35 tests still failing due to behavior changes:
+    - Half Notes tests expect beats to be REMOVED, but new impl keeps all beats
+    - Dotted4 tests expect phase-independent generation, new impl keeps original beats
+    - Validation tests for old segment format need to be rewritten
+    - Serialization tests need to compare new config format
 
 ### 4.2 Update Other Test Files
 - [ ] [beatKeyHelpers.test.ts](tests/unit/beat/beatKeyHelpers.test.ts) - Update subdivision config usage
 - [ ] [beatStream.test.ts](tests/unit/beat/beatStream.test.ts) - Update subdivision config usage
 - [ ] [unifyBeatMap.test.ts](tests/unit/beat/unifyBeatMap.test.ts) - Check for segment usage
 - [ ] [subdivisionPlaybackController.test.ts](tests/unit/playback/subdivisionPlaybackController.test.ts) - Update config format
+
+### 4.3 Behavioral Changes Requiring Test Updates
+
+The new per-beat subdivision system has different behavior from the old segment-based system:
+
+| Subdivision | Old Behavior | New Behavior |
+|-------------|--------------|--------------|
+| `half` | Removes beats at positions 1, 3 (keeps 0, 2) | Keeps all beats, no interpolation |
+| `dotted4` | Phase-independent, generates new beat grid | Keeps original beats, no interpolation |
+| `rest` | N/A (new) | Skips beat entirely (no output beat) |
+
+Tests written for the old behavior need to be updated to match the new behavior.
 
 ---
 
