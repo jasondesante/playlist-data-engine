@@ -248,7 +248,7 @@ Tests written for the old behavior need to be updated to match the new behavior.
 
 ### 5.3 Update Code Examples in Source Files
 - [x] Update JSDoc examples in [BeatMap.ts](src/core/types/BeatMap.ts)
-- [ ] Update JSDoc examples in [BeatSubdivider.ts](src/core/analysis/beat/BeatSubdivider.ts)
+- [x] Update JSDoc examples in [BeatSubdivider.ts](src/core/analysis/beat/BeatSubdivider.ts)
 - [ ] Update examples in [subdivideBeatMap.ts](src/core/analysis/beat/utils/subdivideBeatMap.ts)
 - [ ] Update examples in [BeatStream.ts](src/core/analysis/beat/BeatStream.ts)
 

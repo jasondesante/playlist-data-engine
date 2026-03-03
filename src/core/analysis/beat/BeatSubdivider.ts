@@ -113,7 +113,7 @@ interface SubdivisionContext {
  * Beat Subdivider
  *
  * Transforms quarter-note beat grids into various rhythmic subdivisions.
- * Supports segment-based configuration for dynamic rhythm patterns.
+ * Each beat can have its own subdivision type for fine-grained rhythm control.
  */
 export class BeatSubdivider {
     private options: Required<BeatSubdividerOptions>;
