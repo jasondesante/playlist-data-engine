@@ -286,12 +286,12 @@ This approach is more forgiving and feels more musical than a hard reset on dire
 
 Create `tests/unit/beat/grooveAnalyzer.test.ts`.
 
-- [ ] **4.1 Pocket Detection Tests**
-  - [ ] Establishes pocket after 3 consistent hits (minHitsForPocket)
-  - [ ] Correctly identifies push direction (negative offsets)
-  - [ ] Correctly identifies pull direction (positive offsets)
-  - [ ] Returns neutral when offsets are within ±10ms dead zone
-  - [ ] Direction shifts gradually as hitting pattern changes
+- [x] **4.1 Pocket Detection Tests**
+  - [x] Establishes pocket after 3 consistent hits (minHitsForPocket)
+  - [x] Correctly identifies push direction (negative offsets)
+  - [x] Correctly identifies pull direction (positive offsets)
+  - [x] Returns neutral when offsets are within ±10ms dead zone
+  - [x] Direction shifts gradually as hitting pattern changes
 
 - [ ] **4.2 Consistency Calculation Tests**
   - [ ] Returns 1.0 consistency when hit is exactly on pocket center
