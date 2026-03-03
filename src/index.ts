@@ -75,9 +75,7 @@ export type {
     InterpolationMetadataJSON,
     // Subdivision types
     SubdivisionType,
-    SubdivisionSegment,
     SubdivisionConfig,
-    PerBeatSubdivisionConfig,
     UnifiedBeatMap,
     SubdividedBeat,
     SubdividedBeatMap,
@@ -96,7 +94,6 @@ export {
     DEFAULT_TIME_SIGNATURE,
     DEFAULT_DOWNBEAT_CONFIG,
     DEFAULT_SUBDIVISION_CONFIG,
-    DEFAULT_PER_BEAT_SUBDIVISION_CONFIG,
     DEFAULT_SUBDIVISION_PLAYBACK_OPTIONS,
     MAX_SUBDIVISION_DENSITY,
     VALID_SUBDIVISION_TYPES,

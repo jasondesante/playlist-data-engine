@@ -38,6 +38,7 @@ import type {
     UnifiedBeatMap,
     SubdividedBeat,
     SubdivisionType,
+    SubdivisionConfig,
     SubdivisionPlaybackOptions,
     SubdivisionBeatEvent,
     SubdivisionCallback,
@@ -295,11 +296,9 @@ export class SubdivisionPlaybackController {
      * Regenerate beats for the current subdivision
      */
     private regenerateBeats(): void {
-        const config = {
-            segments: [{
-                startBeat: 0,
-                subdivision: this.state.currentSubdivision,
-            }],
+        const config: SubdivisionConfig = {
+            beatSubdivisions: new Map(),  // empty = all use default
+            defaultSubdivision: this.state.currentSubdivision,
         };
 
         const subdividedMap = this.subdivider.subdivide(this.unifiedMap, config);

@@ -82,22 +82,22 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
 - [x] Rename `validatePerBeatSubdivisionConfigAgainstBeats()` to `validateSubdivisionConfigAgainstBeats()`
 
 ### 2.3 Update BeatSubdivider.ts
-- [ ] Remove `SegmentSubdivisionConfig` import
-- [ ] Remove `SubdivisionSegment` import
-- [ ] Remove `isPerBeatSubdivisionConfig` import
-- [ ] Delete `SegmentSubdivisionContext` interface
-- [ ] Delete `subdivideSegments()` method
-- [ ] Delete `processSegments()` method
-- [ ] Delete `subdivideSegment()` method
-- [ ] Delete `createEmptySubdividedBeatMap()` (segment-based version)
-- [ ] Rename `subdividePerBeat()` to `subdivide()` (the main method)
-- [ ] Rename `createEmptySubdividedBeatMapFromPerBeatConfig()` to `createEmptySubdividedBeatMap()`
-- [ ] Update `SubdivisionContext` to remove segment-specific fields
-- [ ] Update `buildMetadata()` to work with per-beat context only
-- [ ] Update class JSDoc to remove segment-based references
+- [x] Remove `SegmentSubdivisionConfig` import
+- [x] Remove `SubdivisionSegment` import
+- [x] Remove `isPerBeatSubdivisionConfig` import
+- [x] Delete `SegmentSubdivisionContext` interface
+- [x] Delete `subdivideSegments()` method
+- [x] Delete `processSegments()` method
+- [x] Delete `subdivideSegment()` method
+- [x] Delete `createEmptySubdividedBeatMap()` (segment-based version)
+- [x] Rename `subdividePerBeat()` to `subdivide()` (the main method)
+- [x] Rename `createEmptySubdividedBeatMapFromPerBeatConfig()` to `createEmptySubdividedBeatMap()`
+- [x] Update `SubdivisionContext` to remove segment-specific fields
+- [x] Update `buildMetadata()` to work with per-beat context only
+- [x] Update class JSDoc to remove segment-based references
 
 ### 2.4 Update SubdivisionPlaybackController.ts
-- [ ] Update `regenerateBeats()` to use new `SubdivisionConfig` format:
+- [x] Update `regenerateBeats()` to use new `SubdivisionConfig` format:
   ```typescript
   // OLD:
   const config = {
@@ -112,23 +112,23 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
   ```
 
 ### 2.5 Update Exports (src/index.ts)
-- [ ] Remove `SegmentSubdivisionConfig` from type exports
-- [ ] Remove `SubdivisionSegment` from type exports
-- [ ] Keep `SubdivisionConfig` (now the per-beat format only)
-- [ ] Remove `isPerBeatSubdivisionConfig` export
-- [ ] Remove `isSegmentSubdivisionConfig` export
-- [ ] Rename `validatePerBeatSubdivisionConfig` export to `validateSubdivisionConfig`
+- [x] Remove `SegmentSubdivisionConfig` from type exports
+- [x] Remove `SubdivisionSegment` from type exports
+- [x] Keep `SubdivisionConfig` (now the per-beat format only)
+- [x] Remove `isPerBeatSubdivisionConfig` export
+- [x] Remove `isSegmentSubdivisionConfig` export
+- [x] Rename `validatePerBeatSubdivisionConfig` export to `validateSubdivisionConfig`
 
 ### 2.6 Update Beat Analysis Index (src/core/analysis/beat/index.ts)
-- [ ] Remove segment-related exports
-- [ ] Update re-exports to reflect simplified API
+- [x] Remove segment-related exports
+- [x] Update re-exports to reflect simplified API
 
 ---
 
 ## Phase 3: Update SubdividedBeatMap Type
 
 ### 3.1 Update SubdividedBeatMap Interface
-- [ ] Change `subdivisionConfig` property type from union to single type:
+- [x] Change `subdivisionConfig` property type from union to single type:
   ```typescript
   // OLD:
   subdivisionConfig: SegmentSubdivisionConfig | PerBeatSubdivisionConfig;
@@ -138,8 +138,8 @@ Remove the legacy segment-based subdivision configuration (`SegmentSubdivisionCo
   ```
 
 ### 3.2 Update SubdivisionMetadata Interface
-- [ ] Remove `segmentCount` field (no longer applicable)
-- [ ] Add `explicitBeatCount` field (number of beats with explicit non-default subdivision)
+- [x] Remove `segmentCount` field (no longer applicable)
+- [x] Add `explicitBeatCount` field (number of beats with explicit non-default subdivision)
 
 ---
 

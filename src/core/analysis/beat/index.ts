@@ -49,7 +49,6 @@ export type {
     UnifiedBeatMap,
     // Subdivision types
     SubdivisionType,
-    SubdivisionSegment,
     SubdivisionConfig,
     SubdividedBeat,
     SubdividedBeatMap,
