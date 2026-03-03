@@ -612,6 +612,11 @@ export class BeatSubdivider {
      * ```
      */
     static toJSON(subdividedBeatMap: SubdividedBeatMap): string {
+        // Convert Map to array for JSON serialization
+        const beatSubdivisionsArray = Array.from(
+            subdividedBeatMap.subdivisionConfig.beatSubdivisions.entries()
+        );
+
         const json: SubdividedBeatMapJSON = {
             audioId: subdividedBeatMap.audioId,
             duration: subdividedBeatMap.duration,
@@ -628,7 +633,10 @@ export class BeatSubdivider {
                 subdivisionType: beat.subdivisionType,
             })),
             detectedBeatIndices: subdividedBeatMap.detectedBeatIndices,
-            subdivisionConfig: subdividedBeatMap.subdivisionConfig,
+            subdivisionConfig: {
+                beatSubdivisions: beatSubdivisionsArray as unknown as Map<number, SubdivisionType>,
+                defaultSubdivision: subdividedBeatMap.subdivisionConfig.defaultSubdivision,
+            },
             downbeatConfig: subdividedBeatMap.downbeatConfig,
             tempoSections: subdividedBeatMap.tempoSections?.map(section => ({
                 start: section.start,
@@ -672,6 +680,10 @@ export class BeatSubdivider {
     static fromJSON(jsonString: string): SubdividedBeatMap {
         const json: SubdividedBeatMapJSON = JSON.parse(jsonString);
 
+        // Convert array back to Map
+        const beatSubdivisionsEntries = json.subdivisionConfig.beatSubdivisions as unknown as [number, SubdivisionType][];
+        const beatSubdivisionsMap = new Map<number, SubdivisionType>(beatSubdivisionsEntries || []);
+
         return {
             audioId: json.audioId,
             duration: json.duration,
@@ -688,7 +700,10 @@ export class BeatSubdivider {
                 subdivisionType: beat.subdivisionType,
             })),
             detectedBeatIndices: json.detectedBeatIndices,
-            subdivisionConfig: json.subdivisionConfig,
+            subdivisionConfig: {
+                beatSubdivisions: beatSubdivisionsMap,
+                defaultSubdivision: json.subdivisionConfig.defaultSubdivision,
+            },
             downbeatConfig: json.downbeatConfig,
             tempoSections: json.tempoSections?.map(section => ({
                 start: section.start,
