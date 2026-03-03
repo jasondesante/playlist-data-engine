@@ -1528,7 +1528,7 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `TempoSection` | Tempo section with boundaries | `start`, `end`, `bpm`, `intervalSeconds`, `beatCount`, `startBeatIndex`, `endBeatIndex` |
 | `InterpolatedBeatMap` | Beat map with interpolation | `audioId`, `duration`, `detectedBeats`, `mergedBeats`, `quarterNoteInterval`, `quarterNoteBpm`, `quarterNoteConfidence`, `originalMetadata`, `interpolationMetadata` |
 | `BeatInterpolationOptions` | Configuration for interpolation | `minAnchorConfidence`, `gridSnapTolerance`, `tempoAdaptationRate`, `extrapolateStart`, `extrapolateEnd`, `anomalyThreshold`, `denseSectionMinBeats`, `gridAlignmentWeight`, `anchorConfidenceWeight`, `paceConfidenceWeight`, `tempoSectionThreshold`, `minClusterBeats`, `enableMultiTempo` |
-| `SubdivisionType` | Types of beat subdivision | `'quarter'` \| `'half'` \| `'eighth'` \| `'sixteenth'` \| `'triplet8'` \| `'triplet4'` \| `'dotted4'` \| `'dotted8'` \| `'rest'` |
+| `SubdivisionType` | Types of beat subdivision | `'quarter'` \| `'half'` \| `'eighth'` \| `'sixteenth'` \| `'triplet8'` \| `'triplet4'` \| `'dotted4'` \| `'dotted8'` \| `'swing'` \| `'offbeat8'` \| `'rest'` |
 | `SubdivisionConfig` | Per-beat subdivision config | `beatSubdivisions: Map<number, SubdivisionType>`, `defaultSubdivision` |
 | `UnifiedBeatMap` | Unified beat map (detected + interpolated merged) | `audioId`, `duration`, `beats`, `detectedBeatIndices`, `quarterNoteInterval`, `quarterNoteBpm`, `downbeatConfig`, `tempoSections?`, `originalMetadata` |
 | `SubdividedBeat` | Beat in a subdivided map (extends Beat, includes `requiredKey?`) | `beatInMeasure` (decimal), `isDetected`, `originalBeatIndex?`, `subdivisionType`, `requiredKey?` |
@@ -2045,11 +2045,15 @@ constructor(options?: BeatSubdividerOptions)
 | `'half'` | 0.5x | Beats on 1 and 3 only | 0, 2, 4, 6 |
 | `'eighth'` | 2x | Double density | 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5 |
 | `'sixteenth'` | 4x | Maximum density | 0, 0.25, 0.5, 0.75, 1, 1.25... |
-| `'triplet8'` | 2x | Eighth triplets (3 per quarter) | 0, 0.33, 0.66, 1, 1.33, 1.66... |
-| `'triplet4'` | 2x | Quarter triplets (3 per half) | 0, 0.66, 1.33, 2, 2.66, 3.33... |
-| `'dotted4'` | 2.67x | Dotted quarter (phase-independent) | 0, 1.5, 3, 4.5, 6... |
-| `'dotted8'` | 2x | Swing long-short (2/3 + 1/3) | 0, 0.667, 1, 1.667, 2... |
+| `'triplet8'` | 3x | Eighth triplets (3 per quarter) | 0, 0.33, 0.66, 1, 1.33, 1.66... |
+| `'triplet4'` | 1.5x | Quarter triplets (3 per 2 beats, 2-beat structure) | 0, 0.66, 1.33, 2, 2.66... |
+| `'dotted4'` | 0.67x | Dotted quarter (2-beat structure with interp at 0.5) | 0, 0.5, 2, 2.5, 4, 4.5... |
+| `'dotted8'` | 2x | Dotted eighth (3/4 + 1/4 pattern) | 0, 0.75, 1, 1.75, 2... |
+| `'swing'` | 2x | Swing feel (2/3 + 1/3 pattern) | 0, 0.667, 1, 1.667, 2... |
+| `'offbeat8'` | 1x | Offbeat eighth (8th rest + 8th note) | 0.5, 1.5, 2.5, 3.5... |
 | `'rest'` | 0x | No beat generated (creates gaps) | (none) |
+
+**2-Beat Structure Types:** `triplet4` and `dotted4` are 2-beat structures that only process beats at even `beatInMeasure` positions (0, 2, 4, 6...). This allows proper triplet and dotted patterns across beat pairs.
 
 **Usage:**
 
@@ -2404,9 +2408,9 @@ The `SubdivisionBeatEvent` includes:
 | `BEAT_DETECTION_ALGORITHM` | `'ellis-dp-v1'` | Algorithm identifier |
 | `DEFAULT_SUBDIVISION_CONFIG` | `{ beatSubdivisions: new Map(), defaultSubdivision: 'quarter' }` | Default subdivision config |
 | `MAX_SUBDIVISION_DENSITY` | 4 | Maximum subdivision density (sixteenth notes) |
-| `VALID_SUBDIVISION_TYPES` | `['quarter', 'half', 'eighth', 'sixteenth', 'triplet8', 'triplet4', 'dotted4', 'dotted8', 'rest']` | All valid subdivision types |
+| `VALID_SUBDIVISION_TYPES` | `['quarter', 'half', 'eighth', 'sixteenth', 'triplet8', 'triplet4', 'dotted4', 'dotted8', 'swing', 'offbeat8', 'rest']` | All valid subdivision types |
 | `isValidSubdivisionType(value)` | Returns boolean | Type guard for SubdivisionType |
-| `getSubdivisionDensity(subdivision)` | Returns number | Get density multiplier (0, 0.5, 1, 2, or 4) |
+| `getSubdivisionDensity(subdivision)` | Returns number | Get density multiplier (0, 0.5, 0.67, 1, 1.5, 2, 3, or 4) |
 | `validateSubdivisionConfig(config)` | Throws on error | Validate subdivision config structure |
 | `validateSubdivisionConfigAgainstBeats(config, totalBeats)` | Throws on error | Validate config against beat count |
 | `validateSubdivisionDensity(subdivision)` | Throws on error | Validate density doesn't exceed max |

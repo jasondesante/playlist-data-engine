@@ -203,13 +203,32 @@ export class BeatSubdivider {
                 continue;
             }
 
-            // Add the original beat
-            subdividedBeats.push({
-                ...beat,
-                isDetected,
-                originalBeatIndex: beatIndex,
-                subdivisionType: subdivision,
-            });
+            // For half notes, only keep beats on positions 0 and 2 (downbeats and beat 3s)
+            // This is "beats on 1 and 3" in music terminology (1-indexed)
+            if (subdivision === 'half' && beat.beatInMeasure % 2 !== 0) {
+                continue;
+            }
+
+            // For dotted quarters and quarter triplets, treat as 2-beat structures like half notes
+            // Only process the first beat of each pair (positions 0, 2 in 4/4 time)
+            // The second beat of each pair is handled via interpolation
+            if ((subdivision === 'dotted4' || subdivision === 'triplet4') && beat.beatInMeasure % 2 !== 0) {
+                continue;
+            }
+
+            // For offbeat8, skip the original beat (it's an 8th rest at the start)
+            // The interpolated beat at 0.5 will be added below
+            const skipOriginalBeat = subdivision === 'offbeat8';
+
+            // Add the original beat (unless skipped)
+            if (!skipOriginalBeat) {
+                subdividedBeats.push({
+                    ...beat,
+                    isDetected,
+                    originalBeatIndex: beatIndex,
+                    subdivisionType: subdivision,
+                });
+            }
 
             // Add interpolated beats based on subdivision type
             if (nextBeat) {
@@ -343,7 +362,11 @@ export class BeatSubdivider {
                 break;
 
             case 'triplet4':
-                // One beat at 2/3 between quarters
+                // Quarter triplets: 3 beats over 2 quarter notes
+                // From beat 0 (even position), we create:
+                // - Triplet 1: the original beat at 0
+                // - Triplet 2: interpolated at 2/3 between beat 0 and beat 1
+                // - Triplet 3: interpolated at 1/3 between beat 1 and beat 2 (need to look 2 ahead)
                 result.push(this.createInterpolatedBeat(
                     beat,
                     nextBeat,
@@ -352,21 +375,69 @@ export class BeatSubdivider {
                     effectiveInterval,
                     this.options
                 ));
+                // Look 2 beats ahead for the 3rd triplet
+                const beat2 = beatIndex + 2 < unifiedMap.beats.length
+                    ? unifiedMap.beats[beatIndex + 2]
+                    : null;
+                const beat1 = nextBeat; // The beat between beat0 and beat2
+                if (beat1 && beat2) {
+                    // Interpolate at 1/3 between beat1 and beat2 to get triplet at 4/3 from beat0
+                    result.push(this.createInterpolatedBeat(
+                        beat1,
+                        beat2,
+                        1/3,
+                        'triplet4',
+                        effectiveInterval,
+                        this.options
+                    ));
+                }
                 break;
 
             case 'dotted4':
-                // Dotted quarter is phase-independent, handled differently in segment mode
-                // For per-beat, we still add the original beat but no interpolation
-                // The rhythm effect comes from which beats are kept vs skipped
+                // Dotted quarter: beat at 0.5 (the "and" of the 2nd beat in the pair)
+                // Creates a 2-beat structure where beat 0 is hit, 0.5 is interpolated, beat 1 is silent
+                result.push(this.createInterpolatedBeat(
+                    beat,
+                    nextBeat,
+                    0.5,
+                    'dotted4',
+                    effectiveInterval,
+                    this.options
+                ));
                 break;
 
             case 'dotted8':
-                // Swing: one beat at 2/3 between quarters
+                // Dotted eighth: beat at 3/4 (correct dotted 8th - 3:1 long-short ratio)
+                result.push(this.createInterpolatedBeat(
+                    beat,
+                    nextBeat,
+                    3/4,
+                    'dotted8',
+                    effectiveInterval,
+                    this.options
+                ));
+                break;
+
+            case 'swing':
+                // Swing feel: beat at 2/3 (2:1 long-short ratio)
                 result.push(this.createInterpolatedBeat(
                     beat,
                     nextBeat,
                     2/3,
-                    'dotted8',
+                    'swing',
+                    effectiveInterval,
+                    this.options
+                ));
+                break;
+
+            case 'offbeat8':
+                // 8th rest + 8th note: original beat is skipped (handled above),
+                // add beat at 0.5 (the "and" of the beat)
+                result.push(this.createInterpolatedBeat(
+                    beat,
+                    nextBeat,
+                    0.5,
+                    'offbeat8',
                     effectiveInterval,
                     this.options
                 ));

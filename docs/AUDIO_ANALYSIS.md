@@ -2126,12 +2126,16 @@ The subdivision system operates on a `UnifiedBeatMap` (created from an `Interpol
 | `eighth` | 2x | Beat between each quarter | 0, 0.5, 1, 1.5, 2, 2.5... |
 | `sixteenth` | 4x | Maximum density (hard limit) | 0, 0.25, 0.5, 0.75, 1... |
 | `triplet8` | 3x | Eighth triplets (3 per quarter) | 0, 0.33, 0.66, 1, 1.33... |
-| `triplet4` | 1.5x | Quarter triplets (3 per half) | 0, 0.66, 1.33, 2, 2.66... |
-| `dotted4` | 0.67x | Every 1.5 quarters (phase-independent) | 0, 1.5, 3, 4.5... |
-| `dotted8` | 2x | Swing long-short pattern (2/3 + 1/3) | 0, 0.667, 1, 1.667, 2... |
+| `triplet4` | 1.5x | Quarter triplets (3 per 2 beats, 2-beat structure) | 0, 0.66, 1.33, 2, 2.66... |
+| `dotted4` | 0.67x | Dotted quarter (2/3 density, 2-beat structure with interp at 0.5) | 0, 0.5, 2, 2.5, 4, 4.5... |
+| `dotted8` | 2x | Dotted eighth (3/4 + 1/4 pattern) | 0, 0.75, 1, 1.75, 2... |
+| `swing` | 2x | Swing feel (2/3 + 1/3 pattern) | 0, 0.667, 1, 1.667, 2... |
+| `offbeat8` | 1x | Offbeat eighth (8th rest + 8th note, skips downbeat) | 0.5, 1.5, 2.5, 3.5... |
 | `rest` | 0x | No beat generated (creates gaps) | N/A |
 
 **Note:** Sixteenth notes (4x) are the **maximum supported density**. Higher densities are not supported.
+
+**2-Beat Structure Types:** `triplet4` and `dotted4` are 2-beat structures that only process beats at even `beatInMeasure` positions (0, 2, 4, 6...). This allows proper triplet and dotted patterns across beat pairs.
 
 ---
 
@@ -2472,10 +2476,12 @@ type SubdivisionType =
   | 'half'       // 0.5x density (beats 1 and 3)
   | 'eighth'     // 2x density
   | 'sixteenth'  // 4x density (MAXIMUM)
-  | 'triplet8'   // 3 beats per quarter (eighth triplets)
-  | 'triplet4'   // 3 beats per half note (quarter triplets)
-  | 'dotted4'    // Every 1.5 quarters (phase-independent)
-  | 'dotted8'    // Swing pattern (2/3 + 1/3 quarters)
+  | 'triplet8'   // 3x density - 3 beats per quarter (eighth triplets)
+  | 'triplet4'   // 1.5x density - 3 beats per 2 quarters (quarter triplets, 2-beat structure)
+  | 'dotted4'    // 0.67x density - 2-beat structure with original at 0 and interpolated at 0.5
+  | 'dotted8'    // 2x density - Dotted eighth pattern (3/4 + 1/4)
+  | 'swing'      // 2x density - Swing feel (2/3 + 1/3 pattern)
+  | 'offbeat8'   // 1x density - Offbeat eighth (8th rest + 8th note, skips downbeat)
   | 'rest';      // No beat generated (creates gaps)
 ```
 

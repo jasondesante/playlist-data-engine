@@ -1712,8 +1712,10 @@ export function validateThresholds(thresholds: Partial<AccuracyThresholds>): Thr
  * - sixteenth: 4x density (3 beats between each quarter) - MAXIMUM DENSITY
  * - triplet8: Eighth triplets (3 beats per quarter note)
  * - triplet4: Quarter triplets (3 beats per half note)
- * - dotted4: Dotted quarter (every 1.5 quarters, phase-independent)
- * - dotted8: Dotted eighth (swing long-short pattern: 2/3 + 1/3)
+ * - dotted4: Dotted quarter (keeps every 3rd beat: positions 0, 3, 6...)
+ * - dotted8: Dotted eighth (beat at 3/4 between quarters - 3:1 long-short ratio)
+ * - swing: Swing feel (beat at 2/3 between quarters - 2:1 long-short ratio)
+ * - offbeat8: 8th rest + 8th note (skips original beat, adds beat at 0.5)
  * - rest: 0x density (no beats generated - used for gaps in rhythm patterns)
  *
  * Note: Sixteenth notes (4x) are the maximum supported density.
@@ -1726,8 +1728,10 @@ export type SubdivisionType =
   | 'sixteenth'  // 4x density (MAXIMUM)
   | 'triplet8'   // 3 beats per quarter (eighth triplets)
   | 'triplet4'   // 3 beats per half note (quarter triplets)
-  | 'dotted4'    // Every 1.5 quarters (phase-independent)
-  | 'dotted8'    // Swing pattern (2/3 + 1/3 quarters)
+  | 'dotted4'    // Every 3rd beat (positions 0, 3, 6...)
+  | 'dotted8'    // Beat at 3/4 (correct dotted 8th: 3:1 ratio)
+  | 'swing'      // Beat at 2/3 (swing feel: 2:1 ratio)
+  | 'offbeat8'   // 8th rest + 8th note (skip original, add at 0.5)
   | 'rest';      // No beats generated (0x density)
 
 // ============================================================================
@@ -2020,6 +2024,8 @@ export const VALID_SUBDIVISION_TYPES: SubdivisionType[] = [
     'triplet4',
     'dotted4',
     'dotted8',
+    'swing',
+    'offbeat8',
     'rest',
 ];
 
@@ -2045,14 +2051,27 @@ export function getSubdivisionDensity(subdivision: SubdivisionType): number {
             return 0;
         case 'half':
             return 0.5;
-        case 'quarter':
-            return 1;
-        case 'triplet8':
-        case 'triplet4':
-        case 'eighth':
-            return 2;
         case 'dotted4':
+            // 2-beat structure: beat 0 + interpolated at 0.5, beat 1 silent
+            // 2 beats per 3 input beats = 2/3 density
+            return 2 / 3;
+        case 'quarter':
+        case 'offbeat8':
+            // offbeat8: skip original, add 1 at 0.5 = 1x density
+            return 1;
+        case 'triplet4':
+            // Quarter triplets: 3 beats per 2 quarter notes = 1.5x density
+            return 1.5;
+        case 'triplet8':
+            // 3 beats per quarter (1 original + 2 interpolated)
+            return 3;
+        case 'eighth':
         case 'dotted8':
+        case 'swing':
+            // eighth: 1 original + 1 at 0.5 = 2x
+            // dotted8: 1 original + 1 at 0.75 = 2x
+            // swing: 1 original + 1 at 2/3 = 2x
+            return 2;
         case 'sixteenth':
             return 4;
         default:
