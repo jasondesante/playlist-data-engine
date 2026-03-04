@@ -172,6 +172,22 @@ export class BeatSubdivider {
         // Track explicit beat count (beats with non-default subdivision)
         let explicitBeatCount = 0;
 
+        // Helper function to determine position in a chain of consecutive triplet4 beats
+        // Returns 0 for first beat in a pair, 1 for second beat in a pair
+        const getTriplet4ChainPosition = (beatIndex: number): number => {
+            let consecutiveCount = 0;
+            for (let i = beatIndex - 1; i >= 0; i--) {
+                const prevSubdivision = config.beatSubdivisions.get(i) ?? config.defaultSubdivision;
+                if (prevSubdivision === 'triplet4') {
+                    consecutiveCount++;
+                } else {
+                    break;
+                }
+            }
+            // Position in chain: 0 = first in pair, 1 = second in pair
+            return consecutiveCount % 2;
+        };
+
         // Process each beat with its assigned subdivision
         const subdividedBeats: SubdividedBeat[] = [];
 
@@ -203,22 +219,20 @@ export class BeatSubdivider {
                 continue;
             }
 
-            // For half notes, only keep beats on positions 0 and 2 (downbeats and beat 3s)
-            // This is "beats on 1 and 3" in music terminology (1-indexed)
-            if (subdivision === 'half' && beat.beatInMeasure % 2 !== 0) {
-                continue;
-            }
-
-            // For dotted quarters and quarter triplets, treat as 2-beat structures like half notes
+            // For half notes and dotted quarters, treat as 2-beat structures
             // Only process the first beat of each pair (positions 0, 2 in 4/4 time)
             // The second beat of each pair is handled via interpolation
-            if ((subdivision === 'dotted4' || subdivision === 'triplet4') && beat.beatInMeasure % 2 !== 0) {
+            // Note: triplet4 is handled differently - each beat processes its own time space
+            if ((subdivision === 'half' || subdivision === 'dotted4') && beat.beatInMeasure % 2 !== 0) {
                 continue;
             }
 
             // For offbeat8, skip the original beat (it's an 8th rest at the start)
-            // The interpolated beat at 0.5 will be added below
-            const skipOriginalBeat = subdivision === 'offbeat8';
+            // For triplet4, skip the original beat if this is the SECOND beat in a consecutive chain
+            // (position 1 in the chain). The first beat in the pair creates the triplet pattern.
+            // Position is determined by counting consecutive triplet4 beats, not by beatInMeasure.
+            const skipOriginalBeat = subdivision === 'offbeat8' ||
+                (subdivision === 'triplet4' && getTriplet4ChainPosition(beatIndex) === 1);
 
             // Add the original beat (unless skipped)
             if (!skipOriginalBeat) {
@@ -238,7 +252,9 @@ export class BeatSubdivider {
                     beatIndex,
                     subdivision,
                     unifiedMap,
-                    hasMultipleTempos
+                    hasMultipleTempos,
+                    config,
+                    getTriplet4ChainPosition(beatIndex)
                 );
                 subdividedBeats.push(...interpolatedBeats);
             }
@@ -294,6 +310,8 @@ export class BeatSubdivider {
      * @param subdivision - The subdivision type to apply
      * @param unifiedMap - The unified beat map
      * @param hasMultipleTempos - Whether there are multiple tempo sections
+     * @param config - The subdivision configuration (for checking adjacent beat subdivisions)
+     * @param triplet4ChainPosition - Position in triplet4 chain (0 = first, 1 = second)
      * @returns Array of interpolated beats (empty for quarter/half subdivisions)
      */
     private createInterpolatedBeatsForSubdivision(
@@ -302,7 +320,9 @@ export class BeatSubdivider {
         beatIndex: number,
         subdivision: SubdivisionType,
         unifiedMap: UnifiedBeatMap,
-        hasMultipleTempos: boolean
+        hasMultipleTempos: boolean,
+        config: SubdivisionConfig,
+        triplet4ChainPosition: number = 0
     ): SubdividedBeat[] {
         const result: SubdividedBeat[] = [];
         const quarterNoteInterval = unifiedMap.quarterNoteInterval;
@@ -361,37 +381,49 @@ export class BeatSubdivider {
                 }
                 break;
 
-            case 'triplet4':
-                // Quarter triplets: 3 beats over 2 quarter notes
-                // From beat 0 (even position), we create:
-                // - Triplet 1: the original beat at 0
-                // - Triplet 2: interpolated at 2/3 between beat 0 and beat 1
-                // - Triplet 3: interpolated at 1/3 between beat 1 and beat 2 (need to look 2 ahead)
-                result.push(this.createInterpolatedBeat(
-                    beat,
-                    nextBeat,
-                    2/3,
-                    'triplet4',
-                    effectiveInterval,
-                    this.options
-                ));
-                // Look 2 beats ahead for the 3rd triplet
-                const beat2 = beatIndex + 2 < unifiedMap.beats.length
-                    ? unifiedMap.beats[beatIndex + 2]
-                    : null;
-                const beat1 = nextBeat; // The beat between beat0 and beat2
-                if (beat1 && beat2) {
-                    // Interpolate at 1/3 between beat1 and beat2 to get triplet at 4/3 from beat0
+            case 'triplet4': {
+                // Quarter triplets: 3 hits over 2 beats
+                // Each quarter note triplet is 2/3 of a beat duration, so 3 notes = 2 beats total.
+                // Hit positions relative to beat 0: 0, 2/3, 4/3
+                //
+                // IMPORTANT: Each beat only creates notes within its own time space.
+                // - Chain position 0 (first in pair): creates note at 2/3 IF next beat is also triplet4
+                // - Chain position 1 (second in pair): creates note at 1/3 IF previous beat was triplet4
+                //
+                // Position is determined by counting consecutive triplet4 beats backwards,
+                // NOT by beatInMeasure. This allows triplets to start on any beat.
+
+                if (triplet4ChainPosition === 0) {
+                    // First beat in the pair: create the 2nd triplet note at 2/3
                     result.push(this.createInterpolatedBeat(
-                        beat1,
-                        beat2,
-                        1/3,
+                        beat,
+                        nextBeat,
+                        2/3,
                         'triplet4',
                         effectiveInterval,
                         this.options
                     ));
+                } else {
+                    // Second beat in the pair: create the 3rd triplet note at 1/3
+                    // Only if beat 0 was also marked triplet4
+                    const prevBeatSubdivision = config.beatSubdivisions.get(beatIndex - 1) ?? config.defaultSubdivision;
+                    if (prevBeatSubdivision === 'triplet4') {
+                        // Triplet 3: at 1/3 between current beat and next beat
+                        // This is at position 4/3 relative to the start of the triplet pattern
+                        result.push(this.createInterpolatedBeat(
+                            beat,
+                            nextBeat,
+                            1/3,
+                            'triplet4',
+                            effectiveInterval,
+                            this.options
+                        ));
+                    }
+                    // If previous beat is NOT triplet4, no interpolated beats are added.
+                    // But we still have the original beat at position 0 (added by caller).
                 }
                 break;
+            }
 
             case 'dotted4':
                 // Dotted quarter: beat at 0.5 (the "and" of the 2nd beat in the pair)
