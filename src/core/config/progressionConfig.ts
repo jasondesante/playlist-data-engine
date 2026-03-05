@@ -31,6 +31,10 @@ export interface ProgressionConfig {
             night_time: number;
             extreme_weather: number;
             high_altitude: number;
+            // Rhythm game listening bonuses (System B)
+            rhythm_game_base: number;      // Base multiplier when rhythm game active
+            rhythm_game_combo: number;     // Max additional from combo
+            rhythm_game_groove: number;    // Max additional from groove hotness
         };
         track_mastery_threshold: number;
         mastery_bonus_xp: number;
@@ -78,6 +82,10 @@ export const DEFAULT_PROGRESSION_CONFIG: Required<ProgressionConfig> = {
             night_time: 1.25,
             extreme_weather: 1.4,
             high_altitude: 1.3,
+            // Rhythm game listening bonuses (System B)
+            rhythm_game_base: 1.25,      // +25% base when rhythm game active
+            rhythm_game_combo: 0.5,      // +50% max from combo
+            rhythm_game_groove: 0.5,     // +50% max from groove hotness
         },
         track_mastery_threshold: 10,
         mastery_bonus_xp: 100,

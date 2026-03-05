@@ -14,6 +14,9 @@ import type {
     EnvironmentalContext
 } from './Environmental.js';
 
+// Import rhythm game context for listening session XP boost
+import type { RhythmGameContext } from './RhythmXP.js';
+
 // Re-export them for consumers
 export type {
     GeolocationData,
@@ -66,6 +69,8 @@ export interface ListeningSession {
     bonus_xp: number;
     environmental_context?: EnvironmentalContext;
     gaming_context?: GamingContext;
+    /** Rhythm game context for XP boost (System B) */
+    rhythm_game_context?: RhythmGameContext;
     activity_type?: string;
     total_xp_earned: number;
 }
@@ -90,6 +95,10 @@ export interface ExperienceSystem {
         night_time: number;
         extreme_weather: number;
         high_altitude: number;
+        // Rhythm game listening bonuses (System B from RHYTHM_XP_PLAN)
+        rhythm_game_base: number;      // Base multiplier when rhythm game active (default: 1.25)
+        rhythm_game_combo: number;     // Max additional from combo (default: 0.5)
+        rhythm_game_groove: number;    // Max additional from groove hotness (default: 0.5)
     };
 
     // Mastery system

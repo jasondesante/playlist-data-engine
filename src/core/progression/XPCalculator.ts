@@ -4,6 +4,7 @@
  */
 
 import type { ListeningSession, EnvironmentalContext, GamingContext } from '../types/Progression.js';
+import type { RhythmGameContext } from '../types/RhythmXP.js';
 import type { PlaylistTrack } from '../types/Playlist.js';
 import type { ExperienceSystem } from '../types/Progression.js';
 
@@ -45,6 +46,10 @@ const DEFAULT_ACTIVITY_BONUSES = {
     night_time: 1.25,
     extreme_weather: 1.4,
     high_altitude: 1.3,
+    // Rhythm game listening bonuses (System B)
+    rhythm_game_base: 1.25,      // +25% base when rhythm game active
+    rhythm_game_combo: 0.5,      // +50% max from combo
+    rhythm_game_groove: 0.5,     // +50% max from groove hotness
 };
 
 /**
@@ -74,7 +79,7 @@ export class XPCalculator {
 
     /**
      * Calculate total XP earned for a listening session
-     * Applies all multipliers: base, activity, environmental, gaming
+     * Applies all multipliers: base, activity, environmental, gaming, rhythm game
      *
      * @param session - The listening session
      * @param track - The playlist track (for duration validation)
@@ -101,6 +106,11 @@ export class XPCalculator {
         // Apply gaming bonuses
         if (session.gaming_context) {
             xp = this.applyGamingBonus(xp, session.gaming_context);
+        }
+
+        // Apply rhythm game bonuses (System B - listening XP boost)
+        if (session.rhythm_game_context) {
+            xp = this.applyRhythmGameBonus(xp, session.rhythm_game_context);
         }
 
         // Apply track completion bonus (95%+ listened)
@@ -201,16 +211,48 @@ export class XPCalculator {
     }
 
     /**
+     * Apply rhythm game bonuses to XP
+     * Rewards users who play rhythm game while listening (System B)
+     *
+     * @param baseXP - Base XP value
+     * @param context - Rhythm game context data
+     * @returns XP with rhythm game bonuses applied
+     */
+    private applyRhythmGameBonus(baseXP: number, context: RhythmGameContext): number {
+        if (!context.isActive) {
+            return baseXP;
+        }
+
+        let multiplier = this.config.activity_bonuses.rhythm_game_base;  // 1.25x base
+
+        // Combo bonus: scales with combo length (0% to 50% additional)
+        if (context.currentCombo > 0) {
+            const comboRatio = context.currentCombo / context.maxComboCap;
+            multiplier += comboRatio * this.config.activity_bonuses.rhythm_game_combo;
+        }
+
+        // Groove bonus: scales with hotness (0% to 50% additional)
+        if (context.grooveHotness > 0) {
+            const grooveRatio = context.grooveHotness / 100;
+            multiplier += grooveRatio * this.config.activity_bonuses.rhythm_game_groove;
+        }
+
+        return baseXP * multiplier;
+    }
+
+    /**
      * Calculate total XP modifier (environmental + gaming combined)
      * Capped at 3.0x to prevent excessive stacking
      *
      * @param envContext - Environmental context (optional)
      * @param gamingContext - Gaming context (optional)
+     * @param rhythmGameContext - Rhythm game context (optional)
      * @returns Combined multiplier (1.0 to 3.0)
      */
     calculateTotalModifier(
         envContext?: EnvironmentalContext,
-        gamingContext?: GamingContext
+        gamingContext?: GamingContext,
+        rhythmGameContext?: RhythmGameContext
     ): number {
         let modifier = 1.0;
 
@@ -222,6 +264,11 @@ export class XPCalculator {
         // Gaming bonuses
         if (gamingContext && gamingContext.isActivelyGaming) {
             modifier *= this.calculateGamingModifier(gamingContext);
+        }
+
+        // Rhythm game bonuses (System B)
+        if (rhythmGameContext && rhythmGameContext.isActive) {
+            modifier *= this.calculateRhythmGameModifier(rhythmGameContext);
         }
 
         // Cap at 3.0x total
@@ -293,6 +340,31 @@ export class XPCalculator {
         }
 
         return Math.min(multiplier, 1.75);
+    }
+
+    /**
+     * Calculate rhythm game XP modifier (System B)
+     *
+     * @param context - Rhythm game context
+     * @returns Multiplier (1.0 to 2.25)
+     */
+    private calculateRhythmGameModifier(context: RhythmGameContext): number {
+        let multiplier = this.config.activity_bonuses.rhythm_game_base;  // 1.25x base
+
+        // Combo bonus: scales with combo length (0% to 50% additional)
+        if (context.currentCombo > 0) {
+            const comboRatio = context.currentCombo / context.maxComboCap;
+            multiplier += comboRatio * this.config.activity_bonuses.rhythm_game_combo;
+        }
+
+        // Groove bonus: scales with hotness (0% to 50% additional)
+        if (context.grooveHotness > 0) {
+            const grooveRatio = context.grooveHotness / 100;
+            multiplier += grooveRatio * this.config.activity_bonuses.rhythm_game_groove;
+        }
+
+        // Max is 1.25 + 0.5 + 0.5 = 2.25
+        return Math.min(multiplier, 2.25);
     }
 
     /**

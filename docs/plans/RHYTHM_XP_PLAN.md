@@ -203,7 +203,8 @@ This plan implements **two independent XP reward systems** that both operate dur
 
 This section combines all listening XP boost functionality. These bonuses apply to the **background listening XP** when rhythm game mode is active (System B from the overview).
 
-- [ ] Add rhythm game bonuses to `activity_bonuses` in `ProgressionConfig.xp` (see `src/core/config/progressionConfig.ts`)
+- [x] Add rhythm game bonuses to `activity_bonuses` in `ProgressionConfig.xp` (see `src/core/config/progressionConfig.ts`)
+  - **Implemented in:** `src/core/types/Progression.ts`, `src/core/config/progressionConfig.ts`
   ```typescript
   activity_bonuses: {
     // Existing movement/environmental bonuses (from engine)
@@ -224,7 +225,8 @@ This section combines all listening XP boost functionality. These bonuses apply 
 
   **Note:** Apps may extend this with their own bonuses (e.g., weather, gaming genres). The engine's `mergeProgressionConfig()` handles new fields gracefully via spread operator.
 
-- [ ] Update `DEFAULT_ACTIVITY_BONUSES` in `XPCalculator.ts` (lines 36-44)
+- [x] Update `DEFAULT_ACTIVITY_BONUSES` in `XPCalculator.ts` (lines 36-44)
+  - **Implemented in:** `src/core/progression/XPCalculator.ts`
   ```typescript
   const DEFAULT_ACTIVITY_BONUSES = {
     stationary: 1.0,
@@ -241,9 +243,11 @@ This section combines all listening XP boost functionality. These bonuses apply 
   };
   ```
 
-- [ ] Update `DEFAULT_PROGRESSION_CONFIG.xp.activity_bonuses` in `progressionConfig.ts` (same fields)
+- [x] Update `DEFAULT_PROGRESSION_CONFIG.xp.activity_bonuses` in `progressionConfig.ts` (same fields)
+  - **Implemented in:** `src/core/config/progressionConfig.ts`
 
-- [ ] Add `RhythmGameContext` to `ListeningSession` for tracking active state
+- [x] Add `RhythmGameContext` to `ListeningSession` for tracking active state
+  - **Note:** `RhythmGameContext` already exists in `src/core/types/RhythmXP.ts`
   ```typescript
   interface RhythmGameContext {
     isActive: boolean;           // Is rhythm game mode currently active?
@@ -254,7 +258,8 @@ This section combines all listening XP boost functionality. These bonuses apply 
   }
   ```
 
-- [ ] Update `ListeningSession` type to include rhythm game context
+- [x] Update `ListeningSession` type to include rhythm game context
+  - **Implemented in:** `src/core/types/Progression.ts`
   ```typescript
   interface ListeningSession {
     // ... existing fields ...
@@ -262,7 +267,8 @@ This section combines all listening XP boost functionality. These bonuses apply 
   }
   ```
 
-- [ ] Update `XPCalculator.calculateSessionXP()` to apply rhythm game bonuses
+- [x] Update `XPCalculator.calculateSessionXP()` to apply rhythm game bonuses
+  - **Implemented in:** `src/core/progression/XPCalculator.ts`
   ```typescript
   // In calculateSessionXP() - follows existing pattern:
   // (See src/core/progression/XPCalculator.ts lines 79-103)
@@ -273,7 +279,8 @@ This section combines all listening XP boost functionality. These bonuses apply 
   }
   ```
 
-- [ ] Add `applyRhythmGameBonus()` method (follows pattern of `applyEnvironmentalBonus` and `applyGamingBonus`)
+- [x] Add `applyRhythmGameBonus()` method (follows pattern of `applyEnvironmentalBonus` and `applyGamingBonus`)
+  - **Implemented in:** `src/core/progression/XPCalculator.ts`
   ```typescript
   /**
    * Apply rhythm game bonuses to XP
@@ -306,7 +313,8 @@ This section combines all listening XP boost functionality. These bonuses apply 
   }
   ```
 
-  **Note:** The existing `calculateTotalModifier()` method should also be updated to include rhythm game context for the combined modifier display.
+  **Note:** The existing `calculateTotalModifier()` method was also updated to include rhythm game context for the combined modifier display.
+  - **Implemented in:** `src/core/progression/XPCalculator.ts`
 
 **Note:** This completes all listening XP boost functionality. No separate phase needed.
 
