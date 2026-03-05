@@ -882,7 +882,9 @@ No separate helper class needed.
   - Added GrooveAnalyzer and RhythmXPCalculator to Source Files table
 
 ### 7.4 Expected XP Rates Documentation
-- [ ] Add tuning guidance section to documentation
+- [x] Add tuning guidance section to documentation
+  - **Implemented in:** `docs/XP_AND_STATS.md` (lines 600-638)
+  - Already includes Per-Hit XP table, Combo Multiplier Scaling, Typical song estimates, Level progression table, and Tuning tips
   ```markdown
   ## Expected XP Rates (with default config)
 
@@ -916,34 +918,35 @@ No separate helper class needed.
 ## Phase 8: Testing
 
 ### 8.1 Unit Tests
-- [ ] Test `RhythmXPCalculator.calculateButtonPressXP()`
-  - [ ] All accuracy levels return correct base score
-  - [ ] xpRatio correctly converts score to XP
-  - [ ] Combo multiplier applies correctly
-  - [ ] Custom combo formula works
-  - [ ] Cap is respected
-  - [ ] Groove per-hit multiplier (when enabled)
-  - [ ] finalScore vs finalXP are correctly separated
-  - [ ] Negative baseXP values don't result in negative finalXP (floored at 0)
-- [ ] Test `calculateComboEndBonus()`
-  - [ ] Default formula (combo * 2) works
-  - [ ] Custom formula works
-  - [ ] xpRatio applied correctly
-  - [ ] Returns both bonusScore and bonusXP
-  - [ ] Edge case: combo = 0 returns 0
-- [ ] Test `calculateGrooveEndBonus()`
-  - [ ] Weighted calculation correct
-  - [ ] Returns both bonusScore and bonusXP
-  - [ ] xpRatio applied correctly
-  - [ ] Edge cases (0 hotness, 0 streak)
-- [ ] Test session tracking methods
-  - [ ] `startSession()` resets all totals
-  - [ ] `recordHit()` updates totals correctly
-  - [ ] `getSessionTotals()` returns accurate snapshot
-  - [ ] `endSession()` returns final totals and clears state
-  - [ ] accuracyDistribution counts each type correctly
-  - [ ] accuracyPercentage calculates correctly
-- [ ] Test config merging
+- [x] Test `RhythmXPCalculator.calculateButtonPressXP()`
+  - **Implemented in:** `tests/unit/rhythmXPCalculator.test.ts` (71 tests total)
+  - [x] All accuracy levels return correct base score
+  - [x] xpRatio correctly converts score to XP
+  - [x] Combo multiplier applies correctly
+  - [x] Custom combo formula works
+  - [x] Cap is respected
+  - [x] Groove per-hit multiplier (when enabled)
+  - [x] finalScore vs finalXP are correctly separated
+  - [x] Negative baseXP values don't result in negative finalXP (floored at 0)
+- [x] Test `calculateComboEndBonus()`
+  - [x] Default formula (combo * 2) works
+  - [x] Custom formula works
+  - [x] xpRatio applied correctly
+  - [x] Returns both bonusScore and bonusXP
+  - [x] Edge case: combo = 0 returns 0
+- [x] Test `calculateGrooveEndBonus()`
+  - [x] Weighted calculation correct
+  - [x] Returns both bonusScore and bonusXP
+  - [x] xpRatio applied correctly
+  - [x] Edge cases (0 hotness, 0 streak)
+- [x] Test session tracking methods
+  - [x] `startSession()` resets all totals
+  - [x] `recordHit()` updates totals correctly
+  - [x] `getSessionTotals()` returns accurate snapshot
+  - [x] `endSession()` returns final totals and clears state
+  - [x] accuracyDistribution counts each type correctly
+  - [x] accuracyPercentage calculates correctly
+- [x] Test config merging
 - [ ] Test with `CharacterUpdater.addRhythmXP()`
   - [ ] Level-ups trigger correctly
   - [ ] levelUpDetails returned
