@@ -184,10 +184,11 @@ This plan implements **two independent XP reward systems** that both operate dur
   ```
 
 ### 1.6 Extend ProgressionConfig
-- [ ] Add `rhythm_game` to `activity_bonuses` in `ProgressionConfig`
-- [ ] Add `rhythmXP` section to `ProgressionConfig.xp`
-  - [ ] Reference `RhythmXPConfig` type
-  - [ ] Update `mergeProgressionConfig()` to handle new section
+- [x] Add `rhythm_game` to `activity_bonuses` in `ProgressionConfig`
+- [x] Add `rhythmXP` section to `ProgressionConfig.xp`
+  - [x] Reference `RhythmXPConfig` type
+  - [x] Update `mergeProgressionConfig()` to handle new section
+  - **Implemented in:** `src/core/config/progressionConfig.ts`
   
   **Note:** `mergeProgressionConfig()` (see `src/core/config/progressionConfig.ts:109-131`) already handles new `activity_bonuses` fields via spread operator:
   ```typescript

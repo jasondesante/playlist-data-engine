@@ -5,11 +5,14 @@
  * - XP calculation settings
  * - Stat increase settings
  * - Level up settings
+ * - Rhythm game XP settings
  *
  * Follows the pattern of sensorConfig.ts for consistency
  */
 
 import type { StatIncreaseConfig } from '../types/Progression.js';
+import type { RhythmXPConfig } from '../types/RhythmXP.js';
+import { DEFAULT_RHYTHM_XP_CONFIG, mergeRhythmXPConfig } from '../types/RhythmXP.js';
 
 /**
  * Complete progression system configuration
@@ -31,6 +34,8 @@ export interface ProgressionConfig {
         };
         track_mastery_threshold: number;
         mastery_bonus_xp: number;
+        /** Rhythm game XP configuration (optional) */
+        rhythmXP?: Partial<RhythmXPConfig>;
     };
 
     /** Stat increase configuration */
@@ -76,6 +81,7 @@ export const DEFAULT_PROGRESSION_CONFIG: Required<ProgressionConfig> = {
         },
         track_mastery_threshold: 10,
         mastery_bonus_xp: 100,
+        rhythmXP: DEFAULT_RHYTHM_XP_CONFIG,
     },
     statIncrease: {
         maxStatCap: 20,
@@ -118,7 +124,9 @@ export function mergeProgressionConfig(
             activity_bonuses: {
                 ...DEFAULT_PROGRESSION_CONFIG.xp.activity_bonuses,
                 ...userConfig.xp?.activity_bonuses
-            }
+            },
+            // Merge rhythmXP using its dedicated helper
+            rhythmXP: mergeRhythmXPConfig(userConfig.xp?.rhythmXP),
         },
         statIncrease: {
             ...DEFAULT_PROGRESSION_CONFIG.statIncrease,
