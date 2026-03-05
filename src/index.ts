@@ -291,6 +291,29 @@ export type {
     SpellValidationResult
 } from './core/spells/SpellValidator.js';
 
+// Rhythm XP types
+export type {
+    RhythmBaseXPConfig,
+    ComboEndBonusConfig,
+    RhythmComboConfig,
+    GrooveEndBonusConfig,
+    RhythmGrooveConfig,
+    RhythmXPConfig,
+    RhythmXPResult,
+    ComboEndBonusResult,
+    GrooveStats,
+    GrooveEndStats,
+    GrooveEndBonusResult,
+    RhythmSessionTotals,
+    RhythmGameContext,
+} from './core/types/RhythmXP.js';
+
+// Rhythm XP configuration helpers
+export {
+    DEFAULT_RHYTHM_XP_CONFIG,
+    mergeRhythmXPConfig,
+} from './core/types/RhythmXP.js';
+
 // Combat result types
 export type { InitiativeResult } from './core/combat/InitiativeRoller.js';
 export type { AttackResult } from './core/combat/AttackResolver.js';

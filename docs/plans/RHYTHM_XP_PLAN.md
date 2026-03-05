@@ -40,7 +40,10 @@ This plan implements **two independent XP reward systems** that both operate dur
 ## Phase 1: Core Types & Configuration
 
 ### 1.1 Define Rhythm XP Types
-- [ ] Create `RhythmXPConfig` interface in `src/core/types/BeatMap.ts` or new file
+- [x] Create `RhythmXPConfig` interface in `src/core/types/BeatMap.ts` or new file
+  - **Implemented in:** `src/core/types/RhythmXP.ts` (new file)
+  - **Also created:** `RhythmBaseXPConfig`, `ComboEndBonusConfig`, `RhythmComboConfig`, `GrooveEndBonusConfig`, `RhythmGrooveConfig`
+  - **Exports added to:** `src/index.ts`
   ```typescript
   interface RhythmXPConfig {
     // Base XP per accuracy level (these are "score points")
