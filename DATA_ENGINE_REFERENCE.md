@@ -107,6 +107,7 @@ A concise overview of all main exports from the library, organized by category.
 | `PrestigeSystem` | Track mastery prestige and thresholds | [Progression System](#progression-system) |
 | `CharacterUpdater` | Apply sessions to characters | [Progression System](#progression-system) |
 | `StatManager` | Manage stat increases | [Stat Increase System](#stat-increase-system) |
+| `RhythmXPCalculator` | Calculate XP for rhythm game button presses | [Progression System](#progression-system) |
 
 **Stat Increase Strategies:** `DnD5eStandardStrategy`, `DnD5eSmartStrategy`, `BalancedStrategy`, `PrimaryOnlyStrategy`, `RandomStrategy`, `ManualStrategy`, `createStatIncreaseStrategy` — see [Stat Increase System](#stat-increase-system)
 
@@ -3051,6 +3052,146 @@ Handles the prestige mechanic where players reset their character after masterin
 |----------|---------|-------------|
 | `isPrestigeLevel(value)` | boolean | Type guard for valid PrestigeLevel |
 | `toPrestigeLevel(value)` | PrestigeLevel | Convert number to PrestigeLevel (clamped 0-10) |
+
+---
+
+### RhythmXPCalculator
+
+**Location:** `src/core/progression/RhythmXPCalculator.ts`
+
+*Also known as: Rhythm game XP, beat game XP, music game XP calculator*
+
+Calculates XP rewards for rhythm game button presses. Separates "score points" (for display/leaderboards) from "character XP" (for progression) via the `xpRatio` parameter.
+
+The system supports two parallel XP systems:
+1. **Per-button-press XP** (this class) - rewards timing accuracy, combos, groove
+2. **Listening session XP boost** (XPCalculator) - boosts background listening XP while playing
+
+**For usage examples, see [XP_AND_STATS.md](docs/XP_AND_STATS.md#rhythm-game-xp)**
+
+#### Constructor
+
+| Constructor | Description |
+|-------------|-------------|
+| `constructor(config?: Partial<RhythmXPConfig>)` | Creates instance with optional configuration to override defaults |
+
+#### Usage Modes
+
+The calculator supports two modes:
+
+1. **Stateless**: Call `calculateButtonPressXP()` directly, frontend tracks combo/session
+2. **Stateful**: Use `startSession()`, `recordHit()`, `getSessionTotals()`, `endSession()`
+
+#### Method Reference
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `calculateButtonPressXP(accuracy, options?)` | `RhythmXPResult` | Calculate XP for a single button press with optional combo and groove |
+| `calculateComboEndBonus(comboLength)` | `ComboEndBonusResult` | Calculate bonus when a combo breaks (miss or wrongKey) |
+| `calculateGrooveEndBonus(stats)` | `GrooveEndBonusResult` | Calculate bonus when a groove ends (hotness drops to 0 or session ends) |
+| `getBaseXP(accuracy)` | `number` | Get base score points for an accuracy level |
+| `getComboMultiplier(comboLength)` | `number` | Calculate combo multiplier from combo length (capped at `combo.cap`) |
+| `startSession()` | `void` | Start a new session, resetting all totals |
+| `recordHit(accuracy, options?)` | `RhythmXPResult` | Record a hit AND update session totals (stateful convenience) |
+| `getSessionTotals()` | `RhythmSessionTotals \| null` | Get current session statistics snapshot |
+| `endSession()` | `RhythmSessionTotals \| null` | End session and get final totals |
+| `getConfig()` | `RhythmXPConfig` | Get current configuration |
+| `updateConfig(config)` | `void` | Merge partial config with current configuration |
+
+#### Configuration Types
+
+| Type | Location | Description |
+|------|----------|-------------|
+| `RhythmXPConfig` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Complete rhythm XP configuration (baseXP, xpRatio, combo, groove, maxMultiplier) |
+| `RhythmBaseXPConfig` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Base XP values for each accuracy level (perfect, great, good, ok, miss, wrongKey) |
+| `RhythmComboConfig` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Combo multiplier configuration (enabled, cap, formula, endBonus) |
+| `RhythmGrooveConfig` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Groove XP configuration (perHitMultiplier, perHitScale, endBonus) |
+| `ComboEndBonusConfig` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Combo end bonus configuration (enabled, formula) |
+| `GrooveEndBonusConfig` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Groove end bonus configuration (enabled, weights) |
+
+#### Result Types
+
+| Type | Location | Description |
+|------|----------|-------------|
+| `RhythmXPResult` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Result of calculating XP for a button press (scorePoints, baseXP, multipliers, finalScore, finalXP) |
+| `ComboEndBonusResult` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Result of combo end bonus (comboLength, bonusScore, bonusXP) |
+| `GrooveEndBonusResult` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Result of groove end bonus (bonusScore, bonusXP) |
+| `GrooveEndStats` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Input stats for groove end bonus (maxStreak, avgHotness, duration, totalHits) |
+| `GrooveStats` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Full groove statistics from GrooveAnalyzer |
+| `RhythmSessionTotals` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Cumulative session statistics (totalScore, totalXP, maxCombo, accuracyDistribution, accuracyPercentage, duration) |
+
+#### Default Configuration
+
+```typescript
+const DEFAULT_RHYTHM_XP_CONFIG = {
+    baseXP: { perfect: 10, great: 7, good: 5, ok: 2, miss: 0, wrongKey: 0 },
+    xpRatio: 0.1,  // 10 score points = 1 character XP
+    combo: {
+        enabled: true,
+        cap: 5.0,
+        endBonus: { enabled: true }
+    },
+    groove: {
+        perHitMultiplier: false,
+        perHitScale: 1.0,
+        endBonus: {
+            enabled: true,
+            maxStreakWeight: 0.4,
+            avgHotnessWeight: 0.4,
+            durationWeight: 0.2
+        }
+    },
+    maxMultiplier: 5.0
+};
+```
+
+#### Constants
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `DEFAULT_RHYTHM_XP_CONFIG` | Object | Default configuration tuned for D&D 5e progression |
+
+#### Helper Functions
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `mergeRhythmXPConfig(userConfig?)` | `RhythmXPConfig` | Merge user config with defaults |
+
+#### Example: Stateless Usage
+
+```typescript
+import { RhythmXPCalculator } from 'playlist-data-engine';
+
+const calculator = new RhythmXPCalculator({ xpRatio: 0.1 });
+
+// Calculate XP for a button press
+const result = calculator.calculateButtonPressXP('perfect', {
+    comboLength: 50,
+    grooveHotness: 80
+});
+
+console.log(`Score: ${result.finalScore}, XP: ${result.finalXP}`);
+// Score: 20, XP: 2 (at 50 combo = 2x multiplier)
+```
+
+#### Example: Stateful Session Tracking
+
+```typescript
+import { RhythmXPCalculator } from 'playlist-data-engine';
+
+const calculator = new RhythmXPCalculator();
+calculator.startSession();
+
+// On each hit (frontend tracks combo/groove)
+const result = calculator.recordHit('perfect', { comboLength, grooveHotness });
+
+// Get running totals for UI
+const totals = calculator.getSessionTotals();
+console.log(`Session XP: ${totals.totalXP}, Accuracy: ${totals.accuracyPercentage}%`);
+
+// End session
+const finalTotals = calculator.endSession();
+```
 
 ---
 
