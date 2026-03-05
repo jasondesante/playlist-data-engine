@@ -22,11 +22,15 @@ The engine's audio analysis is powered by the Web Audio API and provides three d
 | **SpectrumScanner** (frequency bands) | [src/core/analysis/SpectrumScanner.ts](../src/core/analysis/SpectrumScanner.ts) |
 | **BeatMapGenerator** | [src/core/analysis/beat/BeatMapGenerator.ts](../src/core/analysis/beat/BeatMapGenerator.ts) |
 | **BeatStream** | [src/core/analysis/beat/BeatStream.ts](../src/core/analysis/beat/BeatStream.ts) |
+| **GrooveAnalyzer** | [src/core/analysis/beat/GrooveAnalyzer.ts](../src/core/analysis/beat/GrooveAnalyzer.ts) |
 | **OnsetStrengthEnvelope** | [src/core/analysis/beat/OnsetStrengthEnvelope.ts](../src/core/analysis/beat/OnsetStrengthEnvelope.ts) |
 | **BeatTracker** (Ellis DP) | [src/core/analysis/beat/BeatTracker.ts](../src/core/analysis/beat/BeatTracker.ts) |
 | **TempoDetector** | [src/core/analysis/beat/TempoDetector.ts](../src/core/analysis/beat/TempoDetector.ts) |
 | **BeatInterpolator** | [src/core/analysis/beat/BeatInterpolator.ts](../src/core/analysis/beat/BeatInterpolator.ts) |
+| **GrooveAnalyzer** | [src/core/analysis/beat/GrooveAnalyzer.ts](../src/core/analysis/beat/GrooveAnalyzer.ts) |
+| **RhythmXPCalculator** | [src/core/progression/RhythmXPCalculator.ts](../src/core/progression/RhythmXPCalculator.ts) |
 | **Beat Types** | [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts) |
+| **Rhythm XP Types** | [src/core/types/RhythmXP.ts](../src/core/types/RhythmXP.ts) |
 | **Audio Types** | [src/core/types/AudioProfile.ts](../src/core/types/AudioProfile.ts) |
 
 ---
@@ -3251,9 +3255,11 @@ const grooveAnalyzer = new GrooveAnalyzer({
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `recordHit` | `offset: number`, `bpm: number` | `GrooveResult` | Record a button press and get groove analysis |
+| `recordHit` | `offset: number`, `bpm: number`, `currentTime?: number` | `GrooveResult` | Record a button press and get groove analysis. Pass `currentTime` (from `buttonResult.matchedBeat.time`) for accurate groove duration tracking. |
 | `recordMiss` | - | `GrooveResult` | Record a missed beat (reduces hotness, resets streak) |
 | `getState` | - | `GrooveState` | Get current state snapshot |
+| `getGrooveStats` | `currentAudioTime?: number` | `GrooveStats \| null` | Get groove statistics for end bonus calculation. Returns null if no groove was active. |
+| `resetGrooveStats` | - | `void` | Reset groove lifetime tracking (called internally when groove ends) |
 | `reset` | - | `void` | Clear all state and start fresh |
 
 ---
@@ -3271,6 +3277,7 @@ const grooveAnalyzer = new GrooveAnalyzer({
 | `streakLength` | `number` | Current streak of consistent hits |
 | `inPocket` | `boolean` | Whether this hit was within pocket window |
 | `pocketWindow` | `number` | Current window size in seconds |
+| `endedGrooveStats` | `GrooveStats \| undefined` | Stats from groove that just ended (present when hotness drops to 0 or direction changes push↔pull). Use for groove end bonus XP. |
 
 #### GrooveState (from `getState`)
 
@@ -3282,6 +3289,23 @@ const grooveAnalyzer = new GrooveAnalyzer({
 | `streakLength` | `number` | Current streak of consistent hits |
 | `hitCount` | `number` | Total hits recorded this session |
 | `pocketWindow` | `number` | Current window size in seconds |
+| `grooveStartTime` | `number \| null` | When current groove started (audio time), null if no active groove |
+| `grooveDuration` | `number` | Duration of current groove in seconds (0 if no active groove) |
+| `maxHotness` | `number` | Peak hotness reached during current groove (0-100) |
+| `avgHotness` | `number` | Average hotness over groove lifetime (0-100) |
+| `grooveHitCount` | `number` | Total hits in current groove |
+
+#### GrooveStats (from `getGrooveStats` / `endedGrooveStats`)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `maxStreak` | `number` | Peak streak during the groove |
+| `maxHotness` | `number` | Peak hotness reached (0-100) |
+| `avgHotness` | `number` | Average hotness over groove lifetime (0-100) |
+| `duration` | `number` | How long the groove lasted in seconds |
+| `totalHits` | `number` | Total hits in the groove |
+| `startTime` | `number` | When groove started (audio time in seconds) |
+| `endTime` | `number` | When groove ended (audio time in seconds) |
 
 ---
 
@@ -3381,6 +3405,67 @@ When timing drifts from one direction to another:
 | Rhythm training tools | ✅ Yes |
 | Visual groove indicators | ✅ Yes |
 | Competitive precision scoring | ❌ Use BeatStream directly |
+
+---
+
+### Rhythm XP Integration
+
+The GrooveAnalyzer integrates seamlessly with the `RhythmXPCalculator` to reward players with character XP based on their groove performance. See [XP_AND_STATS.md - Rhythm Game XP](XP_AND_STATS.md#rhythm-game-xp) for complete documentation.
+
+#### How Groove Data Feeds XP
+
+| Groove Data | XP System Usage |
+|-------------|-----------------|
+| `hotness` | Per-hit groove multiplier (optional mode) |
+| `endedGrooveStats` | Groove end bonus calculation |
+| `avgHotness` | Weighted bonus in groove end calculation |
+| `maxStreak` | Weighted bonus in groove end calculation |
+| `duration` | Weighted bonus in groove end calculation |
+
+#### Groove End Bonus Flow
+
+When a groove ends (hotness drops to 0 or direction changes push↔pull), the `endedGrooveStats` are immediately available:
+
+```typescript
+import { GrooveAnalyzer, RhythmXPCalculator, CharacterUpdater } from 'playlist-data-engine';
+
+const grooveAnalyzer = new GrooveAnalyzer();
+const rhythmXP = new RhythmXPCalculator();
+const updater = new CharacterUpdater();
+
+// During gameplay - on each button press
+function onButtonPress(timestamp: number) {
+  const buttonResult = beatStream.checkButtonPress(timestamp);
+
+  // Pass the beat's audio time for accurate groove duration tracking
+  const grooveResult = grooveAnalyzer.recordHit(
+    buttonResult.offset,
+    beatStream.getCurrentBpm(),
+    buttonResult.matchedBeat?.time  // Audio time from beat map
+  );
+
+  // Check if groove ended - immediate bonus opportunity!
+  if (grooveResult.endedGrooveStats) {
+    const bonusResult = rhythmXP.calculateGrooveEndBonus(grooveResult.endedGrooveStats);
+    console.log(`Groove ended! Bonus: ${bonusResult.bonusXP} XP`);
+    // Add bonus to character
+    // updater.addRhythmXP(character, bonusResult);
+  }
+}
+```
+
+#### Groove Reset Behavior
+
+The groove (including streak AND lifetime tracking) resets when:
+1. **Hotness drops to 0** - The groove has completely ended
+2. **Pocket direction changes** (push ↔ pull) - The player shifted from ahead to behind (or vice versa)
+
+When the groove resets:
+- `streakLength` → 0
+- All lifetime stats captured in `endedGrooveStats` before reset
+- Fresh tracking starts for the new groove
+
+**Note:** Transitions to/from 'neutral' do NOT reset tracking - only push↔pull transitions.
 
 ---
 
