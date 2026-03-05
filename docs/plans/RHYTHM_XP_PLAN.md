@@ -106,7 +106,8 @@ This plan implements **two independent XP reward systems** that both operate dur
   - This prevents punishing character progression while still providing gameplay feedback
 
 ### 1.2 Define Result Types
-- [ ] Create `RhythmXPResult` interface
+- [x] Create `RhythmXPResult` interface
+  - **Implemented in:** `src/core/types/RhythmXP.ts` (lines 212-245)
   ```typescript
   interface RhythmXPResult {
     scorePoints: number;      // Raw score from accuracy (before ratio)
@@ -125,7 +126,8 @@ This plan implements **two independent XP reward systems** that both operate dur
   ```
 
 ### 1.3 Session Totals Type (for UI display)
-- [ ] Create `RhythmSessionTotals` interface for tracking cumulative stats
+- [x] Create `RhythmSessionTotals` interface for tracking cumulative stats
+  - **Implemented in:** `src/core/types/RhythmXP.ts` (lines 333-358)
   ```typescript
   interface RhythmSessionTotals {
     /** Total raw score accumulated */
@@ -157,7 +159,9 @@ This plan implements **two independent XP reward systems** that both operate dur
   This helps frontends display session summaries without tracking everything themselves.
 
 ### 1.5 Create Default Configuration
-- [ ] Create `DEFAULT_RHYTHM_XP_CONFIG` constant
+- [x] Create `DEFAULT_RHYTHM_XP_CONFIG` constant
+  - **Implemented in:** `src/core/types/RhythmXP.ts` (lines 409-438)
+  - **Also created:** `mergeRhythmXPConfig()` helper function (lines 511-526)
   ```typescript
   const DEFAULT_RHYTHM_XP_CONFIG: RhythmXPConfig = {
     baseXP: { perfect: 10, great: 7, good: 5, ok: 2, miss: 0, wrongKey: 0 },
