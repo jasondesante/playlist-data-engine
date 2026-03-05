@@ -17,6 +17,7 @@ import type {
     GrooveResult,
     GrooveState,
     GrooveAnalyzerOptions,
+    BeatAccuracy,
 } from '../../types/BeatMap.js';
 import type { GrooveStats } from '../../types/RhythmXP.js';
 import { DEFAULT_GROOVE_OPTIONS } from '../../types/BeatMap.js';
@@ -77,14 +78,30 @@ export class GrooveAnalyzer {
      * This is the main method called after each button press during gameplay.
      * It updates the pocket tracking, calculates consistency, and adjusts hotness.
      *
+     * IMPORTANT: When accuracy is 'miss' or 'wrongKey', this method will:
+     * - NOT update the pocket tracking (the offset is not valid for groove)
+     * - Decrease hotness by hotnessLossOnMiss
+     * - Reset the streak
+     * - Return inPocket: false
+     *
+     * This ensures that missed beats and wrong key presses hurt the groove score
+     * rather than contributing to it.
+     *
      * @param offset - Timing offset in seconds (negative = early/push, positive = late/pull)
      * @param bpm - Current BPM of the song (used for BPM-aware window calculation)
-     * @param currentTime - Optional current audio time for groove duration tracking (defaults to hitCount-based estimation)
+     * @param currentTime - Current audio time for groove duration tracking (use buttonResult.matchedBeat.time)
+     * @param accuracy - Accuracy level from BeatStream.checkButtonPress(). When 'miss' or 'wrongKey', treats as a miss.
      * @returns GrooveResult with current groove state and hit analysis
      */
-    recordHit(offset: number, bpm: number, currentTime?: number): GrooveResult {
+    recordHit(offset: number, bpm: number, currentTime: number, accuracy: BeatAccuracy): GrooveResult {
         this.hitCount++;
         this.lastBpm = bpm;
+
+        // If accuracy is 'miss' or 'wrongKey', treat as a miss instead of a valid hit
+        // This ensures missed beats and wrong key presses hurt the groove score
+        if (accuracy === 'miss' || accuracy === 'wrongKey') {
+            return this.recordMiss();
+        }
 
         // Store previous direction before updating (for direction change detection)
         const previousDirection = this.pocketDirection;

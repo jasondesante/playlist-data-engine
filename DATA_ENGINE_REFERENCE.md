@@ -1793,7 +1793,7 @@ constructor(options?: Partial<GrooveAnalyzerOptions>)
 
 | Method | Description |
 |--------|-------------|
-| `recordHit(offset: number, bpm: number): GrooveResult` | Record a button press hit and get groove analysis. Offset is timing offset in seconds (negative = early/push, positive = late/pull). BPM is current tempo for BPM-aware window calculation. |
+| `recordHit(offset: number, bpm: number, currentTime: number, accuracy: BeatAccuracy): GrooveResult` | Record a button press hit and get groove analysis. Offset is timing offset in seconds (negative = early/push, positive = late/pull). BPM is current tempo for BPM-aware window calculation. currentTime is audio time for groove duration tracking. accuracy from `buttonResult.accuracy` - when `'miss'` or `'wrongKey'`, hotness decreases instead of increases. |
 | `recordMiss(): GrooveResult` | Record a missed beat (user didn't press). Reduces hotness by configured miss penalty, resets streak, but keeps established pocket. |
 | `getState(): GrooveState` | Get current groove analyzer state snapshot |
 | `reset(): void` | Reset the analyzer to initial state |
@@ -1840,37 +1840,6 @@ Example at 120 BPM:
 - At 0% hotness: 31.25ms window
 - At 50% hotness: 20.6ms window
 - At 100% hotness: 15ms window
-
-**Usage:**
-
-```typescript
-import { GrooveAnalyzer } from 'playlist-data-engine';
-
-const grooveAnalyzer = new GrooveAnalyzer();
-
-// On each button press during gameplay
-const buttonResult = beatStream.checkButtonPress(timestamp);
-const grooveResult = grooveAnalyzer.recordHit(buttonResult.offset, beatStream.getCurrentBpm());
-
-// Read the groove state for UI display
-if (grooveResult.pocketDirection !== 'neutral') {
-  console.log(`${grooveResult.pocketDirection} groove: ${grooveResult.hotness}%`);
-}
-
-// When user misses a beat (doesn't press)
-grooveAnalyzer.recordMiss();
-
-// Get full state for UI
-const state = grooveAnalyzer.getState();
-// state.hotness: 0-100
-// state.pocketDirection: 'push' | 'pull' | 'neutral'
-// state.consistency: 0-1
-// state.streakLength: number
-// state.establishedOffset: seconds from perfect
-
-// Reset for new song
-grooveAnalyzer.reset();
-```
 
 **Design Notes:**
 

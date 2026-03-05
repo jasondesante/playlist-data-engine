@@ -1930,4 +1930,269 @@ describe('GrooveAnalyzer', () => {
             });
         });
     });
+
+    // ========================================
+    // Accuracy Parameter Tests (Miss & WrongKey handling)
+    // ========================================
+
+    describe('recordHit() accuracy parameter for miss/wrongKey handling', () => {
+        beforeEach(() => {
+            analyzer = new GrooveAnalyzer();
+        });
+
+        describe('When accuracy is "miss"', () => {
+            it('should NOT increase groove when accuracy is miss', () => {
+                // Build up some groove first
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hotnessBefore = analyzer.getState().hotness;
+                expect(hotnessBefore).toBeGreaterThan(0);
+
+                // Record a hit with miss accuracy - should decrease hotness, not increase
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'miss');
+
+                expect(result.hotness).toBeLessThan(hotnessBefore);
+                expect(result.inPocket).toBe(false);
+            });
+
+            it('should decrease hotness by hotnessLossOnMiss when accuracy is miss', () => {
+                // Build up some groove
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hotnessBefore = analyzer.getState().hotness;
+
+                // Record a miss
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'miss');
+
+                // Should lose hotnessLossOnMiss (default 10)
+                expect(result.hotness).toBe(Math.max(0, hotnessBefore - 10));
+            });
+
+            it('should reset streak when accuracy is miss', () => {
+                // Build up groove and streak
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const streakBefore = analyzer.getState().streakLength;
+                expect(streakBefore).toBeGreaterThan(0);
+
+                // Record a miss
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'miss');
+
+                expect(result.streakLength).toBe(0);
+            });
+
+            it('should NOT update pocket tracking when accuracy is miss', () => {
+                // Establish pocket with consistent timing
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const establishedOffsetBefore = analyzer.getState().establishedOffset;
+
+                // Record a miss with very different offset
+                analyzer.recordHit(200 * MS, DEFAULT_BPM, undefined, 'miss');
+
+                // Established offset should NOT change (miss doesn't affect pocket)
+                const establishedOffsetAfter = analyzer.getState().establishedOffset;
+                expect(establishedOffsetAfter).toBe(establishedOffsetBefore);
+            });
+        });
+
+        describe('When accuracy is "wrongKey"', () => {
+            it('should NOT increase groove when accuracy is wrongKey', () => {
+                // Build up some groove first
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hotnessBefore = analyzer.getState().hotness;
+                expect(hotnessBefore).toBeGreaterThan(0);
+
+                // Record a hit with wrongKey accuracy - should decrease hotness, not increase
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'wrongKey');
+
+                expect(result.hotness).toBeLessThan(hotnessBefore);
+                expect(result.inPocket).toBe(false);
+            });
+
+            it('should decrease hotness by hotnessLossOnMiss when accuracy is wrongKey', () => {
+                // Build up some groove
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hotnessBefore = analyzer.getState().hotness;
+
+                // Record a wrong key
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'wrongKey');
+
+                // Should lose hotnessLossOnMiss (default 10)
+                expect(result.hotness).toBe(Math.max(0, hotnessBefore - 10));
+            });
+
+            it('should reset streak when accuracy is wrongKey', () => {
+                // Build up groove and streak
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const streakBefore = analyzer.getState().streakLength;
+                expect(streakBefore).toBeGreaterThan(0);
+
+                // Record a wrong key
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'wrongKey');
+
+                expect(result.streakLength).toBe(0);
+            });
+
+            it('should NOT update pocket tracking when accuracy is wrongKey', () => {
+                // Establish pocket with consistent timing
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const establishedOffsetBefore = analyzer.getState().establishedOffset;
+
+                // Record a wrong key with very different offset
+                analyzer.recordHit(200 * MS, DEFAULT_BPM, undefined, 'wrongKey');
+
+                // Established offset should NOT change (wrongKey doesn't affect pocket)
+                const establishedOffsetAfter = analyzer.getState().establishedOffset;
+                expect(establishedOffsetAfter).toBe(establishedOffsetBefore);
+            });
+        });
+
+        describe('Valid accuracy values should still work correctly', () => {
+            it('should increase groove when accuracy is perfect', () => {
+                // Establish pocket
+                for (let i = 0; i < 3; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hotnessBefore = analyzer.getState().hotness;
+
+                // Record a perfect hit
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'perfect');
+
+                // Should increase hotness
+                expect(result.hotness).toBeGreaterThan(hotnessBefore);
+            });
+
+            it('should increase groove when accuracy is great', () => {
+                // Establish pocket
+                for (let i = 0; i < 3; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hotnessBefore = analyzer.getState().hotness;
+
+                // Record a great hit
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'great');
+
+                // Should increase hotness
+                expect(result.hotness).toBeGreaterThan(hotnessBefore);
+            });
+
+            it('should increase groove when accuracy is good', () => {
+                // Establish pocket
+                for (let i = 0; i < 3; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hotnessBefore = analyzer.getState().hotness;
+
+                // Record a good hit
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'good');
+
+                // Should increase hotness
+                expect(result.hotness).toBeGreaterThan(hotnessBefore);
+            });
+
+            it('should increase groove when accuracy is ok', () => {
+                // Establish pocket
+                for (let i = 0; i < 3; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hotnessBefore = analyzer.getState().hotness;
+
+                // Record an ok hit
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'ok');
+
+                // Should increase hotness
+                expect(result.hotness).toBeGreaterThan(hotnessBefore);
+            });
+
+            it('should work normally when accuracy is undefined (backwards compatible)', () => {
+                // Establish pocket
+                for (let i = 0; i < 3; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hotnessBefore = analyzer.getState().hotness;
+
+                // Record a hit without accuracy parameter
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM);
+
+                // Should increase hotness (normal behavior)
+                expect(result.hotness).toBeGreaterThan(hotnessBefore);
+            });
+        });
+
+        describe('Comparison between miss accuracy and recordMiss()', () => {
+            it('should behave the same as recordMiss() when accuracy is miss', () => {
+                // Build up groove
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                // Create a second analyzer with same state
+                const analyzer2 = new GrooveAnalyzer();
+                for (let i = 0; i < 5; i++) {
+                    analyzer2.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                // Record miss using accuracy parameter
+                const result1 = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'miss');
+
+                // Record miss using recordMiss()
+                const result2 = analyzer2.recordMiss();
+
+                // Both should have same hotness and streak
+                expect(result1.hotness).toBe(result2.hotness);
+                expect(result1.streakLength).toBe(result2.streakLength);
+                expect(result1.inPocket).toBe(result2.inPocket);
+            });
+
+            it('should behave the same as recordMiss() when accuracy is wrongKey', () => {
+                // Build up groove
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                // Create a second analyzer with same state
+                const analyzer2 = new GrooveAnalyzer();
+                for (let i = 0; i < 5; i++) {
+                    analyzer2.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                // Record wrongKey using accuracy parameter
+                const result1 = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'wrongKey');
+
+                // Record miss using recordMiss()
+                const result2 = analyzer2.recordMiss();
+
+                // Both should have same hotness and streak
+                expect(result1.hotness).toBe(result2.hotness);
+                expect(result1.streakLength).toBe(result2.streakLength);
+                expect(result1.inPocket).toBe(result2.inPocket);
+            });
+        });
+    });
 });

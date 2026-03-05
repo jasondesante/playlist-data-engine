@@ -266,7 +266,8 @@ function onButtonPress(timestamp: number) {
   const grooveResult = grooveAnalyzer.recordHit(
     buttonResult.offset,
     beatStream.getCurrentBpm(),
-    buttonResult.matchedBeat?.time
+    buttonResult.matchedBeat?.time,
+    buttonResult.accuracy  // 'miss' or 'wrongKey' will hurt groove
   );
 
   // 3. Check if combo is about to break (before updating)
@@ -473,8 +474,13 @@ const updater = new CharacterUpdater();
 // When groove ends (hotness drops to 0 or direction changes), the stats
 // are returned directly in endedGrooveStats:
 
-function onButtonPress(timestamp: number) {
-  const grooveResult = grooveAnalyzer.recordHit(offset, bpm, currentTime);
+function onButtonPress(timestamp: number, buttonResult: ButtonPressResult) {
+  const grooveResult = grooveAnalyzer.recordHit(
+    buttonResult.offset,
+    bpm,
+    buttonResult.matchedBeat?.time,  // currentTime for groove duration tracking
+    buttonResult.accuracy  // 'miss' or 'wrongKey' will hurt groove
+  );
 
   // ... handle XP, combo, etc. ...
 

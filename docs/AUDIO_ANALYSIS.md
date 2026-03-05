@@ -3168,10 +3168,12 @@ function onButtonPress(timestamp: number) {
   // Check timing accuracy
   const buttonResult = beatStream.checkButtonPress(timestamp);
 
-  // Analyze groove feel (offset + current BPM)
+  // Analyze groove feel (offset + current BPM + accuracy)
   const grooveResult = grooveAnalyzer.recordHit(
     buttonResult.offset,
-    beatStream.getCurrentBpm()
+    beatStream.getCurrentBpm(),
+    buttonResult.matchedBeat.time,  // Audio time from beat map (required)
+    buttonResult.accuracy  // 'miss' or 'wrongKey' will decrease hotness (required)
   );
 
   // Use the results
@@ -3206,7 +3208,12 @@ const grooveAnalyzer = new GrooveAnalyzer();
 
 // On each button press during gameplay
 const buttonResult = beatStream.checkButtonPress(timestamp);
-const grooveResult = grooveAnalyzer.recordHit(buttonResult.offset, beatStream.getCurrentBpm());
+const grooveResult = grooveAnalyzer.recordHit(
+    buttonResult.offset,
+    beatStream.getCurrentBpm(),
+    buttonResult.matchedBeat.time,  // Audio time from beat map (required)
+    buttonResult.accuracy  // 'miss' or 'wrongKey' will decrease hotness (required)
+);
 
 // When user misses a beat (doesn't press)
 grooveAnalyzer.recordMiss();
@@ -3255,7 +3262,7 @@ const grooveAnalyzer = new GrooveAnalyzer({
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `recordHit` | `offset: number`, `bpm: number`, `currentTime?: number` | `GrooveResult` | Record a button press and get groove analysis. Pass `currentTime` (from `buttonResult.matchedBeat.time`) for accurate groove duration tracking. |
+| `recordHit` | `offset: number`, `bpm: number`, `currentTime: number`, `accuracy: BeatAccuracy` | `GrooveResult` | Record a button press and get groove analysis. **Required:** Pass `currentTime` (from `buttonResult.matchedBeat.time`) for accurate groove duration tracking. **Required:** Pass `accuracy` from `buttonResult.accuracy` - when `'miss'` or `'wrongKey'`, hotness decreases instead of increasing it. |
 | `recordMiss` | - | `GrooveResult` | Record a missed beat (reduces hotness, resets streak) |
 | `getState` | - | `GrooveState` | Get current state snapshot |
 | `getGrooveStats` | `currentAudioTime?: number` | `GrooveStats \| null` | Get groove statistics for end bonus calculation. Returns null if no groove was active. |
@@ -3441,7 +3448,8 @@ function onButtonPress(timestamp: number) {
   const grooveResult = grooveAnalyzer.recordHit(
     buttonResult.offset,
     beatStream.getCurrentBpm(),
-    buttonResult.matchedBeat?.time  // Audio time from beat map
+    buttonResult.matchedBeat?.time,  // Audio time from beat map
+    buttonResult.accuracy  // Pass accuracy - miss/wrongKey will decrease hotness
   );
 
   // Check if groove ended - immediate bonus opportunity!
