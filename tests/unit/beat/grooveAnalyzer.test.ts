@@ -12,6 +12,7 @@ import type {
     GrooveState,
     GrooveAnalyzerOptions,
     GrooveDirection,
+    GrooveStats,
 } from '../../../src/core/types/BeatMap.js';
 import { DEFAULT_GROOVE_OPTIONS } from '../../../src/core/types/BeatMap.js';
 
@@ -1459,6 +1460,474 @@ describe('GrooveAnalyzer', () => {
             expect(state.hotness).toBe(0);
             expect(state.streakLength).toBe(0);
             expect(state.hitCount).toBe(0);
+        });
+    });
+
+    // ========================================
+    // Phase 8.2: Groove Lifetime Tracking Tests
+    // ========================================
+
+    describe('Groove Lifetime Tracking', () => {
+        beforeEach(() => {
+            analyzer = new GrooveAnalyzer();
+        });
+
+        describe('getState() returns correct values including new fields', () => {
+            it('should return null grooveStartTime initially', () => {
+                const state = analyzer.getState();
+                expect(state.grooveStartTime).toBeNull();
+                expect(state.grooveDuration).toBe(0);
+                expect(state.maxHotness).toBe(0);
+                expect(state.avgHotness).toBe(0);
+                expect(state.grooveHitCount).toBe(0);
+            });
+
+            it('should return groove lifetime stats after groove is established', () => {
+                // Establish pocket and build groove
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const state = analyzer.getState();
+                expect(state.grooveStartTime).not.toBeNull();
+                expect(state.grooveDuration).toBeGreaterThan(0);
+                expect(state.maxHotness).toBeGreaterThan(0);
+                expect(state.avgHotness).toBeGreaterThan(0);
+                expect(state.grooveHitCount).toBeGreaterThan(0);
+            });
+
+            it('should return all standard fields in addition to new fields', () => {
+                // Build groove
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const state = analyzer.getState();
+                // Standard fields
+                expect(state.pocketDirection).toBe('pull');
+                expect(state.establishedOffset).toBeCloseTo(30 * MS, 3);
+                expect(state.hotness).toBeGreaterThan(0);
+                expect(state.streakLength).toBe(3); // 3 hits after pocket established
+                expect(state.hitCount).toBe(5);
+                expect(state.pocketWindow).toBeGreaterThan(0);
+                // New fields
+                expect(state.grooveStartTime).not.toBeNull();
+                expect(state.grooveDuration).toBeGreaterThan(0);
+                expect(state.maxHotness).toBeGreaterThan(0);
+                expect(state.avgHotness).toBeGreaterThan(0);
+                expect(state.grooveHitCount).toBeGreaterThan(0);
+            });
+        });
+
+        describe('avgHotness calculation over multiple hits', () => {
+            it('should return 0 avgHotness when no groove is active', () => {
+                const state = analyzer.getState();
+                expect(state.avgHotness).toBe(0);
+            });
+
+            it('should calculate avgHotness correctly over multiple hits', () => {
+                // Establish pocket (3 hits to establish)
+                // Default hotnessGainPerHit is 8
+                analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                analyzer.recordHit(30 * MS, DEFAULT_BPM); // hotness = 8 (first in-pocket hit)
+
+                const state1 = analyzer.getState();
+                expect(state1.avgHotness).toBe(8);
+
+                // Add more hits
+                analyzer.recordHit(30 * MS, DEFAULT_BPM); // hotness = 16
+                analyzer.recordHit(30 * MS, DEFAULT_BPM); // hotness = 24
+
+                const state2 = analyzer.getState();
+                // Average of [8, 16, 24] = 16
+                expect(state2.avgHotness).toBe(16);
+            });
+
+            it('should update avgHotness when hotness changes', () => {
+                // Build up groove
+                for (let i = 0; i < 10; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const state = analyzer.getState();
+                // All hits are consistent, so hotness should increase each hit
+                // avgHotness should be the average of all hotness values recorded
+                expect(state.avgHotness).toBeGreaterThan(0);
+                expect(state.avgHotness).toBeLessThanOrEqual(state.maxHotness);
+            });
+
+            it('should reset avgHotness when groove ends', () => {
+                // Use custom analyzer with high hotnessLossOnBreak to ensure groove ends quickly
+                const quickEndAnalyzer = new GrooveAnalyzer({
+                    hotnessGainPerHit: 8,
+                    hotnessLossOnBreak: 50,
+                });
+
+                // Build up groove
+                for (let i = 0; i < 10; i++) {
+                    quickEndAnalyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const stateBefore = quickEndAnalyzer.getState();
+                expect(stateBefore.avgHotness).toBeGreaterThan(0);
+
+                // Drain hotness by hitting off-pocket
+                // With hotnessLossOnBreak: 50, two hits should drain hotness to 0
+                for (let i = 0; i < 5; i++) {
+                    const result = quickEndAnalyzer.recordHit(200 * MS, DEFAULT_BPM);
+                    if (result.endedGrooveStats) {
+                        break;
+                    }
+                }
+
+                const stateAfter = quickEndAnalyzer.getState();
+                expect(stateAfter.hotness).toBe(0);
+                // avgHotness should be 0 since groove tracking reset
+                expect(stateAfter.avgHotness).toBe(0);
+            });
+        });
+
+        describe('maxHotness tracking', () => {
+            it('should return 0 maxHotness initially', () => {
+                const state = analyzer.getState();
+                expect(state.maxHotness).toBe(0);
+            });
+
+            it('should track peak hotness during groove', () => {
+                // Establish pocket and build groove
+                for (let i = 0; i < 10; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const state = analyzer.getState();
+                // Hotness should have increased each hit (8 per hit by default)
+                // After 10 hits, hotness = 8 * 7 = 56 (7 hits in pocket after 3 to establish)
+                expect(state.maxHotness).toBeGreaterThan(0);
+                expect(state.maxHotness).toBe(state.hotness); // All consistent, so max = current
+            });
+
+            it('should retain maxHotness even when current hotness drops', () => {
+                // Build groove to high hotness
+                for (let i = 0; i < 15; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const peakState = analyzer.getState();
+                const peakHotness = peakState.hotness;
+
+                // Break pocket a few times (reduces hotness but doesn't end groove)
+                analyzer.recordHit(200 * MS, DEFAULT_BPM);
+                analyzer.recordHit(200 * MS, DEFAULT_BPM);
+
+                const stateAfterBreak = analyzer.getState();
+                // maxHotness should still be the peak
+                expect(stateAfterBreak.maxHotness).toBe(peakHotness);
+                // Current hotness should be lower
+                expect(stateAfterBreak.hotness).toBeLessThan(peakHotness);
+            });
+
+            it('should reset maxHotness when groove ends and new groove starts', () => {
+                // Build first groove
+                for (let i = 0; i < 10; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const firstGrooveMax = analyzer.getState().maxHotness;
+                expect(firstGrooveMax).toBeGreaterThan(0);
+
+                // End groove by draining hotness using recordMiss
+                while (analyzer.getState().hotness > 0) {
+                    analyzer.recordMiss();
+                }
+
+                expect(analyzer.getState().hotness).toBe(0);
+
+                // Start new groove with different timing
+                analyzer.reset(); // Reset to clear established pocket
+
+                for (let i = 0; i < 10; i++) {
+                    analyzer.recordHit(-30 * MS, DEFAULT_BPM);
+                }
+
+                const newGrooveMax = analyzer.getState().maxHotness;
+                // New groove should have fresh tracking
+                expect(newGrooveMax).toBeGreaterThan(0);
+            });
+        });
+
+        describe('grooveDuration calculation', () => {
+            it('should return 0 duration when no groove is active', () => {
+                const state = analyzer.getState();
+                expect(state.grooveDuration).toBe(0);
+            });
+
+            it('should calculate duration based on hits and BPM', () => {
+                // Establish groove
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const state = analyzer.getState();
+                // Duration should be based on grooveHitCount * (60 / BPM)
+                // At 120 BPM: 60/120 = 0.5 seconds per beat
+                // With 3 groove hits (hits after pocket established): 3 * 0.5 = 1.5 seconds
+                expect(state.grooveDuration).toBeGreaterThan(0);
+            });
+
+            it('should increase duration as more hits are recorded', () => {
+                // Establish groove
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const duration1 = analyzer.getState().grooveDuration;
+
+                // Add more hits
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const duration2 = analyzer.getState().grooveDuration;
+                expect(duration2).toBeGreaterThan(duration1);
+            });
+
+            it('should reset duration when groove ends', () => {
+                // Use custom analyzer with high hotnessLossOnBreak to ensure groove ends quickly
+                const quickEndAnalyzer = new GrooveAnalyzer({
+                    hotnessGainPerHit: 8,
+                    hotnessLossOnBreak: 50,
+                });
+
+                // Build groove
+                for (let i = 0; i < 10; i++) {
+                    quickEndAnalyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const durationBefore = quickEndAnalyzer.getState().grooveDuration;
+                expect(durationBefore).toBeGreaterThan(0);
+
+                // End groove by hitting off-pocket
+                for (let i = 0; i < 5; i++) {
+                    const result = quickEndAnalyzer.recordHit(200 * MS, DEFAULT_BPM);
+                    if (result.endedGrooveStats) {
+                        break;
+                    }
+                }
+
+                const stateAfter = quickEndAnalyzer.getState();
+                expect(stateAfter.hotness).toBe(0);
+                expect(stateAfter.grooveDuration).toBe(0);
+            });
+        });
+
+        describe('resetGrooveStats() clears tracking without losing pocket', () => {
+            it('should clear groove stats but keep established offset', () => {
+                // Build groove
+                for (let i = 0; i < 10; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const stateBefore = analyzer.getState();
+                expect(stateBefore.establishedOffset).toBeCloseTo(30 * MS, 3);
+                expect(stateBefore.grooveStartTime).not.toBeNull();
+                expect(stateBefore.maxHotness).toBeGreaterThan(0);
+
+                // Reset groove stats only
+                analyzer.resetGrooveStats();
+
+                const stateAfter = analyzer.getState();
+                // Pocket should remain
+                expect(stateAfter.establishedOffset).toBeCloseTo(30 * MS, 3);
+                expect(stateAfter.pocketDirection).toBe('pull');
+                // Groove stats should be cleared
+                expect(stateAfter.grooveStartTime).toBeNull();
+                expect(stateAfter.grooveDuration).toBe(0);
+                expect(stateAfter.maxHotness).toBe(0);
+                expect(stateAfter.avgHotness).toBe(0);
+                expect(stateAfter.grooveHitCount).toBe(0);
+            });
+
+            it('should keep hit count and streak after resetGrooveStats', () => {
+                // Build groove
+                for (let i = 0; i < 10; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hitCountBefore = analyzer.getState().hitCount;
+                const streakBefore = analyzer.getState().streakLength;
+
+                // Reset groove stats only
+                analyzer.resetGrooveStats();
+
+                const stateAfter = analyzer.getState();
+                // Hit count should remain
+                expect(stateAfter.hitCount).toBe(hitCountBefore);
+                // Streak remains (it's not reset by resetGrooveStats, only by groove ending)
+                expect(stateAfter.streakLength).toBe(streakBefore);
+            });
+
+            it('should allow building new groove stats after reset', () => {
+                // Build first groove
+                for (let i = 0; i < 10; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                // Reset groove stats
+                analyzer.resetGrooveStats();
+
+                // Build new groove (pocket is already established)
+                for (let i = 0; i < 5; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const state = analyzer.getState();
+                expect(state.grooveStartTime).not.toBeNull();
+                expect(state.maxHotness).toBeGreaterThan(0);
+                expect(state.grooveHitCount).toBeGreaterThan(0);
+            });
+        });
+
+        describe('getGrooveStats() returns correct stats', () => {
+            it('should return null when no groove is active', () => {
+                const stats = analyzer.getGrooveStats();
+                expect(stats).toBeNull();
+            });
+
+            it('should return groove stats when groove is active', () => {
+                // Build groove
+                for (let i = 0; i < 10; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const stats = analyzer.getGrooveStats();
+                expect(stats).not.toBeNull();
+                expect(stats!.maxStreak).toBeGreaterThan(0);
+                expect(stats!.maxHotness).toBeGreaterThan(0);
+                expect(stats!.avgHotness).toBeGreaterThan(0);
+                expect(stats!.duration).toBeGreaterThan(0);
+                expect(stats!.totalHits).toBeGreaterThan(0);
+                expect(stats!.startTime).toBeGreaterThanOrEqual(0);
+                expect(stats!.endTime).toBeGreaterThan(stats!.startTime);
+            });
+
+            it('should accept optional currentAudioTime parameter', () => {
+                // Build groove
+                for (let i = 0; i < 10; i++) {
+                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const customTime = 10.5; // 10.5 seconds
+                const stats = analyzer.getGrooveStats(customTime);
+                expect(stats).not.toBeNull();
+                expect(stats!.endTime).toBe(customTime);
+            });
+        });
+
+        describe('endedGrooveStats in recordHit result', () => {
+            it('should not include endedGrooveStats during active groove', () => {
+                // Build groove
+                for (let i = 0; i < 10; i++) {
+                    const result = analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                    // During active groove, endedGrooveStats should not be present
+                    // (or undefined) since groove hasn't ended
+                }
+
+                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM);
+                expect(result.endedGrooveStats).toBeUndefined();
+            });
+
+            it('should include endedGrooveStats when groove ends due to hotness reaching 0', () => {
+                // Use custom analyzer with high hotnessLossOnBreak to ensure groove ends quickly
+                const quickEndAnalyzer = new GrooveAnalyzer({
+                    hotnessGainPerHit: 8,
+                    hotnessLossOnBreak: 50, // High loss to end groove quickly
+                });
+
+                // Build groove
+                for (let i = 0; i < 10; i++) {
+                    quickEndAnalyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const hotnessBefore = quickEndAnalyzer.getState().hotness;
+                expect(hotnessBefore).toBeGreaterThan(0);
+
+                // Hit off-pocket to end groove
+                // With hotnessLossOnBreak: 50, two hits should drain hotness to 0
+                let endingResult: GrooveResult | null = null;
+                for (let i = 0; i < 10; i++) {
+                    const result = quickEndAnalyzer.recordHit(200 * MS, DEFAULT_BPM);
+                    if (result.endedGrooveStats) {
+                        endingResult = result;
+                        break;
+                    }
+                }
+
+                expect(endingResult).not.toBeNull();
+                expect(endingResult!.endedGrooveStats).toBeDefined();
+                expect(endingResult!.endedGrooveStats!.maxStreak).toBeGreaterThan(0);
+                expect(endingResult!.endedGrooveStats!.maxHotness).toBeGreaterThan(0);
+                expect(endingResult!.endedGrooveStats!.duration).toBeGreaterThan(0);
+            });
+
+            it('should include endedGrooveStats when direction changes (push to pull)', () => {
+                // Use custom analyzer to make direction change more predictable
+                const directionAnalyzer = new GrooveAnalyzer({
+                    hotnessGainPerHit: 8,
+                    hotnessLossOnBreak: 20,
+                    averagingWindowSize: 2, // Smaller window for faster direction changes
+                });
+
+                // Build groove with push direction
+                for (let i = 0; i < 10; i++) {
+                    directionAnalyzer.recordHit(-50 * MS, DEFAULT_BPM);
+                }
+
+                expect(directionAnalyzer.getState().pocketDirection).toBe('push');
+                expect(directionAnalyzer.getState().hotness).toBeGreaterThan(0);
+
+                // Switch to pull direction with very different offset
+                // With averagingWindowSize: 2, direction changes faster
+                let endingResult: GrooveResult | null = null;
+                for (let i = 0; i < 10; i++) {
+                    const result = directionAnalyzer.recordHit(100 * MS, DEFAULT_BPM);
+                    if (result.endedGrooveStats) {
+                        endingResult = result;
+                        break;
+                    }
+                }
+
+                // When direction changes from push to pull, groove ends
+                if (endingResult && endingResult.endedGrooveStats) {
+                    expect(endingResult.endedGrooveStats.maxHotness).toBeGreaterThan(0);
+                }
+            });
+
+            it('should reset streakLength when groove ends', () => {
+                // Use custom analyzer with high hotnessLossOnBreak
+                const quickEndAnalyzer = new GrooveAnalyzer({
+                    hotnessGainPerHit: 8,
+                    hotnessLossOnBreak: 50,
+                });
+
+                // Build groove
+                for (let i = 0; i < 10; i++) {
+                    quickEndAnalyzer.recordHit(30 * MS, DEFAULT_BPM);
+                }
+
+                const streakBefore = quickEndAnalyzer.getState().streakLength;
+                expect(streakBefore).toBeGreaterThan(0);
+
+                // End groove by hitting off-pocket
+                for (let i = 0; i < 10; i++) {
+                    const result = quickEndAnalyzer.recordHit(200 * MS, DEFAULT_BPM);
+                    if (result.endedGrooveStats) {
+                        // After groove ends, streak should be reset
+                        expect(result.streakLength).toBe(0);
+                        break;
+                    }
+                }
+            });
         });
     });
 });

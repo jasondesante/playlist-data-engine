@@ -953,11 +953,16 @@ No separate helper class needed.
   - **Implemented in:** `tests/unit/characterUpdater.test.ts` (12 new tests in `addRhythmXP` describe block)
 
 ### 8.2 Unit Tests for GrooveAnalyzer
-- [ ] Test `getState()` returns correct values including new fields
-- [ ] Test `avgHotness` calculation over multiple hits
-- [ ] Test `maxHotness` tracking
-- [ ] Test `grooveDuration` calculation
-- [ ] Test `resetGrooveStats()` clears tracking without losing pocket
+- [x] Test `getState()` returns correct values including new fields
+  - **Implemented in:** `tests/unit/beat/grooveAnalyzer.test.ts` (new `Groove Lifetime Tracking` describe block)
+- [x] Test `avgHotness` calculation over multiple hits
+  - **Implemented in:** `tests/unit/beat/grooveAnalyzer.test.ts`
+- [x] Test `maxHotness` tracking
+  - **Implemented in:** `tests/unit/beat/grooveAnalyzer.test.ts`
+- [x] Test `grooveDuration` calculation
+  - **Implemented in:** `tests/unit/beat/grooveAnalyzer.test.ts`
+- [x] Test `resetGrooveStats()` clears tracking without losing pocket
+  - **Implemented in:** `tests/unit/beat/grooveAnalyzer.test.ts`
 
 ### 8.3 Integration Tests
 - [ ] Test full flow: `checkButtonPress()` → `calculateButtonPressXP()` → `addRhythmXP()`
