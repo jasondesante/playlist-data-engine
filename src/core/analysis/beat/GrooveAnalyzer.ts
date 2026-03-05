@@ -18,6 +18,7 @@ import type {
     GrooveState,
     GrooveAnalyzerOptions,
 } from '../../types/BeatMap.js';
+import type { GrooveStats } from '../../types/RhythmXP.js';
 import { DEFAULT_GROOVE_OPTIONS } from '../../types/BeatMap.js';
 
 /**
@@ -78,11 +79,15 @@ export class GrooveAnalyzer {
      *
      * @param offset - Timing offset in seconds (negative = early/push, positive = late/pull)
      * @param bpm - Current BPM of the song (used for BPM-aware window calculation)
+     * @param currentTime - Optional current audio time for groove duration tracking (defaults to hitCount-based estimation)
      * @returns GrooveResult with current groove state and hit analysis
      */
-    recordHit(offset: number, bpm: number): GrooveResult {
+    recordHit(offset: number, bpm: number, currentTime?: number): GrooveResult {
         this.hitCount++;
         this.lastBpm = bpm;
+
+        // Store previous direction before updating (for direction change detection)
+        const previousDirection = this.pocketDirection;
 
         // 1. Add to recent offsets (rolling window)
         this.recentOffsets.push(offset);
@@ -119,7 +124,35 @@ export class GrooveAnalyzer {
             }
         }
 
-        // 9. Return result
+        // 9. Track groove lifetime statistics
+        // Check for direction change (push ↔ pull only, ignore neutral transitions)
+        const directionChanged =
+            (previousDirection === 'push' && this.pocketDirection === 'pull') ||
+            (previousDirection === 'pull' && this.pocketDirection === 'push');
+
+        if (directionChanged) {
+            // Direction changed - reset lifetime tracking for new groove
+            // Note: hotness already decreased from out-of-pocket hits that caused the shift
+            this.resetGrooveStats();
+        }
+
+        if (this.hotness > 0) {
+            // Groove is active
+            if (this.grooveStartTime === null) {
+                this.grooveStartTime = currentTime ?? (this.hitCount * (60 / bpm));
+            }
+            this.maxHotness = Math.max(this.maxHotness, this.hotness);
+            this.hotnessSamples.push(this.hotness);
+            this.grooveHitCount++;
+        } else {
+            // Groove ended (hotness hit 0) - reset lifetime tracking
+            this.resetGrooveStats();
+        }
+
+        // Update previous direction for next call
+        this.previousDirection = this.pocketDirection;
+
+        // 10. Return result
         return {
             pocketDirection: this.pocketDirection,
             establishedOffset: this.establishedOffset,
@@ -159,9 +192,14 @@ export class GrooveAnalyzer {
     /**
      * Get current groove analyzer state snapshot
      *
-     * @returns GrooveState with all current values
+     * @returns GrooveState with all current values including lifetime statistics
      */
     getState(): GrooveState {
+        // Calculate average hotness from samples
+        const avgHotness = this.hotnessSamples.length > 0
+            ? this.hotnessSamples.reduce((a, b) => a + b, 0) / this.hotnessSamples.length
+            : 0;
+
         return {
             pocketDirection: this.pocketDirection,
             establishedOffset: this.establishedOffset,
@@ -169,6 +207,12 @@ export class GrooveAnalyzer {
             streakLength: this.streakLength,
             hitCount: this.hitCount,
             pocketWindow: this.calculatePocketWindow(this.lastBpm),
+            // Groove lifetime statistics
+            grooveStartTime: this.grooveStartTime,
+            grooveDuration: this.grooveStartTime !== null ? this.grooveHitCount * (60 / this.lastBpm) : 0,
+            maxHotness: this.maxHotness,
+            avgHotness,
+            grooveHitCount: this.grooveHitCount,
         };
     }
 
@@ -186,6 +230,47 @@ export class GrooveAnalyzer {
         this.streakLength = 0;
         this.hitCount = 0;
         this.lastBpm = 120;
+        this.resetGrooveStats();
+    }
+
+    /**
+     * Get groove statistics for end bonus calculation.
+     * Call this when hotness drops to 0 or at session end.
+     *
+     * @param currentAudioTime - Current audio time for duration calculation (defaults to hitCount-based estimation)
+     * @returns GrooveStats or null if no groove was active
+     */
+    getGrooveStats(currentAudioTime?: number): GrooveStats | null {
+        if (this.grooveStartTime === null || this.grooveHitCount === 0) {
+            return null;
+        }
+
+        const endTime = currentAudioTime ?? (this.hitCount * (60 / this.lastBpm));
+        const avgHotness = this.hotnessSamples.length > 0
+            ? this.hotnessSamples.reduce((a, b) => a + b, 0) / this.hotnessSamples.length
+            : 0;
+
+        return {
+            maxStreak: this.streakLength,  // Current streak is max when groove ends
+            maxHotness: this.maxHotness,
+            avgHotness,
+            duration: endTime - this.grooveStartTime,
+            totalHits: this.grooveHitCount,
+            startTime: this.grooveStartTime,
+            endTime,
+        };
+    }
+
+    /**
+     * Reset groove lifetime tracking.
+     * Called internally when hotness drops to 0 or direction changes.
+     * Can also be called externally to force a reset (e.g., at session end).
+     */
+    resetGrooveStats(): void {
+        this.grooveStartTime = null;
+        this.maxHotness = 0;
+        this.hotnessSamples = [];
+        this.grooveHitCount = 0;
     }
 
     /**

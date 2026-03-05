@@ -2378,6 +2378,52 @@ export interface GrooveState {
 
     /** Current pocket window size in seconds */
     pocketWindow: number;
+
+    // ========================================
+    // Groove lifetime statistics
+    // ========================================
+
+    /** When the current groove started (audio time in seconds), null if no active groove */
+    grooveStartTime: number | null;
+
+    /** Duration of the current groove in seconds (0 if no active groove) */
+    grooveDuration: number;
+
+    /** Peak hotness reached during the current groove (0-100) */
+    maxHotness: number;
+
+    /** Average hotness over the groove lifetime (0-100) */
+    avgHotness: number;
+
+    /** Total hits in the current groove */
+    grooveHitCount: number;
+}
+
+/**
+ * Statistics for groove end bonus calculation.
+ * Returned by GrooveAnalyzer.getGrooveStats() when a groove ends.
+ */
+export interface GrooveStats {
+    /** Peak streak during the groove */
+    maxStreak: number;
+
+    /** Peak hotness reached during the groove (0-100) */
+    maxHotness: number;
+
+    /** Average hotness over the groove lifetime (0-100) */
+    avgHotness: number;
+
+    /** How long the groove lasted in seconds */
+    duration: number;
+
+    /** Total hits in the groove */
+    totalHits: number;
+
+    /** When the groove started (audio time in seconds) */
+    startTime: number;
+
+    /** When the groove ended (audio time in seconds) */
+    endTime: number;
 }
 
 /**
