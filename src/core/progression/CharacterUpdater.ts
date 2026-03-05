@@ -4,6 +4,7 @@ import type { PlaylistTrack } from '../types/Playlist.js';
 import type { PrestigeLevel, PrestigeResult } from '../types/Prestige.js';
 import type { AudioProfile } from '../types/AudioProfile.js';
 import type { ISessionTracker } from '../types/ISessionTracker.js';
+import type { RhythmXPResult } from '../types/RhythmXP.js';
 import { XPCalculator } from './XPCalculator.js';
 import { LevelUpProcessor } from './LevelUpProcessor.js';
 import { StatManager } from './stat/StatManager.js';
@@ -22,6 +23,12 @@ export interface CharacterUpdateResult {
     /** Detailed breakdown of each level-up (NEW) */
     levelUpDetails?: LevelUpDetail[];
 }
+
+/**
+ * Result type for rhythm XP additions (excludes track mastery fields)
+ * Rhythm game XP doesn't involve track mastery mechanics
+ */
+export type RhythmXPUpdateResult = Omit<CharacterUpdateResult, 'masteredTrack' | 'masteryBonusXP'>;
 
 /**
  * CharacterUpdater - Orchestrates character updates from listening sessions
@@ -196,6 +203,51 @@ export class CharacterUpdater {
             leveledUp,
             newLevel,
             levelUpDetails: levelUpDetails.length > 0 ? levelUpDetails : undefined
+        };
+    }
+
+    /**
+     * Add XP from rhythm game button presses.
+     * Triggers level-up system just like addXP() does.
+     *
+     * This method is designed to work with RhythmXPCalculator results.
+     * Rhythm XP doesn't involve track mastery mechanics.
+     *
+     * @param character - The character to update
+     * @param xpResult - Result from RhythmXPCalculator.calculateButtonPressXP()
+     * @param source - Source label for tracking (default: 'rhythm_game')
+     * @returns Result object containing updated character and level-up details
+     *
+     * @example
+     * ```typescript
+     * const calculator = new RhythmXPCalculator();
+     * const xpResult = calculator.calculateButtonPressXP('perfect', { comboLength: 50 });
+     *
+     * const updateResult = updater.addRhythmXP(character, xpResult);
+     *
+     * if (updateResult.leveledUp) {
+     *   console.log(`LEVELED UP to ${updateResult.newLevel}!`);
+     *   for (const detail of updateResult.levelUpDetails ?? []) {
+     *     console.log(`HP: +${detail.hpIncrease}`);
+     *   }
+     * }
+     * ```
+     */
+    public addRhythmXP(
+        character: CharacterSheet,
+        xpResult: RhythmXPResult,
+        source: string = 'rhythm_game'
+    ): RhythmXPUpdateResult {
+        // Delegate to addXP() for full level-up processing
+        const result = this.addXP(character, xpResult.finalXP, source);
+
+        // Return without mastery fields (rhythm XP doesn't involve track mastery)
+        return {
+            character: result.character,
+            xpEarned: result.xpEarned,
+            leveledUp: result.leveledUp,
+            newLevel: result.newLevel,
+            levelUpDetails: result.levelUpDetails,
         };
     }
 

@@ -351,7 +351,8 @@ The groove lifetime tracking resets when:
 **Note:** Transitions to/from 'neutral' do NOT reset tracking - only push↔pull transitions.
 
 ### 2.2 Update GrooveState Interface
-- [ ] Extend `GrooveState` in `src/core/types/BeatMap.ts`
+- [x] Extend `GrooveState` in `src/core/types/BeatMap.ts`
+  - **Implemented in:** `src/core/types/BeatMap.ts` (lines 2363-2400)
   ```typescript
   interface GrooveState {
     // Existing fields
@@ -372,7 +373,8 @@ The groove lifetime tracking resets when:
   ```
 
 ### 2.3 Add GrooveStats Interface
-- [ ] Create dedicated interface for groove end bonus calculation
+- [x] Create dedicated interface for groove end bonus calculation
+  - **Implemented in:** `src/core/types/BeatMap.ts` (lines 2406-2427) and `src/core/types/RhythmXP.ts` (lines 268-289)
   ```typescript
   /**
    * Statistics for groove end bonus calculation
@@ -390,7 +392,8 @@ The groove lifetime tracking resets when:
   ```
 
 ### 2.4 Update GrooveAnalyzer.recordHit()
-- [ ] Track hotness samples, groove timing, and direction changes in `recordHit()`
+- [x] Track hotness samples, groove timing, and direction changes in `recordHit()`
+  - **Implemented in:** `src/core/analysis/beat/GrooveAnalyzer.ts` (lines 85-165)
   ```typescript
   recordHit(offset: number, bpm: number, currentTime?: number): GrooveResult {
     // ... existing logic ...
@@ -435,7 +438,8 @@ The groove lifetime tracking resets when:
   `buttonResult.matchedBeat.time` from the beat map for accurate groove duration tracking.
 
 ### 2.5 Add getGrooveStats() Method
-- [ ] Add method to get all stats needed for groove end bonus
+- [x] Add method to get all stats needed for groove end bonus
+  - **Implemented in:** `src/core/analysis/beat/GrooveAnalyzer.ts` (lines 243-262)
   ```typescript
   /**
    * Get groove statistics for end bonus calculation.
@@ -466,7 +470,8 @@ The groove lifetime tracking resets when:
   ```
 
 ### 2.6 Add resetGrooveStats() Method
-- [ ] Add public method to reset groove lifetime stats
+- [x] Add public method to reset groove lifetime stats
+  - **Implemented in:** `src/core/analysis/beat/GrooveAnalyzer.ts` (lines 269-274)
   ```typescript
   /**
    * Reset groove lifetime tracking.
@@ -485,7 +490,8 @@ The groove lifetime tracking resets when:
   (e.g., after collecting a groove end bonus at session end).
 
 ### 2.7 Update getState() Method
-- [ ] Include new lifetime statistics in `getState()`
+- [x] Include new lifetime statistics in `getState()`
+  - **Implemented in:** `src/core/analysis/beat/GrooveAnalyzer.ts` (lines 197-217)
   ```typescript
   getState(): GrooveState {
     const avgHotness = this.hotnessSamples.length > 0
@@ -513,8 +519,16 @@ The groove lifetime tracking resets when:
 
 ## Phase 3: Combo Multiplier System
 
-### 2.1 Default Combo Formula
-- [ ] Implement default capped combo formula
+### 3.1 Default Combo Formula
+- [x] Implement default capped combo formula
+  - **Implemented in:** `src/core/progression/RhythmXPCalculator.ts` (private `defaultComboFormula` method)
+  ```typescript
+  // Default: 1 + (comboLength / 50) capped at 5.0
+  // At 50 combo = 2x, at 100 combo = 3x, at 200 combo = 5x (cap)
+  function defaultComboFormula(comboLength: number, cap: number): number {
+    return Math.min(1 + (comboLength / 50), cap);
+  }
+  ```
   ```typescript
   // Default: 1 + (comboLength / 50) capped at 5.0
   // At 50 combo = 2x, at 100 combo = 3x, at 200 combo = 5x (cap)
@@ -523,8 +537,9 @@ The groove lifetime tracking resets when:
   }
   ```
 
-### 2.2 Custom Formula Support
-- [ ] Allow passing custom formula via config
+### 3.2 Custom Formula Support
+- [x] Allow passing custom formula via config
+  - **Implemented in:** `src/core/types/RhythmXP.ts` (`RhythmComboConfig.formula` property)
   ```typescript
   // Example uncapped exponential growth
   const uncappedFormula = (combo: number) => 1 + Math.log10(combo + 1);
@@ -533,8 +548,9 @@ The groove lifetime tracking resets when:
   const stepFormula = (combo: number) => 1 + Math.floor(combo / 10) * 0.1;
   ```
 
-### 2.3 Combo Behavior
-- [ ] Document combo reset behavior clearly
+### 3.3 Combo Behavior
+- [x] Document combo reset behavior clearly
+  - **Documented in:** Plan section and JSDoc comments
   - **Combo builds**: Each successful hit (perfect, great, good, ok) increments combo
   - **Combo breaks**: On `miss` or `wrongKey`, combo resets to 0 immediately
   - **Multiplier is per-hit**: The combo multiplier applies to the *current* hit only, not retroactively
@@ -551,8 +567,9 @@ Hit 5: perfect, combo=1  → 10 × 1.02x = 10.2 score, 1.02 XP (started fresh)
 
 The combo multiplier formula determines how much bonus you get at each combo level. The default formula (`1 + combo/50`) gives small incremental bonuses that add up over time.
 
-### 2.4 Combo End Bonus
-- [ ] Implement optional combo end bonus
+### 3.4 Combo End Bonus
+- [x] Implement optional combo end bonus
+  - **Implemented in:** `src/core/progression/RhythmXPCalculator.ts` (`calculateComboEndBonus` method)
   ```typescript
   interface ComboEndBonusResult {
     comboLength: number;    // The combo that just ended
@@ -566,7 +583,8 @@ The combo multiplier formula determines how much bonus you get at each combo lev
   // 100 combo → 200 bonus score → 20 XP
   ```
 
-- [ ] Add `calculateComboEndBonus(comboLength: number)` method to `RhythmXPCalculator`
+- [x] Add `calculateComboEndBonus(comboLength: number)` method to `RhythmXPCalculator`
+  - **Implemented in:** `src/core/progression/RhythmXPCalculator.ts` (lines 120-138)
 
 **When to call:**
 - Frontend calls this immediately after a miss/wrongKey
@@ -584,14 +602,16 @@ Hit 51: miss, combo=0 → call calculateComboEndBonus(50) → +10 XP bonus!
 ## Phase 4: Groove XP Integration
 
 ### 4.1 Per-Hit Groove Multiplier (Optional Mode)
-- [ ] Implement optional per-hit groove boost
+- [x] Implement optional per-hit groove boost
+  - **Implemented in:** `src/core/progression/RhythmXPCalculator.ts` (in `calculateButtonPressXP` method)
   ```typescript
   // If enabled: multiplier += (hotness / 100) * perHitScale
   // At 100% hotness with scale 1.0 = +1.0x to multiplier
   ```
 
 ### 4.2 Groove End Bonus Calculator
-- [ ] Create `calculateGrooveEndBonus()` function
+- [x] Create `calculateGrooveEndBonus()` function
+  - **Implemented in:** `src/core/progression/RhythmXPCalculator.ts` (lines 140-171)
   ```typescript
   interface GrooveEndStats {
     maxStreak: number;      // Peak streak during groove
@@ -624,7 +644,8 @@ No separate helper class needed.
 ## Phase 5: RhythmXPCalculator Class (Rhythm Game Scoring)
 
 ### 5.1 Core Calculator Implementation
-- [ ] Create `src/core/progression/RhythmXPCalculator.ts`
+- [x] Create `src/core/progression/RhythmXPCalculator.ts`
+  - **Implemented in:** `src/core/progression/RhythmXPCalculator.ts`
   ```typescript
   export class RhythmXPCalculator {
     // Session tracking state (optional - for convenience)
@@ -697,7 +718,8 @@ No separate helper class needed.
   - The calculator can be used statelessly (just `calculateButtonPressXP`) OR with session tracking
 
 ### 5.2 Integration with CharacterUpdater
-- [ ] Add `addRhythmXP()` method to `CharacterUpdater` (see `src/core/progression/CharacterUpdater.ts`)
+- [x] Add `addRhythmXP()` method to `CharacterUpdater` (see `src/core/progression/CharacterUpdater.ts`)
+  - **Implemented in:** `src/core/progression/CharacterUpdater.ts` (lines 200-241)
   ```typescript
   /**
    * Result type for rhythm XP additions (excludes track mastery fields)
@@ -747,7 +769,7 @@ No separate helper class needed.
 ## Phase 6: Integration & Exports
 
 ### 6.1 Update Exports
-- [ ] Export from `src/index.ts`:
+- [x] Export from `src/index.ts`:
   - `RhythmXPCalculator`
   - `RhythmXPConfig` type
   - `RhythmXPResult` type
@@ -758,10 +780,13 @@ No separate helper class needed.
   - `GrooveStats` type (from GrooveAnalyzer enhancement)
   - `DEFAULT_RHYTHM_XP_CONFIG`
   - `mergeRhythmXPConfig()` helper
+  - `RhythmXPUpdateResult` type
+  - **Implemented in:** `src/index.ts`
 
 ### 6.2 Update BeatMap Types Exports
-- [ ] Ensure types are exported from `src/core/types/BeatMap.ts` or create dedicated file
-- [ ] Consider: `src/core/types/RhythmXP.ts` for organization
+- [x] Ensure types are exported from `src/core/types/BeatMap.ts` or create dedicated file
+- [x] Consider: `src/core/types/RhythmXP.ts` for organization
+  - **Implemented in:** Types exported from `src/core/types/RhythmXP.ts` and `src/core/types/BeatMap.ts`
 
 ---
 
