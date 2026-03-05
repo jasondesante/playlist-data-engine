@@ -947,9 +947,10 @@ No separate helper class needed.
   - [x] accuracyDistribution counts each type correctly
   - [x] accuracyPercentage calculates correctly
 - [x] Test config merging
-- [ ] Test with `CharacterUpdater.addRhythmXP()`
-  - [ ] Level-ups trigger correctly
-  - [ ] levelUpDetails returned
+- [x] Test with `CharacterUpdater.addRhythmXP()`
+  - [x] Level-ups trigger correctly
+  - [x] levelUpDetails returned
+  - **Implemented in:** `tests/unit/characterUpdater.test.ts` (12 new tests in `addRhythmXP` describe block)
 
 ### 8.2 Unit Tests for GrooveAnalyzer
 - [ ] Test `getState()` returns correct values including new fields

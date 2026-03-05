@@ -295,4 +295,260 @@ describe('CharacterUpdater', () => {
             expect(result.character.xp.next_level).toBe(0); // No next level
         });
     });
+
+    describe('addRhythmXP', () => {
+        it('should add rhythm XP to character', () => {
+            const rhythmResult = {
+                scorePoints: 10,
+                baseXP: 1,
+                comboMultiplier: 1,
+                grooveMultiplier: 0,
+                totalMultiplier: 1,
+                finalScore: 10,
+                finalXP: 1,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0 }
+            };
+
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult);
+
+            expect(result.xpEarned).toBe(1);
+            expect(result.character.xp.current).toBe(1);
+        });
+
+        it('should trigger level-up when rhythm XP crosses threshold', () => {
+            // Give enough rhythm XP to level up (needs 300)
+            const rhythmResult = {
+                scorePoints: 3000,
+                baseXP: 300,
+                comboMultiplier: 1,
+                grooveMultiplier: 0,
+                totalMultiplier: 1,
+                finalScore: 3000,
+                finalXP: 300,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0 }
+            };
+
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult);
+
+            expect(result.leveledUp).toBe(true);
+            expect(result.newLevel).toBe(2);
+            expect(result.character.level).toBe(2);
+        });
+
+        it('should include levelUpDetails when level-up occurs', () => {
+            const rhythmResult = {
+                scorePoints: 3000,
+                baseXP: 300,
+                comboMultiplier: 1,
+                grooveMultiplier: 0,
+                totalMultiplier: 1,
+                finalScore: 3000,
+                finalXP: 300,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0 }
+            };
+
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult);
+
+            expect(result.levelUpDetails).toBeDefined();
+            expect(result.levelUpDetails!.length).toBe(1);
+
+            const detail = result.levelUpDetails![0];
+            expect(detail.fromLevel).toBe(1);
+            expect(detail.toLevel).toBe(2);
+            expect(detail.hpIncrease).toBeGreaterThan(0);
+            expect(detail.newMaxHP).toBeGreaterThan(10);
+        });
+
+        it('should handle multi-level jump with detailed breakdowns', () => {
+            // Give enough XP to jump to level 3 (needs 900)
+            const rhythmResult = {
+                scorePoints: 9000,
+                baseXP: 900,
+                comboMultiplier: 1,
+                grooveMultiplier: 0,
+                totalMultiplier: 1,
+                finalScore: 9000,
+                finalXP: 900,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0 }
+            };
+
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult);
+
+            expect(result.leveledUp).toBe(true);
+            expect(result.newLevel).toBe(3);
+            expect(result.levelUpDetails).toBeDefined();
+            expect(result.levelUpDetails!.length).toBe(2); // Levels 2 and 3
+        });
+
+        it('should not level up if insufficient rhythm XP', () => {
+            const rhythmResult = {
+                scorePoints: 100,
+                baseXP: 10,
+                comboMultiplier: 1,
+                grooveMultiplier: 0,
+                totalMultiplier: 1,
+                finalScore: 100,
+                finalXP: 10,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0 }
+            };
+
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult);
+
+            expect(result.leveledUp).toBe(false);
+            expect(result.newLevel).toBeUndefined();
+            expect(result.character.level).toBe(1);
+        });
+
+        it('should apply combo multiplier to rhythm XP', () => {
+            // perfect = 10 score * 2x combo = 20 score = 2 XP
+            const rhythmResult = {
+                scorePoints: 10,
+                baseXP: 1,
+                comboMultiplier: 2,
+                grooveMultiplier: 0,
+                totalMultiplier: 2,
+                finalScore: 20,
+                finalXP: 2,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 50 }
+            };
+
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult);
+
+            expect(result.xpEarned).toBe(2);
+            expect(result.character.xp.current).toBe(2);
+        });
+
+        it('should apply groove multiplier to rhythm XP', () => {
+            // perfect = 10 score * 1.5x total = 15 score = 1.5 XP
+            const rhythmResult = {
+                scorePoints: 10,
+                baseXP: 1,
+                comboMultiplier: 1,
+                grooveMultiplier: 0.5,
+                totalMultiplier: 1.5,
+                finalScore: 15,
+                finalXP: 1.5,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0, grooveHotness: 50 }
+            };
+
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult);
+
+            expect(result.xpEarned).toBe(1.5);
+            expect(result.character.xp.current).toBe(1.5);
+        });
+
+        it('should use default source when not specified', () => {
+            const rhythmResult = {
+                scorePoints: 10,
+                baseXP: 1,
+                comboMultiplier: 1,
+                grooveMultiplier: 0,
+                totalMultiplier: 1,
+                finalScore: 10,
+                finalXP: 1,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0 }
+            };
+
+            // Should not throw - uses 'rhythm_game' as default source
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult);
+            expect(result.xpEarned).toBe(1);
+        });
+
+        it('should use custom source when specified', () => {
+            const rhythmResult = {
+                scorePoints: 10,
+                baseXP: 1,
+                comboMultiplier: 1,
+                grooveMultiplier: 0,
+                totalMultiplier: 1,
+                finalScore: 10,
+                finalXP: 1,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0 }
+            };
+
+            // Should not throw - uses custom source
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult, 'beat_saber');
+            expect(result.xpEarned).toBe(1);
+        });
+
+        it('should not have masteredTrack field (excluded from RhythmXPUpdateResult)', () => {
+            const rhythmResult = {
+                scorePoints: 10,
+                baseXP: 1,
+                comboMultiplier: 1,
+                grooveMultiplier: 0,
+                totalMultiplier: 1,
+                finalScore: 10,
+                finalXP: 1,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0 }
+            };
+
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult);
+
+            // TypeScript enforces this, but let's verify runtime behavior
+            expect(result).not.toHaveProperty('masteredTrack');
+            expect(result).not.toHaveProperty('masteryBonusXP');
+        });
+
+        it('should create pending stat increases for standard mode at stat levels', () => {
+            // Standard mode defaults to manual stat selection
+            // Level 1 -> Level 5 crosses level 4 which has a stat increase
+            const rhythmResult = {
+                scorePoints: 65000,
+                baseXP: 6500,
+                comboMultiplier: 1,
+                grooveMultiplier: 0,
+                totalMultiplier: 1,
+                finalScore: 65000,
+                finalXP: 6500,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0 }
+            };
+
+            const result = updater.addRhythmXP(mockCharacter, rhythmResult);
+
+            expect(result.leveledUp).toBe(true);
+            expect(result.newLevel).toBe(5);
+
+            // Check that stats are PENDING at level 4 (not applied)
+            const level4Detail = result.levelUpDetails!.find(d => d.toLevel === 4);
+            expect(level4Detail).toBeDefined();
+            expect(level4Detail!.statIncreases).toBeUndefined(); // Stats are pending!
+
+            // But HP should still increase
+            expect(level4Detail!.hpIncrease).toBeGreaterThan(0);
+
+            // Counter should be incremented
+            expect(result.character.pendingStatIncreases).toBe(1);
+        });
+
+        it('should automatically increase stats for uncapped mode', () => {
+            // Uncapped mode defaults to automatic stat selection
+            const uncappedCharacter = { ...mockCharacter, gameMode: 'uncapped' as const };
+
+            const rhythmResult = {
+                scorePoints: 65000,
+                baseXP: 6500,
+                comboMultiplier: 1,
+                grooveMultiplier: 0,
+                totalMultiplier: 1,
+                finalScore: 65000,
+                finalXP: 6500,
+                breakdown: { accuracy: 'perfect' as const, comboLength: 0 }
+            };
+
+            const result = updater.addRhythmXP(uncappedCharacter, rhythmResult);
+
+            expect(result.leveledUp).toBe(true);
+            expect(result.newLevel).toBe(5);
+
+            // Check that stats ARE applied automatically for uncapped mode
+            const level2Detail = result.levelUpDetails!.find(d => d.toLevel === 2);
+            expect(level2Detail).toBeDefined();
+            expect(level2Detail!.statIncreases).toBeDefined();
+            expect(level2Detail!.statIncreases!.length).toBeGreaterThan(0);
+
+            // Counter should NOT be incremented (auto mode)
+            expect(result.character.pendingStatIncreases).toBeUndefined();
+        });
+    });
 });
