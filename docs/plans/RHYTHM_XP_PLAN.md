@@ -337,18 +337,27 @@ The `GrooveAnalyzer` currently only tracks current hotness and streak. To suppor
   ```
 
 ### 2.1.1 Groove Reset Triggers
-The groove lifetime tracking resets when:
+The groove (including streak AND lifetime tracking) resets when:
 1. **Hotness drops to 0** - The groove has completely ended
 2. **Pocket direction changes** (push ↔ pull) - The player has shifted from playing ahead of the beat to behind (or vice versa)
 
-**Why direction changes reset tracking:**
+**What gets reset when groove ends:**
+- `streakLength` → 0 (the streak ends!)
+- `grooveStartTime` → null
+- `maxHotness` → 0
+- `hotnessSamples` → []
+- `grooveHitCount` → 0
+
+**Why direction changes reset the groove:**
 - A groove is defined by maintaining a consistent pocket (ahead/behind/on beat)
 - When direction changes, the player has been hitting outside their established pocket
 - Those out-of-pocket hits already reduce hotness via `hotnessLossOnBreak`
 - The direction change is a symptom of the groove being broken
-- Starting fresh tracking for the new direction makes statistical sense
+- Starting fresh for the new direction makes statistical sense
 
 **Note:** Transitions to/from 'neutral' do NOT reset tracking - only push↔pull transitions.
+
+**Important:** When the groove ends, `recordHit()` captures the final stats and returns them in `result.endedGrooveStats` BEFORE resetting. This gives you immediate access to the groove end bonus data without needing to call `getGrooveStats()` separately.
 
 ### 2.2 Update GrooveState Interface
 - [x] Extend `GrooveState` in `src/core/types/BeatMap.ts`
@@ -391,48 +400,101 @@ The groove lifetime tracking resets when:
   }
   ```
 
+### 2.3.1 Update GrooveResult Interface
+- [x] Add `endedGrooveStats` field to `GrooveResult` for immediate groove end bonus access
+  - **Implemented in:** `src/core/types/BeatMap.ts` (GrooveResult interface)
+  ```typescript
+  interface GrooveResult {
+    // ... existing fields ...
+    pocketDirection: GrooveDirection;
+    establishedOffset: number;
+    consistency: number;
+    hotness: number;
+    streakLength: number;
+    inPocket: boolean;
+    pocketWindow: number;
+
+    /**
+     * Stats from the groove that just ended (if any).
+     * Present when hotness drops to 0 or direction changes (push↔pull).
+     * Use this to calculate groove end bonus XP immediately.
+     */
+    endedGrooveStats?: GrooveStats;
+  }
+  ```
+
+  **Why this matters:** Instead of needing a separate game loop to check if the groove ended,
+  the `endedGrooveStats` is returned directly in the `recordHit()` result when the groove ends.
+  This makes it easy to award the groove end bonus immediately.
+
 ### 2.4 Update GrooveAnalyzer.recordHit()
 - [x] Track hotness samples, groove timing, and direction changes in `recordHit()`
+- [x] Capture final stats BEFORE resetting when groove ends
+- [x] Reset `streakLength` to 0 when groove ends
+- [x] Return `endedGrooveStats` in result for immediate groove end bonus calculation
   - **Implemented in:** `src/core/analysis/beat/GrooveAnalyzer.ts` (lines 85-165)
   ```typescript
   recordHit(offset: number, bpm: number, currentTime?: number): GrooveResult {
-    // ... existing logic ...
+    // ... existing logic for offset, pocket, hotness updates ...
 
-    // Store previous direction before updating
-    const previousDirection = this.previousDirection;
-
-    // Determine new direction (existing logic)
-    this.pocketDirection = this.determineDirection(this.establishedOffset);
-    this.previousDirection = this.pocketDirection;
+    // Track groove lifetime statistics and detect groove ending
+    let endedGrooveStats: GrooveStats | undefined;
 
     // Check for direction change (push ↔ pull only, ignore neutral transitions)
     const directionChanged =
       (previousDirection === 'push' && this.pocketDirection === 'pull') ||
       (previousDirection === 'pull' && this.pocketDirection === 'push');
 
-    if (directionChanged) {
-      // Direction changed - reset lifetime tracking for new groove
-      // Note: hotness already decreased from out-of-pocket hits that caused the shift
-      this.resetGrooveStats();
-    }
+    // Determine if groove is ending this hit
+    const grooveEnding = directionChanged || this.hotness === 0;
 
-    // Track groove lifetime statistics
-    if (this.hotness > 0) {
-      // Groove is active
+    if (this.hotness > 0 && !grooveEnding) {
+      // Groove is active - track lifetime statistics
       if (this.grooveStartTime === null) {
-        this.grooveStartTime = currentTime ?? null;
+        this.grooveStartTime = currentTime ?? (this.hitCount * (60 / bpm));
       }
       this.maxHotness = Math.max(this.maxHotness, this.hotness);
       this.hotnessSamples.push(this.hotness);
       this.grooveHitCount++;
-    } else {
-      // Groove ended (hotness hit 0) - reset lifetime tracking
+    } else if (grooveEnding && this.grooveStartTime !== null && this.grooveHitCount > 0) {
+      // Groove is ending - capture final stats BEFORE resetting
+      const endTime = currentTime ?? (this.hitCount * (60 / bpm));
+      const avgHotness = this.hotnessSamples.length > 0
+        ? this.hotnessSamples.reduce((a, b) => a + b, 0) / this.hotnessSamples.length
+        : 0;
+
+      endedGrooveStats = {
+        maxStreak: this.streakLength,
+        maxHotness: this.maxHotness,
+        avgHotness,
+        duration: endTime - this.grooveStartTime,
+        totalHits: this.grooveHitCount,
+        startTime: this.grooveStartTime,
+        endTime,
+      };
+
+      // Reset groove state - streak ends when groove ends!
+      this.streakLength = 0;
       this.resetGrooveStats();
     }
 
-    return result;
+    return {
+      pocketDirection: this.pocketDirection,
+      establishedOffset: this.establishedOffset,
+      consistency,
+      hotness: this.hotness,
+      streakLength: this.streakLength,
+      inPocket,
+      pocketWindow,
+      endedGrooveStats,  // Present when groove just ended
+    };
   }
   ```
+
+  **Key Changes:**
+  1. Stats are captured BEFORE resetting, so caller has access to final groove data
+  2. `streakLength` resets to 0 when groove ends (hotness→0 or direction change)
+  3. `endedGrooveStats` is included in the return value when groove ends
 
   **Note:** `currentTime` is an optional parameter that the frontend should pass using
   `buttonResult.matchedBeat.time` from the beat map for accurate groove duration tracking.
@@ -800,6 +862,8 @@ No separate helper class needed.
   - Combo multiplier configuration
   - Groove end bonus calculation
   - Custom formula examples
+- [x] Document `endedGrooveStats` field for immediate groove end bonus access
+- [x] Document groove reset behavior (streakLength resets when groove ends)
   - **Implemented in:** `docs/XP_AND_STATS.md` (new section added after "XP and Leveling")
 
 ### 7.2 Update DATA_ENGINE_REFERENCE.md
@@ -910,8 +974,8 @@ No separate helper class needed.
 | `src/core/config/progressionConfig.ts` | Extend activity_bonuses with rhythm_game_* |
 | `src/core/progression/XPCalculator.ts` | Add rhythm game bonus calculation |
 | `src/core/progression/CharacterUpdater.ts` | Add `addRhythmXP()` method (triggers level-ups) |
-| `src/core/analysis/beat/GrooveAnalyzer.ts` | Add avgHotness, maxHotness, grooveDuration tracking, getGrooveStats() |
-| `src/core/types/BeatMap.ts` | Extend GrooveState with new fields, add GrooveStats interface |
+| `src/core/analysis/beat/GrooveAnalyzer.ts` | Add avgHotness, maxHotness, grooveDuration tracking, getGrooveStats(), reset streakLength on groove end, return endedGrooveStats |
+| `src/core/types/BeatMap.ts` | Extend GrooveState with new fields, add GrooveStats interface, add endedGrooveStats to GrooveResult |
 | `src/core/types/Progression.ts` | Add RhythmGameContext interface |
 | `src/index.ts` | Export new types and class |
 | `docs/XP_AND_STATS.md` | Add rhythm game XP section |
@@ -998,12 +1062,20 @@ function onButtonPress(timestamp: number) {
     console.log(`Combo ended! ${comboBeforeHit} hit streak → +${comboBonus.bonusXP} XP bonus`);
     updater.addXP(character, comboBonus.bonusXP, 'combo_bonus');
   }
+
+  // Check if groove ended (endedGrooveStats is present when groove just ended)
+  if (grooveResult.endedGrooveStats) {
+    const bonus = rhythmXP.calculateGrooveEndBonus(grooveResult.endedGrooveStats);
+    console.log(`🔥 Groove ended! Duration: ${grooveResult.endedGrooveStats.duration.toFixed(1)}s, Avg Hotness: ${grooveResult.endedGrooveStats.avgHotness.toFixed(1)}%`);
+    console.log(`Groove end bonus: +${bonus.bonusXP} XP`);
+    updater.addXP(character, bonus.bonusXP, 'groove_bonus');
+  }
 }
 
 // When song/session ends
 function onSessionEnd() {
   const finalStats = rhythmXP.endSession();
-  
+
   console.log('=== Session Complete ===');
   console.log(`Total Score: ${finalStats.totalScore}`);
   console.log(`Total XP: ${finalStats.totalXP}`);
@@ -1011,38 +1083,22 @@ function onSessionEnd() {
   console.log(`Duration: ${finalStats.duration}s`);
   console.log(`Accuracy: ${finalStats.accuracyPercentage.toFixed(1)}%`);
   console.log('Accuracy Distribution:', finalStats.accuracyDistribution);
-  
-  // Check for any final groove bonus
-  onGrooveEnd();
-}
 
-// When groove ends (hotness drops to 0 or session ends)
-function onGrooveEnd() {
+  // Check for any active groove at session end
   const grooveState = grooveAnalyzer.getState();
-  
-  if (grooveState.grooveDuration !== null && grooveState.avgHotness > 0) {
+  if (grooveState.avgHotness > 0 && grooveState.grooveHitCount > 0) {
     const bonus = rhythmXP.calculateGrooveEndBonus({
       maxStreak: grooveState.streakLength,
-      avgHotness: grooveState.avgHotness,  // Now available from GrooveState!
-      duration: grooveState.grooveDuration ?? 0,
-      totalHits: grooveState.hitCount
+      maxHotness: grooveState.maxHotness,
+      avgHotness: grooveState.avgHotness,
+      duration: grooveState.grooveDuration,
+      totalHits: grooveState.grooveHitCount,
+      startTime: grooveState.grooveStartTime ?? 0,
+      endTime: Date.now() / 1000,
     });
-    console.log(`Groove ended! Duration: ${grooveState.grooveDuration}s, Avg Hotness: ${grooveState.avgHotness.toFixed(1)}%`);
-    console.log(`Groove end bonus: +${bonus.bonusXP} XP`);
+    console.log(`Final groove bonus: +${bonus.bonusXP} XP`);
     updater.addXP(character, bonus.bonusXP, 'groove_bonus');
-    
-    // Reset groove stats for next groove
     grooveAnalyzer.resetGrooveStats();
-  }
-}
-
-// Example: Check for groove end during gameplay loop
-function gameLoop() {
-  const grooveState = grooveAnalyzer.getState();
-  
-  // If hotness just dropped to 0 and we had an active groove
-  if (grooveState.hotness === 0 && grooveState.grooveDuration !== null) {
-    onGrooveEnd();
   }
 }
 ```

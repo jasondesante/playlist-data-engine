@@ -2353,6 +2353,21 @@ export interface GrooveResult {
 
     /** Current pocket window size in seconds (changes with hotness) */
     pocketWindow: number;
+
+    /**
+     * Stats from the groove that just ended (if any).
+     * Present when hotness drops to 0 or direction changes (push↔pull).
+     * Use this to calculate groove end bonus XP immediately.
+     */
+    endedGrooveStats?: {
+        maxStreak: number;
+        maxHotness: number;
+        avgHotness: number;
+        duration: number;
+        totalHits: number;
+        startTime: number;
+        endTime: number;
+    };
 }
 
 /**

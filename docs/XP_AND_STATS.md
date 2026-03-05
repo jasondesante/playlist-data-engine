@@ -308,6 +308,16 @@ function onButtonPress(timestamp: number) {
     console.log(`Combo ended! ${comboBeforeHit} hit streak → +${comboBonus.bonusXP.toFixed(2)} XP bonus`);
     updater.addXP(character, comboBonus.bonusXP, 'combo_bonus');
   }
+
+  // 8. Check if groove ended (endedGrooveStats is present when groove just ended)
+  // This is returned directly in the result - no need for separate game loop!
+  if (grooveResult.endedGrooveStats) {
+    const grooveBonus = rhythmXP.calculateGrooveEndBonus(grooveResult.endedGrooveStats);
+    console.log(`🔥 Groove ended! Duration: ${grooveResult.endedGrooveStats.duration.toFixed(1)}s`);
+    console.log(`   Avg Hotness: ${grooveResult.endedGrooveStats.avgHotness.toFixed(1)}%`);
+    console.log(`   Bonus: +${grooveBonus.bonusXP.toFixed(2)} XP`);
+    updater.addXP(character, grooveBonus.bonusXP, 'groove_bonus');
+  }
 }
 
 // ===== ON SESSION END =====
@@ -322,12 +332,21 @@ function onSessionEnd() {
   console.log(`Accuracy: ${finalStats?.accuracyPercentage.toFixed(1)}%`);
   console.log('Accuracy Distribution:', finalStats?.accuracyDistribution);
 
-  // Check for groove end bonus
-  const grooveStats = grooveAnalyzer.getGrooveStats();
-  if (grooveStats && grooveStats.avgHotness > 0) {
-    const grooveBonus = rhythmXP.calculateGrooveEndBonus(grooveStats);
-    console.log(`Groove end bonus: +${grooveBonus.bonusXP.toFixed(2)} XP`);
+  // Check for any active groove at session end
+  const grooveState = grooveAnalyzer.getState();
+  if (grooveState.avgHotness > 0 && grooveState.grooveHitCount > 0) {
+    const grooveBonus = rhythmXP.calculateGrooveEndBonus({
+      maxStreak: grooveState.streakLength,
+      maxHotness: grooveState.maxHotness,
+      avgHotness: grooveState.avgHotness,
+      duration: grooveState.grooveDuration,
+      totalHits: grooveState.grooveHitCount,
+      startTime: grooveState.grooveStartTime ?? 0,
+      endTime: Date.now() / 1000,
+    });
+    console.log(`Final groove bonus: +${grooveBonus.bonusXP.toFixed(2)} XP`);
     updater.addXP(character, grooveBonus.bonusXP, 'groove_bonus');
+    grooveAnalyzer.resetGrooveStats();
   }
 }
 ```
@@ -441,6 +460,8 @@ const bigEndBonusXP = new RhythmXPCalculator({
 
 ### Groove End Bonus Integration
 
+The groove end bonus is now returned directly in `grooveResult.endedGrooveStats` when the groove ends - no need for a separate game loop!
+
 ```typescript
 import { GrooveAnalyzer, RhythmXPCalculator, CharacterUpdater } from 'playlist-data-engine';
 
@@ -449,40 +470,45 @@ const rhythmXP = new RhythmXPCalculator();
 const updater = new CharacterUpdater();
 
 // During gameplay, groove is tracked automatically by GrooveAnalyzer
-// When groove ends (hotness drops to 0 or session ends), get stats:
+// When groove ends (hotness drops to 0 or direction changes), the stats
+// are returned directly in endedGrooveStats:
 
-function checkGrooveEnd() {
-  const grooveState = grooveAnalyzer.getState();
+function onButtonPress(timestamp: number) {
+  const grooveResult = grooveAnalyzer.recordHit(offset, bpm, currentTime);
 
-  // Groove ended when hotness is 0 but we had an active groove
-  if (grooveState.hotness === 0 && grooveState.grooveStartTime !== null) {
-    const grooveStats = grooveAnalyzer.getGrooveStats();
+  // ... handle XP, combo, etc. ...
 
-    if (grooveStats) {
-      const bonus = rhythmXP.calculateGrooveEndBonus(grooveStats);
+  // Check if groove ended - stats are RIGHT HERE in the result!
+  if (grooveResult.endedGrooveStats) {
+    const bonus = rhythmXP.calculateGrooveEndBonus(grooveResult.endedGrooveStats);
 
-      console.log('Groove Ended!');
-      console.log(`  Duration: ${grooveStats.duration.toFixed(1)}s`);
-      console.log(`  Max Hotness: ${grooveStats.maxHotness.toFixed(1)}%`);
-      console.log(`  Avg Hotness: ${grooveStats.avgHotness.toFixed(1)}%`);
-      console.log(`  Bonus Score: ${bonus.bonusScore.toFixed(1)}`);
-      console.log(`  Bonus XP: +${bonus.bonusXP.toFixed(2)}`);
+    console.log('🔥 Groove Ended!');
+    console.log(`  Duration: ${grooveResult.endedGrooveStats.duration.toFixed(1)}s`);
+    console.log(`  Max Hotness: ${grooveResult.endedGrooveStats.maxHotness.toFixed(1)}%`);
+    console.log(`  Avg Hotness: ${grooveResult.endedGrooveStats.avgHotness.toFixed(1)}%`);
+    console.log(`  Bonus XP: +${bonus.bonusXP.toFixed(2)}`);
 
-      // Add to character
-      updater.addXP(character, bonus.bonusXP, 'groove_bonus');
+    // Add to character
+    updater.addXP(character, bonus.bonusXP, 'groove_bonus');
 
-      // Reset groove stats for next groove
-      grooveAnalyzer.resetGrooveStats();
-    }
+    // Note: streakLength is already reset to 0 by recordHit() when groove ends
   }
 }
 
-// Call this in your game loop
-function gameLoop() {
-  checkGrooveEnd();
-  // ... other game logic
-}
+// Groove ends when:
+// 1. Hotness drops to 0 (player broke their pocket too many times)
+// 2. Direction changes from push ↔ pull (player shifted from ahead to behind beat)
+// 3. Session ends (manually check grooveState for any active groove)
 ```
+
+**What Resets When Groove Ends:**
+- `streakLength` → 0 (the groove streak ends!)
+- `grooveStartTime` → null
+- `maxHotness` → 0
+- `hotnessSamples` → []
+- `grooveHitCount` → 0
+
+**Note:** The established pocket (`establishedOffset`, `pocketDirection`) is NOT reset - only the groove statistics.
 
 ### Per-Hit Groove Multiplier Mode
 

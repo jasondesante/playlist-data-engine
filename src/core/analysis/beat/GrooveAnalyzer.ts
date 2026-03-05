@@ -124,28 +124,44 @@ export class GrooveAnalyzer {
             }
         }
 
-        // 9. Track groove lifetime statistics
+        // 9. Track groove lifetime statistics and detect groove ending
+        let endedGrooveStats: GrooveStats | undefined;
+
         // Check for direction change (push ↔ pull only, ignore neutral transitions)
         const directionChanged =
             (previousDirection === 'push' && this.pocketDirection === 'pull') ||
             (previousDirection === 'pull' && this.pocketDirection === 'push');
 
-        if (directionChanged) {
-            // Direction changed - reset lifetime tracking for new groove
-            // Note: hotness already decreased from out-of-pocket hits that caused the shift
-            this.resetGrooveStats();
-        }
+        // Determine if groove is ending this hit
+        const grooveEnding = directionChanged || this.hotness === 0;
 
-        if (this.hotness > 0) {
-            // Groove is active
+        if (this.hotness > 0 && !grooveEnding) {
+            // Groove is active - track lifetime statistics
             if (this.grooveStartTime === null) {
                 this.grooveStartTime = currentTime ?? (this.hitCount * (60 / bpm));
             }
             this.maxHotness = Math.max(this.maxHotness, this.hotness);
             this.hotnessSamples.push(this.hotness);
             this.grooveHitCount++;
-        } else {
-            // Groove ended (hotness hit 0) - reset lifetime tracking
+        } else if (grooveEnding && this.grooveStartTime !== null && this.grooveHitCount > 0) {
+            // Groove is ending - capture final stats BEFORE resetting
+            const endTime = currentTime ?? (this.hitCount * (60 / bpm));
+            const avgHotness = this.hotnessSamples.length > 0
+                ? this.hotnessSamples.reduce((a, b) => a + b, 0) / this.hotnessSamples.length
+                : 0;
+
+            endedGrooveStats = {
+                maxStreak: this.streakLength,
+                maxHotness: this.maxHotness,
+                avgHotness,
+                duration: endTime - this.grooveStartTime,
+                totalHits: this.grooveHitCount,
+                startTime: this.grooveStartTime,
+                endTime,
+            };
+
+            // Reset groove state - streak ends when groove ends
+            this.streakLength = 0;
             this.resetGrooveStats();
         }
 
@@ -161,6 +177,7 @@ export class GrooveAnalyzer {
             streakLength: this.streakLength,
             inPocket,
             pocketWindow,
+            endedGrooveStats,
         };
     }
 
