@@ -10,10 +10,11 @@ Complete guide to XP, leveling, and stats in the Playlist Data Engine.
 ## Table of Contents
 
 1. [XP and Leveling](#xp-and-leveling)
-2. [Track Mastery Prestige System](#track-mastery-prestige-system)
-3. [Stat Strategies](#stat-strategies)
-4. [XP Scaling](#xp-scaling)
-5. [Progression Configuration](#progression-configuration)
+2. [Rhythm Game XP](#rhythm-game-xp)
+3. [Track Mastery Prestige System](#track-mastery-prestige-system)
+4. [Stat Strategies](#stat-strategies)
+5. [XP Scaling](#xp-scaling)
+6. [Progression Configuration](#progression-configuration)
 
 ---
 
@@ -213,6 +214,7 @@ console.log(`Total Combat XP: ${combatXP}, Total Quest XP: ${questXP}`);
 | Combat | `addXP()` | Direct amount | ✅ Full breakdown |
 | Quests | `addXP()` | Direct amount | ✅ Full breakdown |
 | Custom Activities | `addXP()` | Direct amount | ✅ Full breakdown |
+| Rhythm Game | `addRhythmXP()` | Accuracy × combo × groove | ✅ Full breakdown |
 
 **Level-Up Result Properties:**
 - `leveledUp` - Whether character leveled up
@@ -221,6 +223,421 @@ console.log(`Total Combat XP: ${combatXP}, Total Quest XP: ${questXP}`);
 - `xpEarned` - Amount of XP earned
 - `masteredTrack` - (Music only) Whether track was mastered
 - `masteryBonusXP` - (Music only) Bonus XP from mastery
+
+
+## Rhythm Game XP
+
+The rhythm game XP system rewards players for timing accuracy, combo streaks, and groove meter performance. It integrates with the beat detection system to provide character progression from rhythm gameplay.
+
+**Key Concept: Score vs XP**
+The system separates "score points" (for in-game display/leaderboards) from "character XP" (for progression) via the `xpRatio` parameter:
+- **Score Points**: Raw values from accuracy (perfect = 10, great = 7, etc.) - for display
+- **Character XP**: Score converted via `xpRatio` (default: 0.1, so 10 score = 1 XP) - for progression
+
+### Basic Usage with BeatStream and GrooveAnalyzer
+
+```typescript
+import {
+  BeatMapGenerator,
+  BeatStream,
+  GrooveAnalyzer,
+  RhythmXPCalculator,
+  CharacterUpdater
+} from 'playlist-data-engine';
+
+// ===== SETUP =====
+const generator = new BeatMapGenerator();
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+const beatStream = new BeatStream(beatMap, audioContext);
+const grooveAnalyzer = new GrooveAnalyzer();
+const rhythmXP = new RhythmXPCalculator(); // Uses defaults
+const updater = new CharacterUpdater();
+
+// Start session tracking
+rhythmXP.startSession();
+let comboCount = 0;
+
+// ===== ON BUTTON PRESS =====
+function onButtonPress(timestamp: number) {
+  // 1. Check button press accuracy
+  const buttonResult = beatStream.checkButtonPress(timestamp);
+
+  // 2. Record hit for groove analysis
+  const grooveResult = grooveAnalyzer.recordHit(
+    buttonResult.offset,
+    beatStream.getCurrentBpm(),
+    buttonResult.matchedBeat?.time
+  );
+
+  // 3. Check if combo is about to break (before updating)
+  const comboBeforeHit = comboCount;
+  const isComboBreaker = buttonResult.accuracy === 'miss' || buttonResult.accuracy === 'wrongKey';
+
+  // 4. Update combo
+  if (isComboBreaker) {
+    comboCount = 0;
+  } else {
+    comboCount++;
+  }
+
+  // 5. Calculate XP for this hit AND update session totals
+  const xpResult = rhythmXP.recordHit(buttonResult.accuracy, {
+    comboLength: comboCount,
+    grooveHotness: grooveResult.hotness
+  });
+
+  console.log(`Accuracy: ${buttonResult.accuracy}`);
+  console.log(`Score: ${xpResult.finalScore.toFixed(1)} points (for leaderboards)`);
+  console.log(`XP: ${xpResult.finalXP.toFixed(2)} (added to character)`);
+
+  // 6. Add XP to character (triggers level-ups!)
+  const updateResult = updater.addRhythmXP(character, xpResult, 'rhythm_game');
+
+  if (updateResult.leveledUp) {
+    console.log(`🎉 LEVELED UP to ${updateResult.newLevel}!`);
+    if (updateResult.levelUpDetails) {
+      for (const detail of updateResult.levelUpDetails) {
+        console.log(`  HP: +${detail.hpIncrease}`);
+      }
+    }
+  }
+
+  // 7. If combo broke, award combo end bonus
+  if (isComboBreaker && comboBeforeHit > 0) {
+    const comboBonus = rhythmXP.calculateComboEndBonus(comboBeforeHit);
+    console.log(`Combo ended! ${comboBeforeHit} hit streak → +${comboBonus.bonusXP.toFixed(2)} XP bonus`);
+    updater.addXP(character, comboBonus.bonusXP, 'combo_bonus');
+  }
+}
+
+// ===== ON SESSION END =====
+function onSessionEnd() {
+  const finalStats = rhythmXP.endSession();
+
+  console.log('=== Session Complete ===');
+  console.log(`Total Score: ${finalStats?.totalScore.toFixed(0)}`);
+  console.log(`Total XP: ${finalStats?.totalXP.toFixed(2)}`);
+  console.log(`Max Combo: ${finalStats?.maxCombo}`);
+  console.log(`Duration: ${finalStats?.duration.toFixed(1)}s`);
+  console.log(`Accuracy: ${finalStats?.accuracyPercentage.toFixed(1)}%`);
+  console.log('Accuracy Distribution:', finalStats?.accuracyDistribution);
+
+  // Check for groove end bonus
+  const grooveStats = grooveAnalyzer.getGrooveStats();
+  if (grooveStats && grooveStats.avgHotness > 0) {
+    const grooveBonus = rhythmXP.calculateGrooveEndBonus(grooveStats);
+    console.log(`Groove end bonus: +${grooveBonus.bonusXP.toFixed(2)} XP`);
+    updater.addXP(character, grooveBonus.bonusXP, 'groove_bonus');
+  }
+}
+```
+
+### Configuration Options
+
+```typescript
+import { RhythmXPCalculator, mergeRhythmXPConfig, type RhythmXPConfig } from 'playlist-data-engine';
+
+// ===== DEFAULT CONFIGURATION =====
+// Default values are tuned for D&D 5e progression:
+// - xpRatio: 0.1 (10 score points = 1 character XP)
+// - Combo cap: 5.0x at 200 combo
+// - Groove end bonus: enabled
+
+// ===== CUSTOM CONFIGURATION =====
+const customConfig: Partial<RhythmXPConfig> = {
+  // Base XP values (score points) for each accuracy level
+  baseXP: {
+    perfect: 10,
+    great: 7,
+    good: 5,
+    ok: 2,
+    miss: 0,
+    wrongKey: 0,  // Can be negative for score penalty (XP floored at 0)
+  },
+
+  // Score-to-XP conversion ratio
+  xpRatio: 0.1,  // 10 score = 1 XP (tuned for D&D 5e progression)
+
+  // Combo multiplier settings
+  combo: {
+    enabled: true,
+    cap: 5.0,  // Max 5x multiplier
+    // Custom formula (optional)
+    // formula: (combo) => 1 + Math.log10(combo + 1),
+    endBonus: {
+      enabled: true,
+      // Custom formula (optional): comboLength * 2 is default
+      // formula: (combo) => Math.floor(combo * 1.5),
+    },
+  },
+
+  // Groove XP settings
+  groove: {
+    perHitMultiplier: false,  // If true: multiplier += (hotness/100) * perHitScale
+    perHitScale: 1.0,
+    endBonus: {
+      enabled: true,
+      maxStreakWeight: 0.4,    // How much max streak matters
+      avgHotnessWeight: 0.4,   // How much average hotness matters
+      durationWeight: 0.2,     // How long groove lasted
+    },
+  },
+
+  maxMultiplier: 5.0,  // Total multiplier cap
+};
+
+const rhythmXP = new RhythmXPCalculator(customConfig);
+```
+
+### Custom Combo Formulas
+
+```typescript
+import { RhythmXPCalculator } from 'playlist-data-engine';
+
+// ===== EXPONENTIAL GROWTH (Uncapped feel) =====
+const exponentialXP = new RhythmXPCalculator({
+  combo: {
+    enabled: true,
+    cap: 10.0,  // Higher cap for exponential growth
+    formula: (combo) => 1 + Math.log10(combo + 1),
+    // At 10 combo = 2.0x, at 100 combo = 3.0x, at 1000 combo = 4.0x
+    endBonus: { enabled: true },
+  },
+});
+
+// ===== STEP-BASED (Every 10 hits = +0.1x) =====
+const stepXP = new RhythmXPCalculator({
+  combo: {
+    enabled: true,
+    cap: 5.0,
+    formula: (combo) => 1 + Math.floor(combo / 10) * 0.1,
+    // At 10 combo = 1.1x, at 50 combo = 1.5x, at 100 combo = 2.0x
+    endBonus: { enabled: true },
+  },
+});
+
+// ===== AGGRESSIVE (Faster scaling) =====
+const aggressiveXP = new RhythmXPCalculator({
+  combo: {
+    enabled: true,
+    cap: 5.0,
+    formula: (combo) => 1 + (combo / 25),  // 2x at 25 combo instead of 50
+    endBonus: { enabled: true },
+  },
+});
+
+// ===== CUSTOM END BONUS FORMULA =====
+const bigEndBonusXP = new RhythmXPCalculator({
+  combo: {
+    enabled: true,
+    cap: 5.0,
+    endBonus: {
+      enabled: true,
+      formula: (combo) => Math.floor(combo * 1.5),  // 50% more than default
+    },
+  },
+});
+```
+
+### Groove End Bonus Integration
+
+```typescript
+import { GrooveAnalyzer, RhythmXPCalculator, CharacterUpdater } from 'playlist-data-engine';
+
+const grooveAnalyzer = new GrooveAnalyzer();
+const rhythmXP = new RhythmXPCalculator();
+const updater = new CharacterUpdater();
+
+// During gameplay, groove is tracked automatically by GrooveAnalyzer
+// When groove ends (hotness drops to 0 or session ends), get stats:
+
+function checkGrooveEnd() {
+  const grooveState = grooveAnalyzer.getState();
+
+  // Groove ended when hotness is 0 but we had an active groove
+  if (grooveState.hotness === 0 && grooveState.grooveStartTime !== null) {
+    const grooveStats = grooveAnalyzer.getGrooveStats();
+
+    if (grooveStats) {
+      const bonus = rhythmXP.calculateGrooveEndBonus(grooveStats);
+
+      console.log('Groove Ended!');
+      console.log(`  Duration: ${grooveStats.duration.toFixed(1)}s`);
+      console.log(`  Max Hotness: ${grooveStats.maxHotness.toFixed(1)}%`);
+      console.log(`  Avg Hotness: ${grooveStats.avgHotness.toFixed(1)}%`);
+      console.log(`  Bonus Score: ${bonus.bonusScore.toFixed(1)}`);
+      console.log(`  Bonus XP: +${bonus.bonusXP.toFixed(2)}`);
+
+      // Add to character
+      updater.addXP(character, bonus.bonusXP, 'groove_bonus');
+
+      // Reset groove stats for next groove
+      grooveAnalyzer.resetGrooveStats();
+    }
+  }
+}
+
+// Call this in your game loop
+function gameLoop() {
+  checkGrooveEnd();
+  // ... other game logic
+}
+```
+
+### Per-Hit Groove Multiplier Mode
+
+```typescript
+import { RhythmXPCalculator } from 'playlist-data-engine';
+
+// By default, groove only affects the end bonus.
+// Enable per-hit mode to add groove to every hit's multiplier:
+
+const perHitGrooveXP = new RhythmXPCalculator({
+  groove: {
+    perHitMultiplier: true,  // Enable per-hit groove bonus
+    perHitScale: 1.0,        // At 100% hotness = +1.0x to multiplier
+    endBonus: { enabled: true },  // End bonus still works too!
+  },
+});
+
+// Example: At 80% hotness with 50 combo:
+// - Combo multiplier: 2.0x (1 + 50/50)
+// - Groove multiplier: 0.8x (80/100 * 1.0)
+// - Total: 2.8x (capped at maxMultiplier)
+```
+
+### Session Tracking for UI Display
+
+```typescript
+import { RhythmXPCalculator } from 'playlist-data-engine';
+
+const rhythmXP = new RhythmXPCalculator();
+
+// Start tracking
+rhythmXP.startSession();
+
+// On each hit, recordHit() updates totals automatically
+rhythmXP.recordHit('perfect', { comboLength: 10 });
+rhythmXP.recordHit('great', { comboLength: 11 });
+rhythmXP.recordHit('miss', { comboLength: 0 });
+
+// Get running totals for UI
+const stats = rhythmXP.getSessionTotals();
+if (stats) {
+  console.log(`Score: ${stats.totalScore}`);
+  console.log(`XP: ${stats.totalXP}`);
+  console.log(`Accuracy: ${stats.accuracyPercentage.toFixed(1)}%`);
+  console.log(`Perfect: ${stats.accuracyDistribution.perfect}`);
+  console.log(`Great: ${stats.accuracyDistribution.great}`);
+  console.log(`Max Combo: ${stats.maxCombo}`);
+}
+
+// End session and get final stats
+const finalStats = rhythmXP.endSession();
+```
+
+### Stateless Usage (Frontend Tracks Combo)
+
+```typescript
+import { RhythmXPCalculator } from 'playlist-data-engine';
+
+const rhythmXP = new RhythmXPCalculator({ xpRatio: 0.1 });
+
+// Frontend manages combo tracking
+let currentCombo = 0;
+
+function onHit(accuracy: 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKey', grooveHotness: number) {
+  // Calculate XP without internal session tracking
+  const result = rhythmXP.calculateButtonPressXP(accuracy, {
+    comboLength: currentCombo,
+    grooveHotness,
+  });
+
+  // Frontend updates combo
+  if (accuracy === 'miss' || accuracy === 'wrongKey') {
+    // Get end bonus before resetting
+    if (currentCombo > 0) {
+      const bonus = rhythmXP.calculateComboEndBonus(currentCombo);
+      console.log(`Combo bonus: +${bonus.bonusXP} XP`);
+    }
+    currentCombo = 0;
+  } else {
+    currentCombo++;
+  }
+
+  return result;
+}
+```
+
+### Expected XP Rates (Default Config)
+
+With `xpRatio: 0.1` and default multipliers:
+
+**Per-Hit XP (no multipliers):**
+| Accuracy | Score | XP |
+|----------|-------|-----|
+| Perfect | 10 | 1.0 |
+| Great | 7 | 0.7 |
+| Good | 5 | 0.5 |
+| Ok | 2 | 0.2 |
+| Miss | 0 | 0 |
+| Wrong Key | 0 | 0 |
+
+**Combo Multiplier Scaling:**
+| Combo | Multiplier |
+|-------|------------|
+| 0 | 1.0x |
+| 25 | 1.5x |
+| 50 | 2.0x |
+| 100 | 3.0x |
+| 200+ | 5.0x (cap) |
+
+**Typical 3-minute song at 120 BPM (~360 beats):**
+- 80% perfect, 15% great, 5% good = ~320 base XP
+- With average 50-combo (2x multiplier) = ~640 XP effective
+- With groove end bonus = additional ~20-50 XP
+
+**Level progression estimate:**
+| Level | XP Required | Songs (good performance) |
+|-------|-------------|--------------------------|
+| 1→2 | 300 | ~1 song |
+| 2→3 | 600 | ~2 songs |
+| 3→4 | 1,800 | ~4-5 songs |
+| 4→5 | 3,800 | ~8-10 songs |
+
+**Tuning tips:**
+- Faster leveling: Set `xpRatio: 0.2` (doubles XP rate)
+- Slower leveling: Set `xpRatio: 0.05` (halves XP rate)
+- Emphasize combos: Increase `combo.cap` to 10.0
+- Emphasize groove: Set `groove.perHitMultiplier: true`
+
+### Listening XP Boost While Playing Rhythm Game
+
+In addition to per-button-press XP, the system boosts background listening XP when rhythm game mode is active. Configure via `ProgressionConfig`:
+
+```typescript
+import { mergeProgressionConfig } from 'playlist-data-engine';
+
+mergeProgressionConfig({
+  xp: {
+    activity_bonuses: {
+      // Rhythm game bonuses (apply to listening XP)
+      rhythm_game_base: 1.25,    // +25% base when rhythm game active
+      rhythm_game_combo: 0.5,    // Up to +50% at max combo
+      rhythm_game_groove: 0.5,   // Up to +50% at 100% hotness
+    },
+  },
+});
+```
+
+See [Progression Configuration](#progression-configuration) for more details on activity bonuses.
+
+**Type Reference:**
+- `RhythmXPConfig` - Configuration interface - [*src/core/types/RhythmXP.ts*](src/core/types/RhythmXP.ts)
+- `RhythmXPResult` - Result from `calculateButtonPressXP()` - [*src/core/types/RhythmXP.ts*](src/core/types/RhythmXP.ts)
+- `RhythmSessionTotals` - Session statistics - [*src/core/types/RhythmXP.ts*](src/core/types/RhythmXP.ts)
+- `GrooveStats` - Groove end bonus stats - [*src/core/types/RhythmXP.ts*](src/core/types/RhythmXP.ts)
+- `RhythmXPCalculator` - Main calculator class - [*src/core/progression/RhythmXPCalculator.ts*](src/core/progression/RhythmXPCalculator.ts)
 
 
 ## Track Mastery Prestige System
