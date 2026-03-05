@@ -965,7 +965,12 @@ No separate helper class needed.
   - **Implemented in:** `tests/unit/beat/grooveAnalyzer.test.ts`
 
 ### 8.3 Integration Tests
-- [ ] Test full flow: `checkButtonPress()` → `calculateButtonPressXP()` → `addRhythmXP()`
+- [x] Test full flow: `checkButtonPress()` → `calculateButtonPressXP()` → `addRhythmXP()`
+  - **Implemented in:** `tests/integration/rhythmXP.integration.test.ts` (20 tests total)
+  - Tests cover: perfect/great/miss hits, combo multipliers, level-ups, wrong key presses
+  - Tests cover: session tracking integration with character XP accumulation
+  - Tests cover: multi-level progression with detailed level-up breakdowns
+  - Tests cover: custom configuration (XP ratio, combo formula, groove per-hit multiplier)
 - [ ] Test with GrooveAnalyzer integration
 - [ ] Test listening session XP boost with rhythm game context
 
