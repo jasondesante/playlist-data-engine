@@ -971,8 +971,19 @@ No separate helper class needed.
   - Tests cover: session tracking integration with character XP accumulation
   - Tests cover: multi-level progression with detailed level-up breakdowns
   - Tests cover: custom configuration (XP ratio, combo formula, groove per-hit multiplier)
-- [ ] Test with GrooveAnalyzer integration
-- [ ] Test listening session XP boost with rhythm game context
+  - Tests cover: GrooveAnalyzer integration with groove hotness and end bonuses
+- [x] Test listening session XP boost with rhythm game context
+  - **Implemented in:** `tests/integration/rhythmXP.integration.test.ts` (11 new tests in `Listening Session XP Boost with Rhythm Game Context (System B)` describe block)
+  - Tests cover: base rhythm game boost (1.25x) when active
+  - Tests cover: no boost when rhythm game is inactive
+  - Tests cover: combo bonus scaling with `currentCombo / maxComboCap`
+  - Tests cover: groove bonus scaling with `grooveHotness / 100`
+  - Tests cover: stacking all bonuses (base + combo + groove = 2.25x max)
+  - Tests cover: proportional scaling of combo and groove bonuses
+  - Tests cover: `calculateTotalModifier()` including rhythm game context
+  - Tests cover: total modifier capped at 3.0x
+  - Tests cover: both System A (button XP) and System B (listening boost) working simultaneously
+  - Tests cover: custom rhythm game activity bonuses configuration
 
 ---
 

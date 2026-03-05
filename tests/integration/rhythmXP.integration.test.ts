@@ -691,4 +691,420 @@ describe('Rhythm XP Integration Tests', () => {
             expect(updateResult.xpEarned).toBeCloseTo(1.8, 5);
         });
     });
+
+    describe('Listening Session XP Boost with Rhythm Game Context (System B)', () => {
+        let rhythmXPCalculator: RhythmXPCalculator;
+        let characterUpdater: CharacterUpdater;
+        let mockCharacter: CharacterSheet;
+        let mockAudioContext: AudioContext;
+        let beatStream: BeatStream;
+        let grooveAnalyzer: GrooveAnalyzer;
+
+        // Import XPCalculator for listening session XP tests
+        // Note: XPCalculator is imported dynamically to avoid circular deps in test file
+
+        beforeEach(() => {
+            const beatMap = createMockBeatMap([0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0], 4, 120);
+            mockAudioContext = createMockAudioContext();
+            beatStream = new BeatStream(beatMap, mockAudioContext);
+            grooveAnalyzer = new GrooveAnalyzer();
+            rhythmXPCalculator = new RhythmXPCalculator();
+            characterUpdater = new CharacterUpdater();
+            mockCharacter = createMockCharacter();
+        });
+
+        it('should boost listening XP when rhythm game is active', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+            const xpCalculator = new XPCalculator();
+
+            // Create a listening session without rhythm game context
+            const baseSession = {
+                track_uuid: 'track-1',
+                start_time: Date.now(),
+                end_time: Date.now() + 60000,
+                duration_seconds: 60,
+                base_xp_earned: 60,
+                bonus_xp: 0,
+                total_xp_earned: 60,
+            };
+
+            const baseXP = xpCalculator.calculateSessionXP(baseSession);
+
+            // Create a listening session WITH rhythm game context (active)
+            const rhythmGameSession = {
+                ...baseSession,
+                rhythm_game_context: {
+                    isActive: true,
+                    currentCombo: 0,
+                    maxComboCap: 100,
+                    grooveHotness: 0,
+                },
+            };
+
+            const rhythmGameXP = xpCalculator.calculateSessionXP(rhythmGameSession);
+
+            // Rhythm game active should give 1.25x boost
+            expect(rhythmGameXP).toBe(Math.floor(baseXP * 1.25));
+            expect(rhythmGameXP).toBeGreaterThan(baseXP);
+        });
+
+        it('should NOT boost listening XP when rhythm game is inactive', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+            const xpCalculator = new XPCalculator();
+
+            const baseSession = {
+                track_uuid: 'track-1',
+                start_time: Date.now(),
+                end_time: Date.now() + 60000,
+                duration_seconds: 60,
+                base_xp_earned: 60,
+                bonus_xp: 0,
+                total_xp_earned: 60,
+            };
+
+            const baseXP = xpCalculator.calculateSessionXP(baseSession);
+
+            // Session with inactive rhythm game context
+            const inactiveSession = {
+                ...baseSession,
+                rhythm_game_context: {
+                    isActive: false,
+                    currentCombo: 50,
+                    maxComboCap: 100,
+                    grooveHotness: 80,
+                },
+            };
+
+            const inactiveXP = xpCalculator.calculateSessionXP(inactiveSession);
+
+            // Inactive should NOT boost XP
+            expect(inactiveXP).toBe(baseXP);
+        });
+
+        it('should apply combo bonus on top of base rhythm game boost', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+            const xpCalculator = new XPCalculator();
+
+            const baseSession = {
+                track_uuid: 'track-1',
+                start_time: Date.now(),
+                end_time: Date.now() + 60000,
+                duration_seconds: 60,
+                base_xp_earned: 60,
+                bonus_xp: 0,
+                total_xp_earned: 60,
+            };
+
+            const baseXP = xpCalculator.calculateSessionXP(baseSession);
+
+            // Session with max combo (100/100 = 100%)
+            const maxComboSession = {
+                ...baseSession,
+                rhythm_game_context: {
+                    isActive: true,
+                    currentCombo: 100,
+                    maxComboCap: 100,
+                    grooveHotness: 0,
+                },
+            };
+
+            const maxComboXP = xpCalculator.calculateSessionXP(maxComboSession);
+
+            // Base (1.25) + combo bonus (0.5 * 100/100 = 0.5) = 1.75x
+            expect(maxComboXP).toBe(Math.floor(baseXP * 1.75));
+        });
+
+        it('should apply groove bonus on top of base rhythm game boost', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+            const xpCalculator = new XPCalculator();
+
+            const baseSession = {
+                track_uuid: 'track-1',
+                start_time: Date.now(),
+                end_time: Date.now() + 60000,
+                duration_seconds: 60,
+                base_xp_earned: 60,
+                bonus_xp: 0,
+                total_xp_earned: 60,
+            };
+
+            const baseXP = xpCalculator.calculateSessionXP(baseSession);
+
+            // Session with 80% groove hotness
+            const grooveSession = {
+                ...baseSession,
+                rhythm_game_context: {
+                    isActive: true,
+                    currentCombo: 0,
+                    maxComboCap: 100,
+                    grooveHotness: 80,
+                },
+            };
+
+            const grooveXP = xpCalculator.calculateSessionXP(grooveSession);
+
+            // Base (1.25) + groove bonus (0.5 * 80/100 = 0.4) = 1.65x
+            expect(grooveXP).toBe(Math.floor(baseXP * 1.65));
+        });
+
+        it('should stack combo and groove bonuses with base boost', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+            const xpCalculator = new XPCalculator();
+
+            const baseSession = {
+                track_uuid: 'track-1',
+                start_time: Date.now(),
+                end_time: Date.now() + 60000,
+                duration_seconds: 60,
+                base_xp_earned: 60,
+                bonus_xp: 0,
+                total_xp_earned: 60,
+            };
+
+            const baseXP = xpCalculator.calculateSessionXP(baseSession);
+
+            // Session with max combo AND max groove
+            const fullBonusSession = {
+                ...baseSession,
+                rhythm_game_context: {
+                    isActive: true,
+                    currentCombo: 100,
+                    maxComboCap: 100,
+                    grooveHotness: 100,
+                },
+            };
+
+            const fullBonusXP = xpCalculator.calculateSessionXP(fullBonusSession);
+
+            // Base (1.25) + combo (0.5) + groove (0.5) = 2.25x
+            expect(fullBonusXP).toBe(Math.floor(baseXP * 2.25));
+        });
+
+        it('should scale combo bonus proportionally', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+            const xpCalculator = new XPCalculator();
+
+            const baseSession = {
+                track_uuid: 'track-1',
+                start_time: Date.now(),
+                end_time: Date.now() + 60000,
+                duration_seconds: 60,
+                base_xp_earned: 60,
+                bonus_xp: 0,
+                total_xp_earned: 60,
+            };
+
+            const baseXP = xpCalculator.calculateSessionXP(baseSession);
+
+            // 50 combo out of 100 cap = 50%
+            const midComboSession = {
+                ...baseSession,
+                rhythm_game_context: {
+                    isActive: true,
+                    currentCombo: 50,
+                    maxComboCap: 100,
+                    grooveHotness: 0,
+                },
+            };
+
+            const midComboXP = xpCalculator.calculateSessionXP(midComboSession);
+
+            // Base (1.25) + combo (0.5 * 50/100 = 0.25) = 1.5x
+            expect(midComboXP).toBe(Math.floor(baseXP * 1.5));
+        });
+
+        it('should scale groove bonus proportionally', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+            const xpCalculator = new XPCalculator();
+
+            const baseSession = {
+                track_uuid: 'track-1',
+                start_time: Date.now(),
+                end_time: Date.now() + 60000,
+                duration_seconds: 60,
+                base_xp_earned: 60,
+                bonus_xp: 0,
+                total_xp_earned: 60,
+            };
+
+            const baseXP = xpCalculator.calculateSessionXP(baseSession);
+
+            // 50% groove hotness
+            const midGrooveSession = {
+                ...baseSession,
+                rhythm_game_context: {
+                    isActive: true,
+                    currentCombo: 0,
+                    maxComboCap: 100,
+                    grooveHotness: 50,
+                },
+            };
+
+            const midGrooveXP = xpCalculator.calculateSessionXP(midGrooveSession);
+
+            // Base (1.25) + groove (0.5 * 50/100 = 0.25) = 1.5x
+            expect(midGrooveXP).toBe(Math.floor(baseXP * 1.5));
+        });
+
+        it('should include rhythm game context in total modifier calculation', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+            const xpCalculator = new XPCalculator();
+
+            // Test calculateTotalModifier with rhythm game context
+            const modifier = xpCalculator.calculateTotalModifier(
+                undefined, // no environmental context
+                undefined, // no gaming context
+                {
+                    isActive: true,
+                    currentCombo: 100,
+                    maxComboCap: 100,
+                    grooveHotness: 100,
+                }
+            );
+
+            // Max rhythm game modifier: 1.25 + 0.5 + 0.5 = 2.25
+            // But calculateTotalModifier caps at 3.0
+            expect(modifier).toBe(2.25);
+        });
+
+        it('should cap total modifier at 3.0x', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+            const xpCalculator = new XPCalculator();
+
+            // Environmental: night (1.25) + thunderstorm (1.4) + altitude (1.3) = ~2.275x
+            const envContext = {
+                weather: {
+                    temperature: 20,
+                    humidity: 80,
+                    pressure: 1013,
+                    windSpeed: 10,
+                    weatherType: 'Thunderstorm' as const,
+                    isNight: true,
+                    description: 'stormy night',
+                    location: 'test',
+                },
+                geolocation: {
+                    latitude: 40,
+                    longitude: -74,
+                    altitude: 2500, // high altitude
+                    accuracy: 10,
+                },
+            };
+
+            // Rhythm game: max (2.25x)
+            const rhythmGameContext = {
+                isActive: true,
+                currentCombo: 100,
+                maxComboCap: 100,
+                grooveHotness: 100,
+            };
+
+            const modifier = xpCalculator.calculateTotalModifier(
+                envContext,
+                undefined,
+                rhythmGameContext
+            );
+
+            // Should be capped at 3.0x
+            expect(modifier).toBe(3.0);
+        });
+
+        it('should work with both rhythm button XP AND listening XP boost simultaneously', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+            const xpCalculator = new XPCalculator();
+
+            // Simulate a player playing rhythm game while listening
+
+            // 1. Button press XP (System A) - from RhythmXPCalculator
+            const buttonResult = beatStream.checkButtonPress(0.0);
+            const buttonXPResult = rhythmXPCalculator.calculateButtonPressXP(buttonResult.accuracy, {
+                comboLength: 50,
+                grooveHotness: 80,
+            });
+
+            // Button XP should be > 0 (perfect hit with combo)
+            expect(buttonXPResult.finalXP).toBeGreaterThan(0);
+
+            // 2. Listening session XP boost (System B) - from XPCalculator
+            const session = {
+                track_uuid: 'track-1',
+                start_time: Date.now(),
+                end_time: Date.now() + 60000,
+                duration_seconds: 60,
+                base_xp_earned: 60,
+                bonus_xp: 0,
+                total_xp_earned: 60,
+                rhythm_game_context: {
+                    isActive: true,
+                    currentCombo: 50,
+                    maxComboCap: 100,
+                    grooveHotness: 80,
+                },
+            };
+
+            const sessionXP = xpCalculator.calculateSessionXP(session);
+
+            // Listening XP should be boosted
+            // Base (1.25) + combo (0.5 * 0.5 = 0.25) + groove (0.5 * 0.8 = 0.4) = 1.9x
+            const expectedMultiplier = 1.25 + 0.25 + 0.4; // = 1.9
+            expect(sessionXP).toBe(Math.floor(60 * expectedMultiplier));
+
+            // 3. Both systems can add XP to character
+            const buttonUpdateResult = characterUpdater.addRhythmXP(mockCharacter, buttonXPResult);
+            mockCharacter = buttonUpdateResult.character;
+
+            const listeningUpdateResult = characterUpdater.addXP(mockCharacter, sessionXP, 'listening_session');
+            mockCharacter = listeningUpdateResult.character;
+
+            // Character should have XP from both systems
+            expect(mockCharacter.xp.current).toBe(buttonXPResult.finalXP + sessionXP);
+        });
+
+        it('should use custom rhythm game activity bonuses when configured', async () => {
+            const { XPCalculator } = await import('../../src/core/progression/XPCalculator.js');
+
+            // Create calculator with custom rhythm game bonuses
+            const customCalculator = new XPCalculator({
+                activity_bonuses: {
+                    stationary: 1.0,
+                    walking: 1.2,
+                    running: 1.5,
+                    driving: 1.3,
+                    night_time: 1.25,
+                    extreme_weather: 1.4,
+                    high_altitude: 1.3,
+                    rhythm_game_base: 2.0,     // Custom: double XP base
+                    rhythm_game_combo: 1.0,    // Custom: +100% max from combo
+                    rhythm_game_groove: 1.0,   // Custom: +100% max from groove
+                },
+            });
+
+            const baseSession = {
+                track_uuid: 'track-1',
+                start_time: Date.now(),
+                end_time: Date.now() + 60000,
+                duration_seconds: 60,
+                base_xp_earned: 60,
+                bonus_xp: 0,
+                total_xp_earned: 60,
+            };
+
+            const baseXP = customCalculator.calculateSessionXP(baseSession);
+
+            const fullBonusSession = {
+                ...baseSession,
+                rhythm_game_context: {
+                    isActive: true,
+                    currentCombo: 100,
+                    maxComboCap: 100,
+                    grooveHotness: 100,
+                },
+            };
+
+            const fullBonusXP = customCalculator.calculateSessionXP(fullBonusSession);
+
+            // Custom: Base (2.0) + combo (1.0) + groove (1.0) = 4.0x
+            expect(fullBonusXP).toBe(Math.floor(baseXP * 4.0));
+        });
+    });
 });
