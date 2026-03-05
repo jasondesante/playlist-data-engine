@@ -54,6 +54,13 @@ export class GrooveAnalyzer {
     private hitCount: number = 0;
     private lastBpm: number = 120; // Default BPM for pocket window calculation
 
+    // Groove lifetime tracking fields (for groove end bonus calculation)
+    private grooveStartTime: number | null = null;      // When current groove started (audio time)
+    private maxHotness: number = 0;                     // Peak hotness during groove
+    private hotnessSamples: number[] = [];              // All hotness values for averaging
+    private grooveHitCount: number = 0;                 // Total hits in current groove
+    private previousDirection: GrooveDirection = 'neutral';  // Track direction for change detection
+
     /**
      * Create a new GrooveAnalyzer instance
      *

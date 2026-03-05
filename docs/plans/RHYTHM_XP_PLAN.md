@@ -325,7 +325,8 @@ This section combines all listening XP boost functionality. These bonuses apply 
 The `GrooveAnalyzer` currently only tracks current hotness and streak. To support groove end bonuses, we need to enhance it to track statistics over the groove lifetime.
 
 ### 2.1 Add Groove Lifetime Tracking
-- [ ] Add new fields to `GrooveAnalyzer`
+- [x] Add new fields to `GrooveAnalyzer`
+  - **Implemented in:** `src/core/analysis/beat/GrooveAnalyzer.ts` (lines 57-61)
   ```typescript
   // Internal tracking state
   private grooveStartTime: number | null = null;      // When current groove started (audio time)
