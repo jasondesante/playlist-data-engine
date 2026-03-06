@@ -551,20 +551,20 @@ describe('Beat Detection Integration Tests', () => {
             expect(thresholds.ok).toBeGreaterThan(HARD_ACCURACY_THRESHOLDS.ok);
 
             // Test accuracy classification with easy preset
-            // Easy: perfect=±75ms, great=±125ms, good=±175ms, ok=±250ms
-            const perfectResult = beatStream.checkButtonPress(1.050); // 50ms off
+            // Easy: perfect=±35ms, great=±70ms, good=±110ms, ok=±150ms
+            const perfectResult = beatStream.checkButtonPress(1.030); // 30ms off
             expect(perfectResult.accuracy).toBe('perfect');
 
-            const greatResult = beatStream.checkButtonPress(1.100); // 100ms off
+            const greatResult = beatStream.checkButtonPress(1.050); // 50ms off
             expect(greatResult.accuracy).toBe('great');
 
-            const goodResult = beatStream.checkButtonPress(1.150); // 150ms off
+            const goodResult = beatStream.checkButtonPress(1.090); // 90ms off
             expect(goodResult.accuracy).toBe('good');
 
-            const okResult = beatStream.checkButtonPress(1.200); // 200ms off
+            const okResult = beatStream.checkButtonPress(1.130); // 130ms off
             expect(okResult.accuracy).toBe('ok');
 
-            const missResult = beatStream.checkButtonPress(1.300); // 300ms off
+            const missResult = beatStream.checkButtonPress(1.200); // 200ms off
             expect(missResult.accuracy).toBe('miss');
 
             console.log(`\n✓ Easy preset applied correctly`);
@@ -797,25 +797,25 @@ describe('Beat Detection Integration Tests', () => {
             const mockAudioContext = createMockAudioContext();
             const beatStream = new BeatStream(beatMap, mockAudioContext, { difficultyPreset: 'hard' });
 
-            // Test perfect accuracy (within 10ms)
+            // Test perfect accuracy (within 8ms)
             const perfect = beatStream.checkButtonPress(1.005);
             expect(perfect.accuracy).toBe('perfect');
             expect(perfect.matchedBeat.timestamp).toBe(1.0);
 
-            // Test great accuracy (within 25ms)
-            const great = beatStream.checkButtonPress(1.020);
+            // Test great accuracy (within 20ms)
+            const great = beatStream.checkButtonPress(1.015);
             expect(great.accuracy).toBe('great');
 
-            // Test good accuracy (within 50ms)
-            const good = beatStream.checkButtonPress(1.045);
+            // Test good accuracy (within 40ms)
+            const good = beatStream.checkButtonPress(1.035);
             expect(good.accuracy).toBe('good');
 
-            // Test ok accuracy (within 100ms)
-            const ok = beatStream.checkButtonPress(1.075);
+            // Test ok accuracy (within 75ms)
+            const ok = beatStream.checkButtonPress(1.060);
             expect(ok.accuracy).toBe('ok');
 
-            // Test miss (outside 100ms)
-            const miss = beatStream.checkButtonPress(1.150);
+            // Test miss (outside 75ms)
+            const miss = beatStream.checkButtonPress(1.100);
             expect(miss.accuracy).toBe('miss');
 
             console.log(`\n✓ Button press accuracy detection works`);

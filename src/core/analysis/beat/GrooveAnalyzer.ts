@@ -18,9 +18,14 @@ import type {
     GrooveState,
     GrooveAnalyzerOptions,
     BeatAccuracy,
+    DifficultyPreset,
+    GroovePenaltyConfig,
 } from '../../types/BeatMap.js';
 import type { GrooveStats } from '../../types/RhythmXP.js';
-import { DEFAULT_GROOVE_OPTIONS } from '../../types/BeatMap.js';
+import {
+    DEFAULT_GROOVE_OPTIONS,
+    getGroovePenaltiesForPreset,
+} from '../../types/BeatMap.js';
 
 /**
  * Analyzes groove/feel consistency in rhythm game play
@@ -70,6 +75,37 @@ export class GrooveAnalyzer {
      */
     constructor(options?: Partial<GrooveAnalyzerOptions>) {
         this.options = { ...DEFAULT_GROOVE_OPTIONS, ...options };
+    }
+
+    /**
+     * Set difficulty level for groove penalties.
+     *
+     * Updates the penalty values (hotnessLossOnMiss, hotnessLossOnBreak) based on
+     * a difficulty preset. This allows dynamic difficulty changes during gameplay.
+     *
+     * @param options - Difficulty configuration
+     * @param options.preset - The difficulty preset ('easy', 'medium', 'hard', or 'custom')
+     * @param options.customPenalties - Custom penalties to use when preset is 'custom'
+     *
+     * @example
+     * ```typescript
+     * // Set to hard difficulty
+     * grooveAnalyzer.setDifficulty({ preset: 'hard' });
+     *
+     * // Set to custom difficulty with specific penalty values
+     * grooveAnalyzer.setDifficulty({
+     *     preset: 'custom',
+     *     customPenalties: { hotnessLossOnMiss: 30, hotnessLossOnBreak: 25 }
+     * });
+     * ```
+     */
+    setDifficulty(options: {
+        preset: DifficultyPreset;
+        customPenalties?: Partial<GroovePenaltyConfig>;
+    }): void {
+        const penalties = getGroovePenaltiesForPreset(options.preset, options.customPenalties);
+        this.options.hotnessLossOnMiss = penalties.hotnessLossOnMiss;
+        this.options.hotnessLossOnBreak = penalties.hotnessLossOnBreak;
     }
 
     /**

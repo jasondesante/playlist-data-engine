@@ -696,30 +696,30 @@ export type DifficultyPreset = 'easy' | 'medium' | 'hard' | 'custom';
  * Easy difficulty thresholds (forgiving)
  */
 export const EASY_ACCURACY_THRESHOLDS: AccuracyThresholds = {
-    perfect: 0.075,  // ±75ms
-    great: 0.125,    // ±125ms
-    good: 0.175,     // ±175ms
-    ok: 0.250,       // ±250ms
+    perfect: 0.035,  // ±35ms
+    great: 0.070,    // ±70ms
+    good: 0.110,     // ±110ms
+    ok: 0.150,       // ±150ms
 } as const;
 
 /**
  * Medium difficulty thresholds (balanced)
  */
 export const MEDIUM_ACCURACY_THRESHOLDS: AccuracyThresholds = {
-    perfect: 0.045,  // ±45ms
-    great: 0.090,    // ±90ms
-    good: 0.135,     // ±135ms
-    ok: 0.200,       // ±200ms
-} as const;
-
-/**
- * Hard difficulty thresholds (strict - original behavior)
- */
-export const HARD_ACCURACY_THRESHOLDS: AccuracyThresholds = {
     perfect: 0.010,  // ±10ms
     great: 0.025,    // ±25ms
     good: 0.050,     // ±50ms
     ok: 0.100,       // ±100ms
+} as const;
+
+/**
+ * Hard difficulty thresholds (strict - for veterans)
+ */
+export const HARD_ACCURACY_THRESHOLDS: AccuracyThresholds = {
+    perfect: 0.008,  // ±8ms
+    great: 0.020,    // ±20ms
+    good: 0.040,     // ±40ms
+    ok: 0.075,       // ±75ms
 } as const;
 
 /**
@@ -2483,3 +2483,73 @@ export const DEFAULT_GROOVE_OPTIONS: GrooveAnalyzerOptions = {
     averagingWindowSize: 4,
     neutralDeadZone: 0.010,            // ±10ms (20ms total)
 };
+
+/**
+ * Groove penalty configuration for difficulty presets.
+ *
+ * These values control how harshly the groove meter punishes mistakes.
+ * Higher values = more severe penalties for misses and wrong keys.
+ */
+export interface GroovePenaltyConfig {
+    /** Hotness loss when missing a beat or pressing wrong key */
+    hotnessLossOnMiss: number;
+    /** Hotness loss when breaking the pocket (hitting outside established timing) */
+    hotnessLossOnBreak: number;
+}
+
+/**
+ * Easy groove penalties - forgiving for casual players.
+ * Miss penalty: 15 (moderate)
+ */
+export const EASY_GROOVE_PENALTIES: GroovePenaltyConfig = {
+    hotnessLossOnMiss: 15,
+    hotnessLossOnBreak: 15,
+} as const;
+
+/**
+ * Medium groove penalties - balanced difficulty.
+ * Miss penalty: 25 (noticeable)
+ */
+export const MEDIUM_GROOVE_PENALTIES: GroovePenaltyConfig = {
+    hotnessLossOnMiss: 25,
+    hotnessLossOnBreak: 25,
+} as const;
+
+/**
+ * Hard groove penalties - strict for veterans.
+ * Miss penalty: 45 (severe)
+ */
+export const HARD_GROOVE_PENALTIES: GroovePenaltyConfig = {
+    hotnessLossOnMiss: 45,
+    hotnessLossOnBreak: 45,
+} as const;
+
+/**
+ * Map of preset names to their groove penalty configurations.
+ */
+export const GROOVE_PENALTY_PRESETS: Record<Exclude<DifficultyPreset, 'custom'>, GroovePenaltyConfig> = {
+    easy: EASY_GROOVE_PENALTIES,
+    medium: MEDIUM_GROOVE_PENALTIES,
+    hard: HARD_GROOVE_PENALTIES,
+};
+
+/**
+ * Get groove penalty configuration for a difficulty preset.
+ *
+ * @param preset - The difficulty preset ('easy', 'medium', 'hard', or 'custom')
+ * @param customPenalties - Custom penalties to use when preset is 'custom'
+ * @returns The groove penalty configuration for the given preset
+ */
+export function getGroovePenaltiesForPreset(
+    preset: DifficultyPreset,
+    customPenalties?: Partial<GroovePenaltyConfig>
+): GroovePenaltyConfig {
+    if (preset === 'custom') {
+        // Merge custom penalties with medium preset as base
+        return {
+            ...MEDIUM_GROOVE_PENALTIES,
+            ...customPenalties,
+        };
+    }
+    return GROOVE_PENALTY_PRESETS[preset];
+}

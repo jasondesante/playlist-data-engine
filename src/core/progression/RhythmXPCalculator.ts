@@ -245,14 +245,14 @@ export class RhythmXPCalculator {
     /**
      * Default combo multiplier formula
      *
-     * 1 + (comboLength / 50), capped at config.combo.cap
+     * 1 + (comboLength / 25), capped at config.combo.cap
      * - At 0 combo = 1x (no bonus)
-     * - At 50 combo = 2x
-     * - At 100 combo = 3x
-     * - At 200 combo = 5x (cap with default config)
+     * - At 25 combo = 2x
+     * - At 50 combo = 3x
+     * - At 100 combo = 5x (cap with default config)
      */
     private defaultComboFormula(comboLength: number): number {
-        return 1 + comboLength / 50;
+        return 1 + comboLength / 25;
     }
 
     // ========================================

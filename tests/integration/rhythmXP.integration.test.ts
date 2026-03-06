@@ -160,9 +160,9 @@ describe('Rhythm XP Integration Tests', () => {
         });
 
         it('should complete the full flow for a great hit', () => {
-            // Medium difficulty: perfect=45ms, great=90ms
-            // Beat at 0.5, press at 0.555 = 55ms off (within great window 45-90ms)
-            const buttonResult = beatStream.checkButtonPress(0.555);
+            // Hard difficulty: perfect=8ms, great=20ms
+            // Beat at 0.5, press at 0.515 = 15ms off (within great window 8-20ms)
+            const buttonResult = beatStream.checkButtonPress(0.515);
 
             expect(buttonResult.accuracy).toBe('great');
 
@@ -195,13 +195,13 @@ describe('Rhythm XP Integration Tests', () => {
         });
 
         it('should apply combo multiplier throughout the flow', () => {
-            // Simulate 50-combo perfect hit
+            // Simulate 25-combo perfect hit
             const buttonResult = beatStream.checkButtonPress(1.0);
 
             expect(buttonResult.accuracy).toBe('perfect');
 
             const xpResult = rhythmXPCalculator.calculateButtonPressXP(buttonResult.accuracy, {
-                comboLength: 50, // 2x multiplier
+                comboLength: 25, // 2x multiplier (1 + 25/25 = 2)
             });
 
             expect(xpResult.comboMultiplier).toBe(2);
@@ -534,19 +534,19 @@ describe('Rhythm XP Integration Tests', () => {
             // Now miss
             const missResult = beatStream.checkButtonPress(25.3); // Between beats
 
-            // Award combo end bonus BEFORE resetting combo
+            // Award combo end bonus before processing combo
             const comboBonus = rhythmXPCalculator.calculateComboEndBonus(comboCount);
 
             expect(comboBonus.comboLength).toBe(50);
-            expect(comboBonus.bonusScore).toBe(100); // 50 * 2
-            expect(comboBonus.bonusXP).toBe(10); // 100 * 0.1
+            expect(comboBonus.bonusScore).toBe(250); // 50 * 5
+            expect(comboBonus.bonusXP).toBe(25); // 250 * 0.1
 
             // Add combo bonus to character
             const bonusResult = characterUpdater.addXP(mockCharacter, comboBonus.bonusXP, 'combo_bonus');
 
-            expect(bonusResult.xpEarned).toBe(10);
+            expect(bonusResult.xpEarned).toBe(25);
             // Total XP should be base XP + combo bonus
-            expect(bonusResult.character.xp.current).toBeCloseTo(totalBaseXP + 10, 5);
+            expect(bonusResult.character.xp.current).toBeCloseTo(totalBaseXP + 25, 5);
         });
     });
 

@@ -114,31 +114,34 @@ describe('RhythmXPCalculator', () => {
                 expect(result.comboMultiplier).toBe(1);
             });
 
-            it('should return 2x multiplier at combo 50 (default formula)', () => {
+            it('should return 3x multiplier at combo 50 (default formula)', () => {
                 const result = calculator.calculateButtonPressXP('perfect', { comboLength: 50 });
-                expect(result.comboMultiplier).toBe(2);
-            });
-
-            it('should return 3x multiplier at combo 100 (default formula)', () => {
-                const result = calculator.calculateButtonPressXP('perfect', { comboLength: 100 });
+                // 1 + (50/25) = 3
                 expect(result.comboMultiplier).toBe(3);
             });
 
-            it('should return 5x multiplier at combo 200 (default formula)', () => {
-                const result = calculator.calculateButtonPressXP('perfect', { comboLength: 200 });
+            it('should return 5x multiplier at combo 100 (default formula)', () => {
+                const result = calculator.calculateButtonPressXP('perfect', { comboLength: 100 });
+                // 1 + (100/25) = 5
                 expect(result.comboMultiplier).toBe(5);
             });
 
-            it('should return 1.02x multiplier at combo 1 (default formula)', () => {
-                const result = calculator.calculateButtonPressXP('perfect', { comboLength: 1 });
-                // 1 + (1/50) = 1.02
-                expect(result.comboMultiplier).toBeCloseTo(1.02, 2);
+            it('should return 5x multiplier at combo 200 (capped)', () => {
+                const result = calculator.calculateButtonPressXP('perfect', { comboLength: 200 });
+                // 1 + (200/25) = 9, but capped at 5
+                expect(result.comboMultiplier).toBe(5);
             });
 
-            it('should return 1.5x multiplier at combo 25 (default formula)', () => {
+            it('should return 1.04x multiplier at combo 1 (default formula)', () => {
+                const result = calculator.calculateButtonPressXP('perfect', { comboLength: 1 });
+                // 1 + (1/25) = 1.04
+                expect(result.comboMultiplier).toBeCloseTo(1.04, 2);
+            });
+
+            it('should return 2x multiplier at combo 25 (default formula)', () => {
                 const result = calculator.calculateButtonPressXP('perfect', { comboLength: 25 });
-                // 1 + (25/50) = 1.5
-                expect(result.comboMultiplier).toBe(1.5);
+                // 1 + (25/25) = 2
+                expect(result.comboMultiplier).toBe(2);
             });
 
             it('should return 1x multiplier when combo is disabled', () => {
@@ -318,15 +321,15 @@ describe('RhythmXPCalculator', () => {
 
         describe('finalScore vs finalXP are correctly separated', () => {
             it('should calculate finalScore from scorePoints and totalMultiplier', () => {
-                // perfect = 10 score, combo 50 = 2x multiplier
+                // perfect = 10 score, combo 50 = 3x multiplier (1 + 50/25)
                 const result = calculator.calculateButtonPressXP('perfect', { comboLength: 50 });
-                expect(result.finalScore).toBe(20); // 10 * 2 = 20
+                expect(result.finalScore).toBe(30); // 10 * 3 = 30
             });
 
             it('should calculate finalXP from baseXP and totalMultiplier', () => {
-                // perfect = 10 score = 1 XP (0.1 ratio), combo 50 = 2x multiplier
+                // perfect = 10 score = 1 XP (0.1 ratio), combo 50 = 3x multiplier
                 const result = calculator.calculateButtonPressXP('perfect', { comboLength: 50 });
-                expect(result.finalXP).toBe(2); // 1 * 2 = 2
+                expect(result.finalXP).toBe(3); // 1 * 3 = 3
             });
 
             it('should keep finalScore and finalXP proportionally different based on xpRatio', () => {
@@ -335,8 +338,8 @@ describe('RhythmXPCalculator', () => {
                 });
 
                 const result = customCalculator.calculateButtonPressXP('perfect', { comboLength: 50 });
-                expect(result.finalScore).toBe(20); // 10 * 2
-                expect(result.finalXP).toBe(4); // 2 * 2
+                expect(result.finalScore).toBe(30); // 10 * 3
+                expect(result.finalXP).toBe(6); // 2 * 3
             });
 
             it('should apply totalMultiplier to both finalScore and finalXP', () => {
@@ -350,14 +353,14 @@ describe('RhythmXPCalculator', () => {
                 });
 
                 const result = customCalculator.calculateButtonPressXP('perfect', {
-                    comboLength: 50, // 2x
+                    comboLength: 50, // 3x (1 + 50/25)
                     grooveHotness: 50, // 0.5x
                 });
 
-                // totalMultiplier = 2 + 0.5 = 2.5
-                expect(result.totalMultiplier).toBe(2.5);
-                expect(result.finalScore).toBe(25); // 10 * 2.5
-                expect(result.finalXP).toBe(2.5); // 1 * 2.5
+                // totalMultiplier = 3 + 0.5 = 3.5
+                expect(result.totalMultiplier).toBe(3.5);
+                expect(result.finalScore).toBe(35); // 10 * 3.5
+                expect(result.finalXP).toBe(3.5); // 1 * 3.5
             });
         });
 
@@ -414,7 +417,7 @@ describe('RhythmXPCalculator', () => {
                 // Even with combo, negative XP should be floored at 0
                 const result = customCalculator.calculateButtonPressXP('miss', { comboLength: 50 });
                 expect(result.scorePoints).toBe(-5);
-                expect(result.finalScore).toBe(-10); // -5 * 2 = -10 (score can be negative)
+                expect(result.finalScore).toBe(-15); // -5 * 3 = -15 (score can be negative)
                 expect(result.finalXP).toBe(0); // Floored at 0
             });
         });
@@ -459,19 +462,19 @@ describe('RhythmXPCalculator', () => {
             expect(result.bonusXP).toBe(0);
         });
 
-        it('should use default formula (comboLength * 2)', () => {
-            // 10 combo = 20 bonus score = 2 XP (0.1 ratio)
+        it('should use default formula (comboLength * 5)', () => {
+            // 10 combo = 50 bonus score = 5 XP (0.1 ratio)
             const result = calculator.calculateComboEndBonus(10);
             expect(result.comboLength).toBe(10);
-            expect(result.bonusScore).toBe(20);
-            expect(result.bonusXP).toBe(2);
+            expect(result.bonusScore).toBe(50);
+            expect(result.bonusXP).toBe(5);
         });
 
         it('should calculate bonus for large combo', () => {
-            // 50 combo = 100 bonus score = 10 XP
+            // 50 combo = 250 bonus score = 25 XP
             const result = calculator.calculateComboEndBonus(50);
-            expect(result.bonusScore).toBe(100);
-            expect(result.bonusXP).toBe(10);
+            expect(result.bonusScore).toBe(250);
+            expect(result.bonusXP).toBe(25);
         });
 
         it('should use custom formula when configured', () => {
@@ -511,8 +514,8 @@ describe('RhythmXPCalculator', () => {
             });
 
             const result = customCalculator.calculateComboEndBonus(10);
-            expect(result.bonusScore).toBe(20); // 10 * 2
-            expect(result.bonusXP).toBe(10); // 20 * 0.5
+            expect(result.bonusScore).toBe(50); // 10 * 5
+            expect(result.bonusXP).toBe(25); // 50 * 0.5
         });
     });
 
@@ -806,15 +809,16 @@ describe('RhythmXPCalculator', () => {
 
         describe('getComboMultiplier', () => {
             it('should return correct multiplier for combo values', () => {
+                // Formula: 1 + comboLength / 25
                 expect(calculator.getComboMultiplier(0)).toBe(1);
-                expect(calculator.getComboMultiplier(25)).toBe(1.5);
-                expect(calculator.getComboMultiplier(50)).toBe(2);
-                expect(calculator.getComboMultiplier(100)).toBe(3);
-                expect(calculator.getComboMultiplier(200)).toBe(5);
+                expect(calculator.getComboMultiplier(25)).toBe(2);
+                expect(calculator.getComboMultiplier(50)).toBe(3);
+                expect(calculator.getComboMultiplier(100)).toBe(5);
+                expect(calculator.getComboMultiplier(200)).toBe(5); // Capped at 5
             });
 
             it('should respect cap', () => {
-                // 300 combo would give 7x, but cap is 5.0
+                // 300 combo would give 13x, but cap is 5.0
                 expect(calculator.getComboMultiplier(300)).toBe(5);
             });
         });

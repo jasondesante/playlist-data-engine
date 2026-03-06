@@ -1546,6 +1546,7 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `GrooveResult` | Result returned after each hit recorded | `pocketDirection`, `establishedOffset`, `consistency`, `hotness`, `streakLength`, `inPocket`, `pocketWindow` |
 | `GrooveState` | Snapshot of current groove analyzer state | `pocketDirection`, `establishedOffset`, `hotness`, `streakLength`, `hitCount`, `pocketWindow` |
 | `GrooveAnalyzerOptions` | Configuration for GrooveAnalyzer | `minHitsForPocket`, `basePocketWindowFraction`, `minPocketWindowSeconds`, `hotnessGainPerHit`, `hotnessLossOnBreak`, `hotnessLossOnMiss`, `averagingWindowSize`, `neutralDeadZone` |
+| `GroovePenaltyConfig` | Groove penalty configuration for difficulty presets | `hotnessLossOnMiss`, `hotnessLossOnBreak` |
 
 ### BeatMapGenerator
 
@@ -1647,9 +1648,9 @@ constructor(beatMap: BeatMap | InterpolatedBeatMap | SubdividedBeatMap, audioCon
 
 | Preset | Perfect | Great | Good | Ok |
 |--------|---------|-------|------|-----|
-| Easy | ±75ms | ±125ms | ±175ms | ±250ms |
-| Medium | ±45ms | ±90ms | ±135ms | ±200ms |
-| Hard | ±10ms | ±25ms | ±50ms | ±100ms |
+| Easy | ±35ms | ±70ms | ±110ms | ±150ms |
+| Medium | ±10ms | ±25ms | ±50ms | ±100ms |
+| Hard | ±8ms | ±20ms | ±40ms | ±75ms |
 
 ### Beat Key Helper Functions
 
@@ -1797,6 +1798,41 @@ constructor(options?: Partial<GrooveAnalyzerOptions>)
 | `recordMiss(): GrooveResult` | Record a missed beat (user didn't press). Reduces hotness by configured miss penalty, resets streak, but keeps established pocket. |
 | `getState(): GrooveState` | Get current groove analyzer state snapshot |
 | `reset(): void` | Reset the analyzer to initial state |
+| `setDifficulty(options: { preset: DifficultyPreset, customPenalties?: Partial<GroovePenaltyConfig> }): void` | Set difficulty level for groove penalties. Updates `hotnessLossOnMiss` and `hotnessLossOnBreak` based on preset or custom values. |
+
+**Difficulty Presets:**
+
+Groove penalties can be adjusted based on difficulty level. Higher difficulties have more severe penalties for misses and wrong keys.
+
+| Preset | `hotnessLossOnMiss` | `hotnessLossOnBreak` | Description |
+|--------|---------------------|----------------------|-------------|
+| `easy` | 15 | 15 | Forgiving for casual players |
+| `medium` | 25 | 25 | Balanced difficulty |
+| `hard` | 45 | 45 | Strict for veterans |
+| `custom` | (varies) | (varies) | Use `customPenalties` parameter |
+
+**Usage:**
+
+```typescript
+// Set to hard difficulty
+grooveAnalyzer.setDifficulty({ preset: 'hard' });
+
+// Set to custom difficulty
+grooveAnalyzer.setDifficulty({
+    preset: 'custom',
+    customPenalties: { hotnessLossOnMiss: 30, hotnessLossOnBreak: 25 }
+});
+```
+
+**Related Exports:**
+
+| Export | Description |
+|--------|-------------|
+| `EASY_GROOVE_PENALTIES` | Easy difficulty penalty config |
+| `MEDIUM_GROOVE_PENALTIES` | Medium difficulty penalty config |
+| `HARD_GROOVE_PENALTIES` | Hard difficulty penalty config |
+| `GROOVE_PENALTY_PRESETS` | Map of preset names to penalty configs |
+| `getGroovePenaltiesForPreset(preset, customPenalties?)` | Get penalty config for a preset |
 
 **Pocket Detection:**
 
@@ -2496,9 +2532,9 @@ The `SubdivisionBeatEvent` includes:
 | `DEFAULT_BEATMAP_GENERATOR_OPTIONS` | See above | Default BeatMapGenerator options |
 | `DEFAULT_BEATSTREAM_OPTIONS` | See above | Default BeatStream options |
 | `BEAT_ACCURACY_THRESHOLDS` | Same as `HARD_ACCURACY_THRESHOLDS` | Accuracy thresholds in seconds (**deprecated**, use `HARD_ACCURACY_THRESHOLDS` or `getAccuracyThresholdsForPreset()`) |
-| `EASY_ACCURACY_THRESHOLDS` | `{ perfect: 0.075, great: 0.125, good: 0.175, ok: 0.250 }` | Easy difficulty thresholds (±75ms, ±125ms, ±175ms, ±250ms) |
-| `MEDIUM_ACCURACY_THRESHOLDS` | `{ perfect: 0.045, great: 0.090, good: 0.135, ok: 0.200 }` | Medium difficulty thresholds (±45ms, ±90ms, ±135ms, ±200ms) |
-| `HARD_ACCURACY_THRESHOLDS` | `{ perfect: 0.010, great: 0.025, good: 0.050, ok: 0.100 }` | Hard difficulty thresholds (±10ms, ±25ms, ±50ms, ±100ms) |
+| `EASY_ACCURACY_THRESHOLDS` | `{ perfect: 0.035, great: 0.070, good: 0.110, ok: 0.150 }` | Easy difficulty thresholds (±35ms, ±70ms, ±110ms, ±150ms) |
+| `MEDIUM_ACCURACY_THRESHOLDS` | `{ perfect: 0.010, great: 0.025, good: 0.050, ok: 0.100 }` | Medium difficulty thresholds (±10ms, ±25ms, ±50ms, ±100ms) |
+| `HARD_ACCURACY_THRESHOLDS` | `{ perfect: 0.008, great: 0.020, good: 0.040, ok: 0.075 }` | Hard difficulty thresholds (±8ms, ±20ms, ±40ms, ±75ms) |
 | `getAccuracyThresholdsForPreset(preset)` | Returns `AccuracyThresholds` | Get thresholds for a difficulty preset (`'easy'`, `'medium'`, `'hard'`, `'custom'`) |
 | `validateThresholds(thresholds)` | Returns `ThresholdValidationResult` | Validate custom thresholds for correctness (checks positive values and ascending order) |
 | `BEAT_DETECTION_VERSION` | `'1.0.0'` | Algorithm version |

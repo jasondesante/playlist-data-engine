@@ -389,14 +389,14 @@ export interface RhythmGameContext {
 // ============================================================================
 
 /**
- * Default combo end bonus formula: comboLength * 2
+ * Default combo end bonus formula: comboLength * 5
  *
  * Examples:
- * - 10 combo → 20 bonus score → 2 XP (with 0.1 ratio)
- * - 50 combo → 100 bonus score → 10 XP
- * - 100 combo → 200 bonus score → 20 XP
+ * - 10 combo → 50 bonus score → 5 XP (with 0.1 ratio)
+ * - 50 combo → 250 bonus score → 25 XP
+ * - 100 combo → 500 bonus score → 50 XP
  */
-const DEFAULT_COMBO_END_BONUS_FORMULA = (comboLength: number): number => comboLength * 2;
+const DEFAULT_COMBO_END_BONUS_FORMULA = (comboLength: number): number => comboLength * 5;
 
 /**
  * Default rhythm XP configuration

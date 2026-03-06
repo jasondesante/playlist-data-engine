@@ -965,11 +965,11 @@ function onPlayerButtonPress() {
 
 | Level | Easy | Medium | Hard | Description |
 |-------|------|--------|------|-------------|
-| `perfect` | ±75ms | ±45ms | ±10ms | Perfect timing |
-| `great` | ±125ms | ±90ms | ±25ms | Very close |
-| `good` | ±175ms | ±135ms | ±50ms | Good timing |
-| `ok` | ±250ms | ±200ms | ±100ms | Acceptable |
-| `miss` | >250ms | >200ms | >100ms | Missed the beat |
+| `perfect` | ±35ms | ±10ms | ±8ms | Perfect timing |
+| `great` | ±70ms | ±25ms | ±20ms | Very close |
+| `good` | ±110ms | ±50ms | ±40ms | Good timing |
+| `ok` | ±150ms | ±100ms | ±75ms | Acceptable |
+| `miss` | >150ms | >100ms | >75ms | Missed the beat |
 | `wrongKey` | — | — | — | Correct timing but wrong key pressed (for charts with required keys) |
 
 **Default**: Medium difficulty (balanced experience for most players)
@@ -1053,7 +1053,7 @@ import {
 
 // Access preset values directly
 console.log(EASY_ACCURACY_THRESHOLDS);
-// { perfect: 0.075, great: 0.125, good: 0.175, ok: 0.250 }
+// { perfect: 0.035, great: 0.070, good: 0.110, ok: 0.150 }
 
 // Get thresholds for a preset programmatically
 const thresholds = getAccuracyThresholdsForPreset('medium');
@@ -3268,6 +3268,41 @@ const grooveAnalyzer = new GrooveAnalyzer({
 | `getGrooveStats` | `currentAudioTime?: number` | `GrooveStats \| null` | Get groove statistics for end bonus calculation. Returns null if no groove was active. |
 | `resetGrooveStats` | - | `void` | Reset groove lifetime tracking (called internally when groove ends) |
 | `reset` | - | `void` | Clear all state and start fresh |
+| `setDifficulty` | `options: { preset: DifficultyPreset, customPenalties?: Partial<GroovePenaltyConfig> }` | `void` | Set difficulty level for groove penalties. Updates `hotnessLossOnMiss` and `hotnessLossOnBreak` based on preset. |
+
+---
+
+### Difficulty Presets
+
+Groove penalties can be adjusted based on difficulty level. Higher difficulties have more severe penalties for misses and wrong keys.
+
+| Preset | `hotnessLossOnMiss` | `hotnessLossOnBreak` | Description |
+|--------|---------------------|----------------------|-------------|
+| `easy` | 15 | 15 | Forgiving for casual players |
+| `medium` | 25 | 25 | Balanced difficulty |
+| `hard` | 45 | 45 | Strict for veterans |
+| `custom` | (varies) | (varies) | Use `customPenalties` parameter |
+
+```typescript
+// Set to hard difficulty
+grooveAnalyzer.setDifficulty({ preset: 'hard' });
+
+// Set to custom difficulty
+grooveAnalyzer.setDifficulty({
+    preset: 'custom',
+    customPenalties: { hotnessLossOnMiss: 30, hotnessLossOnBreak: 25 }
+});
+```
+
+**Related Exports:**
+
+| Export | Description |
+|--------|-------------|
+| `EASY_GROOVE_PENALTIES` | Easy difficulty penalty config |
+| `MEDIUM_GROOVE_PENALTIES` | Medium difficulty penalty config |
+| `HARD_GROOVE_PENALTIES` | Hard difficulty penalty config |
+| `GROOVE_PENALTY_PRESETS` | Map of preset names to penalty configs |
+| `getGroovePenaltiesForPreset(preset, customPenalties?)` | Get penalty config for a preset |
 
 ---
 

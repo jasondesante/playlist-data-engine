@@ -90,6 +90,7 @@ export type {
     GrooveResult,
     GrooveState,
     GrooveAnalyzerOptions,
+    GroovePenaltyConfig,
 } from './core/types/BeatMap.js';
 
 // Beat detection constants
@@ -132,6 +133,12 @@ export {
     DEFAULT_BEAT_INTERPOLATION_OPTIONS,
     // Groove analyzer defaults
     DEFAULT_GROOVE_OPTIONS,
+    // Groove penalty presets
+    EASY_GROOVE_PENALTIES,
+    MEDIUM_GROOVE_PENALTIES,
+    HARD_GROOVE_PENALTIES,
+    GROOVE_PENALTY_PRESETS,
+    getGroovePenaltiesForPreset,
 } from './core/types/BeatMap.js';
 
 // Character types
