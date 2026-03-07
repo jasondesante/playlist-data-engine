@@ -177,7 +177,7 @@ This plan implements **two independent XP reward systems** that both operate dur
     groove: {
       perHitMultiplier: false,
       perHitScale: 1.0,
-      endBonus: { enabled: true, maxStreakWeight: 0.4, avgHotnessWeight: 0.4, durationWeight: 0.2 }
+      endBonus: { enabled: true, maxStreakWeight: 5, avgHotnessWeight: 5, durationWeight: 5 }
     },
     maxMultiplier: 5.0
   };

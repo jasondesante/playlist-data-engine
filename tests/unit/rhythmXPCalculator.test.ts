@@ -525,18 +525,18 @@ describe('RhythmXPCalculator', () => {
         });
 
         it('should calculate bonus using weighted formula', () => {
-            // Default weights: maxStreakWeight: 0.4, avgHotnessWeight: 0.4, durationWeight: 0.2
+            // Default weights: maxStreakWeight: 5, avgHotnessWeight: 5, durationWeight: 5
             const result = calculator.calculateGrooveEndBonus({
-                maxStreak: 50, // 50 * 0.4 = 20
-                avgHotness: 80, // 80 * 0.4 = 32
-                duration: 10, // 10 * 0.2 = 2
+                maxStreak: 50, // 50 * 5 = 250
+                avgHotness: 80, // 80 * 5 = 400
+                duration: 10, // 10 * 5 = 50
                 totalHits: 100,
             });
 
-            // bonusScore = 20 + 32 + 2 = 54
-            // bonusXP = 54 * 0.1 = 5.4
-            expect(result.bonusScore).toBe(54);
-            expect(result.bonusXP).toBe(5.4);
+            // bonusScore = 250 + 400 + 50 = 700
+            // bonusXP = 700 * 0.1 = 70
+            expect(result.bonusScore).toBe(700);
+            expect(result.bonusXP).toBe(70);
         });
 
         it('should handle zero values', () => {
@@ -577,16 +577,16 @@ describe('RhythmXPCalculator', () => {
             });
 
             const result = customCalculator.calculateGrooveEndBonus({
-                maxStreak: 50, // 20
-                avgHotness: 80, // 32
-                duration: 10, // 2
+                maxStreak: 50, // 50 * 5 = 250
+                avgHotness: 80, // 80 * 5 = 400
+                duration: 10, // 10 * 5 = 50
                 totalHits: 100,
             });
 
-            // bonusScore = 54
-            // bonusXP = 54 * 0.5 = 27
-            expect(result.bonusScore).toBe(54);
-            expect(result.bonusXP).toBe(27);
+            // bonusScore = 250 + 400 + 50 = 700
+            // bonusXP = 700 * 0.5 = 350
+            expect(result.bonusScore).toBe(700);
+            expect(result.bonusXP).toBe(350);
         });
 
         it('should use custom weights', () => {

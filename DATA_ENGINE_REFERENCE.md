@@ -3141,9 +3141,9 @@ const DEFAULT_RHYTHM_XP_CONFIG = {
         perHitScale: 1.0,
         endBonus: {
             enabled: true,
-            maxStreakWeight: 0.4,
-            avgHotnessWeight: 0.4,
-            durationWeight: 0.2
+            maxStreakWeight: 5,
+            avgHotnessWeight: 5,
+            durationWeight: 5
         }
     },
     maxMultiplier: 5.0
