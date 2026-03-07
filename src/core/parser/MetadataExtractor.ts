@@ -107,6 +107,44 @@ export class MetadataExtractor {
     }
 
     /**
+     * Extract genre with support for string or array formats
+     * - If genre is a string, returns it directly
+     * - If genre is an array, returns the first element
+     * - Also checks OpenSea attributes array for "Genre" trait_type
+     */
+    static extractGenre(data: Record<string, unknown>): string {
+        // Check direct genre field first
+        if (typeof data.genre === 'string') {
+            return data.genre;
+        }
+
+        // Handle array of genres - take first one as primary
+        if (Array.isArray(data.genre) && data.genre.length > 0) {
+            const firstGenre = data.genre[0];
+            return typeof firstGenre === 'string' ? firstGenre : '';
+        }
+
+        // Check OpenSea-style attributes for Genre trait
+        if (Array.isArray(data.attributes)) {
+            const genreAttr = data.attributes.find(
+                (attr: { trait_type?: string; value?: unknown }) =>
+                    attr.trait_type?.toLowerCase() === 'genre' && attr.value !== undefined
+            );
+            if (genreAttr) {
+                if (typeof genreAttr.value === 'string') {
+                    return genreAttr.value;
+                }
+                if (Array.isArray(genreAttr.value) && genreAttr.value.length > 0) {
+                    const firstGenre = genreAttr.value[0];
+                    return typeof firstGenre === 'string' ? firstGenre : '';
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
      * Convert OpenSea-style attributes array to key-value object
      * Example: [{ trait_type: "BPM", value: 120 }] => { BPM: 120 }
      */

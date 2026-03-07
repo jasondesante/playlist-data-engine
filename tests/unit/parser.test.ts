@@ -112,6 +112,62 @@ describe('MetadataExtractor', () => {
             expect(result).toBeNull();
         });
     });
+
+    describe('extractGenre', () => {
+        it('should extract genre as string', () => {
+            const data = { genre: 'House' };
+            expect(MetadataExtractor.extractGenre(data)).toBe('House');
+        });
+
+        it('should extract first genre from array', () => {
+            const data = { genre: ['House', 'Electronic', 'Dance'] };
+            expect(MetadataExtractor.extractGenre(data)).toBe('House');
+        });
+
+        it('should return empty string for empty genre array', () => {
+            const data = { genre: [] };
+            expect(MetadataExtractor.extractGenre(data)).toBe('');
+        });
+
+        it('should extract genre from OpenSea attributes array', () => {
+            const data = {
+                attributes: [
+                    { trait_type: 'Genre', value: 'Techno' },
+                    { trait_type: 'BPM', value: 128 },
+                ],
+            };
+            expect(MetadataExtractor.extractGenre(data)).toBe('Techno');
+        });
+
+        it('should extract first genre from attributes array value', () => {
+            const data = {
+                attributes: [
+                    { trait_type: 'genre', value: ['Ambient', 'Chillout'] },
+                ],
+            };
+            expect(MetadataExtractor.extractGenre(data)).toBe('Ambient');
+        });
+
+        it('should prioritize direct genre field over attributes', () => {
+            const data = {
+                genre: 'Direct Genre',
+                attributes: [{ trait_type: 'Genre', value: 'Attribute Genre' }],
+            };
+            expect(MetadataExtractor.extractGenre(data)).toBe('Direct Genre');
+        });
+
+        it('should return empty string when genre is missing', () => {
+            const data = { title: 'Track' };
+            expect(MetadataExtractor.extractGenre(data)).toBe('');
+        });
+
+        it('should handle case-insensitive genre trait_type', () => {
+            const data = {
+                attributes: [{ trait_type: 'GENRE', value: 'Trance' }],
+            };
+            expect(MetadataExtractor.extractGenre(data)).toBe('Trance');
+        });
+    });
 });
 
 describe('PlaylistParser', () => {

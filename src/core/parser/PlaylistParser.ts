@@ -141,7 +141,7 @@ export class PlaylistParser {
         const description = typeof parsedMetadata?.description === 'string' ? parsedMetadata.description : undefined;
         const album = typeof parsedMetadata?.album === 'string' ? parsedMetadata.album : undefined;
         const duration = parsedMetadata?.duration ? Number(parsedMetadata.duration) : 0;
-        const genre = typeof parsedMetadata?.genre === 'string' ? parsedMetadata.genre : '';
+        const genre = MetadataExtractor.extractGenre(parsedMetadata || {});
         const tags = parsedMetadata?.tags || [];
         const bpm = parsedMetadata?.bpm ? Number(parsedMetadata.bpm) : undefined;
         const key = typeof parsedMetadata?.key === 'string' ? parsedMetadata.key : undefined;
