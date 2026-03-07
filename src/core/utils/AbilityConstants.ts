@@ -31,7 +31,6 @@ export function isValidAbility(ability: string): ability is Ability {
 }
 
 /**
- * Alias for isValidAbility for backwards compatibility
- * @deprecated Use isValidAbility instead
+ * Alias for isValidAbility - both names are equivalent and supported
  */
 export { isValidAbility as isAbility };
