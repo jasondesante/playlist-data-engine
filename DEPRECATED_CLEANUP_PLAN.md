@@ -36,12 +36,12 @@ export { isValidAbility as isAbility };
 ```
 
 ### Task 1.2: Remove `@deprecated` from `BEAT_ACCURACY_THRESHOLDS`
-- [ ] Edit `src/core/types/BeatMap.ts`
-  - Remove the `@deprecated` JSDoc comment
-  - Update comment to clarify it's the standard hard preset constant
-- [ ] Verify no other changes needed (20 active references including public API exports)
+- [x] Edit `src/core/types/BeatMap.ts`
+  - Removed the `@deprecated` JSDoc comment
+  - Updated comment to clarify it's the standard hard preset constant
+- [x] Verified no other changes needed (8 files reference it including public API exports)
 
-**Current code (lines 1300-1304):**
+**Original code (lines 1300-1304):**
 ```typescript
 /**
  * Default accuracy thresholds (Hard difficulty)
@@ -50,7 +50,7 @@ export { isValidAbility as isAbility };
 export const BEAT_ACCURACY_THRESHOLDS: AccuracyThresholds = HARD_ACCURACY_THRESHOLDS;
 ```
 
-**Should become:**
+**Updated to:**
 ```typescript
 /**
  * Default accuracy thresholds (Hard difficulty preset)

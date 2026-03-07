@@ -1298,8 +1298,8 @@ export const DEFAULT_BEATSTREAM_OPTIONS: Required<BeatStreamOptions> = {
 };
 
 /**
- * Default accuracy thresholds (Hard difficulty)
- * @deprecated Use HARD_ACCURACY_THRESHOLDS or getAccuracyThresholdsForPreset() instead
+ * Default accuracy thresholds (Hard difficulty preset)
+ * Equivalent to HARD_ACCURACY_THRESHOLDS - use either constant
  */
 export const BEAT_ACCURACY_THRESHOLDS: AccuracyThresholds = HARD_ACCURACY_THRESHOLDS;
 
