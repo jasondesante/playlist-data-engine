@@ -247,11 +247,11 @@ Removed all three code blocks. The existing cross-reference link at line 2665 al
 > **Action if NOT found:** Move to `docs/EXTENSIBILITY_GUIDE.md`, add cross-reference in reference
 
 ### Task 4.1: Batch Image Methods Example (Lines 4906-4933)
-- [ ] **Search** `docs/EXTENSIBILITY_GUIDE.md` for "batchAddIcons", "batchUpdateImages", "batchByCategory"
-- [ ] **Decision:** If found → Remove from reference; If not found → Move to appropriate doc
-- [ ] **Execute:** Remove or relocate the code block
+- [x] **Search** `docs/EXTENSIBILITY_GUIDE.md` for "batchAddIcons", "batchUpdateImages", "batchByCategory"
+- [x] **Decision:** Found in EXTENSIBILITY_GUIDE.md (lines 744-804 with comprehensive examples) - Remove from reference
+- [x] **Execute:** Removed 27-line code block, added cross-reference link
 
-**Code to check:** 27-line usage example for batch image methods
+**Summary:** The batch image methods usage example was redundant. EXTENSIBILITY_GUIDE.md has comprehensive documentation including: batchAddIcons examples (spells, equipment), batchUpdateImages with predicates, batchByCategory by property (school, rarity), and error handling. Removed the code block and added cross-reference: "**For batch image usage examples (batchAddIcons, batchUpdateImages, batchByCategory):** See [docs/EXTENSIBILITY_GUIDE.md#batch-image-operations](docs/EXTENSIBILITY_GUIDE.md#batch-image-operations)"
 
 ---
 

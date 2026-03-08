@@ -4445,34 +4445,7 @@ The following categories support `icon` and `image` fields for batch operations:
 | `races.data` | RaceDataEntry | `name` (race name) |
 | `classes.data` | ClassDataEntry | `name` (class name) |
 
-**Batch Image Methods Usage:**
-```typescript
-const manager = ExtensionManager.getInstance();
-
-// Add icons to specific spells
-manager.batchAddIcons('spells', {
-    'Fireball': '/assets/spells/fireball.png',
-    'Magic Missile': '/assets/spells/magic-missile.png'
-});
-
-// Add same icon to all cantrips
-manager.batchUpdateImages('spells',
-    spell => spell.level === 0,
-    { icon: '/assets/spells/cantrip-icon.png' }
-);
-
-// Add icons by spell school
-manager.batchByCategory('spells', 'school', {
-    'Evocation': '/assets/icons/fire.png',
-    'Necromancy': '/assets/icons/skull.png'
-});
-
-// Add icons by equipment rarity
-manager.batchByCategory('equipment', 'rarity', {
-    'legendary': '/assets/icons/star-gold.png',
-    'very_rare': '/assets/icons/star-purple.png'
-});
-```
+**For batch image usage examples (batchAddIcons, batchUpdateImages, batchByCategory):** See [docs/EXTENSIBILITY_GUIDE.md#batch-image-operations](docs/EXTENSIBILITY_GUIDE.md#batch-image-operations)
 
 ### FeatureQuery
 
