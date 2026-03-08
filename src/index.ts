@@ -373,6 +373,16 @@ export {
     getVRMTracks
 } from './utils/playlistUtils.js';
 
+// Arweave URL utilities
+export {
+    type GatewayConfig,
+    type ArweaveUrlInfo,
+    DEFAULT_GATEWAYS,
+    isArweaveUrl,
+    parseArweaveUrl,
+    constructGatewayUrl,
+} from './utils/arweaveUtils.js';
+
 // Type helpers
 export { asClass, isValidClass } from './core/types/Character.js';
 
