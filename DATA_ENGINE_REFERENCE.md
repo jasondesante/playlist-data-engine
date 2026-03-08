@@ -1950,9 +1950,9 @@ constructor(options?: BeatSubdividerOptions)
 
 **Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `subdivide(unifiedMap: UnifiedBeatMap, config?: SubdivisionConfig): SubdividedBeatMap` | Subdivide a unified beat map according to per-beat configuration |
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `subdivide(unifiedMap, config?)` | `SubdividedBeatMap` | Subdivide a unified beat map according to per-beat configuration |
 
 **Subdivision Types:**
 
