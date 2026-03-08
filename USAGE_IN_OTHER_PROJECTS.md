@@ -4,14 +4,18 @@ Transform music playlists into D&D 5e-inspired RPG characters through audio/visu
 
 **Quick Links:**
 - **[API Reference](DATA_ENGINE_REFERENCE.md)** — Complete class and method documentation
-- **[Audio Analysis](docs/AUDIO_ANALYSIS.md)** — Triple-tap real-time, full timeline, beat detection
+- **[Audio Analysis](docs/AUDIO_ANALYSIS.md)** — Triple-tap real-time, full timeline
+- **[Beat Detection](docs/BEAT_DETECTION.md)** — Beat detection, rhythm game
+- **[XP and Leveling](docs/XP_AND_STATS.md)** — Progression, stat increases, mastery
+- **[Environmental Sensors](docs/IRL_SENSORS.md)** — GPS, motion, weather, light modifiers
+- **[Rolls and Seeds](docs/ROLLS_AND_SEEDS.md)** — Deterministic random number generation
+- **[Combat System](docs/COMBAT_SYSTEM.md)** — Turn-based D&D 5e combat
+- **[Enemy Generation](docs/ENEMY_GENERATION.md)** — CR-based enemies, encounters, rarity scaling
 - **[Extensibility Guide](docs/EXTENSIBILITY_GUIDE.md)** — Custom content, classes, races, skills
 - **[Equipment System](docs/EQUIPMENT_SYSTEM.md)** — Properties, enchanting, templates
-- **[Enemy Generation](docs/ENEMY_GENERATION.md)** — CR-based enemies, encounters, rarity scaling
-- **[Custom Classes & Races](docs/CUSTOM_CONTENT.md)** — Template-based class inheritance
-- **[XP and Leveling](docs/XP_AND_STATS.md)** — Progression, stat increases, mastery
-- **[Prestige System](docs/XP_AND_STATS.md#track-mastery-prestige-system)** — Reset for badge upgrades after mastering
 - **[Prerequisites](docs/PREREQUISITES.md)** — Level/ability/class/skill/feature requirements
+- **[Custom Classes & Races](docs/CUSTOM_CONTENT.md)** — Template-based class inheritance
+- **[Content Packs](docs/CONTENT_PACKS.md)** — Data packs for custom content
 
 ---
 
@@ -47,7 +51,6 @@ cd /path/to/your/project && npm link playlist-data-engine
 - [Color Extraction](#color-extraction) — Artwork color palette extraction
 - [Character Naming](#character-naming) — Automatic and manual RPG-style name generation
 - [Deterministic Character Generation](#deterministic-character-generation) — Same seed, same character
-- [Advanced Character Features](#advanced-character-features) — Skills, spells, equipment, appearance
 - [Stat Strategies](#stat-strategies) — Level-up stat increase options
 - [XP Scaling](#xp-scaling) — Progression configuration
 - [Prestige System](docs/XP_AND_STATS.md#track-mastery-prestige-system) — Reset for badge upgrades after mastering tracks
@@ -58,7 +61,7 @@ cd /path/to/your/project && npm link playlist-data-engine
 
 ### Audio Analysis
 - [Full Song Analysis](#full-song-analysis) — Segment-by-segment timeline analysis for visualization
-- [Beat Detection](docs/AUDIO_ANALYSIS.md) — Rhythm game timing, beat maps, button press accuracy
+- [Beat Detection](docs/BEAT_DETECTION.md) — Rhythm game timing, beat maps, button press accuracy
 
 ### Advanced Pipeline
 - [Combining All Systems](#combining-all-systems) — Full pipeline with environmental and gaming context
@@ -117,6 +120,12 @@ console.log(`Generated: ${character.name}`);
 console.log(`  Race: ${character.race}`);
 console.log(`  Class: ${character.class}`);
 console.log(`  STR: ${character.ability_scores.STR}, DEX: ${character.ability_scores.DEX}`);
+
+// All generated data is on the character object:
+character.skills      // { athletics: 'proficient', perception: 'expertise', ... }
+character.spells      // { cantrips, known_spells, spell_slots }
+character.equipment   // { weapons, armor, items, totalWeight, equippedWeight }
+character.appearance  // { body_type, hair_color, eye_color, skin_tone, facial_features, aura_color }
 ```
 
 ### Quick Data Extraction
@@ -203,6 +212,11 @@ timelineCount.forEach(event => {
 });
 ```
 
+**For detailed documentation, see [AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)**
+
+### Beat Detect
+
+**For detailed documentation, see [BEAT_DETECTION.md](docs/BEAT_DETECTION.md)**
 
 ### Earning XP from Listening to Music
 
@@ -310,180 +324,6 @@ if (!characterCache.has(track.id)) {
 ```
 
 
-
-### Advanced Character Features
-
-Characters are generated with complete skills, spells, equipment, and appearance. These are initialized automatically by `CharacterGenerator.generate()`.
-
-```typescript
-import { SkillAssigner, SpellManager, EquipmentGenerator, AppearanceGenerator } from 'playlist-data-engine';
-
-const character = CharacterGenerator.generate(track.id, audioProfile, track);
-
-// Skills and proficiencies (assigned by class)
-const rng = new SeededRNG(track.id);
-const skills = SkillAssigner.assignSkills(character.class, rng);
-// Returns: { athletics: 'proficient', perception: 'expertise', stealth: 'proficient', ... }
-
-// Spells (for spellcasting classes)
-if (SpellManager.isSpellcaster(character.class)) {
-  const spells = SpellManager.initializeSpells(character.class, character.level);
-  // Returns: { cantrips, known_spells, spell_slots }
-}
-
-// Starting equipment (by class)
-const equipment = EquipmentGenerator.initializeEquipment(character.class);
-// Returns: { weapons, armor, items, totalWeight, equippedWeight }
-
-// Appearance (from seed + audio profile)
-const appearance = AppearanceGenerator.generate(track.id, character.class, audioProfile);
-// Returns: body_type, hair_color/style, eye_color, skin_tone, facial_features, aura_color
-```
-
-**For deeper dives:**
-- **Skills & Proficiencies**: See [XP_AND_STATS.md](docs/XP_AND_STATS.md)
-- **Spells**: See [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)
-- **Equipment**: See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) (properties, enchanting, templates)
-
-
-
-### Stat Strategies
-
-**For detailed documentation, see [XP_AND_STATS.md](docs/XP_AND_STATS.md)**
-
-### XP Scaling
-
-**For detailed documentation, see [XP_AND_STATS.md](docs/XP_AND_STATS.md)**
-
-
-### Environmental Sensors
-
-GPS, motion, weather, and light sensors that provide XP modifiers based on real-world conditions (running, night, storm, altitude).
-
-**For detailed documentation, see [IRL_SENSORS.md](docs/IRL_SENSORS.md)**
-
-### Gaming Platform Integration
-
-Steam game detection and Discord Rich Presence integration that provide XP bonuses based on gaming activity.
-
-**For detailed documentation, see [IRL_SENSORS.md](docs/IRL_SENSORS.md)**
-
-
-### Combat System
-
-Turn-based D&D 5e-inspired combat with initiative, attacks, spell casting, and dice rolling.
-
-**For detailed documentation, see [COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md)**
-
-
-### Enemy Generation
-
-Generate enemies and balanced encounters using the `EnemyGenerator` class. The system uses **two independent axes** for enemy creation:
-
-| Concept | Determines | Examples |
-|---------|------------|----------|
-| **Challenge Rating (CR)** | Power level (stats, HP, level) | Weak beast vs. ancient dragon |
-| **Rarity** | Complexity (abilities, resistances) | Simple guard vs. complex spellcaster |
-
-**Key principle:** Any CR can combine with any rarity.
-
-```typescript
-import { EnemyGenerator } from 'playlist-data-engine';
-
-// Generate a specific enemy at CR 5 with elite rarity
-const enemy = EnemyGenerator.generate({
-    seed: 'dungeon-orc',
-    templateId: 'orc',
-    cr: 5,              // Power: Level 5, full stats
-    rarity: 'elite'     // Complexity: d10 signature, 2 extra abilities
-});
-
-console.log(enemy.level);  // 5 (derived from CR)
-```
-
-#### CR + Rarity Combinations
-
-Different combinations create diverse enemies:
-
-| CR | Rarity | Result | Example |
-|----|--------|--------|---------|
-| 0.25 | Common | Weak, simple | Goblin grunt |
-| 0.25 | Boss | Weak, complex | Goblin chieftain |
-| 5 | Common | Strong, simple | Dire wolf |
-| 5 | Boss | Strong, complex | Werewolf alpha |
-| 20 | Common | Epic, simple | Ancient purple worm |
-| 20 | Boss | Epic, complex | Ancient red dragon |
-
-```typescript
-// Weak but complex enemy (goblin chieftain)
-const chieftain = EnemyGenerator.generate({
-    seed: 'goblin-leader',
-    templateId: 'goblin',
-    cr: 0.25,           // Level 0.25, 75% base stats
-    rarity: 'boss'      // d12 signature, 3 extra abilities, legendary actions
-});
-
-// Strong but simple enemy (ancient beast)
-const beast = EnemyGenerator.generate({
-    seed: 'ancient-beast',
-    templateId: 'purple-worm',
-    cr: 20,             // Level 20, full stats
-    rarity: 'common'    // d6 signature, no extra abilities
-});
-```
-
-#### Generate Balanced Encounters
-
-```typescript
-// Generate 3 enemies for a level 5 party (medium difficulty)
-const enemies = EnemyGenerator.generateEncounter(party, {
-    seed: 'dungeon-room-1',
-    difficulty: 'medium',
-    count: 3
-});
-
-// Or generate by specific CR
-const cr5Enemies = EnemyGenerator.generateEncounterByCR({
-    seed: 'cr5-encounter',
-    targetCR: 5,
-    count: 3,
-    baseRarity: 'common'   // All enemies start at common rarity
-});
-
-// Opt-in: Scale rarity with CR (higher CR = higher average rarity)
-const scaledEnemies = EnemyGenerator.generateEncounterByCR({
-    seed: 'scaling-encounter',
-    targetCR: 18,          // High CR
-    count: 3,
-    scaleRarityWithCR: true  // Results in [elite, uncommon, uncommon]
-});
-```
-
-#### Fractional CRs
-
-Enemies with fractional CR values (0.25, 0.5) get reduced base stats:
-
-| CR | Stat Multiplier | Description |
-|----|-----------------|-------------|
-| 0.25 | 75% | Sub-level enemy (goblin grunt) |
-| 0.5 | 85% | Sub-level enemy (giant rat) |
-| 1+ | 100% | Full stats |
-
-```typescript
-const grunt = EnemyGenerator.generate({
-    seed: 'weak-goblin',
-    cr: 0.25,           // 75% base stats
-    rarity: 'common'
-});
-```
-
-**For detailed documentation**, see [ENEMY_GENERATION.md](docs/ENEMY_GENERATION.md) for:
-- Complete template list
-- Rarity tier breakdowns
-- Leader promotion system
-- Audio-influenced generation
-- Encounter balance formulas
-
 ---
 
 ## Advanced Examples
@@ -560,6 +400,50 @@ for (const track of playlist.tracks) {
 
 ---
 
+## Stat Strategies & XP Scaling
+
+**For detailed documentation, see [XP_AND_STATS.md](docs/XP_AND_STATS.md)**
+
+---
+
+## Environmental Sensors & Gaming Platform Integration
+
+GPS, motion, weather, and light sensors that provide XP modifiers based on real-world conditions (running, night, storm, altitude).
+
+Steam game detection and Discord Rich Presence integration that provide XP bonuses based on gaming activity.
+
+**For detailed documentation, see [IRL_SENSORS.md](docs/IRL_SENSORS.md)**
+
+---
+
+## Combat System
+
+Turn-based D&D 5e-inspired combat with initiative, attacks, spell casting, and dice rolling.
+
+**For detailed documentation, see [COMBAT_SYSTEM.md](docs/COMBAT_SYSTEM.md)**
+
+### Enemy Generation
+
+Generate enemies and balanced encounters using the `EnemyGenerator` class. The system uses **two independent axes** for enemy creation:
+
+| Concept | Determines | Examples |
+|---------|------------|----------|
+| **Challenge Rating (CR)** | Power level (stats, HP, level) | Weak beast vs. ancient dragon |
+| **Rarity** | Complexity (abilities, resistances) | Simple guard vs. complex spellcaster |
+
+**Key principle:** Any CR can combine with any rarity.
+
+**For detailed documentation**, see [ENEMY_GENERATION.md](docs/ENEMY_GENERATION.md) for:
+- Complete template list
+- Rarity tier breakdowns
+- Leader promotion system
+- Audio-influenced generation
+- Encounter balance formulas
+
+
+---
+
+
 ## Extensibility System
 
 The extensibility system allows you to add custom content at runtime, including spells, equipment, races, classes, features, skills, and appearance options.
@@ -567,86 +451,9 @@ The extensibility system allows you to add custom content at runtime, including 
 **Detailed guides:**
 - [docs/EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md) - Complete extensibility system (custom content, spawn rates, export/import, content packs)
 - [docs/CUSTOM_CONTENT.md](docs/CUSTOM_CONTENT.md) - Custom races, subraces, and classes
+- [docs/CONTENT_PACKS.md](docs/CONTENT_PACKS.md) - Content packs with data of many types all in one file.
 - [docs/PREREQUISITES.md](docs/PREREQUISITES.md) - Skill, spell, and feature prerequisites
-- [docs/EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md) - Equipment properties and modifications
 - [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md) - Complete API reference
-
-### Image Support (Icons and Images)
-
-All entity types support optional `icon` and `image` URL fields for UI display. Use batch methods to add images to multiple items at once.
-
-**Valid URL prefixes:** `http://`, `https://`, `/`, `assets/`
-
-```typescript
-import { ExtensionManager } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// --- Register custom content with images ---
-manager.register('equipment', [{
-    name: 'Dragon Scale Armor',
-    type: 'armor',
-    rarity: 'very_rare',
-    weight: 15,
-    icon: '/icons/armor/dragon-scale.png',
-    image: '/images/equipment/dragon-scale-armor.png'
-}]);
-
-// --- Batch add icons by name ---
-manager.batchAddIcons('spells', {
-    'Fireball': '/assets/spells/fireball.png',
-    'Magic Missile': '/assets/spells/magic-missile.png'
-});
-
-// --- Batch add images by name ---
-manager.batchAddImages('equipment', {
-    'Longsword': '/assets/equipment/longsword.png'
-});
-
-// --- Update all items matching a condition ---
-// Add same icon to all cantrips
-manager.batchUpdateImages('spells',
-    spell => spell.level === 0,
-    { icon: '/assets/spells/cantrip-icon.png' }
-);
-
-// --- Add icons by property value ---
-// All evocation spells get fire icon
-manager.batchByCategory('spells', 'school', {
-    'Evocation': '/assets/icons/fire.png',
-    'Necromancy': '/assets/icons/skull.png',
-    'Abjuration': '/assets/icons/shield.png'
-});
-
-// Add icons by equipment rarity
-manager.batchByCategory('equipment', 'rarity', {
-    'legendary': '/assets/icons/star-gold.png',
-    'very_rare': '/assets/icons/star-purple.png',
-    'rare': '/assets/icons/star-blue.png'
-});
-```
-
-**Supported categories:** `spells`, `skills`, `classFeatures`, `racialTraits`, `equipment`, `races.data`, `classes.data`
-
-**Image validation:**
-```typescript
-import { validateImageFields, isValidImageUrl } from 'playlist-data-engine';
-
-// Validate both icon and image on an object
-const errors = validateImageFields({
-    icon: '/assets/icon.png',
-    image: 'https://example.com/image.png'
-});
-if (errors.length > 0) {
-    console.error('Invalid image URLs:', errors);
-}
-
-// Check a single URL
-if (!isValidImageUrl('ftp://invalid.com/file.png')) {
-    console.log('URL must start with http, https, /, or assets/');
-}
-```
-
 
 ---
 
@@ -661,152 +468,6 @@ Comprehensive equipment system with custom items, properties, enchanting, templa
 - Equipment spawning — Batch spawn by rarity, tags, or templates
 - Equipment-granted features — Items that grant features, skills, or spells
 - Box items — Containers, adventure packs, and loot boxes
-
-### Box Items (Containers & Loot Boxes)
-
-Box-type equipment (`type: 'box'`) can contain other items and gold. This covers both guaranteed containers (like adventure packs that always give specific items) and probability-based loot boxes.
-
-```typescript
-import { BoxOpener, EquipmentSpawnHelper, SeededRNG } from 'playlist-data-engine';
-
-const rng = new SeededRNG('player-seed');
-
-// --- Check if an item in inventory is a box ---
-const someItem = character.equipment.items[0];
-if (BoxOpener.isBox(someItem)) {
-    // Preview possible contents without opening
-    const preview = BoxOpener.previewContents(someItem);
-    console.log(preview.possibleItems);  // ['Backpack', 'Bedroll', 'Torch', ...]
-    console.log(preview.possibleGold);   // { min: 0, max: 0 }
-    console.log(preview.totalDrops);     // 8
-}
-
-// --- Open a box directly ---
-const result = BoxOpener.openBox(someItem, rng);
-console.log(result.items);       // Equipment[] generated from the box
-console.log(result.gold);        // Total gold awarded
-console.log(result.consumeBox);  // true = remove box from inventory
-
-// --- Open a named box from a character's inventory ---
-// (finds "Explorer's Pack" in inventory, opens it, removes it, adds contents)
-EquipmentSpawnHelper.openBoxForCharacter(character, "Explorer's Pack", rng);
-```
-
-**Box behavior:**
-- **Guaranteed drops** — Single-entry pool (weight 100) always gives that item
-- **Weighted random** — Multi-entry pool selects one item per drop slot
-- **Quantity** — `quantity: 10` for Torch gives 10 torch items in one drop
-- **Gold drops** — Pool entries with `gold` award gold instead of items
-- **Nested boxes** — Boxes inside boxes are added unopened (no recursive opening)
-- **Deterministic** — Same seed + same box = same result every time
-
-**Box with icon and image:**
-```typescript
-// Define a custom box with visual assets
-const treasureBox = {
-    name: 'Treasure Chest',
-    type: 'box',
-    rarity: 'rare',
-    weight: 5,
-    icon: '/icons/box/treasure-chest.png',
-    image: '/images/equipment/treasure-chest-open.png',
-    box: {
-        drops: [
-            { pool: [{ name: 'Gold Coin', gold: { min: 50, max: 100 }, weight: 100 }] },
-            { pool: [{ name: 'Ruby', weight: 30 }, { name: 'Sapphire', weight: 30 }] }
-        ],
-        consumeOnOpen: true
-    }
-};
-```
-
-For all built-in pack definitions and custom box examples, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#box-equipment-type) and [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md#boxopener).
-
-### Locked Boxes (Opening Requirements)
-
-Boxes can have optional opening requirements that must be satisfied before the box can be opened. This is useful for locked chests requiring keys, treasure boxes that cost gold to unlock, or caches requiring consumable tools.
-
-```typescript
-import { BoxOpener, EquipmentSpawnHelper, SeededRNG } from 'playlist-data-engine';
-
-const rng = new SeededRNG('player-seed');
-
-// --- Check if a box has requirements ---
-const inventory = character.equipment.items; // Character's item inventory
-const boxItem = inventory.find(item => item.name === 'Locked Chest');
-
-if (BoxOpener.isBox(boxItem)) {
-    // Preview shows requirements along with possible contents
-    const preview = BoxOpener.previewContents(boxItem);
-    if (preview.openRequirements) {
-        console.log('Requirements:', preview.openRequirements);
-        // [{ itemName: 'Iron Key' }]
-    }
-}
-
-// --- Check if player can open a box (boolean check for UI) ---
-if (BoxOpener.canOpen(boxItem, inventory)) {
-    console.log('You have the required items to open this box!');
-} else {
-    // Get human-readable description of what's needed
-    const description = BoxOpener.getRequirementsDescription(boxItem);
-    console.log(description); // "Requires: Iron Key"
-}
-
-// --- Open a locked box (with requirement checking) ---
-const result = BoxOpener.openBox(boxItem, rng, inventory);
-
-if (result.success) {
-    console.log(`Opened! Consumed:`, result.consumedItems);
-    // [{ name: 'Iron Key', quantity: 1 }]
-
-    console.log(`Received ${result.items.length} items and ${result.gold} gold`);
-    console.log(`Box consumed: ${result.consumeBox}`);
-} else {
-    console.log(`Cannot open: ${result.error?.message}`);
-    // "Missing required item: Iron Key" or
-    // "Insufficient Gold Coin: have 50, need 100"
-}
-
-// --- Open a locked box directly from character inventory ---
-const openResult = EquipmentSpawnHelper.openBoxForCharacter(
-    character,
-    'Locked Chest',
-    rng
-);
-
-if (openResult) {
-    if (openResult.result.success) {
-        // Box opened - character is updated automatically:
-        // - Required items consumed from inventory
-        // - Box removed from inventory (if consumeOnOpen: true)
-        // - New items added to inventory
-        character = openResult.character;
-        console.log('Consumed:', openResult.result.consumedItems);
-    } else {
-        // Requirements not met - character unchanged
-        console.log('Failed:', openResult.result.error?.code);
-        // 'MISSING_ITEM' or 'INSUFFICIENT_QUANTITY'
-    }
-}
-```
-
-**Requirement types:**
-
-| Type | Example | Behavior |
-|------|---------|----------|
-| **Single item** | `{ itemName: 'Iron Key' }` | Requires 1 of the item |
-| **Quantity** | `{ itemName: 'Lockpick', quantity: 3 }` | Requires multiple of the same item |
-| **Gold cost** | `{ itemName: 'Gold Coin', quantity: 100 }` | Gold treated as an item with quantity |
-| **Multiple** | Array of requirements | ALL requirements must be satisfied |
-
-**Requirement validation:**
-- Requirements are checked atomically (all or nothing)
-- If any requirement fails, no items are consumed
-- When all requirements are met, ALL required items are consumed
-- The box contents are then generated as normal
-
-For built-in locked boxes (Locked Chest, Gilded Strongbox, Royal Treasury Box, Thieves' Cache) and custom locked box definitions, see [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#opening-requirements).
 
 ---
 

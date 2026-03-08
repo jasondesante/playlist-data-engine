@@ -10,10 +10,11 @@ Complete guide to the environmental and gaming sensors in the Playlist Data Engi
 ## Table of Contents
 
 1. [Environmental Sensors](#environmental-sensors)
-2. [Gaming Sensors](#gaming-sensors)
-3. [Severe Weather Detection](#severe-weather-detection)
-4. [Sensor Dashboard](#sensor-dashboard)
-5. [Sensor Configuration](#sensor-configuration)
+2. [Solar Information (No API Key Required)](#solar-information-no-api-key-required)
+3. [Gaming Sensors](#gaming-sensors)
+4. [Severe Weather Detection](#severe-weather-detection)
+5. [Sensor Dashboard](#sensor-dashboard)
+6. [Sensor Configuration](#sensor-configuration)
 
 ---
 
@@ -48,6 +49,41 @@ console.log(`Environmental bonus: ${xpModifier.toFixed(2)}x`);
 
 ---
 
+## Solar Information (No API Key Required)
+
+The `getSolarInfo()` method provides astronomical calculations for sunrise, sunset, and day stage. **This method works without an API key** using pure astronomical math (NOAA algorithm).
+
+### Basic Usage
+
+```typescript
+import { WeatherAPIClient } from 'playlist-data-engine';
+
+// No API key needed for solar calculations!
+const weatherClient = new WeatherAPIClient('');
+const solarInfo = weatherClient.getSolarInfo(40.7128, -74.0060); // NYC coordinates
+
+console.log(solarInfo.stage);          // 'day', 'night', 'dawn', or 'dusk'
+console.log(solarInfo.sunrise);        // Date object
+console.log(solarInfo.sunset);         // Date object
+console.log(solarInfo.solarNoon);      // Solar noon time
+console.log(solarInfo.dayLengthHours); // e.g., 14.5
+console.log(solarInfo.sunAltitude);    // Sun altitude in degrees
+console.log(solarInfo.sunAzimuth);     // Sun azimuth (0-360, North=0)
+```
+
+### Optional Date Parameter
+
+You can also calculate solar info for a specific date:
+
+```typescript
+// Get solar info for a specific date
+const futureDate = new Date('2024-12-25');
+const christmasSolar = weatherClient.getSolarInfo(40.7128, -74.0060, futureDate);
+console.log(`Christmas day length: ${christmasSolar.dayLengthHours} hours`);
+```
+
+
+---
 
 ## Gaming Platform Integration
 
