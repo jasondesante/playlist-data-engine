@@ -175,13 +175,13 @@ Removed all three code blocks. The existing cross-reference link at line 2665 al
 
 ---
 
-### Task 2.6: Game Mode Configuration Example (Lines 3162-3178)
-- [ ] **Search** `docs/XP_AND_STATS.md` for "gameMode", "standard", "uncapped"
-- [ ] **Search** `USAGE_IN_OTHER_PROJECTS.md` for "gameMode"
-- [ ] **Decision:** If found → Remove from reference; If not found → Move to appropriate doc
-- [ ] **Execute:** Remove or relocate the code block
+### Task 2.6: Game Mode Configuration Example (Lines 2799-2837)
+- [x] **Search** `docs/XP_AND_STATS.md` for "gameMode", "standard", "uncapped"
+- [x] **Search** `USAGE_IN_OTHER_PROJECTS.md` for "gameMode"
+- [x] **Decision:** Found in both XP_AND_STATS.md (lines 902-919 with comprehensive "GAME MODE SELECTION" section) and USAGE_IN_OTHER_PROJECTS.md (lines 312-313)
+- [x] **Execute:** Removed 16-line code block, enhanced cross-reference link
 
-**Code to check:** 16-line usage example for game mode configuration
+**Summary:** The game mode configuration code example was redundant. Both `docs/XP_AND_STATS.md` (comprehensive section at lines 902-919 with detailed comments) and `USAGE_IN_OTHER_PROJECTS.md` (lines 312-313) already have the same examples. Removed the code block and updated the cross-reference to point to `docs/XP_AND_STATS.md#game-mode-selection`.
 
 ---
 

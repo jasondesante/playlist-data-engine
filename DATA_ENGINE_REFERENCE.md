@@ -2812,29 +2812,9 @@ The engine supports two game modes for character progression:
 - Maximum level: unlimited
 - Custom XP scaling formulas available
 
-**Usage:**
-
-```typescript
-// Standard mode (default)
-const character = CharacterGenerator.generate(
-    seed,
-    audioProfile,
-    track,
-    { gameMode: 'standard' }
-);
-
-// Uncapped mode with default D&D 5e pattern continuation
-const epicCharacter = CharacterGenerator.generate(
-    seed,
-    audioProfile,
-    track,
-    { gameMode: 'uncapped' }
-);
-```
-
 The `gameMode` is stored on the character and automatically used during level-ups.
 
-For uncapped progression configuration examples, see [XP_AND_STATS.md](docs/XP_AND_STATS.md#uncapped-mode-custom-formulas).
+**For usage examples and progression configuration:** See [docs/XP_AND_STATS.md#game-mode-selection](docs/XP_AND_STATS.md#game-mode-selection)
 
 ---
 
