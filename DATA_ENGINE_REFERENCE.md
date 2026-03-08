@@ -2244,34 +2244,7 @@ Gaussian smoothing determines how much the onset envelope is smoothed. More smoo
 | `getMelBands(config?: MelBandsConfig)` | `number` | Convert mel bands mode to actual count |
 | `getGaussianSmoothMs(config?: GaussianSmoothConfig)` | `number` | Convert gaussian smooth mode to actual milliseconds value |
 
-**Usage Examples:**
-
-```typescript
-import { BeatMapGenerator, getHopSizeMs, HOP_SIZE_PRESETS } from 'playlist-data-engine';
-
-// Using mode-based configuration
-const generator = new BeatMapGenerator({
-  hopSizeMode: { mode: 'standard' },      // 4ms (Ellis 2007 paper spec)
-  melBandsMode: { mode: 'detailed' },     // 64 bands
-  gaussianSmoothMode: { mode: 'standard' } // 20ms
-});
-
-// Using custom hop size
-const customGenerator = new BeatMapGenerator({
-  hopSizeMode: { mode: 'custom', customValue: 5 } // 5ms
-});
-
-// Using helper functions directly
-const hopSize = getHopSizeMs({ mode: 'hq' }); // 2ms
-const presetValue = HOP_SIZE_PRESETS.standard; // 4
-
-// Backward compatible - direct value still works
-const legacyGenerator = new BeatMapGenerator({
-  hopSizeMs: 10 // Direct numeric value (legacy behavior)
-});
-```
-
-**Precedence:** When both mode and direct value are provided, mode takes precedence. This allows easy migration from legacy code.
+**For detailed examples (mode-based configuration, helper functions, precedence rules):** See [docs/AUDIO_ANALYSIS.md#ose-parameter-modes](docs/AUDIO_ANALYSIS.md#ose-parameter-modes)
 
 ## Progression System
 
