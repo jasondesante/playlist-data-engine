@@ -1903,43 +1903,7 @@ constructor(options?: BeatInterpolationOptions)
 | `static saveToFile(interpolatedBeatMap, filePath)` | `Promise<void>` | Save to disk (Node.js only) |
 | `static loadFromFile(filePath)` | `Promise<InterpolatedBeatMap>` | Load from disk (Node.js only) |
 
-**Usage:**
-
-```typescript
-import { BeatInterpolator, BeatMapGenerator } from 'playlist-data-engine';
-
-// Generate beat map
-const generator = new BeatMapGenerator();
-const beatMap = await generator.generateBeatMap(audioUrl, 'track-1');
-
-// Create interpolator with default options
-const interpolator = new BeatInterpolator();
-
-// Or with custom options
-const customInterpolator = new BeatInterpolator({
-  minAnchorConfidence: 0.5,
-  gridSnapTolerance: 0.03,
-  tempoAdaptationRate: 0.2,
-});
-
-// Interpolate beats
-const interpolatedMap = interpolator.interpolate(beatMap);
-
-// Access original detected beats
-console.log('Detected beats:', interpolatedMap.detectedBeats.length);
-
-// Access merged beats (interpolated + detected)
-console.log('Merged beats:', interpolatedMap.mergedBeats.length);
-
-// Check interpolation metadata
-console.log('Quarter note BPM:', interpolatedMap.quarterNoteBpm);
-console.log('Interpolation ratio:', interpolatedMap.interpolationMetadata.interpolationRatio);
-
-// Use with BeatStream
-const beatStream = new BeatStream(interpolatedMap, audioContext, {
-  useInterpolatedBeats: true,  // Use mergedBeats instead of beats
-});
-```
+**For usage examples:** See [docs/AUDIO_ANALYSIS.md#beat-interpolation](docs/AUDIO_ANALYSIS.md#beat-interpolation)
 
 **Confidence Model:**
 
