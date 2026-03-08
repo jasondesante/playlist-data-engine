@@ -2356,35 +2356,34 @@ new XPCalculator(options?: Partial<ExperienceSystem>)
 
 ### ExperienceSystem
 
-*Location:* *[src/core/types/Progression.ts](src/core/types/Progression.ts)* (76-98)
+*Location:* *[src/core/types/Progression.ts](src/core/types/Progression.ts)*
 
 Configuration for XP calculation.
 
-```typescript
-export interface ExperienceSystem {
-    // XP thresholds for each level (D&D 5e standard)
-    level_thresholds: number[];
+#### Properties
 
-    // Base XP rates
-    xp_per_second: number;        // Base rate (e.g., 1 XP per second of listening)
-    xp_per_track_completion: number;  // Bonus for finishing a song
+| Property | Type | Description |
+|----------|------|-------------|
+| `level_thresholds` | `number[]` | XP thresholds for each level (D&D 5e standard) |
+| `xp_per_second` | `number` | Base rate (e.g., 1 XP per second of listening) |
+| `xp_per_track_completion` | `number` | Bonus for finishing a song |
+| `activity_bonuses` | `object` | Activity multipliers for XP |
+| `activity_bonuses.stationary` | `number` | Multiplier for stationary activity |
+| `activity_bonuses.walking` | `number` | Multiplier for walking |
+| `activity_bonuses.running` | `number` | Multiplier for running |
+| `activity_bonuses.driving` | `number` | Multiplier for driving |
+| `activity_bonuses.night_time` | `number` | Multiplier for night time |
+| `activity_bonuses.extreme_weather` | `number` | Multiplier for extreme weather |
+| `activity_bonuses.high_altitude` | `number` | Multiplier for high altitude (≥2000m) |
+| `activity_bonuses.rhythm_game_base` | `number` | Base multiplier when rhythm game active (default: 1.25) |
+| `activity_bonuses.rhythm_game_combo` | `number` | Max additional from combo (default: 0.5) |
+| `activity_bonuses.rhythm_game_groove` | `number` | Max additional from groove hotness (default: 0.5) |
+| `track_mastery_threshold` | `number` | Listens required to master a track |
+| `mastery_bonus_xp` | `number` | Bonus XP for mastering a track |
 
-    // Activity multipliers
-    activity_bonuses: {
-        stationary: number;
-        walking: number;
-        running: number;
-        driving: number;
-        night_time: number;
-        extreme_weather: number;
-        high_altitude: number;
-    };
+---
 
-    // Mastery system
-    track_mastery_threshold: number;  // Listens required to master a track
-    mastery_bonus_xp: number;         // Bonus for mastering
-}
-```
+### XPCalculator Methods
 
 **Methods:**
 
