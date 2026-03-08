@@ -315,14 +315,6 @@ Audio frequency band separation for analysis. Rebalanced v2 ranges prevent trebl
 | Mid | 400Hz - 4kHz | 52% (3,600 Hz) |
 | Treble | 4kHz - 14kHz | 37% (10,000 Hz) |
 
-```typescript
-export interface FrequencyBands {
-    bass: number[];   // Bass frequencies (20Hz - 400Hz)
-    mid: number[];    // Mid frequencies (400Hz - 4kHz)
-    treble: number[]; // Treble frequencies (4kHz - 14kHz)
-}
-```
-
 ### Character Types
 
 **Location:** [src/core/types/Character.ts](src/core/types/Character.ts)
@@ -557,12 +549,6 @@ Visual appearance details for a character.
 | secondary_color | string? | Dynamic (from audio/visual) |
 | accent_color | string? | Dynamic (from audio/visual) |
 | aura_color | string? | Dynamic (from audio/visual, magical classes only) |
-    // Dynamic features (from audio/visual)
-    primary_color?: string;
-    secondary_color?: string;
-    accent_color?: string;
-    aura_color?: string;
-
 
 ### EnvironmentalContext
 
@@ -913,16 +899,7 @@ Deterministic random number generator for reproducible results. The same seed al
 
 *Location:* `src/utils/validators.ts`
 
-Zod schemas for runtime type validation. Use `safeParse()` for validation:
-
-```typescript
-import { PlaylistTrackSchema } from '@playlist-data-engine/utils';
-
-const result = PlaylistTrackSchema.safeParse(data);
-if (!result.success) {
-  console.error(result.error);
-}
-```
+Zod schemas for runtime type validation. Use `safeParse()` for validation.
 
 | Schema | Validates |
 |--------|-----------|
@@ -1001,16 +978,6 @@ Validates icon and image URL fields for all entity types. Ensures URLs follow al
 | Type | Description |
 |------|-------------|
 | `ImageValidationResult` | Validation result with `valid: boolean` and `errors: string[]` |
-
-**Usage Example:**
-```typescript
-import { validateImageFields } from '@playlist-data-engine/core';
-
-const errors = validateImageFields({ icon: '/assets/icon.png', image: 'https://example.com/image.png' });
-if (errors.length > 0) {
-    console.error('Invalid image URLs:', errors);
-}
-```
 
 #### Sensor Dashboard
 
@@ -1217,45 +1184,15 @@ Simple functions that return arrays of basic data from playlists. Works with bot
 
 #### Types
 
-```typescript
-type PlaylistInput = ServerlessPlaylist | RawArweavePlaylist;
+*Location:* [src/utils/playlistUtils.ts](src/utils/playlistUtils.ts)
 
-interface SimpleTrack {
-    title: string;
-    artist: string;
-    audio_url: string;
-    image_url: string;
-}
+| Type | Description |
+|------|-------------|
+| `PlaylistInput` | Union of `ServerlessPlaylist` or `RawArweavePlaylist` |
+| `SimpleTrack` | Simplified track: `{ title, artist, audio_url, image_url }` |
+| `VRMTrack` | Track with VRM: `{ title, artist, audio_url, image_url, vrm }` |
 
-interface VRMTrack {
-    title: string;
-    artist: string;
-    audio_url: string;
-    image_url: string;
-    vrm: string;
-}
-```
-
-#### Usage Example
-
-```typescript
-import { PlaylistParser, getAudioUrls, getArtists, getTracks, getVRMTracks } from 'playlist-data-engine';
-
-const parser = new PlaylistParser();
-const playlist = await parser.parse(rawPlaylistData);
-
-// Simple array extraction
-const urls = getAudioUrls(playlist);      // ['https://...', 'https://...']
-const artists = getArtists(playlist);     // ['Artist A', 'Artist B']
-
-// Object extraction
-const tracks = getTracks(playlist);
-// [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...' }, ...]
-
-// VRM extraction (for tracks with 3D avatar models)
-const vrmTracks = getVRMTracks(playlist);
-// [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', vrm: 'https://...' }, ...]
-```
+*For usage examples, see [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md#playlist-utilities).*
 
 ---
 
@@ -1686,80 +1623,6 @@ The engine performs simple string comparison for key matching. The frontend is r
 - Game controller face buttons → pass `"a"`, `"b"`, `"x"`, `"y"`
 - Touch screen zones → pass any custom string
 
-### Chart Creation Example
-
-Create a rhythm game chart with required keys:
-
-```typescript
-import {
-    BeatMapGenerator,
-    BeatInterpolator,
-    BeatSubdivider,
-    unifyBeatMap,
-    SubdivisionConfig,
-    BeatStream,
-    assignKeysToBeats,
-    extractKeyMap,
-    getUsedKeys,
-} from 'playlist-data-engine';
-
-// Step 1: Generate beat map from audio
-const generator = new BeatMapGenerator();
-const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
-
-// Step 2: Interpolate to fill gaps
-const interpolator = new BeatInterpolator();
-const interpolatedMap = interpolator.interpolate(beatMap);
-
-// Step 3: Unify for subdivision
-const unifiedMap = unifyBeatMap(interpolatedMap);
-
-// Step 4: Subdivide for rhythm patterns
-const subdivisionConfig: SubdivisionConfig = {
-    beatSubdivisions: new Map([
-        [0, 'eighth'],   // All beats get eighth notes
-    ]),
-    defaultSubdivision: 'eighth',
-};
-const subdivider = new BeatSubdivider();
-const subdividedMap = subdivider.subdivide(unifiedMap, subdivisionConfig);
-
-// Step 5: Assign required keys to create a chart
-const chartMap = assignKeysToBeats(subdividedMap, [
-    { beatIndex: 0, key: 'left' },
-    { beatIndex: 1, key: 'down' },
-    { beatIndex: 2, key: 'up' },
-    { beatIndex: 3, key: 'right' },
-    // ... more assignments
-]);
-
-// Step 6: Check what keys are used
-const usedKeys = getUsedKeys(chartMap);
-// ['down', 'left', 'right', 'up']
-
-// Step 7: Use in gameplay
-const beatStream = new BeatStream(chartMap, audioContext);
-
-// Step 8: On player input - frontend maps physical input to string
-function onPlayerInput(physicalKey: string) {
-    // Map physical input to logical key
-    const keyMap = { 'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right' };
-    const pressedKey = keyMap[physicalKey];
-
-    const result = beatStream.checkButtonPress(audioContext.currentTime, pressedKey);
-
-    // result.accuracy: 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKey'
-    // result.keyMatch: true | false
-    // result.requiredKey: the key the beat required (if any)
-    // result.pressedKey: the key that was passed in
-}
-
-// Easy mode: ignore key requirements (timing-only evaluation)
-const easyStream = new BeatStream(chartMap, audioContext, {
-    ignoreKeyRequirements: true,
-});
-```
-
 ### GrooveAnalyzer
 
 **Location:** `src/core/analysis/beat/GrooveAnalyzer.ts`
@@ -1810,19 +1673,6 @@ Groove penalties can be adjusted based on difficulty level. Higher difficulties 
 | `medium` | 25 | 25 | Balanced difficulty |
 | `hard` | 45 | 45 | Strict for veterans |
 | `custom` | (varies) | (varies) | Use `customPenalties` parameter |
-
-**Usage:**
-
-```typescript
-// Set to hard difficulty
-grooveAnalyzer.setDifficulty({ preset: 'hard' });
-
-// Set to custom difficulty
-grooveAnalyzer.setDifficulty({
-    preset: 'custom',
-    customPenalties: { hotnessLossOnMiss: 30, hotnessLossOnBreak: 25 }
-});
-```
 
 **Related Exports:**
 

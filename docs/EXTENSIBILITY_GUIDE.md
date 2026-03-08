@@ -941,6 +941,19 @@ All custom content IDs must use `lowercase_with_underscores` format.
 - **Duplicate IDs:** Automatically detected. Use `getCustom(category)` to check existing IDs before registering.
 - **Disable validation:** Use `{ validate: false }` to bypass (advanced use only—may cause runtime errors).
 
+### Image/Icon URL Validation
+
+Use `ImageValidator` to validate `icon` and `image` URL fields for custom content. Valid URL prefixes: `http://`, `https://`, `/`, `assets/`
+
+```typescript
+import { validateImageFields } from 'playlist-data-engine';
+
+const errors = validateImageFields({ icon: '/assets/icon.png', image: 'https://example.com/image.png' });
+if (errors.length > 0) {
+    console.error('Invalid image URLs:', errors);
+}
+```
+
 ---
 
 ## Troubleshooting
