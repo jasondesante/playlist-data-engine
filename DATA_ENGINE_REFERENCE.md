@@ -2439,14 +2439,7 @@ Orchestrates applying session results to a character, handling leveling up and m
 | `standard` (capped at 20) | `dnD5e` (manual) | 2-step level-up: XP adds HP/proficiency/features, stats require manual selection via `applyPendingStatIncrease()` |
 | `uncapped` | `dnD5e_smart` (auto) | 1-step level-up: Everything applied automatically, intelligently boosts primary/lowest stats |
 
-**Override with custom StatManager:**
-```typescript
-import { StatManager, CharacterUpdater } from 'playlist-data-engine';
-
-// Force automatic mode for standard characters
-const statManager = new StatManager({ strategy: 'dnD5e_smart' });
-const updater = new CharacterUpdater(statManager);
-```
+**For custom StatManager configuration and strategy options:** See [docs/XP_AND_STATS.md#stat-increase-strategies](docs/XP_AND_STATS.md#stat-increase-strategies)
 
 #### Types
 
@@ -3339,50 +3332,7 @@ Bidirectional conversion between Challenge Rating (CR) and character level for e
 | `formatCR(cr: number): string` | Format CR with fractional notation (e.g., "1/4", "1/2") |
 | `createCRTuning(options?: Partial<CRTuningConfig>): CRTuningConfig` | Create custom CR tuning configuration |
 
-**Single Enemy Generation:**
-
-```typescript
-// Generate a specific elite orc
-const orc = EnemyGenerator.generate({
-  seed: 'my-encounter',
-  templateId: 'orc',
-  rarity: 'elite'
-});
-
-// Generate a random humanoid brute
-const enemy = EnemyGenerator.generate({
-  seed: 'random-1',
-  category: 'humanoid',
-  archetype: 'brute',
-  rarity: 'common'
-});
-
-// With audio influence
-const enemy = EnemyGenerator.generate({
-  seed: 'audio-1',
-  audioProfile: profile,
-  track: trackData,
-  difficultyMultiplier: 1.2
-});
-```
-
-**Encounter Generation:**
-
-```typescript
-// Party-based balanced encounter
-const enemies = EnemyGenerator.generateEncounter(party, {
-  seed: 'dungeon-1',
-  difficulty: 'medium',
-  count: 5  // Will auto-promote 1 to uncommon as leader
-});
-
-// CR-based encounter (no party needed)
-const enemies = EnemyGenerator.generateEncounterByCR({
-  seed: 'cr5-encounter',
-  targetCR: 5,
-  count: 3
-});
-```
+**For usage examples (single enemy generation, encounter generation, audio influence):** See [docs/ENEMY_GENERATION.md](docs/ENEMY_GENERATION.md#enemy-generation)
 
 **Generation Options (EnemyGenerationOptions):**
 
@@ -3457,20 +3407,18 @@ Analyzes party strength for encounter generation using D&D 5e encounter building
 
 **PartyAnalysis Interface:**
 
-```typescript
-interface PartyAnalysis {
-  averageLevel: number;      // Average party level
-  partySize: number;         // Number of party members
-  averageAC: number;         // Average armor class
-  averageHP: number;         // Average hit points
-  averageDamage: number;      // Estimated damage output
-  totalStrength: number;      // Abstract strength score
-  easyXP: number;           // XP budget for easy difficulty
-  mediumXP: number;         // XP budget for medium difficulty
-  hardXP: number;           // XP budget for hard difficulty
-  deadlyXP: number;         // XP budget for deadly difficulty
-}
-```
+| Property | Type | Description |
+|----------|------|-------------|
+| `averageLevel` | `number` | Average party level |
+| `partySize` | `number` | Number of party members |
+| `averageAC` | `number` | Average armor class |
+| `averageHP` | `number` | Average hit points |
+| `averageDamage` | `number` | Estimated damage output |
+| `totalStrength` | `number` | Abstract strength score |
+| `easyXP` | `number` | XP budget for easy difficulty |
+| `mediumXP` | `number` | XP budget for medium difficulty |
+| `hardXP` | `number` | XP budget for hard difficulty |
+| `deadlyXP` | `number` | XP budget for deadly difficulty |
 
 ### Encounter Balance Constants
 
@@ -3478,12 +3426,7 @@ interface PartyAnalysis {
 
 D&D 5e official encounter building tables for balanced encounters.
 
-**XP Budget Per Level:**
-
-```typescript
-XP_BUDGET_PER_LEVEL[level][difficulty]
-// Example: XP_BUDGET_PER_LEVEL[5]['medium'] = 500
-```
+**XP Budget Per Level:** `XP_BUDGET_PER_LEVEL[level][difficulty]`
 
 | Level | Easy | Medium | Hard | Deadly |
 |-------|-------|--------|-------|--------|
@@ -3493,12 +3436,7 @@ XP_BUDGET_PER_LEVEL[level][difficulty]
 | 15 | 1600 | 3200 | 4800 | 6400 |
 | 20 | 5000 | 10000 | 15000 | 20000 |
 
-**CR to XP Conversion:**
-
-```typescript
-CR_TO_XP[cr]  // Returns XP value for given CR
-// Example: CR_TO_XP[5] = 1800
-```
+**CR to XP Conversion:** `CR_TO_XP[cr]`
 
 | CR | XP | CR | XP | CR | XP |
 |----|-----|----|-----|----|
@@ -4247,98 +4185,16 @@ Templates that can be applied to base equipment to create magic variants:
 
 ### Query Functions
 
-```typescript
-function getMagicItem(name: string): EnhancedEquipment | undefined
-// Get a specific magic item by name
+| Function | Parameter | Returns | Description |
+|----------|-----------|---------|-------------|
+| `getMagicItem` | `name: string` | `EnhancedEquipment \| undefined` | Get a specific magic item by name |
+| `getMagicItemsByType` | `type: 'weapon' \| 'armor' \| 'item'` | `EnhancedEquipment[]` | Get all magic items of a specific type |
+| `getMagicItemsByRarity` | `rarity: 'common' \| 'uncommon' \| 'rare' \| 'very_rare' \| 'legendary'` | `EnhancedEquipment[]` | Get all magic items of a specific rarity |
+| `getCursedItems` | — | `EnhancedEquipment[]` | Get all cursed items (items with 'cursed' tag) |
+| `getItemsWithProperty` | `propertyType: string` | `EnhancedEquipment[]` | Get all items with a specific property type |
+| `applyTemplate` | `baseEquipment: EnhancedEquipment, templateId: string` | `EnhancedEquipment \| null` | Apply a template to base equipment, returns enhanced item or null if template not found |
 
-function getMagicItemsByType(type: 'weapon' | 'armor' | 'item'): EnhancedEquipment[]
-// Get all magic items of a specific type
-
-function getMagicItemsByRarity(rarity: 'common' | 'uncommon' | 'rare' | 'very_rare' | 'legendary'): EnhancedEquipment[]
-// Get all magic items of a specific rarity
-
-function getCursedItems(): EnhancedEquipment[]
-// Get all cursed items (items with 'cursed' tag)
-
-function getItemsWithProperty(propertyType: string): EnhancedEquipment[]
-// Get all items with a specific property type
-
-function applyTemplate(baseEquipment: EnhancedEquipment, templateId: string): EnhancedEquipment | null
-// Apply a template to base equipment, returns enhanced item or null if template not found
-```
-
-### Usage Example
-
-```typescript
-import {
-    MAGIC_ITEMS,
-    ITEM_CREATION_TEMPLATES,
-    getMagicItem,
-    getMagicItemsByType,
-    getCursedItems,
-    applyTemplate,
-    EnhancedEquipment
-} from 'playlist-data-engine';
-
-// Get a specific item by name
-const flameTongue = getMagicItem('Flame Tongue');
-if (flameTongue) {
-    console.log(flameTongue.properties); // Array of equipment properties
-}
-
-// Get all weapons
-const weapons = getMagicItemsByType('weapon');
-console.log(weapons.length); // 4 weapons
-
-// Get cursed items
-const curses = getCursedItems();
-console.log(curses.map(item => item.name)); // ['-1 Cursed Sword', 'Belt of Strength Drain', ...]
-
-// Apply a template to base equipment
-const baseLongsword: EnhancedEquipment = {
-    name: 'Longsword',
-    type: 'weapon',
-    rarity: 'common',
-    weight: 3,
-    damage: { dice: '1d8', damageType: 'slashing', versatile: '1d10' },
-    weaponProperties: ['finesse', 'versatile'],
-    source: 'base',
-    tags: ['martial', 'melee']
-};
-
-const flamingLongsword = applyTemplate(baseLongsword, 'flaming_weapon_template');
-if (flamingLongsword) {
-    console.log(flamingLongsword.name); // "Longsword (flaming weapon template)"
-    console.log(flamingLongsword.properties); // Combined properties from base + template
-}
-
-// Access all items directly
-MAGIC_ITEMS.forEach(item => {
-    console.log(`${item.name} (${item.rarity}) - ${item.type}`);
-});
-```
-
-### Registration with ExtensionManager
-
-Magic item examples can be registered as custom equipment for use in procedural generation:
-
-```typescript
-import { ExtensionManager } from 'playlist-data-engine';
-import { MAGIC_ITEMS } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// Register all magic items as custom equipment
-manager.register('equipment', MAGIC_ITEMS, {
-    mode: 'append',
-    weights: MAGIC_ITEMS.reduce((acc, item) => {
-        acc[item.name] = item.spawnWeight ?? 0;
-        return acc;
-    }, {} as Record<string, number>)
-});
-
-// Now items will appear in random generation (respecting spawnWeight)
-```
+**For usage examples (querying items, applying templates, registration with ExtensionManager):** See [docs/EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#magic-items-and-templates)
 
 ---
 
