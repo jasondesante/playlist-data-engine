@@ -1311,26 +1311,6 @@ export class EnemyGenerator {
     }
 
     /**
-     * Get rarity from approximate CR
-     *
-     * @deprecated Rarity and CR are now independent axes. Use explicit `baseRarity` parameter
-     * instead of deriving rarity from CR. This method is kept for backward compatibility
-     * but should not be used in new code.
-     *
-     * Maps CR values back to rarity tiers for encounter building.
-     * CR < 0.5: common, CR < 1: uncommon, CR < 2: elite, CR >= 2: boss
-     *
-     * @param cr - Challenge Rating value
-     * @returns Corresponding rarity tier
-     */
-    private static getRarityFromCR(cr: number): EnemyRarity {
-        if (cr < 0.5) return 'common';
-        if (cr < 1.0) return 'uncommon';
-        if (cr < 2.0) return 'elite';
-        return 'boss';
-    }
-
-    /**
      * Generate a balanced encounter for a party
      *
      * Uses PartyAnalyzer to determine appropriate enemy strength based on party level

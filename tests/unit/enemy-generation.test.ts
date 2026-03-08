@@ -2492,27 +2492,6 @@ describe('Backward Compatibility Tests', () => {
         });
     });
 
-    describe('Deprecated Methods Still Work', () => {
-        it('should support getRarityFromCR() for backward compatibility', () => {
-            // Test that the deprecated method exists and works
-            // This is tested indirectly through generateEncounterByCR
-            // when scaleRarityWithCR is false but targetCR is low
-            const enemies = EnemyGenerator.generateEncounterByCR({
-                seed: 'deprecated-rarity-from-cr',
-                targetCR: 0.25,
-                count: 3
-            });
-
-            // All enemies should be common for low CR
-            expect(enemies.length).toBe(3);
-            // When scaleRarityWithCR is false (default), baseRarity is used
-            // baseRarity defaults to 'common'
-            enemies.forEach(enemy => {
-                expect(enemy.subrace).toBe('common');
-            });
-        });
-    });
-
     describe('New CR Parameter Takes Precedence Over Deprecated Fallback', () => {
         it('should use explicit CR over rarity-based CR', () => {
             const enemy = EnemyGenerator.generate({

@@ -101,14 +101,17 @@ This method is marked deprecated and only referenced in:
 - Old plan documentation (can ignore)
 
 ### Task 3.1: Evaluate `getRarityFromCR()` removal
-- [ ] Review if the backward compat test provides value
+- [x] Review if the backward compat test provides value
   - Test at `tests/unit/enemy-generation.test.ts:2495-2510` tests deprecated behavior
   - The test doesn't actually call `getRarityFromCR()` directly - it tests via `generateEncounterByCR`
-- [ ] Decision: Remove both the method AND the backward compat test section
+  - **Finding**: Test is misleadingly named and provides no value for the deprecated method
+- [x] Decision: Remove both the method AND the backward compat test section
 
 ### Task 3.2: Remove `getRarityFromCR()` method
-- [ ] Delete the method from `src/core/generation/EnemyGenerator.ts` (lines ~1348-1362)
-- [ ] Delete the "Deprecated Methods Still Work" test section from `tests/unit/enemy-generation.test.ts` (lines ~2495-2510)
+- [x] Delete the method from `src/core/generation/EnemyGenerator.ts` (lines ~1313-1331)
+- [x] Delete the "Deprecated Methods Still Work" test section from `tests/unit/enemy-generation.test.ts` (lines ~2495-2514)
+- [x] Verify build passes
+- [x] Verify tests pass (4385 tests passing, -1 from removed test)
 
 **Method to remove:**
 ```typescript
