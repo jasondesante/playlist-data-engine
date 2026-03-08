@@ -2326,20 +2326,18 @@ Interface for session tracking operations required by the prestige system. Allow
 
 Record of a single listening session.
 
-```typescript
-export interface ListeningSession {
-    track_uuid: string;
-    start_time: number;           // Unix timestamp
-    end_time: number;             // Unix timestamp
-    duration_seconds: number;
-    base_xp_earned: number;
-    bonus_xp: number;
-    environmental_context?: EnvironmentalContext;
-    gaming_context?: GamingContext;
-    activity_type?: string;
-    total_xp_earned: number;
-}
-```
+| Property | Type | Description |
+|----------|------|-------------|
+| `track_uuid` | string | UUID of the track being listened to |
+| `start_time` | number | Unix timestamp when session started |
+| `end_time` | number | Unix timestamp when session ended |
+| `duration_seconds` | number | Total session duration in seconds |
+| `base_xp_earned` | number | Base XP earned before modifiers |
+| `bonus_xp` | number | Bonus XP from environmental/gaming modifiers |
+| `environmental_context?` | EnvironmentalContext | Environmental context during session |
+| `gaming_context?` | GamingContext | Gaming context during session |
+| `activity_type?` | string | Type of activity (e.g., "listening") |
+| `total_xp_earned` | number | Total XP earned (base + bonus) |
 
 ---
 
