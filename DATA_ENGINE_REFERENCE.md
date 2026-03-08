@@ -2312,27 +2312,13 @@ new SessionTracker(xpCalculator?: XPCalculator)
 
 Interface for session tracking operations required by the prestige system. Allows consumers using different state management approaches (Zustand, Redux, etc.) to provide adapters for `CharacterUpdater.resetCharacterForPrestige()`.
 
-```typescript
-export interface ISessionTracker {
-    getTrackListenCount(trackUuid: string): number;
-    getTrackXPTotal(trackUuid: string): number;
-    clearTrackSessions(trackUuid: string): number;
-}
-```
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getTrackListenCount(trackUuid)` | `number` | Get the number of listening sessions for a specific track |
+| `getTrackXPTotal(trackUuid)` | `number` | Get the total XP earned for a specific track |
+| `clearTrackSessions(trackUuid)` | `number` | Clear all listening sessions for a track; returns count removed |
 
-**Usage with Zustand adapter:**
-```typescript
-import { type ISessionTracker, CharacterUpdater } from 'playlist-data-engine';
-import { useSessionStore } from './stores/sessionStore';
-
-const zustandAdapter: ISessionTracker = {
-    getTrackListenCount: (id) => useSessionStore.getState().getTrackListenCount(id),
-    getTrackXPTotal: (id) => useSessionStore.getState().getTrackXPTotal(id),
-    clearTrackSessions: (id) => useSessionStore.getState().clearTrackSessions(id),
-};
-
-const result = updater.resetCharacterForPrestige(character, zustandAdapter, trackUuid, audioProfile, track);
-```
+**For usage examples (Zustand adapter, mock for testing):** See [docs/XP_AND_STATS.md#isessiontracker-adapter](docs/XP_AND_STATS.md#isessiontracker-adapter)
 
 ### ListeningSession
 

@@ -124,21 +124,21 @@ Remove redundant code examples from DATA_ENGINE_REFERENCE.md that violate style 
 > **Action if NOT found:** Move to `docs/XP_AND_STATS.md`, add cross-reference in reference
 
 ### Task 2.1: ISessionTracker Interface (Lines 2584-2590)
-- [ ] **Search** `docs/XP_AND_STATS.md` for "ISessionTracker", "session tracker interface"
-- [ ] **Decision:** If found → Remove from reference; If not found → Move to appropriate doc
-- [ ] **Execute:** Remove or relocate the raw interface
+- [x] **Search** `docs/XP_AND_STATS.md` for "ISessionTracker", "session tracker interface"
+- [x] **Decision:** Not found in XP_AND_STATS.md - converted raw interface to table format per style guide convention #3
+- [x] **Execute:** Converted raw interface to table format, added cross-reference link to XP_AND_STATS.md
 
-**Code to check:** 6-line raw TypeScript interface for ISessionTracker
+**Summary:** The raw TypeScript interface was converted to table format (Method | Returns | Description). Also moved the Zustand adapter and mock examples to `docs/XP_AND_STATS.md#isessiontracker-adapter` and added a cross-reference link. This addresses both Task 2.1 and Task 2.2.
 
 ---
 
 ### Task 2.2: Zustand Adapter Example (Lines 2593-2604)
-- [ ] **Search** `docs/XP_AND_STATS.md` for "Zustand", "adapter"
-- [ ] **Search** `USAGE_IN_OTHER_PROJECTS.md` for "Zustand", "adapter"
-- [ ] **Decision:** If found → Remove from reference; If not found → Move to appropriate doc
-- [ ] **Execute:** Remove or relocate the code block
+- [x] **Search** `docs/XP_AND_STATS.md` for "Zustand", "adapter" - Not found
+- [x] **Search** `USAGE_IN_OTHER_PROJECTS.md` for "Zustand", "adapter" - Not found
+- [x] **Decision:** Moved to docs/XP_AND_STATS.md#isessiontracker-adapter
+- [x] **Execute:** Moved Zustand adapter example and mock testing example to XP_AND_STATS.md
 
-**Code to check:** 11-line Zustand adapter usage example
+**Summary:** Combined with Task 2.1. The Zustand adapter example and mock testing example were moved to `docs/XP_AND_STATS.md#isessiontracker-adapter`. Cross-reference link added in DATA_ENGINE_REFERENCE.md.
 
 ---
 

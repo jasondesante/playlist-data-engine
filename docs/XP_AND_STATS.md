@@ -855,6 +855,35 @@ allThresholds.forEach(t => {
 | IX | 389 | 38,444 |
 | X (max) | 584 | 57,666 |
 
+### ISessionTracker Adapter {#isessiontracker-adapter}
+
+If you're using a custom state management solution (Zustand, Redux, etc.) instead of the built-in `SessionTracker`, implement the `ISessionTracker` interface for the prestige system's `resetCharacterForPrestige()` method.
+
+**Using with Zustand:**
+
+```typescript
+import { type ISessionTracker, CharacterUpdater } from 'playlist-data-engine';
+import { useSessionStore } from './stores/sessionStore';
+
+const zustandAdapter: ISessionTracker = {
+    getTrackListenCount: (id) => useSessionStore.getState().getTrackListenCount(id),
+    getTrackXPTotal: (id) => useSessionStore.getState().getTrackXPTotal(id),
+    clearTrackSessions: (id) => useSessionStore.getState().clearTrackSessions(id),
+};
+
+const result = updater.resetCharacterForPrestige(character, zustandAdapter, trackUuid, audioProfile, track);
+```
+
+**Using with a mock for testing:**
+
+```typescript
+const mockTracker: ISessionTracker = {
+    getTrackListenCount: () => 15,
+    getTrackXPTotal: () => 2000,
+    clearTrackSessions: () => 10,
+};
+```
+
 
 ## Stat Strategies
 
