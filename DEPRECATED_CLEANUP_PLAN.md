@@ -77,10 +77,10 @@ private static getLevelForRarity(rarity: EnemyRarity): number { ... }
 ```
 
 ### Task 2.2: Remove `ADJECTIVE_DATA` from constants
-- [ ] Triple-check for any references (already verified: 0 references, only definition exists)
-- [ ] Delete the export from `src/utils/constants.ts` (lines 541-545)
-- [ ] Verify build passes
-- [ ] Verify tests pass
+- [x] Triple-check for any references (verified: 0 references outside definition and plan docs)
+- [x] Delete the export from `src/utils/constants.ts` (lines 541-545)
+- [x] Verify build passes
+- [x] Verify tests pass (4386 tests passing)
 
 **Export to remove:**
 ```typescript

@@ -538,12 +538,6 @@ export const NAMING_DATA = {
                        'the Fallen', 'Unbound', 'Rising', 'Triumphant', 'Immortal']
 };
 
-/**
- * Backward compatibility export
- * @deprecated Use NAMING_DATA.adjectives instead
- */
-export const ADJECTIVE_DATA = NAMING_DATA.adjectives;
-
 // Skill to ability score mapping (D&D 5e)
 export const SKILL_ABILITY_MAP: Record<Skill, Ability> = {
     // STR-based
