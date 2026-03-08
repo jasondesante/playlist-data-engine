@@ -4131,54 +4131,15 @@ Functions that create stat-boosting enchantments with configurable bonus levels 
 
 ### Query Functions
 
-```typescript
-function getEnchantment(id: string): EquipmentModification | undefined
-// Get a specific enchantment by its ID
+| Function | Parameter | Returns | Description |
+|----------|-----------|---------|-------------|
+| `getEnchantment` | `id: string` | `EquipmentModification \| undefined` | Get a specific enchantment by its ID |
+| `getCurse` | `id: string` | `EquipmentModification \| undefined` | Get a specific curse by its ID |
+| `getAllEnchantments` | - | `EquipmentModification[]` | Get all enchantments (weapons, armor, resistances, combo) |
+| `getAllCurses` | - | `EquipmentModification[]` | Get all curses |
+| `getEnchantmentsByType` | `type: 'weapon' \| 'armor' \| 'resistance' \| 'combo'` | `EquipmentModification[]` | Get enchantments filtered by type |
 
-function getCurse(id: string): EquipmentModification | undefined
-// Get a specific curse by its ID
-
-function getAllEnchantments(): EquipmentModification[]
-// Get all enchantments (weapons, armor, resistances, combo)
-
-function getAllCurses(): EquipmentModification[]
-// Get all curses
-
-function getEnchantmentsByType(type: 'weapon' | 'armor' | 'resistance' | 'combo'): EquipmentModification[]
-// Get enchantments filtered by type
-```
-
-### Usage Example
-
-```typescript
-import { EquipmentModifier, WEAPON_ENCHANTMENTS, CURSES, createStrengthEnchantment } from 'playlist-data-engine';
-
-// Apply a predefined enchantment
-const flamingEnch = WEAPON_ENCHANTMENTS.flaming;
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Longsword',
-    flamingEnch,
-    character
-);
-
-// Apply a curse
-const cursed = EquipmentModifier.curse(
-    character.equipment,
-    'Ring',
-    CURSES.attunement,
-    character
-);
-
-// Create and apply custom stat boost
-const strengthBoost = createStrengthEnchantment(2); // +2 Strength
-character.equipment = EquipmentModifier.enchant(
-    character.equipment,
-    'Belt of Giant Strength',
-    strengthBoost,
-    character
-);
-```
+**For usage examples (applying enchantments, curses, stat boosts):** See [docs/EQUIPMENT_SYSTEM.md#applying-enchantments](docs/EQUIPMENT_SYSTEM.md#applying-enchantments)
 
 ---
 

@@ -216,21 +216,21 @@ Removed all three code blocks. The existing cross-reference link at line 2665 al
 ---
 
 ### Task 3.3: Enchantment Query Functions (Lines 4553-4568)
-- [ ] **Search** `docs/EQUIPMENT_SYSTEM.md` for "getEnchantment", "getCurse", "query"
-- [ ] **Decision:** Function signatures - minimal, may be acceptable. Check if table format would be better.
-- [ ] **Execute:** Convert to table or keep as minimal signature
+- [x] **Search** `docs/EQUIPMENT_SYSTEM.md` for "getEnchantment", "getCurse", "query"
+- [x] **Decision:** Found in EQUIPMENT_SYSTEM.md - Convert to table format per style guide convention #5
+- [x] **Execute:** Converted function signatures to table format, added cross-reference link
 
-**Code to check:** 15 lines of function signatures with comments
+**Summary:** The 15-line TypeScript function signature block was converted to table format (Function | Parameter | Returns | Description). Added cross-reference to docs/EQUIPMENT_SYSTEM.md#querying-enchantments for usage examples.
 
 ---
 
 ### Task 3.4: Enchantment Usage Example (Lines 4572-4600)
-- [ ] **Search** `docs/EQUIPMENT_SYSTEM.md` for "WEAPON_ENCHANTMENTS", "EquipmentModifier.enchant"
-- [ ] **Search** `USAGE_IN_OTHER_PROJECTS.md` for "enchantment", "EquipmentModifier"
-- [ ] **Decision:** If found → Remove from reference; If not found → Move to appropriate doc
-- [ ] **Execute:** Remove or relocate the code block
+- [x] **Search** `docs/EQUIPMENT_SYSTEM.md` for "WEAPON_ENCHANTMENTS", "EquipmentModifier.enchant"
+- [x] **Search** `USAGE_IN_OTHER_PROJECTS.md` for "enchantment", "EquipmentModifier"
+- [x] **Decision:** Found in EQUIPMENT_SYSTEM.md with comprehensive examples (applying enchantments, curses, stat boosts)
+- [x] **Execute:** Removed 30-line code block, added cross-reference link
 
-**Code to check:** 28-line usage example for applying enchantments and curses
+**Summary:** The 30-line usage example was redundant. EQUIPMENT_SYSTEM.md has comprehensive documentation including: applying enchantments (lines 1270-1306), creating stat-boosting enchantments (lines 1308-1339), and applying curses (lines 1341+). Removed the code block and added cross-reference: "**For usage examples (applying enchantments, curses, stat boosts):** See [docs/EQUIPMENT_SYSTEM.md#applying-enchantments](docs/EQUIPMENT_SYSTEM.md#applying-enchantments)"
 
 ---
 
