@@ -3512,6 +3512,82 @@ When the groove resets:
 
 ---
 
+## Chart Creation Example
+
+Create a rhythm game chart with required keys:
+
+```typescript
+import {
+    BeatMapGenerator,
+    BeatInterpolator,
+    BeatSubdivider,
+    unifyBeatMap,
+    SubdivisionConfig,
+    BeatStream,
+    assignKeysToBeats,
+    extractKeyMap,
+    getUsedKeys,
+} from 'playlist-data-engine';
+
+// Step 1: Generate beat map from audio
+const generator = new BeatMapGenerator();
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
+
+// Step 2: Interpolate to fill gaps
+const interpolator = new BeatInterpolator();
+const interpolatedMap = interpolator.interpolate(beatMap);
+
+// Step 3: Unify for subdivision
+const unifiedMap = unifyBeatMap(interpolatedMap);
+
+// Step 4: Subdivide for rhythm patterns
+const subdivisionConfig: SubdivisionConfig = {
+    beatSubdivisions: new Map([
+        [0, 'eighth'],   // All beats get eighth notes
+    ]),
+    defaultSubdivision: 'eighth',
+};
+const subdivider = new BeatSubdivider();
+const subdividedMap = subdivider.subdivide(unifiedMap, subdivisionConfig);
+
+// Step 5: Assign required keys to create a chart
+const chartMap = assignKeysToBeats(subdividedMap, [
+    { beatIndex: 0, key: 'left' },
+    { beatIndex: 1, key: 'down' },
+    { beatIndex: 2, key: 'up' },
+    { beatIndex: 3, key: 'right' },
+    // ... more assignments
+]);
+
+// Step 6: Check what keys are used
+const usedKeys = getUsedKeys(chartMap);
+// ['down', 'left', 'right', 'up']
+
+// Step 7: Use in gameplay
+const beatStream = new BeatStream(chartMap, audioContext);
+
+// Step 8: On player input - frontend maps physical input to string
+function onPlayerInput(physicalKey: string) {
+    // Map physical input to logical key
+    const keyMap = { 'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right' };
+    const pressedKey = keyMap[physicalKey];
+
+    const result = beatStream.checkButtonPress(audioContext.currentTime, pressedKey);
+
+    // result.accuracy: 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKey'
+    // result.keyMatch: true | false
+    // result.requiredKey: the key the beat required (if any)
+    // result.pressedKey: the key that was passed in
+}
+
+// Easy mode: ignore key requirements (timing-only evaluation)
+const easyStream = new BeatStream(chartMap, audioContext, {
+    ignoreKeyRequirements: true,
+});
+```
+
+---
+
 ## References
 
 - [Beat Tracking by Dynamic Programming (Ellis, 2007)](https://www.ee.columbia.edu/~dpwe/pubs/Ellis07-beattrack.pdf)
