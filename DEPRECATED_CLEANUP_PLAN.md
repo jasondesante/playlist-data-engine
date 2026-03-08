@@ -132,21 +132,23 @@ describe('Deprecated Methods Still Work', () => {
 ## Phase 4: Update Migration Comments
 
 ### Task 4.1: Update EnemyGenerator migration comment
-- [ ] Review the migration comment at line 943
-- [ ] Update or remove the "gradual migration" comment since deprecated fallbacks are being removed
+- [x] Review the migration comment at line 943
+- [x] Update or remove the "gradual migration" comment since deprecated fallbacks are being removed
 
-**Current comment (lines 942-944):**
+**Original comment (lines 942-944):**
 ```typescript
 // Calculate CR: use explicit CR or fall back to rarity-based CR (backward compat)
 // This allows gradual migration to the new CR-based system
 const cr = explicitCR ?? EnemyGenerator.getCRForRarity(rarity);
 ```
 
-**After removing `getCRForRarity`, this logic needs updating:**
-- If `getCRForRarity` is also being removed, the fallback needs to change to a default CR value
-- OR keep `getCRForRarity` (it's NOT deprecated) and just update the comment
+**Updated to:**
+```typescript
+// Calculate CR: use explicit CR or derive from rarity
+const cr = explicitCR ?? EnemyGenerator.getCRForRarity(rarity);
+```
 
-**Note:** `getCRForRarity()` is NOT deprecated and is used for the fallback. Only `getRarityFromCR()` is deprecated.
+**Note:** `getCRForRarity()` is NOT deprecated and remains a valid fallback mechanism. Only `getRarityFromCR()` was deprecated and removed.
 
 ---
 

@@ -939,8 +939,7 @@ export class EnemyGenerator {
             template = EnemyGenerator.selectTemplate(rng, category, archetype, audioProfile);
         }
 
-        // Calculate CR: use explicit CR or fall back to rarity-based CR (backward compat)
-        // This allows gradual migration to the new CR-based system
+        // Calculate CR: use explicit CR or derive from rarity
         const cr = explicitCR ?? EnemyGenerator.getCRForRarity(rarity);
 
         // Calculate level: use explicit level override, or derive from CR
