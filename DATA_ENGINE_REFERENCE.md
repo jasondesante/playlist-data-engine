@@ -2121,71 +2121,7 @@ constructor(
 | `'next-downbeat'` | Wait for the next downbeat before switching |
 | `'next-measure'` | Wait for the next measure before switching |
 
-**Usage - Practice Mode:**
-
-```typescript
-import {
-    BeatMapGenerator,
-    BeatInterpolator,
-    unifyBeatMap,
-    SubdivisionPlaybackController
-} from 'playlist-data-engine';
-
-// Generate and unify (done once)
-const generator = new BeatMapGenerator();
-const interpolator = new BeatInterpolator();
-
-const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
-const interpolatedMap = interpolator.interpolate(beatMap);
-const unifiedMap = unifyBeatMap(interpolatedMap);
-
-// Create real-time controller for practice mode
-const controller = new SubdivisionPlaybackController(
-    unifiedMap,
-    audioContext,
-    {
-        initialSubdivision: 'quarter',
-        transitionMode: 'next-downbeat',
-        onSubdivisionChange: (oldType, newType) => {
-            console.log(`Switched from ${oldType} to ${newType}`);
-        },
-    }
-);
-
-// Subscribe to beat events
-controller.subscribe((event) => {
-    switch (event.type) {
-        case 'upcoming':
-            // Pre-render beat visual (event.timeUntilBeat seconds until beat)
-            break;
-        case 'exact':
-            // Beat is happening now - play sound
-            playBeatSound(event.beat);
-            break;
-        case 'passed':
-            // Beat was missed
-            break;
-    }
-});
-
-// Start playback
-controller.play();
-
-// User clicks "Eighth Notes" button in practice mode
-document.getElementById('eighth-btn').onclick = () => {
-    controller.setSubdivision('eighth');  // Switches in real-time!
-};
-
-// User clicks "Half Notes" button
-document.getElementById('half-btn').onclick = () => {
-    controller.setSubdivision('half');  // Slows down the beat grid
-};
-
-// User clicks "Quarter Notes" button
-document.getElementById('quarter-btn').onclick = () => {
-    controller.setSubdivision('quarter');  // Back to normal
-};
-```
+**For usage examples:** See [docs/AUDIO_ANALYSIS.md#real-time-subdivision-playground-practice-mode](docs/AUDIO_ANALYSIS.md#real-time-subdivision-playground-practice-mode)
 
 **Event Types:**
 
