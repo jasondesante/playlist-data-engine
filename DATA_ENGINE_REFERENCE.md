@@ -4118,16 +4118,16 @@ Special multi-effect enchantments:
 
 Functions that create stat-boosting enchantments with configurable bonus levels (1-4):
 
-```typescript
-function createStrengthEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
-function createDexterityEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
-function createConstitutionEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
-function createIntelligenceEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
-function createWisdomEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
-function createCharismaEnchantment(bonus: 1 | 2 | 3 | 4): EquipmentModification
-```
+| Function | Parameter | Returns | Description |
+|----------|-----------|---------|-------------|
+| `createStrengthEnchantment` | `bonus: 1 \| 2 \| 3 \| 4` | `EquipmentModification` | Enchantment adding +bonus to STR |
+| `createDexterityEnchantment` | `bonus: 1 \| 2 \| 3 \| 4` | `EquipmentModification` | Enchantment adding +bonus to DEX |
+| `createConstitutionEnchantment` | `bonus: 1 \| 2 \| 3 \| 4` | `EquipmentModification` | Enchantment adding +bonus to CON |
+| `createIntelligenceEnchantment` | `bonus: 1 \| 2 \| 3 \| 4` | `EquipmentModification` | Enchantment adding +bonus to INT |
+| `createWisdomEnchantment` | `bonus: 1 \| 2 \| 3 \| 4` | `EquipmentModification` | Enchantment adding +bonus to WIS |
+| `createCharismaEnchantment` | `bonus: 1 \| 2 \| 3 \| 4` | `EquipmentModification` | Enchantment adding +bonus to CHA |
 
-Each function returns an `EquipmentModification` that adds the specified bonus to the corresponding ability score when applied via `EquipmentModifier.enchant()`.
+**For usage examples:** See [docs/EQUIPMENT_SYSTEM.md#creating-stat-boosting-enchantments](docs/EQUIPMENT_SYSTEM.md#creating-stat-boosting-enchantments)
 
 ### Query Functions
 

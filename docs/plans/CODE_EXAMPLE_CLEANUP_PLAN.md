@@ -207,11 +207,11 @@ Removed all three code blocks. The existing cross-reference link at line 2665 al
 ---
 
 ### Task 3.2: Stat Boosting Enchantment Functions (Lines 4540-4547)
-- [ ] **Search** `docs/EQUIPMENT_SYSTEM.md` for "createStrengthEnchantment", "enchantment"
-- [ ] **Decision:** Function signatures - minimal, may be acceptable. Check if table format would be better.
-- [ ] **Execute:** Convert to table or keep as minimal signature
+- [x] **Search** `docs/EQUIPMENT_SYSTEM.md` for "createStrengthEnchantment", "enchantment"
+- [x] **Decision:** Found in EQUIPMENT_SYSTEM.md (line 395 inline, lines 1308-1339 full examples) - Convert to table format
+- [x] **Execute:** Removed code block, converted to table format with cross-reference
 
-**Code to check:** 7 lines of function signatures
+**Summary:** The 7-line TypeScript function signature block was converted to table format (Function | Parameter | Returns | Description). Added cross-reference to docs/EQUIPMENT_SYSTEM.md#creating-stat-boosting-enchantments for usage examples. The table format is more scannable and aligns with style guide convention #5.
 
 ---
 
