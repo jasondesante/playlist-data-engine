@@ -3973,61 +3973,7 @@ Static utility class for opening `type: 'box'` equipment items and generating th
 | `BoxOpenRequirement` | `itemName`, `quantity?` | A single requirement to open a box. `itemName` is the item to consume, `quantity` defaults to 1. Gold requirements use `"Gold Coin"` as itemName. |
 | `BoxOpenError` | `code`, `message`, `requirement?` | Error returned when box cannot be opened. `code` is `'MISSING_ITEM'`, `'INSUFFICIENT_QUANTITY'`, or `'NO_BOX_CONTENTS'`. |
 
-#### Usage Examples
-
-```typescript
-import { BoxOpener, EquipmentSpawnHelper, SeededRNG } from 'playlist-data-engine';
-
-const rng = new SeededRNG('my-seed');
-
-// --- Open a box directly ---
-const explorersPack = /* Equipment with type: 'box' */;
-const result = BoxOpener.openBox(explorersPack, rng);
-console.log(result.items);      // Generated Equipment[] (e.g., 26 items for Explorer's Pack)
-console.log(result.gold);       // Gold total (0 for packs, non-zero for treasure chests)
-console.log(result.consumeBox); // true (pack is consumed on open)
-
-// --- Check if an item is a box ---
-if (BoxOpener.isBox(someItem)) {
-    const preview = BoxOpener.previewContents(someItem);
-    console.log(preview.possibleItems);            // ['Backpack', 'Bedroll', ...]
-    console.log(preview.possibleGold);             // { min: 0, max: 0 }
-    console.log(preview.totalDrops);               // 8
-}
-
-// --- Open a box already in a character's inventory ---
-// (removes box from inventory, adds contents)
-EquipmentSpawnHelper.openBoxForCharacter(character, "Explorer's Pack", rng);
-
-// --- Locked boxes with requirements ---
-const inventory = character.equipment.items; // EnhancedInventoryItem[]
-
-// Check if a locked box can be opened
-const lockedChest = EquipmentSpawnHelper.getEquipmentDataStatic('Locked Chest');
-if (BoxOpener.canOpen(lockedChest, inventory)) {
-    // Open the locked box (consumes required item from inventory)
-    const result = BoxOpener.openBox(lockedChest, rng, inventory);
-    if (result.success) {
-        console.log('Box opened! Consumed:', result.consumedItems);
-        console.log('Got:', result.items.map(i => i.name));
-    }
-} else {
-    // Show user what's needed
-    console.log(BoxOpener.getRequirementsDescription(lockedChest));
-    // Output: "Requires: 1 Iron Key"
-}
-
-// Preview requirements without opening
-const preview = BoxOpener.previewContents(lockedChest);
-console.log(preview.openRequirements); // [{ itemName: 'Iron Key' }]
-
-// Check requirements programmatically
-const error = BoxOpener.checkRequirements(lockedChest, inventory);
-if (error) {
-    console.log(`Cannot open: ${error.message}`);
-    console.log(`Missing: ${error.requirement?.itemName}`);
-}
-```
+**For usage examples (openBox, isBox, previewContents, locked boxes with requirements):** See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#boxopener-class)
 
 #### Box Behavior Rules
 

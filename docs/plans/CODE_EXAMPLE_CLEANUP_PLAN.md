@@ -198,11 +198,11 @@ Removed all three code blocks. The existing cross-reference link at line 2665 al
 > **Action if NOT found:** Move to `docs/EQUIPMENT_SYSTEM.md`, add cross-reference in reference
 
 ### Task 3.1: BoxOpener Example (Lines 4366-4395)
-- [ ] **Search** `docs/EQUIPMENT_SYSTEM.md` for "BoxOpener", "box", "open"
-- [ ] **Decision:** If found → Remove from reference; If not found → Move to appropriate doc
-- [ ] **Execute:** Remove or relocate the code block
+- [x] **Search** `docs/EQUIPMENT_SYSTEM.md` for "BoxOpener", "box", "open"
+- [x] **Decision:** Found in EQUIPMENT_SYSTEM.md with comprehensive examples (openBox, isBox, previewContents, checkRequirements, canOpen, getRequirementsDescription, locked chests)
+- [x] **Execute:** Removed 52-line code block, added cross-reference link
 
-**Code to check:** 30-line usage example for BoxOpener with locked chests
+**Summary:** The BoxOpener usage example (52 lines) was redundant. EQUIPMENT_SYSTEM.md has comprehensive documentation with examples for all methods: openBox, isBox, previewContents, checkRequirements, canOpen, and getRequirementsDescription, plus locked chest examples and guaranteed container examples. Removed the code block and added cross-reference: "**For usage examples (openBox, isBox, previewContents, locked boxes with requirements):** See [EQUIPMENT_SYSTEM.md](docs/EQUIPMENT_SYSTEM.md#boxopener-class)"
 
 ---
 
