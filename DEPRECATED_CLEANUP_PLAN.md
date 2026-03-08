@@ -66,10 +66,10 @@ export const BEAT_ACCURACY_THRESHOLDS: AccuracyThresholds = HARD_ACCURACY_THRESH
 These items are marked `@deprecated` and have zero references outside their definition. Safe to remove.
 
 ### Task 2.1: Remove `getLevelForRarity()` from EnemyGenerator
-- [ ] Triple-check for any references (already verified: 0 references)
-- [ ] Delete the method from `src/core/generation/EnemyGenerator.ts` (lines ~1293-1310)
-- [ ] Verify build passes
-- [ ] Verify tests pass
+- [x] Triple-check for any references (verified: 0 references outside definition)
+- [x] Delete the method from `src/core/generation/EnemyGenerator.ts` (lines 1281-1301 including JSDoc)
+- [x] Verify build passes
+- [x] Verify tests pass (4386 tests passing)
 
 **Method to remove:**
 ```typescript

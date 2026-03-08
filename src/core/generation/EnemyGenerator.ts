@@ -1279,28 +1279,6 @@ export class EnemyGenerator {
     }
 
     /**
-     * Get character level based on rarity
-     *
-     * Simple rarity-to-level mapping for V1.
-     * Common: 1, Uncommon: 2, Elite: 3, Boss: 4
-     *
-     * @param rarity - Enemy rarity tier
-     * @returns Character level
-     *
-     * @deprecated Level should come from CR, not rarity. Use getLevelFromCR() instead.
-     *             This method will be removed in a future version.
-     */
-    private static getLevelForRarity(rarity: EnemyRarity): number {
-        const levels: Record<EnemyRarity, number> = {
-            common: 1,
-            uncommon: 2,
-            elite: 3,
-            boss: 4
-        };
-        return levels[rarity] || 1;
-    }
-
-    /**
      * Get damage die notation for rarity
      *
      * Returns the die size used for damage based on rarity tier.
