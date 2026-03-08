@@ -39,11 +39,11 @@ Remove redundant code examples from DATA_ENGINE_REFERENCE.md that violate style 
 ---
 
 ### Task 1.2: reapplyDownbeatConfig Example (Lines 1892-1910)
-- [ ] **Search** `docs/AUDIO_ANALYSIS.md` for "reapplyDownbeatConfig", "downbeat", "measure"
-- [ ] **Decision:** If found → Remove from reference; If not found → Move to AUDIO_ANALYSIS.md
-- [ ] **Execute:** Remove or relocate the code block
+- [x] **Search** `docs/AUDIO_ANALYSIS.md` for "reapplyDownbeatConfig", "downbeat", "measure"
+- [x] **Decision:** Found in AUDIO_ANALYSIS.md at lines 1581-1673 (full section with multiple examples)
+- [x] **Execute:** Removed code block from reference, added cross-reference link
 
-**Code to check:** 19-line usage example for reapplyDownbeatConfig
+**Summary:** The reapplyDownbeatConfig example was already well-documented in AUDIO_ANALYSIS.md with multiple usage examples (default, 3/4 waltz, time signature changes, pickup beats). Removed the 19-line code block from DATA_ENGINE_REFERENCE.md and added cross-reference: "**For usage examples:** See [docs/AUDIO_ANALYSIS.md#downbeat-configuration](docs/AUDIO_ANALYSIS.md#downbeat-configuration)"
 
 ---
 

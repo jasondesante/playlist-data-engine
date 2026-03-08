@@ -1853,28 +1853,7 @@ function reapplyDownbeatConfig(beatMap: BeatMap, newConfig: DownbeatConfig): Bea
 
 **Throws:** Error if configuration is invalid or `downbeatBeatIndex` exceeds total beats
 
-**Usage:**
-
-```typescript
-import { BeatMapGenerator, reapplyDownbeatConfig } from 'playlist-data-engine';
-
-const generator = new BeatMapGenerator();
-
-// Step 1: Generate with default config (beat 0 = downbeat, 4/4 time)
-const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
-
-// Step 2: Examine beat map, identify that beat 9 is actually the "one"
-
-// Step 3: Apply correct configuration
-const correctedMap = reapplyDownbeatConfig(beatMap, {
-  segments: [{
-    startBeat: 0,
-    downbeatBeatIndex: 9,  // Beat 9 is the "one"
-    timeSignature: { beatsPerMeasure: 4 },
-  }],
-});
-// Beats 1, 5, 9, 13, 17... are now downbeats
-```
+**For usage examples:** See [docs/AUDIO_ANALYSIS.md#downbeat-configuration](docs/AUDIO_ANALYSIS.md#downbeat-configuration)
 
 ### BeatInterpolator
 
