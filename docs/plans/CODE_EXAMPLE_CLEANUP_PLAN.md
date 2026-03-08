@@ -30,15 +30,11 @@ Remove redundant code examples from DATA_ENGINE_REFERENCE.md that violate style 
 > **Action if NOT found:** Move to `docs/AUDIO_ANALYSIS.md`, add cross-reference in reference
 
 ### Task 1.1: GrooveAnalyzer Formulas (Lines 1722-1746)
-- [ ] **Search** `docs/AUDIO_ANALYSIS.md` for "quadratic falloff", "consistency calculation", "BPM-aware window", "pocket", "groove", "hotness"
-- [ ] **Decision:** If found → Remove from reference; If not found → Move to AUDIO_ANALYSIS.md
-- [ ] **Execute:** Remove or relocate the code block
+- [x] **Search** `docs/AUDIO_ANALYSIS.md` for "quadratic falloff", "consistency calculation", "BPM-aware window", "pocket", "groove", "hotness"
+- [x] **Decision:** Found in AUDIO_ANALYSIS.md at lines 3354-3369 (BPM-aware) and 3373-3385 (Consistency)
+- [x] **Execute:** Removed code blocks, added cross-reference link to AUDIO_ANALYSIS.md
 
-**Code to check:**
-```
-Lines 1722-1727: Consistency Calculation (quadratic falloff formula)
-Lines 1739-1746: BPM-Aware Window Calculation formula
-```
+**Summary:** Both code blocks were already documented in AUDIO_ANALYSIS.md. Removed the TypeScript code blocks and replaced with cross-reference: "**For detailed formulas (BPM-aware window calculation, consistency quadratic falloff) and examples:** See [docs/AUDIO_ANALYSIS.md#groove-meter](docs/AUDIO_ANALYSIS.md#groove-meter)"
 
 ---
 

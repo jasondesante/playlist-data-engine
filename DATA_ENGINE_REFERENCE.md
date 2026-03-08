@@ -1717,41 +1717,7 @@ The analyzer tracks recent hit offsets in a rolling window (default: 4 hits) and
 - **pull**: Playing behind the beat (positive offset, dragging)
 - **neutral**: Playing on the beat (within ±10ms dead zone)
 
-**Consistency Calculation (Quadratic Falloff):**
-
-```typescript
-// 1.0 = perfect (at pocket center), 0.0 = outside window
-const normalizedDistance = distanceFromPocket / pocketWindow;
-if (normalizedDistance >= 1) return 0;
-return 1 - (normalizedDistance * normalizedDistance);  // Quadratic falloff
-```
-
-- At pocket center: 1.0 (perfect)
-- At 50% to edge: 0.75 (1 - 0.5²)
-- At 70% to edge: 0.51 (1 - 0.7²)
-- At 90% to edge: 0.19 (1 - 0.9²)
-- At/beyond edge: 0.0 (outside window)
-
-**BPM-Aware Window Calculation:**
-
-The pocket window scales with tempo using 1/32 note as the base unit:
-
-```typescript
-beatDuration = 60 / BPM           // in seconds
-thirtySecondNote = beatDuration / 8
-baseWindow = thirtySecondNote / 2 // half of 1/32 note each direction
-
-// Progressive tightening at higher hotness
-pocketWindow = baseWindow - (baseWindow - minWindow) * (hotness / 100)
-```
-
-Example at 120 BPM:
-- beatDuration = 500ms
-- 1/32 note = 62.5ms
-- baseWindow = 31.25ms
-- At 0% hotness: 31.25ms window
-- At 50% hotness: 20.6ms window
-- At 100% hotness: 15ms window
+**For detailed formulas (BPM-aware window calculation, consistency quadratic falloff) and examples:** See [docs/AUDIO_ANALYSIS.md#groove-meter](docs/AUDIO_ANALYSIS.md#groove-meter)
 
 **Design Notes:**
 
