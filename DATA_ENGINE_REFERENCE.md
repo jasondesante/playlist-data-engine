@@ -2044,30 +2044,7 @@ function subdivideBeatMap(
 
 **Returns:** `SubdividedBeatMap` with subdivision applied
 
-**Usage:**
-
-```typescript
-import { BeatInterpolator, subdivideBeatMap, type SubdivisionConfig } from 'playlist-data-engine';
-
-const interpolator = new BeatInterpolator();
-const interpolatedMap = interpolator.interpolate(beatMap);
-
-// One-step subdivision with per-beat config
-const config: SubdivisionConfig = {
-    beatSubdivisions: new Map([
-        [0, 'quarter'],   // Beat 0: quarter notes
-        [32, 'eighth'],   // Beat 32+: eighth notes
-    ]),
-    defaultSubdivision: 'eighth',
-};
-const subdividedMap = subdivideBeatMap(interpolatedMap, config);
-
-// Or with subdivider options
-const subdividedMap = subdivideBeatMap(interpolatedMap, config, {
-    tolerance: 0.03,
-    defaultIntensity: 0.6,
-});
-```
+**For usage examples:** See [docs/AUDIO_ANALYSIS.md#beat-subdivision](docs/AUDIO_ANALYSIS.md#beat-subdivision)
 
 ### SubdivisionPlaybackController
 
