@@ -1972,52 +1972,7 @@ constructor(options?: BeatSubdividerOptions)
 
 **2-Beat Structure Types:** `triplet4` and `dotted4` are 2-beat structures that only process beats at even `beatInMeasure` positions (0, 2, 4, 6...). This allows proper triplet and dotted patterns across beat pairs.
 
-**Usage:**
-
-```typescript
-import {
-    BeatMapGenerator,
-    BeatInterpolator,
-    BeatSubdivider,
-    unifyBeatMap,
-    type SubdivisionConfig
-} from 'playlist-data-engine';
-
-const generator = new BeatMapGenerator();
-const interpolator = new BeatInterpolator();
-const subdivider = new BeatSubdivider();
-
-// Step 1: Generate beat map
-const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
-
-// Step 2: Interpolate to fill gaps
-const interpolatedMap = interpolator.interpolate(beatMap);
-
-// Step 3: Unify into quarter-note grid
-const unifiedMap = unifyBeatMap(interpolatedMap);
-
-// Step 4: Create per-beat subdivision configuration
-const subdivisionConfig: SubdivisionConfig = {
-    beatSubdivisions: new Map([
-        // Assign subdivisions to specific beats
-        [0, 'quarter'],   // Beat 0: quarter note
-        [32, 'eighth'],   // Beat 32: switch to eighth notes
-        [96, 'half'],     // Beat 96: switch to half notes
-        [128, 'triplet8'], // Beat 128: switch to triplets
-    ]),
-    defaultSubdivision: 'quarter',  // Default for unassigned beats
-};
-
-const subdividedMap = subdivider.subdivide(unifiedMap, subdivisionConfig);
-
-// Result: A beat map with per-beat subdivision control
-console.log('Original beats:', unifiedMap.beats.length);
-console.log('Subdivided beats:', subdividedMap.beats.length);
-console.log('Density multiplier:', subdividedMap.subdivisionMetadata.averageDensityMultiplier);
-
-// Detected beats are still marked for accent patterns
-const detectedBeats = subdividedMap.beats.filter(b => b.isDetected);
-```
+**For usage examples:** See [docs/AUDIO_ANALYSIS.md#beat-subdivision](docs/AUDIO_ANALYSIS.md#beat-subdivision)
 
 **Per-Beat Configuration:**
 
