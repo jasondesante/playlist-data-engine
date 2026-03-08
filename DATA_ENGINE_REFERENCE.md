@@ -2016,26 +2016,7 @@ function unifyBeatMap(interpolatedBeatMap: InterpolatedBeatMap): UnifiedBeatMap
 
 **Returns:** `UnifiedBeatMap` ready for subdivision
 
-**Usage:**
-
-```typescript
-import { BeatInterpolator, unifyBeatMap } from 'playlist-data-engine';
-
-const interpolator = new BeatInterpolator();
-const interpolatedMap = interpolator.interpolate(beatMap);
-
-// Convert to unified format
-const unifiedMap = unifyBeatMap(interpolatedMap);
-
-// All beats are now in a single array
-console.log('Total beats:', unifiedMap.beats.length);
-
-// Detected beat indices for accent patterns
-console.log('Detected beats:', unifiedMap.detectedBeatIndices.length);
-
-// Tempo information preserved
-console.log('BPM:', unifiedMap.quarterNoteBpm);
-```
+**For usage examples:** See [docs/AUDIO_ANALYSIS.md#beat-subdivision](docs/AUDIO_ANALYSIS.md#beat-subdivision)
 
 ### subdivideBeatMap
 

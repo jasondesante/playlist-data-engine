@@ -66,11 +66,11 @@ Remove redundant code examples from DATA_ENGINE_REFERENCE.md that violate style 
 ---
 
 ### Task 1.5: unifyBeatMap Example (Lines 2157-2174)
-- [ ] **Search** `docs/AUDIO_ANALYSIS.md` for "unifyBeatMap", "UnifiedBeatMap"
-- [ ] **Decision:** If found → Remove from reference; If not found → Move to AUDIO_ANALYSIS.md
-- [ ] **Execute:** Remove or relocate the code block
+- [x] **Search** `docs/AUDIO_ANALYSIS.md` for "unifyBeatMap", "UnifiedBeatMap"
+- [x] **Decision:** Found in AUDIO_ANALYSIS.md at lines 2624-2632 (utility function example) and 2206-2248 (comprehensive pipeline example)
+- [x] **Execute:** Removed code block, added cross-reference link
 
-**Code to check:** 17-line usage example for unifyBeatMap
+**Summary:** The 17-line usage example was redundant. AUDIO_ANALYSIS.md has both a minimal utility function example and a comprehensive pipeline example showing `unifyBeatMap` in context. Removed the code block and added cross-reference: "**For usage examples:** See [docs/AUDIO_ANALYSIS.md#beat-subdivision](docs/AUDIO_ANALYSIS.md#beat-subdivision)"
 
 ---
 
