@@ -2715,31 +2715,6 @@ The calculator supports two modes:
 | `GrooveStats` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Full groove statistics from GrooveAnalyzer |
 | `RhythmSessionTotals` | [src/core/types/RhythmXP.ts](src/core/types/RhythmXP.ts) | Cumulative session statistics (totalScore, totalXP, maxCombo, accuracyDistribution, accuracyPercentage, duration) |
 
-#### Default Configuration
-
-```typescript
-const DEFAULT_RHYTHM_XP_CONFIG = {
-    baseXP: { perfect: 10, great: 7, good: 5, ok: 2, miss: 0, wrongKey: 0 },
-    xpRatio: 0.1,  // 10 score points = 1 character XP
-    combo: {
-        enabled: true,
-        cap: 5.0,
-        endBonus: { enabled: true }
-    },
-    groove: {
-        perHitMultiplier: false,
-        perHitScale: 1.0,
-        endBonus: {
-            enabled: true,
-            maxStreakWeight: 5,
-            avgHotnessWeight: 5,
-            durationWeight: 5
-        }
-    },
-    maxMultiplier: 5.0
-};
-```
-
 #### Constants
 
 | Constant | Value | Description |
@@ -2752,41 +2727,7 @@ const DEFAULT_RHYTHM_XP_CONFIG = {
 |----------|---------|-------------|
 | `mergeRhythmXPConfig(userConfig?)` | `RhythmXPConfig` | Merge user config with defaults |
 
-#### Example: Stateless Usage
-
-```typescript
-import { RhythmXPCalculator } from 'playlist-data-engine';
-
-const calculator = new RhythmXPCalculator({ xpRatio: 0.1 });
-
-// Calculate XP for a button press
-const result = calculator.calculateButtonPressXP('perfect', {
-    comboLength: 50,
-    grooveHotness: 80
-});
-
-console.log(`Score: ${result.finalScore}, XP: ${result.finalXP}`);
-// Score: 20, XP: 2 (at 50 combo = 2x multiplier)
-```
-
-#### Example: Stateful Session Tracking
-
-```typescript
-import { RhythmXPCalculator } from 'playlist-data-engine';
-
-const calculator = new RhythmXPCalculator();
-calculator.startSession();
-
-// On each hit (frontend tracks combo/groove)
-const result = calculator.recordHit('perfect', { comboLength, grooveHotness });
-
-// Get running totals for UI
-const totals = calculator.getSessionTotals();
-console.log(`Session XP: ${totals.totalXP}, Accuracy: ${totals.accuracyPercentage}%`);
-
-// End session
-const finalTotals = calculator.endSession();
-```
+**For configuration details, session tracking, and stateless usage examples:** See [docs/XP_AND_STATS.md#rhythm-game-xp](docs/XP_AND_STATS.md#rhythm-game-xp)
 
 ---
 

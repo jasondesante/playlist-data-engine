@@ -161,15 +161,17 @@ Remove redundant code examples from DATA_ENGINE_REFERENCE.md that violate style 
 ---
 
 ### Task 2.5: RhythmXPCalculator Examples (Lines 3006-3075)
-- [ ] **Search** `docs/XP_AND_STATS.md` for "RhythmXPCalculator", "rhythm XP", "button press"
-- [ ] **Search** `docs/AUDIO_ANALYSIS.md` for "rhythm XP"
-- [ ] **Decision:** If found → Remove from reference; If not found → Move to appropriate doc
-- [ ] **Execute:** Remove or relocate the code blocks
+- [x] **Search** `docs/XP_AND_STATS.md` for "RhythmXPCalculator", "rhythm XP", "button press"
+- [x] **Search** `docs/AUDIO_ANALYSIS.md` for "rhythm XP"
+- [x] **Decision:** Found in XP_AND_STATS.md - Remove from reference
+- [x] **Execute:** Removed code blocks, kept cross-reference link
 
-**Code to check:**
-- Lines 3006-3027: DEFAULT_RHYTHM_XP_CONFIG (21 lines)
-- Lines 3043-3056: Stateless Usage example (13 lines)
-- Lines 3060-3075: Stateful Session Tracking example (15 lines)
+**Summary:** All three code blocks were already documented in XP_AND_STATS.md with comprehensive examples:
+- DEFAULT_RHYTHM_XP_CONFIG (21 lines) → Covered in "Configuration Options" section (lines 357-410)
+- Stateless Usage example (15 lines) → Covered in "Stateless Usage (Frontend Tracks Combo)" section (lines 571+)
+- Stateful Session Tracking example (17 lines) → Covered in "Session Tracking for UI Display" section (lines 541-569)
+
+Removed all three code blocks. The existing cross-reference link at line 2665 already points to XP_AND_STATS.md#rhythm-game-xp. Added additional cross-reference below the helper functions table.
 
 ---
 
