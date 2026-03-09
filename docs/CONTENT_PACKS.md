@@ -10,13 +10,11 @@ This guide explains how to create and manage content packs for the Playlist Data
    - [Basic Content Pack](#basic-content-pack)
    - [Themed Content Pack](#themed-content-pack)
    - [Complete Expansion Pack](#complete-expansion-pack)
-   - [Dragon-Themed Content](#dragon-themed-content)
+   - [Advanced: Prerequisites and Subraces](#advanced-prerequisites-and-subraces)
 2. [Saving and Loading Content Packs](#saving-and-loading-content-packs)
-   - [Exporting Custom Data](#exporting-custom-data)
-   - [Saving Content Packs to File](#saving-content-packs-to-file)
-   - [Loading Content Packs from File](#loading-content-packs-from-file)
-   - [Creating Reusable Content Packs](#creating-reusable-content-packs)
+   - [Save & Load Workflow](#save--load-workflow)
    - [Debugging with Export](#debugging-with-export)
+   - [Batch Image Methods](#batch-image-methods)
 
 ---
 
@@ -33,7 +31,7 @@ import { ExtensionManager } from 'playlist-data-engine';
 export function loadContentPack() {
     const manager = ExtensionManager.getInstance();
 
-    // Custom equipment
+    // Custom equipment with spawn weights
     manager.register('equipment', [
         { name: 'Dragon Scale Armor', type: 'armor', rarity: 'very_rare', weight: 15, icon: '/icons/armor/dragon-scale.png' },
         { name: 'Flame Tongue', type: 'weapon', rarity: 'rare', weight: 3, icon: '/icons/weapons/flame-tongue.png' }
@@ -91,7 +89,7 @@ A dark fantasy themed pack using `absolute` mode to exclude default items:
 export function loadDarkFantasyPack() {
     const manager = ExtensionManager.getInstance();
 
-    // Dark fantasy equipment
+    // Dark fantasy equipment - ONLY these items spawn
     manager.register('equipment', [
         { name: 'Soul Reaver', type: 'weapon', rarity: 'legendary', weight: 4, icon: '/icons/weapons/soul-reaver.png' },
         { name: 'Shadow Cloak', type: 'armor', rarity: 'very_rare', weight: 5, icon: '/icons/armor/shadow-cloak.png' },
@@ -221,24 +219,23 @@ function registerArcticExpansionPack() {
         weights: { 'snow_walker': 0.7 }
     });
 
-    // Skills (register via ExtensionManager)
+    // Skills
     manager.register('skills', [coldSurvival, iceFishing]);
     manager.register('skills.WIS', [coldSurvival, iceFishing], {
         weights: {
-            'survival_cold': 0.5,  // Less common than default skills
+            'survival_cold': 0.5,
             'ice_fishing': 0.3      // Quite rare
         }
     });
 
     // ===== SPAWN RATE CONFIGURATION =====
-    // Make cold-themed content more likely for certain classes
     manager.setWeights('skillLists.Ranger', {
         'survival_cold': 2.0,  // Rangers love this skill
         'ice_fishing': 1.5
     });
 
     manager.setWeights('skillLists.Barbarian', {
-        'survival_cold': 1.5,  // Barbarians also get this
+        'survival_cold': 1.5,
         'ice_fishing': 0.5
     });
 
@@ -255,9 +252,9 @@ const character = CharacterGenerator.generate(seed, audio, track, {forceName: 'A
 
 ---
 
-### Dragon-Themed Content
+### Advanced: Prerequisites and Subraces
 
-A complete dragon-themed content pack with custom race, subraces, skills, and spells:
+A complete content pack demonstrating advanced patterns: custom races with subraces, racial traits, and prerequisites for skills/spells:
 
 ```typescript
 import { ExtensionManager, asClass } from 'playlist-data-engine';
@@ -335,15 +332,17 @@ manager.register('spells', [{
 
 The `ExtensionManager` provides methods to export and import custom data, allowing you to save and restore content packs.
 
-### Exporting Custom Data
+### Save & Load Workflow
 
-Export all custom extensions and weights for saving or debugging:
+Complete workflow for saving content packs to file and loading them later:
 
 ```typescript
-import { ExtensionManager } from 'playlist-data-engine';
+import { readFileSync, writeFileSync } from 'fs';
+import { ExtensionManager, type ContentPackData } from 'playlist-data-engine';
 
 const manager = ExtensionManager.getInstance();
 
+// ===== SAVING =====
 // Register some custom content
 manager.register('equipment', [
     { name: 'Dragon Sword', type: 'weapon', rarity: 'rare', weight: 5, icon: '/icons/weapons/dragon-sword.png' }
@@ -352,9 +351,9 @@ manager.register('equipment', [
 });
 
 // Export all custom data
-const customData = manager.exportCustomData();
+const customData: ContentPackData = manager.exportCustomData();
 
-console.log(customData);
+// Output structure:
 // {
 //   extensions: {
 //     equipment: {
@@ -367,35 +366,14 @@ console.log(customData);
 //     equipment: { 'Dragon Sword': 0.5 }
 //   }
 // }
-```
 
-### Saving Content Packs to File
-
-Save exported data to a file for later use:
-
-```typescript
-import { writeFileSync } from 'fs';
-import { ExtensionManager } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
-// Export and save to file
-const customData = manager.exportCustomData();
+// Save to file
 writeFileSync('./my-content-pack.json', JSON.stringify(customData, null, 2));
-```
 
-### Loading Content Packs from File
 
-Load and re-register a saved content pack:
-
-```typescript
-import { readFileSync } from 'fs';
-import { ExtensionManager } from 'playlist-data-engine';
-
-const manager = ExtensionManager.getInstance();
-
+// ===== LOADING =====
 // Load from file
-const savedData = JSON.parse(readFileSync('./my-content-pack.json', 'utf-8'));
+const savedData: ContentPackData = JSON.parse(readFileSync('./my-content-pack.json', 'utf-8'));
 
 // Re-register each category
 for (const [category, data] of Object.entries(savedData.extensions)) {
@@ -411,43 +389,26 @@ for (const [category, weights] of Object.entries(savedData.weights)) {
 }
 ```
 
-### Creating Reusable Content Packs
+---
 
-Combine export/import with a clean loader function:
+### Debugging with Export
+
+Use export to inspect registered content:
 
 ```typescript
-// content-packs/dragon-pack.ts
-import { ExtensionManager, type ContentPackData } from 'playlist-data-engine';
+const manager = ExtensionManager.getInstance();
 
-export function loadDragonPack() {
-    const manager = ExtensionManager.getInstance();
+// Debug: Check what's registered
+const data = manager.exportCustomData();
 
-    // Use replace mode to clear any previous dragon content
-    manager.register('equipment', [
-        { name: 'Dragon Scale Armor', type: 'armor', rarity: 'very_rare', weight: 15, icon: '/icons/armor/dragon-scale.png' },
-        { name: 'Flame Tongue', type: 'weapon', rarity: 'rare', weight: 3, icon: '/icons/weapons/flame-tongue.png' }
-    ], {
-        mode: 'relative',
-        weights: {
-            'Dragon Scale Armor': 0.3,
-            'Flame Tongue': 0.5
-        }
-    });
-
-    manager.register('spells', [
-        { name: 'Dragon Breath', level: 3, school: 'Evocation', icon: '/icons/spells/dragon-breath.png' }
-    ]);
-}
-
-// Export for saving
-export function saveDragonPack(): ContentPackData {
-    loadDragonPack();
-    const manager = ExtensionManager.getInstance();
-    return manager.exportCustomData();
-}
+console.log('Registered categories:', Object.keys(data.extensions));
+console.log('Equipment items:', data.extensions.equipment?.items.length);
+console.log('Custom weights:', data.weights);
 ```
 
-### Batch Image Methods for Content Packs
+---
+
+### Batch Image Methods
 
 Use batch methods to efficiently add icons and images to all items in a content pack:
 
@@ -463,94 +424,39 @@ manager.register('equipment', [
     { name: 'Dragon Shield', type: 'shield', rarity: 'rare', weight: 5 }
 ]);
 
-// Method 1: batchAddIcons - Add icons to specific items by name
+// Add icons to specific items by name
 manager.batchAddIcons('equipment', {
     'Dragon Scale Armor': '/icons/armor/dragon-scale.png',
     'Flame Tongue': '/icons/weapons/flame-tongue.png',
     'Dragon Shield': '/icons/shields/dragon-shield.png'
 });
 
-// Method 2: batchAddImages - Add larger images to specific items
+// Add larger images (portraits, cards, etc.)
 manager.batchAddImages('equipment', {
     'Dragon Scale Armor': '/images/equipment/dragon-scale-armor.png'
 });
 
-// Method 3: batchUpdateImages - Add same icon to items matching a predicate
+// Add same icon to items matching a predicate
 manager.batchUpdateImages('spells',
     spell => spell.level === 0,  // All cantrips
     { icon: '/icons/spells/cantrip-icon.png' }
 );
 
-// Method 4: batchByCategory - Add icons based on a property value
-// Example: Add icons by spell school
+// Add icons based on a property value (by category)
 manager.batchByCategory('spells', 'school', {
     'Evocation': '/icons/schools/fire.png',
     'Necromancy': '/icons/schools/skull.png',
-    'Abjuration': '/icons/schools/shield.png',
-    'Conjuration': '/icons/schools/portal.png',
-    'Divination': '/icons/schools/eye.png',
-    'Enchantment': '/icons/schools/charm.png',
-    'Illusion': '/icons/schools/mask.png',
-    'Transmutation': '/icons/schools/alchemy.png'
+    'Abjuration': '/icons/schools/shield.png'
+    // Also supports: Conjuration, Divination, Enchantment, Illusion, Transmutation
 });
 
-// Example: Add icons by equipment rarity
+// Also works for equipment rarity
 manager.batchByCategory('equipment', 'rarity', {
     'legendary': '/icons/rarity/star-gold.png',
     'very_rare': '/icons/rarity/star-purple.png',
-    'rare': '/icons/rarity/star-blue.png',
-    'uncommon': '/icons/rarity/star-green.png',
-    'common': '/icons/rarity/star-white.png'
+    'rare': '/icons/rarity/star-blue.png'
+    // Also supports: uncommon, common
 });
-
-// Example: Complete content pack with batch icons
-function loadElementalPackWithIcons() {
-    const manager = ExtensionManager.getInstance();
-
-    // Register spells
-    manager.register('spells', [
-        { name: 'Fireball', level: 3, school: 'Evocation' },
-        { name: 'Ice Storm', level: 4, school: 'Evocation' },
-        { name: 'Lightning Bolt', level: 3, school: 'Evocation' },
-        { name: 'Mage Armor', level: 1, school: 'Abjuration' }
-    ]);
-
-    // Register equipment
-    manager.register('equipment', [
-        { name: 'Staff of Fire', type: 'weapon', rarity: 'rare' },
-        { name: 'Frost Brand', type: 'weapon', rarity: 'very_rare' },
-        { name: 'Robe of Elements', type: 'armor', rarity: 'legendary' }
-    ]);
-
-    // Apply icons in bulk by category
-    manager.batchByCategory('spells', 'school', {
-        'Evocation': '/icons/schools/evocation.png',
-        'Abjuration': '/icons/schools/abjuration.png'
-    });
-
-    manager.batchByCategory('equipment', 'rarity', {
-        'legendary': '/icons/rarity/legendary.png',
-        'very_rare': '/icons/rarity/very-rare.png',
-        'rare': '/icons/rarity/rare.png'
-    });
-
-    console.log('Elemental Pack loaded with icons!');
-}
-```
-
-### Debugging with Export
-
-Use export to inspect registered content:
-
-```typescript
-const manager = ExtensionManager.getInstance();
-
-// Debug: Check what's registered
-const data = manager.exportCustomData();
-
-console.log('Registered categories:', Object.keys(data.extensions));
-console.log('Equipment items:', data.extensions.equipment?.items.length);
-console.log('Custom weights:', data.weights);
 ```
 
 ---

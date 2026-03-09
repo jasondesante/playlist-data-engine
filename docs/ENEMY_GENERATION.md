@@ -41,100 +41,73 @@ The Enemy Generation System creates balanced combat encounters through:
 
 ## Quick Start
 
-### Generate a Specific Enemy by Name
-
 ```typescript
-import { EnemyGenerator } from 'playlist-data-engine';
+import { AudioAnalyzer, EnemyGenerator } from 'playlist-data-engine';
 
-// Generate an elite Orc at CR 5 with signature ability scaled to d10
+// ═══════════════════════════════════════════════════════════════
+// SINGLE ENEMY
+// ═══════════════════════════════════════════════════════════════
+
+// By template ID
 const orc = EnemyGenerator.generate({
-    seed: 'dungeon-1-entrance',
+    seed: 'dungeon-entrance',
     templateId: 'orc',
-    cr: 5,              // Power level: Level 5, full stats
-    rarity: 'elite'     // Complexity: d10 signature, 2 extra abilities
+    cr: 5,              // Power level (determines level/stats)
+    rarity: 'elite'     // Complexity (determines abilities)
 });
 
-console.log(orc.name); // 'Orc'
-console.log(orc.level); // 5 (derived from CR)
-console.log(orc.class_features); // ['orc_savage_strike', ...extra abilities]
-```
-
-### Generate a Random Enemy by Category/Archetype
-
-```typescript
-// Generate a random humanoid brute at CR 3 (could be Orc or Bandit)
+// By category/archetype (random from matching templates)
 const enemy = EnemyGenerator.generate({
-    seed: 'random-encounter',
+    seed: 'random',
     category: 'humanoid',
     archetype: 'brute',
-    cr: 3,              // Power level: Level 3
-    rarity: 'uncommon'  // Complexity: d8 signature, 1 extra ability
+    cr: 3,
+    rarity: 'uncommon'
 });
-```
 
-### Generate Encounter Balanced for Party
+// ═══════════════════════════════════════════════════════════════
+// ENCOUNTERS
+// ═══════════════════════════════════════════════════════════════
 
-```typescript
-import { EnemyGenerator } from 'playlist-data-engine';
-
-// Generate 5 enemies balanced for a level 5 party (medium difficulty)
-const party = [player1, player2, player3, player4]; // CharacterSheet[]
-
-const enemies = EnemyGenerator.generateEncounter(party, {
-    seed: 'dungeon-1-room-3',
+// Party-balanced (uses D&D 5e XP budgets)
+const party = [player1, player2, player3, player4];
+const encounter = EnemyGenerator.generateEncounter(party, {
+    seed: 'room-3',
     difficulty: 'medium',
     count: 5
 });
 
-// Result: 5 enemies at appropriate CR
-// One enemy will be promoted to uncommon as leader (auto-leader system)
-```
-
-### Generate Encounter by CR (No Party Needed)
-
-```typescript
-// Generate 3 enemies at approximately CR 5 each
-const enemies = EnemyGenerator.generateEncounterByCR({
-    seed: 'cr5-encounter',
+// CR-based (no party needed)
+const crEncounter = EnemyGenerator.generateEncounterByCR({
+    seed: 'cr5-group',
     targetCR: 5,
     count: 3
 });
-```
 
-### Generate Custom Mix of Enemies
-
-```typescript
-// Specify exact enemy composition
-const enemies = EnemyGenerator.generateEncounterByCR({
-    seed: 'custom-mix',
+// Custom composition
+const customMix = EnemyGenerator.generateEncounterByCR({
+    seed: 'patrol',
     targetCR: 3,
     enemyMix: 'custom',
-    templates: ['orc', 'orc', 'goblin-archer', 'goblin-archer', 'shaman']
+    templates: ['orc', 'orc', 'goblin-archer', 'shaman']
 });
 
-// Result: 2 orcs, 2 goblin archers, 1 shaman
-```
+// ═══════════════════════════════════════════════════════════════
+// AUDIO-INFLUENCED
+// ═══════════════════════════════════════════════════════════════
 
-### Audio-Influenced Generation
-
-```typescript
-import { AudioAnalyzer, EnemyGenerator } from 'playlist-data-engine';
-
-// Analyze audio from a track
 const analyzer = new AudioAnalyzer();
 const audioProfile = await analyzer.extractSonicFingerprint(track.audio_url);
 
-// Generate encounter influenced by audio profile
-const enemies = EnemyGenerator.generateEncounter(party, {
-    seed: 'audio-encounter',
-    audioProfile: audioProfile,
-    track: track,
+const audioEncounter = EnemyGenerator.generateEncounter(party, {
+    seed: 'audio-room',
+    audioProfile,
+    track,
     difficulty: 'hard',
     count: 4
 });
-
-// Bass-heavy audio → more likely to select brute templates (Orc, Bear)
-// Treble-heavy audio → more likely to select archer templates (Hunter, Goblin Archer)
+// Bass-heavy → more brutes (Orc, Bear)
+// Treble-heavy → more archers (Hunter, Goblin Archer)
 ```
 
 ---
@@ -232,42 +205,18 @@ The enemy generation system uses **two independent axes** to create diverse enem
 2. **Rarity determines complexity**: Rarity controls ability count, signature die size, and special features. Higher rarity = more complex = more abilities.
 3. **Fractional CRs** (0.25, 0.5) get reduced base stats (75-85%) to represent "sub-level" enemies.
 
-### Example: Same Rarity, Different CR
+### Example: CR vs Rarity Independence
 
 ```typescript
-// Both are COMMON rarity, but very different power levels
-const grunt = EnemyGenerator.generate({
-    seed: 'grunt',
-    templateId: 'goblin',
-    cr: 0.25,           // Level 0.25, 75% base stats
-    rarity: 'common'    // d6 signature, no extra abilities
-});
+// SAME rarity, DIFFERENT power (CR determines stats/level)
+const grunt = EnemyGenerator.generate({ seed: 'a', templateId: 'goblin', cr: 0.25, rarity: 'common' });
+const beast = EnemyGenerator.generate({ seed: 'b', templateId: 'purple-worm', cr: 20, rarity: 'common' });
+// Both have d6 signature, 0 extras — but beast has 20x the stats
 
-const ancientBeast = EnemyGenerator.generate({
-    seed: 'beast',
-    templateId: 'purple-worm',
-    cr: 20,             // Level 20, full stats
-    rarity: 'common'    // d6 signature, no extra abilities (same complexity!)
-});
-```
-
-### Example: Same CR, Different Rarity
-
-```typescript
-// Both are CR 5, but very different complexity
-const simpleWolf = EnemyGenerator.generate({
-    seed: 'wolf',
-    templateId: 'dire-wolf',
-    cr: 5,              // Level 5, full stats
-    rarity: 'common'    // d6 signature, 0 extra abilities
-});
-
-const complexAlpha = EnemyGenerator.generate({
-    seed: 'alpha',
-    templateId: 'werewolf',
-    cr: 5,              // Level 5, full stats (same power!)
-    rarity: 'boss'      // d12 signature, 3 extra abilities, legendary actions
-});
+// SAME power, DIFFERENT complexity (rarity determines abilities)
+const simple = EnemyGenerator.generate({ seed: 'c', templateId: 'dire-wolf', cr: 5, rarity: 'common' });
+const complex = EnemyGenerator.generate({ seed: 'd', templateId: 'werewolf', cr: 5, rarity: 'boss' });
+// Both are level 5 — but boss has d12 signature, 3 extras, legendary actions
 ```
 
 ---
@@ -523,158 +472,21 @@ Templates are the foundation of enemy generation. Each template defines:
 | `audioPreference` | Weights for audio-influenced selection |
 | `resistances` | Damage resistances/immunities for Elite+ tier |
 
-### Available Templates (V1 + V2)
+### Available Templates
 
-#### Humanoid - Brute
+The system includes 40+ templates across 8 categories. Full template definitions are in the source:
 
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `orc` | Orc | Savage Strike (bonus melee damage) | Bass-heavy |
-| `bandit` | Bandit | Cheap Shot (bonus vs flat-footed) | Mid-range |
+| Category | Source File | Templates |
+|----------|-------------|-----------|
+| **Humanoid, Beast** | [DefaultEnemies.ts](src/constants/DefaultEnemies.ts) | Orc, Bandit, Hunter, Goblin Archer, Shaman, Cultist, Bear, Boar, Giant Spider, Stirge |
+| **Undead** | [EnemyTemplates/Undead.ts](src/constants/EnemyTemplates/Undead.ts) | Skeleton, Ghost, Zombie, Wight |
+| **Fiend** | [EnemyTemplates/Fiend.ts](src/constants/EnemyTemplates/Fiend.ts) | Imp, Lemure, Demon, Quasit |
+| **Elemental** | [EnemyTemplates/Elemental.ts](src/constants/EnemyTemplates/Elemental.ts) | Fire, Earth, Air, Water Elementals |
+| **Construct** | [EnemyTemplates/Construct.ts](src/constants/EnemyTemplates/Construct.ts) | Animated Armor, Golem, Flying Sword, Shield Guardian |
+| **Dragon** | [EnemyTemplates/Dragon.ts](src/constants/EnemyTemplates/Dragon.ts) | Young Red Dragon, Young Blue Dragon, Wyrmling, Drake |
+| **Monstrosity** | [EnemyTemplates/Monstrosity.ts](src/constants/EnemyTemplates/Monstrosity.ts) | Owlbear, Mimic, Griffin, Basilisk |
 
-#### Humanoid - Archer
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `hunter` | Hunter | Precise Shot (ignore half cover) | Treble-heavy |
-| `goblin-archer` | Goblin Archer | Sneaky Shot (bonus from hiding) | Treble-heavy |
-
-#### Humanoid - Support
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `shaman` | Shaman | Spirit Bond (ally damage boost) | Mid-range |
-| `cultist` | Cultist | Dark Blessing (ally AC bonus) | Mid-range |
-
-#### Beast - Brute
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `bear` | Bear | Maul (multiattack with grapple) | Bass-heavy |
-| `boar` | Boar | Gore Charge (bonus on charge) | Bass-heavy |
-
-#### Beast - "Archer" (Ranged)
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `giant-spider` | Giant Spider | Web Spray (ranged restrain) | Treble-heavy |
-| `stirge` | Stirge | Blood Drain (ranged life steal) | Treble-heavy |
-
-#### Undead - Archer
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `skeleton` | Skeleton | Bone Shot (piercing damage bonus) | Treble |
-| `ghost` | Ghost | Horrifying Visage (fear debuff) | Mid |
-
-#### Undead - Brute
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `zombie` | Zombie | Undead Grip (grapple + bite) | Bass |
-| `wight` | Wight | Life Drain (damage + self heal) | Mid |
-
-**Undead Traits:** Necrotic resistance, poison immunity
-
-#### Fiend - Archer
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `imp` | Imp | Sting (poison damage) | Treble |
-
-#### Fiend - Brute
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `lemure` | Lemure | Hellish Resilience (damage reduction) | Bass |
-| `demon` | Demon | Chaos Claw (random damage type) | Bass |
-
-#### Fiend - Support
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `quasit` | Quasit | Fear Aura (debuff) | Mid |
-
-**Fiend Traits:** Fire resistance, cold resistance, poison immunity
-
-#### Elemental - Brute
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `fire-elemental` | Fire Elemental | Burning Touch (fire + ongoing) | Bass |
-| `earth-elemental` | Earth Elemental | Earth Slam (AoE + prone) | Bass |
-
-#### Elemental - Archer
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `air-elemental` | Air Elemental | Wind Blast (ranged push) | Treble |
-
-#### Elemental - Support
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `water-elemental` | Water Elemental | Whirlpool (restrain + pull) | Mid |
-
-**Elemental Traits:** Fire (fire immunity), Water (cold immunity, fire/necrotic resistance), Air (lightning immunity, thunder resistance), Earth (poison immunity, necrotic resistance)
-
-#### Construct - Brute
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `animated-armor` | Animated Armor | Slam (force damage) | Bass |
-| `golem` | Golem | Immutable Form (status immunity) | Bass |
-
-#### Construct - Archer
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `flying-sword` | Flying Sword | Diving Strike (bonus on charge) | Treble |
-
-#### Construct - Support
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `shield-guardian` | Shield Guardian | Protection Aura (ally AC bonus) | Mid |
-
-**Construct Traits:** Poison immunity, psychic immunity, no healing
-
-#### Dragon - Brute
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `young-red-dragon` | Young Red Dragon | Fire Breath (AoE fire) | Bass |
-| `dragon-wyrmling` | Dragon Wyrmling | Bite + Claw (multiattack) | Mid |
-| `drake` | Drake | Tail Swipe (knockback) | Bass |
-
-#### Dragon - Archer
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `young-blue-dragon` | Young Blue Dragon | Lightning Breath (line lightning) | Treble |
-
-**Dragon Traits:** Young Red (fire immunity), Young Blue (lightning immunity, thunder resistance), Wyrmling (acid resistance), Drake (cold resistance)
-
-#### Monstrosity - Brute
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `owlbear` | Owlbear | Multiattack (beak + claws) | Bass |
-| `mimic` | Mimic | Adhesive (grapple on hit) | Mid |
-
-#### Monstrosity - Archer
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `griffin` | Griffin | Dive Attack (bonus from flight) | Treble |
-
-#### Monstrosity - Support
-
-| ID | Name | Signature Ability | Audio Preference |
-|-----|--------|------------------|-------------------|
-| `basilisk` | Basilisk | Pertrifying Gaze (save or stunned) | Mid |
-
-**Monstrosity Traits:** Varied resistances: mimic (acid), basilisk (poison), owlbear/griffin (none)
+Each template includes: `id`, `name`, `category`, `archetype`, `signatureAbility`, `baseStats`, `baseHP`, `baseAC`, `baseSpeed`, `audioPreference`, and `resistances`.
 
 ### Get Template by ID
 
@@ -899,34 +711,12 @@ When generating enemies with fractional CR values (0.25, 0.5), the system applie
 | 0.5 | 0.5 | 85% | Sub-level enemy (e.g., giant rat) |
 | 1+ | CR | 100% | Full stats (standard enemy) |
 
-**This multiplier is applied BEFORE the rarity stat multiplier**, so:
+**This multiplier is applied BEFORE the rarity stat multiplier** (e.g., CR 0.25 + Elite = 75% × 107% ≈ 80% base stats).
 
 ```typescript
-// CR 0.25 + Elite = 75% × 107% = ~80% base stats
-const grunt = EnemyGenerator.generate({
-    seed: 'grunt',
-    cr: 0.25,
-    rarity: 'elite'  // Complex but still weak
-});
-```
-
-**Example:**
-```typescript
-// A CR 0.25 enemy has reduced base stats
-const goblin = EnemyGenerator.generate({
-    seed: 'weak-goblin',
-    templateId: 'goblin',
-    cr: 0.25,           // 75% base stats
-    rarity: 'common'
-});
-
-// Same template at CR 5 has full stats
-const warrior = EnemyGenerator.generate({
-    seed: 'strong-goblin',
-    templateId: 'goblin',
-    cr: 5,              // 100% base stats
-    rarity: 'common'
-});
+const grunt = EnemyGenerator.generate({ seed: 'weak', templateId: 'goblin', cr: 0.25, rarity: 'common' });
+const warrior = EnemyGenerator.generate({ seed: 'strong', templateId: 'goblin', cr: 5, rarity: 'common' });
+// Same template, same rarity — grunt has 75% stats, warrior has 100%
 ```
 
 ---
@@ -979,22 +769,11 @@ Customize conversion with tuning parameters:
 ```typescript
 import { createCRTuning } from 'playlist-data-engine';
 
-// Harder enemies: CR converts to higher levels
-const hardMode = createCRTuning({
-    baseMultiplier: 1.2  // CR 5 = Level 6
-});
-
-// Softer enemies: CR converts to lower levels
-const easyMode = createCRTuning({
-    baseMultiplier: 0.8  // CR 5 = Level 4
-});
-
-// Custom curve for specific breakpoints
-const customCurve = createCRTuning({
-    customCurve: new Map([
-        [5, 7],  // CR 5 = Level 7
-        [10, 15] // CR 10 = Level 15
-    ])
+// Adjust difficulty by changing how CR maps to level
+const tuning = createCRTuning({
+    baseMultiplier: 1.2  // CR 5 → Level 6 (harder enemies)
+    // baseMultiplier: 0.8  // CR 5 → Level 4 (easier enemies)
+    // customCurve: new Map([[5, 7], [10, 15]])  // Specific breakpoints
 });
 ```
 

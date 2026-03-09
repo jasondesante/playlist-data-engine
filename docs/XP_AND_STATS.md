@@ -94,112 +94,68 @@ const updater = new CharacterUpdater(statManager);
 
 #### Comprehensive Level-Up Celebration & Multi-Source XP System
 
-The `levelUpDetails` returned by both `updateCharacterFromSession()` and `addXP()` contains everything you need for that "LEVELED UP!" celebration experience. Whether XP comes from music listening, combat, quests, or custom activities, the level-up system works identically.
+The `levelUpDetails` returned by both `updateCharacterFromSession()` and `addXP()` contains everything you need for that "LEVELED UP!" celebration experience. All XP sources work identically.
 
 ```typescript
 import { CharacterUpdater } from 'playlist-data-engine';
 
 const updater = new CharacterUpdater();
 
-// ===== LEVEL-UP CELEBRATION FUNCTION (Reusable) =====
+// ===== REUSABLE CELEBRATION FUNCTION =====
 function celebrateLevelUp(result: LevelUpResult, source: string) {
     if (!result.leveledUp) return;
 
     console.log(`🎉 LEVELED UP from ${source}!`);
-    console.log(`🎉 Level ${result.levelUpDetails![0].fromLevel} → ${result.newLevel}!`);
-
-    // Handle multiple level-ups (e.g., boss rewards)
+    console.log(`Level ${result.levelUpDetails![0].fromLevel} → ${result.newLevel}!`);
     console.log(`Gained ${result.levelUpDetails?.length} level(s) at once!`);
 
     for (const detail of result.levelUpDetails!) {
-        console.log(`\n=== Level ${detail.fromLevel} → ${detail.toLevel} ===`);
-        console.log(`💚 HP: +${detail.hpIncrease} (new max: ${detail.newMaxHP})`);
+        console.log(`=== Level ${detail.fromLevel} → ${detail.toLevel} ===`);
+        console.log(`HP: +${detail.hpIncrease} (new max: ${detail.newMaxHP})`);
 
         if (detail.proficiencyIncrease > 0) {
-            console.log(`⚔️ Proficiency: +${detail.proficiencyIncrease} (new: ${detail.newProficiency})`);
+            console.log(`Proficiency: +${detail.proficiencyIncrease} (new: ${detail.newProficiency})`);
         }
-
-        if (detail.statIncreases && detail.statIncreases.length > 0) {
-            console.log(`📊 STATS INCREASED:`);
-            for (const stat of detail.statIncreases) {
-                console.log(`   ${stat.ability}: ${stat.oldValue} → ${stat.newValue} (+${stat.delta})`);
-            }
+        if (detail.statIncreases?.length) {
+            console.log(`Stats: ${detail.statIncreases.map(s => `${s.ability} ${s.oldValue}→${s.newValue}`).join(', ')}`);
         }
-
-        if (detail.featuresGained && detail.featuresGained.length > 0) {
-            console.log(`✨ NEW FEATURES: ${detail.featuresGained.join(', ')}`);
+        if (detail.featuresGained?.length) {
+            console.log(`Features: ${detail.featuresGained.join(', ')}`);
         }
-
         if (detail.newSpellSlots) {
-            console.log(`🔮 NEW SPELL SLOTS:`, detail.newSpellSlots);
+            console.log(`Spell Slots:`, detail.newSpellSlots);
         }
     }
 }
 
-// ===== MUSIC LISTENING XP =====
-// Follow the same pattern from "Earning XP from Listening to Music" above
-// The celebrateLevelUp() function works identically for all XP sources
+// ===== USAGE: ALL XP SOURCES USE THE SAME PATTERN =====
+// Music listening
 const musicResult = updater.updateCharacterFromSession(character, session, track, listenCount);
 celebrateLevelUp(musicResult, 'Music Session');
 
-// ===== COMBAT XP =====
-// Award XP for defeating enemies
+// Combat, quests, custom activities - same pattern
 const combatResult = updater.addXP(character, 500, 'combat');
 celebrateLevelUp(combatResult, 'Combat');
 
-// ===== QUEST COMPLETION XP =====
-// Award XP for completing quests
 const questResult = updater.addXP(character, 1000, 'quest');
 celebrateLevelUp(questResult, 'Quest Complete');
-console.log(`Earned ${questResult.xpEarned} XP.`);
 
-// ===== CUSTOM ACTIVITY XP =====
-// Award XP for exploration, crafting, social interactions, etc.
-const explorationResult = updater.addXP(character, 250, 'exploration');
-const craftingResult = updater.addXP(character, 150, 'crafting');
-const socialResult = updater.addXP(character, 100, 'social');
-
-// ===== MASSIVE XP REWARD (Boss/Milestone) =====
-// Boss defeated or major milestone - can trigger multiple level-ups at once!
+// Boss rewards can trigger multiple level-ups at once!
 const bossResult = updater.addXP(character, 10000, 'boss_defeat');
-console.log(`🎉🎉🎉 BOSS DEFEATED!`);
-celebrateLevelUp(bossResult, 'Boss Defeat'); // Reuses the celebration function from above
+celebrateLevelUp(bossResult, 'Boss Defeat');
 
-// ===== XP SOURCE TRACKING =====
-// Track where XP came from for analytics/achievements
-// Note: XPSource is a custom application-level type (not from the engine)
-// Define it yourself based on your tracking needs:
+// ===== OPTIONAL: XP SOURCE TRACKING =====
+// Track XP sources for analytics (application-level implementation)
 const xpHistory: Array<{ source: string; amount: number; timestamp: number }> = [];
 
 function addXPWithTracking(character: CharacterSheet, amount: number, source: string) {
     const result = updater.addXP(character, amount, source);
-
-    // Track the XP source
-    xpHistory.push({
-        source,
-        amount,
-        timestamp: Date.now()
-    });
-
+    xpHistory.push({ source, amount, timestamp: Date.now() });
     celebrateLevelUp(result, source);
     return result;
 }
 
-// Usage with tracking
-addXPWithTracking(character, 500, 'combat');
-addXPWithTracking(character, 1000, 'quest_main');
-addXPWithTracking(character, 250, 'side_quest');
-
-// Later, analyze where XP came from
-const combatXP = xpHistory
-    .filter(h => h.source.startsWith('combat'))
-    .reduce((sum, h) => sum + h.amount, 0);
-
-const questXP = xpHistory
-    .filter(h => h.source.startsWith('quest'))
-    .reduce((sum, h) => sum + h.amount, 0);
-
-console.log(`Total Combat XP: ${combatXP}, Total Quest XP: ${questXP}`);
+// Analyze: const combatXP = xpHistory.filter(h => h.source.startsWith('combat')).reduce((sum, h) => sum + h.amount, 0);
 ```
 
 **Type Reference:**
@@ -415,17 +371,19 @@ const rhythmXP = new RhythmXPCalculator(customConfig);
 import { RhythmXPCalculator } from 'playlist-data-engine';
 
 // ===== EXPONENTIAL GROWTH (Uncapped feel) =====
+// Slower scaling at high combos, faster at low combos
 const exponentialXP = new RhythmXPCalculator({
   combo: {
     enabled: true,
-    cap: 10.0,  // Higher cap for exponential growth
+    cap: 10.0,
     formula: (combo) => 1 + Math.log10(combo + 1),
     // At 10 combo = 2.0x, at 100 combo = 3.0x, at 1000 combo = 4.0x
     endBonus: { enabled: true },
   },
 });
 
-// ===== STEP-BASED (Every 10 hits = +0.1x) =====
+// ===== STEP-BASED (Tiered progression) =====
+// Every 10 hits = +0.1x, predictable milestones
 const stepXP = new RhythmXPCalculator({
   combo: {
     enabled: true,
@@ -436,85 +394,23 @@ const stepXP = new RhythmXPCalculator({
   },
 });
 
-// ===== AGGRESSIVE (Faster scaling) =====
-const aggressiveXP = new RhythmXPCalculator({
-  combo: {
-    enabled: true,
-    cap: 5.0,
-    formula: (combo) => 1 + (combo / 25),  // 2x at 25 combo instead of 50
-    endBonus: { enabled: true },
-  },
-});
-
-// ===== CUSTOM END BONUS FORMULA =====
-const bigEndBonusXP = new RhythmXPCalculator({
-  combo: {
-    enabled: true,
-    cap: 5.0,
-    endBonus: {
-      enabled: true,
-      formula: (combo) => Math.floor(combo * 1.5),  // 50% more than default
-    },
-  },
-});
+// ===== OTHER VARIATIONS =====
+// Aggressive: formula: (combo) => 1 + (combo / 25)  // 2x at 25 combo
+// Custom end bonus: endBonus: { formula: (combo) => Math.floor(combo * 1.5) }
 ```
 
-### Groove End Bonus Integration
+### Groove End Bonus
 
-The groove end bonus is now returned directly in `grooveResult.endedGrooveStats` when the groove ends - no need for a separate game loop!
+When groove ends (hotness drops to 0 or direction changes), stats are returned directly in `grooveResult.endedGrooveStats` - no separate game loop needed!
 
-```typescript
-import { GrooveAnalyzer, RhythmXPCalculator, CharacterUpdater } from 'playlist-data-engine';
+**Groove ends when:**
+1. Hotness drops to 0 (player broke their pocket too many times)
+2. Direction changes from push ↔ pull (player shifted from ahead to behind beat)
+3. Session ends (manually check `grooveState` for any active groove)
 
-const grooveAnalyzer = new GrooveAnalyzer();
-const rhythmXP = new RhythmXPCalculator();
-const updater = new CharacterUpdater();
-
-// During gameplay, groove is tracked automatically by GrooveAnalyzer
-// When groove ends (hotness drops to 0 or direction changes), the stats
-// are returned directly in endedGrooveStats:
-
-function onButtonPress(timestamp: number, buttonResult: ButtonPressResult) {
-  const grooveResult = grooveAnalyzer.recordHit(
-    buttonResult.offset,
-    bpm,
-    buttonResult.matchedBeat?.time,  // currentTime for groove duration tracking
-    buttonResult.accuracy  // 'miss' or 'wrongKey' will hurt groove
-  );
-
-  // ... handle XP, combo, etc. ...
-
-  // Check if groove ended - stats are RIGHT HERE in the result!
-  if (grooveResult.endedGrooveStats) {
-    const bonus = rhythmXP.calculateGrooveEndBonus(grooveResult.endedGrooveStats);
-
-    console.log('🔥 Groove Ended!');
-    console.log(`  Duration: ${grooveResult.endedGrooveStats.duration.toFixed(1)}s`);
-    console.log(`  Max Hotness: ${grooveResult.endedGrooveStats.maxHotness.toFixed(1)}%`);
-    console.log(`  Avg Hotness: ${grooveResult.endedGrooveStats.avgHotness.toFixed(1)}%`);
-    console.log(`  Bonus XP: +${bonus.bonusXP.toFixed(2)}`);
-
-    // Add to character
-    updater.addXP(character, bonus.bonusXP, 'groove_bonus');
-
-    // Note: streakLength is already reset to 0 by recordHit() when groove ends
-  }
-}
-
-// Groove ends when:
-// 1. Hotness drops to 0 (player broke their pocket too many times)
-// 2. Direction changes from push ↔ pull (player shifted from ahead to behind beat)
-// 3. Session ends (manually check grooveState for any active groove)
-```
-
-**What Resets When Groove Ends:**
-- `streakLength` → 0 (the groove streak ends!)
-- `grooveStartTime` → null
-- `maxHotness` → 0
-- `hotnessSamples` → []
-- `grooveHitCount` → 0
-
-**Note:** The established pocket (`establishedOffset`, `pocketDirection`) is NOT reset - only the groove statistics.
+**What resets when groove ends:**
+- `streakLength`, `grooveStartTime`, `maxHotness`, `hotnessSamples`, `grooveHitCount` → all reset
+- **Note:** `establishedOffset` and `pocketDirection` are NOT reset - only groove statistics
 
 ### Per-Hit Groove Multiplier Mode
 
@@ -958,49 +854,19 @@ console.log(`Leveled up to ${uncappedResult.newLevel}!`);
 console.log(`Stats auto-increased: ${JSON.stringify(uncappedResult.levelUpDetails?.[0].statIncreases)}`);
 
 // ===== OPTION 2: Manual Stat Selection =====
-// Two approaches for the same end result - choose based on your needs:
-
-// APPROACH A: CharacterUpdater (Recommended)
-// Higher-level API - handles XP, level-up, and pending stats together
 const manualStatManager = new StatManager({ strategy: 'dnD5e' });
 const manualUpdater = new CharacterUpdater(manualStatManager);
 
 const manualResult = manualUpdater.addXP(character, 6500, 'quest');
 
 if (manualUpdater.hasPendingStatIncreases(character)) {
-    // Show UI to get player choice (returns 'STR' or ['DEX', 'CON'])
-    const playerChoice = await showStatSelectionUI();
-
+    const playerChoice = await showStatSelectionUI();  // Returns 'STR' or ['DEX', 'CON']
     const completeResult = manualUpdater.applyPendingStatIncrease(
-        character,
-        playerChoice.primary,
-        playerChoice.secondary
+        character, playerChoice.primary, playerChoice.secondary
     );
-    console.log(`Stats increased: ${completeResult.statIncreases.map(s => s.ability).join(', ')}`);
 }
 
-// APPROACH B: LevelUpProcessor (Advanced)
-// Lower-level API - complete control over two-phase level-up process
-// Phase 1: Process HP/proficiency benefits
-// Phase 2: Apply stats after player choice
-const statManager = new StatManager();
-const statIncreaseLevels = [4, 8, 12, 16, 19];
-const newLevel = character.level + 1;
-
-// Phase 1: Process level-up benefits first
-const benefits = LevelUpProcessor.processLevelUp(character, newLevel, character.seed);
-character = LevelUpProcessor.applyLevelUp(character, benefits);
-
-// Phase 2: Get player choice and apply stats
-if (statIncreaseLevels.includes(newLevel)) {
-    const playerChoice = await showStatSelectionUI();
-    const statResult = statManager.processLevelUp(character, newLevel, {
-        forcedAbilities: playerChoice
-    });
-
-    character = statResult.character;
-    console.log(`Stat increased: ${statResult.increases[0].ability} +${statResult.increases[0].delta}`);
-}
+// Alternative: Use LevelUpProcessor directly for lower-level control over the two-phase process
 
 // ===== OPTION 3: Smart Auto-Selection (Force Auto Mode) =====
 // Automatically picks best stats based on class and current scores - no player input needed
@@ -1102,42 +968,9 @@ const customUpdater = new CharacterUpdater(customStatManager);
 const customResult = customUpdater.addXP(character, 6500, 'quest');
 ```
 
-### Game Mode Comparison
-
-```typescript
-// Standard mode (D&D 5e rules)
-const standard = CharacterGenerator.generate(seed, audioProfile, track, { gameMode: 'standard' });
-// Stats capped at 20, stat increases at levels 4, 8, 12, 16, 19
-
-// Uncapped mode (epic progression - unlimited levels)
-const uncapped = CharacterGenerator.generate(seed, audioProfile, track, { gameMode: 'uncapped' });
-// No stat cap, stat increases EVERY level (unlimited)
-// Level 2, 3, 4... and beyond give +2 to one stat (or +1 to two)
-```
-
 ### HP Increases on Every Level
 
-The leveling system ensures HP increases on EVERY level up, not just at stat increase levels:
-
-```typescript
-// HP increases every level using class hit die + CON modifier
-// Example: Fighter (d10 hit die) with +2 CON:
-// Level 1 → 2: HP increases by 1d10+2 (avg 7.5)
-// Level 2 → 3: HP increases by 1d10+2
-// ...and so on for ALL levels!
-
-// Standard mode (capped at level 20):
-// - Ability scores increase at levels 4, 8, 12, 16, 19
-// - Each grants +2 to one ability or +1 to two abilities
-// - Stats are capped at 20
-// - HP increases EVERY level
-
-// Uncapped mode (unlimited levels):
-// - Ability scores increase at EVERY level
-// - Each grants +2 to one ability or +1 to two abilities
-// - No stat cap - grow infinitely!
-// - HP increases EVERY level
-```
+HP increases on **every** level using class hit die + CON modifier. Standard mode caps stats at 20; uncapped mode has no cap.
 
 ### Optional Features - Developer Implementation
 
@@ -1241,38 +1074,22 @@ const character = CharacterGenerator.generate(
 
 **Type Reference:** `UncappedProgressionConfig` interface - [*src/core/progression/LevelUpProcessor.ts*](src/core/progression/LevelUpProcessor.ts)
 
-**Example: Exponential Scaling**
+**Example Formulas:**
 
 ```typescript
+// Exponential: faster at low levels, slower at high levels
 LevelUpProcessor.setUncappedConfig({
-    // Faster progression at low levels, slower at high levels
     xpFormula: (level) => Math.floor(1000 * Math.pow(1.5, level - 1)),
     proficiencyBonusFormula: (level) => 2 + Math.floor(Math.sqrt(level))
 });
+// Level 1: 1,000 XP | Level 5: ~5,062 XP | Level 10: ~38,443 XP
 
-const character = CharacterGenerator.generate(seed, audio, track, { gameMode: 'uncapped' });
-
-// Level 1: 1,000 XP
-// Level 2: 1,500 XP
-// Level 5: ~5,062 XP
-// Level 10: ~38,443 XP
-// Level 20+: Scales exponentially
-```
-
-**Example: OSRS-Style Scaling**
-
-```typescript
+// OSRS-style: cubic XP curve
 LevelUpProcessor.setUncappedConfig({
-    // Old School RuneScape style: exponential XP curve
     xpFormula: (level) => Math.floor(Math.pow(level, 3) * 100),
     proficiencyBonusFormula: (level) => 2 + Math.floor(level / 10)
 });
-
-// Level 1: 100 XP
-// Level 2: 800 XP
-// Level 5: 12,500 XP
-// Level 10: 100,000 XP
-// Level 20+: Very fast scaling
+// Level 1: 100 XP | Level 5: 12,500 XP | Level 10: 100,000 XP
 ```
 
 **Reset to Default:**
