@@ -29,7 +29,6 @@ The beat detection system is powered by the Web Audio API and provides:
 | **BeatTracker** (Ellis DP) | [src/core/analysis/beat/BeatTracker.ts](../src/core/analysis/beat/BeatTracker.ts) |
 | **TempoDetector** | [src/core/analysis/beat/TempoDetector.ts](../src/core/analysis/beat/TempoDetector.ts) |
 | **BeatInterpolator** | [src/core/analysis/beat/BeatInterpolator.ts](../src/core/analysis/beat/BeatInterpolator.ts) |
-| **GrooveAnalyzer** | [src/core/analysis/beat/GrooveAnalyzer.ts](../src/core/analysis/beat/GrooveAnalyzer.ts) |
 | **RhythmXPCalculator** | [src/core/progression/RhythmXPCalculator.ts](../src/core/progression/RhythmXPCalculator.ts) |
 | **Beat Types** | [src/core/types/BeatMap.ts](../src/core/types/BeatMap.ts) |
 | **Rhythm XP Types** | [src/core/types/RhythmXP.ts](../src/core/types/RhythmXP.ts) |
@@ -634,101 +633,31 @@ const beatMap = await generator.generateBeatMap('song.mp3', 'track-001', (progre
 });
 ```
 
-#### Sensitivity Control Examples
+#### Sensitivity & Filter Configuration
 
 ```typescript
 import { BeatMapGenerator } from 'playlist-data-engine';
 
-// Low sensitivity: strict tempo, fewer beats (good for simple 4/4 songs)
-const strictGenerator = new BeatMapGenerator({
-  sensitivity: 0.5,  // Fewer beats, only the strongest ones
+// Sensitivity: controls how many beats are detected
+// Filter: controls how strictly beats must align to the grid
+
+// Common presets:
+const generator = new BeatMapGenerator({
+  sensitivity: 2.0,  // High: detect subdivisions | Low (0.5): only strong beats
+  filter: 0.7,       // High: strict grid alignment | Low (0.0): keep all beats
 });
 
-// Default sensitivity: balanced detection
-const defaultGenerator = new BeatMapGenerator({
-  sensitivity: 1.0,  // Standard behavior
-});
-
-// High sensitivity: more beats, captures subdivisions
-const sensitiveGenerator = new BeatMapGenerator({
-  sensitivity: 3.0,  // More beats, including 1/8 and 1/16 notes
-});
-
-const strictBeatMap = await strictGenerator.generateBeatMap('simple-beat.mp3', 'track-001');
-const defaultBeatMap = await defaultGenerator.generateBeatMap('song.mp3', 'track-002');
-const sensitiveBeatMap = await sensitiveGenerator.generateBeatMap('complex-rhythm.mp3', 'track-003');
-
-console.log(`Strict: ${strictBeatMap.beats.length} beats`);
-console.log(`Default: ${defaultBeatMap.beats.length} beats`);
-console.log(`Sensitive: ${sensitiveBeatMap.beats.length} beats`);
+const beatMap = await generator.generateBeatMap('song.mp3', 'track-001');
+console.log(`Detected ${beatMap.beats.length} beats`);
+console.log(`Settings used:`, beatMap.metadata.sensitivity, beatMap.metadata.filter);
 ```
 
-#### Filter Control Examples
-
-```typescript
-import { BeatMapGenerator } from 'playlist-data-engine';
-
-// No filtering: keep all detected beats (default)
-const noFilter = new BeatMapGenerator({
-  filter: 0.0,  // All beats kept
-});
-
-// Moderate filtering: remove clearly off-grid beats
-const moderateFilter = new BeatMapGenerator({
-  filter: 0.5,  // Remove beats far from the grid
-});
-
-// Strict filtering: only grid-aligned beats
-const strictFilter = new BeatMapGenerator({
-  filter: 0.9,  // Only beats very close to the grid
-});
-
-const allBeats = await noFilter.generateBeatMap('song.mp3', 'track-001');
-const gridBeats = await strictFilter.generateBeatMap('song.mp3', 'track-001');
-
-console.log(`All beats: ${allBeats.beats.length}`);
-console.log(`Grid-aligned only: ${gridBeats.beats.length}`);
-```
-
-#### Combined Sensitivity + Filter Examples
-
-```typescript
-import { BeatMapGenerator } from 'playlist-data-engine';
-
-// Rhythm game preset: high sensitivity + strict filter
-// Detects many beats, then removes off-grid ones
-const rhythmGameGenerator = new BeatMapGenerator({
-  sensitivity: 2.0,  // Detect subdivisions
-  filter: 0.7,       // Remove off-grid beats
-});
-
-// Casual game preset: low sensitivity + no filter
-// Only the strongest beats, all kept
-const casualGameGenerator = new BeatMapGenerator({
-  sensitivity: 0.5,  // Only strong beats
-  filter: 0.0,       // Keep all detected beats
-});
-
-// Expert rhythm game: very high sensitivity + strict filter
-// Maximum beat detection, quantized to grid
-const expertGenerator = new BeatMapGenerator({
-  sensitivity: 5.0,  // Detect all rhythmic elements
-  filter: 0.9,       // Strict grid alignment
-});
-
-// Compare results
-const song = 'complex-drum-track.mp3';
-const rhythmBeatMap = await rhythmGameGenerator.generateBeatMap(song, 'rhythm-001');
-const casualBeatMap = await casualGameGenerator.generateBeatMap(song, 'casual-001');
-const expertBeatMap = await expertGenerator.generateBeatMap(song, 'expert-001');
-
-console.log(`Rhythm game: ${rhythmBeatMap.beats.length} beats`);
-console.log(`Casual game: ${casualBeatMap.beats.length} beats`);
-console.log(`Expert: ${expertBeatMap.beats.length} beats`);
-
-// Metadata shows the settings used
-console.log(`Rhythm settings:`, rhythmBeatMap.metadata.sensitivity, rhythmBeatMap.metadata.filter);
-```
+| Use Case | Sensitivity | Filter | Description |
+|----------|-------------|--------|-------------|
+| Casual game | 0.5 | 0.0 | Only strong beats, all kept |
+| Rhythm game | 2.0 | 0.7 | Detect subdivisions, remove off-grid |
+| Expert mode | 5.0 | 0.9 | Maximum detection, strict alignment |
+| Simple 4/4 songs | 0.5 | 0.5 | Fewer beats, moderate filtering |
 
 #### BeatMap Serialization
 
@@ -840,219 +769,48 @@ See [Configuring Difficulty](#configuring-difficulty) for how to customize thres
 
 #### Configuring Difficulty
 
-The beat detection system supports configurable difficulty through three presets and custom thresholds.
-
-##### Using Difficulty Presets
+The beat detection system supports configurable difficulty through three presets (`easy`, `medium`, `hard`) and custom thresholds.
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
+import { AudioAnalyzer, validateThresholds } from 'playlist-data-engine';
 
 const analyzer = new AudioAnalyzer();
 const audioContext = new AudioContext();
-
 const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
 
-// Easy mode - forgiving timing for casual players
-const easyStream = analyzer.createBeatStream(beatMap, audioContext, {
-  difficultyPreset: 'easy'
-});
-
-// Medium mode - balanced difficulty (default)
-const mediumStream = analyzer.createBeatStream(beatMap, audioContext, {
-  difficultyPreset: 'medium'
-});
-
-// Hard mode - strict timing
-const hardStream = analyzer.createBeatStream(beatMap, audioContext, {
-  difficultyPreset: 'hard'
-});
-```
-
-##### Using Custom Thresholds
-
-For fine-grained control, you can override specific thresholds:
-
-```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
-
-const analyzer = new AudioAnalyzer();
-const audioContext = new AudioContext();
-
-const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
-
-// Override only specific thresholds (uses hard preset as base)
-const customStream = analyzer.createBeatStream(beatMap, audioContext, {
-  customThresholds: {
-    perfect: 0.050,  // ±50ms (more lenient perfect)
-    great: 0.100,    // ±100ms
-    good: 0.150,     // ±150ms
-    ok: 0.200,       // ±200ms
-  }
-});
-
-// Partial override - only change perfect and ok
-const partialStream = analyzer.createBeatStream(beatMap, audioContext, {
-  difficultyPreset: 'medium',  // Base preset
-  customThresholds: {
-    perfect: 0.030,  // Stricter perfect (±30ms)
-  }
-});
-```
-
-##### Difficulty Preset Constants
-
-The preset thresholds are also exported as constants for direct access:
-
-```typescript
-import {
-  EASY_ACCURACY_THRESHOLDS,
-  MEDIUM_ACCURACY_THRESHOLDS,
-  HARD_ACCURACY_THRESHOLDS,
-  getAccuracyThresholdsForPreset,
-  type AccuracyThresholds,
-  type DifficultyPreset,
-} from 'playlist-data-engine';
-
-// Access preset values directly
-console.log(EASY_ACCURACY_THRESHOLDS);
-// { perfect: 0.035, great: 0.070, good: 0.110, ok: 0.150 }
-
-// Get thresholds for a preset programmatically
-const thresholds = getAccuracyThresholdsForPreset('medium');
-console.log(`Medium perfect window: ${thresholds.perfect * 1000}ms`);
-// "Medium perfect window: 45ms"
-
-// Get current thresholds from a BeatStream
+// Use a preset: 'easy' | 'medium' | 'hard'
 const stream = analyzer.createBeatStream(beatMap, audioContext, {
-  difficultyPreset: 'easy'
+  difficultyPreset: 'medium'  // also available: 'easy', 'hard'
 });
-const currentThresholds = stream.getAccuracyThresholds();
-```
 
-##### Validating Custom Thresholds
-
-Use `validateThresholds()` to validate custom thresholds before passing them to BeatStream. This helps catch configuration errors early and provides helpful error messages.
-
-```typescript
-import { validateThresholds, type AccuracyThresholds } from 'playlist-data-engine';
+// Or customize with customThresholds (partial override)
+const customStream = analyzer.createBeatStream(beatMap, audioContext, {
+  difficultyPreset: 'medium',
+  customThresholds: { perfect: 0.030 }  // Stricter perfect (±30ms)
+});
 
 // Validate custom thresholds before use
-const customThresholds: Partial<AccuracyThresholds> = {
-  perfect: 0.050,
-  great: 0.100,
-  good: 0.150,
-  ok: 0.200,
-};
-
-const result = validateThresholds(customThresholds);
-
-if (!result.valid) {
-  console.error('Invalid thresholds:', result.errors);
-  // Example errors:
-  // - "great (0.05) must be greater than perfect (0.1)"
-  // - "perfect must be positive, got -0.01"
-} else {
-  // Safe to use with BeatStream
-  const stream = analyzer.createBeatStream(beatMap, audioContext, {
-    customThresholds
-  });
-}
+const result = validateThresholds({ perfect: 0.050, great: 0.100, good: 0.150, ok: 0.200 });
+if (!result.valid) console.error('Invalid:', result.errors);
 ```
 
-**Validation Rules:**
-- All threshold values must be positive numbers (including zero)
-- Thresholds must be in ascending order: `perfect < great < good < ok`
-- Partial thresholds are validated only for the values provided
-
-**Return Type:**
-```typescript
-interface ThresholdValidationResult {
-  valid: boolean;
-  errors: string[];
-}
-```
+**Preset Constants** are exported for direct access: `EASY_ACCURACY_THRESHOLDS`, `MEDIUM_ACCURACY_THRESHOLDS`, `HARD_ACCURACY_THRESHOLDS`. Use `getAccuracyThresholdsForPreset('medium')` to get thresholds programmatically, or `stream.getAccuracyThresholds()` to get current thresholds.
 
 ##### Changing Difficulty Mid-Stream
 
-Use `setDifficulty()` to change difficulty settings while the BeatStream is running. This enables adaptive difficulty gameplay where the game adjusts based on player performance.
+Use `setDifficulty()` for adaptive difficulty during gameplay:
 
 ```typescript
-import { AudioAnalyzer } from 'playlist-data-engine';
-
-const analyzer = new AudioAnalyzer();
-const audioContext = new AudioContext();
-const beatMap = await analyzer.generateBeatMap('song.mp3', 'track-001');
-
-// Start with hard difficulty
-const stream = analyzer.createBeatStream(beatMap, audioContext, {
-  difficultyPreset: 'hard'
-});
-
 stream.start();
 
-// Later, adjust difficulty based on player performance
+// Adjust based on player performance
 function onPlayerPerformanceUpdate(accuracy: number) {
-  if (accuracy < 0.5) {
-    // Player struggling - switch to easy
-    stream.setDifficulty({ preset: 'easy' });
-  } else if (accuracy > 0.9) {
-    // Player doing great - switch to hard
-    stream.setDifficulty({ preset: 'hard' });
-  }
+  if (accuracy < 0.5) stream.setDifficulty({ preset: 'easy' });
+  else if (accuracy > 0.9) stream.setDifficulty({ preset: 'hard' });
 }
 
-// You can also use custom thresholds
-stream.setDifficulty({
-  preset: 'medium',
-  customThresholds: { perfect: 0.060 }  // Looser perfect window
-});
-
-// Clear custom thresholds and use preset only
-stream.setDifficulty({ preset: 'easy', customThresholds: {} });
-```
-
-**Use Cases:**
-- **Adaptive difficulty**: Automatically adjust based on player performance
-- **Practice mode**: Let players try different difficulties without restarting
-- **Accessibility**: Allow players to adjust difficulty on the fly
-
-##### UI Integration Example
-
-Here's how you might integrate difficulty selection in a rhythm game UI:
-
-```typescript
-import {
-  AudioAnalyzer,
-  EASY_ACCURACY_THRESHOLDS,
-  MEDIUM_ACCURACY_THRESHOLDS,
-  HARD_ACCURACY_THRESHOLDS,
-} from 'playlist-data-engine';
-
-// Display preset options to the player
-const DIFFICULTY_OPTIONS = [
-  {
-    name: 'Easy',
-    preset: 'easy',
-    description: `Perfect: ±${EASY_ACCURACY_THRESHOLDS.perfect * 1000}ms`,
-  },
-  {
-    name: 'Medium',
-    preset: 'medium',
-    description: `Perfect: ±${MEDIUM_ACCURACY_THRESHOLDS.perfect * 1000}ms`,
-  },
-  {
-    name: 'Hard',
-    preset: 'hard',
-    description: `Perfect: ±${HARD_ACCURACY_THRESHOLDS.perfect * 1000}ms`,
-  },
-];
-
-// Create stream based on player selection
-function createGameStream(beatMap: BeatMap, audioContext: AudioContext, difficulty: DifficultyPreset) {
-  return analyzer.createBeatStream(beatMap, audioContext, {
-    difficultyPreset: difficulty
-  });
-}
+// Can also use custom thresholds
+stream.setDifficulty({ preset: 'medium', customThresholds: { perfect: 0.060 } });
 ```
 
 #### Pre-rendering Beats
@@ -1290,142 +1048,57 @@ const easyStream = new BeatStream(chartMap, audioContext, {
 3. **Test with `hasRequiredKeys()`**: Verify a beat map is actually a chart before gameplay
 4. **Use `getUsedKeys()` for UI**: Determine which buttons to display based on the chart
 
-### Code Examples
+### Chart Essentials
 
-#### Example 1: Creating a Simple 2-Key Chart
-
-This example shows how to create a basic rhythm game chart with two keys (left and right):
+A compact example showing key chart operations: creating a chart, handling input with key validation, and using `ignoreKeyRequirements` for easy mode.
 
 ```typescript
 import {
     BeatMapGenerator,
     assignKeysToBeats,
-    hasRequiredKeys,
-    getKeyCount,
     getUsedKeys,
+    BeatStream,
+    type ButtonPressResult,
+    type BeatStreamOptions,
 } from 'playlist-data-engine';
 
 const generator = new BeatMapGenerator();
-
-// Step 1: Generate the base beat map from audio
 const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
-console.log(`Generated ${beatMap.beats.length} beats`);
 
-// Step 2: Create a simple 2-key chart by assigning keys to beats
-// This creates an alternating left-right pattern
-const assignments = beatMap.beats.map((_, index) => ({
-    beatIndex: index,
-    key: index % 2 === 0 ? 'left' : 'right',
-}));
-
-const chartMap = assignKeysToBeats(beatMap, assignments);
-
-// Step 3: Verify the chart
-console.log(`Has required keys: ${hasRequiredKeys(chartMap)}`); // true
-console.log(`Key count: ${getKeyCount(chartMap)}`); // Same as beat count
+// Assign keys to create a chart (alternating left-right pattern)
+const chartMap = assignKeysToBeats(beatMap, beatMap.beats.map((_, i) => ({
+    beatIndex: i,
+    key: i % 2 === 0 ? 'left' : 'right',
+})));
 console.log(`Keys used: ${getUsedKeys(chartMap).join(', ')}`); // "left, right"
-```
 
-#### Example 2: Checking Button Press with Key Validation
-
-This example shows how to handle player input with key validation:
-
-```typescript
-import { BeatStream, type ButtonPressResult } from 'playlist-data-engine';
-
+// Create BeatStream - normal mode enforces keys, easy mode ignores them
 const audioContext = new AudioContext();
-const beatStream = new BeatStream(chartMap, audioContext);
+const options: BeatStreamOptions = {
+    difficultyPreset: 'medium',
+    ignoreKeyRequirements: false,  // Set true for timing-only evaluation
+};
+const beatStream = new BeatStream(chartMap, audioContext, options);
 beatStream.start();
 
-// Map physical keyboard inputs to logical keys
-function mapInputToKey(physicalKey: string): string | null {
+// Handle player input with key validation
+function onPlayerInput(physicalKey: string) {
     const keyMap: Record<string, string> = {
-        'ArrowLeft': 'left',
-        'ArrowRight': 'right',
-        'ArrowUp': 'up',
-        'ArrowDown': 'down',
+        'ArrowLeft': 'left', 'ArrowRight': 'right',
+        'ArrowUp': 'up', 'ArrowDown': 'down',
     };
-    return keyMap[physicalKey] ?? null;
-}
+    const pressedKey = keyMap[physicalKey];
+    if (!pressedKey) return;
 
-// Handle player button press
-function onPlayerInput(keyboardEvent: KeyboardEvent) {
-    const logicalKey = mapInputToKey(keyboardEvent.key);
-    if (!logicalKey) return; // Ignore unmapped keys
+    const result: ButtonPressResult = beatStream.checkButtonPress(
+        audioContext.currentTime,
+        pressedKey
+    );
 
-    const timestamp = audioContext.currentTime;
-    const result: ButtonPressResult = beatStream.checkButtonPress(timestamp, logicalKey);
-
-    // Handle different accuracy results
-    switch (result.accuracy) {
-        case 'wrongKey':
-            console.log(`❌ Wrong key! Pressed '${result.pressedKey}', needed '${result.requiredKey}'`);
-            console.log(`   Timing was: ${result.offset > 0 ? 'late' : 'early'} by ${Math.abs(result.offset).toFixed(3)}s`);
-            break;
-        case 'miss':
-            console.log(`❌ Missed! No beat nearby or no key pressed when required`);
-            break;
-        case 'perfect':
-        case 'great':
-        case 'good':
-        case 'ok':
-            console.log(`✓ ${result.accuracy.toUpperCase()}! Key match: ${result.keyMatch}`);
-            console.log(`   Offset: ${result.offset.toFixed(3)}s`);
-            break;
-    }
-}
-
-// Listen for keyboard input
-document.addEventListener('keydown', onPlayerInput);
-```
-
-#### Example 3: Using ignoreKeyRequirements to Bypass Key Checking
-
-This example shows how to create an easy mode where timing matters but key doesn't:
-
-```typescript
-import { BeatStream, type BeatStreamOptions } from 'playlist-data-engine';
-
-const audioContext = new AudioContext();
-
-// Normal mode: key requirements enforced
-const normalOptions: BeatStreamOptions = {
-    difficultyPreset: 'hard',
-    ignoreKeyRequirements: false, // default
-};
-const normalStream = new BeatStream(chartMap, audioContext, normalOptions);
-normalStream.start();
-
-// Easy mode: timing-only evaluation, any key works
-const easyOptions: BeatStreamOptions = {
-    difficultyPreset: 'easy',
-    ignoreKeyRequirements: true, // Bypass key checking
-};
-const easyStream = new BeatStream(chartMap, audioContext, easyOptions);
-easyStream.start();
-
-// Compare behavior with the same input
-function testBothModes() {
-    const timestamp = audioContext.currentTime;
-
-    // Suppose beat 0 requires 'left' but player presses 'right'
-    const normalResult = normalStream.checkButtonPress(timestamp, 'right');
-    const easyResult = easyStream.checkButtonPress(timestamp, 'right');
-
-    console.log('Normal mode:', normalResult.accuracy); // 'wrongKey'
-    console.log('Easy mode:', easyResult.accuracy);     // Timing-based (e.g., 'perfect')
-
-    // In easy mode, keyMatch is always true regardless of actual key
-    console.log('Easy mode keyMatch:', easyResult.keyMatch); // true
-}
-
-// Use case: Let players choose their difficulty
-function createStream(difficulty: 'easy' | 'normal' | 'hard'): BeatStream {
-    const options: BeatStreamOptions = {
-        difficultyPreset: difficulty,
-        ignoreKeyRequirements: difficulty === 'easy',
-    };
-    return new BeatStream(chartMap, audioContext, options);
+    // result.accuracy: 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKey'
+    // result.keyMatch: true | false (always true if ignoreKeyRequirements is enabled)
+    // result.requiredKey: the key the beat required (if any)
+    // result.pressedKey: the key that was passed in
 }
 ```
 
@@ -2129,113 +1802,32 @@ console.log(`Subdivisions used: ${subdividedMap.subdivisionMetadata.subdivisions
 
 ### Subdivision Types Explained
 
-Each subdivision type can be assigned to individual beats. Here are simple examples using the per-beat format with a single beat:
-
-#### Quarter Notes (No Change)
-
-Default subdivision - beats pass through unchanged:
+Each subdivision type can be assigned to individual beats using the `SubdivisionConfig`:
 
 ```typescript
 const config: SubdivisionConfig = {
-  beatSubdivisions: new Map([[0, 'quarter']]),
-  defaultSubdivision: 'quarter',
+  beatSubdivisions: new Map([[0, 'eighth']]),  // Beat 0 gets eighth notes
+  defaultSubdivision: 'quarter',               // All other beats
 };
-// Result: 1x density (unchanged)
 ```
 
-#### Half Notes (0.5x Density)
+#### Subdivision Results
 
-Keeps beats on positions 0 and 2 (downbeats and beat 3s). Measure numbers are preserved from the original grid.
+| Type | Density | From `0, 1, 2, 3...` | Notes |
+|------|---------|---------------------|-------|
+| `quarter` | 1x | `0, 1, 2, 3` | Default, unchanged |
+| `half` | 0.5x | `0, 2, 4, 6` | Downbeats and beat 3s only |
+| `eighth` | 2x | `0, 0.5, 1, 1.5, 2...` | Midpoint between quarters |
+| `sixteenth` | 4x | `0, 0.25, 0.5, 0.75, 1...` | **Maximum density** |
+| `triplet8` | 3x | `0, 0.33, 0.66, 1, 1.33...` | 3 beats per quarter |
+| `triplet4` | 1.5x | `0, 0.66, 1, 1.66, 2...` | 3 beats per half note |
+| `dotted4` | 0.67x | `0, 1.5, 3, 4.5, 6...` | Cross-rhythm, ignores measure boundaries |
+| `dotted8` | 2x | `0, 0.667, 1, 1.667...` | Swing feel (long-short pattern) |
+| `swing` | 2x | `0, 0.667, 1, 1.667...` | Same as dotted8 |
 
-```typescript
-const config: SubdivisionConfig = {
-  beatSubdivisions: new Map([[0, 'half']]),
-  defaultSubdivision: 'half',
-};
-// Original: 0, 1, 2, 3, 4, 5, 6, 7...
-// Result:   0,    2,    4,    6...   (downbeats and beat 3s)
-```
+#### Rest (Creating Gaps)
 
-#### Eighth Notes (2x Density)
-
-Inserts a new beat midway between each quarter note. Intensity/confidence is interpolated from neighboring beats.
-
-```typescript
-const config: SubdivisionConfig = {
-  beatSubdivisions: new Map([[0, 'eighth']]),
-  defaultSubdivision: 'eighth',
-};
-// Original: 0, 1, 2, 3...
-// Result:   0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5...
-```
-
-#### Sixteenth Notes (4x Density - Maximum)
-
-Inserts 3 beats evenly spaced between each quarter note. This is the **hard maximum** for density.
-
-```typescript
-const config: SubdivisionConfig = {
-  beatSubdivisions: new Map([[0, 'sixteenth']]),
-  defaultSubdivision: 'sixteenth',
-};
-// Original: 0, 1, 2, 3...
-// Result:   0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2...
-```
-
-#### Eighth Triplets (3x Density)
-
-Three beats per quarter note, creating a triplet feel.
-
-```typescript
-const config: SubdivisionConfig = {
-  beatSubdivisions: new Map([[0, 'triplet8']]),
-  defaultSubdivision: 'triplet8',
-};
-// Original: 0, 1, 2, 3...
-// Result:   0, 0.33, 0.66, 1, 1.33, 1.66, 2, 2.33, 2.66...
-```
-
-#### Quarter Triplets (1.5x Density)
-
-Three beats per half note - same density as eighth notes but different feel.
-
-```typescript
-const config: SubdivisionConfig = {
-  beatSubdivisions: new Map([[0, 'triplet4']]),
-  defaultSubdivision: 'triplet4',
-};
-// Original: 0, 1, 2, 3...
-// Result:   0, 0.66, 1, 1.66, 2, 2.66, 3, 3.66...
-```
-
-#### Dotted Quarter (0.67x Density)
-
-Phase-independent pattern that creates 3-beat groups in 4/4 time (cross-rhythm). Doesn't care about measure boundaries.
-
-```typescript
-const config: SubdivisionConfig = {
-  beatSubdivisions: new Map([[0, 'dotted4']]),
-  defaultSubdivision: 'dotted4',
-};
-// Pattern: 0, 1.5, 3, 4.5, 6... (every 1.5 quarter notes)
-```
-
-#### Dotted Eighth / Swing (2x Density)
-
-Classic swing long-short pattern: long note is 2/3 of a quarter, short note is 1/3.
-
-```typescript
-const config: SubdivisionConfig = {
-  beatSubdivisions: new Map([[0, 'dotted8']]),
-  defaultSubdivision: 'dotted8',
-};
-// Pattern: 0, 0.667, 1, 1.667, 2, 2.667...
-//          ├───long───┤short├───long───┤short┤
-```
-
-#### Rest (0x Density)
-
-No beats generated - used for creating gaps in rhythm patterns. Perfect for syncopated rhythms or dramatic pauses.
+The `rest` type creates gaps in rhythm patterns - useful for syncopation or dramatic pauses:
 
 ```typescript
 const config: SubdivisionConfig = {
@@ -2247,7 +1839,6 @@ const config: SubdivisionConfig = {
   ]),
   defaultSubdivision: 'quarter',
 };
-// Result: Beats only at positions 0 and 2 (with eighths on 2)
 // Creates a "hit, rest, hit-hit, rest" pattern
 ```
 
@@ -2661,18 +2252,16 @@ const controller = new SubdivisionPlaybackController(
     initialSubdivision: 'quarter',
     transitionMode: 'next-downbeat',
     onSubdivisionChange: (oldType, newType) => {
-    console.log(`Switched from ${oldType} to ${newType}`);
-  },
+      console.log(`Switched from ${oldType} to ${newType}`);
+    },
   }
 );
 
 // Subscribe to beat events
 const unsubscribe = controller.subscribe((event) => {
   if (event.type === 'upcoming') {
-    // Pre-render beat visual
     console.log(`Beat approaching in ${event.timeUntilBeat}s`);
   } else if (event.type === 'exact') {
-    // Beat is happening now
     console.log('Beat!', event.beat);
   }
 });
@@ -2685,23 +2274,11 @@ controller.play();
 
 ### Real-Time Subdivision Switching
 
-Change subdivision during playback
-
 ```typescript
-// User clicks "Eighth Notes" button in practice mode
-document.getElementById('eighth-btn').onclick = () => {
-  controller.setSubdivision('eighth');  // Switches in real-time!
-};
-
-// User clicks "Half Notes" button
-document.getElementById('half-btn').onclick = () => {
-  controller.setSubdivision('half');  // Slows down the beat grid
-};
-
-// User clicks "Quarter Notes" button
-document.getElementById('quarter-btn').onclick = () => {
-  controller.setSubdivision('quarter');  // Back to normal
-};
+// Switch subdivision during playback
+controller.setSubdivision('eighth');   // 2x density
+controller.setSubdivision('half');     // 0.5x density
+controller.setSubdivision('quarter');  // back to normal
 ```
 
 ---
@@ -2853,8 +2430,6 @@ interface SubdivisionBeatEvent {
 
 #### BeatEventType
 
-Events are emitted at different times during playback:
-
 | Type | When | Use Case |
 |------|------|----------|
 | `'upcoming'` | Beat is within `anticipationTime` | Pre-render visuals, prepare animations |
@@ -2918,39 +2493,6 @@ new SubdivisionPlaybackController(
 | `setBeatMap` | `unifiedMap: UnifiedBeatMap` | `void` | Update the beat map |
 | `checkButtonPress` | `timestamp: number`, `thresholds?: AccuracyThresholds` | `ButtonPressResult` | Check tap accuracy against current subdivision's beats (no key matching, optional custom thresholds) |
 | `dispose` | - | `void` | Clean up resources |
-
----
-
-### Practice Mode UI Concept
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  PRACTICE MODE - Song.mp3                                       │
-│                                                                 │
-│  [Quarter] [Eighth] [Half] [Triplets] [Swing]                   │
-│     ↑                                                           │
-│   (active)                                                      │
-│                                                                 │
-│  ▶ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
-│                    ↑    ↑    ↑    ↑                             │
-│                   beat events flow based on active              │
-│                   subdivision type                              │
-│                                                                 │
-│  Current: Eighth Notes | Next beat in: 0.234s                   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### Use Cases for Real-Time Playground
-
-| Use Case | Recommended |
-|----------|-------------|
-| Practice mode with dynamic difficulty | ✅ Yes |
-| Learning rhythm patterns | ✅ Yes |
-| Interactive beat visualization | ✅ Yes |
-| Live performance tools | ✅ Yes |
-| Pre-calculated level creation | ❌ Use SubdividedBeatMap directly |
 
 ---
 
@@ -3065,40 +2607,6 @@ function onButtonPress(timestamp: number) {
 function onMissedBeat() {
   const grooveResult = grooveAnalyzer.recordMiss();
   console.log(`Hotness dropped to: ${grooveResult.hotness}%`);
-}
-```
-
----
-
-### Integration with BeatStream
-
-The GrooveAnalyzer is a **standalone class**—it does not integrate directly with BeatStream. This separation provides flexibility:
-
-| Component | Responsibility |
-|-----------|----------------|
-| `BeatStream` | Beat timing, synchronization, button press accuracy |
-| `GrooveAnalyzer` | Feel/pocket tracking, style meter, consistency scoring |
-| **Frontend** | Connects both, displays results |
-
-```typescript
-// Frontend integration during gameplay
-const grooveAnalyzer = new GrooveAnalyzer();
-
-// On each button press during gameplay
-const buttonResult = beatStream.checkButtonPress(timestamp);
-const grooveResult = grooveAnalyzer.recordHit(
-    buttonResult.offset,
-    beatStream.getCurrentBpm(),
-    buttonResult.matchedBeat.time,  // Audio time from beat map (required)
-    buttonResult.accuracy  // 'miss' or 'wrongKey' will decrease hotness (required)
-);
-
-// When user misses a beat (doesn't press)
-grooveAnalyzer.recordMiss();
-
-// Read the groove state for UI display
-if (grooveResult.pocketDirection !== 'neutral') {
-  console.log(`${grooveResult.pocketDirection} groove: ${grooveResult.hotness}%`);
 }
 ```
 
