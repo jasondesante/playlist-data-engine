@@ -1211,21 +1211,43 @@ import {
 
 ### Creating a Chart
 
+Complete end-to-end workflow showing the full pipeline from audio to playable chart:
+
 ```typescript
 import {
     BeatMapGenerator,
-    assignKeysToBeats,
+    BeatInterpolator,
+    BeatSubdivider,
+    unifyBeatMap,
+    SubdivisionConfig,
     BeatStream,
+    assignKeysToBeats,
+    getUsedKeys,
 } from 'playlist-data-engine';
 
+// Step 1: Generate beat map from audio
 const generator = new BeatMapGenerator();
-const audioContext = new AudioContext();
-
-// Step 1: Generate beat map
 const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
 
-// Step 2: Assign required keys to create a chart
-const chartMap = assignKeysToBeats(beatMap, [
+// Step 2: Interpolate to fill gaps
+const interpolator = new BeatInterpolator();
+const interpolatedMap = interpolator.interpolate(beatMap);
+
+// Step 3: Unify for subdivision
+const unifiedMap = unifyBeatMap(interpolatedMap);
+
+// Step 4: Subdivide for rhythm patterns
+const subdivisionConfig: SubdivisionConfig = {
+    beatSubdivisions: new Map([
+        [0, 'eighth'],   // All beats get eighth notes
+    ]),
+    defaultSubdivision: 'eighth',
+};
+const subdivider = new BeatSubdivider();
+const subdividedMap = subdivider.subdivide(unifiedMap, subdivisionConfig);
+
+// Step 5: Assign required keys to create a chart
+const chartMap = assignKeysToBeats(subdividedMap, [
     { beatIndex: 0, key: 'left' },
     { beatIndex: 1, key: 'down' },
     { beatIndex: 2, key: 'up' },
@@ -1233,38 +1255,32 @@ const chartMap = assignKeysToBeats(beatMap, [
     // ... more assignments
 ]);
 
-// Step 3: Use in gameplay
+// Step 6: Check what keys are used
+const usedKeys = getUsedKeys(chartMap);
+// ['down', 'left', 'right', 'up']
+
+// Step 7: Use in gameplay
+const audioContext = new AudioContext();
 const beatStream = new BeatStream(chartMap, audioContext);
 beatStream.start();
 
-// Step 4: On player input
+// Step 8: On player input - frontend maps physical input to string
 function onPlayerInput(physicalKey: string) {
-    // Map physical input to logical key (frontend responsibility)
-    const logicalKey = mapInputToKey(physicalKey); // e.g., 'ArrowUp' -> 'up'
+    const keyMap = { 'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right' };
+    const pressedKey = keyMap[physicalKey];
 
-    const result = beatStream.checkButtonPress(audioContext.currentTime, logicalKey);
+    const result = beatStream.checkButtonPress(audioContext.currentTime, pressedKey);
 
-    if (result.accuracy === 'wrongKey') {
-        console.log(`Wrong key! Pressed ${result.pressedKey}, needed ${result.requiredKey}`);
-    } else {
-        console.log(`Accuracy: ${result.accuracy}`);
-    }
+    // result.accuracy: 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKey'
+    // result.keyMatch: true | false
+    // result.requiredKey: the key the beat required (if any)
+    // result.pressedKey: the key that was passed in
 }
-```
 
-### Easy Mode (Ignore Key Requirements)
-
-For accessibility or easier gameplay, you can bypass key checking:
-
-```typescript
-// Easy mode: timing-only evaluation even if beat has required key
+// Easy mode: ignore key requirements (timing-only evaluation)
 const easyStream = new BeatStream(chartMap, audioContext, {
     ignoreKeyRequirements: true,
 });
-
-// Player can press any key - only timing matters
-const result = easyStream.checkButtonPress(timestamp, 'any-key');
-// result.accuracy will be timing-based, never 'wrongKey'
 ```
 
 ### Key Assignment Best Practices
@@ -3371,82 +3387,6 @@ When the groove resets:
 - Fresh tracking starts for the new groove
 
 **Note:** Transitions to/from 'neutral' do NOT reset tracking - only push↔pull transitions.
-
----
-
-## Chart Creation Example
-
-Create a rhythm game chart with required keys:
-
-```typescript
-import {
-    BeatMapGenerator,
-    BeatInterpolator,
-    BeatSubdivider,
-    unifyBeatMap,
-    SubdivisionConfig,
-    BeatStream,
-    assignKeysToBeats,
-    extractKeyMap,
-    getUsedKeys,
-} from 'playlist-data-engine';
-
-// Step 1: Generate beat map from audio
-const generator = new BeatMapGenerator();
-const beatMap = await generator.generateBeatMap('song.mp3', 'track-1');
-
-// Step 2: Interpolate to fill gaps
-const interpolator = new BeatInterpolator();
-const interpolatedMap = interpolator.interpolate(beatMap);
-
-// Step 3: Unify for subdivision
-const unifiedMap = unifyBeatMap(interpolatedMap);
-
-// Step 4: Subdivide for rhythm patterns
-const subdivisionConfig: SubdivisionConfig = {
-    beatSubdivisions: new Map([
-        [0, 'eighth'],   // All beats get eighth notes
-    ]),
-    defaultSubdivision: 'eighth',
-};
-const subdivider = new BeatSubdivider();
-const subdividedMap = subdivider.subdivide(unifiedMap, subdivisionConfig);
-
-// Step 5: Assign required keys to create a chart
-const chartMap = assignKeysToBeats(subdividedMap, [
-    { beatIndex: 0, key: 'left' },
-    { beatIndex: 1, key: 'down' },
-    { beatIndex: 2, key: 'up' },
-    { beatIndex: 3, key: 'right' },
-    // ... more assignments
-]);
-
-// Step 6: Check what keys are used
-const usedKeys = getUsedKeys(chartMap);
-// ['down', 'left', 'right', 'up']
-
-// Step 7: Use in gameplay
-const beatStream = new BeatStream(chartMap, audioContext);
-
-// Step 8: On player input - frontend maps physical input to string
-function onPlayerInput(physicalKey: string) {
-    // Map physical input to logical key
-    const keyMap = { 'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right' };
-    const pressedKey = keyMap[physicalKey];
-
-    const result = beatStream.checkButtonPress(audioContext.currentTime, pressedKey);
-
-    // result.accuracy: 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKey'
-    // result.keyMatch: true | false
-    // result.requiredKey: the key the beat required (if any)
-    // result.pressedKey: the key that was passed in
-}
-
-// Easy mode: ignore key requirements (timing-only evaluation)
-const easyStream = new BeatStream(chartMap, audioContext, {
-    ignoreKeyRequirements: true,
-});
-```
 
 ---
 
