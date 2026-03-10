@@ -105,6 +105,11 @@ const manager = ExtensionManager.getInstance();
 | `batchAddImages()` | `category`, `imageMap`, `identifierKey?` | `number` | Add images to items by name/ID. Returns count updated. |
 | `batchUpdateImages()` | `category`, `predicate`, `updates` | `number` | Update icon/image on items matching predicate. Returns count. |
 | `batchByCategory()` | `category`, `property`, `valueMap` | `number` | Add icons/images by property value (e.g., school). Returns count. |
+| `getImageOverrides()` | | `Map<Category, ImageOverride[]>` | Get all image overrides for all categories. |
+| `getImageOverridesForCategory()` | `category` | `ImageOverride[]` | Get image overrides for a specific category. |
+| `restoreImageOverrides()` | `category`, `overrides` | `void` | Restore saved image overrides (for persistence). |
+| `clearImageOverrides()` | `category` | `void` | Clear all image overrides for a category. |
+| `clearAllImageOverrides()` | | `void` | Clear all image overrides for all categories. |
 
 ### Registration Options
 
@@ -807,6 +812,60 @@ try {
 
 ---
 
+### Image Overrides (Patch System)
+
+Batch image methods use a **patch-based storage system** that stores only icon/image changes, not complete item copies. This prevents duplicates when applying images to default items.
+
+**How it works:**
+1. `batchUpdateImages()` and `batchByCategory()` store **patches** (identifier → {icon, image}) in a separate `imageOverrides` map
+2. When `get()` retrieves items, patches are **applied on top** of the item data
+3. This means default items remain in the default pool but appear with your custom images
+
+**Benefits:**
+- No duplicate items - you always have the same number of items
+- Images persist across sessions via localStorage integration
+- Works correctly in all view modes (default, relative, replace, absolute)
+
+**API Methods:**
+
+| Method | Parameters | Return | Description |
+|--------|------------|--------|-------------|
+| `getImageOverrides()` | | `Map<Category, ImageOverride[]>` | Get all image overrides for all categories |
+| `getImageOverridesForCategory(category)` | `category` | `ImageOverride[]` | Get overrides for a specific category |
+| `restoreImageOverrides(category, overrides)` | `category`, `overrides` | `void` | Restore saved overrides (for persistence) |
+| `clearImageOverrides(category)` | `category` | `void` | Clear all overrides for a category |
+| `clearAllImageOverrides()` | | `void` | Clear all overrides for all categories |
+
+**ImageOverride interface:**
+```typescript
+interface ImageOverride {
+    identifier: string;  // Item id (for spells) or name (for others)
+    icon?: string;       // Icon URL
+    image?: string;      // Image URL
+    appliedAt: number;   // Timestamp when applied
+}
+```
+
+**Example - Persistence integration:**
+```typescript
+import { ExtensionManager, type ImageOverride } from 'playlist-data-engine';
+
+const manager = ExtensionManager.getInstance();
+
+// After batch applying images, save overrides to localStorage
+const overrides = manager.getImageOverridesForCategory('spells');
+localStorage.setItem('spell_image_overrides', JSON.stringify(overrides));
+
+// On app startup, restore overrides
+const savedOverrides = JSON.parse(localStorage.getItem('spell_image_overrides') || '[]');
+manager.restoreImageOverrides('spells', savedOverrides);
+
+// Clear overrides to reset to defaults
+manager.clearImageOverrides('spells');
+```
+
+---
+
 ## Content Packs
 
 Content packs are reusable collections of custom content for multiple categories that can be saved to files and loaded at runtime. For complete examples including basic packs, themed packs, expansion packs with custom features and skills, prerequisite-based content, and saving/loading functionality, see [Content Packs](CONTENT_PACKS.md).
@@ -1001,6 +1060,7 @@ import type {
     CustomSkill,
     ExtensionOptions,
     ExtensionCategory,
+    ImageOverride,
     SpellSchool
 } from 'playlist-data-engine';
 ```
@@ -1014,6 +1074,7 @@ import type {
 | `SkillListDefinition` | [src/core/skills/SkillTypes.ts](../src/core/skills/SkillTypes.ts) | Skill lists for class character generation |
 | `SpellSchool` | [src/core/spells/SpellTypes.ts](../src/core/spells/SpellTypes.ts) | D&D 5e schools of magic: Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation |
 | `ExtensionCategory` | [src/core/extensions/ExtensionManager.ts](../src/core/extensions/ExtensionManager.ts) | All extensible category names |
+| `ImageOverride` | [src/core/extensions/ExtensionManager.ts](../src/core/extensions/ExtensionManager.ts) | Image patch: identifier, icon, image, appliedAt |
 
 ### Character Generator Extensions
 

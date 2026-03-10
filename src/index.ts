@@ -650,6 +650,7 @@ export {
 // ============================================================================
 
 export { ExtensionManager } from './core/extensions/ExtensionManager.js';
+export type { ImageOverride } from './core/extensions/ExtensionManager.js';
 export { WeightedSelector } from './core/extensions/WeightedSelector.js';
 
 // Extensibility types

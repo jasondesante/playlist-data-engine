@@ -4244,6 +4244,7 @@ Singleton registry for managing runtime customization of procedural generation l
 | `ImageSupportedCategory` | Categories that support icon/image fields: `spells`, `skills`, `classFeatures`, `racialTraits`, `equipment`, `races.data`, `classes.data` |
 | `SpawnMode` | Spawn mode: `'relative'` | `'absolute'` | `'default'` | `'replace'` |
 | `ExtensionOptions` | Registration options: mode, weights, validate |
+| `ImageOverride` | Image patch: identifier, icon, image, appliedAt |
 | `RegistrationEntry` | Batch registration: category, items, options |
 | `ValidationResult` | Validation result: valid, errors, warnings |
 
@@ -4276,6 +4277,11 @@ Singleton registry for managing runtime customization of procedural generation l
 | `batchAddImages(category, imageMap, identifierKey?)` | `number` | Add images to items matching names/IDs. Returns count updated. Validates URLs first. |
 | `batchUpdateImages(category, predicate, updates)` | `number` | Update icon/image on all items matching predicate. Returns count updated. |
 | `batchByCategory(category, property, valueToImageMap)` | `number` | Add icons/images by property value (e.g., school, rarity). Returns count updated. |
+| `getImageOverrides()` | `Map<ImageSupportedCategory, ImageOverride[]>` | Get all image overrides for all categories. |
+| `getImageOverridesForCategory(category)` | `ImageOverride[]` | Get image overrides for a specific category. |
+| `restoreImageOverrides(category, overrides)` | `void` | Restore saved image overrides (for persistence). |
+| `clearImageOverrides(category)` | `void` | Clear all image overrides for a category. |
+| `clearAllImageOverrides()` | `void` | Clear all image overrides for all categories. |
 
 ---
 

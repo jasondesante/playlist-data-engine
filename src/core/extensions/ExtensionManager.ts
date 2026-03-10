@@ -180,6 +180,21 @@ interface ExtensionData {
 }
 
 /**
+ * Image override for a single item
+ * Stores only the icon/image fields to be patched onto default items
+ */
+export interface ImageOverride {
+    /** Item identifier (id for spells, name for others) */
+    identifier: string;
+    /** Icon URL */
+    icon?: string;
+    /** Image URL */
+    image?: string;
+    /** When this override was applied */
+    appliedAt: number;
+}
+
+/**
  * Result of validation
  */
 export interface ValidationResult {
@@ -238,11 +253,17 @@ export class ExtensionManager {
     private defaultData: Map<ExtensionCategory, any[]>;
     private extensions: Map<ExtensionCategory, ExtensionData>;
     private customWeights: Map<string, Record<string, number>>;
+    /**
+     * Image overrides per category - stores patches for icon/image fields only
+     * Key: category, Value: Map of identifier -> ImageOverride
+     */
+    private imageOverrides: Map<ImageSupportedCategory, Map<string, ImageOverride>>;
 
     private constructor() {
         this.defaultData = new Map();
         this.extensions = new Map();
         this.customWeights = new Map();
+        this.imageOverrides = new Map();
     }
 
     /**
@@ -398,19 +419,66 @@ export class ExtensionManager {
         const defaults = this.defaultData.get(category) || [];
         const extension = this.extensions.get(category);
 
+        let items: any[];
         if (!extension) {
-            return [...defaults];
+            items = [...defaults];
+        } else {
+            const mode = extension.options.mode || 'relative';
+
+            // Replace mode: return only custom items
+            if (mode === 'replace') {
+                items = [...extension.items];
+            } else {
+                // Default and relative modes: merge defaults with custom items
+                items = [...defaults, ...extension.items];
+            }
         }
 
-        const mode = extension.options.mode || 'relative';
-
-        // Replace mode: return only custom items
-        if (mode === 'replace') {
-            return [...extension.items];
+        // Apply image overrides if this category supports them
+        if (this.isImageSupportedCategory(category)) {
+            items = this.applyImageOverrides(category as ImageSupportedCategory, items);
         }
 
-        // Default and relative modes: merge defaults with custom items
-        return [...defaults, ...extension.items];
+        return items;
+    }
+
+    /**
+     * Check if a category supports image fields
+     */
+    private isImageSupportedCategory(category: ExtensionCategory): boolean {
+        const imageCategories: ImageSupportedCategory[] = [
+            'spells', 'skills', 'classFeatures', 'racialTraits',
+            'equipment', 'races.data', 'classes.data'
+        ];
+        return imageCategories.includes(category as ImageSupportedCategory);
+    }
+
+    /**
+     * Apply image overrides to items
+     * Patches icon/image fields onto items based on stored overrides
+     */
+    private applyImageOverrides(category: ImageSupportedCategory, items: any[]): any[] {
+        const overrides = this.imageOverrides.get(category);
+        if (!overrides || overrides.size === 0) {
+            return items;
+        }
+
+        const identifierKey = this.getDefaultIdentifierKey(category);
+
+        return items.map(item => {
+            const identifier = item[identifierKey];
+            const override = overrides.get(identifier);
+
+            if (override) {
+                // Apply override patch to this item
+                return {
+                    ...item,
+                    ...(override.icon !== undefined && { icon: override.icon }),
+                    ...(override.image !== undefined && { image: override.image })
+                };
+            }
+            return item;
+        });
     }
 
     /**
@@ -1201,37 +1269,38 @@ export class ExtensionManager {
             );
         }
 
-        // Get current items and update matching items
+        // Get current items to find matches
         const items = this.get(category);
-        const updatedItems: any[] = [];
+        const identifierKey = this.getDefaultIdentifierKey(category);
+        const now = Date.now();
         let updateCount = 0;
 
+        // Get or create overrides map for this category
+        if (!this.imageOverrides.has(category)) {
+            this.imageOverrides.set(category, new Map());
+        }
+        const overridesMap = this.imageOverrides.get(category)!;
+
+        // Create patches for matching items
         for (const item of items) {
             if (predicate(item as T)) {
-                // Create a copy with updated image fields
-                const updatedItem = { ...item };
-                if (updates.icon !== undefined) {
-                    updatedItem.icon = updates.icon;
-                }
-                if (updates.image !== undefined) {
-                    updatedItem.image = updates.image;
-                }
-                updatedItems.push(updatedItem);
+                const identifier = item[identifierKey];
+                const existingOverride = overridesMap.get(identifier);
+
+                // Merge with existing override or create new one
+                const newOverride: ImageOverride = {
+                    identifier,
+                    icon: updates.icon !== undefined ? updates.icon : existingOverride?.icon,
+                    image: updates.image !== undefined ? updates.image : existingOverride?.image,
+                    appliedAt: now
+                };
+
+                overridesMap.set(identifier, newOverride);
                 updateCount++;
-            } else {
-                // Keep original item
-                updatedItems.push(item);
             }
         }
 
-        // Store updated items in extensions
-        this.extensions.set(category, {
-            items: updatedItems,
-            options: { mode: 'replace' },
-            registeredAt: Date.now()
-        });
-
-        // Invalidate cache
+        // Invalidate cache so fresh data with patches is picked up
         this.invalidateRegistryCache(category);
 
         return updateCount;
@@ -1297,49 +1366,136 @@ export class ExtensionManager {
             );
         }
 
-        // Get current items and update matching items
+        // Get current items to find matches
         const items = this.get(category);
-        const updatedItems: any[] = [];
+        const identifierKey = this.getDefaultIdentifierKey(category);
+        const now = Date.now();
         let updateCount = 0;
 
+        // Get or create overrides map for this category
+        if (!this.imageOverrides.has(category)) {
+            this.imageOverrides.set(category, new Map());
+        }
+        const overridesMap = this.imageOverrides.get(category)!;
+
+        // Create patches for matching items
         for (const item of items) {
             const propertyValue = String(item[property as string] ?? '');
             const updates = valueMap[propertyValue];
 
             if (updates !== undefined) {
-                // Create a copy with updated image fields
-                const updatedItem = { ...item };
+                const identifier = item[identifierKey];
+                const existingOverride = overridesMap.get(identifier);
+
+                // Determine icon/image values
+                let iconValue: string | undefined;
+                let imageValue: string | undefined;
+
                 if (typeof updates === 'string') {
                     // String is applied as icon
-                    updatedItem.icon = updates;
+                    iconValue = updates;
+                    imageValue = existingOverride?.image;
                 } else {
                     // Object can have both icon and image
-                    if (updates.icon !== undefined) {
-                        updatedItem.icon = updates.icon;
-                    }
-                    if (updates.image !== undefined) {
-                        updatedItem.image = updates.image;
-                    }
+                    iconValue = updates.icon !== undefined ? updates.icon : existingOverride?.icon;
+                    imageValue = updates.image !== undefined ? updates.image : existingOverride?.image;
                 }
-                updatedItems.push(updatedItem);
+
+                // Create or update override
+                const newOverride: ImageOverride = {
+                    identifier,
+                    icon: iconValue,
+                    image: imageValue,
+                    appliedAt: now
+                };
+
+                overridesMap.set(identifier, newOverride);
                 updateCount++;
-            } else {
-                // Keep original item
-                updatedItems.push(item);
             }
         }
 
-        // Store updated items in extensions
-        this.extensions.set(category, {
-            items: updatedItems,
-            options: { mode: 'replace' },
-            registeredAt: Date.now()
-        });
-
-        // Invalidate cache
+        // Invalidate cache so fresh data with patches is picked up
         this.invalidateRegistryCache(category);
 
         return updateCount;
+    }
+
+    /**
+     * Get all image overrides for all categories
+     *
+     * Used by persistence layer to save overrides to localStorage.
+     *
+     * @returns Map of category to array of image overrides
+     */
+    getImageOverrides(): Map<ImageSupportedCategory, ImageOverride[]> {
+        const result = new Map<ImageSupportedCategory, ImageOverride[]>();
+        for (const [category, overrides] of this.imageOverrides.entries()) {
+            result.set(category, Array.from(overrides.values()));
+        }
+        return result;
+    }
+
+    /**
+     * Get image overrides for a specific category
+     *
+     * @param category - The category to get overrides for
+     * @returns Array of image overrides, or empty array if none
+     */
+    getImageOverridesForCategory(category: ImageSupportedCategory): ImageOverride[] {
+        const overrides = this.imageOverrides.get(category);
+        return overrides ? Array.from(overrides.values()) : [];
+    }
+
+    /**
+     * Restore image overrides from saved data
+     *
+     * Used by persistence layer to restore overrides from localStorage.
+     * Merges with existing overrides - new values override existing for same identifier.
+     *
+     * @param category - The category to restore overrides for
+     * @param overrides - Array of image overrides to restore
+     */
+    restoreImageOverrides(category: ImageSupportedCategory, overrides: ImageOverride[]): void {
+        if (!overrides || overrides.length === 0) {
+            return;
+        }
+
+        if (!this.imageOverrides.has(category)) {
+            this.imageOverrides.set(category, new Map());
+        }
+
+        const overridesMap = this.imageOverrides.get(category)!;
+        for (const override of overrides) {
+            overridesMap.set(override.identifier, override);
+        }
+
+        // Invalidate cache so restored overrides are applied
+        this.invalidateRegistryCache(category);
+    }
+
+    /**
+     * Clear all image overrides for a category
+     *
+     * @param category - The category to clear overrides for
+     */
+    clearImageOverrides(category: ImageSupportedCategory): void {
+        this.imageOverrides.delete(category);
+        this.invalidateRegistryCache(category);
+    }
+
+    /**
+     * Clear all image overrides for all categories
+     */
+    clearAllImageOverrides(): void {
+        this.imageOverrides.clear();
+        // Invalidate all relevant caches
+        const categories: ImageSupportedCategory[] = [
+            'spells', 'skills', 'classFeatures', 'racialTraits',
+            'equipment', 'races.data', 'classes.data'
+        ];
+        for (const category of categories) {
+            this.invalidateRegistryCache(category);
+        }
     }
 
     /**

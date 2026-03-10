@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Batch Image Duplicate Entries Bug**: Fixed `batchUpdateImages()` and `batchByCategory()` creating duplicate entries instead of patching existing items
+  - Root cause: Methods stored complete item copies in `extensions` Map with `mode: 'replace'`, causing duplicates when combined with defaults
+  - Solution: New patch-based `imageOverrides` system stores only icon/image changes keyed by item identifier
+  - Added `imageOverrides` private Map to store patches separately from item data
+  - `get()` now applies image patches on retrieval, avoiding duplicates
+
+### Added
+
+- **Image Override API**: New methods for managing image patches
+  - `getImageOverrides()`: Get all image overrides for all categories
+  - `getImageOverridesForCategory(category)`: Get overrides for a specific category
+  - `restoreImageOverrides(category, overrides)`: Restore saved overrides (for persistence)
+  - `clearImageOverrides(category)`: Clear all overrides for a category
+  - `clearAllImageOverrides()`: Clear all overrides for all categories
+- **ImageOverride Type**: New exported type for image patches with `identifier`, `icon`, `image`, `appliedAt` fields
+
 ## [1.1.0] - 2025-02-27
 
 ### Added
