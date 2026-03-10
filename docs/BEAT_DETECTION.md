@@ -2475,6 +2475,7 @@ new SubdivisionPlaybackController(
 |--------|------------|---------|-------------|
 | `subscribe` | `callback: SubdivisionCallback` | `() => void` | Subscribe to beat events, returns unsubscribe function |
 | `setSubdivision` | `type: SubdivisionType` | `void` | Change subdivision in real-time |
+| `setTransitionMode` | `mode: SubdivisionTransitionMode` | `void` | Change transition mode during playback |
 | `play` | - | `void` | Start streaming beat events |
 | `pause` | - | `void` | Pause event emission, preserves position |
 | `resume` | - | `void` | Resume from paused position |
@@ -2493,6 +2494,19 @@ new SubdivisionPlaybackController(
 | `setBeatMap` | `unifiedMap: UnifiedBeatMap` | `void` | Update the beat map |
 | `checkButtonPress` | `timestamp: number`, `thresholds?: AccuracyThresholds` | `ButtonPressResult` | Check tap accuracy against current subdivision's beats (no key matching, optional custom thresholds) |
 | `dispose` | - | `void` | Clean up resources |
+
+#### Runtime Transition Mode Changes
+
+The `setTransitionMode` method allows changing how subdivision changes are applied during playback:
+
+```typescript
+// Runtime transition mode changes
+controller.setTransitionMode('next-measure');
+controller.setSubdivision('eighth'); // Will apply at next measure boundary
+
+// Switch to immediate mode (applies any pending change right away)
+controller.setTransitionMode('immediate');
+```
 
 ---
 
