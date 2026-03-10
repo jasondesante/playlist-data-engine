@@ -37,6 +37,7 @@
 import type {
     UnifiedBeatMap,
     SubdividedBeat,
+    SubdividedBeatMap,
     SubdivisionType,
     SubdivisionConfig,
     SubdivisionPlaybackOptions,
@@ -1039,6 +1040,11 @@ export class SubdivisionPlaybackController {
             duration: this.unifiedMap.duration,
             beats,
             detectedBeatIndices: [],
+            subdivisionConfig: {
+                beatSubdivisions: new Map(),
+                defaultSubdivision: this.state.currentSubdivision,
+            },
+            downbeatConfig: this.unifiedMap.downbeatConfig,
             subdivisionMetadata: {
                 originalBeatCount,
                 subdividedBeatCount: beats.length,
@@ -1046,7 +1052,7 @@ export class SubdivisionPlaybackController {
                 explicitBeatCount: 0,
                 subdivisionsUsed: Array.from(subdivisionsUsed),
                 hasMultipleTempos: false,
-                maxDensity: Math.max(...Array.from(subdivisionsUsed).map(s => s === 'eighth' ? 2 : s === 'sixteenth' ? 4 : s === 'triplet' ? 3 : 1)),
+                maxDensity: Math.max(...Array.from(subdivisionsUsed).map(s => s === 'eighth' ? 2 : s === 'sixteenth' ? 4 : (s === 'triplet8' || s === 'triplet4') ? 3 : 1)),
             },
         };
     }

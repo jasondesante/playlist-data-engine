@@ -180,10 +180,9 @@ export class GrooveAnalyzer {
         // 9. Track groove lifetime statistics and detect groove ending
         let endedGrooveStats: GrooveStats | undefined;
 
-        // Check for direction change (push ↔ pull only, ignore neutral transitions)
-        const directionChanged =
-            (previousDirection === 'push' && this.pocketDirection === 'pull') ||
-            (previousDirection === 'pull' && this.pocketDirection === 'push');
+        // Check for any direction change between push, neutral, and pull
+        // All transitions trigger end of groove bonus and reset groove strength
+        const directionChanged = previousDirection !== this.pocketDirection;
 
         // Determine if groove is ending this hit
         const grooveEnding = directionChanged || this.hotness === 0;
@@ -215,6 +214,20 @@ export class GrooveAnalyzer {
 
             // Reset groove state - streak ends when groove ends
             this.streakLength = 0;
+            this.hotness = 0; // Reset groove strength when direction changes
+            this.resetGrooveStats();
+        }
+
+        // CRITICAL: When direction changes, ALWAYS reset groove state
+        // This ensures reset happens even if the else-if block didn't run
+        // (e.g., when grooveStartTime is null or grooveHitCount is 0)
+        // This handles cases like:
+        // - First hit after previous groove ended causes direction change
+        // - Direction changes without an active groove session
+        // - Direct push↔pull transitions that skip neutral
+        if (directionChanged) {
+            this.streakLength = 0;
+            this.hotness = 0;
             this.resetGrooveStats();
         }
 

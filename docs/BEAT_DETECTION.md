@@ -2719,7 +2719,7 @@ grooveAnalyzer.setDifficulty({
 | `streakLength` | `number` | Current streak of consistent hits |
 | `inPocket` | `boolean` | Whether this hit was within pocket window |
 | `pocketWindow` | `number` | Current window size in seconds |
-| `endedGrooveStats` | `GrooveStats \| undefined` | Stats from groove that just ended (present when hotness drops to 0 or direction changes push↔pull). Use for groove end bonus XP. |
+| `endedGrooveStats` | `GrooveStats \| undefined` | Stats from groove that just ended (present when hotness drops to 0 or direction changes between push/pull/neutral). Use for groove end bonus XP. |
 
 #### GrooveState (from `getState`)
 
@@ -2866,7 +2866,7 @@ The GrooveAnalyzer integrates seamlessly with the `RhythmXPCalculator` to reward
 
 #### Groove End Bonus Flow
 
-When a groove ends (hotness drops to 0 or direction changes push↔pull), the `endedGrooveStats` are immediately available:
+When a groove ends (hotness drops to 0 or direction changes between push/pull/neutral), the `endedGrooveStats` are immediately available:
 
 ```typescript
 import { GrooveAnalyzer, RhythmXPCalculator, CharacterUpdater } from 'playlist-data-engine';
@@ -2901,14 +2901,19 @@ function onButtonPress(timestamp: number) {
 
 The groove (including streak AND lifetime tracking) resets when:
 1. **Hotness drops to 0** - The groove has completely ended
-2. **Pocket direction changes** (push ↔ pull) - The player shifted from ahead to behind (or vice versa)
+2. **Pocket direction changes** (push ↔ neutral ↔ pull) - The player's timing shifted between ahead/behind/on-beat states. This includes:
+   - Push → Neutral (playing settled from ahead to on-beat)
+   - Neutral → Pull (playing drifted from on-beat to behind)
+   - Push → Pull (direct transition, skipping neutral)
+   - And all reverse transitions (Pull → Neutral, Neutral → Push, Pull → Push)
 
 When the groove resets:
+- `hotness` → 0
 - `streakLength` → 0
 - All lifetime stats captured in `endedGrooveStats` before reset
 - Fresh tracking starts for the new groove
 
-**Note:** Transitions to/from 'neutral' do NOT reset tracking - only push↔pull transitions.
+**Note:** ALL direction changes reset tracking, including transitions involving 'neutral'. This ensures the groove meter accurately reflects the player's current timing consistency.
 
 ---
 
