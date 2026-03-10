@@ -1396,3 +1396,167 @@ describe('SubdivisionPlaybackController - Transition Mode Logic', () => {
         controller.stop();
     });
 });
+
+// ============================================================================
+// Partial Beat Regeneration Tests
+// ============================================================================
+
+describe('SubdivisionPlaybackController - Partial Beat Regeneration', () => {
+    let mockAudio: ReturnType<typeof createMockAudioContext>;
+    let unifiedMap: UnifiedBeatMap;
+
+    beforeEach(() => {
+        // Create 4 measures of quarter notes at 120 BPM
+        // Measure 0: beats at 0.0, 0.5, 1.0, 1.5
+        // Measure 1: beats at 2.0, 2.5, 3.0, 3.5
+        // Measure 2: beats at 4.0, 4.5, 5.0, 5.5
+        // Measure 3: beats at 6.0, 6.5, 7.0, 7.5
+        const beats = createRegularQuarterNotes(120, 16);
+        unifiedMap = createUnifiedBeatMap(beats, { bpm: 120, duration: 8.0 });
+        mockAudio = createMockAudioContext();
+    });
+
+    it('should preserve old beats before transition point when subdivision changes', () => {
+        const controller = new SubdivisionPlaybackController(
+            unifiedMap,
+            mockAudio.context,
+            { transitionMode: 'next-measure' }
+        );
+
+        // Start at measure 0, beat 1.0
+        mockAudio.setTime(1.0);
+        controller.seek(1.0);
+        controller.play();
+
+        // Get beats in range before the change
+        const beatsBeforeChange = controller.getBeatsInRange(0, 8);
+        const quarterNoteCount = beatsBeforeChange.filter(b => b.subdivisionType === 'quarter').length;
+        expect(quarterNoteCount).toBe(16); // All quarter notes
+
+        // Request change to eighth notes
+        controller.setSubdivision('eighth');
+        expect(controller.subdivision).toBe('quarter'); // Still waiting
+
+        // Move to measure 1's downbeat (beat 2.0)
+        // This triggers the change
+        mockAudio.setTime(2.0);
+
+        // Force the update loop to run (in tests, animation frame doesn't run automatically)
+        controller.forceUpdate();
+
+        // Now check that beats before measure 1 are still quarter notes
+        // and beats from measure 1 onwards are eighth notes
+        const beatsAfterChange = controller.getBeatsInRange(0, 8);
+
+        // Beats before 2.0 should still be quarter notes
+        const beatsBeforeTransition = beatsAfterChange.filter(b => b.timestamp < 2.0);
+        const quarterBefore = beatsBeforeTransition.filter(b => b.subdivisionType === 'quarter');
+        expect(quarterBefore.length).toBe(beatsBeforeTransition.length);
+
+        // Beats from 2.0 onwards should be eighth notes
+        const beatsAfterTransition = beatsAfterChange.filter(b => b.timestamp >= 2.0);
+        const eighthAfter = beatsAfterTransition.filter(b => b.subdivisionType === 'eighth');
+        expect(eighthAfter.length).toBe(beatsAfterTransition.length);
+
+        controller.stop();
+    });
+
+    it('should have correct beat count after partial regeneration', () => {
+        const controller = new SubdivisionPlaybackController(
+            unifiedMap,
+            mockAudio.context,
+            { transitionMode: 'next-measure' }
+        );
+
+        // Start at measure 1, beat 2.5
+        mockAudio.setTime(2.5);
+        controller.seek(2.5);
+        controller.play();
+
+        // Request change to eighth notes
+        controller.setSubdivision('eighth');
+
+        // Move to measure 2's downbeat (beat 4.0)
+        mockAudio.setTime(4.0);
+
+        // Force the update loop to run
+        controller.forceUpdate();
+
+        // Get all beats
+        const allBeats = controller.getBeatsInRange(0, 8);
+
+        // Before 4.0: quarter notes (8 beats: 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5)
+        // From 4.0: eighth notes
+        const beatsBeforeTransition = allBeats.filter(b => b.timestamp < 4.0);
+        const beatsAfterTransition = allBeats.filter(b => b.timestamp >= 4.0);
+
+        // Should have 8 quarter note beats before transition
+        expect(beatsBeforeTransition.length).toBe(8);
+        expect(beatsBeforeTransition.every(b => b.subdivisionType === 'quarter')).toBe(true);
+
+        // Should have eighth note beats after transition (exact count depends on subdivider)
+        expect(beatsAfterTransition.length).toBeGreaterThan(0);
+        expect(beatsAfterTransition.every(b => b.subdivisionType === 'eighth')).toBe(true);
+
+        controller.stop();
+    });
+
+    it('should not preserve beats when transition mode is immediate', () => {
+        const controller = new SubdivisionPlaybackController(
+            unifiedMap,
+            mockAudio.context,
+            { transitionMode: 'immediate' }
+        );
+
+        mockAudio.setTime(2.5);
+        controller.seek(2.5);
+        controller.play();
+
+        // Change to eighth notes immediately
+        controller.setSubdivision('eighth');
+        expect(controller.subdivision).toBe('eighth');
+
+        // ALL beats should now be eighth notes, including those before current time
+        const allBeats = controller.getBeatsInRange(0, 8);
+        const allEighth = allBeats.every(b => b.subdivisionType === 'eighth');
+        expect(allEighth).toBe(true);
+
+        controller.stop();
+    });
+
+    it('should preserve beats for next-downbeat transition mode', () => {
+        const controller = new SubdivisionPlaybackController(
+            unifiedMap,
+            mockAudio.context,
+            { transitionMode: 'next-downbeat' }
+        );
+
+        // Start at measure 0, beat 0.5
+        mockAudio.setTime(0.5);
+        controller.seek(0.5);
+        controller.play();
+
+        // Request change to eighth notes
+        controller.setSubdivision('eighth');
+        expect(controller.subdivision).toBe('quarter');
+
+        // Move to measure 1's downbeat (beat 2.0)
+        mockAudio.setTime(2.0);
+
+        // Force the update loop to run
+        controller.forceUpdate();
+
+        // Beats before 2.0 should be quarter notes
+        const allBeats = controller.getBeatsInRange(0, 8);
+        const beatsBeforeTransition = allBeats.filter(b => b.timestamp < 2.0);
+        const quarterBefore = beatsBeforeTransition.filter(b => b.subdivisionType === 'quarter');
+        expect(quarterBefore.length).toBe(beatsBeforeTransition.length);
+
+        // Beats from 2.0 onwards should be eighth notes
+        const beatsAfterTransition = allBeats.filter(b => b.timestamp >= 2.0);
+        const eighthAfter = beatsAfterTransition.filter(b => b.subdivisionType === 'eighth');
+        expect(eighthAfter.length).toBe(beatsAfterTransition.length);
+
+        controller.stop();
+    });
+});

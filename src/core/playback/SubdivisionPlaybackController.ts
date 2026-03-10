@@ -80,6 +80,8 @@ interface PlaybackState {
     pendingSubdivision: SubdivisionType | null;
     /** Measure number when pending change was requested (for 'next-measure' mode) */
     pendingMeasureNumber: number | null;
+    /** Timestamp where the transition should occur (for partial regeneration) */
+    transitionTimestamp: number | null;
     /** Scheduled beats for current subdivision */
     scheduledBeats: Map<string, { beat: SubdividedBeat; upcomingEmitted: boolean; exactEmitted: boolean; passedEmitted: boolean }>;
     /** Accuracy thresholds for button press evaluation */
@@ -154,6 +156,7 @@ export class SubdivisionPlaybackController {
             currentSubdivision: this.options.initialSubdivision,
             pendingSubdivision: null,
             pendingMeasureNumber: null,
+            transitionTimestamp: null,
             scheduledBeats: new Map(),
             thresholds: getAccuracyThresholdsForPreset('medium'),
         };
@@ -354,8 +357,13 @@ export class SubdivisionPlaybackController {
         this.state.pendingSubdivision = null;
         this.state.pendingMeasureNumber = null;
 
+        // Get the transition timestamp for partial regeneration (if any)
+        const transitionTimestamp = this.state.transitionTimestamp;
+        this.state.transitionTimestamp = null;
+
         // Regenerate beats for the new subdivision
-        this.regenerateBeats();
+        // If we have a transition timestamp, only regenerate beats from that point onwards
+        this.regenerateBeats(transitionTimestamp);
 
         // Notify callback
         if (this.options.onSubdivisionChange) {
@@ -366,13 +374,18 @@ export class SubdivisionPlaybackController {
             }
         }
 
-        logger.debug('Subdivision changed', { from: oldType, to: newType });
+        logger.debug('Subdivision changed', { from: oldType, to: newType, transitionTimestamp });
     }
 
     /**
-     * Regenerate beats for the current subdivision
+     * Regenerate beats for the current subdivision.
+     * When fromTimestamp is provided, only regenerates beats from that point onwards,
+     * preserving old beats before the transition point for smooth visual transitions.
+     *
+     * @param fromTimestamp - Optional timestamp to start regeneration from. Beats before this
+     *                        timestamp are preserved. Used for deferred transitions.
      */
-    private regenerateBeats(): void {
+    private regenerateBeats(fromTimestamp: number | null = null): void {
         const config: SubdivisionConfig = {
             beatSubdivisions: new Map(),  // empty = all use default
             defaultSubdivision: this.state.currentSubdivision,
@@ -380,22 +393,51 @@ export class SubdivisionPlaybackController {
 
         const subdividedMap = this.subdivider.subdivide(this.unifiedMap, config);
 
+        // If we have a fromTimestamp, preserve old beats before that point
+        const oldBeatsToKeep = new Map<string, { beat: SubdividedBeat; upcomingEmitted: boolean; exactEmitted: boolean; passedEmitted: boolean }>();
+
+        if (fromTimestamp !== null) {
+            // Preserve beats before the transition point
+            for (const [key, scheduled] of this.state.scheduledBeats) {
+                if (scheduled.beat.timestamp < fromTimestamp) {
+                    oldBeatsToKeep.set(key, scheduled);
+                }
+            }
+        }
+
         // Rebuild scheduled beats map
         this.state.scheduledBeats.clear();
 
+        // First, restore old beats that were preserved
+        for (const [key, scheduled] of oldBeatsToKeep) {
+            this.state.scheduledBeats.set(key, scheduled);
+        }
+
+        // Then add new beats from the subdivided map
+        // If fromTimestamp is set, only add beats >= fromTimestamp
         for (const beat of subdividedMap.beats) {
+            if (fromTimestamp !== null && beat.timestamp < fromTimestamp) {
+                continue; // Skip beats before the transition point
+            }
+
             const key = this.getBeatKey(beat);
-            this.state.scheduledBeats.set(key, {
-                beat,
-                upcomingEmitted: false,
-                exactEmitted: false,
-                passedEmitted: false,
-            });
+            // Only add if not already present (from preserved beats)
+            if (!this.state.scheduledBeats.has(key)) {
+                this.state.scheduledBeats.set(key, {
+                    beat,
+                    upcomingEmitted: false,
+                    exactEmitted: false,
+                    passedEmitted: false,
+                });
+            }
         }
 
         logger.debug('Beats regenerated', {
             subdivision: this.state.currentSubdivision,
             beatCount: subdividedMap.beats.length,
+            preservedBeatCount: oldBeatsToKeep.size,
+            totalScheduledBeats: this.state.scheduledBeats.size,
+            fromTimestamp,
         });
     }
 
@@ -764,15 +806,18 @@ export class SubdivisionPlaybackController {
 
         if (this.options.transitionMode === 'next-downbeat') {
             // Apply at the next beat where isDownbeat === true
+            // Note: isDownbeat is only true for original beats (not interpolated subdivision beats)
             shouldChange = currentBeat.isDownbeat;
         } else if (this.options.transitionMode === 'next-measure') {
             // Apply when entering a NEW measure (measureNumber has increased from when change was requested)
-            // Also require being at the start of a measure (beatInMeasure === 0)
+            // Also require being at the start of a measure
+            // Note: beatInMeasure can be a decimal for subdivided beats (e.g., 0.5 for eighth notes),
+            // so we use Math.floor to detect the start of a measure.
             const pendingMeasure = this.state.pendingMeasureNumber;
             if (pendingMeasure !== null) {
                 // We must be at a beat in a DIFFERENT measure than when the change was requested
-                // AND we must be at beat 0 (start of measure)
-                shouldChange = currentBeat.measureNumber > pendingMeasure && currentBeat.beatInMeasure === 0;
+                // AND we must be at the start of measure (beatInMeasure floor'd to 0)
+                shouldChange = currentBeat.measureNumber > pendingMeasure && Math.floor(currentBeat.beatInMeasure) === 0;
             } else {
                 // If pendingMeasureNumber is null, just wait for any downbeat
                 shouldChange = currentBeat.beatInMeasure === 0;
@@ -780,12 +825,17 @@ export class SubdivisionPlaybackController {
         }
 
         if (shouldChange) {
+            // Store the transition timestamp for partial regeneration
+            // The transition happens at the current beat's timestamp
+            this.state.transitionTimestamp = currentBeat.timestamp;
+
             logger.debug('Applying pending subdivision change', {
                 newSubdivision: this.state.pendingSubdivision,
                 transitionMode: this.options.transitionMode,
                 currentMeasureNumber: currentBeat.measureNumber,
                 pendingMeasureNumber: this.state.pendingMeasureNumber,
                 beatInMeasure: currentBeat.beatInMeasure,
+                transitionTimestamp: this.state.transitionTimestamp,
             });
             this.applySubdivisionChange(
                 this.state.pendingSubdivision,
@@ -941,6 +991,64 @@ export class SubdivisionPlaybackController {
             audioId: unifiedMap.audioId,
             beatCount: unifiedMap.beats.length,
         });
+    }
+
+    /**
+     * Force an update cycle (primarily for testing).
+     *
+     * This manually triggers the update loop which checks for pending
+     * subdivision changes and emits beat events. Useful in tests where
+     * the animation frame loop doesn't run automatically.
+     */
+    forceUpdate(): void {
+        this.update();
+    }
+
+    /**
+     * Get the current SubdividedBeatMap with partial regeneration applied.
+     *
+     * This returns a SubdividedBeatMap containing all beats from the
+     * scheduled beats map. When a deferred transition has occurred,
+     * this will include:
+     * - Beats before the transition point with the OLD subdivision
+     * - Beats from the transition point onwards with the NEW subdivision
+     *
+     * Use this for visualization when you need to show the actual beat
+     * grid that the player will encounter, including partial transitions.
+     *
+     * @returns A SubdividedBeatMap with all scheduled beats
+     */
+    getSubdividedBeatMap(): SubdividedBeatMap {
+        const beats: SubdividedBeat[] = [];
+
+        for (const [, scheduled] of this.state.scheduledBeats) {
+            beats.push(scheduled.beat);
+        }
+
+        // Sort by timestamp
+        beats.sort((a, b) => a.timestamp - b.timestamp);
+
+        // Determine which subdivisions are used
+        const subdivisionsUsed = new Set(beats.map(b => b.subdivisionType));
+
+        // Count original vs subdivided beats
+        const originalBeatCount = beats.filter(b => b.isDetected).length;
+
+        return {
+            audioId: this.unifiedMap.audioId,
+            duration: this.unifiedMap.duration,
+            beats,
+            detectedBeatIndices: [],
+            subdivisionMetadata: {
+                originalBeatCount,
+                subdividedBeatCount: beats.length,
+                averageDensityMultiplier: beats.length / Math.max(1, this.unifiedMap.beats.length),
+                explicitBeatCount: 0,
+                subdivisionsUsed: Array.from(subdivisionsUsed),
+                hasMultipleTempos: false,
+                maxDensity: Math.max(...Array.from(subdivisionsUsed).map(s => s === 'eighth' ? 2 : s === 'sixteenth' ? 4 : s === 'triplet' ? 3 : 1)),
+            },
+        };
     }
 
     /**
