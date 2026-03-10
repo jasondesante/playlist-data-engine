@@ -165,16 +165,16 @@ const count = getTrackCount(playlist);     // 10
 
 // Simplified track objects
 const tracks = getTracks(playlist);
-// [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...' }, ...]
+// [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', image_thumb_url: '...' }, ...]
 
 // Full track data (all available fields)
 const fullTracks = getFullTracks(playlist);
-// [{ id, title, artist, album, duration, genre, tags, audio_url, image_url, ... }, ...]
+// [{ id, title, artist, album, duration, genre, tags, audio_url, image_url, image_thumb_url, ... }, ...]
 
 // VRM extraction (for tracks with 3D avatar models)
 const vrms = getVRMs(playlist);            // ['https://...', ...]
 const vrmTracks = getVRMTracks(playlist);
-// [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', vrm: 'https://...' }, ...]
+// [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', image_thumb_url: '...', vrm: 'https://...' }, ...]
 
 // Use in your app - example: add all audio URLs to a player
 urls.forEach(url => audioPlayer.add(url));

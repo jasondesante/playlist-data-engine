@@ -63,24 +63,26 @@ Add an optional `image_thumb_url` field to parsed track objects. This field maps
   - [x] Update Playlist Utilities section - update `SimpleTrack` and `VRMTrack` descriptions
   - [x] Update `PlaylistTrackSchema` description if needed
 
-- [ ] **4.2 Update USAGE_IN_OTHER_PROJECTS.md**
-  - [ ] Update `getTracks()` output example
-  - [ ] Update `getFullTracks()` output example
-  - [ ] Update `getVRMTracks()` output example
+- [x] **4.2 Update USAGE_IN_OTHER_PROJECTS.md**
+  - [x] Update `getTracks()` output example
+  - [x] Update `getFullTracks()` output example
+  - [x] Update `getVRMTracks()` output example
 
 ---
 
 ## Phase 5: Build & Verify
 
-- [ ] **5.1 Build the project**
+- [x] **5.1 Build the project**
   ```bash
   npm run build
   ```
+  ✓ Build succeeded (no errors)
 
-- [ ] **5.2 Run tests to verify no regressions**
+- [x] **5.2 Run tests to verify no regressions**
   ```bash
   npm test
   ```
+  ✓ Tests pass (2 pre-existing failures in rhythmXPCalculator.test.ts unrelated to image_thumb_url)
 
 ---
 
