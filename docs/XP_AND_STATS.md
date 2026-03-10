@@ -358,9 +358,9 @@ const customConfig: Partial<RhythmXPConfig> = {
     perHitScale: 1.0,
     endBonus: {
       enabled: true,
-      maxStreakWeight: 2.5,      // How much max streak matters
-      avgHotnessWeight: 2.5,     // How much average hotness matters
-      durationWeight: 2.5,       // How long groove lasted
+      maxStreakWeight: 1.5,      // How much max streak matters
+      avgHotnessWeight: 1.5,     // How much average hotness matters
+      durationWeight: 1.5,       // How long groove lasted
     },
   },
 
