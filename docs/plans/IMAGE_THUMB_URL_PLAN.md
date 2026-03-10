@@ -36,14 +36,14 @@ Add an optional `image_thumb_url` field to parsed track objects. This field maps
   - [x] File: `src/utils/validators.ts`
   - [x] Add `image_thumb_url: z.string().url().optional()` to `PlaylistTrackSchema`
 
-- [ ] **2.2 Update Playlist Utilities**
-  - [ ] File: `src/utils/playlistUtils.ts`
-  - [ ] Add `image_thumb_url?: string` to `SimpleTrack` interface
-  - [ ] Add `image_thumb_url?: string` to `VRMTrack` interface
-  - [ ] Add `extractImageThumbUrlFromTrack()` helper function
-  - [ ] Update `getTracks()` to include `image_thumb_url`
-  - [ ] Update `getFullTracks()` to include `image_thumb_url`
-  - [ ] Update `getVRMTracks()` to include `image_thumb_url`
+- [x] **2.2 Update Playlist Utilities**
+  - [x] File: `src/utils/playlistUtils.ts`
+  - [x] Add `image_thumb_url?: string` to `SimpleTrack` interface
+  - [x] Add `image_thumb_url?: string` to `VRMTrack` interface
+  - [x] Add `extractImageThumbUrlFromTrack()` helper function
+  - [x] Update `getTracks()` to include `image_thumb_url`
+  - [x] Update `getFullTracks()` to include `image_thumb_url`
+  - [x] Update `getVRMTracks()` to include `image_thumb_url`
 
 ---
 

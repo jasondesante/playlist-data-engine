@@ -19,6 +19,7 @@ export interface SimpleTrack {
     artist: string;
     audio_url: string;
     image_url: string;
+    image_thumb_url?: string;
 }
 
 /** Track object with VRM data for getVRMTracks() */
@@ -27,6 +28,7 @@ export interface VRMTrack {
     artist: string;
     audio_url: string;
     image_url: string;
+    image_thumb_url?: string;
     vrm: string;
 }
 
@@ -68,6 +70,27 @@ function extractImageUrlFromTrack(track: PlaylistTrack | RawArweavePlaylist['tra
         const parsed = MetadataExtractor.parseMetadata(track.metadata);
         if (parsed) {
             return MetadataExtractor.extractImageUrl(parsed);
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Extract image thumb URL from a track (handles both parsed and raw)
+ * Unlike extractImageUrlFromTrack, this specifically targets thumbnail fields only.
+ */
+function extractImageThumbUrlFromTrack(track: PlaylistTrack | RawArweavePlaylist['tracks'][number]): string | null {
+    // Parsed track - has image_thumb_url directly
+    if ('image_thumb_url' in track && typeof track.image_thumb_url === 'string') {
+        return track.image_thumb_url;
+    }
+
+    // Raw track - needs metadata parsing
+    if ('metadata' in track) {
+        const parsed = MetadataExtractor.parseMetadata(track.metadata);
+        if (parsed) {
+            return MetadataExtractor.extractImageThumbUrl(parsed);
         }
     }
 
@@ -339,7 +362,7 @@ export function getTrackCount(playlist: PlaylistInput): number {
  *
  * @example
  * const tracks = getTracks(playlist);
- * // [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...' }, ...]
+ * // [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', image_thumb_url: '...' }, ...]
  */
 export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
     const tracks: SimpleTrack[] = [];
@@ -347,6 +370,7 @@ export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
     for (const track of playlist.tracks) {
         const audio_url = extractAudioUrlFromTrack(track);
         const image_url = extractImageUrlFromTrack(track);
+        const image_thumb_url = extractImageThumbUrlFromTrack(track);
 
         let title = '';
         let artist = '';
@@ -366,12 +390,19 @@ export function getTracks(playlist: PlaylistInput): SimpleTrack[] {
 
         // Only include if we have at least an audio URL
         if (audio_url) {
-            tracks.push({
+            const simpleTrack: SimpleTrack = {
                 title,
                 artist,
                 audio_url,
                 image_url: image_url || ''
-            });
+            };
+
+            // Only add image_thumb_url if present
+            if (image_thumb_url) {
+                simpleTrack.image_thumb_url = image_thumb_url;
+            }
+
+            tracks.push(simpleTrack);
         }
     }
 
@@ -414,6 +445,7 @@ export function getFullTracks(playlist: PlaylistInput): Array<Record<string, unk
                     artist: MetadataExtractor.extractArtist(parsed),
                     audio_url: MetadataExtractor.extractAudioUrl(parsed),
                     image_url: MetadataExtractor.extractImageUrl(parsed),
+                    image_thumb_url: MetadataExtractor.extractImageThumbUrl(parsed),
                     duration: parsed.duration,
                     genre: parsed.genre,
                     tags: parsed.tags,
@@ -465,7 +497,7 @@ export function getVRMs(playlist: PlaylistInput): string[] {
  *
  * @example
  * const vrmTracks = getVRMTracks(playlist);
- * // [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', vrm: '...' }, ...]
+ * // [{ title: 'Song', artist: 'Artist', audio_url: '...', image_url: '...', image_thumb_url: '...', vrm: '...' }, ...]
  */
 export function getVRMTracks(playlist: PlaylistInput): VRMTrack[] {
     const tracks: VRMTrack[] = [];
@@ -476,6 +508,7 @@ export function getVRMTracks(playlist: PlaylistInput): VRMTrack[] {
 
         const audio_url = extractAudioUrlFromTrack(track);
         const image_url = extractImageUrlFromTrack(track);
+        const image_thumb_url = extractImageThumbUrlFromTrack(track);
 
         let title = '';
         let artist = '';
@@ -493,13 +526,20 @@ export function getVRMTracks(playlist: PlaylistInput): VRMTrack[] {
             }
         }
 
-        tracks.push({
+        const vrmTrack: VRMTrack = {
             title,
             artist,
             audio_url: audio_url || '',
             image_url: image_url || '',
             vrm
-        });
+        };
+
+        // Only add image_thumb_url if present
+        if (image_thumb_url) {
+            vrmTrack.image_thumb_url = image_thumb_url;
+        }
+
+        tracks.push(vrmTrack);
     }
 
     return tracks;
