@@ -17,11 +17,11 @@ Add an optional `image_thumb_url` field to parsed track objects. This field maps
   - [x] Add `image_thumb_url?: string` to `PlaylistTrack` interface (after `image_url` field)
   - [x] Add JSDoc comment explaining the field
 
-- [ ] **1.2 Add Image Thumb Extractor**
-  - [ ] File: `src/core/parser/MetadataExtractor.ts`
-  - [ ] Add new static method `extractImageThumbUrl(data: Record<string, unknown>): string | null`
-  - [ ] Check for `image_thumb_url` first, then fall back to `image_thumb`
-  - [ ] Return null if neither exists
+- [x] **1.2 Add Image Thumb Extractor**
+  - [x] File: `src/core/parser/MetadataExtractor.ts`
+  - [x] Add new static method `extractImageThumbUrl(data: Record<string, unknown>): string | null`
+  - [x] Check for `image_thumb_url` first, then fall back to `image_thumb`
+  - [x] Return null if neither exists
 
 - [ ] **1.3 Update PlaylistParser**
   - [ ] File: `src/core/parser/PlaylistParser.ts`

@@ -44,6 +44,25 @@ export class MetadataExtractor {
     }
 
     /**
+     * Extract thumbnail image URL directly from image_thumb fields.
+     * Unlike extractImageUrl, this specifically targets thumbnail fields only.
+     * Priority: image_thumb_url > image_thumb
+     */
+    static extractImageThumbUrl(data: Record<string, unknown>): string | null {
+        // Check image_thumb_url first (preferred)
+        if (data.image_thumb_url && typeof data.image_thumb_url === 'string') {
+            return data.image_thumb_url;
+        }
+
+        // Fall back to image_thumb
+        if (data.image_thumb && typeof data.image_thumb === 'string') {
+            return data.image_thumb;
+        }
+
+        return null;
+    }
+
+    /**
      * Extract name/title with priority (see specs/001-core-engine/SPEC.md):
      * 1. name
      * 2. title
