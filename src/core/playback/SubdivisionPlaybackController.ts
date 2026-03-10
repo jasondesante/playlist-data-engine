@@ -77,6 +77,8 @@ interface PlaybackState {
     currentSubdivision: SubdivisionType;
     /** Pending subdivision change (for deferred transitions) */
     pendingSubdivision: SubdivisionType | null;
+    /** Measure number when pending change was requested (for 'next-measure' mode) */
+    pendingMeasureNumber: number | null;
     /** Scheduled beats for current subdivision */
     scheduledBeats: Map<string, { beat: SubdividedBeat; upcomingEmitted: boolean; exactEmitted: boolean; passedEmitted: boolean }>;
     /** Accuracy thresholds for button press evaluation */
@@ -150,6 +152,7 @@ export class SubdivisionPlaybackController {
             rafId: null,
             currentSubdivision: this.options.initialSubdivision,
             pendingSubdivision: null,
+            pendingMeasureNumber: null,
             scheduledBeats: new Map(),
             thresholds: getAccuracyThresholdsForPreset('medium'),
         };
@@ -262,14 +265,29 @@ export class SubdivisionPlaybackController {
                 break;
 
             case 'next-downbeat':
-            case 'next-measure':
-                // Defer the change until the next downbeat/measure
+                // Defer the change until the next downbeat
                 this.state.pendingSubdivision = type;
-                logger.debug('Subdivision change deferred', {
+                this.state.pendingMeasureNumber = null; // Not needed for downbeat mode
+                logger.debug('Subdivision change deferred until next downbeat', {
                     pendingType: type,
                     transitionMode: this.options.transitionMode,
                 });
                 break;
+
+            case 'next-measure': {
+                // Defer the change until we enter a NEW measure
+                // Capture the current measure number so we can detect when we've moved to a different measure
+                const currentBeat = this.getCurrentBeat();
+                const currentMeasureNumber = currentBeat?.measureNumber ?? null;
+                this.state.pendingSubdivision = type;
+                this.state.pendingMeasureNumber = currentMeasureNumber;
+                logger.debug('Subdivision change deferred until next measure', {
+                    pendingType: type,
+                    transitionMode: this.options.transitionMode,
+                    currentMeasureNumber,
+                });
+                break;
+            }
 
             default:
                 // Fallback to immediate
@@ -283,6 +301,7 @@ export class SubdivisionPlaybackController {
     private applySubdivisionChange(newType: SubdivisionType, oldType: SubdivisionType): void {
         this.state.currentSubdivision = newType;
         this.state.pendingSubdivision = null;
+        this.state.pendingMeasureNumber = null;
 
         // Regenerate beats for the new subdivision
         this.regenerateBeats();
@@ -690,13 +709,33 @@ export class SubdivisionPlaybackController {
             return;
         }
 
-        const shouldChange = this.options.transitionMode === 'next-downbeat'
-            ? currentBeat.isDownbeat
-            : this.options.transitionMode === 'next-measure'
-                ? currentBeat.beatInMeasure === 0
-                : false;
+        let shouldChange = false;
+
+        if (this.options.transitionMode === 'next-downbeat') {
+            // Apply at the next beat where isDownbeat === true
+            shouldChange = currentBeat.isDownbeat;
+        } else if (this.options.transitionMode === 'next-measure') {
+            // Apply when entering a NEW measure (measureNumber has increased from when change was requested)
+            // Also require being at the start of a measure (beatInMeasure === 0)
+            const pendingMeasure = this.state.pendingMeasureNumber;
+            if (pendingMeasure !== null) {
+                // We must be at a beat in a DIFFERENT measure than when the change was requested
+                // AND we must be at beat 0 (start of measure)
+                shouldChange = currentBeat.measureNumber > pendingMeasure && currentBeat.beatInMeasure === 0;
+            } else {
+                // If pendingMeasureNumber is null, just wait for any downbeat
+                shouldChange = currentBeat.beatInMeasure === 0;
+            }
+        }
 
         if (shouldChange) {
+            logger.debug('Applying pending subdivision change', {
+                newSubdivision: this.state.pendingSubdivision,
+                transitionMode: this.options.transitionMode,
+                currentMeasureNumber: currentBeat.measureNumber,
+                pendingMeasureNumber: this.state.pendingMeasureNumber,
+                beatInMeasure: currentBeat.beatInMeasure,
+            });
             this.applySubdivisionChange(
                 this.state.pendingSubdivision,
                 this.state.currentSubdivision
