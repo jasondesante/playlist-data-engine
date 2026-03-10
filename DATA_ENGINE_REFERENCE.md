@@ -2094,6 +2094,7 @@ constructor(
 |--------|-------------|
 | `subscribe(callback: SubdivisionCallback): () => void` | Subscribe to beat events, returns unsubscribe function |
 | `setSubdivision(type: SubdivisionType): void` | Change subdivision type in real-time |
+| `setTransitionMode(mode: SubdivisionTransitionMode): void` | Change transition mode during playback |
 | `play(): void` | Start streaming beat events |
 | `stop(): void` | Stop streaming and reset state |
 | `pause(): void` | Pause event emission (preserves position) |
