@@ -108,7 +108,6 @@ A concise overview of all main exports from the library, organized by category.
 | `CharacterUpdater` | Apply sessions to characters | [Progression System](#progression-system) |
 | `StatManager` | Manage stat increases | [Stat Increase System](#stat-increase-system) |
 | `RhythmXPCalculator` | Calculate XP for rhythm game button presses | [Progression System](#progression-system) |
-| `shouldAccuracyBreakCombo` | Check if accuracy should break combo streak | [Progression System](#progression-system) |
 
 **Stat Increase Strategies:** `DnD5eStandardStrategy`, `DnD5eSmartStrategy`, `BalancedStrategy`, `PrimaryOnlyStrategy`, `RandomStrategy`, `ManualStrategy`, `createStatIncreaseStrategy` — see [Stat Increase System](#stat-increase-system)
 
