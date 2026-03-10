@@ -23,10 +23,10 @@ Add an optional `image_thumb_url` field to parsed track objects. This field maps
   - [x] Check for `image_thumb_url` first, then fall back to `image_thumb`
   - [x] Return null if neither exists
 
-- [ ] **1.3 Update PlaylistParser**
-  - [ ] File: `src/core/parser/PlaylistParser.ts`
-  - [ ] In `parseTrack()` method, add call to `MetadataExtractor.extractImageThumbUrl()`
-  - [ ] Add `image_thumb_url` to the track object being built (only if not null)
+- [x] **1.3 Update PlaylistParser**
+  - [x] File: `src/core/parser/PlaylistParser.ts`
+  - [x] In `parseTrack()` method, add call to `MetadataExtractor.extractImageThumbUrl()`
+  - [x] Add `image_thumb_url` to the track object being built (only if not null)
 
 ---
 

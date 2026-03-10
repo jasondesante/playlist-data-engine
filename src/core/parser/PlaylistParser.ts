@@ -106,6 +106,7 @@ export class PlaylistParser {
         const title = MetadataExtractor.extractTitle(parsedMetadata || {});
         const artist = MetadataExtractor.extractArtist(parsedMetadata || {});
         const imageUrl = MetadataExtractor.extractImageUrl(parsedMetadata || {});
+        const imageThumbUrl = MetadataExtractor.extractImageThumbUrl(parsedMetadata || {});
         const audioUrl = MetadataExtractor.extractAudioUrl(parsedMetadata || {});
 
         // Step 6: Validate - If audio_url is empty, mark as "Unsummonable"
@@ -168,6 +169,11 @@ export class PlaylistParser {
             key,
             attributes: attributes || undefined,
         };
+
+        // Add image_thumb_url if present (per design decision: only add if exists)
+        if (imageThumbUrl) {
+            track.image_thumb_url = imageThumbUrl;
+        }
 
         // Add token_address and token_id for non-Arweave chains
         if (chainName !== 'AR') {
