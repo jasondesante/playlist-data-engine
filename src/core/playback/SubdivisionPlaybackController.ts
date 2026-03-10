@@ -40,6 +40,7 @@ import type {
     SubdivisionType,
     SubdivisionConfig,
     SubdivisionPlaybackOptions,
+    SubdivisionTransitionMode,
     SubdivisionBeatEvent,
     SubdivisionCallback,
     BeatEventType,
@@ -293,6 +294,56 @@ export class SubdivisionPlaybackController {
                 // Fallback to immediate
                 this.applySubdivisionChange(type, oldType);
         }
+    }
+
+    /**
+     * Set the transition mode for subdivision changes.
+     * Updates how pending subdivision changes are applied.
+     *
+     * @param mode - The transition mode ('immediate', 'next-downbeat', 'next-measure')
+     *
+     * @example
+     * ```typescript
+     * // Change to immediate mode during playback
+     * controller.setTransitionMode('immediate');
+     *
+     * // Any pending subdivision change will apply immediately
+     * controller.setSubdivision('eighth');
+     * ```
+     */
+    setTransitionMode(mode: SubdivisionTransitionMode): void {
+        if (!['immediate', 'next-downbeat', 'next-measure'].includes(mode)) {
+            throw new Error(`Invalid transition mode: ${mode}`);
+        }
+
+        const oldMode = this.options.transitionMode;
+
+        if (oldMode === mode) {
+            return; // No change needed
+        }
+
+        logger.debug('Transition mode change requested', {
+            from: oldMode,
+            to: mode,
+        });
+
+        this.options = {
+            ...this.options,
+            transitionMode: mode,
+        };
+
+        // If switching to immediate mode and there's a pending change, apply it now
+        if (mode === 'immediate' && this.state.pendingSubdivision) {
+            logger.debug('Applying pending subdivision immediately due to mode switch', {
+                pendingSubdivision: this.state.pendingSubdivision,
+            });
+            this.applySubdivisionChange(
+                this.state.pendingSubdivision,
+                this.state.currentSubdivision
+            );
+        }
+
+        logger.debug('Transition mode changed', { from: oldMode, to: mode });
     }
 
     /**
