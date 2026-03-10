@@ -1695,9 +1695,9 @@ Groove penalties can be adjusted based on difficulty level. Higher difficulties 
 
 | Preset | `hotnessLossOnMiss` | `hotnessLossOnBreak` | Description |
 |--------|---------------------|----------------------|-------------|
-| `easy` | 15 | 15 | Forgiving for casual players |
-| `medium` | 25 | 25 | Balanced difficulty |
-| `hard` | 45 | 45 | Strict for veterans |
+| `easy` | 35 | 35 | Forgiving for casual players |
+| `medium` | 50 | 50 | Balanced difficulty |
+| `hard` | 65 | 65 | Strict for veterans |
 | `custom` | (varies) | (varies) | Use `customPenalties` parameter |
 
 **Related Exports:**
@@ -2167,7 +2167,7 @@ The `SubdivisionBeatEvent` includes:
 | `DEFAULT_BEATMAP_GENERATOR_OPTIONS` | See above | Default BeatMapGenerator options |
 | `DEFAULT_BEATSTREAM_OPTIONS` | See above | Default BeatStream options |
 | `BEAT_ACCURACY_THRESHOLDS` | Same as `HARD_ACCURACY_THRESHOLDS` | Accuracy thresholds in seconds (**deprecated**, use `HARD_ACCURACY_THRESHOLDS` or `getAccuracyThresholdsForPreset()`) |
-| `EASY_ACCURACY_THRESHOLDS` | `{ perfect: 0.035, great: 0.070, good: 0.110, ok: 0.150 }` | Easy difficulty thresholds (±35ms, ±70ms, ±110ms, ±150ms) |
+| `EASY_ACCURACY_THRESHOLDS` | `{ perfect: 0.020, great: 0.035, good: 0.060, ok: 0.125 }` | Easy difficulty thresholds (±20ms, ±35ms, ±60ms, ±125ms) |
 | `MEDIUM_ACCURACY_THRESHOLDS` | `{ perfect: 0.010, great: 0.025, good: 0.050, ok: 0.100 }` | Medium difficulty thresholds (±10ms, ±25ms, ±50ms, ±100ms) |
 | `HARD_ACCURACY_THRESHOLDS` | `{ perfect: 0.008, great: 0.020, good: 0.040, ok: 0.075 }` | Hard difficulty thresholds (±8ms, ±20ms, ±40ms, ±75ms) |
 | `getAccuracyThresholdsForPreset(preset)` | Returns `AccuracyThresholds` | Get thresholds for a difficulty preset (`'easy'`, `'medium'`, `'hard'`, `'custom'`) |

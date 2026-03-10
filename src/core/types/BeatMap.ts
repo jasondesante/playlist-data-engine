@@ -696,10 +696,10 @@ export type DifficultyPreset = 'easy' | 'medium' | 'hard' | 'custom';
  * Easy difficulty thresholds (forgiving)
  */
 export const EASY_ACCURACY_THRESHOLDS: AccuracyThresholds = {
-    perfect: 0.035,  // ±35ms
-    great: 0.070,    // ±70ms
-    good: 0.110,     // ±110ms
-    ok: 0.150,       // ±150ms
+    perfect: 0.020,  // ±20ms
+    great: 0.035,    // ±35ms
+    good: 0.060,     // ±60ms
+    ok: 0.125,       // ±125ms
 } as const;
 
 /**
@@ -2499,29 +2499,29 @@ export interface GroovePenaltyConfig {
 
 /**
  * Easy groove penalties - forgiving for casual players.
- * Miss penalty: 15 (moderate)
+ * Miss penalty: 35 (moderate)
  */
 export const EASY_GROOVE_PENALTIES: GroovePenaltyConfig = {
-    hotnessLossOnMiss: 15,
-    hotnessLossOnBreak: 15,
+    hotnessLossOnMiss: 35,
+    hotnessLossOnBreak: 35,
 } as const;
 
 /**
  * Medium groove penalties - balanced difficulty.
- * Miss penalty: 25 (noticeable)
+ * Miss penalty: 50 (noticeable)
  */
 export const MEDIUM_GROOVE_PENALTIES: GroovePenaltyConfig = {
-    hotnessLossOnMiss: 25,
-    hotnessLossOnBreak: 25,
+    hotnessLossOnMiss: 50,
+    hotnessLossOnBreak: 50,
 } as const;
 
 /**
  * Hard groove penalties - strict for veterans.
- * Miss penalty: 45 (severe)
+ * Miss penalty: 65 (severe)
  */
 export const HARD_GROOVE_PENALTIES: GroovePenaltyConfig = {
-    hotnessLossOnMiss: 45,
-    hotnessLossOnBreak: 45,
+    hotnessLossOnMiss: 65,
+    hotnessLossOnBreak: 65,
 } as const;
 
 /**

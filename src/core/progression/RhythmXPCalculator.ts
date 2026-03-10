@@ -178,11 +178,23 @@ export class RhythmXPCalculator {
      * Call this when a groove ends (hotness drops to 0 or session ends).
      * Uses weighted calculation based on groove statistics.
      *
+     * Note: Requires a minimum streak of 3 to award any bonus. Short grooves
+     * (maxStreak < 3) return 0 bonus to prevent excessive rewards for brief streaks.
+     *
      * @param stats - Groove statistics from GrooveAnalyzer.getGrooveStats()
      * @returns GrooveEndBonusResult with bonus score and XP
      */
     calculateGrooveEndBonus(stats: GrooveEndStats): GrooveEndBonusResult {
         if (!this.config.groove.endBonus.enabled) {
+            return {
+                bonusScore: 0,
+                bonusXP: 0,
+            };
+        }
+
+        // Minimum streak threshold - grooves shorter than this get no bonus
+        const MIN_STREAK_FOR_BONUS = 3;
+        if (stats.maxStreak < MIN_STREAK_FOR_BONUS) {
             return {
                 bonusScore: 0,
                 bonusXP: 0,

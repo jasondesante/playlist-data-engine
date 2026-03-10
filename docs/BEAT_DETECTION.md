@@ -2678,9 +2678,9 @@ Groove penalties can be adjusted based on difficulty level. Higher difficulties 
 
 | Preset | `hotnessLossOnMiss` | `hotnessLossOnBreak` | Description |
 |--------|---------------------|----------------------|-------------|
-| `easy` | 15 | 15 | Forgiving for casual players |
-| `medium` | 25 | 25 | Balanced difficulty |
-| `hard` | 45 | 45 | Strict for veterans |
+| `easy` | 35 | 35 | Forgiving for casual players |
+| `medium` | 50 | 50 | Balanced difficulty |
+| `hard` | 65 | 65 | Strict for veterans |
 | `custom` | (varies) | (varies) | Use `customPenalties` parameter |
 
 ```typescript
