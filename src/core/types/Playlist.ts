@@ -44,6 +44,8 @@ export interface PlaylistTrack {
 
     // --- Assets (The Extracted Media) ---
     image_url: string;      // The result of the Image Extraction Logic
+    /** Optional thumbnail URL extracted from image_thumb or image_thumb_url fields */
+    image_thumb_url?: string;
     audio_url: string;      // The result of the Audio Extraction Logic
     duration: number;       // In seconds (parsed or estimated)
 
