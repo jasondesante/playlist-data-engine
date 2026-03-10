@@ -2560,13 +2560,21 @@ The groove meter has two quality dimensions:
 
 #### Axis 2: Intensity (How consistent?)
 
-| Hotness | Meaning | Window Size |
-|---------|---------|-------------|
-| 0% | No groove established | Full (1/32 note) |
-| 50% | Moderate consistency | Tightened |
-| 100% | Locked in | Minimum (15ms floor) |
+The groove meter uses a **tiered system** that allows hotness to exceed 100 for exceptional play. Higher tiers have tighter pocket windows, making it progressively harder to maintain your groove.
 
-**Progressive Tightening**: As hotness increases, the pocket window shrinks, requiring more precise consistency to maintain.
+| Tier | Hotness Range | Window Size (120 BPM) | Description |
+|------|---------------|----------------------|-------------|
+| **D** | 0-33 | 31ms | Starting groove |
+| **C** | 33-66 | 25ms | Building momentum |
+| **B** | 66-100 | 20ms | Solid groove |
+| **A** | 100-150 | 15ms | Locked in |
+| **S** | 150-200 | 10ms | Exceptional |
+| **SS** | 200-350 | 7ms | Legendary |
+| **Platinum** | 350+ | 5ms | Godlike |
+
+**Progressive Tightening**: As you climb tiers, the pocket window shrinks, requiring more precise consistency to maintain. The window continues to shrink even past 100 hotness.
+
+**Uncapped Hotness**: Unlike the old system that capped at 100, hotness can now grow indefinitely. Each consistent hit adds +8 hotness, but the tighter windows at higher tiers make it increasingly difficult to maintain streaks.
 
 ---
 
@@ -2703,6 +2711,10 @@ grooveAnalyzer.setDifficulty({
 | `HARD_GROOVE_PENALTIES` | Hard difficulty penalty config |
 | `GROOVE_PENALTY_PRESETS` | Map of preset names to penalty configs |
 | `getGroovePenaltiesForPreset(preset, customPenalties?)` | Get penalty config for a preset |
+| `GROOVE_TIERS` | Array of tier configurations (tier, minHotness, maxHotness, windowMs) |
+| `getGrooveTier(hotness)` | Get groove tier for a hotness value |
+| `getGrooveWindowMs(hotness)` | Get pocket window size in milliseconds for a hotness value |
+| `getMinHotnessForTier(tier)` | Get minimum hotness required for a tier |
 
 ---
 
@@ -2715,7 +2727,8 @@ grooveAnalyzer.setDifficulty({
 | `pocketDirection` | `GrooveDirection` | Current pocket direction ('push', 'pull', 'neutral') |
 | `establishedOffset` | `number` | Running average offset in seconds (pocket center) |
 | `consistency` | `number` | How close hit was to pocket (0-1, quadratic falloff) |
-| `hotness` | `number` | Current meter value (0-100) |
+| `hotness` | `number` | Current meter value (0+, can exceed 100 for higher tiers) |
+| `tier` | `GrooveTier` | Current groove tier ('D', 'C', 'B', 'A', 'S', or 'SS') |
 | `streakLength` | `number` | Current streak of consistent hits |
 | `inPocket` | `boolean` | Whether this hit was within pocket window |
 | `pocketWindow` | `number` | Current window size in seconds |
@@ -2727,14 +2740,15 @@ grooveAnalyzer.setDifficulty({
 |----------|------|-------------|
 | `pocketDirection` | `GrooveDirection` | Established pocket direction |
 | `establishedOffset` | `number` | Running average offset in seconds |
-| `hotness` | `number` | Current meter value (0-100) |
+| `hotness` | `number` | Current meter value (0+, can exceed 100 for higher tiers) |
+| `tier` | `GrooveTier` | Current groove tier ('D', 'C', 'B', 'A', 'S', or 'SS') |
 | `streakLength` | `number` | Current streak of consistent hits |
 | `hitCount` | `number` | Total hits recorded this session |
 | `pocketWindow` | `number` | Current window size in seconds |
 | `grooveStartTime` | `number \| null` | When current groove started (audio time), null if no active groove |
 | `grooveDuration` | `number` | Duration of current groove in seconds (0 if no active groove) |
-| `maxHotness` | `number` | Peak hotness reached during current groove (0-100) |
-| `avgHotness` | `number` | Average hotness over groove lifetime (0-100) |
+| `maxHotness` | `number` | Peak hotness reached during current groove (0+) |
+| `avgHotness` | `number` | Average hotness over groove lifetime (0+) |
 | `grooveHitCount` | `number` | Total hits in current groove |
 
 #### GrooveStats (from `getGrooveStats` / `endedGrooveStats`)
@@ -2742,8 +2756,8 @@ grooveAnalyzer.setDifficulty({
 | Property | Type | Description |
 |----------|------|-------------|
 | `maxStreak` | `number` | Peak streak during the groove |
-| `maxHotness` | `number` | Peak hotness reached (0-100) |
-| `avgHotness` | `number` | Average hotness over groove lifetime (0-100) |
+| `maxHotness` | `number` | Peak hotness reached (0+, can exceed 100) |
+| `avgHotness` | `number` | Average hotness over groove lifetime (0+) |
 | `duration` | `number` | How long the groove lasted in seconds |
 | `totalHits` | `number` | Total hits in the groove |
 | `startTime` | `number` | When groove started (audio time in seconds) |
@@ -2751,22 +2765,27 @@ grooveAnalyzer.setDifficulty({
 
 ---
 
-### BPM-Aware Window Calculation
+### Tier-Based Window Calculation
 
-The pocket window adapts to tempo:
+The pocket window is determined by the current groove tier, with BPM scaling applied:
 
 ```
-beatDuration = 60 / BPM
-thirtySecondNote = beatDuration / 8
-baseWindow = thirtySecondNote × fraction
-pocketWindow = baseWindow - (baseWindow - minWindow) × (hotness / 100)
+windowMs = getGrooveWindowMs(hotness)  // Tier-based window
+windowSeconds = windowMs / 1000
+pocketWindow = windowSeconds × (120 / BPM)  // BPM scaling
 ```
 
-| BPM | Base Window | At 50% Hotness | At 100% Hotness |
-|-----|-------------|----------------|-----------------|
-| 90 BPM | 41.7ms | 25.8ms | 15ms |
-| 120 BPM | 31.3ms | 20.6ms | 15ms |
-| 140 BPM | 26.8ms | 18.4ms | 15ms |
+| Tier | Hotness | Base Window | At 90 BPM | At 120 BPM | At 140 BPM |
+|------|---------|-------------|-----------|------------|------------|
+| D | 0-33 | 31ms | 41ms | 31ms | 27ms |
+| C | 33-66 | 25ms | 33ms | 25ms | 21ms |
+| B | 66-100 | 20ms | 27ms | 20ms | 17ms |
+| A | 100-150 | 15ms | 20ms | 15ms | 13ms |
+| S | 150-200 | 10ms | 13ms | 10ms | 9ms |
+| SS | 200-350 | 7ms | 9ms | 7ms | 6ms |
+| Platinum | 350+ | 5ms | 7ms | 5ms | 4ms |
+
+**BPM Scaling**: Faster songs have proportionally smaller windows. The base window is calibrated for 120 BPM.
 
 ---
 
@@ -2828,12 +2847,36 @@ When timing drifts from one direction to another:
 │                     ↑                                           │
 │              Your pocket                                        │
 │                                                                 │
-│  Hotness: ████████████░░░░░░░░ 62%                              │
-│  Streak:  14 hits                                               │
-│  Consistency: 0.87                                              │
+│  Hotness: ████████████████████░░ 142                           │
+│  Tier: A (Locked in!)                                           │
+│  Streak:  18 hits                                               │
+│  Consistency: 0.91                                              │
 │                                                                 │
 │  "Locked in behind the beat!"                                   │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+### Tier Display
+
+The `tier` field in `GrooveResult` and `GrooveState` provides the current groove tier:
+
+```typescript
+const grooveResult = grooveAnalyzer.recordHit(offset, bpm, currentTime, accuracy);
+
+// Display tier in UI
+console.log(`Tier: ${grooveResult.tier}`);  // 'D', 'C', 'B', 'A', 'S', 'SS', or 'Platinum'
+console.log(`Hotness: ${grooveResult.hotness}`);  // Can exceed 100
+
+// Tier-based styling
+const tierColors = {
+  D: '#888',   // Gray
+  C: '#4a4',   // Green
+  B: '#44f',   // Blue
+  A: '#f4f',   // Purple
+  S: '#f80',   // Orange
+  SS: '#ff0',  // Gold
+  Platinum: '#e5e4e2',  // Platinum
+};
 ```
 
 ---

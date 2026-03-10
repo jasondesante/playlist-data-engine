@@ -1507,8 +1507,9 @@ Beat detection system based on the Ellis Dynamic Programming algorithm. Provides
 | `SubdivisionCallback` | Callback type for beat events | `(event: SubdivisionBeatEvent) => void` |
 | `SubdivisionTransitionMode` | Transition mode for subdivision changes | `'immediate'` \| `'next-downbeat'` \| `'next-measure'` |
 | `GrooveDirection` | Direction of established pocket relative to beat | `'push'` \| `'pull'` \| `'neutral'` |
-| `GrooveResult` | Result returned after each hit recorded | `pocketDirection`, `establishedOffset`, `consistency`, `hotness`, `streakLength`, `inPocket`, `pocketWindow` |
-| `GrooveState` | Snapshot of current groove analyzer state | `pocketDirection`, `establishedOffset`, `hotness`, `streakLength`, `hitCount`, `pocketWindow` |
+| `GrooveTier` | Groove intensity tier based on hotness | `'D'` \| `'C'` \| `'B'` \| `'A'` \| `'S'` \| `'SS'` \| `'Platinum'` |
+| `GrooveResult` | Result returned after each hit recorded | `pocketDirection`, `establishedOffset`, `consistency`, `hotness`, `tier`, `streakLength`, `inPocket`, `pocketWindow` |
+| `GrooveState` | Snapshot of current groove analyzer state | `pocketDirection`, `establishedOffset`, `hotness`, `tier`, `streakLength`, `hitCount`, `pocketWindow` |
 | `GrooveAnalyzerOptions` | Configuration for GrooveAnalyzer | `minHitsForPocket`, `basePocketWindowFraction`, `minPocketWindowSeconds`, `hotnessGainPerHit`, `hotnessLossOnBreak`, `hotnessLossOnMiss`, `averagingWindowSize`, `neutralDeadZone` |
 | `GroovePenaltyConfig` | Groove penalty configuration for difficulty presets | `hotnessLossOnMiss`, `hotnessLossOnBreak` |
 
@@ -1717,6 +1718,31 @@ The analyzer tracks recent hit offsets in a rolling window (default: 4 hits) and
 - **push**: Playing ahead of the beat (negative offset, rushing)
 - **pull**: Playing behind the beat (positive offset, dragging)
 - **neutral**: Playing on the beat (within ±10ms dead zone)
+
+**Tier System:**
+
+Hotness is uncapped and determines your groove tier. Higher tiers have tighter pocket windows:
+
+| Tier | Hotness Range | Window (120 BPM) |
+|------|---------------|------------------|
+| D | 0-33 | 31ms |
+| C | 33-66 | 25ms |
+| B | 66-100 | 20ms |
+| A | 100-150 | 15ms |
+| S | 150-200 | 10ms |
+| SS | 200-350 | 7ms |
+| Platinum | 350+ | 5ms |
+
+The `tier` field is included in both `GrooveResult` and `GrooveState` for easy UI display.
+
+**Related Tier Exports:**
+
+| Export | Description |
+|--------|-------------|
+| `GROOVE_TIERS` | Array of tier configurations |
+| `getGrooveTier(hotness)` | Get tier for a hotness value |
+| `getGrooveWindowMs(hotness)` | Get pocket window in milliseconds |
+| `getMinHotnessForTier(tier)` | Get minimum hotness for a tier |
 
 **For detailed formulas (BPM-aware window calculation, consistency quadratic falloff) and examples:** See [docs/AUDIO_ANALYSIS.md#groove-meter](docs/AUDIO_ANALYSIS.md#groove-meter)
 

@@ -20,11 +20,14 @@ import type {
     BeatAccuracy,
     DifficultyPreset,
     GroovePenaltyConfig,
+    GrooveTier,
 } from '../../types/BeatMap.js';
 import type { GrooveStats } from '../../types/RhythmXP.js';
 import {
     DEFAULT_GROOVE_OPTIONS,
     getGroovePenaltiesForPreset,
+    getGrooveTier,
+    getGrooveWindowMs,
 } from '../../types/BeatMap.js';
 
 /**
@@ -169,7 +172,8 @@ export class GrooveAnalyzer {
         // 8. Update hotness and streak
         if (this.hasPocket()) {
             if (inPocket) {
-                this.hotness = Math.min(100, this.hotness + this.options.hotnessGainPerHit);
+                // Uncapped hotness - can exceed 100 for higher tiers (A, S, SS)
+                this.hotness = this.hotness + this.options.hotnessGainPerHit;
                 this.streakLength++;
             } else {
                 this.hotness = Math.max(0, this.hotness - this.options.hotnessLossOnBreak);
@@ -240,6 +244,7 @@ export class GrooveAnalyzer {
             establishedOffset: this.establishedOffset,
             consistency,
             hotness: this.hotness,
+            tier: getGrooveTier(this.hotness),
             streakLength: this.streakLength,
             inPocket,
             pocketWindow,
@@ -266,6 +271,7 @@ export class GrooveAnalyzer {
             establishedOffset: this.establishedOffset,
             consistency: 0, // No hit, so no consistency
             hotness: this.hotness,
+            tier: getGrooveTier(this.hotness),
             streakLength: this.streakLength,
             inPocket: false, // Miss is never in pocket
             pocketWindow,
@@ -287,6 +293,7 @@ export class GrooveAnalyzer {
             pocketDirection: this.pocketDirection,
             establishedOffset: this.establishedOffset,
             hotness: this.hotness,
+            tier: getGrooveTier(this.hotness),
             streakLength: this.streakLength,
             hitCount: this.hitCount,
             pocketWindow: this.calculatePocketWindow(this.lastBpm),
@@ -370,30 +377,26 @@ export class GrooveAnalyzer {
     /**
      * Calculate the current pocket window size
      *
-     * Uses BPM-aware calculation (1/32 note at current BPM) with
-     * progressive tightening at higher hotness levels.
+     * Uses tier-based window sizes with BPM scaling.
+     * Window shrinks as you climb tiers (D → C → B → A → S → SS).
      *
      * @param bpm - Current BPM
      * @returns Pocket window size in seconds
      */
     private calculatePocketWindow(bpm: number): number {
-        // Step 1: Calculate beat duration at current BPM
-        const beatDuration = 60 / bpm; // in seconds
+        // Get tier-based window size in milliseconds
+        const windowMs = getGrooveWindowMs(this.hotness);
 
-        // Step 2: Calculate 1/32 note duration (1/32 note = 1/8 of a quarter note)
-        const thirtySecondNote = beatDuration / 8;
+        // Convert to seconds
+        const windowSeconds = windowMs / 1000;
 
-        // Step 3: Calculate base pocket window (the fraction of 1/32 note)
-        const baseWindow = thirtySecondNote * this.options.basePocketWindowFraction * 8;
+        // Apply BPM scaling: faster songs = proportionally smaller windows
+        // At 120 BPM, use the base window size
+        // At 90 BPM, window is 4/3 larger (slower song, more time between beats)
+        // At 180 BPM, window is 2/3 smaller (faster song, less time between beats)
+        const bpmScaleFactor = 120 / bpm;
 
-        // Step 4: Apply progressive tightening based on hotness
-        // At 0% hotness: full base window
-        // At 100% hotness: minimum window
-        const minWindow = this.options.minPocketWindowSeconds;
-        const tighteningFactor = this.hotness / 100;
-        const pocketWindow = baseWindow - (baseWindow - minWindow) * tighteningFactor;
-
-        return pocketWindow;
+        return windowSeconds * bpmScaleFactor;
     }
 
     /**

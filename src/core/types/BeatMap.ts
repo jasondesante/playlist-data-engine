@@ -2318,6 +2318,120 @@ export const BEAT_DETECTION_ALGORITHM = 'ellis-dp-v1';
 // Groove Analyzer Types
 // ============================================================================
 
+// ============================================================================
+// Groove Tier System
+// ============================================================================
+
+/**
+ * Groove tier representing the player's current groove intensity level.
+ *
+ * Tiers are determined by hotness value:
+ * - D: 0-33 (starting groove)
+ * - C: 33-66 (building momentum)
+ * - B: 66-100 (solid groove)
+ * - A: 100-150 (locked in)
+ * - S: 150-200 (exceptional)
+ * - SS: 200+ (legendary)
+ */
+export type GrooveTier = 'D' | 'C' | 'B' | 'A' | 'S' | 'SS' | 'Platinum';
+
+/**
+ * Configuration for a single groove tier.
+ */
+export interface GrooveTierConfig {
+    /** Tier name/label */
+    tier: GrooveTier;
+    /** Minimum hotness for this tier (inclusive) */
+    minHotness: number;
+    /** Maximum hotness for this tier (exclusive, except for SS which has no max) */
+    maxHotness: number;
+    /** Pocket window size in milliseconds at this tier */
+    windowMs: number;
+}
+
+/**
+ * Groove tier configurations with thresholds and window sizes.
+ *
+ * Window sizes represent the pocket tolerance at each tier:
+ * - Lower tier = more forgiving (larger window)
+ * - Higher tier = more demanding (smaller window)
+ *
+ * The window continues to shrink as you climb tiers, making it progressively
+ * harder to maintain your groove.
+ */
+export const GROOVE_TIERS: GrooveTierConfig[] = [
+    { tier: 'D',  minHotness: 0,   maxHotness: 33,  windowMs: 31 },
+    { tier: 'C',  minHotness: 33,  maxHotness: 66,  windowMs: 25 },
+    { tier: 'B',  minHotness: 66,  maxHotness: 100, windowMs: 20 },
+    { tier: 'A',  minHotness: 100, maxHotness: 150, windowMs: 15 },
+    { tier: 'S',  minHotness: 150, maxHotness: 200, windowMs: 10 },
+    { tier: 'SS', minHotness: 200, maxHotness: 350, windowMs: 7 },
+    { tier: 'Platinum', minHotness: 350, maxHotness: Infinity, windowMs: 5 },
+];
+
+/**
+ * Get the groove tier for a given hotness value.
+ *
+ * @param hotness - Current hotness value (can exceed 100)
+ * @returns The groove tier (D, C, B, A, S, SS, or Platinum)
+ */
+export function getGrooveTier(hotness: number): GrooveTier {
+    for (const tierConfig of GROOVE_TIERS) {
+        if (hotness >= tierConfig.minHotness && hotness < tierConfig.maxHotness) {
+            return tierConfig.tier;
+        }
+    }
+    // If hotness >= 350, return Platinum
+    return 'Platinum';
+}
+
+/**
+ * Get the pocket window size in milliseconds for a given hotness value.
+ *
+ * Uses linear interpolation within each tier for smooth transitions.
+ *
+ * @param hotness - Current hotness value
+ * @returns Pocket window size in milliseconds
+ */
+export function getGrooveWindowMs(hotness: number): number {
+    const tierIndex = GROOVE_TIERS.findIndex(
+        (t) => hotness >= t.minHotness && hotness < t.maxHotness
+    );
+
+    if (tierIndex === -1) {
+        // Hotness >= 350, return Platinum window
+        return GROOVE_TIERS[6].windowMs;
+    }
+
+    const tier = GROOVE_TIERS[tierIndex];
+    const nextTier = GROOVE_TIERS[tierIndex + 1];
+
+    // If this is the highest tier (SS), no interpolation needed
+    if (!nextTier) {
+        return tier.windowMs;
+    }
+
+    // Linear interpolation within the tier
+    const tierRange = tier.maxHotness - tier.minHotness;
+    const hotnessInTier = hotness - tier.minHotness;
+    const progress = hotnessInTier / tierRange; // 0 to 1 within this tier
+
+    // Interpolate between current tier window and next tier window
+    const windowDiff = tier.windowMs - nextTier.windowMs;
+    return tier.windowMs - (windowDiff * progress);
+}
+
+/**
+ * Get the minimum hotness required for a specific tier.
+ *
+ * @param tier - The groove tier
+ * @returns Minimum hotness required for that tier
+ */
+export function getMinHotnessForTier(tier: GrooveTier): number {
+    const config = GROOVE_TIERS.find((t) => t.tier === tier);
+    return config?.minHotness ?? 0;
+}
+
 /**
  * Direction of the established pocket relative to the beat
  *
@@ -2342,8 +2456,11 @@ export interface GrooveResult {
     /** How close this hit was to the pocket (0-1, 1 = perfect consistency) */
     consistency: number;
 
-    /** Current hotness/meter value (0-100) */
+    /** Current hotness/meter value (0+, can exceed 100 for higher tiers) */
     hotness: number;
+
+    /** Current groove tier based on hotness (D, C, B, A, S, or SS) */
+    tier: GrooveTier;
 
     /** Current streak length within pocket */
     streakLength: number;
@@ -2351,7 +2468,7 @@ export interface GrooveResult {
     /** Whether this hit was in the pocket window */
     inPocket: boolean;
 
-    /** Current pocket window size in seconds (changes with hotness) */
+    /** Current pocket window size in seconds (changes with tier) */
     pocketWindow: number;
 
     /**
@@ -2382,8 +2499,11 @@ export interface GrooveState {
     /** Running average offset in seconds */
     establishedOffset: number;
 
-    /** Current hotness/meter value (0-100) */
+    /** Current hotness/meter value (0+, can exceed 100 for higher tiers) */
     hotness: number;
+
+    /** Current groove tier based on hotness (D, C, B, A, S, or SS) */
+    tier: GrooveTier;
 
     /** Current streak length within pocket */
     streakLength: number;
@@ -2404,10 +2524,10 @@ export interface GrooveState {
     /** Duration of the current groove in seconds (0 if no active groove) */
     grooveDuration: number;
 
-    /** Peak hotness reached during the current groove (0-100) */
+    /** Peak hotness reached during the current groove (0+) */
     maxHotness: number;
 
-    /** Average hotness over the groove lifetime (0-100) */
+    /** Average hotness over the groove lifetime (0+) */
     avgHotness: number;
 
     /** Total hits in the current groove */
