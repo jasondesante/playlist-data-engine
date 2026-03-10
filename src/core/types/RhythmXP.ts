@@ -112,6 +112,26 @@ export interface RhythmComboConfig {
      */
     formula?: (comboLength: number) => number;
 
+    /**
+     * Whether "ok" accuracy breaks the combo streak (default: true)
+     *
+     * When true: "ok" accuracy resets combo to 0 (stricter gameplay)
+     * When false: "ok" accuracy keeps the combo going (more forgiving)
+     *
+     * Note: This only affects combo streaks - the groove meter is NOT affected.
+     * "ok" accuracy still contributes positively to groove hotness.
+     *
+     * @example
+     * ```typescript
+     * // Default behavior - ok breaks combo
+     * okBreaksCombo: true
+     *
+     * // Forgiving mode - ok keeps combo alive
+     * okBreaksCombo: false
+     * ```
+     */
+    okBreaksCombo: boolean;
+
     /** Combo end bonus configuration */
     endBonus: ComboEndBonusConfig;
 }
@@ -419,6 +439,7 @@ export const DEFAULT_RHYTHM_XP_CONFIG: RhythmXPConfig = {
     combo: {
         enabled: true,
         cap: 5.0,
+        okBreaksCombo: true,  // Default: "ok" accuracy breaks combo (stricter gameplay)
         endBonus: {
             enabled: true,
             formula: DEFAULT_COMBO_END_BONUS_FORMULA,
@@ -455,6 +476,7 @@ function mergeComboConfig(
         enabled: userCombo.enabled ?? defaults.enabled,
         cap: userCombo.cap ?? defaults.cap,
         formula: userCombo.formula ?? defaults.formula,
+        okBreaksCombo: userCombo.okBreaksCombo ?? defaults.okBreaksCombo,
         endBonus: {
             ...defaults.endBonus,
             ...userCombo.endBonus,
@@ -523,4 +545,60 @@ export function mergeRhythmXPConfig(
         groove: mergeGrooveConfig(userConfig.groove),
         maxMultiplier: userConfig.maxMultiplier ?? DEFAULT_RHYTHM_XP_CONFIG.maxMultiplier,
     };
+}
+
+// ============================================================================
+// Combo Breaking Helper
+// ============================================================================
+
+/**
+ * Determine if an accuracy level should break the combo streak.
+ *
+ * This helper function centralizes the combo-breaking logic so frontends
+ * don't have to duplicate it. It considers both the accuracy level and
+ * the `okBreaksCombo` configuration option.
+ *
+ * @param accuracy - The accuracy level of the hit
+ * @param okBreaksCombo - Whether "ok" accuracy breaks combo (default: true from config)
+ * @returns true if the accuracy should break the combo, false otherwise
+ *
+ * @example
+ * ```typescript
+ * import { shouldAccuracyBreakCombo, RhythmXPCalculator } from 'playlist-data-engine';
+ *
+ * const rhythmXP = new RhythmXPCalculator();
+ * const config = rhythmXP.getConfig();
+ *
+ * // Check if accuracy breaks combo
+ * if (shouldAccuracyBreakCombo(buttonResult.accuracy, config.combo.okBreaksCombo)) {
+ *   // Combo breaks - award end bonus before resetting
+ *   const bonus = rhythmXP.calculateComboEndBonus(currentCombo);
+ *   updater.addXP(character, bonus.bonusXP, 'combo_bonus');
+ *   currentCombo = 0;
+ * } else {
+ *   currentCombo++;
+ * }
+ *
+ * // Using with custom okBreaksCombo setting
+ * const customConfig = { combo: { okBreaksCombo: false } };
+ * const rhythmXP = new RhythmXPCalculator(customConfig);
+ * // Now "ok" accuracy will NOT break combo
+ * ```
+ */
+export function shouldAccuracyBreakCombo(
+    accuracy: BeatAccuracy,
+    okBreaksCombo: boolean = DEFAULT_RHYTHM_XP_CONFIG.combo.okBreaksCombo
+): boolean {
+    // miss and wrongKey always break combo
+    if (accuracy === 'miss' || accuracy === 'wrongKey') {
+        return true;
+    }
+
+    // ok breaks combo only if okBreaksCombo is true
+    if (accuracy === 'ok') {
+        return okBreaksCombo;
+    }
+
+    // perfect, great, good never break combo
+    return false;
 }

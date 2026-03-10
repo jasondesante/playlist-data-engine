@@ -198,7 +198,8 @@ import {
   BeatStream,
   GrooveAnalyzer,
   RhythmXPCalculator,
-  CharacterUpdater
+  CharacterUpdater,
+  shouldAccuracyBreakCombo
 } from 'playlist-data-engine';
 
 // ===== SETUP =====
@@ -227,8 +228,10 @@ function onButtonPress(timestamp: number) {
   );
 
   // 3. Check if combo is about to break (before updating)
+  // Use shouldAccuracyBreakCombo helper - respects okBreaksCombo config setting
   const comboBeforeHit = comboCount;
-  const isComboBreaker = buttonResult.accuracy === 'miss' || buttonResult.accuracy === 'wrongKey';
+  const config = rhythmXP.getConfig();
+  const isComboBreaker = shouldAccuracyBreakCombo(buttonResult.accuracy, config.combo.okBreaksCombo);
 
   // 4. Update combo
   if (isComboBreaker) {
@@ -317,6 +320,7 @@ import { RhythmXPCalculator, mergeRhythmXPConfig, type RhythmXPConfig } from 'pl
 // Default values are tuned for D&D 5e progression:
 // - xpRatio: 0.1 (10 score points = 1 character XP)
 // - Combo cap: 5.0x at 200 combo
+// - okBreaksCombo: true ("ok" accuracy breaks combo streaks)
 // - Groove end bonus: enabled
 
 // ===== CUSTOM CONFIGURATION =====
@@ -338,6 +342,7 @@ const customConfig: Partial<RhythmXPConfig> = {
   combo: {
     enabled: true,
     cap: 5.0,  // Max 5x multiplier
+    okBreaksCombo: true,  // "ok" accuracy breaks combo (default: true). Set to false for easier gameplay.
     // Custom formula (optional)
     // formula: (combo) => 1 + Math.log10(combo + 1),
     endBonus: {
@@ -467,9 +472,12 @@ const finalStats = rhythmXP.endSession();
 ### Stateless Usage (Frontend Tracks Combo)
 
 ```typescript
-import { RhythmXPCalculator } from 'playlist-data-engine';
+import { RhythmXPCalculator, shouldAccuracyBreakCombo } from 'playlist-data-engine';
 
 const rhythmXP = new RhythmXPCalculator({ xpRatio: 0.1 });
+
+// Get config for combo breaking behavior
+const config = rhythmXP.getConfig();
 
 // Frontend manages combo tracking
 let currentCombo = 0;
@@ -481,8 +489,8 @@ function onHit(accuracy: 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKe
     grooveHotness,
   });
 
-  // Frontend updates combo
-  if (accuracy === 'miss' || accuracy === 'wrongKey') {
+  // Frontend updates combo using helper function
+  if (shouldAccuracyBreakCombo(accuracy, config.combo.okBreaksCombo)) {
     // Get end bonus before resetting
     if (currentCombo > 0) {
       const bonus = rhythmXP.calculateComboEndBonus(currentCombo);
@@ -495,6 +503,35 @@ function onHit(accuracy: 'perfect' | 'great' | 'good' | 'ok' | 'miss' | 'wrongKe
 
   return result;
 }
+```
+
+### Combo Breaking Behavior
+
+The `okBreaksCombo` config option controls whether "ok" accuracy breaks the combo streak:
+
+| Setting | Behavior | Use Case |
+|---------|----------|----------|
+| `true` (default) | "ok" resets combo to 0 | Stricter gameplay, rewards precision |
+| `false` | "ok" keeps combo going | More forgiving, easier for beginners |
+
+**Important:** The groove meter is NOT affected by this setting. "ok" accuracy always contributes positively to the groove meter regardless of `okBreaksCombo`. This keeps the two systems independent:
+- **Combo**: Rewards consecutive precise hits (affected by `okBreaksCombo`)
+- **Groove**: Rewards consistent timing feel (always counts "ok" as valid)
+
+```typescript
+import { RhythmXPCalculator, shouldAccuracyBreakCombo } from 'playlist-data-engine';
+
+// Stricter mode (default): "ok" breaks combo
+const strictRhythmXP = new RhythmXPCalculator();
+const strictConfig = strictRhythmXP.getConfig();
+console.log(shouldAccuracyBreakCombo('ok', strictConfig.combo.okBreaksCombo)); // true
+
+// Easier mode: "ok" keeps combo going
+const easyRhythmXP = new RhythmXPCalculator({
+  combo: { okBreaksCombo: false }
+});
+const easyConfig = easyRhythmXP.getConfig();
+console.log(shouldAccuracyBreakCombo('ok', easyConfig.combo.okBreaksCombo)); // false
 ```
 
 ### Expected XP Rates (Default Config)

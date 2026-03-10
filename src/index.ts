@@ -319,6 +319,7 @@ export type {
 export {
     DEFAULT_RHYTHM_XP_CONFIG,
     mergeRhythmXPConfig,
+    shouldAccuracyBreakCombo,
 } from './core/types/RhythmXP.js';
 
 // Combat result types
