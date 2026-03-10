@@ -107,6 +107,7 @@ export const sampleTrack: PlaylistTrack = {
     token_id: '1',
     platform: 'sound',
     image_url: 'https://example.com/image.jpg',
+    image_thumb_url: 'https://example.com/thumb.jpg',
     audio_url: 'https://example.com/audio.mp3',
     duration: 180,
     tags: ['rock', 'test']

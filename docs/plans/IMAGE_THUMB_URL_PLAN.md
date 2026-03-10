@@ -49,9 +49,9 @@ Add an optional `image_thumb_url` field to parsed track objects. This field maps
 
 ## Phase 3: Test Fixtures
 
-- [ ] **3.1 Update Sample Test Data**
-  - [ ] File: `tests/fixtures/sampleData.ts`
-  - [ ] Add `image_thumb_url` to `sampleTrack` object
+- [x] **3.1 Update Sample Test Data**
+  - [x] File: `tests/fixtures/sampleData.ts`
+  - [x] Add `image_thumb_url` to `sampleTrack` object
 
 ---
 
