@@ -25,6 +25,7 @@ export const PlaylistTrackSchema = z.object({
     description: z.string().optional(),
     album: z.string().optional(),
     image_url: z.string().url(),
+    image_thumb_url: z.string().url().optional(),
     audio_url: z.string().url(),
     duration: z.number().nonnegative(),
     genre: z.string(),

@@ -32,9 +32,9 @@ Add an optional `image_thumb_url` field to parsed track objects. This field maps
 
 ## Phase 2: Validation & Utilities
 
-- [ ] **2.1 Update Validation Schema**
-  - [ ] File: `src/utils/validators.ts`
-  - [ ] Add `image_thumb_url: z.string().url().optional()` to `PlaylistTrackSchema`
+- [x] **2.1 Update Validation Schema**
+  - [x] File: `src/utils/validators.ts`
+  - [x] Add `image_thumb_url: z.string().url().optional()` to `PlaylistTrackSchema`
 
 - [ ] **2.2 Update Playlist Utilities**
   - [ ] File: `src/utils/playlistUtils.ts`
