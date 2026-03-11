@@ -450,9 +450,9 @@ export const DEFAULT_RHYTHM_XP_CONFIG: RhythmXPConfig = {
         perHitScale: 1.0,
         endBonus: {
             enabled: true,
-            maxStreakWeight: 1,
-            avgHotnessWeight: 1,
-            durationWeight: 0.5,
+            maxStreakWeight: 2,
+            avgHotnessWeight: 2,
+            durationWeight: 1,
         },
     },
     maxMultiplier: 5.0,
