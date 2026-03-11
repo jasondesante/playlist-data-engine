@@ -1510,11 +1510,8 @@ export class ExtensionManager {
      * @private
      */
     private getDefaultIdentifierKey(category: ImageSupportedCategory): string {
-        // Spells and class spell lists use 'id' as their identifier
-        if (category === 'spells' || category.startsWith('spells.')) {
-            return 'id';
-        }
-        // All other categories use 'name'
+        // All categories use 'name' as their identifier
+        // Note: SPELL_DATABASE uses 'name' as the key and property, not 'id'
         return 'name';
     }
 
