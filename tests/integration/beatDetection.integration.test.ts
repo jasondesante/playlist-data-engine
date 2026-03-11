@@ -551,17 +551,17 @@ describe('Beat Detection Integration Tests', () => {
             expect(thresholds.ok).toBeGreaterThan(HARD_ACCURACY_THRESHOLDS.ok);
 
             // Test accuracy classification with easy preset
-            // Easy: perfect=±35ms, great=±70ms, good=±110ms, ok=±150ms
-            const perfectResult = beatStream.checkButtonPress(1.030); // 30ms off
+            // Easy: perfect=±20ms, great=±35ms, good=±60ms, ok=±125ms
+            const perfectResult = beatStream.checkButtonPress(1.015); // 15ms off
             expect(perfectResult.accuracy).toBe('perfect');
 
-            const greatResult = beatStream.checkButtonPress(1.050); // 50ms off
+            const greatResult = beatStream.checkButtonPress(1.030); // 30ms off
             expect(greatResult.accuracy).toBe('great');
 
-            const goodResult = beatStream.checkButtonPress(1.090); // 90ms off
+            const goodResult = beatStream.checkButtonPress(1.050); // 50ms off
             expect(goodResult.accuracy).toBe('good');
 
-            const okResult = beatStream.checkButtonPress(1.130); // 130ms off
+            const okResult = beatStream.checkButtonPress(1.100); // 100ms off
             expect(okResult.accuracy).toBe('ok');
 
             const missResult = beatStream.checkButtonPress(1.200); // 200ms off

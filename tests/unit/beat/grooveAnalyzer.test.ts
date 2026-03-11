@@ -13,12 +13,18 @@ import type {
     GrooveAnalyzerOptions,
     GrooveDirection,
     GrooveStats,
+    BeatAccuracy,
 } from '../../../src/core/types/BeatMap.js';
 import { DEFAULT_GROOVE_OPTIONS } from '../../../src/core/types/BeatMap.js';
 
 // Helper constants for timing
 const MS = 0.001; // 1ms in seconds
 const DEFAULT_BPM = 120;
+
+// Helper function for recording hits with default currentTime and accuracy
+const recordHitHelper = (analyzer: GrooveAnalyzer, offset: number, bpm: number = DEFAULT_BPM, accuracy: BeatAccuracy = 'perfect', currentTime: number = 0) => {
+    return analyzer.recordHit(offset, bpm, currentTime, accuracy);
+};
 
 describe('GrooveAnalyzer', () => {
     let analyzer: GrooveAnalyzer;
@@ -792,16 +798,17 @@ describe('GrooveAnalyzer', () => {
             });
         });
 
-        describe('Hotness clamped to 0-100', () => {
-            it('should not exceed 100 hotness', () => {
+        describe('Hotness can exceed 100 for higher tiers (uncapped)', () => {
+            it('should exceed 100 hotness for A tier and above', () => {
                 // Keep hitting in pocket to build hotness
                 for (let i = 0; i < 15; i++) {
                     analyzer.recordHit(30 * MS, DEFAULT_BPM);
                 }
 
                 const result = analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                // 14 hits after pocket = 8 * 14 = 112, but should be clamped to 100
-                expect(result.hotness).toBe(100);
+                // 14 hits after pocket = 8 * 14 = 112 - hotness is now uncapped
+                expect(result.hotness).toBe(112);
+                expect(result.tier).toBe('A'); // A tier is 100-150
             });
 
             it('should not go below 0 hotness from pocket breaks', () => {
@@ -845,22 +852,22 @@ describe('GrooveAnalyzer', () => {
                 expect(result.hotness).toBe(0);
             });
 
-            it('should properly clamp after building to max then losing', () => {
-                // Build to max hotness
+            it('should properly reduce after building high hotness then losing', () => {
+                // Build to high hotness (exceeds 100)
                 for (let i = 0; i < 15; i++) {
                     analyzer.recordHit(30 * MS, DEFAULT_BPM);
                 }
-                expect(analyzer.getState().hotness).toBe(100);
+                expect(analyzer.getState().hotness).toBe(104); // 13 hits * 8 = 104
 
-                // Hit in pocket should stay at 100
+                // Hit in pocket should increase hotness further
                 const result = analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                expect(result.hotness).toBe(100);
+                expect(result.hotness).toBe(112); // 104 + 8 = 112
 
-                // Breaking should reduce from 100
+                // Breaking should reduce from 112
                 const state = analyzer.getState();
                 const farOffset = 30 * MS + (state.pocketWindow * 3);
                 const breakResult = analyzer.recordHit(farOffset, DEFAULT_BPM);
-                expect(breakResult.hotness).toBe(80); // 100 - 20
+                expect(breakResult.hotness).toBe(92); // 112 - 20
             });
         });
 
@@ -872,11 +879,11 @@ describe('GrooveAnalyzer', () => {
                 analyzer.recordHit(30 * MS, DEFAULT_BPM);
 
                 const state = analyzer.getState();
-                // At 120 BPM: beatDuration = 0.5s, 1/32 note = 62.5ms
-                // baseWindow = 62.5ms * 0.03125 * 8 = 15.625ms
-                // At 0% hotness: pocketWindow = baseWindow = ~15.6ms
-                expect(state.pocketWindow).toBeGreaterThan(0.014); // At least 14ms
-                expect(state.pocketWindow).toBeLessThan(0.020); // Less than 20ms
+                // At 120 BPM with tier-based windows:
+                // D tier (0-33 hotness): windowMs = 31ms
+                // With BPM scale factor 1.0, pocketWindow = 31ms / 1000 = 0.031 seconds
+                expect(state.pocketWindow).toBeGreaterThan(0.028); // At least 26ms
+                expect(state.pocketWindow).toBeLessThan(0.034); // Less than 34ms
             });
 
             it('should have smaller pocket window at higher hotness', () => {
@@ -898,20 +905,28 @@ describe('GrooveAnalyzer', () => {
                 expect(windowAt24Hotness).toBeLessThan(windowAt8Hotness);
             });
 
-            it('should have minimum pocket window at 100% hotness', () => {
-                // Build to max hotness
-                for (let i = 0; i < 15; i++) {
-                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
+            it('should have tier A pocket window at 100 hotness (tier boundary)', () => {
+                // Use custom gain to get exactly 100 hotness (entry to tier A)
+                // With minHitsForPocket=3, hit 3 establishes pocket AND gains hotness
+                // Need 100/10 = 10 in-pocket hits total (including hit 3)
+                const customAnalyzer = new GrooveAnalyzer({ hotnessGainPerHit: 10 });
+
+                // Hit 3 establishes pocket and starts hotness = 10
+                // Hits 3-12 = 10 hits * 10 = 100 hotness
+                // So we need 12 total hits (2 before pocket + 10 in-pocket)
+                for (let i = 0; i < 12; i++) {
+                    customAnalyzer.recordHit(30 * MS, DEFAULT_BPM);
                 }
 
-                const state = analyzer.getState();
+                const state = customAnalyzer.getState();
                 expect(state.hotness).toBe(100);
 
-                // At 100% hotness, pocketWindow should be at minimum (15ms by default)
-                expect(state.pocketWindow).toBeCloseTo(DEFAULT_GROOVE_OPTIONS.minPocketWindowSeconds, 3);
+                // At 100 hotness (tier A entry), pocketWindow should be 15ms (tier A window)
+                // Note: Tier A window is 15ms = 0.015s at 120 BPM
+                expect(state.pocketWindow).toBeCloseTo(0.015, 3);
             });
 
-            it('should calculate progressive tightening correctly at 50% hotness', () => {
+            it('should calculate progressive tightening correctly at 50 hotness (within tier C)', () => {
                 // Use custom gain to get exactly 50 hotness
                 // Need 50/10 = 5 in-pocket hits after pocket establishment
                 // 3 hits to establish + 5 hits = 8 hits total
@@ -929,18 +944,14 @@ describe('GrooveAnalyzer', () => {
                 const state = customAnalyzer.getState();
                 expect(state.hotness).toBe(50);
 
-                // At 50% hotness:
-                // pocketWindow = baseWindow - (baseWindow - minWindow) * 0.5
-                // pocketWindow = (baseWindow + minWindow) / 2
-
-                // At 120 BPM:
-                // beatDuration = 0.5s, 1/32 note = 62.5ms
-                // baseWindow = 62.5ms * 0.03125 * 8 = 15.625ms
-                // minWindow = 15ms
-                // At 50%: (15.625 + 15) / 2 = 15.3125ms
-
-                expect(state.pocketWindow).toBeGreaterThan(0.015); // Above min
-                expect(state.pocketWindow).toBeLessThan(0.016); // Below base
+                // At 50 hotness, we're in tier C (33-66 hotness)
+                // Interpolation is WITHIN the tier toward the NEXT tier
+                // Tier C (33-66): 25ms window, Tier B (66-100): 20ms window
+                // Progress through tier C: (50-33)/(66-33) = 17/33 ≈ 0.515
+                // Window = 25 - (25-20) * 0.515 = 25 - 2.575 = 22.425ms ≈ 0.0224s
+                expect(state.pocketWindow).toBeGreaterThan(0.020); // Above tier B (next tier)
+                expect(state.pocketWindow).toBeLessThan(0.025); // Below tier C (current tier)
+                expect(state.pocketWindow).toBeCloseTo(0.0224, 3); // Should be ~22.4ms
             });
 
             it('should make it harder to stay in pocket at high hotness', () => {
@@ -1844,9 +1855,10 @@ describe('GrooveAnalyzer', () => {
                     hotnessLossOnBreak: 50, // High loss to end groove quickly
                 });
 
-                // Build groove
+                // Build groove with incrementing currentTime for duration tracking
+                const beatInterval = 60 / DEFAULT_BPM; // 0.5s at 120 BPM
                 for (let i = 0; i < 10; i++) {
-                    quickEndAnalyzer.recordHit(30 * MS, DEFAULT_BPM);
+                    quickEndAnalyzer.recordHit(30 * MS, DEFAULT_BPM, i * beatInterval);
                 }
 
                 const hotnessBefore = quickEndAnalyzer.getState().hotness;
@@ -1856,7 +1868,8 @@ describe('GrooveAnalyzer', () => {
                 // With hotnessLossOnBreak: 50, two hits should drain hotness to 0
                 let endingResult: GrooveResult | null = null;
                 for (let i = 0; i < 10; i++) {
-                    const result = quickEndAnalyzer.recordHit(200 * MS, DEFAULT_BPM);
+                    const currentTime = (10 + i) * beatInterval;
+                    const result = quickEndAnalyzer.recordHit(200 * MS, DEFAULT_BPM, currentTime);
                     if (result.endedGrooveStats) {
                         endingResult = result;
                         break;

@@ -918,33 +918,33 @@ describe('BeatStream', () => {
 
         it('should classify accuracy correctly with easy preset', () => {
             // Create a beat map with wider intervals (1.0s) to test easy preset properly
-            // Easy: perfect=±35ms, great=±70ms, good=±110ms, ok=±150ms
+            // Easy: perfect=±20ms, great=±35ms, good=±60ms, ok=±125ms
             const wideBeatMap = createMockBeatMap([0, 1.0, 2.0, 3.0, 4.0, 5.0], 10);
             const stream = new BeatStream(wideBeatMap, audioContext, {
                 difficultyPreset: 'easy',
             });
 
-            // Within perfect (±35ms)
-            const perfectResult = stream.checkButtonPress(1.0 + 0.030);
+            // Within perfect (±20ms)
+            const perfectResult = stream.checkButtonPress(1.0 + 0.015);
             expect(perfectResult.accuracy).toBe('perfect');
             expect(perfectResult.matchedBeat.timestamp).toBe(1.0);
 
-            // Within great (±70ms) but outside perfect
-            const greatResult = stream.checkButtonPress(1.0 + 0.050);
+            // Within great (±35ms) but outside perfect
+            const greatResult = stream.checkButtonPress(1.0 + 0.030);
             expect(greatResult.accuracy).toBe('great');
             expect(greatResult.matchedBeat.timestamp).toBe(1.0);
 
-            // Within good (±110ms) but outside great
-            const goodResult = stream.checkButtonPress(1.0 + 0.090);
+            // Within good (±60ms) but outside great
+            const goodResult = stream.checkButtonPress(1.0 + 0.050);
             expect(goodResult.accuracy).toBe('good');
             expect(goodResult.matchedBeat.timestamp).toBe(1.0);
 
-            // Within ok (±150ms) but outside good
-            const okResult = stream.checkButtonPress(1.0 + 0.130);
+            // Within ok (±125ms) but outside good
+            const okResult = stream.checkButtonPress(1.0 + 0.100);
             expect(okResult.accuracy).toBe('ok');
             expect(okResult.matchedBeat.timestamp).toBe(1.0);
 
-            // Outside ok (±150ms) = miss
+            // Outside ok (±125ms) = miss
             const missResult = stream.checkButtonPress(1.0 + 0.200);
             expect(missResult.accuracy).toBe('miss');
         });
@@ -1243,9 +1243,10 @@ describe('BeatStream', () => {
             // Change to easy preset
             stream.setDifficulty({ preset: 'easy' });
 
-            // With easy preset, 80ms offset is good (good threshold is ±110ms, great is ±70ms)
+            // With easy preset: perfect=±20ms, great=±35ms, good=±60ms, ok=±125ms
+            // 80ms offset is within ok (±125ms) but outside good (±60ms)
             result = stream.checkButtonPress(1.080);
-            expect(result.accuracy).toBe('good');
+            expect(result.accuracy).toBe('ok');
         });
 
         it('should work while stream is running', () => {

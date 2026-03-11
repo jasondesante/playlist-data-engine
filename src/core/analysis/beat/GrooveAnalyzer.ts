@@ -132,14 +132,14 @@ export class GrooveAnalyzer {
      * @param accuracy - Accuracy level from BeatStream.checkButtonPress(). When 'miss' or 'wrongKey', treats as a miss.
      * @returns GrooveResult with current groove state and hit analysis
      */
-    recordHit(offset: number, bpm: number, currentTime: number, accuracy: BeatAccuracy): GrooveResult {
+    recordHit(offset: number, bpm: number, currentTime: number = 0, accuracy: BeatAccuracy = 'perfect'): GrooveResult {
         this.hitCount++;
         this.lastBpm = bpm;
 
         // If accuracy is 'miss' or 'wrongKey', treat as a miss instead of a valid hit
         // This ensures missed beats and wrong key presses hurt the groove score
         if (accuracy === 'miss' || accuracy === 'wrongKey') {
-            return this.recordMiss();
+            return this.recordMiss(currentTime);
         }
 
         // Store previous direction before updating (for direction change detection)
@@ -257,14 +257,46 @@ export class GrooveAnalyzer {
      *
      * Reduces hotness by configured miss penalty (default: 10).
      * Resets streak but does NOT clear the established pocket.
+     * Captures endedGrooveStats if the miss ends the groove (hotness drops to 0).
      *
+     * @param currentTime - Current audio time for groove duration tracking (optional)
      * @returns GrooveResult representing current state after miss
      */
-    recordMiss(): GrooveResult {
+    recordMiss(currentTime?: number): GrooveResult {
+        // Track values BEFORE modifying them (for groove end stats)
+        const previousHotness = this.hotness;
+        const previousStreak = this.streakLength;
+        const wasGrooveActive = previousHotness > 0 && this.grooveStartTime !== null && this.grooveHitCount > 0;
+
+        // Reduce hotness
         this.hotness = Math.max(0, this.hotness - this.options.hotnessLossOnMiss);
         this.streakLength = 0;
 
         const pocketWindow = this.calculatePocketWindow(this.lastBpm);
+
+        // Check if this miss ended the groove
+        let endedGrooveStats: GrooveStats | undefined;
+
+        if (wasGrooveActive && this.hotness === 0) {
+            // Groove is ending due to this miss - capture stats BEFORE resetting
+            const endTime = currentTime ?? (this.hitCount * (60 / this.lastBpm));
+            const avgHotness = this.hotnessSamples.length > 0
+                ? this.hotnessSamples.reduce((a, b) => a + b, 0) / this.hotnessSamples.length
+                : 0;
+
+            endedGrooveStats = {
+                maxStreak: previousStreak,
+                maxHotness: this.maxHotness,
+                avgHotness,
+                duration: endTime - this.grooveStartTime!,
+                totalHits: this.grooveHitCount,
+                startTime: this.grooveStartTime!,
+                endTime,
+            };
+
+            // Reset groove state
+            this.resetGrooveStats();
+        }
 
         return {
             pocketDirection: this.pocketDirection,
@@ -275,6 +307,7 @@ export class GrooveAnalyzer {
             streakLength: this.streakLength,
             inPocket: false, // Miss is never in pocket
             pocketWindow,
+            endedGrooveStats,
         };
     }
 

@@ -525,18 +525,18 @@ describe('RhythmXPCalculator', () => {
         });
 
         it('should calculate bonus using weighted formula', () => {
-            // Default weights: maxStreakWeight: 5, avgHotnessWeight: 5, durationWeight: 5
+            // Default weights: maxStreakWeight: 2, avgHotnessWeight: 2, durationWeight: 1
             const result = calculator.calculateGrooveEndBonus({
-                maxStreak: 50, // 50 * 5 = 250
-                avgHotness: 80, // 80 * 5 = 400
-                duration: 10, // 10 * 5 = 50
+                maxStreak: 50, // 50 * 2 = 100
+                avgHotness: 80, // 80 * 2 = 160
+                duration: 10, // 10 * 1 = 10
                 totalHits: 100,
             });
 
-            // bonusScore = 250 + 400 + 50 = 700
-            // bonusXP = 700 * 0.1 = 70
-            expect(result.bonusScore).toBe(700);
-            expect(result.bonusXP).toBe(70);
+            // bonusScore = 100 + 160 + 10 = 270
+            // bonusXP = 270 * 0.1 = 27
+            expect(result.bonusScore).toBe(270);
+            expect(result.bonusXP).toBe(27);
         });
 
         it('should handle zero values', () => {
@@ -577,16 +577,16 @@ describe('RhythmXPCalculator', () => {
             });
 
             const result = customCalculator.calculateGrooveEndBonus({
-                maxStreak: 50, // 50 * 5 = 250
-                avgHotness: 80, // 80 * 5 = 400
-                duration: 10, // 10 * 5 = 50
+                maxStreak: 50, // 50 * 2 = 100
+                avgHotness: 80, // 80 * 2 = 160
+                duration: 10, // 10 * 1 = 10
                 totalHits: 100,
             });
 
-            // bonusScore = 250 + 400 + 50 = 700
-            // bonusXP = 700 * 0.5 = 350
-            expect(result.bonusScore).toBe(700);
-            expect(result.bonusXP).toBe(350);
+            // bonusScore = 100 + 160 + 10 = 270
+            // bonusXP = 270 * 0.5 = 135
+            expect(result.bonusScore).toBe(270);
+            expect(result.bonusXP).toBe(135);
         });
 
         it('should use custom weights', () => {
