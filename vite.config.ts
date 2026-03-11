@@ -12,7 +12,7 @@ export default defineConfig({
       fileName: (format: 'es' | 'cjs') => `playlist-data-engine.${format === 'es' ? 'mjs' : 'js'}`
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: ['react', 'react-dom', 'essentia.js'],
       output: {
         globals: {
           react: 'React',

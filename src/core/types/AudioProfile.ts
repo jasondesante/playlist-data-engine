@@ -109,3 +109,40 @@ export interface FrequencyBands {
     /** Treble frequencies (4kHz - 14kHz) */
     treble: number[];
 }
+
+/**
+ * A detected genre or style tag with its confidence score
+ */
+export interface GenreTag {
+    /** The name of the genre (e.g. "rock", "jazz", "electronic") */
+    name: string;
+
+    /** Confidence score from the ML model (0.0 to 1.0) */
+    confidence: number;
+}
+
+/**
+ * The output profile from the ML-based GenreAnalyzer
+ */
+export interface GenreProfile {
+    /** The Top N genres detected in the audio */
+    genres: GenreTag[];
+
+    /** The single most dominant genre detected */
+    primary_genre: string;
+
+    /** Analysis metadata */
+    analysis_metadata: {
+        /** The name of the ML model used (e.g. "MTG-Jamendo genre") */
+        model_used: string;
+
+        /** Duration of audio analyzed in seconds */
+        duration_analyzed: number;
+
+        /** Number of audio frames processed by the model */
+        frames_analyzed: number;
+
+        /** Timestamp of analysis */
+        analyzed_at: string;
+    };
+}

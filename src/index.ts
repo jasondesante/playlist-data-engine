@@ -19,7 +19,9 @@ export type {
     AudioProfile,
     ColorPalette,
     FrequencyBands,
-    AudioTimelineEvent
+    AudioTimelineEvent,
+    GenreProfile,
+    GenreTag
 } from './core/types/AudioProfile.js';
 
 // Beat detection types
@@ -480,6 +482,7 @@ export { PartyAnalyzer, type PartyAnalysis } from './core/combat/PartyAnalyzer.j
 export { PlaylistParser } from './core/parser/PlaylistParser.js';
 export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
 export { AudioAnalyzer, type AudioAnalyzerOptions, type SamplingStrategy } from './core/analysis/AudioAnalyzer.js';
+export { GenreAnalyzer, type GenreAnalyzerOptions } from './core/analysis/GenreAnalyzer.js';
 export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
 export { ColorExtractor } from './core/analysis/ColorExtractor.js';
 

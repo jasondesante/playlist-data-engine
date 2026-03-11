@@ -64,6 +64,7 @@ A concise overview of all main exports from the library, organized by category.
 | `MetadataExtractor` | Extract metadata from track objects | [Core Modules](#core-modules) |
 | `getAudioUrls`, `getImageUrls`, etc. | Simple playlist data extraction utilities | [Core Modules](#core-modules) |
 | `AudioAnalyzer` | Analyze audio frequency characteristics | [Core Modules](#core-modules) |
+| `GenreAnalyzer` | Semantic genre classification using ML models | [Core Modules](#core-modules) |
 | `SpectrumScanner` | Analyze frequency bands | [Core Modules](#core-modules) |
 | `ColorExtractor` | Extract color palettes from images | [Core Modules](#core-modules) |
 | `CharacterGenerator` | Generate D&D 5e characters deterministically | [Core Modules](#core-modules) |
@@ -191,7 +192,7 @@ All TypeScript types are exported, including:
 
 **Character Types:** `CharacterSheet`, `AbilityScores`, `Skill`, `ProficiencyLevel`, `Race`, `Class`, `Ability`, `GameMode` — see [Data Types](#data-types)
 
-**Generator Types:** `CharacterGeneratorOptions` (includes `gameMode`), `AudioProfile`, `ColorPalette`, `FrequencyBands` — see [Data Types](#data-types)
+**Generator Types:** `CharacterGeneratorOptions` (includes `gameMode`), `AudioProfile`, `ColorPalette`, `FrequencyBands`, `GenreProfile`, `GenreTag` — see [Data Types](#data-types)
 
 **Context Types:** `EnvironmentalContext`, `GamingContext`, `ListeningSession` — see [Data Types](#data-types)
 
@@ -254,6 +255,29 @@ Result of the `AudioAnalyzer`. Used to generate characters.
 | `zero_crossing_rate?` | number | Advanced metric: zero crossing rate |
 | `color_palette?` | ColorPalette | Color palette extracted from artwork |
 | `analysis_metadata` | object | Duration, buffer status, sample positions, timestamp |
+
+### GenreProfile
+
+*Location:* *[src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)*
+
+Result of the `GenreAnalyzer`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `genres` | `GenreTag[]` | Array of matched genres (name and confidence) |
+| `primary_genre` | `string` | The highest-confidence genre tag |
+| `analysis_metadata` | `object` | Duration, model URL, timestamp |
+
+### GenreTag
+
+*Location:* *[src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)*
+
+Individual probability match.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `string` | Genre or subgenre name |
+| `confidence` | `number` | Confidence probability of the match (0.0 - 1.0) |
 
 ### SamplingStrategy
 
