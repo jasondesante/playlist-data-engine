@@ -91,6 +91,8 @@ export type {
     GrooveState,
     GrooveAnalyzerOptions,
     GroovePenaltyConfig,
+    GrooveTier,
+    GrooveTierConfig,
 } from './core/types/BeatMap.js';
 
 // Beat detection constants
@@ -139,6 +141,11 @@ export {
     HARD_GROOVE_PENALTIES,
     GROOVE_PENALTY_PRESETS,
     getGroovePenaltiesForPreset,
+    // Groove tier system
+    GROOVE_TIERS,
+    getGrooveTier,
+    getMinHotnessForTier,
+    getGrooveWindowMs,
 } from './core/types/BeatMap.js';
 
 // Character types
