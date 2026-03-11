@@ -525,18 +525,18 @@ describe('RhythmXPCalculator', () => {
         });
 
         it('should calculate bonus using weighted formula', () => {
-            // Default weights: maxStreakWeight: 2, avgHotnessWeight: 2, durationWeight: 1
+            // Default weights: maxStreakWeight: 0.5, avgHotnessWeight: 0.5, durationWeight: 0.25
             const result = calculator.calculateGrooveEndBonus({
-                maxStreak: 50, // 50 * 2 = 100
-                avgHotness: 80, // 80 * 2 = 160
-                duration: 10, // 10 * 1 = 10
+                maxStreak: 50, // 50 * 0.5 = 25
+                avgHotness: 80, // 80 * 0.5 = 40
+                duration: 10, // 10 * 0.25 = 2.5
                 totalHits: 100,
             });
 
-            // bonusScore = 100 + 160 + 10 = 270
-            // bonusXP = 270 * 0.1 = 27
-            expect(result.bonusScore).toBe(270);
-            expect(result.bonusXP).toBe(27);
+            // bonusScore = 25 + 40 + 2.5 = 67.5
+            // bonusXP = 67.5 * 0.1 = 6.75
+            expect(result.bonusScore).toBe(67.5);
+            expect(result.bonusXP).toBe(6.75);
         });
 
         it('should handle zero values', () => {
@@ -577,16 +577,16 @@ describe('RhythmXPCalculator', () => {
             });
 
             const result = customCalculator.calculateGrooveEndBonus({
-                maxStreak: 50, // 50 * 2 = 100
-                avgHotness: 80, // 80 * 2 = 160
-                duration: 10, // 10 * 1 = 10
+                maxStreak: 50, // 50 * 0.5 = 25
+                avgHotness: 80, // 80 * 0.5 = 40
+                duration: 10, // 10 * 0.25 = 2.5
                 totalHits: 100,
             });
 
-            // bonusScore = 100 + 160 + 10 = 270
-            // bonusXP = 270 * 0.5 = 135
-            expect(result.bonusScore).toBe(270);
-            expect(result.bonusXP).toBe(135);
+            // bonusScore = 25 + 40 + 2.5 = 67.5
+            // bonusXP = 67.5 * 0.5 = 33.75
+            expect(result.bonusScore).toBe(67.5);
+            expect(result.bonusXP).toBe(33.75);
         });
 
         it('should use custom weights', () => {
