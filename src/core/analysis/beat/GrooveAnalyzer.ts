@@ -67,6 +67,7 @@ export class GrooveAnalyzer {
     // Groove lifetime tracking fields (for groove end bonus calculation)
     private grooveStartTime: number | null = null;      // When current groove started (audio time)
     private maxHotness: number = 0;                     // Peak hotness during groove
+    private maxGrooveStreak: number = 0;                // Peak streak during groove
     private hotnessSamples: number[] = [];              // All hotness values for averaging
     private grooveHitCount: number = 0;                 // Total hits in current groove
     private previousDirection: GrooveDirection = 'neutral';  // Track direction for change detection
@@ -179,6 +180,7 @@ export class GrooveAnalyzer {
                 this.hotness = Math.max(0, this.hotness - this.options.hotnessLossOnBreak);
                 // Streak continues even on pocket break per design decision
             }
+            this.maxGrooveStreak = Math.max(this.maxGrooveStreak, this.streakLength);
         }
 
         // 9. Track groove lifetime statistics and detect groove ending
@@ -207,7 +209,7 @@ export class GrooveAnalyzer {
                 : 0;
 
             endedGrooveStats = {
-                maxStreak: this.streakLength,
+                maxStreak: this.maxGrooveStreak,
                 maxHotness: this.maxHotness,
                 avgHotness,
                 duration: endTime - this.grooveStartTime,
@@ -265,7 +267,6 @@ export class GrooveAnalyzer {
     recordMiss(currentTime?: number): GrooveResult {
         // Track values BEFORE modifying them (for groove end stats)
         const previousHotness = this.hotness;
-        const previousStreak = this.streakLength;
         const wasGrooveActive = previousHotness > 0 && this.grooveStartTime !== null && this.grooveHitCount > 0;
 
         // Reduce hotness
@@ -285,7 +286,7 @@ export class GrooveAnalyzer {
                 : 0;
 
             endedGrooveStats = {
-                maxStreak: previousStreak,
+                maxStreak: this.maxGrooveStreak,
                 maxHotness: this.maxHotness,
                 avgHotness,
                 duration: endTime - this.grooveStartTime!,
@@ -374,7 +375,7 @@ export class GrooveAnalyzer {
             : 0;
 
         return {
-            maxStreak: this.streakLength,  // Current streak is max when groove ends
+            maxStreak: this.maxGrooveStreak,
             maxHotness: this.maxHotness,
             avgHotness,
             duration: endTime - this.grooveStartTime,
@@ -392,6 +393,7 @@ export class GrooveAnalyzer {
     resetGrooveStats(): void {
         this.grooveStartTime = null;
         this.maxHotness = 0;
+        this.maxGrooveStreak = 0;
         this.hotnessSamples = [];
         this.grooveHitCount = 0;
     }
