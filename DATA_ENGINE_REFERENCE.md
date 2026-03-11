@@ -64,7 +64,8 @@ A concise overview of all main exports from the library, organized by category.
 | `MetadataExtractor` | Extract metadata from track objects | [Core Modules](#core-modules) |
 | `getAudioUrls`, `getImageUrls`, etc. | Simple playlist data extraction utilities | [Core Modules](#core-modules) |
 | `AudioAnalyzer` | Analyze audio frequency characteristics | [Core Modules](#core-modules) |
-| `GenreAnalyzer` | Semantic genre classification using ML models | [Core Modules](#core-modules) |
+| `MusicClassifier` | Deep ML classification (genre, mood, vibe) | [Core Modules](#core-modules) |
+| `GenreAnalyzer` | Legacy genre classification wrapper | [Core Modules](#core-modules) |
 | `SpectrumScanner` | Analyze frequency bands | [Core Modules](#core-modules) |
 | `ColorExtractor` | Extract color palettes from images | [Core Modules](#core-modules) |
 | `CharacterGenerator` | Generate D&D 5e characters deterministically | [Core Modules](#core-modules) |
@@ -192,7 +193,7 @@ All TypeScript types are exported, including:
 
 **Character Types:** `CharacterSheet`, `AbilityScores`, `Skill`, `ProficiencyLevel`, `Race`, `Class`, `Ability`, `GameMode` — see [Data Types](#data-types)
 
-**Generator Types:** `CharacterGeneratorOptions` (includes `gameMode`), `AudioProfile`, `ColorPalette`, `FrequencyBands`, `GenreProfile`, `GenreTag` — see [Data Types](#data-types)
+**Generator Types:** `CharacterGeneratorOptions` (includes `gameMode`), `AudioProfile`, `ColorPalette`, `FrequencyBands`, `MusicClassificationProfile`, `ClassificationTag`, `VibeMetrics`, `GenreProfile`, `GenreTag` — see [Data Types](#data-types)
 
 **Context Types:** `EnvironmentalContext`, `GamingContext`, `ListeningSession` — see [Data Types](#data-types)
 
@@ -256,28 +257,62 @@ Result of the `AudioAnalyzer`. Used to generate characters.
 | `color_palette?` | ColorPalette | Color palette extracted from artwork |
 | `analysis_metadata` | object | Duration, buffer status, sample positions, timestamp |
 
-### GenreProfile
+### MusicClassificationProfile
 
 *Location:* *[src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)*
 
-Result of the `GenreAnalyzer`.
+Result of the `MusicClassifier`.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `genres` | `GenreTag[]` | Array of matched genres (name and confidence) |
+| `genres` | `ClassificationTag[]` | Array of matched genres |
+| `moods` | `ClassificationTag[]` | Array of matched moods and themes |
+| `primary_genre` | `string` | The highest-confidence genre tag |
+| `mood_tags` | `string[]` | Top semantic mood keywords |
+| `vibe_metrics` | `VibeMetrics` | Danceability, energy, valence, etc. |
+| `analysis_metadata` | `object` | Duration, models used, timestamp |
+
+### VibeMetrics
+
+*Location:* *[src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)*
+
+Quantitative vibe and engagement scores.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `danceability` | `number?` | Suitability for dancing (0.0 - 1.0) |
+| `energy` | `number?` | Perceived energy level (0.0 - 1.0) |
+| `valence` | `number?` | Emotional positivity (0.0 - 1.0) |
+| `engagement` | `number?` | Track catchiness (0.0 - 1.0) |
+
+### ClassificationTag
+
+*Location:* *[src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)*
+
+Individual probability match for genre/mood.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `string` | Tag name |
+| `confidence` | `number` | Match confidence (0.0 - 1.0) |
+
+### GenreProfile (Legacy)
+
+*Location:* *[src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)*
+
+Result of the `GenreAnalyzer`. Inherits from `MusicClassificationProfile`.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `genres` | `ClassificationTag[]` | Array of matched genres |
 | `primary_genre` | `string` | The highest-confidence genre tag |
 | `analysis_metadata` | `object` | Duration, model URL, timestamp |
 
-### GenreTag
+### GenreTag (Legacy)
 
 *Location:* *[src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)*
 
-Individual probability match.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `name` | `string` | Genre or subgenre name |
-| `confidence` | `number` | Confidence probability of the match (0.0 - 1.0) |
+Individual probability match. Alias for `ClassificationTag`.
 
 ### SamplingStrategy
 
@@ -1263,6 +1298,50 @@ Extracts sonic fingerprints from audio files using Web Audio API. Analyzes frequ
 |--------|---------|-------------|
 | `extractSonicFingerprint(audioUrl: string)` | `Promise<AudioProfile>` | Downloads and analyzes audio file; returns bass/mid/treble dominance, average_amplitude, RMS energy, dynamic range, optional advanced metrics, and analysis_metadata |
 | `analyzeTimeline(audioUrl: string, strategy: SamplingStrategy)` | `Promise<AudioTimelineEvent[]>` | Performs full-song analysis, returning an array of frequency and amplitude data points over time |
+
+### MusicClassifier
+
+*Location:* *[src/core/analysis/MusicClassifier.ts](src/core/analysis/MusicClassifier.ts)*
+
+*Also known as: ML audio classifier, music analyzer*
+
+Deep semantic analysis of music including genre, mood, and vibe metrics using multiple `essentia.js` models.
+
+#### Constructor Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `topN` | number | `3` | Return top N matches for genres and moods |
+| `threshold` | number | `0.1` | Minimum confidence score (10%) |
+| `modelBaseUrl` | string | `undefined` | Custom base URL for `.json` and `.bin` model files |
+
+#### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `analyze(audioUrl: string)` | `Promise<MusicClassificationProfile>` | Downloads and analyzes audio; returns genres, moods, vibe metrics, and metadata |
+
+### GenreAnalyzer (Legacy)
+
+*Location:* *[src/core/analysis/GenreAnalyzer.ts](src/core/analysis/GenreAnalyzer.ts)*
+
+*Also known as: Genre classifier wrapper*
+
+Legacy wrapper for backward compatibility. Uses `MusicClassifier` internally to provide genre tags.
+
+#### Constructor Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `topN` | number | `3` | Return top N matches |
+| `threshold` | number | `0.1` | Minimum confidence score (10%) |
+| `modelUrl` | string | `undefined` | Legacy model URL option |
+
+#### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `analyzeGenre(audioUrl: string)` | `Promise<GenreProfile>` | Returns genre profile with 100% backward compatibility |
 
 
 ### ColorExtractor

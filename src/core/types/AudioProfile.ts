@@ -111,10 +111,10 @@ export interface FrequencyBands {
 }
 
 /**
- * A detected genre or style tag with its confidence score
+ * A detected classification tag (genre, mood, etc) with its confidence score
  */
-export interface GenreTag {
-    /** The name of the genre (e.g. "rock", "jazz", "electronic") */
+export interface ClassificationTag {
+    /** The name of the tag (e.g. "rock", "happy", "party") */
     name: string;
 
     /** Confidence score from the ML model (0.0 to 1.0) */
@@ -122,27 +122,72 @@ export interface GenreTag {
 }
 
 /**
- * The output profile from the ML-based GenreAnalyzer
+ * Backward compatibility alias for GenreTag
  */
-export interface GenreProfile {
-    /** The Top N genres detected in the audio */
-    genres: GenreTag[];
+export type GenreTag = ClassificationTag;
 
-    /** The single most dominant genre detected */
+/**
+ * Vibe and engagement metrics extracted from audio
+ */
+export interface VibeMetrics {
+    /** Suitability for dancing (0.0 - 1.0) */
+    danceability?: number;
+
+    /** Perceived energy level (0.0 - 1.0) */
+    energy?: number;
+
+    /** Emotional positivity/happiness (0.0 - 1.0) */
+    valence?: number;
+
+    /** How "catchy" or engaging the track is (0.0 - 1.0) */
+    engagement?: number;
+
+    /** Likelihood of being acoustic vs electronic (0.0 - 1.0, >0.5 is more electronic) */
+    electronic_probability?: number;
+
+    /** Likelihood of being instrumental vs vocal (0.0 - 1.0, >0.5 is more instrumental) */
+    instrumental_probability?: number;
+}
+
+/**
+ * The output profile from the ML-based MusicClassifier
+ */
+export interface MusicClassificationProfile {
+    /** Top detected genres */
+    genres: ClassificationTag[];
+
+    /** Top detected moods and themes */
+    moods: ClassificationTag[];
+
+    /** Highest confidence genre */
     primary_genre: string;
+
+    /** Semantic mood tags (highest confidence) */
+    mood_tags: string[];
+
+    /** High-level vibe metrics */
+    vibe_metrics?: VibeMetrics;
 
     /** Analysis metadata */
     analysis_metadata: {
-        /** The name of the ML model used (e.g. "MTG-Jamendo genre") */
-        model_used: string;
+        /** ML models used in analysis */
+        models_used: string[];
+
+        /** Legacy: The primary model used (first in models_used) */
+        model_used?: string;
+
+        /** Legacy: Number of frames processed (usually 0) */
+        frames_analyzed?: number;
 
         /** Duration of audio analyzed in seconds */
         duration_analyzed: number;
-
-        /** Number of audio frames processed by the model */
-        frames_analyzed: number;
 
         /** Timestamp of analysis */
         analyzed_at: string;
     };
 }
+
+/**
+ * Backward compatibility alias for GenreProfile
+ */
+export interface GenreProfile extends MusicClassificationProfile { }

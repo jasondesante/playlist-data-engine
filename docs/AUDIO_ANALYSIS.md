@@ -12,7 +12,8 @@ The engine's audio analysis is powered by the Web Audio API and provides two dis
 |------|--------|---------|----------|
 | **Triple Tap Real-Time** | `extractSonicFingerprint()` | Quick analysis at key positions | Character generation, quick profiling |
 | **Full Song Timeline** | `analyzeTimeline()` | Complete track analysis | Waveform visualization, level generation |
-| **Genre Analysis** | `analyzeGenre()` | Classification of audio styles | Tagging, recommendation systems |
+| **Music Classification** | `analyze()` | Deep ML classification | Genre, mood, and vibe detection |
+| **Genre Analysis** | `analyzeGenre()` | Legacy classification | Backward compatible genre tags |
 
 > **Note**: For rhythm game features like beat detection, beat streaming, and chart creation, see [BEAT_DETECTION.md](BEAT_DETECTION.md).
 
@@ -21,7 +22,8 @@ The engine's audio analysis is powered by the Web Audio API and provides two dis
 | Component | Location |
 |-----------|----------|
 | **AudioAnalyzer** (main class) | [src/core/analysis/AudioAnalyzer.ts](../src/core/analysis/AudioAnalyzer.ts) |
-| **GenreAnalyzer** (ML classification) | [src/core/analysis/GenreAnalyzer.ts](../src/core/analysis/GenreAnalyzer.ts) |
+| **MusicClassifier** (ML classification) | [src/core/analysis/MusicClassifier.ts](../src/core/analysis/MusicClassifier.ts) |
+| **GenreAnalyzer** (Legacy wrapper) | [src/core/analysis/GenreAnalyzer.ts](../src/core/analysis/GenreAnalyzer.ts) |
 | **SpectrumScanner** (frequency bands) | [src/core/analysis/SpectrumScanner.ts](../src/core/analysis/SpectrumScanner.ts) |
 | **Audio Types** | [src/core/types/AudioProfile.ts](../src/core/types/AudioProfile.ts) |
 
@@ -168,11 +170,49 @@ timeline.forEach(event => {
 
 ---
 
-## Genre Analysis
+## Music Classification (Genre, Mood, Vibe)
 
-For applications requiring semantic tags for music styles (e.g., "rock", "electronic", "jazz"), use the `GenreAnalyzer`. This uses `essentia.js` and a pre-trained TensorFlow.js model (MTG Jamendo).
+For deep semantic analysis of music including mood, themes, and vibe metrics (like danceability), use the `MusicClassifier`. This uses multiple `essentia.js` models.
 
-> **Note**: The machine learning model data is large and loaded dynamically at runtime via a provided `modelUrl`.
+### Method
+
+```typescript
+analyze(audioUrl: string): Promise<MusicClassificationProfile>
+```
+
+### Usage Example
+
+```typescript
+import { MusicClassifier } from 'playlist-data-engine';
+
+const classifier = new MusicClassifier({
+  topN: 3,         // Return top 3 genres/moods
+  threshold: 0.1   // 10% confidence threshold
+});
+
+const profile = await classifier.analyze('https://example.com/audio.mp3');
+
+console.log(`Genre: ${profile.primary_genre}`);
+console.log(`Moods: ${profile.mood_tags.join(', ')}`);
+console.log(`Danceability: ${profile.vibe_metrics.danceability}`);
+console.log(`Energy: ${profile.vibe_metrics.energy}`);
+```
+
+### MusicClassificationProfile Output
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `genres` | `ClassificationTag[]` | Top matched genres |
+| `moods` | `ClassificationTag[]` | Top matched moods/themes |
+| `primary_genre` | `string` | Highest confidence genre |
+| `mood_tags` | `string[]` | Most relevant mood keywords |
+| `vibe_metrics` | `VibeMetrics` | Danceability, energy, valence, etc. |
+
+---
+
+## Genre Analysis (Legacy)
+
+The `GenreAnalyzer` is a legacy wrapper for backward compatibility. It now uses `MusicClassifier` internally and maintains a 100% identical return structure (including legacy metadata fields like `model_used` and `frames_analyzed`).
 
 ### Method
 
@@ -185,28 +225,9 @@ analyzeGenre(audioUrl: string): Promise<GenreProfile>
 ```typescript
 import { GenreAnalyzer } from 'playlist-data-engine';
 
-const analyzer = new GenreAnalyzer({
-  topN: 3,         // Only return the top 3 matches
-  threshold: 0.1   // Minimum confidence score (10%)
-});
-
+const analyzer = new GenreAnalyzer();
 const profile = await analyzer.analyzeGenre('https://example.com/audio.mp3');
-
-console.log(`Primary Genre: ${profile.primary_genre}`);
-
-// Detailed scores
-profile.genres.forEach(tag => {
-  console.log(`${tag.name}: ${(tag.confidence * 100).toFixed(1)}%`);
-});
 ```
-
-### GenreProfile Output
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `genres` | `GenreTag[]` | Array of matched genres (name and confidence) |
-| `primary_genre` | `string` | The highest-confidence genre tag |
-| `analysis_metadata` | `object` | Duration, model URL, timestamp |
 
 ---
 

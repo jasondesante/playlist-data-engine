@@ -15,17 +15,16 @@ class MockAudioContext {
     AudioContext: MockAudioContext
 };
 
-// Mock dynamically imported essentia.js and essentia.js-model
+// Mock dynamically imported essentia.js
+const mockPredict = vi.fn();
+
 vi.mock('essentia.js', () => ({
     EssentiaWASM: vi.fn(),
     Essentia: vi.fn(),
     EssentiaModel: {
         Extractor: class {
             constructor() { }
-            predict = vi.fn().mockResolvedValue(
-                // Mock array of 87 probabilities where index 73 ('rock') has high probability
-                Array.from({ length: 87 }, (_, i) => i === 73 ? 0.95 : i === 34 ? 0.8 : 0.01) // 34 = electronic
-            )
+            predict = mockPredict;
         }
     }
 }));
@@ -46,6 +45,11 @@ describe('GenreAnalyzer', () => {
         (global.fetch as any).mockResolvedValueOnce({
             arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
         });
+
+        // Mock predictions for Genre (87 classes) and Mood (62 classes) - MusicClassifier calls both
+        mockPredict
+            .mockResolvedValueOnce(Array.from({ length: 87 }, (_, i) => i === 73 ? 0.95 : i === 34 ? 0.8 : 0.01))
+            .mockResolvedValue(Array.from({ length: 100 }, () => 0.01));
 
         const analyzer = new GenreAnalyzer({ topN: 3, threshold: 0.1 });
         const profile = await analyzer.analyzeGenre('https://example.com/test-audio.mp3');
