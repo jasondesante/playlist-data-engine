@@ -46,6 +46,7 @@
     "zod": "^4.1.13"
   },
   "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.59.0",
     "@ryuziii/discord-rpc": "^1.0.1-rc.1"
   },
   "peerDependenciesMeta": {

@@ -20,7 +20,7 @@ export class GenreAnalyzer {
         const { modelUrl, ...rest } = options;
         this.classifier = new MusicClassifier({
             models: {
-                genre: modelUrl || 'https://cdn.jsdelivr.net/gh/MTG/essentia.js/examples/models/mtg_jamendo_genre/model.json'
+                genre: modelUrl || '/models/genre_tzanetakis-musicnn-msd/model.json'
             },
             ...rest
         });
