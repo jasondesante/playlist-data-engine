@@ -550,14 +550,11 @@ export class MusicClassifier {
             // 2. Analyze Mood
             if (this.options.models?.mood) {
                 const moodConfig = this.options.models.mood;
-                if (isTwoStepModel(moodConfig)) {
-                    throw new Error('Two-step model architecture not yet implemented. Use single model URL for mood.');
-                }
-                const moodPredictions = await this.predictWithModel(
+                results.moods = await this.runModelPrediction(
                     moodConfig,
-                    features
+                    audioSignal,
+                    JAMENDO_MOODS
                 );
-                results.moods = this.mapPredictions(moodPredictions, JAMENDO_MOODS);
                 results.mood_tags = results.moods.slice(0, 3).map(m => m.name);
                 modelsUsed.push(formatModelForMetadata(moodConfig));
             }
@@ -838,9 +835,8 @@ export class MusicClassifier {
             predictions = await this.predictWithTwoStepModel(config, audioSignal);
         } else {
             // Single-step architecture: one model does it all
-            // Detect architecture for correct feature extraction
-            const architecture = detectModelArchitecture(config);
-            const features = this.getFeaturesForArchitecture(audioSignal, architecture);
+            // Use default musicnn extractor (96 bands) - the model handles internal feature processing
+            const features = this.extractor.computeFrameWise(audioSignal, 512);
             predictions = await this.predictWithModel(config, features);
         }
 

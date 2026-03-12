@@ -250,7 +250,7 @@ const classifier = new MusicClassifier({
 
 - [ ] Refactor ALL model analysis to use unified pattern
   - [x] Genre: single or two-step → `JAMENDO_GENRES` labels
-  - [ ] Mood: single or two-step → `JAMENDO_MOODS` labels
+  - [x] Mood: single or two-step → `JAMENDO_MOODS` labels
   - [ ] Danceability: single or two-step → `['danceable', 'non-danceable']` labels
   - [ ] Voice: single or two-step → `['voice', 'instrumental']` labels (or similar)
   - [ ] Acoustic: single or two-step → appropriate labels
