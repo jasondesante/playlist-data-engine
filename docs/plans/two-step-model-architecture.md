@@ -81,11 +81,11 @@ const classifier = new MusicClassifier({
 
 ## Phase 1: Type Definitions & Helpers
 
-- [ ] Add new type definitions to `MusicClassifier.ts`
-  - [ ] `ModelArchitecture` type: `'musicnn' | 'vggish' | 'tempocnn'`
-  - [ ] `TwoStepModelConfig` interface with `embedding`, `classifier`, and optional `labels`
-  - [ ] `ModelConfig` union type: `string | TwoStepModelConfig`
-  - [ ] Update `MusicClassifierOptions` - ALL model options use `ModelConfig`:
+- [x] Add new type definitions to `MusicClassifier.ts`
+  - [x] `ModelArchitecture` type: `'musicnn' | 'vggish' | 'tempocnn'`
+  - [x] `TwoStepModelConfig` interface with `embedding`, `classifier`, and optional `labels`
+  - [x] `ModelConfig` union type: `string | TwoStepModelConfig`
+  - [x] Update `MusicClassifierOptions` - ALL model options use `ModelConfig`:
     ```typescript
     models?: {
         genre?: ModelConfig;       // string OR { embedding, classifier }
@@ -95,14 +95,14 @@ const classifier = new MusicClassifier({
         acoustic?: ModelConfig;    // string OR { embedding, classifier }
     };
     ```
-  - [ ] Add `cacheEmbeddings?: boolean` option
+  - [x] Add `cacheEmbeddings?: boolean` option
 
-- [ ] Implement model architecture detection helpers
-  - [ ] `detectModelArchitecture(modelUrl: string): ModelArchitecture`
+- [x] Implement model architecture detection helpers
+  - [x] `detectModelArchitecture(modelUrl: string): ModelArchitecture`
     - Detect `vggish` from URL pattern
     - Detect `tempocnn` from URL pattern
     - Default to `musicnn` for discogs-effnet, msd, etc.
-  - [ ] `isTwoStepModel(config): config is TwoStepModelConfig`
+  - [x] `isTwoStepModel(config): config is TwoStepModelConfig`
     - Type guard to check if config is two-step or single model
 
 ---

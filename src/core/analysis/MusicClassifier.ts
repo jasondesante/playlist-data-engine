@@ -5,16 +5,61 @@ import type {
 } from '../types/AudioProfile.js';
 import * as tf from '@tensorflow/tfjs';
 
+/**
+ * Supported model architectures for audio feature extraction.
+ * - `musicnn`: MTG Jamendo / Discogs-EffNet style models
+ * - `vggish`: VGGish-based models (e.g., audioset classifiers)
+ * - `tempocnn`: TempoCNN-based models (e.g., tempo estimation)
+ */
+export type ModelArchitecture = 'musicnn' | 'vggish' | 'tempocnn';
+
+/**
+ * Configuration for two-step model architectures where embedding
+ * and classifier models are separate files.
+ *
+ * This enables using models like:
+ * - Discogs-EffNet (embedding) + MTG Jamendo Genre (classifier)
+ * - Discogs-EffNet (embedding) + MTG Jamendo Mood (classifier)
+ */
+export interface TwoStepModelConfig {
+    /** URL to the embedding model (e.g., discogs-effnet-bs64-1.json) */
+    embedding: string;
+    /** URL to the classifier model that operates on embeddings */
+    classifier: string;
+    /** Optional custom labels for classifier output */
+    labels?: string[];
+}
+
+/**
+ * Model configuration that accepts either:
+ * - Single string URL (1-step process): Model handles everything internally
+ * - Two-step object: Separate embedding + classifier models chained together
+ *
+ * @example
+ * // Single-step
+ * genre: '/models/genre-classifier.json'
+ *
+ * // Two-step
+ * genre: {
+ *     embedding: '/models/discogs-effnet-bs64-1.json',
+ *     classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+ * }
+ */
+export type ModelConfig = string | TwoStepModelConfig;
+
 export interface MusicClassifierOptions {
     /**
-     * URLs to pre-trained TensorFlow.js models
+     * URLs to pre-trained TensorFlow.js models.
+     * Each model option accepts EITHER:
+     * - Single string URL (1-step process)
+     * - Object with { embedding, classifier } for 2-step process
      */
     models?: {
-        genre?: string;
-        mood?: string;
-        danceability?: string;
-        voice?: string;
-        acoustic?: string;
+        genre?: ModelConfig;
+        mood?: ModelConfig;
+        danceability?: ModelConfig;
+        voice?: ModelConfig;
+        acoustic?: ModelConfig;
     };
 
     /** Maximum number of tags to return per category */
@@ -22,6 +67,14 @@ export interface MusicClassifierOptions {
 
     /** Minimum confidence threshold (0.0 to 1.0) */
     threshold?: number;
+
+    /**
+     * When true, embedding models are cached and reused across multiple
+     * predictions. Useful when using the same embedding model for both
+     * genre and mood classification.
+     * @default true
+     */
+    cacheEmbeddings?: boolean;
 }
 
 const JAMENDO_GENRES = [
@@ -64,6 +117,55 @@ const JAMENDO_MOODS = [
     "serene", "sexy", "space", "sport", "summer", "suspense", "trailer", "travel", "upbeat", "uplifting",
     "video", "war"
 ];
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Type guard to check if a model config is a two-step configuration
+ * (embedding + classifier) or a single model URL string.
+ */
+export function isTwoStepModel(config: ModelConfig): config is TwoStepModelConfig {
+    return typeof config === 'object' && config !== null &&
+           'embedding' in config && 'classifier' in config;
+}
+
+/**
+ * Detects the model architecture from a model URL.
+ * Used to select the correct model class for inference.
+ *
+ * @param modelUrl - URL to the model file
+ * @returns The detected architecture type
+ */
+export function detectModelArchitecture(modelUrl: string): ModelArchitecture {
+    const url = modelUrl.toLowerCase();
+
+    // VGGish models typically have 'vggish' in the name
+    if (url.includes('vggish')) {
+        return 'vggish';
+    }
+
+    // TempoCNN models typically have 'tempocnn' or 'tempo' in the name
+    if (url.includes('tempocnn') || (url.includes('tempo') && !url.includes('temple'))) {
+        return 'tempocnn';
+    }
+
+    // Default to musicnn for discogs-effnet, msd, and other models
+    return 'musicnn';
+}
+
+/**
+ * Formats a model config for display in metadata.
+ * - Single-step: just the URL
+ * - Two-step: "embedding -> classifier" format
+ */
+export function formatModelForMetadata(config: ModelConfig): string {
+    if (isTwoStepModel(config)) {
+        return `${config.embedding} -> ${config.classifier}`;
+    }
+    return config;
+}
 
 // Type definitions for essentia.js model module
 interface EssentiaModel {
@@ -153,37 +255,49 @@ export class MusicClassifier {
 
             // 1. Analyze Genre
             if (this.options.models?.genre) {
+                const genreConfig = this.options.models.genre;
+                if (isTwoStepModel(genreConfig)) {
+                    throw new Error('Two-step model architecture not yet implemented. Use single model URL for genre.');
+                }
                 const genrePredictions = await this.predictWithModel(
-                    this.options.models.genre,
+                    genreConfig,
                     features
                 );
                 results.genres = this.mapPredictions(genrePredictions, JAMENDO_GENRES);
                 // results.genres = this.mapPredictions(genrePredictions, GTZAN_GENRES);
                 // results.genres = this.mapPredictions(genrePredictions, MTT_MUSICNN);
                 results.primary_genre = results.genres.length > 0 ? results.genres[0].name : "Unknown";
-                modelsUsed.push(this.options.models.genre);
+                modelsUsed.push(formatModelForMetadata(genreConfig));
             }
 
             // 2. Analyze Mood
             if (this.options.models?.mood) {
+                const moodConfig = this.options.models.mood;
+                if (isTwoStepModel(moodConfig)) {
+                    throw new Error('Two-step model architecture not yet implemented. Use single model URL for mood.');
+                }
                 const moodPredictions = await this.predictWithModel(
-                    this.options.models.mood,
+                    moodConfig,
                     features
                 );
                 results.moods = this.mapPredictions(moodPredictions, JAMENDO_MOODS);
                 results.mood_tags = results.moods.slice(0, 3).map(m => m.name);
-                modelsUsed.push(this.options.models.mood);
+                modelsUsed.push(formatModelForMetadata(moodConfig));
             }
 
             // 3. Analyze Vibe (Danceability)
             if (this.options.models?.danceability) {
+                const danceConfig = this.options.models.danceability;
+                if (isTwoStepModel(danceConfig)) {
+                    throw new Error('Two-step model architecture not yet implemented. Use single model URL for danceability.');
+                }
                 const dancePredictions = await this.predictWithModel(
-                    this.options.models.danceability,
+                    danceConfig,
                     features
                 );
                 // Danceability model usually returns [danceable, non-danceable]
                 results.vibe_metrics!.danceability = dancePredictions[0];
-                modelsUsed.push(this.options.models.danceability);
+                modelsUsed.push(formatModelForMetadata(danceConfig));
             }
 
             // Note: Other metrics (valence, energy) could be derived from the mood predictions
