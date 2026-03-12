@@ -92,7 +92,410 @@ const JAMENDO_GENRES = [
     "worldbeat", "worldmusic"
 ];
 
-const GTZAN_GENRES = [
+export const DISCOGS400_GENRES = [
+    'Blues---Boogie Woogie',
+    'Blues---Chicago Blues',
+    'Blues---Country Blues',
+    'Blues---Delta Blues',
+    'Blues---Electric Blues',
+    'Blues---Harmonica Blues',
+    'Blues---Jump Blues',
+    'Blues---Louisiana Blues',
+    'Blues---Modern Electric Blues',
+    'Blues---Piano Blues',
+    'Blues---Rhythm & Blues',
+    'Blues---Texas Blues',
+    'Brass & Military---Brass Band',
+    'Brass & Military---Marches',
+    'Brass & Military---Military',
+    `Children's-- - Educational`,
+    `Children's-- - Nursery Rhymes`,
+    `Children's-- - Story`,
+    `Classical---Baroque`,
+    'Classical---Choral',
+    'Classical---Classical',
+    'Classical---Contemporary',
+    'Classical---Impressionist',
+    'Classical---Medieval',
+    'Classical---Modern',
+    'Classical---Neo-Classical',
+    'Classical---Neo-Romantic',
+    'Classical---Opera',
+    'Classical---Post-Modern',
+    'Classical---Renaissance',
+    'Classical---Romantic',
+    'Electronic---Abstract',
+    'Electronic---Acid',
+    'Electronic---Acid House',
+    'Electronic---Acid Jazz',
+    'Electronic---Ambient',
+    'Electronic---Bassline',
+    'Electronic---Beatdown',
+    'Electronic---Berlin-School',
+    'Electronic---Big Beat',
+    'Electronic---Bleep',
+    'Electronic---Breakbeat',
+    'Electronic---Breakcore',
+    'Electronic---Breaks',
+    'Electronic---Broken Beat',
+    'Electronic---Chillwave',
+    'Electronic---Chiptune',
+    'Electronic---Dance-pop',
+    'Electronic---Dark Ambient',
+    'Electronic---Darkwave',
+    'Electronic---Deep House',
+    'Electronic---Deep Techno',
+    'Electronic---Disco',
+    'Electronic---Disco Polo',
+    'Electronic---Donk',
+    'Electronic---Downtempo',
+    'Electronic---Drone',
+    'Electronic---Drum n Bass',
+    'Electronic---Dub',
+    'Electronic---Dub Techno',
+    'Electronic---Dubstep',
+    'Electronic---Dungeon Synth',
+    'Electronic---EBM',
+    'Electronic---Electro',
+    'Electronic---Electro House',
+    'Electronic---Electroclash',
+    'Electronic---Euro House',
+    'Electronic---Euro-Disco',
+    'Electronic---Eurobeat',
+    'Electronic---Eurodance',
+    'Electronic---Experimental',
+    'Electronic---Freestyle',
+    'Electronic---Future Jazz',
+    'Electronic---Gabber',
+    'Electronic---Garage House',
+    'Electronic---Ghetto',
+    'Electronic---Ghetto House',
+    'Electronic---Glitch',
+    'Electronic---Goa Trance',
+    'Electronic---Grime',
+    'Electronic---Halftime',
+    'Electronic---Hands Up',
+    'Electronic---Happy Hardcore',
+    'Electronic---Hard House',
+    'Electronic---Hard Techno',
+    'Electronic---Hard Trance',
+    'Electronic---Hardcore',
+    'Electronic---Hardstyle',
+    'Electronic---Hi NRG',
+    'Electronic---Hip Hop',
+    'Electronic---Hip-House',
+    'Electronic---House',
+    'Electronic---IDM',
+    'Electronic---Illbient',
+    'Electronic---Industrial',
+    'Electronic---Italo House',
+    'Electronic---Italo-Disco',
+    'Electronic---Italodance',
+    'Electronic---Jazzdance',
+    'Electronic---Juke',
+    'Electronic---Jumpstyle',
+    'Electronic---Jungle',
+    'Electronic---Latin',
+    'Electronic---Leftfield',
+    'Electronic---Makina',
+    'Electronic---Minimal',
+    'Electronic---Minimal Techno',
+    'Electronic---Modern Classical',
+    'Electronic---Musique Concrète',
+    'Electronic---Neofolk',
+    'Electronic---New Age',
+    'Electronic---New Beat',
+    'Electronic---New Wave',
+    'Electronic---Noise',
+    'Electronic---Nu-Disco',
+    'Electronic---Power Electronics',
+    'Electronic---Progressive Breaks',
+    'Electronic---Progressive House',
+    'Electronic---Progressive Trance',
+    'Electronic---Psy-Trance',
+    'Electronic---Rhythmic Noise',
+    'Electronic---Schranz',
+    'Electronic---Sound Collage',
+    'Electronic---Speed Garage',
+    'Electronic---Speedcore',
+    'Electronic---Synth-pop',
+    'Electronic---Synthwave',
+    'Electronic---Tech House',
+    'Electronic---Tech Trance',
+    'Electronic---Techno',
+    'Electronic---Trance',
+    'Electronic---Tribal',
+    'Electronic---Tribal House',
+    'Electronic---Trip Hop',
+    'Electronic---Tropical House',
+    'Electronic---UK Garage',
+    'Electronic---Vaporwave',
+    'Folk, World, & Country---African',
+    'Folk, World, & Country---Bluegrass',
+    'Folk, World, & Country---Cajun',
+    'Folk, World, & Country---Canzone Napoletana',
+    'Folk, World, & Country---Catalan Music',
+    'Folk, World, & Country---Celtic',
+    'Folk, World, & Country---Country',
+    'Folk, World, & Country---Fado',
+    'Folk, World, & Country---Flamenco',
+    'Folk, World, & Country---Folk',
+    'Folk, World, & Country---Gospel',
+    'Folk, World, & Country---Highlife',
+    'Folk, World, & Country---Hillbilly',
+    'Folk, World, & Country---Hindustani',
+    'Folk, World, & Country---Honky Tonk',
+    'Folk, World, & Country---Indian Classical',
+    'Folk, World, & Country---Laïkó',
+    'Folk, World, & Country---Nordic',
+    'Folk, World, & Country---Pacific',
+    'Folk, World, & Country---Polka',
+    'Folk, World, & Country---Raï',
+    'Folk, World, & Country---Romani',
+    'Folk, World, & Country---Soukous',
+    'Folk, World, & Country---Séga',
+    'Folk, World, & Country---Volksmusik',
+    'Folk, World, & Country---Zouk',
+    'Folk, World, & Country---Éntekhno',
+    'Funk / Soul---Afrobeat',
+    'Funk / Soul---Boogie',
+    'Funk / Soul---Contemporary R&B',
+    'Funk / Soul---Disco',
+    'Funk / Soul---Free Funk',
+    'Funk / Soul---Funk',
+    'Funk / Soul---Gospel',
+    'Funk / Soul---Neo Soul',
+    'Funk / Soul---New Jack Swing',
+    'Funk / Soul---P.Funk',
+    'Funk / Soul---Psychedelic',
+    'Funk / Soul---Rhythm & Blues',
+    'Funk / Soul---Soul',
+    'Funk / Soul---Swingbeat',
+    'Funk / Soul---UK Street Soul',
+    'Hip Hop---Bass Music',
+    'Hip Hop---Boom Bap',
+    'Hip Hop---Bounce',
+    'Hip Hop---Britcore',
+    'Hip Hop---Cloud Rap',
+    'Hip Hop---Conscious',
+    'Hip Hop---Crunk',
+    'Hip Hop---Cut-up/DJ',
+    'Hip Hop---DJ Battle Tool',
+    'Hip Hop---Electro',
+    'Hip Hop---G-Funk',
+    'Hip Hop---Gangsta',
+    'Hip Hop---Grime',
+    'Hip Hop---Hardcore Hip-Hop',
+    'Hip Hop---Horrorcore',
+    'Hip Hop---Instrumental',
+    'Hip Hop---Jazzy Hip-Hop',
+    'Hip Hop---Miami Bass',
+    'Hip Hop---Pop Rap',
+    'Hip Hop---Ragga HipHop',
+    'Hip Hop---RnB/Swing',
+    'Hip Hop---Screw',
+    'Hip Hop---Thug Rap',
+    'Hip Hop---Trap',
+    'Hip Hop---Trip Hop',
+    'Hip Hop---Turntablism',
+    'Jazz---Afro-Cuban Jazz',
+    'Jazz---Afrobeat',
+    'Jazz---Avant-garde Jazz',
+    'Jazz---Big Band',
+    'Jazz---Bop',
+    'Jazz---Bossa Nova',
+    'Jazz---Contemporary Jazz',
+    'Jazz---Cool Jazz',
+    'Jazz---Dixieland',
+    'Jazz---Easy Listening',
+    'Jazz---Free Improvisation',
+    'Jazz---Free Jazz',
+    'Jazz---Fusion',
+    'Jazz---Gypsy Jazz',
+    'Jazz---Hard Bop',
+    'Jazz---Jazz-Funk',
+    'Jazz---Jazz-Rock',
+    'Jazz---Latin Jazz',
+    'Jazz---Modal',
+    'Jazz---Post Bop',
+    'Jazz---Ragtime',
+    'Jazz---Smooth Jazz',
+    'Jazz---Soul-Jazz',
+    'Jazz---Space-Age',
+    'Jazz---Swing',
+    'Latin---Afro-Cuban',
+    'Latin---Baião',
+    'Latin---Batucada',
+    'Latin---Beguine',
+    'Latin---Bolero',
+    'Latin---Boogaloo',
+    'Latin---Bossanova',
+    'Latin---Cha-Cha',
+    'Latin---Charanga',
+    'Latin---Compas',
+    'Latin---Cubano',
+    'Latin---Cumbia',
+    'Latin---Descarga',
+    'Latin---Forró',
+    'Latin---Guaguancó',
+    'Latin---Guajira',
+    'Latin---Guaracha',
+    'Latin---MPB',
+    'Latin---Mambo',
+    'Latin---Mariachi',
+    'Latin---Merengue',
+    'Latin---Norteño',
+    'Latin---Nueva Cancion',
+    'Latin---Pachanga',
+    'Latin---Porro',
+    'Latin---Ranchera',
+    'Latin---Reggaeton',
+    'Latin---Rumba',
+    'Latin---Salsa',
+    'Latin---Samba',
+    'Latin---Son',
+    'Latin---Son Montuno',
+    'Latin---Tango',
+    'Latin---Tejano',
+    'Latin---Vallenato',
+    'Non-Music---Audiobook',
+    'Non-Music---Comedy',
+    'Non-Music---Dialogue',
+    'Non-Music---Education',
+    'Non-Music---Field Recording',
+    'Non-Music---Interview',
+    'Non-Music---Monolog',
+    'Non-Music---Poetry',
+    'Non-Music---Political',
+    'Non-Music---Promotional',
+    'Non-Music---Radioplay',
+    'Non-Music---Religious',
+    'Non-Music---Spoken Word',
+    'Pop---Ballad',
+    'Pop---Bollywood',
+    'Pop---Bubblegum',
+    'Pop---Chanson',
+    'Pop---City Pop',
+    'Pop---Europop',
+    'Pop---Indie Pop',
+    'Pop---J-pop',
+    'Pop---K-pop',
+    'Pop---Kayōkyoku',
+    'Pop---Light Music',
+    'Pop---Music Hall',
+    'Pop---Novelty',
+    'Pop---Parody',
+    'Pop---Schlager',
+    'Pop---Vocal',
+    'Reggae---Calypso',
+    'Reggae---Dancehall',
+    'Reggae---Dub',
+    'Reggae---Lovers Rock',
+    'Reggae---Ragga',
+    'Reggae---Reggae',
+    'Reggae---Reggae-Pop',
+    'Reggae---Rocksteady',
+    'Reggae---Roots Reggae',
+    'Reggae---Ska',
+    'Reggae---Soca',
+    'Rock---AOR',
+    'Rock---Acid Rock',
+    'Rock---Acoustic',
+    'Rock---Alternative Rock',
+    'Rock---Arena Rock',
+    'Rock---Art Rock',
+    'Rock---Atmospheric Black Metal',
+    'Rock---Avantgarde',
+    'Rock---Beat',
+    'Rock---Black Metal',
+    'Rock---Blues Rock',
+    'Rock---Brit Pop',
+    'Rock---Classic Rock',
+    'Rock---Coldwave',
+    'Rock---Country Rock',
+    'Rock---Crust',
+    'Rock---Death Metal',
+    'Rock---Deathcore',
+    'Rock---Deathrock',
+    'Rock---Depressive Black Metal',
+    'Rock---Doo Wop',
+    'Rock---Doom Metal',
+    'Rock---Dream Pop',
+    'Rock---Emo',
+    'Rock---Ethereal',
+    'Rock---Experimental',
+    'Rock---Folk Metal',
+    'Rock---Folk Rock',
+    'Rock---Funeral Doom Metal',
+    'Rock---Funk Metal',
+    'Rock---Garage Rock',
+    'Rock---Glam',
+    'Rock---Goregrind',
+    'Rock---Goth Rock',
+    'Rock---Gothic Metal',
+    'Rock---Grindcore',
+    'Rock---Grunge',
+    'Rock---Hard Rock',
+    'Rock---Hardcore',
+    'Rock---Heavy Metal',
+    'Rock---Indie Rock',
+    'Rock---Industrial',
+    'Rock---Krautrock',
+    'Rock---Lo-Fi',
+    'Rock---Lounge',
+    'Rock---Math Rock',
+    'Rock---Melodic Death Metal',
+    'Rock---Melodic Hardcore',
+    'Rock---Metalcore',
+    'Rock---Mod',
+    'Rock---Neofolk',
+    'Rock---New Wave',
+    'Rock---No Wave',
+    'Rock---Noise',
+    'Rock---Noisecore',
+    'Rock---Nu Metal',
+    'Rock---Oi',
+    'Rock---Parody',
+    'Rock---Pop Punk',
+    'Rock---Pop Rock',
+    'Rock---Pornogrind',
+    'Rock---Post Rock',
+    'Rock---Post-Hardcore',
+    'Rock---Post-Metal',
+    'Rock---Post-Punk',
+    'Rock---Power Metal',
+    'Rock---Power Pop',
+    'Rock---Power Violence',
+    'Rock---Prog Rock',
+    'Rock---Progressive Metal',
+    'Rock---Psychedelic Rock',
+    'Rock---Psychobilly',
+    'Rock---Pub Rock',
+    'Rock---Punk',
+    'Rock---Rock & Roll',
+    'Rock---Rockabilly',
+    'Rock---Shoegaze',
+    'Rock---Ska',
+    'Rock---Sludge Metal',
+    'Rock---Soft Rock',
+    'Rock---Southern Rock',
+    'Rock---Space Rock',
+    'Rock---Speed Metal',
+    'Rock---Stoner Rock',
+    'Rock---Surf',
+    'Rock---Symphonic Rock',
+    'Rock---Technical Death Metal',
+    'Rock---Thrash',
+    'Rock---Twist',
+    'Rock---Viking Metal',
+    'Rock---Yé-Yé',
+    'Stage & Screen---Musical',
+    'Stage & Screen---Score',
+    'Stage & Screen---Soundtrack',
+    'Stage & Screen---Theme'
+];
+
+const tzanetakis_GENRES = [
     "Blues",
     "Classical",
     "Country",
@@ -136,7 +539,7 @@ const ACOUSTIC_LABELS = ['acoustic', 'electronic'];
  */
 export function isTwoStepModel(config: ModelConfig): config is TwoStepModelConfig {
     return typeof config === 'object' && config !== null &&
-           'embedding' in config && 'classifier' in config;
+        'embedding' in config && 'classifier' in config;
 }
 
 /**
@@ -460,14 +863,14 @@ export class MusicClassifier {
 
             // Apply Hann window
             // Essentia.js Windowing parameters (in order):
-            // frame, zeroPhase, zeroPadding, type, normalized, constantsDecimals
+            // frame, normalized, size, type, zeroPadding, zeroPhase
             const windowed = essentia.Windowing(
                 essentia.arrayToVector(frame),
-                true,        // zeroPhase
-                0,           // zeroPadding
-                'hann',      // type
                 true,        // normalized
-                5            // constantsDecimals
+                frameSize,   // size (must be explicit, not inferred from frame length)
+                'hann',      // type
+                0,           // zeroPadding
+                true         // zeroPhase
             );
 
             // Compute spectrum (FFT magnitude)
@@ -588,7 +991,8 @@ export class MusicClassifier {
                 results.genres = await this.runModelPrediction(
                     genreConfig,
                     audioSignal,
-                    JAMENDO_GENRES
+                    // JAMENDO_GENRES
+                    DISCOGS400_GENRES
                 );
                 results.primary_genre = results.genres.length > 0 ? results.genres[0].name : "Unknown";
                 modelsUsed.push(formatModelForMetadata(genreConfig));
@@ -717,7 +1121,6 @@ export class MusicClassifier {
 
             // Convert output tensor to array
             predictions = await output.data().then(data => Array.from(data));
-
             // Dispose output tensor
             output.dispose();
         } finally {
@@ -790,55 +1193,222 @@ export class MusicClassifier {
     }
 
     /**
+     * Discovers the input names from a TensorFlow.js GraphModel.
+     * 
+     * Different model versions and sources may have different input naming conventions.
+     * This method inspects the model's signature to find the correct input names.
+     *
+     * @param model - TensorFlow.js GraphModel instance
+     * @returns Array of input names expected by the model
+     */
+    private getModelInputNames(model: tf.GraphModel): string[] {
+        const inputNames: string[] = [];
+
+        try {
+            // Method 1: Check model.inputs (standard TF.js API)
+            if (model.inputs && Array.isArray(model.inputs)) {
+                for (const input of model.inputs) {
+                    if (input && input.name) {
+                        inputNames.push(input.name);
+                    }
+                }
+            }
+
+            // Method 2: Check model.executor for signature info
+            if (inputNames.length === 0 && (model as any).executor) {
+                const executor = (model as any).executor;
+                if (executor._signature && executor._signature.inputs) {
+                    for (const key of Object.keys(executor._signature.inputs)) {
+                        inputNames.push(key);
+                    }
+                }
+            }
+
+            // Method 3: Check model.inputNodes
+            if (inputNames.length === 0 && (model as any).inputNodes) {
+                const nodes = (model as any).inputNodes;
+                if (Array.isArray(nodes)) {
+                    inputNames.push(...nodes);
+                }
+            }
+
+            // Method 4: Check model.metadata
+            if (inputNames.length === 0 && (model as any).metadata) {
+                const metadata = (model as any).metadata;
+                if (metadata.signature && metadata.signature.inputs) {
+                    for (const key of Object.keys(metadata.signature.inputs)) {
+                        inputNames.push(key);
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('[MusicClassifier] Error discovering input names:', e);
+        }
+
+        return inputNames;
+    }
+
+    /**
      * Runs effnet embedding model inference on mel-spectrogram features.
      *
-     * EffNet models are TensorFlow.js GraphModels that expect input shape
-     * [batch, time, mel_bands, channels] and output embeddings.
+     * EffNet models are TensorFlow.js GraphModels that expect:
+     * - Named inputs discovered dynamically from model signature
+     * - Mel-spectrogram shape: [batch=64, mel_bands=128, time_frames=96]
+     *
+     * The 'bs64' in model name means fixed batch size of 64.
      *
      * @param model - TensorFlow.js GraphModel instance
      * @param features - 2D array of mel-spectrogram frames, shape [frames][128]
-     * @returns 2D array of embeddings, shape [frames][embedding_dim]
+     * @returns 2D array of embeddings, shape [segments][embedding_dim]
      */
     private async runEffnetEmbedding(model: tf.GraphModel, features: number[][]): Promise<number[][]> {
-        const numFrames = features.length;
         const numBands = features[0]?.length || 128;
+        const numFrames = features.length;
 
-        // Stack all frames into a single tensor [1, frames, bands, 1]
-        // The model expects batch dimension and channel dimension
-        const flattened = features.flat();
-        const inputTensor = tf.tensor4d(flattened, [1, numFrames, numBands, 1]);
+        // Discogs-EffNet-bs64 expects exactly [64, 128, 96]
+        const batchSize = 64;      // Fixed batch size (bs64)
+        const melBands = 128;       // Mel bands
+        const timeFrames = 96;      // Time frames per sample
 
         let embeddings: number[][] = [];
 
-        try {
-            // Run inference
-            const output = model.predict(inputTensor) as tf.Tensor;
+        // We need to create 64 segments of 96 frames each
+        // Each segment will be transposed to [128, 96] (mel_bands, time_frames)
 
-            // Output shape is typically [1, frames, embedding_dim] or [1, embedding_dim]
+        // First, ensure we have at least 96 frames by padding if needed
+        let paddedFeatures = features;
+        if (numFrames < timeFrames) {
+            const zeroFrame = Array(numBands).fill(0);
+            while (paddedFeatures.length < timeFrames) {
+                paddedFeatures = [...paddedFeatures, zeroFrame];
+            }
+        }
+
+        // Create 64 segments by sliding window or repeating
+        // For short audio, we repeat the available segments
+        const segments: number[][][] = [];
+
+        for (let i = 0; i < batchSize; i++) {
+            // Use modulo to cycle through available frames if we don't have enough
+            const startFrame = (i * timeFrames) % paddedFeatures.length;
+            const segment: number[][] = [];
+
+            for (let t = 0; t < timeFrames; t++) {
+                const frameIdx = (startFrame + t) % paddedFeatures.length;
+                segment.push(paddedFeatures[frameIdx] || Array(numBands).fill(0));
+            }
+            segments.push(segment);
+        }
+
+        // Now build the batch tensor: [64, 128, 96]
+        // Transpose each segment from [96, 128] to [128, 96]
+        const batchData: number[] = [];
+
+        for (let b = 0; b < batchSize; b++) {
+            // Transpose segment: [time_frames][mel_bands] -> [mel_bands][time_frames]
+            for (let band = 0; band < melBands; band++) {
+                for (let t = 0; t < timeFrames; t++) {
+                    batchData.push(segments[b][t]?.[band] ?? 0);
+                }
+            }
+        }
+
+        // Create input tensors
+        const melTensor = tf.tensor3d(batchData, [batchSize, melBands, timeFrames]);
+
+        try {
+            // Dynamically discover input names from the model signature
+            // Different model versions may have different input names
+            const inputNames = this.getModelInputNames(model);
+
+            if (inputNames.length === 0) {
+                throw new Error('Could not discover model input names');
+            }
+
+            // Build the input map based on discovered names
+            const inputs: Record<string, tf.Tensor> = {};
+
+            for (const name of inputNames) {
+                if (name.includes('melspectrogram') || name.includes('mel') || name.includes('spectrogram')) {
+                    inputs[name] = melTensor;
+                } else if (name.includes('saver') || name.includes('filename')) {
+                    // Some models expect a dummy string tensor
+                    inputs[name] = tf.scalar('');
+                } else {
+                    // Unknown input type - try mel tensor as default for single-input models
+                    inputs[name] = melTensor;
+                }
+            }
+
+            // Use execute() with dynamically discovered named inputs
+            const result = model.execute(inputs);
+
+            // Handle different output types (single tensor, array, or named map)
+            let output: tf.Tensor;
+            if (Array.isArray(result)) {
+                // Take the first tensor from array output
+                output = result[0];
+            } else if (result && typeof result === 'object' && !('data' in result)) {
+                // Named output map - take the first value
+                const tensors = Object.values(result);
+                output = tensors[0] as tf.Tensor;
+            } else {
+                output = result as tf.Tensor;
+            }
+
+            if (!output || typeof output.data !== 'function') {
+                throw new Error('Model execution did not return a valid tensor');
+            }
+
             const outputData = await output.data();
             const outputShape = output.shape;
 
+            // Output shape is typically [64, embedding_dim]
+            // We average across the batch to get a single embedding
             if (outputShape.length === 2) {
-                // Pooled output: [1, embedding_dim]
                 const embeddingDim = outputShape[1];
-                embeddings.push(Array.from(outputData));
-            } else if (outputShape.length === 3) {
-                // Frame-level output: [1, frames, embedding_dim]
-                const numOutputFrames = outputShape[1];
-                const embeddingDim = outputShape[2];
-                for (let i = 0; i < numOutputFrames; i++) {
-                    const start = i * embeddingDim;
-                    const frameEmbedding = Array.from(outputData.slice(start, start + embeddingDim));
-                    embeddings.push(frameEmbedding);
+                // Average all 64 embeddings
+                const avgEmbedding: number[] = [];
+                for (let d = 0; d < embeddingDim; d++) {
+                    let sum = 0;
+                    for (let b = 0; b < batchSize; b++) {
+                        sum += outputData[b * embeddingDim + d];
+                    }
+                    avgEmbedding.push(sum / batchSize);
                 }
+
+                // L2 normalize the embedding - this is critical for classifier compatibility
+                // The discogs-effnet model outputs unnormalized values that need normalization
+                const norm = Math.sqrt(avgEmbedding.reduce((sum, val) => sum + val * val, 0));
+                const normalizedEmbedding = norm > 0
+                    ? avgEmbedding.map(val => val / norm)
+                    : avgEmbedding;
+
+                embeddings.push(normalizedEmbedding);
             } else {
-                // Fallback: treat as single embedding
-                embeddings.push(Array.from(outputData));
+                // Fallback: just use the first embedding
+                const rawEmbedding = Array.from(outputData.slice(0, outputShape[outputShape.length - 1]));
+
+                // L2 normalize
+                const norm = Math.sqrt(rawEmbedding.reduce((sum, val) => sum + val * val, 0));
+                const normalizedEmbedding = norm > 0
+                    ? rawEmbedding.map(val => val / norm)
+                    : rawEmbedding;
+
+                embeddings.push(normalizedEmbedding);
             }
 
             output.dispose();
+
+            // Dispose any dynamically created input tensors (except melTensor which is handled below)
+            for (const [name, tensor] of Object.entries(inputs)) {
+                // Don't dispose melTensor here, it's handled in finally block
+                if (tensor !== melTensor) {
+                    tensor.dispose();
+                }
+            }
         } finally {
-            inputTensor.dispose();
+            melTensor.dispose();
         }
 
         return embeddings;
@@ -960,7 +1530,7 @@ export class MusicClassifier {
 
     private mapPredictions(predictions: number[], labels: string[]): ClassificationTag[] {
         return predictions.map((prob: number, index: number) => ({
-            name: labels[index],
+            name: labels[index] || `unknown_${index}`,
             confidence: prob
         }))
             .sort((a, b) => b.confidence - a.confidence)
