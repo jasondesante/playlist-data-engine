@@ -249,7 +249,7 @@ const classifier = new MusicClassifier({
   - [x] Returns mapped predictions with labels
 
 - [ ] Refactor ALL model analysis to use unified pattern
-  - [ ] Genre: single or two-step → `JAMENDO_GENRES` labels
+  - [x] Genre: single or two-step → `JAMENDO_GENRES` labels
   - [ ] Mood: single or two-step → `JAMENDO_MOODS` labels
   - [ ] Danceability: single or two-step → `['danceable', 'non-danceable']` labels
   - [ ] Voice: single or two-step → `['voice', 'instrumental']` labels (or similar)

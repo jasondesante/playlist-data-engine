@@ -538,16 +538,11 @@ export class MusicClassifier {
             // 1. Analyze Genre
             if (this.options.models?.genre) {
                 const genreConfig = this.options.models.genre;
-                if (isTwoStepModel(genreConfig)) {
-                    throw new Error('Two-step model architecture not yet implemented. Use single model URL for genre.');
-                }
-                const genrePredictions = await this.predictWithModel(
+                results.genres = await this.runModelPrediction(
                     genreConfig,
-                    features
+                    audioSignal,
+                    JAMENDO_GENRES
                 );
-                results.genres = this.mapPredictions(genrePredictions, JAMENDO_GENRES);
-                // results.genres = this.mapPredictions(genrePredictions, GTZAN_GENRES);
-                // results.genres = this.mapPredictions(genrePredictions, MTT_MUSICNN);
                 results.primary_genre = results.genres.length > 0 ? results.genres[0].name : "Unknown";
                 modelsUsed.push(formatModelForMetadata(genreConfig));
             }
