@@ -614,6 +614,56 @@ export class MusicClassifier {
     }
 
     /**
+     * Runs a classifier model on pre-computed embeddings.
+     *
+     * This method is used in the two-step model architecture:
+     * 1. Embedding model produces embeddings from audio features
+     * 2. Classifier model produces class predictions from embeddings
+     *
+     * @param classifierUrl - URL to the classifier model (GraphModel format)
+     * @param embeddings - 2D array of embeddings, shape [frames][embedding_dim]
+     * @returns Promise resolving to 1D array of averaged class predictions
+     */
+    private async runClassifierOnEmbeddings(
+        classifierUrl: string,
+        embeddings: number[][]
+    ): Promise<number[]> {
+        // Average embeddings across all frames
+        const avgEmbedding = averageEmbeddings(embeddings);
+
+        if (avgEmbedding.length === 0) {
+            console.warn('Empty embeddings provided to classifier');
+            return [];
+        }
+
+        // Load classifier model (GraphModel format for TF.js)
+        const classifier = await tf.loadGraphModel(classifierUrl);
+
+        // Create input tensor with shape [1, embedding_dim]
+        // The model expects batch dimension, even for single sample
+        const inputTensor = tf.tensor2d([avgEmbedding], [1, avgEmbedding.length]);
+
+        let predictions: number[] = [];
+
+        try {
+            // Execute model inference
+            const output = classifier.predict(inputTensor) as tf.Tensor;
+
+            // Convert output tensor to array
+            predictions = await output.data().then(data => Array.from(data));
+
+            // Dispose output tensor
+            output.dispose();
+        } finally {
+            // Always dispose input tensor and model
+            inputTensor.dispose();
+            classifier.dispose();
+        }
+
+        return predictions;
+    }
+
+    /**
      * Run TensorFlow model inference on pre-computed features.
      */
     private async predictWithModel(

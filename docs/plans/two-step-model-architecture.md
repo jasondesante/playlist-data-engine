@@ -217,8 +217,8 @@ const classifier = new MusicClassifier({
     - Average embeddings across all audio frames
     - Handle empty arrays gracefully
 
-- [ ] Implement classifier execution on embeddings
-  - [ ] `runClassifierOnEmbeddings(classifierUrl: string, embeddings: number[][]): Promise<number[]>`
+- [x] Implement classifier execution on embeddings
+  - [x] `runClassifierOnEmbeddings(classifierUrl: string, embeddings: number[][]): Promise<number[]>`
     - Load classifier model directly with `tf.loadGraphModel()`
     - Average embeddings across frames
     - Create input tensor with correct shape `[1, embedding_dim]`
