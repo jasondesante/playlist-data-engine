@@ -150,7 +150,7 @@ const classifier = new MusicClassifier({
   - [x] Check cache first, return cached model if available
   - [x] Initialize and cache model if `cacheEmbeddings` is true
   - [x] Return model instance
-  - [ ] **UPDATE NEEDED**: Handle `effnet` architecture (uses raw TF.js, not Essentia class)
+  - [x] Handle `effnet` architecture (uses raw TF.js `tf.loadGraphModel()`, not Essentia class)
 
 ---
 

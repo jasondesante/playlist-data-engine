@@ -314,24 +314,29 @@ export class MusicClassifier {
             return this.embeddingModelCache.get(modelUrl);
         }
 
-        if (!this.essentiaModel) {
-            throw new Error('Essentia not initialized. Call initializeEssentia() first.');
-        }
-
-        // Detect architecture to select the correct model class
+        // Detect architecture to select the correct model loading strategy
         const architecture = detectModelArchitecture(modelUrl);
         let model: any;
 
-        if (architecture === 'vggish') {
-            // VGGish models use TensorflowVGGish class
+        if (architecture === 'effnet') {
+            // EffNet models use raw TensorFlow.js (not Essentia wrapper classes)
+            // These are GraphModel format, loaded directly with tf.loadGraphModel()
+            model = await tf.loadGraphModel(modelUrl);
+        } else if (architecture === 'vggish') {
+            // VGGish models use TensorflowVGGish class from Essentia
+            if (!this.essentiaModel) {
+                throw new Error('Essentia not initialized. Call initializeEssentia() first.');
+            }
             model = new this.essentiaModel.TensorflowVGGish(tf, modelUrl);
+            await model.initialize();
         } else {
-            // musicnn and tempocnn models use TensorflowMusiCNN class
+            // musicnn and tempocnn models use TensorflowMusiCNN class from Essentia
+            if (!this.essentiaModel) {
+                throw new Error('Essentia not initialized. Call initializeEssentia() first.');
+            }
             model = new this.essentiaModel.TensorflowMusiCNN(tf, modelUrl);
+            await model.initialize();
         }
-
-        // Initialize the model
-        await model.initialize();
 
         // Cache the model if caching is enabled
         if (this.options.cacheEmbeddings) {
@@ -345,10 +350,18 @@ export class MusicClassifier {
      * Clears the embedding model cache, disposing of any cached models.
      * Call this to free memory when switching to different models or
      * when done with analysis.
+     *
+     * Handles both:
+     * - GraphModel instances (effnet) - use dispose()
+     * - Essentia model instances (musicnn, vggish) - use terminate()
      */
     public clearEmbeddingCache(): void {
         for (const model of this.embeddingModelCache.values()) {
-            if (model.terminate) {
+            if (model.dispose) {
+                // TensorFlow.js GraphModel (effnet)
+                model.dispose();
+            } else if (model.terminate) {
+                // Essentia model wrapper (musicnn, vggish, tempocnn)
                 model.terminate();
             }
         }
