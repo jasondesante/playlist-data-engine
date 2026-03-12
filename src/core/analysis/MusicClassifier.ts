@@ -124,6 +124,8 @@ const DANCEABILITY_LABELS = ['danceable', 'non-danceable'];
 
 const VOICE_LABELS = ['voice', 'instrumental'];
 
+const ACOUSTIC_LABELS = ['acoustic', 'electronic'];
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -589,6 +591,20 @@ export class MusicClassifier {
                 const instrumentalTag = voiceTags.find(tag => tag.name === 'instrumental');
                 results.vibe_metrics!.instrumental_probability = instrumentalTag?.confidence ?? 0;
                 modelsUsed.push(formatModelForMetadata(voiceConfig));
+            }
+
+            // 5. Analyze Acoustic/Electronic
+            if (this.options.models?.acoustic) {
+                const acousticConfig = this.options.models.acoustic;
+                const acousticTags = await this.runModelPrediction(
+                    acousticConfig,
+                    audioSignal,
+                    ACOUSTIC_LABELS
+                );
+                // Extract the electronic probability (confidence of "electronic" class)
+                const electronicTag = acousticTags.find(tag => tag.name === 'electronic');
+                results.vibe_metrics!.electronic_probability = electronicTag?.confidence ?? 0;
+                modelsUsed.push(formatModelForMetadata(acousticConfig));
             }
 
             // Note: Other metrics (valence, energy) could be derived from the mood predictions

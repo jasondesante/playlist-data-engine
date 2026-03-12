@@ -248,12 +248,12 @@ const classifier = new MusicClassifier({
   - [x] Calls appropriate prediction method
   - [x] Returns mapped predictions with labels
 
-- [ ] Refactor ALL model analysis to use unified pattern
+- [x] Refactor ALL model analysis to use unified pattern
   - [x] Genre: single or two-step → `JAMENDO_GENRES` labels
   - [x] Mood: single or two-step → `JAMENDO_MOODS` labels
   - [x] Danceability: single or two-step → `['danceable', 'non-danceable']` labels
   - [x] Voice: single or two-step → `['voice', 'instrumental']` labels
-  - [ ] Acoustic: single or two-step → appropriate labels
+  - [x] Acoustic: single or two-step → `['acoustic', 'electronic']` labels (populates `electronic_probability` in VibeMetrics)
 
 - [ ] Track models used in metadata
   - [ ] Single-step: just the model URL
