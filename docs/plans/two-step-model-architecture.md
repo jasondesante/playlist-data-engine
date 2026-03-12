@@ -395,6 +395,16 @@ const classifier = new MusicClassifier({
 
 ---
 
+## Bug Fixes (Post-Implementation)
+
+- [x] **Fixed GenreAnalyzer.test.ts mocks** (2026-03-12)
+  - Issue: Test was failing with `TypeError: OfflineAudioContext is not a constructor`
+  - Root cause: GenreAnalyzer.test.ts mocked `essentia.js` but MusicClassifier imports from `essentia.js/dist/essentia-wasm.es.js` and `essentia.js/dist/essentia.js-model.es.js`
+  - Fix: Updated mocks to match the actual import paths used by MusicClassifier
+  - Also updated test to use single-step model config since default is now two-step
+
+---
+
 ## Questions/Unknowns
 
 - [x] ~~What mel-band count does discogs-effnet use?~~ **Answer: 128 bands**
