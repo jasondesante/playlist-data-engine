@@ -122,11 +122,6 @@ export interface ClassificationTag {
 }
 
 /**
- * Backward compatibility alias for GenreTag
- */
-export type GenreTag = ClassificationTag;
-
-/**
  * Vibe and engagement metrics extracted from audio
  */
 export interface VibeMetrics {
@@ -186,8 +181,3 @@ export interface MusicClassificationProfile {
         analyzed_at: string;
     };
 }
-
-/**
- * Backward compatibility alias for GenreProfile
- */
-export interface GenreProfile extends MusicClassificationProfile { }

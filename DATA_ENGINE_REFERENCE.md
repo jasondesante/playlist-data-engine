@@ -65,7 +65,6 @@ A concise overview of all main exports from the library, organized by category.
 | `getAudioUrls`, `getImageUrls`, etc. | Simple playlist data extraction utilities | [Core Modules](#core-modules) |
 | `AudioAnalyzer` | Analyze audio frequency characteristics | [Core Modules](#core-modules) |
 | `MusicClassifier` | Deep ML classification (genre, mood, vibe) | [Core Modules](#core-modules) |
-| `GenreAnalyzer` | Legacy genre classification wrapper | [Core Modules](#core-modules) |
 | `SpectrumScanner` | Analyze frequency bands | [Core Modules](#core-modules) |
 | `ColorExtractor` | Extract color palettes from images | [Core Modules](#core-modules) |
 | `CharacterGenerator` | Generate D&D 5e characters deterministically | [Core Modules](#core-modules) |
@@ -295,24 +294,6 @@ Individual probability match for genre/mood.
 |----------|------|-------------|
 | `name` | `string` | Tag name |
 | `confidence` | `number` | Match confidence (0.0 - 1.0) |
-
-### GenreProfile (Legacy)
-
-*Location:* *[src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)*
-
-Result of the `GenreAnalyzer`. Inherits from `MusicClassificationProfile`.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `genres` | `ClassificationTag[]` | Array of matched genres |
-| `primary_genre` | `string` | The highest-confidence genre tag |
-| `analysis_metadata` | `object` | Duration, model URL, timestamp |
-
-### GenreTag (Legacy)
-
-*Location:* *[src/core/types/AudioProfile.ts](src/core/types/AudioProfile.ts)*
-
-Individual probability match. Alias for `ClassificationTag`.
 
 ### SamplingStrategy
 
@@ -1331,14 +1312,14 @@ interface ModelsConfig {
     acoustic?: ModelConfig;    // Acoustic/electronic detection
 }
 
-// Single-step: string URL
-type ModelConfig = string;
+// ModelConfig accepts either format:
+type ModelConfig = string | TwoStepModelConfig;
 
 // Two-step: embedding + classifier
 interface TwoStepModelConfig {
-    embedding: string;  // URL to embedding model
+    embedding: string;  // URL to embedding model (e.g., discogs-effnet-bs64-1.json)
     classifier: string; // URL to classifier model
-    labels?: string[];  // Optional custom labels
+    labels?: string[];  // Optional custom labels override
 }
 ```
 
@@ -1369,6 +1350,19 @@ Different model architectures require different mel-band configurations for feat
 - `tempocnn` or `tempo` → tempocnn (40 bands)
 - Default → musicnn (96 bands)
 
+#### Genre Label Detection
+
+Genre labels are automatically detected from the classifier model URL. Different genre models were trained on different datasets with their own taxonomies:
+
+| URL Keyword | Genre List | Count | Example Models |
+|-------------|------------|-------|----------------|
+| `jamendo` | MTG Jamendo | 87 genres | `mtg_jamendo_genre-discogs-effnet-1.json` |
+| `discogs400` or `discogs` | Discogs 400 | 400+ subgenres | `discogs400-effnet-1.json` |
+| `tzanetakis` | GTZAN | 10 classic genres | `genre-tzanetakis-1.json` |
+| `mtt_musicnn` | MagnaTagATune | 50 tags | `mtt_musicnn-1.json` |
+
+**Detection Order:** `jamendo` → `discogs400`/`discogs` → `tzanetakis` → `mtt_musicnn` → defaults to `jamendo`
+
 #### Methods
 
 | Method | Returns | Description |
@@ -1383,29 +1377,6 @@ Different model architectures require different mel-band configurations for feat
 The `analysis_metadata.models_used` array shows which models were used:
 - **Single-step:** Just the model URL (e.g., `'/models/genre-classifier.json'`)
 - **Two-step:** `"embedding -> classifier"` format (e.g., `'/models/discogs-effnet-bs64-1.json -> /models/mtg_jamendo_genre-discogs-effnet-1.json'`)
-
-### GenreAnalyzer (Legacy)
-
-*Location:* *[src/core/analysis/GenreAnalyzer.ts](src/core/analysis/GenreAnalyzer.ts)*
-
-*Also known as: Genre classifier wrapper*
-
-Legacy wrapper for backward compatibility. Uses `MusicClassifier` internally to provide genre tags.
-
-#### Constructor Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `topN` | number | `3` | Return top N matches |
-| `threshold` | number | `0.1` | Minimum confidence score (10%) |
-| `modelUrl` | string | `undefined` | Legacy model URL option |
-
-#### Methods
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `analyzeGenre(audioUrl: string)` | `Promise<GenreProfile>` | Returns genre profile with 100% backward compatibility |
-
 
 ### ColorExtractor
 
