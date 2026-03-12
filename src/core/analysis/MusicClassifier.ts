@@ -171,6 +171,7 @@ export function formatModelForMetadata(config: ModelConfig): string {
 interface EssentiaModel {
     EssentiaTFInputExtractor: new (wasmBackend: any, outputType: string) => any;
     TensorflowMusiCNN: new (tf: typeof import('@tensorflow/tfjs'), modelUrl: string) => any;
+    TensorflowVGGish: new (tf: typeof import('@tensorflow/tfjs'), modelUrl: string) => any;
 }
 
 export class MusicClassifier {
@@ -179,6 +180,21 @@ export class MusicClassifier {
     private essentiaModel: EssentiaModel | null = null;
     private extractor: any = null;
     private initialized = false;
+
+    /**
+     * Cache for embedding models by URL.
+     * Key: model URL, Value: initialized model instance
+     * Used to avoid re-loading the same embedding model when shared across
+     * multiple classifiers (e.g., genre and mood using the same discogs-effnet).
+     */
+    private embeddingModelCache: Map<string, any> = new Map();
+
+    /**
+     * Optional cache for classifier models.
+     * Key: model URL, Value: initialized model instance
+     * Useful when repeatedly analyzing audio with the same classifier.
+     */
+    private classifierModelCache: Map<string, any> = new Map();
 
     constructor(options: MusicClassifierOptions = {}) {
         this.options = {
@@ -190,6 +206,7 @@ export class MusicClassifier {
             },
             topN: 5,
             threshold: 0.05,
+            cacheEmbeddings: true, // Enable embedding caching by default
             ...options
         };
     }
@@ -221,6 +238,83 @@ export class MusicClassifier {
         );
 
         this.initialized = true;
+    }
+
+    /**
+     * Gets or creates an embedding model instance with caching support.
+     *
+     * This method implements intelligent model caching to avoid re-loading
+     * the same embedding model when it's shared across multiple classifiers
+     * (e.g., genre and mood both using discogs-effnet).
+     *
+     * @param modelUrl - URL to the embedding model
+     * @returns Promise resolving to the initialized model instance
+     */
+    private async getEmbeddingModel(modelUrl: string): Promise<any> {
+        // Check cache first
+        if (this.embeddingModelCache.has(modelUrl)) {
+            return this.embeddingModelCache.get(modelUrl);
+        }
+
+        if (!this.essentiaModel) {
+            throw new Error('Essentia not initialized. Call initializeEssentia() first.');
+        }
+
+        // Detect architecture to select the correct model class
+        const architecture = detectModelArchitecture(modelUrl);
+        let model: any;
+
+        if (architecture === 'vggish') {
+            // VGGish models use TensorflowVGGish class
+            model = new this.essentiaModel.TensorflowVGGish(tf, modelUrl);
+        } else {
+            // musicnn and tempocnn models use TensorflowMusiCNN class
+            model = new this.essentiaModel.TensorflowMusiCNN(tf, modelUrl);
+        }
+
+        // Initialize the model
+        await model.initialize();
+
+        // Cache the model if caching is enabled
+        if (this.options.cacheEmbeddings) {
+            this.embeddingModelCache.set(modelUrl, model);
+        }
+
+        return model;
+    }
+
+    /**
+     * Clears the embedding model cache, disposing of any cached models.
+     * Call this to free memory when switching to different models or
+     * when done with analysis.
+     */
+    public clearEmbeddingCache(): void {
+        for (const model of this.embeddingModelCache.values()) {
+            if (model.terminate) {
+                model.terminate();
+            }
+        }
+        this.embeddingModelCache.clear();
+    }
+
+    /**
+     * Clears the classifier model cache, disposing of any cached models.
+     */
+    public clearClassifierCache(): void {
+        for (const model of this.classifierModelCache.values()) {
+            if (model.terminate) {
+                model.terminate();
+            }
+        }
+        this.classifierModelCache.clear();
+    }
+
+    /**
+     * Clears all model caches (both embedding and classifier).
+     */
+    public clearAllCaches(): void {
+        this.clearEmbeddingCache();
+        this.clearClassifierCache();
     }
 
     /**

@@ -109,17 +109,19 @@ const classifier = new MusicClassifier({
 
 ## Phase 2: Embedding Model Cache
 
-- [ ] Add embedding model caching infrastructure
-  - [ ] Add `private embeddingModelCache: Map<string, any>` property
-  - [ ] Add `private classifierModelCache: Map<string, any>` property (optional, for reuse)
+> **Bonus**: Also implemented `clearEmbeddingCache()`, `clearClassifierCache()`, and `clearAllCaches()` methods for cache management.
 
-- [ ] Implement `getEmbeddingModel()` method
-  - [ ] Check cache first, return cached model if available
-  - [ ] Select correct model class based on architecture:
+- [x] Add embedding model caching infrastructure
+  - [x] Add `private embeddingModelCache: Map<string, any>` property
+  - [x] Add `private classifierModelCache: Map<string, any>` property (optional, for reuse)
+
+- [x] Implement `getEmbeddingModel()` method
+  - [x] Check cache first, return cached model if available
+  - [x] Select correct model class based on architecture:
     - `vggish` → `TensorflowVGGish`
     - `musicnn`/`tempocnn` → `TensorflowMusiCNN`
-  - [ ] Initialize and cache model if `cacheEmbeddings` is true
-  - [ ] Return model instance
+  - [x] Initialize and cache model if `cacheEmbeddings` is true
+  - [x] Return model instance
 
 ---
 
