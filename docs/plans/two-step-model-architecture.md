@@ -287,11 +287,11 @@ const classifier = new MusicClassifier({
 
 ## Phase 7: Testing
 
-- [ ] Add unit tests for two-step model flow
-  - [ ] Mock `tf.loadGraphModel()` for classifier
-  - [ ] Mock embedding model `predict()` to return fake embeddings
-  - [ ] Verify correct flow: features → embeddings → predictions
-  - [ ] Verify metadata shows both models
+- [x] Add unit tests for two-step model flow
+  - [x] Mock `tf.loadGraphModel()` for classifier
+  - [x] Mock embedding model `predict()` to return fake embeddings
+  - [x] Verify correct flow: features → embeddings → predictions
+  - [x] Verify metadata shows both models
 
 - [x] Add architecture-specific feature extraction tests
   - [x] Test architecture detection for effnet (from 'effnet' and 'discogs' keywords)

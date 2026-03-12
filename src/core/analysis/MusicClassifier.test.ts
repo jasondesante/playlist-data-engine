@@ -1,8 +1,55 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MusicClassifier, averageEmbeddings, detectModelArchitecture, isTwoStepModel, formatModelForMetadata } from './MusicClassifier.js';
 
+// ============================================================================
+// Hoisted Mock Variables (must be defined before vi.mock calls)
+// ============================================================================
+
+const {
+    mockFetch,
+    mockPredict,
+    mockInitialize,
+    mockTerminate,
+    mockDownsampleAudioBuffer,
+    mockComputeFrameWise,
+    mockLoadGraphModel,
+    mockTensor2d,
+    mockTensor4d,
+    mockEssentiaInstance
+} = vi.hoisted(() => {
+    // Create mock Essentia instance with all required methods
+    const createMockEssentiaInstance = () => ({
+        arrayToVector: vi.fn((arr: any) => arr),
+        vectorToArray: vi.fn((vec: any) => vec),
+        Windowing: vi.fn().mockReturnValue({ frame: new Float32Array(512) }),
+        Spectrum: vi.fn().mockReturnValue({ spectrum: new Float32Array(256) }),
+        MelBands: vi.fn().mockReturnValue({ bands: new Float32Array(128) }),
+        UnaryOperator: vi.fn().mockReturnValue({ array: new Float32Array(128) })
+    });
+
+    return {
+        mockFetch: vi.fn(),
+        mockPredict: vi.fn(),
+        mockInitialize: vi.fn().mockResolvedValue(undefined),
+        mockTerminate: vi.fn(),
+        mockDownsampleAudioBuffer: vi.fn().mockReturnValue(new Float32Array(16000)),
+        mockComputeFrameWise: vi.fn().mockReturnValue([
+            new Float32Array(96 * 1),
+            new Float32Array(96 * 1)
+        ]),
+        mockLoadGraphModel: vi.fn(),
+        mockTensor2d: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+        mockTensor4d: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+        mockEssentiaInstance: createMockEssentiaInstance()
+    };
+});
+
+// ============================================================================
+// Global Mocks
+// ============================================================================
+
 // Mock fetch
-global.fetch = vi.fn();
+global.fetch = mockFetch;
 
 // Mock AudioContext
 const mockAudioBuffer = {
@@ -18,25 +65,62 @@ class MockAudioContext {
     AudioContext: MockAudioContext
 };
 
-// Mock TensorFlow.js
-vi.mock('@tensorflow/tfjs', () => ({}));
-
-// Mock dynamically imported essentia.js modules
-const mockPredict = vi.fn();
-const mockInitialize = vi.fn().mockResolvedValue(undefined);
-const mockTerminate = vi.fn();
-const mockDownsampleAudioBuffer = vi.fn().mockReturnValue(new Float32Array(16000));
-const mockComputeFrameWise = vi.fn().mockReturnValue([
-    new Float32Array(96 * 1),
-    new Float32Array(96 * 1)
-]);
-
-vi.mock('essentia.js/dist/essentia-wasm.web.js', () => ({
-    EssentiaWASM: {
-        EssentiaWASM: {}
-    }
+// Mock TensorFlow.js with loadGraphModel for two-step classifier models
+vi.mock('@tensorflow/tfjs', () => ({
+    loadGraphModel: mockLoadGraphModel,
+    tensor2d: mockTensor2d,
+    tensor4d: mockTensor4d
 }));
 
+// Mock Essentia WASM ES module (the actual import path used by MusicClassifier)
+vi.mock('essentia.js/dist/essentia-wasm.es.js', () => {
+    // Create a class constructor that returns the mock instance
+    const MockEssentiaJS = vi.fn().mockImplementation(function(this: any) {
+        // Copy all properties from mockEssentiaInstance to this
+        Object.assign(this, {
+            arrayToVector: mockEssentiaInstance.arrayToVector,
+            vectorToArray: mockEssentiaInstance.vectorToArray,
+            Windowing: mockEssentiaInstance.Windowing,
+            Spectrum: mockEssentiaInstance.Spectrum,
+            MelBands: mockEssentiaInstance.MelBands,
+            UnaryOperator: mockEssentiaInstance.UnaryOperator
+        });
+        return this;
+    });
+
+    return {
+        EssentiaWASM: {
+            EssentiaWASM: {},
+            EssentiaJS: MockEssentiaJS,
+            ready: Promise.resolve()
+        }
+    };
+});
+
+// Mock Essentia WASM Web module (for backward compatibility)
+vi.mock('essentia.js/dist/essentia-wasm.web.js', () => {
+    const MockEssentiaJS = vi.fn().mockImplementation(function(this: any) {
+        Object.assign(this, {
+            arrayToVector: mockEssentiaInstance.arrayToVector,
+            vectorToArray: mockEssentiaInstance.vectorToArray,
+            Windowing: mockEssentiaInstance.Windowing,
+            Spectrum: mockEssentiaInstance.Spectrum,
+            MelBands: mockEssentiaInstance.MelBands,
+            UnaryOperator: mockEssentiaInstance.UnaryOperator
+        });
+        return this;
+    });
+
+    return {
+        EssentiaWASM: {
+            EssentiaWASM: {},
+            EssentiaJS: MockEssentiaJS,
+            ready: Promise.resolve()
+        }
+    };
+});
+
+// Mock Essentia model classes
 vi.mock('essentia.js/dist/essentia.js-model.es.js', () => ({
     EssentiaTFInputExtractor: class {
         downsampleAudioBuffer = mockDownsampleAudioBuffer;
@@ -46,8 +130,17 @@ vi.mock('essentia.js/dist/essentia.js-model.es.js', () => ({
         initialize = mockInitialize;
         predict = mockPredict;
         terminate = mockTerminate;
+    },
+    TensorflowVGGish: class {
+        initialize = mockInitialize;
+        predict = mockPredict;
+        terminate = mockTerminate;
     }
 }));
+
+// ============================================================================
+// Test Suite
+// ============================================================================
 
 describe('MusicClassifier', () => {
     beforeEach(() => {
@@ -57,15 +150,27 @@ describe('MusicClassifier', () => {
         mockTerminate.mockClear();
         mockDownsampleAudioBuffer.mockClear();
         mockComputeFrameWise.mockClear();
+        mockLoadGraphModel.mockReset();
+        mockTensor2d.mockClear();
+        mockTensor4d.mockClear();
+        mockFetch.mockReset();
+
+        // Reset Essentia instance mocks
+        mockEssentiaInstance.arrayToVector.mockImplementation((arr: any) => arr);
+        mockEssentiaInstance.vectorToArray.mockImplementation((vec: any) => vec);
+        mockEssentiaInstance.Windowing.mockReturnValue({ frame: new Float32Array(512) });
+        mockEssentiaInstance.Spectrum.mockReturnValue({ spectrum: new Float32Array(256) });
+        mockEssentiaInstance.MelBands.mockReturnValue({ bands: new Float32Array(128) });
+        mockEssentiaInstance.UnaryOperator.mockReturnValue({ array: new Float32Array(128) });
     });
 
-    it('should analyze genre, mood, and danceability', async () => {
+    it('should analyze genre, mood, and danceability with single-step models', async () => {
         // Setup mock fetch response
-        (global.fetch as any).mockResolvedValueOnce({
+        mockFetch.mockResolvedValueOnce({
             arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
         });
 
-        // Mock predictions for 3 models calls (predictions are 2D arrays - one per frame)
+        // Mock predictions for 3 single-step model calls (predictions are 2D arrays - one per frame)
         mockPredict
             // Genre (87 classes) - 2 frames
             .mockResolvedValueOnce([
@@ -80,7 +185,16 @@ describe('MusicClassifier', () => {
             // Danceability [danceable, non-danceable]
             .mockResolvedValueOnce([[0.7, 0.3], [0.72, 0.28]]);
 
-        const classifier = new MusicClassifier({ topN: 3, threshold: 0.1 });
+        // Use single-step models explicitly (not two-step defaults)
+        const classifier = new MusicClassifier({
+            models: {
+                genre: '/models/genre-musicnn.json',
+                mood: '/models/mood-musicnn.json',
+                danceability: '/models/danceability-vggish.json'
+            },
+            topN: 3,
+            threshold: 0.1
+        });
         const profile = await classifier.analyze('https://example.com/test-audio.mp3');
 
         expect(profile).toBeDefined();
@@ -96,7 +210,7 @@ describe('MusicClassifier', () => {
     });
 
     it('should handle missing models gracefully', async () => {
-        (global.fetch as any).mockResolvedValueOnce({
+        mockFetch.mockResolvedValueOnce({
             arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
         });
 
@@ -283,5 +397,506 @@ describe('formatModelForMetadata', () => {
     it('should handle relative paths', () => {
         const relativeConfig = '/models/genre/model.json';
         expect(formatModelForMetadata(relativeConfig)).toBe('/models/genre/model.json');
+    });
+});
+
+// ============================================================================
+// Two-Step Model Flow Tests
+// ============================================================================
+
+describe('Two-Step Model Flow', () => {
+    // Helper to create mock embedding model for tf.loadGraphModel (effnet)
+    const createMockEmbeddingModel = (embeddingDim: number, numFrames: number = 1) => {
+        // Create mock embeddings data
+        const embeddingsData = new Float32Array(embeddingDim * numFrames);
+        for (let i = 0; i < embeddingDim * numFrames; i++) {
+            embeddingsData[i] = (i % embeddingDim) / embeddingDim;
+        }
+
+        return {
+            predict: vi.fn().mockImplementation(() => ({
+                data: vi.fn().mockResolvedValue(new Float32Array(embeddingsData)), // Fresh copy each call
+                shape: [1, numFrames, embeddingDim],
+                dispose: vi.fn()
+            })),
+            dispose: vi.fn()
+        };
+    };
+
+    // Helper to create mock classifier model for tf.loadGraphModel
+    const createMockClassifierModel = (predictions: number[]) => ({
+        predict: vi.fn().mockImplementation(() => ({
+            data: vi.fn().mockResolvedValue(new Float32Array(predictions)), // Fresh copy each call
+            shape: [1, predictions.length],
+            dispose: vi.fn()
+        })),
+        dispose: vi.fn()
+    });
+
+    // Helper to create mock embedding model output (for Essentia models)
+    const createMockEmbeddingOutput = (embeddingDim: number, numFrames: number = 1) => {
+        const embeddings: number[][] = [];
+        for (let i = 0; i < numFrames; i++) {
+            embeddings.push(Array.from({ length: embeddingDim }, (_, j) => (i + j) / embeddingDim));
+        }
+        return embeddings;
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockPredict.mockReset();
+        mockInitialize.mockClear();
+        mockTerminate.mockClear();
+        mockDownsampleAudioBuffer.mockClear();
+        mockComputeFrameWise.mockClear();
+        mockLoadGraphModel.mockReset();
+        mockTensor2d.mockClear();
+        mockTensor4d.mockClear();
+        mockFetch.mockReset();
+
+        // Reset Essentia instance mocks
+        mockEssentiaInstance.arrayToVector.mockImplementation((arr: any) => arr);
+        mockEssentiaInstance.vectorToArray.mockImplementation((vec: any) => vec);
+        mockEssentiaInstance.Windowing.mockReturnValue({ frame: new Float32Array(512) });
+        mockEssentiaInstance.Spectrum.mockReturnValue({ spectrum: new Float32Array(256) });
+        mockEssentiaInstance.MelBands.mockReturnValue({ bands: new Float32Array(128) });
+        mockEssentiaInstance.UnaryOperator.mockReturnValue({ array: new Float32Array(128) });
+    });
+
+    describe('with two-step genre config', () => {
+        it('should analyze genre using two-step model architecture', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            // Mock loadGraphModel to return:
+            // 1. Embedding model (for discogs-effnet-bs64-1.json) - effnet uses 128 mel bands
+            // 2. Classifier model (for mtg_jamendo_genre-discogs-effnet-1.json)
+            const embeddingDim = 1280;
+            const numFrames = 2;
+            const genrePredictions = Array.from({ length: 87 }, (_, i) => i === 73 ? 0.9 : 0.01);
+
+            mockLoadGraphModel
+                .mockResolvedValueOnce(createMockEmbeddingModel(embeddingDim, numFrames))  // Embedding model
+                .mockResolvedValueOnce(createMockClassifierModel(genrePredictions));        // Classifier model
+
+            const classifier = new MusicClassifier({
+                models: {
+                    genre: {
+                        embedding: '/models/discogs-effnet-bs64-1.json',
+                        classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+                    },
+                    mood: undefined,
+                    danceability: undefined
+                },
+                topN: 3,
+                threshold: 0.1
+            });
+
+            const profile = await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // Verify genre was analyzed
+            expect(profile).toBeDefined();
+            expect(profile.genres.length).toBeGreaterThan(0);
+            expect(profile.primary_genre).toBe('rock');
+
+            // Verify metadata shows two-step format
+            expect(profile.analysis_metadata.models_used).toHaveLength(1);
+            expect(profile.analysis_metadata.models_used[0]).toBe(
+                '/models/discogs-effnet-bs64-1.json -> /models/mtg_jamendo_genre-discogs-effnet-1.json'
+            );
+
+            // Verify tf.loadGraphModel was called for both embedding and classifier
+            expect(mockLoadGraphModel).toHaveBeenCalledTimes(2);
+            expect(mockLoadGraphModel).toHaveBeenNthCalledWith(1, '/models/discogs-effnet-bs64-1.json');
+            expect(mockLoadGraphModel).toHaveBeenNthCalledWith(2, '/models/mtg_jamendo_genre-discogs-effnet-1.json');
+        });
+
+        it('should load embedding model once when shared between genre and mood', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            // Mock loadGraphModel calls:
+            // 1. Shared embedding model (loaded once, cached)
+            // 2. Genre classifier
+            // 3. Mood classifier (embedding uses cache)
+            const embeddingDim = 1280;
+            const numFrames = 1;
+            const genrePredictions = Array.from({ length: 87 }, (_, i) => i === 0 ? 0.9 : 0.01);
+            const moodPredictions = Array.from({ length: 62 }, (_, i) => i === 26 ? 0.85 : 0.01);
+
+            mockLoadGraphModel
+                .mockResolvedValueOnce(createMockEmbeddingModel(embeddingDim, numFrames))  // Shared embedding
+                .mockResolvedValueOnce(createMockClassifierModel(genrePredictions))        // Genre classifier
+                .mockResolvedValueOnce(createMockClassifierModel(moodPredictions));        // Mood classifier
+
+            // Use effnet-style URL to ensure architecture is detected as 'effnet'
+            const sharedEmbeddingUrl = '/models/shared-effnet-embeddings.json';
+            const classifier = new MusicClassifier({
+                models: {
+                    genre: {
+                        embedding: sharedEmbeddingUrl,
+                        classifier: '/models/genre-classifier.json'
+                    },
+                    mood: {
+                        embedding: sharedEmbeddingUrl, // Same embedding URL - should use cache
+                        classifier: '/models/mood-classifier.json'
+                    },
+                    danceability: undefined
+                },
+                cacheEmbeddings: true,
+                topN: 3,
+                threshold: 0.1
+            });
+
+            await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // Verify embedding was loaded only once (cached on second use)
+            // Total calls: 1 embedding + 2 classifiers = 3
+            expect(mockLoadGraphModel).toHaveBeenCalledTimes(3);
+
+            // Verify the embedding model was loaded first
+            expect(mockLoadGraphModel).toHaveBeenNthCalledWith(1, sharedEmbeddingUrl);
+        });
+    });
+
+    describe('with mixed single and two-step configs', () => {
+        it('should handle mixed configurations in same instance', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            // Mock predictions:
+            // - Genre: two-step (embedding + classifier)
+            // - Danceability: single-step (one model)
+            const mockEmbeddings = createMockEmbeddingOutput(1280, 1);
+            mockPredict
+                .mockResolvedValueOnce(mockEmbeddings)  // Genre embedding (two-step)
+                .mockResolvedValueOnce([[0.7, 0.3]]);   // Danceability single-step
+
+            // Mock genre classifier
+            const genrePredictions = Array.from({ length: 87 }, (_, i) => i === 0 ? 0.9 : 0.01);
+            mockLoadGraphModel.mockResolvedValueOnce(createMockClassifierModel(genrePredictions));
+
+            const classifier = new MusicClassifier({
+                models: {
+                    genre: {
+                        embedding: '/models/embedding.json',
+                        classifier: '/models/genre-classifier.json'
+                    },
+                    mood: undefined,
+                    danceability: '/models/danceability-model.json'
+                },
+                topN: 3,
+                threshold: 0.1
+            });
+
+            const profile = await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // Verify both analyses
+            expect(profile.genres.length).toBeGreaterThan(0);
+            expect(profile.vibe_metrics?.danceability).toBeCloseTo(0.7, 1);
+
+            // Verify metadata shows different formats
+            expect(profile.analysis_metadata.models_used).toHaveLength(2);
+            // Genre should show two-step format
+            expect(profile.analysis_metadata.models_used[0]).toContain('->');
+            // Danceability should be single URL
+            expect(profile.analysis_metadata.models_used[1]).toBe('/models/danceability-model.json');
+        });
+    });
+
+    describe('metadata tracking', () => {
+        it('should show both embedding and classifier in metadata for two-step', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            const mockEmbeddings = createMockEmbeddingOutput(1280, 1);
+            mockPredict.mockResolvedValueOnce(mockEmbeddings);
+
+            const predictions = Array.from({ length: 87 }, () => 0.01);
+            mockLoadGraphModel.mockResolvedValueOnce(createMockClassifierModel(predictions));
+
+            const embeddingUrl = '/models/custom-embedding.json';
+            const classifierUrl = '/models/custom-classifier.json';
+
+            const classifier = new MusicClassifier({
+                models: {
+                    genre: {
+                        embedding: embeddingUrl,
+                        classifier: classifierUrl
+                    },
+                    mood: undefined,
+                    danceability: undefined
+                }
+            });
+
+            const profile = await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // Verify metadata format
+            expect(profile.analysis_metadata.models_used[0]).toBe(
+                `${embeddingUrl} -> ${classifierUrl}`
+            );
+        });
+
+        it('should include custom labels in two-step config without affecting metadata format', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            const mockEmbeddings = createMockEmbeddingOutput(1280, 1);
+            mockPredict.mockResolvedValueOnce(mockEmbeddings);
+
+            // Voice classifier has 2 classes
+            mockLoadGraphModel.mockResolvedValueOnce(createMockClassifierModel([0.8, 0.2]));
+
+            const classifier = new MusicClassifier({
+                models: {
+                    voice: {
+                        embedding: '/models/voice-embedding.json',
+                        classifier: '/models/voice-classifier.json',
+                        labels: ['vocals', 'instrumental', 'mixed']
+                    },
+                    genre: undefined,
+                    mood: undefined,
+                    danceability: undefined
+                }
+            });
+
+            const profile = await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // Verify metadata still shows "embedding -> classifier" format
+            expect(profile.analysis_metadata.models_used[0]).toBe(
+                '/models/voice-embedding.json -> /models/voice-classifier.json'
+            );
+        });
+    });
+
+    describe('architecture detection in two-step flow', () => {
+        it('should use effnet features for discogs-effnet embedding models', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            // Mock both embedding and classifier models
+            const predictions = Array.from({ length: 87 }, () => 0.01);
+            mockLoadGraphModel
+                .mockResolvedValueOnce(createMockEmbeddingModel(1280, 1))  // Embedding model
+                .mockResolvedValueOnce(createMockClassifierModel(predictions));  // Classifier
+
+            const classifier = new MusicClassifier({
+                models: {
+                    genre: {
+                        embedding: '/models/discogs-effnet-bs64-1.json', // effnet = 128 bands
+                        classifier: '/models/genre-classifier.json'
+                    },
+                    mood: undefined,
+                    danceability: undefined
+                }
+            });
+
+            const profile = await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // The architecture should be detected as 'effnet' based on URL
+            expect(detectModelArchitecture('/models/discogs-effnet-bs64-1.json')).toBe('effnet');
+            expect(profile.analysis_metadata.models_used[0]).toContain('discogs-effnet');
+        });
+
+        it('should detect vggish architecture for vggish embedding models', async () => {
+            // Verify vggish detection
+            expect(detectModelArchitecture('/models/vggish-embedding.json')).toBe('vggish');
+        });
+
+        it('should detect musicnn architecture for standard models', async () => {
+            // Verify musicnn detection (default)
+            expect(detectModelArchitecture('/models/standard-embedding.json')).toBe('musicnn');
+        });
+    });
+
+    describe('effnet feature extraction', () => {
+        it('should call Essentia WASM methods for 128-band extraction', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            // Mock both embedding and classifier models
+            const predictions = Array.from({ length: 87 }, () => 0.01);
+            mockLoadGraphModel
+                .mockResolvedValueOnce(createMockEmbeddingModel(1280, 1))  // Embedding model
+                .mockResolvedValueOnce(createMockClassifierModel(predictions));  // Classifier
+
+            const classifier = new MusicClassifier({
+                models: {
+                    genre: {
+                        embedding: '/models/discogs-effnet-bs64-1.json', // triggers 128-band extraction
+                        classifier: '/models/genre-classifier.json'
+                    },
+                    mood: undefined,
+                    danceability: undefined
+                }
+            });
+
+            await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // Verify Essentia WASM methods were called for feature extraction
+            // Note: The exact number of calls depends on the audio signal length
+            // Just verify that the methods were called
+            expect(mockEssentiaInstance.arrayToVector).toHaveBeenCalled();
+        });
+    });
+
+    describe('cache management', () => {
+        it('should provide clearAllCaches method', () => {
+            const classifier = new MusicClassifier();
+            expect(classifier.clearAllCaches).toBeDefined();
+            expect(typeof classifier.clearAllCaches).toBe('function');
+        });
+
+        it('should provide clearEmbeddingCache method', () => {
+            const classifier = new MusicClassifier();
+            expect(classifier.clearEmbeddingCache).toBeDefined();
+            expect(typeof classifier.clearEmbeddingCache).toBe('function');
+        });
+
+        it('should provide clearClassifierCache method', () => {
+            const classifier = new MusicClassifier();
+            expect(classifier.clearClassifierCache).toBeDefined();
+            expect(typeof classifier.clearClassifierCache).toBe('function');
+        });
+    });
+});
+
+// ============================================================================
+// Backward Compatibility Tests
+// ============================================================================
+
+describe('Backward Compatibility', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockPredict.mockReset();
+        mockInitialize.mockClear();
+        mockTerminate.mockClear();
+        mockDownsampleAudioBuffer.mockClear();
+        mockComputeFrameWise.mockClear();
+        mockLoadGraphModel.mockReset();
+        mockFetch.mockReset();
+    });
+
+    it('should work with genre as single URL string', async () => {
+        mockFetch.mockResolvedValueOnce({
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+        });
+
+        mockPredict.mockResolvedValueOnce([
+            Array.from({ length: 87 }, (_, i) => i === 0 ? 0.9 : 0.01)
+        ]);
+
+        const classifier = new MusicClassifier({
+            models: {
+                genre: '/models/genre-classifier.json',
+                mood: undefined,
+                danceability: undefined
+            }
+        });
+
+        const profile = await classifier.analyze('https://example.com/test-audio.mp3');
+
+        expect(profile.genres.length).toBeGreaterThan(0);
+        expect(profile.analysis_metadata.models_used[0]).toBe('/models/genre-classifier.json');
+    });
+
+    it('should work with mood as single URL string', async () => {
+        mockFetch.mockResolvedValueOnce({
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+        });
+
+        mockPredict.mockResolvedValueOnce([
+            Array.from({ length: 62 }, (_, i) => i === 26 ? 0.85 : 0.01)
+        ]);
+
+        const classifier = new MusicClassifier({
+            models: {
+                genre: undefined,
+                mood: '/models/mood-classifier.json',
+                danceability: undefined
+            }
+        });
+
+        const profile = await classifier.analyze('https://example.com/test-audio.mp3');
+
+        expect(profile.moods.length).toBeGreaterThan(0);
+        expect(profile.analysis_metadata.models_used[0]).toBe('/models/mood-classifier.json');
+    });
+
+    it('should work with danceability as single URL string', async () => {
+        mockFetch.mockResolvedValueOnce({
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+        });
+
+        mockPredict.mockResolvedValueOnce([[0.75, 0.25]]);
+
+        const classifier = new MusicClassifier({
+            models: {
+                genre: undefined,
+                mood: undefined,
+                danceability: '/models/danceability-model.json'
+            }
+        });
+
+        const profile = await classifier.analyze('https://example.com/test-audio.mp3');
+
+        expect(profile.vibe_metrics?.danceability).toBeCloseTo(0.75, 1);
+        expect(profile.analysis_metadata.models_used[0]).toBe('/models/danceability-model.json');
+    });
+
+    it('should work with voice as single URL string', async () => {
+        mockFetch.mockResolvedValueOnce({
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+        });
+
+        mockPredict.mockResolvedValueOnce([[0.6, 0.4]]);
+
+        const classifier = new MusicClassifier({
+            models: {
+                genre: undefined,
+                mood: undefined,
+                danceability: undefined,
+                voice: '/models/voice-model.json'
+            }
+        });
+
+        const profile = await classifier.analyze('https://example.com/test-audio.mp3');
+
+        expect(profile.vibe_metrics?.instrumental_probability).toBeCloseTo(0.4, 1);
+    });
+
+    it('should work with acoustic as single URL string', async () => {
+        mockFetch.mockResolvedValueOnce({
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+        });
+
+        mockPredict.mockResolvedValueOnce([[0.3, 0.7]]);
+
+        const classifier = new MusicClassifier({
+            models: {
+                genre: undefined,
+                mood: undefined,
+                danceability: undefined,
+                acoustic: '/models/acoustic-model.json'
+            }
+        });
+
+        const profile = await classifier.analyze('https://example.com/test-audio.mp3');
+
+        expect(profile.vibe_metrics?.electronic_probability).toBeCloseTo(0.7, 1);
     });
 });
