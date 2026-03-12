@@ -226,14 +226,16 @@ const classifier = new MusicClassifier({
     - Properly dispose tensors and model after inference
     - Return prediction array
 
-- [ ] Implement main two-step prediction method
-  - [ ] `predictWithTwoStepModel(config: TwoStepModelConfig, audioSignal: Float32Array): Promise<number[]>`
+- [x] Implement main two-step prediction method
+  - [x] `predictWithTwoStepModel(config: TwoStepModelConfig, audioSignal: Float32Array): Promise<number[]>`
     - Detect embedding architecture
     - **Get correct features for architecture** (96 vs 128 mel bands!)
     - Load embedding model (with caching)
     - Run embedding model to get feature vectors
     - Run classifier on embeddings
     - Return averaged predictions
+  - [x] `runEffnetEmbedding(model, features)` - Runs effnet GraphModel inference on mel-spectrogram
+  - [x] `runEssentiaEmbedding(model, features)` - Runs Essentia model inference (musicnn, vggish)
 
 ---
 

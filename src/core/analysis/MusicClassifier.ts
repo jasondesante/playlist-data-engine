@@ -664,6 +664,145 @@ export class MusicClassifier {
     }
 
     /**
+     * Runs a two-step model architecture prediction.
+     *
+     * This method implements the complete two-step flow:
+     * 1. Detect embedding architecture from config
+     * 2. Extract architecture-specific features (96 vs 128 mel bands!)
+     * 3. Load embedding model (with caching)
+     * 4. Run embedding model to get feature vectors
+     * 5. Run classifier on embeddings
+     * 6. Return predictions
+     *
+     * @param config - Two-step model configuration with embedding and classifier URLs
+     * @param audioSignal - Mono audio signal at 16kHz sample rate
+     * @returns Promise resolving to 1D array of class predictions
+     */
+    private async predictWithTwoStepModel(
+        config: TwoStepModelConfig,
+        audioSignal: Float32Array
+    ): Promise<number[]> {
+        // Step 1: Detect embedding architecture
+        const architecture = detectModelArchitecture(config.embedding);
+
+        // Step 2: Get architecture-specific features
+        // CRITICAL: effnet uses 128 mel bands, musicnn uses 96!
+        const features = this.getFeaturesForArchitecture(audioSignal, architecture);
+
+        if (features.length === 0) {
+            console.warn('No features extracted from audio signal');
+            return [];
+        }
+
+        // Step 3: Load embedding model (with caching)
+        const embeddingModel = await this.getEmbeddingModel(config.embedding);
+
+        // Step 4: Run embedding model to get embeddings
+        let embeddings: number[][];
+
+        if (architecture === 'effnet') {
+            // EffNet uses TensorFlow.js GraphModel directly
+            embeddings = await this.runEffnetEmbedding(embeddingModel, features);
+        } else if (architecture === 'vggish') {
+            // VGGish uses Essentia TensorflowVGGish
+            embeddings = await this.runEssentiaEmbedding(embeddingModel, features);
+        } else {
+            // musicnn and tempocnn use Essentia TensorflowMusiCNN
+            embeddings = await this.runEssentiaEmbedding(embeddingModel, features);
+        }
+
+        if (embeddings.length === 0) {
+            console.warn('No embeddings produced by embedding model');
+            return [];
+        }
+
+        // Step 5: Run classifier on embeddings
+        const predictions = await this.runClassifierOnEmbeddings(config.classifier, embeddings);
+
+        // Step 6: Return predictions
+        return predictions;
+    }
+
+    /**
+     * Runs effnet embedding model inference on mel-spectrogram features.
+     *
+     * EffNet models are TensorFlow.js GraphModels that expect input shape
+     * [batch, time, mel_bands, channels] and output embeddings.
+     *
+     * @param model - TensorFlow.js GraphModel instance
+     * @param features - 2D array of mel-spectrogram frames, shape [frames][128]
+     * @returns 2D array of embeddings, shape [frames][embedding_dim]
+     */
+    private async runEffnetEmbedding(model: tf.GraphModel, features: number[][]): Promise<number[][]> {
+        const numFrames = features.length;
+        const numBands = features[0]?.length || 128;
+
+        // Stack all frames into a single tensor [1, frames, bands, 1]
+        // The model expects batch dimension and channel dimension
+        const flattened = features.flat();
+        const inputTensor = tf.tensor4d(flattened, [1, numFrames, numBands, 1]);
+
+        let embeddings: number[][] = [];
+
+        try {
+            // Run inference
+            const output = model.predict(inputTensor) as tf.Tensor;
+
+            // Output shape is typically [1, frames, embedding_dim] or [1, embedding_dim]
+            const outputData = await output.data();
+            const outputShape = output.shape;
+
+            if (outputShape.length === 2) {
+                // Pooled output: [1, embedding_dim]
+                const embeddingDim = outputShape[1];
+                embeddings.push(Array.from(outputData));
+            } else if (outputShape.length === 3) {
+                // Frame-level output: [1, frames, embedding_dim]
+                const numOutputFrames = outputShape[1];
+                const embeddingDim = outputShape[2];
+                for (let i = 0; i < numOutputFrames; i++) {
+                    const start = i * embeddingDim;
+                    const frameEmbedding = Array.from(outputData.slice(start, start + embeddingDim));
+                    embeddings.push(frameEmbedding);
+                }
+            } else {
+                // Fallback: treat as single embedding
+                embeddings.push(Array.from(outputData));
+            }
+
+            output.dispose();
+        } finally {
+            inputTensor.dispose();
+        }
+
+        return embeddings;
+    }
+
+    /**
+     * Runs Essentia embedding model inference on mel-spectrogram features.
+     *
+     * This handles TensorflowMusiCNN and TensorflowVGGish models from Essentia.js.
+     * These models have a predict() method that returns frame-level outputs.
+     *
+     * @param model - Essentia model instance (TensorflowMusiCNN or TensorflowVGGish)
+     * @param features - 2D array of mel-spectrogram frames
+     * @returns 2D array of embeddings, shape [frames][embedding_dim]
+     */
+    private async runEssentiaEmbedding(model: any, features: number[][]): Promise<number[][]> {
+        // Essentia models have a predict method that takes features array
+        // and returns predictions (which for embedding models are the embeddings)
+        const predictions = await model.predict(features, true);
+
+        if (!predictions || predictions.length === 0) {
+            return [];
+        }
+
+        // predictions is number[][] - shape [frames][output_dim]
+        // For embedding models, output_dim is the embedding dimension
+        return predictions;
+    }
+
+    /**
      * Run TensorFlow model inference on pre-computed features.
      */
     private async predictWithModel(
