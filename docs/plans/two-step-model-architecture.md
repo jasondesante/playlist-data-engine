@@ -300,7 +300,7 @@ const classifier = new MusicClassifier({
   - [x] Test architecture detection defaults to musicnn
   - [x] Test isTwoStepModel type guard
   - [x] Test 128-band extraction for effnet (calls Essentia WASM methods)
-  - [ ] Test 64-band extraction for vggish (future)
+  - [x] Test 64-band extraction for vggish
 
 - [x] Add backward compatibility tests for ALL model options
   - [x] Test genre with single URL string

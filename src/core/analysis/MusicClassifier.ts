@@ -312,6 +312,13 @@ export class MusicClassifier {
             'musicnn'
         );
 
+        // Create vggish extractor (64 mel bands) for VGGish-based models
+        const vggishExtractor = new modelModule.EssentiaTFInputExtractor(
+            this.essentiaWASM,
+            'vggish'
+        );
+        this.extractors.set('vggish', vggishExtractor);
+
         this.initialized = true;
     }
 
@@ -502,11 +509,13 @@ export class MusicClassifier {
                 return this.computeEffnetFeatures(audioSignal);
 
             case 'vggish':
-                // VGGish uses 64 bands - for now use default extractor
-                // TODO: Implement dedicated vggish extractor if needed
-                console.warn('VGGish architecture requested but using default 96-band extractor. ' +
-                    'Results may be suboptimal for VGGish models.');
-                return this.extractor.computeFrameWise(audioSignal, 512);
+                // VGGish uses 64 bands - use dedicated vggish extractor
+                const vggishExtractor = this.extractors.get('vggish');
+                if (!vggishExtractor) {
+                    console.warn('VGGish extractor not initialized, falling back to default 96-band extractor.');
+                    return this.extractor.computeFrameWise(audioSignal, 512);
+                }
+                return vggishExtractor.computeFrameWise(audioSignal, 512);
 
             case 'tempocnn':
                 // TempoCNN uses 40 bands - for now use default extractor

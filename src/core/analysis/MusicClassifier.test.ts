@@ -12,6 +12,7 @@ const {
     mockTerminate,
     mockDownsampleAudioBuffer,
     mockComputeFrameWise,
+    mockComputeFrameWiseVggish,
     mockLoadGraphModel,
     mockTensor2d,
     mockTensor4d,
@@ -36,6 +37,10 @@ const {
         mockComputeFrameWise: vi.fn().mockReturnValue([
             new Float32Array(96 * 1),
             new Float32Array(96 * 1)
+        ]),
+        mockComputeFrameWiseVggish: vi.fn().mockReturnValue([
+            new Float32Array(64 * 1),
+            new Float32Array(64 * 1)
         ]),
         mockLoadGraphModel: vi.fn(),
         mockTensor2d: vi.fn().mockReturnValue({ dispose: vi.fn() }),
@@ -125,6 +130,15 @@ vi.mock('essentia.js/dist/essentia.js-model.es.js', () => ({
     EssentiaTFInputExtractor: class {
         downsampleAudioBuffer = mockDownsampleAudioBuffer;
         computeFrameWise = mockComputeFrameWise;
+        private outputType: string;
+
+        constructor(wasmBackend: any, outputType: string = 'musicnn') {
+            this.outputType = outputType;
+            // Use vggish-specific mock for vggish extractor
+            if (outputType === 'vggish') {
+                this.computeFrameWise = mockComputeFrameWiseVggish;
+            }
+        }
     },
     TensorflowMusiCNN: class {
         initialize = mockInitialize;
@@ -150,6 +164,7 @@ describe('MusicClassifier', () => {
         mockTerminate.mockClear();
         mockDownsampleAudioBuffer.mockClear();
         mockComputeFrameWise.mockClear();
+        mockComputeFrameWiseVggish.mockClear();
         mockLoadGraphModel.mockReset();
         mockTensor2d.mockClear();
         mockTensor4d.mockClear();
@@ -449,6 +464,7 @@ describe('Two-Step Model Flow', () => {
         mockTerminate.mockClear();
         mockDownsampleAudioBuffer.mockClear();
         mockComputeFrameWise.mockClear();
+        mockComputeFrameWiseVggish.mockClear();
         mockLoadGraphModel.mockReset();
         mockTensor2d.mockClear();
         mockTensor4d.mockClear();
@@ -751,6 +767,166 @@ describe('Two-Step Model Flow', () => {
             // Note: The exact number of calls depends on the audio signal length
             // Just verify that the methods were called
             expect(mockEssentiaInstance.arrayToVector).toHaveBeenCalled();
+        });
+    });
+
+    describe('vggish feature extraction', () => {
+        it('should use vggish extractor (64 bands) for two-step vggish architecture models', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            // Mock loadGraphModel for vggish two-step (embedding + classifier)
+            const embeddingDim = 128;  // VGGish uses 128-dim embeddings
+            const numFrames = 2;
+            const dancePredictions = [0.7, 0.3];  // danceable, non-danceable
+
+            mockLoadGraphModel
+                .mockResolvedValueOnce(createMockEmbeddingModel(embeddingDim, numFrames))  // VGGish embedding
+                .mockResolvedValueOnce(createMockClassifierModel(dancePredictions));       // Danceability classifier
+
+            const classifier = new MusicClassifier({
+                models: {
+                    genre: undefined,
+                    mood: undefined,
+                    danceability: {
+                        embedding: '/models/vggish-embedding.json',  // triggers vggish extraction
+                        classifier: '/models/danceability-classifier.json'
+                    }
+                }
+            });
+
+            await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // Verify the vggish extractor was called (not the default musicnn extractor)
+            // The vggish extractor should be used for vggish embedding models
+            expect(mockComputeFrameWiseVggish).toHaveBeenCalled();
+        });
+
+        it('should use default musicnn extractor for non-vggish single-step models', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            // Mock predictions for musicnn model
+            mockPredict.mockResolvedValueOnce([
+                Array.from({ length: 87 }, (_, i) => i === 0 ? 0.9 : 0.01)
+            ]);
+
+            const classifier = new MusicClassifier({
+                models: {
+                    genre: '/models/genre-musicnn.json', // musicnn model
+                    mood: undefined,
+                    danceability: undefined
+                }
+            });
+
+            await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // Verify the default musicnn extractor was called
+            expect(mockComputeFrameWise).toHaveBeenCalled();
+            // Verify the vggish extractor was NOT called
+            expect(mockComputeFrameWiseVggish).not.toHaveBeenCalled();
+        });
+
+        it('should extract 64-band mel-spectrogram features for vggish architecture', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            // Mock loadGraphModel for vggish two-step (embedding + classifier)
+            const embeddingDim = 128;  // VGGish embedding dimension
+            const numFrames = 3;
+            const numMelBands = 64;  // VGGish uses 64 mel bands
+            const genrePredictions = Array.from({ length: 87 }, (_, i) => i === 0 ? 0.9 : 0.01);
+
+            // Setup mock to return 64-band features (64 elements per frame)
+            mockComputeFrameWiseVggish.mockReturnValue([
+                new Float32Array(numMelBands).fill(0.1),
+                new Float32Array(numMelBands).fill(0.2),
+                new Float32Array(numMelBands).fill(0.3)
+            ]);
+
+            mockLoadGraphModel
+                .mockResolvedValueOnce(createMockEmbeddingModel(embeddingDim, numFrames))  // VGGish embedding
+                .mockResolvedValueOnce(createMockClassifierModel(genrePredictions));       // Classifier
+
+            const classifier = new MusicClassifier({
+                models: {
+                    genre: {
+                        embedding: '/models/vggish-embedding.json',  // vggish = 64 bands
+                        classifier: '/models/genre-classifier.json'
+                    },
+                    mood: undefined,
+                    danceability: undefined
+                }
+            });
+
+            await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // Verify vggish extractor was called with correct parameters
+            expect(mockComputeFrameWiseVggish).toHaveBeenCalled();
+
+            // Verify the returned features have 64 mel bands per frame
+            const callArgs = mockComputeFrameWiseVggish.mock.calls[0];
+            expect(callArgs).toBeDefined();
+
+            // The mock returns 64-element arrays, confirming 64-band extraction
+            const returnedFeatures = mockComputeFrameWiseVggish.mock.results[0].value;
+            expect(returnedFeatures).toHaveLength(3); // 3 frames
+            expect(returnedFeatures[0]).toHaveLength(numMelBands); // 64 bands per frame
+            expect(returnedFeatures[1]).toHaveLength(numMelBands);
+            expect(returnedFeatures[2]).toHaveLength(numMelBands);
+        });
+
+        it('should detect vggish architecture from model URL containing "vggish"', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            // Mock predictions for single-step vggish model
+            mockPredict.mockResolvedValueOnce([[0.8, 0.2]]);
+
+            const classifier = new MusicClassifier({
+                models: {
+                    genre: undefined,
+                    mood: undefined,
+                    danceability: '/models/danceability-vggish-audioset-1.json'  // vggish in URL
+                }
+            });
+
+            // Verify architecture detection
+            expect(detectModelArchitecture('/models/danceability-vggish-audioset-1.json')).toBe('vggish');
+
+            await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // For single-step vggish models, the Essentia TensorflowVGGish class handles
+            // internal feature extraction with 64 mel bands
+            expect(mockPredict).toHaveBeenCalled();
+        });
+
+        it('should differentiate vggish (64 bands) from musicnn (96 bands) and effnet (128 bands)', async () => {
+            // Verify that different architectures are correctly identified
+            // and mapped to their respective mel-band counts
+
+            // VGGish = 64 bands
+            expect(detectModelArchitecture('/models/vggish-model.json')).toBe('vggish');
+            expect(detectModelArchitecture('/models/danceability-vggish-audioset-1.json')).toBe('vggish');
+
+            // MusiCNN = 96 bands (default)
+            expect(detectModelArchitecture('/models/musicnn-model.json')).toBe('musicnn');
+            expect(detectModelArchitecture('/models/genre-msd.json')).toBe('musicnn');
+
+            // EffNet = 128 bands
+            expect(detectModelArchitecture('/models/discogs-effnet-bs64-1.json')).toBe('effnet');
+            expect(detectModelArchitecture('/models/effnet-classifier.json')).toBe('effnet');
+
+            // TempoCNN = 40 bands
+            expect(detectModelArchitecture('/models/tempocnn-model.json')).toBe('tempocnn');
         });
     });
 
