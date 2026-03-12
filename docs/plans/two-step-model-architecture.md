@@ -255,9 +255,9 @@ const classifier = new MusicClassifier({
   - [x] Voice: single or two-step → `['voice', 'instrumental']` labels
   - [x] Acoustic: single or two-step → `['acoustic', 'electronic']` labels (populates `electronic_probability` in VibeMetrics)
 
-- [ ] Track models used in metadata
-  - [ ] Single-step: just the model URL
-  - [ ] Two-step: `"embedding -> classifier"` format
+- [x] Track models used in metadata
+  - [x] Single-step: just the model URL
+  - [x] Two-step: `"embedding -> classifier"` format
 
 ---
 

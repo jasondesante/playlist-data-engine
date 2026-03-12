@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MusicClassifier, averageEmbeddings, detectModelArchitecture, isTwoStepModel } from './MusicClassifier.js';
+import { MusicClassifier, averageEmbeddings, detectModelArchitecture, isTwoStepModel, formatModelForMetadata } from './MusicClassifier.js';
 
 // Mock fetch
 global.fetch = vi.fn();
@@ -240,5 +240,48 @@ describe('isTwoStepModel', () => {
         expect(isTwoStepModel({} as any)).toBe(false);
         expect(isTwoStepModel({ embedding: '/models/emb.json' } as any)).toBe(false);
         expect(isTwoStepModel({ classifier: '/models/cls.json' } as any)).toBe(false);
+    });
+});
+
+describe('formatModelForMetadata', () => {
+    it('should return URL string for single-step model config', () => {
+        const singleStepConfig = '/models/genre-classifier.json';
+        expect(formatModelForMetadata(singleStepConfig)).toBe('/models/genre-classifier.json');
+    });
+
+    it('should format two-step model config as "embedding -> classifier"', () => {
+        const twoStepConfig = {
+            embedding: '/models/discogs-effnet-bs64-1.json',
+            classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+        };
+        expect(formatModelForMetadata(twoStepConfig)).toBe(
+            '/models/discogs-effnet-bs64-1.json -> /models/mtg_jamendo_genre-discogs-effnet-1.json'
+        );
+    });
+
+    it('should handle two-step config with custom labels', () => {
+        const twoStepWithLabels = {
+            embedding: '/models/embedding.json',
+            classifier: '/models/classifier.json',
+            labels: ['label1', 'label2']
+        };
+        expect(formatModelForMetadata(twoStepWithLabels)).toBe(
+            '/models/embedding.json -> /models/classifier.json'
+        );
+    });
+
+    it('should handle URLs with different protocols', () => {
+        const httpsConfig = {
+            embedding: 'https://example.com/models/embedding.json',
+            classifier: 'https://example.com/models/classifier.json'
+        };
+        expect(formatModelForMetadata(httpsConfig)).toBe(
+            'https://example.com/models/embedding.json -> https://example.com/models/classifier.json'
+        );
+    });
+
+    it('should handle relative paths', () => {
+        const relativeConfig = '/models/genre/model.json';
+        expect(formatModelForMetadata(relativeConfig)).toBe('/models/genre/model.json');
     });
 });
