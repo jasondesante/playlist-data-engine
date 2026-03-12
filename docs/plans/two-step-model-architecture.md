@@ -276,9 +276,12 @@ const classifier = new MusicClassifier({
 
 ## Phase 6: Update GenreAnalyzer Wrapper
 
-- [ ] Update `GenreAnalyzer.ts` if needed
-  - [ ] Ensure it can pass through two-step configs to `MusicClassifier`
-  - [ ] Update `GenreAnalyzerOptions` if it has its own model config
+- [x] Update `GenreAnalyzer.ts` if needed
+  - [x] Ensure it can pass through two-step configs to `MusicClassifier`
+  - [x] Update `GenreAnalyzerOptions` if it has its own model config
+  - [x] Add tests for two-step model config pass-through
+  - [x] Add tests for priority handling (models.genre > modelUrl > default)
+  - [x] Add tests for preserving other model configs
 
 ---
 

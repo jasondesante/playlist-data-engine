@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GenreAnalyzer } from './GenreAnalyzer.js';
+import type { ModelConfig } from './MusicClassifier.js';
 
 // Mock fetch
 global.fetch = vi.fn();
@@ -38,6 +39,62 @@ describe('GenreAnalyzer', () => {
         const analyzer = new GenreAnalyzer();
         // Since options is private, we can't easily assert exactly, but we know it instantiated
         expect(analyzer).toBeInstanceOf(GenreAnalyzer);
+    });
+
+    describe('two-step model config support', () => {
+        it('should pass through two-step model config for genre', () => {
+            const twoStepConfig: ModelConfig = {
+                embedding: '/models/discogs-effnet-bs64-1.json',
+                classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+            };
+            const analyzer = new GenreAnalyzer({
+                models: { genre: twoStepConfig }
+            });
+            expect(analyzer).toBeInstanceOf(GenreAnalyzer);
+        });
+
+        it('should prioritize models.genre over deprecated modelUrl', () => {
+            const twoStepConfig: ModelConfig = {
+                embedding: '/models/discogs-effnet-bs64-1.json',
+                classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+            };
+            const analyzer = new GenreAnalyzer({
+                modelUrl: '/models/old-model.json',
+                models: { genre: twoStepConfig }
+            });
+            expect(analyzer).toBeInstanceOf(GenreAnalyzer);
+        });
+
+        it('should use deprecated modelUrl when models.genre is not provided', () => {
+            const analyzer = new GenreAnalyzer({
+                modelUrl: '/models/custom-genre-model.json'
+            });
+            expect(analyzer).toBeInstanceOf(GenreAnalyzer);
+        });
+
+        it('should preserve other model configs when setting genre', () => {
+            const twoStepConfig: ModelConfig = {
+                embedding: '/models/discogs-effnet-bs64-1.json',
+                classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+            };
+            const analyzer = new GenreAnalyzer({
+                models: {
+                    genre: twoStepConfig,
+                    mood: {
+                        embedding: '/models/discogs-effnet-bs64-1.json',
+                        classifier: '/models/mtg_jamendo_moodtheme-discogs-effnet-1.json'
+                    }
+                }
+            });
+            expect(analyzer).toBeInstanceOf(GenreAnalyzer);
+        });
+
+        it('should use default model when neither models.genre nor modelUrl is provided', () => {
+            const analyzer = new GenreAnalyzer({
+                topN: 10
+            });
+            expect(analyzer).toBeInstanceOf(GenreAnalyzer);
+        });
     });
 
     it('should analyze genre and return a GenreProfile', async () => {
