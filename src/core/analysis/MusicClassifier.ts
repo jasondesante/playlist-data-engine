@@ -122,6 +122,8 @@ const JAMENDO_MOODS = [
 
 const DANCEABILITY_LABELS = ['danceable', 'non-danceable'];
 
+const VOICE_LABELS = ['voice', 'instrumental'];
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -573,6 +575,20 @@ export class MusicClassifier {
                 const danceableTag = danceTags.find(tag => tag.name === 'danceable');
                 results.vibe_metrics!.danceability = danceableTag?.confidence ?? 0;
                 modelsUsed.push(formatModelForMetadata(danceConfig));
+            }
+
+            // 4. Analyze Voice/Instrumental
+            if (this.options.models?.voice) {
+                const voiceConfig = this.options.models.voice;
+                const voiceTags = await this.runModelPrediction(
+                    voiceConfig,
+                    audioSignal,
+                    VOICE_LABELS
+                );
+                // Extract the instrumental probability (confidence of "instrumental" class)
+                const instrumentalTag = voiceTags.find(tag => tag.name === 'instrumental');
+                results.vibe_metrics!.instrumental_probability = instrumentalTag?.confidence ?? 0;
+                modelsUsed.push(formatModelForMetadata(voiceConfig));
             }
 
             // Note: Other metrics (valence, energy) could be derived from the mood predictions

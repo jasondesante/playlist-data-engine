@@ -252,7 +252,7 @@ const classifier = new MusicClassifier({
   - [x] Genre: single or two-step → `JAMENDO_GENRES` labels
   - [x] Mood: single or two-step → `JAMENDO_MOODS` labels
   - [x] Danceability: single or two-step → `['danceable', 'non-danceable']` labels
-  - [ ] Voice: single or two-step → `['voice', 'instrumental']` labels (or similar)
+  - [x] Voice: single or two-step → `['voice', 'instrumental']` labels
   - [ ] Acoustic: single or two-step → appropriate labels
 
 - [ ] Track models used in metadata
