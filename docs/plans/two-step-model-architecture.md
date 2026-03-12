@@ -299,41 +299,41 @@ const classifier = new MusicClassifier({
   - [x] Test architecture detection for tempocnn
   - [x] Test architecture detection defaults to musicnn
   - [x] Test isTwoStepModel type guard
-  - [ ] Test 128-band extraction for effnet (requires mocking Essentia WASM algorithms)
+  - [x] Test 128-band extraction for effnet (calls Essentia WASM methods)
   - [ ] Test 64-band extraction for vggish (future)
 
-- [ ] Add backward compatibility tests for ALL model options
-  - [ ] Test genre with single URL string
-  - [ ] Test genre with two-step object
-  - [ ] Test mood with single URL string
-  - [ ] Test mood with two-step object
-  - [ ] Test danceability with single URL string
-  - [ ] Test danceability with two-step object
-  - [ ] Test voice/acoustic with both formats
-  - [ ] Ensure existing behavior unchanged
+- [x] Add backward compatibility tests for ALL model options
+  - [x] Test genre with single URL string
+  - [x] Test genre with two-step object
+  - [x] Test mood with single URL string
+  - [x] Test mood with two-step object (via cache test with shared embedding)
+  - [x] Test danceability with single URL string
+  - [x] Test danceability with two-step object (via mixed config test)
+  - [x] Test voice/acoustic with both formats
+  - [x] Ensure existing behavior unchanged
 
-- [ ] Add cache verification tests
-  - [ ] Verify embedding model is created only once when same URL used for genre and mood
-  - [ ] Verify cache is used on second call
+- [x] Add cache verification tests
+  - [x] Verify embedding model is created only once when same URL used for genre and mood
+  - [x] Verify cache is used on second call
 
-- [ ] Add mixed configuration tests
-  - [ ] Some models single-step, some two-step in same instance
-  - [ ] All two-step with shared embedding
-  - [ ] All single-step (original behavior)
+- [x] Add mixed configuration tests
+  - [x] Some models single-step, some two-step in same instance
+  - [x] All two-step with shared embedding
+  - [x] All single-step (original behavior)
 
 ---
 
 ## Phase 8: Documentation & Cleanup
 
-- [ ] Update JSDoc comments
-  - [ ] Document `TwoStepModelConfig` interface
-  - [ ] Document `cacheEmbeddings` option
-  - [ ] Document architecture differences (mel-band counts)
-  - [ ] Add examples in class-level docs
+- [x] Update JSDoc comments
+  - [x] Document `TwoStepModelConfig` interface
+  - [x] Document `cacheEmbeddings` option
+  - [x] Document architecture differences (mel-band counts)
+  - [x] Add examples in class-level docs
 
-- [ ] Update `DATA_ENGINE_REFERENCE.md` (reference tables)
-  - [ ] Update `MusicClassifier` Constructor Options table
-  - [ ] Add architecture compatibility table:
+- [x] Update `DATA_ENGINE_REFERENCE.md` (reference tables)
+  - [x] Update `MusicClassifier` Constructor Options table
+  - [x] Add architecture compatibility table:
 
     | Architecture | Mel Bands | Extractor | Compatible Models |
     |--------------|-----------|-----------|-------------------|
@@ -342,7 +342,7 @@ const classifier = new MusicClassifier({
     | `vggish` | 64 | Essentia vggish | VGGish, AudioSet |
     | `tempocnn` | 40 | Essentia tempocnn | TempoCNN |
 
-  - [ ] Add note about embedding model caching behavior
+  - [x] Add note about embedding model caching behavior
 
 - [ ] Update `docs/AUDIO_ANALYSIS.md` (examples)
   - [ ] Add two-step model usage examples

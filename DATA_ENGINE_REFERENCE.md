@@ -1305,21 +1305,84 @@ Extracts sonic fingerprints from audio files using Web Audio API. Analyzes frequ
 
 *Also known as: ML audio classifier, music analyzer*
 
-Deep semantic analysis of music including genre, mood, and vibe metrics using multiple `essentia.js` models.
+Deep semantic analysis of music including genre, mood, and vibe metrics using multiple `essentia.js` and TensorFlow.js models.
+
+Supports both **single-step** (one model does everything) and **two-step** (embedding + classifier) architectures.
 
 #### Constructor Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `topN` | number | `3` | Return top N matches for genres and moods |
-| `threshold` | number | `0.1` | Minimum confidence score (10%) |
-| `modelBaseUrl` | string | `undefined` | Custom base URL for `.json` and `.bin` model files |
+| `models` | `ModelsConfig` | See below | Model URLs for each analysis type |
+| `topN` | number | `5` | Return top N matches for genres and moods |
+| `threshold` | number | `0.05` | Minimum confidence score (5%) |
+| `cacheEmbeddings` | boolean | `true` | Cache embedding models for reuse across classifiers |
+
+#### ModelsConfig
+
+Each model option accepts EITHER a single URL string OR a two-step configuration object:
+
+```typescript
+interface ModelsConfig {
+    genre?: ModelConfig;       // Genre classification
+    mood?: ModelConfig;        // Mood/theme classification
+    danceability?: ModelConfig; // Danceability analysis
+    voice?: ModelConfig;       // Voice/instrumental detection
+    acoustic?: ModelConfig;    // Acoustic/electronic detection
+}
+
+// Single-step: string URL
+type ModelConfig = string;
+
+// Two-step: embedding + classifier
+interface TwoStepModelConfig {
+    embedding: string;  // URL to embedding model
+    classifier: string; // URL to classifier model
+    labels?: string[];  // Optional custom labels
+}
+```
+
+**Default Configuration:**
+
+| Model | Default | Type |
+|-------|---------|------|
+| `genre` | `{ embedding: '/models/discogs-effnet-bs64-1.json', classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json' }` | Two-step |
+| `mood` | `{ embedding: '/models/discogs-effnet-bs64-1.json', classifier: '/models/mtg_jamendo_moodtheme-discogs-effnet-1.json' }` | Two-step |
+| `danceability` | `'/models/classifiers/danceability/danceability-vggish-audioset-1.json'` | Single-step |
+| `voice` | `undefined` | Optional |
+| `acoustic` | `undefined` | Optional |
+
+#### Architecture Compatibility
+
+Different model architectures require different mel-band configurations for feature extraction:
+
+| Architecture | Mel Bands | Essentia Extractor | Compatible Models |
+|--------------|-----------|-------------------|-------------------|
+| `musicnn` | 96 | Essentia `musicnn` | MusiCNN, MSD classifiers |
+| `effnet` | 128 | Custom (Essentia WASM) | Discogs-EffNet embeddings |
+| `vggish` | 64 | Essentia `vggish` | VGGish, AudioSet classifiers |
+| `tempocnn` | 40 | Essentia `tempocnn` | TempoCNN tempo models |
+
+**Architecture Detection:** Automatically detected from model URL keywords:
+- `effnet` or `discogs` → effnet (128 bands)
+- `vggish` → vggish (64 bands)
+- `tempocnn` or `tempo` → tempocnn (40 bands)
+- Default → musicnn (96 bands)
 
 #### Methods
 
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `analyze(audioUrl: string)` | `Promise<MusicClassificationProfile>` | Downloads and analyzes audio; returns genres, moods, vibe metrics, and metadata |
+| `clearEmbeddingCache()` | `void` | Clears cached embedding models, freeing memory |
+| `clearClassifierCache()` | `void` | Clears cached classifier models |
+| `clearAllCaches()` | `void` | Clears all model caches |
+
+#### Metadata Format
+
+The `analysis_metadata.models_used` array shows which models were used:
+- **Single-step:** Just the model URL (e.g., `'/models/genre-classifier.json'`)
+- **Two-step:** `"embedding -> classifier"` format (e.g., `'/models/discogs-effnet-bs64-1.json -> /models/mtg_jamendo_genre-discogs-effnet-1.json'`)
 
 ### GenreAnalyzer (Legacy)
 
