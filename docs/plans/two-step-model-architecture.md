@@ -263,14 +263,14 @@ const classifier = new MusicClassifier({
 
 ## Phase 5: Update Default Configuration
 
-- [ ] Update constructor defaults (all support single OR two-step)
-  - [ ] Genre: two-step `{ embedding, classifier }` with discogs-effnet + jamendo-genre
-  - [ ] Mood: two-step `{ embedding, classifier }` with discogs-effnet + jamendo-mood
-  - [ ] Danceability: single-model string (VGGish) - can be upgraded to two-step later
-  - [ ] Voice: optional, single or two-step
-  - [ ] Acoustic: optional, single or two-step
-  - [ ] Set `cacheEmbeddings: true` by default
-  - [ ] User can override ANY option with either format
+- [x] Update constructor defaults (all support single OR two-step)
+  - [x] Genre: two-step `{ embedding, classifier }` with discogs-effnet + jamendo-genre
+  - [x] Mood: two-step `{ embedding, classifier }` with discogs-effnet + jamendo-mood
+  - [x] Danceability: single-model string (VGGish) - can be upgraded to two-step later
+  - [x] Voice: optional, single or two-step (omitted by default, user provides if needed)
+  - [x] Acoustic: optional, single or two-step (omitted by default, user provides if needed)
+  - [x] Set `cacheEmbeddings: true` by default
+  - [x] User can override ANY option with either format
 
 ---
 
