@@ -411,4 +411,4 @@ const classifier = new MusicClassifier({
 - [ ] What are the exact URLs/paths for the model files in production?
 - [ ] Should classifier models also be cached, or only embeddings?
 - [ ] Are there any memory constraints to consider with multiple cached models?
-- [ ] Should we expose a method to clear the cache manually? (Done: `clearAllCaches()`)
+- [x] Should we expose a method to clear the cache manually? (Done: `clearAllCaches()`)
