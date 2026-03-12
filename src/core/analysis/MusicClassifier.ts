@@ -120,6 +120,8 @@ const JAMENDO_MOODS = [
     "video", "war"
 ];
 
+const DANCEABILITY_LABELS = ['danceable', 'non-danceable'];
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -562,15 +564,14 @@ export class MusicClassifier {
             // 3. Analyze Vibe (Danceability)
             if (this.options.models?.danceability) {
                 const danceConfig = this.options.models.danceability;
-                if (isTwoStepModel(danceConfig)) {
-                    throw new Error('Two-step model architecture not yet implemented. Use single model URL for danceability.');
-                }
-                const dancePredictions = await this.predictWithModel(
+                const danceTags = await this.runModelPrediction(
                     danceConfig,
-                    features
+                    audioSignal,
+                    DANCEABILITY_LABELS
                 );
-                // Danceability model usually returns [danceable, non-danceable]
-                results.vibe_metrics!.danceability = dancePredictions[0];
+                // Extract the danceability probability (confidence of "danceable" class)
+                const danceableTag = danceTags.find(tag => tag.name === 'danceable');
+                results.vibe_metrics!.danceability = danceableTag?.confidence ?? 0;
                 modelsUsed.push(formatModelForMetadata(danceConfig));
             }
 
