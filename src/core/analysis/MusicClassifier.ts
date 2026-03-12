@@ -421,13 +421,31 @@ export class MusicClassifier {
      * @param audioSignal - Mono audio signal at 16kHz sample rate
      * @returns 2D array of mel-spectrogram frames, shape [frames][128]
      */
+    /**
+     * Creates a wrapper object that combines EssentiaJS algorithms with WASM utility methods.
+     * This is needed because EssentiaJS has algorithms (Windowing, Spectrum, etc.) but lacks
+     * utility methods like arrayToVector/vectorToArray which are on the WASM module directly.
+     */
+    private createEssentiaWrapper(): { Windowing: any; Spectrum: any; MelBands: any; UnaryOperator: any; arrayToVector: any; vectorToArray: any } {
+        const algorithms = new this.essentiaWASM.EssentiaJS(false);
+        return {
+            Windowing: algorithms.Windowing.bind(algorithms),
+            Spectrum: algorithms.Spectrum.bind(algorithms),
+            MelBands: algorithms.MelBands.bind(algorithms),
+            UnaryOperator: algorithms.UnaryOperator.bind(algorithms),
+            // Utility methods are on the WASM module directly, not on EssentiaJS
+            arrayToVector: this.essentiaWASM.arrayToVector,
+            vectorToArray: this.essentiaWASM.vectorToArray
+        };
+    }
+
     private computeEffnetFeatures(audioSignal: Float32Array): number[][] {
         if (!this.essentiaWASM) {
             throw new Error('Essentia WASM not initialized. Call initializeEssentia() first.');
         }
 
-        // Create Essentia instance for algorithm access
-        const essentia = new this.essentiaWASM.EssentiaJS(false);
+        // Create Essentia wrapper that combines algorithms with utility methods
+        const essentia = this.createEssentiaWrapper();
         const features: number[][] = [];
 
         // Frame parameters matching discogs-effnet requirements
@@ -441,12 +459,15 @@ export class MusicClassifier {
             const frame = audioSignal.slice(i, i + frameSize);
 
             // Apply Hann window
+            // Essentia.js Windowing parameters (in order):
+            // frame, zeroPhase, zeroPadding, type, normalized, constantsDecimals
             const windowed = essentia.Windowing(
                 essentia.arrayToVector(frame),
-                true,        // normalized
-                frameSize,   // size
+                true,        // zeroPhase
+                0,           // zeroPadding
                 'hann',      // type
-                true         // zeroPhase
+                true,        // normalized
+                5            // constantsDecimals
             );
 
             // Compute spectrum (FFT magnitude)
