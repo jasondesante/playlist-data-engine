@@ -7,11 +7,13 @@ import * as tf from '@tensorflow/tfjs';
 
 /**
  * Supported model architectures for audio feature extraction.
- * - `musicnn`: MTG Jamendo / Discogs-EffNet style models
- * - `vggish`: VGGish-based models (e.g., audioset classifiers)
- * - `tempocnn`: TempoCNN-based models (e.g., tempo estimation)
+ * Each architecture requires different mel-band configurations:
+ * - `musicnn`: 96 mel bands - MusiCNN / MSD style models
+ * - `effnet`: 128 mel bands - Discogs-EffNet embedding models
+ * - `vggish`: 64 mel bands - VGGish-based models (e.g., audioset classifiers)
+ * - `tempocnn`: 40 mel bands - TempoCNN-based models (e.g., tempo estimation)
  */
-export type ModelArchitecture = 'musicnn' | 'vggish' | 'tempocnn';
+export type ModelArchitecture = 'musicnn' | 'effnet' | 'vggish' | 'tempocnn';
 
 /**
  * Configuration for two-step model architectures where embedding
@@ -133,7 +135,13 @@ export function isTwoStepModel(config: ModelConfig): config is TwoStepModelConfi
 
 /**
  * Detects the model architecture from a model URL.
- * Used to select the correct model class for inference.
+ * Used to select the correct feature extractor (mel-band count) and model class.
+ *
+ * Architecture → Mel Bands mapping:
+ * - effnet: 128 bands (Discogs-EffNet)
+ * - vggish: 64 bands
+ * - tempocnn: 40 bands
+ * - musicnn: 96 bands (default)
  *
  * @param modelUrl - URL to the model file
  * @returns The detected architecture type
@@ -141,17 +149,22 @@ export function isTwoStepModel(config: ModelConfig): config is TwoStepModelConfi
 export function detectModelArchitecture(modelUrl: string): ModelArchitecture {
     const url = modelUrl.toLowerCase();
 
-    // VGGish models typically have 'vggish' in the name
+    // Discogs-EffNet models (128 mel bands) - check first since they're commonly used for embeddings
+    if (url.includes('effnet') || url.includes('discogs')) {
+        return 'effnet';
+    }
+
+    // VGGish models (64 mel bands)
     if (url.includes('vggish')) {
         return 'vggish';
     }
 
-    // TempoCNN models typically have 'tempocnn' or 'tempo' in the name
+    // TempoCNN models (40 mel bands)
     if (url.includes('tempocnn') || (url.includes('tempo') && !url.includes('temple'))) {
         return 'tempocnn';
     }
 
-    // Default to musicnn for discogs-effnet, msd, and other models
+    // Default to musicnn (96 mel bands) for MusiCNN, MSD, and other models
     return 'musicnn';
 }
 
@@ -165,6 +178,41 @@ export function formatModelForMetadata(config: ModelConfig): string {
         return `${config.embedding} -> ${config.classifier}`;
     }
     return config;
+}
+
+/**
+ * Averages embeddings across all audio frames.
+ * Used in two-step model architecture to aggregate frame-level embeddings
+ * before passing to the classifier.
+ *
+ * @param embeddings - 2D array of embeddings, shape [frames][embedding_dim]
+ * @returns 1D array of averaged embeddings, shape [embedding_dim]
+ *
+ * @example
+ * const frameEmbeddings = [[0.1, 0.2, 0.3], [0.2, 0.3, 0.4]];
+ * const avgEmbedding = averageEmbeddings(frameEmbeddings);
+ * // Result: [0.15, 0.25, 0.35]
+ */
+export function averageEmbeddings(embeddings: number[][]): number[] {
+    // Handle empty arrays gracefully
+    if (!embeddings || embeddings.length === 0) {
+        return [];
+    }
+
+    // Get embedding dimension from first frame
+    const embeddingDim = embeddings[0].length;
+    if (embeddingDim === 0) {
+        return [];
+    }
+
+    // Average across all frames
+    const averaged: number[] = [];
+    for (let i = 0; i < embeddingDim; i++) {
+        const sum = embeddings.reduce((acc, frame) => acc + (frame[i] ?? 0), 0);
+        averaged.push(sum / embeddings.length);
+    }
+
+    return averaged;
 }
 
 // Type definitions for essentia.js model module
@@ -195,6 +243,16 @@ export class MusicClassifier {
      * Useful when repeatedly analyzing audio with the same classifier.
      */
     private classifierModelCache: Map<string, any> = new Map();
+
+    /**
+     * Architecture-specific feature extractors.
+     * Each architecture requires different mel-band configurations:
+     * - musicnn: 96 bands (default extractor)
+     * - effnet: 128 bands (custom extractor)
+     * - vggish: 64 bands
+     * - tempocnn: 40 bands
+     */
+    private extractors: Map<ModelArchitecture, any> = new Map();
 
     constructor(options: MusicClassifierOptions = {}) {
         this.options = {
@@ -315,6 +373,123 @@ export class MusicClassifier {
     public clearAllCaches(): void {
         this.clearEmbeddingCache();
         this.clearClassifierCache();
+    }
+
+    /**
+     * Computes 128-band mel-spectrogram features for Discogs-EffNet models.
+     *
+     * Unlike the standard musicnn extractor (96 bands), EffNet requires 128 mel bands.
+     * This method uses Essentia WASM's core MelBands algorithm directly.
+     *
+     * @param audioSignal - Mono audio signal at 16kHz sample rate
+     * @returns 2D array of mel-spectrogram frames, shape [frames][128]
+     */
+    private computeEffnetFeatures(audioSignal: Float32Array): number[][] {
+        if (!this.essentiaWASM) {
+            throw new Error('Essentia WASM not initialized. Call initializeEssentia() first.');
+        }
+
+        // Create Essentia instance for algorithm access
+        const essentia = new this.essentiaWASM.EssentiaJS(false);
+        const features: number[][] = [];
+
+        // Frame parameters matching discogs-effnet requirements
+        const frameSize = 512;
+        const hopSize = 256; // 50% overlap
+        const sampleRate = 16000;
+        const numBands = 128; // KEY: EffNet uses 128 mel bands, not 96!
+
+        // Process audio in overlapping frames
+        for (let i = 0; i <= audioSignal.length - frameSize; i += hopSize) {
+            const frame = audioSignal.slice(i, i + frameSize);
+
+            // Apply Hann window
+            const windowed = essentia.Windowing(
+                essentia.arrayToVector(frame),
+                true,        // normalized
+                frameSize,   // size
+                'hann',      // type
+                true         // zeroPhase
+            );
+
+            // Compute spectrum (FFT magnitude)
+            const spectrum = essentia.Spectrum(
+                windowed.frame,
+                frameSize
+            );
+
+            // Compute 128-band mel spectrum
+            const melBands = essentia.MelBands(
+                spectrum.spectrum,
+                8000,          // highFrequencyBound (16kHz / 2)
+                frameSize / 2, // inputSize (FFT output size)
+                false,         // log (apply log later)
+                0,             // lowFrequencyBound
+                'unit_sum',    // normalize
+                numBands,      // numberBands - THE MAGIC NUMBER!
+                sampleRate,    // sampleRate
+                'power',       // type
+                'slaneyMel',   // warpingFormula
+                'linear'       // weighting
+            );
+
+            // Apply log compression (dB scale with floor)
+            const logMel = essentia.UnaryOperator(
+                melBands.bands,
+                10000,    // scale pre-log to avoid log(0)
+                1,        // shift
+                'log10'   // operation
+            );
+
+            // Convert back to array and store
+            const frameFeatures = Array.from(essentia.vectorToArray(logMel.array) as number[]);
+            features.push(frameFeatures);
+        }
+
+        return features;
+    }
+
+    /**
+     * Gets the appropriate mel-spectrogram features for a given model architecture.
+     *
+     * Different architectures require different mel-band configurations:
+     * - musicnn: 96 bands (default)
+     * - effnet: 128 bands (custom)
+     * - vggish: 64 bands
+     * - tempocnn: 40 bands
+     *
+     * @param audioSignal - Mono audio signal at 16kHz sample rate
+     * @param architecture - The model architecture type
+     * @returns 2D array of mel-spectrogram frames
+     */
+    private getFeaturesForArchitecture(
+        audioSignal: Float32Array,
+        architecture: ModelArchitecture
+    ): number[][] {
+        switch (architecture) {
+            case 'effnet':
+                // EffNet requires custom 128-band extraction
+                return this.computeEffnetFeatures(audioSignal);
+
+            case 'vggish':
+                // VGGish uses 64 bands - for now use default extractor
+                // TODO: Implement dedicated vggish extractor if needed
+                console.warn('VGGish architecture requested but using default 96-band extractor. ' +
+                    'Results may be suboptimal for VGGish models.');
+                return this.extractor.computeFrameWise(audioSignal, 512);
+
+            case 'tempocnn':
+                // TempoCNN uses 40 bands - for now use default extractor
+                // TODO: Implement dedicated tempocnn extractor if needed
+                console.warn('TempoCNN architecture requested but using default 96-band extractor. ' +
+                    'Results may be suboptimal for TempoCNN models.');
+                return this.extractor.computeFrameWise(audioSignal, 512);
+
+            case 'musicnn':
+            default:
+                // Default musicnn uses 96 bands (standard extractor)
+                return this.extractor.computeFrameWise(audioSignal, 512);
+        }
     }
 
     /**
