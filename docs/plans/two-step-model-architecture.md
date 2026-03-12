@@ -344,12 +344,12 @@ const classifier = new MusicClassifier({
 
   - [x] Add note about embedding model caching behavior
 
-- [ ] Update `docs/AUDIO_ANALYSIS.md` (examples)
-  - [ ] Add two-step model usage examples
-  - [ ] Show both single-step and two-step configurations
-  - [ ] Document discogs-effnet + jamendo genre/mood workflow
-  - [ ] Add signal flow diagrams for both 1-step and 2-step
-  - [ ] Add architecture compatibility table
+- [x] Update `docs/AUDIO_ANALYSIS.md` (examples)
+  - [x] Add two-step model usage examples
+  - [x] Show both single-step and two-step configurations
+  - [x] Document discogs-effnet + jamendo genre/mood workflow
+  - [x] Add signal flow diagrams for both 1-step and 2-step
+  - [x] Add architecture compatibility table
 
 ---
 

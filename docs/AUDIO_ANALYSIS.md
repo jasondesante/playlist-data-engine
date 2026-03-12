@@ -210,6 +210,187 @@ console.log(`Energy: ${profile.vibe_metrics.energy}`);
 
 ---
 
+### Two-Step Model Architecture
+
+The `MusicClassifier` supports both single-step (one model) and two-step (embedding + classifier) architectures. This enables using state-of-the-art models like Discogs-EffNet for embeddings combined with specialized classifier heads.
+
+#### Architecture Compatibility Table
+
+Different model architectures require different mel-band configurations for feature extraction:
+
+| Architecture | Mel Bands | Extractor | Compatible Models |
+|--------------|-----------|-----------|-------------------|
+| `musicnn` | 96 | Essentia musicnn | MusiCNN classifiers, MSD models |
+| `effnet` | 128 | Custom | Discogs-EffNet embeddings |
+| `vggish` | 64 | Essentia vggish | VGGish classifiers, AudioSet |
+| `tempocnn` | 40 | Essentia tempocnn | TempoCNN tempo estimation |
+
+> **Important**: The engine automatically detects the architecture from the model URL and uses the correct mel-band configuration. No manual configuration needed!
+
+#### Model Configuration Formats
+
+Every model option (`genre`, `mood`, `danceability`, `voice`, `acoustic`) accepts EITHER format:
+
+**Single-Step (1-step)** - One model handles everything:
+```typescript
+genre: '/models/genre-classifier.json'
+```
+
+**Two-Step (2-step)** - Separate embedding and classifier models:
+```typescript
+genre: {
+    embedding: '/models/discogs-effnet-bs64-1.json',
+    classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+}
+```
+
+#### Signal Flow Diagrams
+
+**Single-Step Flow:**
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Audio Signal   │ ──▶ │  Feature         │ ──▶ │  Single Model   │
+│  (16kHz mono)   │     │  Extractor       │     │  (classifier)   │
+└─────────────────┘     │  (96 bands)      │     └────────┬────────┘
+                        └──────────────────┘              │
+                                                          ▼
+                                                 ┌─────────────────┐
+                                                 │  Class Labels   │
+                                                 │  (genre, mood)  │
+                                                 └─────────────────┘
+```
+
+**Two-Step Flow:**
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Audio Signal   │ ──▶ │  Feature         │ ──▶ │  Embedding      │
+│  (16kHz mono)   │     │  Extractor       │     │  Model          │
+└─────────────────┘     │  (128 bands)     │     │  (1280-dim)     │
+                        └──────────────────┘     └────────┬────────┘
+                                                          │
+                        Architecture-specific              │
+                        mel-band config                    ▼
+                                                 ┌─────────────────┐
+                                                 │  Classifier     │
+                                                 │  Model          │
+                                                 │  (class probs)  │
+                                                 └────────┬────────┘
+                                                          │
+                                                          ▼
+                                                 ┌─────────────────┐
+                                                 │  Class Labels   │
+                                                 │  (genre, mood)  │
+                                                 └─────────────────┘
+```
+
+#### Two-Step Configuration Examples
+
+**Default Configuration (Two-Step for Genre/Mood):**
+
+The default uses Discogs-EffNet embeddings + MTG Jamendo classifiers:
+
+```typescript
+import { MusicClassifier } from 'playlist-data-engine';
+
+// Default configuration uses two-step architecture
+const classifier = new MusicClassifier();
+
+// This is equivalent to:
+const classifier = new MusicClassifier({
+    models: {
+        genre: {
+            embedding: '/models/discogs-effnet-bs64-1.json',
+            classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+        },
+        mood: {
+            embedding: '/models/discogs-effnet-bs64-1.json',  // Shared!
+            classifier: '/models/mtg_jamendo_moodtheme-discogs-effnet-1.json'
+        },
+        danceability: '/models/classifiers/danceability/danceability-vggish-audioset-1.json'
+    },
+    cacheEmbeddings: true  // Reuses shared embedding model
+});
+```
+
+**Mixed Configuration (Single + Two-Step):**
+
+```typescript
+const classifier = new MusicClassifier({
+    models: {
+        // Two-step: embedding + classifier (uses 128-band extractor)
+        genre: {
+            embedding: '/models/discogs-effnet-bs64-1.json',
+            classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+        },
+        // Two-step: same embedding cached, different classifier
+        mood: {
+            embedding: '/models/discogs-effnet-bs64-1.json',
+            classifier: '/models/mtg_jamendo_moodtheme-discogs-effnet-1.json'
+        },
+        // Single-step: one model does it all (uses 64-band vggish extractor)
+        danceability: '/models/danceability-vggish-audioset-1.json',
+        // Single-step: optional voice detection
+        voice: '/models/voice-detector.json',
+        // Two-step: optional acoustic detection
+        acoustic: {
+            embedding: '/models/discogs-effnet-bs64-1.json',
+            classifier: '/models/acoustic-classifier.json'
+        }
+    }
+});
+```
+
+**All Single-Step (Legacy Style):**
+
+```typescript
+const classifier = new MusicClassifier({
+    models: {
+        genre: '/models/genre-musicnn-msd-1.json',
+        mood: '/models/mood-musicnn-msd-1.json',
+        danceability: '/models/danceability-vggish-audioset-1.json'
+    }
+});
+```
+
+#### Embedding Model Caching
+
+When using two-step models with shared embeddings (e.g., same Discogs-EffNet for genre and mood), the embedding model is automatically cached and reused:
+
+```typescript
+const classifier = new MusicClassifier({
+    cacheEmbeddings: true,  // Default: true
+    models: {
+        genre: {
+            embedding: '/models/discogs-effnet-bs64-1.json',  // Loaded once
+            classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+        },
+        mood: {
+            embedding: '/models/discogs-effnet-bs64-1.json',  // Reused from cache!
+            classifier: '/models/mtg_jamendo_moodtheme-discogs-effnet-1.json'
+        }
+    }
+});
+
+// Later, to free memory:
+classifier.clearEmbeddingCache();   // Clear embedding models only
+classifier.clearClassifierCache();  // Clear classifier models only
+classifier.clearAllCaches();        // Clear everything
+```
+
+#### Metadata Tracking
+
+The `analysis_metadata.models_used` field tracks which models were used:
+
+```typescript
+const profile = await classifier.analyze(audioUrl);
+
+console.log(profile.analysis_metadata.models_used);
+// Two-step: ['/models/discogs-effnet-bs64-1.json -> /models/mtg_jamendo_genre-discogs-effnet-1.json', ...]
+// Single-step: ['/models/genre-musicnn-msd-1.json', ...]
+```
+
+---
+
 ## Genre Analysis (Legacy)
 
 The `GenreAnalyzer` is a legacy wrapper for backward compatibility. It now uses `MusicClassifier` internally and maintains a 100% identical return structure (including legacy metadata fields like `model_used` and `frames_analyzed`).
