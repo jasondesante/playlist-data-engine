@@ -803,6 +803,57 @@ export class MusicClassifier {
     }
 
     /**
+     * Unified model prediction method that handles both single-step and two-step model architectures.
+     *
+     * This is the primary entry point for model predictions. It automatically:
+     * - Detects if the config is single-step (string URL) or two-step (object with embedding + classifier)
+     * - Detects the model architecture and uses the correct feature extractor
+     * - Calls the appropriate prediction method
+     * - Maps predictions to labeled ClassificationTags
+     *
+     * @param config - Model configuration (string URL for single-step, or TwoStepModelConfig for two-step)
+     * @param audioSignal - Mono audio signal at 16kHz sample rate
+     * @param labels - Array of class labels for the model output
+     * @returns Promise resolving to array of ClassificationTags sorted by confidence
+     *
+     * @example
+     * // Single-step prediction
+     * const tags = await classifier.runModelPrediction(
+     *     '/models/genre-classifier.json',
+     *     audioSignal,
+     *     JAMENDO_GENRES
+     * );
+     *
+     * // Two-step prediction
+     * const tags = await classifier.runModelPrediction(
+     *     { embedding: '/models/effnet.json', classifier: '/models/genre-cls.json' },
+     *     audioSignal,
+     *     JAMENDO_GENRES
+     * );
+     */
+    private async runModelPrediction(
+        config: ModelConfig,
+        audioSignal: Float32Array,
+        labels: string[]
+    ): Promise<ClassificationTag[]> {
+        let predictions: number[];
+
+        if (isTwoStepModel(config)) {
+            // Two-step architecture: embedding model + classifier
+            predictions = await this.predictWithTwoStepModel(config, audioSignal);
+        } else {
+            // Single-step architecture: one model does it all
+            // Detect architecture for correct feature extraction
+            const architecture = detectModelArchitecture(config);
+            const features = this.getFeaturesForArchitecture(audioSignal, architecture);
+            predictions = await this.predictWithModel(config, features);
+        }
+
+        // Map predictions to labeled tags
+        return this.mapPredictions(predictions, labels);
+    }
+
+    /**
      * Run TensorFlow model inference on pre-computed features.
      */
     private async predictWithModel(

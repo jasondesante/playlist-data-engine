@@ -241,12 +241,12 @@ const classifier = new MusicClassifier({
 
 ## Phase 4: Update analyze() Method
 
-- [ ] Create helper method for unified model prediction
-  - [ ] `runModelPrediction(config: ModelConfig, audioSignal: Float32Array, labels: string[]): Promise<ClassificationTag[]>`
-  - [ ] Detects if config is single-step (string) or two-step (object)
-  - [ ] Detects architecture and uses correct feature extractor
-  - [ ] Calls appropriate prediction method
-  - [ ] Returns mapped predictions with labels
+- [x] Create helper method for unified model prediction
+  - [x] `runModelPrediction(config: ModelConfig, audioSignal: Float32Array, labels: string[]): Promise<ClassificationTag[]>`
+  - [x] Detects if config is single-step (string) or two-step (object)
+  - [x] Detects architecture and uses correct feature extractor
+  - [x] Calls appropriate prediction method
+  - [x] Returns mapped predictions with labels
 
 - [ ] Refactor ALL model analysis to use unified pattern
   - [ ] Genre: single or two-step → `JAMENDO_GENRES` labels
