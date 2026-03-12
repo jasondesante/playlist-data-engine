@@ -16,6 +16,16 @@ import * as tf from '@tensorflow/tfjs';
 export type ModelArchitecture = 'musicnn' | 'effnet' | 'vggish' | 'tempocnn';
 
 /**
+ * Supported genre list types for different model sources.
+ * Each genre model was trained on a specific dataset with its own genre taxonomy:
+ * - `jamendo`: MTG Jamendo dataset (87 genres)
+ * - `discogs400`: Discogs 400-style taxonomy (400+ subgenres)
+ * - `tzanetakis`: GTZAN dataset (10 classic genres)
+ * - `mtt_musicnn`: MTT (MagnaTagATune) with MusiCNN tags (50 tags)
+ */
+export type GenreListType = 'jamendo' | 'discogs400' | 'tzanetakis' | 'mtt_musicnn';
+
+/**
  * Configuration for two-step model architectures where embedding
  * and classifier models are separate files.
  *
@@ -578,6 +588,69 @@ export function detectModelArchitecture(modelUrl: string): ModelArchitecture {
 }
 
 /**
+ * Detects which genre list to use based on the model URL.
+ * Different genre models were trained on different datasets with different taxonomies:
+ *
+ * Model path keywords → Genre list:
+ * - 'jamendo' → JAMENDO_GENRES (MTG Jamendo dataset)
+ * - 'discogs400' or 'discogs' → DISCOGS400_GENRES (Discogs taxonomy)
+ * - 'tzanetakis' → tzanetakis_GENRES (GTZAN 10-class dataset)
+ * - 'mtt_musicnn' or 'mtt' → MTT_MUSICNN (MagnaTagATune tags)
+ *
+ * @param modelUrl - URL to the genre model file
+ * @returns The detected genre list type
+ */
+export function detectGenreListType(modelUrl: string): GenreListType {
+    const url = modelUrl.toLowerCase();
+
+    // Check for specific model identifiers in order of specificity
+
+    // MTG Jamendo genre models
+    if (url.includes('jamendo')) {
+        return 'jamendo';
+    }
+
+    // Discogs 400 genre models - check for discogs400 first, then generic discogs
+    if (url.includes('discogs400') || url.includes('discogs')) {
+        return 'discogs400';
+    }
+
+    // GTZAN Tzanetakis models (classic 10-genre dataset)
+    if (url.includes('tzanetakis')) {
+        return 'tzanetakis';
+    }
+
+    // MTT (MagnaTagATune) with MusiCNN
+    if (url.includes('mtt_musicnn')) {
+        return 'mtt_musicnn';
+    }
+
+    // Default to jamendo as it's the middle size
+    return 'jamendo';
+}
+
+/**
+ * Gets the genre labels array for a given genre list type.
+ *
+ * @param genreType - The genre list type
+ * @returns Array of genre label strings
+ */
+export function getGenreLabels(genreType: GenreListType): string[] {
+    switch (genreType) {
+        case 'jamendo':
+            return JAMENDO_GENRES;
+        case 'discogs400':
+            return DISCOGS400_GENRES;
+        case 'tzanetakis':
+            return tzanetakis_GENRES;
+        case 'mtt_musicnn':
+            return MTT_MUSICNN;
+        default:
+            return DISCOGS400_GENRES;
+    }
+}
+
+/**
  * Formats a model config for display in metadata.
  * - Single-step: just the URL
  * - Two-step: "embedding -> classifier" format
@@ -988,11 +1061,17 @@ export class MusicClassifier {
             // 1. Analyze Genre
             if (this.options.models?.genre) {
                 const genreConfig = this.options.models.genre;
+                // Detect genre list from the model path
+                const genreModelUrl = isTwoStepModel(genreConfig)
+                    ? genreConfig.classifier
+                    : genreConfig;
+                const genreType = detectGenreListType(genreModelUrl);
+                const genreLabels = getGenreLabels(genreType);
+
                 results.genres = await this.runModelPrediction(
                     genreConfig,
                     audioSignal,
-                    // JAMENDO_GENRES
-                    DISCOGS400_GENRES
+                    genreLabels
                 );
                 results.primary_genre = results.genres.length > 0 ? results.genres[0].name : "Unknown";
                 modelsUsed.push(formatModelForMetadata(genreConfig));
