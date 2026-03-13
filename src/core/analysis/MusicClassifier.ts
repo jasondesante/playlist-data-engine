@@ -40,24 +40,50 @@ export interface TwoStepModelConfig {
     classifier: string;
     /** Optional custom labels for classifier output */
     labels?: string[];
+    /** Explicit embedding architecture type (overrides URL detection) */
+    embeddingType?: ModelArchitecture;
+    /** Explicit classifier type for genre models (overrides URL detection) */
+    classifierType?: GenreListType;
+}
+
+/**
+ * Configuration for single-step model architecture where one model
+ * handles feature extraction and classification internally.
+ */
+export interface SingleStepModelConfig {
+    /** URL to the model file */
+    modelUrl: string;
+    /** Explicit model architecture type (overrides URL detection) */
+    modelType: ModelArchitecture;
+    /** Optional custom labels for model output */
+    labels?: string[];
 }
 
 /**
  * Model configuration that accepts either:
- * - Single string URL (1-step process): Model handles everything internally
- * - Two-step object: Separate embedding + classifier models chained together
+ * - Single string URL (legacy): Model handles everything internally
+ * - SingleStepModelConfig: One model with explicit architecture type
+ * - TwoStepModelConfig: Separate embedding + classifier models chained together
  *
  * @example
- * // Single-step
+ * // Legacy string
  * genre: '/models/genre-classifier.json'
+ *
+ * // Single-step with explicit type (for Arweave URLs)
+ * genre: {
+ *     modelUrl: 'https://arweave.net/xxx/model.json',
+ *     modelType: 'musicnn'
+ * }
  *
  * // Two-step
  * genre: {
  *     embedding: '/models/discogs-effnet-bs64-1.json',
- *     classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+ *     classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json',
+ *     embeddingType: 'effnet',
+ *     classifierType: 'jamendo'
  * }
  */
-export type ModelConfig = string | TwoStepModelConfig;
+export type ModelConfig = string | SingleStepModelConfig | TwoStepModelConfig;
 
 export interface MusicClassifierOptions {
     /**
@@ -553,6 +579,20 @@ export function isTwoStepModel(config: ModelConfig): config is TwoStepModelConfi
 }
 
 /**
+ * Type guard to check if a model config is a single-step configuration.
+ */
+export function isSingleStepModel(config: ModelConfig): config is SingleStepModelConfig {
+    return typeof config === 'object' && config !== null && 'modelUrl' in config;
+}
+
+/**
+ * Type guard to check if a model config is a plain string (legacy format).
+ */
+export function isStringModel(config: ModelConfig): config is string {
+    return typeof config === 'string';
+}
+
+/**
  * Detects the model architecture from a model URL.
  * Used to select the correct feature extractor (mel-band count) and model class.
  *
@@ -563,9 +603,16 @@ export function isTwoStepModel(config: ModelConfig): config is TwoStepModelConfi
  * - musicnn: 96 bands (default)
  *
  * @param modelUrl - URL to the model file
+ * @param explicitType - Optional explicit architecture type (overrides URL detection)
  * @returns The detected architecture type
  */
-export function detectModelArchitecture(modelUrl: string): ModelArchitecture {
+export function detectModelArchitecture(
+    modelUrl: string,
+    explicitType?: ModelArchitecture
+): ModelArchitecture {
+    // Use explicit type if provided
+    if (explicitType) return explicitType;
+
     const url = modelUrl.toLowerCase();
 
     // Discogs-EffNet models (128 mel bands) - check first since they're commonly used for embeddings
@@ -598,9 +645,16 @@ export function detectModelArchitecture(modelUrl: string): ModelArchitecture {
  * - 'mtt_musicnn' or 'mtt' → MTT_MUSICNN (MagnaTagATune tags)
  *
  * @param modelUrl - URL to the genre model file
+ * @param explicitType - Optional explicit genre list type (overrides URL detection)
  * @returns The detected genre list type
  */
-export function detectGenreListType(modelUrl: string): GenreListType {
+export function detectGenreListType(
+    modelUrl: string,
+    explicitType?: GenreListType
+): GenreListType {
+    // Use explicit type if provided
+    if (explicitType) return explicitType;
+
     const url = modelUrl.toLowerCase();
 
     // Check for specific model identifiers in order of specificity
@@ -658,6 +712,9 @@ export function getGenreLabels(genreType: GenreListType): string[] {
 export function formatModelForMetadata(config: ModelConfig): string {
     if (isTwoStepModel(config)) {
         return `${config.embedding} -> ${config.classifier}`;
+    }
+    if (isSingleStepModel(config)) {
+        return config.modelUrl;
     }
     return config;
 }
@@ -1081,11 +1138,15 @@ export class MusicClassifier {
             // 1. Analyze Genre
             if (this.options.models?.genre) {
                 const genreConfig = this.options.models.genre;
-                // Detect genre list from the model path
+                // Detect genre list from the model path or use explicit type
                 const genreModelUrl = isTwoStepModel(genreConfig)
                     ? genreConfig.classifier
-                    : genreConfig;
-                const genreType = detectGenreListType(genreModelUrl);
+                    : isSingleStepModel(genreConfig)
+                        ? genreConfig.modelUrl
+                        : genreConfig;
+                const genreType = isTwoStepModel(genreConfig) && genreConfig.classifierType
+                    ? genreConfig.classifierType
+                    : detectGenreListType(genreModelUrl);
                 const genreLabels = getGenreLabels(genreType);
 
                 results.genres = await this.runModelPrediction(
@@ -1250,8 +1311,8 @@ export class MusicClassifier {
         config: TwoStepModelConfig,
         audioSignal: Float32Array
     ): Promise<number[]> {
-        // Step 1: Detect embedding architecture
-        const architecture = detectModelArchitecture(config.embedding);
+        // Step 1: Detect embedding architecture (use explicit type if provided)
+        const architecture = detectModelArchitecture(config.embedding, config.embeddingType);
 
         // Step 2: Get architecture-specific features
         // CRITICAL: effnet uses 128 mel bands, musicnn uses 96!
@@ -1576,8 +1637,13 @@ export class MusicClassifier {
         if (isTwoStepModel(config)) {
             // Two-step architecture: embedding model + classifier
             predictions = await this.predictWithTwoStepModel(config, audioSignal);
+        } else if (isSingleStepModel(config)) {
+            // Single-step architecture with explicit type
+            const architecture = detectModelArchitecture(config.modelUrl, config.modelType);
+            const features = this.getFeaturesForArchitecture(audioSignal, architecture);
+            predictions = await this.predictWithModel(config.modelUrl, features);
         } else {
-            // Single-step architecture: one model does it all
+            // Legacy string URL - single-step architecture
             // Use default musicnn extractor (96 bands) - the model handles internal feature processing
             const features = this.extractor.computeFrameWise(audioSignal, 512);
             predictions = await this.predictWithModel(config, features);
