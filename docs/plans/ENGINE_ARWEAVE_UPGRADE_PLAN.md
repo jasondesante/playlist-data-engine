@@ -510,9 +510,9 @@ export {
 
 ### 5.2 Update AUDIO_ANALYSIS.md
 
-- [ ] Add section on model configuration formats
-- [ ] Document explicit type parameters
-- [ ] Add Arweave URL examples
+- [x] Add section on model configuration formats
+- [x] Document explicit type parameters
+- [x] Add Arweave URL examples
 
 ---
 
