@@ -1301,7 +1301,7 @@ Supports both **single-step** (one model does everything) and **two-step** (embe
 
 #### ModelsConfig
 
-Each model option accepts EITHER a single URL string OR a two-step configuration object:
+Each model option accepts a configuration object (single-step or two-step):
 
 ```typescript
 interface ModelsConfig {
@@ -1313,12 +1313,13 @@ interface ModelsConfig {
 }
 
 // ModelConfig accepts either format:
-type ModelConfig = string | SingleStepModelConfig | TwoStepModelConfig;
+type ModelConfig = SingleStepModelConfig | TwoStepModelConfig;
 
 // Single-step: one model handles everything
 interface SingleStepModelConfig {
     modelUrl: string;           // URL to the model file
     modelType: ModelArchitecture; // Explicit model architecture type (overrides URL detection)
+    genreType?: GenreListType;  // Explicit genre list type for genre models (overrides URL detection)
     labels?: string[];          // Optional custom labels override
 }
 
@@ -1334,18 +1335,7 @@ interface TwoStepModelConfig {
 
 #### Configuration Formats
 
-**Legacy String Format:**
-
-```typescript
-// Simple URL string - architecture detected from URL
-const classifier = new MusicClassifier({
-    models: {
-        genre: '/models/genre-classifier.json'
-    }
-});
-```
-
-**Single-Step with Explicit Type (Recommended for Arweave URLs):**
+**Single-Step with Explicit Type:**
 
 ```typescript
 // When URL doesn't contain architecture hints, use explicit type
@@ -1359,7 +1349,7 @@ const classifier = new MusicClassifier({
 });
 ```
 
-**Two-Step with Explicit Types (Recommended for Arweave URLs):**
+**Two-Step with Explicit Types:**
 
 ```typescript
 // Embedding + classifier with explicit types for Arweave URLs

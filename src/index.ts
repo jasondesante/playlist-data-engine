@@ -493,7 +493,6 @@ export {
     type ModelConfig,
     isTwoStepModel,
     isSingleStepModel,
-    isStringModel,
     detectModelArchitecture,
     detectGenreListType,
     getGenreLabels,

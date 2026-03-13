@@ -55,20 +55,21 @@ export interface SingleStepModelConfig {
     modelUrl: string;
     /** Explicit model architecture type (overrides URL detection) */
     modelType: ModelArchitecture;
+    /**
+     * Explicit genre list type for genre models (overrides URL detection).
+     * Required when using Arweave URLs that don't contain genre identifiers.
+     */
+    genreType?: GenreListType;
     /** Optional custom labels for model output */
     labels?: string[];
 }
 
 /**
  * Model configuration that accepts either:
- * - Single string URL (legacy): Model handles everything internally
  * - SingleStepModelConfig: One model with explicit architecture type
  * - TwoStepModelConfig: Separate embedding + classifier models chained together
  *
  * @example
- * // Legacy string
- * genre: '/models/genre-classifier.json'
- *
  * // Single-step with explicit type (for Arweave URLs)
  * genre: {
  *     modelUrl: 'https://arweave.net/xxx/model.json',
@@ -83,7 +84,7 @@ export interface SingleStepModelConfig {
  *     classifierType: 'jamendo'
  * }
  */
-export type ModelConfig = string | SingleStepModelConfig | TwoStepModelConfig;
+export type ModelConfig = SingleStepModelConfig | TwoStepModelConfig;
 
 export interface MusicClassifierOptions {
     /**
@@ -586,13 +587,6 @@ export function isSingleStepModel(config: ModelConfig): config is SingleStepMode
 }
 
 /**
- * Type guard to check if a model config is a plain string (legacy format).
- */
-export function isStringModel(config: ModelConfig): config is string {
-    return typeof config === 'string';
-}
-
-/**
  * Detects the model architecture from a model URL.
  * Used to select the correct feature extractor (mel-band count) and model class.
  *
@@ -713,10 +707,8 @@ export function formatModelForMetadata(config: ModelConfig): string {
     if (isTwoStepModel(config)) {
         return `${config.embedding} -> ${config.classifier}`;
     }
-    if (isSingleStepModel(config)) {
-        return config.modelUrl;
-    }
-    return config;
+    // SingleStepModelConfig
+    return config.modelUrl;
 }
 
 /**
@@ -837,7 +829,10 @@ export class MusicClassifier {
                     classifier: '/models/mtg_jamendo_moodtheme-discogs-effnet-1.json'
                 },
                 // Single-step architecture: VGGish model handles everything internally
-                danceability: '/models/classifiers/danceability/danceability-vggish-audioset-1.json',
+                danceability: {
+                    modelUrl: '/models/classifiers/danceability/danceability-vggish-audioset-1.json',
+                    modelType: 'vggish'
+                },
                 // Voice and acoustic are optional - user can provide either format
                 ...options.models
             },
@@ -1275,12 +1270,18 @@ export class MusicClassifier {
                 // Detect genre list from the model path or use explicit type
                 const genreModelUrl = isTwoStepModel(genreConfig)
                     ? genreConfig.classifier
-                    : isSingleStepModel(genreConfig)
-                        ? genreConfig.modelUrl
-                        : genreConfig;
-                const genreType = isTwoStepModel(genreConfig) && genreConfig.classifierType
-                    ? genreConfig.classifierType
-                    : detectGenreListType(genreModelUrl);
+                    : genreConfig.modelUrl;
+                
+                // Check for explicit genreType in config (works for both single and two-step)
+                let genreType: GenreListType;
+                if (isTwoStepModel(genreConfig) && genreConfig.classifierType) {
+                    genreType = genreConfig.classifierType;
+                } else if (isSingleStepModel(genreConfig) && genreConfig.genreType) {
+                    genreType = genreConfig.genreType;
+                } else {
+                    genreType = detectGenreListType(genreModelUrl);
+                }
+                
                 const genreLabels = getGenreLabels(genreType);
 
                 results.genres = await this.runModelPrediction(
@@ -1748,12 +1749,12 @@ export class MusicClassifier {
      * Unified model prediction method that handles both single-step and two-step model architectures.
      *
      * This is the primary entry point for model predictions. It automatically:
-     * - Detects if the config is single-step (string URL) or two-step (object with embedding + classifier)
+     * - Detects if the config is single-step or two-step
      * - Detects the model architecture and uses the correct feature extractor
      * - Calls the appropriate prediction method
      * - Maps predictions to labeled ClassificationTags
      *
-     * @param config - Model configuration (string URL for single-step, or TwoStepModelConfig for two-step)
+     * @param config - Model configuration (SingleStepModelConfig or TwoStepModelConfig)
      * @param audioSignal - Mono audio signal at 16kHz sample rate
      * @param labels - Array of class labels for the model output
      * @returns Promise resolving to array of ClassificationTags sorted by confidence
@@ -1761,7 +1762,7 @@ export class MusicClassifier {
      * @example
      * // Single-step prediction
      * const tags = await classifier.runModelPrediction(
-     *     '/models/genre-classifier.json',
+     *     { modelUrl: '/models/genre-classifier.json', modelType: 'musicnn' },
      *     audioSignal,
      *     JAMENDO_GENRES
      * );
@@ -1783,16 +1784,11 @@ export class MusicClassifier {
         if (isTwoStepModel(config)) {
             // Two-step architecture: embedding model + classifier
             predictions = await this.predictWithTwoStepModel(config, audioSignal);
-        } else if (isSingleStepModel(config)) {
-            // Single-step architecture with explicit type
+        } else {
+            // Single-step architecture
             const architecture = detectModelArchitecture(config.modelUrl, config.modelType);
             const features = this.getFeaturesForArchitecture(audioSignal, architecture);
             predictions = await this.predictWithModel(config.modelUrl, features);
-        } else {
-            // Legacy string URL - single-step architecture
-            // Use default musicnn extractor (96 bands) - the model handles internal feature processing
-            const features = this.extractor.computeFrameWise(audioSignal, 512);
-            predictions = await this.predictWithModel(config, features);
         }
 
         // Map predictions to labeled tags

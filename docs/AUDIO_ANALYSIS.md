@@ -227,17 +227,9 @@ Different model architectures require different mel-band configurations for feat
 
 #### Model Configuration Formats
 
-Every model option (`genre`, `mood`, `danceability`, `voice`, `acoustic`) accepts three formats:
+Every model option (`genre`, `mood`, `danceability`, `voice`, `acoustic`) accepts two formats:
 
-##### Format 1: Legacy String URL
-
-Simple string URL - architecture detected automatically from URL path:
-
-```typescript
-genre: '/models/genre-classifier.json'
-```
-
-##### Format 2: Single-Step Model Config (with explicit type)
+##### Format 1: Single-Step Model Config (with explicit type)
 
 For URLs where architecture cannot be detected (e.g., Arweave URLs), use `SingleStepModelConfig`:
 
@@ -247,6 +239,7 @@ import { MusicClassifier, type SingleStepModelConfig } from 'playlist-data-engin
 const config: SingleStepModelConfig = {
     modelUrl: 'https://arweave.net/xxx/model.json',
     modelType: 'musicnn',  // Explicitly specify architecture
+    genreType: 'jamendo',  // Explicitly specify genre list (for genre models)
     labels: ['custom', 'labels']  // Optional custom labels
 };
 ```
@@ -255,9 +248,10 @@ const config: SingleStepModelConfig = {
 |----------|------|----------|-------------|
 | `modelUrl` | `string` | Yes | URL to the model file |
 | `modelType` | `ModelArchitecture` | Yes | Explicit architecture: `'musicnn'` \| `'effnet'` \| `'vggish'` \| `'tempocnn'` |
+| `genreType` | `GenreListType` | No* | Explicit genre list: `'jamendo'` \| `'discogs400'` \| `'tzanetakis'` \| `'mtt_musicnn'` (*required for genre models with Arweave URLs) |
 | `labels` | `string[]` | No | Custom output labels |
 
-##### Format 3: Two-Step Model Config (with explicit types)
+##### Format 2: Two-Step Model Config (with explicit types)
 
 Separate embedding and classifier models with optional explicit type parameters:
 
@@ -384,14 +378,23 @@ const classifier = new MusicClassifier({
 });
 ```
 
-**All Single-Step (Legacy Style):**
+**All Single-Step:**
 
 ```typescript
 const classifier = new MusicClassifier({
     models: {
-        genre: '/models/genre-musicnn-msd-1.json',
-        mood: '/models/mood-musicnn-msd-1.json',
-        danceability: '/models/danceability-vggish-audioset-1.json'
+        genre: {
+            modelUrl: '/models/genre-musicnn-msd-1.json',
+            modelType: 'musicnn'
+        },
+        mood: {
+            modelUrl: '/models/mood-musicnn-msd-1.json',
+            modelType: 'musicnn'
+        },
+        danceability: {
+            modelUrl: '/models/danceability-vggish-audioset-1.json',
+            modelType: 'vggish'
+        }
     }
 });
 ```
