@@ -1286,216 +1286,74 @@ Extracts sonic fingerprints from audio files using Web Audio API. Analyzes frequ
 
 *Also known as: ML audio classifier, music analyzer*
 
-Deep semantic analysis of music including genre, mood, and vibe metrics using multiple `essentia.js` and TensorFlow.js models.
+Deep semantic analysis of music including genre, mood, and vibe metrics using multiple `essentia.js` and TensorFlow.js models. Supports both single-step (one model) and two-step (embedding + classifier) architectures.
 
-Supports both **single-step** (one model does everything) and **two-step** (embedding + classifier) architectures.
+**Usage examples:** [USAGE_IN_OTHER_PROJECTS.md](USAGE_IN_OTHER_PROJECTS.md#musicclassifier)
 
 #### Constructor Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `models` | `ModelsConfig` | See below | Model URLs for each analysis type |
+| `models` | `ModelsConfig` | `DEFAULT_ARWEAVE_MODELS` | Model URLs for each analysis type |
 | `topN` | number | `5` | Return top N matches for genres and moods |
 | `threshold` | number | `0.05` | Minimum confidence score (5%) |
 | `cacheEmbeddings` | boolean | `true` | Cache embedding models for reuse across classifiers |
 
-#### ModelsConfig
+For complete type definitions (`ModelConfig`, `SingleStepModelConfig`, `TwoStepModelConfig`, `ModelArchitecture`, `GenreListType`), see [src/core/analysis/MusicClassifier.ts:15-77](src/core/analysis/MusicClassifier.ts#L15-L77).
 
-Each model option accepts a configuration object (single-step or two-step):
+#### DEFAULT_ARWEAVE_MODELS
 
-```typescript
-interface ModelsConfig {
-    genre?: ModelConfig;       // Genre classification
-    mood?: ModelConfig;        // Mood/theme classification
-    danceability?: ModelConfig; // Danceability analysis
-    voice?: ModelConfig;       // Voice/instrumental detection
-    acoustic?: ModelConfig;    // Acoustic/electronic detection
-}
+Pre-configured Arweave-hosted models for zero-setup usage (see [source](src/core/analysis/MusicClassifier.ts#L379-L395)):
 
-// ModelConfig accepts either format:
-type ModelConfig = SingleStepModelConfig | TwoStepModelConfig;
+| Model | Architecture | Genre/Mood Type |
+|-------|--------------|-----------------|
+| `genre` | Two-step (effnet + discogs400) | 400+ subgenres |
+| `mood` | Two-step (effnet) | 60+ mood themes |
+| `danceability` | Single-step (musicnn) | Binary |
 
-// Single-step: one model handles everything
-interface SingleStepModelConfig {
-    modelUrl: string;           // URL to the model file
-    modelType: ModelArchitecture; // Explicit model architecture type (overrides URL detection)
-    genreType?: GenreListType;  // Explicit genre list type for genre models (overrides URL detection)
-    labels?: string[];          // Optional custom labels override
-}
+#### Architecture & Mel Bands
 
-// Two-step: embedding + classifier
-interface TwoStepModelConfig {
-    embedding: string;          // URL to embedding model (e.g., discogs-effnet-bs64-1.json)
-    classifier: string;         // URL to classifier model
-    labels?: string[];          // Optional custom labels override
-    embeddingType?: ModelArchitecture;  // Explicit embedding architecture type (overrides URL detection)
-    classifierType?: GenreListType;     // Explicit classifier type (overrides URL detection)
-}
-```
+Different architectures require different mel-band configurations (see [`ModelArchitecture`](src/core/analysis/MusicClassifier.ts#L15-L24)):
 
-#### Configuration Formats
-
-**Single-Step with Explicit Type:**
-
-```typescript
-// When URL doesn't contain architecture hints, use explicit type
-const classifier = new MusicClassifier({
-    models: {
-        danceability: {
-            modelUrl: 'https://arweave.net/xxx/model.json',
-            modelType: 'musicnn'  // Explicitly specify architecture
-        }
-    }
-});
-```
-
-**Two-Step with Explicit Types:**
-
-```typescript
-// Embedding + classifier with explicit types for Arweave URLs
-const classifier = new MusicClassifier({
-    models: {
-        genre: {
-            embedding: 'https://arweave.net/abc/model.json',
-            classifier: 'https://arweave.net/def/model.json',
-            embeddingType: 'effnet',      // Explicit embedding architecture
-            classifierType: 'discogs400'   // Explicit genre list type
-        }
-    }
-});
-```
-
-#### DEFAULT_ARWEAVE_MODELS Constant
-
-Pre-configured model URLs hosted on Arweave for zero-setup usage:
-
-```typescript
-import { MusicClassifier, DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine';
-
-// Use default Arweave-hosted models - no local files needed
-const classifier = new MusicClassifier({
-    models: DEFAULT_ARWEAVE_MODELS
-});
-```
-
-**Contents of DEFAULT_ARWEAVE_MODELS:**
-
-| Model | Architecture | Type | URL Format |
-|-------|--------------|------|------------|
-| `genre` | Two-step | effnet + discogs400 | Arweave |
-| `mood` | Two-step | effnet | Arweave |
-| `danceability` | Single-step | musicnn | Arweave |
-
-```typescript
-const DEFAULT_ARWEAVE_MODELS = {
-    genre: {
-        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
-        classifier: 'https://arweave.net/ZY-GSfMe7crJUITAtHITcoLCNfNWVP1HMwywivZ_LAQ/model.json',
-        embeddingType: 'effnet',
-        classifierType: 'discogs400'
-    },
-    mood: {
-        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
-        classifier: 'https://arweave.net/BUXf3AoFuIsrNDkV2hW6BhiwSVTuFllWOUQv5mu6qQ8/model.json',
-        embeddingType: 'effnet'
-    },
-    danceability: {
-        modelUrl: 'https://turbo-gateway.com/nX9KX1OVhEaT1dStNcsRiZKCQTWuHjAMl4MWprIFyZU/model.json',
-        modelType: 'musicnn'
-    }
-} as const;
-```
-
-#### Migration Guide
-
-**Migrating from Local Models to Arweave:**
-
-```typescript
-// Before: Local file paths
-const oldConfig = {
-    models: {
-        genre: {
-            embedding: '/models/discogs-effnet-bs64-1.json',
-            classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
-        }
-    }
-};
-
-// After: Arweave URLs with explicit types
-const newConfig = {
-    models: {
-        genre: {
-            embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
-            classifier: 'https://arweave.net/ZY-GSfMe7crJUITAtHITcoLCNfNWVP1HMwywivZ_LAQ/model.json',
-            embeddingType: 'effnet',      // Required for Arweave URLs
-            classifierType: 'discogs400'   // Required for genre classifiers
-        }
-    }
-};
-
-// Or simply use the defaults:
-import { DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine';
-const classifier = new MusicClassifier({ models: DEFAULT_ARWEAVE_MODELS });
-```
-
-**Why Explicit Types Are Needed for Arweave:**
-
-Arweave URLs like `arweave.net/xxx/model.json` don't contain architecture hints like `effnet` or `discogs400`. Without explicit types, the engine defaults to `musicnn` and `jamendo`, which may not match your models. Always specify `embeddingType`, `classifierType`, or `modelType` when using Arweave URLs.
-
-**Default Configuration (Local Models):**
-
-| Model | Default | Type |
-|-------|---------|------|
-| `genre` | `{ embedding: '/models/discogs-effnet-bs64-1.json', classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json' }` | Two-step |
-| `mood` | `{ embedding: '/models/discogs-effnet-bs64-1.json', classifier: '/models/mtg_jamendo_moodtheme-discogs-effnet-1.json' }` | Two-step |
-| `danceability` | `'/models/classifiers/danceability/danceability-vggish-audioset-1.json'` | Single-step |
-| `voice` | `undefined` | Optional |
-| `acoustic` | `undefined` | Optional |
-
-#### Architecture Compatibility
-
-Different model architectures require different mel-band configurations for feature extraction:
-
-| Architecture | Mel Bands | Essentia Extractor | Compatible Models |
-|--------------|-----------|-------------------|-------------------|
-| `musicnn` | 96 | Essentia `musicnn` | MusiCNN, MSD classifiers |
-| `effnet` | 128 | Custom (Essentia WASM) | Discogs-EffNet embeddings |
-| `vggish` | 64 | Essentia `vggish` | VGGish, AudioSet classifiers |
-| `tempocnn` | 40 | Essentia `tempocnn` | TempoCNN tempo models |
-
-**Architecture Detection:** Automatically detected from model URL keywords:
-- `effnet` or `discogs` → effnet (128 bands)
-- `vggish` → vggish (64 bands)
-- `tempocnn` or `tempo` → tempocnn (40 bands)
-- Default → musicnn (96 bands)
+| Architecture | Mel Bands | Use Case |
+|--------------|-----------|----------|
+| `musicnn` | 96 | MusiCNN, MSD classifiers |
+| `effnet` | 128 | Discogs-EffNet embeddings |
+| `vggish` | 64 | VGGish, AudioSet classifiers |
+| `tempocnn` | 40 | TempoCNN tempo models |
 
 #### Genre Label Detection
 
-Genre labels are automatically detected from the classifier model URL. Different genre models were trained on different datasets with their own taxonomies:
+Genre models auto-detect their taxonomy from URL keywords (see [`GenreListType`](src/core/analysis/MusicClassifier.ts#L26-L35)):
 
-| URL Keyword | Genre List | Count | Example Models |
-|-------------|------------|-------|----------------|
-| `jamendo` | MTG Jamendo | 87 genres | `mtg_jamendo_genre-discogs-effnet-1.json` |
-| `discogs400` or `discogs` | Discogs 400 | 400+ subgenres | `discogs400-effnet-1.json` |
-| `tzanetakis` | GTZAN | 10 classic genres | `genre-tzanetakis-1.json` |
-| `mtt_musicnn` | MagnaTagATune | 50 tags | `mtt_musicnn-1.json` |
-
-**Detection Order:** `jamendo` → `discogs400`/`discogs` → `tzanetakis` → `mtt_musicnn` → defaults to `jamendo`
+| URL Keyword | Genre List | Count |
+|-------------|------------|-------|
+| `jamendo` | MTG Jamendo | 87 |
+| `discogs400` or `discogs` | Discogs 400 | 400+ |
+| `tzanetakis` | GTZAN | 10 |
+| `mtt_musicnn` | MagnaTagATune | 50 |
 
 #### Methods
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `analyze(audioUrl: string)` | `Promise<MusicClassificationProfile>` | Downloads and analyzes audio; returns genres, moods, vibe metrics, and metadata |
-| `clearEmbeddingCache()` | `void` | Clears cached embedding models, freeing memory |
+| `analyze(audioUrl)` | `Promise<MusicClassificationProfile>` | Downloads and analyzes audio; returns genres, moods, vibe metrics, and metadata |
+| `clearEmbeddingCache()` | `void` | Clears cached embedding models |
 | `clearClassifierCache()` | `void` | Clears cached classifier models |
 | `clearAllCaches()` | `void` | Clears all model caches |
 
-#### Metadata Format
+#### Exports
 
-The `analysis_metadata.models_used` array shows which models were used:
-- **Single-step:** Just the model URL (e.g., `'/models/genre-classifier.json'`)
-- **Two-step:** `"embedding -> classifier"` format (e.g., `'/models/discogs-effnet-bs64-1.json -> /models/mtg_jamendo_genre-discogs-effnet-1.json'`)
+| Export | Description |
+|--------|-------------|
+| `MusicClassifier` | Main classifier class |
+| `DEFAULT_ARWEAVE_MODELS` | Pre-configured Arweave model URLs |
+| `ModelArchitecture` | Type: `'musicnn' \| 'effnet' \| 'vggish' \| 'tempocnn'` |
+| `GenreListType` | Type: `'jamendo' \| 'discogs400' \| 'tzanetakis' \| 'mtt_musicnn'` |
+| `detectModelArchitecture()` | Detects architecture from URL |
+| `detectGenreListType()` | Detects genre list from URL |
+| `isTwoStepModel()` | Type guard for two-step config |
+| `isSingleStepModel()` | Type guard for single-step config |
 
 ### ColorExtractor
 

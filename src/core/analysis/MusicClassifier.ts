@@ -836,26 +836,6 @@ export class MusicClassifier {
         };
     }
 
-    //     const DEFAULT_MODELS = {
-    //     genre: {
-    //         embedding: 'https://turbo-gateway.com/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
-    //         classifier: 'https://turbo-gateway.com/ZY-GSfMe7crJUITAtHITcoLCNfNWVP1HMwywivZ_LAQ/model.json',
-    //         embeddingType: 'effnet' as ModelArchitecture,
-    //         classifierType: 'discogs400' as GenreListType
-    //     },
-    //     mood: {
-    //         embedding: 'https://turbo-gateway.com/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
-    //         classifier: 'https://turbo-gateway.com/BUXf3AoFuIsrNDkV2hW6BhiwSVTuFllWOUQv5mu6qQ8/model.json',
-    //         embeddingType: 'effnet' as ModelArchitecture
-    //         // classifierType not needed - mood always uses jamendo labels
-    //     },
-    //     danceability: {
-    //         modelUrl: 'https://turbo-gateway.com/nX9KX1OVhEaT1dStNcsRiZKCQTWuHjAMl4MWprIFyZU/model.json',
-    //         modelType: 'musicnn' as ModelArchitecture
-    //         // Always uses danceability-musicnn-msd-2, fixed labels
-    //     }
-    // };
-
     /**
      * Initialize essentia.js modules for browser environment.
      * Must be called before any analysis.

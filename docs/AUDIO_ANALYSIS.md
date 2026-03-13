@@ -321,34 +321,7 @@ URL-based detection works for conventional file paths like `/models/effnet-class
                                                  └─────────────────┘
 ```
 
-#### Two-Step Configuration Examples
-
-**Default Configuration (Two-Step for Genre/Mood):**
-
-The default uses Discogs-EffNet embeddings + MTG Jamendo classifiers:
-
-```typescript
-import { MusicClassifier } from 'playlist-data-engine';
-
-// Default configuration uses two-step architecture
-const classifier = new MusicClassifier();
-
-// This is equivalent to:
-const classifier = new MusicClassifier({
-    models: {
-        genre: {
-            embedding: '/models/discogs-effnet-bs64-1.json',
-            classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
-        },
-        mood: {
-            embedding: '/models/discogs-effnet-bs64-1.json',  // Shared!
-            classifier: '/models/mtg_jamendo_moodtheme-discogs-effnet-1.json'
-        },
-        danceability: '/models/classifiers/danceability/danceability-vggish-audioset-1.json'
-    },
-    cacheEmbeddings: true  // Reuses shared embedding model
-});
-```
+#### Configuration Examples
 
 **Mixed Configuration (Single + Two-Step):**
 
@@ -365,10 +338,16 @@ const classifier = new MusicClassifier({
             embedding: '/models/discogs-effnet-bs64-1.json',
             classifier: '/models/mtg_jamendo_moodtheme-discogs-effnet-1.json'
         },
-        // Single-step: one model does it all (uses 64-band vggish extractor)
-        danceability: '/models/danceability-vggish-audioset-1.json',
+        // Single-step: requires modelUrl + modelType (uses 64-band vggish extractor)
+        danceability: {
+            modelUrl: '/models/danceability-vggish-audioset-1.json',
+            modelType: 'vggish'
+        },
         // Single-step: optional voice detection
-        voice: '/models/voice-detector.json',
+        voice: {
+            modelUrl: '/models/voice-detector.json',
+            modelType: 'musicnn'
+        },
         // Two-step: optional acoustic detection
         acoustic: {
             embedding: '/models/discogs-effnet-bs64-1.json',
@@ -378,101 +357,49 @@ const classifier = new MusicClassifier({
 });
 ```
 
-**All Single-Step:**
-
-```typescript
-const classifier = new MusicClassifier({
-    models: {
-        genre: {
-            modelUrl: '/models/genre-musicnn-msd-1.json',
-            modelType: 'musicnn'
-        },
-        mood: {
-            modelUrl: '/models/mood-musicnn-msd-1.json',
-            modelType: 'musicnn'
-        },
-        danceability: {
-            modelUrl: '/models/danceability-vggish-audioset-1.json',
-            modelType: 'vggish'
-        }
-    }
-});
-```
-
 #### Using Arweave-Hosted Models (Zero Setup)
 
-The engine provides pre-configured Arweave-hosted models that work out-of-the-box without any local model files:
+The default configuration uses pre-configured Arweave-hosted models:
+
+```typescript
+import { MusicClassifier } from 'playlist-data-engine';
+
+// Zero setup - models load from Arweave automatically
+const classifier = new MusicClassifier();
+
+const profile = await classifier.analyze('https://example.com/track.mp3');
+```
+
+| Model | Architecture | Labels | Source |
+|-------|-------------|--------|--------|
+| **Genre** | Two-step (effnet + classifier) | discogs400 (400+ subgenres) | Arweave |
+| **Mood** | Two-step (effnet + classifier) | JAMENDO_MOODS (60 themes) | Arweave |
+| **Danceability** | Single-step (musicnn) | Binary | Turbo Gateway |
+
+**Partial Override & Custom Arweave Models:**
 
 ```typescript
 import { MusicClassifier, DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine';
 
-// Easiest way - use all default Arweave models
-const classifier = new MusicClassifier({
-    models: DEFAULT_ARWEAVE_MODELS
-});
-
-// Analyze audio - models load from Arweave automatically
-const profile = await classifier.analyze('https://example.com/track.mp3');
-```
-
-The `DEFAULT_ARWEAVE_MODELS` constant includes:
-
-| Model | Architecture | Type | Source |
-|-------|-------------|------|--------|
-| **Genre** | Two-step (effnet + classifier) | discogs400 | Arweave |
-| **Mood** | Two-step (effnet + classifier) | jamendo | Arweave |
-| **Danceability** | Single-step (musicnn) | — | Turbo Gateway |
-
-**Full DEFAULT_ARWEAVE_MODELS structure:**
-
-```typescript
-export const DEFAULT_ARWEAVE_MODELS = {
-    genre: {
-        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
-        classifier: 'https://arweave.net/ZY-GSfMe7crJUITAtHITcoLCNfNWVP1HMwywivZ_LAQ/model.json',
-        embeddingType: 'effnet',
-        classifierType: 'discogs400'
-    },
-    mood: {
-        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
-        classifier: 'https://arweave.net/BUXf3AoFuIsrNDkV2hW6BhiwSVTuFllWOUQv5mu6qQ8/model.json',
-        embeddingType: 'effnet'
-    },
-    danceability: {
-        modelUrl: 'https://turbo-gateway.com/nX9KX1OVhEaT1dStNcsRiZKCQTWuHjAMl4MWprIFyZU/model.json',
-        modelType: 'musicnn'
-    }
-} as const;
-```
-
-**Partial Override (mix Arweave and local models):**
-
-```typescript
 const classifier = new MusicClassifier({
     models: {
-        // Use Arweave for genre
-        ...DEFAULT_ARWEAVE_MODELS.genre,
-        // Use local models for others
-        mood: '/models/mood-musicnn-msd-1.json',
-        danceability: '/models/danceability-vggish-audioset-1.json'
-    }
-});
-```
-
-**Custom Arweave Model (with explicit types):**
-
-```typescript
-const classifier = new MusicClassifier({
-    models: {
-        genre: {
-            embedding: 'https://arweave.net/YOUR_EMBEDDING_TXID/model.json',
-            classifier: 'https://arweave.net/YOUR_CLASSIFIER_TXID/model.json',
-            embeddingType: 'effnet',    // Required for Arweave URLs
-            classifierType: 'discogs400'  // Required for genre models
+        // Use default Arweave model
+        genre: DEFAULT_ARWEAVE_MODELS.genre,
+        // Override with local model
+        mood: {
+            modelUrl: '/models/mood-musicnn-msd-1.json',
+            modelType: 'musicnn'
+        },
+        // Or use custom Arweave URLs with explicit types
+        danceability: {
+            modelUrl: 'https://arweave.net/YOUR_TXID/model.json',
+            modelType: 'musicnn'  // Required for Arweave URLs
         }
     }
 });
 ```
+
+> **Note:** Single-step mood models use binary labels (`'happy'`, `'not happy'`) while two-step mood models use the full JAMENDO_MOODS taxonomy (60 mood/theme labels).
 
 #### Embedding Model Caching
 
