@@ -958,6 +958,55 @@ export class MusicClassifier {
     }
 
     /**
+     * Initializes an Essentia model with retry logic for network resilience.
+     *
+     * Essentia models (TensorflowMusiCNN, TensorflowVGGish) have their own
+     * initialize() method that loads the model from URL. This wrapper adds
+     * retry logic similar to loadModelWithRetry.
+     *
+     * @param model - Essentia model instance (TensorflowMusiCNN or TensorflowVGGish)
+     * @param modelUrl - URL to the model file (for logging)
+     * @param maxRetries - Maximum number of retry attempts (default: 3)
+     * @param baseDelayMs - Base delay for exponential backoff in ms (default: 1000)
+     */
+    private async initializeEssentiaModelWithRetry(
+        model: any,
+        modelUrl: string,
+        maxRetries: number = 3,
+        baseDelayMs: number = 1000
+    ): Promise<void> {
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                await model.initialize();
+                return; // Success
+            } catch (error) {
+                const errorMessage = String(error).toLowerCase();
+
+                // Check if this is a transient network error
+                const isTransient =
+                    errorMessage.includes('fetch') ||
+                    errorMessage.includes('network') ||
+                    errorMessage.includes('timeout') ||
+                    errorMessage.includes('failed to fetch') ||
+                    errorMessage.includes('networkerror');
+
+                if (!isTransient || attempt === maxRetries - 1) {
+                    throw error;
+                }
+
+                const delay = baseDelayMs * Math.pow(2, attempt);
+                console.warn(
+                    `[MusicClassifier] Essentia model init failed (attempt ${attempt + 1}/${maxRetries}), ` +
+                    `retrying in ${delay}ms...`,
+                    { modelUrl, error: String(error) }
+                );
+
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+
+    /**
      * Gets or creates an embedding model instance with caching support.
      *
      * This method implements intelligent model caching to avoid re-loading
@@ -990,14 +1039,14 @@ export class MusicClassifier {
                 throw new Error('Essentia not initialized. Call initializeEssentia() first.');
             }
             model = new this.essentiaModel.TensorflowVGGish(tf, modelUrl);
-            await model.initialize();
+            await this.initializeEssentiaModelWithRetry(model, modelUrl);
         } else {
             // musicnn and tempocnn models use TensorflowMusiCNN class from Essentia
             if (!this.essentiaModel) {
                 throw new Error('Essentia not initialized. Call initializeEssentia() first.');
             }
             model = new this.essentiaModel.TensorflowMusiCNN(tf, modelUrl);
-            await model.initialize();
+            await this.initializeEssentiaModelWithRetry(model, modelUrl);
         }
 
         // Cache the model if caching is enabled
@@ -1761,9 +1810,9 @@ export class MusicClassifier {
             throw new Error('Essentia not initialized. Call initializeEssentia() first.');
         }
 
-        // Create and initialize the TensorFlow model
+        // Create and initialize the TensorFlow model with retry logic
         const model = new this.essentiaModel!.TensorflowMusiCNN(tf, modelUrl);
-        await model.initialize();
+        await this.initializeEssentiaModelWithRetry(model, modelUrl);
 
         // Run prediction with zero-padding
         const predictions = await model.predict(features, true);
