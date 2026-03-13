@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MusicClassifier, averageEmbeddings, detectModelArchitecture, isTwoStepModel, formatModelForMetadata } from './MusicClassifier.js';
+import { MusicClassifier, averageEmbeddings, detectModelArchitecture, isTwoStepModel, isSingleStepModel, isStringModel, formatModelForMetadata } from './MusicClassifier.js';
 
 // ============================================================================
 // Hoisted Mock Variables (must be defined before vi.mock calls)
@@ -369,6 +369,64 @@ describe('isTwoStepModel', () => {
         expect(isTwoStepModel({} as any)).toBe(false);
         expect(isTwoStepModel({ embedding: '/models/emb.json' } as any)).toBe(false);
         expect(isTwoStepModel({ classifier: '/models/cls.json' } as any)).toBe(false);
+    });
+});
+
+describe('isSingleStepModel', () => {
+    it('should return true for valid SingleStepModelConfig', () => {
+        expect(isSingleStepModel({
+            modelUrl: 'https://example.com/model.json',
+            modelType: 'musicnn'
+        })).toBe(true);
+    });
+
+    it('should return true with optional labels', () => {
+        expect(isSingleStepModel({
+            modelUrl: 'https://example.com/model.json',
+            modelType: 'effnet',
+            labels: ['a', 'b']
+        })).toBe(true);
+    });
+
+    it('should return false for TwoStepModelConfig', () => {
+        expect(isSingleStepModel({
+            embedding: 'a',
+            classifier: 'b'
+        })).toBe(false);
+    });
+
+    it('should return false for string', () => {
+        expect(isSingleStepModel('https://example.com/model.json')).toBe(false);
+    });
+
+    it('should return false for null/undefined', () => {
+        expect(isSingleStepModel(null as any)).toBe(false);
+        expect(isSingleStepModel(undefined as any)).toBe(false);
+    });
+});
+
+describe('isStringModel', () => {
+    it('should return true for string', () => {
+        expect(isStringModel('https://example.com/model.json')).toBe(true);
+    });
+
+    it('should return false for SingleStepModelConfig', () => {
+        expect(isStringModel({
+            modelUrl: 'a',
+            modelType: 'musicnn'
+        })).toBe(false);
+    });
+
+    it('should return false for TwoStepModelConfig', () => {
+        expect(isStringModel({
+            embedding: 'a',
+            classifier: 'b'
+        })).toBe(false);
+    });
+
+    it('should return false for null/undefined', () => {
+        expect(isStringModel(null as any)).toBe(false);
+        expect(isStringModel(undefined as any)).toBe(false);
     });
 });
 
