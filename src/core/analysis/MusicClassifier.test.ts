@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MusicClassifier, averageEmbeddings, detectModelArchitecture, isTwoStepModel, isSingleStepModel, isStringModel, formatModelForMetadata } from './MusicClassifier.js';
+import { MusicClassifier, averageEmbeddings, detectModelArchitecture, detectGenreListType, isTwoStepModel, isSingleStepModel, isStringModel, formatModelForMetadata } from './MusicClassifier.js';
 
 // ============================================================================
 // Hoisted Mock Variables (must be defined before vi.mock calls)
@@ -338,6 +338,55 @@ describe('detectModelArchitecture', () => {
         expect(detectModelArchitecture('/models/unknown-model.json')).toBe('musicnn');
         expect(detectModelArchitecture('/models/musicnn-msd.json')).toBe('musicnn');
         expect(detectModelArchitecture('/models/genre-classifier.json')).toBe('musicnn');
+    });
+
+    it('should override URL detection with explicit type', () => {
+        // URL would be detected as effnet, but explicit type is musicnn
+        expect(detectModelArchitecture('/models/effnet/model.json', 'musicnn')).toBe('musicnn');
+        // URL would be detected as musicnn, but explicit type is effnet
+        expect(detectModelArchitecture('/models/unknown/model.json', 'effnet')).toBe('effnet');
+        // URL would be detected as vggish, but explicit type is tempocnn
+        expect(detectModelArchitecture('/models/vggish/model.json', 'tempocnn')).toBe('tempocnn');
+        // URL would be detected as tempocnn, but explicit type is vggish
+        expect(detectModelArchitecture('/models/tempo/model.json', 'vggish')).toBe('vggish');
+    });
+});
+
+describe('detectGenreListType', () => {
+    it('should detect jamendo from jamendo keyword', () => {
+        expect(detectGenreListType('/models/mtg_jamendo_genre-discogs-effnet-1.json')).toBe('jamendo');
+        expect(detectGenreListType('https://example.com/jamendo/model.json')).toBe('jamendo');
+    });
+
+    it('should detect discogs400 from discogs400 or discogs keyword', () => {
+        expect(detectGenreListType('/models/discogs400-model.json')).toBe('discogs400');
+        expect(detectGenreListType('/models/discogs-model.json')).toBe('discogs400');
+        expect(detectGenreListType('https://example.com/DISCOGS/model.json')).toBe('discogs400');
+    });
+
+    it('should detect tzanetakis from tzanetakis keyword', () => {
+        expect(detectGenreListType('/models/tzanetakis-model.json')).toBe('tzanetakis');
+        expect(detectGenreListType('https://example.com/tzanetakis/model.json')).toBe('tzanetakis');
+    });
+
+    it('should detect mtt_musicnn from mtt_musicnn keyword', () => {
+        expect(detectGenreListType('/models/mtt_musicnn-model.json')).toBe('mtt_musicnn');
+    });
+
+    it('should default to jamendo for unknown models', () => {
+        expect(detectGenreListType('/models/unknown-model.json')).toBe('jamendo');
+        expect(detectGenreListType('/models/genre-classifier.json')).toBe('jamendo');
+    });
+
+    it('should override URL detection with explicit type', () => {
+        // URL would be detected as jamendo, but explicit type is discogs400
+        expect(detectGenreListType('/models/jamendo/model.json', 'discogs400')).toBe('discogs400');
+        // URL would be detected as discogs400, but explicit type is jamendo
+        expect(detectGenreListType('/models/discogs/model.json', 'jamendo')).toBe('jamendo');
+        // URL would be detected as jamendo (default), but explicit type is tzanetakis
+        expect(detectGenreListType('/models/unknown/model.json', 'tzanetakis')).toBe('tzanetakis');
+        // URL would be detected as jamendo, but explicit type is mtt_musicnn
+        expect(detectGenreListType('/models/jamendo/model.json', 'mtt_musicnn')).toBe('mtt_musicnn');
     });
 });
 

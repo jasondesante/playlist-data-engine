@@ -294,7 +294,7 @@ describe('Detection Functions with Explicit Types', () => {
 ```
 
 **Validation:**
-- [ ] Tests pass: `npm test`
+- [x] Tests pass: `npm test`
 
 ---
 
