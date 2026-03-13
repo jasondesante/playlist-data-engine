@@ -761,6 +761,35 @@ interface EssentiaModel {
     TensorflowVGGish: new (tf: typeof import('@tensorflow/tfjs'), modelUrl: string) => any;
 }
 
+/**
+ * Default model configurations using Arweave-hosted models.
+ * These work out-of-the-box without any local model files.
+ *
+ * @example
+ * import { MusicClassifier, DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine';
+ *
+ * const classifier = new MusicClassifier({
+ *     models: DEFAULT_ARWEAVE_MODELS
+ * });
+ */
+export const DEFAULT_ARWEAVE_MODELS = {
+    genre: {
+        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
+        classifier: 'https://arweave.net/ZY-GSfMe7crJUITAtHITcoLCNfNWVP1HMwywivZ_LAQ/model.json',
+        embeddingType: 'effnet' as ModelArchitecture,
+        classifierType: 'discogs400' as GenreListType
+    },
+    mood: {
+        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
+        classifier: 'https://arweave.net/BUXf3AoFuIsrNDkV2hW6BhiwSVTuFllWOUQv5mu6qQ8/model.json',
+        embeddingType: 'effnet' as ModelArchitecture
+    },
+    danceability: {
+        modelUrl: 'https://arweave.net/kUIS-Xxr4k3MZ4K2gHdvMgZxK7aBYce_FPGIkGA_hjM/model.json',
+        modelType: 'musicnn' as ModelArchitecture
+    }
+} as const;
+
 export class MusicClassifier {
     private options: MusicClassifierOptions;
     private essentiaWASM: any = null;

@@ -459,35 +459,42 @@ export const DEFAULT_ARWEAVE_MODELS = {
 **Note**: Replace placeholder URLs with actual Arweave transaction IDs.
 
 **Validation:**
-- [ ] TypeScript compiles without errors
-- [ ] Export is accessible: `npm run build`
+- [x] TypeScript compiles without errors
+- [x] Export is accessible: `npm run build`
 
 ---
 
 ### 4.2 Export Types and Constants
 
-**File:** `src/core/analysis/index.ts`
+**File:** `src/index.ts`
 
 Ensure all new types are exported:
 
 ```typescript
 export {
     MusicClassifier,
-    MusicClassifierOptions,
-    // Existing exports
-    TwoStepModelConfig,
-    // New exports
-    SingleStepModelConfig,
-    isSingleStepModel,
+    type MusicClassifierOptions,
+    type ModelArchitecture,
+    type GenreListType,
+    type TwoStepModelConfig,
+    type SingleStepModelConfig,
+    type ModelConfig,
     isTwoStepModel,
+    isSingleStepModel,
     isStringModel,
-    DEFAULT_ARWEAVE_MODELS
-} from './MusicClassifier';
+    detectModelArchitecture,
+    detectGenreListType,
+    getGenreLabels,
+    formatModelForMetadata,
+    averageEmbeddings,
+    DEFAULT_ARWEAVE_MODELS,
+    DISCOGS400_GENRES
+} from './core/analysis/MusicClassifier.js';
 ```
 
 **Validation:**
-- [ ] TypeScript compiles without errors
-- [ ] Build succeeds: `npm run build`
+- [x] TypeScript compiles without errors
+- [x] Build succeeds: `npm run build`
 
 ---
 
