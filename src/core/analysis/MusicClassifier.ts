@@ -905,6 +905,59 @@ export class MusicClassifier {
     }
 
     /**
+     * Loads a TensorFlow.js GraphModel with retry logic for network resilience.
+     *
+     * This method handles transient network failures (common with remote URLs
+     * like Arweave) by retrying with exponential backoff.
+     *
+     * @param modelUrl - URL to the model file
+     * @param maxRetries - Maximum number of retry attempts (default: 3)
+     * @param baseDelayMs - Base delay for exponential backoff in ms (default: 1000)
+     * @returns Promise resolving to the loaded GraphModel
+     */
+    private async loadModelWithRetry(
+        modelUrl: string,
+        maxRetries: number = 3,
+        baseDelayMs: number = 1000
+    ): Promise<tf.GraphModel> {
+        let lastError: Error | null = null;
+
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                return await tf.loadGraphModel(modelUrl);
+            } catch (error) {
+                lastError = error as Error;
+                const errorMessage = String(error).toLowerCase();
+
+                // Check if this is a transient network error that might succeed on retry
+                const isTransient =
+                    errorMessage.includes('fetch') ||
+                    errorMessage.includes('network') ||
+                    errorMessage.includes('timeout') ||
+                    errorMessage.includes('failed to fetch') ||
+                    errorMessage.includes('networkerror');
+
+                // If not transient or we've exhausted retries, throw immediately
+                if (!isTransient || attempt === maxRetries - 1) {
+                    throw error;
+                }
+
+                // Calculate exponential backoff delay: 1s, 2s, 4s
+                const delay = baseDelayMs * Math.pow(2, attempt);
+                console.warn(
+                    `[MusicClassifier] Model load failed (attempt ${attempt + 1}/${maxRetries}), ` +
+                    `retrying in ${delay}ms...`,
+                    { modelUrl, error: String(error) }
+                );
+
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+
+        throw lastError;
+    }
+
+    /**
      * Gets or creates an embedding model instance with caching support.
      *
      * This method implements intelligent model caching to avoid re-loading
@@ -927,7 +980,8 @@ export class MusicClassifier {
         if (architecture === 'effnet') {
             // EffNet models use raw TensorFlow.js (not Essentia wrapper classes)
             // These are GraphModel format, loaded directly with tf.loadGraphModel()
-            model = await tf.loadGraphModel(modelUrl);
+            // Use retry logic for network resilience (especially for Arweave URLs)
+            model = await this.loadModelWithRetry(modelUrl);
         } else if (architecture === 'vggish') {
             // VGGish models use TensorflowVGGish class from Essentia
             if (!this.essentiaModel) {
@@ -1296,7 +1350,8 @@ export class MusicClassifier {
         }
 
         // Load classifier model (GraphModel format for TF.js)
-        const classifier = await tf.loadGraphModel(classifierUrl);
+        // Use retry logic for network resilience (especially for Arweave URLs)
+        const classifier = await this.loadModelWithRetry(classifierUrl);
 
         // Create input tensor with shape [1, embedding_dim]
         // The model expects batch dimension, even for single sample
