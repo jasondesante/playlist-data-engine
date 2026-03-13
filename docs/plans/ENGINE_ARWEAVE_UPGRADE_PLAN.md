@@ -524,10 +524,9 @@ export {
 npm test
 npm run build
 ```
-
-- [ ] All tests pass
-- [ ] Build succeeds
-- [ ] No TypeScript errors
+- [x] All tests pass
+- [x] Build succeeds
+- [x] No TypeScript errors
 
 ### 6.2 Integration Test with Local Showcase
 

@@ -97,6 +97,9 @@ vi.mock('essentia.js/dist/essentia-wasm.es.js', () => {
         EssentiaWASM: {
             EssentiaWASM: {},
             EssentiaJS: MockEssentiaJS,
+            // arrayToVector and vectorToArray are accessed directly on EssentiaWASM
+            arrayToVector: mockEssentiaInstance.arrayToVector,
+            vectorToArray: mockEssentiaInstance.vectorToArray,
             ready: Promise.resolve()
         }
     };
@@ -120,6 +123,9 @@ vi.mock('essentia.js/dist/essentia-wasm.web.js', () => {
         EssentiaWASM: {
             EssentiaWASM: {},
             EssentiaJS: MockEssentiaJS,
+            // arrayToVector and vectorToArray are accessed directly on EssentiaWASM
+            arrayToVector: mockEssentiaInstance.arrayToVector,
+            vectorToArray: mockEssentiaInstance.vectorToArray,
             ready: Promise.resolve()
         }
     };
