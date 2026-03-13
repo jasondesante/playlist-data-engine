@@ -1313,17 +1313,146 @@ interface ModelsConfig {
 }
 
 // ModelConfig accepts either format:
-type ModelConfig = string | TwoStepModelConfig;
+type ModelConfig = string | SingleStepModelConfig | TwoStepModelConfig;
+
+// Single-step: one model handles everything
+interface SingleStepModelConfig {
+    modelUrl: string;           // URL to the model file
+    modelType: ModelArchitecture; // Explicit model architecture type (overrides URL detection)
+    labels?: string[];          // Optional custom labels override
+}
 
 // Two-step: embedding + classifier
 interface TwoStepModelConfig {
-    embedding: string;  // URL to embedding model (e.g., discogs-effnet-bs64-1.json)
-    classifier: string; // URL to classifier model
-    labels?: string[];  // Optional custom labels override
+    embedding: string;          // URL to embedding model (e.g., discogs-effnet-bs64-1.json)
+    classifier: string;         // URL to classifier model
+    labels?: string[];          // Optional custom labels override
+    embeddingType?: ModelArchitecture;  // Explicit embedding architecture type (overrides URL detection)
+    classifierType?: GenreListType;     // Explicit classifier type (overrides URL detection)
 }
 ```
 
-**Default Configuration:**
+#### Configuration Formats
+
+**Legacy String Format:**
+
+```typescript
+// Simple URL string - architecture detected from URL
+const classifier = new MusicClassifier({
+    models: {
+        genre: '/models/genre-classifier.json'
+    }
+});
+```
+
+**Single-Step with Explicit Type (Recommended for Arweave URLs):**
+
+```typescript
+// When URL doesn't contain architecture hints, use explicit type
+const classifier = new MusicClassifier({
+    models: {
+        danceability: {
+            modelUrl: 'https://arweave.net/xxx/model.json',
+            modelType: 'musicnn'  // Explicitly specify architecture
+        }
+    }
+});
+```
+
+**Two-Step with Explicit Types (Recommended for Arweave URLs):**
+
+```typescript
+// Embedding + classifier with explicit types for Arweave URLs
+const classifier = new MusicClassifier({
+    models: {
+        genre: {
+            embedding: 'https://arweave.net/abc/model.json',
+            classifier: 'https://arweave.net/def/model.json',
+            embeddingType: 'effnet',      // Explicit embedding architecture
+            classifierType: 'discogs400'   // Explicit genre list type
+        }
+    }
+});
+```
+
+#### DEFAULT_ARWEAVE_MODELS Constant
+
+Pre-configured model URLs hosted on Arweave for zero-setup usage:
+
+```typescript
+import { MusicClassifier, DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine';
+
+// Use default Arweave-hosted models - no local files needed
+const classifier = new MusicClassifier({
+    models: DEFAULT_ARWEAVE_MODELS
+});
+```
+
+**Contents of DEFAULT_ARWEAVE_MODELS:**
+
+| Model | Architecture | Type | URL Format |
+|-------|--------------|------|------------|
+| `genre` | Two-step | effnet + discogs400 | Arweave |
+| `mood` | Two-step | effnet | Arweave |
+| `danceability` | Single-step | musicnn | Arweave |
+
+```typescript
+const DEFAULT_ARWEAVE_MODELS = {
+    genre: {
+        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
+        classifier: 'https://arweave.net/ZY-GSfMe7crJUITAtHITcoLCNfNWVP1HMwywivZ_LAQ/model.json',
+        embeddingType: 'effnet',
+        classifierType: 'discogs400'
+    },
+    mood: {
+        embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
+        classifier: 'https://arweave.net/BUXf3AoFuIsrNDkV2hW6BhiwSVTuFllWOUQv5mu6qQ8/model.json',
+        embeddingType: 'effnet'
+    },
+    danceability: {
+        modelUrl: 'https://turbo-gateway.com/nX9KX1OVhEaT1dStNcsRiZKCQTWuHjAMl4MWprIFyZU/model.json',
+        modelType: 'musicnn'
+    }
+} as const;
+```
+
+#### Migration Guide
+
+**Migrating from Local Models to Arweave:**
+
+```typescript
+// Before: Local file paths
+const oldConfig = {
+    models: {
+        genre: {
+            embedding: '/models/discogs-effnet-bs64-1.json',
+            classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
+        }
+    }
+};
+
+// After: Arweave URLs with explicit types
+const newConfig = {
+    models: {
+        genre: {
+            embedding: 'https://arweave.net/tVO0RIu2Ly_Di5cZccw_wB3x6Vs_2KSqxhl8bdhhimE/model.json',
+            classifier: 'https://arweave.net/ZY-GSfMe7crJUITAtHITcoLCNfNWVP1HMwywivZ_LAQ/model.json',
+            embeddingType: 'effnet',      // Required for Arweave URLs
+            classifierType: 'discogs400'   // Required for genre classifiers
+        }
+    }
+};
+
+// Or simply use the defaults:
+import { DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine';
+const classifier = new MusicClassifier({ models: DEFAULT_ARWEAVE_MODELS });
+```
+
+**Why Explicit Types Are Needed for Arweave:**
+
+Arweave URLs like `arweave.net/xxx/model.json` don't contain architecture hints like `effnet` or `discogs400`. Without explicit types, the engine defaults to `musicnn` and `jamendo`, which may not match your models. Always specify `embeddingType`, `classifierType`, or `modelType` when using Arweave URLs.
+
+**Default Configuration (Local Models):**
 
 | Model | Default | Type |
 |-------|---------|------|

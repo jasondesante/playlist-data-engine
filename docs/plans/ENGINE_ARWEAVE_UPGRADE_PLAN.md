@@ -502,11 +502,11 @@ export {
 
 ### 5.1 Update DATA_ENGINE_REFERENCE.md
 
-- [ ] Document `SingleStepModelConfig` interface
-- [ ] Document new optional fields in `TwoStepModelConfig`
-- [ ] Document `DEFAULT_ARWEAVE_MODELS` constant
-- [ ] Add examples using explicit type parameters
-- [ ] Add migration guide for upgrading
+- [x] Document `SingleStepModelConfig` interface
+- [x] Document new optional fields in `TwoStepModelConfig`
+- [x] Document `DEFAULT_ARWEAVE_MODELS` constant
+- [x] Add examples using explicit type parameters
+- [x] Add migration guide for upgrading
 
 ### 5.2 Update AUDIO_ANALYSIS.md
 

@@ -785,7 +785,7 @@ export const DEFAULT_ARWEAVE_MODELS = {
         embeddingType: 'effnet' as ModelArchitecture
     },
     danceability: {
-        modelUrl: 'https://arweave.net/kUIS-Xxr4k3MZ4K2gHdvMgZxK7aBYce_FPGIkGA_hjM/model.json',
+        modelUrl: 'https://turbo-gateway.com/nX9KX1OVhEaT1dStNcsRiZKCQTWuHjAMl4MWprIFyZU/model.json',
         modelType: 'musicnn' as ModelArchitecture
     }
 } as const;
