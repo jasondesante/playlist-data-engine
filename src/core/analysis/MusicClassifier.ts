@@ -550,6 +550,8 @@ const MTT_MUSICNN = [
 ]
 
 
+const BINARY_MOOD_LABELS = ['happy', 'not happy'];
+
 const JAMENDO_MOODS = [
     "action", "adventure", "advertising", "background", "ballad", "calm", "children", "christmas", "commercial", "cool",
     "corporate", "dark", "deep", "documentary", "drama", "dramatic", "dream", "emotional", "energetic", "epic",
@@ -1296,10 +1298,12 @@ export class MusicClassifier {
             // 2. Analyze Mood
             if (this.options.models?.mood) {
                 const moodConfig = this.options.models.mood;
+                // Use binary labels for single-step models, JAMENDO_MOODS for two-step models
+                const moodLabels = isSingleStepModel(moodConfig) ? BINARY_MOOD_LABELS : JAMENDO_MOODS;
                 results.moods = await this.runModelPrediction(
                     moodConfig,
                     audioSignal,
-                    JAMENDO_MOODS
+                    moodLabels
                 );
                 results.mood_tags = results.moods.slice(0, 3).map(m => m.name);
                 modelsUsed.push(formatModelForMetadata(moodConfig));
