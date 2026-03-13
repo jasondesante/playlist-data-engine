@@ -822,19 +822,10 @@ export class MusicClassifier {
                 // Two-step architecture: Discogs-EffNet embedding + MTG Jamendo classifiers
                 // Benefits: 1) Shared embedding model cached for both genre and mood
                 //          2) Better accuracy with specialized classifier heads
-                genre: {
-                    embedding: '/models/discogs-effnet-bs64-1.json',
-                    classifier: '/models/mtg_jamendo_genre-discogs-effnet-1.json'
-                },
-                mood: {
-                    embedding: '/models/discogs-effnet-bs64-1.json',
-                    classifier: '/models/mtg_jamendo_moodtheme-discogs-effnet-1.json'
-                },
+                genre: DEFAULT_ARWEAVE_MODELS.genre,
+                mood: DEFAULT_ARWEAVE_MODELS.mood,
                 // Single-step architecture: VGGish model handles everything internally
-                danceability: {
-                    modelUrl: '/models/classifiers/danceability/danceability-vggish-audioset-1.json',
-                    modelType: 'vggish'
-                },
+                danceability: DEFAULT_ARWEAVE_MODELS.danceability,
                 // Voice and acoustic are optional - user can provide either format
                 ...options.models
             },
@@ -1273,7 +1264,7 @@ export class MusicClassifier {
                 const genreModelUrl = isTwoStepModel(genreConfig)
                     ? genreConfig.classifier
                     : genreConfig.modelUrl;
-                
+
                 // Check for explicit genreType in config (works for both single and two-step)
                 let genreType: GenreListType;
                 if (isTwoStepModel(genreConfig) && genreConfig.classifierType) {
@@ -1283,7 +1274,7 @@ export class MusicClassifier {
                 } else {
                     genreType = detectGenreListType(genreModelUrl);
                 }
-                
+
                 const genreLabels = getGenreLabels(genreType);
 
                 results.genres = await this.runModelPrediction(
