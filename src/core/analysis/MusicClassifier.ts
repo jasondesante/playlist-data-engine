@@ -965,16 +965,18 @@ export class MusicClassifier {
      * (e.g., genre and mood both using discogs-effnet).
      *
      * @param modelUrl - URL to the embedding model
+     * @param explicitType - Optional explicit architecture type (overrides URL detection)
      * @returns Promise resolving to the initialized model instance
      */
-    private async getEmbeddingModel(modelUrl: string): Promise<any> {
+    private async getEmbeddingModel(modelUrl: string, explicitType?: ModelArchitecture): Promise<any> {
         // Check cache first
         if (this.embeddingModelCache.has(modelUrl)) {
             return this.embeddingModelCache.get(modelUrl);
         }
 
         // Detect architecture to select the correct model loading strategy
-        const architecture = detectModelArchitecture(modelUrl);
+        // Use explicit type if provided, otherwise detect from URL
+        const architecture = detectModelArchitecture(modelUrl, explicitType);
         let model: any;
 
         if (architecture === 'effnet') {
@@ -1408,7 +1410,8 @@ export class MusicClassifier {
         }
 
         // Step 3: Load embedding model (with caching)
-        const embeddingModel = await this.getEmbeddingModel(config.embedding);
+        // Pass explicit embeddingType to ensure correct model loading for Arweave URLs
+        const embeddingModel = await this.getEmbeddingModel(config.embedding, config.embeddingType);
 
         // Step 4: Run embedding model to get embeddings
         let embeddings: number[][];
@@ -1438,7 +1441,7 @@ export class MusicClassifier {
 
     /**
      * Discovers the input names from a TensorFlow.js GraphModel.
-     * 
+     *
      * Different model versions and sources may have different input naming conventions.
      * This method inspects the model's signature to find the correct input names.
      *
@@ -1481,6 +1484,16 @@ export class MusicClassifier {
                 const metadata = (model as any).metadata;
                 if (metadata.signature && metadata.signature.inputs) {
                     for (const key of Object.keys(metadata.signature.inputs)) {
+                        inputNames.push(key);
+                    }
+                }
+            }
+
+            // Method 5: Check model.graph and related properties
+            if (inputNames.length === 0) {
+                const graphModel = model as any;
+                if (graphModel.graph && graphModel.graph.inputs) {
+                    for (const key of Object.keys(graphModel.graph.inputs)) {
                         inputNames.push(key);
                     }
                 }
