@@ -114,6 +114,26 @@ export interface MusicClassifierOptions {
      * @default true
      */
     cacheEmbeddings?: boolean;
+
+    /**
+     * Optional callback to resolve Arweave URLs before loading models.
+     * Used by the ArweaveGatewayManager to try alternate gateways if
+     * the primary gateway fails (e.g., turbo-gateway.com returning 499 errors).
+     *
+     * The callback takes a URL string and returns a Promise that resolves
+     * to the working URL (possibly from a different gateway).
+     *
+     * @example
+     * ```typescript
+     * import { arweaveGatewayManager } from 'playlist-data-engine';
+     *
+     * const classifier = new MusicClassifier({
+     *   resolveUrl: arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager),
+     *   models: { genre: 'https://arweave.net/...' }
+     * });
+     * ```
+     */
+    resolveUrl?: (url: string) => Promise<string>;
 }
 
 const JAMENDO_GENRES = [
