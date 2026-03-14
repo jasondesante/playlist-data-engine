@@ -896,7 +896,9 @@ export class MusicClassifier {
      * Loads a TensorFlow.js GraphModel with retry logic for network resilience.
      *
      * This method handles transient network failures (common with remote URLs
-     * like Arweave) by retrying with exponential backoff.
+     * like Arweave) by retrying with exponential backoff. If a `resolveUrl`
+     * callback is provided in options, it will be called to resolve the URL
+     * before loading (e.g., for Arweave gateway fallback).
      *
      * @param modelUrl - URL to the model file
      * @param maxRetries - Maximum number of retry attempts (default: 3)
@@ -910,9 +912,29 @@ export class MusicClassifier {
     ): Promise<tf.GraphModel> {
         let lastError: Error | null = null;
 
+        // Resolve URL if resolveUrl callback is provided
+        let resolvedUrl = modelUrl;
+        if (this.options.resolveUrl) {
+            try {
+                resolvedUrl = await this.options.resolveUrl(modelUrl);
+                if (resolvedUrl !== modelUrl) {
+                    console.info(
+                        `[MusicClassifier] Resolved model URL to alternate gateway`,
+                        { originalUrl: modelUrl, resolvedUrl }
+                    );
+                }
+            } catch (resolveError) {
+                console.warn(
+                    `[MusicClassifier] URL resolution failed, using original URL`,
+                    { modelUrl, error: String(resolveError) }
+                );
+                // Continue with original URL if resolution fails
+            }
+        }
+
         for (let attempt = 0; attempt < maxRetries; attempt++) {
             try {
-                return await tf.loadGraphModel(modelUrl);
+                return await tf.loadGraphModel(resolvedUrl);
             } catch (error) {
                 lastError = error as Error;
                 const errorMessage = String(error).toLowerCase();
@@ -935,7 +957,7 @@ export class MusicClassifier {
                 console.warn(
                     `[MusicClassifier] Model load failed (attempt ${attempt + 1}/${maxRetries}), ` +
                     `retrying in ${delay}ms...`,
-                    { modelUrl, error: String(error) }
+                    { originalUrl: modelUrl, resolvedUrl, error: String(error) }
                 );
 
                 await new Promise(resolve => setTimeout(resolve, delay));
