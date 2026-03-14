@@ -62,6 +62,64 @@ export interface ArweaveGatewayManagerConfig {
 }
 
 /**
+ * Options for prefetching URLs
+ */
+export interface PrefetchOptions {
+    /** Maximum number of concurrent gateway checks (default: 5) */
+    concurrency?: number;
+    /** Whether to continue on errors (default: true) */
+    continueOnError?: boolean;
+}
+
+/**
+ * Result of prefetching a single URL
+ */
+export interface PrefetchResultEntry {
+    /** The original URL that was prefetched */
+    url: string;
+    /** The transaction ID extracted from the URL */
+    txId: string;
+    /** Whether the prefetch succeeded */
+    success: boolean;
+    /** The working gateway (if successful) */
+    gateway?: GatewayConfig;
+    /** Error message (if failed) */
+    error?: string;
+}
+
+/**
+ * Result of prefetching multiple URLs
+ */
+export interface PrefetchResult {
+    /** Total number of URLs processed */
+    total: number;
+    /** Number of successful prefetches */
+    succeeded: number;
+    /** Number of failed prefetches */
+    failed: number;
+    /** Number of URLs skipped (not Arweave URLs) */
+    skipped: number;
+    /** Detailed results for each URL */
+    entries: PrefetchResultEntry[];
+}
+
+/**
+ * Statistics about the gateway cache
+ */
+export interface CacheStats {
+    /** Number of entries in the cache */
+    size: number;
+    /** List of cached transaction IDs */
+    txIds: string[];
+    /** Cache hit count (since last clear) */
+    hitCount: number;
+    /** Cache miss count (since last clear) */
+    missCount: number;
+    /** Cache TTL in milliseconds */
+    ttl: number;
+}
+
+/**
  * Default timeout for gateway checks (5 seconds)
  */
 const DEFAULT_TIMEOUT = 5000;
@@ -91,6 +149,10 @@ export class ArweaveGatewayManager {
     private cacheTTL: number;
     private cache: Map<string, GatewayCache> = new Map();
     private logger = Logger.for('ArweaveGateway');
+    /** Cache hit counter for statistics */
+    private hitCount: number = 0;
+    /** Cache miss counter for statistics */
+    private missCount: number = 0;
 
     constructor(config?: ArweaveGatewayManagerConfig) {
         this.gateways = config?.gateways ?? DEFAULT_GATEWAYS;
@@ -136,11 +198,13 @@ export class ArweaveGatewayManager {
         // Check cache first
         const cachedGateway = this.getCachedGateway(txId);
         if (cachedGateway) {
+            this.hitCount++;
             const workingUrl = constructGatewayUrl(txId, cachedGateway, pathSuffix);
             this.logger.debug('Cache hit for txId', { txId, gateway: cachedGateway.host, pathSuffix });
             return workingUrl;
         }
 
+        this.missCount++;
         this.logger.debug('Cache miss, checking gateways', { txId, pathSuffix });
 
         // Try each gateway in priority order
@@ -278,7 +342,183 @@ export class ArweaveGatewayManager {
     clearCache(): void {
         const size = this.cache.size;
         this.cache.clear();
+        this.hitCount = 0;
+        this.missCount = 0;
         this.logger.info('Cache cleared', { entriesRemoved: size });
+    }
+
+    /**
+     * Prefetch and cache gateways for multiple URLs in parallel
+     *
+     * This is useful for warming up the cache at app startup with known model URLs.
+     * URLs are resolved in parallel with configurable concurrency.
+     *
+     * @param urls - Array of URLs to prefetch (non-Arweave URLs are skipped)
+     * @param options - Prefetch options
+     * @returns Result summary with success/failure counts and details
+     *
+     * @example
+     * ```ts
+     * const result = await arweaveGatewayManager.prefetchUrls([
+     *     'https://arweave.net/abc123.../model.json',
+     *     'https://arweave.net/def456.../model.json',
+     * ]);
+     * console.log(`Prefetched ${result.succeeded}/${result.total} URLs`);
+     * ```
+     */
+    async prefetchUrls(urls: string[], options?: PrefetchOptions): Promise<PrefetchResult> {
+        const concurrency = options?.concurrency ?? 5;
+        const continueOnError = options?.continueOnError ?? true;
+
+        const entries: PrefetchResultEntry[] = [];
+        let succeeded = 0;
+        let failed = 0;
+        let skipped = 0;
+
+        // Process URLs in batches for controlled concurrency
+        for (let i = 0; i < urls.length; i += concurrency) {
+            const batch = urls.slice(i, i + concurrency);
+
+            const batchResults = await Promise.allSettled(
+                batch.map(async (url): Promise<PrefetchResultEntry> => {
+                    // Skip non-Arweave URLs
+                    if (!isArweaveUrl(url)) {
+                        return {
+                            url,
+                            txId: '',
+                            success: false,
+                            error: 'Not an Arweave URL',
+                        };
+                    }
+
+                    // Parse URL to get txId
+                    const parsed = parseArweaveUrl(url);
+                    if (!parsed) {
+                        return {
+                            url,
+                            txId: '',
+                            success: false,
+                            error: 'Failed to parse Arweave URL',
+                        };
+                    }
+
+                    // Check if already cached
+                    const cached = this.getCachedGateway(parsed.txId);
+                    if (cached) {
+                        return {
+                            url,
+                            txId: parsed.txId,
+                            success: true,
+                            gateway: cached,
+                        };
+                    }
+
+                    // Resolve URL (this will check gateways and cache the result)
+                    await this.resolveUrl(url);
+                    const resolvedGateway = this.getCachedGateway(parsed.txId);
+
+                    if (resolvedGateway) {
+                        return {
+                            url,
+                            txId: parsed.txId,
+                            success: true,
+                            gateway: resolvedGateway,
+                        };
+                    } else {
+                        return {
+                            url,
+                            txId: parsed.txId,
+                            success: false,
+                            error: 'All gateways failed',
+                        };
+                    }
+                })
+            );
+
+            // Collect results
+            for (const result of batchResults) {
+                if (result.status === 'fulfilled') {
+                    const entry = result.value;
+                    entries.push(entry);
+
+                    if (entry.error === 'Not an Arweave URL') {
+                        skipped++;
+                    } else if (entry.success) {
+                        succeeded++;
+                    } else {
+                        failed++;
+                    }
+                } else {
+                    // Promise rejected (shouldn't happen with our implementation)
+                    failed++;
+                    entries.push({
+                        url: 'unknown',
+                        txId: '',
+                        success: false,
+                        error: result.reason?.message ?? 'Unknown error',
+                    });
+                }
+            }
+
+            // Stop processing if continueOnError is false and we have failures
+            if (!continueOnError && failed > 0) {
+                this.logger.warn('Prefetch stopped due to failures', { failed, processed: entries.length });
+                break;
+            }
+        }
+
+        this.logger.info('Prefetch complete', {
+            total: urls.length,
+            succeeded,
+            failed,
+            skipped,
+        });
+
+        return {
+            total: urls.length,
+            succeeded,
+            failed,
+            skipped,
+            entries,
+        };
+    }
+
+    /**
+     * Get statistics about the gateway cache
+     *
+     * @returns Cache statistics including size, entries, and hit/miss counts
+     *
+     * @example
+     * ```ts
+     * const stats = arweaveGatewayManager.getCacheStats();
+     * console.log(`Cache has ${stats.size} entries, hit rate: ${stats.hitCount / (stats.hitCount + stats.missCount)}`);
+     * ```
+     */
+    getCacheStats(): CacheStats {
+        const entries = Array.from(this.cache.entries());
+        const now = Date.now();
+
+        // Filter to only valid (non-expired) entries
+        const validTxIds = entries
+            .filter(([, cache]) => now - cache.timestamp < cache.ttl)
+            .map(([txId]) => txId);
+
+        return {
+            size: validTxIds.length,
+            txIds: validTxIds,
+            hitCount: this.hitCount,
+            missCount: this.missCount,
+            ttl: this.cacheTTL,
+        };
+    }
+
+    /**
+     * Get all cached gateway entries (for debugging)
+     *
+     * @returns Array of all cache entries (including expired ones)
+     */
+    getCacheEntries(): GatewayCache[] {
+        return Array.from(this.cache.values());
     }
 
     /**

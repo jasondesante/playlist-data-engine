@@ -403,6 +403,10 @@ export {
     type GatewayCache,
     type GatewayCheckResult,
     type ArweaveGatewayManagerConfig,
+    type PrefetchOptions,
+    type PrefetchResultEntry,
+    type PrefetchResult,
+    type CacheStats,
 } from './utils/arweaveGatewayManager.js';
 
 // Type helpers
