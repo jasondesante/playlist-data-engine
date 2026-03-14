@@ -4,6 +4,7 @@ import type {
     VibeMetrics
 } from '../types/AudioProfile.js';
 import * as tf from '@tensorflow/tfjs';
+import { arweaveGatewayManager } from '../../utils/arweaveGatewayManager.js';
 
 /**
  * Supported model architectures for audio feature extraction.
@@ -116,19 +117,17 @@ export interface MusicClassifierOptions {
     cacheEmbeddings?: boolean;
 
     /**
-     * Optional callback to resolve Arweave URLs before loading models.
-     * Used by the ArweaveGatewayManager to try alternate gateways if
-     * the primary gateway fails (e.g., turbo-gateway.com returning 499 errors).
+     * Optional override for URL resolution. By default, MusicClassifier uses
+     * arweaveGatewayManager.resolveUrl to handle Arweave gateway fallback
+     * automatically (trying alternate gateways if the primary fails).
      *
-     * The callback takes a URL string and returns a Promise that resolves
-     * to the working URL (possibly from a different gateway).
+     * Only provide this if you need custom URL resolution logic.
      *
      * @example
      * ```typescript
-     * import { arweaveGatewayManager } from 'playlist-data-engine';
-     *
+     * // Custom resolver (overrides default)
      * const classifier = new MusicClassifier({
-     *   resolveUrl: arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager),
+     *   resolveUrl: async (url) => url.replace('arweave.net', 'my-gateway.com'),
      *   models: { genre: 'https://arweave.net/...' }
      * });
      * ```
@@ -799,7 +798,7 @@ export const DEFAULT_ARWEAVE_MODELS = {
         embeddingType: 'effnet' as ModelArchitecture
     },
     danceability: {
-        modelUrl: 'https://turbo-gateway.com/nX9KX1OVhEaT1dStNcsRiZKCQTWuHjAMl4MWprIFyZU/model.json',
+        modelUrl: 'https://arweave.net/nX9KX1OVhEaT1dStNcsRiZKCQTWuHjAMl4MWprIFyZU/model.json',
         modelType: 'musicnn' as ModelArchitecture
     }
 } as const;
@@ -912,24 +911,23 @@ export class MusicClassifier {
     ): Promise<tf.GraphModel> {
         let lastError: Error | null = null;
 
-        // Resolve URL if resolveUrl callback is provided
+        // Resolve URL using arweaveGatewayManager by default, or custom resolver if provided
+        const resolver = this.options.resolveUrl ?? arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager);
         let resolvedUrl = modelUrl;
-        if (this.options.resolveUrl) {
-            try {
-                resolvedUrl = await this.options.resolveUrl(modelUrl);
-                if (resolvedUrl !== modelUrl) {
-                    console.info(
-                        `[MusicClassifier] Resolved model URL to alternate gateway`,
-                        { originalUrl: modelUrl, resolvedUrl }
-                    );
-                }
-            } catch (resolveError) {
-                console.warn(
-                    `[MusicClassifier] URL resolution failed, using original URL`,
-                    { modelUrl, error: String(resolveError) }
+        try {
+            resolvedUrl = await resolver(modelUrl);
+            if (resolvedUrl !== modelUrl) {
+                console.info(
+                    `[MusicClassifier] Resolved model URL to alternate gateway`,
+                    { originalUrl: modelUrl, resolvedUrl }
                 );
-                // Continue with original URL if resolution fails
             }
+        } catch (resolveError) {
+            console.warn(
+                `[MusicClassifier] URL resolution failed, using original URL`,
+                { modelUrl, error: String(resolveError) }
+            );
+            // Continue with original URL if resolution fails
         }
 
         for (let attempt = 0; attempt < maxRetries; attempt++) {

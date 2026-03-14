@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MusicClassifier, averageEmbeddings, detectModelArchitecture, detectGenreListType, isTwoStepModel, isSingleStepModel, isStringModel, formatModelForMetadata } from './MusicClassifier.js';
 
-// ============================================================================
-// Hoisted Mock Variables (must be defined before vi.mock calls)
-// ============================================================================
-
 const {
     mockFetch,
     mockPredict,
@@ -15,7 +11,9 @@ const {
     mockComputeFrameWiseVggish,
     mockLoadGraphModel,
     mockTensor2d,
+    mockTensor3d,
     mockTensor4d,
+    mockScalar,
     mockEssentiaInstance
 } = vi.hoisted(() => {
     // Create mock Essentia instance with all required methods
@@ -44,7 +42,9 @@ const {
         ]),
         mockLoadGraphModel: vi.fn(),
         mockTensor2d: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+        mockTensor3d: vi.fn().mockReturnValue({ dispose: vi.fn() }),
         mockTensor4d: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+        mockScalar: vi.fn().mockReturnValue({ dispose: vi.fn() }),
         mockEssentiaInstance: createMockEssentiaInstance()
     };
 });
@@ -74,7 +74,9 @@ class MockAudioContext {
 vi.mock('@tensorflow/tfjs', () => ({
     loadGraphModel: mockLoadGraphModel,
     tensor2d: mockTensor2d,
-    tensor4d: mockTensor4d
+    tensor3d: mockTensor3d,
+    tensor4d: mockTensor4d,
+    scalar: mockScalar
 }));
 
 // Mock Essentia WASM ES module (the actual import path used by MusicClassifier)
@@ -131,6 +133,8 @@ vi.mock('essentia.js/dist/essentia-wasm.web.js', () => {
     };
 });
 
+// Mock arweaveGatewayManager - used by default for URL resolution
+
 // Mock Essentia model classes
 vi.mock('essentia.js/dist/essentia.js-model.es.js', () => ({
     EssentiaTFInputExtractor: class {
@@ -173,7 +177,9 @@ describe('MusicClassifier', () => {
         mockComputeFrameWiseVggish.mockClear();
         mockLoadGraphModel.mockReset();
         mockTensor2d.mockClear();
+        mockTensor3d.mockClear();
         mockTensor4d.mockClear();
+        mockScalar.mockClear();
         mockFetch.mockReset();
 
         // Reset Essentia instance mocks
@@ -541,25 +547,42 @@ describe('Two-Step Model Flow', () => {
             embeddingsData[i] = (i % embeddingDim) / embeddingDim;
         }
 
+        // Create a mock tensor that the execute method returns
+        const mockOutputTensor = {
+            data: vi.fn().mockResolvedValue(new Float32Array(embeddingsData)),
+            shape: [64, embeddingDim], // [batch, embedding_dim]
+            dispose: vi.fn()
+        };
+
         return {
             predict: vi.fn().mockImplementation(() => ({
-                data: vi.fn().mockResolvedValue(new Float32Array(embeddingsData)), // Fresh copy each call
+                data: vi.fn().mockResolvedValue(new Float32Array(embeddingsData)),
                 shape: [1, numFrames, embeddingDim],
                 dispose: vi.fn()
             })),
+            execute: vi.fn().mockReturnValue(mockOutputTensor),
             dispose: vi.fn()
         };
     };
 
     // Helper to create mock classifier model for tf.loadGraphModel
-    const createMockClassifierModel = (predictions: number[]) => ({
-        predict: vi.fn().mockImplementation(() => ({
-            data: vi.fn().mockResolvedValue(new Float32Array(predictions)), // Fresh copy each call
+    const createMockClassifierModel = (predictions: number[]) => {
+        const mockOutputTensor = {
+            data: vi.fn().mockResolvedValue(new Float32Array(predictions)),
             shape: [1, predictions.length],
             dispose: vi.fn()
-        })),
-        dispose: vi.fn()
-    });
+        };
+
+        return {
+            predict: vi.fn().mockImplementation(() => ({
+                data: vi.fn().mockResolvedValue(new Float32Array(predictions)),
+                shape: [1, predictions.length],
+                dispose: vi.fn()
+            })),
+            execute: vi.fn().mockReturnValue(mockOutputTensor),
+            dispose: vi.fn()
+        };
+    };
 
     // Helper to create mock embedding model output (for Essentia models)
     const createMockEmbeddingOutput = (embeddingDim: number, numFrames: number = 1) => {
@@ -580,7 +603,9 @@ describe('Two-Step Model Flow', () => {
         mockComputeFrameWiseVggish.mockClear();
         mockLoadGraphModel.mockReset();
         mockTensor2d.mockClear();
+        mockTensor3d.mockClear();
         mockTensor4d.mockClear();
+        mockScalar.mockClear();
         mockFetch.mockReset();
 
         // Reset Essentia instance mocks
@@ -1060,6 +1085,49 @@ describe('Two-Step Model Flow', () => {
             const classifier = new MusicClassifier();
             expect(classifier.clearClassifierCache).toBeDefined();
             expect(typeof classifier.clearClassifierCache).toBe('function');
+        });
+    });
+
+    // ============================================================================
+    // resolveUrl Integration Tests
+    // ============================================================================
+
+    describe('resolveUrl option', () => {
+        it('should not call resolveUrl for non-effnet models (Essentia models)', async () => {
+            // Setup mock fetch response for audio
+            mockFetch.mockResolvedValueOnce({
+                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
+            });
+
+            // Mock predictions for musicnn model
+            mockPredict.mockResolvedValueOnce([
+                Array.from({ length: 87 }, (_, i) => i === 73 ? 0.9 : 0.01)
+            ]);
+
+            const customResolver = vi.fn().mockResolvedValue('https://resolved.url/model.json');
+
+            const classifier = new MusicClassifier({
+                resolveUrl: customResolver,
+                models: {
+                    genre: {
+                        modelUrl: '/models/genre-musicnn.json',
+                        modelType: 'musicnn' as const,
+                        genreType: 'jamendo' as const
+                    },
+                    mood: undefined,
+                    danceability: undefined
+                },
+                topN: 3,
+                threshold: 0.1
+            });
+
+            await classifier.analyze('https://example.com/test-audio.mp3');
+
+            // resolveUrl should NOT be called for musicnn models (they use Essentia's initialize)
+            // Note: The current implementation only uses resolveUrl in loadModelWithRetry
+            // which is used for effnet models. Essentia models use initializeEssentiaModelWithRetry
+            // which doesn't call resolveUrl.
+            expect(customResolver).not.toHaveBeenCalled();
         });
     });
 });
