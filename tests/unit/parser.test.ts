@@ -559,4 +559,249 @@ describe('PlaylistParser', () => {
             vi.restoreAllMocks();
         });
     });
+
+    describe('resolveUrl option', () => {
+        it('should not resolve image URLs by default (backward compatible)', async () => {
+            const parser = new PlaylistParser();
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://arweave.net/playlist-txid',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'AR',
+                        tx_id: 'track-txid-123',
+                        platform: 'arweave',
+                        metadata: JSON.stringify({
+                            name: 'Track 1',
+                            artist: 'Artist 1',
+                            mp3_url: 'https://arweave.net/audio-txid',
+                            image_small: 'https://arweave.net/image-txid',
+                            duration: 180,
+                            genre: 'Electronic',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const result = await parser.parse(rawData);
+
+            // URLs should NOT be resolved by default
+            expect(result.image).toBe('https://arweave.net/playlist-txid');
+            expect(result.tracks[0].image_url).toBe('https://arweave.net/image-txid');
+        });
+
+        it('should resolve image URLs when resolveImageUrls is true', async () => {
+            const resolveUrl = vi.fn().mockImplementation((url: string) => {
+                // Simulate gateway resolution
+                return Promise.resolve(url.replace('arweave.net', 'ar.io'));
+            });
+
+            const parser = new PlaylistParser({
+                resolveImageUrls: true,
+                resolveUrl,
+            });
+
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://arweave.net/playlist-txid',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'AR',
+                        tx_id: 'track-txid-123',
+                        platform: 'arweave',
+                        metadata: JSON.stringify({
+                            name: 'Track 1',
+                            artist: 'Artist 1',
+                            mp3_url: 'https://arweave.net/audio-txid',
+                            image_small: 'https://arweave.net/image-txid',
+                            duration: 180,
+                            genre: 'Electronic',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const result = await parser.parse(rawData);
+
+            // Playlist image should be resolved
+            expect(result.image).toBe('https://ar.io/playlist-txid');
+            // Track image URL should be resolved
+            expect(result.tracks[0].image_url).toBe('https://ar.io/image-txid');
+            // Audio URL should NOT be resolved (only images)
+            expect(result.tracks[0].audio_url).toBe('https://arweave.net/audio-txid');
+        });
+
+        it('should resolve image_thumb_url when present', async () => {
+            const resolveUrl = vi.fn().mockImplementation((url: string) => {
+                return Promise.resolve(url.replace('arweave.net', 'ar.io'));
+            });
+
+            const parser = new PlaylistParser({
+                resolveImageUrls: true,
+                resolveUrl,
+            });
+
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://arweave.net/playlist-txid',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'AR',
+                        tx_id: 'track-txid-123',
+                        platform: 'arweave',
+                        metadata: JSON.stringify({
+                            name: 'Track 1',
+                            artist: 'Artist 1',
+                            mp3_url: 'https://arweave.net/audio-txid',
+                            image_small: 'https://arweave.net/image-txid',
+                            image_thumb: 'https://arweave.net/thumb-txid',
+                            duration: 180,
+                            genre: 'Electronic',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(result.tracks[0].image_url).toBe('https://ar.io/image-txid');
+            expect(result.tracks[0].image_thumb_url).toBe('https://ar.io/thumb-txid');
+        });
+
+        it('should call resolveUrl for each image URL', async () => {
+            const resolveUrl = vi.fn().mockResolvedValue('https://resolved.url');
+
+            const parser = new PlaylistParser({
+                resolveImageUrls: true,
+                resolveUrl,
+            });
+
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://arweave.net/playlist-img',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'AR',
+                        tx_id: 'track-1',
+                        platform: 'arweave',
+                        metadata: JSON.stringify({
+                            name: 'Track 1',
+                            artist: 'Artist 1',
+                            mp3_url: 'https://arweave.net/audio-1',
+                            image_small: 'https://arweave.net/image-1',
+                            image_thumb: 'https://arweave.net/thumb-1',
+                            duration: 180,
+                            genre: 'Electronic',
+                            tags: [],
+                        }),
+                    },
+                    {
+                        chain_name: 'AR',
+                        tx_id: 'track-2',
+                        platform: 'arweave',
+                        metadata: JSON.stringify({
+                            name: 'Track 2',
+                            artist: 'Artist 2',
+                            mp3_url: 'https://arweave.net/audio-2',
+                            image_small: 'https://arweave.net/image-2',
+                            duration: 180,
+                            genre: 'Electronic',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            await parser.parse(rawData);
+
+            // Should be called for playlist image + track 1 (image + thumb) + track 2 (image only)
+            expect(resolveUrl).toHaveBeenCalledTimes(4);
+            expect(resolveUrl).toHaveBeenCalledWith('https://arweave.net/playlist-img');
+            expect(resolveUrl).toHaveBeenCalledWith('https://arweave.net/image-1');
+            expect(resolveUrl).toHaveBeenCalledWith('https://arweave.net/thumb-1');
+            expect(resolveUrl).toHaveBeenCalledWith('https://arweave.net/image-2');
+        });
+
+        it('should handle ar:// protocol URLs', async () => {
+            const resolveUrl = vi.fn().mockResolvedValue('https://arweave.net/resolved-txid');
+
+            const parser = new PlaylistParser({
+                resolveImageUrls: true,
+                resolveUrl,
+            });
+
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'ar://playlist-txid',
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'AR',
+                        tx_id: 'track-txid',
+                        platform: 'arweave',
+                        metadata: JSON.stringify({
+                            name: 'Track 1',
+                            artist: 'Artist 1',
+                            mp3_url: 'ar://audio-txid',
+                            image_small: 'ar://image-txid',
+                            duration: 180,
+                            genre: 'Electronic',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const result = await parser.parse(rawData);
+
+            expect(resolveUrl).toHaveBeenCalledWith('ar://playlist-txid');
+            expect(resolveUrl).toHaveBeenCalledWith('ar://image-txid');
+            expect(result.image).toBe('https://arweave.net/resolved-txid');
+        });
+
+        it('should use default arweaveGatewayManager when resolveUrl is not provided', async () => {
+            // This test verifies integration with the default gateway manager
+            // The actual gateway manager behavior is tested in arweaveGatewayManager.test.ts
+            const parser = new PlaylistParser({
+                resolveImageUrls: true,
+                // No resolveUrl provided - should use default
+            });
+
+            const rawData = {
+                name: 'Test Playlist',
+                image: 'https://example.com/regular-image.jpg', // Non-Arweave URL
+                creator: '0xCreator',
+                tracks: [
+                    {
+                        chain_name: 'ETH',
+                        token_address: '0xabc',
+                        token_id: '1',
+                        platform: 'sound',
+                        metadata: JSON.stringify({
+                            name: 'Track 1',
+                            artist: 'Artist 1',
+                            mp3_url: 'https://example.com/audio.mp3',
+                            image_small: 'https://example.com/image.jpg', // Non-Arweave URL
+                            duration: 180,
+                            genre: 'Electronic',
+                            tags: [],
+                        }),
+                    },
+                ],
+            };
+
+            const result = await parser.parse(rawData);
+
+            // Non-Arweave URLs should be returned as-is
+            expect(result.image).toBe('https://example.com/regular-image.jpg');
+            expect(result.tracks[0].image_url).toBe('https://example.com/image.jpg');
+        });
+    });
 });

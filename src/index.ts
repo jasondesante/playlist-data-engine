@@ -491,7 +491,7 @@ export { PartyAnalyzer, type PartyAnalysis } from './core/combat/PartyAnalyzer.j
 // PLAYLIST PARSING & ANALYSIS
 // ============================================================================
 
-export { PlaylistParser } from './core/parser/PlaylistParser.js';
+export { PlaylistParser, type PlaylistParserOptions } from './core/parser/PlaylistParser.js';
 export { MetadataExtractor } from './core/parser/MetadataExtractor.js';
 export { AudioAnalyzer, type AudioAnalyzerOptions, type SamplingStrategy } from './core/analysis/AudioAnalyzer.js';
 export {
@@ -513,7 +513,7 @@ export {
     DISCOGS400_GENRES
 } from './core/analysis/MusicClassifier.js';
 export { SpectrumScanner } from './core/analysis/SpectrumScanner.js';
-export { ColorExtractor } from './core/analysis/ColorExtractor.js';
+export { ColorExtractor, type ColorExtractorOptions } from './core/analysis/ColorExtractor.js';
 
 // ============================================================================
 // BEAT DETECTION SYSTEM

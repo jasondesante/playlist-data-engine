@@ -5,6 +5,7 @@
 
 import type { ServerlessPlaylist, PlaylistTrack, RawArweavePlaylist } from '../types/Playlist.js';
 import { MetadataExtractor } from './MetadataExtractor.js';
+import { arweaveGatewayManager } from '../../utils/arweaveGatewayManager.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface PlaylistParserOptions {
@@ -16,6 +17,30 @@ export interface PlaylistParserOptions {
 
     /** Timeout in milliseconds for audio URL validation (default: 5000ms) */
     audioUrlValidationTimeout?: number;
+
+    /**
+     * Optional override for URL resolution. By default, PlaylistParser uses
+     * arweaveGatewayManager.resolveUrl to handle Arweave gateway fallback
+     * automatically (trying alternate gateways if the primary fails).
+     *
+     * Only provide this if you need custom URL resolution logic.
+     *
+     * @example
+     * ```typescript
+     * // Custom resolver (overrides default)
+     * const parser = new PlaylistParser({
+     *   resolveUrl: async (url) => url.replace('arweave.net', 'my-gateway.com'),
+     * });
+     * ```
+     */
+    resolveUrl?: (url: string) => Promise<string>;
+
+    /**
+     * Whether to resolve image URLs (image_url, image_thumb_url) during parsing.
+     * When true, Arweave image URLs will be resolved to working gateways.
+     * Default: false (to maintain backward compatibility - consumers can resolve on-demand)
+     */
+    resolveImageUrls?: boolean;
 }
 
 export class PlaylistParser {
@@ -26,6 +51,7 @@ export class PlaylistParser {
             validateAudioUrls: false,
             strict: false,
             audioUrlValidationTimeout: 5000,
+            resolveImageUrls: false,
             ...options,
         };
     }
@@ -43,6 +69,13 @@ export class PlaylistParser {
         const playlistGenre = data.genre;
         const playlistTags = data.tags;
 
+        // Resolve playlist image URL if needed
+        let resolvedPlaylistImage = playlistImage;
+        if (playlistImage && this.options.resolveImageUrls) {
+            const resolver = this.options.resolveUrl ?? arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager);
+            resolvedPlaylistImage = await resolver(playlistImage);
+        }
+
         // Parse tracks
         const rawTracks = data.tracks || [];
         const tracks: PlaylistTrack[] = [];
@@ -51,7 +84,9 @@ export class PlaylistParser {
             try {
                 const track = await this.parseTrack(rawTracks[i], i);
                 if (track) {
-                    tracks.push(track);
+                    // Resolve image URLs if requested
+                    const resolvedTrack = await this.resolveTrackUrls(track);
+                    tracks.push(resolvedTrack);
                 }
             } catch (error) {
                 if (this.options.strict) {
@@ -64,12 +99,37 @@ export class PlaylistParser {
         return {
             name: playlistName,
             description: playlistDescription,
-            image: playlistImage,
+            image: resolvedPlaylistImage,
             creator: playlistCreator,
             genre: playlistGenre,
             tags: playlistTags,
             tracks,
         };
+    }
+
+    /**
+     * Resolve Arweave URLs in a track (image_url, image_thumb_url)
+     * Only resolves if resolveImageUrls option is enabled
+     */
+    private async resolveTrackUrls(track: PlaylistTrack): Promise<PlaylistTrack> {
+        if (!this.options.resolveImageUrls) {
+            return track;
+        }
+
+        const resolver = this.options.resolveUrl ?? arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager);
+        const resolvedTrack = { ...track };
+
+        // Resolve image_url
+        if (resolvedTrack.image_url) {
+            resolvedTrack.image_url = await resolver(resolvedTrack.image_url);
+        }
+
+        // Resolve image_thumb_url if present
+        if (resolvedTrack.image_thumb_url) {
+            resolvedTrack.image_thumb_url = await resolver(resolvedTrack.image_thumb_url);
+        }
+
+        return resolvedTrack;
     }
 
     /**
