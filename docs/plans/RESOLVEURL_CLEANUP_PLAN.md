@@ -25,9 +25,9 @@ Remove `resolveUrl` from all public options interfaces. Gateway resolution is no
   - [x] Remove references to "pass resolveUrl..." in the documentation
   - [x] Clarify that gateway fallback is automatic
 
-- [ ] **1.3 Update MusicClassifier tests**
+- [x] **1.3 Update MusicClassifier tests**
   - [x] Remove the `resolveUrl` option test from `MusicClassifier.test.ts` (removed the entire describe block)
-  - [ ] Consider removing `tests/integration/musicClassifier.resolveUrl.integration.test.ts` (tests pass but test deprecated functionality)
+  - [x] ~~Consider removing `tests/integration/musicClassifier.resolveUrl.integration.test.ts`~~ - Removed on 2026-03-14 (file tested deprecated functionality)
 
 ---
 
