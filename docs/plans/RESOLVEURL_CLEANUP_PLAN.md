@@ -56,17 +56,20 @@ Remove `resolveUrl` from all public options interfaces. Gateway resolution is no
 
 > **Note:** Phase 4 requires the `playlist-data-showcase` repository which is a separate project. These tasks should be completed in that repository, not in playlist-data-engine.
 
-- [ ] **4.1 Remove resolveUrl from useMusicClassifier.ts** (requires showcase repo)
-  - [ ] Remove `resolveUrl: arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager)` from MusicClassifier instantiation
-  - [ ] Gateway resolution is now automatic - no manual passing needed
+- [x] **4.1 Remove resolveUrl from useMusicClassifier.ts** (requires showcase repo)
+  - [x] Remove `resolveUrl: arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager)` from MusicClassifier instantiation
+  - [x] Gateway resolution is now automatic - no manual passing needed
+  - [x] Removed `arweaveGatewayManager` import since it's no longer used
+  - [x] Updated JSDoc comment to reflect automatic gateway resolution
 
-- [ ] **4.2 Remove resolveUrl from ArweaveImage.tsx** (if present) (requires showcase repo)
-  - [ ] Check if ArweaveImage component passes resolveUrl
-  - [ ] Remove if found
+- [x] **4.2 Remove resolveUrl from ArweaveImage.tsx** (if present) (requires showcase repo)
+  - [x] Check if ArweaveImage component passes resolveUrl - **NO CHANGES NEEDED**
+  - [x] ArweaveImage uses `arweaveGatewayManager.resolveUrl()` directly for its own URL resolution, not as an option passed to engine classes
 
-- [ ] **4.3 Update any other showcase files** (requires showcase repo)
-  - [ ] Search for any other `resolveUrl` usage in showcase
-  - [ ] Remove or update as needed
+- [x] **4.3 Update any other showcase files** (requires showcase repo)
+  - [x] Search for any other `resolveUrl` usage in showcase
+  - [x] No other files found that pass `resolveUrl` as an option to engine classes
+  - [x] Other usages (audioPlayerStore, ArweaveImage) use `arweaveGatewayManager.resolveUrl()` directly - correct usage
 
 ---
 
