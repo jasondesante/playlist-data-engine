@@ -115,15 +115,17 @@ Make the gateway manager available to consumers.
 
 Enable the engine to resolve model URLs before loading.
 
-- [x] **4.1 Add resolveUrl option to MusicClassifierOptions**
+> **Note (2026-03-14):** This phase added `resolveUrl` as an optional callback parameter. This was later changed to automatic resolution - the `resolveUrl` parameter was removed from all options interfaces. See "Post-Implementation Update" section below for details.
+
+- [x] **4.1 Add resolveUrl option to MusicClassifierOptions** (later removed - now automatic)
   - [x] Add optional `resolveUrl?: (url: string) => Promise<string>` callback
   - [x] Document that this is used for Arweave URL resolution
 
-- [x] **4.2 Update loadModelWithRetry method**
+- [x] **4.2 Update loadModelWithRetry method** (now uses arweaveGatewayManager directly)
   - [x] Call `resolveUrl` on modelUrl before loading (if provided)
   - [x] Log when URL is resolved to different gateway
 
-- [x] **4.3 Update loadModels method** ✓
+- [x] **4.3 Update loadModels method** ✓ (now uses arweaveGatewayManager directly)
     - **Note:** The `loadModels` method doesn't exist as the single class - models are loaded lazily through `getEmbeddingModel`, `loadModelWithRetry`, `predictWithModel`, and and other model loading paths.
     - **Implementation details:**
     - Added `resolvedUrlCache: Map<string, string>` property to cache resolved URLs
@@ -210,19 +212,21 @@ Ensure default models use reliable gateways.
 
 Future improvements that could be added.
 
+> **Note (2026-03-14):** Task 7.1 originally added `resolveUrl` as optional callback parameters. These were later removed in favor of automatic resolution. See "Post-Implementation Update" section below.
+
 - [x] **7.1 Add gateway resolution for images in engine**
   - [x] ColorExtractor could resolve image URLs before loading
-    - Added `ColorExtractorOptions` interface with optional `resolveUrl` callback
+    - ~~Added `ColorExtractorOptions` interface with optional `resolveUrl` callback~~ (removed - now automatic)
     - ColorExtractor now resolves image URLs before loading using arweaveGatewayManager by default
-    - Added 4 new tests for resolveUrl functionality in colorExtractor.test.ts
+    - ~~Added 4 new tests for resolveUrl functionality in colorExtractor.test.ts~~ (removed - no longer needed)
   - [x] PlaylistParser could resolve track images
-    - Added `resolveUrl` and `resolveImageUrls` options to `PlaylistParserOptions`
-    - When `resolveImageUrls: true`, playlist and track image URLs are resolved during parsing
+    - ~~Added `resolveUrl` and `resolveImageUrls` options to `PlaylistParserOptions`~~ (removed - now automatic)
+    - Playlist and track image URLs are now resolved automatically during parsing
     - Audio URLs are NOT resolved (only images) to maintain backward compatibility
-    - Added 6 new tests for resolveUrl functionality in parser.test.ts
+    - ~~Added 6 new tests for resolveUrl functionality in parser.test.ts~~ (removed - no longer needed)
   - [x] Export new types from engine's index.ts
-    - `ColorExtractorOptions` type exported
-    - `PlaylistParserOptions` type exported
+    - `ColorExtractorOptions` type exported (without resolveUrl)
+    - `PlaylistParserOptions` type exported (without resolveUrl)
 
 - [x] **7.2 Add prefetch/warmup capability**
   - [x] Method to pre-check and cache gateways for known txIds
@@ -275,7 +279,8 @@ Future improvements that could be added.
 1. **Should the engine have a default resolveUrl in MusicClassifier?**
    - Option A: Require explicit `resolveUrl` callback (current plan)
    - Option B: Auto-import singleton and use by default
-   - **Recommendation:** Option A for explicit dependency injection, easier testing
+   - **Recommendation:** ~~Option A for explicit dependency injection, easier testing~~
+   - **Resolution (2026-03-14):** Option B was ultimately chosen. The `resolveUrl` parameter was removed from all options interfaces (`MusicClassifierOptions`, `ColorExtractorOptions`, `PlaylistParserOptions`) and the internal code now uses `arweaveGatewayManager.resolveUrl` directly. Gateway resolution is automatic - no user configuration needed. See RESOLVEURL_CLEANUP_PLAN.md for details.
 
 2. **Should gateway priority order be configurable?**
    - Currently hardcoded as: arweave.net, ar.io, ardrive.net, turbo-gateway.com
@@ -325,3 +330,41 @@ Future improvements that could be added.
 - [ ] All existing tests pass
 - [ ] New tests in engine cover gateway manager functionality
 - [ ] TypeScript compilation succeeds in both packages
+
+---
+
+## Post-Implementation Update: Automatic Gateway Resolution
+
+**Date:** 2026-03-14
+
+### What Changed
+
+After implementing the migration plan, we realized that requiring users to pass `resolveUrl` manually was unnecessary complexity. The engine now handles gateway resolution automatically.
+
+### Key Changes Made
+
+1. **Removed `resolveUrl` from all options interfaces:**
+   - `MusicClassifierOptions` - no longer accepts `resolveUrl` callback
+   - `ColorExtractorOptions` - no longer accepts `resolveUrl` callback
+   - `PlaylistParserOptions` - no longer accepts `resolveUrl` callback
+
+2. **Internal code now uses `arweaveGatewayManager.resolveUrl` directly:**
+   - `MusicClassifier.ts` - `loadModelWithRetry` calls `arweaveGatewayManager.resolveUrl` internally
+   - `ColorExtractor.ts` - `extractColors` calls `arweaveGatewayManager.resolveUrl` internally
+   - `PlaylistParser.ts` - `parse` calls `arweaveGatewayManager.resolveUrl` for image URLs
+
+3. **Gateway resolution is now automatic:**
+   - No user configuration needed
+   - Fallback to working gateways happens transparently
+   - Users don't need to know about Arweave gateways at all
+
+### Why This Approach is Better
+
+- **Simpler API:** Users just pass URLs, the engine handles resolution
+- **Less boilerplate:** No need to import and bind `arweaveGatewayManager`
+- **Fewer errors:** No chance of forgetting to pass the callback
+- **Better DX:** "It just works" without configuration
+
+### Documentation Updates
+
+See `RESOLVEURL_CLEANUP_PLAN.md` for the complete cleanup process that removed the optional `resolveUrl` parameters.

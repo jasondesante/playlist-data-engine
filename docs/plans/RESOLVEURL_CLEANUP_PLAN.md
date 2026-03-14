@@ -54,15 +54,17 @@ Remove `resolveUrl` from all public options interfaces. Gateway resolution is no
 
 ## Phase 4: Update Showcase (playlist-data-showcase)
 
-- [ ] **4.1 Remove resolveUrl from useMusicClassifier.ts**
+> **Note:** Phase 4 requires the `playlist-data-showcase` repository which is a separate project. These tasks should be completed in that repository, not in playlist-data-engine.
+
+- [ ] **4.1 Remove resolveUrl from useMusicClassifier.ts** (requires showcase repo)
   - [ ] Remove `resolveUrl: arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager)` from MusicClassifier instantiation
   - [ ] Gateway resolution is now automatic - no manual passing needed
 
-- [ ] **4.2 Remove resolveUrl from ArweaveImage.tsx** (if present)
+- [ ] **4.2 Remove resolveUrl from ArweaveImage.tsx** (if present) (requires showcase repo)
   - [ ] Check if ArweaveImage component passes resolveUrl
   - [ ] Remove if found
 
-- [ ] **4.3 Update any other showcase files**
+- [ ] **4.3 Update any other showcase files** (requires showcase repo)
   - [ ] Search for any other `resolveUrl` usage in showcase
   - [ ] Remove or update as needed
 
@@ -70,11 +72,11 @@ Remove `resolveUrl` from all public options interfaces. Gateway resolution is no
 
 ## Phase 5: Update Documentation
 
-- [ ] **5.1 Update ARWEAVE_GATEWAY_MANAGER_MIGRATION.md**
-  - [ ] Update Phase 4 description to reflect automatic resolution (no manual passing)
-  - [ ] Update "Questions/Unknowns" section - resolve question #1 is now resolved
-  - [ ] Mark Phase 4 tasks as updated
-  - [ ] Write update at the bottom of the plan explaining what was done wrong in ARWEAVE_GATEWAY_MANAGER_MIGRATION regarding resolveUrl
+- [x] **5.1 Update ARWEAVE_GATEWAY_MANAGER_MIGRATION.md**
+  - [x] Update Phase 4 description to reflect automatic resolution (no manual passing)
+  - [x] Update "Questions/Unknowns" section - resolve question #1 is now resolved
+  - [x] Mark Phase 4 tasks as updated
+  - [x] Write update at the bottom of the plan explaining what was done wrong in ARWEAVE_GATEWAY_MANAGER_MIGRATION regarding resolveUrl
 
 - [ ] **5.2 Update AUDIO_ANALYSIS.md**
   - [ ] Add section about automatic gateway resolution
