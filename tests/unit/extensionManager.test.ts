@@ -126,23 +126,59 @@ describe('ExtensionManager', () => {
         });
 
         it('should register custom races', () => {
-            const customRaces = ['Human', 'Elf']; // Valid races from defaults
+            // First register custom race data so the race name is valid
+            manager.register('races.data', [{
+                race: 'CrystalElf',
+                ability_bonuses: { DEX: 2 },
+                speed: 30,
+                traits: []
+            }]);
+            manager.register('races.data', [{
+                race: 'ShadowFey',
+                ability_bonuses: { CHA: 2 },
+                speed: 35,
+                traits: []
+            }]);
+
+            const customRaces = ['CrystalElf', 'ShadowFey'];
 
             manager.register('races', customRaces);
 
             const merged = manager.get('races');
-            expect(merged).toContain('Human');
-            expect(merged).toContain('Elf');
+            expect(merged).toContain('CrystalElf');
+            expect(merged).toContain('ShadowFey');
         });
 
         it('should register custom classes', () => {
-            const customClasses = ['Fighter', 'Wizard']; // Valid classes from defaults
+            // First register custom class data so the class name is valid
+            manager.register('classes.data', [{
+                name: 'Artificer',
+                primary_ability: 'INT',
+                hit_die: 8,
+                saving_throws: ['INT', 'CON'],
+                is_spellcaster: true,
+                skill_count: 2,
+                available_skills: ['Arcana', 'Investigation', 'Perception', 'Sleight of Hand'],
+                has_expertise: false
+            }]);
+            manager.register('classes.data', [{
+                name: 'BloodHunter',
+                primary_ability: 'STR',
+                hit_die: 10,
+                saving_throws: ['STR', 'DEX'],
+                is_spellcaster: false,
+                skill_count: 2,
+                available_skills: ['Athletics', 'Insight', 'Investigation', 'Perception'],
+                has_expertise: false
+            }]);
+
+            const customClasses = ['Artificer', 'BloodHunter'];
 
             manager.register('classes', customClasses);
 
             const merged = manager.get('classes');
-            expect(merged).toContain('Fighter');
-            expect(merged).toContain('Wizard');
+            expect(merged).toContain('Artificer');
+            expect(merged).toContain('BloodHunter');
         });
 
         it('should throw on invalid equipment items when validate is true', () => {
@@ -313,7 +349,9 @@ describe('ExtensionManager', () => {
                 components: ['V', 'S'],
                 duration: 'Instantaneous'
             }]);
-            manager.register('races', ['Human']);
+            // Use a custom race that doesn't exist in defaults
+            manager.register('races.data', [{ race: 'TestRace', ability_bonuses: {}, speed: 30, traits: [] }]);
+            manager.register('races', ['TestRace']);
 
             expect(manager.hasCustomData('equipment')).toBe(true);
             expect(manager.hasCustomData('spells')).toBe(true);
@@ -539,7 +577,9 @@ describe('ExtensionManager', () => {
         });
 
         it('should get info for a specific category', () => {
-            manager.register('races', ['Human'], { mode: 'relative', weights: { 'Human': 2 } });
+            // Use a custom race that doesn't exist in defaults
+            manager.register('races.data', [{ race: 'TestRaceInfo', ability_bonuses: {}, speed: 30, traits: [] }]);
+            manager.register('races', ['TestRaceInfo'], { mode: 'relative', weights: { 'TestRaceInfo': 2 } });
 
             const info = manager.getInfo('races');
 
@@ -548,7 +588,7 @@ describe('ExtensionManager', () => {
             expect(info.customCount).toBe(1);
             expect(info.totalCount).toBe(ALL_RACES.length + 1);
             expect(info.mode).toBe('relative');
-            expect(info.weights['Human']).toBe(2);
+            expect(info.weights['TestRaceInfo']).toBe(2);
             expect(info.registeredAt).toBeDefined();
         });
 
@@ -678,6 +718,161 @@ describe('ExtensionManager', () => {
 
             const merged = manager.get('appearance.hairStyles');
             expect(merged).toContain('月光');
+        });
+    });
+
+    describe('Duplicate Detection', () => {
+        it('should throw error when registering duplicate equipment by name', () => {
+            // First registration should succeed
+            manager.register('equipment', [
+                { name: 'Unique Sword', type: 'weapon' as const, rarity: 'rare' as const, weight: 3 }
+            ]);
+
+            // Second registration with same name should fail
+            expect(() => {
+                manager.register('equipment', [
+                    { name: 'Unique Sword', type: 'weapon' as const, rarity: 'common' as const, weight: 1 }
+                ]);
+            }).toThrow('Duplicate items in category');
+        });
+
+        it('should throw error when registering duplicate spells by name', () => {
+            manager.register('spells', [{
+                name: 'Unique Spell',
+                level: 1,
+                school: 'Evocation',
+                casting_time: '1 action',
+                range: '60 feet',
+                components: ['V', 'S'],
+                duration: 'Instantaneous'
+            }]);
+
+            expect(() => {
+                manager.register('spells', [{
+                    name: 'Unique Spell',
+                    level: 3,
+                    school: 'Necromancy',
+                    casting_time: '1 bonus action',
+                    range: '30 feet',
+                    components: ['V'],
+                    duration: '1 minute'
+                }]);
+            }).toThrow('Duplicate items in category');
+        });
+
+        it('should throw error when registering duplicate appearance options', () => {
+            manager.register('appearance.bodyTypes', ['custom-type']);
+
+            expect(() => {
+                manager.register('appearance.bodyTypes', ['custom-type']);
+            }).toThrow('Duplicate items in category');
+        });
+
+        it('should throw error when registering duplicate races', () => {
+            // First, register a custom race data so the race name is valid
+            manager.register('races.data', [{
+                race: 'CustomRace',
+                ability_bonuses: { STR: 2 },
+                speed: 30,
+                traits: []
+            }]);
+
+            // Register the race name
+            manager.register('races', ['CustomRace']);
+
+            // Try to register the same race again
+            expect(() => {
+                manager.register('races', ['CustomRace']);
+            }).toThrow('Duplicate items in category');
+        });
+
+        it('should throw error when registering duplicate classes', () => {
+            // First, register a custom class data so the class name is valid
+            manager.register('classes.data', [{
+                name: 'CustomClass',
+                primary_ability: 'STR',
+                hit_die: 10,
+                saving_throws: ['STR', 'CON'],
+                is_spellcaster: false,
+                skill_count: 2,
+                available_skills: ['Athletics', 'Intimidation'],
+                has_expertise: false
+            }]);
+
+            // Register the class name
+            manager.register('classes', ['CustomClass']);
+
+            // Try to register the same class again
+            expect(() => {
+                manager.register('classes', ['CustomClass']);
+            }).toThrow('Duplicate items in category');
+        });
+
+        it('should NOT throw error in replace mode (replaces all items)', () => {
+            manager.register('equipment', [
+                { name: 'First Sword', type: 'weapon' as const, rarity: 'rare' as const, weight: 3 }
+            ]);
+
+            // In replace mode, duplicates should NOT be checked (it replaces everything)
+            expect(() => {
+                manager.register('equipment', [
+                    { name: 'First Sword', type: 'weapon' as const, rarity: 'common' as const, weight: 1 }
+                ], { mode: 'replace' });
+            }).not.toThrow();
+        });
+
+        it('should allow registering different items in same category', () => {
+            manager.register('equipment', [
+                { name: 'Sword of Fire', type: 'weapon' as const, rarity: 'rare' as const, weight: 3 }
+            ]);
+
+            // Different name should be allowed
+            expect(() => {
+                manager.register('equipment', [
+                    { name: 'Sword of Ice', type: 'weapon' as const, rarity: 'rare' as const, weight: 3 }
+                ]);
+            }).not.toThrow();
+        });
+
+        it('should detect duplicates by id property when name is not present', () => {
+            // Register an item with an id
+            manager.register('classFeatures', [{
+                id: 'unique-feature-id',
+                name: 'First Feature',
+                description: 'A feature',
+                class: 'Fighter',
+                level: 1,
+                effects: []
+            }], { validate: false });
+
+            // Try to register another item with the same id but different name
+            expect(() => {
+                manager.register('classFeatures', [{
+                    id: 'unique-feature-id',
+                    name: 'Different Feature Name',
+                    description: 'Another feature',
+                    class: 'Fighter',
+                    level: 2,
+                    effects: []
+                }], { validate: false });
+            }).toThrow('Duplicate items in category');
+        });
+
+        it('should include duplicate names in error message', () => {
+            manager.register('equipment', [
+                { name: 'Duplicate Item', type: 'weapon' as const, rarity: 'rare' as const, weight: 3 }
+            ]);
+
+            try {
+                manager.register('equipment', [
+                    { name: 'Duplicate Item', type: 'weapon' as const, rarity: 'common' as const, weight: 1 }
+                ]);
+                expect.fail('Should have thrown');
+            } catch (error) {
+                expect(error).toBeInstanceOf(Error);
+                expect((error as Error).message).toContain('Duplicate Item');
+                expect((error as Error).message).toContain('unique name or id');
+            }
         });
     });
 });

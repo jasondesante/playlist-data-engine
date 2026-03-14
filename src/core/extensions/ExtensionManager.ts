@@ -376,6 +376,63 @@ export class ExtensionManager {
             }
         }
 
+        // Duplicate detection - check for items with same name or id
+        // Skip check only in replace mode (it replaces everything with custom items only)
+        if (mode !== 'replace') {
+            const existingItems = this.get(category);
+            const duplicates: string[] = [];
+
+            // Categories where items are strings (the string itself is the identifier)
+            const stringCategories = ['races', 'classes'];
+
+            if (stringCategories.includes(category)) {
+                // For string categories, check if the string already exists
+                for (const item of items) {
+                    if (typeof item === 'string' && existingItems.includes(item)) {
+                        duplicates.push(item);
+                    }
+                }
+            } else if (category.startsWith('appearance.')) {
+                // Appearance options are strings - check for duplicates
+                for (const item of items) {
+                    if (typeof item === 'string' && existingItems.includes(item)) {
+                        duplicates.push(item);
+                    }
+                }
+            } else {
+                // For object categories, check by both name AND id property
+                // An item is a duplicate if either its name OR id matches an existing item
+                for (const item of items) {
+                    if (item && typeof item === 'object') {
+                        const itemName = item.name;
+                        const itemId = item.id;
+                        
+                        if (itemName || itemId) {
+                            const isDuplicate = existingItems.some((existing: any) => {
+                                if (existing && typeof existing === 'object') {
+                                    // Check if name matches
+                                    if (itemName && existing.name === itemName) return true;
+                                    // Check if id matches
+                                    if (itemId && existing.id === itemId) return true;
+                                }
+                                return false;
+                            });
+                            if (isDuplicate) {
+                                duplicates.push(itemName || itemId);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (duplicates.length > 0) {
+                throw new Error(
+                    `Duplicate items in category '${category}': ${duplicates.join(', ')}. ` +
+                    `Each item must have a unique name or id.`
+                );
+            }
+        }
+
         // Store the extension data
         // For relative mode, merge with existing items; for other modes, replace
         const existingExtension = this.extensions.get(category);
