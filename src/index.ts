@@ -396,6 +396,15 @@ export {
     getAllGatewayUrls,
 } from './utils/arweaveUtils.js';
 
+// Arweave Gateway Manager
+export {
+    ArweaveGatewayManager,
+    arweaveGatewayManager,
+    type GatewayCache,
+    type GatewayCheckResult,
+    type ArweaveGatewayManagerConfig,
+} from './utils/arweaveGatewayManager.js';
+
 // Type helpers
 export { asClass, isValidClass } from './core/types/Character.js';
 
