@@ -104,8 +104,10 @@ Remove `resolveUrl` from all public options interfaces. Gateway resolution is no
 > 1. **ArweaveGatewayManager mutation bug** - Constructor wasn't deep-cloning gateway objects, causing test pollution when `adjustGatewayPriorities` modified shared object references. Fixed by cloning gateway objects with `{ ...g }` in constructor.
 > 2. **MusicClassifier test mock bug** - Single-step mood model test mocked 62 classes but single-step models use binary labels (2 classes). Fixed mock to use correct 2-class format.
 
-- [ ] **6.2 Run all integration tests**
-  - [ ] Verify resolveUrl integration tests still pass (or update/remove)
+- [x] **6.2 Run all integration tests**
+  - [x] Verify resolveUrl integration tests still pass (or update/remove)
+
+> **Completed on 2026-03-14:** All 748 integration tests pass. The `resolveUrl` parameter was already removed from all engine classes and tests in Phases 1-3. No remaining tests reference the deprecated `resolveUrl` option. The `arweaveGatewayManager.resolveUrl()` method (used internally) continues to work correctly.
 
 - [ ] **6.3 Build both packages**
   - [x] `npm run build` in playlist-data-engine
