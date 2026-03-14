@@ -733,5 +733,537 @@ describe('Singleton instance', () => {
         expect(typeof arweaveGatewayManager.getCachedGateway).toBe('function');
         expect(typeof arweaveGatewayManager.setCache).toBe('function');
         expect(typeof arweaveGatewayManager.clearCache).toBe('function');
+        expect(typeof arweaveGatewayManager.prefetchUrls).toBe('function');
+        expect(typeof arweaveGatewayManager.getCacheStats).toBe('function');
+        expect(typeof arweaveGatewayManager.getCacheEntries).toBe('function');
+    });
+});
+
+// ============================================================
+// Additional Tests: prefetchUrls method
+// ============================================================
+
+describe('prefetchUrls method', () => {
+    it('should prefetch multiple URLs in parallel', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const txId1 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+        const txId2 = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
+        const urls = [
+            'https://arweave.net/' + txId1,
+            'https://arweave.net/' + txId2,
+        ];
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        const result = await manager.prefetchUrls(urls);
+
+        expect(result.total).toBe(2);
+        expect(result.succeeded).toBe(2);
+        expect(result.failed).toBe(0);
+        expect(result.skipped).toBe(0);
+        expect(result.entries).toHaveLength(2);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should skip non-Arweave URLs', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const urls = [
+            'https://example.com/audio.mp3',
+            'https://arweave.net/' + VALID_TX_ID,
+        ];
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        const result = await manager.prefetchUrls(urls);
+
+        expect(result.total).toBe(2);
+        expect(result.succeeded).toBe(1);
+        expect(result.skipped).toBe(1);
+        expect(result.failed).toBe(0);
+    });
+
+    it('should use cached gateways when available', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // Pre-cache the gateway
+        manager.setCache(VALID_TX_ID, CUSTOM_GATEWAYS[0]);
+
+        const result = await manager.prefetchUrls([ARWEAVE_URL]);
+
+        expect(result.succeeded).toBe(1);
+        expect(result.entries[0].gateway?.host).toBe('primary.example.com');
+        // Should not have called fetch since it was cached
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle partial failures', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const txId1 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+        const txId2 = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
+
+        // First URL succeeds, second fails
+        mockFetch
+            .mockResolvedValueOnce(new Response(null, { status: 200 }))
+            .mockResolvedValue(new Response(null, { status: 500 }));
+
+        const result = await manager.prefetchUrls([
+            'https://arweave.net/' + txId1,
+            'https://arweave.net/' + txId2,
+        ]);
+
+        expect(result.succeeded).toBe(1);
+        expect(result.failed).toBe(1);
+    });
+
+    it('should respect concurrency option', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const urls = [
+            'https://arweave.net/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            'https://arweave.net/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+            'https://arweave.net/CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC',
+            'https://arweave.net/DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD',
+        ];
+
+        let concurrentCalls = 0;
+        let maxConcurrentCalls = 0;
+
+        mockFetch.mockImplementation(async () => {
+            concurrentCalls++;
+            maxConcurrentCalls = Math.max(maxConcurrentCalls, concurrentCalls);
+            await new Promise(resolve => setTimeout(resolve, 10));
+            concurrentCalls--;
+            return new Response(null, { status: 200 });
+        });
+
+        // Concurrency of 2
+        await manager.prefetchUrls(urls, { concurrency: 2 });
+
+        // Max concurrent calls should be 2 (or close to it)
+        expect(maxConcurrentCalls).toBeLessThanOrEqual(2);
+    });
+
+    it('should return entry details for each URL', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const txId1 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        const result = await manager.prefetchUrls(['https://arweave.net/' + txId1]);
+
+        expect(result.entries[0].url).toBe('https://arweave.net/' + txId1);
+        expect(result.entries[0].txId).toBe(txId1);
+        expect(result.entries[0].success).toBe(true);
+        expect(result.entries[0].gateway?.host).toBe('primary.example.com');
+    });
+});
+
+// ============================================================
+// Additional Tests: getCacheStats method
+// ============================================================
+
+describe('getCacheStats method', () => {
+    it('should return empty stats for empty cache', () => {
+        const manager = new ArweaveGatewayManager();
+        const stats = manager.getCacheStats();
+
+        expect(stats.size).toBe(0);
+        expect(stats.txIds).toHaveLength(0);
+        expect(stats.hitCount).toBe(0);
+        expect(stats.missCount).toBe(0);
+        expect(stats.ttl).toBe(DEFAULT_CACHE_TTL);
+    });
+
+    it('should return correct stats after caching', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        // Resolve URL to populate cache
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        const stats = manager.getCacheStats();
+
+        expect(stats.size).toBe(1);
+        expect(stats.txIds).toContain(VALID_TX_ID);
+        expect(stats.missCount).toBe(1);
+    });
+
+    it('should track hit and miss counts', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        // First request - miss
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        // Second request - hit
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        const stats = manager.getCacheStats();
+
+        expect(stats.hitCount).toBe(1);
+        expect(stats.missCount).toBe(1);
+    });
+
+    it('should reset hit/miss counts on clearCache', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        await manager.resolveUrl(ARWEAVE_URL);
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        manager.clearCache();
+
+        const stats = manager.getCacheStats();
+
+        expect(stats.size).toBe(0);
+        expect(stats.hitCount).toBe(0);
+        expect(stats.missCount).toBe(0);
+    });
+
+    it('should only count valid (non-expired) entries', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+            cacheTTL: 10, // 10ms TTL
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        // Wait for cache to expire
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        const stats = manager.getCacheStats();
+
+        expect(stats.size).toBe(0);
+        expect(stats.txIds).toHaveLength(0);
+    });
+});
+
+// ============================================================
+// Additional Tests: getCacheEntries method
+// ============================================================
+
+describe('getCacheEntries method', () => {
+    it('should return empty array for empty cache', () => {
+        const manager = new ArweaveGatewayManager();
+        const entries = manager.getCacheEntries();
+
+        expect(entries).toHaveLength(0);
+    });
+
+    it('should return all cache entries including expired', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+            cacheTTL: 10, // 10ms TTL
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        // Wait for cache to expire
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // getCacheEntries returns ALL entries (including expired)
+        const entries = manager.getCacheEntries();
+
+        expect(entries).toHaveLength(1);
+        expect(entries[0].txId).toBe(VALID_TX_ID);
+    });
+});
+
+const DEFAULT_CACHE_TTL = 7200000;
+
+// ============================================================
+// Additional Tests: prefetchUrls method
+// ============================================================
+
+describe('prefetchUrls method', () => {
+    it('should prefetch multiple URLs in parallel', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const txId1 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+        const txId2 = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
+        const urls = [
+            'https://arweave.net/' + txId1,
+            'https://arweave.net/' + txId2,
+        ];
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        const result = await manager.prefetchUrls(urls);
+
+        expect(result.total).toBe(2);
+        expect(result.succeeded).toBe(2);
+        expect(result.failed).toBe(0);
+        expect(result.skipped).toBe(0);
+        expect(result.entries).toHaveLength(2);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should skip non-Arweave URLs', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const urls = [
+            'https://example.com/audio.mp3',
+            'https://arweave.net/' + VALID_TX_ID,
+        ];
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        const result = await manager.prefetchUrls(urls);
+
+        expect(result.total).toBe(2);
+        expect(result.succeeded).toBe(1);
+        expect(result.skipped).toBe(1);
+        expect(result.failed).toBe(0);
+    });
+
+    it('should use cached gateways when available', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // Pre-cache the gateway
+        manager.setCache(VALID_TX_ID, CUSTOM_GATEWAYS[0]);
+
+        const result = await manager.prefetchUrls([ARWEAVE_URL]);
+
+        expect(result.succeeded).toBe(1);
+        expect(result.entries[0].gateway?.host).toBe('primary.example.com');
+        // Should not have called fetch since it was cached
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle partial failures', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const txId1 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+        const txId2 = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
+
+        // First URL succeeds, second fails
+        mockFetch
+            .mockResolvedValueOnce(new Response(null, { status: 200 }))
+            .mockResolvedValue(new Response(null, { status: 500 }));
+
+        const result = await manager.prefetchUrls([
+            'https://arweave.net/' + txId1,
+            'https://arweave.net/' + txId2,
+        ]);
+
+        expect(result.succeeded).toBe(1);
+        expect(result.failed).toBe(1);
+    });
+
+    it('should respect concurrency option', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const urls = [
+            'https://arweave.net/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            'https://arweave.net/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+            'https://arweave.net/CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC',
+            'https://arweave.net/DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD',
+        ];
+
+        let concurrentCalls = 0;
+        let maxConcurrentCalls = 0;
+
+        mockFetch.mockImplementation(async () => {
+            concurrentCalls++;
+            maxConcurrentCalls = Math.max(maxConcurrentCalls, concurrentCalls);
+            await new Promise(resolve => setTimeout(resolve, 10));
+            concurrentCalls--;
+            return new Response(null, { status: 200 });
+        });
+
+        // Concurrency of 2
+        await manager.prefetchUrls(urls, { concurrency: 2 });
+
+        // Max concurrent calls should be 2 (or close to it)
+        expect(maxConcurrentCalls).toBeLessThanOrEqual(2);
+    });
+
+    it('should return entry details for each URL', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const txId1 = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        const result = await manager.prefetchUrls(['https://arweave.net/' + txId1]);
+
+        expect(result.entries[0].url).toBe('https://arweave.net/' + txId1);
+        expect(result.entries[0].txId).toBe(txId1);
+        expect(result.entries[0].success).toBe(true);
+        expect(result.entries[0].gateway?.host).toBe('primary.example.com');
+    });
+});
+
+// ============================================================
+// Additional Tests: getCacheStats method
+// ============================================================
+
+describe('getCacheStats method', () => {
+    it('should return empty stats for empty cache', () => {
+        const manager = new ArweaveGatewayManager();
+        const stats = manager.getCacheStats();
+
+        expect(stats.size).toBe(0);
+        expect(stats.txIds).toHaveLength(0);
+        expect(stats.hitCount).toBe(0);
+        expect(stats.missCount).toBe(0);
+        expect(stats.ttl).toBe(DEFAULT_CACHE_TTL);
+    });
+
+    it('should return correct stats after caching', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        await manager.resolveUrl(ARWEAVE_URL);
+        const stats = manager.getCacheStats();
+
+        expect(stats.size).toBe(1);
+        expect(stats.txIds).toContain(VALID_TX_ID);
+        expect(stats.missCount).toBe(1);
+    });
+
+    it('should track hit and miss counts', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        // First request - miss
+        await manager.resolveUrl(ARWEAVE_URL);
+        // Second request - hit
+        await manager.resolveUrl(ARWEAVE_URL);
+        const stats = manager.getCacheStats();
+
+        expect(stats.hitCount).toBe(1);
+        expect(stats.missCount).toBe(1);
+    });
+
+    it('should reset hit/miss counts on clearCache', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+        await manager.resolveUrl(ARWEAVE_URL);
+        await manager.resolveUrl(ARWEAVE_URL);
+        manager.clearCache();
+        const stats = manager.getCacheStats();
+
+        expect(stats.size).toBe(0);
+        expect(stats.hitCount).toBe(0);
+        expect(stats.missCount).toBe(0);
+    });
+
+    it('should only count valid (non-expired) entries', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+            cacheTTL: 10, // 10ms TTL
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+        await manager.resolveUrl(ARWEAVE_URL);
+        // Wait for cache to expire
+        await new Promise(resolve => setTimeout(resolve, 50));
+        const stats = manager.getCacheStats();
+
+        expect(stats.size).toBe(0);
+        expect(stats.txIds).toHaveLength(0);
+    });
+});
+
+// ============================================================
+// Additional Tests: getCacheEntries method
+// ============================================================
+
+describe('getCacheEntries method', () => {
+    it('should return empty array for empty cache', () => {
+        const manager = new ArweaveGatewayManager();
+        const entries = manager.getCacheEntries();
+
+        expect(entries).toHaveLength(0);
+    });
+
+    it('should return all cache entries including expired', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+            cacheTTL: 10, // 10ms TTL
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+        await manager.resolveUrl(ARWEAVE_URL);
+        // Wait for cache to expire
+        await new Promise(resolve => setTimeout(resolve, 50));
+        // getCacheEntries returns all entries (including expired)
+        const entries = manager.getCacheEntries();
+
+        expect(entries).toHaveLength(1);
+        expect(entries[0].txId).toBe(VALID_TX_ID);
     });
 });
