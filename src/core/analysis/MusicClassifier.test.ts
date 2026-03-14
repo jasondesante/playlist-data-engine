@@ -1087,49 +1087,6 @@ describe('Two-Step Model Flow', () => {
             expect(typeof classifier.clearClassifierCache).toBe('function');
         });
     });
-
-    // ============================================================================
-    // resolveUrl Integration Tests
-    // ============================================================================
-
-    describe('resolveUrl option', () => {
-        it('should not call resolveUrl for non-effnet models (Essentia models)', async () => {
-            // Setup mock fetch response for audio
-            mockFetch.mockResolvedValueOnce({
-                arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
-            });
-
-            // Mock predictions for musicnn model
-            mockPredict.mockResolvedValueOnce([
-                Array.from({ length: 87 }, (_, i) => i === 73 ? 0.9 : 0.01)
-            ]);
-
-            const customResolver = vi.fn().mockResolvedValue('https://resolved.url/model.json');
-
-            const classifier = new MusicClassifier({
-                resolveUrl: customResolver,
-                models: {
-                    genre: {
-                        modelUrl: '/models/genre-musicnn.json',
-                        modelType: 'musicnn' as const,
-                        genreType: 'jamendo' as const
-                    },
-                    mood: undefined,
-                    danceability: undefined
-                },
-                topN: 3,
-                threshold: 0.1
-            });
-
-            await classifier.analyze('https://example.com/test-audio.mp3');
-
-            // resolveUrl should NOT be called for musicnn models (they use Essentia's initialize)
-            // Note: The current implementation only uses resolveUrl in loadModelWithRetry
-            // which is used for effnet models. Essentia models use initializeEssentiaModelWithRetry
-            // which doesn't call resolveUrl.
-            expect(customResolver).not.toHaveBeenCalled();
-        });
-    });
 });
 
 // ============================================================================

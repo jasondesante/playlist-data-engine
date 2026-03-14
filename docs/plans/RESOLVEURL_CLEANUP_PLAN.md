@@ -16,18 +16,18 @@ Remove `resolveUrl` from all public options interfaces. Gateway resolution is no
 
 ## Phase 1: Remove resolveUrl from MusicClassifierOptions
 
-- [ ] **1.1 Update MusicClassifierOptions interface**
-  - [ ] Remove `resolveUrl?: (url: string) => Promise<string>` from the interface
-  - [ ] Update JSDoc to remove the "optional override" documentation
-  - [ ] The internal code (`loadModelWithRetry`) already uses `arweaveGatewayManager.resolveUrl` by default
+- [x] **1.1 Update MusicClassifierOptions interface**
+  - [x] Remove `resolveUrl?: (url: string) => Promise<string>` from the interface
+  - [x] Update JSDoc to remove the "optional override" documentation
+  - [x] The internal code (`loadModelWithRetry`) now uses `arweaveGatewayManager.resolveUrl` directly (no optional override)
 
-- [ ] **1.2 Update DEFAULT_ARWEAVE_MODELS JSDoc**
-  - [ ] Remove references to "pass resolveUrl..." in the documentation
-  - [ ] Clarify that gateway fallback is automatic
+- [x] **1.2 Update DEFAULT_ARWEAVE_MODELS JSDoc**
+  - [x] Remove references to "pass resolveUrl..." in the documentation
+  - [x] Clarify that gateway fallback is automatic
 
 - [ ] **1.3 Update MusicClassifier tests**
-  - [ ] Remove or update tests that verify `resolveUrl` option behavior
-  - [ ] The `resolveUrl` option test in `MusicClassifier.test.ts` should be updated or removed
+  - [x] Remove the `resolveUrl` option test from `MusicClassifier.test.ts` (removed the entire describe block)
+  - [ ] Consider removing `tests/integration/musicClassifier.resolveUrl.integration.test.ts` (tests pass but test deprecated functionality)
 
 ---
 

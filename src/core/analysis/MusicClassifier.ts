@@ -115,24 +115,6 @@ export interface MusicClassifierOptions {
      * @default true
      */
     cacheEmbeddings?: boolean;
-
-    /**
-     * Optional override for URL resolution. By default, MusicClassifier uses
-     * arweaveGatewayManager.resolveUrl to handle Arweave gateway fallback
-     * automatically (trying alternate gateways if the primary fails).
-     *
-     * Only provide this if you need custom URL resolution logic.
-     *
-     * @example
-     * ```typescript
-     * // Custom resolver (overrides default)
-     * const classifier = new MusicClassifier({
-     *   resolveUrl: async (url) => url.replace('arweave.net', 'my-gateway.com'),
-     *   models: { genre: 'https://arweave.net/...' }
-     * });
-     * ```
-     */
-    resolveUrl?: (url: string) => Promise<string>;
 }
 
 const JAMENDO_GENRES = [
@@ -790,8 +772,7 @@ interface EssentiaModel {
  * 3. ardrive.net
  * 4. turbo-gateway.com (fallback)
  *
- * Pass `resolveUrl: arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager)` to
- * MusicClassifier options to enable automatic gateway fallback for model loading.
+ * Gateway fallback is enabled automatically - no configuration needed.
  *
  * @example
  * import { MusicClassifier, DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine';
@@ -910,9 +891,8 @@ export class MusicClassifier {
      * Loads a TensorFlow.js GraphModel with retry logic for network resilience.
      *
      * This method handles transient network failures (common with remote URLs
-     * like Arweave) by retrying with exponential backoff. If a `resolveUrl`
-     * callback is provided in options, it will be called to resolve the URL
-     * before loading (e.g., for Arweave gateway fallback).
+     * like Arweave) by retrying with exponential backoff. URLs are automatically
+     * resolved through arweaveGatewayManager for Arweave gateway fallback.
      *
      * @param modelUrl - URL to the model file
      * @param maxRetries - Maximum number of retry attempts (default: 3)
@@ -926,11 +906,10 @@ export class MusicClassifier {
     ): Promise<tf.GraphModel> {
         let lastError: Error | null = null;
 
-        // Resolve URL using arweaveGatewayManager by default, or custom resolver if provided
-        const resolver = this.options.resolveUrl ?? arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager);
+        // Resolve URL using arweaveGatewayManager for automatic gateway fallback
         let resolvedUrl = modelUrl;
         try {
-            resolvedUrl = await resolver(modelUrl);
+            resolvedUrl = await arweaveGatewayManager.resolveUrl(modelUrl);
             if (resolvedUrl !== modelUrl) {
                 console.info(
                     `[MusicClassifier] Resolved model URL to alternate gateway`,
