@@ -78,10 +78,10 @@ Remove `resolveUrl` from all public options interfaces. Gateway resolution is no
   - [x] Mark Phase 4 tasks as updated
   - [x] Write update at the bottom of the plan explaining what was done wrong in ARWEAVE_GATEWAY_MANAGER_MIGRATION regarding resolveUrl
 
-- [ ] **5.2 Update AUDIO_ANALYSIS.md**
-  - [ ] Add section about automatic gateway resolution
-  - [ ] Document that Arweave model URLs are automatically resolved with fallback
-  - [ ] No user configuration needed for gateway resolution
+- [x] **5.2 Update AUDIO_ANALYSIS.md**
+  - [x] Add section about automatic gateway resolution
+  - [x] Document that Arweave model URLs are automatically resolved with fallback
+  - [x] No user configuration needed for gateway resolution
 
 - [ ] **5.3 Update engine's index.ts exports** (if needed)
   - [ ] Verify `MusicClassifierOptions` is still correctly exported

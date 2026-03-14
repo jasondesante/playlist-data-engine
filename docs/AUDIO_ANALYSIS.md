@@ -401,6 +401,37 @@ const classifier = new MusicClassifier({
 
 > **Note:** Single-step mood models use binary labels (`'happy'`, `'not happy'`) while two-step mood models use the full JAMENDO_MOODS taxonomy (60 mood/theme labels).
 
+#### Automatic Gateway Resolution
+
+Arweave model URLs are automatically resolved with gateway fallback. The engine uses `ArweaveGatewayManager` internally to handle gateway failures transparently.
+
+**How it works:**
+1. When an Arweave URL is passed (e.g., `https://arweave.net/txId/model.json`), the engine extracts the transaction ID
+2. The gateway manager checks the primary gateway (`arweave.net`) first
+3. If the primary gateway fails or times out, it automatically falls back to alternative gateways (`ar.io`, `ardrive.net`, `turbo-gateway.com`)
+4. Working gateways are cached for faster subsequent requests
+
+**No configuration needed:**
+```typescript
+import { MusicClassifier } from 'playlist-data-engine';
+
+// Just works - gateway resolution is automatic
+const classifier = new MusicClassifier();
+const profile = await classifier.analyze('https://example.com/track.mp3');
+```
+
+**Default gateway priority order:**
+1. `arweave.net` - Primary gateway
+2. `ar.io` - Secondary fallback
+3. `ardrive.net` - Tertiary fallback
+4. `turbo-gateway.com` - Last resort (may have reliability issues)
+
+The gateway manager also applies to:
+- `ColorExtractor` - Image URL resolution for color extraction
+- `PlaylistParser` - Image URL resolution for playlist artwork
+
+For advanced use cases (custom gateways, health monitoring, prefetching), see the `ArweaveGatewayManager` class exported from the engine.
+
 #### Embedding Model Caching
 
 When using two-step models with shared embeddings (e.g., same Discogs-EffNet for genre and mood), the embedding model is automatically cached and reused:
