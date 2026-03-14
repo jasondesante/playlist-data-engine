@@ -83,9 +83,11 @@ Remove `resolveUrl` from all public options interfaces. Gateway resolution is no
   - [x] Document that Arweave model URLs are automatically resolved with fallback
   - [x] No user configuration needed for gateway resolution
 
-- [ ] **5.3 Update engine's index.ts exports** (if needed)
-  - [ ] Verify `MusicClassifierOptions` is still correctly exported
-  - [ ] Ensure no breaking changes for consumers
+- [x] **5.3 Update engine's index.ts exports** (if needed)
+  - [x] Verify `MusicClassifierOptions` is still correctly exported
+  - [x] Ensure no breaking changes for consumers
+
+> **Verified on 2026-03-14:** All three options types (`MusicClassifierOptions`, `ColorExtractorOptions`, `PlaylistParserOptions`) are properly exported from `src/index.ts`. No code changes were needed - exports were already correctly configured. Build succeeds. Note: Pre-existing test failures in "Backward Compatibility" tests (unrelated to resolveUrl cleanup) - these test single URL string handling for models.
 
 ---
 
