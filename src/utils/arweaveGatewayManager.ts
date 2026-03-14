@@ -14,8 +14,8 @@
  * @module utils/arweaveGatewayManager
  */
 
+import type { GatewayConfig } from './arweaveUtils.js';
 import {
-    GatewayConfig,
     DEFAULT_GATEWAYS,
     isArweaveUrl,
     parseArweaveUrl,
@@ -120,6 +120,80 @@ export interface CacheStats {
 }
 
 /**
+ * Health statistics for a single gateway
+ */
+export interface GatewayHealthStats {
+    /** Gateway hostname */
+    host: string;
+    /** Current priority (lower = higher priority) */
+    priority: number;
+    /** Original priority from configuration */
+    originalPriority: number;
+    /** Number of successful checks */
+    successCount: number;
+    /** Number of failed checks */
+    failureCount: number;
+    /** Total number of checks */
+    totalChecks: number;
+    /** Success rate (0-1) */
+    successRate: number;
+    /** Average response time in milliseconds */
+    averageResponseTime: number;
+    /** Last successful check timestamp (ms since epoch) */
+    lastSuccess: number | null;
+    /** Last failure timestamp (ms since epoch) */
+    lastFailure: number | null;
+    /** Whether the gateway is currently considered healthy */
+    isHealthy: boolean;
+}
+
+/**
+ * Result of running a health check on all gateways
+ */
+export interface HealthCheckResult {
+    /** Timestamp when the health check was performed */
+    timestamp: number;
+    /** Health stats for each gateway */
+    gateways: GatewayHealthStats[];
+    /** List of healthy gateway hosts */
+    healthyGateways: string[];
+    /** List of unhealthy gateway hosts */
+    unhealthyGateways: string[];
+    /** Gateway with the best response time (if any) */
+    fastestGateway: string | null;
+    /** Total time taken for the health check in ms */
+    totalTime: number;
+}
+
+/**
+ * Options for running a health check
+ */
+export interface HealthCheckOptions {
+    /** Transaction ID to use for health check (default: a well-known stable txId) */
+    txId?: string;
+    /** Whether to adjust priorities based on results (default: false) */
+    adjustPriorities?: boolean;
+    /** Minimum number of checks before considering adjusting priorities (default: 3) */
+    minChecksForAdjustment?: number;
+    /** Threshold for considering a gateway healthy (success rate, default: 0.5) */
+    healthyThreshold?: number;
+    /** Maximum response time to consider a gateway "fast" in ms (default: 2000) */
+    fastThreshold?: number;
+}
+
+/**
+ * Response time record for tracking gateway performance
+ */
+interface ResponseTimeRecord {
+    /** Response time in milliseconds */
+    responseTime: number;
+    /** Whether the check was successful */
+    success: boolean;
+    /** Timestamp of the check */
+    timestamp: number;
+}
+
+/**
  * Default timeout for gateway checks (5 seconds)
  */
 const DEFAULT_TIMEOUT = 5000;
@@ -153,6 +227,12 @@ export class ArweaveGatewayManager {
     private hitCount: number = 0;
     /** Cache miss counter for statistics */
     private missCount: number = 0;
+    /** Health tracking data for each gateway (keyed by host) */
+    private healthData: Map<string, ResponseTimeRecord[]> = new Map();
+    /** Original gateway priorities (for potential reset) */
+    private originalPriorities: Map<string, number> = new Map();
+    /** Maximum number of response time records to keep per gateway */
+    private readonly MAX_HEALTH_RECORDS = 50;
 
     constructor(config?: ArweaveGatewayManagerConfig) {
         this.gateways = config?.gateways ?? DEFAULT_GATEWAYS;
@@ -161,6 +241,11 @@ export class ArweaveGatewayManager {
 
         // Sort gateways by priority
         this.gateways = [...this.gateways].sort((a, b) => a.priority - b.priority);
+
+        // Store original priorities
+        this.gateways.forEach(g => {
+            this.originalPriorities.set(g.host, g.priority);
+        });
 
         this.logger.info('Gateway manager initialized', {
             gateways: this.gateways.map(g => g.host),
@@ -252,6 +337,7 @@ export class ArweaveGatewayManager {
      */
     async checkGateway(txId: string, gateway: GatewayConfig, pathSuffix: string = ''): Promise<boolean> {
         const url = constructGatewayUrl(txId, gateway, pathSuffix);
+        const startTime = Date.now();
 
         // Create AbortController for timeout
         const controller = new AbortController();
@@ -266,11 +352,21 @@ export class ArweaveGatewayManager {
             });
 
             clearTimeout(timeoutId);
+            const responseTime = Date.now() - startTime;
 
             // Consider 2xx and 3xx responses as success
-            return response.ok || (response.status >= 200 && response.status < 400);
+            const success = response.ok || (response.status >= 200 && response.status < 400);
+
+            // Record response for health tracking
+            this.recordGatewayResponse(gateway.host, responseTime, success);
+
+            return success;
         } catch (error) {
             clearTimeout(timeoutId);
+            const responseTime = Date.now() - startTime;
+
+            // Record failed response for health tracking
+            this.recordGatewayResponse(gateway.host, responseTime, false);
 
             // Handle timeout
             if (error instanceof Error && error.name === 'AbortError') {
@@ -531,6 +627,343 @@ export class ArweaveGatewayManager {
         const now = Date.now();
         const age = now - cache.timestamp;
         return age < cache.ttl;
+    }
+
+    /**
+     * Record a gateway response for health tracking
+     *
+     * @param host - Gateway hostname
+     * @param responseTime - Response time in milliseconds
+     * @param success - Whether the check was successful
+     */
+    private recordGatewayResponse(host: string, responseTime: number, success: boolean): void {
+        if (!this.healthData.has(host)) {
+            this.healthData.set(host, []);
+        }
+
+        const records = this.healthData.get(host)!;
+        records.push({
+            responseTime,
+            success,
+            timestamp: Date.now(),
+        });
+
+        // Keep only the most recent records
+        if (records.length > this.MAX_HEALTH_RECORDS) {
+            records.shift();
+        }
+    }
+
+    /**
+     * Get health statistics for a specific gateway
+     *
+     * @param host - Gateway hostname
+     * @returns Health statistics for the gateway, or undefined if not tracked
+     */
+    getGatewayHealth(host: string): GatewayHealthStats | undefined {
+        const gateway = this.gateways.find(g => g.host === host);
+        if (!gateway) {
+            return undefined;
+        }
+
+        const records = this.healthData.get(host) || [];
+        const originalPriority = this.originalPriorities.get(host) ?? gateway.priority;
+
+        if (records.length === 0) {
+            return {
+                host,
+                priority: gateway.priority,
+                originalPriority,
+                successCount: 0,
+                failureCount: 0,
+                totalChecks: 0,
+                successRate: 0,
+                averageResponseTime: 0,
+                lastSuccess: null,
+                lastFailure: null,
+                isHealthy: true, // Assume healthy until we have data
+            };
+        }
+
+        const successCount = records.filter(r => r.success).length;
+        const failureCount = records.filter(r => !r.success).length;
+        const successRate = successCount / records.length;
+        const averageResponseTime = Math.round(
+            records.reduce((sum, r) => sum + r.responseTime, 0) / records.length
+        );
+        const lastSuccess = records.filter(r => r.success).pop()?.timestamp ?? null;
+        const lastFailure = records.filter(r => !r.success).pop()?.timestamp ?? null;
+
+        // Consider healthy if success rate is >= 50% or no failures yet
+        const isHealthy = successRate >= 0.5;
+
+        return {
+            host,
+            priority: gateway.priority,
+            originalPriority,
+            successCount,
+            failureCount,
+            totalChecks: records.length,
+            successRate,
+            averageResponseTime,
+            lastSuccess,
+            lastFailure,
+            isHealthy,
+        };
+    }
+
+    /**
+     * Get health statistics for all gateways
+     *
+     * @returns Array of health statistics for each gateway
+     */
+    getAllGatewayHealth(): GatewayHealthStats[] {
+        return this.gateways.map(g => this.getGatewayHealth(g.host)!);
+    }
+
+    /**
+     * Adjust gateway priorities based on health data
+     *
+     * This method reorders gateways based on:
+     * 1. Health status (healthy gateways first)
+     * 2. Average response time (faster gateways first among healthy)
+     * 3. Success rate (higher success rate first)
+     *
+     * @param options - Options for priority adjustment
+     * @returns The new gateway order after adjustment
+     */
+    adjustGatewayPriorities(options?: {
+        /** Minimum number of checks required before adjusting (default: 3) */
+        minChecks?: number;
+        /** Threshold for considering a gateway healthy (default: 0.5) */
+        healthyThreshold?: number;
+    }): GatewayConfig[] {
+        const minChecks = options?.minChecks ?? 3;
+        const healthyThreshold = options?.healthyThreshold ?? 0.5;
+
+        // Get health stats for all gateways
+        const healthStats = this.getAllGatewayHealth();
+
+        // Check if we have enough data to make adjustments
+        const totalChecks = healthStats.reduce((sum, h) => sum + h.totalChecks, 0);
+        if (totalChecks < minChecks) {
+            this.logger.debug('Not enough health data to adjust priorities', {
+                totalChecks,
+                required: minChecks,
+            });
+            return [...this.gateways];
+        }
+
+        // Sort gateways based on health metrics (with stable sort using original index)
+        const indexedGateways = this.gateways.map((g, index) => ({ gateway: g, originalIndex: index }));
+
+        indexedGateways.sort((a, b) => {
+            const healthA = this.getGatewayHealth(a.gateway.host)!;
+            const healthB = this.getGatewayHealth(b.gateway.host)!;
+
+            // First: unhealthy gateways go to the end
+            const aHealthy = healthA.successRate >= healthyThreshold || healthA.totalChecks === 0;
+            const bHealthy = healthB.successRate >= healthyThreshold || healthB.totalChecks === 0;
+
+            if (aHealthy && !bHealthy) return -1;
+            if (!aHealthy && bHealthy) return 1;
+
+            // Second: faster response time wins (among healthy or equally unhealthy)
+            if (healthA.totalChecks > 0 && healthB.totalChecks > 0) {
+                const timeDiff = healthA.averageResponseTime - healthB.averageResponseTime;
+                if (Math.abs(timeDiff) > 100) { // Only consider significant differences (>100ms)
+                    return timeDiff;
+                }
+            }
+
+            // Third: higher success rate wins
+            if (healthA.totalChecks > 0 && healthB.totalChecks > 0) {
+                const rateDiff = healthB.successRate - healthA.successRate;
+                if (Math.abs(rateDiff) > 0.1) { // Only consider significant differences (>10%)
+                    return rateDiff;
+                }
+            }
+
+            // Keep original order if no significant difference (stable sort)
+            return a.originalIndex - b.originalIndex;
+        });
+
+        const sortedGateways = indexedGateways.map(item => item.gateway);
+
+        // Update priorities based on new order (preserve original priority range)
+        const minPriority = Math.min(...Array.from(this.originalPriorities.values()));
+        sortedGateways.forEach((gateway, index) => {
+            gateway.priority = minPriority + index;
+        });
+
+        // Re-sort the main gateways array
+        this.gateways = sortedGateways;
+
+        this.logger.info('Gateway priorities adjusted', {
+            newOrder: this.gateways.map(g => ({
+                host: g.host,
+                priority: g.priority,
+                health: this.getGatewayHealth(g.host),
+            })),
+        });
+
+        return [...this.gateways];
+    }
+
+    /**
+     * Run a health check on all gateways
+     *
+     * Tests each gateway by making a HEAD request to a known transaction.
+     * Optionally adjusts priorities based on results.
+     *
+     * @param options - Health check options
+     * @returns Health check results
+     *
+     * @example
+     * ```ts
+     * const result = await arweaveGatewayManager.runHealthCheck({
+     *     adjustPriorities: true,
+     * });
+     * console.log(`Fastest gateway: ${result.fastestGateway}`);
+     * console.log(`Healthy gateways: ${result.healthyGateways.join(', ')}`);
+     * ```
+     */
+    async runHealthCheck(options?: HealthCheckOptions): Promise<HealthCheckResult> {
+        const startTime = Date.now();
+        const txId = options?.txId ?? 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijk012345'; // Default test txId
+        const healthyThreshold = options?.healthyThreshold ?? 0.5;
+        const fastThreshold = options?.fastThreshold ?? 2000;
+
+        this.logger.info('Starting gateway health check', {
+            txId,
+            gateways: this.gateways.map(g => g.host),
+        });
+
+        // Check each gateway in parallel
+        const checkPromises = this.gateways.map(async (gateway) => {
+            const checkStart = Date.now();
+            let success = false;
+            let responseTime = this.timeout; // Default to timeout on failure
+
+            try {
+                const url = constructGatewayUrl(txId, gateway);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+                const response = await fetch(url, {
+                    method: 'HEAD',
+                    mode: 'cors',
+                    signal: controller.signal,
+                });
+
+                clearTimeout(timeoutId);
+                responseTime = Date.now() - checkStart;
+                success = response.ok || (response.status >= 200 && response.status < 400);
+            } catch (error) {
+                responseTime = Date.now() - checkStart;
+                success = false;
+            }
+
+            // Record the result
+            this.recordGatewayResponse(gateway.host, responseTime, success);
+
+            return {
+                host: gateway.host,
+                success,
+                responseTime,
+            };
+        });
+
+        const results = await Promise.all(checkPromises);
+
+        // Build health stats
+        const gatewayStats = this.getAllGatewayHealth();
+
+        // Determine healthy/unhealthy gateways
+        const healthyGateways: string[] = [];
+        const unhealthyGateways: string[] = [];
+        let fastestGateway: string | null = null;
+        let fastestTime = Infinity;
+
+        for (const result of results) {
+            const stats = gatewayStats.find(s => s.host === result.host)!;
+
+            if (result.success && result.responseTime < fastestTime) {
+                fastestTime = result.responseTime;
+                fastestGateway = result.host;
+            }
+
+            if (stats.successRate >= healthyThreshold || stats.totalChecks === 1) {
+                // First check or healthy threshold met
+                if (result.success) {
+                    healthyGateways.push(result.host);
+                } else {
+                    unhealthyGateways.push(result.host);
+                }
+            } else {
+                unhealthyGateways.push(result.host);
+            }
+        }
+
+        const totalTime = Date.now() - startTime;
+
+        // Optionally adjust priorities
+        if (options?.adjustPriorities) {
+            this.adjustGatewayPriorities({
+                minChecks: options.minChecksForAdjustment ?? 1,
+                healthyThreshold,
+            });
+        }
+
+        const healthCheckResult: HealthCheckResult = {
+            timestamp: startTime,
+            gateways: gatewayStats,
+            healthyGateways,
+            unhealthyGateways,
+            fastestGateway,
+            totalTime,
+        };
+
+        this.logger.info('Health check complete', {
+            healthyGateways,
+            unhealthyGateways,
+            fastestGateway,
+            totalTime,
+        });
+
+        return healthCheckResult;
+    }
+
+    /**
+     * Reset gateway priorities to their original values
+     */
+    resetGatewayPriorities(): void {
+        // Reset each gateway's priority to its original value
+        this.gateways.forEach(gateway => {
+            const original = this.originalPriorities.get(gateway.host);
+            if (original !== undefined) {
+                gateway.priority = original;
+            }
+        });
+
+        // Re-sort by original priorities
+        this.gateways.sort((a, b) => {
+            const aOriginal = this.originalPriorities.get(a.host) ?? a.priority;
+            const bOriginal = this.originalPriorities.get(b.host) ?? b.priority;
+            return aOriginal - bOriginal;
+        });
+
+        this.logger.info('Gateway priorities reset to original values', {
+            gateways: this.gateways.map(g => ({ host: g.host, priority: g.priority })),
+        });
+    }
+
+    /**
+     * Clear all health tracking data
+     */
+    clearHealthData(): void {
+        this.healthData.clear();
+        this.logger.info('Health data cleared');
     }
 }
 

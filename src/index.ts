@@ -407,6 +407,9 @@ export {
     type PrefetchResultEntry,
     type PrefetchResult,
     type CacheStats,
+    type GatewayHealthStats,
+    type HealthCheckResult,
+    type HealthCheckOptions,
 } from './utils/arweaveGatewayManager.js';
 
 // Type helpers

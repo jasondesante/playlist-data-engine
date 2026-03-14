@@ -1267,3 +1267,452 @@ describe('getCacheEntries method', () => {
         expect(entries[0].txId).toBe(VALID_TX_ID);
     });
 });
+
+// ============================================================
+// Health Monitoring Tests: getGatewayHealth method
+// ============================================================
+
+describe('getGatewayHealth method', () => {
+    it('should return undefined for unknown gateway', () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+        });
+
+        const health = manager.getGatewayHealth('unknown.example.com');
+        expect(health).toBeUndefined();
+    });
+
+    it('should return default health stats for gateway with no checks', () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+        });
+
+        const health = manager.getGatewayHealth('primary.example.com');
+
+        expect(health).toBeDefined();
+        expect(health?.host).toBe('primary.example.com');
+        expect(health?.successCount).toBe(0);
+        expect(health?.failureCount).toBe(0);
+        expect(health?.totalChecks).toBe(0);
+        expect(health?.successRate).toBe(0);
+        expect(health?.averageResponseTime).toBe(0);
+        expect(health?.lastSuccess).toBeNull();
+        expect(health?.lastFailure).toBeNull();
+        expect(health?.isHealthy).toBe(true); // Assumed healthy until proven otherwise
+    });
+
+    it('should track health stats after successful check', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        const health = manager.getGatewayHealth('primary.example.com');
+
+        expect(health?.successCount).toBe(1);
+        expect(health?.failureCount).toBe(0);
+        expect(health?.totalChecks).toBe(1);
+        expect(health?.successRate).toBe(1);
+        expect(health?.averageResponseTime).toBeGreaterThanOrEqual(0);
+        expect(health?.lastSuccess).toBeGreaterThan(0);
+        expect(health?.lastFailure).toBeNull();
+        expect(health?.isHealthy).toBe(true);
+    });
+
+    it('should track health stats after failed check', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // First gateway fails, second succeeds
+        mockFetch
+            .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+            .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        const primaryHealth = manager.getGatewayHealth('primary.example.com');
+        expect(primaryHealth?.successCount).toBe(0);
+        expect(primaryHealth?.failureCount).toBe(1);
+        expect(primaryHealth?.isHealthy).toBe(false);
+        expect(primaryHealth?.lastFailure).toBeGreaterThan(0);
+    });
+
+    it('should calculate average response time correctly', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // Simulate multiple checks with different response times
+        let callCount = 0;
+        mockFetch.mockImplementation(async () => {
+            callCount++;
+            await new Promise(resolve => setTimeout(resolve, callCount * 10)); // 10ms, 20ms, 30ms
+            return new Response(null, { status: 200 });
+        });
+
+        // Make 3 requests
+        for (let i = 0; i < 3; i++) {
+            manager.clearCache(); // Clear cache to force new checks
+            await manager.resolveUrl(ARWEAVE_URL);
+        }
+
+        const health = manager.getGatewayHealth('primary.example.com');
+        expect(health?.successCount).toBe(3);
+        // Average should be around 20ms (10+20+30)/3 = 20
+        expect(health?.averageResponseTime).toBeGreaterThanOrEqual(10);
+    });
+
+    it('should limit health records to MAX_HEALTH_RECORDS', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        // Make more than MAX_HEALTH_RECORDS (50) requests
+        for (let i = 0; i < 60; i++) {
+            manager.clearCache();
+            await manager.resolveUrl(ARWEAVE_URL);
+        }
+
+        const health = manager.getGatewayHealth('primary.example.com');
+        // Should be capped at 50
+        expect(health?.totalChecks).toBe(50);
+    });
+});
+
+// ============================================================
+// Health Monitoring Tests: getAllGatewayHealth method
+// ============================================================
+
+describe('getAllGatewayHealth method', () => {
+    it('should return health stats for all gateways', () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+        });
+
+        const allHealth = manager.getAllGatewayHealth();
+
+        expect(allHealth).toHaveLength(3);
+        expect(allHealth.map(h => h.host)).toEqual([
+            'primary.example.com',
+            'secondary.example.com',
+            'tertiary.example.com',
+        ]);
+    });
+
+    it('should reflect health stats after multiple checks', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // First gateway fails, second succeeds
+        mockFetch
+            .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+            .mockResolvedValue(new Response(null, { status: 200 }));
+
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        const allHealth = manager.getAllGatewayHealth();
+
+        expect(allHealth[0].failureCount).toBe(1); // primary failed
+        expect(allHealth[1].successCount).toBe(1); // secondary succeeded
+        expect(allHealth[2].totalChecks).toBe(0);  // tertiary not checked
+    });
+});
+
+// ============================================================
+// Health Monitoring Tests: runHealthCheck method
+// ============================================================
+
+describe('runHealthCheck method', () => {
+    it('should check all gateways and return results', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        const result = await manager.runHealthCheck();
+
+        expect(result.gateways).toHaveLength(3);
+        expect(result.healthyGateways).toHaveLength(3);
+        expect(result.unhealthyGateways).toHaveLength(0);
+        expect(result.fastestGateway).toBe('primary.example.com');
+        expect(result.totalTime).toBeGreaterThanOrEqual(0);
+        expect(result.timestamp).toBeGreaterThan(0);
+    });
+
+    it('should identify unhealthy gateways', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // Primary fails, others succeed
+        mockFetch
+            .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+            .mockResolvedValue(new Response(null, { status: 200 }));
+
+        const result = await manager.runHealthCheck();
+
+        expect(result.healthyGateways).toContain('secondary.example.com');
+        expect(result.healthyGateways).toContain('tertiary.example.com');
+        expect(result.unhealthyGateways).toContain('primary.example.com');
+    });
+
+    it('should identify fastest gateway', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // Secondary is fastest
+        mockFetch
+            .mockImplementation(async () => {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                return new Response(null, { status: 200 });
+            })
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                return new Response(null, { status: 200 });
+            })
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 10)); // Fastest
+                return new Response(null, { status: 200 });
+            })
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                return new Response(null, { status: 200 });
+            });
+
+        const result = await manager.runHealthCheck();
+
+        // Secondary should be fastest (10ms)
+        expect(result.fastestGateway).toBe('secondary.example.com');
+    });
+
+    it('should adjust priorities when requested', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // Make secondary fastest
+        mockFetch
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                return new Response(null, { status: 200 });
+            })
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 10)); // Fastest
+                return new Response(null, { status: 200 });
+            })
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                return new Response(null, { status: 200 });
+            });
+
+        const result = await manager.runHealthCheck({ adjustPriorities: true });
+
+        // After adjustment, secondary should have priority 1
+        const allHealth = manager.getAllGatewayHealth();
+        const secondaryHealth = allHealth.find(h => h.host === 'secondary.example.com');
+        expect(secondaryHealth?.priority).toBe(1);
+    });
+
+    it('should use custom txId for health check', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        const customTxId = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        await manager.runHealthCheck({ txId: customTxId });
+
+        // Check that the custom txId was used
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.stringContaining(customTxId),
+            expect.any(Object)
+        );
+    });
+
+    it('should return null fastestGateway if all fail', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 100,
+        });
+
+        mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+        const result = await manager.runHealthCheck();
+
+        expect(result.fastestGateway).toBeNull();
+        expect(result.healthyGateways).toHaveLength(0);
+        expect(result.unhealthyGateways).toHaveLength(3);
+    });
+});
+
+// ============================================================
+// Health Monitoring Tests: adjustGatewayPriorities method
+// ============================================================
+
+describe('adjustGatewayPriorities method', () => {
+    it('should not adjust with insufficient data', () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+        });
+
+        // No health data yet
+        const result = manager.adjustGatewayPriorities({ minChecks: 3 });
+
+        // Priorities should remain unchanged
+        expect(result[0].priority).toBe(0);
+        expect(result[1].priority).toBe(1);
+        expect(result[2].priority).toBe(2);
+    });
+
+    it('should reorder gateways based on health', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // Primary fails, secondary succeeds
+        mockFetch
+            .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+            .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        const result = manager.adjustGatewayPriorities({ minChecks: 1 });
+
+        // Secondary should now be first (healthy), primary last (unhealthy)
+        expect(result[0].host).toBe('secondary.example.com');
+        expect(result[result.length - 1].host).toBe('primary.example.com');
+    });
+
+    it('should consider response time when health is similar', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // All succeed, but secondary is fastest
+        mockFetch
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                return new Response(null, { status: 200 });
+            })
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 10)); // Fastest
+                return new Response(null, { status: 200 });
+            })
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                return new Response(null, { status: 200 });
+            });
+
+        await manager.runHealthCheck();
+        const result = manager.adjustGatewayPriorities({ minChecks: 1 });
+
+        // Secondary should be first (fastest)
+        expect(result[0].host).toBe('secondary.example.com');
+    });
+
+    it('should keep original order when metrics are similar', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // All succeed with exactly the same response time (0ms delay)
+        // This ensures the stable sort keeps the original order
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+
+        await manager.runHealthCheck();
+        const result = manager.adjustGatewayPriorities({ minChecks: 1 });
+
+        // Order should remain the same (all similar - 0ms response time)
+        expect(result[0].host).toBe('primary.example.com');
+        expect(result[1].host).toBe('secondary.example.com');
+        expect(result[2].host).toBe('tertiary.example.com');
+    });
+});
+
+// ============================================================
+// Health Monitoring Tests: resetGatewayPriorities method
+// ============================================================
+
+describe('resetGatewayPriorities method', () => {
+    it('should reset priorities to original values', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        // Make secondary fastest and adjust
+        mockFetch
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                return new Response(null, { status: 200 });
+            })
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 10));
+                return new Response(null, { status: 200 });
+            })
+            .mockImplementationOnce(async () => {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                return new Response(null, { status: 200 });
+            });
+
+        await manager.runHealthCheck({ adjustPriorities: true });
+
+        // Reset
+        manager.resetGatewayPriorities();
+
+        const allHealth = manager.getAllGatewayHealth();
+        // After reset, order should be restored to original
+        expect(allHealth[0].host).toBe('primary.example.com');
+        expect(allHealth[0].priority).toBe(0);
+        expect(allHealth[0].originalPriority).toBe(0);
+    });
+});
+
+// ============================================================
+// Health Monitoring Tests: clearHealthData method
+// ============================================================
+
+describe('clearHealthData method', () => {
+    it('should clear all health tracking data', async () => {
+        const manager = new ArweaveGatewayManager({
+            gateways: CUSTOM_GATEWAYS,
+            timeout: 1000,
+        });
+
+        mockFetch.mockResolvedValue(new Response(null, { status: 200 }));
+        await manager.resolveUrl(ARWEAVE_URL);
+
+        // Should have health data for the first gateway that was checked
+        const healthBeforeClear = manager.getGatewayHealth('primary.example.com');
+        expect(healthBeforeClear?.totalChecks).toBe(1);
+
+        // Clear health data
+        manager.clearHealthData();
+
+        // Should be reset
+        const healthAfterClear = manager.getGatewayHealth('primary.example.com');
+        expect(healthAfterClear?.totalChecks).toBe(0);
+    });
+});
