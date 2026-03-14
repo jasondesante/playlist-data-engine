@@ -1609,10 +1609,10 @@ describe('adjustGatewayPriorities method', () => {
             timeout: 1000,
         });
 
-        // All succeed, but secondary is fastest
+        // All succeed, but secondary is fastest (using >100ms differences to exceed threshold)
         mockFetch
             .mockImplementationOnce(async () => {
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 150));
                 return new Response(null, { status: 200 });
             })
             .mockImplementationOnce(async () => {
@@ -1627,7 +1627,7 @@ describe('adjustGatewayPriorities method', () => {
         await manager.runHealthCheck();
         const result = manager.adjustGatewayPriorities({ minChecks: 1 });
 
-        // Secondary should be first (fastest)
+        // Secondary should be first (fastest) - 140ms difference exceeds 100ms threshold
         expect(result[0].host).toBe('secondary.example.com');
     });
 

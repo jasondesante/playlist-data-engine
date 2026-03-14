@@ -204,10 +204,10 @@ describe('MusicClassifier', () => {
                 Array.from({ length: 87 }, (_, i) => i === 73 ? 0.9 : 0.01),
                 Array.from({ length: 87 }, (_, i) => i === 73 ? 0.92 : 0.01)
             ])
-            // Mood (62 classes) - 2 frames, index 26 = happy
+            // Mood (2 classes for single-step: happy, not happy) - 2 frames, index 0 = happy
             .mockResolvedValueOnce([
-                Array.from({ length: 62 }, (_, i) => i === 26 ? 0.85 : 0.01),
-                Array.from({ length: 62 }, (_, i) => i === 26 ? 0.87 : 0.01)
+                [0.85, 0.15],
+                [0.87, 0.13]
             ])
             // Danceability [danceable, non-danceable]
             .mockResolvedValueOnce([[0.7, 0.3], [0.72, 0.28]]);
@@ -530,6 +530,7 @@ describe('Two-Step Model Flow', () => {
         };
 
         return {
+            inputs: [{ name: 'melspectrogram' }],
             predict: vi.fn().mockImplementation(() => ({
                 data: vi.fn().mockResolvedValue(new Float32Array(embeddingsData)),
                 shape: [1, numFrames, embeddingDim],
@@ -549,6 +550,7 @@ describe('Two-Step Model Flow', () => {
         };
 
         return {
+            inputs: [{ name: 'embedding' }],
             predict: vi.fn().mockImplementation(() => ({
                 data: vi.fn().mockResolvedValue(new Float32Array(predictions)),
                 shape: [1, predictions.length],

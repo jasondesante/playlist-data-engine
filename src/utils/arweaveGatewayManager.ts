@@ -235,12 +235,13 @@ export class ArweaveGatewayManager {
     private readonly MAX_HEALTH_RECORDS = 50;
 
     constructor(config?: ArweaveGatewayManagerConfig) {
-        this.gateways = config?.gateways ?? DEFAULT_GATEWAYS;
+        // Deep-clone gateways to avoid mutating the original config objects
+        this.gateways = (config?.gateways ?? DEFAULT_GATEWAYS).map(g => ({ ...g }));
         this.timeout = config?.timeout ?? DEFAULT_TIMEOUT;
         this.cacheTTL = config?.cacheTTL ?? DEFAULT_CACHE_TTL;
 
         // Sort gateways by priority
-        this.gateways = [...this.gateways].sort((a, b) => a.priority - b.priority);
+        this.gateways.sort((a, b) => a.priority - b.priority);
 
         // Store original priorities
         this.gateways.forEach(g => {
