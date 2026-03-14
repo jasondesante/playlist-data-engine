@@ -778,6 +778,21 @@ interface EssentiaModel {
  * Default model configurations using Arweave-hosted models.
  * These work out-of-the-box without any local model files.
  *
+ * ## Gateway Independence
+ *
+ * The URLs below use `arweave.net` as the gateway, but **any Arweave gateway can serve
+ * any transaction ID (txId)**. The content is identified by the txId, not the gateway.
+ *
+ * If a gateway fails (e.g., timeout, 4xx/5xx errors), the `arweaveGatewayManager.resolveUrl()`
+ * mechanism automatically tries alternate gateways in priority order:
+ * 1. arweave.net (primary)
+ * 2. ar.io
+ * 3. ardrive.net
+ * 4. turbo-gateway.com (fallback)
+ *
+ * Pass `resolveUrl: arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager)` to
+ * MusicClassifier options to enable automatic gateway fallback for model loading.
+ *
  * @example
  * import { MusicClassifier, DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine';
  *
