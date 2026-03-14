@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MusicClassifier, averageEmbeddings, detectModelArchitecture, detectGenreListType, isTwoStepModel, isSingleStepModel, isStringModel, formatModelForMetadata } from './MusicClassifier.js';
+import { MusicClassifier, averageEmbeddings, detectModelArchitecture, detectGenreListType, isTwoStepModel, isSingleStepModel, formatModelForMetadata } from './MusicClassifier.js';
 
 const {
     mockFetch,
@@ -215,9 +215,9 @@ describe('MusicClassifier', () => {
         // Use single-step models explicitly (not two-step defaults)
         const classifier = new MusicClassifier({
             models: {
-                genre: '/models/genre-musicnn.json',
-                mood: '/models/mood-musicnn.json',
-                danceability: '/models/danceability-vggish.json'
+                genre: { modelUrl: '/models/genre-musicnn.json', modelType: 'musicnn' },
+                mood: { modelUrl: '/models/mood-musicnn.json', modelType: 'musicnn' },
+                danceability: { modelUrl: '/models/danceability-vggish.json', modelType: 'vggish' }
             },
             topN: 3,
             threshold: 0.1
@@ -249,7 +249,7 @@ describe('MusicClassifier', () => {
 
         const classifier = new MusicClassifier({
             models: {
-                genre: 'mock-url',
+                genre: { modelUrl: 'mock-url', modelType: 'musicnn' },
                 mood: undefined,
                 danceability: undefined
             }
@@ -466,34 +466,9 @@ describe('isSingleStepModel', () => {
     });
 });
 
-describe('isStringModel', () => {
-    it('should return true for string', () => {
-        expect(isStringModel('https://example.com/model.json')).toBe(true);
-    });
-
-    it('should return false for SingleStepModelConfig', () => {
-        expect(isStringModel({
-            modelUrl: 'a',
-            modelType: 'musicnn'
-        })).toBe(false);
-    });
-
-    it('should return false for TwoStepModelConfig', () => {
-        expect(isStringModel({
-            embedding: 'a',
-            classifier: 'b'
-        })).toBe(false);
-    });
-
-    it('should return false for null/undefined', () => {
-        expect(isStringModel(null as any)).toBe(false);
-        expect(isStringModel(undefined as any)).toBe(false);
-    });
-});
-
 describe('formatModelForMetadata', () => {
     it('should return URL string for single-step model config', () => {
-        const singleStepConfig = '/models/genre-classifier.json';
+        const singleStepConfig = { modelUrl: '/models/genre-classifier.json', modelType: 'musicnn' };
         expect(formatModelForMetadata(singleStepConfig)).toBe('/models/genre-classifier.json');
     });
 
@@ -529,7 +504,7 @@ describe('formatModelForMetadata', () => {
     });
 
     it('should handle relative paths', () => {
-        const relativeConfig = '/models/genre/model.json';
+        const relativeConfig = { modelUrl: '/models/genre/model.json', modelType: 'musicnn' };
         expect(formatModelForMetadata(relativeConfig)).toBe('/models/genre/model.json');
     });
 });
@@ -743,7 +718,7 @@ describe('Two-Step Model Flow', () => {
                         classifier: '/models/genre-classifier.json'
                     },
                     mood: undefined,
-                    danceability: '/models/danceability-model.json'
+                    danceability: { modelUrl: '/models/danceability-model.json', modelType: 'vggish' }
                 },
                 topN: 3,
                 threshold: 0.1
@@ -955,7 +930,7 @@ describe('Two-Step Model Flow', () => {
 
             const classifier = new MusicClassifier({
                 models: {
-                    genre: '/models/genre-musicnn.json', // musicnn model
+                    genre: { modelUrl: '/models/genre-musicnn.json', modelType: 'musicnn' }, // musicnn model
                     mood: undefined,
                     danceability: undefined
                 }
@@ -1033,7 +1008,7 @@ describe('Two-Step Model Flow', () => {
                 models: {
                     genre: undefined,
                     mood: undefined,
-                    danceability: '/models/danceability-vggish-audioset-1.json'  // vggish in URL
+                    danceability: { modelUrl: '/models/danceability-vggish-audioset-1.json', modelType: 'vggish' }  // vggish in URL
                 }
             });
 
@@ -1086,131 +1061,5 @@ describe('Two-Step Model Flow', () => {
             expect(classifier.clearClassifierCache).toBeDefined();
             expect(typeof classifier.clearClassifierCache).toBe('function');
         });
-    });
-});
-
-// ============================================================================
-// Backward Compatibility Tests
-// ============================================================================
-
-describe('Backward Compatibility', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockPredict.mockReset();
-        mockInitialize.mockClear();
-        mockTerminate.mockClear();
-        mockDownsampleAudioBuffer.mockClear();
-        mockComputeFrameWise.mockClear();
-        mockLoadGraphModel.mockReset();
-        mockFetch.mockReset();
-    });
-
-    it('should work with genre as single URL string', async () => {
-        mockFetch.mockResolvedValueOnce({
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
-        });
-
-        mockPredict.mockResolvedValueOnce([
-            Array.from({ length: 87 }, (_, i) => i === 0 ? 0.9 : 0.01)
-        ]);
-
-        const classifier = new MusicClassifier({
-            models: {
-                genre: '/models/genre-classifier.json',
-                mood: undefined,
-                danceability: undefined
-            }
-        });
-
-        const profile = await classifier.analyze('https://example.com/test-audio.mp3');
-
-        expect(profile.genres.length).toBeGreaterThan(0);
-        expect(profile.analysis_metadata.models_used[0]).toBe('/models/genre-classifier.json');
-    });
-
-    it('should work with mood as single URL string', async () => {
-        mockFetch.mockResolvedValueOnce({
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
-        });
-
-        mockPredict.mockResolvedValueOnce([
-            Array.from({ length: 62 }, (_, i) => i === 26 ? 0.85 : 0.01)
-        ]);
-
-        const classifier = new MusicClassifier({
-            models: {
-                genre: undefined,
-                mood: '/models/mood-classifier.json',
-                danceability: undefined
-            }
-        });
-
-        const profile = await classifier.analyze('https://example.com/test-audio.mp3');
-
-        expect(profile.moods.length).toBeGreaterThan(0);
-        expect(profile.analysis_metadata.models_used[0]).toBe('/models/mood-classifier.json');
-    });
-
-    it('should work with danceability as single URL string', async () => {
-        mockFetch.mockResolvedValueOnce({
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
-        });
-
-        mockPredict.mockResolvedValueOnce([[0.75, 0.25]]);
-
-        const classifier = new MusicClassifier({
-            models: {
-                genre: undefined,
-                mood: undefined,
-                danceability: '/models/danceability-model.json'
-            }
-        });
-
-        const profile = await classifier.analyze('https://example.com/test-audio.mp3');
-
-        expect(profile.vibe_metrics?.danceability).toBeCloseTo(0.75, 1);
-        expect(profile.analysis_metadata.models_used[0]).toBe('/models/danceability-model.json');
-    });
-
-    it('should work with voice as single URL string', async () => {
-        mockFetch.mockResolvedValueOnce({
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
-        });
-
-        mockPredict.mockResolvedValueOnce([[0.6, 0.4]]);
-
-        const classifier = new MusicClassifier({
-            models: {
-                genre: undefined,
-                mood: undefined,
-                danceability: undefined,
-                voice: '/models/voice-model.json'
-            }
-        });
-
-        const profile = await classifier.analyze('https://example.com/test-audio.mp3');
-
-        expect(profile.vibe_metrics?.instrumental_probability).toBeCloseTo(0.4, 1);
-    });
-
-    it('should work with acoustic as single URL string', async () => {
-        mockFetch.mockResolvedValueOnce({
-            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
-        });
-
-        mockPredict.mockResolvedValueOnce([[0.3, 0.7]]);
-
-        const classifier = new MusicClassifier({
-            models: {
-                genre: undefined,
-                mood: undefined,
-                danceability: undefined,
-                acoustic: '/models/acoustic-model.json'
-            }
-        });
-
-        const profile = await classifier.analyze('https://example.com/test-audio.mp3');
-
-        expect(profile.vibe_metrics?.electronic_probability).toBeCloseTo(0.7, 1);
     });
 });

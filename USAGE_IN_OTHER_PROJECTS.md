@@ -547,9 +547,6 @@ const workingUrl = await gatewayManager.resolveUrl('https://arweave.net/txId/mod
 // Non-Arweave URLs are returned unchanged
 const regularUrl = await gatewayManager.resolveUrl('https://example.com/file.json');
 ```
-
-See [AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md#automatic-gateway-resolution) for details on gateway priority and advanced configuration.
-
 ---
 
 ## Troubleshooting
