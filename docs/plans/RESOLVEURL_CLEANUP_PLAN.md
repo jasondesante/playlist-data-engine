@@ -43,12 +43,12 @@ Remove `resolveUrl` from all public options interfaces. Gateway resolution is no
 ---
 
 ## Phase 3: Remove resolveUrl from PlaylistParserOptions
-- [ ] **3.1 Update PlaylistParserOptions interface**
-  - [ ] Remove `resolveUrl?: (url: string) => Promise<string>` from `src/core/parser/PlaylistParser.ts`
-  - [ ] Update JSDoc to reflect automatic resolution
+- [x] **3.1 Update PlaylistParserOptions interface**
+  - [x] Remove `resolveUrl?: (url: string) => Promise<string>` from `src/core/parser/PlaylistParser.ts`
+  - [x] Update JSDoc to reflect automatic resolution
 
-- [ ] **3.2 Update PlaylistParser tests**
-  - [ ] Update or remove tests for `resolveUrl` in `parser.test.ts`
+- [x] **3.2 Update PlaylistParser tests**
+  - [x] Remove tests for `resolveUrl` in `parser.test.ts` (removed entire describe block with 7 tests)
 
 ---
 

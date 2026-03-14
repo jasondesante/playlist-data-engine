@@ -19,23 +19,6 @@ export interface PlaylistParserOptions {
     audioUrlValidationTimeout?: number;
 
     /**
-     * Optional override for URL resolution. By default, PlaylistParser uses
-     * arweaveGatewayManager.resolveUrl to handle Arweave gateway fallback
-     * automatically (trying alternate gateways if the primary fails).
-     *
-     * Only provide this if you need custom URL resolution logic.
-     *
-     * @example
-     * ```typescript
-     * // Custom resolver (overrides default)
-     * const parser = new PlaylistParser({
-     *   resolveUrl: async (url) => url.replace('arweave.net', 'my-gateway.com'),
-     * });
-     * ```
-     */
-    resolveUrl?: (url: string) => Promise<string>;
-
-    /**
      * Whether to resolve image URLs (image_url, image_thumb_url) during parsing.
      * When true, Arweave image URLs will be resolved to working gateways.
      * Default: false (to maintain backward compatibility - consumers can resolve on-demand)
@@ -72,8 +55,7 @@ export class PlaylistParser {
         // Resolve playlist image URL if needed
         let resolvedPlaylistImage = playlistImage;
         if (playlistImage && this.options.resolveImageUrls) {
-            const resolver = this.options.resolveUrl ?? arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager);
-            resolvedPlaylistImage = await resolver(playlistImage);
+            resolvedPlaylistImage = await arweaveGatewayManager.resolveUrl(playlistImage);
         }
 
         // Parse tracks
@@ -116,17 +98,16 @@ export class PlaylistParser {
             return track;
         }
 
-        const resolver = this.options.resolveUrl ?? arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager);
         const resolvedTrack = { ...track };
 
         // Resolve image_url
         if (resolvedTrack.image_url) {
-            resolvedTrack.image_url = await resolver(resolvedTrack.image_url);
+            resolvedTrack.image_url = await arweaveGatewayManager.resolveUrl(resolvedTrack.image_url);
         }
 
         // Resolve image_thumb_url if present
         if (resolvedTrack.image_thumb_url) {
-            resolvedTrack.image_thumb_url = await resolver(resolvedTrack.image_thumb_url);
+            resolvedTrack.image_thumb_url = await arweaveGatewayManager.resolveUrl(resolvedTrack.image_thumb_url);
         }
 
         return resolvedTrack;
