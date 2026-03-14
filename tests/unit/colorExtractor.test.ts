@@ -94,48 +94,4 @@ describe('ColorExtractor', () => {
         expect(palette.primary_color).toBe('#000000'); // Fallback primary
         expect(palette.is_monochrome).toBe(true);
     });
-
-    describe('resolveUrl option', () => {
-        it('should call resolveUrl callback with the image URL', async () => {
-            const resolveUrl = vi.fn().mockResolvedValue('resolved-url.jpg');
-            extractor = new ColorExtractor({ resolveUrl });
-
-            await extractor.extractPalette('original-url.jpg');
-
-            expect(resolveUrl).toHaveBeenCalledWith('original-url.jpg');
-        });
-
-        it('should use resolved URL to load the image', async () => {
-            const resolveUrl = vi.fn().mockResolvedValue('https://arweave.net/resolved-image.jpg');
-            extractor = new ColorExtractor({ resolveUrl });
-
-            await extractor.extractPalette('https://turbo-gateway.com/original-image.jpg');
-
-            // Wait for the image to load and check the src
-            await new Promise(resolve => setTimeout(resolve, 20));
-            expect(loadedSrc).toBe('https://arweave.net/resolved-image.jpg');
-        });
-
-        it('should use custom resolveUrl over default arweaveGatewayManager', async () => {
-            const customResolver = vi.fn().mockImplementation(
-                (url: string) => Promise.resolve(url.replace('arweave.net', 'custom-gateway.com'))
-            );
-            extractor = new ColorExtractor({ resolveUrl: customResolver });
-
-            await extractor.extractPalette('https://arweave.net/abc123');
-
-            expect(customResolver).toHaveBeenCalledWith('https://arweave.net/abc123');
-            await new Promise(resolve => setTimeout(resolve, 20));
-            expect(loadedSrc).toBe('https://custom-gateway.com/abc123');
-        });
-
-        it('should handle ar:// protocol URLs via resolveUrl', async () => {
-            const resolveUrl = vi.fn().mockResolvedValue('https://arweave.net/converted-txid');
-            extractor = new ColorExtractor({ resolveUrl });
-
-            await extractor.extractPalette('ar://abc123');
-
-            expect(resolveUrl).toHaveBeenCalledWith('ar://abc123');
-        });
-    });
 });

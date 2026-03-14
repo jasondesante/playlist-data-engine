@@ -33,12 +33,12 @@ Remove `resolveUrl` from all public options interfaces. Gateway resolution is no
 
 ## Phase 2: Remove resolveUrl from ColorExtractorOptions
 
-- [ ] **2.1 Update ColorExtractorOptions interface**
-  - [ ] Remove `resolveUrl?: (url: string) => Promise<string>` from `src/core/analysis/ColorExtractor.ts`
-  - [ ] Update JSDoc to reflect automatic resolution
+- [x] **2.1 Update ColorExtractorOptions interface**
+  - [x] Remove `resolveUrl?: (url: string) => Promise<string>` from `src/core/analysis/ColorExtractor.ts`
+  - [x] Update JSDoc to reflect automatic resolution
 
-- [ ] **2.2 Update ColorExtractor tests**
-  - [ ] Update or remove tests for `resolveUrl` in `colorExtractor.test.ts`
+- [x] **2.2 Update ColorExtractor tests**
+  - [x] Remove tests for `resolveUrl` in `colorExtractor.test.ts` (removed entire describe block with 4 tests)
 
 ---
 

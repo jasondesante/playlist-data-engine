@@ -3,24 +3,12 @@ import { arweaveGatewayManager } from '../../utils/arweaveGatewayManager.js';
 
 /**
  * Configuration options for ColorExtractor.
+ *
+ * Gateway resolution is automatic - Arweave URLs are resolved with fallback
+ * using the default arweaveGatewayManager. No configuration needed.
  */
 export interface ColorExtractorOptions {
-    /**
-     * Optional override for URL resolution. By default, ColorExtractor uses
-     * arweaveGatewayManager.resolveUrl to handle Arweave gateway fallback
-     * automatically (trying alternate gateways if the primary fails).
-     *
-     * Only provide this if you need custom URL resolution logic.
-     *
-     * @example
-     * ```typescript
-     * // Custom resolver (overrides default)
-     * const extractor = new ColorExtractor({
-     *   resolveUrl: async (url) => url.replace('arweave.net', 'my-gateway.com'),
-     * });
-     * ```
-     */
-    resolveUrl?: (url: string) => Promise<string>;
+    // Reserved for future options
 }
 
 /**
@@ -30,16 +18,14 @@ export interface ColorExtractorOptions {
 export class ColorExtractor {
     private canvas: HTMLCanvasElement | null = null;
     private context: CanvasRenderingContext2D | null = null;
-    private options: ColorExtractorOptions;
 
     /**
      * Initialize ColorExtractor with canvas for image processing
      * Canvas is only created in browser environments (safe for Node.js)
      *
-     * @param options - Configuration options including optional URL resolver
+     * @param _options - Configuration options (reserved for future use)
      */
-    constructor(options: ColorExtractorOptions = {}) {
-        this.options = options;
+    constructor(_options: ColorExtractorOptions = {}) {
 
         if (typeof document !== 'undefined') {
             this.canvas = document.createElement('canvas');
@@ -56,9 +42,8 @@ export class ColorExtractor {
      * the 4 most representative colors in the image. Analyzes color frequency,
      * brightness, saturation, and monochrome characteristics.
      *
-     * If a `resolveUrl` callback was provided in constructor options, it will
-     * be called to resolve the URL before loading (e.g., for Arweave gateway
-     * fallback). Otherwise, the default arweaveGatewayManager.resolveUrl is used.
+     * Arweave URLs are automatically resolved with gateway fallback via
+     * arweaveGatewayManager.resolveUrl - no configuration needed.
      *
      * @param {string} imageUrl - URL of the image to analyze
      * @returns {Promise<ColorPalette>} Color palette with dominant colors and characteristics
@@ -75,9 +60,8 @@ export class ColorExtractor {
                 throw new Error('Canvas not supported in this environment');
             }
 
-            // Resolve URL using arweaveGatewayManager by default, or custom resolver if provided
-            const resolver = this.options.resolveUrl ?? arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager);
-            const resolvedUrl = await resolver(imageUrl);
+            // Resolve URL using arweaveGatewayManager (automatic gateway fallback)
+            const resolvedUrl = await arweaveGatewayManager.resolveUrl(imageUrl);
 
             const image = await this.loadImage(resolvedUrl);
             this.context.drawImage(image, 0, 0, 100, 100);
