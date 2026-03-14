@@ -389,9 +389,11 @@ export {
     type GatewayConfig,
     type ArweaveUrlInfo,
     DEFAULT_GATEWAYS,
+    KNOWN_GATEWAY_HOSTS,
     isArweaveUrl,
     parseArweaveUrl,
     constructGatewayUrl,
+    getAllGatewayUrls,
 } from './utils/arweaveUtils.js';
 
 // Type helpers

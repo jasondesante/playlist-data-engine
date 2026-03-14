@@ -27,6 +27,8 @@ export interface ArweaveUrlInfo {
     txId: string;
     /** The original URL that was parsed */
     originalUrl: string;
+    /** Additional path after the txId (e.g., '/model.json', '/image.png') */
+    pathSuffix: string;
 }
 
 /**
@@ -42,12 +44,12 @@ export const DEFAULT_GATEWAYS: GatewayConfig[] = [
 /**
  * Known Arweave gateway hosts for URL detection
  */
-const KNOWN_GATEWAY_HOSTS = [
+export const KNOWN_GATEWAY_HOSTS = [
     'arweave.net',
     'ar.io',
     'ardrive.net',
     'turbo-gateway.com',
-];
+] as const;
 
 /**
  * Regex pattern for extracting 43-character Arweave transaction IDs
@@ -88,11 +90,13 @@ export function isArweaveUrl(url: string): boolean {
 }
 
 /**
- * Parse an Arweave URL to extract transaction ID
+ * Parse an Arweave URL to extract transaction ID and any path suffix
  *
  * Handles both formats:
  * - `ar://{txId}` - Native Arweave protocol
+ * - `ar://{txId}/path/to/file` - Native protocol with path suffix
  * - `https://arweave.net/{txId}` - HTTP gateway URL
+ * - `https://arweave.net/{txId}/path/to/file` - HTTP gateway with path suffix
  *
  * @param url - The Arweave URL to parse
  * @returns Parsed URL info or null if not a valid Arweave URL
@@ -100,10 +104,10 @@ export function isArweaveUrl(url: string): boolean {
  * @example
  * ```ts
  * parseArweaveUrl('ar://abc123...');
- * // { txId: 'abc123...', originalUrl: 'ar://abc123...' }
+ * // { txId: 'abc123...', originalUrl: 'ar://abc123...', pathSuffix: '' }
  *
- * parseArweaveUrl('https://arweave.net/abc123...');
- * // { txId: 'abc123...', originalUrl: 'https://arweave.net/abc123...' }
+ * parseArweaveUrl('https://arweave.net/abc123.../model.json');
+ * // { txId: 'abc123...', originalUrl: '...', pathSuffix: '/model.json' }
  *
  * parseArweaveUrl('https://example.com/audio.mp3');
  * // null
@@ -114,21 +118,60 @@ export function parseArweaveUrl(url: string): ArweaveUrlInfo | null {
         return null;
     }
 
+    // Check if it's an Arweave URL
+    if (!isArweaveUrl(url)) {
+        return null;
+    }
+
+    let txId: string | null = null;
+    let pathSuffix = '';
+
     // Handle ar:// protocol
     if (url.startsWith('ar://')) {
-        const txId = url.slice(5); // Remove 'ar://' prefix
-        // Validate it looks like a transaction ID (43 chars, base64url)
-        if (txId.length === 43 && /^[a-zA-Z0-9_-]+$/.test(txId)) {
-            return { txId, originalUrl: url };
+        const afterProtocol = url.slice(5); // Remove 'ar://' prefix
+        // Check if there's a path after the txId
+        const slashIndex = afterProtocol.indexOf('/');
+        if (slashIndex !== -1) {
+            txId = afterProtocol.slice(0, slashIndex);
+            pathSuffix = afterProtocol.slice(slashIndex);
+        } else {
+            txId = afterProtocol;
+        }
+        // Validate it's a proper txId (43 chars)
+        if (txId.length === 43 && /^[A-Za-z0-9_-]+$/.test(txId)) {
+            return { txId, originalUrl: url, pathSuffix };
         }
         return null;
     }
 
-    // Handle HTTP gateway URLs
-    // Try to extract txId from URL path
-    const match = url.match(ARWEAVE_TX_ID_PATTERN);
-    if (match && isArweaveUrl(url)) {
-        return { txId: match[0], originalUrl: url };
+    // For HTTP URLs, try to extract txId using regex
+    // This handles various URL patterns like:
+    // - https://arweave.net/{txId}
+    // - https://arweave.net/{txId}/path/to/file
+    // - https://ardrive.net/{txId}?query=...
+    const ARWEAVE_TXID_REGEX = /[A-Za-z0-9_-]{43}/g;
+    const matches = url.match(ARWEAVE_TXID_REGEX);
+    if (matches && matches.length > 0) {
+        // Get the first 43-character match that looks like a txId
+        txId = matches[0];
+
+        // Find where the txId ends in the URL and extract any path suffix
+        const txIdIndex = url.indexOf(txId);
+        if (txIdIndex !== -1) {
+            const afterTxId = url.slice(txIdIndex + 43);
+            // Extract path (everything before query string or fragment)
+            const queryIndex = Math.min(
+                afterTxId.indexOf('?') === -1 ? Infinity : afterTxId.indexOf('?'),
+                afterTxId.indexOf('#') === -1 ? Infinity : afterTxId.indexOf('#')
+            );
+            if (queryIndex === Infinity) {
+                pathSuffix = afterTxId;
+            } else {
+                pathSuffix = afterTxId.slice(0, queryIndex);
+            }
+        }
+
+        return { txId, originalUrl: url, pathSuffix };
     }
 
     return null;
@@ -139,14 +182,46 @@ export function parseArweaveUrl(url: string): ArweaveUrlInfo | null {
  *
  * @param txId - The 43-character Arweave transaction ID
  * @param gateway - The gateway configuration to use
+ * @param pathSuffix - Optional path suffix to append after txId (e.g., '/file.jpg')
  * @returns The constructed gateway URL
  *
  * @example
  * ```ts
  * constructGatewayUrl('abc123...', { host: 'arweave.net', protocol: 'https', priority: 1 });
  * // 'https://arweave.net/abc123...'
+ *
+ * constructGatewayUrl('abc123...', { host: 'arweave.net', protocol: 'https', priority: 1 }, '/model.json');
+ * // 'https://arweave.net/abc123.../model.json'
  * ```
  */
-export function constructGatewayUrl(txId: string, gateway: GatewayConfig): string {
-    return `${gateway.protocol}://${gateway.host}/${txId}`;
+export function constructGatewayUrl(txId: string, gateway: GatewayConfig, pathSuffix: string = ''): string {
+    const protocol = gateway.protocol || 'https';
+    return `${protocol}://${gateway.host}/${txId}${pathSuffix}`;
+}
+
+/**
+ * Get all gateway URLs for a transaction ID in priority order
+ *
+ * @param txId - The 43-character Arweave transaction ID
+ * @param gateways - Array of gateway configs (defaults to DEFAULT_GATEWAYS)
+ * @param pathSuffix - Optional path suffix to append after txId (e.g., '/file.jpg')
+ * @returns Array of gateway URLs in priority order
+ *
+ * @example
+ * ```ts
+ * getAllGatewayUrls('abc123...');
+ * // ['https://arweave.net/abc123...', 'https://ar.io/abc123...', ...]
+ *
+ * getAllGatewayUrls('abc123...', DEFAULT_GATEWAYS, '/model.json');
+ * // ['https://arweave.net/abc123.../model.json', ...]
+ * ```
+ */
+export function getAllGatewayUrls(
+    txId: string,
+    gateways: GatewayConfig[] = DEFAULT_GATEWAYS,
+    pathSuffix: string = ''
+): string[] {
+    return gateways
+        .sort((a, b) => a.priority - b.priority)
+        .map(gateway => constructGatewayUrl(txId, gateway, pathSuffix));
 }
