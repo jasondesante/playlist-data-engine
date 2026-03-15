@@ -313,9 +313,27 @@ export class ExtensionManager {
             validate = true
         } = options;
 
+        // Categories where items should be strings (normalized from objects with 'name' property)
+        const stringCategories = ['races', 'classes'];
+
+        // Normalize items for string categories: convert { name: 'X' } to 'X'
+        let normalizedItems = items;
+        if (stringCategories.includes(category)) {
+            normalizedItems = items.map(item => {
+                if (typeof item === 'string') {
+                    return item;
+                }
+                if (item && typeof item === 'object' && typeof item.name === 'string') {
+                    return item.name;
+                }
+                // Return as-is if it doesn't match expected format (validation will catch this)
+                return item;
+            });
+        }
+
         // Validate items if validation is enabled
         if (validate) {
-            const validation = this.validate(category, items);
+            const validation = this.validate(category, normalizedItems);
             if (!validation.valid) {
                 throw new Error(
                     `Invalid items for category '${category}':\n${validation.errors?.join('\n')}`
@@ -387,14 +405,15 @@ export class ExtensionManager {
 
             if (stringCategories.includes(category)) {
                 // For string categories, check if the string already exists
-                for (const item of items) {
+                // Items have already been normalized to strings above
+                for (const item of normalizedItems) {
                     if (typeof item === 'string' && existingItems.includes(item)) {
                         duplicates.push(item);
                     }
                 }
             } else if (category.startsWith('appearance.')) {
                 // Appearance options are strings - check for duplicates
-                for (const item of items) {
+                for (const item of normalizedItems) {
                     if (typeof item === 'string' && existingItems.includes(item)) {
                         duplicates.push(item);
                     }
@@ -402,11 +421,11 @@ export class ExtensionManager {
             } else {
                 // For object categories, check by both name AND id property
                 // An item is a duplicate if either its name OR id matches an existing item
-                for (const item of items) {
+                for (const item of normalizedItems) {
                     if (item && typeof item === 'object') {
                         const itemName = item.name;
                         const itemId = item.id;
-                        
+
                         if (itemName || itemId) {
                             const isDuplicate = existingItems.some((existing: any) => {
                                 if (existing && typeof existing === 'object') {
@@ -437,8 +456,8 @@ export class ExtensionManager {
         // For relative mode, merge with existing items; for other modes, replace
         const existingExtension = this.extensions.get(category);
         const finalItems = (mode === 'relative' && existingExtension)
-            ? [...existingExtension.items, ...items]
-            : [...items];
+            ? [...existingExtension.items, ...normalizedItems]
+            : [...normalizedItems];
 
         this.extensions.set(category, {
             items: finalItems,

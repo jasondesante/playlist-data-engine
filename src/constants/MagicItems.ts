@@ -499,7 +499,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
 
     /**
      * Gloves of Thievery - Thieves' tools expertise
-     * Demonstrates: granting proficiency with tools
+     * Demonstrates: granting proficiency with tools and skills
      */
     {
         name: 'Gloves of Thievery',
@@ -508,15 +508,20 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
         weight: 0.1,
         description: 'Magical gloves that make you a master of larceny. Grants expertise with thieves\' tools and proficiency in sleight of hand.',
         grantsSkills: [
-            { skillId: 'thieves_tools', level: 'expertise' },
             { skillId: 'sleight_of_hand', level: 'proficient' }
         ],
         properties: [
             {
                 type: 'passive_modifier',
-                target: 'thieves_tools_check',
+                target: 'sleight_of_hand',
                 value: 2,
-                description: '+2 to checks with thieves\' tools'
+                description: '+2 to Sleight of Hand checks'
+            },
+            {
+                type: 'special_property',
+                target: 'thieves_tools_expertise',
+                value: true,
+                description: 'Advantage on checks using thieves\' tools'
             }
         ],
         spawnWeight: 0.25,
@@ -530,7 +535,7 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
 
     /**
      * Boots of Speed - Haste effect
-     * Demonstrates: granting features (referencing registry feature)
+     * Demonstrates: granting features via inline mini-features
      */
     {
         name: 'Boots of Speed',
@@ -546,7 +551,42 @@ export const MAGIC_ITEMS: EnhancedEquipment[] = [
                 description: '+10 walking speed'
             }
         ],
-        grantsFeatures: ['freedom_of_movement', 'haste'],
+        grantsFeatures: [
+            {
+                id: 'boots_of_speed_dash',
+                name: 'Speed Burst',
+                description: 'You can take the Dash action as a bonus action, and moving leaves no trace.',
+                effects: [
+                    {
+                        type: 'special_property',
+                        target: 'bonus_action_dash',
+                        value: true,
+                        description: 'Dash as bonus action'
+                    }
+                ],
+                source: 'equipment_inline'
+            },
+            {
+                id: 'boots_of_speed_freedom',
+                name: 'Unfettered Movement',
+                description: 'Your movement is unimpeded by difficult terrain, and spells and effects can neither reduce your speed nor cause you to be restrained.',
+                effects: [
+                    {
+                        type: 'special_property',
+                        target: 'ignore_difficult_terrain',
+                        value: true,
+                        description: 'Ignore difficult terrain'
+                    },
+                    {
+                        type: 'special_property',
+                        target: 'freedom_of_movement',
+                        value: true,
+                        description: 'Immunity to speed reduction and restraint'
+                    }
+                ],
+                source: 'equipment_inline'
+            }
+        ],
         spawnWeight: 0.1,
         source: 'custom',
         tags: ['magic', 'wondrous', 'boots', 'speed']

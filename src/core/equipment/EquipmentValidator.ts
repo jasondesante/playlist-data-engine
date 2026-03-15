@@ -80,9 +80,10 @@ const VALID_PROFICIENCY_LEVEL = ['proficient', 'expertise'];
 const VALID_SOURCE = ['default', 'custom'];
 
 /**
- * Dice format regex for validation (e.g., "1d8", "2d6", "1d10")
+ * Dice format regex for validation (e.g., "1d8", "2d6", "1d10", "1d4+1")
+ * Allows optional modifier suffix like +1, -2, etc.
  */
-const DICE_FORMAT_REGEX = /^\d+d\d+$/;
+const DICE_FORMAT_REGEX = /^\d+d\d+([+-]\d+)?$/;
 
 /**
  * Range format regex for weapon properties (e.g., "range_20_60")
@@ -389,11 +390,22 @@ export class EquipmentValidator {
                 if (!validPassiveTargets.includes(target) &&
                     !VALID_ABILITIES.includes(target as Ability) &&
                     !SkillQuery.getInstance().isValidSkill(target)) {
-                    // Allow custom targets for extensibility
+                    // Allow custom targets for extensibility (e.g., resistance_fire, immunity_poison)
                     // But warn if it doesn't match known patterns
                 }
+                // Value can be a number (for bonuses) or boolean (for resistances/immunities)
+                if (typeof value !== 'number' && typeof value !== 'boolean') {
+                    errors.push('passive_modifier value must be a number or boolean');
+                }
+                break;
+
+            case 'stat_requirement':
+                // Target is the ability score (e.g., "STR", "DEX")
+                if (!VALID_ABILITIES.includes(target as Ability)) {
+                    errors.push(`stat_requirement target must be a valid ability: ${VALID_ABILITIES.join(', ')}`);
+                }
                 if (typeof value !== 'number') {
-                    errors.push('passive_modifier value must be a number');
+                    errors.push('stat_requirement value must be a number (minimum score)');
                 }
                 break;
 
