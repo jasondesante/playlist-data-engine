@@ -307,8 +307,16 @@ export class ExtensionManager {
         items: any[],
         options: ExtensionOptions = {}
     ): void {
+        // Get existing extension early to preserve mode if not explicitly provided
+        const existingExtension = this.extensions.get(category);
+
+        // ONLY use the mode from options if explicitly provided
+        // Otherwise preserve the existing mode - NEVER default to 'relative'
+        const mode = options.mode !== undefined
+            ? options.mode
+            : existingExtension?.options.mode;
+
         const {
-            mode = 'relative',
             weights = {},
             validate = true
         } = options;
@@ -453,15 +461,19 @@ export class ExtensionManager {
         }
 
         // Store the extension data
-        // For relative mode, merge with existing items; for other modes, replace
-        const existingExtension = this.extensions.get(category);
-        const finalItems = (mode === 'relative' && existingExtension)
+        // Always merge with existing items (mode only affects retrieval, not storage)
+        // Exception: 'replace' mode clears existing items first
+        // Note: existingExtension is declared at the top of this function
+        const finalItems = existingExtension && mode !== 'replace'
             ? [...existingExtension.items, ...normalizedItems]
             : [...normalizedItems];
 
         this.extensions.set(category, {
             items: finalItems,
-            options: { mode, weights, validate },
+            // Auto-reset 'replace' mode to 'absolute' after registration
+            // 'replace' is a one-time operation that replaces all items,
+            // then subsequent registrations should be additive
+            options: { mode: mode === 'replace' ? 'absolute' : mode, weights, validate },
             registeredAt: Date.now()
         });
 
