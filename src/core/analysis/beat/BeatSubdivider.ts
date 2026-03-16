@@ -219,20 +219,28 @@ export class BeatSubdivider {
                 continue;
             }
 
-            // For half notes and dotted quarters, treat as 2-beat structures
+            // For half notes, treat as 2-beat structure
             // Only process the first beat of each pair (positions 0, 2 in 4/4 time)
-            // The second beat of each pair is handled via interpolation
-            // Note: triplet4 is handled differently - each beat processes its own time space
-            if ((subdivision === 'half' || subdivision === 'dotted4') && beat.beatInMeasure % 2 !== 0) {
+            // The second beat of each pair is skipped entirely (no interpolated beats)
+            // Note: dotted4 and triplet4 are handled differently below
+            if (subdivision === 'half' && beat.beatInMeasure % 2 !== 0) {
                 continue;
             }
+
+            // For dotted quarters, treat as 2-beat structure but differently:
+            // - Even beats (0, 2, 4...): add original beat only (no interpolated beat)
+            // - Odd beats (1, 3, 5...): skip original beat, but add interpolated beat at 0.5
+            // This creates the correct dotted quarter pattern: hits at 0, 1.5, 2, 3.5...
+            const isDotted4OnOddBeat = subdivision === 'dotted4' && beat.beatInMeasure % 2 !== 0;
 
             // For offbeat8, skip the original beat (it's an 8th rest at the start)
             // For triplet4, skip the original beat if this is the SECOND beat in a consecutive chain
             // (position 1 in the chain). The first beat in the pair creates the triplet pattern.
             // Position is determined by counting consecutive triplet4 beats, not by beatInMeasure.
+            // For dotted4 on odd beats, skip the original beat (but still add interpolated beat)
             const skipOriginalBeat = subdivision === 'offbeat8' ||
-                (subdivision === 'triplet4' && getTriplet4ChainPosition(beatIndex) === 1);
+                (subdivision === 'triplet4' && getTriplet4ChainPosition(beatIndex) === 1) ||
+                isDotted4OnOddBeat;
 
             // Add the original beat (unless skipped)
             if (!skipOriginalBeat) {
@@ -426,16 +434,21 @@ export class BeatSubdivider {
             }
 
             case 'dotted4':
-                // Dotted quarter: beat at 0.5 (the "and" of the 2nd beat in the pair)
-                // Creates a 2-beat structure where beat 0 is hit, 0.5 is interpolated, beat 1 is silent
-                result.push(this.createInterpolatedBeat(
-                    beat,
-                    nextBeat,
-                    0.5,
-                    'dotted4',
-                    effectiveInterval,
-                    this.options
-                ));
+                // Dotted quarter: 2-beat structure
+                // - Even beats (0, 2, 4...): NO interpolated beat (original beat added by caller)
+                // - Odd beats (1, 3, 5...): Add interpolated beat at 0.5 (the "and" of this beat)
+                // This creates the correct dotted quarter pattern: hits at 0, 1.5, 2, 3.5...
+                // (where 1.5 is beat 1 timestamp + 0.5 * interval)
+                if (beat.beatInMeasure % 2 !== 0) {
+                    result.push(this.createInterpolatedBeat(
+                        beat,
+                        nextBeat,
+                        0.5,
+                        'dotted4',
+                        effectiveInterval,
+                        this.options
+                    ));
+                }
                 break;
 
             case 'dotted8':

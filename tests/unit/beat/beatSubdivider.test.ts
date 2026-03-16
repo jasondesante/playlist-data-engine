@@ -2789,7 +2789,7 @@ describe('BeatSubdivider - Triplet4 Notes', () => {
 // ============================================================================
 
 describe('BeatSubdivider - Dotted4 Notes', () => {
-    it('should create 2-beat structure with original at 0 and interpolated at 0.5', () => {
+    it('should create 2-beat structure with original at even beats and interpolated at odd+0.5', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
         const bpm = 120;
@@ -2806,23 +2806,25 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
         const result = subdivider.subdivide(unifiedMap, config);
 
         // Assert - dotted4 creates 2-beat structure:
-        // From beat pair (0,1): beat 0 at 0s, interpolated at 0.25s (0.5 of interval)
-        // From beat pair (2,3): beat 2 at 1.0s, interpolated at 1.25s
-        // From beat pair (4,5): beat 4 at 2.0s, interpolated at 2.25s
-        // From beat pair (6,7): beat 6 at 3.0s, interpolated at 3.25s
+        // - Even beats (0, 2, 4, 6): original beat only
+        // - Odd beats (1, 3, 5, 7): skip original, add interpolated at 0.5 (relative to this beat)
+        // Pattern: beat 0 at 0s, interpolated at 0.75s (beat1 + 0.5*interval = 0.5 + 0.25)
+        //          beat 2 at 1.0s, interpolated at 1.75s (beat3 + 0.5*interval = 1.5 + 0.25)
+        //          beat 4 at 2.0s, interpolated at 2.75s
+        //          beat 6 at 3.0s, interpolated at 3.75s
         // Total: 8 beats
         expect(result.beats.length).toBe(8);
-        expect(result.beats[0].timestamp).toBeCloseTo(0, 3);           // Beat 0
-        expect(result.beats[1].timestamp).toBeCloseTo(0.25, 3);       // Interpolated at 0.5
-        expect(result.beats[2].timestamp).toBeCloseTo(1.0, 3);        // Beat 2
-        expect(result.beats[3].timestamp).toBeCloseTo(1.25, 3);       // Interpolated
-        expect(result.beats[4].timestamp).toBeCloseTo(2.0, 3);        // Beat 4
-        expect(result.beats[5].timestamp).toBeCloseTo(2.25, 3);       // Interpolated
-        expect(result.beats[6].timestamp).toBeCloseTo(3.0, 3);        // Beat 6
-        expect(result.beats[7].timestamp).toBeCloseTo(3.25, 3);       // Interpolated
+        expect(result.beats[0].timestamp).toBeCloseTo(0, 3);           // Beat 0 (original)
+        expect(result.beats[1].timestamp).toBeCloseTo(0.75, 3);       // Interpolated at beat1 + 0.5*interval
+        expect(result.beats[2].timestamp).toBeCloseTo(1.0, 3);        // Beat 2 (original)
+        expect(result.beats[3].timestamp).toBeCloseTo(1.75, 3);       // Interpolated at beat3 + 0.5*interval
+        expect(result.beats[4].timestamp).toBeCloseTo(2.0, 3);        // Beat 4 (original)
+        expect(result.beats[5].timestamp).toBeCloseTo(2.75, 3);       // Interpolated at beat5 + 0.5*interval
+        expect(result.beats[6].timestamp).toBeCloseTo(3.0, 3);        // Beat 6 (original)
+        expect(result.beats[7].timestamp).toBeCloseTo(3.75, 3);       // Interpolated at beat7 + 0.5*interval
     });
 
-    it('should only process beats at positions 0 and 2 (even beatInMeasure)', () => {
+    it('should only keep original beats at even positions (0, 2, 4, 6)', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
         const bpm = 120;
@@ -2940,7 +2942,7 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
         expect(result.beats[0].subdivisionType).toBe('dotted4');
     });
 
-    it('should handle 2 beats (beat 0 + interpolated at 0.5)', () => {
+    it('should handle 2 beats (beat 0 kept + interpolated from beat 1)', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
         const beats = createRegularQuarterNotes(120, 2);
@@ -2953,10 +2955,13 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - beat 0 kept + interpolated at 0.5
+        // Assert - beat 0 kept + interpolated at beat 1 + 0.5*interval = 0.75s
         expect(result.beats.length).toBe(2);
         expect(result.beats[0].originalBeatIndex).toBe(0);
         expect(result.beats[1].originalBeatIndex).toBeUndefined();
+        // Verify interpolated beat is at correct position (beat 1 timestamp + 0.5*interval = 0.5 + 0.25 = 0.75)
+        const interval = 60 / 120; // 0.5 seconds
+        expect(result.beats[1].timestamp).toBeCloseTo(0.5 + interval * 0.5, 3);
     });
 
     it('should include "dotted4" in subdivisionsUsed metadata', () => {
@@ -3058,10 +3063,12 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - 2-beat structure: 4 original + 4 interpolated = 8 beats
+        // Assert - dotted4 creates 2-beat structure:
+        // Beat 0 at 0s, interpolated at beat 1 + 0.5*interval = 0.667 + 0.333 = 1.0s
+        // Beat 2 at 1.333s, interpolated at beat 3 + 0.5*interval = 2.0 + 0.333 = 2.333s
         expect(result.beats.length).toBe(8);
         expect(result.beats[0].timestamp).toBeCloseTo(0, 3);
-        expect(result.beats[1].timestamp).toBeCloseTo(interval * 0.5, 3); // Interpolated at 0.5
+        expect(result.beats[1].timestamp).toBeCloseTo(interval + interval * 0.5, 3); // Interpolated at beat1 + 0.5*interval
         expect(result.beats[2].timestamp).toBeCloseTo(interval * 2, 3);  // Beat at position 2
     });
 
@@ -3080,10 +3087,11 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - 2-beat structure: 4 original + 4 interpolated = 8 beats
+        // Assert - dotted4 creates 2-beat structure:
+        // Beat 0 at 0s, interpolated at beat 1 + 0.5*interval = 0.333 + 0.167 = 0.5s
         expect(result.beats.length).toBe(8);
         expect(result.beats[0].timestamp).toBeCloseTo(0, 3);
-        expect(result.beats[1].timestamp).toBeCloseTo(interval * 0.5, 3); // Interpolated
+        expect(result.beats[1].timestamp).toBeCloseTo(interval + interval * 0.5, 3); // Interpolated at beat1 + 0.5*interval
     });
 
     it('should produce correct beat count for longer track', () => {
