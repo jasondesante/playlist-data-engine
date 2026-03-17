@@ -1790,8 +1790,8 @@ constructor(options?: Partial<GrooveAnalyzerOptions>)
 | `basePocketWindowFraction` | 0.03125 | Base pocket window as fraction of beat (1/32 note) |
 | `minPocketWindowSeconds` | 0.015 | Minimum pocket window (15ms floor for progressive tightening) |
 | `hotnessGainPerHit` | 8 | Hotness gain per consistent hit |
-| `hotnessLossOnBreak` | 20 | Hotness loss on pocket break |
-| `hotnessLossOnMiss` | 10 | Hotness loss on missed beat |
+| `hotnessLossOnBreak` | 80 | Hotness loss on pocket break |
+| `hotnessLossOnMiss` | 80 | Hotness loss on missed beat |
 | `averagingWindowSize` | 4 | Number of recent hits to average for pocket establishment |
 | `neutralDeadZone` | 0.010 | Dead zone around zero for neutral classification (±10ms = 20ms total) |
 
@@ -1811,9 +1811,9 @@ Groove penalties can be adjusted based on difficulty level. Higher difficulties 
 
 | Preset | `hotnessLossOnMiss` | `hotnessLossOnBreak` | Description |
 |--------|---------------------|----------------------|-------------|
-| `easy` | 35 | 35 | Forgiving for casual players |
-| `medium` | 50 | 50 | Balanced difficulty |
-| `hard` | 65 | 65 | Strict for veterans |
+| `easy` | 50 | 50 | Forgiving for casual players |
+| `medium` | 80 | 80 | Balanced difficulty |
+| `hard` | 120 | 120 | Strict for veterans |
 | `custom` | (varies) | (varies) | Use `customPenalties` parameter |
 
 **Related Exports:**

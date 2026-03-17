@@ -1722,17 +1722,17 @@ export function validateThresholds(thresholds: Partial<AccuracyThresholds>): Thr
  * Higher densities are not supported and will throw an error.
  */
 export type SubdivisionType =
-  | 'quarter'    // 1x density (no change)
-  | 'half'       // 0.5x density (beats 1 and 3)
-  | 'eighth'     // 2x density
-  | 'sixteenth'  // 4x density (MAXIMUM)
-  | 'triplet8'   // 3 beats per quarter (eighth triplets)
-  | 'triplet4'   // 3 beats per half note (quarter triplets)
-  | 'dotted4'    // Every 3rd beat (positions 0, 3, 6...)
-  | 'dotted8'    // Beat at 3/4 (correct dotted 8th: 3:1 ratio)
-  | 'swing'      // Beat at 2/3 (swing feel: 2:1 ratio)
-  | 'offbeat8'   // 8th rest + 8th note (skip original, add at 0.5)
-  | 'rest';      // No beats generated (0x density)
+    | 'quarter'    // 1x density (no change)
+    | 'half'       // 0.5x density (beats 1 and 3)
+    | 'eighth'     // 2x density
+    | 'sixteenth'  // 4x density (MAXIMUM)
+    | 'triplet8'   // 3 beats per quarter (eighth triplets)
+    | 'triplet4'   // 3 beats per half note (quarter triplets)
+    | 'dotted4'    // Every 3rd beat (positions 0, 3, 6...)
+    | 'dotted8'    // Beat at 3/4 (correct dotted 8th: 3:1 ratio)
+    | 'swing'      // Beat at 2/3 (swing feel: 2:1 ratio)
+    | 'offbeat8'   // 8th rest + 8th note (skip original, add at 0.5)
+    | 'rest';      // No beats generated (0x density)
 
 // ============================================================================
 // Subdivision Configuration
@@ -2360,11 +2360,11 @@ export interface GrooveTierConfig {
  * harder to maintain your groove.
  */
 export const GROOVE_TIERS: GrooveTierConfig[] = [
-    { tier: 'D',  minHotness: 0,   maxHotness: 33,  windowMs: 31 },
-    { tier: 'C',  minHotness: 33,  maxHotness: 66,  windowMs: 25 },
-    { tier: 'B',  minHotness: 66,  maxHotness: 100, windowMs: 20 },
-    { tier: 'A',  minHotness: 100, maxHotness: 150, windowMs: 15 },
-    { tier: 'S',  minHotness: 150, maxHotness: 200, windowMs: 10 },
+    { tier: 'D', minHotness: 0, maxHotness: 33, windowMs: 31 },
+    { tier: 'C', minHotness: 33, maxHotness: 66, windowMs: 25 },
+    { tier: 'B', minHotness: 66, maxHotness: 100, windowMs: 20 },
+    { tier: 'A', minHotness: 100, maxHotness: 150, windowMs: 15 },
+    { tier: 'S', minHotness: 150, maxHotness: 200, windowMs: 10 },
     { tier: 'SS', minHotness: 200, maxHotness: 350, windowMs: 7 },
     { tier: 'Platinum', minHotness: 350, maxHotness: Infinity, windowMs: 5 },
 ];
@@ -2577,10 +2577,10 @@ export interface GrooveAnalyzerOptions {
     /** Hotness gain per consistent hit (default: 8) */
     hotnessGainPerHit: number;
 
-    /** Hotness loss on pocket break (default: 20) */
+    /** Hotness loss on pocket break (default: 80) */
     hotnessLossOnBreak: number;
 
-    /** Hotness loss on missed beat (default: 10) */
+    /** Hotness loss on missed beat (default: 80) */
     hotnessLossOnMiss: number;
 
     /** Number of recent hits to average for pocket establishment (default: 4) */
@@ -2598,8 +2598,8 @@ export const DEFAULT_GROOVE_OPTIONS: GrooveAnalyzerOptions = {
     basePocketWindowFraction: 0.03125, // 1/32 note
     minPocketWindowSeconds: 0.015,     // 15ms floor
     hotnessGainPerHit: 8,
-    hotnessLossOnBreak: 20,
-    hotnessLossOnMiss: 10,
+    hotnessLossOnBreak: 80,
+    hotnessLossOnMiss: 80,
     averagingWindowSize: 4,
     neutralDeadZone: 0.010,            // ±10ms (20ms total)
 };
@@ -2622,8 +2622,8 @@ export interface GroovePenaltyConfig {
  * Miss penalty: 35 (moderate)
  */
 export const EASY_GROOVE_PENALTIES: GroovePenaltyConfig = {
-    hotnessLossOnMiss: 35,
-    hotnessLossOnBreak: 35,
+    hotnessLossOnMiss: 50,
+    hotnessLossOnBreak: 50,
 } as const;
 
 /**
@@ -2631,8 +2631,8 @@ export const EASY_GROOVE_PENALTIES: GroovePenaltyConfig = {
  * Miss penalty: 50 (noticeable)
  */
 export const MEDIUM_GROOVE_PENALTIES: GroovePenaltyConfig = {
-    hotnessLossOnMiss: 50,
-    hotnessLossOnBreak: 50,
+    hotnessLossOnMiss: 80,
+    hotnessLossOnBreak: 80,
 } as const;
 
 /**
@@ -2640,8 +2640,8 @@ export const MEDIUM_GROOVE_PENALTIES: GroovePenaltyConfig = {
  * Miss penalty: 65 (severe)
  */
 export const HARD_GROOVE_PENALTIES: GroovePenaltyConfig = {
-    hotnessLossOnMiss: 65,
-    hotnessLossOnBreak: 65,
+    hotnessLossOnMiss: 120,
+    hotnessLossOnBreak: 120,
 } as const;
 
 /**
