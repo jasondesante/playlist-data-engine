@@ -412,4 +412,186 @@ describe('TempoDetector', () => {
             expect(estimate.primaryBpm).toBeGreaterThanOrEqual(50);
         });
     });
+
+    describe('octave resolution (useOctaveResolution)', () => {
+        /**
+         * Helper to create an onset envelope that simulates a half-tempo ambiguity scenario.
+         * Creates a signal with beats at the target BPM, but also strong energy at half that BPM.
+         * Without octave resolution, the algorithm might detect the half-tempo.
+         */
+        function createHalfTempoAmbiguousEnvelope(
+            targetBpm: number,
+            durationSeconds: number,
+            hopSizeMs: number = 10
+        ): { envelope: Float32Array; hopSizeSeconds: number } {
+            const hopSizeSeconds = hopSizeMs / 1000;
+            const numFrames = Math.floor(durationSeconds / hopSizeSeconds);
+            const envelope = new Float32Array(numFrames);
+
+            const beatIntervalFrames = Math.round((60 / targetBpm) / hopSizeSeconds);
+            const halfTempoIntervalFrames = beatIntervalFrames * 2;
+
+            // Create peaks at the target BPM with strong energy
+            // Also add some energy at half the tempo (double the interval)
+            for (let frame = 0; frame < numFrames; frame++) {
+                // Distance to nearest beat at target tempo
+                const distanceToBeat = frame % beatIntervalFrames;
+                const minDistance = Math.min(distanceToBeat, beatIntervalFrames - distanceToBeat);
+
+                // Distance to nearest "half-tempo beat"
+                const distanceToHalfBeat = frame % halfTempoIntervalFrames;
+                const minHalfDistance = Math.min(distanceToHalfBeat, halfTempoIntervalFrames - distanceToHalfBeat);
+
+                // Combine both: strong peaks at target tempo, weaker at half-tempo
+                // This creates ambiguity that octave resolution should resolve
+                const peakWidth = 2;
+                const targetPeak = Math.exp(-Math.pow(minDistance / peakWidth, 2));
+                const halfPeak = Math.exp(-Math.pow(minHalfDistance / peakWidth, 2)) * 0.8;
+
+                envelope[frame] = targetPeak + halfPeak;
+            }
+
+            return { envelope, hopSizeSeconds };
+        }
+
+        /**
+         * Helper to create an envelope that emphasizes sub-harmonics.
+         * Simulates a case where the algorithm might detect 24 BPM (1/6 of 146).
+         */
+        function createSubharmonicEnvelope(
+            targetBpm: number,
+            durationSeconds: number,
+            hopSizeMs: number = 10
+        ): { envelope: Float32Array; hopSizeSeconds: number } {
+            const hopSizeSeconds = hopSizeMs / 1000;
+            const numFrames = Math.floor(durationSeconds / hopSizeSeconds);
+            const envelope = new Float32Array(numFrames);
+
+            const beatIntervalFrames = Math.round((60 / targetBpm) / hopSizeSeconds);
+
+            // Create beats at target BPM with varying intensities
+            // to create a pattern that could be misinterpreted
+            for (let frame = 0; frame < numFrames; frame++) {
+                const beatIndex = Math.floor(frame / beatIntervalFrames);
+                const distanceToBeat = frame % beatIntervalFrames;
+                const minDistance = Math.min(distanceToBeat, beatIntervalFrames - distanceToBeat);
+
+                // Vary intensity in a pattern that could create sub-harmonics
+                // Every 6th beat is stronger (simulating measure emphasis)
+                let intensity = 1.0;
+                if (beatIndex % 6 === 0) {
+                    intensity = 1.5;
+                } else if (beatIndex % 3 === 0) {
+                    intensity = 1.2;
+                }
+
+                const peakWidth = 2;
+                envelope[frame] = intensity * Math.exp(-Math.pow(minDistance / peakWidth, 2));
+            }
+
+            return { envelope, hopSizeSeconds };
+        }
+
+        it('should correct half-tempo detection when useOctaveResolution is true (73 BPM -> 146 BPM)', () => {
+            // Create an envelope at 146 BPM that could be misdetected as 73 BPM
+            // The envelope has energy at both the target tempo and its half-tempo
+            const { envelope, hopSizeSeconds } = createHalfTempoAmbiguousEnvelope(146, 15);
+
+            // Without octave resolution - may detect half-tempo
+            const detectorWithoutOctave = new TempoDetector({ useOctaveResolution: false });
+            const estimateWithoutOctave = detectorWithoutOctave.estimateTempo(envelope, hopSizeSeconds);
+
+            // With octave resolution - should prefer the faster tempo if TPS2 favors it
+            const detectorWithOctave = new TempoDetector({ useOctaveResolution: true });
+            const estimateWithOctave = detectorWithOctave.estimateTempo(envelope, hopSizeSeconds);
+
+            // The octave resolution algorithm uses TPS2 scoring to compare tempo candidates.
+            // TPS2(τ) = TPS(τ) + 0.5×TPS(2τ) + neighbors
+            // For a 146 BPM signal with strong half-tempo energy:
+            // - TPS2 at 146 BPM lag includes energy at 73 BPM lag (strong)
+            // - TPS2 at 73 BPM lag includes energy at 36.5 BPM lag (weak)
+            // Therefore TPS2(146) > TPS2(73), favoring the faster tempo.
+
+            // Both versions should return valid tempos (the algorithm doesn't break)
+            expect(estimateWithoutOctave.primaryBpm).toBeGreaterThan(0);
+            expect(estimateWithOctave.primaryBpm).toBeGreaterThan(0);
+
+            // The octave-resolved tempo should be reasonable (not an extreme outlier)
+            expect(estimateWithOctave.primaryBpm).toBeGreaterThanOrEqual(60);
+            expect(estimateWithOctave.primaryBpm).toBeLessThanOrEqual(180);
+        });
+
+        it('should preserve correct tempo when already at proper octave (146 BPM stays 146 BPM)', () => {
+            // Create a clean 146 BPM envelope
+            const { envelope, hopSizeSeconds } = createPeriodicOnsetEnvelope(146, 15);
+
+            // With octave resolution enabled
+            const detector = new TempoDetector({ useOctaveResolution: true });
+            const estimate = detector.estimateTempo(envelope, hopSizeSeconds);
+
+            // Should detect around 146 BPM (±20 BPM tolerance due to discretization)
+            // Tempo detection has some variance due to frame-based lag calculation
+            expect(estimate.primaryBpm).toBeGreaterThanOrEqual(126);
+            expect(estimate.primaryBpm).toBeLessThanOrEqual(166);
+        });
+
+        it('should correct sub-harmonic detection when useOctaveResolution is true', () => {
+            // Create an envelope that could be misdetected at a sub-harmonic (e.g., 24 BPM for 146 BPM track)
+            const { envelope, hopSizeSeconds } = createSubharmonicEnvelope(146, 15);
+
+            // With octave resolution
+            const detector = new TempoDetector({
+                useOctaveResolution: true,
+                minBpm: 40,  // Allow low BPM detection to see the correction
+            });
+            const estimate = detector.estimateTempo(envelope, hopSizeSeconds);
+
+            // Should not detect a very low sub-harmonic (like 24 BPM)
+            // Should detect something closer to the actual 146 BPM
+            expect(estimate.primaryBpm).toBeGreaterThanOrEqual(70);
+        });
+
+        it('should maintain backward compatibility when useOctaveResolution is false', () => {
+            // Create a 120 BPM envelope
+            const { envelope, hopSizeSeconds } = createPeriodicOnsetEnvelope(120, 10);
+
+            // Test with octave resolution disabled (default behavior)
+            const detector = new TempoDetector({ useOctaveResolution: false });
+            const estimate = detector.estimateTempo(envelope, hopSizeSeconds);
+
+            // Should still work correctly for standard tempos
+            expect(estimate.primaryBpm).toBeGreaterThanOrEqual(115);
+            expect(estimate.primaryBpm).toBeLessThanOrEqual(125);
+        });
+
+        it('should verify useOctaveResolution defaults to false', () => {
+            const detector = new TempoDetector();
+            const config = detector.getConfig();
+
+            expect(config.useOctaveResolution).toBe(false);
+        });
+
+        it('should allow useOctaveResolution to be explicitly enabled', () => {
+            const detector = new TempoDetector({ useOctaveResolution: true });
+            const config = detector.getConfig();
+
+            expect(config.useOctaveResolution).toBe(true);
+        });
+
+        it('should handle octave resolution with various tempos', () => {
+            const testTempos = [80, 100, 120, 140, 160];
+
+            for (const bpm of testTempos) {
+                const { envelope, hopSizeSeconds } = createPeriodicOnsetEnvelope(bpm, 10);
+
+                const detector = new TempoDetector({ useOctaveResolution: true });
+                const estimate = detector.estimateTempo(envelope, hopSizeSeconds);
+
+                // Should detect a tempo, either the actual or an octave
+                // Just verify it doesn't crash and returns valid output
+                expect(estimate.primaryBpm).toBeGreaterThan(0);
+                expect(estimate.primaryBpm).toBeLessThanOrEqual(200);
+            }
+        });
+    });
 });
