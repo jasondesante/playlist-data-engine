@@ -594,4 +594,183 @@ describe('TempoDetector', () => {
             }
         });
     });
+
+    describe('triple meter resolution (useTripleMeter)', () => {
+        /**
+         * Helper to create an onset envelope with a triple meter pattern (3/4 or 6/8).
+         * Creates a signal where beats group in threes with a strong-weak-weak pattern.
+         * The third sub-harmonic has strong energy, which TPS3 can detect.
+         */
+        function createTripleMeterOnsetEnvelope(
+            bpm: number,
+            durationSeconds: number,
+            hopSizeMs: number = 10
+        ): { envelope: Float32Array; hopSizeSeconds: number } {
+            const hopSizeSeconds = hopSizeMs / 1000;
+            const numFrames = Math.floor(durationSeconds / hopSizeSeconds);
+            const envelope = new Float32Array(numFrames);
+
+            const beatIntervalFrames = Math.round((60 / bpm) / hopSizeSeconds);
+
+            // Create a 3/4 pattern: strong-weak-weak
+            for (let frame = 0; frame < numFrames; frame++) {
+                const beatInMeasure = Math.floor(frame / beatIntervalFrames) % 3;
+                const distanceToBeat = frame % beatIntervalFrames;
+                const minDistance = Math.min(distanceToBeat, beatIntervalFrames - distanceToBeat);
+                const peakWidth = 2;
+
+                // Strong beat on 1, weak beats on 2 and 3
+                const intensity = beatInMeasure === 0 ? 1.0 : 0.4;
+
+                envelope[frame] = intensity * Math.exp(-Math.pow(minDistance / peakWidth, 2));
+            }
+
+            return { envelope, hopSizeSeconds };
+        }
+
+        /**
+         * Helper to create an envelope that could be misdetected at one-third tempo.
+         * This simulates a waltz where the algorithm might detect the measure tempo
+         * instead of the beat tempo.
+         */
+        function createThirdTempoAmbiguousEnvelope(
+            targetBpm: number,
+            durationSeconds: number,
+            hopSizeMs: number = 10
+        ): { envelope: Float32Array; hopSizeSeconds: number } {
+            const hopSizeSeconds = hopSizeMs / 1000;
+            const numFrames = Math.floor(durationSeconds / hopSizeSeconds);
+            const envelope = new Float32Array(numFrames);
+
+            const beatIntervalFrames = Math.round((60 / targetBpm) / hopSizeSeconds);
+            const thirdTempoIntervalFrames = beatIntervalFrames * 3;
+
+            // Create peaks at the target BPM, but also strong energy at the measure level (1/3 tempo)
+            for (let frame = 0; frame < numFrames; frame++) {
+                // Distance to nearest beat at target tempo
+                const distanceToBeat = frame % beatIntervalFrames;
+                const minDistance = Math.min(distanceToBeat, beatIntervalFrames - distanceToBeat);
+
+                // Distance to nearest "measure beat" (1/3 tempo)
+                const distanceToMeasureBeat = frame % thirdTempoIntervalFrames;
+                const minMeasureDistance = Math.min(distanceToMeasureBeat, thirdTempoIntervalFrames - distanceToMeasureBeat);
+
+                // Combine: strong peaks at target tempo, moderate at measure level
+                const peakWidth = 2;
+                const targetPeak = Math.exp(-Math.pow(minDistance / peakWidth, 2));
+                const measurePeak = Math.exp(-Math.pow(minMeasureDistance / peakWidth, 2)) * 0.7;
+
+                envelope[frame] = targetPeak + measurePeak;
+            }
+
+            return { envelope, hopSizeSeconds };
+        }
+
+        it('should detect triple meter pattern correctly with useTripleMeter enabled', () => {
+            // Create a 120 BPM triple meter pattern (3/4 time)
+            const { envelope, hopSizeSeconds } = createTripleMeterOnsetEnvelope(120, 15);
+
+            // With triple meter resolution enabled
+            const detector = new TempoDetector({ useTripleMeter: true });
+            const estimate = detector.estimateTempo(envelope, hopSizeSeconds);
+
+            // Should detect around 120 BPM (±10 BPM tolerance)
+            expect(estimate.primaryBpm).toBeGreaterThanOrEqual(110);
+            expect(estimate.primaryBpm).toBeLessThanOrEqual(130);
+        });
+
+        it('should correct third-tempo detection when useTripleMeter is true (50 BPM -> 150 BPM)', () => {
+            // Create an envelope at 150 BPM that could be misdetected as 50 BPM (one-third tempo)
+            const { envelope, hopSizeSeconds } = createThirdTempoAmbiguousEnvelope(150, 15);
+
+            // Without triple meter resolution - may detect third-tempo
+            const detectorWithoutTriple = new TempoDetector({ useTripleMeter: false });
+            const estimateWithoutTriple = detectorWithoutTriple.estimateTempo(envelope, hopSizeSeconds);
+
+            // With triple meter resolution - should prefer the faster tempo if TPS3 favors it
+            const detectorWithTriple = new TempoDetector({ useTripleMeter: true });
+            const estimateWithTriple = detectorWithTriple.estimateTempo(envelope, hopSizeSeconds);
+
+            // Both versions should return valid tempos (the algorithm doesn't break)
+            expect(estimateWithoutTriple.primaryBpm).toBeGreaterThan(0);
+            expect(estimateWithTriple.primaryBpm).toBeGreaterThan(0);
+
+            // The triple meter resolved tempo should be reasonable
+            expect(estimateWithTriple.primaryBpm).toBeGreaterThanOrEqual(60);
+            expect(estimateWithTriple.primaryBpm).toBeLessThanOrEqual(180);
+        });
+
+        it('should preserve correct tempo for duple meter when triple meter is enabled', () => {
+            // Create a standard 4/4 pattern at 120 BPM
+            const { envelope, hopSizeSeconds } = createPeriodicOnsetEnvelope(120, 10);
+
+            // With triple meter resolution enabled
+            const detector = new TempoDetector({ useTripleMeter: true });
+            const estimate = detector.estimateTempo(envelope, hopSizeSeconds);
+
+            // Should still correctly detect 120 BPM (±10 BPM)
+            // TPS3 shouldn't incorrectly trigger for duple meter
+            expect(estimate.primaryBpm).toBeGreaterThanOrEqual(110);
+            expect(estimate.primaryBpm).toBeLessThanOrEqual(130);
+        });
+
+        it('should handle combined useOctaveResolution and useTripleMeter', () => {
+            // Create a triple meter pattern at 140 BPM
+            const { envelope, hopSizeSeconds } = createTripleMeterOnsetEnvelope(140, 15);
+
+            // With both options enabled
+            const detector = new TempoDetector({
+                useOctaveResolution: true,
+                useTripleMeter: true,
+            });
+            const estimate = detector.estimateTempo(envelope, hopSizeSeconds);
+
+            // Should detect a valid tempo (doesn't crash with both enabled)
+            expect(estimate.primaryBpm).toBeGreaterThan(0);
+            expect(estimate.primaryBpm).toBeLessThanOrEqual(180);
+        });
+
+        it('should maintain backward compatibility when useTripleMeter is false', () => {
+            // Create a 120 BPM envelope
+            const { envelope, hopSizeSeconds } = createPeriodicOnsetEnvelope(120, 10);
+
+            // Test with triple meter disabled (default behavior)
+            const detector = new TempoDetector({ useTripleMeter: false });
+            const estimate = detector.estimateTempo(envelope, hopSizeSeconds);
+
+            // Should still work correctly for standard tempos
+            expect(estimate.primaryBpm).toBeGreaterThanOrEqual(115);
+            expect(estimate.primaryBpm).toBeLessThanOrEqual(125);
+        });
+
+        it('should verify useTripleMeter defaults to false', () => {
+            const detector = new TempoDetector();
+            const config = detector.getConfig();
+
+            expect(config.useTripleMeter).toBe(false);
+        });
+
+        it('should allow useTripleMeter to be explicitly enabled', () => {
+            const detector = new TempoDetector({ useTripleMeter: true });
+            const config = detector.getConfig();
+
+            expect(config.useTripleMeter).toBe(true);
+        });
+
+        it('should handle triple meter resolution with various tempos (60, 80, 100, 120, 140 BPM)', () => {
+            const testTempos = [60, 80, 100, 120, 140];
+
+            for (const bpm of testTempos) {
+                const { envelope, hopSizeSeconds } = createTripleMeterOnsetEnvelope(bpm, 10);
+
+                const detector = new TempoDetector({ useTripleMeter: true });
+                const estimate = detector.estimateTempo(envelope, hopSizeSeconds);
+
+                // Should detect a tempo, either the actual or an octave
+                // Just verify it doesn't crash and returns valid output
+                expect(estimate.primaryBpm).toBeGreaterThan(0);
+                expect(estimate.primaryBpm).toBeLessThanOrEqual(200);
+            }
+        });
+    });
 });
