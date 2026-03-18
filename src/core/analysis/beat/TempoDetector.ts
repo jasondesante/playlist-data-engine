@@ -6,6 +6,21 @@
  *
  * Reference: https://www.ee.columbia.edu/~dpwe/pubs/Ellis07-beattrack.pdf
  * Section 3.2: Tempo Estimation
+ *
+ * ## Meter Resolution Options
+ *
+ * ### Octave Resolution (TPS2) - Duple Meter
+ * The perceptual weighting cannot distinguish between half/double tempo (e.g., 73 BPM vs 146 BPM).
+ * When `useOctaveResolution` is enabled, TPS2 (Tempo Period Strength for duple meter) is used
+ * to prefer tempos with strong half-period evidence. This improved accuracy from 77% to 84%
+ * in the original Ellis paper.
+ *
+ * ### Triple Meter Resolution (TPS3)
+ * When `useTripleMeter` is enabled, TPS3 is used to detect triple meter music (3/4, 6/8).
+ * The TPS3 formula combines the main tempo with its third-harmonic:
+ * `TPS3(τ) = TPS(τ) + 0.33×TPS(3τ) + 0.33×TPS(3τ-1) + 0.33×TPS(3τ+1)`
+ *
+ * Both options can be enabled simultaneously as they work independently.
  */
 
 import type { TempoDetectorConfig, TempoEstimate } from '../../types/BeatMap.js';
@@ -45,12 +60,20 @@ interface AutocorrelationResult {
  * 2. Apply perceptual weighting that biases toward 120 BPM
  * 3. Find the peak that maximizes the weighted autocorrelation
  * 4. (Optional) Use TPS2 for octave resolution to prevent half-tempo detection
+ * 5. (Optional) Use TPS3 for triple meter resolution to detect 3/4, 6/8 time signatures
  *
- * ## Octave Resolution (TPS2)
+ * ## Octave Resolution (TPS2) - Duple Meter
  * The perceptual weighting cannot distinguish between half/double tempo (e.g., 73 BPM vs 146 BPM).
  * When `useOctaveResolution` is enabled, TPS2 (Tempo Period Strength for duple meter) is used
  * to prefer tempos with strong half-period evidence. This improved accuracy from 77% to 84%
  * in the original Ellis paper.
+ *
+ * ## Triple Meter Resolution (TPS3)
+ * When `useTripleMeter` is enabled, TPS3 is used to detect triple meter music (3/4, 6/8).
+ * The TPS3 formula combines the main tempo with its third-harmonic:
+ * `TPS3(τ) = TPS(τ) + 0.33×TPS(3τ) + 0.33×TPS(3τ-1) + 0.33×TPS(3τ+1)`
+ *
+ * Both TPS2 and TPS3 can be enabled simultaneously as they work independently.
  *
  * @see {@link https://www.ee.columbia.edu/~dpwe/pubs/Ellis07-beattrack.pdf|Ellis 2007 Paper}
  *
@@ -60,6 +83,7 @@ interface AutocorrelationResult {
  *   tempoCenter: 0.5,  // 120 BPM
  *   tempoWidth: 1.4,   // octaves
  *   useOctaveResolution: true,  // Enable TPS2 octave resolution
+ *   useTripleMeter: true,       // Enable TPS3 triple meter resolution
  * });
  *
  * const estimate = detector.estimateTempo(onsetEnvelope, hopSize);
@@ -83,10 +107,11 @@ export class TempoDetector {
      *
      * Implements Ellis Section 3.2:
      * - Autocorrelation with perceptual weighting
-     * - TPS2/TPS3 for duple/triple meter detection
+     * - TPS2 for duple meter (octave resolution)
+     * - TPS3 for triple meter (3/4, 6/8 detection)
      *
-     * ## Octave Resolution
-     * When `useOctaveResolution` is enabled (config option), this method uses TPS2
+     * ## Octave Resolution (TPS2) - Duple Meter
+     * When `useOctaveResolution` is enabled, this method uses TPS2
      * (Tempo Period Strength for duple meter) to resolve tempo octave ambiguity.
      *
      * The problem: the perceptual weighting gives equal preference to tempos at
@@ -98,6 +123,24 @@ export class TempoDetector {
      *
      * Tempos with strong half-period evidence (indicating the correct octave)
      * will have higher TPS2 scores, allowing us to prefer the true tempo.
+     *
+     * ## Triple Meter Resolution (TPS3)
+     * When `useTripleMeter` is enabled, this method uses TPS3 to detect triple
+     * meter music (3/4, 6/8 time signatures).
+     *
+     * The problem: for waltzes and triple meter music, the algorithm may lock onto
+     * a slower tempo (1 beat per 3 sub-beats) instead of the actual beat.
+     *
+     * The solution: TPS3 combines the main tempo with its third-period energy:
+     * `TPS3(τ) = TPS(τ) + 0.33×TPS(3τ) + 0.33×TPS(3τ-1) + 0.33×TPS(3τ+1)`
+     *
+     * Tempos with strong third-period evidence (indicating triple meter)
+     * will have higher TPS3 scores, allowing proper beat detection.
+     *
+     * ## Combining TPS2 and TPS3
+     * Both options can be enabled simultaneously. They run independently:
+     * - TPS2 runs first, resolving duple meter ambiguity
+     * - TPS3 runs second, resolving triple meter ambiguity
      *
      * @param onsetEnvelope - Onset strength envelope from OSE calculation
      * @param hopSizeSeconds - Hop size in seconds (time between envelope frames)
