@@ -185,17 +185,38 @@ Before quantization, validate that detected transients aren't too dense:
 - [ ] Filter transients below intensity threshold before quantization
 - [ ] Log how many transients were filtered for transparency
 
-#### 1.4.3 Rhythmic Quantization
-- [ ] Snap transients to the nearest valid subdivision grid point
-  - [ ] **Scope**: 16th notes and 8th note triplets only
-  - [ ] Calculate all valid grid points within each beat
-  - [ ] Assign each transient to nearest grid point (within tolerance)
-- [ ] Handle edge cases:
+#### 1.4.3 Per-Beat Grid Detection & Quantization
+
+**Goal**: For each beat, determine whether transients fit better on a straight 16th note grid or an 8th note triplet grid, then quantize to the chosen grid.
+
+- [ ] **Per-beat grid detection algorithm**:
+  - [ ] For each beat, extract transients within that beat's time range
+  - [ ] Lay out a **straight 16th note grid** for the beat
+  - [ ] Calculate **total ms offset** of all transients from the 16th grid
+  - [ ] Lay out an **8th note triplet grid** for the beat
+  - [ ] Calculate **total ms offset** of all transients from the triplet grid
+  - [ ] **Whichever grid has smaller total offset** = use that grid for this beat
+  ```typescript
+  interface GridDecision {
+    beatIndex: number;
+    selectedGrid: 'straight_16th' | 'triplet_8th';
+    straightOffset: number;   // Total ms offset from 16th grid
+    tripletOffset: number;    // Total ms offset from triplet grid
+    confidence: number;       // How much better the chosen grid fits
+  }
+  ```
+- [ ] **Quantize to chosen grid**:
+  - [ ] For each beat, use the selected grid (16th or triplet)
+  - [ ] Snap transients to nearest grid point (within tolerance)
+  - [ ] Track which transients were quantized and by how much
+- [ ] **Handle edge cases**:
   - [ ] Transients too far from any grid point (discard or mark as "unquantized")
   - [ ] Multiple transients snapping to same grid point (keep strongest)
+  - [ ] Beats with no transients (skip, no grid decision needed)
   ```typescript
   interface QuantizedRhythm {
     beatIndex: number;
+    gridUsed: 'straight_16th' | 'triplet_8th';
     subdivisions: QuantizedSubdivision[];
     sourceTransientCount: number;
     filteredTransientCount: number;  // Removed by intensity filter
@@ -203,61 +224,37 @@ Before quantization, validate that detected transients aren't too dense:
 
   interface QuantizedSubdivision {
     subdivisionType: SubdivisionType;
-    gridPosition: number;  // 0-15 for position within beat (16th note resolution)
+    gridPosition: number;  // 0-15 for 16th, 0-11 for triplet (per beat)
     intensity: number;  // From source transient
     band: 'low' | 'mid' | 'high';
+    quantizationError: number;  // How far it was moved (ms)
   }
   ```
+  ```
 
-#### 1.4.4 Pattern Detection
-- [ ] Detect and extract common patterns from quantized rhythms:
-  - [ ] Offbeat patterns (transients on &)
-  - [ ] Syncopation (transients between grid)
-  - [ ] Triple feel (transients suggest triplet subdivision)
-  - [ ] Swing feel (consistent micro-timing deviation from mathematical grid)
+#### 1.4.4 Phase 1 Output
 
-### 1.5 Rhythm Scoring & Stream Combiner
+**Output**: 3 quantized rhythm streams (low/mid/high) that are fully compatible with existing beat map infrastructure.
 
-**Goal**: Score rhythmic phrases by interest level and combine the best sections from each band into a composite stream.
-
-> **Note**: The composite stream is created here but will be finalized in Phase 3 as the primary output.
-
-- [ ] Implement scoring logic to evaluate the "interest" level of rhythms within each band over a given window (e.g., 1 measure):
-  - [ ] Score based on Inter-Onset Interval (IOI) density and variance
-  - [ ] Score based on Syncopation (weighting transients that land on offbeats or micro-subdivisions higher than simple downbeats)
-- [ ] Create **Rhythm Slicer/Combiner** that evaluates scores across bands:
+- [ ] Ensure output format matches `SubdividedBeatMap` structure
+- [ ] Streams contain quantized subdivision data without named subdivision types (no "dotted4", "triplet8", etc.)
+- [ ] Each stream is a complete, playable rhythm chart for its frequency band
   ```typescript
-  interface RhythmPhrase {
-    band: 'low' | 'mid' | 'high';
-    measureIndex: number;
-    subdivisions: SubdivisionType[];
-    interestScore: number;  // Based on syncopation and density
-  }
-
-  interface RhythmSuggestion {
-    beatIndex: number;
-    suggestedSubdivision: SubdivisionType;
-    confidence: number;
-    source: 'quantized_transient' | 'pattern';
-    dominantBand: 'low' | 'mid' | 'high';  // Which band won for this section
-  }
-  ```
-- [ ] The system produces **3 streams** at this phase:
-  - [ ] `low` stream: Full quantized rhythms from low frequency band
-  - [ ] `mid` stream: Full quantized rhythms from mid frequency band  
-  - [ ] `high` stream: Full quantized rhythms from high frequency band
-- [ ] The **4th stream** (`composite`) is created by slicing together the most interesting sections from each band:
-  ```typescript
-  interface BandRhythmStreams {
-    low: QuantizedRhythm[];
-    mid: QuantizedRhythm[];
-    high: QuantizedRhythm[];
-    // composite is generated by the slicer:
-    composite: QuantizedRhythm[];  // Best sections from each band
+  interface Phase1Output {
+    streams: {
+      low: QuantizedRhythm[];   // Low frequency band
+      mid: QuantizedRhythm[];    // Mid frequency band
+      high: QuantizedRhythm[];   // High frequency band
+    };
+    metadata: {
+      gridDecisions: GridDecision[];  // Per-beat: 16th or triplet
+      densityValidation: DensityValidationResult;
+      transientsFilteredByIntensity: number;
+    };
   }
   ```
 
-### 1.6 Tests
+### 1.5 Tests
 - [ ] Unit tests for band-pass filter
 - [ ] Unit tests for `MultiBandAnalyzer`
 - [ ] Unit tests for `TransientDetector`
@@ -271,180 +268,222 @@ Before quantization, validate that detected transients aren't too dense:
 
 ---
 
-## Phase 2: Procedural Subdivision Generator
+## Phase 2: Rhythmic Phrase Analysis & Difficulty Variants
 
-**Goal**: Automatically generate interesting subdivision patterns based on audio analysis and difficulty settings.
+**Goal**: Analyze quantized streams for rhythmic patterns and generate difficulty variants for each band stream.
 
-### 2.1 Subdivision Pattern Types
-- [ ] Define subdivision pattern vocabulary
+**Input**: 3 quantized rhythm streams (low/mid/high) from Phase 1, compatible with existing beat map infrastructure.
+
+**Output**: 9 total streams - 3 difficulty variants (easy/medium/hard) for each of the 3 bands.
+
+### 2.1 Rhythmic Phrase Analysis
+
+**Goal**: Find duplicate rhythmic phrases to identify distinct rhythmic motifs specific to the song. These detected phrases form a **song-specific pattern library** used later for density enhancement.
+
+- [ ] Scan quantized streams for **duplicate multi-beat phrases**:
+  - [ ] Check phrase sizes: 1 beat, 2 beats, 4 beats, 8 beats
+  - [ ] **Larger identical phrases are more significant** - an 8-beat repeated pattern is more meaningful than a 1-beat repeat
+  - [ ] Track phrase occurrences and locations for later reference
+- [ ] **Exclude uninteresting patterns** from phrase detection:
+  - [ ] Straight quarter notes (no variation)
+  - [ ] Straight eighth notes (no variation)
+  - [ ] Only patterns with **rhythmic variation** count as significant phrases
+- [ ] **Store detected phrases** as a song-specific pattern library:
+  - [ ] Phrases are remembered for use in density enhancement (Phase 2.3)
+  - [ ] When increasing density, prefer inserting detected patterns over simple interpolation
+  - [ ] Patterns are more interesting because they're derived from the song itself
   ```typescript
-  type PatternCategory =
-    | 'basic'      // quarter, half
-    | 'subdivision' // eighth, sixteenth
-    | 'triplet'    // triplet8, triplet4
-    | 'syncopated' // offbeat8, swing
-    | 'sparse'     // dotted4, dotted8, rest
-    | 'mixed';     // combinations
+  interface RhythmicPhrase {
+    pattern: QuantizedSubdivision[];  // The actual rhythm pattern
+    sizeInBeats: number;  // 1, 2, 4, or 8
+    occurrences: number[];  // Beat indices where this pattern occurs
+    significance: number;  // Weighted by size and occurrence count
+    hasVariation: boolean;  // Excludes straight quarters/eighths
+    availableForReuse: boolean;  // Can be inserted elsewhere for density
+  }
 
-  interface SubdivisionPattern {
-    name: string;
-    category: PatternCategory;
-    subdivisions: SubdivisionType[];
-    measures: number;  // Pattern length in measures
-    difficulty: number; // 1-10 scale
-    tags: string[];  // 'groovy', 'intense', 'chill', etc.
+  interface PhraseAnalysisResult {
+    phrases: RhythmicPhrase[];
+    mostSignificantPhrases: RhythmicPhrase[];  // Top N by significance score
+    phrasesBySize: Map<number, RhythmicPhrase[]>;  // Grouped by 1, 2, 4, 8 beats
+    patternLibrary: RhythmicPhrase[];  // Phrases available for density enhancement
   }
   ```
-- [ ] Create pattern library with common rhythmic patterns
-  - [ ] Basic 4/4 patterns (quarter notes, basic eighth)
-  - [ ] Syncopation patterns (offbeats, anticipations)
-  - [ ] Triplet patterns (shuffle feel, 6/8 feel)
-  - [ ] Mixed patterns (varying subdivisions per measure)
-  - [ ] Rest patterns (breathing room)
-
-### 2.2 Subdivision Generator Config
-- [ ] Define generation configuration
-  ```typescript
-  interface SubdivisionGeneratorConfig {
-    difficulty: DifficultyPreset;
-
-    // User Customization
-    measureStartOffset: number; // Offset in beats to designate "Beat 1" of a measure (since automatic measure detection is unreliable). This is an exposed, user-tweakable parameter.
-
-    // Density settings
-    maxDensity: SubdivisionType;  // 'quarter', 'eighth', 'sixteenth'
-    averageDensity: number;  // 0-1, target average density
-
-    // Pattern settings
-    patternLength: number;  // Measures per pattern
-    variationProbability: number;  // 0-1
-    repeatPatternMeasures: number;  // How many measures to repeat a pattern
-
-    // Audio influence
-    useAudioSuggestions: boolean;
-    audioSuggestionWeight: number;  // 0-1, how much to follow audio hints
-    preferredBands: ('low' | 'mid' | 'high')[];  // Which bands to trust more
-
-    // Transient filtering
-    minimumTransientIntensity: number;  // Default: 0.0 (catch all)
-
-    // Musical constraints
-    avoidConsecutiveRests: boolean;
-    maxConsecutiveDense: number;  // Max beats of high density in a row
-    enforceDownbeats: boolean;  // Always have beat 1
-  }
-
-  // Difficulty presets
-  const DIFFICULTY_CONFIGS: Record<DifficultyPreset, SubdivisionGeneratorConfig>
   ```
 
-### 2.3 Subdivision Generator Class
-- [ ] Create `SubdivisionGenerator` in `src/core/generation/SubdivisionGenerator.ts`
-  - [ ] Input: `UnifiedBeatMap`, optional `TransientAnalysis`, config
-  - [ ] Output: `GeneratedSubdivisionResult`
+### 2.2 Density Analysis & Natural Difficulty Detection
 
+**Goal**: Measure rhythmic density and determine what difficulty the unedited stream naturally represents.
+
+- [ ] Calculate **detected transients per beat** for each stream:
   ```typescript
-  class SubdivisionGenerator {
-    constructor(config: SubdivisionGeneratorConfig);
+  interface DensityMetrics {
+    transientsPerBeat: number;
+    densityCategory: 'sparse' | 'moderate' | 'dense';
+    naturalDifficulty: 'easy' | 'medium' | 'hard';
+    // What difficulty the unedited stream naturally maps to
+  }
+  ```
+- [ ] Determine **natural difficulty** based on density:
+  - [ ] High density (many transients per beat) → Unedited = hard
+  - [ ] Medium density → Unedited = medium
+  - [ ] Low density (sparse transients) → Unedited = easy
+- [ ] Track density per beat and per section for granular analysis
+- [ ] This determines the **baseline for simplification/interpolation**
 
-    generate(
-      unifiedBeatMap: UnifiedBeatMap,
-      transientAnalysis?: TransientAnalysis
-    ): GeneratedSubdivisionResult;
+### 2.3 Difficulty Variants Generation
 
-    // Pattern selection methods
-    private selectPatternForMeasure(
-      measureIndex: number,
-      transientHints: RhythmSuggestion[],
-      previousPattern: SubdivisionPattern | null
-    ): SubdivisionPattern;
+**Goal**: Create 3 difficulty variants for each band stream, with appropriate simplification or interpolation.
 
-    // Variation methods
-    private applyVariation(
-      pattern: SubdivisionPattern,
-      config: SubdivisionGeneratorConfig
-    ): SubdivisionPattern;
+- [ ] Generate difficulty variants based on source density:
 
-    // Audio-influenced selection
-    private getAudioInfluencedSubdivision(
-      beatIndex: number,
-      transientHints: RhythmSuggestion[]
-    ): SubdivisionType | null;
+  **For dense sources (unedited = hard):**
+  - [ ] **Hard**: Unedited stream (no changes)
+  - [ ] **Medium**: Simplify - remove some subdivisions
+  - [ ] **Easy**: Heavy simplification - keep only core beats
+
+  **For moderate sources (unedited = medium):**
+  - [ ] **Hard**: Interpolate additional subdivisions between detected transients
+  - [ ] **Medium**: Unedited stream (no changes)
+  - [ ] **Easy**: Simplify - remove some subdivisions
+
+  **For sparse sources (unedited = easy):**
+  - [ ] **Hard**: Heavy density enhancement
+    - [ ] **First priority**: Insert detected duplicate patterns from song-specific pattern library (more interesting, song-specific)
+    - [ ] **Fallback**: Simple grid interpolation if no suitable pattern exists or doesn't fit
+  - [ ] **Medium**: Moderate density enhancement (prefer patterns, fallback to interpolation)
+  - [ ] **Easy**: Unedited stream (no changes)
+
+- [ ] **Density enhancement priority order**:
+  1. **Detected pattern insertion** - Use a phrase from the pattern library if it fits the available space
+  2. **Simple interpolation** - Fill in grid subdivisions between existing transients (like existing interpolation mode)
+
+- [ ] **Mark each variant** with editing status:
+  ```typescript
+  interface DifficultyVariant {
+    difficulty: 'easy' | 'medium' | 'hard';
+    stream: QuantizedRhythm[];
+    isUnedited: boolean;  // true if this is the raw detected stream
+    editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
+    editAmount: number;  // 0-1, how much was changed
+    patternsInserted?: string[];  // IDs of patterns from library that were inserted
   }
 
-  interface GeneratedSubdivisionResult {
-    config: SubdivisionConfig;
-    // All 4 streams of generated rhythmic phrases, fully compatible with existing beat maps
-    streams: {
-      low: SubdividedBeatMap;      // Low frequency band rhythms
-      mid: SubdividedBeatMap;      // Mid frequency band rhythms
-      high: SubdividedBeatMap;     // High frequency band rhythms
-      composite: SubdividedBeatMap; // The primary, highest-quality combined map
+  interface BandDifficultyVariants {
+    band: 'low' | 'mid' | 'high';
+    variants: {
+      easy: DifficultyVariant;
+      medium: DifficultyVariant;
+      hard: DifficultyVariant;
     };
-    metadata: {
-      patternsUsed: string[];
-      audioInfluencedBeats: number;
-      averageDensity: number;
-      difficultyScore: number;
-      transientDensityValidation: {
-        retryCount: number;
-        sensitivityReductionApplied: number;
-        minIntervalDetected: number;
-      };
-    };
+    densityMetrics: DensityMetrics;
   }
   ```
 
-### 2.4 Difficulty-Based Generation Rules
-- [ ] Implement difficulty-specific logic
+- [ ] **Density enhancement logic** (for sparse sources needing harder difficulties):
+  - [ ] **Pattern insertion** (first priority):
+    - [ ] Find suitable gaps in the stream where a detected pattern could fit
+    - [ ] Match pattern size to available space (1/2/4/8 beats)
+    - [ ] Insert pattern from song-specific library
+    - [ ] More interesting than interpolation because pattern is from the song itself
+  - [ ] **Simple interpolation** (fallback):
+    - [ ] Similar to existing interpolation mode in the codebase
+    - [ ] Fill in subdivisions on the grid between detected transients
+    - [ ] Respect the per-beat grid decision (16th vs triplet) from Phase 1
+  - [ ] Respect the per-beat grid decision (16th vs triplet) from Phase 1
+  - [ ] Don't over-fill - maintain musical feel
 
-  **Easy:**
-  - Default to quarter notes
-  - Occasional eighth notes on strong beats
-  - Many rests for breathing room
-  - Never more than 2 consecutive non-rest beats
-  - Pattern length: 4-8 measures
+- [ ] **Simplification logic** (for dense sources needing easier difficulties):
+  - [ ] Prioritize keeping transients on strong beats (1, 3)
+  - [ ] Remove offbeat subdivisions first
+  - [ ] Respect detected phrase boundaries when possible
 
-  **Medium:**
-  - Mix of quarter and eighth
-  - Introduction of triplets in appropriate sections
-  - Some syncopation
-  - Rest patterns for contrast
-  - Pattern length: 2-4 measures
-
-  **Hard:**
-  - Full sixteenth notes allowed
-  - Complex syncopation patterns
-  - Rapid subdivision changes
-  - Minimal rests
-  - Pattern length: 1-2 measures (more variation)
-
-### 2.5 Tests
-- [ ] Unit tests for pattern library
-- [ ] Unit tests for `SubdivisionGenerator`
-- [ ] Verify difficulty constraints are respected
-- [ ] Test audio influence weighting
-- [ ] Integration test: generate subdivisions for known track
+### 2.4 Tests
+- [ ] Unit tests for phrase detection (varying sizes, significance scoring)
+- [ ] Unit tests for excluding straight quarter/eighth patterns
+- [ ] Unit tests for pattern library storage and retrieval
+- [ ] Unit tests for density calculation and categorization
+- [ ] Unit tests for natural difficulty detection
+- [ ] Unit tests for simplification logic
+- [ ] Unit tests for pattern insertion (density enhancement)
+- [ ] Unit tests for interpolation logic
+- [ ] Verify all 9 output streams are valid quantized rhythms
+- [ ] Verify `isUnedited` flag is correct for each variant
+- [ ] Verify pattern insertion is preferred over interpolation when patterns available
+- [ ] Integration test: process known track and verify difficulty variants
 
 ---
 
-## Phase 3: Rhythm Generator Orchestration
+## Phase 3: Rhythm Scoring & Composite Generation
 
-**Goal**: Create the orchestrator that combines multi-band analysis and subdivision generation into a cohesive pipeline.
+**Goal**: Score band streams for interest level, create composite streams by combining the best sections, and orchestrate the final output.
 
-### 3.1 Rhythm Generator Class
+**Input**: 9 difficulty variant streams from Phase 2 (3 difficulties × 3 bands).
+
+**Output**: Final generated rhythm with composite stream for each difficulty.
+
+### 3.1 Band Stream Scoring
+
+**Goal**: Evaluate the "interest" level of each band stream per section.
+
+- [ ] Implement scoring logic for rhythmic interest:
+  - [ ] Score based on **Inter-Onset Interval (IOI) density and variance**
+  - [ ] Score based on **Syncopation** (weighting transients on offbeats higher)
+  - [ ] Consider **phrase significance** from Phase 2 analysis
+  ```typescript
+  interface SectionScore {
+    beatRange: { start: number; end: number };
+    band: 'low' | 'mid' | 'high';
+    score: number;
+    factors: {
+      ioiVariance: number;
+      syncopationLevel: number;
+      phraseSignificance: number;
+    };
+  }
+  ```
+- [ ] Score per measure or per 4-measure section
+- [ ] Identify which band has the most interesting rhythm for each section
+
+### 3.2 Composite Stream Generation
+
+**Goal**: Create composite streams by slicing together the highest-scoring sections from each band.
+
+- [ ] For each difficulty level, create a composite stream:
+  - [ ] For each section, select the band with the highest interest score
+  - [ ] Slice that band's rhythm into the composite
+  - [ ] Handle transitions between bands smoothly
+  ```typescript
+  interface CompositeStream {
+    difficulty: 'easy' | 'medium' | 'hard';
+    stream: QuantizedRhythm[];
+    sections: CompositeSection[];  // Which band contributed to each section
+  }
+
+  interface CompositeSection {
+    beatRange: { start: number; end: number };
+    sourceBand: 'low' | 'mid' | 'high';
+    score: number;  // Why this band won this section
+  }
+  ```
+- [ ] Generate **3 composite streams** (one per difficulty)
+
+### 3.3 Rhythm Generator Orchestration
+
+**Goal**: Create the orchestrator that combines all phases into a cohesive pipeline.
+
 - [ ] Create `RhythmGenerator` in `src/core/generation/RhythmGenerator.ts`
   ```typescript
   interface RhythmGenerationOptions {
     difficulty: DifficultyPreset;
-
-    // Subdivision settings
-    subdivision: Partial<SubdivisionGeneratorConfig>;
-
-    // Audio analysis settings
-    useMultiBand: boolean;
-    preferredBands: string[];
-
+    
+    // Which stream to use as primary output
+    outputMode: 'composite' | 'low' | 'mid' | 'high';
+    
+    // User customization
+    measureStartOffset: number;  // Offset in beats for "Beat 1"
+    minimumTransientIntensity: number;  // Filter weak transients (default: 0.0)
+    
     // Seed for reproducibility
     seed?: string;
   }
@@ -458,69 +497,84 @@ Before quantization, validate that detected transients aren't too dense:
       interpolatedBeatMap: InterpolatedBeatMap
     ): Promise<GeneratedRhythm>;
 
-    // Pipeline steps
+    // Pipeline steps (orchestrates Phases 1-3)
     private async analyzeMultiBand(audioBuffer: AudioBuffer): Promise<MultiBandResult>;
-    private detectTransients(multiBand: MultiBandResult, unifiedMap: UnifiedBeatMap): TransientAnalysis;
-    private generateSubdivisions(unifiedMap: UnifiedBeatMap, transients: TransientAnalysis): GeneratedSubdivisionResult;
+    private detectTransients(multiBand: MultiBandResult): TransientAnalysis;
+    private quantizeTransients(transients: TransientAnalysis, unifiedMap: UnifiedBeatMap): QuantizationResult;
+    private analyzePhrasesAndVariants(quantized: QuantizationResult): BandDifficultyVariants[];
+    private scoreAndGenerateComposite(variants: BandDifficultyVariants[]): CompositeResult;
   }
 
   interface GeneratedRhythm {
+    // All available streams
     streams: {
-      low: SubdividedBeatMap;
-      mid: SubdividedBeatMap;
-      high: SubdividedBeatMap;
-      composite: SubdividedBeatMap;
+      low: DifficultyVariant;
+      mid: DifficultyVariant;
+      high: DifficultyVariant;
+      composite: DifficultyVariant;
     };
+    
+    // Analysis results
     transientAnalysis: TransientAnalysis;
-    quantizationResult: QuantizationResult;  // Includes density validation metadata
+    quantizationResult: QuantizationResult;
+    phraseAnalysis: PhraseAnalysisResult;
+    
+    // Metadata
     metadata: RhythmMetadata;
   }
 
   interface RhythmMetadata {
     difficulty: DifficultyPreset;
-    bandsAnalyzed: string[];  // ['low', 'mid', 'high']
+    bandsAnalyzed: ('low' | 'mid' | 'high')[];
     transientsDetected: number;
     transientsFilteredByIntensity: number;
     densityValidationRetries: number;
-    patternsUsed: string[];
+    phrasesDetected: number;
     averageDensity: number;
     generationConfig: RhythmGenerationOptions;
   }
   ```
 
-### 3.2 Pipeline Implementation
+### 3.4 Pipeline Implementation
 - [ ] Implement the full rhythm generation pipeline
 - [ ] Add progress callbacks for long-running generation
 - [ ] Support cancellation
 - [ ] Add caching for intermediate results
 
-### 3.3 Configuration Presets
+### 3.5 Configuration Presets
 - [ ] Create preset configurations
   ```typescript
   const RHYTHM_PRESETS = {
     casual: {
       difficulty: 'easy',
-      subdivision: { maxDensity: 'eighth', averageDensity: 0.3 },
+      outputMode: 'composite',
     },
     standard: {
       difficulty: 'medium',
-      subdivision: { maxDensity: 'eighth', averageDensity: 0.5 },
+      outputMode: 'composite',
     },
     challenge: {
       difficulty: 'hard',
-      subdivision: { maxDensity: 'sixteenth', averageDensity: 0.7 },
+      outputMode: 'composite',
     },
-    insane: {
+    bass: {
+      difficulty: 'medium',
+      outputMode: 'low',  // Use low-frequency band directly
+    },
+    fullIntensity: {
       difficulty: 'hard',
-      subdivision: { maxDensity: 'sixteenth', averageDensity: 0.9 },
+      outputMode: 'composite',
     }
   };
   ```
 
-### 3.4 Tests
-- [ ] Integration tests for full pipeline
+### 3.6 Tests
+- [ ] Unit tests for scoring logic
+- [ ] Unit tests for composite generation
+- [ ] Integration tests for full pipeline (all 3 phases)
 - [ ] Performance tests (generation time < 5 seconds for 3-minute song)
-- [ ] Verify all 4 output streams are valid
+- [ ] Verify all 4 output streams per difficulty are valid
+- [ ] Verify composite sections reference correct source bands
 
 ---
 
@@ -590,10 +644,10 @@ Before quantization, validate that detected transients aren't too dense:
    - ✅ **Resolved**: Implemented density validation with exponential sensitivity reduction (3 retries)
 
 2. **Pattern memory**: How to avoid repetitive patterns without sounding random?
-   - Consider: Markov chains, weighted random selection with history
+   - ✅ **Resolved**: Song-specific pattern library derived from detected duplicate phrases. When increasing density, prefer inserting detected patterns (song-specific, more interesting) over simple interpolation.
 
 3. **Swing detection**: Can swing feel be reliably detected from transient timing?
-   - Consider: Statistical analysis of micro-timing deviations
+   - Consider: Statistical analysis of micro-timing deviations (future enhancement)
 
 ### Design Questions
 1. **Band selection**: Should band selection be automatic or configurable?
@@ -613,6 +667,9 @@ Before quantization, validate that detected transients aren't too dense:
 2. Difficulty settings produce noticeably different rhythmic density
 3. Generation is deterministic when given same seed
 4. Generation completes in reasonable time (< 5 seconds for 3-minute song)
-5. All 4 streams (low/mid/high/composite) are valid and usable
-6. API is simple and discoverable
-7. Documentation is complete and accurate
+5. All 12 streams are valid and usable (3 bands × 3 difficulties + 3 composites)
+6. Per-beat grid detection (16th vs triplet) produces accurate results
+7. Phrase detection finds meaningful rhythmic patterns in the source material
+8. Difficulty variants correctly marked as edited vs unedited
+9. API is simple and discoverable
+10. Documentation is complete and accurate
