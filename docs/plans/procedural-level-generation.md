@@ -135,17 +135,21 @@ Audio → Beat Detection → Interpolation → Unified Beat Map
   }
   ```
 
-### 1.3 Transient Detector (Separate from Ellis Beat Detection)
+### 1.3 Multi-Band Transient Detector (Separate from Ellis Beat Detection)
 - [ ] Create `TransientDetector` class in `src/core/analysis/beat/TransientDetector.ts`
-  - [ ] Implement spectral flux algorithm (different from Ellis)
-  - [ ] Add adaptive thresholding
-  - [ ] Support per-band transient detection
-  - [ ] Cross-reference transients with quarter note beat map
+  - [ ] Implement varied detection strategies tailored to the frequency band:
+    - [ ] **Low Band**: Energy-based detection / Subband Envelope (great for clear kick/bass transients).
+    - [ ] **Mid Band**: Spectral Flux algorithm (reliable for snare, vocals, and harmonic onsets).
+    - [ ] **High Band**: High-Frequency Content (HFC) / Spectral Flux (ideal for hi-hats, cymbals, air).
+  - [ ] Add adaptive thresholding to adjust to the song's dynamic range.
+  - [ ] Support concurrent per-band transient detection.
+  - [ ] Cross-reference transients with quarter note beat map (Rhythmic Quantization & Grid Mapping) to lock absolute timestamps to a rhythmic grid. **Scope is strictly limited to snapping to 16th notes and 8th note triplets.**
   ```typescript
   interface TransientResult {
     timestamp: number;
     intensity: number;
     band: string;  // Which frequency band detected this
+    detectionMethod: 'energy' | 'spectral_flux' | 'hfc';
     nearestBeat?: {
       index: number;
       distance: number;  // How far from quarter note grid
@@ -159,22 +163,39 @@ Audio → Beat Detection → Interpolation → Unified Beat Map
   }
   ```
 
-### 1.4 Rhythm Suggestion Engine
-- [ ] Create rhythm suggestion logic that maps transients to subdivision hints
+### 1.4 Rhythm Extraction & Scoring Engine
+- [ ] Create rhythm extraction logic that maps transients into discrete rhythmic phrases for *each* frequency band.
+- [ ] Implement scoring logic to evaluate the "interest" level of rhythms within each band over a given window (e.g., 1 measure):
+  - [ ] Score based on Inter-Onset Interval (IOI) density and variance.
+  - [ ] Score based on Syncopation (weighting transients that land on offbeats or micro-subdivisions higher than simple downbeats).
+- [ ] Implement a **Rhythm Slicer/Combiner**. The program will evaluate the scores of the Low, Mid, and High band rhythms for a given section, slicing pieces from the strongest/most interesting bands into a final, composite generated subdivision map.
+  - [ ] **Crucially**, the system must provide access to all 4 streams: the fully preserved, quantized rhythmic phrases for Bass, Mid, and High bands, plus the final aggregated composite stream (which will be the primary, highest-quality map).
   ```typescript
+  interface RhythmPhrase {
+    band: string;  // Low, Mid, High
+    measureIndex: number;
+    subdivisions: SubdivisionType[];
+    interestScore: number;  // Based on syncopation and density
+  }
+
+  // A complete stream mapped onto the beats
+  interface RhythmStream extends SubdividedBeatMap {
+    bandSource: 'bass' | 'mid' | 'high' | 'composite';
+  }
+
   interface RhythmSuggestion {
     beatIndex: number;
     suggestedSubdivision: SubdivisionType;
     confidence: number;
-    source: 'transient' | 'energy' | 'pattern';
-    bands: string[];  // Which bands contributed
+    source: 'transient' | 'energy' | 'pattern' | 'composite_slicer';
+    dominantBand: string;  // Which band won the slice for this section
   }
   ```
-- [ ] Detect common patterns:
+- [ ] Detect and extract common patterns from the transients:
   - [ ] Offbeat patterns (transients on &)
   - [ ] Syncopation (transients between grid)
   - [ ] Triple feel (transients suggest triplet subdivision)
-  - [ ] Swing feel (2:1 ratio transients)
+  - [ ] Swing feel (consistent micro-timing deviation from mathematical grid)
 
 ### 1.5 Tests
 - [ ] Unit tests for band-pass filter
@@ -221,6 +242,9 @@ Audio → Beat Detection → Interpolation → Unified Beat Map
   ```typescript
   interface SubdivisionGeneratorConfig {
     difficulty: DifficultyPreset;
+    
+    // User Customization
+    measureStartOffset: number; // Offset in beats to designate "Beat 1" of a measure (since automatic measure detection is unreliable). This is an exposed, user-tweakable parameter.
     
     // Density settings
     maxDensity: SubdivisionType;  // 'quarter', 'eighth', 'sixteenth'
@@ -282,6 +306,13 @@ Audio → Beat Detection → Interpolation → Unified Beat Map
   
   interface GeneratedSubdivisionResult {
     config: SubdivisionConfig;
+    // All 4 streams of generated rhythmic phrases, fully compatible with existing beat maps
+    streams: {
+      bass: SubdividedBeatMap;
+      mid: SubdividedBeatMap;
+      high: SubdividedBeatMap;
+      composite: SubdividedBeatMap; // The primary, highest-quality combined map
+    };
     metadata: {
       patternsUsed: string[];
       audioInfluencedBeats: number;
