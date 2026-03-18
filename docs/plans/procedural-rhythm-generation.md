@@ -189,70 +189,85 @@ Before quantization, validate that detected transients aren't too dense:
 
 **Goal**: For each beat, determine whether transients fit better on a straight 16th note grid or an 8th note triplet grid, then quantize to the chosen grid.
 
-- [ ] **Per-beat grid detection algorithm**:
-  - [ ] For each beat, extract transients within that beat's time range
-  - [ ] Lay out a **straight 16th note grid** for the beat
-  - [ ] Calculate **total ms offset** of all transients from the 16th grid
-  - [ ] Lay out an **8th note triplet grid** for the beat
-  - [ ] Calculate **total ms offset** of all transients from the triplet grid
-  - [ ] **Whichever grid has smaller total offset** = use that grid for this beat
+##### Interfaces
+
+- [ ] **Grid decision metadata** (produced during grid detection):
   ```typescript
   interface GridDecision {
     beatIndex: number;
     selectedGrid: 'straight_16th' | 'triplet_8th';
-    straightOffset: number;   // Total ms offset from 16th grid
-    tripletOffset: number;    // Total ms offset from triplet grid
-    confidence: number;       // How much better the chosen grid fits
+    straightAvgOffset: number;   // Average ms offset per transient from 16th grid
+    tripletAvgOffset: number;    // Average ms offset per transient from triplet grid
+    transientCount: number;      // Number of transients in this beat
+    confidence: number;          // How much better the chosen grid fits
   }
   ```
-- [ ] **Quantize to chosen grid**:
-  - [ ] For each beat, use the selected grid (16th or triplet)
-  - [ ] Snap transients to nearest grid point (within tolerance)
-  - [ ] Track which transients were quantized and by how much
-- [ ] **Handle edge cases**:
-  - [ ] Transients too far from any grid point (discard or mark as "unquantized")
-  - [ ] Multiple transients snapping to same grid point (keep strongest)
-  - [ ] Beats with no transients (skip, no grid decision needed)
-  ```typescript
-  interface QuantizedRhythm {
-    beatIndex: number;
-    gridUsed: 'straight_16th' | 'triplet_8th';
-    subdivisions: QuantizedSubdivision[];
-    sourceTransientCount: number;
-    filteredTransientCount: number;  // Removed by intensity filter
-  }
 
-  interface QuantizedSubdivision {
-    subdivisionType: SubdivisionType;
-    gridPosition: number;  // 0-15 for 16th, 0-11 for triplet (per beat)
-    intensity: number;  // From source transient
+- [ ] **Core beat type** - a single quantized note:
+  ```typescript
+  interface GeneratedBeat {
+    timestamp: number;           // Quantized time in seconds
+    beatIndex: number;           // Index into UnifiedBeatMap.beats[] - which quarter note this belongs to
+    gridPosition: number;        // Position within that beat (0-3 for 16th, 0-2 for triplet)
+    gridType: 'straight_16th' | 'triplet_8th';
+    intensity: number;           // Transient strength (0.0 - 1.0)
     band: 'low' | 'mid' | 'high';
-    quantizationError: number;  // How far it was moved (ms)
+    quantizationError?: number;  // How far it was moved from original (ms), for debugging
   }
   ```
+
+- [ ] **Per-band rhythm map** - a complete rhythm chart for one frequency band:
+  ```typescript
+  interface GeneratedRhythmMap {
+    audioId: string;
+    duration: number;
+    beats: GeneratedBeat[];      // All quantized beats for this band
+    gridDecisions: GridDecision[];  // Per-beat grid choices (16th vs triplet)
+  }
   ```
 
-#### 1.4.4 Phase 1 Output
-
-**Output**: 3 quantized rhythm streams (low/mid/high) that are fully compatible with existing beat map infrastructure.
-
-- [ ] Ensure output format matches `SubdividedBeatMap` structure
-- [ ] Streams contain quantized subdivision data without named subdivision types (no "dotted4", "triplet8", etc.)
-- [ ] Each stream is a complete, playable rhythm chart for its frequency band
+- [ ] **Complete Phase 1 output** - all 3 band streams plus metadata:
   ```typescript
-  interface Phase1Output {
+  interface QuantizedBandStreams {
     streams: {
-      low: QuantizedRhythm[];   // Low frequency band
-      mid: QuantizedRhythm[];    // Mid frequency band
-      high: QuantizedRhythm[];   // High frequency band
+      low: GeneratedRhythmMap;   // Low frequency band
+      mid: GeneratedRhythmMap;    // Mid frequency band
+      high: GeneratedRhythmMap;   // High frequency band
     };
     metadata: {
-      gridDecisions: GridDecision[];  // Per-beat: 16th or triplet
       densityValidation: DensityValidationResult;
       transientsFilteredByIntensity: number;
     };
   }
   ```
+
+##### Algorithm
+
+- [ ] **Per-beat grid detection**:
+  - [ ] For each beat, extract transients within that beat's time range
+  - [ ] Lay out a **straight 16th note grid** for the beat
+  - [ ] Calculate **average ms offset per transient** from the 16th grid (total offset / transient count)
+  - [ ] Lay out an **8th note triplet grid** for the beat
+  - [ ] Calculate **average ms offset per transient** from the triplet grid (total offset / transient count)
+  - [ ] **Whichever grid has smaller average offset** = use that grid for this beat
+  - [ ] Record decision in `GridDecision` for each beat
+- [ ] **Quantize to chosen grid**:
+  - [ ] For each beat, use the selected grid (16th or triplet)
+  - [ ] Snap transients to nearest grid point (within tolerance)
+  - [ ] Create `GeneratedBeat` for each quantized transient
+  - [ ] Track quantization error for debugging
+- [ ] **Handle edge cases**:
+  - [ ] Transients too far from any grid point (discard or mark as "unquantized")
+  - [ ] Multiple transients snapping to same grid point (keep strongest)
+  - [ ] Beats with no transients (skip, no grid decision needed)
+
+#### 1.4.4 Phase 1 Output Summary
+
+**Output**: `QuantizedBandStreams` containing 3 quantized rhythm streams (low/mid/high).
+
+- [ ] Each stream is a `GeneratedRhythmMap` - a complete, playable rhythm chart
+- [ ] Streams are compatible with existing beat map infrastructure
+- [ ] No manual-subdivision metadata (`SubdivisionConfig`, `isDetected`, etc.) - those are manual-path concerns
 
 ### 1.5 Tests
 - [ ] Unit tests for band-pass filter
@@ -294,7 +309,7 @@ Before quantization, validate that detected transients aren't too dense:
   - [ ] Patterns are more interesting because they're derived from the song itself
   ```typescript
   interface RhythmicPhrase {
-    pattern: QuantizedSubdivision[];  // The actual rhythm pattern
+    pattern: GeneratedBeat[];  // The actual rhythm pattern
     sizeInBeats: number;  // 1, 2, 4, or 8
     occurrences: number[];  // Beat indices where this pattern occurs
     significance: number;  // Weighted by size and occurrence count
@@ -362,7 +377,7 @@ Before quantization, validate that detected transients aren't too dense:
   ```typescript
   interface DifficultyVariant {
     difficulty: 'easy' | 'medium' | 'hard';
-    stream: QuantizedRhythm[];
+    stream: GeneratedBeat[];
     isUnedited: boolean;  // true if this is the raw detected stream
     editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
     editAmount: number;  // 0-1, how much was changed
@@ -456,7 +471,7 @@ Before quantization, validate that detected transients aren't too dense:
   ```typescript
   interface CompositeStream {
     difficulty: 'easy' | 'medium' | 'hard';
-    stream: QuantizedRhythm[];
+    stream: GeneratedBeat[];
     sections: CompositeSection[];  // Which band contributed to each section
   }
 
