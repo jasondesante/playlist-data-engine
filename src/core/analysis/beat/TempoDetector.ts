@@ -112,13 +112,32 @@ export class TempoDetector {
         );
 
         // Step 3: Find primary tempo (peak in weighted autocorrelation)
-        const primaryLag = this.findPeak(weightedAutocorr, 0, weightedAutocorr.length);
-        const primaryBpm = this.lagToBpm(primaryLag + autocorr.minLag, hopSizeSeconds);
+        let primaryLag = this.findPeak(weightedAutocorr, 0, weightedAutocorr.length);
 
-        // Step 4: TPS2/TPS3 calculations (Ellis Equations 7 & 8) are kept for algorithm completeness
-        // but no longer used for meter detection - meter is now configured manually via DownbeatConfig
-        // const tps2 = this.calculateTPS2(autocorr.values, primaryLag);
-        // const tps3 = this.calculateTPS3(autocorr.values, primaryLag);
+        // Step 4: Octave resolution using TPS2 (Ellis Equation 7)
+        // When enabled, compare TPS2 scores to prefer tempos with strong half-period evidence
+        // This prevents the algorithm from locking onto half-tempo (e.g., 73 BPM instead of 146 BPM)
+        if (this.config.useOctaveResolution) {
+            // Calculate TPS2 for the current primary candidate
+            const primaryTps2 = this.calculateTPS2(autocorr.values, primaryLag);
+
+            // Check for a double-tempo candidate (half the lag = double BPM)
+            // If primaryLag corresponds to 73 BPM, halfLag corresponds to 146 BPM
+            const halfLag = Math.floor(primaryLag / 2);
+
+            // Only consider the half-lag if it's valid and significantly different
+            if (halfLag >= 1 && halfLag < weightedAutocorr.length) {
+                const halfLagTps2 = this.calculateTPS2(autocorr.values, halfLag);
+
+                // If the faster tempo has a stronger TPS2 score, use it instead
+                // TPS2 prefers tempos where the half-period also has strong energy
+                if (halfLagTps2 > primaryTps2) {
+                    primaryLag = halfLag;
+                }
+            }
+        }
+
+        const primaryBpm = this.lagToBpm(primaryLag + autocorr.minLag, hopSizeSeconds);
 
         // Secondary tempo is at half the primary period (most common case)
         const secondaryBpm = primaryBpm / 2;
