@@ -43,13 +43,22 @@ interface AutocorrelationResult {
  * 1. Compute autocorrelation of the onset strength envelope
  * 2. Apply perceptual weighting that biases toward 120 BPM
  * 3. Find the peak that maximizes the weighted autocorrelation
- * 4. Use TPS2/TPS3 to determine duple vs triple meter
+ * 4. (Optional) Use TPS2 for octave resolution to prevent half-tempo detection
+ *
+ * ## Octave Resolution (TPS2)
+ * The perceptual weighting cannot distinguish between half/double tempo (e.g., 73 BPM vs 146 BPM).
+ * When `useOctaveResolution` is enabled, TPS2 (Tempo Period Strength for duple meter) is used
+ * to prefer tempos with strong half-period evidence. This improved accuracy from 77% to 84%
+ * in the original Ellis paper.
+ *
+ * @see {@link https://www.ee.columbia.edu/~dpwe/pubs/Ellis07-beattrack.pdf|Ellis 2007 Paper}
  *
  * @example
  * ```typescript
  * const detector = new TempoDetector({
  *   tempoCenter: 0.5,  // 120 BPM
  *   tempoWidth: 1.4,   // octaves
+ *   useOctaveResolution: true,  // Enable TPS2 octave resolution
  * });
  *
  * const estimate = detector.estimateTempo(onsetEnvelope, hopSize);
@@ -74,6 +83,20 @@ export class TempoDetector {
      * Implements Ellis Section 3.2:
      * - Autocorrelation with perceptual weighting
      * - TPS2/TPS3 for duple/triple meter detection
+     *
+     * ## Octave Resolution
+     * When `useOctaveResolution` is enabled (config option), this method uses TPS2
+     * (Tempo Period Strength for duple meter) to resolve tempo octave ambiguity.
+     *
+     * The problem: the perceptual weighting gives equal preference to tempos at
+     * half/double the true tempo (e.g., 73 BPM vs 146 BPM). This causes the
+     * algorithm to sometimes lock onto the wrong octave.
+     *
+     * The solution: TPS2 combines the main tempo with its half-period energy:
+     * `TPS2(τ) = TPS(τ) + 0.5×TPS(2τ) + 0.25×TPS(2τ-1) + 0.25×TPS(2τ+1)`
+     *
+     * Tempos with strong half-period evidence (indicating the correct octave)
+     * will have higher TPS2 scores, allowing us to prefer the true tempo.
      *
      * @param onsetEnvelope - Onset strength envelope from OSE calculation
      * @param hopSizeSeconds - Hop size in seconds (time between envelope frames)
