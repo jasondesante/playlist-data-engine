@@ -298,11 +298,13 @@ Before quantization, validate that detected transients aren't too dense:
 
 **Goal**: Find duplicate rhythmic phrases to identify distinct rhythmic motifs specific to the song. These detected phrases form a **song-specific pattern library** used later for density enhancement.
 
-- [ ] Scan quantized streams for **duplicate multi-beat phrases**:
+- [ ] Scan quantized streams for **duplicate multi-beat phrases** (per band):
   - [ ] Check phrase sizes: 1 beat, 2 beats, 4 beats, 8 beats
   - [ ] **Larger identical phrases are more significant** - an 8-beat repeated pattern is more meaningful than a 1-beat repeat
   - [ ] **More occurrences increases significance** - a phrase that appears 10 times is more noteworthy than one that appears twice
-  - [ ] Track phrase occurrences and locations for later reference
+  - [ ] Track phrase occurrences with timestamps for pitch detection integration
+  - [ ] Record `sourceBand` for each phrase (which frequency band it was detected in)
+  - [ ] Store `startTimestamp`/`endTimestamp` for each occurrence (enables pitch analysis of that audio segment)
 - [ ] **Exclude uninteresting patterns** from phrase detection:
   - [ ] Straight quarter notes (no variation)
   - [ ] Straight eighth notes (no variation)
@@ -312,10 +314,17 @@ Before quantization, validate that detected transients aren't too dense:
   - [ ] When increasing density, prefer inserting detected patterns over simple interpolation
   - [ ] Patterns are more interesting because they're derived from the song itself
   ```typescript
+  interface PhraseOccurrence {
+    beatIndex: number;       // Index into UnifiedBeatMap.beats[]
+    startTimestamp: number;  // Start time in seconds (for pitch analysis reference)
+    endTimestamp: number;    // End time in seconds
+  }
+
   interface RhythmicPhrase {
     pattern: GeneratedBeat[];  // The actual rhythm pattern
     sizeInBeats: number;  // 1, 2, 4, or 8
-    occurrences: number[];  // Beat indices where this pattern occurs
+    sourceBand: 'low' | 'mid' | 'high';  // Which frequency band this phrase was detected in
+    occurrences: PhraseOccurrence[];  // All locations where this pattern occurs
     significance: number;  // Weighted by size and occurrence count
     hasVariation: boolean;  // Excludes straight quarters/eighths
     availableForReuse: boolean;  // Can be inserted elsewhere for density
@@ -323,12 +332,17 @@ Before quantization, validate that detected transients aren't too dense:
 
   interface PhraseAnalysisResult {
     phrases: RhythmicPhrase[];
+    phrasesByBand: Map<'low' | 'mid' | 'high', RhythmicPhrase[]>;  // Phrases grouped by source band
     mostSignificantPhrases: RhythmicPhrase[];  // Top N by significance score
     phrasesBySize: Map<number, RhythmicPhrase[]>;  // Grouped by 1, 2, 4, 8 beats
     patternLibrary: RhythmicPhrase[];  // Phrases available for density enhancement
   }
   ```
-  ```
+
+  > **Note for Pitch Detection Integration**: The `sourceBand` and `PhraseOccurrence.timestamp` fields are essential for the companion pitch detection plan. When analyzing pitch for a detected phrase, the pitch detector will:
+  > 1. Use `sourceBand` to know which frequency range to analyze
+  > 2. Use `startTimestamp`/`endTimestamp` to extract the exact audio segment
+  > 3. Associate detected pitches with the same phrase occurrences across the song
 
 ### 2.2 Density Analysis & Natural Difficulty Detection
 
@@ -354,6 +368,8 @@ Before quantization, validate that detected transients aren't too dense:
 - [ ] Unit tests for phrase detection (varying sizes, significance scoring)
 - [ ] Unit tests for excluding straight quarter/eighth patterns
 - [ ] Unit tests for pattern library storage and retrieval
+- [ ] Unit tests for `sourceBand` tracking (verify phrases are attributed to correct band)
+- [ ] Unit tests for `PhraseOccurrence` timestamps (verify start/end times are accurate)
 - [ ] Unit tests for density calculation and categorization
 - [ ] Unit tests for natural difficulty detection
 - [ ] Verify phrase library is populated correctly
@@ -632,7 +648,9 @@ Since the composite already represents one difficulty level (its natural difficu
   - [ ] Create structured tables for methods (with Returns/Description columns)
   - [ ] Create frequency bands reference table (low/mid/high Hz ranges)
   - [ ] Create output streams table (low/mid/high/composite with purpose descriptions)
+  - [ ] Create phrase analysis table documenting `RhythmicPhrase` and `PhraseOccurrence` fields (for pitch detection integration)
   - [ ] Add cross-references to BEAT_DETECTION.md for algorithm details
+  - [ ] Add cross-reference to pitch-detection-button-mapping.md for phrase/pitch correlation
   - [ ] Add "Also known as" aliases where helpful (e.g., *transient detection* ↔ *onset detection*)
 
 ### 5.3 Update BEAT_DETECTION.md
@@ -649,6 +667,10 @@ Since the composite already represents one difficulty level (its natural difficu
 - [ ] Add section on scoring and composite generation
   - [ ] Explain IOI variance, syncopation scoring, phrase significance
   - [ ] Document the slicing algorithm for composite creation
+- [ ] Add section on phrase detection
+  - [ ] Explain how phrases are detected per-band (low/mid/high)
+  - [ ] Document that each phrase stores `sourceBand` indicating its frequency band origin
+  - [ ] Document that each occurrence stores `startTimestamp`/`endTimestamp` for precise audio location
 - [ ] Add usage examples for common workflows:
   - [ ] Basic usage with `AudioAnalyzer.generateRhythm()`
   - [ ] Generate rhythms with default settings

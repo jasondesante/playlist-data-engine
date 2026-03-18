@@ -12,7 +12,10 @@ The button mapping uses pitch information to create patterns that follow the mel
 ## Relationship to Companion Plan
 
 This plan **depends on** `procedural-rhythm-generation.md`:
-- Rhythm generation produces `SubdividedBeatMap` (WHEN notes happen)
+- Rhythm generation produces `GeneratedRhythm` containing:
+  - 3 difficulty variants (easy/medium/hard) of a composite stream
+  - Individual band streams (low/mid/high) for reference
+  - Analysis results (transients, phrases, density metrics)
 - This plan produces button assignments (WHAT to press)
 - Together they create a complete playable level
 
@@ -27,9 +30,12 @@ The engine already has:
 - ✅ Multi-band analysis (from rhythm generation plan)
 
 After rhythm generation plan completes:
-- ✅ `SubdividedBeatMap` with rhythmic patterns
-- ✅ `TransientAnalysis` with band-specific transients
-- ✅ 4 rhythm streams (bass/mid/high/composite)
+- ✅ `GeneratedRhythm` with:
+  - 3 difficulty variants (`easy`/`medium`/`hard` as `DifficultyVariant`)
+  - 3 band streams (`low`/`mid`/`high` as `GeneratedRhythmMap`)
+  - 1 composite stream (`CompositeStream`)
+  - Analysis results (`TransientAnalysis`, `PhraseAnalysisResult`, `DensityMetrics`)
+  - Rich metadata (`RhythmMetadata`)
 
 ---
 
@@ -52,6 +58,21 @@ After rhythm generation plan completes:
     hopSize: number;  // In samples
   }
 
+  // Re-exported from rhythm generation for reference
+  interface PhraseOccurrence {
+    beatIndex: number;       // Index into UnifiedBeatMap.beats[]
+    startTimestamp: number;  // Start time in seconds (for pitch analysis)
+    endTimestamp: number;    // End time in seconds
+  }
+
+  interface RhythmicPhrase {
+    pattern: GeneratedBeat[];  // The actual rhythm pattern
+    sizeInBeats: number;       // 1, 2, 4, or 8
+    sourceBand: 'low' | 'mid' | 'high';  // Which band this phrase was detected in
+    occurrences: PhraseOccurrence[];     // All locations where this pattern occurs
+    significance: number;      // Weighted by size and occurrence count
+  }
+
   interface PitchResult {
     timestamp: number;
     frequency: number;  // Hz, or 0 if no pitch detected
@@ -64,6 +85,7 @@ After rhythm generation plan completes:
     pitches: PitchResult[];
     melodyContour: MelodyContour;
     keyHint: KeyHint | null;
+    linkedPhrases: RhythmicPhrase[];  // Phrases with pitch correlation
   }
   ```
 
@@ -114,8 +136,8 @@ After rhythm generation plan completes:
 - [ ] Use band selection to inform button generation
   ```typescript
   interface MultiBandPitchAnalysis {
-    primaryBand: string;  // Band with best pitch confidence
-    bandAnalyses: Map<string, PitchAnalysis>;
+    primaryBand: 'low' | 'mid' | 'high';  // Band with best pitch confidence
+    bandAnalyses: Map<'low' | 'mid' | 'high', PitchAnalysis>;
     combinedMelody: MelodyContour;
   }
   ```
@@ -125,6 +147,10 @@ After rhythm generation plan completes:
   - [ ] Map pitch results to nearest beat positions
   - [ ] Calculate pitch direction between consecutive beats
   - [ ] Identify pitch events that align with transients
+  - [ ] **Integrate with `RhythmicPhrase` from rhythm generation**:
+    - [ ] Use `RhythmicPhrase.sourceBand` to know which frequency range to analyze
+    - [ ] Use `PhraseOccurrence.startTimestamp`/`endTimestamp` to extract exact audio segments
+    - [ ] Associate detected pitches with phrase occurrences across the song
   ```typescript
   interface PitchAtBeat {
     beatIndex: number;
@@ -137,7 +163,8 @@ After rhythm generation plan completes:
   interface LinkedPitchAnalysis {
     pitchByBeat: PitchAtBeat[];
     melodyContour: MelodyContour;
-    dominantBand: string;
+    dominantBand: 'low' | 'mid' | 'high';
+    phrasePitchCorrelation: Map<string, PitchResult[]>;  // phrase ID -> pitches
   }
   ```
 
@@ -191,6 +218,17 @@ After rhythm generation plan completes:
     | 'directional'  // Up pitch = up button, down pitch = down button
     | 'chromatic'    // Each semitone maps to different key
     | 'interval';    // Intervals determine button changes
+
+  // Re-exported from rhythm generation for reference
+  interface GeneratedBeat {
+    timestamp: number;           // Quantized time in seconds
+    beatIndex: number;           // Index into UnifiedBeatMap.beats[]
+    gridPosition: number;        // Position within that beat (0-3 for 16th, 0-2 for triplet)
+    gridType: 'straight_16th' | 'triplet_8th';
+    intensity: number;           // Transient strength (0.0 - 1.0)
+    band: 'low' | 'mid' | 'high';
+    quantizationError?: number;  // How far it was moved from original (ms)
+  }
   ```
 
 ### 2.2 Button Pattern Vocabulary
@@ -224,10 +262,11 @@ After rhythm generation plan completes:
   class ButtonMapper {
     constructor(config: ButtonMappingConfig);
 
+    // Main entry point - takes GeneratedRhythm, outputs mapped variant
     map(
-      subdividedBeatMap: SubdividedBeatMap,
-      pitchAnalysis?: LinkedPitchAnalysis,
-      transientAnalysis?: TransientAnalysis
+      generatedRhythm: GeneratedRhythm,
+      difficulty: 'easy' | 'medium' | 'hard',  // Which variant to map
+      pitchAnalysis?: LinkedPitchAnalysis
     ): MappedLevelResult;
 
     // Pitch-influenced mapping
@@ -238,7 +277,7 @@ After rhythm generation plan completes:
 
     // Pattern selection
     private selectButtonPattern(
-      subdivisionType: SubdivisionType,
+      gridType: 'straight_16th' | 'triplet_8th',
       measureIndex: number
     ): ButtonPattern;
 
@@ -257,8 +296,12 @@ After rhythm generation plan completes:
   }
 
   interface MappedLevelResult {
-    beatMap: SubdividedBeatMap;  // Now with requiredKey populated
-    metadata: {
+    // The selected difficulty variant with keys assigned
+    variant: DifficultyVariant;
+    // Original rhythm metadata preserved
+    rhythmMetadata: RhythmMetadata;
+    // Button mapping metadata
+    buttonMetadata: {
       keysUsed: string[];
       chordCount: number;
       averageKeysPerBeat: number;
@@ -335,13 +378,20 @@ After rhythm generation plan completes:
 
 ### 2.6 Combining Rhythm Band Selection with Pitch
 - [ ] Implement band-aware button mapping
-  - If rhythm used 'bass' band for a section, use same band for pitch
+  - If rhythm used 'low' band for a section, use same band for pitch
   - If rhythm used 'mid' band, focus pitch detection there
   - Store band selection from rhythm generation in metadata
   ```typescript
+  // Re-exported from rhythm generation for reference
+  interface CompositeSection {
+    beatRange: { start: number; end: number };
+    sourceBand: 'low' | 'mid' | 'high';
+    score: number;  // Why this band won this section
+  }
+
   interface BandAwareMapping {
-    rhythmBand: string;  // From rhythm generation
-    pitchBand: string;   // Usually matches, but can differ
+    rhythmBand: 'low' | 'mid' | 'high';  // From CompositeSection.sourceBand
+    pitchBand: 'low' | 'mid' | 'high';   // Usually matches, but can differ
     useConsistentBands: boolean;
   }
   ```
@@ -390,22 +440,61 @@ After rhythm generation plan completes:
 
     // Pipeline steps
     private async generateRhythm(...): Promise<GeneratedRhythm>;
-    private async detectPitch(audioBuffer: AudioBuffer, dominantBand: string): Promise<LinkedPitchAnalysis>;
+    private async detectPitch(audioBuffer: AudioBuffer, dominantBand: 'low' | 'mid' | 'high'): Promise<LinkedPitchAnalysis>;
     private mapButtons(
       rhythm: GeneratedRhythm,
       pitch: LinkedPitchAnalysis | null
     ): MappedLevelResult;
   }
 
-  interface GeneratedLevel {
-    beatMap: SubdividedBeatMap;  // Fully generated with keys
-    rhythmStreams: {
-      bass: SubdividedBeatMap;
-      mid: SubdividedBeatMap;
-      high: SubdividedBeatMap;
-      composite: SubdividedBeatMap;
+  // Re-exported from rhythm generation for reference
+  interface DifficultyVariant {
+    difficulty: 'easy' | 'medium' | 'hard';
+    stream: GeneratedBeat[];
+    isUnedited: boolean;  // true for the composite's natural difficulty
+    editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
+    editAmount: number;  // 0-1, how much was changed
+    patternsInserted?: string[];  // IDs of patterns inserted (if any)
+  }
+
+  interface GeneratedRhythm {
+    // 3 difficulty variants of the composite stream
+    difficultyVariants: {
+      easy: DifficultyVariant;
+      medium: DifficultyVariant;
+      hard: DifficultyVariant;
     };
+
+    // Individual band streams (for reference/advanced use)
+    bandStreams: {
+      low: GeneratedRhythmMap;
+      mid: GeneratedRhythmMap;
+      high: GeneratedRhythmMap;
+    };
+
+    // The composite (unedited baseline)
+    composite: CompositeStream;
+
+    // Analysis results
+    transientAnalysis: TransientAnalysis;
+    quantizationResult: QuantizedBandStreams;
+    phraseAnalysis: PhraseAnalysisResult;
+
+    // Metadata
+    metadata: RhythmMetadata;
+  }
+
+  interface GeneratedLevel {
+    // The selected difficulty variant with keys assigned
+    variant: DifficultyVariant;
+
+    // Original rhythm outputs preserved
+    rhythm: GeneratedRhythm;
+
+    // Pitch analysis results
     pitchAnalysis: LinkedPitchAnalysis | null;
+
+    // Combined metadata
     metadata: LevelMetadata;
   }
 
@@ -419,7 +508,7 @@ After rhythm generation plan completes:
       patternsUsed: string[];
     };
     pitchMetadata: {
-      bandUsed: string;
+      bandUsed: 'low' | 'mid' | 'high';
       melodyRange: { min: string; max: string } | null;
       keyHint: string | null;
     } | null;
@@ -429,11 +518,12 @@ After rhythm generation plan completes:
 
 ### 3.2 Pipeline Implementation
 - [ ] Implement the full generation pipeline
-  1. Run rhythm generation (from companion plan)
-  2. Run pitch detection on dominant band
-  3. Link pitch to beat positions
-  4. Generate button mappings
-  5. Combine into final level
+  1. Run rhythm generation (from companion plan) → `GeneratedRhythm`
+  2. Select difficulty variant from `GeneratedRhythm.difficultyVariants`
+  3. Run pitch detection on dominant band (from `CompositeSection.sourceBand`)
+  4. Link pitch to beat positions and phrase occurrences
+  5. Generate button mappings for selected variant
+  6. Combine into final `GeneratedLevel`
 - [ ] Add progress callbacks for long-running generation
   ```typescript
   interface GenerationProgress {
@@ -571,6 +661,101 @@ After rhythm generation plan completes:
 
 ---
 
+## Types from Rhythm Generation
+
+This plan re-uses the following types from `procedural-rhythm-generation.md`. They are defined there and re-exported here for reference:
+
+### Core Beat Types
+```typescript
+// Single quantized note
+interface GeneratedBeat {
+  timestamp: number;           // Quantized time in seconds
+  beatIndex: number;           // Index into UnifiedBeatMap.beats[]
+  gridPosition: number;        // Position within that beat (0-3 for 16th, 0-2 for triplet)
+  gridType: 'straight_16th' | 'triplet_8th';
+  intensity: number;           // Transient strength (0.0 - 1.0)
+  band: 'low' | 'mid' | 'high';
+  quantizationError?: number;  // How far it was moved from original (ms)
+}
+
+// Per-band rhythm map
+interface GeneratedRhythmMap {
+  audioId: string;
+  duration: number;
+  beats: GeneratedBeat[];
+  gridDecisions: GridDecision[];
+}
+```
+
+### Difficulty & Composite Types
+```typescript
+// Difficulty variant with edit metadata
+interface DifficultyVariant {
+  difficulty: 'easy' | 'medium' | 'hard';
+  stream: GeneratedBeat[];
+  isUnedited: boolean;
+  editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
+  editAmount: number;
+  patternsInserted?: string[];
+}
+
+// Composite stream from best band sections
+interface CompositeStream {
+  stream: GeneratedBeat[];
+  sections: CompositeSection[];
+  naturalDifficulty: 'easy' | 'medium' | 'hard';
+}
+
+interface CompositeSection {
+  beatRange: { start: number; end: number };
+  sourceBand: 'low' | 'mid' | 'high';
+  score: number;
+}
+```
+
+### Phrase Analysis Types
+```typescript
+// Phrase occurrence with timestamps for pitch integration
+interface PhraseOccurrence {
+  beatIndex: number;
+  startTimestamp: number;
+  endTimestamp: number;
+}
+
+// Detected rhythmic phrase
+interface RhythmicPhrase {
+  pattern: GeneratedBeat[];
+  sizeInBeats: number;
+  sourceBand: 'low' | 'mid' | 'high';
+  occurrences: PhraseOccurrence[];
+  significance: number;
+}
+```
+
+### Main Output Type
+```typescript
+// Complete rhythm generation output
+interface GeneratedRhythm {
+  difficultyVariants: {
+    easy: DifficultyVariant;
+    medium: DifficultyVariant;
+    hard: DifficultyVariant;
+  };
+  bandStreams: {
+    low: GeneratedRhythmMap;
+    mid: GeneratedRhythmMap;
+    high: GeneratedRhythmMap;
+  };
+  composite: CompositeStream;
+  transientAnalysis: TransientAnalysis;
+  quantizationResult: QuantizedBandStreams;
+  phraseAnalysis: PhraseAnalysisResult;
+  metadata: RhythmMetadata;
+}
+```
+
+---
+
 ## Dependencies
 
 ### External Dependencies
@@ -578,9 +763,14 @@ After rhythm generation plan completes:
 
 ### Internal Dependencies
 - **Requires**: `procedural-rhythm-generation.md` to be completed
-  - Needs `SubdividedBeatMap` output
-  - Needs `TransientAnalysis` for band selection
-  - Needs rhythm streams metadata
+  - Needs `GeneratedRhythm` output containing:
+    - `difficultyVariants` (easy/medium/hard as `DifficultyVariant`)
+    - `bandStreams` (low/mid/high as `GeneratedRhythmMap`)
+    - `composite` (`CompositeStream`)
+    - `transientAnalysis` (`TransientAnalysis`)
+    - `phraseAnalysis` (`PhraseAnalysisResult`)
+    - `metadata` (`RhythmMetadata`)
+  - Needs `RhythmicPhrase.sourceBand` and `PhraseOccurrence` timestamps for pitch-to-phrase correlation
 
 ---
 
