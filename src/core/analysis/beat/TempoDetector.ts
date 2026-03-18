@@ -161,6 +161,29 @@ export class TempoDetector {
             }
         }
 
+        // Step 5: Triple meter resolution using TPS3
+        // When enabled, compare TPS3 scores to prefer tempos with strong third-period evidence
+        // This helps detect triple meter (3/4, 6/8) where beats group in threes
+        if (this.config.useTripleMeter) {
+            // Calculate TPS3 for the current primary candidate
+            const primaryTps3 = this.calculateTPS3(autocorr.values, primaryLag);
+
+            // Check for a triple-tempo candidate (one-third the lag = triple BPM)
+            // If primaryLag corresponds to 50 BPM, thirdLag corresponds to 150 BPM
+            const thirdLag = Math.floor(primaryLag / 3);
+
+            // Only consider the third-lag if it's valid
+            if (thirdLag >= 1 && thirdLag < weightedAutocorr.length) {
+                const thirdLagTps3 = this.calculateTPS3(autocorr.values, thirdLag);
+
+                // If the faster tempo has a stronger TPS3 score, use it instead
+                // TPS3 prefers tempos where the third-period also has strong energy
+                if (thirdLagTps3 > primaryTps3) {
+                    primaryLag = thirdLag;
+                }
+            }
+        }
+
         const primaryBpm = this.lagToBpm(primaryLag + autocorr.minLag, hopSizeSeconds);
 
         // Secondary tempo is at half the primary period (most common case)
