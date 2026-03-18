@@ -20,7 +20,8 @@
       "mcp__RepoPrompt__read_file",
       "mcp__RepoPrompt__file_search",
       "mcp__RepoPrompt__get_file_tree",
-      "mcp__RepoPrompt__apply_edits"
+      "mcp__RepoPrompt__apply_edits",
+      "mcp__RepoPrompt__get_code_structure"
     ],
     "deny": [],
     "ask": []
