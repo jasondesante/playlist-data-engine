@@ -274,6 +274,7 @@ export class BeatMapGenerator {
                 tempoWidth: this.options.tempoWidth,
                 minBpm: this.options.minBpm,
                 maxBpm: this.options.maxBpm,
+                useOctaveResolution: this.options.useOctaveResolution,
             });
 
             const tempoEstimate = tempoDetector.estimateTempo(

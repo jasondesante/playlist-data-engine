@@ -1962,6 +1962,7 @@ constructor(config?: TempoDetectorConfig)
 | `tempoWidth` | 1.4 | Tempo width in octaves |
 | `minBpm` | 60 | Minimum BPM |
 | `maxBpm` | 180 | Maximum BPM |
+| `useOctaveResolution` | `false` | Enable TPS2 octave resolution to fix half-tempo/double-tempo ambiguity. When enabled, uses Ellis 2007 duple meter calculation to prefer tempos with strong half-period evidence. Enable this if tempo detection is returning half the actual BPM (e.g., 73 BPM instead of 146 BPM). |
 
 **Methods:**
 

@@ -575,6 +575,19 @@ export interface BeatMapGeneratorOptions {
     /** Tempo width in octaves for perception weighting (default: 1.4) */
     tempoWidth?: number;
 
+    /**
+     * Whether to use TPS2 octave resolution to prevent half-tempo/double-tempo ambiguity.
+     *
+     * When enabled, uses the Ellis TPS2 calculation (Equation 7) to prefer tempos
+     * with strong half-period evidence, improving accuracy from 77% to 84%.
+     *
+     * This helps prevent the algorithm from locking onto 73 BPM when the true tempo
+     * is 146 BPM (octave error).
+     *
+     * Default: false (opt-in for now)
+     */
+    useOctaveResolution?: boolean;
+
     // Mode-based alternatives (Tier 1 & Tier 2 controls)
 
     /**
@@ -1290,6 +1303,7 @@ export const DEFAULT_BEATMAP_GENERATOR_OPTIONS: Required<BeatMapGeneratorOptions
     gaussianSmoothMs: 20,
     tempoCenter: 0.5,
     tempoWidth: 1.4,
+    useOctaveResolution: false,  // Opt-in - uses TPS2 to prevent half-tempo/double-tempo errors
     // Mode-based configurations (default to standard modes)
     hopSizeMode: { mode: 'standard' },
     melBandsMode: { mode: 'standard' },
