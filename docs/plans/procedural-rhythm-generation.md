@@ -85,15 +85,15 @@ The engine already has:
     description: string;
   }
 
+  // MVP: 3 bands for rhythm detection
   const FREQUENCY_BANDS: FrequencyBand[] = [
-    { name: 'sub', lowHz: 20, highHz: 60, description: 'Sub bass' },
-    { name: 'bass', lowHz: 60, highHz: 250, description: 'Bass/kick' },
-    { name: 'lowMid', lowHz: 250, highHz: 500, description: 'Low mids/snare body' },
-    { name: 'mid', lowHz: 500, highHz: 2000, description: 'Mids/vocals' },
-    { name: 'highMid', lowHz: 2000, highHz: 4000, description: 'High mids/presence' },
-    { name: 'high', lowHz: 4000, highHz: 20000, description: 'Highs/air' },
+    { name: 'low', lowHz: 20, highHz: 500, description: 'Low frequencies (bass, kick, sub)' },
+    { name: 'mid', lowHz: 500, highHz: 4000, description: 'Mid frequencies (vocals, snare body, instruments)' },
+    { name: 'high', lowHz: 4000, highHz: 20000, description: 'High frequencies (hi-hats, cymbals, air)' },
   ];
   ```
+
+> **Future Consideration**: Expand to 6 bands (sub, bass, lowMid, mid, highMid, high) for finer-grained rhythm detection in complex material. This would increase processing time approximately 2x.
 
 ### 1.2 Multi-Band Analyzer
 - [ ] Create `MultiBandAnalyzer` class in `src/core/analysis/MultiBandAnalyzer.ts`
@@ -125,66 +125,149 @@ The engine already has:
     - [ ] **High Band**: High-Frequency Content (HFC) / Spectral Flux (ideal for hi-hats, cymbals, air)
   - [ ] Add adaptive thresholding to adjust to the song's dynamic range
   - [ ] Support concurrent per-band transient detection
-  - [ ] Cross-reference transients with quarter note beat map (Rhythmic Quantization & Grid Mapping) to lock absolute timestamps to a rhythmic grid. **Scope is strictly limited to snapping to 16th notes and 8th note triplets.**
+  - [ ] **Note**: Rhythmic quantization to the beat map grid happens in section 1.4, not here.
   ```typescript
   interface TransientResult {
     timestamp: number;
-    intensity: number;
-    band: string;  // Which frequency band detected this
+    intensity: number;  // Strength of the detected transient (0.0 - 1.0)
+    band: string;  // Which frequency band detected this: 'low', 'mid', or 'high'
     detectionMethod: 'energy' | 'spectral_flux' | 'hfc';
     nearestBeat?: {
       index: number;
-      distance: number;  // How far from quarter note grid
+      distance: number;  // How far from quarter note grid (in seconds)
     };
   }
 
   interface TransientAnalysis {
     transients: TransientResult[];
-    bandTransients: Map<string, TransientResult[]>;
-    rhythmSuggestions: RhythmSuggestion[];
+    bandTransients: Map<string, TransientResult[]>;  // Keys: 'low', 'mid', 'high'
+    // rhythmSuggestions removed - now generated in 1.4 after quantization
   }
   ```
 
-### 1.4 Rhythm Extraction & Scoring Engine
-- [ ] Create rhythm extraction logic that maps transients into discrete rhythmic phrases for *each* frequency band
+### 1.4 Transient-to-Rhythm Quantization
+
+**Goal**: Translate raw transients into quantized rhythmic subdivisions that align with the beat map grid.
+
+> **⚠️ Critical Step**: This is the translation layer between audio analysis and playable rhythm patterns. Take time to validate quantization results before proceeding. The quality of this step directly impacts playability.
+
+#### 1.4.1 Density Validation Gate
+Before quantization, validate that detected transients aren't too dense:
+- [ ] Calculate minimum allowed interval based on tempo (16th note duration = quarterNoteInterval / 4)
+- [ ] Check if any two consecutive transients are closer than the minimum interval
+- [ ] If too dense, trigger sensitivity adjustment with retry logic:
+  ```typescript
+  interface DensityValidationResult {
+    isValid: boolean;
+    minIntervalDetected: number;  // Smallest gap between transients (seconds)
+    requiredMinInterval: number;  // 16th note duration at current tempo
+    retryCount: number;
+    sensitivityReduction: number;  // Cumulative sensitivity reduction applied
+  }
+
+  // Retry logic (max 3 retries):
+  // - Retry 1: Reduce sensitivity by base amount (e.g., 0.1)
+  // - Retry 2: Reduce sensitivity by 2x base amount (0.2)
+  // - Retry 3: Reduce sensitivity by 4x base amount (0.4)
+  // After 3 retries, proceed with current results and log warning
+  ```
+- [ ] Implement exponential backoff for sensitivity reduction
+- [ ] Track retry count and cumulative sensitivity reduction in metadata
+
+#### 1.4.2 Intensity Filtering
+- [ ] Support optional filtering by transient intensity:
+  ```typescript
+  interface QuantizationConfig {
+    minimumTransientIntensity: number;  // Default: 0.0 (catch all), user can set higher to filter weak transients
+    // ... other config
+  }
+  ```
+- [ ] Filter transients below intensity threshold before quantization
+- [ ] Log how many transients were filtered for transparency
+
+#### 1.4.3 Rhythmic Quantization
+- [ ] Snap transients to the nearest valid subdivision grid point
+  - [ ] **Scope**: 16th notes and 8th note triplets only
+  - [ ] Calculate all valid grid points within each beat
+  - [ ] Assign each transient to nearest grid point (within tolerance)
+- [ ] Handle edge cases:
+  - [ ] Transients too far from any grid point (discard or mark as "unquantized")
+  - [ ] Multiple transients snapping to same grid point (keep strongest)
+  ```typescript
+  interface QuantizedRhythm {
+    beatIndex: number;
+    subdivisions: QuantizedSubdivision[];
+    sourceTransientCount: number;
+    filteredTransientCount: number;  // Removed by intensity filter
+  }
+
+  interface QuantizedSubdivision {
+    subdivisionType: SubdivisionType;
+    gridPosition: number;  // 0-15 for position within beat (16th note resolution)
+    intensity: number;  // From source transient
+    band: 'low' | 'mid' | 'high';
+  }
+  ```
+
+#### 1.4.4 Pattern Detection
+- [ ] Detect and extract common patterns from quantized rhythms:
+  - [ ] Offbeat patterns (transients on &)
+  - [ ] Syncopation (transients between grid)
+  - [ ] Triple feel (transients suggest triplet subdivision)
+  - [ ] Swing feel (consistent micro-timing deviation from mathematical grid)
+
+### 1.5 Rhythm Scoring & Stream Combiner
+
+**Goal**: Score rhythmic phrases by interest level and combine the best sections from each band into a composite stream.
+
+> **Note**: The composite stream is created here but will be finalized in Phase 3 as the primary output.
+
 - [ ] Implement scoring logic to evaluate the "interest" level of rhythms within each band over a given window (e.g., 1 measure):
   - [ ] Score based on Inter-Onset Interval (IOI) density and variance
   - [ ] Score based on Syncopation (weighting transients that land on offbeats or micro-subdivisions higher than simple downbeats)
-- [ ] Implement a **Rhythm Slicer/Combiner**. The program will evaluate the scores of the Low, Mid, and High band rhythms for a given section, slicing pieces from the strongest/most interesting bands into a final, composite generated subdivision map
-  - [ ] **Crucially**, the system must provide access to all 4 streams: the fully preserved, quantized rhythmic phrases for Bass, Mid, and High bands, plus the final aggregated composite stream (which will be the primary, highest-quality map)
+- [ ] Create **Rhythm Slicer/Combiner** that evaluates scores across bands:
   ```typescript
   interface RhythmPhrase {
-    band: string;  // Low, Mid, High
+    band: 'low' | 'mid' | 'high';
     measureIndex: number;
     subdivisions: SubdivisionType[];
     interestScore: number;  // Based on syncopation and density
-  }
-
-  // A complete stream mapped onto the beats
-  interface RhythmStream extends SubdividedBeatMap {
-    bandSource: 'bass' | 'mid' | 'high' | 'composite';
   }
 
   interface RhythmSuggestion {
     beatIndex: number;
     suggestedSubdivision: SubdivisionType;
     confidence: number;
-    source: 'transient' | 'energy' | 'pattern' | 'composite_slicer';
-    dominantBand: string;  // Which band won the slice for this section
+    source: 'quantized_transient' | 'pattern';
+    dominantBand: 'low' | 'mid' | 'high';  // Which band won for this section
   }
   ```
-- [ ] Detect and extract common patterns from the transients:
-  - [ ] Offbeat patterns (transients on &)
-  - [ ] Syncopation (transients between grid)
-  - [ ] Triple feel (transients suggest triplet subdivision)
-  - [ ] Swing feel (consistent micro-timing deviation from mathematical grid)
+- [ ] The system produces **3 streams** at this phase:
+  - [ ] `low` stream: Full quantized rhythms from low frequency band
+  - [ ] `mid` stream: Full quantized rhythms from mid frequency band  
+  - [ ] `high` stream: Full quantized rhythms from high frequency band
+- [ ] The **4th stream** (`composite`) is created by slicing together the most interesting sections from each band:
+  ```typescript
+  interface BandRhythmStreams {
+    low: QuantizedRhythm[];
+    mid: QuantizedRhythm[];
+    high: QuantizedRhythm[];
+    // composite is generated by the slicer:
+    composite: QuantizedRhythm[];  // Best sections from each band
+  }
+  ```
 
-### 1.5 Tests
+### 1.6 Tests
 - [ ] Unit tests for band-pass filter
 - [ ] Unit tests for `MultiBandAnalyzer`
 - [ ] Unit tests for `TransientDetector`
+- [ ] Unit tests for density validation retry logic
+- [ ] Unit tests for intensity filtering
+- [ ] Unit tests for rhythmic quantization
 - [ ] Integration test: detect transients on known drum track
-- [ ] Verify cross-referencing with existing beat maps
+- [ ] Verify quantization aligns with beat map grid
+- [ ] Verify retry logic reduces sensitivity correctly (exponential backoff)
+- [ ] Verify all 3 band streams are valid quantized rhythms
 
 ---
 
@@ -240,7 +323,10 @@ The engine already has:
     // Audio influence
     useAudioSuggestions: boolean;
     audioSuggestionWeight: number;  // 0-1, how much to follow audio hints
-    preferredBands: string[];  // Which bands to trust more
+    preferredBands: ('low' | 'mid' | 'high')[];  // Which bands to trust more
+
+    // Transient filtering
+    minimumTransientIntensity: number;  // Default: 0.0 (catch all)
 
     // Musical constraints
     avoidConsecutiveRests: boolean;
@@ -290,9 +376,9 @@ The engine already has:
     config: SubdivisionConfig;
     // All 4 streams of generated rhythmic phrases, fully compatible with existing beat maps
     streams: {
-      bass: SubdividedBeatMap;
-      mid: SubdividedBeatMap;
-      high: SubdividedBeatMap;
+      low: SubdividedBeatMap;      // Low frequency band rhythms
+      mid: SubdividedBeatMap;      // Mid frequency band rhythms
+      high: SubdividedBeatMap;     // High frequency band rhythms
       composite: SubdividedBeatMap; // The primary, highest-quality combined map
     };
     metadata: {
@@ -300,6 +386,11 @@ The engine already has:
       audioInfluencedBeats: number;
       averageDensity: number;
       difficultyScore: number;
+      transientDensityValidation: {
+        retryCount: number;
+        sensitivityReductionApplied: number;
+        minIntervalDetected: number;
+      };
     };
   }
   ```
@@ -375,19 +466,22 @@ The engine already has:
 
   interface GeneratedRhythm {
     streams: {
-      bass: SubdividedBeatMap;
+      low: SubdividedBeatMap;
       mid: SubdividedBeatMap;
       high: SubdividedBeatMap;
       composite: SubdividedBeatMap;
     };
     transientAnalysis: TransientAnalysis;
+    quantizationResult: QuantizationResult;  // Includes density validation metadata
     metadata: RhythmMetadata;
   }
 
   interface RhythmMetadata {
     difficulty: DifficultyPreset;
-    bandsAnalyzed: string[];
+    bandsAnalyzed: string[];  // ['low', 'mid', 'high']
     transientsDetected: number;
+    transientsFilteredByIntensity: number;
+    densityValidationRetries: number;
     patternsUsed: string[];
     averageDensity: number;
     generationConfig: RhythmGenerationOptions;
@@ -472,7 +566,7 @@ The engine already has:
   - [ ] Document `TransientDetector` and detection methods
   - [ ] Document `SubdivisionGenerator` and pattern system
   - [ ] Add code examples for common use cases
-  - [ ] Document the 4 output streams (bass/mid/high/composite)
+  - [ ] Document the 4 output streams (low/mid/high/composite)
 
 ### 5.3 Update BEAT_DETECTION.md
 - [ ] Add section on transient detection (separate from beat detection)
@@ -493,7 +587,7 @@ The engine already has:
 
 ### Technical Questions
 1. **Transient detection accuracy**: How to handle overlapping transients in dense music?
-   - Consider: Per-band thresholding, peak picking refinement
+   - ✅ **Resolved**: Implemented density validation with exponential sensitivity reduction (3 retries)
 
 2. **Pattern memory**: How to avoid repetitive patterns without sounding random?
    - Consider: Markov chains, weighted random selection with history
@@ -503,10 +597,13 @@ The engine already has:
 
 ### Design Questions
 1. **Band selection**: Should band selection be automatic or configurable?
-   - Recommendation: Auto with override option
+   - ✅ **Resolved**: MVP uses 3 bands (low/mid/high), with 6-band expansion as future consideration
 
 2. **Composite vs individual streams**: Which should be the "default" output?
    - Recommendation: Composite as default, others available for advanced use
+
+3. **Transient intensity filtering**: Should weak transients be filtered?
+   - ✅ **Resolved**: Default to catch all (0.0), expose `minimumTransientIntensity` parameter for user filtering
 
 ---
 
@@ -516,6 +613,6 @@ The engine already has:
 2. Difficulty settings produce noticeably different rhythmic density
 3. Generation is deterministic when given same seed
 4. Generation completes in reasonable time (< 5 seconds for 3-minute song)
-5. All 4 streams (bass/mid/high/composite) are valid and usable
+5. All 4 streams (low/mid/high/composite) are valid and usable
 6. API is simple and discoverable
 7. Documentation is complete and accurate
