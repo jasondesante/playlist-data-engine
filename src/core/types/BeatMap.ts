@@ -588,6 +588,22 @@ export interface BeatMapGeneratorOptions {
      */
     useOctaveResolution?: boolean;
 
+    /**
+     * Whether to use TPS3 triple meter resolution for 3/4, 6/8 time signatures.
+     *
+     * When enabled, uses the Ellis TPS3 calculation (Equation 7 variant) to prefer tempos
+     * with strong third-period evidence, improving detection for waltzes and triple meter music.
+     *
+     * The TPS3 formula combines the main tempo with its third-harmonic:
+     * `TPS3(τ) = TPS(τ) + 0.33×TPS(3τ) + 0.33×TPS(3τ-1) + 0.33×TPS(3τ+1)`
+     *
+     * Tempos with strong third-period evidence (indicating triple meter) will have
+     * higher TPS3 scores, allowing proper beat detection for waltzes and 6/8 shuffles.
+     *
+     * Default: false (opt-in for triple meter music)
+     */
+    useTripleMeter?: boolean;
+
     // Mode-based alternatives (Tier 1 & Tier 2 controls)
 
     /**
@@ -1266,6 +1282,22 @@ export interface TempoDetectorConfig {
      * Default: false (opt-in for now)
      */
     useOctaveResolution?: boolean;
+
+    /**
+     * Whether to use TPS3 triple meter resolution for 3/4, 6/8 time signatures.
+     *
+     * When enabled, uses the Ellis TPS3 calculation (Equation 7 variant) to prefer tempos
+     * with strong third-period evidence, improving detection for waltzes and triple meter music.
+     *
+     * The TPS3 formula combines the main tempo with its third-harmonic:
+     * `TPS3(τ) = TPS(τ) + 0.33×TPS(3τ) + 0.33×TPS(3τ-1) + 0.33×TPS(3τ+1)`
+     *
+     * Tempos with strong third-period evidence (indicating triple meter) will have
+     * higher TPS3 scores, allowing proper beat detection for waltzes and 6/8 shuffles.
+     *
+     * Default: false (opt-in for triple meter music)
+     */
+    useTripleMeter?: boolean;
 }
 
 /**
@@ -1304,6 +1336,7 @@ export const DEFAULT_BEATMAP_GENERATOR_OPTIONS: Required<BeatMapGeneratorOptions
     tempoCenter: 0.5,
     tempoWidth: 1.4,
     useOctaveResolution: false,  // Opt-in - uses TPS2 to prevent half-tempo/double-tempo errors
+    useTripleMeter: false,  // Opt-in - uses TPS3 for triple meter detection (waltzes, 6/8 shuffles)
     // Mode-based configurations (default to standard modes)
     hopSizeMode: { mode: 'standard' },
     melBandsMode: { mode: 'standard' },
