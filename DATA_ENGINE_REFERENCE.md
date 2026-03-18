@@ -1963,6 +1963,7 @@ constructor(config?: TempoDetectorConfig)
 | `minBpm` | 60 | Minimum BPM |
 | `maxBpm` | 180 | Maximum BPM |
 | `useOctaveResolution` | `false` | Enable TPS2 octave resolution to fix half-tempo/double-tempo ambiguity. When enabled, uses Ellis 2007 duple meter calculation to prefer tempos with strong half-period evidence. Enable this if tempo detection is returning half the actual BPM (e.g., 73 BPM instead of 146 BPM). |
+| `useTripleMeter` | `false` | Enable TPS3 triple meter resolution for 3/4 and 6/8 time signatures. Uses Ellis 2007 triple meter calculation (TPS3) to boost tempos with strong third-period evidence. Enable for waltzes, 6/8 shuffles, and other triple-meter music where beats occur in groups of three. Works independently of `useOctaveResolution` and can be enabled simultaneously. |
 
 **Methods:**
 
