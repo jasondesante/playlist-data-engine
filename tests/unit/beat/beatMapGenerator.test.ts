@@ -80,7 +80,7 @@ describe('BeatMapGenerator', () => {
             expect(config.minBpm).toBe(60);
             expect(config.maxBpm).toBe(180);
             expect(config.sensitivity).toBe(1.0);
-            expect(config.noiseFloorThreshold).toBe(0.1);
+            expect(config.noiseFloorThreshold).toBe(0);
             expect(config.hopSizeMs).toBe(4);  // Changed to 4 (Ellis 2007 paper spec)
             expect(config.fftSize).toBe(2048);
             expect(config.rollingBpmWindowSize).toBe(8);
@@ -389,7 +389,7 @@ describe('BeatMapGenerator', () => {
                     minBpm: 60,
                     maxBpm: 180,
                     sensitivity: 1.0,
-                    noiseFloorThreshold: 0.1,
+                    noiseFloorThreshold: 0,
                     hopSizeMs: 10,
                     fftSize: 2048,
                     dpAlpha: 680,
@@ -459,7 +459,7 @@ describe('BeatMapGenerator', () => {
                     minBpm: 60,
                     maxBpm: 180,
                     sensitivity: 1.0,
-                    noiseFloorThreshold: 0.1,
+                    noiseFloorThreshold: 0,
                     hopSizeMs: 10,
                     fftSize: 2048,
                     dpAlpha: 680,
@@ -513,7 +513,7 @@ describe('BeatMapGenerator', () => {
                     minBpm: 60,
                     maxBpm: 180,
                     sensitivity: 1.0,
-                    noiseFloorThreshold: 0.1,
+                    noiseFloorThreshold: 0,
                     hopSizeMs: 10,
                     fftSize: 2048,
                     dpAlpha: 680,
@@ -582,7 +582,7 @@ describe('BeatMapGenerator', () => {
                     minBpm: 60,
                     maxBpm: 180,
                     sensitivity: 1.0,
-                    noiseFloorThreshold: 0.1,
+                    noiseFloorThreshold: 0,
                     hopSizeMs: 10,
                     fftSize: 2048,
                     dpAlpha: 680,
@@ -622,7 +622,7 @@ describe('BeatMapGenerator', () => {
                     minBpm: 60,
                     maxBpm: 180,
                     sensitivity: 1.0,
-                    noiseFloorThreshold: 0.1,
+                    noiseFloorThreshold: 0,
                     hopSizeMs: 10,
                     fftSize: 2048,
                     dpAlpha: 680,
@@ -697,7 +697,7 @@ describe('BeatMapGenerator', () => {
                     minBpm: 60,
                     maxBpm: 180,
                     sensitivity: 1.0,
-                    noiseFloorThreshold: 0.1,
+                    noiseFloorThreshold: 0,
                     hopSizeMs: 10,
                     fftSize: 2048,
                     dpAlpha: 680,

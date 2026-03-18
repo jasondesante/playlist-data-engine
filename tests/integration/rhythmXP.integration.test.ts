@@ -59,7 +59,7 @@ function createMockBeatMap(beatTimestamps: number[], duration: number = 10, bpm:
             maxBpm: bpm,
             sensitivity: 0.5,
             filter: 0.0,
-            noiseFloorThreshold: 0.1,
+            noiseFloorThreshold: 0,
             hopSizeMs: 4,
             fftSize: 2048,
             dpAlpha: 680,

@@ -90,7 +90,7 @@ function createDefaultMetadata(): BeatMapMetadata {
         maxBpm: 180,
         sensitivity: 1.0,
         filter: 0.0,
-        noiseFloorThreshold: 0.1,
+        noiseFloorThreshold: 0,
         hopSizeMs: 4,
         fftSize: 2048,
         dpAlpha: 680,

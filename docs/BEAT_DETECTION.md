@@ -416,7 +416,7 @@ Configuration for beat map generation:
 | `maxBpm` | `number` | 180 | Maximum BPM to detect |
 | `sensitivity` | `number` | 1.0 | Pre-processing sensitivity (0.1-10.0) |
 | `filter` | `number` | 0.0 | Post-processing grid-alignment filter (0.0-1.0) |
-| `noiseFloorThreshold` | `number` | 0.1 | Noise floor threshold |
+| `noiseFloorThreshold` | `number` | 0 | Noise floor threshold |
 | `hopSizeMs` | `number` | 4 | Milliseconds between FFT frames |
 | `hopSizeMode` | `HopSizeConfig` | `{ mode: 'standard' }` | Hop size mode (alternative to `hopSizeMs`) |
 | `fftSize` | `number` | 2048 | FFT window size in samples |

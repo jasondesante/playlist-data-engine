@@ -1647,7 +1647,7 @@ constructor(options?: BeatMapGeneratorOptions)
 | `maxBpm` | 180 | Maximum BPM to detect |
 | `sensitivity` | 1.0 | Pre-processing sensitivity (0.1-10.0) |
 | `filter` | 0.0 | Post-processing grid-alignment filter (0.0-1.0) |
-| `noiseFloorThreshold` | 0.1 | Minimum threshold to prevent noise detection |
+| `noiseFloorThreshold` | 0 | Minimum threshold to prevent noise detection |
 | `hopSizeMs` | 4 | Milliseconds between FFT frames (Ellis 2007 paper spec) |
 | `hopSizeMode` | `{ mode: 'standard' }` | Hop size mode (alternative to `hopSizeMs`) |
 | `fftSize` | 2048 | FFT window size in samples |

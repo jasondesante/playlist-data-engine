@@ -54,7 +54,7 @@ function createBeatMap(numBeats: number, trackId: string = 'test-track'): BeatMa
             minBpm: 60,
             maxBpm: 180,
             sensitivity: 1.0,
-            noiseFloorThreshold: 0.1,
+            noiseFloorThreshold: 0,
             hopSizeMs: 4,
             fftSize: 2048,
             dpAlpha: 680,

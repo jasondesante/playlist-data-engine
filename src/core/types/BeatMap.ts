@@ -529,7 +529,7 @@ export interface BeatMapGeneratorOptions {
     /** Post-processing grid-alignment filter (0.0-1.0, default: 0.0) */
     filter?: number;
 
-    /** Minimum threshold to prevent noise detection (default: 0.1) */
+    /** Minimum threshold to prevent noise detection (default: 0) */
     noiseFloorThreshold?: number;
 
     /**
@@ -1267,7 +1267,7 @@ export const DEFAULT_BEATMAP_GENERATOR_OPTIONS: Required<BeatMapGeneratorOptions
     maxBpm: 180,
     sensitivity: 1.0,
     filter: 0.0,
-    noiseFloorThreshold: 0.1,
+    noiseFloorThreshold: 0,  // Changed from 0.1 - was filtering out too many valid beats
     hopSizeMs: 4,           // Changed from 10 to 4 (Ellis 2007 paper spec)
     fftSize: 2048,
     rollingBpmWindowSize: 8,

@@ -18,6 +18,9 @@
  */
 
 import type { Beat, BeatTrackerConfig, TempoEstimate } from '../../types/BeatMap.js';
+import { Logger } from '../../../utils/logger.js';
+
+const logger = Logger.for('BeatTracker');
 
 /**
  * Default configuration for beat tracking
@@ -113,6 +116,13 @@ export class BeatTracker {
         // Target period in frames
         const period = Math.round(tempoEstimate.targetIntervalSeconds / hopSizeSeconds);
 
+        logger.info('BeatTracker: Beat tracking parameters', {
+            targetIntervalSeconds: tempoEstimate.targetIntervalSeconds,
+            hopSizeSeconds,
+            periodFrames: period,
+            envelopeLength: length,
+        });
+
         // Need at least a few periods of data
         if (period < 2 || length < period * 2) {
             return {
@@ -130,6 +140,12 @@ export class BeatTracker {
 
         // Clamp to reasonable bounds (prevent extreme values)
         const clampedDpAlpha = Math.max(10, Math.min(10000, effectiveDpAlpha));
+
+        logger.info('Beat tracking parameters', {
+            sensitivity,
+            dpAlpha: this.config.dpAlpha,
+            effectiveDpAlpha: clampedDpAlpha,
+        });
 
         // Step 1: Precompute transition costs
         // Search range: from τp/2 to 2τp (as per Ellis)
@@ -182,6 +198,10 @@ export class BeatTracker {
 
         // Step 3: Backward pass - extract beat sequence
         // Start from frame with highest cumulative score (typically near end)
+        logger.info('BeatTracker: Starting backward pass', {
+            maxCumulativeScore: Math.max(...cumscore),
+            envelopeLength: length,
+        });
         let bestEndFrame = 0;
         let bestEndScore = cumscore[0];
 
@@ -205,6 +225,13 @@ export class BeatTracker {
         if (currentFrame >= 0 && onsetEnvelope[currentFrame] > 0) {
             beatFrames.unshift(currentFrame);
         }
+
+        logger.info('BeatTracker: Backward pass complete', {
+            beatsFound: beatFrames.length,
+            bestEndFrame,
+            firstBeatFrame: beatFrames[0],
+            lastBeatFrame: beatFrames[beatFrames.length - 1],
+        });
 
         // Step 4: Convert to Beat objects
         const beats = this.convertToBeats(
