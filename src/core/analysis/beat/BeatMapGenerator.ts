@@ -332,7 +332,7 @@ export class BeatMapGenerator {
             // Apply noise floor threshold
             const beforeFilterCount = processedBeats.length;
             processedBeats = this.applyIntensityThreshold(processedBeats);
-            logger.info('BeatMapGenerator: Intensity filter applied', {
+            logger.debug('BeatMapGenerator: Intensity filter applied', {
                 beatsBefore: beforeFilterCount,
                 beatsAfter: processedBeats.length,
                 beatsFiltered: beforeFilterCount - processedBeats.length,

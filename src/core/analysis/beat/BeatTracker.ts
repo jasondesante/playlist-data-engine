@@ -116,7 +116,7 @@ export class BeatTracker {
         // Target period in frames
         const period = Math.round(tempoEstimate.targetIntervalSeconds / hopSizeSeconds);
 
-        logger.info('BeatTracker: Beat tracking parameters', {
+        logger.debug('BeatTracker: Beat tracking parameters', {
             targetIntervalSeconds: tempoEstimate.targetIntervalSeconds,
             hopSizeSeconds,
             periodFrames: period,
@@ -141,7 +141,7 @@ export class BeatTracker {
         // Clamp to reasonable bounds (prevent extreme values)
         const clampedDpAlpha = Math.max(10, Math.min(10000, effectiveDpAlpha));
 
-        logger.info('Beat tracking parameters', {
+        logger.debug('Beat tracking parameters', {
             sensitivity,
             dpAlpha: this.config.dpAlpha,
             effectiveDpAlpha: clampedDpAlpha,
@@ -198,7 +198,7 @@ export class BeatTracker {
 
         // Step 3: Backward pass - extract beat sequence
         // Start from frame with highest cumulative score (typically near end)
-        logger.info('BeatTracker: Starting backward pass', {
+        logger.debug('BeatTracker: Starting backward pass', {
             maxCumulativeScore: Math.max(...cumscore),
             envelopeLength: length,
         });
@@ -226,7 +226,7 @@ export class BeatTracker {
             beatFrames.unshift(currentFrame);
         }
 
-        logger.info('BeatTracker: Backward pass complete', {
+        logger.debug('BeatTracker: Backward pass complete', {
             beatsFound: beatFrames.length,
             bestEndFrame,
             firstBeatFrame: beatFrames[0],
