@@ -298,6 +298,7 @@ Before quantization, validate that detected transients aren't too dense:
 - [ ] Scan quantized streams for **duplicate multi-beat phrases**:
   - [ ] Check phrase sizes: 1 beat, 2 beats, 4 beats, 8 beats
   - [ ] **Larger identical phrases are more significant** - an 8-beat repeated pattern is more meaningful than a 1-beat repeat
+  - [ ] **More occurrences increases significance** - a phrase that appears 10 times is more noteworthy than one that appears twice
   - [ ] Track phrase occurrences and locations for later reference
 - [ ] **Exclude uninteresting patterns** from phrase detection:
   - [ ] Straight quarter notes (no variation)
@@ -386,7 +387,7 @@ Before quantization, validate that detected transients aren't too dense:
     };
   }
   ```
-- [ ] Score per measure or per 4-measure section
+- [ ] Score per 2-measure section
 - [ ] Identify which band has the most interesting rhythm for each section
 
 ### 3.2 Composite Stream Generation
@@ -432,12 +433,12 @@ Since the composite already represents one difficulty level (its natural difficu
   - [ ] **Easy**: Simplify - remove some subdivisions
 
   **If composite is naturally easy (sparse):**
-  - [ ] **Hard**: Density enhancement using pattern library
+  - [ ] **Hard**: Heavy density enhancement using pattern library and interpolation
   - [ ] **Medium**: Moderate density enhancement
   - [ ] **Easy**: Composite (unedited)
 
 - [ ] **Density enhancement** (for sparse composites needing harder difficulties):
-  - [ ] **First priority**: Insert detected patterns from phrase library (song-specific, more interesting)
+  - [ ] **First priority**: Insert detected patterns from phrase library whenever possible (song-specific, more interesting)
   - [ ] **Fallback**: Simple grid interpolation if no suitable pattern exists
   - [ ] Respect per-beat grid decisions (16th vs triplet) from Phase 1
 
@@ -560,10 +561,6 @@ Since the composite already represents one difficulty level (its natural difficu
     bass: {
       difficulty: 'medium',
       outputMode: 'low',  // Use low-frequency band directly
-    },
-    fullIntensity: {
-      difficulty: 'hard',
-      outputMode: 'composite',
     }
   };
   ```
@@ -609,7 +606,7 @@ Since the composite already represents one difficulty level (its natural difficu
 
 ## Phase 5: Documentation
 
-**Goal**: Ensure all new features are properly documented.
+**Goal**: Ensure all new features are properly documented, following the DATA_ENGINE_REFERENCE.md style guide.
 
 ### 5.1 Code Documentation
 - [ ] JSDoc for all public types and interfaces
@@ -617,19 +614,42 @@ Since the composite already represents one difficulty level (its natural difficu
 - [ ] Inline comments for complex algorithms (especially transient detection strategies)
 
 ### 5.2 Update DATA_ENGINE_REFERENCE.md
+
+**Style**: Per the style guide, this file prioritizes scannable efficiency. No code examples—use structured tables, location links, and cross-references instead.
+
 - [ ] Add new section: "Procedural Rhythm Generation"
-  - [ ] Document `RhythmGenerator` class and usage
-  - [ ] Document `MultiBandAnalyzer` and frequency bands
-  - [ ] Document `TransientDetector` and detection methods
-  - [ ] Document `SubdivisionGenerator` and pattern system
-  - [ ] Add code examples for common use cases
-  - [ ] Document the 4 output streams (low/mid/high/composite)
+  - [ ] Add location links (italicized format) to all major definitions:
+    - [ ] `RhythmGenerator` → *[src/core/generation/RhythmGenerator.ts](src/core/generation/RhythmGenerator.ts)*
+    - [ ] `MultiBandAnalyzer` → *[src/core/analysis/MultiBandAnalyzer.ts](src/core/analysis/MultiBandAnalyzer.ts)*
+    - [ ] `TransientDetector` → *[src/core/analysis/beat/TransientDetector.ts](src/core/analysis/beat/TransientDetector.ts)*
+  - [ ] Create structured tables for methods (with Returns/Description columns)
+  - [ ] Create frequency bands reference table (low/mid/high Hz ranges)
+  - [ ] Create output streams table (low/mid/high/composite with purpose descriptions)
+  - [ ] Add cross-references to BEAT_DETECTION.md for algorithm details
+  - [ ] Add "Also known as" aliases where helpful (e.g., *transient detection* ↔ *onset detection*)
 
 ### 5.3 Update BEAT_DETECTION.md
+
+**Purpose**: This is the specialized guide where explanations, algorithm details, and usage examples belong.
+
 - [ ] Add section on transient detection (separate from beat detection)
-- [ ] Document how transients cross-reference with beat maps
-- [ ] Explain multi-band analysis approach
-- [ ] Document rhythm scoring and slicing algorithm
+  - [ ] Explain multi-band analysis approach with diagrams/examples
+  - [ ] Document the 3 detection strategies: Energy-based, Spectral Flux, HFC
+  - [ ] Explain how transients cross-reference with beat maps
+- [ ] Add section on rhythm quantization
+  - [ ] Explain per-beat grid detection (16th vs triplet)
+  - [ ] Document density validation and sensitivity retry logic
+- [ ] Add section on scoring and composite generation
+  - [ ] Explain IOI variance, syncopation scoring, phrase significance
+  - [ ] Document the slicing algorithm for composite creation
+- [ ] Add usage examples for common workflows:
+  - [ ] Basic usage with `AudioAnalyzer.generateRhythm()`
+  - [ ] Generate rhythms with default settings
+  - [ ] Filter by transient intensity
+  - [ ] Select specific output streams (composite vs band-specific)
+  - [ ] Working with difficulty variants
+  - [ ] Accessing individual band streams
+  - [ ] Custom configuration presets
 
 ---
 
