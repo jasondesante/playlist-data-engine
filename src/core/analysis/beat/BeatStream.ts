@@ -218,6 +218,8 @@ export class BeatStream {
                 gaussianSmoothMs: 20,
                 tempoCenter: 0.5,
                 tempoWidth: 1.4,
+                useOctaveResolution: false,
+                useTripleMeter: false,
                 generatedAt: new Date().toISOString(),
             };
 

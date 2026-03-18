@@ -395,6 +395,12 @@ export interface BeatMapMetadata {
     /** Tempo width in octaves for perception weighting */
     tempoWidth: number;
 
+    /** Whether TPS2 octave resolution was enabled for duple meter detection */
+    useOctaveResolution: boolean;
+
+    /** Whether TPS3 triple meter resolution was enabled for 3/4, 6/8 detection */
+    useTripleMeter: boolean;
+
     /** Timestamp when the beat map was generated */
     generatedAt: string;
 }

@@ -356,6 +356,8 @@ export class BeatMapGenerator {
                 gaussianSmoothMs: this.options.gaussianSmoothMs,
                 tempoCenter: this.options.tempoCenter,
                 tempoWidth: this.options.tempoWidth,
+                useOctaveResolution: this.options.useOctaveResolution ?? false,
+                useTripleMeter: this.options.useTripleMeter ?? false,
                 generatedAt: new Date().toISOString(),
             };
 
