@@ -1255,7 +1255,21 @@ export interface BeatTrackerConfig {
 }
 
 /**
- * Configuration for the TempoDetector
+ * Configuration for the TempoDetector.
+ *
+ * Controls tempo estimation behavior including BPM range, perceptual weighting,
+ * and optional meter resolution algorithms.
+ *
+ * Key options:
+ * - `useOctaveResolution`: Enable TPS2 calculation to resolve duple meter ambiguity
+ *   (half-tempo/double-tempo errors). Use for most 4/4, 2/4 music.
+ * - `useTripleMeter`: Enable TPS3 calculation to resolve triple meter ambiguity
+ *   (3/4, 6/8 time signatures). Use for waltzes and shuffle feels.
+ *
+ * Both options can be enabled simultaneously - they run independently and each
+ * resolves its respective meter ambiguity.
+ *
+ * @see {@link https://eeewing.com/pubs/ismir2007.pdf} - Ellis 2007, "Beat Tracking by Dynamic Programming"
  */
 export interface TempoDetectorConfig {
     /** Tempo center in seconds (default: 0.5 = 120 BPM) */
