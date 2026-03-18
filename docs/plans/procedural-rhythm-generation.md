@@ -7,7 +7,10 @@ This plan focuses on automatically generating interesting subdivision patterns o
 1. Match the music's energy and transients
 2. Provide configurable difficulty levels (easy/medium/hard)
 3. Feel "musical" rather than random
-4. Output multiple streams (bass/mid/high/composite) for flexibility
+4. Output a rich `GeneratedRhythm` containing:
+   - 3 difficulty variants (easy/medium/hard) of the composite stream
+   - Individual band streams (low/mid/high) for advanced use
+   - Analysis results (transients, phrases, density metrics)
 
 This plan intentionally **excludes** pitch detection and button mapping - those are covered in the companion plan `pitch-detection-button-mapping.md`.
 
@@ -24,7 +27,7 @@ InterpolatedBeatMap (gaps filled, quarter note grid established)
     ↓ unifyBeatMap()
 UnifiedBeatMap (merged detected + interpolated beats)
     ↓ [this plan: RhythmGenerator + TransientDetector]
-GeneratedSubdivisionResult (with bass/mid/high/composite streams)
+GeneratedRhythm (difficulty variants + band streams + analysis)
 ```
 
 ### `UnifiedBeatMap` Structure
@@ -365,7 +368,11 @@ Before quantization, validate that detected transients aren't too dense:
 
 **Input**: 3 quantized rhythm streams (low/mid/high) from Phase 1 + phrase library + density metrics from Phase 2.
 
-**Output**: 3 difficulty variants (easy/medium/hard) of the composite stream.
+**Output**: `GeneratedRhythm` containing:
+- 3 difficulty variants (easy/medium/hard) of the composite stream
+- Individual band streams (low/mid/high) for reference
+- Analysis results (transient, quantization, phrase)
+- Rich metadata
 
 ### 3.1 Band Stream Scoring
 
