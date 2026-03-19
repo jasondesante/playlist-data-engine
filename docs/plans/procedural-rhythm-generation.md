@@ -704,10 +704,10 @@ Each difficulty level has constraints on the maximum subdivision density allowed
 - [x] Integration tests for full pipeline (all 3 phases)
   - Tests cover: caching functionality, cancellation support, progress callbacks
 - [x] Performance tests (generation time < 5 seconds for 3-minute song)
-- [ ] Verify 3 difficulty variants are valid
-- [ ] Verify `isUnedited` flag is correct for natural difficulty variant
-- [ ] Verify composite sections reference correct source bands
-- [ ] Verify Easy variant contains only allowed grid types (`straight_8th`, `quarter_triplet`)
+- [x] Verify 3 difficulty variants are valid
+- [x] Verify `isUnedited` flag is correct for natural difficulty variant
+- [x] Verify composite sections reference correct source bands
+- [x] Verify Easy variant contains only allowed grid types (`straight_8th`, `quarter_triplet`)
 
 ---
 

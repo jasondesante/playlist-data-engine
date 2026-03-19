@@ -375,6 +375,169 @@ describe('RhythmGenerator', () => {
         });
     });
 
+    // ============================================================================
+    // Variant Verification Tests (Phase 3.7)
+    // ============================================================================
+
+    describe('variant verification', () => {
+        /**
+         * Helper function to assert that a variant has valid structure
+         */
+        function assertValidVariantStructure(
+            variant: { difficulty: string; beats: unknown[]; isUnedited: boolean; editType: string; editAmount: number },
+            expectedDifficulty: 'easy' | 'medium' | 'hard'
+        ): void {
+            expect(variant).toBeDefined();
+            expect(variant.difficulty).toBe(expectedDifficulty);
+            expect(Array.isArray(variant.beats)).toBe(true);
+            expect(typeof variant.isUnedited).toBe('boolean');
+            expect(['none', 'simplified', 'interpolated', 'pattern_inserted']).toContain(variant.editType);
+            expect(typeof variant.editAmount).toBe('number');
+            expect(variant.editAmount).toBeGreaterThanOrEqual(0);
+            expect(variant.editAmount).toBeLessThanOrEqual(1);
+        }
+
+        it('should verify all 3 difficulty variants are valid', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const result = await generator.generate(audioBuffer, unifiedBeatMap);
+
+            // Verify all 3 variants have valid structure
+            assertValidVariantStructure(result.difficultyVariants.easy, 'easy');
+            assertValidVariantStructure(result.difficultyVariants.medium, 'medium');
+            assertValidVariantStructure(result.difficultyVariants.hard, 'hard');
+
+            // Verify each beat in each variant has required properties
+            const validBands = ['low', 'mid', 'high'];
+            const validGridTypes = ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'];
+
+            for (const [difficulty, variant] of Object.entries(result.difficultyVariants)) {
+                for (const beat of variant.beats) {
+                    expect(beat).toHaveProperty('timestamp');
+                    expect(beat).toHaveProperty('beatIndex');
+                    expect(beat).toHaveProperty('gridPosition');
+                    expect(beat).toHaveProperty('gridType');
+                    expect(beat).toHaveProperty('intensity');
+                    expect(beat).toHaveProperty('band');
+                    expect(beat).toHaveProperty('sourceBand');
+                    expect(typeof beat.timestamp).toBe('number');
+                    expect(typeof beat.beatIndex).toBe('number');
+                    expect(typeof beat.gridPosition).toBe('number');
+                    expect(typeof beat.intensity).toBe('number');
+                    expect(validGridTypes).toContain(beat.gridType);
+                    expect(validBands).toContain(beat.band);
+                    expect(validBands).toContain(beat.sourceBand);
+                }
+            }
+        });
+
+        it('should verify isUnedited flag is correct for natural difficulty variant', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const result = await generator.generate(audioBuffer, unifiedBeatMap);
+            const naturalDifficulty = result.composite.naturalDifficulty;
+            const variants = result.difficultyVariants;
+
+            // The variant matching the natural difficulty should have isUnedited = true
+            // Other variants should have isUnedited = false
+            expect(variants.easy.isUnedited).toBe(naturalDifficulty === 'easy');
+            expect(variants.medium.isUnedited).toBe(naturalDifficulty === 'medium');
+            expect(variants.hard.isUnedited).toBe(naturalDifficulty === 'hard');
+
+            // Verify that exactly one variant is unedited
+            const uneditedCount = [variants.easy, variants.medium, variants.hard]
+                .filter(v => v.isUnedited).length;
+            expect(uneditedCount).toBe(1);
+
+            // The unedited variant should have editType = 'none' and editAmount = 0
+            const uneditedVariant = [variants.easy, variants.medium, variants.hard]
+                .find(v => v.isUnedited);
+            expect(uneditedVariant).toBeDefined();
+            expect(uneditedVariant!.editType).toBe('none');
+            expect(uneditedVariant!.editAmount).toBe(0);
+        });
+
+        it('should verify composite sections reference correct source bands', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const result = await generator.generate(audioBuffer, unifiedBeatMap);
+            const composite = result.composite;
+
+            // Verify sections array exists
+            expect(Array.isArray(composite.sections)).toBe(true);
+
+            // If there are sections, verify each has correct properties
+            const validBands = ['low', 'mid', 'high'];
+
+            for (const section of composite.sections) {
+                // Each section must have beatRange
+                expect(section).toHaveProperty('beatRange');
+                expect(section.beatRange).toHaveProperty('start');
+                expect(section.beatRange).toHaveProperty('end');
+                expect(typeof section.beatRange.start).toBe('number');
+                expect(typeof section.beatRange.end).toBe('number');
+                expect(section.beatRange.start).toBeLessThanOrEqual(section.beatRange.end);
+
+                // Each section must have valid sourceBand
+                expect(section).toHaveProperty('sourceBand');
+                expect(validBands).toContain(section.sourceBand);
+
+                // Each section must have score and margin
+                expect(section).toHaveProperty('score');
+                expect(section).toHaveProperty('margin');
+                expect(typeof section.score).toBe('number');
+                expect(typeof section.margin).toBe('number');
+                expect(section.score).toBeGreaterThanOrEqual(0);
+                expect(section.margin).toBeGreaterThanOrEqual(0);
+            }
+
+            // Verify all composite beats have valid sourceBand
+            for (const beat of composite.beats) {
+                expect(beat).toHaveProperty('sourceBand');
+                expect(validBands).toContain(beat.sourceBand);
+            }
+
+            // Verify metadata
+            expect(composite.metadata).toBeDefined();
+            expect(composite.metadata.totalBeats).toBe(composite.beats.length);
+            expect(composite.metadata.sectionCount).toBe(composite.sections.length);
+        });
+
+        it('should verify Easy variant contains only allowed grid types', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const result = await generator.generate(audioBuffer, unifiedBeatMap);
+            const easyVariant = result.difficultyVariants.easy;
+
+            // Easy difficulty only allows: straight_8th, quarter_triplet
+            // It must NOT contain: straight_16th, triplet_8th
+            const allowedGridTypes = ['straight_8th', 'quarter_triplet'];
+            const disallowedGridTypes = ['straight_16th', 'triplet_8th'];
+
+            // Verify all beats in easy variant have allowed grid types
+            for (const beat of easyVariant.beats) {
+                expect(allowedGridTypes).toContain(beat.gridType);
+                expect(disallowedGridTypes).not.toContain(beat.gridType);
+            }
+
+            // Additional verification: if there are beats, they should all be valid
+            if (easyVariant.beats.length > 0) {
+                const allGridTypesValid = easyVariant.beats.every(
+                    beat => allowedGridTypes.includes(beat.gridType)
+                );
+                expect(allGridTypesValid).toBe(true);
+            }
+        });
+    });
+
     describe('static methods', () => {
         describe('quickGenerate', () => {
             it('should generate with default options', async () => {
