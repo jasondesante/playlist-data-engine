@@ -307,21 +307,21 @@ Before quantization, validate that detected transients aren't too dense:
 
 **Goal**: Find duplicate rhythmic phrases to identify distinct rhythmic motifs specific to the song. These detected phrases form a **song-specific pattern library** used later for density enhancement.
 
-- [ ] Scan quantized streams for **duplicate multi-beat phrases** (per band):
-  - [ ] Check phrase sizes: 1 beat, 2 beats, 4 beats, 8 beats
-  - [ ] **Larger identical phrases are more significant** - an 8-beat repeated pattern is more meaningful than a 1-beat repeat
-  - [ ] **More occurrences increases significance** - a phrase that appears 10 times is more noteworthy than one that appears twice
-  - [ ] Track phrase occurrences with timestamps for pitch detection integration
-  - [ ] Record `sourceBand` for each phrase (which frequency band it was detected in)
-  - [ ] Store `startTimestamp`/`endTimestamp` for each occurrence (enables pitch analysis of that audio segment)
-- [ ] **Exclude uninteresting patterns** from phrase detection:
-  - [ ] Straight quarter notes (no variation)
-  - [ ] Straight eighth notes (no variation)
-  - [ ] Only patterns with **rhythmic variation** count as significant phrases
-- [ ] **Store detected phrases** as a song-specific pattern library:
-  - [ ] Phrases are remembered for use in density enhancement (Phase 2.3)
-  - [ ] When increasing density, prefer inserting detected patterns over simple interpolation
-  - [ ] Patterns are more interesting because they're derived from the song itself
+- [x] Scan quantized streams for **duplicate multi-beat phrases** (per band):
+  - [x] Check phrase sizes: 1 beat, 2 beats, 4 beats, 8 beats
+  - [x] **Larger identical phrases are more significant** - an 8-beat repeated pattern is more meaningful than a 1-beat repeat
+  - [x] **More occurrences increases significance** - a phrase that appears 10 times is more noteworthy than one that appears twice
+  - [x] Track phrase occurrences with timestamps for pitch detection integration
+  - [x] Record `sourceBand` for each phrase (which frequency band it was detected in)
+  - [x] Store `startTimestamp`/`endTimestamp` for each occurrence (enables pitch analysis of that audio segment)
+- [x] **Exclude uninteresting patterns** from phrase detection:
+  - [x] Straight quarter notes (no variation)
+  - [x] Straight eighth notes (no variation)
+  - [x] Only patterns with **rhythmic variation** count as significant phrases
+- [x] **Store detected phrases** as a song-specific pattern library:
+  - [x] Phrases are remembered for use in density enhancement (Phase 2.3)
+  - [x] When increasing density, prefer inserting detected patterns over simple interpolation
+  - [x] Patterns are more interesting because they're derived from the song itself
   ```typescript
   interface PhraseOccurrence {
     beatIndex: number;       // Index into UnifiedBeatMap.beats[]
@@ -374,11 +374,11 @@ Before quantization, validate that detected transients aren't too dense:
 - [ ] This determines the **baseline for simplification/interpolation**
 
 ### 2.3 Tests
-- [ ] Unit tests for phrase detection (varying sizes, significance scoring)
-- [ ] Unit tests for excluding straight quarter/eighth patterns
-- [ ] Unit tests for pattern library storage and retrieval
-- [ ] Unit tests for `sourceBand` tracking (verify phrases are attributed to correct band)
-- [ ] Unit tests for `PhraseOccurrence` timestamps (verify start/end times are accurate)
+- [x] Unit tests for phrase detection (varying sizes, significance scoring)
+- [x] Unit tests for excluding straight quarter/eighth patterns
+- [x] Unit tests for pattern library storage and retrieval
+- [x] Unit tests for `sourceBand` tracking (verify phrases are attributed to correct band)
+- [x] Unit tests for `PhraseOccurrence` timestamps (verify start/end times are accurate)
 - [ ] Unit tests for density calculation and categorization
 - [ ] Unit tests for natural difficulty detection
 - [ ] Verify phrase library is populated correctly
