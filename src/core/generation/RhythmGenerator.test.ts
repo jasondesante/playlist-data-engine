@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
     RhythmGenerator,
+    RHYTHM_PRESETS,
+    getRhythmPreset,
+    getRhythmPresetNames,
     type RhythmGenerationOptions,
-    type GeneratedRhythm,
-    type RhythmMetadata,
-    type OutputMode,
 } from './RhythmGenerator.js';
 import type { UnifiedBeatMap, Beat } from '../types/BeatMap.js';
 
@@ -589,5 +589,141 @@ describe('RhythmGenerator', () => {
             const result = await generator.generate(audioBuffer, unifiedBeatMap, controller.signal);
             expect(result).toBeDefined();
         });
+
     });
+
+    // ============================================================================
+    // Preset Tests
+    // ============================================================================
+
+    describe('presets', () => {
+        describe('RHYTHM_PRESETS', () => {
+            it('should have all expected preset names', () => {
+                expect(RHYTHM_PRESETS).toHaveProperty('casual');
+                expect(RHYTHM_PRESETS).toHaveProperty('standard');
+                expect(RHYTHM_PRESETS).toHaveProperty('challenge');
+                expect(RHYTHM_PRESETS).toHaveProperty('bass');
+            });
+
+            it('should have correct casual preset configuration', () => {
+                expect(RHYTHM_PRESETS.casual).toEqual({
+                    difficulty: 'easy',
+                    outputMode: 'composite',
+                    description: 'Easy difficulty for relaxed gameplay',
+                });
+            });
+
+            it('should have correct standard preset configuration', () => {
+                expect(RHYTHM_PRESETS.standard).toEqual({
+                    difficulty: 'medium',
+                    outputMode: 'composite',
+                    description: 'Balanced experience for most players',
+                });
+            });
+
+            it('should have correct challenge preset configuration', () => {
+                expect(RHYTHM_PRESETS.challenge).toEqual({
+                    difficulty: 'hard',
+                    outputMode: 'composite',
+                    description: 'Hard difficulty for skilled players',
+                });
+            });
+
+            it('should have correct bass preset configuration', () => {
+                expect(RHYTHM_PRESETS.bass).toEqual({
+                    difficulty: 'medium',
+                    outputMode: 'low',
+                    description: 'Focus on bass/low-frequency rhythms',
+                });
+            });
+
+            it('should have all presets with required properties', () => {
+                const presets = Object.values(RHYTHM_PRESETS);
+                for (const preset of presets) {
+                    expect(preset).toHaveProperty('difficulty');
+                    expect(preset).toHaveProperty('outputMode');
+                    expect(['easy', 'medium', 'hard']).toContain(preset.difficulty);
+                    expect(['composite', 'low', 'mid', 'high']).toContain(preset.outputMode);
+                }
+            });
+        });
+
+        describe('getRhythmPreset', () => {
+            it('should return casual preset by name', () => {
+                const preset = getRhythmPreset('casual');
+                expect(preset).toBeDefined();
+                expect(preset?.difficulty).toBe('easy');
+                expect(preset?.outputMode).toBe('composite');
+            });
+
+            it('should return standard preset by name', () => {
+                const preset = getRhythmPreset('standard');
+                expect(preset).toBeDefined();
+                expect(preset?.difficulty).toBe('medium');
+                expect(preset?.outputMode).toBe('composite');
+            });
+
+            it('should return challenge preset by name', () => {
+                const preset = getRhythmPreset('challenge');
+                expect(preset).toBeDefined();
+                expect(preset?.difficulty).toBe('hard');
+                expect(preset?.outputMode).toBe('composite');
+            });
+
+            it('should return bass preset by name', () => {
+                const preset = getRhythmPreset('bass');
+                expect(preset).toBeDefined();
+                expect(preset?.difficulty).toBe('medium');
+                expect(preset?.outputMode).toBe('low');
+            });
+        });
+
+        describe('getRhythmPresetNames', () => {
+            it('should return all preset names', () => {
+                const names = getRhythmPresetNames();
+                expect(names).toContain('casual');
+                expect(names).toContain('standard');
+                expect(names).toContain('challenge');
+                expect(names).toContain('bass');
+                expect(names.length).toBe(4);
+            });
+
+            it('should return names in consistent order', () => {
+                const names1 = getRhythmPresetNames();
+                const names2 = getRhythmPresetNames();
+                expect(names1).toEqual(names2);
+            });
+        });
+
+        describe('using presets with RhythmGenerator', () => {
+            it('should create generator with casual preset options', () => {
+                const preset = getRhythmPreset('casual');
+                expect(preset).toBeDefined();
+
+                generator = new RhythmGenerator({
+                    difficulty: preset!.difficulty,
+                    outputMode: preset!.outputMode,
+                });
+
+                const options = generator.getOptions();
+                expect(options.difficulty).toBe('easy');
+                expect(options.outputMode).toBe('composite');
+            });
+
+            it('should create generator with bass preset options', () => {
+                const preset = getRhythmPreset('bass');
+                expect(preset).toBeDefined();
+
+                generator = new RhythmGenerator({
+                    difficulty: preset!.difficulty,
+                    outputMode: preset!.outputMode,
+                });
+
+                const options = generator.getOptions();
+                expect(options.difficulty).toBe('medium');
+                expect(options.outputMode).toBe('low');
+            });
+        });
+    });
+
 });

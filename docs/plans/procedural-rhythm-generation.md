@@ -647,26 +647,49 @@ Each difficulty level has constraints on the maximum subdivision density allowed
 - [x] Add caching for intermediate results
 
 ### 3.6 Configuration Presets
-- [ ] Create preset configurations
+- [x] Create preset configurations
+  - **Implementation**: `src/core/generation/RhythmGenerator.ts`
+  - Added `RhythmPresetName` type: `'casual' | 'standard' | 'challenge' | 'bass'`
+  - Added `RhythmPresetConfig` interface with `difficulty`, `outputMode`, and optional `description`
+  - Added `RHYTHM_PRESETS` constant with all 4 presets
+  - Added `getRhythmPreset(name)` function to retrieve a preset by name
+  - Added `getRhythmPresetNames()` function to get all available preset names
+  - Exported all preset types and functions from `src/index.ts`
+  - Added comprehensive unit tests for presets (12 new tests)
   ```typescript
-  const RHYTHM_PRESETS = {
+  export type RhythmPresetName = 'casual' | 'standard' | 'challenge' | 'bass';
+
+  export interface RhythmPresetConfig {
+    difficulty: DifficultyPreset;
+    outputMode: OutputMode;
+    description?: string;
+  }
+
+  export const RHYTHM_PRESETS: Record<RhythmPresetName, RhythmPresetConfig> = {
     casual: {
       difficulty: 'easy',
       outputMode: 'composite',
+      description: 'Easy difficulty for relaxed gameplay',
     },
     standard: {
       difficulty: 'medium',
       outputMode: 'composite',
+      description: 'Balanced experience for most players',
     },
     challenge: {
       difficulty: 'hard',
       outputMode: 'composite',
+      description: 'Hard difficulty for skilled players',
     },
     bass: {
       difficulty: 'medium',
-      outputMode: 'low',  // Use low-frequency band directly
-    }
+      outputMode: 'low',
+      description: 'Focus on bass/low-frequency rhythms',
+    },
   };
+
+  export function getRhythmPreset(name: RhythmPresetName): RhythmPresetConfig | undefined;
+  export function getRhythmPresetNames(): RhythmPresetName[];
   ```
 
 ### 3.7 Tests

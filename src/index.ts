@@ -430,6 +430,25 @@ export { AppearanceGenerator } from './core/generation/AppearanceGenerator.js';
 export { NamingEngine } from './core/generation/NamingEngine.js';
 
 // ============================================================================
+// RHYTHM GENERATION
+// ============================================================================
+
+export {
+    RhythmGenerator,
+    RHYTHM_PRESETS,
+    getRhythmPreset,
+    getRhythmPresetNames,
+    type RhythmGenerationOptions,
+    type GeneratedRhythm,
+    type RhythmMetadata,
+    type OutputMode,
+    type Band,
+    type CachePhase,
+    type RhythmPresetName,
+    type RhythmPresetConfig,
+} from './core/generation/RhythmGenerator.js';
+
+// ============================================================================
 // ENEMY GENERATION
 // ============================================================================
 

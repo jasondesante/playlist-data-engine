@@ -199,6 +199,79 @@ export interface RhythmMetadata {
 }
 
 // ============================================================================
+// Presets
+// ============================================================================
+
+/**
+ * Preset name for rhythm generation configurations
+ */
+export type RhythmPresetName = 'casual' | 'standard' | 'challenge' | 'bass';
+
+/**
+ * A preset configuration for rhythm generation
+ */
+export interface RhythmPresetConfig {
+    /** Which difficulty preset to use for output */
+    difficulty: DifficultyPreset;
+
+    /** Which stream to use as primary output */
+    outputMode: OutputMode;
+
+    /** Optional description of what this preset is designed for */
+    description?: string;
+}
+
+/**
+ * Built-in preset configurations for common use cases
+ *
+ * - **casual**: Easy difficulty, composite output - for relaxed gameplay
+ * - **standard**: Medium difficulty, composite output - balanced experience
+ * - **challenge**: Hard difficulty, composite output - for skilled players
+ * - **bass**: Medium difficulty, low-frequency band - focus on bass rhythms
+ */
+export const RHYTHM_PRESETS: Record<RhythmPresetName, RhythmPresetConfig> = {
+    casual: {
+        difficulty: 'easy',
+        outputMode: 'composite',
+        description: 'Easy difficulty for relaxed gameplay',
+    },
+    standard: {
+        difficulty: 'medium',
+        outputMode: 'composite',
+        description: 'Balanced experience for most players',
+    },
+    challenge: {
+        difficulty: 'hard',
+        outputMode: 'composite',
+        description: 'Hard difficulty for skilled players',
+    },
+    bass: {
+        difficulty: 'medium',
+        outputMode: 'low',
+        description: 'Focus on bass/low-frequency rhythms',
+    },
+};
+
+/**
+ * Get a preset configuration by name
+ *
+ * @param name - The preset name to retrieve
+ * @returns The preset configuration, or undefined if not found
+ */
+export function getRhythmPreset(name: RhythmPresetName): RhythmPresetConfig | undefined {
+    return RHYTHM_PRESETS[name];
+}
+
+/**
+ * Get all available preset names
+ *
+ * @returns Array of preset names
+ */
+export function getRhythmPresetNames(): RhythmPresetName[] {
+    return Object.keys(RHYTHM_PRESETS) as RhythmPresetName[];
+}
+
+// ============================================================================
 // Default Configuration
 // ============================================================================
 
