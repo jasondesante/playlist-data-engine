@@ -84,3 +84,13 @@ export {
     isValidEnemyArchetype,
     isValidEncounterDifficulty
 } from '../types/Enemy.js';
+
+// Rhythm Generation
+export { RhythmGenerator } from './RhythmGenerator.js';
+export type {
+    RhythmGenerationOptions,
+    GeneratedRhythm,
+    RhythmMetadata,
+    OutputMode,
+    ProgressCallback,
+} from './RhythmGenerator.js';
