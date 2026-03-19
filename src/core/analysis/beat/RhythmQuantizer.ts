@@ -405,8 +405,7 @@ export class RhythmQuantizer {
      */
     private quantizeBand(
         transients: TransientResult[],
-        unifiedBeatMap: UnifiedBeatMap,
-        band: 'low' | 'mid' | 'high'
+        unifiedBeatMap: UnifiedBeatMap
     ): GeneratedRhythmMap {
         const beats: GeneratedBeat[] = [];
         const gridDecisions: GridDecision[] = [];
