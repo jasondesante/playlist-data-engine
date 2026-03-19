@@ -452,6 +452,26 @@ Before quantization, validate that detected transients aren't too dense:
 
 Since the composite already represents one difficulty level (its natural difficulty), only 2 additional variants need to be created.
 
+#### 3.3.1 Subdivision Limits by Difficulty
+
+Each difficulty level has constraints on the maximum subdivision density allowed. These limits ensure appropriate playability curves across difficulties.
+
+| Difficulty | Max Subdivision | Allowed Grid Types |
+|------------|-----------------|-------------------|
+| **Easy** | 8th notes, quarter note triplets | `straight_8th`, `quarter_triplet` |
+| **Medium** | 16th notes | `straight_16th`, `triplet_8th`, all types |
+| **Hard** | 16th notes | `straight_16th`, `triplet_8th`, all types |
+
+> **Key Constraint**: Easy difficulty excludes both `straight_16th` and `triplet_8th` grids. This is a stricter constraint than density alone - even if an Easy stream has low note density, it must not contain rapid subdivisions.
+
+- [ ] Define `SUBDIVISION_LIMITS` constant mapping difficulty to allowed grid types
+- [ ] Validate generated variants against subdivision limits
+- [ ] When simplifying to Easy, snap 16th notes to nearest 8th note grid
+- [ ] When simplifying to Easy, snap 8th note triplets to nearest quarter note triplet
+- [ ] Log any subdivision conversions for debugging
+
+#### 3.3.2 Variant Generation by Natural Difficulty
+
 - [ ] Determine which variants to generate based on composite's natural difficulty:
 
   **If composite is naturally hard (dense):**
@@ -475,8 +495,10 @@ Since the composite already represents one difficulty level (its natural difficu
   - [ ] Respect per-beat grid decisions (16th vs triplet) from Phase 1
 
 - [ ] **Simplification** (for dense composites needing easier difficulties):
+  - [ ] **Enforce subdivision limits** (see 3.3.1) - this is the primary constraint for Easy
   - [ ] Prioritize keeping transients on strong beats (1, 3)
   - [ ] Remove offbeat subdivisions first
+  - [ ] Snap removed subdivisions to nearest allowed grid (e.g., 16th → 8th for Easy)
   - [ ] Respect detected phrase boundaries when possible
 
 - [ ] **Mark each variant**:
@@ -600,13 +622,16 @@ Since the composite already represents one difficulty level (its natural difficu
 ### 3.7 Tests
 - [ ] Unit tests for scoring logic
 - [ ] Unit tests for composite generation
-- [ ] Unit tests for difficulty variant generation (simplification,- [ ] Unit tests for difficulty variant generation (density enhancement)
+- [ ] Unit tests for difficulty variant generation (simplification)
+- [ ] Unit tests for difficulty variant generation (density enhancement)
+- [ ] Unit tests for subdivision limits enforcement (Easy has no 16th/8th-triplets)
 - [ ] Unit tests for pattern insertion from phrase library
 - [ ] Integration tests for full pipeline (all 3 phases)
 - [ ] Performance tests (generation time < 5 seconds for  3-minute song)
 - [ ] Verify 3 difficulty variants are valid
 - [ ] Verify `isUnedited` flag is correct for natural difficulty variant
 - [ ] Verify composite sections reference correct source bands
+- [ ] Verify Easy variant contains only allowed grid types (`straight_8th`, `quarter_triplet`)
 
 ---
 

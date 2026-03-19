@@ -405,7 +405,7 @@ After rhythm generation plan completes:
     emphasizeSyncopation: boolean;
 
     // === Difficulty Settings ===
-    consecutiveSameKeyLimit: number;  // Prevent spam
+    consecutiveSameKeyLimit: number;  // Max same-key repeats: easy=12, medium=8, hard=6
     patternMemory: number;  // Measures to avoid repeating
 
     // Band selection (from rhythm generation)
@@ -565,20 +565,18 @@ The DDR pad uses **circular motion** as the primary movement philosophy. Dancing
 **Design Principles:**
 - Small intervals move to adjacent buttons in circular sequence
 - Medium intervals continue circular motion but may cross axes
-- Large intervals make dramatic crosses (up↔down or left↔right)
-- Very large intervals cross the entire pad
+- Large intervals move toward vertical axis (up/down)
+- Very large intervals go to opposite horizontal (left↔right)
 
 **State Transition Table:** The next button depends on (1) current position, (2) pitch direction, and (3) interval size:
 
-| From | Ascending → | | | | Descending → | | | | Stable |
-|------|-------------|------|---------|-------|-------------|------|---------|-------|-------|
-| | unison | small | medium | large/very_large | unison | small | medium | large/very_large | |
-| **up** | up | up | right | right / down* | up | left | left | down | up |
-| **right** | right | right | down | down / left* | right | up | up | left | right |
-| **down** | down | left | left | right | down | down | left | left / right* | down |
-| **left** | left | up | up | right | left | left | down | down / right* | left |
-
-\* `large` vs `very_large` distinction: `very_large` uses the more dramatic cross option
+| From | Ascending → | | | | | Descending → | | | | | Stable |
+|------|-------------|------|---------|-------|------------|-------------|------|---------|-------|------------|-------|
+| | unison | small | medium | large | very_large | unison | small | medium | large | very_large | |
+| **up** | up | up | right | right | left | up | left | right | down | down | up |
+| **right** | right | up | up | up | left | right | down | down | down | left | right |
+| **down** | down | left | right | up | up | down | down | left | left | right | down |
+| **left** | left | up | up | up | right | left | down | down | down | right | left |
 
 - [ ] Implement DDR pitch-to-button mapping with state transitions
   ```typescript
@@ -698,27 +696,27 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
 
 **Fret Transition Table:** The next fret depends on (1) current fret, (2) pitch direction, and (3) interval size:
 
-| From | Ascending → | | | | Descending → | | | | Stable |
+| From | Ascending → | | | | | Descending → | | | | | Stable |
 |------|-------------|------|---------|-------|------------|-------------|------|---------|-------|------------|-------|
 | | unison | small | medium | large | very_large | unison | small | medium | large | very_large | |
-| **1** | 1 | 2 | 2 | 3 | 3 | 1 | 4↗ | 4↗ | 3↗ | 2↗ | 1 |
-| **2** | 2 | 3 | 3 | 4 | 4 | 2 | 1 | 1 | 4↗ | 3↗ | 2 |
-| **3** | 3 | 4 | 4 | 5 | 5 | 3 | 2 | 2 | 1 | 4↗ | 3 |
-| **4** | 4 | 5 | 5 | 2↘ | 3↘ | 4 | 3 | 3 | 2 | 1 | 4 |
-| **5** | 5 | 2↘ | 2↘ | 3↘ | 4↘ | 5 | 4 | 4 | 3 | 2 | 5 |
+| **1** | 1 | 2 | 2 | 3 | 3 | 1 | 4↗ | 4↗ | 3↗ | 3 | 1 |
+| **2** | 2 | 3 | 3 | 4 | 4 | 2 | 1 | 1 | 4↗ | 4 | 2 |
+| **3** | 3 | 4 | 4 | 5 | 5 | 3 | 2 | 2 | 1 | 1 | 3 |
+| **4** | 4 | 5 | 5 | 2↘ | 2↘ | 4 | 3 | 3 | 2 | 1 | 4 |
+| **5** | 5 | 2↘ | 2↘ | 3↘ | 3↘ | 5 | 4 | 4 | 3 | 2 | 5 |
 
 ↘ = string wrap down (ceiling → wrap to lower fret)
 ↗ = string wrap up (floor → wrap to higher fret)
 
 **String Wrap Logic:** Instead of clamping at frets 1 and 5, simulate a string change:
-- **Ascending past fret 5** → wrap to fret 2 (like moving to a higher string)
+- **Ascending past fret 5** → wrap to fret 2-3 (like moving to a higher string)
   - From 5 +1 fret → fret 2
   - From 5 +2 frets → fret 3
-  - From 5 +3 frets → fret 4
-- **Descending past fret 1** → wrap to fret 4 (like moving to a lower string)
+  - From 5 +3 frets → fret 3 (stays centered)
+- **Descending past fret 1** → wrap to fret 3-4 (like moving to a lower string)
   - From 1 -1 fret → fret 4
   - From 1 -2 frets → fret 3
-  - From 1 -3 frets → fret 2
+  - From 1 -3 frets → fret 3 (stays centered)
 
 **Key observations:**
 - Small/medium intervals move by 1 fret (adjacent)
@@ -841,52 +839,143 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
 
 #### 2.4.3 Common Mapping Logic
 
-- [ ] Implement shared mapping utilities
+**Goal**: Blend pitch-derived buttons with pattern-derived buttons based on pitch detection confidence.
+
+**Strategy**: Replace buttons in order of confidence - lowest confidence pitch detections are replaced with pattern buttons first. This ensures that high-confidence pitch data is preserved while uncertain pitches fall back to patterns.
+
+- [ ] Implement confidence-based blending
   ```typescript
-  // Used by both modes to blend pitch and pattern influences
+  /**
+   * Blends pitch-derived and pattern-derived buttons based on pitch confidence.
+   *
+   * Algorithm:
+   * 1. Sort all beats by pitch confidence (lowest → highest)
+   * 2. Calculate how many beats to replace based on weight
+   * 3. Replace the lowest-confidence beats with pattern buttons
+   * 4. Keep pitch buttons for highest-confidence beats
+   *
+   * @param beats - All beats with pitch data (including confidence)
+   * @param pitchKeys - Pitch-derived button for each beat (null if no pitch)
+   * @param patternKeys - Pattern-derived button for each beat
+   * @param weight - 0 = all pattern, 1 = all pitch
+   * @returns Final button assignments
+   */
   function blendPitchAndPattern<T extends DDRButton | GuitarHeroButton>(
-    pitchKey: T | null,
-    patternKey: T,
-    weight: number  // 0 = pattern only, 1 = pitch only
-  ): T {
-    // No pitch available → use pattern
-    if (pitchKey === null) {
-      return patternKey;
+    beats: PitchAtBeat[],
+    pitchKeys: (T | null)[],
+    patternKeys: T[],
+    weight: number
+  ): T[] {
+    // Build list with confidence, filtering out beats with no pitch
+    const withConfidence = beats
+      .map((beat, index) => ({
+        index,
+        confidence: beat.pitch?.confidence ?? 0,
+        hasPitch: pitchKeys[index] !== null,
+      }))
+      .filter(item => item.hasPitch);
+
+    // Sort by confidence (lowest first) - these get replaced first
+    withConfidence.sort((a, b) => a.confidence - b.confidence);
+
+    // Calculate how many beats to replace with patterns
+    // weight = 1.0 → 0% replaced (all pitch)
+    // weight = 0.5 → 50% replaced (lowest confidence half)
+    // weight = 0.0 → 100% replaced (all patterns)
+    const replaceCount = Math.floor(withConfidence.length * (1 - weight));
+
+    // Indices of beats to replace (lowest confidence)
+    const indicesToReplace = new Set(
+      withConfidence.slice(0, replaceCount).map(item => item.index)
+    );
+
+    // Build final result
+    return beats.map((beat, index) => {
+      // No pitch available → always use pattern
+      if (pitchKeys[index] === null) {
+        return patternKeys[index];
+      }
+      // Low confidence → use pattern
+      if (indicesToReplace.has(index)) {
+        return patternKeys[index];
+      }
+      // High confidence → use pitch
+      return pitchKeys[index]!;
+    });
+  }
+  ```
+
+- [ ] **Confidence-based blending rationale**:
+  | Confidence Level | Weight = 0.8 | Weight = 0.5 | Weight = 0.2 |
+  |------------------|--------------|--------------|--------------|
+  | 0.9 (high)       | pitch        | pitch        | pattern      |
+  | 0.7              | pitch        | pitch        | pattern      |
+  | 0.5              | pitch        | pattern      | pattern      |
+  | 0.3 (low)        | pitch        | pattern      | pattern      |
+  | no pitch         | pattern      | pattern      | pattern      |
+
+- [ ] **Pattern filling for filtered beats**:
+  - After identifying which beats need patterns (low confidence or no pitch), fill them immediately
+  - Randomly select from all patterns in the vocabulary that can fill the available hole
+  - If no pattern can fill a remaining unassigned beat, interpolate from the previous pattern button to the next detected pitch button
+  ```typescript
+  function fillPatternHoles<T extends DDRButton | GuitarHeroButton>(
+    beats: PitchAtBeat[],
+    pitchKeys: (T | null)[],      // null = needs pattern
+    patternLibrary: ButtonPattern<T>[],
+    previousKey: T | null
+  ): T[] {
+    const result: T[] = [...pitchKeys.map(k => k)];  // Copy pitch keys
+
+    for (let i = 0; i < beats.length; i++) {
+      if (result[i] !== null) continue;  // Already has pitch key
+
+      // Find patterns that can fill this hole
+      // Consider: previous key, next pitch key, and context
+      const nextPitchKey = findNextPitchKey(result, i);
+      const compatiblePatterns = patternLibrary.filter(pattern =>
+        isPatternCompatible(pattern, previousKey, nextPitchKey)
+      );
+
+      if (compatiblePatterns.length > 0) {
+        // Randomly select a compatible pattern
+        const pattern = compatiblePatterns[Math.floor(Math.random() * compatiblePatterns.length)];
+        result[i] = pattern.keys[0];  // Use first key from pattern
+      } else {
+        // No pattern fits - interpolate to next pitch key
+        result[i] = interpolateButton(previousKey, nextPitchKey);
+      }
+
+      previousKey = result[i];
     }
 
-    // Weight determines blend
-    // In practice, this could use weighted random selection
-    // or deterministic blending based on beat position
-    if (Math.random() < weight) {
-      return pitchKey;
-    }
-    return patternKey;
+    return result as T[];
   }
   ```
 
 ### 2.5 Difficulty-Based Button Logic
 
-> **How pitch influence works**: The `pitchInfluenceWeight` (0-1) determines how much `PitchAtBeat.direction` and `intervalCategory` affect button selection vs. pattern-based selection. A weight of 1.0 means buttons follow the melody exactly; 0.0 means buttons follow patterns only.
+> **How pitch influence works**: The `pitchInfluenceWeight` (0-1) defaults to **1.0** (full pitch influence) and is **user-controlled only**. It does not change based on difficulty. A weight of 1.0 means buttons follow the melody; lower values allow more patterns to fill in.
 
-- [ ] Easy:
+- [ ] **Easy**:
   - Single button per beat
-  - Predictable patterns (alternating)
-  - **Strong pitch influence (weight 0.8)**: `direction` strongly determines button; `stable` direction = repeat key
-  - No rapid direction changes - prefer `stable` or adjacent keys when `direction` changes
-  - `consecutiveSameKeyLimit`: 3
+  - **Direction-only mapping**: Uses only `PitchAtBeat.direction` (up/down/stable), ignores `intervalCategory`
+  - **No leaps**: Only moves to adjacent buttons (stepwise motion), never skips
+  - `stable` direction = repeat the same key
+  - `consecutiveSameKeyLimit`: 12
 
-- [ ] Medium:
+- [ ] **Medium**:
+  - **Direction + interval mapping**: Uses both `PitchAtBeat.direction` and `intervalCategory`
+  - **Leaps allowed**: Can skip buttons based on interval size (medium/large/very_large intervals)
   - Pattern variation enabled
-  - **Moderate pitch influence (weight 0.5)**: `direction` and `intervalCategory` influence 50% of button selection
-  - Some rapid direction changes allowed
-  - `consecutiveSameKeyLimit`: 2
+  - `consecutiveSameKeyLimit`: 8
 
-- [ ] Hard:
+- [ ] **Hard**:
+  - **Direction + interval mapping**: Uses both `PitchAtBeat.direction` and `intervalCategory`
+  - **Leaps allowed**: Can skip buttons based on interval size (medium/large/very_large intervals)
   - Rapid button changes allowed
   - Complex patterns (rolls, streams)
-  - **Lower pitch influence (weight 0.3)**: `direction` and `intervalCategory` have less influence; more variety from patterns
-  - Large and `very_large` intervals can trigger bigger button jumps
-  - `consecutiveSameKeyLimit`: 2
+  - `consecutiveSameKeyLimit`: 6
 
 ### 2.6 Combining Rhythm Band Selection with Pitch
 
@@ -1153,7 +1242,14 @@ interface ChartMetadata {
 - [ ] Unit tests for pattern selection (both controller modes)
 - [ ] Verify difficulty constraints are respected
 - [ ] Test band-aware mapping logic (using `PitchAtBeat.band`)
-- [ ] Unit tests for pitch/pattern blending (`blendPitchAndPattern`)
+- [ ] **Unit tests for confidence-based blending (`blendPitchAndPattern`)**:
+  - [ ] Verify weight = 1.0 → all pitch buttons used (no replacement)
+  - [ ] Verify weight = 0.0 → all pattern buttons used (full replacement)
+  - [ ] Verify weight = 0.5 → 50% replaced (lowest confidence half)
+  - [ ] Verify lowest confidence beats are replaced first
+  - [ ] Verify beats with no pitch (null) always use pattern regardless of weight
+  - [ ] Verify high-confidence pitch beats are preserved when weight > 0
+  - [ ] Verify correct behavior with ties in confidence (deterministic ordering)
 - [ ] Integration test: full button mapping with real pitch data
 - [ ] Verify direction statistics are calculated correctly in output metadata
 
@@ -1335,7 +1431,8 @@ interface ChartMetadata {
       controllerMode: 'ddr',  // or 'guitar_hero'
       rhythm: { maxDensity: 'eighth', averageDensity: 0.3 },
       buttons: {
-        pitchInfluenceWeight: 0.8  // Strong pitch influence
+        // pitchInfluenceWeight defaults to 1.0 (user-controlled)
+        consecutiveSameKeyLimit: 12
       }
     },
     standard: {
@@ -1343,7 +1440,8 @@ interface ChartMetadata {
       controllerMode: 'ddr',
       rhythm: { maxDensity: 'eighth', averageDensity: 0.5 },
       buttons: {
-        pitchInfluenceWeight: 0.5  // Balanced
+        // pitchInfluenceWeight defaults to 1.0 (user-controlled)
+        consecutiveSameKeyLimit: 8
       }
     },
     challenge: {
@@ -1351,7 +1449,8 @@ interface ChartMetadata {
       controllerMode: 'ddr',
       rhythm: { maxDensity: 'sixteenth', averageDensity: 0.7 },
       buttons: {
-        pitchInfluenceWeight: 0.3  // More pattern variety
+        // pitchInfluenceWeight defaults to 1.0 (user-controlled)
+        consecutiveSameKeyLimit: 6
       }
     },
     insane: {
@@ -1359,10 +1458,15 @@ interface ChartMetadata {
       controllerMode: 'ddr',
       rhythm: { maxDensity: 'sixteenth', averageDensity: 0.9 },
       buttons: {
-        pitchInfluenceWeight: 0.2  // Mostly patterns
+        // pitchInfluenceWeight defaults to 1.0 (user-controlled)
+        consecutiveSameKeyLimit: 6
       }
     }
   };
+
+  // Note: pitchInfluenceWeight is a user-controlled parameter that defaults to 1.0.
+  // Users can lower it to allow more patterns to fill in when pitch confidence is low.
+  // It does not automatically change based on difficulty preset.
   ```
 
 ### 3.4 Tests
