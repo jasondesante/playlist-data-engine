@@ -108,11 +108,11 @@ The engine already has:
 > **Future Consideration**: Expand to 6 bands (sub, bass, lowMid, mid, highMid, high) for finer-grained rhythm detection in complex material. This would increase processing time approximately 2x.
 
 ### 1.2 Multi-Band Analyzer
-- [ ] Create `MultiBandAnalyzer` class in `src/core/analysis/MultiBandAnalyzer.ts`
-  - [ ] Accept `AudioBuffer` as input
-  - [ ] Apply band-pass filters for each band
-  - [ ] Generate separate onset strength envelopes per band
-  - [ ] Calculate per-band energy over time
+- [x] Create `MultiBandAnalyzer` class in `src/core/analysis/MultiBandAnalyzer.ts`
+  - [x] Accept `AudioBuffer` as input
+  - [x] Apply band-pass filters for each band
+  - [x] Generate separate onset strength envelopes per band
+  - [x] Calculate per-band energy over time
   ```typescript
   interface MultiBandResult {
     bands: Map<string, BandAnalysis>;
@@ -283,7 +283,7 @@ Before quantization, validate that detected transients aren't too dense:
 
 ### 1.5 Tests
 - [x] Unit tests for band-pass filter
-- [ ] Unit tests for `MultiBandAnalyzer`
+- [x] Unit tests for `MultiBandAnalyzer`
 - [ ] Unit tests for `TransientDetector`
 - [ ] Unit tests for density validation retry logic
 - [ ] Unit tests for intensity filtering
