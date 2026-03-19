@@ -1,0 +1,182 @@
+/**
+ * Combat System Types
+ * D&D 5e-inspired turn-based combat mechanics
+ */
+
+import type { CharacterSheet, Attack, Spell } from './Character';
+import type { EnvironmentalContext } from './Progression';
+import type { Equipment } from '../../utils/constants.ts';
+
+/**
+ * StatusEffect - Temporary condition affecting a combatant
+ */
+export interface StatusEffect {
+  name: string;           // e.g., "Charmed", "Frightened", "Prone"
+  description: string;
+  duration: number;       // Rounds remaining
+  source?: string;        // Which combatant applied this
+  hasConcentration?: boolean;  // Some effects require concentration
+
+  /** Optional icon URL for small UI display */
+  icon?: string;
+
+  /** Optional image URL for larger display */
+  image?: string;
+}
+
+/**
+ * Combatant - A character participating in combat
+ */
+export interface Combatant {
+  id: string;             // Unique ID within combat instance
+  character: CharacterSheet;
+  initiative: number;     // Initiative roll result
+  currentHP: number;      // Current hit points
+  temporaryHP?: number;   // Temporary hit points (damage is taken from these first)
+  statusEffects: StatusEffect[];
+  position?: {
+    x: number;
+    y: number;
+  };                      // Optional tactical position
+  isDefeated: boolean;    // Whether combatant is unconscious/defeated
+  actionUsed: boolean;    // Has action been used this turn
+  bonusActionUsed: boolean;
+  reactionUsed: boolean;
+  spellSlots?: {          // Remaining spell slots by level (if applicable)
+    [level: number]: number;
+  };
+}
+
+/**
+ * CombatAction - An action taken during combat
+ */
+export interface CombatAction {
+  type: 'attack' | 'spell' | 'dodge' | 'dash' | 'disengage' | 'help' | 'hide' | 'ready' | 'flee';
+  actor: Combatant;
+  target?: Combatant;
+  targets?: Combatant[];
+  attack?: Attack;
+  spell?: Spell;
+  result?: CombatActionResult;
+}
+
+/**
+ * CombatActionResult - Outcome of a combat action
+ */
+export interface CombatActionResult {
+  success: boolean;
+  roll?: number;          // d20 roll result
+  isCritical?: boolean;
+  damage?: number;
+  damageType?: string;
+  targetHP?: number;
+  description: string;
+}
+
+/**
+ * AttackRoll - Result of an attack roll
+ */
+export interface AttackRoll {
+  d20Roll: number;        // The d20 roll (1-20)
+  attackBonus: number;    // Modifier added (ability mod + proficiency)
+  totalRoll: number;      // d20 + attackBonus
+  targetAC: number;       // Defense of target
+  hit: boolean;           // Whether attack hit
+  isCritical: boolean;    // Natural 20
+  isMiss: boolean;        // Natural 1
+}
+
+/**
+ * DamageRoll - Result of a damage roll
+ */
+export interface DamageRoll {
+  diceFormula: string;    // e.g., "2d6", "1d8+3"
+  rolls: number[];        // Individual die rolls
+  modifier?: number;      // Ability modifier added
+  total: number;          // Sum of rolls + modifier
+  isCritical: boolean;    // If critical hit, dice are doubled
+}
+
+/**
+ * SpellCastResult - Outcome of casting a spell
+ */
+export interface SpellCastResult {
+  success: boolean;
+  spellName: string;
+  caster: Combatant;
+  targets: Combatant[];
+  saveDC?: number;        // Difficulty class for saving throw
+  damage?: DamageRoll;
+  effectsApplied: StatusEffect[];
+  spellSlotUsed: number;  // Spell level
+  description: string;
+}
+
+/**
+ * CombatInstance - Represents an active combat encounter
+ */
+export interface CombatInstance {
+  id: string;
+  combatants: Combatant[];
+  currentTurnIndex: number;  // Index into combatants array
+  roundNumber: number;
+  environment?: EnvironmentalContext;
+  history: CombatAction[];   // Log of all actions taken
+  isActive: boolean;
+  winner?: Combatant;        // Set when combat ends
+  startTime: number;
+  lastUpdated: number;
+}
+
+/**
+ * CombatResult - Final outcome of a combat encounter
+ */
+export interface CombatResult {
+  winner: Combatant;
+  defeated: Combatant[];
+  roundsElapsed: number;
+  totalTurns: number;
+  xpAwarded: number;
+  treasureAwarded?: {
+    gold: number;
+    items: Equipment[];
+  };
+  description: string;
+}
+
+/**
+ * D&D Damage Type Classification
+ */
+export type DamageType =
+  | 'slashing' | 'piercing' | 'bludgeoning'  // Physical
+  | 'fire' | 'cold' | 'lightning' | 'thunder' | 'poison' | 'acid'  // Elemental
+  | 'necrotic' | 'radiant' | 'psychic' | 'force';  // Magical
+
+/**
+ * D&D Ability Saving Throw
+ */
+export type SavingThrowAbility = 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma';
+
+/**
+ * Treasure Configuration Options
+ * - Fixed amount: `{ gold: 500 }` - always rewards exactly 500 gold
+ * - Range: `{ gold: { min: 100, max: 200 } }` - random amount between 100-200 (uses seed if provided)
+ * - Items: Optional array of items to award (supports any Equipment type including boxes)
+ */
+export interface TreasureConfig {
+  gold?: number | { min: number; max: number };
+  items?: Equipment[];
+}
+
+/**
+ * Combat Configuration Options
+ */
+export interface CombatConfig {
+  useEnvironment?: boolean;     // Apply environmental context to combat (weather, altitude, etc.)
+  useMusic?: boolean;           // Apply music-based buffs to character stats
+  tacticalMode?: boolean;       // Enable position-based distance mechanics
+  maxTurnsBeforeDraw?: number;  // Turn limit before combat is a draw (default: 100)
+  allowFleeing?: boolean;       // Can combatants attempt to flee
+  seed?: string;                // Seed for deterministic RNG (treasure generation, etc.)
+  treasure?: TreasureConfig;    // Custom treasure rewards (overrides default 0-99 gold)
+}
