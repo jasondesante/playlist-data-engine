@@ -230,6 +230,9 @@ export interface DifficultyVariantConfig {
 
     /** Minimum intensity threshold for keeping beats during simplification. Default: 0.3 */
     simplificationIntensityThreshold: number;
+
+    /** Intensity threshold for keeping beats during HEAVY simplification. Default: 0.5 */
+    heavySimplificationIntensityThreshold: number;
 }
 
 // ============================================================================
@@ -240,6 +243,7 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     logConversions: false,
     preservePhraseBoundaries: true,
     simplificationIntensityThreshold: 0.3,
+    heavySimplificationIntensityThreshold: 0.5,
 };
 
 // ============================================================================
@@ -491,8 +495,11 @@ export class DifficultyVariantGenerator {
         const needsEnhancement = this.needsEnhancement(targetDifficulty, naturalDifficulty);
 
         if (needsSimplification) {
+            // Determine if this is heavy simplification (2 levels down: hard -> easy)
+            const isHeavySimplification = this.isHeavySimplification(targetDifficulty, naturalDifficulty);
+
             // Simplify beats to meet subdivision limits
-            const result = this.simplifyBeats(composite.beats, targetDifficulty);
+            const result = this.simplifyBeats(composite.beats, targetDifficulty, isHeavySimplification);
 
             return {
                 difficulty: targetDifficulty,
@@ -534,16 +541,23 @@ export class DifficultyVariantGenerator {
      * - `straight_16th` → `straight_8th` (snap 16th notes to nearest 8th note)
      * - `triplet_8th` → `quarter_triplet` (snap 8th triplets to quarter note triplet)
      *
+     * For heavy simplification (hard -> easy), additional beat prioritization is applied:
+     * - Prioritize keeping transients on strong beats (beats 1 and 3 of each measure)
+     * - Remove offbeat subdivisions first (gridPosition 1 and 3)
+     * - Keep only core beats (high intensity or on strong beats)
+     *
      * After conversion, duplicate beats at the same grid position are deduplicated
      * (keeping the highest intensity).
      *
      * @param beats - The beats to simplify
      * @param targetDifficulty - The target difficulty level
+     * @param isHeavySimplification - Whether this is heavy simplification (hard -> easy)
      * @returns Simplified beats with conversion metadata
      */
     private simplifyBeats(
         beats: CompositeBeat[],
-        targetDifficulty: DifficultyLevel
+        targetDifficulty: DifficultyLevel,
+        isHeavySimplification: boolean = false
     ): { beats: CompositeBeat[]; metadata: SubdivisionConversionMetadata } {
         const metadata: SubdivisionConversionMetadata = {
             sixteenthToEighth: 0,
@@ -557,15 +571,21 @@ export class DifficultyVariantGenerator {
         const allowedTypes = SUBDIVISION_LIMITS[targetDifficulty].allowedGridTypes;
         const allTypesAllowed = beats.every(b => allowedTypes.includes(b.gridType));
 
-        if (allTypesAllowed) {
+        if (allTypesAllowed && !isHeavySimplification) {
             metadata.totalBeatsAfter = beats.length;
             return { beats: [...beats], metadata };
+        }
+
+        // For heavy simplification, filter beats based on priority
+        let beatsToProcess = beats;
+        if (isHeavySimplification) {
+            beatsToProcess = this.filterBeatsForHeavySimplification(beats, metadata);
         }
 
         // Convert each beat to allowed grid type
         const convertedBeats: CompositeBeat[] = [];
 
-        for (const beat of beats) {
+        for (const beat of beatsToProcess) {
             if (allowedTypes.includes(beat.gridType)) {
                 // Beat already allowed, keep as-is
                 convertedBeats.push(beat);
@@ -614,6 +634,79 @@ export class DifficultyVariantGenerator {
         metadata.totalBeatsAfter = deduplicatedBeats.length;
 
         return { beats: deduplicatedBeats, metadata };
+    }
+
+    /**
+     * Filter beats for heavy simplification (hard -> easy)
+     *
+     * Implements beat prioritization:
+     * 1. Strong beats (beats 1 and 3 of each measure) are always kept
+     * 2. Downbeats (gridPosition 0) on weak beats are kept if high intensity
+     * 3. Offbeats (gridPosition 1, 2, 3) are only kept if very high intensity
+     *
+     * In 4/4 time with 0-indexed beats:
+     * - Beat 0, 4, 8... = Beat 1 of measure (strong)
+     * - Beat 2, 6, 10... = Beat 3 of measure (strong)
+     * - Beat 1, 5, 9... = Beat 2 of measure (weak)
+     * - Beat 3, 7, 11... = Beat 4 of measure (weak)
+     *
+     * @param beats - The beats to filter
+     * @param metadata - Metadata object to track removals
+     * @returns Filtered beats
+     */
+    private filterBeatsForHeavySimplification(
+        beats: CompositeBeat[],
+        metadata: SubdivisionConversionMetadata
+    ): CompositeBeat[] {
+        const threshold = this.config.heavySimplificationIntensityThreshold;
+        const keptBeats: CompositeBeat[] = [];
+
+        for (const beat of beats) {
+            const isStrongBeat = this.isStrongBeat(beat.beatIndex);
+            const isDownbeat = beat.gridPosition === 0;
+            const isOffbeat = beat.gridPosition === 1 || beat.gridPosition === 3;
+
+            if (isStrongBeat) {
+                // Always keep beats on strong beats (1 and 3 of measure)
+                keptBeats.push(beat);
+            } else if (isDownbeat && beat.intensity >= threshold * 0.7) {
+                // Keep downbeats on weak beats if reasonably high intensity
+                keptBeats.push(beat);
+            } else if (isOffbeat && beat.intensity >= threshold) {
+                // Only keep offbeats if very high intensity
+                keptBeats.push(beat);
+            } else if (beat.gridPosition === 2 && beat.intensity >= threshold * 0.8) {
+                // Grid position 2 is the "and" of the beat - keep if high intensity
+                keptBeats.push(beat);
+            } else {
+                // Remove this beat
+                metadata.beatsRemoved++;
+                if (this.config.logConversions) {
+                    console.log(
+                        `[DifficultyVariantGenerator] Heavy simplification: removed beat at ` +
+                        `beat ${beat.beatIndex} position ${beat.gridPosition} ` +
+                        `(intensity: ${beat.intensity.toFixed(2)}, strongBeat: ${isStrongBeat})`
+                    );
+                }
+            }
+        }
+
+        return keptBeats;
+    }
+
+    /**
+     * Determine if a beat index is on a strong beat (beat 1 or 3 of a measure)
+     *
+     * In 4/4 time with 0-indexed beats:
+     * - Beat indices 0, 4, 8, 12... are beat 1 of their measure
+     * - Beat indices 2, 6, 10, 14... are beat 3 of their measure
+     *
+     * @param beatIndex - The beat index (0-indexed)
+     * @returns True if this is a strong beat
+     */
+    private isStrongBeat(beatIndex: number): boolean {
+        const positionInMeasure = beatIndex % 4;
+        return positionInMeasure === 0 || positionInMeasure === 2;
     }
 
     /**
@@ -751,6 +844,23 @@ export class DifficultyVariantGenerator {
         const naturalIndex = difficultyOrder.indexOf(naturalDifficulty);
 
         return targetIndex > naturalIndex;
+    }
+
+    /**
+     * Determine if this is heavy simplification (2 levels down)
+     *
+     * Heavy simplification occurs when going from hard -> easy (skipping medium).
+     * This requires more aggressive beat removal - keeping only core beats.
+     *
+     * @param targetDifficulty - The target difficulty
+     * @param naturalDifficulty - The natural difficulty of the composite
+     * @returns True if this is heavy simplification
+     */
+    private isHeavySimplification(
+        targetDifficulty: DifficultyLevel,
+        naturalDifficulty: NaturalDifficulty
+    ): boolean {
+        return naturalDifficulty === 'hard' && targetDifficulty === 'easy';
     }
 
     /**
