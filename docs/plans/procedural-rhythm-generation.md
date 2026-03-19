@@ -383,7 +383,7 @@ Before quantization, validate that detected transients aren't too dense:
 - [x] Unit tests for natural difficulty detection
 - [x] Verify phrase library is populated correctly
 - [x] Verify density metrics are accurate per band
-- [ ] Integration test: process known track and verify phrase/density analysis
+- [x] Integration test: process known track and verify phrase/density analysis
 
 ---
 
