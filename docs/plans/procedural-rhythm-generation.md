@@ -428,25 +428,38 @@ Before quantization, validate that detected transients aren't too dense:
 
 **Goal**: Create a single composite stream by slicing together the highest-scoring sections from each band.
 
-- [ ] Create the composite stream:
-  - [ ] For each section, select the band with the highest interest score
-  - [ ] Slice that band's rhythm into the composite
-  - [ ] Handle transitions between bands smoothly
+- [x] Create the composite stream:
+  - [x] For each section, select the band with the highest interest score
+  - [x] Slice that band's rhythm into the composite
+  - [x] Handle transitions between bands smoothly
   ```typescript
   interface CompositeStream {
-    stream: GeneratedBeat[];
-    sections: CompositeSection[];  // Which band contributed to each section
+    beats: CompositeBeat[];          // All beats combined from winning sections
+    sections: CompositeSection[];    // Which band contributed to each section
     naturalDifficulty: 'easy' | 'medium' | 'hard';  // Determined by density analysis
+    metadata: {
+      totalBeats: number;
+      sectionCount: number;
+      beatsPerBand: { low: number; mid: number; high: number };
+      sectionsPerBand: { low: number; mid: number; high: number };
+    };
   }
 
   interface CompositeSection {
     beatRange: { start: number; end: number };
     sourceBand: 'low' | 'mid' | 'high';
     score: number;  // Why this band won this section
+    margin: number; // Margin of victory over runner-up
+  }
+
+  interface CompositeBeat extends GeneratedBeat {
+    sourceBand: 'low' | 'mid' | 'high';  // Which band this beat originated from
   }
   ```
-- [ ] Generate **1 composite stream** (unedited baseline)
-- [ ] Determine the composite's **natural difficulty** based on Phase 2 density metrics
+- [x] Generate **1 composite stream** (unedited baseline)
+- [x] Determine the composite's **natural difficulty** based on Phase 2 density metrics
+- [x] Filter out sections where no band has any beats (empty section handling)
+- [x] Deduplicate beats at the same timestamp (keep highest intensity)
 
 ### 3.3 Difficulty Variant Generation
 
@@ -623,7 +636,7 @@ Each difficulty level has constraints on the maximum subdivision density allowed
 
 ### 3.7 Tests
 - [x] Unit tests for scoring logic
-- [ ] Unit tests for composite generation
+- [x] Unit tests for composite generation
 - [ ] Unit tests for difficulty variant generation (simplification)
 - [ ] Unit tests for difficulty variant generation (density enhancement)
 - [ ] Unit tests for subdivision limits enforcement (Easy has no 16th/8th-triplets)
