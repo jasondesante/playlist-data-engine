@@ -551,8 +551,13 @@ export class DifficultyVariantGenerator {
             // Determine if this is heavy simplification (2 levels down: hard -> easy)
             const isHeavySimplification = this.isHeavySimplification(targetDifficulty, naturalDifficulty);
 
-            // Simplify beats to meet subdivision limits
-            const result = this.simplifyBeats(composite.beats, targetDifficulty, isHeavySimplification);
+            // Simplify beats to meet subdivision limits, respecting phrase boundaries if enabled
+            const result = this.simplifyBeats(
+                composite.beats,
+                targetDifficulty,
+                isHeavySimplification,
+                phraseAnalysis
+            );
 
             return {
                 difficulty: targetDifficulty,
@@ -625,12 +630,14 @@ export class DifficultyVariantGenerator {
      * @param beats - The beats to simplify
      * @param targetDifficulty - The target difficulty level
      * @param isHeavySimplification - Whether this is heavy simplification (hard -> easy)
+     * @param phraseAnalysis - Optional phrase analysis for preserving phrase boundaries
      * @returns Simplified beats with conversion metadata
      */
     private simplifyBeats(
         beats: CompositeBeat[],
         targetDifficulty: DifficultyLevel,
-        isHeavySimplification: boolean = false
+        isHeavySimplification: boolean = false,
+        phraseAnalysis?: PhraseAnalysisResult
     ): { beats: CompositeBeat[]; metadata: SubdivisionConversionMetadata } {
         const metadata: SubdivisionConversionMetadata = {
             sixteenthToEighth: 0,
@@ -639,6 +646,9 @@ export class DifficultyVariantGenerator {
             totalBeatsBefore: beats.length,
             totalBeatsAfter: 0,
         };
+
+        // Build phrase membership map for boundary preservation
+        const phraseMembership = this.buildPhraseMembershipMap(phraseAnalysis);
 
         // If all grid types are allowed, no conversion needed
         const allowedTypes = SUBDIVISION_LIMITS[targetDifficulty].allowedGridTypes;
@@ -652,7 +662,7 @@ export class DifficultyVariantGenerator {
         // For heavy simplification, filter beats based on priority
         let beatsToProcess = beats;
         if (isHeavySimplification) {
-            beatsToProcess = this.filterBeatsForHeavySimplification(beats, metadata);
+            beatsToProcess = this.filterBeatsForHeavySimplification(beats, metadata, phraseMembership);
         }
 
         // Convert each beat to allowed grid type
@@ -716,6 +726,7 @@ export class DifficultyVariantGenerator {
      * 1. Strong beats (beats 1 and 3 of each measure) are always kept
      * 2. Downbeats (gridPosition 0) on weak beats are kept if high intensity
      * 3. Offbeats (gridPosition 1, 2, 3) are only kept if very high intensity
+     * 4. Beats part of significant phrases get additional consideration
      *
      * In 4/4 time with 0-indexed beats:
      * - Beat 0, 4, 8... = Beat 1 of measure (strong)
@@ -725,11 +736,13 @@ export class DifficultyVariantGenerator {
      *
      * @param beats - The beats to filter
      * @param metadata - Metadata object to track removals
+     * @param phraseMembership - Map of beat indices to phrase membership
      * @returns Filtered beats
      */
     private filterBeatsForHeavySimplification(
         beats: CompositeBeat[],
-        metadata: SubdivisionConversionMetadata
+        metadata: SubdivisionConversionMetadata,
+        phraseMembership: Map<number, RhythmicPhrase[]> = new Map()
     ): CompositeBeat[] {
         const threshold = this.config.heavySimplificationIntensityThreshold;
         const keptBeats: CompositeBeat[] = [];
@@ -739,8 +752,14 @@ export class DifficultyVariantGenerator {
             const isDownbeat = beat.gridPosition === 0;
             const isOffbeat = beat.gridPosition === 1 || beat.gridPosition === 3;
 
+            // Check if beat should be preserved due to phrase membership
+            const shouldPreservePhrase = this.shouldPreserveForPhrase(beat, phraseMembership, threshold);
+
             if (isStrongBeat) {
                 // Always keep beats on strong beats (1 and 3 of measure)
+                keptBeats.push(beat);
+            } else if (shouldPreservePhrase) {
+                // Keep beats that are part of significant phrases
                 keptBeats.push(beat);
             } else if (isDownbeat && beat.intensity >= threshold * 0.7) {
                 // Keep downbeats on weak beats if reasonably high intensity
@@ -1306,5 +1325,98 @@ export class DifficultyVariantGenerator {
      */
     getConfig(): DifficultyVariantConfig {
         return { ...this.config };
+    }
+
+    /**
+     * Build a map of beat indices to their phrase membership
+     *
+     * This creates a lookup structure to quickly check if a beat is part of
+     * a detected rhythmic phrase, and how significant that phrase is.
+     *
+     * @param phraseAnalysis - The phrase analysis result
+     * @returns Map from beat index to array of phrases that include that beat
+     */
+    private buildPhraseMembershipMap(
+        phraseAnalysis?: PhraseAnalysisResult
+    ): Map<number, RhythmicPhrase[]> {
+        const membershipMap = new Map<number, RhythmicPhrase[]>();
+
+        if (!phraseAnalysis || !this.config.preservePhraseBoundaries) {
+            return membershipMap;
+        }
+
+        // Only consider phrases with variation (interesting patterns)
+        const significantPhrases = phraseAnalysis.phrases.filter(p => p.hasVariation);
+
+        for (const phrase of significantPhrases) {
+            for (const occurrence of phrase.occurrences) {
+                // Each occurrence spans from beatIndex to beatIndex + sizeInBeats - 1
+                for (let i = 0; i < phrase.sizeInBeats; i++) {
+                    const beatIndex = occurrence.beatIndex + i;
+                    const existing = membershipMap.get(beatIndex) ?? [];
+                    existing.push(phrase);
+                    membershipMap.set(beatIndex, existing);
+                }
+            }
+        }
+
+        return membershipMap;
+    }
+
+    /**
+     * Check if a beat should be preserved due to phrase membership
+     *
+     * When preservePhraseBoundaries is enabled, this method determines if
+     * a beat that would normally be removed should be kept because it's
+     * part of a significant detected phrase.
+     *
+     * @param beat - The beat to check
+     * @param phraseMembership - Map of beat indices to phrase membership
+     * @param intensityThreshold - The intensity threshold being used
+     * @returns True if the beat should be preserved due to phrase membership
+     */
+    private shouldPreserveForPhrase(
+        beat: CompositeBeat,
+        phraseMembership: Map<number, RhythmicPhrase[]>,
+        intensityThreshold: number
+    ): boolean {
+        if (!this.config.preservePhraseBoundaries) {
+            return false;
+        }
+
+        const phrases = phraseMembership.get(beat.beatIndex);
+        if (!phrases || phrases.length === 0) {
+            return false;
+        }
+
+        // Find the most significant phrase this beat belongs to
+        const mostSignificant = phrases.reduce((best, phrase) =>
+            phrase.significance > best.significance ? phrase : best
+        );
+
+        // If the beat is close to the intensity threshold and part of a significant phrase,
+        // preserve it to keep the phrase intact
+        const intensityMargin = beat.intensity - intensityThreshold;
+        const isCloseToThreshold = intensityMargin >= -0.15; // Within 15% below threshold
+
+        // More significant phrases get more leniency
+        const significanceThreshold = 1.5;
+        const isSignificantPhrase = mostSignificant.significance >= significanceThreshold;
+
+        // Preserve if:
+        // 1. The beat is close to the intensity threshold AND
+        // 2. It's part of a significant phrase
+        if (isCloseToThreshold && isSignificantPhrase) {
+            if (this.config.logConversions) {
+                console.log(
+                    `[DifficultyVariantGenerator] Preserving beat at index ${beat.beatIndex} ` +
+                    `position ${beat.gridPosition} (intensity: ${beat.intensity.toFixed(2)}) ` +
+                    `due to phrase membership (phrase significance: ${mostSignificant.significance.toFixed(2)})`
+                );
+            }
+            return true;
+        }
+
+        return false;
     }
 }

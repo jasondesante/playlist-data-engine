@@ -140,7 +140,7 @@ export interface RhythmMetadata {
     naturalDifficulty: DifficultyLevel;
 
     /** Configuration used for generation */
-    generationConfig: Required<RhythmGenerationOptions>;
+    generationConfig: ResolvedOptions;
 
     /** Duration of the audio in seconds */
     duration: number;
@@ -153,7 +153,19 @@ export interface RhythmMetadata {
 // Default Configuration
 // ============================================================================
 
-const DEFAULT_OPTIONS: Required<RhythmGenerationOptions> = {
+/**
+ * Internal type for resolved options (seed remains optional)
+ */
+type ResolvedOptions = {
+    difficulty: DifficultyPreset;
+    outputMode: OutputMode;
+    measureStartOffset: number;
+    minimumTransientIntensity: number;
+    seed: string | undefined;
+    verbose: boolean;
+};
+
+const DEFAULT_OPTIONS: ResolvedOptions = {
     difficulty: 'medium',
     outputMode: 'composite',
     measureStartOffset: 0,
@@ -202,7 +214,7 @@ const DEFAULT_OPTIONS: Required<RhythmGenerationOptions> = {
  * ```
  */
 export class RhythmGenerator {
-    private options: Required<RhythmGenerationOptions>;
+    private options: ResolvedOptions;
 
     // Pipeline components
     private multiBandAnalyzer: MultiBandAnalyzer;
@@ -247,7 +259,7 @@ export class RhythmGenerator {
      *
      * @returns The current configuration
      */
-    getOptions(): Required<RhythmGenerationOptions> {
+    getOptions(): ResolvedOptions {
         return { ...this.options };
     }
 
@@ -258,12 +270,15 @@ export class RhythmGenerator {
      *
      * @param audioBuffer - Web Audio API AudioBuffer to analyze
      * @param unifiedBeatMap - Unified beat map from beat detection
+     * @param signal - Optional AbortSignal for cancellation
      * @param onProgress - Optional progress callback
      * @returns Complete rhythm generation result
+     * @throws {DOMException} If the operation is cancelled via signal
      */
     async generate(
         audioBuffer: AudioBuffer,
         unifiedBeatMap: UnifiedBeatMap,
+        signal?: AbortSignal,
         onProgress?: ProgressCallback
     ): Promise<GeneratedRhythm> {
         const log = (phase: string, progress: number, message: string) => {
@@ -273,16 +288,22 @@ export class RhythmGenerator {
             onProgress?.(phase, progress, message);
         };
 
+        // Check for cancellation
+        signal?.throwIfAborted();
+
         // ================================================================
         // Phase 1: Multi-band Analysis, Transient Detection, Quantization
         // ================================================================
         log('Phase 1', 0, 'Starting multi-band analysis');
+        signal?.throwIfAborted();
 
         const multiBandResult = this.analyzeMultiBand(audioBuffer);
         log('Phase 1', 0.2, `Analyzed ${multiBandResult.bands.size} frequency bands`);
+        signal?.throwIfAborted();
 
         const transientAnalysis = this.detectTransients(multiBandResult);
         log('Phase 1', 0.4, `Detected ${transientAnalysis.transients.length} transients`);
+        signal?.throwIfAborted();
 
         const quantizationResult = this.quantizeTransients(transientAnalysis, unifiedBeatMap);
         log('Phase 1', 0.8, `Quantized to ${quantizationResult.streams.low.beats.length +
@@ -290,33 +311,44 @@ export class RhythmGenerator {
             quantizationResult.streams.high.beats.length} beats across all bands`);
         log('Phase 1', 1, 'Phase 1 complete');
 
+        signal?.throwIfAborted();
+
         // ================================================================
         // Phase 2: Phrase Analysis, Density Analysis
         // ================================================================
         log('Phase 2', 0, 'Starting phrase and density analysis');
+        signal?.throwIfAborted();
 
         const phraseAnalysis = this.analyzePhrases(quantizationResult.streams);
         log('Phase 2', 0.3, `Detected ${phraseAnalysis.phrases.length} rhythmic phrases`);
+        signal?.throwIfAborted();
 
         const densityAnalysis = this.analyzeDensity(quantizationResult);
         log('Phase 2', 0.7, `Density category: ${densityAnalysis.combinedMetrics.densityCategory}`);
         log('Phase 2', 1, 'Phase 2 complete');
+        signal?.throwIfAborted();
 
         // ================================================================
         // Phase 3: Scoring, Composite Generation, Difficulty Variants
         // ================================================================
         log('Phase 3', 0, 'Starting scoring and composite generation');
+        signal?.throwIfAborted();
 
         const scoringResult = this.scoreStreams(quantizationResult, phraseAnalysis, densityAnalysis);
         log('Phase 3', 0.2, `Scored ${scoringResult.sectionWinners.length} sections`);
+        signal?.throwIfAborted();
 
         const composite = this.generateComposite(quantizationResult, scoringResult, densityAnalysis);
         log('Phase 3', 0.4, `Generated composite with ${composite.beats.length} beats, ` +
             `natural difficulty: ${composite.naturalDifficulty}`);
+        signal?.throwIfAborted();
 
         const difficultyVariants = this.generateDifficultyVariants(composite, phraseAnalysis, quantizationResult);
         log('Phase 3', 0.8, 'Generated easy/medium/hard difficulty variants');
         log('Phase 3', 1, 'Phase 3 complete');
+
+        // Check for cancellation before building final result
+        signal?.throwIfAborted();
 
         // ================================================================
         // Build Final Result

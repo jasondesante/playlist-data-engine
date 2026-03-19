@@ -320,7 +320,7 @@ Before quantization, validate that detected transients aren't too dense:
   - [x] Only patterns with **rhythmic variation** count as significant phrases
 - [x] **Store detected phrases** as a song-specific pattern library:
 
-> **⚠️ Bug Fix Required**: The current implementation includes intensity in the pattern hash calculation (`hashPattern()` in `PhraseAnalyzer.ts`). This causes identical rhythms with different intensities to be treated as different patterns. **Fix**: Remove intensity from the hash - only beat indices, grid positions, and grid types should be used for pattern matching. Intensity varies naturally between occurrences of the same rhythm and should not prevent pattern recognition.
+> **✅ Fixed**: Intensity is now excluded from pattern matching. The `hashPattern()` method in `PhraseAnalyzer.ts` only uses beat indices, grid positions, and grid types. Identical rhythms with different intensities are correctly recognized as the same pattern.
   - [x] Phrases are remembered for use in density enhancement (Phase 2.3)
   - [x] When increasing density, prefer inserting detected patterns over simple interpolation
   - [x] Patterns are more interesting because they're derived from the song itself
@@ -543,7 +543,13 @@ Each difficulty level has constraints on the maximum subdivision density allowed
     - Strong beats identified as beatIndex % 4 == 0 or 2 (beats 1 and 3 of 4/4 measure)
   - [x] Remove offbeat subdivisions first (gridPosition 1 and 3 prioritized for removal)
   - [x] Snap removed subdivisions to nearest allowed grid (e.g., 16th → 8th for Easy)
-  - [ ] Respect detected phrase boundaries when possible (not yet implemented)
+  - [x] Respect detected phrase boundaries when possible
+    - **Implementation**: `src/core/analysis/beat/DifficultyVariantGenerator.ts`
+    - Added `buildPhraseMembershipMap()` method to track which beats belong to phrases
+    - Added `shouldPreserveForPhrase()` method to determine if a beat should be preserved
+    - Beats close to intensity threshold (within 15%) AND in significant phrases (significance >= 1.5) are preserved
+    - Configurable via `preservePhraseBoundaries` option (default: true)
+    - Added 3 unit tests for phrase boundary preservation behavior
 
 - [x] **Mark each variant**:
   ```typescript

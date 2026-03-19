@@ -481,3 +481,152 @@ describe('DifficultyVariantGenerator Integration', () => {
         expect(variants.easy.conversionMetadata?.totalBeatsBefore).toBe(8);
     });
 });
+
+// ============================================================================
+// Phrase Boundary Preservation Tests
+// ============================================================================
+
+describe('Phrase Boundary Preservation', () => {
+    /**
+     * Create a mock phrase analysis result with phrases at specific beat indices
+     */
+    function createMockPhraseAnalysis(
+        phraseBeats: { startBeatIndex: number; sizeInBeats: number; significance: number }[]
+    ): import('../../../src/core/analysis/beat/PhraseAnalyzer.js').PhraseAnalysisResult {
+        const phrases: import('../../../src/core/analysis/beat/PhraseAnalyzer.js').RhythmicPhrase[] =
+            phraseBeats.map((p, i) => ({
+                id: `phrase-${i}`,
+                pattern: [],
+                sizeInBeats: p.sizeInBeats,
+                sourceBand: 'mid' as const,
+                occurrences: [
+                    {
+                        beatIndex: p.startBeatIndex,
+                        startTimestamp: p.startBeatIndex * 0.5,
+                        endTimestamp: (p.startBeatIndex + p.sizeInBeats) * 0.5,
+                    },
+                ],
+                significance: p.significance,
+                hasVariation: true,
+                availableForReuse: true,
+            }));
+
+        return {
+            phrases,
+            phrasesByBand: new Map([['mid', phrases]]),
+            mostSignificantPhrases: phrases.filter(p => p.significance > 2),
+            phrasesBySize: new Map([[2, phrases.filter(p => p.sizeInBeats === 2)]]),
+            patternLibrary: phrases.filter(p => p.hasVariation && p.availableForReuse),
+            bandAnalysis: {
+                low: { band: 'low', phrases: [], phrasesBySize: new Map(), phrasesWithVariation: [] },
+                mid: { band: 'mid', phrases, phrasesBySize: new Map(), phrasesWithVariation: phrases },
+                high: { band: 'high', phrases: [], phrasesBySize: new Map(), phrasesWithVariation: [] },
+            },
+        };
+    }
+
+    it('should preserve beats that are part of significant phrases during heavy simplification', () => {
+        // Create a generator with phrase preservation enabled
+        const generator = new DifficultyVariantGenerator({
+            preservePhraseBoundaries: true,
+            heavySimplificationIntensityThreshold: 0.5,
+            logConversions: true,
+        });
+
+        // Create beats where beat 1 is part of a significant phrase
+        // Beat 1 is NOT a strong beat (0 and 2 are strong in 0-indexed), so it would normally be removed
+        // But if it's part of a phrase with high significance, it should be preserved
+        const beats = [
+            // Beat 0 (strong) - will always be kept
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            createMockCompositeBeat(0, 'straight_16th', 1, 0.4), // Low intensity offbeat
+            createMockCompositeBeat(0, 'straight_16th', 2, 0.4), // Low intensity
+            createMockCompositeBeat(0, 'straight_16th', 3, 0.4), // Low intensity offbeat
+            // Beat 1 (weak) - would normally be removed during heavy simplification
+            // Intensity 0.36 is below threshold * 0.7 = 0.35 for downbeats (would be removed)
+            // But intensity - threshold = 0.36 - 0.5 = -0.14, which is >= -0.15 (close to threshold)
+            // And it's part of a significant phrase (significance: 3.0), so it should be preserved
+            createMockCompositeBeat(1, 'straight_16th', 0, 0.36), // Close to threshold, in phrase
+            createMockCompositeBeat(1, 'straight_16th', 1, 0.36),
+            createMockCompositeBeat(1, 'straight_16th', 2, 0.36),
+            createMockCompositeBeat(1, 'straight_16th', 3, 0.36),
+            // Beat 2 (strong)
+            createMockCompositeBeat(2, 'straight_16th', 0, 0.9),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'hard');
+
+        // Create phrase analysis where beat 1 is part of a significant 1-beat phrase
+        const phraseAnalysis = createMockPhraseAnalysis([
+            { startBeatIndex: 1, sizeInBeats: 1, significance: 3.0 }, // High significance phrase at beat 1
+        ]);
+
+        const variants = generator.generate(composite, phraseAnalysis);
+
+        // Easy variant should be simplified
+        expect(variants.easy.editType).toBe('simplified');
+
+        // Without phrase preservation, beat 1 would be completely removed (it's a weak beat with low intensity)
+        // With phrase preservation, some beats from beat 1 should be kept
+        const beatsAtBeat1 = variants.easy.beats.filter(b => b.beatIndex === 1);
+        expect(beatsAtBeat1.length).toBeGreaterThan(0);
+    });
+
+    it('should not affect simplification when preservePhraseBoundaries is disabled', () => {
+        // Create a generator with phrase preservation DISABLED
+        const generator = new DifficultyVariantGenerator({
+            preservePhraseBoundaries: false,
+            heavySimplificationIntensityThreshold: 0.5,
+        });
+
+        const beats = [
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            createMockCompositeBeat(0, 'straight_16th', 1, 0.4),
+            // Beat 1 has intensity 0.2, which is below threshold * 0.7 = 0.35
+            // So it should be removed without phrase preservation
+            createMockCompositeBeat(1, 'straight_16th', 0, 0.2),
+            createMockCompositeBeat(2, 'straight_16th', 0, 0.9),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'hard');
+
+        // Create phrase analysis (but it won't be used since preservation is disabled)
+        const phraseAnalysis = createMockPhraseAnalysis([
+            { startBeatIndex: 1, sizeInBeats: 1, significance: 3.0 },
+        ]);
+
+        const variants = generator.generate(composite, phraseAnalysis);
+
+        // Beat 1 should be completely removed since preservation is disabled
+        const beatsAtBeat1 = variants.easy.beats.filter(b => b.beatIndex === 1);
+        expect(beatsAtBeat1.length).toBe(0);
+    });
+
+    it('should not preserve beats from low-significance phrases', () => {
+        const generator = new DifficultyVariantGenerator({
+            preservePhraseBoundaries: true,
+            heavySimplificationIntensityThreshold: 0.5,
+        });
+
+        const beats = [
+            createMockCompositeBeat(0, 'straight_16th', 0, 0.9),
+            // Beat 1 has intensity 0.2, which is below threshold * 0.7 = 0.35
+            // It would only be kept if phrase preservation kicks in
+            createMockCompositeBeat(1, 'straight_16th', 0, 0.2),
+            createMockCompositeBeat(2, 'straight_16th', 0, 0.9),
+        ];
+
+        const composite = createMockCompositeStream(beats, 'hard');
+
+        // Create phrase analysis with LOW significance (below 1.5 threshold)
+        const phraseAnalysis = createMockPhraseAnalysis([
+            { startBeatIndex: 1, sizeInBeats: 1, significance: 0.5 }, // Low significance
+        ]);
+
+        const variants = generator.generate(composite, phraseAnalysis);
+
+        // Beat 1 should be removed since the phrase significance is too low
+        const beatsAtBeat1 = variants.easy.beats.filter(b => b.beatIndex === 1);
+        expect(beatsAtBeat1.length).toBe(0);
+    });
+});
