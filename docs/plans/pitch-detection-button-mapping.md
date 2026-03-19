@@ -192,8 +192,6 @@ After rhythm generation plan completes:
     availableKeys: string[];  // e.g., ['up', 'down', 'left', 'right']
 
     // Pattern settings
-    maxSimultaneous: number;  // Max buttons pressed at once (chords)
-    chordProbability: number;  // 0-1
     holdNoteProbability: number;  // 0-1
 
     // Pitch influence
@@ -236,23 +234,21 @@ After rhythm generation plan completes:
   ```typescript
   interface ButtonPattern {
     name: string;
-    keys: string[][];  // Array of key combinations per beat
+    keys: string[];  // Sequence of keys per beat
     measures: number;
     tags: string[];
     difficulty: number;  // 1-10
   }
 
   // Example patterns:
-  // "alternating": [['up'], ['down'], ['up'], ['down']]
-  // "roll": [['left'], ['down'], ['right']]
-  // "chord": [['up', 'down']]
-  // "stream": [['left'], ['left'], ['right'], ['right']]
-  // "staircase": [['up'], ['right'], ['down'], ['left']]
+  // "alternating": ['up', 'down', 'up', 'down']
+  // "roll": ['left', 'down', 'right']
+  // "stream": ['left', 'left', 'right', 'right']
+  // "staircase": ['up', 'right', 'down', 'left']
   ```
 - [ ] Create pattern library
   - [ ] Basic patterns (alternating, single key runs)
   - [ ] Roll patterns (sequential key presses)
-  - [ ] Chord patterns (simultaneous presses)
   - [ ] Stream patterns (repeated directions)
   - [ ] Jump patterns (non-adjacent keys)
 
@@ -303,8 +299,6 @@ After rhythm generation plan completes:
     // Button mapping metadata
     buttonMetadata: {
       keysUsed: string[];
-      chordCount: number;
-      averageKeysPerBeat: number;
       pitchInfluencedBeats: number;
       patternsUsed: string[];
     };
@@ -355,21 +349,18 @@ After rhythm generation plan completes:
 ### 2.5 Difficulty-Based Button Logic
 - [ ] Easy:
   - Single button per beat
-  - No simultaneous presses (chords)
   - Predictable patterns (alternating)
   - Strong pitch influence (follows melody closely)
   - No rapid direction changes
   - `consecutiveSameKeyLimit`: 3
 
 - [ ] Medium:
-  - Occasional chords (2 buttons), probability 0.1-0.2
   - Pattern variation enabled
   - Moderate pitch influence (weight 0.5)
   - Some rapid direction changes
   - `consecutiveSameKeyLimit`: 2
 
 - [ ] Hard:
-  - Frequent chords, probability 0.3-0.5
   - Rapid button changes allowed
   - Complex patterns (rolls, streams)
   - Lower pitch influence (weight 0.3) - more variety
@@ -396,7 +387,218 @@ After rhythm generation plan completes:
   }
   ```
 
-### 2.7 Tests
+### 2.7 Output Format Conversion (GeneratedBeat → ChartedBeatMap)
+
+**Goal**: Convert the procedural generation output (`GeneratedBeat[]`) to a format compatible with the existing manual charting system (`ChartedBeatMap`) for use with `BeatStream`.
+
+#### 2.7.1 ChartedBeatMap Type Definition
+
+The `ChartedBeatMap` is the final output format that bridges procedural generation with the existing beat map infrastructure:
+
+```typescript
+import type { Beat, DownbeatConfig, SubdivisionType } from '../../types/BeatMap.js';
+
+/**
+ * A beat in a procedurally generated chart.
+ * Extends the base Beat interface with procedural-generation-specific fields.
+ */
+interface ChartedBeat extends Beat {
+  // === Inherited from Beat ===
+  // timestamp: number;
+  // beatInMeasure: number;  // Decimal position (0, 0.25, 0.5, 0.75 for 16th notes)
+  // isDownbeat: boolean;
+  // measureNumber: number;
+  // intensity: number;
+  // confidence: number;
+  // requiredKey?: string;  // Assigned by ButtonMapper
+
+  // === Procedural generation fields ===
+
+  /** Index into the original UnifiedBeatMap.beats[] - which quarter note this belongs to */
+  quarterNoteIndex: number;
+
+  /** Position within that quarter note (0-3 for 16th, 0-2 for triplet) */
+  subdivisionPosition: number;
+
+  /** Whether this was detected from audio (true) or interpolated/generated (false) */
+  isDetected: boolean;
+
+  /** The subdivision type used for this beat */
+  subdivisionType: SubdivisionType;
+
+  /** Which frequency band this beat originated from */
+  sourceBand: 'low' | 'mid' | 'high';
+
+  /** Quantization error in milliseconds (how far from original transient) */
+  quantizationError?: number;
+}
+
+/**
+ * A complete procedurally-generated chart ready for gameplay.
+ * Compatible with BeatStream and the existing beat map infrastructure.
+ */
+interface ChartedBeatMap {
+  /** Unique identifier for the audio source */
+  audioId: string;
+
+  /** Duration of the audio in seconds */
+  duration: number;
+
+  /** All beats with required keys assigned */
+  beats: ChartedBeat[];
+
+  /** Indices of beats that were originally detected from audio */
+  detectedBeatIndices: number[];
+
+  /** The downbeat configuration inherited from UnifiedBeatMap */
+  downbeatConfig: DownbeatConfig;
+
+  /** Quarter note interval in seconds (from UnifiedBeatMap) */
+  quarterNoteInterval: number;
+
+  /** Equivalent BPM (60 / quarterNoteInterval) */
+  bpm: number;
+
+  /** Chart metadata */
+  chartMetadata: ChartMetadata;
+}
+
+interface ChartMetadata {
+  /** Which difficulty this chart represents */
+  difficulty: 'easy' | 'medium' | 'hard';
+
+  /** Keys used in this chart */
+  keysUsed: string[];
+
+  /** Number of beats with pitch-influenced keys */
+  pitchInfluencedBeats: number;
+
+  /** Button patterns used */
+  patternsUsed: string[];
+
+  /** Source rhythm metadata */
+  rhythmMetadata: RhythmMetadata;
+
+  /** Pitch analysis metadata (if pitch detection was used) */
+  pitchMetadata: {
+    bandUsed: 'low' | 'mid' | 'high';
+    melodyRange: { min: string; max: string } | null;
+    keyHint: string | null;
+  } | null;
+
+  /** Generation timestamp */
+  generatedAt: string;
+
+  /** Seed used for reproducibility */
+  seed?: string;
+}
+```
+
+#### 2.7.2 BeatConverter Class
+
+- [ ] Create `BeatConverter` in `src/core/generation/BeatConverter.ts`
+  ```typescript
+  /**
+   * Converts procedural generation output (GeneratedBeat[]) to ChartedBeatMap
+   * for compatibility with BeatStream and the existing beat map infrastructure.
+   */
+  class BeatConverter {
+    /**
+     * Convert a DifficultyVariant to a ChartedBeatMap
+     *
+     * @param variant - The difficulty variant with GeneratedBeat[]
+     * @param unifiedBeatMap - The source UnifiedBeatMap for measure/beat info
+     * @param keyAssignments - Map of beat index to required key
+     * @param metadata - Chart metadata
+     * @returns A ChartedBeatMap ready for BeatStream
+     */
+    convertToChartedBeatMap(
+      variant: DifficultyVariant,
+      unifiedBeatMap: UnifiedBeatMap,
+      keyAssignments: Map<number, string>,
+      metadata: Partial<ChartMetadata>
+    ): ChartedBeatMap;
+
+    /**
+     * Convert a single GeneratedBeat to ChartedBeat
+     *
+     * @param beat - The GeneratedBeat to convert
+     * @param unifiedBeatMap - Source for measure/beat info
+     * @param key - The required key (if assigned)
+     * @returns A ChartedBeat
+     */
+    private convertBeat(
+      beat: GeneratedBeat,
+      unifiedBeatMap: UnifiedBeatMap,
+      key?: string
+    ): ChartedBeat;
+
+    /**
+     * Calculate beatInMeasure from gridPosition and gridType
+     *
+     * @param quarterNoteIndex - Index of the parent quarter note
+     * @param gridPosition - Position within that quarter (0-3 for 16th, 0-2 for triplet)
+     * @param gridType - The grid type
+     * @returns Decimal beatInMeasure value
+     */
+    private calculateBeatInMeasure(
+      quarterNoteIndex: number,
+      gridPosition: number,
+      gridType: 'straight_16th' | 'triplet_8th'
+    ): number;
+
+    /**
+     * Map gridType to SubdivisionType
+     *
+     * @param gridType - Procedural grid type
+     * @returns SubdivisionType for the beat
+     */
+    private mapGridToSubdivision(
+      gridType: 'straight_16th' | 'triplet_8th'
+    ): SubdivisionType;
+  }
+  ```
+
+#### 2.7.3 Conversion Logic Details
+
+- [ ] **beatInMeasure calculation**:
+  - Get parent quarter note's `beatInMeasure` from UnifiedBeatMap
+  - For `straight_16th`: Add `gridPosition * 0.25` (0, 0.25, 0.5, 0.75)
+  - For `triplet_8th`: Add `gridPosition * 0.33` (0, 0.33, 0.67)
+
+- [ ] **isDownbeat and measureNumber**:
+  - Inherited from the parent quarter note in UnifiedBeatMap
+  - Subdivisions of beat 0 (downbeat) are NOT downbeats themselves
+
+- [ ] **subdivisionType mapping**:
+  ```typescript
+  const GRID_TO_SUBDIVISION = {
+    'straight_16th': 'sixteenth',
+    'triplet_8th': 'triplet8',
+  };
+  ```
+
+- [ ] **confidence assignment**:
+  - Use `intensity` from GeneratedBeat as base confidence
+  - Set `confidence = 1.0` for detected beats
+  - Set `confidence = 0.8` for interpolated/generated beats
+
+- [ ] **requiredKey assignment**:
+  - Look up key from `keyAssignments` map by beat index
+  - Set `requiredKey` only if key exists in map
+
+#### 2.7.4 Tests for Conversion
+
+- [ ] Unit tests for `calculateBeatInMeasure` (all grid positions)
+- [ ] Unit tests for `mapGridToSubdivision`
+- [ ] Unit tests for full `convertToChartedBeatMap`
+- [ ] Verify converted beats have correct `beatInMeasure` values
+- [ ] Verify `isDownbeat` is only true for quarter note positions
+- [ ] Verify `requiredKey` is correctly assigned from map
+- [ ] Integration test: converted ChartedBeatMap works with BeatStream
+- [ ] Integration test: key matching works with `checkButtonPress()`
+
+### 2.8 Tests
 - [ ] Unit tests for pitch-to-key mapping (all 3 modes)
 - [ ] Unit tests for pattern selection
 - [ ] Verify difficulty constraints are respected
@@ -485,6 +687,11 @@ After rhythm generation plan completes:
   }
 
   interface GeneratedLevel {
+    // === PLAYABLE OUTPUT ===
+    // The ChartedBeatMap ready for use with BeatStream
+    chart: ChartedBeatMap;
+
+    // === SOURCE DATA (for reference/re-generation) ===
     // The selected difficulty variant with keys assigned
     variant: DifficultyVariant;
 
@@ -503,7 +710,6 @@ After rhythm generation plan completes:
     rhythmMetadata: RhythmMetadata;
     buttonMetadata: {
       keysUsed: string[];
-      chordCount: number;
       pitchInfluencedBeats: number;
       patternsUsed: string[];
     };
@@ -512,6 +718,12 @@ After rhythm generation plan completes:
       melodyRange: { min: string; max: string } | null;
       keyHint: string | null;
     } | null;
+    chartMetadata: {
+      totalBeats: number;
+      detectedBeats: number;
+      generatedBeats: number;
+      subdivisionTypesUsed: SubdivisionType[];
+    };
     generationConfig: LevelGenerationOptions;
   }
   ```
@@ -522,12 +734,13 @@ After rhythm generation plan completes:
   2. Select difficulty variant from `GeneratedRhythm.difficultyVariants`
   3. Run pitch detection on dominant band (from `CompositeSection.sourceBand`)
   4. Link pitch to beat positions and phrase occurrences
-  5. Generate button mappings for selected variant
-  6. Combine into final `GeneratedLevel`
+  5. Generate button mappings for selected variant → `MappedLevelResult`
+  6. **Convert to ChartedBeatMap** using `BeatMapConverter.convertToChartedBeatMap()`
+  7. Combine into final `GeneratedLevel` with playable `chart`
 - [ ] Add progress callbacks for long-running generation
   ```typescript
   interface GenerationProgress {
-    stage: 'rhythm' | 'pitch' | 'buttons' | 'finalizing';
+    stage: 'rhythm' | 'pitch' | 'buttons' | 'conversion' | 'finalizing';
     progress: number;  // 0-1
     message: string;
   }
@@ -543,7 +756,6 @@ After rhythm generation plan completes:
       difficulty: 'easy',
       rhythm: { maxDensity: 'eighth', averageDensity: 0.3 },
       buttons: {
-        maxSimultaneous: 1,
         usePitchMapping: true,
         pitchMappingMode: 'directional',
         pitchInfluenceWeight: 0.8
@@ -553,8 +765,6 @@ After rhythm generation plan completes:
       difficulty: 'medium',
       rhythm: { maxDensity: 'eighth', averageDensity: 0.5 },
       buttons: {
-        maxSimultaneous: 2,
-        chordProbability: 0.2,
         pitchInfluenceWeight: 0.5
       }
     },
@@ -562,8 +772,6 @@ After rhythm generation plan completes:
       difficulty: 'hard',
       rhythm: { maxDensity: 'sixteenth', averageDensity: 0.7 },
       buttons: {
-        maxSimultaneous: 2,
-        chordProbability: 0.4,
         pitchInfluenceWeight: 0.3
       }
     },
@@ -571,8 +779,6 @@ After rhythm generation plan completes:
       difficulty: 'hard',
       rhythm: { maxDensity: 'sixteenth', averageDensity: 0.9 },
       buttons: {
-        maxSimultaneous: 3,
-        chordProbability: 0.6,
         pitchInfluenceWeight: 0.2
       }
     }
@@ -810,3 +1016,6 @@ interface GeneratedRhythm {
 7. Serialization preserves all level data and metadata
 8. API is simple and discoverable
 9. Documentation is complete and accurate
+10. **ChartedBeatMap is fully compatible with BeatStream** - generated levels can be played immediately
+11. **Key matching works correctly** - `checkButtonPress()` validates keys against `requiredKey`
+12. **Conversion preserves timing accuracy** - beat positions match original transients within tolerance
