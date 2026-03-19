@@ -149,6 +149,15 @@ export {
     type STFTResult,
 } from './utils/audioUtils.js';
 
+// Transient Detector
+export { TransientDetector } from './TransientDetector.js';
+export type {
+    TransientResult,
+    TransientAnalysis,
+    TransientDetectorConfig,
+    TransientDetectionMethod,
+} from './TransientDetector.js';
+
 // Beat Key Helpers (for rhythm game chart creation)
 export {
     assignKeyToBeat,

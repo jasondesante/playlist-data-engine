@@ -130,14 +130,14 @@ The engine already has:
   ```
 
 ### 1.3 Multi-Band Transient Detector (Separate from Ellis Beat Detection)
-- [ ] Create `TransientDetector` class in `src/core/analysis/beat/TransientDetector.ts`
-  - [ ] Implement varied detection strategies tailored to the frequency band:
-    - [ ] **Low Band**: Energy-based detection / Subband Envelope (great for clear kick/bass transients)
-    - [ ] **Mid Band**: Spectral Flux algorithm (reliable for snare, vocals, and harmonic onsets)
-    - [ ] **High Band**: High-Frequency Content (HFC) / Spectral Flux (ideal for hi-hats, cymbals, air)
-  - [ ] Add adaptive thresholding to adjust to the song's dynamic range
-  - [ ] Support concurrent per-band transient detection
-  - [ ] **Note**: Rhythmic quantization to the beat map grid happens in section 1.4, not here.
+- [x] Create `TransientDetector` class in `src/core/analysis/beat/TransientDetector.ts`
+  - [x] Implement varied detection strategies tailored to the frequency band:
+    - [x] **Low Band**: Energy-based detection / Subband Envelope (great for clear kick/bass transients)
+    - [x] **Mid Band**: Spectral Flux algorithm (reliable for snare, vocals, and harmonic onsets)
+    - [x] **High Band**: High-Frequency Content (HFC) / Spectral Flux (ideal for hi-hats, cymbals, air)
+  - [x] Add adaptive thresholding to adjust to the song's dynamic range
+  - [x] Support concurrent per-band transient detection
+  - [x] **Note**: Rhythmic quantization to the beat map grid happens in section 1.4, not here.
   ```typescript
   interface TransientResult {
     timestamp: number;
