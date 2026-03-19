@@ -75,20 +75,20 @@ The engine already has:
 **Goal**: Create a separate transient detection system that operates on filtered frequency bands and cross-references with the beat map.
 
 ### 1.1 Band-Pass Filter Implementation
-- [ ] Create `BandPassFilter` utility in `audioUtils.ts`
-  - [ ] Implement Butterworth band-pass filter
-  - [ ] Default to **8th order** (48 dB/octave slope) for clean band separation
-  - [ ] Support configurable order (higher = steeper cutoff, more phase distortion)
-  - [ ] Use cascaded 2nd-order biquad sections (4 stages = 8th order)
+- [x] Create `BandPassFilter` utility in `audioUtils.ts`
+  - [x] Implement Butterworth band-pass filter
+  - [x] Default to **8th order** (48 dB/octave slope) for clean band separation
+  - [x] Support configurable order (higher = steeper cutoff, more phase distortion)
+  - [x] Use cascaded 2nd-order biquad sections (4 stages = 8th order)
   ```typescript
   interface BandPassFilterConfig {
     order: number;           // Default: 8 (48 dB/octave)
     qFactor?: number;        // Optional Q adjustment
   }
   ```
-  
+
   > **Why 8th Order**: Provides sharp enough cutoff (48 dB/octave) to minimize band bleed at crossover points (500Hz, 2000Hz) without introducing significant phase distortion or ringing artifacts that occur with higher orders (10th+).
-- [ ] Define frequency band presets
+- [x] Define frequency band presets
   ```typescript
   interface FrequencyBand {
     name: string;
@@ -282,7 +282,7 @@ Before quantization, validate that detected transients aren't too dense:
 - [ ] No manual-subdivision metadata (`SubdivisionConfig`, `isDetected`, etc.) - those are manual-path concerns
 
 ### 1.5 Tests
-- [ ] Unit tests for band-pass filter
+- [x] Unit tests for band-pass filter
 - [ ] Unit tests for `MultiBandAnalyzer`
 - [ ] Unit tests for `TransientDetector`
 - [ ] Unit tests for density validation retry logic

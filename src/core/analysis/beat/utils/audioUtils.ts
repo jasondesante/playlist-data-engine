@@ -406,3 +406,294 @@ export function performSTFT(
         sampleRate,
     };
 }
+
+// ============================================================================
+// Band-Pass Filter for Multi-Band Transient Detection
+// ============================================================================
+
+/**
+ * Configuration for the Butterworth band-pass filter
+ *
+ * The filter uses cascaded 2nd-order biquad sections for steep cutoff.
+ * An 8th order filter provides 48 dB/octave slope.
+ */
+export interface BandPassFilterConfig {
+    /** Filter order (must be even positive integer). Default: 8 for 48 dB/octave */
+    order?: number;
+    /** Optional Q factor adjustment. Default: 0.707 (Butterworth maximally flat) */
+    qFactor?: number;
+}
+
+/**
+ * Frequency band definition for multi-band analysis
+ */
+export interface FrequencyBand {
+    /** Band name identifier (e.g., 'low', 'mid', 'high') */
+    name: string;
+    /** Lower cutoff frequency in Hz */
+    lowHz: number;
+    /** Upper cutoff frequency in Hz */
+    highHz: number;
+    /** Human-readable description of the band's typical content */
+    description: string;
+}
+
+/**
+ * Standard frequency bands for multi-band transient detection
+ *
+ * These three bands cover the full audible spectrum and are optimized
+ * for detecting different types of rhythmic elements:
+ * - Low: Bass, kick drums, sub frequencies
+ * - Mid: Vocals, snare body, lead instruments
+ * - High: Hi-hats, cymbals, harmonics, air
+ */
+export const FREQUENCY_BANDS: FrequencyBand[] = [
+    { name: 'low', lowHz: 20, highHz: 500, description: 'Low frequencies (bass, kick, sub)' },
+    { name: 'mid', lowHz: 500, highHz: 2000, description: 'Mid frequencies (vocals, snare body, lead instruments)' },
+    { name: 'high', lowHz: 2000, highHz: 20000, description: 'High frequencies (hi-hats, cymbals, harmonics, air)' },
+];
+
+/**
+ * Biquad filter coefficients
+ */
+interface BiquadCoefficients {
+    b0: number;
+    b1: number;
+    b2: number;
+    a1: number;
+    a2: number;
+}
+
+/**
+ * Calculate Q value for a specific stage of a Butterworth filter
+ *
+ * For an n-th order Butterworth filter, each 2nd-order stage has a different Q
+ * based on the pole locations on the unit circle.
+ *
+ * @param stage - Stage number (1 to n/2 for n-th order filter)
+ * @param order - Total filter order
+ * @returns Q value for this stage
+ */
+function butterworthQ(stage: number, order: number): number {
+    const theta = (Math.PI * (2 * stage - 1)) / (2 * order);
+    return 1 / (2 * Math.sin(theta));
+}
+
+/**
+ * Calculate Butterworth low-pass biquad coefficients for a single stage
+ * Using RBJ Audio EQ Cookbook formulas
+ *
+ * Reference: https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html
+ *
+ * @param cutoff - Cutoff frequency in Hz
+ * @param sampleRate - Sample rate in Hz
+ * @param stage - Stage number (1 to n/2 for n-th order filter)
+ * @param order - Total filter order
+ * @returns Biquad coefficients for this stage
+ */
+function butterworthLowpassStage(
+    cutoff: number,
+    sampleRate: number,
+    stage: number,
+    order: number
+): BiquadCoefficients {
+    // Angular frequency
+    const w0 = (2 * Math.PI * cutoff) / sampleRate;
+    const cosW0 = Math.cos(w0);
+    const sinW0 = Math.sin(w0);
+
+    // Q for this Butterworth stage
+    const Q = butterworthQ(stage, order);
+    const alpha = sinW0 / (2 * Q);
+
+    // RBJ Cookbook low-pass coefficients (normalized by a0)
+    const a0 = 1 + alpha;
+
+    const b0 = (1 - cosW0) / 2 / a0;
+    const b1 = (1 - cosW0) / a0;
+    const b2 = (1 - cosW0) / 2 / a0;
+    const a1 = (-2 * cosW0) / a0;
+    const a2 = (1 - alpha) / a0;
+
+    return { b0, b1, b2, a1, a2 };
+}
+
+/**
+ * Calculate Butterworth high-pass biquad coefficients for a single stage
+ * Using RBJ Audio EQ Cookbook formulas
+ *
+ * Reference: https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html
+ *
+ * @param cutoff - Cutoff frequency in Hz
+ * @param sampleRate - Sample rate in Hz
+ * @param stage - Stage number (1 to n/2 for n-th order filter)
+ * @param order - Total filter order
+ * @returns Biquad coefficients for this stage
+ */
+function butterworthHighpassStage(
+    cutoff: number,
+    sampleRate: number,
+    stage: number,
+    order: number
+): BiquadCoefficients {
+    // Angular frequency
+    const w0 = (2 * Math.PI * cutoff) / sampleRate;
+    const cosW0 = Math.cos(w0);
+    const sinW0 = Math.sin(w0);
+
+    // Q for this Butterworth stage
+    const Q = butterworthQ(stage, order);
+    const alpha = sinW0 / (2 * Q);
+
+    // RBJ Cookbook high-pass coefficients (normalized by a0)
+    const a0 = 1 + alpha;
+
+    const b0 = (1 + cosW0) / 2 / a0;
+    const b1 = -(1 + cosW0) / a0;
+    const b2 = (1 + cosW0) / 2 / a0;
+    const a1 = (-2 * cosW0) / a0;
+    const a2 = (1 - alpha) / a0;
+
+    return { b0, b1, b2, a1, a2 };
+}
+
+/**
+ * Apply a single biquad filter stage to a signal
+ *
+ * @param signal - Input signal
+ * @param coeffs - Biquad coefficients
+ * @returns Filtered signal
+ */
+function applyBiquad(signal: Float32Array, coeffs: BiquadCoefficients): Float32Array {
+    const { b0, b1, b2, a1, a2 } = coeffs;
+    const output = new Float32Array(signal.length);
+
+    // Initialize with first two samples (no previous state)
+    output[0] = b0 * signal[0];
+    if (signal.length > 1) {
+        output[1] = b0 * signal[1] + b1 * signal[0] - a1 * output[0];
+    }
+
+    // Process remaining samples
+    for (let i = 2; i < signal.length; i++) {
+        output[i] =
+            b0 * signal[i] +
+            b1 * signal[i - 1] +
+            b2 * signal[i - 2] -
+            a1 * output[i - 1] -
+            a2 * output[i - 2];
+    }
+
+    return output;
+}
+
+/**
+ * Apply a Butterworth band-pass filter to a signal
+ *
+ * Implements a band-pass filter by cascading high-pass and low-pass filters.
+ * Uses cascaded 2nd-order biquad sections for steep cutoff slopes.
+ *
+ * Default configuration is 8th order (48 dB/octave slope) which provides
+ * clean band separation at crossover points without significant phase distortion.
+ *
+ * @param signal - Input signal to filter
+ * @param lowHz - Lower cutoff frequency in Hz
+ * @param highHz - Upper cutoff frequency in Hz
+ * @param sampleRate - Sample rate in Hz
+ * @param config - Optional filter configuration
+ * @returns Filtered signal (same length as input)
+ * @throws Error if order is not a positive even integer
+ *
+ * @example
+ * ```typescript
+ * // Apply default 8th order band-pass filter for low band (20-500 Hz)
+ * const filtered = bandPassFilter(signal, 20, 500, 44100);
+ *
+ * // Apply 4th order filter with custom Q factor
+ * const filtered = bandPassFilter(signal, 500, 2000, 44100, { order: 4, qFactor: 0.5 });
+ * ```
+ */
+export function bandPassFilter(
+    signal: Float32Array,
+    lowHz: number,
+    highHz: number,
+    sampleRate: number,
+    config?: BandPassFilterConfig
+): Float32Array {
+    // Handle empty signal
+    if (signal.length === 0) {
+        return new Float32Array(0);
+    }
+
+    // Default to 8th order (48 dB/octave)
+    const order = config?.order ?? 8;
+    // Note: qFactor is reserved for future use - Butterworth uses Q=0.707 internally
+
+    // Validate order
+    if (order <= 0 || order % 2 !== 0) {
+        throw new Error(`Filter order must be a positive even integer, got: ${order}`);
+    }
+
+    // Validate frequency range
+    if (lowHz >= highHz) {
+        throw new Error(`Low frequency (${lowHz} Hz) must be less than high frequency (${highHz} Hz)`);
+    }
+    if (highHz >= sampleRate / 2) {
+        throw new Error(`High frequency (${highHz} Hz) must be less than Nyquist frequency (${sampleRate / 2} Hz)`);
+    }
+
+    const numStages = order / 2;
+    let filtered: Float32Array = new Float32Array(signal);
+
+    // Apply high-pass filter stages (remove frequencies below lowHz)
+    for (let stage = 1; stage <= numStages; stage++) {
+        const coeffs = butterworthHighpassStage(lowHz, sampleRate, stage, order);
+        filtered = applyBiquad(filtered, coeffs);
+    }
+
+    // Apply low-pass filter stages (remove frequencies above highHz)
+    for (let stage = 1; stage <= numStages; stage++) {
+        const coeffs = butterworthLowpassStage(highHz, sampleRate, stage, order);
+        filtered = applyBiquad(filtered, coeffs);
+    }
+
+    return filtered;
+}
+
+/**
+ * Apply a frequency band filter to a signal
+ *
+ * Convenience function that applies the band-pass filter using
+ * predefined frequency band settings from FREQUENCY_BANDS.
+ *
+ * @param signal - Input signal to filter
+ * @param bandName - Name of the frequency band ('low', 'mid', or 'high')
+ * @param sampleRate - Sample rate in Hz
+ * @param config - Optional filter configuration
+ * @returns Filtered signal
+ * @throws Error if bandName is not recognized
+ *
+ * @example
+ * ```typescript
+ * // Apply low band filter (20-500 Hz) for bass/kick detection
+ * const lowFiltered = applyFrequencyBand(signal, 'low', 44100);
+ *
+ * // Apply mid band filter (500-2000 Hz) for vocal/snare detection
+ * const midFiltered = applyFrequencyBand(signal, 'mid', 44100);
+ *
+ * // Apply high band filter (2000-20000 Hz) for hi-hat/cymbal detection
+ * const highFiltered = applyFrequencyBand(signal, 'high', 44100);
+ * ```
+ */
+export function applyFrequencyBand(
+    signal: Float32Array,
+    bandName: 'low' | 'mid' | 'high',
+    sampleRate: number,
+    config?: BandPassFilterConfig
+): Float32Array {
+    const band = FREQUENCY_BANDS.find(b => b.name === bandName);
+    if (!band) {
+        throw new Error(`Unknown frequency band: ${bandName}. Valid bands are: low, mid, high`);
+    }
+    return bandPassFilter(signal, band.lowHz, band.highHz, sampleRate, config);
+}
