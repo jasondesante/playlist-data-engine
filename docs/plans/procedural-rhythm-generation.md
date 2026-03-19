@@ -716,7 +716,11 @@ Each difficulty level has constraints on the maximum subdivision density allowed
 **Goal**: Expose the rhythm generation system through a clean API.
 
 ### 4.1 Public API
-- [ ] Add exports to `src/index.ts`
+- [x] Add exports to `src/index.ts`
+  - **Implementation**: Added comprehensive exports for all procedural rhythm generation types:
+    - `MultiBandAnalyzer`, `TransientDetector`, `RhythmQuantizer`, `PhraseAnalyzer`, `DensityAnalyzer`
+    - `StreamScorer`, `CompositeStreamGenerator`, `DifficultyVariantGenerator`
+    - All associated types and constants (`SUBDIVISION_LIMITS`, `ALL_GRID_TYPES`, etc.)
 - [ ] Create convenience methods on `AudioAnalyzer`
   ```typescript
   // On AudioAnalyzer class
