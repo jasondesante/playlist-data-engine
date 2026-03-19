@@ -158,6 +158,41 @@ export type {
     TransientDetectionMethod,
 } from './TransientDetector.js';
 
+// Rhythm Quantizer
+export { RhythmQuantizer } from './RhythmQuantizer.js';
+export type {
+    QuantizationConfig,
+    QuantizedBandStreams,
+    DensityValidationConfig,
+    DensityValidationResult,
+    GridType,
+    GridDecision,
+    GeneratedBeat,
+    GeneratedRhythmMap,
+} from './RhythmQuantizer.js';
+
+// Phrase Analyzer
+export { PhraseAnalyzer } from './PhraseAnalyzer.js';
+export type {
+    PhraseOccurrence,
+    RhythmicPhrase,
+    BandPhraseAnalysis,
+    PhraseAnalysisResult,
+    PhraseAnalyzerConfig,
+} from './PhraseAnalyzer.js';
+
+// Density Analyzer
+export { DensityAnalyzer } from './DensityAnalyzer.js';
+export type {
+    DensityCategory,
+    NaturalDifficulty,
+    BeatDensityMetrics,
+    SectionDensityMetrics,
+    BandDensityMetrics,
+    DensityAnalysisResult,
+    DensityAnalyzerConfig,
+} from './DensityAnalyzer.js';
+
 // Beat Key Helpers (for rhythm game chart creation)
 export {
     assignKeyToBeat,

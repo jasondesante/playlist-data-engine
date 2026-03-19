@@ -357,7 +357,7 @@ Before quantization, validate that detected transients aren't too dense:
 
 **Goal**: Measure rhythmic density and determine what difficulty the unedited stream naturally represents.
 
-- [ ] Calculate **detected transients per beat** for each stream:
+- [x] Calculate **detected transients per beat** for each stream:
   ```typescript
   interface DensityMetrics {
     transientsPerBeat: number;
@@ -366,12 +366,12 @@ Before quantization, validate that detected transients aren't too dense:
     // What difficulty the unedited stream naturally maps to
   }
   ```
-- [ ] Determine **natural difficulty** based on density:
-  - [ ] High density (many transients per beat) → Unedited = hard
-  - [ ] Medium density → Unedited = medium
-  - [ ] Low density (sparse transients) → Unedited = easy
-- [ ] Track density per beat and per section for granular analysis
-- [ ] This determines the **baseline for simplification/interpolation**
+- [x] Determine **natural difficulty** based on density:
+  - [x] High density (many transients per beat) → Unedited = hard
+  - [x] Medium density → Unedited = medium
+  - [x] Low density (sparse transients) → Unedited = easy
+- [x] Track density per beat and per section for granular analysis
+- [x] This determines the **baseline for simplification/interpolation**
 
 ### 2.3 Tests
 - [x] Unit tests for phrase detection (varying sizes, significance scoring)
@@ -379,10 +379,10 @@ Before quantization, validate that detected transients aren't too dense:
 - [x] Unit tests for pattern library storage and retrieval
 - [x] Unit tests for `sourceBand` tracking (verify phrases are attributed to correct band)
 - [x] Unit tests for `PhraseOccurrence` timestamps (verify start/end times are accurate)
-- [ ] Unit tests for density calculation and categorization
-- [ ] Unit tests for natural difficulty detection
-- [ ] Verify phrase library is populated correctly
-- [ ] Verify density metrics are accurate per band
+- [x] Unit tests for density calculation and categorization
+- [x] Unit tests for natural difficulty detection
+- [x] Verify phrase library is populated correctly
+- [x] Verify density metrics are accurate per band
 - [ ] Integration test: process known track and verify phrase/density analysis
 
 ---
