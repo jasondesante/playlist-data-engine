@@ -479,7 +479,14 @@ Each difficulty level has constraints on the maximum subdivision density allowed
 
 > **Key Constraint**: Easy difficulty excludes both `straight_16th` and `triplet_8th` grids. This is a stricter constraint than density alone - even if an Easy stream has low note density, it must not contain rapid subdivisions.
 
-- [ ] Define `SUBDIVISION_LIMITS` constant mapping difficulty to allowed grid types
+- [x] Define `SUBDIVISION_LIMITS` constant mapping difficulty to allowed grid types
+  - **Implementation**: `src/core/analysis/beat/DifficultyVariantGenerator.ts`
+  - Added `ExtendedGridType` with `straight_8th` and `quarter_triplet` for Easy
+  - Added `SUBDIVISION_LIMITS` constant mapping each difficulty to allowed grid types
+  - Added `ALL_GRID_TYPES` constant listing all 4 grid types
+  - Added helper functions: `isGridTypeAllowed`, `getAllowedGridTypes`, `convertToAllowedGridType`
+  - Added `validateSubdivisionLimits` for validation against limits
+  - Added `DifficultyVariantGenerator` class structure with placeholder variant generation
 - [ ] Validate generated variants against subdivision limits
 - [ ] When simplifying to Easy, snap 16th notes to nearest 8th note grid
 - [ ] When simplifying to Easy, snap 8th note triplets to nearest quarter note triplet

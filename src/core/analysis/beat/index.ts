@@ -204,6 +204,39 @@ export type {
     StreamScorerConfig,
 } from './StreamScorer.js';
 
+// Composite Stream Generator
+export { CompositeStreamGenerator } from './CompositeStreamGenerator.js';
+export type {
+    CompositeSection,
+    CompositeBeat,
+    CompositeStream,
+    CompositeStreamConfig,
+} from './CompositeStreamGenerator.js';
+
+// Difficulty Variant Generator
+export {
+    DifficultyVariantGenerator,
+    SUBDIVISION_LIMITS,
+    ALL_GRID_TYPES,
+    isGridTypeAllowed,
+    getAllowedGridTypes,
+    convertToAllowedGridType,
+    naturalDifficultyToLevel,
+    validateSubdivisionLimits,
+} from './DifficultyVariantGenerator.js';
+export type {
+    ExtendedGridType,
+    DifficultyLevel,
+    MaxSubdivision,
+    SubdivisionLimitConfig,
+    EditType,
+    DifficultyVariant,
+    SubdivisionConversionMetadata,
+    SubdivisionValidationResult,
+    SubdivisionViolation,
+    DifficultyVariantConfig,
+} from './DifficultyVariantGenerator.js';
+
 // Beat Key Helpers (for rhythm game chart creation)
 export {
     assignKeyToBeat,
