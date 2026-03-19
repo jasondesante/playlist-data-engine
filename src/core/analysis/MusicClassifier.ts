@@ -4,7 +4,6 @@ import type {
     VibeMetrics
 } from '../types/AudioProfile.js';
 import * as tf from '@tensorflow/tfjs';
-import { arweaveGatewayManager } from '../../utils/arweaveGatewayManager.js';
 
 /**
  * Supported model architectures for audio feature extraction.
@@ -115,6 +114,26 @@ export interface MusicClassifierOptions {
      * @default true
      */
     cacheEmbeddings?: boolean;
+
+    /**
+     * Optional callback to resolve Arweave URLs before loading models.
+     * Used by the ArweaveGatewayManager to try alternate gateways if
+     * the primary gateway fails (e.g., turbo-gateway.com returning 499 errors).
+     *
+     * The callback takes a URL string and returns a Promise that resolves
+     * to the working URL (possibly from a different gateway).
+     *
+     * @example
+     * ```typescript
+     * import { arweaveGatewayManager } from 'playlist-data-engine';
+     *
+     * const classifier = new MusicClassifier({
+     *   resolveUrl: arweaveGatewayManager.resolveUrl.bind(arweaveGatewayManager),
+     *   models: { genre: 'https://arweave.net/...' }
+     * });
+     * ```
+     */
+    resolveUrl?: (url: string) => Promise<string>;
 }
 
 const JAMENDO_GENRES = [
@@ -760,20 +779,6 @@ interface EssentiaModel {
  * Default model configurations using Arweave-hosted models.
  * These work out-of-the-box without any local model files.
  *
- * ## Gateway Independence
- *
- * The URLs below use `arweave.net` as the gateway, but **any Arweave gateway can serve
- * any transaction ID (txId)**. The content is identified by the txId, not the gateway.
- *
- * If a gateway fails (e.g., timeout, 4xx/5xx errors), the `arweaveGatewayManager.resolveUrl()`
- * mechanism automatically tries alternate gateways in priority order:
- * 1. arweave.net (primary)
- * 2. ar.io
- * 3. ardrive.net
- * 4. turbo-gateway.com (fallback)
- *
- * Gateway fallback is enabled automatically - no configuration needed.
- *
  * @example
  * import { MusicClassifier, DEFAULT_ARWEAVE_MODELS } from 'playlist-data-engine';
  *
@@ -794,7 +799,7 @@ export const DEFAULT_ARWEAVE_MODELS = {
         embeddingType: 'effnet' as ModelArchitecture
     },
     danceability: {
-        modelUrl: 'https://arweave.net/nX9KX1OVhEaT1dStNcsRiZKCQTWuHjAMl4MWprIFyZU/model.json',
+        modelUrl: 'https://turbo-gateway.com/nX9KX1OVhEaT1dStNcsRiZKCQTWuHjAMl4MWprIFyZU/model.json',
         modelType: 'musicnn' as ModelArchitecture
     }
 } as const;
@@ -820,6 +825,13 @@ export class MusicClassifier {
      * Useful when repeatedly analyzing audio with the same classifier.
      */
     private classifierModelCache: Map<string, any> = new Map();
+
+    /**
+     * Cache for resolved Arweave URLs.
+     * Key: original URL, Value: resolved URL (possibly from different gateway)
+     * Avoids repeated gateway resolution calls for the same URL.
+     */
+    private resolvedUrlCache: Map<string, string> = new Map();
 
     /**
      * Architecture-specific feature extractors.
@@ -888,11 +900,60 @@ export class MusicClassifier {
     }
 
     /**
+     * Resolves a URL using the resolveUrl callback with caching.
+     *
+     * If a resolveUrl callback is provided in options, this method will:
+     * 1. Check the cache first to avoid repeated resolution calls
+     * 2. Call the resolveUrl callback if not cached
+     * 3. Cache the result for future use
+     *
+     * If no resolveUrl callback is provided, returns the original URL unchanged.
+     *
+     * @param url - The URL to resolve
+     * @returns Promise resolving to the resolved URL (or original if no resolver)
+     */
+    private async resolveUrlWithCache(url: string): Promise<string> {
+        // Return cached result if available
+        if (this.resolvedUrlCache.has(url)) {
+            return this.resolvedUrlCache.get(url)!;
+        }
+
+        // If no resolver callback, return original URL
+        if (!this.options.resolveUrl) {
+            return url;
+        }
+
+        // Resolve URL and cache the result
+        try {
+            const resolvedUrl = await this.options.resolveUrl(url);
+            this.resolvedUrlCache.set(url, resolvedUrl);
+
+            if (resolvedUrl !== url) {
+                console.info(
+                    `[MusicClassifier] Resolved URL to alternate gateway`,
+                    { originalUrl: url, resolvedUrl }
+                );
+            }
+
+            return resolvedUrl;
+        } catch (resolveError) {
+            console.warn(
+                `[MusicClassifier] URL resolution failed, using original URL`,
+                { url, error: String(resolveError) }
+            );
+            // Cache the original URL to avoid repeated failed resolution attempts
+            this.resolvedUrlCache.set(url, url);
+            return url;
+        }
+    }
+
+    /**
      * Loads a TensorFlow.js GraphModel with retry logic for network resilience.
      *
      * This method handles transient network failures (common with remote URLs
-     * like Arweave) by retrying with exponential backoff. URLs are automatically
-     * resolved through arweaveGatewayManager for Arweave gateway fallback.
+     * like Arweave) by retrying with exponential backoff. If a `resolveUrl`
+     * callback is provided in options, it will be called to resolve the URL
+     * before loading (e.g., for Arweave gateway fallback).
      *
      * @param modelUrl - URL to the model file
      * @param maxRetries - Maximum number of retry attempts (default: 3)
@@ -906,23 +967,8 @@ export class MusicClassifier {
     ): Promise<tf.GraphModel> {
         let lastError: Error | null = null;
 
-        // Resolve URL using arweaveGatewayManager for automatic gateway fallback
-        let resolvedUrl = modelUrl;
-        try {
-            resolvedUrl = await arweaveGatewayManager.resolveUrl(modelUrl);
-            if (resolvedUrl !== modelUrl) {
-                console.info(
-                    `[MusicClassifier] Resolved model URL to alternate gateway`,
-                    { originalUrl: modelUrl, resolvedUrl }
-                );
-            }
-        } catch (resolveError) {
-            console.warn(
-                `[MusicClassifier] URL resolution failed, using original URL`,
-                { modelUrl, error: String(resolveError) }
-            );
-            // Continue with original URL if resolution fails
-        }
+        // Resolve URL using cached resolution (avoids repeated gateway checks)
+        const resolvedUrl = await this.resolveUrlWithCache(modelUrl);
 
         for (let attempt = 0; attempt < maxRetries; attempt++) {
             try {
@@ -1020,7 +1066,11 @@ export class MusicClassifier {
      * @returns Promise resolving to the initialized model instance
      */
     private async getEmbeddingModel(modelUrl: string, explicitType?: ModelArchitecture): Promise<any> {
-        // Check cache first
+        // Resolve URL before checking cache (use original URL as cache key)
+        // This ensures the same original URL returns cached model even if resolved
+        const resolvedUrl = await this.resolveUrlWithCache(modelUrl);
+
+        // Check cache first (using original URL as key)
         if (this.embeddingModelCache.has(modelUrl)) {
             return this.embeddingModelCache.get(modelUrl);
         }
@@ -1034,24 +1084,27 @@ export class MusicClassifier {
             // EffNet models use raw TensorFlow.js (not Essentia wrapper classes)
             // These are GraphModel format, loaded directly with tf.loadGraphModel()
             // Use retry logic for network resilience (especially for Arweave URLs)
+            // Note: loadModelWithRetry already uses resolveUrlWithCache internally
             model = await this.loadModelWithRetry(modelUrl);
         } else if (architecture === 'vggish') {
             // VGGish models use TensorflowVGGish class from Essentia
             if (!this.essentiaModel) {
                 throw new Error('Essentia not initialized. Call initializeEssentia() first.');
             }
-            model = new this.essentiaModel.TensorflowVGGish(tf, modelUrl);
-            await this.initializeEssentiaModelWithRetry(model, modelUrl);
+            // Use resolved URL for Essentia model constructor
+            model = new this.essentiaModel.TensorflowVGGish(tf, resolvedUrl);
+            await this.initializeEssentiaModelWithRetry(model, resolvedUrl);
         } else {
             // musicnn and tempocnn models use TensorflowMusiCNN class from Essentia
             if (!this.essentiaModel) {
                 throw new Error('Essentia not initialized. Call initializeEssentia() first.');
             }
-            model = new this.essentiaModel.TensorflowMusiCNN(tf, modelUrl);
-            await this.initializeEssentiaModelWithRetry(model, modelUrl);
+            // Use resolved URL for Essentia model constructor
+            model = new this.essentiaModel.TensorflowMusiCNN(tf, resolvedUrl);
+            await this.initializeEssentiaModelWithRetry(model, resolvedUrl);
         }
 
-        // Cache the model if caching is enabled
+        // Cache the model if caching is enabled (using original URL as key)
         if (this.options.cacheEmbeddings) {
             this.embeddingModelCache.set(modelUrl, model);
         }
@@ -1094,11 +1147,12 @@ export class MusicClassifier {
     }
 
     /**
-     * Clears all model caches (both embedding and classifier).
+     * Clears all model caches (embedding, classifier, and resolved URLs).
      */
     public clearAllCaches(): void {
         this.clearEmbeddingCache();
         this.clearClassifierCache();
+        this.resolvedUrlCache.clear();
     }
 
     /**
@@ -1815,9 +1869,12 @@ export class MusicClassifier {
             throw new Error('Essentia not initialized. Call initializeEssentia() first.');
         }
 
+        // Resolve URL using cached resolution (for Arweave gateway fallback)
+        const resolvedUrl = await this.resolveUrlWithCache(modelUrl);
+
         // Create and initialize the TensorFlow model with retry logic
-        const model = new this.essentiaModel!.TensorflowMusiCNN(tf, modelUrl);
-        await this.initializeEssentiaModelWithRetry(model, modelUrl);
+        const model = new this.essentiaModel!.TensorflowMusiCNN(tf, resolvedUrl);
+        await this.initializeEssentiaModelWithRetry(model, resolvedUrl);
 
         // Run prediction with zero-padding
         const predictions = await model.predict(features, true);

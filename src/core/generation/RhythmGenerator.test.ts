@@ -323,7 +323,7 @@ describe('RhythmGenerator', () => {
                 progressCalls.push({ phase, progress, message });
             };
 
-            await generator.generate(audioBuffer, unifiedBeatMap, onProgress);
+            await generator.generate(audioBuffer, unifiedBeatMap, undefined, onProgress);
 
             // Should have progress calls for all 3 phases
             expect(progressCalls.length).toBeGreaterThan(0);
@@ -458,6 +458,136 @@ describe('RhythmGenerator', () => {
 
             expect(result).toBeDefined();
             expect(result.metadata.duration).toBe(0.5);
+        });
+    });
+
+    describe('caching', () => {
+        it('should cache results and return cached result on second call', async () => {
+            generator = new RhythmGenerator({ enableCache: true });
+            const audioBuffer = createMockAudioBuffer(1.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(1.0);
+
+            // First call - should compute
+            const result1 = await generator.generate(audioBuffer, unifiedBeatMap);
+
+            // Check cache stats
+            const statsAfterFirst = generator.getCacheStats();
+            expect(statsAfterFirst.entryCount).toBe(1);
+            expect(statsAfterFirst.hits).toBe(0);
+            expect(statsAfterFirst.misses).toBe(1);
+
+            // Second call - should return cached result
+            const result2 = await generator.generate(audioBuffer, unifiedBeatMap);
+
+            // Verify cache hit
+            const statsAfterSecond = generator.getCacheStats();
+            expect(statsAfterSecond.hits).toBe(1);
+            expect(statsAfterSecond.misses).toBe(1);
+
+            // Results should be equivalent
+            expect(result2.metadata.transientsDetected).toBe(result1.metadata.transientsDetected);
+            expect(result2.metadata.phrasesDetected).toBe(result1.metadata.phrasesDetected);
+        });
+
+        it('should not cache when caching is disabled', async () => {
+            generator = new RhythmGenerator({ enableCache: false });
+            const audioBuffer = createMockAudioBuffer(1.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(1.0);
+
+            await generator.generate(audioBuffer, unifiedBeatMap);
+
+            const stats = generator.getCacheStats();
+            expect(stats.entryCount).toBe(0);
+        });
+
+        it('should clear cache', async () => {
+            generator = new RhythmGenerator({ enableCache: true });
+            const audioBuffer = createMockAudioBuffer(1.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(1.0);
+
+            await generator.generate(audioBuffer, unifiedBeatMap);
+
+            expect(generator.getCacheStats().entryCount).toBe(1);
+
+            generator.clearCache();
+
+            expect(generator.getCacheStats().entryCount).toBe(0);
+        });
+
+        it('should use different cache entries for different audio IDs', async () => {
+            generator = new RhythmGenerator({ enableCache: true });
+            const audioBuffer = createMockAudioBuffer(1.0);
+
+            // First audio
+            const beatMap1 = createMockUnifiedBeatMap(1.0, 120, 'audio-1');
+            await generator.generate(audioBuffer, beatMap1);
+
+            // Second audio - different ID
+            const beatMap2 = createMockUnifiedBeatMap(1.0, 120, 'audio-2');
+            await generator.generate(audioBuffer, beatMap2);
+
+            // Should have 2 cache entries, no hits (both misses)
+            const stats = generator.getCacheStats();
+            expect(stats.entryCount).toBe(2);
+            expect(stats.hits).toBe(0);
+            expect(stats.misses).toBe(2);
+        });
+
+        it('should invalidate cache when config changes', async () => {
+            const audioBuffer = createMockAudioBuffer(1.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(1.0);
+
+            // First generator with one config
+            generator = new RhythmGenerator({ enableCache: true, minimumTransientIntensity: 0.0 });
+            await generator.generate(audioBuffer, unifiedBeatMap);
+
+            expect(generator.getCacheStats().entryCount).toBe(1);
+
+            // Same generator with different config should create new cache entry
+            generator = new RhythmGenerator({ enableCache: true, minimumTransientIntensity: 0.5 });
+            await generator.generate(audioBuffer, unifiedBeatMap);
+
+            expect(generator.getCacheStats().entryCount).toBe(1);
+            expect(generator.getCacheStats().misses).toBe(1);
+        });
+
+        it('should check if phase is cached', async () => {
+            generator = new RhythmGenerator({ enableCache: true });
+            const audioBuffer = createMockAudioBuffer(1.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(1.0, 120, 'test-audio');
+
+            expect(generator.isCached('test-audio', 'variants')).toBe(false);
+
+            await generator.generate(audioBuffer, unifiedBeatMap);
+
+            expect(generator.isCached('test-audio', 'variants')).toBe(true);
+        });
+    });
+
+    describe('cancellation', () => {
+        it('should support cancellation via AbortSignal', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(1.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(1.0);
+
+            const controller = new AbortController();
+            controller.abort(); // Abort immediately
+
+            await expect(
+                generator.generate(audioBuffer, unifiedBeatMap, controller.signal)
+            ).rejects.toThrow('aborted');
+        });
+
+        it('should not throw if signal is not aborted', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(1.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(1.0);
+
+            const controller = new AbortController();
+            // Don't abort
+
+            const result = await generator.generate(audioBuffer, unifiedBeatMap, controller.signal);
+            expect(result).toBeDefined();
         });
     });
 });

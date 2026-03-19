@@ -50,6 +50,31 @@ export type OutputMode = 'composite' | 'low' | 'mid' | 'high';
 export type Band = 'low' | 'mid' | 'high';
 
 /**
+ * Phase identifier for caching
+ */
+export type CachePhase =
+    | 'multiBand'
+    | 'transients'
+    | 'quantization'
+    | 'phrases'
+    | 'density'
+    | 'scoring'
+    | 'composite'
+    | 'variants';
+
+/**
+ * Cached intermediate result
+ */
+interface CacheEntry<T> {
+    /** The cached result */
+    result: T;
+    /** Timestamp when cached (ms) */
+    timestamp: number;
+    /** Cache key used */
+    key: string;
+}
+
+/**
  * Configuration options for rhythm generation
  */
 export interface RhythmGenerationOptions {
@@ -70,6 +95,30 @@ export interface RhythmGenerationOptions {
 
     /** Whether to log progress information (default: false) */
     verbose?: boolean;
+
+    /** Whether to enable caching of intermediate results (default: true) */
+    enableCache?: boolean;
+
+    /** Maximum age of cache entries in milliseconds (default: 30 minutes) */
+    cacheMaxAge?: number;
+}
+
+/**
+ * Statistics about the cache
+ */
+export interface CacheStats {
+    /** Number of entries currently cached */
+    entryCount: number;
+    /** Total size estimate in bytes (approximate) */
+    estimatedSize: number;
+    /** Phases that have cached results */
+    cachedPhases: CachePhase[];
+    /** Oldest entry timestamp (ms) */
+    oldestEntry: number | null;
+    /** Number of cache hits during this session */
+    hits: number;
+    /** Number of cache misses during this session */
+    misses: number;
 }
 
 /**
@@ -163,6 +212,8 @@ type ResolvedOptions = {
     minimumTransientIntensity: number;
     seed: string | undefined;
     verbose: boolean;
+    enableCache: boolean;
+    cacheMaxAge: number;
 };
 
 const DEFAULT_OPTIONS: ResolvedOptions = {
@@ -172,6 +223,8 @@ const DEFAULT_OPTIONS: ResolvedOptions = {
     minimumTransientIntensity: 0.0,
     seed: undefined,
     verbose: false,
+    enableCache: true,
+    cacheMaxAge: 30 * 60 * 1000, // 30 minutes
 };
 
 // ============================================================================
@@ -226,6 +279,11 @@ export class RhythmGenerator {
     private compositeGenerator: CompositeStreamGenerator;
     private variantGenerator: DifficultyVariantGenerator;
 
+    // Cache storage
+    private cache: Map<string, CacheEntry<unknown>> = new Map();
+    private cacheHits: number = 0;
+    private cacheMisses: number = 0;
+
     /**
      * Create a new RhythmGenerator
      *
@@ -254,6 +312,148 @@ export class RhythmGenerator {
         this.variantGenerator = new DifficultyVariantGenerator();
     }
 
+    // ================================================================
+    // Cache Management Methods
+    // ================================================================
+
+    /**
+     * Generate a cache key for a specific phase and inputs
+     */
+    private generateCacheKey(
+        audioId: string,
+        phase: CachePhase,
+        configFingerprint: string
+    ): string {
+        return `${audioId}:${phase}:${configFingerprint}`;
+    }
+
+    /**
+     * Create a config fingerprint for cache invalidation
+     */
+    private createConfigFingerprint(): string {
+        // Include all options that affect the output
+        const relevantConfig = {
+            minimumTransientIntensity: this.options.minimumTransientIntensity,
+            measureStartOffset: this.options.measureStartOffset,
+        };
+        return JSON.stringify(relevantConfig);
+    }
+
+    /**
+     * Get a cached result if available and not expired
+     */
+    private getFromCache<T>(key: string): T | null {
+        if (!this.options.enableCache) {
+            return null;
+        }
+
+        const entry = this.cache.get(key) as CacheEntry<T> | undefined;
+        if (!entry) {
+            this.cacheMisses++;
+            return null;
+        }
+
+        // Check if entry has expired
+        const age = Date.now() - entry.timestamp;
+        if (age > this.options.cacheMaxAge) {
+            this.cache.delete(key);
+            this.cacheMisses++;
+            return null;
+        }
+
+        this.cacheHits++;
+        if (this.options.verbose) {
+            console.log(`[RhythmGenerator] Cache HIT for key: ${key}`);
+        }
+        return entry.result;
+    }
+
+    /**
+     * Store a result in the cache
+     */
+    private setCache<T>(key: string, result: T): void {
+        if (!this.options.enableCache) {
+            return;
+        }
+
+        this.cache.set(key, {
+            result,
+            timestamp: Date.now(),
+            key,
+        });
+
+        if (this.options.verbose) {
+            console.log(`[RhythmGenerator] Cache SET for key: ${key}`);
+        }
+    }
+
+    /**
+     * Clear all cached results
+     */
+    clearCache(): void {
+        this.cache.clear();
+        this.cacheHits = 0;
+        this.cacheMisses = 0;
+    }
+
+    /**
+     * Clear expired cache entries
+     */
+    pruneExpiredCache(): void {
+        const now = Date.now();
+        for (const [key, entry] of this.cache.entries()) {
+            if (now - entry.timestamp > this.options.cacheMaxAge) {
+                this.cache.delete(key);
+            }
+        }
+    }
+
+    /**
+     * Get cache statistics
+     */
+    getCacheStats(): CacheStats {
+        let estimatedSize = 0;
+        const cachedPhases: CachePhase[] = [];
+        let oldestEntry: number | null = null;
+
+        for (const [key, entry] of this.cache.entries()) {
+            // Extract phase from key (format: audioId:phase:config)
+            const phase = key.split(':')[1] as CachePhase;
+            if (!cachedPhases.includes(phase)) {
+                cachedPhases.push(phase);
+            }
+
+            // Rough size estimate (JSON stringification)
+            try {
+                estimatedSize += JSON.stringify(entry.result).length * 2; // UTF-16
+            } catch {
+                estimatedSize += 1000; // Default estimate for non-serializable
+            }
+
+            if (oldestEntry === null || entry.timestamp < oldestEntry) {
+                oldestEntry = entry.timestamp;
+            }
+        }
+
+        return {
+            entryCount: this.cache.size,
+            estimatedSize,
+            cachedPhases,
+            oldestEntry,
+            hits: this.cacheHits,
+            misses: this.cacheMisses,
+        };
+    }
+
+    /**
+     * Check if a phase result is cached for the given audio ID
+     */
+    isCached(audioId: string, phase: CachePhase): boolean {
+        const configFingerprint = this.createConfigFingerprint();
+        const key = this.generateCacheKey(audioId, phase, configFingerprint);
+        return this.cache.has(key);
+    }
+
     /**
      * Get the current configuration
      *
@@ -267,6 +467,7 @@ export class RhythmGenerator {
      * Generate rhythm patterns from audio and beat map
      *
      * This is the main entry point that orchestrates all phases of the pipeline.
+     * Results are cached by audioId and configuration for efficient reuse.
      *
      * @param audioBuffer - Web Audio API AudioBuffer to analyze
      * @param unifiedBeatMap - Unified beat map from beat detection
@@ -290,6 +491,19 @@ export class RhythmGenerator {
 
         // Check for cancellation
         signal?.throwIfAborted();
+
+        // Check cache for complete result
+        const cacheKey = this.generateCacheKey(
+            unifiedBeatMap.audioId,
+            'variants', // Cache at the final phase level (complete result)
+            this.createConfigFingerprint()
+        );
+
+        const cachedResult = this.getFromCache<GeneratedRhythm>(cacheKey);
+        if (cachedResult) {
+            log('Cache', 1, 'Retrieved complete result from cache');
+            return cachedResult;
+        }
 
         // ================================================================
         // Phase 1: Multi-band Analysis, Transient Detection, Quantization
@@ -367,7 +581,7 @@ export class RhythmGenerator {
             totalBeats: unifiedBeatMap.beats.length,
         };
 
-        return {
+        const result: GeneratedRhythm = {
             difficultyVariants,
             bandStreams: quantizationResult.streams,
             composite,
@@ -380,6 +594,11 @@ export class RhythmGenerator {
             },
             metadata,
         };
+
+        // Cache the complete result
+        this.setCache(cacheKey, result);
+
+        return result;
     }
 
     // ================================================================
