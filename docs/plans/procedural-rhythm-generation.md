@@ -91,8 +91,8 @@ The engine already has:
   // MVP: 3 bands for rhythm detection
   const FREQUENCY_BANDS: FrequencyBand[] = [
     { name: 'low', lowHz: 20, highHz: 500, description: 'Low frequencies (bass, kick, sub)' },
-    { name: 'mid', lowHz: 500, highHz: 4000, description: 'Mid frequencies (vocals, snare body, instruments)' },
-    { name: 'high', lowHz: 4000, highHz: 20000, description: 'High frequencies (hi-hats, cymbals, air)' },
+    { name: 'mid', lowHz: 500, highHz: 2000, description: 'Mid frequencies (vocals, snare body, lead instruments)' },
+    { name: 'high', lowHz: 2000, highHz: 20000, description: 'High frequencies (hi-hats, cymbals, harmonics, air)' },
   ];
   ```
 

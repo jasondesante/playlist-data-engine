@@ -84,7 +84,6 @@ After rhythm generation plan completes:
   interface PitchAnalysis {
     pitches: PitchResult[];
     melodyContour: MelodyContour;
-    keyHint: KeyHint | null;
     linkedPhrases: RhythmicPhrase[];  // Phrases with pitch correlation
   }
   ```
@@ -115,23 +114,27 @@ After rhythm generation plan completes:
 - [ ] Link segments to beat positions
 - [ ] Calculate contour direction over different time windows
 
-### 1.3 Key Detection Hint
-- [ ] Basic key detection from pitch histogram
-  ```typescript
-  interface KeyHint {
-    likelyKey: string;  // e.g., "C major", "A minor"
-    confidence: number;
-    alternatives: Array<{ key: string; confidence: number }>;
-  }
-  ```
-- [ ] Implement pitch class histogram
-- [ ] Correlate with major/minor scale profiles
-- [ ] Return top candidates with confidence scores
+### 1.3 Multi-Band Pitch Analysis
 
-### 1.4 Multi-Band Pitch Analysis
-- [ ] Apply pitch detection to multiple frequency bands
-  - [ ] Focus on mid band (500-2000Hz) for vocals/lead melody
-  - [ ] Optionally analyze other bands for harmony
+**Goal**: Reuse the same multi-band filtering infrastructure from rhythm generation for pitch detection, ensuring consistent frequency band analysis across both systems.
+
+> **⚠️ Important**: Pitch detection MUST use the same `FREQUENCY_BANDS` configuration and `MultiBandAnalyzer` infrastructure from rhythm generation. Do not create separate filtering logic.
+
+- [ ] **Reuse existing multi-band infrastructure**:
+  - [ ] Import `FREQUENCY_BANDS` from rhythm generation (defined in `procedural-rhythm-generation.md`)
+  - [ ] Accept pre-filtered band outputs from `MultiBandAnalyzer` to avoid redundant filtering
+  - [ ] Use the exact same band definitions:
+    ```typescript
+    // From procedural-rhythm-generation.md - shared configuration
+    const FREQUENCY_BANDS: FrequencyBand[] = [
+      { name: 'low', lowHz: 20, highHz: 500, description: 'Low frequencies (bass, kick, sub)' },
+      { name: 'mid', lowHz: 500, highHz: 2000, description: 'Mid frequencies (vocals, snare body, lead instruments)' },
+      { name: 'high', lowHz: 2000, highHz: 20000, description: 'High frequencies (hi-hats, cymbals, harmonics, air)' },
+    ];
+    ```
+- [ ] Apply pitch detection to the pre-filtered bands:
+  - [ ] Focus on **mid band (500-2000Hz)** for vocals/lead melody - this is the primary band for pitch detection
+  - [ ] Optionally analyze other bands for harmony/instrument detection
 - [ ] Store which band produced the most confident pitch results
 - [ ] Use band selection to inform button generation
   ```typescript
@@ -139,17 +142,28 @@ After rhythm generation plan completes:
     primaryBand: 'low' | 'mid' | 'high';  // Band with best pitch confidence
     bandAnalyses: Map<'low' | 'mid' | 'high', PitchAnalysis>;
     combinedMelody: MelodyContour;
+    // Reference to the shared frequency band configuration
+    bandsUsed: FrequencyBand[];
   }
   ```
 
-### 1.5 Linking Pitch to Beat Map
+### 1.4 Beat-Timestamped Pitch Detection
+
+**Goal**: Perform pitch detection at the specific timestamps from the generated beat map, rather than running continuous analysis. This approach is more efficient and accurate because we analyze only the audio segments that correspond to actual notes in the rhythm chart.
+
+> **⚠️ Why Timestamp-Based Analysis**: Instead of running pitch detection over the entire audio continuously and then linking results to beats, we analyze only the specific audio segments at `GeneratedBeat.timestamp` positions. This:
+> - Reduces computational overhead
+> - Provides more accurate pitch detection (shorter, focused analysis windows)
+> - Avoids noise from analyzing audio that doesn't correspond to beats
+> - Aligns pitch results directly with the rhythm chart
+
 - [ ] Create `PitchBeatLinker` utility
-  - [ ] Map pitch results to nearest beat positions
+  - [ ] **Accept `GeneratedBeat[]` timestamps as input** - only analyze audio at these specific points
+  - [ ] Extract short audio windows around each beat timestamp for pitch analysis
   - [ ] Calculate pitch direction between consecutive beats
-  - [ ] Identify pitch events that align with transients
   - [ ] **Integrate with `RhythmicPhrase` from rhythm generation**:
-    - [ ] Use `RhythmicPhrase.sourceBand` to know which frequency range to analyze
-    - [ ] Use `PhraseOccurrence.startTimestamp`/`endTimestamp` to extract exact audio segments
+    - [ ] Use `RhythmicPhrase.sourceBand` to know which pre-filtered frequency band to analyze
+    - [ ] Use `PhraseOccurrence.startTimestamp`/`endTimestamp` to analyze pitch across phrase boundaries
     - [ ] Associate detected pitches with phrase occurrences across the song
   ```typescript
   interface PitchAtBeat {
@@ -167,14 +181,31 @@ After rhythm generation plan completes:
     phrasePitchCorrelation: Map<string, PitchResult[]>;  // phrase ID -> pitches
   }
   ```
+  ```typescript
+  interface PitchAtBeat {
+    beatIndex: number;
+    timestamp: number;
+    pitch: PitchResult | null;
+    direction: 'up' | 'down' | 'stable' | 'none';
+    intervalFromPrevious: number;  // Semitones, 0 if none
+  }
 
-### 1.6 Tests
+  interface LinkedPitchAnalysis {
+    pitchByBeat: PitchAtBeat[];
+    melodyContour: MelodyContour;
+    dominantBand: 'low' | 'mid' | 'high';
+    phrasePitchCorrelation: Map<string, PitchResult[]>;  // phrase ID -> pitches
+  }
+  ```
+
+### 1.5 Tests
 - [ ] Unit tests for YIN implementation
 - [ ] Unit tests for melody contour extraction
-- [ ] Unit tests for key detection
+- [ ] Unit tests for multi-band pitch analysis (verify same bands as rhythm generation)
 - [ ] Test with synthesized audio of known pitch
 - [ ] Test with real vocal tracks
-- [ ] Test pitch-to-beat linking accuracy
+- [ ] Test beat-timestamped pitch detection accuracy
+- [ ] Verify pitch detection uses pre-filtered band outputs (no redundant filtering)
 
 ---
 
@@ -483,7 +514,6 @@ interface ChartMetadata {
   pitchMetadata: {
     bandUsed: 'low' | 'mid' | 'high';
     melodyRange: { min: string; max: string } | null;
-    keyHint: string | null;
   } | null;
 
   /** Generation timestamp */
@@ -716,7 +746,6 @@ interface ChartMetadata {
     pitchMetadata: {
       bandUsed: 'low' | 'mid' | 'high';
       melodyRange: { min: string; max: string } | null;
-      keyHint: string | null;
     } | null;
     chartMetadata: {
       totalBeats: number;
@@ -989,9 +1018,15 @@ interface GeneratedRhythm {
 
 2. **Pitch detection on filtered bands**: Does band-passing improve or degrade pitch accuracy?
    - Consider: Test on vocals (mid band) vs full spectrum
+   - Note: We're reusing the same filtered bands from rhythm generation for consistency
 
 3. **Polyphonic handling**: How to handle multiple simultaneous pitches?
    - Consider: Pick dominant pitch, or use confidence-weighted selection
+
+4. **Timestamp-based vs continuous analysis**: Should pitch detection run only at beat timestamps or continuously?
+   - **Current approach**: Timestamp-based - analyze only at `GeneratedBeat.timestamp` positions
+   - This is more efficient and provides focused analysis windows
+   - Consider: May need continuous analysis for very dense rhythm patterns
 
 ### Design Questions
 1. **Pitch influence strength**: How strongly should melody override other factors?
@@ -999,9 +1034,6 @@ interface GeneratedRhythm {
 
 2. **Button pattern vs pitch**: When they conflict, which wins?
    - Recommendation: Blend with configurable weight, favor playability
-
-3. **Key detection usage**: Should key hints influence button patterns?
-   - Consider: Use key to avoid "wrong" button combinations
 
 ---
 
