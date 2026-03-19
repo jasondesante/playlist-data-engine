@@ -397,7 +397,7 @@ After rhythm generation plan completes:
 
     // === Pitch Influence ===
     // How strongly pitch affects button selection (0-1) (default 1)
-    // 0 = pure pattern library, 1 = pure pitch-driven
+    // 0 = pure pattern library (skips pitch analysis entirely), 1 = pure pitch-driven
     pitchInfluenceWeight: number;
 
     // === Rhythm Influence ===
@@ -521,12 +521,15 @@ Patterns are controller-mode-specific:
     // === Core Mapping Logic ===
 
     // Combine pitch + pattern influences based on pitchInfluenceWeight
-    // weight: 0 = pattern only, 1 = pitch only
+    // Uses confidence-based blending: lowest confidence pitch detections
+    // are replaced with pattern buttons first
+    // weight: 0 = all patterns, 1 = all pitch (for beats with pitch)
     private blendPitchAndPattern<T extends DDRButton | GuitarHeroButton>(
-      pitchKey: T | null,
-      patternKey: T,
+      beats: PitchAtBeat[],
+      pitchKeys: (T | null)[],
+      patternKeys: T[],
       weight: number
-    ): T;
+    ): T[];
 
     // Difficulty adjustments
     private applyDifficultyVariation(
@@ -977,15 +980,16 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
   - Complex patterns (rolls, streams)
   - `consecutiveSameKeyLimit`: 6
 
-### 2.6 Combining Rhythm Band Selection with Pitch
+### 2.6 Band-Aware Button Mapping
 
+> **Context**: The pitch-band combination was already done in Phase 1 section 1.4 (Composite Stream Pitch Derivation). This section is about using that already-combined information during button mapping.
+>
 > **Input from Phase 1**: `PitchAtBeat.band` tells us which frequency band each beat's pitch was derived from (see section 1.3.3).
 
 - [ ] Implement band-aware button mapping
   - Use `PitchAtBeat.band` to know which frequency band the pitch came from
-  - If rhythm used 'low' band for a section, the pitch data already reflects that (via derivation in 1.4)
-  - If rhythm used 'mid' band, the pitch data reflects that
-  - Store band selection from rhythm generation in metadata
+  - The pitch data already reflects the correct band (via derivation in 1.4)
+  - Store band selection from rhythm generation in metadata for transparency
   ```typescript
   // Re-exported from rhythm generation for reference
   interface CompositeSection {
@@ -1274,12 +1278,12 @@ interface ChartMetadata {
     // Button settings
     buttons: Partial<ButtonMappingConfig>;
 
-    // Pitch settings
-    usePitchDetection: boolean;  // Whether to run pitch analysis (set false for faster generation)
-
     // Seed for reproducibility
     seed?: string;
   }
+
+  // Note: Pitch analysis is automatically skipped when pitchInfluenceWeight = 0
+  // This optimization avoids expensive pitch detection when using pattern-only mode
 
   class LevelGenerator {
     constructor(options: LevelGenerationOptions);
@@ -1402,11 +1406,11 @@ interface ChartMetadata {
 ### 3.2 Pipeline Implementation
 - [ ] Implement the full generation pipeline
   1. Run rhythm generation (from companion plan) → `GeneratedRhythm`
-  2. **Run pitch analysis** (Phase 1):
+  2. **Run pitch analysis** (Phase 1) - **skipped if `pitchInfluenceWeight = 0`**:
      - Analyze pitch on ALL band streams (low/mid/high) using filtered audio
      - Derive composite stream pitches from band stream pitches
      - Calculate melody contour (direction + interval for each beat)
-  3. Derive pitches for each difficulty variant from composite
+  3. Derive pitches for each difficulty variant from composite (skipped if no pitch analysis)
   4. Select difficulty variant from `GeneratedRhythm.difficultyVariants`
   5. Generate button mappings for selected variant using `PitchAtBeat.direction` and `intervalCategory` → `MappedLevelResult`
   6. **Convert to ChartedBeatMap** using `BeatMapConverter.convertToChartedBeatMap()`
@@ -1422,60 +1426,12 @@ interface ChartMetadata {
 - [ ] Support cancellation
 - [ ] Add caching for intermediate results
 
-### 3.3 Configuration Presets
-- [ ] Create preset configurations
-  ```typescript
-  const LEVEL_PRESETS = {
-    casual: {
-      difficulty: 'easy',
-      controllerMode: 'ddr',  // or 'guitar_hero'
-      rhythm: { maxDensity: 'eighth', averageDensity: 0.3 },
-      buttons: {
-        // pitchInfluenceWeight defaults to 1.0 (user-controlled)
-        consecutiveSameKeyLimit: 12
-      }
-    },
-    standard: {
-      difficulty: 'medium',
-      controllerMode: 'ddr',
-      rhythm: { maxDensity: 'eighth', averageDensity: 0.5 },
-      buttons: {
-        // pitchInfluenceWeight defaults to 1.0 (user-controlled)
-        consecutiveSameKeyLimit: 8
-      }
-    },
-    challenge: {
-      difficulty: 'hard',
-      controllerMode: 'ddr',
-      rhythm: { maxDensity: 'sixteenth', averageDensity: 0.7 },
-      buttons: {
-        // pitchInfluenceWeight defaults to 1.0 (user-controlled)
-        consecutiveSameKeyLimit: 6
-      }
-    },
-    insane: {
-      difficulty: 'hard',
-      controllerMode: 'ddr',
-      rhythm: { maxDensity: 'sixteenth', averageDensity: 0.9 },
-      buttons: {
-        // pitchInfluenceWeight defaults to 1.0 (user-controlled)
-        consecutiveSameKeyLimit: 6
-      }
-    }
-  };
-
-  // Note: pitchInfluenceWeight is a user-controlled parameter that defaults to 1.0.
-  // Users can lower it to allow more patterns to fill in when pitch confidence is low.
-  // It does not automatically change based on difficulty preset.
-  ```
-
-### 3.4 Tests
+### 3.3 Tests
 - [ ] Integration tests for full pipeline
 - [ ] Performance tests (generation time < 10 seconds for 3-minute song)
 - [ ] Verify pitch influence is visible in output
 - [ ] Verify direction/interval statistics are populated in `LevelMetadata.pitchMetadata`
 - [ ] Verify button mapping correctly uses `direction` and `intervalCategory` from pitch analysis
-- [ ] Test all presets produce valid levels
 
 ---
 
