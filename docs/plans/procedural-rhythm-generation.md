@@ -77,8 +77,17 @@ The engine already has:
 ### 1.1 Band-Pass Filter Implementation
 - [ ] Create `BandPassFilter` utility in `audioUtils.ts`
   - [ ] Implement Butterworth band-pass filter
-  - [ ] Support configurable Q-factor
-  - [ ] Add cascaded filter for sharper cutoffs
+  - [ ] Default to **8th order** (48 dB/octave slope) for clean band separation
+  - [ ] Support configurable order (higher = steeper cutoff, more phase distortion)
+  - [ ] Use cascaded 2nd-order biquad sections (4 stages = 8th order)
+  ```typescript
+  interface BandPassFilterConfig {
+    order: number;           // Default: 8 (48 dB/octave)
+    qFactor?: number;        // Optional Q adjustment
+  }
+  ```
+  
+  > **Why 8th Order**: Provides sharp enough cutoff (48 dB/octave) to minimize band bleed at crossover points (500Hz, 2000Hz) without introducing significant phase distortion or ringing artifacts that occur with higher orders (10th+).
 - [ ] Define frequency band presets
   ```typescript
   interface FrequencyBand {

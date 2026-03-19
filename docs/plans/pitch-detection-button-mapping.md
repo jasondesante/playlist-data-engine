@@ -378,27 +378,33 @@ After rhythm generation plan completes:
 **Goal**: Generate interesting button combinations that follow the music's melody and rhythm.
 
 ### 2.1 Button Mapping Configuration
+
+**Controller Modes**: The button mapper supports two distinct controller styles, each with different pitch-to-button mapping strategies:
+
+| Mode | Buttons | Axes | Pitch Expression |
+|------|---------|------|------------------|
+| **DDR** | up, down, left, right | 2 (vertical + horizontal) | Vertical: up→high, down→low; Horizontal: left→low, right→high |
+| **Guitar Hero** | 1, 2, 3, 4, 5 | 1 (horizontal only) | Fretboard metaphor: 1→lowest pitch, 5→highest pitch |
+
 - [ ] Define button mapping config
   ```typescript
   interface ButtonMappingConfig {
     difficulty: DifficultyPreset;
 
-    // Available buttons
-    availableKeys: string[];  // e.g., ['up', 'down', 'left', 'right']
+    // === Controller Mode ===
+    // Determines available buttons and mapping strategy
+    controllerMode: 'ddr' | 'guitar_hero';
 
-    // Pattern settings
-    holdNoteProbability: number;  // 0-1
+    // === Pitch Influence ===
+    // How strongly pitch affects button selection (0-1) (default 1)
+    // 0 = pure pattern library, 1 = pure pitch-driven
+    pitchInfluenceWeight: number;
 
-    // Pitch influence
-    usePitchMapping: boolean;
-    pitchToKeyMapping: 'directional' | 'chromatic' | 'interval';
-    pitchInfluenceWeight: number;  // 0-1, how strongly pitch affects buttons
-
-    // Rhythm influence
+    // === Rhythm Influence ===
     emphasizeDownbeats: boolean;
     emphasizeSyncopation: boolean;
 
-    // Difficulty settings
+    // === Difficulty Settings ===
     consecutiveSameKeyLimit: number;  // Prevent spam
     patternMemory: number;  // Measures to avoid repeating
 
@@ -406,11 +412,14 @@ After rhythm generation plan completes:
     useRhythmBand: boolean;  // Use same band that won rhythm slicing
   }
 
-  // Pitch-to-key mapping modes
-  type PitchMappingMode =
-    | 'directional'  // Up pitch = up button, down pitch = down button
-    | 'chromatic'    // Each semitone maps to different key
-    | 'interval';    // Intervals determine button changes
+  // Controller mode determines available buttons
+  type ControllerMode = 'ddr' | 'guitar_hero';
+
+  // DDR: 4 directional buttons, 2-axis pitch expression
+  type DDRButton = 'up' | 'down' | 'left' | 'right';
+
+  // Guitar Hero: 5 fret buttons, 1-axis pitch expression (left-to-right = low-to-high)
+  type GuitarHeroButton = 1 | 2 | 3 | 4 | 5;
 
   // Re-exported from rhythm generation for reference
   interface GeneratedBeat {
@@ -425,27 +434,50 @@ After rhythm generation plan completes:
   ```
 
 ### 2.2 Button Pattern Vocabulary
+
+**Purpose**: The pattern library provides fallback button assignments when:
+- `pitchInfluenceWeight` is low (more pattern-driven)
+- Pitch detection confidence is low (no reliable pitch data)
+- Specific rhythmic patterns are more playable than pitch-accurate mapping
+
+Patterns are controller-mode-specific:
+- **DDR patterns**: Use 'up', 'down', 'left', 'right'
+- **Guitar Hero patterns**: Use 1, 2, 3, 4, 5
+
 - [ ] Define button pattern types
   ```typescript
-  interface ButtonPattern {
+  interface ButtonPattern<T extends DDRButton | GuitarHeroButton> {
     name: string;
-    keys: string[];  // Sequence of keys per beat
+    controllerMode: 'ddr' | 'guitar_hero';
+    keys: T[];  // Sequence of keys per beat (mode-specific)
     measures: number;
     tags: string[];
     difficulty: number;  // 1-10
   }
 
-  // Example patterns:
+  // DDR Example patterns:
   // "alternating": ['up', 'down', 'up', 'down']
   // "roll": ['left', 'down', 'right']
   // "stream": ['left', 'left', 'right', 'right']
   // "staircase": ['up', 'right', 'down', 'left']
+
+  // Guitar Hero Example patterns:
+  // "ascending": [1, 2, 3, 4]
+  // "descending": [5, 4, 3, 2]
+  // "alternating": [1, 3, 1, 3]
+  // "power_chord": [1, 3, 5]
   ```
-- [ ] Create pattern library
-  - [ ] Basic patterns (alternating, single key runs)
-  - [ ] Roll patterns (sequential key presses)
-  - [ ] Stream patterns (repeated directions)
-  - [ ] Jump patterns (non-adjacent keys)
+- [ ] Create pattern library (separate libraries per controller mode)
+  - [ ] DDR patterns
+    - [ ] Basic patterns (alternating, single key runs)
+    - [ ] Roll patterns (sequential key presses around the pad)
+    - [ ] Stream patterns (repeated directions)
+    - [ ] Jump patterns (non-adjacent keys)
+  - [ ] Guitar Hero patterns
+    - [ ] Basic patterns (ascending, descending runs)
+    - [ ] Alternating patterns (1-3, 2-4)
+    - [ ] Chord patterns (1-3-5 power chord shapes)
+    - [ ] Jump patterns (1-4, 2-5 stretches)
 
 ### 2.3 Button Mapper Class
 - [ ] Create `ButtonMapper` in `src/core/generation/ButtonMapper.ts`
@@ -460,33 +492,47 @@ After rhythm generation plan completes:
       pitchAnalysis?: LinkedPitchAnalysis
     ): MappedLevelResult;
 
-    // Pitch-influenced mapping - uses direction and intervalCategory from Phase 1
-    private mapPitchToKey(
-      pitch: PitchAtBeat,  // Contains direction, intervalFromPrevious, intervalCategory
-      previousKey: string | null
-    ): string;
+    // === Controller-Mode-Specific Pitch Mapping ===
 
-    // Pattern selection
+    // DDR: Maps pitch to directional button using 2-axis logic
+    // - Vertical axis: pitch up/down → up/down buttons
+    // - Horizontal axis: large intervals → left/right buttons
+    private mapPitchToDDR(
+      pitch: PitchAtBeat,
+      previousKey: DDRButton | null
+    ): DDRButton;
+
+    // Guitar Hero: Maps pitch to fret button using 1-axis logic
+    // - Fretboard metaphor: pitch up → move right (higher fret)
+    // - Interval size determines fret jump distance
+    private mapPitchToGuitarHero(
+      pitch: PitchAtBeat,
+      previousKey: GuitarHeroButton | null
+    ): GuitarHeroButton;
+
+    // === Pattern Selection (controller-mode-aware) ===
+
+    // Selects pattern from appropriate library (DDR or Guitar Hero)
     private selectButtonPattern(
       gridType: 'straight_16th' | 'triplet_8th',
       measureIndex: number
-    ): ButtonPattern;
+    ): ButtonPattern<DDRButton> | ButtonPattern<GuitarHeroButton>;
+
+    // === Core Mapping Logic ===
+
+    // Combine pitch + pattern influences based on pitchInfluenceWeight
+    // weight: 0 = pattern only, 1 = pitch only
+    private blendPitchAndPattern<T extends DDRButton | GuitarHeroButton>(
+      pitchKey: T | null,
+      patternKey: T,
+      weight: number
+    ): T;
 
     // Difficulty adjustments
     private applyDifficultyVariation(
-      keys: string[],
+      keys: (DDRButton | GuitarHeroButton)[],
       difficulty: DifficultyPreset
-    ): string[];
-
-    // Combine pitch + pattern influences
-    // pitchKey: derived from PitchAtBeat.direction and intervalCategory
-    // patternKey: derived from button pattern vocabulary
-    // weight: from config.pitchInfluenceWeight (0 = pattern only, 1 = pitch only)
-    private blendPitchAndPattern(
-      pitchKey: string | null,
-      patternKey: string,
-      weight: number
-    ): string;
+    ): (DDRButton | GuitarHeroButton)[];
   }
 
   interface MappedLevelResult {
@@ -496,7 +542,8 @@ After rhythm generation plan completes:
     rhythmMetadata: RhythmMetadata;
     // Button mapping metadata
     buttonMetadata: {
-      keysUsed: string[];
+      controllerMode: 'ddr' | 'guitar_hero';
+      keysUsed: string[];  // e.g., ['up', 'down', 'left', 'right'] or ['1', '2', '3', '4', '5']
       pitchInfluencedBeats: number;
       patternsUsed: string[];
     };
@@ -506,57 +553,151 @@ After rhythm generation plan completes:
 ### 2.4 Pitch-to-Button Mapping Strategies
 
 > **Input from Phase 1**: These strategies use `PitchAtBeat.direction`, `PitchAtBeat.intervalFromPrevious`, and `PitchAtBeat.intervalCategory` (defined in section 1.5.4).
+>
+> **Controller Mode Matters**: Each mode expresses pitch movement differently:
+> - **DDR**: 2 axes (vertical for pitch up/down, horizontal for interval magnitude)
+> - **Guitar Hero**: 1 axis (fretboard position = pitch height)
 
-- [ ] Implement directional mapping (uses `PitchAtBeat.direction` + `intervalCategory`)
-  - Melody goes up → use "up" or "right" button
-  - Melody goes down → use "down" or "left" button
-  - Larger intervals → bigger "jumps" in button position
-  - Stable pitch → repeat or adjacent button
+#### 2.4.1 DDR Mode Strategy (4 buttons, 2 axes)
+
+The DDR pad has two independent axes for expressing pitch movement:
+
+- **Vertical Axis** (up/down buttons): Primary pitch direction
+  - Pitch goes up → "up" button
+  - Pitch goes down → "down" button
+  - Stable pitch → repeat previous button
+
+- **Horizontal Axis** (left/right buttons): Interval magnitude expression
+  - Small/medium intervals → stay on vertical axis
+  - Large/very_large intervals → cross to horizontal axis (left/right)
+  - This creates "jump" patterns for dramatic melodic leaps
+
+- [ ] Implement DDR pitch-to-button mapping
   ```typescript
-  // Directional mapping using IntervalCategory from Phase 1
-  const DIRECTIONAL_MAP: Record<PitchAtBeat['direction'], Record<IntervalCategory, string>> = {
-    'up': {
-      unison: 'same',      // Same pitch, repeat key
-      small: 'up',         // Small step up
-      medium: 'up',        // Medium step up
-      large: 'right',      // Large leap, use different direction
-      very_large: 'right', // Very large leap, use different direction
+  // DDR mapping uses 2 axes: vertical for direction, horizontal for large intervals
+  const DDR_MAPPING = {
+    // Primary: vertical axis for pitch direction
+    direction: {
+      up: { primaryAxis: 'vertical', button: 'up' },
+      down: { primaryAxis: 'vertical', button: 'down' },
+      stable: { primaryAxis: 'same', button: 'repeat' },
+      none: { primaryAxis: 'fallback', button: 'pattern' },
     },
-    'down': {
-      unison: 'same',
-      small: 'down',
-      medium: 'down',
-      large: 'left',
-      very_large: 'left',
+    // Secondary: horizontal axis for large interval jumps
+    interval: {
+      unison: { axis: 'same', buttonModifier: 'none' },
+      small: { axis: 'vertical', buttonModifier: 'none' },      // Stay on up/down
+      medium: { axis: 'vertical', buttonModifier: 'none' },     // Stay on up/down
+      large: { axis: 'horizontal', buttonModifier: 'cross' },   // Jump to left/right
+      very_large: { axis: 'horizontal', buttonModifier: 'cross' },
     },
-    'stable': { /* all map to 'same' */ },
-    'none': { /* use fallback pattern */ },
   };
+
+  // Combined DDR decision logic
+  function mapPitchToDDR(
+    pitch: PitchAtBeat,
+    previousKey: DDRButton | null
+  ): DDRButton {
+    // No pitch detected → use pattern library
+    if (pitch.direction === 'none') {
+      return selectFromPatternLibrary('ddr', previousKey);
+    }
+
+    // Stable pitch → repeat previous
+    if (pitch.direction === 'stable' || pitch.intervalCategory === 'unison') {
+      return previousKey ?? 'up';  // Default to 'up' if no previous
+    }
+
+    // Large intervals → horizontal axis (left/right)
+    if (pitch.intervalCategory === 'large' || pitch.intervalCategory === 'very_large') {
+      return pitch.direction === 'up' ? 'right' : 'left';
+    }
+
+    // Small/medium intervals → vertical axis (up/down)
+    return pitch.direction === 'up' ? 'up' : 'down';
+  }
   ```
 
-- [ ] Implement chromatic mapping
-  - Map each semitone to a button in sequence
-  - Modulo for limited buttons (4 buttons = 4 semitone groups)
+#### 2.4.2 Guitar Hero Mode Strategy (5 buttons, 1 axis)
+
+Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (1-5), where:
+- Lower pitches map to lower fret numbers (1, 2)
+- Higher pitches map to higher fret numbers (4, 5)
+- Button 3 is the "middle" position
+
+- [ ] Implement Guitar Hero pitch-to-button mapping
   ```typescript
-  // Chromatic mapping (C=up, C#=up, D=down, D#=down, E=left, etc.)
-  const CHROMATIC_MAP = ['up', 'up', 'down', 'down', 'left', 'left', 'right', 'right', ...];
+  // Guitar Hero: 1-axis fretboard metaphor
+  // Position on fretboard = pitch height
+  const GUITAR_HERO_MAPPING = {
+    // Fret direction based on pitch direction
+    direction: {
+      up: { fretDirection: +1 },    // Move toward higher fret (right)
+      down: { fretDirection: -1 },  // Move toward lower fret (left)
+      stable: { fretDirection: 0 }, // Stay on same fret
+      none: { fretDirection: 0 },   // Use pattern library
+    },
+    // Fret jump distance based on interval size
+    interval: {
+      unison: { fretJump: 0 },      // Same fret
+      small: { fretJump: 1 },       // Adjacent fret
+      medium: { fretJump: 1 },      // Adjacent fret
+      large: { fretJump: 2 },       // Skip one fret
+      very_large: { fretJump: 2 },  // Skip one fret (clamped to 1-5)
+    },
+  };
+
+  // Combined Guitar Hero decision logic
+  function mapPitchToGuitarHero(
+    pitch: PitchAtBeat,
+    previousKey: GuitarHeroButton | null
+  ): GuitarHeroButton {
+    // No pitch detected → use pattern library
+    if (pitch.direction === 'none') {
+      return selectFromPatternLibrary('guitar_hero', previousKey);
+    }
+
+    const currentFret = previousKey ?? 3;  // Default to middle fret
+    const direction = GUITAR_HERO_MAPPING.direction[pitch.direction].fretDirection;
+    const jump = GUITAR_HERO_MAPPING.interval[pitch.intervalCategory].fretJump;
+
+    // Calculate new fret position
+    let newFret: number;
+    if (pitch.direction === 'stable' || pitch.intervalCategory === 'unison') {
+      newFret = currentFret;  // Stay in place
+    } else {
+      // Apply direction and jump
+      newFret = currentFret + (direction * jump);
+    }
+
+    // Clamp to valid fret range (1-5)
+    return Math.max(1, Math.min(5, newFret)) as GuitarHeroButton;
+  }
   ```
 
-- [ ] Implement interval mapping (uses `PitchAtBeat.intervalCategory`)
-  - Same note = same button
-  - Small interval (1-2 semitones) = adjacent button
-  - Medium interval (3-4 semitones) = skip one button
-  - Large interval (5-7 semitones) = opposite button
-  - Very large interval (8+ semitones) = opposite button
+#### 2.4.3 Common Mapping Logic
+
+- [ ] Implement shared mapping utilities
   ```typescript
-  // Interval mapping using IntervalCategory from Phase 1
-  const INTERVAL_MAP: Record<IntervalCategory, string> = {
-    unison: 'same',       // 0 semitones - repeat previous key
-    small: 'adjacent',    // 1-2 semitones - next button in sequence
-    medium: 'skip_one',   // 3-4 semitones - skip one button
-    large: 'opposite',    // 5-7 semitones - opposite button
-    very_large: 'opposite', // 8+ semitones - opposite button
-  };
+  // Used by both modes to blend pitch and pattern influences
+  function blendPitchAndPattern<T extends DDRButton | GuitarHeroButton>(
+    pitchKey: T | null,
+    patternKey: T,
+    weight: number  // 0 = pattern only, 1 = pitch only
+  ): T {
+    // No pitch available → use pattern
+    if (pitchKey === null) {
+      return patternKey;
+    }
+
+    // Weight determines blend
+    // In practice, this could use weighted random selection
+    // or deterministic blending based on beat position
+    if (Math.random() < weight) {
+      return pitchKey;
+    }
+    return patternKey;
+  }
   ```
 
 ### 2.5 Difficulty-Based Button Logic
@@ -582,7 +723,6 @@ After rhythm generation plan completes:
   - **Lower pitch influence (weight 0.3)**: `direction` and `intervalCategory` have less influence; more variety from patterns
   - Large and `very_large` intervals can trigger bigger button jumps
   - `consecutiveSameKeyLimit`: 2
-  - Hold notes enabled
 
 ### 2.6 Combining Rhythm Band Selection with Pitch
 
@@ -834,12 +974,22 @@ interface ChartMetadata {
 - [ ] Integration test: key matching works with `checkButtonPress()`
 
 ### 2.8 Tests
-- [ ] Unit tests for pitch-to-key mapping (all 3 modes)
-  - [ ] Verify directional mapping uses `PitchAtBeat.direction` and `intervalCategory`
-  - [ ] Verify interval mapping uses `PitchAtBeat.intervalCategory`
-- [ ] Unit tests for pattern selection
+- [ ] Unit tests for DDR mode pitch-to-button mapping
+  - [ ] Verify pitch up → 'up' button for small/medium intervals
+  - [ ] Verify pitch down → 'down' button for small/medium intervals
+  - [ ] Verify large intervals → horizontal axis (left/right)
+  - [ ] Verify stable pitch → repeat previous button
+  - [ ] Verify 'none' direction → falls back to pattern library
+- [ ] Unit tests for Guitar Hero mode pitch-to-button mapping
+  - [ ] Verify pitch up → higher fret number (move right)
+  - [ ] Verify pitch down → lower fret number (move left)
+  - [ ] Verify interval size affects fret jump distance
+  - [ ] Verify fret clamping to valid range (1-5)
+  - [ ] Verify stable pitch → stay on same fret
+- [ ] Unit tests for pattern selection (both controller modes)
 - [ ] Verify difficulty constraints are respected
 - [ ] Test band-aware mapping logic (using `PitchAtBeat.band`)
+- [ ] Unit tests for pitch/pattern blending (`blendPitchAndPattern`)
 - [ ] Integration test: full button mapping with real pitch data
 - [ ] Verify direction statistics are calculated correctly in output metadata
 
@@ -855,6 +1005,9 @@ interface ChartMetadata {
   interface LevelGenerationOptions {
     difficulty: DifficultyPreset;
 
+    // Controller mode (DDR or Guitar Hero)
+    controllerMode: 'ddr' | 'guitar_hero';
+
     // Rhythm settings (passes through to RhythmGenerator)
     rhythm: Partial<RhythmGenerationOptions>;
 
@@ -862,8 +1015,7 @@ interface ChartMetadata {
     buttons: Partial<ButtonMappingConfig>;
 
     // Pitch settings
-    usePitchDetection: boolean;
-    pitchMappingMode: PitchMappingMode;
+    usePitchDetection: boolean;  // Whether to run pitch analysis (set false for faster generation)
 
     // Seed for reproducibility
     seed?: string;
@@ -1016,32 +1168,34 @@ interface ChartMetadata {
   const LEVEL_PRESETS = {
     casual: {
       difficulty: 'easy',
+      controllerMode: 'ddr',  // or 'guitar_hero'
       rhythm: { maxDensity: 'eighth', averageDensity: 0.3 },
       buttons: {
-        usePitchMapping: true,
-        pitchMappingMode: 'directional',
-        pitchInfluenceWeight: 0.8
+        pitchInfluenceWeight: 0.8  // Strong pitch influence
       }
     },
     standard: {
       difficulty: 'medium',
+      controllerMode: 'ddr',
       rhythm: { maxDensity: 'eighth', averageDensity: 0.5 },
       buttons: {
-        pitchInfluenceWeight: 0.5
+        pitchInfluenceWeight: 0.5  // Balanced
       }
     },
     challenge: {
       difficulty: 'hard',
+      controllerMode: 'ddr',
       rhythm: { maxDensity: 'sixteenth', averageDensity: 0.7 },
       buttons: {
-        pitchInfluenceWeight: 0.3
+        pitchInfluenceWeight: 0.3  // More pattern variety
       }
     },
     insane: {
       difficulty: 'hard',
+      controllerMode: 'ddr',
       rhythm: { maxDensity: 'sixteenth', averageDensity: 0.9 },
       buttons: {
-        pitchInfluenceWeight: 0.2
+        pitchInfluenceWeight: 0.2  // Mostly patterns
       }
     }
   };
@@ -1117,7 +1271,7 @@ interface ChartMetadata {
   - [ ] Document `PitchDetector` class and YIN algorithm
   - [ ] Document `ButtonMapper` class and mapping strategies
   - [ ] Document `LevelGenerator` orchestration
-  - [ ] Explain the 3 pitch-to-key mapping modes (directional, chromatic, interval)
+  - [ ] Explain the 2 controller modes (DDR vs Guitar Hero) and their mapping strategies
   - [ ] Add code examples for generating complete levels
   - [ ] Document configuration presets
   - [ ] Document serialization format
