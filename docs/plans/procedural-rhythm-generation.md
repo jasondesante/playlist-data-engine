@@ -703,7 +703,7 @@ Each difficulty level has constraints on the maximum subdivision density allowed
 - [x] Unit tests for pattern insertion from phrase library
 - [x] Integration tests for full pipeline (all 3 phases)
   - Tests cover: caching functionality, cancellation support, progress callbacks
-- [ ] Performance tests (generation time < 5 seconds for 3-minute song)
+- [x] Performance tests (generation time < 5 seconds for 3-minute song)
 - [ ] Verify 3 difficulty variants are valid
 - [ ] Verify `isUnedited` flag is correct for natural difficulty variant
 - [ ] Verify composite sections reference correct source bands

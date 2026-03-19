@@ -190,8 +190,8 @@ const DEFAULT_DENSITY_ANALYZER_CONFIG: DensityAnalyzerConfig = {
  *
  * 2. **Density Categorization**:
  *    - Sparse: < 1.0 transients/beat (mostly quarter notes)
- *    - Moderate: 1.0 - 2.5 transients/beat (eighth notes, some sixteenths)
- *    - Dense: > 2.5 transients/beat (heavy sixteenth notes, triplets)
+ *    - Moderate: 1.0 - 1.75 transients/beat (eighth notes, some sixteenths)
+ *    - Dense: > 1.75 transients/beat (heavy sixteenth notes, triplets)
  *
  * 3. **Natural Difficulty Determination**:
  *    - High density (dense) → Hard
