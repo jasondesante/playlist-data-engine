@@ -319,6 +319,8 @@ Before quantization, validate that detected transients aren't too dense:
   - [x] Straight eighth notes (no variation)
   - [x] Only patterns with **rhythmic variation** count as significant phrases
 - [x] **Store detected phrases** as a song-specific pattern library:
+
+> **⚠️ Bug Fix Required**: The current implementation includes intensity in the pattern hash calculation (`hashPattern()` in `PhraseAnalyzer.ts`). This causes identical rhythms with different intensities to be treated as different patterns. **Fix**: Remove intensity from the hash - only beat indices, grid positions, and grid types should be used for pattern matching. Intensity varies naturally between occurrences of the same rhythm and should not prevent pattern recognition.
   - [x] Phrases are remembered for use in density enhancement (Phase 2.3)
   - [x] When increasing density, prefer inserting detected patterns over simple interpolation
   - [x] Patterns are more interesting because they're derived from the song itself

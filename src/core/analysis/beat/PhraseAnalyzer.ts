@@ -402,7 +402,10 @@ export class PhraseAnalyzer {
      * - Beat indices (relative to phrase start)
      * - Grid positions
      * - Grid types
-     * - Intensities (rounded to 2 decimal places for tolerance)
+     *
+     * NOTE: Intensity is deliberately excluded from the hash. Identical rhythms
+     * with different intensities should be recognized as the same pattern.
+     * Intensity varies naturally between occurrences of the same rhythm.
      */
     private hashPattern(pattern: GeneratedBeat[], sizeInBeats: number): string {
         // Sort by beatIndex, then gridPosition for consistent hashing
@@ -411,9 +414,9 @@ export class PhraseAnalyzer {
             return a.gridPosition - b.gridPosition;
         });
 
-        // Create a string representation
+        // Create a string representation (intensity excluded - same rhythm = same pattern)
         const parts = sorted.map(b =>
-            `${b.beatIndex}:${b.gridPosition}:${b.gridType}:${Math.round(b.intensity * 100)}`
+            `${b.beatIndex}:${b.gridPosition}:${b.gridType}`
         );
 
         return `phrase_${sizeInBeats}_${parts.join('|')}`;

@@ -979,5 +979,30 @@ describe('PhraseAnalyzer', () => {
                 expect(phrase.occurrences.length).toBeGreaterThanOrEqual(2);
             }
         });
+
+        it('should recognize patterns with different intensities as the same rhythm', () => {
+            // Same rhythm pattern but with different intensities at each occurrence
+            const beats: GeneratedBeat[] = [
+                // First occurrence: intensity 0.3
+                createGeneratedBeat({ timestamp: 0.0, beatIndex: 0, gridPosition: 1, intensity: 0.3 }), // 16th note
+                // Second occurrence: intensity 0.8 (different!)
+                createGeneratedBeat({ timestamp: 1.0, beatIndex: 2, gridPosition: 1, intensity: 0.8 }),
+                // Third occurrence: intensity 0.5 (different again!)
+                createGeneratedBeat({ timestamp: 2.0, beatIndex: 4, gridPosition: 1, intensity: 0.5 }),
+            ];
+
+            const streams = {
+                low: createMockRhythmMap(beats),
+                mid: createEmptyRhythmMap(),
+                high: createEmptyRhythmMap(),
+            };
+
+            const result = analyzer.analyze(streams);
+
+            // Should find ONE phrase with THREE occurrences (not three separate phrases)
+            expect(result.phrases.length).toBe(1);
+            expect(result.phrases[0].occurrences.length).toBe(3);
+            expect(result.phrases[0].hasVariation).toBe(true); // 16th note = variation
+        });
     });
 });
