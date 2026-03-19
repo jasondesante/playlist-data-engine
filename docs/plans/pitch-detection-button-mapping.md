@@ -558,42 +558,112 @@ Patterns are controller-mode-specific:
 > - **DDR**: 2 axes (vertical for pitch up/down, horizontal for interval magnitude)
 > - **Guitar Hero**: 1 axis (fretboard position = pitch height)
 
-#### 2.4.1 DDR Mode Strategy (4 buttons, 2 axes)
+#### 2.4.1 DDR Mode Strategy (4 buttons, circular motion)
 
-The DDR pad has two independent axes for expressing pitch movement:
+The DDR pad uses **circular motion** as the primary movement philosophy. Dancing should feel like constant circular flow rather than axis-based jumps. The natural clockwise flow is: `up → right → down → left → up`.
 
-- **Vertical Axis** (up/down buttons): Primary pitch direction
-  - Pitch goes up → "up" button
-  - Pitch goes down → "down" button
-  - Stable pitch → repeat previous button
+**Design Principles:**
+- Small intervals move to adjacent buttons in circular sequence
+- Medium intervals continue circular motion but may cross axes
+- Large intervals make dramatic crosses (up↔down or left↔right)
+- Very large intervals cross the entire pad
 
-- **Horizontal Axis** (left/right buttons): Interval magnitude expression
-  - Small/medium intervals → stay on vertical axis
-  - Large/very_large intervals → cross to horizontal axis (left/right)
-  - This creates "jump" patterns for dramatic melodic leaps
+**State Transition Table:** The next button depends on (1) current position, (2) pitch direction, and (3) interval size:
 
-- [ ] Implement DDR pitch-to-button mapping
+| From | Ascending → | | | | Descending → | | | | Stable |
+|------|-------------|------|---------|-------|-------------|------|---------|-------|-------|
+| | unison | small | medium | large/very_large | unison | small | medium | large/very_large | |
+| **up** | up | up | right | right / down* | up | left | left | down | up |
+| **right** | right | right | down | down / left* | right | up | up | left | right |
+| **down** | down | left | left | right | down | down | left | left / right* | down |
+| **left** | left | up | up | right | left | left | down | down / right* | left |
+
+\* `large` vs `very_large` distinction: `very_large` uses the more dramatic cross option
+
+- [ ] Implement DDR pitch-to-button mapping with state transitions
   ```typescript
-  // DDR mapping uses 2 axes: vertical for direction, horizontal for large intervals
-  const DDR_MAPPING = {
-    // Primary: vertical axis for pitch direction
-    direction: {
-      up: { primaryAxis: 'vertical', button: 'up' },
-      down: { primaryAxis: 'vertical', button: 'down' },
-      stable: { primaryAxis: 'same', button: 'repeat' },
-      none: { primaryAxis: 'fallback', button: 'pattern' },
+  type DDRButton = 'up' | 'down' | 'left' | 'right';
+  type IntervalCategory = 'unison' | 'small' | 'medium' | 'large' | 'very_large';
+  type PitchDirection = 'up' | 'down' | 'stable' | 'none';
+
+  // DDR Circular Motion Transition Table
+  // Determines next button based on: current position + pitch direction + interval size
+  const DDR_TRANSITIONS: Record<DDRButton, {
+    ascending: Record<IntervalCategory, DDRButton>;
+    descending: Record<IntervalCategory, DDRButton>;
+    stable: DDRButton;
+  }> = {
+    'up': {
+      ascending: {
+        unison: 'up',
+        small: 'up',           
+        medium: 'right',      
+        large: 'right',        
+        very_large: 'left',   
+      },
+      descending: {
+        unison: 'up',
+        small: 'left',       
+        medium: 'right',
+        large: 'down',         
+        very_large: 'down',  
+      },
+      stable: 'up',
     },
-    // Secondary: horizontal axis for large interval jumps
-    interval: {
-      unison: { axis: 'same', buttonModifier: 'none' },
-      small: { axis: 'vertical', buttonModifier: 'none' },      // Stay on up/down
-      medium: { axis: 'vertical', buttonModifier: 'none' },     // Stay on up/down
-      large: { axis: 'horizontal', buttonModifier: 'cross' },   // Jump to left/right
-      very_large: { axis: 'horizontal', buttonModifier: 'cross' },
+    'right': {
+      ascending: {
+        unison: 'right',
+        small: 'up',       
+        medium: 'up',        
+        large: 'up',        
+        very_large: 'left',  
+      },
+      descending: {
+        unison: 'right',
+        small: 'down',          
+        medium: 'down',
+        large: 'down',          
+        very_large: 'left', 
+      },
+      stable: 'right',
+    },
+    'down': {
+      ascending: {
+        unison: 'down',
+        small: 'left',       
+        medium: 'right',
+        large: 'up',        
+        very_large: 'up',  
+      },
+      descending: {
+        unison: 'down',
+        small: 'down',        
+        medium: 'left',       
+        large: 'left',        
+        very_large: 'right',    
+      },
+      stable: 'down',
+    },
+    'left': {
+      ascending: {
+        unison: 'left',
+        small: 'up',          
+        medium: 'up',
+        large: 'up',          
+        very_large: 'right',   
+      },
+      descending: {
+        unison: 'left',
+        small: 'down',         
+        medium: 'down',       
+        large: 'down',         
+        very_large: 'right', 
+      },
+      stable: 'left',
     },
   };
 
-  // Combined DDR decision logic
+  // DDR mapping function using state transitions
   function mapPitchToDDR(
     pitch: PitchAtBeat,
     previousKey: DDRButton | null
@@ -603,18 +673,19 @@ The DDR pad has two independent axes for expressing pitch movement:
       return selectFromPatternLibrary('ddr', previousKey);
     }
 
+    // Default starting position
+    const currentButton = previousKey ?? 'left';  // Start from left for natural clockwise flow
+
     // Stable pitch → repeat previous
     if (pitch.direction === 'stable' || pitch.intervalCategory === 'unison') {
-      return previousKey ?? 'up';  // Default to 'up' if no previous
+      return currentButton;
     }
 
-    // Large intervals → horizontal axis (left/right)
-    if (pitch.intervalCategory === 'large' || pitch.intervalCategory === 'very_large') {
-      return pitch.direction === 'up' ? 'right' : 'left';
-    }
+    // Look up transition based on direction and interval
+    const transitions = DDR_TRANSITIONS[currentButton];
+    const directionKey = pitch.direction === 'up' ? 'ascending' : 'descending';
 
-    // Small/medium intervals → vertical axis (up/down)
-    return pitch.direction === 'up' ? 'up' : 'down';
+    return transitions[directionKey][pitch.intervalCategory];
   }
   ```
 
@@ -625,29 +696,91 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
 - Higher pitches map to higher fret numbers (4, 5)
 - Button 3 is the "middle" position
 
-- [ ] Implement Guitar Hero pitch-to-button mapping
+**Fret Transition Table:** The next fret depends on (1) current fret, (2) pitch direction, and (3) interval size:
+
+| From | Ascending → | | | | Descending → | | | | Stable |
+|------|-------------|------|---------|-------|------------|-------------|------|---------|-------|------------|-------|
+| | unison | small | medium | large | very_large | unison | small | medium | large | very_large | |
+| **1** | 1 | 2 | 2 | 3 | 3 | 1 | 4↗ | 4↗ | 3↗ | 2↗ | 1 |
+| **2** | 2 | 3 | 3 | 4 | 4 | 2 | 1 | 1 | 4↗ | 3↗ | 2 |
+| **3** | 3 | 4 | 4 | 5 | 5 | 3 | 2 | 2 | 1 | 4↗ | 3 |
+| **4** | 4 | 5 | 5 | 2↘ | 3↘ | 4 | 3 | 3 | 2 | 1 | 4 |
+| **5** | 5 | 2↘ | 2↘ | 3↘ | 4↘ | 5 | 4 | 4 | 3 | 2 | 5 |
+
+↘ = string wrap down (ceiling → wrap to lower fret)
+↗ = string wrap up (floor → wrap to higher fret)
+
+**String Wrap Logic:** Instead of clamping at frets 1 and 5, simulate a string change:
+- **Ascending past fret 5** → wrap to fret 2 (like moving to a higher string)
+  - From 5 +1 fret → fret 2
+  - From 5 +2 frets → fret 3
+  - From 5 +3 frets → fret 4
+- **Descending past fret 1** → wrap to fret 4 (like moving to a lower string)
+  - From 1 -1 fret → fret 4
+  - From 1 -2 frets → fret 3
+  - From 1 -3 frets → fret 2
+
+**Key observations:**
+- Small/medium intervals move by 1 fret (adjacent)
+- Large intervals skip 2 frets
+- Very large intervals skip 3 frets (more dramatic expression)
+- String wrap keeps motion flowing - no stuck positions
+
+- [ ] Implement Guitar Hero pitch-to-button mapping with state transitions
   ```typescript
-  // Guitar Hero: 1-axis fretboard metaphor
-  // Position on fretboard = pitch height
-  const GUITAR_HERO_MAPPING = {
-    // Fret direction based on pitch direction
-    direction: {
-      up: { fretDirection: +1 },    // Move toward higher fret (right)
-      down: { fretDirection: -1 },  // Move toward lower fret (left)
-      stable: { fretDirection: 0 }, // Stay on same fret
-      none: { fretDirection: 0 },   // Use pattern library
+  type GuitarHeroButton = 1 | 2 | 3 | 4 | 5;
+
+  // Guitar Hero Fret Transition Table (with string wrap)
+  // Determines next fret based on: current position + pitch direction + interval size
+  // String wrap: ascending past 5 → wraps to 2-4; descending past 1 → wraps to 4-2
+  const GUITAR_HERO_TRANSITIONS: Record<GuitarHeroButton, {
+    ascending: Record<IntervalCategory, GuitarHeroButton>;
+    descending: Record<IntervalCategory, GuitarHeroButton>;
+    stable: GuitarHeroButton;
+  }> = {
+    1: {
+      ascending: { unison: 1, small: 2, medium: 2, large: 3, very_large: 3 },
+      descending: { unison: 1, small: 4, medium: 4, large: 3, very_large: 3 }, // string wrap up
+      stable: 1,
     },
-    // Fret jump distance based on interval size
-    interval: {
-      unison: { fretJump: 0 },      // Same fret
-      small: { fretJump: 1 },       // Adjacent fret
-      medium: { fretJump: 1 },      // Adjacent fret
-      large: { fretJump: 2 },       // Skip one fret
-      very_large: { fretJump: 2 },  // Skip one fret (clamped to 1-5)
+    2: {
+      ascending: { unison: 2, small: 3, medium: 3, large: 4, very_large: 4 },
+      descending: { unison: 2, small: 1, medium: 1, large: 4, very_large: 4 }, // large/very_large wrap
+      stable: 2,
+    },
+    3: {
+      ascending: { unison: 3, small: 4, medium: 4, large: 5, very_large: 5 },
+      descending: { unison: 3, small: 2, medium: 2, large: 1, very_large: 1 }, // very_large wraps
+      stable: 3,
+    },
+    4: {
+      ascending: { unison: 4, small: 5, medium: 5, large: 2, very_large: 2 }, // string wrap down
+      descending: { unison: 4, small: 3, medium: 3, large: 2, very_large: 1 },
+      stable: 4,
+    },
+    5: {
+      ascending: { unison: 5, small: 2, medium: 2, large: 3, very_large: 3 }, // string wrap down
+      descending: { unison: 5, small: 4, medium: 4, large: 3, very_large: 2 },
+      stable: 5,
     },
   };
 
-  // Combined Guitar Hero decision logic
+  // Fret jump distances (alternative: algorithmic approach)
+  const FRET_JUMPS: Record<IntervalCategory, number> = {
+    unison: 0,
+    small: 1,
+    medium: 1,
+    large: 2,
+    very_large: 3,  // More dramatic than 'large'
+  };
+
+  // String wrap thresholds
+  const FRET_CEILING = 5;
+  const FRET_FLOOR = 1;
+  const WRAP_TARGET_HIGH = 2;  // When ascending past ceiling, land here (+offset)
+  const WRAP_TARGET_LOW = 4;   // When descending past floor, land here (-offset)
+
+  // Guitar Hero mapping function using state transitions
   function mapPitchToGuitarHero(
     pitch: PitchAtBeat,
     previousKey: GuitarHeroButton | null
@@ -657,21 +790,52 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
       return selectFromPatternLibrary('guitar_hero', previousKey);
     }
 
-    const currentFret = previousKey ?? 3;  // Default to middle fret
-    const direction = GUITAR_HERO_MAPPING.direction[pitch.direction].fretDirection;
-    const jump = GUITAR_HERO_MAPPING.interval[pitch.intervalCategory].fretJump;
+    // Default to middle fret
+    const currentFret = previousKey ?? 3;
 
-    // Calculate new fret position
-    let newFret: number;
+    // Stable pitch → stay on current fret
     if (pitch.direction === 'stable' || pitch.intervalCategory === 'unison') {
-      newFret = currentFret;  // Stay in place
-    } else {
-      // Apply direction and jump
-      newFret = currentFret + (direction * jump);
+      return currentFret;
     }
 
-    // Clamp to valid fret range (1-5)
-    return Math.max(1, Math.min(5, newFret)) as GuitarHeroButton;
+    // Look up transition based on direction and interval
+    const transitions = GUITAR_HERO_TRANSITIONS[currentFret];
+    const directionKey = pitch.direction === 'up' ? 'ascending' : 'descending';
+
+    return transitions[directionKey][pitch.intervalCategory];
+  }
+
+  // Alternative: Algorithmic approach with string wrap
+  function mapPitchToGuitarHeroAlgorithmic(
+    pitch: PitchAtBeat,
+    previousKey: GuitarHeroButton | null
+  ): GuitarHeroButton {
+    if (pitch.direction === 'none') {
+      return selectFromPatternLibrary('guitar_hero', previousKey);
+    }
+
+    const currentFret = previousKey ?? 3;
+
+    if (pitch.direction === 'stable' || pitch.intervalCategory === 'unison') {
+      return currentFret;
+    }
+
+    const jump = FRET_JUMPS[pitch.intervalCategory];
+    const direction = pitch.direction === 'up' ? +1 : -1;
+    let newFret = currentFret + (direction * jump);
+
+    // String wrap instead of clamping
+    if (newFret > FRET_CEILING) {
+      // Ascending past fret 5 → wrap down to fret 2 (+ offset)
+      // e.g., 5+1=6 → 2, 5+2=7 → 3, 5+3=8 → 4
+      newFret = WRAP_TARGET_HIGH + (newFret - FRET_CEILING - 1);
+    } else if (newFret < FRET_FLOOR) {
+      // Descending past fret 1 → wrap up to fret 4 (- offset)
+      // e.g., 1-1=0 → 4, 1-2=-1 → 3, 1-3=-2 → 2
+      newFret = WRAP_TARGET_LOW - (FRET_FLOOR - newFret - 1);
+    }
+
+    return newFret as GuitarHeroButton;
   }
   ```
 
