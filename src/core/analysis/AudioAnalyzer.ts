@@ -13,6 +13,8 @@ import { SpectrumScanner } from './SpectrumScanner.js';
 import { BeatMapGenerator, type ProgressCallback } from './beat/BeatMapGenerator.js';
 import { BeatStream } from './beat/BeatStream.js';
 import { BeatInterpolator } from './beat/BeatInterpolator.js';
+import { unifyBeatMap } from './beat/utils/unifyBeatMap.js';
+import { RhythmGenerator, type RhythmGenerationOptions, type GeneratedRhythm } from '../generation/RhythmGenerator.js';
 
 export type SamplingStrategy =
     | { type: 'interval'; intervalSeconds: number } // e.g., every 1s
@@ -547,6 +549,139 @@ export class AudioAnalyzer {
      */
     static async loadBeatMapFromFile(filePath: string): Promise<BeatMap> {
         return BeatMapGenerator.loadFromFile(filePath);
+    }
+
+    // ==================== Procedural Rhythm Generation ====================
+
+    /**
+     * Generate procedural rhythm patterns from an audio URL
+     *
+     * This is a convenience method that combines the full pipeline:
+     * 1. Fetches and decodes the audio
+     * 2. Generates a beat map with interpolation
+     * 3. Unifies the beat map
+     * 4. Runs the RhythmGenerator to create difficulty variants
+     *
+     * @param audioUrl - URL of the audio file to analyze
+     * @param audioId - Unique identifier for the audio source
+     * @param options - Rhythm generation options (optional)
+     * @param beatMapOptions - Beat map generation options (optional)
+     * @param downbeatConfig - Optional manual downbeat configuration
+     * @param onProgress - Optional progress callback for rhythm generation
+     * @returns Promise resolving to the generated rhythm with difficulty variants
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     * const rhythm = await analyzer.generateRhythm('song.mp3', 'track-001', {
+     *   difficulty: 'medium',
+     *   outputMode: 'composite',
+     * });
+     *
+     * // Access difficulty variants
+     * const easyBeats = rhythm.difficultyVariants.easy.beats;
+     * const hardBeats = rhythm.difficultyVariants.hard.beats;
+     *
+     * // Access individual band streams
+     * const bassBeats = rhythm.bandStreams.low.beats;
+     * ```
+     */
+    async generateRhythm(
+        audioUrl: string,
+        audioId: string,
+        options?: RhythmGenerationOptions,
+        beatMapOptions?: BeatMapGeneratorOptions,
+        downbeatConfig?: DownbeatConfig,
+        onProgress?: (phase: string, progress: number, message: string) => void
+    ): Promise<GeneratedRhythm> {
+        // Fetch and decode audio
+        const audioBuffer = await this.fetchAndDecode(audioUrl);
+
+        // Generate rhythm from buffer
+        return this.generateRhythmFromBuffer(
+            audioBuffer,
+            audioId,
+            options,
+            beatMapOptions,
+            downbeatConfig,
+            onProgress
+        );
+    }
+
+    /**
+     * Generate procedural rhythm patterns from an AudioBuffer
+     *
+     * Use this method when you already have the audio decoded.
+     * This combines beat map generation, interpolation, unification,
+     * and rhythm generation in a single call.
+     *
+     * @param audioBuffer - Decoded audio buffer
+     * @param audioId - Unique identifier for the audio source
+     * @param options - Rhythm generation options (optional)
+     * @param beatMapOptions - Beat map generation options (optional)
+     * @param downbeatConfig - Optional manual downbeat configuration
+     * @param onProgress - Optional progress callback for rhythm generation
+     * @returns Promise resolving to the generated rhythm with difficulty variants
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     * const audioBuffer = await analyzer.fetchAndDecodeAudio('song.mp3');
+     *
+     * const rhythm = await analyzer.generateRhythmFromBuffer(
+     *   audioBuffer,
+     *   'track-001',
+     *   { difficulty: 'hard' }
+     * );
+     *
+     * console.log(`Generated ${rhythm.difficultyVariants.hard.beats.length} beats`);
+     * ```
+     */
+    async generateRhythmFromBuffer(
+        audioBuffer: AudioBuffer,
+        audioId: string,
+        options?: RhythmGenerationOptions,
+        beatMapOptions?: BeatMapGeneratorOptions,
+        downbeatConfig?: DownbeatConfig,
+        onProgress?: (phase: string, progress: number, message: string) => void
+    ): Promise<GeneratedRhythm> {
+        // Generate beat map with interpolation
+        const interpolated = await this.generateBeatMapWithInterpolationFromBuffer(
+            audioBuffer,
+            audioId,
+            beatMapOptions,
+            downbeatConfig
+        );
+
+        // Unify the beat map
+        const unifiedBeatMap = unifyBeatMap(interpolated);
+
+        // Create rhythm generator and run
+        const generator = new RhythmGenerator(options);
+        return generator.generate(audioBuffer, unifiedBeatMap, undefined, onProgress);
+    }
+
+    /**
+     * Fetch and decode audio from a URL
+     *
+     * This is a convenience method for fetching audio when you need
+     * to reuse the decoded buffer for multiple operations.
+     *
+     * @param audioUrl - URL of the audio file
+     * @returns Promise resolving to the decoded AudioBuffer
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     * const audioBuffer = await analyzer.fetchAndDecodeAudio('song.mp3');
+     *
+     * // Reuse buffer for multiple analyses
+     * const profile = await analyzer.extractSonicFingerprint('song.mp3');
+     * const rhythm = await analyzer.generateRhythmFromBuffer(audioBuffer, 'track-001');
+     * ```
+     */
+    async fetchAndDecodeAudio(audioUrl: string): Promise<AudioBuffer> {
+        return this.fetchAndDecode(audioUrl);
     }
 
     /**
