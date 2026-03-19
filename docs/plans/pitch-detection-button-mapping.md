@@ -1444,35 +1444,178 @@ interface ChartMetadata {
 - [ ] Create convenience methods on `AudioAnalyzer`
   ```typescript
   // On AudioAnalyzer class
-  async generateLevel(
+  async generateRhythmLevel(
     audioUrl: string,
     options: LevelGenerationOptions
   ): Promise<GeneratedLevel>;
 
   // Quick generation with preset
-  async generateLevelWithPreset(
+  async generateRhythmLevelWithPreset(
     audioUrl: string,
     preset: 'casual' | 'standard' | 'challenge' | 'insane'
   ): Promise<GeneratedLevel>;
   ```
 
-### 4.2 Serialization
-- [ ] Add `toJSON`/`fromJSON` for `GeneratedLevel`
-- [ ] Add file save/load methods
-  ```typescript
-  interface SerializedLevel {
-    version: string;
-    beatMap: SerializedBeatMap;
-    metadata: LevelMetadata;
-    generatedAt: string;
-  }
+### 4.2 Level Serialization (Unified Format)
 
-  // Save/load helpers
-  function saveLevel(level: GeneratedLevel, path: string): Promise<void>;
-  function loadLevel(path: string): Promise<GeneratedLevel>;
+**Reference Implementation:** `playlist-data-showcase/src/store/beatDetectionStore.ts`
+- `exportFullBeatMap()` / `importFullBeatMap()`
+- `playlist-data-showcase/src/types/index.ts` → `FullBeatMapExportData` interface
+
+The showcase app currently has its own level export/import logic that is **not in the engine**. This task adds proper engine-level save/load that is compatible with both:
+1. **Procedurally generated levels** (from this plan)
+2. **Manually charted levels** (from the showcase app's chart editor)
+
+#### 4.2.1 Research & Design (COMPLETED)
+
+**Decision: Adopt `FullBeatMapExportData` format directly**
+
+After analyzing the showcase app's implementation, we will use the existing `FullBeatMapExportData` format as the serialization standard. Key findings:
+
+1. **Showcase app ignores extra fields**: The import uses `.map()` to extract only needed fields, so procedural-specific fields can be safely added without breaking compatibility.
+
+2. **Format structure**:
+   ```typescript
+   interface FullBeatMapExportData {
+     version: 1;
+     format: 'full-beatmap';
+     audioId: string;
+     audioTitle?: string;
+     exportedAt: number;
+     duration: number;
+     quarterNoteBpm: number;
+     quarterNoteConfidence: number;
+     
+     // Beat data
+     detectedBeats: FullExportDetectedBeat[];
+     mergedBeats: FullExportMergedBeat[];
+     interpolatedMetadata: {...};
+     
+     // Subdivision with chart keys
+     subdivision: {
+       config: SubdivisionConfigJSON;
+       beats: FullExportSubdividedBeat[];  // Can add procedural fields here
+       metadata: {...};
+     } | null;
+     
+     // Chart metadata
+     chart: {
+       style: ChartStyle;
+       keyCount: number;
+       usedKeys: string[];
+     } | null;
+   }
+   ```
+
+3. **Procedural extensions**: Add these optional fields to `subdivision.beats[]`:
+   ```typescript
+   interface ProceduralBeatExtension {
+     /** Only present for procedurally generated beats */
+     quarterNoteIndex?: number;
+     subdivisionPosition?: number;
+     sourceBand?: 'low' | 'mid' | 'high';
+     quantizationError?: number;
+   }
+   ```
+
+4. **Generation source indicator**: Add to root level:
+   ```typescript
+   generationSource?: 'manual' | 'procedural';
+   generationMetadata?: {
+     difficulty: string;
+     pitchInfluenceWeight: number;
+     patternsUsed: string[];
+   };
+   ```
+
+**Implementation approach**: New `LevelSerializer` class in engine that:
+- Converts `GeneratedLevel` → `FullBeatMapExportData` (with procedural extensions)
+- Converts `FullBeatMapExportData` → `GeneratedLevel` (for engine)
+- Is 100% compatible with showcase app's `importFullBeatMap()`
+
+#### 4.2.2 Implementation
+- [ ] Add `FullBeatMapExportData` type to engine (copy from showcase app types)
+  ```typescript
+  // In src/core/types/LevelExport.ts (new file)
+  // These types match playlist-data-showcase/src/types/index.ts exactly
+  
+  export interface FullBeatMapExportData {
+    version: 1;
+    format: 'full-beatmap';
+    audioId: string;
+    audioTitle?: string;
+    exportedAt: number;
+    duration: number;
+    quarterNoteBpm: number;
+    quarterNoteConfidence: number;
+    detectedBeats: FullExportDetectedBeat[];
+    mergedBeats: FullExportMergedBeat[];
+    interpolatedMetadata: InterpolatedMetadataJSON;
+    subdivision: SubdivisionExportData | null;
+    chart: ChartExportData | null;
+    
+    // Procedural-only extensions (optional, ignored by showcase app)
+    generationSource?: 'manual' | 'procedural';
+    generationMetadata?: ProceduralGenerationMetadata;
+  }
+  
+  // Procedural beat extensions (added to subdivision.beats)
+  export interface ProceduralBeatExtension {
+    quarterNoteIndex?: number;
+    subdivisionPosition?: number;
+    sourceBand?: 'low' | 'mid' | 'high';
+    quantizationError?: number;
+  }
   ```
-- [ ] Ensure metadata is preserved
-- [ ] Version the serialization format for future compatibility
+- [ ] Create `LevelSerializer` class
+  ```typescript
+  // In src/core/analysis/LevelSerializer.ts (new file)
+
+  export class LevelSerializer {
+    // Convert GeneratedLevel → FullBeatMapExportData
+    static toExportData(level: GeneratedLevel): FullBeatMapExportData;
+
+    // Convert FullBeatMapExportData → GeneratedLevel (for engine use)
+    static fromExportData(data: FullBeatMapExportData): GeneratedLevel;
+
+    // JSON serialization
+    static toJSON(level: GeneratedLevel): string;
+    static fromJSON(json: string): GeneratedLevel;
+
+    // File I/O (Node.js only)
+    static async saveToFile(level: GeneratedLevel, path: string): Promise<void>;
+    static async loadFromFile(path: string): Promise<GeneratedLevel>;
+
+    // Validation
+    static validate(data: unknown): FullBeatMapImportResult;
+  }
+  ```
+- [ ] **Mapping: GeneratedLevel → FullBeatMapExportData**
+  - The `GeneratedLevel.chart` (ChartedBeatMap) maps to `FullBeatMapExportData.subdivision`
+  - `ChartedBeat.beats[]` maps to `FullExportSubdividedBeat[]` (with procedural extensions)
+  - `detectedBeatIndices` used to set `isDetected` flag on beats
+  - `requiredKey` field is preserved
+  - `bpm` maps to `quarterNoteBpm`
+  - Extract data from `GeneratedLevel.rhythm` and `pitchAnalysis` for other fields
+- [ ] **Mapping: FullBeatMapExportData → GeneratedLevel** (reverse import)
+  - Parse `subdivision.beats` into `ChartedBeat[]`
+  - Reconstruct `pitchAnalysis` if present (from generationMetadata)
+  - Reconstruct `GeneratedLevel.metadata` from export data
+
+#### 4.2.3 Compatibility Verification
+- [ ] **Procedural level → Showcase import**: Generate level in engine, save, load in showcase app
+- [ ] **Manual chart → Engine import**: Export from showcase app, load in engine
+- [ ] **Round-trip test**: Save → load → save → compare outputs identical
+- [ ] Verify all fields used by `importFullBeatMap()` are populated correctly:
+  - `detectedBeats`, `mergedBeats`, `interpolatedMetadata`
+  - `subdivision.config`, `subdivision.beats`, `subdivision.metadata`
+  - `chart.style`, `chart.keyCount`, `chart.usedKeys`
+
+#### 4.2.4 Edge Cases
+- [ ] Handle procedurally generated levels that skip pitch analysis (`pitchInfluenceWeight: 0`)
+- [ ] Handle levels with no subdivision (only interpolated beats)
+- [ ] Handle levels with no key assignments (chart is null)
+- [ ] Ensure metadata includes generation source indicator (procedural vs manual)
 
 ### 4.3 Tests
 - [ ] API integration tests
