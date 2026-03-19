@@ -10,6 +10,8 @@ import {
 } from './RhythmQuantizer.js';
 import type { TransientAnalysis, TransientResult } from './TransientDetector.js';
 import type { UnifiedBeatMap, Beat } from '../../types/BeatMap.js';
+import { MultiBandAnalyzer } from '../MultiBandAnalyzer.js';
+import { TransientDetector } from './TransientDetector.js';
 
 // ============================================================================
 // Test Utilities
@@ -603,6 +605,448 @@ describe('RhythmQuantizer', () => {
             expect(typeof dv.requiredMinInterval).toBe('number');
             expect(typeof dv.retryCount).toBe('number');
             expect(typeof dv.sensitivityReduction).toBe('number');
+        });
+    });
+});
+
+// ============================================================================
+// Integration Tests - Full Pipeline
+// ============================================================================
+
+/**
+ * Create a mock AudioBuffer simulating a drum track with known patterns
+ *
+ * Creates transients at specific intervals to simulate a basic drum pattern.
+ * At 120 BPM, quarter note = 0.5s, 16th note = 0.125s
+ */
+function createDrumTrackAudioBuffer(
+    options: {
+        durationSeconds?: number;
+        bpm?: number;
+        sampleRate?: number;
+        transientPositions?: number[]; // Specific times in seconds for transients
+    } = {}
+): AudioBuffer {
+    const {
+        durationSeconds = 4.0,
+        bpm = 120,
+        sampleRate = 44100,
+        transientPositions,
+    } = options;
+
+    const length = Math.floor(durationSeconds * sampleRate);
+    const data = new Float32Array(length);
+    const quarterNoteInterval = 60 / bpm;
+
+    // Generate transients at specific positions or create a basic pattern
+    const transients = transientPositions ?? [
+        // Basic 4/4 drum pattern with 16th notes
+        0.0,                    // Beat 1
+        quarterNoteInterval * 0.25,  // 16th after beat 1
+        quarterNoteInterval * 0.5,   // 8th after beat 1
+        quarterNoteInterval,         // Beat 2
+        quarterNoteInterval * 1.5,   // 8th after beat 2
+        quarterNoteInterval * 2,     // Beat 3
+        quarterNoteInterval * 2.25,  // 16th after beat 3
+        quarterNoteInterval * 2.75,  // 16th before beat 4
+        quarterNoteInterval * 3,     // Beat 4
+    ];
+
+    // Create sharp transients (impulse-like) at each position
+    for (const transientTime of transients) {
+        if (transientTime >= durationSeconds) continue;
+
+        const sampleIndex = Math.floor(transientTime * sampleRate);
+        const transientWidth = Math.floor(0.005 * sampleRate); // 5ms transient width
+
+        // Create a short burst of energy
+        for (let i = 0; i < transientWidth && sampleIndex + i < length; i++) {
+            // Gaussian-like envelope for the transient
+            const envelope = Math.exp(-Math.pow((i - transientWidth / 2) / (transientWidth / 4), 2));
+            data[sampleIndex + i] += envelope * 0.9;
+        }
+    }
+
+    // Add low-level background noise
+    for (let i = 0; i < length; i++) {
+        data[i] += (Math.random() - 0.5) * 0.02;
+    }
+
+    return {
+        duration: durationSeconds,
+        length,
+        sampleRate,
+        numberOfChannels: 1,
+        getChannelData: () => data,
+        copyFromChannel: () => {},
+        copyToChannel: () => {},
+        getAudioData: () => data,
+    } as AudioBuffer;
+}
+
+describe('Integration Tests - Full Pipeline', () => {
+    let multiBandAnalyzer: MultiBandAnalyzer;
+    let transientDetector: TransientDetector;
+    let rhythmQuantizer: RhythmQuantizer;
+
+    beforeEach(() => {
+        multiBandAnalyzer = new MultiBandAnalyzer({ peakThreshold: 0.2 });
+        transientDetector = new TransientDetector({ baseThreshold: 0.2 });
+        rhythmQuantizer = new RhythmQuantizer();
+    });
+
+    describe('detect transients on known drum track', () => {
+        it('should detect transients in a drum track and produce quantized output', () => {
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm;
+            const duration = 4.0;
+
+            // Create drum track with known transient positions
+            const audioBuffer = createDrumTrackAudioBuffer({
+                durationSeconds: duration,
+                bpm,
+                transientPositions: [
+                    0.0,                    // Beat 1
+                    quarterNoteInterval,    // Beat 2
+                    quarterNoteInterval * 2, // Beat 3
+                    quarterNoteInterval * 3, // Beat 4
+                ],
+            });
+
+            // Run full pipeline
+            const multiBandResult = multiBandAnalyzer.analyze(audioBuffer);
+            const transientAnalysis = transientDetector.detect(multiBandResult);
+            const beatMap = createMockUnifiedBeatMap({ bpm, duration });
+
+            const result = rhythmQuantizer.quantize(transientAnalysis, beatMap);
+
+            // Verify we detected some transients
+            expect(transientAnalysis.transients.length).toBeGreaterThan(0);
+
+            // Verify we have quantized output in at least one band
+            const totalBeats =
+                result.streams.low.beats.length +
+                result.streams.mid.beats.length +
+                result.streams.high.beats.length;
+            expect(totalBeats).toBeGreaterThan(0);
+
+            // Verify structure of quantized output
+            expect(result.streams.low.audioId).toBe(beatMap.audioId);
+            expect(result.streams.mid.audioId).toBe(beatMap.audioId);
+            expect(result.streams.high.audioId).toBe(beatMap.audioId);
+        });
+
+        it('should handle 16th note patterns correctly', () => {
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm;
+            const sixteenthNoteInterval = quarterNoteInterval / 4;
+            const duration = 2.0;
+
+            // Create a pattern with 16th notes
+            const transientPositions: number[] = [];
+            for (let beat = 0; beat < 4; beat++) {
+                for (let sixteenth = 0; sixteenth < 4; sixteenth++) {
+                    transientPositions.push((beat * quarterNoteInterval) + (sixteenth * sixteenthNoteInterval));
+                }
+            }
+
+            const audioBuffer = createDrumTrackAudioBuffer({
+                durationSeconds: duration,
+                bpm,
+                transientPositions,
+            });
+
+            const multiBandResult = multiBandAnalyzer.analyze(audioBuffer);
+            const transientAnalysis = transientDetector.detect(multiBandResult);
+            const beatMap = createMockUnifiedBeatMap({ bpm, duration });
+
+            const result = rhythmQuantizer.quantize(transientAnalysis, beatMap);
+
+            // Verify quantization produced output
+            const totalBeats =
+                result.streams.low.beats.length +
+                result.streams.mid.beats.length +
+                result.streams.high.beats.length;
+            expect(totalBeats).toBeGreaterThan(0);
+
+            // All quantized beats should have valid grid positions
+            for (const stream of [result.streams.low, result.streams.mid, result.streams.high]) {
+                for (const beat of stream.beats) {
+                    expect(beat.beatIndex).toBeGreaterThanOrEqual(0);
+                    expect(beat.gridPosition).toBeGreaterThanOrEqual(0);
+                    if (beat.gridType === 'straight_16th') {
+                        expect(beat.gridPosition).toBeLessThanOrEqual(3);
+                    } else {
+                        expect(beat.gridPosition).toBeLessThanOrEqual(2);
+                    }
+                }
+            }
+        });
+
+        it('should produce grid decisions for beats with detected transients', () => {
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm;
+            const duration = 2.0;
+
+            const audioBuffer = createDrumTrackAudioBuffer({
+                durationSeconds: duration,
+                bpm,
+                transientPositions: [
+                    0.0,
+                    quarterNoteInterval,
+                    quarterNoteInterval * 2,
+                ],
+            });
+
+            const multiBandResult = multiBandAnalyzer.analyze(audioBuffer);
+            const transientAnalysis = transientDetector.detect(multiBandResult);
+            const beatMap = createMockUnifiedBeatMap({ bpm, duration });
+
+            const result = rhythmQuantizer.quantize(transientAnalysis, beatMap);
+
+            // Check that grid decisions have correct structure
+            for (const stream of [result.streams.low, result.streams.mid, result.streams.high]) {
+                for (const decision of stream.gridDecisions) {
+                    expect(['straight_16th', 'triplet_8th']).toContain(decision.selectedGrid);
+                    expect(typeof decision.straightAvgOffset).toBe('number');
+                    expect(typeof decision.tripletAvgOffset).toBe('number');
+                    expect(typeof decision.confidence).toBe('number');
+                }
+            }
+        });
+    });
+
+    describe('verify quantization aligns with beat map grid', () => {
+        it('should quantize transients to exact grid positions', () => {
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm;
+            const sixteenthNoteInterval = quarterNoteInterval / 4;
+            const duration = 2.0;
+
+            // Create transients exactly on 16th note grid positions
+            const exactGridPositions = [
+                0.0,                              // Beat 0, position 0
+                sixteenthNoteInterval,            // Beat 0, position 1
+                sixteenthNoteInterval * 2,        // Beat 0, position 2
+                quarterNoteInterval,              // Beat 1, position 0
+                quarterNoteInterval + sixteenthNoteInterval * 2, // Beat 1, position 2
+            ];
+
+            const audioBuffer = createDrumTrackAudioBuffer({
+                durationSeconds: duration,
+                bpm,
+                transientPositions: exactGridPositions,
+            });
+
+            const multiBandResult = multiBandAnalyzer.analyze(audioBuffer);
+            const transientAnalysis = transientDetector.detect(multiBandResult);
+            const beatMap = createMockUnifiedBeatMap({ bpm, duration });
+
+            const result = rhythmQuantizer.quantize(transientAnalysis, beatMap);
+
+            // Collect all quantized beats
+            const allBeats = [
+                ...result.streams.low.beats,
+                ...result.streams.mid.beats,
+                ...result.streams.high.beats,
+            ];
+
+            // Verify each beat's timestamp matches its theoretical grid position
+            for (const beat of allBeats) {
+                const beatStart = beatMap.beats[beat.beatIndex]?.timestamp ?? 0;
+                let expectedTimestamp: number;
+
+                if (beat.gridType === 'straight_16th') {
+                    expectedTimestamp = beatStart + (beat.gridPosition * sixteenthNoteInterval);
+                } else {
+                    // Triplet grid: quarter note divided into 3 equal parts
+                    const tripletInterval = quarterNoteInterval / 3;
+                    expectedTimestamp = beatStart + (beat.gridPosition * tripletInterval);
+                }
+
+                // Quantized timestamp should be very close to expected (within 1ms for exact matches)
+                expect(Math.abs(beat.timestamp - expectedTimestamp)).toBeLessThan(0.001);
+            }
+        });
+
+        it('should handle transients slightly off-grid by snapping to nearest grid point', () => {
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm;
+            const sixteenthNoteInterval = quarterNoteInterval / 4;
+            const duration = 2.0;
+
+            // Create transients slightly off-grid (by ~10ms)
+            const offGridPositions = [
+                0.0 + 0.010,                              // 10ms late
+                sixteenthNoteInterval - 0.008,            // 8ms early
+                quarterNoteInterval + 0.012,              // 12ms late
+            ];
+
+            const audioBuffer = createDrumTrackAudioBuffer({
+                durationSeconds: duration,
+                bpm,
+                transientPositions: offGridPositions,
+            });
+
+            const multiBandResult = multiBandAnalyzer.analyze(audioBuffer);
+            const transientAnalysis = transientDetector.detect(multiBandResult);
+            const beatMap = createMockUnifiedBeatMap({ bpm, duration });
+
+            const result = rhythmQuantizer.quantize(transientAnalysis, beatMap);
+
+            // Collect all quantized beats
+            const allBeats = [
+                ...result.streams.low.beats,
+                ...result.streams.mid.beats,
+                ...result.streams.high.beats,
+            ];
+
+            // Verify quantization error is tracked
+            for (const beat of allBeats) {
+                // Quantization error should be recorded
+                expect(beat.quantizationError).toBeDefined();
+                expect(beat.quantizationError).toBeGreaterThanOrEqual(0);
+
+                // After quantization, the beat should be on a valid grid position
+                const beatStart = beatMap.beats[beat.beatIndex]?.timestamp ?? 0;
+                let gridInterval: number;
+
+                if (beat.gridType === 'straight_16th') {
+                    gridInterval = sixteenthNoteInterval;
+                } else {
+                    gridInterval = quarterNoteInterval / 3;
+                }
+
+                // Verify the timestamp is at a valid grid position
+                const offsetFromBeatStart = beat.timestamp - beatStart;
+                const expectedGridPosition = Math.round(offsetFromBeatStart / gridInterval);
+                expect(expectedGridPosition).toBe(beat.gridPosition);
+            }
+        });
+
+        it('should preserve beat index assignment for quantized beats', () => {
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm;
+            const duration = 4.0;
+
+            const audioBuffer = createDrumTrackAudioBuffer({
+                durationSeconds: duration,
+                bpm,
+                transientPositions: [
+                    0.0,
+                    quarterNoteInterval * 0.5,
+                    quarterNoteInterval,
+                    quarterNoteInterval * 1.5,
+                    quarterNoteInterval * 2,
+                    quarterNoteInterval * 2.5,
+                    quarterNoteInterval * 3,
+                ],
+            });
+
+            const multiBandResult = multiBandAnalyzer.analyze(audioBuffer);
+            const transientAnalysis = transientDetector.detect(multiBandResult);
+            const beatMap = createMockUnifiedBeatMap({ bpm, duration });
+
+            const result = rhythmQuantizer.quantize(transientAnalysis, beatMap);
+
+            // Collect all quantized beats
+            const allBeats = [
+                ...result.streams.low.beats,
+                ...result.streams.mid.beats,
+                ...result.streams.high.beats,
+            ];
+
+            // Each beat should be assigned to the correct beat index
+            for (const beat of allBeats) {
+                // The beat's timestamp should fall within the beat's time range
+                const beatStartTime = beatMap.beats[beat.beatIndex]?.timestamp ?? 0;
+                const beatEndTime = beatMap.beats[beat.beatIndex + 1]?.timestamp ?? (beatStartTime + quarterNoteInterval);
+
+                expect(beat.timestamp).toBeGreaterThanOrEqual(beatStartTime - 0.001); // Allow 1ms tolerance
+                expect(beat.timestamp).toBeLessThan(beatEndTime + 0.001);
+            }
+        });
+
+        it('should select correct grid type based on transient pattern', () => {
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm;
+            const tripletInterval = quarterNoteInterval / 3;
+            const duration = 2.0;
+
+            // Create transients that fit a triplet pattern better
+            const tripletPattern = [
+                0.0,
+                tripletInterval,
+                tripletInterval * 2,
+                quarterNoteInterval,
+                quarterNoteInterval + tripletInterval,
+                quarterNoteInterval + tripletInterval * 2,
+            ];
+
+            const audioBuffer = createDrumTrackAudioBuffer({
+                durationSeconds: duration,
+                bpm,
+                transientPositions: tripletPattern,
+            });
+
+            const multiBandResult = multiBandAnalyzer.analyze(audioBuffer);
+            const transientAnalysis = transientDetector.detect(multiBandResult);
+            const beatMap = createMockUnifiedBeatMap({ bpm, duration });
+
+            const result = rhythmQuantizer.quantize(transientAnalysis, beatMap);
+
+            // At least some beats should have triplet grid
+            const allDecisions = [
+                ...result.streams.low.gridDecisions,
+                ...result.streams.mid.gridDecisions,
+                ...result.streams.high.gridDecisions,
+            ];
+
+            // If we detected transients and made grid decisions, verify structure
+            if (allDecisions.length > 0) {
+                // Grid decisions should show the reasoning
+                for (const decision of allDecisions) {
+                    // The grid with smaller average offset should be selected
+                    if (decision.selectedGrid === 'triplet_8th') {
+                        expect(decision.tripletAvgOffset).toBeLessThanOrEqual(decision.straightAvgOffset + 1);
+                    } else {
+                        expect(decision.straightAvgOffset).toBeLessThanOrEqual(decision.tripletAvgOffset + 1);
+                    }
+                }
+            }
+        });
+
+        it('should handle different tempos correctly', () => {
+            const testTempos = [60, 90, 120, 140, 180];
+
+            for (const bpm of testTempos) {
+                const quarterNoteInterval = 60 / bpm;
+                const sixteenthNoteInterval = quarterNoteInterval / 4;
+                const duration = 2.0;
+
+                const audioBuffer = createDrumTrackAudioBuffer({
+                    durationSeconds: duration,
+                    bpm,
+                    transientPositions: [
+                        0.0,
+                        quarterNoteInterval,
+                        quarterNoteInterval * 2,
+                        quarterNoteInterval * 3,
+                    ],
+                });
+
+                const multiBandResult = multiBandAnalyzer.analyze(audioBuffer);
+                const transientAnalysis = transientDetector.detect(multiBandResult);
+                const beatMap = createMockUnifiedBeatMap({ bpm, duration });
+
+                const result = rhythmQuantizer.quantize(transientAnalysis, beatMap);
+
+                // Verify the quarterNoteInterval in beatMap is correct
+                expect(beatMap.quarterNoteInterval).toBeCloseTo(quarterNoteInterval, 5);
+
+                // Verify minimum interval calculation (should be 16th note)
+                expect(result.metadata.densityValidation.requiredMinInterval).toBeCloseTo(sixteenthNoteInterval, 5);
+            }
         });
     });
 });

@@ -187,15 +187,15 @@ Before quantization, validate that detected transients aren't too dense:
 - [x] Track retry count and cumulative sensitivity reduction in metadata
 
 #### 1.4.2 Intensity Filtering
-- [ ] Support optional filtering by transient intensity:
+- [x] Support optional filtering by transient intensity:
   ```typescript
   interface QuantizationConfig {
     minimumTransientIntensity: number;  // Default: 0.0 (catch all), user can set higher to filter weak transients
     // ... other config
   }
   ```
-- [ ] Filter transients below intensity threshold before quantization
-- [ ] Log how many transients were filtered for transparency
+- [x] Filter transients below intensity threshold before quantization
+- [x] Log how many transients were filtered for transparency
 
 #### 1.4.3 Per-Beat Grid Detection & Quantization
 
@@ -203,7 +203,7 @@ Before quantization, validate that detected transients aren't too dense:
 
 ##### Interfaces
 
-- [ ] **Grid decision metadata** (produced during grid detection):
+- [x] **Grid decision metadata** (produced during grid detection):
   ```typescript
   interface GridDecision {
     beatIndex: number;
@@ -215,7 +215,7 @@ Before quantization, validate that detected transients aren't too dense:
   }
   ```
 
-- [ ] **Core beat type** - a single quantized note:
+- [x] **Core beat type** - a single quantized note:
   ```typescript
   interface GeneratedBeat {
     timestamp: number;           // Quantized time in seconds
@@ -228,7 +228,7 @@ Before quantization, validate that detected transients aren't too dense:
   }
   ```
 
-- [ ] **Per-band rhythm map** - a complete rhythm chart for one frequency band:
+- [x] **Per-band rhythm map** - a complete rhythm chart for one frequency band:
   ```typescript
   interface GeneratedRhythmMap {
     audioId: string;
@@ -238,7 +238,7 @@ Before quantization, validate that detected transients aren't too dense:
   }
   ```
 
-- [ ] **Complete Phase 1 output** - all 3 band streams plus metadata:
+- [x] **Complete Phase 1 output** - all 3 band streams plus metadata:
   ```typescript
   interface QuantizedBandStreams {
     streams: {
@@ -255,31 +255,31 @@ Before quantization, validate that detected transients aren't too dense:
 
 ##### Algorithm
 
-- [ ] **Per-beat grid detection**:
-  - [ ] For each beat, extract transients within that beat's time range
-  - [ ] Lay out a **straight 16th note grid** for the beat
-  - [ ] Calculate **average ms offset per transient** from the 16th grid (total offset / transient count)
-  - [ ] Lay out an **8th note triplet grid** for the beat
-  - [ ] Calculate **average ms offset per transient** from the triplet grid (total offset / transient count)
-  - [ ] **Whichever grid has smaller average offset** = use that grid for this beat
-  - [ ] Record decision in `GridDecision` for each beat
-- [ ] **Quantize to chosen grid**:
-  - [ ] For each beat, use the selected grid (16th or triplet)
-  - [ ] Snap transients to nearest grid point (within tolerance)
-  - [ ] Create `GeneratedBeat` for each quantized transient
-  - [ ] Track quantization error for debugging
-- [ ] **Handle edge cases**:
-  - [ ] Transients too far from any grid point (discard or mark as "unquantized")
-  - [ ] Multiple transients snapping to same grid point (keep strongest)
-  - [ ] Beats with no transients (skip, no grid decision needed)
+- [x] **Per-beat grid detection**:
+  - [x] For each beat, extract transients within that beat's time range
+  - [x] Lay out a **straight 16th note grid** for the beat
+  - [x] Calculate **average ms offset per transient** from the 16th grid (total offset / transient count)
+  - [x] Lay out an **8th note triplet grid** for the beat
+  - [x] Calculate **average ms offset per transient** from the triplet grid (total offset / transient count)
+  - [x] **Whichever grid has smaller average offset** = use that grid for this beat
+  - [x] Record decision in `GridDecision` for each beat
+- [x] **Quantize to chosen grid**:
+  - [x] For each beat, use the selected grid (16th or triplet)
+  - [x] Snap transients to nearest grid point (within tolerance)
+  - [x] Create `GeneratedBeat` for each quantized transient
+  - [x] Track quantization error for debugging
+- [x] **Handle edge cases**:
+  - [x] Transients too far from any grid point (discard or mark as "unquantized")
+  - [x] Multiple transients snapping to same grid point (keep strongest)
+  - [x] Beats with no transients (skip, no grid decision needed)
 
 #### 1.4.4 Phase 1 Output Summary
 
 **Output**: `QuantizedBandStreams` containing 3 quantized rhythm streams (low/mid/high).
 
-- [ ] Each stream is a `GeneratedRhythmMap` - a complete, playable rhythm chart
-- [ ] Streams are compatible with existing beat map infrastructure
-- [ ] No manual-subdivision metadata (`SubdivisionConfig`, `isDetected`, etc.) - those are manual-path concerns
+- [x] Each stream is a `GeneratedRhythmMap` - a complete, playable rhythm chart
+- [x] Streams are compatible with existing beat map infrastructure
+- [x] No manual-subdivision metadata (`SubdivisionConfig`, `isDetected`, etc.) - those are manual-path concerns
 
 ### 1.5 Tests
 - [x] Unit tests for band-pass filter
@@ -288,8 +288,8 @@ Before quantization, validate that detected transients aren't too dense:
 - [x] Unit tests for density validation retry logic
 - [x] Unit tests for intensity filtering
 - [x] Unit tests for rhythmic quantization
-- [ ] Integration test: detect transients on known drum track
-- [ ] Verify quantization aligns with beat map grid
+- [x] Integration test: detect transients on known drum track
+- [x] Verify quantization aligns with beat map grid
 - [x] Verify retry logic reduces sensitivity correctly (exponential backoff)
 - [x] Verify all 3 band streams are valid quantized rhythms
 

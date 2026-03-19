@@ -31,9 +31,15 @@ function createMockMultiBandResult(
         if (transients) {
             for (const t of transients) {
                 const frame = Math.floor(t.time / hopSizeSeconds);
-                if (frame >= 0 && frame < frameCount) {
+                if (frame >= 1 && frame < frameCount - 1) {
+                    // Create a proper local maximum (peak) by setting the transient frame
+                    // to the intensity and neighboring frames to lower values
                     envelope[frame] = t.intensity;
+                    envelope[frame - 1] = t.intensity * 0.5;
+                    envelope[frame + 1] = t.intensity * 0.5;
                     energyOverTime[frame] = t.intensity;
+                    energyOverTime[frame - 1] = t.intensity * 0.5;
+                    energyOverTime[frame + 1] = t.intensity * 0.5;
                 }
             }
         }
@@ -222,6 +228,11 @@ describe('TransientDetector', () => {
         });
 
         it('should calculate average intensity correctly', () => {
+            // Use non-adaptive thresholding for predictable behavior with sparse mock data
+            const testDetector = new TransientDetector({
+                adaptiveThresholding: false,
+                baseThreshold: 0.3,
+            });
             const multiBandResult = createMockMultiBandResult({
                 duration: 1.0,
                 lowTransients: [
@@ -229,7 +240,7 @@ describe('TransientDetector', () => {
                     { time: 0.3, intensity: 0.6 },
                 ],
             });
-            const result = detector.detect(multiBandResult);
+            const result = testDetector.detect(multiBandResult);
 
             // Average intensity should be approximately (0.8 + 0.6) / 2 = 0.7
             expect(result.metadata.averageIntensity).toBeCloseTo(0.7, 0.1);
@@ -317,11 +328,16 @@ describe('TransientDetector', () => {
         });
 
         it('should handle single transient', () => {
+            // Use non-adaptive thresholding for predictable behavior with sparse mock data
+            const testDetector = new TransientDetector({
+                adaptiveThresholding: false,
+                baseThreshold: 0.3,
+            });
             const multiBandResult = createMockMultiBandResult({
                 duration: 1.0,
                 lowTransients: [{ time: 0.5, intensity: 0.9 }],
             });
-            const result = detector.detect(multiBandResult);
+            const result = testDetector.detect(multiBandResult);
 
             expect(result.transients.length).toBeGreaterThanOrEqual(1);
         });

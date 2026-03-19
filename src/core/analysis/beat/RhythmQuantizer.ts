@@ -497,7 +497,7 @@ export class RhythmQuantizer {
         transients: TransientResult[],
         unifiedBeatMap: UnifiedBeatMap
     ): GeneratedRhythmMap {
-        const beats: GeneratedBeat[] = [];
+        const rawBeats: GeneratedBeat[] = [];
         const gridDecisions: GridDecision[] = [];
         const quarterNoteInterval = unifiedBeatMap.quarterNoteInterval;
 
@@ -535,10 +535,13 @@ export class RhythmQuantizer {
                     quarterNoteInterval
                 );
                 if (quantizedBeat) {
-                    beats.push(quantizedBeat);
+                    rawBeats.push(quantizedBeat);
                 }
             }
         }
+
+        // Deduplicate beats that snap to the same grid point (keep strongest)
+        const beats = this.deduplicateBeats(rawBeats);
 
         return {
             audioId: unifiedBeatMap.audioId,
@@ -546,6 +549,34 @@ export class RhythmQuantizer {
             beats,
             gridDecisions,
         };
+    }
+
+    /**
+     * Deduplicate beats that snap to the same grid point
+     *
+     * When multiple transients quantize to the same (beatIndex, gridPosition, gridType),
+     * keep only the one with the highest intensity.
+     *
+     * @param beats - Array of quantized beats (may have duplicates)
+     * @returns Deduplicated array with only the strongest beat at each grid point
+     */
+    private deduplicateBeats(beats: GeneratedBeat[]): GeneratedBeat[] {
+        // Create a map keyed by (beatIndex, gridPosition, gridType)
+        const beatMap = new Map<string, GeneratedBeat>();
+
+        for (const beat of beats) {
+            // Create a unique key for this grid position
+            const key = `${beat.beatIndex}:${beat.gridPosition}:${beat.gridType}`;
+
+            const existing = beatMap.get(key);
+            if (!existing || beat.intensity > existing.intensity) {
+                // Either no beat at this position, or this one is stronger
+                beatMap.set(key, beat);
+            }
+        }
+
+        // Convert map back to array and sort by timestamp
+        return Array.from(beatMap.values()).sort((a, b) => a.timestamp - b.timestamp);
     }
 
     /**
