@@ -9,7 +9,8 @@
 
 import type { CompositeBeat, CompositeStream } from './CompositeStreamGenerator.js';
 import type { NaturalDifficulty } from './DensityAnalyzer.js';
-import type { GridType } from './RhythmQuantizer.js';
+import type { GridType, GridDecision } from './RhythmQuantizer.js';
+import type { PhraseAnalysisResult, RhythmicPhrase } from './PhraseAnalyzer.js';
 
 // ============================================================================
 // Extended Grid Types
@@ -165,6 +166,9 @@ export interface DifficultyVariant {
 
     /** Metadata about subdivision conversions */
     conversionMetadata?: SubdivisionConversionMetadata;
+
+    /** Metadata about density enhancement */
+    enhancementMetadata?: EnhancementMetadata;
 }
 
 /**
@@ -185,6 +189,29 @@ export interface SubdivisionConversionMetadata {
 
     /** Total beats after conversion */
     totalBeatsAfter: number;
+}
+
+/**
+ * Metadata about density enhancement during variant generation
+ */
+export interface EnhancementMetadata {
+    /** Total beats before enhancement */
+    totalBeatsBefore: number;
+
+    /** Total beats after enhancement */
+    totalBeatsAfter: number;
+
+    /** Number of beats added via pattern insertion */
+    patternsInserted: number;
+
+    /** Number of beats added via grid interpolation */
+    interpolatedBeats: number;
+
+    /** IDs of patterns that were inserted */
+    insertedPatternIds: string[];
+
+    /** Target density multiplier that was applied */
+    densityMultiplier: number;
 }
 
 /**
@@ -233,6 +260,18 @@ export interface DifficultyVariantConfig {
 
     /** Intensity threshold for keeping beats during HEAVY simplification. Default: 0.5 */
     heavySimplificationIntensityThreshold: number;
+
+    /** Target density multiplier for enhancement (1.0 = no change, 1.5 = 50% more beats). Default: 1.5 */
+    enhancementDensityMultiplier: number;
+
+    /** Intensity for interpolated beats (0.0 - 1.0). Default: 0.5 */
+    interpolatedBeatIntensity: number;
+
+    /** Whether to prefer pattern insertion over simple interpolation. Default: true */
+    preferPatternInsertion: boolean;
+
+    /** Maximum phrase size to consider for pattern insertion (in beats). Default: 4 */
+    maxPatternInsertionSize: number;
 }
 
 // ============================================================================
@@ -244,6 +283,10 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     preservePhraseBoundaries: true,
     simplificationIntensityThreshold: 0.3,
     heavySimplificationIntensityThreshold: 0.5,
+    enhancementDensityMultiplier: 1.5,
+    interpolatedBeatIntensity: 0.5,
+    preferPatternInsertion: true,
+    maxPatternInsertionSize: 4,
 };
 
 // ============================================================================
@@ -401,9 +444,15 @@ export class DifficultyVariantGenerator {
      * to ensure compliance.
      *
      * @param composite - The composite stream from CompositeStreamGenerator
+     * @param phraseAnalysis - Optional phrase analysis for pattern library access
+     * @param gridDecisions - Optional grid decisions from quantized streams
      * @returns Object containing easy, medium, and hard variants
      */
-    generate(composite: CompositeStream): {
+    generate(
+        composite: CompositeStream,
+        phraseAnalysis?: PhraseAnalysisResult,
+        gridDecisions?: Map<number, GridDecision>
+    ): {
         easy: DifficultyVariant;
         medium: DifficultyVariant;
         hard: DifficultyVariant;
@@ -411,9 +460,9 @@ export class DifficultyVariantGenerator {
         const naturalDifficulty = composite.naturalDifficulty;
 
         // Generate variants based on natural difficulty
-        const easy = this.generateVariant(composite, 'easy', naturalDifficulty);
-        const medium = this.generateVariant(composite, 'medium', naturalDifficulty);
-        const hard = this.generateVariant(composite, 'hard', naturalDifficulty);
+        const easy = this.generateVariant(composite, 'easy', naturalDifficulty, phraseAnalysis, gridDecisions);
+        const medium = this.generateVariant(composite, 'medium', naturalDifficulty, phraseAnalysis, gridDecisions);
+        const hard = this.generateVariant(composite, 'hard', naturalDifficulty, phraseAnalysis, gridDecisions);
 
         // Validate all variants against subdivision limits
         this.validateVariant(easy, 'easy');
@@ -470,12 +519,16 @@ export class DifficultyVariantGenerator {
      * @param composite - The composite stream
      * @param targetDifficulty - The target difficulty level
      * @param naturalDifficulty - The natural difficulty of the composite
+     * @param phraseAnalysis - Optional phrase analysis for pattern library access
+     * @param gridDecisions - Optional grid decisions from quantized streams
      * @returns The difficulty variant
      */
     private generateVariant(
         composite: CompositeStream,
         targetDifficulty: DifficultyLevel,
-        naturalDifficulty: NaturalDifficulty
+        naturalDifficulty: NaturalDifficulty,
+        phraseAnalysis?: PhraseAnalysisResult,
+        gridDecisions?: Map<number, GridDecision>
     ): DifficultyVariant {
         const isNatural = targetDifficulty === naturalDifficulty;
 
@@ -514,13 +567,33 @@ export class DifficultyVariantGenerator {
         }
 
         if (needsEnhancement) {
-            // Placeholder: Will implement full enhancement logic in next task
+            // Determine enhancement level based on how many steps up we're going
+            const enhancementLevel = this.getEnhancementLevel(targetDifficulty, naturalDifficulty);
+
+            // Enhance beats using pattern library and interpolation
+            const result = this.enhanceBeats(
+                composite.beats,
+                targetDifficulty,
+                enhancementLevel,
+                phraseAnalysis,
+                gridDecisions
+            );
+
+            // Determine edit type based on what was actually done
+            const editType = result.metadata.patternsInserted > 0 ? 'pattern_inserted' : 'interpolated';
+
             return {
                 difficulty: targetDifficulty,
-                beats: [...composite.beats], // Placeholder: actual enhancement in next task
+                beats: result.beats,
                 isUnedited: false,
-                editType: 'interpolated',
-                editAmount: 0.3, // Placeholder
+                editType,
+                editAmount: result.metadata.totalBeatsBefore > 0
+                    ? (result.metadata.totalBeatsAfter - result.metadata.totalBeatsBefore) / result.metadata.totalBeatsBefore
+                    : 0,
+                patternsInserted: result.metadata.insertedPatternIds.length > 0
+                    ? result.metadata.insertedPatternIds
+                    : undefined,
+                enhancementMetadata: result.metadata,
             };
         }
 
@@ -861,6 +934,371 @@ export class DifficultyVariantGenerator {
         naturalDifficulty: NaturalDifficulty
     ): boolean {
         return naturalDifficulty === 'hard' && targetDifficulty === 'easy';
+    }
+
+    /**
+     * Get the enhancement level based on how many steps up we're going
+     *
+     * @param targetDifficulty - The target difficulty
+     * @param naturalDifficulty - The natural difficulty of the composite
+     * @returns 'moderate' for 1 step up, 'heavy' for 2 steps up
+     */
+    private getEnhancementLevel(
+        targetDifficulty: DifficultyLevel,
+        naturalDifficulty: NaturalDifficulty
+    ): 'moderate' | 'heavy' {
+        const difficultyOrder: DifficultyLevel[] = ['easy', 'medium', 'hard'];
+        const targetIndex = difficultyOrder.indexOf(targetDifficulty);
+        const naturalIndex = difficultyOrder.indexOf(naturalDifficulty);
+        const stepsUp = targetIndex - naturalIndex;
+
+        return stepsUp >= 2 ? 'heavy' : 'moderate';
+    }
+
+    /**
+     * Enhance beats by adding density through pattern insertion and interpolation
+     *
+     * ## Algorithm Overview
+     *
+     * 1. **Pattern Insertion** (first priority):
+     *    - Look for suitable patterns from the phrase library
+     *    - Insert patterns at beats that have low density
+     *    - Patterns are song-specific and more interesting than simple interpolation
+     *
+     * 2. **Grid Interpolation** (fallback):
+     *    - For beats where no pattern matches, interpolate additional subdivisions
+     *    - Respect per-beat grid decisions (16th vs triplet) from Phase 1
+     *    - Add beats at intermediate grid positions
+     *
+     * @param beats - The beats to enhance
+     * @param targetDifficulty - The target difficulty level
+     * @param enhancementLevel - Whether this is moderate or heavy enhancement
+     * @param phraseAnalysis - Optional phrase analysis for pattern library
+     * @param gridDecisions - Optional grid decisions from quantized streams
+     * @returns Enhanced beats with metadata
+     */
+    private enhanceBeats(
+        beats: CompositeBeat[],
+        targetDifficulty: DifficultyLevel,
+        enhancementLevel: 'moderate' | 'heavy',
+        phraseAnalysis?: PhraseAnalysisResult,
+        gridDecisions?: Map<number, GridDecision>
+    ): { beats: CompositeBeat[]; metadata: EnhancementMetadata } {
+        const metadata: EnhancementMetadata = {
+            totalBeatsBefore: beats.length,
+            totalBeatsAfter: 0,
+            patternsInserted: 0,
+            interpolatedBeats: 0,
+            insertedPatternIds: [],
+            densityMultiplier: this.config.enhancementDensityMultiplier,
+        };
+
+        // Adjust density multiplier based on enhancement level
+        const densityMultiplier = enhancementLevel === 'heavy'
+            ? this.config.enhancementDensityMultiplier * 1.5
+            : this.config.enhancementDensityMultiplier;
+
+        metadata.densityMultiplier = densityMultiplier;
+
+        // If no beats to enhance, return empty
+        if (beats.length === 0) {
+            metadata.totalBeatsAfter = 0;
+            return { beats: [], metadata };
+        }
+
+        // Group beats by beatIndex for analysis
+        const beatsByIndex = this.groupBeatsByIndex(beats);
+
+        // Calculate target beats per beat index based on multiplier
+        const targetBeatsPerBeat = this.calculateTargetBeatsPerBeat(beatsByIndex, densityMultiplier);
+
+        // Create enhanced beats array
+        const enhancedBeats: CompositeBeat[] = [];
+
+        // Process each beat index
+        const maxBeatIndex = Math.max(...Array.from(beatsByIndex.keys()));
+
+        for (let beatIndex = 0; beatIndex <= maxBeatIndex; beatIndex++) {
+            const existingBeats = beatsByIndex.get(beatIndex) ?? [];
+            const targetCount = targetBeatsPerBeat.get(beatIndex) ?? existingBeats.length;
+
+            if (existingBeats.length >= targetCount) {
+                // Already at or above target, keep existing beats
+                enhancedBeats.push(...existingBeats);
+                continue;
+            }
+
+            // Need to add beats
+            const beatsToAdd = targetCount - existingBeats.length;
+
+            // Try pattern insertion first (if enabled and phrase analysis available)
+            let addedFromPattern = 0;
+            if (this.config.preferPatternInsertion && phraseAnalysis) {
+                const patternResult = this.tryInsertPattern(
+                    existingBeats,
+                    beatIndex,
+                    beatsToAdd,
+                    phraseAnalysis,
+                    enhancedBeats
+                );
+                addedFromPattern = patternResult.beatsAdded;
+                if (patternResult.patternId) {
+                    metadata.patternsInserted++;
+                    metadata.insertedPatternIds.push(patternResult.patternId);
+                }
+            }
+
+            // If pattern insertion didn't add enough beats, use interpolation
+            if (addedFromPattern < beatsToAdd) {
+                const interpolatedBeats = this.interpolateBeats(
+                    existingBeats,
+                    beatIndex,
+                    beatsToAdd - addedFromPattern,
+                    gridDecisions
+                );
+                enhancedBeats.push(...interpolatedBeats);
+                metadata.interpolatedBeats += interpolatedBeats.length;
+            }
+
+            // Add original beats
+            enhancedBeats.push(...existingBeats);
+        }
+
+        // Sort and deduplicate
+        const sortedBeats = enhancedBeats.sort((a, b) => {
+            if (a.beatIndex !== b.beatIndex) return a.beatIndex - b.beatIndex;
+            return a.gridPosition - b.gridPosition;
+        });
+
+        const deduplicatedBeats = this.deduplicateEnhancedBeats(sortedBeats);
+
+        metadata.totalBeatsAfter = deduplicatedBeats.length;
+
+        if (this.config.logConversions) {
+            console.log(
+                `[DifficultyVariantGenerator] Enhanced beats for ${targetDifficulty}: ` +
+                `${metadata.totalBeatsBefore} → ${metadata.totalBeatsAfter} beats ` +
+                `(patterns: ${metadata.patternsInserted}, interpolated: ${metadata.interpolatedBeats})`
+            );
+        }
+
+        return { beats: deduplicatedBeats, metadata };
+    }
+
+    /**
+     * Group beats by their beat index
+     */
+    private groupBeatsByIndex(beats: CompositeBeat[]): Map<number, CompositeBeat[]> {
+        const map = new Map<number, CompositeBeat[]>();
+
+        for (const beat of beats) {
+            const existing = map.get(beat.beatIndex);
+            if (existing) {
+                existing.push(beat);
+            } else {
+                map.set(beat.beatIndex, [beat]);
+            }
+        }
+
+        return map;
+    }
+
+    /**
+     * Calculate target beats per beat index based on density multiplier
+     */
+    private calculateTargetBeatsPerBeat(
+        beatsByIndex: Map<number, CompositeBeat[]>,
+        densityMultiplier: number
+    ): Map<number, number> {
+        const targetMap = new Map<number, number>();
+
+        for (const [beatIndex, beats] of beatsByIndex) {
+            // Calculate target count, cap at 4 (max subdivisions per beat)
+            const targetCount = Math.min(Math.ceil(beats.length * densityMultiplier), 4);
+            targetMap.set(beatIndex, targetCount);
+        }
+
+        return targetMap;
+    }
+
+    /**
+     * Try to insert a pattern from the phrase library
+     *
+     * Looks for patterns that:
+     * - Have available slots in the current beat
+     * - Match the grid type of existing beats
+     * - Are within the max pattern size limit
+     */
+    private tryInsertPattern(
+        existingBeats: CompositeBeat[],
+        beatIndex: number,
+        beatsToAdd: number,
+        phraseAnalysis: PhraseAnalysisResult,
+        enhancedBeats: CompositeBeat[]
+    ): { beatsAdded: number; patternId?: string } {
+        const patternLibrary = phraseAnalysis.patternLibrary;
+
+        // Filter patterns by max size
+        const suitablePatterns = patternLibrary.filter(
+            p => p.sizeInBeats <= this.config.maxPatternInsertionSize && p.availableForReuse
+        );
+
+        if (suitablePatterns.length === 0) {
+            return { beatsAdded: 0 };
+        }
+
+        // Get the grid type of existing beats (if any)
+        const existingGridType = existingBeats.length > 0 ? existingBeats[0].gridType : 'straight_16th';
+
+        // Find patterns that match the grid type
+        const matchingPatterns = suitablePatterns.filter(p =>
+            p.pattern.some(b => b.gridType === existingGridType)
+        );
+
+        // If no matching patterns, use any pattern
+        const patternsToUse = matchingPatterns.length > 0 ? matchingPatterns : suitablePatterns;
+
+        // Sort by significance (most significant first)
+        patternsToUse.sort((a, b) => b.significance - a.significance);
+
+        // Try to use the most significant pattern
+        const pattern = patternsToUse[0];
+
+        // Find beats from the pattern that fit in the current beat index
+        const patternBeatsForCurrentBeat = pattern.pattern.filter(b => b.beatIndex === 0);
+
+        // Get existing grid positions
+        const existingPositions = new Set(existingBeats.map(b => b.gridPosition));
+
+        // Find pattern beats that don't overlap with existing beats
+        const newBeats = patternBeatsForCurrentBeat.filter(b => !existingPositions.has(b.gridPosition));
+
+        if (newBeats.length === 0) {
+            return { beatsAdded: 0 };
+        }
+
+        // Take only the number of beats we need
+        const beatsToInsert = newBeats.slice(0, beatsToAdd);
+
+        // Convert pattern beats to composite beats
+        const sourceBand = pattern.sourceBand;
+        const compositeBeats: CompositeBeat[] = beatsToInsert.map(b => ({
+            ...b,
+            beatIndex, // Use current beat index
+            band: sourceBand,
+            sourceBand,
+            intensity: b.intensity * 0.8, // Slightly reduce intensity for inserted patterns
+        }));
+
+        enhancedBeats.push(...compositeBeats);
+
+        return {
+            beatsAdded: compositeBeats.length,
+            patternId: pattern.id,
+        };
+    }
+
+    /**
+     * Interpolate beats to add density
+     *
+     * Adds beats at intermediate grid positions that don't already have beats.
+     * Respects grid decisions (16th vs triplet) if available.
+     */
+    private interpolateBeats(
+        existingBeats: CompositeBeat[],
+        beatIndex: number,
+        beatsToAdd: number,
+        gridDecisions?: Map<number, GridDecision>
+    ): CompositeBeat[] {
+        if (beatsToAdd <= 0 || existingBeats.length === 0) {
+            return [];
+        }
+
+        // Determine grid type from existing beats or grid decisions
+        let gridType: GridType = existingBeats[0].gridType;
+        let maxPositions = gridType === 'straight_16th' ? 4 : 3;
+
+        // Check grid decisions for this beat index
+        if (gridDecisions) {
+            const decision = gridDecisions.get(beatIndex);
+            if (decision) {
+                gridType = decision.selectedGrid;
+                maxPositions = gridType === 'straight_16th' ? 4 : 3;
+            }
+        }
+
+        // Get existing positions
+        const existingPositions = new Set(existingBeats.map(b => b.gridPosition));
+
+        // Find available positions (positions without beats)
+        const availablePositions: number[] = [];
+        for (let pos = 0; pos < maxPositions; pos++) {
+            if (!existingPositions.has(pos)) {
+                availablePositions.push(pos);
+            }
+        }
+
+        // If no available positions, try alternate grid type
+        if (availablePositions.length === 0 && gridType === 'straight_16th') {
+            // Try triplet grid
+            for (let pos = 0; pos < 3; pos++) {
+                if (!existingPositions.has(pos)) {
+                    availablePositions.push(pos);
+                }
+            }
+        }
+
+        // Sort available positions (prefer mid-beat positions for interpolation)
+        availablePositions.sort((a, b) => {
+            // Prefer positions 1 and 2 (off-beats) for interpolation
+            const aScore = a === 0 ? 2 : (a === 3 ? 2 : 1);
+            const bScore = b === 0 ? 2 : (b === 3 ? 2 : 1);
+            return aScore - bScore;
+        });
+
+        // Take the positions we need
+        const positionsToFill = availablePositions.slice(0, beatsToAdd);
+
+        // Get reference beat for timestamp calculation
+        const referenceBeat = existingBeats[0];
+        const quarterNoteInterval = 0.5; // Default, would need actual value from beat map
+
+        // Create interpolated beats
+        const interpolatedBeats: CompositeBeat[] = positionsToFill.map(gridPosition => {
+            const interval = gridType === 'straight_16th' ? quarterNoteInterval / 4 : quarterNoteInterval / 3;
+            const timestamp = referenceBeat.timestamp - (referenceBeat.gridPosition * interval) + (gridPosition * interval);
+
+            return {
+                timestamp,
+                beatIndex,
+                gridPosition,
+                gridType,
+                intensity: this.config.interpolatedBeatIntensity,
+                band: referenceBeat.band,
+                sourceBand: referenceBeat.sourceBand,
+                quantizationError: 0,
+            };
+        });
+
+        return interpolatedBeats;
+    }
+
+    /**
+     * Deduplicate enhanced beats (same beatIndex + gridPosition + gridType)
+     */
+    private deduplicateEnhancedBeats(beats: CompositeBeat[]): CompositeBeat[] {
+        const beatMap = new Map<string, CompositeBeat>();
+
+        for (const beat of beats) {
+            const key = `${beat.beatIndex}:${beat.gridPosition}:${beat.gridType}`;
+            const existing = beatMap.get(key);
+
+            if (!existing || beat.intensity > existing.intensity) {
+                beatMap.set(key, beat);
+            }
+        }
+
+        return Array.from(beatMap.values());
     }
 
     /**

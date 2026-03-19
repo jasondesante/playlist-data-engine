@@ -521,19 +521,19 @@ Each difficulty level has constraints on the maximum subdivision density allowed
     - Uses `isStrongBeat()` helper to identify beats 1 and 3 (beatIndex % 4 == 0 or 2)
 
   **If composite is naturally medium (moderate):**
-  - [ ] **Hard**: Interpolate additional subdivisions between detected transients
+  - [x] **Hard**: Interpolate additional subdivisions between detected transients
   - [x] **Medium**: Composite (unedited) - natural difficulty variant marked as unedited
   - [x] **Easy**: Simplify - remove some subdivisions (standard simplification)
 
   **If composite is naturally easy (sparse):**
-  - [ ] **Hard**: Heavy density enhancement using pattern library and interpolation
-  - [ ] **Medium**: Moderate density enhancement
+  - [x] **Hard**: Heavy density enhancement using pattern library and interpolation
+  - [x] **Medium**: Moderate density enhancement
   - [x] **Easy**: Composite (unedited) - natural difficulty variant marked as unedited
 
-- [ ] **Density enhancement** (for sparse composites needing harder difficulties):
-  - [ ] **First priority**: Insert detected patterns from phrase library whenever possible (song-specific, more interesting)
-  - [ ] **Fallback**: Simple grid interpolation if no suitable pattern exists
-  - [ ] Respect per-beat grid decisions (16th vs triplet) from Phase 1
+- [x] **Density enhancement** (for sparse composites needing harder difficulties):
+  - [x] **First priority**: Insert detected patterns from phrase library whenever possible (song-specific, more interesting)
+  - [x] **Fallback**: Simple grid interpolation if no suitable pattern exists
+  - [x] Respect per-beat grid decisions (16th vs triplet) from Phase 1
 
 - [x] **Simplification** (for dense composites needing easier difficulties):
   - [x] **Enforce subdivision limits** (see 3.3.1) - this is the primary constraint for Easy
@@ -667,9 +667,9 @@ Each difficulty level has constraints on the maximum subdivision density allowed
 - [x] Unit tests for difficulty variant generation (simplification)
   - Tests cover: easy/medium/hard variants, unedited flag, editType, editAmount
   - Heavy simplification tested with beat prioritization
-- [ ] Unit tests for difficulty variant generation (density enhancement)
+- [x] Unit tests for difficulty variant generation (density enhancement)
 - [x] Unit tests for subdivision limits enforcement (Easy has no 16th/8th-triplets)
-- [ ] Unit tests for pattern insertion from phrase library
+- [x] Unit tests for pattern insertion from phrase library
 - [ ] Integration tests for full pipeline (all 3 phases)
 - [ ] Performance tests (generation time < 5 seconds for 3-minute song)
 - [ ] Verify 3 difficulty variants are valid
