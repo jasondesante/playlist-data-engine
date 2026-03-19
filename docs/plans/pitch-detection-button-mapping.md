@@ -161,13 +161,15 @@ After rhythm generation plan completes:
 #### 1.3.3 Output Types
 
   ```typescript
+  // Direction and interval are populated in section 1.5 (Melody Contour Analysis)
   interface PitchAtBeat {
     beatIndex: number;
     timestamp: number;
     band: 'low' | 'mid' | 'high';  // Which band stream this beat belongs to
     pitch: PitchResult | null;
-    direction: 'up' | 'down' | 'stable' | 'none';
-    intervalFromPrevious: number;  // Semitones, 0 if none
+    direction: 'up' | 'down' | 'stable' | 'none';  // Populated in 1.5
+    intervalFromPrevious: number;  // Semitones, 0 if none. Populated in 1.5
+    intervalCategory?: IntervalCategory;  // Categorized interval. Populated in 1.5
   }
 
   interface LinkedPitchAnalysis {
@@ -240,7 +242,71 @@ After rhythm generation plan completes:
 
 **Goal**: Analyze the collected pitch data to identify melodic patterns, direction, and range. This step happens AFTER pitch detection because it needs the pitch data as input.
 
-- [ ] Create melody contour extraction
+> **Key Insight**: The primary output for button mapping is the **pitch-to-pitch relationship** - whether each pitch is higher, lower, or the same as the previous, and the interval distance between them. This directional information is what drives button selection in Phase 2.
+
+#### 1.5.1 Pitch-to-Pitch Comparison
+
+- [ ] For each band stream, iterate through pitches and compare consecutive beats:
+  ```typescript
+  // Pseudocode for pitch comparison
+  for (const band of ['low', 'mid', 'high'] as const) {
+    const pitches = bandStreamPitches.get(band);
+
+    for (let i = 0; i < pitches.length; i++) {
+      const current = pitches[i];
+      const previous = i > 0 ? pitches[i - 1] : null;
+
+      if (previous?.pitch && current.pitch) {
+        const currentMidi = current.pitch.midiNote;
+        const previousMidi = previous.pitch.midiNote;
+
+        // Determine direction
+        if (currentMidi > previousMidi) {
+          current.direction = 'up';
+        } else if (currentMidi < previousMidi) {
+          current.direction = 'down';
+        } else {
+          current.direction = 'stable';
+        }
+
+        // Calculate interval in semitones
+        current.intervalFromPrevious = Math.abs(currentMidi - previousMidi);
+      } else {
+        current.direction = 'none';
+        current.intervalFromPrevious = 0;
+      }
+    }
+  }
+  ```
+
+- [ ] **Direction categories for button mapping**:
+  - `up`: Current pitch is higher than previous (ascending melody)
+  - `down`: Current pitch is lower than previous (descending melody)
+  - `stable`: Same pitch as previous (repeated note)
+  - `none`: No previous pitch available (first note or no pitch detected)
+
+- [ ] **Interval categories for button mapping**:
+  ```typescript
+  // Useful interval groupings for button mapping
+  type IntervalCategory =
+    | 'unison'      // 0 semitones
+    | 'small'       // 1-2 semitones (minor/major 2nd)
+    | 'medium'      // 3-4 semitones (minor/major 3rd)
+    | 'large'       // 5-7 semitones (4th, tritone, 5th)
+    | 'very_large'; // 8+ semitones (6th, 7th, octave+)
+
+  function categorizeInterval(semitones: number): IntervalCategory {
+    if (semitones === 0) return 'unison';
+    if (semitones <= 2) return 'small';
+    if (semitones <= 4) return 'medium';
+    if (semitones <= 7) return 'large';
+    return 'very_large';
+  }
+  ```
+
+#### 1.5.2 Contour Aggregation Types
+
+- [ ] Create melody contour extraction types
   ```typescript
   interface MelodyContour {
     segments: MelodySegment[];
@@ -261,15 +327,42 @@ After rhythm generation plan completes:
     interval: number;  // Semitones
   }
   ```
+
+#### 1.5.3 Contour Analysis Tasks
+
 - [ ] Implement segment detection for melody phrases
+  - [ ] Group consecutive beats with same direction into segments
+  - [ ] Calculate total interval span for each segment
 - [ ] Link segments to beat positions
-- [ ] Calculate contour direction over different time windows
+- [ ] Calculate overall contour direction over different time windows
+  - [ ] Short-term (1-2 beats): immediate direction changes
+  - [ ] Medium-term (4-8 beats): phrase-level direction
+  - [ ] Long-term (16+ beats): section-level direction
 - [ ] Analyze contour separately for each band stream
 - [ ] Generate combined contour from composite pitches
+
+#### 1.5.4 Output for Button Mapping
+
+- [ ] Ensure `PitchAtBeat` is populated with direction and interval:
+  ```typescript
+  interface PitchAtBeat {
+    beatIndex: number;
+    timestamp: number;
+    band: 'low' | 'mid' | 'high';
+    pitch: PitchResult | null;
+    direction: 'up' | 'down' | 'stable' | 'none';  // ← Used by button mapper
+    intervalFromPrevious: number;  // ← Semitones, used by button mapper
+    intervalCategory: IntervalCategory;  // ← Categorized for easier mapping
+  }
+  ```
 
 ### 1.6 Tests
 - [ ] Unit tests for YIN implementation
 - [ ] Unit tests for melody contour extraction
+- [ ] **Unit tests for pitch-to-pitch comparison**:
+  - [ ] Verify `direction` is correctly calculated (up/down/stable/none)
+  - [ ] Verify `intervalFromPrevious` is correctly calculated in semitones
+  - [ ] Verify `intervalCategory` is correctly assigned (unison/small/medium/large/very_large)
 - [ ] Unit tests for multi-band pitch analysis (verify same bands as rhythm generation)
 - [ ] Test with synthesized audio of known pitch
 - [ ] Test with real vocal tracks
@@ -367,9 +460,9 @@ After rhythm generation plan completes:
       pitchAnalysis?: LinkedPitchAnalysis
     ): MappedLevelResult;
 
-    // Pitch-influenced mapping
+    // Pitch-influenced mapping - uses direction and intervalCategory from Phase 1
     private mapPitchToKey(
-      pitch: PitchAtBeat,
+      pitch: PitchAtBeat,  // Contains direction, intervalFromPrevious, intervalCategory
       previousKey: string | null
     ): string;
 
@@ -386,6 +479,9 @@ After rhythm generation plan completes:
     ): string[];
 
     // Combine pitch + pattern influences
+    // pitchKey: derived from PitchAtBeat.direction and intervalCategory
+    // patternKey: derived from button pattern vocabulary
+    // weight: from config.pitchInfluenceWeight (0 = pattern only, 1 = pitch only)
     private blendPitchAndPattern(
       pitchKey: string | null,
       patternKey: string,
@@ -408,17 +504,33 @@ After rhythm generation plan completes:
   ```
 
 ### 2.4 Pitch-to-Button Mapping Strategies
-- [ ] Implement directional mapping
+
+> **Input from Phase 1**: These strategies use `PitchAtBeat.direction`, `PitchAtBeat.intervalFromPrevious`, and `PitchAtBeat.intervalCategory` (defined in section 1.5.4).
+
+- [ ] Implement directional mapping (uses `PitchAtBeat.direction` + `intervalCategory`)
   - Melody goes up → use "up" or "right" button
   - Melody goes down → use "down" or "left" button
-  - Large intervals → bigger "jumps" in button position
+  - Larger intervals → bigger "jumps" in button position
   - Stable pitch → repeat or adjacent button
   ```typescript
-  // Directional mapping example
-  const DIRECTIONAL_MAP = {
-    'up': { small: 'up', medium: 'up', large: 'up' },
-    'down': { small: 'down', medium: 'down', large: 'down' },
-    'stable': 'same',  // Repeat previous key
+  // Directional mapping using IntervalCategory from Phase 1
+  const DIRECTIONAL_MAP: Record<PitchAtBeat['direction'], Record<IntervalCategory, string>> = {
+    'up': {
+      unison: 'same',      // Same pitch, repeat key
+      small: 'up',         // Small step up
+      medium: 'up',        // Medium step up
+      large: 'right',      // Large leap, use different direction
+      very_large: 'right', // Very large leap, use different direction
+    },
+    'down': {
+      unison: 'same',
+      small: 'down',
+      medium: 'down',
+      large: 'left',
+      very_large: 'left',
+    },
+    'stable': { /* all map to 'same' */ },
+    'none': { /* use fallback pattern */ },
   };
   ```
 
@@ -430,49 +542,56 @@ After rhythm generation plan completes:
   const CHROMATIC_MAP = ['up', 'up', 'down', 'down', 'left', 'left', 'right', 'right', ...];
   ```
 
-- [ ] Implement interval mapping
+- [ ] Implement interval mapping (uses `PitchAtBeat.intervalCategory`)
   - Same note = same button
   - Small interval (1-2 semitones) = adjacent button
-  - Medium interval (3-5 semitones) = skip one button
-  - Large interval (6+ semitones) = opposite button
+  - Medium interval (3-4 semitones) = skip one button
+  - Large interval (5-7 semitones) = opposite button
+  - Very large interval (8+ semitones) = opposite button
   ```typescript
-  const INTERVAL_MAP = {
-    0: 'same',           // Unison
-    1: 'adjacent',       // Minor 2nd
-    2: 'adjacent',       // Major 2nd
-    3: 'skip_one',       // Minor 3rd
-    4: 'skip_one',       // Major 3rd
-    5: 'opposite',       // Perfect 4th
-    7: 'opposite',       // Perfect 5th
-    // etc.
+  // Interval mapping using IntervalCategory from Phase 1
+  const INTERVAL_MAP: Record<IntervalCategory, string> = {
+    unison: 'same',       // 0 semitones - repeat previous key
+    small: 'adjacent',    // 1-2 semitones - next button in sequence
+    medium: 'skip_one',   // 3-4 semitones - skip one button
+    large: 'opposite',    // 5-7 semitones - opposite button
+    very_large: 'opposite', // 8+ semitones - opposite button
   };
   ```
 
 ### 2.5 Difficulty-Based Button Logic
+
+> **How pitch influence works**: The `pitchInfluenceWeight` (0-1) determines how much `PitchAtBeat.direction` and `intervalCategory` affect button selection vs. pattern-based selection. A weight of 1.0 means buttons follow the melody exactly; 0.0 means buttons follow patterns only.
+
 - [ ] Easy:
   - Single button per beat
   - Predictable patterns (alternating)
-  - Strong pitch influence (follows melody closely)
-  - No rapid direction changes
+  - **Strong pitch influence (weight 0.8)**: `direction` strongly determines button; `stable` direction = repeat key
+  - No rapid direction changes - prefer `stable` or adjacent keys when `direction` changes
   - `consecutiveSameKeyLimit`: 3
 
 - [ ] Medium:
   - Pattern variation enabled
-  - Moderate pitch influence (weight 0.5)
-  - Some rapid direction changes
+  - **Moderate pitch influence (weight 0.5)**: `direction` and `intervalCategory` influence 50% of button selection
+  - Some rapid direction changes allowed
   - `consecutiveSameKeyLimit`: 2
 
 - [ ] Hard:
   - Rapid button changes allowed
   - Complex patterns (rolls, streams)
-  - Lower pitch influence (weight 0.3) - more variety
+  - **Lower pitch influence (weight 0.3)**: `direction` and `intervalCategory` have less influence; more variety from patterns
+  - Large and `very_large` intervals can trigger bigger button jumps
   - `consecutiveSameKeyLimit`: 2
   - Hold notes enabled
 
 ### 2.6 Combining Rhythm Band Selection with Pitch
+
+> **Input from Phase 1**: `PitchAtBeat.band` tells us which frequency band each beat's pitch was derived from (see section 1.3.3).
+
 - [ ] Implement band-aware button mapping
-  - If rhythm used 'low' band for a section, use same band for pitch
-  - If rhythm used 'mid' band, focus pitch detection there
+  - Use `PitchAtBeat.band` to know which frequency band the pitch came from
+  - If rhythm used 'low' band for a section, the pitch data already reflects that (via derivation in 1.4)
+  - If rhythm used 'mid' band, the pitch data reflects that
   - Store band selection from rhythm generation in metadata
   ```typescript
   // Re-exported from rhythm generation for reference
@@ -484,7 +603,7 @@ After rhythm generation plan completes:
 
   interface BandAwareMapping {
     rhythmBand: 'low' | 'mid' | 'high';  // From CompositeSection.sourceBand
-    pitchBand: 'low' | 'mid' | 'high';   // Usually matches, but can differ
+    pitchBand: 'low' | 'mid' | 'high';   // From PitchAtBeat.band (usually matches)
     useConsistentBands: boolean;
   }
   ```
@@ -585,6 +704,21 @@ interface ChartMetadata {
   pitchMetadata: {
     bandUsed: 'low' | 'mid' | 'high';
     melodyRange: { min: string; max: string } | null;
+    /** Direction statistics from melody contour analysis (Phase 1 section 1.5) */
+    directionStats: {
+      up: number;      // Count of ascending pitches
+      down: number;    // Count of descending pitches
+      stable: number;  // Count of repeated pitches
+      none: number;    // Count with no pitch detected
+    } | null;
+    /** Interval statistics from melody contour analysis (Phase 1 section 1.5) */
+    intervalStats: {
+      unison: number;
+      small: number;
+      medium: number;
+      large: number;
+      very_large: number;
+    } | null;
   } | null;
 
   /** Generation timestamp */
@@ -701,10 +835,13 @@ interface ChartMetadata {
 
 ### 2.8 Tests
 - [ ] Unit tests for pitch-to-key mapping (all 3 modes)
+  - [ ] Verify directional mapping uses `PitchAtBeat.direction` and `intervalCategory`
+  - [ ] Verify interval mapping uses `PitchAtBeat.intervalCategory`
 - [ ] Unit tests for pattern selection
 - [ ] Verify difficulty constraints are respected
-- [ ] Test band-aware mapping logic
+- [ ] Test band-aware mapping logic (using `PitchAtBeat.band`)
 - [ ] Integration test: full button mapping with real pitch data
+- [ ] Verify direction statistics are calculated correctly in output metadata
 
 ---
 
@@ -743,7 +880,14 @@ interface ChartMetadata {
 
     // Pipeline steps
     private async generateRhythm(...): Promise<GeneratedRhythm>;
-    private async detectPitch(audioBuffer: AudioBuffer, dominantBand: 'low' | 'mid' | 'high'): Promise<LinkedPitchAnalysis>;
+
+    // Analyze pitch on all band streams, then derive composite/variant pitches
+    // See Phase 1 sections 1.2-1.5 for details
+    private async analyzePitch(
+      audioBuffer: AudioBuffer,
+      generatedRhythm: GeneratedRhythm
+    ): Promise<LinkedPitchAnalysis>;
+
     private mapButtons(
       rhythm: GeneratedRhythm,
       pitch: LinkedPitchAnalysis | null
@@ -817,6 +961,21 @@ interface ChartMetadata {
     pitchMetadata: {
       bandUsed: 'low' | 'mid' | 'high';
       melodyRange: { min: string; max: string } | null;
+      // Direction statistics from Phase 1 section 1.5
+      directionStats: {
+        up: number;      // Count of ascending pitches
+        down: number;    // Count of descending pitches
+        stable: number;  // Count of repeated pitches
+        none: number;    // Count with no pitch detected
+      } | null;
+      // Interval statistics from Phase 1 section 1.5
+      intervalStats: {
+        unison: number;
+        small: number;
+        medium: number;
+        large: number;
+        very_large: number;
+      } | null;
     } | null;
     chartMetadata: {
       totalBeats: number;
@@ -831,10 +990,13 @@ interface ChartMetadata {
 ### 3.2 Pipeline Implementation
 - [ ] Implement the full generation pipeline
   1. Run rhythm generation (from companion plan) → `GeneratedRhythm`
-  2. Select difficulty variant from `GeneratedRhythm.difficultyVariants`
-  3. Run pitch detection on dominant band (from `CompositeSection.sourceBand`)
-  4. Link pitch to beat positions and phrase occurrences
-  5. Generate button mappings for selected variant → `MappedLevelResult`
+  2. **Run pitch analysis** (Phase 1):
+     - Analyze pitch on ALL band streams (low/mid/high) using filtered audio
+     - Derive composite stream pitches from band stream pitches
+     - Calculate melody contour (direction + interval for each beat)
+  3. Derive pitches for each difficulty variant from composite
+  4. Select difficulty variant from `GeneratedRhythm.difficultyVariants`
+  5. Generate button mappings for selected variant using `PitchAtBeat.direction` and `intervalCategory` → `MappedLevelResult`
   6. **Convert to ChartedBeatMap** using `BeatMapConverter.convertToChartedBeatMap()`
   7. Combine into final `GeneratedLevel` with playable `chart`
 - [ ] Add progress callbacks for long-running generation
@@ -889,6 +1051,8 @@ interface ChartMetadata {
 - [ ] Integration tests for full pipeline
 - [ ] Performance tests (generation time < 10 seconds for 3-minute song)
 - [ ] Verify pitch influence is visible in output
+- [ ] Verify direction/interval statistics are populated in `LevelMetadata.pitchMetadata`
+- [ ] Verify button mapping correctly uses `direction` and `intervalCategory` from pitch analysis
 - [ ] Test all presets produce valid levels
 
 ---
