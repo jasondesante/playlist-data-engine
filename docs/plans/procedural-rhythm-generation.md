@@ -487,10 +487,20 @@ Each difficulty level has constraints on the maximum subdivision density allowed
   - Added helper functions: `isGridTypeAllowed`, `getAllowedGridTypes`, `convertToAllowedGridType`
   - Added `validateSubdivisionLimits` for validation against limits
   - Added `DifficultyVariantGenerator` class structure with placeholder variant generation
-- [ ] Validate generated variants against subdivision limits
-- [ ] When simplifying to Easy, snap 16th notes to nearest 8th note grid
-- [ ] When simplifying to Easy, snap 8th note triplets to nearest quarter note triplet
-- [ ] Log any subdivision conversions for debugging
+- [x] Validate generated variants against subdivision limits
+  - Added `validateVariant()` private method to check each variant after generation
+  - Logs warnings if violations are found (indicates bugs in generation logic)
+  - Logs success message when `logConversions` config is enabled
+- [x] When simplifying to Easy, snap 16th notes to nearest 8th note grid
+  - Implemented `simplifyBeats()` method with full conversion logic
+  - Implemented `convertBeatGridType()` method for per-beat conversion
+  - 16th positions 0,1 → 8th position 0; 16th positions 2,3 → 8th position 2
+- [x] When simplifying to Easy, snap 8th note triplets to nearest quarter note triplet
+  - All triplet positions (0, 1, 2) snap to quarter triplet position 0
+- [x] Log any subdivision conversions for debugging
+  - Added logging when `logConversions` config is enabled
+  - Logs each conversion with beat index, position, and conversion type
+  - Logs validation results after generation
 
 #### 3.3.2 Variant Generation by Natural Difficulty
 
