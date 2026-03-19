@@ -44,28 +44,60 @@ After rhythm generation plan completes:
 **Goal**: Extract pitch information over time to influence button pattern generation.
 
 ### 1.1 Pitch Detector Implementation
+
+**Algorithm Choice: pYIN (Probabilistic YIN)**
+
+We use pYIN instead of standard YIN for several key advantages:
+- **Probabilistic output**: Provides multiple pitch hypotheses with probabilities, allowing confident selection
+- **HMM-based tracking**: Hidden Markov Model smooths pitch transitions and handles voiced/unvoiced detection
+- **Better voicing detection**: More accurate identification of when pitch is present vs absent
+- **Polyphonic robustness**: Handles complex audio better by tracking the most likely fundamental frequency
+
 - [ ] Create `PitchDetector` class in `src/core/analysis/PitchDetector.ts`
-  - [ ] Implement YIN algorithm for monophonic pitch detection
-  - [ ] Add autocorrelation-based fallback
+  - [ ] Implement pYIN algorithm (probabilistic extension of YIN)
+    - [ ] Implement YIN difference function computation
+    - [ ] Implement cumulative mean normalized difference function
+    - [ ] Add HMM (Hidden Markov Model) for pitch state tracking
+    - [ ] Implement Viterbi decoding for optimal pitch path
   - [ ] Support configurable frequency range (for different instruments)
-  - [ ] Handle polyphonic audio gracefully (pick dominant pitch)
+  - [ ] Output single best pitch hypothesis per frame (simplifies downstream usage)
 
   ```typescript
   interface PitchDetectorConfig {
+    // === Frequency Range ===
     minFrequency: number;  // Default: 80Hz (low guitar)
     maxFrequency: number;  // Default: 1000Hz (high vocals)
-    confidenceThreshold: number;  // 0-1
-    hopSize: number;  // In samples
+
+    // === Analysis Window ===
+    frameSize: number;     // Default: 2048 samples (~46ms at 44.1kHz)
+    hopSize: number;       // Default: 512 samples (~12ms at 44.1kHz)
+
+    // === pYIN HMM Parameters ===
+    voicingThreshold: number;    // Default: 0.5 - probability threshold for voiced/unvoiced
+    transitionPenalty: number;   // Default: 0.5 - penalty for large pitch jumps in HMM
+    selfTransitionProbability: number;  // Default: 0.99 - probability of staying in same pitch state
+
+    // === YIN Core Parameters ===
+    yinThreshold: number;  // Default: 0.1 - threshold for accepting a pitch candidate in difference function
   }
 
   interface PitchResult {
     timestamp: number;
     frequency: number;  // Hz, or 0 if no pitch detected
-    confidence: number;  // 0-1
-    midiNote: number | null;  // MIDI note number
-    noteName: string | null;  // e.g., "C4", "F#5"
+    probability: number;  // 0-1 - probability from pYIN HMM (replaces simple confidence)
+    isVoiced: boolean;    // Whether this frame contains a detectable pitch
+    midiNote: number | null;  // MIDI note number (null if unvoiced)
+    noteName: string | null;  // e.g., "C4", "F#5" (null if unvoiced)
+
+    // Optional: Alternative hypotheses for debugging/analysis
+    alternativeHypotheses?: {
+      frequency: number;
+      probability: number;
+    }[];
   }
   ```
+
+> **Note**: While pYIN internally computes multiple pitch hypotheses, we expose only the most probable result in `PitchResult`. This simplifies integration with button mapping. The `alternativeHypotheses` field is optional and primarily for debugging or advanced analysis.
 
 ### 1.2 Multi-Band Pitch Analysis
 
@@ -93,7 +125,7 @@ After rhythm generation plan completes:
 - [ ] Use band selection to inform button generation
   ```typescript
   interface MultiBandPitchAnalysis {
-    primaryBand: 'low' | 'mid' | 'high';  // Band with best pitch confidence
+    primaryBand: 'low' | 'mid' | 'high';  // Band with best pitch probability
     bandAnalyses: Map<'low' | 'mid' | 'high', PitchAnalysis>;
     combinedMelody: MelodyContour;
     // Reference to the shared frequency band configuration
@@ -357,7 +389,13 @@ After rhythm generation plan completes:
   ```
 
 ### 1.6 Tests
-- [ ] Unit tests for YIN implementation
+- [ ] **Unit tests for pYIN implementation**:
+  - [ ] Verify YIN difference function produces correct values
+  - [ ] Verify cumulative mean normalization
+  - [ ] Verify absolute threshold detection
+  - [ ] Verify HMM voicing detection transitions (voiced→unvoiced→voiced)
+  - [ ] Verify HMM pitch state transitions are smooth
+  - [ ] Verify probability values are in valid range [0,1]
 - [ ] Unit tests for melody contour extraction
 - [ ] **Unit tests for pitch-to-pitch comparison**:
   - [ ] Verify `direction` is correctly calculated (up/down/stable/none)
@@ -370,6 +408,8 @@ After rhythm generation plan completes:
 - [ ] Verify pitch detection uses pre-filtered band outputs (no redundant filtering)
 - [ ] **Test composite pitch derivation** - verify derived pitches match source band pitches
 - [ ] **Test band stream iteration** - verify each band is analyzed with correct filtered audio
+- [ ] **Test pYIN HMM tracking** - verify smooth pitch trajectories over time
+- [ ] **Test voicing detection accuracy** - compare voiced/unvoiced classification against ground truth
 
 ---
 
@@ -437,7 +477,7 @@ After rhythm generation plan completes:
 
 **Purpose**: The pattern library provides fallback button assignments when:
 - `pitchInfluenceWeight` is low (more pattern-driven)
-- Pitch detection confidence is low (no reliable pitch data)
+- Pitch detection probability is low (no reliable pitch data)
 - Specific rhythmic patterns are more playable than pitch-accurate mapping
 
 Patterns are controller-mode-specific:
@@ -521,7 +561,7 @@ Patterns are controller-mode-specific:
     // === Core Mapping Logic ===
 
     // Combine pitch + pattern influences based on pitchInfluenceWeight
-    // Uses confidence-based blending: lowest confidence pitch detections
+    // Uses probability-based blending: lowest probability pitch detections
     // are replaced with pattern buttons first
     // weight: 0 = all patterns, 1 = all pitch (for beats with pitch)
     private blendPitchAndPattern<T extends DDRButton | GuitarHeroButton>(
@@ -842,22 +882,22 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
 
 #### 2.4.3 Common Mapping Logic
 
-**Goal**: Blend pitch-derived buttons with pattern-derived buttons based on pitch detection confidence.
+**Goal**: Blend pitch-derived buttons with pattern-derived buttons based on pYIN probability.
 
-**Strategy**: Replace buttons in order of confidence - lowest confidence pitch detections are replaced with pattern buttons first. This ensures that high-confidence pitch data is preserved while uncertain pitches fall back to patterns.
+**Strategy**: Replace buttons in order of probability - lowest probability pitch detections are replaced with pattern buttons first. This ensures that high-probability pitch data is preserved while uncertain pitches fall back to patterns.
 
-- [ ] Implement confidence-based blending
+- [ ] Implement probability-based blending
   ```typescript
   /**
-   * Blends pitch-derived and pattern-derived buttons based on pitch confidence.
+   * Blends pitch-derived and pattern-derived buttons based on pYIN probability.
    *
    * Algorithm:
-   * 1. Sort all beats by pitch confidence (lowest → highest)
+   * 1. Sort all beats by pitch probability (lowest → highest)
    * 2. Calculate how many beats to replace based on weight
-   * 3. Replace the lowest-confidence beats with pattern buttons
-   * 4. Keep pitch buttons for highest-confidence beats
+   * 3. Replace the lowest-probability beats with pattern buttons
+   * 4. Keep pitch buttons for highest-probability beats
    *
-   * @param beats - All beats with pitch data (including confidence)
+   * @param beats - All beats with pitch data (including probability)
    * @param pitchKeys - Pitch-derived button for each beat (null if no pitch)
    * @param patternKeys - Pattern-derived button for each beat
    * @param weight - 0 = all pattern, 1 = all pitch
@@ -869,27 +909,27 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
     patternKeys: T[],
     weight: number
   ): T[] {
-    // Build list with confidence, filtering out beats with no pitch
-    const withConfidence = beats
+    // Build list with probability (from pYIN HMM), filtering out beats with no pitch
+    const withProbability = beats
       .map((beat, index) => ({
         index,
-        confidence: beat.pitch?.confidence ?? 0,
+        probability: beat.pitch?.probability ?? 0,  // pYIN probability (0-1)
         hasPitch: pitchKeys[index] !== null,
       }))
       .filter(item => item.hasPitch);
 
-    // Sort by confidence (lowest first) - these get replaced first
-    withConfidence.sort((a, b) => a.confidence - b.confidence);
+    // Sort by probability (lowest first) - these get replaced first
+    withProbability.sort((a, b) => a.probability - b.probability);
 
     // Calculate how many beats to replace with patterns
     // weight = 1.0 → 0% replaced (all pitch)
-    // weight = 0.5 → 50% replaced (lowest confidence half)
+    // weight = 0.5 → 50% replaced (lowest probability half)
     // weight = 0.0 → 100% replaced (all patterns)
-    const replaceCount = Math.floor(withConfidence.length * (1 - weight));
+    const replaceCount = Math.floor(withProbability.length * (1 - weight));
 
-    // Indices of beats to replace (lowest confidence)
+    // Indices of beats to replace (lowest probability)
     const indicesToReplace = new Set(
-      withConfidence.slice(0, replaceCount).map(item => item.index)
+      withProbability.slice(0, replaceCount).map(item => item.index)
     );
 
     // Build final result
@@ -898,27 +938,27 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
       if (pitchKeys[index] === null) {
         return patternKeys[index];
       }
-      // Low confidence → use pattern
+      // Low probability → use pattern
       if (indicesToReplace.has(index)) {
         return patternKeys[index];
       }
-      // High confidence → use pitch
+      // High probability → use pitch
       return pitchKeys[index]!;
     });
   }
   ```
 
-- [ ] **Confidence-based blending rationale**:
-  | Confidence Level | Weight = 0.8 | Weight = 0.5 | Weight = 0.2 |
-  |------------------|--------------|--------------|--------------|
-  | 0.9 (high)       | pitch        | pitch        | pattern      |
-  | 0.7              | pitch        | pitch        | pattern      |
-  | 0.5              | pitch        | pattern      | pattern      |
-  | 0.3 (low)        | pitch        | pattern      | pattern      |
-  | no pitch         | pattern      | pattern      | pattern      |
+- [ ] **Probability-based blending rationale** (using pYIN HMM probabilities):
+  | Probability Level | Weight = 0.8 | Weight = 0.5 | Weight = 0.2 |
+  |-------------------|--------------|--------------|--------------|
+  | 0.9 (high)        | pitch        | pitch        | pattern      |
+  | 0.7               | pitch        | pitch        | pattern      |
+  | 0.5               | pitch        | pattern      | pattern      |
+  | 0.3 (low)         | pitch        | pattern      | pattern      |
+  | no pitch          | pattern      | pattern      | pattern      |
 
 - [ ] **Pattern filling for filtered beats**:
-  - After identifying which beats need patterns (low confidence or no pitch), fill them immediately
+  - After identifying which beats need patterns (low probability or no pitch), fill them immediately
   - Randomly select from all patterns in the vocabulary that can fill the available hole
   - If no pattern can fill a remaining unassigned beat, interpolate from the previous pattern button to the next detected pitch button
   ```typescript
@@ -1246,14 +1286,14 @@ interface ChartMetadata {
 - [ ] Unit tests for pattern selection (both controller modes)
 - [ ] Verify difficulty constraints are respected
 - [ ] Test band-aware mapping logic (using `PitchAtBeat.band`)
-- [ ] **Unit tests for confidence-based blending (`blendPitchAndPattern`)**:
+- [ ] **Unit tests for probability-based blending (`blendPitchAndPattern`)**:
   - [ ] Verify weight = 1.0 → all pitch buttons used (no replacement)
   - [ ] Verify weight = 0.0 → all pattern buttons used (full replacement)
-  - [ ] Verify weight = 0.5 → 50% replaced (lowest confidence half)
-  - [ ] Verify lowest confidence beats are replaced first
+  - [ ] Verify weight = 0.5 → 50% replaced (lowest probability half)
+  - [ ] Verify lowest probability beats are replaced first
   - [ ] Verify beats with no pitch (null) always use pattern regardless of weight
-  - [ ] Verify high-confidence pitch beats are preserved when weight > 0
-  - [ ] Verify correct behavior with ties in confidence (deterministic ordering)
+  - [ ] Verify high-probability pitch beats are preserved when weight > 0
+  - [ ] Verify correct behavior with ties in probability (deterministic ordering)
 - [ ] Integration test: full button mapping with real pitch data
 - [ ] Verify direction statistics are calculated correctly in output metadata
 
@@ -1626,29 +1666,150 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
 
 ## Phase 5: Documentation
 
-**Goal**: Ensure all new features are properly documented.
+**Goal**: Ensure all new features are properly documented following the established documentation style guide.
 
 ### 5.1 Code Documentation
 - [ ] JSDoc for all public types and interfaces
 - [ ] Usage examples in code comments
-- [ ] Inline comments for complex algorithms (especially YIN pitch detection)
+- [ ] Inline comments for complex algorithms (especially pYIN pitch detection with HMM)
 
 ### 5.2 Update DATA_ENGINE_REFERENCE.md
+
+> **Style Guide Reminder**: This is a scannable API reference. Focus on location links, structured tables, and cross-references. NO code examples or algorithm explanations—those belong in BEAT_DETECTION.md.
+
 - [ ] Add new section: "Pitch Detection & Button Mapping"
-  - [ ] Document `PitchDetector` class and YIN algorithm
-  - [ ] Document `ButtonMapper` class and mapping strategies
-  - [ ] Document `LevelGenerator` orchestration
-  - [ ] Explain the 2 controller modes (DDR vs Guitar Hero) and their mapping strategies
-  - [ ] Add code examples for generating complete levels
-  - [ ] Document configuration presets
-  - [ ] Document serialization format
+  - [ ] **Location links** (italicized) to all major definitions:
+    - [ ] [src/core/analysis/PitchDetector.ts](src/core/analysis/PitchDetector.ts) - `PitchDetector` class
+    - [ ] [src/core/generation/ButtonMapper.ts](src/core/generation/ButtonMapper.ts) - `ButtonMapper` class
+    - [ ] [src/core/generation/LevelGenerator.ts](src/core/generation/LevelGenerator.ts) - `LevelGenerator` class
+    - [ ] [src/core/generation/BeatConverter.ts](src/core/generation/BeatConverter.ts) - `BeatConverter` class
+    - [ ] [src/core/analysis/LevelSerializer.ts](src/core/analysis/LevelSerializer.ts) - `LevelSerializer` class
+  - [ ] **"Also known as" aliases** for discoverability:
+    - [ ] *pitch detection* ↔ *melody extraction* ↔ *fundamental frequency estimation*
+    - [ ] *button mapping* ↔ *key assignment* ↔ *chart generation*
+    - [ ] *melody contour* ↔ *pitch direction* ↔ *interval analysis*
+  - [ ] **Structured tables** (not raw TypeScript interfaces):
+    - [ ] `PitchDetector` methods table with Returns/Description columns
+    - [ ] `ButtonMapper` methods table with Returns/Description columns
+    - [ ] `LevelGenerator` methods table with Returns/Description columns
+    - [ ] `ButtonMappingConfig` properties table with Type/Default/Description columns
+    - [ ] `PitchDetectorConfig` properties table with Type/Default/Description columns
+    - [ ] `LevelGenerationOptions` properties table with Type/Default/Description columns
+  - [ ] **Cross-references** to related docs:
+    - [ ] "For pitch detection algorithms (pYIN with HMM), see [BEAT_DETECTION.md](BEAT_DETECTION.md#pitch-detection)"
+    - [ ] "For controller mode strategies (DDR, Guitar Hero), see [BEAT_DETECTION.md](BEAT_DETECTION.md#button-mapping-strategies)"
+    - [ ] "For melody contour analysis approach, see [BEAT_DETECTION.md](BEAT_DETECTION.md#melody-contour)"
+    - [ ] "For usage examples, see [BEAT_DETECTION.md](BEAT_DETECTION.md#level-generation-examples)"
+  - [ ] **Type descriptions** focusing on purpose and key properties (not full interface definitions—readers click location links for complete source):
+    - [ ] `PitchResult` - describes a detected pitch at a point in time
+    - [ ] `PitchAtBeat` - pitch information linked to a rhythm beat
+    - [ ] `MelodyContour` - aggregated melodic direction over time
+    - [ ] `ChartedBeatMap` - final playable chart format
+    - [ ] `GeneratedLevel` - complete output from level generation
+  - [ ] **Controller mode overview** (brief, table format):
+    | Mode | Buttons | Axes | See Details |
+    |------|---------|------|-------------|
+    | DDR | up, down, left, right | 2 (vertical + horizontal) | [BEAT_DETECTION.md#ddr-mode](BEAT_DETECTION.md#ddr-mode) |
+    | Guitar Hero | 1, 2, 3, 4, 5 | 1 (horizontal only) | [BEAT_DETECTION.md#guitar-hero-mode](BEAT_DETECTION.md#guitar-hero-mode) |
+  - [ ] **Serialization format reference**:
+    - [ ] Link to `FullBeatMapExportData` type location
+    - [ ] Brief description of format purpose
+    - [ ] Cross-reference to BEAT_DETECTION.md for format details
 
 ### 5.3 Update BEAT_DETECTION.md
-- [ ] Add section on pitch detection (separate from beat/transient detection)
-- [ ] Document how pitch analysis links to beat positions
-- [ ] Explain multi-band pitch analysis approach
-- [ ] Document melody contour extraction
-- [ ] Add examples of pitch-to-button mapping
+
+> **This is where detailed explanations and examples go.** Include algorithm descriptions, workflow examples, and conceptual documentation.
+
+- [ ] Add section: "Pitch Detection" (separate from beat/transient detection)
+  - [ ] **pYIN Algorithm Explanation**:
+    - [ ] How pYIN works conceptually (probabilistic YIN with HMM tracking)
+    - [ ] YIN core: difference function, cumulative mean normalized difference
+    - [ ] HMM layer: pitch state tracking, Viterbi decoding for optimal path
+    - [ ] Why pYIN was chosen over alternatives (YIN, CREPE)
+    - [ ] Configurable parameters and their effects:
+      - `minFrequency` / `maxFrequency` - frequency range limits
+      - `voicingThreshold` - probability threshold for voiced/unvoiced detection
+      - `transitionPenalty` - penalty for large pitch jumps in HMM
+      - `selfTransitionProbability` - probability of staying in same pitch state
+      - `yinThreshold` - threshold for accepting pitch candidates in difference function
+      - `hopSize` - analysis window overlap
+    - [ ] Handling polyphonic audio (dominant pitch selection via HMM)
+    - [ ] Probabilistic output (multiple hypotheses with probabilities)
+  - [ ] **Multi-Band Pitch Analysis**:
+    - [ ] Why we analyze pitch on pre-filtered bands (reuse from rhythm generation)
+    - [ ] Band characteristics and typical pitch content:
+      - Low band (20-500Hz): Bass, kick drum, sub frequencies
+      - Mid band (500-2000Hz): Vocals, lead melody, snare body
+      - High band (2000-20000Hz): Hi-hats, cymbals, harmonics
+    - [ ] Band selection strategy (which band to use for melody)
+    - [ ] Integration with `MultiBandAnalyzer` from rhythm generation
+  - [ ] **Beat-Timestamped Pitch Detection**:
+    - [ ] Why timestamp-based analysis (efficiency, accuracy, alignment)
+    - [ ] How pitch links to `GeneratedBeat.timestamp` positions
+    - [ ] Phrase-level pitch correlation using `RhythmicPhrase.sourceBand`
+
+- [ ] Add section: "Melody Contour Analysis"
+  - [ ] **Pitch-to-Pitch Comparison**:
+    - [ ] Direction categories: `up`, `down`, `stable`, `none`
+    - [ ] Interval calculation in semitones
+    - [ ] Interval categories for mapping: `unison`, `small`, `medium`, `large`, `very_large`
+  - [ ] **Contour Extraction**:
+    - [ ] Segment detection (grouping consecutive same-direction beats)
+    - [ ] Time-window analysis (short/medium/long term)
+    - [ ] Output for button mapping (`PitchAtBeat.direction`, `PitchAtBeat.intervalCategory`)
+
+- [ ] Add section: "Button Mapping Strategies"
+  - [ ] **Controller Mode Overview**:
+    - [ ] Why two modes (different gameplay metaphors)
+    - [ ] Mode selection via `controllerMode` config option
+  - [ ] **DDR Mode Strategy** (4 buttons, circular motion):
+    - [ ] Circular motion philosophy: `up → right → down → left → up`
+    - [ ] State transition table explanation
+    - [ ] How pitch direction maps to button selection
+    - [ ] How interval size affects movement magnitude
+    - [ ] Example: "Ascending small interval from 'left' → 'up'"
+  - [ ] **Guitar Hero Mode Strategy** (5 buttons, 1 axis):
+    - [ ] Fretboard metaphor: 1=lowest pitch, 5=highest pitch
+    - [ ] State transition table explanation
+    - [ ] String wrap logic (instead of clamping at edges)
+    - [ ] How interval size affects fret jump distance
+    - [ ] Example: "Descending large interval from fret 3 → fret 1"
+  - [ ] **Probability-Based Blending** (using pYIN HMM probabilities):
+    - [ ] How `pitchInfluenceWeight` controls pitch vs pattern balance
+    - [ ] Why lowest-probability pitches are replaced first
+    - [ ] Pattern filling for beats with no pitch detected
+    - [ ] Example workflow showing blending at different weights
+  - [ ] **Difficulty-Based Variations**:
+    - [ ] Easy: Direction-only mapping, no leaps
+    - [ ] Medium: Direction + interval, leaps allowed
+    - [ ] Hard: Full interval mapping, rapid changes
+
+- [ ] Add section: "Level Generation Examples"
+  - [ ] **Basic level generation**:
+    ```typescript
+    const level = await audioAnalyzer.generateRhythmLevel(audioUrl, {
+      difficulty: 'medium',
+      controllerMode: 'ddr',
+      buttons: { pitchInfluenceWeight: 0.8 }
+    });
+    ```
+  - [ ] **Pattern-only generation** (no pitch analysis):
+    ```typescript
+    const level = await audioAnalyzer.generateRhythmLevel(audioUrl, {
+      difficulty: 'easy',
+      controllerMode: 'guitar_hero',
+      buttons: { pitchInfluenceWeight: 0 }  // Skips pitch detection entirely
+    });
+    ```
+  - [ ] **Full workflow example**: Audio → Rhythm → Pitch → Buttons → ChartedBeatMap
+  - [ ] **Serialization example**: Save and load generated levels
+  - [ ] **Conversion example**: GeneratedLevel → ChartedBeatMap for BeatStream
+
+- [ ] Add section: "Serialization Format"
+  - [ ] Overview of `FullBeatMapExportData` format
+  - [ ] Procedural extensions to the format (`generationSource`, `generationMetadata`)
+  - [ ] Compatibility with manual charting (showcase app)
+  - [ ] Round-trip preservation of procedural metadata
 
 ---
 
@@ -1750,7 +1911,7 @@ interface GeneratedRhythm {
 ## Dependencies
 
 ### External Dependencies
-- None (YIN algorithm can be implemented from scratch)
+- None (pYIN algorithm can be implemented from scratch - YIN core + HMM layer)
 
 ### Internal Dependencies
 - **Requires**: `procedural-rhythm-generation.md` to be completed
@@ -1768,16 +1929,18 @@ interface GeneratedRhythm {
 ## Questions/Unknowns
 
 ### Technical Questions
-1. **YIN vs. pYIN vs. CREPE**: Which pitch detection algorithm is best for polyphonic music?
-   - Recommendation: Start with YIN, may need pYIN for better voiced/unvoiced detection
-   - CREPE is ML-based and may be overkill for this use case
+1. ~~**YIN vs. pYIN vs. CREPE**: Which pitch detection algorithm is best for polyphonic music?~~
+   - **RESOLVED**: Using pYIN (probabilistic YIN with HMM)
+   - pYIN provides better voiced/unvoiced detection through HMM
+   - Probabilistic output allows probability-based button blending
+   - CREPE is ML-based and would be overkill for this use case
 
 2. **Pitch detection on filtered bands**: Does band-passing improve or degrade pitch accuracy?
    - Consider: Test on vocals (mid band) vs full spectrum
    - Note: We're reusing the same filtered bands from rhythm generation for consistency
 
 3. **Polyphonic handling**: How to handle multiple simultaneous pitches?
-   - Consider: Pick dominant pitch, or use confidence-weighted selection
+   - Consider: Pick dominant pitch, or use probability-weighted selection
 
 4. **Timestamp-based vs continuous analysis**: Should pitch detection run only at beat timestamps or continuously?
    - **Current approach**: Timestamp-based - analyze only at `GeneratedBeat.timestamp` positions
