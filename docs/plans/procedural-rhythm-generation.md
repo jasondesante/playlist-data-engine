@@ -403,10 +403,11 @@ Before quantization, validate that detected transients aren't too dense:
 
 **Goal**: Evaluate the "interest" level of each band stream per section.
 
-- [ ] Implement scoring logic for rhythmic interest:
-  - [ ] Score based on **Inter-Onset Interval (IOI) density and variance**
-  - [ ] Score based on **Syncopation** (weighting transients on offbeats higher)
-  - [ ] Consider **phrase significance** from Phase 2 analysis
+- [x] Implement scoring logic for rhythmic interest:
+  - [x] Score based on **Inter-Onset Interval (IOI) density and variance**
+  - [x] Score based on **Syncopation** (weighting transients on offbeats higher)
+  - [x] Consider **phrase significance** from Phase 2 analysis
+  - [x] Added density factor (bell curve for optimal density scoring)
   ```typescript
   interface SectionScore {
     beatRange: { start: number; end: number };
@@ -416,11 +417,12 @@ Before quantization, validate that detected transients aren't too dense:
       ioiVariance: number;
       syncopationLevel: number;
       phraseSignificance: number;
+      densityFactor: number;
     };
   }
   ```
-- [ ] Score per 2-measure section
-- [ ] Identify which band has the most interesting rhythm for each section
+- [x] Score per 2-measure section
+- [x] Identify which band has the most interesting rhythm for each section
 
 ### 3.2 Composite Stream Generation
 
@@ -620,7 +622,7 @@ Each difficulty level has constraints on the maximum subdivision density allowed
   ```
 
 ### 3.7 Tests
-- [ ] Unit tests for scoring logic
+- [x] Unit tests for scoring logic
 - [ ] Unit tests for composite generation
 - [ ] Unit tests for difficulty variant generation (simplification)
 - [ ] Unit tests for difficulty variant generation (density enhancement)

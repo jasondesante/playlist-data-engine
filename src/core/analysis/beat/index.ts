@@ -193,6 +193,17 @@ export type {
     DensityAnalyzerConfig,
 } from './DensityAnalyzer.js';
 
+// Stream Scorer
+export { StreamScorer } from './StreamScorer.js';
+export type {
+    Band,
+    ScoringFactors,
+    SectionScore,
+    StreamScoringResult,
+    SectionWinner,
+    StreamScorerConfig,
+} from './StreamScorer.js';
+
 // Beat Key Helpers (for rhythm game chart creation)
 export {
     assignKeyToBeat,
