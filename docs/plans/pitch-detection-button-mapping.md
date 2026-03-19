@@ -58,6 +58,90 @@ After rhythm generation plan completes:
     hopSize: number;  // In samples
   }
 
+  interface PitchResult {
+    timestamp: number;
+    frequency: number;  // Hz, or 0 if no pitch detected
+    confidence: number;  // 0-1
+    midiNote: number | null;  // MIDI note number
+    noteName: string | null;  // e.g., "C4", "F#5"
+  }
+  ```
+
+### 1.2 Multi-Band Pitch Analysis
+
+**Goal**: Reuse the same multi-band filtering infrastructure from rhythm generation for pitch detection, ensuring consistent frequency band analysis across both systems.
+
+> **⚠️ Important**: Pitch detection MUST use the same `FREQUENCY_BANDS` configuration and `MultiBandAnalyzer` infrastructure from rhythm generation. Do not create separate filtering logic.
+
+- [ ] **Reuse existing multi-band infrastructure**:
+  - [ ] Import `FREQUENCY_BANDS` from rhythm generation (defined in `procedural-rhythm-generation.md`)
+  - [ ] Accept pre-filtered band outputs from `MultiBandAnalyzer` to avoid redundant filtering
+  - [ ] Use the exact same band definitions:
+    ```typescript
+    // From procedural-rhythm-generation.md - shared configuration
+    const FREQUENCY_BANDS: FrequencyBand[] = [
+      { name: 'low', lowHz: 20, highHz: 500, description: 'Low frequencies (bass, kick, sub)' },
+      { name: 'mid', lowHz: 500, highHz: 2000, description: 'Mid frequencies (vocals, snare body, lead instruments)' },
+      { name: 'high', lowHz: 2000, highHz: 20000, description: 'High frequencies (hi-hats, cymbals, harmonics, air)' },
+    ];
+    ```
+- [ ] Apply pitch detection to ALL pre-filtered bands:
+  - [ ] **Low band (20-500Hz)**: Bass, kick drum, sub frequencies
+  - [ ] **Mid band (500-2000Hz)**: Vocals, lead melody, snare body - typically the most useful for melody contour
+  - [ ] **High band (2000-20000Hz)**: Hi-hats, cymbals, harmonics - may have less pitch content but still analyzed
+- [ ] Store which band produced the most confident pitch results
+- [ ] Use band selection to inform button generation
+  ```typescript
+  interface MultiBandPitchAnalysis {
+    primaryBand: 'low' | 'mid' | 'high';  // Band with best pitch confidence
+    bandAnalyses: Map<'low' | 'mid' | 'high', PitchAnalysis>;
+    combinedMelody: MelodyContour;
+    // Reference to the shared frequency band configuration
+    bandsUsed: FrequencyBand[];
+  }
+  ```
+
+### 1.3 Beat-Timestamped Pitch Detection
+
+**Goal**: Perform pitch detection at the specific timestamps from the generated beat map, rather than running continuous analysis. This approach is more efficient and accurate because we analyze only the audio segments that correspond to actual notes in the rhythm chart.
+
+> **⚠️ Why Timestamp-Based Analysis**: Instead of running pitch detection over the entire audio continuously and then linking results to beats, we analyze only the specific audio segments at `GeneratedBeat.timestamp` positions. This:
+> - Reduces computational overhead
+> - Provides more accurate pitch detection (shorter, focused analysis windows)
+> - Avoids noise from analyzing audio that doesn't correspond to beats
+> - Aligns pitch results directly with the rhythm chart
+
+#### 1.3.1 Band Stream Pitch Detection
+
+**Key Insight**: Since pitch detection is based on the timestamps of transients, we iterate over each band stream independently. The `GeneratedRhythm.bandStreams` contains separate `GeneratedBeat[]` arrays for low/mid/high, each with their own timestamps.
+
+- [ ] Create `PitchBeatLinker` utility
+  - [ ] **Iterate over each band stream independently**:
+    ```typescript
+    // Pseudocode for band stream pitch detection
+    for (const band of ['low', 'mid', 'high'] as const) {
+      const bandStream = generatedRhythm.bandStreams[band];
+      const filteredAudio = multiBandAnalyzer.getBandOutput(band);
+
+      for (const beat of bandStream.beats) {
+        // Analyze pitch in the FILTERED audio for this band
+        // at the beat's timestamp
+        const pitch = pitchDetector.detectAt(filteredAudio, beat.timestamp);
+        // Store result keyed by band + beatIndex
+      }
+    }
+    ```
+  - [ ] For each `GeneratedBeat` in `bandStreams.low`, analyze the **low-frequency filtered audio** at that timestamp
+  - [ ] For each `GeneratedBeat` in `bandStreams.mid`, analyze the **mid-frequency filtered audio** at that timestamp
+  - [ ] For each `GeneratedBeat` in `bandStreams.high`, analyze the **high-frequency filtered audio** at that timestamp
+
+#### 1.3.2 Phrase-Level Pitch Correlation
+
+- [ ] **Integrate with `RhythmicPhrase` from rhythm generation**:
+  - [ ] Use `RhythmicPhrase.sourceBand` to know which pre-filtered frequency band to analyze
+  - [ ] Use `PhraseOccurrence.startTimestamp`/`endTimestamp` to analyze pitch across phrase boundaries
+  - [ ] Associate detected pitches with phrase occurrences across the song
+  ```typescript
   // Re-exported from rhythm generation for reference
   interface PhraseOccurrence {
     beatIndex: number;       // Index into UnifiedBeatMap.beats[]
@@ -72,23 +156,90 @@ After rhythm generation plan completes:
     occurrences: PhraseOccurrence[];     // All locations where this pattern occurs
     significance: number;      // Weighted by size and occurrence count
   }
+  ```
 
-  interface PitchResult {
+#### 1.3.3 Output Types
+
+  ```typescript
+  interface PitchAtBeat {
+    beatIndex: number;
     timestamp: number;
-    frequency: number;  // Hz, or 0 if no pitch detected
-    confidence: number;  // 0-1
-    midiNote: number | null;  // MIDI note number
-    noteName: string | null;  // e.g., "C4", "F#5"
+    band: 'low' | 'mid' | 'high';  // Which band stream this beat belongs to
+    pitch: PitchResult | null;
+    direction: 'up' | 'down' | 'stable' | 'none';
+    intervalFromPrevious: number;  // Semitones, 0 if none
   }
 
-  interface PitchAnalysis {
-    pitches: PitchResult[];
+  interface LinkedPitchAnalysis {
+    pitchByBeat: PitchAtBeat[];
     melodyContour: MelodyContour;
-    linkedPhrases: RhythmicPhrase[];  // Phrases with pitch correlation
+    dominantBand: 'low' | 'mid' | 'high';
+    phrasePitchCorrelation: Map<string, PitchResult[]>;  // phrase ID -> pitches
   }
   ```
 
-### 1.2 Melody Contour Analysis
+### 1.4 Composite Stream Pitch Derivation
+
+**Goal**: Derive pitches for the composite stream from the already-analyzed band stream pitches. Since the composite stream is assembled from sections of the band streams, we can look up pitches without re-analyzing audio.
+
+> **Key Insight**: The `CompositeStream.sections` array tells us which band contributed each section. We can derive composite pitches by looking up the corresponding band stream beat.
+
+#### 1.4.1 Derivation Logic
+
+- [ ] Implement composite pitch derivation
+  - [ ] For each beat in `CompositeStream.stream`, find which section it belongs to
+  - [ ] Look up `CompositeSection.sourceBand` for that section
+  - [ ] Find the corresponding beat in `bandStreams[sourceBand]` by matching timestamp
+  - [ ] Use the pitch already calculated for that band stream beat
+  ```typescript
+  interface CompositeSection {
+    beatRange: { start: number; end: number };
+    sourceBand: 'low' | 'mid' | 'high';  // ← Key for pitch derivation
+    score: number;
+  }
+
+  // Pseudocode for composite pitch derivation
+  function deriveCompositePitches(
+    compositeStream: CompositeStream,
+    bandStreamPitches: Map<'low' | 'mid' | 'high', PitchAtBeat[]>
+  ): PitchAtBeat[] {
+    const compositePitches: PitchAtBeat[] = [];
+
+    for (const beat of compositeStream.stream) {
+      // Find which section this beat belongs to
+      const section = compositeStream.sections.find(s =>
+        beat.beatIndex >= s.beatRange.start &&
+        beat.beatIndex < s.beatRange.end
+      );
+
+      if (section) {
+        // Look up the pitch from the source band stream
+        const sourcePitches = bandStreamPitches.get(section.sourceBand);
+        const matchingPitch = sourcePitches?.find(p => p.timestamp === beat.timestamp);
+
+        compositePitches.push({
+          ...matchingPitch,
+          // The band in the composite is the source band
+          band: section.sourceBand
+        });
+      }
+    }
+
+    return compositePitches;
+  }
+  ```
+
+#### 1.4.2 Difficulty Variant Pitch Derivation
+
+- [ ] Apply same derivation logic to difficulty variants
+  - [ ] Each `DifficultyVariant.stream` is derived from the composite
+  - [ ] Pitches can be derived by matching timestamps to composite pitches
+  - [ ] Simplified variants (easy) may have fewer beats, so filter pitches accordingly
+
+### 1.5 Melody Contour Analysis
+
+**Goal**: Analyze the collected pitch data to identify melodic patterns, direction, and range. This step happens AFTER pitch detection because it needs the pitch data as input.
+
 - [ ] Create melody contour extraction
   ```typescript
   interface MelodyContour {
@@ -113,92 +264,10 @@ After rhythm generation plan completes:
 - [ ] Implement segment detection for melody phrases
 - [ ] Link segments to beat positions
 - [ ] Calculate contour direction over different time windows
+- [ ] Analyze contour separately for each band stream
+- [ ] Generate combined contour from composite pitches
 
-### 1.3 Multi-Band Pitch Analysis
-
-**Goal**: Reuse the same multi-band filtering infrastructure from rhythm generation for pitch detection, ensuring consistent frequency band analysis across both systems.
-
-> **⚠️ Important**: Pitch detection MUST use the same `FREQUENCY_BANDS` configuration and `MultiBandAnalyzer` infrastructure from rhythm generation. Do not create separate filtering logic.
-
-- [ ] **Reuse existing multi-band infrastructure**:
-  - [ ] Import `FREQUENCY_BANDS` from rhythm generation (defined in `procedural-rhythm-generation.md`)
-  - [ ] Accept pre-filtered band outputs from `MultiBandAnalyzer` to avoid redundant filtering
-  - [ ] Use the exact same band definitions:
-    ```typescript
-    // From procedural-rhythm-generation.md - shared configuration
-    const FREQUENCY_BANDS: FrequencyBand[] = [
-      { name: 'low', lowHz: 20, highHz: 500, description: 'Low frequencies (bass, kick, sub)' },
-      { name: 'mid', lowHz: 500, highHz: 2000, description: 'Mid frequencies (vocals, snare body, lead instruments)' },
-      { name: 'high', lowHz: 2000, highHz: 20000, description: 'High frequencies (hi-hats, cymbals, harmonics, air)' },
-    ];
-    ```
-- [ ] Apply pitch detection to the pre-filtered bands:
-  - [ ] Focus on **mid band (500-2000Hz)** for vocals/lead melody - this is the primary band for pitch detection
-  - [ ] Optionally analyze other bands for harmony/instrument detection
-- [ ] Store which band produced the most confident pitch results
-- [ ] Use band selection to inform button generation
-  ```typescript
-  interface MultiBandPitchAnalysis {
-    primaryBand: 'low' | 'mid' | 'high';  // Band with best pitch confidence
-    bandAnalyses: Map<'low' | 'mid' | 'high', PitchAnalysis>;
-    combinedMelody: MelodyContour;
-    // Reference to the shared frequency band configuration
-    bandsUsed: FrequencyBand[];
-  }
-  ```
-
-### 1.4 Beat-Timestamped Pitch Detection
-
-**Goal**: Perform pitch detection at the specific timestamps from the generated beat map, rather than running continuous analysis. This approach is more efficient and accurate because we analyze only the audio segments that correspond to actual notes in the rhythm chart.
-
-> **⚠️ Why Timestamp-Based Analysis**: Instead of running pitch detection over the entire audio continuously and then linking results to beats, we analyze only the specific audio segments at `GeneratedBeat.timestamp` positions. This:
-> - Reduces computational overhead
-> - Provides more accurate pitch detection (shorter, focused analysis windows)
-> - Avoids noise from analyzing audio that doesn't correspond to beats
-> - Aligns pitch results directly with the rhythm chart
-
-- [ ] Create `PitchBeatLinker` utility
-  - [ ] **Accept `GeneratedBeat[]` timestamps as input** - only analyze audio at these specific points
-  - [ ] Extract short audio windows around each beat timestamp for pitch analysis
-  - [ ] Calculate pitch direction between consecutive beats
-  - [ ] **Integrate with `RhythmicPhrase` from rhythm generation**:
-    - [ ] Use `RhythmicPhrase.sourceBand` to know which pre-filtered frequency band to analyze
-    - [ ] Use `PhraseOccurrence.startTimestamp`/`endTimestamp` to analyze pitch across phrase boundaries
-    - [ ] Associate detected pitches with phrase occurrences across the song
-  ```typescript
-  interface PitchAtBeat {
-    beatIndex: number;
-    timestamp: number;
-    pitch: PitchResult | null;
-    direction: 'up' | 'down' | 'stable' | 'none';
-    intervalFromPrevious: number;  // Semitones, 0 if none
-  }
-
-  interface LinkedPitchAnalysis {
-    pitchByBeat: PitchAtBeat[];
-    melodyContour: MelodyContour;
-    dominantBand: 'low' | 'mid' | 'high';
-    phrasePitchCorrelation: Map<string, PitchResult[]>;  // phrase ID -> pitches
-  }
-  ```
-  ```typescript
-  interface PitchAtBeat {
-    beatIndex: number;
-    timestamp: number;
-    pitch: PitchResult | null;
-    direction: 'up' | 'down' | 'stable' | 'none';
-    intervalFromPrevious: number;  // Semitones, 0 if none
-  }
-
-  interface LinkedPitchAnalysis {
-    pitchByBeat: PitchAtBeat[];
-    melodyContour: MelodyContour;
-    dominantBand: 'low' | 'mid' | 'high';
-    phrasePitchCorrelation: Map<string, PitchResult[]>;  // phrase ID -> pitches
-  }
-  ```
-
-### 1.5 Tests
+### 1.6 Tests
 - [ ] Unit tests for YIN implementation
 - [ ] Unit tests for melody contour extraction
 - [ ] Unit tests for multi-band pitch analysis (verify same bands as rhythm generation)
@@ -206,6 +275,8 @@ After rhythm generation plan completes:
 - [ ] Test with real vocal tracks
 - [ ] Test beat-timestamped pitch detection accuracy
 - [ ] Verify pitch detection uses pre-filtered band outputs (no redundant filtering)
+- [ ] **Test composite pitch derivation** - verify derived pitches match source band pitches
+- [ ] **Test band stream iteration** - verify each band is analyzed with correct filtered audio
 
 ---
 
