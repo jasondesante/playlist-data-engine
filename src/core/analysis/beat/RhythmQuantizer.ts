@@ -28,7 +28,24 @@ export interface DensityValidationConfig {
     maxCumulativeReduction: number;
 }
 
- /**
+/**
+ * Internal state for tracking retries during quantization
+ */
+interface RetryState {
+    /** Current retry count (0 = first attempt) */
+    retryCount: number;
+
+    /** Cumulative sensitivity reduction applied */
+    sensitivityReduction: number;
+
+    /** Current intensity threshold (base + sensitivity reduction) */
+    currentIntensityThreshold: number;
+
+    /** Transients filtered out by intensity filtering */
+    transientsFilteredByIntensity: number;
+}
+
+/**
  * Configuration for the RhythmQuantizer
  */
 export interface QuantizationConfig {
@@ -42,7 +59,7 @@ export interface QuantizationConfig {
     bands?: FrequencyBand[];
 }
 
- /**
+/**
  * Filtered transients result
  */
 interface FilteredTransients {
@@ -52,7 +69,7 @@ interface FilteredTransients {
     totalFiltered: number;
 }
 
- /**
+/**
  * Complete Phase 1 output - all 3 band streams plus metadata
  */
 export interface QuantizedBandStreams {
@@ -256,6 +273,12 @@ export class RhythmQuantizer {
     /**
      * Quantize transients into rhythm streams
      *
+     * Implements retry logic with exponential backoff for density validation:
+     * - Retry 1: Sensitivity reduction = base (0.1)
+     * - Retry 2: Sensitivity reduction = 2x base (0.2)
+     * - Retry 3: Sensitivity reduction = 4x base (0.4)
+     * - After max retries, proceeds with warning
+     *
      * @param transientAnalysis - Transient analysis from TransientDetector
      * @param unifiedBeatMap - Unified beat map to quantize against
      * @returns Quantized band streams
@@ -264,56 +287,141 @@ export class RhythmQuantizer {
         transientAnalysis: TransientAnalysis,
         unifiedBeatMap: UnifiedBeatMap
     ): QuantizedBandStreams {
-        // Step 1: Validate density with retry logic
-        const densityResult = this.validateDensity(transientAnalysis, unifiedBeatMap);
+        const maxRetries = this.config.densityValidation.maxRetries;
+        const baseReduction = this.config.densityValidation.baseSensitivityReduction;
+        const maxCumulative = this.config.densityValidation.maxCumulativeReduction;
 
-        if (!densityResult.isValid && densityResult.retryCount < this.config.densityValidation.maxRetries) {
-            // Retry with reduced sensitivity
-            return this.quantizeWithRetry(
-                transientAnalysis,
-                unifiedBeatMap,
-                densityResult.sensitivityReduction
+        // Step 1: Apply initial intensity filtering if configured
+        let initialFilteredCount = 0;
+        let currentTransients = transientAnalysis.transients;
+
+        if (this.config.minimumTransientIntensity > 0) {
+            const beforeCount = currentTransients.length;
+            currentTransients = currentTransients.filter(
+                t => t.intensity >= this.config.minimumTransientIntensity
+            );
+            initialFilteredCount = beforeCount - currentTransients.length;
+        }
+
+        // Initialize retry state
+        const retryState: RetryState = {
+            retryCount: 0,
+            sensitivityReduction: 0,
+            currentIntensityThreshold: this.config.minimumTransientIntensity,
+            transientsFilteredByIntensity: initialFilteredCount,
+        };
+
+        // Calculate required minimum interval (16th note duration)
+        const requiredMinInterval = unifiedBeatMap.quarterNoteInterval / 4;
+
+        // Retry loop with exponential backoff
+        while (retryState.retryCount <= maxRetries) {
+            // Step 2: Validate density of current transients
+            const densityResult = this.validateDensityWithState(
+                currentTransients,
+                requiredMinInterval,
+                retryState
+            );
+
+            if (densityResult.isValid) {
+                // Density is valid, proceed with quantization
+                return this.finalizeQuantization(
+                    currentTransients,
+                    unifiedBeatMap,
+                    densityResult,
+                    retryState.transientsFilteredByIntensity
+                );
+            }
+
+            // Check if we've exhausted retries
+            if (retryState.retryCount >= maxRetries) {
+                // Max retries reached, proceed with warning
+                console.warn(
+                    `Density validation: Max retries (${maxRetries}) reached. ` +
+                    `Proceeding with ${currentTransients.length} transients. ` +
+                    `Min interval: ${(densityResult.minIntervalDetected * 1000).toFixed(1)}ms ` +
+                    `(required: ${(requiredMinInterval * 1000).toFixed(1)}ms)`
+                );
+
+                return this.finalizeQuantization(
+                    currentTransients,
+                    unifiedBeatMap,
+                    densityResult,
+                    retryState.transientsFilteredByIntensity
+                );
+            }
+
+            // Increment retry count
+            retryState.retryCount++;
+
+            // Calculate exponential backoff: base * 2^(retry-1)
+            // Retry 1: 0.1, Retry 2: 0.2, Retry 3: 0.4
+            const backoffMultiplier = Math.pow(2, retryState.retryCount - 1);
+            const reductionStep = Math.min(
+                baseReduction * backoffMultiplier,
+                maxCumulative - retryState.sensitivityReduction
+            );
+
+            retryState.sensitivityReduction += reductionStep;
+            retryState.currentIntensityThreshold = Math.min(
+                this.config.minimumTransientIntensity + retryState.sensitivityReduction,
+                1.0 // Cap at 1.0 (maximum threshold)
+            );
+
+            // Filter transients with new threshold
+            const beforeCount = currentTransients.length;
+            currentTransients = currentTransients.filter(
+                t => t.intensity >= retryState.currentIntensityThreshold
+            );
+            const filteredThisRound = beforeCount - currentTransients.length;
+            retryState.transientsFilteredByIntensity += filteredThisRound;
+
+            console.warn(
+                `Density validation retry ${retryState.retryCount}: ` +
+                `Sensitivity reduction += ${(reductionStep * 100).toFixed(1)}% ` +
+                `(cumulative: ${(retryState.sensitivityReduction * 100).toFixed(1)}%), ` +
+                `Intensity threshold: ${(retryState.currentIntensityThreshold * 100).toFixed(1)}%, ` +
+                `Filtered ${filteredThisRound} transients, ` +
+                `${currentTransients.length} remaining`
             );
         }
 
-        // Step 2: Filter by intensity
-        const filteredTransients = this.filterByIntensity(transientAnalysis);
-
-        // Step 3: Quantize each band
-        const streams = this.quantizeBands(filteredTransients, unifiedBeatMap);
-
-        return {
-            streams,
-            metadata: {
-                densityValidation: densityResult,
-                transientsFilteredByIntensity: filteredTransients.totalFiltered,
-            },
-        };
+        // This should never be reached due to the while loop logic,
+        // but TypeScript needs a return statement
+        const finalDensityResult = this.validateDensityWithState(
+            currentTransients,
+            requiredMinInterval,
+            retryState
+        );
+        return this.finalizeQuantization(
+            currentTransients,
+            unifiedBeatMap,
+            finalDensityResult,
+            retryState.transientsFilteredByIntensity
+        );
     }
 
     /**
-     * Validate density with retry logic
+     * Validate density with current retry state
      */
-    private validateDensity(
-        transientAnalysis: TransientAnalysis,
-        unifiedBeatMap: UnifiedBeatMap
+    private validateDensityWithState(
+        transients: TransientResult[],
+        requiredMinInterval: number,
+        retryState: RetryState
     ): DensityValidationResult {
-        // Calculate minimum interval (16th note duration)
-        const requiredMinInterval = unifiedBeatMap.quarterNoteInterval / 4;
-
         // Handle edge case: no transients
-        if (transientAnalysis.transients.length === 0) {
+        if (transients.length === 0) {
             return {
                 isValid: true,
                 minIntervalDetected: Infinity,
                 requiredMinInterval,
-                retryCount: 0,
-                sensitivityReduction: 0,
+                retryCount: retryState.retryCount,
+                sensitivityReduction: retryState.sensitivityReduction,
             };
         }
 
         // Sort transients by timestamp
-        const sortedTransients = [...transientAnalysis.transients].sort((a, b) => a.timestamp - b.timestamp);
+        const sortedTransients = [...transients].sort((a, b) => a.timestamp - b.timestamp);
 
         // Check for transients that are too close together
         let minIntervalDetected = Infinity;
@@ -325,60 +433,42 @@ export class RhythmQuantizer {
             }
         }
 
-        // If minimum interval is less than required, we need retry
+        // If minimum interval is less than required, density is invalid
         const isValid = minIntervalDetected >= requiredMinInterval;
 
         return {
             isValid,
             minIntervalDetected,
             requiredMinInterval,
-            retryCount: isValid ? 0 : 1,
-            sensitivityReduction: isValid ? 0 : this.config.densityValidation.baseSensitivityReduction,
+            retryCount: retryState.retryCount,
+            sensitivityReduction: retryState.sensitivityReduction,
         };
     }
 
     /**
-     * Quantize with reduced sensitivity (retry logic)
-     *
-     * Note: In a full implementation, this would re-run the MultiBandAnalyzer
-     * and TransientDetector with adjusted sensitivity. For now, we log a warning
-     * and proceed with the current transients.
+     * Finalize quantization after density validation
      */
-    private quantizeWithRetry(
-        transientAnalysis: TransientAnalysis,
+    private finalizeQuantization(
+        transients: TransientResult[],
         unifiedBeatMap: UnifiedBeatMap,
-        sensitivityReduction: number
+        densityResult: DensityValidationResult,
+        transientsFilteredByIntensity: number
     ): QuantizedBandStreams {
-        // In a real implementation, we would re-run multi-band analysis
-        // for now, use the original transients with adjusted threshold
-        console.warn(`Density validation failed, retrying with sensitivity reduction: ${sensitivityReduction.toFixed(2)}`);
+        // Create filtered transients structure
+        const filteredTransients: FilteredTransients = {
+            transients,
+            totalFiltered: transientsFilteredByIntensity,
+        };
 
-        // Return current result for now (placeholder - in production, would re-analyze)
-        return this.quantize(transientAnalysis, unifiedBeatMap);
-    }
-
-    /**
-     * Filter transients by intensity
-     */
-    private filterByIntensity(
-        transientAnalysis: TransientAnalysis
-    ): FilteredTransients {
-        const threshold = this.config.minimumTransientIntensity;
-
-        if (threshold <= 0) {
-            return {
-                transients: transientAnalysis.transients,
-                totalFiltered: 0,
-            };
-        }
-
-        const filtered = transientAnalysis.transients.filter(
-            t => t.intensity >= threshold
-        );
+        // Quantize each band
+        const streams = this.quantizeBands(filteredTransients, unifiedBeatMap);
 
         return {
-            transients: filtered,
-            totalFiltered: transientAnalysis.transients.length - filtered.length,
+            streams,
+            metadata: {
+                densityValidation: densityResult,
+                transientsFilteredByIntensity,
+            },
         };
     }
 

@@ -165,9 +165,9 @@ The engine already has:
 
 #### 1.4.1 Density Validation Gate
 Before quantization, validate that detected transients aren't too dense:
-- [ ] Calculate minimum allowed interval based on tempo (16th note duration = quarterNoteInterval / 4)
-- [ ] Check if any two consecutive transients are closer than the minimum interval
-- [ ] If too dense, trigger sensitivity adjustment with retry logic:
+- [x] Calculate minimum allowed interval based on tempo (16th note duration = quarterNoteInterval / 4)
+- [x] Check if any two consecutive transients are closer than the minimum interval
+- [x] If too dense, trigger sensitivity adjustment with retry logic:
   ```typescript
   interface DensityValidationResult {
     isValid: boolean;
@@ -183,8 +183,8 @@ Before quantization, validate that detected transients aren't too dense:
   // - Retry 3: Reduce sensitivity by 4x base amount (0.4)
   // After 3 retries, proceed with current results and log warning
   ```
-- [ ] Implement exponential backoff for sensitivity reduction
-- [ ] Track retry count and cumulative sensitivity reduction in metadata
+- [x] Implement exponential backoff for sensitivity reduction
+- [x] Track retry count and cumulative sensitivity reduction in metadata
 
 #### 1.4.2 Intensity Filtering
 - [ ] Support optional filtering by transient intensity:
@@ -284,14 +284,14 @@ Before quantization, validate that detected transients aren't too dense:
 ### 1.5 Tests
 - [x] Unit tests for band-pass filter
 - [x] Unit tests for `MultiBandAnalyzer`
-- [ ] Unit tests for `TransientDetector`
-- [ ] Unit tests for density validation retry logic
-- [ ] Unit tests for intensity filtering
-- [ ] Unit tests for rhythmic quantization
+- [x] Unit tests for `TransientDetector`
+- [x] Unit tests for density validation retry logic
+- [x] Unit tests for intensity filtering
+- [x] Unit tests for rhythmic quantization
 - [ ] Integration test: detect transients on known drum track
 - [ ] Verify quantization aligns with beat map grid
-- [ ] Verify retry logic reduces sensitivity correctly (exponential backoff)
-- [ ] Verify all 3 band streams are valid quantized rhythms
+- [x] Verify retry logic reduces sensitivity correctly (exponential backoff)
+- [x] Verify all 3 band streams are valid quantized rhythms
 
 ---
 
