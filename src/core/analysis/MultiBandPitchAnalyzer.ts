@@ -96,6 +96,29 @@ export interface MultiBandPitchAnalysis {
     };
 }
 
+/**
+ * Pre-filtered audio input for a single band
+ *
+ * Use this when you have already applied band-pass filtering (e.g., from MultiBandAnalyzer)
+ * and want to avoid redundant filtering operations.
+ */
+export interface PreFilteredBandInput {
+    /** Band name identifier */
+    band: BandName;
+    /** Pre-filtered audio signal (already band-pass filtered) */
+    signal: Float32Array;
+    /** Sample rate of the signal */
+    sampleRate: number;
+}
+
+/**
+ * Configuration for pre-filtered analysis
+ */
+export interface PreFilteredAnalysisConfig {
+    /** Duration of the audio in seconds (required for metadata) */
+    duration: number;
+}
+
 // ============================================================================
 // Constants
 // ============================================================================
@@ -210,6 +233,75 @@ export class MultiBandPitchAnalyzer {
     }
 
     /**
+     * Analyze pitch using pre-filtered band signals
+     *
+     * Use this method when you have already applied band-pass filtering (e.g., from
+     * a previous MultiBandAnalyzer run) to avoid redundant filtering operations.
+     *
+     * This is more efficient than `analyze()` when the filtering has already been done
+     * for rhythm generation or other analysis purposes.
+     *
+     * @param preFilteredBands - Array of pre-filtered band signals with their sample rates
+     * @param config - Configuration including duration (required for metadata)
+     * @returns Multi-band pitch analysis result
+     *
+     * @example
+     * ```typescript
+     * // After running MultiBandAnalyzer for rhythm generation
+     * const rhythmAnalyzer = new MultiBandAnalyzer();
+     * const rhythmResult = rhythmAnalyzer.analyze(audioBuffer);
+     *
+     * // Get pre-filtered signals from the rhythm analyzer
+     * const preFilteredBands = rhythmAnalyzer.getFilteredSignals();
+     *
+     * // Use pre-filtered signals for pitch analysis (avoids redundant filtering)
+     * const pitchAnalyzer = new MultiBandPitchAnalyzer();
+     * const pitchResult = pitchAnalyzer.analyzePreFiltered(preFilteredBands, {
+     *   duration: audioBuffer.duration,
+     * });
+     * ```
+     */
+    analyzePreFiltered(
+        preFilteredBands: PreFilteredBandInput[],
+        config: PreFilteredAnalysisConfig
+    ): MultiBandPitchAnalysis {
+        if (preFilteredBands.length === 0) {
+            throw new Error('At least one pre-filtered band must be provided');
+        }
+
+        const duration = config.duration;
+        const bandAnalyses = new Map<BandName, BandPitchAnalysis>();
+        let effectiveSampleRate = 44100;
+
+        for (const preFiltered of preFilteredBands) {
+            const bandName = preFiltered.band;
+            const band = this.config.bands.find(b => b.name === bandName);
+
+            if (!band) {
+                throw new Error(`Unknown band: ${bandName}. Expected one of: ${this.config.bands.map(b => b.name).join(', ')}`);
+            }
+
+            effectiveSampleRate = preFiltered.sampleRate;
+            const analysis = this.analyzePreFilteredBand(preFiltered, band, duration);
+            bandAnalyses.set(bandName, analysis);
+        }
+
+        // Determine primary band (highest average probability on voiced frames)
+        const primaryBand = this.determinePrimaryBand(bandAnalyses);
+
+        return {
+            primaryBand,
+            bandAnalyses,
+            bandsUsed: [...this.config.bands],
+            metadata: {
+                duration,
+                effectiveSampleRate,
+                framesPerBand: bandAnalyses.values().next().value?.results.length ?? 0,
+            },
+        };
+    }
+
+    /**
      * Analyze a single frequency band
      *
      * Applies band-pass filter and runs pitch detection.
@@ -235,6 +327,52 @@ export class MultiBandPitchAnalyzer {
         const filteredBuffer = this.createAudioBuffer(filteredSignal, sampleRate);
 
         // Run pitch detection on the filtered signal
+        const results = detector.detect(filteredBuffer);
+
+        // Calculate statistics
+        const voicedResults = results.filter(r => r.isVoiced);
+        const avgProbability = voicedResults.length > 0
+            ? voicedResults.reduce((sum, r) => sum + r.probability, 0) / voicedResults.length
+            : 0;
+
+        return {
+            band: bandName,
+            frequencyRange: {
+                lowHz: band.lowHz,
+                highHz: band.highHz,
+            },
+            results,
+            avgProbability,
+            voicedFrameCount: voicedResults.length,
+            totalFrameCount: results.length,
+        };
+    }
+
+    /**
+     * Analyze a single pre-filtered frequency band
+     *
+     * Runs pitch detection on a signal that has already been band-pass filtered.
+     * This avoids redundant filtering when the filtering has already been done
+     * (e.g., by MultiBandAnalyzer for rhythm generation).
+     */
+    private analyzePreFilteredBand(
+        preFiltered: PreFilteredBandInput,
+        band: FrequencyBand,
+        duration: number
+    ): BandPitchAnalysis {
+        const { signal, sampleRate, band: bandName } = preFiltered;
+
+        // Get the pitch detector for this band
+        const detector = this.pitchDetectors.get(bandName);
+        if (!detector) {
+            throw new Error(`No pitch detector found for band: ${bandName}`);
+        }
+
+        // Create a mock AudioBuffer from the pre-filtered signal
+        // PitchDetector expects an AudioBuffer, so we create a compatible object
+        const filteredBuffer = this.createAudioBuffer(signal, sampleRate);
+
+        // Run pitch detection on the pre-filtered signal
         const results = detector.detect(filteredBuffer);
 
         // Calculate statistics

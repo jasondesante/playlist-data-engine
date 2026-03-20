@@ -105,10 +105,10 @@ We use pYIN instead of standard YIN for several key advantages:
 
 > **⚠️ Important**: Pitch detection MUST use the same `FREQUENCY_BANDS` configuration and `MultiBandAnalyzer` infrastructure from rhythm generation. Do not create separate filtering logic.
 
-- [ ] **Reuse existing multi-band infrastructure**:
-  - [ ] Import `FREQUENCY_BANDS` from rhythm generation (defined in `procedural-rhythm-generation.md`)
-  - [ ] Accept pre-filtered band outputs from `MultiBandAnalyzer` to avoid redundant filtering
-  - [ ] Use the exact same band definitions:
+- [x] **Reuse existing multi-band infrastructure**:
+  - [x] Import `FREQUENCY_BANDS` from rhythm generation (defined in `procedural-rhythm-generation.md`)
+  - [x] Accept pre-filtered band outputs from `MultiBandAnalyzer` to avoid redundant filtering
+  - [x] Use the exact same band definitions:
     ```typescript
     // From procedural-rhythm-generation.md - shared configuration
     const FREQUENCY_BANDS: FrequencyBand[] = [
@@ -117,11 +117,11 @@ We use pYIN instead of standard YIN for several key advantages:
       { name: 'high', lowHz: 2000, highHz: 20000, description: 'High frequencies (hi-hats, cymbals, harmonics, air)' },
     ];
     ```
-- [ ] Apply pitch detection to ALL pre-filtered bands:
-  - [ ] **Low band (20-500Hz)**: Bass, kick drum, sub frequencies
-  - [ ] **Mid band (500-2000Hz)**: Vocals, lead melody, snare body - typically the most useful for melody contour
-  - [ ] **High band (2000-20000Hz)**: Hi-hats, cymbals, harmonics - may have less pitch content but still analyzed
-- [ ] Store which band produced the most confident pitch results
+- [x] Apply pitch detection to ALL pre-filtered bands:
+  - [x] **Low band (20-500Hz)**: Bass, kick drum, sub frequencies
+  - [x] **Mid band (500-2000Hz)**: Vocals, lead melody, snare body - typically the most useful for melody contour
+  - [x] **High band (2000-20000Hz)**: Hi-hats, cymbals, harmonics - may have less pitch content but still analyzed
+- [x] Store which band produced the most confident pitch results
 - [ ] Use band selection to inform button generation
   ```typescript
   interface MultiBandPitchAnalysis {

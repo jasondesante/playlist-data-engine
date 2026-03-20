@@ -15,8 +15,9 @@ import {
     type MultiBandPitchAnalysis,
     type BandPitchAnalysis,
     type BandName,
+    type PreFilteredBandInput,
 } from './MultiBandPitchAnalyzer.js';
-import { FREQUENCY_BANDS } from './beat/utils/audioUtils.js';
+import { FREQUENCY_BANDS, applyFrequencyBand } from './beat/utils/audioUtils.js';
 
 describe('MultiBandPitchAnalyzer', () => {
     // Helper to create a sine wave at a specific frequency
@@ -346,16 +347,162 @@ describe('MultiBandPitchAnalyzer', () => {
             expect(result.bandAnalyses.size).toBe(3);
         });
 
-        it('should handle different sample rates', () => {
+        it('should handle different sample rates (within Nyquist limits)', () => {
+            // Note: High band (20000Hz) requires sample rate > 40000Hz to satisfy Nyquist
+            // Using 44100Hz which is the default and supports all bands
             const analyzer = new MultiBandPitchAnalyzer({
-                targetSampleRate: 22050,
+                targetSampleRate: 44100,
             });
 
             // Create buffer at different sample rate
             const buffer = createSineWave(440, 0.5, 48000);
             const result = analyzer.analyze(buffer);
 
-            expect(result.metadata.effectiveSampleRate).toBe(22050);
+            expect(result.metadata.effectiveSampleRate).toBe(44100);
+        });
+    });
+
+    describe('Pre-Filtered Analysis', () => {
+        // Helper to create pre-filtered band inputs
+        function createPreFilteredBands(
+            frequencies: { freq: number; amplitude: number }[],
+            durationSeconds: number,
+            sampleRate: number = 44100
+        ): PreFilteredBandInput[] {
+            // Create mixed signal
+            const length = durationSeconds * sampleRate;
+            const signal = new Float32Array(length);
+            for (let i = 0; i < length; i++) {
+                for (const { freq, amplitude } of frequencies) {
+                    signal[i] += amplitude * Math.sin(2 * Math.PI * freq * i / sampleRate);
+                }
+            }
+
+            // Filter for each band
+            const bands: PreFilteredBandInput[] = [];
+            for (const bandName of ['low', 'mid', 'high'] as const) {
+                const filtered = applyFrequencyBand(signal, bandName, sampleRate);
+                bands.push({
+                    band: bandName,
+                    signal: filtered,
+                    sampleRate,
+                });
+            }
+            return bands;
+        }
+
+        it('should analyze pre-filtered bands', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+
+            // Create pre-filtered inputs for a 1000Hz signal (mid band)
+            const preFilteredBands = createPreFilteredBands(
+                [{ freq: 1000, amplitude: 0.5 }],
+                0.5
+            );
+
+            const result = analyzer.analyzePreFiltered(preFilteredBands, {
+                duration: 0.5,
+            });
+
+            expect(result.bandAnalyses.size).toBe(3);
+            expect(result.bandAnalyses.has('low')).toBe(true);
+            expect(result.bandAnalyses.has('mid')).toBe(true);
+            expect(result.bandAnalyses.has('high')).toBe(true);
+        });
+
+        it('should produce same results as regular analyze method', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+
+            // Create a test signal
+            const buffer = createSineWave(440, 0.5);
+
+            // Analyze using regular method
+            const regularResult = analyzer.analyze(buffer);
+
+            // Create pre-filtered inputs from the same buffer
+            const sampleRate = 44100;
+            const signal = buffer.getChannelData(0);
+            const preFilteredBands: PreFilteredBandInput[] = [];
+            for (const bandName of ['low', 'mid', 'high'] as const) {
+                const filtered = applyFrequencyBand(signal, bandName, sampleRate);
+                preFilteredBands.push({
+                    band: bandName,
+                    signal: filtered,
+                    sampleRate,
+                });
+            }
+
+            // Analyze using pre-filtered method
+            const preFilteredResult = analyzer.analyzePreFiltered(preFilteredBands, {
+                duration: 0.5,
+            });
+
+            // Results should be identical
+            expect(preFilteredResult.bandAnalyses.size).toBe(regularResult.bandAnalyses.size);
+            expect(preFilteredResult.primaryBand).toBe(regularResult.primaryBand);
+
+            // Check that each band has the same number of pitch results
+            for (const bandName of ['low', 'mid', 'high'] as const) {
+                const preFilteredAnalysis = preFilteredResult.bandAnalyses.get(bandName);
+                const regularAnalysis = regularResult.bandAnalyses.get(bandName);
+
+                expect(preFilteredAnalysis?.totalFrameCount).toBe(regularAnalysis?.totalFrameCount);
+                expect(preFilteredAnalysis?.frequencyRange).toEqual(regularAnalysis?.frequencyRange);
+            }
+        });
+
+        it('should throw error for empty pre-filtered bands', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+
+            expect(() => analyzer.analyzePreFiltered([], { duration: 0.5 })).toThrow();
+        });
+
+        it('should throw error for unknown band name', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+
+            const invalidBands: PreFilteredBandInput[] = [{
+                band: 'invalid' as BandName,
+                signal: new Float32Array(1000),
+                sampleRate: 44100,
+            }];
+
+            expect(() => analyzer.analyzePreFiltered(invalidBands, { duration: 0.5 })).toThrow(/Unknown band/);
+        });
+
+        it('should support partial band analysis', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+
+            // Only provide mid band
+            const preFilteredBands = createPreFilteredBands(
+                [{ freq: 1000, amplitude: 0.5 }],
+                0.5
+            ).filter(b => b.band === 'mid');
+
+            const result = analyzer.analyzePreFiltered(preFilteredBands, {
+                duration: 0.5,
+            });
+
+            // Should have analysis only for the provided band
+            expect(result.bandAnalyses.size).toBe(1);
+            expect(result.bandAnalyses.has('mid')).toBe(true);
+            expect(result.bandAnalyses.has('low')).toBe(false);
+            expect(result.bandAnalyses.has('high')).toBe(false);
+        });
+
+        it('should use pre-filtered sample rate in metadata', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+
+            const preFilteredBands = createPreFilteredBands(
+                [{ freq: 440, amplitude: 0.5 }],
+                0.5,
+                48000 // Different sample rate
+            );
+
+            const result = analyzer.analyzePreFiltered(preFilteredBands, {
+                duration: 0.5,
+            });
+
+            expect(result.metadata.effectiveSampleRate).toBe(48000);
         });
     });
 });
