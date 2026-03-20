@@ -504,14 +504,22 @@ Patterns are controller-mode-specific:
 - **DDR patterns**: Use 'up', 'down', 'left', 'right'
 - **Guitar Hero patterns**: Use 1, 2, 3, 4, 5
 
-- [ ] Define button pattern types
+- [x] Define button pattern types
+  - [x] Created `ButtonPattern<T>` generic interface with id, name, controllerMode, keys, measures, tags, category, difficulty
+  - [x] Added `ButtonPatternCategory` type for grouping patterns
+  - [x] Added `DDRPattern` and `GuitarHeroPattern` type aliases
+  - [x] Added `ButtonPatternLibrary<T>` interface for organizing patterns
+  - [x] Added `PatternSelectionOptions` and `PatternSelectionResult` types
+  - [x] Added exports to `src/index.ts`
   ```typescript
   interface ButtonPattern<T extends DDRButton | GuitarHeroButton> {
+    id: string;
     name: string;
     controllerMode: 'ddr' | 'guitar_hero';
     keys: T[];  // Sequence of keys per beat (mode-specific)
     measures: number;
     tags: string[];
+    category: ButtonPatternCategory;
     difficulty: number;  // 1-10
   }
 

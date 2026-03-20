@@ -261,3 +261,223 @@ export function mergeButtonMappingConfig(
 
     return config;
 }
+
+// =============================================================================
+// BUTTON PATTERN TYPES
+// =============================================================================
+
+/**
+ * Pattern category for grouping similar patterns.
+ */
+export type ButtonPatternCategory =
+    | 'basic'       // Simple patterns (alternating, single key runs)
+    | 'roll'        // Sequential key presses around the pad
+    | 'stream'      // Repeated directions
+    | 'jump'        // Non-adjacent keys
+    | 'chord'       // Multi-key patterns (Guitar Hero only)
+    | 'transition'; // Patterns that transition between sections
+
+/**
+ * Generic button pattern interface.
+ * Patterns are controller-mode-specific - DDR patterns use DDRButton, Guitar Hero patterns use GuitarHeroButton.
+ *
+ * @template T - The button type (DDRButton or GuitarHeroButton)
+ *
+ * @example
+ * ```typescript
+ * // DDR pattern
+ * const ddrPattern: ButtonPattern<DDRButton> = {
+ *     id: 'ddr_alternating_up_down',
+ *     name: 'Alternating Up-Down',
+ *     controllerMode: 'ddr',
+ *     keys: ['up', 'down', 'up', 'down'],
+ *     measures: 1,
+ *     tags: ['basic', 'alternating'],
+ *     category: 'basic',
+ *     difficulty: 2,
+ * };
+ *
+ * // Guitar Hero pattern
+ * const ghPattern: ButtonPattern<GuitarHeroButton> = {
+ *     id: 'gh_ascending_run',
+ *     name: 'Ascending Run',
+ *     controllerMode: 'guitar_hero',
+ *     keys: [1, 2, 3, 4],
+ *     measures: 1,
+ *     tags: ['basic', 'ascending'],
+ *     category: 'basic',
+ *     difficulty: 2,
+ * };
+ * ```
+ */
+export interface ButtonPattern<T extends DDRButton | GuitarHeroButton> {
+    /**
+     * Unique identifier for this pattern.
+     * Format: `{mode}_{category}_{description}` (e.g., 'ddr_basic_alternating')
+     */
+    id: string;
+
+    /**
+     * Human-readable name for this pattern.
+     */
+    name: string;
+
+    /**
+     * Controller mode this pattern is designed for.
+     * DDR patterns cannot be used with Guitar Hero mode and vice versa.
+     */
+    controllerMode: ControllerMode;
+
+    /**
+     * Sequence of keys per beat.
+     * The length determines how many beats this pattern spans.
+     */
+    keys: T[];
+
+    /**
+     * Number of measures this pattern spans.
+     * Used for time-based pattern selection.
+     */
+    measures: number;
+
+    /**
+     * Tags for pattern selection and filtering.
+     * Common tags: 'basic', 'alternating', 'roll', 'stream', 'jump', 'chord'
+     */
+    tags: string[];
+
+    /**
+     * Category for grouping similar patterns.
+     */
+    category: ButtonPatternCategory;
+
+    /**
+     * Difficulty rating from 1 (easiest) to 10 (hardest).
+     * Used for difficulty-based pattern selection.
+     */
+    difficulty: number;
+}
+
+/**
+ * DDR-specific button pattern.
+ */
+export type DDRPattern = ButtonPattern<DDRButton>;
+
+/**
+ * Guitar Hero-specific button pattern.
+ */
+export type GuitarHeroPattern = ButtonPattern<GuitarHeroButton>;
+
+/**
+ * Union type of all pattern types.
+ */
+export type AnyButtonPattern = DDRPattern | GuitarHeroPattern;
+
+// =============================================================================
+// PATTERN LIBRARY TYPES
+// =============================================================================
+
+/**
+ * A complete pattern library for a controller mode.
+ * Contains all available patterns organized by category.
+ */
+export interface ButtonPatternLibrary<T extends DDRButton | GuitarHeroButton> {
+    /**
+     * Controller mode this library is for.
+     */
+    controllerMode: ControllerMode;
+
+    /**
+     * All patterns in this library.
+     */
+    patterns: ButtonPattern<T>[];
+
+    /**
+     * Patterns organized by category for quick lookup.
+     */
+    byCategory: Map<ButtonPatternCategory, ButtonPattern<T>[]>;
+
+    /**
+     * Patterns organized by difficulty level (1-10).
+     */
+    byDifficulty: Map<number, ButtonPattern<T>[]>;
+}
+
+/**
+ * DDR pattern library type.
+ */
+export type DDRPatternLibrary = ButtonPatternLibrary<DDRButton>;
+
+/**
+ * Guitar Hero pattern library type.
+ */
+export type GuitarHeroPatternLibrary = ButtonPatternLibrary<GuitarHeroButton>;
+
+// =============================================================================
+// PATTERN SELECTION TYPES
+// =============================================================================
+
+/**
+ * Options for selecting a pattern from the library.
+ */
+export interface PatternSelectionOptions {
+    /**
+     * Maximum difficulty level to consider.
+     */
+    maxDifficulty?: number;
+
+    /**
+     * Minimum difficulty level to consider.
+     */
+    minDifficulty?: number;
+
+    /**
+     * Preferred category of pattern.
+     */
+    category?: ButtonPatternCategory;
+
+    /**
+     * Tags that must be present on the pattern.
+     */
+    requiredTags?: string[];
+
+    /**
+     * Tags that should be preferred (optional boost).
+     */
+    preferredTags?: string[];
+
+    /**
+     * Previous key that was used (for smooth transitions).
+     */
+    previousKey?: DDRButton | GuitarHeroButton;
+
+    /**
+     * Number of beats to fill with the pattern.
+     */
+    targetBeatCount?: number;
+
+    /**
+     * Number of measures to fill.
+     */
+    targetMeasures?: number;
+}
+
+/**
+ * Result of pattern selection.
+ */
+export interface PatternSelectionResult<T extends DDRButton | GuitarHeroButton> {
+    /**
+     * The selected pattern.
+     */
+    pattern: ButtonPattern<T>;
+
+    /**
+     * Score indicating how well this pattern matches the selection criteria (0-1).
+     */
+    score: number;
+
+    /**
+     * Reasons why this pattern was selected.
+     */
+    matchReasons: string[];
+}

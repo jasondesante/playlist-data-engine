@@ -159,6 +159,19 @@ export type {
     Button,
     ButtonMappingConfig,
     ButtonMappingConfigValidationResult,
+    // Button Pattern types
+    ButtonPatternCategory,
+    ButtonPattern,
+    DDRPattern,
+    GuitarHeroPattern,
+    AnyButtonPattern,
+    // Pattern Library types
+    ButtonPatternLibrary,
+    DDRPatternLibrary,
+    GuitarHeroPatternLibrary,
+    // Pattern Selection types
+    PatternSelectionOptions,
+    PatternSelectionResult,
 } from './core/types/ButtonMapping.js';
 
 // Button mapping constants and helpers
