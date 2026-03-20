@@ -1500,7 +1500,7 @@ interface ChartMetadata {
 
 ### 3.3 Tests
 - [x] Integration tests for full pipeline (see `levelGenerator.integration.test.ts`)
-- [ ] Performance tests (generation time < 10 seconds for 3-minute song)
+- [x] Performance tests (generation time < 10 seconds for 3-minute song) (see `levelGenerator.performance.test.ts`)
 - [x] Verify pitch influence is visible in output
 - [x] Verify direction/interval statistics are populated in `LevelMetadata.pitchMetadata`
 - [x] Verify button mapping correctly uses `direction` and `intervalCategory` from pitch analysis
