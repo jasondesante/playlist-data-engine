@@ -1299,8 +1299,8 @@ interface ChartMetadata {
 - [x] Verify converted beats have correct `beatInMeasure` values
 - [x] Verify `isDownbeat` is only true for quarter note positions
 - [x] Verify `requiredKey` is correctly assigned from map
-- [ ] Integration test: converted ChartedBeatMap works with BeatStream
-- [ ] Integration test: key matching works with `checkButtonPress()`
+- [x] Integration test: converted ChartedBeatMap works with BeatStream
+- [x] Integration test: key matching works with `checkButtonPress()`
 
 ### 2.8 Tests
 - [x] Unit tests for DDR mode pitch-to-button mapping

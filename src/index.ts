@@ -196,6 +196,7 @@ export type {
 export {
     mapGridToSubdivision,
     calculateBeatInMeasure,
+    chartedBeatMapToBeatMap,
 } from './core/types/ChartedBeatMap.js';
 
 // Character types

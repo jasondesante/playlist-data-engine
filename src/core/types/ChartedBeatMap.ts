@@ -250,3 +250,59 @@ export function calculateBeatInMeasure(
 
     return parentBeatInMeasure + offset;
 }
+
+// ============================================================================
+// BeatStream Compatibility
+// ============================================================================
+
+import type { BeatMap, BeatMapMetadata } from './BeatMap.js';
+
+/**
+ * Convert a ChartedBeatMap to a BeatMap for use with BeatStream
+ *
+ * This adapter function creates a BeatMap-compatible object from a ChartedBeatMap,
+ * allowing procedurally generated charts to be used with the existing BeatStream
+ * infrastructure.
+ *
+ * @param chartedBeatMap - The ChartedBeatMap to convert
+ * @returns A BeatMap compatible with BeatStream
+ *
+ * @example
+ * ```typescript
+ * const chartedMap = beatConverter.convertToChartedBeatMap(variant, unifiedMap, keys, metadata);
+ * const beatMap = chartedBeatMapToBeatMap(chartedMap);
+ * const beatStream = new BeatStream(beatMap, audioContext);
+ * ```
+ */
+export function chartedBeatMapToBeatMap(chartedBeatMap: ChartedBeatMap): BeatMap {
+    // Create BeatMapMetadata from ChartMetadata
+    const metadata: BeatMapMetadata = {
+        version: chartedBeatMap.chartMetadata.seed ?? '1.0.0',
+        algorithm: 'procedural-generation',
+        minBpm: chartedBeatMap.bpm,
+        maxBpm: chartedBeatMap.bpm,
+        sensitivity: 1.0,
+        filter: 0.0,
+        noiseFloorThreshold: 0,
+        hopSizeMs: 4,
+        fftSize: 2048,
+        dpAlpha: 680,
+        melBands: 40,
+        highPassCutoff: 0.4,
+        gaussianSmoothMs: 20,
+        tempoCenter: 0.5,
+        tempoWidth: 1.4,
+        useOctaveResolution: false,
+        useTripleMeter: false,
+        generatedAt: chartedBeatMap.chartMetadata.generatedAt,
+    };
+
+    return {
+        audioId: chartedBeatMap.audioId,
+        duration: chartedBeatMap.duration,
+        beats: chartedBeatMap.beats, // ChartedBeat extends Beat, so this is compatible
+        bpm: chartedBeatMap.bpm,
+        metadata,
+        downbeatConfig: chartedBeatMap.downbeatConfig,
+    };
+}
