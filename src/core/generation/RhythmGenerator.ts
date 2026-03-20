@@ -12,17 +12,19 @@
  */
 
 import { MultiBandAnalyzer, type MultiBandResult } from '../analysis/MultiBandAnalyzer.js';
-import { TransientDetector, type TransientAnalysis } from '../analysis/beat/TransientDetector.js';
+import { TransientDetector, type TransientAnalysis, type TransientResult } from '../analysis/beat/TransientDetector.js';
 import {
     RhythmQuantizer,
     type QuantizationConfig,
     type QuantizedBandStreams,
     type GeneratedRhythmMap,
     type GridDecision,
+    type GeneratedBeat,
+    type DensityValidationResult,
 } from '../analysis/beat/RhythmQuantizer.js';
-import { PhraseAnalyzer, type PhraseAnalysisResult } from '../analysis/beat/PhraseAnalyzer.js';
-import { DensityAnalyzer, type DensityAnalysisResult } from '../analysis/beat/DensityAnalyzer.js';
-import { StreamScorer, type StreamScoringResult } from '../analysis/beat/StreamScorer.js';
+import { PhraseAnalyzer, type PhraseAnalysisResult, type RhythmicPhrase, type PhraseOccurrence, type BandPhraseAnalysis } from '../analysis/beat/PhraseAnalyzer.js';
+import { DensityAnalyzer, type DensityAnalysisResult, type BandDensityMetrics, type SectionDensityMetrics, type BeatDensityMetrics } from '../analysis/beat/DensityAnalyzer.js';
+import { StreamScorer, type StreamScoringResult, type SectionScore, type SectionWinner, type ScoringFactors } from '../analysis/beat/StreamScorer.js';
 import {
     CompositeStreamGenerator,
     type CompositeStream,
@@ -32,6 +34,9 @@ import {
     DifficultyVariantGenerator,
     type DifficultyVariant,
     type DifficultyLevel,
+    type VariantBeat,
+    type SubdivisionConversionMetadata,
+    type EnhancementMetadata,
 } from '../analysis/beat/DifficultyVariantGenerator.js';
 import type { UnifiedBeatMap, DifficultyPreset } from '../types/BeatMap.js';
 
@@ -196,6 +201,363 @@ export interface RhythmMetadata {
 
     /** Total beats in the unified beat map */
     totalBeats: number;
+}
+
+// ============================================================================
+// JSON Serialization Types
+// ============================================================================
+
+/**
+ * JSON-serializable version of GeneratedBeat
+ */
+interface GeneratedBeatJSON {
+    timestamp: number;
+    beatIndex: number;
+    gridPosition: number;
+    gridType: 'straight_16th' | 'triplet_8th';
+    intensity: number;
+    band: 'low' | 'mid' | 'high';
+    quantizationError?: number;
+}
+
+/**
+ * JSON-serializable version of VariantBeat (uses ExtendedGridType)
+ */
+interface VariantBeatJSON {
+    timestamp: number;
+    beatIndex: number;
+    gridPosition: number;
+    gridType: 'straight_16th' | 'triplet_8th' | 'straight_8th' | 'quarter_triplet';
+    intensity: number;
+    band: 'low' | 'mid' | 'high';
+    quantizationError?: number;
+    sourceBand: 'low' | 'mid' | 'high';
+}
+
+/**
+ * JSON-serializable version of CompositeBeat (uses basic GridType)
+ */
+interface CompositeBeatJSON {
+    timestamp: number;
+    beatIndex: number;
+    gridPosition: number;
+    gridType: 'straight_16th' | 'triplet_8th';
+    intensity: number;
+    band: 'low' | 'mid' | 'high';
+    quantizationError?: number;
+    sourceBand: 'low' | 'mid' | 'high';
+}
+
+/**
+ * JSON-serializable version of GridDecision
+ */
+interface GridDecisionJSON {
+    beatIndex: number;
+    selectedGrid: 'straight_16th' | 'triplet_8th';
+    straightAvgOffset: number;
+    tripletAvgOffset: number;
+    transientCount: number;
+    confidence: number;
+}
+
+/**
+ * JSON-serializable version of GeneratedRhythmMap
+ */
+interface GeneratedRhythmMapJSON {
+    audioId: string;
+    duration: number;
+    beats: GeneratedBeatJSON[];
+    gridDecisions: GridDecisionJSON[];
+}
+
+/**
+ * JSON-serializable version of DifficultyVariant
+ */
+interface DifficultyVariantJSON {
+    difficulty: 'easy' | 'medium' | 'hard';
+    beats: VariantBeatJSON[];
+    isUnedited: boolean;
+    editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
+    editAmount: number;
+    patternsInserted?: string[];
+    conversionMetadata?: SubdivisionConversionMetadata;
+    enhancementMetadata?: EnhancementMetadata;
+}
+
+/**
+ * JSON-serializable version of CompositeSection
+ */
+interface CompositeSectionJSON {
+    beatRange: { start: number; end: number };
+    sourceBand: 'low' | 'mid' | 'high';
+    score: number;
+    margin: number;
+}
+
+/**
+ * JSON-serializable version of CompositeStream
+ */
+interface CompositeStreamJSON {
+    beats: CompositeBeatJSON[];
+    sections: CompositeSectionJSON[];
+    naturalDifficulty: 'easy' | 'medium' | 'hard';
+    quarterNoteInterval: number;
+    metadata: {
+        totalBeats: number;
+        sectionCount: number;
+        beatsPerBand: { low: number; mid: number; high: number };
+        sectionsPerBand: { low: number; mid: number; high: number };
+    };
+}
+
+/**
+ * JSON-serializable version of TransientResult
+ */
+interface TransientResultJSON {
+    timestamp: number;
+    intensity: number;
+    band: 'low' | 'mid' | 'high';
+    detectionMethod: 'energy' | 'spectral_flux' | 'hfc';
+    nearestBeat?: {
+        index: number;
+        distance: number;
+    };
+}
+
+/**
+ * JSON-serializable version of TransientAnalysis metadata
+ */
+interface TransientAnalysisMetadataJSON {
+    totalTransients: number;
+    transientsPerBand: Array<{ band: 'low' | 'mid' | 'high'; count: number }>;
+    duration: number;
+    averageIntensity: number;
+    detectionMethodsUsed: Array<'energy' | 'spectral_flux' | 'hfc'>;
+}
+
+/**
+ * JSON-serializable version of TransientAnalysis
+ */
+interface TransientAnalysisJSON {
+    transients: TransientResultJSON[];
+    bandTransients: Array<{ band: 'low' | 'mid' | 'high'; transients: TransientResultJSON[] }>;
+    metadata: TransientAnalysisMetadataJSON;
+}
+
+/**
+ * JSON-serializable version of DensityValidationResult
+ */
+interface DensityValidationResultJSON {
+    isValid: boolean;
+    minIntervalDetected: number;
+    requiredMinInterval: number;
+    retryCount: number;
+    sensitivityReduction: number;
+}
+
+/**
+ * JSON-serializable version of QuantizedBandStreams metadata
+ */
+interface QuantizedBandStreamsMetadataJSON {
+    densityValidation: DensityValidationResultJSON;
+    transientsFilteredByIntensity: number;
+}
+
+/**
+ * JSON-serializable version of QuantizedBandStreams
+ */
+interface QuantizedBandStreamsJSON {
+    streams: {
+        low: GeneratedRhythmMapJSON;
+        mid: GeneratedRhythmMapJSON;
+        high: GeneratedRhythmMapJSON;
+    };
+    metadata: QuantizedBandStreamsMetadataJSON;
+}
+
+/**
+ * JSON-serializable version of PhraseOccurrence
+ */
+interface PhraseOccurrenceJSON {
+    beatIndex: number;
+    startTimestamp: number;
+    endTimestamp: number;
+}
+
+/**
+ * JSON-serializable version of RhythmicPhrase
+ */
+interface RhythmicPhraseJSON {
+    id: string;
+    pattern: GeneratedBeatJSON[];
+    sizeInBeats: number;
+    sourceBand: 'low' | 'mid' | 'high';
+    occurrences: PhraseOccurrenceJSON[];
+    significance: number;
+    hasVariation: boolean;
+    availableForReuse: boolean;
+}
+
+/**
+ * JSON-serializable version of BandPhraseAnalysis
+ */
+interface BandPhraseAnalysisJSON {
+    band: 'low' | 'mid' | 'high';
+    phrases: RhythmicPhraseJSON[];
+    phrasesBySize: Array<{ size: number; phrases: RhythmicPhraseJSON[] }>;
+    phrasesWithVariation: RhythmicPhraseJSON[];
+}
+
+/**
+ * JSON-serializable version of PhraseAnalysisResult
+ */
+interface PhraseAnalysisResultJSON {
+    phrases: RhythmicPhraseJSON[];
+    phrasesByBand: Array<{ band: 'low' | 'mid' | 'high'; phrases: RhythmicPhraseJSON[] }>;
+    mostSignificantPhrases: RhythmicPhraseJSON[];
+    phrasesBySize: Array<{ size: number; phrases: RhythmicPhraseJSON[] }>;
+    patternLibrary: RhythmicPhraseJSON[];
+    bandAnalysis: {
+        low: BandPhraseAnalysisJSON;
+        mid: BandPhraseAnalysisJSON;
+        high: BandPhraseAnalysisJSON;
+    };
+}
+
+/**
+ * JSON-serializable version of BeatDensityMetrics
+ */
+interface BeatDensityMetricsJSON {
+    beatIndex: number;
+    transientCount: number;
+    bands: ('low' | 'mid' | 'high')[];
+    averageIntensity: number;
+}
+
+/**
+ * JSON-serializable version of BeatDensityMetrics
+ */
+interface BeatDensityMetricsJSON {
+    beatIndex: number;
+    transientCount: number;
+    bands: ('low' | 'mid' | 'high')[];
+    averageIntensity: number;
+}
+
+/**
+ * JSON-serializable version of BeatDensityMetrics
+ */
+interface BeatDensityMetricsJSON {
+    beatIndex: number;
+    transientCount: number;
+    bands: ('low' | 'mid' | 'high')[];
+    averageIntensity: number;
+}
+
+/**
+ * JSON-serializable version of BandDensityMetrics
+ */
+interface BandDensityMetricsJSON {
+    band: 'low' | 'mid' | 'high';
+    totalBeats: number;
+    totalTransients: number;
+    transientsPerBeat: number;
+    minTransientsPerBeat: number;
+    maxTransientsPerBeat: number;
+    variance: number;
+    densityCategory: 'sparse' | 'moderate' | 'dense';
+    naturalDifficulty: 'easy' | 'medium' | 'hard';
+    perBeatDensity: BeatDensityMetricsJSON[];
+}
+
+/**
+ * JSON-serializable version of DensityAnalysisResult
+ */
+interface DensityAnalysisResultJSON {
+    bandMetrics: {
+        low: BandDensityMetricsJSON;
+        mid: BandDensityMetricsJSON;
+        high: BandDensityMetricsJSON;
+    };
+    combinedMetrics: {
+        totalTransients: number;
+        transientsPerBeat: number;
+        densityCategory: 'sparse' | 'moderate' | 'dense';
+        naturalDifficulty: 'easy' | 'medium' | 'hard';
+    };
+    sections: Array<{
+        startBeat: number;
+        endBeat: number;
+        beatCount: number;
+        totalTransients: number;
+        transientsPerBeat: number;
+        minTransientsPerBeat: number;
+        maxTransientsPerBeat: number;
+        densityCategory: 'sparse' | 'moderate' | 'dense';
+        naturalDifficulty: 'easy' | 'medium' | 'hard';
+    }>;
+    perBeatDensity: BeatDensityMetricsJSON[];
+}
+
+/**
+ * JSON-serializable version of StreamScoringResult
+ */
+interface StreamScoringResultJSON {
+    sectionScores: Array<{
+        beatRange: { start: number; end: number };
+        band: 'low' | 'mid' | 'high';
+        score: number;
+        factors: {
+            ioiVariance: number;
+            syncopationLevel: number;
+            phraseSignificance: number;
+            densityFactor: number;
+        };
+    }>;
+    bandTotals: { low: number; mid: number; high: number };
+    bandAverages: { low: number; mid: number; high: number };
+    sectionWinners: Array<{
+        beatRange: { start: number; end: number };
+        winner: 'low' | 'mid' | 'high';
+        score: number;
+        margin: number;
+    }>;
+    config: {
+        beatsPerSection: number;
+        ioiVarianceWeight: number;
+        syncopationWeight: number;
+        phraseSignificanceWeight: number;
+        densityWeight: number;
+        offbeatGridPositions: {
+            straight_16th: number[];
+            triplet_8th: number[];
+        };
+    };
+}
+
+/**
+ * JSON-serializable version of GeneratedRhythm
+ */
+interface GeneratedRhythmJSON {
+    difficultyVariants: {
+        easy: DifficultyVariantJSON;
+        medium: DifficultyVariantJSON;
+        hard: DifficultyVariantJSON;
+    };
+    bandStreams: {
+        low: GeneratedRhythmMapJSON;
+        mid: GeneratedRhythmMapJSON;
+        high: GeneratedRhythmMapJSON;
+    };
+    composite: CompositeStreamJSON;
+    analysis: {
+        transientAnalysis: TransientAnalysisJSON;
+        quantizationResult: QuantizedBandStreamsJSON;
+        phraseAnalysis: PhraseAnalysisResultJSON;
+        densityAnalysis: DensityAnalysisResultJSON;
+        scoringResult: StreamScoringResultJSON;
+    };
+    metadata: RhythmMetadata;
 }
 
 // ============================================================================
@@ -868,5 +1230,506 @@ export class RhythmGenerator {
         const generator = new RhythmGenerator();
         const result = await generator.generate(audioBuffer, unifiedBeatMap);
         return result.difficultyVariants[difficulty];
+    }
+
+    // ================================================================
+    // Serialization Support
+    // ================================================================
+
+    /**
+     * Convert a GeneratedRhythm to JSON string
+     *
+     * Serializes all data including difficulty variants, band streams, composite,
+     * analysis results, and metadata.
+     *
+     * @param rhythm - Generated rhythm to serialize
+     * @returns JSON string
+     */
+    static toJSON(rhythm: GeneratedRhythm): string {
+        const json: GeneratedRhythmJSON = {
+            difficultyVariants: {
+                easy: this.serializeDifficultyVariant(rhythm.difficultyVariants.easy),
+                medium: this.serializeDifficultyVariant(rhythm.difficultyVariants.medium),
+                hard: this.serializeDifficultyVariant(rhythm.difficultyVariants.hard),
+            },
+            bandStreams: {
+                low: this.serializeGeneratedRhythmMap(rhythm.bandStreams.low),
+                mid: this.serializeGeneratedRhythmMap(rhythm.bandStreams.mid),
+                high: this.serializeGeneratedRhythmMap(rhythm.bandStreams.high),
+            },
+            composite: this.serializeCompositeStream(rhythm.composite),
+            analysis: {
+                transientAnalysis: this.serializeTransientAnalysis(rhythm.analysis.transientAnalysis),
+                quantizationResult: this.serializeQuantizedBandStreams(rhythm.analysis.quantizationResult),
+                phraseAnalysis: this.serializePhraseAnalysisResult(rhythm.analysis.phraseAnalysis),
+                densityAnalysis: this.serializeDensityAnalysisResult(rhythm.analysis.densityAnalysis),
+                scoringResult: this.serializeStreamScoringResult(rhythm.analysis.scoringResult),
+            },
+            metadata: rhythm.metadata,
+        };
+
+        return JSON.stringify(json, null, 2);
+    }
+
+    /**
+     * Parse a GeneratedRhythm from JSON string
+     *
+     * @param jsonString - JSON string to parse
+     * @returns Generated rhythm object
+     */
+    static fromJSON(jsonString: string): GeneratedRhythm {
+        const json: GeneratedRhythmJSON = JSON.parse(jsonString);
+
+        return {
+            difficultyVariants: {
+                easy: this.deserializeDifficultyVariant(json.difficultyVariants.easy),
+                medium: this.deserializeDifficultyVariant(json.difficultyVariants.medium),
+                hard: this.deserializeDifficultyVariant(json.difficultyVariants.hard),
+            },
+            bandStreams: {
+                low: this.deserializeGeneratedRhythmMap(json.bandStreams.low),
+                mid: this.deserializeGeneratedRhythmMap(json.bandStreams.mid),
+                high: this.deserializeGeneratedRhythmMap(json.bandStreams.high),
+            },
+            composite: this.deserializeCompositeStream(json.composite),
+            analysis: {
+                transientAnalysis: this.deserializeTransientAnalysis(json.analysis.transientAnalysis),
+                quantizationResult: this.deserializeQuantizedBandStreams(json.analysis.quantizationResult),
+                phraseAnalysis: this.deserializePhraseAnalysisResult(json.analysis.phraseAnalysis),
+                densityAnalysis: this.deserializeDensityAnalysisResult(json.analysis.densityAnalysis),
+                scoringResult: this.deserializeStreamScoringResult(json.analysis.scoringResult),
+            },
+            metadata: json.metadata,
+        };
+    }
+
+    /**
+     * Save a GeneratedRhythm to a file (Node.js only)
+     *
+     * @param rhythm - Generated rhythm to save
+     * @param filePath - Path to save to
+     */
+    static async saveToFile(rhythm: GeneratedRhythm, filePath: string): Promise<void> {
+        // Check if we're in a Node.js environment
+        if (typeof process === 'undefined' || !process.versions?.node) {
+            throw new Error('saveToFile is only available in Node.js environment');
+        }
+
+        // Dynamic import for Node.js fs/promises
+        const { writeFile } = await import('fs/promises');
+        const json = RhythmGenerator.toJSON(rhythm);
+        await writeFile(filePath, json, 'utf-8');
+    }
+
+    /**
+     * Load a GeneratedRhythm from a file (Node.js only)
+     *
+     * @param filePath - Path to load from
+     * @returns Generated rhythm object
+     */
+    static async loadFromFile(filePath: string): Promise<GeneratedRhythm> {
+        // Check if we're in a Node.js environment
+        if (typeof process === 'undefined' || !process.versions?.node) {
+            throw new Error('loadFromFile is only available in Node.js environment');
+        }
+
+        // Dynamic import for Node.js fs/promises
+        const { readFile } = await import('fs/promises');
+        const jsonString = await readFile(filePath, 'utf-8');
+        return RhythmGenerator.fromJSON(jsonString);
+    }
+
+    // ================================================================
+    // Private Serialization Helpers
+    // ================================================================
+
+    private static serializeDifficultyVariant(variant: DifficultyVariant): DifficultyVariantJSON {
+        return {
+            difficulty: variant.difficulty,
+            beats: variant.beats.map(b => this.serializeVariantBeat(b)),
+            isUnedited: variant.isUnedited,
+            editType: variant.editType,
+            editAmount: variant.editAmount,
+            patternsInserted: variant.patternsInserted,
+            conversionMetadata: variant.conversionMetadata,
+            enhancementMetadata: variant.enhancementMetadata,
+        };
+    }
+
+    private static deserializeDifficultyVariant(json: DifficultyVariantJSON): DifficultyVariant {
+        return {
+            difficulty: json.difficulty,
+            beats: json.beats.map(b => this.deserializeVariantBeat(b)),
+            isUnedited: json.isUnedited,
+            editType: json.editType,
+            editAmount: json.editAmount,
+            patternsInserted: json.patternsInserted,
+            conversionMetadata: json.conversionMetadata,
+            enhancementMetadata: json.enhancementMetadata,
+        };
+    }
+
+    private static serializeVariantBeat(beat: VariantBeat): VariantBeatJSON {
+        return {
+            timestamp: beat.timestamp,
+            beatIndex: beat.beatIndex,
+            gridPosition: beat.gridPosition,
+            gridType: beat.gridType,
+            intensity: beat.intensity,
+            band: beat.band,
+            quantizationError: beat.quantizationError,
+            sourceBand: beat.sourceBand,
+        };
+    }
+    private static deserializeVariantBeat(json: VariantBeatJSON): VariantBeat {
+        return {
+            timestamp: json.timestamp,
+            beatIndex: json.beatIndex,
+            gridPosition: json.gridPosition,
+            gridType: json.gridType,
+            intensity: json.intensity,
+            band: json.band,
+            quantizationError: json.quantizationError,
+            sourceBand: json.sourceBand,
+        };
+    }
+
+    private static serializeGeneratedRhythmMap(map: GeneratedRhythmMap): GeneratedRhythmMapJSON {
+        return {
+            audioId: map.audioId,
+            duration: map.duration,
+            beats: map.beats.map(b => this.serializeGeneratedBeat(b)),
+            gridDecisions: map.gridDecisions,
+        };
+    }
+    private static deserializeGeneratedRhythmMap(json: GeneratedRhythmMapJSON): GeneratedRhythmMap {
+        return {
+            audioId: json.audioId,
+            duration: json.duration,
+            beats: json.beats.map(b => this.deserializeGeneratedBeat(b)),
+            gridDecisions: json.gridDecisions,
+        };
+    }
+    private static serializeGeneratedBeat(beat: GeneratedBeat): GeneratedBeatJSON {
+        return {
+            timestamp: beat.timestamp,
+            beatIndex: beat.beatIndex,
+            gridPosition: beat.gridPosition,
+            gridType: beat.gridType,
+            intensity: beat.intensity,
+            band: beat.band,
+            quantizationError: beat.quantizationError,
+        };
+    }
+    private static deserializeGeneratedBeat(json: GeneratedBeatJSON): GeneratedBeat {
+        return {
+            timestamp: json.timestamp,
+            beatIndex: json.beatIndex,
+            gridPosition: json.gridPosition,
+            gridType: json.gridType,
+            intensity: json.intensity,
+            band: json.band,
+            quantizationError: json.quantizationError,
+        };
+    }
+
+    private static serializeCompositeStream(stream: CompositeStream): CompositeStreamJSON {
+        return {
+            beats: stream.beats.map(b => this.serializeCompositeBeat(b)),
+            sections: stream.sections,
+            naturalDifficulty: stream.naturalDifficulty,
+            quarterNoteInterval: stream.quarterNoteInterval,
+            metadata: stream.metadata,
+        };
+    }
+    private static deserializeCompositeStream(json: CompositeStreamJSON): CompositeStream {
+        return {
+            beats: json.beats.map(b => this.deserializeCompositeBeat(b)),
+            sections: json.sections,
+            naturalDifficulty: json.naturalDifficulty,
+            quarterNoteInterval: json.quarterNoteInterval,
+            metadata: json.metadata,
+        };
+    }
+    private static serializeCompositeBeat(beat: CompositeBeat): CompositeBeatJSON {
+        return {
+            timestamp: beat.timestamp,
+            beatIndex: beat.beatIndex,
+            gridPosition: beat.gridPosition,
+            gridType: beat.gridType,
+            intensity: beat.intensity,
+            band: beat.band,
+            quantizationError: beat.quantizationError,
+            sourceBand: beat.sourceBand,
+        };
+    }
+    private static deserializeCompositeBeat(json: CompositeBeatJSON): CompositeBeat {
+        return {
+            timestamp: json.timestamp,
+            beatIndex: json.beatIndex,
+            gridPosition: json.gridPosition,
+            gridType: json.gridType,
+            intensity: json.intensity,
+            band: json.band,
+            quantizationError: json.quantizationError,
+            sourceBand: json.sourceBand,
+        };
+    }
+
+    private static serializeTransientAnalysis(analysis: TransientAnalysis): TransientAnalysisJSON {
+        return {
+            transients: analysis.transients.map(t => this.serializeTransientResult(t)),
+            bandTransients: Array.from(analysis.bandTransients.entries()).map(([band, transients]) => ({
+                band,
+                transients: transients.map(t => this.serializeTransientResult(t)),
+            })),
+            metadata: {
+                totalTransients: analysis.metadata.totalTransients,
+                transientsPerBand: Array.from(analysis.metadata.transientsPerBand.entries()).map(([band, count]) => ({
+                    band,
+                    count,
+                })),
+                duration: analysis.metadata.duration,
+                averageIntensity: analysis.metadata.averageIntensity,
+                detectionMethodsUsed: analysis.metadata.detectionMethodsUsed,
+            },
+        };
+    }
+    private static deserializeTransientAnalysis(json: TransientAnalysisJSON): TransientAnalysis {
+        const bandTransients = new Map<'low' | 'mid' | 'high', TransientResult[]>();
+        for (const entry of json.bandTransients) {
+            bandTransients.set(entry.band as 'low', entry.transients.map(t => this.deserializeTransientResult(t)));
+        }
+
+        const transientsPerBand = new Map<'low' | 'mid' | 'high', number>();
+        for (const entry of json.metadata.transientsPerBand) {
+            transientsPerBand.set(entry.band as 'low', entry.count);
+        }
+
+        return {
+            transients: json.transients.map(t => this.deserializeTransientResult(t)),
+            bandTransients,
+            metadata: {
+                totalTransients: json.metadata.totalTransients,
+                transientsPerBand,
+                duration: json.metadata.duration,
+                averageIntensity: json.metadata.averageIntensity,
+                detectionMethodsUsed: json.metadata.detectionMethodsUsed,
+            },
+        };
+    }
+
+    private static serializeTransientResult(result: TransientResult): TransientResultJSON {
+        return {
+            timestamp: result.timestamp,
+            intensity: result.intensity,
+            band: result.band,
+            detectionMethod: result.detectionMethod,
+            nearestBeat: result.nearestBeat,
+        };
+    }
+    private static deserializeTransientResult(json: TransientResultJSON): TransientResult {
+        return {
+            timestamp: json.timestamp,
+            intensity: json.intensity,
+            band: json.band,
+            detectionMethod: json.detectionMethod,
+            nearestBeat: json.nearestBeat,
+        };
+    }
+
+    private static serializeQuantizedBandStreams(streams: QuantizedBandStreams): QuantizedBandStreamsJSON {
+        return {
+            streams: {
+                low: this.serializeGeneratedRhythmMap(streams.streams.low),
+                mid: this.serializeGeneratedRhythmMap(streams.streams.mid),
+                high: this.serializeGeneratedRhythmMap(streams.streams.high),
+            },
+            metadata: {
+                densityValidation: streams.metadata.densityValidation,
+                transientsFilteredByIntensity: streams.metadata.transientsFilteredByIntensity,
+            },
+        };
+    }
+    private static deserializeQuantizedBandStreams(json: QuantizedBandStreamsJSON): QuantizedBandStreams {
+        return {
+            streams: {
+                low: this.deserializeGeneratedRhythmMap(json.streams.low),
+                mid: this.deserializeGeneratedRhythmMap(json.streams.mid),
+                high: this.deserializeGeneratedRhythmMap(json.streams.high),
+            },
+            metadata: {
+                densityValidation: json.metadata.densityValidation,
+                transientsFilteredByIntensity: json.metadata.transientsFilteredByIntensity,
+            },
+        };
+    }
+
+    private static serializePhraseAnalysisResult(result: PhraseAnalysisResult): PhraseAnalysisResultJSON {
+        return {
+            phrases: result.phrases.map(p => this.serializeRhythmicPhrase(p)),
+            phrasesByBand: Array.from(result.phrasesByBand.entries()).map(([band, phrases]) => ({
+                band,
+                phrases: phrases.map(p => this.serializeRhythmicPhrase(p)),
+            })),
+            mostSignificantPhrases: result.mostSignificantPhrases.map(p => this.serializeRhythmicPhrase(p)),
+            phrasesBySize: Array.from(result.phrasesBySize.entries()).map(([size, phrases]) => ({
+                size,
+                phrases: phrases.map(p => this.serializeRhythmicPhrase(p)),
+            })),
+            patternLibrary: result.patternLibrary.map(p => this.serializeRhythmicPhrase(p)),
+            bandAnalysis: {
+                low: this.serializeBandPhraseAnalysis(result.bandAnalysis.low),
+                mid: this.serializeBandPhraseAnalysis(result.bandAnalysis.mid),
+                high: this.serializeBandPhraseAnalysis(result.bandAnalysis.high),
+            },
+        };
+    }
+    private static deserializePhraseAnalysisResult(json: PhraseAnalysisResultJSON): PhraseAnalysisResult {
+        const phrasesByBand = new Map<'low' | 'mid' | 'high', RhythmicPhrase[]>();
+        for (const entry of json.phrasesByBand) {
+            phrasesByBand.set(entry.band as 'low', entry.phrases.map(p => this.deserializeRhythmicPhrase(p)));
+        }
+
+        const phrasesBySize = new Map<number, RhythmicPhrase[]>();
+        for (const entry of json.phrasesBySize) {
+            phrasesBySize.set(entry.size, entry.phrases.map(p => this.deserializeRhythmicPhrase(p)));
+        }
+
+        return {
+            phrases: json.phrases.map(p => this.deserializeRhythmicPhrase(p)),
+            phrasesByBand,
+            mostSignificantPhrases: json.mostSignificantPhrases.map(p => this.deserializeRhythmicPhrase(p)),
+            phrasesBySize,
+            patternLibrary: json.patternLibrary.map(p => this.deserializeRhythmicPhrase(p)),
+            bandAnalysis: {
+                low: this.deserializeBandPhraseAnalysis(json.bandAnalysis.low),
+                mid: this.deserializeBandPhraseAnalysis(json.bandAnalysis.mid),
+                high: this.deserializeBandPhraseAnalysis(json.bandAnalysis.high),
+            },
+        };
+    }
+
+    private static serializeRhythmicPhrase(phrase: RhythmicPhrase): RhythmicPhraseJSON {
+        return {
+            id: phrase.id,
+            pattern: phrase.pattern.map(b => this.serializeGeneratedBeat(b)),
+            sizeInBeats: phrase.sizeInBeats,
+            sourceBand: phrase.sourceBand,
+            occurrences: phrase.occurrences,
+            significance: phrase.significance,
+            hasVariation: phrase.hasVariation,
+            availableForReuse: phrase.availableForReuse,
+        };
+    }
+    private static deserializeRhythmicPhrase(json: RhythmicPhraseJSON): RhythmicPhrase {
+        return {
+            id: json.id,
+            pattern: json.pattern.map(b => this.deserializeGeneratedBeat(b)),
+            sizeInBeats: json.sizeInBeats,
+            sourceBand: json.sourceBand,
+            occurrences: json.occurrences,
+            significance: json.significance,
+            hasVariation: json.hasVariation,
+            availableForReuse: json.availableForReuse,
+        };
+    }
+
+    private static serializeBandPhraseAnalysis(analysis: BandPhraseAnalysis): BandPhraseAnalysisJSON {
+        return {
+            band: analysis.band,
+            phrases: analysis.phrases.map(p => this.serializeRhythmicPhrase(p)),
+            phrasesBySize: Array.from(analysis.phrasesBySize.entries()).map(([size, phrases]) => ({
+                size,
+                phrases: phrases.map(p => this.serializeRhythmicPhrase(p)),
+            })),
+            phrasesWithVariation: analysis.phrasesWithVariation.map(p => this.serializeRhythmicPhrase(p)),
+        };
+    }
+    private static deserializeBandPhraseAnalysis(json: BandPhraseAnalysisJSON): BandPhraseAnalysis {
+        const phrasesBySize = new Map<number, RhythmicPhrase[]>();
+        for (const entry of json.phrasesBySize) {
+            phrasesBySize.set(entry.size, entry.phrases.map(p => this.deserializeRhythmicPhrase(p)));
+        }
+
+        return {
+            band: json.band,
+            phrases: json.phrases.map(p => this.deserializeRhythmicPhrase(p)),
+            phrasesBySize,
+            phrasesWithVariation: json.phrasesWithVariation.map(p => this.deserializeRhythmicPhrase(p)),
+        };
+    }
+
+    private static serializeDensityAnalysisResult(result: DensityAnalysisResult): DensityAnalysisResultJSON {
+        return {
+            bandMetrics: {
+                low: this.serializeBandDensityMetrics(result.bandMetrics.low),
+                mid: this.serializeBandDensityMetrics(result.bandMetrics.mid),
+                high: this.serializeBandDensityMetrics(result.bandMetrics.high),
+            },
+            combinedMetrics: result.combinedMetrics,
+            sections: result.sections,
+            perBeatDensity: result.perBeatDensity,
+        };
+    }
+    private static deserializeDensityAnalysisResult(json: DensityAnalysisResultJSON): DensityAnalysisResult {
+        return {
+            bandMetrics: {
+                low: this.deserializeBandDensityMetrics(json.bandMetrics.low),
+                mid: this.deserializeBandDensityMetrics(json.bandMetrics.mid),
+                high: this.deserializeBandDensityMetrics(json.bandMetrics.high),
+            },
+            combinedMetrics: json.combinedMetrics,
+            sections: json.sections,
+            perBeatDensity: json.perBeatDensity,
+        };
+    }
+
+    private static serializeBandDensityMetrics(metrics: BandDensityMetrics): BandDensityMetricsJSON {
+        return {
+            band: metrics.band,
+            totalBeats: metrics.totalBeats,
+            totalTransients: metrics.totalTransients,
+            transientsPerBeat: metrics.transientsPerBeat,
+            minTransientsPerBeat: metrics.minTransientsPerBeat,
+            maxTransientsPerBeat: metrics.maxTransientsPerBeat,
+            variance: metrics.variance,
+            densityCategory: metrics.densityCategory,
+            naturalDifficulty: metrics.naturalDifficulty,
+            perBeatDensity: metrics.perBeatDensity,
+        };
+    }
+    private static deserializeBandDensityMetrics(json: BandDensityMetricsJSON): BandDensityMetrics {
+        return {
+            band: json.band,
+            totalBeats: json.totalBeats,
+            totalTransients: json.totalTransients,
+            transientsPerBeat: json.transientsPerBeat,
+            minTransientsPerBeat: json.minTransientsPerBeat,
+            maxTransientsPerBeat: json.maxTransientsPerBeat,
+            variance: json.variance,
+            densityCategory: json.densityCategory,
+            naturalDifficulty: json.naturalDifficulty,
+            perBeatDensity: json.perBeatDensity,
+        };
+    }
+
+    private static serializeStreamScoringResult(result: StreamScoringResult): StreamScoringResultJSON {
+        return {
+            sectionScores: result.sectionScores,
+            bandTotals: result.bandTotals,
+            bandAverages: result.bandAverages,
+            sectionWinners: result.sectionWinners,
+            config: result.config,
+        };
+    }
+    private static deserializeStreamScoringResult(json: StreamScoringResultJSON): StreamScoringResult {
+        return {
+            sectionScores: json.sectionScores,
+            bandTotals: json.bandTotals,
+            bandAverages: json.bandAverages,
+            sectionWinners: json.sectionWinners,
+            config: json.config,
+        };
     }
 }

@@ -889,4 +889,171 @@ describe('RhythmGenerator', () => {
         });
     });
 
+    // ============================================================================
+    // Serialization Tests (Phase 4.2)
+    // ============================================================================
+
+    describe('Serialization', () => {
+        it('should serialize GeneratedRhythm to JSON', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const result = await generator.generate(audioBuffer, unifiedBeatMap);
+            const jsonString = RhythmGenerator.toJSON(result);
+
+            expect(typeof jsonString).toBe('string');
+            expect(jsonString.length).toBeGreaterThan(0);
+
+            // Verify it's valid JSON
+            const parsed = JSON.parse(jsonString);
+            expect(parsed).toHaveProperty('difficultyVariants');
+            expect(parsed).toHaveProperty('bandStreams');
+            expect(parsed).toHaveProperty('composite');
+            expect(parsed).toHaveProperty('analysis');
+            expect(parsed).toHaveProperty('metadata');
+        });
+
+        it('should deserialize JSON to GeneratedRhythm', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const original = await generator.generate(audioBuffer, unifiedBeatMap);
+            const jsonString = RhythmGenerator.toJSON(original);
+            const deserialized = RhythmGenerator.fromJSON(jsonString);
+
+            expect(deserialized).toBeDefined();
+            expect(deserialized.difficultyVariants).toBeDefined();
+            expect(deserialized.bandStreams).toBeDefined();
+            expect(deserialized.composite).toBeDefined();
+            expect(deserialized.analysis).toBeDefined();
+            expect(deserialized.metadata).toBeDefined();
+        });
+
+        it('should preserve all difficulty variants through round-trip', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const original = await generator.generate(audioBuffer, unifiedBeatMap);
+            const jsonString = RhythmGenerator.toJSON(original);
+            const deserialized = RhythmGenerator.fromJSON(jsonString);
+
+            // Verify all variants are preserved
+            expect(deserialized.difficultyVariants.easy.difficulty).toBe('easy');
+            expect(deserialized.difficultyVariants.medium.difficulty).toBe('medium');
+            expect(deserialized.difficultyVariants.hard.difficulty).toBe('hard');
+
+            // Verify beat counts match
+            expect(deserialized.difficultyVariants.easy.beats.length).toBe(original.difficultyVariants.easy.beats.length);
+            expect(deserialized.difficultyVariants.medium.beats.length).toBe(original.difficultyVariants.medium.beats.length);
+            expect(deserialized.difficultyVariants.hard.beats.length).toBe(original.difficultyVariants.hard.beats.length);
+        });
+
+        it('should preserve band streams through round-trip', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const original = await generator.generate(audioBuffer, unifiedBeatMap);
+            const jsonString = RhythmGenerator.toJSON(original);
+            const deserialized = RhythmGenerator.fromJSON(jsonString);
+
+            // Verify all band streams are preserved
+            expect(deserialized.bandStreams.low.beats.length).toBe(original.bandStreams.low.beats.length);
+            expect(deserialized.bandStreams.mid.beats.length).toBe(original.bandStreams.mid.beats.length);
+            expect(deserialized.bandStreams.high.beats.length).toBe(original.bandStreams.high.beats.length);
+        });
+
+        it('should preserve metadata through round-trip', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const original = await generator.generate(audioBuffer, unifiedBeatMap);
+            const jsonString = RhythmGenerator.toJSON(original);
+            const deserialized = RhythmGenerator.fromJSON(jsonString);
+
+            // Verify metadata is preserved
+            expect(deserialized.metadata.difficulty).toBe(original.metadata.difficulty);
+            expect(deserialized.metadata.bandsAnalyzed).toEqual(original.metadata.bandsAnalyzed);
+            expect(deserialized.metadata.transientsDetected).toBe(original.metadata.transientsDetected);
+            expect(deserialized.metadata.phrasesDetected).toBe(original.metadata.phrasesDetected);
+            expect(deserialized.metadata.naturalDifficulty).toBe(original.metadata.naturalDifficulty);
+            expect(deserialized.metadata.duration).toBe(original.metadata.duration);
+            expect(deserialized.metadata.totalBeats).toBe(original.metadata.totalBeats);
+        });
+
+        it('should preserve beat data integrity through round-trip', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const original = await generator.generate(audioBuffer, unifiedBeatMap);
+            const jsonString = RhythmGenerator.toJSON(original);
+            const deserialized = RhythmGenerator.fromJSON(jsonString);
+
+            // Compare first beat of each variant
+            const variants = ['easy', 'medium', 'hard'] as const;
+            for (const variant of variants) {
+                const originalBeats = original.difficultyVariants[variant].beats;
+                const deserializedBeats = deserialized.difficultyVariants[variant].beats;
+
+                if (originalBeats.length > 0) {
+                    expect(deserializedBeats[0].timestamp).toBeCloseTo(originalBeats[0].timestamp, 0e-10);
+                    expect(deserializedBeats[0].beatIndex).toBe(originalBeats[0].beatIndex);
+                    expect(deserializedBeats[0].gridPosition).toBe(originalBeats[0].gridPosition);
+                    expect(deserializedBeats[0].intensity).toBeCloseTo(originalBeats[0].intensity, 1e-10);
+                }
+            }
+        });
+
+        it('should preserve phrase analysis through round-trip', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const original = await generator.generate(audioBuffer, unifiedBeatMap);
+            const jsonString = RhythmGenerator.toJSON(original);
+            const deserialized = RhythmGenerator.fromJSON(jsonString);
+
+            // Verify phrase analysis is preserved
+            expect(deserialized.analysis.phraseAnalysis.phrases.length).toBe(original.analysis.phraseAnalysis.phrases.length);
+            expect(deserialized.analysis.phraseAnalysis.patternLibrary.length).toBe(original.analysis.phraseAnalysis.patternLibrary.length);
+        });
+
+        it('should preserve density analysis through round-trip', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const original = await generator.generate(audioBuffer, unifiedBeatMap);
+            const jsonString = RhythmGenerator.toJSON(original);
+            const deserialized = RhythmGenerator.fromJSON(jsonString);
+
+            // Verify density analysis is preserved
+            expect(deserialized.analysis.densityAnalysis.combinedMetrics.transientsPerBeat).toBeCloseTo(
+                original.analysis.densityAnalysis.combinedMetrics.transientsPerBeat, 1e-10
+            );
+            expect(deserialized.analysis.densityAnalysis.combinedMetrics.densityCategory).toBe(
+                original.analysis.densityAnalysis.combinedMetrics.densityCategory
+            );
+        });
+
+        it('should handle empty beats arrays', async () => {
+            generator = new RhythmGenerator();
+            const audioBuffer = createMockAudioBuffer(0.1); // Very short audio
+            const unifiedBeatMap = createMockUnifiedBeatMap(0.1);
+
+            const original = await generator.generate(audioBuffer, unifiedBeatMap);
+            const jsonString = RhythmGenerator.toJSON(original);
+            const deserialized = RhythmGenerator.fromJSON(jsonString);
+
+            // Should not throw and should have valid structure
+            expect(deserialized).toBeDefined();
+            expect(deserialized.difficultyVariants).toBeDefined();
+        });
+    });
+
 });

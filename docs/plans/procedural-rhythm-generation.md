@@ -735,13 +735,33 @@ Each difficulty level has constraints on the maximum subdivision density allowed
   ```
 
 ### 4.2 Serialization
-- [ ] Add `toJSON`/`fromJSON` for `GeneratedRhythm`
-- [ ] Add file save/load methods
-- [ ] Ensure metadata is preserved
+- [x] Add `toJSON`/`fromJSON` for `GeneratedRhythm`
+  - **Implementation**: Added static `toJSON()` and `fromJSON()` methods to `RhythmGenerator` class
+  - **Location**: `src/core/generation/RhythmGenerator.ts`
+  - Added comprehensive JSON type definitions for all nested types
+  - Handles Map<> serialization by converting to arrays of key-value pairs
+  - Full round-trip support verified with unit tests
+- [x] Add file save/load methods
+  - **Implementation**: Added static `saveToFile()` and `loadFromFile()` methods
+  - Node.js only (uses dynamic import of `fs/promises`)
+  - Graceful degradation in browser environments with clear error messages
+- [x] Ensure metadata is preserved
+  - All metadata fields preserved through serialization round-trip
+  - Comprehensive test coverage for metadata preservation
 
 ### 4.3 Tests
 - [ ] API integration tests
-- [ ] Serialization round-trip tests
+- [x] Serialization round-trip tests
+  - **Location**: `src/core/generation/RhythmGenerator.test.ts`
+  - 10 new tests covering:
+    - JSON serialization/deserialization
+    - Difficulty variants preservation
+    - Band streams preservation
+    - Metadata preservation
+    - Beat data integrity
+    - Phrase analysis preservation
+    - Density analysis preservation
+    - Empty beats arrays handling
 
 ---
 
