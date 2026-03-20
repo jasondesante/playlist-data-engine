@@ -22,6 +22,7 @@ import {
     type GridType,
     type CompositeBeat,
     type CompositeStream,
+    type VariantBeat,
 } from '../../../src/core/analysis/beat/index.js';
 
 // ============================================================================

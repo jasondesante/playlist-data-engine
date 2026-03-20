@@ -230,6 +230,7 @@ export type {
     MaxSubdivision,
     SubdivisionLimitConfig,
     EditType,
+    VariantBeat,
     DifficultyVariant,
     SubdivisionConversionMetadata,
     SubdivisionValidationResult,

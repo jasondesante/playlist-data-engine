@@ -332,16 +332,18 @@ export function getAllowedGridTypes(difficulty: DifficultyLevel): ExtendedGridTy
  * - `straight_16th` → `straight_8th` (snap to nearest 8th note)
  * - `triplet_8th` → `quarter_triplet` (snap to quarter note triplet)
  *
- * @param gridType - The original grid type
+ * @param gridType - The original grid type (can be extended type)
  * @param difficulty - The target difficulty
  * @returns The converted grid type (or original if already allowed)
  */
 export function convertToAllowedGridType(
-    gridType: GridType,
+    gridType: ExtendedGridType,
     difficulty: DifficultyLevel
 ): ExtendedGridType {
+    const allowedTypes = SUBDIVISION_LIMITS[difficulty].allowedGridTypes;
+
     // If already allowed, return as-is
-    if (isGridTypeAllowed(gridType, difficulty)) {
+    if (allowedTypes.includes(gridType)) {
         return gridType;
     }
 
@@ -353,6 +355,7 @@ export function convertToAllowedGridType(
             case 'triplet_8th':
                 return 'quarter_triplet';
             default:
+                // For extended types not in base GridType, keep as-is if allowed
                 return gridType;
         }
     }
@@ -390,7 +393,7 @@ export function validateSubdivisionLimits(
             violations.push({
                 beat,
                 gridType: beat.gridType,
-                suggestedConversion: convertToAllowedGridType(beat.gridType as GridType, difficulty),
+                suggestedConversion: convertToAllowedGridType(beat.gridType, difficulty),
             });
         }
     }
@@ -567,7 +570,8 @@ export class DifficultyVariantGenerator {
                 composite.beats,
                 targetDifficulty,
                 isHeavySimplification,
-                phraseAnalysis
+                phraseAnalysis,
+                composite.quarterNoteInterval
             );
 
             return {
@@ -642,14 +646,16 @@ export class DifficultyVariantGenerator {
      * @param targetDifficulty - The target difficulty level
      * @param isHeavySimplification - Whether this is heavy simplification (hard -> easy)
      * @param phraseAnalysis - Optional phrase analysis for preserving phrase boundaries
+     * @param quarterNoteInterval - Duration of a quarter note in seconds for timestamp calculation
      * @returns Simplified beats with conversion metadata
      */
     private simplifyBeats(
         beats: CompositeBeat[],
         targetDifficulty: DifficultyLevel,
         isHeavySimplification: boolean = false,
-        phraseAnalysis?: PhraseAnalysisResult
-    ): { beats: CompositeBeat[]; metadata: SubdivisionConversionMetadata } {
+        phraseAnalysis?: PhraseAnalysisResult,
+        quarterNoteInterval?: number
+    ): { beats: VariantBeat[]; metadata: SubdivisionConversionMetadata } {
         const metadata: SubdivisionConversionMetadata = {
             sixteenthToEighth: 0,
             tripletToQuarterTriplet: 0,
@@ -677,17 +683,17 @@ export class DifficultyVariantGenerator {
         }
 
         // Convert each beat to allowed grid type
-        const convertedBeats: CompositeBeat[] = [];
+        const convertedBeats: VariantBeat[] = [];
 
         for (const beat of beatsToProcess) {
             if (allowedTypes.includes(beat.gridType)) {
-                // Beat already allowed, keep as-is
-                convertedBeats.push(beat);
+                // Beat already allowed, keep as-is (as VariantBeat)
+                convertedBeats.push(beat as VariantBeat);
                 continue;
             }
 
             // Convert the beat
-            const convertedBeat = this.convertBeatGridType(beat, targetDifficulty);
+            const convertedBeat = this.convertBeatGridType(beat, targetDifficulty, quarterNoteInterval ?? 0.5);
 
             if (convertedBeat) {
                 convertedBeats.push(convertedBeat);
@@ -827,22 +833,30 @@ export class DifficultyVariantGenerator {
      *
      * @param beat - The beat to convert
      * @param targetDifficulty - The target difficulty
-     * @returns The converted beat, or null if the beat should be removed
+     * @param quarterNoteInterval - Duration of a quarter note in seconds
+     * @returns The converted beat as VariantBeat, or null if the beat should be removed
      */
     private convertBeatGridType(
         beat: CompositeBeat,
-        targetDifficulty: DifficultyLevel
-    ): CompositeBeat | null {
+        targetDifficulty: DifficultyLevel,
+        quarterNoteInterval: number
+    ): VariantBeat | null {
         const targetGridType = convertToAllowedGridType(beat.gridType, targetDifficulty);
 
-        // If no conversion needed, return as-is
+        // If no conversion needed, return as-is (but as VariantBeat)
         if (targetGridType === beat.gridType) {
-            return beat;
+            return {
+                ...beat,
+                gridType: targetGridType,
+            };
         }
 
         // Calculate new grid position and timestamp based on conversion
         let newGridPosition: number;
-        let timestampAdjustment: number;
+        let newTimestamp: number;
+
+        // Calculate beat start timestamp (timestamp at beatIndex, gridPosition 0)
+        const beatStartTimestamp = beat.beatIndex * quarterNoteInterval;
 
         switch (beat.gridType) {
             case 'straight_16th': {
@@ -854,13 +868,11 @@ export class DifficultyVariantGenerator {
                 } else {
                     newGridPosition = beat.gridPosition;
                 }
-                // Calculate timestamp adjustment
-                // 16th note interval = quarterInterval / 4
+                // Calculate new timestamp for straight_8th grid
                 // 8th note interval = quarterInterval / 2
-                // We need to adjust based on original vs new position
-                // Since we don't have quarterNoteInterval here, we estimate from beat timing
-                // For now, we'll set the new grid position and keep the beat structure
-                timestampAdjustment = 0; // Will be recalculated during deduplication
+                // Position 0 = beat start, Position 2 = beat start + 8th interval
+                const eighthNoteInterval = quarterNoteInterval / 2;
+                newTimestamp = beatStartTimestamp + (newGridPosition === 0 ? 0 : eighthNoteInterval);
                 break;
             }
 
@@ -868,21 +880,25 @@ export class DifficultyVariantGenerator {
                 // 8th triplet → quarter triplet conversion
                 // All positions snap to 0 (the quarter triplet)
                 newGridPosition = 0;
-                timestampAdjustment = 0;
+                // Quarter triplet is at beat start
+                newTimestamp = beatStartTimestamp;
                 break;
             }
 
             default:
-                // Unknown grid type, keep as-is
-                return beat;
+                // Unknown grid type, keep as-is (return as VariantBeat)
+                return {
+                    ...beat,
+                    gridType: beat.gridType as ExtendedGridType,
+                };
         }
 
-        // Return the converted beat with updated grid type and position
+        // Return the converted beat with updated grid type, position, and timestamp
         return {
             ...beat,
-            gridType: targetGridType as GridType, // Cast back to GridType for compatibility
+            gridType: targetGridType,
             gridPosition: newGridPosition,
-            // Note: timestamp will be corrected during deduplication if needed
+            timestamp: newTimestamp,
         };
     }
 
@@ -895,8 +911,8 @@ export class DifficultyVariantGenerator {
      * @param beats - Converted beats (may have duplicates)
      * @returns Deduplicated beats
      */
-    private deduplicateConvertedBeats(beats: CompositeBeat[]): CompositeBeat[] {
-        const beatMap = new Map<string, CompositeBeat>();
+    private deduplicateConvertedBeats(beats: VariantBeat[]): VariantBeat[] {
+        const beatMap = new Map<string, VariantBeat>();
 
         for (const beat of beats) {
             // Create a unique key for this grid position
@@ -1013,7 +1029,7 @@ export class DifficultyVariantGenerator {
         enhancementLevel: 'moderate' | 'heavy',
         phraseAnalysis?: PhraseAnalysisResult,
         gridDecisions?: Map<number, GridDecision>
-    ): { beats: CompositeBeat[]; metadata: EnhancementMetadata } {
+    ): { beats: VariantBeat[]; metadata: EnhancementMetadata } {
         const metadata: EnhancementMetadata = {
             totalBeatsBefore: beats.length,
             totalBeatsAfter: 0,

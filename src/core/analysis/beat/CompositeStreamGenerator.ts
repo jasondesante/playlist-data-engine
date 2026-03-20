@@ -56,6 +56,9 @@ export interface CompositeStream {
     /** Natural difficulty determined by density analysis of the composite */
     naturalDifficulty: NaturalDifficulty;
 
+    /** Duration of a quarter note in seconds (derived from beat map) */
+    quarterNoteInterval: number;
+
     /** Metadata about the composite generation */
     metadata: {
         /** Total number of beats in the composite */
@@ -224,6 +227,9 @@ export class CompositeStreamGenerator {
             densityAnalysis
         );
 
+        // Calculate quarter note interval from beats
+        const quarterNoteInterval = this.calculateQuarterNoteInterval(deduplicatedBeats);
+
         // Build metadata
         const totalSections = sections.length;
         const metadata = {
@@ -241,6 +247,7 @@ export class CompositeStreamGenerator {
             beats: deduplicatedBeats,
             sections,
             naturalDifficulty,
+            quarterNoteInterval,
             metadata,
         };
     }
@@ -293,6 +300,74 @@ export class CompositeStreamGenerator {
         // Use the combined metrics from density analysis
         // This represents the overall density across all bands
         return densityAnalysis.combinedMetrics.naturalDifficulty;
+    }
+
+    /**
+     * Calculate the quarter note interval from the composite beats
+     *
+     * Looks at adjacent beats with the same beat index to determine
+     * the interval between grid positions. Falls back to 0.5 (120 BPM)
+     * if no beats are available.
+     *
+     * @param beats - The composite beats
+     * @returns The quarter note interval in seconds
+     */
+    private calculateQuarterNoteInterval(beats: CompositeBeat[]): number {
+        if (beats.length < 2) {
+            return 0.5; // Default: 120 BPM
+        }
+
+        // Find beats with consecutive beat indices
+        const sortedBeats = [...beats].sort((a, b) => a.beatIndex - b.beatIndex);
+
+        for (let i = 0; i < sortedBeats.length - 1; i++) {
+            const current = sortedBeats[i];
+            const next = sortedBeats[i + 1];
+
+            if (next.beatIndex === current.beatIndex + 1) {
+                // Found consecutive beats, calculate interval
+                // A beat index represents a quarter note
+                const interval = next.timestamp - current.timestamp;
+                if (interval > 0) {
+                    return interval;
+                }
+            }
+        }
+
+        // Alternative: look for beats within the same beat index with different grid positions
+        const beatsByIndex = new Map<number, CompositeBeat[]>();
+        for (const beat of beats) {
+            const existing = beatsByIndex.get(beat.beatIndex) ?? [];
+            existing.push(beat);
+            beatsByIndex.set(beat.beatIndex, existing);
+        }
+
+        // Find a beat index with multiple beats to calculate grid interval
+        for (const [_, beatsAtSameIndex] of beatsByIndex) {
+            if (beatsAtSameIndex.length >= 2) {
+                // Sort by grid position
+                beatsAtSameIndex.sort((a, b) => a.gridPosition - b.gridPosition);
+                const first = beatsAtSameIndex[0];
+                const second = beatsAtSameIndex[1];
+
+                // Calculate grid interval
+                const gridInterval = second.timestamp - first.timestamp;
+                const gridPositionDiff = second.gridPosition - first.gridPosition;
+
+                if (gridPositionDiff > 0 && gridInterval > 0) {
+                    // Determine grid type to calculate quarter note interval
+                    if (first.gridType === 'straight_16th') {
+                        // 4 grid positions per quarter note
+                        return gridInterval / gridPositionDiff * 4;
+                    } else if (first.gridType === 'triplet_8th') {
+                        // 3 grid positions per quarter note
+                        return gridInterval / gridPositionDiff * 3;
+                    }
+                }
+            }
+        }
+
+        return 0.5; // Default: 120 BPM
     }
 
     /**
