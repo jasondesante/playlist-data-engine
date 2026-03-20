@@ -1496,7 +1496,7 @@ interface ChartMetadata {
   }
   ```
 - [x] Support cancellation
-- [ ] Add caching for intermediate results
+- [x] Add caching for intermediate results
 
 ### 3.3 Tests
 - [x] Integration tests for full pipeline (see `levelGenerator.integration.test.ts`)

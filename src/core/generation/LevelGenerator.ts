@@ -165,6 +165,47 @@ export interface AllDifficultiesResult {
     hard: GeneratedLevel
 }
 
+/**
+ * Cache phase identifier
+ */
+export type LevelCachePhase = 'rhythm' | 'pitch'
+
+/**
+ * Cached intermediate result
+ */
+interface CacheEntry<T> {
+    /** The cached result */
+    result: T
+    /** Timestamp when cached (ms) */
+    timestamp: number
+    /** Cache key used */
+    key: string
+}
+
+/**
+ * Statistics about the cache
+ */
+export interface LevelCacheStats {
+    /** Number of entries currently cached */
+    entryCount: number
+    /** Phases that have cached results */
+    cachedPhases: LevelCachePhase[]
+    /** Number of cache hits during this session */
+    hits: number
+    /** Number of cache misses during this session */
+    misses: number
+}
+
+/**
+ * Extended options for level generation with cache settings
+ */
+export interface LevelGenerationOptionsWithCache extends LevelGenerationOptions {
+    /** Enable caching of intermediate results (default: true) */
+    enableCache?: boolean
+    /** Maximum age of cache entries in milliseconds (default: 30 minutes) */
+    cacheMaxAge?: number
+}
+
 // ============================================================================
 // Default Configuration
 // ============================================================================
@@ -172,11 +213,13 @@ export interface AllDifficultiesResult {
 /**
  * Default level generation options
  */
-const DEFAULT_LEVEL_OPTIONS: LevelGenerationOptions = {
+const DEFAULT_LEVEL_OPTIONS: LevelGenerationOptionsWithCache = {
     difficulty: 'medium',
     controllerMode: 'ddr',
     rhythm: {},
     buttons: {},
+    enableCache: true,
+    cacheMaxAge: 30 * 60 * 1000, // 30 minutes
 };
 
 // ============================================================================
@@ -188,17 +231,41 @@ const DEFAULT_LEVEL_OPTIONS: LevelGenerationOptions = {
  *
  * Orchestrates the complete rhythm game level generation pipeline.
  * Takes audio input and produces playable ChartedBeatMap output.
+ *
+ * @example
+ * ```typescript
+ * // With caching enabled (default)
+ * const generator = new LevelGenerator({
+ *   difficulty: 'medium',
+ *   controllerMode: 'ddr',
+ *   enableCache: true,
+ * });
+ *
+ * // First call computes and caches rhythm/pitch
+ * const level1 = await generator.generate(audioBuffer, beatMap);
+ *
+ * // Second call reuses cached results (much faster)
+ * const level2 = await generator.generate(audioBuffer, beatMap);
+ *
+ * // Clear cache when done with this audio
+ * generator.clearCache();
+ * ```
  */
 export class LevelGenerator {
-    private options: LevelGenerationOptions;
+    private options: LevelGenerationOptionsWithCache;
     private buttonConfig: ButtonMappingConfig;
+
+    // Cache storage
+    private cache: Map<string, CacheEntry<unknown>> = new Map();
+    private cacheHits: number = 0;
+    private cacheMisses: number = 0;
 
     /**
      * Create a new LevelGenerator
      *
      * @param options - Generation options (partial, defaults applied)
      */
-    constructor(options: Partial<LevelGenerationOptions> = {}) {
+    constructor(options: Partial<LevelGenerationOptionsWithCache> = {}) {
         this.options = {
             ...DEFAULT_LEVEL_OPTIONS,
             ...options,
@@ -223,8 +290,152 @@ export class LevelGenerator {
     /**
      * Get the current configuration
      */
-    getOptions(): LevelGenerationOptions {
+    getOptions(): LevelGenerationOptionsWithCache {
         return { ...this.options };
+    }
+
+    // ============================================================================
+    // Cache Management Methods
+    // ============================================================================
+
+    /**
+     * Generate a cache key for a specific phase and inputs
+     */
+    private generateCacheKey(
+        audioId: string,
+        phase: LevelCachePhase,
+        configFingerprint: string
+    ): string {
+        return `${audioId}:${phase}:${configFingerprint}`;
+    }
+
+    /**
+     * Create a config fingerprint for cache invalidation
+     * Only includes config options that affect the output
+     */
+    private createConfigFingerprint(phase: LevelCachePhase): string {
+        const rhythmConfig = this.options.rhythm || {};
+
+        if (phase === 'rhythm') {
+            // Rhythm is affected by rhythm generation options
+            return JSON.stringify({
+                measureStartOffset: rhythmConfig.measureStartOffset,
+                minimumTransientIntensity: rhythmConfig.minimumTransientIntensity,
+                seed: rhythmConfig.seed,
+            });
+        }
+
+        if (phase === 'pitch') {
+            // Pitch analysis is not affected by config - it's deterministic based on audio
+            return 'pitch-default';
+        }
+
+        return 'default';
+    }
+
+    /**
+     * Get a cached result if available and not expired
+     */
+    private getFromCache<T>(key: string): T | null {
+        if (!this.options.enableCache) {
+            return null;
+        }
+
+        const entry = this.cache.get(key) as CacheEntry<T> | undefined;
+
+        if (!entry) {
+            this.cacheMisses++;
+            return null;
+        }
+
+        // Check if entry has expired
+        const age = Date.now() - entry.timestamp;
+        const maxAge = this.options.cacheMaxAge ?? DEFAULT_LEVEL_OPTIONS.cacheMaxAge!;
+        if (age > maxAge) {
+            this.cache.delete(key);
+            this.cacheMisses++;
+            return null;
+        }
+
+        this.cacheHits++;
+
+        return entry.result;
+    }
+
+    /**
+     * Store a result in the cache
+     */
+    private setCache<T>(key: string, result: T): void {
+        if (!this.options.enableCache) {
+            return;
+        }
+
+        this.cache.set(key, {
+            result,
+            timestamp: Date.now(),
+            key,
+        });
+    }
+
+    /**
+     * Clear all cached results
+     */
+    clearCache(): void {
+        this.cache.clear();
+        this.cacheHits = 0;
+        this.cacheMisses = 0;
+    }
+
+    /**
+     * Clear expired cache entries
+     */
+    pruneExpiredCache(): void {
+        const now = Date.now();
+        const maxAge = this.options.cacheMaxAge ?? DEFAULT_LEVEL_OPTIONS.cacheMaxAge!;
+        for (const [key, entry] of this.cache.entries()) {
+            if (now - entry.timestamp > maxAge) {
+                this.cache.delete(key);
+            }
+        }
+    }
+
+    /**
+     * Get cache statistics
+     */
+    getCacheStats(): LevelCacheStats {
+        const cachedPhases: LevelCachePhase[] = [];
+
+        for (const [key] of this.cache.entries()) {
+            const phase = key.split(':')[1] as LevelCachePhase;
+            if (!cachedPhases.includes(phase)) {
+                cachedPhases.push(phase);
+            }
+        }
+
+        return {
+            entryCount: this.cache.size,
+            cachedPhases,
+            hits: this.cacheHits,
+            misses: this.cacheMisses,
+        };
+    }
+
+    /**
+     * Check if a phase result is cached for the given audio ID
+     */
+    isCached(audioId: string, phase: LevelCachePhase): boolean {
+        const configFingerprint = this.createConfigFingerprint(phase);
+        const key = this.generateCacheKey(audioId, phase, configFingerprint);
+        return this.cache.has(key);
+    }
+
+    /**
+     * Get the cache hit ratio (0-1)
+     */
+    getCacheHitRatio(): number {
+        const total = this.cacheHits + this.cacheMisses;
+        if (total === 0) return 0;
+        return this.cacheHits / total;
     }
 
     // ============================================================================
@@ -254,29 +465,60 @@ export class LevelGenerator {
         // Check for cancellation at start
         signal?.throwIfAborted();
 
-        // Phase 1: Generate rhythm
+        // Get audio ID for cache key
+        const audioId = unifiedBeatMap.audioId;
+
+        // Phase 1: Generate rhythm (with caching)
         progress('rhythm', 0, 'Starting rhythm generation...');
-        const rhythm = await this.generateRhythm(
-            audioBuffer,
-            unifiedBeatMap,
-            (phase, p, msg) => {
-                progress('rhythm', p, `[${phase}] ${msg}`);
-            },
-            signal
+
+        const rhythmCacheKey = this.generateCacheKey(
+            audioId,
+            'rhythm',
+            this.createConfigFingerprint('rhythm')
         );
-        progress('rhythm', 1, 'Rhythm generation complete');
+
+        let rhythm = this.getFromCache<GeneratedRhythm>(rhythmCacheKey);
+
+        if (rhythm) {
+            progress('rhythm', 1, 'Rhythm loaded from cache');
+        } else {
+            rhythm = await this.generateRhythm(
+                audioBuffer,
+                unifiedBeatMap,
+                (phase, p, msg) => {
+                    progress('rhythm', p, `[${phase}] ${msg}`);
+                },
+                signal
+            );
+            this.setCache(rhythmCacheKey, rhythm);
+            progress('rhythm', 1, 'Rhythm generation complete');
+        }
 
         // Check for cancellation after rhythm generation
         signal?.throwIfAborted();
 
-        // Phase 2: Analyze pitch (if enabled)
+        // Phase 2: Analyze pitch (if enabled, with caching)
         let pitchAnalysis: MelodyContourAnalysisResult | null = null;
+
         if (this.buttonConfig.pitchInfluenceWeight > 0) {
-            progress('pitch', 0, 'Starting pitch analysis...');
-            pitchAnalysis = await this.analyzePitch(audioBuffer, rhythm, (p, msg) => {
-                progress('pitch', p, msg);
-            });
-            progress('pitch', 1, 'Pitch analysis complete');
+            const pitchCacheKey = this.generateCacheKey(
+                audioId,
+                'pitch',
+                this.createConfigFingerprint('pitch')
+            );
+
+            pitchAnalysis = this.getFromCache<MelodyContourAnalysisResult>(pitchCacheKey);
+
+            if (pitchAnalysis) {
+                progress('pitch', 1, 'Pitch analysis loaded from cache');
+            } else {
+                progress('pitch', 0, 'Starting pitch analysis...');
+                pitchAnalysis = await this.analyzePitch(audioBuffer, rhythm, (p, msg) => {
+                    progress('pitch', p, msg);
+                });
+                this.setCache(pitchCacheKey, pitchAnalysis);
+                progress('pitch', 1, 'Pitch analysis complete');
+            }
         } else {
             progress('pitch', 1, 'Pitch analysis skipped (pitchInfluenceWeight = 0)');
         }
@@ -311,6 +553,9 @@ export class LevelGenerator {
     /**
      * Generate levels for all difficulties
      *
+     * This method efficiently reuses cached rhythm and pitch analysis results
+     * across all difficulty levels.
+     *
      * @param audioBuffer - Web Audio API AudioBuffer to analyze
      * @param unifiedBeatMap - The unified beat map for measure/beat info
      * @param progressCallback - Optional callback for progress updates
@@ -334,16 +579,42 @@ export class LevelGenerator {
         // Check for cancellation at start
         signal?.throwIfAborted();
 
-        // Generate rhythm once (shared across difficulties)
-        const rhythm = await this.generateRhythm(audioBuffer, unifiedBeatMap, undefined, signal);
+        // Get audio ID for cache key
+        const audioId = unifiedBeatMap.audioId;
+
+        // Generate rhythm once (shared across difficulties, with caching)
+        const rhythmCacheKey = this.generateCacheKey(
+            audioId,
+            'rhythm',
+            this.createConfigFingerprint('rhythm')
+        );
+
+        let rhythm = this.getFromCache<GeneratedRhythm>(rhythmCacheKey);
+
+        if (!rhythm) {
+            rhythm = await this.generateRhythm(audioBuffer, unifiedBeatMap, undefined, signal);
+            this.setCache(rhythmCacheKey, rhythm);
+        }
 
         // Check for cancellation after rhythm generation
         signal?.throwIfAborted();
 
-        // Analyze pitch once (shared across difficulties)
+        // Analyze pitch once (shared across difficulties, with caching)
         let pitchAnalysis: MelodyContourAnalysisResult | null = null;
+
         if (this.buttonConfig.pitchInfluenceWeight > 0) {
-            pitchAnalysis = await this.analyzePitch(audioBuffer, rhythm);
+            const pitchCacheKey = this.generateCacheKey(
+                audioId,
+                'pitch',
+                this.createConfigFingerprint('pitch')
+            );
+
+            pitchAnalysis = this.getFromCache<MelodyContourAnalysisResult>(pitchCacheKey);
+
+            if (!pitchAnalysis) {
+                pitchAnalysis = await this.analyzePitch(audioBuffer, rhythm);
+                this.setCache(pitchCacheKey, pitchAnalysis);
+            }
         }
 
         // Check for cancellation after pitch analysis

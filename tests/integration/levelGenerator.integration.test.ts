@@ -606,4 +606,226 @@ describe('LevelGenerator Full Pipeline Integration', () => {
             ).rejects.toThrow('aborted');
         });
     });
+
+    describe('caching', () => {
+        it('should cache intermediate results by default', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            // First generation
+            const level1 = await generator.generate(audioBuffer, unifiedBeatMap);
+
+            // Check cache stats
+            const stats1 = generator.getCacheStats();
+            expect(stats1.entryCount).toBeGreaterThan(0);
+            expect(stats1.cachedPhases).toContain('rhythm');
+
+            console.log('\n✓ Cache populated after first generation');
+            console.log(`  Cache entries: ${stats1.entryCount}`);
+            console.log(`  Cached phases: ${stats1.cachedPhases.join(', ')}`);
+        });
+
+        it('should reuse cached results on second generation', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            // First generation (cache miss)
+            const start1 = Date.now();
+            const level1 = await generator.generate(audioBuffer, unifiedBeatMap);
+            const time1 = Date.now() - start1;
+
+            // Second generation (should use cache)
+            const start2 = Date.now();
+            const level2 = await generator.generate(audioBuffer, unifiedBeatMap);
+            const time2 = Date.now() - start2;
+
+            // Check cache stats show hits
+            const stats = generator.getCacheStats();
+            expect(stats.hits).toBeGreaterThan(0);
+
+            // Second generation should be faster (or at least not slower)
+            // Note: In tests this might not be dramatically different due to mock audio
+            console.log('\n✓ Cache reused on second generation');
+            console.log(`  First generation: ${time1}ms`);
+            console.log(`  Second generation: ${time2}ms`);
+            console.log(`  Cache hits: ${stats.hits}`);
+            console.log(`  Cache misses: ${stats.misses}`);
+        });
+
+        it('should respect enableCache: false option', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+                enableCache: false,
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            // Generate twice
+            const level1 = await generator.generate(audioBuffer, unifiedBeatMap);
+            const level2 = await generator.generate(audioBuffer, unifiedBeatMap);
+
+            // Cache should remain empty
+            const stats = generator.getCacheStats();
+            expect(stats.entryCount).toBe(0);
+            expect(stats.hits).toBe(0);
+
+            console.log('\n✓ Cache disabled when enableCache: false');
+            console.log(`  Cache entries: ${stats.entryCount}`);
+        });
+
+        it('should clear cache with clearCache()', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            // Generate to populate cache
+            await generator.generate(audioBuffer, unifiedBeatMap);
+
+            // Verify cache has entries
+            const statsBefore = generator.getCacheStats();
+            expect(statsBefore.entryCount).toBeGreaterThan(0);
+
+            // Clear cache
+            generator.clearCache();
+
+            // Verify cache is empty
+            const statsAfter = generator.getCacheStats();
+            expect(statsAfter.entryCount).toBe(0);
+            expect(statsAfter.hits).toBe(0);
+            expect(statsAfter.misses).toBe(0);
+
+            console.log('\n✓ Cache cleared with clearCache()');
+            console.log(`  Before: ${statsBefore.entryCount} entries`);
+            console.log(`  After: ${statsAfter.entryCount} entries`);
+        });
+
+        it('should check if phase is cached with isCached()', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            // Before generation - not cached
+            expect(generator.isCached(unifiedBeatMap.audioId, 'rhythm')).toBe(false);
+
+            // Generate
+            await generator.generate(audioBuffer, unifiedBeatMap);
+
+            // After generation - rhythm should be cached
+            expect(generator.isCached(unifiedBeatMap.audioId, 'rhythm')).toBe(true);
+
+            console.log('\n✓ isCached() works correctly');
+        });
+
+        it('should report cache hit ratio', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            // Initially 0
+            expect(generator.getCacheHitRatio()).toBe(0);
+
+            // First generation (miss)
+            await generator.generate(audioBuffer, unifiedBeatMap);
+            const ratio1 = generator.getCacheHitRatio();
+
+            // Second generation (hit)
+            await generator.generate(audioBuffer, unifiedBeatMap);
+            const ratio2 = generator.getCacheHitRatio();
+
+            // Ratio should increase
+            expect(ratio2).toBeGreaterThan(ratio1);
+
+            console.log('\n✓ Cache hit ratio tracked');
+            console.log(`  After 1st gen: ${ratio1.toFixed(2)}`);
+            console.log(`  After 2nd gen: ${ratio2.toFixed(2)}`);
+        });
+
+        it('should cache pitch analysis when pitchInfluenceWeight > 0', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+                buttons: { pitchInfluenceWeight: 1.0 },
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            // Generate
+            await generator.generate(audioBuffer, unifiedBeatMap);
+
+            // Check both rhythm and pitch are cached
+            const stats = generator.getCacheStats();
+            expect(stats.cachedPhases).toContain('rhythm');
+            expect(stats.cachedPhases).toContain('pitch');
+
+            console.log('\n✓ Pitch analysis cached when pitchInfluenceWeight > 0');
+            console.log(`  Cached phases: ${stats.cachedPhases.join(', ')}`);
+        });
+
+        it('should not cache pitch analysis when pitchInfluenceWeight = 0', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+                buttons: { pitchInfluenceWeight: 0 },
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            // Generate
+            await generator.generate(audioBuffer, unifiedBeatMap);
+
+            // Only rhythm should be cached, not pitch
+            const stats = generator.getCacheStats();
+            expect(stats.cachedPhases).toContain('rhythm');
+            expect(stats.cachedPhases).not.toContain('pitch');
+
+            console.log('\n✓ Pitch analysis not cached when pitchInfluenceWeight = 0');
+            console.log(`  Cached phases: ${stats.cachedPhases.join(', ')}`);
+        });
+
+        it('should share cache across generateAllDifficulties', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            // Generate all difficulties
+            const results = await generator.generateAllDifficulties(audioBuffer, unifiedBeatMap);
+
+            // Cache should have entries
+            const stats = generator.getCacheStats();
+            expect(stats.entryCount).toBeGreaterThan(0);
+
+            console.log('\n✓ Cache used in generateAllDifficulties');
+            console.log(`  Cache entries: ${stats.entryCount}`);
+        });
+    });
 });
