@@ -650,6 +650,16 @@ export {
     BeatConverter,
 } from './core/generation/BeatConverter.js';
 
+// Level Generator (Phase 3.1)
+export {
+    LevelGenerator,
+    type LevelGenerationOptions,
+    type LevelMetadata,
+    type GeneratedLevel,
+    type AllDifficultiesResult,
+    type LevelProgressCallback,
+} from './core/generation/LevelGenerator.js';
+
 // ============================================================================
 // ENEMY GENERATION
 // ============================================================================

@@ -127,3 +127,13 @@ export type {
     MappedLevelResult,
     ButtonMappingMetadata,
 } from './ButtonMapper.js';
+
+// Level Generator
+export { LevelGenerator } from './LevelGenerator.js';
+export type {
+    LevelGenerationOptions,
+    LevelMetadata,
+    GeneratedLevel,
+    AllDifficultiesResult,
+    LevelProgressCallback,
+} from './LevelGenerator.js';
