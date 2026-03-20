@@ -503,4 +503,240 @@ describe('PitchBeatLinker', () => {
             expect(result.metadata.totalVoicedBeats).toBe(0);
         });
     });
+
+    // ============================================================================
+    // Composite Stream Pitch Derivation Tests (Phase 1.4)
+    // ============================================================================
+
+    describe('Composite Stream Pitch Derivation', () => {
+        // Helper to create mock composite stream
+        function createMockCompositeStream(
+            beats: Array<{ beatIndex: number; timestamp: number; sourceBand: PitchBandName }>
+        ): CompositeStream {
+            return {
+                beats: beats.map(b => ({
+                    ...b,
+                    beatIndex: b.beatIndex,
+                    timestamp: b.timestamp,
+                    gridPosition: b.gridPosition,
+                    gridType: b.gridType as 'straight_16th',
+                    intensity: b.intensity,
+                    band: b.band,
+                    sourceBand: b.sourceBand,
+                })),
+                sections: [
+                    {
+                        beatRange: { start: beats[0]?.beatIndex ?? 0, end: beats[beats.length - 1]?.beatIndex ?? 0 },
+                        sourceBand: beats[0]?.sourceBand ?? 'mid',
+                        score: 1,
+                        margin: 0.5,
+                    },
+                ],
+                naturalDifficulty: 'medium',
+                quarterNoteInterval: 0.5,
+                metadata: {
+                    totalBeats: beats.length,
+                    sectionCount: 1,
+                    beatsPerBand: { low: 0, mid: 0, high: 0 },
+                    sectionsPerBand: { low: 0, mid: 0, high: 0 },
+                },
+            };
+        }
+
+        // Helper to create mock difficulty variant
+        function createMockDifficultyVariant(
+            difficulty: 'easy' | 'medium' | 'hard',
+            beats: Array<{ beatIndex: number; timestamp: number; sourceBand: PitchBandName }>
+        ): DifficultyVariant {
+            return {
+                difficulty,
+                beats: beats.map(b => ({
+                    ...b,
+                    beatIndex: b.beatIndex,
+                    timestamp: b.timestamp,
+                    gridPosition: 0,
+                    gridType: 'straight_16th' as const,
+                    intensity: 0.8,
+                    band: b.sourceBand,
+                    sourceBand: b.sourceBand,
+                })),
+                isUnedited: true,
+                editType: 'none',
+                editAmount: 0,
+            };
+        }
+
+        it('should derive composite pitches from band stream pitches', () => {
+            const linker = new PitchBeatLinker();
+
+            // Create band streams with mid band beats
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.0, beatIndex: 1, band: 'mid' },
+                { timestamp: 1.5, beatIndex: 2, band: 'mid' },
+            ]);
+
+            // Create audio and link
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+            const linkedAnalysis = linker.link(bandStreams, audioBuffer);
+
+            // Create composite stream
+            const compositeStream = createMockCompositeStream([
+                { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid', gridPosition: 0, intensity: 0.8 },
+                { beatIndex: 1, timestamp: 1.0, sourceBand: 'mid', gridPosition: 0, intensity: 0.8 },
+                { beatIndex: 2, timestamp: 1.5, sourceBand: 'low', gridPosition: 0, intensity: 0.8 },
+            ]);
+
+            // Derive composite pitches
+            const compositePitches = linker.deriveCompositePitches(compositeStream, linkedAnalysis);
+
+            expect(compositePitches).toHaveLength(3);
+
+            // Verify each composite pitch has the correct source band
+            expect(compositePitches[0].band).toBe('mid');
+            expect(compositePitches[1].band).toBe('mid');
+            expect(compositePitches[2].band).toBe('low');
+        });
+
+        it('should derive composite pitches with null pitches when no band data', () => {
+            const linker = new PitchBeatLinker();
+
+            // Create band streams with beats at specific timestamps
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+            const linkedAnalysis = linker.link(bandStreams, audioBuffer);
+
+            // Create composite stream with a beat that doesn't exist in any band stream
+            // (using timestamp 2.0 which is not in the band streams)
+            const compositeStream = createMockCompositeStream([
+                { beatIndex: 0, timestamp: 2.0, sourceBand: 'mid', gridPosition: 0, intensity: 0.8 },
+            ]);
+
+            // Derive composite pitches
+            const compositePitches = linker.deriveCompositePitches(compositeStream, linkedAnalysis);
+
+            expect(compositePitches).toHaveLength(1);
+            expect(compositePitches[0].pitch).toBeNull();
+            expect(compositePitches[0].direction).toBe('none');
+            expect(compositePitches[0].intervalFromPrevious).toBe(0);
+        });
+
+        it('should derive variant pitches from composite pitches', () => {
+            const linker = new PitchBeatLinker();
+
+            // First, create composite pitches from a mock linked analysis
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.0, beatIndex: 1, band: 'mid' },
+                { timestamp: 1.5, beatIndex: 6, band: 'low' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+            const linkedAnalysis = linker.link(bandStreams, audioBuffer);
+
+            // Create composite stream
+            const compositeStream = createMockCompositeStream([
+                { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid', gridPosition: 0, intensity: 0.8 },
+                { beatIndex: 1, timestamp: 1.0, sourceBand: 'mid', gridPosition: 0, intensity: 0.8 },
+                { beatIndex: 2, timestamp: 1.5, sourceBand: 'low', gridPosition: 0, intensity: 0.8 },
+            ]);
+
+            const compositePitches = linker.deriveCompositePitches(compositeStream, linkedAnalysis);
+
+            // Create easy variant (fewer beats - only mid band)
+            const easyVariant = createMockDifficultyVariant('easy', [
+                { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid' },
+                // beat at 1.5 is removed
+            ]);
+
+            // Derive variant pitches
+            const easyPitches = linker.deriveVariantPitches(easyVariant, compositePitches);
+
+            expect(easyPitches).toHaveLength(1);
+            expect(easyPitches[0].timestamp).toBe(0.5);
+            expect(easyPitches[0].band).toBe('mid');
+            expect(easyPitches[0].pitch).toBeDefined();
+        });
+
+        it('should derive variant pitches for hard variant (all beats)', () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.0, beatIndex: 1, band: 'mid' },
+                { timestamp: 1.5, beatIndex: 6, band: 'low' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+            const linkedAnalysis = linker.link(bandStreams, audioBuffer);
+
+            const compositeStream = createMockCompositeStream([
+                { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid', gridPosition: 0, intensity: 0.8 },
+                { beatIndex: 1, timestamp: 1.0, sourceBand: 'mid', gridPosition: 0, intensity: 0.8 },
+                { beatIndex: 2, timestamp: 1.5, sourceBand: 'low', gridPosition: 0, intensity: 0.8 },
+            ]);
+
+            const compositePitches = linker.deriveCompositePitches(compositeStream, linkedAnalysis);
+
+            // Create hard variant (same beats as composite)
+            const hardVariant = createMockDifficultyVariant('hard', compositeStream.beats);
+
+            // Derive variant pitches
+            const hardPitches = linker.deriveVariantPitches(hardVariant, compositePitches);
+
+            expect(hardPitches).toHaveLength(3);
+            expect(hardPitches[0].timestamp).toBe(0.5);
+            expect(hardPitches[0].band).toBe('mid');
+            expect(hardPitches[0].pitch).toBeDefined();
+        });
+
+        it('should derive all variant pitches at once', () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.0, beatIndex: 1, band: 'mid' },
+                { timestamp: 1.5, beatIndex: 6, band: 'low' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+            const linkedAnalysis = linker.link(bandStreams, audioBuffer);
+
+            const compositeStream = createMockCompositeStream([
+                { beatIndex: 0, timestamp: 0.5, sourceBand: 'mid', gridPosition: 0, intensity: 0.8 },
+                { beatIndex: 1, timestamp: 1.0, sourceBand: 'mid', gridPosition: 0, intensity: 0.8 },
+                { beatIndex: 2, timestamp: 1.5, sourceBand: 'low', gridPosition: 0, intensity: 0.8 },
+            ]);
+
+            const compositePitches = linker.deriveCompositePitches(compositeStream, linkedAnalysis);
+
+            // Derive all variant pitches
+            const allVariantPitches = linker.deriveAllVariantPitches(
+                {
+                    easy: createMockDifficultyVariant('easy', [compositeStream.beats[0]]),
+                    medium: createMockDifficultyVariant('medium', compositeStream.beats),
+                    hard: createMockDifficultyVariant('hard', compositeStream.beats),
+                },
+                compositePitches
+            );
+
+            expect(allVariantPitches.easy).toHaveLength(1);
+            expect(allVariantPitches.medium).toHaveLength(3);
+            expect(allVariantPitches.hard).toHaveLength(3);
+            expect(allVariantPitches.easy[0].band).toBe('mid');
+            expect(allVariantPitches.medium[0].band).toBe('mid');
+            expect(allVariantPitches.medium[1].band).toBe('mid');
+            expect(allVariantPitches.hard[0].band).toBe('mid');
+            expect(allVariantPitches.hard[2].band).toBe('low');
+        });
+
+    });
 });

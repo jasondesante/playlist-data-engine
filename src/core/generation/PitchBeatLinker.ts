@@ -42,6 +42,8 @@ import {
 } from '../analysis/beat/utils/audioUtils.js';
 import type { GeneratedRhythmMap, GeneratedBeat } from '../analysis/beat/RhythmQuantizer.js';
 import type { RhythmicPhrase } from '../analysis/beat/PhraseAnalyzer.js';
+import type { CompositeStream } from '../analysis/beat/CompositeStreamGenerator.js';
+import type { DifficultyVariant } from '../analysis/beat/DifficultyVariantGenerator.js';
 
 // ============================================================================
 // Type Definitions
@@ -559,5 +561,257 @@ export class PitchBeatLinker {
         return analysis.pitchByBeat.filter(
             p => p.timestamp >= startTime && p.timestamp <= endTime
         );
+    }
+
+    // ============================================================================
+    // Composite Stream Pitch Derivation (Phase 1.4)
+    // ============================================================================
+
+    /**
+     * Derive pitches for composite stream beats from band stream pitches
+     *
+     * Since the composite stream is assembled from sections of band streams,
+     * we can look up pitches without re-analyzing audio. Each composite beat
+     * has a `sourceBand` field that tells us which band it came from.
+     *
+     * This is more efficient than running pitch detection again, and ensures
+     * the pitch data is consistent with the band stream analysis.
+     *
+     * @param compositeStream - The composite stream from GeneratedRhythm.composite
+     * @param linkedAnalysis - The linked pitch analysis from link() or linkPreFiltered()
+     * @returns Array of pitch-at-beat for composite stream beats
+     *
+     * @example
+     * ```typescript
+     * const linker = new PitchBeatLinker();
+     *
+     * // First, analyze band streams
+     * const linkedAnalysis = linker.link(bandStreams, audioBuffer);
+     *
+     * // Then derive composite pitches from band stream pitches
+     * const compositePitches = linker.deriveCompositePitches(
+     *   generatedRhythm.composite,
+     *   linkedAnalysis
+     * );
+     *
+     * // Access pitches for composite beats
+     * for (const pitchAtBeat of compositePitches) {
+     *   console.log(`Beat ${pitchAtBeat.beatIndex}: band=${pitchAtBeat.band}, pitch=${pitchAtBeat.pitch?.noteName}`);
+     * }
+     * ```
+     */
+    deriveCompositePitches(
+        compositeStream: CompositeStream,
+        linkedAnalysis: LinkedPitchAnalysis
+    ): PitchAtBeat[] {
+        const compositePitches: PitchAtBeat[] = [];
+
+        // Build a lookup map for each band: timestamp -> PitchAtBeat
+        const bandPitchesByTimestamp = new Map<PitchBandName, Map<number, PitchAtBeat>>();
+
+        for (const [bandName, bandResult] of linkedAnalysis.bandPitches) {
+            const timestampMap = new Map<number, PitchAtBeat>();
+            for (const pitch of bandResult.pitches) {
+                // Use rounded timestamp (to nearest ms) as key for matching
+                const key = Math.round(pitch.timestamp * 1000);
+                timestampMap.set(key, pitch);
+            }
+            bandPitchesByTimestamp.set(bandName, timestampMap);
+        }
+
+        // For each composite beat, look up the pitch from its source band
+        for (const compositeBeat of compositeStream.beats) {
+            const sourceBand = compositeBeat.sourceBand;
+            const timestampMap = bandPitchesByTimestamp.get(sourceBand);
+
+            if (!timestampMap) {
+                // No pitches for this band, create a null entry
+                compositePitches.push({
+                    beatIndex: compositeBeat.beatIndex,
+                    timestamp: compositeBeat.timestamp,
+                    band: sourceBand,
+                    pitch: null,
+                    direction: 'none',
+                    intervalFromPrevious: 0,
+                });
+                continue;
+            }
+
+            // Look up by timestamp (with millisecond tolerance)
+            const key = Math.round(compositeBeat.timestamp * 1000);
+            let matchingPitch = timestampMap.get(key);
+
+            // If no exact match, try nearby timestamps (±2ms tolerance)
+            if (!matchingPitch) {
+                for (let offset = -2; offset <= 2; offset++) {
+                    matchingPitch = timestampMap.get(key + offset);
+                    if (matchingPitch) break;
+                }
+            }
+
+            if (matchingPitch) {
+                // Found matching pitch from band stream
+                compositePitches.push({
+                    beatIndex: compositeBeat.beatIndex,
+                    timestamp: compositeBeat.timestamp,
+                    band: sourceBand,
+                    pitch: matchingPitch.pitch,
+                    direction: matchingPitch.direction,
+                    intervalFromPrevious: matchingPitch.intervalFromPrevious,
+                    intervalCategory: matchingPitch.intervalCategory,
+                });
+            } else {
+                // No matching pitch found
+                compositePitches.push({
+                    beatIndex: compositeBeat.beatIndex,
+                    timestamp: compositeBeat.timestamp,
+                    band: sourceBand,
+                    pitch: null,
+                    direction: 'none',
+                    intervalFromPrevious: 0,
+                });
+            }
+        }
+
+        return compositePitches;
+    }
+
+    /**
+     * Derive pitches for a difficulty variant from composite pitches
+     *
+     * Since difficulty variants are derived from the composite stream,
+     * we can look up pitches by matching timestamps. Simplified variants
+     * (e.g., easy) may have fewer beats, so we filter pitches accordingly.
+     *
+     * @param variant - The difficulty variant from GeneratedRhythm.difficultyVariants
+     * @param compositePitches - Pitches derived from deriveCompositePitches()
+     * @returns Array of pitch-at-beat for variant beats
+     *
+     * @example
+     * ```typescript
+     * const linker = new PitchBeatLinker();
+     *
+     * // Get composite pitches
+     * const compositePitches = linker.deriveCompositePitches(
+     *   generatedRhythm.composite,
+     *   linkedAnalysis
+     * );
+     *
+     * // Derive pitches for each difficulty variant
+     * const easyPitches = linker.deriveVariantPitches(
+     *   generatedRhythm.difficultyVariants.easy,
+     *   compositePitches
+     * );
+     * const mediumPitches = linker.deriveVariantPitches(
+     *   generatedRhythm.difficultyVariants.medium,
+     *   compositePitches
+     * );
+     * const hardPitches = linker.deriveVariantPitches(
+     *   generatedRhythm.difficultyVariants.hard,
+     *   compositePitches
+     * );
+     * ```
+     */
+    deriveVariantPitches(
+        variant: DifficultyVariant,
+        compositePitches: PitchAtBeat[]
+    ): PitchAtBeat[] {
+        const variantPitches: PitchAtBeat[] = [];
+
+        // Build a lookup map: timestamp -> PitchAtBeat from composite
+        const compositeByTimestamp = new Map<number, PitchAtBeat>();
+        for (const pitch of compositePitches) {
+            const key = Math.round(pitch.timestamp * 1000);
+            compositeByTimestamp.set(key, pitch);
+        }
+
+        // For each variant beat, look up the pitch from composite
+        for (const variantBeat of variant.beats) {
+            const key = Math.round(variantBeat.timestamp * 1000);
+            let matchingPitch = compositeByTimestamp.get(key);
+
+            // If no exact match, try nearby timestamps (±2ms tolerance)
+            if (!matchingPitch) {
+                for (let offset = -2; offset <= 2; offset++) {
+                    matchingPitch = compositeByTimestamp.get(key + offset);
+                    if (matchingPitch) break;
+                }
+            }
+
+            if (matchingPitch) {
+                // Found matching pitch from composite
+                variantPitches.push({
+                    beatIndex: variantBeat.beatIndex,
+                    timestamp: variantBeat.timestamp,
+                    band: variantBeat.sourceBand,
+                    pitch: matchingPitch.pitch,
+                    direction: matchingPitch.direction,
+                    intervalFromPrevious: matchingPitch.intervalFromPrevious,
+                    intervalCategory: matchingPitch.intervalCategory,
+                });
+            } else {
+                // No matching pitch found
+                variantPitches.push({
+                    beatIndex: variantBeat.beatIndex,
+                    timestamp: variantBeat.timestamp,
+                    band: variantBeat.sourceBand,
+                    pitch: null,
+                    direction: 'none',
+                    intervalFromPrevious: 0,
+                });
+            }
+        }
+
+        return variantPitches;
+    }
+
+    /**
+     * Derive pitches for all difficulty variants at once
+     *
+     * Convenience method that derives pitches for easy, medium, and hard
+     * variants in a single call.
+     *
+     * @param difficultyVariants - The difficulty variants from GeneratedRhythm
+     * @param compositePitches - Pitches derived from deriveCompositePitches()
+     * @returns Object with pitches for each difficulty level
+     *
+     * @example
+     * ```typescript
+     * const linker = new PitchBeatLinker();
+     *
+     * // Get composite pitches
+     * const compositePitches = linker.deriveCompositePitches(
+     *   generatedRhythm.composite,
+     *   linkedAnalysis
+     * );
+     *
+     * // Derive pitches for all variants
+     * const allVariantPitches = linker.deriveAllVariantPitches(
+     *   generatedRhythm.difficultyVariants,
+     *   compositePitches
+     * );
+     *
+     * console.log('Easy beats:', allVariantPitches.easy.length);
+     * console.log('Medium beats:', allVariantPitches.medium.length);
+     * console.log('Hard beats:', allVariantPitches.hard.length);
+     * ```
+     */
+    deriveAllVariantPitches(
+        difficultyVariants: {
+            easy: DifficultyVariant;
+            medium: DifficultyVariant;
+            hard: DifficultyVariant;
+        },
+        compositePitches: PitchAtBeat[]
+    ): {
+        easy: PitchAtBeat[];
+        medium: PitchAtBeat[];
+        hard: PitchAtBeat[];
+    } {
+        return {
+            easy: this.deriveVariantPitches(difficultyVariants.easy, compositePitches),
+            medium: this.deriveVariantPitches(difficultyVariants.medium, compositePitches),
+            hard: this.deriveVariantPitches(difficultyVariants.hard, compositePitches),
+        };
     }
 }

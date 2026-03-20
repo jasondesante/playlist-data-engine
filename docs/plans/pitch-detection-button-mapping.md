@@ -220,11 +220,11 @@ We use pYIN instead of standard YIN for several key advantages:
 
 #### 1.4.1 Derivation Logic
 
-- [ ] Implement composite pitch derivation
-  - [ ] For each beat in `CompositeStream.stream`, find which section it belongs to
-  - [ ] Look up `CompositeSection.sourceBand` for that section
-  - [ ] Find the corresponding beat in `bandStreams[sourceBand]` by matching timestamp
-  - [ ] Use the pitch already calculated for that band stream beat
+- [x] Implement composite pitch derivation
+  - [x] For each beat in `CompositeStream.stream`, find which section it belongs to
+  - [x] Look up `CompositeSection.sourceBand` for that section
+  - [x] Find the corresponding beat in `bandStreams[sourceBand]` by matching timestamp
+  - [x] Use the pitch already calculated for that band stream beat
   ```typescript
   interface CompositeSection {
     beatRange: { start: number; end: number };
@@ -265,10 +265,10 @@ We use pYIN instead of standard YIN for several key advantages:
 
 #### 1.4.2 Difficulty Variant Pitch Derivation
 
-- [ ] Apply same derivation logic to difficulty variants
-  - [ ] Each `DifficultyVariant.stream` is derived from the composite
-  - [ ] Pitches can be derived by matching timestamps to composite pitches
-  - [ ] Simplified variants (easy) may have fewer beats, so filter pitches accordingly
+- [x] Apply same derivation logic to difficulty variants
+  - [x] Each `DifficultyVariant.stream` is derived from the composite
+  - [x] Pitches can be derived by matching timestamps to composite pitches
+  - [x] Simplified variants (easy) may have fewer beats, so filter pitches accordingly
 
 ### 1.5 Melody Contour Analysis
 
