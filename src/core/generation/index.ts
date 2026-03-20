@@ -94,3 +94,15 @@ export type {
     OutputMode,
     ProgressCallback,
 } from './RhythmGenerator.js';
+
+// Pitch Beat Linker
+export { PitchBeatLinker } from './PitchBeatLinker.js';
+export type {
+    PitchAtBeat,
+    BandPitchAtBeat,
+    LinkedPitchAnalysis,
+    PitchBandName,
+    PreFilteredBandAudio,
+    IntervalCategory,
+    PitchDirection,
+} from './PitchBeatLinker.js';

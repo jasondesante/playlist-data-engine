@@ -43,6 +43,67 @@ import { PitchDetector, type PitchResult, type PitchDetectorConfig } from './Pit
 export type BandName = 'low' | 'mid' | 'high';
 
 /**
+ * Direction of a melody segment
+ */
+export type MelodySegmentDirection = 'up' | 'down' | 'stable';
+
+/**
+ * Overall direction of a melody contour
+ */
+export type MelodyContourDirection = 'ascending' | 'descending' | 'stable' | 'mixed';
+
+/**
+ * A segment of a melody with consistent direction
+ *
+ * Part of Phase 1.5 (Melody Contour Analysis)
+ */
+export interface MelodySegment {
+    /** Start time in seconds */
+    startTime: number;
+    /** End time in seconds */
+    endTime: number;
+    /** Starting pitch (note name, e.g., "C4") */
+    startPitch: string;
+    /** Ending pitch (note name, e.g., "F#5") */
+    endPitch: string;
+    /** Direction of this segment */
+    direction: MelodySegmentDirection;
+    /** Interval in semitones between start and end */
+    interval: number;
+}
+
+/**
+ * Melody contour representing the overall melodic shape
+ *
+ * Populated by melody contour analysis (Phase 1.5).
+ * Used by button mapping (Phase 2) to generate patterns that follow the melody.
+ *
+ * @example
+ * ```typescript
+ * const result = analyzer.analyze(audioBuffer);
+ * if (result.combinedMelody) {
+ *   console.log('Overall direction:', result.combinedMelody.direction);
+ *   console.log('Melody range:', result.combinedMelody.range.minNote, '-', result.combinedMelody.range.maxNote);
+ * }
+ * ```
+ */
+export interface MelodyContour {
+    /** Melody segments grouped by direction */
+    segments: MelodySegment[];
+    /** Overall direction of the melody */
+    direction: MelodyContourDirection;
+    /** Pitch range of the melody */
+    range: {
+        /** Lowest note (e.g., "C4") */
+        minNote: string;
+        /** Highest note (e.g., "F#5") */
+        maxNote: string;
+        /** Total span in semitones */
+        semitones: number;
+    };
+}
+
+/**
  * Pitch analysis result for a single frequency band
  */
 export interface BandPitchAnalysis {
@@ -83,6 +144,15 @@ export interface MultiBandPitchAnalysis {
     primaryBand: BandName;
     /** Pitch analysis results per band, keyed by band name */
     bandAnalyses: Map<BandName, BandPitchAnalysis>;
+    /**
+     * Combined melody contour from the primary band
+     *
+     * Populated by melody contour analysis (Phase 1.5).
+     * This field is null until melody contour analysis is performed.
+     *
+     * Use `primaryBand` to know which band's pitches to use for button mapping.
+     */
+    combinedMelody: MelodyContour | null;
     /** The frequency bands that were used for analysis */
     bandsUsed: FrequencyBand[];
     /** Analysis metadata */
@@ -223,6 +293,7 @@ export class MultiBandPitchAnalyzer {
         return {
             primaryBand,
             bandAnalyses,
+            combinedMelody: null, // Populated by melody contour analysis (Phase 1.5)
             bandsUsed: [...this.config.bands],
             metadata: {
                 duration,
@@ -292,6 +363,7 @@ export class MultiBandPitchAnalyzer {
         return {
             primaryBand,
             bandAnalyses,
+            combinedMelody: null, // Populated by melody contour analysis (Phase 1.5)
             bandsUsed: [...this.config.bands],
             metadata: {
                 duration,
@@ -475,5 +547,58 @@ export class MultiBandPitchAnalyzer {
         results.sort((a, b) => a.timestamp - b.timestamp);
 
         return results;
+    }
+
+    /**
+     * Get pitch results from the primary band only
+     *
+     * The primary band is the one with the highest average pitch probability.
+     * Use this method when button generation needs the most reliable pitch data.
+     *
+     * This is the recommended method for button mapping as it provides the
+     * highest-quality pitch information.
+     *
+     * @param analysis - The multi-band analysis result
+     * @returns Array of voiced pitch results from the primary band, or empty array if none
+     *
+     * @example
+     * ```typescript
+     * const result = analyzer.analyze(audioBuffer);
+     *
+     * // Get pitches from the best band for button mapping
+     * const primaryPitches = analyzer.getPrimaryBandPitches(result);
+     * console.log(`Using ${result.primaryBand} band with ${primaryPitches.length} voiced pitches`);
+     * ```
+     */
+    getPrimaryBandPitches(analysis: MultiBandPitchAnalysis): Array<PitchResult & { band: BandName }> {
+        const primaryAnalysis = analysis.bandAnalyses.get(analysis.primaryBand);
+
+        if (!primaryAnalysis) {
+            return [];
+        }
+
+        return primaryAnalysis.results
+            .filter(r => r.isVoiced)
+            .map(r => ({ ...r, band: analysis.primaryBand }));
+    }
+
+    /**
+     * Get all pitch results from the primary band (including unvoiced)
+     *
+     * Unlike `getPrimaryBandPitches()`, this returns ALL pitch frames from the
+     * primary band, including frames where no pitch was detected (unvoiced).
+     * Useful when you need to know about silence/gaps in the melody.
+     *
+     * @param analysis - The multi-band analysis result
+     * @returns Array of all pitch results from the primary band
+     */
+    getPrimaryBandAllResults(analysis: MultiBandPitchAnalysis): Array<PitchResult & { band: BandName }> {
+        const primaryAnalysis = analysis.bandAnalyses.get(analysis.primaryBand);
+
+        if (!primaryAnalysis) {
+            return [];
+        }
+
+        return primaryAnalysis.results.map(r => ({ ...r, band: analysis.primaryBand }));
     }
 }

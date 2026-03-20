@@ -122,7 +122,10 @@ We use pYIN instead of standard YIN for several key advantages:
   - [x] **Mid band (500-2000Hz)**: Vocals, lead melody, snare body - typically the most useful for melody contour
   - [x] **High band (2000-20000Hz)**: Hi-hats, cymbals, harmonics - may have less pitch content but still analyzed
 - [x] Store which band produced the most confident pitch results
-- [ ] Use band selection to inform button generation
+- [x] Use band selection to inform button generation
+  - [x] `MultiBandPitchAnalysis.primaryBand` identifies the best band for button mapping
+  - [x] `MultiBandPitchAnalyzer.getPrimaryBandPitches()` method retrieves pitches from the primary band
+  - [x] All necessary types exported from `src/core/analysis/index.ts`
   ```typescript
   interface MultiBandPitchAnalysis {
     primaryBand: 'low' | 'mid' | 'high';  // Band with best pitch probability

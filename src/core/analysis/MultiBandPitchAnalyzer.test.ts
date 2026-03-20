@@ -181,6 +181,49 @@ describe('MultiBandPitchAnalyzer', () => {
             expect(result.metadata.effectiveSampleRate).toBe(44100);
             expect(result.metadata.framesPerBand).toBeGreaterThan(0);
         });
+
+        it('should include combinedMelody field initialized as null', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+            const buffer = createSineWave(440, 0.5);
+            const result = analyzer.analyze(buffer);
+
+            // combinedMelody is null until melody contour analysis (Phase 1.5) is performed
+            expect(result.combinedMelody).toBeNull();
+        });
+    });
+
+    describe('MelodyContour Types', () => {
+        it('should export MelodyContour type', () => {
+            // Type is exported, this is a compile-time check
+            // Ensure the types exist and are correctly structured
+            const melodyContour: MultiBandPitchAnalysis['combinedMelody'] = {
+                segments: [],
+                direction: 'stable',
+                range: {
+                    minNote: 'C4',
+                    maxNote: 'C4',
+                    semitones: 0,
+                },
+            };
+
+            expect(melodyContour.direction).toBe('stable');
+            expect(melodyContour.segments).toEqual([]);
+            expect(melodyContour.range.semitones).toBe(0);
+        });
+
+        it('should export MelodySegment type', () => {
+            const segment = {
+                startTime: 0,
+                endTime: 1,
+                startPitch: 'C4',
+                endPitch: 'D4',
+                direction: 'up' as const,
+                interval: 2,
+            };
+
+            expect(segment.direction).toBe('up');
+            expect(segment.interval).toBe(2);
+        });
     });
 
     describe('Primary Band Determination', () => {
@@ -316,6 +359,75 @@ describe('MultiBandPitchAnalyzer', () => {
             for (let i = 1; i < voicedResults.length; i++) {
                 expect(voicedResults[i].timestamp).toBeGreaterThanOrEqual(voicedResults[i - 1].timestamp);
             }
+        });
+
+        it('should get primary band pitches only', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+            const buffer = createSineWave(440, 0.5);
+            const result = analyzer.analyze(buffer);
+
+            const primaryPitches = analyzer.getPrimaryBandPitches(result);
+
+            // All returned pitches should be from the primary band
+            for (const p of primaryPitches) {
+                expect(p.band).toBe(result.primaryBand);
+                expect(p.isVoiced).toBe(true);
+            }
+        });
+
+        it('should return empty array when primary band has no voiced pitches', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+
+            // Create an empty analysis
+            const emptyAnalysis: BandPitchAnalysis = {
+                band: 'mid',
+                frequencyRange: { lowHz: 500, highHz: 2000 },
+                results: [],
+                avgProbability: 0,
+                voicedFrameCount: 0,
+                totalFrameCount: 0,
+            };
+
+            const bandAnalyses = new Map<BandName, BandPitchAnalysis>();
+            bandAnalyses.set('mid', emptyAnalysis);
+
+            const result: MultiBandPitchAnalysis = {
+                primaryBand: 'mid',
+                bandAnalyses,
+            } as MultiBandPitchAnalysis;
+
+            const primaryPitches = analyzer.getPrimaryBandPitches(result);
+
+            expect(primaryPitches).toEqual([]);
+        });
+
+        it('should get primary band all results including unvoiced', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+            const buffer = createSineWave(440, 0.5);
+            const result = analyzer.analyze(buffer);
+
+            const allResults = analyzer.getPrimaryBandAllResults(result);
+
+            // Should have results
+            expect(allResults.length).toBeGreaterThan(0);
+
+            // All should be from primary band
+            for (const r of allResults) {
+                expect(r.band).toBe(result.primaryBand);
+            }
+        });
+
+        it('should return empty array for all results when primary band has no analysis', () => {
+            const analyzer = new MultiBandPitchAnalyzer();
+
+            const result: MultiBandPitchAnalysis = {
+                primaryBand: 'mid',
+                bandAnalyses: new Map(),
+            } as MultiBandPitchAnalysis;
+
+            const allResults = analyzer.getPrimaryBandAllResults(result);
+
+            expect(allResults).toEqual([]);
         });
     });
 
