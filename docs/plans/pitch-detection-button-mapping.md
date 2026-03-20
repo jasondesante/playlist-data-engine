@@ -54,12 +54,6 @@ We use pYIN instead of standard YIN for several key advantages:
 - **Polyphonic robustness**: Handles complex audio better by tracking the most likely fundamental frequency
 
 - [x] Implement pYIN algorithm (probabilistic extension of YIN)
-    - [ ] Implement YIN difference function computation
-    - [ ] Implement cumulative mean normalized difference function
-    - [ ] Add HMM (Hidden Markov Model) for pitch state tracking
-    - [ ] Implement Viterbi decoding for optimal pitch path
-  - [ ] Support configurable frequency range (for different instruments)
-  - [ ] Output single best pitch hypothesis per frame (simplifies downstream usage)
   - [x] Implement pYIN algorithm (probabilistic extension of YIN)
     - [x] Implement YIN difference function computation
     - [x] Implement cumulative mean normalized difference function
