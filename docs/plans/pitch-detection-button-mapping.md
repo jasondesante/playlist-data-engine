@@ -147,8 +147,8 @@ We use pYIN instead of standard YIN for several key advantages:
 
 **Key Insight**: Since pitch detection is based on the timestamps of transients, we iterate over each band stream independently. The `GeneratedRhythm.bandStreams` contains separate `GeneratedBeat[]` arrays for low/mid/high, each with their own timestamps.
 
-- [ ] Create `PitchBeatLinker` utility
-  - [ ] **Iterate over each band stream independently**:
+- [x] Create `PitchBeatLinker` utility
+  - [x] **Iterate over each band stream independently**:
     ```typescript
     // Pseudocode for band stream pitch detection
     for (const band of ['low', 'mid', 'high'] as const) {
@@ -163,9 +163,9 @@ We use pYIN instead of standard YIN for several key advantages:
       }
     }
     ```
-  - [ ] For each `GeneratedBeat` in `bandStreams.low`, analyze the **low-frequency filtered audio** at that timestamp
-  - [ ] For each `GeneratedBeat` in `bandStreams.mid`, analyze the **mid-frequency filtered audio** at that timestamp
-  - [ ] For each `GeneratedBeat` in `bandStreams.high`, analyze the **high-frequency filtered audio** at that timestamp
+  - [x] For each `GeneratedBeat` in `bandStreams.low`, analyze the **low-frequency filtered audio** at that timestamp
+  - [x] For each `GeneratedBeat` in `bandStreams.mid`, analyze the **mid-frequency filtered audio** at that timestamp
+  - [x] For each `GeneratedBeat` in `bandStreams.high`, analyze the **high-frequency filtered audio** at that timestamp
 
 #### 1.3.2 Phrase-Level Pitch Correlation
 
