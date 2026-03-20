@@ -548,7 +548,7 @@ Patterns are controller-mode-specific:
     - [x] Jump patterns (1-4, 2-5 stretches)
 
 ### 2.3 Button Mapper Class
-- [ ] Create `ButtonMapper` in `src/core/generation/ButtonMapper.ts`
+- [x] Create `ButtonMapper` in `src/core/generation/ButtonMapper.ts`
   ```typescript
   class ButtonMapper {
     constructor(config: ButtonMappingConfig);
@@ -649,7 +649,7 @@ The DDR pad uses **circular motion** as the primary movement philosophy. Dancing
 | **down** | down | left | right | up | up | down | down | left | left | right | down |
 | **left** | left | up | up | up | right | left | down | down | down | right | left |
 
-- [ ] Implement DDR pitch-to-button mapping with state transitions
+- [x] Implement DDR pitch-to-button mapping with state transitions
   ```typescript
   type DDRButton = 'up' | 'down' | 'left' | 'right';
   type IntervalCategory = 'unison' | 'small' | 'medium' | 'large' | 'very_large';
@@ -795,7 +795,7 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
 - Very large intervals skip 3 frets (more dramatic expression)
 - String wrap keeps motion flowing - no stuck positions
 
-- [ ] Implement Guitar Hero pitch-to-button mapping with state transitions
+- [x] Implement Guitar Hero pitch-to-button mapping with state transitions
   ```typescript
   type GuitarHeroButton = 1 | 2 | 3 | 4 | 5;
 
@@ -914,7 +914,7 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
 
 **Strategy**: Replace buttons in order of probability - lowest probability pitch detections are replaced with pattern buttons first. This ensures that high-probability pitch data is preserved while uncertain pitches fall back to patterns.
 
-- [ ] Implement probability-based blending
+- [x] Implement probability-based blending
   ```typescript
   /**
    * Blends pitch-derived and pattern-derived buttons based on pYIN probability.
@@ -1028,20 +1028,20 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
 
 > **How pitch influence works**: The `pitchInfluenceWeight` (0-1) defaults to **1.0** (full pitch influence) and is **user-controlled only**. It does not change based on difficulty. A weight of 1.0 means buttons follow the melody; lower values allow more patterns to fill in.
 
-- [ ] **Easy**:
+- [x] **Easy**:
   - Single button per beat
-  - **Direction-only mapping**: Uses only `PitchAtBeat.direction` (up/down/stable), ignores `intervalCategory`
+  - **Direction-only mapping**: Uses only`PitchAtBeat.direction` (up/down/stable), ignores`intervalCategory`
   - **No leaps**: Only moves to adjacent buttons (stepwise motion), never skips
   - `stable` direction = repeat the same key
   - `consecutiveSameKeyLimit`: 12
 
-- [ ] **Medium**:
+- [x] **Medium**:
   - **Direction + interval mapping**: Uses both `PitchAtBeat.direction` and `intervalCategory`
   - **Leaps allowed**: Can skip buttons based on interval size (medium/large/very_large intervals)
   - Pattern variation enabled
   - `consecutiveSameKeyLimit`: 8
 
-- [ ] **Hard**:
+- [x] **Hard**:
   - **Direction + interval mapping**: Uses both `PitchAtBeat.direction` and `intervalCategory`
   - **Leaps allowed**: Can skip buttons based on interval size (medium/large/very_large intervals)
   - Rapid button changes allowed
@@ -1054,7 +1054,7 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
 >
 > **Input from Phase 1**: `PitchAtBeat.band` tells us which frequency band each beat's pitch was derived from (see section 1.3.3).
 
-- [ ] Implement band-aware button mapping
+- [x] Implement band-aware button mapping
   - Use `PitchAtBeat.band` to know which frequency band the pitch came from
   - The pitch data already reflects the correct band (via derivation in 1.4)
   - Store band selection from rhythm generation in metadata for transparency

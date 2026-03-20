@@ -120,3 +120,10 @@ export {
     getPatternById,
     getPatternLibraryStats,
 } from './ButtonPatternLibrary.js';
+
+// Button Mapper
+export { ButtonMapper } from './ButtonMapper.js';
+export type {
+    MappedLevelResult,
+    ButtonMappingMetadata,
+} from './ButtonMapper.js';
