@@ -1512,8 +1512,8 @@ interface ChartMetadata {
 **Goal**: Expose the complete level generation system through a clean API.
 
 ### 4.1 Public API
-- [ ] Add exports to `src/index.ts`
-- [ ] Create convenience methods on `AudioAnalyzer`
+- [x] Add exports to `src/index.ts`
+- [x] Create convenience methods on `AudioAnalyzer`
   ```typescript
   // On AudioAnalyzer class
   async generateRhythmLevel(

@@ -8,13 +8,18 @@
  */
 
 import type { AudioProfile, AudioTimelineEvent, FrequencyBands } from '../types/AudioProfile.js';
-import type { BeatMap, BeatMapGeneratorOptions, BeatStreamOptions, BeatInterpolationOptions, InterpolatedBeatMap, DownbeatConfig } from '../types/BeatMap.js';
+import type { BeatMap, BeatStreamOptions, BeatInterpolationOptions, InterpolatedBeatMap, DownbeatConfig, BeatMapGeneratorOptions } from '../types/BeatMap.js';
 import { SpectrumScanner } from './SpectrumScanner.js';
 import { BeatMapGenerator, type ProgressCallback } from './beat/BeatMapGenerator.js';
 import { BeatStream } from './beat/BeatStream.js';
 import { BeatInterpolator } from './beat/BeatInterpolator.js';
 import { unifyBeatMap } from './beat/utils/unifyBeatMap.js';
 import { RhythmGenerator, type RhythmGenerationOptions, type GeneratedRhythm } from '../generation/RhythmGenerator.js';
+import { LevelGenerator, type LevelGenerationOptions, type GeneratedLevel, type LevelProgressCallback, type LevelGenerationProgress } from '../generation/LevelGenerator.js';
+import type { ButtonMappingConfig, ControllerMode } from '../types/ButtonMapping.js';
+
+// Re-export types for convenience
+export type { LevelGenerationOptions, GeneratedLevel, LevelProgressCallback, LevelGenerationProgress };
 
 export type SamplingStrategy =
     | { type: 'interval'; intervalSeconds: number } // e.g., every 1s
@@ -659,6 +664,268 @@ export class AudioAnalyzer {
         // Create rhythm generator and run
         const generator = new RhythmGenerator(options);
         return generator.generate(audioBuffer, unifiedBeatMap, undefined, onProgress);
+    }
+
+    /**
+     * Generate a complete rhythm game level from an audio URL
+     *
+     * This is the main convenience method that combines:
+     * 1. Fetches and decodes the audio
+     * 2. Generates a beat map with interpolation
+     * 3. Unifies the beat map
+     * 4. Runs rhythm generation
+     * 5. Runs pitch analysis (if pitchInfluenceWeight > 0)
+     * 6. Maps buttons to beats
+     * 7. Converts to ChartedBeatMap
+     *
+     * @param audioUrl - URL of the audio file to analyze
+     * @param audioId - Unique identifier for the audio source
+     * @param options - Level generation options (difficulty, controller mode, etc.)
+     * @param beatMapOptions - Beat map generation options (optional)
+     * @param downbeatConfig - Optional manual downbeat configuration
+     * @param onProgress - Optional callback for progress updates
+     * @returns Promise resolving to the generated level with playable chart
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     * const level = await analyzer.generateRhythmLevel('song.mp3', 'track-001', {
+     *   difficulty: 'medium',
+     *   controllerMode: 'ddr',
+     *   buttons: { pitchInfluenceWeight: 0.8 }
+     * });
+     *
+     * // Use the chart with BeatStream
+     * const beatStream = new BeatStream(level.chart, audioContext);
+     *
+     * // Access metadata
+     * console.log(`Generated ${level.metadata.chartMetadata.totalBeats} beats`);
+     * console.log(`Pitch influenced: ${level.metadata.buttonMetadata.pitchInfluencedBeats} beats`);
+     * ```
+     */
+    async generateRhythmLevel(
+        audioUrl: string,
+        audioId: string,
+        options: LevelGenerationOptions,
+        beatMapOptions?: BeatMapGeneratorOptions,
+        downbeatConfig?: DownbeatConfig,
+        onProgress?: LevelProgressCallback
+    ): Promise<GeneratedLevel> {
+        // Fetch and decode audio
+        const audioBuffer = await this.fetchAndDecode(audioUrl);
+
+        // Generate level from buffer
+        return this.generateRhythmLevelFromBuffer(
+            audioBuffer,
+            audioId,
+            options,
+            beatMapOptions,
+            downbeatConfig,
+            onProgress
+        );
+    }
+
+    /**
+     * Generate a complete rhythm game level from an AudioBuffer
+     *
+     * Use this method when you already have the audio decoded.
+     * This combines all generation phases in a single call.
+     *
+     * @param audioBuffer - Decoded audio buffer
+     * @param audioId - Unique identifier for the audio source
+     * @param options - Level generation options (difficulty, controller mode, etc.)
+     * @param beatMapOptions - Beat map generation options (optional)
+     * @param downbeatConfig - Optional manual downbeat configuration
+     * @param onProgress - Optional callback for progress updates
+     * @returns Promise resolving to the generated level with playable chart
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     * const audioBuffer = await analyzer.fetchAndDecodeAudio('song.mp3');
+     *
+     * const level = await analyzer.generateRhythmLevelFromBuffer(
+     *   audioBuffer,
+     *   'track-001',
+     *   {
+     *     difficulty: 'hard',
+     *     controllerMode: 'guitar_hero',
+     *     buttons: { pitchInfluenceWeight: 1.0 }
+     *   }
+     * );
+     *
+     * console.log(`Chart has ${level.chart.beats.length} beats`);
+     * ```
+     */
+    async generateRhythmLevelFromBuffer(
+        audioBuffer: AudioBuffer,
+        audioId: string,
+        options: LevelGenerationOptions,
+        beatMapOptions?: BeatMapGeneratorOptions,
+        downbeatConfig?: DownbeatConfig,
+        onProgress?: LevelProgressCallback
+    ): Promise<GeneratedLevel> {
+        // Generate beat map with interpolation
+        const interpolated = await this.generateBeatMapWithInterpolationFromBuffer(
+            audioBuffer,
+            audioId,
+            beatMapOptions,
+            downbeatConfig
+        );
+
+        // Unify the beat map
+        const unifiedBeatMap = unifyBeatMap(interpolated);
+
+        // Create level generator and run
+        const generator = new LevelGenerator(options);
+        return generator.generate(audioBuffer, unifiedBeatMap, onProgress);
+    }
+
+    // ==================== Level Generation with Presets ====================
+
+    /**
+     * Preset name for level generation configurations
+     */
+    static LEVEL_PRESETS = {
+        casual: {
+            difficulty: 'easy' as const,
+            controllerMode: 'ddr' as ControllerMode,
+            buttons: { pitchInfluenceWeight: 0.3 },
+            description: 'Easy difficulty, low pitch influence - for relaxed gameplay',
+        },
+        standard: {
+            difficulty: 'medium' as const,
+            controllerMode: 'ddr' as ControllerMode,
+            buttons: { pitchInfluenceWeight: 0.7 },
+            description: 'Medium difficulty, high pitch influence - balanced experience',
+        },
+        challenge: {
+            difficulty: 'hard' as const,
+            controllerMode: 'ddr' as ControllerMode,
+            buttons: { pitchInfluenceWeight: 1.0 },
+            description: 'Hard difficulty, full pitch influence - for skilled players',
+        },
+        insane: {
+            difficulty: 'hard' as const,
+            controllerMode: 'ddr' as ControllerMode,
+            buttons: {
+                pitchInfluenceWeight: 1.0,
+                consecutiveSameKeyLimit: 4,
+            },
+            description: 'Maximum difficulty with strict limits - for experts only',
+        },
+    };
+
+    /**
+     * Generate a rhythm game level using a preset configuration
+     *
+     * Quick generation method that uses predefined settings for common use cases.
+     *
+     * @param audioUrl - URL of the audio file to analyze
+     * @param audioId - Unique identifier for the audio source
+     * @param preset - Preset name: 'casual', 'standard', 'challenge', or 'insane'
+     * @param beatMapOptions - Beat map generation options (optional)
+     * @param downbeatConfig - Optional manual downbeat configuration
+     * @param onProgress - Optional callback for progress updates
+     * @returns Promise resolving to the generated level with playable chart
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     *
+     * // Quick casual level
+     * const casualLevel = await analyzer.generateRhythmLevelWithPreset(
+     *   'song.mp3',
+     *   'track-001',
+     *   'casual'
+     * );
+     *
+     * // Quick challenge level
+     * const challengeLevel = await analyzer.generateRhythmLevelWithPreset(
+     *   'song.mp3',
+     *   'track-001',
+     *   'challenge'
+     * );
+     *
+     * // List available presets
+     * console.log(AudioAnalyzer.LEVEL_PRESETS);
+     * ```
+     */
+    async generateRhythmLevelWithPreset(
+        audioUrl: string,
+        audioId: string,
+        preset: 'casual' | 'standard' | 'challenge' | 'insane',
+        beatMapOptions?: BeatMapGeneratorOptions,
+        downbeatConfig?: DownbeatConfig,
+        onProgress?: LevelProgressCallback
+    ): Promise<GeneratedLevel> {
+        const presetConfig = AudioAnalyzer.LEVEL_PRESETS[preset];
+
+        const options: LevelGenerationOptions = {
+            difficulty: presetConfig.difficulty,
+            controllerMode: presetConfig.controllerMode,
+            buttons: presetConfig.buttons,
+        };
+
+        return this.generateRhythmLevel(
+            audioUrl,
+            audioId,
+            options,
+            beatMapOptions,
+            downbeatConfig,
+            onProgress
+        );
+    }
+
+    /**
+     * Generate a rhythm game level using a preset configuration from an AudioBuffer
+     *
+     * Use this method when you already have the audio decoded.
+     *
+     * @param audioBuffer - Decoded audio buffer
+     * @param audioId - Unique identifier for the audio source
+     * @param preset - Preset name: 'casual', 'standard', 'challenge', or 'insane'
+     * @param beatMapOptions - Beat map generation options (optional)
+     * @param downbeatConfig - Optional manual downbeat configuration
+     * @param onProgress - Optional callback for progress updates
+     * @returns Promise resolving to the generated level with playable chart
+     *
+     * @example
+     * ```typescript
+     * const analyzer = new AudioAnalyzer();
+     * const audioBuffer = await analyzer.fetchAndDecodeAudio('song.mp3');
+     *
+     * const level = await analyzer.generateRhythmLevelWithPresetFromBuffer(
+     *   audioBuffer,
+     *   'track-001',
+     *   'standard'
+     * );
+     * ```
+     */
+    async generateRhythmLevelWithPresetFromBuffer(
+        audioBuffer: AudioBuffer,
+        audioId: string,
+        preset: 'casual' | 'standard' | 'challenge' | 'insane',
+        beatMapOptions?: BeatMapGeneratorOptions,
+        downbeatConfig?: DownbeatConfig,
+        onProgress?: LevelProgressCallback
+    ): Promise<GeneratedLevel> {
+        const presetConfig = AudioAnalyzer.LEVEL_PRESETS[preset];
+
+        const options: LevelGenerationOptions = {
+            difficulty: presetConfig.difficulty,
+            controllerMode: presetConfig.controllerMode,
+            buttons: presetConfig.buttons,
+        };
+
+        return this.generateRhythmLevelFromBuffer(
+            audioBuffer,
+            audioId,
+            options,
+            beatMapOptions,
+            downbeatConfig,
+            onProgress
+        );
     }
 
     /**
