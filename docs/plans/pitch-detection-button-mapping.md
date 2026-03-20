@@ -1316,12 +1316,12 @@ interface ChartMetadata {
   - [x] Verify large intervals → horizontal axis (left/right)
   - [x] Verify stable pitch → repeat previous button
   - [x] Verify 'none' direction → falls back to pattern library
-- [ ] Unit tests for Guitar Hero mode pitch-to-button mapping
-  - [ ] Verify pitch up → higher fret number (move right)
-  - [ ] Verify pitch down → lower fret number (move left)
-  - [ ] Verify interval size affects fret jump distance
-  - [ ] Verify fret clamping to valid range (1-5)
-  - [ ] Verify stable pitch → stay on same fret
+- [x] Unit tests for Guitar Hero mode pitch-to-button mapping
+  - [x] Verify pitch up → higher fret number (move right)
+  - [x] Verify pitch down → lower fret number (move left)
+  - [x] Verify interval size affects fret jump distance
+  - [x] Verify fret clamping to valid range (1-5) (with string wrap)
+  - [x] Verify stable pitch → stay on same fret
 - [ ] Unit tests for pattern selection (both controller modes)
 - [ ] Verify difficulty constraints are respected
 - [ ] Test band-aware mapping logic (using `PitchAtBeat.band`)
