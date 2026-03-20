@@ -450,6 +450,11 @@ export class MelodyContourAnalyzer {
         // Determine overall direction
         const overallDirection = determineOverallDirection(segments);
 
+        // Calculate time-window directions
+        const shortTermDirection = this.calculateTimeWindowDirection(pitches, 1, 2);
+        const mediumTermDirection = this.calculateTimeWindowDirection(pitches, 4, 8);
+        const longTermDirection = this.calculateTimeWindowDirection(pitches, 16, Infinity);
+
         return {
             segments,
             direction: overallDirection,
@@ -458,7 +463,82 @@ export class MelodyContourAnalyzer {
                 maxNote,
                 semitones: maxMidi - minMidi,
             },
+            shortTermDirection,
+            mediumTermDirection,
+            longTermDirection,
         };
+    }
+
+    /**
+     * Calculate direction over a specific time window
+     *
+     * Analyzes the last N beats to determine the overall direction trend.
+     *
+     * @param pitches - All pitches (sorted by timestamp)
+     * @param windowSize - Number of beats to look back for direction analysis
+     * @returns The overall direction for that window
+     */
+    private calculateTimeWindowDirection(
+        pitches: PitchAtBeat[],
+        minBeats: number,
+        maxBeats: number
+    ): MelodyContourDirection {
+        if (pitches.length === 0 || windowSize < 1) {
+            return 'stable';
+        }
+
+        // Get the last n pitches
+        const windowPitches = pitches.slice(-windowSize);
+
+        if (windowPitches.length === 0) {
+            return 'stable';
+        }
+
+        // Count directions in window
+        let upCount = 0;
+        let downCount = 0;
+        let stableCount = 0;
+
+        for (const pitch of windowPitches) {
+            if (pitch.direction === 'up') upCount++;
+            else if (pitch.direction === 'down') downCount++;
+            else if (pitch.direction === 'stable') stableCount++;
+        }
+
+        // Determine direction
+        return determineOverallDirectionFromCounts(upCount, downCount, stableCount);
+    }
+
+    /**
+     * Determine overall direction from direction counts
+     */
+    private determineOverallDirectionFromCounts(
+        upCount: number,
+        downCount: number,
+        stableCount: number
+    ): MelodyContourDirection {
+        const total = upCount + downCount + stableCount;
+
+        if (total === 0) {
+            return 'stable';
+        }
+
+        // Threshold for "mixed" - if up and down are within 20% of each other
+        const threshold = total * 0.2;
+
+        const netDirection = upCount - downCount;
+
+        if (Math.abs(netDirection) <= threshold) {
+            return 'mixed';
+        }
+
+        if (upCount > downCount) {
+            return 'ascending';
+        } else if (downCount > upCount) {
+            return 'descending';
+        } else {
+            return 'stable';
+        }
     }
 
     /**

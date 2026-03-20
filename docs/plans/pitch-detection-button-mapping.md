@@ -281,7 +281,7 @@ We use pYIN instead of standard YIN for several key advantages:
 
 #### 1.5.1 Pitch-to-Pitch Comparison
 
-- [ ] For each band stream, iterate through pitches and compare consecutive beats:
+- [x] For each band stream, iterate through pitches and compare consecutive beats:
   ```typescript
   // Pseudocode for pitch comparison
   for (const band of ['low', 'mid', 'high'] as const) {
@@ -314,13 +314,13 @@ We use pYIN instead of standard YIN for several key advantages:
   }
   ```
 
-- [ ] **Direction categories for button mapping**:
+- [x] **Direction categories for button mapping**:
   - `up`: Current pitch is higher than previous (ascending melody)
   - `down`: Current pitch is lower than previous (descending melody)
   - `stable`: Same pitch as previous (repeated note)
   - `none`: No previous pitch available (first note or no pitch detected)
 
-- [ ] **Interval categories for button mapping**:
+- [x] **Interval categories for button mapping**:
   ```typescript
   // Useful interval groupings for button mapping
   type IntervalCategory =
@@ -341,7 +341,7 @@ We use pYIN instead of standard YIN for several key advantages:
 
 #### 1.5.2 Contour Aggregation Types
 
-- [ ] Create melody contour extraction types
+- [x] Create melody contour extraction types
   ```typescript
   interface MelodyContour {
     segments: MelodySegment[];
@@ -365,14 +365,14 @@ We use pYIN instead of standard YIN for several key advantages:
 
 #### 1.5.3 Contour Analysis Tasks
 
-- [ ] Implement segment detection for melody phrases
-  - [ ] Group consecutive beats with same direction into segments
-  - [ ] Calculate total interval span for each segment
-- [ ] Link segments to beat positions
-- [ ] Calculate overall contour direction over different time windows
-  - [ ] Short-term (1-2 beats): immediate direction changes
-  - [ ] Medium-term (4-8 beats): phrase-level direction
-  - [ ] Long-term (16+ beats): section-level direction
+- [x] Implement segment detection for melody phrases
+  - [x] Group consecutive beats with same direction into segments
+  - [x] Calculate total interval span for each segment
+- [x] Link segments to beat positions
+- [x] Calculate overall contour direction over different time windows
+  - [x] Short-term (1-2 beats): immediate direction changes
+  - [x] Medium-term (4-8 beats): phrase-level direction
+  - [x] Long-term (16+ beats): section-level direction
 - [ ] Analyze contour separately for each band stream
 - [ ] Generate combined contour from composite pitches
 

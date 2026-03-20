@@ -101,6 +101,13 @@ export interface MelodyContour {
         /** Total span in semitones */
         semitones: number;
     };
+    /** Time-window direction analysis (Phase 1.5.3) */
+    /** Direction over the last 1-2 beats */
+    shortTermDirection: MelodyContourDirection;
+    /** Direction over the last 4-8 beats */
+    mediumTermDirection: MelodyContourDirection;
+    /** Direction over the last 16+ beats */
+    longTermDirection: MelodyContourDirection;
 }
 
 /**
