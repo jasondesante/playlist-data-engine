@@ -1495,7 +1495,7 @@ interface ChartMetadata {
     message: string;
   }
   ```
-- [ ] Support cancellation
+- [x] Support cancellation
 - [ ] Add caching for intermediate results
 
 ### 3.3 Tests

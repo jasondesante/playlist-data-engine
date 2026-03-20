@@ -553,4 +553,57 @@ describe('LevelGenerator Full Pipeline Integration', () => {
             console.log(`  Hard: ${results.hard.chart.beats.length} beats`);
         });
     });
+
+    describe('cancellation', () => {
+        it('should support cancellation via AbortSignal', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const controller = new AbortController();
+            controller.abort(); // Abort immediately
+
+            await expect(
+                generator.generate(audioBuffer, unifiedBeatMap, undefined, controller.signal)
+            ).rejects.toThrow('aborted');
+        });
+
+        it('should not throw if signal is not aborted', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const controller = new AbortController();
+            // Don't abort
+
+            const level = await generator.generate(audioBuffer, unifiedBeatMap, undefined, controller.signal);
+            expect(level).toBeDefined();
+            expect(level.chart.beats.length).toBeGreaterThan(0);
+        });
+
+        it('should support cancellation in generateAllDifficulties', async () => {
+            const generator = new LevelGenerator({
+                difficulty: 'medium',
+                controllerMode: 'ddr',
+            });
+
+            const audioBuffer = createMockAudioBufferWithPitch(2.0);
+            const unifiedBeatMap = createMockUnifiedBeatMap(2.0);
+
+            const controller = new AbortController();
+            controller.abort(); // Abort immediately
+
+            await expect(
+                generator.generateAllDifficulties(audioBuffer, unifiedBeatMap, undefined, controller.signal)
+            ).rejects.toThrow('aborted');
+        });
+    });
 });

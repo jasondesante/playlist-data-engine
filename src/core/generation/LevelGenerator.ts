@@ -237,23 +237,37 @@ export class LevelGenerator {
      * @param audioBuffer - Web Audio API AudioBuffer to analyze
      * @param unifiedBeatMap - The unified beat map for measure/beat info
      * @param progressCallback - Optional callback for progress updates
+     * @param signal - Optional AbortSignal for cancellation
      * @returns Generated level with playable chart
+     * @throws {DOMException} If the operation is cancelled via signal
      */
     async generate(
         audioBuffer: AudioBuffer,
         unifiedBeatMap: UnifiedBeatMap,
-        progressCallback?: LevelProgressCallback
+        progressCallback?: LevelProgressCallback,
+        signal?: AbortSignal
     ): Promise<GeneratedLevel> {
         const progress = (stage: LevelGenerationProgress['stage'], p: number, message: string) => {
             progressCallback?.({ stage, progress: p, message });
         };
 
+        // Check for cancellation at start
+        signal?.throwIfAborted();
+
         // Phase 1: Generate rhythm
         progress('rhythm', 0, 'Starting rhythm generation...');
-        const rhythm = await this.generateRhythm(audioBuffer, unifiedBeatMap, (phase, p, msg) => {
-            progress('rhythm', p, `[${phase}] ${msg}`);
-        });
+        const rhythm = await this.generateRhythm(
+            audioBuffer,
+            unifiedBeatMap,
+            (phase, p, msg) => {
+                progress('rhythm', p, `[${phase}] ${msg}`);
+            },
+            signal
+        );
         progress('rhythm', 1, 'Rhythm generation complete');
+
+        // Check for cancellation after rhythm generation
+        signal?.throwIfAborted();
 
         // Phase 2: Analyze pitch (if enabled)
         let pitchAnalysis: MelodyContourAnalysisResult | null = null;
@@ -267,15 +281,24 @@ export class LevelGenerator {
             progress('pitch', 1, 'Pitch analysis skipped (pitchInfluenceWeight = 0)');
         }
 
+        // Check for cancellation after pitch analysis
+        signal?.throwIfAborted();
+
         // Phase 3: Map buttons
         progress('buttons', 0, 'Starting button mapping...');
         const mappedResult = this.mapButtons(rhythm, pitchAnalysis);
         progress('buttons', 1, 'Button mapping complete');
 
+        // Check for cancellation after button mapping
+        signal?.throwIfAborted();
+
         // Phase 4: Convert to ChartedBeatMap
         progress('conversion', 0, 'Converting to playable chart...');
         const chart = this.convertToChart(mappedResult, unifiedBeatMap);
         progress('conversion', 1, 'Chart conversion complete');
+
+        // Check for cancellation before finalizing
+        signal?.throwIfAborted();
 
         // Phase 5: Finalize
         progress('finalizing', 0, 'Finalizing level...');
@@ -291,12 +314,15 @@ export class LevelGenerator {
      * @param audioBuffer - Web Audio API AudioBuffer to analyze
      * @param unifiedBeatMap - The unified beat map for measure/beat info
      * @param progressCallback - Optional callback for progress updates
+     * @param signal - Optional AbortSignal for cancellation
      * @returns Generated levels for easy, medium, and hard
+     * @throws {DOMException} If the operation is cancelled via signal
      */
     async generateAllDifficulties(
         audioBuffer: AudioBuffer,
         unifiedBeatMap: UnifiedBeatMap,
-        progressCallback?: LevelProgressCallback
+        progressCallback?: LevelProgressCallback,
+        signal?: AbortSignal
     ): Promise<AllDifficultiesResult> {
         const difficulties: Exclude<DifficultyPreset, 'custom'>[] = ['easy', 'medium', 'hard'];
         const results: Record<Exclude<DifficultyPreset, 'custom'>, GeneratedLevel | null> = {
@@ -305,14 +331,23 @@ export class LevelGenerator {
             hard: null,
         };
 
+        // Check for cancellation at start
+        signal?.throwIfAborted();
+
         // Generate rhythm once (shared across difficulties)
-        const rhythm = await this.generateRhythm(audioBuffer, unifiedBeatMap);
+        const rhythm = await this.generateRhythm(audioBuffer, unifiedBeatMap, undefined, signal);
+
+        // Check for cancellation after rhythm generation
+        signal?.throwIfAborted();
 
         // Analyze pitch once (shared across difficulties)
         let pitchAnalysis: MelodyContourAnalysisResult | null = null;
         if (this.buttonConfig.pitchInfluenceWeight > 0) {
             pitchAnalysis = await this.analyzePitch(audioBuffer, rhythm);
         }
+
+        // Check for cancellation after pitch analysis
+        signal?.throwIfAborted();
 
         // Generate each difficulty
         for (let i = 0; i < difficulties.length; i++) {
@@ -322,6 +357,9 @@ export class LevelGenerator {
                 progress: i / difficulties.length,
                 message: `Generating ${difficulty} chart...`,
             });
+
+            // Check for cancellation before each difficulty
+            signal?.throwIfAborted();
 
             // Create generator for this difficulty
             const diffGenerator = new LevelGenerator({
@@ -358,14 +396,15 @@ export class LevelGenerator {
     private async generateRhythm(
         audioBuffer: AudioBuffer,
         unifiedBeatMap: UnifiedBeatMap,
-        progressCallback?: (phase: string, progress: number, message: string) => void
+        progressCallback?: (phase: string, progress: number, message: string) => void,
+        signal?: AbortSignal
     ): Promise<GeneratedRhythm> {
         const rhythmGenerator = new RhythmGenerator(this.options.rhythm);
 
         const rhythm = await rhythmGenerator.generate(
             audioBuffer,
             unifiedBeatMap,
-            undefined, // signal
+            signal,
             progressCallback ? (phase, progress, message) => {
                 progressCallback(phase, progress, message);
             } : undefined
