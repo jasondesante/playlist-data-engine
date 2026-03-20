@@ -2520,6 +2520,8 @@ constructor(options?: RhythmGenerationOptions)
 
 Splits audio into multiple frequency bands and analyzes each band separately for transient detection. Each band is processed independently to detect band-specific rhythmic elements.
 
+**For multi-band analysis approach and diagrams, see [docs/BEAT_DETECTION.md#transient-detection](docs/BEAT_DETECTION.md#transient-detection)**
+
 **Constructor:**
 
 ```typescript
@@ -2547,6 +2549,8 @@ constructor(config?: MultiBandAnalyzerConfig)
 *Location:* *[src/core/analysis/beat/TransientDetector.ts](src/core/analysis/beat/TransientDetector.ts)*
 
 Detects transients (onsets) in audio using band-specific detection strategies. Each frequency band uses a different algorithm optimized for its typical content.
+
+**For detection strategies (Energy, Spectral Flux, HFC) and adaptive thresholding, see [docs/BEAT_DETECTION.md#detection-strategies](docs/BEAT_DETECTION.md#detection-strategies)**
 
 **Detection Strategies:**
 
@@ -2583,6 +2587,8 @@ constructor(config?: TransientDetectorConfig)
 
 Translates raw transients into quantized rhythmic subdivisions that align with the beat map grid. Performs per-beat grid detection (16th vs triplet) with density validation and sensitivity retry logic.
 
+**For per-beat grid detection, density validation, and intensity filtering, see [docs/BEAT_DETECTION.md#rhythm-quantization](docs/BEAT_DETECTION.md#rhythm-quantization)**
+
 **Constructor:**
 
 ```typescript
@@ -2616,6 +2622,8 @@ constructor(config?: QuantizationConfig)
 *Location:* *[src/core/analysis/beat/PhraseAnalyzer.ts](src/core/analysis/beat/PhraseAnalyzer.ts)*
 
 Analyzes quantized rhythm streams to detect duplicate multi-beat phrases. These detected phrases form a song-specific pattern library used for density enhancement.
+
+**For phrase detection algorithm and significance scoring, see [docs/BEAT_DETECTION.md#phrase-detection](docs/BEAT_DETECTION.md#phrase-detection)**
 
 **Constructor:**
 
@@ -2668,6 +2676,8 @@ Single occurrence of a detected phrase. Timestamps enable pitch analysis of spec
 
 Analyzes quantized rhythm streams to measure density and determine natural difficulty. Calculates transients per beat and categorizes streams as sparse, moderate, or dense.
 
+**For density analysis and natural difficulty detection, see [docs/BEAT_DETECTION.md#natural-difficulty-detection](docs/BEAT_DETECTION.md#natural-difficulty-detection)**
+
 **Methods:**
 
 | Method | Returns | Description |
@@ -2686,6 +2696,8 @@ Analyzes quantized rhythm streams to measure density and determine natural diffi
 *Location:* *[src/core/analysis/beat/StreamScorer.ts](src/core/analysis/beat/StreamScorer.ts)*
 
 Scores each band stream section for rhythmic interest. Uses IOI variance, syncopation, phrase significance, and density factors.
+
+**For scoring factors and section scoring algorithm, see [docs/BEAT_DETECTION.md#scoring-and-composite-generation](docs/BEAT_DETECTION.md#scoring-and-composite-generation)**
 
 **Methods:**
 
@@ -2707,6 +2719,8 @@ Scores each band stream section for rhythmic interest. Uses IOI variance, syncop
 
 Creates a composite stream by slicing together the highest-scoring sections from each band. The composite represents the most interesting rhythm patterns across all frequency bands.
 
+**For composite stream generation algorithm, see [docs/BEAT_DETECTION.md#composite-stream-generation](docs/BEAT_DETECTION.md#composite-stream-generation)**
+
 **Methods:**
 
 | Method | Returns | Description |
@@ -2717,6 +2731,8 @@ Creates a composite stream by slicing together the highest-scoring sections from
 *Location:* *[src/core/analysis/beat/DifficultyVariantGenerator.ts](src/core/analysis/beat/DifficultyVariantGenerator.ts)*
 
 Generates easy/medium/hard difficulty variants from the composite stream. Uses simplification for harder-to-easier conversions and density enhancement for easier-to-harder conversions.
+
+**For variant generation strategy, simplification rules, and density enhancement, see [docs/BEAT_DETECTION.md#difficulty-variant-generation](docs/BEAT_DETECTION.md#difficulty-variant-generation)**
 
 **Methods:**
 
