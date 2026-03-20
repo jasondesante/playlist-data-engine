@@ -328,22 +328,62 @@ export class MultiBandAnalyzer {
      *
      * Spectral flux measures the amount of change in the spectrum between
      * consecutive frames. High values indicate likely onset points.
+     *
+     * ## Algorithm: Spectral Flux for Onset Detection
+     *
+     * Spectral flux is a widely-used onset detection method that measures the
+     * positive change in spectral energy between consecutive STFT frames.
+     *
+     * ### Mathematical Definition:
+     *
+     * For each frequency bin `b` at time `t`:
+     * ```
+     * flux(t, b) = max(0, |X(t, b)| - |X(t-1, b)|)
+     * ```
+     * Where |X(t, b)| is the magnitude at frequency bin b, time frame t.
+     *
+     * The total flux at time t is the sum across all frequency bins:
+     * ```
+     * onset_strength(t) = Σ flux(t, b) for all bins b
+     * ```
+     *
+     * ### Why Positive Differences Only?
+     *
+     * We only count increases in energy (positive differences) because:
+     * 1. Onsets are characterized by a *rise* in energy, not a fall
+     * 2. Including negative differences would cancel out onset peaks
+     * 3. This is called "half-wave rectification" in signal processing
+     *
+     * ### Why This Works for Rhythm Detection:
+     *
+     * - When a new note/drum hits, its frequency content suddenly appears
+     * - This creates a large positive difference in those frequency bins
+     * - The sum of all positive differences creates a peak in the envelope
+     * - Peaks in the envelope correspond to transients/onsets
      */
     private calculateOnsetEnvelope(frames: Float32Array[]): Float32Array {
         const numFrames = frames.length;
         const envelope = new Float32Array(numFrames);
 
-        // First frame has no predecessor
+        // First frame has no predecessor, so flux is zero by definition
+        // (no previous frame to compare against)
         envelope[0] = 0;
 
+        // Process each consecutive frame pair
         for (let frame = 1; frame < numFrames; frame++) {
             const currentFrame = frames[frame];
             const prevFrame = frames[frame - 1];
 
-            // Calculate spectral flux (sum of positive differences)
+            // Calculate spectral flux: sum of positive (half-wave rectified) differences
+            // This is the core of the onset detection algorithm
             let flux = 0;
             for (let bin = 0; bin < currentFrame.length; bin++) {
+                // Calculate the difference between current and previous frame
                 const diff = currentFrame[bin] - prevFrame[bin];
+
+                // Half-wave rectification: only count positive differences
+                // Negative differences (energy decreasing) are ignored
+                // This is crucial - we want to detect energy *increases* (onsets)
                 if (diff > 0) {
                     flux += diff;
                 }

@@ -607,6 +607,34 @@ export class RhythmQuantizer {
 
     /**
      * Detect grid type for a beat
+     *
+     * ## Algorithm: Per-Beat Grid Detection (16th vs Triplet)
+     *
+     * This method determines whether transients within a beat fit better on:
+     * - **Straight 16th note grid**: 4 equally-spaced positions (0, 1, 2, 3)
+     * - **8th note triplet grid**: 3 equally-spaced positions (0, 1, 2)
+     *
+     * ### Decision Logic:
+     *
+     * 1. Calculate both grid positions for the beat
+     * 2. For each transient, measure distance to nearest point on each grid
+     * 3. Calculate average offset per transient for each grid
+     * 4. Select grid with **smaller average offset** (transients are closer to grid points)
+     * 5. Confidence = |straightAvgOffset - tripletAvgOffset| (how much better the winner fits)
+     *
+     * ### Example:
+     * - If transients are at 0ms, 250ms, 500ms in a 500ms beat:
+     *   - Straight 16th grid (0, 125, 250, 375, 500ms) → offsets: 0, 0, 0 → avg 0ms
+     *   - Triplet grid (0, 167, 333, 500ms) → offsets: 0, 83, 167 → avg 83ms
+     *   - Winner: Straight 16th (smaller offset)
+     *
+     * ### Why Per-Beat Detection?
+     *
+     * Music often mixes straight and triplet feels within the same song.
+     * By detecting the grid per-beat, we can handle:
+     * - Songs with tempo changes
+     * - Songs with mixed time signatures
+     * - Songs with swing feel in some sections but not others
      */
     private detectGrid(
         transients: TransientResult[],
@@ -614,16 +642,19 @@ export class RhythmQuantizer {
         beatIndex: number,
         quarterNoteInterval: number
     ): GridDecision {
-        // Calculate grid positions
+        // Step 1: Calculate grid positions for both grid types
+        // Straight 16th: 4 positions at 0, 1/4, 2/4, 3/4 of the beat
         const straightGrid = this.calculateStraightGrid(beat.timestamp, quarterNoteInterval);
+        // Triplet 8th: 3 positions at 0, 1/3, 2/3 of the beat
         const tripletGrid = this.calculateTripletGrid(beat.timestamp, quarterNoteInterval);
 
-        // Calculate average offset from each grid
+        // Step 2: Calculate total offset from each grid for all transients
         let straightTotalOffset = 0;
         let tripletTotalOffset = 0;
         let validTransients = 0;
 
         for (const transient of transients) {
+            // Find minimum distance from this transient to any point on each grid
             const straightOffset = this.calculateOffsetFromGrid(transient, straightGrid);
             const tripletOffset = this.calculateOffsetFromGrid(transient, tripletGrid);
             straightTotalOffset += straightOffset;
@@ -631,12 +662,16 @@ export class RhythmQuantizer {
             validTransients++;
         }
 
-        // Calculate averages
+        // Step 3: Calculate average offset per transient
         const straightAvgOffset = validTransients > 0 ? straightTotalOffset / validTransients : 0;
         const tripletAvgOffset = validTransients > 0 ? tripletTotalOffset / validTransients : 0;
 
-        // Select grid with smaller average offset
+        // Step 4: Select grid with smaller average offset (better fit)
+        // Use <= to prefer straight grid when tied (more common in Western music)
         const selectedGrid: GridType = straightAvgOffset <= tripletAvgOffset ? 'straight_16th' : 'triplet_8th';
+
+        // Step 5: Calculate confidence (how much better the winner fits)
+        // Higher confidence = clearer decision (one grid fits much better)
         const confidence = Math.abs(straightAvgOffset - tripletAvgOffset);
 
         return {

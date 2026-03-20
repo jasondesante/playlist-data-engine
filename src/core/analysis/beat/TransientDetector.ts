@@ -391,6 +391,19 @@ export class TransientDetector {
      * Uses a sliding window to calculate local energy and adjust threshold accordingly.
      * This helps handle songs with varying dynamics.
      *
+     * ## Algorithm: Adaptive Thresholding via Coefficient of Variation
+     *
+     * The threshold is adjusted based on the signal's dynamic range:
+     *
+     * 1. **Calculate Mean Energy**: Average onset strength across all frames
+     * 2. **Calculate Standard Deviation**: Measure of energy variation
+     * 3. **Compute Coefficient of Variation (CV)**: stdDev / mean
+     *    - CV ≈ 0: Signal is consistent (e.g., electronic dance music)
+     *    - CV > 1: Signal has high dynamic range (e.g., classical with quiet/loud sections)
+     * 4. **Adjust Threshold**: baseThreshold * (1 + CV * 0.5)
+     *    - High CV → Higher threshold (more selective, fewer false positives in dynamic sections)
+     *    - Low CV → Lower threshold (catch more transients in consistent sections)
+     *
      * @param envelope - The onset strength envelope
      * @returns Calculated threshold
      */
@@ -399,7 +412,8 @@ export class TransientDetector {
             return this.config.baseThreshold;
         }
 
-        // Calculate global statistics
+        // Step 1: Calculate mean energy (first pass through envelope)
+        // This represents the average onset strength across the entire signal
         let sum = 0;
         let max = 0;
         for (let i = 0; i < envelope.length; i++) {
@@ -410,7 +424,9 @@ export class TransientDetector {
         }
         const mean = sum / envelope.length;
 
-        // Calculate standard deviation
+        // Step 2: Calculate standard deviation (second pass)
+        // Standard deviation measures how spread out the energy values are
+        // High stdDev = signal has both quiet and loud sections
         let varianceSum = 0;
         for (let i = 0; i < envelope.length; i++) {
             const diff = envelope[i] - mean;
@@ -418,18 +434,20 @@ export class TransientDetector {
         }
         const stdDev = Math.sqrt(varianceSum / envelope.length);
 
-        // Adaptive threshold: base threshold adjusted by signal characteristics
-        // Use higher threshold for signals with high variance (dynamic range)
-        // Use lower threshold for signals with low variance (consistent level)
+        // Step 3: Compute coefficient of variation (CV)
+        // CV = stdDev / mean, a normalized measure of dispersion
+        // This allows comparison across signals with different average levels
         const coefficientOfVariation = mean > 0 ? stdDev / mean : 0;
 
-        // Scale threshold based on coefficient of variation
-        // Higher variance = higher threshold (more selective)
-        // Lower variance = lower threshold (less selective)
+        // Step 4: Apply adaptive scaling factor
+        // The 0.5 multiplier is a tuning parameter that controls sensitivity
+        // - CV of 0.5 → threshold multiplied by 1.25 (slightly more selective)
+        // - CV of 1.0 → threshold multiplied by 1.5 (moderately more selective)
+        // - CV of 2.0 → threshold multiplied by 2.0 (much more selective)
         const adaptiveFactor = 1 + (coefficientOfVariation * 0.5);
         const adaptiveThreshold = this.config.baseThreshold * adaptiveFactor;
 
-        // Clamp to valid range
+        // Clamp to valid range to prevent extreme values
         return Math.max(0.1, Math.min(0.9, adaptiveThreshold));
     }
 
