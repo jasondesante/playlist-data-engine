@@ -1318,16 +1318,16 @@ interface ChartMetadata {
 - [x] Unit tests for pattern selection (both controller modes)
 - [x] Verify difficulty constraints are respected
 - [x] Test band-aware mapping logic (using `PitchAtBeat.band`)
-- [ ] **Unit tests for probability-based blending (`blendPitchAndPattern`)**:
-  - [ ] Verify weight = 1.0 → all pitch buttons used (no replacement)
-  - [ ] Verify weight = 0.0 → all pattern buttons used (full replacement)
-  - [ ] Verify weight = 0.5 → 50% replaced (lowest probability half)
-  - [ ] Verify lowest probability beats are replaced first
-  - [ ] Verify beats with no pitch (null) always use pattern regardless of weight
-  - [ ] Verify high-probability pitch beats are preserved when weight > 0
-  - [ ] Verify correct behavior with ties in probability (deterministic ordering)
+- [x] **Unit tests for probability-based blending (`blendPitchAndPattern`)**:
+  - [x] Verify weight = 1.0 → all pitch buttons used (no replacement)
+  - [x] Verify weight = 0.0 → all pattern buttons used (full replacement)
+  - [x] Verify weight = 0.5 → 50% replaced (lowest probability half)
+  - [x] Verify lowest probability beats are replaced first
+  - [x] Verify beats with no pitch (null) always use pattern regardless of weight
+  - [x] Verify high-probability pitch beats are preserved when weight > 0
+  - [x] Verify correct behavior with ties in probability (deterministic ordering)
 - [ ] Integration test: full button mapping with real pitch data
-- [ ] Verify direction statistics are calculated correctly in output metadata
+- [x] Verify direction statistics are calculated correctly in output metadata
 
 ---
 
