@@ -1326,7 +1326,7 @@ interface ChartMetadata {
   - [x] Verify beats with no pitch (null) always use pattern regardless of weight
   - [x] Verify high-probability pitch beats are preserved when weight > 0
   - [x] Verify correct behavior with ties in probability (deterministic ordering)
-- [ ] Integration test: full button mapping with real pitch data
+- [x] Integration test: full button mapping with real pitch data
 - [x] Verify direction statistics are calculated correctly in output metadata
 
 ---
