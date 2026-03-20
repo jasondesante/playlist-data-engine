@@ -172,10 +172,10 @@ We use pYIN instead of standard YIN for several key advantages:
 
 #### 1.3.2 Phrase-Level Pitch Correlation
 
-- [ ] **Integrate with `RhythmicPhrase` from rhythm generation**:
-  - [ ] Use `RhythmicPhrase.sourceBand` to know which pre-filtered frequency band to analyze
-  - [ ] Use `PhraseOccurrence.startTimestamp`/`endTimestamp` to analyze pitch across phrase boundaries
-  - [ ] Associate detected pitches with phrase occurrences across the song
+- [x] **Integrate with `RhythmicPhrase` from rhythm generation**:
+  - [x] Use `RhythmicPhrase.sourceBand` to know which pre-filtered frequency band to analyze
+  - [x] Use `PhraseOccurrence.startTimestamp`/`endTimestamp` to analyze pitch across phrase boundaries
+  - [x] Associate detected pitches with phrase occurrences across the song
   ```typescript
   // Re-exported from rhythm generation for reference
   interface PhraseOccurrence {

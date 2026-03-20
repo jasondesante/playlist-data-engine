@@ -16,6 +16,7 @@ import {
     type PreFilteredBandAudio,
 } from './PitchBeatLinker.js';
 import type { GeneratedRhythmMap, GeneratedBeat } from '../analysis/beat/RhythmQuantizer.js';
+import type { RhythmicPhrase, PhraseOccurrence } from '../analysis/beat/PhraseAnalyzer.js';
 import { FREQUENCY_BANDS, applyFrequencyBand } from '../analysis/beat/utils/audioUtils.js';
 
 describe('PitchBeatLinker', () => {
@@ -738,5 +739,242 @@ describe('PitchBeatLinker', () => {
             expect(allVariantPitches.hard[2].band).toBe('low');
         });
 
+    });
+
+    // ============================================================================
+    // Phrase-Level Pitch Correlation Tests (Phase 1.3.2)
+    // ============================================================================
+
+    describe('Phrase-Level Pitch Correlation', () => {
+        // Helper to create mock rhythmic phrases
+        function createMockPhrase(
+            id: string,
+            sourceBand: PitchBandName,
+            occurrences: Array<{ beatIndex: number; startTimestamp: number; endTimestamp: number }>,
+            pattern?: GeneratedBeat[]
+        ): RhythmicPhrase {
+            const defaultPattern: GeneratedBeat[] = occurrences.map((occ, i) => ({
+                timestamp: occ.startTimestamp,
+                beatIndex: occ.beatIndex,
+                gridPosition: 0,
+                gridType: 'straight_16th' as const,
+                intensity: 0.8,
+                band: sourceBand,
+            }));
+
+            return {
+                id,
+                pattern: pattern ?? defaultPattern,
+                sizeInBeats: occurrences.length > 0 ? 1 : 0,
+                sourceBand,
+                occurrences: occurrences.map(occ => ({
+                    beatIndex: occ.beatIndex,
+                    startTimestamp: occ.startTimestamp,
+                    endTimestamp: occ.endTimestamp,
+                })),
+                significance: 1.0,
+                hasVariation: true,
+                availableForReuse: true,
+            };
+        }
+
+        it('should build phrase-pitch correlation when phrases are provided', () => {
+            const linker = new PitchBeatLinker();
+
+            // Create beats in mid band
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.0, beatIndex: 1, band: 'mid' },
+                { timestamp: 1.5, beatIndex: 2, band: 'mid' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            // Create mock phrases
+            const phrases: RhythmicPhrase[] = [
+                createMockPhrase('phrase_1_1', 'mid', [
+                    { beatIndex: 0, startTimestamp: 0.4, endTimestamp: 0.6 },
+                ]),
+            ];
+
+            const result = linker.link(bandStreams, audioBuffer, phrases);
+
+            // Should have phrase correlation map
+            expect(result.phrasePitchCorrelation).toBeDefined();
+            expect(result.phrasePitchCorrelation.size).toBe(1);
+        });
+
+        it('should use phrase.id as the correlation key', () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            const phrases: RhythmicPhrase[] = [
+                createMockPhrase('my_unique_phrase_id', 'mid', [
+                    { beatIndex: 0, startTimestamp: 0.4, endTimestamp: 0.6 },
+                ]),
+            ];
+
+            const result = linker.link(bandStreams, audioBuffer, phrases);
+
+            // Should use phrase.id as the key
+            expect(result.phrasePitchCorrelation.has('my_unique_phrase_id')).toBe(true);
+        });
+
+        it('should use RhythmicPhrase.sourceBand to find correct band pitches', () => {
+            const linker = new PitchBeatLinker();
+
+            // Create beats in both low and mid bands
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'low' },
+                { timestamp: 1.0, beatIndex: 1, band: 'mid' },
+            ]);
+
+            const signal = createSineWave(220, 5.0); // Low frequency for low band
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            // Create phrase in LOW band
+            const phrases: RhythmicPhrase[] = [
+                createMockPhrase('low_phrase', 'low', [
+                    { beatIndex: 0, startTimestamp: 0.4, endTimestamp: 0.6 },
+                ]),
+            ];
+
+            const result = linker.link(bandStreams, audioBuffer, phrases);
+
+            // Should correlate with low band pitches
+            expect(result.phrasePitchCorrelation.has('low_phrase')).toBe(true);
+            const lowPhrasePitches = result.phrasePitchCorrelation.get('low_phrase');
+            expect(lowPhrasePitches).toBeDefined();
+            expect(lowPhrasePitches!.length).toBeGreaterThan(0);
+        });
+
+        it('should use PhraseOccurrence timestamps to find pitches in range', () => {
+            const linker = new PitchBeatLinker();
+
+            // Create beats at 0.5, 1.0, 1.5, 2.0
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.0, beatIndex: 1, band: 'mid' },
+                { timestamp: 1.5, beatIndex: 2, band: 'mid' },
+                { timestamp: 2.0, beatIndex: 3, band: 'mid' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            // Create phrase with occurrence spanning 0.4-1.1 (should catch 0.5 and 1.0)
+            const phrases: RhythmicPhrase[] = [
+                createMockPhrase('range_phrase', 'mid', [
+                    { beatIndex: 0, startTimestamp: 0.4, endTimestamp: 1.1 },
+                ]),
+            ];
+
+            const result = linker.link(bandStreams, audioBuffer, phrases);
+
+            const rangePhrasePitches = result.phrasePitchCorrelation.get('range_phrase');
+            expect(rangePhrasePitches).toBeDefined();
+            // Should include pitches from 0.5 and 1.0 (within 0.4-1.1 range)
+            expect(rangePhrasePitches!.length).toBe(2);
+        });
+
+        it('should handle multiple occurrences of the same phrase', () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.5, beatIndex: 1, band: 'mid' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            // Create phrase with TWO occurrences
+            const phrases: RhythmicPhrase[] = [
+                createMockPhrase('repeating_phrase', 'mid', [
+                    { beatIndex: 0, startTimestamp: 0.4, endTimestamp: 0.6 },
+                    { beatIndex: 1, startTimestamp: 1.4, endTimestamp: 1.6 },
+                ]),
+            ];
+
+            const result = linker.link(bandStreams, audioBuffer, phrases);
+
+            const repeatingPhrasePitches = result.phrasePitchCorrelation.get('repeating_phrase');
+            expect(repeatingPhrasePitches).toBeDefined();
+            // Should include pitches from both occurrences
+            expect(repeatingPhrasePitches!.length).toBe(2);
+        });
+
+        it('should return empty correlation map when no phrases provided', () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            // No phrases provided
+            const result = linker.link(bandStreams, audioBuffer);
+
+            expect(result.phrasePitchCorrelation.size).toBe(0);
+        });
+
+        it('should handle phrase with no matching band pitches gracefully', () => {
+            const linker = new PitchBeatLinker();
+
+            // Create beats only in mid band
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const audioBuffer = createMockAudioBuffer(signal);
+
+            // Create phrase for HIGH band (which has no beats)
+            const phrases: RhythmicPhrase[] = [
+                createMockPhrase('high_phrase', 'high', [
+                    { beatIndex: 0, startTimestamp: 0.4, endTimestamp: 0.6 },
+                ]),
+            ];
+
+            const result = linker.link(bandStreams, audioBuffer, phrases);
+
+            // High band has no beats, so no correlation
+            expect(result.phrasePitchCorrelation.size).toBe(0);
+        });
+
+        it('should work with pre-filtered analysis and phrases', () => {
+            const linker = new PitchBeatLinker();
+
+            const bandStreams = createMockBandStreams([
+                { timestamp: 0.5, beatIndex: 0, band: 'mid' },
+                { timestamp: 1.0, beatIndex: 1, band: 'mid' },
+            ]);
+
+            const signal = createSineWave(440, 5.0);
+            const preFilteredBands = createPreFilteredBands(signal);
+
+            const phrases: RhythmicPhrase[] = [
+                createMockPhrase('prefiltered_phrase', 'mid', [
+                    { beatIndex: 0, startTimestamp: 0.4, endTimestamp: 0.6 },
+                    { beatIndex: 1, startTimestamp: 0.9, endTimestamp: 1.1 },
+                ]),
+            ];
+
+            const result = linker.linkPreFiltered(bandStreams, preFilteredBands, {
+                duration: 5.0,
+            }, phrases);
+
+            expect(result.phrasePitchCorrelation.size).toBe(1);
+            expect(result.phrasePitchCorrelation.has('prefiltered_phrase')).toBe(true);
+        });
     });
 });

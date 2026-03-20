@@ -475,6 +475,12 @@ export class PitchBeatLinker {
      * Build phrase-level pitch correlation
      *
      * Maps each phrase to the pitches detected within its occurrences.
+     * Uses the phrase's unique `id` field as the map key for reliable lookups.
+     *
+     * This integration enables:
+     * - Identifying which pitches are associated with which rhythmic phrases
+     * - Tracking pitch patterns across repeated phrase occurrences
+     * - Using phrase-level pitch data for button mapping decisions
      */
     private buildPhraseCorrelation(
         phrases: RhythmicPhrase[],
@@ -488,18 +494,13 @@ export class PitchBeatLinker {
 
             if (!bandResult) continue;
 
-            // Create a timestamp lookup for this band's pitches
-            const pitchByTimestamp = new Map<number, PitchAtBeat>();
-            for (const pitch of bandResult.pitches) {
-                pitchByTimestamp.set(pitch.timestamp, pitch);
-            }
-
-            // Find pitches within each phrase occurrence
+            // Find pitches within each phrase occurrence using timestamps
             for (const occurrence of phrase.occurrences) {
                 const startTime = occurrence.startTimestamp;
                 const endTime = occurrence.endTimestamp;
 
                 // Find all pitches within this occurrence's time range
+                // Uses RhythmicPhrase.sourceBand to get the correct pre-filtered band
                 for (const pitch of bandResult.pitches) {
                     if (pitch.timestamp >= startTime && pitch.timestamp <= endTime && pitch.pitch) {
                         phrasePitches.push(pitch.pitch);
@@ -507,13 +508,13 @@ export class PitchBeatLinker {
                 }
             }
 
-            // Store correlation using phrase pattern as key (could use a unique ID if available)
-            const phraseKey = `${phrase.sourceBand}_${phrase.sizeInBeats}_${phrase.pattern.length}`;
+            // Store correlation using phrase.id as the unique key
+            // This enables reliable lookups since id is a hash of the pattern
             if (phrasePitches.length > 0) {
-                if (!correlation.has(phraseKey)) {
-                    correlation.set(phraseKey, []);
+                if (!correlation.has(phrase.id)) {
+                    correlation.set(phrase.id, []);
                 }
-                correlation.get(phraseKey)!.push(...phrasePitches);
+                correlation.get(phrase.id)!.push(...phrasePitches);
             }
         }
 
