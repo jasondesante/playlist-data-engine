@@ -792,18 +792,18 @@ Each difficulty level has constraints on the maximum subdivision density allowed
 
 **Style**: Per the style guide, this file prioritizes scannable efficiency. No code examples—use structured tables, location links, and cross-references instead.
 
-- [ ] Add new section: "Procedural Rhythm Generation"
-  - [ ] Add location links (italicized format) to all major definitions:
-    - [ ] `RhythmGenerator` → *[src/core/generation/RhythmGenerator.ts](src/core/generation/RhythmGenerator.ts)*
-    - [ ] `MultiBandAnalyzer` → *[src/core/analysis/MultiBandAnalyzer.ts](src/core/analysis/MultiBandAnalyzer.ts)*
-    - [ ] `TransientDetector` → *[src/core/analysis/beat/TransientDetector.ts](src/core/analysis/beat/TransientDetector.ts)*
-  - [ ] Create structured tables for methods (with Returns/Description columns)
-  - [ ] Create frequency bands reference table (low/mid/high Hz ranges)
-  - [ ] Create output streams table (low/mid/high/composite with purpose descriptions)
-  - [ ] Create phrase analysis table documenting `RhythmicPhrase` and `PhraseOccurrence` fields (for pitch detection integration)
-  - [ ] Add cross-references to BEAT_DETECTION.md for algorithm details
-  - [ ] Add cross-reference to pitch-detection-button-mapping.md for phrase/pitch correlation
-  - [ ] Add "Also known as" aliases where helpful (e.g., *transient detection* ↔ *onset detection*)
+- [x] Add new section: "Procedural Rhythm Generation"
+  - [x] Add location links (italicized format) to all major definitions:
+    - [x] `RhythmGenerator` → *[src/core/generation/RhythmGenerator.ts](src/core/generation/RhythmGenerator.ts)*
+    - [x] `MultiBandAnalyzer` → *[src/core/analysis/MultiBandAnalyzer.ts](src/core/analysis/MultiBandAnalyzer.ts)*
+    - [x] `TransientDetector` → *[src/core/analysis/beat/TransientDetector.ts](src/core/analysis/beat/TransientDetector.ts)*
+  - [x] Create structured tables for methods (with Returns/Description columns)
+  - [x] Create frequency bands reference table (low/mid/high Hz ranges)
+  - [x] Create output streams table (low/mid/high/composite with purpose descriptions)
+  - [x] Create phrase analysis table documenting `RhythmicPhrase` and `PhraseOccurrence` fields (for pitch detection integration)
+  - [x] Add cross-references to BEAT_DETECTION.md for algorithm details
+  - [x] Add cross-reference to pitch-detection-button-mapping.md for phrase/pitch correlation
+  - [x] Add "Also known as" aliases where helpful (e.g., *transient detection* ↔ *onset detection*)
 
 ### 5.3 Update BEAT_DETECTION.md
 

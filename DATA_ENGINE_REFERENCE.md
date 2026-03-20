@@ -18,13 +18,23 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [BeatTracker](#beattracker)
    - [TempoDetector](#tempodetector)
    - [Beat Detection Utilities](#beat-detection-utilities)
-5. [Progression System](#progression-system)
-6. [Configuration](#configuration)
-7. [Environmental Sensors](#environmental-sensors)
-8. [Gaming Integration](#gaming-integration)
-9. [Combat System](#combat-system)
-10. [Enemy Generation](#enemy-generation)
-11. [Equipment System](#equipment-system)
+5. [Procedural Rhythm Generation](#procedural-rhythm-generation)
+   - [RhythmGenerator](#rhythmgenerator)
+   - [MultiBandAnalyzer](#multibandanalyzer)
+   - [TransientDetector](#transientdetector)
+   - [RhythmQuantizer](#rhythmquantizer)
+   - [PhraseAnalyzer](#phraseanalyzer)
+   - [DensityAnalyzer](#densityanalyzer)
+   - [StreamScorer](#streamscorer)
+   - [CompositeStreamGenerator](#compositestreamgenerator)
+   - [DifficultyVariantGenerator](#difficultyvariantgenerator)
+6. [Progression System](#progression-system)
+7. [Configuration](#configuration)
+8. [Environmental Sensors](#environmental-sensors)
+9. [Gaming Integration](#gaming-integration)
+10. [Combat System](#combat-system)
+11. [Enemy Generation](#enemy-generation)
+12. [Equipment System](#equipment-system)
    - [Equipment Types](#equipment-types)
    - [EquipmentEffectApplier](#equipmenteffectapplier)
    - [EquipmentValidator](#equipmentvalidator)
@@ -32,7 +42,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [Equipment Modifier](#equipment-modifier)
    - [Equipment Spawn Helper](#equipment-spawn-helper)
    - [BoxOpener](#boxopener)
-12. [Extensibility System](#extensibility-system)
+13. [Extensibility System](#extensibility-system)
     - [ExtensionManager](#extensionmanager)
     - [FeatureQuery](#featurequery)
     - [FeatureValidator](#featurevalidator)
@@ -48,7 +58,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
     - [Custom Classes](#custom-classes)
 
     **For spawn rates, CharacterGenerator extensions, validation rules, and advanced patterns, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
-13. [Cross-References](#cross-references)
+14. [Cross-References](#cross-references)
 
 ---
 
@@ -169,6 +179,24 @@ A concise overview of all main exports from the library, organized by category.
 
 **OSE Helper Functions:** `getHopSizeMs`, `getMelBands`, `getGaussianSmoothMs` — see [OSE Parameter Mode Helper Functions](#ose-parameter-mode-helper-functions)
 
+### Procedural Rhythm Generation
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `RhythmGenerator` | Main orchestrator for procedural rhythm generation | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `MultiBandAnalyzer` | Split audio into frequency bands for transient detection | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `TransientDetector` | Detect transients using band-specific strategies | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `RhythmQuantizer` | Quantize transients to beat map grid | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `PhraseAnalyzer` | Detect duplicate rhythmic phrases | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `DensityAnalyzer` | Measure density and determine natural difficulty | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `StreamScorer` | Score band streams for rhythmic interest | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `CompositeStreamGenerator` | Create composite stream from best sections | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+| `DifficultyVariantGenerator` | Generate easy/medium/hard variants | [Procedural Rhythm Generation](#procedural-rhythm-generation) |
+
+**Preset Functions:** `getRhythmPreset`, `getRhythmPresetNames` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
+
+**Preset Constants:** `RHYTHM_PRESETS` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
+
 ### Utilities
 
 | Export | Description | Section |
@@ -217,6 +245,8 @@ All TypeScript types are exported, including:
 **Beat Key Types:** `KeyAssignableBeatMap`, `KeyAssignment` — see [Beat Key Helper Functions](#beat-key-helper-functions)
 
 **OSE Parameter Mode Types:** `HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig` — see [OSE Parameter Modes](#ose-parameter-modes)
+
+**Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
 
 **Game Data:** `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS` — see [Game Data Reference](#game-data-reference)
 
@@ -2389,6 +2419,301 @@ Gaussian smoothing determines how much the onset envelope is smoothed. More smoo
 | `getGaussianSmoothMs(config?: GaussianSmoothConfig)` | `number` | Convert gaussian smooth mode to actual milliseconds value |
 
 **For detailed examples (mode-based configuration, helper functions, precedence rules):** See [docs/AUDIO_ANALYSIS.md#ose-parameter-modes](docs/AUDIO_ANALYSIS.md#ose-parameter-modes)
+
+## Procedural Rhythm Generation
+
+System for generating procedural rhythm patterns from audio. Takes a `UnifiedBeatMap` (quarter note grid) and generates 3 difficulty variants (easy/medium/hard) with quantized subdivision patterns derived from multi-band transient detection.
+
+**For comprehensive documentation including usage examples, see [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)**
+
+**Also known as:** *Rhythm synthesis, procedural beat generation, auto-chart generation*
+
+### Frequency Bands Reference
+
+*Location:* *[src/core/analysis/beat/utils/audioUtils.ts](src/core/analysis/beat/utils/audioUtils.ts)*
+
+| Band | Range | Typical Content |
+|------|-------|------------------|
+| Low | 20Hz - 500Hz | Bass, kick drum, sub-bass |
+| Mid | 500Hz - 2000Hz | Vocals, snare body, lead instruments |
+| High | 2000Hz - 20000Hz | Hi-hats, cymbals, harmonics, air |
+
+### Output Streams Reference
+
+| Stream | Description |
+|--------|-------------|
+| `low` | Low-frequency band stream (bass/kick patterns) |
+| `mid` | Mid-frequency band stream (vocals/snare patterns) |
+| `high` | High-frequency band stream (hi-hat/cymbal patterns) |
+| `composite` | Combined stream selecting best sections from each band |
+
+### RhythmGenerator
+
+*Location:* *[src/core/generation/RhythmGenerator.ts](src/core/generation/RhythmGenerator.ts)*
+
+Main orchestrator for procedural rhythm generation. Coordinates multi-band analysis, transient detection, quantization, phrase analysis, density analysis, scoring, composite generation, and difficulty variant generation.
+
+**Constructor:**
+
+```typescript
+constructor(options?: RhythmGenerationOptions)
+```
+
+**Options (with defaults):**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `difficulty` | `'medium'` | Difficulty preset for output (`'easy'`, `'medium'`, `'hard'`) |
+| `outputMode` | `'composite'` | Which stream to use (`'composite'`, `'low'`, `'mid'`, `'high'`) |
+| `measureStartOffset` | `0` | Offset in beats for downbeat alignment |
+| `minimumTransientIntensity` | `0.0` | Filter weak transients (0.0 = catch all) |
+| `seed` | `undefined` | Seed for reproducibility |
+| `verbose` | `false` | Log progress information |
+| `enableCache` | `true` | Enable caching of intermediate results |
+| `cacheMaxAge` | `1800000` | Maximum cache entry age in ms (30 min) |
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `generate(audioBuffer, unifiedBeatMap, signal?, onProgress?)` | `Promise<GeneratedRhythm>` | Generate rhythm patterns from audio and beat map |
+| `analyzeMultiBand(audioBuffer)` | `MultiBandResult` | Phase 1.1: Multi-band audio analysis |
+| `detectTransients(multiBandResult)` | `TransientAnalysis` | Phase 1.2: Transient detection |
+| `quantizeTransients(transientAnalysis, unifiedBeatMap)` | `QuantizedBandStreams` | Phase 1.3: Rhythm quantization |
+| `analyzePhrases(streams)` | `PhraseAnalysisResult` | Phase 2.1: Phrase analysis |
+| `analyzeDensity(quantizedStreams)` | `DensityAnalysisResult` | Phase 2.2: Density analysis |
+| `scoreStreams(streams, phraseAnalysis, densityAnalysis)` | `StreamScoringResult` | Phase 3.1: Stream scoring |
+| `generateComposite(streams, scoringResult, densityAnalysis)` | `CompositeStream` | Phase 3.2: Composite stream generation |
+| `generateDifficultyVariants(composite, phraseAnalysis, quantizationResult)` | `DifficultyVariants` | Phase 3.3: Difficulty variant generation |
+| `clearCache()` | `void` | Clear all cached results |
+| `pruneExpiredCache()` | `void` | Clear expired cache entries |
+| `getCacheStats()` | `CacheStats` | Get cache statistics |
+| `isCached(audioId, phase)` | `boolean` | Check if phase result is cached |
+| `getOptions()` | `ResolvedOptions` | Get current configuration |
+| `static quickGenerate(audioBuffer, unifiedBeatMap)` | `Promise<GeneratedRhythm>` | Quick generate with default options |
+| `static generateForDifficulty(audioBuffer, unifiedBeatMap, difficulty)` | `Promise<DifficultyVariant>` | Generate for specific difficulty |
+| `static toJSON(rhythm)` | `string` | Export GeneratedRhythm as JSON string |
+| `static fromJSON(jsonString)` | `GeneratedRhythm` | Load GeneratedRhythm from JSON string |
+| `static saveToFile(rhythm, filePath)` | `Promise<void>` | Save to disk (Node.js only) |
+| `static loadFromFile(filePath)` | `Promise<GeneratedRhythm>` | Load from disk (Node.js only) |
+
+**Preset Functions:**
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `getRhythmPreset(name)` | `RhythmPresetConfig \| undefined` | Get preset configuration by name |
+| `getRhythmPresetNames()` | `RhythmPresetName[]` | Get all available preset names |
+
+**Built-in Presets:**
+
+| Preset | Difficulty | Output Mode | Description |
+|--------|------------|--------------|-------------|
+| `casual` | easy | composite | Easy difficulty for relaxed gameplay |
+| `standard` | medium | composite | Balanced experience for most players |
+| `challenge` | hard | composite | Hard difficulty for skilled players |
+| `bass` | medium | low | Focus on bass/low-frequency rhythms |
+
+### MultiBandAnalyzer
+*Location:* *[src/core/analysis/MultiBandAnalyzer.ts](src/core/analysis/MultiBandAnalyzer.ts)*
+
+Splits audio into multiple frequency bands and analyzes each band separately for transient detection. Each band is processed independently to detect band-specific rhythmic elements.
+
+**Constructor:**
+
+```typescript
+constructor(config?: MultiBandAnalyzerConfig)
+```
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `targetSampleRate` | 44100 | Target sample rate for analysis |
+| `fftWindowSizeMs` | 23 | FFT window size in milliseconds |
+| `hopSizeMs` | 10 | Hop size in milliseconds |
+| `smoothWindowMs` | 10 | Gaussian smoothing window in ms |
+| `peakThreshold` | 0.3 | Peak detection threshold (0.0 - 1.0) |
+| `bands` | `FREQUENCY_BANDS` | Custom frequency bands |
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `analyze(audioBuffer)` | `MultiBandResult` | Analyze audio across all frequency bands |
+
+### TransientDetector
+*Location:* *[src/core/analysis/beat/TransientDetector.ts](src/core/analysis/beat/TransientDetector.ts)*
+
+Detects transients (onsets) in audio using band-specific detection strategies. Each frequency band uses a different algorithm optimized for its typical content.
+
+**Detection Strategies:**
+
+| Band | Strategy | Best For |
+|------|----------|----------|
+| Low | Energy-based detection | Clear kick/bass transients |
+| Mid | Spectral Flux algorithm | Snare, vocals, harmonic onsets |
+| High | High-Frequency Content (HFC) | Hi-hats, cymbals, air |
+
+**Constructor:**
+
+```typescript
+constructor(config?: TransientDetectorConfig)
+```
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `baseThreshold` | 0.3 | Base threshold for peak detection (0.0 - 1.0) |
+| `adaptiveThresholding` | `true` | Adjust thresholds based on local energy |
+| `adaptiveWindowSize` | 50 | Window size for adaptive thresholding (frames) |
+| `minTransientInterval` | 0.02 | Minimum distance between transients (seconds) |
+| `bands` | `FREQUENCY_BANDS` | Custom frequency bands |
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `detect(multiBandResult)` | `TransientAnalysis` | Detect transients from multi-band analysis |
+
+### RhythmQuantizer
+*Location:* *[src/core/analysis/beat/RhythmQuantizer.ts](src/core/analysis/beat/RhythmQuantizer.ts)*
+
+Translates raw transients into quantized rhythmic subdivisions that align with the beat map grid. Performs per-beat grid detection (16th vs triplet) with density validation and sensitivity retry logic.
+
+**Constructor:**
+
+```typescript
+constructor(config?: QuantizationConfig)
+```
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `minimumTransientIntensity` | 0.0 | Filter transients below intensity threshold |
+| `densityValidation.maxRetries` | 3 | Maximum sensitivity adjustment retries |
+| `densityValidation.baseSensitivityReduction` | 0.1 | Base reduction per retry |
+| `densityValidation.maxCumulativeReduction` | 0.7 | Maximum total sensitivity reduction |
+| `bands` | `FREQUENCY_BANDS` | Custom frequency bands |
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `quantize(transientAnalysis, unifiedBeatMap)` | `QuantizedBandStreams` | Quantize transients to beat map grid |
+
+**Grid Types:**
+
+| Grid Type | Description |
+|-----------|-------------|
+| `straight_16th` | Standard 16th note grid (4 divisions per beat) |
+| `triplet_8th` | 8th note triplet grid (3 divisions per beat) |
+
+### PhraseAnalyzer
+*Location:* *[src/core/analysis/beat/PhraseAnalyzer.ts](src/core/analysis/beat/PhraseAnalyzer.ts)*
+
+Analyzes quantized rhythm streams to detect duplicate multi-beat phrases. These detected phrases form a song-specific pattern library used for density enhancement.
+
+**Constructor:**
+
+```typescript
+constructor(config?: PhraseAnalyzerConfig)
+```
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `phraseSizes` | `[1, 2, 4, 8]` | Phrase sizes to check (in beats) |
+| `minOccurrences` | 2 | Minimum occurrences for significance |
+| `topSignificantCount` | 10 | Number of top phrases to include |
+| `includePhrasesWithoutVariation` | `false` | Include phrases without rhythmic variation |
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `analyze(streams)` | `PhraseAnalysisResult` | Analyze streams for duplicate phrases |
+
+### DensityAnalyzer
+*Location:* *[src/core/analysis/beat/DensityAnalyzer.ts](src/core/analysis/beat/DensityAnalyzer.ts)*
+
+Analyzes quantized rhythm streams to measure density and determine natural difficulty. Calculates transients per beat and categorizes streams as sparse, moderate, or dense.
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `analyze(quantizedStreams)` | `DensityAnalysisResult` | Analyze density of quantized streams |
+
+**Density Categories:**
+
+| Category | Natural Difficulty |
+|----------|-------------------|
+| sparse | easy |
+| moderate | medium |
+| dense | hard |
+
+### StreamScorer
+*Location:* *[src/core/analysis/beat/StreamScorer.ts](src/core/analysis/beat/StreamScorer.ts)*
+
+Scores each band stream section for rhythmic interest. Uses IOI variance, syncopation, phrase significance, and density factors.
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `score(streams, phraseAnalysis, densityAnalysis)` | `StreamScoringResult` | Score band streams for rhythmic interest |
+
+**Scoring Factors:**
+
+| Factor | Description |
+|--------|-------------|
+| `ioiVariance` | Inter-Onset Interval variance (timing variety) |
+| `syncopationLevel` | Weighting for offbeat transients |
+| `phraseSignificance` | Significance of detected phrases in section |
+| `densityFactor` | Bell curve for optimal density scoring |
+
+### CompositeStreamGenerator
+*Location:* *[src/core/analysis/beat/CompositeStreamGenerator.ts](src/core/analysis/beat/CompositeStreamGenerator.ts)*
+
+Creates a composite stream by slicing together the highest-scoring sections from each band. The composite represents the most interesting rhythm patterns across all frequency bands.
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `generate(streams, scoringResult, densityAnalysis)` | `CompositeStream` | Generate composite from best sections |
+
+### DifficultyVariantGenerator
+*Location:* *[src/core/analysis/beat/DifficultyVariantGenerator.ts](src/core/analysis/beat/DifficultyVariantGenerator.ts)*
+
+Generates easy/medium/hard difficulty variants from the composite stream. Uses simplification for harder-to-easier conversions and density enhancement for easier-to-harder conversions.
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `generate(composite, phraseAnalysis, gridDecisions)` | `DifficultyVariants` | Generate 3 difficulty variants |
+
+**Subdivision Limits by Difficulty:**
+
+| Difficulty | Max Subdivision | Allowed Grid Types |
+|------------|-----------------|-------------------|
+| Easy | 8th notes, quarter note triplets | `straight_8th`, `quarter_triplet` |
+| Medium | 16th notes | `straight_16th`, `triplet_8th`, all types |
+| Hard | 16th notes | `straight_16th`, `triplet_8th`, all types |
+
+**Variant Generation Strategy:**
+
+| Natural Difficulty | Easy Variant | Medium Variant | Hard Variant |
+|-------------------|--------------|----------------|--------------|
+| easy | Unedited | Density enhancement | Heavy density enhancement |
+| medium | Simplification | Unedited | Density enhancement |
+| hard | Heavy simplification | Simplification | Unedited |
+
+---
 
 ## Progression System
 

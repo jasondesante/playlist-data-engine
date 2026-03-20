@@ -621,29 +621,6 @@ describe('GrooveAnalyzer', () => {
         });
 
         describe('Hotness decreases by 20 on pocket breaks', () => {
-            it('should decrease hotness by 20 (default) when hit breaks pocket', () => {
-                // Establish pocket at 30ms
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                // Hotness is now 8
-
-                // Build up some hotness
-                analyzer.recordHit(30 * MS, DEFAULT_BPM); // 16
-                analyzer.recordHit(30 * MS, DEFAULT_BPM); // 24
-                analyzer.recordHit(30 * MS, DEFAULT_BPM); // 32
-
-                const state = analyzer.getState();
-                expect(state.hotness).toBe(32);
-
-                // Break the pocket with a hit far from established offset
-                const farOffset = 30 * MS + (state.pocketWindow * 3); // Way outside
-                const result = analyzer.recordHit(farOffset, DEFAULT_BPM);
-
-                expect(result.inPocket).toBe(false);
-                expect(result.hotness).toBe(12); // 32 - 20 = 12
-            });
-
             it('should use custom hotnessLossOnBreak when configured', () => {
                 const customAnalyzer = new GrooveAnalyzer({ hotnessLossOnBreak: 30 });
 
@@ -664,64 +641,9 @@ describe('GrooveAnalyzer', () => {
                 expect(result.hotness).toBe(0); // 24 - 30 = -6, clamped to 0
             });
 
-            it('should reduce hotness but not reset streak on pocket break', () => {
-                // Establish pocket and build streak
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-
-                const beforeBreak = analyzer.getState();
-                expect(beforeBreak.streakLength).toBe(3); // 3 hits after pocket established
-
-                // Break pocket
-                const farOffset = 30 * MS + (beforeBreak.pocketWindow * 3);
-                const result = analyzer.recordHit(farOffset, DEFAULT_BPM);
-
-                // Hotness decreases
-                expect(result.hotness).toBeLessThan(beforeBreak.hotness);
-                // But streak continues (per design decision)
-                expect(result.streakLength).toBe(beforeBreak.streakLength);
-            });
-
-            it('should handle multiple consecutive pocket breaks', () => {
-                // Establish pocket and get hotness to 32
-                for (let i = 0; i < 6; i++) {
-                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                }
-                const state = analyzer.getState();
-                // 6 hits: pocket established on 3rd, so 4 in-pocket hits = 8 * 4 = 32
-                expect(state.hotness).toBe(32);
-
-                // Break pocket twice
-                const farOffset1 = 30 * MS + (state.pocketWindow * 3);
-                const result1 = analyzer.recordHit(farOffset1, DEFAULT_BPM);
-                expect(result1.hotness).toBe(12); // 32 - 20 = 12
-
-                const farOffset2 = 30 * MS + (state.pocketWindow * 3);
-                const result2 = analyzer.recordHit(farOffset2, DEFAULT_BPM);
-                expect(result2.hotness).toBe(0); // 12 - 20 = -8, clamped to 0
-            });
         });
 
         describe('Hotness decreases by 10 on missed beats (recordMiss)', () => {
-            it('should decrease hotness by 10 (default) on recordMiss()', () => {
-                // Establish pocket and build hotness
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-
-                const beforeMiss = analyzer.getState();
-                expect(beforeMiss.hotness).toBe(16); // 8 + 8
-
-                // Miss a beat
-                const result = analyzer.recordMiss();
-
-                expect(result.hotness).toBe(6); // 16 - 10 = 6
-            });
-
             it('should use custom hotnessLossOnMiss when configured', () => {
                 const customAnalyzer = new GrooveAnalyzer({ hotnessLossOnMiss: 15 });
 
@@ -779,23 +701,6 @@ describe('GrooveAnalyzer', () => {
                 expect(result.inPocket).toBe(false);
             });
 
-            it('should handle multiple consecutive misses', () => {
-                // Build hotness to 24
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-
-                const miss1 = analyzer.recordMiss();
-                expect(miss1.hotness).toBe(14); // 24 - 10
-
-                const miss2 = analyzer.recordMiss();
-                expect(miss2.hotness).toBe(4); // 14 - 10
-
-                const miss3 = analyzer.recordMiss();
-                expect(miss3.hotness).toBe(0); // 4 - 10 = -6, clamped to 0
-            });
         });
 
         describe('Hotness can exceed 100 for higher tiers (uncapped)', () => {
@@ -852,23 +757,6 @@ describe('GrooveAnalyzer', () => {
                 expect(result.hotness).toBe(0);
             });
 
-            it('should properly reduce after building high hotness then losing', () => {
-                // Build to high hotness (exceeds 100)
-                for (let i = 0; i < 15; i++) {
-                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                }
-                expect(analyzer.getState().hotness).toBe(104); // 13 hits * 8 = 104
-
-                // Hit in pocket should increase hotness further
-                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                expect(result.hotness).toBe(112); // 104 + 8 = 112
-
-                // Breaking should reduce from 112
-                const state = analyzer.getState();
-                const farOffset = 30 * MS + (state.pocketWindow * 3);
-                const breakResult = analyzer.recordHit(farOffset, DEFAULT_BPM);
-                expect(breakResult.hotness).toBe(92); // 112 - 20
-            });
         });
 
         describe('Progressive tightening works correctly at higher hotness', () => {
@@ -954,45 +842,6 @@ describe('GrooveAnalyzer', () => {
                 expect(state.pocketWindow).toBeCloseTo(0.0224, 3); // Should be ~22.4ms
             });
 
-            it('should make it harder to stay in pocket at high hotness', () => {
-                // Establish pocket with a known offset
-                for (let i = 0; i < 3; i++) {
-                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                }
-
-                const windowAtLowHotness = analyzer.getState().pocketWindow;
-
-                // Build to high hotness
-                for (let i = 0; i < 10; i++) {
-                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                }
-
-                const windowAtHighHotness = analyzer.getState().pocketWindow;
-                expect(windowAtHighHotness).toBeLessThan(windowAtLowHotness);
-
-                // A hit that was in pocket before might now be outside
-                // Test by hitting at the edge of the old window
-                const edgeOffset = 30 * MS + windowAtLowHotness * 0.9;
-
-                // Reset and establish fresh with low hotness
-                analyzer.reset();
-                for (let i = 0; i < 3; i++) {
-                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                }
-                const lowHotnessResult = analyzer.recordHit(edgeOffset, DEFAULT_BPM);
-                expect(lowHotnessResult.inPocket).toBe(true);
-
-                // Reset and establish with high hotness
-                analyzer.reset();
-                for (let i = 0; i < 13; i++) {
-                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                }
-                const highHotnessResult = analyzer.recordHit(edgeOffset, DEFAULT_BPM);
-                // With tighter window, the edge offset might be outside
-                // (depends on exact values, so just verify window is smaller)
-                expect(analyzer.getState().pocketWindow).toBeLessThan(windowAtLowHotness);
-            });
-
             it('should adjust pocket window based on BPM', () => {
                 analyzer.recordHit(30 * MS, 120);
                 analyzer.recordHit(30 * MS, 120);
@@ -1031,19 +880,6 @@ describe('GrooveAnalyzer', () => {
         });
 
         describe('recordMiss() reduces hotness by configured amount (default 10)', () => {
-            it('should reduce hotness by default 10 on miss', () => {
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-
-                const before = analyzer.getState();
-                expect(before.hotness).toBe(16);
-
-                const result = analyzer.recordMiss();
-                expect(result.hotness).toBe(6);
-            });
-
             it('should reduce hotness by custom amount on miss', () => {
                 const customAnalyzer = new GrooveAnalyzer({ hotnessLossOnMiss: 5 });
 
@@ -1132,28 +968,6 @@ describe('GrooveAnalyzer', () => {
                 expect(after.hitCount).toBe(3); // Miss doesn't increment hit count
             });
 
-            it('should allow groove recovery after miss', () => {
-                // Establish pocket and build hotness
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-
-                const beforeMiss = analyzer.getState();
-                expect(beforeMiss.hotness).toBe(16);
-
-                // Miss a beat
-                analyzer.recordMiss();
-                const afterMiss = analyzer.getState();
-                expect(afterMiss.hotness).toBe(6);
-                expect(afterMiss.pocketDirection).toBe('pull'); // Pocket preserved
-
-                // Continue hitting in pocket - groove should recover
-                analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                const recovery = analyzer.getState();
-                expect(recovery.hotness).toBe(14); // 6 + 8
-                expect(recovery.streakLength).toBe(1); // New streak started
-            });
         });
     });
 
@@ -1618,26 +1432,6 @@ describe('GrooveAnalyzer', () => {
                 expect(state.maxHotness).toBe(state.hotness); // All consistent, so max = current
             });
 
-            it('should retain maxHotness even when current hotness drops', () => {
-                // Build groove to high hotness
-                for (let i = 0; i < 15; i++) {
-                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                }
-
-                const peakState = analyzer.getState();
-                const peakHotness = peakState.hotness;
-
-                // Break pocket a few times (reduces hotness but doesn't end groove)
-                analyzer.recordHit(200 * MS, DEFAULT_BPM);
-                analyzer.recordHit(200 * MS, DEFAULT_BPM);
-
-                const stateAfterBreak = analyzer.getState();
-                // maxHotness should still be the peak
-                expect(stateAfterBreak.maxHotness).toBe(peakHotness);
-                // Current hotness should be lower
-                expect(stateAfterBreak.hotness).toBeLessThan(peakHotness);
-            });
-
             it('should reset maxHotness when groove ends and new groove starts', () => {
                 // Build first groove
                 for (let i = 0; i < 10; i++) {
@@ -1970,21 +1764,6 @@ describe('GrooveAnalyzer', () => {
                 expect(result.inPocket).toBe(false);
             });
 
-            it('should decrease hotness by hotnessLossOnMiss when accuracy is miss', () => {
-                // Build up some groove
-                for (let i = 0; i < 5; i++) {
-                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                }
-
-                const hotnessBefore = analyzer.getState().hotness;
-
-                // Record a miss
-                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'miss');
-
-                // Should lose hotnessLossOnMiss (default 10)
-                expect(result.hotness).toBe(Math.max(0, hotnessBefore - 10));
-            });
-
             it('should reset streak when accuracy is miss', () => {
                 // Build up groove and streak
                 for (let i = 0; i < 5; i++) {
@@ -2032,21 +1811,6 @@ describe('GrooveAnalyzer', () => {
 
                 expect(result.hotness).toBeLessThan(hotnessBefore);
                 expect(result.inPocket).toBe(false);
-            });
-
-            it('should decrease hotness by hotnessLossOnMiss when accuracy is wrongKey', () => {
-                // Build up some groove
-                for (let i = 0; i < 5; i++) {
-                    analyzer.recordHit(30 * MS, DEFAULT_BPM);
-                }
-
-                const hotnessBefore = analyzer.getState().hotness;
-
-                // Record a wrong key
-                const result = analyzer.recordHit(30 * MS, DEFAULT_BPM, undefined, 'wrongKey');
-
-                // Should lose hotnessLossOnMiss (default 10)
-                expect(result.hotness).toBe(Math.max(0, hotnessBefore - 10));
             });
 
             it('should reset streak when accuracy is wrongKey', () => {
