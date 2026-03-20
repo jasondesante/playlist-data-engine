@@ -183,6 +183,21 @@ export {
     mergeButtonMappingConfig,
 } from './core/types/ButtonMapping.js';
 
+// Charted Beat Map types (procedural generation output)
+export type {
+    ChartedBeat,
+    ChartedBeatMap,
+    ChartMetadata,
+    RhythmMetadataSummary,
+    PitchMetadata,
+    ChartConversionOptions,
+} from './core/types/ChartedBeatMap.js';
+
+export {
+    mapGridToSubdivision,
+    calculateBeatInMeasure,
+} from './core/types/ChartedBeatMap.js';
+
 // Character types
 export type {
     CharacterSheet,
@@ -621,6 +636,18 @@ export {
     getPatternById,
     getPatternLibraryStats,
 } from './core/generation/ButtonPatternLibrary.js';
+
+// Button Mapper (Phase 2.3)
+export {
+    ButtonMapper,
+    type MappedLevelResult,
+    type ButtonMappingMetadata,
+} from './core/generation/ButtonMapper.js';
+
+// Beat Converter (Phase 2.7)
+export {
+    BeatConverter,
+} from './core/generation/BeatConverter.js';
 
 // ============================================================================
 // ENEMY GENERATION

@@ -1196,7 +1196,7 @@ interface ChartMetadata {
 
 #### 2.7.2 BeatConverter Class
 
-- [ ] Create `BeatConverter` in `src/core/generation/BeatConverter.ts`
+- [x] Create `BeatConverter` in `src/core/generation/BeatConverter.ts`
   ```typescript
   /**
    * Converts procedural generation output (GeneratedBeat[]) to ChartedBeatMap
@@ -1261,16 +1261,16 @@ interface ChartMetadata {
 
 #### 2.7.3 Conversion Logic Details
 
-- [ ] **beatInMeasure calculation**:
+- [x] **beatInMeasure calculation**:
   - Get parent quarter note's `beatInMeasure` from UnifiedBeatMap
   - For `straight_16th`: Add `gridPosition * 0.25` (0, 0.25, 0.5, 0.75)
   - For `triplet_8th`: Add `gridPosition * 0.33` (0, 0.33, 0.67)
 
-- [ ] **isDownbeat and measureNumber**:
+- [x] **isDownbeat and measureNumber**:
   - Inherited from the parent quarter note in UnifiedBeatMap
   - Subdivisions of beat 0 (downbeat) are NOT downbeats themselves
 
-- [ ] **subdivisionType mapping**:
+- [x] **subdivisionType mapping**:
   ```typescript
   const GRID_TO_SUBDIVISION = {
     'straight_16th': 'sixteenth',
@@ -1278,12 +1278,12 @@ interface ChartMetadata {
   };
   ```
 
-- [ ] **confidence assignment**:
+- [x] **confidence assignment**:
   - Use `intensity` from GeneratedBeat as base confidence
   - Set `confidence = 1.0` for detected beats
   - Set `confidence = 0.8` for interpolated/generated beats
 
-- [ ] **requiredKey assignment**:
+- [x] **requiredKey assignment**:
   - Look up key from `keyAssignments` map by beat index
   - Set `requiredKey` only if key exists in map
 
