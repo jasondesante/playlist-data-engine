@@ -1310,12 +1310,12 @@ interface ChartMetadata {
 - [ ] Integration test: key matching works with `checkButtonPress()`
 
 ### 2.8 Tests
-- [ ] Unit tests for DDR mode pitch-to-button mapping
-  - [ ] Verify pitch up → 'up' button for small/medium intervals
-  - [ ] Verify pitch down → 'down' button for small/medium intervals
-  - [ ] Verify large intervals → horizontal axis (left/right)
-  - [ ] Verify stable pitch → repeat previous button
-  - [ ] Verify 'none' direction → falls back to pattern library
+- [x] Unit tests for DDR mode pitch-to-button mapping
+  - [x] Verify pitch up → 'up' button for small/medium intervals
+  - [x] Verify pitch down → 'down' button for small/medium intervals
+  - [x] Verify large intervals → horizontal axis (left/right)
+  - [x] Verify stable pitch → repeat previous button
+  - [x] Verify 'none' direction → falls back to pattern library
 - [ ] Unit tests for Guitar Hero mode pitch-to-button mapping
   - [ ] Verify pitch up → higher fret number (move right)
   - [ ] Verify pitch down → lower fret number (move left)
