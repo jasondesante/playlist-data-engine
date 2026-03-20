@@ -976,7 +976,7 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
   }
   ```
 
-- [ ] **Probability-based blending rationale** (using pYIN HMM probabilities):
+- [x] **Probability-based blending rationale** (using pYIN HMM probabilities):
   | Probability Level | Weight = 0.8 | Weight = 0.5 | Weight = 0.2 |
   |-------------------|--------------|--------------|--------------|
   | 0.9 (high)        | pitch        | pitch        | pattern      |
@@ -985,7 +985,7 @@ Guitar Hero uses a fretboard metaphor - the buttons are arranged left-to-right (
   | 0.3 (low)         | pitch        | pattern      | pattern      |
   | no pitch          | pattern      | pattern      | pattern      |
 
-- [ ] **Pattern filling for filtered beats**:
+- [x] **Pattern filling for filtered beats**:
   - After identifying which beats need patterns (low probability or no pitch), fill them immediately
   - Randomly select from all patterns in the vocabulary that can fill the available hole
   - If no pattern can fill a remaining unassigned beat, interpolate from the previous pattern button to the next detected pitch button
@@ -1289,7 +1289,18 @@ interface ChartMetadata {
 
 #### 2.7.4 Tests for Conversion
 
-- [ ] Unit tests for `calculateBeatInMeasure` (all grid positions)
+ *
+ * Tests the conversion of procedural generation output to ChartedBeatMap format.
+ */
+
+- [x] Unit tests for `calculateBeatInMeasure` (all grid positions)
+- [x] Unit tests for `mapGridToSubdivision`
+- [x] Unit tests for full `convertToChartedBeatMap`
+- [x] Verify converted beats have correct `beatInMeasure` values
+- [x] Verify `isDownbeat` is only true for quarter note positions
+- [x] Verify `requiredKey` is correctly assigned from map
+- [ ] Integration test: converted ChartedBeatMap works with BeatStream
+ - [ ] Integration test: key matching works with `checkButtonPress()`- [ ] Unit tests for `calculateBeatInMeasure` (all grid positions)
 - [ ] Unit tests for `mapGridToSubdivision`
 - [ ] Unit tests for full `convertToChartedBeatMap`
 - [ ] Verify converted beats have correct `beatInMeasure` values

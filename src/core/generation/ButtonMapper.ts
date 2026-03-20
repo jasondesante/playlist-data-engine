@@ -320,6 +320,252 @@ function getVariationButton<T extends DDRButton | GuitarHeroButton>(
 }
 
 // ============================================================================
+// Pattern Hole Filling Functions (Phase 2.4.3)
+// ============================================================================
+
+/**
+ * DDR button adjacency map for smooth transitions
+ */
+const DDR_ADJACENT: Record<DDRButton, DDRButton[]> = {
+    'up': ['left', 'right'],
+    'down': ['left', 'right'],
+    'left': ['up', 'down'],
+    'right': ['up', 'down'],
+};
+
+/**
+ * Find the next pitch-derived key in the array
+ *
+ * @param keys - Array of keys (null means no pitch)
+ * @param startIndex - Index to start searching from
+ * @returns The next non-null key, or null if none found
+ */
+function findNextPitchKey<T extends DDRButton | GuitarHeroButton>(
+    keys: (T | null)[],
+    startIndex: number
+): T | null {
+    for (let i = startIndex + 1; i < keys.length; i++) {
+        if (keys[i] !== null) {
+            return keys[i];
+        }
+    }
+    return null;
+}
+
+/**
+ * Check if a pattern is compatible with previous and next keys
+ *
+ * A pattern is compatible if:
+ * - Its first key flows well from the previous key (not the same, or adjacent)
+ * - Its first key allows smooth transition to the next pitch key
+ *
+ * @param pattern - The pattern to check
+ * @param previousKey - The previous key (may be null)
+ * @param nextPitchKey - The next pitch-derived key (may be null)
+ * @returns True if the pattern is compatible
+ */
+function isPatternCompatible<T extends DDRButton | GuitarHeroButton>(
+    pattern: ButtonPattern<T>,
+    previousKey: T | null,
+    nextPitchKey: T | null
+): boolean {
+    const firstKey = pattern.keys[0];
+
+    // If no previous key, any pattern starting with a different key than next is OK
+    if (previousKey === null) {
+        if (nextPitchKey === null) return true;
+        return firstKey !== nextPitchKey;
+    }
+
+    // Avoid patterns that start with the same key as previous (no repetition)
+    if (firstKey === previousKey) {
+        return false;
+    }
+
+    // If there's a next pitch key, prefer patterns that transition toward it
+    if (nextPitchKey !== null) {
+        // For DDR, check if first key is adjacent or moving toward next
+        if (typeof firstKey === 'string' && typeof nextPitchKey === 'string') {
+            const adjacent = DDR_ADJACENT[firstKey as DDRButton];
+            // Good if first key is adjacent to next pitch key, or same (will be handled by pitch mapping)
+            if (adjacent?.includes(nextPitchKey as DDRButton) || firstKey === nextPitchKey) {
+                return true;
+            }
+        }
+
+        // For Guitar Hero, check if first key is between previous and next
+        if (typeof firstKey === 'number' && typeof previousKey === 'number' && typeof nextPitchKey === 'number') {
+            // Good if first key is between previous and next, or moving toward next
+            const movingTowardNext =
+                (previousKey < nextPitchKey && firstKey >= previousKey && firstKey <= nextPitchKey) ||
+                (previousKey > nextPitchKey && firstKey <= previousKey && firstKey >= nextPitchKey);
+            if (movingTowardNext) {
+                return true;
+            }
+        }
+    }
+
+    // Default: pattern is compatible if it doesn't repeat the previous key
+    return true;
+}
+
+/**
+ * Interpolate between two buttons to find a smooth transition
+ *
+ * @param previousKey - The previous key (may be null)
+ * @param nextKey - The next key (may be null)
+ * @returns An interpolated button for smooth transition
+ */
+function interpolateButton<T extends DDRButton | GuitarHeroButton>(
+    previousKey: T | null,
+    nextKey: T | null
+): T {
+    // If no previous, start from a neutral position
+    if (previousKey === null) {
+        if (nextKey === null) {
+            // No context - return defaults
+            return (typeof nextKey === 'string' ? 'left' : 3) as T;
+        }
+        // Start adjacent to next key
+        if (typeof nextKey === 'string') {
+            const adjacent = DDR_ADJACENT[nextKey as DDRButton];
+            return adjacent[0] as T;
+        } else {
+            // Guitar Hero: start one fret below or at 3
+            return Math.max(1, (nextKey as number) - 1) as T;
+        }
+    }
+
+    // If no next, continue in same direction or stay
+    if (nextKey === null) {
+        return previousKey;
+    }
+
+    // DDR interpolation
+    if (typeof previousKey === 'string' && typeof nextKey === 'string') {
+        const prev = previousKey as DDRButton;
+        const next = nextKey as DDRButton;
+
+        // Same key - stay
+        if (prev === next) return previousKey;
+
+        // Check if adjacent - if so, move toward next
+        const adjacent = DDR_ADJACENT[prev];
+        if (adjacent.includes(next)) {
+            return nextKey;
+        }
+
+        // Opposite keys (up/down or left/right) - pick an adjacent that leads toward next
+        // up <-> down: go through left or right
+        // left <-> right: go through up or down
+        const prevAdjacent = DDR_ADJACENT[prev];
+        const nextAdjacent = DDR_ADJACENT[next];
+
+        // Find common adjacent button
+        for (const adj of prevAdjacent) {
+            if (nextAdjacent.includes(adj)) {
+                return adj as T;
+            }
+        }
+
+        // Fallback: return first adjacent
+        return prevAdjacent[0] as T;
+    }
+
+    // Guitar Hero interpolation
+    if (typeof previousKey === 'number' && typeof nextKey === 'number') {
+        const prev = previousKey as number;
+        const next = nextKey as number;
+
+        // Same fret - stay
+        if (prev === next) return previousKey;
+
+        // Move one step toward next
+        if (next > prev) {
+            return Math.min(5, prev + 1) as T;
+        } else {
+            return Math.max(1, prev - 1) as T;
+        }
+    }
+
+    // Fallback
+    return previousKey;
+}
+
+/**
+ * Fill pattern holes with compatible patterns or interpolation
+ *
+ * This function implements the sophisticated pattern filling logic from Phase 2.4.3.
+ * It looks at beats that need patterns (null pitch keys) and fills them with:
+ * 1. Patterns compatible with both previous and next pitch keys
+ * 2. Interpolated buttons if no compatible pattern exists
+ *
+ * @param beats - Beat information (for context)
+ * @param pitchKeys - Pitch-derived keys (null = needs pattern)
+ * @param patternLibrary - Available patterns
+ * @param previousKey - Starting key for context
+ * @param maxDifficulty - Maximum pattern difficulty to use
+ * @returns Final button assignments
+ */
+function fillPatternHoles<T extends DDRButton | GuitarHeroButton>(
+    beats: { timestamp: number }[],
+    pitchKeys: (T | null)[],
+    patternLibrary: ButtonPattern<T>[],
+    previousKey: T | null,
+    maxDifficulty: number
+): T[] {
+    // Copy pitch keys as starting point
+    const result: (T | null)[] = [...pitchKeys];
+
+    // First pass: identify beats that need patterns
+    const holesNeedingPatterns: number[] = [];
+    for (let i = 0; i < beats.length; i++) {
+        if (result[i] === null) {
+            holesNeedingPatterns.push(i);
+        }
+    }
+
+    // If no holes, return as-is
+    if (holesNeedingPatterns.length === 0) {
+        return result as T[];
+    }
+
+    // Second pass: fill each hole with compatible pattern or interpolation
+    let currentPreviousKey = previousKey;
+
+    for (let i = 0; i < beats.length; i++) {
+        if (result[i] !== null) {
+            // This beat has a pitch key - update previous and continue
+            currentPreviousKey = result[i];
+            continue;
+        }
+
+        // Find the next pitch key for context
+        const nextPitchKey = findNextPitchKey(result, i);
+
+        // Filter patterns by difficulty and compatibility
+        const eligiblePatterns = patternLibrary.filter(p => p.difficulty <= maxDifficulty);
+        const compatiblePatterns = eligiblePatterns.filter(pattern =>
+            isPatternCompatible(pattern, currentPreviousKey, nextPitchKey)
+        );
+
+        if (compatiblePatterns.length > 0) {
+            // Randomly select a compatible pattern
+            const pattern = compatiblePatterns[Math.floor(Math.random() * compatiblePatterns.length)];
+            result[i] = pattern.keys[0];
+        } else {
+            // No compatible pattern - interpolate
+            result[i] = interpolateButton(currentPreviousKey, nextPitchKey);
+        }
+
+        // Update previous key for next iteration
+        currentPreviousKey = result[i];
+    }
+
+    return result as T[];
+}
+
+// ============================================================================
 // ButtonMapper Class
 // ============================================================================
 
@@ -481,13 +727,44 @@ export class ButtonMapper {
         }
 
         // Second pass: blend pitch and pattern based on probability and weight
+        // First, identify which beats should use pitch vs pattern based on probability
         const weight = this.config.pitchInfluenceWeight;
-        const finalKeys = this.blendPitchAndPattern(
+        const blendedKeys = this.blendPitchAndPattern(
             beats.map(b => ({ timestamp: b.timestamp })),
             pitchKeys,
             patternKeys,
             probabilities,
             weight
+        );
+
+        // Third pass: use sophisticated pattern filling for any remaining holes
+        // This ensures smooth transitions considering both previous and next pitch keys
+        const patternLibrary = this.config.controllerMode === 'ddr'
+            ? DDR_PATTERN_LIBRARY.patterns as ButtonPattern<DDRButton | GuitarHeroButton>[]
+            : GUITAR_HERO_PATTERN_LIBRARY.patterns as ButtonPattern<DDRButton | GuitarHeroButton>[];
+
+        // Create a pitch-key array where null means "needs pattern filling"
+        // After blending, keys that came from patterns may benefit from smarter selection
+        const keysNeedingSmartFill: (DDRButton | GuitarHeroButton | null)[] = blendedKeys.map((key, i) => {
+            // If this beat originally had no pitch, mark for smart fill
+            if (pitchKeys[i] === null) {
+                return null;
+            }
+            // If this beat was replaced with pattern due to low probability, mark for smart fill
+            if (pitchKeys[i] !== null && pitchKeys[i] !== key) {
+                return null;
+            }
+            // Otherwise, keep the pitch-derived key
+            return key;
+        });
+
+        // Apply sophisticated pattern filling
+        const finalKeys = fillPatternHoles(
+            beats.map(b => ({ timestamp: b.timestamp })),
+            keysNeedingSmartFill,
+            patternLibrary,
+            null, // No previous key context at start
+            maxPatternDifficulty
         );
 
         // Build final assignments
