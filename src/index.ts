@@ -151,6 +151,25 @@ export {
     getGrooveWindowMs,
 } from './core/types/BeatMap.js';
 
+// Button mapping types
+export type {
+    ControllerMode,
+    DDRButton,
+    GuitarHeroButton,
+    Button,
+    ButtonMappingConfig,
+    ButtonMappingConfigValidationResult,
+} from './core/types/ButtonMapping.js';
+
+// Button mapping constants and helpers
+export {
+    DEFAULT_BUTTON_MAPPING_CONFIG,
+    CONSECUTIVE_KEY_LIMITS,
+    getConsecutiveKeyLimit,
+    validateButtonMappingConfig,
+    mergeButtonMappingConfig,
+} from './core/types/ButtonMapping.js';
+
 // Character types
 export type {
     CharacterSheet,

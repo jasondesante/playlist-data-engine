@@ -435,7 +435,18 @@ We use pYIN instead of standard YIN for several key advantages:
 | **DDR** | up, down, left, right | 2 (vertical + horizontal) | Vertical: up→high, down→low; Horizontal: left→low, right→high |
 | **Guitar Hero** | 1, 2, 3, 4, 5 | 1 (horizontal only) | Fretboard metaphor: 1→lowest pitch, 5→highest pitch |
 
-- [ ] Define button mapping config
+- [x] Define button mapping config
+  - [x] Created `src/core/types/ButtonMapping.ts` with:
+    - [x] `ControllerMode` type ('ddr' | 'guitar_hero')
+    - [x] `DDRButton` type ('up' | 'down' | 'left' | 'right')
+    - [x] `GuitarHeroButton` type (1 | 2 | 3 | 4 | 5)
+    - [x] `ButtonMappingConfig` interface with all properties
+    - [x] `DEFAULT_BUTTON_MAPPING_CONFIG` constant
+    - [x] `CONSECUTIVE_KEY_LIMITS` by difficulty
+    - [x] `getConsecutiveKeyLimit()` helper
+    - [x] `validateButtonMappingConfig()` validation
+    - [x] `mergeButtonMappingConfig()` helper
+  - [x] Added exports to `src/index.ts`
   ```typescript
   interface ButtonMappingConfig {
     difficulty: DifficultyPreset;
