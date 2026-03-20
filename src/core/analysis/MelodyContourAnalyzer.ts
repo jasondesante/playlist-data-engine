@@ -116,6 +116,12 @@ export interface MelodyContourAnalysisResult {
     /** Melody contour from the dominant band */
     melodyContour: MelodyContour;
 
+    /** Per-band melody contours (Phase 1.5.3) */
+    bandContours: Map<PitchBandName, MelodyContour>;
+
+    /** Combined contour from composite pitches (Phase 1.5.3) */
+    combinedContour: MelodyContour | null;
+
     /** Band with the best pitch results */
     dominantBand: PitchBandName;
 
@@ -224,6 +230,11 @@ export function determineOverallDirection(segments: MelodySegment[]): MelodyCont
         else stableCount++;
     }
 
+    // If there are no up or down segments, return stable (all stable segments)
+    if (upCount === 0 && downCount === 0) {
+        return 'stable';
+    }
+
     // Calculate net direction
     const netDirection = upCount - downCount;
 
@@ -309,13 +320,18 @@ export class MelodyContourAnalyzer {
         // Process each band stream
         const updatedBandPitches = new Map<PitchBandName, BandPitchAtBeat>();
         const allPitchByBeat: PitchAtBeat[] = [];
+        const bandContours = new Map<PitchBandName, MelodyContour>();
 
         for (const [bandName, bandResult] of linkedAnalysis.bandPitches) {
             const updatedPitches = this.analyzeBandPitches(bandResult.pitches);
+            const bandContour = this.buildMelodyContour(updatedPitches);
+
             updatedBandPitches.set(bandName, {
                 ...bandResult,
                 pitches: updatedPitches,
+                melodyContour: bandContour,
             });
+            bandContours.set(bandName, bandContour);
             allPitchByBeat.push(...updatedPitches);
         }
 
@@ -331,10 +347,15 @@ export class MelodyContourAnalyzer {
             dominantBandPitches?.pitches ?? []
         );
 
+        // Build combined contour from all pitches
+        const combinedContour = this.buildMelodyContour(allPitchByBeat);
+
         return {
             pitchByBeat: allPitchByBeat,
             bandPitches: updatedBandPitches,
             melodyContour,
+            bandContours,
+            combinedContour,
             dominantBand: linkedAnalysis.dominantBand,
             directionStats,
             intervalStats,
@@ -418,6 +439,9 @@ export class MelodyContourAnalyzer {
                     maxNote: 'N/A',
                     semitones: 0,
                 },
+                shortTermDirection: 'stable',
+                mediumTermDirection: 'stable',
+                longTermDirection: 'stable',
             };
         }
 
@@ -435,6 +459,9 @@ export class MelodyContourAnalyzer {
                     maxNote: 'N/A',
                     semitones: 0,
                 },
+                shortTermDirection: 'stable',
+                mediumTermDirection: 'stable',
+                longTermDirection: 'stable',
             };
         }
 
@@ -483,9 +510,12 @@ export class MelodyContourAnalyzer {
         minBeats: number,
         maxBeats: number
     ): MelodyContourDirection {
-        if (pitches.length === 0 || windowSize < 1) {
+        if (pitches.length === 0 || minBeats < 1) {
             return 'stable';
         }
+
+        // Calculate window size: at least minBeats, at most maxBeats, but no more than available
+        const windowSize = Math.min(maxBeats, Math.max(minBeats, pitches.length));
 
         // Get the last n pitches
         const windowPitches = pitches.slice(-windowSize);
@@ -506,7 +536,7 @@ export class MelodyContourAnalyzer {
         }
 
         // Determine direction
-        return determineOverallDirectionFromCounts(upCount, downCount, stableCount);
+        return this.determineOverallDirectionFromCounts(upCount, downCount, stableCount);
     }
 
     /**

@@ -44,6 +44,7 @@ import type { GeneratedRhythmMap, GeneratedBeat } from '../analysis/beat/RhythmQ
 import type { RhythmicPhrase } from '../analysis/beat/PhraseAnalyzer.js';
 import type { CompositeStream } from '../analysis/beat/CompositeStreamGenerator.js';
 import type { DifficultyVariant } from '../analysis/beat/DifficultyVariantGenerator.js';
+import type { MelodyContour } from '../analysis/MultiBandPitchAnalyzer.js';
 
 // ============================================================================
 // Type Definitions
@@ -99,6 +100,9 @@ export interface BandPitchAtBeat {
 
     /** Pitch at each beat in this band stream */
     pitches: PitchAtBeat[];
+
+    /** Melody contour for this band (populated by MelodyContourAnalyzer) */
+    melodyContour?: MelodyContour;
 
     /** Average probability of voiced frames */
     avgProbability: number;

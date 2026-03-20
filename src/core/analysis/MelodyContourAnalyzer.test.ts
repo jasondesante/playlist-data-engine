@@ -595,6 +595,132 @@ describe('MelodyContourAnalyzer', () => {
                 expect(['low', 'mid', 'high']).toContain(pitch.band);
             }
         });
+
+        it('should analyze contour separately for each band stream (Phase 1.5.3)', () => {
+            const analyzer = new MelodyContourAnalyzer();
+
+            // Create different melodies in each band with different directions
+            // Low band: ascending (C2 -> E2 -> G2)
+            const lowPitches: PitchAtBeat[] = [
+                createMockPitchAtBeat(0, 0.0, 'low', 36, 'C2'),
+                createMockPitchAtBeat(1, 0.25, 'low', 40, 'E2'),
+                createMockPitchAtBeat(2, 0.5, 'low', 43, 'G2'),
+            ];
+
+            // Mid band: descending (G4 -> E4 -> C4)
+            const midPitches: PitchAtBeat[] = [
+                createMockPitchAtBeat(0, 0.0, 'mid', 67, 'G4'),
+                createMockPitchAtBeat(1, 0.25, 'mid', 64, 'E4'),
+                createMockPitchAtBeat(2, 0.5, 'mid', 60, 'C4'),
+            ];
+
+            // High band: stable (C6 -> C6 -> C6)
+            const highPitches: PitchAtBeat[] = [
+                createMockPitchAtBeat(0, 0.0, 'high', 84, 'C6'),
+                createMockPitchAtBeat(1, 0.25, 'high', 84, 'C6'),
+                createMockPitchAtBeat(2, 0.5, 'high', 84, 'C6'),
+            ];
+
+            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
+            bandPitches.set('low', createMockBandPitchAtBeat('low', lowPitches));
+            bandPitches.set('mid', createMockBandPitchAtBeat('mid', midPitches));
+            bandPitches.set('high', createMockBandPitchAtBeat('high', highPitches));
+
+            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
+            const result = analyzer.analyze(linkedAnalysis);
+
+            // Verify bandContours exists and has all three bands
+            expect(result.bandContours).toBeDefined();
+            expect(result.bandContours.size).toBe(3);
+            expect(result.bandContours.has('low')).toBe(true);
+            expect(result.bandContours.has('mid')).toBe(true);
+            expect(result.bandContours.has('high')).toBe(true);
+
+            // Verify each band has its own contour with correct direction
+            const lowContour = result.bandContours.get('low')!;
+            const midContour = result.bandContours.get('mid')!;
+            const highContour = result.bandContours.get('high')!;
+
+            expect(lowContour.direction).toBe('ascending');
+            expect(midContour.direction).toBe('descending');
+            expect(highContour.direction).toBe('stable');
+
+            // Verify each band has correct range
+            expect(lowContour.range.minNote).toBe('C2');
+            expect(lowContour.range.maxNote).toBe('G2');
+            expect(midContour.range.minNote).toBe('C4');
+            expect(midContour.range.maxNote).toBe('G4');
+            expect(highContour.range.minNote).toBe('C6');
+            expect(highContour.range.maxNote).toBe('C6');
+        });
+
+        it('should generate combined contour from composite pitches (Phase 1.5.3)', () => {
+            const analyzer = new MelodyContourAnalyzer();
+
+            // Create pitches across multiple bands that interleave in time
+            const lowPitches: PitchAtBeat[] = [
+                createMockPitchAtBeat(0, 0.0, 'low', 36, 'C2'),
+                createMockPitchAtBeat(1, 0.5, 'low', 40, 'E2'),
+            ];
+
+            const midPitches: PitchAtBeat[] = [
+                createMockPitchAtBeat(0, 0.25, 'mid', 60, 'C4'),
+                createMockPitchAtBeat(1, 0.75, 'mid', 64, 'E4'),
+            ];
+
+            const highPitches: PitchAtBeat[] = [
+                createMockPitchAtBeat(0, 0.125, 'high', 84, 'C6'),
+                createMockPitchAtBeat(1, 0.625, 'high', 86, 'D6'),
+            ];
+
+            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
+            bandPitches.set('low', createMockBandPitchAtBeat('low', lowPitches));
+            bandPitches.set('mid', createMockBandPitchAtBeat('mid', midPitches));
+            bandPitches.set('high', createMockBandPitchAtBeat('high', highPitches));
+
+            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
+            const result = analyzer.analyze(linkedAnalysis);
+
+            // Verify combinedContour exists
+            expect(result.combinedContour).toBeDefined();
+            expect(result.combinedContour).not.toBeNull();
+
+            // Combined contour should span the full range of all bands
+            expect(result.combinedContour!.range.minNote).toBe('C2');  // Lowest from low band
+            expect(result.combinedContour!.range.maxNote).toBe('D6');  // Highest from high band
+
+            // Combined contour should have segments
+            expect(result.combinedContour!.segments.length).toBeGreaterThan(0);
+        });
+
+        it('should have combinedContour that differs from dominant band contour', () => {
+            const analyzer = new MelodyContourAnalyzer();
+
+            // Create different melodies in each band
+            const lowPitches: PitchAtBeat[] = [
+                createMockPitchAtBeat(0, 0.0, 'low', 36, 'C2'),
+                createMockPitchAtBeat(1, 0.5, 'low', 48, 'C3'),  // Large jump
+            ];
+
+            const midPitches: PitchAtBeat[] = [
+                createMockPitchAtBeat(0, 0.25, 'mid', 60, 'C4'),
+                createMockPitchAtBeat(1, 0.75, 'mid', 62, 'D4'),  // Small step
+            ];
+
+            const bandPitches = new Map<PitchBandName, BandPitchAtBeat>();
+            bandPitches.set('low', createMockBandPitchAtBeat('low', lowPitches));
+            bandPitches.set('mid', createMockBandPitchAtBeat('mid', midPitches));
+
+            const linkedAnalysis = createMockLinkedAnalysis(bandPitches, 'mid');
+            const result = analyzer.analyze(linkedAnalysis);
+
+            // melodyContour should be from dominant band (mid)
+            const dominantContour = result.melodyContour;
+            const combinedContour = result.combinedContour!;
+
+            // Combined should have larger range (includes low band's C2-C3)
+            expect(combinedContour.range.semitones).toBeGreaterThanOrEqual(dominantContour.range.semitones);
+        });
     });
 
     describe('Edge Cases', () => {

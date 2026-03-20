@@ -373,12 +373,12 @@ We use pYIN instead of standard YIN for several key advantages:
   - [x] Short-term (1-2 beats): immediate direction changes
   - [x] Medium-term (4-8 beats): phrase-level direction
   - [x] Long-term (16+ beats): section-level direction
-- [ ] Analyze contour separately for each band stream
-- [ ] Generate combined contour from composite pitches
+- [x] Analyze contour separately for each band stream
+- [x] Generate combined contour from composite pitches
 
 #### 1.5.4 Output for Button Mapping
 
-- [ ] Ensure `PitchAtBeat` is populated with direction and interval:
+- [x] Ensure `PitchAtBeat` is populated with direction and interval:
   ```typescript
   interface PitchAtBeat {
     beatIndex: number;
