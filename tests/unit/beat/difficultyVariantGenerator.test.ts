@@ -631,3 +631,183 @@ describe('Phrase Boundary Preservation', () => {
         expect(beatsAtBeat1.length).toBe(0);
     });
 });
+
+// ============================================================================
+// Timestamp Recalculation Tests
+// ============================================================================
+
+describe('Timestamp Recalculation After Grid Type Conversion', () => {
+    /**
+     * Helper to create a beat with explicit timestamp for testing
+     */
+    function createBeatWithTimestamp(
+        beatIndex: number,
+        gridType: GridType,
+        gridPosition: number,
+        timestamp: number,
+        intensity: number = 0.5
+    ): CompositeBeat {
+        return {
+            timestamp,
+            beatIndex,
+            gridPosition,
+            gridType,
+            intensity,
+            band: 'mid',
+            sourceBand: 'mid',
+        };
+    }
+
+    /**
+     * Helper to create a composite stream with explicit quarterNoteInterval
+     */
+    function createCompositeStreamWithInterval(
+        beats: CompositeBeat[],
+        naturalDifficulty: 'easy' | 'medium' | 'hard' = 'medium',
+        quarterNoteInterval: number = 0.5
+    ) {
+        return {
+            beats,
+            naturalDifficulty,
+            tempo: 120,
+            timeSignature: { numerator: 4, denominator: 4 } as const,
+            duration: beats.length > 0 ? beats[beats.length - 1].timestamp + 1 : 0,
+            quarterNoteInterval,
+        };
+    }
+
+    describe('16th to 8th conversion timestamps', () => {
+        it('should recalculate timestamp for position 0 (quarter note)', () => {
+            const generator = new DifficultyVariantGenerator();
+            // 16th note at beat 0, position 0 should have timestamp 0.0
+            const beats = [
+                createBeatWithTimestamp(0, 'straight_16th', 0, 0.0, 0.9),
+            ];
+            const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
+            const variants = generator.generate(composite);
+
+            // After conversion to 8th, position 0 should still have timestamp 0.0
+            expect(variants.easy.beats[0].gridType).toBe('straight_8th');
+            expect(variants.easy.beats[0].gridPosition).toBe(0);
+            expect(variants.easy.beats[0].timestamp).toBe(0.0);
+        });
+
+        it('should recalculate timestamp for position 1 snapped to 0', () => {
+            const generator = new DifficultyVariantGenerator();
+            // 16th note at beat 0, position 1 has timestamp 0.125
+            // After conversion to 8th, it snaps to position 0 with timestamp 0.0
+            const beats = [
+                createBeatWithTimestamp(0, 'straight_16th', 1, 0.125, 0.9),
+            ];
+            const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
+            const variants = generator.generate(composite);
+
+            expect(variants.easy.beats[0].gridType).toBe('straight_8th');
+            expect(variants.easy.beats[0].gridPosition).toBe(0);
+            expect(variants.easy.beats[0].timestamp).toBe(0.0);
+        });
+
+        it('should recalculate timestamp for position 2 (8th note)', () => {
+            const generator = new DifficultyVariantGenerator();
+            // 16th note at beat 0, position 2 has timestamp 0.25
+            // After conversion to 8th, it stays at position 2 with timestamp 0.25
+            const beats = [
+                createBeatWithTimestamp(0, 'straight_16th', 2, 0.25, 0.9),
+            ];
+            const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
+            const variants = generator.generate(composite);
+
+            expect(variants.easy.beats[0].gridType).toBe('straight_8th');
+            expect(variants.easy.beats[0].gridPosition).toBe(2);
+            expect(variants.easy.beats[0].timestamp).toBe(0.25);
+        });
+
+        it('should recalculate timestamp for position 3 snapped to 2', () => {
+            const generator = new DifficultyVariantGenerator();
+            // 16th note at beat 0, position 3 has timestamp 0.375
+            // After conversion to 8th, it snaps to position 2 with timestamp 0.25
+            const beats = [
+                createBeatWithTimestamp(0, 'straight_16th', 3, 0.375, 0.9),
+            ];
+            const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
+            const variants = generator.generate(composite);
+
+            expect(variants.easy.beats[0].gridType).toBe('straight_8th');
+            expect(variants.easy.beats[0].gridPosition).toBe(2);
+            expect(variants.easy.beats[0].timestamp).toBe(0.25);
+        });
+
+        it('should correctly calculate timestamps at beat 1 with different quarterNoteInterval', () => {
+            const generator = new DifficultyVariantGenerator();
+            // Using quarterNoteInterval = 0.4 (150 BPM)
+            // 16th note at beat 1, position 1
+            // Original timestamp = 1 * 0.4 + 1 * 0.1 = 0.5
+            // After conversion: timestamp = 1 * 0.4 = 0.4
+            const beats = [
+                createBeatWithTimestamp(1, 'straight_16th', 1, 0.5, 0.9),
+            ];
+            const composite = createCompositeStreamWithInterval(beats, 'hard', 0.4);
+            const variants = generator.generate(composite);
+
+            expect(variants.easy.beats[0].gridType).toBe('straight_8th');
+            expect(variants.easy.beats[0].gridPosition).toBe(0);
+            expect(variants.easy.beats[0].timestamp).toBe(0.4);
+        });
+
+        it('should handle multiple beats with deduplication and correct timestamps', () => {
+            const generator = new DifficultyVariantGenerator();
+            // Two 16th notes that both snap to position 0
+            // Beat 0, position 0 (intensity 0.9) -> stays at 0
+            // Beat 0, position 1 (intensity 0.5) -> snaps to 0, gets deduplicated
+            const beats = [
+                createBeatWithTimestamp(0, 'straight_16th', 0, 0.0, 0.9),
+                createBeatWithTimestamp(0, 'straight_16th', 1, 0.125, 0.5),
+            ];
+            const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
+            const variants = generator.generate(composite);
+
+            // Only one beat should remain (higher intensity wins)
+            expect(variants.easy.beats.length).toBe(1);
+            expect(variants.easy.beats[0].gridPosition).toBe(0);
+            expect(variants.easy.beats[0].timestamp).toBe(0.0);
+            expect(variants.easy.beats[0].intensity).toBe(0.9);
+        });
+    });
+
+    describe('8th triplet to quarter triplet conversion timestamps', () => {
+        it('should recalculate timestamp for all triplet positions to beat start', () => {
+            const generator = new DifficultyVariantGenerator();
+            // Triplet positions 0, 1, 2 should all snap to position 0
+            const beats = [
+                createBeatWithTimestamp(0, 'triplet_8th', 0, 0.0, 0.9),
+                createBeatWithTimestamp(0, 'triplet_8th', 1, 0.167, 0.5),
+                createBeatWithTimestamp(0, 'triplet_8th', 2, 0.333, 0.6),
+            ];
+            const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
+            const variants = generator.generate(composite);
+
+            // All should be quarter triplets at position 0
+            // But they get deduplicated to just one beat
+            expect(variants.easy.beats.length).toBe(1);
+            expect(variants.easy.beats[0].gridType).toBe('quarter_triplet');
+            expect(variants.easy.beats[0].gridPosition).toBe(0);
+            expect(variants.easy.beats[0].timestamp).toBe(0.0);
+        });
+
+        it('should correctly recalculate triplet timestamp at beat 2', () => {
+            const generator = new DifficultyVariantGenerator();
+            // Triplet at beat 2, position 1
+            // Original timestamp would be 2 * 0.5 + 1 * (0.5/3) = 1.167
+            // After conversion: timestamp = 2 * 0.5 = 1.0
+            const beats = [
+                createBeatWithTimestamp(2, 'triplet_8th', 1, 1.167, 0.9),
+            ];
+            const composite = createCompositeStreamWithInterval(beats, 'hard', 0.5);
+            const variants = generator.generate(composite);
+
+            expect(variants.easy.beats[0].gridType).toBe('quarter_triplet');
+            expect(variants.easy.beats[0].gridPosition).toBe(0);
+            expect(variants.easy.beats[0].timestamp).toBe(1.0);
+        });
+    });
+});
