@@ -2962,6 +2962,689 @@ When the groove resets:
 
 ---
 
+## Procedural Rhythm Generation
+
+The procedural rhythm generation system automatically creates interesting subdivision patterns from audio analysis. Unlike the manual subdivision system (which applies uniform patterns like "eighth notes"), procedural generation detects transients in the audio and generates rhythm patterns that match the music's actual rhythmic content.
+
+### Overview
+
+The system produces a `GeneratedRhythm` containing:
+- **3 difficulty variants** (easy/medium/hard) of a composite rhythm stream
+- **Individual band streams** (low/mid/high frequency bands) for advanced use
+- **Analysis results** including transients, phrases, and density metrics
+
+**Key Difference from Beat Detection**: Beat detection finds quarter note beats (the "pulse"). Transient detection finds individual note attacks (onsets) across all frequency bands. Transient detection is more granular and produces more events.
+
+### Source Files
+
+| Component | Location |
+|-----------|----------|
+| **RhythmGenerator** (orchestrator) | [src/core/generation/RhythmGenerator.ts](../src/core/generation/RhythmGenerator.ts) |
+| **MultiBandAnalyzer** | [src/core/analysis/MultiBandAnalyzer.ts](../src/core/analysis/MultiBandAnalyzer.ts) |
+| **TransientDetector** | [src/core/analysis/beat/TransientDetector.ts](../src/core/analysis/beat/TransientDetector.ts) |
+| **RhythmQuantizer** | [src/core/analysis/beat/RhythmQuantizer.ts](../src/core/analysis/beat/RhythmQuantizer.ts) |
+| **PhraseAnalyzer** | [src/core/analysis/beat/PhraseAnalyzer.ts](../src/core/analysis/beat/PhraseAnalyzer.ts) |
+| **DensityAnalyzer** | [src/core/analysis/beat/DensityAnalyzer.ts](../src/core/analysis/beat/DensityAnalyzer.ts) |
+| **StreamScorer** | [src/core/analysis/beat/StreamScorer.ts](../src/core/analysis/beat/StreamScorer.ts) |
+| **CompositeStreamGenerator** | [src/core/analysis/beat/CompositeStreamGenerator.ts](../src/core/analysis/beat/CompositeStreamGenerator.ts) |
+| **DifficultyVariantGenerator** | [src/core/analysis/beat/DifficultyVariantGenerator.ts](../src/core/analysis/beat/DifficultyVariantGenerator.ts) |
+
+---
+
+### Processing Pipeline
+
+```
+┌─────────────┐     ┌──────────────────┐     ┌───────────────────┐
+│ AudioBuffer │ ──▶ │ MultiBandAnalyzer │ ──▶ │ TransientDetector │
+└─────────────┘     └──────────────────┘     └───────────────────┘
+                                                    │
+                                                    ▼
+┌─────────────────┐     ┌──────────────────┐     ┌───────────────────┐
+│ GeneratedRhythm │ ◀── │ DifficultyVariant │ ◀── │ CompositeStream   │
+│ (final output)  │     │ Generator         │     │ Generator         │
+└─────────────────┘     └──────────────────┘     └───────────────────┘
+                              ▲                        ▲
+                              │                        │
+                    ┌─────────────────┐     ┌─────────────────┐
+                    │  StreamScorer   │ ◀── │  PhraseAnalyzer │
+                    └─────────────────┘     │  DensityAnalyzer│
+                                            └─────────────────┘
+```
+
+---
+
+## Transient Detection
+
+Transient detection (also known as *onset detection*) identifies the precise moments when notes begin in audio. Unlike beat detection which finds the quarter note pulse, transient detection captures every distinct attack across multiple frequency bands.
+
+### Multi-Band Analysis Approach
+
+The system splits audio into three frequency bands, each analyzed independently:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                         Audio Signal                                │
+└────────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+            ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+            │   Low Band   │ │   Mid Band   │ │  High Band   │
+            │  20-500 Hz   │ │ 500-2000 Hz  │ │ 2000-20000 Hz│
+            │ (bass, kick) │ │(vocals,snare)│ │(hi-hats,cym) │
+            └──────────────┘ └──────────────┘ └──────────────┘
+                    │               │               │
+                    ▼               ▼               ▼
+            ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+            │    Energy    │ │ Spectral Flux│ │     HFC      │
+            │  Detection   │ │  Detection   │ │  Detection   │
+            └──────────────┘ └──────────────┘ └──────────────┘
+                    │               │               │
+                    └───────────────┼───────────────┘
+                                    ▼
+                        ┌───────────────────┐
+                        │ TransientAnalysis │
+                        └───────────────────┘
+```
+
+### Frequency Bands Reference
+
+| Band | Frequency Range | Typical Content | Detection Method |
+|------|-----------------|-----------------|------------------|
+| **Low** | 20-500 Hz | Bass, kick drums, sub frequencies | Energy-based |
+| **Mid** | 500-2000 Hz | Vocals, snare body, lead instruments | Spectral Flux |
+| **High** | 2000-20000 Hz | Hi-hats, cymbals, harmonics, air | HFC (High-Frequency Content) |
+
+### Detection Strategies
+
+#### 1. Energy-Based Detection (Low Band)
+
+Best for detecting bass-heavy transients like kick drums.
+
+**Algorithm**: Directly measures amplitude changes in the energy envelope.
+
+```
+Energy[n] = sum(samples[n-window:n+window]²)
+
+Transient when: Energy[n] > threshold × local_average
+```
+
+**Why it works**: Kick drums and bass produce sharp amplitude increases that are clearly visible in the raw energy signal without needing spectral analysis.
+
+#### 2. Spectral Flux (Mid Band)
+
+Best for detecting harmonic instrument onsets and vocals.
+
+**Algorithm**: Measures how much the frequency spectrum changes between frames.
+
+```
+Flux[n] = sum(max(0, |Spectrum[n]| - |Spectrum[n-1]|))
+
+Transient when: Flux[n] > threshold × local_average
+```
+
+**Why it works**: When a new note starts, the spectrum changes significantly as new frequencies appear. This works well for instruments with complex harmonics.
+
+#### 3. High-Frequency Content / HFC (High Band)
+
+Best for detecting percussive high-frequency content like hi-hats and cymbals.
+
+**Algorithm**: Weights high-frequency bins more heavily in spectral flux calculation.
+
+```
+HFC[n] = sum(k × |Spectrum[n,k]|) for each frequency bin k
+
+Transient when: HFC[n] > threshold × local_average
+```
+
+**Why it works**: Cymbals and hi-hats have most of their energy in high frequencies. Weighting these bins makes them more detectable even when quiet.
+
+### Adaptive Thresholding
+
+All detection methods use adaptive thresholding to handle songs with varying dynamics:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                    Adaptive Threshold Flow                          │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│   1. Calculate signal mean energy                                  │
+│   2. Calculate standard deviation                                  │
+│   3. Compute coefficient of variation: CV = stdDev / mean          │
+│   4. Adjust threshold: adaptive = base × (1 + CV × 0.5)            │
+│                                                                    │
+│   ┌─────────────────────────────────────────────────────────────┐ │
+│   │ Low CV (consistent signal): Lower threshold → more detection │ │
+│   │ High CV (dynamic signal): Higher threshold → fewer detection │ │
+│   └─────────────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### Cross-Referencing with Beat Maps
+
+Transients are not quantized to the beat grid during detection—that happens in the next phase (Rhythm Quantization). However, each transient records its relationship to the nearest beat:
+
+```typescript
+interface TransientResult {
+  timestamp: number;          // When the transient occurred (seconds)
+  intensity: number;          // Strength (0.0 - 1.0)
+  band: 'low' | 'mid' | 'high';
+  detectionMethod: 'energy' | 'spectral_flux' | 'hfc';
+  nearestBeat?: {
+    index: number;            // Which quarter note this is near
+    distance: number;         // How far from the beat grid (seconds)
+  };
+}
+```
+
+### Basic Usage
+
+```typescript
+import { MultiBandAnalyzer, TransientDetector } from 'playlist-data-engine';
+
+// Analyze audio into frequency bands
+const multiBandAnalyzer = new MultiBandAnalyzer();
+const multiBandResult = multiBandAnalyzer.analyze(audioBuffer);
+
+// Detect transients in each band
+const detector = new TransientDetector({
+  baseThreshold: 0.3,
+  adaptiveThresholding: true,
+});
+const transients = detector.detect(multiBandResult);
+
+// Access per-band transients
+const lowBandHits = transients.bandTransients.get('low');
+const midBandHits = transients.bandTransients.get('mid');
+const highBandHits = transients.bandTransients.get('high');
+
+console.log(`Total transients: ${transients.transients.length}`);
+console.log(`Low band: ${lowBandHits?.length} (kick/bass)`);
+console.log(`Mid band: ${midBandHits?.length} (vocals/snare)`);
+console.log(`High band: ${highBandHits?.length} (hi-hats/cymbals)`);
+```
+
+---
+
+## Rhythm Quantization
+
+Rhythm quantization translates raw transients into grid-aligned rhythmic subdivisions. This is the bridge between audio analysis and playable rhythm patterns.
+
+### Per-Beat Grid Detection
+
+For each quarter note beat, the system determines whether transients fit better on a straight 16th note grid or an 8th note triplet grid:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                    Beat Duration (e.g., 500ms at 120 BPM)          │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│   Straight 16th Grid:    │    │    │    │   (4 divisions)          │
+│                          0   125  250  375  500ms                  │
+│                                                                    │
+│   Triplet 8th Grid:       │   │   │      (3 divisions)             │
+│                           0  167 333  500ms                        │
+│                                                                    │
+│   Transients:            ●      ●      ●                           │
+│                          50    200    350ms                        │
+│                                                                    │
+│   Analysis:                                                        │
+│   - 16th grid avg offset: 50ms                                     │
+│   - Triplet grid avg offset: 17ms  ← BETTER FIT                    │
+│   - Decision: Use triplet grid for this beat                       │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### Density Validation
+
+Before quantization, the system validates that detected transients aren't too dense:
+
+| Validation | Description |
+|------------|-------------|
+| **Minimum interval** | 16th note duration at current tempo |
+| **Retry logic** | If too dense, reduce sensitivity and retry (max 3 retries) |
+| **Exponential backoff** | Each retry reduces sensitivity more aggressively |
+
+```typescript
+interface DensityValidationResult {
+  isValid: boolean;
+  minIntervalDetected: number;  // Smallest gap between transients
+  requiredMinInterval: number;  // 16th note duration
+  retryCount: number;           // How many retries occurred
+  sensitivityReduction: number; // Cumulative reduction applied
+}
+```
+
+### Intensity Filtering
+
+Transients can be filtered by intensity to remove weak detections:
+
+```typescript
+import { RhythmQuantizer } from 'playlist-data-engine';
+
+const quantizer = new RhythmQuantizer({
+  minimumTransientIntensity: 0.3,  // Filter transients below 30% intensity
+});
+
+const result = quantizer.quantize(transientAnalysis, unifiedBeatMap);
+console.log(`Filtered: ${result.metadata.transientsFilteredByIntensity} transients`);
+```
+
+### Generated Beat Structure
+
+Each quantized beat contains detailed metadata:
+
+```typescript
+interface GeneratedBeat {
+  timestamp: number;           // Quantized time (seconds)
+  beatIndex: number;           // Which quarter note this belongs to
+  gridPosition: number;        // Position within beat (0-3 for 16th, 0-2 for triplet)
+  gridType: 'straight_16th' | 'triplet_8th';
+  intensity: number;           // Transient strength (0.0 - 1.0)
+  band: 'low' | 'mid' | 'high';
+  quantizationError?: number;  // How far it was moved (ms)
+}
+```
+
+### Grid Decision Metadata
+
+For each beat, the system records which grid was chosen and why:
+
+```typescript
+interface GridDecision {
+  beatIndex: number;
+  selectedGrid: 'straight_16th' | 'triplet_8th';
+  straightAvgOffset: number;   // Average ms offset if using 16th grid
+  tripletAvgOffset: number;    // Average ms offset if using triplet grid
+  transientCount: number;      // How many transients in this beat
+  confidence: number;          // How much better the chosen grid fits
+}
+```
+
+---
+
+## Scoring and Composite Generation
+
+The scoring system evaluates which frequency band has the most "interesting" rhythm for each section, then combines them into a composite stream.
+
+### Scoring Factors
+
+Each band stream is scored on multiple factors:
+
+| Factor | Weight | Description |
+|--------|--------|-------------|
+| **IOI Variance** | - | Inter-Onset Interval variance—more varied = more interesting |
+| **Syncopation** | - | Offbeat transients score higher |
+| **Phrase Significance** | - | Higher if section contains detected phrases |
+| **Density Factor** | - | Bell curve—optimal density scores highest |
+
+```
+Score = ioiVariance + syncopationLevel + phraseSignificance + densityFactor
+```
+
+### Section Scoring
+
+The song is divided into 2-measure sections (8 beats each), and each band receives a score per section:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                   Section Scoring Example                           │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│   Section: Beats 0-7 (First 2 measures)                            │
+│   ┌─────────────────────────────────────────────────────────────┐ │
+│   │ Band   │ Score │ IOI Var │ Sync │ Phrase │ Density │        │ │
+│   ├─────────────────────────────────────────────────────────────┤ │
+│   │ Low    │ 0.72  │ 0.15    │ 0.20 │ 0.00   │ 0.37    │        │ │
+│   │ Mid    │ 0.89  │ 0.25    │ 0.30 │ 0.15   │ 0.19    │ ← WIN │ │
+│   │ High   │ 0.65  │ 0.10    │ 0.25 │ 0.00   │ 0.30    │        │ │
+│   └─────────────────────────────────────────────────────────────┘ │
+│                                                                    │
+│   Winner: Mid band (score: 0.89, margin: 0.17)                     │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### Composite Stream Generation
+
+The composite stream is created by selecting the highest-scoring band for each section:
+
+```typescript
+interface CompositeStream {
+  beats: CompositeBeat[];           // Combined beats from winning sections
+  sections: CompositeSection[];     // Which band won each section
+  naturalDifficulty: 'easy' | 'medium' | 'hard';
+  metadata: {
+    totalBeats: number;
+    sectionCount: number;
+    beatsPerBand: { low: number; mid: number; high: number };
+    sectionsPerBand: { low: number; mid: number; high: number };
+  };
+}
+
+interface CompositeBeat extends GeneratedBeat {
+  sourceBand: 'low' | 'mid' | 'high';  // Which band contributed this beat
+}
+```
+
+### Natural Difficulty Detection
+
+The composite's natural difficulty is determined by its density:
+
+| Density | Transients/Beat | Natural Difficulty |
+|---------|-----------------|-------------------|
+| Sparse | < 1.5 | Easy |
+| Moderate | 1.5 - 2.5 | Medium |
+| Dense | > 2.5 | Hard |
+
+---
+
+## Phrase Detection
+
+The phrase detection system identifies repeated rhythmic patterns within a song. These detected phrases form a **song-specific pattern library** used for density enhancement.
+
+### How Phrases Are Detected
+
+Phrases are detected by comparing rhythmic patterns across the song:
+
+1. **Scan for duplicates**: Check each 1, 2, 4, and 8-beat window for identical patterns
+2. **Hash for comparison**: Create a hash from beat indices, grid positions, and grid types (intensity is ignored)
+3. **Filter uninteresting patterns**: Exclude straight quarter notes and straight eighth notes
+4. **Score significance**: Larger phrases with more occurrences are more significant
+
+### Phrase Structure
+
+```typescript
+interface RhythmicPhrase {
+  pattern: GeneratedBeat[];         // The rhythm pattern
+  sizeInBeats: number;              // 1, 2, 4, or 8
+  sourceBand: 'low' | 'mid' | 'high';  // Which band this was detected in
+  occurrences: PhraseOccurrence[];  // All locations where this occurs
+  significance: number;             // Weighted by size and occurrence count
+  hasVariation: boolean;            // Excludes straight quarters/eighths
+  availableForReuse: boolean;       // Can be inserted for density enhancement
+}
+
+interface PhraseOccurrence {
+  beatIndex: number;        // Where in the beat map
+  startTimestamp: number;   // Start time (for pitch analysis reference)
+  endTimestamp: number;     // End time
+}
+```
+
+### Significance Scoring
+
+```
+Significance = sizeInBeats × log(occurrenceCount + 1)
+```
+
+| Size | 2 Occurrences | 5 Occurrences | 10 Occurrences |
+|------|---------------|---------------|----------------|
+| 1 beat | 0.7 | 1.6 | 2.3 |
+| 2 beats | 1.4 | 3.2 | 4.6 |
+| 4 beats | 2.8 | 6.4 | 9.2 |
+| 8 beats | 5.5 | 12.9 | 18.4 |
+
+### Integration with Pitch Detection
+
+The `sourceBand` and timestamp fields enable integration with pitch detection:
+
+```typescript
+// For pitch detection integration (future use):
+// 1. Use sourceBand to know which frequency range to analyze
+// 2. Use startTimestamp/endTimestamp to extract the audio segment
+// 3. Associate detected pitches with phrase occurrences
+```
+
+---
+
+## Difficulty Variant Generation
+
+The system generates three difficulty variants from the composite stream by either simplifying (for easier difficulties) or enhancing density (for harder difficulties).
+
+### Subdivision Limits by Difficulty
+
+| Difficulty | Max Subdivision | Allowed Grid Types |
+|------------|-----------------|-------------------|
+| **Easy** | 8th notes | `straight_8th`, `quarter_triplet` |
+| **Medium** | 16th notes | `straight_16th`, `triplet_8th`, all types |
+| **Hard** | 16th notes | `straight_16th`, `triplet_8th`, all types |
+
+### Variant Generation Strategy
+
+The strategy depends on the composite's natural difficulty:
+
+#### If Composite is Naturally Hard (Dense)
+
+| Variant | Strategy |
+|---------|----------|
+| **Hard** | Composite unchanged (unedited) |
+| **Medium** | Standard simplification—remove some subdivisions |
+| **Easy** | Heavy simplification—keep only core beats, snap 16th→8th |
+
+#### If Composite is Naturally Medium (Moderate)
+
+| Variant | Strategy |
+|---------|----------|
+| **Hard** | Density enhancement using pattern library |
+| **Medium** | Composite unchanged (unedited) |
+| **Easy** | Standard simplification |
+
+#### If Composite is Naturally Easy (Sparse)
+
+| Variant | Strategy |
+|---------|----------|
+| **Hard** | Heavy density enhancement |
+| **Medium** | Moderate density enhancement |
+| **Easy** | Composite unchanged (unedited) |
+
+### Simplification Rules
+
+When simplifying to easier difficulties:
+
+1. **Enforce subdivision limits** - 16th notes snap to 8th notes for Easy
+2. **Prioritize strong beats** - Beats 1 and 3 of each measure are kept first
+3. **Remove offbeats first** - Grid positions 1 and 3 prioritized for removal
+4. **Respect phrase boundaries** - Beats in significant phrases are preserved when possible
+
+### Density Enhancement
+
+When enhancing to harder difficulties:
+
+1. **First priority**: Insert detected patterns from the phrase library
+2. **Fallback**: Simple grid interpolation if no suitable pattern exists
+3. **Respect grid decisions**: Use the per-beat grid choices (16th vs triplet) from quantization
+
+### Variant Metadata
+
+```typescript
+interface DifficultyVariant {
+  difficulty: 'easy' | 'medium' | 'hard';
+  stream: GeneratedBeat[];
+  isUnedited: boolean;  // true for the composite's natural difficulty
+  editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
+  editAmount: number;   // 0-1, how much was changed
+  patternsInserted?: string[];  // IDs of patterns inserted (if any)
+}
+```
+
+---
+
+## Usage Examples
+
+### Basic Rhythm Generation
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+
+// Generate rhythm from audio URL
+const rhythm = await analyzer.generateRhythm('song.mp3', 'track-001');
+
+// Access difficulty variants
+const easyVariant = rhythm.difficultyVariants.easy;
+const mediumVariant = rhythm.difficultyVariants.medium;
+const hardVariant = rhythm.difficultyVariants.hard;
+
+console.log(`Easy: ${easyVariant.stream.length} beats`);
+console.log(`Medium: ${mediumVariant.stream.length} beats`);
+console.log(`Hard: ${hardVariant.stream.length} beats`);
+```
+
+### Generate with Default Settings
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+
+// Simple one-call generation
+const rhythm = await analyzer.generateRhythm('song.mp3', 'track-001');
+
+// Use the medium variant for gameplay
+const beats = rhythm.difficultyVariants.medium.stream;
+console.log(`Natural difficulty: ${rhythm.composite.naturalDifficulty}`);
+console.log(`Total beats: ${beats.length}`);
+```
+
+### Filter by Transient Intensity
+
+```typescript
+import { RhythmGenerator } from 'playlist-data-engine';
+
+const generator = new RhythmGenerator({
+  minimumTransientIntensity: 0.3,  // Only use transients above 30%
+});
+
+const rhythm = await generator.generate(audioBuffer, beatMap, interpolatedBeatMap);
+
+console.log(`Filtered: ${rhythm.metadata.transientsFilteredByIntensity} transients`);
+```
+
+### Select Specific Output Streams
+
+```typescript
+import { RhythmGenerator } from 'playlist-data-engine';
+
+// Focus on bass-heavy rhythms
+const bassGenerator = new RhythmGenerator({
+  outputMode: 'low',  // Use low band directly instead of composite
+});
+
+const rhythm = await bassGenerator.generate(audioBuffer, beatMap, interpolatedBeatMap);
+
+// All variants are from the low band
+console.log(rhythm.difficultyVariants.medium.stream);
+```
+
+### Working with Difficulty Variants
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+const rhythm = await analyzer.generateRhythm('song.mp3', 'track-001');
+
+// Check which variant is unedited (matches the original composite)
+for (const [name, variant] of Object.entries(rhythm.difficultyVariants)) {
+  if (variant.isUnedited) {
+    console.log(`${name} is the natural difficulty (unedited)`);
+  }
+  console.log(`${name}: ${variant.stream.length} beats, editType: ${variant.editType}`);
+}
+
+// Check what patterns were inserted
+const hardVariant = rhythm.difficultyVariants.hard;
+if (hardVariant.patternsInserted) {
+  console.log(`Patterns inserted: ${hardVariant.patternsInserted.length}`);
+}
+```
+
+### Accessing Individual Band Streams
+
+```typescript
+import { AudioAnalyzer } from 'playlist-data-engine';
+
+const analyzer = new AudioAnalyzer();
+const rhythm = await analyzer.generateRhythm('song.mp3', 'track-001');
+
+// Access raw band streams for advanced use
+const lowBand = rhythm.bandStreams.low;
+const midBand = rhythm.bandStreams.mid;
+const highBand = rhythm.bandStreams.high;
+
+console.log(`Low band: ${lowBand.beats.length} beats`);
+console.log(`Mid band: ${midBand.beats.length} beats`);
+console.log(`High band: ${highBand.beats.length} beats`);
+
+// Check grid decisions per band
+for (const decision of lowBand.gridDecisions) {
+  console.log(`Beat ${decision.beatIndex}: ${decision.selectedGrid}`);
+}
+```
+
+### Custom Configuration Presets
+
+```typescript
+import { RhythmGenerator, getRhythmPreset, getRhythmPresetNames } from 'playlist-data-engine';
+
+// List available presets
+console.log('Available presets:', getRhythmPresetNames());
+// ['casual', 'standard', 'challenge', 'bass']
+
+// Get a preset configuration
+const preset = getRhythmPreset('bass');
+console.log(preset);
+// { difficulty: 'medium', outputMode: 'low', description: 'Focus on bass/low-frequency rhythms' }
+
+// Create generator with preset
+const generator = new RhythmGenerator({
+  difficulty: preset.difficulty,
+  outputMode: preset.outputMode,
+});
+```
+
+### Complete Workflow Example
+
+```typescript
+import {
+  BeatMapGenerator,
+  BeatInterpolator,
+  unifyBeatMap,
+  RhythmGenerator
+} from 'playlist-data-engine';
+
+// Step 1: Generate beat map (quarter note grid)
+const beatMapGenerator = new BeatMapGenerator();
+const beatMap = await beatMapGenerator.generateBeatMap('song.mp3', 'track-001');
+
+// Step 2: Interpolate to fill gaps
+const interpolator = new BeatInterpolator();
+const interpolated = interpolator.interpolate(beatMap);
+
+// Step 3: Create unified beat map
+const unifiedMap = unifyBeatMap(interpolated);
+
+// Step 4: Generate procedural rhythm
+const rhythmGenerator = new RhythmGenerator({
+  difficulty: 'medium',
+  outputMode: 'composite',
+  minimumTransientIntensity: 0.2,
+});
+const rhythm = await rhythmGenerator.generate(audioBuffer, beatMap, interpolated);
+
+// Step 5: Use the generated rhythm
+console.log(`Analysis complete:`);
+console.log(`  Transients detected: ${rhythm.metadata.transientsDetected}`);
+console.log(`  Phrases found: ${rhythm.metadata.phrasesDetected}`);
+console.log(`  Natural difficulty: ${rhythm.metadata.naturalDifficulty}`);
+console.log(`  Easy beats: ${rhythm.difficultyVariants.easy.stream.length}`);
+console.log(`  Medium beats: ${rhythm.difficultyVariants.medium.stream.length}`);
+console.log(`  Hard beats: ${rhythm.difficultyVariants.hard.stream.length}`);
+```
+
+---
+
 ## References
 
 - [Beat Tracking by Dynamic Programming (Ellis, 2007)](https://www.ee.columbia.edu/~dpwe/pubs/Ellis07-beattrack.pdf)

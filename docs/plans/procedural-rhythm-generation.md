@@ -809,28 +809,28 @@ Each difficulty level has constraints on the maximum subdivision density allowed
 
 **Purpose**: This is the specialized guide where explanations, algorithm details, and usage examples belong.
 
-- [ ] Add section on transient detection (separate from beat detection)
-  - [ ] Explain multi-band analysis approach with diagrams/examples
-  - [ ] Document the 3 detection strategies: Energy-based, Spectral Flux, HFC
-  - [ ] Explain how transients cross-reference with beat maps
-- [ ] Add section on rhythm quantization
-  - [ ] Explain per-beat grid detection (16th vs triplet)
-  - [ ] Document density validation and sensitivity retry logic
-- [ ] Add section on scoring and composite generation
-  - [ ] Explain IOI variance, syncopation scoring, phrase significance
-  - [ ] Document the slicing algorithm for composite creation
-- [ ] Add section on phrase detection
-  - [ ] Explain how phrases are detected per-band (low/mid/high)
-  - [ ] Document that each phrase stores `sourceBand` indicating its frequency band origin
-  - [ ] Document that each occurrence stores `startTimestamp`/`endTimestamp` for precise audio location
-- [ ] Add usage examples for common workflows:
-  - [ ] Basic usage with `AudioAnalyzer.generateRhythm()`
-  - [ ] Generate rhythms with default settings
-  - [ ] Filter by transient intensity
-  - [ ] Select specific output streams (composite vs band-specific)
-  - [ ] Working with difficulty variants
-  - [ ] Accessing individual band streams
-  - [ ] Custom configuration presets
+- [x] Add section on transient detection (separate from beat detection)
+  - [x] Explain multi-band analysis approach with diagrams/examples
+  - [x] Document the 3 detection strategies: Energy-based, Spectral Flux, HFC
+  - [x] Explain how transients cross-reference with beat maps
+- [x] Add section on rhythm quantization
+  - [x] Explain per-beat grid detection (16th vs triplet)
+  - [x] Document density validation and sensitivity retry logic
+- [x] Add section on scoring and composite generation
+  - [x] Explain IOI variance, syncopation scoring, phrase significance
+  - [x] Document the slicing algorithm for composite creation
+- [x] Add section on phrase detection
+  - [x] Explain how phrases are detected per-band (low/mid/high)
+  - [x] Document that each phrase stores `sourceBand` indicating its frequency band origin
+  - [x] Document that each occurrence stores `startTimestamp`/`endTimestamp` for precise audio location
+- [x] Add usage examples for common workflows:
+  - [x] Basic usage with `AudioAnalyzer.generateRhythm()`
+  - [x] Generate rhythms with default settings
+  - [x] Filter by transient intensity
+  - [x] Select specific output streams (composite vs band-specific)
+  - [x] Working with difficulty variants
+  - [x] Accessing individual band streams
+  - [x] Custom configuration presets
 
 ---
 

@@ -2426,6 +2426,8 @@ System for generating procedural rhythm patterns from audio. Takes a `UnifiedBea
 
 **For comprehensive documentation including usage examples, see [docs/AUDIO_ANALYSIS.md](docs/AUDIO_ANALYSIS.md)**
 
+**For algorithm details (multi-band analysis, transient detection strategies, quantization, scoring, phrase detection), see [docs/BEAT_DETECTION.md#procedural-rhythm-generation](docs/BEAT_DETECTION.md#procedural-rhythm-generation)**
+
 **Also known as:** *Rhythm synthesis, procedural beat generation, auto-chart generation*
 
 ### Frequency Bands Reference
