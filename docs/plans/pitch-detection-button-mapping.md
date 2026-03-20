@@ -535,17 +535,17 @@ Patterns are controller-mode-specific:
   // "alternating": [1, 3, 1, 3]
   // "power_chord": [1, 3, 5]
   ```
-- [ ] Create pattern library (separate libraries per controller mode)
-  - [ ] DDR patterns
-    - [ ] Basic patterns (alternating, single key runs)
-    - [ ] Roll patterns (sequential key presses around the pad)
-    - [ ] Stream patterns (repeated directions)
-    - [ ] Jump patterns (non-adjacent keys)
-  - [ ] Guitar Hero patterns
-    - [ ] Basic patterns (ascending, descending runs)
-    - [ ] Alternating patterns (1-3, 2-4)
-    - [ ] Chord patterns (1-3-5 power chord shapes)
-    - [ ] Jump patterns (1-4, 2-5 stretches)
+- [x] Create pattern library (separate libraries per controller mode)
+  - [x] DDR patterns
+    - [x] Basic patterns (alternating, single key runs)
+    - [x] Roll patterns (sequential key presses around the pad)
+    - [x] Stream patterns (repeated directions)
+    - [x] Jump patterns (non-adjacent keys)
+  - [x] Guitar Hero patterns
+    - [x] Basic patterns (ascending, descending runs)
+    - [x] Alternating patterns (1-3, 2-4)
+    - [x] Chord patterns (1-3-5 power chord shapes)
+    - [x] Jump patterns (1-4, 2-5 stretches)
 
 ### 2.3 Button Mapper Class
 - [ ] Create `ButtonMapper` in `src/core/generation/ButtonMapper.ts`

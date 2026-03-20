@@ -106,3 +106,17 @@ export type {
     IntervalCategory,
     PitchDirection,
 } from './PitchBeatLinker.js';
+
+// Button Pattern Library
+export {
+    DDR_PATTERN_LIBRARY,
+    GUITAR_HERO_PATTERN_LIBRARY,
+    getPatternLibrary,
+    getPatternsByCategory,
+    getPatternsByDifficulty,
+    getPatternsByTags,
+    getPatternsByKeyCount,
+    getRandomPattern,
+    getPatternById,
+    getPatternLibraryStats,
+} from './ButtonPatternLibrary.js';
