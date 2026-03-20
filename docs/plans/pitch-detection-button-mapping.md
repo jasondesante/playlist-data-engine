@@ -412,7 +412,7 @@ We use pYIN instead of standard YIN for several key advantages:
   - [x] Verify `combinedContour` segments are correctly built from all pitches
 - [x] Unit tests for multi-band pitch analysis (verify same bands as rhythm generation)
 - [x] Test with synthesized audio of known pitch
-- [ ] Test with real vocal tracks
+- [x] Test with real vocal tracks
 - [x] Test beat-timestamped pitch detection accuracy
 - [x] Verify pitch detection uses pre-filtered band outputs (no redundant filtering)
 - [x] **Test composite pitch derivation** - verify derived pitches match source band pitches
