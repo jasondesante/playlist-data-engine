@@ -392,27 +392,33 @@ We use pYIN instead of standard YIN for several key advantages:
   ```
 
 ### 1.6 Tests
-- [ ] **Unit tests for pYIN implementation**:
-  - [ ] Verify YIN difference function produces correct values
-  - [ ] Verify cumulative mean normalization
-  - [ ] Verify absolute threshold detection
-  - [ ] Verify HMM voicing detection transitions (voiced→unvoiced→voiced)
-  - [ ] Verify HMM pitch state transitions are smooth
-  - [ ] Verify probability values are in valid range [0,1]
-- [ ] Unit tests for melody contour extraction
-- [ ] **Unit tests for pitch-to-pitch comparison**:
-  - [ ] Verify `direction` is correctly calculated (up/down/stable/none)
-  - [ ] Verify `intervalFromPrevious` is correctly calculated in semitones
-  - [ ] Verify `intervalCategory` is correctly assigned (unison/small/medium/large/very_large)
-- [ ] Unit tests for multi-band pitch analysis (verify same bands as rhythm generation)
-- [ ] Test with synthesized audio of known pitch
+- [x] **Unit tests for pYIN implementation**:
+  - [x] Verify YIN difference function produces correct values
+  - [x] Verify cumulative mean normalization
+  - [x] Verify absolute threshold detection
+  - [x] Verify HMM voicing detection transitions (voiced→unvoiced→voiced)
+  - [x] Verify HMM pitch state transitions are smooth
+  - [x] Verify probability values are in valid range [0,1]
+- [x] Unit tests for melody contour extraction
+- [x] **Unit tests for pitch-to-pitch comparison**:
+  - [x] Verify `direction` is correctly calculated (up/down/stable/none)
+  - [x] Verify `intervalFromPrevious` is correctly calculated in semitones
+  - [x] Verify `intervalCategory` is correctly assigned (unison/small/medium/large/very_large)
+- [x] **Unit tests for per-band contour analysis** (Phase 1.5.3):
+  - [x] Verify `bandContours` contains contours for all three bands
+  - [x] Verify each band's contour has correct direction and range
+- [x] **Unit tests for combined contour generation** (Phase 1.5.3):
+  - [x] Verify `combinedContour` spans the full range of all bands
+  - [x] Verify `combinedContour` segments are correctly built from all pitches
+- [x] Unit tests for multi-band pitch analysis (verify same bands as rhythm generation)
+- [x] Test with synthesized audio of known pitch
 - [ ] Test with real vocal tracks
-- [ ] Test beat-timestamped pitch detection accuracy
-- [ ] Verify pitch detection uses pre-filtered band outputs (no redundant filtering)
-- [ ] **Test composite pitch derivation** - verify derived pitches match source band pitches
-- [ ] **Test band stream iteration** - verify each band is analyzed with correct filtered audio
-- [ ] **Test pYIN HMM tracking** - verify smooth pitch trajectories over time
-- [ ] **Test voicing detection accuracy** - compare voiced/unvoiced classification against ground truth
+- [x] Test beat-timestamped pitch detection accuracy
+- [x] Verify pitch detection uses pre-filtered band outputs (no redundant filtering)
+- [x] **Test composite pitch derivation** - verify derived pitches match source band pitches
+- [x] **Test band stream iteration** - verify each band is analyzed with correct filtered audio
+- [x] **Test pYIN HMM tracking** - verify smooth pitch trajectories over time
+- [x] **Test voicing detection accuracy** - compare voiced/unvoiced classification against ground truth
 
 ---
 

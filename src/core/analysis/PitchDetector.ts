@@ -357,14 +357,16 @@ export class PitchDetector {
 
         // Collect pitch candidates for each frame
         const frameCandidates: PitchCandidate[][] = [];
+        const allFrameCandidates: PitchCandidate[][] = [];
 
         for (let frame = 0; frame < numFrames; frame++) {
             const startSample = frame * hopSize;
             const frameSignal = signal.slice(startSample, startSample + frameSize);
 
             // Get pitch candidates for this frame
-            const candidates = this.analyzeFrame(frameSignal, sampleRate);
-            frameCandidates.push(candidates);
+            const { filtered, all } = this.analyzeFrame(frameSignal, sampleRate);
+            frameCandidates.push(filtered);
+            allFrameCandidates.push(all);
         }
 
         // Run Viterbi decoding to find optimal pitch path
@@ -376,6 +378,7 @@ export class PitchDetector {
             const stateIndex = optimalPath[frame];
             const state = this.states[stateIndex];
             const candidates = frameCandidates[frame];
+            const allCandidates = allFrameCandidates[frame];
 
             const result: PitchResult = {
                 timestamp: frame * hopTime,
@@ -386,9 +389,10 @@ export class PitchDetector {
                 noteName: state.frequency > 0 ? this.midiToNoteName(state.midiNote) : null,
             };
 
-            // Add alternative hypotheses if available
-            if (candidates.length > 1) {
-                result.alternativeHypotheses = candidates.slice(0, 5).map(c => ({
+            // Add alternative hypotheses from all candidates (including subharmonics)
+            // This is useful for debugging and analysis
+            if (allCandidates.length > 1) {
+                result.alternativeHypotheses = allCandidates.slice(0, 5).map(c => ({
                     frequency: c.frequency,
                     probability: c.probability,
                 }));
@@ -431,10 +435,10 @@ export class PitchDetector {
         }
 
         const frameSignal = signal.slice(startSample, endSample);
-        const candidates = this.analyzeFrame(frameSignal, sampleRate);
+        const { filtered, all } = this.analyzeFrame(frameSignal, sampleRate);
 
         // Find best candidate
-        if (candidates.length === 0) {
+        if (filtered.length === 0) {
             return {
                 timestamp,
                 frequency: 0,
@@ -445,10 +449,10 @@ export class PitchDetector {
             };
         }
 
-        const best = candidates[0];
+        const best = filtered[0];
         const midiNote = Math.round(this.frequencyToMidi(best.frequency));
 
-        return {
+        const result: PitchResult = {
             timestamp,
             frequency: best.frequency,
             probability: best.probability,
@@ -456,14 +460,26 @@ export class PitchDetector {
             midiNote,
             noteName: this.midiToNoteName(midiNote),
         };
+
+        // Add alternative hypotheses from all candidates
+        if (all.length > 1) {
+            result.alternativeHypotheses = all.slice(0, 5).map(c => ({
+                frequency: c.frequency,
+                probability: c.probability,
+            }));
+        }
+
+        return result;
     }
 
     /**
      * Analyze a single frame and return pitch candidates
      *
      * Implements the core YIN algorithm with probabilistic output.
+     * Uses absolute threshold method: prefers the first (highest frequency) candidate
+     * below the threshold to avoid octave errors.
      */
-    private analyzeFrame(signal: Float32Array, sampleRate: number): PitchCandidate[] {
+    private analyzeFrame(signal: Float32Array, sampleRate: number): { filtered: PitchCandidate[], all: PitchCandidate[] } {
         const { minFrequency, maxFrequency, yinThreshold } = this.config;
 
         // Calculate lag range from frequency range
@@ -480,7 +496,7 @@ export class PitchDetector {
         const cmndf = this.computeCMNDF(difference, minLag, actualMaxLag);
 
         // Find local minima as pitch candidates
-        const candidates: PitchCandidate[] = [];
+        const allCandidates: PitchCandidate[] = [];
 
         for (let lag = minLag + 1; lag < actualMaxLag - 1; lag++) {
             // Check if this is a local minimum
@@ -495,16 +511,58 @@ export class PitchDetector {
                     const probability = 1 - cmndf[lag];
 
                     if (frequency >= minFrequency && frequency <= maxFrequency) {
-                        candidates.push({ lag: refinedLag, frequency, probability });
+                        allCandidates.push({ lag: refinedLag, frequency, probability });
                     }
                 }
             }
         }
 
         // Sort by probability (descending)
-        candidates.sort((a, b) => b.probability - a.probability);
+        allCandidates.sort((a, b) => b.probability - a.probability);
 
-        return candidates;
+        if (allCandidates.length === 0) {
+            return { filtered: [], all: [] };
+        }
+
+        // Apply subharmonic filtering:
+        // For each candidate, check if there's a higher-frequency candidate
+        // with similar probability that is approximately N times the frequency.
+        // If so, the lower frequency is likely a subharmonic and should be removed.
+        const filteredCandidates: PitchCandidate[] = [];
+        const bestProb = allCandidates[0].probability;
+
+        for (const candidate of allCandidates) {
+            let isSubharmonic = false;
+
+            // Check against all higher-frequency candidates with good probability
+            for (const other of allCandidates) {
+                if (other.frequency <= candidate.frequency) continue;
+                if (other.probability < bestProb * 0.9) continue;
+
+                // Check if this candidate is a subharmonic of the other
+                // (i.e., other.frequency ≈ N * candidate.frequency for integer N)
+                const ratio = other.frequency / candidate.frequency;
+                const nearestInteger = Math.round(ratio);
+                const deviation = Math.abs(ratio - nearestInteger);
+
+                // If the ratio is close to an integer (2, 3, 4, etc.), this is a subharmonic
+                if (nearestInteger >= 2 && nearestInteger <= 5 && deviation < 0.1) {
+                    isSubharmonic = true;
+                    break;
+                }
+            }
+
+            if (!isSubharmonic) {
+                filteredCandidates.push(candidate);
+            }
+        }
+
+        // If we filtered out all candidates, keep the best one
+        if (filteredCandidates.length === 0 && allCandidates.length > 0) {
+            filteredCandidates.push(allCandidates[0]);
+        }
+
+        return { filtered: filteredCandidates, all: allCandidates };
     }
 
     /**
@@ -729,15 +787,32 @@ export class PitchDetector {
 
         for (const candidate of candidates) {
             const freqRatio = candidate.frequency / stateFrequency;
-            // Allow for octave errors (0.5, 1.0, 2.0 ratios)
-            const minDiff = Math.min(
-                Math.abs(freqRatio - 1),
-                Math.abs(freqRatio - 0.5),
-                Math.abs(freqRatio - 2)
-            );
+            const exactDiff = Math.abs(freqRatio - 1);
 
-            if (minDiff < 0.05) {
-                bestMatch = Math.max(bestMatch, candidate.probability);
+            // Check for exact match (within 5%)
+            if (exactDiff < 0.05) {
+                // Apply distance-based scaling: closer matches get higher probability
+                // This gives a slight edge to states that are closer to the candidate
+                const distanceScale = 1 - (exactDiff / 0.05) * 0.2; // 0.8 to 1.0 scaling
+                const scaledProb = candidate.probability * distanceScale;
+
+                if (scaledProb > bestMatch) {
+                    bestMatch = scaledProb;
+                }
+            }
+
+            // Check for octave matches only if no exact match found
+            if (bestMatch === 0) {
+                const octaveLowDiff = Math.abs(freqRatio - 0.5);  // Candidate is octave below state
+                const octaveHighDiff = Math.abs(freqRatio - 2);   // Candidate is octave above state
+
+                if (octaveLowDiff < 0.05 || octaveHighDiff < 0.05) {
+                    // Apply octave penalty: reduce probability for octave matches
+                    const penalizedProb = candidate.probability * 0.4;
+                    if (penalizedProb > bestMatch) {
+                        bestMatch = penalizedProb;
+                    }
+                }
             }
         }
 
