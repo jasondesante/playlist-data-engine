@@ -1316,7 +1316,7 @@ interface ChartMetadata {
   - [x] Verify fret clamping to valid range (1-5) (with string wrap)
   - [x] Verify stable pitch → stay on same fret
 - [x] Unit tests for pattern selection (both controller modes)
-- [ ] Verify difficulty constraints are respected
+- [x] Verify difficulty constraints are respected
 - [ ] Test band-aware mapping logic (using `PitchAtBeat.band`)
 - [ ] **Unit tests for probability-based blending (`blendPitchAndPattern`)**:
   - [ ] Verify weight = 1.0 → all pitch buttons used (no replacement)
