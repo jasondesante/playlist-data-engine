@@ -6,6 +6,35 @@ The Playlist Data Engine provides beat detection and rhythm analysis features fo
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Beat Detection System](#beat-detection-system)
+- [Chart Creation with Required Keys](#chart-creation-with-required-keys)
+- [Downbeat Configuration](#downbeat-configuration)
+- [Beat Interpolation](#beat-interpolation)
+- [Beat Subdivision](#beat-subdivision)
+- [Real-Time Subdivision Playground (Practice Mode)](#real-time-subdivision-playground-practice-mode)
+- [Groove Analysis](#groove-analysis)
+
+### Automatic Level Generation — Rhythm Generation
+
+> **Note**: This is the rhythm generation half of automatic level generation. For pitch detection and button mapping, see [DATA_ENGINE_REFERENCE.md](DATA_ENGINE_REFERENCE.md).
+
+- [Procedural Rhythm Generation](#procedural-rhythm-generation) — Overview and pipeline
+- [Transient Detection](#transient-detection) — Multi-band onset detection
+- [Rhythm Quantization](#rhythm-quantization) — Grid alignment and density validation
+- [Scoring and Composite Generation](#scoring-and-composite-generation) — Band selection and stream creation
+- [Phrase Detection](#phrase-detection) — Pattern library for density enhancement
+- [Difficulty Variant Generation](#difficulty-variant-generation) — Easy/Medium/Hard variants
+- [Usage Examples](#usage-examples) — Common workflows for rhythm generation
+
+### Reference
+
+- [References](#references)
+
+---
+
 ## Overview
 
 The beat detection system is powered by the Web Audio API and provides:
