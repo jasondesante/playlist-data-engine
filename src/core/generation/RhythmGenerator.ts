@@ -590,6 +590,27 @@ export interface RhythmPresetConfig {
  * - **standard**: Medium difficulty, composite output - balanced experience
  * - **challenge**: Hard difficulty, composite output - for skilled players
  * - **bass**: Medium difficulty, low-frequency band - focus on bass rhythms
+ *
+ * @example
+ * ```typescript
+ * // Get a preset configuration
+ * const preset = getRhythmPreset('standard');
+ * console.log(preset.description); // "Balanced experience for most players"
+ *
+ * // Use preset with RhythmGenerator
+ * const generator = new RhythmGenerator({
+ *   ...preset,
+ *   minimumTransientIntensity: 0.2,
+ * });
+ *
+ * // List all available presets
+ * const presetNames = getRhythmPresetNames();
+ * console.log('Available presets:', presetNames); // ['casual', 'standard', 'challenge', 'bass']
+ *
+ * // Select bass-focused preset for rhythm games
+ * const bassPreset = getRhythmPreset('bass');
+ * const bassGenerator = new RhythmGenerator(bassPreset);
+ * ```
  */
 export const RHYTHM_PRESETS: Record<RhythmPresetName, RhythmPresetConfig> = {
     casual: {

@@ -5,6 +5,28 @@
  * Each frequency band uses a different algorithm optimized for its typical content:
  *
  * Part of the Procedural Rhythm Generation pipeline.
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - detect transients from multi-band analysis
+ * const detector = new TransientDetector();
+ * const transients = detector.detect(multiBandResult);
+ *
+ * // Access all transients across all bands
+ * console.log(`Total transients: ${transients.transients.length}`);
+ *
+ * // Access transients by band
+ * for (const [band, bandTransients] of transients.bandTransients) {
+ *   console.log(`${band}: ${bandTransients.length} transients`);
+ * }
+ *
+ * // Custom configuration with higher threshold
+ * const customDetector = new TransientDetector({
+ *   baseThreshold: 0.5,         // Higher = fewer transients detected
+ *   adaptiveThresholding: true, // Adjust based on local energy
+ *   minTransientInterval: 0.03, // Minimum 30ms between transients
+ * });
+ * ```
  */
 
 import type { MultiBandResult, BandAnalysis } from '../MultiBandAnalyzer.js';

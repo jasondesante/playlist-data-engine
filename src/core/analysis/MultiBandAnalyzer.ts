@@ -6,6 +6,28 @@
  * elements (bass/kick, vocals/snare, hi-hats/cymbals) independently.
  *
  * Part of the Procedural Rhythm Generation pipeline.
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - analyze an audio buffer
+ * const analyzer = new MultiBandAnalyzer();
+ * const result = analyzer.analyze(audioBuffer);
+ *
+ * // Access per-band analysis
+ * for (const [bandName, analysis] of result.bands) {
+ *   console.log(`${bandName}: ${analysis.peaks.length} transients detected`);
+ *   console.log(`  Energy: ${analysis.energy.toFixed(3)}`);
+ * }
+ *
+ * // Check which bands have the most activity
+ * console.log('Dominant bands:', result.dominantBands);
+ *
+ * // Custom configuration with adjusted threshold
+ * const customAnalyzer = new MultiBandAnalyzer({
+ *   peakThreshold: 0.4,  // Higher threshold = fewer, stronger peaks
+ *   fftWindowSizeMs: 46, // Larger window = better frequency resolution
+ * });
+ * ```
  */
 
 import {

@@ -5,6 +5,27 @@
  * from each band stream.
  *
  * Part of the Procedural Rhythm Generation pipeline - Phase 3.2
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - generate composite from scored streams
+ * const generator = new CompositeStreamGenerator();
+ * const composite = generator.generate(quantizedBandStreams, scoringResult, densityAnalysis);
+ *
+ * // Access the composite beats
+ * console.log(`Total beats: ${composite.beats.length}`);
+ * console.log(`Natural difficulty: ${composite.naturalDifficulty}`);
+ *
+ * // Check which band contributed to each section
+ * for (const section of composite.sections) {
+ *   console.log(`Beats ${section.beatRange.start}-${section.beatRange.end}: ${section.sourceBand}`);
+ *   console.log(`  Score: ${section.score.toFixed(2)}, margin: ${section.margin.toFixed(2)}`);
+ * }
+ *
+ * // Check band contribution statistics
+ * console.log('Beats per band:', composite.metadata.beatsPerBand);
+ * console.log('Sections per band:', composite.metadata.sectionsPerBand);
+ * ```
  */
 
 import type { GeneratedBeat, GeneratedRhythmMap, QuantizedBandStreams } from './RhythmQuantizer.js';

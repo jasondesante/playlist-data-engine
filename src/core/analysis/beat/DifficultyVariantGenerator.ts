@@ -5,6 +5,33 @@
  * by simplifying or enhancing density based on natural difficulty.
  *
  * Part of the Procedural Rhythm Generation pipeline - Phase 3.3
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - generate all 3 difficulty variants
+ * const generator = new DifficultyVariantGenerator();
+ * const variants = generator.generateAll(compositeStream, phraseAnalysis, gridDecisions);
+ *
+ * // Access each difficulty variant
+ * const easyVariant = variants.easy;
+ * const mediumVariant = variants.medium;
+ * const hardVariant = variants.hard;
+ *
+ * // Check which variant is unedited (natural difficulty)
+ * console.log(`Easy is unedited: ${easyVariant.isUnedited}`);
+ * console.log(`Medium is unedited: ${mediumVariant.isUnedited}`);
+ * console.log(`Hard is unedited: ${hardVariant.isUnedited}`);
+ *
+ * // Check edit details
+ * console.log(`Medium edit type: ${mediumVariant.editType}`);
+ * console.log(`Medium edit amount: ${mediumVariant.editAmount.toFixed(2)}`);
+ *
+ * // Custom configuration for phrase boundary preservation
+ * const customGenerator = new DifficultyVariantGenerator({
+ *   preservePhraseBoundaries: true,
+ *   logConversions: true,
+ * });
+ * ```
  */
 
 import type { CompositeBeat, CompositeStream } from './CompositeStreamGenerator.js';

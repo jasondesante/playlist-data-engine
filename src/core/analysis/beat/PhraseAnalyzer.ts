@@ -7,6 +7,26 @@
  * - Pitch detection integration (via sourceBand and timestamps)
  *
  * Part of the Procedural Rhythm Generation pipeline - Phase 2.1
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - analyze phrases in quantized streams
+ * const analyzer = new PhraseAnalyzer();
+ * const result = analyzer.analyze(quantizedBandStreams);
+ *
+ * // Access all detected phrases
+ * console.log(`Found ${result.phrases.length} unique phrases`);
+ *
+ * // Get the most significant phrases (best patterns to reuse)
+ * for (const phrase of result.mostSignificantPhrases) {
+ *   console.log(`Phrase: ${phrase.sizeInBeats} beats, ${phrase.occurrences.length} occurrences`);
+ *   console.log(`  Source band: ${phrase.sourceBand}`);
+ *   console.log(`  Significance: ${phrase.significance.toFixed(2)}`);
+ * }
+ *
+ * // Access phrases by band for targeted analysis
+ * const lowBandPhrases = result.phrasesByBand.get('low');
+ * ```
  */
 
 import type { GeneratedBeat, GeneratedRhythmMap, GridType } from './RhythmQuantizer.js';

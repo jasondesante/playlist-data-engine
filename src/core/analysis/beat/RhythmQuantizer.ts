@@ -4,6 +4,32 @@
  * Translates raw transients into quantized rhythmic subdivisions that align with the beat map grid.
  *
  * Part of the Procedural Rhythm Generation pipeline.
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - quantize transients to beat grid
+ * const quantizer = new RhythmQuantizer();
+ * const result = quantizer.quantize(transientAnalysis, unifiedBeatMap);
+ *
+ * // Access quantized streams for each band
+ * const lowBandBeats = result.streams.low.beats;
+ * const midBandBeats = result.streams.mid.beats;
+ * const highBandBeats = result.streams.high.beats;
+ *
+ * // Check grid decisions (16th vs triplet) for each beat
+ * for (const decision of result.streams.low.gridDecisions) {
+ *   console.log(`Beat ${decision.beatIndex}: ${decision.selectedGrid} (confidence: ${decision.confidence.toFixed(2)})`);
+ * }
+ *
+ * // Custom configuration with intensity filtering
+ * const customQuantizer = new RhythmQuantizer({
+ *   minimumTransientIntensity: 0.3, // Filter weak transients
+ *   densityValidation: {
+ *     maxRetries: 3,
+ *     baseSensitivityReduction: 0.1,
+ *   },
+ * });
+ * ```
  */
 
 import type { TransientResult, TransientAnalysis } from './TransientDetector.js';

@@ -4,6 +4,27 @@
  * Analyzes quantized rhythm streams to measure density and determine natural difficulty.
  *
  * Part of the Procedural Rhythm Generation pipeline - Phase 2.2
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - analyze density of quantized streams
+ * const analyzer = new DensityAnalyzer();
+ * const result = analyzer.analyze(quantizedBandStreams);
+ *
+ * // Check combined metrics for overall density
+ * console.log(`Combined density: ${result.combinedMetrics.transientsPerBeat.toFixed(2)} transients/beat`);
+ * console.log(`Natural difficulty: ${result.combinedMetrics.naturalDifficulty}`);
+ *
+ * // Access per-band metrics
+ * for (const [band, metrics] of Object.entries(result.bandMetrics)) {
+ *   console.log(`${band}: ${metrics.densityCategory} (${metrics.transientsPerBeat.toFixed(2)} t/b)`);
+ * }
+ *
+ * // Check section-level density for dynamic difficulty
+ * for (const section of result.sections) {
+ *   console.log(`Beats ${section.startBeat}-${section.endBeat}: ${section.densityCategory}`);
+ * }
+ * ```
  */
 
 import type { GeneratedBeat, GeneratedRhythmMap, QuantizedBandStreams } from './RhythmQuantizer.js';

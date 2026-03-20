@@ -785,7 +785,7 @@ Each difficulty level has constraints on the maximum subdivision density allowed
 
 ### 5.1 Code Documentation
 - [x] JSDoc for all public types and interfaces
-- [ ] Usage examples in code comments
+- [x] Usage examples in code comments
 - [ ] Inline comments for complex algorithms (especially transient detection strategies)
 
 ### 5.2 Update DATA_ENGINE_REFERENCE.md

@@ -5,6 +5,29 @@
  * Used to determine which band has the most interesting rhythm for composite generation.
  *
  * Part of the Procedural Rhythm Generation pipeline - Phase 3.1
+ *
+ * @example
+ * ```typescript
+ * // Basic usage - score band streams for interest level
+ * const scorer = new StreamScorer();
+ * const result = scorer.score(quantizedBandStreams, phraseAnalysis, densityAnalysis);
+ *
+ * // Check which band won each section
+ * for (const winner of result.sectionWinners) {
+ *   console.log(`Beats ${winner.beatRange.start}-${winner.beatRange.end}: ${winner.band} won`);
+ * }
+ *
+ * // Compare overall band performance
+ * console.log('Band totals:', result.bandTotals);
+ * console.log('Band averages:', result.bandAverages);
+ *
+ * // Inspect individual scoring factors
+ * for (const score of result.sectionScores) {
+ *   console.log(`${score.band} @ ${score.beatRange.start}: ${score.score.toFixed(2)}`);
+ *   console.log(`  IOI variance: ${score.factors.ioiVariance.toFixed(2)}`);
+ *   console.log(`  Syncopation: ${score.factors.syncopationLevel.toFixed(2)}`);
+ * }
+ * ```
  */
 
 import type { GeneratedBeat, GeneratedRhythmMap, QuantizedBandStreams } from './RhythmQuantizer.js';
