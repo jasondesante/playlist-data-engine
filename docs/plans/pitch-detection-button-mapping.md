@@ -1476,7 +1476,7 @@ interface ChartMetadata {
   ```
 
 ### 3.2 Pipeline Implementation
-- [ ] Implement the full generation pipeline
+- [x] Implement the full generation pipeline (tested in `levelGenerator.integration.test.ts`)
   1. Run rhythm generation (from companion plan) → `GeneratedRhythm`
   2. **Run pitch analysis** (Phase 1) - **skipped if `pitchInfluenceWeight = 0`**:
      - Analyze pitch on ALL band streams (low/mid/high) using filtered audio
@@ -1487,7 +1487,7 @@ interface ChartMetadata {
   5. Generate button mappings for selected variant using `PitchAtBeat.direction` and `intervalCategory` → `MappedLevelResult`
   6. **Convert to ChartedBeatMap** using `BeatMapConverter.convertToChartedBeatMap()`
   7. Combine into final `GeneratedLevel` with playable `chart`
-- [ ] Add progress callbacks for long-running generation
+- [x] Add progress callbacks for long-running generation
   ```typescript
   interface GenerationProgress {
     stage: 'rhythm' | 'pitch' | 'buttons' | 'conversion' | 'finalizing';
@@ -1499,11 +1499,11 @@ interface ChartMetadata {
 - [ ] Add caching for intermediate results
 
 ### 3.3 Tests
-- [ ] Integration tests for full pipeline
+- [x] Integration tests for full pipeline (see `levelGenerator.integration.test.ts`)
 - [ ] Performance tests (generation time < 10 seconds for 3-minute song)
-- [ ] Verify pitch influence is visible in output
-- [ ] Verify direction/interval statistics are populated in `LevelMetadata.pitchMetadata`
-- [ ] Verify button mapping correctly uses `direction` and `intervalCategory` from pitch analysis
+- [x] Verify pitch influence is visible in output
+- [x] Verify direction/interval statistics are populated in `LevelMetadata.pitchMetadata`
+- [x] Verify button mapping correctly uses `direction` and `intervalCategory` from pitch analysis
 
 ---
 
