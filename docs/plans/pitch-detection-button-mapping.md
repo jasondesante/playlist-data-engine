@@ -1300,13 +1300,6 @@ interface ChartMetadata {
 - [x] Verify `isDownbeat` is only true for quarter note positions
 - [x] Verify `requiredKey` is correctly assigned from map
 - [ ] Integration test: converted ChartedBeatMap works with BeatStream
- - [ ] Integration test: key matching works with `checkButtonPress()`- [ ] Unit tests for `calculateBeatInMeasure` (all grid positions)
-- [ ] Unit tests for `mapGridToSubdivision`
-- [ ] Unit tests for full `convertToChartedBeatMap`
-- [ ] Verify converted beats have correct `beatInMeasure` values
-- [ ] Verify `isDownbeat` is only true for quarter note positions
-- [ ] Verify `requiredKey` is correctly assigned from map
-- [ ] Integration test: converted ChartedBeatMap works with BeatStream
 - [ ] Integration test: key matching works with `checkButtonPress()`
 
 ### 2.8 Tests
@@ -1322,7 +1315,7 @@ interface ChartMetadata {
   - [x] Verify interval size affects fret jump distance
   - [x] Verify fret clamping to valid range (1-5) (with string wrap)
   - [x] Verify stable pitch → stay on same fret
-- [ ] Unit tests for pattern selection (both controller modes)
+- [x] Unit tests for pattern selection (both controller modes)
 - [ ] Verify difficulty constraints are respected
 - [ ] Test band-aware mapping logic (using `PitchAtBeat.band`)
 - [ ] **Unit tests for probability-based blending (`blendPitchAndPattern`)**:
