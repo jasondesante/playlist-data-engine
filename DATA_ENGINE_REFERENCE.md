@@ -2636,6 +2636,31 @@ constructor(config?: PhraseAnalyzerConfig)
 |--------|---------|-------------|
 | `analyze(streams)` | `PhraseAnalysisResult` | Analyze streams for duplicate phrases |
 
+**Type Reference: RhythmicPhrase**
+
+Detected rhythmic phrase with all occurrences. Used for density enhancement and pitch detection integration.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | `string` | Unique identifier (hash of pattern) |
+| `pattern` | `GeneratedBeat[]` | The rhythm pattern (relative to phrase start) |
+| `sizeInBeats` | `number` | Size in beats: 1, 2, 4, or 8 |
+| `sourceBand` | `'low' \| 'mid' \| 'high'` | Which frequency band this phrase was detected in |
+| `occurrences` | `PhraseOccurrence[]` | All locations where this pattern occurs |
+| `significance` | `number` | Weighted score (larger size + more occurrences = higher) |
+| `hasVariation` | `boolean` | Excludes straight quarters/eighths |
+| `availableForReuse` | `boolean` | Can be inserted elsewhere for density enhancement |
+
+**Type Reference: PhraseOccurrence**
+
+Single occurrence of a detected phrase. Timestamps enable pitch analysis of specific audio segments.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `beatIndex` | `number` | Index into UnifiedBeatMap.beats[] where occurrence starts |
+| `startTimestamp` | `number` | Start time in seconds (for pitch analysis reference) |
+| `endTimestamp` | `number` | End time in seconds (for pitch analysis reference) |
+
 ### DensityAnalyzer
 *Location:* *[src/core/analysis/beat/DensityAnalyzer.ts](src/core/analysis/beat/DensityAnalyzer.ts)*
 
