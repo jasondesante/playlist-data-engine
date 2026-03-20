@@ -750,7 +750,21 @@ Each difficulty level has constraints on the maximum subdivision density allowed
   - Comprehensive test coverage for metadata preservation
 
 ### 4.3 Tests
-- [ ] API integration tests
+- [x] API integration tests
+  - **Implementation**: `tests/integration/rhythmGeneration.integration.test.ts`
+  - Comprehensive test suite covering:
+    - `generateRhythmFromBuffer()` with mock and real audio
+    - `generateRhythm()` from URL (network tests)
+    - Progress callbacks during generation
+    - Variant verification (easy/medium/hard structure)
+    - Band streams tests (low/mid/high)
+    - Analysis results (transients, phrases, density)
+    - Metadata completeness
+    - Beat map integration (custom options, downbeat config)
+    - Error handling (invalid inputs, edge cases)
+    - Performance tests (generation time limits)
+    - Reusability (multiple generations)
+    - Static method signatures
 - [x] Serialization round-trip tests
   - **Location**: `src/core/generation/RhythmGenerator.test.ts`
   - 10 new tests covering:
