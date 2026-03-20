@@ -545,15 +545,43 @@ export class DifficultyVariantGenerator {
         gridDecisions?: Map<number, GridDecision>
     ): DifficultyVariant {
         const isNatural = targetDifficulty === naturalDifficulty;
+        const allowedTypes = SUBDIVISION_LIMITS[targetDifficulty].allowedGridTypes;
 
         if (isNatural) {
-            // This variant is the unedited composite
+            // Check if all beats already have allowed grid types
+            const allTypesAllowed = composite.beats.every(b => allowedTypes.includes(b.gridType));
+
+            if (allTypesAllowed) {
+                // This variant is the unedited composite
+                return {
+                    difficulty: targetDifficulty,
+                    beats: [...composite.beats],
+                    isUnedited: true,
+                    editType: 'none',
+                    editAmount: 0,
+                };
+            }
+
+            // Even for "natural" difficulty, we must ensure grid types are allowed
+            // This handles edge cases where DensityAnalyzer may misclassify or
+            // the composite has mixed grid types
+            const result = this.simplifyBeats(
+                composite.beats,
+                targetDifficulty,
+                false,
+                phraseAnalysis,
+                composite.quarterNoteInterval
+            );
+
             return {
                 difficulty: targetDifficulty,
-                beats: [...composite.beats],
-                isUnedited: true,
-                editType: 'none',
-                editAmount: 0,
+                beats: result.beats,
+                isUnedited: false,
+                editType: 'simplified',
+                editAmount: result.metadata.totalBeatsBefore > 0
+                    ? (result.metadata.totalBeatsBefore - result.metadata.totalBeatsAfter) / result.metadata.totalBeatsBefore
+                    : 0,
+                conversionMetadata: result.metadata,
             };
         }
 
