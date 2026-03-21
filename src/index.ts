@@ -680,6 +680,12 @@ export {
     type LevelProgressCallback,
 } from './core/generation/LevelGenerator.js';
 
+// Level Serializer (Phase 4.2.2)
+export {
+    LevelSerializer,
+    type LevelSerializerOptions,
+} from './core/analysis/LevelSerializer.js';
+
 // ============================================================================
 // ENEMY GENERATION
 // ============================================================================

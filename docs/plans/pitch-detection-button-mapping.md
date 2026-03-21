@@ -1639,7 +1639,7 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
     quantizationError?: number;
   }
   ```
-- [ ] Create `LevelSerializer` class
+- [x] Create `LevelSerializer` class
   ```typescript
   // In src/core/analysis/LevelSerializer.ts (new file)
 
@@ -1662,14 +1662,14 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
     static validate(data: unknown): FullBeatMapImportResult;
   }
   ```
-- [ ] **Mapping: GeneratedLevel → FullBeatMapExportData**
+- [x] **Mapping: GeneratedLevel → FullBeatMapExportData**
   - The `GeneratedLevel.chart` (ChartedBeatMap) maps to `FullBeatMapExportData.subdivision`
   - `ChartedBeat.beats[]` maps to `FullExportSubdividedBeat[]` (with procedural extensions)
   - `detectedBeatIndices` used to set `isDetected` flag on beats
   - `requiredKey` field is preserved
   - `bpm` maps to `quarterNoteBpm`
   - Extract data from `GeneratedLevel.rhythm` and `pitchAnalysis` for other fields
-- [ ] **Mapping: FullBeatMapExportData → GeneratedLevel** (reverse import)
+- [x] **Mapping: FullBeatMapExportData → GeneratedLevel** (reverse import)
   - Parse `subdivision.beats` into `ChartedBeat[]`
   - Reconstruct `pitchAnalysis` if present (from generationMetadata)
   - Reconstruct `GeneratedLevel.metadata` from export data
