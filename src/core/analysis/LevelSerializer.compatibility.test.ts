@@ -1386,4 +1386,291 @@ describe('LevelSerializer Compatibility with Showcase App', () => {
             console.log('✓ Level correctly identified as procedural when pitchInfluenceWeight = 0');
         });
     });
+
+    describe('Phase 4.2.4: Edge Cases - No subdivision (only interpolated beats)', () => {
+        /**
+         * Create mock export data with no subdivision (subdivision: null)
+         * This simulates a level that only has interpolated beats without subdivision
+         */
+        function createMockExportDataNoSubdivision(): FullBeatMapExportData {
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm;
+            const duration = 10.0;
+
+            // Create detected beats (quarter notes only)
+            const detectedBeats: FullExportDetectedBeat[] = [];
+            for (let i = 0; i < Math.floor(duration / quarterNoteInterval); i++) {
+                detectedBeats.push({
+                    timestamp: i * quarterNoteInterval,
+                    beatInMeasure: i % 4,
+                    isDownbeat: i % 4 === 0,
+                    measureNumber: Math.floor(i / 4),
+                    intensity: 0.8,
+                    confidence: 0.9,
+                });
+            }
+
+            // Create merged beats (only quarter notes, no subdivisions)
+            const mergedBeats: FullExportMergedBeat[] = detectedBeats.map((beat, index) => ({
+                ...beat,
+                requiredKey: ['up', 'down', 'left', 'right'][index % 4],
+                source: 'detected' as const,
+            }));
+
+            return {
+                version: 1,
+                format: 'full-beatmap',
+                audioId: 'no-subdivision-audio-123',
+                exportedAt: Date.now(),
+                duration,
+                quarterNoteBpm: bpm,
+                quarterNoteConfidence: 0.85,
+                detectedBeats,
+                mergedBeats,
+                interpolatedMetadata: {
+                    quarterNoteInterval,
+                    quarterNoteBpm: bpm,
+                    quarterNoteConfidence: 0.85,
+                    detectedBeatCount: detectedBeats.length,
+                    mergedBeatCount: mergedBeats.length,
+                },
+                subdivision: null, // No subdivision!
+                chart: {
+                    style: 'ddr',
+                    keyCount: 4,
+                    usedKeys: ['up', 'down', 'left', 'right'],
+                },
+                generationSource: 'manual',
+            };
+        }
+
+        it('should validate export data with no subdivision (warning only)', () => {
+            const exportData = createMockExportDataNoSubdivision();
+
+            const result = LevelSerializer.validate(exportData);
+
+            // Should succeed with a warning
+            expect(result.success).toBe(true);
+            expect(result.warnings).toBeDefined();
+            expect(result.warnings?.some(w => w.includes('subdivision'))).toBe(true);
+
+            console.log('✓ Validation passes for no subdivision with warning');
+            console.log(`  warnings: ${result.warnings?.join(', ')}`);
+        });
+
+        it('should import level with no subdivision by using mergedBeats', () => {
+            const exportData = createMockExportDataNoSubdivision();
+
+            // Import should not throw
+            const level = LevelSerializer.fromExportData(exportData);
+
+            expect(level).toBeDefined();
+            expect(level.chart).toBeDefined();
+            expect(level.chart.beats.length).toBeGreaterThan(0);
+
+            console.log('✓ Level with no subdivision imported successfully');
+            console.log(`  beats count: ${level.chart.beats.length}`);
+        });
+
+        it('should reconstruct chart beats from mergedBeats when subdivision is null', () => {
+            const exportData = createMockExportDataNoSubdivision();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Check that beats were created from mergedBeats
+            expect(level.chart.beats.length).toBe(exportData.mergedBeats.length);
+
+            // Check that beat timestamps match
+            for (let i = 0; i < level.chart.beats.length; i++) {
+                expect(level.chart.beats[i].timestamp).toBe(exportData.mergedBeats[i].timestamp);
+            }
+
+            console.log('✓ Chart beats correctly reconstructed from mergedBeats');
+        });
+
+        it('should preserve required keys when importing level with no subdivision', () => {
+            const exportData = createMockExportDataNoSubdivision();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Check that keys are preserved
+            const keys = level.chart.beats
+                .map(b => b.requiredKey)
+                .filter((k): k is string => k !== undefined);
+
+            expect(keys.length).toBe(exportData.mergedBeats.length);
+            expect(keys).toContain('up');
+            expect(keys).toContain('down');
+            expect(keys).toContain('left');
+            expect(keys).toContain('right');
+
+            console.log('✓ Keys preserved when importing level with no subdivision');
+            console.log(`  keys count: ${keys.length}`);
+        });
+
+        it('should use default values for procedural fields when subdivision is null', () => {
+            const exportData = createMockExportDataNoSubdivision();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Check default values
+            const beat = level.chart.beats[0];
+            expect(beat.subdivisionType).toBe('quarter');
+            expect(beat.sourceBand).toBe('mid');
+
+            console.log('✓ Default values used for procedural fields');
+            console.log(`  subdivisionType: ${beat.subdivisionType}`);
+            console.log(`  sourceBand: ${beat.sourceBand}`);
+        });
+    });
+
+    describe('Phase 4.2.4: Edge Cases - No key assignments (chart is null)', () => {
+        /**
+         * Create mock export data with no key assignments (chart: null)
+         * This simulates a level that has beats but no required keys assigned
+         */
+        function createMockExportDataNoKeys(): FullBeatMapExportData {
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm;
+            const duration = 10.0;
+            const beatCount = 40;
+
+            // Create detected beats
+            const detectedBeats: FullExportDetectedBeat[] = [];
+            for (let i = 0; i < Math.floor(duration / quarterNoteInterval); i++) {
+                detectedBeats.push({
+                    timestamp: i * quarterNoteInterval,
+                    beatInMeasure: i % 4,
+                    isDownbeat: i % 4 === 0,
+                    measureNumber: Math.floor(i / 4),
+                    intensity: 0.8,
+                    confidence: 0.9,
+                    // No requiredKey!
+                });
+            }
+
+            // Create merged beats without keys
+            const mergedBeats: FullExportMergedBeat[] = [];
+            for (let i = 0; i < beatCount; i++) {
+                const quarterIndex = Math.floor(i / 4);
+                const subPosition = i % 4;
+                mergedBeats.push({
+                    timestamp: (quarterIndex + subPosition * 0.25) * quarterNoteInterval,
+                    beatInMeasure: (quarterIndex % 4) + subPosition * 0.25,
+                    isDownbeat: quarterIndex % 4 === 0 && subPosition === 0,
+                    measureNumber: Math.floor(quarterIndex / 4),
+                    intensity: 0.7,
+                    confidence: 0.8,
+                    // No requiredKey!
+                    source: i % 4 === 0 ? 'detected' : 'interpolated',
+                });
+            }
+
+            // Create subdivision beats without keys
+            const subdivisionBeats: FullExportSubdividedBeat[] = mergedBeats.map((beat, index) => ({
+                ...beat,
+                isDetected: beat.source === 'detected',
+                originalBeatIndex: beat.source === 'detected' ? index : undefined,
+                subdivisionType: 'sixteenth' as SubdivisionType,
+                // No requiredKey!
+            }));
+
+            return {
+                version: 1,
+                format: 'full-beatmap',
+                audioId: 'no-keys-audio-123',
+                exportedAt: Date.now(),
+                duration,
+                quarterNoteBpm: bpm,
+                quarterNoteConfidence: 0.85,
+                detectedBeats,
+                mergedBeats,
+                interpolatedMetadata: {
+                    quarterNoteInterval,
+                    quarterNoteBpm: bpm,
+                    quarterNoteConfidence: 0.85,
+                    detectedBeatCount: detectedBeats.length,
+                    mergedBeatCount: mergedBeats.length,
+                },
+                subdivision: {
+                    config: {
+                        beatSubdivisions: subdivisionBeats.map((_, i) => [i, 'sixteenth' as SubdivisionType]),
+                        defaultSubdivision: 'sixteenth',
+                    },
+                    beats: subdivisionBeats,
+                    metadata: {
+                        originalBeatCount: detectedBeats.length,
+                        subdividedBeatCount: subdivisionBeats.length,
+                        averageDensityMultiplier: 1.0,
+                        explicitBeatCount: detectedBeats.length,
+                    },
+                },
+                chart: null, // No chart!
+                generationSource: 'manual',
+            };
+        }
+
+        it('should validate export data with no chart (warning only)', () => {
+            const exportData = createMockExportDataNoKeys();
+
+            const result = LevelSerializer.validate(exportData);
+
+            // Should succeed with a warning
+            expect(result.success).toBe(true);
+            expect(result.warnings).toBeDefined();
+            expect(result.warnings?.some(w => w.includes('chart') || w.includes('key'))).toBe(true);
+
+            console.log('✓ Validation passes for no chart with warning');
+            console.log(`  warnings: ${result.warnings?.join(', ')}`);
+        });
+
+        it('should import level with no key assignments', () => {
+            const exportData = createMockExportDataNoKeys();
+
+            // Import should not throw
+            const level = LevelSerializer.fromExportData(exportData);
+
+            expect(level).toBeDefined();
+            expect(level.chart).toBeDefined();
+            expect(level.chart.beats.length).toBeGreaterThan(0);
+
+            console.log('✓ Level with no keys imported successfully');
+            console.log(`  beats count: ${level.chart.beats.length}`);
+        });
+
+        it('should have undefined requiredKey on beats when chart is null', () => {
+            const exportData = createMockExportDataNoKeys();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // All beats should have undefined requiredKey
+            const keys = level.chart.beats
+                .map(b => b.requiredKey)
+                .filter((k): k is string => k !== undefined);
+
+            expect(keys.length).toBe(0);
+
+            console.log('✓ Beats have undefined requiredKey when chart is null');
+        });
+
+        it('should have empty keysUsed in metadata when chart is null', () => {
+            const exportData = createMockExportDataNoKeys();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // keysUsed should be empty
+            expect(level.metadata.buttonMetadata.keysUsed).toEqual([]);
+            expect(level.chart.chartMetadata.keysUsed).toEqual([]);
+
+            console.log('✓ keysUsed is empty in metadata when chart is null');
+        });
+
+        it('should still have valid rhythm data when chart is null', () => {
+            const exportData = createMockExportDataNoKeys();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Rhythm should still be valid
+            expect(level.rhythm).toBeDefined();
+            expect(level.rhythm.bandStreams).toBeDefined();
+            expect(level.rhythm.composite).toBeDefined();
+            expect(level.rhythm.metadata).toBeDefined();
+
+            console.log('✓ Rhythm data still valid when chart is null');
+        });
+    });
 });

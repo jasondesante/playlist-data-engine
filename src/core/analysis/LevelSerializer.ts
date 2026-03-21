@@ -256,16 +256,23 @@ export class LevelSerializer {
 
     /**
      * Build chart export data from metadata
+     *
+     * Returns null if there are no key assignments (chart is null case)
      */
     private static buildChartExportData(
         chart: ChartedBeatMap,
         metadata: LevelMetadata
-    ): ChartExportData {
+    ): ChartExportData | null {
         const keysUsed = chart.beats
             .map(b => b.requiredKey)
             .filter((k): k is string => k !== undefined);
 
         const uniqueKeys = [...new Set(keysUsed)];
+
+        // Edge case: No key assignments - return null for chart
+        if (uniqueKeys.length === 0) {
+            return null;
+        }
 
         return {
             style: metadata.controllerMode === 'ddr' ? 'ddr' : 'guitar',
@@ -351,10 +358,15 @@ export class LevelSerializer {
 
     /**
      * Reconstruct ChartedBeatMap from export data
+     *
+     * Handles two cases:
+     * 1. Normal case: subdivision data exists, use it for beats
+     * 2. Edge case: subdivision is null, create beats from mergedBeats (interpolated only)
      */
     private static reconstructChart(data: FullBeatMapExportData): ChartedBeatMap {
+        // Edge case: No subdivision data - create beats from mergedBeats
         if (!data.subdivision) {
-            throw new Error('Export data has no subdivision data');
+            return this.reconstructChartFromMergedBeats(data);
         }
 
         const beats: ChartedBeat[] = data.subdivision.beats.map((beat, index) => ({
@@ -382,6 +394,49 @@ export class LevelSerializer {
         const downbeatConfig: DownbeatConfig = this.reconstructDownbeatConfig(beats);
 
         // Reconstruct chart metadata
+        const chartMetadata = this.reconstructChartMetadata(data);
+
+        return {
+            audioId: data.audioId,
+            duration: data.duration,
+            beats,
+            detectedBeatIndices,
+            downbeatConfig,
+            quarterNoteInterval: data.interpolatedMetadata.quarterNoteInterval,
+            bpm: data.quarterNoteBpm,
+            chartMetadata,
+        };
+    }
+
+    /**
+     * Reconstruct ChartedBeatMap from mergedBeats when subdivision is null
+     *
+     * This handles the edge case where a level has only interpolated beats
+     * without any subdivision applied. We create ChartedBeats from mergedBeats.
+     */
+    private static reconstructChartFromMergedBeats(data: FullBeatMapExportData): ChartedBeatMap {
+        const beats: ChartedBeat[] = data.mergedBeats.map((beat, index) => ({
+            timestamp: beat.timestamp,
+            beatInMeasure: beat.beatInMeasure,
+            isDownbeat: beat.isDownbeat,
+            measureNumber: beat.measureNumber,
+            intensity: beat.intensity,
+            confidence: beat.confidence,
+            requiredKey: beat.requiredKey,
+            // Default procedural generation fields for interpolated-only beats
+            quarterNoteIndex: index,
+            subdivisionPosition: 0,
+            isDetected: beat.source === 'detected',
+            subdivisionType: 'quarter' as SubdivisionType,
+            sourceBand: 'mid' as Band,
+            quantizationError: beat.distanceToAnchor,
+        }));
+
+        const detectedBeatIndices = data.mergedBeats
+            .map((beat, index) => (beat.source === 'detected' ? index : -1))
+            .filter(i => i >= 0);
+
+        const downbeatConfig: DownbeatConfig = this.reconstructDownbeatConfig(beats);
         const chartMetadata = this.reconstructChartMetadata(data);
 
         return {
@@ -1029,6 +1084,16 @@ export class LevelSerializer {
                     error: 'subdivision.beats must be an array',
                 };
             }
+        }
+
+        // Check chart exists (may be null if no key assignments)
+        if (obj.chart === null) {
+            warnings.push('No chart data - level has no key assignments');
+        } else if (obj.chart !== undefined && typeof obj.chart !== 'object') {
+            return {
+                success: false,
+                error: 'chart must be an object or null',
+            };
         }
 
         // Validate interpolatedMetadata
