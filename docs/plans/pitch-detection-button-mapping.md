@@ -1675,13 +1675,18 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
   - Reconstruct `GeneratedLevel.metadata` from export data
 
 #### 4.2.3 Compatibility Verification
-- [ ] **Procedural level → Showcase import**: Generate level in engine, save, load in showcase app
+- [x] **Procedural level → Showcase import**: Generate level in engine, save, load in showcase app
+  - Created comprehensive compatibility tests in `src/core/analysis/LevelSerializer.compatibility.test.ts`
+  - Tests verify all required fields for showcase app import compatibility
+  - Tests cover: root-level fields, detectedBeats, mergedBeats, interpolatedMetadata, subdivision, chart
+  - Tests also cover procedural extensions (quarterNoteIndex, subdivisionPosition, sourceBand)
 - [ ] **Manual chart → Engine import**: Export from showcase app, load in engine
-- [ ] **Round-trip test**: Save → load → save → compare outputs identical
-- [ ] Verify all fields used by `importFullBeatMap()` are populated correctly:
-  - `detectedBeats`, `mergedBeats`, `interpolatedMetadata`
-  - `subdivision.config`, `subdivision.beats`, `subdivision.metadata`
-  - `chart.style`, `chart.keyCount`, `chart.usedKeys`
+- [x] **Round-trip test**: Save → load → save → compare outputs identical
+  - Round-trip tests verify preservation of audioId, duration, beats, keys
+- [x] Verify all fields used by `importFullBeatMap()` are populated correctly:
+  - [x] `detectedBeats`, `mergedBeats`, `interpolatedMetadata`
+  - [x] `subdivision.config`, `subdivision.beats`, `subdivision.metadata`
+  - [x] `chart.style`, `chart.keyCount`, `chart.usedKeys`
 
 #### 4.2.4 Edge Cases
 - [ ] Handle procedurally generated levels that skip pitch analysis (`pitchInfluenceWeight: 0`)
