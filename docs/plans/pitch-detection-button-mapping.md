@@ -1762,44 +1762,44 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
 
 > **Style Guide Reminder**: This is a scannable API reference. Focus on location links, structured tables, and cross-references. NO code examples or algorithm explanations—those belong in BEAT_DETECTION.md.
 
-- [ ] Add new section: "Pitch Detection & Button Mapping"
-  - [ ] **Location links** (italicized) to all major definitions:
-    - [ ] [src/core/analysis/PitchDetector.ts](src/core/analysis/PitchDetector.ts) - `PitchDetector` class
-    - [ ] [src/core/generation/ButtonMapper.ts](src/core/generation/ButtonMapper.ts) - `ButtonMapper` class
-    - [ ] [src/core/generation/LevelGenerator.ts](src/core/generation/LevelGenerator.ts) - `LevelGenerator` class
-    - [ ] [src/core/generation/BeatConverter.ts](src/core/generation/BeatConverter.ts) - `BeatConverter` class
-    - [ ] [src/core/analysis/LevelSerializer.ts](src/core/analysis/LevelSerializer.ts) - `LevelSerializer` class
-  - [ ] **"Also known as" aliases** for discoverability:
-    - [ ] *pitch detection* ↔ *melody extraction* ↔ *fundamental frequency estimation*
-    - [ ] *button mapping* ↔ *key assignment* ↔ *chart generation*
-    - [ ] *melody contour* ↔ *pitch direction* ↔ *interval analysis*
-  - [ ] **Structured tables** (not raw TypeScript interfaces):
-    - [ ] `PitchDetector` methods table with Returns/Description columns
-    - [ ] `ButtonMapper` methods table with Returns/Description columns
-    - [ ] `LevelGenerator` methods table with Returns/Description columns
-    - [ ] `ButtonMappingConfig` properties table with Type/Default/Description columns
-    - [ ] `PitchDetectorConfig` properties table with Type/Default/Description columns
-    - [ ] `LevelGenerationOptions` properties table with Type/Default/Description columns
-  - [ ] **Cross-references** to related docs:
-    - [ ] "For pitch detection algorithms (pYIN with HMM), see [BEAT_DETECTION.md](BEAT_DETECTION.md#pitch-detection)"
-    - [ ] "For controller mode strategies (DDR, Guitar Hero), see [BEAT_DETECTION.md](BEAT_DETECTION.md#button-mapping-strategies)"
-    - [ ] "For melody contour analysis approach, see [BEAT_DETECTION.md](BEAT_DETECTION.md#melody-contour)"
-    - [ ] "For usage examples, see [BEAT_DETECTION.md](BEAT_DETECTION.md#level-generation-examples)"
-  - [ ] **Type descriptions** focusing on purpose and key properties (not full interface definitions—readers click location links for complete source):
-    - [ ] `PitchResult` - describes a detected pitch at a point in time
-    - [ ] `PitchAtBeat` - pitch information linked to a rhythm beat
-    - [ ] `MelodyContour` - aggregated melodic direction over time
-    - [ ] `ChartedBeatMap` - final playable chart format
-    - [ ] `GeneratedLevel` - complete output from level generation
-  - [ ] **Controller mode overview** (brief, table format):
+- [x] Add new section: "Pitch Detection & Button Mapping"
+  - [x] **Location links** (italicized) to all major definitions:
+    - [x] [src/core/analysis/PitchDetector.ts](src/core/analysis/PitchDetector.ts) - `PitchDetector` class
+    - [x] [src/core/generation/ButtonMapper.ts](src/core/generation/ButtonMapper.ts) - `ButtonMapper` class
+    - [x] [src/core/generation/LevelGenerator.ts](src/core/generation/LevelGenerator.ts) - `LevelGenerator` class
+    - [x] [src/core/generation/BeatConverter.ts](src/core/generation/BeatConverter.ts) - `BeatConverter` class
+    - [x] [src/core/analysis/LevelSerializer.ts](src/core/analysis/LevelSerializer.ts) - `LevelSerializer` class
+  - [x] **"Also known as" aliases** for discoverability:
+    - [x] *pitch detection* ↔ *melody extraction* ↔ *fundamental frequency estimation*
+    - [x] *button mapping* ↔ *key assignment* ↔ *chart generation*
+    - [x] *melody contour* ↔ *pitch direction* ↔ *interval analysis*
+  - [x] **Structured tables** (not raw TypeScript interfaces):
+    - [x] `PitchDetector` methods table with Returns/Description columns
+    - [x] `ButtonMapper` methods table with Returns/Description columns
+    - [x] `LevelGenerator` methods table with Returns/Description columns
+    - [x] `ButtonMappingConfig` properties table with Type/Default/Description columns
+    - [x] `PitchDetectorConfig` properties table with Type/Default/Description columns
+    - [x] `LevelGenerationOptions` properties table with Type/Default/Description columns
+  - [x] **Cross-references** to related docs:
+    - [x] "For pitch detection algorithms (pYIN with HMM), see [BEAT_DETECTION.md](BEAT_DETECTION.md#pitch-detection)"
+    - [x] "For controller mode strategies (DDR, Guitar Hero), see [BEAT_DETECTION.md](BEAT_DETECTION.md#button-mapping-strategies)"
+    - [x] "For melody contour analysis approach, see [BEAT_DETECTION.md](BEAT_DETECTION.md#melody-contour)"
+    - [x] "For usage examples, see [BEAT_DETECTION.md](BEAT_DETECTION.md#level-generation-examples)"
+  - [x] **Type descriptions** focusing on purpose and key properties (not full interface definitions—readers click location links for complete source):
+    - [x] `PitchResult` - describes a detected pitch at a point in time
+    - [x] `PitchAtBeat` - pitch information linked to a rhythm beat
+    - [x] `MelodyContour` - aggregated melodic direction over time
+    - [x] `ChartedBeatMap` - final playable chart format
+    - [x] `GeneratedLevel` - complete output from level generation
+  - [x] **Controller mode overview** (brief, table format):
     | Mode | Buttons | Axes | See Details |
     |------|---------|------|-------------|
     | DDR | up, down, left, right | 2 (vertical + horizontal) | [BEAT_DETECTION.md#ddr-mode](BEAT_DETECTION.md#ddr-mode) |
     | Guitar Hero | 1, 2, 3, 4, 5 | 1 (horizontal only) | [BEAT_DETECTION.md#guitar-hero-mode](BEAT_DETECTION.md#guitar-hero-mode) |
-  - [ ] **Serialization format reference**:
-    - [ ] Link to `FullBeatMapExportData` type location
-    - [ ] Brief description of format purpose
-    - [ ] Cross-reference to BEAT_DETECTION.md for format details
+  - [x] **Serialization format reference**:
+    - [x] Link to `FullBeatMapExportData` type location
+    - [x] Brief description of format purpose
+    - [x] Cross-reference to BEAT_DETECTION.md for format details
 
 ### 5.3 Update BEAT_DETECTION.md
 

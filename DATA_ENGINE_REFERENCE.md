@@ -28,13 +28,21 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [StreamScorer](#streamscorer)
    - [CompositeStreamGenerator](#compositestreamgenerator)
    - [DifficultyVariantGenerator](#difficultyvariantgenerator)
-6. [Progression System](#progression-system)
-7. [Configuration](#configuration)
-8. [Environmental Sensors](#environmental-sensors)
-9. [Gaming Integration](#gaming-integration)
-10. [Combat System](#combat-system)
-11. [Enemy Generation](#enemy-generation)
-12. [Equipment System](#equipment-system)
+6. [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
+   - [PitchDetector](#pitchdetector)
+   - [PitchBeatLinker](#pitchbeatlinker)
+   - [MelodyContourAnalyzer](#melodycontouranalyzer)
+   - [ButtonMapper](#buttonmapper)
+   - [LevelGenerator](#levelgenerator)
+   - [BeatConverter](#beatconverter)
+   - [LevelSerializer](#levelserializer)
+7. [Progression System](#progression-system)
+8. [Configuration](#configuration)
+9. [Environmental Sensors](#environmental-sensors)
+10. [Gaming Integration](#gaming-integration)
+11. [Combat System](#combat-system)
+12. [Enemy Generation](#enemy-generation)
+13. [Equipment System](#equipment-system)
    - [Equipment Types](#equipment-types)
    - [EquipmentEffectApplier](#equipmenteffectapplier)
    - [EquipmentValidator](#equipmentvalidator)
@@ -42,7 +50,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
    - [Equipment Modifier](#equipment-modifier)
    - [Equipment Spawn Helper](#equipment-spawn-helper)
    - [BoxOpener](#boxopener)
-13. [Extensibility System](#extensibility-system)
+14. [Extensibility System](#extensibility-system)
     - [ExtensionManager](#extensionmanager)
     - [FeatureQuery](#featurequery)
     - [FeatureValidator](#featurevalidator)
@@ -58,7 +66,7 @@ Complete API reference for the Playlist Data Engine. Contains all type definitio
     - [Custom Classes](#custom-classes)
 
     **For spawn rates, CharacterGenerator extensions, validation rules, and advanced patterns, see [EXTENSIBILITY_GUIDE.md](docs/EXTENSIBILITY_GUIDE.md)**
-14. [Cross-References](#cross-references)
+15. [Cross-References](#cross-references)
 
 ---
 
@@ -197,6 +205,22 @@ A concise overview of all main exports from the library, organized by category.
 
 **Preset Constants:** `RHYTHM_PRESETS` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
 
+### Pitch Detection & Button Mapping
+
+| Export | Description | Section |
+|--------|-------------|---------|
+| `PitchDetector` | pYIN algorithm for pitch/fundamental frequency detection | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
+| `PitchBeatLinker` | Link pitch detection to rhythm beat timestamps | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
+| `MelodyContourAnalyzer` | Analyze pitch data for melodic contour information | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
+| `ButtonMapper` | Map pitch analysis to button assignments for rhythm games | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
+| `LevelGenerator` | Main orchestrator for complete rhythm game level generation | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
+| `BeatConverter` | Convert procedural output to ChartedBeatMap format | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
+| `LevelSerializer` | Serialize/deserialize generated levels to/from export formats | [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) |
+
+**Button Mapping Helpers:** `validateButtonMappingConfig`, `mergeButtonMappingConfig`, `getConsecutiveKeyLimit` — see [Button Mapping Configuration](#button-mapping-configuration)
+
+**Button Mapping Constants:** `DEFAULT_BUTTON_MAPPING_CONFIG`, `CONSECUTIVE_KEY_LIMITS` — see [Button Mapping Configuration](#button-mapping-configuration)
+
 ### Utilities
 
 | Export | Description | Section |
@@ -247,6 +271,20 @@ All TypeScript types are exported, including:
 **OSE Parameter Mode Types:** `HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig` — see [OSE Parameter Modes](#ose-parameter-modes)
 
 **Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
+
+**Pitch Detection Types:** `PitchDetectorConfig`, `PitchResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#pitch-detection)
+
+**Pitch Analysis Types:** `PitchAtBeat`, `BandPitchAtBeat`, `LinkedPitchAnalysis`, `PitchBandName`, `IntervalCategory`, `PitchDirection` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
+
+**Melody Contour Types:** `MelodyContourAnalysisResult`, `MelodyContour`, `MelodySegment`, `MelodyContourDirection`, `DirectionStats`, `IntervalStats` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
+
+**Button Mapping Types:** `ButtonMappingConfig`, `ControllerMode`, `DDRButton`, `GuitarHeroButton`, `Button`, `ButtonPattern`, `ButtonPatternCategory`, `ButtonPatternLibrary`, `MappedLevelResult`, `ButtonMappingMetadata` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#button-mapping-strategies)
+
+**Level Generation Types:** `LevelGenerationOptions`, `LevelMetadata`, `GeneratedLevel`, `LevelGenerationProgress`, `LevelProgressCallback`, `AllDifficultiesResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
+
+**Charted Beat Types:** `ChartedBeat`, `ChartedBeatMap`, `ChartMetadata`, `PitchMetadata`, `RhythmMetadataSummary`, `ChartConversionOptions` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping)
+
+**Level Export Types:** `FullBeatMapExportData`, `FullExportDetectedBeat`, `FullExportMergedBeat`, `FullExportSubdividedBeat`, `SubdivisionExportData`, `ChartExportData`, `ProceduralGenerationMetadata`, `FullBeatMapImportResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#serialization-format)
 
 **Game Data:** `RACE_DATA`, `CLASS_DATA`, `SPELL_DATABASE`, `XP_THRESHOLDS` — see [Game Data Reference](#game-data-reference)
 
@@ -2755,6 +2793,363 @@ Generates easy/medium/hard difficulty variants from the composite stream. Uses s
 | easy | Unedited | Density enhancement | Heavy density enhancement |
 | medium | Simplification | Unedited | Density enhancement |
 | hard | Heavy simplification | Simplification | Unedited |
+
+---
+
+## Pitch Detection & Button Mapping
+
+This section covers pitch detection, melody analysis, button mapping, and level generation for rhythm games. These components work together to create playable rhythm game charts from audio.
+
+*Also known as: melody extraction, fundamental frequency estimation, key assignment, chart generation*
+
+**For pitch detection algorithms (pYIN with HMM), see [docs/BEAT_DETECTION.md#pitch-detection](docs/BEAT_DETECTION.md#pitch-detection)**
+
+**For controller mode strategies (DDR, Guitar Hero), see [docs/BEAT_DETECTION.md#button-mapping-strategies](docs/BEAT_DETECTION.md#button-mapping-strategies)**
+
+**For melody contour analysis approach, see [docs/BEAT_DETECTION.md#melody-contour](docs/BEAT_DETECTION.md#melody-contour)**
+
+**For usage examples, see [docs/BEAT_DETECTION.md#level-generation-examples](docs/BEAT_DETECTION.md#level-generation-examples)**
+
+### Controller Modes
+
+The button mapper supports two controller styles:
+
+| Mode | Buttons | Axes | Pitch Expression | See Details |
+|------|---------|------|------------------|-------------|
+| DDR | up, down, left, right | 2 (vertical + horizontal) | Vertical: up→high, down→low; Horizontal: left→low, right→high | [BEAT_DETECTION.md#ddr-mode](docs/BEAT_DETECTION.md#ddr-mode) |
+| Guitar Hero | 1, 2, 3, 4, 5 | 1 (horizontal only) | Fretboard metaphor: 1→lowest pitch, 5→highest pitch | [BEAT_DETECTION.md#guitar-hero-mode](docs/BEAT_DETECTION.md#guitar-hero-mode) |
+
+### PitchDetector
+
+*Location:* *[src/core/analysis/PitchDetector.ts](src/core/analysis/PitchDetector.ts)*
+
+Detects the fundamental frequency (pitch) of audio signals over time using the pYIN algorithm (probabilistic YIN with HMM tracking).
+
+*Also known as: pitch detection, melody extraction, fundamental frequency estimation, f0 estimation*
+
+#### Class: `PitchDetector`
+
+**Constructor:**
+```typescript
+new PitchDetector(config?: Partial<PitchDetectorConfig>)
+```
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `detect(audioBuffer)` | `PitchResult[]` | Detect pitch across the entire audio buffer |
+| `detectAt(audioBuffer, timestamp)` | `PitchResult` | Detect pitch at a specific timestamp |
+
+#### PitchDetectorConfig Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `minFrequency` | number | 80 | Minimum frequency to detect in Hz (low guitar) |
+| `maxFrequency` | number | 1000 | Maximum frequency to detect in Hz (high vocals) |
+| `frameSize` | number | 2048 | Frame size in samples (~46ms at 44.1kHz) |
+| `hopSize` | number | 512 | Hop size in samples (~12ms at 44.1kHz) |
+| `voicingThreshold` | number | 0.5 | Probability threshold for voiced/unvoiced decision |
+| `transitionPenalty` | number | 0.5 | Penalty for large pitch jumps in HMM |
+| `selfTransitionProbability` | number | 0.99 | Probability of staying in same pitch state |
+| `yinThreshold` | number | 0.1 | Threshold for accepting pitch candidates |
+| `targetSampleRate` | number | 44100 | Target sample rate for analysis |
+
+#### PitchResult Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `timestamp` | number | Timestamp in seconds |
+| `frequency` | number | Detected frequency in Hz (0 if no pitch) |
+| `probability` | number | Probability from pYIN HMM (0-1) |
+| `isVoiced` | boolean | Whether this frame contains a detectable pitch |
+| `midiNote` | number \| null | MIDI note number (null if unvoiced) |
+| `noteName` | string \| null | Note name e.g., "C4", "F#5" (null if unvoiced) |
+| `alternativeHypotheses` | array | Alternative hypotheses for debugging (optional) |
+
+### PitchBeatLinker
+
+*Location:* *[src/core/generation/PitchBeatLinker.ts](src/core/generation/PitchBeatLinker.ts)*
+
+Links pitch detection to rhythm beat timestamps. Performs pitch detection at specific timestamps from generated rhythm patterns, iterating over each band stream independently.
+
+*Also known as: beat-timestamped pitch detection, pitch-to-rhythm linking*
+
+**For band stream pitch detection approach, see [docs/BEAT_DETECTION.md#beat-timestamped-pitch](docs/BEAT_DETECTION.md#beat-timestamped-pitch)**
+
+#### Class: `PitchBeatLinker`
+
+**Constructor:**
+```typescript
+new PitchBeatLinker(config?: Partial<PitchDetectorConfig>)
+```
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `link(generatedRhythm, audioBuffer)` | `LinkedPitchAnalysis` | Analyze pitch with automatic band filtering |
+| `linkPreFiltered(generatedRhythm, preFilteredBands, metadata)` | `LinkedPitchAnalysis` | Analyze with pre-filtered audio (more efficient) |
+
+#### LinkedPitchAnalysis Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `bandPitches` | Map | Pitch at each beat, keyed by band name |
+| `pitchByBeat` | PitchAtBeat[] | All pitches flattened and sorted by timestamp |
+| `dominantBand` | string | Band with highest average pitch probability |
+| `phrasePitchCorrelation` | Map | Phrase-level pitch correlation (phrase ID → pitches) |
+
+#### PitchAtBeat Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `beatIndex` | number | Index into the beat stream |
+| `timestamp` | number | Timestamp in seconds |
+| `band` | string | Which band stream ('low', 'mid', 'high') |
+| `pitch` | PitchResult \| null | Detected pitch (null if no pitch) |
+| `direction` | string | Direction from previous beat ('up', 'down', 'stable', 'none') |
+| `intervalFromPrevious` | number | Interval in semitones from previous beat |
+| `intervalCategory` | string | Categorized interval ('unison', 'small', 'medium', 'large', 'very_large') |
+
+### MelodyContourAnalyzer
+
+*Location:* *[src/core/analysis/MelodyContourAnalyzer.ts](src/core/analysis/MelodyContourAnalyzer.ts)*
+
+Analyzes pitch data to extract melodic contour information for button mapping. Calculates direction, interval categories, and segment detection.
+
+*Also known as: pitch direction analysis, interval analysis, melody segment detection*
+
+**For pitch-to-pitch comparison approach, see [docs/BEAT_DETECTION.md#melody-contour](docs/BEAT_DETECTION.md#melody-contour)**
+
+#### Class: `MelodyContourAnalyzer`
+
+**Constructor:**
+```typescript
+new MelodyContourAnalyzer(config?: Partial<MelodyContourAnalyzerConfig>)
+```
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `analyze(linkedAnalysis)` | `MelodyContourAnalysisResult` | Analyze linked pitch data for melody contour |
+
+#### MelodyContourAnalysisResult Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `pitchByBeat` | PitchAtBeat[] | Updated pitch-by-beat with direction and interval |
+| `bandPitches` | Map | Band pitch analyses with updated direction/interval |
+| `melodyContour` | MelodyContour | Melody contour from the dominant band |
+| `bandContours` | Map | Per-band melody contours |
+| `combinedContour` | MelodyContour \| null | Combined contour from composite pitches |
+| `dominantBand` | string | Band with the best pitch results |
+| `directionStats` | DirectionStats | Direction statistics (up/down/stable/none counts) |
+| `intervalStats` | IntervalStats | Interval statistics by category |
+
+#### IntervalCategory Values
+
+| Category | Semitones | Musical Interval |
+|----------|-----------|------------------|
+| unison | 0 | Same note |
+| small | 1-2 | Minor/major 2nd |
+| medium | 3-4 | Minor/major 3rd |
+| large | 5-7 | 4th, tritone, 5th |
+| very_large | 8+ | 6th, 7th, octave+ |
+
+### ButtonMapper
+
+*Location:* *[src/core/generation/ButtonMapper.ts](src/core/generation/ButtonMapper.ts)*
+
+Maps pitch analysis to button assignments for rhythm games. Uses pitch detection, pattern library, and probability-based blending to assign buttons.
+
+*Also known as: key assignment, chart generation, button pattern mapping*
+
+**For DDR and Guitar Hero strategies, see [docs/BEAT_DETECTION.md#button-mapping-strategies](docs/BEAT_DETECTION.md#button-mapping-strategies)**
+
+#### Class: `ButtonMapper`
+
+**Constructor:**
+```typescript
+new ButtonMapper(config: Partial<ButtonMappingConfig>)
+```
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `map(generatedRhythm, difficulty, pitchAnalysis?)` | `MappedLevelResult` | Map buttons for a difficulty variant |
+
+#### MappedLevelResult Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `variant` | DifficultyVariant | The difficulty variant with keys assigned |
+| `rhythmMetadata` | RhythmMetadata | Original rhythm metadata preserved |
+| `buttonMetadata` | ButtonMappingMetadata | Button mapping metadata |
+
+#### ButtonMappingMetadata Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `controllerMode` | string | Controller mode used ('ddr' or 'guitar_hero') |
+| `keysUsed` | string[] | All unique keys used in the chart |
+| `pitchInfluencedBeats` | number | Number of beats influenced by pitch |
+| `patternInfluencedBeats` | number | Number of beats from pattern library |
+| `patternsUsed` | string[] | IDs of patterns used |
+| `directionStats` | object | Direction statistics (if pitch analysis provided) |
+| `intervalStats` | object | Interval statistics (if pitch analysis provided) |
+
+### Button Mapping Configuration
+
+*Location:* *[src/core/types/ButtonMapping.ts](src/core/types/ButtonMapping.ts)*
+
+#### ButtonMappingConfig Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `difficulty` | DifficultyPreset | 'medium' | Difficulty preset |
+| `controllerMode` | ControllerMode | 'ddr' | Controller mode ('ddr' or 'guitar_hero') |
+| `pitchInfluenceWeight` | number | 1.0 | How strongly pitch affects buttons (0-1) |
+| `emphasizeDownbeats` | boolean | true | Emphasize downbeats with specific patterns |
+| `emphasizeSyncopation` | boolean | false | Emphasize syncopated beats |
+| `consecutiveSameKeyLimit` | number | 8 | Max consecutive same-key repeats |
+| `patternMemory` | number | 4 | Measures to look back for avoiding repetition |
+| `useRhythmBand` | boolean | true | Use same band that won rhythm slicing |
+
+#### Consecutive Key Limits by Difficulty
+
+| Difficulty | Limit |
+|------------|-------|
+| easy | 12 |
+| medium | 8 |
+| hard | 6 |
+
+### LevelGenerator
+
+*Location:* *[src/core/generation/LevelGenerator.ts](src/core/generation/LevelGenerator.ts)*
+
+Main orchestrator for complete rhythm game level generation. Combines rhythm generation, pitch analysis, button mapping, and conversion into a complete playable level.
+
+*Also known as: chart generator, level orchestrator*
+
+**For full workflow example, see [docs/BEAT_DETECTION.md#level-generation-examples](docs/BEAT_DETECTION.md#level-generation-examples)**
+
+#### Class: `LevelGenerator`
+
+**Constructor:**
+```typescript
+new LevelGenerator(options: LevelGenerationOptions)
+```
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `generate(audioBuffer, unifiedBeatMap, progressCallback?)` | Promise\<GeneratedLevel\> | Generate a complete level |
+| `generateAllDifficulties(audioBuffer, unifiedBeatMap, progressCallback?)` | Promise\<AllDifficultiesResult\> | Generate levels for all 3 difficulties |
+| `clearCache()` | void | Clear cached intermediate results |
+| `getCacheStats()` | LevelCacheStats | Get cache statistics |
+
+#### LevelGenerationOptions Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `difficulty` | DifficultyPreset | required | Target difficulty |
+| `controllerMode` | ControllerMode | 'ddr' | Controller mode |
+| `rhythm` | Partial\<RhythmGenerationOptions\> | {} | Rhythm generation settings |
+| `buttons` | Partial\<ButtonMappingConfig\> | {} | Button mapping settings |
+| `seed` | string | undefined | Seed for reproducibility |
+
+#### GeneratedLevel Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `chart` | ChartedBeatMap | The playable chart ready for BeatStream |
+| `variant` | DifficultyVariant | The selected difficulty variant with keys |
+| `rhythm` | GeneratedRhythm | Original rhythm generation output |
+| `pitchAnalysis` | MelodyContourAnalysisResult \| null | Pitch analysis results (null if weight=0) |
+| `metadata` | LevelMetadata | Combined metadata |
+
+### BeatConverter
+
+*Location:* *[src/core/generation/BeatConverter.ts](src/core/generation/BeatConverter.ts)*
+
+Converts procedural generation output (GeneratedBeat[]) to ChartedBeatMap format for compatibility with BeatStream.
+
+*Also known as: chart converter, beat map converter*
+
+#### Class: `BeatConverter`
+
+**Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `convertToChartedBeatMap(variant, unifiedBeatMap, keyAssignments, metadata)` | ChartedBeatMap | Convert variant to playable chart |
+| `convertWithOptions(variant, options)` | ChartedBeatMap | Convert with options object |
+
+#### ChartedBeatMap Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `audioId` | string | Unique identifier for the audio source |
+| `duration` | number | Duration of the audio in seconds |
+| `beats` | ChartedBeat[] | All beats with required keys assigned |
+| `detectedBeatIndices` | number[] | Indices of originally detected beats |
+| `downbeatConfig` | DownbeatConfig | Downbeat configuration |
+| `quarterNoteInterval` | number | Quarter note interval in seconds |
+| `bpm` | number | Equivalent BPM |
+| `chartMetadata` | ChartMetadata | Chart metadata |
+
+### LevelSerializer
+
+*Location:* *[src/core/analysis/LevelSerializer.ts](src/core/analysis/LevelSerializer.ts)*
+
+Serializes and deserializes generated levels. Converts between engine internal format and FullBeatMapExportData format compatible with the showcase app.
+
+*Also known as: level export, chart serialization*
+
+**For serialization format details, see [docs/BEAT_DETECTION.md#serialization-format](docs/BEAT_DETECTION.md#serialization-format)**
+
+#### Class: `LevelSerializer` (static methods)
+
+**Export Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `toExportData(level, options?)` | FullBeatMapExportData | Convert GeneratedLevel to export format |
+| `toJSON(level)` | string | Serialize level to JSON string |
+
+**Import Methods:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `fromExportData(data)` | GeneratedLevel | Convert export format to GeneratedLevel |
+| `fromJSON(json)` | GeneratedLevel | Parse JSON string to GeneratedLevel |
+
+**Validation:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `validate(data)` | FullBeatMapImportResult | Validate unknown data as export format |
+| `isProcedural(data)` | boolean | Check if export data is from procedural generation |
+
+#### FullBeatMapExportData Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `version` | 1 | Format version |
+| `format` | 'full-beatmap' | Format identifier |
+| `audioId` | string | Unique audio identifier |
+| `duration` | number | Audio duration in seconds |
+| `quarterNoteBpm` | number | BPM of quarter notes |
+| `detectedBeats` | array | Detected beat timestamps |
+| `mergedBeats` | array | Merged beat data |
+| `subdivision` | object \| null | Subdivision data with beats |
+| `chart` | object \| null | Chart style and keys |
+| `generationSource` | string | 'procedural' or 'manual' (optional) |
+| `generationMetadata` | object | Procedural generation metadata (optional) |
 
 ---
 
