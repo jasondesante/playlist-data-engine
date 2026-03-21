@@ -1719,9 +1719,20 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
   - `isProcedural()` utility method available to check source
 
 ### 4.3 Tests
-- [ ] API integration tests
-- [ ] Serialization round-trip tests
-- [ ] Backward compatibility tests
+- [x] API integration tests
+  - Added `tests/integration/levelGeneration.api.integration.test.ts` with 14 comprehensive tests
+  - Tests the full public API workflow: LevelGenerator → LevelSerializer → round-trip
+  - Tests all three difficulties via `generateAllDifficulties`
+  - Tests both DDR and Guitar Hero controller modes
+  - Tests preservation of beats, keys, metadata, pitch data through round-trip
+- [x] Serialization round-trip tests
+  - Covered in `tests/integration/levelGeneration.api.integration.test.ts` (7 round-trip tests)
+  - Also covered in `src/core/analysis/LevelSerializer.compatibility.test.ts` (Phase 4.2.3 round-trip tests)
+- [x] Backward compatibility tests
+  - Covered in `src/core/analysis/LevelSerializer.compatibility.test.ts` (Phase 4.2.3 + 4.2.4)
+  - Manual chart import tests
+  - Older procedural format tests
+  - Edge case tests (pitchInfluenceWeight=0, no subdivision, null chart)
 
 ---
 
