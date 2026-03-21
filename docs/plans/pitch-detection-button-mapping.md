@@ -1805,72 +1805,72 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
 
 > **This is where detailed explanations and examples go.** Include algorithm descriptions, workflow examples, and conceptual documentation.
 
-- [ ] Add section: "Pitch Detection" (separate from beat/transient detection)
-  - [ ] **pYIN Algorithm Explanation**:
-    - [ ] How pYIN works conceptually (probabilistic YIN with HMM tracking)
-    - [ ] YIN core: difference function, cumulative mean normalized difference
-    - [ ] HMM layer: pitch state tracking, Viterbi decoding for optimal path
-    - [ ] Why pYIN was chosen over alternatives (YIN, CREPE)
-    - [ ] Configurable parameters and their effects:
+- [x] Add section: "Pitch Detection" (separate from beat/transient detection)
+  - [x] **pYIN Algorithm Explanation**:
+    - [x] How pYIN works conceptually (probabilistic YIN with HMM tracking)
+    - [x] YIN core: difference function, cumulative mean normalized difference
+    - [x] HMM layer: pitch state tracking, Viterbi decoding for optimal path
+    - [x] Why pYIN was chosen over alternatives (YIN, CREPE)
+    - [x] Configurable parameters and their effects:
       - `minFrequency` / `maxFrequency` - frequency range limits
       - `voicingThreshold` - probability threshold for voiced/unvoiced detection
       - `transitionPenalty` - penalty for large pitch jumps in HMM
       - `selfTransitionProbability` - probability of staying in same pitch state
       - `yinThreshold` - threshold for accepting pitch candidates in difference function
       - `hopSize` - analysis window overlap
-    - [ ] Handling polyphonic audio (dominant pitch selection via HMM)
-    - [ ] Probabilistic output (multiple hypotheses with probabilities)
-  - [ ] **Multi-Band Pitch Analysis**:
-    - [ ] Why we analyze pitch on pre-filtered bands (reuse from rhythm generation)
-    - [ ] Band characteristics and typical pitch content:
+    - [x] Handling polyphonic audio (dominant pitch selection via HMM)
+    - [x] Probabilistic output (multiple hypotheses with probabilities)
+  - [x] **Multi-Band Pitch Analysis**:
+    - [x] Why we analyze pitch on pre-filtered bands (reuse from rhythm generation)
+    - [x] Band characteristics and typical pitch content:
       - Low band (20-500Hz): Bass, kick drum, sub frequencies
       - Mid band (500-2000Hz): Vocals, lead melody, snare body
       - High band (2000-20000Hz): Hi-hats, cymbals, harmonics
-    - [ ] Band selection strategy (which band to use for melody)
-    - [ ] Integration with `MultiBandAnalyzer` from rhythm generation
-  - [ ] **Beat-Timestamped Pitch Detection**:
-    - [ ] Why timestamp-based analysis (efficiency, accuracy, alignment)
-    - [ ] How pitch links to `GeneratedBeat.timestamp` positions
-    - [ ] Phrase-level pitch correlation using `RhythmicPhrase.sourceBand`
+    - [x] Band selection strategy (which band to use for melody)
+    - [x] Integration with `MultiBandAnalyzer` from rhythm generation
+  - [x] **Beat-Timestamped Pitch Detection**:
+    - [x] Why timestamp-based analysis (efficiency, accuracy, alignment)
+    - [x] How pitch links to `GeneratedBeat.timestamp` positions
+    - [x] Phrase-level pitch correlation using `RhythmicPhrase.sourceBand`
 
-- [ ] Add section: "Melody Contour Analysis"
-  - [ ] **Pitch-to-Pitch Comparison**:
-    - [ ] Direction categories: `up`, `down`, `stable`, `none`
-    - [ ] Interval calculation in semitones
-    - [ ] Interval categories for mapping: `unison`, `small`, `medium`, `large`, `very_large`
-  - [ ] **Contour Extraction**:
-    - [ ] Segment detection (grouping consecutive same-direction beats)
-    - [ ] Time-window analysis (short/medium/long term)
-    - [ ] Output for button mapping (`PitchAtBeat.direction`, `PitchAtBeat.intervalCategory`)
+- [x] Add section: "Melody Contour Analysis"
+  - [x] **Pitch-to-Pitch Comparison**:
+    - [x] Direction categories: `up`, `down`, `stable`, `none`
+    - [x] Interval calculation in semitones
+    - [x] Interval categories for mapping: `unison`, `small`, `medium`, `large`, `very_large`
+  - [x] **Contour Extraction**:
+    - [x] Segment detection (grouping consecutive same-direction beats)
+    - [x] Time-window analysis (short/medium/long term)
+    - [x] Output for button mapping (`PitchAtBeat.direction`, `PitchAtBeat.intervalCategory`)
 
-- [ ] Add section: "Button Mapping Strategies"
-  - [ ] **Controller Mode Overview**:
-    - [ ] Why two modes (different gameplay metaphors)
-    - [ ] Mode selection via `controllerMode` config option
-  - [ ] **DDR Mode Strategy** (4 buttons, circular motion):
-    - [ ] Circular motion philosophy: `up → right → down → left → up`
-    - [ ] State transition table explanation
-    - [ ] How pitch direction maps to button selection
-    - [ ] How interval size affects movement magnitude
-    - [ ] Example: "Ascending small interval from 'left' → 'up'"
-  - [ ] **Guitar Hero Mode Strategy** (5 buttons, 1 axis):
-    - [ ] Fretboard metaphor: 1=lowest pitch, 5=highest pitch
-    - [ ] State transition table explanation
-    - [ ] String wrap logic (instead of clamping at edges)
-    - [ ] How interval size affects fret jump distance
-    - [ ] Example: "Descending large interval from fret 3 → fret 1"
-  - [ ] **Probability-Based Blending** (using pYIN HMM probabilities):
-    - [ ] How `pitchInfluenceWeight` controls pitch vs pattern balance
-    - [ ] Why lowest-probability pitches are replaced first
-    - [ ] Pattern filling for beats with no pitch detected
-    - [ ] Example workflow showing blending at different weights
-  - [ ] **Difficulty-Based Variations**:
-    - [ ] Easy: Direction-only mapping, no leaps
-    - [ ] Medium: Direction + interval, leaps allowed
-    - [ ] Hard: Full interval mapping, rapid changes
+- [x] Add section: "Button Mapping Strategies"
+  - [x] **Controller Mode Overview**:
+    - [x] Why two modes (different gameplay metaphors)
+    - [x] Mode selection via `controllerMode` config option
+  - [x] **DDR Mode Strategy** (4 buttons, circular motion):
+    - [x] Circular motion philosophy: `up → right → down → left → up`
+    - [x] State transition table explanation
+    - [x] How pitch direction maps to button selection
+    - [x] How interval size affects movement magnitude
+    - [x] Example: "Ascending small interval from 'left' → 'up'"
+  - [x] **Guitar Hero Mode Strategy** (5 buttons, 1 axis):
+    - [x] Fretboard metaphor: 1=lowest pitch, 5=highest pitch
+    - [x] State transition table explanation
+    - [x] String wrap logic (instead of clamping at edges)
+    - [x] How interval size affects fret jump distance
+    - [x] Example: "Descending large interval from fret 3 → fret 1"
+  - [x] **Probability-Based Blending** (using pYIN HMM probabilities):
+    - [x] How `pitchInfluenceWeight` controls pitch vs pattern balance
+    - [x] Why lowest-probability pitches are replaced first
+    - [x] Pattern filling for beats with no pitch detected
+    - [x] Example workflow showing blending at different weights
+  - [x] **Difficulty-Based Variations**:
+    - [x] Easy: Direction-only mapping, no leaps
+    - [x] Medium: Direction + interval, leaps allowed
+    - [x] Hard: Full interval mapping, rapid changes
 
-- [ ] Add section: "Level Generation Examples"
-  - [ ] **Basic level generation**:
+- [x] Add section: "Level Generation Examples"
+  - [x] **Basic level generation**:
     ```typescript
     const level = await audioAnalyzer.generateRhythmLevel(audioUrl, {
       difficulty: 'medium',
@@ -1878,7 +1878,7 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
       buttons: { pitchInfluenceWeight: 0.8 }
     });
     ```
-  - [ ] **Pattern-only generation** (no pitch analysis):
+  - [x] **Pattern-only generation** (no pitch analysis):
     ```typescript
     const level = await audioAnalyzer.generateRhythmLevel(audioUrl, {
       difficulty: 'easy',
@@ -1886,7 +1886,7 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
       buttons: { pitchInfluenceWeight: 0 }  // Skips pitch detection entirely
     });
     ```
-  - [ ] **Full workflow example**: Audio → Rhythm → Pitch → Buttons → ChartedBeatMap
+  - [x] **Full workflow example**: Audio → Rhythm → Pitch → Buttons → ChartedBeatMap
   - [ ] **Serialization example**: Save and load generated levels
   - [ ] **Conversion example**: GeneratedLevel → ChartedBeatMap for BeatStream
 
