@@ -1702,10 +1702,14 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
   - [x] `chart.style`, `chart.keyCount`, `chart.usedKeys`
 
 #### 4.2.4 Edge Cases
-- [ ] Handle procedurally generated levels that skip pitch analysis (`pitchInfluenceWeight: 0`)
+- [x] Handle procedurally generated levels that skip pitch analysis (`pitchInfluenceWeight: 0`)
+  - Added 9 comprehensive tests in `LevelSerializer.compatibility.test.ts` under "Phase 4.2.4: Edge Cases - pitchInfluenceWeight = 0"
+  - Tests verify: export with pitchInfluenceWeight=0, null pitchAnalysis on import, null pitchMetadata, pitchInfluencedBeats=0, round-trip preservation, valid chart data, pattern metadata included, procedural identification
 - [ ] Handle levels with no subdivision (only interpolated beats)
 - [ ] Handle levels with no key assignments (chart is null)
-- [ ] Ensure metadata includes generation source indicator (procedural vs manual)
+- [x] Ensure metadata includes generation source indicator (procedural vs manual)
+  - Already implemented: `generationSource` field set to 'procedural' for generated levels
+  - `isProcedural()` utility method available to check source
 
 ### 4.3 Tests
 - [ ] API integration tests

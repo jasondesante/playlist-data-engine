@@ -435,6 +435,73 @@ function createMockGeneratedLevel(): GeneratedLevel {
     };
 }
 
+/**
+ * Create a mock GeneratedLevel with pitchInfluenceWeight: 0 (no pitch analysis)
+ * This simulates a level generated with pattern-only mode
+ */
+function createMockGeneratedLevelWithoutPitch(): GeneratedLevel {
+    const chart = createMockChartedBeatMap();
+    const variant = createMockDifficultyVariant();
+    const rhythm = createMockGeneratedRhythm(chart);
+
+    // No pitch analysis when pitchInfluenceWeight is 0
+    const pitchAnalysis = null;
+
+    // Create metadata with pitchInfluenceWeight: 0 and no pitch metadata
+    const metadata: LevelMetadata = {
+        difficulty: 'medium',
+        controllerMode: 'ddr' as ControllerMode,
+        rhythmMetadata: {
+            difficulty: 'medium',
+            bandsAnalyzed: ['low', 'mid', 'high'] as Band[],
+            transientsDetected: chart.detectedBeatIndices.length,
+            transientsFilteredByIntensity: 0,
+            densityValidationRetries: 0,
+            phrasesDetected: 0,
+            averageDensity: 0.5,
+            naturalDifficulty: 'medium',
+            generationConfig: {
+                difficulty: 'medium',
+                outputMode: 'composite',
+                measureStartOffset: 0,
+                minimumTransientIntensity: 0.1,
+                seed: 'test-seed-pattern-only',
+                verbose: false,
+                enableCache: true,
+                cacheMaxAge: 30 * 60 * 1000,
+            },
+            duration: chart.duration,
+            totalBeats: chart.beats.length,
+        },
+        buttonMetadata: {
+            keysUsed: ['up', 'down', 'left', 'right'],
+            pitchInfluencedBeats: 0, // No pitch-influenced beats when pitchInfluenceWeight is 0
+            patternsUsed: ['alternating', 'roll', 'stream'],
+        },
+        pitchMetadata: null, // No pitch metadata when pitchInfluenceWeight is 0
+        chartMetadata: {
+            totalBeats: chart.beats.length,
+            detectedBeats: chart.detectedBeatIndices.length,
+            generatedBeats: chart.beats.length - chart.detectedBeatIndices.length,
+        },
+        generationConfig: {
+            difficulty: 'medium',
+            controllerMode: 'ddr' as ControllerMode,
+            rhythm: {},
+            buttons: { pitchInfluenceWeight: 0 }, // Pattern-only mode
+            seed: 'test-seed-pattern-only',
+        },
+    };
+
+    return {
+        chart,
+        variant,
+        rhythm,
+        pitchAnalysis,
+        metadata,
+    };
+}
+
 // =============================================================================
 // Compatibility Tests
 // =============================================================================
@@ -1190,6 +1257,133 @@ describe('LevelSerializer Compatibility with Showcase App', () => {
 
             console.log('✓ Summary generated:');
             console.log(summary.split('\n').map(line => `  ${line}`).join('\n'));
+        });
+    });
+
+    describe('Phase 4.2.4: Edge Cases - pitchInfluenceWeight = 0', () => {
+        it('should export level with pitchInfluenceWeight = 0', () => {
+            const level = createMockGeneratedLevelWithoutPitch();
+            const exportData = LevelSerializer.toExportData(level);
+
+            // Check that pitchInfluenceWeight is preserved as 0
+            expect(exportData.generationSource).toBe('procedural');
+            expect(exportData.generationMetadata).toBeDefined();
+            expect(exportData.generationMetadata?.pitchInfluenceWeight).toBe(0);
+
+            console.log('✓ Level with pitchInfluenceWeight = 0 exported correctly');
+            console.log(`  pitchInfluenceWeight: ${exportData.generationMetadata?.pitchInfluenceWeight}`);
+        });
+
+        it('should not include pitch metadata when pitchInfluenceWeight = 0', () => {
+            const level = createMockGeneratedLevelWithoutPitch();
+            const exportData = LevelSerializer.toExportData(level);
+
+            // pitchBand, directionStats, intervalStats should be undefined
+            expect(exportData.generationMetadata?.pitchBand).toBeUndefined();
+            expect(exportData.generationMetadata?.directionStats).toBeUndefined();
+            expect(exportData.generationMetadata?.intervalStats).toBeUndefined();
+
+            console.log('✓ Pitch metadata correctly omitted when pitchInfluenceWeight = 0');
+        });
+
+        it('should import level with pitchInfluenceWeight = 0 and null pitchAnalysis', () => {
+            const level = createMockGeneratedLevelWithoutPitch();
+            const exportData = LevelSerializer.toExportData(level);
+
+            // Import back
+            const importedLevel = LevelSerializer.fromExportData(exportData);
+
+            // pitchAnalysis should be null
+            expect(importedLevel.pitchAnalysis).toBeNull();
+
+            console.log('✓ Imported level has null pitchAnalysis when pitchInfluenceWeight = 0');
+        });
+
+        it('should have pitchMetadata = null when pitchInfluenceWeight = 0', () => {
+            const level = createMockGeneratedLevelWithoutPitch();
+            const exportData = LevelSerializer.toExportData(level);
+            const importedLevel = LevelSerializer.fromExportData(exportData);
+
+            // pitchMetadata should be null
+            expect(importedLevel.metadata.pitchMetadata).toBeNull();
+
+            console.log('✓ pitchMetadata is null when pitchInfluenceWeight = 0');
+        });
+
+        it('should have pitchInfluencedBeats = 0 when pitchInfluenceWeight = 0', () => {
+            const level = createMockGeneratedLevelWithoutPitch();
+            const exportData = LevelSerializer.toExportData(level);
+            const importedLevel = LevelSerializer.fromExportData(exportData);
+
+            // pitchInfluencedBeats should be 0
+            expect(importedLevel.metadata.buttonMetadata.pitchInfluencedBeats).toBe(0);
+
+            console.log('✓ pitchInfluencedBeats is 0 when pitchInfluenceWeight = 0');
+        });
+
+        it('should preserve pitchInfluenceWeight = 0 through round-trip', () => {
+            const level = createMockGeneratedLevelWithoutPitch();
+
+            // Export
+            const exportData = LevelSerializer.toExportData(level);
+
+            // Import
+            const importedLevel = LevelSerializer.fromExportData(exportData);
+
+            // Re-export
+            const reexportData = LevelSerializer.toExportData(importedLevel);
+
+            // pitchInfluenceWeight should still be 0
+            expect(reexportData.generationMetadata?.pitchInfluenceWeight).toBe(0);
+
+            // generationConfig.buttons.pitchInfluenceWeight should be preserved
+            expect(importedLevel.metadata.generationConfig.buttons?.pitchInfluenceWeight).toBe(0);
+
+            console.log('✓ pitchInfluenceWeight = 0 preserved through round-trip');
+        });
+
+        it('should still have valid chart data when pitchInfluenceWeight = 0', () => {
+            const level = createMockGeneratedLevelWithoutPitch();
+            const exportData = LevelSerializer.toExportData(level);
+
+            // Chart should still be valid
+            expect(exportData.chart).toBeDefined();
+            expect(exportData.chart).not.toBeNull();
+            expect(exportData.chart?.style).toBe('ddr');
+            expect(exportData.chart?.keyCount).toBeGreaterThan(0);
+            expect(exportData.chart?.usedKeys.length).toBeGreaterThan(0);
+
+            // Subdivision should still be valid
+            expect(exportData.subdivision).toBeDefined();
+            expect(exportData.subdivision).not.toBeNull();
+            expect(exportData.subdivision?.beats.length).toBeGreaterThan(0);
+
+            console.log('✓ Chart data still valid when pitchInfluenceWeight = 0');
+            console.log(`  chart style: ${exportData.chart?.style}`);
+            console.log(`  subdivision beats: ${exportData.subdivision?.beats.length}`);
+        });
+
+        it('should include pattern metadata even when pitchInfluenceWeight = 0', () => {
+            const level = createMockGeneratedLevelWithoutPitch();
+            const exportData = LevelSerializer.toExportData(level);
+
+            // Patterns should still be recorded
+            expect(exportData.generationMetadata?.patternsUsed).toBeDefined();
+            expect(Array.isArray(exportData.generationMetadata?.patternsUsed)).toBe(true);
+            expect(exportData.generationMetadata?.patternsUsed?.length).toBeGreaterThan(0);
+
+            console.log('✓ Pattern metadata included when pitchInfluenceWeight = 0');
+            console.log(`  patternsUsed: ${exportData.generationMetadata?.patternsUsed?.join(', ')}`);
+        });
+
+        it('should be identified as procedural even when pitchInfluenceWeight = 0', () => {
+            const level = createMockGeneratedLevelWithoutPitch();
+            const exportData = LevelSerializer.toExportData(level);
+
+            // Should still be identified as procedural
+            expect(LevelSerializer.isProcedural(exportData)).toBe(true);
+
+            console.log('✓ Level correctly identified as procedural when pitchInfluenceWeight = 0');
         });
     });
 });
