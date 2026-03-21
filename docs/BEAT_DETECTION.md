@@ -4206,6 +4206,124 @@ console.log(`  Medium: ${mediumButtons.length} buttons`);
 console.log(`  Hard: ${hardButtons.length} buttons`);
 ```
 
+### Serialization: Save and Load Generated Levels
+
+The `LevelSerializer` class provides methods to save and load generated levels. This is useful for:
+- Persisting generated levels to disk or cloud storage
+- Sharing levels between users
+- Caching generated levels to avoid re-generation
+
+```typescript
+import { LevelGenerator, LevelSerializer } from 'playlist-data-engine';
+
+// Generate a level
+const generator = new LevelGenerator({
+  difficulty: 'medium',
+  controllerMode: 'ddr',
+});
+const level = await generator.generate(audioBuffer, unifiedBeatMap);
+
+// === Save to JSON string ===
+const jsonString = LevelSerializer.toJSON(level);
+// Save to localStorage, send to server, etc.
+localStorage.setItem('saved-level', jsonString);
+
+// === Load from JSON string ===
+const loadedLevel = LevelSerializer.fromJSON(jsonString);
+console.log('Loaded level:', loadedLevel.metadata.difficulty);
+
+// === Export to FullBeatMapExportData format ===
+// This format is compatible with the playlist-data-showcase app
+const exportData = LevelSerializer.toExportData(level);
+console.log('Export format version:', exportData.version);
+console.log('Generation source:', exportData.generationSource); // 'procedural'
+
+// === Import from FullBeatMapExportData ===
+const reimportedLevel = LevelSerializer.fromExportData(exportData);
+
+// === Validate before importing unknown data ===
+const unknownData = JSON.parse(someJsonString);
+const result = LevelSerializer.validate(unknownData);
+if (result.success) {
+  const validLevel = LevelSerializer.fromExportData(result.data!);
+  console.log('Valid level loaded!');
+} else {
+  console.error('Validation failed:', result.errors);
+  console.warn('Warnings:', result.warnings);
+}
+
+// === Round-trip preservation ===
+// All level data is preserved through serialization
+const roundTripJson = LevelSerializer.toJSON(level);
+const roundTripLevel = LevelSerializer.fromJSON(roundTripJson);
+console.assert(
+  roundTripLevel.chart.beats.length === level.chart.beats.length,
+  'Beat count preserved'
+);
+```
+
+### Conversion: GeneratedLevel → ChartedBeatMap for BeatStream
+
+The `GeneratedLevel` output includes a `chart` property that is already a `ChartedBeatMap` ready for use with `BeatStream`. No additional conversion is needed.
+
+```typescript
+import { LevelGenerator, BeatStream } from 'playlist-data-engine';
+
+// Generate a level
+const generator = new LevelGenerator({
+  difficulty: 'medium',
+  controllerMode: 'ddr',
+  buttons: { pitchInfluenceWeight: 0.8 }
+});
+const level = await generator.generate(audioBuffer, unifiedBeatMap);
+
+// The chart property is already a ChartedBeatMap
+const chartedBeatMap = level.chart;
+
+// Create a BeatStream from the generated chart
+const beatStream = new BeatStream(chartedBeatMap, audioContext);
+
+// Connect to audio element for synchronization
+const audioElement = document.querySelector('audio');
+beatStream.connectAudioElement(audioElement);
+
+// Start playback
+audioElement.play();
+beatStream.start();
+
+// Listen for beat events (includes requiredKey from button mapping)
+beatStream.on('beat', (beat) => {
+  console.log(`Beat at ${beat.timestamp}s - Press key: ${beat.requiredKey}`);
+
+  // Check if player pressed the correct key
+  const playerPressedKey = 'up'; // From game input
+  const isCorrect = beatStream.checkButtonPress(
+    beat.timestamp,
+    playerPressedKey,
+    50 // ±50ms tolerance window
+  );
+
+  if (isCorrect) {
+    console.log('Perfect hit!');
+  }
+});
+
+// Access metadata about the generated level
+console.log('Level metadata:');
+console.log(`  Difficulty: ${level.metadata.difficulty}`);
+console.log(`  Keys used: ${level.metadata.buttonMetadata.keysUsed.join(', ')}`);
+console.log(`  Pitch-influenced beats: ${level.metadata.buttonMetadata.pitchInfluencedBeats}`);
+console.log(`  Patterns used: ${level.metadata.buttonMetadata.patternsUsed.join(', ')}`);
+
+if (level.metadata.pitchMetadata) {
+  console.log('Pitch analysis:');
+  console.log(`  Band used: ${level.metadata.pitchMetadata.bandUsed}`);
+  console.log(`  Melody range: ${level.metadata.pitchMetadata.melodyRange?.min} - ${level.metadata.pitchMetadata.melodyRange?.max}`);
+  console.log(`  Direction stats:`, level.metadata.pitchMetadata.directionStats);
+  console.log(`  Interval stats:`, level.metadata.pitchMetadata.intervalStats);
+}
+```
+
 ---
 
 ## References

@@ -1887,8 +1887,8 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
     });
     ```
   - [x] **Full workflow example**: Audio → Rhythm → Pitch → Buttons → ChartedBeatMap
-  - [ ] **Serialization example**: Save and load generated levels
-  - [ ] **Conversion example**: GeneratedLevel → ChartedBeatMap for BeatStream
+  - [x] **Serialization example**: Save and load generated levels
+  - [x] **Conversion example**: GeneratedLevel → ChartedBeatMap for BeatStream
 
 - [ ] Add section: "Serialization Format"
   - [ ] Overview of `FullBeatMapExportData` format
