@@ -37,6 +37,7 @@ The Playlist Data Engine provides beat detection and rhythm analysis features fo
 - [Melody Contour Analysis](#melody-contour-analysis) — Pitch direction and interval tracking
 - [Button Mapping Strategies](#button-mapping-strategies) — DDR and Guitar Hero modes
 - [Level Generation Examples](#level-generation-examples) — Complete workflows
+- [Serialization Format](#serialization-format) — FullBeatMapExportData structure and compatibility
 
 ### Reference
 
@@ -4323,6 +4324,227 @@ if (level.metadata.pitchMetadata) {
   console.log(`  Interval stats:`, level.metadata.pitchMetadata.intervalStats);
 }
 ```
+
+---
+
+## Serialization Format
+
+The `LevelSerializer` class exports generated levels to the `FullBeatMapExportData` format, a unified JSON structure that supports both procedurally generated levels and manually charted levels. This format is fully compatible with the playlist-data-showcase app's import/export functionality.
+
+### Overview of FullBeatMapExportData Format
+
+The `FullBeatMapExportData` format contains all the data needed to reconstruct a complete rhythm game level:
+
+| Section | Purpose |
+|---------|---------|
+| **Format identification** | `version: 1` and `format: 'full-beatmap'` for type detection |
+| **Audio identification** | `audioId`, `audioTitle`, `duration` |
+| **Tempo information** | `quarterNoteBpm`, `quarterNoteConfidence` |
+| **Beat data** | `detectedBeats`, `mergedBeats`, `interpolatedMetadata` |
+| **Subdivision** | `config`, `beats`, `metadata` (optional) |
+| **Chart** | `style`, `keyCount`, `usedKeys` (optional) |
+| **Procedural extensions** | `generationSource`, `generationMetadata` (optional) |
+
+#### Core Structure
+
+```typescript
+interface FullBeatMapExportData {
+  // Format identification
+  version: 1;
+  format: 'full-beatmap';
+
+  // Audio identification
+  audioId: string;
+  audioTitle?: string;
+  exportedAt: number;  // Unix timestamp
+  duration: number;
+
+  // Tempo information
+  quarterNoteBpm: number;
+  quarterNoteConfidence: number;
+
+  // Beat data
+  detectedBeats: FullExportDetectedBeat[];
+  mergedBeats: FullExportMergedBeat[];
+  interpolatedMetadata: InterpolatedMetadataJSON;
+
+  // Subdivision (null if no subdivision applied)
+  subdivision: SubdivisionExportData | null;
+
+  // Chart metadata (null if no chart)
+  chart: ChartExportData | null;
+
+  // Procedural extensions (optional)
+  generationSource?: 'manual' | 'procedural';
+  generationMetadata?: ProceduralGenerationMetadata;
+}
+```
+
+### Procedural Extensions
+
+Procedurally generated levels include additional metadata that preserves the generation context. These fields are optional and are safely ignored by the showcase app during import.
+
+#### Root-Level Extensions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `generationSource` | `'manual' \| 'procedural'` | Indicates whether the level was created manually or procedurally |
+| `generationMetadata` | `ProceduralGenerationMetadata` | Detailed metadata about the generation process |
+
+#### ProceduralGenerationMetadata Structure
+
+```typescript
+interface ProceduralGenerationMetadata {
+  difficulty: string;              // 'easy', 'medium', or 'hard'
+  pitchInfluenceWeight: number;    // 0-1, how much pitch affected button mapping
+  patternsUsed: string[];          // IDs of button patterns used
+  controllerMode: 'ddr' | 'guitar_hero';
+  seed?: string;                   // For reproducibility
+  generatedAt: string;             // ISO timestamp
+
+  // Pitch analysis results (null if pitchInfluenceWeight = 0)
+  pitchBand?: 'low' | 'mid' | 'high';
+  directionStats?: {
+    up: number;
+    down: number;
+    stable: number;
+    none: number;
+  };
+  intervalStats?: {
+    unison: number;
+    small: number;
+    medium: number;
+    large: number;
+    very_large: number;
+  };
+
+  // Rhythm generation summary
+  rhythmMetadata?: {
+    difficulty: string;
+    bandsAnalyzed: ('low' | 'mid' | 'high')[];
+    transientsDetected: number;
+    averageDensity: number;
+  };
+}
+```
+
+#### Beat-Level Procedural Extensions
+
+Individual beats in `subdivision.beats[]` can include procedural-specific fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `quarterNoteIndex` | `number` | Index of the parent quarter note |
+| `subdivisionPosition` | `number` | Position within the quarter (0-3 for 16th, 0-2 for triplet) |
+| `sourceBand` | `'low' \| 'mid' \| 'high'` | Which frequency band this beat originated from |
+| `quantizationError` | `number` | How far (ms) the beat was moved during quantization |
+
+### Compatibility with Manual Charting
+
+The serialization format is designed for seamless interoperability between the data engine and the playlist-data-showcase app:
+
+#### Procedural Level → Showcase App Import
+
+When a procedurally generated level is exported and imported into the showcase app:
+
+1. **Required fields are preserved**: All beat timing, key assignments, and chart metadata work correctly
+2. **Procedural extensions are ignored**: The showcase app uses `.map()` to extract only needed fields
+3. **Chart playback works**: `requiredKey` values are used for key matching during gameplay
+
+```typescript
+// Export from engine
+const exportData = LevelSerializer.toExportData(generatedLevel);
+const json = JSON.stringify(exportData);
+
+// Import in showcase app - procedural fields are safely ignored
+// The showcase app extracts: timestamp, beatInMeasure, requiredKey, etc.
+```
+
+#### Manual Chart → Engine Import
+
+Manual charts exported from the showcase app can be imported into the engine:
+
+1. **Missing procedural fields get defaults**: `quarterNoteIndex = 0`, `subdivisionPosition = 0`, `sourceBand = 'mid'`
+2. **generationSource is absent**: The engine detects manual charts by the lack of `generationSource` field
+3. **Rhythm reconstruction**: Basic rhythm data is reconstructed from available beat information
+
+```typescript
+// Manual charts don't have generationMetadata
+if (!exportData.generationSource || exportData.generationSource === 'manual') {
+  // This is a manually charted level
+  // Procedural fields will use sensible defaults
+}
+```
+
+### Round-Trip Preservation
+
+The serialization format preserves all level data through save/load cycles:
+
+| Data | Preservation |
+|------|--------------|
+| **Beat timestamps** | ✅ Exact preservation |
+| **Key assignments** | ✅ `requiredKey` preserved for all beats |
+| **Chart metadata** | ✅ Style, key count, used keys preserved |
+| **Pitch metadata** | ✅ Direction/interval stats preserved for procedural levels |
+| **Rhythm metadata** | ✅ Density, transient count, bands analyzed preserved |
+| **Generation config** | ✅ Difficulty, controller mode, seed preserved |
+
+#### Round-Trip Example
+
+```typescript
+import { LevelGenerator, LevelSerializer } from 'playlist-data-engine';
+
+// Generate a level
+const level = await generator.generate(audioBuffer, unifiedBeatMap);
+
+// Export → Import → Re-export
+const export1 = LevelSerializer.toExportData(level);
+const reimported = LevelSerializer.fromExportData(export1);
+const export2 = LevelSerializer.toExportData(reimported);
+
+// Verify preservation
+console.assert(
+  JSON.stringify(export1) === JSON.stringify(export2),
+  'Round-trip should produce identical output'
+);
+```
+
+### Edge Cases
+
+#### Pattern-Only Levels (pitchInfluenceWeight = 0)
+
+When pitch influence is disabled during generation:
+
+- `generationMetadata.pitchBand` is absent
+- `generationMetadata.directionStats` is absent
+- `generationMetadata.intervalStats` is absent
+- `generationMetadata.pitchInfluenceWeight = 0`
+
+#### Levels Without Subdivision
+
+When no subdivision was applied:
+
+- `subdivision` is `null`
+- Beats are reconstructed from `mergedBeats` on import
+- Default `subdivisionType: 'quarter'` is used
+
+#### Levels Without Key Assignments
+
+When no chart was created:
+
+- `chart` is `null`
+- `requiredKey` is undefined on all beats
+- `usedKeys` array is empty
+
+### Type Definitions
+
+The complete type definitions are available in the engine:
+
+| Type | Location |
+|------|----------|
+| `FullBeatMapExportData` | [src/core/types/LevelExport.ts](../src/core/types/LevelExport.ts) |
+| `ProceduralGenerationMetadata` | [src/core/types/LevelExport.ts](../src/core/types/LevelExport.ts) |
+| `LevelSerializer` | [src/core/analysis/LevelSerializer.ts](../src/core/analysis/LevelSerializer.ts) |
 
 ---
 

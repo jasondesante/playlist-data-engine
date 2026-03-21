@@ -1890,11 +1890,11 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
   - [x] **Serialization example**: Save and load generated levels
   - [x] **Conversion example**: GeneratedLevel → ChartedBeatMap for BeatStream
 
-- [ ] Add section: "Serialization Format"
-  - [ ] Overview of `FullBeatMapExportData` format
-  - [ ] Procedural extensions to the format (`generationSource`, `generationMetadata`)
-  - [ ] Compatibility with manual charting (showcase app)
-  - [ ] Round-trip preservation of procedural metadata
+- [x] Add section: "Serialization Format"
+  - [x] Overview of `FullBeatMapExportData` format
+  - [x] Procedural extensions to the format (`generationSource`, `generationMetadata`)
+  - [x] Compatibility with manual charting (showcase app)
+  - [x] Round-trip preservation of procedural metadata
 
 ---
 
