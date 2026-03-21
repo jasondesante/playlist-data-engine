@@ -1741,9 +1741,22 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
 **Goal**: Ensure all new features are properly documented following the established documentation style guide.
 
 ### 5.1 Code Documentation
-- [ ] JSDoc for all public types and interfaces
-- [ ] Usage examples in code comments
-- [ ] Inline comments for complex algorithms (especially pYIN pitch detection with HMM)
+- [x] JSDoc for all public types and interfaces
+  - All files reviewed have comprehensive JSDoc documentation:
+    - `src/core/types/ButtonMapping.ts` - Full JSDoc for all types
+    - `src/core/analysis/PitchDetector.ts` - Comprehensive JSDoc with examples
+    - `src/core/generation/ButtonMapper.ts` - Full JSDoc documentation
+    - `src/core/generation/LevelGenerator.ts` - Comprehensive JSDoc with examples
+    - `src/core/generation/BeatConverter.ts` - Full JSDoc documentation
+    - `src/core/analysis/LevelSerializer.ts` - Full JSDoc with examples
+    - `src/core/types/ChartedBeatMap.ts` - Full JSDoc for all types
+    - `src/core/types/LevelExport.ts` - Comprehensive JSDoc documentation
+    - `src/core/generation/PitchBeatLinker.ts` - Comprehensive JSDoc with examples
+    - `src/core/analysis/MelodyContourAnalyzer.ts` - Full JSDoc with examples
+- [x] Usage examples in code comments
+  - All major classes include @example blocks in their JSDoc
+- [x] Inline comments for complex algorithms (especially pYIN pitch detection with HMM)
+  - PitchDetector.ts has extensive inline comments explaining YIN difference function, CMNDF, HMM tracking, Viterbi decoding
 
 ### 5.2 Update DATA_ENGINE_REFERENCE.md
 
