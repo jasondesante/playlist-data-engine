@@ -802,7 +802,7 @@ Each difficulty level has constraints on the maximum subdivision density allowed
   - [x] Create output streams table (low/mid/high/composite with purpose descriptions)
   - [x] Create phrase analysis table documenting `RhythmicPhrase` and `PhraseOccurrence` fields (for pitch detection integration)
   - [x] Add cross-references to BEAT_DETECTION.md for algorithm details *(blocked by Phase 5.3)*
-  - [ ] Add cross-reference to pitch-detection-button-mapping.md for phrase/pitch correlation *(blocked by companion plan implementation)*
+  - [x] Add cross-reference to pitch-detection-button-mapping.md for phrase/pitch correlation *(blocked by companion plan implementation)*
   - [x] Add "Also known as" aliases where helpful (e.g., *transient detection* ↔ *onset detection*)
 
 ### 5.3 Update BEAT_DETECTION.md

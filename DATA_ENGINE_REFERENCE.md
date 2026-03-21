@@ -2709,6 +2709,8 @@ Single occurrence of a detected phrase. Timestamps enable pitch analysis of spec
 | `startTimestamp` | `number` | Start time in seconds (for pitch analysis reference) |
 | `endTimestamp` | `number` | End time in seconds (for pitch analysis reference) |
 
+**For phrase-level pitch correlation, see [docs/BEAT_DETECTION.md#phrase-level-pitch-correlation](docs/BEAT_DETECTION.md#phrase-level-pitch-correlation)**
+
 ### DensityAnalyzer
 *Location:* *[src/core/analysis/beat/DensityAnalyzer.ts](src/core/analysis/beat/DensityAnalyzer.ts)*
 
