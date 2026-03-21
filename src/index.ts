@@ -199,6 +199,26 @@ export {
     chartedBeatMapToBeatMap,
 } from './core/types/ChartedBeatMap.js';
 
+// Level Export types (serialization format for showcase app compatibility)
+export type {
+    ChartStyle,
+    FullExportDetectedBeat,
+    FullExportMergedBeat,
+    InterpolatedMetadataJSON,
+    SubdivisionConfigJSON,
+    SubdivisionMetadataJSON,
+    FullExportSubdividedBeat,
+    SubdivisionExportData,
+    ChartExportData,
+    ProceduralGenerationMetadata,
+    FullBeatMapExportData,
+    FullBeatMapImportResult,
+} from './core/types/LevelExport.js';
+
+export {
+    isFullBeatMapExportData,
+} from './core/types/LevelExport.js';
+
 // Character types
 export type {
     CharacterSheet,

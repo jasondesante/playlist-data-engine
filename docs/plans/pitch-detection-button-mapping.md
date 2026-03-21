@@ -1606,7 +1606,7 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
 - Is 100% compatible with showcase app's `importFullBeatMap()`
 
 #### 4.2.2 Implementation
-- [ ] Add `FullBeatMapExportData` type to engine (copy from showcase app types)
+- [x] Add `FullBeatMapExportData` type to engine (copy from showcase app types)
   ```typescript
   // In src/core/types/LevelExport.ts (new file)
   // These types match playlist-data-showcase/src/types/index.ts exactly
