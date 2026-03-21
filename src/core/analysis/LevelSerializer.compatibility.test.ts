@@ -833,6 +833,313 @@ describe('LevelSerializer Compatibility with Showcase App', () => {
         });
     });
 
+    describe('Phase 4.2.3: Manual chart → Engine import', () => {
+        /**
+         * Create mock manual chart export data (like what the showcase app exports)
+         * This simulates data from the playlist-data-showcase app's exportFullBeatMap()
+         */
+        function createMockManualChartExportData(): FullBeatMapExportData {
+            const bpm = 120;
+            const quarterNoteInterval = 60 / bpm;
+            const duration = 10.0;
+            const beatCount = 40; // 16th notes for 10 seconds at 120 BPM
+
+            // Create detected beats (quarter notes)
+            const detectedBeats: FullExportDetectedBeat[] = [];
+            for (let i = 0; i < Math.floor(duration / quarterNoteInterval); i++) {
+                detectedBeats.push({
+                    timestamp: i * quarterNoteInterval,
+                    beatInMeasure: i % 4,
+                    isDownbeat: i % 4 === 0,
+                    measureNumber: Math.floor(i / 4),
+                    intensity: 0.8,
+                    confidence: 0.9,
+                });
+            }
+
+            // Create merged beats (includes interpolated)
+            const mergedBeats: FullExportMergedBeat[] = [];
+            for (let i = 0; i < beatCount; i++) {
+                const quarterIndex = Math.floor(i / 4);
+                const subPosition = i % 4;
+                mergedBeats.push({
+                    timestamp: (quarterIndex + subPosition * 0.25) * quarterNoteInterval,
+                    beatInMeasure: (quarterIndex % 4) + subPosition * 0.25,
+                    isDownbeat: quarterIndex % 4 === 0 && subPosition === 0,
+                    measureNumber: Math.floor(quarterIndex / 4),
+                    intensity: 0.7,
+                    confidence: 0.8,
+                    requiredKey: ['up', 'down', 'left', 'right'][i % 4],
+                    source: i % 4 === 0 ? 'detected' : 'interpolated',
+                });
+            }
+
+            // Create subdivision beats (no procedural extensions)
+            const subdivisionBeats: FullExportSubdividedBeat[] = mergedBeats.map((beat, index) => ({
+                timestamp: beat.timestamp,
+                beatInMeasure: beat.beatInMeasure,
+                isDownbeat: beat.isDownbeat,
+                measureNumber: beat.measureNumber,
+                intensity: beat.intensity,
+                confidence: beat.confidence,
+                requiredKey: beat.requiredKey,
+                isDetected: beat.source === 'detected',
+                originalBeatIndex: beat.source === 'detected' ? index : undefined,
+                subdivisionType: 'sixteenth' as SubdivisionType,
+                // NO procedural extensions (quarterNoteIndex, subdivisionPosition, sourceBand, quantizationError)
+            }));
+
+            return {
+                version: 1,
+                format: 'full-beatmap',
+                audioId: 'manual-chart-audio-123',
+                audioTitle: 'Manual Chart Test Song',
+                exportedAt: Date.now(),
+                duration,
+                quarterNoteBpm: bpm,
+                quarterNoteConfidence: 0.85,
+                detectedBeats,
+                mergedBeats,
+                interpolatedMetadata: {
+                    quarterNoteInterval,
+                    quarterNoteBpm: bpm,
+                    quarterNoteConfidence: 0.85,
+                    detectedBeatCount: detectedBeats.length,
+                    mergedBeatCount: mergedBeats.length,
+                },
+                subdivision: {
+                    config: {
+                        beatSubdivisions: subdivisionBeats.map((_, i) => [i, 'sixteenth' as SubdivisionType]),
+                        defaultSubdivision: 'sixteenth',
+                    },
+                    beats: subdivisionBeats,
+                    metadata: {
+                        originalBeatCount: detectedBeats.length,
+                        subdividedBeatCount: subdivisionBeats.length,
+                        averageDensityMultiplier: 1.0,
+                        explicitBeatCount: detectedBeats.length,
+                    },
+                },
+                chart: {
+                    style: 'ddr',
+                    keyCount: 4,
+                    usedKeys: ['up', 'down', 'left', 'right'],
+                },
+                // NO generationSource or generationMetadata for manual charts
+            };
+        }
+
+        it('should import manual chart without generation metadata', () => {
+            const exportData = createMockManualChartExportData();
+
+            // Validate first
+            const result = LevelSerializer.validate(exportData);
+            expect(result.success).toBe(true);
+
+            // Import
+            const level = LevelSerializer.fromExportData(exportData);
+
+            expect(level).toBeDefined();
+            expect(level.chart).toBeDefined();
+            expect(level.chart.audioId).toBe('manual-chart-audio-123');
+
+            console.log('✓ Manual chart imported successfully');
+            console.log(`  audioId: ${level.chart.audioId}`);
+            console.log(`  beats: ${level.chart.beats.length}`);
+        });
+
+        it('should reconstruct chart beats from manual chart', () => {
+            const exportData = createMockManualChartExportData();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Check chart beats
+            expect(level.chart.beats.length).toBe(40);
+
+            // Check that beats have required keys
+            const keysUsed = level.chart.beats
+                .map(b => b.requiredKey)
+                .filter((k): k is string => k !== undefined);
+            expect(keysUsed.length).toBe(40);
+
+            // Check unique keys
+            const uniqueKeys = [...new Set(keysUsed)];
+            expect(uniqueKeys).toContain('up');
+            expect(uniqueKeys).toContain('down');
+            expect(uniqueKeys).toContain('left');
+            expect(uniqueKeys).toContain('right');
+
+            console.log('✓ Manual chart beats reconstructed');
+            console.log(`  Total beats: ${level.chart.beats.length}`);
+            console.log(`  Keys: ${uniqueKeys.join(', ')}`);
+        });
+
+        it('should use default values for missing procedural fields', () => {
+            const exportData = createMockManualChartExportData();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Check that chart beats have default values for procedural fields
+            const beat = level.chart.beats[0];
+
+            // These should have defaults since manual chart doesn't have them
+            expect(beat.quarterNoteIndex).toBeDefined(); // defaults to 0
+            expect(beat.subdivisionPosition).toBeDefined(); // defaults to 0
+            expect(beat.sourceBand).toBeDefined(); // defaults to 'mid'
+            expect(beat.isDetected).toBeDefined();
+
+            console.log('✓ Default values applied for procedural fields');
+            console.log(`  quarterNoteIndex: ${beat.quarterNoteIndex}`);
+            console.log(`  subdivisionPosition: ${beat.subdivisionPosition}`);
+            console.log(`  sourceBand: ${beat.sourceBand}`);
+        });
+
+        it('should not identify manual chart as procedural', () => {
+            const exportData = createMockManualChartExportData();
+
+            expect(LevelSerializer.isProcedural(exportData)).toBe(false);
+
+            console.log('✓ Manual chart not identified as procedural');
+        });
+
+        it('should reconstruct metadata for manual chart', () => {
+            const exportData = createMockManualChartExportData();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Check metadata exists
+            expect(level.metadata).toBeDefined();
+
+            // Should have default difficulty (medium) since manual chart doesn't specify
+            expect(level.metadata.difficulty).toBe('medium');
+
+            // Should have default controller mode
+            expect(level.metadata.controllerMode).toBeDefined();
+
+            // rhythmMetadata should exist with defaults
+            expect(level.metadata.rhythmMetadata).toBeDefined();
+            expect(level.metadata.rhythmMetadata.bandsAnalyzed).toEqual(['low', 'mid', 'high']);
+
+            console.log('✓ Metadata reconstructed for manual chart');
+            console.log(`  difficulty: ${level.metadata.difficulty}`);
+            console.log(`  controllerMode: ${level.metadata.controllerMode}`);
+        });
+
+        it('should reconstruct variant for manual chart', () => {
+            const exportData = createMockManualChartExportData();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Check variant exists
+            expect(level.variant).toBeDefined();
+            expect(level.variant.difficulty).toBe('medium');
+            expect(level.variant.beats.length).toBe(40);
+
+            console.log('✓ Variant reconstructed for manual chart');
+            console.log(`  difficulty: ${level.variant.difficulty}`);
+            console.log(`  beats: ${level.variant.beats.length}`);
+        });
+
+        it('should reconstruct rhythm for manual chart', () => {
+            const exportData = createMockManualChartExportData();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Check rhythm exists
+            expect(level.rhythm).toBeDefined();
+            expect(level.rhythm.bandStreams).toBeDefined();
+            expect(level.rhythm.composite).toBeDefined();
+
+            // Should have all three band streams
+            expect(level.rhythm.bandStreams.low).toBeDefined();
+            expect(level.rhythm.bandStreams.mid).toBeDefined();
+            expect(level.rhythm.bandStreams.high).toBeDefined();
+
+            console.log('✓ Rhythm reconstructed for manual chart');
+            console.log(`  composite beats: ${level.rhythm.composite.beats.length}`);
+        });
+
+        it('should have null pitch analysis for manual chart', () => {
+            const exportData = createMockManualChartExportData();
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Manual charts without generationMetadata.pitchBand should have null pitch analysis
+            expect(level.pitchAnalysis).toBeNull();
+
+            console.log('✓ Pitch analysis is null for manual chart without pitch metadata');
+        });
+
+        it('should preserve keys through manual chart round-trip', () => {
+            const exportData = createMockManualChartExportData();
+
+            // Import
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Export again
+            const reexportData = LevelSerializer.toExportData(level);
+
+            // Check keys preserved
+            expect(reexportData.chart).toBeDefined();
+            expect(reexportData.chart?.usedKeys).toContain('up');
+            expect(reexportData.chart?.usedKeys).toContain('down');
+            expect(reexportData.chart?.usedKeys).toContain('left');
+            expect(reexportData.chart?.usedKeys).toContain('right');
+
+            // Check beats have keys
+            const originalKeys = exportData.subdivision?.beats
+                .map(b => b.requiredKey)
+                .filter((k): k is string => k !== undefined) ?? [];
+
+            const reimportedKeys = reexportData.subdivision?.beats
+                .map(b => b.requiredKey)
+                .filter((k): k is string => k !== undefined) ?? [];
+
+            expect(reimportedKeys.length).toBe(originalKeys.length);
+
+            console.log('✓ Keys preserved through manual chart round-trip');
+            console.log(`  Original keys: ${originalKeys.length}`);
+            console.log(`  Re-imported keys: ${reimportedKeys.length}`);
+        });
+
+        it('should handle manual chart with explicit generationSource: manual', () => {
+            const exportData = createMockManualChartExportData();
+            exportData.generationSource = 'manual';
+
+            // Should still validate and import
+            const result = LevelSerializer.validate(exportData);
+            expect(result.success).toBe(true);
+
+            const level = LevelSerializer.fromExportData(exportData);
+            expect(level).toBeDefined();
+
+            // Should NOT be identified as procedural
+            expect(LevelSerializer.isProcedural(exportData)).toBe(false);
+
+            console.log('✓ Manual chart with explicit generationSource handled');
+        });
+
+        it('should import manual chart with guitar hero style', () => {
+            const exportData = createMockManualChartExportData();
+            exportData.chart = {
+                style: 'guitar',
+                keyCount: 5,
+                usedKeys: ['1', '2', '3', '4', '5'],
+            };
+
+            // Update beat keys to match guitar hero style
+            if (exportData.subdivision) {
+                exportData.subdivision.beats = exportData.subdivision.beats.map((beat, i) => ({
+                    ...beat,
+                    requiredKey: String((i % 5) + 1),
+                }));
+            }
+
+            const level = LevelSerializer.fromExportData(exportData);
+
+            // Should have guitar hero keys
+            const uniqueKeys = [...new Set(level.chart.beats.map(b => b.requiredKey).filter((k): k is string => k !== undefined))];
+            expect(uniqueKeys.length).toBe(5);
+
+            console.log('✓ Guitar Hero style manual chart imported');
+            console.log(`  Keys: ${uniqueKeys.join(', ')}`);
+        });
+    });
+
     describe('Utility Functions', () => {
         it('should identify procedural levels', () => {
             const level = createMockGeneratedLevel();
@@ -841,6 +1148,34 @@ describe('LevelSerializer Compatibility with Showcase App', () => {
             expect(LevelSerializer.isProcedural(exportData)).toBe(true);
 
             console.log('✓ isProcedural correctly identifies procedural levels');
+        });
+
+        it('should identify manual levels', () => {
+            // Create manual chart export data
+            const manualExportData: FullBeatMapExportData = {
+                version: 1,
+                format: 'full-beatmap',
+                audioId: 'manual-test',
+                duration: 10,
+                quarterNoteBpm: 120,
+                quarterNoteConfidence: 0.9,
+                detectedBeats: [],
+                mergedBeats: [],
+                interpolatedMetadata: {
+                    quarterNoteInterval: 0.5,
+                    quarterNoteBpm: 120,
+                    quarterNoteConfidence: 0.9,
+                    detectedBeatCount: 0,
+                    mergedBeatCount: 0,
+                },
+                subdivision: null,
+                chart: null,
+                // No generationSource = manual
+            };
+
+            expect(LevelSerializer.isProcedural(manualExportData)).toBe(false);
+
+            console.log('✓ isProcedural correctly identifies manual levels');
         });
 
         it('should generate readable summary', () => {

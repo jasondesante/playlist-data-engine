@@ -1680,7 +1680,20 @@ After analyzing the showcase app's implementation, we will use the existing `Ful
   - Tests verify all required fields for showcase app import compatibility
   - Tests cover: root-level fields, detectedBeats, mergedBeats, interpolatedMetadata, subdivision, chart
   - Tests also cover procedural extensions (quarterNoteIndex, subdivisionPosition, sourceBand)
-- [ ] **Manual chart → Engine import**: Export from showcase app, load in engine
+- [x] **Manual chart → Engine import**: Export from showcase app, load in engine
+  - Added new test section "Phase 4.2.3: Manual chart → Engine import" with 11 tests
+  - Tests verify:
+    - Import manual chart without generation metadata
+    - Reconstruct chart beats from manual chart
+    - Default values for missing procedural fields (quarterNoteIndex=0, subdivisionPosition=0, sourceBand='mid')
+    - Manual chart not identified as procedural
+    - Metadata reconstruction with defaults
+    - Variant reconstruction
+    - Rhythm reconstruction
+    - Null pitch analysis for manual charts without pitch metadata
+    - Key preservation through round-trip
+    - Handling explicit `generationSource: 'manual'`
+    - Guitar Hero style manual chart import
 - [x] **Round-trip test**: Save → load → save → compare outputs identical
   - Round-trip tests verify preservation of audioId, duration, beats, keys
 - [x] Verify all fields used by `importFullBeatMap()` are populated correctly:
