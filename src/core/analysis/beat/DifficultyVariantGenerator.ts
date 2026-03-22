@@ -910,11 +910,21 @@ export class DifficultyVariantGenerator {
         let newGridPosition: number;
         let newTimestamp: number;
 
-        // Calculate beat start timestamp (timestamp at beatIndex, gridPosition 0)
-        const beatStartTimestamp = beat.beatIndex * quarterNoteInterval;
+        // CRITICAL: Calculate the actual beat start timestamp from the beat's own timestamp.
+        // We derive the beat start by subtracting the offset contributed by the grid position.
+        // This preserves the actual detected timing rather than assuming beat 0 starts at timestamp 0.
+        //
+        // For straight_16th grid (4 positions): each position = quarterInterval/4
+        // For triplet_8th grid (3 positions): each position = quarterInterval/3
+        let beatStartTimestamp: number;
 
         switch (beat.gridType) {
             case 'straight_16th': {
+                // Derive actual beat start from the beat's timestamp
+                // Position 0 = beat start, Position 1 = +1/4, Position 2 = +1/2, Position 3 = +3/4
+                const sixteenthNoteInterval = quarterNoteInterval / 4;
+                beatStartTimestamp = beat.timestamp - (beat.gridPosition * sixteenthNoteInterval);
+
                 // 16th → 8th conversion
                 // Positions: 0→0, 1→0 (snap to quarter), 2→2, 3→2 (snap to 8th)
                 if (beat.gridPosition === 1 || beat.gridPosition === 3) {
@@ -923,7 +933,8 @@ export class DifficultyVariantGenerator {
                 } else {
                     newGridPosition = beat.gridPosition;
                 }
-                // Calculate new timestamp for straight_8th grid
+
+                // Calculate new timestamp from the ACTUAL beat start (not theoretical)
                 // 8th note interval = quarterInterval / 2
                 // Position 0 = beat start, Position 2 = beat start + 8th interval
                 const eighthNoteInterval = quarterNoteInterval / 2;
@@ -932,10 +943,15 @@ export class DifficultyVariantGenerator {
             }
 
             case 'triplet_8th': {
+                // Derive actual beat start from the beat's timestamp
+                // Position 0 = beat start, Position 1 = +1/3, Position 2 = +2/3
+                const tripletInterval = quarterNoteInterval / 3;
+                beatStartTimestamp = beat.timestamp - (beat.gridPosition * tripletInterval);
+
                 // 8th triplet → quarter triplet conversion
                 // All positions snap to 0 (the quarter triplet)
                 newGridPosition = 0;
-                // Quarter triplet is at beat start
+                // Quarter triplet is at beat start (using actual detected timing)
                 newTimestamp = beatStartTimestamp;
                 break;
             }
