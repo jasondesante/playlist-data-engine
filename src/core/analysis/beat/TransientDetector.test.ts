@@ -228,10 +228,15 @@ describe('TransientDetector', () => {
         });
 
         it('should calculate average intensity correctly', () => {
-            // Use non-adaptive thresholding for predictable behavior with sparse mock data
+            // Use per-band config with non-adaptive thresholding for predictable behavior
             const testDetector = new TransientDetector({
-                adaptiveThresholding: false,
-                baseThreshold: 0.3,
+                bandConfig: {
+                    low: {
+                        threshold: 0.3,
+                        adaptiveThresholding: false,
+                        minInterval: 0.05,
+                    },
+                },
             });
             const multiBandResult = createMockMultiBandResult({
                 duration: 1.0,
@@ -328,10 +333,15 @@ describe('TransientDetector', () => {
         });
 
         it('should handle single transient', () => {
-            // Use non-adaptive thresholding for predictable behavior with sparse mock data
+            // Use per-band config with non-adaptive thresholding for predictable behavior
             const testDetector = new TransientDetector({
-                adaptiveThresholding: false,
-                baseThreshold: 0.3,
+                bandConfig: {
+                    low: {
+                        threshold: 0.3,
+                        adaptiveThresholding: false,
+                        minInterval: 0.05,
+                    },
+                },
             });
             const multiBandResult = createMockMultiBandResult({
                 duration: 1.0,

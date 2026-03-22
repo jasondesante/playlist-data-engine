@@ -362,8 +362,9 @@ export class RhythmQuantizer {
         // Split transients by band first
         const transientsByBand = this.splitTransientsByBand(transientAnalysis.transients);
 
-        // Calculate required minimum interval (16th note duration)
-        const requiredMinInterval = unifiedBeatMap.quarterNoteInterval / 4;
+        // Calculate required minimum interval (between 16th and 32nd note: /6 instead of /4)
+        // This allows denser patterns before triggering retry logic
+        const requiredMinInterval = unifiedBeatMap.quarterNoteInterval / 6;
 
         // Process each band independently with per-band density validation
         const lowResult = this.processBand(

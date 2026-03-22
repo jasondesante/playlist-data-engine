@@ -42,6 +42,48 @@ import type { FrequencyBand } from './utils/audioUtils.js';
 export type TransientDetectionMethod = 'energy' | 'spectral_flux' | 'hfc';
 
 /**
+ * Band identifier type
+ */
+type BandName = 'low' | 'mid' | 'high';
+
+/**
+ * Per-band transient detection configuration.
+ * Each frequency band can have different settings optimized for its typical content.
+ */
+export interface BandTransientConfig {
+    /**
+     * Threshold for peak detection (0.0 - 1.0).
+     * Higher values are more selective (fewer transients detected).
+     */
+    threshold: number;
+
+    /**
+     * Minimum interval between transients in seconds (buffer window).
+     * Within this window, only the strongest transient wins (Non-Maximum Suppression).
+     */
+    minInterval: number;
+
+    /**
+     * Whether to use adaptive thresholding for this band.
+     * Adjusts threshold based on local energy/density of the signal.
+     */
+    adaptiveThresholding: boolean;
+}
+
+/**
+ * Per-band transient detection configuration overrides.
+ * Each band can optionally override the global defaults.
+ */
+export interface BandTransientConfigOverrides {
+    /** Low frequency band (20-500 Hz) - kick drums, bass */
+    low?: Partial<BandTransientConfig>;
+    /** Mid frequency band (500-2000 Hz) - vocals, snare body */
+    mid?: Partial<BandTransientConfig>;
+    /** High frequency band (2000-20000 Hz) - hi-hats, cymbals */
+    high?: Partial<BandTransientConfig>;
+}
+
+/**
  * Result of a single detected transient
  */
 export interface TransientResult {
@@ -73,6 +115,7 @@ export interface TransientDetectorConfig {
     /**
      * Base threshold for peak detection (0.0 - 1.0).
      * Lower values detect more transients, higher values are more selective.
+     * This is used as a fallback if per-band threshold is not specified.
      * Default: 0.3
      */
     baseThreshold?: number;
@@ -80,6 +123,7 @@ export interface TransientDetectorConfig {
     /**
      * Adaptive thresholding enabled.
      * When true, the detector adjusts thresholds based on the local energy/density of the signal.
+     * This is used as a fallback if per-band setting is not specified.
      * Default: true
      */
     adaptiveThresholding?: boolean;
@@ -92,9 +136,11 @@ export interface TransientDetectorConfig {
     adaptiveWindowSize?: number;
 
     /**
-     * Minimum distance between transients in seconds.
-     * Prevents detecting multiple transients for the same event.
+     * Minimum distance between transients in seconds (buffer window).
+     * Within this window, only the strongest transient wins (Non-Maximum Suppression).
+     * This is used as a fallback if per-band interval is not specified.
      * Default: 0.02 (20ms)
+     * @deprecated Use per-band config in `bandConfig` instead
      */
     minTransientInterval?: number;
 
@@ -102,6 +148,13 @@ export interface TransientDetectorConfig {
      * Custom frequency bands (default: FREQUENCY_BANDS from audioUtils)
      */
     bands?: FrequencyBand[];
+
+    /**
+     * Per-band configuration overrides.
+     * Each band can have different thresholds and intervals optimized for its content.
+     * Settings here override the global defaults for specific bands.
+     */
+    bandConfig?: BandTransientConfigOverrides;
 }
 
 /**
@@ -138,13 +191,48 @@ export interface TransientAnalysis {
 // ============================================================================
 
 /**
+ * Default per-band transient detection configurations.
+ *
+ * These are tuned for typical musical content in each frequency range:
+ *
+ * - **Low band (20-500 Hz)**: Kick drums, bass - fewer, stronger transients
+ *   - Higher threshold (0.4) - bass transients are typically strong
+ *   - Longer interval (50ms) - bass events are usually more sparse
+ *
+ * - **Mid band (500-2000 Hz)**: Vocals, snare body, lead instruments
+ *   - Medium threshold (0.3) - balanced detection
+ *   - Medium interval (30ms) - moderate density
+ *
+ * - **High band (2000-20000 Hz)**: Hi-hats, cymbals, harmonics
+ *   - Lower threshold (0.25) - hi-hats can be subtle
+ *   - Shorter interval (20ms) - rapid fire percussion is common
+ */
+const DEFAULT_BAND_CONFIGS: Record<BandName, BandTransientConfig> = {
+    low: {
+        threshold: 0.4,         // Higher - bass transients are stronger
+        minInterval: 0.05,      // 50ms buffer - ~1/10 of 16th note at 120 BPM
+        adaptiveThresholding: true,
+    },
+    mid: {
+        threshold: 0.3,         // Medium - balanced
+        minInterval: 0.03,      // 30ms buffer
+        adaptiveThresholding: true,
+    },
+    high: {
+        threshold: 0.25,        // Lower - hi-hats can be subtle
+        minInterval: 0.02,      // 20ms buffer - allow rapid fire
+        adaptiveThresholding: true,
+    },
+};
+
+/**
  * Default configuration for TransientDetector (required properties only)
  */
 const DEFAULT_TRANSIENT_DETECTOR_CONFIG = {
     baseThreshold: 0.3,
     adaptiveThresholding: true,
     adaptiveWindowSize: 50,
-    minTransientInterval: 0.02, // 20ms minimum between transients
+    minTransientInterval: 0.02, // 20ms minimum between transients (fallback)
 } as const;
 
 /**
@@ -156,6 +244,7 @@ type TransientDetectorInternalConfig = {
     adaptiveWindowSize: number;
     minTransientInterval: number;
     bands?: FrequencyBand[];
+    bandConfig: Record<BandName, BandTransientConfig>;
 };
 
 // ============================================================================
@@ -209,12 +298,20 @@ export class TransientDetector {
      * @param config - Configuration options (all optional, defaults provided)
      */
     constructor(config: TransientDetectorConfig = {}) {
-        // Extract bands separately to handle optional property
-        const { bands, ...requiredConfig } = config;
+        // Extract bands and bandConfig separately to handle optional properties
+        const { bands, bandConfig, ...requiredConfig } = config;
+
+        // Build per-band config by merging defaults with user overrides
+        const mergedBandConfig: Record<BandName, BandTransientConfig> = {
+            low: { ...DEFAULT_BAND_CONFIGS.low, ...bandConfig?.low },
+            mid: { ...DEFAULT_BAND_CONFIGS.mid, ...bandConfig?.mid },
+            high: { ...DEFAULT_BAND_CONFIGS.high, ...bandConfig?.high },
+        };
 
         this.config = {
             ...DEFAULT_TRANSIENT_DETECTOR_CONFIG,
             ...requiredConfig,
+            bandConfig: mergedBandConfig,
         };
 
         // Store bands if provided
@@ -232,6 +329,17 @@ export class TransientDetector {
         if (this.config.minTransientInterval < 0) {
             throw new Error(`minTransientInterval must be non-negative, got: ${this.config.minTransientInterval}`);
         }
+
+        // Validate per-band config
+        for (const band of ['low', 'mid', 'high'] as BandName[]) {
+            const bc = this.config.bandConfig[band];
+            if (bc.threshold < 0 || bc.threshold > 1) {
+                throw new Error(`${band} band threshold must be between 0 and 1, got: ${bc.threshold}`);
+            }
+            if (bc.minInterval < 0) {
+                throw new Error(`${band} band minInterval must be non-negative, got: ${bc.minInterval}`);
+            }
+        }
     }
 
     /**
@@ -240,7 +348,28 @@ export class TransientDetector {
      * @returns The current configuration
      */
     getConfig(): TransientDetectorConfig {
-        return { ...this.config };
+        const { bandConfig, ...rest } = this.config;
+        return {
+            ...rest,
+            bandConfig: {
+                low: { ...bandConfig.low },
+                mid: { ...bandConfig.mid },
+                high: { ...bandConfig.high },
+            },
+        };
+    }
+
+    /**
+     * Get the per-band configuration
+     *
+     * @returns The per-band configuration
+     */
+    getBandConfig(): Record<BandName, BandTransientConfig> {
+        return {
+            low: { ...this.config.bandConfig.low },
+            mid: { ...this.config.bandConfig.mid },
+            high: { ...this.config.bandConfig.high },
+        };
     }
 
     /**
@@ -303,6 +432,9 @@ export class TransientDetector {
      * - Mid band: Spectral Flux
      * - High band: High-Frequency Content (HFC)
      *
+     * Applies Non-Maximum Suppression (NMS) to ensure only the strongest
+     * transient within a buffer window is kept.
+     *
      * @param bandName - Name of the frequency band
      * @param bandAnalysis - Analysis result for this band
      * @param hopSizeSeconds - Time between frames in seconds
@@ -313,6 +445,9 @@ export class TransientDetector {
         bandAnalysis: BandAnalysis,
         hopSizeSeconds: number
     ): TransientResult[] {
+        // Get per-band configuration
+        const bandConfig = this.config.bandConfig[bandName];
+
         // Select detection method based on band
         const detectionMethod = this.getDetectionMethod(bandName);
 
@@ -329,41 +464,85 @@ export class TransientDetector {
             return [];
         }
 
-        // Calculate adaptive threshold if enabled
-        const threshold = this.config.adaptiveThresholding
-            ? this.calculateAdaptiveThreshold(envelope)
-            : this.config.baseThreshold;
+        // Calculate adaptive threshold if enabled for this band
+        const threshold = bandConfig.adaptiveThresholding
+            ? this.calculateAdaptiveThreshold(envelope, bandConfig.threshold)
+            : bandConfig.threshold;
 
         // Find peaks in the envelope
         const peaks = this.findPeaks(envelope, threshold);
 
-        // Convert peaks to transient results
-        const transients: TransientResult[] = [];
-        const minIntervalFrames = Math.round(this.config.minTransientInterval / hopSizeSeconds);
+        // Convert peaks to candidate transients (all peaks above threshold)
+        const candidates: TransientResult[] = peaks.map(peakFrame => ({
+            timestamp: peakFrame * hopSizeSeconds,
+            intensity: envelope[peakFrame],
+            band: bandName,
+            detectionMethod,
+        }));
 
-        for (let i = 0; i < peaks.length; i++) {
-            const peakFrame = peaks[i];
+        // Apply Non-Maximum Suppression (NMS) - keep only strongest in each buffer window
+        const transients = this.applyNonMaximumSuppression(
+            candidates,
+            bandConfig.minInterval
+        );
 
-            // Apply minimum interval constraint
-            if (i > 0) {
-                const prevFrame = peaks[i - 1];
-                if (peakFrame - prevFrame < minIntervalFrames) {
-                    continue; // Skip this peak, too close to previous
+        return transients;
+    }
+
+    /**
+     * Apply Non-Maximum Suppression (NMS) to transients
+     *
+     * Within a buffer window, only the strongest transient wins.
+     * This prevents multiple detections for the same acoustic event.
+     *
+     * ## Algorithm
+     *
+     * 1. Sort candidates by intensity (strongest first)
+     * 2. For each candidate (starting with strongest):
+     *    - If not suppressed by an already-accepted transient, accept it
+     *    - Suppress all weaker candidates within the buffer window
+     * 3. Return accepted transients sorted by timestamp
+     *
+     * @param candidates - All candidate transients (peaks above threshold)
+     * @param bufferWindow - Minimum interval in seconds between transients
+     * @returns Filtered transients with only the strongest in each window
+     */
+    private applyNonMaximumSuppression(
+        candidates: TransientResult[],
+        bufferWindow: number
+    ): TransientResult[] {
+        if (candidates.length === 0) {
+            return [];
+        }
+
+        // Sort by intensity (strongest first) for greedy NMS
+        const sortedByIntensity = [...candidates].sort((a, b) => b.intensity - a.intensity);
+
+        const accepted: TransientResult[] = [];
+
+        for (const candidate of sortedByIntensity) {
+            // Check if this candidate is suppressed by any already-accepted transient
+            let isSuppressed = false;
+
+            for (const acceptedTransient of accepted) {
+                const timeDiff = Math.abs(candidate.timestamp - acceptedTransient.timestamp);
+                if (timeDiff < bufferWindow) {
+                    // This candidate is within the buffer window of an already-accepted transient
+                    // The accepted one is stronger (since we process in intensity order)
+                    isSuppressed = true;
+                    break;
                 }
             }
 
-            const timestamp = peakFrame * hopSizeSeconds;
-            const intensity = envelope[peakFrame];
-
-            transients.push({
-                timestamp,
-                intensity,
-                band: bandName,
-                detectionMethod,
-            });
+            if (!isSuppressed) {
+                accepted.push(candidate);
+            }
         }
 
-        return transients;
+        // Sort by timestamp for output
+        accepted.sort((a, b) => a.timestamp - b.timestamp);
+
+        return accepted;
     }
 
     /**
@@ -405,11 +584,14 @@ export class TransientDetector {
      *    - Low CV → Lower threshold (catch more transients in consistent sections)
      *
      * @param envelope - The onset strength envelope
+     * @param baseThreshold - The base threshold for this band (default: global baseThreshold)
      * @returns Calculated threshold
      */
-    private calculateAdaptiveThreshold(envelope: Float32Array): number {
+    private calculateAdaptiveThreshold(envelope: Float32Array, baseThreshold?: number): number {
+        const threshold = baseThreshold ?? this.config.baseThreshold;
+
         if (envelope.length === 0) {
-            return this.config.baseThreshold;
+            return threshold;
         }
 
         // Step 1: Calculate mean energy (first pass through envelope)
@@ -445,7 +627,7 @@ export class TransientDetector {
         // - CV of 1.0 → threshold multiplied by 1.5 (moderately more selective)
         // - CV of 2.0 → threshold multiplied by 2.0 (much more selective)
         const adaptiveFactor = 1 + (coefficientOfVariation * 0.5);
-        const adaptiveThreshold = this.config.baseThreshold * adaptiveFactor;
+        const adaptiveThreshold = threshold * adaptiveFactor;
 
         // Clamp to valid range to prevent extreme values
         return Math.max(0.1, Math.min(0.9, adaptiveThreshold));

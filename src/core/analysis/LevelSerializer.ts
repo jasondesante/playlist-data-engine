@@ -839,6 +839,7 @@ export class LevelSerializer {
                 outputMode: 'composite',
                 measureStartOffset: 0,
                 minimumTransientIntensity: 0.1,
+                transientConfig: undefined,
                 seed: genMeta?.seed,
                 verbose: false,
                 enableCache: true,

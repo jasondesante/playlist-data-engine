@@ -1053,7 +1053,7 @@ describe('Integration Tests - Full Pipeline', () => {
 
             for (const bpm of testTempos) {
                 const quarterNoteInterval = 60 / bpm;
-                const sixteenthNoteInterval = quarterNoteInterval / 4;
+                const requiredMinInterval = quarterNoteInterval / 6; // Updated: between 16th and 32nd note
                 const duration = 2.0;
 
                 const audioBuffer = createDrumTrackAudioBuffer({
@@ -1076,8 +1076,8 @@ describe('Integration Tests - Full Pipeline', () => {
                 // Verify the quarterNoteInterval in beatMap is correct
                 expect(beatMap.quarterNoteInterval).toBeCloseTo(quarterNoteInterval, 5);
 
-                // Verify minimum interval calculation (should be 16th note) - same for all bands
-                expect(result.metadata.densityValidation.bands.low.requiredMinInterval).toBeCloseTo(sixteenthNoteInterval, 5);
+                // Verify minimum interval calculation (between 16th and 32nd note: /6) - same for all bands
+                expect(result.metadata.densityValidation.bands.low.requiredMinInterval).toBeCloseTo(requiredMinInterval, 5);
             }
         });
     });

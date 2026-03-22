@@ -165,7 +165,7 @@ The engine already has:
 
 #### 1.4.1 Density Validation Gate
 Before quantization, validate that detected transients aren't too dense:
-- [x] Calculate minimum allowed interval based on tempo (16th note duration = quarterNoteInterval / 4)
+- [x] Calculate minimum allowed interval based on tempo (quarterNoteInterval / 6, between 16th and 32nd note)
 - [x] Check if any two consecutive transients are closer than the minimum interval
 - [x] If too dense, trigger sensitivity adjustment with retry logic:
   ```typescript
@@ -174,7 +174,7 @@ Before quantization, validate that detected transients aren't too dense:
     band: 'low' | 'mid' | 'high';
     isValid: boolean;
     minIntervalDetected: number;  // Smallest gap between transients (seconds)
-    requiredMinInterval: number;  // 16th note duration at current tempo
+    requiredMinInterval: number;  // quarterNoteInterval / 6
     retryCount: number;
     sensitivityReduction: number;  // Cumulative sensitivity reduction applied
     finalIntensityThreshold: number;

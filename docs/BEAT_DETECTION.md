@@ -3176,6 +3176,52 @@ interface TransientResult {
 }
 ```
 
+### Per-Band Configuration
+
+Each frequency band can have different detection settings optimized for its typical content:
+
+| Band | Default Threshold | Min Interval | Description |
+|------|-------------------|--------------|-------------|
+| **Low** | 0.4 | 50ms | Higher threshold - bass transients are typically stronger; longer interval - bass events are more sparse |
+| **Mid** | 0.3 | 30ms | Medium threshold - balanced detection; moderate interval |
+| **High** | 0.25 | 20ms | Lower threshold - hi-hats can be subtle; shorter interval - rapid fire percussion |
+
+```typescript
+interface BandTransientConfig {
+  threshold: number;           // Peak detection threshold (0.0 - 1.0)
+  minInterval: number;         // Buffer window in seconds (Non-Maximum Suppression)
+  adaptiveThresholding: boolean;
+}
+```
+
+### Non-Maximum Suppression (NMS)
+
+Within each band's `minInterval` buffer window, only the **strongest transient wins**. This prevents multiple detections for the same acoustic event:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                    Non-Maximum Suppression Flow                          │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│   1. Find all peaks above threshold                                │
+│   2. Sort candidates by intensity (strongest first)                │
+│   3. For each candidate:                                           │
+│      - If not within buffer window of accepted transient → accept   │
+│      - Otherwise → suppress (weaker transient discarded)           │
+│   4. Return accepted transients sorted by timestamp                 │
+│                                                                    │
+│   Example (50ms buffer):                                           │
+│   ────────────────────────                                         │
+│   Peaks:  ●     ●●    ●     (4 peaks detected)                     │
+│           0ms  40ms 60ms  100ms                                    │
+│                                                                    │
+│   After NMS (50ms buffer):                                         │
+│   ────────────────────────                                         │
+│   Result:  ●      ●     ●     (3 transients - weaker at 40ms       │
+│           0ms   60ms  100ms   suppressed by stronger 0ms peak)     │
+└────────────────────────────────────────────────────────────────────┘
+```
+
 ### Basic Usage
 
 ```typescript
@@ -3185,12 +3231,18 @@ import { MultiBandAnalyzer, TransientDetector } from 'playlist-data-engine';
 const multiBandAnalyzer = new MultiBandAnalyzer();
 const multiBandResult = multiBandAnalyzer.analyze(audioBuffer);
 
-// Detect transients in each band
-const detector = new TransientDetector({
-  baseThreshold: 0.3,
-  adaptiveThresholding: true,
-});
+// Detect transients with default per-band settings
+const detector = new TransientDetector();
 const transients = detector.detect(multiBandResult);
+
+// Or customize per-band settings
+const customDetector = new TransientDetector({
+  bandConfig: {
+    low: { threshold: 0.5, minInterval: 0.08 },  // Higher threshold, longer buffer for bass
+    high: { threshold: 0.2 },  // Lower threshold for hi-hats
+  },
+});
+const customTransients = customDetector.detect(multiBandResult);
 
 // Access per-band transients
 const lowBandHits = transients.bandTransients.get('low');
@@ -3240,7 +3292,7 @@ Before quantization, the system validates that detected transients aren't too de
 
 | Validation | Description |
 |------------|-------------|
-| **Minimum interval** | 16th note duration at current tempo |
+| **Minimum interval** | `quarterNoteInterval / 6` (between 16th and 32nd note) |
 | **Per-band retry logic** | If too dense, reduce sensitivity and retry (max 5 retries per band) |
 | **Linear increments** | Each retry increases threshold by 0.1 (0.1, 0.2, 0.3, 0.4, 0.5) |
 
@@ -3250,7 +3302,7 @@ interface BandDensityValidationResult {
   band: 'low' | 'mid' | 'high';
   isValid: boolean;
   minIntervalDetected: number;  // Smallest gap between transients in this band
-  requiredMinInterval: number;  // 16th note duration
+  requiredMinInterval: number;  // quarterNoteInterval / 6
   retryCount: number;           // How many retries occurred for this band
   sensitivityReduction: number; // Cumulative reduction applied to this band
   finalIntensityThreshold: number;  // Final threshold after retries

@@ -12,7 +12,7 @@
  */
 
 import { MultiBandAnalyzer, type MultiBandResult } from '../analysis/MultiBandAnalyzer.js';
-import { TransientDetector, type TransientAnalysis, type TransientResult } from '../analysis/beat/TransientDetector.js';
+import { TransientDetector, type TransientAnalysis, type TransientResult, type BandTransientConfigOverrides } from '../analysis/beat/TransientDetector.js';
 import {
     RhythmQuantizer,
     type QuantizationConfig,
@@ -95,6 +95,19 @@ export interface RhythmGenerationOptions {
 
     /** Filter weak transients (0.0 = catch all, default: 0.0) */
     minimumTransientIntensity?: number;
+
+    /**
+     * Per-band transient detection configuration.
+     * Allows customizing threshold, minimum interval, and adaptive thresholding for each frequency band.
+     * @example
+     * ```typescript
+     * transientConfig: {
+     *   low: { threshold: 0.5, minInterval: 0.08 }, // Higher threshold for bass
+     *   high: { threshold: 0.2 }, // Lower threshold for hi-hats
+     * }
+     * ```
+     */
+    transientConfig?: BandTransientConfigOverrides;
 
     /** Seed for reproducibility (optional) */
     seed?: string;
@@ -689,6 +702,7 @@ type ResolvedOptions = {
     outputMode: OutputMode;
     measureStartOffset: number;
     minimumTransientIntensity: number;
+    transientConfig: BandTransientConfigOverrides | undefined;
     seed: string | undefined;
     verbose: boolean;
     enableCache: boolean;
@@ -700,6 +714,7 @@ const DEFAULT_OPTIONS: ResolvedOptions = {
     outputMode: 'composite',
     measureStartOffset: 0,
     minimumTransientIntensity: 0.0,
+    transientConfig: undefined,
     seed: undefined,
     verbose: false,
     enableCache: true,
@@ -774,7 +789,9 @@ export class RhythmGenerator {
         // Initialize pipeline components with appropriate configurations
         this.multiBandAnalyzer = new MultiBandAnalyzer();
 
-        this.transientDetector = new TransientDetector();
+        this.transientDetector = new TransientDetector({
+            bandConfig: this.options.transientConfig,
+        });
 
         this.rhythmQuantizer = new RhythmQuantizer({
             minimumTransientIntensity: this.options.minimumTransientIntensity,

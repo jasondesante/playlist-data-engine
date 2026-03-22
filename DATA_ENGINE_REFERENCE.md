@@ -270,7 +270,7 @@ All TypeScript types are exported, including:
 
 **OSE Parameter Mode Types:** `HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig` — see [OSE Parameter Modes](#ose-parameter-modes)
 
-**Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityValidationResult`, `BandDensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
+**Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityValidationResult`, `BandDensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `TransientDetectorConfig`, `BandTransientConfig`, `BandTransientConfigOverrides`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
 
 **Pitch Detection Types:** `PitchDetectorConfig`, `PitchResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#pitch-detection)
 
@@ -2507,6 +2507,7 @@ constructor(options?: RhythmGenerationOptions)
 | `outputMode` | `'composite'` | Which stream to use (`'composite'`, `'low'`, `'mid'`, `'high'`) |
 | `measureStartOffset` | `0` | Offset in beats for downbeat alignment |
 | `minimumTransientIntensity` | `0.0` | Filter weak transients (0.0 = catch all) |
+| `transientConfig` | `undefined` | Per-band transient detection config (see [TransientDetector](#transientdetector)) |
 | `seed` | `undefined` | Seed for reproducibility |
 | `verbose` | `false` | Log progress information |
 | `enableCache` | `true` | Enable caching of intermediate results |
@@ -2604,15 +2605,30 @@ Detects transients (onsets) in audio using band-specific detection strategies. E
 constructor(config?: TransientDetectorConfig)
 ```
 
+**Per-Band Default Configuration:**
+
+| Band | Threshold | Min Interval | Adaptive | Description |
+|------|-----------|--------------|----------|-------------|
+| Low | 0.4 | 50ms | true | Kick drums, bass - higher threshold, longer buffer |
+| Mid | 0.3 | 30ms | true | Vocals, snare - balanced detection |
+| High | 0.25 | 20ms | true | Hi-hats, cymbals - lower threshold, shorter buffer |
+
 **Config Options:**
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `baseThreshold` | 0.3 | Base threshold for peak detection (0.0 - 1.0) |
+| `baseThreshold` | 0.3 | Base threshold (fallback if per-band not specified) |
 | `adaptiveThresholding` | `true` | Adjust thresholds based on local energy |
 | `adaptiveWindowSize` | 50 | Window size for adaptive thresholding (frames) |
-| `minTransientInterval` | 0.02 | Minimum distance between transients (seconds) |
+| `minTransientInterval` | 0.02 | *(deprecated)* Use `bandConfig` instead |
 | `bands` | `FREQUENCY_BANDS` | Custom frequency bands |
+| `bandConfig` | `{ low: {...}, mid: {...}, high: {...} }` | Per-band configuration overrides |
+
+**Non-Maximum Suppression (NMS):**
+
+Within a buffer window (per-band `minInterval`), only the strongest transient is kept. Weaker transients are suppressed. This prevents multiple detections for the same acoustic event.
+
+ (see [docs/BEAT_DETECTION.md#transient-detection](docs/BEAT_DETECTION.md#transient-detection) for details)
 
 **Methods:**
 
