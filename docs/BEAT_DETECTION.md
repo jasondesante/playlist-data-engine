@@ -3236,21 +3236,37 @@ For each quarter note beat, the system determines whether transients fit better 
 
 ### Density Validation
 
-Before quantization, the system validates that detected transients aren't too dense:
+Before quantization, the system validates that detected transients aren't too dense. **Each frequency band (low/mid/high) is validated independently**, so if one band is too dense, only that band's threshold is increased—not all bands.
 
 | Validation | Description |
 |------------|-------------|
 | **Minimum interval** | 16th note duration at current tempo |
-| **Retry logic** | If too dense, reduce sensitivity and retry (max 3 retries) |
-| **Exponential backoff** | Each retry reduces sensitivity more aggressively |
+| **Per-band retry logic** | If too dense, reduce sensitivity and retry (max 5 retries per band) |
+| **Linear increments** | Each retry increases threshold by 0.1 (0.1, 0.2, 0.3, 0.4, 0.5) |
 
 ```typescript
-interface DensityValidationResult {
+// Per-band density validation result
+interface BandDensityValidationResult {
+  band: 'low' | 'mid' | 'high';
   isValid: boolean;
-  minIntervalDetected: number;  // Smallest gap between transients
+  minIntervalDetected: number;  // Smallest gap between transients in this band
   requiredMinInterval: number;  // 16th note duration
-  retryCount: number;           // How many retries occurred
-  sensitivityReduction: number; // Cumulative reduction applied
+  retryCount: number;           // How many retries occurred for this band
+  sensitivityReduction: number; // Cumulative reduction applied to this band
+  finalIntensityThreshold: number;  // Final threshold after retries
+  transientsRemaining: number;      // Transients left after filtering
+}
+
+// Aggregate result combining all bands
+interface DensityValidationResult {
+  isValid: boolean;  // True if all bands pass validation
+  bands: {
+    low: BandDensityValidationResult;
+    mid: BandDensityValidationResult;
+    high: BandDensityValidationResult;
+  };
+  maxRetryCount: number;         // Highest retry count across all bands
+  maxSensitivityReduction: number;  // Highest reduction across all bands
 }
 ```
 

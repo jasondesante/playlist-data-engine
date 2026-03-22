@@ -44,20 +44,28 @@ import type { FrequencyBand } from './utils/audioUtils.js';
  * Configuration for density validation
  */
 export interface DensityValidationConfig {
-    /** Maximum number of retries for sensitivity adjustment (default: 3) */
+    /** Maximum number of retries for sensitivity adjustment (default: 5) */
     maxRetries: number;
 
     /** Base sensitivity reduction amount per retry (default: 0.1) */
     baseSensitivityReduction: number;
 
-    /** Maximum cumulative sensitivity reduction (default: 0.7) */
+    /** Maximum cumulative sensitivity reduction (default: 0.5) */
     maxCumulativeReduction: number;
 }
 
 /**
- * Internal state for tracking retries during quantization
+ * Band type for per-band processing
  */
-interface RetryState {
+type BandType = 'low' | 'mid' | 'high';
+
+/**
+ * Internal state for tracking retries during quantization (per-band)
+ */
+interface BandRetryState {
+    /** Band being processed */
+    band: BandType;
+
     /** Current retry count (0 = first attempt) */
     retryCount: number;
 
@@ -105,8 +113,16 @@ export interface QuantizedBandStreams {
         high: GeneratedRhythmMap;
     };
     metadata: {
+        /** Per-band density validation results */
         densityValidation: DensityValidationResult;
+        /** Total transients filtered by intensity across all bands */
         transientsFilteredByIntensity: number;
+        /** Per-band filtered counts */
+        transientsFilteredByBand: {
+            low: number;
+            mid: number;
+            high: number;
+        };
     };
 }
 
@@ -115,9 +131,12 @@ export interface QuantizedBandStreams {
 // ============================================================================
 
 /**
- * Result of density validation
+ * Result of density validation for a single band
  */
-export interface DensityValidationResult {
+export interface BandDensityValidationResult {
+    /** Band that was validated */
+    band: BandType;
+
     /** Whether the density is valid */
     isValid: boolean;
 
@@ -132,6 +151,33 @@ export interface DensityValidationResult {
 
     /** Cumulative sensitivity reduction applied */
     sensitivityReduction: number;
+
+    /** Final intensity threshold used */
+    finalIntensityThreshold: number;
+
+    /** Number of transients after filtering */
+    transientsRemaining: number;
+}
+
+/**
+ * Combined density validation result for all bands
+ */
+export interface DensityValidationResult {
+    /** Whether all bands have valid density */
+    isValid: boolean;
+
+    /** Per-band density validation results */
+    bands: {
+        low: BandDensityValidationResult;
+        mid: BandDensityValidationResult;
+        high: BandDensityValidationResult;
+    };
+
+    /** Maximum retry count across all bands */
+    maxRetryCount: number;
+
+    /** Maximum sensitivity reduction across all bands */
+    maxSensitivityReduction: number;
 }
 
 // ============================================================================
@@ -196,7 +242,7 @@ export interface GeneratedBeat {
     quantizationError?: number;
 }
 
- // ============================================================================
+// ============================================================================
 // Rhythm Map types
 // ============================================================================
 
@@ -223,9 +269,9 @@ export interface GeneratedRhythmMap {
 
 const DEFAULT_QUANTIZATION_CONFIG: Required<QuantizationConfig> = {
     densityValidation: {
-        maxRetries: 3,
+        maxRetries: 5,
         baseSensitivityReduction: 0.1,
-        maxCumulativeReduction: 0.7,
+        maxCumulativeReduction: 0.5,
     },
     minimumTransientIntensity: 0.0,
     bands: [] as FrequencyBand[], // Will use FREQUENCY_BANDS from audioUtils
@@ -299,11 +345,10 @@ export class RhythmQuantizer {
     /**
      * Quantize transients into rhythm streams
      *
-     * Implements retry logic with exponential backoff for density validation:
-     * - Retry 1: Sensitivity reduction = base (0.1)
-     * - Retry 2: Sensitivity reduction = 2x base (0.2)
-     * - Retry 3: Sensitivity reduction = 4x base (0.4)
-     * - After max retries, proceeds with warning
+     * Implements per-band density validation with linear retry increments:
+     * - Each band (low/mid/high) is validated independently
+     * - Retry increments are linear: 0.1, 0.2, 0.3, 0.4, 0.5
+     * - If one band is too dense, only that band's threshold is increased
      *
      * @param transientAnalysis - Transient analysis from TransientDetector
      * @param unifiedBeatMap - Unified beat map to quantize against
@@ -313,136 +358,226 @@ export class RhythmQuantizer {
         transientAnalysis: TransientAnalysis,
         unifiedBeatMap: UnifiedBeatMap
     ): QuantizedBandStreams {
+        // Split transients by band first
+        const transientsByBand = this.splitTransientsByBand(transientAnalysis.transients);
+
+        // Calculate required minimum interval (16th note duration)
+        const requiredMinInterval = unifiedBeatMap.quarterNoteInterval / 4;
+
+        // Process each band independently with per-band density validation
+        const lowResult = this.processBand(
+            transientsByBand.low,
+            'low',
+            requiredMinInterval
+        );
+        const midResult = this.processBand(
+            transientsByBand.mid,
+            'mid',
+            requiredMinInterval
+        );
+        const highResult = this.processBand(
+            transientsByBand.high,
+            'high',
+            requiredMinInterval
+        );
+
+        // Quantize each band with its filtered transients
+        const streams = {
+            low: this.quantizeBand(lowResult.filteredTransients, unifiedBeatMap),
+            mid: this.quantizeBand(midResult.filteredTransients, unifiedBeatMap),
+            high: this.quantizeBand(highResult.filteredTransients, unifiedBeatMap),
+        };
+
+        // Calculate total filtered across all bands
+        const totalFiltered = lowResult.filteredCount + midResult.filteredCount + highResult.filteredCount;
+
+        // Aggregate density validation result (overall status)
+        const aggregateDensityResult = this.aggregateDensityResults(
+            [lowResult.densityResult, midResult.densityResult, highResult.densityResult],
+            requiredMinInterval
+        );
+
+        return {
+            streams,
+            metadata: {
+                densityValidation: aggregateDensityResult,
+                transientsFilteredByIntensity: totalFiltered,
+                transientsFilteredByBand: {
+                    low: lowResult.filteredCount,
+                    mid: midResult.filteredCount,
+                    high: highResult.filteredCount,
+                },
+            },
+        };
+    }
+
+    /**
+     * Split transients by frequency band
+     */
+    private splitTransientsByBand(transients: TransientResult[]): {
+        low: TransientResult[];
+        mid: TransientResult[];
+        high: TransientResult[];
+    } {
+        return {
+            low: transients.filter(t => t.band === 'low'),
+            mid: transients.filter(t => t.band === 'mid'),
+            high: transients.filter(t => t.band === 'high'),
+        };
+    }
+
+    /**
+     * Process a single band with per-band density validation and retry logic
+     *
+     * Uses linear increments instead of exponential:
+     * - Retry 1: +0.1
+     * - Retry 2: +0.2
+     * - Retry 3: +0.3
+     * - Retry 4: +0.4
+     * - Retry 5: +0.5
+     */
+    private processBand(
+        transients: TransientResult[],
+        band: BandType,
+        requiredMinInterval: number
+    ): {
+        filteredTransients: TransientResult[];
+        filteredCount: number;
+        densityResult: BandDensityValidationResult;
+    } {
         const maxRetries = this.config.densityValidation.maxRetries;
         const baseReduction = this.config.densityValidation.baseSensitivityReduction;
         const maxCumulative = this.config.densityValidation.maxCumulativeReduction;
 
-        // Step 1: Apply initial intensity filtering if configured
-        let initialFilteredCount = 0;
-        let currentTransients = transientAnalysis.transients;
+        // Step 1: Apply initial intensity filtering for this band
+        let filteredCount = 0;
+        let currentTransients = transients;
 
         if (this.config.minimumTransientIntensity > 0) {
             const beforeCount = currentTransients.length;
             currentTransients = currentTransients.filter(
                 t => t.intensity >= this.config.minimumTransientIntensity
             );
-            initialFilteredCount = beforeCount - currentTransients.length;
+            filteredCount = beforeCount - currentTransients.length;
         }
 
-        // Initialize retry state
-        const retryState: RetryState = {
-            retryCount: 0,
-            sensitivityReduction: 0,
-            currentIntensityThreshold: this.config.minimumTransientIntensity,
-            transientsFilteredByIntensity: initialFilteredCount,
-        };
+        // Initialize per-band retry state
+        let currentThreshold = this.config.minimumTransientIntensity;
+        let sensitivityReduction = 0;
+        let retryCount = 0;
 
-        // Calculate required minimum interval (16th note duration)
-        const requiredMinInterval = unifiedBeatMap.quarterNoteInterval / 4;
-
-        // Retry loop with exponential backoff
-        while (retryState.retryCount <= maxRetries) {
-            // Step 2: Validate density of current transients
-            const densityResult = this.validateDensityWithState(
+        // Retry loop with LINEAR increments (not exponential)
+        while (retryCount <= maxRetries) {
+            // Validate density of current transients for this band
+            const densityResult = this.validateBandDensity(
                 currentTransients,
+                band,
                 requiredMinInterval,
-                retryState
+                retryCount,
+                sensitivityReduction
             );
 
             if (densityResult.isValid) {
-                // Density is valid, proceed with quantization
-                return this.finalizeQuantization(
-                    currentTransients,
-                    unifiedBeatMap,
+                // Density is valid for this band
+                return {
+                    filteredTransients: currentTransients,
+                    filteredCount,
                     densityResult,
-                    retryState.transientsFilteredByIntensity
-                );
+                };
             }
 
             // Check if we've exhausted retries
-            if (retryState.retryCount >= maxRetries) {
-                // Max retries reached, proceed with warning
+            if (retryCount >= maxRetries) {
+                // Max retries reached for this band, proceed with warning
                 console.warn(
-                    `Density validation: Max retries (${maxRetries}) reached. ` +
+                    `[${band}] Density validation: Max retries (${maxRetries}) reached. ` +
                     `Proceeding with ${currentTransients.length} transients. ` +
                     `Min interval: ${(densityResult.minIntervalDetected * 1000).toFixed(1)}ms ` +
                     `(required: ${(requiredMinInterval * 1000).toFixed(1)}ms)`
                 );
 
-                return this.finalizeQuantization(
-                    currentTransients,
-                    unifiedBeatMap,
+                return {
+                    filteredTransients: currentTransients,
+                    filteredCount,
                     densityResult,
-                    retryState.transientsFilteredByIntensity
-                );
+                };
             }
 
             // Increment retry count
-            retryState.retryCount++;
+            retryCount++;
 
-            // Calculate exponential backoff: base * 2^(retry-1)
-            // Retry 1: 0.1, Retry 2: 0.2, Retry 3: 0.4
-            const backoffMultiplier = Math.pow(2, retryState.retryCount - 1);
+            // LINEAR increment: baseReduction * retryCount (not exponential)
+            // Retry 1: 0.1, Retry 2: 0.2, Retry 3: 0.3, Retry 4: 0.4, Retry 5: 0.5
             const reductionStep = Math.min(
-                baseReduction * backoffMultiplier,
-                maxCumulative - retryState.sensitivityReduction
+                baseReduction, // Linear: same amount each time
+                maxCumulative - sensitivityReduction
             );
 
-            retryState.sensitivityReduction += reductionStep;
-            retryState.currentIntensityThreshold = Math.min(
-                this.config.minimumTransientIntensity + retryState.sensitivityReduction,
+            sensitivityReduction += reductionStep;
+            currentThreshold = Math.min(
+                this.config.minimumTransientIntensity + sensitivityReduction,
                 1.0 // Cap at 1.0 (maximum threshold)
             );
 
-            // Filter transients with new threshold
+            // Filter transients with new threshold for this band only
             const beforeCount = currentTransients.length;
             currentTransients = currentTransients.filter(
-                t => t.intensity >= retryState.currentIntensityThreshold
+                t => t.intensity >= currentThreshold
             );
             const filteredThisRound = beforeCount - currentTransients.length;
-            retryState.transientsFilteredByIntensity += filteredThisRound;
+            filteredCount += filteredThisRound;
 
             console.warn(
-                `Density validation retry ${retryState.retryCount}: ` +
-                `Sensitivity reduction += ${(reductionStep * 100).toFixed(1)}% ` +
-                `(cumulative: ${(retryState.sensitivityReduction * 100).toFixed(1)}%), ` +
-                `Intensity threshold: ${(retryState.currentIntensityThreshold * 100).toFixed(1)}%, ` +
+                `[${band}] Density validation retry ${retryCount}: ` +
+                `Threshold increased to ${(currentThreshold * 100).toFixed(1)}%, ` +
                 `Filtered ${filteredThisRound} transients, ` +
                 `${currentTransients.length} remaining`
             );
         }
 
-        // This should never be reached due to the while loop logic,
-        // but TypeScript needs a return statement
-        const finalDensityResult = this.validateDensityWithState(
+        // Should not reach here, but TypeScript needs a return
+        const finalDensityResult = this.validateBandDensity(
             currentTransients,
+            band,
             requiredMinInterval,
-            retryState
+            retryCount,
+            sensitivityReduction
         );
-        return this.finalizeQuantization(
-            currentTransients,
-            unifiedBeatMap,
-            finalDensityResult,
-            retryState.transientsFilteredByIntensity
-        );
+        return {
+            filteredTransients: currentTransients,
+            filteredCount,
+            densityResult: finalDensityResult,
+        };
     }
 
     /**
-     * Validate density with current retry state
+     * Validate density for a single band
      */
-    private validateDensityWithState(
+    private validateBandDensity(
         transients: TransientResult[],
+        band: BandType,
         requiredMinInterval: number,
-        retryState: RetryState
-    ): DensityValidationResult {
+        retryCount: number,
+        sensitivityReduction: number,
+        currentThreshold: number = this.config.minimumTransientIntensity
+    ): BandDensityValidationResult {
+        const transientsRemaining = transients.length;
+        const finalIntensityThreshold = Math.min(
+            this.config.minimumTransientIntensity + sensitivityReduction,
+            1.0
+        );
+
         // Handle edge case: no transients
         if (transients.length === 0) {
             return {
+                band,
                 isValid: true,
                 minIntervalDetected: Infinity,
                 requiredMinInterval,
-                retryCount: retryState.retryCount,
-                sensitivityReduction: retryState.sensitivityReduction,
+                retryCount,
+                sensitivityReduction,
+                finalIntensityThreshold,
+                transientsRemaining,
             };
         }
 
@@ -463,38 +598,54 @@ export class RhythmQuantizer {
         const isValid = minIntervalDetected >= requiredMinInterval;
 
         return {
+            band,
             isValid,
             minIntervalDetected,
             requiredMinInterval,
-            retryCount: retryState.retryCount,
-            sensitivityReduction: retryState.sensitivityReduction,
+            retryCount,
+            sensitivityReduction,
+            finalIntensityThreshold,
+            transientsRemaining,
         };
     }
 
     /**
-     * Finalize quantization after density validation
+     * Aggregate density results from all bands into a single result
      */
-    private finalizeQuantization(
-        transients: TransientResult[],
-        unifiedBeatMap: UnifiedBeatMap,
-        densityResult: DensityValidationResult,
-        transientsFilteredByIntensity: number
-    ): QuantizedBandStreams {
-        // Create filtered transients structure
-        const filteredTransients: FilteredTransients = {
-            transients,
-            totalFiltered: transientsFilteredByIntensity,
-        };
+    private aggregateDensityResults(
+        bandResults: BandDensityValidationResult[],
+        requiredMinInterval: number
+    ): DensityValidationResult {
+        // Find the worst case across all bands
+        let maxRetryCount = 0;
+        let maxSensitivityReduction = 0;
+        let minIntervalDetected = Infinity;
+        let allValid = true;
 
-        // Quantize each band
-        const streams = this.quantizeBands(filteredTransients, unifiedBeatMap);
+        for (const result of bandResults) {
+            if (result.retryCount > maxRetryCount) {
+                maxRetryCount = result.retryCount;
+            }
+            if (result.sensitivityReduction > maxSensitivityReduction) {
+                maxSensitivityReduction = result.sensitivityReduction;
+            }
+            if (result.minIntervalDetected < minIntervalDetected) {
+                minIntervalDetected = result.minIntervalDetected;
+            }
+            if (!result.isValid) {
+                allValid = false;
+            }
+        }
 
         return {
-            streams,
-            metadata: {
-                densityValidation: densityResult,
-                transientsFilteredByIntensity,
+            isValid: allValid,
+            bands: {
+                low: bandResults.find(r => r.band === 'low')!,
+                mid: bandResults.find(r => r.band === 'mid')!,
+                high: bandResults.find(r => r.band === 'high')!,
             },
+            maxRetryCount,
+            maxSensitivityReduction,
         };
     }
 

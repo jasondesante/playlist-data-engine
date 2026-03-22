@@ -169,22 +169,40 @@ Before quantization, validate that detected transients aren't too dense:
 - [x] Check if any two consecutive transients are closer than the minimum interval
 - [x] If too dense, trigger sensitivity adjustment with retry logic:
   ```typescript
-  interface DensityValidationResult {
+  // Per-band density validation result
+  interface BandDensityValidationResult {
+    band: 'low' | 'mid' | 'high';
     isValid: boolean;
     minIntervalDetected: number;  // Smallest gap between transients (seconds)
     requiredMinInterval: number;  // 16th note duration at current tempo
     retryCount: number;
     sensitivityReduction: number;  // Cumulative sensitivity reduction applied
+    finalIntensityThreshold: number;
+    transientsRemaining: number;
   }
 
-  // Retry logic (max 3 retries):
-  // - Retry 1: Reduce sensitivity by base amount (e.g., 0.1)
-  // - Retry 2: Reduce sensitivity by 2x base amount (0.2)
-  // - Retry 3: Reduce sensitivity by 4x base amount (0.4)
-  // After 3 retries, proceed with current results and log warning
+  // Aggregate result combining all bands
+  interface DensityValidationResult {
+    isValid: boolean;
+    bands: {
+      low: BandDensityValidationResult;
+      mid: BandDensityValidationResult;
+      high: BandDensityValidationResult;
+    };
+    maxRetryCount: number;         // Highest retry count across all bands
+    maxSensitivityReduction: number;  // Highest reduction across all bands
+  }
+
+  // Per-band retry logic (max 5 retries per band, linear increments):
+  // - Retry 1: Increase threshold by 0.1
+  // - Retry 2: Increase threshold by 0.1 (cumulative 0.2)
+  // - Retry 3: Increase threshold by 0.1 (cumulative 0.3)
+  // - Retry 4: Increase threshold by 0.1 (cumulative 0.4)
+  // - Retry 5: Increase threshold by 0.1 (cumulative 0.5, max)
+  // After 5 retries, proceed with current results and log warning
   ```
-- [x] Implement exponential backoff for sensitivity reduction
-- [x] Track retry count and cumulative sensitivity reduction in metadata
+- [x] Implement per-band linear increments for sensitivity reduction
+- [x] Track retry count and cumulative sensitivity reduction per band in metadata
 
 #### 1.4.2 Intensity Filtering
 - [x] Support optional filtering by transient intensity:
@@ -290,7 +308,7 @@ Before quantization, validate that detected transients aren't too dense:
 - [x] Unit tests for rhythmic quantization
 - [x] Integration test: detect transients on known drum track
 - [x] Verify quantization aligns with beat map grid
-- [x] Verify retry logic reduces sensitivity correctly (exponential backoff)
+- [x] Verify retry logic reduces sensitivity correctly (per-band linear increments)
 - [x] Verify all 3 band streams are valid quantized rhythms
 
 ---

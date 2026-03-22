@@ -71,6 +71,9 @@ function createMockUnifiedBeatMap(
                 timestamp,
                 intensity: 0.5,
                 isDownbeat: index % 4 === 0,
+                beatInMeasure: index % 4,
+                measureNumber: Math.floor(index / 4),
+                confidence: 0.8,
             });
             timestamp += quarterNoteInterval;
             index++;
@@ -85,13 +88,31 @@ function createMockUnifiedBeatMap(
         quarterNoteInterval,
         quarterNoteBpm: bpm,
         downbeatConfig: {
-            measureBeats: 4,
-            startOffset: 0,
+            segments: [{
+                startBeat: 0,
+                downbeatBeatIndex: 0,
+                timeSignature: { beatsPerMeasure: 4 },
+            }],
         },
         originalMetadata: {
             algorithm: 'ellis',
             version: '1.0.0',
-            generatedAt: Date.now(),
+            minBpm: 60,
+            maxBpm: 180,
+            sensitivity: 1.0,
+            filter: 0.0,
+            noiseFloorThreshold: 0,
+            hopSizeMs: 10,
+            fftSize: 2048,
+            dpAlpha: 680,
+            melBands: 40,
+            highPassCutoff: 80,
+            gaussianSmoothMs: 50,
+            tempoCenter: 0.5,
+            tempoWidth: 1.4,
+            useOctaveResolution: false,
+            useTripleMeter: false,
+            generatedAt: new Date().toISOString(),
         },
     };
 }
@@ -125,9 +146,9 @@ describe('RhythmQuantizer', () => {
             const config = quantizer.getConfig();
 
             expect(config.minimumTransientIntensity).toBe(0.0);
-            expect(config.densityValidation.maxRetries).toBe(3);
+            expect(config.densityValidation.maxRetries).toBe(5);
             expect(config.densityValidation.baseSensitivityReduction).toBe(0.1);
-            expect(config.densityValidation.maxCumulativeReduction).toBe(0.7);
+            expect(config.densityValidation.maxCumulativeReduction).toBe(0.5);
         });
 
         it('should accept custom configuration', () => {
@@ -179,7 +200,8 @@ describe('RhythmQuantizer', () => {
             expect(result.streams.mid.beats).toHaveLength(0);
             expect(result.streams.high.beats).toHaveLength(0);
             expect(result.metadata.densityValidation.isValid).toBe(true);
-            expect(result.metadata.densityValidation.minIntervalDetected).toBe(Infinity);
+            // With per-band structure, check bands.low for minIntervalDetected
+            expect(result.metadata.densityValidation.bands.low.minIntervalDetected).toBe(Infinity);
         });
 
         it('should separate transients into correct bands', () => {
@@ -219,8 +241,9 @@ describe('RhythmQuantizer', () => {
             const result = quantizer.quantize(transientAnalysis, beatMap);
 
             expect(result.metadata.densityValidation.isValid).toBe(true);
-            expect(result.metadata.densityValidation.retryCount).toBe(0);
-            expect(result.metadata.densityValidation.sensitivityReduction).toBe(0);
+            // Use maxRetryCount for aggregate result
+            expect(result.metadata.densityValidation.maxRetryCount).toBe(0);
+            expect(result.metadata.densityValidation.maxSensitivityReduction).toBe(0);
         });
 
         it('should trigger retry when transients are too close together', () => {
@@ -243,16 +266,16 @@ describe('RhythmQuantizer', () => {
 
             const result = quantizer.quantize(transientAnalysis, beatMap);
 
-            // Should have triggered retry
-            expect(result.metadata.densityValidation.retryCount).toBeGreaterThanOrEqual(1);
-            expect(result.metadata.densityValidation.sensitivityReduction).toBeGreaterThan(0);
+            // Should have triggered retry - check low band since all transients are in low band
+            expect(result.metadata.densityValidation.maxRetryCount).toBeGreaterThanOrEqual(1);
+            expect(result.metadata.densityValidation.maxSensitivityReduction).toBeGreaterThan(0);
 
             warnSpy.mockRestore();
         });
     });
 
-    describe('density validation retry logic with exponential backoff', () => {
-        it('should apply exponential backoff: 0.1, 0.2, 0.4', () => {
+    describe('density validation retry logic with linear increments', () => {
+        it('should apply linear increments: 0.1, 0.2, 0.3, 0.4, 0.5', () => {
             // Suppress console.warn for this test
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -260,7 +283,7 @@ describe('RhythmQuantizer', () => {
                 densityValidation: {
                     maxRetries: 3,
                     baseSensitivityReduction: 0.1,
-                    maxCumulativeReduction: 0.7,
+                    maxCumulativeReduction: 0.5,
                 },
             });
 
@@ -280,9 +303,10 @@ describe('RhythmQuantizer', () => {
             const result = quantizer.quantize(transientAnalysis, beatMap);
 
             // After 3 retries, should proceed with warning
-            expect(result.metadata.densityValidation.retryCount).toBe(3);
-            // Cumulative should be 0.1 + 0.2 + 0.4 = 0.7
-            expect(result.metadata.densityValidation.sensitivityReduction).toBeCloseTo(0.7, 2);
+            // Use maxRetryCount for aggregate result
+            expect(result.metadata.densityValidation.maxRetryCount).toBe(3);
+            // Linear cumulative: 0.1 + 0.1 + 0.1 = 0.3
+            expect(result.metadata.densityValidation.maxSensitivityReduction).toBeCloseTo(0.3, 2);
 
             warnSpy.mockRestore();
         });
@@ -341,7 +365,7 @@ describe('RhythmQuantizer', () => {
             const result = quantizer.quantize(transientAnalysis, beatMap);
 
             expect(result).toBeDefined();
-            expect(result.metadata.densityValidation.retryCount).toBe(2);
+            expect(result.metadata.densityValidation.maxRetryCount).toBe(2);
 
             warnSpy.mockRestore();
         });
@@ -601,10 +625,18 @@ describe('RhythmQuantizer', () => {
 
             const dv = result.metadata.densityValidation;
             expect(typeof dv.isValid).toBe('boolean');
-            expect(typeof dv.minIntervalDetected).toBe('number');
-            expect(typeof dv.requiredMinInterval).toBe('number');
-            expect(typeof dv.retryCount).toBe('number');
-            expect(typeof dv.sensitivityReduction).toBe('number');
+            // Check aggregate properties
+            expect(typeof dv.maxRetryCount).toBe('number');
+            expect(typeof dv.maxSensitivityReduction).toBe('number');
+            // Check per-band structure
+            expect(dv.bands.low).toBeDefined();
+            expect(dv.bands.mid).toBeDefined();
+            expect(dv.bands.high).toBeDefined();
+            // Check band-level properties
+            expect(typeof dv.bands.low.minIntervalDetected).toBe('number');
+            expect(typeof dv.bands.low.requiredMinInterval).toBe('number');
+            expect(typeof dv.bands.low.retryCount).toBe('number');
+            expect(typeof dv.bands.low.sensitivityReduction).toBe('number');
         });
     });
 });
@@ -1044,8 +1076,8 @@ describe('Integration Tests - Full Pipeline', () => {
                 // Verify the quarterNoteInterval in beatMap is correct
                 expect(beatMap.quarterNoteInterval).toBeCloseTo(quarterNoteInterval, 5);
 
-                // Verify minimum interval calculation (should be 16th note)
-                expect(result.metadata.densityValidation.requiredMinInterval).toBeCloseTo(sixteenthNoteInterval, 5);
+                // Verify minimum interval calculation (should be 16th note) - same for all bands
+                expect(result.metadata.densityValidation.bands.low.requiredMinInterval).toBeCloseTo(sixteenthNoteInterval, 5);
             }
         });
     });

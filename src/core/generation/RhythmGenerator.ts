@@ -21,6 +21,7 @@ import {
     type GridDecision,
     type GeneratedBeat,
     type DensityValidationResult,
+    type BandDensityValidationResult,
 } from '../analysis/beat/RhythmQuantizer.js';
 import { PhraseAnalyzer, type PhraseAnalysisResult, type RhythmicPhrase, type PhraseOccurrence, type BandPhraseAnalysis } from '../analysis/beat/PhraseAnalyzer.js';
 import { DensityAnalyzer, type DensityAnalysisResult, type BandDensityMetrics, type SectionDensityMetrics, type BeatDensityMetrics } from '../analysis/beat/DensityAnalyzer.js';
@@ -345,14 +346,31 @@ interface TransientAnalysisJSON {
 }
 
 /**
- * JSON-serializable version of DensityValidationResult
+ * JSON-serializable version of BandDensityValidationResult
  */
-interface DensityValidationResultJSON {
+interface BandDensityValidationResultJSON {
+    band: 'low' | 'mid' | 'high';
     isValid: boolean;
     minIntervalDetected: number;
     requiredMinInterval: number;
     retryCount: number;
     sensitivityReduction: number;
+    finalIntensityThreshold: number;
+    transientsRemaining: number;
+}
+
+/**
+ * JSON-serializable version of DensityValidationResult
+ */
+interface DensityValidationResultJSON {
+    isValid: boolean;
+    bands: {
+        low: BandDensityValidationResultJSON;
+        mid: BandDensityValidationResultJSON;
+        high: BandDensityValidationResultJSON;
+    };
+    maxRetryCount: number;
+    maxSensitivityReduction: number;
 }
 
 /**
@@ -361,6 +379,11 @@ interface DensityValidationResultJSON {
 interface QuantizedBandStreamsMetadataJSON {
     densityValidation: DensityValidationResultJSON;
     transientsFilteredByIntensity: number;
+    transientsFilteredByBand: {
+        low: number;
+        mid: number;
+        high: number;
+    };
 }
 
 /**
@@ -1028,7 +1051,7 @@ export class RhythmGenerator {
             bandsAnalyzed: ['low', 'mid', 'high'],
             transientsDetected: transientAnalysis.metadata.totalTransients,
             transientsFilteredByIntensity: quantizationResult.metadata.transientsFilteredByIntensity,
-            densityValidationRetries: quantizationResult.metadata.densityValidation.retryCount,
+            densityValidationRetries: quantizationResult.metadata.densityValidation.maxRetryCount,
             phrasesDetected: phraseAnalysis.phrases.length,
             averageDensity: densityAnalysis.combinedMetrics.transientsPerBeat,
             naturalDifficulty: composite.naturalDifficulty,
@@ -1567,9 +1590,36 @@ export class RhythmGenerator {
                 high: this.serializeGeneratedRhythmMap(streams.streams.high),
             },
             metadata: {
-                densityValidation: streams.metadata.densityValidation,
+                densityValidation: this.serializeDensityValidationResult(streams.metadata.densityValidation),
                 transientsFilteredByIntensity: streams.metadata.transientsFilteredByIntensity,
+                transientsFilteredByBand: streams.metadata.transientsFilteredByBand,
             },
+        };
+    }
+
+    private static serializeDensityValidationResult(result: DensityValidationResult): DensityValidationResultJSON {
+        return {
+            isValid: result.isValid,
+            bands: {
+                low: this.serializeBandDensityValidationResult(result.bands.low),
+                mid: this.serializeBandDensityValidationResult(result.bands.mid),
+                high: this.serializeBandDensityValidationResult(result.bands.high),
+            },
+            maxRetryCount: result.maxRetryCount,
+            maxSensitivityReduction: result.maxSensitivityReduction,
+        };
+    }
+
+    private static serializeBandDensityValidationResult(result: BandDensityValidationResult): BandDensityValidationResultJSON {
+        return {
+            band: result.band,
+            isValid: result.isValid,
+            minIntervalDetected: result.minIntervalDetected,
+            requiredMinInterval: result.requiredMinInterval,
+            retryCount: result.retryCount,
+            sensitivityReduction: result.sensitivityReduction,
+            finalIntensityThreshold: result.finalIntensityThreshold,
+            transientsRemaining: result.transientsRemaining,
         };
     }
     private static deserializeQuantizedBandStreams(json: QuantizedBandStreamsJSON): QuantizedBandStreams {
@@ -1580,9 +1630,36 @@ export class RhythmGenerator {
                 high: this.deserializeGeneratedRhythmMap(json.streams.high),
             },
             metadata: {
-                densityValidation: json.metadata.densityValidation,
+                densityValidation: this.deserializeDensityValidationResult(json.metadata.densityValidation),
                 transientsFilteredByIntensity: json.metadata.transientsFilteredByIntensity,
+                transientsFilteredByBand: json.metadata.transientsFilteredByBand,
             },
+        };
+    }
+
+    private static deserializeDensityValidationResult(json: DensityValidationResultJSON): DensityValidationResult {
+        return {
+            isValid: json.isValid,
+            bands: {
+                low: this.deserializeBandDensityValidationResult(json.bands.low),
+                mid: this.deserializeBandDensityValidationResult(json.bands.mid),
+                high: this.deserializeBandDensityValidationResult(json.bands.high),
+            },
+            maxRetryCount: json.maxRetryCount,
+            maxSensitivityReduction: json.maxSensitivityReduction,
+        };
+    }
+
+    private static deserializeBandDensityValidationResult(json: BandDensityValidationResultJSON): BandDensityValidationResult {
+        return {
+            band: json.band,
+            isValid: json.isValid,
+            minIntervalDetected: json.minIntervalDetected,
+            requiredMinInterval: json.requiredMinInterval,
+            retryCount: json.retryCount,
+            sensitivityReduction: json.sensitivityReduction,
+            finalIntensityThreshold: json.finalIntensityThreshold,
+            transientsRemaining: json.transientsRemaining,
         };
     }
 
