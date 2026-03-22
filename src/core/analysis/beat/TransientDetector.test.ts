@@ -86,7 +86,7 @@ describe('TransientDetector', () => {
             const config = detector.getConfig();
 
             expect(config.baseThreshold).toBe(0.3);
-            expect(config.adaptiveThresholding).toBe(true);
+            expect(config.adaptiveThresholding).toBe(false);
             expect(config.adaptiveWindowSize).toBe(50);
             expect(config.minTransientInterval).toBe(0.02);
         });

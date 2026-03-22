@@ -25,7 +25,7 @@
  * const customQuantizer = new RhythmQuantizer({
  *   minimumTransientIntensity: 0.3, // Filter weak transients
  *   densityValidation: {
- *     maxRetries: 5,  // Per-band retry limit (default: 5)
+ *     maxRetries: 5,  // Per-band retry limit (opt-in, default: 0)
  *     baseSensitivityReduction: 0.1,  // Linear increment per retry
  *     maxCumulativeReduction: 0.5,  // Max threshold increase (default: 0.5)
  *   },
@@ -45,7 +45,7 @@ import type { FrequencyBand } from './utils/audioUtils.js';
  * Configuration for density validation
  */
 export interface DensityValidationConfig {
-    /** Maximum number of retries for sensitivity adjustment (default: 5) */
+    /** Maximum number of retries for sensitivity adjustment (default: 0, opt-in) */
     maxRetries: number;
 
     /** Base sensitivity reduction amount per retry (default: 0.1) */
@@ -270,7 +270,7 @@ export interface GeneratedRhythmMap {
 
 const DEFAULT_QUANTIZATION_CONFIG: Required<QuantizationConfig> = {
     densityValidation: {
-        maxRetries: 5,
+        maxRetries: 0, // Opt-in: density validation retries disabled by default
         baseSensitivityReduction: 0.1,
         maxCumulativeReduction: 0.5,
     },

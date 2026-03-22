@@ -211,17 +211,17 @@ const DEFAULT_BAND_CONFIGS: Record<BandName, BandTransientConfig> = {
     low: {
         threshold: 0.4,         // Higher - bass transients are stronger
         minInterval: 0.05,      // 50ms buffer - ~1/10 of 16th note at 120 BPM
-        adaptiveThresholding: true,
+        adaptiveThresholding: false,
     },
     mid: {
         threshold: 0.3,         // Medium - balanced
         minInterval: 0.03,      // 30ms buffer
-        adaptiveThresholding: true,
+        adaptiveThresholding: false,
     },
     high: {
         threshold: 0.25,        // Lower - hi-hats can be subtle
         minInterval: 0.02,      // 20ms buffer - allow rapid fire
-        adaptiveThresholding: true,
+        adaptiveThresholding: false,
     },
 };
 
@@ -230,7 +230,7 @@ const DEFAULT_BAND_CONFIGS: Record<BandName, BandTransientConfig> = {
  */
 const DEFAULT_TRANSIENT_DETECTOR_CONFIG = {
     baseThreshold: 0.3,
-    adaptiveThresholding: true,
+    adaptiveThresholding: false,
     adaptiveWindowSize: 50,
     minTransientInterval: 0.02, // 20ms minimum between transients (fallback)
 } as const;

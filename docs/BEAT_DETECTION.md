@@ -3140,7 +3140,9 @@ Transient when: HFC[n] > threshold × local_average
 
 ### Adaptive Thresholding
 
-All detection methods use adaptive thresholding to handle songs with varying dynamics:
+> **Note**: Adaptive thresholding is **disabled by default** (`adaptiveThresholding: false`). The threshold you set is used exactly as-is. Enable this only if you need automatic adjustment based on track dynamics.
+
+When enabled, adaptive thresholding adjusts the threshold based on the track's dynamic range:
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
@@ -3152,9 +3154,10 @@ All detection methods use adaptive thresholding to handle songs with varying dyn
 │   3. Compute coefficient of variation: CV = stdDev / mean          │
 │   4. Adjust threshold: adaptive = base × (1 + CV × 0.5)            │
 │                                                                    │
+│   Note: This can only INCREASE the threshold, never decrease it.   │
 │   ┌─────────────────────────────────────────────────────────────┐ │
-│   │ Low CV (consistent signal): Lower threshold → more detection │ │
-│   │ High CV (dynamic signal): Higher threshold → fewer detection │ │
+│   │ Low CV (consistent signal): Threshold stays near base        │ │
+│   │ High CV (dynamic signal): Threshold increases → fewer detect │ │
 │   └─────────────────────────────────────────────────────────────┘ │
 └────────────────────────────────────────────────────────────────────┘
 ```
@@ -3293,7 +3296,7 @@ Before quantization, the system validates that detected transients aren't too de
 | Validation | Description |
 |------------|-------------|
 | **Minimum interval** | `quarterNoteInterval / 6` (between 16th and 32nd note) |
-| **Per-band retry logic** | If too dense, reduce sensitivity and retry (max 5 retries per band) |
+| **Per-band retry logic** | If too dense, reduce sensitivity and retry (opt-in, default: 0 retries) |
 | **Linear increments** | Each retry increases threshold by 0.1 (0.1, 0.2, 0.3, 0.4, 0.5) |
 
 ```typescript
@@ -3320,6 +3323,27 @@ interface DensityValidationResult {
   maxRetryCount: number;         // Highest retry count across all bands
   maxSensitivityReduction: number;  // Highest reduction across all bands
 }
+```
+
+**Configuration Example** - Density validation is **disabled by default** (0 retries). Enable it by configuring `densityValidation`:
+
+```typescript
+import { RhythmQuantizer } from 'playlist-data-engine';
+
+// Enable density validation with 5 retries
+const quantizer = new RhythmQuantizer({
+  densityValidation: {
+    maxRetries: 5,                    // Number of retries before giving up (default: 0)
+    baseSensitivityReduction: 0.1,   // Amount to increase threshold per retry
+    maxCumulativeReduction: 0.5,     // Maximum total threshold increase
+  },
+});
+
+const result = quantizer.quantize(transientAnalysis, unifiedBeatMap);
+
+// Check if density validation triggered any retries
+console.log(`Max retries used: ${result.metadata.densityValidation.maxRetryCount}`);
+console.log(`Max threshold increase: ${result.metadata.densityValidation.maxSensitivityReduction}`);
 ```
 
 ### Intensity Filtering

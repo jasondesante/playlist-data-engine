@@ -146,7 +146,7 @@ describe('RhythmQuantizer', () => {
             const config = quantizer.getConfig();
 
             expect(config.minimumTransientIntensity).toBe(0.0);
-            expect(config.densityValidation.maxRetries).toBe(5);
+            expect(config.densityValidation.maxRetries).toBe(0); // Opt-in: default is 0 retries
             expect(config.densityValidation.baseSensitivityReduction).toBe(0.1);
             expect(config.densityValidation.maxCumulativeReduction).toBe(0.5);
         });
@@ -250,7 +250,13 @@ describe('RhythmQuantizer', () => {
             // Suppress console.warn for this test
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-            quantizer = new RhythmQuantizer();
+            quantizer = new RhythmQuantizer({
+                densityValidation: {
+                    maxRetries: 5,
+                    baseSensitivityReduction: 0.1,
+                    maxCumulativeReduction: 0.5,
+                },
+            });
             const bpm = 120;
             const quarterNoteInterval = 60 / bpm;
             const sixteenthNoteInterval = quarterNoteInterval / 4; // 125ms at 120 BPM
@@ -315,7 +321,13 @@ describe('RhythmQuantizer', () => {
             // Suppress console.warn for this test
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-            quantizer = new RhythmQuantizer();
+            quantizer = new RhythmQuantizer({
+                densityValidation: {
+                    maxRetries: 5,
+                    baseSensitivityReduction: 0.1,
+                    maxCumulativeReduction: 0.5,
+                },
+            });
 
             const bpm = 120;
             const quarterNoteInterval = 60 / bpm;

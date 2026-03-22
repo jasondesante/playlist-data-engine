@@ -2609,16 +2609,16 @@ constructor(config?: TransientDetectorConfig)
 
 | Band | Threshold | Min Interval | Adaptive | Description |
 |------|-----------|--------------|----------|-------------|
-| Low | 0.4 | 50ms | true | Kick drums, bass - higher threshold, longer buffer |
-| Mid | 0.3 | 30ms | true | Vocals, snare - balanced detection |
-| High | 0.25 | 20ms | true | Hi-hats, cymbals - lower threshold, shorter buffer |
+| Low | 0.4 | 50ms | false | Kick drums, bass - higher threshold, longer buffer |
+| Mid | 0.3 | 30ms | false | Vocals, snare - balanced detection |
+| High | 0.25 | 20ms | false | Hi-hats, cymbals - lower threshold, shorter buffer |
 
 **Config Options:**
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `baseThreshold` | 0.3 | Base threshold (fallback if per-band not specified) |
-| `adaptiveThresholding` | `true` | Adjust thresholds based on local energy |
+| `adaptiveThresholding` | `false` | Adjust thresholds based on local energy (disabled by default) |
 | `adaptiveWindowSize` | 50 | Window size for adaptive thresholding (frames) |
 | `minTransientInterval` | 0.02 | *(deprecated)* Use `bandConfig` instead |
 | `bands` | `FREQUENCY_BANDS` | Custom frequency bands |
@@ -2654,7 +2654,7 @@ constructor(config?: QuantizationConfig)
 | Option | Default | Description |
 |--------|---------|-------------|
 | `minimumTransientIntensity` | 0.0 | Filter transients below intensity threshold |
-| `densityValidation.maxRetries` | 5 | Maximum sensitivity adjustment retries per band |
+| `densityValidation.maxRetries` | 0 | Maximum sensitivity adjustment retries per band (opt-in) |
 | `densityValidation.baseSensitivityReduction` | 0.1 | Linear reduction per retry (0.1 each time) |
 | `densityValidation.maxCumulativeReduction` | 0.5 | Maximum total sensitivity reduction |
 | `bands` | `FREQUENCY_BANDS` | Custom frequency bands |
