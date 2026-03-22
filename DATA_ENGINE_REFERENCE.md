@@ -270,7 +270,7 @@ All TypeScript types are exported, including:
 
 **OSE Parameter Mode Types:** `HopSizeMode`, `HopSizeConfig`, `MelBandsMode`, `MelBandsConfig`, `GaussianSmoothMode`, `GaussianSmoothConfig` — see [OSE Parameter Modes](#ose-parameter-modes)
 
-**Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityValidationResult`, `BandDensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `TransientDetectorConfig`, `BandTransientConfig`, `BandTransientConfigOverrides`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
+**Rhythm Generation Types:** `GeneratedRhythm`, `RhythmGenerationOptions`, `RhythmMetadata`, `OutputMode`, `Band`, `RhythmPresetName`, `RhythmPresetConfig`, `DifficultyVariant`, `DifficultyLevel`, `VariantBeat`, `CompositeStream`, `CompositeBeat`, `CompositeSection`, `GeneratedRhythmMap`, `GeneratedBeat`, `GridType`, `GridDecision`, `QuantizedBandStreams`, `QuantizationConfig`, `DensityValidationConfig`, `DensityValidationResult`, `BandDensityValidationResult`, `TransientAnalysis`, `TransientResult`, `TransientDetectionMethod`, `TransientDetectorConfig`, `BandTransientConfig`, `BandTransientConfigOverrides`, `MultiBandResult`, `BandAnalysis`, `MultiBandAnalyzerConfig`, `PhraseAnalysisResult`, `RhythmicPhrase`, `PhraseOccurrence`, `BandPhraseAnalysis`, `PhraseAnalyzerConfig`, `DensityAnalysisResult`, `BandDensityMetrics`, `SectionDensityMetrics`, `BeatDensityMetrics`, `DensityCategory`, `NaturalDifficulty`, `StreamScoringResult`, `SectionScore`, `SectionWinner`, `ScoringFactors` — see [Procedural Rhythm Generation](#procedural-rhythm-generation)
 
 **Pitch Detection Types:** `PitchDetectorConfig`, `PitchResult` — see [Pitch Detection & Button Mapping](#pitch-detection--button-mapping) and [docs/BEAT_DETECTION.md](docs/BEAT_DETECTION.md#pitch-detection)
 
@@ -2508,6 +2508,7 @@ constructor(options?: RhythmGenerationOptions)
 | `measureStartOffset` | `0` | Offset in beats for downbeat alignment |
 | `minimumTransientIntensity` | `0.0` | Filter weak transients (0.0 = catch all) |
 | `transientConfig` | `undefined` | Per-band transient detection config (see [TransientDetector](#transientdetector)) |
+| `densityValidation` | `undefined` | Density validation config for quantization (see [RhythmQuantizer](#rhythmquantizer)) |
 | `seed` | `undefined` | Seed for reproducibility |
 | `verbose` | `false` | Log progress information |
 | `enableCache` | `true` | Enable caching of intermediate results |

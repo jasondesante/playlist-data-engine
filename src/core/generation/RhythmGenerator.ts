@@ -20,6 +20,7 @@ import {
     type GeneratedRhythmMap,
     type GridDecision,
     type GeneratedBeat,
+    type DensityValidationConfig,
     type DensityValidationResult,
     type BandDensityValidationResult,
 } from '../analysis/beat/RhythmQuantizer.js';
@@ -108,6 +109,22 @@ export interface RhythmGenerationOptions {
      * ```
      */
     transientConfig?: BandTransientConfigOverrides;
+
+    /**
+     * Density validation configuration for quantization.
+     * When enabled, if transients are too dense, the system will automatically
+     * increase thresholds and retry detection.
+     * @default undefined (disabled by default)
+     * @example
+     * ```typescript
+     * densityValidation: {
+     *   maxRetries: 5,  // Enable with 5 retries per band
+     *   baseSensitivityReduction: 0.1,
+     *   maxCumulativeReduction: 0.5,
+     * }
+     * ```
+     */
+    densityValidation?: DensityValidationConfig;
 
     /** Seed for reproducibility (optional) */
     seed?: string;
@@ -703,6 +720,7 @@ type ResolvedOptions = {
     measureStartOffset: number;
     minimumTransientIntensity: number;
     transientConfig: BandTransientConfigOverrides | undefined;
+    densityValidation?: DensityValidationConfig;
     seed: string | undefined;
     verbose: boolean;
     enableCache: boolean;
@@ -795,6 +813,7 @@ export class RhythmGenerator {
 
         this.rhythmQuantizer = new RhythmQuantizer({
             minimumTransientIntensity: this.options.minimumTransientIntensity,
+            densityValidation: this.options.densityValidation,
         });
 
         this.phraseAnalyzer = new PhraseAnalyzer();
