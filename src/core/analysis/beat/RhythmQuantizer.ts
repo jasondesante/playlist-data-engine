@@ -25,8 +25,9 @@
  * const customQuantizer = new RhythmQuantizer({
  *   minimumTransientIntensity: 0.3, // Filter weak transients
  *   densityValidation: {
- *     maxRetries: 3,
- *     baseSensitivityReduction: 0.1,
+ *     maxRetries: 5,  // Per-band retry limit (default: 5)
+ *     baseSensitivityReduction: 0.1,  // Linear increment per retry
+ *     maxCumulativeReduction: 0.5,  // Max threshold increase (default: 0.5)
  *   },
  * });
  * ```
