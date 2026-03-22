@@ -531,6 +531,8 @@ export {
     type TransientAnalysis,
     type TransientDetectorConfig,
     type TransientDetectionMethod,
+    type BandTransientConfig,
+    type BandTransientConfigOverrides,
 } from './core/analysis/beat/TransientDetector.js';
 
 // Rhythm Quantizer (Phase 1.3)
@@ -540,6 +542,7 @@ export {
     type QuantizedBandStreams,
     type DensityValidationConfig,
     type DensityValidationResult,
+    type BandDensityValidationResult,
     type GridType,
     type GridDecision,
     type GeneratedBeat,
