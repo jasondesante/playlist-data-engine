@@ -3185,7 +3185,7 @@ Each frequency band can have different detection settings optimized for its typi
 
 | Band | Default Threshold | Min Interval | Description |
 |------|-------------------|--------------|-------------|
-| **Low** | 0.4 | 50ms | Higher threshold - bass transients are typically stronger; longer interval - bass events are more sparse |
+| **Low** | 0.5 | 80ms | Higher threshold - bass transients are typically stronger; longer interval - bass events are more sparse |
 | **Mid** | 0.3 | 30ms | Medium threshold - balanced detection; moderate interval |
 | **High** | 0.25 | 20ms | Lower threshold - hi-hats can be subtle; shorter interval - rapid fire percussion |
 

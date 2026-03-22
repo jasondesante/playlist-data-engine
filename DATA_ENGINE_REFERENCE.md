@@ -2610,7 +2610,7 @@ constructor(config?: TransientDetectorConfig)
 
 | Band | Threshold | Min Interval | Adaptive | Description |
 |------|-----------|--------------|----------|-------------|
-| Low | 0.4 | 50ms | false | Kick drums, bass - higher threshold, longer buffer |
+| Low | 0.5 | 80ms | false | Kick drums, bass - higher threshold, longer buffer |
 | Mid | 0.3 | 30ms | false | Vocals, snare - balanced detection |
 | High | 0.25 | 20ms | false | Hi-hats, cymbals - lower threshold, shorter buffer |
 

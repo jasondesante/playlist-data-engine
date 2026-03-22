@@ -196,8 +196,8 @@ export interface TransientAnalysis {
  * These are tuned for typical musical content in each frequency range:
  *
  * - **Low band (20-500 Hz)**: Kick drums, bass - fewer, stronger transients
- *   - Higher threshold (0.4) - bass transients are typically strong
- *   - Longer interval (50ms) - bass events are usually more sparse
+ *   - Higher threshold (0.5) - bass transients are typically strong
+ *   - Longer interval (80ms) - bass events are usually more sparse
  *
  * - **Mid band (500-2000 Hz)**: Vocals, snare body, lead instruments
  *   - Medium threshold (0.3) - balanced detection
@@ -209,8 +209,8 @@ export interface TransientAnalysis {
  */
 const DEFAULT_BAND_CONFIGS: Record<BandName, BandTransientConfig> = {
     low: {
-        threshold: 0.4,         // Higher - bass transients are stronger
-        minInterval: 0.05,      // 50ms buffer - ~1/10 of 16th note at 120 BPM
+        threshold: 0.5,         // Higher - bass transients are stronger
+        minInterval: 0.08,      // 80ms buffer - ~1/6 of 16th note at 120 BPM
         adaptiveThresholding: false,
     },
     mid: {
