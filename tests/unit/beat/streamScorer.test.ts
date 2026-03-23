@@ -788,6 +788,160 @@ describe('StreamScorer', () => {
         });
     });
 
+    describe('Factor Weights', () => {
+        beforeEach(() => {
+            phraseAnalyzer = new PhraseAnalyzer({ minOccurrences: 2 });
+            densityAnalyzer = new DensityAnalyzer();
+        });
+
+        it('should apply custom factor weights to final scores', async () => {
+            // Create a pattern with known characteristics
+            const lowBeats: GeneratedBeat[] = [];
+            for (let i = 0; i < 8; i++) {
+                // Create syncopated pattern (all notes on offbeats)
+                lowBeats.push(createGeneratedBeat({
+                    timestamp: i * 0.5 + 0.125,
+                    beatIndex: i,
+                    gridPosition: 1, // Offbeat position
+                    intensity: 0.7,
+                    band: 'low',
+                }));
+            }
+
+            const streams = createMockStreams(lowBeats, [], []);
+            const phraseResult = phraseAnalyzer.analyze(streams.streams);
+            const densityResult = densityAnalyzer.analyze(streams);
+
+            // Score with default weights (0.3, 0.3, 0.25, 0.15)
+            const defaultScorer = new StreamScorer({ beatsPerSection: 8 });
+            const defaultResult = defaultScorer.score(streams, phraseResult, densityResult);
+
+            const defaultScore = defaultResult.sectionScores.find(
+                s => s.band === 'low' && s.beatRange.start === 0
+            );
+            expect(defaultScore).toBeDefined();
+
+            // Calculate expected default score
+            const factors = defaultScore!.factors;
+            const expectedDefault =
+                factors.ioiVariance * 0.3 +
+                factors.syncopationLevel * 0.3 +
+                factors.phraseSignificance * 0.25 +
+                factors.densityFactor * 0.15;
+
+            expect(defaultScore!.score).toBeCloseTo(expectedDefault, 5);
+
+            // Now score with increased syncopation weight (0.5 instead of 0.3)
+            // and reduced IOI variance weight (0.1 instead of 0.3)
+            const customScorer = new StreamScorer({
+                beatsPerSection: 8,
+                ioiVarianceWeight: 0.1,
+                syncopationWeight: 0.5,
+                phraseSignificanceWeight: 0.25,
+                densityWeight: 0.15,
+            });
+            const customResult = customScorer.score(streams, phraseResult, densityResult);
+
+            const customScore = customResult.sectionScores.find(
+                s => s.band === 'low' && s.beatRange.start === 0
+            );
+            expect(customScore).toBeDefined();
+
+            // Calculate expected custom score
+            const expectedCustom =
+                factors.ioiVariance * 0.1 +
+                factors.syncopationLevel * 0.5 +
+                factors.phraseSignificance * 0.25 +
+                factors.densityFactor * 0.15;
+
+            expect(customScore!.score).toBeCloseTo(expectedCustom, 5);
+
+            // Since pattern is syncopated (all offbeats), syncopation factor should be high
+            // Increasing syncopation weight should increase the score
+            expect(customScore!.score).toBeGreaterThan(defaultScore!.score);
+        });
+
+        it('should affect section winners when factor weights change', async () => {
+            // Create patterns where bands have different strengths
+            const lowBeats: GeneratedBeat[] = [];
+            const highBeats: GeneratedBeat[] = [];
+
+            for (let i = 0; i < 8; i++) {
+                // Low band: high syncopation (all offbeats)
+                lowBeats.push(createGeneratedBeat({
+                    timestamp: i * 0.5 + 0.125,
+                    beatIndex: i,
+                    gridPosition: 1, // Offbeat
+                    intensity: 0.7,
+                    band: 'low',
+                }));
+
+                // High band: on-beat pattern (no syncopation)
+                highBeats.push(createGeneratedBeat({
+                    timestamp: i * 0.5,
+                    beatIndex: i,
+                    gridPosition: 0, // On-beat
+                    intensity: 0.7,
+                    band: 'high',
+                }));
+            }
+
+            const streams = createMockStreams(lowBeats, [], highBeats);
+            const phraseResult = phraseAnalyzer.analyze(streams.streams);
+            const densityResult = densityAnalyzer.analyze(streams);
+
+            // With high syncopation weight, low band should win
+            const syncopationFavoringScorer = new StreamScorer({
+                beatsPerSection: 8,
+                ioiVarianceWeight: 0.2,
+                syncopationWeight: 0.5, // High syncopation weight
+                phraseSignificanceWeight: 0.2,
+                densityWeight: 0.1,
+            });
+            const syncopationResult = syncopationFavoringScorer.score(streams, phraseResult, densityResult);
+
+            // Low band (syncopated) should win
+            expect(syncopationResult.sectionWinners[0].winner).toBe('low');
+
+            // With low syncopation weight, the result might differ
+            const lowSyncopationScorer = new StreamScorer({
+                beatsPerSection: 8,
+                ioiVarianceWeight: 0.5, // High IOI weight
+                syncopationWeight: 0.05, // Very low syncopation weight
+                phraseSignificanceWeight: 0.25,
+                densityWeight: 0.2,
+            });
+            const lowSyncopationResult = lowSyncopationScorer.score(streams, phraseResult, densityResult);
+
+            // The scores should be different
+            const lowSyncScore = lowSyncopationResult.sectionScores.find(
+                s => s.band === 'low' && s.beatRange.start === 0
+            );
+            const highSyncScore = syncopationResult.sectionScores.find(
+                s => s.band === 'low' && s.beatRange.start === 0
+            );
+
+            // Low syncopation weight should reduce low band's advantage
+            expect(lowSyncScore!.score).toBeLessThan(highSyncScore!.score);
+        });
+
+        it('should include custom factor weights in config', async () => {
+            const customWeights = {
+                beatsPerSection: 4,
+                ioiVarianceWeight: 0.4,
+                syncopationWeight: 0.2,
+                phraseSignificanceWeight: 0.25,
+                densityWeight: 0.15,
+            };
+            scorer = new StreamScorer(customWeights);
+
+            const config = scorer.getConfig();
+            expect(config.ioiVarianceWeight).toBe(0.4);
+            expect(config.syncopationWeight).toBe(0.2);
+            expect(config.beatsPerSection).toBe(4);
+        });
+    });
+
     describe('Band Bias Weights', () => {
         beforeEach(() => {
             phraseAnalyzer = new PhraseAnalyzer({ minOccurrences: 2 });
