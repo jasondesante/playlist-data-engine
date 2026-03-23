@@ -197,30 +197,30 @@ export interface TransientAnalysis {
  *
  * - **Low band (20-500 Hz)**: Kick drums, bass - fewer, stronger transients
  *   - Higher threshold (0.5) - bass transients are typically strong
- *   - Longer interval (80ms) - bass events are usually more sparse
+ *   - Longer interval (100ms) - bass events are usually more sparse
  *
  * - **Mid band (500-2000 Hz)**: Vocals, snare body, lead instruments
  *   - Medium threshold (0.3) - balanced detection
- *   - Medium interval (30ms) - moderate density
+ *   - Medium interval (80ms) - moderate density
  *
  * - **High band (2000-20000 Hz)**: Hi-hats, cymbals, harmonics
  *   - Lower threshold (0.25) - hi-hats can be subtle
- *   - Shorter interval (20ms) - rapid fire percussion is common
+ *   - Shorter interval (60ms) - rapid fire percussion is common
  */
 const DEFAULT_BAND_CONFIGS: Record<BandName, BandTransientConfig> = {
     low: {
         threshold: 0.5,         // Higher - bass transients are stronger
-        minInterval: 0.08,      // 80ms buffer - ~1/6 of 16th note at 120 BPM
+        minInterval: 0.1,       // 100ms buffer
         adaptiveThresholding: false,
     },
     mid: {
         threshold: 0.3,         // Medium - balanced
-        minInterval: 0.03,      // 30ms buffer
+        minInterval: 0.08,      // 80ms buffer
         adaptiveThresholding: false,
     },
     high: {
         threshold: 0.25,        // Lower - hi-hats can be subtle
-        minInterval: 0.02,      // 20ms buffer - allow rapid fire
+        minInterval: 0.06,      // 60ms buffer
         adaptiveThresholding: false,
     },
 };

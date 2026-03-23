@@ -3241,7 +3241,7 @@ const transients = detector.detect(multiBandResult);
 // Or customize per-band settings
 const customDetector = new TransientDetector({
   bandConfig: {
-    low: { threshold: 0.5, minInterval: 0.08 },  // Higher threshold, longer buffer for bass
+    low: { threshold: 0.5, minInterval: 0.1 },  // Higher threshold, longer buffer for bass
     high: { threshold: 0.2 },  // Lower threshold for hi-hats
   },
 });

@@ -103,7 +103,7 @@ export interface RhythmGenerationOptions {
      * @example
      * ```typescript
      * transientConfig: {
-     *   low: { threshold: 0.5, minInterval: 0.08 }, // Higher threshold for bass
+     *   low: { threshold: 0.5, minInterval: 0.1 }, // Higher threshold for bass
      *   high: { threshold: 0.2 }, // Lower threshold for hi-hats
      * }
      * ```
