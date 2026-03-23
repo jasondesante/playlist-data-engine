@@ -735,6 +735,7 @@ type ResolvedOptions = {
     minimumTransientIntensity: number;
     transientConfig: BandTransientConfigOverrides | undefined;
     densityValidation?: DensityValidationConfig;
+    scoringConfig?: Partial<StreamScorerConfig>;
     seed: string | undefined;
     verbose: boolean;
     enableCache: boolean;
@@ -747,6 +748,7 @@ const DEFAULT_OPTIONS: ResolvedOptions = {
     measureStartOffset: 0,
     minimumTransientIntensity: 0.0,
     transientConfig: undefined,
+    scoringConfig: undefined,
     seed: undefined,
     verbose: false,
     enableCache: true,
@@ -834,7 +836,7 @@ export class RhythmGenerator {
 
         this.densityAnalyzer = new DensityAnalyzer();
 
-        this.streamScorer = new StreamScorer();
+        this.streamScorer = new StreamScorer(this.options.scoringConfig);
 
         this.compositeGenerator = new CompositeStreamGenerator();
 
