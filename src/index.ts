@@ -579,6 +579,7 @@ export {
     type StreamScoringResult,
     type SectionWinner,
     type StreamScorerConfig,
+    type BandBiasWeights,
 } from './core/analysis/beat/StreamScorer.js';
 
 // Composite Stream Generator (Phase 3.2)
