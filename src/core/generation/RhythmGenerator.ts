@@ -26,7 +26,7 @@ import {
 } from '../analysis/beat/RhythmQuantizer.js';
 import { PhraseAnalyzer, type PhraseAnalysisResult, type RhythmicPhrase, type PhraseOccurrence, type BandPhraseAnalysis } from '../analysis/beat/PhraseAnalyzer.js';
 import { DensityAnalyzer, type DensityAnalysisResult, type BandDensityMetrics, type SectionDensityMetrics, type BeatDensityMetrics } from '../analysis/beat/DensityAnalyzer.js';
-import { StreamScorer, type StreamScoringResult, type SectionScore, type SectionWinner, type ScoringFactors } from '../analysis/beat/StreamScorer.js';
+import { StreamScorer, type StreamScoringResult, type SectionScore, type SectionWinner, type ScoringFactors, type StreamScorerConfig } from '../analysis/beat/StreamScorer.js';
 import {
     CompositeStreamGenerator,
     type CompositeStream,
@@ -125,6 +125,20 @@ export interface RhythmGenerationOptions {
      * ```
      */
     densityValidation?: DensityValidationConfig;
+
+    /**
+     * Stream scoring configuration.
+     * Allows customizing factor weights and band bias for composite stream selection.
+     * @example
+     * ```typescript
+     * scoringConfig: {
+     *   // Favor syncopation and high frequencies
+     *   syncopationWeight: 0.4,
+     *   bandBiasWeights: { low: 0.3, mid: 1.0, high: 1.5 }
+     * }
+     * ```
+     */
+    scoringConfig?: Partial<StreamScorerConfig>;
 
     /** Seed for reproducibility (optional) */
     seed?: string;
