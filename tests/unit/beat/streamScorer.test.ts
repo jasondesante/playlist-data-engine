@@ -787,4 +787,270 @@ describe('StreamScorer', () => {
             expect(midScore!.score).toBeGreaterThanOrEqual(0);
         });
     });
+
+    describe('Band Bias Weights', () => {
+        beforeEach(() => {
+            phraseAnalyzer = new PhraseAnalyzer({ minOccurrences: 2 });
+            densityAnalyzer = new DensityAnalyzer();
+        });
+
+        it('should apply band bias to final scores', async () => {
+            // Create identical patterns for all bands
+            const lowBeats: GeneratedBeat[] = [];
+            const midBeats: GeneratedBeat[] = [];
+            const highBeats: GeneratedBeat[] = [];
+
+            for (let i = 0; i < 8; i++) {
+                // All bands have the same syncopated pattern
+                const beat = {
+                    timestamp: i * 0.5 + 0.125,
+                    beatIndex: i,
+                    gridPosition: 1,
+                    intensity: 0.7,
+                };
+                lowBeats.push(createGeneratedBeat({ ...beat, band: 'low' }));
+                midBeats.push(createGeneratedBeat({ ...beat, band: 'mid' }));
+                highBeats.push(createGeneratedBeat({ ...beat, band: 'high' }));
+            }
+
+            const streams = createMockStreams(lowBeats, midBeats, highBeats);
+            const phraseResult = phraseAnalyzer.analyze(streams.streams);
+            const densityResult = densityAnalyzer.analyze(streams);
+
+            // First score without bias to get baseline
+            const unbiasedScorer = new StreamScorer({ beatsPerSection: 8 });
+            const unbiasedResult = unbiasedScorer.score(streams, phraseResult, densityResult);
+
+            // Get baseline scores
+            const baselineLow = unbiasedResult.sectionScores.find(
+                s => s.band === 'low' && s.beatRange.start === 0
+            );
+            const baselineMid = unbiasedResult.sectionScores.find(
+                s => s.band === 'mid' && s.beatRange.start === 0
+            );
+            const baselineHigh = unbiasedResult.sectionScores.find(
+                s => s.band === 'high' && s.beatRange.start === 0
+            );
+
+            expect(baselineLow).toBeDefined();
+            expect(baselineMid).toBeDefined();
+            expect(baselineHigh).toBeDefined();
+
+            // With identical patterns, all bands should have the same base score
+            expect(baselineLow!.score).toBeCloseTo(baselineMid!.score, 5);
+            expect(baselineMid!.score).toBeCloseTo(baselineHigh!.score, 5);
+
+            // Now score with band bias
+            const biasedScorer = new StreamScorer({
+                beatsPerSection: 8,
+                bandBiasWeights: { low: 0.5, mid: 1.0, high: 1.5 },
+            });
+            const biasedResult = biasedScorer.score(streams, phraseResult, densityResult);
+
+            const biasedLow = biasedResult.sectionScores.find(
+                s => s.band === 'low' && s.beatRange.start === 0
+            );
+            const biasedMid = biasedResult.sectionScores.find(
+                s => s.band === 'mid' && s.beatRange.start === 0
+            );
+            const biasedHigh = biasedResult.sectionScores.find(
+                s => s.band === 'high' && s.beatRange.start === 0
+            );
+
+            // Verify bias is applied correctly
+            // Low should be half the baseline
+            expect(biasedLow!.score).toBeCloseTo(baselineLow!.score * 0.5, 5);
+            // Mid should be unchanged
+            expect(biasedMid!.score).toBeCloseTo(baselineMid!.score * 1.0, 5);
+            // High should be 1.5x the baseline
+            expect(biasedHigh!.score).toBeCloseTo(baselineHigh!.score * 1.5, 5);
+        });
+
+        it('should default to no bias when not configured', async () => {
+            // Create a simple pattern
+            const lowBeats: GeneratedBeat[] = [];
+            for (let i = 0; i < 8; i++) {
+                lowBeats.push(createGeneratedBeat({
+                    timestamp: i * 0.5 + 0.125,
+                    beatIndex: i,
+                    gridPosition: 1,
+                    intensity: 0.7,
+                    band: 'low',
+                }));
+            }
+
+            const streams = createMockStreams(lowBeats, [], []);
+            const phraseResult = phraseAnalyzer.analyze(streams.streams);
+            const densityResult = densityAnalyzer.analyze(streams);
+
+            // Create scorer without band bias config
+            scorer = new StreamScorer({ beatsPerSection: 8 });
+            const config = scorer.getConfig();
+
+            // bandBiasWeights should be undefined by default
+            expect(config.bandBiasWeights).toBeUndefined();
+
+            // Score the streams
+            const scoreResult = scorer.score(streams, phraseResult, densityResult);
+
+            // All scores should be based purely on factors (no bias applied)
+            const lowScore = scoreResult.sectionScores.find(
+                s => s.band === 'low' && s.beatRange.start === 0
+            );
+            expect(lowScore).toBeDefined();
+
+            // Calculate expected score from factors
+            const expectedScore =
+                lowScore!.factors.ioiVariance * 0.3 +
+                lowScore!.factors.syncopationLevel * 0.3 +
+                lowScore!.factors.phraseSignificance * 0.25 +
+                lowScore!.factors.densityFactor * 0.15;
+
+            // Score should match expected (no bias multiplier)
+            expect(lowScore!.score).toBeCloseTo(expectedScore, 5);
+        });
+
+        it('should handle missing band in bias config by defaulting to 1.0', async () => {
+            // Create identical patterns for all bands
+            const lowBeats: GeneratedBeat[] = [];
+            const midBeats: GeneratedBeat[] = [];
+            const highBeats: GeneratedBeat[] = [];
+
+            for (let i = 0; i < 8; i++) {
+                const beat = {
+                    timestamp: i * 0.5 + 0.125,
+                    beatIndex: i,
+                    gridPosition: 1,
+                    intensity: 0.7,
+                };
+                lowBeats.push(createGeneratedBeat({ ...beat, band: 'low' }));
+                midBeats.push(createGeneratedBeat({ ...beat, band: 'mid' }));
+                highBeats.push(createGeneratedBeat({ ...beat, band: 'high' }));
+            }
+
+            const streams = createMockStreams(lowBeats, midBeats, highBeats);
+            const phraseResult = phraseAnalyzer.analyze(streams.streams);
+            const densityResult = densityAnalyzer.analyze(streams);
+
+            // First get baseline scores without any bias
+            const baselineScorer = new StreamScorer({ beatsPerSection: 8 });
+            const baselineResult = baselineScorer.score(streams, phraseResult, densityResult);
+
+            const baselineMid = baselineResult.sectionScores.find(
+                s => s.band === 'mid' && s.beatRange.start === 0
+            );
+            const baselineHigh = baselineResult.sectionScores.find(
+                s => s.band === 'high' && s.beatRange.start === 0
+            );
+
+            // Create scorer with partial bias config (only low band specified)
+            const partialBiasScorer = new StreamScorer({
+                beatsPerSection: 8,
+                bandBiasWeights: { low: 0.0, mid: 1.0, high: 1.0 },
+            });
+            const partialResult = partialBiasScorer.score(streams, phraseResult, densityResult);
+
+            const partialMid = partialResult.sectionScores.find(
+                s => s.band === 'mid' && s.beatRange.start === 0
+            );
+            const partialHigh = partialResult.sectionScores.find(
+                s => s.band === 'high' && s.beatRange.start === 0
+            );
+
+            // Mid and High bands should have the same score as baseline (1.0 multiplier)
+            expect(partialMid!.score).toBeCloseTo(baselineMid!.score, 5);
+            expect(partialHigh!.score).toBeCloseTo(baselineHigh!.score, 5);
+
+            // Low band should have zero score (0.0 multiplier = never wins)
+            const partialLow = partialResult.sectionScores.find(
+                s => s.band === 'low' && s.beatRange.start === 0
+            );
+            expect(partialLow!.score).toBe(0);
+        });
+
+        it('should affect section winners based on bias', async () => {
+            // Create identical patterns for all bands
+            const lowBeats: GeneratedBeat[] = [];
+            const midBeats: GeneratedBeat[] = [];
+            const highBeats: GeneratedBeat[] = [];
+
+            for (let i = 0; i < 8; i++) {
+                const beat = {
+                    timestamp: i * 0.5 + 0.125,
+                    beatIndex: i,
+                    gridPosition: 1,
+                    intensity: 0.7,
+                };
+                lowBeats.push(createGeneratedBeat({ ...beat, band: 'low' }));
+                midBeats.push(createGeneratedBeat({ ...beat, band: 'mid' }));
+                highBeats.push(createGeneratedBeat({ ...beat, band: 'high' }));
+            }
+
+            const streams = createMockStreams(lowBeats, midBeats, highBeats);
+            const phraseResult = phraseAnalyzer.analyze(streams.streams);
+            const densityResult = densityAnalyzer.analyze(streams);
+
+            // With strong high bias, high band should win
+            const highBiasScorer = new StreamScorer({
+                beatsPerSection: 8,
+                bandBiasWeights: { low: 0.5, mid: 1.0, high: 2.0 },
+            });
+            const highBiasResult = highBiasScorer.score(streams, phraseResult, densityResult);
+
+            // High band should win the section
+            expect(highBiasResult.sectionWinners.length).toBeGreaterThan(0);
+            expect(highBiasResult.sectionWinners[0].winner).toBe('high');
+
+            // With strong low bias, low band should win
+            const lowBiasScorer = new StreamScorer({
+                beatsPerSection: 8,
+                bandBiasWeights: { low: 2.0, mid: 1.0, high: 0.5 },
+            });
+            const lowBiasResult = lowBiasScorer.score(streams, phraseResult, densityResult);
+
+            // Low band should win the section
+            expect(lowBiasResult.sectionWinners.length).toBeGreaterThan(0);
+            expect(lowBiasResult.sectionWinners[0].winner).toBe('low');
+        });
+
+        it('should include bandBiasWeights in config when set', async () => {
+            const biasConfig = { low: 0.3, mid: 1.0, high: 1.5 };
+            scorer = new StreamScorer({
+                beatsPerSection: 8,
+                bandBiasWeights: biasConfig,
+            });
+
+            const config = scorer.getConfig();
+            expect(config.bandBiasWeights).toBeDefined();
+            expect(config.bandBiasWeights).toEqual(biasConfig);
+        });
+
+        it('should return bandBiasWeights in scoring result config', async () => {
+            const biasConfig = { low: 0.3, mid: 1.0, high: 1.5 };
+            scorer = new StreamScorer({
+                beatsPerSection: 8,
+                bandBiasWeights: biasConfig,
+            });
+
+            const lowBeats: GeneratedBeat[] = [];
+            for (let i = 0; i < 8; i++) {
+                lowBeats.push(createGeneratedBeat({
+                    timestamp: i * 0.5 + 0.125,
+                    beatIndex: i,
+                    gridPosition: 1,
+                    intensity: 0.7,
+                    band: 'low',
+                }));
+            }
+
+            const streams = createMockStreams(lowBeats, [], []);
+            const phraseResult = phraseAnalyzer.analyze(streams.streams);
+            const densityResult = densityAnalyzer.analyze(streams);
+            const scoreResult = scorer.score(streams, phraseResult, densityResult);
+
+            // Result config should include bandBiasWeights
+            expect(scoreResult.config.bandBiasWeights).toBeDefined();
+            expect(scoreResult.config.bandBiasWeights).toEqual(biasConfig);
+        });
+    });
 });
