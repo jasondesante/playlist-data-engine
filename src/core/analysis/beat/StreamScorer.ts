@@ -129,6 +129,23 @@ export interface SectionWinner {
 }
 
 /**
+ * Band bias weights for controlling which frequency bands are favored
+ * in composite stream selection.
+ *
+ * Values are applied as multipliers to the final score:
+ * - 1.0 = no bias (neutral)
+ * - > 1.0 = favor this band
+ * - < 1.0 = disfavor this band
+ *
+ * Example: To reduce bass dominance, set { low: 0.5, mid: 1.0, high: 1.0 }
+ */
+export interface BandBiasWeights {
+    low: number;
+    mid: number;
+    high: number;
+}
+
+/**
  * Configuration for stream scoring
  */
 export interface StreamScorerConfig {
@@ -155,6 +172,12 @@ export interface StreamScorerConfig {
         straight_16th: number[];
         triplet_8th: number[];
     };
+
+    /** Band bias multipliers applied to final section scores.
+     *  undefined = no bias (default)
+     *  Range: 0.0 - 2.0 (0 = never win, 1 = neutral, 2 = strongly favored)
+     */
+    bandBiasWeights?: BandBiasWeights;
 }
 
 // ============================================================================
@@ -171,6 +194,7 @@ const DEFAULT_STREAM_SCORER_CONFIG: StreamScorerConfig = {
         straight_16th: [1, 3], // 16th note offbeats (the "e" and "a" in "1-e-and-a")
         triplet_8th: [1, 2], // Triplet offbeats (after the downbeat)
     },
+    bandBiasWeights: undefined, // No bias by default
 };
 
 // ============================================================================
