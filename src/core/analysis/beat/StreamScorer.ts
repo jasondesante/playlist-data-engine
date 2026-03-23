@@ -355,11 +355,17 @@ export class StreamScorer {
         );
 
         // Combine factors with weights
-        const score =
+        let score =
             ioiVariance * this.config.ioiVarianceWeight +
             syncopationLevel * this.config.syncopationWeight +
             phraseSignificance * this.config.phraseSignificanceWeight +
             densityFactor * this.config.densityWeight;
+
+        // Apply band bias if configured
+        if (this.config.bandBiasWeights) {
+            const bias = this.config.bandBiasWeights[band] ?? 1.0;
+            score *= bias;
+        }
 
         return {
             beatRange,
