@@ -3602,6 +3602,16 @@ The `sourceBand` and timestamp fields enable integration with pitch detection:
 
 The system generates three difficulty variants from the composite stream by either simplifying (for easier difficulties) or enhancing density (for harder difficulties).
 
+### Target Density Ranges
+
+Each difficulty level has a target density range (transients per beat):
+
+| Difficulty | Target Density | Description |
+|------------|----------------|-------------|
+| **Easy** | 0 - 1.0 t/b | Sparse (mostly quarter notes) |
+| **Medium** | 1.0 - 1.75 t/b | Moderate (eighth notes, some sixteenths) |
+| **Hard** | 1.75+ t/b | Dense (heavy sixteenths, triplets) |
+
 ### Subdivision Limits by Difficulty
 
 | Difficulty | Max Subdivision | Allowed Grid Types |
@@ -3619,8 +3629,8 @@ The strategy depends on the composite's natural difficulty:
 | Variant | Strategy |
 |---------|----------|
 | **Hard** | Composite unchanged (unedited) |
-| **Medium** | Standard simplification—remove some subdivisions |
-| **Easy** | Heavy simplification—keep only core beats, snap 16th→8th |
+| **Medium** | Density-aware reduction to ≤1.75 t/b (removes low-priority beats) |
+| **Easy** | Grid conversion (16th→8th) + density reduction to ≤1.0 t/b |
 
 #### If Composite is Naturally Medium (Moderate)
 
@@ -3628,7 +3638,7 @@ The strategy depends on the composite's natural difficulty:
 |---------|----------|
 | **Hard** | Density enhancement using pattern library |
 | **Medium** | Composite unchanged (unedited) |
-| **Easy** | Standard simplification |
+| **Easy** | Grid conversion + density reduction to ≤1.0 t/b |
 
 #### If Composite is Naturally Easy (Sparse)
 
@@ -3643,9 +3653,24 @@ The strategy depends on the composite's natural difficulty:
 When simplifying to easier difficulties:
 
 1. **Enforce subdivision limits** - 16th notes snap to 8th notes for Easy
-2. **Prioritize strong beats** - Beats 1 and 3 of each measure are kept first
-3. **Remove offbeats first** - Grid positions 1 and 3 prioritized for removal
-4. **Respect phrase boundaries** - Beats in significant phrases are preserved when possible
+2. **Apply density-aware reduction** - After grid conversion, remove beats if density exceeds target
+3. **Prioritize strong beats** - Beats 1 and 3 of each measure are kept first
+4. **Remove offbeats first** - Grid positions 1 and 3 prioritized for removal
+5. **Respect phrase boundaries** - Beats in significant phrases are preserved when possible
+
+#### Beat Removal Priority
+
+When reducing density, beats are assigned a priority score (higher = kept longer):
+
+| Factor | Priority Impact |
+|--------|-----------------|
+| Strong beat (1, 3 of measure) | +0.3 |
+| Downbeat (gridPosition 0) | +0.2 |
+| Intensity | +intensity × 0.3 |
+| Phrase membership | +0.15 max |
+| Offbeat penalty (positions 1, 3) | -0.1 |
+
+This ensures offbeats with low intensity are removed first, preserving musical structure.
 
 ### Density Enhancement
 

@@ -101,24 +101,29 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - No 8th note triplets (too rapid for beginners)
      * - 8th notes are the maximum density
      * - Quarter note triplets allowed for swing feel
+     * - Target density: < 1.0 transients/beat (sparse)
      */
     easy: {
         maxSubdivision: 'eighth',
         allowedGridTypes: ['straight_8th', 'quarter_triplet'],
         description: '8th notes and quarter note triplets only',
+        targetDensityRange: { min: 0, max: 1.0 },
     },
 
     /**
-     * Medium difficulty: All subdivision types allowed
+     * Medium difficulty: All subdivision types allowed, but density should be reduced
      *
      * - 16th notes allowed
      * - 8th note triplets allowed
      * - All grid types available
+     * - Target density: 1.0 - 1.75 transients/beat (moderate)
+     * - Density reduction via moderate simplification (remove weak offbeat 16ths)
      */
     medium: {
         maxSubdivision: 'sixteenth',
         allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
-        description: 'All subdivision types including 16th notes',
+        description: 'All subdivision types, with density reduction for moderate difficulty',
+        targetDensityRange: { min: 1.0, max: 1.75 },
     },
 
     /**
@@ -128,11 +133,13 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
      * - 8th note triplets allowed
      * - All grid types available
      * - Maximum density expected
+     * - Target density: > 1.75 transients/beat (dense)
      */
     hard: {
         maxSubdivision: 'sixteenth',
         allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
         description: 'All subdivision types including 16th notes',
+        targetDensityRange: { min: 1.75, max: Infinity },
     },
 };
 
@@ -162,6 +169,9 @@ export interface SubdivisionLimitConfig {
 
     /** Human-readable description of the limits */
     description: string;
+
+    /** Target density range for this difficulty (transients per beat) */
+    targetDensityRange: { min: number; max: number };
 }
 
 /**
@@ -299,6 +309,12 @@ export interface DifficultyVariantConfig {
     /** Intensity threshold for keeping beats during HEAVY simplification. Default: 0.5 */
     heavySimplificationIntensityThreshold: number;
 
+    /** Intensity threshold for removing offbeat 16ths during moderate simplification (hard→medium). Default: 0.4 */
+    moderateSimplificationIntensityThreshold: number;
+
+    /** Minimum intensity threshold for removing beats during density reduction. Default: 0.25 */
+    densityReductionMinIntensity: number;
+
     /** Target density multiplier for enhancement (1.0 = no change, 1.5 = 50% more beats). Default: 1.5 */
     enhancementDensityMultiplier: number;
 
@@ -321,6 +337,8 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     preservePhraseBoundaries: true,
     simplificationIntensityThreshold: 0.3,
     heavySimplificationIntensityThreshold: 0.5,
+    moderateSimplificationIntensityThreshold: 0.4,
+    densityReductionMinIntensity: 0.25,
     enhancementDensityMultiplier: 1.5,
     interpolatedBeatIntensity: 0.5,
     preferPatternInsertion: true,
@@ -722,13 +740,20 @@ export class DifficultyVariantGenerator {
         // Build phrase membership map for boundary preservation
         const phraseMembership = this.buildPhraseMembershipMap(phraseAnalysis);
 
-        // If all grid types are allowed, no conversion needed
+        // If all grid types are allowed, no grid conversion needed, but density reduction may still be required
         const allowedTypes = SUBDIVISION_LIMITS[targetDifficulty].allowedGridTypes;
         const allTypesAllowed = beats.every(b => allowedTypes.includes(b.gridType));
 
         if (allTypesAllowed && !isHeavySimplification) {
-            metadata.totalBeatsAfter = beats.length;
-            return { beats: [...beats], metadata };
+            // Even though grid types are allowed, check if density reduction is needed
+            const densityReducedBeats = this.reduceDensityToTarget(
+                beats as VariantBeat[],
+                targetDifficulty,
+                metadata,
+                phraseMembership
+            );
+            metadata.totalBeatsAfter = densityReducedBeats.length;
+            return { beats: densityReducedBeats, metadata };
         }
 
         // For heavy simplification, filter beats based on priority
@@ -786,9 +811,19 @@ export class DifficultyVariantGenerator {
         // Deduplicate beats that may have snapped to the same grid position
         const deduplicatedBeats = this.deduplicateConvertedBeats(convertedBeats);
         metadata.beatsRemoved += convertedBeats.length - deduplicatedBeats.length;
-        metadata.totalBeatsAfter = deduplicatedBeats.length;
 
-        return { beats: deduplicatedBeats, metadata };
+        // Apply density-aware reduction if still above target
+        // This ensures we actually meet the target density range for the difficulty
+        const densityReducedBeats = this.reduceDensityToTarget(
+            deduplicatedBeats,
+            targetDifficulty,
+            metadata,
+            phraseMembership
+        );
+
+        metadata.totalBeatsAfter = densityReducedBeats.length;
+
+        return { beats: densityReducedBeats, metadata };
     }
 
     /**
@@ -871,6 +906,203 @@ export class DifficultyVariantGenerator {
     private isStrongBeat(beatIndex: number): boolean {
         const positionInMeasure = beatIndex % 4;
         return positionInMeasure === 0 || positionInMeasure === 2;
+    }
+
+    /**
+     * Calculate the density (transients per beat) of a beat collection
+     *
+     * @param beats - The beats to analyze
+     * @returns Transients per beat (0 if no beats)
+     */
+    private calculateDensity(beats: CompositeBeat[] | VariantBeat[]): number {
+        if (beats.length === 0) return 0;
+
+        // Find the range of beat indices
+        const beatIndices = beats.map(b => b.beatIndex);
+        const minBeat = Math.min(...beatIndices);
+        const maxBeat = Math.max(...beatIndices);
+        const totalBeats = maxBeat - minBeat + 1;
+
+        if (totalBeats === 0) return 0;
+
+        return beats.length / totalBeats;
+    }
+
+    /**
+     * Reduce density by removing low-priority beats until target is reached
+     *
+     * This method implements a priority-based beat removal strategy:
+     * 1. Calculate current density
+     * 2. If above target, sort beats by removal priority (lowest priority first)
+     * 3. Remove beats one at a time until density is within target range
+     *
+     * Removal priority (lowest to highest - low priority = removed first):
+     * - Offbeats (gridPosition 1, 3) with low intensity - removed first
+     * - Mid-beat positions (gridPosition 2) with low intensity
+     * - Downbeats (gridPosition 0) on weak beats (2, 4 of measure)
+     * - Strong beats (beats 1, 3 of measure) - kept as long as possible
+     *
+     * Protected beats (not removed):
+     * - Beats with priority >= (1 - densityReductionMinIntensity)
+     * - Beats with intensity >= moderateSimplificationIntensityThreshold
+     *
+     * @param beats - The beats to potentially reduce
+     * @param targetDifficulty - The target difficulty level
+     * @param metadata - Metadata to track removals
+     * @param phraseMembership - Map of beat indices to phrase membership
+     * @returns Beats with density reduced to target range
+     */
+    private reduceDensityToTarget<T extends CompositeBeat | VariantBeat>(
+        beats: T[],
+        targetDifficulty: DifficultyLevel,
+        metadata: SubdivisionConversionMetadata,
+        phraseMembership: Map<number, RhythmicPhrase[]> = new Map()
+    ): T[] {
+        const targetRange = SUBDIVISION_LIMITS[targetDifficulty].targetDensityRange;
+        let currentDensity = this.calculateDensity(beats);
+
+        // If already within target range, no reduction needed
+        if (currentDensity <= targetRange.max) {
+            if (this.config.logConversions) {
+                console.log(
+                    `[DifficultyVariantGenerator] Density ${currentDensity.toFixed(2)} already within ` +
+                    `target range [${targetRange.min}, ${targetRange.max}] for ${targetDifficulty}`
+                );
+            }
+            return beats;
+        }
+
+        if (this.config.logConversions) {
+            console.log(
+                `[DifficultyVariantGenerator] Reducing density from ${currentDensity.toFixed(2)} to ` +
+                `target max ${targetRange.max} for ${targetDifficulty}`
+            );
+        }
+
+        // Calculate removal priority for each beat
+        const beatsWithPriority = beats.map(beat => ({
+            beat,
+            priority: this.calculateRemovalPriority(beat, phraseMembership),
+        }));
+
+        // Sort by priority (ascending - lowest priority first for removal)
+        beatsWithPriority.sort((a, b) => a.priority - b.priority);
+
+        // Find beat range for density calculation
+        const beatIndices = beats.map(b => b.beatIndex);
+        const minBeat = Math.min(...beatIndices);
+        const maxBeat = Math.max(...beatIndices);
+        const totalBeats = maxBeat - minBeat + 1;
+
+        // Remove beats one at a time until density is within target
+        const removedBeats = new Set<T>();
+        let remainingCount = beats.length;
+
+        for (const { beat, priority } of beatsWithPriority) {
+            // Check if we've reached target density
+            const projectedDensity = (remainingCount - 1) / totalBeats;
+
+            if (projectedDensity <= targetRange.max) {
+                // We've removed enough beats, stop
+                break;
+            }
+
+            // Don't remove if it's a critical beat (very high priority) or has high intensity
+            const priorityThreshold = 1 - this.config.densityReductionMinIntensity;
+            if (priority >= priorityThreshold || beat.intensity >= this.config.moderateSimplificationIntensityThreshold) {
+                continue;
+            }
+
+            // Remove this beat
+            removedBeats.add(beat);
+            remainingCount--;
+
+            if (this.config.logConversions) {
+                console.log(
+                    `[DifficultyVariantGenerator] Removed beat at index ${beat.beatIndex} ` +
+                    `position ${beat.gridPosition} (priority: ${priority.toFixed(2)}, intensity: ${beat.intensity.toFixed(2)})`
+                );
+            }
+        }
+
+        // Check if we couldn't reach target density (all remaining beats are protected)
+        const finalDensity = remainingCount / totalBeats;
+        if (finalDensity > targetRange.max && this.config.logConversions) {
+            console.warn(
+                `[DifficultyVariantGenerator] Could not reach target density ${targetRange.max} for ${targetDifficulty}. ` +
+                `Final density: ${finalDensity.toFixed(2)} (${remainingCount} beats remaining are all protected)`
+            );
+        }
+
+        // Filter out removed beats
+        const keptBeats = beats.filter(b => !removedBeats.has(b));
+        metadata.beatsRemoved += removedBeats.size;
+
+        // Ensure we keep at least some beats (don't over-reduce)
+        const minBeatsToKeep = Math.ceil(targetRange.min * totalBeats);
+        if (keptBeats.length < minBeatsToKeep && beats.length > 0) {
+            // Add back the highest priority removed beats
+            const removedWithPriority = beatsWithPriority
+                .filter(({ beat }) => removedBeats.has(beat))
+                .sort((a, b) => b.priority - a.priority);
+
+            for (const { beat } of removedWithPriority) {
+                if (keptBeats.length >= minBeatsToKeep) break;
+                keptBeats.push(beat);
+                metadata.beatsRemoved--;
+            }
+        }
+
+        return keptBeats;
+    }
+
+    /**
+     * Calculate removal priority for a beat (higher = more important to keep)
+     *
+     * Priority factors:
+     * - Strong beat bonus: +0.3 (beats 1 and 3 of measure)
+     * - Downbeat bonus: +0.2 (gridPosition 0)
+     * - Intensity contribution: +intensity * 0.3
+     * - Phrase membership bonus: +0.15 (max)
+     * - Offbeat penalty: -0.1 (gridPosition 1 or 3)
+     *
+     * @param beat - The beat to evaluate
+     * @param phraseMembership - Map of beat indices to phrase membership
+     * @returns Priority score (0-1 range, higher = keep)
+     */
+    private calculateRemovalPriority(
+        beat: CompositeBeat | VariantBeat,
+        phraseMembership: Map<number, RhythmicPhrase[]>
+    ): number {
+        let priority = 0.5; // Base priority
+
+        // Strong beat bonus
+        if (this.isStrongBeat(beat.beatIndex)) {
+            priority += 0.3;
+        }
+
+        // Downbeat bonus
+        if (beat.gridPosition === 0) {
+            priority += 0.2;
+        }
+
+        // Intensity contribution
+        priority += beat.intensity * 0.3;
+
+        // Phrase membership bonus
+        const phrases = phraseMembership.get(beat.beatIndex);
+        if (phrases && phrases.length > 0) {
+            const maxSignificance = Math.max(...phrases.map(p => p.significance));
+            priority += Math.min(0.15, maxSignificance * 0.05);
+        }
+
+        // Offbeat penalty
+        if (beat.gridPosition === 1 || beat.gridPosition === 3) {
+            priority -= 0.1;
+        }
+
+        // Clamp to 0-1 range
+        return Math.max(0, Math.min(1, priority));
     }
 
     /**
