@@ -3467,6 +3467,76 @@ The composite's natural difficulty is determined by its density:
 | Moderate | 1.5 - 2.5 | Medium |
 | Dense | > 2.5 | Hard |
 
+### Custom Scoring Configuration
+
+The scoring system can be customized to control which frequency bands are favored during composite stream generation. This is useful when the automatic merit-based selection doesn't match your desired outcome.
+
+#### When to Use Custom Scoring
+
+- **Bass-heavy results**: If the low band wins most sections, reduce its bias
+- **Percussion focus**: Emphasize high frequencies (hi-hats, cymbals)
+- **Melody/rhythm balance**: Favor mid frequencies for guitar/keyboard parts
+- **Experimental patterns**: Dramatically alter which transients are selected
+
+#### Factor Weights
+
+Control how much each scoring factor contributes to band selection. Weights should sum to approximately 1.0 for balanced scoring:
+
+| Parameter | Default | Range | Purpose |
+|-----------|---------|-------|---------|
+| `ioiVarianceWeight` | 0.30 | 0.0-1.0 | Rhythmic variety importance |
+| `syncopationWeight` | 0.30 | 0.0-1.0 | Offbeat emphasis importance |
+| `phraseSignificanceWeight` | 0.25 | 0.0-1.0 | Pattern detection importance |
+| `densityWeight` | 0.15 | 0.0-1.0 | Note count importance |
+
+#### Band Bias Weights
+
+Manual preference multipliers applied to the final score for each frequency band:
+
+| Parameter | Default | Range | Effect |
+|-----------|---------|-------|--------|
+| `bandBiasWeights.low` | undefined | 0.0-2.0 | 0 = never win, 1 = neutral, 2 = strongly favored |
+| `bandBiasWeights.mid` | undefined | 0.0-2.0 | Same as above |
+| `bandBiasWeights.high` | undefined | 0.0-2.0 | Same as above |
+
+**Note**: When `undefined`, no bias is applied (all bands compete on merit alone).
+
+#### How Bias Affects Selection
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                   Band Bias Example                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   Without bias (merit-based):                                       │
+│   ┌──────────────────────────────────────────────────────────────┐ │
+│   │ Band   │ Score │ Winner?                                      │ │
+│   ├──────────────────────────────────────────────────────────────┤ │
+│   │ Low    │ 0.89  │ ← WIN (highest merit)                        │ │
+│   │ Mid    │ 0.72  │                                              │ │
+│   │ High   │ 0.65  │                                              │ │
+│   └──────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│   With bias: { low: 0.5, mid: 1.0, high: 1.5 }                     │
+│   ┌──────────────────────────────────────────────────────────────┐ │
+│   │ Band   │ Score │ Bias  │ Final │ Winner?                     │ │
+│   ├──────────────────────────────────────────────────────────────┤ │
+│   │ Low    │ 0.89  │ ×0.5  │ 0.445 │                             │ │
+│   │ Mid    │ 0.72  │ ×1.0  │ 0.720 │                             │ │
+│   │ High   │ 0.65  │ ×1.5  │ 0.975 │ ← WIN (bias pushes it up)   │ │
+│   └──────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### Common Use Cases
+
+| Use Case | Configuration | Effect |
+|----------|---------------|--------|
+| **Reduce bass dominance** | `{ low: 0.5, mid: 1.0, high: 1.0 }` | Bass wins half as often |
+| **Focus on melody/rhythm** | `{ low: 0.3, mid: 1.5, high: 1.0 }` | Strongly favor mid band |
+| **Emphasize percussion** | `{ low: 1.0, mid: 1.0, high: 1.5 }` | Favor hi-hats, cymbals |
+| **Balanced mix** | `{ low: 0.8, mid: 1.2, high: 1.0 }` | Slight mid preference |
+
 ---
 
 ## Phrase Detection
@@ -3666,6 +3736,85 @@ const rhythm = await bassGenerator.generate(audioBuffer, beatMap, interpolatedBe
 
 // All variants are from the low band
 console.log(rhythm.difficultyVariants.medium.stream);
+```
+
+### Custom Scoring with Band Bias
+
+Use `scoringConfig` to control which frequency bands are favored in the composite stream:
+
+```typescript
+import { RhythmGenerator } from 'playlist-data-engine';
+
+// Example: Reduce bass dominance, favor high frequencies
+const generator = new RhythmGenerator({
+  outputMode: 'composite',
+  scoringConfig: {
+    bandBiasWeights: {
+      low: 0.3,   // Bass rarely wins (30% of normal)
+      mid: 1.0,   // Neutral - no change
+      high: 1.5,  // Strongly favor high frequencies (hi-hats, cymbals)
+    }
+  }
+});
+
+const rhythm = await generator.generate(audioBuffer, beatMap, interpolatedBeatMap);
+
+// Check which bands won sections
+console.log(rhythm.composite.metadata.sectionsPerBand);
+// { low: 2, mid: 8, high: 15 } - high band dominates
+```
+
+### Custom Scoring with Factor Weights
+
+Adjust how much each scoring factor contributes:
+
+```typescript
+import { RhythmGenerator } from 'playlist-data-engine';
+
+// Example: Focus on syncopated rhythms
+const generator = new RhythmGenerator({
+  outputMode: 'composite',
+  scoringConfig: {
+    // Favor syncopation and variety over density
+    ioiVarianceWeight: 0.35,      // Increased from 0.30
+    syncopationWeight: 0.40,      // Increased from 0.30
+    phraseSignificanceWeight: 0.15, // Decreased from 0.25
+    densityWeight: 0.10,          // Decreased from 0.15
+    // Total: 1.0 ✓
+  }
+});
+
+const rhythm = await generator.generate(audioBuffer, beatMap, interpolatedBeatMap);
+```
+
+### Combined Scoring Configuration
+
+Use both factor weights and band bias together:
+
+```typescript
+import { RhythmGenerator } from 'playlist-data-engine';
+
+// Example: Syncopated high-frequency rhythms
+const generator = new RhythmGenerator({
+  outputMode: 'composite',
+  scoringConfig: {
+    // Favor syncopation and variety
+    ioiVarianceWeight: 0.35,
+    syncopationWeight: 0.40,
+    phraseSignificanceWeight: 0.15,
+    densityWeight: 0.10,
+
+    // And bias toward high frequencies
+    bandBiasWeights: {
+      low: 0.2,   // Almost never use bass
+      mid: 1.0,   // Neutral
+      high: 1.8,  // Strongly favor high frequencies
+    }
+  }
+});
+
+const rhythm = await generator.generate(audioBuffer, beatMap, interpolatedBeatMap);
+console.log(`Natural difficulty: ${rhythm.composite.naturalDifficulty}`);
 ```
 
 ### Working with Difficulty Variants

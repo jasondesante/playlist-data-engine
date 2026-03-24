@@ -2509,6 +2509,7 @@ constructor(options?: RhythmGenerationOptions)
 | `minimumTransientIntensity` | `0.0` | Filter weak transients (0.0 = catch all) |
 | `transientConfig` | `undefined` | Per-band transient detection config (see [TransientDetector](#transientdetector)) |
 | `densityValidation` | `undefined` | Density validation config for quantization (see [RhythmQuantizer](#rhythmquantizer)) |
+| `scoringConfig` | `undefined` | Stream scoring config for composite selection (see [StreamScorer](#streamscorer)) |
 | `seed` | `undefined` | Seed for reproducibility |
 | `verbose` | `false` | Log progress information |
 | `enableCache` | `true` | Enable caching of intermediate results |
@@ -2755,6 +2756,39 @@ Analyzes quantized rhythm streams to measure density and determine natural diffi
 Scores each band stream section for rhythmic interest. Uses IOI variance, syncopation, phrase significance, and density factors.
 
 **For scoring factors and section scoring algorithm, see [docs/BEAT_DETECTION.md#scoring-and-composite-generation](docs/BEAT_DETECTION.md#scoring-and-composite-generation)**
+
+**Constructor:**
+
+```typescript
+constructor(config?: Partial<StreamScorerConfig>)
+```
+
+**Config Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `beatsPerSection` | `8` | Number of beats per section for scoring (2 measures in 4/4 time) |
+| `ioiVarianceWeight` | `0.30` | Weight for IOI variance (rhythmic variety) in scoring |
+| `syncopationWeight` | `0.30` | Weight for syncopation (offbeat emphasis) in scoring |
+| `phraseSignificanceWeight` | `0.25` | Weight for phrase significance (pattern detection) in scoring |
+| `densityWeight` | `0.15` | Weight for density factor (note count) in scoring |
+| `offbeatGridPositions` | `{ straight_16th: [1, 3], triplet_8th: [1, 2] }` | Grid positions considered "offbeats" for syncopation scoring |
+| `bandBiasWeights` | `undefined` | Band bias multipliers applied to final section scores (see below) |
+
+**Band Bias Weights:**
+
+| Band | Type | Range | Description |
+|------|------|-------|-------------|
+| `low` | `number` | `0.0 - 2.0` | Bias for low/bass frequency band |
+| `mid` | `number` | `0.0 - 2.0` | Bias for mid frequency band |
+| `high` | `number` | `0.0 - 2.0` | Bias for high frequency band |
+
+**Band Bias Values:**
+- `1.0` = neutral (no bias)
+- `> 1.0` = favor this band
+- `< 1.0` = disfavor this band
+- `0.0` = never select this band
+- `undefined` = no bias applied (default)
 
 **Methods:**
 
