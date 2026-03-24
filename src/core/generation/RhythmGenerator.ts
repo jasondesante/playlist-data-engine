@@ -314,6 +314,7 @@ interface GeneratedRhythmMapJSON {
     duration: number;
     beats: GeneratedBeatJSON[];
     gridDecisions: GridDecisionJSON[];
+    quarterNoteInterval: number;
 }
 
 /**
@@ -1500,6 +1501,7 @@ export class RhythmGenerator {
             duration: map.duration,
             beats: map.beats.map(b => this.serializeGeneratedBeat(b)),
             gridDecisions: map.gridDecisions,
+            quarterNoteInterval: map.quarterNoteInterval,
         };
     }
     private static deserializeGeneratedRhythmMap(json: GeneratedRhythmMapJSON): GeneratedRhythmMap {
@@ -1508,6 +1510,7 @@ export class RhythmGenerator {
             duration: json.duration,
             beats: json.beats.map(b => this.deserializeGeneratedBeat(b)),
             gridDecisions: json.gridDecisions,
+            quarterNoteInterval: json.quarterNoteInterval,
         };
     }
     private static serializeGeneratedBeat(beat: GeneratedBeat): GeneratedBeatJSON {

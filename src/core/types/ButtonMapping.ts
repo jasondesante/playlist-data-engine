@@ -163,6 +163,7 @@ export const CONSECUTIVE_KEY_LIMITS: Record<Exclude<DifficultyPreset, 'custom'>,
     easy: 12,
     medium: 8,
     hard: 6,
+    natural: 6,  // Same as hard - uses actual detected rhythm
 };
 
 /**
@@ -174,6 +175,9 @@ export const CONSECUTIVE_KEY_LIMITS: Record<Exclude<DifficultyPreset, 'custom'>,
 export function getConsecutiveKeyLimit(difficulty: DifficultyPreset): number {
     if (difficulty === 'custom') {
         return CONSECUTIVE_KEY_LIMITS.medium; // Default to medium for custom
+    }
+    if (difficulty === 'natural') {
+        return CONSECUTIVE_KEY_LIMITS.hard; // Natural uses hard limits
     }
     return CONSECUTIVE_KEY_LIMITS[difficulty];
 }

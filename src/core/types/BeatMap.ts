@@ -724,8 +724,14 @@ export interface AccuracyThresholds {
 
 /**
  * Preset difficulty levels for accuracy thresholds
+ *
+ * - 'easy': Forgiving timing, simplified rhythm
+ * - 'medium': Balanced timing and rhythm
+ * - 'hard': Tight timing, full rhythm density
+ * - 'natural': Unedited composite stream (what was actually detected in the audio)
+ * - 'custom': User-defined settings
  */
-export type DifficultyPreset = 'easy' | 'medium' | 'hard' | 'custom';
+export type DifficultyPreset = 'easy' | 'medium' | 'hard' | 'natural' | 'custom';
 
 /**
  * Easy difficulty thresholds (forgiving)
@@ -751,6 +757,16 @@ export const MEDIUM_ACCURACY_THRESHOLDS: AccuracyThresholds = {
  * Hard difficulty thresholds (strict - for veterans)
  */
 export const HARD_ACCURACY_THRESHOLDS: AccuracyThresholds = {
+    perfect: 0.008,  // ±8ms
+    great: 0.020,    // ±20ms
+    good: 0.040,     // ±40ms
+    ok: 0.075,       // ±75ms
+} as const;
+
+/**
+ * Natural difficulty thresholds (same as hard - unedited composite)
+ */
+export const NATURAL_ACCURACY_THRESHOLDS: AccuracyThresholds = {
     perfect: 0.008,  // ±8ms
     great: 0.020,    // ±20ms
     good: 0.040,     // ±40ms
@@ -2731,6 +2747,7 @@ export const GROOVE_PENALTY_PRESETS: Record<Exclude<DifficultyPreset, 'custom'>,
     easy: EASY_GROOVE_PENALTIES,
     medium: MEDIUM_GROOVE_PENALTIES,
     hard: HARD_GROOVE_PENALTIES,
+    natural: MEDIUM_GROOVE_PENALTIES, // Natural uses medium settings (unedited composite)
 };
 
 /**

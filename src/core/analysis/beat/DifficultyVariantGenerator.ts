@@ -1656,8 +1656,15 @@ export class DifficultyVariantGenerator {
 
         // Create interpolated beats
         const interpolatedBeats: CompositeBeat[] = positionsToFill.map(gridPosition => {
-            const interval = gridType === 'straight_16th' ? quarterNoteInterval / 4 : quarterNoteInterval / 3;
-            const timestamp = referenceBeat.timestamp - (referenceBeat.gridPosition * interval) + (gridPosition * interval);
+            // CRITICAL: Use the reference beat's OWN grid type interval to derive the beat start.
+            // Then use the target grid type interval for the new grid position.
+            // Mixing intervals causes 32nd-note offsets (quarterInterval/12 error).
+            const referenceInterval = referenceBeat.gridType === 'straight_16th'
+                ? quarterNoteInterval / 4 : quarterNoteInterval / 3;
+            const newInterval = gridType === 'straight_16th'
+                ? quarterNoteInterval / 4 : quarterNoteInterval / 3;
+            const beatStartTimestamp = referenceBeat.timestamp - (referenceBeat.gridPosition * referenceInterval);
+            const timestamp = beatStartTimestamp + (gridPosition * newInterval);
 
             return {
                 timestamp,

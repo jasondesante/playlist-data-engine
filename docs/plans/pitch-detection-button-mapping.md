@@ -556,7 +556,7 @@ Patterns are controller-mode-specific:
     // Main entry point - takes GeneratedRhythm, outputs mapped variant
     map(
       generatedRhythm: GeneratedRhythm,
-      difficulty: 'easy' | 'medium' | 'hard',  // Which variant to map
+      difficulty: 'easy' | 'medium' | 'hard' | 'natural',  // Which variant to map ('natural' uses hard limits)
       pitchAnalysis?: LinkedPitchAnalysis
     ): MappedLevelResult;
 
@@ -1151,7 +1151,7 @@ interface ChartedBeatMap {
 
 interface ChartMetadata {
   /** Which difficulty this chart represents */
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'easy' | 'medium' | 'hard' | 'natural';
 
   /** Keys used in this chart */
   keysUsed: string[];
@@ -1384,20 +1384,21 @@ interface ChartMetadata {
 
   // Re-exported from rhythm generation for reference
   interface DifficultyVariant {
-    difficulty: 'easy' | 'medium' | 'hard';
+    difficulty: 'easy' | 'medium' | 'hard' | 'natural';
     stream: GeneratedBeat[];
-    isUnedited: boolean;  // true for the composite's natural difficulty
+    isUnedited: boolean;  // true for the composite's natural difficulty or 'natural' variant
     editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
     editAmount: number;  // 0-1, how much was changed
     patternsInserted?: string[];  // IDs of patterns inserted (if any)
   }
 
   interface GeneratedRhythm {
-    // 3 difficulty variants of the composite stream
+    // 4 difficulty variants of the composite stream (including natural/unedited)
     difficultyVariants: {
       easy: DifficultyVariant;
       medium: DifficultyVariant;
       hard: DifficultyVariant;
+      natural: DifficultyVariant;  // Unedited composite stream for reference
     };
 
     // Individual band streams (for reference/advanced use)
@@ -1977,6 +1978,7 @@ interface GeneratedRhythm {
     easy: DifficultyVariant;
     medium: DifficultyVariant;
     hard: DifficultyVariant;
+    natural: DifficultyVariant;  // Unedited composite stream for reference
   };
   bandStreams: {
     low: GeneratedRhythmMap;
@@ -2001,7 +2003,7 @@ interface GeneratedRhythm {
 ### Internal Dependencies
 - **Requires**: `procedural-rhythm-generation.md` to be completed
   - Needs `GeneratedRhythm` output containing:
-    - `difficultyVariants` (easy/medium/hard as `DifficultyVariant`)
+    - `difficultyVariants` (easy/medium/hard/natural as `DifficultyVariant`)
     - `bandStreams` (low/mid/high as `GeneratedRhythmMap`)
     - `composite` (`CompositeStream`)
     - `transientAnalysis` (`TransientAnalysis`)

@@ -569,11 +569,12 @@ export class LevelGenerator {
         progressCallback?: LevelProgressCallback,
         signal?: AbortSignal
     ): Promise<AllDifficultiesResult> {
-        const difficulties: Exclude<DifficultyPreset, 'custom'>[] = ['easy', 'medium', 'hard'];
-        const results: Record<Exclude<DifficultyPreset, 'custom'>, GeneratedLevel | null> = {
+        const difficulties: Exclude<DifficultyPreset, 'custom'>[] = ['easy', 'medium', 'hard', 'natural'];
+        const results: Record<Exclude<DifficultyPreset, 'custom'> | 'natural', GeneratedLevel | null> = {
             easy: null,
             medium: null,
             hard: null,
+            natural: null,
         };
 
         // Check for cancellation at start

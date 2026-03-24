@@ -520,7 +520,7 @@ export class LevelSerializer {
      * Parse difficulty level from string
      */
     private static parseDifficultyLevel(value: string | undefined): DifficultyLevel {
-        if (value === 'easy' || value === 'medium' || value === 'hard') {
+        if (value === 'easy' || value === 'medium' || value === 'hard' || value === 'natural') {
             return value;
         }
         return 'medium';
@@ -530,7 +530,7 @@ export class LevelSerializer {
      * Parse difficulty preset from string
      */
     private static parseDifficultyPreset(value: string | undefined): DifficultyPreset {
-        if (value === 'easy' || value === 'medium' || value === 'hard' || value === 'custom') {
+        if (value === 'easy' || value === 'medium' || value === 'hard' || value === 'natural' || value === 'custom') {
             return value;
         }
         return 'medium';
@@ -611,6 +611,7 @@ export class LevelSerializer {
                     quantizationError: beat.quantizationError,
                 })),
             gridDecisions: [],
+            quarterNoteInterval: data.interpolatedMetadata.quarterNoteInterval,
         });
 
         const bandStreams = {

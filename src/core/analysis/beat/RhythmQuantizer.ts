@@ -262,6 +262,9 @@ export interface GeneratedRhythmMap {
 
     /** Per-beat grid choices (16th vs triplet) */
     gridDecisions: GridDecision[];
+
+    /** Duration of a quarter note in seconds (from UnifiedBeatMap - the ground truth) */
+    quarterNoteInterval: number;
 }
 
 // ============================================================================
@@ -727,6 +730,7 @@ export class RhythmQuantizer {
             duration: unifiedBeatMap.duration,
             beats,
             gridDecisions,
+            quarterNoteInterval: unifiedBeatMap.quarterNoteInterval,
         };
     }
 
