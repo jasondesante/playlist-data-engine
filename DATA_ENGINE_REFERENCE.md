@@ -2821,7 +2821,7 @@ Creates a composite stream by slicing together the highest-scoring sections from
 ### DifficultyVariantGenerator
 *Location:* *[src/core/analysis/beat/DifficultyVariantGenerator.ts](src/core/analysis/beat/DifficultyVariantGenerator.ts)*
 
-Generates easy/medium/hard difficulty variants from the composite stream. Uses simplification for harder-to-easier conversions and density enhancement for easier-to-harder conversions.
+Generates easy/medium/hard difficulty variants from the composite stream, plus a natural variant representing the unedited composite. Uses simplification for harder-to-easier conversions and density enhancement for easier-to-harder conversions.
 
 **For variant generation strategy, simplification rules, and density enhancement, see [docs/BEAT_DETECTION.md#difficulty-variant-generation](docs/BEAT_DETECTION.md#difficulty-variant-generation)**
 
@@ -2829,7 +2829,7 @@ Generates easy/medium/hard difficulty variants from the composite stream. Uses s
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `generate(composite, phraseAnalysis, gridDecisions)` | `DifficultyVariants` | Generate 3 difficulty variants |
+| `generate(composite, phraseAnalysis, gridDecisions)` | `DifficultyVariants` | Generate 4 difficulty variants (easy, medium, hard, natural) |
 
 **Subdivision Limits by Difficulty:**
 
@@ -2838,14 +2838,15 @@ Generates easy/medium/hard difficulty variants from the composite stream. Uses s
 | Easy | 8th notes, quarter note triplets | `straight_8th`, `quarter_triplet` |
 | Medium | 16th notes | `straight_16th`, `triplet_8th`, all types |
 | Hard | 16th notes | `straight_16th`, `triplet_8th`, all types |
+| Natural | No restrictions | All types (unedited composite) |
 
 **Variant Generation Strategy:**
 
-| Natural Difficulty | Easy Variant | Medium Variant | Hard Variant |
-|-------------------|--------------|----------------|--------------|
-| easy | Unedited | Density enhancement | Heavy density enhancement |
-| medium | Simplification | Unedited | Density enhancement |
-| hard | Heavy simplification | Simplification | Unedited |
+| Natural Difficulty | Easy Variant | Medium Variant | Hard Variant | Natural Variant |
+|-------------------|--------------|----------------|--------------|----------------|
+| easy | Unedited | Density enhancement | Heavy density enhancement | Unedited composite |
+| medium | Simplification | Unedited | Density enhancement | Unedited composite |
+| hard | Heavy simplification | Simplification | Unedited | Unedited composite |
 
 ---
 

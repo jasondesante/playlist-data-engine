@@ -3855,7 +3855,7 @@ for (const [name, variant] of Object.entries(rhythm.difficultyVariants)) {
   if (variant.isUnedited) {
     console.log(`${name} is the natural difficulty (unedited)`);
   }
-  console.log(`${name}: ${variant.stream.length} beats, editType: ${variant.editType}`);
+  console.log(`${name}: ${variant.beats.length} beats, editType: ${variant.editType}`);
 }
 
 // Check what patterns were inserted
@@ -3863,6 +3863,10 @@ const hardVariant = rhythm.difficultyVariants.hard;
 if (hardVariant.patternsInserted) {
   console.log(`Patterns inserted: ${hardVariant.patternsInserted.length}`);
 }
+
+// The 'natural' variant is always unedited - the actual detected rhythm
+const naturalVariant = rhythm.difficultyVariants.natural;
+console.log(`Natural variant: ${naturalVariant.beats.length} beats (unedited composite)`);
 ```
 
 ### Accessing Individual Band Streams

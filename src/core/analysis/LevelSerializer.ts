@@ -44,6 +44,7 @@ import type {
 import { isFullBeatMapExportData } from '../types/LevelExport.js';
 import type { SubdivisionType, DownbeatConfig, DownbeatSegment, TimeSignatureConfig } from '../types/BeatMap.js';
 import type { DifficultyLevel, DifficultyVariant } from '../analysis/beat/DifficultyVariantGenerator.js';
+import type { NaturalDifficulty } from '../analysis/beat/DensityAnalyzer.js';
 import type { GeneratedBeat, GridType, GeneratedRhythmMap } from '../analysis/beat/RhythmQuantizer.js';
 import type { GeneratedRhythm, RhythmMetadata, Band } from '../generation/RhythmGenerator.js';
 import type { MelodyContourAnalysisResult, DirectionStats, IntervalStats } from './MelodyContourAnalyzer.js';
@@ -641,7 +642,7 @@ export class LevelSerializer {
         const composite: CompositeStream = {
             beats: compositeBeats,
             sections: [],
-            naturalDifficulty: difficulty,
+            naturalDifficulty: difficulty as NaturalDifficulty,
             quarterNoteInterval: data.interpolatedMetadata.quarterNoteInterval,
             metadata: {
                 totalBeats: compositeBeats.length,
@@ -656,6 +657,7 @@ export class LevelSerializer {
                 easy: { ...variant, difficulty: 'easy' },
                 medium: { ...variant, difficulty: 'medium' },
                 hard: { ...variant, difficulty: 'hard' },
+                natural: { ...variant, difficulty: 'natural' },
             },
             bandStreams,
             composite,
@@ -774,7 +776,7 @@ export class LevelSerializer {
                             maxTransientsPerBeat: 1,
                             variance: 0,
                             densityCategory: 'moderate',
-                            naturalDifficulty: difficulty,
+                            naturalDifficulty: difficulty as NaturalDifficulty,
                             perBeatDensity: [],
                         },
                         high: {
@@ -794,7 +796,7 @@ export class LevelSerializer {
                         totalTransients: data.detectedBeats.length,
                         transientsPerBeat: 0.5,
                         densityCategory: 'moderate',
-                        naturalDifficulty: difficulty,
+                        naturalDifficulty: difficulty as NaturalDifficulty,
                     },
                 },
                 scoringResult: {

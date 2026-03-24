@@ -930,6 +930,7 @@ export class ButtonMapper {
             case 'easy': return 3;
             case 'medium': return 6;
             case 'hard': return 10;
+            case 'natural': return 10; // Natural uses hard difficulty limits
         }
     }
 

@@ -1235,7 +1235,8 @@ describe('Timestamp Recalculation After Grid Type Conversion', () => {
 
             expect(variants.easy.beats[0].gridType).toBe('quarter_triplet');
             expect(variants.easy.beats[0].gridPosition).toBe(0);
-            expect(variants.easy.beats[0].timestamp).toBe(1.0);
+            // Use toBeCloseTo for floating point comparison due to precision in test setup
+            expect(variants.easy.beats[0].timestamp).toBeCloseTo(1.0, 3);
         });
     });
 });

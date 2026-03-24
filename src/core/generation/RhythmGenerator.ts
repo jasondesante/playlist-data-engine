@@ -180,11 +180,12 @@ export type ProgressCallback = (phase: string, progress: number, message: string
  * Complete result of rhythm generation
  */
 export interface GeneratedRhythm {
-    /** 3 difficulty variants of the composite stream */
+    /** 4 difficulty variants of the composite stream (including natural/unedited) */
     difficultyVariants: {
         easy: DifficultyVariant;
         medium: DifficultyVariant;
         hard: DifficultyVariant;
+        natural: DifficultyVariant;
     };
 
     /** Individual band streams (for reference/advanced use) */
@@ -319,7 +320,7 @@ interface GeneratedRhythmMapJSON {
  * JSON-serializable version of DifficultyVariant
  */
 interface DifficultyVariantJSON {
-    difficulty: 'easy' | 'medium' | 'hard';
+    difficulty: 'easy' | 'medium' | 'hard' | 'natural';
     beats: VariantBeatJSON[];
     isUnedited: boolean;
     editType: 'none' | 'simplified' | 'interpolated' | 'pattern_inserted';
@@ -610,6 +611,7 @@ interface GeneratedRhythmJSON {
         easy: DifficultyVariantJSON;
         medium: DifficultyVariantJSON;
         hard: DifficultyVariantJSON;
+        natural: DifficultyVariantJSON;
     };
     bandStreams: {
         low: GeneratedRhythmMapJSON;
@@ -1254,7 +1256,7 @@ export class RhythmGenerator {
         composite: CompositeStream,
         phraseAnalysis: PhraseAnalysisResult,
         quantizationResult: QuantizedBandStreams
-    ): { easy: DifficultyVariant; medium: DifficultyVariant; hard: DifficultyVariant } {
+    ): { easy: DifficultyVariant; medium: DifficultyVariant; hard: DifficultyVariant; natural: DifficultyVariant } {
         // Collect grid decisions from all band streams
         const gridDecisions = this.collectGridDecisions(quantizationResult);
 
@@ -1347,6 +1349,7 @@ export class RhythmGenerator {
                 easy: this.serializeDifficultyVariant(rhythm.difficultyVariants.easy),
                 medium: this.serializeDifficultyVariant(rhythm.difficultyVariants.medium),
                 hard: this.serializeDifficultyVariant(rhythm.difficultyVariants.hard),
+                natural: this.serializeDifficultyVariant(rhythm.difficultyVariants.natural),
             },
             bandStreams: {
                 low: this.serializeGeneratedRhythmMap(rhythm.bandStreams.low),
@@ -1381,6 +1384,7 @@ export class RhythmGenerator {
                 easy: this.deserializeDifficultyVariant(json.difficultyVariants.easy),
                 medium: this.deserializeDifficultyVariant(json.difficultyVariants.medium),
                 hard: this.deserializeDifficultyVariant(json.difficultyVariants.hard),
+                natural: this.deserializeDifficultyVariant(json.difficultyVariants.natural),
             },
             bandStreams: {
                 low: this.deserializeGeneratedRhythmMap(json.bandStreams.low),

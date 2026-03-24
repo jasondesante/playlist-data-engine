@@ -141,6 +141,21 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
         description: 'All subdivision types including 16th notes',
         targetDensityRange: { min: 1.75, max: Infinity },
     },
+
+    /**
+     * Natural difficulty: Unedited composite stream
+     *
+     * - All grid types allowed (no restrictions)
+     * - Represents the actual detected rhythm from the audio
+     * - No target density range (accepts whatever was detected)
+     * - Used as a baseline for comparison against difficulty variants
+     */
+    natural: {
+        maxSubdivision: 'sixteenth',
+        allowedGridTypes: ['straight_16th', 'triplet_8th', 'straight_8th', 'quarter_triplet'],
+        description: 'Unedited composite stream - no subdivision restrictions',
+        targetDensityRange: { min: 0, max: Infinity },
+    },
 };
 
 // ============================================================================
@@ -149,8 +164,13 @@ export const SUBDIVISION_LIMITS: Record<DifficultyLevel, SubdivisionLimitConfig>
 
 /**
  * Difficulty level for rhythm variants
+ *
+ * - 'easy': Simplified rhythm with 8th notes max
+ * - 'medium': Moderate difficulty with density reduction
+ * - 'hard': Full density with all subdivisions
+ * - 'natural': Unedited composite stream (what was actually detected)
  */
-export type DifficultyLevel = 'easy' | 'medium' | 'hard';
+export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'natural';
 
 /**
  * Maximum subdivision type
@@ -515,6 +535,7 @@ export class DifficultyVariantGenerator {
         easy: DifficultyVariant;
         medium: DifficultyVariant;
         hard: DifficultyVariant;
+        natural: DifficultyVariant;
     } {
         const naturalDifficulty = composite.naturalDifficulty;
 
@@ -523,12 +544,22 @@ export class DifficultyVariantGenerator {
         const medium = this.generateVariant(composite, 'medium', naturalDifficulty, phraseAnalysis, gridDecisions);
         const hard = this.generateVariant(composite, 'hard', naturalDifficulty, phraseAnalysis, gridDecisions);
 
+        // Generate the natural variant (unedited composite stream)
+        const natural: DifficultyVariant = {
+            difficulty: 'natural',
+            beats: [...composite.beats],
+            isUnedited: true,
+            editType: 'none',
+            editAmount: 0,
+        };
+
         // Validate all variants against subdivision limits
         this.validateVariant(easy, 'easy');
         this.validateVariant(medium, 'medium');
         this.validateVariant(hard, 'hard');
+        // Note: natural variant is not validated since it has no restrictions
 
-        return { easy, medium, hard };
+        return { easy, medium, hard, natural };
     }
 
     /**
@@ -613,9 +644,9 @@ export class DifficultyVariantGenerator {
             const result = this.simplifyBeats(
                 composite.beats,
                 targetDifficulty,
+                composite.quarterNoteInterval,
                 false,
-                phraseAnalysis,
-                composite.quarterNoteInterval
+                phraseAnalysis
             );
 
             return {
@@ -642,9 +673,9 @@ export class DifficultyVariantGenerator {
             const result = this.simplifyBeats(
                 composite.beats,
                 targetDifficulty,
+                composite.quarterNoteInterval,
                 isHeavySimplification,
-                phraseAnalysis,
-                composite.quarterNoteInterval
+                phraseAnalysis
             );
 
             return {
@@ -669,7 +700,8 @@ export class DifficultyVariantGenerator {
                 targetDifficulty,
                 enhancementLevel,
                 phraseAnalysis,
-                gridDecisions
+                gridDecisions,
+                composite.quarterNoteInterval
             );
 
             // Determine edit type based on what was actually done
@@ -717,17 +749,17 @@ export class DifficultyVariantGenerator {
      *
      * @param beats - The beats to simplify
      * @param targetDifficulty - The target difficulty level
+     * @param quarterNoteInterval - Duration of a quarter note in seconds for timestamp calculation
      * @param isHeavySimplification - Whether this is heavy simplification (hard -> easy)
      * @param phraseAnalysis - Optional phrase analysis for preserving phrase boundaries
-     * @param quarterNoteInterval - Duration of a quarter note in seconds for timestamp calculation
      * @returns Simplified beats with conversion metadata
      */
     private simplifyBeats(
         beats: CompositeBeat[],
         targetDifficulty: DifficultyLevel,
+        quarterNoteInterval: number,
         isHeavySimplification: boolean = false,
-        phraseAnalysis?: PhraseAnalysisResult,
-        quarterNoteInterval?: number
+        phraseAnalysis?: PhraseAnalysisResult
     ): { beats: VariantBeat[]; metadata: SubdivisionConversionMetadata } {
         const metadata: SubdivisionConversionMetadata = {
             sixteenthToEighth: 0,
@@ -773,7 +805,7 @@ export class DifficultyVariantGenerator {
             }
 
             // Convert the beat
-            const convertedBeat = this.convertBeatGridType(beat, targetDifficulty, quarterNoteInterval ?? 0.5);
+            const convertedBeat = this.convertBeatGridType(beat, targetDifficulty, quarterNoteInterval);
 
             if (convertedBeat) {
                 convertedBeats.push(convertedBeat);
@@ -1324,6 +1356,7 @@ export class DifficultyVariantGenerator {
      * @param enhancementLevel - Whether this is moderate or heavy enhancement
      * @param phraseAnalysis - Optional phrase analysis for pattern library
      * @param gridDecisions - Optional grid decisions from quantized streams
+     * @param quarterNoteInterval - Duration of a quarter note in seconds for timestamp calculation
      * @returns Enhanced beats with metadata
      */
     private enhanceBeats(
@@ -1331,7 +1364,8 @@ export class DifficultyVariantGenerator {
         targetDifficulty: DifficultyLevel,
         enhancementLevel: 'moderate' | 'heavy',
         phraseAnalysis?: PhraseAnalysisResult,
-        gridDecisions?: Map<number, GridDecision>
+        gridDecisions?: Map<number, GridDecision>,
+        quarterNoteInterval: number = 0.5
     ): { beats: VariantBeat[]; metadata: EnhancementMetadata } {
         const metadata: EnhancementMetadata = {
             totalBeatsBefore: beats.length,
@@ -1403,7 +1437,8 @@ export class DifficultyVariantGenerator {
                     existingBeats,
                     beatIndex,
                     beatsToAdd - addedFromPattern,
-                    gridDecisions
+                    gridDecisions,
+                    quarterNoteInterval
                 );
                 enhancedBeats.push(...interpolatedBeats);
                 metadata.interpolatedBeats += interpolatedBeats.length;
@@ -1552,12 +1587,20 @@ export class DifficultyVariantGenerator {
      *
      * Adds beats at intermediate grid positions that don't already have beats.
      * Respects grid decisions (16th vs triplet) if available.
+     *
+     * @param existingBeats - Existing beats at this beat index
+     * @param beatIndex - The beat index to interpolate for
+     * @param beatsToAdd - Number of beats to add
+     * @param gridDecisions - Optional grid decisions from quantized streams
+     * @param quarterNoteInterval - Duration of a quarter note in seconds for timestamp calculation
+     * @returns Array of interpolated beats
      */
     private interpolateBeats(
         existingBeats: CompositeBeat[],
         beatIndex: number,
         beatsToAdd: number,
-        gridDecisions?: Map<number, GridDecision>
+        gridDecisions?: Map<number, GridDecision>,
+        quarterNoteInterval: number = 0.5
     ): CompositeBeat[] {
         if (beatsToAdd <= 0 || existingBeats.length === 0) {
             return [];
@@ -1610,7 +1653,6 @@ export class DifficultyVariantGenerator {
 
         // Get reference beat for timestamp calculation
         const referenceBeat = existingBeats[0];
-        const quarterNoteInterval = 0.5; // Default, would need actual value from beat map
 
         // Create interpolated beats
         const interpolatedBeats: CompositeBeat[] = positionsToFill.map(gridPosition => {
