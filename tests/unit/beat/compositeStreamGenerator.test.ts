@@ -315,8 +315,11 @@ describe('CompositeStreamGenerator', () => {
 
         it('should set natural difficulty to medium for moderate patterns', async () => {
             // Create a moderate pattern (should be 'medium')
+            // Medium range: 1.0 - 1.75 notes/beat
+            // We'll create 24 beats across 16 quarter notes = 1.5 notes/beat (solidly in medium range)
             const midBeats: GeneratedBeat[] = [];
             for (let i = 0; i < 16; i++) {
+                // Every beat gets a downbeat (16 beats)
                 midBeats.push(createGeneratedBeat({
                     timestamp: i * 0.5,
                     beatIndex: i,
@@ -324,13 +327,16 @@ describe('CompositeStreamGenerator', () => {
                     intensity: 0.7,
                     band: 'mid',
                 }));
-                midBeats.push(createGeneratedBeat({
-                    timestamp: i * 0.5 + 0.25,
-                    beatIndex: i,
-                    gridPosition: 2,
-                    intensity: 0.7,
-                    band: 'mid',
-                }));
+                // Only even beats get an offbeat (8 more beats = 24 total)
+                if (i % 2 === 0) {
+                    midBeats.push(createGeneratedBeat({
+                        timestamp: i * 0.5 + 0.25,
+                        beatIndex: i,
+                        gridPosition: 2,
+                        intensity: 0.7,
+                        band: 'mid',
+                    }));
+                }
             }
 
             const streams = createMockStreams([], midBeats, []);
@@ -339,7 +345,7 @@ describe('CompositeStreamGenerator', () => {
             const scoreResult = scorer.score(streams, phraseResult, densityResult);
             const composite = generator.generate(streams, scoreResult, densityResult);
 
-            // Moderate pattern (2 notes/beat) should be 'medium'
+            // Moderate pattern (24 beats / 16 quarter notes = 1.5 notes/beat) should be 'medium'
             expect(composite.naturalDifficulty).toBe('medium');
         });
     });

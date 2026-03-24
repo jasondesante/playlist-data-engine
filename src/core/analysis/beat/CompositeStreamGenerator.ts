@@ -127,6 +127,17 @@ const DEFAULT_COMPOSITE_STREAM_CONFIG: CompositeStreamConfig = {
     preserveGridDecisions: true,
 };
 
+/**
+ * Density thresholds for determining natural difficulty from composite stream.
+ * These match the defaults in DensityAnalyzer.
+ *
+ * Sparse: < SPARSE_THRESHOLD notes/beat → Easy
+ * Moderate: SPARSE_THRESHOLD - DENSE_THRESHOLD notes/beat → Medium
+ * Dense: > DENSE_THRESHOLD notes/beat → Hard
+ */
+const SPARSE_THRESHOLD = 1.0;
+const DENSE_THRESHOLD = 1.75;
+
 // ============================================================================
 // CompositeStreamGenerator Class
 // ============================================================================
@@ -311,16 +322,36 @@ export class CompositeStreamGenerator {
     /**
      * Determine the natural difficulty of the composite stream
      *
-     * Uses the combined density analysis to determine overall difficulty.
-     * Falls back to per-beat calculation if no combined metrics available.
+     * Calculates density based on the merged composite beats (what the player actually hits)
+     * rather than the multi-band density (which counts overlapping beats multiple times).
+     *
+     * This gives a more accurate representation of gameplay difficulty.
      */
     private determineNaturalDifficulty(
         beats: CompositeBeat[],
         densityAnalysis: DensityAnalysisResult
     ): NaturalDifficulty {
-        // Use the combined metrics from density analysis
-        // This represents the overall density across all bands
-        return densityAnalysis.combinedMetrics.naturalDifficulty;
+        // Calculate density from the composite (merged) beats
+        // This represents what the player actually hits
+        if (beats.length === 0) {
+            return 'easy';
+        }
+
+        // Find the total number of quarter note beats (max beatIndex + 1)
+        const maxBeatIndex = Math.max(...beats.map(b => b.beatIndex));
+        const totalQuarterNotes = maxBeatIndex + 1;
+
+        // Calculate notes per quarter note (notes/beat)
+        const notesPerBeat = beats.length / totalQuarterNotes;
+
+        // Determine natural difficulty based on density thresholds
+        if (notesPerBeat < SPARSE_THRESHOLD) {
+            return 'easy';
+        } else if (notesPerBeat > DENSE_THRESHOLD) {
+            return 'hard';
+        } else {
+            return 'medium';
+        }
     }
 
     /**
