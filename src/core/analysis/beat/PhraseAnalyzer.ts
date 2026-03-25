@@ -129,7 +129,7 @@ export interface PhraseAnalyzerConfig {
     /** Phrase sizes to check (in beats). Default: [1, 2, 4, 8] */
     phraseSizes: number[];
 
-    /** Minimum number of occurrences for a phrase to be considered significant. Default: 2 */
+    /** Minimum number of occurrences for a phrase to be considered significant. Default: 3 */
     minOccurrences: number;
 
     /** Number of top significant phrases to include in mostSignificantPhrases. Default: 10 */
@@ -137,6 +137,18 @@ export interface PhraseAnalyzerConfig {
 
     /** Whether to include phrases without variation in results. Default: false */
     includePhrasesWithoutVariation: boolean;
+
+    /**
+     * Minimum number of notes a phrase pattern must contain.
+     * Can be a static number or a function of phrase size in beats.
+     * Default: (sizeInBeats) => 1 + sizeInBeats
+     *
+     * Examples:
+     * - 1-beat phrase needs ≥2 notes
+     * - 2-beat phrase needs ≥3 notes
+     * - 4-beat phrase needs ≥5 notes
+     */
+    minNotesPerPhrase?: number | ((sizeInBeats: number) => number);
 }
 
 /**
@@ -168,9 +180,10 @@ interface PhraseCandidate {
 
 const DEFAULT_PHRASE_ANALYZER_CONFIG: PhraseAnalyzerConfig = {
     phraseSizes: [1, 2, 4, 8],
-    minOccurrences: 2,
+    minOccurrences: 3,
     topSignificantCount: 10,
     includePhrasesWithoutVariation: false,
+    minNotesPerPhrase: (sizeInBeats: number) => 1 + sizeInBeats,
 };
 
 // ============================================================================
@@ -279,6 +292,19 @@ export class PhraseAnalyzer {
     }
 
     /**
+     * Resolve the minimum notes required for a given phrase size
+     */
+    private getMinNotes(sizeInBeats: number): number {
+        if (typeof this.config.minNotesPerPhrase === 'function') {
+            return this.config.minNotesPerPhrase(sizeInBeats);
+        }
+        if (typeof this.config.minNotesPerPhrase === 'number') {
+            return this.config.minNotesPerPhrase;
+        }
+        return 1 + sizeInBeats;
+    }
+
+    /**
      * Analyze a single band for phrases
      */
     private analyzeBand(rhythmMap: GeneratedRhythmMap, band: 'low' | 'mid' | 'high'): BandPhraseAnalysis {
@@ -314,6 +340,11 @@ export class PhraseAnalyzer {
 
             // Use the first candidate as the pattern template
             const template = candidates[0];
+
+            // Skip phrases with too few notes
+            if (template.pattern.length < this.getMinNotes(template.sizeInBeats)) {
+                continue;
+            }
 
             // Check if the pattern has variation
             const hasVariation = this.hasPatternVariation(template.pattern, template.sizeInBeats);

@@ -24,7 +24,7 @@ import {
     type DensityValidationResult,
     type BandDensityValidationResult,
 } from '../analysis/beat/RhythmQuantizer.js';
-import { PhraseAnalyzer, type PhraseAnalysisResult, type RhythmicPhrase, type PhraseOccurrence, type BandPhraseAnalysis } from '../analysis/beat/PhraseAnalyzer.js';
+import { PhraseAnalyzer, type PhraseAnalysisResult, type RhythmicPhrase, type PhraseOccurrence, type BandPhraseAnalysis, type PhraseAnalyzerConfig } from '../analysis/beat/PhraseAnalyzer.js';
 import { DensityAnalyzer, type DensityAnalysisResult, type BandDensityMetrics, type SectionDensityMetrics, type BeatDensityMetrics } from '../analysis/beat/DensityAnalyzer.js';
 import { StreamScorer, type StreamScoringResult, type SectionScore, type SectionWinner, type ScoringFactors, type StreamScorerConfig } from '../analysis/beat/StreamScorer.js';
 import {
@@ -139,6 +139,19 @@ export interface RhythmGenerationOptions {
      * ```
      */
     scoringConfig?: Partial<StreamScorerConfig>;
+
+    /**
+     * Phrase analyzer configuration.
+     * Controls phrase detection behavior including minimum phrase size and occurrences.
+     * @example
+     * ```typescript
+     * phraseAnalyzerConfig: {
+     *   minOccurrences: 3,
+     *   minNotesPerPhrase: (size) => 1 + size,
+     * }
+     * ```
+     */
+    phraseAnalyzerConfig?: Partial<PhraseAnalyzerConfig>;
 
     /** Seed for reproducibility (optional) */
     seed?: string;
@@ -740,6 +753,7 @@ type ResolvedOptions = {
     transientConfig: BandTransientConfigOverrides | undefined;
     densityValidation?: DensityValidationConfig;
     scoringConfig?: Partial<StreamScorerConfig>;
+    phraseAnalyzerConfig?: Partial<PhraseAnalyzerConfig>;
     seed: string | undefined;
     verbose: boolean;
     enableCache: boolean;
@@ -753,6 +767,7 @@ const DEFAULT_OPTIONS: ResolvedOptions = {
     minimumTransientIntensity: 0.0,
     transientConfig: undefined,
     scoringConfig: undefined,
+    phraseAnalyzerConfig: undefined,
     seed: undefined,
     verbose: false,
     enableCache: true,
@@ -836,7 +851,7 @@ export class RhythmGenerator {
             densityValidation: this.options.densityValidation,
         });
 
-        this.phraseAnalyzer = new PhraseAnalyzer();
+        this.phraseAnalyzer = new PhraseAnalyzer(this.options.phraseAnalyzerConfig);
 
         this.densityAnalyzer = new DensityAnalyzer();
 

@@ -2510,6 +2510,7 @@ constructor(options?: RhythmGenerationOptions)
 | `transientConfig` | `undefined` | Per-band transient detection config (see [TransientDetector](#transientdetector)) |
 | `densityValidation` | `undefined` | Density validation config for quantization (see [RhythmQuantizer](#rhythmquantizer)) |
 | `scoringConfig` | `undefined` | Stream scoring config for composite selection (see [StreamScorer](#streamscorer)) |
+| `phraseAnalyzerConfig` | `undefined` | Phrase analyzer config (see [PhraseAnalyzer](#phraseanalyzer)) |
 | `seed` | `undefined` | Seed for reproducibility |
 | `verbose` | `false` | Log progress information |
 | `enableCache` | `true` | Enable caching of intermediate results |
@@ -2692,9 +2693,10 @@ constructor(config?: PhraseAnalyzerConfig)
 | Option | Default | Description |
 |--------|---------|-------------|
 | `phraseSizes` | `[1, 2, 4, 8]` | Phrase sizes to check (in beats) |
-| `minOccurrences` | 2 | Minimum occurrences for significance |
+| `minOccurrences` | 3 | Minimum occurrences for significance |
 | `topSignificantCount` | 10 | Number of top phrases to include |
 | `includePhrasesWithoutVariation` | `false` | Include phrases without rhythmic variation |
+| `minNotesPerPhrase` | `(size) => 1 + size` | Minimum notes a phrase pattern must contain (static number or function of phrase size) |
 
 **Methods:**
 
