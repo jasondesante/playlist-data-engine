@@ -778,14 +778,18 @@ export class DifficultyVariantGenerator {
         // Build phrase membership map for boundary preservation
         const phraseMembership = this.buildPhraseMembershipMap(phraseAnalysis);
 
+        // Resolve mixed grids before density calculations for accurate counts
+        const cleanedBeats = this.enforceSingleGridPerBeat(beats);
+        metadata.totalBeatsBefore = cleanedBeats.length;
+
         // If all grid types are allowed, no grid conversion needed, but density reduction may still be required
         const allowedTypes = SUBDIVISION_LIMITS[targetDifficulty].allowedGridTypes;
-        const allTypesAllowed = beats.every(b => allowedTypes.includes(b.gridType));
+        const allTypesAllowed = cleanedBeats.every(b => allowedTypes.includes(b.gridType));
 
         if (allTypesAllowed && !isHeavySimplification) {
             // Even though grid types are allowed, check if density reduction is needed
             const densityReducedBeats = this.reduceDensityToTarget(
-                beats as VariantBeat[],
+                cleanedBeats as VariantBeat[],
                 targetDifficulty,
                 metadata,
                 phraseMembership
@@ -795,9 +799,9 @@ export class DifficultyVariantGenerator {
         }
 
         // For heavy simplification, filter beats based on priority
-        let beatsToProcess = beats;
+        let beatsToProcess = cleanedBeats;
         if (isHeavySimplification) {
-            beatsToProcess = this.filterBeatsForHeavySimplification(beats, metadata, phraseMembership);
+            beatsToProcess = this.filterBeatsForHeavySimplification(cleanedBeats, metadata, phraseMembership);
         }
 
         // Convert each beat to allowed grid type
@@ -1395,8 +1399,16 @@ export class DifficultyVariantGenerator {
             return { beats: [], metadata };
         }
 
+        // Resolve mixed grids BEFORE calculating targets.
+        // If a beat index has both triplet and straight notes, the density calculation
+        // counts them all, but enforceSingleGridPerBeat later removes the losers.
+        // This causes the final density to fall short of the target. By resolving
+        // grids first, all density math and interpolation work with accurate counts.
+        const cleanedBeats = this.enforceSingleGridPerBeat(beats);
+        metadata.totalBeatsBefore = cleanedBeats.length;
+
         // Group beats by beatIndex for analysis
-        const beatsByIndex = this.groupBeatsByIndex(beats);
+        const beatsByIndex = this.groupBeatsByIndex(cleanedBeats);
 
         // Calculate target beats per beat index based on multiplier
         const targetBeatsPerBeat = this.calculateTargetBeatsPerBeat(beatsByIndex, densityMultiplier);

@@ -413,7 +413,7 @@ describe('DifficultyVariantGenerator', () => {
         it('should include conversion metadata for simplified variants', () => {
             const beats = [
                 createMockCompositeBeat(0, 'straight_16th', 0),
-                createMockCompositeBeat(0, 'triplet_8th', 1),
+                createMockCompositeBeat(1, 'triplet_8th', 1),
             ];
             const composite = createMockCompositeStream(beats, 'medium');
             const variants = generator.generate(composite);
