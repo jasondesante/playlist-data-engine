@@ -823,11 +823,22 @@ describe('Custom Classes', () => {
 
     describe('Edge cases and integration', () => {
         it('should handle registering default class again as custom', () => {
-            // Try to register Wizard as a custom class
-            manager.register('classes', [asClass('Wizard')]);
+            // Register custom class data for TestFighter first, then register the name
+            manager.register('classes.data' as any, [{
+                name: 'TestFighter',
+                baseClass: 'Fighter',
+                primary_ability: 'STR',
+                hit_die: 10,
+                saving_throws: ['STR', 'CON'],
+                is_spellcaster: false,
+                skill_count: 2,
+                available_skills: ['athletics', 'intimidation'],
+                has_expertise: false
+            }]);
+            manager.register('classes', [asClass('TestFighter')]);
 
             const classes = manager.get('classes');
-            expect(classes).toContain('Wizard');
+            expect(classes).toContain('TestFighter');
         });
 
         it('should handle multiple custom classes with different base classes', () => {

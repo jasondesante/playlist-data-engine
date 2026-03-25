@@ -559,10 +559,14 @@ describe('Custom Races', () => {
     });
 
     describe('Edge cases and integration', () => {
-        it('should handle registering default race again as custom', () => {
-            // Try to register Human as a custom race (should work but would use default data)
-            manager.register('races', ['Human']);
+        it('should handle registering default race again (string categories skip dup check)', () => {
+            // String categories (races, classes) skip duplicate detection because
+            // re-registering is used to adjust weights on existing items
+            expect(() => {
+                manager.register('races', ['Human']);
+            }).not.toThrow();
 
+            // The race should still be available
             const races = manager.get('races');
             expect(races).toContain('Human');
         });
@@ -612,7 +616,7 @@ describe('Custom Races', () => {
             // This test uses default race (Elf) to avoid ESM/CJS interop issues
             const baseTrait = {
                 id: 'darkvision_custom',
-                name: 'Darkvision',
+                name: 'Custom Darkvision',
                 race: 'Elf',
                 description: 'See in darkness',
                 type: 'passive' as const,
@@ -624,7 +628,7 @@ describe('Custom Races', () => {
             // High Elf only trait
             const highElfTrait = {
                 id: 'high_elf_magic',
-                name: 'High Elf Magic',
+                name: 'Custom High Elf Magic',
                 race: 'Elf',
                 subrace: 'High Elf',
                 description: 'Extra wizard cantrip',

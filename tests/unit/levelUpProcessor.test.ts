@@ -529,7 +529,7 @@ describe('LevelUpProcessor with Custom Features', () => {
         it('should apply passive modifier effects', () => {
             const speedFeature: ClassFeature = {
                 id: 'custom_speed_boost',
-                name: 'Fast Movement',
+                name: 'Test Fast Movement',
                 description: '+10 speed.',
                 type: 'passive',
                 class: 'Fighter',

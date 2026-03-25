@@ -89,7 +89,7 @@ describe('Integration: Custom Data Generation', () => {
                 // Mage Hand is a default spell, we can use createTestSpell for a second cantrip
                 {
                     id: 'mage_hand_test',
-                    name: 'Mage Hand',
+                    name: 'Test Mage Hand',
                     level: 0,
                     school: 'Conjuration',
                     casting_time: '1 action',
@@ -118,7 +118,7 @@ describe('Integration: Custom Data Generation', () => {
             const cantripNames = cantrips.map((s: { name: string }) => s.name);
 
             expect(cantripNames).toContain('Arcane Spark');
-            expect(cantripNames).toContain('Mage Hand');
+            expect(cantripNames).toContain('Test Mage Hand');
         });
     });
 
@@ -220,7 +220,7 @@ describe('Integration: Custom Data Generation', () => {
         });
 
         it('should include custom skin tones', () => {
-            const customSkinTones = ['#FFCCAA', '#C68642', '#8D5524'];
+            const customSkinTones = ['#FFCCAA', '#D2956A', '#9B6B4A'];
 
             CharacterGenerator.generate(
                 'test-custom-skin-tones',
@@ -238,8 +238,8 @@ describe('Integration: Custom Data Generation', () => {
             const allSkinTones = manager.get('appearance.skinTones');
 
             expect(allSkinTones).toContain('#FFCCAA');
-            expect(allSkinTones).toContain('#C68642');
-            expect(allSkinTones).toContain('#8D5524');
+            expect(allSkinTones).toContain('#D2956A');
+            expect(allSkinTones).toContain('#9B6B4A');
         });
 
         it('should include custom hair colors', () => {
@@ -290,7 +290,7 @@ describe('Integration: Custom Data Generation', () => {
         });
 
         it('should include custom eye colors', () => {
-            const customEyeColors = ['#2C1810', '#1A1A1A', '#4169E1'];
+            const customEyeColors = ['#2C1810', '#1A1A1A', '#3B5998'];
 
             CharacterGenerator.generate(
                 'test-custom-eye-colors',
@@ -309,7 +309,7 @@ describe('Integration: Custom Data Generation', () => {
 
             expect(allEyeColors).toContain('#2C1810');
             expect(allEyeColors).toContain('#1A1A1A');
-            expect(allEyeColors).toContain('#4169E1');
+            expect(allEyeColors).toContain('#3B5998');
         });
 
         it('should include custom facial features', () => {
@@ -341,7 +341,7 @@ describe('Integration: Custom Data Generation', () => {
                 skinTones: ['#FFCCAA'],
                 hairColors: ['#1a1a1a'],
                 hairStyles: ['Spiky'],
-                eyeColors: ['#4169E1'],
+                eyeColors: ['#3B5998'],
                 facialFeatures: ['Tattoo']
             };
 
@@ -361,7 +361,7 @@ describe('Integration: Custom Data Generation', () => {
             expect(manager.get('appearance.skinTones')).toContain('#FFCCAA');
             expect(manager.get('appearance.hairColors')).toContain('#1a1a1a');
             expect(manager.get('appearance.hairStyles')).toContain('Spiky');
-            expect(manager.get('appearance.eyeColors')).toContain('#4169E1');
+            expect(manager.get('appearance.eyeColors')).toContain('#3B5998');
             expect(manager.get('appearance.facialFeatures')).toContain('Tattoo');
         });
     });

@@ -709,7 +709,7 @@ describe('Subrace Support', () => {
 
             const baseDragonkinTrait: RacialTrait = {
                 id: 'dragonkin_draconic_ancestry',
-                name: 'Draconic Ancestry',
+                name: 'Test Draconic Ancestry',
                 description: 'Dragon heritage',
                 type: 'passive',
                 race: 'Dwarf', // Using Dwarf as a stand-in for custom race testing

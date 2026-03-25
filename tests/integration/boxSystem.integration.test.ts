@@ -819,16 +819,16 @@ describe('Integration: Box Item System', () => {
         it('should consume required item from inventory when opening box', () => {
             const character = createMockCharacter();
 
-            // Create a box requiring an Iron Key
+            // Create a box requiring a Test Iron Key
             const lockedChest = createLockedBox(
                 'Test Locked Chest',
-                [{ itemName: 'Iron Key' }],
+                [{ itemName: 'Test Iron Key' }],
                 [{ gold: 50 }]
             );
 
-            // Create the Iron Key item
+            // Create the Test Iron Key item
             const ironKey: EnhancedEquipment = {
-                name: 'Iron Key',
+                name: 'Test Iron Key',
                 type: 'item',
                 rarity: 'common',
                 weight: 0,
@@ -843,8 +843,8 @@ describe('Integration: Box Item System', () => {
 
             // Verify both items are in inventory
             expect(withItems.equipment!.items.some(i => i.name === 'Test Locked Chest')).toBe(true);
-            expect(withItems.equipment!.items.some(i => i.name === 'Iron Key')).toBe(true);
-            expect(withItems.equipment!.items.find(i => i.name === 'Iron Key')?.quantity).toBe(1);
+            expect(withItems.equipment!.items.some(i => i.name === 'Test Iron Key')).toBe(true);
+            expect(withItems.equipment!.items.find(i => i.name === 'Test Iron Key')?.quantity).toBe(1);
 
             // Open the locked chest
             const rng = new SeededRNG('locked-chest-test');
@@ -853,10 +853,10 @@ describe('Integration: Box Item System', () => {
             expect(result).not.toBeNull();
             expect(result!.result.success).toBe(true);
             expect(result!.result.gold).toBe(50);
-            expect(result!.result.consumedItems).toEqual([{ name: 'Iron Key', quantity: 1 }]);
+            expect(result!.result.consumedItems).toEqual([{ name: 'Test Iron Key', quantity: 1 }]);
 
-            // Iron Key should be removed from inventory
-            const keyStillInInventory = result!.character.equipment!.items.some(i => i.name === 'Iron Key');
+            // Test Iron Key should be removed from inventory
+            const keyStillInInventory = result!.character.equipment!.items.some(i => i.name === 'Test Iron Key');
             expect(keyStillInInventory).toBe(false);
 
             // Box should also be removed
@@ -867,16 +867,16 @@ describe('Integration: Box Item System', () => {
         it('should consume multiple items when quantity > 1', () => {
             const character = createMockCharacter();
 
-            // Create a box requiring 3 Lockpicks
+            // Create a box requiring 3 Test Lockpicks
             const thievesCache = createLockedBox(
                 'Test Thieves Cache',
-                [{ itemName: 'Lockpick', quantity: 3 }],
+                [{ itemName: 'Test Lockpick', quantity: 3 }],
                 [{ gold: 75 }]
             );
 
-            // Create the Lockpick item
+            // Create the Test Lockpick item
             const lockpick: EnhancedEquipment = {
-                name: 'Lockpick',
+                name: 'Test Lockpick',
                 type: 'item',
                 rarity: 'common',
                 weight: 0,
@@ -891,14 +891,14 @@ describe('Integration: Box Item System', () => {
 
             // Manually add lockpicks with quantity 5
             withItems.equipment!.items.push({
-                name: 'Lockpick',
+                name: 'Test Lockpick',
                 quantity: 5,
                 equipped: false,
                 instanceId: 'lockpick_instance_1'
             });
 
             // Verify setup
-            expect(withItems.equipment!.items.find(i => i.name === 'Lockpick')?.quantity).toBe(5);
+            expect(withItems.equipment!.items.find(i => i.name === 'Test Lockpick')?.quantity).toBe(5);
 
             // Open the cache
             const rng = new SeededRNG('thieves-cache-test');
@@ -907,10 +907,10 @@ describe('Integration: Box Item System', () => {
             expect(result).not.toBeNull();
             expect(result!.result.success).toBe(true);
             expect(result!.result.gold).toBe(75);
-            expect(result!.result.consumedItems).toEqual([{ name: 'Lockpick', quantity: 3 }]);
+            expect(result!.result.consumedItems).toEqual([{ name: 'Test Lockpick', quantity: 3 }]);
 
             // Lockpicks should be reduced from 5 to 2
-            const lockpickItem = result!.character.equipment!.items.find(i => i.name === 'Lockpick');
+            const lockpickItem = result!.character.equipment!.items.find(i => i.name === 'Test Lockpick');
             expect(lockpickItem).toBeDefined();
             expect(lockpickItem!.quantity).toBe(2);
 
@@ -921,10 +921,10 @@ describe('Integration: Box Item System', () => {
         it('should fail gracefully when required item is not in inventory', () => {
             const character = createMockCharacter();
 
-            // Create a box requiring an Iron Key
+            // Create a box requiring a Test Iron Key
             const lockedChest = createLockedBox(
                 'Test Locked Chest No Key',
-                [{ itemName: 'Iron Key' }],
+                [{ itemName: 'Test Iron Key' }],
                 [{ gold: 50 }]
             );
 
@@ -941,7 +941,7 @@ describe('Integration: Box Item System', () => {
             expect(result!.result.success).toBe(false);
             expect(result!.result.error).toBeDefined();
             expect(result!.result.error!.code).toBe('MISSING_ITEM');
-            expect(result!.result.error!.message).toContain('Iron Key');
+            expect(result!.result.error!.message).toContain('Test Iron Key');
 
             // Box should still be in inventory (not consumed)
             const boxStillInInventory = result!.character.equipment!.items.some(
@@ -957,16 +957,16 @@ describe('Integration: Box Item System', () => {
         it('should fail gracefully when item quantity is insufficient', () => {
             const character = createMockCharacter();
 
-            // Create a box requiring 3 Lockpicks
+            // Create a box requiring 3 Test Lockpicks
             const thievesCache = createLockedBox(
                 'Test Thieves Cache Insufficient',
-                [{ itemName: 'Lockpick', quantity: 3 }],
+                [{ itemName: 'Test Lockpick', quantity: 3 }],
                 [{ gold: 75 }]
             );
 
-            // Create the Lockpick item
+            // Create the Test Lockpick item
             const lockpick: EnhancedEquipment = {
-                name: 'Lockpick',
+                name: 'Test Lockpick',
                 type: 'item',
                 rarity: 'common',
                 weight: 0,
@@ -979,7 +979,7 @@ describe('Integration: Box Item System', () => {
             // Add the box and only 1 lockpick (need 3!)
             let withItems = EquipmentSpawnHelper.addToCharacter(character, [thievesCache], false);
             withItems.equipment!.items.push({
-                name: 'Lockpick',
+                name: 'Test Lockpick',
                 quantity: 1,
                 equipped: false,
                 instanceId: 'lockpick_instance_2'
@@ -993,7 +993,7 @@ describe('Integration: Box Item System', () => {
             expect(result!.result.success).toBe(false);
             expect(result!.result.error).toBeDefined();
             expect(result!.result.error!.code).toBe('INSUFFICIENT_QUANTITY');
-            expect(result!.result.error!.message).toContain('Lockpick');
+            expect(result!.result.error!.message).toContain('Test Lockpick');
             expect(result!.result.error!.message).toContain('1'); // Have
             expect(result!.result.error!.message).toContain('3'); // Need
 
@@ -1003,8 +1003,8 @@ describe('Integration: Box Item System', () => {
             );
             expect(boxStillInInventory).toBe(true);
 
-            // Lockpick should still be in inventory (not consumed)
-            const lockpickItem = result!.character.equipment!.items.find(i => i.name === 'Lockpick');
+            // Test Lockpick should still be in inventory (not consumed)
+            const lockpickItem = result!.character.equipment!.items.find(i => i.name === 'Test Lockpick');
             expect(lockpickItem).toBeDefined();
             expect(lockpickItem!.quantity).toBe(1);
 
@@ -1018,7 +1018,7 @@ describe('Integration: Box Item System', () => {
             // Test 1: Missing item error message
             const box1 = createLockedBox(
                 'Test Box Missing Item',
-                [{ itemName: 'Golden Key' }],
+                [{ itemName: 'Test Golden Key' }],
                 [{ gold: 100 }]
             );
             manager.register('equipment', [box1], { mode: 'relative', validate: false });
@@ -1028,7 +1028,7 @@ describe('Integration: Box Item System', () => {
             const result1 = EquipmentSpawnHelper.openBoxForCharacter(withBox, 'Test Box Missing Item', rng1);
 
             expect(result1!.result.success).toBe(false);
-            expect(result1!.result.error!.message).toBe('Missing required item: Golden Key');
+            expect(result1!.result.error!.message).toBe('Missing required item: Test Golden Key');
 
             // Test 2: Insufficient quantity error message
             manager.resetAll();
@@ -1037,12 +1037,12 @@ describe('Integration: Box Item System', () => {
             const character2 = createMockCharacter();
             const box2 = createLockedBox(
                 'Test Box Insufficient',
-                [{ itemName: 'Gold Coin', quantity: 100 }],
+                [{ itemName: 'Test Gold Coin', quantity: 100 }],
                 [{ gold: 500 }]
             );
 
             const goldCoin: EnhancedEquipment = {
-                name: 'Gold Coin',
+                name: 'Test Gold Coin',
                 type: 'item',
                 rarity: 'common',
                 weight: 0,
@@ -1054,7 +1054,7 @@ describe('Integration: Box Item System', () => {
 
             let withBox2 = EquipmentSpawnHelper.addToCharacter(character2, [box2], false);
             withBox2.equipment!.items.push({
-                name: 'Gold Coin',
+                name: 'Test Gold Coin',
                 quantity: 50, // Only 50, need 100
                 equipped: false,
                 instanceId: 'gold_instance_1'
@@ -1064,7 +1064,7 @@ describe('Integration: Box Item System', () => {
             const result2 = EquipmentSpawnHelper.openBoxForCharacter(withBox2, 'Test Box Insufficient', rng2);
 
             expect(result2!.result.success).toBe(false);
-            expect(result2!.result.error!.message).toContain('Insufficient Gold Coin');
+            expect(result2!.result.error!.message).toContain('Insufficient Test Gold Coin');
             expect(result2!.result.error!.message).toContain('50');
             expect(result2!.result.error!.message).toContain('100');
         });
@@ -1125,7 +1125,7 @@ describe('Integration: Box Item System', () => {
         it('should handle multiple requirements correctly', () => {
             const character = createMockCharacter();
 
-            // Create a box requiring both Golden Key AND 200 Gold Coins
+            // Create a box requiring both Test Golden Key AND 200 Test Gold Coins
             const royalBox: EnhancedEquipment = {
                 name: 'Test Royal Box',
                 type: 'box',
@@ -1135,15 +1135,15 @@ describe('Integration: Box Item System', () => {
                 tags: ['test', 'royal', 'locked'],
                 boxContents: {
                     openRequirements: [
-                        { itemName: 'Golden Key' },
-                        { itemName: 'Gold Coin', quantity: 200 }
+                        { itemName: 'Test Golden Key' },
+                        { itemName: 'Test Gold Coin', quantity: 200 }
                     ],
                     drops: [{ pool: [{ weight: 100, gold: 1000 }] }],
                 },
             };
 
             const goldenKey: EnhancedEquipment = {
-                name: 'Golden Key',
+                name: 'Test Golden Key',
                 type: 'item',
                 rarity: 'uncommon',
                 weight: 0,
@@ -1152,7 +1152,7 @@ describe('Integration: Box Item System', () => {
             };
 
             const goldCoin: EnhancedEquipment = {
-                name: 'Gold Coin',
+                name: 'Test Gold Coin',
                 type: 'item',
                 rarity: 'common',
                 weight: 0,
@@ -1165,7 +1165,7 @@ describe('Integration: Box Item System', () => {
             // Add box and both requirements to character
             let withItems = EquipmentSpawnHelper.addToCharacter(character, [royalBox, goldenKey], false);
             withItems.equipment!.items.push({
-                name: 'Gold Coin',
+                name: 'Test Gold Coin',
                 quantity: 300, // More than needed
                 equipped: false,
                 instanceId: 'gold_instance_2'
@@ -1173,8 +1173,8 @@ describe('Integration: Box Item System', () => {
 
             // Verify setup
             expect(withItems.equipment!.items.some(i => i.name === 'Test Royal Box')).toBe(true);
-            expect(withItems.equipment!.items.some(i => i.name === 'Golden Key')).toBe(true);
-            expect(withItems.equipment!.items.find(i => i.name === 'Gold Coin')?.quantity).toBe(300);
+            expect(withItems.equipment!.items.some(i => i.name === 'Test Golden Key')).toBe(true);
+            expect(withItems.equipment!.items.find(i => i.name === 'Test Gold Coin')?.quantity).toBe(300);
 
             // Open the royal box
             const rng = new SeededRNG('multi-req-test');
@@ -1186,15 +1186,15 @@ describe('Integration: Box Item System', () => {
 
             // Both items should be consumed
             expect(result!.result.consumedItems).toEqual([
-                { name: 'Golden Key', quantity: 1 },
-                { name: 'Gold Coin', quantity: 200 }
+                { name: 'Test Golden Key', quantity: 1 },
+                { name: 'Test Gold Coin', quantity: 200 }
             ]);
 
-            // Golden Key should be removed (was 1, consumed 1)
-            expect(result!.character.equipment!.items.some(i => i.name === 'Golden Key')).toBe(false);
+            // Test Golden Key should be removed (was 1, consumed 1)
+            expect(result!.character.equipment!.items.some(i => i.name === 'Test Golden Key')).toBe(false);
 
-            // Gold Coins should be reduced (was 300, consumed 200 = 100 left)
-            const goldItem = result!.character.equipment!.items.find(i => i.name === 'Gold Coin');
+            // Test Gold Coins should be reduced (was 300, consumed 200 = 100 left)
+            const goldItem = result!.character.equipment!.items.find(i => i.name === 'Test Gold Coin');
             expect(goldItem).toBeDefined();
             expect(goldItem!.quantity).toBe(100);
 
@@ -1205,7 +1205,7 @@ describe('Integration: Box Item System', () => {
         it('should fail when one of multiple requirements is missing', () => {
             const character = createMockCharacter();
 
-            // Create a box requiring both Golden Key AND 200 Gold Coins
+            // Create a box requiring both Test Golden Key AND 200 Test Gold Coins
             const royalBox: EnhancedEquipment = {
                 name: 'Test Royal Box Missing',
                 type: 'box',
@@ -1215,15 +1215,15 @@ describe('Integration: Box Item System', () => {
                 tags: ['test', 'royal', 'locked'],
                 boxContents: {
                     openRequirements: [
-                        { itemName: 'Golden Key' },
-                        { itemName: 'Gold Coin', quantity: 200 }
+                        { itemName: 'Test Golden Key' },
+                        { itemName: 'Test Gold Coin', quantity: 200 }
                     ],
                     drops: [{ pool: [{ weight: 100, gold: 1000 }] }],
                 },
             };
 
             const goldenKey: EnhancedEquipment = {
-                name: 'Golden Key',
+                name: 'Test Golden Key',
                 type: 'item',
                 rarity: 'uncommon',
                 weight: 0,
@@ -1232,7 +1232,7 @@ describe('Integration: Box Item System', () => {
             };
 
             const goldCoin: EnhancedEquipment = {
-                name: 'Gold Coin',
+                name: 'Test Gold Coin',
                 type: 'item',
                 rarity: 'common',
                 weight: 0,
@@ -1242,29 +1242,29 @@ describe('Integration: Box Item System', () => {
 
             manager.register('equipment', [royalBox, goldenKey, goldCoin], { mode: 'relative', validate: false });
 
-            // Add box and gold coins, but NO Golden Key
+            // Add box and gold coins, but NO Test Golden Key
             let withItems = EquipmentSpawnHelper.addToCharacter(character, [royalBox], false);
             withItems.equipment!.items.push({
-                name: 'Gold Coin',
+                name: 'Test Gold Coin',
                 quantity: 300,
                 equipped: false,
                 instanceId: 'gold_instance_3'
             });
 
-            // Try to open - should fail due to missing Golden Key
+            // Try to open - should fail due to missing Test Golden Key
             const rng = new SeededRNG('multi-req-missing-test');
             const result = EquipmentSpawnHelper.openBoxForCharacter(withItems, 'Test Royal Box Missing', rng);
 
             expect(result).not.toBeNull();
             expect(result!.result.success).toBe(false);
             expect(result!.result.error!.code).toBe('MISSING_ITEM');
-            expect(result!.result.error!.message).toContain('Golden Key');
+            expect(result!.result.error!.message).toContain('Test Golden Key');
 
             // Nothing should be consumed
             expect(result!.result.consumedItems).toBeUndefined();
 
-            // Gold coins should still be 300 (not consumed)
-            const goldItem = result!.character.equipment!.items.find(i => i.name === 'Gold Coin');
+            // Test Gold coins should still be 300 (not consumed)
+            const goldItem = result!.character.equipment!.items.find(i => i.name === 'Test Gold Coin');
             expect(goldItem?.quantity).toBe(300);
 
             // Box should still be in inventory

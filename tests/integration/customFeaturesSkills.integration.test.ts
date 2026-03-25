@@ -109,7 +109,7 @@ registerTestClassFeature(customFeature);
                 },
                 {
                     id: 'wizard_spell_mastery',
-                    name: 'Spell Mastery',
+                    name: 'Test Spell Mastery',
                     class: 'Wizard' as const,
                     level: 3,
                     type: 'passive' as const,

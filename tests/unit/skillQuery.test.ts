@@ -108,7 +108,7 @@ describe('SkillQuery', () => {
             expect(emSkills.some(s => s.id === 'custom_sailing')).toBe(true);
         });
 
-        it('should allow duplicate skill ID registration (ExtensionManager does not prevent duplicates)', () => {
+        it('should prevent duplicate skill ID registration (ExtensionManager throws on duplicates)', () => {
             const skill: CustomSkill = {
                 id: 'duplicate_skill',
                 name: 'Duplicate Skill',
@@ -117,15 +117,14 @@ describe('SkillQuery', () => {
                 source: 'custom'
             };
 
-            // ExtensionManager does not do duplicate detection
-            // This test verifies that behavior - duplicates are allowed
-            // Use ExtensionManager.register() directly to test this behavior
+            // ExtensionManager now detects duplicates and throws
+            ExtensionManager.getInstance().register('skills', [skill], { validate: false });
+
             expect(() => {
                 ExtensionManager.getInstance().register('skills', [skill], { validate: false });
-                ExtensionManager.getInstance().register('skills', [skill], { validate: false });
-            }).not.toThrow();
+            }).toThrow();
 
-            // Verify the skill exists (may have duplicate entries)
+            // Verify the skill exists from the first registration
             const retrieved = registry.getSkill('duplicate_skill');
             expect(retrieved).toBeDefined();
         });

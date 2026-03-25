@@ -359,7 +359,7 @@ describe('Phase 11.2: FeatureQuery/ExtensionManager Integration for Racial Trait
             // Register Tiefling trait (if not already present)
             const tieflingTrait: RacialTrait = {
                 id: 'test_tiefling_infernal_legacy',
-                name: 'Infernal Legacy',
+                name: 'Test Infernal Legacy',
                 description: 'Tiefling test trait',
                 race: 'Tiefling' as const,
                 source: 'custom' as const,

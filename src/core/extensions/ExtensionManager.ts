@@ -177,6 +177,8 @@ interface ExtensionData {
     items: any[];
     options: ExtensionOptions;
     registeredAt: number;
+    /** When true, get() returns only custom items (no defaults). Set by mode: 'replace'. */
+    excludeDefaults?: boolean;
 }
 
 /**
@@ -409,16 +411,12 @@ export class ExtensionManager {
             const duplicates: string[] = [];
 
             // Categories where items are strings (the string itself is the identifier)
+            // Skip duplicate detection for string categories — re-registering is used
+            // to adjust weights on existing races/classes, not to add new items
             const stringCategories = ['races', 'classes'];
 
             if (stringCategories.includes(category)) {
-                // For string categories, check if the string already exists
-                // Items have already been normalized to strings above
-                for (const item of normalizedItems) {
-                    if (typeof item === 'string' && existingItems.includes(item)) {
-                        duplicates.push(item);
-                    }
-                }
+                // No duplicate detection for string categories
             } else if (category.startsWith('appearance.')) {
                 // Appearance options are strings - check for duplicates
                 for (const item of normalizedItems) {
@@ -474,7 +472,9 @@ export class ExtensionManager {
             // 'replace' is a one-time operation that replaces all items,
             // then subsequent registrations should be additive
             options: { mode: mode === 'replace' ? 'absolute' : mode, weights, validate },
-            registeredAt: Date.now()
+            registeredAt: Date.now(),
+            // Persist replace intent so get() knows to exclude defaults
+            excludeDefaults: mode === 'replace' ? true : existingExtension?.excludeDefaults,
         });
 
         // Merge custom weights if provided (don't replace existing weights)
@@ -513,8 +513,8 @@ export class ExtensionManager {
         } else {
             const mode = extension.options.mode || 'relative';
 
-            // Replace mode: return only custom items
-            if (mode === 'replace') {
+            // Replace mode: return only custom items (checked via persisted flag)
+            if (extension.excludeDefaults) {
                 items = [...extension.items];
             } else {
                 // Default and relative modes: merge defaults with custom items
@@ -1217,11 +1217,12 @@ export class ExtensionManager {
             }
         }
 
-        // Store updated items in extensions
+        // Store updated items in extensions (excludeDefaults since items already include defaults)
         this.extensions.set(category, {
             items: updatedItems,
             options: { mode: 'replace' },
-            registeredAt: Date.now()
+            registeredAt: Date.now(),
+            excludeDefaults: true,
         });
 
         // Invalidate cache
@@ -1292,11 +1293,12 @@ export class ExtensionManager {
             }
         }
 
-        // Store updated items in extensions
+        // Store updated items in extensions (excludeDefaults since items already include defaults)
         this.extensions.set(category, {
             items: updatedItems,
             options: { mode: 'replace' },
-            registeredAt: Date.now()
+            registeredAt: Date.now(),
+            excludeDefaults: true,
         });
 
         // Invalidate cache

@@ -229,7 +229,7 @@ describe('Integration: Edge Cases', () => {
     });
 
     describe('Conflicting weights (resolve correctly)', () => {
-        it('should handle registering same item with different weights', () => {
+        it('should throw when registering duplicate item (use reset + re-register to update)', () => {
             const customEquipment = [
                 { name: 'Sword', type: 'weapon' as const, rarity: 'common' as const, weight: 3 },
             ];
@@ -242,13 +242,21 @@ describe('Integration: Edge Cases', () => {
             let weights = manager.getWeights('equipment');
             expect(weights['Sword']).toBe(5.0);
 
-            // Register again with different weight
+            // Registering the same item again should throw
+            expect(() => {
+                manager.register('equipment', customEquipment, {
+                    weights: { 'Sword': 10.0 }
+                });
+            }).toThrow('Duplicate items');
+
+            // To update, reset first then re-register
+            manager.reset('equipment');
             manager.register('equipment', customEquipment, {
                 weights: { 'Sword': 10.0 }
             });
 
             weights = manager.getWeights('equipment');
-            expect(weights['Sword']).toBe(10.0); // Should use new weight
+            expect(weights['Sword']).toBe(10.0);
         });
 
         it('should merge weights when registering multiple times', () => {

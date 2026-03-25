@@ -221,15 +221,19 @@ describe('Phase 10.2: Performance Testing', () => {
 
         it('should benchmark character generation with custom content (extensions)', () => {
             const customSpells = [
-                { id: 'phoenix_fire', name: 'Phoenix Fire', level: 5, school: 'Evocation', casting_time: '1 action', range: '60 feet', components: ['V', 'S'], duration: 'Instantaneous' },
-                { id: 'mind_shield', name: 'Mind Shield', level: 2, school: 'Abjuration', casting_time: '1 action', range: 'Self', components: ['V', 'S'], duration: '1 hour' },
-                { id: 'frost_nova', name: 'Frost Nova', level: 3, school: 'Evocation', casting_time: '1 action', range: '15 ft cone', components: ['V', 'S'], duration: 'Instantaneous' },
+                { id: 'bench_phoenix_fire', name: 'Bench Phoenix Fire', level: 5, school: 'Evocation', casting_time: '1 action', range: '60 feet', components: ['V', 'S'], duration: 'Instantaneous' },
+                { id: 'bench_mind_shield', name: 'Bench Mind Shield', level: 2, school: 'Abjuration', casting_time: '1 action', range: 'Self', components: ['V', 'S'], duration: '1 hour' },
+                { id: 'bench_frost_nova', name: 'Bench Frost Nova', level: 3, school: 'Evocation', casting_time: '1 action', range: '15 ft cone', components: ['V', 'S'], duration: 'Instantaneous' },
             ];
 
             const customEquipment = [
-                { name: 'Moonlit Blade', type: 'weapon' as const, rarity: 'rare' as const, weight: 3, damage: '1d8 slashing' },
-                { name: 'Shadow Cloak', type: 'armor' as const, rarity: 'uncommon' as const, weight: 5, armor_class: 12 },
+                { name: 'Bench Moonlit Blade', type: 'weapon' as const, rarity: 'rare' as const, weight: 3, damage: '1d8 slashing' },
+                { name: 'Bench Shadow Cloak', type: 'armor' as const, rarity: 'uncommon' as const, weight: 5, armor_class: 12 },
             ];
+
+            // Register custom content once before benchmarking to avoid duplicate errors
+            manager.register('spells', customSpells as any, { mode: 'append', validate: false });
+            manager.register('equipment', customEquipment as any, { mode: 'append', validate: false });
 
             let counter = 0;
 
@@ -243,10 +247,6 @@ describe('Phase 10.2: Performance Testing', () => {
                         sampleTrack,
                         {
                             forceClass: 'Wizard',
-                            extensions: {
-                                spells: customSpells,
-                                equipment: customEquipment,
-                            }
                         }
                     );
                     expect(character).toBeDefined();
