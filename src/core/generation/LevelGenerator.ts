@@ -65,6 +65,13 @@ export interface LevelGenerationOptions {
 
     /** Seed for reproducibility */
     seed?: string
+
+    /**
+     * Pre-generated rhythm to use instead of generating new.
+     * When provided, skips the rhythm generation phase entirely.
+     * Useful for reusing rhythm from a previous generation step.
+     */
+    cachedRhythm?: GeneratedRhythm
 }
 
 /**
@@ -468,30 +475,39 @@ export class LevelGenerator {
         // Get audio ID for cache key
         const audioId = unifiedBeatMap.audioId;
 
-        // Phase 1: Generate rhythm (with caching)
+        // Phase 1: Generate rhythm (with caching or use provided cached rhythm)
         progress('rhythm', 0, 'Starting rhythm generation...');
 
-        const rhythmCacheKey = this.generateCacheKey(
-            audioId,
-            'rhythm',
-            this.createConfigFingerprint('rhythm')
-        );
+        let rhythm: GeneratedRhythm | null = null;
 
-        let rhythm = this.getFromCache<GeneratedRhythm>(rhythmCacheKey);
-
-        if (rhythm) {
-            progress('rhythm', 1, 'Rhythm loaded from cache');
+        // First check if a cached rhythm was provided via options
+        if (this.options.cachedRhythm) {
+            rhythm = this.options.cachedRhythm;
+            progress('rhythm', 1, 'Using pre-generated rhythm from store');
         } else {
-            rhythm = await this.generateRhythm(
-                audioBuffer,
-                unifiedBeatMap,
-                (phase, p, msg) => {
-                    progress('rhythm', p, `[${phase}] ${msg}`);
-                },
-                signal
+            // Otherwise use internal caching
+            const rhythmCacheKey = this.generateCacheKey(
+                audioId,
+                'rhythm',
+                this.createConfigFingerprint('rhythm')
             );
-            this.setCache(rhythmCacheKey, rhythm);
-            progress('rhythm', 1, 'Rhythm generation complete');
+
+            rhythm = this.getFromCache<GeneratedRhythm>(rhythmCacheKey);
+
+            if (rhythm) {
+                progress('rhythm', 1, 'Rhythm loaded from cache');
+            } else {
+                rhythm = await this.generateRhythm(
+                    audioBuffer,
+                    unifiedBeatMap,
+                    (phase, p, msg) => {
+                        progress('rhythm', p, `[${phase}] ${msg}`);
+                    },
+                    signal
+                );
+                this.setCache(rhythmCacheKey, rhythm);
+                progress('rhythm', 1, 'Rhythm generation complete');
+            }
         }
 
         // Check for cancellation after rhythm generation
@@ -583,18 +599,26 @@ export class LevelGenerator {
         // Get audio ID for cache key
         const audioId = unifiedBeatMap.audioId;
 
-        // Generate rhythm once (shared across difficulties, with caching)
-        const rhythmCacheKey = this.generateCacheKey(
-            audioId,
-            'rhythm',
-            this.createConfigFingerprint('rhythm')
-        );
+        // Generate rhythm once (shared across difficulties, with caching or use provided cached rhythm)
+        let rhythm: GeneratedRhythm | null = null;
 
-        let rhythm = this.getFromCache<GeneratedRhythm>(rhythmCacheKey);
+        // First check if a cached rhythm was provided via options
+        if (this.options.cachedRhythm) {
+            rhythm = this.options.cachedRhythm;
+        } else {
+            // Otherwise use internal caching
+            const rhythmCacheKey = this.generateCacheKey(
+                audioId,
+                'rhythm',
+                this.createConfigFingerprint('rhythm')
+            );
 
-        if (!rhythm) {
-            rhythm = await this.generateRhythm(audioBuffer, unifiedBeatMap, undefined, signal);
-            this.setCache(rhythmCacheKey, rhythm);
+            rhythm = this.getFromCache<GeneratedRhythm>(rhythmCacheKey);
+
+            if (!rhythm) {
+                rhythm = await this.generateRhythm(audioBuffer, unifiedBeatMap, undefined, signal);
+                this.setCache(rhythmCacheKey, rhythm);
+            }
         }
 
         // Check for cancellation after rhythm generation
