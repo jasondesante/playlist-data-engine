@@ -359,7 +359,7 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     heavySimplificationIntensityThreshold: 0.5,
     moderateSimplificationIntensityThreshold: 0.4,
     densityReductionMinIntensity: 0.25,
-    enhancementDensityMultiplier: 1.5,
+    enhancementDensityMultiplier: 2.5,
     interpolatedBeatIntensity: 0.5,
     preferPatternInsertion: true,
     maxPatternInsertionSize: 4,
@@ -1388,7 +1388,7 @@ export class DifficultyVariantGenerator {
 
         // Adjust density multiplier based on enhancement level
         const densityMultiplier = enhancementLevel === 'heavy'
-            ? this.config.enhancementDensityMultiplier * 1.5
+            ? this.config.enhancementDensityMultiplier * 2.5
             : this.config.enhancementDensityMultiplier;
 
         metadata.densityMultiplier = densityMultiplier;
@@ -1451,12 +1451,22 @@ export class DifficultyVariantGenerator {
 
             // If pattern insertion didn't add enough beats, use interpolation
             if (addedFromPattern < beatsToAdd) {
+                // Collect positions already filled by pattern insertion so
+                // interpolation doesn't duplicate them
+                const patternPositions = new Set<number>();
+                for (const b of enhancedBeats) {
+                    if (b.beatIndex === beatIndex) {
+                        patternPositions.add(b.gridPosition);
+                    }
+                }
+
                 const interpolatedBeats = this.interpolateBeats(
                     existingBeats,
                     beatIndex,
                     beatsToAdd - addedFromPattern,
                     gridDecisions,
-                    quarterNoteInterval
+                    quarterNoteInterval,
+                    patternPositions
                 );
                 enhancedBeats.push(...interpolatedBeats);
                 metadata.interpolatedBeats += interpolatedBeats.length;
@@ -1615,6 +1625,7 @@ export class DifficultyVariantGenerator {
      * @param beatsToAdd - Number of beats to add
      * @param gridDecisions - Optional grid decisions from quantized streams
      * @param quarterNoteInterval - Duration of a quarter note in seconds for timestamp calculation
+     * @param occupiedPositions - Optional set of grid positions already filled (e.g., by pattern insertion)
      * @returns Array of interpolated beats
      */
     private interpolateBeats(
@@ -1622,7 +1633,8 @@ export class DifficultyVariantGenerator {
         beatIndex: number,
         beatsToAdd: number,
         gridDecisions?: Map<number, GridDecision>,
-        quarterNoteInterval: number = 0.5
+        quarterNoteInterval: number = 0.5,
+        occupiedPositions?: Set<number>
     ): CompositeBeat[] {
         if (beatsToAdd <= 0 || existingBeats.length === 0) {
             return [];
@@ -1630,19 +1642,28 @@ export class DifficultyVariantGenerator {
 
         // Determine grid type from existing beats or grid decisions
         let gridType: GridType = existingBeats[0].gridType;
-        let maxPositions = gridType === 'straight_16th' ? 4 : 3;
+        const getMaxPositions = (gt: string) =>
+            gt === 'straight_16th' ? 4
+                : gt === 'straight_8th' ? 2
+                    : 3;
+        let maxPositions = getMaxPositions(gridType);
 
         // Check grid decisions for this beat index
         if (gridDecisions) {
             const decision = gridDecisions.get(beatIndex);
             if (decision) {
                 gridType = decision.selectedGrid;
-                maxPositions = gridType === 'straight_16th' ? 4 : 3;
+                maxPositions = getMaxPositions(gridType);
             }
         }
 
-        // Get existing positions
+        // Get existing positions, plus any positions already filled by pattern insertion
         const existingPositions = new Set(existingBeats.map(b => b.gridPosition));
+        if (occupiedPositions) {
+            for (const pos of occupiedPositions) {
+                existingPositions.add(pos);
+            }
+        }
 
         // Find available positions (positions without beats)
         const availablePositions: number[] = [];
@@ -1674,11 +1695,17 @@ export class DifficultyVariantGenerator {
         const interpolatedBeats: CompositeBeat[] = positionsToFill.map(gridPosition => {
             // CRITICAL: Use the reference beat's OWN grid type interval to derive the beat start.
             // Then use the target grid type interval for the new grid position.
-            // Mixing intervals causes 32nd-note offsets (quarterInterval/12 error).
+            // Mixing intervals causes offset errors (32nd-note or 16th-triplet).
             const referenceInterval = referenceBeat.gridType === 'straight_16th'
-                ? quarterNoteInterval / 4 : quarterNoteInterval / 3;
+                ? quarterNoteInterval / 4
+                : referenceBeat.gridType === 'straight_8th'
+                    ? quarterNoteInterval / 2
+                    : quarterNoteInterval / 3;
             const newInterval = gridType === 'straight_16th'
-                ? quarterNoteInterval / 4 : quarterNoteInterval / 3;
+                ? quarterNoteInterval / 4
+                : gridType === 'straight_8th'
+                    ? quarterNoteInterval / 2
+                    : quarterNoteInterval / 3;
             const beatStartTimestamp = referenceBeat.timestamp - (referenceBeat.gridPosition * referenceInterval);
             const timestamp = beatStartTimestamp + (gridPosition * newInterval);
 
