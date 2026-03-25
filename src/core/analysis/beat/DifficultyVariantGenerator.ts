@@ -359,7 +359,7 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     heavySimplificationIntensityThreshold: 0.5,
     moderateSimplificationIntensityThreshold: 0.4,
     densityReductionMinIntensity: 0.25,
-    enhancementDensityMultiplier: 2.5,
+    enhancementDensityMultiplier: 1.5,
     interpolatedBeatIntensity: 0.5,
     preferPatternInsertion: true,
     maxPatternInsertionSize: 4,
@@ -1388,7 +1388,7 @@ export class DifficultyVariantGenerator {
 
         // Adjust density multiplier based on enhancement level
         const densityMultiplier = enhancementLevel === 'heavy'
-            ? this.config.enhancementDensityMultiplier * 2.5
+            ? this.config.enhancementDensityMultiplier * 1.5
             : this.config.enhancementDensityMultiplier;
 
         metadata.densityMultiplier = densityMultiplier;
@@ -1410,18 +1410,16 @@ export class DifficultyVariantGenerator {
         // Group beats by beatIndex for analysis
         const beatsByIndex = this.groupBeatsByIndex(cleanedBeats);
 
-        // Calculate target beats per beat index based on multiplier
-        const targetBeatsPerBeat = this.calculateTargetBeatsPerBeat(beatsByIndex, densityMultiplier);
+        // Calculate target beats per beat index based on multiplier (includes empty beats)
+        const maxBeatIndex = Math.max(...Array.from(beatsByIndex.keys()));
+        const targetBeatsPerBeat = this.calculateTargetBeatsPerBeat(beatsByIndex, densityMultiplier, maxBeatIndex);
 
         // Create enhanced beats array
         const enhancedBeats: CompositeBeat[] = [];
 
-        // Process each beat index
-        const maxBeatIndex = Math.max(...Array.from(beatsByIndex.keys()));
-
         for (let beatIndex = 0; beatIndex <= maxBeatIndex; beatIndex++) {
             const existingBeats = beatsByIndex.get(beatIndex) ?? [];
-            const targetCount = targetBeatsPerBeat.get(beatIndex) ?? existingBeats.length;
+            const targetCount = targetBeatsPerBeat.get(beatIndex) ?? 0;
 
             if (existingBeats.length >= targetCount) {
                 // Already at or above target, keep existing beats
@@ -1431,6 +1429,23 @@ export class DifficultyVariantGenerator {
 
             // Need to add beats
             const beatsToAdd = targetCount - existingBeats.length;
+
+            if (existingBeats.length === 0) {
+                // Empty beat index — create beats from scratch using grid decisions
+                // or neighbor context. interpolateBeats requires an existing reference
+                // beat, so we synthesize one here.
+                const createdBeats = this.createBeatsForEmptyIndex(
+                    beatIndex,
+                    beatsToAdd,
+                    gridDecisions,
+                    quarterNoteInterval,
+                    beatsByIndex,
+                    enhancedBeats
+                );
+                enhancedBeats.push(...createdBeats);
+                metadata.interpolatedBeats += createdBeats.length;
+                continue;
+            }
 
             // Try pattern insertion first (if enabled and phrase analysis available)
             let addedFromPattern = 0;
@@ -1517,17 +1532,34 @@ export class DifficultyVariantGenerator {
 
     /**
      * Calculate target beats per beat index based on density multiplier
+     *
+     * Includes empty beat indices (those with no existing beats) so that
+     * enhancement can fill gaps in the rhythm. Empty beats get a target
+     * proportional to the multiplier, treating them as having 1 virtual beat.
      */
     private calculateTargetBeatsPerBeat(
         beatsByIndex: Map<number, CompositeBeat[]>,
-        densityMultiplier: number
+        densityMultiplier: number,
+        maxBeatIndex: number
     ): Map<number, number> {
         const targetMap = new Map<number, number>();
 
-        for (const [beatIndex, beats] of beatsByIndex) {
-            // Calculate target count, cap at 4 (max subdivisions per beat)
-            const targetCount = Math.min(Math.ceil(beats.length * densityMultiplier), 4);
-            targetMap.set(beatIndex, targetCount);
+        for (let beatIndex = 0; beatIndex <= maxBeatIndex; beatIndex++) {
+            const beats = beatsByIndex.get(beatIndex);
+            if (beats) {
+                // Beat index has existing beats — scale from actual count
+                const targetCount = Math.min(Math.ceil(beats.length * densityMultiplier), 4);
+                targetMap.set(beatIndex, targetCount);
+            } else {
+                // Empty beat index — treat as having 1 virtual beat so we can fill gaps.
+                // A multiplier of 1.0 means leave it empty (< 1.5 doesn't ceil to 2),
+                // while higher multipliers will start populating sparse beats.
+                const virtualCount = Math.min(Math.ceil(densityMultiplier * 0.7), 4);
+                if (virtualCount >= 2) {
+                    targetMap.set(beatIndex, virtualCount);
+                }
+                // else: leave the target at 0 (don't fill this beat)
+            }
         }
 
         return targetMap;
@@ -1612,6 +1644,104 @@ export class DifficultyVariantGenerator {
             beatsAdded: compositeBeats.length,
             patternId: pattern.id,
         };
+    }
+
+    /**
+     * Create beats for an empty beat index (one with no existing beats)
+     *
+     * When enhancement needs to fill gaps in the rhythm, this method creates
+     * beats from scratch using grid decisions or neighbor context to determine
+     * the appropriate grid type and timing.
+     *
+     * @param beatIndex - The beat index to create beats for
+     * @param beatsToAdd - Number of beats to create
+     * @param gridDecisions - Optional grid decisions from quantized streams
+     * @param quarterNoteInterval - Duration of a quarter note in seconds
+     * @param beatsByIndex - All beats grouped by index (for neighbor lookup)
+     * @param enhancedBeats - Already-enhanced beats (to check for pattern-inserted positions)
+     * @returns Array of newly created beats
+     */
+    private createBeatsForEmptyIndex(
+        beatIndex: number,
+        beatsToAdd: number,
+        gridDecisions?: Map<number, GridDecision>,
+        quarterNoteInterval: number = 0.5,
+        beatsByIndex?: Map<number, CompositeBeat[]>,
+        enhancedBeats?: CompositeBeat[]
+    ): CompositeBeat[] {
+        // Determine grid type: grid decision > neighbor > default to straight_16th
+        let gridType: GridType = 'straight_16th';
+        let band: 'low' | 'mid' | 'high' = 'mid';
+        let sourceBand: 'low' | 'mid' | 'high' = 'mid';
+
+        if (gridDecisions) {
+            const decision = gridDecisions.get(beatIndex);
+            if (decision) {
+                gridType = decision.selectedGrid;
+            }
+        }
+
+        // Fall back to nearest neighbor's grid type and band
+        if (!gridDecisions?.has(beatIndex) && beatsByIndex) {
+            for (const offset of [1, -1, 2, -2, 3, -3]) {
+                const neighborBeats = beatsByIndex.get(beatIndex + offset);
+                if (neighborBeats && neighborBeats.length > 0) {
+                    gridType = neighborBeats[0].gridType;
+                    band = neighborBeats[0].band;
+                    sourceBand = neighborBeats[0].sourceBand;
+                    break;
+                }
+            }
+        }
+
+        // Collect positions already filled by pattern insertion at this beat index
+        const occupiedPositions = new Set<number>();
+        if (enhancedBeats) {
+            for (const b of enhancedBeats) {
+                if (b.beatIndex === beatIndex) {
+                    occupiedPositions.add(b.gridPosition);
+                }
+            }
+        }
+
+        const maxPositions = gridType === 'straight_16th' ? 4
+            : gridType === 'straight_8th' ? 2
+                : 3;
+
+        // Pick positions to fill (prefer downbeat 0, then offbeats)
+        const availablePositions: number[] = [];
+        for (let pos = 0; pos < maxPositions; pos++) {
+            if (!occupiedPositions.has(pos)) {
+                availablePositions.push(pos);
+            }
+        }
+        availablePositions.sort((a, b) => {
+            // Prefer downbeat (0), then mid-beat (1, 2), then last (3)
+            const score = (pos: number) => pos === 0 ? 0 : (pos === maxPositions - 1 ? 2 : 1);
+            return score(a) - score(b);
+        });
+
+        const positionsToFill = availablePositions.slice(0, beatsToAdd);
+
+        // Calculate beat start timestamp from beatIndex
+        // beatIndex 0 starts at some reference time; use 0 as base since we
+        // have no existing beat to derive an absolute timestamp from.
+        // The actual timestamp will be recalculated downstream if needed.
+        const interval = gridType === 'straight_16th' ? quarterNoteInterval / 4
+            : gridType === 'straight_8th' ? quarterNoteInterval / 2
+                : quarterNoteInterval / 3;
+        const beatStartTimestamp = beatIndex * quarterNoteInterval;
+
+        return positionsToFill.map(gridPosition => ({
+            timestamp: beatStartTimestamp + (gridPosition * interval),
+            beatIndex,
+            gridPosition,
+            gridType,
+            intensity: this.config.interpolatedBeatIntensity * 0.8, // Slightly lower for filled gaps
+            band,
+            sourceBand,
+            quantizationError: 0,
+        }));
     }
 
     /**
