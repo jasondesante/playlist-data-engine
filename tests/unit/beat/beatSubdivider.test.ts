@@ -2788,79 +2788,85 @@ describe('BeatSubdivider - Triplet4 Notes', () => {
 // Dotted Quarter Notes (dotted4) Tests
 // ============================================================================
 
+/**
+ * Create a dotted4 subdivision config with rest on every 3rd beat.
+ * Dotted4 is a 2-beat grouping (dotted quarter + eighth), so the 3rd beat
+ * must be a rest for the pattern to work properly.
+ * Pattern: dotted4, dotted4, rest, dotted4, dotted4, rest, ...
+ */
+function createDotted4Config(beatCount: number): SubdivisionConfig {
+    const beatSubdivisions = new Map<number, SubdivisionType>();
+    for (let i = 0; i < beatCount; i++) {
+        if (i % 3 === 2) {
+            beatSubdivisions.set(i, 'rest');
+        } else {
+            beatSubdivisions.set(i, 'dotted4');
+        }
+    }
+    return { beatSubdivisions, defaultSubdivision: 'quarter' };
+}
+
 describe('BeatSubdivider - Dotted4 Notes', () => {
     it('should create 2-beat structure with original at even beats and interpolated at odd+0.5', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
         const bpm = 120;
         const interval = 60 / bpm; // 0.5 seconds per quarter note
-        // Create 8 quarter notes (2 measures in 4/4 time)
-        const beats = createRegularQuarterNotes(bpm, 8);
+        // Create 9 quarter notes for 3 complete dotted4 groups (each group = 3 beats: dotted4, dotted4, rest)
+        const beats = createRegularQuarterNotes(bpm, 9);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - dotted4 creates 2-beat structure:
-        // - Even beats (0, 2, 4, 6): original beat only
-        // - Odd beats (1, 3, 5, 7): skip original, add interpolated at 0.5 (relative to this beat)
-        // Pattern: beat 0 at 0s, interpolated at 0.75s (beat1 + 0.5*interval = 0.5 + 0.25)
-        //          beat 2 at 1.0s, interpolated at 1.75s (beat3 + 0.5*interval = 1.5 + 0.25)
-        //          beat 4 at 2.0s, interpolated at 2.75s
-        //          beat 6 at 3.0s, interpolated at 3.75s
-        // Total: 8 beats
-        expect(result.beats.length).toBe(8);
-        expect(result.beats[0].timestamp).toBeCloseTo(0, 3);           // Beat 0 (original)
-        expect(result.beats[1].timestamp).toBeCloseTo(0.75, 3);       // Interpolated at beat1 + 0.5*interval
-        expect(result.beats[2].timestamp).toBeCloseTo(1.0, 3);        // Beat 2 (original)
-        expect(result.beats[3].timestamp).toBeCloseTo(1.75, 3);       // Interpolated at beat3 + 0.5*interval
-        expect(result.beats[4].timestamp).toBeCloseTo(2.0, 3);        // Beat 4 (original)
-        expect(result.beats[5].timestamp).toBeCloseTo(2.75, 3);       // Interpolated at beat5 + 0.5*interval
-        expect(result.beats[6].timestamp).toBeCloseTo(3.0, 3);        // Beat 6 (original)
-        expect(result.beats[7].timestamp).toBeCloseTo(3.75, 3);       // Interpolated at beat7 + 0.5*interval
+        // Assert - dotted4 is a 2-beat grouping, 3rd beat is rest:
+        // Group 1 (beats 0,1): beat 0 (bIM=0, even) kept at 0s, beat 1 (bIM=1, odd) interpolated at 0.75s
+        // Beat 2: rest (no output)
+        // Group 2 (beats 3,4): beat 3 (bIM=3, odd) interpolated at 1.75s, beat 4 (bIM=0, even) kept at 2.0s
+        // Beat 5: rest (no output)
+        // Group 3 (beats 6,7): beat 6 (bIM=2, even) kept at 3.0s, beat 7 (bIM=3, odd) interpolated at 3.75s
+        // Beat 8: rest (no output)
+        // Total: 6 beats
+        expect(result.beats.length).toBe(6);
+        expect(result.beats[0].timestamp).toBeCloseTo(0, 3);           // Beat 0 (original, even bIM)
+        expect(result.beats[1].timestamp).toBeCloseTo(0.75, 3);       // Interpolated from beat 1 (odd bIM)
+        expect(result.beats[2].timestamp).toBeCloseTo(1.75, 3);       // Interpolated from beat 3 (odd bIM)
+        expect(result.beats[3].timestamp).toBeCloseTo(2.0, 3);        // Beat 4 (original, even bIM)
+        expect(result.beats[4].timestamp).toBeCloseTo(3.0, 3);        // Beat 6 (original, even bIM)
+        expect(result.beats[5].timestamp).toBeCloseTo(3.75, 3);       // Interpolated from beat 7 (odd bIM)
     });
 
-    it('should only keep original beats at even positions (0, 2, 4, 6)', () => {
+    it('should only keep original beats at even positions within each group', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
         const bpm = 120;
-        const beats = createRegularQuarterNotes(bpm, 8);
+        const beats = createRegularQuarterNotes(bpm, 9);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - only original beats at positions 0, 2, 4, 6 are kept
+        // Assert - only original beats at even beatInMeasure positions (0, 4, 6) are kept
         const originalBeats = result.beats.filter(b => b.originalBeatIndex !== undefined);
-        expect(originalBeats.length).toBe(4);
+        expect(originalBeats.length).toBe(3);
         expect(originalBeats[0].originalBeatIndex).toBe(0);
-        expect(originalBeats[1].originalBeatIndex).toBe(2);
-        expect(originalBeats[2].originalBeatIndex).toBe(4);
-        expect(originalBeats[3].originalBeatIndex).toBe(6);
+        expect(originalBeats[1].originalBeatIndex).toBe(4);
+        expect(originalBeats[2].originalBeatIndex).toBe(6);
     });
 
-    it('should set subdivisionType to "dotted4" for all beats', () => {
+    it('should set subdivisionType to "dotted4" for all non-rest beats', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
-        const beats = createRegularQuarterNotes(120, 8);
+        const beats = createRegularQuarterNotes(120, 9);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert
+        // Assert - all output beats should be dotted4 (rests produce no output)
         for (const beat of result.beats) {
             expect(beat.subdivisionType).toBe('dotted4');
         }
@@ -2869,52 +2875,44 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
     it('should have isDetected=true for original beats and false for interpolated', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
-        const beats = createRegularQuarterNotes(120, 8);
+        const beats = createRegularQuarterNotes(120, 9);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
         // Assert - original beats have isDetected=true, interpolated have false
-        expect(result.beats.length).toBe(8);
-        expect(result.beats[0].isDetected).toBe(true);   // Original
-        expect(result.beats[1].isDetected).toBe(false); // Interpolated
-        expect(result.beats[2].isDetected).toBe(true);  // Original
-        expect(result.beats[3].isDetected).toBe(false); // Interpolated
+        expect(result.beats.length).toBe(6);
+        expect(result.beats[0].isDetected).toBe(true);   // Original (beat 0, even bIM)
+        expect(result.beats[1].isDetected).toBe(false); // Interpolated (from beat 1, odd bIM)
+        expect(result.beats[2].isDetected).toBe(false); // Interpolated (from beat 3, odd bIM)
+        expect(result.beats[3].isDetected).toBe(true);  // Original (beat 4, even bIM)
     });
 
     it('should set originalBeatIndex for original beats and undefined for interpolated', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
-        const beats = createRegularQuarterNotes(120, 8);
+        const beats = createRegularQuarterNotes(120, 9);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
         // Assert - original beats have originalBeatIndex
+        // Output: beat 0 (original), beat 1 interp, beat 3 interp, beat 4 (original), beat 6 (original), beat 7 interp
         expect(result.beats[0].originalBeatIndex).toBe(0);
         expect(result.beats[1].originalBeatIndex).toBeUndefined();
-        expect(result.beats[2].originalBeatIndex).toBe(2);
-        expect(result.beats[3].originalBeatIndex).toBeUndefined();
+        expect(result.beats[2].originalBeatIndex).toBeUndefined(); // Interpolated from beat 3 (odd bIM)
+        expect(result.beats[3].originalBeatIndex).toBe(4);
     });
 
     it('should handle empty beat map', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
         const unifiedMap = createUnifiedBeatMap([], { bpm: 120 });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(0);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
@@ -2930,8 +2928,8 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
         const beats = [createBeat(0)];
         const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
         const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
+            beatSubdivisions: new Map([[0, 'dotted4']]),
+            defaultSubdivision: 'quarter',
         };
 
         // Act
@@ -2942,20 +2940,20 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
         expect(result.beats[0].subdivisionType).toBe('dotted4');
     });
 
-    it('should handle 2 beats (beat 0 kept + interpolated from beat 1)', () => {
-        // Arrange
+    it('should handle 3 beats (one dotted4 group + rest)', () => {
+        // Arrange - one complete dotted4 group: dotted4, dotted4, rest
         const subdivider = new BeatSubdivider();
-        const beats = createRegularQuarterNotes(120, 2);
+        const beats = createRegularQuarterNotes(120, 3);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
         const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
+            beatSubdivisions: new Map([[0, 'dotted4'], [1, 'dotted4'], [2, 'rest']]),
+            defaultSubdivision: 'quarter',
         };
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - beat 0 kept + interpolated at beat 1 + 0.5*interval = 0.75s
+        // Assert - beat 0 kept + interpolated at beat 1 + 0.5*interval = 0.75s, beat 2 is rest
         expect(result.beats.length).toBe(2);
         expect(result.beats[0].originalBeatIndex).toBe(0);
         expect(result.beats[1].originalBeatIndex).toBeUndefined();
@@ -2967,12 +2965,9 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
     it('should include "dotted4" in subdivisionsUsed metadata', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
-        const beats = createRegularQuarterNotes(120, 8);
+        const beats = createRegularQuarterNotes(120, 9);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
@@ -2982,25 +2977,19 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
     });
 
     it('should have density multiplier of ~0.67 (2/3)', () => {
-        // Arrange - 8 quarter notes
+        // Arrange - 9 quarter notes (3 groups of dotted4+dotted4+rest)
         const subdivider = new BeatSubdivider();
         const bpm = 120;
-        const beats = createRegularQuarterNotes(bpm, 8);
+        const beats = createRegularQuarterNotes(bpm, 9);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - 8 beats out of 8 input = 1.0 density (2 per pair * 4 pairs / 8 input)
-        // Actually: from 8 beats, we process 4 (positions 0, 2, 4, 6)
-        // Each produces 2 beats (original + interpolated) = 8 beats total
-        // Density = 8/8 = 1.0
-        expect(result.beats.length).toBe(8);
-        expect(result.subdivisionMetadata.averageDensityMultiplier).toBeCloseTo(1.0, 2);
+        // Assert - 6 beats out of 9 input = 0.667 density (2 per group * 3 groups / 9 input)
+        expect(result.beats.length).toBe(6);
+        expect(result.subdivisionMetadata.averageDensityMultiplier).toBeCloseTo(6 / 9, 2);
     });
 
     it('should preserve downbeatConfig from unified map', () => {
@@ -3014,10 +3003,7 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
             bpm: 120,
             downbeatConfig: customDownbeatConfig,
         });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
@@ -3035,10 +3021,7 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
             duration: 10.5,
         });
         unifiedMap.audioId = 'test-audio-123';
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
@@ -3053,23 +3036,24 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
         const subdivider = new BeatSubdivider();
         const bpm = 90;
         const interval = 60 / bpm; // ~0.667 seconds per quarter note
-        const beats = createRegularQuarterNotes(bpm, 8);
+        const beats = createRegularQuarterNotes(bpm, 9);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - dotted4 creates 2-beat structure:
-        // Beat 0 at 0s, interpolated at beat 1 + 0.5*interval = 0.667 + 0.333 = 1.0s
-        // Beat 2 at 1.333s, interpolated at beat 3 + 0.5*interval = 2.0 + 0.333 = 2.333s
-        expect(result.beats.length).toBe(8);
+        // Assert - dotted4 creates 2-beat structure per group:
+        // Group 1: beat 0 (even bIM) kept at 0s, beat 1 (odd bIM) interpolated at 0.667 + 0.333 = 1.0s
+        // Beat 2: rest
+        // Group 2: beat 3 (odd bIM) interpolated at 2.0 + 0.333 = 2.333s, beat 4 (even bIM) kept at 2.667s
+        // Beat 5: rest
+        // Group 3: beat 6 (even bIM) kept at 4.0s, beat 7 (odd bIM) interpolated
+        // Beat 8: rest
+        expect(result.beats.length).toBe(6);
         expect(result.beats[0].timestamp).toBeCloseTo(0, 3);
-        expect(result.beats[1].timestamp).toBeCloseTo(interval + interval * 0.5, 3); // Interpolated at beat1 + 0.5*interval
-        expect(result.beats[2].timestamp).toBeCloseTo(interval * 2, 3);  // Beat at position 2
+        expect(result.beats[1].timestamp).toBeCloseTo(interval + interval * 0.5, 3); // Interpolated from beat 1
+        expect(result.beats[2].timestamp).toBeCloseTo(interval * 3 + interval * 0.5, 3); // Interpolated from beat 3
     });
 
     it('should work with fast BPM (180)', () => {
@@ -3077,75 +3061,65 @@ describe('BeatSubdivider - Dotted4 Notes', () => {
         const subdivider = new BeatSubdivider();
         const bpm = 180;
         const interval = 60 / bpm; // 0.333 seconds per quarter note
-        const beats = createRegularQuarterNotes(bpm, 8);
+        const beats = createRegularQuarterNotes(bpm, 9);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - dotted4 creates 2-beat structure:
-        // Beat 0 at 0s, interpolated at beat 1 + 0.5*interval = 0.333 + 0.167 = 0.5s
-        expect(result.beats.length).toBe(8);
+        // Assert - dotted4 creates 2-beat structure per group:
+        // Group 1: beat 0 at 0s, interpolated at beat 1 + 0.5*interval = 0.333 + 0.167 = 0.5s
+        expect(result.beats.length).toBe(6);
         expect(result.beats[0].timestamp).toBeCloseTo(0, 3);
         expect(result.beats[1].timestamp).toBeCloseTo(interval + interval * 0.5, 3); // Interpolated at beat1 + 0.5*interval
     });
 
     it('should produce correct beat count for longer track', () => {
-        // Arrange - 16 quarter notes (4 measures in 4/4 time)
+        // Arrange - 18 quarter notes (6 groups of dotted4+dotted4+rest)
         const subdivider = new BeatSubdivider();
         const bpm = 120;
-        const beats = createRegularQuarterNotes(bpm, 16);
+        const beats = createRegularQuarterNotes(bpm, 18);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(18);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - 8 pairs, 2 beats each = 16 beats total
-        expect(result.beats.length).toBe(16);
+        // Assert - 6 groups, 2 beats each = 12 beats total
+        expect(result.beats.length).toBe(12);
     });
 
     it('should preserve beat properties for kept beats', () => {
         // Arrange - Create a track long enough to show pattern
         const subdivider = new BeatSubdivider();
         const bpm = 120;
-        const beats = createRegularQuarterNotes(bpm, 8); // 2 measures
+        const beats = createRegularQuarterNotes(bpm, 9); // 3 groups of dotted4
         const unifiedMap = createUnifiedBeatMap(beats, { bpm });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - 8 beats from 8 input (4 original + 4 interpolated)
-        expect(result.beats.length).toBe(8);
+        // Assert - 6 beats from 9 input (3 original + 3 interpolated)
+        expect(result.beats.length).toBe(6);
     });
 
     it('should have detectedBeatIndices for original beats only', () => {
         // Arrange
         const subdivider = new BeatSubdivider();
-        const beats = createRegularQuarterNotes(120, 8);
+        const beats = createRegularQuarterNotes(120, 9);
         const unifiedMap = createUnifiedBeatMap(beats, { bpm: 120 });
-        const config: SubdivisionConfig = {
-            beatSubdivisions: new Map(),
-            defaultSubdivision: 'dotted4',
-        };
+        const config = createDotted4Config(9);
 
         // Act
         const result = subdivider.subdivide(unifiedMap, config);
 
-        // Assert - only original beats (at positions 0, 2, 4, 6) are detected
-        expect(result.detectedBeatIndices).toHaveLength(4);
-        expect(result.detectedBeatIndices).toEqual([0, 2, 4, 6]);
+        // Assert - detectedBeatIndices are output positions of original (isDetected) beats
+        // Output: [beat0, interp1, interp3, beat4, beat6, interp7]
+        // Detected: 0, 3, 4
+        expect(result.detectedBeatIndices).toHaveLength(3);
+        expect(result.detectedBeatIndices).toEqual([0, 3, 4]);
     });
 });
 

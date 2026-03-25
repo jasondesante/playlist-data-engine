@@ -410,7 +410,9 @@ describe('SubdivisionPlaybackController - Real-Time Beat Generation', () => {
 
             const beats = controller.getBeatsInRange(0, 8);
 
-            // Dotted quarter: 2-beat structure with original at 0 and interpolated at 0.5
+            // Dotted quarter: 2-beat structure with original at even beats and interpolated at odd+0.5
+            // Note: The controller applies dotted4 uniformly to all beats. For correct musical
+            // usage, dotted4 should be paired with rest on every 3rd beat.
             expect(beats.every(b => b.subdivisionType === 'dotted4')).toBe(true);
         });
 
@@ -423,17 +425,17 @@ describe('SubdivisionPlaybackController - Real-Time Beat Generation', () => {
 
             const beats = controller.getBeatsInRange(0, 8);
 
-            // Dotted4 is a 2-beat structure: keeps beats at positions 0, 2, 4, ...
-            // Each pair produces: original + interpolated at 0.5
-            // From 16 beats, we get 8 originals + 8 interpolated = 16 beats
-            // In range 0-8 seconds: 16 beats (8 pairs)
-            expect(beats.length).toBe(16);
-            // First pair: beat 0 at 0s, interpolated at 0.25s
+            // Dotted4 applied uniformly: keeps beats at even positions, interpolates at odd+0.5
+            // The last odd beat has no nextBeat, so no interpolated beat is created for it.
+            // From 16 beats (0-15), we get 8 originals (even) + 7 interpolated (odd, minus last) = 15
+            // In range 0-8 seconds: 15 beats
+            expect(beats.length).toBe(15);
+            // First pair: beat 0 at 0s, interpolated at 0.75s (beat1 + 0.5*interval)
             expect(beats[0].timestamp).toBeCloseTo(0, 2);
-            expect(beats[1].timestamp).toBeCloseTo(0.25, 2);
-            // Second pair: beat 2 at 1.0s, interpolated at 1.25s
+            expect(beats[1].timestamp).toBeCloseTo(0.75, 2);
+            // Second pair: beat 2 at 1.0s, interpolated at 1.75s (beat3 + 0.5*interval)
             expect(beats[2].timestamp).toBeCloseTo(1.0, 2);
-            expect(beats[3].timestamp).toBeCloseTo(1.25, 2);
+            expect(beats[3].timestamp).toBeCloseTo(1.75, 2);
         });
     });
 
