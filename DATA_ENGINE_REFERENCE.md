@@ -2848,6 +2848,35 @@ Generates easy/medium/hard difficulty variants from the composite stream, plus a
 | medium | Simplification | Unedited | Density enhancement | Unedited composite |
 | hard | Heavy simplification | Simplification | Unedited | Unedited composite |
 
+**Custom Configuration:**
+
+The constructor accepts a `Partial<DifficultyVariantConfig>` to override default behavior. Only provide the fields you want to change; the rest use defaults.
+
+```typescript
+const generator = new DifficultyVariantGenerator({
+    simplificationIntensityThreshold: 0.5,
+    enhancementDensityMultiplier: 2.0,
+    logConversions: true,
+});
+
+// Inspect the resolved config
+const config = generator.getConfig();
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `logConversions` | `boolean` | `false` | Log subdivision conversions for debugging |
+| `preservePhraseBoundaries` | `boolean` | `true` | Preserve phrase structure when simplifying |
+| `simplificationIntensityThreshold` | `number` | `0.3` | Min intensity to keep beats during simplification |
+| `heavySimplificationIntensityThreshold` | `number` | `0.5` | Min intensity for heavy simplification |
+| `moderateSimplificationIntensityThreshold` | `number` | `0.4` | Threshold for removing offbeat 16ths (hard→medium) |
+| `densityReductionMinIntensity` | `number` | `0.25` | Min intensity for density reduction removal |
+| `enhancementDensityMultiplier` | `number` | `1.6` | Target density multiplier for enhancement (1.0 = no change) |
+| `interpolatedBeatIntensity` | `number` | `0.5` | Intensity assigned to interpolated beats (0.0–1.0) |
+| `preferPatternInsertion` | `boolean` | `true` | Prefer pattern insertion over simple interpolation |
+| `maxPatternInsertionSize` | `number` | `4` | Max phrase size (in beats) for pattern insertion |
+| `seed` | `string?` | `undefined` | Deterministic seed for probability rolls |
+
 ---
 
 ## Pitch Detection & Button Mapping

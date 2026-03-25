@@ -844,7 +844,7 @@ export class RhythmGenerator {
 
         this.compositeGenerator = new CompositeStreamGenerator();
 
-        this.variantGenerator = new DifficultyVariantGenerator();
+        this.variantGenerator = new DifficultyVariantGenerator({ seed: this.options.seed });
     }
 
     // ================================================================

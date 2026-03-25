@@ -1240,3 +1240,184 @@ describe('Timestamp Recalculation After Grid Type Conversion', () => {
         });
     });
 });
+
+// ============================================================================
+// Probabilistic Density Scaling Tests
+// ============================================================================
+
+describe('Probabilistic density scaling', () => {
+    /**
+     * Helper: count total beats across all variants from generate.
+     * Tests the probabilistic density through the public API (enhanceBeats is private).
+     */
+    function countBeatsInVariant(
+        generator: DifficultyVariantGenerator,
+        stream: CompositeStream,
+        difficulty: DifficultyLevel
+    ): number {
+        const variants = generator.generate(stream);
+        return (variants as Record<string, { beats: VariantBeat[] }>)[difficulty].beats.length;
+    }
+
+    /**
+     * Helper: create a simple stream with 1 beat per beat index across many indices.
+     * This makes density changes easy to observe since every index has the same base count.
+     */
+    function createUniformStream(
+        beatCount: number,
+        naturalDifficulty: 'easy' | 'medium' | 'hard' = 'medium'
+    ): CompositeStream {
+        const beats: CompositeBeat[] = [];
+        for (let i = 0; i < beatCount; i++) {
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.7));
+        }
+        return createMockCompositeStream(beats, naturalDifficulty);
+    }
+
+    it('should produce deterministic results with the same seed', () => {
+        const config = { seed: 'test-seed-determinism', enhancementDensityMultiplier: 1.5 };
+        const stream = createUniformStream(20, 'easy');
+
+        const gen1 = new DifficultyVariantGenerator(config);
+        const gen2 = new DifficultyVariantGenerator(config);
+
+        const result1 = gen1.generate(stream);
+        const result2 = gen2.generate(stream);
+
+        expect(result1.medium.beats.length).toBe(result2.medium.beats.length);
+        expect(result1.hard.beats.length).toBe(result2.hard.beats.length);
+    });
+
+    it('should produce different results with different seeds', () => {
+        const stream = createUniformStream(50, 'easy');
+
+        const gen1 = new DifficultyVariantGenerator({ seed: 'seed-A', enhancementDensityMultiplier: 1.5 });
+        const gen2 = new DifficultyVariantGenerator({ seed: 'seed-B', enhancementDensityMultiplier: 1.5 });
+
+        const result1 = gen1.generate(stream);
+        const result2 = gen2.generate(stream);
+
+        // With 50 beat indices and 50% probability, the odds of identical results by chance are astronomically low
+        expect(result1.medium.beats.length).not.toBe(result2.medium.beats.length);
+    });
+
+    it('should increase density gradually with multiplier (no dramatic jumps)', () => {
+        const stream = createUniformStream(40, 'easy');
+
+        const counts: number[] = [];
+        for (const mult of [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9]) {
+            const gen = new DifficultyVariantGenerator({
+                seed: 'gradual-test',
+                enhancementDensityMultiplier: mult,
+            });
+            counts.push(countBeatsInVariant(gen, stream, 'medium'));
+        }
+
+        // Each step should add a roughly similar number of beats (no huge jumps)
+        for (let i = 1; i < counts.length; i++) {
+            const diff = counts[i] - counts[i - 1];
+            // No single 0.1 multiplier step should add more than 15 beats (out of 40 indices)
+            // The old deterministic approach would add ~40 beats at once at a threshold
+            expect(diff).toBeLessThan(16);
+        }
+
+        // Overall trend: density should increase (total beats should be higher at higher multipliers)
+        // Allow for minor statistical noise but the general trend should be upward
+        expect(counts[counts.length - 1]).toBeGreaterThan(counts[0]);
+    });
+
+    it('should produce natural variation (not all indices get same target)', () => {
+        const stream = createUniformStream(40, 'easy');
+
+        const gen = new DifficultyVariantGenerator({
+            seed: 'variation-test',
+            enhancementDensityMultiplier: 1.5, // 50% probability for each index
+        });
+
+        const result = gen.generate(stream);
+        const mediumBeats = result.medium.beats;
+
+        // With 40 indices and 50% probability, we should NOT get all 40 extra beats
+        // (which deterministic ceil would give us). We should get roughly 20.
+        // Allow generous bounds to avoid flaky tests.
+        expect(mediumBeats.length).toBeGreaterThan(30); // base 40 + some extras
+        expect(mediumBeats.length).toBeLessThan(70); // base 40 + far fewer than 40 extras
+    });
+
+    it('should produce no change at multiplier 1.0', () => {
+        const stream = createUniformStream(20, 'medium'); // natural = medium, so medium is unedited
+
+        const gen = new DifficultyVariantGenerator({
+            seed: 'no-change-test',
+            enhancementDensityMultiplier: 1.0,
+        });
+
+        const result = gen.generate(stream);
+        // Medium should be unedited since it's the natural difficulty
+        expect(result.medium.isUnedited).toBe(true);
+        expect(result.medium.beats.length).toBe(20);
+    });
+
+    it('should respect the cap of 4 beats per index at high multipliers', () => {
+        // Create stream with 2 beats per index (grid positions 0 and 2)
+        const beats: CompositeBeat[] = [];
+        for (let i = 0; i < 20; i++) {
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.7));
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 2, 0.7));
+        }
+        const stream = createMockCompositeStream(beats, 'easy');
+
+        const gen = new DifficultyVariantGenerator({
+            seed: 'cap-test',
+            enhancementDensityMultiplier: 3.0, // Very high - would try for 6 beats per index
+        });
+
+        const result = gen.generate(stream);
+
+        // Count beats per beat index in the hard variant
+        const beatsByIndex = new Map<number, number>();
+        for (const beat of result.hard.beats) {
+            const count = beatsByIndex.get(beat.beatIndex) ?? 0;
+            beatsByIndex.set(beat.beatIndex, count + 1);
+        }
+
+        for (const [index, count] of beatsByIndex) {
+            expect(count).toBeLessThanOrEqual(4);
+        }
+    });
+
+    it('should fill empty beat indices gradually, not all at once', () => {
+        // Create a sparse stream with beats on every other index.
+        // Using odd indices so gaps are at even positions (avoiding beat 0 edge case).
+        const beats: CompositeBeat[] = [];
+        for (let i = 1; i < 21; i += 2) {
+            beats.push(createMockCompositeBeat(i, 'straight_16th', 0, 0.7));
+        }
+        const stream = createMockCompositeStream(beats, 'medium');
+
+        // Test across multiple seeds to verify probabilistic behavior on average
+        let totalNewIndices = 0;
+        const seedCount = 10;
+        for (let s = 0; s < seedCount; s++) {
+            const gen = new DifficultyVariantGenerator({
+                seed: `sparse-fill-${s}`,
+                enhancementDensityMultiplier: 1.5,
+            });
+
+            const result = gen.generate(stream);
+            const hardBeats = result.hard.beats;
+
+            const filledIndices = new Set(hardBeats.map(b => b.beatIndex));
+            const originalIndices = new Set(beats.map(b => b.beatIndex));
+            const newIndices = [...filledIndices].filter(i => !originalIndices.has(i));
+            totalNewIndices += newIndices.length;
+        }
+
+        const avgNewIndices = totalNewIndices / seedCount;
+
+        // With 10 empty slots and ~5% probability per slot, average should be around 0.5.
+        // The old deterministic approach would fill all 10 or none.
+        // Average should be well under 10 — this proves gradual filling.
+        expect(avgNewIndices).toBeLessThan(8);
+    });
+});

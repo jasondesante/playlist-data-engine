@@ -39,6 +39,7 @@ import type { NaturalDifficulty } from './DensityAnalyzer.js';
 import type { GridType, GridDecision } from './RhythmQuantizer.js';
 import type { PhraseAnalysisResult, RhythmicPhrase } from './PhraseAnalyzer.js';
 import type { UnifiedBeatMap } from '../../types/BeatMap.js';
+import { deriveSeed, hashSeedToFloat } from '../../../utils/hash.js';
 
 // ============================================================================
 // Extended Grid Types
@@ -347,6 +348,9 @@ export interface DifficultyVariantConfig {
 
     /** Maximum phrase size to consider for pattern insertion (in beats). Default: 4 */
     maxPatternInsertionSize: number;
+
+    /** Seed for deterministic probability rolls in beat enhancement. If not provided, falls back to a hash of beat data. */
+    seed?: string;
 }
 
 // ============================================================================
@@ -360,10 +364,11 @@ const DEFAULT_DIFFICULTY_VARIANT_CONFIG: DifficultyVariantConfig = {
     heavySimplificationIntensityThreshold: 0.5,
     moderateSimplificationIntensityThreshold: 0.4,
     densityReductionMinIntensity: 0.25,
-    enhancementDensityMultiplier: 1.42,
+    enhancementDensityMultiplier: 1.6,
     interpolatedBeatIntensity: 0.5,
     preferPatternInsertion: true,
     maxPatternInsertionSize: 4,
+    seed: undefined,
 };
 
 // ============================================================================
@@ -1393,7 +1398,7 @@ export class DifficultyVariantGenerator {
 
         // Adjust density multiplier based on enhancement level
         const densityMultiplier = enhancementLevel === 'heavy'
-            ? this.config.enhancementDensityMultiplier * 1.45
+            ? this.config.enhancementDensityMultiplier * 1.7
             : this.config.enhancementDensityMultiplier;
 
         metadata.densityMultiplier = densityMultiplier;
@@ -1415,9 +1420,18 @@ export class DifficultyVariantGenerator {
         // Group beats by beatIndex for analysis
         const beatsByIndex = this.groupBeatsByIndex(cleanedBeats);
 
-        // Calculate target beats per beat index based on multiplier (includes empty beats)
+        // Calculate target beats per beat index using probabilistic density scaling.
+        // Each beat index independently rolls against a probability derived from the
+        // fractional part of (count * multiplier), producing gradual density changes
+        // instead of all indices jumping at once.
         const maxBeatIndex = Math.max(...Array.from(beatsByIndex.keys()));
-        const targetBeatsPerBeat = this.calculateTargetBeatsPerBeat(beatsByIndex, densityMultiplier, maxBeatIndex);
+        const densitySeed = this.config.seed ?? `${densityMultiplier}:${maxBeatIndex}:${cleanedBeats.length}`;
+        const targetBeatsPerBeat = this.calculateProbabilisticTargetBeatsPerBeat(
+            beatsByIndex,
+            densityMultiplier,
+            maxBeatIndex,
+            `${densitySeed}:${targetDifficulty}`
+        );
 
         // Create enhanced beats array
         const enhancedBeats: CompositeBeat[] = [];
@@ -1587,19 +1601,105 @@ export class DifficultyVariantGenerator {
         for (let beatIndex = 0; beatIndex <= maxBeatIndex; beatIndex++) {
             const beats = beatsByIndex.get(beatIndex);
             if (beats) {
-                // Beat index has existing beats — scale from actual count
                 const targetCount = Math.min(Math.ceil(beats.length * densityMultiplier), 4);
                 targetMap.set(beatIndex, targetCount);
             } else {
-                // Empty beat index — treat as having 1 virtual beat so we can fill gaps.
-                // A multiplier of 1.0 means leave it empty (< 1.5 doesn't ceil to 2),
-                // while higher multipliers will start populating sparse beats.
                 const virtualCount = Math.min(Math.ceil(densityMultiplier * 0.7), 4);
                 if (virtualCount >= 2) {
                     targetMap.set(beatIndex, virtualCount);
                 }
-                // else: leave the target at 0 (don't fill this beat)
             }
+        }
+
+        return targetMap;
+    }
+
+    /**
+     * Calculate target beats per beat index using probabilistic density scaling.
+     *
+     * Instead of deterministic Math.ceil() which causes all beat indices to jump
+     * simultaneously at threshold boundaries, each beat index independently rolls
+     * against a probability derived from the fractional part of (count * multiplier).
+     *
+     * This produces smooth, gradual density changes:
+     * - 1 beat * 1.3 multiplier = 1.3 → base 1 + 30% chance of 2nd
+     * - 1 beat * 1.8 multiplier = 1.8 → base 1 + 80% chance of 2nd
+     * - 2 beats * 1.3 multiplier = 2.6 → base 2 + 60% chance of 3rd
+     *
+     * Empty beat indices are treated as having 1 virtual beat, scaled by 0.7,
+     * allowing gradual gap filling instead of binary fill/skip behavior.
+     *
+     * Deterministic via MurmurHash: same seed + beat index always produces the same roll.
+     */
+    private calculateProbabilisticTargetBeatsPerBeat(
+        beatsByIndex: Map<number, CompositeBeat[]>,
+        densityMultiplier: number,
+        maxBeatIndex: number,
+        seed: string
+    ): Map<number, number> {
+        const targetMap = new Map<number, number>();
+        const maxTarget = 4;
+
+        for (let beatIndex = 0; beatIndex <= maxBeatIndex; beatIndex++) {
+            const beats = beatsByIndex.get(beatIndex);
+
+            let rawTarget: number;
+            let baseCount: number;
+            let fractionalPart: number;
+
+            if (beats && beats.length > 0) {
+                // Occupied beat index: scale from actual count
+                rawTarget = beats.length * densityMultiplier;
+                baseCount = Math.floor(rawTarget);
+                fractionalPart = rawTarget - baseCount;
+            } else {
+                // Empty beat index: purely probabilistic with no guaranteed floor.
+                // The probability of getting at least 1 beat scales with the multiplier.
+                // Scale of 0.5 means: M=1.0 → 50%, M=1.5 → 75%, M=2.0 → 100%.
+                rawTarget = densityMultiplier * 0.5;
+                baseCount = 0;
+                // Two independent rolls: first for the initial beat, second for extras
+                const roll1Seed = deriveSeed(seed, `beat:${beatIndex}:r1`);
+                const roll2Seed = deriveSeed(seed, `beat:${beatIndex}:r2`);
+                const roll1 = hashSeedToFloat(roll1Seed);
+                const roll2 = hashSeedToFloat(roll2Seed);
+
+                let targetCount = 0;
+                // First beat: probability = min(rawTarget, 1.0)
+                if (roll1 < Math.min(rawTarget, 1.0)) {
+                    targetCount = 1;
+                }
+                // Second beat: probability = max(0, rawTarget - 1.0)
+                if (targetCount === 1 && roll2 < Math.max(0, rawTarget - 1.0)) {
+                    targetCount = 2;
+                }
+
+                if (targetCount === 0) continue;
+                targetMap.set(beatIndex, Math.min(targetCount, maxTarget));
+                continue;
+            }
+
+            if (baseCount >= maxTarget) {
+                targetMap.set(beatIndex, maxTarget);
+                continue;
+            }
+
+            // Deterministic roll using MurmurHash of (seed + beatIndex)
+            const rollSeed = deriveSeed(seed, `beat:${beatIndex}`);
+            const roll = hashSeedToFloat(rollSeed);
+
+            // If roll lands below the probability threshold, add one extra beat
+            const targetCount = Math.min(
+                baseCount + (roll < fractionalPart ? 1 : 0),
+                maxTarget
+            );
+
+            // For empty indices: if target is 0, don't fill
+            if (!beats && targetCount === 0) {
+                continue;
+            }
+
+            targetMap.set(beatIndex, targetCount);
         }
 
         return targetMap;
@@ -1708,7 +1808,7 @@ export class DifficultyVariantGenerator {
     private createBeatsForEmptyIndex(
         beatIndex: number,
         beatsToAdd: number,
-        unifiedBeatMap: UnifiedBeatMap,
+        unifiedBeatMap?: UnifiedBeatMap,
         gridDecisions?: Map<number, GridDecision>,
         quarterNoteInterval: number = 0.5,
         beatsByIndex?: Map<number, CompositeBeat[]>,
@@ -1771,7 +1871,8 @@ export class DifficultyVariantGenerator {
 
         // Use the actual beat timestamp from the unified beat map.
         // This is the authoritative source for where each beat sits in time.
-        const beatStartTimestamp = unifiedBeatMap.beats[beatIndex]?.timestamp ?? beatIndex * quarterNoteInterval;
+        // Falls back to beat index * quarterNoteInterval when no unified beat map is available.
+        const beatStartTimestamp = unifiedBeatMap?.beats[beatIndex]?.timestamp ?? beatIndex * quarterNoteInterval;
 
         const interval = gridType === 'straight_16th' ? quarterNoteInterval / 4
             : gridType === 'straight_8th' ? quarterNoteInterval / 2
