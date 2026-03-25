@@ -459,7 +459,7 @@ describe('RhythmQuantizer', () => {
             const result = quantizer.quantize(transientAnalysis, beatMap);
 
             for (const decision of result.streams.low.gridDecisions) {
-                expect(['straight_16th', 'triplet_8th']).toContain(decision.selectedGrid);
+                expect(['straight_16th', 'triplet_8th', 'straight_8th']).toContain(decision.selectedGrid);
             }
         });
     });
@@ -615,7 +615,7 @@ describe('RhythmQuantizer', () => {
                 expect(beat.timestamp).toBeGreaterThanOrEqual(0);
                 expect(beat.beatIndex).toBeGreaterThanOrEqual(0);
                 expect(beat.gridPosition).toBeGreaterThanOrEqual(0);
-                expect(['straight_16th', 'triplet_8th']).toContain(beat.gridType);
+                expect(['straight_16th', 'triplet_8th', 'straight_8th']).toContain(beat.gridType);
                 expect(beat.intensity).toBeGreaterThanOrEqual(0);
                 expect(beat.intensity).toBeLessThanOrEqual(1);
                 expect(['low', 'mid', 'high']).toContain(beat.band);
@@ -851,9 +851,14 @@ describe('Integration Tests - Full Pipeline', () => {
             // Check that grid decisions have correct structure
             for (const stream of [result.streams.low, result.streams.mid, result.streams.high]) {
                 for (const decision of stream.gridDecisions) {
-                    expect(['straight_16th', 'triplet_8th']).toContain(decision.selectedGrid);
-                    expect(typeof decision.straightAvgOffset).toBe('number');
-                    expect(typeof decision.tripletAvgOffset).toBe('number');
+                    expect(['straight_16th', 'triplet_8th', 'straight_8th']).toContain(decision.selectedGrid);
+                    // Forced-grid bands (low) won't have offset values
+                    if (decision.straightAvgOffset !== undefined) {
+                        expect(typeof decision.straightAvgOffset).toBe('number');
+                    }
+                    if (decision.tripletAvgOffset !== undefined) {
+                        expect(typeof decision.tripletAvgOffset).toBe('number');
+                    }
                     expect(typeof decision.confidence).toBe('number');
                 }
             }
@@ -902,6 +907,8 @@ describe('Integration Tests - Full Pipeline', () => {
 
                 if (beat.gridType === 'straight_16th') {
                     expectedTimestamp = beatStart + (beat.gridPosition * sixteenthNoteInterval);
+                } else if (beat.gridType === 'straight_8th') {
+                    expectedTimestamp = beatStart + (beat.gridPosition * (quarterNoteInterval / 2));
                 } else {
                     // Triplet grid: quarter note divided into 3 equal parts
                     const tripletInterval = quarterNoteInterval / 3;
@@ -1050,6 +1057,10 @@ describe('Integration Tests - Full Pipeline', () => {
             if (allDecisions.length > 0) {
                 // Grid decisions should show the reasoning
                 for (const decision of allDecisions) {
+                    // Forced-grid bands (low = straight_8th) won't have offset values
+                    if (decision.straightAvgOffset === undefined || decision.tripletAvgOffset === undefined) {
+                        continue;
+                    }
                     // The grid with smaller average offset should be selected
                     if (decision.selectedGrid === 'triplet_8th') {
                         expect(decision.tripletAvgOffset).toBeLessThanOrEqual(decision.straightAvgOffset + 1);

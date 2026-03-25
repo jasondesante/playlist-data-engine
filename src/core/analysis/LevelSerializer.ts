@@ -814,6 +814,7 @@ export class LevelSerializer {
                         offbeatGridPositions: {
                             straight_16th: [1, 3],
                             triplet_8th: [1, 2],
+                            straight_8th: [1],
                         },
                     },
                 },

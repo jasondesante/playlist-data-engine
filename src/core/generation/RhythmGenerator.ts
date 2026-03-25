@@ -260,7 +260,7 @@ interface GeneratedBeatJSON {
     timestamp: number;
     beatIndex: number;
     gridPosition: number;
-    gridType: 'straight_16th' | 'triplet_8th';
+    gridType: 'straight_16th' | 'triplet_8th' | 'straight_8th';
     intensity: number;
     band: 'low' | 'mid' | 'high';
     quantizationError?: number;
@@ -287,7 +287,7 @@ interface CompositeBeatJSON {
     timestamp: number;
     beatIndex: number;
     gridPosition: number;
-    gridType: 'straight_16th' | 'triplet_8th';
+    gridType: 'straight_16th' | 'triplet_8th' | 'straight_8th';
     intensity: number;
     band: 'low' | 'mid' | 'high';
     quantizationError?: number;
@@ -299,9 +299,9 @@ interface CompositeBeatJSON {
  */
 interface GridDecisionJSON {
     beatIndex: number;
-    selectedGrid: 'straight_16th' | 'triplet_8th';
-    straightAvgOffset: number;
-    tripletAvgOffset: number;
+    selectedGrid: 'straight_16th' | 'triplet_8th' | 'straight_8th';
+    straightAvgOffset?: number;
+    tripletAvgOffset?: number;
     transientCount: number;
     confidence: number;
 }
@@ -600,6 +600,7 @@ interface StreamScoringResultJSON {
         offbeatGridPositions: {
             straight_16th: number[];
             triplet_8th: number[];
+            straight_8th: number[];
         };
     };
 }

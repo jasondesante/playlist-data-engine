@@ -167,10 +167,12 @@ export interface StreamScorerConfig {
     /** Grid positions considered "offbeats" for syncopation scoring.
      *  For straight_16th: 1 and 3 are offbeats (16th note subdivisions)
      *  For triplet_8th: 1 and 2 are offbeats (after the downbeat)
+     *  For straight_8th: 1 is offbeat (the "and" in "1-and")
      */
     offbeatGridPositions: {
         straight_16th: number[];
         triplet_8th: number[];
+        straight_8th: number[];
     };
 
     /** Band bias multipliers applied to final section scores.
@@ -193,6 +195,7 @@ const DEFAULT_STREAM_SCORER_CONFIG: StreamScorerConfig = {
     offbeatGridPositions: {
         straight_16th: [1, 3], // 16th note offbeats (the "e" and "a" in "1-e-and-a")
         triplet_8th: [1, 2], // Triplet offbeats (after the downbeat)
+        straight_8th: [1], // 8th note offbeat (the "and" in "1-and")
     },
     bandBiasWeights: undefined, // No bias by default
 };

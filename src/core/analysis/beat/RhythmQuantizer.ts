@@ -188,7 +188,7 @@ export interface DensityValidationResult {
 /**
  * Grid type for a beat
  */
-export type GridType = 'straight_16th' | 'triplet_8th';
+export type GridType = 'straight_16th' | 'triplet_8th' | 'straight_8th';
 
 /**
  * Grid decision metadata (produced during grid detection)
@@ -200,11 +200,11 @@ export interface GridDecision {
     /** Selected grid type for this beat */
     selectedGrid: GridType;
 
-    /** Average ms offset from straight 16th grid */
-    straightAvgOffset: number;
+    /** Average ms offset from straight 16th grid (undefined when grid is forced) */
+    straightAvgOffset?: number;
 
-    /** Average ms offset from triplet grid */
-    tripletAvgOffset: number;
+    /** Average ms offset from triplet grid (undefined when grid is forced) */
+    tripletAvgOffset?: number;
 
     /** Number of transients in this beat */
     transientCount: number;
@@ -227,7 +227,7 @@ export interface GeneratedBeat {
     /** Index into UnifiedBeatMap.beats[] - which quarter note this belongs to */
     beatIndex: number;
 
-    /** Position within that beat (0-3 for 16th, 0-2 for triplet) */
+    /** Position within that beat (0-3 for 16th, 0-2 for triplet, 0-1 for 8th) */
     gridPosition: number;
 
     /** Grid type for this beat */
@@ -388,9 +388,9 @@ export class RhythmQuantizer {
 
         // Quantize each band with its filtered transients
         const streams = {
-            low: this.quantizeBand(lowResult.filteredTransients, unifiedBeatMap),
-            mid: this.quantizeBand(midResult.filteredTransients, unifiedBeatMap),
-            high: this.quantizeBand(highResult.filteredTransients, unifiedBeatMap),
+            low: this.quantizeBand(lowResult.filteredTransients, unifiedBeatMap, 'low'),
+            mid: this.quantizeBand(midResult.filteredTransients, unifiedBeatMap, 'mid'),
+            high: this.quantizeBand(highResult.filteredTransients, unifiedBeatMap, 'high'),
         };
 
         // Calculate total filtered across all bands
@@ -666,9 +666,9 @@ export class RhythmQuantizer {
         const highTransients = filteredTransients.transients.filter(t => t.band === 'high');
 
         return {
-            low: this.quantizeBand(lowTransients, unifiedBeatMap),
-            mid: this.quantizeBand(midTransients, unifiedBeatMap),
-            high: this.quantizeBand(highTransients, unifiedBeatMap),
+            low: this.quantizeBand(lowTransients, unifiedBeatMap, 'low'),
+            mid: this.quantizeBand(midTransients, unifiedBeatMap, 'mid'),
+            high: this.quantizeBand(highTransients, unifiedBeatMap, 'high'),
         };
     }
 
@@ -677,11 +677,13 @@ export class RhythmQuantizer {
      */
     private quantizeBand(
         transients: TransientResult[],
-        unifiedBeatMap: UnifiedBeatMap
+        unifiedBeatMap: UnifiedBeatMap,
+        band: 'low' | 'mid' | 'high'
     ): GeneratedRhythmMap {
         const rawBeats: GeneratedBeat[] = [];
         const gridDecisions: GridDecision[] = [];
         const quarterNoteInterval = unifiedBeatMap.quarterNoteInterval;
+        const forcedGrid = this.getBandGridType(band);
 
         // Sort transients by timestamp
         const sortedTransients = [...transients].sort((a, b) => a.timestamp - b.timestamp);
@@ -703,8 +705,18 @@ export class RhythmQuantizer {
                 continue;
             }
 
-            // Determine grid type for this beat
-            const gridDecision = this.detectGrid(beatTransients, beat, beatIndex, quarterNoteInterval);
+            // Determine grid type: use forced grid for this band, or auto-detect
+            let gridDecision: GridDecision;
+            if (forcedGrid) {
+                gridDecision = {
+                    beatIndex,
+                    selectedGrid: forcedGrid,
+                    transientCount: beatTransients.length,
+                    confidence: 1.0,
+                };
+            } else {
+                gridDecision = this.detectGrid(beatTransients, beat, beatIndex, quarterNoteInterval);
+            }
             gridDecisions.push(gridDecision);
 
             // Quantize each transient
@@ -793,6 +805,20 @@ export class RhythmQuantizer {
      * - Songs with mixed time signatures
      * - Songs with swing feel in some sections but not others
      */
+
+    /**
+     * Get the forced grid type for a band, if any.
+     *
+     * Returns null for bands that should auto-detect their grid.
+     */
+    private getBandGridType(band: 'low' | 'mid' | 'high'): GridType | null {
+        switch (band) {
+            case 'low': return 'straight_8th';
+            case 'mid':
+            case 'high': return null;
+        }
+    }
+
     private detectGrid(
         transients: TransientResult[],
         beat: Beat,
@@ -876,6 +902,23 @@ export class RhythmQuantizer {
     }
 
     /**
+     * Calculate straight 8th note grid for a beat
+     *
+     * @param beatStart - Start time of the beat in seconds
+     * @param quarterNoteInterval - Duration of a quarter note in seconds
+     * @returns Array of grid positions in seconds
+     */
+    private calculate8thGrid(beatStart: number, quarterNoteInterval: number): number[] {
+        const grid: number[] = [];
+        const interval = quarterNoteInterval / 2; // 8th note interval
+
+        for (let i = 0; i < 2; i++) {
+            grid.push(beatStart + (i * interval));
+        }
+        return grid;
+    }
+
+    /**
      * Calculate offset from grid (in milliseconds)
      */
     private calculateOffsetFromGrid(transient: TransientResult, grid: number[]): number {
@@ -900,14 +943,23 @@ export class RhythmQuantizer {
         gridType: GridType,
         quarterNoteInterval: number
     ): GeneratedBeat | null {
-        const grid = gridType === 'straight_16th'
-            ? this.calculateStraightGrid(beat.timestamp, quarterNoteInterval)
-            : this.calculateTripletGrid(beat.timestamp, quarterNoteInterval);
-        const maxGridPosition = gridType === 'straight_16th' ? 3 : 2;
+        let maxGridPosition: number;
+        let interval: number;
 
-        const interval = gridType === 'straight_16th'
-            ? quarterNoteInterval / 4
-            : quarterNoteInterval / 3;
+        switch (gridType) {
+            case 'straight_8th':
+                maxGridPosition = 1;
+                interval = quarterNoteInterval / 2;
+                break;
+            case 'straight_16th':
+                maxGridPosition = 3;
+                interval = quarterNoteInterval / 4;
+                break;
+            case 'triplet_8th':
+                maxGridPosition = 2;
+                interval = quarterNoteInterval / 3;
+                break;
+        }
 
         const gridPosition = Math.round((transient.timestamp - beat.timestamp) / interval);
 
